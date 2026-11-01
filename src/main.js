@@ -471,7 +471,11 @@ function leaveStore() {
   cam.dist = 9;
   cam.pitch = 0.42;
   // Face the street, with the camera to the side so the shop front stays in view.
-  moveMeTo(scene, it.door.x, it.door.z, it.group.rotation.y, it.group.rotation.y + Math.PI / 2);
+  // Step out a little in front of the door, on a spot that is not inside a
+  // building (some shop fronts sit close to their neighbours).
+  const ry = it.group.rotation.y;
+  const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
+  moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
