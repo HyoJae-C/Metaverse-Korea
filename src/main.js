@@ -18,7 +18,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior, EXIT, ROOM } from './core/interior.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
-import { Music } from './core/music.js';
+import { Music, Sfx } from './core/music.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -251,7 +251,14 @@ const input = new Input(canvas, $('joystick'));
 $('hud').hidden = false;
 $('start').hidden = true;
 $('joystick').hidden = !input.isTouch;
+// Settings sheet: music, sign translation and language live here.
+$('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
+$('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+$('settings-panel').onclick = (e) => {
+  if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
+};
 $('lang-btn').onclick = () => {
+  $('settings-panel').hidden = true;
   $('lang-overlay').hidden = false;
 };
 $('lang-overlay').onclick = (e) => {
@@ -386,20 +393,71 @@ async function joinRoom(room, roomScene, area = null) {
 net = SOLO;
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
+// Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
+// send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
 const emoteBar = $('emotes');
-for (const pack of ownedPacks()) {
-  for (const em of pack.emotes) {
-    const b = document.createElement('button');
-    b.textContent = em.emoji;
-    b.setAttribute('aria-label', em.id);
-    b.onclick = () => {
-      if (em.anim === 'wave') me.wave();
-      showBubble(myLabel, $('labels'), em.emoji);
-      net.sendEmote(em.id);
-    };
-    emoteBar.appendChild(b);
-  }
+const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
+function sendEmote(em) {
+  if (em.anim === 'wave') me.wave();
+  showBubble(myLabel, $('labels'), em.emoji);
+  net.sendEmote(em.id);
 }
+const petals = emoteList.map((em, i) => {
+  const b = document.createElement('button');
+  b.textContent = em.emoji;
+  b.setAttribute('aria-label', em.id);
+  // Fan out in a quarter circle above and to the left of the main button.
+  const n = emoteList.length;
+  const ang = Math.PI / 2 + (n > 1 ? (i / (n - 1)) : 0.5) * (Math.PI / 2);
+  const r = 84;
+  b.style.setProperty('--dx', `${Math.cos(ang) * r}px`);
+  b.style.setProperty('--dy', `${-Math.sin(ang) * r}px`);
+  b.onclick = (e) => { e.stopPropagation(); sendEmote(em); closeWheel(); };
+  emoteBar.appendChild(b);
+  return b;
+});
+let wheelOpen = false, dragHot = null, dragStart = null;
+function openWheel() { wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open'); }
+function closeWheel() {
+  wheelOpen = false; emoteBar.hidden = true; $('emote-wheel').classList.remove('open');
+  petals.forEach((p) => p.classList.remove('hot'));
+  dragHot = null;
+}
+const mainBtn = $('emote-main');
+mainBtn.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  mainBtn.setPointerCapture(e.pointerId);
+  dragStart = { x: e.clientX, y: e.clientY, wasOpen: wheelOpen, moved: false };
+  openWheel();
+});
+mainBtn.addEventListener('pointermove', (e) => {
+  if (!dragStart) return;
+  if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 12) dragStart.moved = true;
+  dragHot = null;
+  let best = 44;
+  for (const p of petals) {
+    const r = p.getBoundingClientRect();
+    const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+    if (d < best) { best = d; dragHot = p; }
+  }
+  petals.forEach((p) => p.classList.toggle('hot', p === dragHot));
+});
+const endDrag = () => {
+  if (!dragStart) return;
+  const { moved, wasOpen } = dragStart;
+  dragStart = null;
+  if (dragHot) { sendEmote(emoteList[petals.indexOf(dragHot)]); closeWheel(); }
+  else if (moved || wasOpen) closeWheel(); // dragged off, or tapped again to close
+  // a plain tap leaves the wheel open for tapping a petal
+};
+mainBtn.addEventListener('pointerup', endDrag);
+mainBtn.addEventListener('pointercancel', () => { dragStart = null; closeWheel(); });
+addEventListener('pointerdown', (e) => { if (wheelOpen && !e.target.closest('#emote-wheel')) closeWheel(); });
+addEventListener('keydown', (e) => {
+  if (e.target instanceof HTMLInputElement) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
+});
 
 
 // ---------- Stores, zones, map, guide ----------
@@ -448,6 +506,7 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 
 const interiorCache = new Map();
 function enterStore(item) {
+  sfx.doorbell(); // ding-dong
   const store = item.store;
   let built = interiorCache.get(store.id);
   if (!built) {
@@ -471,6 +530,7 @@ function enterStore(item) {
 
 function leaveStore() {
   if (mode !== 'store') return;
+  sfx.doorbell();
   const it = interior.front;
   mode = 'street';
   activeScene = scene;
@@ -503,6 +563,17 @@ $('signs-btn').onclick = () => {
   applySigns();
 };
 onLanguageChange(() => { if (signsTranslated) applySigns(); });
+
+// Sound effects (on by default; remembered on this device).
+const sfx = new Sfx();
+try { sfx.on = localStorage.getItem('mk.sfx') !== '0'; } catch { /* ignore */ }
+$('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
+$('sfx-btn').onclick = () => {
+  sfx.on = !sfx.on;
+  $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
+  try { localStorage.setItem('mk.sfx', sfx.on ? '1' : '0'); } catch { /* ignore */ }
+  if (sfx.on) sfx.doorbell(); // preview
+};
 
 // Background music (off by default; the choice is remembered on this device).
 const music = new Music();
@@ -581,6 +652,8 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyM') $('map-btn').click();
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
+    else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
+    else if (wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
 });

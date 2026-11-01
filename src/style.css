@@ -281,7 +281,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   text-transform: uppercase; background: #fff1c9; color: #8a6a1f; padding: 2px 7px; border-radius: 6px;
 }
 .store-banner .chip { flex: none; background: #fff; }
-.in-store .street-card, .in-store .tools #signs-btn { display: none; }
+.in-store .street-card { display: none; }
 .in-store .tools { top: calc(max(12px, env(safe-area-inset-top)) + 100px); }
 .sheet {
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -345,8 +345,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .map-row-text small { color: var(--ink-soft); }
 @media (max-width: 700px) {
   .map-body { grid-template-columns: 1fr; grid-template-rows: 1fr 40%; }
-  .tools { top: auto; bottom: max(176px, calc(env(safe-area-inset-bottom) + 166px)); right: 12px; flex-direction: column; }
-  .emotes { grid-template-columns: repeat(2, 50px); }
+  .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
   .store-banner {
@@ -378,8 +377,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .look-panel { width: min(720px, 100%); }
   .look-layout { grid-template-columns: 220px 1fr; display: grid; gap: 12px; align-items: start; }
   .look-stage { height: 200px; aspect-ratio: auto; }
-  .emotes { grid-template-columns: repeat(2, 50px); }
-  .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 132px; flex-direction: column; }
+  .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 88px; flex-direction: column; }
   .help { top: max(12px, env(safe-area-inset-top)); bottom: auto; }
 }
 
@@ -390,3 +388,35 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .map-btns .chip { width: 44px; height: 44px; }
   .chip { min-height: 44px; }
 }
+
+/* Emote wheel */
+.emote-wheel { position: absolute; right: 14px; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); width: 60px; height: 60px; }
+.emote-main {
+  width: 60px; height: 60px; border-radius: 50%; font-size: 30px;
+  background: var(--panel); box-shadow: var(--shadow); touch-action: none; position: relative; z-index: 2;
+}
+.emote-wheel.open .emote-main { background: var(--mint); }
+.emote-petals button {
+  position: absolute; left: 5px; top: 5px; width: 50px; height: 50px; border-radius: 50%;
+  background: var(--panel); font-size: 25px; box-shadow: var(--shadow);
+  transform: translate(var(--dx), var(--dy)); animation: petal-in 0.16s ease-out;
+}
+.emote-petals button.hot { transform: translate(var(--dx), var(--dy)) scale(1.25); background: #fff; }
+@keyframes petal-in { from { transform: translate(0, 0) scale(0.4); opacity: 0; } }
+
+/* Settings sheet */
+.icon-chip { width: 44px; height: 44px; padding: 0; font-size: 20px; display: grid; place-items: center; }
+.settings-card { display: grid; gap: 10px; text-align: left; }
+.settings-card h2 { margin: 0 0 4px; text-align: center; color: var(--ink); font-size: 18px; }
+.setting-row {
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px;
+  background: #fff; border-radius: 16px; font-size: 15px; font-weight: 700; color: var(--ink); text-align: left;
+}
+.setting-row > span:first-child { font-size: 20px; }
+.setting-label { flex: 1; }
+.setting-go { font-size: 22px; color: var(--ink-soft); }
+.switch { width: 46px; height: 28px; border-radius: 999px; background: #e3d9c8; position: relative; transition: background 0.15s; flex: none; }
+.switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.15s; }
+.setting-row[aria-pressed='true'] .switch { background: var(--mint); }
+.setting-row[aria-pressed='true'] .switch::after { transform: translateX(18px); }
+.settings-card .primary { margin-top: 6px; }

@@ -35,6 +35,7 @@ try {
   await b.keyboard.down('KeyW');
   await b.waitForTimeout(1000);
   await b.keyboard.up('KeyW');
+  await b.click('#emote-main'); // open the emote wheel
   await b.click('#emotes button >> nth=0');
   await a.waitForSelector('.bubble', { timeout: 5000 });
   // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
