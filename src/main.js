@@ -264,10 +264,13 @@ const refreshHelp = () => {
   $('help-text').textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
 };
 refreshHelp();
-$('help-ok').onclick = () => {
+const dismissHelp = () => {
+  if ($('help').hidden) return;
   $('help').hidden = true;
   try { localStorage.setItem('mk.helpSeen', '1'); } catch { /* ignore */ }
 };
+$('help-ok').onclick = dismissHelp;
+let walkedFor = 0; // the hint closes by itself once the player has walked a bit
 clearTimeout(helpTimer);
 
 // Street name: shown in its original (Korean) form, with a translate toggle.
@@ -685,6 +688,8 @@ renderer.setAnimationLoop(() => {
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
   if (mag > 0.05) {
+    walkedFor += dt;
+    if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
     const speed = (input.run ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward

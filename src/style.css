@@ -382,3 +382,11 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 132px; flex-direction: column; }
   .help { top: max(12px, env(safe-area-inset-top)); bottom: auto; }
 }
+
+/* Comfortable touch targets (44 px minimum) and readable small labels. */
+@media (pointer: coarse) {
+  .street-card .chip { min-height: 44px; padding: 10px 16px; font-size: 14px; }
+  .tool small { font-size: 11px; }
+  .map-btns .chip { width: 44px; height: 44px; }
+  .chip { min-height: 44px; }
+}
