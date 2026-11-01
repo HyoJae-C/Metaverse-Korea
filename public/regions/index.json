@@ -1,0 +1,6 @@
+{
+  "default": "seongsu",
+  "regions": [
+    { "id": "seongsu", "status": "live" }
+  ]
+}

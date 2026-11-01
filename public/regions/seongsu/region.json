@@ -1,0 +1,14 @@
+{
+  "id": "seongsu",
+  "name": { "en": "Seongsu-dong", "ko": "성수동" },
+  "city": { "en": "Seoul", "ko": "서울" },
+  "center": { "lat": 37.5446, "lon": 127.0557 },
+  "bbox": { "south": 37.5395, "west": 127.0480, "north": 37.5495, "east": 127.0640 },
+  "spawn": { "lat": 37.5443, "lon": 127.0553, "heading": 200 },
+  "mapFile": "map.json",
+  "attribution": {
+    "text": "© OpenStreetMap contributors",
+    "license": "ODbL",
+    "url": "https://www.openstreetmap.org/copyright"
+  }
+}
