@@ -15,7 +15,10 @@ async function join(name) {
   page.on('console', (m) => m.type() === 'warning' && errors.push(`${name}: ${m.text()}`));
   await page.goto(url);
   await page.click('#next-btn');
-  await page.fill('#nickname', name);
+  // Type key by key (fill() bypasses key handlers and once hid a bug here).
+  await page.fill('#nickname', '');
+  await page.type('#nickname', name);
+  if ((await page.inputValue('#nickname')) !== name) throw new Error('nickname field did not accept typing');
   await page.click('#start-btn');
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
   return page;

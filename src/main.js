@@ -95,7 +95,11 @@ const zonesPromise = optionalJson('zones.json');
 
 await new Promise((resolve) => {
   $('start-btn').onclick = resolve;
-  $('nickname').onkeydown = (e) => e.key === 'Enter' && resolve();
+  // Note: a handler body, not an expression. Returning false from an
+  // on-handler cancels the key, which blocked typing in this field.
+  $('nickname').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.isComposing) resolve();
+  };
 });
 const myLook = editor.getLook();
 editor.dispose();
@@ -312,13 +316,15 @@ onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
+let idleTimer = 0;
+let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
 async function joinRoom(room, roomScene) {
   net?.disconnect();
   for (const id of [...others.players.keys()]) others.leave(id);
   others = new RemotePlayers(roomScene, $('labels'));
   refreshOnline();
   const handlers = {
-    onJoin: (p) => { others.join(p); refreshOnline(); },
+    onJoin: (p) => { others.join(p); refreshOnline(); lastSent = null; },
     onLeave: (id) => { others.leave(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
@@ -673,15 +679,25 @@ renderer.setAnimationLoop(() => {
     }
   }
 
+  // Send our state only when it changed (moving / turning), plus a slow
+  // heartbeat when idle. Realtime services bill per message, so standing
+  // still should cost almost nothing.
   sendTimer -= dt;
+  idleTimer -= dt;
   if (sendTimer <= 0) {
-    sendTimer = 1 / config.netSendRate;
-    net.sendState({
+    const st = {
       x: Math.round(p.x * 100) / 100,
       z: Math.round(p.z * 100) / 100,
       ry: Math.round(me.root.rotation.y * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
-    });
+    };
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s;
+    if (changed || idleTimer <= 0) {
+      net.sendState(st);
+      lastSent = st;
+      idleTimer = config.netIdleInterval;
+    }
+    sendTimer = 1 / config.netSendRate;
   }
 
   const w = innerWidth, h = innerHeight;
