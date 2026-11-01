@@ -8,8 +8,10 @@ export const config = {
     url: import.meta.env.VITE_REALTIME_URL || '',
     key: import.meta.env.VITE_REALTIME_PUBLIC_KEY || '',
   },
-  // Max position updates per second while moving. Nothing is sent while
-  // standing still except a heartbeat every netIdleInterval seconds.
+  // Max position updates per second while walking / running (other players
+  // interpolate in between). Nothing is sent while standing still except a
+  // heartbeat every netIdleInterval seconds.
   netSendRate: 6,
-  netIdleInterval: 3,
+  netSendRateRun: 8,
+  netIdleInterval: 5,
 };

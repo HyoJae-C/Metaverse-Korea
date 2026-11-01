@@ -316,7 +316,7 @@ onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
-let idleTimer = 0;
+let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
 async function joinRoom(room, roomScene) {
   net?.disconnect();
@@ -400,6 +400,8 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
   targetScene.add(me.root);
   me.root.position.set(x, 0, z);
   me.root.rotation.y = ry;
+  lastSent = null; // teleport: tell others right away
+  sendTimer = 0;
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
@@ -602,7 +604,7 @@ addEventListener('resize', resize);
 resize();
 
 const timer = new THREE.Timer();
-let streetTimer = 0, sendTimer = 0, speed01 = 0;
+let streetTimer = 0, speed01 = 0;
 const tmp = new THREE.Vector3();
 
 renderer.setAnimationLoop(() => {
@@ -679,9 +681,11 @@ renderer.setAnimationLoop(() => {
     }
   }
 
-  // Send our state only when it changed (moving / turning), plus a slow
-  // heartbeat when idle. Realtime services bill per message, so standing
-  // still should cost almost nothing.
+  // Event-based sync: send only when our state changed (moving, turning,
+  // slowing to a stop; a teleport or a newcomer forces a send), plus a slow
+  // heartbeat when idle. Presence already tracks who is online, so the
+  // heartbeat only re-confirms the last position. Realtime services bill per
+  // message and receiver, so standing still should cost almost nothing.
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
@@ -697,7 +701,7 @@ renderer.setAnimationLoop(() => {
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
-    sendTimer = 1 / config.netSendRate;
+    sendTimer = 1 / (input.run ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;
