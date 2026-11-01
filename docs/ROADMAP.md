@@ -17,6 +17,12 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Signs in Korean (or English) with a Translate button to the chosen language
 - Background music: a cozy lo-fi loop generated in the browser (no audio files, no licensing), off by default, 🎵 toggle remembered per device
 
+## Cost guardrails (done)
+
+- Position is sent only while moving (6/s walking, 8/s running) plus a 5 s idle heartbeat
+- Streets are split into 200 m cells: you announce yourself in your cell and listen to the 3×3 around it, so a message only reaches people nearby. Shops are their own rooms
+- Later: cap a cell at about 30 people (open a second channel), and move position sync to a self-run realtime server, keeping Supabase for accounts and data
+
 ## Step 3: Social
 
 - Voice chat **only inside the café**: opt-in, push-to-talk, mute and report
