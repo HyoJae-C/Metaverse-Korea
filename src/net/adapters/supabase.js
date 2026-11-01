@@ -27,7 +27,13 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     connect({ room, self: me, listenOnly = false }) {
       self = me;
       listening = listenOnly;
-      channel = client.channel('room:' + room, {
+      // A room we just left may still be closing on the shared client; make
+      // sure we get a fresh channel rather than the old one.
+      const topic = 'room:' + room;
+      for (const old of client.getChannels()) {
+        if (old.topic === 'realtime:' + topic || old.topic === topic) client.removeChannel(old);
+      }
+      channel = client.channel(topic, {
         config: { broadcast: { self: false }, presence: { key: me.id } },
       });
       channel

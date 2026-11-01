@@ -13,7 +13,7 @@ async function join(name) {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => m.type() === 'warning' && errors.push(`${name}: ${m.text()}`));
-  await page.goto(url);
+  await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug'); // debug exposes window.__mk
   await page.click('#next-btn');
   // Type key by key (fill() bypasses key handlers and once hid a bug here).
   await page.fill('#nickname', '');
@@ -34,12 +34,18 @@ try {
   await b.keyboard.up('KeyW');
   await b.click('#emotes button >> nth=0');
   await a.waitForSelector('.bubble', { timeout: 5000 });
+  // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
+  const [ax, az] = await a.evaluate(() => __mk.me());
+  await b.evaluate(([x, z]) => __mk.goto(x + 700, z), [ax, az]);
+  await a.waitForFunction(() => document.querySelector('#online').hidden, null, { timeout: 15000 });
+  await b.evaluate(([x, z]) => __mk.goto(x + 3, z), [ax, az]);
+  await a.waitForFunction(() => document.querySelector('#online')?.textContent.includes('2') && !document.querySelector('#online').hidden, null, { timeout: 15000 });
   ok = true;
 } catch (e) {
   errors.push('assertion: ' + e.message);
 }
 await a.screenshot({ path: 'e2e-multiplayer.png' });
-console.log(ok ? 'PASS: players see each other and emotes arrive' : 'FAIL');
+console.log(ok ? 'PASS: players see each other, emotes arrive, area cells switch' : 'FAIL');
 if (errors.length) console.log(errors.join('\n'));
 await browser.close();
 process.exit(ok ? 0 : 1);
