@@ -1,1 +1,51 @@
-# Metaverse-Korea
+# Metaverse Korea
+
+A browser-based 3D virtual trip to Korea for international visitors. No install: open the website and walk.
+First stop: **Seongsu-dong, Seoul**.
+
+## What works now (step 1)
+
+- 3D streets and buildings around Seongsu Station, built from real OpenStreetMap data
+- A cute chibi character you walk with WASD / arrow keys (desktop) or a touch joystick (phone)
+- Language picker on the start screen (English, 한국어, 日本語, 中文); English is the default
+- Street name card in the original Korean, with a Translate button
+- Multiplayer: see other travellers in real time, with nicknames and emotes (Supabase Realtime)
+
+## Run locally
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm test           # unit tests
+```
+
+To test multiplayer without a server, set `VITE_NET_PROVIDER=local` (e.g. in `.env.local`) and open two tabs.
+
+## Project layout
+
+```
+public/regions/<id>/region.json   per-region settings (bbox, spawn point, names)
+public/regions/<id>/map.json      generated map data (do not edit by hand)
+scripts/fetch-osm.mjs             downloads OSM data and writes map.json
+src/core/                         shared engine: world, character, input, collision, i18n
+src/net/                          multiplayer, behind a swappable adapter (local, supabase)
+src/data/emotes.js                emote packs (data-driven, ready for a future shop)
+src/i18n/strings.js               UI translations
+```
+
+### Adding a region
+
+1. Create `public/regions/<id>/region.json` (copy Seongsu's and change the bbox, centre and spawn).
+2. Run the **Fetch OSM map data** workflow (Actions tab) with the region id, or `node scripts/fetch-osm.mjs <id>` locally.
+3. Add the region to `public/regions/index.json`.
+
+### Swapping the realtime provider
+
+Game code talks only to the adapter interface in `src/net/index.js`. Add a file in `src/net/adapters/`,
+register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
+
+## Data and credits
+
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL.
+Street trees and building colours are decorative and not part of the map data.
+Store and product data (coming in step 2) are fictional sample data.

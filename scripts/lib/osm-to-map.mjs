@@ -88,6 +88,35 @@ export function osmToMap(overpass, region) {
     return pts;
   };
 
+  // Keep line features only within the bbox plus a margin, splitting
+  // polylines that leave it (arterial roads can run for kilometres).
+  const MARGIN = 150;
+  const bb = region.bbox
+    ? (() => {
+        const [x0, z0] = proj.toLocal(region.bbox.north, region.bbox.west);
+        const [x1, z1] = proj.toLocal(region.bbox.south, region.bbox.east);
+        return { minX: x0 - MARGIN, minZ: z0 - MARGIN, maxX: x1 + MARGIN, maxZ: z1 + MARGIN };
+      })()
+    : null;
+  const clipLine = (p) => {
+    if (!bb) return [p];
+    const inside = ([x, z]) => x >= bb.minX && x <= bb.maxX && z >= bb.minZ && z <= bb.maxZ;
+    const parts = [];
+    let cur = [];
+    for (let i = 0; i < p.length; i++) {
+      if (inside(p[i])) {
+        if (!cur.length && i > 0) cur.push(p[i - 1]); // keep the segment crossing in
+        cur.push(p[i]);
+      } else if (cur.length) {
+        cur.push(p[i]); // and the one crossing out
+        parts.push(cur);
+        cur = [];
+      }
+    }
+    if (cur.length) parts.push(cur);
+    return parts.filter((q) => q.length >= 2);
+  };
+
   const roads = [];
   const buildings = [];
   const rail = [];
@@ -121,13 +150,15 @@ export function osmToMap(overpass, region) {
       const lanes = parseInt(tags.lanes, 10);
       let w = ROAD_WIDTH[tags.highway];
       if (Number.isFinite(lanes) && !WALKWAY.has(tags.highway)) w = Math.max(w, lanes * 3.2);
-      const r = { k: WALKWAY.has(tags.highway) ? 'walk' : tags.highway, w, p };
       const name = pickNames(tags);
-      if (name) r.n = name;
-      roads.push(r);
+      for (const part of clipLine(p)) {
+        const r = { k: WALKWAY.has(tags.highway) ? 'walk' : tags.highway, w, p: part };
+        if (name) r.n = name;
+        roads.push(r);
+      }
     } else if (tags.railway && ['subway', 'rail', 'light_rail'].includes(tags.railway)) {
       if (tags.tunnel === 'yes' || Number(tags.layer) < 0) continue;
-      rail.push({ e: isElevated(tags) ? 1 : 0, p });
+      for (const part of clipLine(p)) rail.push({ e: isElevated(tags) ? 1 : 0, p: part });
     } else {
       const k = AREA_KIND(tags);
       if (k && p.length >= 4) areas.push({ k, p: closeless(p) });

@@ -27,3 +27,16 @@ test('converts roads, buildings, rail and stations', () => {
   assert.equal(m.pois[0].name.en, 'Seongsu');
   assert.match(m.meta.attribution, /OpenStreetMap/);
 });
+
+test('clips long roads to the region bbox plus margin', () => {
+  const f = { elements: [
+    { type: 'node', id: 1, lat: 37.5446, lon: 127.0557 },
+    { type: 'node', id: 2, lat: 37.5446, lon: 127.0600 },
+    { type: 'node', id: 3, lat: 37.5446, lon: 127.1000 },
+    { type: 'way', id: 9, nodes: [1, 2, 3], tags: { highway: 'primary' } },
+  ] };
+  const r = { ...region, bbox: { south: 37.544, west: 127.055, north: 37.545, east: 127.057 } };
+  const m = osmToMap(f, r);
+  assert.equal(m.roads.length, 1);
+  assert.equal(m.roads[0].p.length, 2, 'far node dropped, crossing segment kept');
+});
