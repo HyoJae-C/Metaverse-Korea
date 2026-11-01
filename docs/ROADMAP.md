@@ -43,6 +43,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Verified place info for real visits (opening hours etc. fact-checked)
 
 ## Later
+- **Teleport and membership**: free forever: teleport to the meeting signposts (A–F) and subway stations. Paid membership later: teleport anywhere on the map or next to a friend, no cooldown, arrival effects. Label it "free during beta" from the start, and thank early users (founder badge or a free month) instead of taking features away
 
 - **Character customisation** (outfits)
 - **Emote shop**: emote packs are data with a `price`; purchases will come from an account service
