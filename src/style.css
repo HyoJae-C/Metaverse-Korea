@@ -420,3 +420,25 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .setting-row[aria-pressed='true'] .switch { background: var(--mint); }
 .setting-row[aria-pressed='true'] .switch::after { transform: translateX(18px); }
 .settings-card .primary { margin-top: 6px; }
+
+/* Running stamina bar: shows only while not full. */
+.stamina {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 46px);
+  width: min(160px, 40vw);
+  height: 8px;
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+  pointer-events: none;
+}
+.stamina-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4cc38a, #9be15d);
+  transform-origin: left center;
+  transition: background 0.3s;
+}
+.stamina.tired .stamina-fill { background: #ff6f5b; }

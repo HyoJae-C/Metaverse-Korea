@@ -21,6 +21,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Background music on/off (🎵), generated in the browser
 - Walking route drawn on the ground along real streets when you pick a destination
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
+- Running uses a stamina bar that refills while you walk or rest
 
 ## Run locally
 

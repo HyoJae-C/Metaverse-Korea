@@ -17,4 +17,13 @@ export const config = {
   // Street multiplayer is split into square cells of this size (metres). You
   // see players in your cell and the 8 around it, i.e. at least this far.
   netCellSize: 200,
+  // Running uses stamina: a full bar lasts staminaMax seconds of running and
+  // refills at staminaRegen per second after staminaDelay seconds of rest.
+  // Once empty you walk until it is back to staminaResume (0..1).
+  // staminaUnlimited is the hook for a future "unlimited stamina" pass.
+  staminaMax: 10,
+  staminaRegen: 2.5,
+  staminaDelay: 1,
+  staminaResume: 0.3,
+  staminaUnlimited: false,
 };

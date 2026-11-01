@@ -281,6 +281,27 @@ const dismissHelp = () => {
   try { localStorage.setItem('mk.helpSeen', '1'); } catch { /* ignore */ }
 };
 $('help-ok').onclick = dismissHelp;
+// Running stamina (see config.stamina*).
+const stamina = { v: 1, rest: 0, tired: false };
+const staminaEl = document.getElementById('stamina');
+const staminaFill = document.getElementById('stamina-fill');
+function updateStamina(dt, wantsRun, moving) {
+  if (config.staminaUnlimited) return wantsRun;
+  const running = wantsRun && moving && !stamina.tired;
+  if (running) {
+    stamina.v = Math.max(0, stamina.v - dt / config.staminaMax);
+    stamina.rest = 0;
+    if (stamina.v === 0) stamina.tired = true;
+  } else {
+    stamina.rest += dt;
+    if (stamina.rest > config.staminaDelay) stamina.v = Math.min(1, stamina.v + (dt * config.staminaRegen) / config.staminaMax);
+    if (stamina.tired && stamina.v >= config.staminaResume) stamina.tired = false;
+  }
+  staminaEl.hidden = stamina.v >= 1;
+  staminaFill.style.transform = `scaleX(${stamina.v})`;
+  staminaEl.classList.toggle('tired', stamina.tired);
+  return running;
+}
 let walkedFor = 0; // the hint closes by itself once the player has walked a bit
 clearTimeout(helpTimer);
 
@@ -764,11 +785,12 @@ renderer.setAnimationLoop(() => {
   const { x: mx, y: my } = input.move;
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
+  const running = updateStamina(dt, input.run, mag > 0.05);
   if (mag > 0.05) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (input.run ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward
     const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -871,7 +893,7 @@ renderer.setAnimationLoop(() => {
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
-    sendTimer = 1 / (input.run ? config.netSendRateRun : config.netSendRate);
+    sendTimer = 1 / (running ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;

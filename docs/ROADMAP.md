@@ -45,6 +45,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 ## Later
 - **Teleport and membership**: free forever: walking, running, teleport to the meeting signposts (A–F) and the subway. Label paid features "free during beta" from the start and never take a free feature away later
 - **Taxi**: pick any point on the map and ride there: a short taxi scene (window view, the driver greets you in Korean) and you are dropped off. Normally paid with virtual currency (same wallet as the transit card). Early members get a few free taxi tickets per month for their first 3 months, plus a founder badge. Paid membership: unlimited taxi and "go to a friend"
+- **Stamina**: running drains a stamina bar (about 10 s of running, then it refills while you walk or rest). Walking is always free and unlimited. Later, an "unlimited stamina" pass can be sold (`config.staminaUnlimited` is the hook); never shorten the free bar after launch.
 
 - **Character customisation** (outfits)
 - **Emote shop**: emote packs are data with a `price`; purchases will come from an account service
