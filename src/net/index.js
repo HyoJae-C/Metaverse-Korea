@@ -2,12 +2,12 @@
 // provider can be swapped without touching game code.
 //
 // An adapter is an object with:
-//   connect({ room, self })   → Promise<void>   self = { id, name, outfit }
+//   connect({ room, self })   → Promise<void>   self = { id, name, look }
 //   sendState(state)          state = { x, z, ry, s }  (position, heading, speed01)
 //   sendEmote(emote)          e.g. 'wave'
 //   disconnect()
 // and calls the handlers passed to its factory:
-//   onJoin(peer)              peer = { id, name, outfit }
+//   onJoin(peer)              peer = { id, name, look }
 //   onLeave(id)
 //   onState(id, state)
 //   onEmote(id, emote)

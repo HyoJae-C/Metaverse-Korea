@@ -2,25 +2,19 @@
 // Used for the local player and for other players alike.
 import * as THREE from 'three';
 
-export const OUTFITS = [
-  { shirt: 0xff9b85, pants: 0x5b6c8f, hair: 0x4a3328, hat: null },
-  { shirt: 0x8fd3c7, pants: 0x6b5b4e, hair: 0x2b2420, hat: 0xffd36e },
-  { shirt: 0xffd36e, pants: 0x4f7a5a, hair: 0x7a4a2e, hat: null },
-  { shirt: 0xb9a6f0, pants: 0x3f4a63, hair: 0x1f1b1a, hat: 0xff9bb3 },
-  { shirt: 0xa6d97a, pants: 0x7a5c4a, hair: 0xc98b4f, hat: null },
-  { shirt: 0x86b8f0, pants: 0x55505e, hair: 0x3a2a22, hat: 0xffffff },
-  { shirt: 0xffb3c7, pants: 0x4b5d73, hair: 0x5c3b2a, hat: null },
-  { shirt: 0xf6f1e7, pants: 0x34495e, hair: 0x2e2a28, hat: 0x8fd3c7 },
-];
+import { PALETTES, sanitizeLook, accessory } from '../data/appearance.js';
 
-const SKIN = 0xffe0c7;
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
-export function createCharacter(outfitIndex = 0) {
-  const o = OUTFITS[((outfitIndex % OUTFITS.length) + OUTFITS.length) % OUTFITS.length];
+export function createCharacter(rawLook) {
+  const look = sanitizeLook(rawLook);
+  const o = {
+    shirt: PALETTES.shirt[look.shirt], pants: PALETTES.pants[look.pants],
+    hair: PALETTES.hair[look.hair], skin: PALETTES.skin[look.skin],
+  };
   const root = new THREE.Group();
   const body = new THREE.Group(); // bobs while walking
   root.add(body);
@@ -34,7 +28,7 @@ export function createCharacter(outfitIndex = 0) {
   const head = new THREE.Group();
   head.position.y = 0.86;
   body.add(head);
-  const skull = new THREE.Mesh(geo('head', () => new THREE.SphereGeometry(0.31, 20, 16)), mat(SKIN));
+  const skull = new THREE.Mesh(geo('head', () => new THREE.SphereGeometry(0.31, 20, 16)), mat(o.skin));
   skull.scale.set(1.05, 0.95, 1);
   head.add(skull);
 
@@ -46,15 +40,6 @@ export function createCharacter(outfitIndex = 0) {
   hair.position.set(0, 0.02, -0.02);
   hair.scale.set(1.05, 0.95, 1);
   head.add(hair);
-
-  if (o.hat) {
-    const hat = new THREE.Mesh(geo('hat', () => new THREE.CylinderGeometry(0.2, 0.26, 0.14, 16)), mat(o.hat));
-    hat.position.set(0, 0.3, -0.02);
-    head.add(hat);
-    const brim = new THREE.Mesh(geo('brim', () => new THREE.CylinderGeometry(0.36, 0.36, 0.03, 20)), mat(o.hat));
-    brim.position.set(0, 0.24, -0.02);
-    head.add(brim);
-  }
 
   // Face (faces +z).
   const eyeGeo = geo('eye', () => new THREE.SphereGeometry(0.045, 10, 8));
@@ -98,6 +83,8 @@ export function createCharacter(outfitIndex = 0) {
   blob.position.y = 0.07;
   root.add(blob);
 
+  addAccessories(look, head, torso, body);
+
   root.traverse((m) => {
     if (m.isMesh && m !== blob) m.castShadow = true;
   });
@@ -134,4 +121,95 @@ export function createCharacter(outfitIndex = 0) {
       waveT = 1.6;
     },
   };
+}
+
+function addAccessories(look, head, torso, body) {
+  const head1 = accessory('head', look.head);
+  if (head1) {
+    const m = mat(head1.color);
+    if (head1.id === 'bucket') {
+      const crown = new THREE.Mesh(geo('bucketCrown', () => new THREE.CylinderGeometry(0.22, 0.28, 0.16, 18)), m);
+      crown.position.set(0, 0.3, -0.02);
+      const brim = new THREE.Mesh(geo('bucketBrim', () => new THREE.CylinderGeometry(0.4, 0.4, 0.03, 22)), m);
+      brim.position.set(0, 0.23, -0.02);
+      head.add(crown, brim);
+    } else if (head1.id === 'cap') {
+      const crown = new THREE.Mesh(
+        geo('capCrown', () => new THREE.SphereGeometry(0.33, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42)), m);
+      crown.position.set(0, 0.05, -0.01);
+      const bill = new THREE.Mesh(geo('capBill', () => new THREE.BoxGeometry(0.34, 0.025, 0.2)), m);
+      bill.position.set(0, 0.17, 0.3);
+      bill.rotation.x = 0.12;
+      head.add(crown, bill);
+    } else if (head1.id === 'ribbon') {
+      const lobe = geo('ribbonLobe', () => new THREE.SphereGeometry(0.075, 10, 8));
+      for (const sgn of [-1, 1]) {
+        const l = new THREE.Mesh(lobe, m);
+        l.scale.set(1.3, 0.9, 0.6);
+        l.position.set(0.17 + 0.07 * sgn, 0.25, 0.06);
+        head.add(l);
+      }
+      const knot = new THREE.Mesh(geo('ribbonKnot', () => new THREE.SphereGeometry(0.04, 8, 6)), m);
+      knot.position.set(0.17, 0.25, 0.09);
+      head.add(knot);
+    } else if (head1.id === 'beanie') {
+      const cap = new THREE.Mesh(
+        geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);
+      cap.position.set(0, 0.04, -0.01);
+      const pom = new THREE.Mesh(geo('pom', () => new THREE.SphereGeometry(0.07, 10, 8)), mat(0xfff8ec));
+      pom.position.set(0, 0.37, -0.02);
+      head.add(cap, pom);
+    }
+  }
+
+  const face = accessory('face', look.face);
+  if (face) {
+    const frame = mat(face.color);
+    const lens = face.id === 'sunglasses' ? frame
+      : new THREE.MeshLambertMaterial({ color: 0xdff1f8, transparent: true, opacity: 0.35 });
+    const ring = geo('lensRing', () => new THREE.TorusGeometry(0.075, 0.012, 6, 16));
+    const disc = geo('lensDisc', () => new THREE.CircleGeometry(0.072, 16));
+    for (const sgn of [-1, 1]) {
+      const r = new THREE.Mesh(ring, frame);
+      r.position.set(0.11 * sgn, -0.02, 0.305);
+      const d = new THREE.Mesh(disc, lens);
+      d.position.set(0.11 * sgn, -0.02, 0.303);
+      head.add(r, d);
+    }
+    const bridge = new THREE.Mesh(geo('bridge', () => new THREE.BoxGeometry(0.07, 0.014, 0.014)), frame);
+    bridge.position.set(0, -0.01, 0.31);
+    head.add(bridge);
+  }
+
+  const neck = accessory('neck', look.neck);
+  if (neck) {
+    const m = mat(neck.color);
+    const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
+    wrap.rotation.x = Math.PI / 2;
+    wrap.position.y = 0.6;
+    const tail = new THREE.Mesh(geo('scarfTail', () => new THREE.BoxGeometry(0.09, 0.2, 0.05)), m);
+    tail.position.set(0.08, 0.5, 0.2);
+    tail.rotation.z = 0.15;
+    body.add(wrap, tail);
+  }
+
+  const back = accessory('back', look.back);
+  if (back) {
+    const m = mat(back.color);
+    if (back.id === 'backpack') {
+      const pack = new THREE.Mesh(geo('pack', () => new THREE.CapsuleGeometry(0.14, 0.12, 4, 10)), m);
+      pack.scale.set(1.1, 1, 0.7);
+      pack.position.set(0, 0.45, -0.21);
+      const pocket = new THREE.Mesh(geo('pocket', () => new THREE.BoxGeometry(0.16, 0.1, 0.05)), mat(0xfff8ec));
+      pocket.position.set(0, 0.38, -0.3);
+      body.add(pack, pocket);
+    } else if (back.id === 'tote') {
+      const bag = new THREE.Mesh(geo('tote', () => new THREE.BoxGeometry(0.22, 0.24, 0.07)), m);
+      bag.position.set(0.27, 0.3, -0.02);
+      const strap = new THREE.Mesh(geo('strap', () => new THREE.TorusGeometry(0.2, 0.012, 4, 20, Math.PI)), m);
+      strap.position.set(0.22, 0.42, 0);
+      strap.rotation.set(0, Math.PI / 2, -0.35);
+      body.add(bag, strap);
+    }
+  }
 }

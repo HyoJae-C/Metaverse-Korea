@@ -4,13 +4,15 @@ import {
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { buildWorld, COLORS } from './core/world.js';
-import { createCharacter, OUTFITS } from './core/character.js';
+import { createCharacter } from './core/character.js';
+import { createLookEditor } from './core/look-editor.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
 import { createNet } from './net/index.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
+import { WeatherSystem } from './core/weather.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -67,10 +69,25 @@ const mapPromise = fetch(`${BASE}regions/${regionId}/${region.mapFile || 'map.js
   return r.json();
 });
 
+// Step 1: language → step 2: character + nickname.
+let editor = null;
+$('next-btn').onclick = () => {
+  $('step-lang').hidden = true;
+  $('step-look').hidden = false;
+  editor ||= createLookEditor({
+    optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random'),
+  });
+};
+$('back-btn').onclick = () => {
+  $('step-look').hidden = true;
+  $('step-lang').hidden = false;
+};
 await new Promise((resolve) => {
   $('start-btn').onclick = resolve;
   $('nickname').onkeydown = (e) => e.key === 'Enter' && resolve();
 });
+const myLook = editor.getLook();
+editor.dispose();
 $('start-btn').disabled = true;
 $('status').textContent = t('loading');
 
@@ -102,8 +119,9 @@ scene.fog = DEBUG_TOP ? null : new THREE.Fog(COLORS.sky, 140, 420);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.3, 2000);
 
-scene.add(new THREE.HemisphereLight(0xfff4e0, 0xc9d6b8, 1.5));
-scene.add(new THREE.AmbientLight(0xfff0e0, 0.9));
+const hemi = new THREE.HemisphereLight(0xfff4e0, 0xc9d6b8, 1.5);
+const ambient = new THREE.AmbientLight(0xfff0e0, 0.9);
+scene.add(hemi, ambient);
 const sun = new THREE.DirectionalLight(0xfff1d6, 1.5);
 sun.position.set(60, 120, 40);
 sun.castShadow = !lowSpec;
@@ -137,8 +155,7 @@ function findFreeSpot(x, z) {
 }
 
 const myId = crypto.randomUUID?.() || String(Math.random()).slice(2);
-const myOutfit = Math.floor(Math.random() * OUTFITS.length);
-const me = createCharacter(myOutfit);
+const me = createCharacter(myLook);
 scene.add(me.root);
 // Spawn on the street closest to the configured spawn point.
 let spawnDir = null;
@@ -258,6 +275,17 @@ function nearestStreet(x, z) {
   return best;
 }
 
+// ---------- Weather ----------
+const weather = new WeatherSystem({
+  scene, sun, hemi, ambient, region,
+  onUpdate: ({ icon, temp }) => {
+    const el = $('weather');
+    el.hidden = false;
+    el.textContent = temp == null ? icon : `${icon} ${Math.round(temp)}°C`;
+    el.title = t('hud.weatherNow');
+  },
+});
+
 // ---------- Multiplayer ----------
 const others = new RemotePlayers(scene, $('labels'));
 const refreshOnline = () => {
@@ -276,7 +304,7 @@ let net = await createNet(config.netProvider, {
   },
 }, config.net);
 try {
-  await net.connect({ room: regionId, self: { id: myId, name: nickname, outfit: myOutfit } });
+  await net.connect({ room: regionId, self: { id: myId, name: nickname, look: myLook } });
 } catch (err) {
   // Keep playing solo if the realtime service is unreachable.
   console.warn('Multiplayer unavailable:', err);
@@ -356,6 +384,7 @@ renderer.setAnimationLoop(() => {
     camera.lookAt(p.x, 0, p.z);
   }
 
+  weather.update(dt, p.x, p.z);
   sun.position.set(p.x + 60, 120, p.z + 40);
   sun.target.position.set(p.x, 0, p.z);
 

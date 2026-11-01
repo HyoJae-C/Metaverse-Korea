@@ -26,7 +26,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote }, cfg
             if (id === self.id || known.has(id)) continue;
             const meta = state[id][0] || {};
             known.add(id);
-            onJoin({ id, name: meta.name, outfit: meta.outfit });
+            onJoin({ id, name: meta.name, look: meta.look });
           }
           for (const id of [...known]) {
             if (!ids.has(id)) {
@@ -47,7 +47,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote }, cfg
         channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             clearTimeout(timeout);
-            await channel.track({ name: me.name, outfit: me.outfit });
+            await channel.track({ name: me.name, look: me.look });
             resolve();
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             clearTimeout(timeout);

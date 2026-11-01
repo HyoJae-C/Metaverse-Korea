@@ -5,7 +5,9 @@
 <body><canvas id="c"></canvas>
 <script type="module">
 import * as THREE from 'three';
-import { createCharacter, OUTFITS } from '../src/core/character.js';
+import { createCharacter } from '../src/core/character.js';
+import { randomLook } from '../src/data/appearance.js';
+const OUTFITS = Array.from({ length: 8 }, randomLook);
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -16,7 +18,7 @@ const sun = new THREE.DirectionalLight(0xfff1d6, 1.4); sun.position.set(3, 6, 5)
 const ground = new THREE.Mesh(new THREE.CircleGeometry(8, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xbfe3a8 }));
 scene.add(ground);
 const chars = OUTFITS.map((_, i) => {
-  const c = createCharacter(i);
+  const c = createCharacter(OUTFITS[i]);
   c.root.position.set((i - (OUTFITS.length - 1) / 2) * 0.95, 0, (i % 2) * -0.4);
   scene.add(c.root);
   return c;

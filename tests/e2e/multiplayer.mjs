@@ -14,6 +14,7 @@ async function join(name) {
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => m.type() === 'warning' && errors.push(`${name}: ${m.text()}`));
   await page.goto(url);
+  await page.click('#next-btn');
   await page.fill('#nickname', name);
   await page.click('#start-btn');
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });

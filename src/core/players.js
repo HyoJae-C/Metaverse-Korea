@@ -12,11 +12,11 @@ export class RemotePlayers {
 
   join(peer) {
     if (this.players.has(peer.id)) return;
-    const ch = createCharacter(peer.outfit);
+    const ch = createCharacter(peer.look); // sanitized inside
     this.scene.add(ch.root);
     const tag = document.createElement('div');
     tag.className = 'nametag';
-    tag.textContent = peer.name || 'Traveler';
+    tag.textContent = String(peer.name || 'Traveler').slice(0, 16);
     this.layer.appendChild(tag);
     this.players.set(peer.id, {
       ch, tag, bubble: null,

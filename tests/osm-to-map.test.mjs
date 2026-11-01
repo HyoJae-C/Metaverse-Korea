@@ -40,3 +40,13 @@ test('clips long roads to the region bbox plus margin', () => {
   assert.equal(m.roads.length, 1);
   assert.equal(m.roads[0].p.length, 2, 'far node dropped, crossing segment kept');
 });
+
+test('weather helpers', async () => {
+  const { weatherKind, daylight, localHour } = await import('../src/core/weather.js');
+  assert.equal(weatherKind(0), 'clear');
+  assert.equal(weatherKind(63), 'rain');
+  assert.equal(weatherKind(73), 'snow');
+  assert.equal(daylight(12), 1);
+  assert.equal(daylight(0), 0);
+  assert.equal(localHour(9, new Date('2026-11-01T03:00:00Z')), 12);
+});

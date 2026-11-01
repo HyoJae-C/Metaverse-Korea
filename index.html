@@ -21,6 +21,7 @@
         <button class="chip" id="street-translate" data-i18n="hud.translate"></button>
       </div>
       <div class="top-right">
+        <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
         <button class="chip" id="lang-btn" aria-label="Language">🌐 <span data-i18n="lang.change"></span></button>
       </div>
@@ -32,24 +33,39 @@
       </div>
     </div>
 
-    <a class="credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">
-      <span data-i18n="credit.map"></span> © OpenStreetMap contributors
-    </a>
+    <div class="credit">
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener"><span data-i18n="credit.map"></span> © OpenStreetMap contributors</a>
+      · <a href="https://open-meteo.com/" target="_blank" rel="noopener"><span data-i18n="credit.weather"></span> Open-Meteo</a>
+    </div>
 
     <!-- Start screen -->
     <div class="overlay" id="start">
-      <div class="panel">
+      <div class="panel" id="step-lang">
         <div class="logo">🏙️</div>
         <h1 data-i18n="app.title"></h1>
         <p class="tagline" data-i18n="app.tagline"></p>
         <h2 data-i18n="lang.choose"></h2>
         <div class="lang-grid" id="lang-grid"></div>
+        <p class="region" id="start-region"></p>
+        <button class="primary" id="next-btn" data-i18n="start.next"></button>
+      </div>
+      <div class="panel look-panel" id="step-look" hidden>
+        <h2 class="look-title" data-i18n="look.title"></h2>
+        <div class="look-layout">
+          <div class="look-stage">
+            <canvas id="look-preview" aria-label="Character preview"></canvas>
+            <button class="chip" id="look-random">🎲 <span data-i18n="look.random"></span></button>
+          </div>
+          <div class="look-options" id="look-options"></div>
+        </div>
         <label class="name-field">
           <span data-i18n="start.nickname"></span>
           <input id="nickname" maxlength="16" autocomplete="off" />
         </label>
-        <p class="region" id="start-region"></p>
-        <button class="primary" id="start-btn" data-i18n="start.button"></button>
+        <div class="look-actions">
+          <button class="chip" id="back-btn" data-i18n="start.back"></button>
+          <button class="primary" id="start-btn" data-i18n="start.button"></button>
+        </div>
         <p class="status" id="status"></p>
       </div>
     </div>
