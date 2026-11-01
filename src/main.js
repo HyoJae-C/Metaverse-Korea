@@ -13,6 +13,11 @@ import { createNet } from './net/index.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem } from './core/weather.js';
+import { Storefronts } from './core/storefronts.js';
+import { Zones } from './core/zones.js';
+import { buildInterior, EXIT, ROOM } from './core/interior.js';
+import { ShopUI, Cart } from './ui/shop-ui.js';
+import { MapView } from './ui/map-view.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -82,6 +87,11 @@ $('back-btn').onclick = () => {
   $('step-look').hidden = true;
   $('step-lang').hidden = false;
 };
+const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
+  .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const storesPromise = optionalJson('stores.json');
+const zonesPromise = optionalJson('zones.json');
+
 await new Promise((resolve) => {
   $('start-btn').onclick = resolve;
   $('nickname').onkeydown = (e) => e.key === 'Enter' && resolve();
@@ -132,6 +142,10 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings);
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
+const storeData = (await storesPromise)?.stores || [];
+const zoneData = (await zonesPromise)?.zones || [];
+const storefronts = new Storefronts(scene, storeData, map, region.center);
+const zones = new Zones(scene, zoneData, map, region.center, collision);
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -155,7 +169,7 @@ function findFreeSpot(x, z) {
 }
 
 const myId = crypto.randomUUID?.() || String(Math.random()).slice(2);
-const me = createCharacter(myLook);
+let me = createCharacter(myLook);
 scene.add(me.root);
 // Spawn on the street closest to the configured spawn point.
 let spawnDir = null;
@@ -287,29 +301,43 @@ const weather = new WeatherSystem({
 });
 
 // ---------- Multiplayer ----------
-const others = new RemotePlayers(scene, $('labels'));
+let others = new RemotePlayers(scene, $('labels'));
 const refreshOnline = () => {
   const n = others.players.size + 1;
   $('online').hidden = n < 2;
   $('online').textContent = '🟢 ' + t('hud.online', { n });
 };
 onLanguageChange(refreshOnline);
-let net = await createNet(config.netProvider, {
-  onJoin: (p) => { others.join(p); refreshOnline(); },
-  onLeave: (id) => { others.leave(id); refreshOnline(); },
-  onState: (id, st) => others.state(id, st),
-  onEmote: (id, e) => {
-    const em = getEmote(e);
-    if (em) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
-  },
-}, config.net);
-try {
-  await net.connect({ room: regionId, self: { id: myId, name: nickname, look: myLook } });
-} catch (err) {
-  // Keep playing solo if the realtime service is unreachable.
-  console.warn('Multiplayer unavailable:', err);
-  net = { sendState() {}, sendEmote() {}, disconnect() {} };
+let net = null;
+let currentLook = myLook;
+const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
+async function joinRoom(room, roomScene) {
+  net?.disconnect();
+  for (const id of [...others.players.keys()]) others.leave(id);
+  others = new RemotePlayers(roomScene, $('labels'));
+  refreshOnline();
+  const handlers = {
+    onJoin: (p) => { others.join(p); refreshOnline(); },
+    onLeave: (id) => { others.leave(id); refreshOnline(); },
+    onState: (id, st) => others.state(id, st),
+    onEmote: (id, e) => {
+      const em = getEmote(e);
+      if (em) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
+    },
+    onLook: (id, look) => others.setLook(id, look),
+  };
+  try {
+    const n = await createNet(config.netProvider, handlers, config.net);
+    await n.connect({ room, self: { id: myId, name: nickname, look: currentLook } });
+    net = n;
+  } catch (err) {
+    // Keep playing solo if the realtime service is unreachable.
+    console.warn('Multiplayer unavailable:', err);
+    net = SOLO;
+  }
 }
+net = SOLO;
+joinRoom(regionId, scene);
 
 const emoteBar = $('emotes');
 for (const pack of ownedPacks()) {
@@ -324,6 +352,209 @@ for (const pack of ownedPacks()) {
     };
     emoteBar.appendChild(b);
   }
+}
+
+
+// ---------- Stores, zones, map, guide ----------
+let mode = 'street';
+let activeScene = scene;
+let activeCollision = collision;
+let interior = null; // { store, scene, products, collision, front }
+let action = null; // what the action button does right now
+
+const cart = new Cart();
+const shop = new ShopUI({
+  cart,
+  onTryOn: (product) => {
+    setLook({ ...currentLook, ...product.tryOn });
+    $('revert-look').hidden = false;
+    shop.toast(t('shop.tried'));
+  },
+  onExit: () => leaveStore(),
+});
+
+function setLook(look) {
+  currentLook = look;
+  const old = me.root;
+  me = createCharacter(look);
+  me.root.position.copy(old.position);
+  me.root.rotation.copy(old.rotation);
+  old.parent?.remove(old);
+  activeScene.add(me.root);
+  net.sendLook?.(look);
+}
+$('revert-look').onclick = () => {
+  setLook(myLook);
+  $('revert-look').hidden = true;
+};
+
+function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
+  me.root.parent?.remove(me.root);
+  targetScene.add(me.root);
+  me.root.position.set(x, 0, z);
+  me.root.rotation.y = ry;
+  cam.yaw = camYaw;
+  camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
+}
+
+const interiorCache = new Map();
+function enterStore(item) {
+  const store = item.store;
+  let built = interiorCache.get(store.id);
+  if (!built) {
+    built = buildInterior(store);
+    built.collision = new CollisionMap(built.colliders);
+    interiorCache.set(store.id, built);
+  }
+  interior = { ...built, store, front: item };
+  mode = 'store';
+  activeScene = built.scene;
+  activeCollision = built.collision;
+  cam.dist = 7;
+  cam.pitch = 0.7;
+  moveMeTo(built.scene, EXIT.x, EXIT.z - 1.4, Math.PI);
+  document.body.classList.add('in-store');
+  shop.enterStore(store);
+  $('guide').hidden = true;
+  if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
+  joinRoom(`${regionId}-${store.id}`, built.scene);
+}
+
+function leaveStore() {
+  if (mode !== 'store') return;
+  const it = interior.front;
+  mode = 'street';
+  activeScene = scene;
+  activeCollision = collision;
+  cam.dist = 11;
+  cam.pitch = 0.5;
+  // Face the street, with the camera to the side so the shop front stays in view.
+  moveMeTo(scene, it.door.x, it.door.z, it.group.rotation.y, it.group.rotation.y + Math.PI / 2);
+  document.body.classList.remove('in-store');
+  shop.leaveStore();
+  interior = null;
+  if (guide) $('guide').hidden = false;
+  joinRoom(regionId, scene);
+}
+
+// Translate signs (storefronts and zone boards) into the chosen language.
+let signsTranslated = false;
+const applySigns = () => {
+  storefronts.setTranslated(signsTranslated, getLanguage());
+  zones.setTranslated(signsTranslated, getLanguage());
+  $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));
+  $('signs-btn').title = t(signsTranslated ? 'hud.signsOn' : 'hud.signsOff');
+};
+$('signs-btn').onclick = () => {
+  signsTranslated = !signsTranslated;
+  applySigns();
+};
+onLanguageChange(() => { if (signsTranslated) applySigns(); });
+
+// Guidance to a zone or store.
+let guide = null;
+function setGuide(g) {
+  guide = g;
+  $('guide').hidden = mode !== 'street';
+}
+function clearGuide() {
+  guide = null;
+  $('guide').hidden = true;
+}
+$('guide-x').onclick = clearGuide;
+
+const mapView = new MapView({
+  root: $('map-panel'),
+  map,
+  zones: zones.items,
+  stores: storefronts.items,
+  getPlayers: () => {
+    const pos = mode === 'street' ? me.root.position : interior.front.door;
+    return {
+      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : interior.front.group.rotation.y },
+      others: mode === 'street' ? others.list() : [],
+    };
+  },
+  onGuide: (g) => {
+    if (mode === 'store') leaveStore();
+    setGuide(g);
+  },
+});
+$('map-btn').onclick = () => {
+  const pos = mode === 'street' ? me.root.position : interior.front.door;
+  mapView.show(pos.x, pos.z);
+};
+
+// Action button (and E / Enter key).
+function runAction() {
+  if (!action) return;
+  action.run();
+}
+$('action-btn').onclick = runAction;
+addEventListener('keydown', (e) => {
+  if (e.target instanceof HTMLInputElement) return;
+  if (e.code === 'KeyE' || e.code === 'Enter') runAction();
+  if (e.code === 'KeyM') $('map-btn').click();
+  if (e.code === 'Escape') {
+    if (!$('map-panel').hidden) mapView.hide();
+    else if (!$('product-panel').hidden) shop.closeProduct();
+  }
+});
+
+let currentZone = null;
+function updateZoneLine(z) {
+  const el = $('zone-line');
+  if (!z) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = z.id;
+  b.style.background = z.color;
+  el.append(b, document.createTextNode(localName(z.name, getLanguage())));
+}
+onLanguageChange(() => updateZoneLine(currentZone));
+
+function updateAction(p, tSec) {
+  let next = null;
+  if (mode === 'street') {
+    const it = storefronts.nearby(p.x, p.z, tSec);
+    if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
+  } else {
+    if (Math.hypot(p.x - EXIT.x, p.z - EXIT.z) < 1.6) {
+      next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
+    } else {
+      let best = null, bestD = 1.9;
+      for (const pr of interior.products) {
+        const d = Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z);
+        if (d < bestD) { bestD = d; best = pr; }
+      }
+      if (best) next = { key: 'look:' + best.product.id, label: '👀 ' + t('shop.look', { name: localName(best.product.name, getLanguage()) }), run: () => shop.openProduct(best.product) };
+      else shop.closeProduct();
+    }
+  }
+  if (next?.key !== action?.key) {
+    action = next;
+    $('action-btn').hidden = !action;
+    if (action) $('action-btn').textContent = action.label;
+    else shop.closeProduct();
+  }
+}
+onLanguageChange(() => { action = null; });
+
+function updateGuide(p) {
+  if (!guide || mode !== 'street') return;
+  const dx = guide.x - p.x, dz = guide.z - p.z;
+  const dist = Math.hypot(dx, dz);
+  if (dist < 6) {
+    shop.toast(t('guide.arrived', { label: guide.label }));
+    clearGuide();
+    return;
+  }
+  const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
+  const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
+  const ang = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz);
+  $('guide-arrow').style.transform = `rotate(${ang}rad)`;
+  $('guide-text').textContent = t('guide.to', { label: guide.label, m: Math.round(dist) });
 }
 
 // ---------- Loop ----------
@@ -348,7 +579,7 @@ renderer.setAnimationLoop(() => {
   const look = input.consumeLook();
   cam.yaw -= look.dx * 0.006;
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, 28);
+  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
 
   // Movement relative to camera.
   const { x: mx, y: my } = input.move;
@@ -360,9 +591,14 @@ renderer.setAnimationLoop(() => {
     const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
     const dz = (fz * my + rz * mx) * speed * dt;
-    const [nx, nz] = collision.move(p.x, p.z, dx, dz, PLAYER_R);
-    p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
-    p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
+    const [nx, nz] = activeCollision.move(p.x, p.z, dx, dz, PLAYER_R);
+    if (mode === 'street') {
+      p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
+      p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
+    } else {
+      p.x = THREE.MathUtils.clamp(nx, -ROOM.w / 2 + 0.5, ROOM.w / 2 - 0.5);
+      p.z = THREE.MathUtils.clamp(nz, -ROOM.d / 2 + 0.5, ROOM.d / 2 - 0.5);
+    }
     const targetRy = Math.atan2(dx, dz);
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -384,12 +620,23 @@ renderer.setAnimationLoop(() => {
     camera.lookAt(p.x, 0, p.z);
   }
 
-  weather.update(dt, p.x, p.z);
-  sun.position.set(p.x + 60, 120, p.z + 40);
-  sun.target.position.set(p.x, 0, p.z);
+  const tSec = timer.getElapsed();
+  if (mode === 'street') {
+    weather.update(dt, p.x, p.z);
+    sun.position.set(p.x + 60, 120, p.z + 40);
+    sun.target.position.set(p.x, 0, p.z);
+    const z = zones.update(camera, p.x, p.z, tSec);
+    if (z !== currentZone) {
+      currentZone = z;
+      updateZoneLine(z);
+    }
+    updateGuide(p);
+  }
+  updateAction(p, tSec);
+  if (mapView.open) mapView.draw();
 
   streetTimer -= dt;
-  if (streetTimer <= 0) {
+  if (streetTimer <= 0 && mode === 'street') {
     streetTimer = 0.4;
     const s = nearestStreet(p.x, p.z);
     if (s !== currentStreet) {
@@ -416,7 +663,19 @@ renderer.setAnimationLoop(() => {
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
 
-  renderer.render(scene, camera);
+  renderer.render(activeScene, camera);
 });
 
 updateStreetCard();
+
+// Test hooks (only with ?debug in the URL).
+if (new URLSearchParams(location.search).has('debug')) {
+  window.__mk = {
+    enter: (id) => enterStore(storefronts.get(id)),
+    leave: () => leaveStore(),
+    goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
+    stores: () => storefronts.items.map((i) => i.store.id),
+    zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+  };
+}

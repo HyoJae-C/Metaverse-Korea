@@ -2,7 +2,7 @@
 // carries movement and emotes. No database tables are used.
 import { createClient } from '@supabase/supabase-js';
 
-export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote }, cfg) {
+export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook }, cfg) {
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
   const client = createClient(cfg.url, cfg.key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -40,6 +40,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote }, cfg
         })
         .on('broadcast', { event: 'e' }, ({ payload }) => {
           if (known.has(payload.id)) onEmote(payload.id, payload.e);
+        })
+        .on('broadcast', { event: 'l' }, ({ payload }) => {
+          if (known.has(payload.id)) onLook?.(payload.id, payload.look);
         });
 
       return new Promise((resolve, reject) => {
@@ -61,6 +64,11 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote }, cfg
     },
     sendEmote(e) {
       channel?.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
+    },
+    sendLook(look) {
+      self = { ...self, look };
+      channel?.send({ type: 'broadcast', event: 'l', payload: { id: self.id, look } });
+      channel?.track({ name: self.name, look }); // so newcomers see it too
     },
     disconnect() {
       if (channel) client.removeChannel(channel);

@@ -19,7 +19,7 @@ export class RemotePlayers {
     tag.textContent = String(peer.name || 'Traveler').slice(0, 16);
     this.layer.appendChild(tag);
     this.players.set(peer.id, {
-      ch, tag, bubble: null,
+      ch, tag, bubble: null, name: tag.textContent,
       target: null, ry: 0, s: 0,
     });
   }
@@ -31,6 +31,22 @@ export class RemotePlayers {
     p.tag.remove();
     p.bubble?.remove();
     this.players.delete(id);
+  }
+
+  setLook(id, look) {
+    const p = this.players.get(id);
+    if (!p) return;
+    const old = p.ch.root;
+    p.ch = createCharacter(look);
+    p.ch.root.position.copy(old.position);
+    p.ch.root.rotation.copy(old.rotation);
+    this.scene.remove(old);
+    this.scene.add(p.ch.root);
+  }
+
+  // Positions for the map.
+  list() {
+    return [...this.players.values()].map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
   }
 
   state(id, st) {

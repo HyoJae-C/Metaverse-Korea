@@ -9,6 +9,7 @@ on:
         description: Region id (folder under public/regions)
         default: seongsu
   push:
+    branches-ignore: [main]
     paths:
       - scripts/fetch-osm.mjs
       - scripts/lib/osm-to-map.mjs

@@ -1,0 +1,148 @@
+{
+  "sampleData": true,
+  "note": "All stores, brands and products here are fictional sample data. Prices are virtual (no real payment).",
+  "currency": "KRW",
+  "stores": [
+    {
+      "id": "ongi-cafe",
+      "category": "cafe",
+      "name": { "ko": "온기 카페", "en": "Ongi Café" },
+      "tagline": { "en": "A warm corner to meet other travellers", "ko": "여행자들이 만나는 따뜻한 쉼터" },
+      "anchor": { "lat": 37.54418, "lon": 127.055386 },
+      "colors": { "sign": "#7a4a2e", "awning": "#e9b97a", "accent": "#fff1d6" },
+      "social": true,
+      "products": [
+        { "id": "dalgona-latte", "model": "cup", "color": "#d9a066", "price": 6500, "name": { "en": "Dalgona Latte", "ko": "달고나 라떼" }, "desc": { "en": "Iced milk topped with whipped honeycomb-toffee foam." } },
+        { "id": "yuja-ade", "model": "cup", "color": "#ffd36e", "price": 6000, "name": { "en": "Yuja Ade", "ko": "유자 에이드" }, "desc": { "en": "Sparkling citron soda, bright and tangy." } },
+        { "id": "misutgaru", "model": "cup", "color": "#e6d3b0", "price": 5500, "name": { "en": "Misutgaru Latte", "ko": "미숫가루 라떼" }, "desc": { "en": "Roasted multigrain powder shaken with milk." } },
+        { "id": "injeolmi-toast", "model": "bread", "color": "#e8c77e", "price": 7000, "name": { "en": "Injeolmi Toast", "ko": "인절미 토스트" }, "desc": { "en": "Thick toast with rice cake and roasted soybean powder." } }
+      ]
+    },
+    {
+      "id": "petal-lip",
+      "category": "beauty",
+      "name": { "ko": "꽃잎 립", "en": "Petal Lip" },
+      "tagline": { "en": "Lip tints in every flower shade", "ko": "꽃잎 색 그대로, 립 틴트" },
+      "anchor": { "lat": 37.544069, "lon": 127.055769 },
+      "colors": { "sign": "#e05a7a", "awning": "#ffc3d0", "accent": "#fff0f3" },
+      "products": [
+        { "id": "tint-camellia", "model": "lipstick", "color": "#d94c5f", "price": 15000, "name": { "en": "Water Tint · Camellia", "ko": "워터 틴트 · 동백" }, "desc": { "en": "Light, glossy tint with a long-lasting stain." } },
+        { "id": "tint-peach", "model": "lipstick", "color": "#ff9b85", "price": 15000, "name": { "en": "Water Tint · Peach Blossom", "ko": "워터 틴트 · 복숭아꽃" }, "desc": { "en": "A soft coral for everyday looks." } },
+        { "id": "balm-honey", "model": "jar", "color": "#ffd36e", "price": 9000, "name": { "en": "Honey Lip Balm", "ko": "허니 립밤" }, "desc": { "en": "Overnight balm for dry lips." } },
+        { "id": "cushion", "model": "jar", "color": "#f3d6c0", "price": 28000, "name": { "en": "Glow Cushion", "ko": "글로우 쿠션" }, "desc": { "en": "Dewy cushion foundation, three shades." } }
+      ]
+    },
+    {
+      "id": "popup-station",
+      "category": "popup",
+      "name": { "ko": "팝업 스테이션", "en": "Pop-up Station" },
+      "tagline": { "en": "This month: Seongsu travel goods", "ko": "이달의 팝업: 성수 여행 굿즈" },
+      "anchor": { "lat": 37.543805, "lon": 127.056267 },
+      "colors": { "sign": "#5b6cf0", "awning": "#ffd36e", "accent": "#eef0ff" },
+      "products": [
+        { "id": "bucket-hat", "model": "hat", "color": "#ffd36e", "price": 29000, "tryOn": { "head": "bucket" }, "name": { "en": "Sunny Bucket Hat", "ko": "써니 버킷햇" }, "desc": { "en": "A soft cotton bucket hat for city walks." } },
+        { "id": "ball-cap", "model": "cap", "color": "#86b8f0", "price": 25000, "tryOn": { "head": "cap" }, "name": { "en": "Seongsu Ball Cap", "ko": "성수 볼캡" }, "desc": { "en": "Washed cotton cap with a small embroidered logo." } },
+        { "id": "eco-tote", "model": "tote", "color": "#f3e5c8", "price": 18000, "tryOn": { "back": "tote" }, "name": { "en": "Canvas Tote", "ko": "캔버스 토트백" }, "desc": { "en": "Sturdy canvas tote for your shopping haul." } },
+        { "id": "mini-plush", "model": "plush", "color": "#ffb3c7", "price": 22000, "name": { "en": "Mochi Bunny Plush", "ko": "찹쌀 토끼 인형" }, "desc": { "en": "A squishy bunny keyring, the pop-up mascot." } }
+      ]
+    },
+    {
+      "id": "stationery-den",
+      "category": "lifestyle",
+      "name": { "ko": "문구다방", "en": "Stationery Den" },
+      "tagline": { "en": "Notebooks, pens and little paper joys", "ko": "노트, 펜, 그리고 작은 종이 행복" },
+      "anchor": { "lat": 37.544292, "lon": 127.055003 },
+      "colors": { "sign": "#3f7a5a", "awning": "#b4dc93", "accent": "#f1f8ea" },
+      "products": [
+        { "id": "grid-note", "model": "notebook", "color": "#8fd3c7", "price": 8000, "name": { "en": "Grid Notebook", "ko": "모눈 노트" }, "desc": { "en": "A5, 120 pages, lay-flat binding." } },
+        { "id": "hangul-stickers", "model": "notebook", "color": "#ffd36e", "price": 4500, "name": { "en": "Hangul Sticker Sheet", "ko": "한글 스티커" }, "desc": { "en": "Cute Korean letters to decorate your journal." } },
+        { "id": "gel-pen-set", "model": "pen", "color": "#b9a6f0", "price": 12000, "name": { "en": "Pastel Gel Pen Set", "ko": "파스텔 젤펜 세트" }, "desc": { "en": "Six smooth 0.5 mm pens." } },
+        { "id": "postcards", "model": "notebook", "color": "#ff9b85", "price": 6000, "name": { "en": "Seoul Postcards", "ko": "서울 엽서 세트" }, "desc": { "en": "Eight illustrated postcards of Seoul streets." } }
+      ]
+    },
+    {
+      "id": "monoroom",
+      "category": "fashion",
+      "name": { "ko": "모노룸", "en": "MONOROOM" },
+      "tagline": { "en": "Simple everyday clothes", "ko": "매일 입는 단정한 옷" },
+      "anchor": { "lat": 37.542472, "lon": 127.05533 },
+      "colors": { "sign": "#3a3a3a", "awning": "#e8e2d8", "accent": "#fafaf7" },
+      "products": [
+        { "id": "tee-cream", "model": "tee", "color": "#f6f1e7", "price": 32000, "tryOn": { "shirt": "cream" }, "name": { "en": "Relaxed Tee · Cream", "ko": "릴렉스 티 · 크림" }, "desc": { "en": "Heavy cotton tee with a roomy fit." } },
+        { "id": "tee-sky", "model": "tee", "color": "#86b8f0", "price": 32000, "tryOn": { "shirt": "sky" }, "name": { "en": "Relaxed Tee · Sky", "ko": "릴렉스 티 · 스카이" }, "desc": { "en": "Same tee, in a soft sky blue." } },
+        { "id": "knit-lilac", "model": "tee", "color": "#b9a6f0", "price": 59000, "tryOn": { "shirt": "lilac" }, "name": { "en": "Soft Knit · Lilac", "ko": "소프트 니트 · 라일락" }, "desc": { "en": "Lightweight knit for cool evenings." } },
+        { "id": "scarf-wool", "model": "scarf", "color": "#e9735c", "price": 39000, "tryOn": { "neck": "scarf" }, "name": { "en": "Wool Scarf", "ko": "울 머플러" }, "desc": { "en": "A cosy brick-red scarf." } }
+      ]
+    },
+    {
+      "id": "denim-lab",
+      "category": "fashion",
+      "name": { "ko": "성수 데님 공방", "en": "Seongsu Denim Lab" },
+      "tagline": { "en": "Jeans made in a former shoe workshop", "ko": "옛 구두 공방에서 만드는 청바지" },
+      "anchor": { "lat": 37.542611, "lon": 127.054864 },
+      "colors": { "sign": "#34495e", "awning": "#5b6c8f", "accent": "#eef2f7" },
+      "products": [
+        { "id": "jeans-indigo", "model": "jeans", "color": "#5b6c8f", "price": 79000, "tryOn": { "pants": "denim" }, "name": { "en": "Wide Jeans · Indigo", "ko": "와이드 진 · 인디고" }, "desc": { "en": "Wide straight leg, mid-weight denim." } },
+        { "id": "jeans-black", "model": "jeans", "color": "#34495e", "price": 79000, "tryOn": { "pants": "navy" }, "name": { "en": "Wide Jeans · Night Navy", "ko": "와이드 진 · 나이트 네이비" }, "desc": { "en": "A deep navy wash." } },
+        { "id": "chino-sand", "model": "jeans", "color": "#c9b08f", "price": 65000, "tryOn": { "pants": "sand" }, "name": { "en": "Easy Chinos · Sand", "ko": "이지 치노 · 샌드" }, "desc": { "en": "Relaxed chinos with an elastic back." } },
+        { "id": "denim-tote", "model": "tote", "color": "#5b6c8f", "price": 35000, "name": { "en": "Denim Tote", "ko": "데님 토트백" }, "desc": { "en": "Made from leftover denim offcuts." } }
+      ]
+    },
+    {
+      "id": "cloud-steps",
+      "category": "fashion",
+      "name": { "ko": "구름신발", "en": "Cloud Steps" },
+      "tagline": { "en": "Sneakers as light as clouds", "ko": "구름처럼 가벼운 스니커즈" },
+      "anchor": { "lat": 37.54274, "lon": 127.054123 },
+      "colors": { "sign": "#4a8fd4", "awning": "#dff1fb", "accent": "#f3f9ff" },
+      "products": [
+        { "id": "sneaker-white", "model": "sneaker", "color": "#f6f1e7", "price": 89000, "name": { "en": "Cloud Runner · White", "ko": "클라우드 러너 · 화이트" }, "desc": { "en": "Cushioned everyday sneaker." } },
+        { "id": "sneaker-mint", "model": "sneaker", "color": "#8fd3c7", "price": 89000, "name": { "en": "Cloud Runner · Mint", "ko": "클라우드 러너 · 민트" }, "desc": { "en": "The same sneaker in mint." } },
+        { "id": "slip-on", "model": "sneaker", "color": "#ff9b85", "price": 59000, "name": { "en": "Canvas Slip-on", "ko": "캔버스 슬립온" }, "desc": { "en": "Easy on, easy off." } },
+        { "id": "socks", "model": "notebook", "color": "#ffd36e", "price": 9000, "name": { "en": "Cloud Socks (3 pairs)", "ko": "구름 양말 3켤레" }, "desc": { "en": "Soft cotton socks with little clouds." } }
+      ]
+    },
+    {
+      "id": "moonlight-beauty",
+      "category": "beauty",
+      "name": { "ko": "달빛 뷰티", "en": "Moonlight Beauty" },
+      "tagline": { "en": "Gentle skincare, step by step", "ko": "순한 스킨케어, 한 단계씩" },
+      "anchor": { "lat": 37.542894, "lon": 127.053665 },
+      "colors": { "sign": "#4b5d9a", "awning": "#d6dcf5", "accent": "#f4f6ff" },
+      "products": [
+        { "id": "toner", "model": "bottle", "color": "#dfe8f1", "price": 22000, "name": { "en": "Rice Water Toner", "ko": "쌀뜨물 토너" }, "desc": { "en": "Hydrating first step after cleansing." } },
+        { "id": "serum", "model": "bottle", "color": "#ffd36e", "price": 34000, "name": { "en": "Citron Vitamin Serum", "ko": "유자 비타민 세럼" }, "desc": { "en": "Brightening serum with citron extract." } },
+        { "id": "sheet-masks", "model": "notebook", "color": "#a6d97a", "price": 15000, "name": { "en": "Sheet Mask Set (10)", "ko": "시트 마스크 10매" }, "desc": { "en": "Ten masks: green tea, honey and aloe." } },
+        { "id": "sun-cream", "model": "jar", "color": "#f6f1e7", "price": 19000, "name": { "en": "Daily Sun Cream SPF50+", "ko": "데일리 선크림" }, "desc": { "en": "Light, no white cast." } }
+      ]
+    },
+    {
+      "id": "sandgrain-bakery",
+      "category": "cafe",
+      "name": { "ko": "모래알 베이커리", "en": "Sandgrain Bakery" },
+      "tagline": { "en": "Fresh salt bread every hour", "ko": "매시간 갓 구운 소금빵" },
+      "anchor": { "lat": 37.543053, "lon": 127.053479 },
+      "colors": { "sign": "#a8642f", "awning": "#f3d9a8", "accent": "#fff6e6" },
+      "products": [
+        { "id": "salt-bread", "model": "bread", "color": "#d9a066", "price": 3500, "name": { "en": "Salt Bread", "ko": "소금빵" }, "desc": { "en": "Buttery roll with a crisp, salty bottom." } },
+        { "id": "red-bean-bread", "model": "bread", "color": "#b5784a", "price": 4000, "name": { "en": "Red Bean Bread", "ko": "단팥빵" }, "desc": { "en": "Soft bun filled with sweet red bean." } },
+        { "id": "castella", "model": "bread", "color": "#ffd36e", "price": 9000, "name": { "en": "Honey Castella", "ko": "꿀 카스텔라" }, "desc": { "en": "Fluffy sponge cake with honey." } },
+        { "id": "americano", "model": "cup", "color": "#5c3b2a", "price": 4500, "name": { "en": "Americano", "ko": "아메리카노" }, "desc": { "en": "Medium roast, hot or iced." } }
+      ]
+    },
+    {
+      "id": "scent-factory",
+      "category": "lifestyle",
+      "name": { "ko": "향기공장", "en": "Scent Factory" },
+      "tagline": { "en": "Candles poured in an old brick factory", "ko": "붉은 벽돌 공장에서 만드는 캔들" },
+      "anchor": { "lat": 37.543199, "lon": 127.053013 },
+      "colors": { "sign": "#8a3f2b", "awning": "#d49a8a", "accent": "#fbefea" },
+      "products": [
+        { "id": "candle-pine", "model": "candle", "color": "#9cc28a", "price": 26000, "name": { "en": "Candle · Seoul Forest Pine", "ko": "캔들 · 서울숲 소나무" }, "desc": { "en": "Green, woody and fresh." } },
+        { "id": "candle-fig", "model": "candle", "color": "#c9a3c9", "price": 26000, "name": { "en": "Candle · Fig & Tea", "ko": "캔들 · 무화과와 차" }, "desc": { "en": "Soft fig with a hint of black tea." } },
+        { "id": "diffuser", "model": "bottle", "color": "#e8cfc4", "price": 32000, "name": { "en": "Reed Diffuser · Brick", "ko": "디퓨저 · 벽돌" }, "desc": { "en": "Warm amber and cedar." } },
+        { "id": "hand-cream", "model": "jar", "color": "#f3e5c8", "price": 12000, "name": { "en": "Hand Cream · Linen", "ko": "핸드크림 · 리넨" }, "desc": { "en": "Clean cotton scent, non-greasy." } }
+      ]
+    }
+  ]
+}

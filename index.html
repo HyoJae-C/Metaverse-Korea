@@ -19,12 +19,52 @@
         <div class="street-name" id="street-name"></div>
         <div class="street-sub" id="street-sub"></div>
         <button class="chip" id="street-translate" data-i18n="hud.translate"></button>
+        <div class="zone-line" id="zone-line" hidden></div>
       </div>
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
         <button class="chip" id="lang-btn" aria-label="Language">🌐 <span data-i18n="lang.change"></span></button>
       </div>
+      <div class="tools">
+        <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
+        <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
+        <button class="tool" id="signs-btn" aria-pressed="false"><span>🔤</span><small data-i18n="hud.signs"></small></button>
+      </div>
+      <div class="guide" id="guide" hidden>
+        <svg class="guide-arrow" id="guide-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg>
+        <span id="guide-text"></span>
+        <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
+      </div>
+      <button class="action" id="action-btn" hidden></button>
+      <div class="store-banner" id="store-banner" hidden>
+        <div class="store-meta">
+          <strong id="store-name"></strong>
+          <span id="store-name-ko"></span>
+          <small id="store-tagline"></small>
+          <span class="sample" data-i18n="shop.sample"></span>
+        </div>
+        <button class="chip" id="store-exit">🚪 <span data-i18n="shop.exit"></span></button>
+      </div>
+      <div class="sheet" id="product-panel" hidden>
+        <button class="sheet-x" id="product-close" aria-label="Close">✕</button>
+        <div class="product-head">
+          <span class="product-icon" id="product-icon"></span>
+          <div>
+            <strong id="product-name"></strong>
+            <span id="product-name-ko"></span>
+            <b id="product-price"></b>
+          </div>
+        </div>
+        <p id="product-desc"></p>
+        <div class="product-actions">
+          <button class="chip" id="product-try">🪞 <span data-i18n="shop.tryOn"></span></button>
+          <button class="primary" id="product-add">🛍️ <span data-i18n="shop.addToCart"></span></button>
+        </div>
+        <p class="fine" data-i18n="shop.virtual"></p>
+      </div>
+      <button class="chip revert" id="revert-look" hidden>↩️ <span data-i18n="shop.revert"></span></button>
+      <div class="toast" id="toast" hidden></div>
       <div class="emotes" id="emotes"></div>
       <div class="joystick" id="joystick" hidden><div class="knob"></div></div>
       <div class="help" id="help" hidden>
@@ -67,6 +107,36 @@
           <button class="primary" id="start-btn" data-i18n="start.button"></button>
         </div>
         <p class="status" id="status"></p>
+      </div>
+    </div>
+
+    <!-- Cart -->
+    <div class="overlay dim" id="cart-panel" hidden>
+      <div class="panel small cart">
+        <button class="sheet-x" id="cart-close" aria-label="Close">✕</button>
+        <h2 data-i18n="cart.title"></h2>
+        <div id="cart-list"></div>
+        <div class="cart-total"><span data-i18n="cart.total"></span><b id="cart-total"></b></div>
+        <button class="primary" id="cart-checkout" data-i18n="cart.checkout"></button>
+        <p class="fine" id="cart-note" hidden data-i18n="cart.demoNote"></p>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="overlay dim" id="map-panel" hidden>
+      <div class="map-card">
+        <div class="map-top">
+          <h2 data-i18n="map.title"></h2>
+          <div class="map-btns">
+            <button class="chip map-zoom-out" aria-label="Zoom out">－</button>
+            <button class="chip map-zoom-in" aria-label="Zoom in">＋</button>
+            <button class="chip map-close" aria-label="Close">✕</button>
+          </div>
+        </div>
+        <div class="map-body">
+          <canvas class="map-canvas"></canvas>
+          <div class="map-list"></div>
+        </div>
       </div>
     </div>
 
