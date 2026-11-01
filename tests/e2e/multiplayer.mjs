@@ -7,13 +7,16 @@ import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const errors = [];
+// A fresh room per run, so visitors on the live site (same Supabase project)
+// or a parallel CI run can't change the player count.
+const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
 
 async function join(name) {
   const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } }); // separate context: no shared tabs
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && errors.push(`${name}: ${m.text()}`));
-  await page.goto(url);
+  await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM); // private test room
   await page.click('#next-btn');
   // Type key by key (fill() bypasses key handlers and once hid a bug here).
   await page.fill('#nickname', '');
