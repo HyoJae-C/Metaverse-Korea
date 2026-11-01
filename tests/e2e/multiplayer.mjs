@@ -12,7 +12,7 @@ async function join(name) {
   const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } }); // separate context: no shared tabs
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
-  page.on('console', (m) => m.type() === 'warning' && errors.push(`${name}: ${m.text()}`));
+  page.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && errors.push(`${name}: ${m.text()}`));
   await page.goto(url);
   await page.click('#next-btn');
   // Type key by key (fill() bypasses key handlers and once hid a bug here).
@@ -37,6 +37,16 @@ try {
   ok = true;
 } catch (e) {
   errors.push('assertion: ' + e.message);
+  // Diagnostics: what each player sees, and how fast the page is rendering.
+  for (const [n, p] of [['A', a], ['B', b]]) {
+    const info = await p.evaluate(async () => {
+      const t0 = performance.now(); let f = 0;
+      await new Promise((r) => { const tick = () => (++f < 10 ? requestAnimationFrame(tick) : r()); requestAnimationFrame(tick); });
+      const o = document.querySelector('#online');
+      return { online: o.hidden ? 'hidden' : o.textContent, fps: Math.round(10000 / (performance.now() - t0)) };
+    }).catch((err) => ({ error: err.message }));
+    errors.push(`${n}: ${JSON.stringify(info)}`);
+  }
 }
 await a.screenshot({ path: 'e2e-multiplayer.png' });
 console.log(ok ? 'PASS: players see each other and emotes arrive' : 'FAIL');
