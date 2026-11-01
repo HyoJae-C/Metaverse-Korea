@@ -28,6 +28,10 @@ const $ = (id) => document.getElementById(id);
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
 const regionId = new URLSearchParams(location.search).get('region') || regionsIndex.default;
+// Realtime room name. Automated tests pass ?debug&room=<name> to get a private
+// room, so real visitors on the live site never mix into a test.
+const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
+const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
 const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
 function renderLangGrid(el, onPick) {
@@ -380,7 +384,7 @@ async function joinRoom(room, roomScene, area = null) {
   }
 }
 net = SOLO;
-joinRoom(regionId, scene, { x: me.root.position.x, z: me.root.position.z });
+joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 const emoteBar = $('emotes');
 for (const pack of ownedPacks()) {
@@ -462,7 +466,7 @@ function enterStore(item) {
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
-  joinRoom(`${regionId}-${store.id}`, built.scene);
+  joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
 function leaveStore() {
@@ -483,7 +487,7 @@ function leaveStore() {
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(regionId, scene, { x: me.root.position.x, z: me.root.position.z });
+  joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 }
 
 // Translate signs (storefronts and zone boards) into the chosen language.
