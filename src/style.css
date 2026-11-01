@@ -359,3 +359,26 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 
 .disclaimer { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--ink-soft); max-width: 46ch; margin-inline: auto; text-align: center; }
 .map-disclaimer { margin: 6px 12px 10px; max-width: none; }
+
+/* Short screens (phones in landscape, iPhone SE): keep the main button in
+   view, use a compact layout, and keep the HUD columns apart. */
+.panel { max-height: calc(100dvh - 32px); }
+#next-btn, .look-actions { position: sticky; bottom: -22px; z-index: 1; }
+.look-actions { background: var(--panel); padding-block: 8px 22px; margin-bottom: -22px; }
+@media (max-height: 600px) {
+  .overlay { padding: 8px; }
+  .panel { max-height: calc(100dvh - 16px); padding: 16px 20px 22px; }
+  .logo, .tagline { display: none; }
+  h1 { font-size: 22px; margin-top: 0; }
+  h2 { margin: 10px 0 8px; }
+  .lang-grid button { padding-block: 10px; }
+  body:has(.overlay:not([hidden])) .credit { display: none; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .look-panel { width: min(720px, 100%); }
+  .look-layout { grid-template-columns: 220px 1fr; display: grid; gap: 12px; align-items: start; }
+  .look-stage { height: 200px; aspect-ratio: auto; }
+  .emotes { grid-template-columns: repeat(2, 50px); }
+  .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 132px; flex-direction: column; }
+  .help { top: max(12px, env(safe-area-inset-top)); bottom: auto; }
+}
