@@ -15,7 +15,7 @@ import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, EXIT, ROOM } from './core/interior.js';
+import { buildInterior } from './core/interior.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -541,7 +541,7 @@ function enterStore(item) {
   activeCollision = built.collision;
   cam.dist = 7;
   cam.pitch = 0.7;
-  moveMeTo(built.scene, EXIT.x, EXIT.z - 1.4, Math.PI);
+  moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   document.body.classList.add('in-store');
   shop.enterStore(store);
   $('guide').hidden = true;
@@ -551,6 +551,7 @@ function enterStore(item) {
 
 function leaveStore() {
   if (mode !== 'store') return;
+  standUp();
   sfx.doorbell();
   const it = interior.front;
   mode = 'street';
@@ -692,14 +693,45 @@ function updateZoneLine(z) {
 }
 onLanguageChange(() => updateZoneLine(currentZone));
 
+// Café seats. Sitting snaps you onto the chair facing the table; moving or
+// tapping Stand puts you back beside it. Others see it through the "sit" flag.
+let seated = null;
+function nearestSeat(p) {
+  let best = null, bd = 1.3;
+  for (const s of interior?.seats || []) {
+    const d = Math.hypot(p.x - s.x, p.z - s.z);
+    if (d < bd && !others.seatTaken?.(s.x, s.z)) { bd = d; best = s; }
+  }
+  return best;
+}
+function sitDown(seat) {
+  seated = seat;
+  me.root.position.set(seat.x, 0, seat.z);
+  me.root.rotation.y = seat.ry;
+  cam.yaw = seat.ry + Math.PI;
+  sendTimer = 0; // tell others right away
+}
+function standUp() {
+  if (!seated) return;
+  me.root.position.set(seated.stand[0], 0, seated.stand[1]);
+  seated = null;
+  sendTimer = 0;
+}
+
 function updateAction(p, tSec) {
   let next = null;
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
   } else {
-    if (Math.hypot(p.x - EXIT.x, p.z - EXIT.z) < 1.6) {
+    const ex = interior.exit;
+    const seat = !seated && nearestSeat(p);
+    if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
+    } else if (seated) {
+      next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (seat) {
+      next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
       let best = null, bestD = 1.9;
       for (const pr of interior.products) {
@@ -785,8 +817,9 @@ renderer.setAnimationLoop(() => {
   const { x: mx, y: my } = input.move;
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
-  const running = updateStamina(dt, input.run, mag > 0.05);
-  if (mag > 0.05) {
+  if (seated && mag > 0.3) standUp();
+  const running = updateStamina(dt, input.run, mag > 0.05 && !seated);
+  if (mag > 0.05 && !seated) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -800,8 +833,9 @@ renderer.setAnimationLoop(() => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      p.x = THREE.MathUtils.clamp(nx, -ROOM.w / 2 + 0.5, ROOM.w / 2 - 0.5);
-      p.z = THREE.MathUtils.clamp(nz, -ROOM.d / 2 + 0.5, ROOM.d / 2 - 0.5);
+      const { w: rw, d: rd } = interior.room;
+      p.x = THREE.MathUtils.clamp(nx, -rw / 2 + 0.5, rw / 2 - 0.5);
+      p.z = THREE.MathUtils.clamp(nz, -rd / 2 + 0.5, rd / 2 - 0.5);
     }
     const targetRy = Math.atan2(dx, dz);
     let d = targetRy - me.root.rotation.y;
@@ -811,7 +845,7 @@ renderer.setAnimationLoop(() => {
   } else {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
-  me.animate(dt, speed01 < 0.05 ? 0 : speed01);
+  me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated);
 
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
@@ -887,7 +921,8 @@ renderer.setAnimationLoop(() => {
       ry: Math.round(me.root.rotation.y * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s;
+    if (seated) st.sit = 1;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -913,6 +948,10 @@ if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),
+    seats: () => interior?.seats?.length ?? 0,
+    sit: (i) => sitDown(interior.seats[i]),
+    seated: () => !!seated,
+    peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),

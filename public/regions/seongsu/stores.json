@@ -6,6 +6,7 @@
     {
       "id": "ongi-cafe",
       "category": "cafe",
+      "size": "large",
       "name": { "ko": "온기 카페", "en": "Ongi Café" },
       "tagline": { "en": "A warm corner to meet other travellers", "ko": "여행자들이 만나는 따뜻한 쉼터" },
       "anchor": { "lat": 37.54418, "lon": 127.055386 },
@@ -117,8 +118,23 @@
       ]
     },
     {
+      "id": "haneul-drip",
+      "category": "cafe",
+      "size": "small",
+      "name": { "ko": "하늘 핸드드립", "en": "Haneul Hand Drip" },
+      "tagline": { "en": "A tiny pour-over bar with two seats", "ko": "두 자리뿐인 작은 핸드드립 바" },
+      "anchor": { "lat": 37.54355, "lon": 127.05475 },
+      "colors": { "sign": "#2f5d7c", "awning": "#a9d3ee", "accent": "#eef7fc" },
+      "products": [
+        { "id": "hand-drip", "model": "cup", "color": "#6b4a35", "price": 6000, "name": { "en": "Hand Drip Coffee", "ko": "핸드드립 커피" }, "desc": { "en": "Single-origin beans, poured slowly by hand." } },
+        { "id": "omija-tea", "model": "cup", "color": "#e0526b", "price": 5500, "name": { "en": "Omija Tea", "ko": "오미자차" }, "desc": { "en": "Berry tea known for five flavours: sweet, sour, salty, bitter and pungent." } },
+        { "id": "yakgwa", "model": "bread", "color": "#b8702f", "price": 3000, "name": { "en": "Yakgwa", "ko": "약과" }, "desc": { "en": "A honey cookie, fried and soaked in ginger syrup." } }
+      ]
+    },
+    {
       "id": "sandgrain-bakery",
       "category": "cafe",
+      "size": "small",
       "name": { "ko": "모래알 베이커리", "en": "Sandgrain Bakery" },
       "tagline": { "en": "Fresh salt bread every hour", "ko": "매시간 갓 구운 소금빵" },
       "anchor": { "lat": 37.543053, "lon": 127.053479 },

@@ -56,6 +56,14 @@ export class RemotePlayers {
     p.target = st;
   }
 
+  // Is someone already sitting on the chair at (x, z)?
+  seatTaken(x, z) {
+    for (const p of this.players.values()) {
+      if (p.target?.sit && Math.hypot(p.target.x - x, p.target.z - z) < 0.3) return true;
+    }
+    return false;
+  }
+
   emote(id, anim, emoji) {
     const p = this.players.get(id);
     if (!p) return;
@@ -74,7 +82,7 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        p.ch.animate(dt, p.target.s || 0);
+        p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
       v.set(r.position.x, 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;

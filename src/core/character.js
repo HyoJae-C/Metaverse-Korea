@@ -94,9 +94,16 @@ export function createCharacter(rawLook) {
   return {
     root,
     head,
-    // speed01: 0 idle … 1 running
-    animate(dt, speed01) {
-      if (speed01 > 0.01) {
+    // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
+    animate(dt, speed01, sit = false) {
+      if (sit) {
+        phase = 0;
+        const k = Math.min(1, dt * 10);
+        for (const l of [legL, legR]) l.rotation.x += (-1.45 - l.rotation.x) * k;
+        armL.rotation.x += (-0.5 - armL.rotation.x) * k;
+        if (waveT <= 0) armR.rotation.x += (-0.5 - armR.rotation.x) * k;
+        body.position.y += (0.2 + Math.sin(performance.now() / 700) * 0.006 - body.position.y) * k;
+      } else if (speed01 > 0.01) {
         // Long, bouncy strides: a slower step rate with a wider leg swing.
         phase += dt * (7.5 + 5.5 * speed01);
         const sw = Math.sin(phase) * (0.65 + 0.4 * speed01);

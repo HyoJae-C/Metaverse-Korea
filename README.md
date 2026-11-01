@@ -15,13 +15,14 @@ First stop: **Seongsu-dong, Seoul**.
 
 - Meeting zones A–F with tall lettered signposts ("meet at B!")
 - Map (M key or 🗺️): streets, zones, shops, you and other players; tap to get walking guidance
-- 10 fictional sample stores with Korean signs and a Translate signs toggle
+- 11 fictional sample stores with Korean signs and a Translate signs toggle
 - Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
 - Each store interior is its own multiplayer room (the café is the meeting spot)
 - Background music on/off (🎵), generated in the browser
 - Walking route drawn on the ground along real streets when you pick a destination
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 - Running uses a stamina bar that refills while you walk or rest
+- Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
 
 ## Run locally
 
