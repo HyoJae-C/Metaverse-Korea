@@ -43,7 +43,8 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Verified place info for real visits (opening hours etc. fact-checked)
 
 ## Later
-- **Teleport and membership**: free forever: teleport to the meeting signposts (A–F) and subway stations. Paid membership later: teleport anywhere on the map or next to a friend, no cooldown, arrival effects. Label it "free during beta" from the start, and thank early users (founder badge or a free month) instead of taking features away
+- **Teleport and membership**: free forever: walking, running, teleport to the meeting signposts (A–F) and the subway. Label paid features "free during beta" from the start and never take a free feature away later
+- **Taxi**: pick any point on the map and ride there: a short taxi scene (window view, the driver greets you in Korean) and you are dropped off. Normally paid with virtual currency (same wallet as the transit card). Early members get a few free taxi tickets per month for their first 3 months, plus a founder badge. Paid membership: unlimited taxi and "go to a friend"
 
 - **Character customisation** (outfits)
 - **Emote shop**: emote packs are data with a `price`; purchases will come from an account service
