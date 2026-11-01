@@ -15,6 +15,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 - 10 fictional stores (fashion, beauty, café, pop-up), clearly marked as sample data
 - Browse products, try on, add to cart; no real payments
 - Signs in Korean (or English) with a Translate button to the chosen language
+- Background music: a cozy lo-fi loop generated in the browser (no audio files, no licensing), off by default, 🎵 toggle remembered per device
 
 ## Step 3: Social
 
@@ -23,6 +24,12 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Toggle to hear / not hear strangers
 - Friends list, and show / hide my online status
 - Needs a persistent identity: anonymous account per device first, optional Google sign-in later
+
+## Step 3.5: Restaurants and brand spaces
+
+- Food can't actually be eaten, so keep **only 2–3 restaurants**. Inside, each is a **Korean practice zone**: read the menu, practise ordering lines ("이거 주세요"), hear and repeat them
+- The café and bakery stay as meeting spots
+- All other buildings are **spare brand / ad slots**: sign and interior page come from advertiser data, so a brand can be swapped in without code changes. Until sold, they show a clear "Advertise here" sample
 
 ## Step 4: Game layer
 

@@ -11,6 +11,15 @@ First stop: **Seongsu-dong, Seoul**.
 - Street name card in the original Korean, with a Translate button
 - Multiplayer: see other travellers in real time, with nicknames and emotes (Supabase Realtime)
 
+## Step 2 (in progress)
+
+- Meeting zones A–F with tall lettered signposts ("meet at B!")
+- Map (M key or 🗺️): streets, zones, shops, you and other players; tap to get walking guidance
+- 10 fictional sample stores with Korean signs and a Translate signs toggle
+- Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
+- Each store interior is its own multiplayer room (the café is the meeting spot)
+- Background music on/off (🎵), generated in the browser
+
 ## Run locally
 
 ```bash
@@ -26,6 +35,8 @@ To test multiplayer without a server, set `VITE_NET_PROVIDER=local` (e.g. in `.e
 ```
 public/regions/<id>/region.json   per-region settings (bbox, spawn point, names)
 public/regions/<id>/map.json      generated map data (do not edit by hand)
+public/regions/<id>/stores.json   stores and products (fictional sample data)
+public/regions/<id>/zones.json    meeting zones
 scripts/fetch-osm.mjs             downloads OSM data and writes map.json
 src/core/                         shared engine: world, character, input, collision, i18n
 src/net/                          multiplayer, behind a swappable adapter (local, supabase)
@@ -48,4 +59,5 @@ register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
 
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL.
 Street trees and building colours are decorative and not part of the map data.
-Store and product data (coming in step 2) are fictional sample data.
+Store and product data are fictional sample data, not the real businesses at those locations.
+Background music is generated live in the browser (Web Audio); no audio files are used.

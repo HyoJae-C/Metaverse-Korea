@@ -5,12 +5,14 @@
 //   connect({ room, self })   → Promise<void>   self = { id, name, look }
 //   sendState(state)          state = { x, z, ry, s }  (position, heading, speed01)
 //   sendEmote(emote)          e.g. 'wave'
+//   sendLook(look)            outfit changed (e.g. trying something on)
 //   disconnect()
 // and calls the handlers passed to its factory:
 //   onJoin(peer)              peer = { id, name, look }
 //   onLeave(id)
 //   onState(id, state)
 //   onEmote(id, emote)
+//   onLook(id, look)
 //
 // Adapters live in ./adapters/. Pick one in src/config.js.
 
