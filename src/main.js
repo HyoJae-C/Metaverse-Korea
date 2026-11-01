@@ -9,7 +9,7 @@ import { createLookEditor } from './core/look-editor.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
-import { createNet } from './net/index.js';
+import { createAreaNet } from './net/area.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem } from './core/weather.js';
@@ -344,8 +344,12 @@ let currentLook = myLook;
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
-async function joinRoom(room, roomScene) {
+// Street rooms are split into cells (see net/area.js); a shop is one room.
+let joinToken = 0;
+async function joinRoom(room, roomScene, area = null) {
+  const token = ++joinToken;
   net?.disconnect();
+  net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
   others = new RemotePlayers(roomScene, $('labels'));
   refreshOnline();
@@ -360,17 +364,20 @@ async function joinRoom(room, roomScene) {
     onLook: (id, look) => others.setLook(id, look),
   };
   try {
-    const n = await createNet(config.netProvider, handlers, config.net);
-    await n.connect({ room, self: { id: myId, name: nickname, look: currentLook } });
+    const n = await createAreaNet(config.netProvider, handlers, config.net, {
+      room, self: { id: myId, name: nickname, look: currentLook },
+      cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
+    });
+    if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
   } catch (err) {
     // Keep playing solo if the realtime service is unreachable.
     console.warn('Multiplayer unavailable:', err);
-    net = SOLO;
+    if (token === joinToken) net = SOLO;
   }
 }
 net = SOLO;
-joinRoom(regionId, scene);
+joinRoom(regionId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 const emoteBar = $('emotes');
 for (const pack of ownedPacks()) {
@@ -461,15 +468,15 @@ function leaveStore() {
   mode = 'street';
   activeScene = scene;
   activeCollision = collision;
-  cam.dist = 11;
-  cam.pitch = 0.5;
+  cam.dist = 9;
+  cam.pitch = 0.42;
   // Face the street, with the camera to the side so the shop front stays in view.
   moveMeTo(scene, it.door.x, it.door.z, it.group.rotation.y, it.group.rotation.y + Math.PI / 2);
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(regionId, scene);
+  joinRoom(regionId, scene, { x: me.root.position.x, z: me.root.position.z });
 }
 
 // Translate signs (storefronts and zone boards) into the chosen language.
@@ -742,6 +749,7 @@ renderer.setAnimationLoop(() => {
       updateZoneLine(z);
     }
     updateGuide(p, dt);
+    net.update?.(p.x, p.z); // switch area cells as we walk
   }
   routeLine.update(dt);
   updateAction(p, tSec);

@@ -14,4 +14,7 @@ export const config = {
   netSendRate: 6,
   netSendRateRun: 8,
   netIdleInterval: 5,
+  // Street multiplayer is split into square cells of this size (metres). You
+  // see players in your cell and the 8 around it, i.e. at least this far.
+  netCellSize: 200,
 };
