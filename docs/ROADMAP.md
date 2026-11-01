@@ -1,0 +1,39 @@
+# Roadmap
+
+Decisions agreed with the project owner. Each step ships something playable.
+
+## Step 1: Walk Seongsu together (done in PR #1)
+
+- 3D streets around Seongsu Station from OpenStreetMap
+- Cute chibi (2-heads-tall) original character, cozy pastel art style
+- Start-screen language picker; English default
+- Multiplayer with nicknames and emotes (Supabase Realtime, swappable adapter)
+
+## Step 2: Café and shopping
+
+- A virtual café near Seongsu Station as the meeting spot (first enterable place)
+- 10 fictional stores (fashion, beauty, café, pop-up), clearly marked as sample data
+- Browse products, try on, add to cart; no real payments
+- Signs in Korean (or English) with a Translate button to the chosen language
+
+## Step 3: Social
+
+- Voice chat **only inside the café**: opt-in, push-to-talk, mute and report
+- Everywhere else: emoji only
+- Toggle to hear / not hear strangers
+- Friends list, and show / hide my online status
+- Needs a persistent identity: anonymous account per device first, optional Google sign-in later
+
+## Step 4: Game layer
+
+- Stamps, shopping missions, recommended routes
+- Verified place info for real visits (opening hours etc. fact-checked)
+
+## Later
+
+- **Character customisation** (outfits)
+- **Emote shop**: emote packs are data with a `price`; purchases will come from an account service
+- **Wallet and transit card**: virtual in-game currency only (no real money). Earned from missions, stamps and a daily login bonus. Subway fare is deducted per ride. When short: walk, do a small nearby mission, or take a small daily free top-up so nobody gets stuck. One wallet model shared with the emote shop.
+- **Subway between regions**: stations act as doors to other regions. Seongsu → Hongik Univ. is about 30 min on Line 2 in real life; in game, about a 1-minute ride with station announcements, window scenery and a Skip button.
+- **Hongdae** region with a **busking zone**
+- More regions: other Seoul neighbourhoods, Busan, Jeju

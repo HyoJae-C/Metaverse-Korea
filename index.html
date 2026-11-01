@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#bfe3ff" />
+    <meta name="description" content="Walk the streets of Seongsu-dong, Seoul, in 3D, right in your browser." />
+    <title>Metaverse Korea</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div id="labels"></div>
+
+    <!-- HUD -->
+    <div id="hud" hidden>
+      <div class="street-card" id="street-card">
+        <div class="street-label" data-i18n="hud.youAreOn"></div>
+        <div class="street-name" id="street-name"></div>
+        <div class="street-sub" id="street-sub"></div>
+        <button class="chip" id="street-translate" data-i18n="hud.translate"></button>
+      </div>
+      <div class="top-right">
+        <span class="online" id="weather" hidden></span>
+        <span class="online" id="online" hidden></span>
+        <button class="chip" id="lang-btn" aria-label="Language">🌐 <span data-i18n="lang.change"></span></button>
+      </div>
+      <div class="emotes" id="emotes"></div>
+      <div class="joystick" id="joystick" hidden><div class="knob"></div></div>
+      <div class="help" id="help" hidden>
+        <span id="help-text"></span>
+        <button class="chip" id="help-ok" data-i18n="help.dismiss"></button>
+      </div>
+    </div>
+
+    <div class="credit">
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener"><span data-i18n="credit.map"></span> © OpenStreetMap contributors</a>
+      · <a href="https://open-meteo.com/" target="_blank" rel="noopener"><span data-i18n="credit.weather"></span> Open-Meteo</a>
+    </div>
+
+    <!-- Start screen -->
+    <div class="overlay" id="start">
+      <div class="panel" id="step-lang">
+        <div class="logo">🏙️</div>
+        <h1 data-i18n="app.title"></h1>
+        <p class="tagline" data-i18n="app.tagline"></p>
+        <h2 data-i18n="lang.choose"></h2>
+        <div class="lang-grid" id="lang-grid"></div>
+        <p class="region" id="start-region"></p>
+        <button class="primary" id="next-btn" data-i18n="start.next"></button>
+      </div>
+      <div class="panel look-panel" id="step-look" hidden>
+        <h2 class="look-title" data-i18n="look.title"></h2>
+        <div class="look-layout">
+          <div class="look-stage">
+            <canvas id="look-preview" aria-label="Character preview"></canvas>
+            <button class="chip" id="look-random">🎲 <span data-i18n="look.random"></span></button>
+          </div>
+          <div class="look-options" id="look-options"></div>
+        </div>
+        <label class="name-field">
+          <span data-i18n="start.nickname"></span>
+          <input id="nickname" maxlength="16" autocomplete="off" />
+        </label>
+        <div class="look-actions">
+          <button class="chip" id="back-btn" data-i18n="start.back"></button>
+          <button class="primary" id="start-btn" data-i18n="start.button"></button>
+        </div>
+        <p class="status" id="status"></p>
+      </div>
+    </div>
+
+    <!-- Language picker (in game) -->
+    <div class="overlay" id="lang-overlay" hidden>
+      <div class="panel small">
+        <h2 data-i18n="lang.choose"></h2>
+        <div class="lang-grid" id="lang-grid-2"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

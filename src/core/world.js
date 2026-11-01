@@ -1,0 +1,398 @@
+// Builds the 3D street scene from a region's map.json.
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const ROAD_Y = { walk: 0.06, default: 0.04 };
+const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
+
+// Low-poly cartoon palette.
+export const COLORS = {
+  sky: 0xbfe3ff,
+  ground: 0xe9e2d0,
+  road: 0x8d8a8f,
+  roadMajor: 0x7f7c84,
+  walk: 0xd8cfc0,
+  park: 0x9fd486,
+  grass: 0xb4dc93,
+  water: 0x7cc4e8,
+  roof: 0xf4efe6,
+  rail: 0xb8bcc4,
+  railTrack: 0x8a8f99,
+};
+
+// Warm, soft pastels for walls, with a matching roof colour for each.
+const WALL_TINTS = [
+  0xfbe3d3, 0xfff1d0, 0xe3f0f7, 0xefe4f7, 0xe2f2dc, 0xffd9c7,
+  0xdfe8f1, 0xfaf3e6, 0xf6dcd2, 0xe9d8c6, 0xd6e4ea, 0xf3e5c8,
+];
+const ROOF_TINTS = [
+  0xe08f78, 0xb7c7a0, 0x8fb0c4, 0xc9a3c9, 0x9cc28a, 0xe8a07f,
+  0xa7b5c9, 0xd9c5a3, 0xd49a8a, 0xb8a089, 0x93b3bd, 0xd8b98a,
+];
+
+export function buildWorld(map, scene, opts = {}) {
+  const lowSpec = !!opts.lowSpec;
+  const group = new THREE.Group();
+  group.name = 'world';
+
+  const bounds = computeBounds(map);
+  group.add(makeGround(bounds));
+
+  for (const kind of ['park', 'grass', 'water']) {
+    const polys = map.areas.filter((a) => a.k === kind).map((a) => a.p);
+    const mesh = makeFlatPolys(polys, COLORS[kind], 0.02);
+    if (mesh) group.add(mesh);
+  }
+
+  const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
+  const roadSets = {
+    walk: map.roads.filter((r) => r.k === 'walk'),
+    minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
+    major: map.roads.filter((r) => majors.has(r.k)),
+  };
+  const roadMesh = (list, color, y) => {
+    const m = makeRibbons(list, color, y);
+    if (m) {
+      m.receiveShadow = true;
+      group.add(m);
+    }
+  };
+  roadMesh(roadSets.walk, COLORS.walk, ROAD_Y.walk);
+  roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
+  roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
+
+  const { walls, roofs } = makeBuildings(map.buildings);
+  if (walls) group.add(walls);
+  if (roofs) group.add(roofs);
+
+  const rail = makeRail(map.rail);
+  if (rail) group.add(rail);
+
+  if (opts.collision) {
+    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500);
+    if (trees) group.add(...trees);
+  }
+
+  if (!lowSpec) {
+    group.traverse((o) => {
+      if (o.isMesh && o.name !== 'ground') o.castShadow = ['walls', 'rail', 'trees'].includes(o.name);
+      if (o.isMesh) o.receiveShadow = true;
+    });
+  }
+
+  scene.add(group);
+  return { group, bounds };
+}
+
+export function computeBounds(map) {
+  let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
+  const eat = (p) => {
+    for (const [x, z] of p) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+  };
+  map.roads.forEach((r) => eat(r.p));
+  map.buildings.forEach((b) => eat(b.p));
+  if (!Number.isFinite(minX)) return { minX: -300, minZ: -300, maxX: 300, maxZ: 300 };
+  return { minX, minZ, maxX, maxZ };
+}
+
+function makeGround(b) {
+  const pad = 400;
+  const w = b.maxX - b.minX + pad * 2;
+  const d = b.maxZ - b.minZ + pad * 2;
+  const geo = new THREE.PlaneGeometry(w, d);
+  geo.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORS.ground }));
+  mesh.position.set((b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2);
+  mesh.name = 'ground';
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// Polygon in [x,z] → THREE.Shape in (x, -z) so that rotating the shape
+// geometry by -90° about X puts it back on the ground plane at +z.
+function toShape(p) {
+  return new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
+}
+
+function makeFlatPolys(polys, color, y) {
+  if (!polys.length) return null;
+  const geos = [];
+  for (const p of polys) {
+    if (p.length < 3) continue;
+    const g = new THREE.ShapeGeometry(toShape(p));
+    g.rotateX(-Math.PI / 2);
+    g.translate(0, y, 0);
+    geos.push(g);
+  }
+  if (!geos.length) return null;
+  const geo = mergeGeometries(geos);
+  geos.forEach((g) => g.dispose());
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// Road polylines → flat ribbons with round joints.
+function makeRibbons(roads, color, y) {
+  if (!roads.length) return null;
+  const pos = [];
+  const idx = [];
+  const JOINT_SEGS = 8;
+  const pushV = (x, z) => {
+    pos.push(x, y, z);
+    return pos.length / 3 - 1;
+  };
+  for (const r of roads) {
+    const hw = r.w / 2;
+    const p = r.p;
+    for (let i = 0; i < p.length - 1; i++) {
+      const [x1, z1] = p[i];
+      const [x2, z2] = p[i + 1];
+      const dx = x2 - x1, dz = z2 - z1;
+      const len = Math.hypot(dx, dz);
+      if (len < 0.01) continue;
+      const nx = (-dz / len) * hw, nz = (dx / len) * hw;
+      const a = pushV(x1 + nx, z1 + nz);
+      const b = pushV(x1 - nx, z1 - nz);
+      const c = pushV(x2 - nx, z2 - nz);
+      const d = pushV(x2 + nx, z2 + nz);
+      idx.push(a, d, b, b, d, c);
+    }
+    // Round caps at each vertex fill the gaps at bends and junctions.
+    for (const [x, z] of p) {
+      const c = pushV(x, z);
+      const first = pos.length / 3;
+      for (let s = 0; s < JOINT_SEGS; s++) {
+        const ang = (s / JOINT_SEGS) * Math.PI * 2;
+        pushV(x + Math.cos(ang) * hw, z + Math.sin(ang) * hw);
+      }
+      for (let s = 0; s < JOINT_SEGS; s++) {
+        idx.push(c, first + ((s + 1) % JOINT_SEGS), first + s);
+      }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return new THREE.Mesh(
+    geo,
+    new THREE.MeshLambertMaterial({ color, polygonOffset: true, polygonOffsetFactor: -1 }),
+  );
+}
+
+// Window texture: one tile = one bay (3 m wide) × one storey (3.2 m tall).
+function makeWindowTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#f1ece4'; // frame
+  g.fillRect(17, 17, 30, 28);
+  g.fillStyle = '#b5d8e8'; // glass
+  g.fillRect(20, 20, 24, 22);
+  g.fillStyle = '#d9eef6'; // reflection
+  g.fillRect(20, 20, 24, 6);
+  g.fillStyle = '#efe6d8'; // sill
+  g.fillRect(15, 45, 34, 3);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function makeBuildings(buildings) {
+  const wPos = [], wUv = [], wCol = [], wIdx = [];
+  const rPos = [], rIdx = [], rCol = [];
+  const roofCol = new THREE.Color();
+  const col = new THREE.Color();
+  const BAY = 3, STOREY = 3.2;
+
+  buildings.forEach((b, bi) => {
+    let p = b.p;
+    if (p.length < 3) return;
+    // Ensure counter-clockwise (in x,-z) so wall normals face outward.
+    if (signedArea(p) < 0) p = [...p].reverse();
+    const base = b.m || 0;
+    const top = b.h;
+    const tint = (bi * 7 + p.length) % WALL_TINTS.length;
+    col.setHex(WALL_TINTS[tint]);
+    roofCol.setHex(ROOF_TINTS[tint]);
+
+    let u = 0;
+    for (let i = 0; i < p.length; i++) {
+      const [x1, z1] = p[i];
+      const [x2, z2] = p[(i + 1) % p.length];
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      if (len < 0.01) continue;
+      const v0 = base / STOREY, v1 = top / STOREY;
+      const u0 = u / BAY, u1 = (u + len) / BAY;
+      const s = wPos.length / 3;
+      wPos.push(x1, base, z1, x2, base, z2, x2, top, z2, x1, top, z1);
+      wUv.push(u0, v0, u1, v0, u1, v1, u0, v1);
+      for (let k = 0; k < 4; k++) wCol.push(col.r, col.g, col.b);
+      wIdx.push(s, s + 1, s + 2, s, s + 2, s + 3);
+      u += len;
+    }
+
+    const contour = p.map(([x, z]) => new THREE.Vector2(x, -z));
+    const tris = THREE.ShapeUtils.triangulateShape(contour, []);
+    const s = rPos.length / 3;
+    for (const [x, z] of p) {
+      rPos.push(x, top, z);
+      rCol.push(roofCol.r, roofCol.g, roofCol.b);
+    }
+    for (const [a, bb, c] of tris) rIdx.push(s + a, s + c, s + bb);
+  });
+
+  let walls = null, roofs = null;
+  if (wPos.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(wPos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(wUv, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(wCol, 3));
+    g.setIndex(wIdx);
+    g.computeVertexNormals();
+    walls = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true }));
+    walls.name = 'walls';
+  }
+  if (rPos.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(rPos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(rCol, 3));
+    g.setIndex(rIdx);
+    g.computeVertexNormals();
+    roofs = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    roofs.name = 'roofs';
+  }
+  return { walls, roofs };
+}
+
+// Signed area in (x, -z) space; positive = counter-clockwise.
+export function signedArea(p) {
+  let a = 0;
+  for (let i = 0; i < p.length; i++) {
+    const [x1, z1] = p[i];
+    const [x2, z2] = p[(i + 1) % p.length];
+    a += x1 * -z2 - x2 * -z1;
+  }
+  return a / 2;
+}
+
+// Elevated rail: a deck on pillars. Ground-level rail: just the track bed.
+function makeRail(rails) {
+  if (!rails.length) return null;
+  const geos = [];
+  const deckW = 9;
+  for (const r of rails) {
+    const y = r.e ? RAIL_DECK_Y : 0.08;
+    let sinceLastPillar = Infinity;
+    for (let i = 0; i < r.p.length - 1; i++) {
+      const [x1, z1] = r.p[i];
+      const [x2, z2] = r.p[i + 1];
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      if (len < 0.01) continue;
+      const deck = new THREE.BoxGeometry(len + 0.5, r.e ? 1.2 : 0.15, r.e ? deckW : 4);
+      deck.rotateY(-Math.atan2(z2 - z1, x2 - x1));
+      deck.translate((x1 + x2) / 2, y, (z1 + z2) / 2);
+      geos.push(deck);
+      if (r.e) {
+        // Pillars roughly every 30 m.
+        let d = 30 - Math.min(sinceLastPillar, 30);
+        while (d <= len) {
+          const t = d / len;
+          const px = x1 + (x2 - x1) * t, pz = z1 + (z2 - z1) * t;
+          const pillar = new THREE.CylinderGeometry(0.9, 1.1, RAIL_DECK_Y, 8);
+          pillar.translate(px, RAIL_DECK_Y / 2 - 0.6, pz);
+          geos.push(pillar);
+          d += 30;
+        }
+        sinceLastPillar = len - (d - 30);
+      }
+    }
+  }
+  if (!geos.length) return null;
+  const nonIndexed = geos.map((g) => (g.index ? g.toNonIndexed() : g));
+  const geo = mergeGeometries(nonIndexed.map((g) => {
+    g.deleteAttribute('uv');
+    return g;
+  }));
+  geos.forEach((g) => g.dispose());
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORS.rail }));
+  mesh.name = 'rail';
+  return mesh;
+}
+
+// Decorative round street trees along the edges of vehicle roads. These are
+// scenery, not map data: placed every ~14 m where nothing else is in the way.
+function makeStreetTrees(roads, collision, max) {
+  const spots = [];
+  const SPACING = 14;
+  for (const r of roads) {
+    if (r.k === 'walk' || r.k === 'service' || r.w < 6) continue;
+    const off = r.w / 2 + 1.2;
+    let carry = SPACING / 2;
+    for (let i = 0; i < r.p.length - 1 && spots.length < max; i++) {
+      const [x1, z1] = r.p[i];
+      const [x2, z2] = r.p[i + 1];
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      if (len < 0.01) continue;
+      const ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+      let d = carry;
+      for (; d < len; d += SPACING) {
+        for (const side of [1, -1]) {
+          const x = x1 + ux * d - uz * off * side;
+          const z = z1 + uz * d + ux * off * side;
+          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z)) spots.push([x, z]);
+        }
+      }
+      carry = d - len;
+    }
+  }
+  if (!spots.length) return null;
+  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0);
+  const crownGeo = new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0xa47a55 }), spots.length);
+  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), spots.length);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const sc = new THREE.Vector3();
+  const pos = new THREE.Vector3();
+  const greens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d].map((h) => new THREE.Color(h));
+  spots.forEach(([x, z], i) => {
+    const s = 0.85 + ((i * 37) % 10) / 25;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.7);
+    m.compose(pos.set(x, 0, z), q, sc.set(s, s, s));
+    trunks.setMatrixAt(i, m);
+    crowns.setMatrixAt(i, m);
+    crowns.setColorAt(i, greens[i % greens.length]);
+  });
+  trunks.name = crowns.name = 'trees';
+  trunks.castShadow = crowns.castShadow = true;
+  return [trunks, crowns];
+}
+
+function onAnyRoad(roads, x, z) {
+  for (const r of roads) {
+    const hw = r.w / 2 + 0.3;
+    for (let i = 0; i < r.p.length - 1; i++) {
+      const [x1, z1] = r.p[i];
+      const [x2, z2] = r.p[i + 1];
+      if (Math.min(x1, x2) - hw > x || Math.max(x1, x2) + hw < x) continue;
+      if (Math.min(z1, z2) - hw > z || Math.max(z1, z2) + hw < z) continue;
+      const dx = x2 - x1, dz = z2 - z1;
+      const l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2));
+      if ((x1 + t * dx - x) ** 2 + (z1 + t * dz - z) ** 2 < hw * hw) return true;
+    }
+  }
+  return false;
+}
