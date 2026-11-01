@@ -18,6 +18,7 @@ First stop: **Seongsu-dong, Seoul**.
 - 10 fictional sample stores with Korean signs and a Translate signs toggle
 - Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
 - Each store interior is its own multiplayer room (the café is the meeting spot)
+- Background music on/off (🎵), generated in the browser
 
 ## Run locally
 
@@ -58,4 +59,5 @@ register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
 
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL.
 Street trees and building colours are decorative and not part of the map data.
-Store and product data (coming in step 2) are fictional sample data.
+Store and product data are fictional sample data, not the real businesses at those locations.
+Background music is generated live in the browser (Web Audio); no audio files are used.

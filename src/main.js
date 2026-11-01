@@ -18,6 +18,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior, EXIT, ROOM } from './core/interior.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
+import { Music } from './core/music.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -450,6 +451,33 @@ $('signs-btn').onclick = () => {
   applySigns();
 };
 onLanguageChange(() => { if (signsTranslated) applySigns(); });
+
+// Background music (off by default; the choice is remembered on this device).
+const music = new Music();
+const MUSIC_KEY = 'mk.music';
+const applyMusicBtn = () => {
+  $('music-btn').setAttribute('aria-pressed', String(music.on));
+  $('music-btn').title = t(music.on ? 'hud.musicOn' : 'hud.musicOff');
+};
+$('music-btn').onclick = async () => {
+  await music.setOn(!music.on);
+  try { localStorage.setItem(MUSIC_KEY, music.on ? '1' : '0'); } catch { /* ignore */ }
+  applyMusicBtn();
+};
+applyMusicBtn();
+onLanguageChange(applyMusicBtn);
+let musicWanted = false;
+try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
+if (musicWanted) {
+  // Browsers only allow sound after a tap or key press.
+  const resume = async () => {
+    removeEventListener('pointerdown', resume);
+    removeEventListener('keydown', resume);
+    if (!music.on) { await music.setOn(true); applyMusicBtn(); }
+  };
+  addEventListener('pointerdown', resume);
+  addEventListener('keydown', resume);
+}
 
 // Guidance to a zone or store.
 let guide = null;

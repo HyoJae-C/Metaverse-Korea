@@ -356,3 +356,6 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .store-meta small { display: none; }
   .in-store .tools { top: auto; }
 }
+
+.disclaimer { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--ink-soft); max-width: 46ch; margin-inline: auto; text-align: center; }
+.map-disclaimer { margin: 6px 12px 10px; max-width: none; }

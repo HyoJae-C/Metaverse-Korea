@@ -30,6 +30,7 @@
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
         <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
         <button class="tool" id="signs-btn" aria-pressed="false"><span>🔤</span><small data-i18n="hud.signs"></small></button>
+        <button class="tool" id="music-btn" aria-pressed="false"><span>🎵</span><small data-i18n="hud.music"></small></button>
       </div>
       <div class="guide" id="guide" hidden>
         <svg class="guide-arrow" id="guide-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg>
@@ -88,6 +89,7 @@
         <div class="lang-grid" id="lang-grid"></div>
         <p class="region" id="start-region"></p>
         <button class="primary" id="next-btn" data-i18n="start.next"></button>
+        <p class="disclaimer" data-i18n="app.disclaimer"></p>
       </div>
       <div class="panel look-panel" id="step-look" hidden>
         <h2 class="look-title" data-i18n="look.title"></h2>
@@ -137,6 +139,7 @@
           <canvas class="map-canvas"></canvas>
           <div class="map-list"></div>
         </div>
+        <p class="disclaimer map-disclaimer" data-i18n="app.disclaimer"></p>
       </div>
     </div>
 
