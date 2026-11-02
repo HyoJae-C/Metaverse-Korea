@@ -121,6 +121,8 @@ export const STRINGS = {
     'hud.translate': 'Translate',
     'hud.original': 'Original',
     'hud.unnamed': 'Unnamed street',
+    'look.model': 'Character',
+    'credit.chars': 'Characters',
     'credit.map': 'Map data',
   },
   ko: {
@@ -234,6 +236,8 @@ export const STRINGS = {
     'hud.translate': '번역',
     'hud.original': '원문',
     'hud.unnamed': '이름 없는 길',
+    'look.model': '캐릭터',
+    'credit.chars': '캐릭터',
     'credit.map': '지도 데이터',
   },
   ja: {
@@ -347,6 +351,8 @@ export const STRINGS = {
     'hud.translate': '翻訳',
     'hud.original': '原文',
     'hud.unnamed': '名前のない通り',
+    'look.model': 'キャラクター',
+    'credit.chars': 'キャラクター',
     'credit.map': '地図データ',
   },
   zh: {
@@ -460,6 +466,8 @@ export const STRINGS = {
     'hud.translate': '翻译',
     'hud.original': '原文',
     'hud.unnamed': '无名街道',
+    'look.model': '角色',
+    'credit.chars': '角色',
     'credit.map': '地图数据',
   },
 };

@@ -4,8 +4,9 @@ import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { t, onLanguageChange } from './i18n.js';
 import {
-  PALETTES, SLOTS, ACCESSORIES, randomLook, sanitizeLook,
+  SLOTS, ACCESSORIES, MODELS, randomLook, sanitizeLook,
 } from '../data/appearance.js';
+import { modelEmoji } from './model-pack.js';
 
 const STORAGE_KEY = 'mk.look';
 
@@ -22,8 +23,6 @@ export function saveLook(look) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(look));
   } catch { /* ignore */ }
 }
-
-const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export function createLookEditor({ optionsEl, canvas, randomBtn }) {
   let look = loadLook();
@@ -102,23 +101,25 @@ export function createLookEditor({ optionsEl, canvas, randomBtn }) {
     for (const { el, field, value } of buttons) el.setAttribute('aria-pressed', String(look[field] === value));
   };
 
-  for (const field of ['shirt', 'pants', 'hair', 'skin']) {
+  // Body model from the pack. (The colour palettes only show on the simple
+  // fallback body now; the hair salon will bring back hair options.)
+  {
     const row = document.createElement('div');
-    row.className = 'swatches';
-    for (const [id, color] of Object.entries(PALETTES[field])) {
+    row.className = 'acc-row';
+    for (const id of MODELS) {
       const b = document.createElement('button');
-      b.className = 'swatch';
-      b.style.background = hex(color);
-      b.setAttribute('aria-label', `${field}: ${id}`);
+      b.className = 'acc';
+      b.textContent = modelEmoji(id);
+      b.setAttribute('aria-label', id);
       b.onclick = () => {
-        look = { ...look, [field]: id };
+        look = { ...look, model: id };
         refreshPressed();
         rebuild();
       };
-      buttons.push({ el: b, field, value: id });
+      buttons.push({ el: b, field: 'model', value: id });
       row.appendChild(b);
     }
-    section('look.' + field, row);
+    section('look.model', row);
   }
 
   for (const slot of SLOTS) {
