@@ -941,3 +941,14 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .book-rom { margin: 0; font-size: 13px; font-style: italic; opacity: 0.7; }
 .book-mean { margin: 0; font-size: 14px; }
 .book-num { align-self: center; font-size: 12px; font-weight: 700; }
+
+/* Food dex */
+.dex-btn { justify-self: start; margin-top: 6px; }
+.dex-summary { margin: 0; font-weight: 900; font-size: 15px; }
+.dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.dex-card { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 14px; background: #fff; text-align: center; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.12); }
+.dex-card.locked { background: #f1ece4; opacity: 0.75; }
+.dex-emoji { font-size: 26px; }
+.dex-card strong { font-size: 12px; line-height: 1.2; }
+.dex-card small { font-size: 10px; opacity: 0.7; }
+.dex-card em { font-size: 11px; font-style: normal; font-weight: 800; }

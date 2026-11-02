@@ -43,8 +43,8 @@ export class Cart {
 }
 
 export class ShopUI {
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -101,10 +101,10 @@ export class ShopUI {
     const take = !!this.store?.takeaway;
     this.$('product-take').hidden = !take;
     this.$('product-take').onclick = () => { this.onTake?.(product); this.closeProduct(); };
-    this.$('product-add').hidden = take || adopt || this.store?.category === 'restaurant';
+    this.$('product-add').hidden = take || adopt;
     this.$('product-add').onclick = () => {
       this.cart.add(this.store, product);
-      this.toast(t('shop.added'));
+      if (!this.onAdd?.(product)) this.toast(t('shop.added')); // onAdd may show its own toast
     };
   }
 

@@ -19,6 +19,8 @@ import { GymLog } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
 import { BookUI } from './ui/book-ui.js';
 import { bookById } from './core/books.js';
+import { FoodDex, isFood, allFoods } from './core/food-dex.js';
+import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -37,7 +39,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
-import { PochaUI } from './ui/pocha-ui.js';
+import { PochaUI, L } from './ui/pocha-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
@@ -743,6 +745,17 @@ let action = null; // what the action button does right now
 const STALE = { key: '\0', run() {} };
 
 const cart = new Cart();
+// Food dex: every food you buy is recorded (see core/food-dex.js).
+const foodDex = new FoodDex();
+function recordFood(store, product, quiet = false) {
+  if (!isFood(store, product)) return false;
+  const isNew = foodDex.add(store, product);
+  const all = allFoods(storeData).length;
+  if (!quiet) shop.toast(isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
+  refreshDexBtn();
+  return true;
+}
+const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑に登録！', zh: '图鉴新登记！' };
 const shop = new ShopUI({
   cart,
   onTryOn: (product) => {
@@ -751,11 +764,13 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => leaveStore(),
+  onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
   },
@@ -1740,6 +1755,11 @@ const bookUi = new BookUI({
   getPage: (id) => bookPages[id] | 0,
   setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
 });
+const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
+function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
+$('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
+refreshDexBtn();
+onLanguageChange(refreshDexBtn);
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
