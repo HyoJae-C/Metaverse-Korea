@@ -318,9 +318,12 @@ export function buildInterior(store) {
     }
     for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
     // Long reading tables with chairs on both long sides.
-    const rows = Math.max(1, Math.floor((d - 6) / 2.8));
+    // Rows 3.4 m apart so there's an aisle between one row's chair backs
+    // and the next table: you stand up into it without getting stuck.
+    const ROW = 3.4;
+    const rows = Math.max(1, Math.floor((d - 5) / ROW));
     for (let r = 0; r < rows; r++) {
-      const tz = -d / 2 + 3 + r * 2.8;
+      const tz = -d / 2 + 2.6 + r * ROW;
       const tl = Math.min(4.2, w - 4.5);
       box(tl, 0.06, 1.0, 0, 0.62, tz, '#c98b4f');
       for (const lx of [-tl / 2 + 0.2, tl / 2 - 0.2]) box(0.1, 0.62, 0.8, lx, 0.31, tz, '#8a5a3a');
@@ -333,10 +336,10 @@ export function buildInterior(store) {
           const cz = tz + 0.8 * s;
           box(0.42, 0.06, 0.42, cx, SEAT_H - 0.03, cz, store.colors.awning);
           box(0.42, 0.5, 0.08, cx, SEAT_H + 0.22, cz + 0.2 * s, store.colors.awning);
-          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.5 * s] });
+          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.35 * s] });
         }
       }
-      block(0, tz, tl + 0.2, 2.1);
+      block(0, tz, tl + 0.2, 1.2); // the table itself; chairs can be walked past
     }
     // Front desk by the door, and the sign above it.
     const cx = Math.min(3.6, sx - 2), cz = d / 2 - 2.3;
