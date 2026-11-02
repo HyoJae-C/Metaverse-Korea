@@ -8,6 +8,11 @@ import { randomLook } from '../data/appearance.js';
 import { showBubble } from './players.js';
 
 const NAMES = ['민지', '지훈', '서연', '도윤', '하은', '준서', '지아', '현우', '수빈', '예준', '다은', '시우'];
+// Revised Romanization, shown next to the Hangul in missions.
+export const NAME_ROMAN = {
+  민지: 'Minji', 지훈: 'Jihun', 서연: 'Seoyeon', 도윤: 'Doyun', 하은: 'Haeun', 준서: 'Junseo',
+  지아: 'Jia', 현우: 'Hyeonu', 수빈: 'Subin', 예준: 'Yejun', 다은: 'Daeun', 시우: 'Siu',
+};
 
 // Phrases: Korean, romanization (Revised Romanization), English.
 export const PHRASES = {

@@ -158,8 +158,11 @@ export function buildInterior(store) {
   wall(w, 0, d / 2, Math.PI);
 
   // Exit door on the front wall.
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 0.1), mat(store.colors.sign));
-  door.position.set(EXIT.x, 1.2, d / 2 - 0.05);
+  // One-sided and facing in, like the walls, so a camera behind the player
+  // (outside the front wall) looks through it instead of at a dark slab.
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
+  door.rotation.y = Math.PI;
+  door.position.set(EXIT.x, 1.2, d / 2 - 0.03);
   scene.add(door);
   const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 1).rotateX(-Math.PI / 2), mat(store.colors.awning));
   mat2.position.set(EXIT.x, 0.01, d / 2 - 0.6);

@@ -143,6 +143,34 @@
       ]
     },
     {
+      "id": "neoguri-raccoon-cafe",
+      "category": "cafe",
+      "pets": "raccoons",
+      "size": "medium",
+      "name": { "ko": "너구리네 라쿤 카페", "en": "Neoguri Raccoon Café" },
+      "tagline": { "en": "Five curious raccoons who love to explore. Watch your snacks!", "ko": "호기심 많은 라쿤 다섯 마리. 간식 조심하세요!" },
+      "anchor": { "lat": 37.54395, "lon": 127.0569 },
+      "colors": { "sign": "#5b5550", "awning": "#d9d3cc", "accent": "#f6f3ef" },
+      "products": [
+        { "id": "raccoon-mocha", "model": "cup", "color": "#7a5a45", "price": 6500, "name": { "en": "Raccoon Mocha", "ko": "라쿤 모카" }, "desc": { "en": "Chocolate mocha with a striped cream tail on top." } },
+        { "id": "hotteok", "model": "bread", "color": "#c98a4a", "price": 2500, "name": { "en": "Hotteok", "ko": "호떡" }, "desc": { "en": "Pan-fried pancake filled with brown sugar and nuts." } }
+      ]
+    },
+    {
+      "id": "big-paws-dog-cafe",
+      "category": "cafe",
+      "pets": "bigdogs",
+      "size": "large",
+      "name": { "ko": "왕발 대형견 카페", "en": "Big Paws Dog Café" },
+      "tagline": { "en": "Six big, gentle dogs and lots of room to play", "ko": "순한 대형견 여섯 마리와 넓은 놀이 공간" },
+      "anchor": { "lat": 37.5428, "lon": 127.0562 },
+      "colors": { "sign": "#3f6f4f", "awning": "#cfe8c4", "accent": "#f2f9ee" },
+      "products": [
+        { "id": "puppuccino", "model": "cup", "color": "#f3e6d0", "price": 5000, "name": { "en": "Paw Latte", "ko": "왕발 라떼" }, "desc": { "en": "Vanilla latte with a big paw print in the foam." } },
+        { "id": "dog-cookie", "model": "bread", "color": "#d9a066", "price": 3000, "name": { "en": "Bone Cookie", "ko": "뼈다귀 쿠키" }, "desc": { "en": "A bone-shaped butter cookie (for people, not dogs)." } }
+      ]
+    },
+    {
       "id": "haneul-drip",
       "category": "cafe",
       "size": "small",

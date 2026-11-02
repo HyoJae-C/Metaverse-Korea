@@ -23,6 +23,9 @@ First stop: **Seongsu-dong, Seoul**.
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 - Running uses a stamina bar that refills while you walk or rest
 - Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
+- Daily check-in (7-day row, bonus coins every 7th day) and three daily missions that change every day, the same for everyone: find a named passer-by and say hi, visit a shop, pat an animal, sit in a café, ride a bike or use emotes. "Show the way" guides you there. Progress is kept in this browser for now
+- Chat safety: a word filter that also hides links, emails and phone numbers; tap a name in the chat log to block or report someone (blocked people disappear from your screen; reports are kept on the device until there is a server to send them to); unblock everyone in Settings
+- Neoguri Raccoon Café (five raccoons) and Big Paws Dog Café (six big dogs), built like the cat café
 - Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor)
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device

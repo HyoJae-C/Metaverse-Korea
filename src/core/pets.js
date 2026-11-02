@@ -16,9 +16,11 @@ function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {
 }
 
 // A chibi animal; front is +z. Returns { root, body, head, tail, legs }.
-function makeAnimal(kind, color, accent) {
+function makeAnimal(kind, color, accent, scale = 1) {
+  if (kind === 'raccoon') return makeRaccoon(color, accent);
   const root = new THREE.Group();
   const body = new THREE.Group();
+  body.scale.setScalar(scale);
   root.add(body);
   const dog = kind === 'dog';
   part(body, sphere(0.2), color, 0, 0.26, 0, 1, 0.85, dog ? 1.45 : 1.3);
@@ -43,6 +45,43 @@ function makeAnimal(kind, color, accent) {
   body.add(tail);
   const t = part(tail, new THREE.CylinderGeometry(0.03, dog ? 0.04 : 0.025, dog ? 0.2 : 0.32, 6), dog ? color : accent, 0, 0.1, -0.03);
   t.rotation.x = -0.5;
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(0.28 * scale, 14).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
+  blob.position.y = 0.01;
+  root.add(blob);
+  return { root, body, head, tail, legs };
+}
+
+// Raccoon: grey with a black eye mask, round ears and a ringed tail.
+function makeRaccoon(color, accent) {
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+  part(body, sphere(0.2), color, 0, 0.25, 0, 1.05, 0.9, 1.3);
+  const head = new THREE.Group();
+  head.position.set(0, 0.44, 0.22);
+  body.add(head);
+  part(head, sphere(0.16), color, 0, 0, 0, 1.2, 0.95, 1);
+  part(head, sphere(0.1, 10, 8), accent, 0, -0.04, 0.1, 1.3, 0.8, 0.9); // white face
+  part(head, sphere(0.06, 10, 8), '#2b2627', 0, -0.03, 0.2, 0.9, 0.7, 0.9); // pointed snout
+  for (const s of [-1, 1]) {
+    part(head, sphere(0.06, 8, 6), color, 0.11 * s, 0.13, -0.02, 1, 1, 0.6); // round ears
+    part(head, sphere(0.055, 8, 6), '#2b2627', 0.07 * s, 0.01, 0.12, 1.5, 0.8, 0.6); // mask
+    part(head, sphere(0.022, 6, 6), '#ffffff', 0.07 * s, 0.02, 0.155); // eyes
+  }
+  part(head, sphere(0.02, 6, 6), '#111111', 0, -0.01, 0.255); // nose
+  const legs = [];
+  for (const [x, z] of [[-0.1, 0.15], [0.1, 0.15], [-0.1, -0.15], [0.1, -0.15]]) {
+    legs.push(part(body, new THREE.CylinderGeometry(0.04, 0.045, 0.17, 6), '#3a3436', x, 0.085, z));
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.3, -0.25);
+  body.add(tail);
+  for (let i = 0; i < 5; i++) { // ringed bushy tail
+    const seg = part(tail, sphere(0.065, 8, 6), i % 2 ? '#3a3436' : accent === '#ffffff' ? '#b9b4b0' : accent,
+      0, 0.02 + i * 0.05, -0.03 - i * 0.045, 1, 0.9, 1);
+    seg.scale.setScalar(1 - i * 0.06);
+  }
   const blob = new THREE.Mesh(new THREE.CircleGeometry(0.28, 14).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
@@ -64,6 +103,22 @@ const BREEDS = {
     { kind: 'dog', name: '보리', rom: 'Bori', color: '#e8c58f', accent: '#b8864f' },
     { kind: 'dog', name: '콩이', rom: 'Kongi', color: '#ffffff', accent: '#e9d9c4' },
   ],
+  // Big dogs: golden retriever, samoyed, husky, bernese, labrador, jindo.
+  bigdogs: [
+    { kind: 'dog', name: '골디', rom: 'Goldie', color: '#e2a85a', accent: '#c98a3e', scale: 1.7 },
+    { kind: 'dog', name: '설이', rom: 'Seori', color: '#f7f5f0', accent: '#e8e2d6', scale: 1.65 },
+    { kind: 'dog', name: '하늘', rom: 'Haneul', color: '#7d8590', accent: '#f2f2f2', scale: 1.7 },
+    { kind: 'dog', name: '버니', rom: 'Bernie', color: '#2b2627', accent: '#c47a45', scale: 1.8 },
+    { kind: 'dog', name: '라떼', rom: 'Latte', color: '#d9b77e', accent: '#b8955c', scale: 1.6 },
+    { kind: 'dog', name: '진돌', rom: 'Jindol', color: '#e9c48a', accent: '#fff6e6', scale: 1.6 },
+  ],
+  raccoons: [
+    { kind: 'raccoon', name: '너구리', rom: 'Neoguri', color: '#8f8a88', accent: '#ffffff' },
+    { kind: 'raccoon', name: '라쿠', rom: 'Raku', color: '#7a7471', accent: '#f4efe9' },
+    { kind: 'raccoon', name: '보송이', rom: 'Bosong', color: '#9d9794', accent: '#ffffff' },
+    { kind: 'raccoon', name: '꼬리', rom: 'Kkori', color: '#857f7c', accent: '#efe9e2' },
+    { kind: 'raccoon', name: '밤톨', rom: 'Bamtol', color: '#8a7f78', accent: '#f7f1ea' },
+  ],
 };
 
 export class Pets {
@@ -71,8 +126,10 @@ export class Pets {
   constructor(scene, room, blocked, kind = 'cats', count = 6) {
     this.room = room;
     this.blocked = blocked;
-    this.list = (BREEDS[kind] || BREEDS.cats).slice(0, count).map((b) => {
-      const a = makeAnimal(b.kind, b.color, b.accent);
+    const breeds = BREEDS[kind] || BREEDS.cats;
+    this.radius = 0.35 * Math.max(...breeds.map((b) => b.scale || 1));
+    this.list = breeds.slice(0, count).map((b) => {
+      const a = makeAnimal(b.kind, b.color, b.accent, b.scale);
       const [x, z] = this._freeSpot();
       a.root.position.set(x, 0, z);
       a.root.rotation.y = Math.random() * Math.PI * 2;
@@ -85,7 +142,7 @@ export class Pets {
     const { w, d } = this.room;
     for (let i = 0; i < 40; i++) {
       const x = (Math.random() - 0.5) * (w - 2), z = (Math.random() - 0.5) * (d - 3);
-      if (!this.blocked(x, z, 0.35)) return [x, z];
+      if (!this.blocked(x, z, this.radius)) return [x, z];
     }
     return [0, 0];
   }
@@ -93,7 +150,7 @@ export class Pets {
   // Korean name in Korean, romanized (with the Hangul) elsewhere: a tiny Korean lesson.
   static label(p) { return getLanguage() === 'ko' ? p.name : `${p.rom} (${p.name})`; }
 
-  nearest(x, z, max = 1.6) {
+  nearest(x, z, max = 1.6 + this.radius) {
     let best = null, bd = max;
     for (const p of this.list) {
       const d = Math.hypot(p.root.position.x - x, p.root.position.z - z);
@@ -140,9 +197,9 @@ export class Pets {
         const d = Math.hypot(dx, dz);
         if (d < 0.25 || p.t <= 0) p.t = 0;
         else {
-          const sp = (p.kind === 'dog' ? 1.3 : 0.9) * dt;
+          const sp = (p.kind === 'dog' ? 1.3 : p.kind === 'raccoon' ? 1.1 : 0.9) * dt;
           const nx = r.position.x + (dx / d) * sp, nz = r.position.z + (dz / d) * sp;
-          if (this.blocked(nx, nz, 0.3)) p.t = 0; // bumped into furniture: do something else
+          if (this.blocked(nx, nz, this.radius * 0.85)) p.t = 0; // bumped into furniture: do something else
           else { r.position.x = nx; r.position.z = nz; moving = true; }
           turn(r, Math.atan2(dx, dz), dt);
         }

@@ -16,9 +16,51 @@ const cache = new Map();
 function load(id) {
   if (!cache.has(id)) {
     // A failed load resolves to null and the character keeps its chibi body.
-    cache.set(id, loader.loadAsync(BASE + PACK.models[id].url).catch(() => null));
+    const def = PACK.models[id];
+    cache.set(id, loader.loadAsync(BASE + def.url)
+      .then((g) => { if (def.recolor) recolor(g, def.recolor); return g; })
+      .catch(() => null));
   }
   return cache.get(id);
+}
+
+// Repaints one colour family in the model's texture atlas, e.g. the hooded
+// rogue's green outfit to black for the ninja. Runs once per loaded model.
+// rule: { hue: [from, to] degrees, sat: min saturation, to: '#rrggbb' }
+function recolor(gltf, rule) {
+  gltf.scene.traverse((o) => {
+    const mat = o.material;
+    if (!o.isMesh || !mat?.map?.image || mat.userData.recolored) return;
+    const img = mat.map.image;
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0);
+    const data = g.getImageData(0, 0, c.width, c.height);
+    const px = data.data;
+    const target = new THREE.Color(rule.to);
+    const hsl = {};
+    const col = new THREE.Color();
+    for (let i = 0; i < px.length; i += 4) {
+      col.setRGB(px[i] / 255, px[i + 1] / 255, px[i + 2] / 255);
+      col.getHSL(hsl);
+      const h = hsl.h * 360;
+      if (h < rule.hue[0] || h > rule.hue[1] || hsl.s < rule.sat) continue;
+      const k = 0.55 + hsl.l * 0.9; // keep the atlas's light-to-dark gradient
+      px[i] = Math.min(255, target.r * 255 * k);
+      px[i + 1] = Math.min(255, target.g * 255 * k);
+      px[i + 2] = Math.min(255, target.b * 255 * k);
+    }
+    g.putImageData(data, 0, 0);
+    const tex = new THREE.CanvasTexture(c);
+    tex.flipY = mat.map.flipY;
+    tex.colorSpace = mat.map.colorSpace;
+    tex.magFilter = mat.map.magFilter;
+    tex.minFilter = mat.map.minFilter;
+    mat.map = tex;
+    mat.userData.recolored = true;
+    mat.needsUpdate = true;
+  });
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
