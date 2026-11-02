@@ -26,6 +26,9 @@ test('the fine costs more than a pet, and poops are spaced out', () => {
 test('dogs and cats are for sale; chinchilla, guinea pig and monkey come from a code', async () => {
   for (const id of ['pet-maltese', 'pet-shiba', 'pet-cheesecat', 'pet-bluecat']) assert.ok(isPet(id) && ITEMS[id].price > 0, id);
   for (const id of ['pet-chinchilla', 'pet-guineapig', 'pet-monkey']) assert.ok(isPet(id) && !ITEMS[id].price, id);
-  assert.deepEqual(await redeemCode('seongsu-pets-2026'), ['pet-chinchilla', 'pet-guineapig', 'pet-monkey']);
+  assert.deepEqual(await redeemCode('seongsu-chinchilla-2026'), ['pet-chinchilla']);
+  assert.deepEqual(await redeemCode('seongsu-guineapig-2026'), ['pet-guineapig']);
+  assert.deepEqual(await redeemCode('seongsu-monkey-2026'), ['pet-monkey']);
+  assert.equal(await redeemCode('seongsu-pets-2026'), null);
   for (const it of Object.values(ITEMS)) if (it.pet) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(it.name[l] && it.desc[l]);
 });

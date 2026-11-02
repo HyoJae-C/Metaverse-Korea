@@ -72,7 +72,10 @@ export class Inventory {
 const CODES = {
   f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10: Object.keys(ITEMS), // master: every item
   '378fc355ed89c5e4b9ba305012dea3f4c739e2fbcd5accdbf6a19bfb53f3ac52': ['car'],
-  b68299663473b1349b0978241206b572376cb45f2aa940ef71539c0cb97c9c22: ['pet-chinchilla', 'pet-guineapig', 'pet-monkey'], // pets not sold yet
+  // Pets not sold yet: one code each.
+  '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
+  bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
+  '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
 };
 
 async function sha256(text) {
