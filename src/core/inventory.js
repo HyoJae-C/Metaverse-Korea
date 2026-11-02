@@ -14,6 +14,17 @@ function pets(defs) {
   return out;
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
+const TEE_DESC = {
+  en: 'A prize from the claw machine. Tap Wear to put it on.',
+  ko: '인형뽑기 경품이에요. "입기"를 누르면 입어요.',
+  ja: 'クレーンゲームの景品。「着る」で着られます。',
+  zh: '抓娃娃机的奖品。点“穿上”即可穿上。',
+};
+function tees(defs) {
+  const out = {};
+  for (const [id, [emoji, tee, name]] of Object.entries(defs)) out[id] = { emoji, tee, name, desc: TEE_DESC };
+  return out;
+}
 
 export const ITEMS = {
   tandem: {
@@ -48,6 +59,12 @@ export const ITEMS = {
       zh: '一只一脸闷闷不乐的毛茸茸小家伙。点“穿上”即可穿上。',
     },
   },
+  // Claw machine prizes (core/claw-game.js).
+  ...tees({
+    'tee-mongle': ['☁️', 'mongle', { en: 'Mongle cloud-sheep tee', ko: '몽글이 티셔츠', ja: 'モングルTシャツ', zh: '云朵羊T恤' }],
+    'tee-mandu': ['🥟', 'mandu', { en: 'Mandu dumpling tee', ko: '만두 티셔츠', ja: 'マンドゥTシャツ', zh: '饺子T恤' }],
+    'tee-ddeok': ['🍡', 'ddeok', { en: 'Rice-cake skewer tee', ko: '떡꼬치 티셔츠', ja: '餅串Tシャツ', zh: '年糕串T恤' }],
+  }),
   // Pets: adopted at the pet shop for coins (price), or by code only (no price).
   ...pets({
     'pet-maltese': [30, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],

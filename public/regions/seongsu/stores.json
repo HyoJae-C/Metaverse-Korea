@@ -354,6 +354,38 @@
       "anchor": { "lat": 37.5441, "lon": 127.0561 },
       "colors": { "sign": "#7b3fe4", "awning": "#f7d6ff", "accent": "#fbf6ff" },
       "products": []
+    },
+    {
+      "id": "sinjeon-pocha", "category": "restaurant", "workshop": "pocha", "size": "medium",
+      "name": { "ko": "신당 떡볶이 포차", "en": "Sindang Tteokbokki Stall", "ja": "シンダン トッポッキ屋台", "zh": "新堂炒年糕小摊" },
+      "tagline": { "en": "Take orders in Korean, cook them, deliver by bike", "ko": "한국어 주문 받고 만들고, 따릉이로 배달까지", "ja": "韓国語で注文を受けて作って、自転車で配達", "zh": "用韩语接单、做菜，还能骑车送外卖" },
+      "anchor": { "lat": 37.5424, "lon": 127.0569 },
+      "colors": { "sign": "#d8452f", "awning": "#ffb199", "accent": "#fff1ec" },
+      "products": []
+    },
+    {
+      "id": "star-noraebang", "category": "play", "workshop": "karaoke", "size": "medium",
+      "name": { "ko": "스타 코인노래방", "en": "Star Coin Noraebang", "ja": "スター コインカラオケ", "zh": "星星投币KTV" },
+      "tagline": { "en": "Tap to the beat and beat the room's high score", "ko": "박자 맞춰 탭하고 방 최고 점수에 도전", "ja": "リズムに合わせてタップ、部屋のハイスコアに挑戦", "zh": "跟着节拍点击，挑战房间最高分" },
+      "anchor": { "lat": 37.5449, "lon": 127.0576 },
+      "colors": { "sign": "#3b2a8f", "awning": "#c9b8ff", "accent": "#f4f0ff" },
+      "products": []
+    },
+    {
+      "id": "nemo-photo", "category": "play", "workshop": "photo", "size": "small",
+      "name": { "ko": "네모 포토부스", "en": "Nemo Photo Booth", "ja": "ネモ フォトブース", "zh": "方块照相馆" },
+      "tagline": { "en": "Four-cut photo strips with your friends", "ko": "친구들과 인생네컷", "ja": "友だちと4カット写真", "zh": "和朋友拍四格照" },
+      "anchor": { "lat": 37.5445, "lon": 127.0544 },
+      "colors": { "sign": "#2b2630", "awning": "#ffd6e5", "accent": "#fff7fa" },
+      "products": []
+    },
+    {
+      "id": "lucky-claw", "category": "play", "workshop": "claw", "size": "small",
+      "name": { "ko": "럭키 인형뽑기", "en": "Lucky Claw Machines", "ja": "ラッキー クレーンゲーム", "zh": "幸运抓娃娃" },
+      "tagline": { "en": "Win printed tees and coin pouches", "ko": "티셔츠와 코인 주머니를 뽑아요", "ja": "TシャツやコインをGET", "zh": "抓T恤和钱袋" },
+      "anchor": { "lat": 37.5433, "lon": 127.0584 },
+      "colors": { "sign": "#e2457a", "awning": "#ffd0e0", "accent": "#fff3f7" },
+      "products": []
     }
   ]
 }

@@ -11,7 +11,7 @@
 import { PACK } from './characters/index.js';
 
 // Printed T-shirts (drawn in core/tee-prints.js).
-export const TEE_IDS = ['simurugi'];
+export const TEE_IDS = ['simurugi', 'mongle', 'mandu', 'ddeok'];
 
 // Body models from the active model pack (src/data/characters).
 export const MODELS = Object.keys(PACK.models);

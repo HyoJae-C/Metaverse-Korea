@@ -128,8 +128,20 @@ export function buildPark(store, ROOM, EXIT) {
     sign2.rotation.y = 0.2;
   }
 
+  // Duck boats (오리배) moored to the right of the pier, with a ticket sign.
+  const duck = { x: 11, z: bank + 0.9 };
+  for (let i = 0; i < 3; i++) {
+    const bx = 9 + i * 2.4, bz = bank - 1.6;
+    box(1.6, 0.4, 1.1, bx, 0.05, bz, '#fffaf0'); // hull
+    box(0.5, 0.8, 0.5, bx - 0.4, 0.55, bz, '#ffd166'); // the duck's neck and head
+    box(0.3, 0.12, 0.2, bx - 0.75, 0.85, bz, '#f08a2c'); // beak
+    box(1.0, 0.08, 1.0, bx + 0.25, 1.15, bz, ['#ff9bb3', '#86b8f0', '#a6d97a'][i]); // roof
+  }
+  const sign3 = box(0.9, 0.5, 0.05, duck.x + 1.2, 1.2, duck.z + 0.2, '#ffd166');
+  sign3.rotation.y = -0.2;
+
   return {
     scene, products: [], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, ramen, river, park: true,
+    fishing, ramen, river, duck, park: true,
   };
 }
