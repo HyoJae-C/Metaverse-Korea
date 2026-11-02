@@ -9,6 +9,9 @@ import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIU
 import { Billboard } from './core/billboard.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { styleNameTag, EmblemCollection } from './core/emblems.js';
+import { EmblemUI } from './ui/emblem-ui.js';
+import { InfoUI, showInfoHint } from './ui/info-ui.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -321,7 +324,7 @@ const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
-myTag.textContent = nickname;
+styleNameTag(myTag, nickname, myLook);
 $('labels').appendChild(myTag);
 const myLabel = { tag: myTag, bubble: null };
 
@@ -855,6 +858,7 @@ if (held) setHeld(held);
 
 function setLook(look) {
   currentLook = look;
+  styleNameTag(myTag, nickname, look);
   const old = me.root;
   me = createCharacter(look);
   me.root.position.copy(old.position);
@@ -1083,7 +1087,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1629,6 +1633,43 @@ const clawUi = new ClawUI({
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
+// Name tag studio: emblems and name colours (a place to spend coins).
+const emblems = new EmblemCollection();
+const emblemUi = new EmblemUI({
+  root: $('emblem-panel'),
+  owned: emblems,
+  wallet,
+  name: nickname,
+  getLook: () => myLook,
+  wearLook: (patch) => {
+    myLook = { ...myLook, ...patch };
+    for (const k of Object.keys(patch)) if (patch[k] == null) delete myLook[k];
+    saveLook(myLook);
+    setLook(myLook);
+    me.play('cheer');
+  },
+});
+// Information Center, and route guides to the places it lists.
+function guideToPlace(to) {
+  if (to.store) {
+    const it = storefronts.get(to.store);
+    if (!it) return false;
+    if (interior) leaveStore();
+    setGuide({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+    return true;
+  }
+  const z = zones.items.find((i) => i.zone.id === to.zone);
+  if (!z) return false;
+  if (interior) leaveStore();
+  setGuide({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: localName(z.zone.name, getLanguage()) });
+  return true;
+}
+const infoUi = new InfoUI({ root: $('info-panel'), guide: guideToPlace });
+// The first-time hint waits until the daily check-in card is closed.
+setTimeout(function infoHintWhenFree() {
+  if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
+  showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
+}, 2500); // after the daily card would have opened (1.2 s)
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2115,6 +2156,10 @@ function updateAction(p, tSec) {
       next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
+    } else if (interior.store.workshop === 'emblem' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'emblem', label: '🏷️ ' + t('emblem.open'), run: () => { clerk.ch.wave(); emblemUi.show(); } };
+    } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {

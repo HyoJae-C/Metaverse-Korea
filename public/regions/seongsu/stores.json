@@ -410,6 +410,20 @@
         {"id": "maesil-tea", "model": "cup", "color": "#c9b44a", "price": 6000, "name": {"en": "Maesil tea", "ko": "매실차", "ja": "梅茶", "zh": "梅子茶"}, "desc": {"en": "Green plum tea, sweet and a little sour.", "ko": "새콤달콤한 매실차예요."}},
         {"id": "injeolmi", "model": "bread", "color": "#e0c27a", "price": 4000, "name": {"en": "Injeolmi", "ko": "인절미", "ja": "インジョルミ", "zh": "打糕"}, "desc": {"en": "Chewy rice cake rolled in roasted soybean powder.", "ko": "고소한 콩고물을 묻힌 쫄깃한 떡이에요."}}
       ]
+    },
+    {
+      "id": "info-center", "category": "info", "workshop": "info", "size": "small", "at": [21, 23],
+      "name": {"en": "Information Center", "ko": "인포메이션 센터", "ja": "インフォメーションセンター", "zh": "信息中心"},
+      "tagline": {"en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去"},
+      "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"},
+      "products": []
+    },
+    {
+      "id": "name-studio", "category": "workshop", "workshop": "emblem", "size": "small", "anchor": {"lat": 37.5447, "lon": 127.0555},
+      "name": {"en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊"},
+      "tagline": {"en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色"},
+      "colors": {"sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff"},
+      "products": []
     }
   ]
 }
