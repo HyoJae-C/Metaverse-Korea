@@ -2,7 +2,7 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️' };
+export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢' };
 
 export class MapView {
   constructor({ root, map, zones, stores, getPlayers, onGuide }) {

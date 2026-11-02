@@ -602,3 +602,44 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .top-right .online { padding: 6px 9px; font-size: 12px; }
   .street-card { max-width: 168px; }
 }
+
+/* Ordering practice (restaurants) */
+.order-panel { display: grid; gap: 10px; max-height: min(74vh, 620px); overflow-y: auto; background: #fffaf2; z-index: 6; }
+/* Keep the main buttons in view while the panel scrolls. */
+.order-panel > .order-actions { position: sticky; bottom: -18px; margin: 0 -18px -18px; padding: 10px 18px 18px; background: #fffaf2; }
+.order-panel h3 { margin: 0; padding-right: 36px; font-size: 18px; }
+.order-panel .fine { margin: 0; }
+.order-missions { display: grid; gap: 8px; }
+.order-mission, .order-answer {
+  display: flex; gap: 10px; align-items: center; text-align: left; width: 100%; min-height: 44px;
+  padding: 10px 12px; border-radius: 14px; background: #fff; border: 2px solid transparent; font: inherit; color: var(--ink);
+}
+.order-mission.done { background: #eef8ef; }
+.order-mission-icon { font-size: 22px; flex: none; }
+.order-stamps, .order-stamp { margin: 0; font-weight: 800; }
+.order-card { display: flex; gap: 10px; align-items: center; background: #fff4e0; border-radius: 14px; padding: 10px 12px; }
+.order-line { display: grid; gap: 2px; background: #fff; border-radius: 14px; padding: 10px 12px; }
+.order-line.clerk { border-left: 4px solid #d8452f; }
+.order-ko { display: flex; gap: 8px; align-items: center; font-size: 18px; font-weight: 800; }
+.order-speak { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #fff4e0; font-size: 16px; }
+.order-rom { color: var(--ink-soft); font-style: italic; }
+.order-tr { color: var(--ink-soft); }
+.order-hint { margin: 0; padding: 8px 12px; border-radius: 12px; background: #fff1c9; color: #6b5214; font-size: 14px; }
+.order-label { font-weight: 800; color: var(--ink-soft); }
+.order-sentence { display: flex; flex-wrap: wrap; gap: 6px; min-height: 48px; padding: 6px; border-radius: 14px; border: 2px dashed #e3c9a0; background: #fffdf8; align-items: center; }
+.order-placeholder { color: var(--ink-soft); font-size: 13px; padding: 0 6px; }
+.order-pool { display: flex; flex-wrap: wrap; gap: 6px; }
+.order-block {
+  display: grid; gap: 1px; justify-items: center; min-height: 44px; min-width: 44px; padding: 5px 9px;
+  border-radius: 12px; background: #fff; border: 2px solid #f0d9b5; font: inherit; font-weight: 800; color: var(--ink);
+}
+.order-block small { font-weight: 600; font-size: 11px; color: var(--ink-soft); }
+.order-block.on { background: #ffd166; border-color: #e6b13c; }
+.order-block.used { opacity: 0.35; }
+.order-answers { display: grid; gap: 8px; }
+.order-answer { display: grid; gap: 2px; }
+.order-answer small { color: var(--ink-soft); }
+.order-practice { display: grid; gap: 8px; }
+.order-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.order-actions .primary { width: auto; margin: 0; padding: 10px 18px; }
+@media (max-height: 700px) { .order-panel { max-height: 64vh; padding: 14px; } .order-panel > .order-actions { bottom: -14px; margin: 0 -14px -14px; padding: 8px 14px 14px; } }

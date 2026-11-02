@@ -74,11 +74,16 @@ export class RemotePlayers {
     for (const el of [p.tag, p.bubble]) if (el) el.style.display = 'none';
   }
   nameOf(id) { return this.players.get(id)?.name ?? null; }
+  // Where another player is right now (x, z), or null.
+  positionOf(id) {
+    const p = this.players.get(id);
+    return p ? p.ch.root.position : null;
+  }
 
-  chat(id, text) {
+  chat(id, text, ms = 6000) {
     const p = this.players.get(id);
     if (!p || p.hidden) return null;
-    showBubble(p, this.layer, text, 6000, 'chat');
+    showBubble(p, this.layer, text, ms, 'chat');
     return p.name;
   }
 

@@ -43,6 +43,14 @@ try {
   await b.fill('#chat-input', 'hello from B');
   await b.press('#chat-input', 'Enter');
   await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 5000 });
+  // On the street, chat from someone more than 10 m away is not shown.
+  const [ax0, az0] = await a.evaluate(() => __mk.me());
+  await b.evaluate(([x, z]) => __mk.goto(x + 25, z), [ax0, az0]);
+  await b.waitForTimeout(1500);
+  await b.fill('#chat-input', 'too far to hear');
+  await b.press('#chat-input', 'Enter');
+  await a.waitForTimeout(2500);
+  if (await a.evaluate(() => document.querySelector('#chat-log')?.textContent.includes('too far to hear'))) throw new Error('street chat from 25 m away was shown');
   await b.press('#chat-input', 'Escape');
   // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
   const [ax, az] = await a.evaluate(() => __mk.me());

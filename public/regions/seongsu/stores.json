@@ -4,6 +4,23 @@
   "currency": "KRW",
   "stores": [
     {
+      "id": "ddeok-bunsik",
+      "category": "restaurant",
+      "workshop": "order",
+      "orderMenu": "bunsik",
+      "size": "small",
+      "name": { "ko": "떡잎 분식", "en": "Ddeokip Bunsik" },
+      "tagline": { "en": "Korean snack bar: practise ordering in Korean", "ko": "분식집에서 한국어로 주문 연습하기" },
+      "anchor": { "lat": 37.5434, "lon": 127.0541 },
+      "colors": { "sign": "#d8452f", "awning": "#ffd166", "accent": "#fff4e0" },
+      "products": [
+        { "id": "tteokbokki", "model": "bowl", "color": "#e0452b", "price": 5000, "name": { "en": "Tteokbokki", "ko": "떡볶이", "ja": "トッポッキ", "zh": "炒年糕" }, "desc": { "en": "Chewy rice cakes in a sweet and spicy red sauce. Ask for 안 맵게 (not spicy) if you like it mild." } },
+        { "id": "gimbap", "model": "roll", "color": "#2e3b2a", "price": 4000, "name": { "en": "Gimbap", "ko": "김밥", "ja": "キンパ", "zh": "紫菜包饭" }, "desc": { "en": "Rice and vegetables rolled in seaweed and sliced. Counted in rolls: 한 줄, 두 줄." } },
+        { "id": "sundae", "model": "bowl", "color": "#4a3038", "price": 5000, "name": { "en": "Sundae", "ko": "순대", "ja": "スンデ", "zh": "血肠" }, "desc": { "en": "Korean blood sausage with glass noodles, often served with liver and lung. Say 내장 빼고 to skip them." } },
+        { "id": "twigim", "model": "bread", "color": "#e8b04a", "price": 3000, "name": { "en": "Twigim (fried snacks)", "ko": "튀김", "ja": "天ぷら", "zh": "炸物" }, "desc": { "en": "Fried vegetables, squid and seaweed rolls. Great dipped in tteokbokki sauce." } }
+      ]
+    },
+    {
       "id": "ongi-cafe",
       "category": "cafe",
       "size": "large",

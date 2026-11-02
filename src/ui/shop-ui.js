@@ -4,7 +4,7 @@ import { t, localName, getLanguage } from '../core/i18n.js';
 const MODEL_ICON = {
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
-  cup: '🥤', scarf: '🧣',
+  cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙',
 };
 const CART_KEY = 'mk.cart';
 
@@ -85,6 +85,8 @@ export class ShopUI {
     const tryBtn = this.$('product-try');
     tryBtn.hidden = !product.tryOn;
     tryBtn.onclick = () => this.onTryOn(product);
+    // Restaurant dishes are a menu to read, not something to buy.
+    this.$('product-add').hidden = this.store?.category === 'restaurant';
     this.$('product-add').onclick = () => {
       this.cart.add(this.store, product);
       this.toast(t('shop.added'));
