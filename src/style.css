@@ -795,3 +795,11 @@ a.setting-row { text-decoration: none; color: inherit; }
 .ramen-meter.cook i { background: linear-gradient(90deg, #ffd166, #c98a4a); }
 .ramen-clock { margin: 0; text-align: center; font-weight: 800; font-size: 18px; }
 .ramen-steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+
+/* Hair salon and clinic */
+.beauty-sec { display: grid; gap: 6px; }
+.beauty-sec strong { font-size: 13px; }
+.beauty-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.beauty-opt { min-width: 34px; height: 34px; padding: 0 10px; border-radius: 17px; background: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset; }
+.beauty-opt.swatch { width: 34px; padding: 0; }
+.beauty-opt[aria-pressed="true"] { box-shadow: 0 0 0 3px #ff8a65; }

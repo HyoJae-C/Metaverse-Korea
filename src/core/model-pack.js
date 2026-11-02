@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
+import { PALETTES } from '../data/appearance.js';
 
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
@@ -63,6 +64,53 @@ function recolor(gltf, rule) {
   });
 }
 
+// Hair dye, eye colour and skin tone (hair salon, clinic): a copy of the
+// model's material whose atlas has those cells repainted, keeping each cell's
+// light-to-dark shading. One copy per model and combination, shared.
+const SMALL_HEAD = 0.88;
+const dyed = new Map();
+function dyedMaterial(id, src, look) {
+  const A = PACK.atlas;
+  const paint = [['hair', PALETTES.dye[look.dye]], ['eyes', PALETTES.eyes[look.eyes]], ['skin', PALETTES.skin[look.tone]]]
+    .filter(([cell, c]) => A?.[cell] && c != null);
+  if (!paint.length) return null;
+  const key = [id, look.dye, look.eyes, look.tone].join('|');
+  if (dyed.has(key)) return dyed.get(key);
+  let base = null;
+  src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
+  if (!base) return null;
+  const img = base.map.image;
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const cw = c.width / A.cols, ch = c.height / A.rows;
+  const col = new THREE.Color(), hsl = {}, target = new THREE.Color();
+  for (const [cell, hex] of paint) {
+    const [cx, cy] = A[cell];
+    const data = g.getImageData(cx * cw, cy * ch, cw, ch);
+    const px = data.data;
+    let mean = 0;
+    for (let i = 0; i < px.length; i += 4) { col.setRGB(px[i] / 255, px[i + 1] / 255, px[i + 2] / 255); mean += col.getHSL(hsl).l; }
+    mean /= px.length / 4;
+    target.set(hex);
+    for (let i = 0; i < px.length; i += 4) {
+      col.setRGB(px[i] / 255, px[i + 1] / 255, px[i + 2] / 255);
+      const k = Math.min(1.3, Math.max(0.55, 1 + (col.getHSL(hsl).l - mean) * 1.4));
+      px[i] = Math.min(255, target.r * 255 * k);
+      px[i + 1] = Math.min(255, target.g * 255 * k);
+      px[i + 2] = Math.min(255, target.b * 255 * k);
+    }
+    g.putImageData(data, cx * cw, cy * ch);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  for (const k of ['flipY', 'colorSpace', 'magFilter', 'minFilter', 'wrapS', 'wrapT']) tex[k] = base.map[k];
+  const m = base.clone();
+  m.map = tex;
+  dyed.set(key, m);
+  return m;
+}
+
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
 // group's origin. Accessories were made for those proportions.
 const CHIBI_HEAD_W = 0.65, CHIBI_HEAD_D = 0.62;
@@ -78,8 +126,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const m = SkeletonUtils.clone(src.scene);
   m.scale.setScalar(PACK.scale);
   let headMesh = null, bodyMesh = null;
+  const dyeMat = dyedMaterial(id, src, look);
   m.traverse((o) => {
     if (!o.isMesh) return;
+    if (dyeMat) o.material = dyeMat;
     if (PACK.hide.test(o.name)) { o.visible = false; return; }
     o.castShadow = true;
     if (/head/i.test(o.name)) headMesh = o;
@@ -118,6 +168,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   body.visible = false;
   root.add(m);
+  const headScale = look.small ? SMALL_HEAD : 1;
 
   const mixer = new THREE.AnimationMixer(m);
   const actions = {};
@@ -169,6 +220,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       mixer.update(dt);
+      if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
     },
   };
 }

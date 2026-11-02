@@ -398,6 +398,57 @@ export function buildInterior(store) {
       scene.add(pane);
     }
   } else {
+    if (store.workshop === 'salon' || store.workshop === 'clinic') {
+      // Mirrors on the back wall with a chair in front of each (salon), or
+      // mirrors with a white treatment bed and a waiting sofa (clinic).
+      const n = Math.max(2, Math.min(4, Math.floor((w - 3) / 2.6)));
+      for (let i = 0; i < n; i++) {
+        const mx = (i - (n - 1) / 2) * 2.6, mz = -d / 2 + 0.25;
+        box(1.1, 1.5, 0.06, mx, 1.6, mz, '#e9eef2');
+        const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.35), new THREE.MeshBasicMaterial({ color: '#cfe6f2' }));
+        glass.position.set(mx, 1.6, mz + 0.04);
+        scene.add(glass);
+        box(1.3, 0.08, 0.4, mx, 0.8, mz + 0.3, '#fffaf0'); // shelf
+        if (store.workshop === 'salon') {
+          box(0.18, 0.12, 0.08, mx - 0.35, 0.9, mz + 0.3, '#f29bb6'); // dye bottles
+          box(0.08, 0.2, 0.08, mx + 0.3, 0.94, mz + 0.3, '#4f7fd6');
+          const cz = mz + 1.3;
+          box(0.6, 0.12, 0.6, mx, SEAT_H, cz, '#2b2b2e');
+          box(0.6, 0.6, 0.1, mx, SEAT_H + 0.35, cz + 0.28, '#2b2b2e');
+          box(0.12, SEAT_H, 0.12, mx, SEAT_H / 2, cz, '#9ca9af');
+          seats.push({ x: mx, z: cz, ry: Math.PI, stand: [mx, cz + 1] });
+          block(mx, cz, 0.7, 0.7);
+        } else {
+          box(0.7, 0.55, 1.9, mx, 0.28, mz + 1.6, '#f6f8fa'); // treatment bed
+          box(0.6, 0.1, 0.4, mx, 0.6, mz + 0.85, '#ffffff'); // pillow
+          block(mx, mz + 1.6, 0.8, 2);
+        }
+        block(mx, mz + 0.3, 1.3, 0.5);
+      }
+      if (store.workshop === 'clinic') { // waiting sofa
+        const fx = -w / 2 + 1.2, fz = d / 2 - 3.2;
+        box(0.8, 0.42, 2.2, fx, 0.21, fz, store.colors.awning);
+        box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
+        for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
+        block(fx, fz, 0.9, 2.3);
+      }
+    } else if (store.workshop === 'fishmarket') {
+      // Ice tables with fish on them.
+      const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];
+      for (const tx of [-w / 4, w / 4]) {
+        const tz = -d / 6;
+        box(2.6, 0.85, 1.2, tx, 0.42, tz, '#4f86b0');
+        box(2.5, 0.08, 1.1, tx, 0.88, tz, '#eef7fb'); // ice
+        for (let i = 0; i < 6; i++) {
+          const f = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), mat(fish[i % fish.length]));
+          f.scale.set(2.4, 0.6, 0.9);
+          f.position.set(tx - 0.95 + (i % 3) * 0.95, 0.96, tz - 0.25 + Math.floor(i / 3) * 0.5);
+          f.rotation.y = 0.3 * (i % 2 ? 1 : -1);
+          scene.add(f);
+        }
+        block(tx, tz, 2.7, 1.3);
+      }
+    }
     const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
     box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0'); // counter
     box(0.35, 0.25, 0.25, cx + 0.4, 1.12, cz, '#4a3f35'); // till

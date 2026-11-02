@@ -3,6 +3,8 @@
 //
 // A "look" is what gets saved and sent to other players:
 //   { shirt, pants, hair, skin, head, face, neck, back }
+// plus hatColor/hatPatch (hat workshop), dye (hair salon), and eyes, tone and
+// small (clinic: eye colour, skin tone, a smaller head).
 // colours are palette ids, accessories are ids or null. One accessory per
 // slot, so at most four at once.
 
@@ -26,6 +28,14 @@ export const PALETTES = {
   },
   skin: {
     light: 0xffe6d2, fair: 0xffd9bd, warm: 0xe8b48f, tan: 0xc98e66, deep: 0x8d5b3f,
+  },
+  // Hair salon dyes and clinic options (null = the model's own colours).
+  dye: {
+    black: 0x1f1b1a, brown: 0x6b4026, ash: 0x8a8580, blonde: 0xe8c27a, pink: 0xf29bb6,
+    red: 0xc8463c, blue: 0x4f7fd6, purple: 0x8a5cc9, mint: 0x6fcdb8, silver: 0xd6d9de,
+  },
+  eyes: {
+    black: 0x1c1c22, brown: 0x7a4a2e, gray: 0x8c97a3, blue: 0x3f7fd0, green: 0x4a9a5c, violet: 0x8a5cc9,
   },
   // Hat colours from the hat workshop.
   hat: {
@@ -68,6 +78,8 @@ export const DEFAULT_LOOK = {
   shirt: 'coral', pants: 'denim', hair: 'espresso', skin: 'fair',
   head: null, face: null, neck: null, back: null,
   hatColor: null, hatPatch: null, // set in the hat workshop
+  dye: null, // hair salon
+  eyes: null, tone: null, small: false, // clinic
 };
 
 const pick = (obj) => {
@@ -101,6 +113,10 @@ export function sanitizeLook(raw) {
   }
   if (typeof raw.hatColor === 'string' && Object.hasOwn(PALETTES.hat, raw.hatColor)) look.hatColor = raw.hatColor;
   if (typeof raw.hatPatch === 'string' && Object.hasOwn(PATCHES, raw.hatPatch)) look.hatPatch = raw.hatPatch;
+  if (typeof raw.dye === 'string' && Object.hasOwn(PALETTES.dye, raw.dye)) look.dye = raw.dye;
+  if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
+  if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
+  if (raw.small === true) look.small = true;
   return look;
 }
 
