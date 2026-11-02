@@ -441,6 +441,13 @@
       "tagline": {"en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快"},
       "colors": {"sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb"},
       "products": []
+    },
+    {
+      "id": "haneul-land", "category": "play", "workshop": "themepark", "size": "park", "at": [-88, 45],
+      "name": {"en": "Haneul Land", "ko": "하늘랜드", "ja": "ハヌルランド", "zh": "天空乐园"},
+      "tagline": {"en": "Carousel, Ferris wheel and a swinging pirate ship", "ko": "회전목마, 대관람차, 바이킹", "ja": "メリーゴーランド・観覧車・バイキング", "zh": "旋转木马、摩天轮、海盗船"},
+      "colors": {"sign": "#7b3fe4", "awning": "#ffd0e0", "accent": "#fff3f7"},
+      "products": []
     }
   ]
 }

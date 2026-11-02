@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
+import { buildThemePark } from './themepark.js';
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -142,6 +143,7 @@ const HANGING = new Set(['tee', 'jeans', 'scarf']);
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
+  if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);

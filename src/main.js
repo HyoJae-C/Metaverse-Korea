@@ -21,6 +21,7 @@ import { BookUI } from './ui/book-ui.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
+import { RIDES as PARK_RIDES, RIDE_COST, RIDE_SECONDS, seatAt } from './core/themepark.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -1164,6 +1165,7 @@ function enterStore(item) {
 
 function leaveStore() {
   if (mode !== 'store') return;
+  endRide();
   standUp();
   closeHome();
   closeHatWorkshop(false);
@@ -1799,6 +1801,33 @@ function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L
 $('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
 refreshDexBtn();
 onLanguageChange(refreshDexBtn);
+// Amusement park rides: pay a ticket, get carried round, hop off at the end.
+let ride = null; // { kind, seat, t0, until, back: [x, z] }
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️' };
+function boardRide(st) {
+  if (!wallet.spend(RIDE_COST)) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
+  const now = interior.time();
+  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: now + RIDE_SECONDS[st.kind], back: [st.x, st.z], shout: 0 };
+  sendTimer = 0;
+  missionEvent('ride');
+}
+function endRide() {
+  if (!ride) return;
+  me.root.position.set(ride.back[0], 0, ride.back[1]);
+  ride = null;
+  sendTimer = 0;
+  me.play('cheer');
+}
+function updateRide(dt) {
+  if (!ride || !interior?.tick) return;
+  const now = interior.time();
+  const s = seatAt(ride.kind, ride.seat, now, ride.t0);
+  me.root.position.set(s.x, s.y, s.z);
+  me.root.rotation.y = s.ry;
+  ride.shout -= dt;
+  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  if (now >= ride.until) endRide();
+}
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2256,6 +2285,11 @@ function updateAction(p, tSec) {
       if (decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
       else if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
       else if (!decor.picked) closePiece();
+    } else if (ride) {
+      next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
+    } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
+      const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
+      next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -2433,10 +2467,12 @@ renderer.setAnimationLoop(() => {
       speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
     }
   }
+  if (mode === 'store') interior?.tick?.(dt); // amusement park rides
+  updateRide(dt);
   if (seated && mag > 0.3) standUp();
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated && riding !== 3) {
+  if (mag > 0.05 && !seated && !ride && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -2487,7 +2523,7 @@ renderer.setAnimationLoop(() => {
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
-  me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated);
+  me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
 
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
@@ -2516,9 +2552,9 @@ renderer.setAnimationLoop(() => {
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
   const cz = p.z + Math.cos(cam.yaw) * camHoriz;
   // Lower the camera with the distance so a close camera doesn't look straight down.
-  const cy = 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
-  camera.lookAt(p.x, hatDraft || beautyCam ? 0.05 : 1.1, p.z); // workshop: character sits above the panel
+  camera.lookAt(p.x, p.y + (hatDraft || beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -2571,7 +2607,7 @@ renderer.setAnimationLoop(() => {
       ry: Math.round(me.root.rotation.y * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
-    if (seated) st.sit = 1;
+    if (seated || ride) st.sit = 1;
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
