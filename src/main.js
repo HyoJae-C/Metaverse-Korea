@@ -20,6 +20,7 @@ import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
+import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isMasterCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { TANDEM_GAP } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
@@ -35,6 +36,12 @@ import { RoadGraph, RouteLine } from './core/route.js';
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
+
+// Cloud save (guest account on Supabase). Runs before anything reads saved
+// data, so a newer save from the server is in place first. Skipped in
+// automated test rooms.
+const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
+await cloud.load();
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
@@ -1161,6 +1168,12 @@ function refreshWallet() {
 wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
 refreshWallet();
+function refreshCloud() {
+  $('cloud-label').textContent = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+}
+cloud.onChange(refreshCloud);
+refreshCloud();
+onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
 function refreshItems() {
   const list = inventory.list();

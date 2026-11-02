@@ -11,6 +11,11 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
+    "credit.privacy": "Privacy",
+    "cloud.guest": "Saved on the server (guest account)",
+    "cloud.account": "Saved to your account",
+    "cloud.local": "Saved on this device only",
+    "cloud.error": "Couldn't reach the server; saved on this device",
     "guide.auto": "Auto",
     "guide.autoStop": "Stop",
     "tandem.invite": "Invite {name} on the back seat",
@@ -209,6 +214,11 @@ export const STRINGS = {
     'credit.map': 'Map data',
   },
   ko: {
+    "credit.privacy": "개인정보처리방침",
+    "cloud.guest": "서버에 저장 중 (게스트 계정)",
+    "cloud.account": "내 계정에 저장 중",
+    "cloud.local": "이 기기에만 저장 중",
+    "cloud.error": "서버에 연결하지 못해 이 기기에 저장 중",
     "guide.auto": "자동",
     "guide.autoStop": "멈춤",
     "tandem.invite": "{name}에게 뒷자리 태워 주기",
@@ -407,6 +417,11 @@ export const STRINGS = {
     'credit.map': '지도 데이터',
   },
   ja: {
+    "credit.privacy": "プライバシー",
+    "cloud.guest": "サーバーに保存中（ゲスト）",
+    "cloud.account": "アカウントに保存中",
+    "cloud.local": "この端末にのみ保存中",
+    "cloud.error": "サーバーに接続できないため、この端末に保存中",
     "guide.auto": "自動",
     "guide.autoStop": "止める",
     "tandem.invite": "{name}さんを後ろに乗せる",
@@ -605,6 +620,11 @@ export const STRINGS = {
     'credit.map': '地図データ',
   },
   zh: {
+    "credit.privacy": "隐私政策",
+    "cloud.guest": "已保存到服务器（游客账号）",
+    "cloud.account": "已保存到你的账号",
+    "cloud.local": "仅保存在此设备",
+    "cloud.error": "无法连接服务器，已保存在此设备",
     "guide.auto": "自动",
     "guide.autoStop": "停止",
     "tandem.invite": "邀请{name}坐后座",

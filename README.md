@@ -82,6 +82,19 @@ pack (for example a paid chibi pack), add its GLBs under `public/models/<pack>/`
 automatically. While a model loads, or if it fails, the simple built-in chibi is shown instead.
 `scripts/models/strip-kaykit.mjs` shows how the KayKit files were shrunk (weapons removed, unused clips dropped).
 
+### Cloud saves (guest accounts)
+
+Game data lives in localStorage keys starting with `mk.`. `src/core/cloud-save.js` signs the player in as an
+anonymous Supabase guest and copies those keys to the `saves` table (the newer copy wins), so a save survives
+clearing the browser. A guest can later link a Google login and keep the same account. One-time setup in the
+Supabase dashboard:
+
+1. Authentication → Sign In / Providers → turn on **Allow anonymous sign-ins**.
+2. SQL Editor → run `supabase/001_saves.sql` (table + row-level security: each player reads and writes only their own save).
+
+Until both are done the game keeps saving on the device only (Settings shows which). Automated test rooms
+(`?debug`) skip cloud saves. The browser writes its own save, so coins and items are not cheat-proof yet.
+
 ### Swapping the realtime provider
 
 Game code talks only to the adapter interface in `src/net/index.js`. Add a file in `src/net/adapters/`,

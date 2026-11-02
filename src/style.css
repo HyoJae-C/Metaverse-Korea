@@ -701,3 +701,6 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .item-row small { color: var(--ink-soft); }
 .ride-panel { display: grid; gap: 10px; }
 .ride-panel .primary { margin: 0; }
+.cloud-row { cursor: default; }
+.cloud-row .setting-label { font-size: 14px; }
+a.setting-row { text-decoration: none; color: inherit; }
