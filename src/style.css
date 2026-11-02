@@ -803,3 +803,11 @@ a.setting-row { text-decoration: none; color: inherit; }
 .beauty-opt { min-width: 34px; height: 34px; padding: 0 10px; border-radius: 17px; background: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset; }
 .beauty-opt.swatch { width: 34px; padding: 0; }
 .beauty-opt[aria-pressed="true"] { box-shadow: 0 0 0 3px #ff8a65; }
+
+/* Square missions */
+.quest-chip {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(max(12px, env(safe-area-inset-top)) + 140px);
+  max-width: min(90vw, 420px); padding: 7px 14px; border-radius: 999px; background: #fffaf0; color: #4a3f35;
+  font-size: 13px; font-weight: 800; z-index: 4; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.in-store .quest-chip { display: none; }

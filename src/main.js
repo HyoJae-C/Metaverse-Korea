@@ -4,6 +4,8 @@ import {
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
+import { SquareQuests, QUEST_REWARD } from './core/quests.js';
+import { Billboard } from './core/billboard.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
@@ -194,6 +196,28 @@ const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
+
+// The main square (the first meeting zone): a guide who hands out errands
+// that end back here (광장 미션), and a big screen (전광판) for ads.
+const quests = new SquareQuests();
+const square = zones.items[0] || null;
+let squareNpc = null, billboard = null;
+if (square) {
+  const face = (x, z) => Math.atan2(square.x - x, square.z - z);
+  squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
+  const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
+  squareNpc.ch.root.position.set(gx, 0, gz);
+  squareNpc.ch.root.rotation.y = face(gx, gz);
+  scene.add(squareNpc.ch.root);
+  const lang = getLanguage();
+  billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
+    title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
+  })));
+  const [bx, bz] = findFreeSpot(square.x - 7, square.z - 7);
+  billboard.root.position.set(bx, 0, bz);
+  billboard.root.rotation.y = face(bx, bz);
+  scene.add(billboard.root);
+}
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -692,6 +716,7 @@ function setPet(id) {
     pet.place(me.root.position.x, me.root.position.z, me.root.rotation.y);
   }
   try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
+  refreshQuestChip();
   if (!$('wallet-panel').hidden) refreshItems();
 }
 function adoptPet(id) {
@@ -780,6 +805,7 @@ function setHeld(h) {
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
   lastSent = null; // others see it on the next update
+  refreshQuestChip();
 }
 function drink() {
   if (!held) return;
@@ -1464,7 +1490,7 @@ const grillUi = new GrillUI({
   root: $('grill-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); },
 });
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
@@ -1494,7 +1520,7 @@ const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); },
 });
 // Hair salon (dye) and cosmetic clinic (eye colour, skin tone, smaller head):
 // try options on with a close-up camera, pay coins to keep them.
@@ -1674,7 +1700,51 @@ function renderDaily() {
   $('daily-bonus').textContent = daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
   $('daily-dot').hidden = !daily.hasNews();
 }
+// Square missions: what the guide can check on the spot, the HUD chip, and
+// talking to the guide (take an errand, see it again, or report back).
+const questCtx = () => ({ held: held?.kind || null, pet: !!pet });
+function questText(q) {
+  const store = q.kind === 'visit' ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
+  return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
+}
+function refreshQuestChip() {
+  const q = quests.active;
+  $('quest-chip').hidden = !q;
+  if (q) $('quest-chip').textContent = (quests.ready(questCtx()) ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + (q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '');
+}
+function talkToGuide() {
+  squareNpc.ch.wave();
+  const q = quests.active;
+  if (q && quests.ready(questCtx())) {
+    const coins = quests.claim(questCtx());
+    if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
+    wallet.add(coins);
+    me.play('cheer');
+    say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
+    shop.toast(t('quest.done', { coins, left: quests.left }));
+  } else if (q) {
+    say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
+    shop.toast(questText(q));
+  } else if (quests.left) {
+    const a = quests.start({
+      stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
+      has: (kind) => kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id)), // only if you have a pet
+    });
+    say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
+    shop.toast(t('quest.new', { coins: QUEST_REWARD }));
+  } else {
+    say(squareNpc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
+  }
+  refreshQuestChip();
+}
+$('quest-chip').onclick = () => { const q = quests.active; if (q) shop.toast(quests.ready(questCtx()) ? t('quest.goBack') : questText(q)); };
+refreshQuestChip();
+
 function missionEvent(type, target) {
+  if (quests.event(type, target)) {
+    refreshQuestChip();
+    if (quests.ready(questCtx())) shop.toast(t('quest.goBack'));
+  }
   const r = daily?.record(type, target);
   if (!r) return;
   shop.toast(t('daily.complete', { n: r.coins }));
@@ -1779,7 +1849,11 @@ function updateAction(p, tSec) {
       next = { key: 'tandem-hop:' + inv.from, label: (others.kindOf(inv.from) === 4 ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
-    else {
+    else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
+      const q = quests.active;
+      const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
+      next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+    } else {
       const n = npcs.nearest(p.x, p.z);
       if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
     }
@@ -2100,6 +2174,11 @@ renderer.setAnimationLoop(() => {
   others.update(dt, camera, w, h);
   if (mode === 'street') npcs.update(dt, camera, w, h);
   else if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+  if (squareNpc) {
+    if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
+    else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
+  }
+  billboard?.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   tmp.set(p.x, 1.55, p.z).project(camera);
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
@@ -2136,6 +2215,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     heldKind: () => heldKind(),
+    quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
+    guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
     look: () => ({ ...currentLook }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
