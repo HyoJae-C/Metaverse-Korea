@@ -508,6 +508,55 @@ export function buildInterior(store) {
         for (const o of [-0.5, 0.5]) seats.push({ x: px + o, z: pz, ry: 0, stand: [px + o, pz + 1.1] });
         block(px, pz, 2.1, 1.2);
       });
+    } else if (store.workshop === 'gym') {
+      // 헬스장: treadmills on the back wall, a bench press, a dumbbell rack,
+      // push-up mats, and a long mirror.
+      const bz = -d / 2 + 1.4;
+      stations.gym = [];
+      for (const tx of [-7, -4]) {
+        box(1, 0.18, 2.2, tx, 0.09, bz, '#3a3f47'); // deck
+        box(0.85, 0.02, 1.9, tx, 0.19, bz, '#1d1f24'); // belt
+        for (const sx2 of [-0.45, 0.45]) box(0.08, 1.2, 0.08, tx + sx2, 0.7, bz - 0.9, '#9ca9af');
+        box(1, 0.3, 0.35, tx, 1.35, bz - 0.9, '#3a3f47'); // console
+        block(tx, bz - 0.9, 1.1, 0.5);
+        stations.gym.push({ x: tx, z: bz + 0.2, kind: 'treadmill' });
+      }
+      // Bench press: bench, rack posts and a bar with plates.
+      const px = 1.5, pz = bz + 0.6;
+      box(0.45, 0.45, 1.6, px, 0.225, pz, '#c8463c');
+      for (const sx2 of [-0.7, 0.7]) box(0.08, 1.3, 0.08, px + sx2, 0.65, pz - 0.6, '#9ca9af');
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2, 8), mat('#c9ced3'));
+      bar.rotation.z = Math.PI / 2;
+      bar.position.set(px, 1.2, pz - 0.6);
+      scene.add(bar);
+      for (const sx2 of [-0.85, 0.85]) {
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.08, 18), mat('#2b2b2e'));
+        plate.rotation.z = Math.PI / 2;
+        plate.position.set(px + sx2, 1.2, pz - 0.6);
+        scene.add(plate);
+      }
+      block(px, pz, 1.6, 1.8);
+      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench' });
+      // Dumbbell rack on the right wall.
+      const rx = w / 2 - 0.8, rz = -d * 0.12;
+      box(0.7, 0.8, 2.6, rx, 0.4, rz, '#4a4f57');
+      for (let i = 0; i < 5; i++) {
+        const dz = rz - 1 + i * 0.5;
+        box(0.5, 0.06, 0.06, rx, 0.9, dz, '#c9ced3');
+        for (const sx2 of [-0.22, 0.22]) box(0.1, 0.16 + i * 0.02, 0.16 + i * 0.02, rx + sx2, 0.9, dz, '#2b2b2e');
+      }
+      block(rx, rz, 0.8, 2.7);
+      stations.gym.push({ x: rx - 1.3, z: rz, kind: 'dumbbell' });
+      // Push-up mats (flat, you stand on them).
+      for (const [mx, c] of [[-5.5, '#8fd3c7'], [-3, '#b9a6f0']]) {
+        box(1, 0.04, 1.9, mx, 0.02, d * 0.12, c);
+        stations.gym.push({ x: mx, z: d * 0.12, kind: 'pushup' });
+      }
+      // A long mirror on the left wall.
+      const mirror = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.2), new THREE.MeshLambertMaterial({ color: '#cfe6f2' }));
+      mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
+      mirror.rotation.y = Math.PI / 2;
+      scene.add(mirror);
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];

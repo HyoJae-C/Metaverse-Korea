@@ -14,6 +14,8 @@ import { EmblemUI } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
+import { GymUI } from './ui/gym-ui.js';
+import { GymLog } from './core/gym.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -320,6 +322,7 @@ const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
+const gymLog = new GymLog(); // workouts make walking and running a touch faster (max +3%)
 const BIKE = 16; // bike share: faster than running, no stamina
 const CAR = 26; // car: big roads only
 const STORE_WALK = 4.2, STORE_RUN = 7;
@@ -1089,7 +1092,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1689,6 +1692,13 @@ const saunaUi = new SaunaUI({
     },
   },
 });
+// Gym: each finished set makes walking a tiny bit faster.
+const gymUi = new GymUI({
+  root: $('gym-panel'),
+  log: gymLog,
+  onRep: () => { me.play('cheer'); },
+  onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
+});
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2152,6 +2162,9 @@ function updateAction(p, tSec) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
       next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
+      const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
+      next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => gymUi.show(st.kind) };
     } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
       const st = interior.stations.sauna.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2);
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
@@ -2325,7 +2338,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding === 4 ? CAR : riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (riding === 4 ? CAR : riding ? BIKE : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag);
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -2356,7 +2369,7 @@ renderer.setAnimationLoop(() => {
     for (const [x, z] of routePoly) if (Math.hypot(x - p.x, z - p.z) > 2.5) { tx = x; tz = z; break; }
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = riding ? BIKE : running ? RUN : WALK;
+    const speed = riding ? BIKE : (running ? RUN : WALK) * gymLog.boost;
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }

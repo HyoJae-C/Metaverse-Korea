@@ -434,6 +434,13 @@
         {"id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠."}},
         {"id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": {"en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个"}, "desc": {"en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요."}}
       ]
+    },
+    {
+      "id": "muscle-gym", "category": "play", "workshop": "gym", "size": "large", "at": [-65, 83],
+      "name": {"en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房"},
+      "tagline": {"en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快"},
+      "colors": {"sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb"},
+      "products": []
     }
   ]
 }
