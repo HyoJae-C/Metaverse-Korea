@@ -1,7 +1,7 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
 import * as THREE from 'three';
-import { TANDEM_GAP } from './bikes.js';
+import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 
 export class RemotePlayers {
@@ -99,13 +99,8 @@ export class RemotePlayers {
     return best;
   }
 
+  kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
-
-  _seatBehind(r, front) {
-    if (!front) return;
-    r.position.set(front.position.x - Math.sin(front.rotation.y) * TANDEM_GAP, 0, front.position.z - Math.cos(front.rotation.y) * TANDEM_GAP);
-    r.rotation.y = front.rotation.y;
-  }
 
   emote(id, anim, emoji) {
     const p = this.players.get(id);
@@ -128,8 +123,11 @@ export class RemotePlayers {
         if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
-      // On someone's tandem back seat: sit right behind them.
-      if (p.target?.bk === 3 && p.target.on) this._seatBehind(r, this.players.get(p.target.on)?.ch.root);
+      // Riding with someone (tandem or car): sit in our seat of their vehicle.
+      if (p.target?.bk === 3 && p.target.on) {
+        const d = this.players.get(p.target.on);
+        if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
+      }
       if (p.hidden) continue;
       v.set(r.position.x, 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;

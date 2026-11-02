@@ -13,6 +13,16 @@ export const ITEMS = {
       zh: '两个座位：你来骑，朋友坐后面。骑上车，走到别人旁边邀请他们。',
     },
   },
+  car: {
+    emoji: '🚗',
+    name: { en: 'Convertible car', ko: '오픈카', ja: 'オープンカー', zh: '敞篷车' },
+    desc: {
+      en: 'Fast, but only on the big roads: cars can’t go into the narrow alleys. Get out to walk the alleys.',
+      ko: '빠르지만 큰길만 달릴 수 있어요. 좁은 골목에는 못 들어가니 내려서 걸어가세요.',
+      ja: '速いけれど大通りだけ。細い路地には入れないので、降りて歩きましょう。',
+      zh: '速度快，但只能走大路，进不了小巷。下车步行去逛小巷吧。',
+    },
+  },
 };
 
 const KEY = 'mk.items';
@@ -32,22 +42,35 @@ export class Inventory {
   }
 }
 
-// Developer master code. Only its SHA-256 is in the code. This keeps it out
-// of plain sight but is NOT security: anyone can change their own browser.
-// Real paid items must be checked on a server.
-const MASTER_HASH = 'f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10';
+// Developer codes, typed in chat as "/master <code>". Only their SHA-256
+// is in the code. This keeps them out of plain sight but is NOT security:
+// anyone can change their own browser. Real paid items must be checked on
+// a server.
+const CODES = {
+  f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10: Object.keys(ITEMS), // master: every item
+  '378fc355ed89c5e4b9ba305012dea3f4c739e2fbcd5accdbf6a19bfb53f3ac52': ['car'],
+};
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(text).trim()));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// The item ids a code unlocks, or null.
+export async function redeemCode(code) {
+  if (!globalThis.crypto?.subtle) return null;
+  return CODES[await sha256(code)] || null;
+}
 
 export async function isMasterCode(code) {
-  if (!globalThis.crypto?.subtle) return false;
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(code).trim()));
-  const hex = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hex === MASTER_HASH;
+  return (await redeemCode(code))?.length === Object.keys(ITEMS).length;
 }
 
-// Tandem messages ride on the emote channel as 'tandem:<verb>:<target id>'.
+// Ride messages (tandem bike and car) travel on the emote channel as
+// 'tandem:<verb>:<target id>[:<seat>]'.
 export const TANDEM_VERBS = ['invite', 'join', 'leave', 'end'];
 export function parseTandem(e) {
-  const m = /^tandem:(invite|join|leave|end):([\w-]{1,64})$/.exec(String(e));
-  return m ? { verb: m[1], target: m[2] } : null;
+  const m = /^tandem:(invite|join|leave|end):([\w-]{1,64})(?::(\d))?$/.exec(String(e));
+  return m ? { verb: m[1], target: m[2], seat: m[3] ? Number(m[3]) : 0 } : null;
 }
-export const tandemMsg = (verb, target) => `tandem:${verb}:${target}`;
+export const tandemMsg = (verb, target, seat) => `tandem:${verb}:${target}${seat ? ':' + seat : ''}`;

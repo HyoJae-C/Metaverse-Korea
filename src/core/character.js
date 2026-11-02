@@ -2,7 +2,7 @@
 // model from the active model pack (src/data/characters); a chibi built from
 // simple rounded shapes shows while the model loads, or if it fails to load.
 import * as THREE from 'three';
-import { makeBike, makeTandem } from './bikes.js';
+import { makeBike, makeTandem, makeCar } from './bikes.js';
 import { attachModel } from './model-pack.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
@@ -98,7 +98,7 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
-  let bike = null, tandem = null, riding = false;
+  let bike = null, tandem = null, car = null, riding = false;
   let act = null; // current body emote
   let model = null; // set once the pack model has loaded
   attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; });
@@ -106,13 +106,16 @@ export function createCharacter(rawLook) {
     root,
     head,
     // Show a bike under the character. kind: 0/false none, 1/true bike,
-    // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only).
+    // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
+    // 4 car (driver's seat).
     setBike(on) {
       const kind = on === true ? 1 : on || 0;
       if (kind === 1 && !bike) { bike = makeBike(); root.add(bike); }
       if (kind === 2 && !tandem) { tandem = makeTandem(); root.add(tandem); }
+      if (kind === 4 && !car) { car = makeCar(); root.add(car); }
       if (bike) bike.visible = kind === 1;
       if (tandem) tandem.visible = kind === 2;
+      if (car) car.visible = kind === 4;
       riding = kind > 0;
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
