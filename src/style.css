@@ -709,3 +709,6 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 a.setting-row { text-decoration: none; color: inherit; }
 .ride-options { display: grid; gap: 10px; }
 .ride-options .primary { margin: 0; }
+
+.cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
+.cloud-actions .chip { font-size: 13px; }

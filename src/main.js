@@ -1277,8 +1277,17 @@ wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
 refreshWallet();
 function refreshCloud() {
-  $('cloud-label').textContent = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+  const label = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+  $('cloud-label').textContent = !cloud.guest && cloud.email ? `${label} · ${cloud.email}` : label;
+  // A guest can link Google (keeps this save) or sign in to an older account.
+  $('cloud-actions').hidden = !(cloud.status === 'cloud' && cloud.guest);
 }
+const googleFail = (err) => err && shop.toast(t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'));
+$('google-link').onclick = async () => googleFail(await cloud.linkGoogle());
+$('google-signin').onclick = async () => {
+  if (!confirm(t('cloud.signinConfirm'))) return;
+  googleFail(await cloud.signInGoogle());
+};
 cloud.onChange(refreshCloud);
 refreshCloud();
 onLanguageChange(refreshCloud);

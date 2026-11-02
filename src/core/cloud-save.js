@@ -15,6 +15,7 @@
 const PREFIX = 'mk.';
 const AT_KEY = 'mkcloud.at'; // when local data last changed (ms), not synced
 const TABLE = 'saves';
+const OWNER_KEY = 'mkcloud.uid'; // which account the data on this device belongs to
 
 export function snapshot(storage = localStorage) {
   const out = {};
@@ -32,8 +33,11 @@ export function applySnapshot(data, storage = localStorage) {
 }
 
 // Which copy wins: the newer one. Returns 'remote', 'local' or 'same'.
-export function pickNewer(localAt, remoteAt, localData, remoteData) {
+// switched: this device's data belongs to another account (e.g. a guest that
+// then signed in with Google on a second device): the account's save wins.
+export function pickNewer(localAt, remoteAt, localData, remoteData, switched = false) {
   if (JSON.stringify(localData) === JSON.stringify(remoteData)) return 'same';
+  if (switched && remoteAt) return 'remote';
   if (!remoteAt) return 'local';
   if (!localAt || !Object.keys(localData).length) return 'remote';
   return remoteAt > localAt ? 'remote' : 'local';
@@ -80,7 +84,9 @@ export class CloudSave {
     const local = snapshot();
     const localAt = Number(localStorage.getItem(AT_KEY)) || 0;
     const remoteAt = row ? Date.parse(row.updated_at) : 0;
-    const which = pickNewer(localAt, remoteAt, local, row?.data || {});
+    const owner = localStorage.getItem(OWNER_KEY);
+    const which = pickNewer(localAt, remoteAt, local, row?.data || {}, !!owner && owner !== this.user.id);
+    localStorage.setItem(OWNER_KEY, this.user.id);
     if (which === 'remote') {
       applySnapshot(row.data);
       localStorage.setItem(AT_KEY, String(remoteAt));
@@ -114,6 +120,28 @@ export class CloudSave {
     setInterval(tick, 8000);
     addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tick(); });
     addEventListener('pagehide', tick);
+  }
+
+  // The Google address once linked (or null).
+  get email() { return this.user?.identities?.find((i) => i.provider === 'google')?.identity_data?.email || this.user?.email || null; }
+
+  // Link Google to this guest account: same account, same save. Leaves the
+  // page for Google's sign-in and comes back. Returns an error code or null.
+  async linkGoogle() {
+    if (!this.client || !this.user) return 'offline';
+    await this._upload().catch(() => {}); // save right before leaving the page
+    const { error } = await this.client.auth.linkIdentity({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+    if (!error) return null;
+    console.info('[cloud-save] link failed:', error.message);
+    return /already|exists/i.test(error.message) ? 'taken' : 'notReady';
+  }
+
+  // Sign in to a Google account used before (e.g. on another device). The
+  // account's save then replaces this device's guest data.
+  async signInGoogle() {
+    if (!this.client) return 'offline';
+    const { error } = await this.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+    return error ? 'notReady' : null;
   }
 
   onChange(f) { this.listeners.push(f); }
