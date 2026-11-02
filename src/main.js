@@ -865,7 +865,8 @@ function enterStore(item) {
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
-  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
+  const quiet = store.category === 'library';
+  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), quiet ? PHRASES.library[0] : PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -1464,7 +1465,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = interior?.store.category === 'library' ? PHRASES.library : PHRASES.shop; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       const pet = interior.pets.nearest(p.x, p.z);
       next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };

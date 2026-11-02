@@ -64,7 +64,7 @@ function pointInPoly(x, z, p) {
 
 // Floating label above a shop: an icon and the name, always facing the
 // camera so the shop is easy to spot from any angle or distance.
-const ICONS = { cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠', restaurant: '🍢' };
+const ICONS = { cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠', restaurant: '🍢', library: '📚' };
 function badgeTexture(icon, text, bg) {
   const c = document.createElement('canvas');
   c.width = 512; c.height = 128;

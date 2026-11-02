@@ -58,3 +58,6 @@ Decisions agreed with the project owner. Each step ships something playable.
 - **Subway between regions**: stations act as doors to other regions. Seongsu → Hongik Univ. is about 30 min on Line 2 in real life; in game, about a 1-minute ride with station announcements, window scenery and a Skip button.
 - **Hongdae** region with a **busking zone**
 - More regions: other Seoul neighbourhoods, Busan, Jeju
+- **Library** (shell done: Chaekmaru Library with bookshelves, reading tables and a quiet-please librarian). Later: study content such as reading Korean picture books, vocabulary cards, a quiet study timer
+- **Elevators in tall buildings**: ride up to a rooftop, an upper-floor café or an observation deck, with floor announcements in Korean ("3층입니다")
+- **Han River outing**: walk or ride to the riverside park, sit and watch the river, and cook instant ramen at a convenience-store ramen machine (a later minigame)

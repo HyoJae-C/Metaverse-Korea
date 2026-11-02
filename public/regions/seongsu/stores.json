@@ -229,6 +229,16 @@
         { "id": "diffuser", "model": "bottle", "color": "#e8cfc4", "price": 32000, "name": { "en": "Reed Diffuser · Brick", "ko": "디퓨저 · 벽돌" }, "desc": { "en": "Warm amber and cedar." } },
         { "id": "hand-cream", "model": "jar", "color": "#f3e5c8", "price": 12000, "name": { "en": "Hand Cream · Linen", "ko": "핸드크림 · 리넨" }, "desc": { "en": "Clean cotton scent, non-greasy." } }
       ]
+    },
+    {
+      "id": "chaekmaru-library",
+      "category": "library",
+      "size": "large",
+      "name": { "ko": "책마루 도서관", "en": "Chaekmaru Library", "ja": "チェクマル図書館", "zh": "书廊图书馆" },
+      "tagline": { "en": "A quiet place to read. Study corners are coming soon.", "ko": "조용히 책 읽는 곳. 공부 공간은 곧 열려요.", "ja": "静かに本を読める場所。勉強コーナーは準備中です。", "zh": "安静读书的地方。学习区即将开放。" },
+      "anchor": { "lat": 37.5449, "lon": 127.0549 },
+      "colors": { "sign": "#3f5e4f", "awning": "#9cb89a", "accent": "#f4efe2" },
+      "products": []
     }
   ]
 }

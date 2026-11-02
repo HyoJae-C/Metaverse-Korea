@@ -258,7 +258,83 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
-  if (store.category === 'cafe' || store.category === 'restaurant') {
+  if (store.category === 'library') {
+    // Tall bookshelves along the back and side walls, reading tables in the
+    // middle (seats below), and a "quiet please" sign. Study content comes later.
+    const spines = ['#b5533c', '#3f6e8c', '#d9a441', '#5f8a4e', '#7a4f8c', '#e3d6c0', '#2f3e4f', '#c97b63'];
+    const shelf = (x, z, ry, len) => {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.rotation.y = ry;
+      scene.add(g);
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(len, 2.4, 0.45), mat('#8a5a3a'));
+      frame.position.y = 1.2;
+      g.add(frame);
+      for (let row = 0; row < 4; row++) {
+        let bx = -len / 2 + 0.12;
+        let k = row * 3 + Math.round((x + z) * 7);
+        while (bx < len / 2 - 0.15) {
+          const bw = 0.07 + ((k * 37) % 5) * 0.015, bh = 0.34 + ((k * 13) % 4) * 0.04;
+          const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.3), mat(spines[Math.abs(k) % spines.length]));
+          b.position.set(bx + bw / 2, 0.22 + row * 0.56 + bh / 2, 0.1);
+          g.add(b);
+          bx += bw + 0.01;
+          k++;
+        }
+      }
+      const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.6, len] : [len, 0.6];
+      block(x, z, cx, cz);
+    };
+    const nBack = Math.max(2, Math.floor((w - 2) / 2.6));
+    for (let i = 0; i < nBack; i++) shelf((i - (nBack - 1) / 2) * 2.6, -d / 2 + 0.45, 0, 2.4);
+    const nSide = Math.max(1, Math.floor((d - 5) / 2.6));
+    for (let i = 0; i < nSide; i++) {
+      const z = -d / 2 + 2.2 + i * 2.6;
+      shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
+      shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
+    }
+    // Long reading tables with chairs on both long sides.
+    const rows = Math.max(1, Math.floor((d - 6) / 2.8));
+    for (let r = 0; r < rows; r++) {
+      const tz = -d / 2 + 3 + r * 2.8;
+      const tl = Math.min(4.2, w - 4.5);
+      box(tl, 0.06, 1.0, 0, 0.62, tz, '#c98b4f');
+      for (const lx of [-tl / 2 + 0.2, tl / 2 - 0.2]) box(0.1, 0.62, 0.8, lx, 0.31, tz, '#8a5a3a');
+      box(0.18, 0.3, 0.18, -tl / 4, 0.8, tz, '#f2d27a'); // reading lamps
+      box(0.18, 0.3, 0.18, tl / 4, 0.8, tz, '#f2d27a');
+      const n = Math.max(1, Math.floor(tl / 1.2));
+      for (let i = 0; i < n; i++) {
+        const cx = (i - (n - 1) / 2) * 1.2;
+        for (const s of [-1, 1]) {
+          const cz = tz + 0.8 * s;
+          box(0.42, 0.06, 0.42, cx, SEAT_H - 0.03, cz, store.colors.awning);
+          box(0.42, 0.5, 0.08, cx, SEAT_H + 0.22, cz + 0.2 * s, store.colors.awning);
+          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.5 * s] });
+        }
+      }
+      block(0, tz, tl + 0.2, 2.1);
+    }
+    // Front desk by the door, and the sign above it.
+    const cx = Math.min(3.6, sx - 2), cz = d / 2 - 2.3;
+    box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0');
+    box(0.5, 0.06, 0.35, cx - 0.4, 1.03, cz, '#3f6e8c'); // a book on the desk
+    block(cx, cz, 2.2, 0.8);
+    clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
+    const sc = document.createElement('canvas');
+    sc.width = 512; sc.height = 128;
+    const sg = sc.getContext('2d');
+    sg.fillStyle = '#fffaf0'; sg.fillRect(0, 0, 512, 128);
+    sg.fillStyle = store.colors.sign;
+    sg.font = '800 54px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    sg.textAlign = 'center'; sg.textBaseline = 'middle';
+    sg.fillText('🤫 쉿! 조용히 · Quiet, please', 256, 66);
+    const stex = new THREE.CanvasTexture(sc);
+    stex.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.75), new THREE.MeshBasicMaterial({ map: stex }));
+    sign.position.set(-w / 2 + 0.05, 2.9, 0);
+    sign.rotation.y = Math.PI / 2;
+    scene.add(sign);
+  } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.
     const cols = Math.max(1, Math.floor((w - 4) / 3.6));
