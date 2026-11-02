@@ -179,7 +179,7 @@ export function buildInterior(store) {
   tex.colorSpace = THREE.SRGBColorSpace;
   const title = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(8, w - 1), Math.min(8, w - 1) / 6.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.9, -d / 2 + 0.02);
-  scene.add(title);
+  if (store.category !== 'home') scene.add(title);
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -272,6 +272,14 @@ export function buildInterior(store) {
     box(2.4, 1.0, 0.8, sx - 1.4, 0.5, d / 2 - 2.2, '#fffaf0');
     box(0.3, 0.35, 0.3, sx - 0.8, 1.17, d / 2 - 2.2, '#4a3f35'); // coffee machine
     block(sx - 1.4, d / 2 - 2.2, 2.4, 0.8);
+  } else if (store.category === 'home') {
+    // Empty home: big windows on the back wall; the player decorates it.
+    for (const wx of [-w / 4, w / 4]) {
+      box(2.6, 1.6, 0.08, wx, 1.9, -d / 2 + 0.05, '#fffaf0');
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), new THREE.MeshBasicMaterial({ color: '#bfe3f5' }));
+      pane.position.set(wx, 1.9, -d / 2 + 0.1);
+      scene.add(pane);
+    }
   } else {
     const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
     box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0'); // counter
@@ -279,7 +287,7 @@ export function buildInterior(store) {
     block(cx, cz, 2.2, 0.8);
   }
   // Plants in the corners.
-  for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
+  if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);

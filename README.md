@@ -24,6 +24,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Running uses a stamina bar that refills while you walk or rest
 - Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
 - Text chat (💬, or T): speech bubbles over heads and a short log
+- Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
 
 ## Run locally
 

@@ -117,6 +117,11 @@ export class Storefronts {
       ]);
       sign.position.set(0, 3.9, 0.2);
       group.add(sign);
+      const home = store.category === 'home';
+      if (home) { // a smaller nameplate over a residential entrance
+        sign.scale.set(0.6, 0.6, 1);
+        sign.position.y = 3.2;
+      }
 
       const awning = new THREE.Mesh(
         new THREE.BoxGeometry(5.4, 0.08, 1.6),
@@ -124,6 +129,7 @@ export class Storefronts {
       );
       awning.position.set(0, 3.0, 0.8);
       awning.rotation.x = 0.28;
+      if (home) { awning.scale.set(0.5, 1, 0.8); awning.position.y = 2.7; }
       group.add(awning);
 
       // Shop front: glass panes either side of a door.
@@ -132,7 +138,8 @@ export class Storefronts {
       const front = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.6, 0.12), frame);
       front.position.set(0, 1.3, 0.06);
       group.add(front);
-      for (const sx of [-1.75, 1.75]) {
+      if (home) front.scale.set(0.5, 1.05, 1);
+      if (!home) for (const sx of [-1.75, 1.75]) {
         const pane = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.9, 0.05), glass);
         pane.position.set(sx, 1.35, 0.14);
         group.add(pane);

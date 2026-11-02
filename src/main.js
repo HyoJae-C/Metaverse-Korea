@@ -16,6 +16,7 @@ import { WeatherSystem } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
+import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -96,6 +97,7 @@ $('back-btn').onclick = () => {
 const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
   .then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const storesPromise = optionalJson('stores.json');
+const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
 
 await new Promise((resolve) => {
@@ -152,7 +154,7 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings);
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
-const storeData = (await storesPromise)?.stores || [];
+const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 const zones = new Zones(scene, zoneData, map, region.center, collision);
@@ -417,6 +419,15 @@ async function joinRoom(room, roomScene, area = null) {
     if (token === joinToken) net = SOLO;
   }
 }
+// Leave multiplayer (e.g. inside your own home).
+function goSolo(roomScene) {
+  joinToken++;
+  net?.disconnect();
+  net = SOLO;
+  for (const id of [...others.players.keys()]) others.leave(id);
+  others = new RemotePlayers(roomScene, $('labels'));
+  refreshOnline();
+}
 net = SOLO;
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
@@ -597,12 +608,16 @@ function enterStore(item) {
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
-  joinRoom(`${roomId}-${store.id}`, built.scene);
+  if (store.category === 'home') {
+    goSolo(built.scene); // your home is private for now
+    openHome(store, built);
+  } else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
 function leaveStore() {
   if (mode !== 'store') return;
   standUp();
+  closeHome();
   sfx.doorbell();
   const it = interior.front;
   mode = 'street';
@@ -744,6 +759,124 @@ function updateZoneLine(z) {
 }
 onLanguageChange(() => updateZoneLine(currentZone));
 
+
+// Home decorating: place furniture from a catalogue, then walk up to a piece
+// to rotate, move or remove it. Saved in this browser only (for now).
+const MAX_PIECES = 60;
+let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece }
+const homeKey = (id) => 'mk.home.' + id;
+function loadDecor(id) {
+  try {
+    const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
+    return Array.isArray(a)
+      ? a.filter((i) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite)).slice(0, MAX_PIECES)
+      : [];
+  } catch { return []; }
+}
+function saveDecor() {
+  const r = (v) => Math.round(v * 100) / 100;
+  try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry) })))); } catch { /* storage blocked */ }
+}
+function rebuildDecor() {
+  decor.group.clear();
+  for (const it of decor.items) {
+    const g = buildFurniture(it.id);
+    g.position.set(it.x, 0, it.z);
+    g.rotation.y = it.ry;
+    decor.group.add(g);
+  }
+  const extra = decor.items.map(furnitureCollider).filter(Boolean);
+  interior.collision = activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
+  interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
+    const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
+    const out = furnitureById(it.id).size[1] / 2 + 0.55;
+    return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
+  });
+  saveDecor();
+}
+function openHome(store, built) {
+  if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
+  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null };
+  rebuildDecor();
+  $('decor-btn').hidden = false;
+}
+function closeHome() {
+  if (!decor) return;
+  setDecorating(false);
+  $('decor-btn').hidden = true;
+  decor = null;
+}
+function setDecorating(on) {
+  decor.editing = on;
+  $('decor-bar').hidden = !on;
+  $('decor-btn').classList.toggle('on', on);
+  if (!on) closePiece();
+  action = null; // refresh the action button
+}
+// A spot about 1.6 m in front of the player, inside the room.
+function spotInFront() {
+  const p = me.root.position, ry = me.root.rotation.y;
+  const { w, d } = interior.room;
+  return [
+    THREE.MathUtils.clamp(p.x + Math.sin(ry) * 1.6, -w / 2 + 0.8, w / 2 - 0.8),
+    THREE.MathUtils.clamp(p.z + Math.cos(ry) * 1.6, -d / 2 + 0.8, d / 2 - 1.8),
+    ry + Math.PI, // facing you
+  ];
+}
+function placePiece(id) {
+  if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
+  const [x, z, ry] = spotInFront();
+  decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
+  rebuildDecor();
+}
+function nearestPiece(p) {
+  let best = null, bd = 1.6;
+  for (const it of decor.items) {
+    const d = Math.hypot(p.x - it.x, p.z - it.z) - Math.max(...furnitureById(it.id).size) / 2;
+    if (d < bd) { bd = d; best = it; }
+  }
+  return best;
+}
+function openPiece(it) {
+  decor.piece = it;
+  $('piece-name').textContent = furnitureById(it.id).emoji + ' ' + localName(furnitureById(it.id).name, getLanguage());
+  $('piece-bar').hidden = false;
+}
+function closePiece() {
+  if (decor) decor.piece = null;
+  $('piece-bar').hidden = true;
+}
+$('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
+$('decor-grid').append(...FURNITURE.map((f) => {
+  const b = document.createElement('button');
+  b.className = 'decor-item';
+  b.innerHTML = `<span>${f.emoji}</span><small></small>`;
+  b.dataset.id = f.id;
+  b.onclick = () => placePiece(f.id);
+  return b;
+}));
+function labelDecor() {
+  for (const b of $('decor-grid').children) b.querySelector('small').textContent = localName(furnitureById(b.dataset.id).name, getLanguage());
+}
+labelDecor();
+onLanguageChange(labelDecor);
+$('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
+$('piece-move').onclick = () => {
+  if (!decor?.piece) return;
+  [decor.piece.x, decor.piece.z] = spotInFront();
+  rebuildDecor();
+  closePiece();
+  action = null;
+};
+$('piece-remove').onclick = () => {
+  if (!decor?.piece) return;
+  decor.items.splice(decor.items.indexOf(decor.piece), 1);
+  rebuildDecor();
+  closePiece();
+  action = null;
+};
+$('piece-close').onclick = closePiece;
+
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
@@ -778,7 +911,12 @@ function updateAction(p, tSec) {
     const ex = interior.exit;
     const seat = !seated && nearestSeat(p);
     if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
+      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
+    } else if (decor?.editing) {
+      // decorate mode: walk up to a piece to rotate, move or remove it
+      const it = nearestPiece(p);
+      if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
+      else closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (seat) {
@@ -1002,6 +1140,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,
+    decor: () => decor?.items.length ?? -1,
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
