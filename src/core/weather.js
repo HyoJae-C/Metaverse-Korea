@@ -94,6 +94,7 @@ export class WeatherSystem {
     if (this.particles) {
       this.scene.remove(this.particles);
       this.particles.geometry.dispose();
+      this.particles.material.dispose(); // the shared flake texture stays
       this.particles = null;
     }
     if (kind === 'rain' || kind === 'storm' || kind === 'snow') this.particles = makePrecip(kind);
@@ -120,40 +121,71 @@ export class WeatherSystem {
     this.ambient.intensity = 0.55 + 0.35 * d;
 
     if (this.particles) {
-      const pos = this.particles.geometry.attributes.position;
-      const snow = this.kind === 'snow';
-      const fall = (snow ? 1.6 : 22) * dt;
-      for (let i = 0; i < pos.count; i += snow ? 1 : 2) {
-        let y = pos.getY(i) - fall;
-        let x = pos.getX(i), z = pos.getZ(i);
-        if (snow) x += Math.sin((y + i) * 0.7) * dt * 0.4;
-        if (y < 0 || Math.abs(x - px) > 30 || Math.abs(z - pz) > 30) {
-          x = px + (Math.random() - 0.5) * 60;
-          z = pz + (Math.random() - 0.5) * 60;
-          y = 18 + Math.random() * 6;
-        }
-        pos.setXYZ(i, x, y, z);
-        if (!snow) pos.setXYZ(i + 1, x + 0.05, y + 0.7, z);
-      }
-      pos.needsUpdate = true;
+      // Drops move on the GPU: only two numbers change per frame, so rain
+      // and snow cost almost nothing on the CPU and never stutter.
+      const u = this.particles.userData.uniforms;
+      u.uTime.value = (u.uTime.value + Math.min(dt, 0.1)) % 1000;
+      u.uCenter.value.set(px, pz);
     }
   }
 }
 
+// Rain streaks and snowflakes in a 60 m box around the player, animated in the
+// vertex shader. Each drop has a fixed spot in a repeating 60 m world grid, so
+// walking never makes drops jump. Fewer drops on phones.
+const BOX = 60, HEIGHT = 24;
+let flake = null; // soft round snowflake, drawn once
+function flakeTexture() {
+  if (flake) return flake;
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  flake = new THREE.CanvasTexture(c);
+  return flake;
+}
 function makePrecip(kind) {
   const snow = kind === 'snow';
-  const n = snow ? 1500 : 1400;
-  const geo = new THREE.BufferGeometry();
-  const arr = new Float32Array(n * 3 * (snow ? 1 : 2));
-  for (let i = 0; i < arr.length; i += 3) {
-    arr[i] = (Math.random() - 0.5) * 60;
-    arr[i + 1] = Math.random() * 24;
-    arr[i + 2] = (Math.random() - 0.5) * 60;
+  const small = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+  const n = Math.round((snow ? 1500 : 1400) * (small ? 0.5 : 1));
+  const per = snow ? 1 : 2; // a rain streak is a short line: bottom and top
+  const base = new Float32Array(n * per * 3);
+  const top = new Float32Array(n * per);
+  for (let i = 0; i < n; i++) {
+    const x = Math.random() * BOX, y = Math.random() * HEIGHT, z = Math.random() * BOX;
+    for (let k = 0; k < per; k++) {
+      base.set([x, y, z], (i * per + k) * 3);
+      top[i * per + k] = k;
+    }
   }
-  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-  const obj = snow
-    ? new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true, opacity: 0.95 }))
-    : new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xaecbe0, transparent: true, opacity: 0.75 }));
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(base, 3));
+  geo.setAttribute('top', new THREE.BufferAttribute(top, 1));
+  const uniforms = { uTime: { value: 0 }, uCenter: { value: new THREE.Vector2() } };
+  const mat = snow
+    ? new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true, opacity: 0.95, map: flakeTexture(), depthWrite: false })
+    : new THREE.LineBasicMaterial({ color: 0xaecbe0, transparent: true, opacity: 0.75 });
+  const speed = snow ? 1.6 : 22;
+  mat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTime;
+        uniform vec2 uCenter;
+        attribute float top;`)
+      .replace('#include <begin_vertex>', `
+        vec3 transformed = position;
+        transformed.y = mod(position.y - uTime * ${speed.toFixed(1)}, ${HEIGHT.toFixed(1)}) + top * 0.7;
+        transformed.xz = uCenter + mod(position.xz - uCenter + ${(BOX / 2).toFixed(1)}, ${BOX.toFixed(1)}) - ${(BOX / 2).toFixed(1)};
+        ${snow ? 'transformed.x += sin(transformed.y * 0.7 + position.z) * 0.3;' : 'transformed.x += top * 0.05;'}`);
+  };
+  const obj = snow ? new THREE.Points(geo, mat) : new THREE.LineSegments(geo, mat);
+  obj.userData.uniforms = uniforms;
   obj.frustumCulled = false;
   obj.name = 'precip';
   return obj;
