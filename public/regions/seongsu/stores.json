@@ -254,6 +254,22 @@
         { "id": "moksal", "model": "bacon", "color": "#e59a8c", "price": 16000, "name": { "en": "Moksal (pork neck)", "ko": "목살", "ja": "モクサル", "zh": "猪颈肉" }, "desc": { "en": "Juicy pork neck, a little leaner than belly." } },
         { "id": "doenjang-jjigae", "model": "bowl", "color": "#b07a3a", "price": 7000, "name": { "en": "Doenjang jjigae", "ko": "된장찌개", "ja": "テンジャンチゲ", "zh": "大酱汤" }, "desc": { "en": "Soybean paste stew, the classic after-BBQ meal with rice." } }
       ]
+    },
+    {
+      "id": "meta-coffee",
+      "category": "cafe",
+      "takeaway": true,
+      "size": "small",
+      "name": { "ko": "메타 커피", "en": "META COFFEE", "ja": "META COFFEE", "zh": "META COFFEE" },
+      "tagline": { "en": "Takeaway coffee: carry your cup around town and sip as you go", "ko": "테이크아웃 커피: 컵을 들고 다니며 마셔요", "ja": "テイクアウトコーヒー：カップを持って街を歩こう", "zh": "外带咖啡：拿着杯子边走边喝" },
+      "anchor": { "lat": 37.5446, "lon": 127.0562 },
+      "colors": { "sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0" },
+      "products": [
+        { "id": "meta-americano", "model": "cup", "color": "#3b2418", "price": 4500, "name": { "en": "Americano", "ko": "아메리카노", "ja": "アメリカーノ", "zh": "美式咖啡" }, "desc": { "en": "Espresso with hot water. Koreans often order it iced: 아이스 아메리카노, even in winter." } },
+        { "id": "meta-latte", "model": "cup", "color": "#c9a27a", "price": 5000, "name": { "en": "Café Latte", "ko": "카페라테", "ja": "カフェラテ", "zh": "拿铁" }, "desc": { "en": "Espresso with steamed milk." } },
+        { "id": "meta-vanilla", "model": "cup", "color": "#e6cfa6", "price": 5500, "name": { "en": "Vanilla Latte", "ko": "바닐라라테", "ja": "バニララテ", "zh": "香草拿铁" }, "desc": { "en": "A sweet latte with vanilla syrup." } },
+        { "id": "meta-dalgona", "model": "cup", "color": "#d89a4a", "price": 6000, "name": { "en": "Dalgona Latte", "ko": "달고나라테", "ja": "ダルゴナラテ", "zh": "焦糖饼拿铁" }, "desc": { "en": "Milk topped with whipped coffee foam, inspired by the honeycomb candy dalgona." } }
+      ]
     }
   ]
 }

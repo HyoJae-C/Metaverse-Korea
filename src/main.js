@@ -21,6 +21,7 @@ import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './c
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
+import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -657,7 +658,40 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => leaveStore(),
+  onTake: (product) => {
+    if (held && !confirm(t('coffee.replace'))) return;
+    setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
+    shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
+  },
 });
+
+// Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
+// when it's finished. Saved, so a half-drunk coffee survives a reload.
+const HELD_KEY = 'mk.held';
+let held = (() => {
+  try {
+    const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
+  } catch { return null; }
+})();
+function setHeld(h) {
+  held = h;
+  try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
+  me.setHeld(h?.kind || null);
+  $('drink-btn').hidden = !h;
+  lastSent = null; // others see it on the next update
+}
+function drink() {
+  if (!held) return;
+  me.play('clap'); // the "use item" move: lift the cup
+  sfx.pop?.();
+  const sips = held.sips - 1;
+  if (sips <= 0) { setHeld(null); shop.toast(t('coffee.finished')); }
+  else { setHeld({ ...held, sips }); shop.toast(t('coffee.sip', { n: sips })); }
+}
+$('drink-btn').onclick = drink;
+if (held) setHeld(held);
 
 function setLook(look) {
   currentLook = look;
@@ -666,6 +700,7 @@ function setLook(look) {
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
   me.setBike(riding);
+  me.setHeld(held?.kind || null);
   old.parent?.remove(old);
   activeScene.add(me.root);
   net.sendLook?.(look);
@@ -1785,7 +1820,8 @@ renderer.setAnimationLoop(() => {
     if (seated) st.sit = 1;
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat;
+    if (held) st.hd = held.kind;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -1831,6 +1867,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
+    product: (i) => shop.openProduct(interior.products[i].product),
+    held: () => held && { ...held },
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     missions: () => daily.missions.map((m) => ({ ...m })),
     mission: (type, target) => missionEvent(type, target),
