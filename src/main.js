@@ -20,6 +20,8 @@ import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
+import { Inventory, ITEMS, isMasterCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { TANDEM_GAP } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
@@ -412,9 +414,10 @@ async function joinRoom(room, roomScene, area = null) {
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
       refreshOnline(); lastSent = null;
     },
-    onLeave: (id) => { others.leave(id); refreshOnline(); },
+    onLeave: (id) => { if (id === tandemDriver || id === tandemPassenger) tandemGone(id); others.leave(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
@@ -591,8 +594,20 @@ function openChat() {
 function closeChat() { chatBar.hidden = true; chatInput.blur(); }
 $('chat-btn').hidden = !config.chatEnabled;
 $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
-chatBar.addEventListener('submit', (e) => {
+chatBar.addEventListener('submit', async (e) => {
   e.preventDefault();
+  // Commands start with "/" and are never sent to other people.
+  const raw = cleanChat(chatInput.value);
+  if (raw.startsWith('/')) {
+    chatInput.value = '';
+    const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    if (cmd === 'master' && await isMasterCode(rest.join(' '))) {
+      const added = inventory.add(...Object.keys(ITEMS));
+      shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
+      refreshItems();
+    } else shop.toast(t('chat.unknownCommand'));
+    return;
+  }
   const text = filterText(cleanChat(chatInput.value));
   const now = performance.now() / 1000;
   if (!text || now - lastChatAt < config.chatCooldown) return;
@@ -664,20 +679,77 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 const interiorCache = new Map();
 let clerk = null; // the clerk NPC in the shop you're in
 // Bike share: rent at a station, get off anywhere (the bike goes back by itself).
-let riding = false;
+let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 back seat of someone's tandem
+let tandemDriver = null; // id of the driver whose back seat I'm on
+let tandemPassenger = null; // id of the person on my back seat
+let tandemInvite = null; // { from, name, until }: someone invited me
 function setRiding(on) {
-  if (riding === on) return;
-  if (on && mode !== 'street') return;
-  riding = on;
-  me.setBike(on);
-  if (on) missionEvent('bike');
+  const kind = on === true ? 1 : on || 0;
+  if (riding === kind) return;
+  if (kind && mode !== 'street') return;
+  // Leaving a tandem tells the other rider.
+  if (riding === 2 && tandemPassenger) { net.sendEmote(tandemMsg('end', tandemPassenger)); tandemPassenger = null; }
+  if (riding === 3 && tandemDriver) {
+    net.sendEmote(tandemMsg('leave', tandemDriver));
+    // Step off beside the bike, onto free ground.
+    const [fx, fz] = findFreeSpot(me.root.position.x + Math.cos(me.root.rotation.y) * 1.2, me.root.position.z - Math.sin(me.root.rotation.y) * 1.2);
+    me.root.position.set(fx, 0, fz);
+    tandemDriver = null;
+  }
+  riding = kind;
+  me.setBike(kind);
+  if (kind === 1 || kind === 2) missionEvent('bike');
   sendTimer = 0;
   action = STALE;
-  $('bike-btn').classList.toggle('on', on);
-  $('bike-label').textContent = t(on ? 'bike.offShort' : 'hud.bike');
+  $('bike-btn').classList.toggle('on', !!kind);
+  $('bike-label').textContent = t(kind ? 'bike.offShort' : 'hud.bike');
 }
+// Tandem (2-seat bike): the driver invites someone nearby; they hop on the
+// back seat and ride along until either gets off. Messages ride on the emote
+// channel (see core/inventory.js).
+function onTandemMsg(from, { verb, target }) {
+  if (target !== myId) return;
+  const name = others.nameOf(from) || '?';
+  if (verb === 'invite' && !riding && mode === 'street') {
+    tandemInvite = { from, name, until: performance.now() + 15000 };
+    shop.toast(t('tandem.invited', { name }));
+    action = STALE;
+  } else if (verb === 'join') {
+    if (riding === 2 && !tandemPassenger) { tandemPassenger = from; shop.toast(t('tandem.joined', { name })); action = STALE; }
+    else net.sendEmote(tandemMsg('end', from)); // seat taken or not riding: say no
+  } else if (verb === 'leave' && from === tandemPassenger) {
+    tandemPassenger = null;
+    shop.toast(t('tandem.left', { name }));
+    action = STALE;
+  } else if (verb === 'end' && from === tandemDriver) {
+    tandemGone(from);
+  }
+}
+function tandemGone(id) {
+  if (id === tandemPassenger) { tandemPassenger = null; action = STALE; }
+  if (id === tandemDriver) { tandemDriver = null; riding = 3; setRiding(0); shop.toast(t('tandem.ended')); }
+}
+function hopOn(inv) {
+  tandemInvite = null;
+  const front = others.rootOf(inv.from);
+  if (!front || mode !== 'street') return;
+  setRiding(0);
+  tandemDriver = inv.from;
+  setRiding(3);
+  net.sendEmote(tandemMsg('join', inv.from));
+}
+// Items (saved on this device). The master code in chat adds every item.
+const inventory = new Inventory();
+function ridePicker() {
+  if (riding) { setRiding(0); return; }
+  if (!inventory.has('tandem')) { setRiding(1); return; }
+  $('ride-panel').hidden = false;
+}
+$('ride-bike').onclick = () => { $('ride-panel').hidden = true; setRiding(1); };
+$('ride-tandem').onclick = () => { $('ride-panel').hidden = true; setRiding(2); };
+$('ride-close').onclick = () => { $('ride-panel').hidden = true; };
 // My bike (from the toolbar): ride anywhere on the street, tap again to get off.
-$('bike-btn').onclick = () => setRiding(!riding);
+$('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function enterStore(item) {
@@ -1077,7 +1149,22 @@ function refreshWallet() {
 wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
 refreshWallet();
-$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); };
+$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
+function refreshItems() {
+  const list = inventory.list();
+  $('wallet-items-title').hidden = !list.length;
+  $('wallet-items').replaceChildren(...list.map((id) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const it = ITEMS[id];
+    const b = document.createElement('strong');
+    b.textContent = `${it.emoji} ${localName(it.name, getLanguage())}`;
+    const d = document.createElement('small');
+    d.textContent = localName(it.desc, getLanguage());
+    row.append(b, d);
+    return row;
+  }));
+}
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
@@ -1244,7 +1331,14 @@ function updateAction(p, tSec) {
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
-    else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if (riding === 2 && !tandemPassenger && others.nearestFree(p.x, p.z, 3)) {
+      const o = others.nearestFree(p.x, p.z, 3);
+      next = { key: 'tandem-invite:' + o.id, label: '🚲 ' + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
+      const inv = tandemInvite;
+      next = { key: 'tandem-hop:' + inv.from, label: '🚲 ' + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
+    }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else {
       const n = npcs.nearest(p.x, p.z);
@@ -1369,9 +1463,20 @@ renderer.setAnimationLoop(() => {
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const p = me.root.position;
+  if (riding === 3) {
+    // On someone's back seat: ride along behind them, pedalling at their pace.
+    const front = others.rootOf(tandemDriver);
+    if (!front) tandemGone(tandemDriver);
+    else {
+      const ox = p.x, oz = p.z;
+      p.set(front.position.x - Math.sin(front.rotation.y) * TANDEM_GAP, 0, front.position.z - Math.cos(front.rotation.y) * TANDEM_GAP);
+      me.root.rotation.y = front.rotation.y;
+      speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
+    }
+  }
   if (seated && mag > 0.3) standUp();
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated) {
+  if (mag > 0.05 && !seated && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -1394,7 +1499,7 @@ renderer.setAnimationLoop(() => {
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
     speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
-  } else {
+  } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated);
@@ -1474,8 +1579,9 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated) st.sit = 1;
-    if (riding) st.bk = 1;
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk;
+    if (riding) st.bk = riding;
+    if (riding === 3) st.on = tandemDriver;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;

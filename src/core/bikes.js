@@ -32,6 +32,32 @@ export function makeBike(color = FRAME) {
   return g;
 }
 
+// A tandem: the front seat is where a normal bike's seat is (so the driver
+// sits the same way), and a second seat 0.8 m behind for the passenger.
+export const TANDEM_GAP = 0.8;
+export function makeTandem(color = '#e0604d') {
+  const g = new THREE.Group();
+  const wheelGeo = new THREE.TorusGeometry(0.27, 0.045, 6, 18).rotateY(Math.PI / 2);
+  for (const z of [-0.48 - TANDEM_GAP, 0.48]) {
+    const w = new THREE.Mesh(wheelGeo, mat(DARK));
+    w.position.set(0, 0.3, z);
+    g.add(w);
+  }
+  const bar = (sx, sy, sz, x, y, z, rx = 0, c = color) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
+    m.position.set(x, y, z);
+    m.rotation.x = rx;
+    g.add(m);
+  };
+  bar(0.06, 0.06, 0.8 + TANDEM_GAP, 0, 0.5, -TANDEM_GAP / 2); // long top tube
+  for (const z of [-0.2, -0.2 - TANDEM_GAP]) bar(0.06, 0.45, 0.06, 0, 0.42, z, 0.25); // seat tubes
+  bar(0.06, 0.55, 0.06, 0, 0.55, 0.45, -0.25); // fork
+  for (const z of [-0.24, -0.24 - TANDEM_GAP]) bar(0.2, 0.06, 0.28, 0, 0.64, z, 0, DARK); // seats
+  bar(0.55, 0.05, 0.05, 0, 0.86, 0.5, 0, DARK); // handlebar
+  bar(0.45, 0.05, 0.05, 0, 0.8, -0.3, 0, DARK); // back rider's handle
+  return g;
+}
+
 export class BikeStations {
   constructor(scene, stations, center, roadGraph, findFree) {
     this.items = [];

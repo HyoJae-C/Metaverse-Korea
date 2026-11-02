@@ -691,3 +691,11 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .taxi-dest { grid-column: 1 / -1; margin: 0; font-weight: 800; }
 .taxi-cabin .chip { grid-column: 1 / -1; justify-self: end; background: #fff; }
 @media (max-width: 700px) { .taxi-mode .map-disclaimer { display: none; } }
+
+/* Items and the ride picker */
+.items-title { display: block; margin-top: 12px; }
+.items-list { display: grid; gap: 6px; margin-top: 6px; }
+.item-row { display: grid; gap: 2px; background: #fff; border-radius: 12px; padding: 8px 12px; }
+.item-row small { color: var(--ink-soft); }
+.ride-panel { display: grid; gap: 10px; }
+.ride-panel .primary { margin: 0; }
