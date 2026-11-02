@@ -10,6 +10,9 @@
 
 import { PACK } from './characters/index.js';
 
+// Printed T-shirts (drawn in core/tee-prints.js).
+export const TEE_IDS = ['simurugi'];
+
 // Body models from the active model pack (src/data/characters).
 export const MODELS = Object.keys(PACK.models);
 
@@ -80,6 +83,7 @@ export const DEFAULT_LOOK = {
   hatColor: null, hatPatch: null, // set in the hat workshop
   dye: null, // hair salon
   eyes: null, tone: null, small: false, // clinic
+  tee: null, // printed T-shirt (an item from the bag)
 };
 
 const pick = (obj) => {
@@ -117,6 +121,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
   if (raw.small === true) look.small = true;
+  if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
   return look;
 }
 

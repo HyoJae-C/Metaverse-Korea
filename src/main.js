@@ -27,7 +27,6 @@ import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { KpopRoom } from './ui/kpop-room.js';
-import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
@@ -442,15 +441,16 @@ onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
-// The video sits on the café's wall screen: a CSS3D layer over the canvas.
+// The video sits on the café's wall screen: a plain box laid over the canvas
+// where the screen is (no 3D transforms: iPhone Safari can drop video, and
+// YouTube's ads stop, inside a 3D-transformed player).
+const kpopLayer = document.createElement('div');
+kpopLayer.className = 'kpop-layer';
+kpopLayer.hidden = true;
 const kpopVideo = document.createElement('div');
 kpopVideo.className = 'kpop-video';
-const cssRenderer = new CSS3DRenderer();
-cssRenderer.domElement.className = 'css3d-layer';
-document.getElementById('scene').after(cssRenderer.domElement);
-const cssScene = new THREE.Scene();
-const kpopScreen = new CSS3DObject(kpopVideo);
-cssScene.add(kpopScreen);
+kpopLayer.append(kpopVideo);
+document.getElementById('scene').after(kpopLayer);
 const kpop = new KpopRoom({ video: kpopVideo, tv: $('kpop-tv'), panel: $('kpop-panel'), send: (m) => net.sendEmote(m), toast: (x) => shop.toast(x) });
 $('kpop-tv').querySelector('.kpop-unmute').onclick = () => kpop.unmute();
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
@@ -1136,7 +1136,6 @@ let cafeMusic = null; // { wasOn } while inside a music café
 // K-POP café: everyone in the room watches and hears the same music video
 // (ui/kpop-room.js). Our own background music pauses while inside.
 let kpopMusic = null;
-const KPOP_PX = 960; // the player's size in CSS pixels, scaled onto the screen
 async function enterKpopCafe() {
   kpopMusic = { wasOn: music.on };
   if (music.on) { await music.setOn(false); applyMusicBtn(); }
@@ -1657,6 +1656,19 @@ function refreshItems() {
       w.onclick = () => setPet(walking ? null : id);
       row.append(w);
     }
+    if (it.tee) { // put the printed shirt on, or take it off
+      const wearing = myLook.tee === it.tee;
+      const w = document.createElement('button');
+      w.className = 'chip item-walk' + (wearing ? ' on' : '');
+      w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
+      w.onclick = () => {
+        myLook = { ...myLook, tee: wearing ? null : it.tee };
+        saveLook(myLook);
+        setLook(myLook);
+        refreshItems();
+      };
+      row.append(w);
+    }
     return row;
   }));
 }
@@ -2003,7 +2015,6 @@ function updateGuide(p, dt) {
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
-  cssRenderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
@@ -2225,16 +2236,31 @@ renderer.setAnimationLoop(() => {
 
   renderer.render(activeScene, camera);
   // The K-POP café's video, on the wall screen.
-  const onScreen = kpop.song && interior?.tv;
-  cssRenderer.domElement.hidden = !onScreen;
-  if (onScreen) {
-    const s = interior.tv.screen;
-    kpopScreen.position.copy(s.position);
-    kpopScreen.position.z += 0.01;
-    kpopScreen.scale.setScalar(interior.tv.width / KPOP_PX);
-    cssRenderer.render(cssScene, camera);
-  }
+  placeKpopVideo(kpop.song && interior?.tv);
 });
+
+// Lay the player over the wall screen's rectangle on screen (the screen
+// faces the camera, so its corners' bounding box is close enough).
+const kpopRect = [0, 0, 0, 0];
+function placeKpopVideo(tv) {
+  let ok = !!tv;
+  if (ok) {
+    const p = tv.screen.position, hw = tv.width / 2, hh = tv.screen.geometry.parameters.height / 2;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [dx, dy] of [[-hw, -hh], [hw, -hh], [-hw, hh], [hw, hh]]) {
+      tmp.set(p.x + dx, p.y + dy, p.z + 0.01).project(camera);
+      if (tmp.z > 1) ok = false; // behind the camera
+      const x = (tmp.x * 0.5 + 0.5) * innerWidth, y = (-tmp.y * 0.5 + 0.5) * innerHeight;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    const r = [x0, y0, x1 - x0, y1 - y0].map(Math.round);
+    if (r.some((v, i) => v !== kpopRect[i])) {
+      r.forEach((v, i) => { kpopRect[i] = v; });
+      Object.assign(kpopVideo.style, { left: r[0] + 'px', top: r[1] + 'px', width: r[2] + 'px', height: r[3] + 'px' });
+    }
+  }
+  if (kpopLayer.hidden === ok) kpopLayer.hidden = !ok;
+}
 
 updateStreetCard();
 
@@ -2251,6 +2277,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     riding: () => riding,
     place: (x, z) => me.root.position.set(x, 0, z),
     look: () => currentLook,
+    mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),

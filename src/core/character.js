@@ -7,6 +7,7 @@ import { attachModel } from './model-pack.js';
 import { makeHeld } from './held.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
+import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
@@ -282,7 +283,22 @@ function patchMat(id) {
   return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
+const TEE_Y = 0.47, TEE_Z = 0.2;
+const printMats = {};
+function printMat(id) {
+  if (printMats[id]) return printMats[id];
+  const tex = new THREE.CanvasTexture(drawTeePrint(id, 256));
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (printMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+}
+
 function addAccessories(look, head, torso, body) {
+  // T-shirt print on the chest.
+  if (TEE_PRINTS[look.tee]) {
+    const print = new THREE.Mesh(geo('teePrint', () => new THREE.PlaneGeometry(0.36, 0.36)), printMat(look.tee));
+    print.position.set(0, TEE_Y, TEE_Z);
+    body.add(print);
+  }
   const head1 = accessory('head', look.head);
   if (head1) {
     const m = mat(look.hatColor ? PALETTES.hat[look.hatColor] : head1.color);

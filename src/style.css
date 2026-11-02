@@ -812,11 +812,11 @@ a.setting-row { text-decoration: none; color: inherit; }
 }
 .in-store .quest-chip { display: none; }
 
-/* K-POP café: the video on the wall screen (CSS3D layer over the canvas),
-   and a small now-playing bar */
-.css3d-layer { position: fixed !important; inset: 0; pointer-events: none; z-index: 0; }
-.css3d-layer[hidden] { display: none; }
-.kpop-video { width: 960px; height: 540px; background: #000; pointer-events: none; }
+/* K-POP café: the video on the wall screen (a box over the canvas), and a
+   small now-playing bar */
+.kpop-layer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.kpop-layer[hidden] { display: none; }
+.kpop-video { position: absolute; overflow: hidden; background: #000; pointer-events: none; }
 .kpop-video iframe, .kpop-video > div { width: 100%; height: 100%; border: 0; display: block; }
 .kpop-tv {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));

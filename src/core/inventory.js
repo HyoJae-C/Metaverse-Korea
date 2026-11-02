@@ -36,6 +36,18 @@ export const ITEMS = {
       zh: '速度快，但只能走大路，进不了小巷。下车步行去逛小巷吧。',
     },
   },
+  // Printed T-shirts: worn from the bag (prints in core/tee-prints.js).
+  'tee-simurugi': {
+    emoji: '👕',
+    tee: 'simurugi',
+    name: { en: 'Simurugi tee', ko: '시무룩이 티셔츠', ja: 'シムルギTシャツ', zh: '闷闷鬼T恤' },
+    desc: {
+      en: 'A fluffy critter with a very sulky face. Tap Wear to put it on.',
+      ko: '잔뜩 시무룩한 얼굴의 복슬복슬한 친구예요. "입기"를 누르면 입어요.',
+      ja: 'すごくふてくされた顔のふわふわの子。「着る」で着られます。',
+      zh: '一只一脸闷闷不乐的毛茸茸小家伙。点“穿上”即可穿上。',
+    },
+  },
   // Pets: adopted at the pet shop for coins (price), or by code only (no price).
   ...pets({
     'pet-maltese': [30, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],
@@ -72,6 +84,7 @@ export class Inventory {
 const CODES = {
   f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10: Object.keys(ITEMS), // master: every item
   '378fc355ed89c5e4b9ba305012dea3f4c739e2fbcd5accdbf6a19bfb53f3ac52': ['car'],
+  '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
   // Pets not sold yet: one code each.
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
   bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
