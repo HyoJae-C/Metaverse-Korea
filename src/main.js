@@ -22,6 +22,7 @@ import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
+import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -164,6 +165,8 @@ const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
+// Passers-by: two strolling around each meeting zone.
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -594,6 +597,7 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 }
 
 const interiorCache = new Map();
+let clerk = null; // the clerk NPC in the shop you're in
 // Bike share: rent at a station, get off anywhere (the bike goes back by itself).
 let riding = false;
 function setRiding(on) {
@@ -625,6 +629,15 @@ function enterStore(item) {
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
+  if (built.clerk && !built.clerkNpc) {
+    built.clerkNpc = makeNpc($('labels'), t('npc.clerk'));
+    built.clerkNpc.ch.root.position.set(built.clerk.x, 0, built.clerk.z);
+    built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
+    built.scene.add(built.clerkNpc.ch.root);
+  }
+  clerk = built.clerkNpc || null;
+  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
+  npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
     openHome(store, built);
@@ -635,6 +648,9 @@ function leaveStore() {
   if (mode !== 'store') return;
   standUp();
   closeHome();
+  if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
+  clerk = null;
+  npcs.setVisible(true);
   sfx.doorbell();
   const it = interior.front;
   mode = 'street';
@@ -952,6 +968,10 @@ function updateAction(p, tSec) {
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
     else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
+    else {
+      const n = npcs.nearest(p.x, p.z);
+      if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => npcs.greet(n, p.x, p.z) };
+    }
   } else {
     const ex = interior.exit;
     const seat = !seated && nearestSeat(p);
@@ -964,6 +984,8 @@ function updateAction(p, tSec) {
       else closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
     } else if (seat) {
       next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
@@ -1168,6 +1190,8 @@ renderer.setAnimationLoop(() => {
 
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
+  if (mode === 'street') npcs.update(dt, camera, w, h);
+  else if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
   tmp.set(p.x, 1.55, p.z).project(camera);
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
@@ -1189,6 +1213,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
+    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },

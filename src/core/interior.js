@@ -244,6 +244,7 @@ export function buildInterior(store) {
 
   // Category extras.
   const seats = [];
+  let clerk = null; // where the shop clerk stands (behind the counter)
   if (store.category === 'cafe') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.
@@ -272,6 +273,7 @@ export function buildInterior(store) {
     box(2.4, 1.0, 0.8, sx - 1.4, 0.5, d / 2 - 2.2, '#fffaf0');
     box(0.3, 0.35, 0.3, sx - 0.8, 1.17, d / 2 - 2.2, '#4a3f35'); // coffee machine
     block(sx - 1.4, d / 2 - 2.2, 2.4, 0.8);
+    clerk = { x: sx - 1.4, z: d / 2 - 1.45, ry: Math.PI };
   } else if (store.category === 'home') {
     // Empty home: big windows on the back wall; the player decorates it.
     for (const wx of [-w / 4, w / 4]) {
@@ -285,6 +287,7 @@ export function buildInterior(store) {
     box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0'); // counter
     box(0.35, 0.25, 0.25, cx + 0.4, 1.12, cz, '#4a3f35'); // till
     block(cx, cz, 2.2, 0.8);
+    clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
   }
   // Plants in the corners.
   if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
@@ -302,5 +305,6 @@ export function buildInterior(store) {
   block(-w / 2 + 0.2 - t / 2, 0, t, d);
   block(w / 2 - 0.2 + t / 2, 0, t, d);
 
-  return { scene, products, colliders, seats, room: ROOM, exit: EXIT };
+  if (clerk) block(clerk.x, clerk.z, 0.6, 0.5); // don't walk through the clerk
+  return { scene, products, colliders, seats, clerk, room: ROOM, exit: EXIT };
 }
