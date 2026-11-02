@@ -23,6 +23,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 - Running uses a stamina bar that refills while you walk or rest
 - Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
+- Text chat (💬, or T): speech bubbles over heads and a short log
 
 ## Run locally
 

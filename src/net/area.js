@@ -65,6 +65,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
       onState: (id, st) => known(id) && handlers.onState(id, st),
       onEmote: (id, e) => known(id) && handlers.onEmote(id, e),
       onLook: (id, look) => known(id) && handlers.onLook?.(id, look),
+      onChat: (id, t) => known(id) && handlers.onChat?.(id, t),
     };
     const adapter = await createNet(provider, cellHandlers, cfg);
     const entry = { adapter, listenOnly };
@@ -112,6 +113,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     },
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
+    sendChat(t) { own()?.sendChat?.(t); },
     sendLook(look) {
       me = { ...me, look };
       for (const { adapter } of cells.values()) adapter.updateSelf?.(me);

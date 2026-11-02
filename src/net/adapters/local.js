@@ -1,7 +1,7 @@
 // Test adapter: players in other tabs of the same browser see each other,
 // via BroadcastChannel. No server needed.
 
-export function createLocalAdapter({ onJoin, onLeave, onState, onEmote, onLook }) {
+export function createLocalAdapter({ onJoin, onLeave, onState, onEmote, onLook, onChat }) {
   let ch = null;
   let self = null;
   const peers = new Map(); // id → last seen ms
@@ -34,6 +34,7 @@ export function createLocalAdapter({ onJoin, onLeave, onState, onEmote, onLook }
         } else if (m.type === 'state') onState(m.from, m.state);
         else if (m.type === 'emote') onEmote(m.from, m.emote);
         else if (m.type === 'look') onLook?.(m.from, m.look);
+        else if (m.type === 'chat') onChat?.(m.from, m.text);
         else if (m.type === 'leave') {
           peers.delete(m.from);
           onLeave(m.from);
@@ -59,6 +60,9 @@ export function createLocalAdapter({ onJoin, onLeave, onState, onEmote, onLook }
     },
     sendEmote(emote) {
       post({ type: 'emote', emote });
+    },
+    sendChat(text) {
+      post({ type: 'chat', text });
     },
     sendLook(look) {
       self = { ...self, look };

@@ -397,6 +397,12 @@ async function joinRoom(room, roomScene, area = null) {
       if (em) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
     onLook: (id, look) => others.setLook(id, look),
+    onChat: (id, raw) => {
+      if (!config.chatEnabled) return;
+      const text = cleanChat(raw);
+      const name = text && others.chat(id, text);
+      if (name) addChatLine(name, text);
+    },
   };
   try {
     const n = await createAreaNet(config.netProvider, handlers, config.net, {
@@ -478,6 +484,51 @@ addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement) return;
   const n = Number(e.key);
   if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
+});
+
+// Text chat: a speech bubble over your head and a short log (last 6 lines,
+// fading out). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
+const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
+let lastChatAt = 0, chatNoticeShown = false;
+const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
+function addChatLine(name, text, kind = '') {
+  const line = document.createElement('div');
+  line.className = 'chat-line ' + kind;
+  const b = document.createElement('b');
+  b.textContent = name;
+  line.append(b, document.createTextNode(' ' + text));
+  chatLog.append(line);
+  while (chatLog.children.length > 6) chatLog.firstChild.remove();
+  setTimeout(() => line.classList.add('old'), 15000);
+}
+function openChat() {
+  chatBar.hidden = false;
+  input.keys.clear();
+  chatInput.focus();
+  if (!chatNoticeShown) { chatNoticeShown = true; addChatLine('ℹ️', t('chat.notice'), 'note'); }
+}
+function closeChat() { chatBar.hidden = true; chatInput.blur(); }
+$('chat-btn').hidden = !config.chatEnabled;
+$('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
+chatBar.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const text = cleanChat(chatInput.value);
+  const now = performance.now() / 1000;
+  if (!text || now - lastChatAt < config.chatCooldown) return;
+  lastChatAt = now;
+  chatInput.value = '';
+  showBubble(myLabel, $('labels'), text, 6000, 'chat');
+  addChatLine(nickname, text, 'mine');
+  net.sendChat?.(text);
+  if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
+});
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.isComposing) e.preventDefault(); // Korean/Japanese IME: finish the word first
+  if (e.key === 'Escape') closeChat();
+});
+addEventListener('keydown', (e) => {
+  if (!config.chatEnabled || e.target instanceof HTMLInputElement) return;
+  if (e.code === 'KeyT' || e.code === 'Slash') { e.preventDefault(); openChat(); }
 });
 
 

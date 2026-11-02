@@ -442,3 +442,39 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   transition: background 0.3s;
 }
 .stamina.tired .stamina-fill { background: #ff6f5b; }
+
+/* Text chat */
+.bubble.chat {
+  font-size: 14px; font-weight: 600; line-height: 1.3;
+  max-width: 220px; padding: 6px 10px; text-align: center;
+  overflow-wrap: anywhere; color: var(--ink, #4a3f35);
+}
+.chat-log {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  width: min(320px, 70vw); display: flex; flex-direction: column; gap: 4px;
+  pointer-events: none;
+}
+.chat-line {
+  background: rgba(255, 255, 255, 0.88); border-radius: 12px; padding: 4px 10px;
+  font-size: 13px; color: #4a3f35; overflow-wrap: anywhere;
+  box-shadow: 0 2px 0 rgba(74, 63, 53, 0.12); transition: opacity 1s;
+}
+.chat-line b { color: #e0604d; }
+.chat-line.mine b { color: #2f8f6b; }
+.chat-line.note { font-size: 12px; background: rgba(255, 246, 220, 0.92); }
+.chat-line.old { opacity: 0; }
+.chat-bar {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+  width: min(520px, calc(100% - 24px)); display: flex; gap: 8px; z-index: 5;
+}
+.chat-bar input {
+  flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px 14px;
+  border-radius: 999px; border: 2px solid #fff; background: rgba(255, 255, 255, 0.95);
+}
+.chat-bar button { flex: 0 0 auto; width: auto; margin: 0; padding: 0 18px; min-height: 44px; }
+@media (pointer: coarse) {
+  .chat-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); }
+  .chat-bar { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+}

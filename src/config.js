@@ -26,4 +26,9 @@ export const config = {
   staminaDelay: 1,
   staminaResume: 0.3,
   staminaUnlimited: false,
+  // Text chat (speech bubbles + a short log). On while the world is small;
+  // can be limited to some places later (e.g. only the café).
+  chatEnabled: true,
+  chatMaxLength: 80,
+  chatCooldown: 1.2, // seconds between messages
 };

@@ -38,6 +38,12 @@ try {
   await b.click('#emote-main'); // open the emote wheel
   await b.click('#emotes button >> nth=0');
   await a.waitForSelector('.bubble', { timeout: 5000 });
+  // Text chat reaches the other player as a bubble and a log line.
+  await b.click('#chat-btn');
+  await b.fill('#chat-input', 'hello from B');
+  await b.press('#chat-input', 'Enter');
+  await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 5000 });
+  await b.press('#chat-input', 'Escape');
   // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
   const [ax, az] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 700, z), [ax, az]);
@@ -59,7 +65,7 @@ try {
   }
 }
 await a.screenshot({ path: 'e2e-multiplayer.png' });
-console.log(ok ? 'PASS: players see each other, emotes arrive, area cells switch' : 'FAIL');
+console.log(ok ? 'PASS: players see each other, emotes and chat arrive, area cells switch' : 'FAIL');
 if (errors.length) console.log(errors.join('\n'));
 await browser.close();
 process.exit(ok ? 0 : 1);

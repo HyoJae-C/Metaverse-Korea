@@ -15,7 +15,7 @@ function sharedClient(url, key) {
   return clients.get(k);
 }
 
-export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook }, cfg) {
+export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook, onChat }, cfg) {
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
   const client = sharedClient(cfg.url, cfg.key);
   let channel = null;
@@ -61,6 +61,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
         })
         .on('broadcast', { event: 'l' }, ({ payload }) => {
           if (known.has(payload.id)) onLook?.(payload.id, payload.look);
+        })
+        .on('broadcast', { event: 'c' }, ({ payload }) => {
+          if (known.has(payload.id)) onChat?.(payload.id, payload.t);
         });
 
       return new Promise((resolve, reject) => {
@@ -82,6 +85,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     },
     sendEmote(e) {
       channel?.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
+    },
+    sendChat(t) {
+      channel?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
     },
     sendLook(look) {
       self = { ...self, look };

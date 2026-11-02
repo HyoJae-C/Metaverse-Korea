@@ -28,6 +28,7 @@
       </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
+        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
         <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
@@ -69,6 +70,11 @@
         <div class="emote-petals" id="emotes" hidden></div>
         <button class="emote-main" id="emote-main" aria-label="Emotes">😊</button>
       </div>
+      <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <form class="chat-bar" id="chat-bar" hidden>
+        <input id="chat-input" type="text" autocomplete="off" enterkeyhint="send" maxlength="80" data-i18n-placeholder="chat.placeholder" />
+        <button class="primary" type="submit" data-i18n="chat.send"></button>
+      </form>
       <div class="stamina" id="stamina" hidden aria-hidden="true"><div class="stamina-fill" id="stamina-fill"></div></div>
       <div class="joystick" id="joystick" hidden><div class="knob"></div></div>
       <div class="help" id="help" hidden>

@@ -64,6 +64,13 @@ export class RemotePlayers {
     return false;
   }
 
+  chat(id, text) {
+    const p = this.players.get(id);
+    if (!p) return null;
+    showBubble(p, this.layer, text, 6000, 'chat');
+    return p.name;
+  }
+
   emote(id, anim, emoji) {
     const p = this.players.get(id);
     if (!p) return;
@@ -98,11 +105,11 @@ export class RemotePlayers {
   }
 }
 
-export function showBubble(p, layer, emoji) {
+export function showBubble(p, layer, text, ms = 2500, kind = '') {
   p.bubble?.remove();
   const b = document.createElement('div');
-  b.className = 'bubble';
-  b.textContent = emoji;
+  b.className = kind ? 'bubble ' + kind : 'bubble';
+  b.textContent = text; // always text, never HTML
   layer.appendChild(b);
   p.bubble = b;
   setTimeout(() => {
@@ -110,5 +117,5 @@ export function showBubble(p, layer, emoji) {
       b.remove();
       p.bubble = null;
     }
-  }, 2500);
+  }, ms);
 }

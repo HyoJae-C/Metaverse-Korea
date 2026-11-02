@@ -12,6 +12,10 @@ export const LANGUAGES = [
 export const STRINGS = {
   en: {
     'hud.map': 'Map',
+    'hud.chat': 'Chat',
+    'chat.placeholder': 'Say something to people nearby…',
+    'chat.send': 'Send',
+    'chat.notice': "Chat is public: be kind, and don't share personal info.",
     'hud.cart': 'Bag',
     'hud.signs': 'Signs',
     'hud.signsOn': 'Signs translated',
@@ -93,6 +97,10 @@ export const STRINGS = {
   },
   ko: {
     'hud.map': '지도',
+    'hud.chat': '채팅',
+    'chat.placeholder': '근처 사람들에게 말 걸기…',
+    'chat.send': '보내기',
+    'chat.notice': "채팅은 공개돼요. 친절하게, 개인정보는 공유하지 마세요.",
     'hud.cart': '쇼핑백',
     'hud.signs': '간판',
     'hud.signsOn': '간판 번역 중',
@@ -174,6 +182,10 @@ export const STRINGS = {
   },
   ja: {
     'hud.map': '地図',
+    'hud.chat': 'チャット',
+    'chat.placeholder': '近くの人に話しかける…',
+    'chat.send': '送信',
+    'chat.notice': "チャットは公開です。思いやりを持ち、個人情報は書かないでください。",
     'hud.cart': 'バッグ',
     'hud.signs': '看板',
     'hud.signsOn': '看板を翻訳中',
@@ -255,6 +267,10 @@ export const STRINGS = {
   },
   zh: {
     'hud.map': '地图',
+    'hud.chat': '聊天',
+    'chat.placeholder': '和附近的人说点什么…',
+    'chat.send': '发送',
+    'chat.notice': "聊天是公开的：请友善，不要分享个人信息。",
     'hud.cart': '购物袋',
     'hud.signs': '招牌',
     'hud.signsOn': '招牌已翻译',
