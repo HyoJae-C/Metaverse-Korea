@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage } from '../core/i18n.js';
-import { FISH, rollFish, tapsFor, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX } from '../core/fishing.js';
+import { FISH, rollFish, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -16,8 +16,8 @@ const pct = (c) => (c < 1 ? c.toFixed(1) : String(c)) + '%';
 
 export class FishingUI {
   // bag: FishBag; onRod(on): show or hide the rod; onCatch(fish): after a catch.
-  constructor({ root, bag, onRod, onCatch, onClose }) {
-    Object.assign(this, { root, bag, onRod, onCatch, onClose });
+  constructor({ root, bag, onRod, onCatch, onEscape, onClose }) {
+    Object.assign(this, { root, bag, onRod, onCatch, onEscape, onClose });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -76,7 +76,7 @@ export class FishingUI {
     const list = el('div', 'fish-list');
     for (const f of FISH) {
       const row = el('div', 'fish-row');
-      row.append(el('span', 'fish-emoji', f.emoji), el('span', 'fish-name', fishName(f)), el('small', null, `${pct(f.chance)} · 🪙 ${f.price}`));
+      row.append(el('span', 'fish-emoji', f.emoji), el('span', 'fish-name', fishName(f)), el('small', null, `${pct(f.chance)} · 🪙 ${f.price} · 💨 ${Math.round(escapeChance(f) * 100)}%`));
       list.append(row);
     }
     d.append(list);
@@ -121,10 +121,14 @@ export class FishingUI {
       fill.style.width = Math.min(100, (taps / need) * 100) + '%';
       time.textContent = t('fish.time', { s: Math.max(0, left).toFixed(1) });
     };
-    btn.onclick = () => {
+    // pointerdown, not click: fast taps register at once (and no
+    // double-tap zoom on phones, see .fish-reel in style.css).
+    btn.onpointerdown = (e) => {
+      e.preventDefault();
+      if (this.state !== 'reel') return;
       taps++;
       paint();
-      if (taps >= need) this.landed();
+      if (taps >= need) this.landed(Math.max(0, left) / REEL_SECONDS);
     };
     const actions = el('div', 'order-actions');
     actions.append(btn);
@@ -137,8 +141,11 @@ export class FishingUI {
     }, 100);
   }
 
-  landed() {
+  landed(spare = 0) {
+    clearInterval(this.tick);
+    this.state = 'landed';
     const f = this.fish;
+    if (Math.random() < escapeChance(f, spare)) { this.escaped(f); return; }
     const kept = this.bag.add(f.id);
     this._frame();
     const card = el('div', 'fish-card' + (f.chance <= 2 ? ' rare' : ''));
@@ -158,6 +165,21 @@ export class FishingUI {
     if (kept) this.onCatch?.(f);
   }
 }
+
+// It slipped off the hook right at the end.
+FishingUI.prototype.escaped = function escaped(f) {
+  this._frame();
+  const card = el('div', 'fish-card escaped');
+  card.append(el('span', 'fish-big', f.emoji), el('strong', null, f.ko), el('small', 'order-rom', f.rom));
+  this.root.append(card, el('p', 'order-hint', t('fish.escaped', { name: fishName(f) })));
+  const again = el('button', 'primary', '🎣 ' + t('fish.again'));
+  again.onclick = () => this.cast();
+  again.disabled = this.bag.full;
+  const actions = el('div', 'order-actions');
+  actions.append(again);
+  this.root.append(actions);
+  this.onEscape?.(f);
+};
 
 // Fish market: sell one, a whole kind, or everything.
 export class FishMarketUI {

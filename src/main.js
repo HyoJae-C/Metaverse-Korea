@@ -5,6 +5,7 @@ import {
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD } from './core/quests.js';
+import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { createCharacter } from './core/character.js';
@@ -164,7 +165,11 @@ try {
 // ---------- Renderer & scene ----------
 const lowSpec = matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4;
 const canvas = $('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowSpec, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowSpec, powerPreference: 'high-performance' }); // alpha: the K-POP café screen is a see-through hole
+// iPhone Safari ignores user-scalable=no: stop pinch and double-tap zoom
+// (fast taps on the fishing reel button zoomed the page in).
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec ? 1.5 : 2));
 renderer.shadowMap.enabled = !lowSpec;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -441,16 +446,15 @@ onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
-// The video sits on the café's wall screen: a plain box laid over the canvas
-// where the screen is (no 3D transforms: iPhone Safari can drop video, and
-// YouTube's ads stop, inside a 3D-transformed player).
+// The video sits on the café's wall screen, behind the canvas (see
+// placeKpopVideo).
 const kpopLayer = document.createElement('div');
 kpopLayer.className = 'kpop-layer';
 kpopLayer.hidden = true;
 const kpopVideo = document.createElement('div');
 kpopVideo.className = 'kpop-video';
 kpopLayer.append(kpopVideo);
-document.getElementById('scene').after(kpopLayer);
+document.getElementById('scene').before(kpopLayer); // behind the canvas
 const kpop = new KpopRoom({ video: kpopVideo, tv: $('kpop-tv'), panel: $('kpop-panel'), send: (m) => net.sendEmote(m), toast: (x) => shop.toast(x) });
 $('kpop-tv').querySelector('.kpop-unmute').onclick = () => kpop.unmute();
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
@@ -477,6 +481,7 @@ async function joinRoom(room, roomScene, area = null) {
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
+      if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
@@ -530,6 +535,7 @@ const emoteBar = $('emotes');
 const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
 function sendEmote(em) {
   missionEvent('emote');
+  if (onSquare()) missionEvent('squareEmote');
   if (em.anim) me.play(em.anim);
   showBubble(myLabel, $('labels'), em.emoji);
   net.sendEmote(em.id);
@@ -1524,7 +1530,7 @@ const grillUi = new GrillUI({
   root: $('grill-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
 });
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
@@ -1538,7 +1544,9 @@ const fishingUi = new FishingUI({
     showBubble(myLabel, $('labels'), f.emoji);
     if (f.chance <= 2) me.play('cheer'); // a rare one!
     missionEvent('fish', f.id);
+    togetherBonus('fish');
   },
+  onEscape: () => showBubble(myLabel, $('labels'), '💨'),
 });
 const marketUi = new FishMarketUI({
   root: $('market-panel'),
@@ -1554,7 +1562,7 @@ const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
 });
 // Hair salon (dye) and cosmetic clinic (eye colour, skin tone, smaller head):
 // try options on with a close-up camera, pay coins to keep them.
@@ -1765,17 +1773,22 @@ function talkToGuide() {
   if (q && quests.ready(questCtx())) {
     const coins = quests.claim(questCtx());
     if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
-    wallet.add(coins);
+    // Busy square bonus: +1 for everyone else standing around the guide.
+    const g = squareNpc.ch.root.position;
+    const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
+    wallet.add(coins + crowd);
     me.play('cheer');
     say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
-    shop.toast(t('quest.done', { coins, left: quests.left }));
+    shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
+    missionEvent('square');
   } else if (q) {
     say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
   } else if (quests.left) {
     const a = quests.start({
       stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
-      has: (kind) => kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id)), // only if you have a pet
+      has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
+        && (kind !== 'highfive' || others.players.size > 0), // only with someone around
     });
     say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: QUEST_REWARD }));
@@ -1786,6 +1799,44 @@ function talkToGuide() {
 }
 $('quest-chip').onclick = () => { const q = quests.active; if (q) shop.toast(quests.ready(questCtx()) ? t('quest.goBack') : questText(q)); };
 refreshQuestChip();
+
+// On the square: near the guide and the big screen.
+const onSquare = () => mode === 'street' && squareNpc && Math.hypot(me.root.position.x - squareNpc.ch.root.position.x, me.root.position.z - squareNpc.ch.root.position.z) < 14;
+
+// Doing something with another player close by pays a little extra.
+function togetherBonus(kind) {
+  const p = me.root.position;
+  const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
+  if (!friend) return;
+  wallet.add(TOGETHER_COINS[kind]);
+  shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
+}
+
+// High five (core/together.js): both press 🙌 next to each other.
+const hi5 = new HighFives();
+function pressHi5(o) {
+  net.sendEmote(hi5Msg(o.id));
+  me.play('wave');
+  showBubble(myLabel, $('labels'), '🙌');
+  const r = hi5.press(o.id, o.name);
+  if (r) hi5Done(o.id, r);
+  else shop.toast(t('hi5.sent', { name: o.name }));
+}
+function onHi5(id) {
+  const name = others.nameOf(id);
+  const r = hi5.heard(id, name);
+  if (r) hi5Done(id, r);
+  else { shop.toast(t('hi5.asked', { name })); action = null; } // refresh the button
+}
+function hi5Done(id, { coins }) {
+  me.play('cheer');
+  others.emote(id, 'cheer', '🙌');
+  showBubble(myLabel, $('labels'), '🙌');
+  sfx.pop?.();
+  if (coins) wallet.add(coins);
+  shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
+  missionEvent('highfive');
+}
 
 function missionEvent(type, target) {
   if (quests.event(type, target)) {
@@ -1879,6 +1930,11 @@ function standUp() {
   sendTimer = 0;
 }
 
+const hi5Target = (p) => !riding && !seated && others.nearestFree(p.x, p.z, 2);
+function hi5Action(o) {
+  const asked = hi5.waiting(o.id);
+  return { key: 'hi5:' + o.id + asked, label: '🙌 ' + t(asked ? 'hi5.accept' : 'hi5.ask', { name: o.name }), run: () => pressHi5(o) };
+}
 function updateAction(p, tSec) {
   let next = null;
   if (mode === 'street') {
@@ -1896,6 +1952,7 @@ function updateAction(p, tSec) {
       next = { key: 'tandem-hop:' + inv.from, label: (others.kindOf(inv.from) === 4 ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
+    else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
       const q = quests.active;
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
@@ -1941,6 +1998,8 @@ function updateAction(p, tSec) {
     } else if (interior.pets?.nearest(p.x, p.z)) {
       const pet = interior.pets.nearest(p.x, p.z);
       next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };
+    } else if (hi5Target(p)) {
+      next = hi5Action(hi5Target(p));
     } else if (seat) {
       next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
@@ -2239,26 +2298,37 @@ renderer.setAnimationLoop(() => {
   placeKpopVideo(kpop.song && interior?.tv);
 });
 
-// Lay the player over the wall screen's rectangle on screen (the screen
-// faces the camera, so its corners' bounding box is close enough).
-const kpopRect = [0, 0, 0, 0];
+// The player sits BEHIND the canvas; while a song is on, the wall screen is
+// drawn as a see-through hole, so the video shows only there and people in
+// front of the TV still cover it. The player box is fitted to the screen's
+// corners with a flat (2D) transform: no 3D transforms, which can drop video
+// on iPhones.
+const KPOP_W = 640, KPOP_H = 360;
+const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: false, blending: THREE.NoBlending });
+holeMat.opacity = 0;
+let kpopLast = '';
 function placeKpopVideo(tv) {
   let ok = !!tv;
-  if (ok) {
+  if (tv) {
+    if (!tv.glowMat) tv.glowMat = tv.screen.material;
+    tv.screen.material = holeMat;
     const p = tv.screen.position, hw = tv.width / 2, hh = tv.screen.geometry.parameters.height / 2;
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const [dx, dy] of [[-hw, -hh], [hw, -hh], [-hw, hh], [hw, hh]]) {
-      tmp.set(p.x + dx, p.y + dy, p.z + 0.01).project(camera);
+    const c = [[-hw, hh], [hw, hh], [-hw, -hh], [hw, -hh]].map(([dx, dy]) => { // TL, TR, BL, BR
+      tmp.set(p.x + dx, p.y + dy, p.z).project(camera);
       if (tmp.z > 1) ok = false; // behind the camera
-      const x = (tmp.x * 0.5 + 0.5) * innerWidth, y = (-tmp.y * 0.5 + 0.5) * innerHeight;
-      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
-    }
-    const r = [x0, y0, x1 - x0, y1 - y0].map(Math.round);
-    if (r.some((v, i) => v !== kpopRect[i])) {
-      r.forEach((v, i) => { kpopRect[i] = v; });
-      Object.assign(kpopVideo.style, { left: r[0] + 'px', top: r[1] + 'px', width: r[2] + 'px', height: r[3] + 'px' });
-    }
+      return [(tmp.x * 0.5 + 0.5) * innerWidth, (-tmp.y * 0.5 + 0.5) * innerHeight];
+    });
+    const [tl, tr, bl, br] = c;
+    const ex = [(tr[0] - tl[0] + br[0] - bl[0]) / 2, (tr[1] - tl[1] + br[1] - bl[1]) / 2];
+    const ey = [(bl[0] - tl[0] + br[0] - tr[0]) / 2, (bl[1] - tl[1] + br[1] - tr[1]) / 2];
+    const cx = (tl[0] + tr[0] + bl[0] + br[0]) / 4, cy = (tl[1] + tr[1] + bl[1] + br[1]) / 4;
+    const k = 1.06; // a little bigger than the hole, so its edges never show the café
+    const m = [ex[0] / KPOP_W * k, ex[1] / KPOP_W * k, ey[0] / KPOP_H * k, ey[1] / KPOP_H * k];
+    m.push(cx - (ex[0] + ey[0]) / 2 * k, cy - (ex[1] + ey[1]) / 2 * k);
+    const css = `matrix(${m.map((v) => v.toFixed(4)).join(',')})`;
+    if (css !== kpopLast) { kpopLast = css; kpopVideo.style.transform = css; }
   }
+  if (!ok && interior?.tv?.glowMat) interior.tv.screen.material = interior.tv.glowMat;
   if (kpopLayer.hidden === ok) kpopLayer.hidden = !ok;
 }
 
