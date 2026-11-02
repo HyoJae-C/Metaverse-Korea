@@ -33,6 +33,8 @@ First stop: **Seongsu-dong, Seoul**.
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
+- Ddeokip Bunsik (snack bar): ordering practice in Korean. Pick a mission ("1 serving of tteokbokki, not spicy, to eat here"), build the order from word blocks, answer the clerk's question, and get a stamp (+15 coins the first time). Then listen to the sentence and record yourself to compare; the recording stays on the device and is never scored. Food can't be bought or eaten here
+- Street chat is heard only within 10 m and shows for a few seconds; inside shops and cafés everyone in the room sees it
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally

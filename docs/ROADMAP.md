@@ -36,6 +36,8 @@ Decisions agreed with the project owner. Each step ships something playable.
 ## Step 3.5: Restaurants and brand spaces
 
 - Food can't actually be eaten, so keep **only 2–3 restaurants**. Inside, each is a **Korean practice zone**: read the menu, practise ordering lines ("이거 주세요"), hear and repeat them
+- First one done: **Ddeokip Bunsik** with three ordering missions (word blocks, the clerk's follow-up question, a stamp each). Missions are data in `src/data/order-missions.js`, so a new restaurant only needs a menu there and `"workshop": "order"` in stores.json
+- Next ideas: a Korean-only kiosk order, reading the menu board, grilling samgyeopsal, building bibimbap, restaurant etiquette quiz. Speech recognition stays out for now (poor accuracy for learners' pronunciation, patchy browser support)
 - The café and bakery stay as meeting spots
 - All other buildings are **spare brand / ad slots**: sign and interior page come from advertiser data, so a brand can be swapped in without code changes. Until sold, they show a clear "Advertise here" sample
 

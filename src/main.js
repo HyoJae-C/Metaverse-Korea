@@ -19,6 +19,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
+import { OrderUI } from './ui/order-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
@@ -721,6 +722,7 @@ function leaveStore() {
   standUp();
   closeHome();
   closeHatWorkshop(false);
+  if (orderUi.open) orderUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -987,6 +989,18 @@ $('piece-close').onclick = closePiece;
 
 // Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+// Ordering practice at restaurants (food can't be eaten; you practise ordering).
+const orderUi = new OrderUI({
+  root: $('order-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
+});
+function openOrder() {
+  if (!interior?.store || !clerk) return;
+  clerk.ch.wave();
+  orderUi.show(interior.store);
+}
 const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
 function refreshWallet() {
   $('coin-count').textContent = wallet.coins;
@@ -1184,6 +1198,8 @@ function updateAction(p, tSec) {
       else closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
