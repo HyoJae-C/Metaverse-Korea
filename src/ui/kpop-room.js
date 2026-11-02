@@ -1,7 +1,7 @@
 // K-POP café: one music video for everyone in the room. Picking a song tells
 // the room "play <id> from <seconds>"; someone who walks in later is caught
 // up by whoever is already there. The video plays in YouTube's own embedded
-// player, shown as the café's TV in the corner of the screen.
+// player, laid over the café's big wall screen (see main.js, CSS3D).
 import { t } from '../core/i18n.js';
 import { KPOP, kpopById, kpopMsg } from '../data/kpop.js';
 
@@ -26,10 +26,11 @@ const el = (tag, cls, text) => {
 };
 
 export class KpopRoom {
-  // tv: the corner box for the player; panel: the song list sheet;
-  // send(msg): to everyone in the room; toast(text).
-  constructor({ tv, panel, send, toast }) {
-    Object.assign(this, { tv, panel, send, toast });
+  // video: the box the player goes in (on the wall screen); tv: the
+  // now-playing bar; panel: the song list sheet; send(msg): to everyone in
+  // the room; toast(text).
+  constructor({ video, tv, panel, send, toast }) {
+    Object.assign(this, { video, tv, panel, send, toast });
     this.song = null; // { id, startedAt (ms, our clock) }
     this.inside = false;
     this.player = null;
@@ -105,7 +106,7 @@ export class KpopRoom {
       this.player.loadVideoById({ videoId: id, startSeconds: start });
       return;
     }
-    const box = this.tv.querySelector('.kpop-video');
+    const box = this.video;
     box.replaceChildren(el('div'));
     this.player = new YT.Player(box.firstChild, {
       videoId: id,

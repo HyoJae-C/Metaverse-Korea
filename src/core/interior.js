@@ -501,7 +501,7 @@ export function buildInterior(store) {
     scene.add(glow);
     for (const sx of [-3.2, 3.2]) box(0.6, 1.1, 0.5, sx, 0.55, tvz + 0.4, '#2b2b30'); // speakers
     block(0, tvz + 0.3, 7, 0.9);
-    tv = { x: 0, z: tvz + 1.6, screen: glow };
+    tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
   return { scene, products, colliders, seats, clerk, turntable, tv, room: ROOM, exit: EXIT };
 }

@@ -31,9 +31,69 @@ function drawSlide(g, s) {
   g.fillText(s.tag || 'AD', W - 28, 36);
 }
 
+// The animated title card: "메타버스 서울" bouncing over a night skyline
+// with Namsan Tower, twinkling stars and a slowly shifting sky (like a GIF).
+const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+const SKYLINE = [ // [x, width, height] in screen units (0..W), repeats
+  [0, 70, 120], [60, 50, 180], [105, 80, 140], [180, 40, 210], [215, 90, 160], [300, 60, 230], [355, 70, 150],
+  [420, 50, 190], [465, 100, 130], [560, 60, 250], [615, 80, 170], [690, 45, 210], [730, 90, 140], [815, 60, 200], [870, 90, 160], [955, 69, 120],
+];
+const STARS = Array.from({ length: 40 }, (_, i) => [((i * 263) % 1000) / 1000, ((i * 137) % 450) / 1000, i]);
+export function drawTitleCard(g, t) {
+  const hue = (t * 12) % 360;
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, `hsl(${(250 + hue * 0.2) % 360}, 60%, 18%)`);
+  sky.addColorStop(1, `hsl(${(300 + hue * 0.2) % 360}, 65%, 42%)`);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  for (const [x, y, i] of STARS) { // twinkle
+    g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 2 + i));
+    g.fillStyle = '#fff';
+    g.fillRect(x * W, y * H, 3, 3);
+  }
+  g.globalAlpha = 1;
+  // Skyline drifting left, with Namsan Tower on the hill.
+  const off = (t * 30) % W;
+  g.fillStyle = 'rgba(20, 16, 40, 0.92)';
+  for (const k of [0, 1]) {
+    const ox = k * W - off;
+    for (const [x, w, h] of SKYLINE) g.fillRect(ox + x, H - h, w + 1, h);
+    g.beginPath(); g.ellipse(ox + 520, H, 160, 90, 0, Math.PI, 0); g.fill(); // Namsan
+    g.fillRect(ox + 514, H - 250, 12, 160); // tower
+    g.fillRect(ox + 500, H - 230, 40, 18);
+    g.fillRect(ox + 518, H - 300, 4, 50);
+    for (let i = 0; i < 18; i++) { // lit windows
+      const [x, w, h] = SKYLINE[i % SKYLINE.length];
+      if (Math.sin(t * 1.3 + i * 7) > 0.2) { g.fillStyle = 'rgba(255, 214, 120, 0.85)'; g.fillRect(ox + x + w / 3, H - h + 20 + (i % 4) * 22, 8, 8); g.fillStyle = 'rgba(20, 16, 40, 0.92)'; }
+    }
+  }
+  // Bouncing rainbow letters.
+  const text = '메타버스 서울';
+  g.font = `900 112px ${FONT}`;
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  const widths = [...text].map((c) => g.measureText(c).width);
+  let x = (W - widths.reduce((a, b) => a + b, 0)) / 2;
+  [...text].forEach((c, i) => {
+    const y = H * 0.36 + Math.sin(t * 4 - i * 0.6) * 16;
+    g.lineWidth = 10; g.strokeStyle = 'rgba(0,0,0,0.35)'; g.strokeText(c, x, y + 4);
+    g.fillStyle = `hsl(${(hue * 3 + i * 40) % 360}, 95%, 72%)`;
+    g.fillText(c, x, y);
+    x += widths[i];
+  });
+  g.textAlign = 'center';
+  g.font = `800 40px ${FONT}`;
+  g.fillStyle = '#fff';
+  g.globalAlpha = 0.75 + 0.25 * Math.sin(t * 3);
+  g.fillText('M E T A V E R S E   S E O U L', W / 2, H * 0.58);
+  g.globalAlpha = 1;
+}
+
 export class Billboard {
   constructor(slides) {
-    this.slides = slides.length ? slides : [{ title: 'Metaverse Korea', bg: '#ff8a65' }];
+    // The animated title card first, then again after every three ads.
+    const card = { anim: drawTitleCard, seconds: 10 };
+    this.slides = [card];
+    slides.forEach((s, i) => { this.slides.push(s); if (i % 3 === 2) this.slides.push(card); });
+    this.frameT = 0;
     this.i = 0;
     this.t = 0;
     this.canvas = document.createElement('canvas');
@@ -41,7 +101,7 @@ export class Billboard {
     this.g = this.canvas.getContext('2d');
     this.tex = new THREE.CanvasTexture(this.canvas);
     this.tex.colorSpace = THREE.SRGBColorSpace;
-    drawSlide(this.g, this.slides[0]);
+    this._draw();
 
     const root = new THREE.Group();
     const dark = new THREE.MeshLambertMaterial({ color: 0x2b2b30 });
@@ -66,12 +126,23 @@ export class Billboard {
     this.footprint = [sw * 0.35 * 2 + 0.6, 0.7]; // the two legs, for collision
   }
 
+  _draw() {
+    const s = this.slides[this.i];
+    if (s.anim) s.anim(this.g, this.t);
+    else drawSlide(this.g, s);
+    this.tex.needsUpdate = true;
+  }
+
   update(dt) {
     this.t += dt;
-    if (this.t < SLIDE_SECONDS || this.slides.length < 2) return;
-    this.t = 0;
-    this.i = (this.i + 1) % this.slides.length;
-    drawSlide(this.g, this.slides[this.i]);
-    this.tex.needsUpdate = true;
+    const s = this.slides[this.i];
+    if (this.t >= (s.seconds || SLIDE_SECONDS) && this.slides.length > 1) {
+      this.t = 0;
+      this.i = (this.i + 1) % this.slides.length;
+      this._draw();
+    } else if (s.anim && (this.frameT += dt) >= 1 / 20) { // animate at ~20 fps
+      this.frameT = 0;
+      this._draw();
+    }
   }
 }
