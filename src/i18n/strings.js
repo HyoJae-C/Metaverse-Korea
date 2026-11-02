@@ -11,6 +11,8 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
+    "guide.auto": "Auto",
+    "guide.autoStop": "Stop",
     "tandem.invite": "Invite {name} on the back seat",
     "tandem.sent": "Invited {name}. Waiting for them to hop on…",
     "tandem.invited": "{name} invites you onto their tandem! Walk up and tap Hop on.",
@@ -207,6 +209,8 @@ export const STRINGS = {
     'credit.map': 'Map data',
   },
   ko: {
+    "guide.auto": "자동",
+    "guide.autoStop": "멈춤",
     "tandem.invite": "{name}에게 뒷자리 태워 주기",
     "tandem.sent": "{name}에게 초대를 보냈어요. 탈 때까지 기다려요…",
     "tandem.invited": "{name}님이 2인 자전거에 초대했어요! 가까이 가서 타기를 누르세요.",
@@ -403,6 +407,8 @@ export const STRINGS = {
     'credit.map': '지도 데이터',
   },
   ja: {
+    "guide.auto": "自動",
+    "guide.autoStop": "止める",
     "tandem.invite": "{name}さんを後ろに乗せる",
     "tandem.sent": "{name}さんを招待しました。乗るのを待っています…",
     "tandem.invited": "{name}さんが2人乗り自転車に招待しています！近づいて「乗る」をタップ。",
@@ -599,6 +605,8 @@ export const STRINGS = {
     'credit.map': '地図データ',
   },
   zh: {
+    "guide.auto": "自动",
+    "guide.autoStop": "停止",
     "tandem.invite": "邀请{name}坐后座",
     "tandem.sent": "已邀请{name}，等对方上车…",
     "tandem.invited": "{name}邀请你坐双人自行车！走近后点“上车”。",

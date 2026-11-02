@@ -875,6 +875,16 @@ if (musicWanted) {
 // Guidance to a zone or store.
 let guide = null;
 let routeTimer = 0, routeLen = 0, faceRoute = false;
+let routePoly = null; // the current route along the streets
+// Auto-walk: follow the route without steering. Any stick/key input stops it.
+let autoWalk = false;
+function setAutoWalk(on) {
+  autoWalk = !!on && !!guide && riding !== 3;
+  $('guide-auto').classList.toggle('on', autoWalk);
+  $('guide-auto-label').textContent = t(autoWalk ? 'guide.autoStop' : 'guide.auto');
+  if (autoWalk) { routeTimer = 0; manualCamT = 0; }
+}
+$('guide-auto').onclick = () => setAutoWalk(!autoWalk);
 function setGuide(g) {
   guide = g;
   $('guide').hidden = mode !== 'street';
@@ -883,6 +893,8 @@ function setGuide(g) {
 }
 function clearGuide() {
   guide = null;
+  routePoly = null;
+  setAutoWalk(false);
   $('guide').hidden = true;
   routeLine.clear();
 }
@@ -1396,6 +1408,7 @@ function updateGuide(p, dt) {
     routeTimer = 0.5;
     const poly = roadGraph.route(p.x, p.z, guide.x, guide.z);
     routeLine.set(poly);
+    routePoly = poly;
     routeLen = 0;
     for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
     if (faceRoute) {
@@ -1475,6 +1488,7 @@ renderer.setAnimationLoop(() => {
     }
   }
   if (seated && mag > 0.3) standUp();
+  if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && riding !== 3) {
     walkedFor += dt;
@@ -1499,6 +1513,19 @@ renderer.setAnimationLoop(() => {
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
     speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
+  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
+    // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
+    let tx = routePoly[routePoly.length - 1][0], tz = routePoly[routePoly.length - 1][1];
+    for (const [x, z] of routePoly) if (Math.hypot(x - p.x, z - p.z) > 2.5) { tx = x; tz = z; break; }
+    const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
+    const running = updateStamina(dt, input.run && !riding, true);
+    const speed = riding ? BIKE : running ? RUN : WALK;
+    const [nx, nz] = activeCollision.move(p.x, p.z, (ddx / dl) * speed * dt, (ddz / dl) * speed * dt, PLAYER_R);
+    p.x = nx; p.z = nz;
+    let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    me.root.rotation.y += d * Math.min(1, dt * 8);
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : RUN), Math.min(1, dt * 10));
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
@@ -1507,12 +1534,14 @@ renderer.setAnimationLoop(() => {
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
   // moment after the player drags the view themselves.
-  if (mag > 0.05 && manualCamT <= 0 && !DEBUG_TOP) {
+  // Auto-walk and the tandem back seat follow too (nobody is steering).
+  const carried = (autoWalk && speed01 > 0.05) || (riding === 3 && speed01 > 0.05);
+  if ((mag > 0.05 || carried) && manualCamT <= 0 && !DEBUG_TOP) {
     const behind = me.root.rotation.y + Math.PI;
     let d = behind - cam.yaw;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     // Don't spin round when walking straight towards the camera.
-    if (Math.abs(d) < 2.7) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
+    if (Math.abs(d) < 2.7 || carried) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
   }
 
   // Camera follow.

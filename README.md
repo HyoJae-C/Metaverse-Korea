@@ -37,6 +37,8 @@ First stop: **Seongsu-dong, Seoul**.
 - Street chat is heard only within 10 m and shows for a few seconds; inside shops and cafés everyone in the room sees it
 - Taxi (🚕 in the map, free during beta): tap any spot or pick a place from the list; a short back-seat ride where the driver speaks Korean, then you are dropped off on the nearest road a car can use
 - Map search and category filter: search shop names (any language), food and products
+- Auto-walk: after picking a destination on the map, tap 🚶 Auto in the guidance bar to walk (or bike) there along the streets without steering; touching the stick or keys takes over again
+- Tandem bike (an item): ride it up to someone and invite them onto the back seat; they ride along while you steer. Items are listed in the coin panel
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally

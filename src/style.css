@@ -257,6 +257,8 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   max-width: calc(100vw - 32px);
 }
 .guide-arrow { display: block; flex: none; color: #ffd36e; }
+.guide-auto { flex: none; min-height: 30px; padding: 0 10px; border-radius: 15px; background: rgba(255, 255, 255, 0.18); color: inherit; font-weight: 800; font-size: 13px; white-space: nowrap; }
+.guide-auto.on { background: #ffd36e; color: #4a3f35; }
 .guide-x { background: rgba(255, 255, 255, 0.15); border-radius: 50%; width: 26px; height: 26px; color: inherit; }
 .action {
   position: absolute; left: 50%; transform: translateX(-50%);
