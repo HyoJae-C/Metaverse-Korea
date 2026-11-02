@@ -314,6 +314,22 @@
         { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
         { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } }
       ]
+    },
+    {
+      "id": "ttukseom-hangang", "category": "park", "size": "park",
+      "name": { "ko": "뚝섬 한강공원", "en": "Ttukseom Han River Park", "ja": "トゥクソム漢江公園", "zh": "纛岛汉江公园" },
+      "tagline": { "en": "Fish from the pier and cook ramen by the river", "ko": "한강에서 낚시하고 라면 끓여 먹기", "ja": "桟橋で釣りをして、川辺でラーメンを作ろう", "zh": "在码头钓鱼，在江边煮拉面" },
+      "anchor": { "lat": 37.5405, "lon": 127.0565 },
+      "colors": { "sign": "#2f8f5b", "awning": "#9fd8b4", "accent": "#e9f6ee" },
+      "products": []
+    },
+    {
+      "id": "seongsu-fishmarket", "category": "market", "workshop": "fishmarket", "size": "medium",
+      "name": { "ko": "성수 수산시장", "en": "Seongsu Fish Market", "ja": "ソンス水産市場", "zh": "圣水水产市场" },
+      "tagline": { "en": "Sell the fish you caught at the Han River", "ko": "한강에서 잡은 물고기를 팔아요", "ja": "漢江で釣った魚を売ろう", "zh": "出售你在汉江钓到的鱼" },
+      "anchor": { "lat": 37.5422, "lon": 127.0575 },
+      "colors": { "sign": "#1f5f8b", "awning": "#9cc9e6", "accent": "#eef6fb" },
+      "products": []
     }
   ]
 }

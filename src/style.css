@@ -758,3 +758,40 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fine-panel dd { margin: 0; font-weight: 700; }
 .item-walk { justify-self: start; margin-top: 4px; font-size: 13px; }
 .item-walk.on { background: var(--accent); color: #fff; }
+
+/* Han River fishing, the fish market and ramen */
+.fish-bag { margin: 0; font-size: 13px; font-weight: 700; opacity: .75; }
+.fish-water { position: relative; display: grid; justify-items: center; gap: 4px; padding: 18px 12px; border-radius: 18px; text-align: center; color: #fff; font-weight: 800; background: linear-gradient(#5fb0de, #2f78b0); }
+.fish-water p { margin: 0; }
+.fish-bobber { font-size: 26px; line-height: 1; animation: fish-bob 2.4s ease-in-out infinite; }
+.fish-water.bite { background: linear-gradient(#ffb36b, #e0613a); }
+.fish-water.bite .fish-bobber { animation: fish-tug .25s ease-in-out infinite; }
+.fish-water.reel { background: linear-gradient(#4b8ec7, #1f4f86); }
+.fish-water.reel .fish-bobber { animation: fish-tug .4s ease-in-out infinite; }
+@keyframes fish-bob { 50% { transform: translateY(4px); } }
+@keyframes fish-tug { 50% { transform: translateY(10px) scale(.85); } }
+.fish-hook.pulse { animation: fish-pulse .4s ease-in-out infinite; }
+@keyframes fish-pulse { 50% { transform: scale(1.08); } }
+.fish-meter { width: 100%; height: 14px; border-radius: 7px; background: #e6e9ee; overflow: hidden; }
+.fish-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #4cc38a, #2f8f5b); transition: width .08s linear; }
+.fish-time { display: block; text-align: center; font-weight: 700; }
+.fish-reel { font-size: 18px; padding: 14px 22px; }
+.fish-card { display: grid; justify-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #f2f7fb; text-align: center; }
+.fish-card.rare { background: linear-gradient(135deg, #fff5d6, #ffe08a); box-shadow: 0 0 0 2px #ffd166 inset; }
+.fish-big { font-size: 56px; line-height: 1; }
+.fish-odds summary { cursor: pointer; font-weight: 700; font-size: 13px; }
+.fish-list { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.fish-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.fish-row .fish-name { flex: 1; min-width: 120px; font-weight: 700; }
+.fish-row .chip { font-size: 12px; padding: 5px 9px; }
+.fish-emoji { font-size: 22px; }
+.ramen-pot { display: grid; justify-items: center; gap: 4px; padding: 14px; border-radius: 18px; background: radial-gradient(circle, #3a3a3e 0 55%, #232326 100%); color: #fff; font-weight: 700; text-align: center; }
+.ramen-pot p { margin: 0; }
+.ramen-bowl { font-size: 52px; line-height: 1; }
+.ramen-pot.boiling .ramen-bowl, .ramen-pot.cooking .ramen-bowl { animation: fish-tug .5s ease-in-out infinite; }
+.ramen-meter { position: relative; }
+.ramen-meter i { background: linear-gradient(90deg, #7cc4f0, #e0613a); }
+.ramen-meter.cook::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(4 / 7 * 100% - 6%); width: 12%; background: rgba(255, 209, 102, .55); } /* 4:00 */
+.ramen-meter.cook i { background: linear-gradient(90deg, #ffd166, #c98a4a); }
+.ramen-clock { margin: 0; text-align: center; font-weight: 800; font-size: 18px; }
+.ramen-steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }

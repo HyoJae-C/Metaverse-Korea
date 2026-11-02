@@ -21,6 +21,9 @@ import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './c
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
+import { RamenUI } from './ui/ramen-ui.js';
+import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
+import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -765,10 +768,13 @@ let held = (() => {
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
 })();
+// A fishing rod while the fishing panel is open shows instead of the cup.
+let rodOut = false;
+const heldKind = () => (rodOut ? 'rod' : held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
-  me.setHeld(h?.kind || null);
+  me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
   lastSent = null; // others see it on the next update
 }
@@ -790,7 +796,7 @@ function setLook(look) {
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
   me.setBike(riding);
-  me.setHeld(held?.kind || null);
+  me.setHeld(heldKind());
   old.parent?.remove(old);
   activeScene.add(me.root);
   net.sendLook?.(look);
@@ -1008,6 +1014,9 @@ function leaveStore() {
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
   if (grillUi.open) grillUi.close();
+  if (fishingUi.open) fishingUi.close();
+  if (marketUi.open) marketUi.close();
+  if (ramenUi.open) ramenUi.close();
   leaveMusicCafe();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
@@ -1453,6 +1462,46 @@ const grillUi = new GrillUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
 });
+// Han River park: fishing at the pier and the railing, ramen at the kiosk.
+// The catch goes in a bag (mk.fish) and is sold at the fish market.
+const fishBag = new FishBag();
+const fishingUi = new FishingUI({
+  root: $('fish-panel'),
+  bag: fishBag,
+  onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
+  onCatch: (f) => {
+    sfx.pop?.();
+    showBubble(myLabel, $('labels'), f.emoji);
+    if (f.chance <= 2) me.play('cheer'); // a rare one!
+    missionEvent('fish', f.id);
+  },
+});
+const marketUi = new FishMarketUI({
+  root: $('market-panel'),
+  bag: fishBag,
+  wallet,
+  onSold: (coins) => {
+    if (!coins) return;
+    shop.toast(t('fish.sold', { coins }));
+    clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
+  },
+});
+const ramenUi = new RamenUI({
+  root: $('ramen-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
+});
+const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
+function openFishing() {
+  me.root.rotation.y = Math.PI; // face the river
+  fishingUi.show();
+}
+function openMarket() {
+  if (!clerk) return;
+  clerk.ch.wave();
+  marketUi.show();
+}
 function openGrill() {
   if (!interior?.store || !clerk) return;
   clerk.ch.wave();
@@ -1711,6 +1760,12 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (nearFishing(p)) {
+      next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
+    } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
+      next = { key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() };
+    } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -1958,6 +2013,7 @@ renderer.setAnimationLoop(() => {
   routeLine.update(dt);
   updateCarry();
   updatePet(dt, p);
+  if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
@@ -1989,7 +2045,7 @@ renderer.setAnimationLoop(() => {
     if (seated) st.sit = 1;
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
-    if (held) st.hd = held.kind;
+    if (heldKind()) st.hd = heldKind();
     if (pet) st.pt = pet.id;
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.pt !== lastSent.pt;
     if (changed || idleTimer <= 0) {
@@ -2040,6 +2096,12 @@ if (new URLSearchParams(location.search).has('debug')) {
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
+    heldKind: () => heldKind(),
+    fish: () => ({ ...fishBag.c }),
+    addFish: (id) => fishBag.add(id),
+    fishing: () => fishingUi.state,
+    spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
+    ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
     music: () => ({ on: music.on, track: music.track.id }),
     pet: () => pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible },
     petPoop: () => { if (pet) pet.walked = pet.poopAt; },

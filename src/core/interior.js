@@ -2,12 +2,14 @@
 // for each product. Each interior is its own scene.
 import * as THREE from 'three';
 import { makeAnimal } from './pets.js';
+import { buildPark } from './park.js';
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -140,6 +142,7 @@ const HANGING = new Set(['tee', 'jeans', 'scarf']);
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
+  if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   scene.background = accent.clone().multiplyScalar(0.92);
