@@ -23,6 +23,7 @@ import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
+import { Pets } from './core/pets.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
@@ -649,6 +650,8 @@ function enterStore(item) {
     built.scene.add(built.clerkNpc.ch.root);
   }
   clerk = built.clerkNpc || null;
+  if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
+  interior.pets = built.pets || null;
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
@@ -1049,6 +1052,9 @@ function updateAction(p, tSec) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
+    } else if (interior.pets?.nearest(p.x, p.z)) {
+      const pet = interior.pets.nearest(p.x, p.z);
+      next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); } };
     } else if (seat) {
       next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
@@ -1266,6 +1272,7 @@ renderer.setAnimationLoop(() => {
   others.update(dt, camera, w, h);
   if (mode === 'street') npcs.update(dt, camera, w, h);
   else if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+  if (mode === 'store') interior.pets?.update(dt, me.root.position);
   tmp.set(p.x, 1.55, p.z).project(camera);
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
@@ -1289,6 +1296,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     riding: () => riding,
     place: (x, z) => me.root.position.set(x, 0, z),
     look: () => currentLook,
+    pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
