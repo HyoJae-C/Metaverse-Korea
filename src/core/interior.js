@@ -102,6 +102,16 @@ export function productModel(kind, color) {
     case 'bread':
       add(new THREE.SphereGeometry(0.14, 12, 8).scale(1.3, 0.7, 1), 0, 0.08);
       break;
+    case 'bowl': // a dish of food on a white plate
+      add(new THREE.CylinderGeometry(0.17, 0.12, 0.08, 16), 0, 0.04, 0, mat('#ffffff'));
+      add(new THREE.SphereGeometry(0.13, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.6, 1), 0, 0.08);
+      break;
+    case 'roll': // sliced gimbap
+      for (let i = -1; i <= 1; i++) {
+        add(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12).rotateX(Math.PI / 2), i * 0.07, 0.06);
+        add(new THREE.CylinderGeometry(0.045, 0.045, 0.052, 10).rotateX(Math.PI / 2), i * 0.07, 0.06, 0, mat('#fff8e8'));
+      }
+      break;
     case 'cup':
       add(new THREE.CylinderGeometry(0.08, 0.06, 0.2, 14), 0, 0.1);
       add(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 14), 0, 0.21, 0, mat('#ffffff'));
@@ -158,8 +168,11 @@ export function buildInterior(store) {
   wall(w, 0, d / 2, Math.PI);
 
   // Exit door on the front wall.
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 0.1), mat(store.colors.sign));
-  door.position.set(EXIT.x, 1.2, d / 2 - 0.05);
+  // One-sided and facing in, like the walls, so a camera behind the player
+  // (outside the front wall) looks through it instead of at a dark slab.
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
+  door.rotation.y = Math.PI;
+  door.position.set(EXIT.x, 1.2, d / 2 - 0.03);
   scene.add(door);
   const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 1).rotateX(-Math.PI / 2), mat(store.colors.awning));
   mat2.position.set(EXIT.x, 0.01, d / 2 - 0.6);
@@ -245,7 +258,7 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
-  if (store.category === 'cafe') {
+  if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.
     const cols = Math.max(1, Math.floor((w - 4) / 3.6));

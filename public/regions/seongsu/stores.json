@@ -4,6 +4,23 @@
   "currency": "KRW",
   "stores": [
     {
+      "id": "ddeok-bunsik",
+      "category": "restaurant",
+      "workshop": "order",
+      "orderMenu": "bunsik",
+      "size": "small",
+      "name": { "ko": "떡잎 분식", "en": "Ddeokip Bunsik" },
+      "tagline": { "en": "Korean snack bar: practise ordering in Korean", "ko": "분식집에서 한국어로 주문 연습하기" },
+      "anchor": { "lat": 37.5434, "lon": 127.0541 },
+      "colors": { "sign": "#d8452f", "awning": "#ffd166", "accent": "#fff4e0" },
+      "products": [
+        { "id": "tteokbokki", "model": "bowl", "color": "#e0452b", "price": 5000, "name": { "en": "Tteokbokki", "ko": "떡볶이", "ja": "トッポッキ", "zh": "炒年糕" }, "desc": { "en": "Chewy rice cakes in a sweet and spicy red sauce. Ask for 안 맵게 (not spicy) if you like it mild." } },
+        { "id": "gimbap", "model": "roll", "color": "#2e3b2a", "price": 4000, "name": { "en": "Gimbap", "ko": "김밥", "ja": "キンパ", "zh": "紫菜包饭" }, "desc": { "en": "Rice and vegetables rolled in seaweed and sliced. Counted in rolls: 한 줄, 두 줄." } },
+        { "id": "sundae", "model": "bowl", "color": "#4a3038", "price": 5000, "name": { "en": "Sundae", "ko": "순대", "ja": "スンデ", "zh": "血肠" }, "desc": { "en": "Korean blood sausage with glass noodles, often served with liver and lung. Say 내장 빼고 to skip them." } },
+        { "id": "twigim", "model": "bread", "color": "#e8b04a", "price": 3000, "name": { "en": "Twigim (fried snacks)", "ko": "튀김", "ja": "天ぷら", "zh": "炸物" }, "desc": { "en": "Fried vegetables, squid and seaweed rolls. Great dipped in tteokbokki sauce." } }
+      ]
+    },
+    {
       "id": "ongi-cafe",
       "category": "cafe",
       "size": "large",
@@ -140,6 +157,34 @@
       "products": [
         { "id": "cat-latte", "model": "cup", "color": "#e6c9a8", "price": 6500, "name": { "en": "Cat Paw Latte", "ko": "고양이 발바닥 라떼" }, "desc": { "en": "A latte with a paw print drawn in the foam." } },
         { "id": "fish-bread", "model": "bread", "color": "#d99a52", "price": 3000, "name": { "en": "Bungeoppang", "ko": "붕어빵" }, "desc": { "en": "Fish-shaped pastry filled with sweet red bean." } }
+      ]
+    },
+    {
+      "id": "neoguri-raccoon-cafe",
+      "category": "cafe",
+      "pets": "raccoons",
+      "size": "medium",
+      "name": { "ko": "너구리네 라쿤 카페", "en": "Neoguri Raccoon Café" },
+      "tagline": { "en": "Five curious raccoons who love to explore. Watch your snacks!", "ko": "호기심 많은 라쿤 다섯 마리. 간식 조심하세요!" },
+      "anchor": { "lat": 37.54395, "lon": 127.0569 },
+      "colors": { "sign": "#5b5550", "awning": "#d9d3cc", "accent": "#f6f3ef" },
+      "products": [
+        { "id": "raccoon-mocha", "model": "cup", "color": "#7a5a45", "price": 6500, "name": { "en": "Raccoon Mocha", "ko": "라쿤 모카" }, "desc": { "en": "Chocolate mocha with a striped cream tail on top." } },
+        { "id": "hotteok", "model": "bread", "color": "#c98a4a", "price": 2500, "name": { "en": "Hotteok", "ko": "호떡" }, "desc": { "en": "Pan-fried pancake filled with brown sugar and nuts." } }
+      ]
+    },
+    {
+      "id": "big-paws-dog-cafe",
+      "category": "cafe",
+      "pets": "bigdogs",
+      "size": "large",
+      "name": { "ko": "왕발 대형견 카페", "en": "Big Paws Dog Café" },
+      "tagline": { "en": "Six big, gentle dogs and lots of room to play", "ko": "순한 대형견 여섯 마리와 넓은 놀이 공간" },
+      "anchor": { "lat": 37.5428, "lon": 127.0562 },
+      "colors": { "sign": "#3f6f4f", "awning": "#cfe8c4", "accent": "#f2f9ee" },
+      "products": [
+        { "id": "puppuccino", "model": "cup", "color": "#f3e6d0", "price": 5000, "name": { "en": "Paw Latte", "ko": "왕발 라떼" }, "desc": { "en": "Vanilla latte with a big paw print in the foam." } },
+        { "id": "dog-cookie", "model": "bread", "color": "#d9a066", "price": 3000, "name": { "en": "Bone Cookie", "ko": "뼈다귀 쿠키" }, "desc": { "en": "A bone-shaped butter cookie (for people, not dogs)." } }
       ]
     },
     {

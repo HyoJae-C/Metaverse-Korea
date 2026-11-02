@@ -24,6 +24,7 @@
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
+        <button class="online coin-chip daily-chip" id="daily-btn" aria-label="Daily">📅<b class="dot" id="daily-dot" hidden></b></button>
         <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
         <button class="chip icon-chip" id="settings-btn" aria-label="Settings">⚙️</button>
       </div>
@@ -68,6 +69,16 @@
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
       </div>
+      <div class="sheet daily-panel" id="daily-panel" hidden>
+        <button class="sheet-x" id="daily-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">📅 <span data-i18n="daily.title"></span></strong>
+        <div class="week" id="daily-week"></div>
+        <button class="primary" id="checkin-btn"></button>
+        <p class="fine" id="daily-streak"></p>
+        <strong class="daily-sub" data-i18n="daily.missions"></strong>
+        <ul class="missions" id="daily-missions"></ul>
+        <p class="fine" id="daily-bonus"></p>
+      </div>
       <div class="ad-overlay" id="ad-overlay" hidden>
         <div class="ad-box">
           <small data-i18n="wallet.adDemo"></small>
@@ -76,6 +87,8 @@
           <button class="chip" id="ad-close" data-i18n="wallet.skip"></button>
         </div>
       </div>
+      <!-- Ordering practice (filled in by ui/order-ui.js) -->
+      <div class="sheet order-panel" id="order-panel" hidden></div>
       <div class="sheet hat-panel" id="hat-panel" hidden>
         <strong>🧢 <span data-i18n="hat.title"></span></strong>
         <p class="fine" data-i18n="hat.hint"></p>
@@ -112,6 +125,12 @@
         <button class="emote-main" id="emote-main" aria-label="Emotes">😊</button>
       </div>
       <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <div class="person-menu" id="person-menu" hidden>
+        <strong id="person-name"></strong>
+        <button class="chip" id="person-block">🚫 <span data-i18n="safety.block"></span></button>
+        <button class="chip" id="person-report">🚩 <span data-i18n="safety.report"></span></button>
+        <button class="sheet-x" id="person-close" aria-label="Close">✕</button>
+      </div>
       <form class="chat-bar" id="chat-bar" hidden>
         <input id="chat-input" type="text" autocomplete="off" enterkeyhint="send" maxlength="80" data-i18n-placeholder="chat.placeholder" />
         <button class="primary" type="submit" data-i18n="chat.send"></button>
@@ -206,6 +225,9 @@
         </button>
         <button class="setting-row" id="signs-btn" aria-pressed="false">
           <span>🔤</span><span class="setting-label" data-i18n="settings.signs"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="unblock-btn">
+          <span>🚫</span><span class="setting-label" id="unblock-label"></span><span class="setting-go">›</span>
         </button>
         <button class="setting-row" id="lang-btn">
           <span>🌐</span><span class="setting-label" data-i18n="lang.change"></span><span class="setting-go">›</span>

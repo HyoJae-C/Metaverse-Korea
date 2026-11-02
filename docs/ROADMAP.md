@@ -29,11 +29,15 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Everywhere else: emoji only
 - Toggle to hear / not hear strangers
 - Friends list, and show / hide my online status
+- Chat filter: "friends only" (on the street you already only see chat within 10 m, for a few seconds; inside shops and cafés everyone in the room hears everyone)
+- Move the 10 m street-chat filter to the server once position sync runs on our own realtime server (today it is filtered on each player's screen)
 - Needs a persistent identity: anonymous account per device first, optional Google sign-in later
 
 ## Step 3.5: Restaurants and brand spaces
 
 - Food can't actually be eaten, so keep **only 2–3 restaurants**. Inside, each is a **Korean practice zone**: read the menu, practise ordering lines ("이거 주세요"), hear and repeat them
+- First one done: **Ddeokip Bunsik** with three ordering missions (word blocks, the clerk's follow-up question, a stamp each). Missions are data in `src/data/order-missions.js`, so a new restaurant only needs a menu there and `"workshop": "order"` in stores.json
+- Next ideas: a Korean-only kiosk order, reading the menu board, grilling samgyeopsal, building bibimbap, restaurant etiquette quiz. Speech recognition stays out for now (poor accuracy for learners' pronunciation, patchy browser support)
 - The café and bakery stay as meeting spots
 - All other buildings are **spare brand / ad slots**: sign and interior page come from advertiser data, so a brand can be swapped in without code changes. Until sold, they show a clear "Advertise here" sample
 

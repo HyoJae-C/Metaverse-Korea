@@ -108,9 +108,12 @@ export function createLookEditor({ optionsEl, canvas, randomBtn }) {
     row.className = 'acc-row';
     for (const id of MODELS) {
       const b = document.createElement('button');
-      b.className = 'acc';
-      b.textContent = modelEmoji(id);
-      b.setAttribute('aria-label', id);
+      b.className = 'acc model';
+      const name = document.createElement('span');
+      name.className = 'acc-name';
+      name.dataset.i18n = 'model.' + id;
+      name.textContent = t('model.' + id);
+      b.append(modelEmoji(id), name);
       b.onclick = () => {
         look = { ...look, model: id };
         refreshPressed();

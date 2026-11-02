@@ -65,16 +65,31 @@ export class RemotePlayers {
     return false;
   }
 
-  chat(id, text) {
+  // Blocked people: no character, name tag or bubbles on this screen.
+  hide(id) {
     const p = this.players.get(id);
-    if (!p) return null;
-    showBubble(p, this.layer, text, 6000, 'chat');
+    if (!p) return;
+    p.hidden = true;
+    p.ch.root.visible = false;
+    for (const el of [p.tag, p.bubble]) if (el) el.style.display = 'none';
+  }
+  nameOf(id) { return this.players.get(id)?.name ?? null; }
+  // Where another player is right now (x, z), or null.
+  positionOf(id) {
+    const p = this.players.get(id);
+    return p ? p.ch.root.position : null;
+  }
+
+  chat(id, text, ms = 6000) {
+    const p = this.players.get(id);
+    if (!p || p.hidden) return null;
+    showBubble(p, this.layer, text, ms, 'chat');
     return p.name;
   }
 
   emote(id, anim, emoji) {
     const p = this.players.get(id);
-    if (!p) return;
+    if (!p || p.hidden) return;
     if (anim) p.ch.play(anim);
     showBubble(p, this.layer, emoji);
   }
@@ -93,6 +108,7 @@ export class RemotePlayers {
         if (!!p.target.bk !== !!p.bk) { p.bk = !!p.target.bk; p.ch.setBike(p.bk); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
+      if (p.hidden) continue;
       v.set(r.position.x, 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       const dist = camera.position.distanceTo(r.position);

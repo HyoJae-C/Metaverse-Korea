@@ -23,6 +23,9 @@ First stop: **Seongsu-dong, Seoul**.
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 - Running uses a stamina bar that refills while you walk or rest
 - Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
+- Daily check-in (7-day row, bonus coins every 7th day) and three daily missions that change every day, the same for everyone: find a named passer-by and say hi, visit a shop, pat an animal, sit in a café, ride a bike or use emotes. "Show the way" guides you there. Progress is kept in this browser for now
+- Chat safety: a word filter that also hides links, emails and phone numbers; tap a name in the chat log to block or report someone (blocked people disappear from your screen; reports are kept on the device until there is a server to send them to); unblock everyone in Settings
+- Neoguri Raccoon Café (five raccoons) and Big Paws Dog Café (six big dogs), built like the cat café
 - Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor)
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
@@ -30,6 +33,8 @@ First stop: **Seongsu-dong, Seoul**.
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
+- Ddeokip Bunsik (snack bar): ordering practice in Korean. Pick a mission ("1 serving of tteokbokki, not spicy, to eat here"), build the order from word blocks, answer the clerk's question, and get a stamp (+15 coins the first time). Then listen to the sentence and record yourself to compare; the recording stays on the device and is never scored. Food can't be bought or eaten here
+- Street chat is heard only within 10 m and shows for a few seconds; inside shops and cafés everyone in the room sees it
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally

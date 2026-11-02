@@ -8,7 +8,8 @@ export default {
   animsFrom: 'rogue',
   models: {
     rogue: { url: 'models/kaykit/rogue.glb', emoji: '🧝' },
-    hooded: { url: 'models/kaykit/rogue_hooded.glb', emoji: '🥷' },
+    // The hooded rogue with its green outfit repainted black: our ninja.
+    hooded: { url: 'models/kaykit/rogue_hooded.glb', emoji: '🥷', recolor: { hue: [95, 185], sat: 0.25, to: '#2e2a36' } },
     mage: { url: 'models/kaykit/mage.glb', emoji: '🧙' },
     knight: { url: 'models/kaykit/knight.glb', emoji: '💂' },
     barbarian: { url: 'models/kaykit/barbarian.glb', emoji: '🧔' },

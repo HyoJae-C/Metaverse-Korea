@@ -19,12 +19,15 @@ import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
+import { OrderUI } from './ui/order-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
+import { Daily, REWARD } from './core/daily.js';
+import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
-import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
+import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -115,6 +118,9 @@ await new Promise((resolve) => {
   };
 });
 let myLook = editor.getLook();
+let daily = null; // daily check-in and missions (set up with the wallet)
+const safety = new Safety(); // chat filter and block list
+const recentLines = new Map(); // id -> their last chat lines, attached to a report
 editor.dispose();
 $('start-btn').disabled = true;
 $('status').textContent = t('loading');
@@ -127,7 +133,7 @@ try {
   throw err;
 }
 
-const nickname = ($('nickname').value.trim() || t('start.defaultName')).slice(0, 16);
+const nickname = filterText(($('nickname').value.trim() || t('start.defaultName')).slice(0, 16));
 try {
   localStorage.setItem('mk.name', $('nickname').value.trim());
 } catch { /* ignore */ }
@@ -401,19 +407,34 @@ async function joinRoom(room, roomScene, area = null) {
   others = new RemotePlayers(roomScene, $('labels'));
   refreshOnline();
   const handlers = {
-    onJoin: (p) => { others.join(p); refreshOnline(); lastSent = null; },
+    onJoin: (p) => {
+      others.join({ ...p, name: filterText(p.name) });
+      if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
+      refreshOnline(); lastSent = null;
+    },
     onLeave: (id) => { others.leave(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       const em = getEmote(e);
-      if (em) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
+      if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
     onLook: (id, look) => others.setLook(id, look),
     onChat: (id, raw) => {
-      if (!config.chatEnabled) return;
-      const text = cleanChat(raw);
-      const name = text && others.chat(id, text);
-      if (name) addChatLine(name, text);
+      if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
+      const text = filterText(cleanChat(raw));
+      if (!text) return;
+      // On the street only people within a few metres are heard, briefly.
+      const street = !interior;
+      if (street) {
+        const at = others.positionOf(id);
+        if (!at || Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z) > config.chatStreetRadius) return;
+      }
+      const ms = street ? config.chatStreetSeconds * 1000 : 6000;
+      const name = others.chat(id, text, ms);
+      if (!name) return;
+      addChatLine(name, text, '', id, street ? ms + 3000 : 0);
+      const log = (recentLines.get(id) || []).concat(text).slice(-10);
+      recentLines.set(id, log);
     },
   };
   try {
@@ -446,6 +467,7 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 const emoteBar = $('emotes');
 const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
 function sendEmote(em) {
+  missionEvent('emote');
   if (em.anim) me.play(em.anim);
   showBubble(myLabel, $('labels'), em.emoji);
   net.sendEmote(em.id);
@@ -515,16 +537,49 @@ addEventListener('keydown', (e) => {
 const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
 let lastChatAt = 0, chatNoticeShown = false;
 const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
-function addChatLine(name, text, kind = '') {
+// removeAfter (ms): drop the line from the log after this long (street chat).
+function addChatLine(name, text, kind = '', id = null, removeAfter = 0) {
   const line = document.createElement('div');
   line.className = 'chat-line ' + kind;
-  const b = document.createElement('b');
+  // Someone else's name is a button: tap it to block or report them.
+  const b = document.createElement(id ? 'button' : 'b');
   b.textContent = name;
+  if (id) { b.className = 'chat-name'; b.onclick = () => openPersonMenu(id, name); }
   line.append(b, document.createTextNode(' ' + text));
   chatLog.append(line);
   while (chatLog.children.length > 6) chatLog.firstChild.remove();
-  setTimeout(() => line.classList.add('old'), 15000);
+  setTimeout(() => line.classList.add('old'), removeAfter ? removeAfter - 1000 : 15000);
+  if (removeAfter) setTimeout(() => line.remove(), removeAfter);
 }
+let personFor = null;
+function openPersonMenu(id, name) {
+  personFor = { id, name };
+  $('person-name').textContent = name;
+  $('person-menu').hidden = false;
+}
+function blockPerson(report) {
+  if (!personFor) return;
+  const { id, name } = personFor;
+  if (report) safety.report(id, name, recentLines.get(id) || []);
+  else safety.block(id, name);
+  others.hide(id);
+  for (const el of chatLog.querySelectorAll('.chat-line')) {
+    if (el.querySelector('.chat-name')?.textContent === name) el.remove();
+  }
+  $('person-menu').hidden = true;
+  shop.toast(t(report ? 'safety.reported' : 'safety.blocked', { name }));
+  refreshUnblock();
+}
+$('person-block').onclick = () => blockPerson(false);
+$('person-report').onclick = () => blockPerson(true);
+$('person-close').onclick = () => { $('person-menu').hidden = true; };
+function refreshUnblock() {
+  $('unblock-label').textContent = t('safety.unblockAll', { n: safety.blockedCount });
+  $('unblock-btn').disabled = safety.blockedCount === 0;
+}
+$('unblock-btn').onclick = () => { safety.unblockAll(); refreshUnblock(); shop.toast(t('safety.unblocked')); };
+onLanguageChange(refreshUnblock);
+refreshUnblock();
 function openChat() {
   chatBar.hidden = false;
   input.keys.clear();
@@ -536,7 +591,7 @@ $('chat-btn').hidden = !config.chatEnabled;
 $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
 chatBar.addEventListener('submit', (e) => {
   e.preventDefault();
-  const text = cleanChat(chatInput.value);
+  const text = filterText(cleanChat(chatInput.value));
   const now = performance.now() / 1000;
   if (!text || now - lastChatAt < config.chatCooldown) return;
   lastChatAt = now;
@@ -613,6 +668,7 @@ function setRiding(on) {
   if (on && mode !== 'street') return;
   riding = on;
   me.setBike(on);
+  if (on) missionEvent('bike');
   sendTimer = 0;
   action = STALE;
   $('bike-btn').classList.toggle('on', on);
@@ -652,6 +708,7 @@ function enterStore(item) {
   clerk = built.clerkNpc || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
+  missionEvent('visit', store.id);
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
@@ -665,6 +722,7 @@ function leaveStore() {
   standUp();
   closeHome();
   closeHatWorkshop(false);
+  if (orderUi.open) orderUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -931,6 +989,18 @@ $('piece-close').onclick = closePiece;
 
 // Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+// Ordering practice at restaurants (food can't be eaten; you practise ordering).
+const orderUi = new OrderUI({
+  root: $('order-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
+});
+function openOrder() {
+  if (!interior?.store || !clerk) return;
+  clerk.ch.wave();
+  orderUi.show(interior.store);
+}
 const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
 function refreshWallet() {
   $('coin-count').textContent = wallet.coins;
@@ -953,6 +1023,85 @@ $('ad-btn').onclick = async () => {
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
+};
+
+// Daily check-in and three daily missions (see core/daily.js).
+daily = new Daily(wallet, {
+  npcs: [...new Set(npcs.list.map((o) => o.name))],
+  stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home'),
+});
+const storeById = (id) => storefronts.items.find((i) => i.store.id === id);
+function missionText(m) {
+  if (m.type === 'talk') return t('mission.talk', { name: getLanguage() === 'ko' ? m.target : `${m.target} (${NAME_ROMAN[m.target] || ''})` });
+  if (m.type === 'visit') return t('mission.visit', { store: localName(storeById(m.target)?.store.name, getLanguage()) || m.target });
+  return t('mission.' + m.type, { n: m.need });
+}
+function renderDaily() {
+  const wd = daily.weekDay(), done = daily.checkedInToday();
+  $('daily-week').replaceChildren(...Array.from({ length: 7 }, (_, i) => {
+    const el = document.createElement('span');
+    const day = i + 1;
+    el.textContent = day === 7 ? '🎁' : String(day);
+    if (day === 7) el.classList.add('big');
+    if (day < wd || (day === wd && done)) el.classList.add('on');
+    if (day === wd) el.classList.add('today');
+    return el;
+  }));
+  const btn = $('checkin-btn');
+  btn.disabled = done;
+  btn.textContent = done ? t('daily.done') : t('daily.checkIn', { n: wd === 7 ? REWARD.week : REWARD.checkIn });
+  $('daily-streak').textContent = t('daily.streak', { n: done ? daily.streak : Math.max(0, wd - 1), w: REWARD.week });
+  $('daily-missions').replaceChildren(...daily.missions.map((m) => {
+    const li = document.createElement('li');
+    const finished = m.n >= m.need;
+    li.classList.toggle('done', finished);
+    const tick = document.createElement('span');
+    tick.className = 'tick';
+    tick.textContent = finished ? '✓' : '';
+    const text = document.createElement('span');
+    text.className = 'm-text';
+    text.textContent = missionText(m);
+    li.append(tick, text);
+    if (m.need > 1 && !finished) {
+      const prog = document.createElement('span');
+      prog.className = 'm-prog';
+      prog.textContent = `${m.n}/${m.need}`;
+      li.append(prog);
+    }
+    // Show the way: to the store, or to where the person is walking right now.
+    const target = m.type === 'visit' ? storeById(m.target) : m.type === 'talk' ? npcs.list.find((o) => o.name === m.target) : null;
+    if (target && !finished) {
+      const go = document.createElement('button');
+      go.className = 'chip';
+      go.textContent = '🧭 ' + t('mission.go');
+      go.onclick = () => {
+        $('daily-panel').hidden = true;
+        if (mode === 'store') leaveStore();
+        if (m.type === 'visit') setGuide({ kind: 'store', id: target.store.id, x: target.door.x, z: target.door.z, label: localName(target.store.name, getLanguage()) });
+        else setGuide({ kind: 'npc', id: target.name, x: target.ch.root.position.x, z: target.ch.root.position.z, label: target.name });
+      };
+      li.append(go);
+    }
+    return li;
+  }));
+  $('daily-bonus').textContent = daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
+  $('daily-dot').hidden = !daily.hasNews();
+}
+function missionEvent(type, target) {
+  const r = daily?.record(type, target);
+  if (!r) return;
+  shop.toast(t('daily.complete', { n: r.coins }));
+}
+daily.onChange(renderDaily);
+onLanguageChange(renderDaily);
+renderDaily();
+$('daily-btn').onclick = () => { renderDaily(); $('daily-panel').hidden = false; };
+$('daily-close').onclick = () => { $('daily-panel').hidden = true; };
+// Once a day, open the check-in card shortly after arriving.
+if (daily.hasNews()) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200);
+$('checkin-btn').onclick = () => {
+  const n = daily.checkIn();
+  if (n) shop.toast(t('daily.checked', { n }));
 };
 
 // Hat workshop: pick a shape, colour and embroidered patch; the hat shows on
@@ -1017,6 +1166,7 @@ function sitDown(seat) {
   me.root.rotation.y = seat.ry;
   cam.yaw = seat.ry + Math.PI;
   sendTimer = 0; // tell others right away
+  missionEvent('sit');
 }
 function standUp() {
   if (!seated) return;
@@ -1034,7 +1184,7 @@ function updateAction(p, tSec) {
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else {
       const n = npcs.nearest(p.x, p.z);
-      if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => npcs.greet(n, p.x, p.z) };
+      if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
     }
   } else {
     const ex = interior.exit;
@@ -1048,13 +1198,15 @@ function updateAction(p, tSec) {
       else closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       const pet = interior.pets.nearest(p.x, p.z);
-      next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); } };
+      next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };
     } else if (seat) {
       next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
@@ -1305,5 +1457,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
+    missions: () => daily.missions.map((m) => ({ ...m })),
+    mission: (type, target) => missionEvent(type, target),
   };
 }
