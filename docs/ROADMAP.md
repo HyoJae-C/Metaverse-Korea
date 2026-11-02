@@ -29,6 +29,8 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Everywhere else: emoji only
 - Toggle to hear / not hear strangers
 - Friends list, and show / hide my online status
+- Chat filter: "friends only" (on the street you already only see chat within 10 m, for a few seconds; inside shops and cafés everyone in the room hears everyone)
+- Move the 10 m street-chat filter to the server once position sync runs on our own realtime server (today it is filtered on each player's screen)
 - Needs a persistent identity: anonymous account per device first, optional Google sign-in later
 
 ## Step 3.5: Restaurants and brand spaces

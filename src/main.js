@@ -421,9 +421,17 @@ async function joinRoom(room, roomScene, area = null) {
     onChat: (id, raw) => {
       if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
       const text = filterText(cleanChat(raw));
-      const name = text && others.chat(id, text);
+      if (!text) return;
+      // On the street only people within a few metres are heard, briefly.
+      const street = !interior;
+      if (street) {
+        const at = others.positionOf(id);
+        if (!at || Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z) > config.chatStreetRadius) return;
+      }
+      const ms = street ? config.chatStreetSeconds * 1000 : 6000;
+      const name = others.chat(id, text, ms);
       if (!name) return;
-      addChatLine(name, text, '', id);
+      addChatLine(name, text, '', id, street ? ms + 3000 : 0);
       const log = (recentLines.get(id) || []).concat(text).slice(-10);
       recentLines.set(id, log);
     },
@@ -528,7 +536,8 @@ addEventListener('keydown', (e) => {
 const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
 let lastChatAt = 0, chatNoticeShown = false;
 const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
-function addChatLine(name, text, kind = '', id = null) {
+// removeAfter (ms): drop the line from the log after this long (street chat).
+function addChatLine(name, text, kind = '', id = null, removeAfter = 0) {
   const line = document.createElement('div');
   line.className = 'chat-line ' + kind;
   // Someone else's name is a button: tap it to block or report them.
@@ -538,7 +547,8 @@ function addChatLine(name, text, kind = '', id = null) {
   line.append(b, document.createTextNode(' ' + text));
   chatLog.append(line);
   while (chatLog.children.length > 6) chatLog.firstChild.remove();
-  setTimeout(() => line.classList.add('old'), 15000);
+  setTimeout(() => line.classList.add('old'), removeAfter ? removeAfter - 1000 : 15000);
+  if (removeAfter) setTimeout(() => line.remove(), removeAfter);
 }
 let personFor = null;
 function openPersonMenu(id, name) {
