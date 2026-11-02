@@ -2,6 +2,7 @@
 // Fictional service (no real bike-share brand). Stations come from the
 // region's bikes.json; each is snapped to the nearest street.
 import * as THREE from 'three';
+import { placeOf } from './districts.js';
 import { latLonToLocal } from './storefronts.js';
 
 const mats = {};
@@ -107,7 +108,7 @@ export class BikeStations {
   constructor(scene, stations, center, roadGraph, findFree) {
     this.items = [];
     for (const st of stations) {
-      const [ax, az] = latLonToLocal(center, st.anchor.lat, st.anchor.lon);
+      const [ax, az] = placeOf(st, center, latLonToLocal);
       const n = roadGraph.nodes[roadGraph.nearest(ax, az)] || [ax, az];
       const [x, z] = findFree(n[0], n[1]);
       const group = new THREE.Group();

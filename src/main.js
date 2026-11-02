@@ -3,6 +3,7 @@ import {
   LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
+import { loadRegionMap } from './core/districts.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
@@ -101,10 +102,11 @@ try {
 } catch { /* ignore */ }
 
 // Load the map while the player is choosing a language.
-const mapPromise = fetch(`${BASE}regions/${regionId}/${region.mapFile || 'map.json'}`).then((r) => {
+// (One map file, or several districts joined into one city: core/districts.js.)
+const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
   if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
   return r.json();
-});
+}));
 
 // Step 1: language → step 2: character + nickname.
 let editor = null;
@@ -181,7 +183,7 @@ Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, n
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
-const collision = new CollisionMap(map.buildings);
+const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];

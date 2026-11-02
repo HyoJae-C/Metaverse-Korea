@@ -1,6 +1,7 @@
 // Storefronts on the street: sign, awning, door and an entrance marker,
 // attached to the building facade nearest each store's anchor point.
 import * as THREE from 'three';
+import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
 
 const SIGN_W = 6.4, SIGN_H = 1.2;
@@ -142,7 +143,7 @@ export class Storefronts {
     this.translated = false;
     const isBlocked = collision ? (x, z) => collision.blocked(x, z, 0.6) : null;
     for (const store of stores) {
-      const [ax, az] = latLonToLocal(center, store.anchor.lat, store.anchor.lon);
+      const [ax, az] = placeOf(store, center, latLonToLocal);
       const f = nearestFacade(map.buildings, ax, az, isBlocked);
       if (!f) {
         console.warn('No facade found for', store.id);
