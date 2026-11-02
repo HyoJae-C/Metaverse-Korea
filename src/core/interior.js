@@ -1,6 +1,7 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
 import * as THREE from 'three';
+import { makeAnimal } from './pets.js';
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -244,12 +245,20 @@ export function buildInterior(store) {
       top.position.y = 0.92;
       stand.add(top);
     }
-    const model = productModel(product.model, product.color);
-    model.scale.setScalar(hanging ? 1.4 : 1.8);
-    model.position.y = hanging ? 0.95 : 0.95;
+    const petKind = product.model.startsWith('pet:') ? product.model.slice(4) : null;
+    // Pet shop: one animal sitting on a cushion on the table.
+    const model = petKind ? makeAnimal(petKind, product.color, product.accent || '#fff4e6').root : productModel(product.model, product.color);
+    if (petKind) {
+      model.rotation.y = 0;
+      const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 0.06, 18), mat(store.colors.awning));
+      cushion.position.y = 0.98;
+      stand.add(cushion);
+    }
+    model.scale.setScalar(petKind ? 1 : hanging ? 1.4 : 1.8);
+    model.position.y = petKind ? 1.01 : 0.95;
     stand.add(model);
     // A second and third copy make the display look stocked.
-    for (const s of [-1, 1]) {
+    if (!petKind) for (const s of [-1, 1]) {
       const copy = productModel(product.model, product.color);
       copy.scale.setScalar(hanging ? 1.3 : 1.4);
       copy.position.set(0.5 * s, 0.95, hanging ? -0.05 : 0.1);

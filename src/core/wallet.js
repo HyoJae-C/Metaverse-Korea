@@ -38,6 +38,18 @@ export class Wallet {
     write(this.w);
     this.listeners.forEach((f) => f(this.w.coins));
   }
+  // Pay n coins if there are enough; returns true when paid.
+  spend(n) {
+    if (n > this.w.coins) return false;
+    this.add(-n);
+    return true;
+  }
+  // Take up to n coins (a fine never makes the balance negative); returns what was taken.
+  take(n) {
+    const k = Math.min(n, this.w.coins);
+    if (k > 0) this.add(-k);
+    return k;
+  }
   onChange(f) { this.listeners.push(f); }
 
   // Shows a rewarded ad; resolves to the coins earned (0 if skipped or none left).

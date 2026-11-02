@@ -22,6 +22,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
+import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -659,6 +660,8 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => leaveStore(),
+  onAdopt: (product) => adoptPet(product.adopt),
+  owns: (id) => inventory.has(id),
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -666,6 +669,92 @@ const shop = new ShopUI({
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
   },
 });
+
+// My pet: adopt at the pet shop (coins) or by code, then take it for walks.
+// It poops now and then on the street; clean up within CLEAN_SECONDS or a
+// fine notice (과태료) takes FINE coins. The poop is then cleared by the city.
+const PET_KEY = 'mk.pet';
+let pet = null; // Companion
+const poopTimers = new PoopTimers();
+const poops = new Map(); // id -> { id, mesh, x, z }
+function setPet(id) {
+  pet?.dispose();
+  pet = null;
+  if (id && inventory.has(id) && ITEMS[id]?.pet) {
+    pet = new Companion(id, ITEMS[id].pet);
+    activeScene.add(pet.root);
+    pet.place(me.root.position.x, me.root.position.z, me.root.rotation.y);
+  }
+  try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
+  if (!$('wallet-panel').hidden) refreshItems();
+}
+function adoptPet(id) {
+  const it = ITEMS[id];
+  if (!it?.pet || !it.price) return;
+  if (inventory.has(id)) { setPet(id); return; }
+  if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+  inventory.add(id);
+  setPet(id);
+  shop.closeProduct();
+  clerk && say(clerk, $('labels'), ['잘 키워 주세요!', 'jal kiwo juseyo!', t('pet.takeCare')]);
+  shop.toast(t('pet.adopted', { name: petName(it.pet) }));
+}
+// Korean subject particle after a name: 이 after a final consonant, else 가.
+const subjectParticle = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '이' : '가'; };
+const petName = (def) => (getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`);
+function nearestPoop(p) {
+  let best = null, bd = 1.6;
+  for (const po of poops.values()) {
+    const d = Math.hypot(po.x - p.x, po.z - p.z);
+    if (d < bd) { bd = d; best = po; }
+  }
+  return best;
+}
+function cleanPoop(po) {
+  poopTimers.clean(po.id);
+  po.mesh.removeFromParent();
+  poops.delete(po.id);
+  me.play('bow'); // bend down
+  shop.toast(t('pet.cleaned'));
+  action = STALE;
+}
+function updatePet(dt, p) {
+  // Fines for poop left too long (the timer runs even inside shops).
+  for (const late of poopTimers.step(dt)) {
+    const po = poops.get(late.id);
+    po?.mesh.removeFromParent();
+    poops.delete(late.id);
+    const taken = wallet.take(FINE);
+    showFine(taken, po?.street);
+  }
+  const soon = poopTimers.list.reduce((m, x) => Math.min(m, x.left), Infinity);
+  $('poop-chip').hidden = soon === Infinity;
+  if (soon !== Infinity) $('poop-chip').textContent = `💩 ${t('pet.cleanIn', { s: Math.ceil(soon) })}`;
+  if (!pet) return;
+  if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y); }
+  const hidden = riding > 0 || seated;
+  if (pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, mode === 'street')) {
+    const pos = pet.root.position;
+    const mesh = makePoop();
+    mesh.position.set(pos.x, 0, pos.z);
+    scene.add(mesh);
+    const { id } = poopTimers.add();
+    poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
+    sfx.pop?.();
+    shop.toast(t('pet.pooped', { name: petName(pet.def), ga: subjectParticle(pet.def.name), s: CLEAN_SECONDS }));
+  }
+}
+let fineShown = null; // { count, taken } while the notice is open (two fines at once add up)
+function showFine(taken, street) {
+  const box = $('fine-panel');
+  fineShown = box.hidden || !fineShown ? { count: 1, taken } : { count: fineShown.count + 1, taken: fineShown.taken + taken };
+  $('fine-street').textContent = street || t('pet.fineStreet');
+  $('fine-amount').textContent = `🪙 ${FINE}` + (fineShown.count > 1 ? ` × ${fineShown.count}` : '');
+  $('fine-paid').textContent = t('pet.finePaid', { n: fineShown.taken, left: wallet.coins });
+  box.hidden = false;
+  refreshWallet();
+}
+$('fine-close').onclick = () => { $('fine-panel').hidden = true; };
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
@@ -1414,9 +1503,19 @@ function refreshItems() {
     const d = document.createElement('small');
     d.textContent = localName(it.desc, getLanguage());
     row.append(b, d);
+    if (it.pet) { // walk this pet, or leave it at home
+      const walking = pet?.id === id;
+      const w = document.createElement('button');
+      w.className = 'chip item-walk' + (walking ? ' on' : '');
+      w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
+      w.onclick = () => setPet(walking ? null : id);
+      row.append(w);
+    }
     return row;
   }));
 }
+// Bring back the pet I was walking last time.
+try { const saved = localStorage.getItem(PET_KEY); if (saved) setPet(saved); } catch { /* storage blocked */ }
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
@@ -1582,7 +1681,9 @@ function updateAction(p, tSec) {
   let next = null;
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
-    if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
+    const poop = !riding && nearestPoop(p);
+    if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
+    else if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
     else if ((riding === 2 || riding === 4) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3);
       const seat = freeSeat();
@@ -1737,12 +1838,15 @@ renderer.setAnimationLoop(() => {
   const p = me.root.position;
   if (riding === 3) {
     // On someone's back seat: ride along behind them, pedalling at their pace.
-    const front = others.rootOf(tandemDriver);
+    const front = others.predicted(tandemDriver);
     if (!front) tandemGone(tandemDriver);
     else {
       const ox = p.x, oz = p.z;
       const [sx, sz] = seatPosition(front, others.kindOf(tandemDriver), mySeat);
-      p.set(sx, 0, sz);
+      // Follow the driver's live (predicted) spot; light smoothing hides the
+      // small corrections when a new update arrives.
+      const k = 1 - Math.exp(-dt * 25);
+      p.set(ox + (sx - ox) * k, 0, oz + (sz - oz) * k);
       me.root.rotation.y = front.rotation.y;
       speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
     }
@@ -1853,6 +1957,7 @@ renderer.setAnimationLoop(() => {
   }
   routeLine.update(dt);
   updateCarry();
+  updatePet(dt, p);
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
@@ -1891,7 +1996,8 @@ renderer.setAnimationLoop(() => {
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
-    sendTimer = 1 / (running ? config.netSendRateRun : config.netSendRate);
+    // Carrying passengers: send more often so their seats keep up.
+    sendTimer = 1 / (passengers.size ? 12 : running ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;
@@ -1934,6 +2040,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     music: () => ({ on: music.on, track: music.track.id }),
+    pet: () => pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible },
+    petPoop: () => { if (pet) pet.walked = pet.poopAt; },
+    poops: () => poopTimers.list.map((x) => ({ ...x, x: poops.get(x.id)?.x, z: poops.get(x.id)?.z })),
+    poopTime: (s) => poopTimers.list.forEach((x) => { x.left = s; }),
+    coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     missions: () => daily.missions.map((m) => ({ ...m })),

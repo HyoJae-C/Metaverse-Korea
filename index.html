@@ -100,6 +100,18 @@
       <div class="sheet order-panel" id="order-panel" hidden></div>
       <div class="sheet order-panel grill-panel" id="grill-panel" hidden></div>
       <div class="sheet order-panel lp-panel" id="lp-panel" hidden></div>
+      <div class="poop-chip" id="poop-chip" hidden></div>
+      <div class="sheet fine-panel" id="fine-panel" hidden>
+        <div class="fine-head">📮 <span data-i18n="pet.fineTitle"></span></div>
+        <p class="fine-ko">과태료 부과 고지서 <small>gwataeryo bugwa gojiseo</small></p>
+        <dl>
+          <dt data-i18n="pet.fineWhat"></dt><dd data-i18n="pet.fineReason"></dd>
+          <dt data-i18n="pet.fineWhere"></dt><dd id="fine-street"></dd>
+          <dt data-i18n="pet.fineHow"></dt><dd id="fine-amount"></dd>
+        </dl>
+        <p class="fine" id="fine-paid"></p>
+        <button class="primary" id="fine-close" data-i18n="pet.fineOk"></button>
+      </div>
       <div class="sheet hat-panel" id="hat-panel" hidden>
         <strong>🧢 <span data-i18n="hat.title"></span></strong>
         <p class="fine" data-i18n="hat.hint"></p>
@@ -124,6 +136,7 @@
         <p id="product-desc"></p>
         <div class="product-actions">
           <button class="chip" id="product-try">🪞 <span data-i18n="shop.tryOn"></span></button>
+          <button class="primary" id="product-adopt" hidden></button>
           <button class="primary" id="product-take" hidden>☕ <span data-i18n="coffee.take"></span></button>
           <button class="primary" id="product-add">🛍️ <span data-i18n="shop.addToCart"></span></button>
         </div>
