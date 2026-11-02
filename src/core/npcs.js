@@ -24,6 +24,11 @@ export const PHRASES = {
     ['날씨 좋네요!', 'nalssi jonneyo!', 'Nice weather, isn’t it?'],
   ],
   welcome: [['어서 오세요!', 'eoseo oseyo', 'Welcome!']],
+  library: [
+    ['도서관에서는 조용히 해 주세요.', 'doseogwaneseoneun joyonghi hae juseyo', 'Please keep quiet in the library.'],
+    ['책은 자유롭게 읽으세요.', 'chaegeun jayuropge ilgeuseyo', 'Feel free to read any book.'],
+    ['자리는 아무 데나 앉으셔도 돼요.', 'jarineun amu dena anjeusyeodo dwaeyo', 'You can sit anywhere.'],
+  ],
   shop: [
     ['천천히 구경하세요!', 'cheoncheonhi gugyeonghaseyo', 'Take your time and look around!'],
     ['감사합니다!', 'gamsahamnida', 'Thank you!'],

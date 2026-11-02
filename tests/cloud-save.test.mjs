@@ -33,3 +33,9 @@ test('the newer copy wins; a fresh device takes the cloud copy', () => {
   assert.equal(pickNewer(100, 0, a, {}), 'local');
   assert.equal(pickNewer(100, 200, a, { ...a }), 'same');
 });
+
+test('after switching accounts on a device, the account save wins', () => {
+  const a = { 'mk.coins': '5' }, b = { 'mk.coins': '90' };
+  assert.equal(pickNewer(300, 200, a, b, true), 'remote');
+  assert.equal(pickNewer(300, 0, a, {}, true), 'local'); // a new account has no save yet
+});

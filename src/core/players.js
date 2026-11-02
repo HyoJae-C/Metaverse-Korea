@@ -1,6 +1,7 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
 import * as THREE from 'three';
+import { HELD_KINDS } from './held.js';
 import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 
@@ -40,6 +41,7 @@ export class RemotePlayers {
     const old = p.ch.root;
     p.ch = createCharacter(look);
     p.bk = false; // re-applied on the next update
+    p.hd = null;
     p.ch.root.position.copy(old.position);
     p.ch.root.rotation.copy(old.rotation);
     this.scene.remove(old);
@@ -121,6 +123,7 @@ export class RemotePlayers {
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
         if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
+        if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
       // Riding with someone (tandem or car): sit in our seat of their vehicle.

@@ -229,6 +229,62 @@
         { "id": "diffuser", "model": "bottle", "color": "#e8cfc4", "price": 32000, "name": { "en": "Reed Diffuser · Brick", "ko": "디퓨저 · 벽돌" }, "desc": { "en": "Warm amber and cedar." } },
         { "id": "hand-cream", "model": "jar", "color": "#f3e5c8", "price": 12000, "name": { "en": "Hand Cream · Linen", "ko": "핸드크림 · 리넨" }, "desc": { "en": "Clean cotton scent, non-greasy." } }
       ]
+    },
+    {
+      "id": "chaekmaru-library",
+      "category": "library",
+      "size": "large",
+      "name": { "ko": "책마루 도서관", "en": "Chaekmaru Library", "ja": "チェクマル図書館", "zh": "书廊图书馆" },
+      "tagline": { "en": "A quiet place to read. Study corners are coming soon.", "ko": "조용히 책 읽는 곳. 공부 공간은 곧 열려요.", "ja": "静かに本を読める場所。勉強コーナーは準備中です。", "zh": "安静读书的地方。学习区即将开放。" },
+      "anchor": { "lat": 37.5449, "lon": 127.0549 },
+      "colors": { "sign": "#3f5e4f", "awning": "#9cb89a", "accent": "#f4efe2" },
+      "products": []
+    },
+    {
+      "id": "dwaejimaru-bbq",
+      "category": "restaurant",
+      "workshop": "grill",
+      "size": "medium",
+      "name": { "ko": "돼지마루 삼겹살", "en": "Dwaejimaru Samgyeopsal", "ja": "テジマル サムギョプサル", "zh": "猪廊五花肉" },
+      "tagline": { "en": "Korean BBQ: grill pork belly with perfect timing", "ko": "삼겹살을 노릇노릇하게 구워 보세요", "ja": "韓国焼肉：タイミングよくサムギョプサルを焼こう", "zh": "韩式烤肉：看准时机烤五花肉" },
+      "anchor": { "lat": 37.5431, "lon": 127.0549 },
+      "colors": { "sign": "#7a2e1f", "awning": "#e8a23a", "accent": "#fff1e2" },
+      "products": [
+        { "id": "samgyeopsal", "model": "bacon", "color": "#f0b7a8", "price": 15000, "name": { "en": "Samgyeopsal (pork belly)", "ko": "삼겹살", "ja": "サムギョプサル", "zh": "五花肉" }, "desc": { "en": "Thick slices of pork belly grilled at the table. Wrap in lettuce with garlic and ssamjang." } },
+        { "id": "moksal", "model": "bacon", "color": "#e59a8c", "price": 16000, "name": { "en": "Moksal (pork neck)", "ko": "목살", "ja": "モクサル", "zh": "猪颈肉" }, "desc": { "en": "Juicy pork neck, a little leaner than belly." } },
+        { "id": "doenjang-jjigae", "model": "bowl", "color": "#b07a3a", "price": 7000, "name": { "en": "Doenjang jjigae", "ko": "된장찌개", "ja": "テンジャンチゲ", "zh": "大酱汤" }, "desc": { "en": "Soybean paste stew, the classic after-BBQ meal with rice." } }
+      ]
+    },
+    {
+      "id": "meta-coffee",
+      "category": "cafe",
+      "takeaway": true,
+      "size": "small",
+      "name": { "ko": "메타 커피", "en": "META COFFEE", "ja": "META COFFEE", "zh": "META COFFEE" },
+      "tagline": { "en": "Takeaway coffee: carry your cup around town and sip as you go", "ko": "테이크아웃 커피: 컵을 들고 다니며 마셔요", "ja": "テイクアウトコーヒー：カップを持って街を歩こう", "zh": "外带咖啡：拿着杯子边走边喝" },
+      "anchor": { "lat": 37.5446, "lon": 127.0562 },
+      "colors": { "sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0" },
+      "products": [
+        { "id": "meta-americano", "model": "cup", "color": "#3b2418", "price": 4500, "name": { "en": "Americano", "ko": "아메리카노", "ja": "アメリカーノ", "zh": "美式咖啡" }, "desc": { "en": "Espresso with hot water. Koreans often order it iced: 아이스 아메리카노, even in winter." } },
+        { "id": "meta-latte", "model": "cup", "color": "#c9a27a", "price": 5000, "name": { "en": "Café Latte", "ko": "카페라테", "ja": "カフェラテ", "zh": "拿铁" }, "desc": { "en": "Espresso with steamed milk." } },
+        { "id": "meta-vanilla", "model": "cup", "color": "#e6cfa6", "price": 5500, "name": { "en": "Vanilla Latte", "ko": "바닐라라테", "ja": "バニララテ", "zh": "香草拿铁" }, "desc": { "en": "A sweet latte with vanilla syrup." } },
+        { "id": "meta-dalgona", "model": "cup", "color": "#d89a4a", "price": 6000, "name": { "en": "Dalgona Latte", "ko": "달고나라테", "ja": "ダルゴナラテ", "zh": "焦糖饼拿铁" }, "desc": { "en": "Milk topped with whipped coffee foam, inspired by the honeycomb candy dalgona." } }
+      ]
+    },
+    {
+      "id": "sorimaru-lp",
+      "category": "cafe",
+      "music": true,
+      "size": "medium",
+      "name": { "ko": "소리마루 LP카페", "en": "Sorimaru Record Café", "ja": "ソリマル LPカフェ", "zh": "声廊黑胶咖啡馆" },
+      "tagline": { "en": "Pick a record and change the music. Only you hear your choice.", "ko": "LP를 골라 음악을 바꿔 보세요. 고른 음악은 나에게만 들려요.", "ja": "レコードを選んで音楽を変えよう。選んだ曲は自分にだけ聞こえます。", "zh": "挑一张唱片换音乐，只有你自己听得到。" },
+      "anchor": { "lat": 37.5438, "lon": 127.0566 },
+      "colors": { "sign": "#2b2340", "awning": "#c9a26a", "accent": "#f3ece0" },
+      "products": [
+        { "id": "lp-hand-drip", "model": "cup", "color": "#5a3a28", "price": 6000, "name": { "en": "Hand drip coffee", "ko": "핸드드립 커피", "ja": "ハンドドリップ", "zh": "手冲咖啡" }, "desc": { "en": "Brewed slowly by hand while the record spins." } },
+        { "id": "lp-yuja-tea", "model": "cup", "color": "#f2c14e", "price": 5500, "name": { "en": "Yuja tea", "ko": "유자차", "ja": "柚子茶", "zh": "柚子茶" }, "desc": { "en": "Sweet citron tea, a Korean winter favourite." } },
+        { "id": "lp-misutgaru", "model": "cup", "color": "#d8c3a0", "price": 5500, "name": { "en": "Misutgaru latte", "ko": "미숫가루 라테", "ja": "ミスッカルラテ", "zh": "谷物拿铁" }, "desc": { "en": "A nutty drink of roasted grain powder and milk." } }
+      ]
     }
   ]
 }

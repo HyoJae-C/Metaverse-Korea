@@ -42,8 +42,8 @@ export class Cart {
 }
 
 export class ShopUI {
-  constructor({ cart, onTryOn, onExit }) {
-    Object.assign(this, { cart, onTryOn, onExit });
+  constructor({ cart, onTryOn, onExit, onTake }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -86,7 +86,11 @@ export class ShopUI {
     tryBtn.hidden = !product.tryOn;
     tryBtn.onclick = () => this.onTryOn(product);
     // Restaurant dishes are a menu to read, not something to buy.
-    this.$('product-add').hidden = this.store?.category === 'restaurant';
+    // Takeaway shops (META COFFEE) hand you the drink to carry around.
+    const take = !!this.store?.takeaway;
+    this.$('product-take').hidden = !take;
+    this.$('product-take').onclick = () => { this.onTake?.(product); this.closeProduct(); };
+    this.$('product-add').hidden = take || this.store?.category === 'restaurant';
     this.$('product-add').onclick = () => {
       this.cart.add(this.store, product);
       this.toast(t('shop.added'));

@@ -20,11 +20,14 @@ import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
+import { GrillUI } from './ui/grill-ui.js';
+import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { TRACKS } from './data/tracks.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
 import { Daily, REWARD } from './core/daily.js';
@@ -656,7 +659,40 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => leaveStore(),
+  onTake: (product) => {
+    if (held && !confirm(t('coffee.replace'))) return;
+    setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
+    shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
+  },
 });
+
+// Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
+// when it's finished. Saved, so a half-drunk coffee survives a reload.
+const HELD_KEY = 'mk.held';
+let held = (() => {
+  try {
+    const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
+  } catch { return null; }
+})();
+function setHeld(h) {
+  held = h;
+  try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
+  me.setHeld(h?.kind || null);
+  $('drink-btn').hidden = !h;
+  lastSent = null; // others see it on the next update
+}
+function drink() {
+  if (!held) return;
+  me.play('clap'); // the "use item" move: lift the cup
+  sfx.pop?.();
+  const sips = held.sips - 1;
+  if (sips <= 0) { setHeld(null); shop.toast(t('coffee.finished')); }
+  else { setHeld({ ...held, sips }); shop.toast(t('coffee.sip', { n: sips })); }
+}
+$('drink-btn').onclick = drink;
+if (held) setHeld(held);
 
 function setLook(look) {
   currentLook = look;
@@ -665,6 +701,7 @@ function setLook(look) {
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
   me.setBike(riding);
+  me.setHeld(held?.kind || null);
   old.parent?.remove(old);
   activeScene.add(me.root);
   net.sendLook?.(look);
@@ -865,7 +902,9 @@ function enterStore(item) {
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
-  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
+  if (store.music) enterMusicCafe();
+  const quiet = store.category === 'library';
+  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), quiet ? PHRASES.library[0] : PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -879,6 +918,8 @@ function leaveStore() {
   closeHome();
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
+  if (grillUi.open) grillUi.close();
+  leaveMusicCafe();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -941,6 +982,64 @@ $('music-btn').onclick = async () => {
 };
 applyMusicBtn();
 onLanguageChange(applyMusicBtn);
+
+// Music café: pick an LP to change the song. Only this player hears it (the
+// music plays in this browser). Leaving puts the usual music back.
+let cafeMusic = null; // { wasOn } while inside a music café
+async function enterMusicCafe() {
+  cafeMusic = { wasOn: music.on };
+  music.setTrack('lofi');
+  if (!music.on) { await music.setOn(true); applyMusicBtn(); } // the room's music plays on entering
+}
+async function leaveMusicCafe() {
+  if (!cafeMusic) return;
+  const { wasOn } = cafeMusic;
+  cafeMusic = null;
+  $('lp-panel').hidden = true;
+  music.setTrack('lofi');
+  if (!wasOn && music.on) { await music.setOn(false); applyMusicBtn(); }
+}
+function openLpPanel() {
+  const root = $('lp-panel');
+  const lang = getLanguage();
+  const x = document.createElement('button');
+  x.className = 'sheet-x';
+  x.textContent = '✕';
+  x.setAttribute('aria-label', t('order.close'));
+  x.onclick = () => { root.hidden = true; };
+  const h = document.createElement('h3');
+  h.textContent = '💿 ' + t('lp.title');
+  const note = document.createElement('p');
+  note.className = 'fine';
+  note.textContent = t('lp.note');
+  const list = document.createElement('div');
+  list.className = 'lp-list';
+  for (const tr of TRACKS) {
+    const b = document.createElement('button');
+    const playing = music.on && music.track.id === tr.id;
+    b.className = 'lp-row' + (playing ? ' on' : '');
+    b.innerHTML = `<span class="lp-disc"><i></i></span><span class="lp-text"><strong></strong><small></small></span>`;
+    b.querySelector('.lp-disc').style.background = `radial-gradient(circle, ${tr.color} 0 26%, #141418 27% 100%)`;
+    b.querySelector('strong').textContent = `${tr.icon} ${localName(tr.name, lang)}${playing ? ' · ' + t('lp.playing') : ''}`;
+    b.querySelector('small').textContent = localName(tr.desc, lang);
+    b.onclick = async () => {
+      music.setTrack(tr.id);
+      if (!music.on) { await music.setOn(true); applyMusicBtn(); }
+      shop.toast(t('lp.now', { name: localName(tr.name, lang) }));
+      openLpPanel();
+    };
+    list.append(b);
+  }
+  const off = document.createElement('button');
+  off.className = 'chip';
+  off.textContent = music.on ? '🔇 ' + t('lp.stop') : '🔊 ' + t('lp.play');
+  off.onclick = async () => { await music.setOn(!music.on); applyMusicBtn(); openLpPanel(); };
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+  actions.append(off);
+  root.replaceChildren(x, h, note, list, actions);
+  root.hidden = false;
+}
 let musicWanted = false;
 try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
 if (musicWanted) {
@@ -1101,16 +1200,17 @@ function updateZoneLine(z) {
 onLanguageChange(() => updateZoneLine(currentZone));
 
 
-// Home decorating: place furniture from a catalogue, then walk up to a piece
-// to rotate, move or remove it. Saved in this browser only (for now).
+// Home decorating: place furniture from a catalogue, then tap it again in the
+// catalogue (or walk up to it) to rotate, carry or put it away. One of each
+// piece for now, so rooms stay light. Saved in this browser only (for now).
 const MAX_PIECES = 60;
-let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece }
+let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
 const homeKey = (id) => 'mk.home.' + id;
 function loadDecor(id) {
   try {
     const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
     return Array.isArray(a)
-      ? a.filter((i) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite)).slice(0, MAX_PIECES)
+      ? a.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && a.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
       : [];
   } catch { return []; }
 }
@@ -1125,8 +1225,10 @@ function rebuildDecor() {
     g.position.set(it.x, 0, it.z);
     g.rotation.y = it.ry;
     decor.group.add(g);
+    it.mesh = g;
   }
-  const extra = decor.items.map(furnitureCollider).filter(Boolean);
+  // The piece being carried doesn't block you until it is put down.
+  const extra = decor.items.filter((it) => it !== decor.carry).map(furnitureCollider).filter(Boolean);
   interior.collision = activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
   interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
     const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
@@ -1134,10 +1236,15 @@ function rebuildDecor() {
     return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
   });
   saveDecor();
+  markPlaced();
+}
+// Catalogue buttons show which pieces are already in the room.
+function markPlaced() {
+  for (const b of $('decor-grid').children) b.classList.toggle('placed', !!decor?.items.some((i) => i.id === b.dataset.id));
 }
 function openHome(store, built) {
   if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
-  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null };
+  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null, carry: null };
   rebuildDecor();
   $('decor-btn').hidden = false;
 }
@@ -1165,6 +1272,8 @@ function spotInFront() {
   ];
 }
 function placePiece(id) {
+  const placed = decor.items.find((i) => i.id === id);
+  if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
   if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
   const [x, z, ry] = spotInFront();
   decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
@@ -1178,14 +1287,31 @@ function nearestPiece(p) {
   }
   return best;
 }
-function openPiece(it) {
+function openPiece(it, picked = false) {
+  if (decor.carry && decor.carry !== it) putDown();
   decor.piece = it;
+  decor.picked = picked; // chosen from the catalogue: stays open while you walk
+  $('piece-move-label').textContent = t(decor.carry === it ? 'home.putDown' : 'home.carry');
   $('piece-name').textContent = furnitureById(it.id).emoji + ' ' + localName(furnitureById(it.id).name, getLanguage());
   $('piece-bar').hidden = false;
 }
 function closePiece() {
-  if (decor) decor.piece = null;
+  if (decor?.carry) putDown();
+  if (decor) { decor.piece = null; decor.picked = false; }
   $('piece-bar').hidden = true;
+}
+// Carry a piece: it floats in front of you until you put it down.
+function putDown() {
+  decor.carry = null;
+  $('decor-bar').hidden = !decor.editing;
+  rebuildDecor();
+  if (decor.piece) $('piece-move-label').textContent = t('home.carry');
+}
+function updateCarry() {
+  const it = decor?.carry;
+  if (!it?.mesh) return;
+  [it.x, it.z] = spotInFront();
+  it.mesh.position.set(it.x, 0.08, it.z); // lifted a little while carried
 }
 $('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
 $('decor-grid').append(...FURNITURE.map((f) => {
@@ -1204,13 +1330,16 @@ onLanguageChange(labelDecor);
 $('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
 $('piece-move').onclick = () => {
   if (!decor?.piece) return;
-  [decor.piece.x, decor.piece.z] = spotInFront();
+  if (decor.carry) { putDown(); closePiece(); action = STALE; return; }
+  decor.carry = decor.piece;
+  decor.picked = true;
+  $('decor-bar').hidden = true; // see where you're walking
   rebuildDecor();
-  closePiece();
-  action = STALE;
+  $('piece-move-label').textContent = t('home.putDown');
 };
 $('piece-remove').onclick = () => {
   if (!decor?.piece) return;
+  if (decor.carry === decor.piece) decor.carry = null;
   decor.items.splice(decor.items.indexOf(decor.piece), 1);
   rebuildDecor();
   closePiece();
@@ -1228,6 +1357,18 @@ const orderUi = new OrderUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
 });
+// Samgyeopsal grilling minigame: medals for good timing.
+const grillUi = new GrillUI({
+  root: $('grill-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
+});
+function openGrill() {
+  if (!interior?.store || !clerk) return;
+  clerk.ch.wave();
+  grillUi.show();
+}
 function openOrder() {
   if (!interior?.store || !clerk) return;
   clerk.ch.wave();
@@ -1246,8 +1387,17 @@ wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
 refreshWallet();
 function refreshCloud() {
-  $('cloud-label').textContent = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+  const label = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+  $('cloud-label').textContent = !cloud.guest && cloud.email ? `${label} · ${cloud.email}` : label;
+  // A guest can link Google (keeps this save) or sign in to an older account.
+  $('cloud-actions').hidden = !(cloud.status === 'cloud' && cloud.guest);
 }
+const googleFail = (err) => err && shop.toast(t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'));
+$('google-link').onclick = async () => googleFail(await cloud.linkGoogle());
+$('google-signin').onclick = async () => {
+  if (!confirm(t('cloud.signinConfirm'))) return;
+  googleFail(await cloud.signInGoogle());
+};
 cloud.onChange(refreshCloud);
 refreshCloud();
 onLanguageChange(refreshCloud);
@@ -1455,16 +1605,21 @@ function updateAction(p, tSec) {
     } else if (decor?.editing) {
       // decorate mode: walk up to a piece to rotate, move or remove it
       const it = nearestPiece(p);
-      if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
-      else closePiece();
+      if (decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
+      else if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
+      else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
+      next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
+    } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = interior?.store.category === 'library' ? PHRASES.library : PHRASES.shop; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       const pet = interior.pets.nearest(p.x, p.z);
       next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };
@@ -1697,6 +1852,8 @@ renderer.setAnimationLoop(() => {
     net.update?.(p.x, p.z); // switch area cells as we walk
   }
   routeLine.update(dt);
+  updateCarry();
+  if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -1727,7 +1884,8 @@ renderer.setAnimationLoop(() => {
     if (seated) st.sit = 1;
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat;
+    if (held) st.hd = held.kind;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -1772,6 +1930,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
+    clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
+    product: (i) => shop.openProduct(interior.products[i].product),
+    held: () => held && { ...held },
+    music: () => ({ on: music.on, track: music.track.id }),
+    turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     missions: () => daily.missions.map((m) => ({ ...m })),
     mission: (type, target) => missionEvent(type, target),

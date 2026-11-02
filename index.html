@@ -32,6 +32,7 @@
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
         <button class="tool" id="bike-btn"><span>🚲</span><small id="bike-label" data-i18n="hud.bike"></small></button>
         <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
+        <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
@@ -58,7 +59,7 @@
       <div class="piece-bar" id="piece-bar" hidden>
         <strong id="piece-name"></strong>
         <button class="chip" id="piece-rotate">🔄 <span data-i18n="home.rotate"></span></button>
-        <button class="chip" id="piece-move">📍 <span data-i18n="home.move"></span></button>
+        <button class="chip" id="piece-move">✋ <span id="piece-move-label" data-i18n="home.carry"></span></button>
         <button class="chip" id="piece-remove">🗑️ <span data-i18n="home.remove"></span></button>
         <button class="sheet-x" id="piece-close" aria-label="Close">✕</button>
       </div>
@@ -97,6 +98,8 @@
       </div>
       <!-- Ordering practice (filled in by ui/order-ui.js) -->
       <div class="sheet order-panel" id="order-panel" hidden></div>
+      <div class="sheet order-panel grill-panel" id="grill-panel" hidden></div>
+      <div class="sheet order-panel lp-panel" id="lp-panel" hidden></div>
       <div class="sheet hat-panel" id="hat-panel" hidden>
         <strong>🧢 <span data-i18n="hat.title"></span></strong>
         <p class="fine" data-i18n="hat.hint"></p>
@@ -121,6 +124,7 @@
         <p id="product-desc"></p>
         <div class="product-actions">
           <button class="chip" id="product-try">🪞 <span data-i18n="shop.tryOn"></span></button>
+          <button class="primary" id="product-take" hidden>☕ <span data-i18n="coffee.take"></span></button>
           <button class="primary" id="product-add">🛍️ <span data-i18n="shop.addToCart"></span></button>
         </div>
         <p class="fine" data-i18n="shop.virtual"></p>
@@ -261,6 +265,10 @@
         </button>
         <div class="setting-row cloud-row">
           <span>☁️</span><span class="setting-label" id="cloud-label"></span>
+        </div>
+        <div class="cloud-actions" id="cloud-actions" hidden>
+          <button class="chip" id="google-link">🔗 <span data-i18n="cloud.link"></span></button>
+          <button class="chip" id="google-signin" data-i18n="cloud.signin"></button>
         </div>
         <a class="setting-row" href="privacy.html" target="_blank" rel="noopener">
           <span>🔒</span><span class="setting-label" data-i18n="credit.privacy"></span><span class="setting-go">›</span>

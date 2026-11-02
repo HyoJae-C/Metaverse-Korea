@@ -106,6 +106,13 @@ export function productModel(kind, color) {
       add(new THREE.CylinderGeometry(0.17, 0.12, 0.08, 16), 0, 0.04, 0, mat('#ffffff'));
       add(new THREE.SphereGeometry(0.13, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.6, 1), 0, 0.08);
       break;
+    case 'bacon': // slices of raw meat on a plate
+      add(new THREE.CylinderGeometry(0.19, 0.15, 0.04, 16), 0, 0.02, 0, mat('#ffffff'));
+      for (let i = -1; i <= 1; i++) {
+        add(new THREE.BoxGeometry(0.26, 0.03, 0.07), 0, 0.055 + (i + 1) * 0.012, i * 0.075);
+        add(new THREE.BoxGeometry(0.26, 0.031, 0.015), 0, 0.055 + (i + 1) * 0.012, i * 0.075 + 0.01, mat('#fbeee4')); // fat stripe
+      }
+      break;
     case 'roll': // sliced gimbap
       for (let i = -1; i <= 1; i++) {
         add(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12).rotateX(Math.PI / 2), i * 0.07, 0.06);
@@ -258,7 +265,83 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
-  if (store.category === 'cafe' || store.category === 'restaurant') {
+  if (store.category === 'library') {
+    // Tall bookshelves along the back and side walls, reading tables in the
+    // middle (seats below), and a "quiet please" sign. Study content comes later.
+    const spines = ['#b5533c', '#3f6e8c', '#d9a441', '#5f8a4e', '#7a4f8c', '#e3d6c0', '#2f3e4f', '#c97b63'];
+    const shelf = (x, z, ry, len) => {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.rotation.y = ry;
+      scene.add(g);
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(len, 2.4, 0.45), mat('#8a5a3a'));
+      frame.position.y = 1.2;
+      g.add(frame);
+      for (let row = 0; row < 4; row++) {
+        let bx = -len / 2 + 0.12;
+        let k = row * 3 + Math.round((x + z) * 7);
+        while (bx < len / 2 - 0.15) {
+          const bw = 0.07 + ((k * 37) % 5) * 0.015, bh = 0.34 + ((k * 13) % 4) * 0.04;
+          const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.3), mat(spines[Math.abs(k) % spines.length]));
+          b.position.set(bx + bw / 2, 0.22 + row * 0.56 + bh / 2, 0.1);
+          g.add(b);
+          bx += bw + 0.01;
+          k++;
+        }
+      }
+      const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.6, len] : [len, 0.6];
+      block(x, z, cx, cz);
+    };
+    const nBack = Math.max(2, Math.floor((w - 2) / 2.6));
+    for (let i = 0; i < nBack; i++) shelf((i - (nBack - 1) / 2) * 2.6, -d / 2 + 0.45, 0, 2.4);
+    const nSide = Math.max(1, Math.floor((d - 5) / 2.6));
+    for (let i = 0; i < nSide; i++) {
+      const z = -d / 2 + 2.2 + i * 2.6;
+      shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
+      shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
+    }
+    // Long reading tables with chairs on both long sides.
+    const rows = Math.max(1, Math.floor((d - 6) / 2.8));
+    for (let r = 0; r < rows; r++) {
+      const tz = -d / 2 + 3 + r * 2.8;
+      const tl = Math.min(4.2, w - 4.5);
+      box(tl, 0.06, 1.0, 0, 0.62, tz, '#c98b4f');
+      for (const lx of [-tl / 2 + 0.2, tl / 2 - 0.2]) box(0.1, 0.62, 0.8, lx, 0.31, tz, '#8a5a3a');
+      box(0.18, 0.3, 0.18, -tl / 4, 0.8, tz, '#f2d27a'); // reading lamps
+      box(0.18, 0.3, 0.18, tl / 4, 0.8, tz, '#f2d27a');
+      const n = Math.max(1, Math.floor(tl / 1.2));
+      for (let i = 0; i < n; i++) {
+        const cx = (i - (n - 1) / 2) * 1.2;
+        for (const s of [-1, 1]) {
+          const cz = tz + 0.8 * s;
+          box(0.42, 0.06, 0.42, cx, SEAT_H - 0.03, cz, store.colors.awning);
+          box(0.42, 0.5, 0.08, cx, SEAT_H + 0.22, cz + 0.2 * s, store.colors.awning);
+          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.5 * s] });
+        }
+      }
+      block(0, tz, tl + 0.2, 2.1);
+    }
+    // Front desk by the door, and the sign above it.
+    const cx = Math.min(3.6, sx - 2), cz = d / 2 - 2.3;
+    box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0');
+    box(0.5, 0.06, 0.35, cx - 0.4, 1.03, cz, '#3f6e8c'); // a book on the desk
+    block(cx, cz, 2.2, 0.8);
+    clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
+    const sc = document.createElement('canvas');
+    sc.width = 512; sc.height = 128;
+    const sg = sc.getContext('2d');
+    sg.fillStyle = '#fffaf0'; sg.fillRect(0, 0, 512, 128);
+    sg.fillStyle = store.colors.sign;
+    sg.font = '800 54px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    sg.textAlign = 'center'; sg.textBaseline = 'middle';
+    sg.fillText('🤫 쉿! 조용히 · Quiet, please', 256, 66);
+    const stex = new THREE.CanvasTexture(sc);
+    stex.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.75), new THREE.MeshBasicMaterial({ map: stex }));
+    sign.position.set(-w / 2 + 0.05, 2.9, 0);
+    sign.rotation.y = Math.PI / 2;
+    scene.add(sign);
+  } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.
     const cols = Math.max(1, Math.floor((w - 4) / 3.6));
@@ -270,6 +353,13 @@ export function buildInterior(store) {
         const tz = z0 + r * 2.6;
         if (Math.abs(tx) < 1.5 && tz > d / 2 - 3.2) continue; // door path
         box(0.9, 0.05, 0.9, tx, 0.62, tz, '#c98b4f');
+        if (store.workshop === 'grill') { // a round grill plate on each table
+          const grill = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 20), mat('#2b2b2e'));
+          grill.position.set(tx, 0.67, tz);
+          scene.add(grill);
+          box(0.2, 0.012, 0.06, tx - 0.06, 0.695, tz, '#c98a4a');
+          box(0.2, 0.012, 0.06, tx + 0.08, 0.695, tz + 0.1, '#f0b7a8');
+        }
         box(0.1, 0.62, 0.1, tx, 0.31, tz, '#8a5a3a');
         for (const s of [-1, 1]) {
           const cx = tx + 0.8 * s;
@@ -319,5 +409,23 @@ export function buildInterior(store) {
   block(w / 2 - 0.2 + t / 2, 0, t, d);
 
   if (clerk) block(clerk.x, clerk.z, 0.6, 0.5); // don't walk through the clerk
-  return { scene, products, colliders, seats, clerk, room: ROOM, exit: EXIT };
+  // Music café: a record player on a cabinet, with a crate of LPs beside it.
+  let turntable = null;
+  if (store.music) {
+    const tx = -w / 2 + 1.3, tz = d / 2 - 2.6;
+    box(1.4, 0.8, 0.7, tx, 0.4, tz, '#6b4a34'); // cabinet
+    box(0.9, 0.12, 0.6, tx, 0.86, tz, '#2a2a2e'); // player
+    const platter = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.02, 24), mat('#111114'));
+    platter.position.set(tx - 0.12, 0.93, tz);
+    scene.add(platter);
+    const label = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.022, 16), mat(store.colors.sign));
+    label.position.set(tx - 0.12, 0.932, tz);
+    scene.add(label);
+    box(0.03, 0.03, 0.34, tx + 0.28, 0.95, tz - 0.05, '#c9c9cf'); // tone arm
+    const crate = ['#e0517a', '#2f8fb0', '#d9a441', '#6d5bd0', '#c0392b'];
+    crate.forEach((c, i) => box(0.04, 0.42, 0.42, tx + 0.95 + i * 0.07, 0.31, tz, c)); // LP sleeves
+    block(tx + 0.3, tz, 2.1, 0.8);
+    turntable = { x: tx, z: tz + 0.9, platter };
+  }
+  return { scene, products, colliders, seats, clerk, turntable, room: ROOM, exit: EXIT };
 }

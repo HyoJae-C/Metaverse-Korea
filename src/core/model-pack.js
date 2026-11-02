@@ -141,6 +141,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   let emote = null; // { key, t, dur }
   return {
+    // Where held things go. The loader drops dots from names (handslot.r → handslotr).
+    hand: m.getObjectByName('handslotr') || m.getObjectByName('handslot.r') || m.getObjectByName('handr'),
+    scale: PACK.scale,
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { makeBike, makeTandem, makeCar } from './bikes.js';
 import { attachModel } from './model-pack.js';
+import { makeHeld } from './held.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
 
@@ -12,6 +13,7 @@ const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
+const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
   const o = {
@@ -101,7 +103,21 @@ export function createCharacter(rawLook) {
   let bike = null, tandem = null, car = null, riding = false;
   let act = null; // current body emote
   let model = null; // set once the pack model has loaded
-  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; });
+  let held = null; // a cup or other thing in the right hand
+  const attachHeld = () => {
+    if (!held) return;
+    if (model?.hand) {
+      held.scale.setScalar(1.8 / model.scale); // inside the scaled model; 1.8x life size so it reads on chibi hands
+      held.position.set(0, 0, 0);
+      held.rotation.set(0, 0, 0);
+      model.hand.add(held);
+    } else {
+      held.scale.setScalar(1.8);
+      held.position.set(0, -0.24, 0.04);
+      armR.add(held);
+    }
+  };
+  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; attachHeld(); });
   return {
     root,
     head,
@@ -120,7 +136,17 @@ export function createCharacter(rawLook) {
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
-      if (model) { model.update(dt, speed01, sit, riding); return; }
+      if (model) {
+        model.update(dt, speed01, sit, riding);
+        if (held?.parent === model.hand) {
+          // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
+          root.updateWorldMatrix(false, true);
+          model.hand.getWorldQuaternion(qHand);
+          root.getWorldQuaternion(qRoot);
+          held.quaternion.copy(qHand.invert().multiply(qRoot));
+        }
+        return;
+      }
       if (!riding) body.position.z = 0;
       if (riding) {
         // Pedalling: legs turn with speed, hands on the handlebar.
@@ -171,6 +197,13 @@ export function createCharacter(rawLook) {
           body.rotation.set(0, 0, 0);
         } else pose({ t, e, armL, armR, head, body });
       }
+    },
+    // Hold something in the right hand ('coffee'), or nothing (null).
+    setHeld(kind) {
+      if ((held?.name || null) === (kind ? 'held:' + kind : null)) return;
+      held?.removeFromParent();
+      held = kind ? makeHeld(kind) : null;
+      attachHeld();
     },
     wave() {
       waveT = 1.6;

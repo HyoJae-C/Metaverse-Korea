@@ -16,6 +16,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Browse products, try on, add to cart; no real payments
 - Signs in Korean (or English) with a Translate button to the chosen language
 - Background music: a cozy lo-fi loop generated in the browser (no audio files, no licensing), off by default, 🎵 toggle remembered per device
+- **Sorimaru Record Café** (done): a record player with five original songs played live in the browser (lo-fi, swing jazz, city pop, Han River ambient, gugak groove), each with a short description. Only you hear your pick; leaving puts the usual music back. More songs are just new recipes in `src/data/tracks.js`
 
 ## Cost guardrails (done)
 
@@ -37,7 +38,8 @@ Decisions agreed with the project owner. Each step ships something playable.
 
 - Food can't actually be eaten, so keep **only 2–3 restaurants**. Inside, each is a **Korean practice zone**: read the menu, practise ordering lines ("이거 주세요"), hear and repeat them
 - First one done: **Ddeokip Bunsik** with three ordering missions (word blocks, the clerk's follow-up question, a stamp each). Missions are data in `src/data/order-missions.js`, so a new restaurant only needs a menu there and `"workshop": "order"` in stores.json
-- Next ideas: a Korean-only kiosk order, reading the menu board, grilling samgyeopsal, building bibimbap, restaurant etiquette quiz. Speech recognition stays out for now (poor accuracy for learners' pronunciation, patchy browser support)
+- Second one done: **Dwaejimaru Samgyeopsal** with a grilling minigame (flip each slice at golden brown; gold, silver and bronze medals, best medal kept, coins once per new tier)
+- Next ideas: a Korean-only kiosk order, reading the menu board, building bibimbap, restaurant etiquette quiz. Speech recognition stays out for now (poor accuracy for learners' pronunciation, patchy browser support)
 - The café and bakery stay as meeting spots
 - All other buildings are **spare brand / ad slots**: sign and interior page come from advertiser data, so a brand can be swapped in without code changes. Until sold, they show a clear "Advertise here" sample
 
@@ -58,3 +60,6 @@ Decisions agreed with the project owner. Each step ships something playable.
 - **Subway between regions**: stations act as doors to other regions. Seongsu → Hongik Univ. is about 30 min on Line 2 in real life; in game, about a 1-minute ride with station announcements, window scenery and a Skip button.
 - **Hongdae** region with a **busking zone**
 - More regions: other Seoul neighbourhoods, Busan, Jeju
+- **Library** (shell done: Chaekmaru Library with bookshelves, reading tables and a quiet-please librarian). Later: study content such as reading Korean picture books, vocabulary cards, a quiet study timer
+- **Elevators in tall buildings**: ride up to a rooftop, an upper-floor café or an observation deck, with floor announcements in Korean ("3층입니다")
+- **Han River outing**: walk or ride to the riverside park, sit and watch the river, and cook instant ramen at a convenience-store ramen machine (a later minigame)
