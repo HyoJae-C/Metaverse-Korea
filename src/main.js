@@ -27,6 +27,7 @@ import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { KpopRoom } from './ui/kpop-room.js';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
@@ -441,7 +442,16 @@ onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
-const kpop = new KpopRoom({ tv: $('kpop-tv'), panel: $('kpop-panel'), send: (m) => net.sendEmote(m), toast: (x) => shop.toast(x) });
+// The video sits on the café's wall screen: a CSS3D layer over the canvas.
+const kpopVideo = document.createElement('div');
+kpopVideo.className = 'kpop-video';
+const cssRenderer = new CSS3DRenderer();
+cssRenderer.domElement.className = 'css3d-layer';
+document.getElementById('scene').after(cssRenderer.domElement);
+const cssScene = new THREE.Scene();
+const kpopScreen = new CSS3DObject(kpopVideo);
+cssScene.add(kpopScreen);
+const kpop = new KpopRoom({ video: kpopVideo, tv: $('kpop-tv'), panel: $('kpop-panel'), send: (m) => net.sendEmote(m), toast: (x) => shop.toast(x) });
 $('kpop-tv').querySelector('.kpop-unmute').onclick = () => kpop.unmute();
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
@@ -1126,6 +1136,7 @@ let cafeMusic = null; // { wasOn } while inside a music café
 // K-POP café: everyone in the room watches and hears the same music video
 // (ui/kpop-room.js). Our own background music pauses while inside.
 let kpopMusic = null;
+const KPOP_PX = 960; // the player's size in CSS pixels, scaled onto the screen
 async function enterKpopCafe() {
   kpopMusic = { wasOn: music.on };
   if (music.on) { await music.setOn(false); applyMusicBtn(); }
@@ -1992,6 +2003,7 @@ function updateGuide(p, dt) {
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
+  cssRenderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
@@ -2212,6 +2224,16 @@ renderer.setAnimationLoop(() => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
 
   renderer.render(activeScene, camera);
+  // The K-POP café's video, on the wall screen.
+  const onScreen = kpop.song && interior?.tv;
+  cssRenderer.domElement.hidden = !onScreen;
+  if (onScreen) {
+    const s = interior.tv.screen;
+    kpopScreen.position.copy(s.position);
+    kpopScreen.position.z += 0.01;
+    kpopScreen.scale.setScalar(interior.tv.width / KPOP_PX);
+    cssRenderer.render(cssScene, camera);
+  }
 });
 
 updateStreetCard();
@@ -2244,6 +2266,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
+    billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
+    billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
