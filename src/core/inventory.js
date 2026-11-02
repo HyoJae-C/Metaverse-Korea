@@ -14,6 +14,17 @@ function pets(defs) {
   return out;
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
+const PLUSH_DESC = {
+  en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
+  ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: 'クレーンゲームの景品。家の「模様替え」で置けます。',
+  zh: '抓娃娃机的奖品。在家里点“装饰”就能摆放。',
+};
+function plushies(defs) {
+  const out = {};
+  for (const [id, [emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: PLUSH_DESC, plush: true };
+  return out;
+}
 
 export const ITEMS = {
   tandem: {
@@ -48,6 +59,13 @@ export const ITEMS = {
       zh: '一只一脸闷闷不乐的毛茸茸小家伙。点“穿上”即可穿上。',
     },
   },
+  // Claw machine prizes (core/claw-game.js).
+  ...plushies({
+    'plush-simurugi': ['😑', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
+    'plush-mongle': ['☁️', { en: 'Mongle plush', ko: '몽글이 인형', ja: 'モングルのぬいぐるみ', zh: '云朵羊玩偶' }],
+    'plush-bear': ['🧸', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
+    'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
+  }),
   // Pets: adopted at the pet shop for coins (price), or by code only (no price).
   ...pets({
     'pet-maltese': [30, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],

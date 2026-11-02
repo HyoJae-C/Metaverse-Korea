@@ -82,6 +82,31 @@ export const FURNITURE = [
       box(g, 2.0, 0.02, 1.4, 0, 0.012, 0, '#e6c9a8');
       box(g, 1.7, 0.022, 1.1, 0, 0.014, 0, '#d9a066');
     } },
+  // Claw machine plushies (core/claw-game.js): only once you own the item.
+  ...[
+    ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
+    ['plush-mongle', '☁️', '#ffffff', '#9fd0f2', { en: 'Mongle plush', ko: '몽글이 인형', ja: 'モングルのぬいぐるみ', zh: '云朵羊玩偶' }],
+    ['plush-bear', '🧸', '#c98b4f', '#f3d9b8', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
+    ['plush-mandu', '🥟', '#fff6e6', '#e8cfa8', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
+  ].map(([id, emoji, body, accent, name]) => ({
+    id, emoji, item: id, size: [0.5, 0.5], name,
+    build(g) {
+      const ball = (r, x, y, z, c) => {
+        const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat(c));
+        m.position.set(x, y, z);
+        g.add(m);
+        return m;
+      };
+      ball(0.22, 0, 0.22, 0, body).scale.set(1, 0.9, 0.9); // body
+      ball(0.18, 0, 0.52, 0.02, body); // head
+      for (const s of [-1, 1]) {
+        ball(0.06, 0.13 * s, 0.68, 0, accent); // ears
+        ball(0.07, 0.17 * s, 0.25, 0.12, body); // paws
+        ball(0.025, 0.06 * s, 0.54, 0.17, '#2b2630'); // eyes
+        ball(0.03, 0.1 * s, 0.49, 0.15, '#ffb0a8'); // cheeks
+      }
+    },
+  })),
 ];
 
 export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);

@@ -277,6 +277,7 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
+  const stations = {}; // minigame spots: { karaoke|photo|claw: [{ x, z }] }
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -432,6 +433,49 @@ export function buildInterior(store) {
         for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
         block(fx, fz, 0.9, 2.3);
       }
+    } else if (store.workshop === 'karaoke') {
+      // A small stage with a big lyrics screen and a mic stand.
+      box(5, 0.2, 2.4, 0, 0.1, -d / 2 + 1.4, '#2b2240');
+      box(4.2, 2.2, 0.1, 0, 1.9, -d / 2 + 0.12, '#14101f');
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 1.9), new THREE.MeshBasicMaterial({ color: '#5b3fd0' }));
+      scr.position.set(0, 1.9, -d / 2 + 0.18);
+      scene.add(scr);
+      box(0.04, 1.2, 0.04, 0, 0.8, -d / 2 + 1.8, '#9ca9af');
+      box(0.1, 0.16, 0.1, 0, 1.45, -d / 2 + 1.8, '#2b2b2e'); // mic
+      for (const sx2 of [-2.3, 2.3]) box(0.5, 0.9, 0.4, sx2, 0.65, -d / 2 + 0.6, '#1d1b22'); // speakers
+      block(0, -d / 2 + 0.6, 5, 0.9);
+      stations.karaoke = [{ x: 0, z: -d / 2 + 2.9 }];
+      for (const o of [-1.6, 1.6]) { // sofas
+        box(1.6, 0.42, 0.7, o, 0.21, 0.6, store.colors.awning);
+        seats.push({ x: o, z: 0.6, ry: Math.PI, stand: [o, 1.5] });
+        block(o, 0.6, 1.7, 0.8);
+      }
+    } else if (store.workshop === 'photo') {
+      // The booth: a box with a curtain opening and a lit backdrop inside.
+      const bz = -d / 2 + 1.6;
+      box(3.4, 2.4, 0.1, 0, 1.2, -d / 2 + 0.1, '#fffaf0'); // backdrop
+      box(0.1, 2.4, 2.6, -1.7, 1.2, bz, store.colors.sign);
+      box(0.1, 2.4, 2.6, 1.7, 1.2, bz, store.colors.sign);
+      box(3.5, 0.12, 2.6, 0, 2.45, bz, store.colors.sign);
+      box(0.4, 0.3, 0.3, 0, 2.25, bz + 1.2, '#2b2b2e'); // camera, hung from the roof
+      block(-1.7, bz, 0.2, 2.6);
+      block(1.7, bz, 0.2, 2.6);
+      stations.photo = [{ x: 0, z: bz + 0.3, ry: 0, camZ: bz + 2.6 }];
+    } else if (store.workshop === 'claw') {
+      // A row of claw machines along the back wall.
+      const n = Math.max(2, Math.min(4, Math.floor((w - 2) / 1.6)));
+      stations.claw = [];
+      for (let i = 0; i < n; i++) {
+        const mx = (i - (n - 1) / 2) * 1.6, mz = -d / 2 + 0.9;
+        box(1.2, 0.9, 1.0, mx, 0.45, mz, store.colors.sign);
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 0.9), new THREE.MeshLambertMaterial({ color: '#dff4ff', transparent: true, opacity: 0.35 }));
+        glass.position.set(mx, 1.4, mz);
+        scene.add(glass);
+        box(1.2, 0.2, 1.0, mx, 2.0, mz, store.colors.sign);
+        for (let k = 0; k < 4; k++) box(0.22, 0.22, 0.22, mx - 0.3 + (k % 2) * 0.5, 1.02, mz - 0.2 + Math.floor(k / 2) * 0.35, ['#ffd36e', '#ff9bb3', '#8fd3c7', '#b9a6f0'][k]);
+        block(mx, mz, 1.3, 1.1);
+        stations.claw.push({ x: mx, z: mz + 1.1 });
+      }
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];
@@ -503,5 +547,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, turntable, tv, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, turntable, tv, stations, room: ROOM, exit: EXIT };
 }

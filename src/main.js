@@ -26,6 +26,14 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
+import { PochaUI } from './ui/pocha-ui.js';
+import { KaraokeUI } from './ui/karaoke-ui.js';
+import { PhotoUI } from './ui/photo-ui.js';
+import { ClawUI } from './ui/claw-ui.js';
+import { DuckUI } from './ui/duck-ui.js';
+import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
+import { duckMsg, parseDuck } from './core/duck-boat.js';
+import { pickDelivery, timeFor, deliveryPay } from './core/delivery.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
@@ -481,6 +489,8 @@ async function joinRoom(room, roomScene, area = null) {
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
+      if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -1049,6 +1059,7 @@ function enterStore(item) {
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
+  deliveryArrived(store.id);
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
   const quiet = store.category === 'library';
@@ -1070,6 +1081,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1442,6 +1454,8 @@ function spotInFront() {
 function placePiece(id) {
   const placed = decor.items.find((i) => i.id === id);
   if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
+  const def = furnitureById(id);
+  if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
   if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
   const [x, z, ry] = spotInFront();
   decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
@@ -1491,7 +1505,11 @@ $('decor-grid').append(...FURNITURE.map((f) => {
   return b;
 }));
 function labelDecor() {
-  for (const b of $('decor-grid').children) b.querySelector('small').textContent = localName(furnitureById(b.dataset.id).name, getLanguage());
+  for (const b of $('decor-grid').children) {
+    const f = furnitureById(b.dataset.id);
+    b.querySelector('small').textContent = localName(f.name, getLanguage());
+    b.hidden = !!f.item && !inventory.has(f.item); // plushies: once you've won one
+  }
 }
 labelDecor();
 onLanguageChange(labelDecor);
@@ -1564,6 +1582,99 @@ const ramenUi = new RamenUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
 });
+
+// Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
+// noraebang, the photo booth, the claw machines and the duck boats.
+const cookDone = (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); };
+const pochaUi = new PochaUI({
+  root: $('pocha-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onDeliver: () => startDelivery(),
+  onMedal: cookDone,
+});
+const karaokeUi = new KaraokeUI({
+  root: $('karaoke-panel'),
+  wallet,
+  onStart: () => { karaokeMusic = music.on; if (music.on) { music.setOn(false); applyMusicBtn(); } },
+  onEnd: () => { if (karaokeMusic && !music.on) { music.setOn(true); applyMusicBtn(); } karaokeMusic = false; },
+  onScore: (n) => net.sendEmote(karaokeMsg(n)),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
+});
+let karaokeMusic = false;
+let snapReq = null; // resolved with a copy of the canvas after the next render
+const photoUi = new PhotoUI({
+  root: $('photo-panel'),
+  wallet,
+  snap: () => new Promise((resolve) => { snapReq = resolve; }),
+  onShoot: (on) => {
+    document.body.classList.toggle('shooting', on);
+    if (on) {
+      const st = interior?.stations?.photo?.[0];
+      photoCam = { ...cam };
+      if (st) { me.root.position.set(st.x, 0, st.z); lastSent = null; }
+      Object.assign(cam, { yaw: 0, dist: 3.0, pitch: 0.06 });
+      me.root.rotation.y = 0; // face the camera
+    } else if (photoCam) { Object.assign(cam, photoCam); photoCam = null; }
+  },
+  countdown: (text) => { $('photo-count').hidden = !text; $('photo-count').textContent = text; },
+});
+let photoCam = null;
+const clawUi = new ClawUI({
+  root: $('claw-panel'),
+  wallet,
+  give: (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; },
+  itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
+  onWin: () => { me.play('cheer'); sfx.pop?.(); },
+});
+const duckUi = new DuckUI({
+  root: $('duck-panel'),
+  wallet,
+  friend: () => others.nearestFree(me.root.position.x, me.root.position.z, TOGETHER_RADIUS),
+  send: (to, n) => net.sendEmote(duckMsg(to, n)),
+  onDone: (ok) => { if (ok) me.play('cheer'); },
+});
+
+// Delivery run from the tteokbokki stall: ride to another shop in time.
+let delivery = null; // { id, name, until }
+function startDelivery() {
+  const from = interior?.front?.door || me.root.position;
+  const stores = storefronts.items.filter((i) => i.store.category !== 'home' && i.store.category !== 'park' && i.store.id !== interior?.store.id)
+    .map((i) => ({ id: i.store.id, x: i.door.x, z: i.door.z, item: i }));
+  const target = pickDelivery(stores, from);
+  if (!target) return;
+  const secs = timeFor(target.d);
+  const name = localName(target.item.store.name, getLanguage());
+  delivery = { id: target.id, name, until: performance.now() + secs * 1000 };
+  shop.toast(t('delivery.start', { name, s: secs }));
+  if (mode === 'store') leaveStore();
+  setGuide({ kind: 'store', id: target.id, x: target.x, z: target.z, label: name });
+}
+function deliveryArrived(storeId) {
+  if (!delivery || delivery.id !== storeId) return;
+  const left = (delivery.until - performance.now()) / 1000;
+  const coins = deliveryPay(left);
+  delivery = null;
+  $('delivery-chip').hidden = true;
+  if (!coins) return;
+  wallet.add(coins);
+  me.play('cheer');
+  shop.toast(t('delivery.done', { n: coins }));
+  missionEvent('delivery');
+}
+function updateDelivery() {
+  if (!delivery) return;
+  const left = (delivery.until - performance.now()) / 1000;
+  if (left <= 0) {
+    delivery = null;
+    $('delivery-chip').hidden = true;
+    shop.toast(t('delivery.late'));
+    return;
+  }
+  $('delivery-chip').hidden = false;
+  $('delivery-chip').textContent = `🛵 ${delivery.name} · ${Math.ceil(left)}s`;
+}
+$('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancelHint')); };
 // Hair salon (dye) and cosmetic clinic (eye colour, skin tone, smaller head):
 // try options on with a close-up camera, pay coins to keep them.
 const beautyUi = new BeautyUI({
@@ -1930,6 +2041,7 @@ function standUp() {
   sendTimer = 0;
 }
 
+const nearStation = (p, kind, r = 1.8) => interior?.stations?.[kind]?.some((st) => Math.hypot(p.x - st.x, p.z - st.z) < r);
 const hi5Target = (p) => !riding && !seated && others.nearestFree(p.x, p.z, 2);
 function hi5Action(o) {
   const asked = hi5.waiting(o.id);
@@ -1974,6 +2086,16 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (nearStation(p, 'karaoke')) {
+      next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
+    } else if (nearStation(p, 'photo', 2.2)) {
+      next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (nearStation(p, 'claw')) {
+      next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
+    } else if (interior.duck && Math.hypot(p.x - interior.duck.x, p.z - interior.duck.z) < 2.4) {
+      next = { key: 'duck', label: '🦆 ' + t('game.duck'), run: () => duckUi.show() };
+    } else if (interior.store.workshop === 'pocha' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'pocha', label: '🌶️ ' + t('game.pocha'), run: () => { clerk.ch.wave(); pochaUi.show(); } };
     } else if (interior.tv && Math.hypot(p.x - interior.tv.x, p.z - interior.tv.z) < 2.6) {
       next = { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
     } else if (nearFishing(p)) {
@@ -2294,6 +2416,31 @@ renderer.setAnimationLoop(() => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
 
   renderer.render(activeScene, camera);
+  // The canvas has an alpha channel (for the K-POP screen hole), but see-
+  // through things (signs, glass) would leave it below 1 and let the page
+  // show through: make every pixel opaque, then cut the hole.
+  const gl = renderer.getContext();
+  gl.colorMask(false, false, false, true);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.colorMask(true, true, true, true);
+  renderer.resetState();
+  if (kpopHole.visible) {
+    renderer.autoClear = false;
+    renderer.render(holeScene, camera);
+    renderer.autoClear = true;
+  }
+  if (snapReq) { // photo booth: copy the frame now, before the buffer is cleared
+    // The middle of the view, where the booth is (photo cells are 32:22).
+    const src = renderer.domElement, W = src.width, H = src.height;
+    const cw = Math.min(W, H * 1.1), ch = cw * 22 / 32;
+    const c = document.createElement('canvas');
+    c.width = Math.round(cw); c.height = Math.round(ch);
+    c.getContext('2d').drawImage(src, (W - cw) / 2, Math.max(0, H * 0.52 - ch / 2), cw, ch, 0, 0, c.width, c.height);
+    snapReq(c);
+    snapReq = null;
+  }
+  updateDelivery();
   // The K-POP café's video, on the wall screen.
   placeKpopVideo(kpop.song && interior?.tv);
 });
@@ -2304,14 +2451,22 @@ renderer.setAnimationLoop(() => {
 // corners with a flat (2D) transform: no 3D transforms, which can drop video
 // on iPhones.
 const KPOP_W = 640, KPOP_H = 360;
-const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: false, blending: THREE.NoBlending });
+// The hole: drawn after the café (depth-tested, so people in front of the
+// TV still cover it), writing transparent black.
+const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000, blending: THREE.NoBlending });
 holeMat.opacity = 0;
+const holeScene = new THREE.Scene();
+const kpopHole = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), holeMat);
+kpopHole.visible = false;
+holeScene.add(kpopHole);
 let kpopLast = '';
 function placeKpopVideo(tv) {
   let ok = !!tv;
   if (tv) {
-    if (!tv.glowMat) tv.glowMat = tv.screen.material;
-    tv.screen.material = holeMat;
+    tv.screen.updateMatrixWorld();
+    kpopHole.matrixAutoUpdate = false;
+    kpopHole.matrix.copy(tv.screen.matrixWorld).multiply(new THREE.Matrix4().makeScale(tv.width, tv.screen.geometry.parameters.height, 1));
+    kpopHole.matrixWorld.copy(kpopHole.matrix);
     const p = tv.screen.position, hw = tv.width / 2, hh = tv.screen.geometry.parameters.height / 2;
     const c = [[-hw, hh], [hw, hh], [-hw, -hh], [hw, -hh]].map(([dx, dy]) => { // TL, TR, BL, BR
       tmp.set(p.x + dx, p.y + dy, p.z).project(camera);
@@ -2328,7 +2483,7 @@ function placeKpopVideo(tv) {
     const css = `matrix(${m.map((v) => v.toFixed(4)).join(',')})`;
     if (css !== kpopLast) { kpopLast = css; kpopVideo.style.transform = css; }
   }
-  if (!ok && interior?.tv?.glowMat) interior.tv.screen.material = interior.tv.glowMat;
+  kpopHole.visible = ok;
   if (kpopLayer.hidden === ok) kpopLayer.hidden = !ok;
 }
 

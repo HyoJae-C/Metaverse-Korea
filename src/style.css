@@ -831,3 +831,30 @@ a.setting-row { text-decoration: none; color: inherit; }
 
 /* Fast taps on buttons must not zoom the page on phones (double-tap zoom). */
 button, .sheet, .order-panel { touch-action: manipulation; }
+
+/* Minigames: stall, noraebang, photo booth, claw machine, duck boat */
+.pocha-customer { display: flex; align-items: center; gap: 10px; }
+.pocha-face { font-size: 40px; line-height: 1; }
+.pocha-say { display: grid; gap: 2px; padding: 10px 12px; border-radius: 14px; background: #fff3e8; }
+.pocha-mean { color: var(--ink-soft); }
+.pocha-mean-btn { justify-self: start; font-size: 12px; padding: 4px 10px; }
+.pocha-label { font-size: 13px; }
+.pocha-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.pocha-row .chip[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.pocha-bowl { margin: 0; font-size: 34px; text-align: center; }
+.pocha-result.ok { color: #2f8f5b; font-weight: 800; }
+.pocha-result.bad { color: #c8463c; font-weight: 800; }
+.karaoke-lane, .duck-lane, .claw-pit { width: 100%; height: auto; border-radius: 14px; display: block; }
+.karaoke-status { margin: 0; text-align: center; font-weight: 800; }
+.karaoke-pad { width: 100%; font-size: 22px; padding: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.karaoke-board { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: #f4f0ff; }
+.karaoke-board:empty { display: none; }
+.karaoke-row { font-size: 13px; }
+.duck-pads { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.duck-pad { font-size: 30px; padding: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.claw-note { font-weight: 800; }
+.photo-strip { display: block; max-height: 60vh; margin: 0 auto; border-radius: 6px; box-shadow: var(--shadow); }
+.photo-count { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 20; padding: 10px 24px; border-radius: 999px; background: rgba(27, 27, 32, 0.6); color: #fff; font-size: 44px; font-weight: 900; pointer-events: none; }
+.photo-count[hidden] { display: none; }
+body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibility: hidden; }
+.delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 196px); bottom: auto; background: #ffefe0; }
