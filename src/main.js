@@ -16,6 +16,7 @@ import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog } from './core/gym.js';
+import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -314,6 +315,21 @@ if (spawnStore) {
   const pick = room(along[0]) >= room(along[1]) ? 0 : 1;
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
+
+// Come back where you left off last time, if that spot is still open.
+{
+  const last = loadLastSpot();
+  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
+    me.root.position.set(last.x, 0, last.z);
+    me.root.rotation.y = last.ry;
+  }
+}
+let lastSpotTimer = 3;
+const rememberSpot = () => {
+  try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
+addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
 let camHoriz = 8; // current camera distance (shortened near walls)
@@ -2458,6 +2474,8 @@ renderer.setAnimationLoop(() => {
   // heartbeat when idle. Presence already tracks who is online, so the
   // heartbeat only re-confirms the last position. Realtime services bill per
   // message and receiver, so standing still should cost almost nothing.
+  lastSpotTimer -= dt;
+  if (lastSpotTimer <= 0) { lastSpotTimer = 3; rememberSpot(); }
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
