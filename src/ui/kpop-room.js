@@ -96,6 +96,7 @@ export class KpopRoom {
     const song = kpopById(id);
     if (!song) return;
     this.song = { id, startedAt: Date.now() - at * 1000 };
+    this.resumes = 0;
     this.tv.hidden = false;
     this._render();
     let YT;
@@ -121,6 +122,17 @@ export class KpopRoom {
         onStateChange: (e) => {
           // Autoplay with sound may be blocked until a tap: show the button.
           if (e.data === YT.PlayerState.PLAYING) this.tv.querySelector('.kpop-unmute').hidden = !e.target.isMuted();
+          // Nobody can pause it (the player takes no taps), so a pause or a
+          // reset here is the player stopping by itself, e.g. as an ad
+          // ends: start it again, a few times at most per song.
+          if ((e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.CUED) && this.song && this.resumes < 3) {
+            const id = this.song.id;
+            setTimeout(() => {
+              if (this.song?.id !== id || this.player !== e.target) return;
+              const st = e.target.getPlayerState?.();
+              if (st === YT.PlayerState.PAUSED || st === YT.PlayerState.CUED) { this.resumes++; e.target.playVideo(); }
+            }, 800);
+          }
         },
       },
     });
