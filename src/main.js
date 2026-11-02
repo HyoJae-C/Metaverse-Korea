@@ -19,6 +19,7 @@ import { buildInterior, EXIT, ROOM } from './core/interior.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music } from './core/music.js';
+import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -27,6 +28,10 @@ const $ = (id) => document.getElementById(id);
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
 const regionId = new URLSearchParams(location.search).get('region') || regionsIndex.default;
+// Realtime room name. Automated tests pass ?debug&room=<name> to get a private
+// room, so real visitors on the live site never mix into a test.
+const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
+const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
 const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
 function renderLangGrid(el, onPick) {
@@ -132,7 +137,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(COLORS.sky);
 scene.fog = DEBUG_TOP ? null : new THREE.Fog(COLORS.sky, 140, 420);
 
-const camera = new THREE.PerspectiveCamera(50, 1, 0.3, 2000);
+const camera = new THREE.PerspectiveCamera(62, 1, 0.3, 2000); // wide, behind-the-back view
 
 const hemi = new THREE.HemisphereLight(0xfff4e0, 0xc9d6b8, 1.5);
 const ambient = new THREE.AmbientLight(0xfff0e0, 0.9);
@@ -149,8 +154,10 @@ const collision = new CollisionMap(map.buildings);
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
 const storeData = (await storesPromise)?.stores || [];
 const zoneData = (await zonesPromise)?.zones || [];
-const storefronts = new Storefronts(scene, storeData, map, region.center);
+const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 const zones = new Zones(scene, zoneData, map, region.center, collision);
+const roadGraph = new RoadGraph(map.roads);
+const routeLine = new RouteLine(scene);
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -205,10 +212,33 @@ if (spawnDir !== null) {
   const diff = (a) => Math.abs(Math.atan2(Math.sin(a - me.root.rotation.y), Math.cos(a - me.root.rotation.y)));
   me.root.rotation.y = diff(spawnDir) < diff(alt) ? spawnDir : alt;
 }
+// Optional: start in front of a store (e.g. the café meeting spot), facing it.
+const spawnStore = region.spawn.nearStore && storefronts.get(region.spawn.nearStore);
+if (spawnStore) {
+  const { door, group } = spawnStore;
+  const ox = Math.sin(group.rotation.y), oz = Math.cos(group.rotation.y); // out of the shop front
+  const [fx, fz] = findFreeSpot(door.x + ox * 2.5 + (Math.random() - 0.5), door.z + oz * 2.5 + (Math.random() - 0.5));
+  me.root.position.set(fx, 0, fz);
+  // Face along the street, the shop on one side, turned slightly towards it.
+  // Pick the direction with open space behind us so the camera fits.
+  const room = (ry) => {
+    let d = 0;
+    while (d < 12 && !collision.blocked(fx - Math.sin(ry) * (d + 0.5), fz - Math.cos(ry) * (d + 0.5), 0.3)) d += 0.5;
+    return d;
+  };
+  const along = [group.rotation.y + Math.PI / 2, group.rotation.y - Math.PI / 2];
+  const pick = room(along[0]) >= room(along[1]) ? 0 : 1;
+  me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
+}
 
-const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.5, dist: 11 };
+const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
+let camHoriz = 8; // current camera distance (shortened near walls)
+let manualCamT = 0; // seconds left before the camera starts following again
 const PLAYER_R = 0.35;
-const WALK = 4.2, RUN = 8;
+// Street speeds are a bit faster than real life so the area feels compact;
+// shops are small rooms, so walking there stays slower.
+const WALK = 6.5, RUN = 12;
+const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
@@ -344,7 +374,7 @@ async function joinRoom(room, roomScene) {
   }
 }
 net = SOLO;
-joinRoom(regionId, scene);
+joinRoom(roomId, scene);
 
 const emoteBar = $('emotes');
 for (const pack of ownedPacks()) {
@@ -426,7 +456,7 @@ function enterStore(item) {
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
-  joinRoom(`${regionId}-${store.id}`, built.scene);
+  joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
 function leaveStore() {
@@ -435,15 +465,19 @@ function leaveStore() {
   mode = 'street';
   activeScene = scene;
   activeCollision = collision;
-  cam.dist = 11;
-  cam.pitch = 0.5;
+  cam.dist = 9;
+  cam.pitch = 0.42;
   // Face the street, with the camera to the side so the shop front stays in view.
-  moveMeTo(scene, it.door.x, it.door.z, it.group.rotation.y, it.group.rotation.y + Math.PI / 2);
+  // Step out a little in front of the door, on a spot that is not inside a
+  // building (some shop fronts sit close to their neighbours).
+  const ry = it.group.rotation.y;
+  const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
+  moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(regionId, scene);
+  joinRoom(roomId, scene);
 }
 
 // Translate signs (storefronts and zone boards) into the chosen language.
@@ -489,13 +523,17 @@ if (musicWanted) {
 
 // Guidance to a zone or store.
 let guide = null;
+let routeTimer = 0, routeLen = 0, faceRoute = false;
 function setGuide(g) {
   guide = g;
   $('guide').hidden = mode !== 'street';
+  routeTimer = 0; // draw the route on the next frame
+  faceRoute = true; // and turn the camera to look along it
 }
 function clearGuide() {
   guide = null;
   $('guide').hidden = true;
+  routeLine.clear();
 }
 $('guide-x').onclick = clearGuide;
 
@@ -577,10 +615,30 @@ function updateAction(p, tSec) {
 }
 onLanguageChange(() => { action = null; });
 
-function updateGuide(p) {
+function updateGuide(p, dt) {
   if (!guide || mode !== 'street') return;
   const dx = guide.x - p.x, dz = guide.z - p.z;
   const dist = Math.hypot(dx, dz);
+  // Re-plan the route along the streets from where we are now.
+  routeTimer -= dt;
+  if (routeTimer <= 0) {
+    routeTimer = 0.5;
+    const poly = roadGraph.route(p.x, p.z, guide.x, guide.z);
+    routeLine.set(poly);
+    routeLen = 0;
+    for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
+    if (faceRoute) {
+      faceRoute = false;
+      // Look towards the route point about 8 m ahead.
+      let ax = poly[1][0], az = poly[1][1], acc = 0;
+      for (let i = 1; i < poly.length; i++) {
+        acc += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
+        [ax, az] = poly[i];
+        if (acc > 8) break;
+      }
+      if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
+    }
+  }
   if (dist < 6) {
     shop.toast(t('guide.arrived', { label: guide.label }));
     clearGuide();
@@ -590,7 +648,7 @@ function updateGuide(p) {
   const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
   const ang = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz);
   $('guide-arrow').style.transform = `rotate(${ang}rad)`;
-  $('guide-text').textContent = t('guide.to', { label: guide.label, m: Math.round(dist) });
+  $('guide-text').textContent = t('guide.to', { label: guide.label, m: Math.round(Math.max(dist, routeLen)) });
 }
 
 // ---------- Loop ----------
@@ -613,6 +671,8 @@ renderer.setAnimationLoop(() => {
   input.update();
 
   const look = input.consumeLook();
+  if (look.dx || look.dy) manualCamT = 2;
+  manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
@@ -622,7 +682,8 @@ renderer.setAnimationLoop(() => {
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
   if (mag > 0.05) {
-    const speed = (input.run ? RUN : WALK) * Math.min(1, mag);
+    const inStore = mode === 'store';
+    const speed = (input.run ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward
     const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -639,16 +700,38 @@ renderer.setAnimationLoop(() => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / RUN, Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
   } else {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
   me.animate(dt, speed01 < 0.05 ? 0 : speed01);
 
+  // Third-person follow: while walking, the camera swings round behind the
+  // character, so running sideways turns into running forward. Paused for a
+  // moment after the player drags the view themselves.
+  if (mag > 0.05 && manualCamT <= 0 && !DEBUG_TOP) {
+    const behind = me.root.rotation.y + Math.PI;
+    let d = behind - cam.yaw;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    // Don't spin round when walking straight towards the camera.
+    if (Math.abs(d) < 2.4) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 1.5 : 2.5));
+  }
+
   // Camera follow.
-  const cx = p.x + Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist;
-  const cz = p.z + Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist;
-  const cy = 1 + Math.sin(cam.pitch) * cam.dist;
+  // Keep the camera out of buildings: walk back from the player and stop
+  // just before the first wall.
+  let horiz = Math.cos(cam.pitch) * cam.dist;
+  if (mode === 'street') {
+    const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+    for (let d = 1; d <= horiz; d += 0.5) {
+      if (collision.blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
+    }
+  }
+  camHoriz += (horiz - camHoriz) * Math.min(1, dt * (horiz < camHoriz ? 20 : 4));
+  const cx = p.x + Math.sin(cam.yaw) * camHoriz;
+  const cz = p.z + Math.cos(cam.yaw) * camHoriz;
+  // Lower the camera with the distance so a close camera doesn't look straight down.
+  const cy = 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   camera.lookAt(p.x, 1.1, p.z);
   if (DEBUG_TOP) {
@@ -666,8 +749,9 @@ renderer.setAnimationLoop(() => {
       currentZone = z;
       updateZoneLine(z);
     }
-    updateGuide(p);
+    updateGuide(p, dt);
   }
+  routeLine.update(dt);
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -725,5 +809,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
+    blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
   };
 }

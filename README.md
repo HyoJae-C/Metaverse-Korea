@@ -19,6 +19,8 @@ First stop: **Seongsu-dong, Seoul**.
 - Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
 - Each store interior is its own multiplayer room (the café is the meeting spot)
 - Background music on/off (🎵), generated in the browser
+- Walking route drawn on the ground along real streets when you pick a destination
+- Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 
 ## Run locally
 

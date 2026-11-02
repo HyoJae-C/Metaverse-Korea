@@ -97,13 +97,14 @@ export function createCharacter(rawLook) {
     // speed01: 0 idle … 1 running
     animate(dt, speed01) {
       if (speed01 > 0.01) {
-        phase += dt * (8 + 6 * speed01);
-        const sw = Math.sin(phase) * (0.5 + 0.4 * speed01);
+        // Long, bouncy strides: a slower step rate with a wider leg swing.
+        phase += dt * (7.5 + 5.5 * speed01);
+        const sw = Math.sin(phase) * (0.65 + 0.4 * speed01);
         legL.rotation.x = sw;
         legR.rotation.x = -sw;
         armL.rotation.x = -sw * 0.8;
         if (waveT <= 0) armR.rotation.x = sw * 0.8;
-        body.position.y = Math.abs(Math.sin(phase)) * 0.05;
+        body.position.y = Math.abs(Math.sin(phase)) * (0.05 + 0.04 * speed01);
       } else {
         phase = 0;
         for (const l of [legL, legR, armL]) l.rotation.x *= 0.8;

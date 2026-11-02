@@ -12,9 +12,12 @@ export function latLonToLocal(center, lat, lon) {
   return [(lon - center.lon) * mLon, -(lat - center.lat) * mLat];
 }
 
-// Nearest building edge (≥ 5 m long) to (x, z): facade point and outward normal.
-function nearestFacade(buildings, x, z) {
-  let best = null;
+// Nearest building edge (≥ 5 m long) to (x, z) that faces open ground:
+// facade point and outward normal. `isBlocked(x, z)` tells whether a point
+// is inside a building; it rules out walls that face a neighbouring building
+// (the door would be unreachable).
+function nearestFacade(buildings, x, z, isBlocked) {
+  const cands = [];
   for (const b of buildings) {
     const p = b.p;
     for (let i = 0; i < p.length; i++) {
@@ -29,14 +32,22 @@ function nearestFacade(buildings, x, z) {
       t = Math.max(margin / len, Math.min(1 - margin / len, t));
       const px = x1 + dx * t, pz = z1 + dz * t;
       const d = Math.hypot(px - x, pz - z);
-      if (!best || d < best.d) best = { d, px, pz, dx: dx / len, dz: dz / len };
+      if (d <= 40) cands.push({ d, px, pz, dx: dx / len, dz: dz / len });
     }
   }
-  if (!best || best.d > 18) return null;
-  // Normal pointing from the facade towards the anchor (the street side).
-  let nx = -best.dz, nz = best.dx;
-  if ((x - best.px) * nx + (z - best.pz) * nz < 0) { nx = -nx; nz = -nz; }
-  return { x: best.px, z: best.pz, nx, nz };
+  cands.sort((a, b) => a.d - b.d);
+  for (const c of cands) {
+    // Prefer the normal pointing towards the anchor (the street side).
+    let nx = -c.dz, nz = c.dx;
+    if ((x - c.px) * nx + (z - c.pz) * nz < 0) { nx = -nx; nz = -nz; }
+    for (const s of [1, -1]) {
+      const fx = c.px + nx * s * 3, fz = c.pz + nz * s * 3;
+      if (!isBlocked || (!isBlocked(fx, fz) && !isBlocked(c.px + nx * s * 1.7, c.pz + nz * s * 1.7))) {
+        return { x: c.px, z: c.pz, nx: nx * s, nz: nz * s };
+      }
+    }
+  }
+  return null;
 }
 
 function signTexture(text, bg, fg = '#ffffff') {
@@ -83,12 +94,13 @@ function awningTexture(color) {
 }
 
 export class Storefronts {
-  constructor(scene, stores, map, center) {
+  constructor(scene, stores, map, center, collision = null) {
     this.items = [];
     this.translated = false;
+    const isBlocked = collision ? (x, z) => collision.blocked(x, z, 0.6) : null;
     for (const store of stores) {
       const [ax, az] = latLonToLocal(center, store.anchor.lat, store.anchor.lon);
-      const f = nearestFacade(map.buildings, ax, az);
+      const f = nearestFacade(map.buildings, ax, az, isBlocked);
       if (!f) {
         console.warn('No facade found for', store.id);
         continue;
