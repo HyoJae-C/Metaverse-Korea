@@ -277,7 +277,7 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
-  const stations = {}; // minigame spots: { karaoke|photo|claw: [{ x, z }] }
+  const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -312,7 +312,9 @@ export function buildInterior(store) {
       const z = -d / 2 + 2.2 + i * 2.6;
       shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
       shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
+      for (const sgn of [-1, 1]) (stations.books ||= []).push({ x: sgn * (w / 2 - 1.3), z }); // pick a book here
     }
+    for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
     // Long reading tables with chairs on both long sides.
     const rows = Math.max(1, Math.floor((d - 6) / 2.8));
     for (let r = 0; r < rows; r++) {
@@ -476,6 +478,87 @@ export function buildInterior(store) {
         block(mx, mz, 1.3, 1.1);
         stations.claw.push({ x: mx, z: mz + 1.1 });
       }
+    } else if (store.workshop === 'sauna') {
+      // 찜질방: a dome-shaped hot kiln (불가마) on the left, an ice room on
+      // the right, and warm wooden platforms with mats in the middle.
+      const kx = -w / 2 + 3, kz = -d * 0.05;
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat('#9a6a45'));
+      dome.position.set(kx, 0, kz);
+      scene.add(dome);
+      box(0.3, 1.7, 1.2, kx + 2.25, 0.85, kz, '#3a2216'); // doorway
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.4), new THREE.MeshBasicMaterial({ color: '#ff8a3d' }));
+      glow.position.set(kx + 2.42, 0.75, kz);
+      glow.rotation.y = Math.PI / 2;
+      scene.add(glow);
+      const heat = new THREE.PointLight(0xff8a3d, 6, 6);
+      heat.position.set(kx + 3, 1, kz);
+      scene.add(heat);
+      block(kx, kz, 4.8, 4.8);
+      const ix = w / 2 - 2.4;
+      box(3.4, 2.8, 3.6, ix, 1.4, kz, '#dff4ff'); // ice room
+      box(0.1, 1.9, 1.2, ix - 1.72, 0.95, kz, '#7fb8e0'); // its door
+      for (let i = 0; i < 6; i++) box(0.12, 0.35 + (i % 3) * 0.12, 0.12, ix - 1.6 + i * 0.6, 2.62 - (i % 3) * 0.06, kz - 1.85, '#ffffff'); // icicles
+      block(ix, kz, 3.5, 3.7);
+      stations.sauna = [{ x: kx + 3.2, z: kz, kind: 'hot' }, { x: ix - 2.5, z: kz, kind: 'ice' }];
+      // Warm platforms (평상) with mats and wooden block pillows (목침).
+      const mats = ['#f2a7a0', '#a7d8c0', '#f6d28b', '#b9c4f0'];
+      [-4.5, -1.5, 1.5].forEach((px, i) => {
+        const pz = d * 0.22;
+        box(2, 0.42, 1.1, px, 0.21, pz, '#c9935f');
+        box(1.9, 0.05, 1.0, px, 0.445, pz, mats[i % mats.length]);
+        box(0.4, 0.14, 0.22, px, 0.53, pz - 0.38, '#8a5a3a');
+        for (const o of [-0.5, 0.5]) seats.push({ x: px + o, z: pz, ry: 0, stand: [px + o, pz + 1.1] });
+        block(px, pz, 2.1, 1.2);
+      });
+    } else if (store.workshop === 'gym') {
+      // 헬스장: treadmills on the back wall, a bench press, a dumbbell rack,
+      // push-up mats, and a long mirror.
+      const bz = -d / 2 + 1.4;
+      stations.gym = [];
+      for (const tx of [-7, -4]) {
+        box(1, 0.18, 2.2, tx, 0.09, bz, '#3a3f47'); // deck
+        box(0.85, 0.02, 1.9, tx, 0.19, bz, '#1d1f24'); // belt
+        for (const sx2 of [-0.45, 0.45]) box(0.08, 1.2, 0.08, tx + sx2, 0.7, bz - 0.9, '#9ca9af');
+        box(1, 0.3, 0.35, tx, 1.35, bz - 0.9, '#3a3f47'); // console
+        block(tx, bz - 0.9, 1.1, 0.5);
+        stations.gym.push({ x: tx, z: bz + 0.2, kind: 'treadmill' });
+      }
+      // Bench press: bench, rack posts and a bar with plates.
+      const px = 1.5, pz = bz + 0.6;
+      box(0.45, 0.45, 1.6, px, 0.225, pz, '#c8463c');
+      for (const sx2 of [-0.7, 0.7]) box(0.08, 1.3, 0.08, px + sx2, 0.65, pz - 0.6, '#9ca9af');
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2, 8), mat('#c9ced3'));
+      bar.rotation.z = Math.PI / 2;
+      bar.position.set(px, 1.2, pz - 0.6);
+      scene.add(bar);
+      for (const sx2 of [-0.85, 0.85]) {
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.08, 18), mat('#2b2b2e'));
+        plate.rotation.z = Math.PI / 2;
+        plate.position.set(px + sx2, 1.2, pz - 0.6);
+        scene.add(plate);
+      }
+      block(px, pz, 1.6, 1.8);
+      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench' });
+      // Dumbbell rack on the right wall.
+      const rx = w / 2 - 0.8, rz = -d * 0.12;
+      box(0.7, 0.8, 2.6, rx, 0.4, rz, '#4a4f57');
+      for (let i = 0; i < 5; i++) {
+        const dz = rz - 1 + i * 0.5;
+        box(0.5, 0.06, 0.06, rx, 0.9, dz, '#c9ced3');
+        for (const sx2 of [-0.22, 0.22]) box(0.1, 0.16 + i * 0.02, 0.16 + i * 0.02, rx + sx2, 0.9, dz, '#2b2b2e');
+      }
+      block(rx, rz, 0.8, 2.7);
+      stations.gym.push({ x: rx - 1.3, z: rz, kind: 'dumbbell' });
+      // Push-up mats (flat, you stand on them).
+      for (const [mx, c] of [[-5.5, '#8fd3c7'], [-3, '#b9a6f0']]) {
+        box(1, 0.04, 1.9, mx, 0.02, d * 0.12, c);
+        stations.gym.push({ x: mx, z: d * 0.12, kind: 'pushup' });
+      }
+      // A long mirror on the left wall.
+      const mirror = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.2), new THREE.MeshLambertMaterial({ color: '#cfe6f2' }));
+      mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
+      mirror.rotation.y = Math.PI / 2;
+      scene.add(mirror);
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];

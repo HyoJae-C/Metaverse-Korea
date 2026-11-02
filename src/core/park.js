@@ -67,8 +67,10 @@ export function buildPark(store, ROOM, EXIT) {
   }
 
   // Walls of the play area: the river (except the pier) and the room edges.
-  block(-(w / 2 + 1.5) / 2 - 0.75, (bank - d / 2) / 2, w / 2 - 1.5, -bank + d / 2 + 0.6); // river left of pier
-  block((w / 2 + 1.5) / 2 + 0.75, (bank - d / 2) / 2, w / 2 - 1.5, -bank + d / 2 + 0.6); // river right
+  // The river starts just past the railing (bank + 0.3); the path in front stays walkable.
+  const rz0 = -d / 2 - 0.5, rz1 = bank + 0.3;
+  block(-(w / 2 + 1.5) / 2 - 0.75, (rz0 + rz1) / 2, w / 2 - 1.5, rz1 - rz0); // river left of pier
+  block((w / 2 + 1.5) / 2 + 0.75, (rz0 + rz1) / 2, w / 2 - 1.5, rz1 - rz0); // river right
   block(0, bank - pierLen - 0.5, 3.4, 1); // pier end
   for (const s of [-1, 1]) block(s * 1.62, bank - pierLen / 2, 0.2, pierLen); // pier sides
   const t = 0.4;

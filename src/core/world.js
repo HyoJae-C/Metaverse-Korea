@@ -15,6 +15,8 @@ export const COLORS = {
   park: 0x9fd486,
   grass: 0xb4dc93,
   water: 0x7cc4e8,
+  plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
+  sand: 0xe6d6b2, // palace courtyards
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
   railTrack: 0x8a8f99,
@@ -38,9 +40,10 @@ export function buildWorld(map, scene, opts = {}) {
   const bounds = computeBounds(map);
   group.add(makeGround(bounds));
 
-  for (const kind of ['park', 'grass', 'water']) {
+  // Paving first, then lawns and water a hair above so they don't flicker.
+  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind).map((a) => a.p);
-    const mesh = makeFlatPolys(polys, COLORS[kind], 0.02);
+    const mesh = makeFlatPolys(polys, COLORS[kind], y);
     if (mesh) group.add(mesh);
   }
 

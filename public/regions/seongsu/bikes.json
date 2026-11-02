@@ -5,6 +5,7 @@
     { "id": "yeonmujang", "anchor": { "lat": 37.54262, "lon": 127.05480 } },
     { "id": "red-brick", "anchor": { "lat": 37.54300, "lon": 127.05300 } },
     { "id": "achasan", "anchor": { "lat": 37.54525, "lon": 127.05430 } },
-    { "id": "popup-square", "anchor": { "lat": 37.54370, "lon": 127.05660 } }
+    { "id": "popup-square", "anchor": { "lat": 37.54370, "lon": 127.05660 } },
+    { "id": "gwanghwamun", "at": [-1320, -288.6] }
   ]
 }

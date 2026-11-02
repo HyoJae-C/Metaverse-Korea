@@ -2,7 +2,7 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮' };
+export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮', info: 'ℹ️' };
 
 // Does a store match the search text? Looks at its names in every language,
 // tagline, category and product names, ignoring case and spaces.
@@ -102,8 +102,12 @@ export class MapView {
         if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy);
       });
     };
-    g.fillStyle = '#bfe3a8';
-    for (const a of this.map.areas) { poly(a.p); g.fill(); }
+    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' }; // the rest: green
+    const order = { plaza: 0, sand: 0, water: 2 };
+    for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
+      g.fillStyle = AREA[a.k] || '#bfe3a8';
+      poly(a.p); g.fill();
+    }
     g.lineCap = g.lineJoin = 'round';
     for (const r of this.map.roads) {
       poly(r.p);

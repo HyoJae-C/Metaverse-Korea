@@ -6,6 +6,8 @@ import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';
 import { ITEMS, isPet } from './inventory.js';
+import { styleNameTag } from './emblems.js';
+import { sanitizeLook } from '../data/appearance.js';
 
 export class RemotePlayers {
   constructor(scene, labelLayer) {
@@ -20,10 +22,11 @@ export class RemotePlayers {
     this.scene.add(ch.root);
     const tag = document.createElement('div');
     tag.className = 'nametag';
-    tag.textContent = String(peer.name || 'Traveler').slice(0, 16);
+    const name = String(peer.name || 'Traveler').slice(0, 16);
+    styleNameTag(tag, name, sanitizeLook(peer.look));
     this.layer.appendChild(tag);
     this.players.set(peer.id, {
-      ch, tag, bubble: null, name: tag.textContent,
+      ch, tag, bubble: null, name,
       target: null, ry: 0, s: 0,
     });
   }
@@ -43,6 +46,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
+    styleNameTag(p.tag, p.name, sanitizeLook(look));
     p.bk = false; // re-applied on the next update
     p.hd = null;
     p.ch.root.position.copy(old.position);

@@ -382,9 +382,64 @@
     {
       "id": "lucky-claw", "category": "play", "workshop": "claw", "size": "small",
       "name": { "ko": "럭키 인형뽑기", "en": "Lucky Claw Machines", "ja": "ラッキー クレーンゲーム", "zh": "幸运抓娃娃" },
-      "tagline": { "en": "Win printed tees and coin pouches", "ko": "티셔츠와 코인 주머니를 뽑아요", "ja": "TシャツやコインをGET", "zh": "抓T恤和钱袋" },
+      "tagline": { "en": "Win plushies for your home and coin pouches", "ko": "집에 놓을 인형과 코인 주머니를 뽑아요", "ja": "家に飾るぬいぐるみやコインをGET", "zh": "抓可以摆在家里的玩偶和钱袋" },
       "anchor": { "lat": 37.5433, "lon": 127.0584 },
       "colors": { "sign": "#e2457a", "awning": "#ffd0e0", "accent": "#fff3f7" },
+      "products": []
+    },
+    {
+      "id": "dano-hanbok", "category": "fashion", "size": "medium", "at": [-1300, -340.6],
+      "name": {"en": "Dano Hanbok Rental", "ko": "단오 한복대여", "ja": "端午 韓服レンタル", "zh": "端午韩服租赁"},
+      "tagline": {"en": "Try on hanbok and walk to the palace", "ko": "한복 입고 경복궁 나들이", "ja": "韓服を着て景福宮へ", "zh": "穿上韩服去景福宫"},
+      "colors": {"sign": "#b8323f", "awning": "#f6c6cf", "accent": "#fff4f2"},
+      "products": [
+        {"id": "jeogori-peach", "model": "tee", "color": "#ffb3c7", "price": 15000, "tryOn": {"shirt": "peach", "pants": "sand"}, "name": {"en": "Hanbok · Peach jeogori", "ko": "한복 · 분홍 저고리", "ja": "韓服 · ピンクのチョゴリ", "zh": "韩服 · 粉色上衣"}, "desc": {"en": "A short jacket (jeogori) tied with a ribbon (goreum), over a long skirt.", "ko": "고름을 매는 짧은 저고리에 긴 치마를 입어요."}},
+        {"id": "jeogori-mint", "model": "tee", "color": "#8fd3c7", "price": 15000, "tryOn": {"shirt": "mint", "pants": "sand"}, "name": {"en": "Hanbok · Mint jeogori", "ko": "한복 · 민트 저고리", "ja": "韓服 · ミントのチョゴリ", "zh": "韩服 · 薄荷色上衣"}, "desc": {"en": "Wearing hanbok gets you into many palaces for free.", "ko": "한복을 입으면 고궁에 무료로 들어갈 수 있어요."}},
+        {"id": "jeogori-butter", "model": "tee", "color": "#ffd36e", "price": 15000, "tryOn": {"shirt": "butter", "pants": "sand"}, "name": {"en": "Hanbok · Yellow jeogori", "ko": "한복 · 노랑 저고리", "ja": "韓服 · 黄色のチョゴリ", "zh": "韩服 · 黄色上衣"}, "desc": {"en": "Bright yellow, a classic colour for festival days.", "ko": "명절에 많이 입는 밝은 노랑이에요."}},
+        {"id": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "tryOn": {"shirt": "lilac", "pants": "charcoal"}, "name": {"en": "Hanbok · Lilac durumagi", "ko": "한복 · 연보라 두루마기", "ja": "韓服 · 薄紫のトゥルマギ", "zh": "韩服 · 淡紫长袍"}, "desc": {"en": "A long overcoat (durumagi) worn over the jeogori and baji.", "ko": "저고리와 바지 위에 입는 긴 겉옷이에요."}}
+      ]
+    },
+    {
+      "id": "chaon-teahouse", "category": "cafe", "size": "small", "at": [-1420, -294.6],
+      "name": {"en": "Chaon Tea House", "ko": "차온 전통찻집", "ja": "茶温 伝統茶房", "zh": "茶温传统茶馆"},
+      "tagline": {"en": "Traditional teas and rice cakes by the palace", "ko": "궁궐 옆 전통차와 떡", "ja": "宮殿のそばで伝統茶とお餅", "zh": "宫殿旁的传统茶和年糕"},
+      "colors": {"sign": "#4f6b3a", "awning": "#e3d9b8", "accent": "#f7f2e3"},
+      "products": [
+        {"id": "ssanghwa-tea", "model": "cup", "color": "#7a4a2e", "price": 7000, "name": {"en": "Ssanghwa tea", "ko": "쌍화차", "ja": "双和茶", "zh": "双和茶"}, "desc": {"en": "A warm herbal tea topped with nuts and a yolk-coloured date slice.", "ko": "견과류를 띄운 따뜻한 한방차예요."}},
+        {"id": "sikhye", "model": "cup", "color": "#efe2c4", "price": 5000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "A sweet, cold rice drink with grains of rice floating in it.", "ko": "밥알이 동동 뜬 달콤하고 시원한 음료예요."}},
+        {"id": "maesil-tea", "model": "cup", "color": "#c9b44a", "price": 6000, "name": {"en": "Maesil tea", "ko": "매실차", "ja": "梅茶", "zh": "梅子茶"}, "desc": {"en": "Green plum tea, sweet and a little sour.", "ko": "새콤달콤한 매실차예요."}},
+        {"id": "injeolmi", "model": "bread", "color": "#e0c27a", "price": 4000, "name": {"en": "Injeolmi", "ko": "인절미", "ja": "インジョルミ", "zh": "打糕"}, "desc": {"en": "Chewy rice cake rolled in roasted soybean powder.", "ko": "고소한 콩고물을 묻힌 쫄깃한 떡이에요."}}
+      ]
+    },
+    {
+      "id": "info-center", "category": "info", "workshop": "info", "size": "small", "at": [21, 23],
+      "name": {"en": "Information Center", "ko": "인포메이션 센터", "ja": "インフォメーションセンター", "zh": "信息中心"},
+      "tagline": {"en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去"},
+      "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"},
+      "products": []
+    },
+    {
+      "id": "name-studio", "category": "workshop", "workshop": "emblem", "size": "small", "anchor": {"lat": 37.5447, "lon": 127.0555},
+      "name": {"en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊"},
+      "tagline": {"en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色"},
+      "colors": {"sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff"},
+      "products": []
+    },
+    {
+      "id": "onsaem-jjimjil", "category": "play", "workshop": "sauna", "size": "large", "at": [-38, 114],
+      "name": {"en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕"},
+      "tagline": {"en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋"},
+      "colors": {"sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6"},
+      "products": [
+        {"id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠."}},
+        {"id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": {"en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个"}, "desc": {"en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요."}}
+      ]
+    },
+    {
+      "id": "muscle-gym", "category": "play", "workshop": "gym", "size": "large", "at": [-65, 83],
+      "name": {"en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房"},
+      "tagline": {"en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快"},
+      "colors": {"sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb"},
       "products": []
     }
   ]

@@ -9,6 +9,7 @@
 // slot, so at most four at once.
 
 import { PACK } from './characters/index.js';
+import { emblemById, nameColorById } from '../core/emblems.js';
 
 // Printed T-shirts (drawn in core/tee-prints.js).
 export const TEE_IDS = ['simurugi', 'mongle', 'mandu', 'ddeok'];
@@ -62,6 +63,7 @@ export const ACCESSORIES = {
     { id: 'ribbon', emoji: '🎀', color: 0xff9bb3 },
     { id: 'beanie', emoji: '🧶', color: 0xff9b85 },
     { id: 'beret', emoji: '🎨', color: 0xc2456b },
+    { id: 'towel', emoji: '🐑', color: 0xf7c6d0 }, // 양머리 수건 from the jjimjilbang
   ],
   face: [
     { id: 'glasses', emoji: '👓', color: 0x4a3f35 },
@@ -122,6 +124,8 @@ export function sanitizeLook(raw) {
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
   if (raw.small === true) look.small = true;
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
+  if (typeof raw.emblem === 'string' && emblemById(raw.emblem)) look.emblem = raw.emblem; // name tag
+  if (typeof raw.nameColor === 'string' && nameColorById(raw.nameColor)) look.nameColor = raw.nameColor;
   return look;
 }
 

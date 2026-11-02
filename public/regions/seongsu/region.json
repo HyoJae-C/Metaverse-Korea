@@ -29,5 +29,45 @@
     "text": "© OpenStreetMap contributors",
     "license": "ODbL",
     "url": "https://www.openstreetmap.org/copyright"
-  }
+  },
+  "districts": [
+    {
+      "id": "seongsu",
+      "map": "map.json",
+      "offset": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "gyeongbokgung",
+      "map": "districts/gyeongbokgung.json",
+      "offset": [
+        -1360,
+        -398.6
+      ]
+    }
+  ],
+  "links": [
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          -971.7,
+          -378.6
+        ],
+        [
+          -1100,
+          -378.6
+        ]
+      ],
+      "n": {
+        "ko": "사직로",
+        "en": "Sajik-ro",
+        "ja": "社稷路",
+        "zh": "社稷路"
+      }
+    }
+  ]
 }

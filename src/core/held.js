@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 
-export const HELD_KINDS = ['coffee', 'rod'];
+export const HELD_KINDS = ['coffee', 'rod', 'book'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -42,6 +42,15 @@ export function makeHeld(kind) {
     wrap.scale.setScalar(0.55); // the hand scales held things up 1.8x
     wrap.add(rod, line);
     g.add(wrap);
+  } else if (kind === 'book') {
+    // A hardback held upright: cover, pages and a spine band.
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.12), mat('#3f6e8c'));
+    cover.position.y = 0.08;
+    const pages = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.15, 0.112), mat('#fbf7ec'));
+    pages.position.set(0, 0.08, 0.006);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.02, 0.122), mat('#d4a73a'));
+    band.position.y = 0.12;
+    g.add(cover, pages, band);
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;

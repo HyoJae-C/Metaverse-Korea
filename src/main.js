@@ -8,6 +8,19 @@ import { SquareQuests, QUEST_REWARD } from './core/quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { buildWorld, COLORS } from './core/world.js';
+import { buildLandmarks } from './core/landmarks.js';
+import { styleNameTag, EmblemCollection } from './core/emblems.js';
+import { EmblemUI } from './ui/emblem-ui.js';
+import { InfoUI, showInfoHint } from './ui/info-ui.js';
+import { SaunaUI } from './ui/sauna-ui.js';
+import { SaunaLog } from './core/sauna.js';
+import { GymUI } from './ui/gym-ui.js';
+import { GymLog } from './core/gym.js';
+import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
+import { BookUI } from './ui/book-ui.js';
+import { bookById } from './core/books.js';
+import { FoodDex, isFood, allFoods } from './core/food-dex.js';
+import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -26,7 +39,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
-import { PochaUI } from './ui/pocha-ui.js';
+import { PochaUI, L } from './ui/pocha-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
@@ -202,6 +215,7 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
+buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
@@ -228,10 +242,49 @@ if (square) {
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
   })));
-  const [bx, bz] = findFreeSpot(square.x - 7, square.z - 7);
+  // Find a spot where the whole screen (9.5 m wide) stands clear of
+  // buildings, facing the square: nearest first, starting from the old spot.
+  const fits = (x, z, ry) => {
+    const ax = Math.cos(ry), az = -Math.sin(ry); // along the screen
+    const nx = Math.sin(ry), nz = Math.cos(ry); // its facing
+    for (let u = -5.4; u <= 5.4; u += 0.6) for (const v of [-0.8, 0.8]) {
+      if (collision.blocked(x + ax * u + nx * v, z + az * u + nz * v, 0.3)) return false;
+    }
+    return true;
+  };
+  let spot = null;
+  for (const r of [9, 11, 13, 15, 18, 22]) {
+    for (let k = 0; k < 32 && !spot; k++) {
+      const a = Math.atan2(-7, -7) + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 16);
+      const x = square.x + Math.sin(a) * r, z = square.z + Math.cos(a) * r;
+      if (fits(x, z, face(x, z))) spot = [x, z];
+    }
+    if (spot) break;
+  }
+  const [bx, bz] = spot || findFreeSpot(square.x - 7, square.z - 7);
   billboard.root.position.set(bx, 0, bz);
   billboard.root.rotation.y = face(bx, bz);
   scene.add(billboard.root);
+  // Paving blocks (보도블럭) on the square, under the roads.
+  const pc = document.createElement('canvas');
+  pc.width = pc.height = 256;
+  const pg = pc.getContext('2d');
+  pg.fillStyle = '#b9b1a4'; pg.fillRect(0, 0, 256, 256); // joints
+  const tones = ['#ddd5c7', '#d3cabb', '#e4ddd0', '#cfc6b6', '#d8cfc0'];
+  for (let row = 0; row < 8; row++) for (let col = -1; col < 5; col++) {
+    const x = col * 64 + (row % 2) * 32, y = row * 32;
+    pg.fillStyle = tones[(row * 7 + col * 3 + 15) % tones.length];
+    pg.fillRect(x + 2, y + 2, 60, 28);
+  }
+  const pt = new THREE.CanvasTexture(pc);
+  pt.colorSpace = THREE.SRGBColorSpace;
+  pt.wrapS = pt.wrapT = THREE.RepeatWrapping;
+  const PAVE_R = 24;
+  pt.repeat.set(PAVE_R / 2, PAVE_R / 2); // a block is about 0.4 m
+  const pave = new THREE.Mesh(new THREE.CircleGeometry(PAVE_R, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: pt }));
+  pave.position.set(square.x, 0.016, square.z);
+  pave.receiveShadow = true;
+  scene.add(pave);
 }
 
 // ---------- Player ----------
@@ -306,6 +359,21 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
+// Come back where you left off last time, if that spot is still open.
+{
+  const last = loadLastSpot();
+  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
+    me.root.position.set(last.x, 0, last.z);
+    me.root.rotation.y = last.ry;
+  }
+}
+let lastSpotTimer = 3;
+const rememberSpot = () => {
+  try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
+addEventListener('pagehide', rememberSpot);
+
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
@@ -313,13 +381,14 @@ const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
+const gymLog = new GymLog(); // workouts make walking and running a touch faster (max +3%)
 const BIKE = 16; // bike share: faster than running, no stamina
 const CAR = 26; // car: big roads only
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
-myTag.textContent = nickname;
+styleNameTag(myTag, nickname, myLook);
 $('labels').appendChild(myTag);
 const myLabel = { tag: myTag, bubble: null };
 
@@ -715,6 +784,17 @@ let action = null; // what the action button does right now
 const STALE = { key: '\0', run() {} };
 
 const cart = new Cart();
+// Food dex: every food you buy is recorded (see core/food-dex.js).
+const foodDex = new FoodDex();
+function recordFood(store, product, quiet = false) {
+  if (!isFood(store, product)) return false;
+  const isNew = foodDex.add(store, product);
+  const all = allFoods(storeData).length;
+  if (!quiet) shop.toast(isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
+  refreshDexBtn();
+  return true;
+}
+const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑に登録！', zh: '图鉴新登记！' };
 const shop = new ShopUI({
   cart,
   onTryOn: (product) => {
@@ -723,11 +803,13 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => leaveStore(),
+  onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
   },
@@ -826,6 +908,7 @@ const HELD_KEY = 'mk.held';
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
+    if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
 })();
@@ -837,11 +920,18 @@ function setHeld(h) {
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : '☕';
+  $('drink-btn').querySelector('small').textContent = t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
 function drink() {
   if (!held) return;
+  if (held.kind === 'book') { // read it, sitting down
+    if (seated) bookUi.read(held.book);
+    else shop.toast(t('book.sitToRead'));
+    return;
+  }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   const sips = held.sips - 1;
@@ -853,6 +943,7 @@ if (held) setHeld(held);
 
 function setLook(look) {
   currentLook = look;
+  styleNameTag(myTag, nickname, look);
   const old = me.root;
   me = createCharacter(look);
   me.root.position.copy(old.position);
@@ -1081,7 +1172,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1627,6 +1718,87 @@ const clawUi = new ClawUI({
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
+// Name tag studio: emblems and name colours (a place to spend coins).
+const emblems = new EmblemCollection();
+const emblemUi = new EmblemUI({
+  root: $('emblem-panel'),
+  owned: emblems,
+  wallet,
+  name: nickname,
+  getLook: () => myLook,
+  wearLook: (patch) => {
+    myLook = { ...myLook, ...patch };
+    for (const k of Object.keys(patch)) if (patch[k] == null) delete myLook[k];
+    saveLook(myLook);
+    setLook(myLook);
+    me.play('cheer');
+  },
+});
+// Information Center, and route guides to the places it lists.
+function guideToPlace(to) {
+  if (to.store) {
+    const it = storefronts.get(to.store);
+    if (!it) return false;
+    if (interior) leaveStore();
+    setGuide({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+    return true;
+  }
+  const z = zones.items.find((i) => i.zone.id === to.zone);
+  if (!z) return false;
+  if (interior) leaveStore();
+  setGuide({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: localName(z.zone.name, getLanguage()) });
+  return true;
+}
+const infoUi = new InfoUI({ root: $('info-panel'), guide: guideToPlace });
+// The first-time hint waits until the daily check-in card is closed.
+setTimeout(function infoHintWhenFree() {
+  if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
+  showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
+}, 2500); // after the daily card would have opened (1.2 s)
+// Jjimjilbang: hot kiln and ice room, and the sheep towel.
+const saunaUi = new SaunaUI({
+  root: $('sauna-panel'),
+  wallet,
+  log: new SaunaLog(),
+  onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
+  onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
+  towel: {
+    on: () => myLook.head === 'towel',
+    toggle: () => {
+      myLook = { ...myLook, head: myLook.head === 'towel' ? null : 'towel' };
+      if (!myLook.head) delete myLook.head;
+      saveLook(myLook);
+      setLook(myLook);
+    },
+  },
+});
+// Gym: each finished set makes walking a tiny bit faster.
+const gymUi = new GymUI({
+  root: $('gym-panel'),
+  log: gymLog,
+  onRep: () => { me.play('cheer'); },
+  onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
+});
+// Library books: carry one, read it sitting anywhere.
+const BOOK_PAGE_KEY = 'mk.bookPages';
+const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAGE_KEY) || '{}') || {}; } catch { return {}; } })();
+const bookUi = new BookUI({
+  root: $('book-panel'),
+  carrying: () => (held?.kind === 'book' ? held.book : null),
+  take: (id) => {
+    if (held?.kind === 'coffee' && !confirm(t('coffee.replace'))) return;
+    setHeld({ kind: 'book', book: id });
+    shop.toast(t('book.taken'));
+  },
+  putDown: () => { if (held?.kind === 'book') setHeld(null); },
+  getPage: (id) => bookPages[id] | 0,
+  setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
+});
+const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
+function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
+$('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
+refreshDexBtn();
+onLanguageChange(refreshDexBtn);
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2090,6 +2262,14 @@ function updateAction(p, tSec) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
       next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (nearStation(p, 'books', 1.5)) {
+      next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
+    } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
+      const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
+      next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => gymUi.show(st.kind) };
+    } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
+      const st = interior.stations.sauna.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2);
+      next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (interior.duck && Math.hypot(p.x - interior.duck.x, p.z - interior.duck.z) < 2.4) {
@@ -2113,6 +2293,10 @@ function updateAction(p, tSec) {
       next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
+    } else if (interior.store.workshop === 'emblem' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'emblem', label: '🏷️ ' + t('emblem.open'), run: () => { clerk.ch.wave(); emblemUi.show(); } };
+    } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
@@ -2256,7 +2440,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding === 4 ? CAR : riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (riding === 4 ? CAR : riding ? BIKE : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag);
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -2287,7 +2471,7 @@ renderer.setAnimationLoop(() => {
     for (const [x, z] of routePoly) if (Math.hypot(x - p.x, z - p.z) > 2.5) { tx = x; tz = z; break; }
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = riding ? BIKE : running ? RUN : WALK;
+    const speed = riding ? BIKE : (running ? RUN : WALK) * gymLog.boost;
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
@@ -2376,6 +2560,8 @@ renderer.setAnimationLoop(() => {
   // heartbeat when idle. Presence already tracks who is online, so the
   // heartbeat only re-confirms the last position. Realtime services bill per
   // message and receiver, so standing still should cost almost nothing.
+  lastSpotTimer -= dt;
+  if (lastSpotTimer <= 0) { lastSpotTimer = 3; rememberSpot(); }
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
