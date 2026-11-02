@@ -312,7 +312,9 @@ export function buildInterior(store) {
       const z = -d / 2 + 2.2 + i * 2.6;
       shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
       shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
+      for (const sgn of [-1, 1]) (stations.books ||= []).push({ x: sgn * (w / 2 - 1.3), z }); // pick a book here
     }
+    for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
     // Long reading tables with chairs on both long sides.
     const rows = Math.max(1, Math.floor((d - 6) / 2.8));
     for (let r = 0; r < rows; r++) {

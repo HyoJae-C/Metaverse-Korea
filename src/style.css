@@ -920,3 +920,24 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .gym-mark { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: #2b2630; }
 .gym-flash { min-height: 1.2em; text-align: center; font-weight: 800; }
 .gym-lift { min-width: 160px; }
+
+/* Library books */
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.book-card {
+  display: grid; gap: 2px; justify-items: start; text-align: left;
+  padding: 10px 10px 10px 16px; border-radius: 12px; background: #fff;
+  border-left: 6px solid var(--spine); box-shadow: 0 2px 0 rgba(74, 63, 53, 0.12);
+}
+.book-card.picked { outline: 3px solid var(--mint); }
+.book-card strong { font-size: 13px; line-height: 1.25; }
+.book-card small { font-size: 11px; opacity: 0.7; }
+.book-icon { font-size: 22px; }
+.book-page {
+  background: #fffdf6; border-radius: 12px; padding: 18px 16px; min-height: 150px;
+  border-left: 8px solid var(--spine); box-shadow: inset 0 0 0 1px rgba(74, 63, 53, 0.08);
+  display: grid; align-content: center; gap: 6px; text-align: center;
+}
+.book-ko { margin: 0; font-size: 22px; font-weight: 900; line-height: 1.35; }
+.book-rom { margin: 0; font-size: 13px; font-style: italic; opacity: 0.7; }
+.book-mean { margin: 0; font-size: 14px; }
+.book-num { align-self: center; font-size: 12px; font-weight: 700; }

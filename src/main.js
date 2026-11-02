@@ -17,6 +17,8 @@ import { SaunaLog } from './core/sauna.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
+import { BookUI } from './ui/book-ui.js';
+import { bookById } from './core/books.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -852,6 +854,7 @@ const HELD_KEY = 'mk.held';
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
+    if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
 })();
@@ -863,11 +866,18 @@ function setHeld(h) {
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : '☕';
+  $('drink-btn').querySelector('small').textContent = t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
 function drink() {
   if (!held) return;
+  if (held.kind === 'book') { // read it, sitting down
+    if (seated) bookUi.read(held.book);
+    else shop.toast(t('book.sitToRead'));
+    return;
+  }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   const sips = held.sips - 1;
@@ -1108,7 +1118,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1715,6 +1725,21 @@ const gymUi = new GymUI({
   onRep: () => { me.play('cheer'); },
   onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
 });
+// Library books: carry one, read it sitting anywhere.
+const BOOK_PAGE_KEY = 'mk.bookPages';
+const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAGE_KEY) || '{}') || {}; } catch { return {}; } })();
+const bookUi = new BookUI({
+  root: $('book-panel'),
+  carrying: () => (held?.kind === 'book' ? held.book : null),
+  take: (id) => {
+    if (held?.kind === 'coffee' && !confirm(t('coffee.replace'))) return;
+    setHeld({ kind: 'book', book: id });
+    shop.toast(t('book.taken'));
+  },
+  putDown: () => { if (held?.kind === 'book') setHeld(null); },
+  getPage: (id) => bookPages[id] | 0,
+  setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
+});
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2178,6 +2203,8 @@ function updateAction(p, tSec) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
       next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (nearStation(p, 'books', 1.5)) {
+      next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
       next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => gymUi.show(st.kind) };
