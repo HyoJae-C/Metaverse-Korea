@@ -2,7 +2,7 @@
 // behind you, sits when you stop, hides while you ride, and now and then
 // poops on the street. Poop must be cleaned up within CLEAN_SECONDS or a
 // fine notice arrives and FINE coins are taken, so the streets stay clean.
-// Local for now: other players don't see your pet yet.
+// Other players see it too (sent as `pt` in our state); poop stays local.
 import * as THREE from 'three';
 import { makeAnimal, turn } from './pets.js';
 

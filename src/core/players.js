@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { HELD_KINDS } from './held.js';
 import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
+import { Companion } from './companion.js';
+import { ITEMS, isPet } from './inventory.js';
 
 export class RemotePlayers {
   constructor(scene, labelLayer) {
@@ -30,6 +32,7 @@ export class RemotePlayers {
     const p = this.players.get(id);
     if (!p) return;
     this.scene.remove(p.ch.root);
+    p.pet?.dispose();
     p.tag.remove();
     p.bubble?.remove();
     this.players.delete(id);
@@ -84,6 +87,8 @@ export class RemotePlayers {
     if (!p) return;
     p.hidden = true;
     p.ch.root.visible = false;
+    p.pet?.dispose();
+    p.pet = null;
     for (const el of [p.tag, p.bubble]) if (el) el.style.display = 'none';
   }
   nameOf(id) { return this.players.get(id)?.name ?? null; }
@@ -129,6 +134,19 @@ export class RemotePlayers {
     showBubble(p, this.layer, emoji);
   }
 
+  // Their pet walking with them (pt: the pet's item id), seen by everyone.
+  _pet(p) {
+    const id = !p.hidden && isPet(p.target.pt) ? p.target.pt : null;
+    if ((p.pet?.id || null) === id) return;
+    p.pet?.dispose();
+    p.pet = null;
+    if (!id) return;
+    p.pet = new Companion(id, ITEMS[id].pet);
+    this.scene.add(p.pet.root);
+    const r = p.ch.root;
+    p.pet.place(r.position.x, r.position.z, r.rotation.y);
+  }
+
   update(dt, camera, width, height) {
     const v = new THREE.Vector3();
     for (const p of this.players.values()) {
@@ -144,12 +162,14 @@ export class RemotePlayers {
         if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
         if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
+        this._pet(p);
       }
       // Riding with someone (tandem or car): sit in our seat of their vehicle.
       if (p.target?.bk === 3 && p.target.on) {
         const d = this.players.get(p.target.on);
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
+      if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, ry: r.rotation.y }, !!p.target?.bk, false);
       if (p.hidden) continue;
       v.set(r.position.x, 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
