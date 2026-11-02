@@ -885,6 +885,7 @@ let routeTimer = 0, routeLen = 0, faceRoute = false;
 let routePoly = null; // the current route along the streets
 // Auto-walk: follow the route without steering. Any stick/key input stops it.
 let autoWalk = false;
+const autoSide = { t: 0, dir: 1, stuck: 0 }; // side-step when walking into a wall
 function setAutoWalk(on) {
   autoWalk = !!on && !!guide && riding !== 3;
   $('guide-auto').classList.toggle('on', autoWalk);
@@ -1413,6 +1414,18 @@ onLanguageChange(() => { action = STALE; });
 
 function updateGuide(p, dt) {
   if (!guide || mode !== 'street') return;
+  // A person walks around: follow where they are now, and when we get
+  // close they stop and wait for us.
+  if (guide.kind === 'npc') {
+    const o = npcs.list.find((n) => n.name === guide.id);
+    if (o) {
+      const moved = Math.hypot(o.ch.root.position.x - guide.x, o.ch.root.position.z - guide.z);
+      guide.x = o.ch.root.position.x;
+      guide.z = o.ch.root.position.z;
+      if (moved > 3) routeTimer = 0;
+      if (Math.hypot(guide.x - p.x, guide.z - p.z) < 25) o.pause = Math.max(o.pause || 0, 1);
+    }
+  }
   const dx = guide.x - p.x, dz = guide.z - p.z;
   const dist = Math.hypot(dx, dz);
   // Re-plan the route along the streets from where we are now.
@@ -1436,7 +1449,7 @@ function updateGuide(p, dt) {
       if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
     }
   }
-  if (dist < 6) {
+  if (dist < (guide.kind === 'npc' ? 2.5 : 6)) {
     shop.toast(t('guide.arrived', { label: guide.label }));
     clearGuide();
     return;
@@ -1533,7 +1546,13 @@ renderer.setAnimationLoop(() => {
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
     const speed = riding ? BIKE : running ? RUN : WALK;
-    const [nx, nz] = activeCollision.move(p.x, p.z, (ddx / dl) * speed * dt, (ddz / dl) * speed * dt, PLAYER_R);
+    // Stuck on a wall corner? Side-step for a moment, then try again.
+    let ux = ddx / dl, uz = ddz / dl;
+    if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
+    const [nx, nz] = activeCollision.move(p.x, p.z, ux * speed * dt, uz * speed * dt, PLAYER_R);
+    const progressed = Math.hypot(nx - p.x, nz - p.z) > speed * dt * 0.3;
+    autoSide.stuck = progressed ? 0 : autoSide.stuck + dt;
+    if (autoSide.stuck > 0.5) { autoSide.stuck = 0; autoSide.t = 0.7; autoSide.dir = -autoSide.dir || 1; routeTimer = 0; }
     p.x = nx; p.z = nz;
     let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
