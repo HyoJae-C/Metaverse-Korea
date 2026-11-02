@@ -1,14 +1,15 @@
 // Claw machine (인형뽑기) rules, no DOM so it can be unit-tested.
 // The claw swings left and right; drop it over a prize. Lined up well, it
 // grabs, but it can still slip on the way up. Each try costs coins: this is
-// somewhere to spend them. Prizes are printed tees for the bag, or coins.
+// somewhere to spend them. Prizes are plushies to put in your home, or coins.
 
 export const CLAW_COST = 2;
 export const SLIP = 0.3; // a good grab still slips 30% of the time
 export const PRIZES = [
-  { id: 'tee-mongle', weight: 3, emoji: '☁️', item: 'tee-mongle' },
-  { id: 'tee-mandu', weight: 3, emoji: '🥟', item: 'tee-mandu' },
-  { id: 'tee-ddeok', weight: 3, emoji: '🍡', item: 'tee-ddeok' },
+  { id: 'plush-simurugi', weight: 2, emoji: '😑', item: 'plush-simurugi' },
+  { id: 'plush-mongle', weight: 3, emoji: '☁️', item: 'plush-mongle' },
+  { id: 'plush-bear', weight: 3, emoji: '🧸', item: 'plush-bear' },
+  { id: 'plush-mandu', weight: 3, emoji: '🥟', item: 'plush-mandu' },
   { id: 'coins5', weight: 4, emoji: '💰', coins: 5 },
   { id: 'coins2', weight: 6, emoji: '🪙', coins: 2 },
 ];

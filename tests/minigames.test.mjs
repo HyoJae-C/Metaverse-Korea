@@ -6,7 +6,7 @@ import { chartFor, judge, karaokeScore, karaokeMsg, parseKaraoke, LEAD_BEATS } f
 import { layPrizes, drop, clawX, PRIZES } from '../src/core/claw-game.js';
 import { DuckBoat, COURSE, duckPay, duckMsg, parseDuck } from '../src/core/duck-boat.js';
 import { ITEMS } from '../src/core/inventory.js';
-import { TEE_IDS } from '../src/data/appearance.js';
+import { furnitureById } from '../src/core/furniture.js';
 
 const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; };
 
@@ -52,7 +52,7 @@ test('claw: lined up grabs, off to the side misses; prizes are real items', () =
   assert.equal(drop(pit, pit[2].x, () => 0.99).slipped, false);
   assert.equal(drop([{ x: 0.5, prize: PRIZES[0] }], 0.9), null);
   assert.ok(clawX(0) >= 0.08 && clawX(0) <= 0.92);
-  for (const p of PRIZES) if (p.item) { assert.ok(ITEMS[p.item]?.tee, p.item); assert.ok(TEE_IDS.includes(ITEMS[p.item].tee)); }
+  for (const p of PRIZES) if (p.item) { assert.ok(ITEMS[p.item]?.plush, p.item); assert.ok(furnitureById(p.item), p.item); }
 });
 
 test('duck boat: alternate pedals, a friend adds strokes', () => {

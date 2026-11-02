@@ -14,15 +14,15 @@ function pets(defs) {
   return out;
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
-const TEE_DESC = {
-  en: 'A prize from the claw machine. Tap Wear to put it on.',
-  ko: '인형뽑기 경품이에요. "입기"를 누르면 입어요.',
-  ja: 'クレーンゲームの景品。「着る」で着られます。',
-  zh: '抓娃娃机的奖品。点“穿上”即可穿上。',
+const PLUSH_DESC = {
+  en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
+  ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: 'クレーンゲームの景品。家の「模様替え」で置けます。',
+  zh: '抓娃娃机的奖品。在家里点“装饰”就能摆放。',
 };
-function tees(defs) {
+function plushies(defs) {
   const out = {};
-  for (const [id, [emoji, tee, name]] of Object.entries(defs)) out[id] = { emoji, tee, name, desc: TEE_DESC };
+  for (const [id, [emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: PLUSH_DESC, plush: true };
   return out;
 }
 
@@ -60,10 +60,11 @@ export const ITEMS = {
     },
   },
   // Claw machine prizes (core/claw-game.js).
-  ...tees({
-    'tee-mongle': ['☁️', 'mongle', { en: 'Mongle cloud-sheep tee', ko: '몽글이 티셔츠', ja: 'モングルTシャツ', zh: '云朵羊T恤' }],
-    'tee-mandu': ['🥟', 'mandu', { en: 'Mandu dumpling tee', ko: '만두 티셔츠', ja: 'マンドゥTシャツ', zh: '饺子T恤' }],
-    'tee-ddeok': ['🍡', 'ddeok', { en: 'Rice-cake skewer tee', ko: '떡꼬치 티셔츠', ja: '餅串Tシャツ', zh: '年糕串T恤' }],
+  ...plushies({
+    'plush-simurugi': ['😑', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
+    'plush-mongle': ['☁️', { en: 'Mongle plush', ko: '몽글이 인형', ja: 'モングルのぬいぐるみ', zh: '云朵羊玩偶' }],
+    'plush-bear': ['🧸', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
+    'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
   }),
   // Pets: adopted at the pet shop for coins (price), or by code only (no price).
   ...pets({

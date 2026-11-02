@@ -1454,6 +1454,8 @@ function spotInFront() {
 function placePiece(id) {
   const placed = decor.items.find((i) => i.id === id);
   if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
+  const def = furnitureById(id);
+  if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
   if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
   const [x, z, ry] = spotInFront();
   decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
@@ -1503,7 +1505,11 @@ $('decor-grid').append(...FURNITURE.map((f) => {
   return b;
 }));
 function labelDecor() {
-  for (const b of $('decor-grid').children) b.querySelector('small').textContent = localName(furnitureById(b.dataset.id).name, getLanguage());
+  for (const b of $('decor-grid').children) {
+    const f = furnitureById(b.dataset.id);
+    b.querySelector('small').textContent = localName(f.name, getLanguage());
+    b.hidden = !!f.item && !inventory.has(f.item); // plushies: once you've won one
+  }
 }
 labelDecor();
 onLanguageChange(labelDecor);
@@ -1617,7 +1623,7 @@ let photoCam = null;
 const clawUi = new ClawUI({
   root: $('claw-panel'),
   wallet,
-  give: (id) => { const added = inventory.add(id); refreshItems(); return added.length > 0; },
+  give: (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; },
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });

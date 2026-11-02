@@ -1,15 +1,15 @@
 // Claw machine panel (rules in core/claw-game.js): pay, watch the claw swing,
-// press DROP over a prize. Prizes are printed tees (into the bag) or coins.
+// press DROP over a prize. Prizes are plushies (for your home) or coins.
 import { CLAW_COST, clawX, layPrizes, drop } from '../core/claw-game.js';
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
   title: { en: 'Claw machine', ko: '인형뽑기', ja: 'クレーンゲーム', zh: '抓娃娃机' },
   howTo: {
-    en: 'The claw swings left and right. Press DROP when it is right above a prize. Tees go in your bag; wear them from there.',
-    ko: '집게가 좌우로 움직여요. 경품 바로 위에 왔을 때 내리기를 누르세요. 티셔츠는 가방에 들어가고, 가방에서 입을 수 있어요.',
-    ja: 'アームが左右に動きます。景品の真上に来たら「落とす」を押して。Tシャツはバッグに入り、そこから着られます。',
-    zh: '爪子会左右摆动。在奖品正上方时按“放下”。T恤会放进背包，可以在背包里穿上。',
+    en: 'The claw swings left and right. Press DROP when it is right above a prize. Plushies you win can be placed in your home.',
+    ko: '집게가 좌우로 움직여요. 경품 바로 위에 왔을 때 내리기를 누르세요. 뽑은 인형은 내 집에 놓을 수 있어요.',
+    ja: 'アームが左右に動きます。景品の真上に来たら「落とす」を押して。取ったぬいぐるみは家に飾れます。',
+    zh: '爪子会左右摆动。在奖品正上方时按“放下”。抓到的玩偶可以摆在家里。',
   },
   play: { en: 'Play · 🪙 {n}', ko: '한 판 · 🪙 {n}', ja: '1回 · 🪙 {n}', zh: '玩一次 · 🪙 {n}' },
   drop: { en: 'DROP', ko: '내리기', ja: '落とす', zh: '放下' },
@@ -17,6 +17,7 @@ const T = {
   miss: { en: 'Missed! Nothing under the claw.', ko: '꽝! 집게 밑에 아무것도 없었어요.', ja: 'ハズレ！アームの下に何もありませんでした。', zh: '没抓到！爪子下面什么都没有。' },
   slip: { en: 'So close! It slipped out of the claw.', ko: '아깝다! 집게에서 미끄러졌어요.', ja: '惜しい！アームから落ちました。', zh: '好可惜！从爪子里滑掉了。' },
   gotTee: { en: 'You got the {name}! It\'s in your bag.', ko: '{name} 획득! 가방에 넣었어요.', ja: '{name}をゲット！バッグに入れました。', zh: '抓到{name}！已放进背包。' },
+  gotPlush: { en: 'You got the {name}! Put it in your home with Decorate.', ko: '{name} 획득! 내 집 꾸미기에서 놓을 수 있어요.', ja: '{name}をゲット！家の模様替えで置けます。', zh: '抓到{name}！可以在家里装饰时摆放。' },
   hadTee: { en: 'You already have the {name}: here are 🪙 {n} instead.', ko: '{name}는 이미 있어서 🪙 {n}으로 바꿔 드렸어요.', ja: '{name}はもう持っているので 🪙 {n} に交換しました。', zh: '你已经有{name}了，换成 🪙 {n}。' },
   gotCoins: { en: 'A coin pouch! 🪙 +{n}', ko: '코인 주머니! 🪙 +{n}', ja: 'コイン袋！🪙 +{n}', zh: '钱袋！🪙 +{n}' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
@@ -117,7 +118,7 @@ export class ClawUI {
     let note;
     if (p.item) {
       const name = this.itemName(p.item);
-      if (this.give(p.item)) note = '🎉 ' + tt('gotTee', { name });
+      if (this.give(p.item)) note = '🎉 ' + tt('gotPlush', { name });
       else { this.wallet.add(3); note = tt('hadTee', { name, n: 3 }); }
     } else {
       this.wallet.add(p.coins);
