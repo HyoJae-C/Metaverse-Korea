@@ -242,10 +242,49 @@ if (square) {
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
   })));
-  const [bx, bz] = findFreeSpot(square.x - 7, square.z - 7);
+  // Find a spot where the whole screen (9.5 m wide) stands clear of
+  // buildings, facing the square: nearest first, starting from the old spot.
+  const fits = (x, z, ry) => {
+    const ax = Math.cos(ry), az = -Math.sin(ry); // along the screen
+    const nx = Math.sin(ry), nz = Math.cos(ry); // its facing
+    for (let u = -5.4; u <= 5.4; u += 0.6) for (const v of [-0.8, 0.8]) {
+      if (collision.blocked(x + ax * u + nx * v, z + az * u + nz * v, 0.3)) return false;
+    }
+    return true;
+  };
+  let spot = null;
+  for (const r of [9, 11, 13, 15, 18, 22]) {
+    for (let k = 0; k < 32 && !spot; k++) {
+      const a = Math.atan2(-7, -7) + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 16);
+      const x = square.x + Math.sin(a) * r, z = square.z + Math.cos(a) * r;
+      if (fits(x, z, face(x, z))) spot = [x, z];
+    }
+    if (spot) break;
+  }
+  const [bx, bz] = spot || findFreeSpot(square.x - 7, square.z - 7);
   billboard.root.position.set(bx, 0, bz);
   billboard.root.rotation.y = face(bx, bz);
   scene.add(billboard.root);
+  // Paving blocks (보도블럭) on the square, under the roads.
+  const pc = document.createElement('canvas');
+  pc.width = pc.height = 256;
+  const pg = pc.getContext('2d');
+  pg.fillStyle = '#b9b1a4'; pg.fillRect(0, 0, 256, 256); // joints
+  const tones = ['#ddd5c7', '#d3cabb', '#e4ddd0', '#cfc6b6', '#d8cfc0'];
+  for (let row = 0; row < 8; row++) for (let col = -1; col < 5; col++) {
+    const x = col * 64 + (row % 2) * 32, y = row * 32;
+    pg.fillStyle = tones[(row * 7 + col * 3 + 15) % tones.length];
+    pg.fillRect(x + 2, y + 2, 60, 28);
+  }
+  const pt = new THREE.CanvasTexture(pc);
+  pt.colorSpace = THREE.SRGBColorSpace;
+  pt.wrapS = pt.wrapT = THREE.RepeatWrapping;
+  const PAVE_R = 24;
+  pt.repeat.set(PAVE_R / 2, PAVE_R / 2); // a block is about 0.4 m
+  const pave = new THREE.Mesh(new THREE.CircleGeometry(PAVE_R, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: pt }));
+  pave.position.set(square.x, 0.016, square.z);
+  pave.receiveShadow = true;
+  scene.add(pave);
 }
 
 // ---------- Player ----------
