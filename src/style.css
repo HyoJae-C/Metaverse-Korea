@@ -512,6 +512,9 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 }
 .decor-item span { font-size: 26px; line-height: 1; }
 .decor-item small { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.decor-item { position: relative; }
+.decor-item.placed { background: #eef6e8; }
+.decor-item.placed::after { content: '✓'; position: absolute; top: 3px; right: 6px; font-size: 12px; font-weight: 800; color: #4f8a3c; }
 .piece-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
   top: calc(max(12px, env(safe-area-inset-top)) + 140px);

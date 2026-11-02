@@ -1102,16 +1102,17 @@ function updateZoneLine(z) {
 onLanguageChange(() => updateZoneLine(currentZone));
 
 
-// Home decorating: place furniture from a catalogue, then walk up to a piece
-// to rotate, move or remove it. Saved in this browser only (for now).
+// Home decorating: place furniture from a catalogue, then tap it again in the
+// catalogue (or walk up to it) to rotate, carry or put it away. One of each
+// piece for now, so rooms stay light. Saved in this browser only (for now).
 const MAX_PIECES = 60;
-let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece }
+let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
 const homeKey = (id) => 'mk.home.' + id;
 function loadDecor(id) {
   try {
     const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
     return Array.isArray(a)
-      ? a.filter((i) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite)).slice(0, MAX_PIECES)
+      ? a.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && a.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
       : [];
   } catch { return []; }
 }
@@ -1126,8 +1127,10 @@ function rebuildDecor() {
     g.position.set(it.x, 0, it.z);
     g.rotation.y = it.ry;
     decor.group.add(g);
+    it.mesh = g;
   }
-  const extra = decor.items.map(furnitureCollider).filter(Boolean);
+  // The piece being carried doesn't block you until it is put down.
+  const extra = decor.items.filter((it) => it !== decor.carry).map(furnitureCollider).filter(Boolean);
   interior.collision = activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
   interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
     const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
@@ -1135,10 +1138,15 @@ function rebuildDecor() {
     return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
   });
   saveDecor();
+  markPlaced();
+}
+// Catalogue buttons show which pieces are already in the room.
+function markPlaced() {
+  for (const b of $('decor-grid').children) b.classList.toggle('placed', !!decor?.items.some((i) => i.id === b.dataset.id));
 }
 function openHome(store, built) {
   if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
-  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null };
+  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null, carry: null };
   rebuildDecor();
   $('decor-btn').hidden = false;
 }
@@ -1166,6 +1174,8 @@ function spotInFront() {
   ];
 }
 function placePiece(id) {
+  const placed = decor.items.find((i) => i.id === id);
+  if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
   if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
   const [x, z, ry] = spotInFront();
   decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
@@ -1179,14 +1189,31 @@ function nearestPiece(p) {
   }
   return best;
 }
-function openPiece(it) {
+function openPiece(it, picked = false) {
+  if (decor.carry && decor.carry !== it) putDown();
   decor.piece = it;
+  decor.picked = picked; // chosen from the catalogue: stays open while you walk
+  $('piece-move-label').textContent = t(decor.carry === it ? 'home.putDown' : 'home.carry');
   $('piece-name').textContent = furnitureById(it.id).emoji + ' ' + localName(furnitureById(it.id).name, getLanguage());
   $('piece-bar').hidden = false;
 }
 function closePiece() {
-  if (decor) decor.piece = null;
+  if (decor?.carry) putDown();
+  if (decor) { decor.piece = null; decor.picked = false; }
   $('piece-bar').hidden = true;
+}
+// Carry a piece: it floats in front of you until you put it down.
+function putDown() {
+  decor.carry = null;
+  $('decor-bar').hidden = !decor.editing;
+  rebuildDecor();
+  if (decor.piece) $('piece-move-label').textContent = t('home.carry');
+}
+function updateCarry() {
+  const it = decor?.carry;
+  if (!it?.mesh) return;
+  [it.x, it.z] = spotInFront();
+  it.mesh.position.set(it.x, 0.08, it.z); // lifted a little while carried
 }
 $('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
 $('decor-grid').append(...FURNITURE.map((f) => {
@@ -1205,13 +1232,16 @@ onLanguageChange(labelDecor);
 $('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
 $('piece-move').onclick = () => {
   if (!decor?.piece) return;
-  [decor.piece.x, decor.piece.z] = spotInFront();
+  if (decor.carry) { putDown(); closePiece(); action = STALE; return; }
+  decor.carry = decor.piece;
+  decor.picked = true;
+  $('decor-bar').hidden = true; // see where you're walking
   rebuildDecor();
-  closePiece();
-  action = STALE;
+  $('piece-move-label').textContent = t('home.putDown');
 };
 $('piece-remove').onclick = () => {
   if (!decor?.piece) return;
+  if (decor.carry === decor.piece) decor.carry = null;
   decor.items.splice(decor.items.indexOf(decor.piece), 1);
   rebuildDecor();
   closePiece();
@@ -1456,8 +1486,9 @@ function updateAction(p, tSec) {
     } else if (decor?.editing) {
       // decorate mode: walk up to a piece to rotate, move or remove it
       const it = nearestPiece(p);
-      if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
-      else closePiece();
+      if (decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
+      else if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
+      else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -1698,6 +1729,7 @@ renderer.setAnimationLoop(() => {
     net.update?.(p.x, p.z); // switch area cells as we walk
   }
   routeLine.update(dt);
+  updateCarry();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
