@@ -20,6 +20,9 @@ import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
+import { CloudSave } from './core/cloud-save.js';
+import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
@@ -33,6 +36,12 @@ import { RoadGraph, RouteLine } from './core/route.js';
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
+
+// Cloud save (guest account on Supabase). Runs before anything reads saved
+// data, so a newer save from the server is in place first. Skipped in
+// automated test rooms.
+const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
+await cloud.load();
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
@@ -256,6 +265,7 @@ const PLAYER_R = 0.35;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
 const BIKE = 16; // bike share: faster than running, no stamina
+const CAR = 26; // car: big roads only
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
@@ -412,9 +422,10 @@ async function joinRoom(room, roomScene, area = null) {
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
       refreshOnline(); lastSent = null;
     },
-    onLeave: (id) => { others.leave(id); refreshOnline(); },
+    onLeave: (id) => { tandemGone(id); others.leave(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
@@ -581,6 +592,8 @@ $('unblock-btn').onclick = () => { safety.unblockAll(); refreshUnblock(); shop.t
 onLanguageChange(refreshUnblock);
 refreshUnblock();
 function openChat() {
+  // Close any open panel first (daily missions, wallet, cart…) so the chat bar is not hidden behind it.
+  for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
   chatBar.hidden = false;
   input.keys.clear();
   chatInput.focus();
@@ -589,8 +602,21 @@ function openChat() {
 function closeChat() { chatBar.hidden = true; chatInput.blur(); }
 $('chat-btn').hidden = !config.chatEnabled;
 $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
-chatBar.addEventListener('submit', (e) => {
+chatBar.addEventListener('submit', async (e) => {
   e.preventDefault();
+  // Commands start with "/" and are never sent to other people.
+  const raw = cleanChat(chatInput.value);
+  if (raw.startsWith('/')) {
+    chatInput.value = '';
+    const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    const unlocked = cmd === 'master' && await redeemCode(rest.join(' '));
+    if (unlocked) {
+      const added = inventory.add(...unlocked);
+      shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
+      refreshItems();
+    } else shop.toast(t('chat.unknownCommand'));
+    return;
+  }
   const text = filterText(cleanChat(chatInput.value));
   const now = performance.now() / 1000;
   if (!text || now - lastChatAt < config.chatCooldown) return;
@@ -662,20 +688,150 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 const interiorCache = new Map();
 let clerk = null; // the clerk NPC in the shop you're in
 // Bike share: rent at a station, get off anywhere (the bike goes back by itself).
-let riding = false;
+let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 a seat in someone's vehicle, 4 car (driving)
+let tandemDriver = null; // id of the driver whose vehicle I'm riding in
+let mySeat = 0; // my seat in their vehicle (see SEATS)
+const passengers = new Map(); // seat -> id: people riding with me
+let tandemInvite = null; // { from, name, seat, until }: someone offered me a ride
+const seatsOf = (kind) => SEATS[kind]?.length || 0;
+const freeSeat = () => { for (let i = 0; i < seatsOf(riding); i++) if (!passengers.has(i)) return i; return -1; };
 function setRiding(on) {
-  if (riding === on) return;
-  if (on && mode !== 'street') return;
-  riding = on;
-  me.setBike(on);
-  if (on) missionEvent('bike');
+  const kind = on === true ? 1 : on || 0;
+  if (riding === kind) return;
+  if (kind && mode !== 'street') return;
+  // Leaving a shared vehicle tells the others.
+  for (const id of passengers.values()) net.sendEmote(tandemMsg('end', id));
+  passengers.clear();
+  if (riding === 3 && tandemDriver) {
+    net.sendEmote(tandemMsg('leave', tandemDriver));
+    // Step out beside the vehicle, onto free ground.
+    const [fx, fz] = findFreeSpot(me.root.position.x + Math.cos(me.root.rotation.y) * 1.4, me.root.position.z - Math.sin(me.root.rotation.y) * 1.4);
+    me.root.position.set(fx, 0, fz);
+    tandemDriver = null;
+  }
+  if (riding === 4) {
+    // Park and step out onto free ground beside the car.
+    const ry = me.root.rotation.y;
+    const [fx, fz] = findFreeSpot(me.root.position.x + Math.cos(ry) * 1.6, me.root.position.z - Math.sin(ry) * 1.6);
+    me.root.position.set(fx, 0, fz);
+  }
+  riding = kind;
+  me.setBike(kind);
+  if (kind === 1 || kind === 2) missionEvent('bike');
+  if (kind === 4) setAutoWalk(false); // auto-walk routes use alleys too
   sendTimer = 0;
   action = STALE;
-  $('bike-btn').classList.toggle('on', on);
-  $('bike-label').textContent = t(on ? 'bike.offShort' : 'hud.bike');
+  $('bike-btn').classList.toggle('on', !!kind);
+  $('bike-label').textContent = t(kind ? 'bike.offShort' : 'hud.bike');
+}
+// Riding together (tandem: 1 passenger; car: up to 5). The driver offers a
+// ride to someone nearby; they tap Ride and sit in the offered seat, following
+// the driver, who steers. Messages ride on the emote channel.
+function onTandemMsg(from, { verb, target, seat }) {
+  if (target !== myId) return;
+  const name = others.nameOf(from) || '?';
+  if (verb === 'invite' && !riding && mode === 'street') {
+    tandemInvite = { from, name, seat, until: performance.now() + 15000 };
+    shop.toast(t('tandem.invited', { name }));
+    action = STALE;
+  } else if (verb === 'join') {
+    const ok = (riding === 2 || riding === 4) && seat < seatsOf(riding) && !passengers.has(seat) && ![...passengers.values()].includes(from);
+    if (ok) { passengers.set(seat, from); shop.toast(t('tandem.joined', { name })); action = STALE; }
+    else net.sendEmote(tandemMsg('end', from)); // seat taken or not driving: say no
+  } else if (verb === 'leave') {
+    for (const [k, id] of passengers) if (id === from) { passengers.delete(k); shop.toast(t('tandem.left', { name })); action = STALE; }
+  } else if (verb === 'end' && from === tandemDriver) {
+    tandemGone(from);
+  }
+}
+function tandemGone(id) {
+  for (const [k, pid] of passengers) if (pid === id) { passengers.delete(k); action = STALE; }
+  if (id === tandemDriver) { tandemDriver = null; riding = 3; setRiding(0); shop.toast(t('tandem.ended')); }
+}
+function hopOn(inv) {
+  tandemInvite = null;
+  const front = others.rootOf(inv.from);
+  if (!front || mode !== 'street') return;
+  setRiding(0);
+  tandemDriver = inv.from;
+  mySeat = inv.seat;
+  setRiding(3);
+  net.sendEmote(tandemMsg('join', inv.from, inv.seat));
+}
+// Items (saved on this device). The master code in chat adds every item.
+const inventory = new Inventory();
+// What you can ride: the share bike always, plus owned vehicles.
+const RIDES = [
+  { kind: 1, emoji: '🚲', label: 'ride.bike' },
+  { kind: 2, emoji: '🚲🚲', label: 'ride.tandem', item: 'tandem' },
+  { kind: 4, emoji: '🚗', label: 'ride.car', item: 'car' },
+];
+function ridePicker() {
+  if (riding) { setRiding(0); return; }
+  const rides = RIDES.filter((r) => !r.item || inventory.has(r.item));
+  if (rides.length === 1) { startRide(1); return; }
+  $('ride-options').replaceChildren(...rides.map((r) => {
+    const b = document.createElement('button');
+    b.className = 'primary';
+    b.textContent = `${r.emoji} ${t(r.label)}`;
+    b.onclick = () => { $('ride-panel').hidden = true; startRide(r.kind); };
+    return b;
+  }));
+  $('ride-panel').hidden = false;
+}
+$('ride-close').onclick = () => { $('ride-panel').hidden = true; };
+function startRide(kind) {
+  if (kind === 4) {
+    // Cars start on a big road: hop to the nearest one if it's close.
+    const p = me.root.position;
+    let [rx, rz, d] = nearestCarRoad(p.x, p.z);
+    if (d <= 25 && collision.blocked(rx, rz, PLAYER_R)) {
+      // Something stands there (a pillar, a kiosk): take the closest clear spot on a big road.
+      const free = clearCarSpot(p.x, p.z);
+      if (free) [rx, rz, d] = [free[0], free[1], Math.max(0.6, free[2])];
+      else d = Infinity;
+    }
+    if (d > 25) { shop.toast(t('car.noRoad')); return; }
+    if (d > 0.5) moveMeTo(scene, rx, rz, me.root.rotation.y, cam.yaw);
+  }
+  setRiding(kind);
+}
+// Cars stay on the big roads (OSM primary, secondary, tertiary…), never in
+// residential alleys, service lanes or footpaths.
+const CAR_ROADS = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'primary_link', 'secondary_link', 'tertiary_link', 'trunk_link', 'unclassified']);
+const carSegs = [];
+for (const r of map.roads) {
+  if (!CAR_ROADS.has(r.k)) continue;
+  for (let i = 1; i < r.p.length; i++) carSegs.push([r.p[i - 1][0], r.p[i - 1][1], r.p[i][0], r.p[i][1], (r.w || 8) / 2]);
+}
+// Nearest point on a car road: [x, z, distance beyond the road edge].
+function nearestCarRoad(x, z) {
+  let best = [x, z, Infinity];
+  for (const [ax, az, bx, bz, hw] of carSegs) {
+    const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+    const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+    const px = ax + u * dx, pz = az + u * dz;
+    const d = Math.max(0, Math.hypot(px - x, pz - z) - hw);
+    if (d < best[2]) best = [d === 0 ? x : px, d === 0 ? z : pz, d];
+  }
+  return best;
+}
+const onCarRoad = (x, z) => nearestCarRoad(x, z)[2] <= 0.5;
+// Closest clear point on a big road's centre line within 25 m: [x, z, distance].
+function clearCarSpot(x, z) {
+  let best = null;
+  for (const [ax, az, bx, bz] of carSegs) {
+    const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 2);
+    for (let i = 0; i <= n; i++) {
+      const px = ax + ((bx - ax) * i) / n, pz = az + ((bz - az) * i) / n;
+      const d = Math.hypot(px - x, pz - z);
+      if (d <= 25 && (!best || d < best[2]) && !collision.blocked(px, pz, PLAYER_R)) best = [px, pz, d];
+    }
+  }
+  return best;
 }
 // My bike (from the toolbar): ride anywhere on the street, tap again to get off.
-$('bike-btn').onclick = () => setRiding(!riding);
+$('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function enterStore(item) {
@@ -801,6 +957,18 @@ if (musicWanted) {
 // Guidance to a zone or store.
 let guide = null;
 let routeTimer = 0, routeLen = 0, faceRoute = false;
+let routePoly = null; // the current route along the streets
+// Auto-walk: follow the route without steering. Any stick/key input stops it.
+let autoWalk = false;
+let carNoteT = 0; // cooldown for the "cars can't go into alleys" note
+const autoSide = { t: 0, dir: 1, stuck: 0 }; // side-step when walking into a wall
+function setAutoWalk(on) {
+  autoWalk = !!on && !!guide && riding !== 3 && riding !== 4;
+  $('guide-auto').classList.toggle('on', autoWalk);
+  $('guide-auto-label').textContent = t(autoWalk ? 'guide.autoStop' : 'guide.auto');
+  if (autoWalk) { routeTimer = 0; manualCamT = 0; }
+}
+$('guide-auto').onclick = () => setAutoWalk(!autoWalk);
 function setGuide(g) {
   guide = g;
   $('guide').hidden = mode !== 'street';
@@ -809,6 +977,8 @@ function setGuide(g) {
 }
 function clearGuide() {
   guide = null;
+  routePoly = null;
+  setAutoWalk(false);
   $('guide').hidden = true;
   routeLine.clear();
 }
@@ -830,7 +1000,69 @@ const mapView = new MapView({
     if (mode === 'store') leaveStore();
     setGuide(g);
   },
+  onTaxi: (dest) => rideTaxi(dest),
 });
+
+// Taxi: pick a place on the map (taxi mode) and ride there. A short scene
+// from the back seat, the driver speaks Korean, then you're dropped off on
+// the nearest street. Free during beta (see ROADMAP: later it costs coins).
+const TAXI_LINES = [
+  ['안녕하세요! 어디로 가세요?', 'annyeonghaseyo! eodiro gaseyo?', 'taxi.t1'],
+  ['네, 출발할게요!', 'ne, chulbalhalgeyo!', 'taxi.t2'],
+  ['도착했습니다. 안녕히 가세요!', 'dochakhaetseumnida. annyeonghi gaseyo!', 'taxi.t3'],
+];
+let taxiTimers = [];
+const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
+function taxiDropOff(x, z) {
+  let best = [x, z], bd = Infinity;
+  for (const r of map.roads) {
+    if (CAR_FREE.has(r.k)) continue;
+    for (let i = 1; i < r.p.length; i++) {
+      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i];
+      const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+      const px = ax + u * dx, pz = az + u * dz, d = (px - x) ** 2 + (pz - z) ** 2;
+      if (d < bd) { bd = d; best = [px, pz]; }
+    }
+  }
+  return best;
+}
+function rideTaxi(dest) {
+  if (mode === 'store') leaveStore();
+  if (riding) setRiding(false);
+  clearGuide();
+  // Drop-off: the nearest point on a road a car can use, on free ground.
+  const [rx, rz] = taxiDropOff(dest.x, dest.z);
+  const [fx, fz] = findFreeSpot(rx, rz);
+  const ry = Math.atan2(dest.x - fx, dest.z - fz); // face the destination
+  const sayLine = ([ko, rom, key]) => {
+    $('taxi-ko').textContent = ko;
+    $('taxi-rom').textContent = rom;
+    $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
+  };
+  $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label: dest.label });
+  $('taxi-skip').textContent = t('taxi.skip');
+  $('taxi-ride').hidden = false;
+  input.keys.clear();
+  sayLine(TAXI_LINES[0]);
+  let done = false;
+  const arrive = () => {
+    if (done) return;
+    done = true;
+    taxiTimers.forEach(clearTimeout);
+    taxiTimers = [];
+    $('taxi-ride').hidden = true;
+    moveMeTo(scene, fx, fz, ry);
+    if (dest.guide && Math.hypot(dest.x - fx, dest.z - fz) > 4) setGuide(dest.guide);
+    showBubble(myLabel, $('labels'), '🚕');
+  };
+  taxiTimers = [
+    setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
+    setTimeout(() => sayLine(TAXI_LINES[2]), 4200),
+    setTimeout(arrive, 5600),
+  ];
+  $('taxi-skip').onclick = arrive;
+}
 $('map-btn').onclick = () => {
   const pos = mode === 'street' ? me.root.position : interior.front.door;
   mapView.show(pos.x, pos.z);
@@ -1013,7 +1245,28 @@ function refreshWallet() {
 wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
 refreshWallet();
-$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); };
+function refreshCloud() {
+  $('cloud-label').textContent = t(cloud.status === 'cloud' ? (cloud.guest ? 'cloud.guest' : 'cloud.account') : cloud.status === 'error' ? 'cloud.error' : 'cloud.local');
+}
+cloud.onChange(refreshCloud);
+refreshCloud();
+onLanguageChange(refreshCloud);
+$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
+function refreshItems() {
+  const list = inventory.list();
+  $('wallet-items-title').hidden = !list.length;
+  $('wallet-items').replaceChildren(...list.map((id) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const it = ITEMS[id];
+    const b = document.createElement('strong');
+    b.textContent = `${it.emoji} ${localName(it.name, getLanguage())}`;
+    const d = document.createElement('small');
+    d.textContent = localName(it.desc, getLanguage());
+    row.append(b, d);
+    return row;
+  }));
+}
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
@@ -1180,7 +1433,15 @@ function updateAction(p, tSec) {
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
-    else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if ((riding === 2 || riding === 4) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3)) {
+      const o = others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3);
+      const seat = freeSeat();
+      next = { key: 'tandem-invite:' + o.id, label: (riding === 4 ? '🚗 ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (riding) next = { key: 'bike-off', label: riding === 4 ? '🚗 ' + t('car.off') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
+      const inv = tandemInvite;
+      next = { key: 'tandem-hop:' + inv.from, label: (others.kindOf(inv.from) === 4 ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
+    }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else {
       const n = npcs.nearest(p.x, p.z);
@@ -1230,6 +1491,18 @@ onLanguageChange(() => { action = STALE; });
 
 function updateGuide(p, dt) {
   if (!guide || mode !== 'street') return;
+  // A person walks around: follow where they are now, and when we get
+  // close they stop and wait for us.
+  if (guide.kind === 'npc') {
+    const o = npcs.list.find((n) => n.name === guide.id);
+    if (o) {
+      const moved = Math.hypot(o.ch.root.position.x - guide.x, o.ch.root.position.z - guide.z);
+      guide.x = o.ch.root.position.x;
+      guide.z = o.ch.root.position.z;
+      if (moved > 3) routeTimer = 0;
+      if (Math.hypot(guide.x - p.x, guide.z - p.z) < 25) o.pause = Math.max(o.pause || 0, 1);
+    }
+  }
   const dx = guide.x - p.x, dz = guide.z - p.z;
   const dist = Math.hypot(dx, dz);
   // Re-plan the route along the streets from where we are now.
@@ -1238,6 +1511,7 @@ function updateGuide(p, dt) {
     routeTimer = 0.5;
     const poly = roadGraph.route(p.x, p.z, guide.x, guide.z);
     routeLine.set(poly);
+    routePoly = poly;
     routeLen = 0;
     for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
     if (faceRoute) {
@@ -1252,7 +1526,7 @@ function updateGuide(p, dt) {
       if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
     }
   }
-  if (dist < 6) {
+  if (dist < (guide.kind === 'npc' ? 2.5 : 6)) {
     shop.toast(t('guide.arrived', { label: guide.label }));
     clearGuide();
     return;
@@ -1286,6 +1560,7 @@ renderer.setAnimationLoop(() => {
   const look = input.consumeLook();
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
+  carNoteT = Math.max(0, carNoteT - dt);
   cam.yaw -= look.dx * 0.006;
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
@@ -1305,18 +1580,37 @@ renderer.setAnimationLoop(() => {
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const p = me.root.position;
+  if (riding === 3) {
+    // On someone's back seat: ride along behind them, pedalling at their pace.
+    const front = others.rootOf(tandemDriver);
+    if (!front) tandemGone(tandemDriver);
+    else {
+      const ox = p.x, oz = p.z;
+      const [sx, sz] = seatPosition(front, others.kindOf(tandemDriver), mySeat);
+      p.set(sx, 0, sz);
+      me.root.rotation.y = front.rotation.y;
+      speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
+    }
+  }
   if (seated && mag > 0.3) standUp();
+  if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated) {
+  if (mag > 0.05 && !seated && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (riding === 4 ? CAR : riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
     const dz = (fz * my + rz * mx) * speed * dt;
-    const [nx, nz] = activeCollision.move(p.x, p.z, dx, dz, PLAYER_R);
+    let [nx, nz] = activeCollision.move(p.x, p.z, dx, dz, PLAYER_R);
+    if (riding === 4 && !onCarRoad(nx, nz)) {
+      // Off the big road: slide along it if we can, else stop.
+      if (onCarRoad(nx, p.z)) nz = p.z;
+      else if (onCarRoad(p.x, nz)) nx = p.x;
+      else { nx = p.x; nz = p.z; if (!carNoteT) { shop.toast(t('car.alley')); carNoteT = 4; } }
+    }
     if (mode === 'street') {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
@@ -1329,8 +1623,27 @@ renderer.setAnimationLoop(() => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
-  } else {
+    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
+  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
+    // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
+    let tx = routePoly[routePoly.length - 1][0], tz = routePoly[routePoly.length - 1][1];
+    for (const [x, z] of routePoly) if (Math.hypot(x - p.x, z - p.z) > 2.5) { tx = x; tz = z; break; }
+    const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
+    const running = updateStamina(dt, input.run && !riding, true);
+    const speed = riding ? BIKE : running ? RUN : WALK;
+    // Stuck on a wall corner? Side-step for a moment, then try again.
+    let ux = ddx / dl, uz = ddz / dl;
+    if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
+    const [nx, nz] = activeCollision.move(p.x, p.z, ux * speed * dt, uz * speed * dt, PLAYER_R);
+    const progressed = Math.hypot(nx - p.x, nz - p.z) > speed * dt * 0.3;
+    autoSide.stuck = progressed ? 0 : autoSide.stuck + dt;
+    if (autoSide.stuck > 0.5) { autoSide.stuck = 0; autoSide.t = 0.7; autoSide.dir = -autoSide.dir || 1; routeTimer = 0; }
+    p.x = nx; p.z = nz;
+    let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    me.root.rotation.y += d * Math.min(1, dt * 8);
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : RUN), Math.min(1, dt * 10));
+  } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated);
@@ -1338,12 +1651,14 @@ renderer.setAnimationLoop(() => {
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
   // moment after the player drags the view themselves.
-  if (mag > 0.05 && manualCamT <= 0 && !DEBUG_TOP) {
+  // Auto-walk and the tandem back seat follow too (nobody is steering).
+  const carried = (autoWalk && speed01 > 0.05) || (riding === 3 && speed01 > 0.05);
+  if ((mag > 0.05 || carried) && manualCamT <= 0 && !DEBUG_TOP) {
     const behind = me.root.rotation.y + Math.PI;
     let d = behind - cam.yaw;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     // Don't spin round when walking straight towards the camera.
-    if (Math.abs(d) < 2.7) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
+    if (Math.abs(d) < 2.7 || carried) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
   }
 
   // Camera follow.
@@ -1410,8 +1725,9 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated) st.sit = 1;
-    if (riding) st.bk = 1;
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk;
+    if (riding) st.bk = riding;
+    if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;

@@ -35,6 +35,10 @@ First stop: **Seongsu-dong, Seoul**.
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
 - Ddeokip Bunsik (snack bar): ordering practice in Korean. Pick a mission ("1 serving of tteokbokki, not spicy, to eat here"), build the order from word blocks, answer the clerk's question, and get a stamp (+15 coins the first time). Then listen to the sentence and record yourself to compare; the recording stays on the device and is never scored. Food can't be bought or eaten here
 - Street chat is heard only within 10 m and shows for a few seconds; inside shops and cafés everyone in the room sees it
+- Taxi (🚕 in the map, free during beta): tap any spot or pick a place from the list; a short back-seat ride where the driver speaks Korean, then you are dropped off on the nearest road a car can use
+- Map search and category filter: search shop names (any language), food and products
+- Auto-walk: after picking a destination on the map, tap 🚶 Auto in the guidance bar to walk (or bike) there along the streets without steering; touching the stick or keys takes over again
+- Tandem bike (an item): ride it up to someone and invite them onto the back seat; they ride along while you steer. Items are listed in the coin panel
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally
@@ -77,6 +81,19 @@ pack (for example a paid chibi pack), add its GLBs under `public/models/<pack>/`
 `kaykit.js`, and point `index.js` at it. Hats, glasses and bags move onto the model's head and chest bones
 automatically. While a model loads, or if it fails, the simple built-in chibi is shown instead.
 `scripts/models/strip-kaykit.mjs` shows how the KayKit files were shrunk (weapons removed, unused clips dropped).
+
+### Cloud saves (guest accounts)
+
+Game data lives in localStorage keys starting with `mk.`. `src/core/cloud-save.js` signs the player in as an
+anonymous Supabase guest and copies those keys to the `saves` table (the newer copy wins), so a save survives
+clearing the browser. A guest can later link a Google login and keep the same account. One-time setup in the
+Supabase dashboard:
+
+1. Authentication → Sign In / Providers → turn on **Allow anonymous sign-ins**.
+2. SQL Editor → run `supabase/001_saves.sql` (table + row-level security: each player reads and writes only their own save).
+
+Until both are done the game keeps saving on the device only (Settings shows which). Automated test rooms
+(`?debug`) skip cloud saves. The browser writes its own save, so coins and items are not cheat-proof yet.
 
 ### Swapping the realtime provider
 

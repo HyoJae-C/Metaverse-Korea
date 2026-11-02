@@ -37,6 +37,7 @@
       <div class="guide" id="guide" hidden>
         <svg class="guide-arrow" id="guide-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg>
         <span id="guide-text"></span>
+        <button class="guide-auto" id="guide-auto">🚶 <span id="guide-auto-label" data-i18n="guide.auto"></span></button>
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
       <button class="action" id="action-btn" hidden></button>
@@ -68,6 +69,13 @@
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
+        <strong class="items-title" id="wallet-items-title" hidden>🎒 <span data-i18n="items.title"></span></strong>
+        <div class="items-list" id="wallet-items"></div>
+      </div>
+      <div class="sheet ride-panel" id="ride-panel" hidden>
+        <button class="sheet-x" id="ride-close" aria-label="Close">✕</button>
+        <strong class="wallet-title" data-i18n="ride.title"></strong>
+        <div class="ride-options" id="ride-options"></div>
       </div>
       <div class="sheet daily-panel" id="daily-panel" hidden>
         <button class="sheet-x" id="daily-close" aria-label="Close">✕</button>
@@ -147,6 +155,26 @@
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener"><span data-i18n="credit.map"></span> © OpenStreetMap contributors</a>
       · <a href="https://open-meteo.com/" target="_blank" rel="noopener"><span data-i18n="credit.weather"></span> Open-Meteo</a>
       · <a href="https://kaylousberg.com/" target="_blank" rel="noopener"><span data-i18n="credit.chars"></span> KayKit (CC0)</a>
+      · <a href="privacy.html" target="_blank" rel="noopener" data-i18n="credit.privacy"></a>
+    </div>
+
+    <!-- Taxi ride: a short scene from the back seat, then you are dropped off. -->
+    <div class="taxi-ride" id="taxi-ride" hidden>
+      <div class="taxi-window">
+        <div class="taxi-city taxi-far"></div>
+        <div class="taxi-city taxi-near"></div>
+        <div class="taxi-road"></div>
+      </div>
+      <div class="taxi-cabin">
+        <div class="taxi-driver">🧑‍✈️</div>
+        <div class="taxi-say" id="taxi-say">
+          <strong id="taxi-ko"></strong>
+          <small id="taxi-rom"></small>
+          <small id="taxi-tr"></small>
+        </div>
+        <p class="taxi-dest" id="taxi-dest"></p>
+        <button class="chip" id="taxi-skip" data-i18n="taxi.skip"></button>
+      </div>
     </div>
 
     <!-- Start screen -->
@@ -200,11 +228,13 @@
         <div class="map-top">
           <h2 data-i18n="map.title"></h2>
           <div class="map-btns">
+            <button class="chip map-taxi" id="map-taxi">🚕 <span data-i18n="taxi.mode"></span></button>
             <button class="chip map-zoom-out" aria-label="Zoom out">－</button>
             <button class="chip map-zoom-in" aria-label="Zoom in">＋</button>
             <button class="chip map-close" aria-label="Close">✕</button>
           </div>
         </div>
+        <p class="map-taxi-hint" id="map-taxi-hint" hidden>🚕 <span data-i18n="taxi.pick"></span> · <b data-i18n="taxi.free"></b></p>
         <div class="map-body">
           <canvas class="map-canvas"></canvas>
           <div class="map-list"></div>
@@ -229,6 +259,12 @@
         <button class="setting-row" id="unblock-btn">
           <span>🚫</span><span class="setting-label" id="unblock-label"></span><span class="setting-go">›</span>
         </button>
+        <div class="setting-row cloud-row">
+          <span>☁️</span><span class="setting-label" id="cloud-label"></span>
+        </div>
+        <a class="setting-row" href="privacy.html" target="_blank" rel="noopener">
+          <span>🔒</span><span class="setting-label" data-i18n="credit.privacy"></span><span class="setting-go">›</span>
+        </a>
         <button class="setting-row" id="lang-btn">
           <span>🌐</span><span class="setting-label" data-i18n="lang.change"></span><span class="setting-go">›</span>
         </button>

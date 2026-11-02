@@ -1,6 +1,7 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
 import * as THREE from 'three';
+import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 
 export class RemotePlayers {
@@ -87,6 +88,20 @@ export class RemotePlayers {
     return p.name;
   }
 
+  // The closest visible player within r metres who is not riding: { id, name }.
+  nearestFree(x, z, r) {
+    let best = null, bd = r;
+    for (const [id, p] of this.players) {
+      if (p.hidden || p.target?.bk) continue;
+      const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
+      if (d < bd) { bd = d; best = { id, name: p.name }; }
+    }
+    return best;
+  }
+
+  kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
+  rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
+
   emote(id, anim, emoji) {
     const p = this.players.get(id);
     if (!p || p.hidden) return;
@@ -105,8 +120,13 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        if (!!p.target.bk !== !!p.bk) { p.bk = !!p.target.bk; p.ch.setBike(p.bk); }
+        if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
+      }
+      // Riding with someone (tandem or car): sit in our seat of their vehicle.
+      if (p.target?.bk === 3 && p.target.on) {
+        const d = this.players.get(p.target.on);
+        if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
       if (p.hidden) continue;
       v.set(r.position.x, 1.55, r.position.z).project(camera);

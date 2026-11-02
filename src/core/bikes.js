@@ -32,6 +32,77 @@ export function makeBike(color = FRAME) {
   return g;
 }
 
+// A tandem: the front seat is where a normal bike's seat is (so the driver
+// sits the same way), and a second seat 0.8 m behind for the passenger.
+export const TANDEM_GAP = 0.8;
+export function makeTandem(color = '#e0604d') {
+  const g = new THREE.Group();
+  const wheelGeo = new THREE.TorusGeometry(0.27, 0.045, 6, 18).rotateY(Math.PI / 2);
+  for (const z of [-0.48 - TANDEM_GAP, 0.48]) {
+    const w = new THREE.Mesh(wheelGeo, mat(DARK));
+    w.position.set(0, 0.3, z);
+    g.add(w);
+  }
+  const bar = (sx, sy, sz, x, y, z, rx = 0, c = color) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
+    m.position.set(x, y, z);
+    m.rotation.x = rx;
+    g.add(m);
+  };
+  bar(0.06, 0.06, 0.8 + TANDEM_GAP, 0, 0.5, -TANDEM_GAP / 2); // long top tube
+  for (const z of [-0.2, -0.2 - TANDEM_GAP]) bar(0.06, 0.45, 0.06, 0, 0.42, z, 0.25); // seat tubes
+  bar(0.06, 0.55, 0.06, 0, 0.55, 0.45, -0.25); // fork
+  for (const z of [-0.24, -0.24 - TANDEM_GAP]) bar(0.2, 0.06, 0.28, 0, 0.64, z, 0, DARK); // seats
+  bar(0.55, 0.05, 0.05, 0, 0.86, 0.5, 0, DARK); // handlebar
+  bar(0.45, 0.05, 0.05, 0, 0.8, -0.3, 0, DARK); // back rider's handle
+  return g;
+}
+
+// An open-top 6-seater (driver, front passenger, two rows of two in the
+// back). The driver sits on the left (Korea drives on the right), so the
+// body sits to the driver's right (-x when facing +z).
+export function makeCar(color = '#ffcf4a') {
+  const g = new THREE.Group();
+  const box = (sx, sy, sz, x, y, z, c = color) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
+    m.position.set(x, y, z);
+    g.add(m);
+  };
+  const cx = -0.42, cz = -0.5, len = 4.8;
+  box(1.8, 0.5, len, cx, 0.45, cz); // body
+  box(1.82, 0.12, 1.0, cx, 0.76, cz + len / 2 - 0.5); // bonnet top
+  box(1.7, 0.35, 0.08, cx, 1.05, 0.62, '#bfe3f5'); // windscreen
+  box(1.6, 0.08, 0.08, cx, 1.24, 0.62, DARK);
+  for (const [sx, sz] of SEATS.car.concat([[0, 0]])) {
+    box(0.5, 0.18, 0.5, sx, 0.55, sz - 0.15, '#7a4a2e'); // seat
+    box(0.5, 0.4, 0.08, sx, 0.8, sz - 0.42, '#7a4a2e'); // back rest
+  }
+  box(0.3, 0.3, 0.05, 0, 0.85, 0.42, DARK); // steering wheel
+  for (const lx of [-0.6, 0.6]) box(0.3, 0.12, 0.05, cx + lx, 0.55, cz + len / 2 + 0.01, '#fff6c9'); // lights
+  box(1.8, 0.1, 0.05, cx, 0.42, cz - len / 2 - 0.01, '#e0604d'); // tail lights
+  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.22, 16).rotateZ(Math.PI / 2);
+  for (const wx of [0.47, -1.31]) for (const wz of [cz + len / 2 - 0.8, cz - len / 2 + 0.8]) {
+    const w = new THREE.Mesh(wheelGeo, mat(DARK));
+    w.position.set(wx, 0.34, wz);
+    g.add(w);
+  }
+  return g;
+}
+
+// Passenger seats relative to the driver ([x, z], driver facing +z).
+export const SEATS = {
+  2: [[0, -TANDEM_GAP]], // tandem back seat
+  4: [[-0.84, 0], [0, -1.15], [-0.84, -1.15], [0, -2.15], [-0.84, -2.15]], // car: 1 front + 4 back
+};
+SEATS.car = SEATS[4];
+
+// Where seat n of the driver's vehicle is in the world.
+export function seatPosition(front, kind, seat) {
+  const [ox, oz] = SEATS[kind]?.[seat] || SEATS[2][0];
+  const s = Math.sin(front.rotation.y), c = Math.cos(front.rotation.y);
+  return [front.position.x + ox * c + oz * s, front.position.z - ox * s + oz * c];
+}
+
 export class BikeStations {
   constructor(scene, stations, center, roadGraph, findFree) {
     this.items = [];
