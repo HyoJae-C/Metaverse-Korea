@@ -26,6 +26,8 @@ import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { BeautyUI } from './ui/beauty-ui.js';
+import { KpopRoom } from './ui/kpop-room.js';
+import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
@@ -438,6 +440,9 @@ const refreshOnline = () => {
 onLanguageChange(refreshOnline);
 let net = null;
 let currentLook = myLook;
+// K-POP café room sync (see enterKpopCafe).
+const kpop = new KpopRoom({ tv: $('kpop-tv'), panel: $('kpop-panel'), send: (m) => net.sendEmote(m), toast: (x) => shop.toast(x) });
+$('kpop-tv').querySelector('.kpop-unmute').onclick = () => kpop.unmute();
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
@@ -455,11 +460,13 @@ async function joinRoom(room, roomScene, area = null) {
       others.join({ ...p, name: filterText(p.name) });
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
       refreshOnline(); lastSent = null;
+      kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
     onLeave: (id) => { tandemGone(id); others.leave(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
+      if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
@@ -1027,6 +1034,7 @@ function enterStore(item) {
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
   if (store.music) enterMusicCafe();
+  if (store.kpop) enterKpopCafe();
   const quiet = store.category === 'library';
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), quiet ? PHRASES.library[0] : PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
@@ -1048,6 +1056,7 @@ function leaveStore() {
   if (ramenUi.open) ramenUi.close();
   beautyUi.close();
   leaveMusicCafe();
+  leaveKpopCafe();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -1114,6 +1123,21 @@ onLanguageChange(applyMusicBtn);
 // Music café: pick an LP to change the song. Only this player hears it (the
 // music plays in this browser). Leaving puts the usual music back.
 let cafeMusic = null; // { wasOn } while inside a music café
+// K-POP café: everyone in the room watches and hears the same music video
+// (ui/kpop-room.js). Our own background music pauses while inside.
+let kpopMusic = null;
+async function enterKpopCafe() {
+  kpopMusic = { wasOn: music.on };
+  if (music.on) { await music.setOn(false); applyMusicBtn(); }
+  kpop.enter();
+}
+async function leaveKpopCafe() {
+  if (!kpopMusic) return;
+  const { wasOn } = kpopMusic;
+  kpopMusic = null;
+  kpop.leave();
+  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
+}
 async function enterMusicCafe() {
   cafeMusic = { wasOn: music.on };
   music.setTrack('lofi');
@@ -1870,6 +1894,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.tv && Math.hypot(p.x - interior.tv.x, p.z - interior.tv.z) < 2.6) {
+      next = { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
     } else if (nearFishing(p)) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
     } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
@@ -2215,6 +2241,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     heldKind: () => heldKind(),
+    kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
     look: () => ({ ...currentLook }),

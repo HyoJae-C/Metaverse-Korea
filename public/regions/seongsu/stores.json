@@ -346,6 +346,14 @@
       "anchor": { "lat": 37.5437, "lon": 127.0533 },
       "colors": { "sign": "#5a7fb0", "awning": "#d8e6f5", "accent": "#f6f9fd" },
       "products": []
+    },
+    {
+      "id": "play-kpop-cafe", "category": "cafe", "kpop": true, "size": "medium",
+      "name": { "ko": "케이팝 카페 PLAY", "en": "K-POP Café PLAY", "ja": "K-POPカフェ PLAY", "zh": "K-POP咖啡馆 PLAY" },
+      "tagline": { "en": "Music videos on the big TV, for everyone in the café", "ko": "큰 TV로 뮤직비디오를 다 같이 봐요", "ja": "大きなテレビでMVをみんなで", "zh": "在大电视上和大家一起看MV" },
+      "anchor": { "lat": 37.5441, "lon": 127.0561 },
+      "colors": { "sign": "#7b3fe4", "awning": "#f7d6ff", "accent": "#fbf6ff" },
+      "products": []
     }
   ]
 }
