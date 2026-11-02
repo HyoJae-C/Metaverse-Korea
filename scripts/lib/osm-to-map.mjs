@@ -42,6 +42,15 @@ const AREA_KIND = (tags) => {
   return null;
 };
 
+// Housing kinds the world draws differently: 'apt' = apartment blocks,
+// 'villa' = low-rise homes (Korean 연립·다세대 "villas", houses).
+const VILLA = new Set(['house', 'residential', 'terrace', 'semidetached_house', 'detached', 'dormitory']);
+export function buildingKind(tags) {
+  if (tags.building === 'apartments') return 'apt';
+  if (VILLA.has(tags.building)) return 'villa';
+  return null;
+}
+
 export function buildingHeight(tags, id) {
   const h = parseFloat(tags.height);
   if (Number.isFinite(h) && h > 0) return Math.min(h, 250);
@@ -144,6 +153,8 @@ export function osmToMap(overpass, region) {
       if (Number.isFinite(minH) && minH > 0) b.m = round1(minH);
       const name = pickNames(tags);
       if (name) b.n = name;
+      const kind = buildingKind(tags);
+      if (kind) b.k = kind;
       buildings.push(b);
     } else if (tags.highway && ROAD_WIDTH[tags.highway] && tags.area !== 'yes') {
       if (tags.tunnel === 'yes' || Number(tags.layer) < 0) continue;

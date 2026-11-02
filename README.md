@@ -15,12 +15,21 @@ First stop: **Seongsu-dong, Seoul**.
 
 - Meeting zones A–F with tall lettered signposts ("meet at B!")
 - Map (M key or 🗺️): streets, zones, shops, you and other players; tap to get walking guidance
-- 10 fictional sample stores with Korean signs and a Translate signs toggle
+- 11 fictional sample stores with Korean signs and a Translate signs toggle
 - Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
 - Each store interior is its own multiplayer room (the café is the meeting spot)
 - Background music on/off (🎵), generated in the browser
 - Walking route drawn on the ground along real streets when you pick a destination
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
+- Running uses a stamina bar that refills while you walk or rest
+- Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
+- Text chat (💬, or T): speech bubbles over heads and a short log
+- Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
+- Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
+- Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
+- NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
+- Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
+- Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally
 

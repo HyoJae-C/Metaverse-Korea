@@ -38,6 +38,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
+    p.bk = false; // re-applied on the next update
     p.ch.root.position.copy(old.position);
     p.ch.root.rotation.copy(old.rotation);
     this.scene.remove(old);
@@ -56,10 +57,25 @@ export class RemotePlayers {
     p.target = st;
   }
 
+  // Is someone already sitting on the chair at (x, z)?
+  seatTaken(x, z) {
+    for (const p of this.players.values()) {
+      if (p.target?.sit && Math.hypot(p.target.x - x, p.target.z - z) < 0.3) return true;
+    }
+    return false;
+  }
+
+  chat(id, text) {
+    const p = this.players.get(id);
+    if (!p) return null;
+    showBubble(p, this.layer, text, 6000, 'chat');
+    return p.name;
+  }
+
   emote(id, anim, emoji) {
     const p = this.players.get(id);
     if (!p) return;
-    if (anim === 'wave') p.ch.wave();
+    if (anim) p.ch.play(anim);
     showBubble(p, this.layer, emoji);
   }
 
@@ -74,7 +90,8 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        p.ch.animate(dt, p.target.s || 0);
+        if (!!p.target.bk !== !!p.bk) { p.bk = !!p.target.bk; p.ch.setBike(p.bk); }
+        p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
       v.set(r.position.x, 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
@@ -90,11 +107,11 @@ export class RemotePlayers {
   }
 }
 
-export function showBubble(p, layer, emoji) {
+export function showBubble(p, layer, text, ms = 2500, kind = '') {
   p.bubble?.remove();
   const b = document.createElement('div');
-  b.className = 'bubble';
-  b.textContent = emoji;
+  b.className = kind ? 'bubble ' + kind : 'bubble';
+  b.textContent = text; // always text, never HTML
   layer.appendChild(b);
   p.bubble = b;
   setTimeout(() => {
@@ -102,5 +119,5 @@ export function showBubble(p, layer, emoji) {
       b.remove();
       p.bubble = null;
     }
-  }, 2500);
+  }, ms);
 }

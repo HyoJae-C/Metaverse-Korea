@@ -2,20 +2,38 @@
 // carries movement and emotes. No database tables are used.
 import { createClient } from '@supabase/supabase-js';
 
-export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook }, cfg) {
+// One client (one websocket) shared by every room we are in.
+const clients = new Map();
+function sharedClient(url, key) {
+  const k = url + '|' + key;
+  if (!clients.has(k)) {
+    clients.set(k, createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      realtime: { params: { eventsPerSecond: 20 } },
+    }));
+  }
+  return clients.get(k);
+}
+
+export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook, onChat }, cfg) {
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
-  const client = createClient(cfg.url, cfg.key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    realtime: { params: { eventsPerSecond: 20 } },
-  });
+  const client = sharedClient(cfg.url, cfg.key);
   let channel = null;
   let self = null;
+  let listening = false; // listen-only: receive, but don't appear in presence
   const known = new Set();
 
   return {
-    connect({ room, self: me }) {
+    connect({ room, self: me, listenOnly = false }) {
       self = me;
-      channel = client.channel('room:' + room, {
+      listening = listenOnly;
+      // A room we just left may still be closing on the shared client; make
+      // sure we get a fresh channel rather than the old one.
+      const topic = 'room:' + room;
+      for (const old of client.getChannels()) {
+        if (old.topic === 'realtime:' + topic || old.topic === topic) client.removeChannel(old);
+      }
+      channel = client.channel(topic, {
         config: { broadcast: { self: false }, presence: { key: me.id } },
       });
       channel
@@ -43,6 +61,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
         })
         .on('broadcast', { event: 'l' }, ({ payload }) => {
           if (known.has(payload.id)) onLook?.(payload.id, payload.look);
+        })
+        .on('broadcast', { event: 'c' }, ({ payload }) => {
+          if (known.has(payload.id)) onChat?.(payload.id, payload.t);
         });
 
       return new Promise((resolve, reject) => {
@@ -50,7 +71,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
         channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             clearTimeout(timeout);
-            await channel.track({ name: me.name, look: me.look });
+            if (!listening) await channel.track({ name: self.name, look: self.look });
             resolve();
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             clearTimeout(timeout);
@@ -65,10 +86,22 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     sendEmote(e) {
       channel?.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
     },
+    sendChat(t) {
+      channel?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
+    },
     sendLook(look) {
       self = { ...self, look };
       channel?.send({ type: 'broadcast', event: 'l', payload: { id: self.id, look } });
-      channel?.track({ name: self.name, look }); // so newcomers see it too
+      if (!listening) channel?.track({ name: self.name, look }); // so newcomers see it too
+    },
+    setListenOnly(on) {
+      if (on === listening) return;
+      listening = on;
+      if (on) channel?.untrack();
+      else channel?.track({ name: self.name, look: self.look });
+    },
+    updateSelf(me) {
+      self = me;
     },
     disconnect() {
       if (channel) client.removeChannel(channel);

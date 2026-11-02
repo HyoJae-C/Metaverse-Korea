@@ -5,20 +5,25 @@ import {
 import { REGION_NAMES } from './i18n/strings.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor } from './core/look-editor.js';
+import { createLookEditor, saveLook } from './core/look-editor.js';
+import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
-import { createNet } from './net/index.js';
+import { createAreaNet } from './net/area.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, EXIT, ROOM } from './core/interior.js';
+import { buildInterior } from './core/interior.js';
+import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
-import { Music } from './core/music.js';
+import { Music, Sfx } from './core/music.js';
+import { BikeStations } from './core/bikes.js';
+import { Wallet, demoAd } from './core/wallet.js';
+import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -96,7 +101,9 @@ $('back-btn').onclick = () => {
 const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
   .then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const storesPromise = optionalJson('stores.json');
+const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
+const bikesPromise = optionalJson('bikes.json');
 
 await new Promise((resolve) => {
   $('start-btn').onclick = resolve;
@@ -106,7 +113,7 @@ await new Promise((resolve) => {
     if (e.key === 'Enter' && !e.isComposing) resolve();
   };
 });
-const myLook = editor.getLook();
+let myLook = editor.getLook();
 editor.dispose();
 $('start-btn').disabled = true;
 $('status').textContent = t('loading');
@@ -152,12 +159,15 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings);
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
-const storeData = (await storesPromise)?.stores || [];
+const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 const routeLine = new RouteLine(scene);
+const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
+// Passers-by: two strolling around each meeting zone.
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -238,6 +248,7 @@ const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
+const BIKE = 16; // bike share: faster than running, no stamina
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
@@ -251,7 +262,14 @@ const input = new Input(canvas, $('joystick'));
 $('hud').hidden = false;
 $('start').hidden = true;
 $('joystick').hidden = !input.isTouch;
+// Settings sheet: music, sign translation and language live here.
+$('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
+$('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+$('settings-panel').onclick = (e) => {
+  if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
+};
 $('lang-btn').onclick = () => {
+  $('settings-panel').hidden = true;
   $('lang-overlay').hidden = false;
 };
 $('lang-overlay').onclick = (e) => {
@@ -268,10 +286,34 @@ const refreshHelp = () => {
   $('help-text').textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
 };
 refreshHelp();
-$('help-ok').onclick = () => {
+const dismissHelp = () => {
+  if ($('help').hidden) return;
   $('help').hidden = true;
   try { localStorage.setItem('mk.helpSeen', '1'); } catch { /* ignore */ }
 };
+$('help-ok').onclick = dismissHelp;
+// Running stamina (see config.stamina*).
+const stamina = { v: 1, rest: 0, tired: false };
+const staminaEl = document.getElementById('stamina');
+const staminaFill = document.getElementById('stamina-fill');
+function updateStamina(dt, wantsRun, moving) {
+  if (config.staminaUnlimited) return wantsRun;
+  const running = wantsRun && moving && !stamina.tired;
+  if (running) {
+    stamina.v = Math.max(0, stamina.v - dt / config.staminaMax);
+    stamina.rest = 0;
+    if (stamina.v === 0) stamina.tired = true;
+  } else {
+    stamina.rest += dt;
+    if (stamina.rest > config.staminaDelay) stamina.v = Math.min(1, stamina.v + (dt * config.staminaRegen) / config.staminaMax);
+    if (stamina.tired && stamina.v >= config.staminaResume) stamina.tired = false;
+  }
+  staminaEl.hidden = stamina.v >= 1;
+  staminaFill.style.transform = `scaleX(${stamina.v})`;
+  staminaEl.classList.toggle('tired', stamina.tired);
+  return running;
+}
+let walkedFor = 0; // the hint closes by itself once the player has walked a bit
 clearTimeout(helpTimer);
 
 // Street name: shown in its original (Korean) form, with a translate toggle.
@@ -348,8 +390,12 @@ let currentLook = myLook;
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
-async function joinRoom(room, roomScene) {
+// Street rooms are split into cells (see net/area.js); a shop is one room.
+let joinToken = 0;
+async function joinRoom(room, roomScene, area = null) {
+  const token = ++joinToken;
   net?.disconnect();
+  net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
   others = new RemotePlayers(roomScene, $('labels'));
   refreshOnline();
@@ -362,34 +408,151 @@ async function joinRoom(room, roomScene) {
       if (em) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
     onLook: (id, look) => others.setLook(id, look),
+    onChat: (id, raw) => {
+      if (!config.chatEnabled) return;
+      const text = cleanChat(raw);
+      const name = text && others.chat(id, text);
+      if (name) addChatLine(name, text);
+    },
   };
   try {
-    const n = await createNet(config.netProvider, handlers, config.net);
-    await n.connect({ room, self: { id: myId, name: nickname, look: currentLook } });
+    const n = await createAreaNet(config.netProvider, handlers, config.net, {
+      room, self: { id: myId, name: nickname, look: currentLook },
+      cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
+    });
+    if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
   } catch (err) {
     // Keep playing solo if the realtime service is unreachable.
     console.warn('Multiplayer unavailable:', err);
-    net = SOLO;
+    if (token === joinToken) net = SOLO;
   }
+}
+// Leave multiplayer (e.g. inside your own home).
+function goSolo(roomScene) {
+  joinToken++;
+  net?.disconnect();
+  net = SOLO;
+  for (const id of [...others.players.keys()]) others.leave(id);
+  others = new RemotePlayers(roomScene, $('labels'));
+  refreshOnline();
 }
 net = SOLO;
-joinRoom(roomId, scene);
+joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
+// Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
+// send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
 const emoteBar = $('emotes');
-for (const pack of ownedPacks()) {
-  for (const em of pack.emotes) {
-    const b = document.createElement('button');
-    b.textContent = em.emoji;
-    b.setAttribute('aria-label', em.id);
-    b.onclick = () => {
-      if (em.anim === 'wave') me.wave();
-      showBubble(myLabel, $('labels'), em.emoji);
-      net.sendEmote(em.id);
-    };
-    emoteBar.appendChild(b);
-  }
+const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
+function sendEmote(em) {
+  if (em.anim) me.play(em.anim);
+  showBubble(myLabel, $('labels'), em.emoji);
+  net.sendEmote(em.id);
 }
+const petals = emoteList.map((em, i) => {
+  const b = document.createElement('button');
+  b.textContent = em.emoji;
+  b.setAttribute('aria-label', em.id);
+  // Fan out in a quarter circle above and to the left of the main button.
+  // Rings of 3, 4 and 5 petals so up to 12 fit without overlapping.
+  const ring = i < 3 ? 0 : i < 7 ? 1 : 2;
+  const start = [0, 3, 7][ring];
+  const n = Math.min([3, 4, 5][ring], emoteList.length - start);
+  const ang = Math.PI / 2 + (n > 1 ? ((i - start) / (n - 1)) : 0.5) * (Math.PI / 2);
+  const r = [80, 140, 200][ring];
+  b.style.setProperty('--dx', `${Math.cos(ang) * r}px`);
+  b.style.setProperty('--dy', `${-Math.sin(ang) * r}px`);
+  b.onclick = (e) => { e.stopPropagation(); sendEmote(em); closeWheel(); };
+  emoteBar.appendChild(b);
+  return b;
+});
+let wheelOpen = false, dragHot = null, dragStart = null;
+function openWheel() { wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open'); }
+function closeWheel() {
+  wheelOpen = false; emoteBar.hidden = true; $('emote-wheel').classList.remove('open');
+  petals.forEach((p) => p.classList.remove('hot'));
+  dragHot = null;
+}
+const mainBtn = $('emote-main');
+mainBtn.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  mainBtn.setPointerCapture(e.pointerId);
+  dragStart = { x: e.clientX, y: e.clientY, wasOpen: wheelOpen, moved: false };
+  openWheel();
+});
+mainBtn.addEventListener('pointermove', (e) => {
+  if (!dragStart) return;
+  if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 12) dragStart.moved = true;
+  dragHot = null;
+  let best = 44;
+  for (const p of petals) {
+    const r = p.getBoundingClientRect();
+    const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+    if (d < best) { best = d; dragHot = p; }
+  }
+  petals.forEach((p) => p.classList.toggle('hot', p === dragHot));
+});
+const endDrag = () => {
+  if (!dragStart) return;
+  const { moved, wasOpen } = dragStart;
+  dragStart = null;
+  if (dragHot) { sendEmote(emoteList[petals.indexOf(dragHot)]); closeWheel(); }
+  else if (moved || wasOpen) closeWheel(); // dragged off, or tapped again to close
+  // a plain tap leaves the wheel open for tapping a petal
+};
+mainBtn.addEventListener('pointerup', endDrag);
+mainBtn.addEventListener('pointercancel', () => { dragStart = null; closeWheel(); });
+addEventListener('pointerdown', (e) => { if (wheelOpen && !e.target.closest('#emote-wheel')) closeWheel(); });
+addEventListener('keydown', (e) => {
+  if (e.target instanceof HTMLInputElement) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
+});
+
+// Text chat: a speech bubble over your head and a short log (last 6 lines,
+// fading out). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
+const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
+let lastChatAt = 0, chatNoticeShown = false;
+const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
+function addChatLine(name, text, kind = '') {
+  const line = document.createElement('div');
+  line.className = 'chat-line ' + kind;
+  const b = document.createElement('b');
+  b.textContent = name;
+  line.append(b, document.createTextNode(' ' + text));
+  chatLog.append(line);
+  while (chatLog.children.length > 6) chatLog.firstChild.remove();
+  setTimeout(() => line.classList.add('old'), 15000);
+}
+function openChat() {
+  chatBar.hidden = false;
+  input.keys.clear();
+  chatInput.focus();
+  if (!chatNoticeShown) { chatNoticeShown = true; addChatLine('ℹ️', t('chat.notice'), 'note'); }
+}
+function closeChat() { chatBar.hidden = true; chatInput.blur(); }
+$('chat-btn').hidden = !config.chatEnabled;
+$('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
+chatBar.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const text = cleanChat(chatInput.value);
+  const now = performance.now() / 1000;
+  if (!text || now - lastChatAt < config.chatCooldown) return;
+  lastChatAt = now;
+  chatInput.value = '';
+  showBubble(myLabel, $('labels'), text, 6000, 'chat');
+  addChatLine(nickname, text, 'mine');
+  net.sendChat?.(text);
+  if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
+});
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.isComposing) e.preventDefault(); // Korean/Japanese IME: finish the word first
+  if (e.key === 'Escape') closeChat();
+});
+addEventListener('keydown', (e) => {
+  if (!config.chatEnabled || e.target instanceof HTMLInputElement) return;
+  if (e.code === 'KeyT' || e.code === 'Slash') { e.preventDefault(); openChat(); }
+});
 
 
 // ---------- Stores, zones, map, guide ----------
@@ -416,6 +579,7 @@ function setLook(look) {
   me = createCharacter(look);
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
+  me.setBike(riding);
   old.parent?.remove(old);
   activeScene.add(me.root);
   net.sendLook?.(look);
@@ -437,7 +601,20 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 }
 
 const interiorCache = new Map();
+let clerk = null; // the clerk NPC in the shop you're in
+// Bike share: rent at a station, get off anywhere (the bike goes back by itself).
+let riding = false;
+function setRiding(on) {
+  if (riding === on) return;
+  riding = on;
+  me.setBike(on);
+  sendTimer = 0;
+  action = null;
+}
+
 function enterStore(item) {
+  setRiding(false);
+  sfx.doorbell(); // ding-dong
   const store = item.store;
   let built = interiorCache.get(store.id);
   if (!built) {
@@ -451,16 +628,35 @@ function enterStore(item) {
   activeCollision = built.collision;
   cam.dist = 7;
   cam.pitch = 0.7;
-  moveMeTo(built.scene, EXIT.x, EXIT.z - 1.4, Math.PI);
+  moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   document.body.classList.add('in-store');
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
-  joinRoom(`${roomId}-${store.id}`, built.scene);
+  if (built.clerk && !built.clerkNpc) {
+    built.clerkNpc = makeNpc($('labels'), t('npc.clerk'));
+    built.clerkNpc.ch.root.position.set(built.clerk.x, 0, built.clerk.z);
+    built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
+    built.scene.add(built.clerkNpc.ch.root);
+  }
+  clerk = built.clerkNpc || null;
+  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), PHRASES.welcome[0]), 600);
+  npcs.setVisible(false);
+  if (store.category === 'home') {
+    goSolo(built.scene); // your home is private for now
+    openHome(store, built);
+  } else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
 function leaveStore() {
   if (mode !== 'store') return;
+  standUp();
+  closeHome();
+  closeHatWorkshop(false);
+  if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
+  clerk = null;
+  npcs.setVisible(true);
+  sfx.doorbell();
   const it = interior.front;
   mode = 'street';
   activeScene = scene;
@@ -477,7 +673,7 @@ function leaveStore() {
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(roomId, scene);
+  joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 }
 
 // Translate signs (storefronts and zone boards) into the chosen language.
@@ -493,6 +689,17 @@ $('signs-btn').onclick = () => {
   applySigns();
 };
 onLanguageChange(() => { if (signsTranslated) applySigns(); });
+
+// Sound effects (on by default; remembered on this device).
+const sfx = new Sfx();
+try { sfx.on = localStorage.getItem('mk.sfx') !== '0'; } catch { /* ignore */ }
+$('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
+$('sfx-btn').onclick = () => {
+  sfx.on = !sfx.on;
+  $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
+  try { localStorage.setItem('mk.sfx', sfx.on ? '1' : '0'); } catch { /* ignore */ }
+  if (sfx.on) sfx.doorbell(); // preview
+};
 
 // Background music (off by default; the choice is remembered on this device).
 const music = new Music();
@@ -571,6 +778,8 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyM') $('map-btn').click();
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
+    else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
+    else if (wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
 });
@@ -588,14 +797,250 @@ function updateZoneLine(z) {
 }
 onLanguageChange(() => updateZoneLine(currentZone));
 
+
+// Home decorating: place furniture from a catalogue, then walk up to a piece
+// to rotate, move or remove it. Saved in this browser only (for now).
+const MAX_PIECES = 60;
+let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece }
+const homeKey = (id) => 'mk.home.' + id;
+function loadDecor(id) {
+  try {
+    const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
+    return Array.isArray(a)
+      ? a.filter((i) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite)).slice(0, MAX_PIECES)
+      : [];
+  } catch { return []; }
+}
+function saveDecor() {
+  const r = (v) => Math.round(v * 100) / 100;
+  try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry) })))); } catch { /* storage blocked */ }
+}
+function rebuildDecor() {
+  decor.group.clear();
+  for (const it of decor.items) {
+    const g = buildFurniture(it.id);
+    g.position.set(it.x, 0, it.z);
+    g.rotation.y = it.ry;
+    decor.group.add(g);
+  }
+  const extra = decor.items.map(furnitureCollider).filter(Boolean);
+  interior.collision = activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
+  interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
+    const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
+    const out = furnitureById(it.id).size[1] / 2 + 0.55;
+    return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
+  });
+  saveDecor();
+}
+function openHome(store, built) {
+  if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
+  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null };
+  rebuildDecor();
+  $('decor-btn').hidden = false;
+}
+function closeHome() {
+  if (!decor) return;
+  setDecorating(false);
+  $('decor-btn').hidden = true;
+  decor = null;
+}
+function setDecorating(on) {
+  decor.editing = on;
+  $('decor-bar').hidden = !on;
+  $('decor-btn').classList.toggle('on', on);
+  if (!on) closePiece();
+  action = null; // refresh the action button
+}
+// A spot about 1.6 m in front of the player, inside the room.
+function spotInFront() {
+  const p = me.root.position, ry = me.root.rotation.y;
+  const { w, d } = interior.room;
+  return [
+    THREE.MathUtils.clamp(p.x + Math.sin(ry) * 1.6, -w / 2 + 0.8, w / 2 - 0.8),
+    THREE.MathUtils.clamp(p.z + Math.cos(ry) * 1.6, -d / 2 + 0.8, d / 2 - 1.8),
+    ry + Math.PI, // facing you
+  ];
+}
+function placePiece(id) {
+  if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
+  const [x, z, ry] = spotInFront();
+  decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
+  rebuildDecor();
+}
+function nearestPiece(p) {
+  let best = null, bd = 1.6;
+  for (const it of decor.items) {
+    const d = Math.hypot(p.x - it.x, p.z - it.z) - Math.max(...furnitureById(it.id).size) / 2;
+    if (d < bd) { bd = d; best = it; }
+  }
+  return best;
+}
+function openPiece(it) {
+  decor.piece = it;
+  $('piece-name').textContent = furnitureById(it.id).emoji + ' ' + localName(furnitureById(it.id).name, getLanguage());
+  $('piece-bar').hidden = false;
+}
+function closePiece() {
+  if (decor) decor.piece = null;
+  $('piece-bar').hidden = true;
+}
+$('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
+$('decor-grid').append(...FURNITURE.map((f) => {
+  const b = document.createElement('button');
+  b.className = 'decor-item';
+  b.innerHTML = `<span>${f.emoji}</span><small></small>`;
+  b.dataset.id = f.id;
+  b.onclick = () => placePiece(f.id);
+  return b;
+}));
+function labelDecor() {
+  for (const b of $('decor-grid').children) b.querySelector('small').textContent = localName(furnitureById(b.dataset.id).name, getLanguage());
+}
+labelDecor();
+onLanguageChange(labelDecor);
+$('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
+$('piece-move').onclick = () => {
+  if (!decor?.piece) return;
+  [decor.piece.x, decor.piece.z] = spotInFront();
+  rebuildDecor();
+  closePiece();
+  action = null;
+};
+$('piece-remove').onclick = () => {
+  if (!decor?.piece) return;
+  decor.items.splice(decor.items.indexOf(decor.piece), 1);
+  rebuildDecor();
+  closePiece();
+  action = null;
+};
+$('piece-close').onclick = closePiece;
+
+
+// Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
+const wallet = new Wallet(config.rewardedAd);
+const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+function refreshWallet() {
+  $('coin-count').textContent = wallet.coins;
+  $('wallet-coins').textContent = wallet.coins;
+  $('ad-label').textContent = t('wallet.watch', { n: config.rewardedAd.reward });
+  const left = wallet.adsLeft();
+  $('ad-left').textContent = t('wallet.left', { n: left });
+  $('ad-btn').disabled = left <= 0;
+}
+wallet.onChange(refreshWallet);
+onLanguageChange(refreshWallet);
+refreshWallet();
+$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); };
+$('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
+$('ad-btn').onclick = async () => {
+  $('ad-btn').disabled = true;
+  const music0 = music.on;
+  if (music0) music.setOn(false); // a real ad has its own sound
+  const n = await wallet.watchAd(showAd);
+  if (music0) music.setOn(true);
+  refreshWallet();
+  if (n) shop.toast(t('wallet.earned', { n }));
+};
+
+// Hat workshop: pick a shape, colour and embroidered patch; the hat shows on
+// your character while you edit, and Save keeps it (others see it too).
+let hatDraft = null, savedCam = null;
+const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+function hatButtons(rowId, items, render, onPick) {
+  const row = $(rowId);
+  row.replaceChildren(...items.map((id) => {
+    const b = document.createElement('button');
+    b.className = 'hat-opt';
+    b.dataset.id = id ?? '';
+    render(b, id);
+    b.onclick = () => { onPick(id); refreshHat(); };
+    return b;
+  }));
+}
+function refreshHat() {
+  for (const [row, key] of [['hat-shapes', 'head'], ['hat-colors', 'hatColor'], ['hat-patches', 'hatPatch']]) {
+    for (const b of $(row).children) b.classList.toggle('on', (hatDraft[key] ?? '') === b.dataset.id);
+  }
+  setLook(hatDraft);
+}
+function openHatWorkshop() {
+  hatDraft = { ...myLook, head: HAT_SHAPES.includes(myLook.head) ? myLook.head : 'bucket', hatColor: myLook.hatColor || 'butter' };
+  hatButtons('hat-shapes', HAT_SHAPES, (b, id) => { b.textContent = accessory('head', id).emoji; b.title = id; }, (id) => { hatDraft.head = id; });
+  hatButtons('hat-colors', Object.keys(PALETTES.hat), (b, id) => { b.style.background = hex(PALETTES.hat[id]); b.classList.add('swatch'); b.title = id; }, (id) => { hatDraft.hatColor = id; });
+  hatButtons('hat-patches', [null, ...Object.keys(PATCHES)], (b, id) => { b.textContent = id ? PATCHES[id] : '∅'; }, (id) => { hatDraft.hatPatch = id; });
+  $('hat-panel').hidden = false;
+  savedCam = { ...cam };
+  Object.assign(cam, { dist: 2.6, pitch: 0.12, yaw: me.root.rotation.y }); // close-up, facing you
+  refreshHat();
+}
+function closeHatWorkshop(save) {
+  if (!hatDraft) return;
+  $('hat-panel').hidden = true;
+  if (save) {
+    myLook = { ...hatDraft };
+    saveLook(myLook);
+    shop.toast(t('hat.saved'));
+  }
+  setLook(myLook);
+  hatDraft = null;
+  if (savedCam) Object.assign(cam, savedCam);
+}
+$('hat-save').onclick = () => closeHatWorkshop(true);
+$('hat-cancel').onclick = () => closeHatWorkshop(false);
+// Café seats. Sitting snaps you onto the chair facing the table; moving or
+// tapping Stand puts you back beside it. Others see it through the "sit" flag.
+let seated = null;
+function nearestSeat(p) {
+  let best = null, bd = 1.3;
+  for (const s of interior?.seats || []) {
+    const d = Math.hypot(p.x - s.x, p.z - s.z);
+    if (d < bd && !others.seatTaken?.(s.x, s.z)) { bd = d; best = s; }
+  }
+  return best;
+}
+function sitDown(seat) {
+  seated = seat;
+  me.root.position.set(seat.x, 0, seat.z);
+  me.root.rotation.y = seat.ry;
+  cam.yaw = seat.ry + Math.PI;
+  sendTimer = 0; // tell others right away
+}
+function standUp() {
+  if (!seated) return;
+  me.root.position.set(seated.stand[0], 0, seated.stand[1]);
+  seated = null;
+  sendTimer = 0;
+}
+
 function updateAction(p, tSec) {
   let next = null;
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
+    else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
+    else {
+      const n = npcs.nearest(p.x, p.z);
+      if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => npcs.greet(n, p.x, p.z) };
+    }
   } else {
-    if (Math.hypot(p.x - EXIT.x, p.z - EXIT.z) < 1.6) {
-      next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
+    const ex = interior.exit;
+    const seat = !seated && nearestSeat(p);
+    if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
+      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
+    } else if (decor?.editing) {
+      // decorate mode: walk up to a piece to rotate, move or remove it
+      const it = nearestPiece(p);
+      if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
+      else closePiece();
+    } else if (seated) {
+      next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
+    } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); say(clerk, $('labels'), PHRASES.shop[Math.floor(Math.random() * PHRASES.shop.length)]); } };
+    } else if (seat) {
+      next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
     } else {
       let best = null, bestD = 1.9;
       for (const pr of interior.products) {
@@ -681,9 +1126,13 @@ renderer.setAnimationLoop(() => {
   const { x: mx, y: my } = input.move;
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
-  if (mag > 0.05) {
+  if (seated && mag > 0.3) standUp();
+  const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
+  if (mag > 0.05 && !seated) {
+    walkedFor += dt;
+    if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (input.run ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward
     const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -693,18 +1142,19 @@ renderer.setAnimationLoop(() => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      p.x = THREE.MathUtils.clamp(nx, -ROOM.w / 2 + 0.5, ROOM.w / 2 - 0.5);
-      p.z = THREE.MathUtils.clamp(nz, -ROOM.d / 2 + 0.5, ROOM.d / 2 - 0.5);
+      const { w: rw, d: rd } = interior.room;
+      p.x = THREE.MathUtils.clamp(nx, -rw / 2 + 0.5, rw / 2 - 0.5);
+      p.z = THREE.MathUtils.clamp(nz, -rd / 2 + 0.5, rd / 2 - 0.5);
     }
     const targetRy = Math.atan2(dx, dz);
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
   } else {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
-  me.animate(dt, speed01 < 0.05 ? 0 : speed01);
+  me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated);
 
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
@@ -733,7 +1183,7 @@ renderer.setAnimationLoop(() => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   const cy = 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
-  camera.lookAt(p.x, 1.1, p.z);
+  camera.lookAt(p.x, hatDraft ? 0.05 : 1.1, p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -750,6 +1200,7 @@ renderer.setAnimationLoop(() => {
       updateZoneLine(z);
     }
     updateGuide(p, dt);
+    net.update?.(p.x, p.z); // switch area cells as we walk
   }
   routeLine.update(dt);
   updateAction(p, tSec);
@@ -779,17 +1230,21 @@ renderer.setAnimationLoop(() => {
       ry: Math.round(me.root.rotation.y * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s;
+    if (seated) st.sit = 1;
+    if (riding) st.bk = 1;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
-    sendTimer = 1 / (input.run ? config.netSendRateRun : config.netSendRate);
+    sendTimer = 1 / (running ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
+  if (mode === 'street') npcs.update(dt, camera, w, h);
+  else if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
   tmp.set(p.x, 1.55, p.z).project(camera);
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
@@ -805,6 +1260,16 @@ if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),
+    seats: () => interior?.seats?.length ?? 0,
+    sit: (i) => sitDown(interior.seats[i]),
+    seated: () => !!seated,
+    decor: () => decor?.items.length ?? -1,
+    bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
+    riding: () => riding,
+    place: (x, z) => me.root.position.set(x, 0, z),
+    look: () => currentLook,
+    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
+    peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),

@@ -169,3 +169,38 @@ export class Music {
   _snare(t) { this._noise(t, 0.07, 0.18, 'bandpass', 1800); }
   _hat(t, vol) { this._noise(t, vol, 0.05, 'highpass', 7000); }
 }
+
+// Short sound effects, sharing the music's audio setup.
+export class Sfx {
+  constructor() { this.ctx = null; this.on = true; }
+  _ctx() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      this.ctx = new AC();
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  }
+  // Two-tone shop door chime ("ding-dong").
+  doorbell() {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.02;
+    [[1318.5, 0], [1046.5, 0.32]].forEach(([f, dt]) => {
+      for (const [mult, vol] of [[1, 0.22], [2.76, 0.05], [5.4, 0.02]]) { // bell partials
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.type = 'sine';
+        o.frequency.value = f * mult;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(vol, t + dt + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 1.1);
+        o.connect(g).connect(c.destination);
+        o.start(t + dt);
+        o.stop(t + dt + 1.2);
+      }
+    });
+  }
+}

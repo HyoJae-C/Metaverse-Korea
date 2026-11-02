@@ -22,7 +22,18 @@ export const PALETTES = {
   skin: {
     light: 0xffe6d2, fair: 0xffd9bd, warm: 0xe8b48f, tan: 0xc98e66, deep: 0x8d5b3f,
   },
+  // Hat colours from the hat workshop.
+  hat: {
+    butter: 0xffd36e, sky: 0x86b8f0, coral: 0xff9b85, mint: 0x8fd3c7, lilac: 0xb9a6f0,
+    black: 0x2b2230, cream: 0xf6f1e7, denim: 0x5b6c8f, olive: 0x6f8a55, berry: 0xc2456b,
+  },
 };
+
+// Embroidered patches for workshop hats (drawn as a small badge on the front).
+export const PATCHES = {
+  heart: '♥', star: '★', flower: '✿', smile: '☺', hangul: '한', moon: '☾',
+};
+export const HAT_SHAPES = ['bucket', 'cap', 'beanie', 'beret'];
 
 export const SLOTS = ['head', 'face', 'neck', 'back'];
 
@@ -32,6 +43,7 @@ export const ACCESSORIES = {
     { id: 'cap', emoji: '🧢', color: 0x86b8f0 },
     { id: 'ribbon', emoji: '🎀', color: 0xff9bb3 },
     { id: 'beanie', emoji: '🧶', color: 0xff9b85 },
+    { id: 'beret', emoji: '🎨', color: 0xc2456b },
   ],
   face: [
     { id: 'glasses', emoji: '👓', color: 0x4a3f35 },
@@ -49,6 +61,7 @@ export const ACCESSORIES = {
 export const DEFAULT_LOOK = {
   shirt: 'coral', pants: 'denim', hair: 'espresso', skin: 'fair',
   head: null, face: null, neck: null, back: null,
+  hatColor: null, hatPatch: null, // set in the hat workshop
 };
 
 const pick = (obj) => {
@@ -78,6 +91,8 @@ export function sanitizeLook(raw) {
   for (const s of SLOTS) {
     if (ACCESSORIES[s].some((a) => a.id === raw[s])) look[s] = raw[s];
   }
+  if (typeof raw.hatColor === 'string' && Object.hasOwn(PALETTES.hat, raw.hatColor)) look.hatColor = raw.hatColor;
+  if (typeof raw.hatPatch === 'string' && Object.hasOwn(PATCHES, raw.hatPatch)) look.hatPatch = raw.hatPatch;
   return look;
 }
 

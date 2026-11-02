@@ -17,6 +17,12 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Signs in Korean (or English) with a Translate button to the chosen language
 - Background music: a cozy lo-fi loop generated in the browser (no audio files, no licensing), off by default, 🎵 toggle remembered per device
 
+## Cost guardrails (done)
+
+- Position is sent only while moving (6/s walking, 8/s running) plus a 5 s idle heartbeat
+- Streets are split into 200 m cells: you announce yourself in your cell and listen to the 3×3 around it, so a message only reaches people nearby. Shops are their own rooms
+- Later: cap a cell at about 30 people (open a second channel), and move position sync to a self-run realtime server, keeping Supabase for accounts and data
+
 ## Step 3: Social
 
 - Voice chat **only inside the café**: opt-in, push-to-talk, mute and report
@@ -37,6 +43,10 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Verified place info for real visits (opening hours etc. fact-checked)
 
 ## Later
+- **Teleport and membership**: free forever: walking, running, teleport to the meeting signposts (A–F) and the subway. Label paid features "free during beta" from the start and never take a free feature away later
+- **Taxi**: pick any point on the map and ride there: a short taxi scene (window view, the driver greets you in Korean) and you are dropped off. Normally paid with virtual currency (same wallet as the transit card). Early members get a few free taxi tickets per month for their first 3 months, plus a founder badge. Paid membership: unlimited taxi and "go to a friend"
+- **Stamina**: running drains a stamina bar (about 10 s of running, then it refills while you walk or rest). Walking is always free and unlimited. Later, an "unlimited stamina" pass can be sold (`config.staminaUnlimited` is the hook); never shorten the free bar after launch.
+- **Homes**: step 1 is one apartment and one villa with a private room you decorate (saved in the browser). Next: save rooms on the server and invite friends to visit (needs accounts), more furniture as rewards.
 
 - **Character customisation** (outfits)
 - **Emote shop**: emote packs are data with a `price`; purchases will come from an account service

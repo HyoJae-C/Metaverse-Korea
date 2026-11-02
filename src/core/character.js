@@ -1,8 +1,9 @@
 // Cute chibi (2-heads-tall) character built from simple rounded shapes.
 // Used for the local player and for other players alike.
 import * as THREE from 'three';
+import { makeBike } from './bikes.js';
 
-import { PALETTES, sanitizeLook, accessory } from '../data/appearance.js';
+import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
@@ -91,12 +92,38 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
+  let bike = null, riding = false;
+  let act = null; // current body emote
   return {
     root,
     head,
-    // speed01: 0 idle … 1 running
-    animate(dt, speed01) {
-      if (speed01 > 0.01) {
+    // Show or hide a bike under the character.
+    setBike(on) {
+      if (on && !bike) { bike = makeBike(); root.add(bike); }
+      if (bike) bike.visible = on;
+      riding = on;
+    },
+    // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
+    animate(dt, speed01, sit = false) {
+      if (!riding) body.position.z = 0;
+      if (riding) {
+        // Pedalling: legs turn with speed, hands on the handlebar.
+        phase += dt * 9 * speed01;
+        const k = Math.min(1, dt * 10);
+        legL.rotation.x = -1.1 + Math.sin(phase) * 0.5;
+        legR.rotation.x = -1.1 - Math.sin(phase) * 0.5;
+        armL.rotation.x += (-1.1 - armL.rotation.x) * k;
+        if (waveT <= 0) armR.rotation.x += (-1.1 - armR.rotation.x) * k;
+        body.position.y += (0.42 - body.position.y) * k;
+        body.position.z = -0.22;
+      } else if (sit) {
+        phase = 0;
+        const k = Math.min(1, dt * 10);
+        for (const l of [legL, legR]) l.rotation.x += (-1.45 - l.rotation.x) * k;
+        armL.rotation.x += (-0.5 - armL.rotation.x) * k;
+        if (waveT <= 0) armR.rotation.x += (-0.5 - armR.rotation.x) * k;
+        body.position.y += (0.2 + Math.sin(performance.now() / 700) * 0.006 - body.position.y) * k;
+      } else if (speed01 > 0.01) {
         // Long, bouncy strides: a slower step rate with a wider leg swing.
         phase += dt * (7.5 + 5.5 * speed01);
         const sw = Math.sin(phase) * (0.65 + 0.4 * speed01);
@@ -117,17 +144,106 @@ export function createCharacter(rawLook) {
         armR.rotation.z = 2.6 + Math.sin(waveT * 14) * 0.35;
         if (waveT <= 0) armR.rotation.z = 0;
       }
+      if (act) {
+        act.t += dt;
+        const t = act.t, e = Math.sin(Math.PI * Math.min(1, t / act.dur)); // ease in and out
+        const pose = POSES[act.name];
+        if (t >= act.dur || (speed01 > 0.3 && !riding)) {
+          act = null;
+          armL.rotation.z = armR.rotation.z = 0;
+          head.rotation.set(0, 0, 0);
+          body.rotation.set(0, 0, 0);
+        } else pose({ t, e, armL, armR, head, body });
+      }
     },
     wave() {
       waveT = 1.6;
     },
+    // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
+    play(name) {
+      if (name === 'wave') { waveT = 1.6; return; }
+      if (!POSES[name]) return;
+      act = { name, t: 0, dur: name === 'cry' ? 2.2 : 1.7 };
+    },
   };
+}
+
+// Body emote poses: each sets limb angles for time t (s) with e = 0..1..0.
+// Right arm: +z raises it outward; left arm: -z.
+const POSES = {
+  bow({ e, armL, armR, body }) { // 인사: a polite Korean bow
+    body.rotation.x = 0.5 * e;
+    armL.rotation.x = armR.rotation.x = 0.1;
+  },
+  laugh({ t, e, armL, armR, head, body }) {
+    armL.rotation.x = armR.rotation.x = -0.7 * e;
+    armL.rotation.z = -0.25 * e; armR.rotation.z = 0.25 * e;
+    head.rotation.x = -0.3 * e;
+    body.position.y += Math.abs(Math.sin(t * 18)) * 0.035 * e;
+  },
+  angry({ t, e, armL, armR, body }) {
+    armL.rotation.x = armR.rotation.x = 0.35;
+    armL.rotation.z = -0.6 * e; armR.rotation.z = 0.6 * e; // fists on hips
+    body.rotation.z = Math.sin(t * 28) * 0.07 * e;
+    body.position.y += Math.abs(Math.sin(t * 9)) * 0.04 * e; // stomp
+  },
+  shrug({ e, armL, armR, head, body }) { // 몰라요
+    armL.rotation.x = armR.rotation.x = -0.5 * e;
+    armL.rotation.z = -1.1 * e; armR.rotation.z = 1.1 * e;
+    head.rotation.z = 0.28 * e;
+    body.position.y += 0.03 * e;
+  },
+  cheer({ t, e, armL, armR, body }) {
+    armL.rotation.x = armR.rotation.x = 0;
+    armL.rotation.z = -(2.5 + Math.sin(t * 16) * 0.2) * e;
+    armR.rotation.z = (2.5 + Math.sin(t * 16) * 0.2) * e;
+    body.position.y += Math.abs(Math.sin(t * 9)) * 0.14 * e;
+  },
+  clap({ t, e, armL, armR }) {
+    armL.rotation.x = armR.rotation.x = -1.3 * e;
+    const c = (0.15 + Math.abs(Math.sin(t * 14)) * 0.35) * e;
+    armL.rotation.z = c; armR.rotation.z = -c;
+  },
+  cry({ t, e, armL, armR, head, body }) {
+    armL.rotation.x = armR.rotation.x = -2.3 * e; // hands to the eyes
+    armL.rotation.z = 0.35 * e; armR.rotation.z = -0.35 * e;
+    head.rotation.x = 0.3 * e;
+    body.rotation.z = Math.sin(t * 20) * 0.03 * e;
+  },
+};
+
+const patchMats = {};
+function patchMat(id) {
+  if (patchMats[id]) return patchMats[id];
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fffaf0';
+  g.beginPath(); g.arc(32, 32, 30, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#e0604d'; g.lineWidth = 4; g.setLineDash([5, 4]);
+  g.beginPath(); g.arc(32, 32, 26, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = '#e0604d';
+  g.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(PATCHES[id], 32, 34);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
 function addAccessories(look, head, torso, body) {
   const head1 = accessory('head', look.head);
   if (head1) {
-    const m = mat(head1.color);
+    const m = mat(look.hatColor ? PALETTES.hat[look.hatColor] : head1.color);
+    // Embroidered patch from the hat workshop, placed on the hat's front.
+    const PATCH_AT = { bucket: [0, 0.3, 0.255, -0.25], cap: [0, 0.24, 0.29, -0.45], beanie: [0, 0.16, 0.325, -0.25], beret: [0.0, 0.25, 0.29, -0.6] };
+    if (look.hatPatch && PATCH_AT[head1.id]) {
+      const [px, py, pz, rx] = PATCH_AT[head1.id];
+      const badge = new THREE.Mesh(geo('patch', () => new THREE.CircleGeometry(0.065, 18)), patchMat(look.hatPatch));
+      badge.position.set(px, py, pz);
+      badge.rotation.x = rx;
+      head.add(badge);
+    }
     if (head1.id === 'bucket') {
       const crown = new THREE.Mesh(geo('bucketCrown', () => new THREE.CylinderGeometry(0.22, 0.28, 0.16, 18)), m);
       crown.position.set(0, 0.3, -0.02);
@@ -153,6 +269,14 @@ function addAccessories(look, head, torso, body) {
       const knot = new THREE.Mesh(geo('ribbonKnot', () => new THREE.SphereGeometry(0.04, 8, 6)), m);
       knot.position.set(0.17, 0.25, 0.09);
       head.add(knot);
+    } else if (head1.id === 'beret') {
+      const top = new THREE.Mesh(geo('beret', () => new THREE.SphereGeometry(0.36, 18, 10)), m);
+      top.scale.set(1, 0.32, 1);
+      top.position.set(0.04, 0.26, -0.02);
+      top.rotation.z = -0.18;
+      const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
+      stalk.position.set(0.02, 0.38, -0.02);
+      head.add(top, stalk);
     } else if (head1.id === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);

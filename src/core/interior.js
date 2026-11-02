@@ -2,13 +2,20 @@
 // for each product. Each interior is its own scene.
 import * as THREE from 'three';
 
-export const ROOM = { w: 14, d: 11, h: 4 };
-export const EXIT = { x: 0, z: ROOM.d / 2 - 0.9 };
+// Room sizes (metres). A store picks one with "size" in stores.json.
+export const ROOM_SIZES = {
+  small: { w: 9, d: 8, h: 3.6 },
+  medium: { w: 14, d: 11, h: 4 },
+  large: { w: 22, d: 16, h: 4.6 },
+};
+export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
+export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
+const SEAT_H = 0.38; // chair seat height, sized for the chibi characters
 
 const mats = {};
 const mat = (c, opts) => (mats[c + JSON.stringify(opts || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...opts }));
 
-function floorTexture(base) {
+function floorTexture(base, room) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
@@ -23,7 +30,7 @@ function floorTexture(base) {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(ROOM.w / 3, ROOM.d / 3);
+  t.repeat.set(room.w / 3, room.d / 3);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
@@ -110,21 +117,24 @@ export function productModel(kind, color) {
 
 const HANGING = new Set(['tee', 'jeans', 'scarf']);
 
-// Builds the room. Returns { scene, products: [{ product, mesh, pos }], colliders }.
+// Builds the room. Returns { scene, products: [{ product, mesh, pos }],
+// colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
+  const ROOM = roomOf(store);
+  const EXIT = exitOf(ROOM);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   scene.background = accent.clone().multiplyScalar(0.92);
   scene.add(new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, 0.6));
-  const lamp = new THREE.PointLight(0xffe2b8, 25, 18);
+  const lamp = new THREE.PointLight(0xffe2b8, 25, Math.max(18, ROOM.w * 1.2));
   lamp.position.set(0, ROOM.h - 0.4, 0);
   scene.add(lamp);
 
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : '#d9b48c') }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -167,9 +177,9 @@ export function buildInterior(store) {
   g.fillText(`${store.name.ko} · ${store.name.en}`, 512, 84);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const title = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.25), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-  title.position.set(0, 3.1, -d / 2 + 0.02);
-  scene.add(title);
+  const title = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(8, w - 1), Math.min(8, w - 1) / 6.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  title.position.set(0, h - 0.9, -d / 2 + 0.02);
+  if (store.category !== 'home') scene.add(title);
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -184,10 +194,12 @@ export function buildInterior(store) {
 
   // Product displays along the back and side walls.
   const products = [];
-  const spots = [
-    [-4.5, -4.2, 0], [-1.5, -4.2, 0], [1.5, -4.2, 0], [4.5, -4.2, 0],
-    [-6.2, -1, Math.PI / 2], [6.2, -1, -Math.PI / 2], [-6.2, 2, Math.PI / 2], [6.2, 2, -Math.PI / 2],
-  ];
+  // Back wall first, then the side walls; scaled to the room.
+  const bz = -d / 2 + 1.3, sx = w / 2 - 0.8;
+  const nBack = Math.max(2, Math.min(5, Math.floor((w - 2) / 3)));
+  const spots = [];
+  for (let i = 0; i < nBack; i++) spots.push([(i - (nBack - 1) / 2) * 3, bz, 0]);
+  for (const sz of [-d * 0.1, d * 0.18]) spots.push([-sx, sz, Math.PI / 2], [sx, sz, -Math.PI / 2]);
   store.products.forEach((product, i) => {
     const [x, z, ry] = spots[i % spots.length];
     const stand = new THREE.Group();
@@ -231,20 +243,54 @@ export function buildInterior(store) {
   });
 
   // Category extras.
+  const seats = [];
+  let clerk = null; // where the shop clerk stands (behind the counter)
   if (store.category === 'cafe') {
-    for (const [tx, tz] of [[-3.5, 1.2], [0, 1.6], [3.5, 1.2]]) {
-      box(1.1, 0.06, 1.1, tx, 0.75, tz, '#c98b4f');
-      box(0.12, 0.75, 0.12, tx, 0.37, tz, '#8a5a3a');
-      for (const s of [-1, 1]) box(0.5, 0.45, 0.5, tx + 0.85 * s, 0.22, tz, store.colors.awning);
-      block(tx, tz, 2.4, 1.2);
+    // Tables with a chair on each side, laid out in rows across the middle of
+    // the room (more of them in a large café), keeping the door path clear.
+    const cols = Math.max(1, Math.floor((w - 4) / 3.6));
+    const rows = Math.max(1, Math.floor((d - 5.6) / 2.6));
+    const z0 = bz + 2.4;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const tx = (c - (cols - 1) / 2) * 3.6;
+        const tz = z0 + r * 2.6;
+        if (Math.abs(tx) < 1.5 && tz > d / 2 - 3.2) continue; // door path
+        box(0.9, 0.05, 0.9, tx, 0.62, tz, '#c98b4f');
+        box(0.1, 0.62, 0.1, tx, 0.31, tz, '#8a5a3a');
+        for (const s of [-1, 1]) {
+          const cx = tx + 0.8 * s;
+          box(0.42, 0.06, 0.42, cx, SEAT_H - 0.03, tz, store.colors.awning); // seat
+          box(0.08, 0.5, 0.42, cx + 0.2 * s, SEAT_H + 0.22, tz, store.colors.awning); // back
+          for (const lx of [-0.16, 0.16]) for (const lz of [-0.16, 0.16]) box(0.05, SEAT_H - 0.06, 0.05, cx + lx, (SEAT_H - 0.06) / 2, tz + lz, '#8a5a3a');
+          // Sit facing the table; stand up beside the chair, outside the collider.
+          seats.push({ x: cx + 0.04 * s, z: tz, ry: s > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [tx + 1.55 * s, tz] });
+        }
+        block(tx, tz, 2.3, 0.95);
+      }
+    }
+    // Counter by the side wall.
+    box(2.4, 1.0, 0.8, sx - 1.4, 0.5, d / 2 - 2.2, '#fffaf0');
+    box(0.3, 0.35, 0.3, sx - 0.8, 1.17, d / 2 - 2.2, '#4a3f35'); // coffee machine
+    block(sx - 1.4, d / 2 - 2.2, 2.4, 0.8);
+    clerk = { x: sx - 1.4, z: d / 2 - 1.45, ry: Math.PI };
+  } else if (store.category === 'home') {
+    // Empty home: big windows on the back wall; the player decorates it.
+    for (const wx of [-w / 4, w / 4]) {
+      box(2.6, 1.6, 0.08, wx, 1.9, -d / 2 + 0.05, '#fffaf0');
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), new THREE.MeshBasicMaterial({ color: '#bfe3f5' }));
+      pane.position.set(wx, 1.9, -d / 2 + 0.1);
+      scene.add(pane);
     }
   } else {
-    box(2.2, 1.0, 0.8, 4.2, 0.5, 3.2, '#fffaf0'); // counter
-    box(0.35, 0.25, 0.25, 4.6, 1.12, 3.2, '#4a3f35'); // till
-    block(4.2, 3.2, 2.2, 0.8);
+    const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
+    box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0'); // counter
+    box(0.35, 0.25, 0.25, cx + 0.4, 1.12, cz, '#4a3f35'); // till
+    block(cx, cz, 2.2, 0.8);
+    clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
   }
   // Plants in the corners.
-  for (const [px, pz] of [[-6.3, -4.8], [6.3, -4.8], [-6.3, 4.6]]) {
+  if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);
@@ -259,5 +305,6 @@ export function buildInterior(store) {
   block(-w / 2 + 0.2 - t / 2, 0, t, d);
   block(w / 2 - 0.2 + t / 2, 0, t, d);
 
-  return { scene, products, colliders };
+  if (clerk) block(clerk.x, clerk.z, 0.6, 0.5); // don't walk through the clerk
+  return { scene, products, colliders, seats, clerk, room: ROOM, exit: EXIT };
 }

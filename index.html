@@ -24,13 +24,13 @@
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
-        <button class="chip" id="lang-btn" aria-label="Language">🌐 <span data-i18n="lang.change"></span></button>
+        <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
+        <button class="chip icon-chip" id="settings-btn" aria-label="Settings">⚙️</button>
       </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
+        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
         <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
-        <button class="tool" id="signs-btn" aria-pressed="false"><span>🔤</span><small data-i18n="hud.signs"></small></button>
-        <button class="tool" id="music-btn" aria-pressed="false"><span>🎵</span><small data-i18n="hud.music"></small></button>
       </div>
       <div class="guide" id="guide" hidden>
         <svg class="guide-arrow" id="guide-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg>
@@ -46,6 +46,45 @@
           <span class="sample" data-i18n="shop.sample"></span>
         </div>
         <button class="chip" id="store-exit">🚪 <span data-i18n="shop.exit"></span></button>
+      </div>
+      <button class="chip decor-btn" id="decor-btn" hidden>🛋️ <span data-i18n="home.decorate"></span></button>
+      <div class="decor-bar" id="decor-bar" hidden>
+        <p class="fine" data-i18n="home.hint"></p>
+        <div class="decor-grid" id="decor-grid"></div>
+      </div>
+      <div class="piece-bar" id="piece-bar" hidden>
+        <strong id="piece-name"></strong>
+        <button class="chip" id="piece-rotate">🔄 <span data-i18n="home.rotate"></span></button>
+        <button class="chip" id="piece-move">📍 <span data-i18n="home.move"></span></button>
+        <button class="chip" id="piece-remove">🗑️ <span data-i18n="home.remove"></span></button>
+        <button class="sheet-x" id="piece-close" aria-label="Close">✕</button>
+      </div>
+      <div class="sheet" id="wallet-panel" hidden>
+        <button class="sheet-x" id="wallet-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">🪙 <span data-i18n="wallet.title"></span></strong>
+        <p class="wallet-balance"><b id="wallet-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+        <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
+        <p class="fine" id="ad-left"></p>
+        <p class="fine" data-i18n="wallet.note"></p>
+      </div>
+      <div class="ad-overlay" id="ad-overlay" hidden>
+        <div class="ad-box">
+          <small data-i18n="wallet.adDemo"></small>
+          <strong>🇰🇷 Metaverse Korea</strong>
+          <span class="ad-count" id="ad-count">5</span>
+          <button class="chip" id="ad-close" data-i18n="wallet.skip"></button>
+        </div>
+      </div>
+      <div class="sheet hat-panel" id="hat-panel" hidden>
+        <strong>🧢 <span data-i18n="hat.title"></span></strong>
+        <p class="fine" data-i18n="hat.hint"></p>
+        <div class="hat-row" id="hat-shapes"></div>
+        <div class="hat-row" id="hat-colors"></div>
+        <div class="hat-row" id="hat-patches"></div>
+        <div class="hat-actions">
+          <button class="chip" id="hat-cancel" data-i18n="hat.cancel"></button>
+          <button class="primary" id="hat-save" data-i18n="hat.save"></button>
+        </div>
       </div>
       <div class="sheet" id="product-panel" hidden>
         <button class="sheet-x" id="product-close" aria-label="Close">✕</button>
@@ -66,7 +105,17 @@
       </div>
       <button class="chip revert" id="revert-look" hidden>↩️ <span data-i18n="shop.revert"></span></button>
       <div class="toast" id="toast" hidden></div>
-      <div class="emotes" id="emotes"></div>
+      <!-- Emotes: one button; press and drag to a petal, or tap to open and tap one. -->
+      <div class="emote-wheel" id="emote-wheel">
+        <div class="emote-petals" id="emotes" hidden></div>
+        <button class="emote-main" id="emote-main" aria-label="Emotes">😊</button>
+      </div>
+      <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <form class="chat-bar" id="chat-bar" hidden>
+        <input id="chat-input" type="text" autocomplete="off" enterkeyhint="send" maxlength="80" data-i18n-placeholder="chat.placeholder" />
+        <button class="primary" type="submit" data-i18n="chat.send"></button>
+      </form>
+      <div class="stamina" id="stamina" hidden aria-hidden="true"><div class="stamina-fill" id="stamina-fill"></div></div>
       <div class="joystick" id="joystick" hidden><div class="knob"></div></div>
       <div class="help" id="help" hidden>
         <span id="help-text"></span>
@@ -140,6 +189,26 @@
           <div class="map-list"></div>
         </div>
         <p class="disclaimer map-disclaimer" data-i18n="app.disclaimer"></p>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="overlay dim" id="settings-panel" hidden>
+      <div class="panel small settings-card">
+        <h2 data-i18n="settings.title"></h2>
+        <button class="setting-row" id="music-btn" aria-pressed="false">
+          <span>🎵</span><span class="setting-label" data-i18n="hud.music"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="sfx-btn" aria-pressed="true">
+          <span>🔔</span><span class="setting-label" data-i18n="settings.sfx"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="signs-btn" aria-pressed="false">
+          <span>🔤</span><span class="setting-label" data-i18n="settings.signs"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="lang-btn">
+          <span>🌐</span><span class="setting-label" data-i18n="lang.change"></span><span class="setting-go">›</span>
+        </button>
+        <button class="primary" id="settings-close" data-i18n="settings.done"></button>
       </div>
     </div>
 

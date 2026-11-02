@@ -51,6 +51,9 @@ export function applyTranslations(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
     el.textContent = t(el.dataset.i18n);
   });
+  root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
 }
 
 export { LANGUAGES };

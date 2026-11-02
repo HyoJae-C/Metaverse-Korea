@@ -50,3 +50,11 @@ test('weather helpers', async () => {
   assert.equal(daylight(0), 0);
   assert.equal(localHour(9, new Date('2026-11-01T03:00:00Z')), 12);
 });
+
+test('tags apartments and low-rise homes', async () => {
+  const { buildingKind } = await import('../scripts/lib/osm-to-map.mjs');
+  assert.equal(buildingKind({ building: 'apartments' }), 'apt');
+  assert.equal(buildingKind({ building: 'house' }), 'villa');
+  assert.equal(buildingKind({ building: 'residential' }), 'villa');
+  assert.equal(buildingKind({ building: 'yes' }), null);
+});

@@ -14,4 +14,23 @@ export const config = {
   netSendRate: 6,
   netSendRateRun: 8,
   netIdleInterval: 5,
+  // Street multiplayer is split into square cells of this size (metres). You
+  // see players in your cell and the 8 around it, i.e. at least this far.
+  netCellSize: 200,
+  // Running uses stamina: a full bar lasts staminaMax seconds of running and
+  // refills at staminaRegen per second after staminaDelay seconds of rest.
+  // Once empty you walk until it is back to staminaResume (0..1).
+  // staminaUnlimited is the hook for a future "unlimited stamina" pass.
+  staminaMax: 10,
+  staminaRegen: 2.5,
+  staminaDelay: 1,
+  staminaResume: 0.3,
+  staminaUnlimited: false,
+  // Text chat (speech bubbles + a short log). On while the world is small;
+  // can be limited to some places later (e.g. only the café).
+  chatEnabled: true,
+  chatMaxLength: 80,
+  chatCooldown: 1.2, // seconds between messages
+  // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
+  rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
 };
