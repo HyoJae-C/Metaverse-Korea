@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { makeBike } from './bikes.js';
 
-import { PALETTES, sanitizeLook, accessory } from '../data/appearance.js';
+import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
@@ -150,10 +150,38 @@ export function createCharacter(rawLook) {
   };
 }
 
+const patchMats = {};
+function patchMat(id) {
+  if (patchMats[id]) return patchMats[id];
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fffaf0';
+  g.beginPath(); g.arc(32, 32, 30, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#e0604d'; g.lineWidth = 4; g.setLineDash([5, 4]);
+  g.beginPath(); g.arc(32, 32, 26, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = '#e0604d';
+  g.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(PATCHES[id], 32, 34);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+}
+
 function addAccessories(look, head, torso, body) {
   const head1 = accessory('head', look.head);
   if (head1) {
-    const m = mat(head1.color);
+    const m = mat(look.hatColor ? PALETTES.hat[look.hatColor] : head1.color);
+    // Embroidered patch from the hat workshop, placed on the hat's front.
+    const PATCH_AT = { bucket: [0, 0.3, 0.255, -0.25], cap: [0, 0.24, 0.29, -0.45], beanie: [0, 0.16, 0.325, -0.25], beret: [0.0, 0.25, 0.29, -0.6] };
+    if (look.hatPatch && PATCH_AT[head1.id]) {
+      const [px, py, pz, rx] = PATCH_AT[head1.id];
+      const badge = new THREE.Mesh(geo('patch', () => new THREE.CircleGeometry(0.065, 18)), patchMat(look.hatPatch));
+      badge.position.set(px, py, pz);
+      badge.rotation.x = rx;
+      head.add(badge);
+    }
     if (head1.id === 'bucket') {
       const crown = new THREE.Mesh(geo('bucketCrown', () => new THREE.CylinderGeometry(0.22, 0.28, 0.16, 18)), m);
       crown.position.set(0, 0.3, -0.02);
@@ -179,6 +207,14 @@ function addAccessories(look, head, torso, body) {
       const knot = new THREE.Mesh(geo('ribbonKnot', () => new THREE.SphereGeometry(0.04, 8, 6)), m);
       knot.position.set(0.17, 0.25, 0.09);
       head.add(knot);
+    } else if (head1.id === 'beret') {
+      const top = new THREE.Mesh(geo('beret', () => new THREE.SphereGeometry(0.36, 18, 10)), m);
+      top.scale.set(1, 0.32, 1);
+      top.position.set(0.04, 0.26, -0.02);
+      top.rotation.z = -0.18;
+      const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
+      stalk.position.set(0.02, 0.38, -0.02);
+      head.add(top, stalk);
     } else if (head1.id === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);

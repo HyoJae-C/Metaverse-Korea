@@ -532,3 +532,22 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 /* NPCs */
 .nametag.npc { background: #fff6e6; color: #8a6d5a; }
 .bubble.npc-say { white-space: pre-line; font-size: 13px; }
+
+/* Hat workshop */
+.hat-panel { display: grid; gap: 10px; }
+.hat-panel .fine { margin: 0; }
+.hat-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.hat-opt {
+  min-width: 44px; height: 44px; border-radius: 14px; background: #fff;
+  font-size: 22px; font-weight: 800; color: #e0604d; border: 3px solid transparent;
+}
+.hat-opt.swatch { min-width: 36px; width: 36px; height: 36px; border-radius: 50%; }
+.hat-opt.on { border-color: var(--accent); }
+.hat-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.hat-actions .primary { width: auto; margin: 0; padding: 10px 18px; }
+@media (max-height: 820px) {
+  .hat-panel { gap: 8px; padding: 14px; }
+  .hat-panel .fine { display: none; }
+  .hat-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .hat-opt { flex: 0 0 auto; }
+}

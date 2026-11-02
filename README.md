@@ -28,6 +28,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
+- Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
 
 ## Run locally
 

@@ -118,6 +118,17 @@
       ]
     },
     {
+      "id": "hat-atelier",
+      "category": "workshop",
+      "workshop": "hat",
+      "size": "small",
+      "name": { "ko": "성수 모자 공방", "en": "Seongsu Hat Atelier" },
+      "tagline": { "en": "Make your own hat: shape, colour and an embroidered patch", "ko": "모양, 색, 자수 패치까지 나만의 모자 만들기" },
+      "anchor": { "lat": 37.54285, "lon": 127.0544 },
+      "colors": { "sign": "#5a4a8a", "awning": "#d9cff5", "accent": "#f7f3ff" },
+      "products": []
+    },
+    {
       "id": "haneul-drip",
       "category": "cafe",
       "size": "small",
