@@ -1737,12 +1737,15 @@ renderer.setAnimationLoop(() => {
   const p = me.root.position;
   if (riding === 3) {
     // On someone's back seat: ride along behind them, pedalling at their pace.
-    const front = others.rootOf(tandemDriver);
+    const front = others.predicted(tandemDriver);
     if (!front) tandemGone(tandemDriver);
     else {
       const ox = p.x, oz = p.z;
       const [sx, sz] = seatPosition(front, others.kindOf(tandemDriver), mySeat);
-      p.set(sx, 0, sz);
+      // Follow the driver's live (predicted) spot; light smoothing hides the
+      // small corrections when a new update arrives.
+      const k = 1 - Math.exp(-dt * 25);
+      p.set(ox + (sx - ox) * k, 0, oz + (sz - oz) * k);
       me.root.rotation.y = front.rotation.y;
       speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
     }
@@ -1891,7 +1894,8 @@ renderer.setAnimationLoop(() => {
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
-    sendTimer = 1 / (running ? config.netSendRateRun : config.netSendRate);
+    // Carrying passengers: send more often so their seats keep up.
+    sendTimer = 1 / (passengers.size ? 12 : running ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;

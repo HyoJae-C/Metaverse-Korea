@@ -57,6 +57,16 @@ export class RemotePlayers {
     const p = this.players.get(id);
     if (!p) return;
     if (!p.target) p.ch.root.position.set(st.x, 0, st.z);
+    // Estimate their velocity from the last two updates, so we can draw them
+    // where they are now rather than where they were when they sent it.
+    const now = performance.now();
+    p.vx = p.vz = 0;
+    if (p.target && p.lastAt && st.s > 0.01) {
+      const dt = (now - p.lastAt) / 1000;
+      const vx = (st.x - p.target.x) / dt, vz = (st.z - p.target.z) / dt;
+      if (dt > 0.03 && dt < 1 && Math.hypot(vx, vz) < 40) { p.vx = vx; p.vz = vz; } // not a teleport
+    }
+    p.lastAt = now;
     p.target = st;
   }
 
@@ -103,6 +113,14 @@ export class RemotePlayers {
 
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
+  // Where someone is right now, predicted from their last update and speed
+  // (no smoothing delay): used to keep a passenger glued to the driver.
+  predicted(id) {
+    const p = this.players.get(id);
+    if (!p?.target) return null;
+    const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000);
+    return { position: { x: p.target.x + (p.vx || 0) * ahead, z: p.target.z + (p.vz || 0) * ahead }, rotation: { y: p.ch.root.rotation.y } };
+  }
 
   emote(id, anim, emoji) {
     const p = this.players.get(id);
@@ -117,8 +135,9 @@ export class RemotePlayers {
       const r = p.ch.root;
       if (p.target) {
         const k = 1 - Math.exp(-dt * 10);
-        r.position.x += (p.target.x - r.position.x) * k;
-        r.position.z += (p.target.z - r.position.z) * k;
+        const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
+        r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
+        r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
