@@ -24,6 +24,7 @@
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
+        <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
         <button class="chip icon-chip" id="settings-btn" aria-label="Settings">⚙️</button>
       </div>
       <div class="tools">
@@ -57,6 +58,22 @@
         <button class="chip" id="piece-move">📍 <span data-i18n="home.move"></span></button>
         <button class="chip" id="piece-remove">🗑️ <span data-i18n="home.remove"></span></button>
         <button class="sheet-x" id="piece-close" aria-label="Close">✕</button>
+      </div>
+      <div class="sheet" id="wallet-panel" hidden>
+        <button class="sheet-x" id="wallet-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">🪙 <span data-i18n="wallet.title"></span></strong>
+        <p class="wallet-balance"><b id="wallet-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+        <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
+        <p class="fine" id="ad-left"></p>
+        <p class="fine" data-i18n="wallet.note"></p>
+      </div>
+      <div class="ad-overlay" id="ad-overlay" hidden>
+        <div class="ad-box">
+          <small data-i18n="wallet.adDemo"></small>
+          <strong>🇰🇷 Metaverse Korea</strong>
+          <span class="ad-count" id="ad-count">5</span>
+          <button class="chip" id="ad-close" data-i18n="wallet.skip"></button>
+        </div>
       </div>
       <div class="sheet" id="product-panel" hidden>
         <button class="sheet-x" id="product-close" aria-label="Close">✕</button>

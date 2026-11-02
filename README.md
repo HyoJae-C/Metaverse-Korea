@@ -26,6 +26,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
 - Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
+- Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 
 ## Run locally
 

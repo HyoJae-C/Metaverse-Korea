@@ -21,6 +21,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { BikeStations } from './core/bikes.js';
+import { Wallet, demoAd } from './core/wallet.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -893,6 +894,32 @@ $('piece-remove').onclick = () => {
 };
 $('piece-close').onclick = closePiece;
 
+
+// Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
+const wallet = new Wallet(config.rewardedAd);
+const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+function refreshWallet() {
+  $('coin-count').textContent = wallet.coins;
+  $('wallet-coins').textContent = wallet.coins;
+  $('ad-label').textContent = t('wallet.watch', { n: config.rewardedAd.reward });
+  const left = wallet.adsLeft();
+  $('ad-left').textContent = t('wallet.left', { n: left });
+  $('ad-btn').disabled = left <= 0;
+}
+wallet.onChange(refreshWallet);
+onLanguageChange(refreshWallet);
+refreshWallet();
+$('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); };
+$('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
+$('ad-btn').onclick = async () => {
+  $('ad-btn').disabled = true;
+  const music0 = music.on;
+  if (music0) music.setOn(false); // a real ad has its own sound
+  const n = await wallet.watchAd(showAd);
+  if (music0) music.setOn(true);
+  refreshWallet();
+  if (n) shop.toast(t('wallet.earned', { n }));
+};
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;

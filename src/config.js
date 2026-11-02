@@ -31,4 +31,6 @@ export const config = {
   chatEnabled: true,
   chatMaxLength: 80,
   chatCooldown: 1.2, // seconds between messages
+  // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
+  rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
 };

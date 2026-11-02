@@ -508,3 +508,23 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   background: var(--panel); border-radius: 22px; box-shadow: var(--shadow); z-index: 5;
 }
 .piece-bar strong { width: 100%; text-align: center; }
+
+/* Coins and the (demo) rewarded ad */
+.coin-chip { border: 0; cursor: pointer; color: inherit; }
+.wallet-title { font-size: 18px; }
+.wallet-balance { font-size: 15px; margin: 8px 0 12px; }
+.wallet-balance b { font-size: 28px; }
+#wallet-panel .primary { width: 100%; }
+#wallet-panel .primary:disabled { opacity: 0.5; }
+.ad-overlay {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
+  background: rgba(20, 18, 16, 0.75);
+}
+.ad-box {
+  display: grid; gap: 10px; justify-items: center; text-align: center;
+  width: min(340px, calc(100vw - 32px)); padding: 28px 20px; border-radius: 24px;
+  background: linear-gradient(160deg, #fff1d6, #ffd2c4);
+}
+.ad-box small { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #8a6d5a; }
+.ad-box strong { font-size: 22px; }
+.ad-count { font-size: 44px; font-weight: 800; color: var(--accent); }
