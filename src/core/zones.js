@@ -1,6 +1,7 @@
 // Meeting zones: big lettered signposts players can agree to meet at
 // ("see you at B!"), visible above the rooftops.
 import * as THREE from 'three';
+import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
 import { latLonToLocal } from './storefronts.js';
 
@@ -76,7 +77,7 @@ export class Zones {
   constructor(scene, zones, map, center, collision) {
     this.items = [];
     for (const zone of zones) {
-      const [ax, az] = latLonToLocal(center, zone.anchor.lat, zone.anchor.lon);
+      const [ax, az] = placeOf(zone, center, latLonToLocal);
       let [x, z] = snapToRoadside(map.roads, ax, az);
       if (collision?.blocked(x, z, 0.5)) [x, z] = [ax, az];
       const group = new THREE.Group();

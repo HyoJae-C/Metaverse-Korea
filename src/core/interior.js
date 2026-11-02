@@ -490,5 +490,18 @@ export function buildInterior(store) {
     block(tx + 0.3, tz, 2.1, 0.8);
     turntable = { x: tx, z: tz + 0.9, platter };
   }
-  return { scene, products, colliders, seats, clerk, turntable, room: ROOM, exit: EXIT };
+  // K-POP café: a big TV on the back wall (the video plays in the corner of
+  // the screen; this is the room's look).
+  let tv = null;
+  if (store.kpop) {
+    const tvz = -d / 2 + 0.3;
+    box(5.2, 3, 0.2, 0, 2.3, tvz, '#1b1b20');
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(4.9, 2.7), new THREE.MeshBasicMaterial({ color: store.colors.awning }));
+    glow.position.set(0, 2.3, tvz + 0.11);
+    scene.add(glow);
+    for (const sx of [-3.2, 3.2]) box(0.6, 1.1, 0.5, sx, 0.55, tvz + 0.4, '#2b2b30'); // speakers
+    block(0, tvz + 0.3, 7, 0.9);
+    tv = { x: 0, z: tvz + 1.6, screen: glow };
+  }
+  return { scene, products, colliders, seats, clerk, turntable, tv, room: ROOM, exit: EXIT };
 }

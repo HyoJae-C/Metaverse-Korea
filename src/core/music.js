@@ -7,6 +7,31 @@ import { trackById } from '../data/tracks.js';
 
 const hz = (m) => 440 * 2 ** ((m - 69) / 12);
 
+// iPhones mute Web Audio when the ring/silent switch is on, unless the page
+// says it plays media. Newer Safari has navigator.audioSession; older ones
+// switch over once an <audio> element is playing, so a silent one loops.
+let unlocked = false;
+export function playThroughSilentSwitch() {
+  if (unlocked) return;
+  unlocked = true;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* not supported */ }
+  if (!/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
+  try {
+    // 0.1 s of silence (8 kHz, 8-bit mono WAV).
+    const n = 800, b = new Uint8Array(44 + n);
+    const v = new DataView(b.buffer);
+    const str = (o, t) => [...t].forEach((c, i) => { b[o + i] = c.charCodeAt(0); });
+    str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 8000, true);
+    v.setUint16(32, 1, true); v.setUint16(34, 8, true); str(36, 'data'); v.setUint32(40, n, true);
+    b.fill(128, 44);
+    const a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' })));
+    a.loop = true;
+    a.setAttribute('playsinline', '');
+    a.play().catch(() => { unlocked = false; });
+  } catch { unlocked = false; }
+}
+
 export class Music {
   constructor() {
     this.ctx = null;
@@ -57,6 +82,7 @@ export class Music {
     this.master.gain.cancelScheduledValues(t);
     this.master.gain.setValueAtTime(this.master.gain.value, t);
     if (on) {
+      playThroughSilentSwitch();
       await this.ctx.resume();
       this.master.gain.linearRampToValueAtTime(0.32, t + 1.5);
       if (!this.timer) {
@@ -230,7 +256,7 @@ export class Sfx {
       if (!AC) return null;
       this.ctx = new AC();
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume(); }
     return this.ctx;
   }
   // Two-tone shop door chime ("ding-dong").
