@@ -344,6 +344,22 @@ function addAccessories(look, head, torso, body) {
       const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
       stalk.position.set(0.02, 0.38, -0.02);
       head.add(top, stalk);
+    } else if (head1.id === 'towel') {
+      // 양머리: a towel band round the head with a rolled "sheep ear" each side.
+      const cap = new THREE.Mesh(
+        geo('towelCap', () => new THREE.SphereGeometry(0.35, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42)), m);
+      cap.position.set(0, 0.04, -0.01);
+      head.add(cap);
+      for (const sgn of [-1, 1]) {
+        const roll = new THREE.Mesh(geo('towelRoll', () => new THREE.CylinderGeometry(0.1, 0.1, 0.16, 14)), m);
+        roll.rotation.z = Math.PI / 2;
+        roll.position.set(sgn * 0.3, 0.24, -0.02);
+        head.add(roll);
+        const swirl = new THREE.Mesh(geo('towelSwirl', () => new THREE.CircleGeometry(0.07, 14)), mat(0xffffff));
+        swirl.rotation.y = sgn * Math.PI / 2;
+        swirl.position.set(sgn * 0.385, 0.24, -0.02);
+        head.add(swirl);
+      }
     } else if (head1.id === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);

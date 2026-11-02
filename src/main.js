@@ -12,6 +12,8 @@ import { buildLandmarks } from './core/landmarks.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint } from './ui/info-ui.js';
+import { SaunaUI } from './ui/sauna-ui.js';
+import { SaunaLog } from './core/sauna.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -1087,7 +1089,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1670,6 +1672,23 @@ setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
+// Jjimjilbang: hot kiln and ice room, and the sheep towel.
+const saunaUi = new SaunaUI({
+  root: $('sauna-panel'),
+  wallet,
+  log: new SaunaLog(),
+  onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
+  onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
+  towel: {
+    on: () => myLook.head === 'towel',
+    toggle: () => {
+      myLook = { ...myLook, head: myLook.head === 'towel' ? null : 'towel' };
+      if (!myLook.head) delete myLook.head;
+      saveLook(myLook);
+      setLook(myLook);
+    },
+  },
+});
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -2133,6 +2152,9 @@ function updateAction(p, tSec) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
       next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
+      const st = interior.stations.sauna.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2);
+      next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (interior.duck && Math.hypot(p.x - interior.duck.x, p.z - interior.duck.z) < 2.4) {

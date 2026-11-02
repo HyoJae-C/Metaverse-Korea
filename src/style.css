@@ -906,3 +906,9 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 }
 .info-hint p { margin: 0 0 8px; font-weight: 700; }
 .info-hint .order-actions { flex-wrap: wrap; }
+
+/* Jjimjilbang meter */
+.sauna-meter { height: 22px; border-radius: 999px; background: #f1e6da; overflow: hidden; }
+.sauna-meter.ice { background: #e3f1fb; }
+.sauna-fill { height: 100%; width: 0; border-radius: inherit; transition: width 0.25s linear; background: linear-gradient(90deg, #ffb36b, #ff5a3d); }
+.sauna-meter.ice .sauna-fill { background: linear-gradient(90deg, #bfe6ff, #4f9fe0); }

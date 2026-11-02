@@ -63,6 +63,7 @@ export const ACCESSORIES = {
     { id: 'ribbon', emoji: '🎀', color: 0xff9bb3 },
     { id: 'beanie', emoji: '🧶', color: 0xff9b85 },
     { id: 'beret', emoji: '🎨', color: 0xc2456b },
+    { id: 'towel', emoji: '🐑', color: 0xf7c6d0 }, // 양머리 수건 from the jjimjilbang
   ],
   face: [
     { id: 'glasses', emoji: '👓', color: 0x4a3f35 },

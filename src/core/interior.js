@@ -277,7 +277,7 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
-  const stations = {}; // minigame spots: { karaoke|photo|claw: [{ x, z }] }
+  const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -476,6 +476,38 @@ export function buildInterior(store) {
         block(mx, mz, 1.3, 1.1);
         stations.claw.push({ x: mx, z: mz + 1.1 });
       }
+    } else if (store.workshop === 'sauna') {
+      // 찜질방: a dome-shaped hot kiln (불가마) on the left, an ice room on
+      // the right, and warm wooden platforms with mats in the middle.
+      const kx = -w / 2 + 3, kz = -d * 0.05;
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat('#9a6a45'));
+      dome.position.set(kx, 0, kz);
+      scene.add(dome);
+      box(0.3, 1.7, 1.2, kx + 2.25, 0.85, kz, '#3a2216'); // doorway
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.4), new THREE.MeshBasicMaterial({ color: '#ff8a3d' }));
+      glow.position.set(kx + 2.42, 0.75, kz);
+      glow.rotation.y = Math.PI / 2;
+      scene.add(glow);
+      const heat = new THREE.PointLight(0xff8a3d, 6, 6);
+      heat.position.set(kx + 3, 1, kz);
+      scene.add(heat);
+      block(kx, kz, 4.8, 4.8);
+      const ix = w / 2 - 2.4;
+      box(3.4, 2.8, 3.6, ix, 1.4, kz, '#dff4ff'); // ice room
+      box(0.1, 1.9, 1.2, ix - 1.72, 0.95, kz, '#7fb8e0'); // its door
+      for (let i = 0; i < 6; i++) box(0.12, 0.35 + (i % 3) * 0.12, 0.12, ix - 1.6 + i * 0.6, 2.62 - (i % 3) * 0.06, kz - 1.85, '#ffffff'); // icicles
+      block(ix, kz, 3.5, 3.7);
+      stations.sauna = [{ x: kx + 3.2, z: kz, kind: 'hot' }, { x: ix - 2.5, z: kz, kind: 'ice' }];
+      // Warm platforms (평상) with mats and wooden block pillows (목침).
+      const mats = ['#f2a7a0', '#a7d8c0', '#f6d28b', '#b9c4f0'];
+      [-4.5, -1.5, 1.5].forEach((px, i) => {
+        const pz = d * 0.22;
+        box(2, 0.42, 1.1, px, 0.21, pz, '#c9935f');
+        box(1.9, 0.05, 1.0, px, 0.445, pz, mats[i % mats.length]);
+        box(0.4, 0.14, 0.22, px, 0.53, pz - 0.38, '#8a5a3a');
+        for (const o of [-0.5, 0.5]) seats.push({ x: px + o, z: pz, ry: 0, stand: [px + o, pz + 1.1] });
+        block(px, pz, 2.1, 1.2);
+      });
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];

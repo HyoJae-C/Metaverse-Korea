@@ -424,6 +424,16 @@
       "tagline": {"en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色"},
       "colors": {"sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff"},
       "products": []
+    },
+    {
+      "id": "onsaem-jjimjil", "category": "play", "workshop": "sauna", "size": "large", "at": [-38, 114],
+      "name": {"en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕"},
+      "tagline": {"en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋"},
+      "colors": {"sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6"},
+      "products": [
+        {"id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠."}},
+        {"id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": {"en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个"}, "desc": {"en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요."}}
+      ]
     }
   ]
 }
