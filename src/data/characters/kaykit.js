@@ -19,6 +19,9 @@ export default {
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
   hide: /Cape|Hat|Helmet/i, // any leftover non-body meshes
   bones: { head: 'head', chest: 'chest' },
+  // Cells of the 8×4 colour atlas (column, row from the top) that the hair
+  // salon and the clinic repaint: hair (and beards), skin, and eyes.
+  atlas: { cols: 8, rows: 4, hair: [1, 0], skin: [0, 0], eyes: [2, 0] },
   // Our action names -> clip names in the pack.
   anims: {
     idle: 'Idle', walk: 'Walking_A', run: 'Running_A', sit: 'Sit_Chair_Idle', ride: 'Sit_Chair_Idle',

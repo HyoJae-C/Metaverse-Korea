@@ -22,6 +22,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
+import { BeautyUI } from './ui/beauty-ui.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
@@ -1017,6 +1018,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
+  beautyUi.close();
   leaveMusicCafe();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
@@ -1492,9 +1494,41 @@ const ramenUi = new RamenUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
 });
+// Hair salon (dye) and cosmetic clinic (eye colour, skin tone, smaller head):
+// try options on with a close-up camera, pay coins to keep them.
+const beautyUi = new BeautyUI({
+  root: $('beauty-panel'),
+  onPreview: (look) => setLook(look),
+  onSave: (look, cost) => {
+    if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
+    myLook = { ...look };
+    saveLook(myLook);
+    setLook(myLook);
+    endBeautyCam();
+    me.play('cheer');
+    shop.toast(t('beauty.saved'));
+    clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
+    return true;
+  },
+  onCancel: () => { setLook(myLook); endBeautyCam(); },
+});
+let beautyCam = null;
+function openBeauty(kind) {
+  clerk?.ch.wave();
+  beautyCam = { ...cam };
+  Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
+  me.root.rotation.y = cam.yaw; // turn to face the camera (a mirror)
+  lastSent = null;
+  beautyUi.show(kind, myLook);
+}
+function endBeautyCam() {
+  if (beautyCam) Object.assign(cam, beautyCam);
+  beautyCam = null;
+}
 const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 function openFishing() {
-  me.root.rotation.y = Math.PI; // face the river
+  me.root.rotation.y = Math.PI; // face the river (north)…
+  cam.yaw = 0; // …with the camera behind you
   fishingUi.show();
 }
 function openMarket() {
@@ -1764,6 +1798,9 @@ function updateAction(p, tSec) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
     } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
       next = { key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() };
+    } else if ((interior.store.workshop === 'salon' || interior.store.workshop === 'clinic') && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      const kind = interior.store.workshop;
+      next = { key: kind, label: (kind === 'salon' ? '💇 ' : '✨ ') + t(kind + '.open'), run: () => openBeauty(kind) };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
@@ -1991,7 +2028,7 @@ renderer.setAnimationLoop(() => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   const cy = 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
-  camera.lookAt(p.x, hatDraft ? 0.05 : 1.1, p.z); // workshop: character sits above the panel
+  camera.lookAt(p.x, hatDraft || beautyCam ? 0.05 : 1.1, p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -2097,6 +2134,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     heldKind: () => heldKind(),
+    look: () => ({ ...currentLook }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
     fishing: () => fishingUi.state,
