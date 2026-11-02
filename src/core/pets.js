@@ -16,8 +16,10 @@ function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {
 }
 
 // A chibi animal; front is +z. Returns { root, body, head, tail, legs }.
-function makeAnimal(kind, color, accent, scale = 1) {
+export function makeAnimal(kind, color, accent, scale = 1) {
   if (kind === 'raccoon') return makeRaccoon(color, accent);
+  if (kind === 'hamster' || kind === 'guineapig' || kind === 'chinchilla') return makeRodent(kind, color, accent, scale);
+  if (kind === 'monkey') return makeMonkey(color, accent, scale);
   const root = new THREE.Group();
   const body = new THREE.Group();
   body.scale.setScalar(scale);
@@ -89,7 +91,91 @@ function makeRaccoon(color, accent) {
   return { root, body, head, tail, legs };
 }
 
+// Small round pets: hamster, guinea pig and chinchilla. Tiny legs, a round
+// body; chinchillas get big round ears and a fluffy tail.
+function makeRodent(kind, color, accent, scale = 1) {
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  body.scale.setScalar(scale);
+  root.add(body);
+  const pig = kind === 'guineapig', chin = kind === 'chinchilla';
+  part(body, sphere(0.2), color, 0, 0.17, 0, 1, 0.82, pig ? 1.45 : 1.15);
+  part(body, sphere(0.15), accent, 0, 0.13, 0.08, 0.95, 0.7, 1); // pale tummy
+  const head = new THREE.Group();
+  head.position.set(0, 0.25, pig ? 0.25 : 0.19);
+  body.add(head);
+  part(head, sphere(0.13), color, 0, 0, 0, 1.05, 0.95, 1);
+  if (!pig) for (const s of [-1, 1]) part(head, sphere(0.06, 8, 6), accent, 0.07 * s, -0.04, 0.07, 1, 0.8, 0.8); // cheek pouches
+  for (const s of [-1, 1]) {
+    const er = chin ? 0.075 : 0.04;
+    const ear = part(head, sphere(er, 8, 6), chin ? '#d8c9c9' : color, 0.08 * s, 0.11, -0.02, 1, 1, 0.45);
+    ear.rotation.z = 0.3 * s;
+    part(head, sphere(0.022, 6, 6), '#1e1a1c', 0.06 * s, 0.03, 0.105); // eyes
+  }
+  part(head, sphere(0.018, 6, 6), '#e48a9a', 0, -0.01, 0.13); // nose
+  const legs = [];
+  for (const [x, z] of [[-0.09, 0.1], [0.09, 0.1], [-0.09, -0.1], [0.09, -0.1]]) {
+    legs.push(part(body, new THREE.CylinderGeometry(0.03, 0.035, 0.07, 6), '#f1c9c4', x, 0.035, z));
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.18, pig ? -0.27 : -0.22);
+  body.add(tail);
+  if (chin) {
+    const t = part(tail, sphere(0.07, 8, 6), color, 0, 0.08, -0.05, 0.8, 1.6, 0.8); // fluffy tail
+    t.rotation.x = -0.6;
+  } else if (!pig) part(tail, sphere(0.025, 6, 6), color, 0, 0, 0); // tiny stub
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(0.22 * scale, 14).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
+  blob.position.y = 0.01;
+  root.add(blob);
+  return { root, body, head, tail, legs };
+}
+
+// A little monkey: round head with a pale face, round ears, long curled tail.
+function makeMonkey(color, accent, scale = 1) {
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  body.scale.setScalar(scale);
+  root.add(body);
+  part(body, sphere(0.17), color, 0, 0.32, 0, 1, 1.15, 0.95);
+  part(body, sphere(0.12), accent, 0, 0.3, 0.07, 0.9, 1, 0.8); // tummy
+  const head = new THREE.Group();
+  head.position.set(0, 0.6, 0.04);
+  body.add(head);
+  part(head, sphere(0.17), color, 0, 0, 0);
+  part(head, sphere(0.12, 10, 8), accent, 0, -0.03, 0.08, 1.2, 1, 0.8); // face
+  for (const s of [-1, 1]) {
+    part(head, sphere(0.06, 8, 6), accent, 0.17 * s, 0.02, 0, 0.6, 1, 1); // ears
+    part(head, sphere(0.024, 6, 6), '#1e1a1c', 0.055 * s, 0.03, 0.17); // eyes
+  }
+  part(head, sphere(0.05, 8, 6), accent, 0, -0.07, 0.15, 1.3, 0.8, 0.8); // muzzle
+  const legs = [];
+  for (const [x, z, y, len] of [[-0.09, 0.03, 0.1, 0.2], [0.09, 0.03, 0.1, 0.2], [-0.2, 0.05, 0.3, 0.26], [0.2, 0.05, 0.3, 0.26]]) {
+    legs.push(part(body, new THREE.CylinderGeometry(0.035, 0.04, len, 6), color, x, y, z)); // legs, then arms
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.22, -0.15);
+  body.add(tail);
+  for (let i = 0; i < 6; i++) { // a tail that curls up at the end
+    const a = i * 0.45;
+    part(tail, sphere(0.03, 6, 6), color, 0, 0.02 + Math.sin(a) * 0.12 + i * 0.03, -0.04 - Math.cos(a) * 0.06 - i * 0.03);
+  }
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(0.25 * scale, 14).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
+  blob.position.y = 0.01;
+  root.add(blob);
+  return { root, body, head, tail, legs };
+}
+
 const BREEDS = {
+  hamsters: [
+    { kind: 'hamster', name: '햄찌', rom: 'Haemjji', color: '#f0b46a', accent: '#fff6ea', scale: 0.85 }, // golden
+    { kind: 'hamster', name: '쿠키', rom: 'Cookie', color: '#c99a6b', accent: '#fff3e6', scale: 0.80 },
+    { kind: 'hamster', name: '눈송이', rom: 'Nunsongi', color: '#f8f6f2', accent: '#ffffff', scale: 0.80 }, // winter white
+    { kind: 'hamster', name: '참깨', rom: 'Chamkkae', color: '#9a9590', accent: '#f3efe9', scale: 0.80 }, // grey dwarf
+    { kind: 'hamster', name: '호떡', rom: 'Hotteok', color: '#d9884a', accent: '#fff1de', scale: 0.90 },
+    { kind: 'hamster', name: '모찌', rom: 'Mochi', color: '#f3d9c4', accent: '#ffffff', scale: 0.85 },
+  ],
   cats: [
     { kind: 'cat', name: '나비', rom: 'Nabi', color: '#f2b36b', accent: '#fff4e6' }, // orange tabby
     { kind: 'cat', name: '까망이', rom: 'Kkamang', color: '#3b3436', accent: '#fff4e6' },
@@ -197,7 +283,7 @@ export class Pets {
         const d = Math.hypot(dx, dz);
         if (d < 0.25 || p.t <= 0) p.t = 0;
         else {
-          const sp = (p.kind === 'dog' ? 1.3 : p.kind === 'raccoon' ? 1.1 : 0.9) * dt;
+          const sp = (p.kind === 'dog' ? 1.3 : p.kind === 'raccoon' ? 1.1 : p.kind === 'hamster' ? 0.7 : 0.9) * dt;
           const nx = r.position.x + (dx / d) * sp, nz = r.position.z + (dz / d) * sp;
           if (this.blocked(nx, nz, this.radius * 0.85)) p.t = 0; // bumped into furniture: do something else
           else { r.position.x = nx; r.position.z = nz; moving = true; }
@@ -228,7 +314,7 @@ export class Pets {
   }
 }
 
-function turn(r, ry, dt) {
+export function turn(r, ry, dt) {
   let d = ry - r.rotation.y;
   d = Math.atan2(Math.sin(d), Math.cos(d));
   r.rotation.y += d * Math.min(1, dt * 6);

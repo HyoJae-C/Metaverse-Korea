@@ -285,6 +285,35 @@
         { "id": "lp-yuja-tea", "model": "cup", "color": "#f2c14e", "price": 5500, "name": { "en": "Yuja tea", "ko": "유자차", "ja": "柚子茶", "zh": "柚子茶" }, "desc": { "en": "Sweet citron tea, a Korean winter favourite." } },
         { "id": "lp-misutgaru", "model": "cup", "color": "#d8c3a0", "price": 5500, "name": { "en": "Misutgaru latte", "ko": "미숫가루 라테", "ja": "ミスッカルラテ", "zh": "谷物拿铁" }, "desc": { "en": "A nutty drink of roasted grain powder and milk." } }
       ]
+    },
+    {
+      "id": "haemjji-hamster-cafe",
+      "category": "cafe",
+      "pets": "hamsters",
+      "size": "small",
+      "name": { "ko": "햄찌네 햄스터 카페", "en": "Haemjji Hamster Café", "ja": "ヘムジのハムスターカフェ", "zh": "仓鼠咖啡馆" },
+      "tagline": { "en": "Tiny hamsters scurry around the floor. Walk up and say hi gently.", "ko": "작은 햄스터들이 바닥을 쪼르르 돌아다녀요. 살살 다가가 인사해요.", "ja": "小さなハムスターがちょこちょこ歩き回ります。そっと近づいて挨拶しよう。", "zh": "小仓鼠在地上跑来跑去，轻轻走过去打个招呼吧。" },
+      "anchor": { "lat": 37.5441, "lon": 127.0538 },
+      "colors": { "sign": "#d9884a", "awning": "#ffe2b8", "accent": "#fff8ee" },
+      "products": [
+        { "id": "hamster-latte", "model": "cup", "color": "#f0d2a8", "price": 5500, "name": { "en": "Honey milk latte", "ko": "꿀 우유 라테", "ja": "ハニーミルクラテ", "zh": "蜂蜜牛奶拿铁" }, "desc": { "en": "Warm milk with honey, as soft as a hamster." } },
+        { "id": "seed-cookie", "model": "bread", "color": "#d9a76a", "price": 3000, "name": { "en": "Sunflower seed cookie", "ko": "해바라기씨 쿠키", "ja": "ひまわりの種クッキー", "zh": "葵花籽饼干" }, "desc": { "en": "For people, not hamsters: please don't feed the animals." } }
+      ]
+    },
+    {
+      "id": "mungnyang-petshop",
+      "category": "petshop",
+      "size": "medium",
+      "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
+      "tagline": { "en": "Adopt a dog or a cat with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지나 고양이를 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗或小猫一起散步。一定要清理宠物的便便！" },
+      "anchor": { "lat": 37.5427, "lon": 127.0556 },
+      "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
+      "products": [
+        { "id": "adopt-maltese", "model": "pet:dog", "color": "#fbf8f2", "accent": "#efe6da", "adopt": "pet-maltese", "price": 0, "name": { "en": "Maltese puppy · Mongi", "ko": "말티즈 · 몽이", "ja": "マルチーズ · モンイ", "zh": "马尔济斯 · 萌萌" }, "desc": { "en": "A small fluffy white dog who loves walks." } },
+        { "id": "adopt-shiba", "model": "pet:dog", "color": "#e39a4f", "accent": "#fff3e3", "adopt": "pet-shiba", "price": 0, "name": { "en": "Shiba puppy · Kongtteok", "ko": "시바견 · 콩떡", "ja": "柴犬 · コントク", "zh": "柴犬 · 豆糕" }, "desc": { "en": "Curly tail, big smile, a bit stubborn." } },
+        { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
+        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } }
+      ]
     }
   ]
 }
