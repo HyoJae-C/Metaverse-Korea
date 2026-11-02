@@ -1,0 +1,177 @@
+// Landmark models placed on hand-made districts (map "landmarks"): palace
+// gates and halls with tiled roofs, a pavilion on a pond, statues, walls.
+// Low-poly and stylised, not to scale. Collision comes from the map's
+// "blockers", so these are only visual.
+import * as THREE from 'three';
+
+const mats = {};
+const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const C = {
+  stone: '#cfc4ae', stoneDark: '#b3a78f', wood: '#a23a2c', green: '#2f8f6b', roof: '#3d4450',
+  roofEdge: '#2b3038', white: '#f3eee4', gold: '#d4a73a', bronze: '#55574f', door: '#3a2a22', plinth: '#8f8a80',
+};
+
+function box(g, sx, sy, sz, x, y, z, c) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
+  m.position.set(x, y, z);
+  g.add(m);
+  return m;
+}
+
+// A hipped tile roof (팔작지붕 feel): a flattened 4-sided pyramid with the
+// long side along x, a little ridge on top, and upturned corner tips.
+function roof(g, w, d, h, y, z = 0) {
+  const r = new THREE.Mesh(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1), mat(C.roof));
+  r.rotation.y = Math.PI / 4;
+  r.scale.set(w, h, d);
+  r.position.set(0, y + h / 2, z);
+  g.add(r);
+  box(g, w * 0.55, h * 0.18, d * 0.12, 0, y + h * 0.82, z, C.roofEdge); // ridge
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { // corner tips
+    const tip = box(g, w * 0.06, h * 0.12, w * 0.06, sx * w * 0.5, y + h * 0.08, z + sz * d * 0.5, C.roofEdge);
+    tip.rotation.z = -sx * 0.4;
+  }
+}
+
+// A wooden hall: red columns, a green painted band (단청), a roof.
+function hall(g, w, d, h, y, z = 0, cols = 7) {
+  box(g, w, h, d, 0, y + h / 2, z, C.white); // walls (paper doors)
+  for (let i = 0; i < cols; i++) {
+    const x = -w / 2 + (i * w) / (cols - 1);
+    for (const sz of [-1, 1]) box(g, 0.6, h, 0.6, x, y + h / 2, z + sz * (d / 2 + 0.2), C.wood);
+  }
+  box(g, w + 1, h * 0.18, d + 1, 0, y + h * 0.95, z, C.green);
+  roof(g, w * 1.35, d * 1.6, h * 0.9, y + h);
+}
+
+const BUILD = {
+  gwanghwamun(g) {
+    // Stone base with three arches; the middle one is the way in.
+    for (const sx of [-1, 1]) box(g, 25, 9, 16, sx * 17.5, 4.5, 0, C.stone);
+    box(g, 10, 3, 16, 0, 7.5, 0, C.stone); // lintel over the middle arch
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 4, 5, 0.2, sx * 11, 2.5, sz * 8.05, C.door); // side arches (closed)
+    box(g, 61, 0.6, 17, 0, 9.3, 0, C.stoneDark);
+    // Two-storey wooden gate tower
+    hall(g, 34, 9, 5, 9.6, 0, 6);
+    hall(g, 28, 7, 4, 17.5, 0, 5);
+    // Name board 광화문
+    const sign = signBoard('光化門', 6, 1.8);
+    sign.position.set(0, 16.2, 5.6);
+    g.add(sign);
+  },
+  gate(g, l) {
+    const w = l.w || 24;
+    box(g, w + 4, 1.2, 10, 0, 0.6, 0, C.stone);
+    for (const sx of [-1, 1]) box(g, w / 2 - 4, 5, 6, sx * (w / 4 + 2), 3.7, 0, C.white);
+    hall(g, w, 6, 5.5, 1.2, 0, 7);
+  },
+  hall(g) {
+    // Two-tier stone platform (월대), the throne hall on top, double roof.
+    box(g, 52, 1.4, 34, 0, 0.7, 0, C.stone);
+    box(g, 44, 1.4, 28, 0, 2.1, 0, C.stoneDark);
+    box(g, 6, 2.8, 4, 0, 1.4, 18, C.stone); // front steps
+    hall(g, 30, 14, 8, 2.8, 0, 7);
+    hall(g, 24, 10, 5, 12.5, 0, 5);
+    const sign = signBoard('勤政殿', 4.2, 1.4);
+    sign.position.set(0, 14.6, 7.2);
+    g.add(sign);
+  },
+  pavilion(g) {
+    // Stone pillars standing in the pond, a raised floor, a big roof.
+    box(g, 34, 1.2, 26, 0, 0.3, 0, C.stone); // island
+    for (let i = 0; i < 6; i++) for (let k = 0; k < 4; k++) box(g, 0.9, 5, 0.9, -13 + i * 5.2, 3.5, -9 + k * 6, C.stoneDark);
+    box(g, 30, 0.8, 22, 0, 6.4, 0, C.wood);
+    hall(g, 26, 18, 5, 6.8, 0, 6);
+    for (const sx of [-1, 1]) box(g, 2, 0.6, 16, sx * 5, 0.3, 20, C.stone); // little bridges to the shore
+  },
+  statue(g, l) {
+    box(g, 6, 3, 8, 0, 1.5, 0, C.plinth);
+    if (l.kind === 'king') {
+      // King Sejong, seated, in gold.
+      box(g, 3.4, 2.4, 3, 0, 4.2, 0.3, C.gold); // lap / robe
+      box(g, 3, 3.2, 2.2, 0, 6.2, -0.4, C.gold); // body
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 8), mat(C.gold));
+      head.position.set(0, 8.4, -0.3);
+      g.add(head);
+      box(g, 1.6, 0.9, 1.6, 0, 9.3, -0.3, C.gold); // crown hat
+      box(g, 1.2, 0.2, 1.6, 1.3, 5.2, 1.2, C.white); // a book
+    } else {
+      // Admiral Yi, standing, in bronze, holding a sword.
+      box(g, 2.2, 5, 1.6, 0, 5.5, 0, C.bronze);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 8), mat(C.bronze));
+      head.position.set(0, 8.7, 0);
+      g.add(head);
+      box(g, 1.3, 0.8, 1.3, 0, 9.5, 0, C.bronze);
+      box(g, 0.2, 4, 0.2, 0.9, 5.5, 1, C.bronze); // sword
+      box(g, 9, 1, 2, 0, 0.5, 6, C.plinth); // the turtle-ship plinth in front
+    }
+  },
+  guard(g) {
+    // A gate guard (수문장) in a red robe with a black hat and a flag.
+    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));
+    robe.position.y = 0.7;
+    g.add(robe);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), mat('#f2c9a5'));
+    head.position.y = 1.65;
+    g.add(head);
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 14), mat('#1d1b22'));
+    hat.position.y = 1.85;
+    g.add(hat);
+    box(g, 0.06, 2.6, 0.06, 0.55, 1.3, 0, C.door);
+    box(g, 0.6, 0.5, 0.04, 0.85, 2.3, 0, '#ffd166');
+  },
+  mountain(g) {
+    // Bugaksan behind the palace.
+    const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
+    m.position.y = 50;
+    m.scale.set(1.4, 1, 0.7);
+    g.add(m);
+  },
+};
+
+// A gold-on-black name board with hanja.
+function signBoard(text, w, h) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 80;
+  const x = c.getContext('2d');
+  x.fillStyle = '#1d1b22'; x.fillRect(0, 0, 256, 80);
+  x.strokeStyle = '#2f8f6b'; x.lineWidth = 6; x.strokeRect(3, 3, 250, 74);
+  x.fillStyle = '#e8c56a'; x.font = '700 54px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(text, 128, 42);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+}
+
+// A wall along a polyline: stone with a dark tiled cap.
+function wall(g, l) {
+  const h = l.h || 4;
+  for (let i = 1; i < l.p.length; i++) {
+    const [x0, z0] = l.p[i - 1], [x1, z1] = l.p[i];
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    const seg = new THREE.Group();
+    box(seg, len, h, 1.4, 0, h / 2, 0, '#d9c9b0');
+    box(seg, len + 0.6, 0.5, 2.2, 0, h + 0.2, 0, C.roof);
+    seg.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+    seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(seg);
+  }
+}
+
+export function buildLandmarks(list = [], scene) {
+  const root = new THREE.Group();
+  root.name = 'landmarks';
+  for (const l of list) {
+    const g = new THREE.Group();
+    if (l.type === 'wall') wall(g, l);
+    else if (BUILD[l.type]) {
+      BUILD[l.type](g, l);
+      g.position.set(l.x, 0, l.z);
+      g.rotation.y = l.ry || 0;
+    } else continue;
+    root.add(g);
+  }
+  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  scene.add(root);
+  return root;
+}

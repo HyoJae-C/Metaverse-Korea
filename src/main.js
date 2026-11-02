@@ -8,6 +8,7 @@ import { SquareQuests, QUEST_REWARD } from './core/quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { buildWorld, COLORS } from './core/world.js';
+import { buildLandmarks } from './core/landmarks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
@@ -202,6 +203,7 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
 const { bounds } = buildWorld(map, scene, { lowSpec, collision });
+buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);

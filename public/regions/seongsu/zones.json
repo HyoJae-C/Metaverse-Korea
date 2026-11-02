@@ -12,6 +12,7 @@
     { "id": "E", "color": "#b9a6f0", "anchor": { "lat": 37.543774, "lon": 127.056323 }, "radius": 60,
       "name": { "en": "Pop-up Square", "ko": "팝업 광장", "ja": "ポップアップ広場", "zh": "快闪广场" } },
     { "id": "F", "color": "#a6d97a", "anchor": { "lat": 37.545139, "lon": 127.054114 }, "radius": 80,
-      "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } }
+      "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
+    { "id": "G", "color": "#d4a73a", "at": [-1360, -248.6], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} }
   ]
 }
