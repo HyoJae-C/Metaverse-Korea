@@ -2,16 +2,38 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢' };
+export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠' };
+
+// Does a store match the search text? Looks at its names in every language,
+// tagline, category and product names, ignoring case and spaces.
+const norm = (v) => String(v ?? '').toLowerCase().replace(/\s+/g, '');
+export function storeMatches(store, query, category, catLabel = '') {
+  if (category && store.category !== category) return false;
+  const q = norm(query);
+  if (!q) return true;
+  const texts = [catLabel, store.category];
+  for (const o of [store.name, store.tagline]) if (o) texts.push(...Object.values(o));
+  for (const pr of store.products || []) if (pr.name) texts.push(...Object.values(pr.name));
+  return texts.some((x) => norm(x).includes(q));
+}
 
 export class MapView {
-  constructor({ root, map, zones, stores, getPlayers, onGuide }) {
-    Object.assign(this, { root, map, zones, stores, getPlayers, onGuide });
+  // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
+  constructor({ root, map, zones, stores, getPlayers, onGuide, onTaxi }) {
+    Object.assign(this, { root, map, zones, stores, getPlayers, onGuide, onTaxi });
+    this.taxi = false; // taxi mode: picking a place calls a taxi instead of guiding
+    const taxiBtn = root.querySelector('.map-taxi');
+    if (taxiBtn) {
+      taxiBtn.hidden = !onTaxi;
+      taxiBtn.onclick = () => this.setTaxi(!this.taxi);
+    }
     this.canvas = root.querySelector('canvas');
     this.list = root.querySelector('.map-list');
     this.view = { cx: 0, cz: 80, scale: 1 }; // metres at centre, px per metre
     this.base = null;
     this.open = false;
+    this.query = '';
+    this.category = null;
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
     root.addEventListener('click', (e) => { if (e.target === root) this.hide(); });
@@ -31,6 +53,22 @@ export class MapView {
   hide() {
     this.open = false;
     this.root.hidden = true;
+    this.setTaxi(false);
+  }
+
+  setTaxi(on) {
+    this.taxi = !!on && !!this.onTaxi;
+    this.root.querySelector('.map-taxi')?.classList.toggle('on', this.taxi);
+    const hint = this.root.querySelector('.map-taxi-hint');
+    if (hint) hint.hidden = !this.taxi;
+    this.root.classList.toggle('taxi-mode', this.taxi);
+  }
+
+  // A place was picked (map tap or list row): guide there, or take a taxi.
+  _pick(g) {
+    if (this.taxi) this.onTaxi({ ...g, guide: g });
+    else this.onGuide(g);
+    this.hide();
   }
 
   _resize() {
@@ -103,6 +141,7 @@ export class MapView {
     // Stores
     g.font = `${18 * dpr}px system-ui, sans-serif`;
     for (const s of this.stores) {
+      if (!this._match(s)) continue;
       const [sx, sy] = this.toScreen(s.door.x, s.door.z);
       g.fillStyle = '#fffaf0';
       g.beginPath();
@@ -150,14 +189,56 @@ export class MapView {
     void css;
   }
 
+  _match(s) {
+    return storeMatches(s.store, this.query, this.category, t('cat.' + s.store.category));
+  }
+
+  // Search box and category chips stay put; only the results are redrawn,
+  // so typing keeps the keyboard open.
+  _renderControls() {
+    if (!this.controls) {
+      this.controls = document.createElement('div');
+      this.controls.className = 'map-controls';
+      this.search = document.createElement('input');
+      this.search.type = 'search';
+      this.search.className = 'map-search';
+      this.search.autocomplete = 'off';
+      this.search.enterKeyHint = 'search';
+      this.search.addEventListener('input', () => { this.query = this.search.value; this._renderResults(); this.draw(); });
+      this.search.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
+      this.chips = document.createElement('div');
+      this.chips.className = 'map-cats';
+      this.controls.append(this.search, this.chips);
+      this.results = document.createElement('div');
+      this.results.className = 'map-results';
+      this.list.replaceChildren(this.controls, this.results);
+    }
+    this.search.placeholder = t('map.search');
+    this.search.value = this.query;
+    const cats = [...new Set(this.stores.map((s) => s.store.category))];
+    this.chips.replaceChildren(...[null, ...cats].map((c) => {
+      const b = document.createElement('button');
+      b.className = 'map-cat' + (c === this.category ? ' on' : '');
+      b.textContent = c ? `${CATEGORY_ICON[c] || '🛍️'} ${t('cat.' + c)}` : t('map.all');
+      b.onclick = () => { this.category = c; this._renderList(); this.draw(); };
+      return b;
+    }));
+  }
+
   _renderList() {
+    this._renderControls();
+    this._renderResults();
+  }
+
+  _renderResults() {
     const lang = getLanguage();
-    this.list.innerHTML = '';
+    const out = this.results;
+    out.innerHTML = '';
     const head = (key) => {
       const h = document.createElement('div');
       h.className = 'map-list-head';
       h.textContent = t(key);
-      this.list.appendChild(h);
+      out.appendChild(h);
     };
     const row = (icon, color, title, sub, onClick) => {
       const b = document.createElement('button');
@@ -175,24 +256,31 @@ export class MapView {
       tx.append(t1, t2);
       b.append(i, tx);
       b.onclick = onClick;
-      this.list.appendChild(b);
+      out.appendChild(b);
     };
     const { me } = this.getPlayers();
     const dist = (x, z) => `${Math.round(Math.hypot(x - me.x, z - me.z))} m`;
-    head('map.zones');
-    for (const z of this.zones) {
+    const filtering = !!(this.category || norm(this.query));
+    const zones = this.category ? [] : this.zones.filter((z) => !filtering || [z.zone.id, ...Object.values(z.zone.name || {})].some((x) => norm(x).includes(norm(this.query))));
+    if (zones.length) head('map.zones');
+    for (const z of zones) {
       row(z.zone.id, z.zone.color, localName(z.zone.name, lang), dist(z.x, z.z), () => {
-        this.onGuide({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
-        this.hide();
+        this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
       });
     }
-    head('map.shops');
-    const byDist = [...this.stores].sort((a, b) => Math.hypot(a.door.x - me.x, a.door.z - me.z) - Math.hypot(b.door.x - me.x, b.door.z - me.z));
+    const shops = this.stores.filter((s) => this._match(s));
+    if (shops.length) head('map.shops');
+    if (!shops.length && !zones.length) {
+      const e = document.createElement('p');
+      e.className = 'map-empty';
+      e.textContent = t('map.noResults');
+      out.appendChild(e);
+    }
+    const byDist = [...shops].sort((a, b) => Math.hypot(a.door.x - me.x, a.door.z - me.z) - Math.hypot(b.door.x - me.x, b.door.z - me.z));
     for (const s of byDist) {
       row(CATEGORY_ICON[s.store.category] || '🛍️', '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
-          this.onGuide({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
-          this.hide();
+          this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
         });
     }
   }
@@ -200,6 +288,7 @@ export class MapView {
   _hit(sx, sy) {
     const r = 20 * this.dpr;
     for (const s of this.stores) {
+      if (!this._match(s)) continue;
       const [x, y] = this.toScreen(s.door.x, s.door.z);
       if (Math.hypot(x - sx, y - sy) < r) return { kind: 'store', item: s };
     }
@@ -247,17 +336,25 @@ export class MapView {
       pts.delete(e.pointerId);
       if (!p || moved > 8) return;
       const r = c.getBoundingClientRect();
-      const hit = this._hit((e.clientX - r.left) * this.dpr, (e.clientY - r.top) * this.dpr);
-      if (!hit) return;
+      const sx = (e.clientX - r.left) * this.dpr, sy = (e.clientY - r.top) * this.dpr;
+      const hit = this._hit(sx, sy);
       const lang = getLanguage();
+      if (!hit) {
+        // In taxi mode any spot on the map is a destination.
+        if (this.taxi) {
+          const [x, z] = this.toWorld(sx, sy);
+          this.onTaxi({ x, z, label: t('taxi.here'), guide: null });
+          this.hide();
+        }
+        return;
+      }
       if (hit.kind === 'store') {
         const s = hit.item;
-        this.onGuide({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
+        this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
       } else {
         const z = hit.item;
-        this.onGuide({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
+        this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
       }
-      this.hide();
     };
     c.addEventListener('pointerup', up);
     c.addEventListener('pointercancel', (e) => pts.delete(e.pointerId));

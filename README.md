@@ -35,6 +35,8 @@ First stop: **Seongsu-dong, Seoul**.
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
 - Ddeokip Bunsik (snack bar): ordering practice in Korean. Pick a mission ("1 serving of tteokbokki, not spicy, to eat here"), build the order from word blocks, answer the clerk's question, and get a stamp (+15 coins the first time). Then listen to the sentence and record yourself to compare; the recording stays on the device and is never scored. Food can't be bought or eaten here
 - Street chat is heard only within 10 m and shows for a few seconds; inside shops and cafés everyone in the room sees it
+- Taxi (🚕 in the map, free during beta): tap any spot or pick a place from the list; a short back-seat ride where the driver speaks Korean, then you are dropped off on the nearest road a car can use
+- Map search and category filter: search shop names (any language), food and products
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
 
 ## Run locally
