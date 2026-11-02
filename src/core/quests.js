@@ -10,14 +10,16 @@
 //   cook   finish the grill or ramen game
 //   pet    come back walking your pet (checked when you report)
 //   talk   say hi to 3 passers-by
+//   dance  do 3 emotes on the square (in front of the big screen)
+//   highfive  high-five another player (only offered when someone is around)
 export const QUEST_REWARD = 15;
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
 
 export function pickQuest(pool, rand = Math.random, last = null) {
-  const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
+  const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance', 'highfive'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
   const kind = kinds[Math.floor(rand() * kinds.length)] || 'talk';
-  const q = { kind, need: kind === 'talk' ? 3 : 1, n: 0 };
+  const q = { kind, need: kind === 'talk' || kind === 'dance' ? 3 : 1, n: 0 };
   if (kind === 'visit') q.target = pool.stores[Math.floor(rand() * pool.stores.length)];
   return q;
 }
@@ -52,7 +54,8 @@ export class SquareQuests {
     const q = this.s.active;
     if (!q || q.n >= q.need) return false;
     const hit = (q.kind === 'visit' && type === 'visit' && target === q.target)
-      || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk');
+      || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk')
+      || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive');
     if (!hit) return false;
     q.n++;
     this._save();

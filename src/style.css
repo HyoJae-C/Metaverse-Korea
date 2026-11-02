@@ -775,7 +775,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-meter { width: 100%; height: 14px; border-radius: 7px; background: #e6e9ee; overflow: hidden; }
 .fish-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #4cc38a, #2f8f5b); transition: width .08s linear; }
 .fish-time { display: block; text-align: center; font-weight: 700; }
-.fish-reel { font-size: 18px; padding: 14px 22px; }
+.fish-reel { font-size: 18px; padding: 14px 22px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.fish-card.escaped { background: #eef0f3; opacity: 0.75; }
+.fish-card.escaped .fish-big { filter: grayscale(1); }
 .fish-card { display: grid; justify-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #f2f7fb; text-align: center; }
 .fish-card.rare { background: linear-gradient(135deg, #fff5d6, #ffe08a); box-shadow: 0 0 0 2px #ffd166 inset; }
 .fish-big { font-size: 56px; line-height: 1; }
@@ -814,9 +816,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 
 /* K-POP café: the video on the wall screen (a box over the canvas), and a
    small now-playing bar */
-.kpop-layer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.kpop-layer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; background: #000; } /* behind the canvas */
 .kpop-layer[hidden] { display: none; }
-.kpop-video { position: absolute; overflow: hidden; background: #000; pointer-events: none; }
+.kpop-video { position: absolute; left: 0; top: 0; width: 640px; height: 360px; transform-origin: 0 0; overflow: hidden; background: #000; pointer-events: none; }
 .kpop-video iframe, .kpop-video > div { width: 100%; height: 100%; border: 0; display: block; }
 .kpop-tv {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));
@@ -826,3 +828,6 @@ a.setting-row { text-decoration: none; color: inherit; }
 .kpop-now { margin: 0; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpop-unmute { flex: none; }
 @media (pointer: coarse) { .kpop-tv { bottom: max(258px, calc(env(safe-area-inset-bottom) + 248px)); } } /* above the action button */
+
+/* Fast taps on buttons must not zoom the page on phones (double-tap zoom). */
+button, .sheet, .order-panel { touch-action: manipulation; }

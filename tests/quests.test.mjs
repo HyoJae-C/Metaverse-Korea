@@ -42,3 +42,16 @@ test('a few a day, back again tomorrow; never the same kind twice in a row', () 
   assert.equal(new SquareQuests(st, () => day).left, QUESTS_PER_DAY);
   for (let r = 0; r < 1; r += 0.1) assert.notEqual(pickQuest(pool, () => r, 'visit').kind, 'visit');
 });
+
+test('dance needs three emotes on the square; high five only when someone is around', () => {
+  const q = new SquareQuests(memory(), () => 'd1');
+  q.s.active = { kind: 'dance', need: 3, n: 0 };
+  assert.equal(q.event('emote'), false); // anywhere else doesn't count
+  q.event('squareEmote'); q.event('squareEmote'); q.event('squareEmote');
+  assert.equal(q.claim({}), QUEST_REWARD);
+  q.s.active = { kind: 'highfive', need: 1, n: 0 };
+  assert.equal(q.event('highfive'), true);
+  assert.ok(q.ready());
+  const alone = { stores: [], has: (k) => k !== 'highfive' };
+  for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest(alone, () => r).kind, 'highfive');
+});

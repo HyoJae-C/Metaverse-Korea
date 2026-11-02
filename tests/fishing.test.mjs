@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FISH, rollFish, tapsFor, FishBag, BAG_MAX } from '../src/core/fishing.js';
+import { FISH, rollFish, tapsFor, escapeChance, fishById, FishBag, BAG_MAX } from '../src/core/fishing.js';
 
 const memory = () => {
   const m = new Map();
@@ -39,11 +39,23 @@ test('the bag keeps catches, caps at its size, and sells', () => {
   const bag = new FishBag(st);
   bag.add('crucian'); bag.add('crucian'); bag.add('tuna');
   assert.equal(new FishBag(st).size, 3);
-  assert.equal(bag.value, 2 + 15);
+  assert.equal(bag.value, 2 + 20);
   assert.equal(bag.sell('crucian', 1), 1);
-  assert.equal(bag.sellAll(), 1 + 15);
+  assert.equal(bag.sellAll(), 1 + 20);
   assert.equal(bag.size, 0);
   for (let i = 0; i < BAG_MAX + 5; i++) bag.add('catfish');
   assert.equal(bag.size, BAG_MAX);
   assert.equal(bag.add('whale'), false);
+});
+
+test('fish can get away: rarer ones more often, less if you reel fast', () => {
+  const c = fishById('crucian'), w = fishById('whale');
+  assert.equal(escapeChance(c), 0.1);
+  assert.ok(Math.abs(escapeChance(w) - 0.37) < 1e-9);
+  for (let i = 1; i < FISH.length; i++) assert.ok(escapeChance(FISH[i]) > escapeChance(FISH[i - 1]));
+  assert.ok(Math.abs(escapeChance(w, 1) - 0.185) < 1e-9);
+  assert.ok(escapeChance(c, 0.5) < escapeChance(c, 0));
+  // A bite is worth about the same as before the escapes (2.7 coins).
+  const ev = FISH.reduce((a, f) => a + (f.chance / 100) * f.price * (1 - escapeChance(f, 0.3)), 0);
+  assert.ok(ev > 2.4 && ev < 3.2, String(ev));
 });

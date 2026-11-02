@@ -37,7 +37,7 @@ export function missionsFor(day, pool) {
   const list = [];
   if (pool.npcs.length) list.push({ type: 'talk', target: pick(pool.npcs), need: 1 });
   if (pool.stores.length) list.push({ type: 'visit', target: pick(pool.stores).id, need: 1 });
-  const extra = ['sit', 'bike', 'emote'];
+  const extra = ['sit', 'bike', 'emote', 'square', 'square']; // square: finish a square mission
   if (pool.stores.some((s) => s.pets)) extra.push('pet', 'pet'); // the pet cafés are popular
   list.push({ type: pick(extra), need: 1 });
   for (const m of list) {
