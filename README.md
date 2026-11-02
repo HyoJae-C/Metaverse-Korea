@@ -6,7 +6,7 @@ First stop: **Seongsu-dong, Seoul**.
 ## What works now (step 1)
 
 - 3D streets and buildings around Seongsu Station, built from real OpenStreetMap data
-- A cute chibi character you walk with WASD / arrow keys (desktop) or a touch joystick (phone)
+- A 3D character (five models to pick from) you walk with WASD / arrow keys (desktop) or a touch joystick (phone), with walk, run, sit, bike and emote animations
 - Language picker on the start screen (English, 한국어, 日本語, 中文); English is the default
 - Street name card in the original Korean, with a Translate button
 - Multiplayer: see other travellers in real time, with nicknames and emotes (Supabase Realtime)
@@ -23,6 +23,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Behind-the-back camera that follows as you walk and stays out of walls; you start in front of the café
 - Running uses a stamina bar that refills while you walk or rest
 - Cafés have seats: walk up to a chair and tap Sit (others see you sitting). Ongi Café is a large café; Haneul Hand Drip and Sandgrain Bakery are small ones
+- Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor)
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
 - Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
@@ -52,6 +53,7 @@ scripts/fetch-osm.mjs             downloads OSM data and writes map.json
 src/core/                         shared engine: world, character, input, collision, i18n
 src/net/                          multiplayer, behind a swappable adapter (local, supabase)
 src/data/emotes.js                emote packs (data-driven, ready for a future shop)
+src/data/characters/              character model packs (GLB files in public/models/)
 src/i18n/strings.js               UI translations
 ```
 
@@ -60,6 +62,16 @@ src/i18n/strings.js               UI translations
 1. Create `public/regions/<id>/region.json` (copy Seongsu's and change the bbox, centre and spawn).
 2. Run the **Fetch OSM map data** workflow (Actions tab) with the region id, or `node scripts/fetch-osm.mjs <id>` locally.
 3. Add the region to `public/regions/index.json`.
+
+### Swapping the character model pack
+
+Characters come from the pack named in `src/data/characters/index.js`. A pack file lists its GLB models,
+scale, sit and bike offsets, and maps our actions (idle, walk, run, sit, ride, wave, bow…) to its clip
+names. All models in a pack share one rig; the clips are read from the `animsFrom` model. To use another
+pack (for example a paid chibi pack), add its GLBs under `public/models/<pack>/`, write a pack file like
+`kaykit.js`, and point `index.js` at it. Hats, glasses and bags move onto the model's head and chest bones
+automatically. While a model loads, or if it fails, the simple built-in chibi is shown instead.
+`scripts/models/strip-kaykit.mjs` shows how the KayKit files were shrunk (weapons removed, unused clips dropped).
 
 ### Swapping the realtime provider
 
@@ -71,4 +83,5 @@ register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL.
 Street trees and building colours are decorative and not part of the map data.
 Store and product data are fictional sample data, not the real businesses at those locations.
+Characters: [KayKit Character Pack: Adventurers](https://kaylousberg.com/) by Kay Lousberg, CC0 (licence in `public/models/kaykit/LICENSE.txt`).
 Background music is generated live in the browser (Web Audio); no audio files are used.

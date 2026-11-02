@@ -129,6 +129,20 @@
       "products": []
     },
     {
+      "id": "nyang-cat-cafe",
+      "category": "cafe",
+      "pets": "cats",
+      "size": "medium",
+      "name": { "ko": "냥냥 고양이 카페", "en": "Nyang Nyang Cat Café" },
+      "tagline": { "en": "Six friendly cats live here. Say hi and give them a pat!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 인사하고 쓰다듬어 주세요!" },
+      "anchor": { "lat": 37.5436, "lon": 127.0558 },
+      "colors": { "sign": "#c2456b", "awning": "#ffd6e2", "accent": "#fff4f7" },
+      "products": [
+        { "id": "cat-latte", "model": "cup", "color": "#e6c9a8", "price": 6500, "name": { "en": "Cat Paw Latte", "ko": "고양이 발바닥 라떼" }, "desc": { "en": "A latte with a paw print drawn in the foam." } },
+        { "id": "fish-bread", "model": "bread", "color": "#d99a52", "price": 3000, "name": { "en": "Bungeoppang", "ko": "붕어빵" }, "desc": { "en": "Fish-shaped pastry filled with sweet red bean." } }
+      ]
+    },
+    {
       "id": "haneul-drip",
       "category": "cafe",
       "size": "small",

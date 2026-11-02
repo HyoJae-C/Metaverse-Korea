@@ -1,7 +1,9 @@
-// Cute chibi (2-heads-tall) character built from simple rounded shapes.
-// Used for the local player and for other players alike.
+// Characters for the local player, other players and NPCs. The body is a 3D
+// model from the active model pack (src/data/characters); a chibi built from
+// simple rounded shapes shows while the model loads, or if it fails to load.
 import * as THREE from 'three';
 import { makeBike } from './bikes.js';
+import { attachModel } from './model-pack.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
 
@@ -84,7 +86,11 @@ export function createCharacter(rawLook) {
   blob.position.y = 0.07;
   root.add(blob);
 
-  addAccessories(look, head, torso, body);
+  // Accessories go in their own groups so they can move onto the model's bones.
+  const headAcc = new THREE.Group(), bodyAcc = new THREE.Group();
+  head.add(headAcc);
+  body.add(bodyAcc);
+  addAccessories(look, headAcc, torso, bodyAcc);
 
   root.traverse((m) => {
     if (m.isMesh && m !== blob) m.castShadow = true;
@@ -94,6 +100,8 @@ export function createCharacter(rawLook) {
   let waveT = 0;
   let bike = null, riding = false;
   let act = null; // current body emote
+  let model = null; // set once the pack model has loaded
+  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; });
   return {
     root,
     head,
@@ -105,6 +113,7 @@ export function createCharacter(rawLook) {
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
+      if (model) { model.update(dt, speed01, sit, riding); return; }
       if (!riding) body.position.z = 0;
       if (riding) {
         // Pedalling: legs turn with speed, hands on the handlebar.
@@ -158,9 +167,11 @@ export function createCharacter(rawLook) {
     },
     wave() {
       waveT = 1.6;
+      model?.play('wave');
     },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
+      model?.play(name);
       if (name === 'wave') { waveT = 1.6; return; }
       if (!POSES[name]) return;
       act = { name, t: 0, dur: name === 'cry' ? 2.2 : 1.7 };

@@ -6,6 +6,11 @@
 // colours are palette ids, accessories are ids or null. One accessory per
 // slot, so at most four at once.
 
+import { PACK } from './characters/index.js';
+
+// Body models from the active model pack (src/data/characters).
+export const MODELS = Object.keys(PACK.models);
+
 export const PALETTES = {
   shirt: {
     coral: 0xff9b85, mint: 0x8fd3c7, butter: 0xffd36e, lilac: 0xb9a6f0,
@@ -59,6 +64,7 @@ export const ACCESSORIES = {
 };
 
 export const DEFAULT_LOOK = {
+  model: MODELS[0],
   shirt: 'coral', pants: 'denim', hair: 'espresso', skin: 'fair',
   head: null, face: null, neck: null, back: null,
   hatColor: null, hatPatch: null, // set in the hat workshop
@@ -71,6 +77,7 @@ const pick = (obj) => {
 
 export function randomLook() {
   const look = {
+    model: MODELS[Math.floor(Math.random() * MODELS.length)],
     shirt: pick(PALETTES.shirt), pants: pick(PALETTES.pants),
     hair: pick(PALETTES.hair), skin: pick(PALETTES.skin),
   };
@@ -85,6 +92,7 @@ export function randomLook() {
 export function sanitizeLook(raw) {
   const look = { ...DEFAULT_LOOK };
   if (!raw || typeof raw !== 'object') return look;
+  if (MODELS.includes(raw.model)) look.model = raw.model;
   for (const k of ['shirt', 'pants', 'hair', 'skin']) {
     if (typeof raw[k] === 'string' && Object.hasOwn(PALETTES[k], raw[k])) look[k] = raw[k];
   }
