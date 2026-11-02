@@ -270,6 +270,21 @@
         { "id": "meta-vanilla", "model": "cup", "color": "#e6cfa6", "price": 5500, "name": { "en": "Vanilla Latte", "ko": "바닐라라테", "ja": "バニララテ", "zh": "香草拿铁" }, "desc": { "en": "A sweet latte with vanilla syrup." } },
         { "id": "meta-dalgona", "model": "cup", "color": "#d89a4a", "price": 6000, "name": { "en": "Dalgona Latte", "ko": "달고나라테", "ja": "ダルゴナラテ", "zh": "焦糖饼拿铁" }, "desc": { "en": "Milk topped with whipped coffee foam, inspired by the honeycomb candy dalgona." } }
       ]
+    },
+    {
+      "id": "sorimaru-lp",
+      "category": "cafe",
+      "music": true,
+      "size": "medium",
+      "name": { "ko": "소리마루 LP카페", "en": "Sorimaru Record Café", "ja": "ソリマル LPカフェ", "zh": "声廊黑胶咖啡馆" },
+      "tagline": { "en": "Pick a record and change the music. Only you hear your choice.", "ko": "LP를 골라 음악을 바꿔 보세요. 고른 음악은 나에게만 들려요.", "ja": "レコードを選んで音楽を変えよう。選んだ曲は自分にだけ聞こえます。", "zh": "挑一张唱片换音乐，只有你自己听得到。" },
+      "anchor": { "lat": 37.5438, "lon": 127.0566 },
+      "colors": { "sign": "#2b2340", "awning": "#c9a26a", "accent": "#f3ece0" },
+      "products": [
+        { "id": "lp-hand-drip", "model": "cup", "color": "#5a3a28", "price": 6000, "name": { "en": "Hand drip coffee", "ko": "핸드드립 커피", "ja": "ハンドドリップ", "zh": "手冲咖啡" }, "desc": { "en": "Brewed slowly by hand while the record spins." } },
+        { "id": "lp-yuja-tea", "model": "cup", "color": "#f2c14e", "price": 5500, "name": { "en": "Yuja tea", "ko": "유자차", "ja": "柚子茶", "zh": "柚子茶" }, "desc": { "en": "Sweet citron tea, a Korean winter favourite." } },
+        { "id": "lp-misutgaru", "model": "cup", "color": "#d8c3a0", "price": 5500, "name": { "en": "Misutgaru latte", "ko": "미숫가루 라테", "ja": "ミスッカルラテ", "zh": "谷物拿铁" }, "desc": { "en": "A nutty drink of roasted grain powder and milk." } }
+      ]
     }
   ]
 }

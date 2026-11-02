@@ -409,5 +409,23 @@ export function buildInterior(store) {
   block(w / 2 - 0.2 + t / 2, 0, t, d);
 
   if (clerk) block(clerk.x, clerk.z, 0.6, 0.5); // don't walk through the clerk
-  return { scene, products, colliders, seats, clerk, room: ROOM, exit: EXIT };
+  // Music café: a record player on a cabinet, with a crate of LPs beside it.
+  let turntable = null;
+  if (store.music) {
+    const tx = -w / 2 + 1.3, tz = d / 2 - 2.6;
+    box(1.4, 0.8, 0.7, tx, 0.4, tz, '#6b4a34'); // cabinet
+    box(0.9, 0.12, 0.6, tx, 0.86, tz, '#2a2a2e'); // player
+    const platter = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.02, 24), mat('#111114'));
+    platter.position.set(tx - 0.12, 0.93, tz);
+    scene.add(platter);
+    const label = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.022, 16), mat(store.colors.sign));
+    label.position.set(tx - 0.12, 0.932, tz);
+    scene.add(label);
+    box(0.03, 0.03, 0.34, tx + 0.28, 0.95, tz - 0.05, '#c9c9cf'); // tone arm
+    const crate = ['#e0517a', '#2f8fb0', '#d9a441', '#6d5bd0', '#c0392b'];
+    crate.forEach((c, i) => box(0.04, 0.42, 0.42, tx + 0.95 + i * 0.07, 0.31, tz, c)); // LP sleeves
+    block(tx + 0.3, tz, 2.1, 0.8);
+    turntable = { x: tx, z: tz + 0.9, platter };
+  }
+  return { scene, products, colliders, seats, clerk, turntable, room: ROOM, exit: EXIT };
 }

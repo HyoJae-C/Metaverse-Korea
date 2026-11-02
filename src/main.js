@@ -27,6 +27,7 @@ import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inv
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { TRACKS } from './data/tracks.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
 import { Daily, REWARD } from './core/daily.js';
@@ -901,6 +902,7 @@ function enterStore(item) {
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
+  if (store.music) enterMusicCafe();
   const quiet = store.category === 'library';
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), quiet ? PHRASES.library[0] : PHRASES.welcome[0]), 600);
   npcs.setVisible(false);
@@ -917,6 +919,7 @@ function leaveStore() {
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
   if (grillUi.open) grillUi.close();
+  leaveMusicCafe();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -979,6 +982,64 @@ $('music-btn').onclick = async () => {
 };
 applyMusicBtn();
 onLanguageChange(applyMusicBtn);
+
+// Music café: pick an LP to change the song. Only this player hears it (the
+// music plays in this browser). Leaving puts the usual music back.
+let cafeMusic = null; // { wasOn } while inside a music café
+async function enterMusicCafe() {
+  cafeMusic = { wasOn: music.on };
+  music.setTrack('lofi');
+  if (!music.on) { await music.setOn(true); applyMusicBtn(); } // the room's music plays on entering
+}
+async function leaveMusicCafe() {
+  if (!cafeMusic) return;
+  const { wasOn } = cafeMusic;
+  cafeMusic = null;
+  $('lp-panel').hidden = true;
+  music.setTrack('lofi');
+  if (!wasOn && music.on) { await music.setOn(false); applyMusicBtn(); }
+}
+function openLpPanel() {
+  const root = $('lp-panel');
+  const lang = getLanguage();
+  const x = document.createElement('button');
+  x.className = 'sheet-x';
+  x.textContent = '✕';
+  x.setAttribute('aria-label', t('order.close'));
+  x.onclick = () => { root.hidden = true; };
+  const h = document.createElement('h3');
+  h.textContent = '💿 ' + t('lp.title');
+  const note = document.createElement('p');
+  note.className = 'fine';
+  note.textContent = t('lp.note');
+  const list = document.createElement('div');
+  list.className = 'lp-list';
+  for (const tr of TRACKS) {
+    const b = document.createElement('button');
+    const playing = music.on && music.track.id === tr.id;
+    b.className = 'lp-row' + (playing ? ' on' : '');
+    b.innerHTML = `<span class="lp-disc"><i></i></span><span class="lp-text"><strong></strong><small></small></span>`;
+    b.querySelector('.lp-disc').style.background = `radial-gradient(circle, ${tr.color} 0 26%, #141418 27% 100%)`;
+    b.querySelector('strong').textContent = `${tr.icon} ${localName(tr.name, lang)}${playing ? ' · ' + t('lp.playing') : ''}`;
+    b.querySelector('small').textContent = localName(tr.desc, lang);
+    b.onclick = async () => {
+      music.setTrack(tr.id);
+      if (!music.on) { await music.setOn(true); applyMusicBtn(); }
+      shop.toast(t('lp.now', { name: localName(tr.name, lang) }));
+      openLpPanel();
+    };
+    list.append(b);
+  }
+  const off = document.createElement('button');
+  off.className = 'chip';
+  off.textContent = music.on ? '🔇 ' + t('lp.stop') : '🔊 ' + t('lp.play');
+  off.onclick = async () => { await music.setOn(!music.on); applyMusicBtn(); openLpPanel(); };
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+  actions.append(off);
+  root.replaceChildren(x, h, note, list, actions);
+  root.hidden = false;
+}
 let musicWanted = false;
 try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
 if (musicWanted) {
@@ -1549,6 +1610,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
+      next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -1790,6 +1853,7 @@ renderer.setAnimationLoop(() => {
   }
   routeLine.update(dt);
   updateCarry();
+  if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -1869,6 +1933,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
+    music: () => ({ on: music.on, track: music.track.id }),
+    turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     missions: () => daily.missions.map((m) => ({ ...m })),
     mission: (type, target) => missionEvent(type, target),

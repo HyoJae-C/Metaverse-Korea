@@ -1,18 +1,10 @@
-// Background music made live in the browser with Web Audio: a slow, cozy
-// lo-fi loop (soft keys, bass, light drums, a little melody). No audio files,
-// so nothing to license and nothing to download. Starts only after a tap.
+// Background music made live in the browser with Web Audio. The songs are
+// short recipes in data/tracks.js (lo-fi by default; the music café's record
+// player switches songs). No audio files, so nothing to license and nothing
+// to download. Starts only after a tap.
 
-const BPM = 78;
-const BEAT = 60 / BPM;
-// Imaj7 – vi7 – IVmaj7 – V7sus in F major (MIDI notes)
-const CHORDS = [
-  [53, 57, 60, 64],
-  [50, 53, 57, 60],
-  [46, 50, 53, 57],
-  [48, 53, 55, 58],
-];
-const BASS = [41, 38, 34, 36];
-const SCALE = [65, 67, 69, 72, 74, 77]; // F major pentatonic, upper octave
+import { trackById } from '../data/tracks.js';
+
 const hz = (m) => 440 * 2 ** ((m - 69) / 12);
 
 export class Music {
@@ -23,6 +15,15 @@ export class Music {
     this.nextTime = 0;
     this.timer = null;
     this.seed = 7;
+    this.track = trackById('lofi');
+  }
+
+  // Switch songs (see data/tracks.js); starts the new one from its first bar.
+  setTrack(id) {
+    const next = trackById(id);
+    if (next === this.track) return;
+    this.track = next;
+    this.step = 0;
   }
 
   _rand() {
@@ -77,28 +78,77 @@ export class Music {
   _schedule() {
     while (this.nextTime < this.ctx.currentTime + 0.25) {
       this._playStep(this.step, this.nextTime);
-      // gentle swing on off-beats
-      this.nextTime += (BEAT / 2) * (this.step % 2 ? 0.84 : 1.16);
+      // swing: long on-beats, short off-beats
+      const beat = 60 / this.track.bpm, sw = this.track.swing;
+      this.nextTime += (beat / 2) * (this.step % 2 ? 2 - sw : sw);
       this.step = (this.step + 1) % 64;
     }
   }
 
   _playStep(s, t) {
+    const tr = this.track, BEAT = 60 / tr.bpm;
     const bar = Math.floor(s / 8) % 4;
     const e = s % 8;
+    const chord = tr.chords[bar], root = tr.bass[bar];
     if (e === 0) {
-      CHORDS[bar].forEach((m, i) => this._key(hz(m), t + i * 0.025, BEAT * 3.8, 0.07));
-      this._bass(hz(BASS[bar]), t, BEAT * 1.8);
+      if (tr.pad) chord.forEach((m) => this._pad(hz(m), t, BEAT * 7.6, 0.035));
+      else chord.forEach((m, i) => this._key(hz(m), t + i * 0.025, BEAT * 3.8, 0.07));
+      if (tr.waves) this._noise(t, 0.035, BEAT * 6, 'lowpass', 380);
     }
-    if (e === 5) this._bass(hz(BASS[bar] + 7), t, BEAT * 0.9);
-    if (e === 0 || e === 3) this._kick(t);
-    if (e === 4) this._snare(t);
-    if (e % 2 === 1) this._hat(t, 0.025);
-    // sparse melody, only in the second half of each 8-bar loop
-    if (s >= 32 && e % 2 === 0 && this._rand() < 0.42) {
-      const m = SCALE[Math.floor(this._rand() * SCALE.length)];
-      this._key(hz(m), t, BEAT * 0.9, 0.05, true);
+    if (tr.walk) { // walking bass: a chord tone on every beat
+      if (e % 2 === 0) this._bass(hz(e === 0 ? root : chord[e / 2] - 12), t, BEAT * 0.9);
+    } else if (tr.octaveBass) {
+      this._bass(hz(root + (e % 2 ? 12 : 0)), t, BEAT * 0.45);
+    } else {
+      for (const [at, iv, len] of tr.bassHits) if (e === at) this._bass(hz(root + iv), t, BEAT * len);
     }
+    if (tr.kick.includes(e)) this._kick(t);
+    if (tr.snare.includes(e)) tr.brush ? this._noise(t, 0.03, 0.22, 'bandpass', 3200) : this._snare(t);
+    if (tr.rim?.includes(e)) this._noise(t, 0.06, 0.04, 'bandpass', 4200);
+    if (tr.hat === 'odd' && e % 2 === 1) this._hat(t, 0.025);
+    if (tr.hat === 'all') this._hat(t, e % 2 ? 0.03 : 0.018);
+    if (tr.hat === 'ride' && e !== 1 && e !== 5) this._noise(t, 0.02, 0.25, 'highpass', 5500);
+    // a sparse melody
+    if (s >= tr.melodyFrom && e % 2 === 0 && this._rand() < tr.melody) {
+      const m = tr.scale[Math.floor(this._rand() * tr.scale.length)];
+      if (tr.lead === 'pluck') this._pluck(hz(m), t, BEAT * 0.7, 0.05);
+      else if (tr.lead === 'gayageum') this._pluck(hz(m), t, BEAT * 1.4, 0.07, this._rand() < 0.35);
+      else this._key(hz(m), t, BEAT * 0.9, 0.05, true);
+    }
+  }
+
+  // Long soft chord tone with a slow swell.
+  _pad(f, t, dur, vol) {
+    const c = this.ctx;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    o.detune.value = (this._rand() - 0.5) * 8;
+    o.connect(g).connect(this.master);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  // Plucked string; bend: slide up into the note, like a gayageum's 농현.
+  _pluck(f, t, dur, vol, bend = false) {
+    const c = this.ctx;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'triangle';
+    if (bend) {
+      o.frequency.setValueAtTime(f * 0.94, t);
+      o.frequency.exponentialRampToValueAtTime(f, t + 0.18);
+    } else o.frequency.value = f;
+    o.connect(g).connect(this.master);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   _env(g, t, peak, dur) {
@@ -156,6 +206,7 @@ export class Music {
     const c = this.ctx;
     const src = c.createBufferSource();
     src.buffer = this.noise;
+    src.loop = dur > 0.5; // long swells (waves) outlast the 1 s buffer
     const f = c.createBiquadFilter();
     f.type = type;
     f.frequency.value = freq;

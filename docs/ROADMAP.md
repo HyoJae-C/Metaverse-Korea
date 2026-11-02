@@ -16,6 +16,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 - Browse products, try on, add to cart; no real payments
 - Signs in Korean (or English) with a Translate button to the chosen language
 - Background music: a cozy lo-fi loop generated in the browser (no audio files, no licensing), off by default, 🎵 toggle remembered per device
+- **Sorimaru Record Café** (done): a record player with five original songs played live in the browser (lo-fi, swing jazz, city pop, Han River ambient, gugak groove), each with a short description. Only you hear your pick; leaving puts the usual music back. More songs are just new recipes in `src/data/tracks.js`
 
 ## Cost guardrails (done)
 
