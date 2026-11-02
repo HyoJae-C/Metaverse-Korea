@@ -11,6 +11,13 @@ export const EMOTE_PACKS = [
     price: 0,
     emotes: [
       { id: 'wave', emoji: '👋', anim: 'wave' },
+      { id: 'bow', emoji: '🙇', anim: 'bow' },
+      { id: 'laugh', emoji: '😂', anim: 'laugh' },
+      { id: 'angry', emoji: '😠', anim: 'angry' },
+      { id: 'shrug', emoji: '🤷', anim: 'shrug' },
+      { id: 'cheer', emoji: '🙌', anim: 'cheer' },
+      { id: 'clap', emoji: '👏', anim: 'clap' },
+      { id: 'cry', emoji: '😢', anim: 'cry' },
       { id: 'smile', emoji: '😊' },
       { id: 'heart', emoji: '💖' },
       { id: 'photo', emoji: '📸' },

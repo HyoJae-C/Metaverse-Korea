@@ -75,7 +75,7 @@ export class RemotePlayers {
   emote(id, anim, emoji) {
     const p = this.players.get(id);
     if (!p) return;
-    if (anim === 'wave') p.ch.wave();
+    if (anim) p.ch.play(anim);
     showBubble(p, this.layer, emoji);
   }
 

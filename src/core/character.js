@@ -93,6 +93,7 @@ export function createCharacter(rawLook) {
   let phase = 0;
   let waveT = 0;
   let bike = null, riding = false;
+  let act = null; // current body emote
   return {
     root,
     head,
@@ -143,12 +144,73 @@ export function createCharacter(rawLook) {
         armR.rotation.z = 2.6 + Math.sin(waveT * 14) * 0.35;
         if (waveT <= 0) armR.rotation.z = 0;
       }
+      if (act) {
+        act.t += dt;
+        const t = act.t, e = Math.sin(Math.PI * Math.min(1, t / act.dur)); // ease in and out
+        const pose = POSES[act.name];
+        if (t >= act.dur || (speed01 > 0.3 && !riding)) {
+          act = null;
+          armL.rotation.z = armR.rotation.z = 0;
+          head.rotation.set(0, 0, 0);
+          body.rotation.set(0, 0, 0);
+        } else pose({ t, e, armL, armR, head, body });
+      }
     },
     wave() {
       waveT = 1.6;
     },
+    // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
+    play(name) {
+      if (name === 'wave') { waveT = 1.6; return; }
+      if (!POSES[name]) return;
+      act = { name, t: 0, dur: name === 'cry' ? 2.2 : 1.7 };
+    },
   };
 }
+
+// Body emote poses: each sets limb angles for time t (s) with e = 0..1..0.
+// Right arm: +z raises it outward; left arm: -z.
+const POSES = {
+  bow({ e, armL, armR, body }) { // 인사: a polite Korean bow
+    body.rotation.x = 0.5 * e;
+    armL.rotation.x = armR.rotation.x = 0.1;
+  },
+  laugh({ t, e, armL, armR, head, body }) {
+    armL.rotation.x = armR.rotation.x = -0.7 * e;
+    armL.rotation.z = -0.25 * e; armR.rotation.z = 0.25 * e;
+    head.rotation.x = -0.3 * e;
+    body.position.y += Math.abs(Math.sin(t * 18)) * 0.035 * e;
+  },
+  angry({ t, e, armL, armR, body }) {
+    armL.rotation.x = armR.rotation.x = 0.35;
+    armL.rotation.z = -0.6 * e; armR.rotation.z = 0.6 * e; // fists on hips
+    body.rotation.z = Math.sin(t * 28) * 0.07 * e;
+    body.position.y += Math.abs(Math.sin(t * 9)) * 0.04 * e; // stomp
+  },
+  shrug({ e, armL, armR, head, body }) { // 몰라요
+    armL.rotation.x = armR.rotation.x = -0.5 * e;
+    armL.rotation.z = -1.1 * e; armR.rotation.z = 1.1 * e;
+    head.rotation.z = 0.28 * e;
+    body.position.y += 0.03 * e;
+  },
+  cheer({ t, e, armL, armR, body }) {
+    armL.rotation.x = armR.rotation.x = 0;
+    armL.rotation.z = -(2.5 + Math.sin(t * 16) * 0.2) * e;
+    armR.rotation.z = (2.5 + Math.sin(t * 16) * 0.2) * e;
+    body.position.y += Math.abs(Math.sin(t * 9)) * 0.14 * e;
+  },
+  clap({ t, e, armL, armR }) {
+    armL.rotation.x = armR.rotation.x = -1.3 * e;
+    const c = (0.15 + Math.abs(Math.sin(t * 14)) * 0.35) * e;
+    armL.rotation.z = c; armR.rotation.z = -c;
+  },
+  cry({ t, e, armL, armR, head, body }) {
+    armL.rotation.x = armR.rotation.x = -2.3 * e; // hands to the eyes
+    armL.rotation.z = 0.35 * e; armR.rotation.z = -0.35 * e;
+    head.rotation.x = 0.3 * e;
+    body.rotation.z = Math.sin(t * 20) * 0.03 * e;
+  },
+};
 
 const patchMats = {};
 function patchMat(id) {

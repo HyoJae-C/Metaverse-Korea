@@ -445,7 +445,7 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 const emoteBar = $('emotes');
 const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
 function sendEmote(em) {
-  if (em.anim === 'wave') me.wave();
+  if (em.anim) me.play(em.anim);
   showBubble(myLabel, $('labels'), em.emoji);
   net.sendEmote(em.id);
 }
@@ -454,9 +454,12 @@ const petals = emoteList.map((em, i) => {
   b.textContent = em.emoji;
   b.setAttribute('aria-label', em.id);
   // Fan out in a quarter circle above and to the left of the main button.
-  const n = emoteList.length;
-  const ang = Math.PI / 2 + (n > 1 ? (i / (n - 1)) : 0.5) * (Math.PI / 2);
-  const r = 84;
+  // Rings of 3, 4 and 5 petals so up to 12 fit without overlapping.
+  const ring = i < 3 ? 0 : i < 7 ? 1 : 2;
+  const start = [0, 3, 7][ring];
+  const n = Math.min([3, 4, 5][ring], emoteList.length - start);
+  const ang = Math.PI / 2 + (n > 1 ? ((i - start) / (n - 1)) : 0.5) * (Math.PI / 2);
+  const r = [80, 140, 200][ring];
   b.style.setProperty('--dx', `${Math.cos(ang) * r}px`);
   b.style.setProperty('--dy', `${-Math.sin(ang) * r}px`);
   b.onclick = (e) => { e.stopPropagation(); sendEmote(em); closeWheel(); };
