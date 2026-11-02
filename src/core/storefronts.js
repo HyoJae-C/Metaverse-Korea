@@ -32,7 +32,7 @@ function nearestFacade(buildings, x, z, isBlocked) {
       t = Math.max(margin / len, Math.min(1 - margin / len, t));
       const px = x1 + dx * t, pz = z1 + dz * t;
       const d = Math.hypot(px - x, pz - z);
-      if (d <= 40) cands.push({ d, px, pz, dx: dx / len, dz: dz / len });
+      if (d <= 40) cands.push({ d, px, pz, dx: dx / len, dz: dz / len, poly: p });
     }
   }
   cands.sort((a, b) => a.d - b.d);
@@ -42,12 +42,55 @@ function nearestFacade(buildings, x, z, isBlocked) {
     if ((x - c.px) * nx + (z - c.pz) * nz < 0) { nx = -nx; nz = -nz; }
     for (const s of [1, -1]) {
       const fx = c.px + nx * s * 3, fz = c.pz + nz * s * 3;
+      // Never face into the building itself (some buildings, e.g. ones with
+      // a raised ground floor, are not in the collision map).
+      if (pointInPoly(c.px + nx * s * 0.5, c.pz + nz * s * 0.5, c.poly)) continue;
       if (!isBlocked || (!isBlocked(fx, fz) && !isBlocked(c.px + nx * s * 1.7, c.pz + nz * s * 1.7))) {
         return { x: c.px, z: c.pz, nx: nx * s, nz: nz * s };
       }
     }
   }
   return null;
+}
+
+function pointInPoly(x, z, p) {
+  let inside = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [xi, zi] = p[i], [xj, zj] = p[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+// Floating label above a shop: an icon and the name, always facing the
+// camera so the shop is easy to spot from any angle or distance.
+const ICONS = { cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠' };
+function badgeTexture(icon, text, bg) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 128;
+  const g = c.getContext('2d');
+  const font = (s) => `800 ${s}px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif`;
+  let size = 52;
+  g.font = font(size);
+  while (g.measureText(text).width > 360 && size > 24) g.font = font((size -= 4));
+  const w = Math.min(500, g.measureText(text).width + 130);
+  const x0 = (512 - w) / 2;
+  g.fillStyle = 'rgba(0,0,0,0.18)';
+  g.beginPath(); g.roundRect(x0 + 4, 14, w - 4, 104, 52); g.fill();
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.roundRect(x0, 8, w - 4, 104, 52); g.fill();
+  g.fillStyle = bg;
+  g.beginPath(); g.arc(x0 + 54, 60, 40, 0, Math.PI * 2); g.fill();
+  g.font = '44px system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(icon, x0 + 54, 62);
+  g.font = font(size);
+  g.textAlign = 'left';
+  g.fillStyle = '#4a3f35';
+  g.fillText(text, x0 + 104, 62);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 function signTexture(text, bg, fg = '#ffffff') {
@@ -162,7 +205,14 @@ export class Storefronts {
       const door3 = new THREE.Vector3(0, 0, 1.7).applyMatrix4(group.matrixWorld.compose(
         group.position, group.quaternion, group.scale,
       ));
-      this.items.push({ store, group, sign, signMat, ring, door: door3 });
+      // Floating badge above the entrance (sprites always face the camera).
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(ICONS[store.category] || '🛍️', store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
+      badge.scale.set(6, 1.5, 1);
+      badge.position.set(0, home ? 5.2 : 6.4, 2.0);
+      badge.renderOrder = 3;
+      group.add(badge);
+
+      this.items.push({ store, group, sign, signMat, ring, badge, door: door3 });
     }
   }
 
@@ -173,6 +223,8 @@ export class Storefronts {
       it.signMat.map.dispose();
       it.signMat.map = signTexture(text, it.store.colors.sign);
       it.signMat.needsUpdate = true;
+      it.badge.material.map.dispose();
+      it.badge.material.map = badgeTexture(ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);
     }
   }
 
@@ -182,6 +234,10 @@ export class Storefronts {
     for (const it of this.items) {
       const s = 1 + Math.sin(t * 3) * 0.08;
       it.ring.scale.set(s, 1, s);
+      // Badges show through walls, so fade them out with distance.
+      const d = Math.hypot(it.door.x - x, it.door.z - z);
+      it.badge.visible = d < 140;
+      it.badge.material.opacity = d < 90 ? 1 : 1 - (d - 90) / 50;
       if (Math.hypot(it.door.x - x, it.door.z - z) < 2.2) hit = it;
     }
     return hit;

@@ -551,3 +551,5 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   .hat-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .hat-opt { flex: 0 0 auto; }
 }
+.tool.on { background: var(--accent); color: #fff; }
+.in-store #bike-btn { display: none; }

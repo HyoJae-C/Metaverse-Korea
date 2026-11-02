@@ -561,6 +561,9 @@ let activeScene = scene;
 let activeCollision = collision;
 let interior = null; // { store, scene, products, collision, front }
 let action = null; // what the action button does right now
+// Assign to `action` to force the button to refresh on the next frame
+// (null would compare equal to "no action" and leave a stale button showing).
+const STALE = { key: '\0', run() {} };
 
 const cart = new Cart();
 const shop = new ShopUI({
@@ -606,11 +609,17 @@ let clerk = null; // the clerk NPC in the shop you're in
 let riding = false;
 function setRiding(on) {
   if (riding === on) return;
+  if (on && mode !== 'street') return;
   riding = on;
   me.setBike(on);
   sendTimer = 0;
-  action = null;
+  action = STALE;
+  $('bike-btn').classList.toggle('on', on);
+  $('bike-label').textContent = t(on ? 'bike.offShort' : 'hud.bike');
 }
+// My bike (from the toolbar): ride anywhere on the street, tap again to get off.
+$('bike-btn').onclick = () => setRiding(!riding);
+onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function enterStore(item) {
   setRiding(false);
@@ -767,6 +776,7 @@ $('map-btn').onclick = () => {
 };
 
 // Action button (and E / Enter key).
+const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
   action.run();
@@ -849,7 +859,7 @@ function setDecorating(on) {
   $('decor-bar').hidden = !on;
   $('decor-btn').classList.toggle('on', on);
   if (!on) closePiece();
-  action = null; // refresh the action button
+  action = STALE; // refresh the action button
 }
 // A spot about 1.6 m in front of the player, inside the room.
 function spotInFront() {
@@ -904,14 +914,14 @@ $('piece-move').onclick = () => {
   [decor.piece.x, decor.piece.z] = spotInFront();
   rebuildDecor();
   closePiece();
-  action = null;
+  action = STALE;
 };
 $('piece-remove').onclick = () => {
   if (!decor?.piece) return;
   decor.items.splice(decor.items.indexOf(decor.piece), 1);
   rebuildDecor();
   closePiece();
-  action = null;
+  action = STALE;
 };
 $('piece-close').onclick = closePiece;
 
@@ -1058,7 +1068,7 @@ function updateAction(p, tSec) {
     else shop.closeProduct();
   }
 }
-onLanguageChange(() => { action = null; });
+onLanguageChange(() => { action = STALE; });
 
 function updateGuide(p, dt) {
   if (!guide || mode !== 'street') return;
@@ -1122,9 +1132,20 @@ renderer.setAnimationLoop(() => {
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
 
-  // Movement relative to camera.
+  // Movement relative to the camera. While the stick is held in one
+  // direction we keep the camera angle from when it was pushed, so the
+  // character walks in a straight line while the camera swings round behind
+  // (instead of circling). A new direction uses the current camera angle.
   const { x: mx, y: my } = input.move;
   const mag = Math.hypot(mx, my);
+  if (mag > 0.05) {
+    const sa = Math.atan2(mx, my);
+    if (moveRef.stick === null || Math.abs(Math.atan2(Math.sin(sa - moveRef.stick), Math.cos(sa - moveRef.stick))) > 0.6) {
+      moveRef.yaw = cam.yaw;
+      moveRef.stick = sa;
+    }
+  } else moveRef.stick = null;
+  if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const p = me.root.position;
   if (seated && mag > 0.3) standUp();
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
@@ -1133,8 +1154,8 @@ renderer.setAnimationLoop(() => {
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
     const speed = (riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
-    const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward
-    const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
+    const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
+    const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
     const dz = (fz * my + rz * mx) * speed * dt;
     const [nx, nz] = activeCollision.move(p.x, p.z, dx, dz, PLAYER_R);
@@ -1164,7 +1185,7 @@ renderer.setAnimationLoop(() => {
     let d = behind - cam.yaw;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     // Don't spin round when walking straight towards the camera.
-    if (Math.abs(d) < 2.4) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 1.5 : 2.5));
+    if (Math.abs(d) < 2.7) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
   }
 
   // Camera follow.
