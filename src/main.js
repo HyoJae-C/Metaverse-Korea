@@ -20,6 +20,7 @@ import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './c
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { BikeStations } from './core/bikes.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -99,6 +100,7 @@ const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
 const storesPromise = optionalJson('stores.json');
 const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
+const bikesPromise = optionalJson('bikes.json');
 
 await new Promise((resolve) => {
   $('start-btn').onclick = resolve;
@@ -160,6 +162,7 @@ const storefronts = new Storefronts(scene, storeData, map, region.center, collis
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 const routeLine = new RouteLine(scene);
+const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
@@ -240,6 +243,7 @@ const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
+const BIKE = 16; // bike share: faster than running, no stamina
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
@@ -567,6 +571,7 @@ function setLook(look) {
   me = createCharacter(look);
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
+  me.setBike(riding);
   old.parent?.remove(old);
   activeScene.add(me.root);
   net.sendLook?.(look);
@@ -588,7 +593,18 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 }
 
 const interiorCache = new Map();
+// Bike share: rent at a station, get off anywhere (the bike goes back by itself).
+let riding = false;
+function setRiding(on) {
+  if (riding === on) return;
+  riding = on;
+  me.setBike(on);
+  sendTimer = 0;
+  action = null;
+}
+
 function enterStore(item) {
+  setRiding(false);
   sfx.doorbell(); // ding-dong
   const store = item.store;
   let built = interiorCache.get(store.id);
@@ -907,6 +923,8 @@ function updateAction(p, tSec) {
   if (mode === 'street') {
     const it = storefronts.nearby(p.x, p.z, tSec);
     if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
+    else if (riding) next = { key: 'bike-off', label: '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
   } else {
     const ex = interior.exit;
     const seat = !seated && nearestSeat(p);
@@ -1007,12 +1025,12 @@ renderer.setAnimationLoop(() => {
   const mag = Math.hypot(mx, my);
   const p = me.root.position;
   if (seated && mag > 0.3) standUp();
-  const running = updateStamina(dt, input.run, mag > 0.05 && !seated);
+  const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
+    const speed = (riding ? BIKE : running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * Math.min(1, mag);
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw); // forward
     const rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -1030,7 +1048,7 @@ renderer.setAnimationLoop(() => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN), Math.min(1, dt * 10));
   } else {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
@@ -1111,7 +1129,8 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated) st.sit = 1;
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit;
+    if (riding) st.bk = 1;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -1141,6 +1160,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,
     decor: () => decor?.items.length ?? -1,
+    bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
+    riding: () => riding,
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },

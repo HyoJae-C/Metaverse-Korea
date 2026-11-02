@@ -38,6 +38,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
+    p.bk = false; // re-applied on the next update
     p.ch.root.position.copy(old.position);
     p.ch.root.rotation.copy(old.rotation);
     this.scene.remove(old);
@@ -89,6 +90,7 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
+        if (!!p.target.bk !== !!p.bk) { p.bk = !!p.target.bk; p.ch.setBike(p.bk); }
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
       }
       v.set(r.position.x, 1.55, r.position.z).project(camera);

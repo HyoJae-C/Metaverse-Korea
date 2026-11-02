@@ -1,6 +1,7 @@
 // Cute chibi (2-heads-tall) character built from simple rounded shapes.
 // Used for the local player and for other players alike.
 import * as THREE from 'three';
+import { makeBike } from './bikes.js';
 
 import { PALETTES, sanitizeLook, accessory } from '../data/appearance.js';
 
@@ -91,12 +92,30 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
+  let bike = null, riding = false;
   return {
     root,
     head,
+    // Show or hide a bike under the character.
+    setBike(on) {
+      if (on && !bike) { bike = makeBike(); root.add(bike); }
+      if (bike) bike.visible = on;
+      riding = on;
+    },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
-      if (sit) {
+      if (!riding) body.position.z = 0;
+      if (riding) {
+        // Pedalling: legs turn with speed, hands on the handlebar.
+        phase += dt * 9 * speed01;
+        const k = Math.min(1, dt * 10);
+        legL.rotation.x = -1.1 + Math.sin(phase) * 0.5;
+        legR.rotation.x = -1.1 - Math.sin(phase) * 0.5;
+        armL.rotation.x += (-1.1 - armL.rotation.x) * k;
+        if (waveT <= 0) armR.rotation.x += (-1.1 - armR.rotation.x) * k;
+        body.position.y += (0.42 - body.position.y) * k;
+        body.position.z = -0.22;
+      } else if (sit) {
         phase = 0;
         const k = Math.min(1, dt * 10);
         for (const l of [legL, legR]) l.rotation.x += (-1.45 - l.rotation.x) * k;
