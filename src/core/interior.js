@@ -106,6 +106,13 @@ export function productModel(kind, color) {
       add(new THREE.CylinderGeometry(0.17, 0.12, 0.08, 16), 0, 0.04, 0, mat('#ffffff'));
       add(new THREE.SphereGeometry(0.13, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.6, 1), 0, 0.08);
       break;
+    case 'bacon': // slices of raw meat on a plate
+      add(new THREE.CylinderGeometry(0.19, 0.15, 0.04, 16), 0, 0.02, 0, mat('#ffffff'));
+      for (let i = -1; i <= 1; i++) {
+        add(new THREE.BoxGeometry(0.26, 0.03, 0.07), 0, 0.055 + (i + 1) * 0.012, i * 0.075);
+        add(new THREE.BoxGeometry(0.26, 0.031, 0.015), 0, 0.055 + (i + 1) * 0.012, i * 0.075 + 0.01, mat('#fbeee4')); // fat stripe
+      }
+      break;
     case 'roll': // sliced gimbap
       for (let i = -1; i <= 1; i++) {
         add(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12).rotateX(Math.PI / 2), i * 0.07, 0.06);
@@ -346,6 +353,13 @@ export function buildInterior(store) {
         const tz = z0 + r * 2.6;
         if (Math.abs(tx) < 1.5 && tz > d / 2 - 3.2) continue; // door path
         box(0.9, 0.05, 0.9, tx, 0.62, tz, '#c98b4f');
+        if (store.workshop === 'grill') { // a round grill plate on each table
+          const grill = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 20), mat('#2b2b2e'));
+          grill.position.set(tx, 0.67, tz);
+          scene.add(grill);
+          box(0.2, 0.012, 0.06, tx - 0.06, 0.695, tz, '#c98a4a');
+          box(0.2, 0.012, 0.06, tx + 0.08, 0.695, tz + 0.1, '#f0b7a8');
+        }
         box(0.1, 0.62, 0.1, tx, 0.31, tz, '#8a5a3a');
         for (const s of [-1, 1]) {
           const cx = tx + 0.8 * s;

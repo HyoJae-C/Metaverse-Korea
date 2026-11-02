@@ -20,6 +20,7 @@ import { buildInterior } from './core/interior.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
+import { GrillUI } from './ui/grill-ui.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -880,6 +881,7 @@ function leaveStore() {
   closeHome();
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
+  if (grillUi.open) grillUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -1259,6 +1261,18 @@ const orderUi = new OrderUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
 });
+// Samgyeopsal grilling minigame: medals for good timing.
+const grillUi = new GrillUI({
+  root: $('grill-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); },
+});
+function openGrill() {
+  if (!interior?.store || !clerk) return;
+  clerk.ch.wave();
+  grillUi.show();
+}
 function openOrder() {
   if (!interior?.store || !clerk) return;
   clerk.ch.wave();
@@ -1500,6 +1514,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -1814,6 +1830,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
+    clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     missions: () => daily.missions.map((m) => ({ ...m })),
     mission: (type, target) => missionEvent(type, target),
