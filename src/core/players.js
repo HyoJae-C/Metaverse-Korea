@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { HELD_KINDS } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'run', 'clap', 'lie', 'pullup']);
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'run', 'clap', 'lie', 'pullup', 'curl']);
 import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';

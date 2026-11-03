@@ -77,6 +77,20 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   box-shadow: 0 3px 0 rgba(74, 63, 53, 0.12);
 }
 .lang-grid button[aria-pressed='true'] { border-color: var(--mint); background: #effaf7; }
+#lang-grid { display: block; }
+.lang-current {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: #fff; border-radius: 16px; padding: 12px 16px;
+  font-weight: 800; font-size: 17px; border: 3px solid var(--mint);
+  box-shadow: 0 3px 0 rgba(74, 63, 53, 0.12);
+}
+.lang-current .lang-name { flex: 1; text-align: start; }
+.lang-current[aria-expanded='true'] .lang-caret { transform: rotate(180deg); }
+.lang-list, #lang-grid-2 { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 8px; max-height: 46vh; overflow-y: auto; }
+.lang-list[hidden] { display: none; }
+.lang-list button, #lang-grid-2 button { padding: 10px 14px; text-align: start; }
+/* Arabic: panels and messages read right-to-left; the game screen keeps its layout. */
+html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='-panel']) { direction: rtl; }
 .name-field { display: grid; gap: 6px; margin-top: 16px; text-align: left; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
 .name-field input {
   font: inherit; font-size: 16px; color: var(--ink);

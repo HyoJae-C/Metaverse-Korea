@@ -22,18 +22,18 @@ const T = {
   poor: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
   bought: { en: 'Bought! It is on your name tag now.', ko: '구매 완료! 이름표에 달았어요.', ja: '購入しました！名札に付けました。', zh: '购买成功！已戴在名牌上。' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
-  nameTab: { en: 'Change name', ko: '이름 바꾸기', ja: '名前変更', zh: '改名', es: 'Cambiar nombre' },
+  nameTab: { en: 'Change name', ko: '이름 바꾸기', ja: '名前変更', zh: '改名', es: 'Cambiar nombre', ar: 'غيّر الاسم', id: 'Ganti nama' },
   nameHow: {
     en: 'Type a new name (Korean or English letters and numbers). Everyone sees it right away.',
     ko: '새 이름을 적어요 (한글, 영어, 숫자). 바꾸면 다른 사람들에게도 바로 보여요.',
     ja: '新しい名前を入力（ハングル・英字・数字）。変えるとすぐみんなに表示されます。',
     zh: '输入新名字（韩文、英文字母和数字），改完大家马上就能看到。',
-    es: 'Escribe un nombre nuevo (letras coreanas o inglesas y números). Todos lo verán al instante.',
+    es: 'Escribe un nombre nuevo (letras coreanas o inglesas y números). Todos lo verán al instante.', ar: 'اكتب اسمًا جديدًا (حروف كورية أو إنجليزية وأرقام). يراه الجميع فورًا.', id: 'Ketik nama baru (huruf Korea atau Inggris dan angka). Semua orang langsung melihatnya.',
   },
-  rename: { en: 'Change name · 🪙 {n}', ko: '이름 바꾸기 · 🪙 {n}', ja: '名前を変える · 🪙 {n}', zh: '改名 · 🪙 {n}', es: 'Cambiar nombre · 🪙 {n}' },
-  renamed: { en: 'Your name is now {name}!', ko: '이름이 「{name}」(으)로 바뀌었어요!', ja: '名前が{name}になりました！', zh: '你的名字现在是{name}！', es: '¡Ahora te llamas {name}!' },
-  same: { en: 'That is already your name.', ko: '지금 이름과 같아요.', ja: '今の名前と同じです。', zh: '和现在的名字一样。', es: 'Ya te llamas así.' },
-  empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.' },
+  rename: { en: 'Change name · 🪙 {n}', ko: '이름 바꾸기 · 🪙 {n}', ja: '名前を変える · 🪙 {n}', zh: '改名 · 🪙 {n}', es: 'Cambiar nombre · 🪙 {n}', ar: 'غيّر الاسم · 🪙 {n}', id: 'Ganti nama · 🪙 {n}' },
+  renamed: { en: 'Your name is now {name}!', ko: '이름이 「{name}」(으)로 바뀌었어요!', ja: '名前が{name}になりました！', zh: '你的名字现在是{name}！', es: '¡Ahora te llamas {name}!', ar: 'اسمك الآن {name}!', id: 'Namamu sekarang {name}!' },
+  same: { en: 'That is already your name.', ko: '지금 이름과 같아요.', ja: '今の名前と同じです。', zh: '和现在的名字一样。', es: 'Ya te llamas así.', ar: 'هذا اسمك بالفعل.', id: 'Itu sudah namamu.' },
+  empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', id: 'Ketik nama dulu.' },
 };
 export const RENAME_COST = 30;
 const tt = (k, v) => fmt(L(T[k]), v);

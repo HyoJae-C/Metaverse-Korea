@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { setBeat } from './core/model-pack.js';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, languageFromBrowser,
+  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
@@ -130,16 +130,37 @@ const testRoom = new URLSearchParams(location.search).has('debug') && new URLSea
 const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
 const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
-function renderLangGrid(el, onPick) {
+// Language list: one row per language. On the start screen it is a dropdown
+// (the current language on a button; tap it to open the list below).
+function renderLangList(el, onPick) {
   el.innerHTML = '';
   for (const l of LANGUAGES) {
     const b = document.createElement('button');
     b.textContent = l.label;
     b.lang = l.code;
+    if (l.rtl) b.dir = 'rtl';
     b.setAttribute('aria-pressed', String(l.code === getLanguage()));
     b.onclick = () => onPick(l.code);
     el.appendChild(b);
   }
+}
+function renderLangDropdown(el, onPick) {
+  const cur = LANGUAGES.find((l) => l.code === getLanguage()) || LANGUAGES[0];
+  el.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'lang-current';
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = '<span>🌐</span><span class="lang-name"></span><span class="lang-caret">▾</span>';
+  btn.querySelector('.lang-name').textContent = cur.label;
+  const list = document.createElement('div');
+  list.className = 'lang-list';
+  list.hidden = true;
+  renderLangList(list, onPick);
+  btn.onclick = () => {
+    list.hidden = !list.hidden;
+    btn.setAttribute('aria-expanded', String(!list.hidden));
+  };
+  el.append(btn, list);
 }
 
 function refreshStartText() {
@@ -153,12 +174,11 @@ function refreshStartText() {
   document.title = t('app.title');
 }
 
-const browserLang = languageFromBrowser(navigator.language || 'en');
-setLanguage(getSavedLanguage() || (LANGUAGES.some((l) => l.code === browserLang) ? browserLang : 'en'));
+setLanguage(getSavedLanguage() || 'en'); // English until you pick one
 const pickLang = (code) => {
   setLanguage(code);
-  renderLangGrid($('lang-grid'), pickLang);
-  renderLangGrid($('lang-grid-2'), (c) => {
+  renderLangDropdown($('lang-grid'), pickLang);
+  renderLangList($('lang-grid-2'), (c) => {
     pickLang(c);
     $('lang-overlay').hidden = true;
   });
@@ -182,8 +202,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
 let editor = null;
 let identity = readIdentity();
 const ID_TEXT = {
-  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the costume shop or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 코스튬 가게나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はコスチューム店かアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在服装店或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en la tienda de disfraces o desde tus objetos.' },
-  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy costumes like mage or ninja at the costume shop.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 마법사·닌자 같은 옷은 코스튬 가게에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、魔法使いや忍者の服はコスチューム店で買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，法师、忍者等服装可在服装店购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar disfraces de mago o ninja en la tienda de disfraces.' },
+  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the costume shop or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 코스튬 가게나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はコスチューム店かアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在服装店或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en la tienda de disfraces o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في متجر الأزياء أو من أغراضك.', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di toko kostum atau dari barangmu.' },
+  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy costumes like mage or ninja at the costume shop.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 마법사·닌자 같은 옷은 코스튬 가게에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、魔法使いや忍者の服はコスチューム店で買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，法师、忍者等服装可在服装店购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar disfraces de mago o ninja en la tienda de disfraces.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء أزياء مثل الساحر أو النينجا من متجر الأزياء.', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli kostum seperti penyihir atau ninja di toko kostum.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -579,9 +599,9 @@ let onboard = (() => {
   } catch { return 2; }
 })();
 const ONBOARD_TEXT = {
-  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.' },
-  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía' },
-  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.' },
+  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
+  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', id: 'Tos dengan pemandu' },
+  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
 };
 if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
@@ -1136,7 +1156,7 @@ const shop = new ShopUI({
 
 // Ordering at the counter: META COFFEE and the bar from the clerk, a club
 // from its bartender. Coffee refills your stamina when you sip it.
-const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir' };
+const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', id: 'Pesan' };
 function orderAtCounter(p) {
   const st = interior?.store;
   if (!st || !(st.takeaway || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
@@ -1264,10 +1284,10 @@ const DINE_TEXT = {
   packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
   poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
   busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
-  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}' },
-  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋' },
-  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados' },
-  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!' },
+  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}', ar: 'تذوّق طعام {name}', id: 'Cicipi makanan {name}' },
+  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋', ar: 'تذوّقت طعام {name}. شكرًا! 😋', id: 'Kamu mencicipi makanan {name}. Makasih! 😋' },
+  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados', ar: 'تذوّق {name} طعامك! بقيت {n} لقمات', id: '{name} mencicipi makananmu! Sisa {n} gigitan' },
+  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', id: '{name} menghabiskan gigitan terakhir!' },
   boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
 };
 const HELD_KEY = 'mk.held';
@@ -1507,14 +1527,14 @@ try {
 } catch { /* storage blocked */ }
 if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
-  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!' },
-  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.' },
-  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.' },
+  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', id: '🪙 +{n} koin!' },
+  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', id: 'Kode itu sudah dipakai di perangkat ini.' },
+  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', id: 'Kode acara itu tidak ada.' },
 };
 const OUTFIT_TEXT = {
-  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.' },
-  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!' },
-  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.' },
+  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.', ar: 'زيّ جديد! أنت ترتديه الآن.', id: 'Kostum baru! Sekarang sedang kamu pakai.' },
+  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!', ar: 'ارتديت الزي!', id: 'Kostum terpasang!' },
+  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', id: 'Kembali ke kaosmu.' },
 };
 // Costume shop and the items list: buy (coins), wear, or take off.
 function outfitAction(itemId) {
@@ -1689,8 +1709,8 @@ const sfx = new Sfx();
 const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
 const HONK_TEXT = {
-  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre' },
-  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon' },
+  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre', ar: 'اقرع الجرس', id: 'Bunyikan bel' },
+  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon', ar: 'زمّور', id: 'Klakson' },
 };
 let shownHonk = null, honkAt = 0;
 function honk() {
@@ -2641,7 +2661,7 @@ const saunaUi = new SaunaUI({
 });
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).
-const GYM_POSE = { treadmill: 'run', dumbbell: 'clap', pushup: 'pushup', situp: 'situp', pullup: 'pullup' };
+const GYM_POSE = { treadmill: 'run', dumbbell: 'curl', pushup: 'pushup', situp: 'situp', pullup: 'pullup' };
 let dancing = false;
 const DANCE_TEXT = {
   start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },

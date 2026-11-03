@@ -169,6 +169,14 @@ export function productModel(kind, color) {
 
 const HANGING = new Set(['tee', 'jeans', 'scarf']);
 
+// Shrink the font until the text fits the canvas width (long shop names).
+function fitText(g, text, size, maxW, weight = 800) {
+  let px = size;
+  const set = () => { g.font = `${weight} ${px}px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif`; };
+  set();
+  while (px > 18 && g.measureText(text).width > maxW) { px -= 2; set(); }
+}
+
 // A small sign: white text on a coloured plate.
 function labelTexture(text, bg) {
   const c = document.createElement('canvas');
@@ -177,7 +185,7 @@ function labelTexture(text, bg) {
   g.fillStyle = bg;
   g.fillRect(0, 0, c.width, c.height);
   g.fillStyle = '#ffffff';
-  g.font = '800 52px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  fitText(g, text, 52, c.width - 32);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillText(text, c.width / 2, c.height / 2 + 2);
@@ -247,14 +255,16 @@ export function buildInterior(store) {
   c.height = 160;
   const g = c.getContext('2d');
   g.fillStyle = store.colors.sign;
-  g.font = '800 92px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  const nameText = `${store.name.ko} · ${store.name.en}`;
+  fitText(g, nameText, 124, c.width - 40);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(`${store.name.ko} · ${store.name.en}`, 512, 84);
+  g.fillText(nameText, 512, 84);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const title = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(8, w - 1), Math.min(8, w - 1) / 6.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-  title.position.set(0, h - 0.9, -d / 2 + 0.02);
+  const tw = Math.min(10, w - 1), th = tw / 6.4;
+  const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
   if (store.category !== 'home') scene.add(title);
 
   const colliders = [];
@@ -722,7 +732,7 @@ export function buildInterior(store) {
       const mw = Math.min(w - 2, n * 2.6), mz = -d / 2 + 0.12;
       box(mw + 0.2, 1.75, 0.08, 0, 1.55, mz, '#e9eef2'); // frame
       const glass = new Reflector(new THREE.PlaneGeometry(mw, 1.55), {
-        textureWidth: 1024, textureHeight: Math.round(1024 * 1.55 / mw), color: 0xd8e4ea,
+        textureWidth: 2048, textureHeight: Math.round(2048 * 1.55 / mw), color: 0xffffff, // clear glass
       });
       glass.position.set(0, 1.55, mz + 0.05);
       scene.add(glass);
