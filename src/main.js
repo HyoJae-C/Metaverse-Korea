@@ -43,6 +43,8 @@ import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
+import { Bag } from './core/bag.js';
+import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
@@ -937,7 +939,7 @@ const shop = new ShopUI({
   onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
-  hasUmbrella: () => hasUmbrella,
+  hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
@@ -965,7 +967,7 @@ function setPet(id) {
   }
   try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
   refreshQuestChip();
-  if (!$('wallet-panel').hidden) refreshItems();
+  if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
 }
 function adoptPet(id) {
   const it = ITEMS[id];
@@ -1038,6 +1040,9 @@ $('fine-close').onclick = () => { $('fine-panel').hidden = true; };
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
 const HELD_KEY = 'mk.held';
+// The bag (core/bag.js): books, drinks and the umbrella you carry but don't
+// hold in your hand. 20 slots for now.
+const bag = new Bag(localStorage, { isBook: (id) => !!bookById(id), maxSips: COFFEE_SIPS });
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
@@ -1053,6 +1058,7 @@ function setHeld(h) {
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
+  $('stow-btn').hidden = !h;
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : '☕';
   $('drink-btn').querySelector('small').textContent = t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
@@ -1077,23 +1083,72 @@ $('drink-btn').onclick = drink;
 // when it rains or snows. Rain and snow slow walking and cycling a little;
 // the umbrella keeps most of that off on foot.
 const UMB_KEY = 'mk.umbrella';
-let hasUmbrella = (() => { try { return !!localStorage.getItem(UMB_KEY); } catch { return false; } })();
-const umbrellaOpen = () => hasUmbrella && mode === 'street' && !riding && !seated && WET.has(weather.kind);
+// The umbrella lives in the bag (it used to be a flag of its own: move it in).
+try {
+  if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
+} catch { /* storage blocked */ }
+const hasUmbrella = () => bag.has('umbrella');
+const umbrellaOpen = () => hasUmbrella() && mode === 'street' && !riding && !seated && WET.has(weather.kind);
 const wxSpeed = () => (mode !== 'street' || riding === 4 ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 const UMB_TEXT = {
   bought: { en: 'Got an umbrella! It opens by itself when it rains or snows. ☂️', ko: '우산을 샀어요! 비나 눈이 오면 저절로 펴져요. ☂️', ja: '傘を買いました！雨や雪の日は自動で開きます。☂️', zh: '买到雨伞了！下雨或下雪时会自动撑开。☂️' },
 };
 function buyUmbrella(product) {
-  if (hasUmbrella) return;
+  if (hasUmbrella()) return;
+  if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
   const cost = product.coins || 5;
   if (!wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
-  hasUmbrella = true;
-  try { localStorage.setItem(UMB_KEY, '1'); } catch { /* storage blocked */ }
+  bag.add({ kind: 'umbrella' });
   refreshWallet();
   shop.toast(L(UMB_TEXT.bought));
   shop.openProduct(product); // the button now says you have one
 }
 if (held) setHeld(held);
+
+// Put what's in my hand into the bag, and take things back out.
+const UMB_DESC = { en: 'Opens by itself outdoors when it rains or snows.', ko: '밖에서 비나 눈이 오면 저절로 펴져요.', ja: '外で雨や雪が降ると自動で開きます。', zh: '在外面下雨或下雪时会自动撑开。' };
+const UMB_NAME = { en: 'Umbrella', ko: '우산', ja: '傘', zh: '雨伞' };
+const BOOK_DESC = { en: 'Hold it and sit down to read.', ko: '손에 들고 앉으면 읽을 수 있어요.', ja: '手に持って座ると読めます。', zh: '拿在手上坐下就能读。' };
+const DRINK_DESC = { en: '{n} sips left.', ko: '{n}모금 남았어요.', ja: '残り{n}口。', zh: '还剩{n}口。' };
+function describeEntry(e) {
+  if (e.kind === 'umbrella') return { emoji: '☂️', name: L(UMB_NAME), desc: L(UMB_DESC), canHold: false };
+  if (e.kind === 'book') {
+    const b = bookById(e.book);
+    return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
+  }
+  return { emoji: '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
+}
+function stowHeld() {
+  if (!held) return;
+  if (!bag.add(held)) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
+  setHeld(null);
+  sfx.pop?.();
+  shop.toast(fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
+}
+$('stow-btn').onclick = stowHeld;
+$('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+const bagUi = new BagUI({
+  root: $('bag-panel'),
+  bag,
+  describe: describeEntry,
+  holding: () => !!held,
+  onHold: (i) => {
+    const e = held ? bag.swap(i, held) : bag.take(i);
+    if (e) setHeld(e);
+  },
+  onDrop: (i) => bag.take(i),
+  extra: () => {
+    refreshItems();
+    $('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
+    return [$('wallet-items-title'), $('wallet-items')];
+  },
+});
+$('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
+$('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+onLanguageChange(() => {
+  $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+  $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+});
 
 function setLook(look) {
   currentLook = look;
