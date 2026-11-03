@@ -1009,3 +1009,4 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .ac-cert-seal { font-size: 14px; font-weight: 800; }
 .err-box { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 9999; max-width: min(92vw, 640px); padding: 8px 12px; border-radius: 10px; background: #3a2a22; color: #fff; font-size: 12px; line-height: 1.4; word-break: break-all; pointer-events: none; }
 .err-box[hidden] { display: none; }
+.err-box.gpu-hint { top: 130px; bottom: auto; font-size: 13px; word-break: keep-all; }

@@ -77,6 +77,27 @@ const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
 
+// Safety net: if the player or the camera ever ends up at an invalid
+// position (NaN), put them back at the last good one, and show a short note
+// with the details so the cause can be found from a screenshot. Set up
+// first so a failure while the world loads shows up too.
+const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
+let errBox = null;
+function reportProblem(msg) {
+  console.error('[mk]', msg);
+  if (!errBox) {
+    errBox = document.createElement('div');
+    errBox.className = 'err-box';
+    document.body.append(errBox);
+  }
+  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  errBox.hidden = false;
+  clearTimeout(errBox.t);
+  errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
+}
+addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
+
 // Cloud save (guest account on Supabase). Runs before anything reads saved
 // data, so a newer save from the server is in place first. Skipped in
 // automated test rooms.
@@ -262,8 +283,36 @@ const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowS
 // (fast taps on the fishing reel button zoomed the page in).
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec ? 1.5 : 2));
-renderer.shadowMap.enabled = !lowSpec;
+// Chrome with graphics acceleration turned off (or a GPU it has blocked)
+// draws with a slow software renderer: say how to turn it back on.
+const softwareGL = (() => {
+  try {
+    const gl = renderer.getContext();
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    return /swiftshader|llvmpipe|software|basic render/i.test(name) ? name : '';
+  } catch { return ''; }
+})();
+if (softwareGL && !/[?&]debug\b/.test(location.search)) {
+  setTimeout(() => showGpuHint(), 3000);
+}
+function showGpuHint() {
+  const box = document.createElement('div');
+  box.className = 'err-box gpu-hint';
+  box.textContent = {
+    ko: '🐢 그래픽 가속이 꺼져 있어 화면이 느리거나 안 보일 수 있어요. 크롬 설정 → 시스템 → "가능한 경우 그래픽 가속 사용"을 켜고 다시 시작해 주세요.',
+    ja: '🐢 グラフィック アクセラレーションがオフです。Chrome の設定 → システム →「グラフィック アクセラレーションが使用可能な場合は使用する」をオンにして再起動してください。',
+    zh: '🐢 图形加速已关闭，画面可能很慢或不显示。请在 Chrome 设置 → 系统 → 打开“使用图形加速功能”后重新启动。',
+  }[getLanguage()] || '🐢 Graphics acceleration is off, so the game may be slow or blank. In Chrome, open Settings → System → turn on "Use graphics acceleration when available", then relaunch.';
+  document.body.append(box);
+  setTimeout(() => box.remove(), 20000);
+}
+// The graphics card can drop the page (driver reset, too many tabs): let it
+// come back instead of leaving a blank screen.
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); reportProblem('graphics context lost — reload the page if it stays blank'); });
+canvas.addEventListener('webglcontextrestored', () => { if (errBox) errBox.hidden = true; });
+renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec || softwareGL ? 1 : 2));
+renderer.shadowMap.enabled = !lowSpec && !softwareGL;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -278,14 +327,14 @@ const ambient = new THREE.AmbientLight(0xfff0e0, 0.9);
 scene.add(hemi, ambient);
 const sun = new THREE.DirectionalLight(0xfff1d6, 1.5);
 sun.position.set(60, 120, 40);
-sun.castShadow = !lowSpec;
+sun.castShadow = !lowSpec && !softwareGL;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 300 });
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
-const { bounds } = buildWorld(map, scene, { lowSpec, collision });
+const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision });
 buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -2547,25 +2596,6 @@ const timer = new THREE.Timer();
 let streetTimer = 0, speed01 = 0;
 const tmp = new THREE.Vector3();
 
-// Safety net: if the player or the camera ever ends up at an invalid
-// position (NaN), put them back at the last good one, and show a short note
-// with the details so the cause can be found from a screenshot.
-const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
-let errBox = null;
-function reportProblem(msg) {
-  console.error('[mk]', msg);
-  if (!errBox) {
-    errBox = document.createElement('div');
-    errBox.className = 'err-box';
-    document.body.append(errBox);
-  }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
-  errBox.hidden = false;
-  clearTimeout(errBox.t);
-  errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
-}
-addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
-addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
 function guardPosition() {
   const r = me.root.position;
   const bad = ![r.x, r.y, r.z, cam.yaw, cam.pitch, cam.dist].every(Number.isFinite);
@@ -2887,6 +2917,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
+    storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
