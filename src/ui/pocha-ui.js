@@ -1,11 +1,11 @@
 // Tteokbokki stall panel (rules in core/pocha-game.js): customers order in
 // Korean, you pick the spice and toppings and serve. The start screen also
 // offers a delivery run (core/delivery.js, driven from main.js).
-import { getLanguage } from '../core/i18n.js';
+import { getLanguage, localName } from '../core/i18n.js';
 import { Medals, medalFor, medalIcon } from '../core/grill-game.js';
 import { POCHA_GAME, CUSTOMERS, PATIENCE, SPICE, TOPPINGS, makeOrder, orderLine, rightBowl, servePoints, tipFor } from '../core/pocha-game.js';
 
-export const L = (o) => o[getLanguage()] || o.en;
+export const L = (o) => localName(o, getLanguage());
 const T = {
   title: { en: 'Tteokbokki stall', ko: '떡볶이 포장마차', ja: 'トッポッキ屋台', zh: '炒年糕小摊' },
   howTo: {

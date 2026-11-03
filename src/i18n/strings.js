@@ -2,11 +2,15 @@
 // block with the same keys and listing it in LANGUAGES. Missing keys fall
 // back to English.
 
+import { ES } from './es.js';
+
 export const LANGUAGES = [
-  { code: 'en', label: 'English' },
   { code: 'ko', label: '한국어' },
+  { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
+  { code: 'zh', label: '简体中文' },
   { code: 'ja', label: '日本語' },
-  { code: 'zh', label: '中文(简体)' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
 ];
 
 export const STRINGS = {
@@ -1662,9 +1666,11 @@ export const STRINGS = {
 
 // Place names that OSM may not carry in every language. Only verified,
 // widely used names go here.
+STRINGS.es = ES;
+
 export const REGION_NAMES = {
   seongsu: {
-    en: 'Seongsu-dong', ko: '성수동', ja: '聖水洞', zh: '圣水洞',
+    en: 'Seongsu-dong', ko: '성수동', ja: '聖水洞', zh: '圣水洞', zht: '聖水洞', es: 'Seongsu-dong',
   },
-  seoul: { en: 'Seoul', ko: '서울', ja: 'ソウル', zh: '首尔' },
+  seoul: { en: 'Seoul', ko: '서울', ja: 'ソウル', zh: '首尔', zht: '首爾', es: 'Seúl' },
 };

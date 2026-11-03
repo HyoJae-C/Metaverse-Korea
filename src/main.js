@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { setBeat } from './core/model-pack.js';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
+  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, languageFromBrowser,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
@@ -142,15 +142,15 @@ function renderLangGrid(el, onPick) {
 function refreshStartText() {
   const lang = getLanguage();
   $('start-region').textContent = t('start.region', {
-    region: REGION_NAMES[regionId]?.[lang] || localName(region.name, lang),
-    city: REGION_NAMES.seoul[lang],
+    region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
+    city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
   input.placeholder = t('start.defaultName');
   document.title = t('app.title');
 }
 
-const browserLang = (navigator.language || 'en').slice(0, 2);
+const browserLang = languageFromBrowser(navigator.language || 'en');
 setLanguage(getSavedLanguage() || (LANGUAGES.some((l) => l.code === browserLang) ? browserLang : 'en'));
 const pickLang = (code) => {
   setLanguage(code);
@@ -659,7 +659,7 @@ function updateStreetCard() {
   }
   const lang = getLanguage();
   const original = currentStreet.ko || localName(currentStreet);
-  const local = currentStreet[lang] || currentStreet.en;
+  const local = localName(currentStreet, lang);
   const canTranslate = lang !== 'ko' && local && local !== original;
   btn.hidden = !canTranslate;
   btn.textContent = t(translated ? 'hud.original' : 'hud.translate');

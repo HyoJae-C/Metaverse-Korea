@@ -163,8 +163,8 @@ const TB = (level, pages, color) => ({
 });
 BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa0'), TB('5-6', 36, '#9c3d54'));
 export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.pages.length);
-// The edition to show first: simplified Chinese for Chinese, else English.
-export const defaultEdition = (lang) => (lang === 'zh' ? 'hans' : 'en');
+// The edition to show first: the reader's Chinese, else English.
+export const defaultEdition = (lang) => (lang === 'zh' ? 'hans' : lang === 'zht' ? 'hant' : 'en');
 export const pageUrl = (b, ed, i) => `books/${b.id}/${ed}/${String(i + 1).padStart(2, '0')}.webp`;
 
 export const bookById = (id) => BOOKS.find((b) => b.id === id) || null;

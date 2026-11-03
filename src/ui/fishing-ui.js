@@ -2,7 +2,7 @@
 // the catch list are in core/fishing.js.
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
-import { t, getLanguage } from '../core/i18n.js';
+import { t, getLanguage, localName } from '../core/i18n.js';
 import { FISH, rollFish, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
@@ -11,7 +11,7 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${f.name[getLanguage()] || f.name.en} · ${f.ko} (${f.rom})`);
+export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.name, getLanguage())} · ${f.ko} (${f.rom})`);
 const pct = (c) => (c < 1 ? c.toFixed(1) : String(c)) + '%';
 
 export class FishingUI {
@@ -153,7 +153,7 @@ export class FishingUI {
       el('span', 'fish-big', f.emoji),
       el('strong', null, f.ko),
       el('small', 'order-rom', f.rom),
-      el('small', null, `${f.name[getLanguage()] || f.name.en} · ${pct(f.chance)} · 🪙 ${f.price}`),
+      el('small', null, `${localName(f.name, getLanguage())} · ${pct(f.chance)} · 🪙 ${f.price}`),
     );
     this.root.append(card, el('p', 'order-hint', kept ? t('fish.caught', { name: fishName(f) }) : t('fish.full')));
     const again = el('button', 'primary', '🎣 ' + t('fish.again'));

@@ -6,7 +6,7 @@ const UMB = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
   have: { en: 'You have one', ko: '이미 있어요', ja: '持っています', zh: '已经有了' },
 };
-const L = (o) => o[getLanguage()] || o.en;
+const L = (o) => localName(o, getLanguage());
 const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
