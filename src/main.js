@@ -72,6 +72,7 @@ import { Inventory, ITEMS, redeemCode, coinCode, parseTandem, tandemMsg } from '
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { taxiFare } from './core/taxi.js';
 import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW } from './core/bike-garage.js';
 import { ClubMusic } from './core/club-music.js';
@@ -810,6 +811,11 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
+      if (parseHonk(e)) {
+        const at = others.positionOf(id);
+        if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
+        return;
+      }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
@@ -1650,6 +1656,21 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
+const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
+// Bicycle bell / horn while riding: you and nearby players hear it.
+const HONK_TEXT = {
+  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre' },
+  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon' },
+};
+let shownHonk = null, honkAt = 0;
+function honk() {
+  if (!shownHonk || performance.now() - honkAt < 900) return;
+  honkAt = performance.now();
+  motionSound.honk(shownHonk);
+  net.sendEmote(honkMsg(shownHonk));
+}
+$('honk-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); honk(); });
+addEventListener('keydown', (e) => { if (e.code === 'KeyH' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) honk(); });
 try { sfx.on = localStorage.getItem('mk.sfx') !== '0'; } catch { /* ignore */ }
 $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
 $('sfx-btn').onclick = () => {
@@ -1657,6 +1678,7 @@ $('sfx-btn').onclick = () => {
   $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
   try { localStorage.setItem('mk.sfx', sfx.on ? '1' : '0'); } catch { /* ignore */ }
   if (sfx.on) sfx.doorbell(); // preview
+  else motionSound.stopAll();
 };
 
 // Background music (off by default; the choice is remembered on this device).
@@ -3485,6 +3507,19 @@ renderer.setAnimationLoop(() => {
     }
   }
 
+  const hk = ride ? null : honkKind(riding === 3 ? 0 : riding);
+  if (hk !== shownHonk) {
+    shownHonk = hk;
+    $('honk-btn').hidden = !hk;
+    if (hk) { $('honk-btn').textContent = hk === 'bell' ? '🔔' : '📯'; $('honk-btn').setAttribute('aria-label', L(HONK_TEXT[hk])); }
+  }
+  motionSound.update(dt, {
+    walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
+    running: input.run && !stamina.tired,
+    riding: ride ? 0 : riding,
+    speed01,
+    indoor: mode === 'store',
+  });
   // Event-based sync: send only when our state changed (moving, turning,
   // slowing to a stop; a teleport or a newcomer forces a send), plus a slow
   // heartbeat when idle. Presence already tracks who is online, so the
@@ -3614,6 +3649,7 @@ updateStreetCard();
 if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     emblem: () => emblemUi.show(),
+    motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),
     mealBites: () => meal?.bites ?? null,
     peerMeals: () => [...peerMeals.values()].map((m) => [m.owner, m.bites, m.seat.plate]),

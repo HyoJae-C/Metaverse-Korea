@@ -1091,3 +1091,10 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
 .rename-input { width: 100%; box-sizing: border-box; font-size: 17px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.18); margin: 4px 0 8px; }
+/* Bicycle bell / horn while riding: next to the emote button. */
+.honk-btn {
+  position: absolute; right: 86px; bottom: max(48px, calc(env(safe-area-inset-bottom) + 40px));
+  width: 52px; height: 52px; border-radius: 50%; font-size: 25px;
+  background: var(--panel); box-shadow: var(--shadow); touch-action: none;
+}
+.honk-btn:active { transform: translateY(2px); }
