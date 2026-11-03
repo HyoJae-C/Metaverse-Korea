@@ -171,7 +171,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .help .chip { background: var(--mint); box-shadow: none; flex: none; }
 @media (pointer: coarse) {
   /* Phones: above the joystick and action button, clear of the street card. */
-  .help { bottom: calc(env(safe-area-inset-bottom) + 250px); }
+  .help { bottom: calc(env(safe-area-inset-bottom) + 268px); }
 }
 
 .credit {
@@ -276,6 +276,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   background: var(--accent); color: #fff; font-weight: 800; font-size: 17px;
   border-radius: 999px; padding: 13px 22px; box-shadow: 0 5px 0 var(--accent-dark);
   white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
+  z-index: 4; /* above the hint cards, so they never swallow the tap (sheets stay above) */
 }
 .action:active { transform: translate(-50%, 3px); box-shadow: 0 2px 0 var(--accent-dark); }
 .store-banner {
@@ -1090,3 +1091,10 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
 .rename-input { width: 100%; box-sizing: border-box; font-size: 17px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.18); margin: 4px 0 8px; }
+/* Bicycle bell / horn while riding: next to the emote button. */
+.honk-btn {
+  position: absolute; right: 86px; bottom: max(48px, calc(env(safe-area-inset-bottom) + 40px));
+  width: 52px; height: 52px; border-radius: 50%; font-size: 25px;
+  background: var(--panel); box-shadow: var(--shadow); touch-action: none;
+}
+.honk-btn:active { transform: translateY(2px); }

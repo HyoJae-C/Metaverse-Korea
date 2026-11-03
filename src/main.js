@@ -44,7 +44,7 @@ import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
 import { buildInterior, productModel } from './core/interior.js';
-import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES } from './core/dining.js';
+import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES, mealSync, parseMealSync, biteMsg, parseBite, BITE_REACH, BITE_GAP_MS, foodScale } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
@@ -72,6 +72,7 @@ import { Inventory, ITEMS, redeemCode, coinCode, parseTandem, tandemMsg } from '
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { taxiFare } from './core/taxi.js';
 import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW } from './core/bike-garage.js';
 import { ClubMusic } from './core/club-music.js';
@@ -810,6 +811,12 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
+      if (parseHonk(e)) {
+        const at = others.positionOf(id);
+        if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
+        return;
+      }
+      if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -1211,6 +1218,10 @@ const DINE_TEXT = {
   packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
   poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
   busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
+  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}' },
+  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋' },
+  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados' },
+  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!' },
   boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
 };
 const HELD_KEY = 'mk.held';
@@ -1645,6 +1656,21 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
+const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
+// Bicycle bell / horn while riding: you and nearby players hear it.
+const HONK_TEXT = {
+  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre' },
+  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon' },
+};
+let shownHonk = null, honkAt = 0;
+function honk() {
+  if (!shownHonk || performance.now() - honkAt < 900) return;
+  honkAt = performance.now();
+  motionSound.honk(shownHonk);
+  net.sendEmote(honkMsg(shownHonk));
+}
+$('honk-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); honk(); });
+addEventListener('keydown', (e) => { if (e.code === 'KeyH' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) honk(); });
 try { sfx.on = localStorage.getItem('mk.sfx') !== '0'; } catch { /* ignore */ }
 $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
 $('sfx-btn').onclick = () => {
@@ -1652,6 +1678,7 @@ $('sfx-btn').onclick = () => {
   $('sfx-btn').setAttribute('aria-pressed', String(sfx.on));
   try { localStorage.setItem('mk.sfx', sfx.on ? '1' : '0'); } catch { /* ignore */ }
   if (sfx.on) sfx.doorbell(); // preview
+  else motionSound.stopAll();
 };
 
 // Background music (off by default; the choice is remembered on this device).
@@ -1831,21 +1858,25 @@ function dineAction() {
   }
   return { key: 'dine-menu', label: '📖 ' + L(DINE_TEXT.menu), run: () => openMenu() };
 }
-function updateMeal() {
-  if (!meal || meal.mesh || !interior || !meal.ready(performance.now())) return;
-  const [x, z] = meal.seat.plate;
+function makePlate(seat, product) {
+  const [x, z] = seat.plate;
   const g = new THREE.Group();
   const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.02, 20), new THREE.MeshLambertMaterial({ color: '#fbfaf6' }));
   plate.position.y = 0.01;
-  const food = productModel(meal.product.model, meal.product.color);
+  const food = productModel(product.model, product.color);
   food.scale.setScalar(1.5);
   food.position.y = 0.02;
   g.add(plate, food);
   g.position.set(x, 0.645, z);
-  g.rotation.y = meal.seat.ry;
+  g.rotation.y = seat.ry;
   interior.scene.add(g);
-  meal.mesh = g;
-  meal.food = food;
+  return { mesh: g, food };
+}
+function updateMeal() {
+  syncPeerMeals();
+  if (!meal || meal.mesh || !interior || !meal.ready(performance.now())) return;
+  Object.assign(meal, makePlate(meal.seat, meal.product));
+  lastSent = null; // show the dish to the room
   sfx.pop?.();
   const name = localName(meal.product.name, getLanguage());
   shop.toast(fmt(L(DINE_TEXT.served), { name }));
@@ -1858,7 +1889,91 @@ function eatMeal() {
   me.play('clap');
   sfx.pop?.();
   if (left <= 0) { clearMeal(); shop.toast(L(DINE_TEXT.finished)); missionEvent('eat'); }
-  else { meal.food.scale.setScalar(1.5 * (0.45 + 0.55 * left / FOOD_BITES)); shop.toast(fmt(L(DINE_TEXT.bite), { n: left })); }
+  else { meal.food.scale.setScalar(foodScale(left)); shop.toast(fmt(L(DINE_TEXT.bite), { n: left })); }
+  lastSent = null;
+}
+// Other people's dishes in this restaurant (from their state): anyone can
+// tap one to take a bite, and the owner's game counts it.
+const peerMeals = new Map(); // player id -> { key, mesh, food, seat, owner, bites }
+function clearPeerMeals() {
+  for (const pm of peerMeals.values()) pm.mesh.removeFromParent();
+  peerMeals.clear();
+}
+function syncPeerMeals() {
+  if (mode !== 'store' || !isDining(interior?.store)) { if (peerMeals.size) clearPeerMeals(); return; }
+  const seen = new Set();
+  for (const [id, p] of others.players) {
+    const m = !p.hidden && parseMealSync(p.target?.ml, interior.seats, interior.store.products);
+    if (!m || m.seat === meal?.seat) continue;
+    seen.add(id);
+    let pm = peerMeals.get(id);
+    const key = m.seatIndex + ':' + m.product.id;
+    if (!pm || pm.key !== key) {
+      pm?.mesh.removeFromParent();
+      pm = { key, seat: m.seat, owner: id, ...makePlate(m.seat, m.product) };
+      peerMeals.set(id, pm);
+    }
+    if (pm.bites !== m.bites) { pm.bites = m.bites; pm.food.scale.setScalar(foodScale(m.bites)); }
+  }
+  for (const [id, pm] of peerMeals) if (!seen.has(id)) { pm.mesh.removeFromParent(); peerMeals.delete(id); }
+}
+function nearPeerMeal(p, r = 1.3) {
+  let best = null, bestD = r;
+  for (const pm of peerMeals.values()) {
+    const d = Math.hypot(p.x - pm.seat.plate[0], p.z - pm.seat.plate[1]);
+    if (d < bestD) { bestD = d; best = pm; }
+  }
+  return best;
+}
+let lastSteal = 0;
+function stealBite(pm) {
+  const now = performance.now();
+  if (now - lastSteal < BITE_GAP_MS || !peerMeals.has(pm.owner)) return;
+  lastSteal = now;
+  net.sendEmote(biteMsg(pm.owner));
+  pm.food.scale.setScalar(foodScale(pm.bites - 1)); // until their state catches up
+  me.play('clap');
+  sfx.pop?.();
+  shop.toast(fmt(L(DINE_TEXT.took), { name: others.nameOf(pm.owner) || '?' }));
+}
+const lastBittenBy = new Map(); // id -> when they last took a bite
+function onBitten(id) {
+  if (!meal?.mesh || safety.isBlocked(id, others.nameOf(id))) return;
+  const at = others.positionOf(id);
+  const [px, pz] = meal.seat.plate;
+  if (!at || Math.hypot(at.x - px, at.z - pz) > BITE_REACH) return;
+  const now = performance.now();
+  if (now - (lastBittenBy.get(id) || 0) < BITE_GAP_MS * 0.8) return;
+  lastBittenBy.set(id, now);
+  const name = others.nameOf(id) || '?';
+  const left = meal.bite(now);
+  sfx.pop?.();
+  if (left <= 0) { clearMeal(); shop.toast(fmt(L(DINE_TEXT.stolenLast), { name })); }
+  else { meal.food.scale.setScalar(foodScale(left)); shop.toast(fmt(L(DINE_TEXT.stolen), { name, n: left })); }
+  lastSent = null;
+  action = STALE;
+}
+// Tap a dish on the table (yours: eat; someone else's: take a bite).
+{
+  const tapRay = new THREE.Raycaster();
+  let down = null;
+  canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+  canvas.addEventListener('pointerup', (e) => {
+    if (!down || mode !== 'store' || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10 || performance.now() - down.t > 500) return;
+    const targets = [...peerMeals.values()].map((pm) => [pm.mesh, pm]);
+    if (meal?.mesh && meal.seat === seated) targets.push([meal.mesh, null]);
+    if (!targets.length) return;
+    const r = canvas.getBoundingClientRect();
+    tapRay.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    const hit = tapRay.intersectObjects(targets.map((t) => t[0]), true)[0];
+    if (!hit) return;
+    const t = targets.find(([m]) => { let o = hit.object; while (o && o !== m) o = o.parent; return !!o; });
+    if (!t) return;
+    const p = me.root.position;
+    if (!t[1]) { eatMeal(); action = STALE; return; }
+    if (Math.hypot(p.x - t[1].seat.plate[0], p.z - t[1].seat.plate[1]) > BITE_REACH) return;
+    stealBite(t[1]);
+  });
 }
 function orderFood(product, togo) {
   const cost = coinPrice(product.price);
@@ -2129,7 +2244,19 @@ function runAction() {
   if (!action) return;
   action.run();
 }
-$('action-btn').onclick = runAction;
+// A tap with a second finger while the first one is still on the joystick
+// gives no click on phones (only the first finger's touch makes clicks), so
+// "enter", "hop on" and the rest did nothing for people walking up to a shop
+// with their thumb still down. Act on the touch itself; mouse and keyboard
+// keep the plain click.
+let actionTouchAt = -1e9;
+$('action-btn').addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  e.preventDefault();
+  actionTouchAt = performance.now();
+  runAction();
+});
+$('action-btn').onclick = () => { if (performance.now() - actionTouchAt > 700) runAction(); };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement) return;
   if (e.code === 'KeyE' || e.code === 'Enter') runAction();
@@ -3031,6 +3158,9 @@ function updateAction(p, tSec) {
     const seat = !seated && nearestSeat(p);
     if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
+    } else if (!seated && nearPeerMeal(p)) {
+      const pm = nearPeerMeal(p);
+      next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
     } else if (decor?.editing) {
       // decorate mode: walk up to a piece to rotate, move or remove it
       const it = nearestPiece(p);
@@ -3377,6 +3507,19 @@ renderer.setAnimationLoop(() => {
     }
   }
 
+  const hk = ride ? null : honkKind(riding === 3 ? 0 : riding);
+  if (hk !== shownHonk) {
+    shownHonk = hk;
+    $('honk-btn').hidden = !hk;
+    if (hk) { $('honk-btn').textContent = hk === 'bell' ? '🔔' : '📯'; $('honk-btn').setAttribute('aria-label', L(HONK_TEXT[hk])); }
+  }
+  motionSound.update(dt, {
+    walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
+    running: input.run && !stamina.tired,
+    riding: ride ? 0 : riding,
+    speed01,
+    indoor: mode === 'store',
+  });
   // Event-based sync: send only when our state changed (moving, turning,
   // slowing to a stop; a teleport or a newcomer forces a send), plus a slow
   // heartbeat when idle. Presence already tracks who is online, so the
@@ -3400,7 +3543,8 @@ renderer.setAnimationLoop(() => {
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt;
+    if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -3505,6 +3649,12 @@ updateStreetCard();
 if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     emblem: () => emblemUi.show(),
+    motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
+    order: (i = 0) => orderFood(interior.store.products[i], false),
+    mealBites: () => meal?.bites ?? null,
+    peerMeals: () => [...peerMeals.values()].map((m) => [m.owner, m.bites, m.seat.plate]),
+    plateSeat: () => interior.seats.findIndex((s) => s.plate),
+    project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),
