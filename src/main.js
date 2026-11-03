@@ -7,6 +7,10 @@ import { loadRegionMap } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD } from './core/quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
+import { WallScreen, wallNear } from './core/wall-screen.js';
+import { LocalBoard, SupabaseBoard } from './core/board.js';
+import { makeNoticeBoard } from './core/notice-board-model.js';
+import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
@@ -361,6 +365,18 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
+// Big screens on building walls (region.json "screens").
+const wallScreens = [];
+for (const sc of region.screens || []) {
+  const wall = wallNear(map.buildings, sc.at[0], sc.at[1]);
+  if (!wall) continue;
+  const w = Math.min(sc.w || 20, wall.len - 2), h = w / 2; // the canvas is 2:1
+  const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
+  const ws = new WallScreen({ w, h });
+  ws.mount(wall, y, h);
+  scene.add(ws.root);
+  wallScreens.push(ws);
+}
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
   squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
@@ -412,12 +428,45 @@ if (square) {
   const pt = new THREE.CanvasTexture(pc);
   pt.colorSpace = THREE.SRGBColorSpace;
   pt.wrapS = pt.wrapT = THREE.RepeatWrapping;
-  const PAVE_R = 24;
-  pt.repeat.set(PAVE_R / 2, PAVE_R / 2); // a block is about 0.4 m
-  const pave = new THREE.Mesh(new THREE.CircleGeometry(PAVE_R, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: pt }));
+  // The square's own shape (zones.json "pave": a rounded rectangle w x l,
+  // turned ry), or a circle.
+  const pv = square.zone.pave;
+  let paveGeo;
+  if (pv) {
+    const hw = pv.w / 2, hl = pv.l / 2, cr = Math.min(6, hw / 2);
+    const sh = new THREE.Shape();
+    sh.moveTo(-hw + cr, -hl);
+    sh.lineTo(hw - cr, -hl); sh.quadraticCurveTo(hw, -hl, hw, -hl + cr);
+    sh.lineTo(hw, hl - cr); sh.quadraticCurveTo(hw, hl, hw - cr, hl);
+    sh.lineTo(-hw + cr, hl); sh.quadraticCurveTo(-hw, hl, -hw, hl - cr);
+    sh.lineTo(-hw, -hl + cr); sh.quadraticCurveTo(-hw, -hl, -hw + cr, -hl);
+    paveGeo = new THREE.ShapeGeometry(sh, 6).rotateX(-Math.PI / 2);
+    pt.repeat.set(1 / 2, 1 / 2); // ShapeGeometry UVs are in metres: a block is about 0.4 m
+  } else {
+    const PAVE_R = 24;
+    paveGeo = new THREE.CircleGeometry(PAVE_R, 48).rotateX(-Math.PI / 2);
+    pt.repeat.set(PAVE_R / 2, PAVE_R / 2);
+  }
+  const pave = new THREE.Mesh(paveGeo, new THREE.MeshLambertMaterial({ map: pt }));
   pave.position.set(square.x, 0.016, square.z);
+  if (pv) pave.rotation.y = pv.ry || 0;
   pave.receiveShadow = true;
   scene.add(pave);
+}
+// Two notice boards side by side at one end of the square, facing it.
+const noticeBoards = [];
+if (square) {
+  const ry = square.zone.pave?.ry || 0;
+  const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
+  const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
+  for (const [board, side, color] of [['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
+    const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
+    const m = makeNoticeBoard(BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
+    m.position.set(x, 0, z);
+    m.rotation.y = Math.atan2(-ax, -az);
+    scene.add(m);
+    noticeBoards.push({ board, x: x - ax * 1.2, z: z - az * 1.2 }); // stand in front of it
+  }
 }
 
 // ---------- Player ----------
@@ -1384,7 +1433,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -2005,6 +2054,15 @@ const academyUi = new AcademyUI({
   onReward: (n) => { wallet.add(n); refreshWallet(); },
   sfx: () => sfx.pop?.(),
 });
+// Notice boards: in Supabase when signed in to it, else on this device.
+let boardBackend = null;
+function boardStore() {
+  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
+  if (live && !(boardBackend instanceof SupabaseBoard)) boardBackend = new SupabaseBoard(cloud.client, cloud.user.id);
+  if (!live && !boardBackend) boardBackend = new LocalBoard();
+  return boardBackend;
+}
+const boardUi = new BoardUI({ root: $('board-panel'), store: boardStore, name: () => nickname, toast: (m) => shop.toast(m) });
 const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
@@ -2490,7 +2548,10 @@ function updateAction(p, tSec) {
     }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
-    else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
+    else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
+      const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
+      next = { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+    } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
       const q = quests.active;
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
       next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
@@ -2873,6 +2934,7 @@ renderer.setAnimationLoop(() => {
     else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
+  for (const ws of wallScreens) ws.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
   tmp.set(p.x, 1.55, p.z).project(camera);
@@ -2985,6 +3047,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
+    boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
+    wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),
     fish: () => ({ ...fishBag.c }),
