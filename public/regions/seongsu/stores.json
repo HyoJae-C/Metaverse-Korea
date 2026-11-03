@@ -461,6 +461,13 @@
         {"id": "cup-ramen", "model": "cup", "color": "#d9473a", "price": 1500, "name": {"en": "Cup ramen", "ko": "컵라면", "ja": "カップラーメン", "zh": "杯面"}, "desc": {"en": "Add hot water from the store's kettle and wait three minutes. Best with a rice ball.", "ko": "편의점 온수기로 물 붓고 3분. 삼각김밥이랑 같이 먹으면 최고."}},
         {"id": "banana-milk", "model": "milk", "color": "#f2d45c", "price": 1700, "name": {"en": "Banana milk", "ko": "바나나 우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶"}, "desc": {"en": "Sweet banana-flavoured milk in a round little pot, a favourite after the jjimjilbang.", "ko": "동글동글 통에 든 달콤한 바나나 우유. 찜질방 다음엔 이거죠."}}
       ]
+    },
+    {
+      "id": "hyojae-academy", "category": "school", "icon": "🏫", "size": "large", "at": [4, -33],
+      "name": {"en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂"},
+      "tagline": {"en": "Korean courses from Hangul to TOPIK 4 and an advanced class, with quizzes and certificates", "ko": "한글부터 토픽 4급, 고급반까지: 퀴즈와 수료증이 있는 한국어 과정", "ja": "ハングルからTOPIK4級、上級クラスまで。クイズと修了証つき", "zh": "从韩文到TOPIK 4级和高级班，有测验和结业证书"},
+      "colors": {"sign": "#2f5d46", "awning": "#e3efe6", "accent": "#f6faf7"},
+      "products": []
     }
   ]
 }

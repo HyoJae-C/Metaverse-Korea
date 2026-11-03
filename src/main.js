@@ -18,6 +18,8 @@ import { GymUI } from './ui/gym-ui.js';
 import { GymLog } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
 import { BookUI } from './ui/book-ui.js';
+import { AcademyUI } from './ui/academy-ui.js';
+import { Academy } from './core/academy.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
@@ -293,7 +295,6 @@ const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
 let navGrid = null;
 const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1 }));
-setTimeout(nav, 3000); // build it while the player looks around
 function planRoute(ax, az, bx, bz) {
   const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
@@ -1223,6 +1224,7 @@ function clearCarSpot(x, z) {
 $('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
+function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 function enterStore(item) {
   setRiding(false);
   sfx.doorbell(); // ding-dong
@@ -1245,7 +1247,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, 0, built.clerk.z);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
@@ -1258,7 +1260,8 @@ function enterStore(item) {
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
   const quiet = store.category === 'library';
-  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), quiet ? PHRASES.library[0] : PHRASES.welcome[0]), 600);
+  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : PHRASES.welcome[0];
+  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -1277,7 +1280,7 @@ function leaveStore() {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -1888,6 +1891,16 @@ const gymUi = new GymUI({
 // Library books: carry one, read it sitting anywhere.
 const BOOK_PAGE_KEY = 'mk.bookPages';
 const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAGE_KEY) || '{}') || {}; } catch { return {}; } })();
+// 효재어학당: the course book opens when you sit at a desk or talk to the
+// teacher.
+const ACADEMY_OPEN = { en: 'Courses', ko: '수강 신청 · 수업', ja: '受講・授業', zh: '报名 · 上课' };
+const academyUi = new AcademyUI({
+  root: $('academy-panel'),
+  academy: new Academy(),
+  name: () => nickname,
+  onReward: (n) => { wallet.add(n); refreshWallet(); },
+  sfx: () => sfx.pop?.(),
+});
 const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
@@ -2338,6 +2351,7 @@ function sitDown(seat) {
   cam.yaw = seat.ry + Math.PI;
   sendTimer = 0; // tell others right away
   missionEvent('sit');
+  if (seat.academy) academyUi.show();
 }
 function standUp() {
   if (!seated) return;
@@ -2400,6 +2414,8 @@ function updateAction(p, tSec) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
       next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+    } else if (nearStation(p, 'academy', 1.8)) {
+      next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (nearStation(p, 'books', 1.5)) {
       next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
@@ -2438,7 +2454,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = interior?.store.category === 'library' ? PHRASES.library : PHRASES.shop; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[interior?.store.category === 'library' ? 'library' : interior?.store.category === 'school' ? 'school' : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       const pet = interior.pets.nearest(p.x, p.z);
       next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };
@@ -2531,7 +2547,38 @@ const timer = new THREE.Timer();
 let streetTimer = 0, speed01 = 0;
 const tmp = new THREE.Vector3();
 
+// Safety net: if the player or the camera ever ends up at an invalid
+// position (NaN), put them back at the last good one, and show a short note
+// with the details so the cause can be found from a screenshot.
+const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
+let errBox = null;
+function reportProblem(msg) {
+  console.error('[mk]', msg);
+  if (!errBox) {
+    errBox = document.createElement('div');
+    errBox.className = 'err-box';
+    document.body.append(errBox);
+  }
+  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  errBox.hidden = false;
+  clearTimeout(errBox.t);
+  errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
+}
+addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
+function guardPosition() {
+  const r = me.root.position;
+  const bad = ![r.x, r.y, r.z, cam.yaw, cam.pitch, cam.dist].every(Number.isFinite);
+  if (!bad) { lastGood.x = r.x; lastGood.z = r.z; lastGood.yaw = cam.yaw; lastGood.ok = true; return; }
+  reportProblem(`position reset (x=${r.x}, z=${r.z}, yaw=${cam.yaw}, mode=${mode}, riding=${riding}, wx=${weather.kind}, speed=${wxSpeed()}, gym=${gymLog.boost})`);
+  r.set(lastGood.x, 0, lastGood.z);
+  cam.yaw = lastGood.yaw;
+  if (!Number.isFinite(cam.pitch)) cam.pitch = 0.42;
+  if (!Number.isFinite(cam.dist)) cam.dist = 9;
+  if (!lastGood.ok && square) r.set(square.x, 0, square.z + 3);
+}
 renderer.setAnimationLoop(() => {
+  guardPosition();
   timer.update();
   const dt = Math.min(timer.getDelta(), 0.05);
   input.update();
@@ -2740,6 +2787,7 @@ renderer.setAnimationLoop(() => {
   }
   billboard?.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
+  guardPosition();
   tmp.set(p.x, 1.55, p.z).project(camera);
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;

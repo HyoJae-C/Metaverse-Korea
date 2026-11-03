@@ -29,6 +29,11 @@ export const PHRASES = {
     ['책은 자유롭게 읽으세요.', 'chaegeun jayuropge ilgeuseyo', 'Feel free to read any book.'],
     ['자리는 아무 데나 앉으셔도 돼요.', 'jarineun amu dena anjeusyeodo dwaeyo', 'You can sit anywhere.'],
   ],
+  school: [
+    ['여러분, 안녕하세요! 자리에 앉으세요.', 'yeoreobun, annyeonghaseyo! jarie anjeuseyo', 'Hello, everyone! Please take a seat.'],
+    ['오늘도 열심히 공부해 봐요!', 'oneuldo yeolsimhi gongbuhae bwayo!', "Let's study hard today too!"],
+    ['모르는 게 있으면 물어보세요.', 'moreuneun ge isseumyeon mureoboseyo', 'Ask me if there is anything you don’t know.'],
+  ],
   shop: [
     ['천천히 구경하세요!', 'cheoncheonhi gugyeonghaseyo', 'Take your time and look around!'],
     ['감사합니다!', 'gamsahamnida', 'Thank you!'],
