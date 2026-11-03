@@ -170,6 +170,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   root.add(m);
   const headScale = look.small ? SMALL_HEAD : 1;
 
+  const ridePose = Object.entries(PACK.ridePose || {}).map(([name, r]) => [m.getObjectByName(name), r]).filter(([b]) => b);
   const mixer = new THREE.AnimationMixer(m);
   const actions = {};
   const action = (key) => {
@@ -220,6 +221,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       mixer.update(dt);
+      if (riding) {
+        const tune = globalThis.__ridePose; // debug: tweak the pose live
+        for (const [bone, r] of ridePose) {
+          const [x, y, z] = tune?.[bone.name] || r;
+          bone.rotation.set(bone.rotation.x + x, bone.rotation.y + y, bone.rotation.z + z);
+        }
+      }
       if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
     },
   };

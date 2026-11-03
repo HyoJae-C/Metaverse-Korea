@@ -16,10 +16,10 @@ test('20 emblems in three tiers, unique ids', () => {
 
 test('buying spends coins once and is remembered', () => {
   const st = memory();
-  const w = walletOf(120);
+  const w = walletOf(250);
   const c = new EmblemCollection(st);
   assert.equal(c.buy('emblem', 'crown', w), 'bought');
-  assert.equal(w.coins, 120 - priceOf(EMBLEMS.find((e) => e.id === 'crown')));
+  assert.equal(w.coins, 250 - priceOf(EMBLEMS.find((e) => e.id === 'crown')));
   assert.equal(c.buy('emblem', 'crown', w), 'owned');
   assert.equal(c.buy('color', 'rainbow', w), 'poor');
   assert.equal(c.buy('color', 'red', w), 'bought');

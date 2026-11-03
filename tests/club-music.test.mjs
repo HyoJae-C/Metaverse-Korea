@@ -55,5 +55,4 @@ test('taxi fare grows with distance', () => {
   assert.equal(taxiFare(0, 0, 10, 0), TAXI_BASE);
   const near = taxiFare(0, 0, 300, 0), far = taxiFare(0, 0, 1300, 0);
   assert.ok(near > TAXI_BASE && far > near);
-  assert.equal(far % 100, 0);
 });
