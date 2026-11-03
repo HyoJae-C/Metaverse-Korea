@@ -35,3 +35,30 @@ export class Meal {
     return this.bites;
   }
 }
+
+// Sharing a table: a served dish is sent with the player's state as
+// "seat.product.bites" (indexes into this restaurant's seats and menu), so
+// everyone in the room sees it, and anyone can tap it to take a bite (a friend
+// with no coins gets a taste too). The owner's game counts the bite.
+export const mealSync = (meal, seats, products) => {
+  if (!meal || meal.bites <= 0) return undefined;
+  const s = seats?.indexOf(meal.seat) ?? -1;
+  const p = products?.indexOf(meal.product) ?? -1;
+  return s >= 0 && p >= 0 ? `${s}.${p}.${meal.bites}` : undefined;
+};
+export function parseMealSync(v, seats, products) {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d)$/.exec(String(v ?? ''));
+  if (!m) return null;
+  const seat = seats?.[+m[1]], product = products?.[+m[2]], bites = +m[3];
+  if (!seat?.plate || !product || bites < 1 || bites > FOOD_BITES) return null;
+  return { seatIndex: +m[1], seat, product, bites };
+}
+export const biteMsg = (to) => `bite:${to}`;
+export function parseBite(e) {
+  const m = /^bite:([\w-]{1,64})$/.exec(String(e));
+  return m ? m[1] : null;
+}
+export const BITE_REACH = 3; // m from the plate a bite is accepted from
+export const BITE_GAP_MS = 1000; // one bite per person per second at most
+// Plate size as it is eaten (5 bites → small).
+export const foodScale = (bites) => 1.5 * (0.45 + 0.55 * Math.max(0, bites) / FOOD_BITES);
