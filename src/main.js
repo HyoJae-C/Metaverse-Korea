@@ -4152,6 +4152,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     plateSeat: () => interior.seats.findIndex((s) => s.plate),
     project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
+    near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),
     seats: () => interior?.seats?.length ?? 0,
