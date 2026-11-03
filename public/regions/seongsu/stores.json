@@ -262,7 +262,7 @@
       "size": "small",
       "name": { "ko": "메타 커피", "en": "META COFFEE", "ja": "META COFFEE", "zh": "META COFFEE" },
       "tagline": { "en": "Takeaway coffee: carry your cup around town and sip as you go", "ko": "테이크아웃 커피: 컵을 들고 다니며 마셔요", "ja": "テイクアウトコーヒー：カップを持って街を歩こう", "zh": "外带咖啡：拿着杯子边走边喝" },
-      "anchor": { "lat": 37.5446, "lon": 127.0562 },
+      "at": [-15, 40],
       "colors": { "sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0" },
       "products": [
         { "id": "meta-americano", "model": "cup", "color": "#3b2418", "price": 4500, "name": { "en": "Americano", "ko": "아메리카노", "ja": "アメリカーノ", "zh": "美式咖啡" }, "desc": { "en": "Espresso with hot water. Koreans often order it iced: 아이스 아메리카노, even in winter." } },
@@ -335,7 +335,7 @@
       "id": "gawison-hair", "category": "beauty", "workshop": "salon", "size": "medium",
       "name": { "ko": "가위손 헤어", "en": "Gawison Hair Salon", "ja": "カウィソン ヘア", "zh": "剪刀手美发" },
       "tagline": { "en": "Hair dye in ten colours, from ash to mint", "ko": "애쉬부터 민트까지, 열 가지 염색", "ja": "アッシュからミントまで、10色のカラー", "zh": "从灰色到薄荷色，十种染发颜色" },
-      "anchor": { "lat": 37.5446, "lon": 127.0566 },
+      "at": [35, 40],
       "colors": { "sign": "#2b2b2e", "awning": "#f2c6d4", "accent": "#fdf3f6" },
       "products": []
     },

@@ -20,6 +20,8 @@ export function latLonToLocal(center, lat, lon) {
 function nearestFacade(buildings, x, z, isBlocked) {
   const cands = [];
   for (const b of buildings) {
+    // A raised building (a station deck over the street) has no shop floor.
+    if (b.m) continue;
     const p = b.p;
     for (let i = 0; i < p.length; i++) {
       const [x1, z1] = p[i];
