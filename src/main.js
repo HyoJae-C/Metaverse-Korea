@@ -546,8 +546,56 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
+// First minute for new players: start next to the square guide, high-five
+// them, get the first mission, then the info centre is suggested (or just
+// explore). 0: high five · 1: getting the mission · 2+: done.
+const ONBOARD_KEY = 'mk.onboard';
+let onboard = (() => {
+  try {
+    const v = localStorage.getItem(ONBOARD_KEY);
+    if (v != null) return Number(v) || 0;
+    return loadLastSpot() ? 2 : 0; // players from before this: skip it
+  } catch { return 2; }
+})();
+const ONBOARD_TEXT = {
+  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.' },
+  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía' },
+  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.' },
+};
+if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
+  const g = squareNpc.ch.root;
+  // Beside them (not between them and the square's sign post), so the
+  // camera behind us sees the guide clearly.
+  const sx2 = Math.cos(g.rotation.y), sz2 = -Math.sin(g.rotation.y);
+  const [ox, oz] = findFreeSpot(g.position.x + sx2 * 2.2, g.position.z + sz2 * 2.2);
+  me.root.position.set(ox, 0, oz);
+  me.root.rotation.y = Math.atan2(g.position.x - ox, g.position.z - oz);
+}
+function setOnboard(n) {
+  onboard = n;
+  try { localStorage.setItem(ONBOARD_KEY, String(n)); } catch { /* storage blocked */ }
+}
+function onboardHi5() {
+  setOnboard(1);
+  $('info-hint').hidden = true;
+  me.play('wave');
+  squareNpc.ch.wave();
+  showBubble(myLabel, $('labels'), '🙌');
+  sfx.pop?.();
+  wallet.add(10);
+  refreshWallet();
+  shop.toast(L(ONBOARD_TEXT.done));
+  action = STALE;
+  setTimeout(() => {
+    talkToGuide(); // the first mission
+    setOnboard(2);
+    // Then: the info centre, or explore on your own.
+    setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
+  }, 1100);
+}
+
 // Come back where you left off last time, if that spot is still open.
-{
+if (onboard >= 2) {
   const last = loadLastSpot();
   if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
     me.root.position.set(last.x, 0, last.z);
@@ -562,6 +610,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) remem
 addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
+if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
 const PLAYER_R = 0.35;
@@ -2355,7 +2404,13 @@ function guideToPlace(to) {
 }
 const infoUi = new InfoUI({ root: $('info-panel'), guide: guideToPlace });
 // The first-time hint waits until the daily check-in card is closed.
-setTimeout(function infoHintWhenFree() {
+if (onboard === 0) { // first time: just the high five, nothing else in the way
+  const box = $('info-hint');
+  const p0 = document.createElement('p');
+  p0.textContent = L(ONBOARD_TEXT.hi5);
+  box.replaceChildren(p0);
+  box.hidden = false;
+} else setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
@@ -2821,7 +2876,7 @@ renderDaily();
 $('daily-btn').onclick = () => { renderDaily(); $('daily-panel').hidden = false; };
 $('daily-close').onclick = () => { $('daily-panel').hidden = true; };
 // Once a day, open the check-in card shortly after arriving.
-if (daily.hasNews()) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200);
+if (daily.hasNews() && onboard >= 2) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200); // not in a new player's first minute
 $('checkin-btn').onclick = () => {
   const n = daily.checkIn();
   if (n) shop.toast(t('daily.checked', { n }));
@@ -2928,6 +2983,8 @@ function updateAction(p, tSec) {
     else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
       const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
       next = { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+    } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
+      next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
       const q = quests.active;
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
