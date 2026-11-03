@@ -20,6 +20,7 @@ const T = {
   winTogether: { en: 'Together bonus 🪙 +{n}', ko: '같이 타기 보너스 🪙 +{n}', ja: '一緒ボーナス 🪙 +{n}', zh: '一起奖励 🪙 +{n}' },
   lose: { en: "Time's up! {m} m to go.", ko: '시간 끝! {m}m 남았어요.', ja: '時間切れ！あと {m}m。', zh: '时间到！还差{m}米。' },
   again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次' },
+  leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', id: 'Turun' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
@@ -33,8 +34,10 @@ const el = (tag, cls, text) => {
 export class DuckUI {
   // friend(): { id, name } of someone right next to you, or null;
   // send(msg) to the room; wallet; onDone(finished, together).
-  constructor({ root, wallet, friend, send, onDone }) {
-    Object.assign(this, { root, wallet, friend, send, onDone });
+  // onProgress(k): 0 at the dock … 1 at the buoy, as you pedal.
+  // onLeave(): get off the boat (shown when set).
+  constructor({ root, wallet, friend, send, onDone, onProgress, onLeave }) {
+    Object.assign(this, { root, wallet, friend, send, onDone, onProgress, onLeave });
     this.timer = 0;
   }
   get open() { return !this.root.hidden; }
@@ -67,6 +70,11 @@ export class DuckUI {
       two.onclick = () => this.play(f);
       actions.append(two);
     }
+    if (this.onLeave) {
+      const off = el('button', 'chip', '🧍 ' + tt('leave'));
+      off.onclick = () => { this.close(); this.onLeave(); };
+      actions.append(off);
+    }
     this.root.append(el('p', 'order-hint', tt('howTo')), actions);
   }
 
@@ -98,6 +106,7 @@ export class DuckUI {
       c.font = '44px system-ui'; c.textAlign = 'center';
       c.fillText('🛟', cv.width - 40, 95);
       c.fillText('🦆', x, 95);
+      this.onProgress?.(Math.min(boat.dist, COURSE) / COURSE);
       info.textContent = tt('left', { m: Math.max(0, Math.ceil(COURSE - boat.dist)), s: Math.max(0, race.left).toFixed(1) });
       if (boat.done) this.finish(race);
     };

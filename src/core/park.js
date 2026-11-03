@@ -8,6 +8,35 @@ const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
 
+export const DUCK_BOATS = 4;
+// Where the two riders sit, in the boat's own space (it faces -z).
+export const DUCK_SEATS = [[-0.3, 0.15], [0.3, 0.15]];
+// How far out a full race takes the boat, in metres.
+export const DUCK_TRIP = 26;
+// A pedal boat shaped like a duck: white hull, yellow neck and head with an
+// orange beak at the front, a coloured canopy on four posts, a bench.
+export function makeDuckBoat(roof) {
+  const g = new THREE.Group();
+  const add = (sx, sy, sz, x, y, z, color) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(color));
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    g.add(m);
+    return m;
+  };
+  add(1.4, 0.42, 1.9, 0, -0.02, 0, '#fffaf0'); // hull
+  add(1.2, 0.06, 1.5, 0, 0.2, 0.05, '#e9e2d4'); // floor
+  add(1.1, 0.1, 0.4, 0, 0.36, 0.3, '#86b8f0'); // bench
+  add(1.1, 0.4, 0.08, 0, 0.55, 0.52, '#86b8f0'); // backrest
+  add(0.5, 0.75, 0.5, 0, 0.55, -0.72, '#ffd166'); // the duck's neck
+  add(0.56, 0.42, 0.62, 0, 1.08, -0.78, '#ffd166'); // head
+  add(0.3, 0.12, 0.28, 0, 1.0, -1.18, '#f08a2c'); // beak
+  for (const s of [-1, 1]) add(0.06, 0.06, 0.04, s * 0.2, 1.16, -1.1, '#2b2230'); // eyes
+  for (const [x, z] of [[-0.6, -0.35], [0.6, -0.35], [-0.6, 0.75], [0.6, 0.75]]) add(0.05, 1.45, 0.05, x, 0.9, z, '#d9dde2'); // posts (tall enough for a seated rider's head)
+  add(1.35, 0.08, 1.3, 0, 1.64, 0.2, roof); // canopy
+  return g;
+}
+
 export function buildPark(store, ROOM, EXIT) {
   const { w, d } = ROOM;
   const scene = new THREE.Scene();
@@ -130,20 +159,23 @@ export function buildPark(store, ROOM, EXIT) {
     sign2.rotation.y = 0.2;
   }
 
-  // Duck boats (오리배) moored to the right of the pier, with a ticket sign.
-  const duck = { x: 11, z: bank + 0.9 };
-  for (let i = 0; i < 3; i++) {
-    const bx = 9 + i * 2.4, bz = bank - 1.6;
-    box(1.6, 0.4, 1.1, bx, 0.05, bz, '#fffaf0'); // hull
-    box(0.5, 0.8, 0.5, bx - 0.4, 0.55, bz, '#ffd166'); // the duck's neck and head
-    box(0.3, 0.12, 0.2, bx - 0.75, 0.85, bz, '#f08a2c'); // beak
-    box(1.0, 0.08, 1.0, bx + 0.25, 1.15, bz, ['#ff9bb3', '#86b8f0', '#a6d97a'][i]); // roof
+  // Four duck boats (오리배) moored to the right of the pier. Each waits at
+  // the dock until someone gets in; two people fit side by side. They face
+  // the river (-z), so riders look out over the water.
+  const duck = { x: 12, z: bank + 0.9 };
+  const ducks = [];
+  for (let i = 0; i < DUCK_BOATS; i++) {
+    const g = makeDuckBoat(['#ff9bb3', '#86b8f0', '#a6d97a', '#c9a6f0'][i]);
+    const home = { x: 7.6 + i * 2.6, z: bank - 1.7 };
+    g.position.set(home.x, 0, home.z);
+    scene.add(g);
+    ducks.push({ g, home, i });
   }
-  const sign3 = box(0.9, 0.5, 0.05, duck.x + 1.2, 1.2, duck.z + 0.2, '#ffd166');
+  const sign3 = box(0.9, 0.5, 0.05, duck.x + 4.4, 1.2, bank + 0.4, '#ffd166');
   sign3.rotation.y = -0.2;
 
   return {
     scene, products: [], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, ramen, river, duck, park: true,
+    fishing, ramen, river, duck, ducks, park: true,
   };
 }

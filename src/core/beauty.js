@@ -13,7 +13,7 @@ export const SALON = [
 export const CLINIC = [
   { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50, label: 'eyeShape' },
   { key: 'tone', palette: 'skin', price: 35 }, // skin tone
-  { key: 'small', toggle: true, price: 45 }, // a smaller head
+  { key: 'small', choices: ['small', 'big'], price: 45, label: 'face' }, // a smaller or bigger head
 ];
 export const CLINIC2 = [
   { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50, label: 'eyeShape' },
@@ -27,7 +27,7 @@ export const BEAUTY_SHOPS = Object.keys(MENUS);
 export const isClinic = (kind) => kind === 'clinic' || kind === 'clinic2';
 export const BEAUTY_ICON = { salon: '💇', clinic: '✨', clinic2: '✨', lens: '👁️', lips: '💄' };
 
-const val = (look, key) => look?.[key] ?? null;
+const val = (look, key) => look?.[key] || null; // false (no head size change) = own
 export function beautyCost(menu, from, to) {
   let n = 0;
   for (const o of menu) {

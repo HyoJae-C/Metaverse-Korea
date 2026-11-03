@@ -7,6 +7,7 @@ const pool = { stores: ['meta-coffee', 'chaekmaru-library'] };
 
 test('an errand is done out there and reported back on the square', () => {
   const q = new SquareQuests(memory(), () => 'd1');
+  q.skipHighFive(); // (the day's high five is covered below)
   const a = q.start(pool, () => 0); // first kind: visit
   assert.equal(a.kind, 'visit');
   assert.equal(q.start(pool), null); // one at a time
@@ -43,7 +44,7 @@ test('a few a day, back again tomorrow; never the same kind twice in a row', () 
   for (let r = 0; r < 1; r += 0.1) assert.notEqual(pickQuest(pool, () => r, 'visit').kind, 'visit');
 });
 
-test('dance needs three emotes on the square; high five only when someone is around', () => {
+test('dance needs three emotes on the square; the day starts with a high five with the guide', () => {
   const q = new SquareQuests(memory(), () => 'd1');
   q.s.active = { kind: 'dance', need: 3, n: 0 };
   assert.equal(q.event('emote'), false); // anywhere else doesn't count
@@ -52,6 +53,10 @@ test('dance needs three emotes on the square; high five only when someone is aro
   q.s.active = { kind: 'highfive', need: 1, n: 0 };
   assert.equal(q.event('highfive'), true);
   assert.ok(q.ready());
-  const alone = { stores: [], has: (k) => k !== 'highfive' };
-  for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest(alone, () => r).kind, 'highfive');
+  for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: [] }, () => r).kind, 'highfive'); // never a random one
+  const day = new SquareQuests(memory(), () => 'd2');
+  assert.equal(day.start({ stores: ['a'] }).kind, 'highfive'); // first of the day
+  day.event('highfive');
+  day.claim({});
+  assert.notEqual(day.start({ stores: ['a'] }).kind, 'highfive');
 });

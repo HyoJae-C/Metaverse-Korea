@@ -2,6 +2,7 @@
 // name, then wear them. Tap an item to preview it on your own tag first.
 import { TIERS, EMBLEMS, NAME_COLORS, priceOf, styleNameTag } from '../core/emblems.js';
 import { L, fmt } from './pocha-ui.js';
+import { t } from '../core/i18n.js';
 
 const T = {
   title: { en: 'Nickname Studio', ko: '닉네임 꾸미기 공방', ja: 'ニックネーム工房', zh: '昵称工坊' },
@@ -54,7 +55,7 @@ export class EmblemUI {
     this.pick = null; // id being previewed
   }
   get open() { return !this.root.hidden; }
-  show() { this.root.hidden = false; this.pick = null; this.render(); }
+  show() { this.root.hidden = false; this.pick = null; this.confirming = null; this.render(); }
   close() { this.root.hidden = true; }
 
   render(note) {
@@ -78,7 +79,7 @@ export class EmblemUI {
       if (k === 'name' && !this.rename) continue;
       const b = el('button', 'chip' + (k === kind ? ' on' : ''), tt(k === 'emblem' ? 'emblems' : k === 'color' ? 'colors' : 'nameTab'));
       b.setAttribute('aria-pressed', String(k === kind));
-      b.onclick = () => { this.tab = k; this.pick = null; this.render(); };
+      b.onclick = () => { this.tab = k; this.pick = null; this.confirming = null; this.render(); };
       tabs.append(b);
     }
     this.root.append(tabs);
@@ -146,13 +147,35 @@ export class EmblemUI {
     this.root.append(input);
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const actions = el('div', 'order-actions');
+    if (!this.confirming) this.root.append(el('p', 'order-hint name-rule', t('name.rule')));
     const go = el('button', 'primary', tt('rename', { n: RENAME_COST }));
-    go.onclick = () => {
-      const r = this.rename(input.value);
+    go.onclick = async () => {
+      // A warning first: the name rules, and are you sure?
+      if (!this.confirming) {
+        this.confirming = input.value.trim() || ' ';
+        this.render();
+        return;
+      }
+      const r = await this.rename(input.value);
+      this.confirming = null;
       if (r === 'ok') { this.draft = null; this.render('🎉 ' + tt('renamed', { name: this.name })); return; }
-      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : tt(r === 'same' ? 'same' : 'empty'));
+      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : r === 'taken' ? t('name.taken') : tt(r === 'same' ? 'same' : 'empty'));
     };
     input.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) go.click(); };
+    if (this.confirming) {
+      const box = el('div', 'name-confirm');
+      box.append(el('strong', null, t('name.confirm', { name: this.confirming.trim() })), el('p', null, t('name.rule')));
+      const yes = el('button', 'primary', t('name.confirmGo'));
+      yes.onclick = () => go.click();
+      const no = el('button', 'chip', t('name.cancel'));
+      no.onclick = () => { this.confirming = null; this.render(); };
+      const row = el('div', 'order-actions');
+      row.append(no, yes);
+      box.append(row);
+      this.root.append(box);
+      input.disabled = true;
+      return;
+    }
     actions.append(go);
     this.root.append(actions);
   }

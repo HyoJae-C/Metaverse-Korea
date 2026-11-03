@@ -34,7 +34,7 @@ export const config = {
   // On the street you only see chat from people this close (metres), and only
   // for a few seconds, so a busy street never fills up with strangers' chat.
   // Inside a shop or café everyone in the room hears everyone.
-  chatStreetRadius: 10,
+  chatStreetRadius: 15,
   chatStreetSeconds: 5,
   // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
   rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },

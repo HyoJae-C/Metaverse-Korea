@@ -46,7 +46,7 @@ export class BeautyUI {
   step(dir) {
     const o = this.menu[this.tab || 0];
     const opts = this.options(o);
-    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] ?? null;
+    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] || null;
     const i = Math.max(0, opts.indexOf(cur));
     this.pick(o, opts[(i + dir + opts.length) % opts.length]);
   }
@@ -79,7 +79,7 @@ export class BeautyUI {
     } else head.append(el('span', 'beauty-price', `${t('beauty.' + this.menu[0].key)} · 🪙 ${this.menu[0].price}`));
     const o = this.menu[this.tab];
     const opts = this.options(o);
-    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] ?? null;
+    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] || null;
     const idx = Math.max(0, opts.indexOf(cur));
     const stepper = el('div', 'beauty-stepper');
     const prev = el('button', 'beauty-arrow', '◀');

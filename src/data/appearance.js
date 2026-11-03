@@ -140,7 +140,9 @@ export function sanitizeLook(raw) {
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
-  if (raw.small === true) look.small = true;
+  // Head size: 'small' or 'big' (true: an older save's small head).
+  if (raw.small === true || raw.small === 'small') look.small = 'small';
+  else if (raw.small === 'big') look.small = 'big';
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
   if (typeof raw.emblem === 'string' && emblemById(raw.emblem)) look.emblem = raw.emblem; // name tag
   if (typeof raw.nameColor === 'string' && nameColorById(raw.nameColor)) look.nameColor = raw.nameColor;

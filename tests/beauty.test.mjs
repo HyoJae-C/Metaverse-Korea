@@ -9,8 +9,10 @@ test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(SALON, {}, { dye: 'pink', hairStyle: 'bob' }), 70);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
-  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: true }), 130);
-  assert.equal(beautyCost(CLINIC, { small: true }, { small: false }), 0);
+  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: 'small' }), 130);
+  assert.equal(beautyCost(CLINIC, { small: 'small' }, { small: 'big' }), 45); // small to big
+  assert.equal(beautyCost(CLINIC, { small: 'big' }, { small: null }), 0);
+  assert.equal(beautyCost(CLINIC, { small: false }, { small: false }), 0);
   assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50);
   assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25);
   assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 15);
@@ -26,7 +28,8 @@ test('ten hairstyles, ten lip tints, fourteen lens colours, two eye shapes per c
 
 test('looks keep valid beauty choices and drop the rest', () => {
   const ok = sanitizeLook({ dye: 'mint', eyes: 'aqua', tone: 'deep', small: true, hairStyle: 'twin', lip: 'coral', eyeShape: 'puppy' });
-  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.small, ok.hairStyle, ok.lip, ok.eyeShape], ['mint', 'aqua', 'deep', true, 'twin', 'coral', 'puppy']);
+  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.small, ok.hairStyle, ok.lip, ok.eyeShape], ['mint', 'aqua', 'deep', 'small', 'twin', 'coral', 'puppy']); // an old save's small head
+  assert.equal(sanitizeLook({ small: 'big' }).small, 'big');
   const bad = sanitizeLook({ dye: 'toString', eyes: '#fff', tone: 1, small: 'yes', hairStyle: 'mohawk', lip: 'constructor', eyeShape: 'huge' });
   assert.deepEqual([bad.dye, bad.eyes, bad.tone, bad.small, bad.hairStyle, bad.lip, bad.eyeShape], [null, null, null, false, null, null, null]);
 });
