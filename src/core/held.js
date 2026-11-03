@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 
-export const HELD_KINDS = ['coffee', 'rod', 'book'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -51,6 +51,15 @@ export function makeHeld(kind) {
     const band = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.02, 0.122), mat('#d4a73a'));
     band.position.y = 0.12;
     g.add(cover, pages, band);
+  } else if (kind === 'food') {
+    // A takeout box: kraft paper box with a lid flap and a little sticker.
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.09), mat('#c99a63'));
+    box.position.y = 0.035;
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.012, 0.095), mat('#b5854f'));
+    lid.position.y = 0.076;
+    const sticker = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.003, 0.04), mat('#e8473b'));
+    sticker.position.y = 0.083;
+    g.add(box, lid, sticker);
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;

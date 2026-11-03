@@ -17,9 +17,9 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5 } = {}) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
-  if (e.kind === 'coffee') {
+  if (e.kind === 'coffee' || e.kind === 'food') {
     const sips = Math.min(maxSips, e.sips | 0);
-    return sips > 0 ? { kind: 'coffee', sips, name: String(e.name || '').slice(0, 40) } : null;
+    return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;
   }
   return null;
 }

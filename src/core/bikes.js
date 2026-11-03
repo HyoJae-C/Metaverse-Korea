@@ -74,16 +74,36 @@ export function makeMoto(color = '#d8262e') {
 // A full-face helmet that matches the motorbike, sized for the chibi head
 // (it sits in the head-accessory group, like hats).
 export function makeHelmet(color = '#d8262e') {
+  // A sleek full-face helmet: a shell drawn out to the back, a dark visor
+  // facing forward (+z), a fin on top at the back and angled ear vents.
   const g = new THREE.Group();
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.36, 20, 14), mat(color));
-  shell.scale.set(1, 0.95, 1.05);
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.37, 24, 16), mat(color));
+  shell.scale.set(1.0, 1.02, 1.12);
+  shell.position.set(0, 0.05, 0.01);
   g.add(shell);
-  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.365, 20, 10, -0.9, 1.8, 1.05, 0.7), mat('#1d2129'));
+  // Visor: a band of a slightly larger sphere, centred on the front.
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.375, 24, 10, Math.PI / 2 - 0.78, 1.56, 1.25, 0.6), mat('#1d2129'));
   visor.scale.copy(shell.scale);
+  visor.position.copy(shell.position);
   g.add(visor);
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.72), mat('#ffffff'));
-  stripe.position.y = 0.34;
-  g.add(stripe);
+  const shine = new THREE.Mesh(new THREE.SphereGeometry(0.378, 12, 4, Math.PI / 2 - 0.55, 0.5, 1.28, 0.1), new THREE.MeshBasicMaterial({ color: '#9fb4c8' }));
+  shine.scale.copy(shell.scale);
+  shine.position.copy(shell.position);
+  g.add(shine);
+  // Fin: a wedge along the top, rising towards the back.
+  const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 0.16, 0.42, 3, 1).rotateX(Math.PI / 2).rotateZ(Math.PI / 2), mat('#ffffff'));
+  fin.scale.set(0.35, 1, 1);
+  fin.position.set(0, 0.36, -0.2);
+  fin.rotation.x = -0.35;
+  g.add(fin);
+  // Angled vents over the ears.
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 3).rotateX(-Math.PI / 2), mat('#1d2129'));
+    ear.position.set(0.37 * s, 0.04, -0.14);
+    ear.rotation.y = 0.25 * s;
+    ear.scale.set(0.55, 1, 1);
+    g.add(ear);
+  }
   return g;
 }
 

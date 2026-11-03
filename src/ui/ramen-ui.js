@@ -1,7 +1,7 @@
 // Han River ramen panel (rules in core/ramen-game.js): boil the water, add
 // noodles and soup, toppings if you like, and take it off at "4:00". Medals
 // as at the grill; each new tier pays coins once.
-import { t, getLanguage } from '../core/i18n.js';
+import { t, getLanguage, localName } from '../core/i18n.js';
 import { Medals, medalFor, medalIcon } from '../core/grill-game.js';
 import { RAMEN_GAME, BOIL_SECONDS, COOK_MAX, ramenScore, noodleState, potClock } from '../core/ramen-game.js';
 
@@ -18,7 +18,7 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-const meaning = (tr) => tr[getLanguage()] || tr.en;
+const meaning = (tr) => localName(tr, getLanguage());
 
 export class RamenUI {
   // root: the sheet; wallet: { add(n) }; onSay(line): the clerk speaks.

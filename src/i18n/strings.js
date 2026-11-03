@@ -2,11 +2,15 @@
 // block with the same keys and listing it in LANGUAGES. Missing keys fall
 // back to English.
 
+import { ES } from './es.js';
+
 export const LANGUAGES = [
-  { code: 'en', label: 'English' },
   { code: 'ko', label: '한국어' },
+  { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
+  { code: 'zh', label: '简体中文' },
   { code: 'ja', label: '日本語' },
-  { code: 'zh', label: '中文(简体)' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
 ];
 
 export const STRINGS = {
@@ -73,6 +77,7 @@ export const STRINGS = {
     "gym.dumbbell": "Lift dumbbells",
     "gym.bench": "Bench press",
     "gym.pushup": "Do push-ups",
+    "gym.situp": "Do sit-ups",
     "sauna.hot": "Go into the hot kiln",
     "sauna.ice": "Go into the ice room",
     "emblem.open": "Decorate my name tag",
@@ -394,6 +399,7 @@ export const STRINGS = {
     'model.mage': 'Mage',
     'model.knight': 'Knight',
     'model.barbarian': 'Viking',
+    'model.ranger': 'Explorer',
     'daily.title': 'Daily check-in',
     'daily.checkIn': 'Check in (+{n} 🪙)',
     'daily.done': 'Checked in today ✓',
@@ -417,6 +423,7 @@ export const STRINGS = {
     'safety.unblockAll': 'Unblock everyone ({n})',
     'safety.unblocked': 'Everyone is unblocked.',
     'look.model': 'Character',
+    'look.tee': 'T-shirt colour',
     'credit.chars': 'Characters',
     'credit.map': 'Map data',
   },
@@ -483,6 +490,7 @@ export const STRINGS = {
     "gym.dumbbell": "아령 들기",
     "gym.bench": "벤치프레스 하기",
     "gym.pushup": "푸시업 하기",
+    "gym.situp": "윗몸일으키기 하기",
     "sauna.hot": "불가마 들어가기",
     "sauna.ice": "얼음방 들어가기",
     "emblem.open": "이름표 꾸미기",
@@ -804,6 +812,7 @@ export const STRINGS = {
     'model.mage': '마법사',
     'model.knight': '기사',
     'model.barbarian': '바이킹',
+    'model.ranger': '탐험가',
     'daily.title': '출석체크',
     'daily.checkIn': '출석하기 (+{n} 🪙)',
     'daily.done': '오늘 출석 완료 ✓',
@@ -827,6 +836,7 @@ export const STRINGS = {
     'safety.unblockAll': '차단 모두 풀기 ({n})',
     'safety.unblocked': '차단을 모두 풀었어요.',
     'look.model': '캐릭터',
+    'look.tee': '티셔츠 색',
     'credit.chars': '캐릭터',
     'credit.map': '지도 데이터',
   },
@@ -893,6 +903,7 @@ export const STRINGS = {
     "gym.dumbbell": "ダンベルを上げる",
     "gym.bench": "ベンチプレスする",
     "gym.pushup": "腕立て伏せする",
+    "gym.situp": "腹筋する",
     "sauna.hot": "汗蒸幕に入る",
     "sauna.ice": "氷の部屋に入る",
     "emblem.open": "名札を飾る",
@@ -1214,6 +1225,7 @@ export const STRINGS = {
     'model.mage': '魔法使い',
     'model.knight': '騎士',
     'model.barbarian': 'バイキング',
+    'model.ranger': '探検家',
     'daily.title': '出席チェック',
     'daily.checkIn': '出席する (+{n} 🪙)',
     'daily.done': '今日は出席済み ✓',
@@ -1237,6 +1249,7 @@ export const STRINGS = {
     'safety.unblockAll': 'ブロックをすべて解除 ({n})',
     'safety.unblocked': 'ブロックをすべて解除しました。',
     'look.model': 'キャラクター',
+    'look.tee': 'Tシャツの色',
     'credit.chars': 'キャラクター',
     'credit.map': '地図データ',
   },
@@ -1303,6 +1316,7 @@ export const STRINGS = {
     "gym.dumbbell": "举哑铃",
     "gym.bench": "卧推",
     "gym.pushup": "做俯卧撑",
+    "gym.situp": "做仰卧起坐",
     "sauna.hot": "进火窑",
     "sauna.ice": "进冰屋",
     "emblem.open": "装饰名牌",
@@ -1624,6 +1638,7 @@ export const STRINGS = {
     'model.mage': '法师',
     'model.knight': '骑士',
     'model.barbarian': '维京人',
+    'model.ranger': '探险家',
     'daily.title': '每日签到',
     'daily.checkIn': '签到 (+{n} 🪙)',
     'daily.done': '今日已签到 ✓',
@@ -1647,6 +1662,7 @@ export const STRINGS = {
     'safety.unblockAll': '全部取消屏蔽 ({n})',
     'safety.unblocked': '已全部取消屏蔽。',
     'look.model': '角色',
+    'look.tee': 'T恤颜色',
     'credit.chars': '角色',
     'credit.map': '地图数据',
   },
@@ -1654,9 +1670,11 @@ export const STRINGS = {
 
 // Place names that OSM may not carry in every language. Only verified,
 // widely used names go here.
+STRINGS.es = ES;
+
 export const REGION_NAMES = {
   seongsu: {
-    en: 'Seongsu-dong', ko: '성수동', ja: '聖水洞', zh: '圣水洞',
+    en: 'Seongsu-dong', ko: '성수동', ja: '聖水洞', zh: '圣水洞', zht: '聖水洞', es: 'Seongsu-dong',
   },
-  seoul: { en: 'Seoul', ko: '서울', ja: 'ソウル', zh: '首尔' },
+  seoul: { en: 'Seoul', ko: '서울', ja: 'ソウル', zh: '首尔', zht: '首爾', es: 'Seúl' },
 };

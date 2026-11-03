@@ -3,10 +3,7 @@
 import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { t, onLanguageChange } from './i18n.js';
-import {
-  SLOTS, ACCESSORIES, MODELS, randomLook, sanitizeLook,
-} from '../data/appearance.js';
-import { modelEmoji } from './model-pack.js';
+import { PALETTES, randomLook, sanitizeLook } from '../data/appearance.js';
 
 const STORAGE_KEY = 'mk.look';
 
@@ -24,11 +21,8 @@ export function saveLook(look) {
   } catch { /* ignore */ }
 }
 
-// lockModel: a model id that can't be changed yet (the model buttons are
-// disabled and "random" keeps it).
-export function createLookEditor({ optionsEl, canvas, randomBtn, lockModel = null }) {
+export function createLookEditor({ optionsEl, canvas, randomBtn }) {
   let look = loadLook();
-  if (lockModel) look = { ...look, model: lockModel };
 
   // --- preview ---
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -104,65 +98,29 @@ export function createLookEditor({ optionsEl, canvas, randomBtn, lockModel = nul
     for (const { el, field, value } of buttons) el.setAttribute('aria-pressed', String(look[field] === value));
   };
 
-  // Body model from the pack. (The colour palettes only show on the simple
-  // fallback body now; the hair salon will bring back hair options.)
+  // Everyone starts in plain clothes: just pick the T-shirt colour. Costumes
+  // (mage, ninja, knight…) and accessories are bought in town.
   {
     const row = document.createElement('div');
     row.className = 'acc-row';
-    for (const id of MODELS) {
+    for (const [id, hex] of Object.entries(PALETTES.shirt)) {
       const b = document.createElement('button');
-      b.className = 'acc model';
-      const name = document.createElement('span');
-      name.className = 'acc-name';
-      name.dataset.i18n = 'model.' + id;
-      name.textContent = t('model.' + id);
-      b.append(modelEmoji(id), name);
-      b.disabled = !!lockModel && id !== lockModel;
+      b.className = 'acc swatch';
+      b.style.background = '#' + hex.toString(16).padStart(6, '0');
+      b.setAttribute('aria-label', id);
       b.onclick = () => {
-        if (lockModel) return;
-        look = { ...look, model: id };
+        look = { ...look, shirt: id, model: 'basic' };
         refreshPressed();
         rebuild();
       };
-      buttons.push({ el: b, field: 'model', value: id });
+      buttons.push({ el: b, field: 'shirt', value: id });
       row.appendChild(b);
     }
-    section('look.model', row);
-  }
-
-  for (const slot of SLOTS) {
-    const row = document.createElement('div');
-    row.className = 'acc-row';
-    const none = document.createElement('button');
-    none.className = 'acc none';
-    none.dataset.i18n = 'look.none';
-    none.textContent = t('look.none');
-    none.onclick = () => {
-      look = { ...look, [slot]: null };
-      refreshPressed();
-      rebuild();
-    };
-    buttons.push({ el: none, field: slot, value: null });
-    row.appendChild(none);
-    for (const a of ACCESSORIES[slot]) {
-      const b = document.createElement('button');
-      b.className = 'acc';
-      b.textContent = a.emoji;
-      b.setAttribute('aria-label', a.id);
-      b.onclick = () => {
-        look = { ...look, [slot]: a.id };
-        refreshPressed();
-        rebuild();
-      };
-      buttons.push({ el: b, field: slot, value: a.id });
-      row.appendChild(b);
-    }
-    section('look.' + slot, row);
+    section('look.tee', row);
   }
 
   randomBtn.onclick = () => {
-    look = randomLook();
-    if (lockModel) look.model = lockModel;
+    look = { ...look, shirt: randomLook().shirt, model: 'basic' };
     refreshPressed();
     rebuild();
   };

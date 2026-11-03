@@ -2,7 +2,7 @@
 // flip it, serve it when both sides are golden. The score gives a gold,
 // silver or bronze medal; the best medal is kept, and each new tier pays coins
 // once. The clerk says short Korean lines with romanization and a meaning.
-import { t, getLanguage } from '../core/i18n.js';
+import { t, getLanguage, localName } from '../core/i18n.js';
 import { Grill, Medals, doneness, medalFor, medalIcon, GOLDEN, BURNT } from '../core/grill-game.js';
 
 const GAME = 'grill';
@@ -22,7 +22,7 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-const meaning = (tr) => tr[getLanguage()] || tr.en;
+const meaning = (tr) => localName(tr, getLanguage());
 
 // Raw pink → golden brown → charred, by doneness.
 const STOPS = [[0, [244, 182, 176]], [GOLDEN, [201, 138, 74]], [BURNT, [120, 72, 40]], [1.4, [48, 30, 22]]];

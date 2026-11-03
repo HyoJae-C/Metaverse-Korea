@@ -1,5 +1,6 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
+import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
@@ -261,7 +262,8 @@ export function buildInterior(store) {
   const counterSpots = store.category === 'club'
     ? [-1.2, 0.3, 1.8, 3.3].map((z) => [w / 2 - 1.4, z, -Math.PI / 2])
     : store.category === 'bar' ? [-3.6, -1.2, 1.2, 3.6].map((x) => [x, -d / 2 + 2.2, 0]) : null;
-  store.products.forEach((product, i) => {
+  // Restaurants with a menu: nothing on display, you order at your table.
+  (isDining(store) ? [] : store.products).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
@@ -329,6 +331,7 @@ export function buildInterior(store) {
   let clerk = null; // where the shop clerk stands (behind the counter)
   const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   let animate = null; // per-frame animation (club lights), called while inside
+  let see = null; // (x, z) each frame: rooms you can walk into turn see-through
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -669,7 +672,8 @@ export function buildInterior(store) {
           box(0.08, 0.5, 0.42, cx + 0.2 * s, SEAT_H + 0.22, tz, store.colors.awning); // back
           for (const lx of [-0.16, 0.16]) for (const lz of [-0.16, 0.16]) box(0.05, SEAT_H - 0.06, 0.05, cx + lx, (SEAT_H - 0.06) / 2, tz + lz, '#8a5a3a');
           // Sit facing the table; stand up beside the chair, outside the collider.
-          seats.push({ x: cx + 0.04 * s, z: tz, ry: s > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [tx + 1.55 * s, tz] });
+          // plate: where a dish ordered from this seat is served on the table
+          seats.push({ x: cx + 0.04 * s, z: tz, ry: s > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [tx + 1.55 * s, tz], plate: [tx + 0.24 * s, tz] });
         }
         block(tx, tz, 2.3, 0.95);
       }
@@ -769,24 +773,146 @@ export function buildInterior(store) {
       // 찜질방: a dome-shaped hot kiln (불가마) on the left, an ice room on
       // the right, and warm wooden platforms with mats in the middle.
       const kx = -w / 2 + 3, kz = -d * 0.05;
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat('#9a6a45'));
+      // Walls you can walk into: their own materials, so they turn see-through
+      // while you're inside (see the `see` hook below).
+      const seeMat = (c) => new THREE.MeshLambertMaterial({ color: c, transparent: true, side: THREE.DoubleSide });
+      const wallSeg = (x1, z1, x2, z2, t = 0.3) => { // a thin collider from one point to another
+        const len = Math.hypot(x2 - x1, z2 - z1), nx = -(z2 - z1) / len * t / 2, nz = (x2 - x1) / len * t / 2;
+        colliders.push({ p: [[x1 + nx, z1 + nz], [x2 + nx, z2 + nz], [x2 - nx, z2 - nz], [x1 - nx, z1 - nz]] });
+      };
+      const R = 2.4, DOOR = 0.42; // dome radius; half the door opening (radians)
+      const domeMat = seeMat('#9a6a45');
+      // The dome, open at the doorway (facing +x, into the room).
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(R, 24, 10, DOOR - Math.PI / 2, Math.PI * 2 - DOOR * 2, 0, Math.PI / 2), domeMat);
       dome.position.set(kx, 0, kz);
       scene.add(dome);
-      box(0.3, 1.7, 1.2, kx + 2.25, 0.85, kz, '#3a2216'); // doorway
-      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.4), new THREE.MeshBasicMaterial({ color: '#ff8a3d' }));
-      glow.position.set(kx + 2.42, 0.75, kz);
-      glow.rotation.y = Math.PI / 2;
-      scene.add(glow);
+      const lintel = new THREE.Mesh(new THREE.SphereGeometry(R, 8, 4, -Math.PI / 2 - DOOR, DOOR * 2, 0, 0.75), domeMat);
+      lintel.position.set(kx, 0, kz);
+      scene.add(lintel);
+      for (let k = 0; k < 14; k++) { // round wall, leaving the doorway open
+        const a0 = DOOR + (k / 14) * (Math.PI * 2 - DOOR * 2), a1 = DOOR + ((k + 1) / 14) * (Math.PI * 2 - DOOR * 2);
+        wallSeg(kx + Math.cos(a0) * R, kz + Math.sin(a0) * R, kx + Math.cos(a1) * R, kz + Math.sin(a1) * R);
+      }
+      const ember = new THREE.Mesh(new THREE.CircleGeometry(0.9, 18), new THREE.MeshBasicMaterial({ color: '#ff7a2f' }));
+      ember.rotation.x = -Math.PI / 2;
+      ember.position.set(kx - 0.2, 0.012, kz);
+      scene.add(ember); // glowing hot floor stones
       const heat = new THREE.PointLight(0xff8a3d, 6, 6);
-      heat.position.set(kx + 3, 1, kz);
+      heat.position.set(kx, 1.2, kz);
       scene.add(heat);
-      block(kx, kz, 4.8, 4.8);
-      const ix = w / 2 - 2.4;
-      box(3.4, 2.8, 3.6, ix, 1.4, kz, '#dff4ff'); // ice room
-      box(0.1, 1.9, 1.2, ix - 1.72, 0.95, kz, '#7fb8e0'); // its door
+      // Benches round the back of the kiln: no backs, you perch on the edge.
+      const benches = [];
+      const bench = (x, z, ry, color, kind) => {
+        const b = new THREE.Group();
+        b.position.set(x, 0, z);
+        b.rotation.y = ry;
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.07, 0.42), mat(color));
+        top.position.y = SEAT_H - 0.035;
+        b.add(top);
+        for (const lx of [-0.24, 0.24]) {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, SEAT_H - 0.07, 0.36), mat('#6b4428'));
+          leg.position.set(lx, (SEAT_H - 0.07) / 2, 0);
+          b.add(leg);
+        }
+        scene.add(b);
+        // Sit facing out (ry), stand up a step in front.
+        const fx = Math.sin(ry), fz = Math.cos(ry);
+        seats.push({ x: x - fx * 0.04, z: z - fz * 0.04, ry, stand: [x + fx * 0.9, z + fz * 0.9], sauna: kind });
+        benches.push(b);
+      };
+      for (const a of [-0.75, 0, 0.75]) { // angle round the back wall (facing the door)
+        const bx = kx - Math.cos(a) * 1.75, bz2 = kz + Math.sin(a) * 1.75;
+        bench(bx, bz2, Math.atan2(kx + 1 - bx, kz - bz2), '#c9935f', 'hot');
+      }
+      // Ice room: four walls of ice and a roof, door facing into the room.
+      const ix = w / 2 - 2.4, IW = 3.4, ID = 3.6, IH = 2.8;
+      const iceMat = seeMat('#dff4ff');
+      const iceRoom = new THREE.Group();
+      const slab = (sx, sy, sz, x, y, z) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), iceMat);
+        m.position.set(x, y, z);
+        iceRoom.add(m);
+      };
+      slab(0.2, IH, ID, ix + IW / 2, IH / 2, kz); // back
+      for (const sz of [-1, 1]) slab(IW, IH, 0.2, ix, IH / 2, kz + sz * ID / 2); // sides
+      for (const sz of [-1, 1]) slab(0.2, IH, (ID - 1.2) / 2, ix - IW / 2, IH / 2, kz + sz * (ID + 1.2) / 4); // front, with a door gap
+      slab(0.2, IH - 2, 1.2, ix - IW / 2, 2 + (IH - 2) / 2, kz); // over the door
+      slab(IW + 0.2, 0.2, ID + 0.2, ix, IH, kz); // roof
+      scene.add(iceRoom);
+      wallSeg(ix + IW / 2, kz - ID / 2, ix + IW / 2, kz + ID / 2, 0.25);
+      for (const sz of [-1, 1]) {
+        wallSeg(ix - IW / 2, kz + sz * ID / 2, ix + IW / 2, kz + sz * ID / 2, 0.25);
+        wallSeg(ix - IW / 2, kz + sz * 0.6, ix - IW / 2, kz + sz * ID / 2, 0.25);
+      }
       for (let i = 0; i < 6; i++) box(0.12, 0.35 + (i % 3) * 0.12, 0.12, ix - 1.6 + i * 0.6, 2.62 - (i % 3) * 0.06, kz - 1.85, '#ffffff'); // icicles
-      block(ix, kz, 3.5, 3.7);
-      stations.sauna = [{ x: kx + 3.2, z: kz, kind: 'hot' }, { x: ix - 2.5, z: kz, kind: 'ice' }];
+      // Frost: pale patches on the inside walls, and a cold blue light.
+      const frostMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
+      for (let i = 0; i < 9; i++) {
+        const f = new THREE.Mesh(new THREE.CircleGeometry(0.18 + (i % 3) * 0.08, 7), frostMat);
+        const side = i % 3;
+        if (side === 0) { f.position.set(ix + IW / 2 - 0.11, 0.4 + (i * 0.73) % 2.1, kz - 1.3 + (i * 0.61) % 2.6); f.rotation.y = -Math.PI / 2; }
+        else { f.position.set(ix - 1.2 + (i * 0.53) % 2.4, 0.4 + (i * 0.47) % 2.1, kz + (side === 1 ? -1 : 1) * (ID / 2 - 0.11)); }
+        iceRoom.add(f);
+      }
+      const cold = new THREE.PointLight(0x9fd8ff, 4, 5);
+      cold.position.set(ix, 1.8, kz);
+      scene.add(cold);
+      for (const sz of [-0.8, 0.8]) bench(ix + IW / 2 - 0.45, kz + sz, -Math.PI / 2, '#bfe3f5', 'ice');
+      // Steam in the kiln and cold mist in the ice room: soft puffs that
+      // drift (up in the heat, slowly down in the cold) and fade.
+      const puffTex = (() => {
+        const c = document.createElement('canvas');
+        c.width = c.height = 64;
+        const g = c.getContext('2d');
+        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+      })();
+      const puffs = [];
+      const addPuffs = (n, cx, cz, rx, rz, color, kind) => {
+        for (let i = 0; i < n; i++) {
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color, transparent: true, depthWrite: false, opacity: 0 }));
+          sp.userData = { cx, cz, rx, rz, kind, t: i / n };
+          scene.add(sp);
+          puffs.push(sp);
+        }
+      };
+      addPuffs(22, kx, kz, 1.6, 1.6, '#ffffff', 'steam');
+      addPuffs(6, kx + R + 0.1, kz, 0.2, 0.5, '#ffffff', 'steam'); // escaping at the door
+      addPuffs(16, ix, kz, 1.4, 1.5, '#e6f7ff', 'mist');
+      let st = 0;
+      animate = (dt) => {
+        st += dt;
+        heat.intensity = 6 + Math.sin(st * 3) * 0.6;
+        for (const sp of puffs) {
+          const u = sp.userData;
+          u.t = (u.t + dt / (u.kind === 'steam' ? 3.2 : 6)) % 1;
+          const seed = puffs.indexOf(sp) * 12.9898;
+          const ox = Math.sin(seed) * u.rx, oz = Math.cos(seed * 1.7) * u.rz;
+          const wob = Math.sin(st * 0.8 + seed) * 0.15;
+          if (u.kind === 'steam') {
+            sp.position.set(u.cx + ox * 0.7 + wob, 0.3 + u.t * 2, u.cz + oz * 0.7);
+            sp.scale.setScalar(0.5 + u.t * 1.1);
+            sp.material.opacity = Math.sin(u.t * Math.PI) * 0.5;
+          } else {
+            sp.position.set(u.cx + ox * 0.8 + wob, 2.3 - u.t * 1.9, u.cz + oz * 0.8);
+            sp.scale.setScalar(0.7 + u.t * 0.6);
+            sp.material.opacity = Math.sin(u.t * Math.PI) * 0.35;
+          }
+        }
+      };
+      // Inside a room: its walls turn see-through so the camera sees you.
+      see = (px, pz) => {
+        const inKiln = Math.hypot(px - kx, pz - kz) < R + 0.2;
+        const inIce = Math.abs(px - ix) < IW / 2 + 0.2 && Math.abs(pz - kz) < ID / 2 + 0.2;
+        for (const [m, on] of [[domeMat, inKiln], [iceMat, inIce]]) {
+          const o = on ? 0.22 : 1;
+          if (m.opacity !== o) { m.opacity = o; m.depthWrite = !on; }
+        }
+      };
       // Warm platforms (평상) with mats and wooden block pillows (목침).
       const mats = ['#f2a7a0', '#a7d8c0', '#f6d28b', '#b9c4f0'];
       [-4.5, -1.5, 1.5].forEach((px, i) => {
@@ -836,10 +962,10 @@ export function buildInterior(store) {
       }
       block(rx, rz, 0.8, 2.7);
       stations.gym.push({ x: rx - 1.3, z: rz, kind: 'dumbbell' });
-      // Push-up mats (flat, you stand on them).
-      for (const [mx, c] of [[-5.5, '#8fd3c7'], [-3, '#b9a6f0']]) {
+      // Exercise mats (flat, you stand on them): push-ups and sit-ups.
+      for (const [mx, c, kind] of [[-5.5, '#8fd3c7', 'pushup'], [-3, '#b9a6f0', 'situp']]) {
         box(1, 0.04, 1.9, mx, 0.02, d * 0.12, c);
-        stations.gym.push({ x: mx, z: d * 0.12, kind: 'pushup' });
+        stations.gym.push({ x: mx, z: d * 0.12, kind });
       }
       // A long mirror on the left wall.
       const mirror = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.2), new THREE.MeshLambertMaterial({ color: '#cfe6f2' }));
@@ -917,5 +1043,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, turntable, tv, stations, animate, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT };
 }

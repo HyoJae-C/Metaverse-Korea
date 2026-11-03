@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { setBeat } from './core/model-pack.js';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
+  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, languageFromBrowser,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
@@ -32,7 +33,7 @@ import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { RIDES as PARK_RIDES, RIDE_COST, RIDE_SECONDS, seatAt } from './core/themepark.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
+import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
@@ -42,7 +43,8 @@ import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
-import { buildInterior } from './core/interior.js';
+import { buildInterior, productModel } from './core/interior.js';
+import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
@@ -66,7 +68,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, redeemCode, coinCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -82,7 +84,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
+import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -140,15 +142,15 @@ function renderLangGrid(el, onPick) {
 function refreshStartText() {
   const lang = getLanguage();
   $('start-region').textContent = t('start.region', {
-    region: REGION_NAMES[regionId]?.[lang] || localName(region.name, lang),
-    city: REGION_NAMES.seoul[lang],
+    region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
+    city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
   input.placeholder = t('start.defaultName');
   document.title = t('app.title');
 }
 
-const browserLang = (navigator.language || 'en').slice(0, 2);
+const browserLang = languageFromBrowser(navigator.language || 'en');
 setLanguage(getSavedLanguage() || (LANGUAGES.some((l) => l.code === browserLang) ? browserLang : 'en'));
 const pickLang = (code) => {
   setLanguage(code);
@@ -179,7 +181,7 @@ let identity = readIdentity();
 const ID_TEXT = {
   model: { en: 'You can change your character in {n} day(s).', ko: '캐릭터는 {n}일 뒤에 바꿀 수 있어요.', ja: 'キャラクターは{n}日後に変更できます。', zh: '{n}天后才能更换角色。' },
   name: { en: 'You can change your name in {n} day(s).', ko: '이름은 {n}일 뒤에 바꿀 수 있어요.', ja: '名前は{n}日後に変更できます。', zh: '{n}天后才能改名。' },
-  first: { en: 'Once you start, your name and character stay for {n} days.', ko: '시작하면 이름과 캐릭터는 {n}일 동안 바꿀 수 없어요.', ja: '始めると、名前とキャラクターは{n}日間変更できません。', zh: '开始后，名字和角色{n}天内不能更改。' },
+  first: { en: 'Once you start, your name stays for {n} days. Costumes like mage or ninja are sold at the costume shop in town.', ko: '시작하면 이름은 {n}일 동안 바꿀 수 없어요. 마법사·닌자 같은 옷은 동네 코스튬 가게에서 살 수 있어요.', ja: '始めると、名前は{n}日間変更できません。魔法使いや忍者の服は町のコスチューム店で買えます。', zh: '开始后，名字{n}天内不能更改。法师、忍者等服装可在镇上的服装店购买。', es: 'Al empezar, tu nombre no se puede cambiar durante {n} días. Los disfraces de mago o ninja se venden en la tienda de disfraces.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -198,12 +200,8 @@ function showLook() {
   $('step-lang').hidden = true;
   $('step-login').hidden = true;
   $('step-look').hidden = false;
-  const lockM = modelLocked(identity) ? identity.model : null;
-  editor ||= createLookEditor({
-    optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random'), lockModel: lockM,
-  });
+  editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
   const notes = [];
-  if (lockM) notes.push(fmt(L(ID_TEXT.model), { n: daysLeft(identity.modelAt) }));
   if (nameLocked(identity)) {
     $('nickname').value = identity.name;
     $('nickname').readOnly = true;
@@ -263,9 +261,10 @@ await new Promise((resolve) => {
 });
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
-identity = commitIdentity(identity, { name: $('nickname').value, model: editor.getLook().model });
+// Costumes are bought now, so only the name is locked.
+identity = commitIdentity(identity, { name: $('nickname').value });
 saveIdentity(identity);
-let myLook = modelLocked(identity) ? { ...editor.getLook(), model: identity.model } : editor.getLook();
+let myLook = editor.getLook();
 if (nameLocked(identity)) $('nickname').value = identity.name;
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
@@ -547,8 +546,56 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
+// First minute for new players: start next to the square guide, high-five
+// them, get the first mission, then the info centre is suggested (or just
+// explore). 0: high five · 1: getting the mission · 2+: done.
+const ONBOARD_KEY = 'mk.onboard';
+let onboard = (() => {
+  try {
+    const v = localStorage.getItem(ONBOARD_KEY);
+    if (v != null) return Number(v) || 0;
+    return loadLastSpot() ? 2 : 0; // players from before this: skip it
+  } catch { return 2; }
+})();
+const ONBOARD_TEXT = {
+  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.' },
+  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía' },
+  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.' },
+};
+if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
+  const g = squareNpc.ch.root;
+  // Beside them (not between them and the square's sign post), so the
+  // camera behind us sees the guide clearly.
+  const sx2 = Math.cos(g.rotation.y), sz2 = -Math.sin(g.rotation.y);
+  const [ox, oz] = findFreeSpot(g.position.x + sx2 * 2.2, g.position.z + sz2 * 2.2);
+  me.root.position.set(ox, 0, oz);
+  me.root.rotation.y = Math.atan2(g.position.x - ox, g.position.z - oz);
+}
+function setOnboard(n) {
+  onboard = n;
+  try { localStorage.setItem(ONBOARD_KEY, String(n)); } catch { /* storage blocked */ }
+}
+function onboardHi5() {
+  setOnboard(1);
+  $('info-hint').hidden = true;
+  me.play('wave');
+  squareNpc.ch.wave();
+  showBubble(myLabel, $('labels'), '🙌');
+  sfx.pop?.();
+  wallet.add(10);
+  refreshWallet();
+  shop.toast(L(ONBOARD_TEXT.done));
+  action = STALE;
+  setTimeout(() => {
+    talkToGuide(); // the first mission
+    setOnboard(2);
+    // Then: the info centre, or explore on your own.
+    setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
+  }, 1100);
+}
+
 // Come back where you left off last time, if that spot is still open.
-{
+if (onboard >= 2) {
   const last = loadLastSpot();
   if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
     me.root.position.set(last.x, 0, last.z);
@@ -563,6 +610,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) remem
 addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
+if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
 const PLAYER_R = 0.35;
@@ -657,7 +705,7 @@ function updateStreetCard() {
   }
   const lang = getLanguage();
   const original = currentStreet.ko || localName(currentStreet);
-  const local = currentStreet[lang] || currentStreet.en;
+  const local = localName(currentStreet, lang);
   const canTranslate = lang !== 'ko' && local && local !== original;
   btn.hidden = !canTranslate;
   btn.textContent = t(translated ? 'hud.original' : 'hud.translate');
@@ -937,6 +985,19 @@ chatBar.addEventListener('submit', async (e) => {
   if (raw.startsWith('/')) {
     chatInput.value = '';
     const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    const coinsFromCode = cmd === 'master' ? await coinCode(rest.join(' ')) : 0;
+    if (coinsFromCode) { // once per device
+      let used = [];
+      try { used = JSON.parse(localStorage.getItem('mk.coinCodes') || '[]'); } catch { /* broken save */ }
+      const tag = String(coinsFromCode) + ':' + rest.join(' ').length;
+      if (used.includes(tag)) { shop.toast(L(CODE_TEXT.used)); return; }
+      used.push(tag);
+      try { localStorage.setItem('mk.coinCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
+      wallet.add(coinsFromCode);
+      refreshWallet();
+      shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
+      return;
+    }
     const unlocked = cmd === 'master' && await redeemCode(rest.join(' '));
     if (unlocked) {
       const added = inventory.add(...unlocked);
@@ -1000,6 +1061,8 @@ const shop = new ShopUI({
   owns: (id) => inventory.has(id),
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
+  onOutfit: (product) => outfitAction(product.outfit),
+  wearing: () => myLook.model,
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -1098,6 +1161,26 @@ $('fine-close').onclick = () => { $('fine-panel').hidden = true; };
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
+// The quest chip can be folded down to its icon (tap it).
+const QUEST_FOLD_KEY = 'mk.questFold';
+let questFolded = (() => { try { return localStorage.getItem(QUEST_FOLD_KEY) === '1'; } catch { return false; } })();
+// Restaurant texts (see the restaurant section below).
+const DINE_TEXT = {
+  menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
+  note: { en: 'Order here and your food comes to the table. Paid in coins: 1 coin per ₩1,000.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로, 1,000원당 1코인이에요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで、1,000ウォンにつき1コイン。', zh: '在这里点餐，菜会送到桌上。用硬币支付，每1,000韩元1枚。' },
+  here: { en: 'Eat here', ko: '먹고 가기', ja: '店内で', zh: '堂食' },
+  togo: { en: 'To go', ko: '포장', ja: '持ち帰り', zh: '打包' },
+  ordered: { en: 'Ordered {name}! It will be right out.', ko: '{name} 주문 완료! 곧 나와요.', ja: '{name}を注文しました！すぐお持ちします。', zh: '已点{name}！马上就好。' },
+  served: { en: 'Your {name} is here. Enjoy!', ko: '{name} 나왔습니다. 맛있게 드세요!', ja: '{name}お待たせしました。どうぞ！', zh: '您的{name}来了，请慢用！' },
+  waiting: { en: 'Cooking…', ko: '조리 중…', ja: '調理中…', zh: '烹饪中…' },
+  eat: { en: 'Eat', ko: '먹기', ja: '食べる', zh: '吃' },
+  bite: { en: 'Yum! {n} bites left', ko: '냠냠! {n}입 남았어요', ja: 'もぐもぐ！あと{n}口', zh: '好吃！还剩{n}口' },
+  finished: { en: 'All gone. That was good!', ko: '다 먹었어요. 잘 먹었습니다!', ja: '完食！ごちそうさまでした！', zh: '吃完了，真好吃！' },
+  packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
+  poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
+  busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
+  boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
+};
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
 // hold in your hand. 20 slots for now.
@@ -1118,8 +1201,8 @@ function setHeld(h) {
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
   $('stow-btn').hidden = !h;
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : '☕';
-  $('drink-btn').querySelector('small').textContent = t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -1133,8 +1216,9 @@ function drink() {
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   const sips = held.sips - 1;
-  if (sips <= 0) { setHeld(null); shop.toast(t('coffee.finished')); }
-  else { setHeld({ ...held, sips }); shop.toast(t('coffee.sip', { n: sips })); }
+  const food = held.kind === 'food';
+  if (sips <= 0) { setHeld(null); shop.toast(food ? L(DINE_TEXT.finished) : t('coffee.finished')); }
+  else { setHeld({ ...held, sips }); shop.toast(food ? fmt(L(DINE_TEXT.bite), { n: sips }) : t('coffee.sip', { n: sips })); }
 }
 $('drink-btn').onclick = drink;
 
@@ -1175,6 +1259,7 @@ function describeEntry(e) {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
   }
+  if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   return { emoji: '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
 }
 function stowHeld() {
@@ -1313,6 +1398,42 @@ function hopOn(inv) {
 }
 // Items (saved on this device). The master code in chat adds every item.
 const inventory = new Inventory();
+// Costumes are bought now. Players who already picked one at the start keep it.
+try {
+  if (!localStorage.getItem('mk.outfitGift')) {
+    if (OUTFIT_ITEM(myLook.model)) inventory.add(OUTFIT_ITEM(myLook.model));
+    localStorage.setItem('mk.outfitGift', '1');
+  }
+} catch { /* storage blocked */ }
+if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
+const CODE_TEXT = {
+  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!' },
+  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.' },
+};
+const OUTFIT_TEXT = {
+  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.' },
+  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!' },
+  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.' },
+};
+// Costume shop and the items list: buy (coins), wear, or take off.
+function outfitAction(itemId) {
+  const it = ITEMS[itemId];
+  if (!it?.outfit) return;
+  if (!inventory.has(itemId)) {
+    if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    inventory.add(itemId);
+    refreshWallet();
+    sfx.pop?.();
+    myLook = { ...myLook, model: it.outfit };
+    shop.toast(L(OUTFIT_TEXT.bought));
+  } else {
+    const on = myLook.model === it.outfit;
+    myLook = { ...myLook, model: on ? 'basic' : it.outfit };
+    shop.toast(L(on ? OUTFIT_TEXT.off : OUTFIT_TEXT.on));
+  }
+  saveLook(myLook);
+  setLook(myLook);
+}
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -1440,6 +1561,7 @@ function leaveStore() {
   if (mode !== 'store') return;
   endRide();
   standUp();
+  clearMeal();
   closeHome();
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
@@ -1661,6 +1783,99 @@ function openBikeShop() {
   root.hidden = false;
 }
 
+// Restaurants (core/dining.js): sit at a table, open the menu and order.
+// The dish comes to your table a few seconds later; eat it in 5 bites. Or
+// order to go and carry the box (5 bites too). Prices are won on the menu,
+// paid in coins at 1 per 1,000 won.
+let meal = null; // Meal on a table in this restaurant (+ .mesh once served)
+function clearMeal() {
+  if (meal?.mesh) meal.mesh.removeFromParent();
+  meal = null;
+}
+function dineAction() {
+  if (meal?.seat === seated) {
+    if (!meal.ready(performance.now())) return { key: 'dine-wait', label: '⏳ ' + L(DINE_TEXT.waiting), run: () => {} };
+    return { key: 'dine-eat:' + meal.bites, label: `😋 ${L(DINE_TEXT.eat)} (${meal.bites}/${FOOD_BITES})`, run: () => eatMeal() };
+  }
+  return { key: 'dine-menu', label: '📖 ' + L(DINE_TEXT.menu), run: () => openMenu() };
+}
+function updateMeal() {
+  if (!meal || meal.mesh || !interior || !meal.ready(performance.now())) return;
+  const [x, z] = meal.seat.plate;
+  const g = new THREE.Group();
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.02, 20), new THREE.MeshLambertMaterial({ color: '#fbfaf6' }));
+  plate.position.y = 0.01;
+  const food = productModel(meal.product.model, meal.product.color);
+  food.scale.setScalar(1.5);
+  food.position.y = 0.02;
+  g.add(plate, food);
+  g.position.set(x, 0.645, z);
+  g.rotation.y = meal.seat.ry;
+  interior.scene.add(g);
+  meal.mesh = g;
+  meal.food = food;
+  sfx.pop?.();
+  const name = localName(meal.product.name, getLanguage());
+  shop.toast(fmt(L(DINE_TEXT.served), { name }));
+  clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', fmt(L(DINE_TEXT.served), { name })]);
+  action = STALE;
+}
+function eatMeal() {
+  if (!meal) return;
+  const left = meal.bite(performance.now());
+  me.play('clap');
+  sfx.pop?.();
+  if (left <= 0) { clearMeal(); shop.toast(L(DINE_TEXT.finished)); missionEvent('eat'); }
+  else { meal.food.scale.setScalar(1.5 * (0.45 + 0.55 * left / FOOD_BITES)); shop.toast(fmt(L(DINE_TEXT.bite), { n: left })); }
+}
+function orderFood(product, togo) {
+  const cost = coinPrice(product.price);
+  if (!togo && meal?.seat === seated) { shop.toast(L(DINE_TEXT.busy)); return; }
+  if (togo && held && !confirm(t('coffee.replace'))) return;
+  if (!wallet.spend(cost)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
+  refreshWallet();
+  recordFood(interior.store, product, true);
+  const name = localName(product.name, getLanguage());
+  $('lp-panel').hidden = true;
+  if (togo) {
+    setHeld({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
+    shop.toast(fmt(L(DINE_TEXT.packed), { name }));
+    clerk && say(clerk, $('labels'), ['포장해 드릴게요!', 'pojanghae deurilgeyo!', fmt(L(DINE_TEXT.packed), { name })]);
+    return;
+  }
+  clearMeal();
+  meal = new Meal(seated, product, performance.now());
+  shop.toast(fmt(L(DINE_TEXT.ordered), { name }));
+  clerk && say(clerk, $('labels'), ['네, 주문 받았습니다!', 'ne, jumun badatseumnida!', fmt(L(DINE_TEXT.ordered), { name })]);
+  action = STALE;
+}
+function openMenu() {
+  const root = $('lp-panel');
+  delete root.dataset.club;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const x = el('button', 'sheet-x', '✕');
+  x.onclick = () => { root.hidden = true; };
+  const list = el('div', 'lp-list');
+  const lang = getLanguage();
+  for (const pr of interior.store.products) {
+    const row = el('div', 'lp-row menu-row');
+    const text = el('span', 'lp-text');
+    text.append(el('strong', null, `${foodIcon(pr.model)} ${localName(pr.name, lang)}`));
+    if (pr.desc) text.append(el('small', null, localName(pr.desc, lang)));
+    text.append(el('small', 'menu-price', `₩${Number(pr.price).toLocaleString()} → 🪙 ${coinPrice(pr.price)}`));
+    const btns = el('span', 'bike-btns');
+    const here = el('button', 'chip', '🍽️ ' + L(DINE_TEXT.here));
+    here.onclick = () => orderFood(pr, false);
+    const go = el('button', 'chip', '🥡 ' + L(DINE_TEXT.togo));
+    go.onclick = () => orderFood(pr, true);
+    btns.append(here, go);
+    row.append(text, btns);
+    list.append(row);
+  }
+  root.replaceChildren(x, el('strong', 'wallet-title', '📖 ' + localName(interior.store.name, lang) + ' · ' + L(DINE_TEXT.menu)), el('p', 'fine', L(DINE_TEXT.note)), list);
+  root.hidden = false;
+}
+
 // Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
 // songs run on the clock, so everyone inside hears the same song at the same
 // moment. Our own background music pauses while inside.
@@ -1700,6 +1915,7 @@ function clubPulse() {
   const p = clubMusic.pulse();
   return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
 }
+setBeat(() => clubPulse()); // dancers move to the club's beat
 function openClubPanel() {
   if (!clubState) return;
   const root = $('lp-panel');
@@ -2188,7 +2404,13 @@ function guideToPlace(to) {
 }
 const infoUi = new InfoUI({ root: $('info-panel'), guide: guideToPlace });
 // The first-time hint waits until the daily check-in card is closed.
-setTimeout(function infoHintWhenFree() {
+if (onboard === 0) { // first time: just the high five, nothing else in the way
+  const box = $('info-hint');
+  const p0 = document.createElement('p');
+  p0.textContent = L(ONBOARD_TEXT.hi5);
+  box.replaceChildren(p0);
+  box.hidden = false;
+} else setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
@@ -2209,11 +2431,25 @@ const saunaUi = new SaunaUI({
     },
   },
 });
+// Poses held while doing something: the gym, fishing, dancing in a club.
+// Others see them too (the "ac" field).
+const GYM_POSE = { treadmill: 'run', dumbbell: 'clap', pushup: 'pushup', situp: 'situp' };
+let dancing = false;
+const DANCE_TEXT = {
+  start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },
+  stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
+};
+function currentActivity() {
+  if (dancing) return 'dance';
+  if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
+  if (fishingUi.open) return 'fish';
+  return null;
+}
 // Gym: each finished set makes walking a tiny bit faster.
 const gymUi = new GymUI({
   root: $('gym-panel'),
   log: gymLog,
-  onRep: () => { me.play('cheer'); },
+  onRep: (kind) => { if (!GYM_POSE[kind]) me.play('cheer'); },
   onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
 });
 // Library books: carry one, read it sitting anywhere.
@@ -2430,6 +2666,14 @@ function refreshItems() {
       w.onclick = () => setPet(walking ? null : id);
       row.append(w);
     }
+    if (it.outfit) { // wear the costume, or go back to the T-shirt
+      const on = myLook.model === it.outfit;
+      const w = document.createElement('button');
+      w.className = 'chip item-walk' + (on ? ' on' : '');
+      w.textContent = on ? '👕 ' + t('tee.off') : '✨ ' + t('tee.wear');
+      w.onclick = () => { outfitAction(id); refreshItems(); };
+      row.append(w);
+    }
     if (it.tee) { // put the printed shirt on, or take it off
       const wearing = myLook.tee === it.tee;
       const w = document.createElement('button');
@@ -2533,7 +2777,14 @@ function questText(q) {
 function refreshQuestChip() {
   const q = quests.active;
   $('quest-chip').hidden = !q;
-  if (q) $('quest-chip').textContent = (quests.ready(questCtx()) ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + (q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '');
+  if (!q) return;
+  const ready = quests.ready(questCtx());
+  const count = q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '';
+  // Folded: just the icon (and the count); tap the chip to unfold or fold it.
+  $('quest-chip').classList.toggle('folded', questFolded);
+  $('quest-chip').textContent = questFolded
+    ? (ready ? '🎁' : '📜') + count + ' ▸'
+    : (ready ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + count + ' ◂';
 }
 function talkToGuide() {
   squareNpc.ch.wave();
@@ -2565,7 +2816,11 @@ function talkToGuide() {
   }
   refreshQuestChip();
 }
-$('quest-chip').onclick = () => { const q = quests.active; if (q) shop.toast(quests.ready(questCtx()) ? t('quest.goBack') : questText(q)); };
+$('quest-chip').onclick = () => {
+  questFolded = !questFolded;
+  try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }
+  refreshQuestChip();
+};
 refreshQuestChip();
 
 // On the square: near the guide and the big screen.
@@ -2621,7 +2876,7 @@ renderDaily();
 $('daily-btn').onclick = () => { renderDaily(); $('daily-panel').hidden = false; };
 $('daily-close').onclick = () => { $('daily-panel').hidden = true; };
 // Once a day, open the check-in card shortly after arriving.
-if (daily.hasNews()) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200);
+if (daily.hasNews() && onboard >= 2) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200); // not in a new player's first minute
 $('checkin-btn').onclick = () => {
   const n = daily.checkIn();
   if (n) shop.toast(t('daily.checked', { n }));
@@ -2691,10 +2946,12 @@ function sitDown(seat) {
   sendTimer = 0; // tell others right away
   missionEvent('sit');
   if (seat.academy) academyUi.show();
+  if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
 }
 function standUp() {
   if (!seated) return;
   me.root.position.set(seated.stand[0], 0, seated.stand[1]);
+  if (seated.sauna && saunaUi.open) saunaUi.close();
   seated = null;
   sendTimer = 0;
 }
@@ -2726,6 +2983,8 @@ function updateAction(p, tSec) {
     else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
       const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
       next = { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+    } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
+      next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
       const q = quests.active;
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
@@ -2750,6 +3009,10 @@ function updateAction(p, tSec) {
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
+    } else if (seated?.sauna) {
+      next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
+    } else if (seated && isDining(interior.store)) {
+      next = dineAction();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -2785,6 +3048,8 @@ function updateAction(p, tSec) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
+    } else if (clubState && !seated) { // anywhere on the club floor: dance to the beat
+      next = { key: 'dance:' + dancing, label: (dancing ? '🛑 ' : '💃 ') + L(dancing ? DANCE_TEXT.stop : DANCE_TEXT.start), run: () => { dancing = !dancing; if (dancing) missionEvent('dance'); action = STALE; } };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'bike' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -2952,6 +3217,8 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   updateRide(dt);
   if (seated && mag > 0.3) standUp();
+  if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  me.activity(currentActivity());
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && !ride && riding !== 3) {
@@ -3062,6 +3329,8 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
+  updateMeal();
+  if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -3095,6 +3364,7 @@ renderer.setAnimationLoop(() => {
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
+    if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt;
@@ -3206,6 +3476,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,
+    bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
+    bookShelf: () => bookUi.showShelf(),
+    readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
+    action: () => action?.label || null,
+    act: () => action?.run(),
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,

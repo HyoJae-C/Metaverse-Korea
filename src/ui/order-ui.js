@@ -3,7 +3,7 @@
 // question, collect a stamp, then listen to the sentence and record yourself
 // saying it. No speech recognition: recording is only played back, never
 // scored or uploaded.
-import { t, getLanguage } from '../core/i18n.js';
+import { t, getLanguage, localName } from '../core/i18n.js';
 import { BLOCKS, LINES, ANSWERS, MENUS, stampId } from '../data/order-missions.js';
 import { blocksFor, checkOrder, repeatBack, sentenceFor } from '../core/order-game.js';
 
@@ -31,8 +31,8 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-const meaning = (tr) => tr[getLanguage()] || tr.en;
-const blockMeaning = (b) => (getLanguage() === 'ko' ? b.rom : b[getLanguage()] || b.en);
+const meaning = (tr) => localName(tr, getLanguage());
+const blockMeaning = (b) => (getLanguage() === 'ko' ? b.rom : localName(b, getLanguage()));
 
 // Korean speech from the browser's own voices (no server). Hidden if missing.
 const canSpeak = typeof speechSynthesis !== 'undefined';

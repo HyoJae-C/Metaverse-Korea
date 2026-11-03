@@ -25,5 +25,5 @@ test('timing marker sweeps and the zone narrows', () => {
   const [a0, b0] = zoneFor(0, 10), [a1, b1] = zoneFor(9, 10);
   assert.ok(b1 - a1 < b0 - a0);
   assert.ok(inZone(0.5, zoneFor(9, 10)) && !inZone(0.05, zoneFor(0, 10)));
-  assert.equal(Object.keys(EXERCISES).length, 4);
+  assert.equal(Object.keys(EXERCISES).length, 5);
 });
