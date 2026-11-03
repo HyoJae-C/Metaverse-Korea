@@ -14,6 +14,20 @@ export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 const loader = new GLTFLoader();
 const cache = new Map();
+// Clip files: the pack's animFiles (several files, one shared rig), or the
+// clips inside one model's own file (animsFrom). Eager files are awaited
+// before the model shows; the rest add their clips when they arrive.
+const clips = new Map(); // clip name -> AnimationClip
+let animsReady = null;
+function loadAnims() {
+  if (animsReady) return animsReady;
+  const add = (g) => { for (const c of g?.animations || []) if (!clips.has(c.name)) clips.set(c.name, c); return g; };
+  const files = PACK.animFiles || [{ model: PACK.animsFrom, eager: true }];
+  const jobs = files.map((f) => (f.model ? load(f.model) : loader.loadAsync(BASE + f.url).catch(() => null)).then(add));
+  const eager = jobs.filter((_, i) => files[i].eager);
+  animsReady = Promise.all(eager).then((r) => r.every(Boolean));
+  return animsReady;
+}
 function load(id) {
   if (!cache.has(id)) {
     // A failed load resolves to null and the character keeps its chibi body.
@@ -117,11 +131,44 @@ const CHIBI_HEAD_W = 0.65, CHIBI_HEAD_D = 0.62;
 const CHIBI_BODY_W = 0.42, CHIBI_BODY_D = 0.36, CHIBI_SHOULDER = 0.66;
 const v = new THREE.Vector3();
 
+// The beat dancers follow: () => { beat, phase } (the club's music), or null
+// for a steady 120 bpm.
+let beatSource = null;
+export const setBeat = (fn) => { beatSource = fn; };
+function beatNow() {
+  const p = beatSource?.();
+  if (p) return p;
+  const s = performance.now() / 500;
+  return { beat: Math.floor(s), phase: s % 1, energy: 0.7 };
+}
+// A little dance on top of the idle clip: a new move every 2 bars. Values are
+// radians added per bone. Upper arms: -x swings the arm forward and up (to
+// -2.8, overhead); y swings it out to the side (-y left, +y right).
+const DANCE_MOVES = [
+  (ph) => { // bounce with arm pumps
+    const pump = Math.sin(ph * Math.PI * 2);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.06, spine: [0.12 * Math.abs(pump), 0, 0], head: [0.18 * Math.abs(pump), 0, 0], armL: [-1.0 - 0.5 * pump, 0, 0], armR: [-1.0 + 0.5 * pump, 0, 0], foreL: [-1.2, 0, 0], foreR: [-1.2, 0, 0] };
+  },
+  (ph, b) => { // side to side, arms out
+    const side = (b % 2 ? 1 : -1) * Math.sin(ph * Math.PI);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.04, turn: side * 0.35, spine: [0, 0, 0.18 * side], head: [0, 0, -0.12 * side], armL: [-0.4, -1.0 + 0.4 * side, 0], armR: [-0.4, 1.0 + 0.4 * side, 0], foreL: [-0.5, 0, 0], foreR: [-0.5, 0, 0] };
+  },
+  (ph, b) => { // hands up!
+    const w = Math.sin((b % 2 + ph) * Math.PI);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.07, spine: [-0.08, 0, 0.1 * w], head: [-0.15, 0, 0], armL: [-2.8 + 0.2 * w, -0.3, 0], armR: [-2.8 - 0.2 * w, 0.3, 0] };
+  },
+  (ph, b) => { // the point: one arm up, then the other
+    const r = b % 2 === 0;
+    const k = Math.sin(ph * Math.PI);
+    return { bob: k * 0.05, turn: (r ? -1 : 1) * 0.25, head: [0.1 * k, 0, 0], armL: r ? [-0.3, 0, 0] : [-2.6, -0.4, 0], armR: r ? [-2.6, 0.4, 0] : [-0.3, 0, 0], foreL: r ? [-1.0, 0, 0] : [0, 0, 0], foreR: r ? [0, 0, 0] : [-1.0, 0, 0] };
+  },
+];
+
 // Resolves to { update, play } once the model is on, or null on failure.
 export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const id = PACK.models[look.model] ? look.model : MODEL_IDS[0];
-  const [src, animSrc] = await Promise.all([load(id), load(PACK.animsFrom)]);
-  if (!src || !animSrc) return null;
+  const [src, animsOk] = await Promise.all([load(id), loadAnims()]);
+  if (!src || !animsOk) return null;
 
   const m = SkeletonUtils.clone(src.scene);
   m.scale.setScalar(PACK.scale);
@@ -174,8 +221,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const mixer = new THREE.AnimationMixer(m);
   const actions = {};
   const action = (key) => {
-    if (key in actions) return actions[key];
-    const clip = animSrc.animations.find((a) => a.name === PACK.anims[key]);
+    if (actions[key]) return actions[key];
+    const clip = clips.get(PACK.anims[key]); // may not be loaded yet: try again later
     return (actions[key] = clip ? mixer.clipAction(clip) : null);
   };
   let current = null, currentKey = '';
@@ -192,10 +239,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   to('idle', 0);
 
   let emote = null; // { key, t, dur }
+  let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  const dBones = { spine: m.getObjectByName('spine'), head: headBone, armL: m.getObjectByName('upperarml'), armR: m.getObjectByName('upperarmr'), foreL: m.getObjectByName('lowerarml'), foreR: m.getObjectByName('lowerarmr') };
   return {
     // Where held things go. The loader drops dots from names (handslot.r → handslotr).
     hand: m.getObjectByName('handslotr') || m.getObjectByName('handslot.r') || m.getObjectByName('handr'),
     scale: PACK.scale,
+    // Hold an activity pose while standing still: one of our anim names, or
+    // 'dance'. null stops it.
+    setActivity(name) { activity = name && (name === 'dance' || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -213,12 +265,23 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (sit) key = 'sit';
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
+      else if (activity && activity !== 'dance' && action(activity)) key = activity;
       else key = 'idle';
+      const dancing = activity === 'dance' && key === 'idle';
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       const off = riding ? PACK.ride : sit ? PACK.sit : null;
       const k = Math.min(1, dt * 10);
-      m.position.y += ((off?.y || 0) - m.position.y) * k;
+      let bob = 0, turn = 0, moves = null;
+      if (dancing) {
+        const { beat, phase } = beatNow();
+        moves = globalThis.__dancePose || DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat); // debug override
+        bob = moves.bob || 0;
+        turn = moves.turn || 0;
+      }
+      m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
+      if (dancing) m.position.y = bob;
+      else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       mixer.update(dt);
       if (riding) {
@@ -226,6 +289,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [bone, r] of ridePose) {
           const [x, y, z] = tune?.[bone.name] || r;
           bone.rotation.set(bone.rotation.x + x, bone.rotation.y + y, bone.rotation.z + z);
+        }
+      }
+      if (moves) {
+        for (const [name, bone] of Object.entries(dBones)) {
+          const r = moves[name];
+          if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
       }
       if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose

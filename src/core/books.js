@@ -148,4 +148,23 @@ export const BOOKS = [
   },
 ];
 
+// Korean grammar textbooks (TOPIK 1 to 6), one book per level in three
+// editions: English, simplified Chinese (简体) and traditional Chinese
+// (繁體). Each page is an image in public/books/<id>/<edition>/NN.webp.
+export const EDITIONS = [
+  { id: 'en', label: 'English', title: 'Korean Grammar Textbook' },
+  { id: 'hans', label: '简体中文', title: '韩语文法教材' },
+  { id: 'hant', label: '繁體中文', title: '韓語文法教材' },
+];
+const TB = (level, pages, color) => ({
+  id: 'topik' + level, icon: '📗', color, textbook: { level: level.replace('-', '–'), pages },
+  title: { en: `Korean Grammar · TOPIK ${level}`, ko: `한국어 문법 · TOPIK ${level}`, ja: `韓国語文法 · TOPIK ${level}`, zh: `韩语文法 · TOPIK ${level}` },
+  pages: [],
+});
+BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa0'), TB('5-6', 36, '#9c3d54'));
+export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.pages.length);
+// The edition to show first: simplified Chinese for Chinese, else English.
+export const defaultEdition = (lang) => (lang === 'zh' ? 'hans' : 'en');
+export const pageUrl = (b, ed, i) => `books/${b.id}/${ed}/${String(i + 1).padStart(2, '0')}.webp`;
+
 export const bookById = (id) => BOOKS.find((b) => b.id === id) || null;

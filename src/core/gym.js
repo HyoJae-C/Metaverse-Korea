@@ -10,6 +10,7 @@ export const EXERCISES = {
   dumbbell: { icon: '💪', mode: 'timing', reps: 10, name: { en: 'Dumbbell curls', ko: '아령', ja: 'ダンベル', zh: '哑铃' } },
   bench: { icon: '🏋️', mode: 'timing', reps: 8, name: { en: 'Bench press', ko: '벤치프레스', ja: 'ベンチプレス', zh: '卧推' } },
   pushup: { icon: '🙇', mode: 'timing', reps: 12, name: { en: 'Push-ups', ko: '푸시업', ja: '腕立て伏せ', zh: '俯卧撑' } },
+  situp: { icon: '🧘', mode: 'timing', reps: 12, name: { en: 'Sit-ups', ko: '윗몸일으키기', ja: '腹筋', zh: '仰卧起坐' } },
 };
 
 // Speed multiplier for a number of workouts.

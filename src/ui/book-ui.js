@@ -1,6 +1,7 @@
 // Library books: pick one from the shelf to carry, then read it page by page
 // while sitting anywhere (a café, a bench, the jjimjilbang...).
-import { BOOKS, bookById } from '../core/books.js';
+import { BOOKS, bookById, pageCount, EDITIONS, defaultEdition, pageUrl } from '../core/books.js';
+import { getLanguage } from '../core/i18n.js';
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
@@ -35,7 +36,7 @@ export class BookUI {
     Object.assign(this, { root, carrying, take, putDown, getPage, setPage });
   }
   get open() { return !this.root.hidden; }
-  close() { this.root.hidden = true; }
+  close() { this.root.hidden = true; this.root.classList.remove('book-full'); }
   _head(title) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', tt('close'));
@@ -52,7 +53,7 @@ export class BookUI {
       const mine = this.carrying() === b.id;
       const card = el('button', 'book-card' + (mine ? ' picked' : ''));
       card.style.setProperty('--spine', b.color);
-      card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)), el('small', null, mine ? tt('carrying') : tt('pages', { n: b.pages.length })));
+      card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)), el('small', null, mine ? tt('carrying') : tt('pages', { n: pageCount(b) })));
       card.onclick = () => { this.take(b.id); this.showShelf(); };
       grid.append(card);
     }
@@ -63,6 +64,8 @@ export class BookUI {
     const b = bookById(id);
     if (!b) return;
     this.root.hidden = false;
+    if (b.textbook) { this._readTextbook(b); return; }
+    this.root.classList.remove('book-full');
     const n = b.pages.length;
     const i = Math.min(n - 1, Math.max(0, this.getPage(id) | 0));
     this._head(`${b.icon} ${L(b.title)}`);
@@ -83,5 +86,66 @@ export class BookUI {
     const foot = el('div', 'order-actions');
     foot.append(away);
     this.root.append(page, nav, foot);
+  }
+
+  // Textbooks: full-screen page images, for studying. Swipe or tap the
+  // left/right edge to turn pages; switch editions (English, 简体, 繁體).
+  _readTextbook(b) {
+    const root = this.root;
+    root.classList.add('book-full');
+    let ed = this.edition || defaultEdition(getLanguage());
+    try { ed = localStorage.getItem('mk.bookEdition') || ed; } catch { /* storage blocked */ }
+    if (!EDITIONS.some((e) => e.id === ed)) ed = 'en';
+    const n = b.textbook.pages;
+    const BASE = import.meta.env?.BASE_URL || '/';
+    const i = Math.min(n - 1, Math.max(0, this.getPage(b.id) | 0));
+    const edition = EDITIONS.find((e) => e.id === ed);
+    const go = (j) => { if (j < 0 || j >= n) return; this.setPage(b.id, j); this._readTextbook(b); root.querySelector('.tb-view')?.scrollTo(0, 0); };
+
+    const x = el('button', 'sheet-x', '✕');
+    x.setAttribute('aria-label', tt('close'));
+    x.onclick = () => this.close();
+    const head = el('div', 'tb-head');
+    head.append(el('strong', null, `${edition.title} · TOPIK ${b.textbook.level}`));
+    const eds = el('div', 'tb-eds');
+    for (const e of EDITIONS) {
+      const btn = el('button', 'chip' + (e.id === ed ? ' on' : ''), e.label);
+      btn.onclick = () => { this.edition = e.id; try { localStorage.setItem('mk.bookEdition', e.id); } catch { /* storage blocked */ } this._readTextbook(b); };
+      eds.append(btn);
+    }
+    head.append(eds);
+    const view = el('div', 'tb-view' + (this.zoom ? ' zoom' : ''));
+    const img = el('img', 'tb-page');
+    img.alt = `${edition.title} TOPIK ${b.textbook.level} ${i + 1}/${n}`;
+    img.src = BASE + pageUrl(b, ed, i);
+    img.draggable = false;
+    view.append(img);
+    // Tap the left or right third of the page to turn; swipe too.
+    let sx = null;
+    view.onpointerdown = (e) => { sx = e.clientX; };
+    view.onpointerup = (e) => {
+      if (sx == null) return;
+      const dx = e.clientX - sx, r = view.getBoundingClientRect();
+      sx = null;
+      if (this.zoom) return; // zoomed in: drag to look around, turn with the buttons
+      if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+      else if (e.clientX < r.left + r.width / 3) go(i - 1);
+      else if (e.clientX > r.right - r.width / 3) go(i + 1);
+    };
+    if (i + 1 < n) new Image().src = BASE + pageUrl(b, ed, i + 1); // preload the next page
+    const nav = el('div', 'tb-nav');
+    const prev = el('button', 'chip', tt('prev'));
+    prev.disabled = i === 0;
+    prev.onclick = () => go(i - 1);
+    const next = el('button', 'primary', tt('next'));
+    next.disabled = i === n - 1;
+    next.onclick = () => go(i + 1);
+    const away = el('button', 'chip', '📕');
+    away.title = tt('putDown');
+    away.onclick = () => { this.putDown(); this.close(); };
+    const zoom = el('button', 'chip' + (this.zoom ? ' on' : ''), this.zoom ? '🔍−' : '🔍+');
+    zoom.onclick = () => { this.zoom = !this.zoom; this._readTextbook(b); };
+    nav.append(prev, el('span', 'book-num', `${i + 1} / ${n}`), next, zoom, away);
+    root.replaceChildren(x, head, view, nav);
   }
 }

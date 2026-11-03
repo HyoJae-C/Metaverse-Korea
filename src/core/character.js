@@ -104,6 +104,7 @@ export function createCharacter(rawLook) {
   let bike = null, tandem = null, car = null, moto = null, helmet = null, riding = false;
   let bikeColor = null;
   let act = null; // current body emote
+  let activityName = null; // looping pose: gym, fishing, dancing
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
   let umbrella = null; // open umbrella over the head
@@ -120,7 +121,7 @@ export function createCharacter(rawLook) {
       armR.add(held);
     }
   };
-  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; attachHeld(); });
+  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); });
   return {
     root,
     head,
@@ -229,6 +230,13 @@ export function createCharacter(rawLook) {
       waveT = 1.6;
       model?.play('wave');
     },
+    // A looping activity pose (gym, fishing, 'dance'), or null.
+    activity(name) {
+      if (name === activityName) return;
+      activityName = name;
+      model?.setActivity(name);
+    },
+    get activityName() { return activityName; },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);

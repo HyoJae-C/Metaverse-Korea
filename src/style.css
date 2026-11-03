@@ -1062,3 +1062,25 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .menu-row .lp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .menu-row .lp-text small { color: #6b625a; }
 .menu-row .menu-price { color: #b5462f !important; font-weight: 700; }
+
+/* Textbooks: full-screen reader */
+#book-panel.book-full {
+  position: fixed; inset: 0; max-width: none; max-height: none; width: auto; margin: 0; border-radius: 0;
+  transform: none; padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 8px; z-index: 30;
+  background: #2b2630; overflow: hidden; padding-bottom: 30px;
+}
+.book-full .sheet-x { z-index: 2; }
+.tb-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-right: 40px; color: #fff; }
+.tb-head strong { font-size: 15px; }
+.tb-eds { display: flex; gap: 6px; }
+.tb-eds .chip { padding: 4px 10px; font-size: 12px; color: #2b2630; background: #fff; }
+.tb-eds .chip.on { background: var(--mint); color: #12352f; }
+.tb-view { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; touch-action: pan-y; }
+.tb-page { width: 100%; max-width: 900px; height: auto; border-radius: 6px; background: #fff; user-select: none; }
+.tb-nav { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.tb-nav button { flex: none; width: auto; min-width: 0; padding: 8px 16px; white-space: nowrap; }
+.tb-nav .book-num { white-space: nowrap; min-width: 52px; text-align: center; }
+.tb-view.zoom .tb-page { width: 200%; max-width: none; }
+.tb-view.zoom { overflow: auto; justify-content: flex-start; touch-action: pan-x pan-y; }
+.tb-nav .book-num { color: #fff; }
+.quest-chip.folded { padding: 6px 12px; opacity: 0.85; }

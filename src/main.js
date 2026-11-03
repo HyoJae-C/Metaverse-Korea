@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { setBeat } from './core/model-pack.js';
 import {
   LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
 } from './core/i18n.js';
@@ -1099,6 +1100,9 @@ $('fine-close').onclick = () => { $('fine-panel').hidden = true; };
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
+// The quest chip can be folded down to its icon (tap it).
+const QUEST_FOLD_KEY = 'mk.questFold';
+let questFolded = (() => { try { return localStorage.getItem(QUEST_FOLD_KEY) === '1'; } catch { return false; } })();
 // Restaurant texts (see the restaurant section below).
 const DINE_TEXT = {
   menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
@@ -1814,6 +1818,7 @@ function clubPulse() {
   const p = clubMusic.pulse();
   return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
 }
+setBeat(() => clubPulse()); // dancers move to the club's beat
 function openClubPanel() {
   if (!clubState) return;
   const root = $('lp-panel');
@@ -2323,11 +2328,25 @@ const saunaUi = new SaunaUI({
     },
   },
 });
+// Poses held while doing something: the gym, fishing, dancing in a club.
+// Others see them too (the "ac" field).
+const GYM_POSE = { treadmill: 'run', dumbbell: 'clap', pushup: 'pushup', situp: 'situp' };
+let dancing = false;
+const DANCE_TEXT = {
+  start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },
+  stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
+};
+function currentActivity() {
+  if (dancing) return 'dance';
+  if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
+  if (fishingUi.open) return 'fish';
+  return null;
+}
 // Gym: each finished set makes walking a tiny bit faster.
 const gymUi = new GymUI({
   root: $('gym-panel'),
   log: gymLog,
-  onRep: () => { me.play('cheer'); },
+  onRep: (kind) => { if (!GYM_POSE[kind]) me.play('cheer'); },
   onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
 });
 // Library books: carry one, read it sitting anywhere.
@@ -2647,7 +2666,14 @@ function questText(q) {
 function refreshQuestChip() {
   const q = quests.active;
   $('quest-chip').hidden = !q;
-  if (q) $('quest-chip').textContent = (quests.ready(questCtx()) ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + (q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '');
+  if (!q) return;
+  const ready = quests.ready(questCtx());
+  const count = q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '';
+  // Folded: just the icon (and the count); tap the chip to unfold or fold it.
+  $('quest-chip').classList.toggle('folded', questFolded);
+  $('quest-chip').textContent = questFolded
+    ? (ready ? '🎁' : '📜') + count + ' ▸'
+    : (ready ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + count + ' ◂';
 }
 function talkToGuide() {
   squareNpc.ch.wave();
@@ -2679,7 +2705,11 @@ function talkToGuide() {
   }
   refreshQuestChip();
 }
-$('quest-chip').onclick = () => { const q = quests.active; if (q) shop.toast(quests.ready(questCtx()) ? t('quest.goBack') : questText(q)); };
+$('quest-chip').onclick = () => {
+  questFolded = !questFolded;
+  try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }
+  refreshQuestChip();
+};
 refreshQuestChip();
 
 // On the square: near the guide and the big screen.
@@ -2805,10 +2835,12 @@ function sitDown(seat) {
   sendTimer = 0; // tell others right away
   missionEvent('sit');
   if (seat.academy) academyUi.show();
+  if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
 }
 function standUp() {
   if (!seated) return;
   me.root.position.set(seated.stand[0], 0, seated.stand[1]);
+  if (seated.sauna && saunaUi.open) saunaUi.close();
   seated = null;
   sendTimer = 0;
 }
@@ -2864,6 +2896,8 @@ function updateAction(p, tSec) {
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
+    } else if (seated?.sauna) {
+      next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
     } else if (seated && isDining(interior.store)) {
       next = dineAction();
     } else if (seated) {
@@ -2901,6 +2935,8 @@ function updateAction(p, tSec) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
+    } else if (clubState && !seated) { // anywhere on the club floor: dance to the beat
+      next = { key: 'dance:' + dancing, label: (dancing ? '🛑 ' : '💃 ') + L(dancing ? DANCE_TEXT.stop : DANCE_TEXT.start), run: () => { dancing = !dancing; if (dancing) missionEvent('dance'); action = STALE; } };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'bike' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -3068,6 +3104,8 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   updateRide(dt);
   if (seated && mag > 0.3) standUp();
+  if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  me.activity(currentActivity());
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && !ride && riding !== 3) {
@@ -3179,6 +3217,7 @@ renderer.setAnimationLoop(() => {
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
   updateMeal();
+  if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -3212,6 +3251,7 @@ renderer.setAnimationLoop(() => {
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
+    if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt;
@@ -3323,6 +3363,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,
+    bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
+    bookShelf: () => bookUi.showShelf(),
+    readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
     act: () => action?.run(),
     decor: () => decor?.items.length ?? -1,

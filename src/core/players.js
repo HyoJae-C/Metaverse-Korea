@@ -2,6 +2,8 @@
 // name tags and emote bubbles.
 import * as THREE from 'three';
 import { HELD_KINDS } from './held.js';
+// Looping poses others can show (see Character.activity).
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'run', 'clap']);
 import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';
@@ -166,6 +168,7 @@ export class RemotePlayers {
         if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
         if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);
+        p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
         this._pet(p);
       }

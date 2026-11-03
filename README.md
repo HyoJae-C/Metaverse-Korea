@@ -76,11 +76,11 @@ src/i18n/strings.js               UI translations
 
 Characters come from the pack named in `src/data/characters/index.js`. A pack file lists its GLB models,
 scale, sit and bike offsets, and maps our actions (idle, walk, run, sit, ride, wave, bow…) to its clip
-names. All models in a pack share one rig; the clips are read from the `animsFrom` model. To use another
+names. All models in a pack share one rig; the clips come from the `animFiles` (or one model, `animsFrom`). To use another
 pack (for example a paid chibi pack), add its GLBs under `public/models/<pack>/`, write a pack file like
-`kaykit.js`, and point `index.js` at it. Hats, glasses and bags move onto the model's head and chest bones
+`kaykit2.js`, and point `index.js` at it. Hats, glasses and bags move onto the model's head and chest bones
 automatically. While a model loads, or if it fails, the simple built-in chibi is shown instead.
-`scripts/models/strip-kaykit.mjs` shows how the KayKit files were shrunk (weapons removed, unused clips dropped).
+`scripts/models/build-kaykit2.mjs` shows how the KayKit files were shrunk (capes and hats removed, only the clips we use kept).
 
 ### Cloud saves (guest accounts)
 
@@ -105,5 +105,6 @@ register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL.
 Street trees and building colours are decorative and not part of the map data.
 Store and product data are fictional sample data, not the real businesses at those locations.
-Characters: [KayKit Character Pack: Adventurers](https://kaylousberg.com/) by Kay Lousberg, CC0 (licence in `public/models/kaykit/LICENSE.txt`).
+Characters: [KayKit Adventurers 2.0 and Character Animations 1.1](https://kaylousberg.com/) by Kay Lousberg, CC0 (licences in `public/models/kaykit2/`).
+Korean grammar textbooks (TOPIK 1–6) in the library: provided by the project owner.
 Background music is generated live in the browser (Web Audio); no audio files are used.
