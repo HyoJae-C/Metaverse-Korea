@@ -44,3 +44,22 @@ export function makeNoticeBoard(title, color) {
   root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   return root;
 }
+
+// A bobbing "NEW" tag over a board while it has something unread.
+export function makeNewTag() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e0604d';
+  g.beginPath(); g.roundRect(8, 16, 240, 96, 48); g.fill();
+  g.fillStyle = '#fff';
+  g.font = '900 64px sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('NEW', 128, 66);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  sp.scale.set(1.0, 0.5, 1);
+  sp.renderOrder = 5;
+  return sp;
+}

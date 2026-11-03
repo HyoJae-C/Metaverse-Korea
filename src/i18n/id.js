@@ -320,6 +320,7 @@ export const ID = {
   'settings.title': 'Pengaturan',
   'settings.signs': 'Terjemahkan papan nama toko',
   'settings.done': 'Selesai',
+  "news.title": "Pembaruan",
   'settings.sfx': 'Efek suara',
   'hud.musicOn': 'Musik nyala',
   'hud.musicOff': 'Musik mati',

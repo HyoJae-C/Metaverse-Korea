@@ -319,6 +319,7 @@ export const ES = {
   'settings.title': 'Ajustes',
   'settings.signs': 'Traducir letreros',
   'settings.done': 'Listo',
+  "news.title": "Novedades",
   'settings.sfx': 'Efectos de sonido',
   'hud.musicOn': 'Música activada',
   'hud.musicOff': 'Música desactivada',

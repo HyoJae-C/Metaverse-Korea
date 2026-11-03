@@ -4,7 +4,7 @@
 import { L } from './pocha-ui.js';
 
 const T = {
-  title: { en: 'Information Center', ko: '인포메이션 센터', ja: 'インフォメーションセンター', zh: '信息中心' },
+  title: { en: 'Information Center', ko: '안내센터', ja: 'インフォメーションセンター', zh: '信息中心' },
   intro: {
     en: 'Welcome! Here is everything you can do around town. Tap "Go" and the guide line takes you there.',
     ko: '어서 오세요! 이 동네에서 할 수 있는 것들을 모았어요. "가기"를 누르면 길 안내 선이 데려다줘요.',
@@ -15,7 +15,7 @@ const T = {
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
   hint: {
     en: 'New here? Visit the Information Center by the square to see everything you can do.',
-    ko: '처음 오셨나요? 광장 앞 인포메이션 센터에서 할 수 있는 것들을 알려드려요.',
+    ko: '처음 오셨나요? 광장 앞 안내센터에서 할 수 있는 것들을 알려드려요.',
     ja: '初めてですか？広場前のインフォメーションセンターで、できることを紹介しています。',
     zh: '第一次来？去广场前的信息中心看看能做些什么吧。',
   },

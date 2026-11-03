@@ -128,10 +128,21 @@ export function createCharacter(rawLook) {
       armR.add(held);
     }
   };
-  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); });
+  // A costume head (the guide's mascot) replaces the face, hair and hats.
+  let mascot = null;
+  const wearMascot = () => {
+    if (!mascot) return;
+    for (const c of head.children) if (c !== headAcc) c.visible = false;
+    for (const c of headAcc.children) c.visible = c === mascot;
+    if (model?.headMesh) model.headMesh.visible = false;
+    if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
+  };
+  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); wearMascot(); });
   return {
     root,
     head,
+    // Put on a costume head (a THREE.Group in chibi head units).
+    setMascot(g) { mascot?.removeFromParent(); mascot = g; headAcc.add(g); wearMascot(); },
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),

@@ -10,7 +10,7 @@ import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIU
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
-import { makeNoticeBoard } from './core/notice-board-model.js';
+import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -58,6 +58,8 @@ import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
+import { makeMascotHead } from './core/mascot.js';
+import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
@@ -437,6 +439,10 @@ for (const sc of region.screens || []) {
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
   squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
+  squareNpc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+  squareNpc.tag.classList.add('square-guide');
+  squareNpc.labelY = 1.95; // above the costume head
+  squareNpc.ch.activity('dance'); // dances while waiting: easy to spot
   const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
   squareNpc.ch.root.position.set(gx, 0, gz);
   squareNpc.ch.root.rotation.y = face(gx, gz);
@@ -520,15 +526,18 @@ if (square) {
   pave.receiveShadow = true;
   scene.add(pave);
 }
-// Two notice boards side by side at one end of the square, facing it.
+// Notice boards side by side at one end of the square, facing it: free
+// board, inquiries, and the update board (with a NEW tag while unread).
 const noticeBoards = [];
+let newsTag = null;
 if (square) {
   const ry = square.zone.pave?.ry || 0;
   const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
   const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
-  for (const [board, side, color] of [['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
+  for (const [board, side, color] of [['news', -5.1, '#e0a020'], ['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
     const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
-    const m = makeNoticeBoard(BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
+    const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
+    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.45, 0.1); newsTag.visible = false; m.add(newsTag); }
     m.position.set(x, 0, z);
     m.rotation.y = Math.atan2(-ax, -az);
     scene.add(m);
@@ -622,6 +631,8 @@ let onboard = (() => {
 const ONBOARD_TEXT = {
   hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
   button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', id: 'Tos dengan pemandu' },
+  // The guide, before the first mission: visit the info centre first.
+  infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
   done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
 };
 if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
@@ -649,12 +660,16 @@ function onboardHi5() {
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
   quests.skipHighFive(); // that was today's high five
+  // First the guide recommends the info centre, then gives the first mission.
+  setTimeout(() => {
+    say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
+  }, 1100);
   setTimeout(() => {
     talkToGuide(); // the first mission
     setOnboard(2);
     // Then: the info centre, or explore on your own.
     setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
-  }, 1100);
+  }, 5600);
 }
 
 // Come back where you left off last time, if that spot is still open.
@@ -707,6 +722,47 @@ $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
 $('settings-panel').onclick = (e) => {
   if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
 };
+// Update board: the notices, newest first, with a dot until the latest is seen.
+const NEWS_SEEN = 'mk.newsSeen';
+const newsSeen = () => { try { return localStorage.getItem(NEWS_SEEN); } catch { return null; } };
+const refreshNewsDot = () => {
+  const on = hasNewUpdate(newsSeen());
+  $('news-dot').hidden = !on; // a pulsing NEW badge on the row
+  $('settings-dot').hidden = !on;
+  $('settings-btn').classList.toggle('has-news', on);
+  if (newsTag) newsTag.visible = on; // over the board on the square
+};
+const renderNews = () => {
+  const lang = getLanguage();
+  const fresh = newUpdates(newsSeen()); // notices not seen yet get a NEW badge
+  $('news-list').replaceChildren(...UPDATES.map((u, i) => {
+    const { title, items } = updateText(u, lang);
+    const card = document.createElement('article');
+    card.className = 'news-item' + (i < fresh ? ' fresh' : '');
+    const when = document.createElement('div');
+    when.className = 'news-when';
+    when.textContent = u.at;
+    if (i < fresh) { const b = document.createElement('b'); b.className = 'news-new'; b.textContent = 'NEW'; when.append(b); }
+    const h = document.createElement('h3');
+    h.textContent = title;
+    const ul = document.createElement('ul');
+    if (items.length === 1) ul.className = 'single'; // one message: no bullet
+    for (const it of items) { const li = document.createElement('li'); li.textContent = it; ul.append(li); }
+    card.append(when, h, ul);
+    return card;
+  }));
+};
+function openNews() {
+  $('settings-panel').hidden = true;
+  renderNews();
+  $('news-panel').hidden = false;
+  try { if (UPDATES[0]) localStorage.setItem(NEWS_SEEN, UPDATES[0].id); } catch { /* ignore */ }
+  refreshNewsDot();
+}
+$('news-btn').onclick = openNews;
+$('news-close').onclick = () => { $('news-panel').hidden = true; };
+$('news-panel').onclick = (e) => { if (e.target.id === 'news-panel') $('news-panel').hidden = true; };
+refreshNewsDot();
 $('lang-btn').onclick = () => {
   $('settings-panel').hidden = true;
   $('lang-overlay').hidden = false;
@@ -3608,7 +3664,9 @@ function updateAction(p, tSec) {
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
       const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
-      next = { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+      next = b.board === 'news'
+        ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
+        : { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
     } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
       next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
@@ -4059,6 +4117,7 @@ renderer.setAnimationLoop(() => {
     else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
+  if (newsTag?.visible) newsTag.position.y = 3.45 + Math.sin(performance.now() / 300) * 0.08;
   for (const ws of wallScreens) ws.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
@@ -4187,7 +4246,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     heldKind: () => heldKind(),
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
-    guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
+    guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
