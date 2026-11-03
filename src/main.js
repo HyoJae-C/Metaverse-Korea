@@ -746,6 +746,7 @@ const renderNews = () => {
     const h = document.createElement('h3');
     h.textContent = title;
     const ul = document.createElement('ul');
+    if (items.length === 1) ul.className = 'single'; // one message: no bullet
     for (const it of items) { const li = document.createElement('li'); li.textContent = it; ul.append(li); }
     card.append(when, h, ul);
     return card;

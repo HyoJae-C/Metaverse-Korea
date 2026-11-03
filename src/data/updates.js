@@ -4,6 +4,7 @@
 //   id:    unique, also used to show the "new" dot once per notice
 //   at:    when it was announced, Korea time ('YYYY.MM.DD HH:MM')
 //   title / items: per language; a language without its own text shows English.
+//   A notice with one item shows it as a message (no bullet); \n breaks a line.
 export const UPDATES = [
   {
     id: '2026-11-04-welcome',
@@ -18,13 +19,13 @@ export const UPDATES = [
       ar: 'أهلًا بك في ميتافيرس كوريا!',
     },
     items: {
-      ko: ['한국 사람도, 한국을 찾은 친구도 누구나 모여서 재미있고 즐거운 서울 라이프를 즐겨 보세요! 🎉'],
-      en: ['Whether you are from Korea or from anywhere else, come together and enjoy a fun and happy Seoul life! 🎉'],
-      ja: ['韓国の人も、韓国が好きな世界中の人も、みんなで集まって楽しいソウルライフを満喫しよう！🎉'],
-      zh: ['无论是韩国人还是来自世界各地的朋友，都来一起享受有趣又快乐的首尔生活吧！🎉'],
-      es: ['Seas de Corea o de cualquier otro lugar, ¡ven y disfruta de una vida en Seúl divertida y feliz! 🎉'],
-      id: ['Orang Korea atau dari mana pun, ayo berkumpul dan nikmati kehidupan Seoul yang seru dan menyenangkan! 🎉'],
-      ar: ['سواء كنت من كوريا أو من أي مكان آخر، تعالَ واستمتع بحياة ممتعة وسعيدة في سيول! 🎉'],
+      ko: ['한국 사람도,\n한국을 찾은 친구도,\n누구나 함께 모여서\n\n재미있고 즐거운\n서울 라이프를 즐겨 보세요! 🎉'],
+      en: ['From Korea\nor from anywhere else,\neveryone is welcome here.\n\nCome together and enjoy\na fun and happy Seoul life! 🎉'],
+      ja: ['韓国の人も、\n世界中から来た人も、\nみんなで集まって\n\n楽しくて幸せな\nソウルライフを満喫しよう！🎉'],
+      zh: ['无论是韩国人，\n还是来自世界各地的朋友，\n大家一起聚在这里\n\n享受有趣又快乐的\n首尔生活吧！🎉'],
+      es: ['Seas de Corea\no de cualquier otro lugar,\naquí todos son bienvenidos.\n\n¡Ven y disfruta de una vida\nen Seúl divertida y feliz! 🎉'],
+      id: ['Orang Korea\natau dari mana pun,\nsemua boleh berkumpul di sini.\n\nAyo nikmati kehidupan Seoul\nyang seru dan menyenangkan! 🎉'],
+      ar: ['سواء كنت من كوريا\nأو من أي مكان آخر،\nالجميع مرحَّب بهم هنا.\n\nتعالَ واستمتع بحياة\nممتعة وسعيدة في سيول! 🎉'],
     },
   },
 ];

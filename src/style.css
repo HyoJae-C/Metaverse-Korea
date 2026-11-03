@@ -1203,3 +1203,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .news-when { font-size: 12px; color: var(--ink-soft); font-weight: 700; }
 .news-item h3 { margin: 2px 0 6px; font-size: 15px; }
 .news-item ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
+.news-item li { white-space: pre-line; }
+.news-item li + li { margin-top: 4px; }
+.news-item ul.single { list-style: none; padding: 4px 0 2px; font-size: 14px; line-height: 1.65; text-align: center; }
+.news-item h3 { text-align: inherit; }
