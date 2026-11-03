@@ -15,7 +15,8 @@ export const LANGUAGES = [
 
 export const STRINGS = {
   en: {
-    "ride.car": "Car (big roads only)",
+    "ride.car": "Open sports car",
+    "ride.limo": "Limousine",
     "ride.moto": "Sports motorbike",
     "car.noRoad": "Cars start on a big road. Walk to a main road first.",
     "car.alley": "Cars can't go into alleys. Get out and walk!",
@@ -428,7 +429,8 @@ export const STRINGS = {
     'credit.map': 'Map data',
   },
   ko: {
-    "ride.car": "자동차 (큰길만)",
+    "ride.car": "오픈 스포츠카",
+    "ride.limo": "리무진",
     "ride.moto": "스포츠 오토바이",
     "car.noRoad": "자동차는 큰길에서만 탈 수 있어요. 먼저 큰길로 걸어가세요.",
     "car.alley": "자동차는 골목에 못 들어가요. 내려서 걸어가 보세요!",
@@ -841,7 +843,8 @@ export const STRINGS = {
     'credit.map': '지도 데이터',
   },
   ja: {
-    "ride.car": "車（大通りのみ）",
+    "ride.car": "オープンスポーツカー",
+    "ride.limo": "リムジン",
     "ride.moto": "スポーツバイク",
     "car.noRoad": "車は大通りでしか乗れません。まず大通りへ歩きましょう。",
     "car.alley": "車は路地に入れません。降りて歩きましょう！",
@@ -1254,7 +1257,8 @@ export const STRINGS = {
     'credit.map': '地図データ',
   },
   zh: {
-    "ride.car": "汽车（仅限大路）",
+    "ride.car": "敞篷跑车",
+    "ride.limo": "豪华轿车",
     "ride.moto": "运动摩托车",
     "car.noRoad": "汽车只能在大路上开。先走到大路吧。",
     "car.alley": "汽车进不了小巷。下车走走吧！",
