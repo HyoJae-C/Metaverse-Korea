@@ -58,6 +58,7 @@ import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
+import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
 import { pickDelivery, timeFor, deliveryPay } from './core/delivery.js';
@@ -2872,8 +2873,66 @@ const duckUi = new DuckUI({
   wallet,
   friend: () => others.nearestFree(me.root.position.x, me.root.position.z, TOGETHER_RADIUS),
   send: (to, n) => net.sendEmote(duckMsg(to, n)),
-  onDone: (ok) => { if (ok) me.play('cheer'); },
+  onDone: (ok) => { if (ok) me.play('cheer'); duckTrip.back = true; },
+  onProgress: (k) => { duckTrip.k = k; duckTrip.back = false; },
+  onLeave: () => standUp(),
 });
+// Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
+// someone gets in (two seats each). Pedalling (the race panel) takes the
+// boat out towards the buoy; afterwards it drifts back to the dock.
+const DUCK_TEXT = {
+  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', id: 'Naik perahu bebek' },
+  go: { en: 'Pedal out', ko: '출발하기', ja: '出発する', zh: '出发', es: 'Salir a pedalear', ar: 'انطلق', id: 'Berangkat' },
+  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', id: 'Perahu ini penuh' },
+  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', id: 'Menunggu di dermaga · {n}/2 naik' },
+};
+const duckTrip = { k: 0, pos: 0, back: false };
+// Which boat each person is in (me and others), to place the boats.
+function duckRiders(i) {
+  let n = seated?.duck === i ? 1 : 0;
+  for (const o of others.players.values()) if (o.target?.db === i + 1) n++;
+  return n;
+}
+function boardDuck(i) {
+  const d = interior.ducks[i];
+  const taken = [...others.players.values()].filter((o) => o.target?.db === i + 1).map((o) => o.target.dbs | 0);
+  const seat = taken.includes(0) ? 1 : 0;
+  if (duckRiders(i) >= DUCK_SEATS.length) { shop.toast(L(DUCK_TEXT.full)); return; }
+  duckTrip.k = 0; duckTrip.pos = 0; duckTrip.back = false;
+  sitDown({ x: d.home.x + DUCK_SEATS[seat][0], z: d.home.z + DUCK_SEATS[seat][1], ry: Math.PI, stand: [d.home.x, d.home.z + 2.6], duck: i, duckSeat: seat });
+  shop.toast(fmt(L(DUCK_TEXT.waiting), { n: duckRiders(i) }));
+}
+// Each frame in the park: move my boat (out while pedalling, back after),
+// carry me with it, and put other people's boats where they sit.
+function updateDucks(dt) {
+  if (!interior?.ducks) return;
+  const moved = new Set();
+  if (seated?.duck != null) {
+    const d = interior.ducks[seated.duck];
+    const target = duckTrip.back || !duckUi.open ? 0 : duckTrip.k; // the panel closed: drift back
+    duckTrip.pos += (target - duckTrip.pos) * Math.min(1, dt * (duckTrip.back ? 0.6 : 3));
+    const sway = Math.sin(performance.now() / 700) * 0.04;
+    d.g.position.set(d.home.x + Math.sin(duckTrip.pos * 3) * 1.5 * duckTrip.pos, Math.sin(performance.now() / 500) * 0.03, d.home.z - duckTrip.pos * DUCK_TRIP);
+    d.g.rotation.z = sway;
+    const [sx, sz] = DUCK_SEATS[seated.duckSeat || 0];
+    me.root.position.set(d.g.position.x + sx, 0, d.g.position.z + sz);
+    me.root.rotation.y = Math.PI;
+    moved.add(seated.duck);
+  }
+  for (const o of others.players.values()) {
+    const i = (o.target?.db | 0) - 1;
+    if (i < 0 || i >= interior.ducks.length || moved.has(i)) continue;
+    const d = interior.ducks[i];
+    const [sx, sz] = DUCK_SEATS[o.target.dbs | 0] || DUCK_SEATS[0];
+    d.g.position.set(o.ch.root.position.x - sx, 0, o.ch.root.position.z - sz);
+    moved.add(i);
+  }
+  for (const d of interior.ducks) if (!moved.has(d.i)) { // empty: back at the dock, bobbing
+    d.g.position.x += (d.home.x - d.g.position.x) * Math.min(1, dt * 2);
+    d.g.position.z += (d.home.z - d.g.position.z) * Math.min(1, dt * 2);
+    d.g.position.y = Math.sin(performance.now() / 600 + d.i) * 0.03;
+  }
+}
 
 // Delivery run from the tteokbokki stall: ride to another shop in time.
 let delivery = null; // { id, name, until }
@@ -3500,6 +3559,7 @@ function standUp() {
   me.root.position.set(seated.stand[0], 0, seated.stand[1]);
   if (seated.sauna && saunaUi.open) saunaUi.close();
   if (seated.beauty && beautyUi.open) beautyUi.close();
+  if (seated.duck != null) { if (duckUi.open) duckUi.close(); duckTrip.k = duckTrip.pos = 0; }
   seated = null;
   sendTimer = 0;
 }
@@ -3579,6 +3639,8 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
     } else if (seated && isDining(interior.store)) {
       next = dineAction();
+    } else if (seated?.duck != null) { // in a duck boat: pedal out (or get off from the panel)
+      next = { key: 'duck-go', label: '🚣 ' + L(DUCK_TEXT.go), run: () => duckUi.show() };
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -3603,8 +3665,9 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
-    } else if (interior.duck && Math.hypot(p.x - interior.duck.x, p.z - interior.duck.z) < 2.4) {
-      next = { key: 'duck', label: '🦆 ' + t('game.duck'), run: () => duckUi.show() };
+    } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
+      const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
+      next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
@@ -3790,7 +3853,8 @@ renderer.setAnimationLoop(() => {
   }
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   updateRide(dt);
-  if (seated && !seated.surgery && mag > 0.3) standUp();
+  if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
+  updateDucks(dt);
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
@@ -3948,13 +4012,14 @@ renderer.setAnimationLoop(() => {
     if (seated || ride) st.sit = 1;
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
+    if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
