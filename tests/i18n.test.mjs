@@ -4,9 +4,19 @@ import { LANGUAGES, STRINGS } from '../src/i18n/strings.js';
 import { localName, languageFromBrowser } from '../src/core/i18n.js';
 import { s2t } from '../src/i18n/hant.js';
 
-test('six languages in the order the picker shows them', () => {
-  assert.deepEqual(LANGUAGES.map((l) => l.code), ['ko', 'zht', 'zh', 'ja', 'en', 'es']);
+test('eight languages in the order the picker shows them, English first', () => {
+  assert.deepEqual(LANGUAGES.map((l) => l.code), ['en', 'es', 'ko', 'zh', 'zht', 'id', 'ar', 'ja']);
 });
+
+for (const code of ['id', 'ar']) {
+  test(`${code} covers every English key, with the same {placeholders}`, () => {
+    const vars = (s) => (s.match(/\{\w+\}/g) || []).sort().join();
+    for (const [k, v] of Object.entries(STRINGS.en)) {
+      assert.ok(STRINGS[code][k], `${code} ${k}`);
+      assert.equal(vars(STRINGS[code][k]), vars(v), `${code} ${k}`);
+    }
+  });
+}
 
 test('Spanish uses only keys that exist in English, and covers most of them', () => {
   const en = Object.keys(STRINGS.en);

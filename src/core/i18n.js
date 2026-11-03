@@ -23,6 +23,7 @@ export function setLanguage(code) {
     /* storage unavailable: language just won't be remembered */
   }
   document.documentElement.lang = code === 'zh' ? 'zh-Hans' : code === 'zht' ? 'zh-Hant' : code;
+  document.body?.classList.toggle('rtl', !!LANGUAGES.find((l) => l.code === code)?.rtl);
   applyTranslations(document);
   listeners.forEach((fn) => fn(code));
 }

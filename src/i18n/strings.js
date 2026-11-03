@@ -3,14 +3,18 @@
 // back to English.
 
 import { ES } from './es.js';
+import { ID } from './id.js';
+import { AR } from './ar.js';
 
 export const LANGUAGES = [
-  { code: 'ko', label: '한국어' },
-  { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
-  { code: 'zh', label: '简体中文' },
-  { code: 'ja', label: '日本語' },
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Español' },
+  { code: 'ko', label: '한국어' },
+  { code: 'zh', label: '简体中文' },
+  { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
+  { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'ar', label: 'العربية', rtl: true },
+  { code: 'ja', label: '日本語' },
 ];
 
 export const STRINGS = {
@@ -1819,6 +1823,8 @@ export const STRINGS = {
 // Place names that OSM may not carry in every language. Only verified,
 // widely used names go here.
 STRINGS.es = ES;
+STRINGS.id = ID;
+STRINGS.ar = AR;
 
 export const REGION_NAMES = {
   seongsu: {

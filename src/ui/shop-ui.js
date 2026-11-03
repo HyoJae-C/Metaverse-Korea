@@ -2,7 +2,7 @@
 import { ITEMS } from '../core/inventory.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar' };
+const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', id: 'Beli' };
 const UMB = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
   have: { en: 'You have one', ko: '이미 있어요', ja: '持っています', zh: '已经有了' },

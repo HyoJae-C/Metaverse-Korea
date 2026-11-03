@@ -83,9 +83,26 @@ function recolor(gltf, rule) {
 // model's material whose atlas has those cells repainted, keeping each cell's
 // light-to-dark shading. One copy per model and combination, shared.
 const SMALL_HEAD = 0.88;
-// Hanging from the gym's pull-up bar (2.05 m): how far the body is lifted,
-// and how much higher each pull-up takes it.
-const PULLUP = { hang: 0.5, lift: 0.22 };
+// Hanging from the gym's pull-up bar: the body is moved so both hands sit on
+// the bar (2.05 m, minus its radius) whatever the arms are doing.
+const PULLUP = { hang: 0.5, bar: 2.03 };
+// Dumbbell curls: extra rotation (radians) on the upper arm and the forearm at the top of a curl.
+const CURL = { foreL: [0, 0, -2], foreR: [0, 0, 2] };
+const _hv = new THREE.Vector3();
+// A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
+function makeDumbbell() {
+  const g = new THREE.Group();
+  const metal = new THREE.MeshLambertMaterial({ color: '#3a3d44' });
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.16, 8), new THREE.MeshLambertMaterial({ color: '#9aa1a8' }));
+  g.add(grip);
+  for (const y of [-0.075, 0.075]) {
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.045, 12), metal);
+    plate.position.y = y;
+    g.add(plate);
+  }
+  g.scale.setScalar(0.8);
+  return g;
+}
 const dyed = new Map();
 function dyedMaterial(id, src, look) {
   const A = PACK.atlas;
@@ -363,6 +380,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let emote = null; // { key, t, dur }
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
   let pullT = 0;
+  const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
+  let bells = null; // dumbbells, made the first time you do curls
+  const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
   const dBones = { spine: m.getObjectByName('spine'), head: headBone, armL: m.getObjectByName('upperarml'), armR: m.getObjectByName('upperarmr'), foreL: m.getObjectByName('lowerarml'), foreR: m.getObjectByName('lowerarmr') };
   return {
     // Where held things go. The loader drops dots from names (handslot.r → handslotr).
@@ -370,7 +390,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -392,6 +412,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else key = 'idle';
       const dancing = activity === 'dance' && key === 'idle';
       const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
+      const curling = activity === 'curl' && key === 'idle'; // dumbbell curls
+      if (curling && !bells && slotL && slotR) {
+        bells = [makeDumbbell(), makeDumbbell()];
+        slotL.add(bells[0]); slotR.add(bells[1]);
+      }
+      if (bells) for (const b of bells) b.visible = curling;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       const off = riding ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
@@ -408,7 +434,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (hanging) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
-        m.position.y = PULLUP.hang + PULLUP.lift * pull;
+        m.position.y = PULLUP.hang; // corrected below, once the arms are posed
       } else if (dancing) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
@@ -427,6 +453,20 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [name, r] of [['armL', [-2.95 - bend * 0.35, 0, 0]], ['armR', [-2.95 - bend * 0.35, 0, 0]], ['foreL', [bend, 0, 0]], ['foreR', [bend, 0, 0]]]) {
           const bone = dBones[name];
           if (bone) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
+        }
+        if (handL && handR && m.parent) { // lift the body until the hands reach the bar
+          m.updateMatrixWorld(true);
+          const y = (m.parent.worldToLocal(handL.getWorldPosition(_hv)).y + m.parent.worldToLocal(handR.getWorldPosition(_hv)).y) / 2;
+          m.position.y += PULLUP.bar - y;
+        }
+      }
+      if (curling) { // one arm curls up while the other lowers
+        pullT += dt;
+        const ph = Math.sin((pullT / 1.4) * Math.PI * 2);
+        const C = globalThis.__curl || CURL; // debug: tune live
+        for (const [side, c] of [['L', Math.max(0, ph)], ['R', Math.max(0, -ph)]]) {
+          const f = dBones['fore' + side], r = C['fore' + side], amt = 0.15 + 0.85 * c;
+          if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
         }
       }
       if (moves) {
