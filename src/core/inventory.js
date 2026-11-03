@@ -156,13 +156,23 @@ const CODES = {
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
 };
 
-// Developer coin codes: "/<code>" adds coins, every time it is used.
-const COIN_CODES = {
-  '74cefd55ed30ad232b9cf41f598821c27ccb3fec18edfeeefb03780f12604248': 1000,
-};
+// Developer coin codes: "/<word><number>" adds that many coins, every time
+// it is used. Only a hash of the word is kept here (upper/lower case is
+// ignored, so a phone capitalising the first letter still works).
+const COIN_WORDS = new Set([
+  '5777947ba432a8c77c12a0884efb8ca8cc05f800c5d99c9fb8de86da2fd5d7b3',
+]);
+export const COIN_CODE_MAX = 1000000;
+// The coins a code gives with the given word hashes (0 when it is not one).
+export async function coinsFor(code, words = COIN_WORDS) {
+  const m = /^(\D+)(\d+)$/.exec(String(code).trim());
+  if (!m || !globalThis.crypto?.subtle) return 0;
+  const n = Math.min(Number(m[2]), COIN_CODE_MAX);
+  if (!(n > 0)) return 0;
+  return words.has(await sha256(m[1].toLowerCase())) ? n : 0;
+}
 export async function coinCode(code) {
-  if (!globalThis.crypto?.subtle) return 0;
-  return COIN_CODES[await sha256(code)] || 0;
+  return coinsFor(code);
 }
 
 // Event codes for players: "./EVENTSTART1" (any letter case) gives coins,
