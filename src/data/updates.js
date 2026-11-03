@@ -6,33 +6,25 @@
 //   title / items: per language; a language without its own text shows English.
 export const UPDATES = [
   {
-    id: '2026-11-04-a',
+    id: '2026-11-04-welcome',
     at: '2026.11.04 05:00',
     title: {
-      ko: '탈것 꾸미기 · 오리배 · 상점 개편',
-      en: 'Ride skins, duck boats and coin shops',
+      ko: '메타버스 코리아에 오신 걸 환영해요!',
+      en: 'Welcome to Metaverse Korea!',
+      ja: 'メタバース・コリアへようこそ！',
+      zh: '欢迎来到元宇宙韩国！',
+      es: '¡Bienvenido a Metaverse Korea!',
+      id: 'Selamat datang di Metaverse Korea!',
+      ar: 'أهلًا بك في ميتافيرس كوريا!',
     },
     items: {
-      ko: [
-        '페달랩에서 자전거, 보드, 인라인, 킥보드를 고를 수 있어요. 종류마다 ★ 3단계가 있어요.',
-        '탈것 색상과 패턴(꽃, 번개, 하트, 별, 한글) 스킨이 생겼어요.',
-        '뚝섬 한강공원 오리배 4척을 타고 강으로 나갈 수 있어요.',
-        '모든 가격이 코인으로 바뀌었어요. 식당은 앉아서, 카페는 직원에게 주문해요.',
-        '음료를 마시면 잠시 체력이 유지되고, 술을 마시면 살짝 느려져요.',
-        '광장 안내원이 인형탈을 쓰고 춤추며 기다려요. NPC 이름표는 노란색이에요.',
-        '이름은 다른 사람과 겹칠 수 없어요. 부적절한 이름은 경고 없이 바뀌거나 삭제될 수 있어요.',
-        '지도에서 다른 지역으로 바로 갈 수 있고, 검색이 더 편해졌어요.',
-      ],
-      en: [
-        'Pedal Lab now has bikes, skateboards, inline skates and kick scooters, each in 3 tiers.',
-        'New ride skins: colours and patterns (flowers, lightning, hearts, stars, Hangul).',
-        'Take one of four duck boats out on the river at Ttukseom Hangang Park.',
-        'Everything is priced in coins now. Order seated at restaurants and from the staff at cafés.',
-        'Drinks keep your stamina up for a while; alcohol makes you a little slower.',
-        'The square guide now wears a mascot costume and dances. NPC name tags are yellow.',
-        'Names must be unique. Inappropriate names may be changed or removed without warning.',
-        'Jump to other districts from the map, and search is easier.',
-      ],
+      ko: ['한국 사람도, 한국을 찾은 친구도 누구나 모여서 재미있고 즐거운 서울 라이프를 즐겨 보세요! 🎉'],
+      en: ['Whether you are from Korea or from anywhere else, come together and enjoy a fun and happy Seoul life! 🎉'],
+      ja: ['韓国の人も、韓国が好きな世界中の人も、みんなで集まって楽しいソウルライフを満喫しよう！🎉'],
+      zh: ['无论是韩国人还是来自世界各地的朋友，都来一起享受有趣又快乐的首尔生活吧！🎉'],
+      es: ['Seas de Corea o de cualquier otro lugar, ¡ven y disfruta de una vida en Seúl divertida y feliz! 🎉'],
+      id: ['Orang Korea atau dari mana pun, ayo berkumpul dan nikmati kehidupan Seoul yang seru dan menyenangkan! 🎉'],
+      ar: ['سواء كنت من كوريا أو من أي مكان آخر، تعالَ واستمتع بحياة ممتعة وسعيدة في سيول! 🎉'],
     },
   },
 ];
@@ -45,4 +37,11 @@ export function updateText(u, lang) {
 // Whether there is a notice newer than the last one seen.
 export function hasNew(seenId, list = UPDATES) {
   return list.length > 0 && list[0].id !== seenId;
+}
+
+// How many notices (from the top) are new since the last one seen: all of
+// them when none was seen yet.
+export function newCount(seenId, list = UPDATES) {
+  const i = list.findIndex((u) => u.id === seenId);
+  return i < 0 ? list.length : i;
 }

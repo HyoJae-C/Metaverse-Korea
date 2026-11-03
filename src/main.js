@@ -59,7 +59,7 @@ import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
-import { UPDATES, updateText, hasNew as hasNewUpdate } from './data/updates.js';
+import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
@@ -721,22 +721,24 @@ $('settings-panel').onclick = (e) => {
 };
 // Update board: the notices, newest first, with a dot until the latest is seen.
 const NEWS_SEEN = 'mk.newsSeen';
+const newsSeen = () => { try { return localStorage.getItem(NEWS_SEEN); } catch { return null; } };
 const refreshNewsDot = () => {
-  let seen = null;
-  try { seen = localStorage.getItem(NEWS_SEEN); } catch { /* ignore */ }
-  const on = hasNewUpdate(seen);
-  $('news-dot').hidden = !on;
+  const on = hasNewUpdate(newsSeen());
+  $('news-dot').hidden = !on; // a pulsing NEW badge on the row
   $('settings-dot').hidden = !on;
+  $('settings-btn').classList.toggle('has-news', on);
 };
 const renderNews = () => {
   const lang = getLanguage();
-  $('news-list').replaceChildren(...UPDATES.map((u) => {
+  const fresh = newUpdates(newsSeen()); // notices not seen yet get a NEW badge
+  $('news-list').replaceChildren(...UPDATES.map((u, i) => {
     const { title, items } = updateText(u, lang);
     const card = document.createElement('article');
-    card.className = 'news-item';
+    card.className = 'news-item' + (i < fresh ? ' fresh' : '');
     const when = document.createElement('div');
     when.className = 'news-when';
     when.textContent = u.at;
+    if (i < fresh) { const b = document.createElement('b'); b.className = 'news-new'; b.textContent = 'NEW'; when.append(b); }
     const h = document.createElement('h3');
     h.textContent = title;
     const ul = document.createElement('ul');

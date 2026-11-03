@@ -1186,9 +1186,17 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 
 /* Update board */
 .settings-chip { position: relative; }
-.settings-chip .dot, .news-dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
+.settings-chip .dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
 #news-btn { position: relative; }
-.news-dot { position: static; flex: none; margin-right: 6px; }
+.news-new { display: inline-block; flex: none; margin: 0 6px; padding: 1px 7px; border-radius: 8px; background: #e0604d; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .3px; vertical-align: 1px; }
+.news-new[hidden] { display: none; }
+.news-new.pulse, .settings-chip.has-news .dot { animation: news-pulse 1.4s ease-in-out infinite; }
+.settings-chip.has-news { animation: news-wiggle 3s ease-in-out infinite; }
+@keyframes news-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 96, 77, .55); } 50% { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(224, 96, 77, 0); } }
+@keyframes news-wiggle { 0%, 88%, 100% { transform: rotate(0); } 91% { transform: rotate(-14deg); } 94% { transform: rotate(12deg); } 97% { transform: rotate(-6deg); } }
+.news-item.fresh { background: #fff3c4; box-shadow: 0 0 0 2px #ffd84a; animation: news-glow 2s ease-in-out 2; }
+@keyframes news-glow { 50% { box-shadow: 0 0 0 2px #ffd84a, 0 0 16px 4px rgba(255, 216, 74, .7); } }
+@media (prefers-reduced-motion: reduce) { .news-new.pulse, .settings-chip.has-news, .settings-chip.has-news .dot, .news-item.fresh { animation: none; } }
 .news-card { max-height: min(80vh, 640px); display: flex; flex-direction: column; }
 .news-list { overflow-y: auto; margin: 4px 0 12px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
 .news-item { background: #fff8ec; border-radius: 14px; padding: 10px 12px; }

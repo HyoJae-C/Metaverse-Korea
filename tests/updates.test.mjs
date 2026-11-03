@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { UPDATES, updateText, hasNew } from '../src/data/updates.js';
+import { UPDATES, updateText, hasNew, newCount } from '../src/data/updates.js';
 
 test('every notice has an id, a time and Korean and English text', () => {
   const ids = new Set();
@@ -29,4 +29,11 @@ test('new dot until the latest notice is seen', () => {
   assert.equal(hasNew(null), UPDATES.length > 0);
   assert.equal(hasNew(UPDATES[0]?.id), false);
   assert.equal(hasNew('x', []), false);
+});
+
+test('notices newer than the last seen one are new', () => {
+  const list = [{ id: 'c' }, { id: 'b' }, { id: 'a' }];
+  assert.equal(newCount('a', list), 2);
+  assert.equal(newCount('c', list), 0);
+  assert.equal(newCount(null, list), 3);
 });
