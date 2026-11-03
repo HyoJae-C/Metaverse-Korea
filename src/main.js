@@ -68,6 +68,9 @@ import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inv
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
+import { taxiFare } from './core/taxi.js';
+import { ClubMusic } from './core/club-music.js';
+import { CLUB_TRACKS, CLUB_GENRES, songSeconds } from './data/club-tracks.js';
 import { TRACKS } from './data/tracks.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
@@ -1401,7 +1404,7 @@ function enterStore(item) {
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
     built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
-    built.clerkNpc.ch.root.position.set(built.clerk.x, 0, built.clerk.z);
+    built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
   }
@@ -1412,6 +1415,8 @@ function enterStore(item) {
   deliveryArrived(store.id);
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
+  if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
+  if (store.genre) enterClub(store.genre);
   const quiet = store.category === 'library';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : PHRASES.welcome[0];
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
@@ -1438,6 +1443,7 @@ function leaveStore() {
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
+  leaveClub();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
   clerk = null;
   npcs.setVisible(true);
@@ -1519,9 +1525,9 @@ async function leaveKpopCafe() {
   kpop.leave();
   if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
 }
-async function enterMusicCafe() {
+async function enterMusicCafe(track = 'lofi') {
   cafeMusic = { wasOn: music.on };
-  music.setTrack('lofi');
+  music.setTrack(track);
   if (!music.on) { await music.setOn(true); applyMusicBtn(); } // the room's music plays on entering
 }
 async function leaveMusicCafe() {
@@ -1573,6 +1579,87 @@ function openLpPanel() {
   root.replaceChildren(x, h, note, list, actions);
   root.hidden = false;
 }
+// Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
+// songs run on the clock, so everyone inside hears the same song at the same
+// moment. Our own background music pauses while inside.
+const clubMusic = new ClubMusic();
+let clubState = null; // { wasOn, genre } while inside a club
+const CLUB_TEXT = {
+  open: { en: 'Playlist', ko: '플레이리스트', ja: 'プレイリスト', zh: '播放列表' },
+  now: { en: 'Now playing', ko: '지금 나오는 곡', ja: '再生中', zh: '正在播放' },
+  note: { en: 'Everyone in the club hears the same song. 10 songs, 2–3 minutes each, all made in your browser.', ko: '클럽 안의 모두가 같은 곡을 들어요. 2~3분짜리 10곡이 브라우저에서 바로 만들어져요.', ja: 'クラブの全員が同じ曲を聴いています。2〜3分の10曲をブラウザでその場で演奏します。', zh: '俱乐部里的每个人都听同一首歌。共10首，每首2–3分钟，在浏览器中实时生成。' },
+  mute: { en: 'Mute', ko: '음소거', ja: 'ミュート', zh: '静音' },
+  unmute: { en: 'Sound on', ko: '소리 켜기', ja: '音を出す', zh: '打开声音' },
+  left: { en: '{t} left', ko: '{t} 남음', ja: '残り{t}', zh: '剩余{t}' },
+};
+const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+clubMusic.onSong = (i) => {
+  if (!clubState) return;
+  const tr = CLUB_TRACKS[clubState.genre][i];
+  shop.toast('🎧 ' + localName(tr.name, getLanguage()));
+  if (!$('lp-panel').hidden && $('lp-panel').dataset.club) openClubPanel();
+};
+async function enterClub(genre) {
+  clubState = { wasOn: music.on, genre };
+  if (music.on) { await music.setOn(false); applyMusicBtn(); }
+  if (clubState?.genre === genre) await clubMusic.start(genre);
+}
+async function leaveClub() {
+  if (!clubState) return;
+  const { wasOn } = clubState;
+  clubState = null;
+  clubMusic.stop();
+  $('lp-panel').hidden = true;
+  delete $('lp-panel').dataset.club;
+  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
+}
+function clubPulse() {
+  if (!clubState || !clubMusic.on) return null;
+  const p = clubMusic.pulse();
+  return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
+}
+function openClubPanel() {
+  if (!clubState) return;
+  const root = $('lp-panel');
+  root.dataset.club = '1';
+  const lang = getLanguage();
+  const g = CLUB_GENRES[clubState.genre];
+  const x = document.createElement('button');
+  x.className = 'sheet-x';
+  x.textContent = '✕';
+  x.onclick = () => { root.hidden = true; delete root.dataset.club; };
+  const h = document.createElement('strong');
+  h.className = 'wallet-title';
+  h.textContent = `${g.icon} ${localName(g.name, lang)} · ${L(CLUB_TEXT.open)}`;
+  const note = document.createElement('p');
+  note.className = 'fine';
+  note.textContent = localName(g.desc, lang) + ' ' + L(CLUB_TEXT.note);
+  const list = document.createElement('div');
+  list.className = 'lp-list';
+  const p = clubMusic.pulse();
+  CLUB_TRACKS[clubState.genre].forEach((tr, i) => {
+    const playing = clubMusic.on && clubMusic.index === i;
+    const row = document.createElement('div');
+    row.className = 'lp-row' + (playing ? ' on' : '');
+    row.innerHTML = '<span class="lp-text"><strong></strong><small></small></span>';
+    row.querySelector('strong').textContent = `${i + 1}. ${localName(tr.name, lang)}`;
+    const len = songSeconds(clubState.genre, tr);
+    row.querySelector('small').textContent = playing && p
+      ? `▶ ${L(CLUB_TEXT.now)} · ${fmt(L(CLUB_TEXT.left), { t: mmss(Math.max(0, len - p.pos)) })}`
+      : `${tr.bpm} BPM · ${mmss(len)}`;
+    list.append(row);
+  });
+  const mute = document.createElement('button');
+  mute.className = 'chip';
+  mute.textContent = clubMusic.muted ? '🔊 ' + L(CLUB_TEXT.unmute) : '🔇 ' + L(CLUB_TEXT.mute);
+  mute.onclick = () => { clubMusic.setMuted(!clubMusic.muted); openClubPanel(); };
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+  actions.append(mute);
+  root.replaceChildren(x, h, note, list, actions);
+  root.hidden = false;
+}
+
 let musicWanted = false;
 try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
 if (musicWanted) {
@@ -1638,7 +1725,7 @@ const mapView = new MapView({
 
 // Taxi: pick a place on the map (taxi mode) and ride there. A short scene
 // from the back seat, the driver speaks Korean, then you're dropped off on
-// the nearest street. Free during beta (see ROADMAP: later it costs coins).
+// the nearest street. The fare grows with the distance.
 const TAXI_LINES = [
   ['안녕하세요! 어디로 가세요?', 'annyeonghaseyo! eodiro gaseyo?', 'taxi.t1'],
   ['네, 출발할게요!', 'ne, chulbalhalgeyo!', 'taxi.t2'],
@@ -1661,19 +1748,24 @@ function taxiDropOff(x, z) {
   return best;
 }
 function rideTaxi(dest) {
-  if (mode === 'store') leaveStore();
-  if (riding) setRiding(false);
-  clearGuide();
   // Drop-off: the nearest point on a road a car can use, on free ground.
   const [rx, rz] = taxiDropOff(dest.x, dest.z);
   const [fx, fz] = findFreeSpot(rx, rz);
+  // The fare grows with the distance (core/taxi.js).
+  const from = mode === 'street' ? me.root.position : interior.front.door;
+  const fare = taxiFare(from.x, from.z, fx, fz);
+  if (!wallet.spend(fare)) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
+  refreshWallet();
+  if (mode === 'store') leaveStore();
+  if (riding) setRiding(false);
+  clearGuide();
   const ry = Math.atan2(dest.x - fx, dest.z - fz); // face the destination
   const sayLine = ([ko, rom, key]) => {
     $('taxi-ko').textContent = ko;
     $('taxi-rom').textContent = rom;
     $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
   };
-  $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label: dest.label });
+  $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label: dest.label }) + ' · 🪙 ' + t('taxi.fare', { n: fare.toLocaleString() });
   $('taxi-skip').textContent = t('taxi.skip');
   $('taxi-ride').hidden = false;
   input.keys.clear();
@@ -2609,6 +2701,8 @@ function updateAction(p, tSec) {
       next = { key: kind, label: (kind === 'salon' ? '💇 ' : '✨ ') + t(kind + '.open'), run: () => openBeauty(kind) };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
+    } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
+      next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -2881,7 +2975,7 @@ renderer.setAnimationLoop(() => {
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
-  if (mode === 'store' && interior?.animate) interior.animate(dt); // club lights, candles
+  if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
