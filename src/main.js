@@ -17,7 +17,7 @@ import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
-import { EmblemUI } from './ui/emblem-ui.js';
+import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
@@ -84,7 +84,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -179,9 +179,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
 let editor = null;
 let identity = readIdentity();
 const ID_TEXT = {
-  model: { en: 'You can change your character in {n} day(s).', ko: '캐릭터는 {n}일 뒤에 바꿀 수 있어요.', ja: 'キャラクターは{n}日後に変更できます。', zh: '{n}天后才能更换角色。' },
-  name: { en: 'You can change your name in {n} day(s).', ko: '이름은 {n}일 뒤에 바꿀 수 있어요.', ja: '名前は{n}日後に変更できます。', zh: '{n}天后才能改名。' },
-  first: { en: 'Once you start, your name stays for {n} days. Costumes like mage or ninja are sold at the costume shop in town.', ko: '시작하면 이름은 {n}일 동안 바꿀 수 없어요. 마법사·닌자 같은 옷은 동네 코스튬 가게에서 살 수 있어요.', ja: '始めると、名前は{n}日間変更できません。魔法使いや忍者の服は町のコスチューム店で買えます。', zh: '开始后，名字{n}天内不能更改。法师、忍者等服装可在镇上的服装店购买。', es: 'Al empezar, tu nombre no se puede cambiar durante {n} días. Los disfraces de mago o ninja se venden en la tienda de disfraces.' },
+  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the costume shop or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 코스튬 가게나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はコスチューム店かアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在服装店或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en la tienda de disfraces o desde tus objetos.' },
+  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy costumes like mage or ninja at the costume shop.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 마법사·닌자 같은 옷은 코스튬 가게에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、魔法使いや忍者の服はコスチューム店で買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，法师、忍者等服装可在服装店购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar disfraces de mago o ninja en la tienda de disfraces.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -195,20 +194,27 @@ const LOGIN_TEXT = {
   guest: { en: 'Play as a guest', ko: '게스트로 시작', ja: 'ゲストで始める', zh: '以游客身份开始' },
   note: { en: 'You can link Google later in ⚙️ Settings too.', ko: '나중에 ⚙️ 설정에서도 구글을 연결할 수 있어요.', ja: 'あとで ⚙️ 設定からもGoogleを連携できます。', zh: '之后也可以在 ⚙️ 设置里绑定 Google。' },
 };
+// Made a character here before (mk.made since the start screen remembers it;
+// older saves: a look plus a saved spot in town).
+const isReturning = () => {
+  try { return !!localStorage.getItem('mk.made') || (!!localStorage.getItem('mk.look') && !!localStorage.getItem('mk.lastSpot')); } catch { return false; }
+};
 const askLogin = () => (cloud.status === 'cloud' && cloud.guest) || new URLSearchParams(location.search).has('login');
 function showLook() {
   $('step-lang').hidden = true;
   $('step-login').hidden = true;
   $('step-look').hidden = false;
   editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
-  const notes = [];
-  if (nameLocked(identity)) {
-    $('nickname').value = identity.name;
+  // Coming back: the character is already made, so no clothes to pick here
+  // (change them later at the costume shop or from your items).
+  // Name too: it is kept, and changed at the name tag workshop.
+  const returning = isReturning();
+  $('step-look').classList.toggle('returning', returning);
+  if (returning) {
+    $('nickname').value = identity.name || localStorage.getItem('mk.name') || '';
     $('nickname').readOnly = true;
-    notes.push(fmt(L(ID_TEXT.name), { n: daysLeft(identity.nameAt) }));
   }
-  if (!notes.length) notes.push(fmt(L(ID_TEXT.first), { n: LOCK_DAYS }));
-  $('look-lock').textContent = '🔒 ' + notes.join(' ');
+  $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
 }
 $('next-btn').onclick = () => {
@@ -262,10 +268,12 @@ await new Promise((resolve) => {
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
 // Costumes are bought now, so only the name is locked.
-identity = commitIdentity(identity, { name: $('nickname').value });
-saveIdentity(identity);
+if (!isReturning()) {
+  identity = { ...identity, name: cleanName($('nickname').value).trim(), nameAt: Date.now() };
+  saveIdentity(identity);
+}
+try { localStorage.setItem('mk.made', '1'); } catch { /* ignore */ }
 let myLook = editor.getLook();
-if (nameLocked(identity)) $('nickname').value = identity.name;
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
 const recentLines = new Map(); // id -> their last chat lines, attached to a report
@@ -281,7 +289,7 @@ try {
   throw err;
 }
 
-const nickname = filterText((cleanName($('nickname').value).trim() || t('start.defaultName')).slice(0, 16));
+let nickname = filterText((cleanName($('nickname').value).trim() || t('start.defaultName')).slice(0, 16));
 try {
   localStorage.setItem('mk.name', cleanName($('nickname').value).trim());
 } catch { /* ignore */ }
@@ -779,7 +787,9 @@ let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
 // Street rooms are split into cells (see net/area.js); a shop is one room.
 let joinToken = 0;
+let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
+  lastJoin = [room, roomScene, !!area];
   const token = ++joinToken;
   net?.disconnect();
   net = SOLO;
@@ -835,6 +845,28 @@ async function joinRoom(room, roomScene, area = null) {
     console.warn('Multiplayer unavailable:', err);
     if (token === joinToken) net = SOLO;
   }
+}
+// Rename at the name tag workshop: costs coins; others see it after a quick
+// rejoin of the room we are in. Returns 'ok', 'same', 'empty' or 'poor'.
+function renameMe(raw) {
+  const clean = cleanName(raw).trim();
+  if (!clean) return 'empty';
+  const next = filterText(clean.slice(0, 16));
+  if (next === nickname) return 'same';
+  if (!wallet.spend(RENAME_COST)) return 'poor';
+  nickname = next;
+  identity = { ...identity, name: clean, nameAt: Date.now() };
+  saveIdentity(identity);
+  try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
+  $('nickname').value = clean;
+  styleNameTag(myTag, nickname, myLook);
+  emblemUi.name = nickname;
+  me.play('cheer');
+  if (lastJoin && net !== SOLO) {
+    const [room, roomScene, hasArea] = lastJoin;
+    joinRoom(room, roomScene, hasArea ? { x: me.root.position.x, z: me.root.position.z } : null);
+  }
+  return 'ok';
 }
 // Leave multiplayer (e.g. inside your own home).
 function goSolo(roomScene) {
@@ -2378,6 +2410,7 @@ const emblemUi = new EmblemUI({
   owned: emblems,
   wallet,
   name: nickname,
+  rename: (raw) => renameMe(raw),
   getLook: () => myLook,
   wearLook: (patch) => {
     myLook = { ...myLook, ...patch };
@@ -3471,6 +3504,8 @@ updateStreetCard();
 // Test hooks (only with ?debug in the URL).
 if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
+    emblem: () => emblemUi.show(),
+    myName: () => nickname,
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),
     seats: () => interior?.seats?.length ?? 0,
