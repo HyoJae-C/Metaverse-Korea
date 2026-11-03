@@ -788,11 +788,13 @@ function nearestStreet(x, z) {
 // ---------- Weather ----------
 const weather = new WeatherSystem({
   scene, sun, hemi, ambient, region,
-  onUpdate: ({ icon, temp }) => {
+  onUpdate: ({ icon }) => {
     const el = $('weather');
     el.hidden = false;
-    el.textContent = temp == null ? icon : `${icon} ${Math.round(temp)}°C`;
-    el.title = t('hud.weatherNow');
+    // Korean time (KST) next to the weather, updated every minute.
+    const kst = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+    el.replaceChildren(`${icon} ${kst}`, Object.assign(document.createElement('small'), { className: 'kst', textContent: ' KST' }));
+    el.title = `${t('credit.weather')} · KST (Korea)`;
   },
 });
 
