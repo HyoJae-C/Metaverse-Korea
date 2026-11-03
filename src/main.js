@@ -10,7 +10,7 @@ import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIU
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
-import { makeNoticeBoard } from './core/notice-board-model.js';
+import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -526,15 +526,18 @@ if (square) {
   pave.receiveShadow = true;
   scene.add(pave);
 }
-// Two notice boards side by side at one end of the square, facing it.
+// Notice boards side by side at one end of the square, facing it: free
+// board, inquiries, and the update board (with a NEW tag while unread).
 const noticeBoards = [];
+let newsTag = null;
 if (square) {
   const ry = square.zone.pave?.ry || 0;
   const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
   const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
-  for (const [board, side, color] of [['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
+  for (const [board, side, color] of [['news', -5.1, '#e0a020'], ['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
     const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
-    const m = makeNoticeBoard(BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
+    const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
+    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.45, 0.1); newsTag.visible = false; m.add(newsTag); }
     m.position.set(x, 0, z);
     m.rotation.y = Math.atan2(-ax, -az);
     scene.add(m);
@@ -727,6 +730,7 @@ const refreshNewsDot = () => {
   $('news-dot').hidden = !on; // a pulsing NEW badge on the row
   $('settings-dot').hidden = !on;
   $('settings-btn').classList.toggle('has-news', on);
+  if (newsTag) newsTag.visible = on; // over the board on the square
 };
 const renderNews = () => {
   const lang = getLanguage();
@@ -747,13 +751,14 @@ const renderNews = () => {
     return card;
   }));
 };
-$('news-btn').onclick = () => {
+function openNews() {
   $('settings-panel').hidden = true;
   renderNews();
   $('news-panel').hidden = false;
   try { if (UPDATES[0]) localStorage.setItem(NEWS_SEEN, UPDATES[0].id); } catch { /* ignore */ }
   refreshNewsDot();
-};
+}
+$('news-btn').onclick = openNews;
 $('news-close').onclick = () => { $('news-panel').hidden = true; };
 $('news-panel').onclick = (e) => { if (e.target.id === 'news-panel') $('news-panel').hidden = true; };
 refreshNewsDot();
@@ -3658,7 +3663,9 @@ function updateAction(p, tSec) {
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
       const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
-      next = { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+      next = b.board === 'news'
+        ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
+        : { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
     } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
       next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
@@ -4109,6 +4116,7 @@ renderer.setAnimationLoop(() => {
     else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
+  if (newsTag?.visible) newsTag.position.y = 3.45 + Math.sin(performance.now() / 300) * 0.08;
   for (const ws of wallScreens) ws.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
