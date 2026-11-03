@@ -31,7 +31,9 @@ const a = await join('E2E A');
 const b = await join('E2E B');
 let ok = false;
 try {
-  await a.waitForFunction(() => document.querySelector('#online')?.textContent.includes('2'), null, { timeout: 20000 });
+  // Meeting in the test room (the online badge counts everyone on the live
+  // map, so visitors can raise it; check the people around us instead).
+  await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
   await b.keyboard.down('KeyW');
   await b.waitForTimeout(1000);
   await b.keyboard.up('KeyW');
@@ -55,9 +57,11 @@ try {
   // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
   const [ax, az] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 700, z), [ax, az]);
-  // (The online count is everyone on the map, so it stays at 2 meanwhile.)
+  // (The online count is everyone on the map: at least the two of us, even
+  // apart. Visitors on the live site can make it more.)
   await a.waitForFunction(() => __mk.near() === 0, null, { timeout: 15000 });
-  if (!(await a.evaluate(() => document.querySelector('#online')?.textContent.includes('2')))) throw new Error('online count should stay global while apart');
+  const total = await a.evaluate(() => { const o = document.querySelector('#online'); return o.hidden ? 0 : +(o.textContent.match(/\d+/)?.[0] || 0); });
+  if (total < 2) throw new Error(`online count should stay global while apart (saw ${total})`);
   await b.evaluate(([x, z]) => __mk.goto(x + 3, z), [ax, az]);
   await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 15000 });
   ok = true;
