@@ -2,7 +2,7 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', school: '🏫', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮', info: 'ℹ️' };
+export const CATEGORY_ICON = { club: '🎧', bar: '🍸', cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', school: '🏫', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮', info: 'ℹ️' };
 
 // Does a store match the search text? Looks at its names in every language,
 // tagline, category and product names, ignoring case and spaces.
