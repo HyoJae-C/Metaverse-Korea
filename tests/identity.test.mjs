@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readIdentity, commitIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from '../src/core/identity.js';
+import { cleanName, readIdentity, commitIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from '../src/core/identity.js';
 
 const DAY = 86400000;
 const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
@@ -37,4 +37,10 @@ test('a broken saved record means no lock', () => {
   const s = mem();
   s.setItem('mk.identity', '{oops');
   assert.deepEqual(readIdentity(s), { name: '', nameAt: 0, model: null, modelAt: 0 });
+});
+
+test('names keep only Hangul, English letters, numbers and spaces', () => {
+  assert.equal(cleanName('효재 Kim 99'), '효재 Kim 99');
+  assert.equal(cleanName('ゆうじ★Yozi✨_!'), 'Yozi');
+  assert.equal(cleanName('ㅎㅛ'), 'ㅎㅛ'); // half-typed Korean stays while typing
 });

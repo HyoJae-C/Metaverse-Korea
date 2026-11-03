@@ -1,10 +1,10 @@
 // Gym (헬스장) rules, no DOM so it can be unit-tested.
 // Four exercises; finishing a set counts as one workout. Each workout makes
-// walking and running a tiny bit faster (+0.01%), up to +3% in total, so
+// walking and running a tiny bit faster (+0.01%), up to +1% in total (100 sets), so
 // regulars move a touch quicker without it changing the game.
 
 export const BOOST_PER_WORKOUT = 0.0001; // +0.01%
-export const MAX_BOOST = 0.03; // +3%
+export const MAX_BOOST = 0.01; // +1%
 export const EXERCISES = {
   treadmill: { icon: '🏃', mode: 'mash', seconds: 15, goal: 40, name: { en: 'Treadmill', ko: '러닝머신', ja: 'ランニングマシン', zh: '跑步机' } },
   dumbbell: { icon: '💪', mode: 'timing', reps: 10, name: { en: 'Dumbbell curls', ko: '아령', ja: 'ダンベル', zh: '哑铃' } },

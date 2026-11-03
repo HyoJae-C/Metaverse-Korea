@@ -3,6 +3,9 @@
 // choice starts LOCK_DAYS of keeping it. An empty name isn't locked.
 
 export const LOCK_DAYS = 7;
+
+// Names use Korean (Hangul), English letters, numbers and spaces only.
+export const cleanName = (s) => String(s || '').replace(/[^가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9 ]/g, '').replace(/ {2,}/g, ' ').slice(0, 16);
 const DAY = 24 * 60 * 60 * 1000;
 const KEY = 'mk.identity';
 
@@ -10,7 +13,7 @@ export function readIdentity(storage = globalThis.localStorage) {
   try {
     const r = JSON.parse(storage?.getItem(KEY) || 'null');
     if (r && typeof r === 'object') {
-      return { name: typeof r.name === 'string' ? r.name.slice(0, 16) : '', nameAt: Number(r.nameAt) || 0, model: typeof r.model === 'string' ? r.model : null, modelAt: Number(r.modelAt) || 0 };
+      return { name: cleanName(r.name).trim(), nameAt: Number(r.nameAt) || 0, model: typeof r.model === 'string' ? r.model : null, modelAt: Number(r.modelAt) || 0 };
     }
   } catch { /* corrupt or blocked: no lock */ }
   return { name: '', nameAt: 0, model: null, modelAt: 0 };
@@ -30,7 +33,7 @@ export function modelLocked(id, now = Date.now()) { return !!id.model && daysLef
 // Returns the record to save (a changed choice restarts its lock).
 export function commitIdentity(id, { name, model }, now = Date.now()) {
   const next = { ...id };
-  const n = (name || '').trim().slice(0, 16);
+  const n = cleanName(name).trim();
   if (!nameLocked(id, now) && n !== id.name) { next.name = n; next.nameAt = n ? now : 0; }
   if (!modelLocked(id, now) && model && model !== id.model) { next.model = model; next.modelAt = now; }
   return next;

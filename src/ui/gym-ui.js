@@ -1,6 +1,6 @@
 // Gym panel (rules in core/gym.js). Treadmill: tap ◀ ▶ in turn to run.
 // Dumbbells, bench press, push-ups: tap when the marker is in the green
-// zone. Each finished set makes you a tiny bit faster (up to +3%).
+// zone. Each finished set makes you a tiny bit faster (up to +1%).
 import { EXERCISES, MAX_BOOST, markerAt, zoneFor, inZone } from '../core/gym.js';
 import { L, fmt } from './pocha-ui.js';
 

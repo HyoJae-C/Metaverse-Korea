@@ -49,7 +49,7 @@ export const TOPICS = [
     text: { en: 'Sweat it out in the hot kiln, cool off in the ice room, and wear a sheep towel.', ko: '불가마에서 땀 빼고 얼음방에서 식히고, 양머리 수건도 써 봐요.', ja: '汗蒸幕で汗を流し、氷の部屋で涼んで、羊タオルもかぶろう。', zh: '在火窑出汗、去冰屋降温，再戴上羊角毛巾。' } },
   { icon: '💪', to: { store: 'muscle-gym' },
     title: { en: 'Gym', ko: '헬스장', ja: 'ジム', zh: '健身房' },
-    text: { en: 'Treadmill, dumbbells, bench press and push-ups. Every set makes you a tiny bit faster (up to +3%).', ko: '러닝머신, 아령, 벤치프레스, 푸시업. 한 세트마다 이동속도가 아주 조금씩 빨라져요(최대 +3%).', ja: 'ランニングマシン、ダンベル、ベンチプレス、腕立て。1セットごとに少しずつ速く（最大+3%）。', zh: '跑步机、哑铃、卧推、俯卧撑。每完成一组速度会稍微提升（最多+3%）。' } },
+    text: { en: 'Treadmill, dumbbells, bench press and push-ups. Every set makes you a tiny bit faster (up to +1%).', ko: '러닝머신, 아령, 벤치프레스, 푸시업. 한 세트마다 이동속도가 아주 조금씩 빨라져요(최대 +1%).', ja: 'ランニングマシン、ダンベル、ベンチプレス、腕立て。1セットごとに少しずつ速く（最大+1%）。', zh: '跑步机、哑铃、卧推、俯卧撑。每完成一组速度会稍微提升（最多+1%）。' } },
   { icon: '📚', to: { store: 'chaekmaru-library' },
     title: { en: 'Korean books', ko: '한국어 책', ja: '韓国語の本', zh: '韩语书' },
     text: { en: '10 books at the library: Hangul, greetings, idioms, new slang, dad jokes and more. Carry one and read it sitting anywhere.', ko: '도서관에 책 10권: 한글, 인사말, 사자성어, 신조어, 아재개그 등. 들고 가서 어디서든 앉아 읽어요.', ja: '図書館に10冊：ハングル、あいさつ、四字熟語、新語、おやじギャグなど。持ち出して座って読めます。', zh: '图书馆有10本书：韩文、问候语、成语、新词、冷笑话等。带走后坐下就能读。' } },

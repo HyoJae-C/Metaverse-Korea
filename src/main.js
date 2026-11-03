@@ -68,7 +68,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { readIdentity, commitIdentity, saveIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
+import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -189,6 +189,17 @@ $('next-btn').onclick = () => {
   $('login-note').textContent = L(LOGIN_TEXT.note);
 };
 $('login-guest').onclick = showLook;
+// Names: Hangul, English letters, numbers and spaces (checked while typing,
+// after an IME has finished composing a syllable).
+const NAME_HINT = { en: 'Korean or English letters and numbers only.', ko: '한글, 영어, 숫자만 쓸 수 있어요.', ja: '韓国語（ハングル）・英字・数字のみ使えます。', zh: '只能使用韩文、英文字母和数字。' };
+const tidyName = (e) => {
+  if (e?.isComposing) return;
+  const el = $('nickname'), v = cleanName(el.value);
+  if (v !== el.value) { el.value = v; $('look-lock').textContent = '✏️ ' + L(NAME_HINT); $('look-lock').hidden = false; }
+};
+$('nickname').addEventListener('input', tidyName);
+$('nickname').addEventListener('compositionend', tidyName);
+$('nickname').value = cleanName($('nickname').value);
 $('login-google').onclick = async () => {
   // Progress on this device: link it to Google (same save). A fresh start:
   // sign in, which also finds an account used on another device.
@@ -236,9 +247,9 @@ try {
   throw err;
 }
 
-const nickname = filterText(($('nickname').value.trim() || t('start.defaultName')).slice(0, 16));
+const nickname = filterText((cleanName($('nickname').value).trim() || t('start.defaultName')).slice(0, 16));
 try {
-  localStorage.setItem('mk.name', $('nickname').value.trim());
+  localStorage.setItem('mk.name', cleanName($('nickname').value).trim());
 } catch { /* ignore */ }
 
 // ---------- Renderer & scene ----------
@@ -618,7 +629,7 @@ async function joinRoom(room, roomScene, area = null) {
   refreshOnline();
   const handlers = {
     onJoin: (p) => {
-      others.join({ ...p, name: filterText(p.name) });
+      others.join({ ...p, name: filterText(cleanName(p.name).trim() || '?') });
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
