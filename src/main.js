@@ -1400,7 +1400,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, 0, built.clerk.z);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
@@ -1422,6 +1422,7 @@ function enterStore(item) {
   } else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
+const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
 function leaveStore() {
   if (mode !== 'store') return;
   endRide();
@@ -2880,6 +2881,7 @@ renderer.setAnimationLoop(() => {
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
+  if (mode === 'store' && interior?.animate) interior.animate(dt); // club lights, candles
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 

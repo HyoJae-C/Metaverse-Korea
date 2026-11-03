@@ -67,7 +67,7 @@ function pointInPoly(x, z, p) {
 
 // Floating label above a shop: an icon and the name, always facing the
 // camera so the shop is easy to spot from any angle or distance.
-const ICONS = { cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠', restaurant: '🍢', library: '📚', school: '🏫', play: '🎮', info: 'ℹ️' };
+const ICONS = { club: '🎧', bar: '🍸', cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠', restaurant: '🍢', library: '📚', school: '🏫', play: '🎮', info: 'ℹ️' };
 function badgeTexture(icon, text, bg) {
   const c = document.createElement('canvas');
   c.width = 512; c.height = 128;
@@ -96,7 +96,9 @@ function badgeTexture(icon, text, bg) {
   return tex;
 }
 
-function signTexture(text, bg, fg = '#ffffff') {
+// sub: a second, smaller line under the name (Itaewon signs: the name in the
+// shop's own language on top, Korean below).
+function signTexture(text, bg, fg = '#ffffff', sub = '') {
   const c = document.createElement('canvas');
   c.width = 640;
   c.height = 120;
@@ -114,11 +116,20 @@ function signTexture(text, bg, fg = '#ffffff') {
   g.fillStyle = fg;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  let size = 64;
-  const font = (s) => `800 ${s}px "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", "PingFang SC", system-ui, sans-serif`;
+  let size = sub ? 50 : 64;
+  const font = (s) => `800 ${s}px "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", "PingFang SC", "Noto Sans Thai", "Leelawadee UI", "Tahoma", system-ui, sans-serif`;
   g.font = font(size);
-  while (g.measureText(text).width > c.width - 70 && size > 26) g.font = font((size -= 4));
-  g.fillText(text, c.width / 2, c.height / 2 + 3);
+  while (g.measureText(text).width > c.width - 70 && size > 22) g.font = font((size -= 4));
+  if (!sub) g.fillText(text, c.width / 2, c.height / 2 + 3);
+  else {
+    g.fillText(text, c.width / 2, c.height * 0.4);
+    let s2 = 30;
+    g.font = font(s2);
+    while (g.measureText(sub).width > c.width - 90 && s2 > 16) g.font = font((s2 -= 2));
+    g.globalAlpha = 0.9;
+    g.fillText(sub, c.width / 2, c.height * 0.74);
+    g.globalAlpha = 1;
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
@@ -156,7 +167,7 @@ export class Storefronts {
       group.rotation.y = Math.atan2(f.nx, f.nz); // +z faces the street
       scene.add(group);
 
-      const signMat = new THREE.MeshBasicMaterial({ map: signTexture(store.name.ko, store.colors.sign) });
+      const signMat = new THREE.MeshBasicMaterial({ map: signTexture(store.signLocal || store.name.ko, store.colors.sign, '#ffffff', store.signLocal ? store.name.ko : '') });
       const sign = new THREE.Mesh(new THREE.BoxGeometry(SIGN_W, SIGN_H, 0.25), [
         mat(store.colors.sign), mat(store.colors.sign), mat(store.colors.sign),
         mat(store.colors.sign), signMat, mat(store.colors.sign),
@@ -223,8 +234,9 @@ export class Storefronts {
     this.translated = on;
     for (const it of this.items) {
       const text = on ? localName(it.store.name, lang) : it.store.name.ko;
+      const local = it.store.signLocal;
       it.signMat.map.dispose();
-      it.signMat.map = signTexture(text, it.store.colors.sign);
+      it.signMat.map = on || !local ? signTexture(text, it.store.colors.sign) : signTexture(local, it.store.colors.sign, '#ffffff', it.store.name.ko);
       it.signMat.needsUpdate = true;
       it.badge.material.map.dispose();
       it.badge.material.map = badgeTexture(it.store.icon || ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);

@@ -120,11 +120,46 @@ const BUILD = {
     box(g, 0.06, 2.6, 0.06, 0.55, 1.3, 0, C.door);
     box(g, 0.6, 0.5, 0.04, 0.85, 2.3, 0, '#ffd166');
   },
-  mountain(g) {
-    // Bugaksan behind the palace.
+  arch(g, l) {
+    // A street gate: two pillars and a lit sign across the street
+    // (e.g. Itaewon's world food street). l.w: width, l.title / l.sub.
+    const w = l.w || 12, H = 6.5, c = l.color || '#c0392b';
+    for (const sx of [-1, 1]) {
+      box(g, 0.7, H, 0.7, sx * w / 2, H / 2, 0, c);
+      box(g, 1.1, 0.4, 1.1, sx * w / 2, 0.2, 0, C.plinth);
+    }
+    box(g, w + 1.4, 1.9, 0.5, 0, H + 0.6, 0, '#1d1b22');
+    const cv = document.createElement('canvas');
+    cv.width = 1024; cv.height = 192;
+    const x = cv.getContext('2d');
+    x.fillStyle = '#1d1b22'; x.fillRect(0, 0, 1024, 192);
+    x.fillStyle = '#ffd36e'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '900 78px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    x.fillText(l.title || '', 512, 70);
+    x.fillStyle = '#ffffff';
+    x.font = '700 46px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    x.fillText(l.sub || '', 512, 146);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    for (const side of [1, -1]) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(w + 1.2, (w + 1.2) * 0.1875), new THREE.MeshBasicMaterial({ map: tex }));
+      sign.position.set(0, H + 0.6, side * 0.26);
+      if (side < 0) sign.rotation.y = Math.PI;
+      g.add(sign);
+    }
+    // Strings of little lights from the beam down to the pillars.
+    for (let i = 0; i <= 10; i++) {
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4), new THREE.MeshBasicMaterial({ color: ['#ffd36e', '#ff6b6b', '#6bd3ff'][i % 3] }));
+      bulb.position.set(-w / 2 + (w * i) / 10, H - 0.45 - Math.sin((Math.PI * i) / 10) * 0.6, 0.3);
+      g.add(bulb);
+    }
+  },
+  mountain(g, l) {
+    // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
     const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
-    m.position.y = 50;
     m.scale.set(1.4, 1, 0.7);
+    if (l?.scale) m.scale.multiplyScalar(l.scale);
+    m.position.y = 50 * (l?.scale || 1);
     g.add(m);
   },
 };

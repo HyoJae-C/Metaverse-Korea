@@ -127,6 +127,19 @@ export function productModel(kind, color) {
       add(new THREE.CylinderGeometry(0.08, 0.06, 0.2, 14), 0, 0.1);
       add(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 14), 0, 0.21, 0, mat('#ffffff'));
       break;
+    case 'cocktail': // a stemmed glass with a coloured drink and a lemon slice
+      add(new THREE.CylinderGeometry(0.06, 0.06, 0.012, 14), 0, 0.006, 0, mat('#e8f3f6', { transparent: true, opacity: 0.8 }));
+      add(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 6), 0, 0.07, 0, mat('#e8f3f6', { transparent: true, opacity: 0.8 }));
+      add(new THREE.ConeGeometry(0.09, 0.11, 16).rotateX(Math.PI), 0, 0.185);
+      add(new THREE.CylinderGeometry(0.03, 0.03, 0.008, 10).rotateZ(Math.PI / 2), 0.085, 0.235, 0, mat('#f5d54a'));
+      break;
+    case 'skewer': // grilled skewers on a plate
+      add(new THREE.CylinderGeometry(0.17, 0.12, 0.03, 16), 0, 0.015, 0, mat('#ffffff'));
+      for (let i = -1; i <= 1; i++) {
+        add(new THREE.CylinderGeometry(0.006, 0.006, 0.32, 6).rotateZ(Math.PI / 2), 0, 0.05, i * 0.07, mat('#d9c09a'));
+        for (let k = -1; k <= 1; k++) add(new THREE.BoxGeometry(0.06, 0.05, 0.05), k * 0.07, 0.05, i * 0.07);
+      }
+      break;
     case 'samgak': // triangle rice ball in its wrapper, a seaweed band
       add(new THREE.CylinderGeometry(0.13, 0.13, 0.07, 3).rotateX(Math.PI / 2), 0, 0.11, 0, mat('#fbfaf6'));
       add(new THREE.BoxGeometry(0.08, 0.1, 0.075), 0, 0.06);
@@ -161,17 +174,19 @@ export function buildInterior(store) {
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
-  scene.background = accent.clone().multiplyScalar(0.92);
-  scene.add(new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, 1.7));
-  scene.add(new THREE.AmbientLight(0xfff0e0, 0.6));
-  const lamp = new THREE.PointLight(0xffe2b8, 25, Math.max(18, ROOM.w * 1.2));
+  // A club or a bar is dark inside, lit by its own lamps (added below).
+  const night = store.category === 'club' || store.category === 'bar';
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, 1.7));
+  scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
+  const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : 25, Math.max(18, ROOM.w * 1.2));
   lamp.position.set(0, ROOM.h - 0.4, 0);
   scene.add(lamp);
 
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -240,7 +255,24 @@ export function buildInterior(store) {
   const spots = [];
   for (let i = 0; i < nBack; i++) spots.push([(i - (nBack - 1) / 2) * 3, bz, 0]);
   for (const sz of [-d * 0.1, d * 0.18]) spots.push([-sx, sz, Math.PI / 2], [sx, sz, -Math.PI / 2]);
+  // Club and bar: the drinks stand on the bar counter instead (see below).
+  const counterSpots = store.category === 'club'
+    ? [-1.2, 0.3, 1.8, 3.3].map((z) => [w / 2 - 1.4, z, -Math.PI / 2])
+    : store.category === 'bar' ? [-3.6, -1.2, 1.2, 3.6].map((x) => [x, -d / 2 + 2.2, 0]) : null;
   store.products.forEach((product, i) => {
+    if (counterSpots) { // on the counter: just the drink, no table
+      const [x, z, ry] = counterSpots[i % counterSpots.length];
+      const spot = new THREE.Group();
+      spot.position.set(x, 1.08, z);
+      spot.rotation.y = ry;
+      const model = productModel(product.model, product.color);
+      model.scale.setScalar(1.6);
+      spot.add(model);
+      scene.add(spot);
+      const front = new THREE.Vector3(0, 0, 1.15).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      products.push({ product, mesh: spot, pos: front });
+      return;
+    }
     const [x, z, ry] = spots[i % spots.length];
     const stand = new THREE.Group();
     stand.position.set(x, 0, z);
@@ -294,6 +326,7 @@ export function buildInterior(store) {
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
   const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
+  let animate = null; // per-frame animation (club lights), called while inside
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -421,6 +454,178 @@ export function buildInterior(store) {
         seats.push({ x: dx, z: dz + 0.62, ry: Math.PI, stand: [dx + (dx > 0 ? -1.0 : 1.0), dz + 0.6], academy: true });
       }
     }
+  } else if (store.category === 'club') {
+    // A dance club: a stage with a DJ booth and a big LED wall at the back,
+    // speaker stacks, a dance floor of glowing tiles, swinging light beams,
+    // and a bar counter with stools on the right.
+    const sz0 = -d / 2 + 1.9; // stage centre
+    box(11, 0.3, 3.6, 0, 0.15, sz0, '#1c1a24');
+    box(11, 0.06, 0.1, 0, 0.32, sz0 + 1.8, '#7a5cff'); // lit stage edge
+    block(0, sz0, 11, 3.6);
+    // DJ booth with two decks and a glowing front.
+    box(3.2, 1.0, 0.9, 0, 0.8, sz0 + 0.6, '#15131c');
+    const boothGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.7), new THREE.MeshBasicMaterial({ color: '#ff3fa4' }));
+    boothGlow.position.set(0, 0.75, sz0 + 1.06);
+    scene.add(boothGlow);
+    for (const dx of [-0.8, 0.8]) {
+      const deck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 24), mat('#2b2b30'));
+      deck.position.set(dx, 1.32, sz0 + 0.6);
+      scene.add(deck);
+    }
+    box(0.5, 0.06, 0.4, 0, 1.33, sz0 + 0.6, '#3a3a44'); // mixer
+    clerk = { x: 0, z: sz0 - 0.2, ry: 0 }; // the DJ, behind the booth
+    // LED wall: moving equaliser bars.
+    const lc = document.createElement('canvas');
+    lc.width = 512; lc.height = 160;
+    const lg = lc.getContext('2d');
+    const ledTex = new THREE.CanvasTexture(lc);
+    ledTex.colorSpace = THREE.SRGBColorSpace;
+    const led = new THREE.Mesh(new THREE.PlaneGeometry(13, 3.4), new THREE.MeshBasicMaterial({ map: ledTex }));
+    led.position.set(0, h - 1.9, -d / 2 + 0.05);
+    scene.add(led);
+    for (const sx2 of [-6.6, 6.6]) { // speaker stacks
+      box(1.3, 2.6, 1.0, sx2, 1.3, sz0, '#141218');
+      for (const y of [0.7, 1.6, 2.3]) {
+        const cone = new THREE.Mesh(new THREE.CircleGeometry(y > 2 ? 0.22 : 0.4, 18), mat('#2e2c36'));
+        cone.position.set(sx2, y, sz0 + 0.51);
+        scene.add(cone);
+      }
+      block(sx2, sz0, 1.4, 1.1);
+    }
+    // Dance floor tiles.
+    const tiles = [];
+    const TC = ['#ff3fa4', '#7a5cff', '#2ad1ff', '#ffd23f', '#3fff9b'];
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) {
+      const t = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: TC[(r + c) % TC.length] }));
+      t.position.set((c - 2.5) * 1.6, 0.012, -0.6 + r * 1.6);
+      scene.add(t);
+      tiles.push(t);
+    }
+    // Light beams from the ceiling.
+    const beams = [];
+    for (const [bx, c] of [[-4.5, '#ff3fa4'], [-1.5, '#2ad1ff'], [1.5, '#7a5cff'], [4.5, '#ffd23f']]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(bx, h - 0.1, 0);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.9, h - 0.3, 18, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }));
+      cone.position.y = -(h - 0.3) / 2;
+      pivot.add(cone);
+      box(0.4, 0.3, 0.4, bx, h - 0.15, 0, '#222028');
+      scene.add(pivot);
+      beams.push(pivot);
+    }
+    const party = [new THREE.PointLight(0xff3fa4, 14, 14), new THREE.PointLight(0x2ad1ff, 14, 14)];
+    party.forEach((l, i) => { l.position.set(i ? 4 : -4, 2.6, 1); scene.add(l); });
+    // Bar counter with stools on the right wall (the drinks stand on it).
+    const cx = w / 2 - 1.4;
+    box(0.9, 1.05, 6.4, cx, 0.52, 1.05, '#1f1b26');
+    box(1.0, 0.06, 6.5, cx, 1.06, 1.05, '#7a5cff');
+    block(cx, 1.05, 1.0, 6.5);
+    for (const z of [-0.5, 1.05, 2.6]) {
+      const sxx = cx - 1.15;
+      box(0.38, 0.06, 0.38, sxx, SEAT_H + 0.1, z, '#ff3fa4');
+      box(0.06, SEAT_H + 0.1, 0.06, sxx, (SEAT_H + 0.1) / 2, z, '#9ca9af');
+      seats.push({ x: sxx, z, ry: Math.PI / 2, stand: [sxx - 0.9, z] });
+      block(sxx, z, 0.45, 0.45);
+    }
+    let t = 0, step = 0, ledT = 0;
+    animate = (dt) => {
+      t += dt;
+      const beat = Math.floor(t * 2.2); // about 132 bpm in halves
+      if (beat !== step) {
+        step = beat;
+        tiles.forEach((tile, i) => tile.material.color.set(TC[(i * 7 + beat * 3 + (i % 3)) % TC.length]));
+        boothGlow.material.color.set(TC[beat % TC.length]);
+      }
+      beams.forEach((b, i) => { b.rotation.z = Math.sin(t * 1.3 + i * 1.7) * 0.55; b.rotation.x = Math.cos(t * 0.9 + i) * 0.35; });
+      party[0].intensity = 10 + 8 * Math.max(0, Math.sin(t * 13.8));
+      party[1].intensity = 10 + 8 * Math.max(0, Math.cos(t * 13.8));
+      ledT += dt;
+      if (ledT > 1 / 15) {
+        ledT = 0;
+        lg.fillStyle = '#07050c'; lg.fillRect(0, 0, 512, 160);
+        for (let k = 0; k < 32; k++) {
+          const v = (Math.sin(t * 6 + k * 0.6) + Math.sin(t * 9.7 + k * 1.3) + 2) / 4;
+          const bh = 20 + v * 130;
+          lg.fillStyle = `hsl(${(k * 11 + t * 60) % 360}, 90%, 60%)`;
+          lg.fillRect(k * 16 + 2, 160 - bh, 12, bh);
+        }
+        lg.fillStyle = '#fff';
+        lg.font = '900 44px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+        lg.textAlign = 'center'; lg.textBaseline = 'middle';
+        lg.globalAlpha = 0.9;
+        lg.fillText(store.signLocal || store.name.en, 256, 44);
+        lg.globalAlpha = 1;
+        ledTex.needsUpdate = true;
+      }
+    };
+    animate(0.1);
+  } else if (store.category === 'bar') {
+    // A quiet cocktail bar: a long counter with stools, shelves of lit
+    // bottles behind it, warm pendant lamps and two candle-lit tables.
+    const cz = -d / 2 + 2.2;
+    box(8.6, 1.05, 0.8, 0, 0.52, cz, '#3b2418');
+    box(8.8, 0.07, 0.95, 0, 1.06, cz, '#8a5a3a');
+    block(0, cz, 8.8, 0.95);
+    clerk = { x: 0.6, z: cz - 1.0, ry: 0 }; // the bartender
+    // Back shelves with bottles.
+    for (const y of [1.25, 1.85, 2.45]) {
+      box(9, 0.06, 0.35, 0, y, -d / 2 + 0.25, '#5a3a28');
+      for (let i = 0; i < 16; i++) {
+        const bc = ['#3f8f5f', '#c9a227', '#a33a2c', '#d8e4ea', '#6b3f8c', '#2f5d8c'][(i * 5 + Math.round(y * 10)) % 6];
+        const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.3, 10), new THREE.MeshLambertMaterial({ color: bc, emissive: bc, emissiveIntensity: 0.25 }));
+        bottle.position.set(-4.2 + i * 0.56, y + 0.18, -d / 2 + 0.25);
+        scene.add(bottle);
+      }
+    }
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(9, 0.08), new THREE.MeshBasicMaterial({ color: '#ffcf8a' }));
+    strip.position.set(0, 2.95, -d / 2 + 0.06);
+    scene.add(strip);
+    // Stools in front of the counter.
+    for (const x of [-2.4, 0, 2.4]) {
+      box(0.4, 0.06, 0.4, x, SEAT_H + 0.12, cz + 0.95, '#8a5a3a');
+      box(0.06, SEAT_H + 0.12, 0.06, x, (SEAT_H + 0.12) / 2, cz + 0.95, '#2b2b2e');
+      seats.push({ x, z: cz + 0.95, ry: Math.PI, stand: [x, cz + 1.9] });
+      block(x, cz + 0.95, 0.45, 0.45);
+    }
+    // Pendant lamps over the counter.
+    for (const x of [-3, 0, 3]) {
+      box(0.02, 1.0, 0.02, x, h - 0.5, cz, '#2b2b2e');
+      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.25, 14, 1, true), new THREE.MeshBasicMaterial({ color: '#ffcf8a', side: THREE.DoubleSide }));
+      shade.position.set(x, h - 1.1, cz);
+      scene.add(shade);
+      const pl = new THREE.PointLight(0xffc27a, 5, 6);
+      pl.position.set(x, h - 1.3, cz + 0.2);
+      scene.add(pl);
+    }
+    // Two small tables with candles.
+    for (const tx of [-w / 2 + 2.2, w / 2 - 2.2]) {
+      const tz = d / 2 - 3.6;
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 20), mat('#5a3a28'));
+      top.position.set(tx, 0.72, tz);
+      scene.add(top);
+      box(0.08, 0.7, 0.08, tx, 0.35, tz, '#2b2b2e');
+      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd27a' }));
+      flame.position.set(tx, 0.84, tz);
+      scene.add(flame);
+      box(0.07, 0.08, 0.07, tx, 0.78, tz, '#f3eee4');
+      const glow = new THREE.PointLight(0xffb45a, 2.5, 3.5);
+      glow.position.set(tx, 1.0, tz);
+      scene.add(glow);
+      for (const s2 of [-1, 1]) {
+        const chx = tx + 0.85 * s2;
+        box(0.42, 0.06, 0.42, chx, SEAT_H - 0.03, tz, '#6b2f2f');
+        box(0.08, 0.5, 0.42, chx + 0.2 * s2, SEAT_H + 0.22, tz, '#6b2f2f');
+        seats.push({ x: chx + 0.04 * s2, z: tz, ry: s2 > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [chx, tz + 0.9] });
+      }
+      block(tx, tz, 2.3, 0.95);
+    }
+    let t = 0;
+    const flames = [];
+    scene.traverse((o) => { if (o.isPointLight && o.distance === 3.5) flames.push(o); });
+    animate = (dt) => {
+      t += dt;
+      flames.forEach((f, i) => { f.intensity = 2.2 + Math.sin(t * 9 + i * 2) * 0.35 + Math.sin(t * 23 + i) * 0.15; });
+    };
   } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.
@@ -695,5 +900,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, turntable, tv, stations, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, turntable, tv, stations, animate, room: ROOM, exit: EXIT };
 }
