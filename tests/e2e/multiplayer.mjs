@@ -55,9 +55,11 @@ try {
   // Area cells: far away we drop out of each other's rooms, back nearby we meet again.
   const [ax, az] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 700, z), [ax, az]);
-  await a.waitForFunction(() => document.querySelector('#online').hidden, null, { timeout: 15000 });
+  // (The online count is everyone on the map, so it stays at 2 meanwhile.)
+  await a.waitForFunction(() => __mk.near() === 0, null, { timeout: 15000 });
+  if (!(await a.evaluate(() => document.querySelector('#online')?.textContent.includes('2')))) throw new Error('online count should stay global while apart');
   await b.evaluate(([x, z]) => __mk.goto(x + 3, z), [ax, az]);
-  await a.waitForFunction(() => document.querySelector('#online')?.textContent.includes('2') && !document.querySelector('#online').hidden, null, { timeout: 15000 });
+  await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 15000 });
   ok = true;
 } catch (e) {
   errors.push('assertion: ' + e.message);
@@ -67,7 +69,7 @@ try {
       const t0 = performance.now(); let f = 0;
       await new Promise((r) => { const tick = () => (++f < 10 ? requestAnimationFrame(tick) : r()); requestAnimationFrame(tick); });
       const o = document.querySelector('#online');
-      return { online: o.hidden ? 'hidden' : o.textContent, fps: Math.round(10000 / (performance.now() - t0)) };
+      return { online: o.hidden ? 'hidden' : o.textContent, near: window.__mk?.near?.(), fps: Math.round(10000 / (performance.now() - t0)) };
     }).catch((err) => ({ error: err.message }));
     errors.push(`${n}: ${JSON.stringify(info)}`);
   }
