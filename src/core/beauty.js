@@ -2,12 +2,12 @@
 // prices can be unit-tested. Each option is a look field; null means "the
 // model's own" (free to go back to). You pay once for each field you change.
 export const SALON = [
-  { key: 'dye', palette: 'dye', price: 10 },
+  { key: 'dye', palette: 'dye', price: 30 },
 ];
 export const CLINIC = [
-  { key: 'eyes', palette: 'eyes', price: 8 }, // colour lenses
-  { key: 'tone', palette: 'skin', price: 12 }, // skin tone
-  { key: 'small', toggle: true, price: 15 }, // a smaller head
+  { key: 'eyes', palette: 'eyes', price: 25 }, // colour lenses
+  { key: 'tone', palette: 'skin', price: 35 }, // skin tone
+  { key: 'small', toggle: true, price: 45 }, // a smaller head
 ];
 export const MENUS = { salon: SALON, clinic: CLINIC };
 

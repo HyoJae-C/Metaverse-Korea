@@ -33,6 +33,60 @@ export function makeBike(color = FRAME) {
   return g;
 }
 
+// A red sports motorbike (fairing, tank, a low windscreen), front towards
+// +z. The rider sits where a bike's rider sits, leaning on the tank.
+export function makeMoto(color = '#d8262e') {
+  const g = new THREE.Group();
+  const box = (sx, sy, sz, x, y, z, c = color, rx = 0) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
+    m.position.set(x, y, z);
+    m.rotation.x = rx;
+    g.add(m);
+    return m;
+  };
+  const wheelGeo = new THREE.TorusGeometry(0.3, 0.09, 8, 20).rotateY(Math.PI / 2);
+  const hubGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 14).rotateZ(Math.PI / 2);
+  for (const z of [-0.62, 0.66]) {
+    const w = new THREE.Mesh(wheelGeo, mat(DARK));
+    w.position.set(0, 0.36, z);
+    g.add(w);
+    const hub = new THREE.Mesh(hubGeo, mat('#c9ccd1'));
+    hub.position.set(0, 0.36, z);
+    g.add(hub);
+  }
+  box(0.36, 0.34, 0.95, 0, 0.62, 0.08); // body
+  box(0.4, 0.42, 0.5, 0, 0.72, 0.5, color, -0.35); // front fairing
+  box(0.32, 0.2, 0.42, 0, 0.9, 0.18); // tank
+  box(0.3, 0.1, 0.5, 0, 0.82, -0.32, DARK); // seat
+  box(0.26, 0.14, 0.4, 0, 0.84, -0.66, color, 0.25); // tail
+  box(0.3, 0.2, 0.04, 0, 1.0, 0.68, '#2c3440', -0.5); // windscreen
+  box(0.28, 0.2, 0.36, 0, 0.42, -0.05, '#3a3d44'); // engine
+  box(0.08, 0.08, 0.6, 0.16, 0.36, -0.45, '#9aa0a8'); // exhaust
+  box(0.06, 0.5, 0.06, 0, 0.55, 0.62, '#9aa0a8', -0.3); // fork
+  box(0.6, 0.05, 0.05, 0, 0.98, 0.42, DARK); // handlebar
+  box(0.14, 0.07, 0.03, 0, 0.82, 0.76, '#fff6c9'); // headlight
+  box(0.16, 0.05, 0.03, 0, 0.86, -0.87, '#ff4040'); // tail light
+  box(0.37, 0.05, 0.5, 0, 0.6, 0.08, '#ffffff'); // white stripe
+  g.scale.setScalar(0.85); // seat at a bike's height, so riders sit the same way
+  return g;
+}
+
+// A full-face helmet that matches the motorbike, sized for the chibi head
+// (it sits in the head-accessory group, like hats).
+export function makeHelmet(color = '#d8262e') {
+  const g = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.36, 20, 14), mat(color));
+  shell.scale.set(1, 0.95, 1.05);
+  g.add(shell);
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.365, 20, 10, -0.9, 1.8, 1.05, 0.7), mat('#1d2129'));
+  visor.scale.copy(shell.scale);
+  g.add(visor);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.72), mat('#ffffff'));
+  stripe.position.y = 0.34;
+  g.add(stripe);
+  return g;
+}
+
 // A tandem: the front seat is where a normal bike's seat is (so the driver
 // sits the same way), and a second seat 0.8 m behind for the passenger.
 export const TANDEM_GAP = 0.8;
@@ -94,6 +148,7 @@ export function makeCar(color = '#ffcf4a') {
 export const SEATS = {
   2: [[0, -TANDEM_GAP]], // tandem back seat
   4: [[-0.84, 0], [0, -1.15], [-0.84, -1.15], [0, -2.15], [-0.84, -2.15]], // car: 1 front + 4 back
+  5: [[0, -0.5]], // motorbike: one passenger behind the rider
 };
 SEATS.car = SEATS[4];
 

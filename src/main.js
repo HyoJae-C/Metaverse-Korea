@@ -10,6 +10,8 @@ import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard } from './core/notice-board-model.js';
+import { useGoldCoins } from './ui/gold-coin.js';
+useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
@@ -69,6 +71,7 @@ import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { taxiFare } from './core/taxi.js';
+import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW } from './core/bike-garage.js';
 import { ClubMusic } from './core/club-music.js';
 import { CLUB_TRACKS, CLUB_GENRES, songSeconds } from './data/club-tracks.js';
 import { TRACKS } from './data/tracks.js';
@@ -567,8 +570,12 @@ const PLAYER_R = 0.35;
 // shops are small rooms, so walking there stays slower.
 const WALK = 6.5, RUN = 12;
 const gymLog = new GymLog(); // workouts make walking and running a touch faster (max +3%)
-const BIKE = 16; // bike share: faster than running, no stamina
+const BIKE = 13.5; // the basic bike (and the tandem): a little faster than running, no stamina
 const CAR = 26; // car: big roads only
+const MOTO = 24; // motorbike (from a developer code)
+// My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
+const garage = new Garage();
+const rideSpeed = () => (riding === 4 ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
@@ -1209,7 +1216,7 @@ function setLook(look) {
   me = createCharacter(look);
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
-  me.setBike(riding);
+  me.setBike(riding, riding === 1 ? garage.current.color : undefined);
   me.setHeld(heldKind());
   old.parent?.remove(old);
   activeScene.add(me.root);
@@ -1262,7 +1269,7 @@ function setRiding(on) {
     me.root.position.set(fx, 0, fz);
   }
   riding = kind;
-  me.setBike(kind);
+  me.setBike(kind, kind === 1 ? garage.current.color : undefined);
   if (kind === 1 || kind === 2) missionEvent('bike');
   if (kind === 4) setAutoWalk(false); // auto-walk routes use alleys too
   sendTimer = 0;
@@ -1281,7 +1288,7 @@ function onTandemMsg(from, { verb, target, seat }) {
     shop.toast(t('tandem.invited', { name }));
     action = STALE;
   } else if (verb === 'join') {
-    const ok = (riding === 2 || riding === 4) && seat < seatsOf(riding) && !passengers.has(seat) && ![...passengers.values()].includes(from);
+    const ok = (riding === 2 || riding === 4 || riding === 5) && seat < seatsOf(riding) && !passengers.has(seat) && ![...passengers.values()].includes(from);
     if (ok) { passengers.set(seat, from); shop.toast(t('tandem.joined', { name })); action = STALE; }
     else net.sendEmote(tandemMsg('end', from)); // seat taken or not driving: say no
   } else if (verb === 'leave') {
@@ -1311,6 +1318,7 @@ const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
   { kind: 2, emoji: '🚲🚲', label: 'ride.tandem', item: 'tandem' },
   { kind: 4, emoji: '🚗', label: 'ride.car', item: 'car' },
+  { kind: 5, emoji: '🏍️', label: 'ride.moto', item: 'moto' },
 ];
 function ridePicker() {
   if (riding) { setRiding(0); return; }
@@ -1579,6 +1587,80 @@ function openLpPanel() {
   root.replaceChildren(x, h, note, list, actions);
   root.hidden = false;
 }
+// Bike shop (Pedal Lab): buy a slightly faster bike, pick which one to
+// ride, and repair wear (core/bike-garage.js).
+const BIKE_TEXT = {
+  open: { en: 'Bikes & repairs', ko: '자전거 고르기·수리', ja: '自転車・修理', zh: '选车·维修' },
+  title: { en: 'Pedal Lab', ko: '페달랩 자전거 가게', ja: 'ペダルラボ', zh: '踏板实验室' },
+  note: { en: 'Every bike is only a little faster than the last. Bikes wear out very slowly as you ride; a repair costs a few coins.', ko: '자전거마다 속도 차이는 조금씩만 나요. 타다 보면 아주 조금씩 닳고, 수리는 몇 코인이면 돼요.', ja: 'どの自転車も速さの差は少しだけ。乗るととてもゆっくりすり減り、修理は数コインです。', zh: '每辆车只快一点点。骑久了会非常缓慢地磨损，修理只要几枚硬币。' },
+  speed: { en: 'Speed', ko: '속도', ja: '速さ', zh: '速度' },
+  dur: { en: 'Condition {n}%', ko: '내구도 {n}%', ja: '状態 {n}%', zh: '耐久 {n}%' },
+  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
+  use: { en: 'Ride this', ko: '이걸로 타기', ja: 'これに乗る', zh: '骑这辆' },
+  using: { en: 'Riding', ko: '타는 중', ja: '使用中', zh: '使用中' },
+  repair: { en: 'Repair', ko: '수리', ja: '修理', zh: '修理' },
+  fixed: { en: 'Good as new!', ko: '새것처럼 고쳤어요!', ja: '新品同様になりました！', zh: '修好啦，跟新的一样！' },
+  bought: { en: 'Enjoy your new bike!', ko: '새 자전거가 생겼어요!', ja: '新しい自転車をどうぞ！', zh: '新车到手！' },
+  poor: { en: 'Not enough coins.', ko: '코인이 부족해요.', ja: 'コインが足りません。', zh: '硬币不够。' },
+  worn: { en: 'Your bike is getting worn: a repair at Pedal Lab makes it good as new.', ko: '자전거가 많이 닳았어요. 페달랩에서 수리하면 새것처럼 돼요.', ja: '自転車がすり減ってきました。ペダルラボで修理できます。', zh: '自行车磨损了，去踏板实验室修一下吧。' },
+};
+function openBikeShop() {
+  const root = $('lp-panel');
+  delete root.dataset.club;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const x = el('button', 'sheet-x', '✕');
+  x.onclick = () => { root.hidden = true; };
+  const list = el('div', 'lp-list');
+  const top = BIKE_MODELS[BIKE_MODELS.length - 1].speed;
+  for (const m of BIKE_MODELS) {
+    const own = garage.has(m.id), on = garage.s.use === m.id;
+    const row = el('div', 'lp-row bike-row' + (on ? ' on' : ''));
+    const sw = el('span', 'bike-swatch');
+    sw.style.background = m.color;
+    const text = el('span', 'lp-text');
+    text.append(el('strong', null, '🚲 ' + L(m.name)));
+    const bar = el('span', 'bike-bar');
+    const fill = el('i');
+    fill.style.width = Math.round((m.speed / top) * 100) + '%';
+    bar.append(fill);
+    const info = el('small', null, `${L(BIKE_TEXT.speed)} ${m.speed.toFixed(1)}` + (own ? ' · ' + fmt(L(BIKE_TEXT.dur), { n: Math.floor(garage.durability(m.id)) }) : ''));
+    text.append(bar, info);
+    const btns = el('span', 'bike-btns');
+    if (!own) {
+      const b = el('button', 'chip', `${L(BIKE_TEXT.buy)} · 🪙 ${m.price}`);
+      b.onclick = () => {
+        const r = garage.buy(m.id, wallet);
+        refreshWallet();
+        shop.toast(L(r === 'bought' ? BIKE_TEXT.bought : BIKE_TEXT.poor));
+        if (r === 'bought' && riding === 1) me.setBike(1, garage.current.color);
+        openBikeShop();
+      };
+      btns.append(b);
+    } else {
+      if (!on) {
+        const b = el('button', 'chip', L(BIKE_TEXT.use));
+        b.onclick = () => { garage.use(m.id); if (riding === 1) me.setBike(1, garage.current.color); openBikeShop(); };
+        btns.append(b);
+      } else btns.append(el('small', 'bike-using', '✓ ' + L(BIKE_TEXT.using)));
+      const cost = repairCost(garage.durability(m.id));
+      if (cost > 0) {
+        const r = el('button', 'chip', `🔧 ${L(BIKE_TEXT.repair)} · 🪙 ${cost}`);
+        r.onclick = () => {
+          const res = garage.repair(m.id, wallet);
+          refreshWallet();
+          shop.toast(L(res === 'fixed' ? BIKE_TEXT.fixed : BIKE_TEXT.poor));
+          openBikeShop();
+        };
+        btns.append(r);
+      }
+    }
+    row.append(sw, text, btns);
+    list.append(row);
+  }
+  root.replaceChildren(x, el('strong', 'wallet-title', '🚲 ' + L(BIKE_TEXT.title)), el('p', 'fine', L(BIKE_TEXT.note)), list);
+  root.hidden = false;
+}
+
 // Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
 // songs run on the clock, so everyone inside hears the same song at the same
 // moment. Our own background music pauses while inside.
@@ -2630,11 +2712,11 @@ function updateAction(p, tSec) {
     const poop = !riding && nearestPoop(p);
     if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
-    else if ((riding === 2 || riding === 4) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3)) {
+    else if ((riding === 2 || riding === 4 || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3);
       const seat = freeSeat();
-      next = { key: 'tandem-invite:' + o.id, label: (riding === 4 ? '🚗 ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
-    } else if (riding) next = { key: 'bike-off', label: riding === 4 ? '🚗 ' + t('car.off') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+      next = { key: 'tandem-invite:' + o.id, label: (riding === 4 ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (riding) next = { key: 'bike-off', label: riding === 4 ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
       next = { key: 'tandem-hop:' + inv.from, label: (others.kindOf(inv.from) === 4 ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
@@ -2705,6 +2787,8 @@ function updateAction(p, tSec) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
+    } else if (interior.store.workshop === 'bike' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'bikeshop', label: '🚲 ' + L(BIKE_TEXT.open), run: () => { clerk.ch.wave(); openBikeShop(); } };
     } else if (interior.store.workshop === 'grill' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'grill', label: '🥓 ' + t('grill.open'), run: () => openGrill() };
     } else if (interior.store.workshop === 'order' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -2849,6 +2933,7 @@ renderer.setAnimationLoop(() => {
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const p = me.root.position;
+  const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
   if (riding === 3) {
     // On someone's back seat: ride along behind them, pedalling at their pace.
     const front = others.predicted(tandemDriver);
@@ -2873,7 +2958,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding === 4 ? CAR : riding ? BIKE : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -2897,13 +2982,13 @@ renderer.setAnimationLoop(() => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
   } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = (riding ? BIKE : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
@@ -2915,11 +3000,12 @@ renderer.setAnimationLoop(() => {
     let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 8);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? BIKE : RUN), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
+  if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
   // Third-person follow: while walking, the camera swings round behind the
   // character, so running sideways turns into running forward. Paused for a
@@ -3123,6 +3209,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
+    cam: (o) => Object.assign(cam, o),
+    ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
     look: () => currentLook,
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera

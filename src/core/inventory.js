@@ -47,6 +47,16 @@ export const ITEMS = {
       zh: '速度快，但只能走大路，进不了小巷。下车步行去逛小巷吧。',
     },
   },
+  moto: {
+    emoji: '🏍️',
+    name: { en: 'Red sports motorbike + helmet', ko: '빨간 스포츠 오토바이 + 헬멧', ja: '赤いスポーツバイク＋ヘルメット', zh: '红色运动摩托车＋头盔' },
+    desc: {
+      en: 'Fast and loud red. Ride it from the Vehicle button; the matching helmet goes on automatically.',
+      ko: '빠르고 멋진 빨간 오토바이예요. "탈것" 버튼에서 타면 같은 색 헬멧을 자동으로 써요.',
+      ja: '速くてかっこいい赤いバイク。「乗り物」ボタンから乗るとおそろいのヘルメットを自動でかぶります。',
+      zh: '又快又酷的红色摩托车。点“交通工具”骑上，会自动戴上同色头盔。',
+    },
+  },
   // Printed T-shirts: worn from the bag (prints in core/tee-prints.js).
   'tee-simurugi': {
     emoji: '👕',
@@ -102,6 +112,7 @@ export class Inventory {
 const CODES = {
   f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10: Object.keys(ITEMS), // master: every item
   '378fc355ed89c5e4b9ba305012dea3f4c739e2fbcd5accdbf6a19bfb53f3ac52': ['car'],
+  '6a4ae2320b9c19a6c29ba13e9daeb1a1aad96880fa89d9b9dd813c0785b2446b': ['moto'], // the red sports motorbike and helmet
   '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
   // Pets not sold yet: one code each.
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],

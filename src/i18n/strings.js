@@ -12,6 +12,7 @@ export const LANGUAGES = [
 export const STRINGS = {
   en: {
     "ride.car": "Car (big roads only)",
+    "ride.moto": "Sports motorbike",
     "car.noRoad": "Cars start on a big road. Walk to a main road first.",
     "car.alley": "Cars can't go into alleys. Get out and walk!",
     "credit.privacy": "Privacy",
@@ -291,7 +292,7 @@ export const STRINGS = {
     'hud.musicOff': 'Music off',
     'hud.signsOff': 'Signs in Korean',
     'hud.zone': 'Zone',
-    'hud.bike': 'Bike',
+    'hud.bike': 'Vehicle',
     'bike.offShort': 'Get off',
     'bike.on': 'Ride a bike',
     'bike.off': 'Get off the bike',
@@ -421,6 +422,7 @@ export const STRINGS = {
   },
   ko: {
     "ride.car": "자동차 (큰길만)",
+    "ride.moto": "스포츠 오토바이",
     "car.noRoad": "자동차는 큰길에서만 탈 수 있어요. 먼저 큰길로 걸어가세요.",
     "car.alley": "자동차는 골목에 못 들어가요. 내려서 걸어가 보세요!",
     "credit.privacy": "개인정보처리방침",
@@ -700,7 +702,7 @@ export const STRINGS = {
     'hud.musicOff': '음악 꺼짐',
     'hud.signsOff': '간판 한국어로 보기',
     'hud.zone': '구역',
-    'hud.bike': '자전거',
+    'hud.bike': '탈것',
     'bike.offShort': '내리기',
     'bike.on': '자전거 타기',
     'bike.off': '자전거에서 내리기',
@@ -830,6 +832,7 @@ export const STRINGS = {
   },
   ja: {
     "ride.car": "車（大通りのみ）",
+    "ride.moto": "スポーツバイク",
     "car.noRoad": "車は大通りでしか乗れません。まず大通りへ歩きましょう。",
     "car.alley": "車は路地に入れません。降りて歩きましょう！",
     "credit.privacy": "プライバシー",
@@ -1109,7 +1112,7 @@ export const STRINGS = {
     'hud.musicOff': '音楽オフ',
     'hud.signsOff': '看板を韓国語で表示',
     'hud.zone': 'ゾーン',
-    'hud.bike': '自転車',
+    'hud.bike': '乗り物',
     'bike.offShort': '降りる',
     'bike.on': '自転車に乗る',
     'bike.off': '自転車を降りる',
@@ -1239,6 +1242,7 @@ export const STRINGS = {
   },
   zh: {
     "ride.car": "汽车（仅限大路）",
+    "ride.moto": "运动摩托车",
     "car.noRoad": "汽车只能在大路上开。先走到大路吧。",
     "car.alley": "汽车进不了小巷。下车走走吧！",
     "credit.privacy": "隐私政策",
@@ -1518,7 +1522,7 @@ export const STRINGS = {
     'hud.musicOff': '音乐已关',
     'hud.signsOff': '显示韩语招牌',
     'hud.zone': '区域',
-    'hud.bike': '自行车',
+    'hud.bike': '交通工具',
     'bike.offShort': '下车',
     'bike.on': '骑自行车',
     'bike.off': '下车',

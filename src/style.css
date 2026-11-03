@@ -1043,3 +1043,18 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .board-del { margin-left: auto; padding: 2px 10px; font-size: 12px; }
 .board-body { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.5; }
 .board-empty { text-align: center; color: var(--ink-soft); padding: 12px 0; margin: 0; }
+
+/* Bike shop (Pedal Lab) */
+.bike-row .lp-text { flex: 1; min-width: 0; }
+.bike-swatch { width: 14px; height: 40px; border-radius: 7px; flex: none; }
+.bike-bar { display: block; height: 6px; margin: 4px 0 2px; border-radius: 3px; background: #eee5d8; overflow: hidden; }
+.bike-bar i { display: block; height: 100%; background: linear-gradient(90deg, #3fb59a, #e0475b); }
+.bike-btns { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
+.bike-using { color: var(--accent); font-weight: 700; }
+
+/* Gold coin (replaces the 🪙 emoji, see ui/gold-coin.js) */
+.coin {
+  display: inline-block; width: 1em; height: 1em; vertical-align: -0.15em; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6c2 0 12%, #ffd54a 13% 52%, #f0a91a 53% 70%, #c97d0a 71%);
+  box-shadow: inset 0 0 0 0.07em #b86f05;
+}

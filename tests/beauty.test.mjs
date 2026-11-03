@@ -4,10 +4,10 @@ import { SALON, CLINIC, beautyCost } from '../src/core/beauty.js';
 import { sanitizeLook, PALETTES } from '../src/data/appearance.js';
 
 test('you pay for each change; going back to your own is free', () => {
-  assert.equal(beautyCost(SALON, {}, { dye: 'pink' }), 10);
+  assert.equal(beautyCost(SALON, {}, { dye: 'pink' }), 30);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
-  assert.equal(beautyCost(CLINIC, {}, { eyes: 'blue', tone: 'tan', small: true }), 35);
+  assert.equal(beautyCost(CLINIC, {}, { eyes: 'blue', tone: 'tan', small: true }), 105);
   assert.equal(beautyCost(CLINIC, { small: true }, { small: false }), 0);
 });
 
