@@ -628,6 +628,8 @@ let onboard = (() => {
 const ONBOARD_TEXT = {
   hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
   button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', id: 'Tos dengan pemandu' },
+  // The guide, before the first mission: visit the info centre first.
+  infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
   done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
 };
 if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
@@ -655,12 +657,16 @@ function onboardHi5() {
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
   quests.skipHighFive(); // that was today's high five
+  // First the guide recommends the info centre, then gives the first mission.
+  setTimeout(() => {
+    say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
+  }, 1100);
   setTimeout(() => {
     talkToGuide(); // the first mission
     setOnboard(2);
     // Then: the info centre, or explore on your own.
     setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
-  }, 1100);
+  }, 5600);
 }
 
 // Come back where you left off last time, if that spot is still open.

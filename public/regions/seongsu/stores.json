@@ -490,7 +490,7 @@
       "workshop": "info",
       "size": "small",
       "at": [58.6, 50.6],
-      "name": { "en": "Information Center", "ko": "인포메이션 센터", "ja": "インフォメーションセンター", "zh": "信息中心" },
+      "name": { "en": "Information Center", "ko": "안내센터", "ja": "インフォメーションセンター", "zh": "信息中心" },
       "tagline": { "en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去" },
       "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
       "products": []
