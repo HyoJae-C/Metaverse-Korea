@@ -1058,3 +1058,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   background: radial-gradient(circle at 35% 30%, #fff6c2 0 12%, #ffd54a 13% 52%, #f0a91a 53% 70%, #c97d0a 71%);
   box-shadow: inset 0 0 0 0.07em #b86f05;
 }
+/* Restaurant menu (📖 메뉴판) */
+.menu-row .lp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.menu-row .lp-text small { color: #6b625a; }
+.menu-row .menu-price { color: #b5462f !important; font-weight: 700; }

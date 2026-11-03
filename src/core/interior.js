@@ -1,5 +1,6 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
+import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
@@ -261,7 +262,8 @@ export function buildInterior(store) {
   const counterSpots = store.category === 'club'
     ? [-1.2, 0.3, 1.8, 3.3].map((z) => [w / 2 - 1.4, z, -Math.PI / 2])
     : store.category === 'bar' ? [-3.6, -1.2, 1.2, 3.6].map((x) => [x, -d / 2 + 2.2, 0]) : null;
-  store.products.forEach((product, i) => {
+  // Restaurants with a menu: nothing on display, you order at your table.
+  (isDining(store) ? [] : store.products).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
@@ -669,7 +671,8 @@ export function buildInterior(store) {
           box(0.08, 0.5, 0.42, cx + 0.2 * s, SEAT_H + 0.22, tz, store.colors.awning); // back
           for (const lx of [-0.16, 0.16]) for (const lz of [-0.16, 0.16]) box(0.05, SEAT_H - 0.06, 0.05, cx + lx, (SEAT_H - 0.06) / 2, tz + lz, '#8a5a3a');
           // Sit facing the table; stand up beside the chair, outside the collider.
-          seats.push({ x: cx + 0.04 * s, z: tz, ry: s > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [tx + 1.55 * s, tz] });
+          // plate: where a dish ordered from this seat is served on the table
+          seats.push({ x: cx + 0.04 * s, z: tz, ry: s > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [tx + 1.55 * s, tz], plate: [tx + 0.24 * s, tz] });
         }
         block(tx, tz, 2.3, 0.95);
       }

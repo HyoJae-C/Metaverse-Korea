@@ -42,7 +42,8 @@ import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
-import { buildInterior } from './core/interior.js';
+import { buildInterior, productModel } from './core/interior.js';
+import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
 import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
@@ -1098,6 +1099,23 @@ $('fine-close').onclick = () => { $('fine-panel').hidden = true; };
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
+// Restaurant texts (see the restaurant section below).
+const DINE_TEXT = {
+  menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
+  note: { en: 'Order here and your food comes to the table. Paid in coins: 1 coin per ₩1,000.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로, 1,000원당 1코인이에요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで、1,000ウォンにつき1コイン。', zh: '在这里点餐，菜会送到桌上。用硬币支付，每1,000韩元1枚。' },
+  here: { en: 'Eat here', ko: '먹고 가기', ja: '店内で', zh: '堂食' },
+  togo: { en: 'To go', ko: '포장', ja: '持ち帰り', zh: '打包' },
+  ordered: { en: 'Ordered {name}! It will be right out.', ko: '{name} 주문 완료! 곧 나와요.', ja: '{name}を注文しました！すぐお持ちします。', zh: '已点{name}！马上就好。' },
+  served: { en: 'Your {name} is here. Enjoy!', ko: '{name} 나왔습니다. 맛있게 드세요!', ja: '{name}お待たせしました。どうぞ！', zh: '您的{name}来了，请慢用！' },
+  waiting: { en: 'Cooking…', ko: '조리 중…', ja: '調理中…', zh: '烹饪中…' },
+  eat: { en: 'Eat', ko: '먹기', ja: '食べる', zh: '吃' },
+  bite: { en: 'Yum! {n} bites left', ko: '냠냠! {n}입 남았어요', ja: 'もぐもぐ！あと{n}口', zh: '好吃！还剩{n}口' },
+  finished: { en: 'All gone. That was good!', ko: '다 먹었어요. 잘 먹었습니다!', ja: '完食！ごちそうさまでした！', zh: '吃完了，真好吃！' },
+  packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
+  poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
+  busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
+  boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
+};
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
 // hold in your hand. 20 slots for now.
@@ -1118,8 +1136,8 @@ function setHeld(h) {
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
   $('stow-btn').hidden = !h;
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : '☕';
-  $('drink-btn').querySelector('small').textContent = t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -1133,8 +1151,9 @@ function drink() {
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   const sips = held.sips - 1;
-  if (sips <= 0) { setHeld(null); shop.toast(t('coffee.finished')); }
-  else { setHeld({ ...held, sips }); shop.toast(t('coffee.sip', { n: sips })); }
+  const food = held.kind === 'food';
+  if (sips <= 0) { setHeld(null); shop.toast(food ? L(DINE_TEXT.finished) : t('coffee.finished')); }
+  else { setHeld({ ...held, sips }); shop.toast(food ? fmt(L(DINE_TEXT.bite), { n: sips }) : t('coffee.sip', { n: sips })); }
 }
 $('drink-btn').onclick = drink;
 
@@ -1175,6 +1194,7 @@ function describeEntry(e) {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
   }
+  if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   return { emoji: '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
 }
 function stowHeld() {
@@ -1440,6 +1460,7 @@ function leaveStore() {
   if (mode !== 'store') return;
   endRide();
   standUp();
+  clearMeal();
   closeHome();
   closeHatWorkshop(false);
   if (orderUi.open) orderUi.close();
@@ -1658,6 +1679,99 @@ function openBikeShop() {
     list.append(row);
   }
   root.replaceChildren(x, el('strong', 'wallet-title', '🚲 ' + L(BIKE_TEXT.title)), el('p', 'fine', L(BIKE_TEXT.note)), list);
+  root.hidden = false;
+}
+
+// Restaurants (core/dining.js): sit at a table, open the menu and order.
+// The dish comes to your table a few seconds later; eat it in 5 bites. Or
+// order to go and carry the box (5 bites too). Prices are won on the menu,
+// paid in coins at 1 per 1,000 won.
+let meal = null; // Meal on a table in this restaurant (+ .mesh once served)
+function clearMeal() {
+  if (meal?.mesh) meal.mesh.removeFromParent();
+  meal = null;
+}
+function dineAction() {
+  if (meal?.seat === seated) {
+    if (!meal.ready(performance.now())) return { key: 'dine-wait', label: '⏳ ' + L(DINE_TEXT.waiting), run: () => {} };
+    return { key: 'dine-eat:' + meal.bites, label: `😋 ${L(DINE_TEXT.eat)} (${meal.bites}/${FOOD_BITES})`, run: () => eatMeal() };
+  }
+  return { key: 'dine-menu', label: '📖 ' + L(DINE_TEXT.menu), run: () => openMenu() };
+}
+function updateMeal() {
+  if (!meal || meal.mesh || !interior || !meal.ready(performance.now())) return;
+  const [x, z] = meal.seat.plate;
+  const g = new THREE.Group();
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.02, 20), new THREE.MeshLambertMaterial({ color: '#fbfaf6' }));
+  plate.position.y = 0.01;
+  const food = productModel(meal.product.model, meal.product.color);
+  food.scale.setScalar(1.5);
+  food.position.y = 0.02;
+  g.add(plate, food);
+  g.position.set(x, 0.645, z);
+  g.rotation.y = meal.seat.ry;
+  interior.scene.add(g);
+  meal.mesh = g;
+  meal.food = food;
+  sfx.pop?.();
+  const name = localName(meal.product.name, getLanguage());
+  shop.toast(fmt(L(DINE_TEXT.served), { name }));
+  clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', fmt(L(DINE_TEXT.served), { name })]);
+  action = STALE;
+}
+function eatMeal() {
+  if (!meal) return;
+  const left = meal.bite(performance.now());
+  me.play('clap');
+  sfx.pop?.();
+  if (left <= 0) { clearMeal(); shop.toast(L(DINE_TEXT.finished)); missionEvent('eat'); }
+  else { meal.food.scale.setScalar(1.5 * (0.45 + 0.55 * left / FOOD_BITES)); shop.toast(fmt(L(DINE_TEXT.bite), { n: left })); }
+}
+function orderFood(product, togo) {
+  const cost = coinPrice(product.price);
+  if (!togo && meal?.seat === seated) { shop.toast(L(DINE_TEXT.busy)); return; }
+  if (togo && held && !confirm(t('coffee.replace'))) return;
+  if (!wallet.spend(cost)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
+  refreshWallet();
+  recordFood(interior.store, product, true);
+  const name = localName(product.name, getLanguage());
+  $('lp-panel').hidden = true;
+  if (togo) {
+    setHeld({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
+    shop.toast(fmt(L(DINE_TEXT.packed), { name }));
+    clerk && say(clerk, $('labels'), ['포장해 드릴게요!', 'pojanghae deurilgeyo!', fmt(L(DINE_TEXT.packed), { name })]);
+    return;
+  }
+  clearMeal();
+  meal = new Meal(seated, product, performance.now());
+  shop.toast(fmt(L(DINE_TEXT.ordered), { name }));
+  clerk && say(clerk, $('labels'), ['네, 주문 받았습니다!', 'ne, jumun badatseumnida!', fmt(L(DINE_TEXT.ordered), { name })]);
+  action = STALE;
+}
+function openMenu() {
+  const root = $('lp-panel');
+  delete root.dataset.club;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const x = el('button', 'sheet-x', '✕');
+  x.onclick = () => { root.hidden = true; };
+  const list = el('div', 'lp-list');
+  const lang = getLanguage();
+  for (const pr of interior.store.products) {
+    const row = el('div', 'lp-row menu-row');
+    const text = el('span', 'lp-text');
+    text.append(el('strong', null, `${foodIcon(pr.model)} ${localName(pr.name, lang)}`));
+    if (pr.desc) text.append(el('small', null, localName(pr.desc, lang)));
+    text.append(el('small', 'menu-price', `₩${Number(pr.price).toLocaleString()} → 🪙 ${coinPrice(pr.price)}`));
+    const btns = el('span', 'bike-btns');
+    const here = el('button', 'chip', '🍽️ ' + L(DINE_TEXT.here));
+    here.onclick = () => orderFood(pr, false);
+    const go = el('button', 'chip', '🥡 ' + L(DINE_TEXT.togo));
+    go.onclick = () => orderFood(pr, true);
+    btns.append(here, go);
+    row.append(text, btns);
+    list.append(row);
+  }
+  root.replaceChildren(x, el('strong', 'wallet-title', '📖 ' + localName(interior.store.name, lang) + ' · ' + L(DINE_TEXT.menu)), el('p', 'fine', L(DINE_TEXT.note)), list);
   root.hidden = false;
 }
 
@@ -2750,6 +2864,8 @@ function updateAction(p, tSec) {
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
+    } else if (seated && isDining(interior.store)) {
+      next = dineAction();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -3062,6 +3178,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
+  updateMeal();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
 
@@ -3206,6 +3323,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,
+    action: () => action?.label || null,
+    act: () => action?.run(),
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
