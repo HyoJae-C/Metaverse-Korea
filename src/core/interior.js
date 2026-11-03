@@ -15,6 +15,8 @@ export const ROOM_SIZES = {
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
 const SEAT_H = 0.38; // chair seat height, sized for the chibi characters
+const COUNTER_H = 0.62; // shop counters: low enough to see the clerk's face over them
+const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
 
 const mats = {};
 const mat = (c, opts) => (mats[c + JSON.stringify(opts || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...opts }));
@@ -263,7 +265,7 @@ export function buildInterior(store) {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
-      spot.position.set(x, 1.08, z);
+      spot.position.set(x, BAR_H + 0.03, z);
       spot.rotation.y = ry;
       const model = productModel(product.model, product.color);
       model.scale.setScalar(1.6);
@@ -390,8 +392,8 @@ export function buildInterior(store) {
     }
     // Front desk by the door, and the sign above it.
     const cx = Math.min(3.6, sx - 2), cz = d / 2 - 2.3;
-    box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0');
-    box(0.5, 0.06, 0.35, cx - 0.4, 1.03, cz, '#3f6e8c'); // a book on the desk
+    box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0');
+    box(0.5, 0.06, 0.35, cx - 0.4, COUNTER_H + 0.03, cz, '#3f6e8c'); // a book on the desk
     block(cx, cz, 2.2, 0.8);
     clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
     const sc = document.createElement('canvas');
@@ -459,21 +461,29 @@ export function buildInterior(store) {
     // speaker stacks, a dance floor of glowing tiles, swinging light beams,
     // and a bar counter with stools on the right.
     const sz0 = -d / 2 + 1.9; // stage centre
+    // Each club has its own colours: EDM neon, hip-hop gold, K-POP pink.
+    const PAL = {
+      edm: { tiles: ['#ff3fa4', '#7a5cff', '#2ad1ff', '#ffd23f', '#3fff9b'], edge: '#7a5cff', lights: [0xff3fa4, 0x2ad1ff] },
+      hiphop: { tiles: ['#f2b705', '#e8452c', '#ffffff', '#ff8a1f', '#7a2b1a'], edge: '#f2b705', lights: [0xf2b705, 0xe8452c] },
+      kpop: { tiles: ['#ff7ab8', '#b388ff', '#7fe3ff', '#fff07a', '#ff4f9a'], edge: '#ff7ab8', lights: [0xff7ab8, 0xb388ff] },
+    }[store.genre] || null;
+    const TC = PAL?.tiles || ['#ff3fa4', '#7a5cff', '#2ad1ff', '#ffd23f', '#3fff9b'];
+    const EDGE = PAL?.edge || '#7a5cff';
     box(11, 0.3, 3.6, 0, 0.15, sz0, '#1c1a24');
-    box(11, 0.06, 0.1, 0, 0.32, sz0 + 1.8, '#7a5cff'); // lit stage edge
+    box(11, 0.06, 0.1, 0, 0.32, sz0 + 1.8, EDGE); // lit stage edge
     block(0, sz0, 11, 3.6);
     // DJ booth with two decks and a glowing front.
-    box(3.2, 1.0, 0.9, 0, 0.8, sz0 + 0.6, '#15131c');
-    const boothGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.7), new THREE.MeshBasicMaterial({ color: '#ff3fa4' }));
-    boothGlow.position.set(0, 0.75, sz0 + 1.06);
+    box(3.2, 0.6, 0.9, 0, 0.6, sz0 + 0.6, '#15131c'); // low, so the DJ shows
+    const boothGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.45), new THREE.MeshBasicMaterial({ color: TC[0] }));
+    boothGlow.position.set(0, 0.6, sz0 + 1.06);
     scene.add(boothGlow);
     for (const dx of [-0.8, 0.8]) {
       const deck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 24), mat('#2b2b30'));
-      deck.position.set(dx, 1.32, sz0 + 0.6);
+      deck.position.set(dx, 0.92, sz0 + 0.6);
       scene.add(deck);
     }
-    box(0.5, 0.06, 0.4, 0, 1.33, sz0 + 0.6, '#3a3a44'); // mixer
-    clerk = { x: 0, z: sz0 - 0.2, ry: 0 }; // the DJ, behind the booth
+    box(0.5, 0.06, 0.4, 0, 0.93, sz0 + 0.6, '#3a3a44'); // mixer
+    clerk = { x: 0, y: 0.3, z: sz0 - 0.2, ry: 0 }; // the DJ, on the stage behind the booth
     // LED wall: moving equaliser bars.
     const lc = document.createElement('canvas');
     lc.width = 512; lc.height = 160;
@@ -494,7 +504,6 @@ export function buildInterior(store) {
     }
     // Dance floor tiles.
     const tiles = [];
-    const TC = ['#ff3fa4', '#7a5cff', '#2ad1ff', '#ffd23f', '#3fff9b'];
     for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) {
       const t = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: TC[(r + c) % TC.length] }));
       t.position.set((c - 2.5) * 1.6, 0.012, -0.6 + r * 1.6);
@@ -503,7 +512,7 @@ export function buildInterior(store) {
     }
     // Light beams from the ceiling.
     const beams = [];
-    for (const [bx, c] of [[-4.5, '#ff3fa4'], [-1.5, '#2ad1ff'], [1.5, '#7a5cff'], [4.5, '#ffd23f']]) {
+    for (const [bx, c] of [[-4.5, TC[0]], [-1.5, TC[2]], [1.5, TC[1]], [4.5, TC[3]]]) {
       const pivot = new THREE.Group();
       pivot.position.set(bx, h - 0.1, 0);
       const cone = new THREE.Mesh(new THREE.ConeGeometry(0.9, h - 0.3, 18, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }));
@@ -513,39 +522,43 @@ export function buildInterior(store) {
       scene.add(pivot);
       beams.push(pivot);
     }
-    const party = [new THREE.PointLight(0xff3fa4, 14, 14), new THREE.PointLight(0x2ad1ff, 14, 14)];
+    const party = (PAL?.lights || [0xff3fa4, 0x2ad1ff]).map((c) => new THREE.PointLight(c, 14, 14));
     party.forEach((l, i) => { l.position.set(i ? 4 : -4, 2.6, 1); scene.add(l); });
     // Bar counter with stools on the right wall (the drinks stand on it).
     const cx = w / 2 - 1.4;
-    box(0.9, 1.05, 6.4, cx, 0.52, 1.05, '#1f1b26');
-    box(1.0, 0.06, 6.5, cx, 1.06, 1.05, '#7a5cff');
+    box(0.9, BAR_H, 6.4, cx, BAR_H / 2, 1.05, '#1f1b26');
+    box(1.0, 0.06, 6.5, cx, BAR_H + 0.01, 1.05, EDGE);
     block(cx, 1.05, 1.0, 6.5);
     for (const z of [-0.5, 1.05, 2.6]) {
       const sxx = cx - 1.15;
-      box(0.38, 0.06, 0.38, sxx, SEAT_H + 0.1, z, '#ff3fa4');
+      box(0.38, 0.06, 0.38, sxx, SEAT_H + 0.1, z, TC[0]);
       box(0.06, SEAT_H + 0.1, 0.06, sxx, (SEAT_H + 0.1) / 2, z, '#9ca9af');
       seats.push({ x: sxx, z, ry: Math.PI / 2, stand: [sxx - 0.9, z] });
       block(sxx, z, 0.45, 0.45);
     }
     let t = 0, step = 0, ledT = 0;
-    animate = (dt) => {
+    // pulse: the club music's beat (core/club-music.js), when it plays.
+    animate = (dt, pulse) => {
       t += dt;
-      const beat = Math.floor(t * 2.2); // about 132 bpm in halves
+      const beat = pulse ? pulse.beat : Math.floor(t * 2.2);
+      const energy = pulse ? pulse.energy : 1;
+      const kick = pulse ? Math.max(0, 1 - pulse.phase * 3) : Math.max(0, Math.sin(t * 13.8));
+      beams.forEach((b) => { b.children[0].material.opacity = 0.05 + 0.14 * energy; });
       if (beat !== step) {
         step = beat;
         tiles.forEach((tile, i) => tile.material.color.set(TC[(i * 7 + beat * 3 + (i % 3)) % TC.length]));
         boothGlow.material.color.set(TC[beat % TC.length]);
       }
       beams.forEach((b, i) => { b.rotation.z = Math.sin(t * 1.3 + i * 1.7) * 0.55; b.rotation.x = Math.cos(t * 0.9 + i) * 0.35; });
-      party[0].intensity = 10 + 8 * Math.max(0, Math.sin(t * 13.8));
-      party[1].intensity = 10 + 8 * Math.max(0, Math.cos(t * 13.8));
+      party[0].intensity = 6 + 14 * kick * energy;
+      party[1].intensity = 6 + 14 * (pulse ? Math.max(0, 1 - Math.abs(pulse.phase - 0.5) * 3) : Math.max(0, Math.cos(t * 13.8))) * energy;
       ledT += dt;
       if (ledT > 1 / 15) {
         ledT = 0;
         lg.fillStyle = '#07050c'; lg.fillRect(0, 0, 512, 160);
         for (let k = 0; k < 32; k++) {
           const v = (Math.sin(t * 6 + k * 0.6) + Math.sin(t * 9.7 + k * 1.3) + 2) / 4;
-          const bh = 20 + v * 130;
+          const bh = 20 + v * 130 * (0.45 + 0.55 * energy) * (0.75 + 0.25 * kick);
           lg.fillStyle = `hsl(${(k * 11 + t * 60) % 360}, 90%, 60%)`;
           lg.fillRect(k * 16 + 2, 160 - bh, 12, bh);
         }
@@ -554,6 +567,10 @@ export function buildInterior(store) {
         lg.textAlign = 'center'; lg.textBaseline = 'middle';
         lg.globalAlpha = 0.9;
         lg.fillText(store.signLocal || store.name.en, 256, 44);
+        if (pulse?.title) {
+          lg.font = '700 22px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+          lg.fillText('♪ ' + pulse.title, 256, 84);
+        }
         lg.globalAlpha = 1;
         ledTex.needsUpdate = true;
       }
@@ -563,8 +580,8 @@ export function buildInterior(store) {
     // A quiet cocktail bar: a long counter with stools, shelves of lit
     // bottles behind it, warm pendant lamps and two candle-lit tables.
     const cz = -d / 2 + 2.2;
-    box(8.6, 1.05, 0.8, 0, 0.52, cz, '#3b2418');
-    box(8.8, 0.07, 0.95, 0, 1.06, cz, '#8a5a3a');
+    box(8.6, BAR_H, 0.8, 0, BAR_H / 2, cz, '#3b2418');
+    box(8.8, 0.07, 0.95, 0, BAR_H + 0.01, cz, '#8a5a3a');
     block(0, cz, 8.8, 0.95);
     clerk = { x: 0.6, z: cz - 1.0, ry: 0 }; // the bartender
     // Back shelves with bottles.
@@ -658,8 +675,8 @@ export function buildInterior(store) {
       }
     }
     // Counter by the side wall.
-    box(2.4, 1.0, 0.8, sx - 1.4, 0.5, d / 2 - 2.2, '#fffaf0');
-    box(0.3, 0.35, 0.3, sx - 0.8, 1.17, d / 2 - 2.2, '#4a3f35'); // coffee machine
+    box(2.4, COUNTER_H, 0.8, sx - 1.4, COUNTER_H / 2, d / 2 - 2.2, '#fffaf0');
+    box(0.3, 0.35, 0.3, sx - 0.8, COUNTER_H + 0.17, d / 2 - 2.2, '#4a3f35'); // coffee machine
     block(sx - 1.4, d / 2 - 2.2, 2.4, 0.8);
     clerk = { x: sx - 1.4, z: d / 2 - 1.45, ry: Math.PI };
   } else if (store.category === 'home') {
@@ -847,8 +864,8 @@ export function buildInterior(store) {
       }
     }
     const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
-    box(2.2, 1.0, 0.8, cx, 0.5, cz, '#fffaf0'); // counter
-    box(0.35, 0.25, 0.25, cx + 0.4, 1.12, cz, '#4a3f35'); // till
+    box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
+    box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
     block(cx, cz, 2.2, 0.8);
     clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
   }
