@@ -2,7 +2,7 @@
 // model from the active model pack (src/data/characters); a chibi built from
 // simple rounded shapes shows while the model loads, or if it fails to load.
 import * as THREE from 'three';
-import { makeBike, makeTandem, makeCar, makeMoto, makeHelmet } from './bikes.js';
+import { makeBike, makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
 import { attachModel } from './model-pack.js';
 import { makeHeld, makeUmbrella } from './held.js';
 
@@ -101,7 +101,7 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
-  let bike = null, tandem = null, car = null, moto = null, helmet = null, riding = false;
+  let bike = null, tandem = null, car = null, limo = null, moto = null, helmet = null, riding = false;
   let bikeColor = null;
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
@@ -127,7 +127,8 @@ export function createCharacter(rawLook) {
     head,
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
-    // 4 car (driver's seat), 5 motorbike (with a helmet). color: the bike's
+    // 4 open sports car (driver's seat), 5 motorbike (with a helmet),
+    // 6 limousine (driver's seat). color: the bike's
     // frame colour (each model in the bike shop has its own).
     setBike(on, color) {
       const kind = on === true ? 1 : on || 0;
@@ -135,11 +136,13 @@ export function createCharacter(rawLook) {
       if (kind === 1 && !bike) { bike = makeBike(color || undefined); bikeColor = color || null; root.add(bike); }
       if (kind === 2 && !tandem) { tandem = makeTandem(); root.add(tandem); }
       if (kind === 4 && !car) { car = makeCar(); root.add(car); }
+      if (kind === 6 && !limo) { limo = makeLimo(); root.add(limo); }
       if (kind === 5 && !moto) { moto = makeMoto(); root.add(moto); }
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
       if (tandem) tandem.visible = kind === 2;
       if (car) car.visible = kind === 4;
+      if (limo) limo.visible = kind === 6;
       if (moto) moto.visible = kind === 5;
       // The helmet replaces any hat while riding the motorbike.
       for (const c of headAcc.children) c.visible = kind === 5 ? c === helmet : c !== helmet;

@@ -1,7 +1,8 @@
 // UI strings in Spanish (Español). Same keys as the English block in
 // strings.js; anything missing falls back to English.
 export const ES = {
-  'ride.car': 'Coche (solo avenidas)',
+  'ride.car': 'Deportivo descapotable',
+  'ride.limo': 'Limusina',
   'ride.moto': 'Moto deportiva',
   'car.noRoad': 'Los coches salen de una avenida. Camina primero hasta una calle grande.',
   'car.alley': 'Los coches no entran en los callejones. ¡Bájate y camina!',

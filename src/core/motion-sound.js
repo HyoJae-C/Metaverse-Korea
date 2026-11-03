@@ -19,7 +19,7 @@ export const engineHz = (speed01, car = false) => (car ? 30 : 38) + Math.max(0, 
 // How loud someone else's bell or horn is at distance d (0 = silent).
 export const hearGain = (d) => (d >= HEAR_RADIUS ? 0 : Math.max(0, 1 - d / HEAR_RADIUS) ** 1.5);
 // Which "honk" a vehicle has: bicycles ring, motor vehicles beep.
-export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 ? 'horn' : null);
+export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 || riding === 6 ? 'horn' : null);
 export const honkMsg = (kind) => `honk:${kind}`;
 export function parseHonk(e) {
   const m = /^honk:(bell|horn)$/.exec(String(e));
@@ -68,26 +68,46 @@ export class MotionSound {
     } else this.stepT = 0.05;
     // Wind and engine.
     // (Sound switched off: let them fade out.)
-    this._setWind(c, c && st.riding ? WIND_MAX * st.speed01 * (st.riding === 4 || st.riding === 5 ? 1 : 0.7) : 0);
-    this._setEngine(c, c && (st.riding === 4 || st.riding === 5) ? st.speed01 : -1, st.riding === 4);
+    this._setWind(c, c && st.riding ? WIND_MAX * st.speed01 * (st.riding >= 4 ? 1 : 0.7) : 0);
+    this._setEngine(c, c && st.riding >= 4 ? st.speed01 : -1, st.riding === 4 || st.riding === 6);
   }
   stopAll() { this._setWind(null, 0); this._setEngine(null, -1); }
 
+  // One footstep: a soft heel thud (low, muffled), then the sole rolling
+  // off with a faint scuff a moment later, like shoes on pavement (or a
+  // wooden floor indoors).
   _step(c, vol, indoor) {
-    const t = c.currentTime;
-    const src = c.createBufferSource();
-    src.buffer = this._noiseBuffer(c);
-    const f = c.createBiquadFilter();
-    f.type = 'bandpass';
-    f.frequency.value = (indoor ? 900 : 650) + Math.random() * 250;
-    f.Q.value = 1.2;
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-    src.connect(f).connect(g).connect(c.destination);
-    src.start(t, Math.random() * 1.5);
-    src.stop(t + 0.1);
+    const t = c.currentTime + 0.005;
+    const noise = (start, len, type, freq, q, peak, attack) => {
+      const src = c.createBufferSource();
+      src.buffer = this._noiseBuffer(c);
+      const f = c.createBiquadFilter();
+      f.type = type;
+      f.frequency.value = freq;
+      f.Q.value = q;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + len);
+      src.connect(f).connect(g).connect(c.destination);
+      src.start(start, Math.random() * 1.5);
+      src.stop(start + len + 0.02);
+    };
+    const r = 0.9 + Math.random() * 0.2;
+    // Heel: muffled thud
+    noise(t, 0.085, 'lowpass', (indoor ? 520 : 380) * r, 0.9, vol, 0.006);
+    const o = c.createOscillator();
+    const og = c.createGain();
+    o.frequency.setValueAtTime((indoor ? 120 : 85) * r, t);
+    o.frequency.exponentialRampToValueAtTime(50, t + 0.07);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(vol * 0.7, t + 0.006);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    o.connect(og).connect(c.destination);
+    o.start(t);
+    o.stop(t + 0.1);
+    // Sole rolling off: a soft, short scuff
+    noise(t + 0.045 * r, 0.11, 'bandpass', (indoor ? 2600 : 1900) * r, 0.8, vol * 0.28, 0.02);
   }
   _setWind(c, target) {
     if (!this.wind) {
@@ -147,25 +167,42 @@ export class MotionSound {
     e.gain.gain.setTargetAtTime(ENGINE_MAX * (0.55 + 0.45 * speed01), t, 0.2);
   }
 
-  // Bicycle bell: two quick "ring-ring" strikes. gain: 1 = my own.
+  // Bicycle bell: the thumb flicks the striker against a small metal dome,
+  // "ting… ting". Bell-like inharmonic partials, each a slightly detuned
+  // pair so it shimmers, a tiny metallic click, and a ringing decay.
   bell(gain = 1) {
     const c = this._ctx();
     if (!c || gain <= 0) return;
     const t0 = c.currentTime + 0.01;
-    for (const dt of [0, 0.16]) {
-      for (const [f, v] of [[2093, 1], [2637, 0.5], [5200, 0.15]]) {
-        const o = c.createOscillator();
-        const g = c.createGain();
-        o.type = 'sine';
-        o.frequency.value = f;
-        const t = t0 + dt;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(BELL_VOL * v * gain, t + 0.005);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
-        o.connect(g).connect(c.destination);
-        o.start(t);
-        o.stop(t + 0.5);
+    const f0 = 2350;
+    for (const [dt, hit] of [[0, 1], [0.24, 0.8]]) {
+      const t = t0 + dt;
+      for (const [ratio, v, decay] of [[1, 1, 1.3], [2.32, 0.45, 0.8], [4.25, 0.18, 0.45], [6.63, 0.07, 0.25]]) {
+        for (const det of [1, 1.0045]) {
+          const o = c.createOscillator();
+          const g = c.createGain();
+          o.type = 'sine';
+          o.frequency.value = f0 * ratio * det;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(BELL_VOL * v * hit * gain * 0.5, t + 0.003);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+          o.connect(g).connect(c.destination);
+          o.start(t);
+          o.stop(t + decay + 0.05);
+        }
       }
+      // The striker's click
+      const src = c.createBufferSource();
+      src.buffer = this._noiseBuffer(c);
+      const hp = c.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 4000;
+      const cg = c.createGain();
+      cg.gain.setValueAtTime(BELL_VOL * 0.4 * hit * gain, t);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.015);
+      src.connect(hp).connect(cg).connect(c.destination);
+      src.start(t, Math.random());
+      src.stop(t + 0.03);
     }
   }
   // Horn: two short "beep-beep"s, mellow (filtered square waves).

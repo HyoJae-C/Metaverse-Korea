@@ -632,7 +632,8 @@ const CAR = 26; // car: big roads only
 const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
-const rideSpeed = () => (riding === 4 ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
+const isCar = (k) => k === 4 || k === 6; // sports car, limousine
+const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
@@ -1275,7 +1276,7 @@ try {
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
 const umbrellaOpen = () => hasUmbrella() && mode === 'street' && !riding && !seated && WET.has(weather.kind);
-const wxSpeed = () => (mode !== 'street' || riding === 4 ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
+const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 const UMB_TEXT = {
   bought: { en: 'Got an umbrella! It opens by itself when it rains or snows. ☂️', ko: '우산을 샀어요! 비나 눈이 오면 저절로 펴져요. ☂️', ja: '傘を買いました！雨や雪の日は自動で開きます。☂️', zh: '买到雨伞了！下雨或下雪时会自动撑开。☂️' },
 };
@@ -1390,16 +1391,15 @@ function setRiding(on) {
     me.root.position.set(fx, 0, fz);
     tandemDriver = null;
   }
-  if (riding === 4) {
+  if (isCar(riding)) {
     // Park and step out onto free ground beside the car.
     const ry = me.root.rotation.y;
-    const [fx, fz] = findFreeSpot(me.root.position.x + Math.cos(ry) * 1.6, me.root.position.z - Math.sin(ry) * 1.6);
+    const [fx, fz] = findFreeSpot(me.root.position.x + Math.cos(ry) * 1.7, me.root.position.z - Math.sin(ry) * 1.7);
     me.root.position.set(fx, 0, fz);
   }
   riding = kind;
   me.setBike(kind, kind === 1 ? garage.current.color : undefined);
   if (kind === 1 || kind === 2) missionEvent('bike');
-  if (kind === 4) setAutoWalk(false); // auto-walk routes use alleys too
   sendTimer = 0;
   action = STALE;
   $('bike-btn').classList.toggle('on', !!kind);
@@ -1416,7 +1416,7 @@ function onTandemMsg(from, { verb, target, seat }) {
     shop.toast(t('tandem.invited', { name }));
     action = STALE;
   } else if (verb === 'join') {
-    const ok = (riding === 2 || riding === 4 || riding === 5) && seat < seatsOf(riding) && !passengers.has(seat) && ![...passengers.values()].includes(from);
+    const ok = (riding === 2 || isCar(riding) || riding === 5) && seat < seatsOf(riding) && !passengers.has(seat) && ![...passengers.values()].includes(from);
     if (ok) { passengers.set(seat, from); shop.toast(t('tandem.joined', { name })); action = STALE; }
     else net.sendEmote(tandemMsg('end', from)); // seat taken or not driving: say no
   } else if (verb === 'leave') {
@@ -1481,7 +1481,8 @@ function outfitAction(itemId) {
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
   { kind: 2, emoji: '🚲🚲', label: 'ride.tandem', item: 'tandem' },
-  { kind: 4, emoji: '🚗', label: 'ride.car', item: 'car' },
+  { kind: 4, emoji: '🏎️', label: 'ride.car', item: 'car' },
+  { kind: 6, emoji: '🚘', label: 'ride.limo', item: 'limo' },
   { kind: 5, emoji: '🏍️', label: 'ride.moto', item: 'moto' },
 ];
 function ridePicker() {
@@ -1498,55 +1499,9 @@ function ridePicker() {
   $('ride-panel').hidden = false;
 }
 $('ride-close').onclick = () => { $('ride-panel').hidden = true; };
+// Cars go anywhere now (alleys too), like the bikes.
 function startRide(kind) {
-  if (kind === 4) {
-    // Cars start on a big road: hop to the nearest one if it's close.
-    const p = me.root.position;
-    let [rx, rz, d] = nearestCarRoad(p.x, p.z);
-    if (d <= 25 && collision.blocked(rx, rz, PLAYER_R)) {
-      // Something stands there (a pillar, a kiosk): take the closest clear spot on a big road.
-      const free = clearCarSpot(p.x, p.z);
-      if (free) [rx, rz, d] = [free[0], free[1], Math.max(0.6, free[2])];
-      else d = Infinity;
-    }
-    if (d > 25) { shop.toast(t('car.noRoad')); return; }
-    if (d > 0.5) moveMeTo(scene, rx, rz, me.root.rotation.y, cam.yaw);
-  }
   setRiding(kind);
-}
-// Cars stay on the big roads (OSM primary, secondary, tertiary…), never in
-// residential alleys, service lanes or footpaths.
-const CAR_ROADS = new Set(['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'primary_link', 'secondary_link', 'tertiary_link', 'trunk_link', 'unclassified']);
-const carSegs = [];
-for (const r of map.roads) {
-  if (!CAR_ROADS.has(r.k)) continue;
-  for (let i = 1; i < r.p.length; i++) carSegs.push([r.p[i - 1][0], r.p[i - 1][1], r.p[i][0], r.p[i][1], (r.w || 8) / 2]);
-}
-// Nearest point on a car road: [x, z, distance beyond the road edge].
-function nearestCarRoad(x, z) {
-  let best = [x, z, Infinity];
-  for (const [ax, az, bx, bz, hw] of carSegs) {
-    const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
-    const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
-    const px = ax + u * dx, pz = az + u * dz;
-    const d = Math.max(0, Math.hypot(px - x, pz - z) - hw);
-    if (d < best[2]) best = [d === 0 ? x : px, d === 0 ? z : pz, d];
-  }
-  return best;
-}
-const onCarRoad = (x, z) => nearestCarRoad(x, z)[2] <= 0.5;
-// Closest clear point on a big road's centre line within 25 m: [x, z, distance].
-function clearCarSpot(x, z) {
-  let best = null;
-  for (const [ax, az, bx, bz] of carSegs) {
-    const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 2);
-    for (let i = 0; i <= n; i++) {
-      const px = ax + ((bx - ax) * i) / n, pz = az + ((bz - az) * i) / n;
-      const d = Math.hypot(px - x, pz - z);
-      if (d <= 25 && (!best || d < best[2]) && !collision.blocked(px, pz, PLAYER_R)) best = [px, pz, d];
-    }
-  }
-  return best;
 }
 // My bike (from the toolbar): ride anywhere on the street, tap again to get off.
 $('bike-btn').onclick = () => ridePicker();
@@ -1555,7 +1510,7 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 function enterStore(item) {
   setRiding(false);
-  sfx.doorbell(); // ding-dong
+  sfx.doorbell(); // automatic door sliding open
   const store = item.store;
   let built = interiorCache.get(store.id);
   if (!built) {
@@ -2124,10 +2079,9 @@ let routeTimer = 0, routeLen = 0, faceRoute = false;
 let routePoly = null; // the current route along the streets
 // Auto-walk: follow the route without steering. Any stick/key input stops it.
 let autoWalk = false;
-let carNoteT = 0; // cooldown for the "cars can't go into alleys" note
 const autoSide = { t: 0, dir: 1, stuck: 0 }; // side-step when walking into a wall
 function setAutoWalk(on) {
-  autoWalk = !!on && !!guide && riding !== 3 && riding !== 4;
+  autoWalk = !!on && !!guide && riding !== 3;
   $('guide-auto').classList.toggle('on', autoWalk);
   $('guide-auto-label').textContent = t(autoWalk ? 'guide.autoStop' : 'guide.auto');
   if (autoWalk) { routeTimer = 0; manualCamT = 0; }
@@ -3129,14 +3083,14 @@ function updateAction(p, tSec) {
     const poop = !riding && nearestPoop(p);
     if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
-    else if ((riding === 2 || riding === 4 || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3)) {
-      const o = others.nearestFree(p.x, p.z, riding === 4 ? 4.5 : 3);
+    else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
+      const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
       const seat = freeSeat();
-      next = { key: 'tandem-invite:' + o.id, label: (riding === 4 ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
-    } else if (riding) next = { key: 'bike-off', label: riding === 4 ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+      next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
-      next = { key: 'tandem-hop:' + inv.from, label: (others.kindOf(inv.from) === 4 ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
+      next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
@@ -3341,7 +3295,6 @@ renderer.setAnimationLoop(() => {
   const look = input.consumeLook();
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
-  carNoteT = Math.max(0, carNoteT - dt);
   cam.yaw -= look.dx * 0.006;
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
@@ -3394,12 +3347,6 @@ renderer.setAnimationLoop(() => {
     const dx = (fx * my + rx * mx) * speed * dt;
     const dz = (fz * my + rz * mx) * speed * dt;
     let [nx, nz] = activeCollision.move(p.x, p.z, dx, dz, PLAYER_R);
-    if (riding === 4 && !onCarRoad(nx, nz)) {
-      // Off the big road: slide along it if we can, else stop.
-      if (onCarRoad(nx, p.z)) nz = p.z;
-      else if (onCarRoad(p.x, nz)) nx = p.x;
-      else { nx = p.x; nz = p.z; if (!carNoteT) { shop.toast(t('car.alley')); carNoteT = 4; } }
-    }
     if (mode === 'street') {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);

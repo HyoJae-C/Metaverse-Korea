@@ -51,13 +51,25 @@ export const ITEMS = {
     },
   },
   car: {
-    emoji: '🚗',
-    name: { en: 'Convertible car', ko: '오픈카', ja: 'オープンカー', zh: '敞篷车' },
+    emoji: '🏎️',
+    name: { en: 'Red open sports car', ko: '빨간 오픈 스포츠카', ja: '赤いオープンスポーツカー', zh: '红色敞篷跑车', es: 'Deportivo descapotable rojo' },
     desc: {
-      en: 'Fast, but only on the big roads: cars can’t go into the narrow alleys. Get out to walk the alleys.',
-      ko: '빠르지만 큰길만 달릴 수 있어요. 좁은 골목에는 못 들어가니 내려서 걸어가세요.',
-      ja: '速いけれど大通りだけ。細い路地には入れないので、降りて歩きましょう。',
-      zh: '速度快，但只能走大路，进不了小巷。下车步行去逛小巷吧。',
+      en: 'A low two-seater with the top down. Drive anywhere, alleys too, and invite one friend to the passenger seat.',
+      ko: '지붕이 열린 낮은 2인승 스포츠카예요. 골목까지 어디든 달릴 수 있고, 옆자리에 친구 한 명을 태울 수 있어요.',
+      ja: '屋根の開いた低い2人乗りスポーツカー。路地までどこでも走れて、助手席に友だちを1人乗せられます。',
+      zh: '敞篷低趴双座跑车。哪里都能开，小巷也行，副驾驶可以邀请一位朋友。',
+      es: 'Un biplaza bajo y descapotable. Conduce por todas partes, callejones incluidos, e invita a un amigo al asiento del copiloto.',
+    },
+  },
+  limo: {
+    emoji: '🚘',
+    name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo' },
+    desc: {
+      en: 'A pearl-white four-seater with a tall chrome grille and a glass roof. Drive anywhere and invite three friends.',
+      ko: '높은 크롬 그릴과 유리 지붕의 진주색 4인승 리무진이에요. 어디든 달릴 수 있고 친구 세 명을 태울 수 있어요.',
+      ja: '背の高いクロームグリルとガラスルーフのパールホワイト4人乗り。どこでも走れて、友だち3人を乗せられます。',
+      zh: '珍珠白四座豪华轿车，高耸的镀铬格栅和玻璃车顶。哪里都能开，可以载三位朋友。',
+      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y techo de cristal. Conduce por todas partes e invita a tres amigos.',
     },
   },
   moto: {
@@ -134,6 +146,7 @@ export class Inventory {
 const CODES = {
   f368f463b616dadfcdc26126130b67a47f6faad781488925bb175e2240a26e10: Object.keys(ITEMS), // master: every item
   '378fc355ed89c5e4b9ba305012dea3f4c739e2fbcd5accdbf6a19bfb53f3ac52': ['car'],
+  '9db9efa6cfeea17db7046ae247534ec49bf53b49f8e953416db0037e44145c44': ['car', 'limo'], // open sports car + limousine
   '6a4ae2320b9c19a6c29ba13e9daeb1a1aad96880fa89d9b9dd813c0785b2446b': ['moto'], // the red sports motorbike and helmet
   '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
   // Pets not sold yet: one code each.

@@ -259,25 +259,62 @@ export class Sfx {
     if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume(); }
     return this.ctx;
   }
-  // Two-tone shop door chime ("ding-dong").
+  // Automatic sliding door: a soft motor hum and the glass panels gliding
+  // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
+  // (Kept the name doorbell: every door uses it.)
   doorbell() {
     if (!this.on) return;
     const c = this._ctx();
     if (!c) return;
     const t = c.currentTime + 0.02;
-    [[1318.5, 0], [1046.5, 0.32]].forEach(([f, dt]) => {
-      for (const [mult, vol] of [[1, 0.22], [2.76, 0.05], [5.4, 0.02]]) { // bell partials
-        const o = c.createOscillator();
-        const g = c.createGain();
-        o.type = 'sine';
-        o.frequency.value = f * mult;
-        g.gain.setValueAtTime(0.0001, t + dt);
-        g.gain.exponentialRampToValueAtTime(vol, t + dt + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 1.1);
-        o.connect(g).connect(c.destination);
-        o.start(t + dt);
-        o.stop(t + dt + 1.2);
-      }
-    });
+    const len = 0.75;
+    // Glide: filtered noise that swells and fades, its tone rising a little
+    if (!this._noise) {
+      const b = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = b.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < d.length; i++) { last = last * 0.96 + (Math.random() * 2 - 1) * 0.04; d[i] = last * 6; } // soft, brownish
+      this._noise = b;
+    }
+    const src = c.createBufferSource();
+    src.buffer = this._noise;
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 0.8;
+    f.frequency.setValueAtTime(500, t);
+    f.frequency.linearRampToValueAtTime(900, t + len * 0.6);
+    f.frequency.linearRampToValueAtTime(650, t + len);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.18);
+    g.gain.setValueAtTime(0.09, t + len * 0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(t);
+    src.stop(t + len + 0.05);
+    // Motor hum underneath
+    const o = c.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.linearRampToValueAtTime(135, t + len * 0.5);
+    o.frequency.linearRampToValueAtTime(100, t + len);
+    const og = c.createGain();
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.025, t + 0.12);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(og).connect(c.destination);
+    o.start(t);
+    o.stop(t + len + 0.05);
+    // Soft stop of the panels
+    const k = c.createOscillator();
+    k.frequency.setValueAtTime(180, t + len - 0.08);
+    k.frequency.exponentialRampToValueAtTime(70, t + len);
+    const kg = c.createGain();
+    kg.gain.setValueAtTime(0.0001, t + len - 0.08);
+    kg.gain.exponentialRampToValueAtTime(0.03, t + len - 0.07);
+    kg.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.02);
+    k.connect(kg).connect(c.destination);
+    k.start(t + len - 0.08);
+    k.stop(t + len + 0.05);
   }
 }
