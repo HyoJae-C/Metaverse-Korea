@@ -1,9 +1,9 @@
-// Live weather and time of day for the region.
-// Weather: Open-Meteo (free, no key; CC BY 4.0, credited on screen).
+// Weather and time of day for the region.
+// Weather: rolled from the clock (rolledWeather), the same for every player.
 // Time of day: the region's local clock (Seoul = UTC+9).
 import * as THREE from 'three';
 
-const REFRESH_MS = 10 * 60 * 1000;
+const REFRESH_MS = 15 * 1000; // the clock chip and the next 30-minute weather slot
 
 // WMO weather code → our weather kind.
 export function weatherKind(code) {
@@ -31,17 +31,18 @@ export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
 export const WEATHER_ICON = { clear: '☀️', cloudy: '☁️', fog: '🌫️', rain: '🌧️', snow: '❄️', storm: '⛈️' };
 const NIGHT_ICON = { clear: '🌙' };
 
-export async function fetchWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    + '&current=temperature_2m,weather_code,is_day&timezone=Asia%2FSeoul';
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('weather HTTP ' + r.status);
-  const j = await r.json();
-  return {
-    temp: j.current?.temperature_2m,
-    kind: weatherKind(j.current?.weather_code),
-    isDay: j.current?.is_day !== 0,
-  };
+// Game weather (no live data): every 30 minutes the same roll for everyone,
+// from the clock: clear 80 %, rain 10 %, snow 10 %.
+export const WEATHER_SLOT_MS = 30 * 60 * 1000;
+export const WEATHER_ODDS = [['clear', 0.8], ['rain', 0.1], ['snow', 0.1]];
+export function rolledWeather(nowMs = Date.now()) {
+  let h = Math.floor(nowMs / WEATHER_SLOT_MS) >>> 0; // integer hash of the slot
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+  const u = ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  let acc = 0;
+  for (const [kind, p] of WEATHER_ODDS) { acc += p; if (u < acc) return kind; }
+  return 'clear';
 }
 
 // Hour of day (fractional) in a fixed UTC offset.
@@ -89,14 +90,10 @@ export class WeatherSystem {
     setInterval(() => this.refresh(), REFRESH_MS);
   }
 
-  async refresh() {
-    try {
-      const w = await fetchWeather(this.region.center.lat, this.region.center.lon);
-      this.temp = w.temp;
-      if (!this.forced) this.setKind(w.kind);
-    } catch (err) {
-      console.warn('Weather unavailable:', err.message);
-    }
+  refresh() {
+    const kind = this.forced || rolledWeather();
+    if (kind !== this.kind || !this.started) this.setKind(kind);
+    this.started = true;
     this.onUpdate?.(this.status());
   }
 
@@ -138,9 +135,10 @@ export class WeatherSystem {
       this.scene.fog.near = near;
       this.scene.fog.far = this.kind === 'fog' ? 160 : 420 - overcast * 120;
     }
-    this.sun.intensity = (0.25 + 1.25 * d) * (1 - overcast * 0.65);
-    this.hemi.intensity = 0.6 + 0.9 * d;
-    this.ambient.intensity = 0.55 + 0.35 * d;
+    // Bright and cheerful: strong fill light so colours stay vivid.
+    this.sun.intensity = (0.4 + 1.6 * d) * (1 - overcast * 0.5);
+    this.hemi.intensity = 0.85 + 1.15 * d;
+    this.ambient.intensity = 0.75 + 0.5 * d;
 
     if (this.particles) {
       // Drops move on the GPU: only two numbers change per frame, so rain

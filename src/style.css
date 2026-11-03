@@ -1147,3 +1147,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .counter-text strong { font-size: 14px; }
 .counter-text small { color: var(--ink-soft); }
 .counter-buy.primary { flex: none; width: auto; min-width: 64px; margin: 0; padding: 8px 12px; font-size: 15px; }
+
+/* The KST label on the clock chip: dropped on narrow phones to save room. */
+#weather .kst { font-size: 0.75em; opacity: 0.7; }
+@media (max-width: 480px) { #weather .kst { display: none; } }

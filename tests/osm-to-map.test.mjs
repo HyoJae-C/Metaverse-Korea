@@ -58,3 +58,13 @@ test('tags apartments and low-rise homes', async () => {
   assert.equal(buildingKind({ building: 'residential' }), 'villa');
   assert.equal(buildingKind({ building: 'yes' }), null);
 });
+
+test('rolled weather: same for everyone in a 30-minute slot, about 80/10/10', async () => {
+  const { rolledWeather, WEATHER_SLOT_MS } = await import('../src/core/weather.js');
+  const t0 = 1_800_000_000_000;
+  assert.equal(rolledWeather(t0), rolledWeather(t0 + 1000));
+  const n = { clear: 0, rain: 0, snow: 0 };
+  for (let i = 0; i < 5000; i++) n[rolledWeather(t0 + i * WEATHER_SLOT_MS)]++;
+  assert.ok(n.clear > 3700 && n.clear < 4300, JSON.stringify(n));
+  assert.ok(n.rain > 350 && n.rain < 650 && n.snow > 350 && n.snow < 650, JSON.stringify(n));
+});
