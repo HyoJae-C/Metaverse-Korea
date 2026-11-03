@@ -1,15 +1,31 @@
-// Hair salon (미용실) and cosmetic clinic (성형외과) menus, without DOM so the
-// prices can be unit-tested. Each option is a look field; null means "the
-// model's own" (free to go back to). You pay once for each field you change.
+// Beauty shops, without DOM so the prices can be unit-tested: the hair salon
+// (미용실), two cosmetic clinics (성형외과), the colour lens shop (렌즈마을)
+// and the lip tint shop (꽃잎 립). Each option is a look field; null means
+// "the model's own" (free to go back to). You pay once for each field you
+// change. Choices: a fixed list of ids (labels in i18n), or a palette.
+import { HAIR_STYLES } from '../data/appearance.js';
+
+export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
+  { key: 'hairStyle', choices: HAIR_STYLES, price: 40, label: 'hair' },
   { key: 'dye', palette: 'dye', price: 30 },
 ];
 export const CLINIC = [
-  { key: 'eyes', palette: 'eyes', price: 25 }, // colour lenses
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50, label: 'eyeShape' },
   { key: 'tone', palette: 'skin', price: 35 }, // skin tone
   { key: 'small', toggle: true, price: 45 }, // a smaller head
 ];
-export const MENUS = { salon: SALON, clinic: CLINIC };
+export const CLINIC2 = [
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50, label: 'eyeShape' },
+];
+export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25 }]; // colour lenses
+export const LIPS = [{ key: 'lip', palette: 'lip', price: 15 }]; // lip tint
+export const MENUS = { salon: SALON, clinic: CLINIC, clinic2: CLINIC2, lens: LENS, lips: LIPS };
+export const BEAUTY_SHOPS = Object.keys(MENUS);
+// Clinics: you lie on a bed and go through to surgery; the others: a chair in
+// front of a big mirror.
+export const isClinic = (kind) => kind === 'clinic' || kind === 'clinic2';
+export const BEAUTY_ICON = { salon: '💇', clinic: '✨', clinic2: '✨', lens: '👁️', lips: '💄' };
 
 const val = (look, key) => look?.[key] ?? null;
 export function beautyCost(menu, from, to) {

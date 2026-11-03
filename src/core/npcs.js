@@ -58,8 +58,8 @@ export function placeLabels(o, camera, width, height) {
   }
 }
 
-export function makeNpc(layer, name) {
-  const ch = createCharacter(randomLook());
+export function makeNpc(layer, name, look = randomLook()) {
+  const ch = createCharacter(look);
   const tag = document.createElement('div');
   tag.className = 'nametag npc';
   tag.textContent = name;

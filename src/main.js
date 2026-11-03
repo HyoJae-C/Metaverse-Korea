@@ -22,7 +22,7 @@ import { InfoUI, showInfoHint } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { GymUI } from './ui/gym-ui.js';
-import { GymLog } from './core/gym.js';
+import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
 import { BookUI } from './ui/book-ui.js';
 import { AcademyUI } from './ui/academy-ui.js';
@@ -61,6 +61,8 @@ import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
 import { pickDelivery, timeFor, deliveryPay } from './core/delivery.js';
 import { BeautyUI } from './ui/beauty-ui.js';
+import { CounterUI, heldFor } from './ui/counter-ui.js';
+import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
@@ -386,7 +388,7 @@ for (const sc of region.screens || []) {
   if (!wall) continue;
   const w = Math.min(sc.w || 20, wall.len - 2), h = w / 2; // the canvas is 2:1
   const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
-  const ws = new WallScreen({ w, h });
+  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null });
   ws.mount(wall, y, h);
   scene.add(ws.root);
   wallScreens.push(ws);
@@ -401,7 +403,7 @@ if (square) {
   const lang = getLanguage();
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
-  })));
+  })), { label: '게임 관련 및 기타 문의', icon: '📷', handle: 'Instagram @hyojae.t' });
   // Raised decks (the station) you can walk under, but a tall screen can't
   // stand there.
   const overhead = new CollisionMap(map.buildings.filter((b) => b.m > 2).map((b) => ({ ...b, m: 0 })));
@@ -416,7 +418,17 @@ if (square) {
     return true;
   };
   let spot = null;
-  for (const r of [9, 11, 13, 15, 18, 22]) {
+  // Best: at the far (north) end of the paved square, on its long axis,
+  // facing down the whole square, so everyone arriving sees it.
+  const pv0 = square.zone.pave;
+  if (pv0) {
+    const ax = Math.sin(pv0.ry || 0), az = Math.cos(pv0.ry || 0);
+    for (let d = pv0.l / 2 - 5; d > 8 && !spot; d -= 1.5) {
+      const x = square.x - ax * d, z = square.z - az * d;
+      if (fits(x, z, face(x, z))) spot = [x, z];
+    }
+  }
+  if (!spot) for (const r of [9, 11, 13, 15, 18, 22]) {
     for (let k = 0; k < 32 && !spot; k++) {
       const a = Math.atan2(-7, -7) + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 16);
       const x = square.x + Math.sin(a) * r, z = square.z + Math.cos(a) * r;
@@ -1122,6 +1134,29 @@ const shop = new ShopUI({
   },
 });
 
+// Ordering at the counter: META COFFEE and the bar from the clerk, a club
+// from its bartender. Coffee refills your stamina when you sip it.
+const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir' };
+function orderAtCounter(p) {
+  const st = interior?.store;
+  if (!st || !(st.takeaway || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
+  const who = st.category === 'club' ? barkeep : clerk;
+  return who && Math.hypot(p.x - who.ch.root.position.x, p.z - who.ch.root.position.z) < (st.category === 'club' ? 3.4 : 2.6) ? who : null; // (over the club's wide bar)
+}
+const counterUi = new CounterUI({
+  root: $('counter-panel'),
+  onBuy: (store, product, coins) => {
+    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!wallet.spend(coins)) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    recordFood(store, product, true);
+    const who = store.category === 'club' ? barkeep : clerk;
+    who && say(who, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
+    shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
+    return true;
+  },
+});
+
 // My pet: adopt at the pet shop (coins) or by code, then take it for walks.
 // It poops now and then on the street; clean up within CLEAN_SECONDS or a
 // fine notice (과태료) takes FINE coins. The poop is then cleared by the city.
@@ -1255,7 +1290,7 @@ function setHeld(h) {
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h;
   $('stow-btn').hidden = !h;
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : '☕';
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
@@ -1269,6 +1304,7 @@ function drink() {
   }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
+  if (held.kind === 'coffee') { stamina.v = 1; stamina.tired = false; stamina.rest = 0; } // coffee: full stamina at once
   const sips = held.sips - 1;
   const food = held.kind === 'food';
   if (sips <= 0) { setHeld(null); shop.toast(food ? L(DINE_TEXT.finished) : t('coffee.finished')); }
@@ -1314,7 +1350,7 @@ function describeEntry(e) {
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
-  return { emoji: '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
+  return { emoji: e.kind === 'glass' ? '🍹' : '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
 }
 function stowHeld() {
   if (!held) return;
@@ -1379,6 +1415,17 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 
 const interiorCache = new Map();
 let clerk = null; // the clerk NPC in the shop you're in
+let trainer = null; // the gym's trainer NPC
+let barkeep = null; // a club's bartender
+const TRAINER_LOOK = { model: 'barbarian', hair: 'black', skin: 'warm', shirt: 'charcoal' };
+let trainerLine = -1;
+function talkToTrainer() {
+  trainerLine = nextTrainerLine(trainerLine);
+  const [ko, rom, en] = TRAINER_LINES[trainerLine];
+  trainer.ch.play(trainerLine % 2 ? 'cheer' : 'clap');
+  say(trainer, $('labels'), [ko, rom, en]);
+  me.root.rotation.y = Math.atan2(trainer.ch.root.position.x - me.root.position.x, trainer.ch.root.position.z - me.root.position.z);
+}
 // Bike share: rent at a station, get off anywhere (the bike goes back by itself).
 let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 a seat in someone's vehicle, 4 car (driving)
 let tandemDriver = null; // id of the driver whose vehicle I'm riding in
@@ -1547,6 +1594,20 @@ function enterStore(item) {
     built.scene.add(built.clerkNpc.ch.root);
   }
   clerk = built.clerkNpc || null;
+  if (built.trainer && !built.trainerNpc) {
+    built.trainerNpc = makeNpc($('labels'), L(TRAINER_NAME), TRAINER_LOOK);
+    built.trainerNpc.ch.root.position.set(built.trainer.x, 0, built.trainer.z);
+    built.trainerNpc.ch.root.rotation.y = built.trainer.ry;
+    built.scene.add(built.trainerNpc.ch.root);
+  }
+  trainer = built.trainerNpc || null;
+  if (built.barkeep && !built.barkeepNpc) {
+    built.barkeepNpc = makeNpc($('labels'), L(BARTENDER));
+    built.barkeepNpc.ch.root.position.set(built.barkeep.x, 0, built.barkeep.z);
+    built.barkeepNpc.ch.root.rotation.y = built.barkeep.ry;
+    built.scene.add(built.barkeepNpc.ch.root);
+  }
+  barkeep = built.barkeepNpc || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -1583,8 +1644,11 @@ function leaveStore() {
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; }
+  for (const o of [clerk, trainer, barkeep]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   clerk = null;
+  trainer = null;
+  barkeep = null;
+  if (counterUi.open) counterUi.close();
   npcs.setVisible(true);
   sfx.doorbell();
   const it = interior.front;
@@ -2478,9 +2542,9 @@ const photoUi = new PhotoUI({
   onShoot: (on) => {
     document.body.classList.toggle('shooting', on);
     if (on) {
-      const st = interior?.stations?.photo?.[0];
+      const st = nearestBooth(me.root.position);
       photoCam = { ...cam };
-      if (st) { me.root.position.set(st.x, 0, st.z); lastSent = null; }
+      if (st) { const [x, z] = boothSpot(st); me.root.position.set(x, 0, z); lastSent = null; }
       Object.assign(cam, { yaw: 0, dist: 3.0, pitch: 0.06 });
       me.root.rotation.y = 0; // face the camera
     } else if (photoCam) { Object.assign(cam, photoCam); photoCam = null; }
@@ -2488,6 +2552,25 @@ const photoUi = new PhotoUI({
   countdown: (text) => { $('photo-count').hidden = !text; $('photo-count').textContent = text; },
 });
 let photoCam = null;
+// The booth you're at, and a free spot in it: friends already posing keep
+// their place, and you stand beside them instead of on top of them.
+function nearestBooth(p) {
+  let best = null, bd = Infinity;
+  for (const st of interior?.stations?.photo || []) { const d = Math.hypot(p.x - st.x, p.z - st.z); if (d < bd) { bd = d; best = st; } }
+  return best;
+}
+function boothSpot(st) {
+  const others2 = others.list();
+  const spots = st.solo ? [0] : [0, -0.6, 0.6, -1.0, 1.0];
+  let best = spots[0], room = -1;
+  for (const o of spots) {
+    const x = st.x + o, z = st.z;
+    const near = Math.min(Infinity, ...others2.map((q) => Math.hypot(q.x - x, q.z - z)));
+    if (near > 0.55) return [x, z]; // nobody here
+    if (near > room) { room = near; best = o; }
+  }
+  return [st.x + best, st.z];
+}
 const clawUi = new ClawUI({
   root: $('claw-panel'),
   wallet,
@@ -2558,13 +2641,14 @@ const saunaUi = new SaunaUI({
 });
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).
-const GYM_POSE = { treadmill: 'run', dumbbell: 'clap', pushup: 'pushup', situp: 'situp' };
+const GYM_POSE = { treadmill: 'run', dumbbell: 'clap', pushup: 'pushup', situp: 'situp', pullup: 'pullup' };
 let dancing = false;
 const DANCE_TEXT = {
   start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },
   stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
 };
 function currentActivity() {
+  if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing) return 'dance';
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
   if (fishingUi.open) return 'fish';
@@ -2691,36 +2775,160 @@ function updateDelivery() {
   $('delivery-chip').textContent = `🛵 ${delivery.name} · ${Math.ceil(left)}s`;
 }
 $('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancelHint')); };
-// Hair salon (dye) and cosmetic clinic (eye colour, skin tone, smaller head):
-// try options on with a close-up camera, pay coins to keep them.
+// Beauty shops (core/beauty.js): sit in front of the big mirror (salon,
+// lens shop, lip shop) or lie on a clinic bed, try options on, pay coins to
+// keep them. A clinic sends you through surgery first.
 const beautyUi = new BeautyUI({
   root: $('beauty-panel'),
   onPreview: (look) => setLook(look),
   onSave: (look, cost) => {
     if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
-    myLook = { ...look };
-    saveLook(myLook);
-    setLook(myLook);
+    if (cost && isClinic(beautyUi.kind) && interior?.stations?.surgery) { setLook(myLook); endBeautyCam(); startSurgery(look); return true; }
+    keepLook(look);
     endBeautyCam();
     me.play('cheer');
-    shop.toast(t('beauty.saved'));
-    clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
     return true;
   },
   onCancel: () => { setLook(myLook); endBeautyCam(); },
 });
+function keepLook(look) {
+  myLook = { ...look };
+  saveLook(myLook);
+  setLook(myLook);
+  shop.toast(t('beauty.saved'));
+  clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
+}
 let beautyCam = null;
 function openBeauty(kind) {
   clerk?.ch.wave();
   beautyCam = { ...cam };
-  Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
-  me.root.rotation.y = cam.yaw; // turn to face the camera (a mirror)
+  if (seated?.lie) { // lying on the bed: look down at the face from the head end
+    Object.assign(cam, { yaw: seated.ry + Math.PI, dist: 2.2, pitch: 1.0 });
+    beautyCam.look = [seated.x, 0.75, seated.z - 0.35];
+  } else if (seated?.mirrorZ != null) { // in the chair: over the shoulder, into the mirror
+    // A little to the side, so your head doesn't hide its own reflection.
+    Object.assign(cam, { yaw: seated.ry + Math.PI + 0.5, dist: 1.9, pitch: 0.28 });
+    beautyCam.look = [seated.x + Math.sin(cam.yaw) * 0.5, 0.55, seated.mirrorZ]; // (mirrors are on the back wall)
+  } else {
+    Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
+    me.root.rotation.y = cam.yaw; // turn to face the camera
+  }
   lastSent = null;
   beautyUi.show(kind, myLook);
 }
 function endBeautyCam() {
-  if (beautyCam) Object.assign(cam, beautyCam);
+  if (beautyCam) { const { look, ...c } = beautyCam; Object.assign(cam, c); }
   beautyCam = null;
+}
+
+// Surgery (clinics): the gurney rolls you into the operating room with the
+// doctor and three nurses, they operate, the lights go out for a moment, and
+// you walk out with the new look.
+const SURGERY = { roll: 4, operate: 4.2, dark: 1.2, after: 2.6 };
+let surgery = null;
+const STAFF_LOOKS = [
+  { model: 'basic', shirt: 'cream', pants: 'navy', hair: 'black', skin: 'fair', face: 'glasses' }, // the doctor
+  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'espresso', skin: 'light', head: 'cap' },
+  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'chestnut', skin: 'warm', head: 'cap' },
+  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'black', skin: 'tan', head: 'cap' },
+];
+function makeGurney() {
+  const g = new THREE.Group();
+  const m = (c) => new THREE.MeshLambertMaterial({ color: c });
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 2), m('#e8f1f4'));
+  top.position.y = 0.55;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 1.8), m('#9ca9af'));
+  frame.position.y = 0.2;
+  g.add(top, frame);
+  for (const [x, z] of [[-0.3, -0.8], [0.3, -0.8], [-0.3, 0.8], [0.3, 0.8]]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 6), m('#9ca9af'));
+    leg.position.set(x, 0.3, z);
+    const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), m('#2b2b2e'));
+    wheel.position.set(x, 0.06, z);
+    g.add(leg, wheel);
+  }
+  return g;
+}
+function startSurgery(look) {
+  const st = interior.stations.surgery;
+  const p = me.root.position;
+  const path = [[p.x, p.z], [p.x, st.door[1] + 1.2], [st.door[0], st.door[1] + 1.2], [st.door[0], st.door[1] - 1.2], [st.table[0], st.door[1] - 1.2], [st.table[0], st.table[1]]];
+  const gurney = makeGurney();
+  gurney.position.set(p.x, 0, p.z);
+  interior.scene.add(gurney);
+  const staff = STAFF_LOOKS.map((l) => { const c = createCharacter(l); interior.scene.add(c.root); return c; });
+  const lens = [];
+  for (let i = 1; i < path.length; i++) lens.push(Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+  surgery = { t: 0, look, st, gurney, staff, path, lens, total: lens.reduce((a, b) => a + b, 0), swapped: false, ry: 0 };
+  seated = { surgery: true, lie: true, x: p.x, z: p.z, ry: 0, stand: st.door };
+  Object.assign(cam, { dist: 7.5, pitch: 0.75 });
+  shop.toast(t('surgery.go'));
+  say(staff[0], $('labels'), ['걱정 마세요!', 'geokjeong maseyo!', t('surgery.doctor')]);
+}
+function surgeryAt(s, d) { // a point along the path, and the heading there
+  let k = 0;
+  while (k < s.lens.length - 1 && d > s.lens[k]) { d -= s.lens[k]; k++; }
+  const [ax, az] = s.path[k], [bx, bz] = s.path[k + 1];
+  const u = s.lens[k] ? Math.min(1, d / s.lens[k]) : 1;
+  return [ax + (bx - ax) * u, az + (bz - az) * u, Math.atan2(bx - ax, bz - az)];
+}
+const blackout = (() => { const el = document.createElement('div'); el.className = 'blackout'; document.body.append(el); return el; })();
+function updateSurgery(dt) {
+  const s = surgery;
+  if (!s) return;
+  s.t += dt;
+  const p = me.root.position;
+  const { roll, operate, dark, after } = SURGERY;
+  if (s.t < roll) { // rolling along, the staff walking beside the gurney
+    const e = s.t / roll;
+    const [x, z, ry] = surgeryAt(s, s.total * (e < 0.5 ? 2 * e * e : 1 - 2 * (1 - e) * (1 - e)));
+    s.ry += Math.atan2(Math.sin(ry - s.ry), Math.cos(ry - s.ry)) * Math.min(1, dt * 6);
+    s.gurney.position.set(x, 0, z);
+    s.gurney.rotation.y = s.ry;
+    p.set(x, 0, z);
+    me.root.rotation.y = s.ry + Math.PI; // head first
+    const c = Math.cos(s.ry), sn = Math.sin(s.ry);
+    [[0, 1.3], [0.75, 0.3], [-0.75, 0.3], [0, -1.35]].forEach(([ox, oz], i) => {
+      const r = s.staff[i].root;
+      r.position.set(x + ox * c + oz * sn, 0, z - ox * sn + oz * c);
+      r.rotation.y = s.ry;
+      s.staff[i].animate(dt, 0.35, false);
+    });
+  } else if (s.t < roll + operate + dark) { // on the table, the team around it
+    const [tx, tz] = s.st.table;
+    s.gurney.visible = false;
+    p.set(tx, s.st.tableTop - s.st.bedTop, tz);
+    me.root.rotation.y = 0;
+    s.st.staff.forEach(([x, z, ry], i) => {
+      const r = s.staff[i].root;
+      r.position.set(x, 0, z);
+      r.rotation.y = ry;
+      s.staff[i].animate(dt, 0, false);
+    });
+    s.beat = (s.beat || 0) - dt;
+    if (s.beat <= 0) { s.beat = 0.9; s.staff.forEach((c, i) => c.play(i === 0 ? 'clap' : ['shrug', 'clap', 'bow'][(Math.random() * 3) | 0])); }
+    const tDark = s.t - roll - operate; // the lights go out
+    blackout.style.opacity = tDark > 0 ? String(Math.min(1, tDark / 0.35)) : '0';
+    if (tDark > dark * 0.5 && !s.swapped) { s.swapped = true; myLook = { ...s.look }; saveLook(myLook); setLook(myLook); }
+  } else if (!s.done) { // lights back on: surgery complete, walk out of the OR
+    s.done = true;
+    blackout.style.opacity = '0';
+    seated = null;
+    p.set(s.st.door[0], 0, s.st.door[1] + 0.6);
+    cam.yaw = Math.PI * 0.15; cam.dist = 3.2; cam.pitch = 0.25;
+    me.root.rotation.y = cam.yaw; // turn round to show the new face
+    me.play('cheer');
+    $('photo-count').hidden = false;
+    $('photo-count').textContent = '✨ ' + t('surgery.done');
+    say(s.staff[0], $('labels'), ['수술 완료!', 'susul wallyo!', t('surgery.done')]);
+    sfx.pop?.();
+  } else if (s.t > roll + operate + dark + after) {
+    $('photo-count').hidden = true;
+    interior?.scene.remove(s.gurney);
+    for (const c of s.staff) c.root.removeFromParent();
+    surgery = null;
+    shop.toast(t('beauty.saved'));
+  } else s.staff.forEach((c) => c.animate(dt, 0, false));
 }
 const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 function openFishing() {
@@ -3077,6 +3285,7 @@ function standUp() {
   if (!seated) return;
   me.root.position.set(seated.stand[0], 0, seated.stand[1]);
   if (seated.sauna && saunaUi.open) saunaUi.close();
+  if (seated.beauty && beautyUi.open) beautyUi.close();
   seated = null;
   sendTimer = 0;
 }
@@ -3121,7 +3330,9 @@ function updateAction(p, tSec) {
   } else {
     const ex = interior.exit;
     const seat = !seated && nearestSeat(p);
-    if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
+    if (surgery) {
+      next = null;
+    } else if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
@@ -3137,6 +3348,11 @@ function updateAction(p, tSec) {
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
+    } else if (seated?.surgery) {
+      next = null; // lie still: the team is at work
+    } else if (seated?.beauty) {
+      const kind = seated.beauty;
+      next = { key: 'beauty:' + kind, label: BEAUTY_ICON[kind] + ' ' + t(kind + '.open'), run: () => openBeauty(kind) };
     } else if (seated?.sauna) {
       next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
     } else if (seated && isDining(interior.store)) {
@@ -3146,14 +3362,20 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
-      next = { key: 'photo', label: '📸 ' + t('game.photo'), run: () => photoUi.show() };
+      const kind = interior.store.workshop;
+      next = { key: 'photo', label: '📸 ' + t(kind === 'photo1' ? 'game.photo1' : kind === 'photobw' ? 'game.photobw' : 'game.photo'), run: () => photoUi.show(kind) };
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (nearStation(p, 'books', 1.5)) {
       next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
-      next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => gymUi.show(st.kind) };
+      next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => {
+        if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; cam.yaw = Math.PI * 0.8; } // hang under the bar
+        gymUi.show(st.kind);
+      } };
+    } else if (trainer && Math.hypot(p.x - trainer.ch.root.position.x, p.z - trainer.ch.root.position.z) < 2.4) {
+      next = { key: 'trainer', label: '💬 ' + t('gym.talk', { name: L(TRAINER_NAME) }), run: () => talkToTrainer() };
     } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
       const st = interior.stations.sauna.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2);
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
@@ -3161,6 +3383,9 @@ function updateAction(p, tSec) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (interior.duck && Math.hypot(p.x - interior.duck.x, p.z - interior.duck.z) < 2.4) {
       next = { key: 'duck', label: '🦆 ' + t('game.duck'), run: () => duckUi.show() };
+    } else if (orderAtCounter(p)) {
+      const who = orderAtCounter(p);
+      next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
     } else if (interior.store.workshop === 'pocha' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'pocha', label: '🌶️ ' + t('game.pocha'), run: () => { clerk.ch.wave(); pochaUi.show(); } };
     } else if (interior.tv && Math.hypot(p.x - interior.tv.x, p.z - interior.tv.z) < 2.6) {
@@ -3169,9 +3394,9 @@ function updateAction(p, tSec) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
     } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
       next = { key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() };
-    } else if ((interior.store.workshop === 'salon' || interior.store.workshop === 'clinic') && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      const kind = interior.store.workshop;
-      next = { key: kind, label: (kind === 'salon' ? '💇 ' : '✨ ') + t(kind + '.open'), run: () => openBeauty(kind) };
+    } else if (BEAUTY_SHOPS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      const hint = t(isClinic(interior.store.workshop) ? 'beauty.lie' : 'beauty.sit');
+      next = { key: 'beauty-hint', label: '💬 ' + hint, run: () => { clerk.ch.wave(); shop.toast(hint); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
@@ -3343,7 +3568,8 @@ renderer.setAnimationLoop(() => {
   }
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   updateRide(dt);
-  if (seated && mag > 0.3) standUp();
+  if (seated && !seated.surgery && mag > 0.3) standUp();
+  updateSurgery(dt);
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
   me.activity(currentActivity());
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
@@ -3424,7 +3650,8 @@ renderer.setAnimationLoop(() => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
-  camera.lookAt(p.x, p.y + (hatDraft || beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  if (beautyCam?.look) camera.lookAt(...beautyCam.look); // the mirror, or the face on the bed
+  else camera.lookAt(p.x, p.y + (hatDraft || beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -3515,7 +3742,10 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   if (mode === 'street') npcs.update(dt, camera, w, h);
-  else if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+  else {
+    if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+    for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+  }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
     else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';

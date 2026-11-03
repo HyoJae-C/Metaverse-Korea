@@ -11,7 +11,7 @@ export default {
     basic: { url: 'models/kaykit2/rogue.glb', emoji: '👕', shirt: { hue: [95, 185], sat: 0.25 } },
     rogue: { url: 'models/kaykit2/rogue.glb', emoji: '🧝' },
     // The hooded rogue with its green outfit repainted black: our ninja.
-    hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🥷', recolor: { hue: [95, 185], sat: 0.25, to: '#2e2a36' } },
+    hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🥷', recolor: { hue: [95, 185], sat: 0.25, to: '#2e2a36' }, hood: true },
     mage: { url: 'models/kaykit2/mage.glb', emoji: '🧙' },
     knight: { url: 'models/kaykit2/knight.glb', emoji: '💂' },
     barbarian: { url: 'models/kaykit2/barbarian.glb', emoji: '🧔' },
@@ -29,6 +29,7 @@ export default {
   scale: 0.57, // model is ~2.2 units tall; our characters are ~1.25 m
   sit: { y: -0.02, z: 0.24 }, // offset on a café chair (metres, after scale)
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
+  lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
   // On a bike the sitting clip is bent a little more: lean forward, head down,
   // arms reaching for the handlebar (radians added to the clip, per bone).
   ridePose: { spine: [0.35, 0, 0], head: [0.15, 0, 0], upperarml: [-1.25, 0, 0], upperarmr: [-1.25, 0, 0], lowerarml: [-0.25, 0, 0], lowerarmr: [-0.25, 0, 0] },

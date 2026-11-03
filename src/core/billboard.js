@@ -87,8 +87,33 @@ export function drawTitleCard(g, t) {
   g.globalAlpha = 1;
 }
 
+// A strip fixed along the bottom of every slide: who to contact about the
+// game ({ label, handle }).
+const STRIP = 92;
+function drawContact(g, c) {
+  g.fillStyle = 'rgba(16, 14, 24, 0.82)';
+  g.fillRect(0, H - STRIP, W, STRIP);
+  g.fillStyle = 'rgba(255,255,255,0.25)';
+  g.fillRect(0, H - STRIP, W, 3);
+  g.textBaseline = 'middle';
+  const y = H - STRIP / 2 + 2;
+  g.textAlign = 'left';
+  g.fillStyle = '#ffffff';
+  g.font = `800 38px ${FONT}`;
+  g.fillText(c.label, 34, y);
+  g.textAlign = 'right';
+  g.font = `900 42px ${FONT}`;
+  g.fillStyle = '#ffd36e';
+  const hw = g.measureText(c.handle).width;
+  g.fillText(c.handle, W - 34, y);
+  g.font = '40px system-ui, sans-serif';
+  g.fillText(c.icon || '📷', W - 46 - hw, y);
+}
+
 export class Billboard {
-  constructor(slides) {
+  // contact: { label, handle, icon } shown on every slide (optional).
+  constructor(slides, contact = null) {
+    this.contact = contact;
     // The animated title card first, then again after every three ads.
     const card = { anim: drawTitleCard, seconds: 10 };
     this.slides = [card];
@@ -130,6 +155,7 @@ export class Billboard {
     const s = this.slides[this.i];
     if (s.anim) s.anim(this.g, this.t);
     else drawSlide(this.g, s);
+    if (this.contact) drawContact(this.g, this.contact);
     this.tex.needsUpdate = true;
   }
 

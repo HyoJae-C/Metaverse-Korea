@@ -4,7 +4,7 @@
 //
 // Entries are small plain objects:
 //   { kind: 'book', book: '<id>' }
-//   { kind: 'coffee', sips: 1-5, name: '<drink name>' }
+//   { kind: 'coffee' | 'glass' | 'food', sips: 1-5, name: '<drink name>' }
 //   { kind: 'umbrella' }
 
 export const BAG_KEY = 'mk.bag';
@@ -17,7 +17,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5 } = {}) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
-  if (e.kind === 'coffee' || e.kind === 'food') {
+  if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
     return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;
   }

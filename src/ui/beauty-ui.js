@@ -2,7 +2,7 @@
 // Pick options and see them on your character right away; Save pays and
 // keeps them, Cancel puts your look back.
 import { t } from '../core/i18n.js';
-import { MENUS, beautyCost } from '../core/beauty.js';
+import { MENUS, BEAUTY_ICON, beautyCost } from '../core/beauty.js';
 import { PALETTES } from '../data/appearance.js';
 
 const el = (tag, cls, text) => {
@@ -42,18 +42,19 @@ export class BeautyUI {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = () => this.close();
-    this.root.replaceChildren(x, el('h3', null, (this.kind === 'salon' ? '💇 ' : '✨ ') + t(this.kind + '.title')), el('p', 'order-hint', t(this.kind + '.howTo')));
+    this.root.replaceChildren(x, el('h3', null, BEAUTY_ICON[this.kind] + ' ' + t(this.kind + '.title')), el('p', 'order-hint', t(this.kind + '.howTo')));
     for (const o of this.menu) {
       const sec = el('div', 'beauty-sec');
       sec.append(el('strong', null, `${t('beauty.' + o.key)} · 🪙 ${o.price}`));
       const row = el('div', 'beauty-row');
-      const opts = o.toggle ? [false, true] : [null, ...Object.keys(PALETTES[o.palette])];
+      const opts = o.toggle ? [false, true] : [null, ...(o.choices || Object.keys(PALETTES[o.palette]))];
       for (const v of opts) {
         const b = el('button', 'beauty-opt');
         const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] ?? null;
         b.setAttribute('aria-pressed', String(cur === v));
         if (o.toggle) b.textContent = t(v ? 'beauty.smallOn' : 'beauty.smallOff');
         else if (v === null) { b.textContent = t('beauty.own'); b.classList.add('own'); }
+        else if (o.choices) { b.textContent = t(o.label + '.' + v); b.classList.add('word'); }
         else { b.classList.add('swatch'); b.style.background = hex(PALETTES[o.palette][v]); b.title = v; b.setAttribute('aria-label', v); }
         b.onclick = () => {
           this.draft = { ...this.draft, [o.key]: v };

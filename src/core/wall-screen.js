@@ -1,7 +1,7 @@
 // A big screen (대형 전광판) fixed to a building's wall, high up. For now it
 // shows a "coming soon" card; ads can be drawn on the same canvas later.
 //
-// Placed from region.json "screens": [{ at: [x, z], w, h, y }]: the screen
+// Placed from region.json "screens": [{ at: [x, z], w, h, y, image }]: the screen
 // goes on the building wall nearest `at`, facing out of the building.
 import * as THREE from 'three';
 
@@ -64,8 +64,24 @@ function drawSoon(g, t) {
   for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 2);
 }
 
+// A picture (e.g. the game's link-preview image), cover-fitted, with a slow
+// light sweep and LED lines so it reads as a screen.
+function drawImage(g, img, t) {
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const k = Math.max(W / img.width, H / img.height);
+  const w = img.width * k, h = img.height * k;
+  g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  const sx = ((t * 160) % (W + 400)) - 200;
+  const sweep = g.createLinearGradient(sx - 120, 0, sx + 120, 0);
+  sweep.addColorStop(0, 'rgba(255,255,255,0)'); sweep.addColorStop(0.5, 'rgba(255,255,255,0.12)'); sweep.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = sweep; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(0,0,0,0.14)';
+  for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 2);
+}
+
 export class WallScreen {
-  constructor({ w = 20, h = 10 } = {}) {
+  // image: a picture to show (url), instead of the "coming soon" card.
+  constructor({ w = 20, h = 10, image = null } = {}) {
     this.t = 0;
     this.frameT = 0;
     this.canvas = document.createElement('canvas');
@@ -74,6 +90,12 @@ export class WallScreen {
     this.tex = new THREE.CanvasTexture(this.canvas);
     this.tex.colorSpace = THREE.SRGBColorSpace;
     drawSoon(this.g, 0);
+    this.img = null;
+    if (image && typeof Image !== 'undefined') {
+      const img = new Image();
+      img.onload = () => { this.img = img; };
+      img.src = image;
+    }
     const root = new THREE.Group();
     const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, h + 0.8, 0.4), new THREE.MeshLambertMaterial({ color: 0x1f1f24 }));
     frame.position.z = 0.2;
@@ -94,7 +116,8 @@ export class WallScreen {
     this.frameT += dt;
     if (this.frameT < 1 / 15) return; // 15 fps is plenty for a sign
     this.frameT = 0;
-    drawSoon(this.g, this.t);
+    if (this.img) drawImage(this.g, this.img, this.t);
+    else drawSoon(this.g, this.t);
     this.tex.needsUpdate = true;
   }
 }
