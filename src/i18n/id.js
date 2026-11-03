@@ -402,6 +402,7 @@ export const ID = {
   'look.none': 'Tidak ada',
   'start.nickname': 'Nama panggilanmu',
   "name.rule": "⚠️ Nama dengan kata kasar, diskriminatif, seksual, atau yang membuat orang lain tidak nyaman bisa diganti otomatis tanpa peringatan atau langsung dihapus.",
+  "name.taken": "Nama itu sudah dipakai orang lain. Coba nama lain.",
   "name.confirm": "Ganti nama jadi “{name}”?",
   "name.confirmGo": "Ya, ganti",
   "name.cancel": "Batal",

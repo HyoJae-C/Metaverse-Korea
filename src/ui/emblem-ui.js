@@ -149,17 +149,17 @@ export class EmblemUI {
     const actions = el('div', 'order-actions');
     if (!this.confirming) this.root.append(el('p', 'order-hint name-rule', t('name.rule')));
     const go = el('button', 'primary', tt('rename', { n: RENAME_COST }));
-    go.onclick = () => {
+    go.onclick = async () => {
       // A warning first: the name rules, and are you sure?
       if (!this.confirming) {
         this.confirming = input.value.trim() || ' ';
         this.render();
         return;
       }
-      const r = this.rename(input.value);
+      const r = await this.rename(input.value);
       this.confirming = null;
       if (r === 'ok') { this.draft = null; this.render('🎉 ' + tt('renamed', { name: this.name })); return; }
-      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : tt(r === 'same' ? 'same' : 'empty'));
+      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : r === 'taken' ? t('name.taken') : tt(r === 'same' ? 'same' : 'empty'));
     };
     input.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) go.click(); };
     if (this.confirming) {

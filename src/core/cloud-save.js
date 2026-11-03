@@ -122,6 +122,20 @@ export class CloudSave {
     addEventListener('pagehide', tick);
   }
 
+  // Reserve a player name for this account (supabase/003_names.sql):
+  // 'ok', 'taken', or 'offline' when the server can't be asked (no Supabase,
+  // not signed in, or the table isn't set up yet), in which case the game
+  // goes ahead without the check.
+  async claimName(name, timeoutMs = 4000) {
+    if (!this.client || !this.user) return 'offline';
+    try {
+      const call = this.client.rpc('claim_name', { new_name: String(name).slice(0, 16) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error) return 'offline';
+      return data === 'taken' ? 'taken' : data === 'ok' ? 'ok' : 'offline';
+    } catch { return 'offline'; }
+  }
+
   // The Google address once linked (or null).
   get email() { return this.user?.identities?.find((i) => i.provider === 'google')?.identity_data?.email || this.user?.email || null; }
 

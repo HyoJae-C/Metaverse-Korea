@@ -283,13 +283,30 @@ const zonesPromise = optionalJson('zones.json');
 const bikesPromise = optionalJson('bikes.json');
 
 await new Promise((resolve) => {
-  $('start-btn').onclick = resolve;
+  // A new name must not be in use by someone else (checked on the server
+  // when it is set up; see supabase/003_names.sql).
+  let busy = false;
+  const go = async () => {
+    if (busy) return;
+    const name = cleanName($('nickname').value).trim();
+    if (!isReturning() && name) {
+      busy = true;
+      $('start-btn').disabled = true;
+      const r = await cloud.claimName(name);
+      busy = false;
+      $('start-btn').disabled = false;
+      if (r === 'taken') { $('status').textContent = t('name.taken'); $('nickname').focus(); return; }
+    }
+    resolve();
+  };
+  $('start-btn').onclick = go;
   // Note: a handler body, not an expression. Returning false from an
   // on-handler cancels the key, which blocked typing in this field.
   $('nickname').onkeydown = (e) => {
-    if (e.key === 'Enter' && !e.isComposing) resolve();
+    if (e.key === 'Enter' && !e.isComposing) go();
   };
 });
+$('status').textContent = '';
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
 // Costumes are bought now, so only the name is locked.
@@ -909,12 +926,15 @@ async function joinRoom(room, roomScene, area = null) {
   }
 }
 // Rename at the name tag workshop: costs coins; others see it after a quick
-// rejoin of the room we are in. Returns 'ok', 'same', 'empty' or 'poor'.
-function renameMe(raw) {
+// rejoin of the room we are in. Resolves to 'ok', 'same', 'empty', 'poor'
+// or 'taken' (someone else uses that name).
+async function renameMe(raw) {
   const clean = cleanName(raw).trim();
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
+  if (wallet.coins < RENAME_COST) return 'poor';
+  if (await cloud.claimName(clean) === 'taken') return 'taken';
   if (!wallet.spend(RENAME_COST)) return 'poor';
   nickname = next;
   identity = { ...identity, name: clean, nameAt: Date.now() };
