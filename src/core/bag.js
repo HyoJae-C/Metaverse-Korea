@@ -17,6 +17,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5 } = {}) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
+  if (e.kind === 'gift') return { kind: 'gift', sips: 1, name: String(e.name || '').slice(0, 40), icon: String(e.icon || '🛍️').slice(0, 4) }; // a shop purchase
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
     return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;

@@ -50,7 +50,7 @@
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
         <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
-        <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
+        <button class="tool" id="cart-btn" hidden><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
         <svg class="guide-arrow" id="guide-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg>
@@ -181,13 +181,14 @@
           </div>
         </div>
         <p id="product-desc"></p>
+        <p class="product-how" id="product-how" hidden></p>
         <div class="product-actions">
           <button class="chip" id="product-try">🪞 <span data-i18n="shop.tryOn"></span></button>
           <button class="primary" id="product-adopt" hidden></button>
           <button class="primary" id="product-take" hidden>☕ <span data-i18n="coffee.take"></span></button>
-          <button class="primary" id="product-add">🛍️ <span data-i18n="shop.addToCart"></span></button>
+          <button class="primary" id="product-add"></button>
         </div>
-        <p class="fine" data-i18n="shop.virtual"></p>
+        <p class="fine" id="product-note"></p>
       </div>
       <button class="chip revert" id="revert-look" hidden>↩️ <span data-i18n="shop.revert"></span></button>
       <div class="toast" id="toast" hidden></div>

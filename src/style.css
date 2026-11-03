@@ -482,6 +482,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   transition: background 0.3s;
 }
 .stamina.tired .stamina-fill { background: #ff6f5b; }
+.stamina.boost .stamina-fill { background: linear-gradient(90deg, #ffd36e, #ffb02e); box-shadow: 0 0 8px #ffd36e; }
 
 /* Text chat */
 .bubble.chat {
@@ -1173,3 +1174,5 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .name-confirm { margin-top: 10px; padding: 12px; border-radius: 14px; background: #fff4ec; box-shadow: 0 0 0 2px #ffc7a8 inset; text-align: left; }
 .name-confirm strong { display: block; font-size: 15px; }
 .name-confirm p { margin: 6px 0 10px; font-size: 12.5px; color: #b4553f; line-height: 1.45; }
+.product-how { margin: 8px 0 0; padding: 8px 10px; border-radius: 12px; background: #fff4e0; font-size: 13px; font-weight: 700; color: #7a5a2e; }
+.product-how.soon { background: #eef1f6; color: #4a5568; }

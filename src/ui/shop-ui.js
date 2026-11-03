@@ -8,6 +8,26 @@ const UMB = {
   have: { en: 'You have one', ko: '이미 있어요', ja: '持っています', zh: '已经有了' },
 };
 const L = (o) => localName(o, getLanguage());
+// Everything is priced in game coins (1 coin per ₩1,000 of the sample
+// price, rounded up). How you get a thing depends on the shop.
+const HOW = {
+  table: { en: '🍽️ Sit at a table and order from the menu.', ko: '🍽️ 자리에 앉아서 메뉴판으로 주문해요.', ja: '🍽️ 席に座ってメニューから注文してね。', zh: '🍽️ 找个座位坐下，用菜单点餐。', es: '🍽️ Siéntate a una mesa y pide desde la carta.', ar: '🍽️ اجلس إلى طاولة واطلب من القائمة.', id: '🍽️ Duduk di meja dan pesan dari menu.' },
+  counter: { en: '🧾 Order from the staff at the counter.', ko: '🧾 카운터 점원에게 주문해요.', ja: '🧾 カウンターの店員に注文してね。', zh: '🧾 到柜台向店员点单。', es: '🧾 Pide al personal en el mostrador.', ar: '🧾 اطلب من الموظف عند المنضدة.', id: '🧾 Pesan ke staf di kasir.' },
+  soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', id: '🚧 Segera hadir: toko sedang disiapkan.' },
+  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', id: 'Beli' },
+  note: { en: 'Paid with game coins only. No real money.', ko: '게임 코인으로만 사요. 실제 결제는 없어요.', ja: 'ゲーム内コインだけで買えます。実際の支払いはありません。', zh: '只用游戏硬币购买，不会真实付款。', es: 'Solo con monedas del juego. Sin dinero real.', ar: 'بعملات اللعبة فقط. لا أموال حقيقية.', id: 'Hanya pakai koin game. Tanpa uang sungguhan.' },
+};
+// Clothes and hats are not for sale for now.
+export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat');
+// How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
+// 'soon' (fashion, for now) or 'buy' (take it home in a shopping bag).
+export function howToGet(store) {
+  if (comingSoon(store)) return 'soon';
+  if (store?.category === 'restaurant') return 'table';
+  if (store?.takeaway || ['cafe', 'bar', 'club'].includes(store?.category)) return 'counter';
+  return 'buy';
+}
+export const coinsFor = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 1000));
 const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
@@ -16,7 +36,7 @@ const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog'
 const CART_KEY = 'mk.cart';
 
 export function formatPrice(krw) {
-  return '₩' + Math.round(krw).toLocaleString('en-US');
+  return '🪙 ' + coinsFor(krw);
 }
 
 export class Cart {
@@ -49,8 +69,9 @@ export class Cart {
 }
 
 export class ShopUI {
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing });
+  // onBuy(product, coins): pay and hold it (shops that sell to take home).
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -122,14 +143,22 @@ export class ShopUI {
       ab.onclick = () => { this.onOutfit?.(product); this.openProduct(product); };
       this.$('product-price').textContent = `🪙 ${outfit.price}`;
     }
-    const take = !!this.store?.takeaway;
-    this.$('product-take').hidden = !take;
-    this.$('product-take').onclick = () => { this.onTake?.(product); this.closeProduct(); };
-    this.$('product-add').hidden = take || adopt || product.umbrella || outfit;
-    this.$('product-add').onclick = () => {
-      this.cart.add(this.store, product);
-      if (!this.onAdd?.(product)) this.toast(t('shop.added')); // onAdd may show its own toast
-    };
+    // No cart: restaurants take orders at the table, cafés at the counter,
+    // fashion is coming soon, and other shops sell for coins to carry home.
+    const how = howToGet(this.store);
+    this.$('product-take').hidden = true;
+    const special = adopt || product.umbrella || outfit;
+    const howEl = this.$('product-how');
+    howEl.hidden = special && how !== 'soon' || how === 'buy';
+    howEl.textContent = L(HOW[how] || HOW.soon);
+    howEl.classList.toggle('soon', how === 'soon');
+    if (how === 'soon') { ab.hidden = true; this.$('product-price').textContent = ''; } // not for sale yet
+    const coins = coinsFor(product.price);
+    const add = this.$('product-add');
+    add.hidden = special || how !== 'buy';
+    add.textContent = `🪙 ${coins} · ${L(HOW.buy)}`;
+    add.onclick = () => { if (this.onBuy?.(product, coins)) this.closeProduct(); };
+    this.$('product-note').textContent = L(HOW.note);
   }
 
   closeProduct() {

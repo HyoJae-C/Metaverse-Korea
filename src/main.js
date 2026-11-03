@@ -714,14 +714,27 @@ const dismissHelp = () => {
 };
 $('help-ok').onclick = dismissHelp;
 // Running stamina (see config.stamina*).
-const stamina = { v: 1, rest: 0, tired: false };
+const stamina = { v: 1, rest: 0, tired: false, boostUntil: 0 };
+// Drinks: any non-alcoholic drink keeps your stamina full for a few minutes;
+// a drink from the bar or a club makes you a little slower for a while.
+const DRINK_BOOST_MS = 3 * 60 * 1000;
+const TIPSY_MS = 2 * 60 * 1000, TIPSY_SPEED = 0.85;
+let tipsyUntil = 0;
+const drinkSpeed = () => (performance.now() < tipsyUntil ? TIPSY_SPEED : 1);
+const DRINK_TEXT = {
+  boost: { en: '⚡ Energy up! You can run without getting tired for 3 minutes.', ko: '⚡ 기운이 났어요! 3분 동안 지치지 않고 달릴 수 있어요.', ja: '⚡ 元気が出た！3分間、疲れずに走れます。', zh: '⚡ 精神满满！3分钟内奔跑不会累。', es: '⚡ ¡Con energía! Puedes correr sin cansarte durante 3 minutos.', ar: '⚡ نشاط! يمكنك الركض دون تعب لمدة 3 دقائق.', id: '⚡ Semangat! Kamu bisa lari tanpa lelah selama 3 menit.' },
+  tipsy: { en: '🥴 A little tipsy… you walk a bit slower for 2 minutes.', ko: '🥴 살짝 취했어요… 2분 동안 조금 느리게 걸어요.', ja: '🥴 ちょっと酔ったかも…2分間、少しゆっくり歩きます。', zh: '🥴 有点微醺……2分钟内走得慢一点。', es: '🥴 Un poco achispado… caminas algo más lento durante 2 minutos.', ar: '🥴 ثمل قليلًا… تمشي أبطأ قليلًا لمدة دقيقتين.', id: '🥴 Agak mabuk… kamu jalan sedikit lebih lambat selama 2 menit.' },
+};
 const staminaEl = document.getElementById('stamina');
 const staminaFill = document.getElementById('stamina-fill');
 function updateStamina(dt, wantsRun, moving) {
   if (config.staminaUnlimited) return wantsRun;
+  const boosted = performance.now() < stamina.boostUntil;
+  if (boosted) { stamina.v = 1; stamina.tired = false; } // a drink: no tiring for a while
+  staminaEl.classList.toggle('boost', boosted);
   const running = wantsRun && moving && !stamina.tired;
   if (running) {
-    stamina.v = Math.max(0, stamina.v - dt / config.staminaMax);
+    if (!boosted) stamina.v = Math.max(0, stamina.v - dt / config.staminaMax);
     stamina.rest = 0;
     if (stamina.v === 0) stamina.tired = true;
   } else {
@@ -729,7 +742,7 @@ function updateStamina(dt, wantsRun, moving) {
     if (stamina.rest > config.staminaDelay) stamina.v = Math.min(1, stamina.v + (dt * config.staminaRegen) / config.staminaMax);
     if (stamina.tired && stamina.v >= config.staminaResume) stamina.tired = false;
   }
-  staminaEl.hidden = stamina.v >= 1;
+  staminaEl.hidden = stamina.v >= 1 && !boosted; // while boosted: a gold bar
   staminaFill.style.transform = `scaleX(${stamina.v})`;
   staminaEl.classList.toggle('tired', stamina.tired);
   return running;
@@ -1155,6 +1168,19 @@ const shop = new ShopUI({
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.outfit),
   wearing: () => myLook.model,
+  // Shops that sell things to take home: pay coins, carry it in your hand
+  // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
+  onBuy: (product, coins) => {
+    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!wallet.spend(coins)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    refreshWallet();
+    const kind = goodsKind(product);
+    setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (kind !== 'gift') recordFood(shop.store, product, true);
+    clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+    shop.toast(fmt(L(GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
+    return true;
+  },
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -1164,12 +1190,20 @@ const shop = new ShopUI({
   },
 });
 
+// What a bought thing becomes in your hand.
+const SHOP_ICON = { notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
+const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
+const GOODS_TEXT = {
+  got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', id: 'Kamu membeli {name}!' },
+  gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', id: 'Tas belanja · {name}' },
+  soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', id: '🚧 Segera hadir: toko sedang disiapkan.' },
+};
 // Ordering at the counter: META COFFEE and the bar from the clerk, a club
 // from its bartender. Coffee refills your stamina when you sip it.
 const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', id: 'Pesan' };
 function orderAtCounter(p) {
   const st = interior?.store;
-  if (!st || !(st.takeaway || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
+  if (!st || !(st.takeaway || st.category === 'cafe' || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
   const who = st.category === 'club' ? barkeep : clerk;
   return who && Math.hypot(p.x - who.ch.root.position.x, p.z - who.ch.root.position.z) < (st.category === 'club' ? 3.4 : 2.6) ? who : null; // (over the club's wide bar)
 }
@@ -1282,7 +1316,7 @@ let questFolded = (() => { try { return localStorage.getItem(QUEST_FOLD_KEY) ===
 // Restaurant texts (see the restaurant section below).
 const DINE_TEXT = {
   menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
-  note: { en: 'Order here and your food comes to the table. Paid in coins: 1 coin per ₩1,000.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로, 1,000원당 1코인이에요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで、1,000ウォンにつき1コイン。', zh: '在这里点餐，菜会送到桌上。用硬币支付，每1,000韩元1枚。' },
+  note: { en: 'Order here and your food comes to the table. Paid in coins.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로 해요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで。', zh: '在这里点餐，菜会送到桌上。用硬币支付。', es: 'Pide aquí y la comida llega a tu mesa. Se paga con monedas.', ar: 'اطلب هنا وسيصل طعامك إلى الطاولة. الدفع بالعملات.', id: 'Pesan di sini dan makanan diantar ke meja. Bayar pakai koin.' },
   here: { en: 'Eat here', ko: '먹고 가기', ja: '店内で', zh: '堂食' },
   togo: { en: 'To go', ko: '포장', ja: '持ち帰り', zh: '打包' },
   ordered: { en: 'Ordered {name}! It will be right out.', ko: '{name} 주문 완료! 곧 나와요.', ja: '{name}を注文しました！すぐお持ちします。', zh: '已点{name}！马上就好。' },
@@ -1308,6 +1342,7 @@ let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
+    if (h?.kind === 'gift') return { kind: 'gift', sips: 1, name: String(h.name || '').slice(0, 40), icon: String(h.icon || '🛍️').slice(0, 4) };
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
 })();
@@ -1318,7 +1353,7 @@ function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
-  $('drink-btn').hidden = !h;
+  $('drink-btn').hidden = !h || h.kind === 'gift'; // a shopping bag is just carried
   $('stow-btn').hidden = !h;
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
@@ -1334,7 +1369,15 @@ function drink() {
   }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
-  if (held.kind === 'coffee') { stamina.v = 1; stamina.tired = false; stamina.rest = 0; } // coffee: full stamina at once
+  if (held.kind === 'coffee') { // any non-alcoholic drink: full stamina, and it stays full for 3 minutes
+    const fresh = performance.now() > stamina.boostUntil - DRINK_BOOST_MS + 5000;
+    stamina.v = 1; stamina.tired = false; stamina.rest = 0;
+    stamina.boostUntil = performance.now() + DRINK_BOOST_MS;
+    if (fresh) setTimeout(() => shop.toast(L(DRINK_TEXT.boost)), 1700);
+  } else if (held.kind === 'glass') { // a drink from the bar or a club: a little slower for a while
+    if (performance.now() > tipsyUntil) setTimeout(() => shop.toast(L(DRINK_TEXT.tipsy)), 1700);
+    tipsyUntil = performance.now() + TIPSY_MS;
+  }
   const sips = held.sips - 1;
   const food = held.kind === 'food';
   if (sips <= 0) { setHeld(null); shop.toast(food ? L(DINE_TEXT.finished) : t('coffee.finished')); }
@@ -1380,6 +1423,7 @@ function describeEntry(e) {
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
+  if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
   return { emoji: e.kind === 'glass' ? '🍹' : '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
 }
 function stowHeld() {
@@ -2134,7 +2178,7 @@ function openMenu() {
     const text = el('span', 'lp-text');
     text.append(el('strong', null, `${foodIcon(pr.model)} ${localName(pr.name, lang)}`));
     if (pr.desc) text.append(el('small', null, localName(pr.desc, lang)));
-    text.append(el('small', 'menu-price', `₩${Number(pr.price).toLocaleString()} → 🪙 ${coinPrice(pr.price)}`));
+    text.append(el('small', 'menu-price', `🪙 ${coinPrice(pr.price)}`));
     const btns = el('span', 'bike-btns');
     const here = el('button', 'chip', '🍽️ ' + L(DINE_TEXT.here));
     here.onclick = () => orderFood(pr, false);
@@ -3594,7 +3638,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => openHatWorkshop() };
+      next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); shop.toast(L(GOODS_TEXT.soon)); say(clerk, $('labels'), ['곧 열어요!', 'got yeoreoyo!', L(GOODS_TEXT.soon)]); } }; // fashion: coming soon
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[interior?.store.category === 'library' ? 'library' : interior?.store.category === 'school' ? 'school' : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
@@ -3758,7 +3802,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost * drinkSpeed()) * Math.min(1, mag) * wxSpeed();
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -3782,7 +3826,7 @@ renderer.setAnimationLoop(() => {
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost * drinkSpeed()) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
