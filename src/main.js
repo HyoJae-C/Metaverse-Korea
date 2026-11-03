@@ -2129,7 +2129,19 @@ function runAction() {
   if (!action) return;
   action.run();
 }
-$('action-btn').onclick = runAction;
+// A tap with a second finger while the first one is still on the joystick
+// gives no click on phones (only the first finger's touch makes clicks), so
+// "enter", "hop on" and the rest did nothing for people walking up to a shop
+// with their thumb still down. Act on the touch itself; mouse and keyboard
+// keep the plain click.
+let actionTouchAt = -1e9;
+$('action-btn').addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  e.preventDefault();
+  actionTouchAt = performance.now();
+  runAction();
+});
+$('action-btn').onclick = () => { if (performance.now() - actionTouchAt > 700) runAction(); };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement) return;
   if (e.code === 'KeyE' || e.code === 'Enter') runAction();

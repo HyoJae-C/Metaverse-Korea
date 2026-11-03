@@ -171,7 +171,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .help .chip { background: var(--mint); box-shadow: none; flex: none; }
 @media (pointer: coarse) {
   /* Phones: above the joystick and action button, clear of the street card. */
-  .help { bottom: calc(env(safe-area-inset-bottom) + 250px); }
+  .help { bottom: calc(env(safe-area-inset-bottom) + 268px); }
 }
 
 .credit {
@@ -276,6 +276,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   background: var(--accent); color: #fff; font-weight: 800; font-size: 17px;
   border-radius: 999px; padding: 13px 22px; box-shadow: 0 5px 0 var(--accent-dark);
   white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
+  z-index: 4; /* above the hint cards, so they never swallow the tap (sheets stay above) */
 }
 .action:active { transform: translate(-50%, 3px); box-shadow: 0 2px 0 var(--accent-dark); }
 .store-banner {
