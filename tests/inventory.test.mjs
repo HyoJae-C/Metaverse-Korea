@@ -2,13 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isMasterCode, redeemCode, parseTandem, tandemMsg, ITEMS } from '../src/core/inventory.js';
 
-test('master code is checked by hash', async () => {
-  assert.equal(await isMasterCode('seongsu-dev-2026'), true);
-  assert.equal(await isMasterCode(' seongsu-dev-2026 '), true);
-  assert.equal(await isMasterCode('seongsu-dev-2025'), false);
-  assert.deepEqual(await redeemCode('seongsu-dev-2026'), Object.keys(ITEMS));
-  assert.deepEqual(await redeemCode('seongsu-car-2026'), ['car']);
+// Developer codes are kept out of the repository (only their hashes are in
+// the code), so the tests only check that unknown codes unlock nothing.
+test('unknown developer codes unlock nothing', async () => {
+  assert.equal(await isMasterCode('nope'), false);
   assert.equal(await redeemCode('nope'), null);
+  assert.equal(await redeemCode('EVENTSTART1'), null);
+  assert.ok(Object.keys(ITEMS).length > 0);
 });
 
 test('tandem messages round-trip and reject junk', () => {

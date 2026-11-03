@@ -1,6 +1,7 @@
 // Walking route along real streets: a graph built from the map's road
 // polylines (OSM ways share their junction nodes), A* search, and a line of
-// glowing dots on the ground that flows towards the destination.
+// blue arrows on the ground pointing the way, with a pulse flowing towards
+// the destination.
 import * as THREE from 'three';
 
 export class RoadGraph {
@@ -130,14 +131,26 @@ class MinHeap {
   }
 }
 
-const SPACING = 2.0; // metres between dots
+const SPACING = 2.0; // metres between arrows
 const MAX_DOTS = 900;
 
-// Dots on the ground along a polyline. Call set() with a new polyline and
-// update() every frame for the flowing animation.
+// An arrow lying flat, pointing along -z (heading 0 = towards -z).
+function arrowGeometry() {
+  const s = new THREE.Shape();
+  for (const [x, y] of [[0, 0.62], [0.46, 0.14], [0.17, 0.14], [0.17, -0.42], [-0.17, -0.42], [-0.17, 0.14], [-0.46, 0.14]]) {
+    if (x === 0 && y === 0.62) s.moveTo(x, y); else s.lineTo(x, y);
+  }
+  s.closePath();
+  return new THREE.ShapeGeometry(s).rotateX(-Math.PI / 2);
+}
+// Heading (rotation about y) that points an arrow along (dx, dz).
+export const arrowHeading = (dx, dz) => Math.atan2(-dx, -dz);
+
+// Arrows on the ground along a polyline, each pointing the way. Call set()
+// with a new polyline and update() every frame for the flowing animation.
 export class RouteLine {
-  constructor(scene, color = 0xff6f5b) {
-    const geo = new THREE.CircleGeometry(0.5, 16).rotateX(-Math.PI / 2);
+  constructor(scene, color = 0x2f7df6) {
+    const geo = arrowGeometry();
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false });
     this.mesh = new THREE.InstancedMesh(geo, mat, MAX_DOTS);
     this.mesh.count = 0;
@@ -145,7 +158,9 @@ export class RouteLine {
     this.mesh.renderOrder = 2;
     scene.add(this.mesh);
     this.points = [];
+    this.heads = [];
     this.t = 0;
+    this._y = new THREE.Vector3(0, 1, 0);
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
     this._s = new THREE.Vector3();
@@ -154,6 +169,7 @@ export class RouteLine {
 
   set(poly) {
     this.points = [];
+    this.heads = [];
     let carry = 0;
     for (let i = 1; i < poly.length && this.points.length < MAX_DOTS; i++) {
       const [ax, az] = poly[i - 1], [bx, bz] = poly[i];
@@ -162,6 +178,7 @@ export class RouteLine {
       for (; d < len && this.points.length < MAX_DOTS; d += SPACING) {
         const f = d / len;
         this.points.push(ax + (bx - ax) * f, az + (bz - az) * f);
+        this.heads.push(arrowHeading(bx - ax, bz - az));
       }
       carry = d - len;
     }
@@ -170,6 +187,7 @@ export class RouteLine {
 
   clear() {
     this.points = [];
+    this.heads = [];
     this.mesh.count = 0;
   }
 
@@ -185,6 +203,7 @@ export class RouteLine {
       const s = (0.7 + 0.45 * wave) * fade;
       this._p.set(this.points[i * 2], 0.12, this.points[i * 2 + 1]); // above roads (max 0.06)
       this._s.set(s, 1, s);
+      this._q.setFromAxisAngle(this._y, this.heads[i]);
       this._m.compose(this._p, this._q, this._s);
       this.mesh.setMatrixAt(i, this._m);
     }

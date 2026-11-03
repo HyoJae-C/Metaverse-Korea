@@ -32,6 +32,8 @@ export default {
   // On a bike the sitting clip is bent a little more: lean forward, head down,
   // arms reaching for the handlebar (radians added to the clip, per bone).
   ridePose: { spine: [0.35, 0, 0], head: [0.15, 0, 0], upperarml: [-1.25, 0, 0], upperarmr: [-1.25, 0, 0], lowerarml: [-0.25, 0, 0], lowerarmr: [-0.25, 0, 0] },
+  // Driving a car: sit upright, only the arms reach forward to the wheel.
+  carPose: { upperarml: [-1.15, 0, 0], upperarmr: [-1.15, 0, 0], lowerarml: [-0.35, 0, 0], lowerarmr: [-0.35, 0, 0] },
   hide: /Cape|Hat|Helmet|Visor|Quiver/i, // any leftover non-body meshes
   bones: { head: 'head', chest: 'chest' },
   // Cells of the 8×4 colour atlas (column, row from the top) that the hair
