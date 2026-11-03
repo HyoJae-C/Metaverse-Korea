@@ -17,6 +17,17 @@ export function weatherKind(code) {
   return 'clear';
 }
 
+// Rain and snow slow you down a little outdoors: on foot and by bike.
+// An umbrella keeps the rain off, so walking is only a touch slower.
+export const WET = new Set(['rain', 'storm', 'snow']);
+export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
+  if (!WET.has(kind)) return 1;
+  const snow = kind === 'snow';
+  if (bike) return snow ? 0.85 : 0.9;
+  if (umbrella) return snow ? 0.94 : 0.96;
+  return snow ? 0.88 : 0.92;
+}
+
 export const WEATHER_ICON = { clear: '☀️', cloudy: '☁️', fog: '🌫️', rain: '🌧️', snow: '❄️', storm: '⛈️' };
 const NIGHT_ICON = { clear: '🌙' };
 

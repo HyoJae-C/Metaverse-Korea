@@ -127,6 +127,20 @@ export function productModel(kind, color) {
       add(new THREE.CylinderGeometry(0.08, 0.06, 0.2, 14), 0, 0.1);
       add(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 14), 0, 0.21, 0, mat('#ffffff'));
       break;
+    case 'samgak': // triangle rice ball in its wrapper, a seaweed band
+      add(new THREE.CylinderGeometry(0.13, 0.13, 0.07, 3).rotateX(Math.PI / 2), 0, 0.11, 0, mat('#fbfaf6'));
+      add(new THREE.BoxGeometry(0.08, 0.1, 0.075), 0, 0.06);
+      break;
+    case 'milk': // a round little milk pot with a foil top
+      add(new THREE.SphereGeometry(0.09, 12, 10).scale(1, 1.15, 1), 0, 0.1);
+      add(new THREE.CylinderGeometry(0.035, 0.045, 0.06, 10), 0, 0.22);
+      add(new THREE.CylinderGeometry(0.037, 0.037, 0.01, 10), 0, 0.255, 0, mat('#d9dde2'));
+      break;
+    case 'umbrella': // a furled umbrella standing on its tip
+      add(new THREE.ConeGeometry(0.06, 0.5, 8).rotateX(Math.PI), 0, 0.3);
+      add(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 6), 0, 0.6, 0, mat('#d9dde2'));
+      add(new THREE.TorusGeometry(0.04, 0.012, 6, 10, Math.PI), 0.04, 0.66, 0, mat('#3b2a22'));
+      break;
     case 'scarf':
       add(new THREE.TorusGeometry(0.13, 0.05, 8, 16), 0, 0.2).rotation.x = Math.PI / 2;
       break;

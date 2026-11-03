@@ -84,6 +84,14 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   user-select: text; -webkit-user-select: text;
 }
 .name-field input:focus { outline: none; border-color: var(--mint); }
+.name-field input[readonly] { background: var(--cream, #f6f1e7); color: var(--ink-soft); }
+.acc:disabled { opacity: 0.35; cursor: not-allowed; }
+.look-lock { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
+#step-login { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; }
+#step-login[hidden] { display: none; }
+.login-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink); }
+.login-note { margin: 0; font-size: 12px; color: var(--ink-soft); }
+#login-google, #login-guest { width: 100%; }
 .region { margin: 16px 0 10px; font-weight: 700; }
 .primary {
   width: 100%;

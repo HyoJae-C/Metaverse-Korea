@@ -2,7 +2,12 @@
 import { ITEMS } from '../core/inventory.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-const MODEL_ICON = { 'pet:dog': '🐶', 'pet:cat': '🐱',
+const UMB = {
+  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
+  have: { en: 'You have one', ko: '이미 있어요', ja: '持っています', zh: '已经有了' },
+};
+const L = (o) => o[getLanguage()] || o.en;
+const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙',
@@ -43,8 +48,8 @@ export class Cart {
 }
 
 export class ShopUI {
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -98,10 +103,19 @@ export class ShopUI {
       ab.onclick = () => this.onAdopt?.(product);
       this.$('product-price').textContent = `🪙 ${adopt.price}`;
     }
+    // Convenience store umbrella: bought with coins, kept for rainy days.
+    if (product.umbrella) {
+      const mine = this.hasUmbrella?.();
+      ab.hidden = false;
+      ab.disabled = !!mine;
+      ab.textContent = mine ? '☂️ ' + L(UMB.have) : `🪙 ${product.coins} · ${L(UMB.buy)}`;
+      ab.onclick = () => this.onUmbrella?.(product);
+      this.$('product-price').textContent = `🪙 ${product.coins}`;
+    } else ab.disabled = false;
     const take = !!this.store?.takeaway;
     this.$('product-take').hidden = !take;
     this.$('product-take').onclick = () => { this.onTake?.(product); this.closeProduct(); };
-    this.$('product-add').hidden = take || adopt;
+    this.$('product-add').hidden = take || adopt || product.umbrella;
     this.$('product-add').onclick = () => {
       this.cart.add(this.store, product);
       if (!this.onAdd?.(product)) this.toast(t('shop.added')); // onAdd may show its own toast

@@ -31,7 +31,7 @@ import { RemotePlayers, showBubble } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
-import { WeatherSystem } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { Storefronts } from './core/storefronts.js';
 import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
@@ -40,7 +40,7 @@ import { ShopUI, Cart } from './ui/shop-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
-import { PochaUI, L } from './ui/pocha-ui.js';
+import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
@@ -68,6 +68,8 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
+import { readIdentity, commitIdentity, saveIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
+import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -135,14 +137,64 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
   return r.json();
 }));
 
-// Step 1: language → step 2: character + nickname.
+// Step 1: language → (guests: Google or guest?) → character + nickname.
+// Name and character stay fixed for a while once chosen (core/identity.js).
 let editor = null;
-$('next-btn').onclick = () => {
+let identity = readIdentity();
+const ID_TEXT = {
+  model: { en: 'You can change your character in {n} day(s).', ko: '캐릭터는 {n}일 뒤에 바꿀 수 있어요.', ja: 'キャラクターは{n}日後に変更できます。', zh: '{n}天后才能更换角色。' },
+  name: { en: 'You can change your name in {n} day(s).', ko: '이름은 {n}일 뒤에 바꿀 수 있어요.', ja: '名前は{n}日後に変更できます。', zh: '{n}天后才能改名。' },
+  first: { en: 'Once you start, your name and character stay for {n} days.', ko: '시작하면 이름과 캐릭터는 {n}일 동안 바꿀 수 없어요.', ja: '始めると、名前とキャラクターは{n}日間変更できません。', zh: '开始后，名字和角色{n}天内不能更改。' },
+};
+const LOGIN_TEXT = {
+  title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
+  text: {
+    en: 'Sign in with Google and your coins, items and home are saved to your account, so you can carry on from any device. As a guest, everything stays in this browser only and can be lost if you clear it or switch devices.',
+    ko: '구글로 로그인하면 코인, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 이 브라우저에만 저장돼서, 기록을 지우거나 기기를 바꾸면 사라질 수 있어요.',
+    ja: 'Googleでログインすると、コイン・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストはこのブラウザだけに保存され、履歴を消したり端末を変えると消えることがあります。',
+    zh: '用 Google 登录后，金币、物品和家会保存到账号，在任何设备上都能继续。游客只保存在这个浏览器里，清除记录或换设备可能会丢失。',
+  },
+  google: { en: 'Sign in with Google (saves)', ko: '구글로 로그인 (저장돼요)', ja: 'Googleでログイン（保存されます）', zh: '用 Google 登录（会保存）' },
+  guest: { en: 'Play as a guest', ko: '게스트로 시작', ja: 'ゲストで始める', zh: '以游客身份开始' },
+  note: { en: 'You can link Google later in ⚙️ Settings too.', ko: '나중에 ⚙️ 설정에서도 구글을 연결할 수 있어요.', ja: 'あとで ⚙️ 設定からもGoogleを連携できます。', zh: '之后也可以在 ⚙️ 设置里绑定 Google。' },
+};
+const askLogin = () => (cloud.status === 'cloud' && cloud.guest) || new URLSearchParams(location.search).has('login');
+function showLook() {
   $('step-lang').hidden = true;
+  $('step-login').hidden = true;
   $('step-look').hidden = false;
+  const lockM = modelLocked(identity) ? identity.model : null;
   editor ||= createLookEditor({
-    optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random'),
+    optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random'), lockModel: lockM,
   });
+  const notes = [];
+  if (lockM) notes.push(fmt(L(ID_TEXT.model), { n: daysLeft(identity.modelAt) }));
+  if (nameLocked(identity)) {
+    $('nickname').value = identity.name;
+    $('nickname').readOnly = true;
+    notes.push(fmt(L(ID_TEXT.name), { n: daysLeft(identity.nameAt) }));
+  }
+  if (!notes.length) notes.push(fmt(L(ID_TEXT.first), { n: LOCK_DAYS }));
+  $('look-lock').textContent = '🔒 ' + notes.join(' ');
+  $('look-lock').hidden = false;
+}
+$('next-btn').onclick = () => {
+  if (!askLogin()) { showLook(); return; }
+  $('step-lang').hidden = true;
+  $('step-login').hidden = false;
+  $('login-title').textContent = L(LOGIN_TEXT.title);
+  $('login-text').textContent = L(LOGIN_TEXT.text);
+  $('login-google').textContent = 'G  ' + L(LOGIN_TEXT.google);
+  $('login-guest').textContent = L(LOGIN_TEXT.guest);
+  $('login-note').textContent = L(LOGIN_TEXT.note);
+};
+$('login-guest').onclick = showLook;
+$('login-google').onclick = async () => {
+  // Progress on this device: link it to Google (same save). A fresh start:
+  // sign in, which also finds an account used on another device.
+  const fresh = !localStorage.getItem('mk.name') && !localStorage.getItem('mk.wallet');
+  const err = fresh ? await cloud.signInGoogle() : await cloud.linkGoogle();
+  if (err) $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady');
 };
 $('back-btn').onclick = () => {
   $('step-look').hidden = true;
@@ -163,7 +215,12 @@ await new Promise((resolve) => {
     if (e.key === 'Enter' && !e.isComposing) resolve();
   };
 });
-let myLook = editor.getLook();
+// Locked name/character win over whatever the form says; a new choice
+// starts its lock.
+identity = commitIdentity(identity, { name: $('nickname').value, model: editor.getLook().model });
+saveIdentity(identity);
+let myLook = modelLocked(identity) ? { ...editor.getLook(), model: identity.model } : editor.getLook();
+if (nameLocked(identity)) $('nickname').value = identity.name;
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
 const recentLines = new Map(); // id -> their last chat lines, attached to a report
@@ -222,6 +279,15 @@ const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
+// Walking routes around walls (built the first time a route is needed).
+let navGrid = null;
+const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1 }));
+setTimeout(nav, 3000); // build it while the player looks around
+function planRoute(ax, az, bx, bz) {
+  const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
+  if (poly.length < 2) poly.push([bx, bz]);
+  return poly;
+}
 const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
@@ -243,13 +309,16 @@ if (square) {
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
   })));
+  // Raised decks (the station) you can walk under, but a tall screen can't
+  // stand there.
+  const overhead = new CollisionMap(map.buildings.filter((b) => b.m > 2).map((b) => ({ ...b, m: 0 })));
   // Find a spot where the whole screen (9.5 m wide) stands clear of
   // buildings, facing the square: nearest first, starting from the old spot.
   const fits = (x, z, ry) => {
     const ax = Math.cos(ry), az = -Math.sin(ry); // along the screen
     const nx = Math.sin(ry), nz = Math.cos(ry); // its facing
     for (let u = -5.4; u <= 5.4; u += 0.6) for (const v of [-0.8, 0.8]) {
-      if (collision.blocked(x + ax * u + nx * v, z + az * u + nz * v, 0.3)) return false;
+      if (collision.blocked(x + ax * u + nx * v, z + az * u + nz * v, 0.3) || overhead.blocked(x + ax * u + nx * v, z + az * u + nz * v, 0.8)) return false;
     }
     return true;
   };
@@ -807,6 +876,8 @@ const shop = new ShopUI({
   onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
+  hasUmbrella: () => hasUmbrella,
+  onUmbrella: (product) => buyUmbrella(product),
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -940,6 +1011,27 @@ function drink() {
   else { setHeld({ ...held, sips }); shop.toast(t('coffee.sip', { n: sips })); }
 }
 $('drink-btn').onclick = drink;
+
+// Umbrella (from the convenience store): opens by itself outdoors on foot
+// when it rains or snows. Rain and snow slow walking and cycling a little;
+// the umbrella keeps most of that off on foot.
+const UMB_KEY = 'mk.umbrella';
+let hasUmbrella = (() => { try { return !!localStorage.getItem(UMB_KEY); } catch { return false; } })();
+const umbrellaOpen = () => hasUmbrella && mode === 'street' && !riding && !seated && WET.has(weather.kind);
+const wxSpeed = () => (mode !== 'street' || riding === 4 ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
+const UMB_TEXT = {
+  bought: { en: 'Got an umbrella! It opens by itself when it rains or snows. ☂️', ko: '우산을 샀어요! 비나 눈이 오면 저절로 펴져요. ☂️', ja: '傘を買いました！雨や雪の日は自動で開きます。☂️', zh: '买到雨伞了！下雨或下雪时会自动撑开。☂️' },
+};
+function buyUmbrella(product) {
+  if (hasUmbrella) return;
+  const cost = product.coins || 5;
+  if (!wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
+  hasUmbrella = true;
+  try { localStorage.setItem(UMB_KEY, '1'); } catch { /* storage blocked */ }
+  refreshWallet();
+  shop.toast(L(UMB_TEXT.bought));
+  shop.openProduct(product); // the button now says you have one
+}
 if (held) setHeld(held);
 
 function setLook(look) {
@@ -1343,6 +1435,7 @@ function setAutoWalk(on) {
 $('guide-auto').onclick = () => setAutoWalk(!autoWalk);
 function setGuide(g) {
   guide = g;
+  routePoly = null; // plan a new route
   $('guide').hidden = mode !== 'street';
   routeTimer = 0; // draw the route on the next frame
   faceRoute = true; // and turn the camera to look along it
@@ -2371,19 +2464,21 @@ function updateGuide(p, dt) {
       const moved = Math.hypot(o.ch.root.position.x - guide.x, o.ch.root.position.z - guide.z);
       guide.x = o.ch.root.position.x;
       guide.z = o.ch.root.position.z;
-      if (moved > 3) routeTimer = 0;
+      if (moved > 3) { routePoly = null; routeTimer = 0; }
       if (Math.hypot(guide.x - p.x, guide.z - p.z) < 25) o.pause = Math.max(o.pause || 0, 1);
     }
   }
   const dx = guide.x - p.x, dz = guide.z - p.z;
   const dist = Math.hypot(dx, dz);
-  // Re-plan the route along the streets from where we are now.
+  // Plan a route once; then just trim the part already walked, and plan
+  // again only when we wander off it.
   routeTimer -= dt;
   if (routeTimer <= 0) {
     routeTimer = 0.5;
-    const poly = roadGraph.route(p.x, p.z, guide.x, guide.z);
+    if (!routePoly || nearestOnPoly(routePoly, p.x, p.z).d > 6) routePoly = planRoute(p.x, p.z, guide.x, guide.z);
+    else routePoly = trimPoly(routePoly, p.x, p.z);
+    const poly = routePoly;
     routeLine.set(poly);
-    routePoly = poly;
     routeLen = 0;
     for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
     if (faceRoute) {
@@ -2398,7 +2493,8 @@ function updateGuide(p, dt) {
       if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
     }
   }
-  if (dist < (guide.kind === 'npc' ? 2.5 : 6)) {
+  // Arrived: close by, and not just on the other side of a wall.
+  if (dist < (guide.kind === 'npc' ? 2.5 : 6) && routeLen < 10) {
     shop.toast(t('guide.arrived', { label: guide.label }));
     clearGuide();
     return;
@@ -2476,7 +2572,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding === 4 ? CAR : riding ? BIKE : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag);
+    const speed = (riding === 4 ? CAR : riding ? BIKE : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -2503,18 +2599,17 @@ renderer.setAnimationLoop(() => {
     speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? BIKE : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
   } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
-    let tx = routePoly[routePoly.length - 1][0], tz = routePoly[routePoly.length - 1][1];
-    for (const [x, z] of routePoly) if (Math.hypot(x - p.x, z - p.z) > 2.5) { tx = x; tz = z; break; }
+    const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = riding ? BIKE : (running ? RUN : WALK) * gymLog.boost;
+    const speed = (riding ? BIKE : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
     const [nx, nz] = activeCollision.move(p.x, p.z, ux * speed * dt, uz * speed * dt, PLAYER_R);
     const progressed = Math.hypot(nx - p.x, nz - p.z) > speed * dt * 0.3;
     autoSide.stuck = progressed ? 0 : autoSide.stuck + dt;
-    if (autoSide.stuck > 0.5) { autoSide.stuck = 0; autoSide.t = 0.7; autoSide.dir = -autoSide.dir || 1; routeTimer = 0; }
+    if (autoSide.stuck > 0.5) { autoSide.stuck = 0; autoSide.t = 0.7; autoSide.dir = -autoSide.dir || 1; routePoly = null; routeTimer = 0; }
     p.x = nx; p.z = nz;
     let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -2561,6 +2656,7 @@ renderer.setAnimationLoop(() => {
   }
 
   const tSec = timer.getElapsed();
+  me.setUmbrella(umbrellaOpen());
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
     sun.position.set(p.x + 60, 120, p.z + 40);
@@ -2611,8 +2707,9 @@ renderer.setAnimationLoop(() => {
     if (riding) st.bk = riding;
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
+    if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.pt !== lastSent.pt;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -2756,6 +2853,21 @@ if (new URLSearchParams(location.search).has('debug')) {
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
+    route: (ax, az, bx, bz) => planRoute(ax, az, bx, bz),
+    guideTo: (id) => guideToPlace({ store: id }),
+    guiding: () => !!guide,
+    routeCheck: (ax, az) => storefronts.items.map((it) => {
+      const t0 = performance.now();
+      const poly = planRoute(ax, az, it.door.x, it.door.z);
+      const ms = Math.round(performance.now() - t0);
+      let bad = 0, worst = null;
+      for (let i = 1; i < poly.length; i++) {
+        const [x1, z1] = poly[i - 1], [x2, z2] = poly[i];
+        const n = Math.ceil(Math.hypot(x2 - x1, z2 - z1) / 0.5);
+        for (let k = 0; k <= n; k++) { const x = x1 + (x2 - x1) * k / n, z = z1 + (z2 - z1) * k / n; if (collision.blocked(x, z, 0.2)) { bad++; worst ||= [Math.round(x), Math.round(z), i, poly.length]; } }
+      }
+      return [it.store.id, bad, worst, ms, poly.length];
+    }),
     missions: () => daily.missions.map((m) => ({ ...m })),
     mission: (type, target) => missionEvent(type, target),
   };

@@ -154,7 +154,7 @@ export class MapView {
       g.strokeStyle = s.store.colors.sign;
       g.lineWidth = 3 * dpr;
       g.stroke();
-      g.fillText(CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
+      g.fillText(s.store.icon || CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
       if (this.view.scale > 0.9 * dpr) {
         g.fillStyle = '#4a3f35';
         g.font = `700 ${11 * dpr}px system-ui, sans-serif`;

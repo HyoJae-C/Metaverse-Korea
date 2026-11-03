@@ -2,7 +2,7 @@
 // eat it in the shop. Shows how many kinds you've tried out of all the food
 // in town, and how many you've bought in total.
 
-export const FOOD_MODELS = new Set(['cup', 'bread', 'bowl', 'bacon', 'roll']);
+export const FOOD_MODELS = new Set(['cup', 'bread', 'bowl', 'bacon', 'roll', 'samgak', 'milk']);
 const FOOD_SHOPS = new Set(['cafe', 'restaurant', 'market', 'play']);
 
 export const isFood = (store, product) => !!store && !!product && FOOD_SHOPS.has(store.category) && FOOD_MODELS.has(product.model);

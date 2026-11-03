@@ -231,6 +231,14 @@
         <button class="primary" id="next-btn" data-i18n="start.next"></button>
         <p class="disclaimer" data-i18n="app.disclaimer"></p>
       </div>
+      <div class="panel" id="step-login" hidden>
+        <div class="logo">💾</div>
+        <h2 id="login-title"></h2>
+        <p class="login-text" id="login-text"></p>
+        <button class="primary" id="login-google"></button>
+        <button class="chip" id="login-guest"></button>
+        <p class="login-note" id="login-note"></p>
+      </div>
       <div class="panel look-panel" id="step-look" hidden>
         <h2 class="look-title" data-i18n="look.title"></h2>
         <div class="look-layout">
@@ -244,6 +252,7 @@
           <span data-i18n="start.nickname"></span>
           <input id="nickname" maxlength="16" autocomplete="off" />
         </label>
+        <p class="look-lock" id="look-lock" hidden></p>
         <div class="look-actions">
           <button class="chip" id="back-btn" data-i18n="start.back"></button>
           <button class="primary" id="start-btn" data-i18n="start.button"></button>
