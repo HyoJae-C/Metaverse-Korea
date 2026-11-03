@@ -11,13 +11,14 @@
 //   pet    come back walking your pet (checked when you report)
 //   talk   say hi to 3 passers-by
 //   dance  do 3 emotes on the square (in front of the big screen)
-//   highfive  high-five another player (only offered when someone is around)
+//   highfive  high-five the guide: always the first errand of the day, so it
+//             works even when nobody else is online
 export const QUEST_REWARD = 15;
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
 
 export function pickQuest(pool, rand = Math.random, last = null) {
-  const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance', 'highfive'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
+  const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
   const kind = kinds[Math.floor(rand() * kinds.length)] || 'talk';
   const q = { kind, need: kind === 'talk' || kind === 'dance' ? 3 : 1, n: 0 };
   if (kind === 'visit') q.target = pool.stores[Math.floor(rand() * pool.stores.length)];
@@ -44,7 +45,7 @@ export class SquareQuests {
   // Take a new errand (one at a time, a few a day).
   start(pool, rand) {
     if (this.s.active || !this.left) return null;
-    this.s.active = pickQuest(pool, rand, this.s.last);
+    this.s.active = this.s.done === 0 && this.s.last !== 'highfive' ? { kind: 'highfive', need: 1, n: 0 } : pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
   }
@@ -82,4 +83,6 @@ export class SquareQuests {
   }
 
   drop() { this.s.active = null; this._save(); }
+  // New players already high-fived the guide while getting started.
+  skipHighFive() { this.s.last = 'highfive'; this._save(); }
 }

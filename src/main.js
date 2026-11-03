@@ -38,6 +38,7 @@ import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
 import { createAreaNet } from './net/area.js';
+import { watchOnline } from './net/online.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
@@ -629,6 +630,7 @@ function onboardHi5() {
   refreshWallet();
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
+  quests.skipHighFive(); // that was today's high five
   setTimeout(() => {
     talkToGuide(); // the first mission
     setOnboard(2);
@@ -800,12 +802,16 @@ const weather = new WeatherSystem({
 
 // ---------- Multiplayer ----------
 let others = new RemotePlayers(scene, $('labels'));
+// Everyone online on the whole map (net/online.js); without a server that
+// can count, the people around you.
+let onlineAll = 0;
 const refreshOnline = () => {
-  const n = others.players.size + 1;
+  const n = onlineAll || others.players.size + 1;
   $('online').hidden = n < 2;
   $('online').textContent = '🟢 ' + t('hud.online', { n });
 };
 onLanguageChange(refreshOnline);
+watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); }).catch(() => {});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
@@ -2870,7 +2876,7 @@ $('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancel
 // keep them. A clinic sends you through surgery first.
 const beautyUi = new BeautyUI({
   root: $('beauty-panel'),
-  onPreview: (look) => setLook(look),
+  onPreview: (look) => setLook(beautyUi.kind === 'salon' ? { ...look, head: null } : look), // salon: hat off to see the hair
   onSave: (look, cost) => {
     if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
     if (cost && isClinic(beautyUi.kind) && interior?.stations?.surgery) { setLook(myLook); endBeautyCam(); startSurgery(look); return true; }
@@ -2890,7 +2896,7 @@ function keepLook(look) {
   clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
 }
 let beautyCam = null;
-const MIRROR_LOOK_Y = 0.9; // a bit below the face, so it sits above the panel
+const MIRROR_LOOK_Y = 0.74; // well below the face, so the whole head sits above the panel
 function openBeauty(kind) {
   clerk?.ch.wave();
   beautyCam = { ...cam };
@@ -2900,15 +2906,16 @@ function openBeauty(kind) {
     beautyCam.look = [seated.x, 0.7, seated.z - 0.75];
   } else if (seated?.mirrorZ != null) { // in the chair: what the mirror sees, your face up close
     // The mirror is only a metre away, so a wider lens fits your head in.
-    Object.assign(cam, { yaw: seated.ry + 0.15, dist: 0.95, pitch: 0.2 });
+    Object.assign(cam, { yaw: seated.ry + 0.12, dist: 1.05, pitch: 0.12 });
     beautyCam.look = [seated.x, MIRROR_LOOK_Y, seated.z];
-    camera.fov = 80; camera.updateProjectionMatrix();
+    camera.fov = 84; camera.updateProjectionMatrix();
   } else {
     Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
     me.root.rotation.y = cam.yaw; // turn to face the camera
   }
   lastSent = null;
   beautyUi.show(kind, myLook);
+  if (kind === 'salon') setLook({ ...myLook, head: null }); // hat off in the salon chair
 }
 function endBeautyCam() {
   if (beautyCam) { const { look, ...c } = beautyCam; Object.assign(cam, c); }
@@ -3303,7 +3310,6 @@ function talkToGuide() {
     const a = quests.start({
       stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
-        && (kind !== 'highfive' || others.players.size > 0), // only with someone around
     });
     say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: QUEST_REWARD }));
@@ -3485,8 +3491,16 @@ function updateAction(p, tSec) {
       next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
       const q = quests.active;
+      if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // today's first errand: high five the guide
+        next = { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
+          me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
+          missionEvent('highfive');
+          setTimeout(() => talkToGuide(), 700); // report straight away
+        } };
+      } else {
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
       next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+      }
     } else {
       const n = npcs.nearest(p.x, p.z);
       if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };

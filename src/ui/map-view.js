@@ -6,7 +6,7 @@ export const CATEGORY_ICON = { club: '🎧', bar: '🍸', cafe: '☕', beauty: '
 
 // Does a store match the search text? Looks at its names in every language,
 // tagline, category and product names, ignoring case and spaces.
-const norm = (v) => String(v ?? '').toLowerCase().replace(/\s+/g, '');
+const norm = (v) => String(v ?? '').normalize('NFKC').toLocaleLowerCase().replace(/[\s\-_'·.]+/g, '');
 export function storeMatches(store, query, category, catLabel = '') {
   if (category && store.category !== category) return false;
   const q = norm(query);
@@ -15,6 +15,28 @@ export function storeMatches(store, query, category, catLabel = '') {
   for (const o of [store.name, store.tagline]) if (o) texts.push(...Object.values(o));
   for (const pr of store.products || []) if (pr.name) texts.push(...Object.values(pr.name));
   return texts.some((x) => norm(x).includes(q));
+}
+
+// Districts of a joined city (see core/districts.js), with names for the
+// "more over here" badges at the map's edge.
+export const DISTRICT_NAME = {
+  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو' },
+  gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ' },
+  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون' },
+  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي' },
+};
+// The middle of each district's buildings.
+export function districtCentres(map) {
+  const out = [];
+  for (const { id } of map?.meta?.districts || []) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const b of map.buildings || []) {
+      if (b.d !== id) continue;
+      for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    }
+    if (x0 < x1) out.push({ id, x: (x0 + x1) / 2, z: (z0 + z1) / 2, name: DISTRICT_NAME[id] || { en: id } });
+  }
+  return out;
 }
 
 export class MapView {
@@ -34,6 +56,8 @@ export class MapView {
     this.open = false;
     this.query = '';
     this.category = null;
+    this.districts = districtCentres(map);
+    this.badges = []; // edge badges for districts off screen: { x, y, r, d }
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
     root.addEventListener('click', (e) => { if (e.target === root) this.hide(); });
@@ -190,7 +214,64 @@ export class MapView {
     g.stroke();
     g.fill();
     g.restore();
+    this._drawBadges(g, me);
     void css;
+  }
+
+  // Districts off screen get a badge at the edge pointing towards them, so
+  // you know there is more to the map. Tap one to go there.
+  _drawBadges(g, me) {
+    const W = this.canvas.width, H = this.canvas.height, dpr = this.dpr;
+    const pad = 34 * dpr;
+    this.badges = [];
+    const lang = getLanguage();
+    for (const d of this.districts) {
+      const [sx, sy] = this.toScreen(d.x, d.z);
+      if (sx > pad && sx < W - pad && sy > pad && sy < H - pad) continue;
+      // Where the line from the centre to the district leaves the screen.
+      const cx = W / 2, cy = H / 2, dx = sx - cx, dy = sy - cy;
+      const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
+      const x = cx + dx * k, y = cy + dy * k;
+      const km = Math.hypot(d.x - me.x, d.z - me.z) / 1000;
+      const label = `${localName(d.name, lang)} · ${km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km'}`;
+      g.font = `800 ${13 * dpr}px system-ui, sans-serif`;
+      const w = g.measureText(label).width + 34 * dpr, h = 28 * dpr;
+      const bx = Math.max(6 * dpr, Math.min(W - w - 6 * dpr, x - w / 2)), by = Math.max(6 * dpr, Math.min(H - h - 6 * dpr, y - h / 2));
+      g.fillStyle = 'rgba(74,63,53,0.88)';
+      g.beginPath();
+      g.roundRect(bx, by, w, h, h / 2);
+      g.fill();
+      // Arrow towards the district.
+      const a = Math.atan2(dy, dx), ax = bx + 15 * dpr, ay = by + h / 2;
+      g.save();
+      g.translate(ax, ay);
+      g.rotate(a);
+      g.fillStyle = '#ffd36e';
+      g.beginPath();
+      g.moveTo(7 * dpr, 0); g.lineTo(-5 * dpr, -6 * dpr); g.lineTo(-5 * dpr, 6 * dpr);
+      g.closePath();
+      g.fill();
+      g.restore();
+      g.fillStyle = '#fffaf0';
+      g.textAlign = 'left';
+      g.textBaseline = 'middle';
+      g.fillText(label, bx + 27 * dpr, by + h / 2 + 1);
+      g.textAlign = 'center';
+      this.badges.push({ x: bx, y: by, w, h, d });
+    }
+  }
+
+  // Slide the map to a district.
+  goTo(x, z) {
+    const from = { cx: this.view.cx, cz: this.view.cz }, t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / 450), e = 1 - (1 - k) ** 3;
+      this.view.cx = from.cx + (x - from.cx) * e;
+      this.view.cz = from.cz + (z - from.cz) * e;
+      this.draw();
+      if (k < 1 && this.open) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
 
   _match(s) {
@@ -208,6 +289,10 @@ export class MapView {
       this.search.className = 'map-search';
       this.search.autocomplete = 'off';
       this.search.enterKeyHint = 'search';
+      // Phones: no auto capitals or autocorrect (they turn "itaewon" into "Itaewon" or another word).
+      this.search.setAttribute('autocapitalize', 'off');
+      this.search.setAttribute('autocorrect', 'off');
+      this.search.spellcheck = false;
       const onType = () => { if (this.query === this.search.value) return; this.query = this.search.value; this._renderResults(); this.draw(); };
       // iOS Korean keyboard: some versions only report the finished syllable
       // on compositionend/keyup, so listen to those as well.
@@ -275,6 +360,11 @@ export class MapView {
     const dist = (x, z) => `${Math.round(Math.hypot(x - me.x, z - me.z))} m`;
     const filtering = !!(this.category || norm(this.query));
     const zones = this.category ? [] : this.zones.filter((z) => !filtering || [z.zone.id, ...Object.values(z.zone.name || {})].some((x) => norm(x).includes(norm(this.query))));
+    // Districts by name (Seongsu, Gyeongbokgung, Itaewon): jump the map there.
+    const dists = norm(this.query) && !this.category ? this.districts.filter((d) => [d.id, ...Object.values(d.name)].some((x) => norm(x).includes(norm(this.query)))) : [];
+    for (const d of dists) {
+      row('🗺️', '#fffaf0', localName(d.name, lang), dist(d.x, d.z), () => this.goTo(d.x, d.z));
+    }
     if (zones.length) head('map.zones');
     for (const z of zones) {
       row(z.zone.id, z.zone.color, localName(z.zone.name, lang), dist(z.x, z.z), () => {
@@ -283,7 +373,7 @@ export class MapView {
     }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length) {
+    if (!shops.length && !zones.length && !dists.length) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
@@ -299,6 +389,7 @@ export class MapView {
   }
 
   _hit(sx, sy) {
+    for (const b of this.badges) if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) return { kind: 'district', item: b.d };
     const r = 20 * this.dpr;
     for (const s of this.stores) {
       if (!this._match(s)) continue;
@@ -361,6 +452,7 @@ export class MapView {
         }
         return;
       }
+      if (hit.kind === 'district') { this.goTo(hit.item.x, hit.item.z); return; }
       if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });

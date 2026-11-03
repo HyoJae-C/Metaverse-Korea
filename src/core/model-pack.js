@@ -84,6 +84,7 @@ function recolor(gltf, rule) {
 // model's material whose atlas has those cells repainted, keeping each cell's
 // light-to-dark shading. One copy per model and combination, shared.
 const SMALL_HEAD = 0.88;
+const BIG_HEAD = 1.12;
 // Hanging from the gym's pull-up bar: the body is moved so both hands sit on
 // the bar (2.05 m, minus its radius) whatever the arms are doing.
 const PULLUP = { hang: 0.5, bar: 2.03 };
@@ -369,7 +370,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   body.visible = false;
   root.add(m);
-  const headScale = look.small ? SMALL_HEAD : 1;
+  const headScale = look.small === 'big' ? BIG_HEAD : look.small ? SMALL_HEAD : 1;
 
   const bonePose = (pose) => Object.entries(pose || {}).map(([name, r]) => [m.getObjectByName(name), r]).filter(([b]) => b);
   const ridePose = bonePose(PACK.ridePose);

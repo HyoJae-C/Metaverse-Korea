@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // One client (one websocket) shared by every room we are in.
 const clients = new Map();
-function sharedClient(url, key) {
+export function sharedClient(url, key) {
   const k = url + '|' + key;
   if (!clients.has(k)) {
     clients.set(k, createClient(url, key, {
