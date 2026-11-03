@@ -78,7 +78,9 @@ export class Zones {
     this.items = [];
     for (const zone of zones) {
       const [ax, az] = placeOf(zone, center, latLonToLocal);
-      let [x, z] = snapToRoadside(map.roads, ax, az);
+      // A zone marked "snap": false stands exactly where it says (a square);
+      // the others move to the nearest roadside.
+      let [x, z] = zone.snap === false ? [ax, az] : snapToRoadside(map.roads, ax, az);
       if (collision?.blocked(x, z, 0.5)) [x, z] = [ax, az];
       const group = new THREE.Group();
       group.position.set(x, 0, z);
