@@ -76,7 +76,7 @@ import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { taxiFare } from './core/taxi.js';
-import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW } from './core/bike-garage.js';
+import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW, RIDE_TYPES, RIDE_ICON as VEHICLE_ICON, SKIN_COLORS, SKIN_PATTERNS, SKIN_PRICE, rideCode } from './core/bike-garage.js';
 import { ClubMusic } from './core/club-music.js';
 import { CLUB_TRACKS, CLUB_GENRES, songSeconds } from './data/club-tracks.js';
 import { TRACKS } from './data/tracks.js';
@@ -1415,7 +1415,7 @@ function setLook(look) {
   me = createCharacter(look);
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
-  me.setBike(riding, riding === 1 ? garage.current.color : undefined, riding === 3 && isCar(others.kindOf(tandemDriver)));
+  me.setBike(riding, riding === 1 ? garage.rideSpec() : undefined, riding === 3 && isCar(others.kindOf(tandemDriver)));
   me.setHeld(heldKind());
   old.parent?.remove(old);
   activeScene.add(me.root);
@@ -1479,7 +1479,7 @@ function setRiding(on) {
     me.root.position.set(fx, 0, fz);
   }
   riding = kind;
-  me.setBike(kind, kind === 1 ? garage.current.color : undefined, kind === 3 && isCar(others.kindOf(tandemDriver)));
+  me.setBike(kind, kind === 1 ? garage.rideSpec() : undefined, kind === 3 && isCar(others.kindOf(tandemDriver)));
   if (kind === 1 || kind === 2) missionEvent('bike');
   sendTimer = 0;
   action = STALE;
@@ -1574,7 +1574,7 @@ function ridePicker() {
   $('ride-options').replaceChildren(...rides.map((r) => {
     const b = document.createElement('button');
     b.className = 'primary';
-    b.textContent = `${r.emoji} ${t(r.label)}`;
+    b.textContent = r.kind === 1 ? `${VEHICLE_ICON[garage.current.type]} ${L(garage.current.name)}` : `${r.emoji} ${t(r.label)}`;
     b.onclick = () => { $('ride-panel').hidden = true; startRide(r.kind); };
     return b;
   }));
@@ -1822,38 +1822,103 @@ function openLpPanel() {
   root.replaceChildren(x, h, note, list, actions);
   root.hidden = false;
 }
-// Bike shop (Pedal Lab): buy a slightly faster bike, pick which one to
-// ride, and repair wear (core/bike-garage.js).
+// Ride shop (Pedal Lab): bikes, skateboards, inline skates and kick scooters
+// in three steps each, plus skins (a colour and a pattern) that go on any
+// ride. Pick which one to ride and repair wear (core/bike-garage.js).
 const BIKE_TEXT = {
-  open: { en: 'Bikes & repairs', ko: '자전거 고르기·수리', ja: '自転車・修理', zh: '选车·维修' },
-  title: { en: 'Pedal Lab', ko: '페달랩 자전거 가게', ja: 'ペダルラボ', zh: '踏板实验室' },
-  note: { en: 'Every bike is only a little faster than the last. Bikes wear out very slowly as you ride; a repair costs a few coins.', ko: '자전거마다 속도 차이는 조금씩만 나요. 타다 보면 아주 조금씩 닳고, 수리는 몇 코인이면 돼요.', ja: 'どの自転車も速さの差は少しだけ。乗るととてもゆっくりすり減り、修理は数コインです。', zh: '每辆车只快一点点。骑久了会非常缓慢地磨损，修理只要几枚硬币。' },
-  speed: { en: 'Speed', ko: '속도', ja: '速さ', zh: '速度' },
-  dur: { en: 'Condition {n}%', ko: '내구도 {n}%', ja: '状態 {n}%', zh: '耐久 {n}%' },
-  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
-  use: { en: 'Ride this', ko: '이걸로 타기', ja: 'これに乗る', zh: '骑这辆' },
-  using: { en: 'Riding', ko: '타는 중', ja: '使用中', zh: '使用中' },
-  repair: { en: 'Repair', ko: '수리', ja: '修理', zh: '修理' },
-  fixed: { en: 'Good as new!', ko: '새것처럼 고쳤어요!', ja: '新品同様になりました！', zh: '修好啦，跟新的一样！' },
-  bought: { en: 'Enjoy your new bike!', ko: '새 자전거가 생겼어요!', ja: '新しい自転車をどうぞ！', zh: '新车到手！' },
-  poor: { en: 'Not enough coins.', ko: '코인이 부족해요.', ja: 'コインが足りません。', zh: '硬币不够。' },
-  worn: { en: 'Your bike is getting worn: a repair at Pedal Lab makes it good as new.', ko: '자전거가 많이 닳았어요. 페달랩에서 수리하면 새것처럼 돼요.', ja: '自転車がすり減ってきました。ペダルラボで修理できます。', zh: '自行车磨损了，去踏板实验室修一下吧。' },
+  open: { en: 'Rides & repairs', ko: '탈것 고르기·수리', ja: '乗り物・修理', zh: '选车·维修', es: 'Vehículos y reparaciones' },
+  title: { en: 'Pedal Lab', ko: '페달랩 탈것 가게', ja: 'ペダルラボ', zh: '踏板实验室', es: 'Pedal Lab' },
+  note: { en: 'Each step is only a little faster. Rides wear out very slowly; a repair costs a few coins.', ko: '단계마다 속도는 조금씩만 빨라져요. 타다 보면 아주 조금씩 닳고, 수리는 몇 코인이면 돼요.', ja: '段階ごとに少しだけ速くなります。乗るとゆっくりすり減り、修理は数コインです。', zh: '每一级只快一点点。骑久了会缓慢磨损，修理只要几枚硬币。', es: 'Cada nivel es solo un poco más rápido. Se desgastan muy despacio; reparar cuesta unas monedas.' },
+  skinNote: { en: 'A colour and a pattern you buy once and can put on any ride.', ko: '한 번 사면 모든 탈것에 입힐 수 있는 색상과 패턴이에요.', ja: '一度買えばどの乗り物にも使える色と柄です。', zh: '买一次就能用在所有车上的颜色和图案。', es: 'Un color y un estampado que compras una vez y usas en cualquier vehículo.' },
+  speed: { en: 'Speed', ko: '속도', ja: '速さ', zh: '速度', es: 'Velocidad' },
+  dur: { en: 'Condition {n}%', ko: '내구도 {n}%', ja: '状態 {n}%', zh: '耐久 {n}%', es: 'Estado {n}%' },
+  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar' },
+  use: { en: 'Ride this', ko: '이걸로 타기', ja: 'これに乗る', zh: '用这个', es: 'Usar' },
+  using: { en: 'Riding', ko: '타는 중', ja: '使用中', zh: '使用中', es: 'En uso' },
+  repair: { en: 'Repair', ko: '수리', ja: '修理', zh: '修理', es: 'Reparar' },
+  fixed: { en: 'Good as new!', ko: '새것처럼 고쳤어요!', ja: '新品同様になりました！', zh: '修好啦，跟新的一样！', es: '¡Como nuevo!' },
+  bought: { en: 'Enjoy your new ride!', ko: '새 탈것이 생겼어요!', ja: '新しい乗り物をどうぞ！', zh: '新车到手！', es: '¡Disfruta tu nuevo vehículo!' },
+  skinOn: { en: 'Skin applied!', ko: '스킨을 입혔어요!', ja: 'スキンを適用しました！', zh: '已换上皮肤！', es: '¡Aspecto aplicado!' },
+  poor: { en: 'Not enough coins.', ko: '코인이 부족해요.', ja: 'コインが足りません。', zh: '硬币不够。', es: 'No tienes suficientes monedas.' },
+  worn: { en: 'Your ride is getting worn: a repair at Pedal Lab makes it good as new.', ko: '탈것이 많이 닳았어요. 페달랩에서 수리하면 새것처럼 돼요.', ja: '乗り物がすり減ってきました。ペダルラボで修理できます。', zh: '车磨损了，去踏板实验室修一下吧。', es: 'Tu vehículo está gastado: repáralo en Pedal Lab.' },
+  colors: { en: 'Colour', ko: '색상', ja: 'カラー', zh: '颜色', es: 'Color' },
+  patterns: { en: 'Pattern', ko: '패턴', ja: '柄', zh: '图案', es: 'Estampado' },
+  none: { en: 'Default', ko: '기본', ja: 'デフォルト', zh: '默认', es: 'Normal' },
+  skins: { en: 'Skins', ko: '스킨', ja: 'スキン', zh: '皮肤', es: 'Aspectos' },
 };
+const RIDE_TAB = {
+  bike: { en: 'Bike', ko: '자전거', ja: '自転車', zh: '自行车', es: 'Bici' },
+  skate: { en: 'Board', ko: '보드', ja: 'スケボー', zh: '滑板', es: 'Patineta' },
+  inline: { en: 'Inline', ko: '인라인', ja: 'インライン', zh: '轮滑', es: 'Patines' },
+  kick: { en: 'Scooter', ko: '킥보드', ja: 'キックボード', zh: '滑板车', es: 'Patinete' },
+};
+const PATTERN_NAME = {
+  flower: { icon: '🌸', en: 'Flowers', ko: '꽃무늬', ja: '花柄', zh: '花朵', es: 'Flores' },
+  bolt: { icon: '⚡', en: 'Lightning', ko: '번개', ja: '稲妻', zh: '闪电', es: 'Rayos' },
+  heart: { icon: '💗', en: 'Hearts', ko: '하트', ja: 'ハート', zh: '爱心', es: 'Corazones' },
+  star: { icon: '⭐', en: 'Stars', ko: '별', ja: '星', zh: '星星', es: 'Estrellas' },
+  hangul: { icon: 'ㅎ', en: 'Hangul', ko: '한글 자모', ja: 'ハングル', zh: '韩文字母', es: 'Hangul' },
+};
+const TIER_STARS = ['★', '★★', '★★★'];
+let bikeTab = null;
+const applyRide = () => { if (riding === 1) me.setBike(1, garage.rideSpec()); };
 function openBikeShop() {
   const root = $('lp-panel');
   delete root.dataset.club;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const x = el('button', 'sheet-x', '✕');
   x.onclick = () => { root.hidden = true; };
+  bikeTab ||= garage.current.type;
+  const tabs = el('div', 'ride-tabs');
+  for (const id of [...RIDE_TYPES, 'skin']) {
+    const b = el('button', 'ride-tab' + (bikeTab === id ? ' on' : ''), (id === 'skin' ? '🎨' : VEHICLE_ICON[id]) + ' ' + L(id === 'skin' ? BIKE_TEXT.skins : RIDE_TAB[id]));
+    b.onclick = () => { bikeTab = id; openBikeShop(); };
+    tabs.append(b);
+  }
   const list = el('div', 'lp-list');
-  const top = BIKE_MODELS[BIKE_MODELS.length - 1].speed;
-  for (const m of BIKE_MODELS) {
+  const top = Math.max(...BIKE_MODELS.map((m) => m.speed));
+  if (bikeTab === 'skin') {
+    const skin = garage.s.skin;
+    const section = (title) => { list.append(el('strong', 'skin-title', title)); const g = el('div', 'skin-grid'); list.append(g); return g; };
+    const pickSkin = (kind, id) => {
+      if (id === null || garage.hasSkin(kind, id)) { garage.setSkin(kind, id); applyRide(); openBikeShop(); return; }
+      const r = garage.buySkin(kind, id, wallet);
+      refreshWallet();
+      shop.toast(L(r === 'bought' ? BIKE_TEXT.skinOn : BIKE_TEXT.poor));
+      if (r === 'bought') applyRide();
+      openBikeShop();
+    };
+    const cg = section(`${L(BIKE_TEXT.colors)} · 🪙 ${SKIN_PRICE.color}`);
+    const none = el('button', 'skin-dot none' + (!skin.color ? ' on' : ''), L(BIKE_TEXT.none));
+    none.onclick = () => pickSkin('color', null);
+    cg.append(none);
+    for (const [id, hex] of Object.entries(SKIN_COLORS)) {
+      const b = el('button', 'skin-dot' + (skin.color === id ? ' on' : '') + (garage.hasSkin('color', id) ? '' : ' locked'));
+      b.style.background = hex;
+      b.title = id;
+      if (!garage.hasSkin('color', id)) b.append(el('small', null, '🪙' + SKIN_PRICE.color));
+      b.onclick = () => pickSkin('color', id);
+      cg.append(b);
+    }
+    const pg = section(`${L(BIKE_TEXT.patterns)} · 🪙 ${SKIN_PRICE.pattern}`);
+    const none2 = el('button', 'chip skin-pat' + (!skin.pattern ? ' on' : ''), L(BIKE_TEXT.none));
+    none2.onclick = () => pickSkin('pattern', null);
+    pg.append(none2);
+    for (const id of SKIN_PATTERNS) {
+      const own = garage.hasSkin('pattern', id);
+      const b = el('button', 'chip skin-pat' + (skin.pattern === id ? ' on' : ''), `${PATTERN_NAME[id].icon} ${L(PATTERN_NAME[id])}` + (own ? '' : ` · 🪙${SKIN_PRICE.pattern}`));
+      b.onclick = () => pickSkin('pattern', id);
+      pg.append(b);
+    }
+  } else for (const m of BIKE_MODELS.filter((b) => b.type === bikeTab)) {
     const own = garage.has(m.id), on = garage.s.use === m.id;
     const row = el('div', 'lp-row bike-row' + (on ? ' on' : ''));
     const sw = el('span', 'bike-swatch');
     sw.style.background = m.color;
     const text = el('span', 'lp-text');
-    text.append(el('strong', null, '🚲 ' + L(m.name)));
+    const name = el('strong', null, `${VEHICLE_ICON[m.type]} ${L(m.name)} `);
+    name.append(el('span', 'tier-stars t' + m.tier, TIER_STARS[m.tier]));
+    text.append(name);
     const bar = el('span', 'bike-bar');
     const fill = el('i');
     fill.style.width = Math.round((m.speed / top) * 100) + '%';
@@ -1867,14 +1932,14 @@ function openBikeShop() {
         const r = garage.buy(m.id, wallet);
         refreshWallet();
         shop.toast(L(r === 'bought' ? BIKE_TEXT.bought : BIKE_TEXT.poor));
-        if (r === 'bought' && riding === 1) me.setBike(1, garage.current.color);
+        if (r === 'bought') applyRide();
         openBikeShop();
       };
       btns.append(b);
     } else {
       if (!on) {
         const b = el('button', 'chip', L(BIKE_TEXT.use));
-        b.onclick = () => { garage.use(m.id); if (riding === 1) me.setBike(1, garage.current.color); openBikeShop(); };
+        b.onclick = () => { garage.use(m.id); applyRide(); openBikeShop(); };
         btns.append(b);
       } else btns.append(el('small', 'bike-using', '✓ ' + L(BIKE_TEXT.using)));
       const cost = repairCost(garage.durability(m.id));
@@ -1892,7 +1957,7 @@ function openBikeShop() {
     row.append(sw, text, btns);
     list.append(row);
   }
-  root.replaceChildren(x, el('strong', 'wallet-title', '🚲 ' + L(BIKE_TEXT.title)), el('p', 'fine', L(BIKE_TEXT.note)), list);
+  root.replaceChildren(x, el('strong', 'wallet-title', '🚲 ' + L(BIKE_TEXT.title)), el('p', 'fine', L(bikeTab === 'skin' ? BIKE_TEXT.skinNote : BIKE_TEXT.note)), tabs, list);
   root.hidden = false;
 }
 
@@ -3824,13 +3889,14 @@ renderer.setAnimationLoop(() => {
     };
     if (seated || ride) st.sit = 1;
     if (riding) st.bk = riding;
+    if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -4014,6 +4080,9 @@ if (new URLSearchParams(location.search).has('debug')) {
       return [it.store.id, bad, worst, ms, poly.length];
     }),
     missions: () => daily.missions.map((m) => ({ ...m })),
+    garage: () => garage,
+    bikeShop: () => openBikeShop(),
+    ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
   };
 }

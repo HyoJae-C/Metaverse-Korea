@@ -1,5 +1,6 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
+import { parseRide } from './bike-garage.js';
 import { t } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS } from './held.js';
@@ -167,7 +168,11 @@ export class RemotePlayers {
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
         const inCar = p.target.bk === 3 && [4, 6].includes(this.players.get(p.target.on)?.target?.bk);
-        if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar) { p.bk = p.target.bk || 0; p.inCar = inCar; p.ch.setBike(p.bk, undefined, inCar); }
+        const bv = p.target.bk === 1 ? String(p.target.bv || '').slice(0, 40) : '';
+        if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar || bv !== (p.bv || '')) {
+          p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;
+          p.ch.setBike(p.bk, p.bk === 1 ? parseRide(bv) || undefined : undefined, inCar); // their ride and skin
+        }
         if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);
         p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing

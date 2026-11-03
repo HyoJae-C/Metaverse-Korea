@@ -3,6 +3,7 @@
 // a skeleton clone per character, and an AnimationMixer driven by our action
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
+import { SKATE_LIFT } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
@@ -394,6 +395,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   to('idle', 0);
 
   let emote = null; // { key, t, dur }
+  let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
   let pullT = 0;
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
@@ -414,14 +416,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       emote = { key: name, t: 0, dur: Math.max(1.6, clip?.duration || 0) };
       currentKey = ''; // restart even if the same clip is already playing
     },
+    feet: [m.getObjectByName('footl'), m.getObjectByName('footr')],
+    // How high a board or scooter deck holds you up.
+    setBoardHeight(y) { boardY = y; },
     update(dt, speed01, sit, riding) {
       if (emote) {
         emote.t += dt;
         if (emote.t >= emote.dur || (speed01 > 0.3 && !riding) || sit) emote = null;
       }
       let key;
-      if (emote && !riding) key = emote.key;
-      else if (riding) key = 'ride';
+      // Standing on a board or scooter: idle pose, raised by the deck height.
+      // On inline skates: walk/run as usual, a little taller.
+      const board = riding === 'board', skates = riding === 'skates';
+      const seated = riding && !board && !skates;
+      if (emote && !seated && speed01 < 0.3) key = emote.key;
+      else if (board) key = 'idle';
+      else if (seated) key = 'ride';
       else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
@@ -440,7 +450,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (scissors) scissors.visible = snipping;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
-      const off = riding ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
+      const off = board ? { y: boardY } : skates ? { y: SKATE_LIFT } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (dancing) {
@@ -461,7 +471,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       mixer.update(dt);
       // riding: true on a bike, 'car' driving, 'seat' a car passenger (the
       // plain sitting clip).
-      if (riding && riding !== 'seat') {
+      if (seated && riding !== 'seat') {
         const tune = globalThis.__ridePose; // debug: tweak the pose live
         for (const [bone, r] of riding === 'car' ? carPose : ridePose) {
           const [x, y, z] = tune?.[bone.name] || r;

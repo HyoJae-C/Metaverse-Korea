@@ -2,8 +2,10 @@
 // model from the active model pack (src/data/characters); a chibi built from
 // simple rounded shapes shows while the model loads, or if it fails to load.
 import * as THREE from 'three';
-import { makeBike, makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
+import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
 import { attachModel } from './model-pack.js';
+import { makeRide, makeSkate1, SKATE_LIFT } from './rides.js';
+import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
@@ -14,6 +16,7 @@ const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
+const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
@@ -102,7 +105,10 @@ export function createCharacter(rawLook) {
   let phase = 0;
   let waveT = 0;
   let bike = null, tandem = null, car = null, limo = null, moto = null, helmet = null, riding = false;
-  let bikeColor = null;
+  let bikeCode = null; // rideCode of the ride drawn
+  let skates = null; // inline skates, one under each foot
+  let rideKind = true; // 'board' (skateboard, scooter), 'skates' or true (bike)
+  const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
   let model = null; // set once the pack model has loaded
@@ -129,19 +135,36 @@ export function createCharacter(rawLook) {
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),
-    // 6 limousine (driver's seat). color: the bike's
-    // frame colour (each model in the bike shop has its own).
+    // 6 limousine (driver's seat). spec: for kind 1, the ride from the bike
+    // shop { type, tier, color, pattern } (a plain colour string means a
+    // basic bike in that colour).
     // inCar: a passenger seat in someone's car (sit upright, not leaning).
-    setBike(on, color, inCar = false) {
+    setBike(on, spec, inCar = false) {
       const kind = on === true ? 1 : on || 0;
-      if (kind === 1 && bike && color && color !== bikeColor) { bike.removeFromParent(); bike = null; }
-      if (kind === 1 && !bike) { bike = makeBike(color || undefined); bikeColor = color || null; root.add(bike); }
+      if (kind === 1) {
+        const r = spec && typeof spec === 'object' ? spec : { type: 'bike', tier: 0, color: spec || '#3fb59a', pattern: null };
+        const code = rideCode(r);
+        if (bike && code !== bikeCode) {
+          bike.removeFromParent(); bike = null;
+          for (const sk of skates || []) sk.removeFromParent();
+          skates = null;
+        }
+        if (!bike) {
+          bike = makeRide(r);
+          bikeCode = code;
+          root.add(bike);
+          rideKind = bike.userData.pose === 'board' ? 'board' : bike.userData.pose === 'skates' ? 'skates' : true;
+          if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); root.add(sk); } }
+        }
+      }
       if (kind === 2 && !tandem) { tandem = makeTandem(); root.add(tandem); }
       if (kind === 4 && !car) { car = makeCar(); root.add(car); }
       if (kind === 6 && !limo) { limo = makeLimo(); root.add(limo); }
       if (kind === 5 && !moto) { moto = makeMoto(); root.add(moto); }
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
+      for (const sk of skates || []) sk.visible = kind === 1;
+      if (kind === 1 && rideKind === 'board') model?.setBoardHeight?.(bike.userData.stand);
       if (tandem) tandem.visible = kind === 2;
       if (car) car.visible = kind === 4;
       if (limo) limo.visible = kind === 6;
@@ -150,12 +173,22 @@ export function createCharacter(rawLook) {
       for (const c of headAcc.children) c.visible = kind === 5 ? c === helmet : c !== helmet;
       // Pose: leaning over handlebars on bikes; upright with arms to the
       // wheel in a car; upright and relaxed as a car passenger.
-      riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : true;
+      riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
       if (model) {
+        if (riding === 'board' && bike) model.setBoardHeight?.(bike.userData.stand);
         model.update(dt, speed01, sit, riding);
+        if (skates && riding === 'skates' && model.feet[0]) {
+          // Each skate follows its foot (in the body's frame, facing forward).
+          root.updateWorldMatrix(false, true);
+          model.feet.forEach((f, i) => {
+            if (!f || !skates[i]) return;
+            root.worldToLocal(f.getWorldPosition(_fv));
+            skates[i].position.set(_fv.x, Math.max(0, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
+          });
+        }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
           root.updateWorldMatrix(false, true);
