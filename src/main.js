@@ -807,10 +807,8 @@ const weather = new WeatherSystem({
   onUpdate: ({ icon }) => {
     const el = $('weather');
     el.hidden = false;
-    // Korean time (KST) next to the weather, updated every minute.
-    const kst = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
-    el.replaceChildren(`${icon} ${kst}`, Object.assign(document.createElement('small'), { className: 'kst', textContent: ' KST' }));
-    el.title = `${t('credit.weather')} · KST (Korea)`;
+    el.replaceChildren(icon); // (the clock is off for now)
+    el.title = t('credit.weather');
   },
 });
 
