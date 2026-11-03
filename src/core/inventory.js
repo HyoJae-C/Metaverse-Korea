@@ -65,11 +65,11 @@ export const ITEMS = {
     emoji: '🚘',
     name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo' },
     desc: {
-      en: 'A pearl-white four-seater with a tall chrome grille and a glass roof. Drive anywhere and invite three friends.',
-      ko: '높은 크롬 그릴과 유리 지붕의 진주색 4인승 리무진이에요. 어디든 달릴 수 있고 친구 세 명을 태울 수 있어요.',
-      ja: '背の高いクロームグリルとガラスルーフのパールホワイト4人乗り。どこでも走れて、友だち3人を乗せられます。',
-      zh: '珍珠白四座豪华轿车，高耸的镀铬格栅和玻璃车顶。哪里都能开，可以载三位朋友。',
-      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y techo de cristal. Conduce por todas partes e invita a tres amigos.',
+      en: 'A pearl-white four-seater with a tall chrome grille and a silver winged crest. Drive anywhere and invite three friends.',
+      ko: '높은 크롬 그릴과 은색 날개 엠블럼의 진주색 4인승 리무진이에요. 어디든 달릴 수 있고 친구 세 명을 태울 수 있어요.',
+      ja: '背の高いクロームグリルと銀の翼のエンブレムのパールホワイト4人乗り。どこでも走れて、友だち3人を乗せられます。',
+      zh: '珍珠白四座豪华轿车，高耸的镀铬格栅和银色飞翼徽标。哪里都能开，可以载三位朋友。',
+      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y emblema alado plateado. Conduce por todas partes e invita a tres amigos.',
     },
   },
   moto: {
@@ -139,7 +139,8 @@ export class Inventory {
   }
 }
 
-// Developer codes, typed in chat as "/master <code>". Only their SHA-256
+// Developer codes, typed in chat as "/<code>" (no keyword, and a wrong
+// code looks like any unknown command, so nothing hints they exist). Only their SHA-256
 // is in the code. This keeps them out of plain sight but is NOT security:
 // anyone can change their own browser. Real paid items must be checked on
 // a server.
@@ -155,12 +156,24 @@ const CODES = {
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
 };
 
-// Coin codes: "/master <code>" adds coins, once per device.
+// Developer coin codes: "/<code>" adds coins, every time it is used.
 const COIN_CODES = {
   '74cefd55ed30ad232b9cf41f598821c27ccb3fec18edfeeefb03780f12604248': 1000,
 };
 export async function coinCode(code) {
+  if (!globalThis.crypto?.subtle) return 0;
   return COIN_CODES[await sha256(code)] || 0;
+}
+
+// Event codes for players: "./EVENTSTART1" (any letter case) gives coins,
+// once per device. A separate, simple format from the developer codes.
+const EVENT_CODES = {
+  '47535964edcf32113829b020570df4d48917a2ae0e6d4f3cd2777e72ab5ef786': { id: 'eventstart1', coins: 100 }, // early players
+};
+export const isEventCode = (text) => /^\.\/[A-Za-z0-9_-]{2,40}$/.test(String(text).trim());
+export async function eventCode(text) {
+  if (!isEventCode(text) || !globalThis.crypto?.subtle) return null;
+  return EVENT_CODES[await sha256(String(text).trim().slice(2).toUpperCase())] || null;
 }
 
 async function sha256(text) {

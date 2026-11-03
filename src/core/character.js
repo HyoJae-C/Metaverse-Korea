@@ -130,7 +130,8 @@ export function createCharacter(rawLook) {
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),
     // 6 limousine (driver's seat). color: the bike's
     // frame colour (each model in the bike shop has its own).
-    setBike(on, color) {
+    // inCar: a passenger seat in someone's car (sit upright, not leaning).
+    setBike(on, color, inCar = false) {
       const kind = on === true ? 1 : on || 0;
       if (kind === 1 && bike && color && color !== bikeColor) { bike.removeFromParent(); bike = null; }
       if (kind === 1 && !bike) { bike = makeBike(color || undefined); bikeColor = color || null; root.add(bike); }
@@ -146,7 +147,9 @@ export function createCharacter(rawLook) {
       if (moto) moto.visible = kind === 5;
       // The helmet replaces any hat while riding the motorbike.
       for (const c of headAcc.children) c.visible = kind === 5 ? c === helmet : c !== helmet;
-      riding = kind > 0;
+      // Pose: leaning over handlebars on bikes; upright with arms to the
+      // wheel in a car; upright and relaxed as a car passenger.
+      riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : true;
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {

@@ -165,7 +165,8 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        if ((p.target.bk || 0) !== (p.bk || 0)) { p.bk = p.target.bk || 0; p.ch.setBike(p.bk); }
+        const inCar = p.target.bk === 3 && [4, 6].includes(this.players.get(p.target.on)?.target?.bk);
+        if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar) { p.bk = p.target.bk || 0; p.inCar = inCar; p.ch.setBike(p.bk, undefined, inCar); }
         if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);
         p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing

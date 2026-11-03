@@ -136,29 +136,39 @@ export function makeTandem(color = '#e0604d') {
 // Shared car parts. Glass is see-through so the people inside stay visible.
 const glassMat = (tint = '#a9d4ea', opacity = 0.35) => (mats['glass' + tint + opacity] ||= new THREE.MeshLambertMaterial({ color: tint, transparent: true, opacity, depthWrite: false }));
 const shiny = (c) => (mats['s' + c] ||= new THREE.MeshPhongMaterial({ color: c, shininess: 80, specular: '#ffffff' }));
-function carWheel(r, w, rim, spokes) {
+// Car wheel: a dark tyre with its whole face filled white (spokes looked
+// like they stood still while driving), and a small silver hub cap.
+function carWheel(r, w) {
   const g = new THREE.Group();
   const tyre = new THREE.Mesh(new THREE.CylinderGeometry(r, r, w, 20).rotateZ(Math.PI / 2), mat('#1c1d22'));
   g.add(tyre);
   for (const sx of [-1, 1]) {
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.02, 20).rotateZ(Math.PI / 2), spokes ? mat('#2a2c33') : shiny(rim));
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.74, r * 0.74, 0.02, 20).rotateZ(Math.PI / 2), shiny('#f6f6f3'));
     disc.position.x = sx * (w / 2 + 0.005);
-    g.add(disc);
-    if (spokes) {
-      for (let k = 0; k < spokes; k++) {
-        const sp = new THREE.Mesh(new THREE.BoxGeometry(0.025, r * 0.66, 0.07), shiny(rim));
-        sp.position.set(sx * (w / 2 + 0.015), 0, 0);
-        sp.rotation.x = (k / spokes) * Math.PI * 2;
-        sp.translateY(r * 0.33);
-        g.add(sp);
-      }
-    }
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.16, r * 0.16, 0.03, 12).rotateZ(Math.PI / 2), shiny('#d9dbe0'));
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.16, r * 0.16, 0.03, 12).rotateZ(Math.PI / 2), shiny('#b9bec6'));
     hub.position.x = sx * (w / 2 + 0.02);
-    g.add(hub);
+    g.add(disc, hub);
   }
   return g;
 }
+
+// A sharp "M" badge: a chrome M on a dark round plate, facing +z.
+function mBadge(size = 0.2) {
+  const g = new THREE.Group();
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.62, size * 0.62, 0.02, 24).rotateX(Math.PI / 2), shiny('#16181d'));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(size * 0.62, size * 0.06, 8, 28), shiny('#e9ecf0'));
+  const sh = new THREE.Shape();
+  const P = [[-0.5, -0.45], [-0.5, 0.45], [-0.26, 0.45], [0, 0.06], [0.26, 0.45], [0.5, 0.45], [0.5, -0.45], [0.3, -0.45], [0.3, 0.06], [0, -0.32], [-0.3, 0.06], [-0.3, -0.45]];
+  sh.moveTo(P[0][0], P[0][1]);
+  for (const [x, y] of P.slice(1)) sh.lineTo(x, y);
+  sh.closePath();
+  const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2 }), shiny('#ffd34a'));
+  m.scale.setScalar(size * 0.75);
+  m.position.z = 0.012;
+  g.add(plate, ring, m);
+  return g;
+}
+
 function seatPair(g, x, z, c, trim) {
   const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.5), mat(c));
   cushion.position.set(x, 0.57, z - 0.12);
@@ -201,7 +211,7 @@ function sideBody(pts, arches, width, cx, material, bottom = 0.2) {
 // A low two-seat open sports car (roadster): long bonnet, round haunches,
 // black cabin with two seats, five-spoke wheels. The driver sits on the
 // left (Korea drives on the right), the passenger at -x.
-export function makeCar(color = '#d9462c') {
+export function makeCar(color = '#ff4d22') {
   const g = new THREE.Group();
   const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => {
     const o = new THREE.Mesh(geo, m);
@@ -235,6 +245,20 @@ export function makeCar(color = '#d9462c') {
     f.scale.set(0.85, 0.9, 1.9);
   }
   add(B(W - 0.2, 0.1, 0.16), mat('#1d1f24'), cx, 0.28, -2.4); // rear diffuser
+  // "M" badges: on the nose, the tail and both front wings
+  const nose = mBadge(0.2);
+  nose.position.set(cx, 0.47, 2.02);
+  nose.rotation.x = -0.55;
+  const tail = mBadge(0.18);
+  tail.position.set(cx, 0.64, -2.5);
+  tail.rotation.y = Math.PI;
+  g.add(nose, tail);
+  for (const s of [-1, 1]) {
+    const b = mBadge(0.15);
+    b.position.set(cx + s * 0.99, 0.6, 0.85);
+    b.rotation.y = s * Math.PI / 2;
+    g.add(b);
+  }
   // Black cabin tub with two seats
   add(B(W - 0.24, 0.04, 1.3), mat('#16171b'), cx, 0.655, -0.25); // cockpit floor line
   seatPair(g, 0, 0, '#22232a', color);
@@ -243,9 +267,9 @@ export function makeCar(color = '#d9462c') {
   add(B(1.62, 0.36, 0.03), glassMat('#8fc4e0', 0.4), cx, 0.86, 0.55, -0.75);
   add(B(1.66, 0.04, 0.05), mat('#16171b'), cx, 1.0, 0.43, -0.75);
   add(B(0.34, 0.34, 0.04), mat('#16171b'), 0, 0.85, 0.36, -0.9); // steering wheel
-  // Wheels: five silver spokes
+  // Wheels: white faces
   for (const s of [-1, 1]) for (const z of [1.18, -1.42]) {
-    const w = carWheel(0.34, 0.26, '#cfd3da', 5);
+    const w = carWheel(0.34, 0.26);
     w.position.set(cx + s * 0.8, 0.34, z);
     g.add(w);
   }
@@ -253,9 +277,9 @@ export function makeCar(color = '#d9462c') {
 }
 
 // A grand four-door limousine: tall upright chrome grille, long bonnet,
-// pearl white with a silver lower body, a panoramic glass roof so the four
-// people inside stay visible. Seats: driver (front left), front passenger,
-// and two in the back.
+// pearl white with a silver lower body, big side windows so the four
+// people inside stay visible, and a silver winged crest on the nose.
+// Seats: driver (front left), front passenger, and two in the back.
 export function makeLimo(color = '#f8f8f5') {
   const g = new THREE.Group();
   const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => {
@@ -287,8 +311,45 @@ export function makeLimo(color = '#f8f8f5') {
     add(B(0.14, 0.1, 0.08), body, cx + s * 1.05, 1.02, 0.62); // mirrors
   }
   add(B(W - 0.1, 0.1, 0.12), chrome, cx, 0.32, front + 0.08); // front bumper
+  // Silver crest on the bonnet's nose: a faceted jewel on a fluted stem
+  // with two swept wings, plus a round winged badge on the grille.
+  const crest = new THREE.Group();
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.09, 8), chrome);
+  stem.position.y = 0.045;
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.055), shiny('#f4f6fa'));
+  gem.position.y = 0.13;
+  gem.scale.set(0.8, 1.3, 0.8);
+  crest.add(stem, gem);
+  const wing = new THREE.Shape();
+  wing.moveTo(0, 0);
+  wing.quadraticCurveTo(0.09, 0.06, 0.2, 0.05);
+  wing.quadraticCurveTo(0.12, 0.02, 0.17, -0.01);
+  wing.quadraticCurveTo(0.08, 0.0, 0.11, -0.05);
+  wing.quadraticCurveTo(0.05, -0.03, 0, -0.03);
+  const wingGeo = new THREE.ExtrudeGeometry(wing, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 1, curveSegments: 8 });
+  for (const s of [-1, 1]) {
+    const w = new THREE.Mesh(wingGeo, chrome);
+    w.position.set(0, 0.1, -0.006);
+    w.scale.set(s, 1, 1);
+    w.rotation.y = s * 0.45;
+    crest.add(w);
+  }
+  crest.position.set(cx, 0.86, front - 0.02);
+  g.add(crest);
+  const badge = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.02, 24).rotateX(Math.PI / 2), shiny('#1b2a4a'));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 8, 28), chrome);
+  badge.add(disc, rim);
+  for (const s of [-1, 1]) {
+    const w = new THREE.Mesh(wingGeo, chrome);
+    w.scale.set(s * 0.9, 0.9, 1);
+    w.position.set(s * 0.06, 0.005, 0);
+    badge.add(w);
+  }
+  badge.position.set(cx, 0.9, front + 0.13);
+  g.add(badge);
   add(B(W - 0.1, 0.1, 0.12), chrome, cx, 0.32, back - 0.08); // rear bumper
-  // Cabin: pillars, glass all round, and a glass roof framed in white
+  // Cabin: pillars, glass all round, and a closed roof
   const top = 1.5;
   for (const s of [-1, 1]) {
     const x = cx + s * (W / 2 - 0.05);
@@ -300,7 +361,7 @@ export function makeLimo(color = '#f8f8f5') {
   }
   add(B(W - 0.16, 0.6, 0.03), glassMat('#bcd9e8', 0.3), cx, 1.17, 0.5, -0.45); // windscreen
   add(B(W - 0.16, 0.55, 0.03), glassMat('#bcd9e8', 0.3), cx, 1.19, -1.92, 0.3); // rear window
-  add(B(W - 0.1, 0.03, 2.5), glassMat('#d5e6ef', 0.22), cx, top + 0.02, -0.68); // panoramic roof
+  add(B(W - 0.06, 0.08, 2.62), body, cx, top + 0.03, -0.68); // closed roof
   add(B(W - 0.1, 0.06, 0.1), body, cx, top, 0.58); // roof front edge
   add(B(W - 0.1, 0.06, 0.1), body, cx, top, -1.95); // roof back edge
   // Cream leather seats, wood-trimmed dash
@@ -309,7 +370,7 @@ export function makeLimo(color = '#f8f8f5') {
   for (const [x, z] of [[0, 0], [-0.95, 0], [0, -1.3], [-0.95, -1.3]]) seatPair(g, x, z, '#e9dcc4', '#b08a5a');
   // Wheels: big flat silver discs
   for (const s of [-1, 1]) for (const z of [1.6, -2.15]) {
-    const w = carWheel(0.38, 0.28, '#d8dbe0', 0);
+    const w = carWheel(0.38, 0.28);
     w.position.set(cx + s * 0.86, 0.38, z);
     g.add(w);
   }

@@ -68,7 +68,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, redeemCode, coinCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, redeemCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -1022,23 +1022,33 @@ chatBar.addEventListener('submit', async (e) => {
   e.preventDefault();
   // Commands start with "/" and are never sent to other people.
   const raw = cleanChat(chatInput.value);
+  // Event codes for everyone: "./EVENTSTART1" — coins, once per device.
+  if (isEventCode(raw)) {
+    chatInput.value = '';
+    const ev = await eventCode(raw);
+    if (!ev) { shop.toast(L(CODE_TEXT.wrong)); return; }
+    let used = [];
+    try { used = JSON.parse(localStorage.getItem('mk.eventCodes') || '[]'); } catch { /* broken save */ }
+    if (used.includes(ev.id)) { shop.toast(L(CODE_TEXT.used)); return; }
+    used.push(ev.id);
+    try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
+    wallet.add(ev.coins);
+    refreshWallet();
+    shop.toast(fmt(L(CODE_TEXT.coins), { n: ev.coins }));
+    return;
+  }
   if (raw.startsWith('/')) {
     chatInput.value = '';
-    const [cmd, ...rest] = raw.slice(1).split(/\s+/);
-    const coinsFromCode = cmd === 'master' ? await coinCode(rest.join(' ')) : 0;
-    if (coinsFromCode) { // once per device
-      let used = [];
-      try { used = JSON.parse(localStorage.getItem('mk.coinCodes') || '[]'); } catch { /* broken save */ }
-      const tag = String(coinsFromCode) + ':' + rest.join(' ').length;
-      if (used.includes(tag)) { shop.toast(L(CODE_TEXT.used)); return; }
-      used.push(tag);
-      try { localStorage.setItem('mk.coinCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
+    // Developer codes: "/<code>". A wrong one reads like any unknown command.
+    const code = raw.slice(1).trim();
+    const coinsFromCode = await coinCode(code);
+    if (coinsFromCode) {
       wallet.add(coinsFromCode);
       refreshWallet();
       shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
       return;
     }
-    const unlocked = cmd === 'master' && await redeemCode(rest.join(' '));
+    const unlocked = await redeemCode(code);
     if (unlocked) {
       const added = inventory.add(...unlocked);
       shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
@@ -1345,7 +1355,7 @@ function setLook(look) {
   me = createCharacter(look);
   me.root.position.copy(old.position);
   me.root.rotation.copy(old.rotation);
-  me.setBike(riding, riding === 1 ? garage.current.color : undefined);
+  me.setBike(riding, riding === 1 ? garage.current.color : undefined, riding === 3 && isCar(others.kindOf(tandemDriver)));
   me.setHeld(heldKind());
   old.parent?.remove(old);
   activeScene.add(me.root);
@@ -1398,7 +1408,7 @@ function setRiding(on) {
     me.root.position.set(fx, 0, fz);
   }
   riding = kind;
-  me.setBike(kind, kind === 1 ? garage.current.color : undefined);
+  me.setBike(kind, kind === 1 ? garage.current.color : undefined, kind === 3 && isCar(others.kindOf(tandemDriver)));
   if (kind === 1 || kind === 2) missionEvent('bike');
   sendTimer = 0;
   action = STALE;
@@ -1439,7 +1449,7 @@ function hopOn(inv) {
   setRiding(3);
   net.sendEmote(tandemMsg('join', inv.from, inv.seat));
 }
-// Items (saved on this device). The master code in chat adds every item.
+// Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
 // Costumes are bought now. Players who already picked one at the start keep it.
 try {
@@ -1452,6 +1462,7 @@ if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { my
 const CODE_TEXT = {
   coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!' },
   used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.' },
+  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.' },
 };
 const OUTFIT_TEXT = {
   bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.' },
