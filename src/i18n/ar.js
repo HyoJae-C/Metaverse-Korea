@@ -137,6 +137,8 @@ export const AR = {
   'beauty.pay': 'حفظ · 🪙 {coins}',
   'beauty.saved': 'حُفظ مظهرك الجديد!',
   'beauty.suits': 'يليق بك كثيرًا!',
+  'book.reading': '📖 يقرأ...',
+  'haircut.start': 'سأقصّ لك شعرك بشكل جميل!',
   'salon.open': 'اختر تسريحة',
   'salon.howTo': 'اجلس على الكرسي وانظر في المرآة: جرّب تسريحة ولونًا. تدفع فقط عند الحفظ.',
   'clinic.open': 'استشر الطبيب',

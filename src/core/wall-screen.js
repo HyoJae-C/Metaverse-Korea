@@ -1,11 +1,12 @@
 // A big screen (대형 전광판) fixed to a building's wall, high up. For now it
 // shows a "coming soon" card; ads can be drawn on the same canvas later.
 //
-// Placed from region.json "screens": [{ at: [x, z], w, h, y, image }]: the screen
-// goes on the building wall nearest `at`, facing out of the building.
+// Placed from region.json "screens": [{ at: [x, z], along, w, h, y, image,
+// city, text }]: the screen goes on the building wall nearest `at` (moved
+// `along` metres sideways), facing out of the building. It shows `image`, a
+// `city` card ({ name, local }) for a tall screen, or a line of `text`.
 import * as THREE from 'three';
 
-const W = 1024, H = 512;
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
 function inPoly(x, z, p) {
@@ -40,6 +41,7 @@ export function wallNear(buildings, x, z, minLen = 8) {
 }
 
 function drawSoon(g, t) {
+  const { width: W, height: H } = g.canvas;
   const sky = g.createLinearGradient(0, 0, W, H);
   const k = (Math.sin(t * 0.4) + 1) / 2;
   sky.addColorStop(0, `hsl(${250 + k * 30}, 55%, 16%)`);
@@ -67,6 +69,7 @@ function drawSoon(g, t) {
 // A picture (e.g. the game's link-preview image), cover-fitted, with a slow
 // light sweep and LED lines so it reads as a screen.
 function drawImage(g, img, t) {
+  const { width: W, height: H } = g.canvas;
   g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   const k = Math.max(W / img.width, H / img.height);
   const w = img.width * k, h = img.height * k;
@@ -79,13 +82,82 @@ function drawImage(g, img, t) {
   for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 2);
 }
 
+function sweepAndLines(g, t, W, H) {
+  const sx = ((t * 160) % (W + 400)) - 200;
+  const sweep = g.createLinearGradient(sx - 120, 0, sx + 120, 0);
+  sweep.addColorStop(0, 'rgba(255,255,255,0)'); sweep.addColorStop(0.5, 'rgba(255,255,255,0.10)'); sweep.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = sweep; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(0,0,0,0.16)';
+  for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 2);
+}
+// Shrink the font until the text fits.
+function fit(g, text, px, maxW, weight = 900) {
+  do g.font = `${weight} ${px}px ${FONT}`; while (g.measureText(text).width > maxW && (px -= 4) > 12);
+}
+
+// A tall screen: the next city, in its own script and in English.
+function drawCity(g, city, t) {
+  const { width: W, height: H } = g.canvas;
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  const k = (Math.sin(t * 0.5 + city.hue) + 1) / 2;
+  sky.addColorStop(0, `hsl(${city.hue}, 70%, ${12 + k * 6}%)`);
+  sky.addColorStop(1, `hsl(${city.hue + 40}, 75%, ${26 + k * 8}%)`);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  // City lights: little windows twinkling along the bottom.
+  for (let i = 0; i < 26; i++) {
+    const bx = (i * 97) % W, bh = 120 + ((i * 53) % 260);
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(bx, H - bh, 40 + (i % 3) * 14, bh);
+    g.fillStyle = `rgba(255,220,140,${0.35 + 0.35 * Math.sin(t * 2 + i)})`;
+    for (let y = H - bh + 14; y < H - 10; y += 26) g.fillRect(bx + 8, y, 8, 10);
+  }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.globalAlpha = 0.65 + 0.35 * Math.sin(t * 2.2);
+  g.fillStyle = '#ffd36e';
+  fit(g, 'COMING NEXT', 64, W - 60, 800);
+  g.fillText('COMING NEXT', W / 2, H * 0.12);
+  g.globalAlpha = 1;
+  g.fillStyle = '#fff';
+  fit(g, city.local, 260, W - 60);
+  g.fillText(city.local, W / 2, H * 0.36);
+  fit(g, city.name, 120, W - 50);
+  g.fillText(city.name, W / 2, H * 0.55);
+  sweepAndLines(g, t, W, H);
+}
+
+// A wide banner with one line of text, the trailing dots blinking in turn.
+function drawText(g, text, t) {
+  const { width: W, height: H } = g.canvas;
+  const sky = g.createLinearGradient(0, 0, W, 0);
+  const k = (t * 0.08) % 1;
+  sky.addColorStop(0, `hsl(${(k * 360) | 0}, 70%, 18%)`);
+  sky.addColorStop(1, `hsl(${((k * 360) + 90) | 0}, 70%, 24%)`);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const base = text.replace(/\.+$/, '');
+  const dots = '.'.repeat(1 + (Math.floor(t * 2.5) % 3));
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  fit(g, base + '...', 150, W - 120);
+  const full = g.measureText(base + '...').width;
+  const x0 = (W - full) / 2;
+  g.shadowColor = 'rgba(255,210,110,0.8)'; g.shadowBlur = 24;
+  g.fillStyle = '#fff';
+  g.fillText(base, x0, H / 2 + 4);
+  g.fillStyle = '#ffd36e';
+  g.fillText(dots, x0 + g.measureText(base).width, H / 2 + 4);
+  g.shadowBlur = 0;
+  sweepAndLines(g, t, W, H);
+}
+
 export class WallScreen {
   // image: a picture to show (url), instead of the "coming soon" card.
-  constructor({ w = 20, h = 10, image = null } = {}) {
+  // city / text: see the region.json note at the top.
+  constructor({ w = 20, h = 10, image = null, city = null, text = null } = {}) {
     this.t = 0;
     this.frameT = 0;
+    this.city = city; this.text = text;
     this.canvas = document.createElement('canvas');
-    this.canvas.width = W; this.canvas.height = H;
+    // The longer side gets 1024 pixels; the canvas has the screen's shape.
+    const k = 1024 / Math.max(w, h);
+    this.canvas.width = Math.round(w * k); this.canvas.height = Math.round(h * k);
     this.g = this.canvas.getContext('2d');
     this.tex = new THREE.CanvasTexture(this.canvas);
     this.tex.colorSpace = THREE.SRGBColorSpace;
@@ -117,6 +189,8 @@ export class WallScreen {
     if (this.frameT < 1 / 15) return; // 15 fps is plenty for a sign
     this.frameT = 0;
     if (this.img) drawImage(this.g, this.img, this.t);
+    else if (this.city) drawCity(this.g, this.city, this.t);
+    else if (this.text) drawText(this.g, this.text, this.t);
     else drawSoon(this.g, this.t);
     this.tex.needsUpdate = true;
   }

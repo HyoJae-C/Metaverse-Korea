@@ -99,6 +99,9 @@
     }
   ],
   "screens": [
-    { "at": [-1.4, 102.4], "w": 28, "y": 6, "image": "og.png" }
+    { "at": [-1.4, 102.4], "w": 28, "y": 6, "image": "og.png" },
+    { "at": [-1.4, 102.4], "along": -19, "w": 7, "h": 14, "y": 6, "city": { "name": "TOKYO", "local": "東京", "hue": 330 } },
+    { "at": [-1.4, 102.4], "along": 19, "w": 7, "h": 14, "y": 6, "city": { "name": "HONG KONG", "local": "香港", "hue": 200 } },
+    { "at": [-1.4, 102.4], "w": 46, "h": 11.5, "y": 21.6, "text": "NEXT IS TOKYO AND HONG KONG..." }
   ]
 }

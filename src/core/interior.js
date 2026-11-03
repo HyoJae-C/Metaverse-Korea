@@ -262,7 +262,7 @@ export function buildInterior(store) {
   g.fillText(nameText, 512, 84);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const tw = Math.min(10, w - 1), th = tw / 6.4;
+  const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
   if (store.category !== 'home') scene.add(title);

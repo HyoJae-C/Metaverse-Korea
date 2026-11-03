@@ -136,6 +136,8 @@ export const ES = {
   'beauty.pay': 'Guardar · 🪙 {coins}',
   'beauty.saved': '¡Nuevo look guardado!',
   'beauty.suits': '¡Te queda genial!',
+  'book.reading': "📖 Leyendo...",
+  'haircut.start': "¡Te haré un corte precioso!",
   'salon.open': "Elegir estilo",
   'salon.howTo': "Siéntate frente al espejo y prueba un peinado y un color. Solo pagas al guardar.",
   'clinic.open': "Consultar",

@@ -404,11 +404,13 @@ let squareNpc = null, billboard = null;
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
-  const wall = wallNear(map.buildings, sc.at[0], sc.at[1]);
-  if (!wall) continue;
-  const w = Math.min(sc.w || 20, wall.len - 2), h = w / 2; // the canvas is 2:1
+  const near = wallNear(map.buildings, sc.at[0], sc.at[1]);
+  if (!near) continue;
+  const along = sc.along || 0; // slide sideways along the wall
+  const wall = { ...near, x: near.x + near.ax * along, z: near.z + near.az * along };
+  const w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
   const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
-  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null });
+  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text });
   ws.mount(wall, y, h);
   scene.add(ws.root);
   wallScreens.push(ws);
@@ -2671,6 +2673,7 @@ function currentActivity() {
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing) return 'dance';
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
+  if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return 'fish';
   return null;
 }
@@ -2804,6 +2807,7 @@ const beautyUi = new BeautyUI({
   onSave: (look, cost) => {
     if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
     if (cost && isClinic(beautyUi.kind) && interior?.stations?.surgery) { setLook(myLook); endBeautyCam(); startSurgery(look); return true; }
+    if (cost && beautyUi.kind === 'salon' && seated?.mirrorZ != null && (look.hairStyle !== myLook.hairStyle || look.dye !== myLook.dye)) { setLook(myLook); startHaircut(look); return true; }
     keepLook(look);
     endBeautyCam();
     me.play('cheer');
@@ -2819,16 +2823,19 @@ function keepLook(look) {
   clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
 }
 let beautyCam = null;
+const MIRROR_LOOK_Y = 0.9; // a bit below the face, so it sits above the panel
 function openBeauty(kind) {
   clerk?.ch.wave();
   beautyCam = { ...cam };
-  if (seated?.lie) { // lying on the bed: look down at the face from the head end
-    Object.assign(cam, { yaw: seated.ry + Math.PI, dist: 2.2, pitch: 1.0 });
-    beautyCam.look = [seated.x, 0.75, seated.z - 0.35];
-  } else if (seated?.mirrorZ != null) { // in the chair: over the shoulder, into the mirror
-    // A little to the side, so your head doesn't hide its own reflection.
-    Object.assign(cam, { yaw: seated.ry + Math.PI + 0.5, dist: 1.9, pitch: 0.28 });
-    beautyCam.look = [seated.x + Math.sin(cam.yaw) * 0.5, 0.55, seated.mirrorZ]; // (mirrors are on the back wall)
+  document.body.classList.add('beauty-mode'); // hides the shop banner so your face shows
+  if (seated?.lie) { // lying on the bed: look down at the face from the foot end
+    Object.assign(cam, { yaw: seated.ry, dist: 2.0, pitch: 0.85 });
+    beautyCam.look = [seated.x, 0.7, seated.z - 0.75];
+  } else if (seated?.mirrorZ != null) { // in the chair: what the mirror sees, your face up close
+    // The mirror is only a metre away, so a wider lens fits your head in.
+    Object.assign(cam, { yaw: seated.ry + 0.15, dist: 0.95, pitch: 0.2 });
+    beautyCam.look = [seated.x, MIRROR_LOOK_Y, seated.z];
+    camera.fov = 80; camera.updateProjectionMatrix();
   } else {
     Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
     me.root.rotation.y = cam.yaw; // turn to face the camera
@@ -2839,6 +2846,8 @@ function openBeauty(kind) {
 function endBeautyCam() {
   if (beautyCam) { const { look, ...c } = beautyCam; Object.assign(cam, c); }
   beautyCam = null;
+  document.body.classList.remove('beauty-mode');
+  if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); }
 }
 
 // Surgery (clinics): the gurney rolls you into the operating room with the
@@ -2949,6 +2958,73 @@ function updateSurgery(dt) {
     surgery = null;
     shop.toast(t('beauty.saved'));
   } else s.staff.forEach((c) => c.animate(dt, 0, false));
+}
+// Salon: after you pay, the hairdresser steps up behind your chair, snips
+// away while bits of hair fall, and then the new style appears.
+const HAIRCUT = { snip: 2.6, after: 1.4 };
+let haircut = null;
+function startHaircut(look) {
+  const st = createCharacter({ model: 'basic', shirt: 'charcoal', pants: 'charcoal', hair: 'black', skin: 'light', neck: 'scarf' });
+  const side = seated.x <= 0 ? 1 : -1; // the camera looks from this side (towards the middle of the room)
+  const sx = seated.x - side * 0.35, sz = seated.z + 0.55; // behind the chair, on the far side
+  st.root.position.set(sx, 0, sz);
+  st.root.rotation.y = Math.atan2(seated.x - sx, seated.z - 0.1 - sz);
+  interior.scene.add(st.root);
+  st.activity('snip');
+  // From the side, towards the middle of the room: you, and the hairdresser behind you.
+  Object.assign(cam, { yaw: Math.atan2(side, -0.35), dist: 2.9, pitch: 0.15 });
+  if (beautyCam) beautyCam.look = [seated.x, 0.85, seated.z + 0.25];
+  const hairHex = '#' + (PALETTES.dye[myLook.dye] ?? PALETTES.hair[myLook.hair] ?? 0x3a2a20).toString(16).padStart(6, '0');
+  haircut = { t: 0, look, st, bits: [], spawn: 0, mat: new THREE.MeshLambertMaterial({ color: hairHex }), swapped: false };
+  say(st, $('labels'), ['예쁘게 잘라 드릴게요!', 'yeppeuge jalla deurilgeyo!', t('haircut.start')]);
+}
+const _headPos = new THREE.Vector3();
+function updateHaircut(dt) {
+  const h = haircut;
+  if (!h) return;
+  h.t += dt;
+  h.st.animate(dt, 0, false);
+  if (h.t < HAIRCUT.snip) { // bits of hair drift down from around the head
+    h.spawn -= dt;
+    const head = me.root.getObjectByName('head');
+    if (h.spawn <= 0 && head) {
+      h.spawn = 0.05;
+      head.getWorldPosition(_headPos);
+      for (let i = 0; i < 2; i++) {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.006, 0.012), h.mat);
+        b.position.set(_headPos.x + (Math.random() - 0.5) * 0.4, _headPos.y + 0.1 + Math.random() * 0.15, _headPos.z + (Math.random() - 0.5) * 0.4);
+        b.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+        b.userData.v = [(Math.random() - 0.5) * 0.3, -0.2, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 8];
+        interior.scene.add(b);
+        h.bits.push(b);
+      }
+    }
+  }
+  for (const b of h.bits) { // flutter down to the floor and stay there
+    if (b.position.y <= 0.01) continue;
+    const v = b.userData.v;
+    v[1] = Math.max(-0.9, v[1] - 1.2 * dt);
+    b.position.x += v[0] * dt; b.position.y = Math.max(0.01, b.position.y + v[1] * dt); b.position.z += v[2] * dt;
+    b.rotation.x += v[3] * dt; b.rotation.z += v[3] * 0.7 * dt;
+  }
+  if (h.t >= HAIRCUT.snip && !h.swapped) { // done: the new style
+    h.swapped = true;
+    h.st.activity(null);
+    keepLook(h.look);
+    me.play('cheer');
+    sfx.pop?.();
+  }
+  if (h.t >= HAIRCUT.snip + HAIRCUT.after) finishHaircut();
+}
+function finishHaircut() {
+  const h = haircut;
+  if (!h) return;
+  haircut = null;
+  if (!h.swapped) keepLook(h.look);
+  h.st.root.removeFromParent();
+  for (const b of h.bits) b.removeFromParent();
+  h.mat.dispose();
+  endBeautyCam();
 }
 const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 function openFishing() {
@@ -3303,6 +3379,7 @@ function sitDown(seat) {
 }
 function standUp() {
   if (!seated) return;
+  finishHaircut(); // walking off mid-cut: the new style is already paid for
   me.root.position.set(seated.stand[0], 0, seated.stand[1]);
   if (seated.sauna && saunaUi.open) saunaUi.close();
   if (seated.beauty && beautyUi.open) beautyUi.close();
@@ -3552,8 +3629,8 @@ renderer.setAnimationLoop(() => {
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, 4, mode === 'store' ? 9 : 28);
+  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beautyCam ? 0.05 : 0.12, 1.25);
+  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -3590,8 +3667,10 @@ renderer.setAnimationLoop(() => {
   updateRide(dt);
   if (seated && !seated.surgery && mag > 0.3) standUp();
   updateSurgery(dt);
+  updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
   me.activity(currentActivity());
+  if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && !ride && riding !== 3) {
@@ -3881,6 +3960,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
     look: () => currentLook,
+    camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
