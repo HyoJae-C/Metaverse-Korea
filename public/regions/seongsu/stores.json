@@ -39,16 +39,13 @@
     {
       "id": "petal-lip",
       "category": "beauty",
-      "name": { "ko": "꽃잎 립", "en": "Petal Lip" },
-      "tagline": { "en": "Lip tints in every flower shade", "ko": "꽃잎 색 그대로, 립 틴트" },
+      "workshop": "lips",
+      "size": "medium",
+      "name": { "ko": "꽃잎 립", "en": "Petal Lip", "ja": "花びらリップ", "zh": "花瓣唇" },
+      "tagline": { "en": "Ten lip tints: sit at the mirror and try them on", "ko": "거울 앞에 앉아 10가지 립 틴트를 발라 봐요", "ja": "鏡の前で10色のリップを試そう", "zh": "坐在镜子前试涂10种唇彩" },
       "anchor": { "lat": 37.544069, "lon": 127.055769 },
       "colors": { "sign": "#e05a7a", "awning": "#ffc3d0", "accent": "#fff0f3" },
-      "products": [
-        { "id": "tint-camellia", "model": "lipstick", "color": "#d94c5f", "price": 15000, "name": { "en": "Water Tint · Camellia", "ko": "워터 틴트 · 동백" }, "desc": { "en": "Light, glossy tint with a long-lasting stain." } },
-        { "id": "tint-peach", "model": "lipstick", "color": "#ff9b85", "price": 15000, "name": { "en": "Water Tint · Peach Blossom", "ko": "워터 틴트 · 복숭아꽃" }, "desc": { "en": "A soft coral for everyday looks." } },
-        { "id": "balm-honey", "model": "jar", "color": "#ffd36e", "price": 9000, "name": { "en": "Honey Lip Balm", "ko": "허니 립밤" }, "desc": { "en": "Overnight balm for dry lips." } },
-        { "id": "cushion", "model": "jar", "color": "#f3d6c0", "price": 28000, "name": { "en": "Glow Cushion", "ko": "글로우 쿠션" }, "desc": { "en": "Dewy cushion foundation, three shades." } }
-      ]
+      "products": []
     },
     {
       "id": "popup-station",
@@ -316,7 +313,9 @@
       ]
     },
     {
-      "id": "ttukseom-hangang", "category": "park", "size": "park",
+      "id": "ttukseom-hangang",
+      "category": "park",
+      "size": "park",
       "name": { "ko": "뚝섬 한강공원", "en": "Ttukseom Han River Park", "ja": "トゥクソム漢江公園", "zh": "纛岛汉江公园" },
       "tagline": { "en": "Fish from the pier and cook ramen by the river", "ko": "한강에서 낚시하고 라면 끓여 먹기", "ja": "桟橋で釣りをして、川辺でラーメンを作ろう", "zh": "在码头钓鱼，在江边煮拉面" },
       "anchor": { "lat": 37.5405, "lon": 127.0565 },
@@ -324,7 +323,10 @@
       "products": []
     },
     {
-      "id": "seongsu-fishmarket", "category": "market", "workshop": "fishmarket", "size": "medium",
+      "id": "seongsu-fishmarket",
+      "category": "market",
+      "workshop": "fishmarket",
+      "size": "medium",
       "name": { "ko": "성수 수산시장", "en": "Seongsu Fish Market", "ja": "ソンス水産市場", "zh": "圣水水产市场" },
       "tagline": { "en": "Sell the fish you caught at the Han River", "ko": "한강에서 잡은 물고기를 팔아요", "ja": "漢江で釣った魚を売ろう", "zh": "出售你在汉江钓到的鱼" },
       "anchor": { "lat": 37.5422, "lon": 127.0575 },
@@ -332,7 +334,10 @@
       "products": []
     },
     {
-      "id": "gawison-hair", "category": "beauty", "workshop": "salon", "size": "medium",
+      "id": "gawison-hair",
+      "category": "beauty",
+      "workshop": "salon",
+      "size": "medium",
       "name": { "ko": "가위손 헤어", "en": "Gawison Hair Salon", "ja": "カウィソン ヘア", "zh": "剪刀手美发" },
       "tagline": { "en": "Hair dye in ten colours, from ash to mint", "ko": "애쉬부터 민트까지, 열 가지 염색", "ja": "アッシュからミントまで、10色のカラー", "zh": "从灰色到薄荷色，十种染发颜色" },
       "at": [35, 40],
@@ -340,15 +345,43 @@
       "products": []
     },
     {
-      "id": "bitna-clinic", "category": "beauty", "workshop": "clinic", "size": "medium",
+      "id": "bitna-clinic",
+      "category": "beauty",
+      "workshop": "clinic",
+      "size": "medium",
       "name": { "ko": "빛나 성형외과", "en": "Bitna Cosmetic Clinic", "ja": "ピンナ美容外科", "zh": "光彩整形外科" },
-      "tagline": { "en": "Colour lenses, skin tone and a smaller face", "ko": "컬러렌즈, 피부 톤, 작은 얼굴", "ja": "カラコン、肌のトーン、小顔", "zh": "彩色隐形眼镜、肤色和小脸" },
+      "tagline": { "en": "Bigger or rounder eyes, skin tone and a smaller face", "ko": "큰 눈, 동그란 눈, 피부 톤, 작은 얼굴", "ja": "大きな目・丸い目、肌のトーン、小顔", "zh": "大眼睛、圆眼睛、肤色和小脸" },
       "anchor": { "lat": 37.5437, "lon": 127.0533 },
       "colors": { "sign": "#5a7fb0", "awning": "#d8e6f5", "accent": "#f6f9fd" },
       "products": []
     },
     {
-      "id": "play-kpop-cafe", "category": "cafe", "kpop": true, "size": "medium",
+      "id": "saebom-clinic",
+      "category": "beauty",
+      "workshop": "clinic2",
+      "size": "medium",
+      "name": { "ko": "새봄 성형외과", "en": "Saebom Eye Clinic", "ja": "セボム美容外科", "zh": "新春整形外科" },
+      "tagline": { "en": "Cat eyes or puppy eyes", "ko": "고양이 눈, 강아지 눈", "ja": "猫目か子犬目", "zh": "猫眼或狗狗眼" },
+      "anchor": { "lat": 37.544, "lon": 127.053 },
+      "colors": { "sign": "#3f9a8a", "awning": "#d3efe8", "accent": "#f3fbf9" },
+      "products": []
+    },
+    {
+      "id": "lens-village",
+      "category": "beauty",
+      "workshop": "lens",
+      "size": "medium",
+      "name": { "ko": "렌즈마을", "en": "Lens Village", "ja": "レンズ村", "zh": "美瞳村" },
+      "tagline": { "en": "Colour lenses in fourteen shades", "ko": "14가지 컬러렌즈", "ja": "14色のカラコン", "zh": "14种颜色的美瞳" },
+      "anchor": { "lat": 37.5433, "lon": 127.0536 },
+      "colors": { "sign": "#6a4fc0", "awning": "#e3dbfa", "accent": "#f7f4ff" },
+      "products": []
+    },
+    {
+      "id": "play-kpop-cafe",
+      "category": "cafe",
+      "kpop": true,
+      "size": "medium",
       "name": { "ko": "케이팝 카페 PLAY", "en": "K-POP Café PLAY", "ja": "K-POPカフェ PLAY", "zh": "K-POP咖啡馆 PLAY" },
       "tagline": { "en": "Music videos on the big TV, for everyone in the café", "ko": "큰 TV로 뮤직비디오를 다 같이 봐요", "ja": "大きなテレビでMVをみんなで", "zh": "在大电视上和大家一起看MV" },
       "anchor": { "lat": 37.5441, "lon": 127.0561 },
@@ -356,7 +389,10 @@
       "products": []
     },
     {
-      "id": "sinjeon-pocha", "category": "restaurant", "workshop": "pocha", "size": "medium",
+      "id": "sinjeon-pocha",
+      "category": "restaurant",
+      "workshop": "pocha",
+      "size": "medium",
       "name": { "ko": "신당 떡볶이 포차", "en": "Sindang Tteokbokki Stall", "ja": "シンダン トッポッキ屋台", "zh": "新堂炒年糕小摊" },
       "tagline": { "en": "Take orders in Korean, cook them, deliver by bike", "ko": "한국어 주문 받고 만들고, 따릉이로 배달까지", "ja": "韓国語で注文を受けて作って、自転車で配達", "zh": "用韩语接单、做菜，还能骑车送外卖" },
       "anchor": { "lat": 37.5424, "lon": 127.0569 },
@@ -364,7 +400,10 @@
       "products": []
     },
     {
-      "id": "star-noraebang", "category": "play", "workshop": "karaoke", "size": "medium",
+      "id": "star-noraebang",
+      "category": "play",
+      "workshop": "karaoke",
+      "size": "medium",
       "name": { "ko": "스타 코인노래방", "en": "Star Coin Noraebang", "ja": "スター コインカラオケ", "zh": "星星投币KTV" },
       "tagline": { "en": "Tap to the beat and beat the room's high score", "ko": "박자 맞춰 탭하고 방 최고 점수에 도전", "ja": "リズムに合わせてタップ、部屋のハイスコアに挑戦", "zh": "跟着节拍点击，挑战房间最高分" },
       "anchor": { "lat": 37.5449, "lon": 127.0576 },
@@ -372,15 +411,43 @@
       "products": []
     },
     {
-      "id": "nemo-photo", "category": "play", "workshop": "photo", "size": "small",
-      "name": { "ko": "네모 포토부스", "en": "Nemo Photo Booth", "ja": "ネモ フォトブース", "zh": "方块照相馆" },
-      "tagline": { "en": "Four-cut photo strips with your friends", "ko": "친구들과 인생네컷", "ja": "友だちと4カット写真", "zh": "和朋友拍四格照" },
+      "id": "nemo-photo",
+      "category": "play",
+      "workshop": "photo",
+      "size": "medium",
+      "name": { "ko": "조각스튜디오", "en": "Jogak Studio", "ja": "チョガクスタジオ", "zh": "碎片工作室" },
+      "tagline": { "en": "Four-cut photo strips with your friends, two booths", "ko": "친구들과 네 컷 사진, 부스 두 개", "ja": "友だちと4カット写真、ブース2台", "zh": "和朋友拍四格照，两个照相亭" },
       "anchor": { "lat": 37.5445, "lon": 127.0544 },
       "colors": { "sign": "#2b2630", "awning": "#ffd6e5", "accent": "#fff7fa" },
       "products": []
     },
     {
-      "id": "lucky-claw", "category": "play", "workshop": "claw", "size": "small",
+      "id": "chueok-photo",
+      "category": "play",
+      "workshop": "photo1",
+      "size": "medium",
+      "name": { "ko": "추억사진관", "en": "Chueok Photo Studio", "ja": "チュオク写真館", "zh": "回忆照相馆" },
+      "tagline": { "en": "One big portrait, just you", "ko": "나 혼자 한 장 크게", "ja": "自分だけの大きな1枚", "zh": "一个人拍一张大照片" },
+      "anchor": { "lat": 37.5447, "lon": 127.0556 },
+      "colors": { "sign": "#7a5a3a", "awning": "#f0e2c8", "accent": "#fbf6ec" },
+      "products": []
+    },
+    {
+      "id": "memories-photo",
+      "category": "play",
+      "workshop": "photobw",
+      "size": "medium",
+      "name": { "ko": "메모리즈", "en": "Memories", "ja": "メモリーズ", "zh": "Memories" },
+      "tagline": { "en": "Black-and-white photo booth", "ko": "흑백 사진 포토부스", "ja": "モノクロ写真ブース", "zh": "黑白照相亭" },
+      "anchor": { "lat": 37.5429, "lon": 127.0546 },
+      "colors": { "sign": "#1d1b22", "awning": "#d9d9d9", "accent": "#f4f4f4" },
+      "products": []
+    },
+    {
+      "id": "lucky-claw",
+      "category": "play",
+      "workshop": "claw",
+      "size": "small",
       "name": { "ko": "럭키 인형뽑기", "en": "Lucky Claw Machines", "ja": "ラッキー クレーンゲーム", "zh": "幸运抓娃娃" },
       "tagline": { "en": "Win plushies for your home and coin pouches", "ko": "집에 놓을 인형과 코인 주머니를 뽑아요", "ja": "家に飾るぬいぐるみやコインをGET", "zh": "抓可以摆在家里的玩偶和钱袋" },
       "anchor": { "lat": 37.5433, "lon": 127.0584 },
@@ -388,104 +455,429 @@
       "products": []
     },
     {
-      "id": "dano-hanbok", "category": "fashion", "size": "medium", "at": [-1300, -340.6],
-      "name": {"en": "Dano Hanbok Rental", "ko": "단오 한복대여", "ja": "端午 韓服レンタル", "zh": "端午韩服租赁"},
-      "tagline": {"en": "Try on hanbok and walk to the palace", "ko": "한복 입고 경복궁 나들이", "ja": "韓服を着て景福宮へ", "zh": "穿上韩服去景福宫"},
-      "colors": {"sign": "#b8323f", "awning": "#f6c6cf", "accent": "#fff4f2"},
+      "id": "dano-hanbok",
+      "category": "fashion",
+      "size": "medium",
+      "at": [-1300, -340.6],
+      "name": { "en": "Dano Hanbok Rental", "ko": "단오 한복대여", "ja": "端午 韓服レンタル", "zh": "端午韩服租赁" },
+      "tagline": { "en": "Try on hanbok and walk to the palace", "ko": "한복 입고 경복궁 나들이", "ja": "韓服を着て景福宮へ", "zh": "穿上韩服去景福宫" },
+      "colors": { "sign": "#b8323f", "awning": "#f6c6cf", "accent": "#fff4f2" },
       "products": [
-        {"id": "jeogori-peach", "model": "tee", "color": "#ffb3c7", "price": 15000, "tryOn": {"shirt": "peach", "pants": "sand"}, "name": {"en": "Hanbok · Peach jeogori", "ko": "한복 · 분홍 저고리", "ja": "韓服 · ピンクのチョゴリ", "zh": "韩服 · 粉色上衣"}, "desc": {"en": "A short jacket (jeogori) tied with a ribbon (goreum), over a long skirt.", "ko": "고름을 매는 짧은 저고리에 긴 치마를 입어요."}},
-        {"id": "jeogori-mint", "model": "tee", "color": "#8fd3c7", "price": 15000, "tryOn": {"shirt": "mint", "pants": "sand"}, "name": {"en": "Hanbok · Mint jeogori", "ko": "한복 · 민트 저고리", "ja": "韓服 · ミントのチョゴリ", "zh": "韩服 · 薄荷色上衣"}, "desc": {"en": "Wearing hanbok gets you into many palaces for free.", "ko": "한복을 입으면 고궁에 무료로 들어갈 수 있어요."}},
-        {"id": "jeogori-butter", "model": "tee", "color": "#ffd36e", "price": 15000, "tryOn": {"shirt": "butter", "pants": "sand"}, "name": {"en": "Hanbok · Yellow jeogori", "ko": "한복 · 노랑 저고리", "ja": "韓服 · 黄色のチョゴリ", "zh": "韩服 · 黄色上衣"}, "desc": {"en": "Bright yellow, a classic colour for festival days.", "ko": "명절에 많이 입는 밝은 노랑이에요."}},
-        {"id": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "tryOn": {"shirt": "lilac", "pants": "charcoal"}, "name": {"en": "Hanbok · Lilac durumagi", "ko": "한복 · 연보라 두루마기", "ja": "韓服 · 薄紫のトゥルマギ", "zh": "韩服 · 淡紫长袍"}, "desc": {"en": "A long overcoat (durumagi) worn over the jeogori and baji.", "ko": "저고리와 바지 위에 입는 긴 겉옷이에요."}}
+        { "id": "jeogori-peach", "model": "tee", "color": "#ffb3c7", "price": 15000, "tryOn": { "shirt": "peach", "pants": "sand" }, "name": { "en": "Hanbok · Peach jeogori", "ko": "한복 · 분홍 저고리", "ja": "韓服 · ピンクのチョゴリ", "zh": "韩服 · 粉色上衣" }, "desc": { "en": "A short jacket (jeogori) tied with a ribbon (goreum), over a long skirt.", "ko": "고름을 매는 짧은 저고리에 긴 치마를 입어요." } },
+        { "id": "jeogori-mint", "model": "tee", "color": "#8fd3c7", "price": 15000, "tryOn": { "shirt": "mint", "pants": "sand" }, "name": { "en": "Hanbok · Mint jeogori", "ko": "한복 · 민트 저고리", "ja": "韓服 · ミントのチョゴリ", "zh": "韩服 · 薄荷色上衣" }, "desc": { "en": "Wearing hanbok gets you into many palaces for free.", "ko": "한복을 입으면 고궁에 무료로 들어갈 수 있어요." } },
+        { "id": "jeogori-butter", "model": "tee", "color": "#ffd36e", "price": 15000, "tryOn": { "shirt": "butter", "pants": "sand" }, "name": { "en": "Hanbok · Yellow jeogori", "ko": "한복 · 노랑 저고리", "ja": "韓服 · 黄色のチョゴリ", "zh": "韩服 · 黄色上衣" }, "desc": { "en": "Bright yellow, a classic colour for festival days.", "ko": "명절에 많이 입는 밝은 노랑이에요." } },
+        { "id": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "tryOn": { "shirt": "lilac", "pants": "charcoal" }, "name": { "en": "Hanbok · Lilac durumagi", "ko": "한복 · 연보라 두루마기", "ja": "韓服 · 薄紫のトゥルマギ", "zh": "韩服 · 淡紫长袍" }, "desc": { "en": "A long overcoat (durumagi) worn over the jeogori and baji.", "ko": "저고리와 바지 위에 입는 긴 겉옷이에요." } }
       ]
     },
     {
-      "id": "chaon-teahouse", "category": "cafe", "size": "small", "at": [-1420, -294.6],
-      "name": {"en": "Chaon Tea House", "ko": "차온 전통찻집", "ja": "茶温 伝統茶房", "zh": "茶温传统茶馆"},
-      "tagline": {"en": "Traditional teas and rice cakes by the palace", "ko": "궁궐 옆 전통차와 떡", "ja": "宮殿のそばで伝統茶とお餅", "zh": "宫殿旁的传统茶和年糕"},
-      "colors": {"sign": "#4f6b3a", "awning": "#e3d9b8", "accent": "#f7f2e3"},
+      "id": "chaon-teahouse",
+      "category": "cafe",
+      "size": "small",
+      "at": [-1420, -294.6],
+      "name": { "en": "Chaon Tea House", "ko": "차온 전통찻집", "ja": "茶温 伝統茶房", "zh": "茶温传统茶馆" },
+      "tagline": { "en": "Traditional teas and rice cakes by the palace", "ko": "궁궐 옆 전통차와 떡", "ja": "宮殿のそばで伝統茶とお餅", "zh": "宫殿旁的传统茶和年糕" },
+      "colors": { "sign": "#4f6b3a", "awning": "#e3d9b8", "accent": "#f7f2e3" },
       "products": [
-        {"id": "ssanghwa-tea", "model": "cup", "color": "#7a4a2e", "price": 7000, "name": {"en": "Ssanghwa tea", "ko": "쌍화차", "ja": "双和茶", "zh": "双和茶"}, "desc": {"en": "A warm herbal tea topped with nuts and a yolk-coloured date slice.", "ko": "견과류를 띄운 따뜻한 한방차예요."}},
-        {"id": "sikhye", "model": "cup", "color": "#efe2c4", "price": 5000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "A sweet, cold rice drink with grains of rice floating in it.", "ko": "밥알이 동동 뜬 달콤하고 시원한 음료예요."}},
-        {"id": "maesil-tea", "model": "cup", "color": "#c9b44a", "price": 6000, "name": {"en": "Maesil tea", "ko": "매실차", "ja": "梅茶", "zh": "梅子茶"}, "desc": {"en": "Green plum tea, sweet and a little sour.", "ko": "새콤달콤한 매실차예요."}},
-        {"id": "injeolmi", "model": "bread", "color": "#e0c27a", "price": 4000, "name": {"en": "Injeolmi", "ko": "인절미", "ja": "インジョルミ", "zh": "打糕"}, "desc": {"en": "Chewy rice cake rolled in roasted soybean powder.", "ko": "고소한 콩고물을 묻힌 쫄깃한 떡이에요."}}
+        { "id": "ssanghwa-tea", "model": "cup", "color": "#7a4a2e", "price": 7000, "name": { "en": "Ssanghwa tea", "ko": "쌍화차", "ja": "双和茶", "zh": "双和茶" }, "desc": { "en": "A warm herbal tea topped with nuts and a yolk-coloured date slice.", "ko": "견과류를 띄운 따뜻한 한방차예요." } },
+        { "id": "sikhye", "model": "cup", "color": "#efe2c4", "price": 5000, "name": { "en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露" }, "desc": { "en": "A sweet, cold rice drink with grains of rice floating in it.", "ko": "밥알이 동동 뜬 달콤하고 시원한 음료예요." } },
+        { "id": "maesil-tea", "model": "cup", "color": "#c9b44a", "price": 6000, "name": { "en": "Maesil tea", "ko": "매실차", "ja": "梅茶", "zh": "梅子茶" }, "desc": { "en": "Green plum tea, sweet and a little sour.", "ko": "새콤달콤한 매실차예요." } },
+        { "id": "injeolmi", "model": "bread", "color": "#e0c27a", "price": 4000, "name": { "en": "Injeolmi", "ko": "인절미", "ja": "インジョルミ", "zh": "打糕" }, "desc": { "en": "Chewy rice cake rolled in roasted soybean powder.", "ko": "고소한 콩고물을 묻힌 쫄깃한 떡이에요." } }
       ]
     },
     {
-      "id": "info-center", "category": "info", "workshop": "info", "size": "small", "at": [58.6, 50.6],
-      "name": {"en": "Information Center", "ko": "인포메이션 센터", "ja": "インフォメーションセンター", "zh": "信息中心"},
-      "tagline": {"en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去"},
-      "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"},
+      "id": "info-center",
+      "category": "info",
+      "workshop": "info",
+      "size": "small",
+      "at": [58.6, 50.6],
+      "name": { "en": "Information Center", "ko": "인포메이션 센터", "ja": "インフォメーションセンター", "zh": "信息中心" },
+      "tagline": { "en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去" },
+      "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
       "products": []
     },
     {
-      "id": "name-studio", "category": "workshop", "workshop": "emblem", "size": "small", "at": [44, 59],
-      "name": {"en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊"},
-      "tagline": {"en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色"},
-      "colors": {"sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff"},
+      "id": "name-studio",
+      "category": "workshop",
+      "workshop": "emblem",
+      "size": "small",
+      "at": [44, 59],
+      "name": { "en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊" },
+      "tagline": { "en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色" },
+      "colors": { "sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff" },
       "products": []
     },
     {
-      "id": "onsaem-jjimjil", "category": "play", "workshop": "sauna", "size": "large", "at": [-38, 114],
-      "name": {"en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕"},
-      "tagline": {"en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋"},
-      "colors": {"sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6"},
+      "id": "onsaem-jjimjil",
+      "category": "play",
+      "workshop": "sauna",
+      "size": "large",
+      "at": [-38, 114],
+      "name": { "en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕" },
+      "tagline": { "en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋" },
+      "colors": { "sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6" },
       "products": [
-        {"id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠."}},
-        {"id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": {"en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个"}, "desc": {"en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요."}}
+        { "id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": { "en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露" }, "desc": { "en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠." } },
+        { "id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": { "en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个" }, "desc": { "en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요." } }
       ]
     },
     {
-      "id": "muscle-gym", "category": "play", "workshop": "gym", "size": "large", "at": [-65, 83],
-      "name": {"en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房"},
-      "tagline": {"en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快"},
-      "colors": {"sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb"},
+      "id": "muscle-gym",
+      "category": "play",
+      "workshop": "gym",
+      "size": "large",
+      "at": [-65, 83],
+      "name": { "en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房" },
+      "tagline": { "en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快" },
+      "colors": { "sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb" },
       "products": []
     },
     {
-      "id": "haneul-land", "category": "play", "workshop": "themepark", "size": "park", "at": [-88, 45],
-      "name": {"en": "Haneul Land", "ko": "하늘랜드", "ja": "ハヌルランド", "zh": "天空乐园"},
-      "tagline": {"en": "Carousel, Ferris wheel and a swinging pirate ship", "ko": "회전목마, 대관람차, 바이킹", "ja": "メリーゴーランド・観覧車・バイキング", "zh": "旋转木马、摩天轮、海盗船"},
-      "colors": {"sign": "#7b3fe4", "awning": "#ffd0e0", "accent": "#fff3f7"},
+      "id": "haneul-land",
+      "category": "play",
+      "workshop": "themepark",
+      "size": "park",
+      "at": [-88, 45],
+      "name": { "en": "Haneul Land", "ko": "하늘랜드", "ja": "ハヌルランド", "zh": "天空乐园" },
+      "tagline": { "en": "Carousel, Ferris wheel and a swinging pirate ship", "ko": "회전목마, 대관람차, 바이킹", "ja": "メリーゴーランド・観覧車・バイキング", "zh": "旋转木马、摩天轮、海盗船" },
+      "colors": { "sign": "#7b3fe4", "awning": "#ffd0e0", "accent": "#fff3f7" },
       "products": []
     },
     {
-      "id": "haru-mart", "category": "market", "icon": "🏪", "size": "small", "at": [-1, 24],
-      "name": {"en": "HARU MART", "ko": "하루마트", "ja": "ハルマート", "zh": "HARU MART"},
-      "tagline": {"en": "Open 24 hours: rice balls, cup ramen, milk, and umbrellas for rainy days", "ko": "24시간 편의점: 삼각김밥, 컵라면, 우유, 그리고 비 오는 날 우산", "ja": "24時間営業：おにぎり、カップ麺、牛乳、雨の日の傘", "zh": "24小时便利店：三角饭团、杯面、牛奶，还有雨天用的伞"},
-      "colors": {"sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7"},
+      "id": "haru-mart",
+      "category": "market",
+      "icon": "🏪",
+      "size": "small",
+      "at": [-1, 24],
+      "name": { "en": "HARU MART", "ko": "하루마트", "ja": "ハルマート", "zh": "HARU MART" },
+      "tagline": { "en": "Open 24 hours: rice balls, cup ramen, milk, and umbrellas for rainy days", "ko": "24시간 편의점: 삼각김밥, 컵라면, 우유, 그리고 비 오는 날 우산", "ja": "24時間営業：おにぎり、カップ麺、牛乳、雨の日の傘", "zh": "24小时便利店：三角饭团、杯面、牛奶，还有雨天用的伞" },
+      "colors": { "sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7" },
       "products": [
-        {"id": "umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5, "name": {"en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞"}, "desc": {"en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。"}},
-        {"id": "samgak-tuna", "model": "samgak", "color": "#2b3a2b", "price": 1300, "name": {"en": "Tuna-mayo rice ball", "ko": "참치마요 삼각김밥", "ja": "ツナマヨおにぎり", "zh": "金枪鱼蛋黄酱饭团"}, "desc": {"en": "The convenience-store classic. Pull tab 1, then the sides, and the seaweed wraps itself on.", "ko": "편의점 대표 메뉴. 1번을 당기고 양옆을 빼면 김이 저절로 싸져요."}},
-        {"id": "samgak-bulgogi", "model": "samgak", "color": "#3a2b22", "price": 1400, "name": {"en": "Bulgogi rice ball", "ko": "불고기 삼각김밥", "ja": "プルコギおにぎり", "zh": "烤肉饭团"}, "desc": {"en": "Sweet soy-marinated beef inside rice and seaweed.", "ko": "달짝지근한 불고기가 들어간 삼각김밥."}},
-        {"id": "cup-ramen", "model": "cup", "color": "#d9473a", "price": 1500, "name": {"en": "Cup ramen", "ko": "컵라면", "ja": "カップラーメン", "zh": "杯面"}, "desc": {"en": "Add hot water from the store's kettle and wait three minutes. Best with a rice ball.", "ko": "편의점 온수기로 물 붓고 3분. 삼각김밥이랑 같이 먹으면 최고."}},
-        {"id": "banana-milk", "model": "milk", "color": "#f2d45c", "price": 1700, "name": {"en": "Banana milk", "ko": "바나나 우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶"}, "desc": {"en": "Sweet banana-flavoured milk in a round little pot, a favourite after the jjimjilbang.", "ko": "동글동글 통에 든 달콤한 바나나 우유. 찜질방 다음엔 이거죠."}}
+        { "id": "umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5, "name": { "en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞" }, "desc": { "en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。" } },
+        { "id": "samgak-tuna", "model": "samgak", "color": "#2b3a2b", "price": 1300, "name": { "en": "Tuna-mayo rice ball", "ko": "참치마요 삼각김밥", "ja": "ツナマヨおにぎり", "zh": "金枪鱼蛋黄酱饭团" }, "desc": { "en": "The convenience-store classic. Pull tab 1, then the sides, and the seaweed wraps itself on.", "ko": "편의점 대표 메뉴. 1번을 당기고 양옆을 빼면 김이 저절로 싸져요." } },
+        { "id": "samgak-bulgogi", "model": "samgak", "color": "#3a2b22", "price": 1400, "name": { "en": "Bulgogi rice ball", "ko": "불고기 삼각김밥", "ja": "プルコギおにぎり", "zh": "烤肉饭团" }, "desc": { "en": "Sweet soy-marinated beef inside rice and seaweed.", "ko": "달짝지근한 불고기가 들어간 삼각김밥." } },
+        { "id": "cup-ramen", "model": "cup", "color": "#d9473a", "price": 1500, "name": { "en": "Cup ramen", "ko": "컵라면", "ja": "カップラーメン", "zh": "杯面" }, "desc": { "en": "Add hot water from the store's kettle and wait three minutes. Best with a rice ball.", "ko": "편의점 온수기로 물 붓고 3분. 삼각김밥이랑 같이 먹으면 최고." } },
+        { "id": "banana-milk", "model": "milk", "color": "#f2d45c", "price": 1700, "name": { "en": "Banana milk", "ko": "바나나 우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶" }, "desc": { "en": "Sweet banana-flavoured milk in a round little pot, a favourite after the jjimjilbang.", "ko": "동글동글 통에 든 달콤한 바나나 우유. 찜질방 다음엔 이거죠." } }
       ]
     },
     {
-      "id": "hyojae-academy", "category": "school", "icon": "🏫", "size": "large", "at": [4, -33],
-      "name": {"en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂"},
-      "tagline": {"en": "Korean courses from Hangul to TOPIK 4 and an advanced class, with quizzes and certificates", "ko": "한글부터 토픽 4급, 고급반까지: 퀴즈와 수료증이 있는 한국어 과정", "ja": "ハングルからTOPIK4級、上級クラスまで。クイズと修了証つき", "zh": "从韩文到TOPIK 4级和高级班，有测验和结业证书"},
-      "colors": {"sign": "#2f5d46", "awning": "#e3efe6", "accent": "#f6faf7"},
+      "id": "hyojae-academy",
+      "category": "school",
+      "icon": "🏫",
+      "size": "large",
+      "at": [4, -33],
+      "name": { "en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂" },
+      "tagline": { "en": "Korean courses from Hangul to TOPIK 4 and an advanced class, with quizzes and certificates", "ko": "한글부터 토픽 4급, 고급반까지: 퀴즈와 수료증이 있는 한국어 과정", "ja": "ハングルからTOPIK4級、上級クラスまで。クイズと修了証つき", "zh": "从韩文到TOPIK 4级和高级班，有测验和结业证书" },
+      "colors": { "sign": "#2f5d46", "awning": "#e3efe6", "accent": "#f6faf7" },
       "products": []
     },
-    {"id": "warung-kuy", "category": "restaurant", "size": "medium", "icon": "🍛", "at": [-1305, 409.7], "signLocal": "Warung Kuy", "name": {"en": "Warung Kuy", "ko": "와룽 쿠이", "ja": "ワルン・クイ", "zh": "Warung Kuy 小吃"}, "tagline": {"en": "Indonesian home cooking", "ko": "인도네시아 가정식", "ja": "インドネシアの家庭料理", "zh": "印尼家常菜"}, "colors": {"sign": "#b5452f", "awning": "#f6d3a1", "accent": "#fff4e6"}, "products": [{"id": "nasi-goreng", "model": "bowl", "color": "#c4762f", "price": 9000, "name": {"en": "Nasi goreng", "ko": "나시고렝", "ja": "ナシゴレン", "zh": "印尼炒饭"}, "desc": {"en": "Sweet-soy fried rice with a fried egg on top.", "ko": "달콤한 간장으로 볶은 밥에 달걀프라이를 올렸어요."}}, {"id": "mie-goreng", "model": "bowl", "color": "#b8862f", "price": 9000, "name": {"en": "Mie goreng", "ko": "미고렝", "ja": "ミーゴレン", "zh": "印尼炒面"}, "desc": {"en": "Stir-fried noodles with vegetables.", "ko": "채소와 함께 볶은 인도네시아식 볶음면이에요."}}, {"id": "sate-ayam", "model": "skewer", "color": "#a5582c", "price": 8000, "name": {"en": "Sate ayam", "ko": "사테 아얌", "ja": "サテ・アヤム", "zh": "沙爹鸡肉串"}, "desc": {"en": "Grilled chicken skewers with peanut sauce.", "ko": "땅콩 소스를 곁들인 닭꼬치예요."}}, {"id": "es-teh", "model": "cup", "color": "#b9733a", "price": 3000, "name": {"en": "Es teh manis", "ko": "에스 테 마니스", "ja": "エス・テ・マニス", "zh": "印尼甜冰茶"}, "desc": {"en": "Sweet iced tea.", "ko": "달콤한 아이스티예요."}}]},
-    {"id": "khammak-padthai", "category": "restaurant", "size": "medium", "icon": "🍜", "at": [-1295, 409.7], "signLocal": "ขำมากผัดไทย", "name": {"en": "Khammak Pad Thai", "ko": "캄막팟타이", "ja": "カムマック・パッタイ", "zh": "开心泰式炒河粉"}, "tagline": {"en": "Thai street food", "ko": "태국 길거리 음식", "ja": "タイの屋台料理", "zh": "泰国街头小吃"}, "colors": {"sign": "#2f7d5b", "awning": "#f2d16b", "accent": "#f3fbf6"}, "products": [{"id": "pad-thai", "model": "bowl", "color": "#d9a05a", "price": 10000, "name": {"en": "Pad thai", "ko": "팟타이", "ja": "パッタイ", "zh": "泰式炒河粉"}, "desc": {"en": "Rice noodles stir-fried with tamarind, peanuts and lime.", "ko": "타마린드 소스에 볶은 쌀국수에 땅콩과 라임을 곁들였어요."}}, {"id": "tom-yum", "model": "bowl", "color": "#e0662f", "price": 11000, "name": {"en": "Tom yum goong", "ko": "똠얌꿍", "ja": "トムヤムクン", "zh": "冬阴功汤"}, "desc": {"en": "Hot and sour shrimp soup.", "ko": "맵고 새콤한 새우 수프예요."}}, {"id": "mango-sticky-rice", "model": "bread", "color": "#f2c14e", "price": 7000, "name": {"en": "Mango sticky rice", "ko": "망고 찹쌀밥", "ja": "マンゴーもち米", "zh": "芒果糯米饭"}, "desc": {"en": "Sweet sticky rice with ripe mango and coconut milk.", "ko": "코코넛 밀크를 부은 찹쌀밥에 잘 익은 망고를 올렸어요."}}, {"id": "cha-yen", "model": "cup", "color": "#e8893a", "price": 4000, "name": {"en": "Thai iced tea", "ko": "타이 아이스티", "ja": "タイティー", "zh": "泰式奶茶"}, "desc": {"en": "Orange, creamy and sweet.", "ko": "주황빛의 달콤하고 진한 밀크티예요."}}]},
-    {"id": "my-mala", "category": "restaurant", "size": "medium", "icon": "🌶️", "at": [-1305, 425.7], "signLocal": "我的麻辣", "name": {"en": "My Mala", "ko": "나의 마라", "ja": "わたしの麻辣", "zh": "我的麻辣"}, "tagline": {"en": "Numbing, spicy Sichuan flavours", "ko": "얼얼하고 매운 쓰촨의 맛", "ja": "しびれる辛さの四川料理", "zh": "麻辣四川味"}, "colors": {"sign": "#c0261f", "awning": "#ffcf5a", "accent": "#fff2ea"}, "products": [{"id": "malatang", "model": "bowl", "color": "#c93a24", "price": 11000, "name": {"en": "Malatang", "ko": "마라탕", "ja": "麻辣湯", "zh": "麻辣烫"}, "desc": {"en": "Pick your veggies and noodles in a numbing, spicy broth.", "ko": "얼얼하고 매운 국물에 채소와 면을 골라 넣어 먹어요."}}, {"id": "mala-xiangguo", "model": "bowl", "color": "#b8321f", "price": 14000, "name": {"en": "Mala xiangguo", "ko": "마라샹궈", "ja": "麻辣香鍋", "zh": "麻辣香锅"}, "desc": {"en": "A dry, spicy stir-fry with lots of toppings.", "ko": "여러 재료를 넣고 맵게 볶은 요리예요."}}, {"id": "guobaorou", "model": "bread", "color": "#e2a04a", "price": 13000, "name": {"en": "Guobaorou", "ko": "꿔바로우", "ja": "鍋包肉", "zh": "锅包肉"}, "desc": {"en": "Crispy sweet-and-sour pork.", "ko": "바삭한 새콤달콤 찹쌀 탕수육이에요."}}, {"id": "tanghulu", "model": "skewer", "color": "#d8263a", "price": 4000, "name": {"en": "Tanghulu", "ko": "탕후루", "ja": "タンフル", "zh": "糖葫芦"}, "desc": {"en": "Fruit on a stick in a crunchy sugar shell.", "ko": "과일에 바삭한 설탕 옷을 입힌 꼬치예요."}}]},
-    {"id": "dim-gai", "category": "restaurant", "size": "medium", "icon": "🧋", "at": [-1295, 425.7], "signLocal": "點解!茶餐廳", "name": {"en": "Dim Gai! Cha Chaan Teng", "ko": "딤가이!차찬텡", "ja": "ディムガイ！茶餐廳", "zh": "點解！茶餐厅"}, "tagline": {"en": "A Hong Kong diner", "ko": "홍콩식 분식 식당", "ja": "香港式の食堂", "zh": "港式茶餐厅"}, "colors": {"sign": "#1f6f8b", "awning": "#f5c84c", "accent": "#eef7fa"}, "products": [{"id": "pineapple-bun", "model": "bread", "color": "#e9a93f", "price": 4000, "name": {"en": "Pineapple bun", "ko": "파인애플 번", "ja": "パイナップルパン", "zh": "菠萝包"}, "desc": {"en": "A crackly sugar-top bun with a slab of butter.", "ko": "바삭한 설탕 껍질 빵에 버터를 끼웠어요. 파인애플은 안 들어가요."}}, {"id": "hk-milk-tea", "model": "cup", "color": "#b07a4a", "price": 4500, "name": {"en": "Hong Kong milk tea", "ko": "홍콩 밀크티", "ja": "香港ミルクティー", "zh": "港式奶茶"}, "desc": {"en": "Strong black tea with evaporated milk.", "ko": "진한 홍차에 연유를 넣은 밀크티예요."}}, {"id": "hk-french-toast", "model": "bread", "color": "#d9a35a", "price": 6000, "name": {"en": "Hong Kong French toast", "ko": "홍콩식 프렌치토스트", "ja": "香港式フレンチトースト", "zh": "西多士"}, "desc": {"en": "Deep-fried, with peanut butter and syrup.", "ko": "땅콩버터를 넣고 튀겨 시럽을 뿌렸어요."}}, {"id": "wonton-noodles", "model": "bowl", "color": "#e8d08a", "price": 9000, "name": {"en": "Wonton noodles", "ko": "완탕면", "ja": "ワンタン麺", "zh": "云吞面"}, "desc": {"en": "Thin egg noodles and shrimp wontons in broth.", "ko": "가는 계란면과 새우 완탕을 맑은 국물에 담았어요."}}]},
-    {"id": "kiwami-sushi", "category": "restaurant", "size": "medium", "icon": "🍣", "at": [-1305, 441.7], "signLocal": "きわみすし", "name": {"en": "Kiwami Sushi", "ko": "키와미스시", "ja": "きわみすし", "zh": "极致寿司"}, "tagline": {"en": "Sushi taken to the top", "ko": "최고를 향한 초밥", "ja": "極みを目指す寿司", "zh": "追求极致的寿司"}, "colors": {"sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0"}, "products": [{"id": "moriawase", "model": "roll", "color": "#e46a4f", "price": 18000, "name": {"en": "Assorted sushi", "ko": "모둠초밥", "ja": "盛り合わせ", "zh": "什锦寿司"}, "desc": {"en": "The chef's pick of ten pieces.", "ko": "셰프가 골라 주는 열 가지 초밥이에요."}}, {"id": "salmon-nigiri", "model": "roll", "color": "#f08a5d", "price": 12000, "name": {"en": "Salmon nigiri", "ko": "연어초밥", "ja": "サーモン握り", "zh": "三文鱼握寿司"}, "desc": {"en": "Fresh salmon over seasoned rice.", "ko": "싱싱한 연어를 올린 초밥이에요."}}, {"id": "miso-soup", "model": "bowl", "color": "#c9a46a", "price": 3000, "name": {"en": "Miso soup", "ko": "미소된장국", "ja": "味噌汁", "zh": "味噌汤"}, "desc": {"en": "With tofu and seaweed.", "ko": "두부와 미역을 넣은 된장국이에요."}}, {"id": "matcha", "model": "cup", "color": "#7aa34a", "price": 5000, "name": {"en": "Matcha", "ko": "말차", "ja": "抹茶", "zh": "抹茶"}, "desc": {"en": "Whisked green tea.", "ko": "곱게 저어 낸 녹차예요."}}]},
-    {"id": "pho-nang", "category": "restaurant", "size": "medium", "icon": "🍜", "at": [-1295, 441.7], "signLocal": "Phở Nắng", "name": {"en": "Pho Nang", "ko": "퍼 낭", "ja": "フォー・ナン", "zh": "阳光河粉"}, "tagline": {"en": "Vietnamese noodles and banh mi", "ko": "베트남 쌀국수와 반미", "ja": "ベトナムのフォーとバインミー", "zh": "越南河粉和法棍"}, "colors": {"sign": "#c2552f", "awning": "#f3dca0", "accent": "#fff7ec"}, "products": [{"id": "pho-bo", "model": "bowl", "color": "#e2c28a", "price": 10000, "name": {"en": "Beef pho", "ko": "소고기 쌀국수", "ja": "牛肉フォー", "zh": "牛肉河粉"}, "desc": {"en": "Rice noodles in a clear beef broth with herbs.", "ko": "맑은 소고기 육수에 쌀국수와 허브를 넣었어요."}}, {"id": "banh-mi", "model": "bread", "color": "#d9a35a", "price": 7000, "name": {"en": "Banh mi", "ko": "반미", "ja": "バインミー", "zh": "越南法棍"}, "desc": {"en": "A crusty baguette with pickled veggies.", "ko": "바삭한 바게트에 절인 채소를 듬뿍 넣었어요."}}, {"id": "cha-gio", "model": "roll", "color": "#d38a3e", "price": 6000, "name": {"en": "Fried spring rolls", "ko": "짜조", "ja": "揚げ春巻き", "zh": "炸春卷"}, "desc": {"en": "Crispy fried rolls.", "ko": "바삭하게 튀긴 스프링롤이에요."}}, {"id": "ca-phe-sua-da", "model": "cup", "color": "#6b4a34", "price": 4500, "name": {"en": "Vietnamese iced coffee", "ko": "베트남 연유커피", "ja": "ベトナムコーヒー", "zh": "越南冰咖啡"}, "desc": {"en": "Strong drip coffee with condensed milk.", "ko": "진한 커피에 연유를 넣었어요."}}]},
-    {"id": "masala-ghar", "category": "restaurant", "size": "medium", "icon": "🍛", "at": [-1305, 457.7], "signLocal": "मसाला घर", "name": {"en": "Masala Ghar", "ko": "마살라 가르", "ja": "マサラ・ガル", "zh": "香料之家"}, "tagline": {"en": "Indian curries from the tandoor", "ko": "인도 커리와 탄두리", "ja": "インドカレーとタンドール", "zh": "印度咖喱和馕"}, "colors": {"sign": "#d9822b", "awning": "#7a2f6b", "accent": "#fff6ea"}, "products": [{"id": "butter-chicken", "model": "bowl", "color": "#e08a3a", "price": 13000, "name": {"en": "Butter chicken curry", "ko": "버터치킨 커리", "ja": "バターチキンカレー", "zh": "黄油鸡咖喱"}, "desc": {"en": "A mild, creamy tomato curry.", "ko": "부드럽고 크리미한 토마토 커리예요."}}, {"id": "naan", "model": "bread", "color": "#efd09a", "price": 3000, "name": {"en": "Garlic naan", "ko": "갈릭 난", "ja": "ガーリックナン", "zh": "蒜香馕"}, "desc": {"en": "Soft flatbread from the tandoor oven.", "ko": "탄두르 화덕에 구운 말랑한 빵이에요."}}, {"id": "tandoori", "model": "skewer", "color": "#c8462f", "price": 12000, "name": {"en": "Tandoori chicken", "ko": "탄두리 치킨", "ja": "タンドリーチキン", "zh": "唐杜里烤鸡"}, "desc": {"en": "Yogurt-spiced chicken, roasted.", "ko": "요거트와 향신료에 재운 구운 닭이에요."}}, {"id": "mango-lassi", "model": "cup", "color": "#f2b84b", "price": 5000, "name": {"en": "Mango lassi", "ko": "망고 라씨", "ja": "マンゴーラッシー", "zh": "芒果拉西"}, "desc": {"en": "A cold mango yogurt drink.", "ko": "시원한 망고 요거트 음료예요."}}]},
-    {"id": "tortilla-feliz", "category": "restaurant", "size": "medium", "icon": "🌮", "at": [-1295, 457.7], "signLocal": "La Tortilla Feliz", "name": {"en": "La Tortilla Feliz", "ko": "라 토르티야 펠리스", "ja": "ラ・トルティーヤ・フェリス", "zh": "快乐玉米饼"}, "tagline": {"en": "Mexican tacos and burritos", "ko": "멕시코 타코와 부리토", "ja": "メキシコのタコスとブリトー", "zh": "墨西哥塔可和卷饼"}, "colors": {"sign": "#2f8f4f", "awning": "#e94f3a", "accent": "#fff8ec"}, "products": [{"id": "tacos", "model": "bread", "color": "#e8c46a", "price": 9000, "name": {"en": "Tacos (3)", "ko": "타코 3개", "ja": "タコス 3個", "zh": "塔可 3个"}, "desc": {"en": "Corn tortillas with grilled meat and salsa.", "ko": "옥수수 토르티야에 구운 고기와 살사를 넣었어요."}}, {"id": "burrito", "model": "roll", "color": "#e0b77a", "price": 10000, "name": {"en": "Burrito", "ko": "부리토", "ja": "ブリトー", "zh": "墨西哥卷饼"}, "desc": {"en": "A big wrap with rice, beans and cheese.", "ko": "밥과 콩, 치즈를 듬뿍 넣고 말았어요."}}, {"id": "nachos", "model": "bowl", "color": "#f2c14e", "price": 8000, "name": {"en": "Nachos", "ko": "나초", "ja": "ナチョス", "zh": "玉米片"}, "desc": {"en": "Tortilla chips with melted cheese.", "ko": "녹인 치즈를 올린 토르티야 칩이에요."}}, {"id": "horchata", "model": "cup", "color": "#efe4cf", "price": 4500, "name": {"en": "Horchata", "ko": "오르차타", "ja": "オルチャータ", "zh": "米浆饮"}, "desc": {"en": "A cold rice and cinnamon drink.", "ko": "쌀과 시나몬으로 만든 시원한 음료예요."}}]},
-    {"id": "nonna-lucia", "category": "restaurant", "size": "medium", "icon": "🍝", "at": [-1305, 473.7], "signLocal": "Trattoria Nonna Lucia", "name": {"en": "Trattoria Nonna Lucia", "ko": "트라토리아 논나 루치아", "ja": "トラットリア・ノンナ・ルチア", "zh": "露西亚奶奶小馆"}, "tagline": {"en": "Grandma's Italian kitchen", "ko": "이탈리아 할머니의 부엌", "ja": "イタリアのおばあちゃんの台所", "zh": "意大利奶奶的厨房"}, "colors": {"sign": "#2f6f3a", "awning": "#c0392b", "accent": "#fbf7ee"}, "products": [{"id": "margherita", "model": "bread", "color": "#e05a3a", "price": 15000, "name": {"en": "Margherita pizza", "ko": "마르게리타 피자", "ja": "マルゲリータ", "zh": "玛格丽特披萨"}, "desc": {"en": "Tomato, mozzarella and basil.", "ko": "토마토와 모차렐라, 바질을 올린 피자예요."}}, {"id": "carbonara", "model": "bowl", "color": "#f0d690", "price": 14000, "name": {"en": "Carbonara", "ko": "까르보나라", "ja": "カルボナーラ", "zh": "培根蛋酱意面"}, "desc": {"en": "Egg, cheese and pepper, the Roman way.", "ko": "달걀과 치즈, 후추로 만든 로마식 파스타예요."}}, {"id": "tiramisu", "model": "bread", "color": "#8a5a3a", "price": 7000, "name": {"en": "Tiramisu", "ko": "티라미수", "ja": "ティラミス", "zh": "提拉米苏"}, "desc": {"en": "Coffee-soaked layers with mascarpone.", "ko": "커피를 적신 시트와 마스카르포네 크림이에요."}}, {"id": "limonata", "model": "cup", "color": "#f2e05a", "price": 5000, "name": {"en": "Lemonade", "ko": "레모네이드", "ja": "レモネード", "zh": "柠檬水"}, "desc": {"en": "Fresh and fizzy.", "ko": "상큼하고 톡 쏘는 레모네이드예요."}}]},
-    {"id": "kebapci-lale", "category": "restaurant", "size": "medium", "icon": "🥙", "at": [-1295, 473.7], "signLocal": "Kebapçı Lale", "name": {"en": "Kebapci Lale", "ko": "케밥츠 랄레", "ja": "ケバプチュ・ラーレ", "zh": "郁金香烤肉"}, "tagline": {"en": "Turkish kebabs and sweets", "ko": "튀르키예 케밥과 디저트", "ja": "トルコのケバブとお菓子", "zh": "土耳其烤肉和甜点"}, "colors": {"sign": "#a3262e", "awning": "#f2d16b", "accent": "#fff4ee"}, "products": [{"id": "doner", "model": "roll", "color": "#c98a4a", "price": 9000, "name": {"en": "Doner kebab wrap", "ko": "되네르 케밥 랩", "ja": "ドネルケバブ", "zh": "旋转烤肉卷"}, "desc": {"en": "Shaved roast meat in a wrap with salad.", "ko": "얇게 썬 구운 고기와 채소를 빵에 말았어요."}}, {"id": "pide", "model": "bread", "color": "#e0a84a", "price": 11000, "name": {"en": "Pide", "ko": "피데", "ja": "ピデ", "zh": "土耳其船形饼"}, "desc": {"en": "A boat-shaped flatbread with cheese.", "ko": "치즈를 올린 배 모양의 화덕빵이에요."}}, {"id": "baklava", "model": "bread", "color": "#d9a03a", "price": 6000, "name": {"en": "Baklava", "ko": "바클라바", "ja": "バクラヴァ", "zh": "果仁蜜饼"}, "desc": {"en": "Flaky pastry with pistachios and honey syrup.", "ko": "피스타치오와 꿀 시럽을 넣은 겹겹 페이스트리예요."}}, {"id": "cay", "model": "cup", "color": "#a3372a", "price": 3000, "name": {"en": "Turkish tea", "ko": "튀르키예 차이", "ja": "チャイ", "zh": "土耳其红茶"}, "desc": {"en": "Strong tea in a little tulip glass.", "ko": "튤립 모양 잔에 담은 진한 홍차예요."}}]},
-    {"id": "beit-hummus", "category": "restaurant", "size": "medium", "icon": "🧆", "at": [-1305, 489.7], "signLocal": "بيت الحمص", "name": {"en": "Beit al-Hummus", "ko": "베이트 알 훔무스", "ja": "ベイト・アル・フムス", "zh": "鹰嘴豆之家"}, "tagline": {"en": "Middle Eastern mezze", "ko": "중동식 메제 요리", "ja": "中東のメゼ料理", "zh": "中东小菜"}, "colors": {"sign": "#2f6f6b", "awning": "#e9d7a0", "accent": "#f5faf8"}, "products": [{"id": "hummus", "model": "bowl", "color": "#e6cf9a", "price": 8000, "name": {"en": "Hummus with pita", "ko": "훔무스와 피타", "ja": "フムスとピタ", "zh": "鹰嘴豆泥配皮塔"}, "desc": {"en": "Smooth chickpea dip with warm pita.", "ko": "부드러운 병아리콩 딥에 따뜻한 피타빵을 곁들였어요."}}, {"id": "falafel", "model": "bread", "color": "#a8762f", "price": 8000, "name": {"en": "Falafel", "ko": "팔라펠", "ja": "ファラフェル", "zh": "炸豆丸子"}, "desc": {"en": "Crispy chickpea balls with herbs.", "ko": "허브를 넣고 바삭하게 튀긴 병아리콩 볼이에요."}}, {"id": "shawarma", "model": "roll", "color": "#c98a4a", "price": 10000, "name": {"en": "Chicken shawarma", "ko": "치킨 샤와르마", "ja": "チキンシャワルマ", "zh": "鸡肉沙威玛"}, "desc": {"en": "Spiced chicken rolled in flatbread.", "ko": "향신료로 구운 닭고기를 얇은 빵에 말았어요."}}, {"id": "mint-lemonade", "model": "cup", "color": "#a9d36a", "price": 5000, "name": {"en": "Mint lemonade", "ko": "민트 레모네이드", "ja": "ミントレモネード", "zh": "薄荷柠檬水"}, "desc": {"en": "Lemon and fresh mint, blended with ice.", "ko": "레몬과 생민트를 얼음과 갈았어요."}}]},
-    {"id": "sunny-side-diner", "category": "restaurant", "size": "medium", "icon": "🍔", "at": [-1295, 489.7], "signLocal": "Sunny Side Diner", "name": {"en": "Sunny Side Diner", "ko": "써니사이드 다이너", "ja": "サニーサイド・ダイナー", "zh": "阳面餐厅"}, "tagline": {"en": "An American diner", "ko": "미국식 다이너", "ja": "アメリカンダイナー", "zh": "美式餐馆"}, "colors": {"sign": "#d8452f", "awning": "#f2f2f2", "accent": "#fff8f0"}, "products": [{"id": "cheeseburger", "model": "bread", "color": "#c98a4a", "price": 11000, "name": {"en": "Cheeseburger", "ko": "치즈버거", "ja": "チーズバーガー", "zh": "芝士汉堡"}, "desc": {"en": "A juicy patty with melted cheese.", "ko": "육즙 가득한 패티에 치즈를 녹였어요."}}, {"id": "fries", "model": "bowl", "color": "#f2c14e", "price": 5000, "name": {"en": "Fries", "ko": "감자튀김", "ja": "フライドポテト", "zh": "薯条"}, "desc": {"en": "Hot and salty.", "ko": "갓 튀긴 짭짤한 감자튀김이에요."}}, {"id": "pancakes", "model": "bread", "color": "#e8b46a", "price": 9000, "name": {"en": "Pancakes", "ko": "팬케이크", "ja": "パンケーキ", "zh": "松饼"}, "desc": {"en": "A tall stack with maple syrup.", "ko": "메이플 시럽을 뿌린 두툼한 팬케이크예요."}}, {"id": "milkshake", "model": "cup", "color": "#f3b6c8", "price": 6000, "name": {"en": "Strawberry milkshake", "ko": "딸기 밀크셰이크", "ja": "いちごミルクシェイク", "zh": "草莓奶昔"}, "desc": {"en": "Thick and cold.", "ko": "진하고 시원한 밀크셰이크예요."}}]},
-    {"id": "club-orbit", "category": "club", "size": "large", "icon": "🎧", "at": [-1361, 385.7], "signLocal": "CLUB ORBIT", "name": {"en": "CLUB ORBIT", "ko": "클럽 오빗", "ja": "クラブ・オービット", "zh": "轨道俱乐部"}, "genre": "edm", "tagline": {"en": "EDM club: a stage, a DJ and a dance floor", "ko": "EDM 클럽: 무대와 DJ, 댄스 플로어", "ja": "EDMクラブ：ステージとDJとダンスフロア", "zh": "EDM 俱乐部：舞台、DJ和舞池"}, "colors": {"sign": "#3b1d6e", "awning": "#ff3fa4", "accent": "#2a2236"}, "products": [{"id": "orbit-cooler", "model": "cocktail", "color": "#7a5cff", "price": 7000, "name": {"en": "Orbit Cooler (alcohol-free)", "ko": "오빗 쿨러 (무알코올)", "ja": "オービットクーラー（ノンアル）", "zh": "轨道冰饮（无酒精）"}, "desc": {"en": "Blue and purple, with lots of ice.", "ko": "보랏빛 파란 음료에 얼음을 가득 넣었어요."}}, {"id": "neon-lemon", "model": "cocktail", "color": "#d6f24a", "price": 6000, "name": {"en": "Neon Lemon soda", "ko": "네온 레몬 소다", "ja": "ネオンレモンソーダ", "zh": "霓虹柠檬苏打"}, "desc": {"en": "Lemon soda that glows under the lights.", "ko": "조명 아래에서 빛나는 레몬 소다예요."}}, {"id": "energy-shot", "model": "cup", "color": "#ff3fa4", "price": 4000, "name": {"en": "Berry energy drink", "ko": "베리 에너지 드링크", "ja": "ベリーエナジードリンク", "zh": "莓果能量饮料"}, "desc": {"en": "For dancing all night.", "ko": "밤새 춤출 힘을 줘요."}}, {"id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": {"en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水"}, "desc": {"en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!"}}]},
-    {"id": "club-808", "category": "club", "size": "large", "icon": "🎤", "at": [-1427, 385.7], "signLocal": "BASEMENT 808", "genre": "hiphop", "name": {"en": "BASEMENT 808", "ko": "베이스먼트 808", "ja": "ベースメント808", "zh": "808 地下室"}, "tagline": {"en": "Hip-hop club: deep 808s and a DJ", "ko": "힙합 클럽: 묵직한 808과 DJ", "ja": "ヒップホップクラブ：重い808とDJ", "zh": "嘻哈俱乐部：厚重的 808 和 DJ"}, "colors": {"sign": "#1a1a1a", "awning": "#f2b705", "accent": "#26221c"}, "products": [{"id": "gold-fizz", "model": "cocktail", "color": "#f2b705", "price": 7000, "name": {"en": "Gold Fizz (alcohol-free)", "ko": "골드 피즈 (무알코올)", "ja": "ゴールドフィズ（ノンアル）", "zh": "金色气泡饮（无酒精）"}, "desc": {"en": "Honey, lemon and lots of bubbles.", "ko": "꿀과 레몬에 탄산을 듬뿍 넣었어요."}}, {"id": "cola-float", "model": "cup", "color": "#5a2d1a", "price": 5000, "name": {"en": "Cola float", "ko": "콜라 플로트", "ja": "コーラフロート", "zh": "可乐冰淇淋"}, "desc": {"en": "Cola with a scoop of vanilla ice cream.", "ko": "콜라 위에 바닐라 아이스크림 한 스쿱."}}, {"id": "hot-wings", "model": "skewer", "color": "#c4471f", "price": 8000, "name": {"en": "Spicy wing skewers", "ko": "매콤 윙 꼬치", "ja": "スパイシー手羽串", "zh": "香辣鸡翅串"}, "desc": {"en": "Crispy, sticky and spicy.", "ko": "바삭하고 끈적하고 매콤해요."}}, {"id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": {"en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水"}, "desc": {"en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!"}}]},
-    {"id": "club-heartbeat", "category": "club", "size": "large", "icon": "💖", "at": [-1217, 385.7], "signLocal": "HEARTBEAT", "genre": "kpop", "name": {"en": "HEARTBEAT", "ko": "하트비트", "ja": "ハートビート", "zh": "心跳俱乐部"}, "tagline": {"en": "K-POP remix club: dance along!", "ko": "K-POP 리믹스 클럽: 같이 춤춰요!", "ja": "K-POPリミックスクラブ：一緒に踊ろう！", "zh": "K-POP 混音俱乐部：一起跳舞吧！"}, "colors": {"sign": "#ff4f9a", "awning": "#b388ff", "accent": "#2a1d33"}, "products": [{"id": "pink-lemonade", "model": "cocktail", "color": "#ff8fc0", "price": 6000, "name": {"en": "Pink lemonade", "ko": "핑크 레모네이드", "ja": "ピンクレモネード", "zh": "粉红柠檬水"}, "desc": {"en": "Sweet, sour and very pink.", "ko": "새콤달콤하고 아주 핑크해요."}}, {"id": "lavender-soda", "model": "cocktail", "color": "#b388ff", "price": 7000, "name": {"en": "Lavender cloud soda", "ko": "라벤더 구름 소다", "ja": "ラベンダークラウドソーダ", "zh": "薰衣草云朵苏打"}, "desc": {"en": "Purple soda with a cloud of cream.", "ko": "보랏빛 소다 위에 구름 같은 크림."}}, {"id": "star-candy", "model": "cup", "color": "#ffd23f", "price": 3000, "name": {"en": "Star candy", "ko": "별사탕", "ja": "星のキャンディ", "zh": "星星糖"}, "desc": {"en": "A cup of tiny star candies.", "ko": "작은 별사탕 한 컵이에요."}}, {"id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": {"en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水"}, "desc": {"en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!"}}]},
-    {"id": "bar-hush", "category": "bar", "size": "medium", "icon": "🍸", "at": [-1249, 385.7], "signLocal": "Bar Hush", "name": {"en": "Bar Hush", "ko": "바 허시", "ja": "バー・ハッシュ", "zh": "静语酒吧"}, "tagline": {"en": "A quiet cocktail bar", "ko": "조용한 칵테일 바", "ja": "静かなカクテルバー", "zh": "安静的鸡尾酒吧"}, "colors": {"sign": "#2b1d14", "awning": "#c9a227", "accent": "#3a2a20"}, "products": [{"id": "virgin-mojito", "model": "cocktail", "color": "#bfe39a", "price": 8000, "name": {"en": "Virgin mojito", "ko": "버진 모히토", "ja": "ヴァージン・モヒート", "zh": "无酒精莫吉托"}, "desc": {"en": "Lime, mint and soda, no alcohol.", "ko": "라임과 민트, 탄산수로 만든 무알코올 모히토예요."}}, {"id": "shirley-temple", "model": "cocktail", "color": "#f05a6a", "price": 8000, "name": {"en": "Shirley Temple", "ko": "셜리 템플", "ja": "シャーリー・テンプル", "zh": "秀兰邓波儿"}, "desc": {"en": "Ginger ale, grenadine and a cherry.", "ko": "진저에일에 석류 시럽과 체리를 넣었어요."}}, {"id": "sunset-punch", "model": "cocktail", "color": "#f2913a", "price": 9000, "name": {"en": "Sunset punch", "ko": "선셋 펀치", "ja": "サンセットパンチ", "zh": "日落果宾治"}, "desc": {"en": "Orange, pineapple and a red sunset at the bottom.", "ko": "오렌지와 파인애플에 붉은 노을빛을 담았어요."}}, {"id": "earl-grey-tonic", "model": "cocktail", "color": "#c9b27a", "price": 9000, "name": {"en": "Earl Grey tonic", "ko": "얼그레이 토닉", "ja": "アールグレイトニック", "zh": "伯爵茶汤力"}, "desc": {"en": "Earl Grey tea with tonic water.", "ko": "얼그레이 차에 토닉워터를 섞었어요."}}]},
-    {"id": "pedal-lab", "category": "lifestyle", "workshop": "bike", "size": "small", "icon": "🚲", "at": [72, 74], "name": {"en": "Pedal Lab", "ko": "페달랩", "ja": "ペダルラボ", "zh": "踏板实验室"}, "tagline": {"en": "Bike shop: faster bikes and repairs", "ko": "자전거 가게: 더 빠른 자전거와 수리", "ja": "自転車店：速い自転車と修理", "zh": "自行车店：更快的车和维修"}, "colors": {"sign": "#2f6f5e", "awning": "#3fb59a", "accent": "#eef6f2"}, "products": [{"id": "bike-bell", "model": "cup", "color": "#f2c84b", "price": 8000, "name": {"en": "Bike bell", "ko": "자전거 벨", "ja": "自転車のベル", "zh": "车铃"}, "desc": {"en": "Ring ring!", "ko": "따릉따릉!"}}, {"id": "bike-light", "model": "cup", "color": "#ffffff", "price": 15000, "name": {"en": "Front light", "ko": "앞 라이트", "ja": "フロントライト", "zh": "前灯"}, "desc": {"en": "Bright LED for night rides.", "ko": "밤에 달릴 때 쓰는 밝은 LED예요."}}, {"id": "water-bottle", "model": "cup", "color": "#5b8def", "price": 9000, "name": {"en": "Water bottle", "ko": "물통", "ja": "ボトル", "zh": "水壶"}, "desc": {"en": "Fits the bottle cage.", "ko": "자전거 물통 거치대에 쏙 들어가요."}}]},
-    {"id": "costume-atelier", "category": "fashion", "size": "medium", "icon": "🎭", "at": [60, 95], "name": {"en": "Costume Atelier", "ko": "코스튬 아틀리에", "ja": "コスチューム・アトリエ", "zh": "服装工作室", "es": "Taller de Disfraces"}, "tagline": {"en": "Costumes: mage, ninja, knight and more", "ko": "코스튬: 마법사, 닌자, 기사 등", "ja": "コスチューム：魔法使い、忍者、騎士など", "zh": "服装：法师、忍者、骑士等", "es": "Disfraces: mago, ninja, caballero y más"}, "colors": {"sign": "#4b2a6b", "awning": "#c9a2f0", "accent": "#f7f2fb"}, "products": [{"id": "costume-ranger", "model": "tee", "color": "#3f9b5f", "price": 0, "outfit": "outfit-rogue", "name": {"en": "Ranger costume", "ko": "레인저 옷", "ja": "レンジャーの服", "zh": "游侠服装", "es": "Traje de explorador"}, "desc": {"en": "A green hunter's outfit with a leather vest.", "ko": "가죽 조끼를 입은 초록색 사냥꾼 옷이에요."}}, {"id": "costume-explorer", "model": "tee", "color": "#d9c29a", "price": 0, "outfit": "outfit-ranger", "name": {"en": "Explorer costume", "ko": "탐험가 옷", "ja": "探検家の服", "zh": "探险家服装", "es": "Traje de aventurero"}, "desc": {"en": "A sandy travel shirt and a blue bandana.", "ko": "모래색 여행 셔츠와 파란 반다나예요."}}, {"id": "costume-viking", "model": "tee", "color": "#8a5a3a", "price": 0, "outfit": "outfit-barbarian", "name": {"en": "Viking costume", "ko": "바이킹 옷", "ja": "バイキングの服", "zh": "维京服装", "es": "Traje de vikingo"}, "desc": {"en": "Fur, straps and a big beard.", "ko": "털옷과 가죽끈, 그리고 멋진 수염!"}}, {"id": "costume-ninja", "model": "tee", "color": "#2e2a36", "price": 0, "outfit": "outfit-hooded", "name": {"en": "Ninja costume", "ko": "닌자 옷", "ja": "忍者の服", "zh": "忍者服装", "es": "Traje de ninja"}, "desc": {"en": "All black, with a hood and a mask.", "ko": "후드와 복면까지 온통 까만 옷이에요."}}, {"id": "costume-knight", "model": "tee", "color": "#9ca9af", "price": 0, "outfit": "outfit-knight", "name": {"en": "Knight armour", "ko": "기사 갑옷", "ja": "騎士の鎧", "zh": "骑士盔甲", "es": "Armadura de caballero"}, "desc": {"en": "Shining steel armour.", "ko": "반짝이는 강철 갑옷이에요."}}, {"id": "costume-mage", "model": "tee", "color": "#5b4fa0", "price": 0, "outfit": "outfit-mage", "name": {"en": "Mage robe", "ko": "마법사 로브", "ja": "魔法使いのローブ", "zh": "法师长袍", "es": "Túnica de mago"}, "desc": {"en": "A purple robe for spell casting.", "ko": "주문을 외울 때 입는 보라색 로브예요."}}]}
+    {
+      "id": "warung-kuy",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍛",
+      "at": [-1305, 409.7],
+      "signLocal": "Warung Kuy",
+      "name": { "en": "Warung Kuy", "ko": "와룽 쿠이", "ja": "ワルン・クイ", "zh": "Warung Kuy 小吃" },
+      "tagline": { "en": "Indonesian home cooking", "ko": "인도네시아 가정식", "ja": "インドネシアの家庭料理", "zh": "印尼家常菜" },
+      "colors": { "sign": "#b5452f", "awning": "#f6d3a1", "accent": "#fff4e6" },
+      "products": [
+        { "id": "nasi-goreng", "model": "bowl", "color": "#c4762f", "price": 9000, "name": { "en": "Nasi goreng", "ko": "나시고렝", "ja": "ナシゴレン", "zh": "印尼炒饭" }, "desc": { "en": "Sweet-soy fried rice with a fried egg on top.", "ko": "달콤한 간장으로 볶은 밥에 달걀프라이를 올렸어요." } },
+        { "id": "mie-goreng", "model": "bowl", "color": "#b8862f", "price": 9000, "name": { "en": "Mie goreng", "ko": "미고렝", "ja": "ミーゴレン", "zh": "印尼炒面" }, "desc": { "en": "Stir-fried noodles with vegetables.", "ko": "채소와 함께 볶은 인도네시아식 볶음면이에요." } },
+        { "id": "sate-ayam", "model": "skewer", "color": "#a5582c", "price": 8000, "name": { "en": "Sate ayam", "ko": "사테 아얌", "ja": "サテ・アヤム", "zh": "沙爹鸡肉串" }, "desc": { "en": "Grilled chicken skewers with peanut sauce.", "ko": "땅콩 소스를 곁들인 닭꼬치예요." } },
+        { "id": "es-teh", "model": "cup", "color": "#b9733a", "price": 3000, "name": { "en": "Es teh manis", "ko": "에스 테 마니스", "ja": "エス・テ・マニス", "zh": "印尼甜冰茶" }, "desc": { "en": "Sweet iced tea.", "ko": "달콤한 아이스티예요." } }
+      ]
+    },
+    {
+      "id": "khammak-padthai",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍜",
+      "at": [-1295, 409.7],
+      "signLocal": "ขำมากผัดไทย",
+      "name": { "en": "Khammak Pad Thai", "ko": "캄막팟타이", "ja": "カムマック・パッタイ", "zh": "开心泰式炒河粉" },
+      "tagline": { "en": "Thai street food", "ko": "태국 길거리 음식", "ja": "タイの屋台料理", "zh": "泰国街头小吃" },
+      "colors": { "sign": "#2f7d5b", "awning": "#f2d16b", "accent": "#f3fbf6" },
+      "products": [
+        { "id": "pad-thai", "model": "bowl", "color": "#d9a05a", "price": 10000, "name": { "en": "Pad thai", "ko": "팟타이", "ja": "パッタイ", "zh": "泰式炒河粉" }, "desc": { "en": "Rice noodles stir-fried with tamarind, peanuts and lime.", "ko": "타마린드 소스에 볶은 쌀국수에 땅콩과 라임을 곁들였어요." } },
+        { "id": "tom-yum", "model": "bowl", "color": "#e0662f", "price": 11000, "name": { "en": "Tom yum goong", "ko": "똠얌꿍", "ja": "トムヤムクン", "zh": "冬阴功汤" }, "desc": { "en": "Hot and sour shrimp soup.", "ko": "맵고 새콤한 새우 수프예요." } },
+        { "id": "mango-sticky-rice", "model": "bread", "color": "#f2c14e", "price": 7000, "name": { "en": "Mango sticky rice", "ko": "망고 찹쌀밥", "ja": "マンゴーもち米", "zh": "芒果糯米饭" }, "desc": { "en": "Sweet sticky rice with ripe mango and coconut milk.", "ko": "코코넛 밀크를 부은 찹쌀밥에 잘 익은 망고를 올렸어요." } },
+        { "id": "cha-yen", "model": "cup", "color": "#e8893a", "price": 4000, "name": { "en": "Thai iced tea", "ko": "타이 아이스티", "ja": "タイティー", "zh": "泰式奶茶" }, "desc": { "en": "Orange, creamy and sweet.", "ko": "주황빛의 달콤하고 진한 밀크티예요." } }
+      ]
+    },
+    {
+      "id": "my-mala",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🌶️",
+      "at": [-1305, 425.7],
+      "signLocal": "我的麻辣",
+      "name": { "en": "My Mala", "ko": "나의 마라", "ja": "わたしの麻辣", "zh": "我的麻辣" },
+      "tagline": { "en": "Numbing, spicy Sichuan flavours", "ko": "얼얼하고 매운 쓰촨의 맛", "ja": "しびれる辛さの四川料理", "zh": "麻辣四川味" },
+      "colors": { "sign": "#c0261f", "awning": "#ffcf5a", "accent": "#fff2ea" },
+      "products": [
+        { "id": "malatang", "model": "bowl", "color": "#c93a24", "price": 11000, "name": { "en": "Malatang", "ko": "마라탕", "ja": "麻辣湯", "zh": "麻辣烫" }, "desc": { "en": "Pick your veggies and noodles in a numbing, spicy broth.", "ko": "얼얼하고 매운 국물에 채소와 면을 골라 넣어 먹어요." } },
+        { "id": "mala-xiangguo", "model": "bowl", "color": "#b8321f", "price": 14000, "name": { "en": "Mala xiangguo", "ko": "마라샹궈", "ja": "麻辣香鍋", "zh": "麻辣香锅" }, "desc": { "en": "A dry, spicy stir-fry with lots of toppings.", "ko": "여러 재료를 넣고 맵게 볶은 요리예요." } },
+        { "id": "guobaorou", "model": "bread", "color": "#e2a04a", "price": 13000, "name": { "en": "Guobaorou", "ko": "꿔바로우", "ja": "鍋包肉", "zh": "锅包肉" }, "desc": { "en": "Crispy sweet-and-sour pork.", "ko": "바삭한 새콤달콤 찹쌀 탕수육이에요." } },
+        { "id": "tanghulu", "model": "skewer", "color": "#d8263a", "price": 4000, "name": { "en": "Tanghulu", "ko": "탕후루", "ja": "タンフル", "zh": "糖葫芦" }, "desc": { "en": "Fruit on a stick in a crunchy sugar shell.", "ko": "과일에 바삭한 설탕 옷을 입힌 꼬치예요." } }
+      ]
+    },
+    {
+      "id": "dim-gai",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🧋",
+      "at": [-1295, 425.7],
+      "signLocal": "點解!茶餐廳",
+      "name": { "en": "Dim Gai! Cha Chaan Teng", "ko": "딤가이!차찬텡", "ja": "ディムガイ！茶餐廳", "zh": "點解！茶餐厅" },
+      "tagline": { "en": "A Hong Kong diner", "ko": "홍콩식 분식 식당", "ja": "香港式の食堂", "zh": "港式茶餐厅" },
+      "colors": { "sign": "#1f6f8b", "awning": "#f5c84c", "accent": "#eef7fa" },
+      "products": [
+        { "id": "pineapple-bun", "model": "bread", "color": "#e9a93f", "price": 4000, "name": { "en": "Pineapple bun", "ko": "파인애플 번", "ja": "パイナップルパン", "zh": "菠萝包" }, "desc": { "en": "A crackly sugar-top bun with a slab of butter.", "ko": "바삭한 설탕 껍질 빵에 버터를 끼웠어요. 파인애플은 안 들어가요." } },
+        { "id": "hk-milk-tea", "model": "cup", "color": "#b07a4a", "price": 4500, "name": { "en": "Hong Kong milk tea", "ko": "홍콩 밀크티", "ja": "香港ミルクティー", "zh": "港式奶茶" }, "desc": { "en": "Strong black tea with evaporated milk.", "ko": "진한 홍차에 연유를 넣은 밀크티예요." } },
+        { "id": "hk-french-toast", "model": "bread", "color": "#d9a35a", "price": 6000, "name": { "en": "Hong Kong French toast", "ko": "홍콩식 프렌치토스트", "ja": "香港式フレンチトースト", "zh": "西多士" }, "desc": { "en": "Deep-fried, with peanut butter and syrup.", "ko": "땅콩버터를 넣고 튀겨 시럽을 뿌렸어요." } },
+        { "id": "wonton-noodles", "model": "bowl", "color": "#e8d08a", "price": 9000, "name": { "en": "Wonton noodles", "ko": "완탕면", "ja": "ワンタン麺", "zh": "云吞面" }, "desc": { "en": "Thin egg noodles and shrimp wontons in broth.", "ko": "가는 계란면과 새우 완탕을 맑은 국물에 담았어요." } }
+      ]
+    },
+    {
+      "id": "kiwami-sushi",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍣",
+      "at": [-1305, 441.7],
+      "signLocal": "きわみすし",
+      "name": { "en": "Kiwami Sushi", "ko": "키와미스시", "ja": "きわみすし", "zh": "极致寿司" },
+      "tagline": { "en": "Sushi taken to the top", "ko": "최고를 향한 초밥", "ja": "極みを目指す寿司", "zh": "追求极致的寿司" },
+      "colors": { "sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0" },
+      "products": [
+        { "id": "moriawase", "model": "roll", "color": "#e46a4f", "price": 18000, "name": { "en": "Assorted sushi", "ko": "모둠초밥", "ja": "盛り合わせ", "zh": "什锦寿司" }, "desc": { "en": "The chef's pick of ten pieces.", "ko": "셰프가 골라 주는 열 가지 초밥이에요." } },
+        { "id": "salmon-nigiri", "model": "roll", "color": "#f08a5d", "price": 12000, "name": { "en": "Salmon nigiri", "ko": "연어초밥", "ja": "サーモン握り", "zh": "三文鱼握寿司" }, "desc": { "en": "Fresh salmon over seasoned rice.", "ko": "싱싱한 연어를 올린 초밥이에요." } },
+        { "id": "miso-soup", "model": "bowl", "color": "#c9a46a", "price": 3000, "name": { "en": "Miso soup", "ko": "미소된장국", "ja": "味噌汁", "zh": "味噌汤" }, "desc": { "en": "With tofu and seaweed.", "ko": "두부와 미역을 넣은 된장국이에요." } },
+        { "id": "matcha", "model": "cup", "color": "#7aa34a", "price": 5000, "name": { "en": "Matcha", "ko": "말차", "ja": "抹茶", "zh": "抹茶" }, "desc": { "en": "Whisked green tea.", "ko": "곱게 저어 낸 녹차예요." } }
+      ]
+    },
+    {
+      "id": "pho-nang",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍜",
+      "at": [-1295, 441.7],
+      "signLocal": "Phở Nắng",
+      "name": { "en": "Pho Nang", "ko": "퍼 낭", "ja": "フォー・ナン", "zh": "阳光河粉" },
+      "tagline": { "en": "Vietnamese noodles and banh mi", "ko": "베트남 쌀국수와 반미", "ja": "ベトナムのフォーとバインミー", "zh": "越南河粉和法棍" },
+      "colors": { "sign": "#c2552f", "awning": "#f3dca0", "accent": "#fff7ec" },
+      "products": [
+        { "id": "pho-bo", "model": "bowl", "color": "#e2c28a", "price": 10000, "name": { "en": "Beef pho", "ko": "소고기 쌀국수", "ja": "牛肉フォー", "zh": "牛肉河粉" }, "desc": { "en": "Rice noodles in a clear beef broth with herbs.", "ko": "맑은 소고기 육수에 쌀국수와 허브를 넣었어요." } },
+        { "id": "banh-mi", "model": "bread", "color": "#d9a35a", "price": 7000, "name": { "en": "Banh mi", "ko": "반미", "ja": "バインミー", "zh": "越南法棍" }, "desc": { "en": "A crusty baguette with pickled veggies.", "ko": "바삭한 바게트에 절인 채소를 듬뿍 넣었어요." } },
+        { "id": "cha-gio", "model": "roll", "color": "#d38a3e", "price": 6000, "name": { "en": "Fried spring rolls", "ko": "짜조", "ja": "揚げ春巻き", "zh": "炸春卷" }, "desc": { "en": "Crispy fried rolls.", "ko": "바삭하게 튀긴 스프링롤이에요." } },
+        { "id": "ca-phe-sua-da", "model": "cup", "color": "#6b4a34", "price": 4500, "name": { "en": "Vietnamese iced coffee", "ko": "베트남 연유커피", "ja": "ベトナムコーヒー", "zh": "越南冰咖啡" }, "desc": { "en": "Strong drip coffee with condensed milk.", "ko": "진한 커피에 연유를 넣었어요." } }
+      ]
+    },
+    {
+      "id": "masala-ghar",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍛",
+      "at": [-1305, 457.7],
+      "signLocal": "मसाला घर",
+      "name": { "en": "Masala Ghar", "ko": "마살라 가르", "ja": "マサラ・ガル", "zh": "香料之家" },
+      "tagline": { "en": "Indian curries from the tandoor", "ko": "인도 커리와 탄두리", "ja": "インドカレーとタンドール", "zh": "印度咖喱和馕" },
+      "colors": { "sign": "#d9822b", "awning": "#7a2f6b", "accent": "#fff6ea" },
+      "products": [
+        { "id": "butter-chicken", "model": "bowl", "color": "#e08a3a", "price": 13000, "name": { "en": "Butter chicken curry", "ko": "버터치킨 커리", "ja": "バターチキンカレー", "zh": "黄油鸡咖喱" }, "desc": { "en": "A mild, creamy tomato curry.", "ko": "부드럽고 크리미한 토마토 커리예요." } },
+        { "id": "naan", "model": "bread", "color": "#efd09a", "price": 3000, "name": { "en": "Garlic naan", "ko": "갈릭 난", "ja": "ガーリックナン", "zh": "蒜香馕" }, "desc": { "en": "Soft flatbread from the tandoor oven.", "ko": "탄두르 화덕에 구운 말랑한 빵이에요." } },
+        { "id": "tandoori", "model": "skewer", "color": "#c8462f", "price": 12000, "name": { "en": "Tandoori chicken", "ko": "탄두리 치킨", "ja": "タンドリーチキン", "zh": "唐杜里烤鸡" }, "desc": { "en": "Yogurt-spiced chicken, roasted.", "ko": "요거트와 향신료에 재운 구운 닭이에요." } },
+        { "id": "mango-lassi", "model": "cup", "color": "#f2b84b", "price": 5000, "name": { "en": "Mango lassi", "ko": "망고 라씨", "ja": "マンゴーラッシー", "zh": "芒果拉西" }, "desc": { "en": "A cold mango yogurt drink.", "ko": "시원한 망고 요거트 음료예요." } }
+      ]
+    },
+    {
+      "id": "tortilla-feliz",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🌮",
+      "at": [-1295, 457.7],
+      "signLocal": "La Tortilla Feliz",
+      "name": { "en": "La Tortilla Feliz", "ko": "라 토르티야 펠리스", "ja": "ラ・トルティーヤ・フェリス", "zh": "快乐玉米饼" },
+      "tagline": { "en": "Mexican tacos and burritos", "ko": "멕시코 타코와 부리토", "ja": "メキシコのタコスとブリトー", "zh": "墨西哥塔可和卷饼" },
+      "colors": { "sign": "#2f8f4f", "awning": "#e94f3a", "accent": "#fff8ec" },
+      "products": [
+        { "id": "tacos", "model": "bread", "color": "#e8c46a", "price": 9000, "name": { "en": "Tacos (3)", "ko": "타코 3개", "ja": "タコス 3個", "zh": "塔可 3个" }, "desc": { "en": "Corn tortillas with grilled meat and salsa.", "ko": "옥수수 토르티야에 구운 고기와 살사를 넣었어요." } },
+        { "id": "burrito", "model": "roll", "color": "#e0b77a", "price": 10000, "name": { "en": "Burrito", "ko": "부리토", "ja": "ブリトー", "zh": "墨西哥卷饼" }, "desc": { "en": "A big wrap with rice, beans and cheese.", "ko": "밥과 콩, 치즈를 듬뿍 넣고 말았어요." } },
+        { "id": "nachos", "model": "bowl", "color": "#f2c14e", "price": 8000, "name": { "en": "Nachos", "ko": "나초", "ja": "ナチョス", "zh": "玉米片" }, "desc": { "en": "Tortilla chips with melted cheese.", "ko": "녹인 치즈를 올린 토르티야 칩이에요." } },
+        { "id": "horchata", "model": "cup", "color": "#efe4cf", "price": 4500, "name": { "en": "Horchata", "ko": "오르차타", "ja": "オルチャータ", "zh": "米浆饮" }, "desc": { "en": "A cold rice and cinnamon drink.", "ko": "쌀과 시나몬으로 만든 시원한 음료예요." } }
+      ]
+    },
+    {
+      "id": "nonna-lucia",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍝",
+      "at": [-1305, 473.7],
+      "signLocal": "Trattoria Nonna Lucia",
+      "name": { "en": "Trattoria Nonna Lucia", "ko": "트라토리아 논나 루치아", "ja": "トラットリア・ノンナ・ルチア", "zh": "露西亚奶奶小馆" },
+      "tagline": { "en": "Grandma's Italian kitchen", "ko": "이탈리아 할머니의 부엌", "ja": "イタリアのおばあちゃんの台所", "zh": "意大利奶奶的厨房" },
+      "colors": { "sign": "#2f6f3a", "awning": "#c0392b", "accent": "#fbf7ee" },
+      "products": [
+        { "id": "margherita", "model": "bread", "color": "#e05a3a", "price": 15000, "name": { "en": "Margherita pizza", "ko": "마르게리타 피자", "ja": "マルゲリータ", "zh": "玛格丽特披萨" }, "desc": { "en": "Tomato, mozzarella and basil.", "ko": "토마토와 모차렐라, 바질을 올린 피자예요." } },
+        { "id": "carbonara", "model": "bowl", "color": "#f0d690", "price": 14000, "name": { "en": "Carbonara", "ko": "까르보나라", "ja": "カルボナーラ", "zh": "培根蛋酱意面" }, "desc": { "en": "Egg, cheese and pepper, the Roman way.", "ko": "달걀과 치즈, 후추로 만든 로마식 파스타예요." } },
+        { "id": "tiramisu", "model": "bread", "color": "#8a5a3a", "price": 7000, "name": { "en": "Tiramisu", "ko": "티라미수", "ja": "ティラミス", "zh": "提拉米苏" }, "desc": { "en": "Coffee-soaked layers with mascarpone.", "ko": "커피를 적신 시트와 마스카르포네 크림이에요." } },
+        { "id": "limonata", "model": "cup", "color": "#f2e05a", "price": 5000, "name": { "en": "Lemonade", "ko": "레모네이드", "ja": "レモネード", "zh": "柠檬水" }, "desc": { "en": "Fresh and fizzy.", "ko": "상큼하고 톡 쏘는 레모네이드예요." } }
+      ]
+    },
+    {
+      "id": "kebapci-lale",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🥙",
+      "at": [-1295, 473.7],
+      "signLocal": "Kebapçı Lale",
+      "name": { "en": "Kebapci Lale", "ko": "케밥츠 랄레", "ja": "ケバプチュ・ラーレ", "zh": "郁金香烤肉" },
+      "tagline": { "en": "Turkish kebabs and sweets", "ko": "튀르키예 케밥과 디저트", "ja": "トルコのケバブとお菓子", "zh": "土耳其烤肉和甜点" },
+      "colors": { "sign": "#a3262e", "awning": "#f2d16b", "accent": "#fff4ee" },
+      "products": [
+        { "id": "doner", "model": "roll", "color": "#c98a4a", "price": 9000, "name": { "en": "Doner kebab wrap", "ko": "되네르 케밥 랩", "ja": "ドネルケバブ", "zh": "旋转烤肉卷" }, "desc": { "en": "Shaved roast meat in a wrap with salad.", "ko": "얇게 썬 구운 고기와 채소를 빵에 말았어요." } },
+        { "id": "pide", "model": "bread", "color": "#e0a84a", "price": 11000, "name": { "en": "Pide", "ko": "피데", "ja": "ピデ", "zh": "土耳其船形饼" }, "desc": { "en": "A boat-shaped flatbread with cheese.", "ko": "치즈를 올린 배 모양의 화덕빵이에요." } },
+        { "id": "baklava", "model": "bread", "color": "#d9a03a", "price": 6000, "name": { "en": "Baklava", "ko": "바클라바", "ja": "バクラヴァ", "zh": "果仁蜜饼" }, "desc": { "en": "Flaky pastry with pistachios and honey syrup.", "ko": "피스타치오와 꿀 시럽을 넣은 겹겹 페이스트리예요." } },
+        { "id": "cay", "model": "cup", "color": "#a3372a", "price": 3000, "name": { "en": "Turkish tea", "ko": "튀르키예 차이", "ja": "チャイ", "zh": "土耳其红茶" }, "desc": { "en": "Strong tea in a little tulip glass.", "ko": "튤립 모양 잔에 담은 진한 홍차예요." } }
+      ]
+    },
+    {
+      "id": "beit-hummus",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🧆",
+      "at": [-1305, 489.7],
+      "signLocal": "بيت الحمص",
+      "name": { "en": "Beit al-Hummus", "ko": "베이트 알 훔무스", "ja": "ベイト・アル・フムス", "zh": "鹰嘴豆之家" },
+      "tagline": { "en": "Middle Eastern mezze", "ko": "중동식 메제 요리", "ja": "中東のメゼ料理", "zh": "中东小菜" },
+      "colors": { "sign": "#2f6f6b", "awning": "#e9d7a0", "accent": "#f5faf8" },
+      "products": [
+        { "id": "hummus", "model": "bowl", "color": "#e6cf9a", "price": 8000, "name": { "en": "Hummus with pita", "ko": "훔무스와 피타", "ja": "フムスとピタ", "zh": "鹰嘴豆泥配皮塔" }, "desc": { "en": "Smooth chickpea dip with warm pita.", "ko": "부드러운 병아리콩 딥에 따뜻한 피타빵을 곁들였어요." } },
+        { "id": "falafel", "model": "bread", "color": "#a8762f", "price": 8000, "name": { "en": "Falafel", "ko": "팔라펠", "ja": "ファラフェル", "zh": "炸豆丸子" }, "desc": { "en": "Crispy chickpea balls with herbs.", "ko": "허브를 넣고 바삭하게 튀긴 병아리콩 볼이에요." } },
+        { "id": "shawarma", "model": "roll", "color": "#c98a4a", "price": 10000, "name": { "en": "Chicken shawarma", "ko": "치킨 샤와르마", "ja": "チキンシャワルマ", "zh": "鸡肉沙威玛" }, "desc": { "en": "Spiced chicken rolled in flatbread.", "ko": "향신료로 구운 닭고기를 얇은 빵에 말았어요." } },
+        { "id": "mint-lemonade", "model": "cup", "color": "#a9d36a", "price": 5000, "name": { "en": "Mint lemonade", "ko": "민트 레모네이드", "ja": "ミントレモネード", "zh": "薄荷柠檬水" }, "desc": { "en": "Lemon and fresh mint, blended with ice.", "ko": "레몬과 생민트를 얼음과 갈았어요." } }
+      ]
+    },
+    {
+      "id": "sunny-side-diner",
+      "category": "restaurant",
+      "size": "medium",
+      "icon": "🍔",
+      "at": [-1295, 489.7],
+      "signLocal": "Sunny Side Diner",
+      "name": { "en": "Sunny Side Diner", "ko": "써니사이드 다이너", "ja": "サニーサイド・ダイナー", "zh": "阳面餐厅" },
+      "tagline": { "en": "An American diner", "ko": "미국식 다이너", "ja": "アメリカンダイナー", "zh": "美式餐馆" },
+      "colors": { "sign": "#d8452f", "awning": "#f2f2f2", "accent": "#fff8f0" },
+      "products": [
+        { "id": "cheeseburger", "model": "bread", "color": "#c98a4a", "price": 11000, "name": { "en": "Cheeseburger", "ko": "치즈버거", "ja": "チーズバーガー", "zh": "芝士汉堡" }, "desc": { "en": "A juicy patty with melted cheese.", "ko": "육즙 가득한 패티에 치즈를 녹였어요." } },
+        { "id": "fries", "model": "bowl", "color": "#f2c14e", "price": 5000, "name": { "en": "Fries", "ko": "감자튀김", "ja": "フライドポテト", "zh": "薯条" }, "desc": { "en": "Hot and salty.", "ko": "갓 튀긴 짭짤한 감자튀김이에요." } },
+        { "id": "pancakes", "model": "bread", "color": "#e8b46a", "price": 9000, "name": { "en": "Pancakes", "ko": "팬케이크", "ja": "パンケーキ", "zh": "松饼" }, "desc": { "en": "A tall stack with maple syrup.", "ko": "메이플 시럽을 뿌린 두툼한 팬케이크예요." } },
+        { "id": "milkshake", "model": "cup", "color": "#f3b6c8", "price": 6000, "name": { "en": "Strawberry milkshake", "ko": "딸기 밀크셰이크", "ja": "いちごミルクシェイク", "zh": "草莓奶昔" }, "desc": { "en": "Thick and cold.", "ko": "진하고 시원한 밀크셰이크예요." } }
+      ]
+    },
+    {
+      "id": "club-orbit",
+      "category": "club",
+      "size": "large",
+      "icon": "🎧",
+      "at": [-1361, 385.7],
+      "signLocal": "CLUB ORBIT",
+      "name": { "en": "CLUB ORBIT", "ko": "클럽 오빗", "ja": "クラブ・オービット", "zh": "轨道俱乐部" },
+      "genre": "edm",
+      "tagline": { "en": "EDM club: a stage, a DJ and a dance floor", "ko": "EDM 클럽: 무대와 DJ, 댄스 플로어", "ja": "EDMクラブ：ステージとDJとダンスフロア", "zh": "EDM 俱乐部：舞台、DJ和舞池" },
+      "colors": { "sign": "#3b1d6e", "awning": "#ff3fa4", "accent": "#2a2236" },
+      "products": [
+        { "id": "orbit-cooler", "model": "cocktail", "color": "#7a5cff", "price": 7000, "name": { "en": "Orbit Cooler (alcohol-free)", "ko": "오빗 쿨러 (무알코올)", "ja": "オービットクーラー（ノンアル）", "zh": "轨道冰饮（无酒精）" }, "desc": { "en": "Blue and purple, with lots of ice.", "ko": "보랏빛 파란 음료에 얼음을 가득 넣었어요." } },
+        { "id": "neon-lemon", "model": "cocktail", "color": "#d6f24a", "price": 6000, "name": { "en": "Neon Lemon soda", "ko": "네온 레몬 소다", "ja": "ネオンレモンソーダ", "zh": "霓虹柠檬苏打" }, "desc": { "en": "Lemon soda that glows under the lights.", "ko": "조명 아래에서 빛나는 레몬 소다예요." } },
+        { "id": "energy-shot", "model": "cup", "color": "#ff3fa4", "price": 4000, "name": { "en": "Berry energy drink", "ko": "베리 에너지 드링크", "ja": "ベリーエナジードリンク", "zh": "莓果能量饮料" }, "desc": { "en": "For dancing all night.", "ko": "밤새 춤출 힘을 줘요." } },
+        { "id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": { "en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水" }, "desc": { "en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!" } }
+      ]
+    },
+    {
+      "id": "club-808",
+      "category": "club",
+      "size": "large",
+      "icon": "🎤",
+      "at": [-1427, 385.7],
+      "signLocal": "BASEMENT 808",
+      "genre": "hiphop",
+      "name": { "en": "BASEMENT 808", "ko": "베이스먼트 808", "ja": "ベースメント808", "zh": "808 地下室" },
+      "tagline": { "en": "Hip-hop club: deep 808s and a DJ", "ko": "힙합 클럽: 묵직한 808과 DJ", "ja": "ヒップホップクラブ：重い808とDJ", "zh": "嘻哈俱乐部：厚重的 808 和 DJ" },
+      "colors": { "sign": "#1a1a1a", "awning": "#f2b705", "accent": "#26221c" },
+      "products": [
+        { "id": "gold-fizz", "model": "cocktail", "color": "#f2b705", "price": 7000, "name": { "en": "Gold Fizz (alcohol-free)", "ko": "골드 피즈 (무알코올)", "ja": "ゴールドフィズ（ノンアル）", "zh": "金色气泡饮（无酒精）" }, "desc": { "en": "Honey, lemon and lots of bubbles.", "ko": "꿀과 레몬에 탄산을 듬뿍 넣었어요." } },
+        { "id": "cola-float", "model": "cup", "color": "#5a2d1a", "price": 5000, "name": { "en": "Cola float", "ko": "콜라 플로트", "ja": "コーラフロート", "zh": "可乐冰淇淋" }, "desc": { "en": "Cola with a scoop of vanilla ice cream.", "ko": "콜라 위에 바닐라 아이스크림 한 스쿱." } },
+        { "id": "hot-wings", "model": "skewer", "color": "#c4471f", "price": 8000, "name": { "en": "Spicy wing skewers", "ko": "매콤 윙 꼬치", "ja": "スパイシー手羽串", "zh": "香辣鸡翅串" }, "desc": { "en": "Crispy, sticky and spicy.", "ko": "바삭하고 끈적하고 매콤해요." } },
+        { "id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": { "en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水" }, "desc": { "en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!" } }
+      ]
+    },
+    {
+      "id": "club-heartbeat",
+      "category": "club",
+      "size": "large",
+      "icon": "💖",
+      "at": [-1217, 385.7],
+      "signLocal": "HEARTBEAT",
+      "genre": "kpop",
+      "name": { "en": "HEARTBEAT", "ko": "하트비트", "ja": "ハートビート", "zh": "心跳俱乐部" },
+      "tagline": { "en": "K-POP remix club: dance along!", "ko": "K-POP 리믹스 클럽: 같이 춤춰요!", "ja": "K-POPリミックスクラブ：一緒に踊ろう！", "zh": "K-POP 混音俱乐部：一起跳舞吧！" },
+      "colors": { "sign": "#ff4f9a", "awning": "#b388ff", "accent": "#2a1d33" },
+      "products": [
+        { "id": "pink-lemonade", "model": "cocktail", "color": "#ff8fc0", "price": 6000, "name": { "en": "Pink lemonade", "ko": "핑크 레모네이드", "ja": "ピンクレモネード", "zh": "粉红柠檬水" }, "desc": { "en": "Sweet, sour and very pink.", "ko": "새콤달콤하고 아주 핑크해요." } },
+        { "id": "lavender-soda", "model": "cocktail", "color": "#b388ff", "price": 7000, "name": { "en": "Lavender cloud soda", "ko": "라벤더 구름 소다", "ja": "ラベンダークラウドソーダ", "zh": "薰衣草云朵苏打" }, "desc": { "en": "Purple soda with a cloud of cream.", "ko": "보랏빛 소다 위에 구름 같은 크림." } },
+        { "id": "star-candy", "model": "cup", "color": "#ffd23f", "price": 3000, "name": { "en": "Star candy", "ko": "별사탕", "ja": "星のキャンディ", "zh": "星星糖" }, "desc": { "en": "A cup of tiny star candies.", "ko": "작은 별사탕 한 컵이에요." } },
+        { "id": "water", "model": "cup", "color": "#cfe9f5", "price": 2000, "name": { "en": "Water", "ko": "생수", "ja": "お水", "zh": "矿泉水" }, "desc": { "en": "Stay hydrated!", "ko": "물도 꼭 챙겨 마셔요!" } }
+      ]
+    },
+    {
+      "id": "bar-hush",
+      "category": "bar",
+      "size": "medium",
+      "icon": "🍸",
+      "at": [-1249, 385.7],
+      "signLocal": "Bar Hush",
+      "name": { "en": "Bar Hush", "ko": "바 허시", "ja": "バー・ハッシュ", "zh": "静语酒吧" },
+      "tagline": { "en": "A quiet cocktail bar", "ko": "조용한 칵테일 바", "ja": "静かなカクテルバー", "zh": "安静的鸡尾酒吧" },
+      "colors": { "sign": "#2b1d14", "awning": "#c9a227", "accent": "#3a2a20" },
+      "products": [
+        { "id": "virgin-mojito", "model": "cocktail", "color": "#bfe39a", "price": 8000, "name": { "en": "Virgin mojito", "ko": "버진 모히토", "ja": "ヴァージン・モヒート", "zh": "无酒精莫吉托" }, "desc": { "en": "Lime, mint and soda, no alcohol.", "ko": "라임과 민트, 탄산수로 만든 무알코올 모히토예요." } },
+        { "id": "shirley-temple", "model": "cocktail", "color": "#f05a6a", "price": 8000, "name": { "en": "Shirley Temple", "ko": "셜리 템플", "ja": "シャーリー・テンプル", "zh": "秀兰邓波儿" }, "desc": { "en": "Ginger ale, grenadine and a cherry.", "ko": "진저에일에 석류 시럽과 체리를 넣었어요." } },
+        { "id": "sunset-punch", "model": "cocktail", "color": "#f2913a", "price": 9000, "name": { "en": "Sunset punch", "ko": "선셋 펀치", "ja": "サンセットパンチ", "zh": "日落果宾治" }, "desc": { "en": "Orange, pineapple and a red sunset at the bottom.", "ko": "오렌지와 파인애플에 붉은 노을빛을 담았어요." } },
+        { "id": "earl-grey-tonic", "model": "cocktail", "color": "#c9b27a", "price": 9000, "name": { "en": "Earl Grey tonic", "ko": "얼그레이 토닉", "ja": "アールグレイトニック", "zh": "伯爵茶汤力" }, "desc": { "en": "Earl Grey tea with tonic water.", "ko": "얼그레이 차에 토닉워터를 섞었어요." } }
+      ]
+    },
+    {
+      "id": "pedal-lab",
+      "category": "lifestyle",
+      "workshop": "bike",
+      "size": "small",
+      "icon": "🚲",
+      "at": [72, 74],
+      "name": { "en": "Pedal Lab", "ko": "페달랩", "ja": "ペダルラボ", "zh": "踏板实验室" },
+      "tagline": { "en": "Bike shop: faster bikes and repairs", "ko": "자전거 가게: 더 빠른 자전거와 수리", "ja": "自転車店：速い自転車と修理", "zh": "自行车店：更快的车和维修" },
+      "colors": { "sign": "#2f6f5e", "awning": "#3fb59a", "accent": "#eef6f2" },
+      "products": [
+        { "id": "bike-bell", "model": "cup", "color": "#f2c84b", "price": 8000, "name": { "en": "Bike bell", "ko": "자전거 벨", "ja": "自転車のベル", "zh": "车铃" }, "desc": { "en": "Ring ring!", "ko": "따릉따릉!" } },
+        { "id": "bike-light", "model": "cup", "color": "#ffffff", "price": 15000, "name": { "en": "Front light", "ko": "앞 라이트", "ja": "フロントライト", "zh": "前灯" }, "desc": { "en": "Bright LED for night rides.", "ko": "밤에 달릴 때 쓰는 밝은 LED예요." } },
+        { "id": "water-bottle", "model": "cup", "color": "#5b8def", "price": 9000, "name": { "en": "Water bottle", "ko": "물통", "ja": "ボトル", "zh": "水壶" }, "desc": { "en": "Fits the bottle cage.", "ko": "자전거 물통 거치대에 쏙 들어가요." } }
+      ]
+    },
+    {
+      "id": "costume-atelier",
+      "category": "fashion",
+      "size": "medium",
+      "icon": "🎭",
+      "at": [60, 95],
+      "name": { "en": "Costume Atelier", "ko": "코스튬 아틀리에", "ja": "コスチューム・アトリエ", "zh": "服装工作室", "es": "Taller de Disfraces" },
+      "tagline": { "en": "Costumes: mage, ninja, knight and more", "ko": "코스튬: 마법사, 닌자, 기사 등", "ja": "コスチューム：魔法使い、忍者、騎士など", "zh": "服装：法师、忍者、骑士等", "es": "Disfraces: mago, ninja, caballero y más" },
+      "colors": { "sign": "#4b2a6b", "awning": "#c9a2f0", "accent": "#f7f2fb" },
+      "products": [
+        { "id": "costume-ranger", "model": "tee", "color": "#3f9b5f", "price": 0, "outfit": "outfit-rogue", "name": { "en": "Ranger costume", "ko": "레인저 옷", "ja": "レンジャーの服", "zh": "游侠服装", "es": "Traje de explorador" }, "desc": { "en": "A green hunter's outfit with a leather vest.", "ko": "가죽 조끼를 입은 초록색 사냥꾼 옷이에요." } },
+        { "id": "costume-explorer", "model": "tee", "color": "#d9c29a", "price": 0, "outfit": "outfit-ranger", "name": { "en": "Explorer costume", "ko": "탐험가 옷", "ja": "探検家の服", "zh": "探险家服装", "es": "Traje de aventurero" }, "desc": { "en": "A sandy travel shirt and a blue bandana.", "ko": "모래색 여행 셔츠와 파란 반다나예요." } },
+        { "id": "costume-viking", "model": "tee", "color": "#8a5a3a", "price": 0, "outfit": "outfit-barbarian", "name": { "en": "Viking costume", "ko": "바이킹 옷", "ja": "バイキングの服", "zh": "维京服装", "es": "Traje de vikingo" }, "desc": { "en": "Fur, straps and a big beard.", "ko": "털옷과 가죽끈, 그리고 멋진 수염!" } },
+        { "id": "costume-ninja", "model": "tee", "color": "#2e2a36", "price": 0, "outfit": "outfit-hooded", "name": { "en": "Ninja costume", "ko": "닌자 옷", "ja": "忍者の服", "zh": "忍者服装", "es": "Traje de ninja" }, "desc": { "en": "All black, with a hood and a mask.", "ko": "후드와 복면까지 온통 까만 옷이에요." } },
+        { "id": "costume-knight", "model": "tee", "color": "#9ca9af", "price": 0, "outfit": "outfit-knight", "name": { "en": "Knight armour", "ko": "기사 갑옷", "ja": "騎士の鎧", "zh": "骑士盔甲", "es": "Armadura de caballero" }, "desc": { "en": "Shining steel armour.", "ko": "반짝이는 강철 갑옷이에요." } },
+        { "id": "costume-mage", "model": "tee", "color": "#5b4fa0", "price": 0, "outfit": "outfit-mage", "name": { "en": "Mage robe", "ko": "마법사 로브", "ja": "魔法使いのローブ", "zh": "法师长袍", "es": "Túnica de mago" }, "desc": { "en": "A purple robe for spell casting.", "ko": "주문을 외울 때 입는 보라색 로브예요." } }
+      ]
+    }
   ]
 }

@@ -1,20 +1,43 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SALON, CLINIC, beautyCost } from '../src/core/beauty.js';
-import { sanitizeLook, PALETTES } from '../src/data/appearance.js';
+import { SALON, CLINIC, CLINIC2, LENS, LIPS, MENUS, EYE_SHAPES, beautyCost } from '../src/core/beauty.js';
+import { sanitizeLook, PALETTES, HAIR_STYLES, EYE_SHAPE_IDS } from '../src/data/appearance.js';
+import { STRINGS } from '../src/i18n/strings.js';
 
 test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(SALON, {}, { dye: 'pink' }), 30);
+  assert.equal(beautyCost(SALON, {}, { dye: 'pink', hairStyle: 'bob' }), 70);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
-  assert.equal(beautyCost(CLINIC, {}, { eyes: 'blue', tone: 'tan', small: true }), 105);
+  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: true }), 130);
   assert.equal(beautyCost(CLINIC, { small: true }, { small: false }), 0);
+  assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50);
+  assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25);
+  assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 15);
 });
 
-test('looks keep valid salon and clinic choices and drop the rest', () => {
-  const ok = sanitizeLook({ dye: 'mint', eyes: 'green', tone: 'deep', small: true });
-  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.small], ['mint', 'green', 'deep', true]);
-  const bad = sanitizeLook({ dye: 'toString', eyes: '#fff', tone: 1, small: 'yes' });
-  assert.deepEqual([bad.dye, bad.eyes, bad.tone, bad.small], [null, null, null, false]);
-  for (const o of [...SALON, ...CLINIC]) if (o.palette) assert.ok(PALETTES[o.palette]);
+test('ten hairstyles, ten lip tints, fourteen lens colours, two eye shapes per clinic', () => {
+  assert.equal(HAIR_STYLES.length, 10);
+  assert.equal(Object.keys(PALETTES.lip).length, 10);
+  assert.ok(Object.keys(PALETTES.eyes).length >= 14);
+  assert.deepEqual([...EYE_SHAPES.clinic, ...EYE_SHAPES.clinic2].sort(), [...EYE_SHAPE_IDS].sort());
+  for (const shapes of Object.values(EYE_SHAPES)) assert.equal(shapes.length, 2);
+});
+
+test('looks keep valid beauty choices and drop the rest', () => {
+  const ok = sanitizeLook({ dye: 'mint', eyes: 'aqua', tone: 'deep', small: true, hairStyle: 'twin', lip: 'coral', eyeShape: 'puppy' });
+  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.small, ok.hairStyle, ok.lip, ok.eyeShape], ['mint', 'aqua', 'deep', true, 'twin', 'coral', 'puppy']);
+  const bad = sanitizeLook({ dye: 'toString', eyes: '#fff', tone: 1, small: 'yes', hairStyle: 'mohawk', lip: 'constructor', eyeShape: 'huge' });
+  assert.deepEqual([bad.dye, bad.eyes, bad.tone, bad.small, bad.hairStyle, bad.lip, bad.eyeShape], [null, null, null, false, null, null, null]);
+});
+
+test('every menu option has a palette or labelled choices in every language', () => {
+  for (const [kind, menu] of Object.entries(MENUS)) {
+    for (const l of ['en', 'ko', 'ja', 'zh']) for (const k of ['open', 'title', 'howTo']) assert.ok(STRINGS[l][`${kind}.${k}`], `${l} ${kind}.${k}`);
+    for (const o of menu) {
+      if (o.palette) assert.ok(PALETTES[o.palette], o.key);
+      for (const c of o.choices || []) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l][`${o.label}.${c}`], `${l} ${o.label}.${c}`);
+      if (!o.toggle) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l]['beauty.' + o.key], `${l} beauty.${o.key}`);
+    }
+  }
 });

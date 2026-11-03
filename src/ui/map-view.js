@@ -220,6 +220,12 @@ export class MapView {
       this.results.className = 'map-results';
       this.list.replaceChildren(this.controls, this.results);
     }
+    // Phones: the search box goes above the map, away from the credits at
+    // the bottom of the screen; wider screens keep it atop the side list.
+    const narrow = globalThis.matchMedia?.('(max-width: 700px)').matches;
+    const body = this.list.closest('.map-body');
+    if (narrow && body && this.controls.nextElementSibling !== body) body.before(this.controls);
+    else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
     const cats = [...new Set(this.stores.map((s) => s.store.category))];

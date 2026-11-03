@@ -49,7 +49,7 @@ export class BagUI {
         b.textContent = d.emoji;
         b.title = d.name;
         b.setAttribute('aria-label', d.name);
-        if (e.kind === 'coffee') b.append(el('small', '', String(e.sips)));
+        if (e.kind === 'coffee' || e.kind === 'glass') b.append(el('small', '', String(e.sips)));
         b.onclick = () => { this.sel = i === this.sel ? -1 : i; this.render(); };
       } else b.disabled = true;
       grid.append(b);

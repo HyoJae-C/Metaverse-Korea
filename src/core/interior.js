@@ -2,6 +2,7 @@
 // for each product. Each interior is its own scene.
 import { isDining } from './dining.js';
 import * as THREE from 'three';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
@@ -168,6 +169,23 @@ export function productModel(kind, color) {
 
 const HANGING = new Set(['tee', 'jeans', 'scarf']);
 
+// A small sign: white text on a coloured plate.
+function labelTexture(text, bg) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 84;
+  const g = c.getContext('2d');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#ffffff';
+  g.font = '800 52px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, c.width / 2, c.height / 2 + 2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
@@ -263,7 +281,9 @@ export function buildInterior(store) {
     ? [-1.2, 0.3, 1.8, 3.3].map((z) => [w / 2 - 1.4, z, -Math.PI / 2])
     : store.category === 'bar' ? [-3.6, -1.2, 1.2, 3.6].map((x) => [x, -d / 2 + 2.2, 0]) : null;
   // Restaurants with a menu: nothing on display, you order at your table.
-  (isDining(store) ? [] : store.products).forEach((product, i) => {
+  // META COFFEE, bars and clubs: you order from the staff instead (no displays).
+  const counterMenu = store.takeaway || store.category === 'bar' || store.category === 'club';
+  (isDining(store) || counterMenu ? [] : store.products).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
@@ -329,6 +349,8 @@ export function buildInterior(store) {
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
+  let trainer = null; // the gym's personal trainer (an NPC to talk to)
+  let barkeep = null; // a club's bartender (the clerk there is the DJ)
   const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   let animate = null; // per-frame animation (club lights), called while inside
   let see = null; // (x, z) each frame: rooms you can walk into turn see-through
@@ -529,6 +551,7 @@ export function buildInterior(store) {
     party.forEach((l, i) => { l.position.set(i ? 4 : -4, 2.6, 1); scene.add(l); });
     // Bar counter with stools on the right wall (the drinks stand on it).
     const cx = w / 2 - 1.4;
+    barkeep = { x: cx + 0.75, z: 1.05, ry: -Math.PI / 2 }; // the bartender, behind the counter
     box(0.9, BAR_H, 6.4, cx, BAR_H / 2, 1.05, '#1f1b26');
     box(1.0, 0.06, 6.5, cx, BAR_H + 0.01, 1.05, EDGE);
     block(cx, 1.05, 1.0, 6.5);
@@ -692,40 +715,99 @@ export function buildInterior(store) {
       scene.add(pane);
     }
   } else {
-    if (store.workshop === 'salon' || store.workshop === 'clinic') {
-      // Mirrors on the back wall with a chair in front of each (salon), or
-      // mirrors with a white treatment bed and a waiting sofa (clinic).
+    if (store.workshop === 'salon' || store.workshop === 'lens' || store.workshop === 'lips') {
+      // One big mirror across the back wall with a chair in front of each
+      // place: sit down and watch yourself in the mirror while you choose.
       const n = Math.max(2, Math.min(4, Math.floor((w - 3) / 2.6)));
+      const mw = Math.min(w - 2, n * 2.6), mz = -d / 2 + 0.12;
+      box(mw + 0.2, 1.75, 0.08, 0, 1.55, mz, '#e9eef2'); // frame
+      const glass = new Reflector(new THREE.PlaneGeometry(mw, 1.55), {
+        textureWidth: 1024, textureHeight: Math.round(1024 * 1.55 / mw), color: 0xd8e4ea,
+      });
+      glass.position.set(0, 1.55, mz + 0.05);
+      scene.add(glass);
+      box(mw, 0.08, 0.42, 0, 0.72, mz + 0.25, '#fffaf0'); // shelf under the mirror
+      const props = { salon: ['#f29bb6', '#4f7fd6', '#e8c27a'], lens: ['#3fc6d0', '#8a5cc9', '#4a9a5c'], lips: ['#d94c5f', '#ff8fb1', '#a8325e'] }[store.workshop];
+      stations.mirror = [];
       for (let i = 0; i < n; i++) {
-        const mx = (i - (n - 1) / 2) * 2.6, mz = -d / 2 + 0.25;
-        box(1.1, 1.5, 0.06, mx, 1.6, mz, '#e9eef2');
-        const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.35), new THREE.MeshBasicMaterial({ color: '#cfe6f2' }));
-        glass.position.set(mx, 1.6, mz + 0.04);
-        scene.add(glass);
-        box(1.3, 0.08, 0.4, mx, 0.8, mz + 0.3, '#fffaf0'); // shelf
-        if (store.workshop === 'salon') {
-          box(0.18, 0.12, 0.08, mx - 0.35, 0.9, mz + 0.3, '#f29bb6'); // dye bottles
-          box(0.08, 0.2, 0.08, mx + 0.3, 0.94, mz + 0.3, '#4f7fd6');
-          const cz = mz + 1.3;
-          box(0.6, 0.12, 0.6, mx, SEAT_H, cz, '#2b2b2e');
-          box(0.6, 0.6, 0.1, mx, SEAT_H + 0.35, cz + 0.28, '#2b2b2e');
-          box(0.12, SEAT_H, 0.12, mx, SEAT_H / 2, cz, '#9ca9af');
-          seats.push({ x: mx, z: cz, ry: Math.PI, stand: [mx, cz + 1] });
-          block(mx, cz, 0.7, 0.7);
-        } else {
-          box(0.7, 0.55, 1.9, mx, 0.28, mz + 1.6, '#f6f8fa'); // treatment bed
-          box(0.6, 0.1, 0.4, mx, 0.6, mz + 0.85, '#ffffff'); // pillow
-          block(mx, mz + 1.6, 0.8, 2);
-        }
-        block(mx, mz + 0.3, 1.3, 0.5);
+        const mx = (i - (n - 1) / 2) * (mw / n);
+        props.forEach((c, k) => {
+          if (store.workshop === 'lips') { // lipsticks standing up
+            box(0.05, 0.12, 0.05, mx - 0.3 + k * 0.12, 0.82, mz + 0.25, '#2b2230');
+            box(0.04, 0.06, 0.04, mx - 0.3 + k * 0.12, 0.91, mz + 0.25, c);
+          } else if (store.workshop === 'lens') box(0.14, 0.05, 0.1, mx - 0.3 + k * 0.2, 0.79, mz + 0.25, c); // lens cases
+          else box(0.08, 0.18 + k * 0.03, 0.08, mx - 0.35 + k * 0.15, 0.85, mz + 0.25, c); // dye bottles
+        });
+        const cz = mz + 1.15;
+        box(0.6, 0.12, 0.6, mx, SEAT_H, cz, '#2b2b2e');
+        box(0.6, 0.6, 0.1, mx, SEAT_H + 0.35, cz + 0.28, '#2b2b2e');
+        box(0.12, SEAT_H, 0.12, mx, SEAT_H / 2, cz, '#9ca9af');
+        seats.push({ x: mx, z: cz, ry: Math.PI, stand: [mx, cz + 1], beauty: store.workshop, mirrorZ: mz });
+        block(mx, cz, 0.7, 0.7);
       }
-      if (store.workshop === 'clinic') { // waiting sofa
-        const fx = -w / 2 + 1.2, fz = d / 2 - 3.2;
-        box(0.8, 0.42, 2.2, fx, 0.21, fz, store.colors.awning);
-        box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
-        for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
-        block(fx, fz, 0.9, 2.3);
+      block(0, mz + 0.25, mw, 0.5);
+    } else if (store.workshop === 'clinic' || store.workshop === 'clinic2') {
+      // Consultation beds along the back wall (lie down to choose), a waiting
+      // sofa, and the operating room behind a glass wall on the right.
+      const bedTop = 0.55;
+      for (const bx of [-w / 2 + 1.8, -w / 2 + 4.3]) {
+        const bz = -d / 2 + 1.45;
+        box(0.9, bedTop, 2.1, bx, bedTop / 2, bz, '#f6f8fa');
+        box(0.8, 0.1, 0.4, bx, bedTop + 0.05, bz - 0.8, '#ffffff'); // pillow
+        box(0.92, 0.04, 1.2, bx, bedTop + 0.02, bz + 0.35, store.colors.awning); // blanket
+        seats.push({ x: bx, z: bz + 0.15, ry: 0, stand: [bx + 0.95, bz + 0.3], beauty: store.workshop, lie: true });
+        block(bx, bz, 1, 2.2);
       }
+      // Operating room: x from ox0 to the right wall, z from the back wall to oz1.
+      const ox0 = 0.6, oz1 = -0.4, oxm = (ox0 + w / 2) / 2, ozm = (-d / 2 + oz1) / 2;
+      const glassMat = new THREE.MeshLambertMaterial({ color: '#cfe8f0', transparent: true, opacity: 0.35, depthWrite: false });
+      const pane = (len, x, z, ry) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 2.6), glassMat);
+        m.position.set(x, 1.3, z);
+        m.rotation.y = ry;
+        scene.add(m);
+      };
+      const doorW = 1.6, frontLen = w / 2 - ox0;
+      pane(oz1 + d / 2, ox0, ozm, Math.PI / 2); // left side
+      pane(frontLen - doorW - 0.4, ox0 + 0.4 + doorW + (frontLen - doorW - 0.4) / 2, oz1, 0); // front, right of the door
+      box(0.4, 2.6, 0.08, ox0 + 0.2, 1.3, oz1, '#9ca9af');
+      box(frontLen, 0.3, 0.1, ox0 + frontLen / 2, 2.75, oz1, '#3f9a8a'); // header
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.26), new THREE.MeshBasicMaterial({ map: labelTexture('수술실 · OR', '#c8463c') }));
+      sign.position.set(ox0 + 0.4 + doorW / 2, 2.75, oz1 + 0.06);
+      scene.add(sign);
+      block(ox0, ozm, 0.12, oz1 + d / 2);
+      block(ox0 + 0.4 + doorW + (frontLen - doorW - 0.4) / 2, oz1, frontLen - doorW - 0.4, 0.12);
+      block(ox0 + 0.2, oz1, 0.4, 0.12);
+      // The operating table and its big round lamp.
+      const tx = oxm + 0.4, tz = ozm;
+      box(0.8, 0.85, 2, tx, 0.42, tz, '#7fa7b5');
+      box(0.85, 0.06, 2.05, tx, 0.87, tz, '#e8f1f4');
+      box(0.06, 1.6, 0.06, tx - 1.1, 2.6, tz, '#9ca9af');
+      const lampHead = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.18, 24), mat('#e9eef2'));
+      lampHead.position.set(tx, 2.25, tz);
+      scene.add(lampHead);
+      const bulb = new THREE.Mesh(new THREE.CircleGeometry(0.33, 24).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#fffbe6' }));
+      bulb.position.set(tx, 2.15, tz);
+      scene.add(bulb);
+      const orLight = new THREE.PointLight(0xfff6e0, 8, 5);
+      orLight.position.set(tx, 2.0, tz);
+      scene.add(orLight);
+      block(tx, tz, 0.9, 2.1);
+      // Monitors and a trolley.
+      box(0.5, 1.3, 0.4, tx + 1.5, 0.65, tz - 0.6, '#4a4f57');
+      box(0.45, 0.32, 0.05, tx + 1.5, 1.45, tz - 0.6, '#1d2a2f');
+      box(0.6, 0.06, 0.4, tx - 1.4, 0.85, tz + 0.7, '#c9ced3');
+      block(tx + 1.5, tz - 0.6, 0.6, 0.5);
+      // The surgery: the gurney rolls from the bed into the room and back out.
+      stations.surgery = {
+        table: [tx, tz], door: [ox0 + 0.4 + doorW / 2, oz1 + 0.9], bedTop, tableTop: 0.9,
+        staff: [[tx - 0.9, tz - 0.4, Math.PI / 2], [tx + 0.9, tz - 0.5, -Math.PI / 2], [tx + 0.9, tz + 0.5, -Math.PI / 2], [tx - 0.9, tz + 0.6, Math.PI / 2]],
+      };
+      const fx = -w / 2 + 1.2, fz = d / 2 - 3.2; // waiting sofa
+      box(0.8, 0.42, 2.2, fx, 0.21, fz, store.colors.awning);
+      box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
+      for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
+      block(fx, fz, 0.9, 2.3);
     } else if (store.workshop === 'karaoke') {
       // A small stage with a big lyrics screen and a mic stand.
       box(5, 0.2, 2.4, 0, 0.1, -d / 2 + 1.4, '#2b2240');
@@ -743,17 +825,44 @@ export function buildInterior(store) {
         seats.push({ x: o, z: 0.6, ry: Math.PI, stand: [o, 1.5] });
         block(o, 0.6, 1.7, 0.8);
       }
-    } else if (store.workshop === 'photo') {
-      // The booth: a box with a curtain opening and a lit backdrop inside.
-      const bz = -d / 2 + 1.6;
-      box(3.4, 2.4, 0.1, 0, 1.2, -d / 2 + 0.1, '#fffaf0'); // backdrop
-      box(0.1, 2.4, 2.6, -1.7, 1.2, bz, store.colors.sign);
-      box(0.1, 2.4, 2.6, 1.7, 1.2, bz, store.colors.sign);
-      box(3.5, 0.12, 2.6, 0, 2.45, bz, store.colors.sign);
-      box(0.4, 0.3, 0.3, 0, 2.25, bz + 1.2, '#2b2b2e'); // camera, hung from the roof
-      block(-1.7, bz, 0.2, 2.6);
-      block(1.7, bz, 0.2, 2.6);
-      stations.photo = [{ x: 0, z: bz + 0.3, ry: 0, camZ: bz + 2.6 }];
+    } else if (store.workshop === 'photo' || store.workshop === 'photobw') {
+      // Two booths side by side: a box with a curtain opening and a lit
+      // backdrop inside (메모리즈: dark wood and a grey backdrop).
+      const bw = store.workshop === 'photobw';
+      const bz = -d / 2 + 1.6, half = 1.45;
+      stations.photo = [];
+      for (const bx of [-w / 4, w / 4]) {
+        box(half * 2, 2.4, 0.1, bx, 1.2, -d / 2 + 0.1, bw ? '#d9d9d9' : '#fffaf0'); // backdrop
+        for (const s2 of [-1, 1]) box(0.1, 2.4, 2.6, bx + s2 * half, 1.2, bz, store.colors.sign);
+        box(half * 2 + 0.1, 0.12, 2.6, bx, 2.45, bz, store.colors.sign);
+        box(0.4, 0.3, 0.3, bx, 2.25, bz + 1.2, '#2b2b2e'); // camera, hung from the roof
+        const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.9), new THREE.MeshLambertMaterial({ color: store.colors.awning, side: THREE.DoubleSide }));
+        curtain.position.set(bx - half + 0.5, 1.35, bz + 1.28);
+        scene.add(curtain);
+        for (const s2 of [-1, 1]) block(bx + s2 * half, bz, 0.2, 2.6);
+        stations.photo.push({ x: bx, z: bz + 0.3, ry: 0, camZ: bz + 2.6, half });
+      }
+    } else if (store.workshop === 'photo1') {
+      // 추억사진관: a portrait studio with a paper backdrop, two soft boxes
+      // and a camera on a tripod. One person at a time.
+      const sz = -d / 2 + 2.2;
+      box(4.2, 2.8, 0.06, 0, 1.4, -d / 2 + 0.1, '#e9e1d2'); // backdrop paper
+      const sweep = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.8).rotateX(-Math.PI / 2), mat('#e9e1d2'));
+      sweep.position.set(0, 0.01, -d / 2 + 1.0);
+      scene.add(sweep);
+      box(4.4, 0.16, 0.16, 0, 2.86, -d / 2 + 0.16, '#2b2b2e'); // roll
+      for (const s2 of [-1, 1]) {
+        box(0.05, 1.7, 0.05, s2 * 2.1, 0.85, sz + 0.4, '#2b2b2e'); // light stands
+        const soft = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.35), new THREE.MeshBasicMaterial({ color: '#fffaf0' }));
+        soft.position.set(s2 * 2.1, 1.85, sz + 0.4);
+        soft.rotation.y = -s2 * 0.6;
+        scene.add(soft);
+        block(s2 * 2.1, sz + 0.4, 0.5, 0.5);
+      }
+      for (const a of [0, 2.1, 4.2]) box(0.04, 1.3, 0.04, Math.sin(a) * 0.25, 0.62, sz + 2.6 + Math.cos(a) * 0.25, '#2b2b2e'); // tripod
+      box(0.36, 0.26, 0.22, 0, 1.36, sz + 2.6, '#1d1b22');
+      block(0, sz + 2.6, 0.6, 0.6);
+      stations.photo = [{ x: 0, z: sz, ry: 0, camZ: sz + 2.6, half: 0.4, solo: true }];
     } else if (store.workshop === 'claw') {
       // A row of claw machines along the back wall.
       const n = Math.max(2, Math.min(4, Math.floor((w - 2) / 1.6)));
@@ -962,11 +1071,29 @@ export function buildInterior(store) {
       }
       block(rx, rz, 0.8, 2.7);
       stations.gym.push({ x: rx - 1.3, z: rz, kind: 'dumbbell' });
-      // Exercise mats (flat, you stand on them): push-ups and sit-ups.
-      for (const [mx, c, kind] of [[-5.5, '#8fd3c7', 'pushup'], [-3, '#b9a6f0', 'situp']]) {
-        box(1, 0.04, 1.9, mx, 0.02, d * 0.12, c);
-        stations.gym.push({ x: mx, z: d * 0.12, kind });
+      // Exercise mats (flat, you stand on them): two rows of push-up and
+      // sit-up mats.
+      for (const [row, mz] of [[0, d * 0.12], [1, d * 0.12 + 2.4]]) {
+        [-8, -5.5, -3].forEach((mx, i) => {
+          const kind = (i + row) % 2 ? 'situp' : 'pushup';
+          box(1, 0.04, 1.9, mx, 0.02, mz, kind === 'pushup' ? '#8fd3c7' : '#b9a6f0');
+          stations.gym.push({ x: mx, z: mz, kind });
+        });
       }
+      // Pull-up bars (철봉): two posts and a bar you hang from.
+      for (const px2 of [4, 6.6]) {
+        const pz2 = d * 0.06;
+        for (const s2 of [-0.65, 0.65]) box(0.1, 2.3, 0.1, px2 + s2, 1.15, pz2, '#4a4f57');
+        const pb = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 10), mat('#c9ced3'));
+        pb.rotation.z = Math.PI / 2;
+        pb.position.set(px2, 2.05, pz2);
+        scene.add(pb);
+        box(1.4, 0.03, 0.9, px2, 0.015, pz2, '#2b2b2e'); // rubber floor
+        for (const s2 of [-0.65, 0.65]) block(px2 + s2, pz2, 0.15, 0.15);
+        stations.gym.push({ x: px2, z: pz2 + 0.05, kind: 'pullup', bar: true });
+      }
+      // The trainer, by the mats.
+      trainer = { x: -1.2, z: d * 0.12 + 1.2, ry: -Math.PI / 2 };
       // A long mirror on the left wall.
       const mirror = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.2), new THREE.MeshLambertMaterial({ color: '#cfe6f2' }));
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
@@ -1043,5 +1170,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT };
 }

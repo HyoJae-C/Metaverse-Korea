@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -22,6 +22,19 @@ export function makeHeld(kind) {
     const sip = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.008, 0.02), mat('#fbfaf6'));
     sip.position.set(0, 0.136, 0.025);
     g.add(cup, sleeve, lid, sip);
+  } else if (kind === 'glass') {
+    // A drink from the bar or a club: a tall glass with a straw and a lemon.
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.034, 0.13, 14), new THREE.MeshLambertMaterial({ color: '#dff1f8', transparent: true, opacity: 0.55 }));
+    glass.position.y = 0.065;
+    const drink = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.031, 0.09, 14), mat('#ff8a5c'));
+    drink.position.y = 0.05;
+    const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.16, 6), mat('#ff4f9a'));
+    straw.position.set(0.015, 0.11, 0);
+    straw.rotation.z = -0.25;
+    const lemon = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.006, 12), mat('#ffe066'));
+    lemon.position.set(-0.03, 0.125, 0);
+    lemon.rotation.z = Math.PI / 2;
+    g.add(glass, drink, straw, lemon);
   } else if (kind === 'rod') {
     // A fishing rod tilted forward over the water, with a reel and a line.
     const rod = new THREE.Group();

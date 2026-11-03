@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES } from '../data/appearance.js';
+import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
 
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
@@ -82,6 +83,9 @@ function recolor(gltf, rule) {
 // model's material whose atlas has those cells repainted, keeping each cell's
 // light-to-dark shading. One copy per model and combination, shared.
 const SMALL_HEAD = 0.88;
+// Hanging from the gym's pull-up bar (2.05 m): how far the body is lifted,
+// and how much higher each pull-up takes it.
+const PULLUP = { hang: 0.5, lift: 0.22 };
 const dyed = new Map();
 function dyedMaterial(id, src, look) {
   const A = PACK.atlas;
@@ -141,6 +145,102 @@ function dyedMaterial(id, src, look) {
   m.map = tex;
   dyed.set(key, m);
   return m;
+}
+
+// Hairstyle and lip tint on the model's head (core/hair-styles.js). The
+// head's scalp hair is hidden (brows and beards stay), and the new hair and
+// lips ride on the head bone. Eye shapes reshape the head's own eyes.
+const headInfo = new Map(); // model id -> { ey, mouth, bald }
+function headFacts(id, geo) {
+  if (headInfo.has(id)) return headInfo.get(id);
+  const A = PACK.atlas;
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  const cell = (i) => [Math.floor(uv.getX(i) * A.cols), Math.floor(uv.getY(i) * A.rows)];
+  const is = (i, c) => { const [x, y] = cell(i); return x === c[0] && y === c[1]; };
+  let ey = 0, ne = 0;
+  for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) { ey += pos.getY(i); ne++; }
+  ey = ne ? ey / ne : 0;
+  // The mouth: the darker band of the skin cell, front and below the eyes.
+  const mouth = new THREE.Vector3();
+  let nm = 0, front = -Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    if (Math.abs(x) < 0.15 && Math.abs(y - (ey - 0.36)) < 0.1) front = Math.max(front, z);
+    if (Math.abs(x) < 0.2 && y < ey - 0.15 && y > ey - 0.7 && z > 0.55 && is(i, A.skin) && (uv.getY(i) * A.rows) % 1 > 0.78) { mouth.x += x; mouth.y += y; mouth.z = Math.max(mouth.z, z); nm++; }
+  }
+  if (nm) { mouth.x = 0; mouth.y /= nm; } else mouth.set(0, ey - 0.36, Number.isFinite(front) ? front : 0.8);
+  // The head without its scalp hair.
+  const idx = geo.index;
+  const keep = [];
+  const tri = (k) => idx ? idx.getX(k) : k;
+  const n = idx ? idx.count : pos.count;
+  for (let k = 0; k < n; k += 3) {
+    const a = tri(k), b = tri(k + 1), c = tri(k + 2);
+    const hair = is(a, A.hair) && is(b, A.hair) && is(c, A.hair);
+    if (hair && isScalpHair((pos.getX(a) + pos.getX(b) + pos.getX(c)) / 3, (pos.getY(a) + pos.getY(b) + pos.getY(c)) / 3, (pos.getZ(a) + pos.getZ(b) + pos.getZ(c)) / 3, ey)) continue;
+    keep.push(a, b, c);
+  }
+  const bald = new THREE.BufferGeometry();
+  for (const [k, attr] of Object.entries(geo.attributes)) bald.setAttribute(k, attr);
+  bald.setIndex(keep);
+  bald.boundingBox = geo.boundingBox;
+  bald.boundingSphere = geo.boundingSphere;
+  const eyes = [];
+  for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) eyes.push(i);
+  const info = { ey, mouth, bald, eyes, shaped: new Map() };
+  headInfo.set(id, info);
+  return info;
+}
+// The head with its eyes reshaped (clinics): each eye scaled and tilted
+// round its own centre, in the face plane.
+function shapedHead(facts, geo, shape, key) {
+  const tf = EYE_TRANSFORM[shape];
+  if (!tf) return geo;
+  if (facts.shaped.has(key)) return facts.shaped.get(key);
+  const src = geo.attributes.position;
+  const pos = src.clone();
+  for (const side of [-1, 1]) {
+    const ids = facts.eyes.filter((i) => Math.sign(src.getX(i)) === side);
+    if (!ids.length) continue;
+    let cx = 0, cy = 0;
+    for (const i of ids) { cx += src.getX(i); cy += src.getY(i); }
+    cx /= ids.length; cy /= ids.length;
+    const a = tf.tilt * side, c = Math.cos(a), sn = Math.sin(a);
+    for (const i of ids) {
+      const dx = (src.getX(i) - cx) * tf.sx, dy = (src.getY(i) - cy) * tf.sy;
+      pos.setXYZ(i, cx + dx * c - dy * sn, cy + dx * sn + dy * c, src.getZ(i) + tf.dz);
+    }
+  }
+  const out = new THREE.BufferGeometry();
+  for (const [k, attr] of Object.entries(geo.attributes)) out.setAttribute(k, k === 'position' ? pos : attr);
+  out.setIndex(geo.index);
+  out.boundingBox = geo.boundingBox;
+  out.boundingSphere = geo.boundingSphere;
+  facts.shaped.set(key, out);
+  return out;
+}
+const LIP_FWD = 0.035;
+function faceExtras(id, headMesh, headBone, look) {
+  const A = PACK.atlas;
+  const facts = headFacts(id, headMesh.geometry); // the model's own head
+  // Head-mesh units -> head-bone space, from the skin's bind pose (exact
+  // whatever pose the model was exported in).
+  const extras = new THREE.Group();
+  const bi = headMesh.skeleton?.bones.indexOf(headBone) ?? -1;
+  if (bi >= 0) extras.matrix.multiplyMatrices(headMesh.skeleton.boneInverses[bi], headMesh.bindMatrix);
+  else extras.matrix.copy(headBone.matrixWorld).invert().multiply(headMesh.matrixWorld);
+  extras.matrix.decompose(extras.position, extras.quaternion, extras.scale);
+  const material = Array.isArray(headMesh.material) ? headMesh.material[0] : headMesh.material;
+  let geo = headMesh.geometry;
+  const hair = look.hairStyle && !PACK.models[id]?.hood ? buildHair(look.hairStyle, material, A, facts.ey) : null;
+  if (hair) geo = facts.bald;
+  if (look.eyeShape) geo = shapedHead(facts, geo, look.eyeShape, (hair ? 'bald|' : '') + look.eyeShape);
+  headMesh.geometry = geo;
+  if (hair) extras.add(hair); // (the head is whole under its hair: no gap to fill)
+  if (look.lip && PALETTES.lip[look.lip] != null) {
+    extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
+  }
+  headBone.add(extras);
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
@@ -231,6 +331,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     }
   }
 
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) faceExtras(id, headMesh, headBone, look);
+
   body.visible = false;
   root.add(m);
   const headScale = look.small ? SMALL_HEAD : 1;
@@ -260,6 +362,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   let emote = null; // { key, t, dur }
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  let pullT = 0;
   const dBones = { spine: m.getObjectByName('spine'), head: headBone, armL: m.getObjectByName('upperarml'), armR: m.getObjectByName('upperarmr'), foreL: m.getObjectByName('lowerarml'), foreR: m.getObjectByName('lowerarmr') };
   return {
     // Where held things go. The loader drops dots from names (handslot.r → handslotr).
@@ -267,7 +370,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -282,15 +385,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       let key;
       if (emote && !riding) key = emote.key;
       else if (riding) key = 'ride';
-      else if (sit) key = 'sit';
+      else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && action(activity)) key = activity;
       else key = 'idle';
       const dancing = activity === 'dance' && key === 'idle';
+      const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
-      const off = riding ? PACK.ride : sit ? PACK.sit : null;
+      const off = riding ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (dancing) {
@@ -300,7 +404,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
-      if (dancing) m.position.y = bob;
+      let pull = 0;
+      if (hanging) {
+        pullT += dt;
+        pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
+        m.position.y = PULLUP.hang + PULLUP.lift * pull;
+      } else if (dancing) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       mixer.update(dt);
@@ -311,6 +420,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [bone, r] of riding === 'car' ? carPose : ridePose) {
           const [x, y, z] = tune?.[bone.name] || r;
           bone.rotation.set(bone.rotation.x + x, bone.rotation.y + y, bone.rotation.z + z);
+        }
+      }
+      if (hanging) { // arms up to the bar, elbows bending as you pull
+        const bend = -1.5 * pull;
+        for (const [name, r] of [['armL', [-2.95 - bend * 0.35, 0, 0]], ['armR', [-2.95 - bend * 0.35, 0, 0]], ['foreL', [bend, 0, 0]], ['foreR', [bend, 0, 0]]]) {
+          const bone = dBones[name];
+          if (bone) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
       }
       if (moves) {
