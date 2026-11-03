@@ -33,6 +33,8 @@
         <button class="tool" id="bike-btn"><span>🚲</span><small id="bike-label" data-i18n="hud.bike"></small></button>
         <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
+        <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
+        <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
         <button class="tool" id="cart-btn"><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
@@ -70,9 +72,11 @@
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
-        <strong class="items-title" id="wallet-items-title" hidden>🎒 <span data-i18n="items.title"></span></strong>
-        <div class="items-list" id="wallet-items"></div>
         <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
+      </div>
+      <div class="sheet bag-panel" id="bag-panel" hidden>
+        <strong class="items-title" id="wallet-items-title" hidden>🗂️ <span class="bag-owned"></span></strong>
+        <div class="items-list" id="wallet-items"></div>
       </div>
       <div class="sheet ride-panel" id="ride-panel" hidden>
         <button class="sheet-x" id="ride-close" aria-label="Close">✕</button>
