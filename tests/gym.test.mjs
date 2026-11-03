@@ -4,7 +4,7 @@ import { boostFor, GymLog, MAX_BOOST, markerAt, zoneFor, inZone, EXERCISES } fro
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
 
-test('each workout adds 0.01% speed, capped at +3%', () => {
+test('each workout adds 0.01% speed, capped at +1%', () => {
   assert.equal(boostFor(0), 1);
   assert.ok(Math.abs(boostFor(1) - 1.0001) < 1e-12);
   assert.ok(Math.abs(boostFor(100) - 1.01) < 1e-12);

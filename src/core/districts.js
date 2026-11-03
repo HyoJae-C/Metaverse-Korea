@@ -33,9 +33,43 @@ export function mergeDistricts(parts, links = []) {
 
 // Loads a region's map: a single file, or its districts joined together.
 export async function loadRegionMap(region, fetchJson) {
-  if (!region.districts?.length) return fetchJson(region.mapFile || 'map.json');
+  if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
   const maps = await Promise.all(region.districts.map((d) => fetchJson(d.map)));
-  return mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || []);
+  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || []));
+}
+
+// Elevated stations (e.g. Seongsu on Line 2) come from OpenStreetMap as
+// ordinary buildings, so they were solid blocks across the streets below.
+// A building that an elevated railway runs through for 20 m or more is a
+// station deck: raise it so people walk underneath (like other overhangs).
+export const DECK_HEIGHT = 4.5;
+export function liftStations(map) {
+  const elevated = (map.rail || []).filter((r) => r.e);
+  if (!elevated.length) return map;
+  for (const b of map.buildings || []) {
+    if (b.m) continue;
+    let inside = 0;
+    for (const r of elevated) {
+      for (let i = 1; i < r.p.length; i++) {
+        const [x1, z1] = r.p[i - 1], [x2, z2] = r.p[i];
+        const len = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.ceil(len / 2));
+        for (let k = 0; k < n; k++) {
+          const t = (k + 0.5) / n;
+          if (inPoly(x1 + (x2 - x1) * t, z1 + (z2 - z1) * t, b.p)) inside += len / n;
+        }
+      }
+    }
+    if (inside >= 20) b.m = Math.min(DECK_HEIGHT, b.h - 1);
+  }
+  return map;
+}
+function inPoly(x, z, p) {
+  let r = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [xi, zi] = p[i], [xj, zj] = p[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
+  }
+  return r;
 }
 
 // Where something stands: local metres ("at": [x, z], for hand-made

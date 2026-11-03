@@ -55,3 +55,23 @@ export function makeHeld(kind) {
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;
 }
+
+// An open umbrella held over the head (bought at the convenience store).
+// Life size, in the character's own space: the canopy sits above the head.
+export function makeUmbrella(color = '#4f7fd6') {
+  const g = new THREE.Group();
+  g.name = 'umbrella';
+  const ribs = 8;
+  const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.26, ribs, 1, true), new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, flatShading: true }));
+  canopy.position.y = 1.0;
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.1, 6), mat('#d9dde2'));
+  tip.position.y = 1.17;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.0, 6), mat('#d9dde2'));
+  pole.position.y = 0.5;
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 6, 10, Math.PI), mat('#3b2a22'));
+  hook.position.set(0.04, 0.0, 0);
+  hook.rotation.z = Math.PI;
+  g.add(canopy, tip, pole, hook);
+  g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+  return g;
+}

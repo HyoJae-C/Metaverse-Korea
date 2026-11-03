@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { makeBike, makeTandem, makeCar } from './bikes.js';
 import { attachModel } from './model-pack.js';
-import { makeHeld } from './held.js';
+import { makeHeld, makeUmbrella } from './held.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
@@ -105,6 +105,7 @@ export function createCharacter(rawLook) {
   let act = null; // current body emote
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
+  let umbrella = null; // open umbrella over the head
   const attachHeld = () => {
     if (!held) return;
     if (model?.hand) {
@@ -198,6 +199,16 @@ export function createCharacter(rawLook) {
           body.rotation.set(0, 0, 0);
         } else pose({ t, e, armL, armR, head, body });
       }
+    },
+    // An open umbrella over the head (rainy days), or none.
+    setUmbrella(on) {
+      if (!!umbrella === !!on) return;
+      if (on) {
+        umbrella = makeUmbrella();
+        umbrella.position.set(0.16, 0.62, 0.05);
+        umbrella.rotation.z = -0.08;
+        root.add(umbrella);
+      } else { umbrella.removeFromParent(); umbrella = null; }
     },
     // Hold something in the right hand ('coffee'), or nothing (null).
     setHeld(kind) {

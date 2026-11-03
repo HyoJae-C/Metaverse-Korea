@@ -17,6 +17,17 @@ export function weatherKind(code) {
   return 'clear';
 }
 
+// Rain and snow slow you down a little outdoors: on foot and by bike.
+// An umbrella keeps the rain off, so walking is only a touch slower.
+export const WET = new Set(['rain', 'storm', 'snow']);
+export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
+  if (!WET.has(kind)) return 1;
+  const snow = kind === 'snow';
+  if (bike) return snow ? 0.85 : 0.9;
+  if (umbrella) return snow ? 0.94 : 0.96;
+  return snow ? 0.88 : 0.92;
+}
+
 export const WEATHER_ICON = { clear: '☀️', cloudy: '☁️', fog: '🌫️', rain: '🌧️', snow: '❄️', storm: '⛈️' };
 const NIGHT_ICON = { clear: '🌙' };
 
@@ -37,6 +48,17 @@ export async function fetchWeather(lat, lon) {
 export function localHour(offsetHours = 9, now = new Date()) {
   const h = now.getUTCHours() + now.getUTCMinutes() / 60 + offsetHours;
   return ((h % 24) + 24) % 24;
+}
+
+// Game clock: a whole day every 2 hours, the same for everyone. Daytime
+// (05:30-19:30, dawn and dusk included) takes 90 minutes, the night 30, so
+// it's light most of the time but you still see night come round.
+export const DAY_CYCLE_MS = 2 * 60 * 60 * 1000;
+const DAY_SHARE = 0.75;
+export function gameHour(nowMs = Date.now()) {
+  const u = ((nowMs % DAY_CYCLE_MS) + DAY_CYCLE_MS) % DAY_CYCLE_MS / DAY_CYCLE_MS;
+  const h = u < DAY_SHARE ? 5.5 + (u / DAY_SHARE) * 14 : 19.5 + ((u - DAY_SHARE) / (1 - DAY_SHARE)) * 10;
+  return h % 24;
 }
 
 // 0 = night, 1 = full day, with ~1.5 h dawn and dusk ramps.
@@ -80,7 +102,7 @@ export class WeatherSystem {
 
   hour() {
     return Number.isFinite(this.forcedHour) && new URLSearchParams(location.search).has('hour')
-      ? this.forcedHour : localHour(9);
+      ? this.forcedHour : gameHour();
   }
 
   status() {

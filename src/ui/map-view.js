@@ -154,7 +154,7 @@ export class MapView {
       g.strokeStyle = s.store.colors.sign;
       g.lineWidth = 3 * dpr;
       g.stroke();
-      g.fillText(CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
+      g.fillText(s.store.icon || CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
       if (this.view.scale > 0.9 * dpr) {
         g.fillStyle = '#4a3f35';
         g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
@@ -208,7 +208,10 @@ export class MapView {
       this.search.className = 'map-search';
       this.search.autocomplete = 'off';
       this.search.enterKeyHint = 'search';
-      this.search.addEventListener('input', () => { this.query = this.search.value; this._renderResults(); this.draw(); });
+      const onType = () => { if (this.query === this.search.value) return; this.query = this.search.value; this._renderResults(); this.draw(); };
+      // iOS Korean keyboard: some versions only report the finished syllable
+      // on compositionend/keyup, so listen to those as well.
+      for (const ev of ['input', 'compositionend', 'keyup', 'change']) this.search.addEventListener(ev, onType);
       this.search.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
       this.chips = document.createElement('div');
       this.chips.className = 'map-cats';

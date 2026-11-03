@@ -27,8 +27,8 @@ async function join(name) {
   return page;
 }
 
-const a = await join('E2E-A');
-const b = await join('E2E-B');
+const a = await join('E2E A');
+const b = await join('E2E B');
 let ok = false;
 try {
   await a.waitForFunction(() => document.querySelector('#online')?.textContent.includes('2'), null, { timeout: 20000 });

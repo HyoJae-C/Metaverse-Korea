@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
+import { buildThemePark } from './themepark.js';
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -126,6 +127,20 @@ export function productModel(kind, color) {
       add(new THREE.CylinderGeometry(0.08, 0.06, 0.2, 14), 0, 0.1);
       add(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 14), 0, 0.21, 0, mat('#ffffff'));
       break;
+    case 'samgak': // triangle rice ball in its wrapper, a seaweed band
+      add(new THREE.CylinderGeometry(0.13, 0.13, 0.07, 3).rotateX(Math.PI / 2), 0, 0.11, 0, mat('#fbfaf6'));
+      add(new THREE.BoxGeometry(0.08, 0.1, 0.075), 0, 0.06);
+      break;
+    case 'milk': // a round little milk pot with a foil top
+      add(new THREE.SphereGeometry(0.09, 12, 10).scale(1, 1.15, 1), 0, 0.1);
+      add(new THREE.CylinderGeometry(0.035, 0.045, 0.06, 10), 0, 0.22);
+      add(new THREE.CylinderGeometry(0.037, 0.037, 0.01, 10), 0, 0.255, 0, mat('#d9dde2'));
+      break;
+    case 'umbrella': // a furled umbrella standing on its tip
+      add(new THREE.ConeGeometry(0.06, 0.5, 8).rotateX(Math.PI), 0, 0.3);
+      add(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 6), 0, 0.6, 0, mat('#d9dde2'));
+      add(new THREE.TorusGeometry(0.04, 0.012, 6, 10, Math.PI), 0.04, 0.66, 0, mat('#3b2a22'));
+      break;
     case 'scarf':
       add(new THREE.TorusGeometry(0.13, 0.05, 8, 16), 0, 0.2).rotation.x = Math.PI / 2;
       break;
@@ -142,6 +157,7 @@ const HANGING = new Set(['tee', 'jeans', 'scarf']);
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
+  if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
@@ -316,9 +332,12 @@ export function buildInterior(store) {
     }
     for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
     // Long reading tables with chairs on both long sides.
-    const rows = Math.max(1, Math.floor((d - 6) / 2.8));
+    // Rows 3.4 m apart so there's an aisle between one row's chair backs
+    // and the next table: you stand up into it without getting stuck.
+    const ROW = 3.4;
+    const rows = Math.max(1, Math.floor((d - 5) / ROW));
     for (let r = 0; r < rows; r++) {
-      const tz = -d / 2 + 3 + r * 2.8;
+      const tz = -d / 2 + 2.6 + r * ROW;
       const tl = Math.min(4.2, w - 4.5);
       box(tl, 0.06, 1.0, 0, 0.62, tz, '#c98b4f');
       for (const lx of [-tl / 2 + 0.2, tl / 2 - 0.2]) box(0.1, 0.62, 0.8, lx, 0.31, tz, '#8a5a3a');
@@ -331,10 +350,10 @@ export function buildInterior(store) {
           const cz = tz + 0.8 * s;
           box(0.42, 0.06, 0.42, cx, SEAT_H - 0.03, cz, store.colors.awning);
           box(0.42, 0.5, 0.08, cx, SEAT_H + 0.22, cz + 0.2 * s, store.colors.awning);
-          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.5 * s] });
+          seats.push({ x: cx, z: cz + 0.04 * s, ry: s > 0 ? Math.PI : 0, stand: [cx, tz + 1.35 * s] });
         }
       }
-      block(0, tz, tl + 0.2, 2.1);
+      block(0, tz, tl + 0.2, 1.2); // the table itself; chairs can be walked past
     }
     // Front desk by the door, and the sign above it.
     const cx = Math.min(3.6, sx - 2), cz = d / 2 - 2.3;

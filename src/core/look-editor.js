@@ -24,8 +24,11 @@ export function saveLook(look) {
   } catch { /* ignore */ }
 }
 
-export function createLookEditor({ optionsEl, canvas, randomBtn }) {
+// lockModel: a model id that can't be changed yet (the model buttons are
+// disabled and "random" keeps it).
+export function createLookEditor({ optionsEl, canvas, randomBtn, lockModel = null }) {
   let look = loadLook();
+  if (lockModel) look = { ...look, model: lockModel };
 
   // --- preview ---
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -114,7 +117,9 @@ export function createLookEditor({ optionsEl, canvas, randomBtn }) {
       name.dataset.i18n = 'model.' + id;
       name.textContent = t('model.' + id);
       b.append(modelEmoji(id), name);
+      b.disabled = !!lockModel && id !== lockModel;
       b.onclick = () => {
+        if (lockModel) return;
         look = { ...look, model: id };
         refreshPressed();
         rebuild();
@@ -157,6 +162,7 @@ export function createLookEditor({ optionsEl, canvas, randomBtn }) {
 
   randomBtn.onclick = () => {
     look = randomLook();
+    if (lockModel) look.model = lockModel;
     refreshPressed();
     rebuild();
   };

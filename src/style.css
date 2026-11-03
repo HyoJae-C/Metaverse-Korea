@@ -24,6 +24,8 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
 }
+/* iOS Safari won't let you type into a field that inherits user-select: none. */
+input, textarea { user-select: text; -webkit-user-select: text; }
 #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
 [hidden] { display: none !important; }
@@ -82,6 +84,14 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
   user-select: text; -webkit-user-select: text;
 }
 .name-field input:focus { outline: none; border-color: var(--mint); }
+.name-field input[readonly] { background: var(--cream, #f6f1e7); color: var(--ink-soft); }
+.acc:disabled { opacity: 0.35; cursor: not-allowed; }
+.look-lock { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
+#step-login { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; }
+#step-login[hidden] { display: none; }
+.login-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink); }
+.login-note { margin: 0; font-size: 12px; color: var(--ink-soft); }
+#login-google, #login-guest { width: 100%; }
 .region { margin: 16px 0 10px; font-weight: 700; }
 .primary {
   width: 100%;
@@ -343,7 +353,7 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .map-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .map-list { overflow: auto; padding: 4px 12px 12px; display: grid; align-content: start; gap: 6px; }
 .map-controls { position: sticky; top: 0; z-index: 1; background: var(--panel); display: grid; gap: 6px; padding: 6px 0 4px; }
-.map-search { width: 100%; min-height: 40px; border-radius: 12px; border: 2px solid #eadfcd; background: #fff; padding: 0 12px; font: inherit; font-size: 15px; }
+.map-search { width: 100%; min-height: 40px; border-radius: 12px; border: 2px solid #eadfcd; background: #fff; padding: 0 12px; font: inherit; font-size: 16px; /* 16px: iOS doesn't zoom in on focus */ }
 .map-cats { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .map-cat { flex: none; min-height: 32px; padding: 0 10px; border-radius: 16px; background: #fff; border: 2px solid #eadfcd; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
 .map-cat.on { background: var(--accent); border-color: var(--accent); color: #fff; }

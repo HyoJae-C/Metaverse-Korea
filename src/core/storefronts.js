@@ -207,7 +207,7 @@ export class Storefronts {
         group.position, group.quaternion, group.scale,
       ));
       // Floating badge above the entrance (sprites always face the camera).
-      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(ICONS[store.category] || '🛍️', store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(store.icon || ICONS[store.category] || '🛍️', store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
       badge.scale.set(6, 1.5, 1);
       badge.position.set(0, home ? 5.2 : 6.4, 2.0);
       badge.renderOrder = 3;
@@ -225,7 +225,7 @@ export class Storefronts {
       it.signMat.map = signTexture(text, it.store.colors.sign);
       it.signMat.needsUpdate = true;
       it.badge.material.map.dispose();
-      it.badge.material.map = badgeTexture(ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);
+      it.badge.material.map = badgeTexture(it.store.icon || ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);
     }
   }
 
