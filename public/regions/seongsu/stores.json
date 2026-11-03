@@ -419,7 +419,7 @@
       "products": []
     },
     {
-      "id": "name-studio", "category": "workshop", "workshop": "emblem", "size": "small", "anchor": {"lat": 37.5447, "lon": 127.0555},
+      "id": "name-studio", "category": "workshop", "workshop": "emblem", "size": "small", "at": [44, 59],
       "name": {"en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊"},
       "tagline": {"en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色"},
       "colors": {"sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff"},
