@@ -49,7 +49,7 @@ export function missionsFor(day, pool) {
 }
 
 function read() {
-  try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { return {}; }
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch { return {}; }
 }
 function write(s) {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage blocked */ }

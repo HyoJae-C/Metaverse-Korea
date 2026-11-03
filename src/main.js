@@ -2235,7 +2235,9 @@ function renderDaily() {
 }
 // Square missions: what the guide can check on the spot, the HUD chip, and
 // talking to the guide (take an errand, see it again, or report back).
-const questCtx = () => ({ held: held?.kind || null, pet: !!pet });
+// A function declaration (not a const): setHeld() runs during startup,
+// before this line, when a held item is restored.
+function questCtx() { return { held: held?.kind || null, pet: !!pet }; }
 function questText(q) {
   const store = q.kind === 'visit' ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
