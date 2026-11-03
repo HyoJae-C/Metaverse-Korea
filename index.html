@@ -41,7 +41,7 @@
         <span class="online" id="online" hidden></span>
         <button class="online coin-chip daily-chip" id="daily-btn" aria-label="Daily">📅<b class="dot" id="daily-dot" hidden></b></button>
         <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
-        <button class="chip icon-chip" id="settings-btn" aria-label="Settings">⚙️</button>
+        <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot" id="settings-dot" hidden></b></button>
       </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
@@ -322,6 +322,9 @@
     <div class="overlay dim" id="settings-panel" hidden>
       <div class="panel small settings-card">
         <h2 data-i18n="settings.title"></h2>
+        <button class="setting-row" id="news-btn">
+          <span>📢</span><span class="setting-label" data-i18n="news.title"></span><b class="dot news-dot" id="news-dot" hidden></b><span class="setting-go">›</span>
+        </button>
         <button class="setting-row" id="music-btn" aria-pressed="false">
           <span>🎵</span><span class="setting-label" data-i18n="hud.music"></span><span class="switch"></span>
         </button>
@@ -348,6 +351,15 @@
           <span>🌐</span><span class="setting-label" data-i18n="lang.change"></span><span class="setting-go">›</span>
         </button>
         <button class="primary" id="settings-close" data-i18n="settings.done"></button>
+      </div>
+    </div>
+
+    <!-- Update board: notices for players (src/data/updates.js) -->
+    <div class="overlay dim" id="news-panel" hidden>
+      <div class="panel small news-card">
+        <h2>📢 <span data-i18n="news.title"></span></h2>
+        <div class="news-list" id="news-list"></div>
+        <button class="primary" id="news-close" data-i18n="settings.done"></button>
       </div>
     </div>
 

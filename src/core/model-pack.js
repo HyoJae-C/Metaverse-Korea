@@ -418,6 +418,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       currentKey = ''; // restart even if the same clip is already playing
     },
     feet: [m.getObjectByName('footl'), m.getObjectByName('footr')],
+    headMesh, headBone, // (a costume head hides them)
     // How high a board or scooter deck holds you up.
     setBoardHeight(y) { boardY = y; },
     update(dt, speed01, sit, riding) {

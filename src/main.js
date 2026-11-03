@@ -58,6 +58,8 @@ import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
+import { makeMascotHead } from './core/mascot.js';
+import { UPDATES, updateText, hasNew as hasNewUpdate } from './data/updates.js';
 import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
@@ -437,6 +439,10 @@ for (const sc of region.screens || []) {
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
   squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
+  squareNpc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+  squareNpc.tag.classList.add('square-guide');
+  squareNpc.labelY = 1.95; // above the costume head
+  squareNpc.ch.activity('dance'); // dances while waiting: easy to spot
   const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
   squareNpc.ch.root.position.set(gx, 0, gz);
   squareNpc.ch.root.rotation.y = face(gx, gz);
@@ -707,6 +713,42 @@ $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
 $('settings-panel').onclick = (e) => {
   if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
 };
+// Update board: the notices, newest first, with a dot until the latest is seen.
+const NEWS_SEEN = 'mk.newsSeen';
+const refreshNewsDot = () => {
+  let seen = null;
+  try { seen = localStorage.getItem(NEWS_SEEN); } catch { /* ignore */ }
+  const on = hasNewUpdate(seen);
+  $('news-dot').hidden = !on;
+  $('settings-dot').hidden = !on;
+};
+const renderNews = () => {
+  const lang = getLanguage();
+  $('news-list').replaceChildren(...UPDATES.map((u) => {
+    const { title, items } = updateText(u, lang);
+    const card = document.createElement('article');
+    card.className = 'news-item';
+    const when = document.createElement('div');
+    when.className = 'news-when';
+    when.textContent = u.at;
+    const h = document.createElement('h3');
+    h.textContent = title;
+    const ul = document.createElement('ul');
+    for (const it of items) { const li = document.createElement('li'); li.textContent = it; ul.append(li); }
+    card.append(when, h, ul);
+    return card;
+  }));
+};
+$('news-btn').onclick = () => {
+  $('settings-panel').hidden = true;
+  renderNews();
+  $('news-panel').hidden = false;
+  try { if (UPDATES[0]) localStorage.setItem(NEWS_SEEN, UPDATES[0].id); } catch { /* ignore */ }
+  refreshNewsDot();
+};
+$('news-close').onclick = () => { $('news-panel').hidden = true; };
+$('news-panel').onclick = (e) => { if (e.target.id === 'news-panel') $('news-panel').hidden = true; };
+refreshNewsDot();
 $('lang-btn').onclick = () => {
   $('settings-panel').hidden = true;
   $('lang-overlay').hidden = false;
@@ -4187,7 +4229,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     heldKind: () => heldKind(),
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
-    guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z],
+    guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),

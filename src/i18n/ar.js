@@ -320,6 +320,7 @@ export const AR = {
   'settings.title': 'الإعدادات',
   'settings.signs': 'ترجمة لافتات المتاجر',
   'settings.done': 'تم',
+  "news.title": "التحديثات",
   'settings.sfx': 'المؤثرات الصوتية',
   'hud.musicOn': 'الموسيقى تعمل',
   'hud.musicOff': 'الموسيقى متوقفة',

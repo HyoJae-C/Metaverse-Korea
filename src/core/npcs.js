@@ -47,7 +47,7 @@ const v = new THREE.Vector3();
 // Puts a name tag and speech bubble over a character on screen.
 export function placeLabels(o, camera, width, height) {
   const r = o.ch.root;
-  v.set(r.position.x, 1.55, r.position.z).project(camera);
+  v.set(r.position.x, o.labelY ?? 1.55, r.position.z).project(camera);
   const dist = camera.position.distanceTo(r.position);
   const show = r.visible && v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1 && dist < 30;
   const sx = (v.x * 0.5 + 0.5) * width, sy = (-v.y * 0.5 + 0.5) * height;
