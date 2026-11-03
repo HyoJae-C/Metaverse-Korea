@@ -90,6 +90,22 @@ const PULLUP = { hang: 0.5, bar: 2.03 };
 const CURL = { foreL: [0, 0, -2], foreR: [0, 0, 2] };
 const _hv = new THREE.Vector3();
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
+// Hairdresser's scissors, held in the right hand while snipping.
+function makeScissors() {
+  const g = new THREE.Group();
+  const steel = new THREE.MeshLambertMaterial({ color: '#d7dde2' });
+  for (const a of [-0.25, 0.25]) {
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.11, 0.006), steel);
+    blade.position.y = 0.06;
+    blade.rotation.z = a;
+    g.add(blade);
+  }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.006, 6, 12), new THREE.MeshLambertMaterial({ color: '#e0566b' }));
+  ring.position.y = -0.015;
+  g.add(ring);
+  g.scale.setScalar(0.8);
+  return g;
+}
 function makeDumbbell() {
   const g = new THREE.Group();
   const metal = new THREE.MeshLambertMaterial({ color: '#3a3d44' });
@@ -382,6 +398,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let pullT = 0;
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
+  let scissors = null; // the hairdresser's
   const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
   const dBones = { spine: m.getObjectByName('spine'), head: headBone, armL: m.getObjectByName('upperarml'), armR: m.getObjectByName('upperarmr'), foreL: m.getObjectByName('lowerarml'), foreR: m.getObjectByName('lowerarmr') };
   return {
@@ -390,7 +407,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -418,6 +435,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         slotL.add(bells[0]); slotR.add(bells[1]);
       }
       if (bells) for (const b of bells) b.visible = curling;
+      const snipping = activity === 'snip' && key === 'idle'; // cutting hair
+      if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
+      if (scissors) scissors.visible = snipping;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       const off = riding ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
@@ -459,6 +479,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           const y = (m.parent.worldToLocal(handL.getWorldPosition(_hv)).y + m.parent.worldToLocal(handR.getWorldPosition(_hv)).y) / 2;
           m.position.y += PULLUP.bar - y;
         }
+      }
+      if (snipping) { // right hand up by the client's head, snip snip
+        pullT += dt;
+        const a = dBones.armR, f = dBones.foreR, sn = Math.sin(pullT * 14);
+        if (a) a.rotation.set(a.rotation.x - 1.3, a.rotation.y, a.rotation.z + 0.3 * Math.sin(pullT * 1.7));
+        if (f) f.rotation.set(f.rotation.x, f.rotation.y, f.rotation.z + 1.2 + 0.25 * sn);
+        if (scissors) scissors.children.forEach((b, i) => { b.rotation.z = (i ? 1 : -1) * (0.08 + 0.2 * Math.abs(sn)); });
       }
       if (curling) { // one arm curls up while the other lowers
         pullT += dt;

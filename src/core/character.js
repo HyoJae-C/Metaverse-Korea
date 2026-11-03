@@ -107,6 +107,7 @@ export function createCharacter(rawLook) {
   let activityName = null; // looping pose: gym, fishing, dancing
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
+  let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
   const attachHeld = () => {
     if (!held) return;
@@ -241,6 +242,10 @@ export function createCharacter(rawLook) {
       if (name === activityName) return;
       activityName = name;
       model?.setActivity(name);
+      // Reading: the book goes from the hand onto the table in front, open.
+      if (held) held.visible = name !== 'read';
+      if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); root.add(openBook); }
+      if (openBook) openBook.visible = name === 'read';
     },
     get activityName() { return activityName; },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
@@ -251,6 +256,21 @@ export function createCharacter(rawLook) {
       act = { name, t: 0, dur: name === 'cry' ? 2.2 : 1.7 };
     },
   };
+}
+
+// An open book lying flat: two pages and a cover, about 30 cm across.
+function makeOpenBook() {
+  const g = new THREE.Group();
+  const cover = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.22), new THREE.MeshLambertMaterial({ color: '#7a4b8c' }));
+  g.add(cover);
+  const paper = new THREE.MeshLambertMaterial({ color: '#fbf6ea' });
+  for (const sgn of [-1, 1]) {
+    const page = new THREE.Mesh(new THREE.BoxGeometry(0.145, 0.016, 0.2), paper);
+    page.position.set(sgn * 0.075, 0.012, 0);
+    page.rotation.z = -sgn * 0.08; // pages rising towards the spine
+    g.add(page);
+  }
+  return g;
 }
 
 // Body emote poses: each sets limb angles for time t (s) with e = 0..1..0.

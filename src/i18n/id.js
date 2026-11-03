@@ -137,6 +137,8 @@ export const ID = {
   'beauty.pay': 'Simpan · 🪙 {coins}',
   'beauty.saved': 'Penampilan baru tersimpan!',
   'beauty.suits': 'Cocok banget buatmu!',
+  'book.reading': '📖 Sedang membaca...',
+  'haircut.start': 'Aku potong rambutmu jadi cantik!',
   'salon.open': 'Pilih gaya',
   'salon.howTo': 'Duduk di kursi dan lihat cermin: coba gaya dan warna rambut. Bayar hanya saat menyimpan.',
   'clinic.open': 'Konsultasi dengan dokter',
