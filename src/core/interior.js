@@ -375,6 +375,52 @@ export function buildInterior(store) {
     sign.position.set(-w / 2 + 0.05, 2.9, 0);
     sign.rotation.y = Math.PI / 2;
     scene.add(sign);
+  } else if (store.category === 'school') {
+    // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
+    // front of it, and rows of student desks facing the board. Sit at any
+    // desk (or talk to the teacher) to open the course book.
+    const bz = -d / 2;
+    box(Math.min(7, w - 3), 2, 0.08, 0, 1.75, bz + 0.06, '#2f5d46'); // board
+    box(Math.min(7, w - 3) + 0.2, 0.08, 0.2, 0, 0.72, bz + 0.12, '#c9935f'); // chalk ledge
+    const bc = document.createElement('canvas');
+    bc.width = 1024; bc.height = 256;
+    const bg = bc.getContext('2d');
+    bg.fillStyle = '#2f5d46'; bg.fillRect(0, 0, 1024, 256);
+    bg.fillStyle = '#f4f1e6';
+    bg.font = '800 84px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    bg.textAlign = 'center'; bg.textBaseline = 'middle';
+    bg.fillText(store.name.ko, 512, 96);
+    bg.font = '600 46px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    bg.fillText('가 나 다 라 · 안녕하세요!', 512, 190);
+    const btex = new THREE.CanvasTexture(bc);
+    btex.colorSpace = THREE.SRGBColorSpace;
+    const writing = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(6.6, w - 3.4), Math.min(6.6, w - 3.4) / 4), new THREE.MeshBasicMaterial({ map: btex }));
+    writing.position.set(0, 1.8, bz + 0.11);
+    scene.add(writing);
+    block(0, bz + 0.1, Math.min(7.2, w - 2.8), 0.3);
+    // Teacher's desk.
+    const tz = bz + 1.9;
+    box(1.8, 0.8, 0.7, 0, 0.4, tz, '#8a5a3a');
+    box(0.3, 0.05, 0.22, 0.4, 0.83, tz, '#d8452f'); // a book
+    block(0, tz, 1.9, 0.8);
+    clerk = { x: 0, z: tz - 0.8, ry: 0 };
+    stations.academy = [{ x: 0, z: tz + 1 }];
+    // Student desks: rows of two-seat desks, an aisle down the middle.
+    const cols = Math.max(2, Math.floor((w - 3) / 2.6));
+    const rows = Math.max(1, Math.floor((d - 7) / 2.2));
+    for (let r = 0; r < rows; r++) {
+      const dz = tz + 2.2 + r * 2.2;
+      for (let c = 0; c < cols; c++) {
+        const dx = (c - (cols - 1) / 2) * 2.6;
+        if (Math.abs(dx) < 0.9) continue; // aisle
+        box(1.1, 0.06, 0.55, dx, 0.72, dz, '#e3c49a');
+        for (const sx2 of [-0.48, 0.48]) box(0.05, 0.72, 0.5, dx + sx2, 0.36, dz, '#9ca9af');
+        box(0.5, 0.05, 0.45, dx, 0.45, dz + 0.6, '#5f8a4e'); // chair seat
+        box(0.5, 0.45, 0.05, dx, 0.7, dz + 0.83, '#5f8a4e'); // chair back
+        block(dx, dz, 1.15, 0.6);
+        seats.push({ x: dx, z: dz + 0.62, ry: Math.PI, stand: [dx + (dx > 0 ? -1.0 : 1.0), dz + 0.6], academy: true });
+      }
+    }
   } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
     // the room (more of them in a large café), keeping the door path clear.

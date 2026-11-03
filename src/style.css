@@ -962,3 +962,50 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .dex-card strong { font-size: 12px; line-height: 1.2; }
 .dex-card small { font-size: 10px; opacity: 0.7; }
 .dex-card em { font-size: 11px; font-style: normal; font-weight: 800; }
+
+/* 효재어학당 course book */
+.ac-back { margin-right: auto; }
+.ac-stage { margin: 14px 0 6px; font-size: 13px; font-weight: 900; color: var(--ink-soft); letter-spacing: 0.02em; }
+.ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ac-card { display: grid; gap: 4px; justify-items: start; text-align: left; padding: 12px; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--course) 40%, transparent); background: color-mix(in srgb, var(--course) 10%, #fffaf0); color: var(--ink); }
+.ac-card strong { font-size: 14px; }
+.ac-card small { font-size: 11px; opacity: 0.75; }
+.ac-icon { font-size: 22px; }
+.ac-bar { width: 100%; height: 6px; border-radius: 3px; background: rgba(0, 0, 0, 0.08); overflow: hidden; }
+.ac-bar span { display: block; height: 100%; background: var(--course); }
+.ac-lessons { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.ac-lesson { width: 100%; display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; padding: 9px 12px; border-radius: 12px; background: #fffaf0; border: 1px solid rgba(0, 0, 0, 0.08); color: var(--ink); font-weight: 800; }
+.ac-lesson small { grid-column: 2; font-size: 11px; font-weight: 600; opacity: 0.7; }
+.ac-num { grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: #fff; font-size: 13px; }
+.ac-lesson.done .ac-num { background: #2f8f6b; }
+.ac-lesson.locked { opacity: 0.5; }
+.ac-lesson.locked .ac-num { background: #c9c4bc; }
+.ac-sub { margin: -4px 0 8px; font-size: 13px; color: var(--ink-soft); }
+.ac-box, .ac-point { padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--course) 9%, #fffaf0); border-left: 4px solid var(--course); margin-bottom: 8px; }
+.ac-box p { margin: 4px 0 0; font-size: 14px; }
+.ac-ko { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.4; }
+.ac-en { margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
+.ac-note { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
+.ac-words { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.ac-word { display: grid; padding: 8px 10px; border-radius: 10px; background: #fffaf0; border: 1px solid rgba(0, 0, 0, 0.07); }
+.ac-word b { font-size: 16px; }
+.ac-word span { font-size: 12px; opacity: 0.75; }
+.ac-q { margin: 0 0 10px; font-size: 17px; font-weight: 800; line-height: 1.45; }
+.ac-opts { display: grid; gap: 8px; }
+.ac-opt { text-align: left; padding: 11px 14px; border-radius: 12px; background: #fffaf0; border: 2px solid rgba(0, 0, 0, 0.08); color: var(--ink); font-size: 15px; font-weight: 700; }
+.ac-opt.right { border-color: #2f8f6b; background: #e3f4ea; }
+.ac-opt.wrong { border-color: #d8452f; background: #fbe6e2; }
+.ac-opt:disabled { cursor: default; }
+.ac-fb { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; font-weight: 700; }
+.ac-score { margin: 4px 0; font-size: 28px; font-weight: 900; text-align: center; }
+.ac-cert { margin: 6px auto; max-width: 420px; padding: 22px 18px; text-align: center; border-radius: 10px; background: #fffdf6; border: 6px double var(--course); box-shadow: inset 0 0 0 2px #fffdf6, inset 0 0 0 4px color-mix(in srgb, var(--course) 30%, transparent); color: #3a2a22; }
+.ac-cert p { margin: 6px 0; }
+.ac-cert-title { font-size: 30px; font-weight: 900; letter-spacing: 0.3em; }
+.ac-cert-sub { font-size: 12px; letter-spacing: 0.12em; opacity: 0.7; }
+.ac-cert-name { margin-top: 16px !important; font-size: 22px; font-weight: 900; }
+.ac-cert-course { font-size: 15px; font-weight: 800; }
+.ac-cert-text { font-size: 13px; line-height: 1.6; }
+.ac-cert-date { margin-top: 14px !important; font-size: 13px; }
+.ac-cert-seal { font-size: 14px; font-weight: 800; }
+.err-box { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 9999; max-width: min(92vw, 640px); padding: 8px 12px; border-radius: 10px; background: #3a2a22; color: #fff; font-size: 12px; line-height: 1.4; word-break: break-all; pointer-events: none; }
+.err-box[hidden] { display: none; }
