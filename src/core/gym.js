@@ -29,7 +29,7 @@ export class GymLog {
   constructor(storage = globalThis.localStorage) {
     this.storage = storage;
     let raw = {};
-    try { raw = JSON.parse(storage?.getItem(KEY) || '{}'); } catch { /* broken save */ }
+    try { raw = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* broken save */ }
     this.workouts = Math.max(0, raw.workouts | 0);
     this.byKind = raw.byKind && typeof raw.byKind === 'object' ? raw.byKind : {};
   }
