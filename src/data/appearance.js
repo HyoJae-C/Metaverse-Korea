@@ -93,18 +93,18 @@ const pick = (obj) => {
   return k[Math.floor(Math.random() * k.length)];
 };
 
+// A new player: plain clothes in a random T-shirt colour. Costumes and
+// accessories come later, from the shops.
 export function randomLook() {
-  const look = {
-    model: MODELS[Math.floor(Math.random() * MODELS.length)],
+  return {
+    ...DEFAULT_LOOK,
+    model: 'basic',
     shirt: pick(PALETTES.shirt), pants: pick(PALETTES.pants),
     hair: pick(PALETTES.hair), skin: pick(PALETTES.skin),
   };
-  for (const s of SLOTS) {
-    const list = ACCESSORIES[s];
-    look[s] = Math.random() < 0.35 ? list[Math.floor(Math.random() * list.length)].id : null;
-  }
-  return look;
 }
+// Costumes sold at the costume shop: model id -> item id (core/inventory.js).
+export const OUTFIT_ITEM = (model) => (model && model !== 'basic' ? 'outfit-' + model : null);
 
 // Validate a look from storage or the network; unknown values fall back.
 export function sanitizeLook(raw) {

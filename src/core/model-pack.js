@@ -87,8 +87,10 @@ function dyedMaterial(id, src, look) {
   const A = PACK.atlas;
   const paint = [['hair', PALETTES.dye[look.dye]], ['eyes', PALETTES.eyes[look.eyes]], ['skin', PALETTES.skin[look.tone]]]
     .filter(([cell, c]) => A?.[cell] && c != null);
-  if (!paint.length) return null;
-  const key = [id, look.dye, look.eyes, look.tone].join('|');
+  const shirtRule = PACK.models[id]?.shirt;
+  const shirt = shirtRule && PALETTES.shirt[look.shirt];
+  if (!paint.length && shirt == null) return null;
+  const key = [id, look.dye, look.eyes, look.tone, shirt ? look.shirt : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
   let base = null;
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
@@ -100,6 +102,22 @@ function dyedMaterial(id, src, look) {
   g.drawImage(img, 0, 0);
   const cw = c.width / A.cols, ch = c.height / A.rows;
   const col = new THREE.Color(), hsl = {}, target = new THREE.Color();
+  if (shirt != null) { // plain clothes: the outfit's colour family becomes the T-shirt colour
+    const data = g.getImageData(0, 0, c.width, c.height);
+    const px = data.data;
+    target.set(shirt);
+    for (let i = 0; i < px.length; i += 4) {
+      col.setRGB(px[i] / 255, px[i + 1] / 255, px[i + 2] / 255);
+      col.getHSL(hsl);
+      const h = hsl.h * 360;
+      if (h < shirtRule.hue[0] || h > shirtRule.hue[1] || hsl.s < shirtRule.sat) continue;
+      const k = 0.6 + hsl.l * 0.8;
+      px[i] = Math.min(255, target.r * 255 * k);
+      px[i + 1] = Math.min(255, target.g * 255 * k);
+      px[i + 2] = Math.min(255, target.b * 255 * k);
+    }
+    g.putImageData(data, 0, 0);
+  }
   for (const [cell, hex] of paint) {
     const [cx, cy] = A[cell];
     const data = g.getImageData(cx * cw, cy * ch, cw, ch);

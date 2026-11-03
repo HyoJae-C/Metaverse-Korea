@@ -5,6 +5,10 @@
 export default {
   id: 'kaykit2',
   models: {
+    // Everyone starts in plain clothes: the rogue with its green outfit
+    // repainted in the T-shirt colour picked at the start (look.shirt). The
+    // costumes below are bought at the costume shop.
+    basic: { url: 'models/kaykit2/rogue.glb', emoji: '👕', shirt: { hue: [95, 185], sat: 0.25 } },
     rogue: { url: 'models/kaykit2/rogue.glb', emoji: '🧝' },
     // The hooded rogue with its green outfit repainted black: our ninja.
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🥷', recolor: { hue: [95, 185], sat: 0.25, to: '#2e2a36' } },

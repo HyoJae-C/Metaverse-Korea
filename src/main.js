@@ -33,7 +33,7 @@ import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { RIDES as PARK_RIDES, RIDE_COST, RIDE_SECONDS, seatAt } from './core/themepark.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory } from './data/appearance.js';
+import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
@@ -68,7 +68,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, redeemCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, redeemCode, coinCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -84,7 +84,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, modelLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
+import { cleanName, readIdentity, commitIdentity, saveIdentity, nameLocked, daysLeft, LOCK_DAYS } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -181,7 +181,7 @@ let identity = readIdentity();
 const ID_TEXT = {
   model: { en: 'You can change your character in {n} day(s).', ko: '캐릭터는 {n}일 뒤에 바꿀 수 있어요.', ja: 'キャラクターは{n}日後に変更できます。', zh: '{n}天后才能更换角色。' },
   name: { en: 'You can change your name in {n} day(s).', ko: '이름은 {n}일 뒤에 바꿀 수 있어요.', ja: '名前は{n}日後に変更できます。', zh: '{n}天后才能改名。' },
-  first: { en: 'Once you start, your name and character stay for {n} days.', ko: '시작하면 이름과 캐릭터는 {n}일 동안 바꿀 수 없어요.', ja: '始めると、名前とキャラクターは{n}日間変更できません。', zh: '开始后，名字和角色{n}天内不能更改。' },
+  first: { en: 'Once you start, your name stays for {n} days. Costumes like mage or ninja are sold at the costume shop in town.', ko: '시작하면 이름은 {n}일 동안 바꿀 수 없어요. 마법사·닌자 같은 옷은 동네 코스튬 가게에서 살 수 있어요.', ja: '始めると、名前は{n}日間変更できません。魔法使いや忍者の服は町のコスチューム店で買えます。', zh: '开始后，名字{n}天内不能更改。法师、忍者等服装可在镇上的服装店购买。', es: 'Al empezar, tu nombre no se puede cambiar durante {n} días. Los disfraces de mago o ninja se venden en la tienda de disfraces.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -200,12 +200,8 @@ function showLook() {
   $('step-lang').hidden = true;
   $('step-login').hidden = true;
   $('step-look').hidden = false;
-  const lockM = modelLocked(identity) ? identity.model : null;
-  editor ||= createLookEditor({
-    optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random'), lockModel: lockM,
-  });
+  editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
   const notes = [];
-  if (lockM) notes.push(fmt(L(ID_TEXT.model), { n: daysLeft(identity.modelAt) }));
   if (nameLocked(identity)) {
     $('nickname').value = identity.name;
     $('nickname').readOnly = true;
@@ -265,9 +261,10 @@ await new Promise((resolve) => {
 });
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
-identity = commitIdentity(identity, { name: $('nickname').value, model: editor.getLook().model });
+// Costumes are bought now, so only the name is locked.
+identity = commitIdentity(identity, { name: $('nickname').value });
 saveIdentity(identity);
-let myLook = modelLocked(identity) ? { ...editor.getLook(), model: identity.model } : editor.getLook();
+let myLook = editor.getLook();
 if (nameLocked(identity)) $('nickname').value = identity.name;
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
@@ -939,6 +936,19 @@ chatBar.addEventListener('submit', async (e) => {
   if (raw.startsWith('/')) {
     chatInput.value = '';
     const [cmd, ...rest] = raw.slice(1).split(/\s+/);
+    const coinsFromCode = cmd === 'master' ? await coinCode(rest.join(' ')) : 0;
+    if (coinsFromCode) { // once per device
+      let used = [];
+      try { used = JSON.parse(localStorage.getItem('mk.coinCodes') || '[]'); } catch { /* broken save */ }
+      const tag = String(coinsFromCode) + ':' + rest.join(' ').length;
+      if (used.includes(tag)) { shop.toast(L(CODE_TEXT.used)); return; }
+      used.push(tag);
+      try { localStorage.setItem('mk.coinCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
+      wallet.add(coinsFromCode);
+      refreshWallet();
+      shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
+      return;
+    }
     const unlocked = cmd === 'master' && await redeemCode(rest.join(' '));
     if (unlocked) {
       const added = inventory.add(...unlocked);
@@ -1002,6 +1012,8 @@ const shop = new ShopUI({
   owns: (id) => inventory.has(id),
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
+  onOutfit: (product) => outfitAction(product.outfit),
+  wearing: () => myLook.model,
   onTake: (product) => {
     if (held && !confirm(t('coffee.replace'))) return;
     setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -1337,6 +1349,42 @@ function hopOn(inv) {
 }
 // Items (saved on this device). The master code in chat adds every item.
 const inventory = new Inventory();
+// Costumes are bought now. Players who already picked one at the start keep it.
+try {
+  if (!localStorage.getItem('mk.outfitGift')) {
+    if (OUTFIT_ITEM(myLook.model)) inventory.add(OUTFIT_ITEM(myLook.model));
+    localStorage.setItem('mk.outfitGift', '1');
+  }
+} catch { /* storage blocked */ }
+if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
+const CODE_TEXT = {
+  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!' },
+  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.' },
+};
+const OUTFIT_TEXT = {
+  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.' },
+  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!' },
+  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.' },
+};
+// Costume shop and the items list: buy (coins), wear, or take off.
+function outfitAction(itemId) {
+  const it = ITEMS[itemId];
+  if (!it?.outfit) return;
+  if (!inventory.has(itemId)) {
+    if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    inventory.add(itemId);
+    refreshWallet();
+    sfx.pop?.();
+    myLook = { ...myLook, model: it.outfit };
+    shop.toast(L(OUTFIT_TEXT.bought));
+  } else {
+    const on = myLook.model === it.outfit;
+    myLook = { ...myLook, model: on ? 'basic' : it.outfit };
+    shop.toast(L(on ? OUTFIT_TEXT.off : OUTFIT_TEXT.on));
+  }
+  saveLook(myLook);
+  setLook(myLook);
+}
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2561,6 +2609,14 @@ function refreshItems() {
       w.className = 'chip item-walk' + (walking ? ' on' : '');
       w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
       w.onclick = () => setPet(walking ? null : id);
+      row.append(w);
+    }
+    if (it.outfit) { // wear the costume, or go back to the T-shirt
+      const on = myLook.model === it.outfit;
+      const w = document.createElement('button');
+      w.className = 'chip item-walk' + (on ? ' on' : '');
+      w.textContent = on ? '👕 ' + t('tee.off') : '✨ ' + t('tee.wear');
+      w.onclick = () => { outfitAction(id); refreshItems(); };
       row.append(w);
     }
     if (it.tee) { // put the printed shirt on, or take it off

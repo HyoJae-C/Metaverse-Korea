@@ -407,6 +407,7 @@ export const ES = {
   'safety.unblockAll': 'Desbloquear a todos ({n})',
   'safety.unblocked': 'Todos están desbloqueados.',
   'look.model': 'Personaje',
+  'look.tee': 'Color de la camiseta',
   'credit.chars': 'Personajes',
   'credit.map': 'Datos del mapa',
 };

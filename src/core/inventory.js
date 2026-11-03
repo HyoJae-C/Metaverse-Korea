@@ -14,6 +14,19 @@ function pets(defs) {
   return out;
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
+const OUTFIT_DESC = {
+  en: 'A costume from the costume shop. Tap Wear to put it on, Take off to go back to your T-shirt.',
+  ko: '코스튬 가게에서 산 옷이에요. "입기"로 입고, "벗기"로 티셔츠로 돌아가요.',
+  ja: 'コスチューム店の服。「着る」で着替え、「脱ぐ」でTシャツに戻ります。',
+  zh: '服装店买的服装。点“穿上”换上，点“脱下”换回T恤。',
+  es: 'Un disfraz de la tienda de disfraces. Toca Poner para vestirlo y Quitar para volver a tu camiseta.',
+};
+// outfit: the character model it puts on; price: coins at the costume shop.
+function outfits(defs) {
+  const out = {};
+  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price };
+  return out;
+}
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
   ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
@@ -69,6 +82,15 @@ export const ITEMS = {
       zh: '一只一脸闷闷不乐的毛茸茸小家伙。点“穿上”即可穿上。',
     },
   },
+  // Costumes from the costume shop: wear one instead of your plain clothes.
+  ...outfits({
+    'outfit-rogue': [60, '🧝', { en: 'Ranger costume', ko: '레인저 옷', ja: 'レンジャーの服', zh: '游侠服装', es: 'Traje de explorador' }],
+    'outfit-ranger': [60, '🧭', { en: 'Explorer costume', ko: '탐험가 옷', ja: '探検家の服', zh: '探险家服装', es: 'Traje de aventurero' }],
+    'outfit-barbarian': [80, '🧔', { en: 'Viking costume', ko: '바이킹 옷', ja: 'バイキングの服', zh: '维京服装', es: 'Traje de vikingo' }],
+    'outfit-hooded': [100, '🥷', { en: 'Ninja costume', ko: '닌자 옷', ja: '忍者の服', zh: '忍者服装', es: 'Traje de ninja' }],
+    'outfit-knight': [120, '💂', { en: 'Knight armour', ko: '기사 갑옷', ja: '騎士の鎧', zh: '骑士盔甲', es: 'Armadura de caballero' }],
+    'outfit-mage': [150, '🧙', { en: 'Mage robe', ko: '마법사 로브', ja: '魔法使いのローブ', zh: '法师长袍', es: 'Túnica de mago' }],
+  }),
   // Claw machine prizes (core/claw-game.js).
   ...plushies({
     'plush-simurugi': ['😑', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
@@ -119,6 +141,14 @@ const CODES = {
   bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
 };
+
+// Coin codes: "/master <code>" adds coins, once per device.
+const COIN_CODES = {
+  '74cefd55ed30ad232b9cf41f598821c27ccb3fec18edfeeefb03780f12604248': 1000,
+};
+export async function coinCode(code) {
+  return COIN_CODES[await sha256(code)] || 0;
+}
 
 async function sha256(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(text).trim()));
