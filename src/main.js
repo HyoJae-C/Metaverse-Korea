@@ -31,7 +31,7 @@ import { Academy } from './core/academy.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
-import { RIDES as PARK_RIDES, RIDE_COST, RIDE_SECONDS, seatAt } from './core/themepark.js';
+import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
@@ -400,7 +400,7 @@ scene.add(sun, sun.target);
 
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
 const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision });
-buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
+const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
@@ -2922,11 +2922,11 @@ refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
 let ride = null; // { kind, seat, t0, until, back: [x, z] }
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️' };
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼' };
 function boardRide(st) {
   if (!wallet.spend(RIDE_COST)) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
   const now = interior.time();
-  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: now + RIDE_SECONDS[st.kind], back: [st.x, st.z], shout: 0 };
+  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
   sendTimer = 0;
   missionEvent('ride');
 }
@@ -2944,7 +2944,7 @@ function updateRide(dt) {
   me.root.position.set(s.x, s.y, s.z);
   me.root.rotation.y = s.ry;
   ride.shout -= dt;
-  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
   if (now >= ride.until) endRide();
 }
 const duckUi = new DuckUI({
@@ -3938,6 +3938,7 @@ renderer.setAnimationLoop(() => {
     }
   }
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
+  else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   updateRide(dt);
   if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
   updateDucks(dt);

@@ -55,6 +55,7 @@ export const ES = {
   'ride.carousel': 'Subir al tiovivo',
   'ride.wheel': 'Subir a la noria',
   'ride.viking': 'Subir al barco pirata',
+  'ride.drop': 'Subir a la torre de caída',
   'ride.off': 'Bajar',
   'ride.noCoins': 'Necesitas 🪙 {n} para el billete.',
   'book.read': 'Leer',

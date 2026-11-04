@@ -56,6 +56,7 @@ export const ID = {
   'ride.carousel': 'Naik komidi putar',
   'ride.wheel': 'Naik bianglala',
   'ride.viking': 'Naik kapal bajak laut',
+  'ride.drop': 'Naik menara jatuh bebas',
   'ride.off': 'Turun',
   'ride.noCoins': 'Kamu perlu 🪙 {n} untuk tiket.',
   'book.read': 'Baca',
