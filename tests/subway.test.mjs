@@ -44,15 +44,17 @@ test('hall stairs: arrive at the foot, climb to leave', () => {
   }
 });
 
-test('a train every 10 s per track, doors open for 5 s, tracks 5 s apart', () => {
-  assert.equal(HEADWAY, 10);
+test('a train every 15 s per track, doors open for 5 s, tracks 7.5 s apart', () => {
+  assert.equal(HEADWAY, 15);
+  assert.deepEqual(TRACKS.map((t) => t.offset), [0, 7.5]);
   assert.equal(DOORS, 5);
   let open = 0;
   for (let t = 0; t < HEADWAY; t += 0.01) if (trainPhase(t).phase === 'open') open += 0.01;
   assert.ok(Math.abs(open - DOORS) < 0.05);
   assert.equal(trainPhase(0, 0).phase, 'in');
-  assert.equal(trainPhase(0, 5).phase, 'open');
-  assert.equal(trainPhase(-3).phase, trainPhase(7).phase); // any clock value works
+  assert.equal(trainPhase(0, 7.5).phase, 'out');
+  assert.equal(trainPhase(0, 3).phase, 'open');
+  assert.equal(trainPhase(-3).phase, trainPhase(12).phase); // any clock value works
   assert.deepEqual(TRACKS.map((t) => t.dir).sort(), [-1, 1]);
 });
 
