@@ -20,7 +20,7 @@ const T = {
   winTogether: { en: 'Together bonus 🪙 +{n}', ko: '같이 타기 보너스 🪙 +{n}', ja: '一緒ボーナス 🪙 +{n}', zh: '一起奖励 🪙 +{n}' },
   lose: { en: "Time's up! {m} m to go.", ko: '시간 끝! {m}m 남았어요.', ja: '時間切れ！あと {m}m。', zh: '时间到！还差{m}米。' },
   again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次' },
-  leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', id: 'Turun' },
+  leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', vi: 'Xuống', id: 'Turun' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);

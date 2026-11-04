@@ -5,6 +5,7 @@
 import { ES } from './es.js';
 import { ID } from './id.js';
 import { AR } from './ar.js';
+import { VI } from './vi.js';
 
 export const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -13,6 +14,7 @@ export const LANGUAGES = [
   { code: 'zh', label: '简体中文' },
   { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
   { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'vi', label: 'Tiếng Việt' },
   { code: 'ar', label: 'العربية', rtl: true },
   { code: 'ja', label: '日本語' },
 ];
@@ -1877,6 +1879,7 @@ export const STRINGS = {
 STRINGS.es = ES;
 STRINGS.id = ID;
 STRINGS.ar = AR;
+STRINGS.vi = VI;
 
 export const REGION_NAMES = {
   seongsu: {
