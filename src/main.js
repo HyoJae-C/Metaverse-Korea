@@ -31,7 +31,7 @@ import { Academy } from './core/academy.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
-import { RIDES as PARK_RIDES, RIDE_COST, RIDE_SECONDS, seatAt } from './core/themepark.js';
+import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
@@ -39,6 +39,7 @@ import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
 import { createAreaNet } from './net/area.js';
+import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
@@ -58,6 +59,10 @@ import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
+import { TarotUI } from './ui/tarot-ui.js';
+import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { dayKey } from './core/daily.js';
+import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
@@ -94,6 +99,7 @@ import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './co
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
+import { SubwayEntrances, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -207,8 +213,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
 let editor = null;
 let identity = readIdentity();
 const ID_TEXT = {
-  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the costume shop or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 코스튬 가게나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はコスチューム店かアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在服装店或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en la tienda de disfraces o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في متجر الأزياء أو من أغراضك.', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di toko kostum atau dari barangmu.' },
-  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy costumes like mage or ninja at the costume shop.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 마법사·닌자 같은 옷은 코스튬 가게에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、魔法使いや忍者の服はコスチューム店で買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，法师、忍者等服装可在服装店购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar disfraces de mago o ninja en la tienda de disfraces.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء أزياء مثل الساحر أو النينجا من متجر الأزياء.', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli kostum seperti penyihir atau ninja di toko kostum.' },
+  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the Daily Closet or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 데일리 클로젯이나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はデイリークローゼットかアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在日常衣橱或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en Armario Diario o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في خزانة يومية أو من أغراضك.', vi: 'Chào mừng bạn trở lại! Đổi tên ở xưởng bảng tên, còn quần áo thì ở Daily Closet hoặc trong đồ của bạn.', hi: 'फिर से स्वागत है! नाम-टैग वर्कशॉप में अपना नाम बदलें, और कपड़े डेली क्लोज़ेट में या अपनी चीज़ों से।', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di Daily Closet atau dari barangmu.' },
+  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy clothes like hoodies or padded coats at the Daily Closet.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 후드티·패딩 같은 옷은 데일리 클로젯에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、パーカーやダウンなどの服はデイリークローゼットで買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，卫衣、羽绒服等衣服可在日常衣橱购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar ropa como sudaderas o abrigos acolchados en Armario Diario.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء ملابس مثل الهودي أو المعاطف المنفوخة من خزانة يومية.', vi: 'Chọn tên và màu áo phông. Sau này bạn có thể đổi tên ở xưởng bảng tên, và mua quần áo như áo hoodie hay áo phao ở Daily Closet.', hi: 'एक नाम और टी-शर्ट का रंग चुनें। बाद में नाम-टैग वर्कशॉप में नाम बदल सकते हैं, और डेली क्लोज़ेट से हुडी या पैडेड कोट जैसे कपड़े ख़रीद सकते हैं।', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli baju seperti hoodie atau mantel puffer di Daily Closet.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -234,7 +240,7 @@ function showLook() {
   $('step-look').hidden = false;
   editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
   // Coming back: the character is already made, so no clothes to pick here
-  // (change them later at the costume shop or from your items).
+  // (change them later at the clothes shop or from your items).
   // Name too: it is kept, and changed at the name tag workshop.
   const returning = isReturning();
   $('step-look').classList.toggle('returning', returning);
@@ -245,8 +251,12 @@ function showLook() {
   $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
 }
+// Made a character already: go straight into town after the language (and
+// login) step, with no name or clothes to pick (see startNow below).
+let startNow = null;
+const lookOrStart = () => (isReturning() && startNow ? startNow() : showLook());
 $('next-btn').onclick = () => {
-  if (!askLogin()) { showLook(); return; }
+  if (!askLogin()) { lookOrStart(); return; }
   $('step-lang').hidden = true;
   $('step-login').hidden = false;
   $('login-title').textContent = L(LOGIN_TEXT.title);
@@ -261,7 +271,7 @@ $('next-btn').onclick = () => {
     onError: (err) => { $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'); },
   }).then((ok) => { $('login-google').hidden = ok; });
 };
-$('login-guest').onclick = showLook;
+$('login-guest').onclick = lookOrStart;
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
 // after an IME has finished composing a syllable).
 const NAME_HINT = { en: 'Korean or English letters and numbers only.', ko: '한글, 영어, 숫자만 쓸 수 있어요.', ja: '韓国語（ハングル）・英字・数字のみ使えます。', zh: '只能使用韩文、英文字母和数字。' };
@@ -304,13 +314,36 @@ await new Promise((resolve) => {
     if (!isReturning() && name) {
       busy = true;
       $('start-btn').disabled = true;
+      $('status').textContent = '';
       const r = await cloud.claimName(name);
       busy = false;
       $('start-btn').disabled = false;
-      if (r === 'taken') { $('status').textContent = t('name.taken'); $('nickname').focus(); return; }
+      if (r === 'taken') {
+        $('status').textContent = t('name.taken');
+        $('nickname').classList.add('bad');
+        $('nickname').focus();
+        return;
+      }
+    } else if (name) {
+      // A name made before names were reserved: reserve it now so newcomers
+      // can't take it (no answer needed; an old clash just stays as it is).
+      cloud.claimName(name);
     }
     resolve();
   };
+  $('nickname').addEventListener('input', () => {
+    $('nickname').classList.remove('bad');
+    if ($('status').textContent === t('name.taken')) $('status').textContent = '';
+  });
+  startNow = () => {
+    showLook();
+    $('step-look').classList.add('quick'); // only the loading line shows
+    go();
+  };
+  // Back from Google sign-in with a character already made: straight in.
+  let fromGoogle = false;
+  try { fromGoogle = !!sessionStorage.getItem('mk.oauth'); sessionStorage.removeItem('mk.oauth'); } catch { /* ignore */ }
+  if (fromGoogle && isReturning()) startNow();
   $('start-btn').onclick = go;
   // Note: a handler body, not an expression. Returning false from an
   // on-handler cancels the key, which blocked typing in this field.
@@ -406,9 +439,15 @@ Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, n
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
-const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
-const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision });
-buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
+// Subway stations (region.json "subway.stations"): stair exits cut into the ground.
+const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
+const allExits = subwayStations.flatMap((st) => st.exits);
+const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf))); // blockers: rivers, walls
+const treeCollision = allExits.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)))) : collision;
+const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf) });
+const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
+renderer.localClippingEnabled = true; // the station's train stays inside the hall
+const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
@@ -426,6 +465,8 @@ const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
+// Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
 // that end back here (광장 미션), and a big screen (전광판) for ads.
@@ -639,11 +680,11 @@ let onboard = (() => {
   } catch { return 2; }
 })();
 const ONBOARD_TEXT = {
-  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
-  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', id: 'Tos dengan pemandu' },
+  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', vi: '👋 Chào mừng! Hãy 🙌 đập tay với người hướng dẫn quảng trường.', hi: '👋 स्वागत है! चौक के गाइड को 🙌 हाई-फ़ाइव दें।', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
+  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', vi: 'Đập tay với người hướng dẫn', hi: 'गाइड को हाई-फ़ाइव दें', id: 'Tos dengan pemandu' },
   // The guide, before the first mission: visit the info centre first.
-  infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
-  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
+  infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', vi: 'Trước khi làm nhiệm vụ, hãy ghé Trung tâm Thông tin nhé! Ở đó có tất cả những gì bạn có thể làm.', hi: 'मिशन से पहले सूचना केंद्र ज़रूर जाएँ! वहाँ वह सब दिखता है जो आप कर सकते हैं।', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
+  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', vi: '🙌 Tuyệt! 🪙 +10. Đây là nhiệm vụ đầu tiên của bạn.', hi: '🙌 बढ़िया! 🪙 +10। यह रहा आपका पहला मिशन।', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
 };
 if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
@@ -665,7 +706,7 @@ function onboardHi5() {
   squareNpc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(10);
+  wallet.add(10, { k: 'ledger.quest' });
   refreshWallet();
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
@@ -691,8 +732,10 @@ if (onboard >= 2) {
     me.root.rotation.y = last.ry;
   }
 }
+let tabParked = false; // another tab of this browser took over (see claimTab)
 let lastSpotTimer = 3;
 const rememberSpot = () => {
+  if (tabParked) return; // the newer tab owns the saved spot now
   try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
 };
 document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
@@ -807,8 +850,8 @@ const TIPSY_MS = 2 * 60 * 1000, TIPSY_SPEED = 0.85;
 let tipsyUntil = 0;
 const drinkSpeed = () => (performance.now() < tipsyUntil ? TIPSY_SPEED : 1);
 const DRINK_TEXT = {
-  boost: { en: '⚡ Energy up! You can run without getting tired for 3 minutes.', ko: '⚡ 기운이 났어요! 3분 동안 지치지 않고 달릴 수 있어요.', ja: '⚡ 元気が出た！3分間、疲れずに走れます。', zh: '⚡ 精神满满！3分钟内奔跑不会累。', es: '⚡ ¡Con energía! Puedes correr sin cansarte durante 3 minutos.', ar: '⚡ نشاط! يمكنك الركض دون تعب لمدة 3 دقائق.', id: '⚡ Semangat! Kamu bisa lari tanpa lelah selama 3 menit.' },
-  tipsy: { en: '🥴 A little tipsy… you walk a bit slower for 2 minutes.', ko: '🥴 살짝 취했어요… 2분 동안 조금 느리게 걸어요.', ja: '🥴 ちょっと酔ったかも…2分間、少しゆっくり歩きます。', zh: '🥴 有点微醺……2分钟内走得慢一点。', es: '🥴 Un poco achispado… caminas algo más lento durante 2 minutos.', ar: '🥴 ثمل قليلًا… تمشي أبطأ قليلًا لمدة دقيقتين.', id: '🥴 Agak mabuk… kamu jalan sedikit lebih lambat selama 2 menit.' },
+  boost: { en: '⚡ Energy up! You can run without getting tired for 3 minutes.', ko: '⚡ 기운이 났어요! 3분 동안 지치지 않고 달릴 수 있어요.', ja: '⚡ 元気が出た！3分間、疲れずに走れます。', zh: '⚡ 精神满满！3分钟内奔跑不会累。', es: '⚡ ¡Con energía! Puedes correr sin cansarte durante 3 minutos.', ar: '⚡ نشاط! يمكنك الركض دون تعب لمدة 3 دقائق.', vi: '⚡ Tràn đầy năng lượng! Bạn có thể chạy mà không mệt trong 3 phút.', hi: '⚡ ऊर्जा भर गई! 3 मिनट तक आप बिना थके दौड़ सकते हैं।', id: '⚡ Semangat! Kamu bisa lari tanpa lelah selama 3 menit.' },
+  tipsy: { en: '🥴 A little tipsy… you walk a bit slower for 2 minutes.', ko: '🥴 살짝 취했어요… 2분 동안 조금 느리게 걸어요.', ja: '🥴 ちょっと酔ったかも…2分間、少しゆっくり歩きます。', zh: '🥴 有点微醺……2分钟内走得慢一点。', es: '🥴 Un poco achispado… caminas algo más lento durante 2 minutos.', ar: '🥴 ثمل قليلًا… تمشي أبطأ قليلًا لمدة دقيقتين.', vi: '🥴 Hơi ngà ngà say… bạn sẽ đi chậm hơn một chút trong 2 phút.', hi: '🥴 थोड़ा नशा… 2 मिनट तक आप थोड़ा धीरे चलेंगे।', id: '🥴 Agak mabuk… kamu jalan sedikit lebih lambat selama 2 menit.' },
 };
 const staminaEl = document.getElementById('stamina');
 const staminaFill = document.getElementById('stamina-fill');
@@ -907,7 +950,9 @@ const refreshOnline = () => {
   $('online').textContent = '🟢 ' + t('hud.online', { n });
 };
 onLanguageChange(refreshOnline);
-watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); }).catch(() => {});
+let stopOnline = null;
+watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
+  .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
@@ -929,6 +974,7 @@ let lastSent = null; // set to null to resend our state at once (e.g. when someo
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
+  if (tabParked) return;
   lastJoin = [room, roomScene, !!area];
   const token = ++joinToken;
   net?.disconnect();
@@ -1002,7 +1048,7 @@ async function renameMe(raw) {
   if (next === nickname) return 'same';
   if (wallet.coins < RENAME_COST) return 'poor';
   if (await cloud.claimName(clean) === 'taken') return 'taken';
-  if (!wallet.spend(RENAME_COST)) return 'poor';
+  if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
   identity = { ...identity, name: clean, nameAt: Date.now() };
   saveIdentity(identity);
@@ -1027,6 +1073,29 @@ function goSolo(roomScene) {
   refreshOnline();
 }
 net = SOLO;
+// Same browser, second tab: the newest tab plays, older ones step aside so
+// you never appear twice on the street (see core/single-tab.js).
+claimTab(() => {
+  tabParked = true;
+  joinToken++; // a join still connecting disconnects itself
+  net?.disconnect();
+  net = SOLO;
+  for (const id of [...others.players.keys()]) others.leave(id);
+  stopOnline?.();
+  renderer.setAnimationLoop(null);
+  try { music.ctx?.suspend(); sfx.ctx?.suspend(); } catch { /* still starting up */ }
+  const box = document.createElement('div');
+  box.className = 'overlay dim';
+  box.id = 'other-tab';
+  box.innerHTML = '<div class="panel small"><div class="logo">🗂️</div><h2></h2><p></p><button class="primary"></button></div>';
+  box.querySelector('h2').textContent = t('tab.elsewhere');
+  box.querySelector('p').textContent = t('tab.elsewhereHint');
+  const btn = box.querySelector('button');
+  btn.textContent = t('tab.playHere');
+  btn.onclick = () => location.reload(); // reloading claims this tab again
+  box.style.zIndex = 10000;
+  document.body.appendChild(box);
+});
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
@@ -1173,7 +1242,7 @@ chatBar.addEventListener('submit', async (e) => {
     if (used.includes(ev.id)) { shop.toast(L(CODE_TEXT.used)); return; }
     used.push(ev.id);
     try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
-    wallet.add(ev.coins);
+    wallet.add(ev.coins, { k: 'ledger.gift' });
     refreshWallet();
     shop.toast(fmt(L(CODE_TEXT.coins), { n: ev.coins }));
     return;
@@ -1184,7 +1253,7 @@ chatBar.addEventListener('submit', async (e) => {
     const code = raw.slice(1).trim();
     const coinsFromCode = await coinCode(code);
     if (coinsFromCode) {
-      wallet.add(coinsFromCode);
+      wallet.add(coinsFromCode, { k: 'ledger.gift' });
       refreshWallet();
       shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
       return;
@@ -1246,7 +1315,7 @@ const shop = new ShopUI({
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
-  onExit: () => leaveStore(),
+  onExit: () => (metro ? metroGetOff() : leaveStore()),
   onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
@@ -1258,7 +1327,7 @@ const shop = new ShopUI({
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
     if (held && !confirm(t('coffee.replace'))) return false;
-    if (!wallet.spend(coins)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
     setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -1280,13 +1349,13 @@ const shop = new ShopUI({
 const SHOP_ICON = { notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
 const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
 const GOODS_TEXT = {
-  got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', id: 'Kamu membeli {name}!' },
-  gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', id: 'Tas belanja · {name}' },
-  soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', id: '🚧 Segera hadir: toko sedang disiapkan.' },
+  got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', id: 'Kamu membeli {name}!' },
+  gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', vi: 'Túi mua sắm · {name}', hi: 'शॉपिंग बैग · {name}', id: 'Tas belanja · {name}' },
+  soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', vi: '🚧 Sắp ra mắt: cửa hàng này đang chuẩn bị.', hi: '🚧 जल्द आ रहा है: यह दुकान तैयार हो रही है।', id: '🚧 Segera hadir: toko sedang disiapkan.' },
 };
 // Ordering at the counter: META COFFEE and the bar from the clerk, a club
 // from its bartender. Coffee refills your stamina when you sip it.
-const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', id: 'Pesan' };
+const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', vi: 'Gọi món', hi: 'ऑर्डर करें', id: 'Pesan' };
 function orderAtCounter(p) {
   const st = interior?.store;
   if (!st || !(st.takeaway || st.category === 'cafe' || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
@@ -1297,7 +1366,7 @@ const counterUi = new CounterUI({
   root: $('counter-panel'),
   onBuy: (store, product, coins) => {
     if (held && !confirm(t('coffee.replace'))) return false;
-    if (!wallet.spend(coins)) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
@@ -1330,7 +1399,7 @@ function adoptPet(id) {
   const it = ITEMS[id];
   if (!it?.pet || !it.price) return;
   if (inventory.has(id)) { setPet(id); return; }
-  if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+  if (!wallet.spend(it.price, { name: it.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
   inventory.add(id);
   setPet(id);
   shop.closeProduct();
@@ -1362,7 +1431,7 @@ function updatePet(dt, p) {
     const po = poops.get(late.id);
     po?.mesh.removeFromParent();
     poops.delete(late.id);
-    const taken = wallet.take(FINE);
+    const taken = wallet.take(FINE, { k: 'ledger.fine' });
     showFine(taken, po?.street);
   }
   const soon = poopTimers.list.reduce((m, x) => Math.min(m, x.left), Infinity);
@@ -1402,7 +1471,7 @@ let questFolded = (() => { try { return localStorage.getItem(QUEST_FOLD_KEY) ===
 // Restaurant texts (see the restaurant section below).
 const DINE_TEXT = {
   menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
-  note: { en: 'Order here and your food comes to the table. Paid in coins.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로 해요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで。', zh: '在这里点餐，菜会送到桌上。用硬币支付。', es: 'Pide aquí y la comida llega a tu mesa. Se paga con monedas.', ar: 'اطلب هنا وسيصل طعامك إلى الطاولة. الدفع بالعملات.', id: 'Pesan di sini dan makanan diantar ke meja. Bayar pakai koin.' },
+  note: { en: 'Order here and your food comes to the table. Paid in coins.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로 해요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで。', zh: '在这里点餐，菜会送到桌上。用硬币支付。', es: 'Pide aquí y la comida llega a tu mesa. Se paga con monedas.', ar: 'اطلب هنا وسيصل طعامك إلى الطاولة. الدفع بالعملات.', vi: 'Gọi món ở đây và đồ ăn sẽ được mang ra bàn. Trả bằng xu.', hi: 'यहाँ ऑर्डर करें और खाना मेज़ पर आएगा। भुगतान सिक्कों में।', id: 'Pesan di sini dan makanan diantar ke meja. Bayar pakai koin.' },
   here: { en: 'Eat here', ko: '먹고 가기', ja: '店内で', zh: '堂食' },
   togo: { en: 'To go', ko: '포장', ja: '持ち帰り', zh: '打包' },
   ordered: { en: 'Ordered {name}! It will be right out.', ko: '{name} 주문 완료! 곧 나와요.', ja: '{name}を注文しました！すぐお持ちします。', zh: '已点{name}！马上就好。' },
@@ -1414,10 +1483,10 @@ const DINE_TEXT = {
   packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
   poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
   busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
-  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}', ar: 'تذوّق طعام {name}', id: 'Cicipi makanan {name}' },
-  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋', ar: 'تذوّقت طعام {name}. شكرًا! 😋', id: 'Kamu mencicipi makanan {name}. Makasih! 😋' },
-  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados', ar: 'تذوّق {name} طعامك! بقيت {n} لقمات', id: '{name} mencicipi makananmu! Sisa {n} gigitan' },
-  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', id: '{name} menghabiskan gigitan terakhir!' },
+  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}', ar: 'تذوّق طعام {name}', vi: 'Ăn thử một miếng của {name}', hi: '{name} के खाने से एक कौर लें', id: 'Cicipi makanan {name}' },
+  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋', ar: 'تذوّقت طعام {name}. شكرًا! 😋', vi: 'Bạn đã ăn thử một miếng của {name}. Cảm ơn nhé! 😋', hi: 'आपने {name} के खाने से एक कौर लिया। धन्यवाद! 😋', id: 'Kamu mencicipi makanan {name}. Makasih! 😋' },
+  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados', ar: 'تذوّق {name} طعامك! بقيت {n} لقمات', vi: '{name} đã ăn một miếng đồ ăn của bạn! Còn {n} miếng', hi: '{name} ने आपके खाने से एक कौर लिया! {n} कौर बाक़ी', id: '{name} mencicipi makananmu! Sisa {n} gigitan' },
+  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', vi: '{name} đã ăn miếng cuối cùng!', hi: '{name} ने आख़िरी कौर खा लिया!', id: '{name} menghabiskan gigitan terakhir!' },
   boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
 };
 const HELD_KEY = 'mk.held';
@@ -1489,7 +1558,7 @@ function buyUmbrella(product) {
   if (hasUmbrella()) return;
   if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
   const cost = product.coins || 5;
-  if (!wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
+  if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
   bag.add({ kind: 'umbrella' });
   refreshWallet();
   shop.toast(L(UMB_TEXT.bought));
@@ -1658,7 +1727,7 @@ function hopOn(inv) {
 }
 // Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
-// Costumes are bought now. Players who already picked one at the start keep it.
+// Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
     if (OUTFIT_ITEM(myLook.model)) inventory.add(OUTFIT_ITEM(myLook.model));
@@ -1667,21 +1736,21 @@ try {
 } catch { /* storage blocked */ }
 if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
-  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', id: '🪙 +{n} koin!' },
-  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', id: 'Kode itu sudah dipakai di perangkat ini.' },
-  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', id: 'Kode acara itu tidak ada.' },
+  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
+  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
+  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
 };
 const OUTFIT_TEXT = {
-  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.', ar: 'زيّ جديد! أنت ترتديه الآن.', id: 'Kostum baru! Sekarang sedang kamu pakai.' },
-  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!', ar: 'ارتديت الزي!', id: 'Kostum terpasang!' },
-  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', id: 'Kembali ke kaosmu.' },
+  bought: { en: 'New clothes! You are wearing them now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Ropa nueva! Ya la llevas puesta.', ar: 'ملابس جديدة! أنت ترتديها الآن.', vi: 'Quần áo mới! Bạn đang mặc rồi.', hi: 'नए कपड़े! आपने इन्हें अभी पहन लिया है।', id: 'Baju baru! Sekarang sedang kamu pakai.' },
+  on: { en: 'Changed clothes!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Te cambiaste de ropa!', ar: 'غيّرت ملابسك!', vi: 'Đã thay đồ!', hi: 'कपड़े बदल लिए!', id: 'Sudah ganti baju!' },
+  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', vi: 'Đã trở lại áo phông.', hi: 'वापस अपनी टी-शर्ट में।', id: 'Kembali ke kaosmu.' },
 };
-// Costume shop and the items list: buy (coins), wear, or take off.
+// Clothes shop and the items list: buy (coins), wear, or take off.
 function outfitAction(itemId) {
   const it = ITEMS[itemId];
   if (!it?.outfit) return;
   if (!inventory.has(itemId)) {
-    if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
     refreshWallet();
     sfx.pop?.();
@@ -1748,7 +1817,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
@@ -1789,6 +1858,7 @@ function enterStore(item) {
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
 function leaveStore() {
   if (mode !== 'store') return;
+  if (metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
   standUp();
   clearMeal();
@@ -1830,11 +1900,214 @@ function leaveStore() {
   joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 }
 
+// ---------- Subway station ----------
+// Walk down an exit's stairs to arrive in the station hall (a room like a
+// shop); walk up any exit's stairs there to come out at that exit.
+const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
+const stationStores = subwayStations.map((sub) => ({
+  id: 'subway-' + (sub.id || sub.name?.en || 'station'), category: 'station', size: 'station', subway: sub, products: [],
+  name: Object.fromEntries(Object.entries(sub.name || {}).map(([k, v]) => [k, v + (STATION_SUFFIX[k] ?? '')])),
+  tagline: sub.line?.name || {},
+  colors: { sign: sub.line?.color || '#f5a200', accent: '#e6e8ec', awning: sub.line?.color || '#f5a200' },
+}));
+// The trains run round all the stations in list order: up = forward, down = back.
+for (const [i, st] of stationStores.entries()) {
+  const n = stationStores.length, nm = (k) => ({ ko: subwayStations[k].name?.ko || '', en: subwayStations[k].name?.en || '' });
+  st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
+}
+const TRAIN_STORE = {
+  id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',
+  name: { en: 'Subway train', ko: '지하철', ja: '地下鉄', zh: '地铁' },
+  tagline: { en: 'Choose where to get off', ko: '내릴 역을 고르세요', ja: '降りる駅を選んでください', zh: '请选择下车站' },
+  colors: { sign: '#5d6470', accent: '#d6dae0', awning: '#5d6470' },
+};
+// A shop-like "front" for each exit: leaving the hall puts you just outside its mouth.
+function exitFront(s, i) {
+  const out = outsideOf(subwayStations[s].exits[i], 0.4); // leaveStore steps another 1.2 m out
+  return { store: stationStores[s], door: { x: out.x, z: out.z }, group: { rotation: { y: out.ry } }, subwayExit: [s, i] };
+}
+let subwayCool = 0; // a moment after arriving, so you don't bounce straight back
+function enterStation(s, i) {
+  enterStore(exitFront(s, i));
+  const st = interior.subway.stairs[i];
+  moveMeTo(interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
+  cam.dist = 8;
+  cam.pitch = 0.6;
+  flashFade();
+  subwayCool = 0.6;
+}
+function leaveStation(i) {
+  const s = stationStores.indexOf(interior.store);
+  interior.front = exitFront(s, i);
+  leaveStore();
+  // Face away from the stairs, with the camera behind you.
+  const out = outsideOf(subwayStations[s].exits[i]);
+  const [x, z] = findFreeSpot(out.x, out.z);
+  moveMeTo(scene, x, z, out.ry);
+  flashFade();
+  subwayCool = 0.6;
+}
+function flashFade() {
+  const el = $('fade');
+  if (!el) return;
+  el.classList.remove('go');
+  void el.offsetWidth; // restart the animation
+  el.classList.add('go');
+}
+// Ticket gates: pay the fare to go through to the platform; going out is free.
+const GATE_TEXT = {
+  in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
+  out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
+  poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
+  paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
+};
+function passGate(g, paying) {
+  if (paying) {
+    if (!wallet.spend(FARE, { name: { en: 'Subway fare', ko: '지하철 요금', ja: '地下鉄運賃', zh: '地铁车费' }, at: interior.store.name })) { shop.toast(fmt(L(GATE_TEXT.poor), { n: FARE })); return; }
+    shop.toast(`🎫 ${L(GATE_TEXT.paid)} · -🪙 ${FARE}`);
+  }
+  sfx.pop?.();
+  moveMeTo(interior.scene, GATE_X + (paying ? 1.3 : -1.3), g.lane, paying ? Math.PI / 2 : -Math.PI / 2, cam.yaw);
+  action = STALE;
+}
+
+// ---------- Riding the train ----------
+// A train comes every 10 s on each platform side and keeps its doors open for
+// 5 s: walk in (or tap Board) while they're open. Inside, pick a station; the
+// train runs one stop per STOP_SECONDS and you step out on that station's platform.
+const METRO_TEXT = {
+  board: { en: 'Board', ko: '타기', ja: '乗る', zh: '上车' },
+  up: { en: 'Up', ko: '상행', ja: '上り', zh: '上行' },
+  down: { en: 'Down', ko: '하행', ja: '下り', zh: '下行' },
+  pick: { en: 'Where do you get off?', ko: '어디서 내릴까요?', ja: 'どこで降りますか？', zh: '在哪里下车？' },
+  stops: { en: '{n} stop(s)', ko: '{n}정거장', ja: '{n}駅', zh: '{n}站' },
+  leaving: { en: 'Doors close in {n}s', ko: '{n}초 뒤 문이 닫혀요', ja: 'あと{n}秒でドアが閉まります', zh: '{n}秒后关门' },
+  moving: { en: 'Next: {name}', ko: '다음 역: {name}', ja: '次は {name}', zh: '下一站：{name}' },
+  getOff: { en: 'Get off here', ko: '여기서 내리기', ja: 'ここで降りる', zh: '在这里下车' },
+  arriving: { en: 'Arriving at {name}', ko: '곧 {name}에 도착해요', ja: 'まもなく {name}', zh: '即将到达 {name}' },
+  choose: { en: 'Pick a station first', ko: '먼저 내릴 역을 골라 주세요', ja: '先に降りる駅を選んでください', zh: '请先选择下车站' },
+};
+let metro = null; // { from, t, dir, leaveAt, dest, arriveAt, chimed }
+const CHIME_LEAD = 2; // seconds before arrival
+const stationIndex = () => stationStores.indexOf(interior?.store);
+const stationName = (k) => localName(stationStores[k].name, getLanguage());
+function boardTrain(t, left) {
+  const from = stationIndex();
+  if (from < 0 || stationStores.length < 2) return;
+  const dir = METRO_TRACKS[t].dir;
+  metro = { from, t, dir, leaveAt: Date.now() + left * 1000, dest: null, arriveAt: 0 };
+  const front = exitFront(from, 0);
+  enterStore({ ...front, store: TRAIN_STORE });
+  interior.front = front; // the map shows you at the station you left
+  goSolo(interior.scene); // a short ride: just you in the car
+  moveMeTo(interior.scene, 0, 0, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
+  cam.dist = 6;
+  cam.pitch = 0.75;
+  flashFade();
+  sfx.pop?.();
+  renderMetro();
+  $('train-panel').hidden = false;
+}
+function renderMetro() {
+  if (!metro) return;
+  const n = stationStores.length;
+  $('train-title').textContent = `🚇 ${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${L(METRO_TEXT.pick)}`;
+  $('train-options').replaceChildren(...lineAhead(metro.from, metro.dir, n).map((k) => {
+    const b = document.createElement('button');
+    b.className = metro.dest === k ? 'primary' : 'chip';
+    b.textContent = `${stationName(k)} · ${fmt(L(METRO_TEXT.stops), { n: stopsBetween(metro.from, k, metro.dir, n) })}`;
+    b.onclick = () => pickStop(k);
+    return b;
+  }));
+  $('train-off').hidden = Date.now() >= metro.leaveAt;
+  $('train-off').textContent = '🚪 ' + L(METRO_TEXT.getOff);
+}
+$('train-off').onclick = () => metroGetOff();
+function pickStop(k) {
+  if (!metro || metro.arriveAt && Date.now() > metro.arriveAt - 500) return;
+  metro.dest = k;
+  metro.chimed = false;
+  const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
+  metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
+  renderMetro();
+}
+// Off before the doors close: back onto the platform you boarded from.
+function metroGetOff() {
+  if (!metro) return;
+  if (Date.now() >= metro.leaveAt) { shop.toast(L(METRO_TEXT.choose)); return; }
+  const { from, t } = metro;
+  endMetro();
+  arriveOnPlatform(from, t);
+}
+function endMetro() {
+  metro = null;
+  $('train-panel').hidden = true;
+}
+function arriveOnPlatform(k, t) {
+  enterStore(exitFront(k, 0));
+  const tr = METRO_TRACKS[t], s = Math.sign(tr.doorZ);
+  moveMeTo(interior.scene, 8.5 + (Math.random() - 0.5) * 6, tr.doorZ - s * 1.4, s > 0 ? Math.PI : 0);
+  cam.dist = 8;
+  cam.pitch = 0.6;
+  flashFade();
+  subwayCool = 0.8;
+}
+function updateMetro(p) {
+  if (!metro || !interior?.train) return;
+  const now = Date.now();
+  const moving = now >= metro.leaveAt;
+  interior.train.setMoving(moving);
+  let led;
+  if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
+  else if (metro.dest != null) {
+    // Chime and "arriving" a couple of seconds before the doors open there.
+    const soon = now >= metro.arriveAt - CHIME_LEAD * 1000;
+    if (soon && !metro.chimed) { metro.chimed = true; sfx.arrivalChime(); }
+    led = fmt(L(soon ? METRO_TEXT.arriving : METRO_TEXT.moving), { name: stationName(metro.dest) });
+  }
+  else led = L(METRO_TEXT.pick);
+  if (led !== metro.led) {
+    metro.led = led;
+    interior.train.setLed(led);
+    $('train-status').textContent = led;
+    renderMetro();
+  }
+  if (metro.dest != null && now >= metro.arriveAt) {
+    const { dest, t } = metro;
+    endMetro();
+    arriveOnPlatform(dest, t);
+  }
+  void p;
+}
+
+// Called every frame after moving: follow the steps up or down.
+function updateSubway(dt, p, px0, pz0) {
+  if (!subwayStations.length) return;
+  subwayCool = Math.max(0, subwayCool - dt);
+  if (mode === 'street') {
+    let s = null, si = -1;
+    for (let k = 0; k < subwayStations.length && !s; k++) { s = streetStairs(subwayStations[k], p.x, p.z); si = k; }
+    if (s && riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
+    p.y = s ? s.y : 0;
+    if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
+  } else if (interior?.subway) {
+    const s = hallStairsAt(interior.subway.stairs, p.x, p.z);
+    p.y = s ? s.y : 0;
+    if (s && s.frac >= HALL_EXIT_AT && !subwayCool) leaveStation(s.i);
+    // Walk into an open train door to board.
+    if (p.x > GATE_X + 0.5 && Math.abs(p.z) >= DOOR_Z - 0.6 && !subwayCool) {
+      const t = p.z >= 0 ? 0 : 1, left = interior.subway.doorsOpen(t);
+      if (left) boardTrain(t, left);
+    }
+  } else if (interior?.train) updateMetro(p);
+}
+
 // Translate signs (storefronts and zone boards) into the chosen language.
 let signsTranslated = false;
 const applySigns = () => {
   storefronts.setTranslated(signsTranslated, getLanguage());
   zones.setTranslated(signsTranslated, getLanguage());
+  for (const e of subwayEntrances) e.setTranslated(signsTranslated, getLanguage());
   $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));
   $('signs-btn').title = t(signsTranslated ? 'hud.signsOn' : 'hud.signsOff');
 };
@@ -1849,8 +2122,8 @@ const sfx = new Sfx();
 const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
 const HONK_TEXT = {
-  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre', ar: 'اقرع الجرس', id: 'Bunyikan bel' },
-  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon', ar: 'زمّور', id: 'Klakson' },
+  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre', ar: 'اقرع الجرس', vi: 'Bấm chuông', hi: 'घंटी बजाएँ', id: 'Bunyikan bel' },
+  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon', ar: 'زمّور', vi: 'Bấm còi', hi: 'हॉर्न बजाएँ', id: 'Klakson' },
 };
 let shownHonk = null, honkAt = 0;
 function honk() {
@@ -2234,7 +2507,7 @@ function orderFood(product, togo) {
   const cost = coinPrice(product.price);
   if (!togo && meal?.seat === seated) { shop.toast(L(DINE_TEXT.busy)); return; }
   if (togo && held && !confirm(t('coffee.replace'))) return;
-  if (!wallet.spend(cost)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
+  if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
   refreshWallet();
   recordFood(interior.store, product, true);
   const name = localName(product.name, getLanguage());
@@ -2409,6 +2682,10 @@ const mapView = new MapView({
   seoul: await seoulPromise,
   zones: zones.items,
   stores: storefronts.items,
+  marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
+    const [x, z] = toWorld(ex, 0, -PIT.l / 2);
+    return { x, z, icon: '🚇', color: sub.line?.color, label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}` };
+  })),
   getPlayers: () => {
     const pos = mode === 'street' ? me.root.position : interior.front.door;
     return {
@@ -2454,7 +2731,7 @@ function rideTaxi(dest) {
   // The fare grows with the distance (core/taxi.js).
   const from = mode === 'street' ? me.root.position : interior.front.door;
   const fare = taxiFare(from.x, from.z, fx, fz);
-  if (!wallet.spend(fare)) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
+  if (!wallet.spend(fare, { k: 'ledger.taxi' })) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
   refreshWallet();
   if (mode === 'store') leaveStore();
   if (riding) setRiding(false);
@@ -2695,6 +2972,8 @@ $('piece-close').onclick = closePiece;
 
 // Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+// Budget-book note for coins earned or spent without one: the shop you are in.
+wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
 // Ordering practice at restaurants (food can't be eaten; you practise ordering).
 const orderUi = new OrderUI({
   root: $('order-panel'),
@@ -2805,6 +3084,77 @@ const clawUi = new ClawUI({
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
+// Starlight Tarot (Hongdae): sit at the reader's table and draw three cards.
+const TAROT_TEXT = {
+  reader: { en: 'Tarot reader', ko: '타로 마스터', ja: 'タロット占い師', zh: '塔罗师', es: 'Tarotista', ar: 'قارئة التاروت', vi: 'Thầy bói tarot', hi: 'टैरो रीडर', id: 'Pembaca tarot' },
+  open: { en: 'Tarot reading', ko: '타로 보기', ja: 'タロット占い', zh: '塔罗占卜', es: 'Lectura de tarot', ar: 'قراءة التاروت', vi: 'Xem bài tarot', hi: 'टैरो रीडिंग', id: 'Baca tarot' },
+  hint: { en: 'Have a seat at my table and I\'ll read your cards.', ko: '테이블에 앉으시면 타로를 봐 드릴게요.', ja: 'テーブルに座ってください。カードを読みますね。', zh: '请在我的桌前坐下，我来为你解牌。', es: 'Siéntate a mi mesa y te leo las cartas.', ar: 'اجلس إلى طاولتي وسأقرأ لك البطاقات.', vi: 'Mời ngồi vào bàn, tôi sẽ xem bài cho bạn.', hi: 'मेरी मेज़ पर बैठिए, मैं आपके कार्ड पढ़ूँगी।', id: 'Silakan duduk di mejaku, aku bacakan kartumu.' },
+};
+const TAROT_LINES = [
+  ['어서 오세요, 앉으세요.', 'eoseo oseyo, anjeuseyo.', 'Welcome, have a seat.'],
+  ['카드가 좋게 나왔네요!', 'kadeuga joke nawanneyo!', 'The cards look good!'],
+  ['마음을 편하게 하고 골라 보세요.', 'maeumeul pyeonhage hago golla boseyo.', 'Relax and pick a card.'],
+];
+const tarotUi = new TarotUI({
+  root: $('tarot-panel'),
+  wallet,
+  onPick: () => sfx.pop?.(),
+  onRead: (cards) => {
+    refreshWallet();
+    if (clerk) { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[1]); }
+    showBubble(myLabel, $('labels'), cards.map((c) => c.icon).join(' '), 4000);
+  },
+});
+// Busking: step onto a busking stage and perform; the crowd tips now and then.
+const BUSK_TEXT = {
+  start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
+  stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
+  hi: { en: 'Say hi to the busker', ko: '버스커에게 인사', ja: 'バスカーにあいさつ', zh: '和街头艺人打招呼', es: 'Saludar al músico', ar: 'حيِّ العازف', vi: 'Chào nghệ sĩ', hi: 'कलाकार को नमस्ते', id: 'Sapa pengamen' },
+  begin: { en: '🎤 You\'re on! The crowd is listening. Moving ends the show.', ko: '🎤 공연 시작! 관객이 듣고 있어요. 움직이면 공연이 끝나요.', ja: '🎤 本番スタート！観客が聴いています。動くと終わります。', zh: '🎤 开演了！观众在听。移动就会结束表演。', es: '🎤 ¡A escena! El público escucha. Si te mueves, termina.', ar: '🎤 بدأ العرض! الجمهور يستمع. الحركة تنهي العرض.', vi: '🎤 Bắt đầu! Khán giả đang nghe. Di chuyển sẽ kết thúc.', hi: '🎤 शो शुरू! भीड़ सुन रही है। चलने से शो ख़त्म होगा।', id: '🎤 Mulai! Penonton mendengarkan. Bergerak mengakhiri pertunjukan.' },
+  tip: { en: '🪙 +{n} A listener dropped a tip in your guitar case!', ko: '🪙 +{n} 관객이 기타 케이스에 팁을 넣었어요!', ja: '🪙 +{n} 観客がギターケースにチップを入れました！', zh: '🪙 +{n} 有观众往吉他盒里放了小费！', es: '🪙 +{n} ¡Alguien dejó una propina!', ar: '🪙 +{n} ترك أحد المستمعين إكرامية!', vi: '🪙 +{n} Một khán giả đã boa cho bạn!', hi: '🪙 +{n} एक श्रोता ने टिप दी!', id: '🪙 +{n} Penonton memberi tip!' },
+  noTips: { en: 'Great show! No more tips today, but the crowd still loves you.', ko: '멋진 공연! 오늘 팁은 다 받았지만 관객은 여전히 좋아해요.', ja: '素敵なショー！今日のチップは終わりですが、観客は大喜び。', zh: '精彩的表演！今天的小费已经领完，但观众依然喜欢你。', es: '¡Gran show! Hoy no hay más propinas.', ar: 'عرض رائع! لا مزيد من الإكراميات اليوم.', vi: 'Diễn hay lắm! Hôm nay hết tiền boa rồi.', hi: 'शानदार शो! आज और टिप नहीं।', id: 'Pertunjukan hebat! Hari ini tip sudah habis.' },
+  note: { en: 'Busking tips', ko: '버스킹 팁', ja: 'バスキングのチップ', zh: '街头表演小费' },
+};
+let buskMusic = null; // { wasOn, track } while inside a busking zone
+function startBusking(s) {
+  busking.start(s);
+  me.root.position.set(s.x, 0, s.z);
+  me.root.rotation.y = 0; // face the crowd
+  showBubble(myLabel, $('labels'), '🎤🎶', 3000);
+  shop.toast(L(BUSK_TEXT.begin));
+  action = STALE;
+}
+function stopBusking() {
+  busking.stop();
+  me.play('bow');
+  action = STALE;
+}
+function buskTip() {
+  const next = takeTip(readTips(), dayKey());
+  if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
+  writeTips(next);
+  wallet.add(TIP, { name: BUSK_TEXT.note });
+  refreshWallet();
+  sfx.pop?.();
+  shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
+}
+// The busking song plays while you're in the zone (and the usual music after).
+function updateBuskMusic(p) {
+  const z = mode === 'street' ? busking.zoneAt(p.x, p.z) : null;
+  if (z === busking.inside) return;
+  busking.inside = z;
+  if (z) {
+    buskMusic = { wasOn: music.on, track: music.track.id === 'busking' ? 'lofi' : music.track.id };
+    music.setTrack('busking');
+    if (!music.on) music.setOn(true).then(applyMusicBtn);
+  } else if (buskMusic) {
+    const { wasOn, track } = buskMusic;
+    buskMusic = null;
+    if (music.track.id === 'busking') music.setTrack(track);
+    if (cafeMusic) cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
+    else if (!wasOn && music.on) music.setOn(false).then(applyMusicBtn);
+  }
+}
 // Name tag studio: emblems and name colours (a place to spend coins).
 const emblems = new EmblemCollection();
 const emblemUi = new EmblemUI({
@@ -2876,7 +3226,7 @@ const DANCE_TEXT = {
 };
 function currentActivity() {
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
-  if (dancing) return 'dance';
+  if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
   if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return 'fish';
@@ -2930,11 +3280,11 @@ refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
 let ride = null; // { kind, seat, t0, until, back: [x, z] }
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️' };
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼' };
 function boardRide(st) {
-  if (!wallet.spend(RIDE_COST)) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
+  if (!wallet.spend(RIDE_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
   const now = interior.time();
-  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: now + RIDE_SECONDS[st.kind], back: [st.x, st.z], shout: 0 };
+  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
   sendTimer = 0;
   missionEvent('ride');
 }
@@ -2952,7 +3302,7 @@ function updateRide(dt) {
   me.root.position.set(s.x, s.y, s.z);
   me.root.rotation.y = s.ry;
   ride.shout -= dt;
-  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
   if (now >= ride.until) endRide();
 }
 const duckUi = new DuckUI({
@@ -2968,10 +3318,10 @@ const duckUi = new DuckUI({
 // someone gets in (two seats each). Pedalling (the race panel) takes the
 // boat out towards the buoy; afterwards it drifts back to the dock.
 const DUCK_TEXT = {
-  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', id: 'Naik perahu bebek' },
-  go: { en: 'Pedal out', ko: '출발하기', ja: '出発する', zh: '出发', es: 'Salir a pedalear', ar: 'انطلق', id: 'Berangkat' },
-  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', id: 'Perahu ini penuh' },
-  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', id: 'Menunggu di dermaga · {n}/2 naik' },
+  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', vi: 'Lên thuyền vịt', hi: 'बत्तख नाव में बैठें', id: 'Naik perahu bebek' },
+  go: { en: 'Pedal out', ko: '출발하기', ja: '出発する', zh: '出发', es: 'Salir a pedalear', ar: 'انطلق', vi: 'Đạp ra hồ', hi: 'पैडल मारकर चलें', id: 'Berangkat' },
+  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', vi: 'Thuyền này đã đầy', hi: 'यह नाव भर गई है', id: 'Perahu ini penuh' },
+  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', vi: 'Đang chờ ở bến · {n}/2 người trên thuyền', hi: 'घाट पर इंतज़ार · {n}/2 सवार', id: 'Menunggu di dermaga · {n}/2 naik' },
 };
 const duckTrip = { k: 0, pos: 0, back: false };
 // Which boat each person is in (me and others), to place the boats.
@@ -3043,7 +3393,7 @@ function deliveryArrived(storeId) {
   delivery = null;
   $('delivery-chip').hidden = true;
   if (!coins) return;
-  wallet.add(coins);
+  wallet.add(coins, { k: 'ledger.delivery' });
   me.play('cheer');
   shop.toast(t('delivery.done', { n: coins }));
   missionEvent('delivery');
@@ -3346,6 +3696,8 @@ if (cloud.status === 'cloud' && cloud.guest) renderSettingsGoogle();
 onLanguageChange(() => { if (settingsGis) renderSettingsGoogle(); });
 cloud.onChange(refreshCloud);
 refreshCloud();
+// Add to Home Screen: settings row, guide sheet and a one-off nudge on phones.
+initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
 function refreshItems() {
@@ -3395,6 +3747,67 @@ function refreshItems() {
 // Bring back the pet I was walking last time.
 try { const saved = localStorage.getItem(PET_KEY); if (saved) setPet(saved); } catch { /* storage blocked */ }
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
+// Budget book (가계부): today's totals and the latest coins in and out.
+function ledgerLabel(e) {
+  const lang = getLanguage(), n = e.note || {};
+  const parts = [n.k && t(n.k, n.v), n.name && localName(n.name, lang), n.at && localName(n.at, lang)].filter(Boolean);
+  return parts.length ? parts.join(' · ') : t(e.n > 0 ? 'ledger.in' : 'ledger.out');
+}
+function renderLedger() {
+  const lang = getLanguage();
+  const day = wallet.dayTotals();
+  $('ledger-today').textContent = t('ledger.today', { in: day.in.toLocaleString(), out: day.out.toLocaleString() });
+  const when = (ms) => {
+    const d = new Date(ms), now = new Date();
+    const time = d.toLocaleTimeString(lang === 'zht' ? 'zh-Hant' : lang, { hour: 'numeric', minute: '2-digit' });
+    return d.toDateString() === now.toDateString() ? time : d.toLocaleDateString(lang === 'zht' ? 'zh-Hant' : lang, { month: 'short', day: 'numeric' }) + ' ' + time;
+  };
+  const rows = wallet.log.slice().reverse().map((e) => {
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    const what = document.createElement('span');
+    what.className = 'ledger-what';
+    const label = document.createElement('strong');
+    label.textContent = ledgerLabel(e);
+    const at = document.createElement('small');
+    at.textContent = when(e.t);
+    what.append(label, at);
+    const amt = document.createElement('span');
+    amt.className = 'ledger-amt ' + (e.n > 0 ? 'in' : 'out');
+    amt.textContent = (e.n > 0 ? '+' : '−') + Math.abs(e.n).toLocaleString();
+    const bal = document.createElement('small');
+    bal.className = 'ledger-bal';
+    bal.textContent = '🪙 ' + Number(e.bal ?? 0).toLocaleString();
+    amt.append(bal);
+    row.append(what, amt);
+    return row;
+  });
+  if (!rows.length) {
+    const p = document.createElement('p');
+    p.className = 'fine';
+    p.textContent = t('ledger.empty');
+    rows.push(p);
+  }
+  $('ledger-list').replaceChildren(...rows);
+}
+$('ledger-btn').onclick = () => { $('wallet-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
+$('ledger-close').onclick = () => { $('ledger-panel').hidden = true; };
+wallet.onChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+onLanguageChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+// Travel money, once: enough to explore without working part-time first,
+// with a word to spend it wisely. Players from before it get it too.
+{
+  const gift = wallet.welcome();
+  if (gift) {
+    refreshWallet();
+    $('welcome-coins').textContent = gift.toLocaleString();
+    const body = () => { $('welcome-body').textContent = t('welcome.body', { n: gift.toLocaleString() }); };
+    body();
+    onLanguageChange(body);
+    $('welcome-panel').hidden = false;
+    $('welcome-close').onclick = () => { $('welcome-panel').hidden = true; };
+  }
+}
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
   const music0 = music.on;
@@ -3499,7 +3912,7 @@ function talkToGuide() {
     // Busy square bonus: +1 for everyone else standing around the guide.
     const g = squareNpc.ch.root.position;
     const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
-    wallet.add(coins + crowd);
+    wallet.add(coins + crowd, { k: 'ledger.quest' });
     me.play('cheer');
     say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
     shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
@@ -3537,7 +3950,7 @@ function togetherBonus(kind) {
   const p = me.root.position;
   const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
   if (!friend) return;
-  wallet.add(TOGETHER_COINS[kind]);
+  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' });
   shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
 }
 
@@ -3562,7 +3975,7 @@ function hi5Done(id, { coins }) {
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins);
+  if (coins) wallet.add(coins, { k: 'ledger.together' });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
@@ -3708,6 +4121,14 @@ function updateAction(p, tSec) {
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
       next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
       }
+    } else if (busking.performing) {
+      next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
+    } else if (!riding && busking.stageAt(p.x, p.z)) {
+      const s = busking.stageAt(p.x, p.z);
+      next = { key: 'busk', label: '🎤 ' + L(BUSK_TEXT.start), run: () => startBusking(s) };
+    } else if (busking.nearBusker(p.x, p.z)) {
+      const s = busking.nearBusker(p.x, p.z);
+      next = { key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) };
     } else {
       const n = npcs.nearest(p.x, p.z);
       if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
@@ -3717,6 +4138,14 @@ function updateAction(p, tSec) {
     const seat = !seated && nearestSeat(p);
     if (surgery) {
       next = null;
+    } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
+      const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
+      next = { key: 'metro-board:' + t, label: `🚇 ${L(METRO_TEXT.board)} · ${L(t === 0 ? METRO_TEXT.up : METRO_TEXT.down)} → ${to ? localName(to, getLanguage()) : ''}`, run: () => boardTrain(t, interior.subway.doorsOpen(t) || 0.5) };
+    } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
+      const g = gateAt(p.x, p.z);
+      next = g.inside
+        ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
+        : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -3744,6 +4173,8 @@ function updateAction(p, tSec) {
       next = dineAction();
     } else if (seated?.duck != null) { // in a duck boat: pedal out (or get off from the panel)
       next = { key: 'duck-go', label: '🚣 ' + L(DUCK_TEXT.go), run: () => duckUi.show() };
+    } else if (seated?.tarot) {
+      next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { clerk?.ch.wave(); tarotUi.show(); } };
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -3803,6 +4234,8 @@ function updateAction(p, tSec) {
       next = { key: 'emblem', label: '🏷️ ' + t('emblem.open'), run: () => { clerk.ch.wave(); emblemUi.show(); } };
     } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
+    } else if (interior.store.workshop === 'tarot' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); shop.toast(L(GOODS_TEXT.soon)); say(clerk, $('labels'), ['곧 열어요!', 'got yeoreoyo!', L(GOODS_TEXT.soon)]); } }; // fashion: coming soon
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
@@ -3955,12 +4388,14 @@ renderer.setAnimationLoop(() => {
     }
   }
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
+  else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   updateRide(dt);
   if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
   updateDucks(dt);
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
@@ -4067,7 +4502,8 @@ renderer.setAnimationLoop(() => {
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
-  if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
+  if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
+  if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   updateMeal();
   if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
   updateAction(p, tSec);
@@ -4113,6 +4549,7 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
+    if (Math.abs(p.y) > 0.05) st.y = Math.round(p.y * 100) / 100; // on subway stairs
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
@@ -4122,7 +4559,7 @@ renderer.setAnimationLoop(() => {
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -4134,8 +4571,10 @@ renderer.setAnimationLoop(() => {
 
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
-  if (mode === 'street') npcs.update(dt, camera, w, h);
+  updateBuskMusic(p);
+  if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
+    busking.hideLabels();
     if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }
@@ -4241,6 +4680,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     mapView: () => mapView,
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
+    subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
+    metro: () => metro && { ...metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },
+    doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
+    pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),

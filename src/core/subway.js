@@ -1,0 +1,582 @@
+// Underground subway station: stair exits on the street and a station hall
+// below (concourse, ticket gates, platform with screen doors, a passing train).
+//
+// The street side is data-driven (region.json "subway"): each exit has a spot
+// and the direction its stairs go down. The ground gets a hole there, so you
+// really walk down the steps; at the bottom you arrive in the station hall
+// (its own scene, like a shop). Walk up another exit's stairs to come out there.
+import * as THREE from 'three';
+
+// Street stairwell, in the exit's own frame: +b runs down the stairs (from the
+// mouth to the bottom), a runs across. The hole in the ground is w × l.
+export const PIT = { w: 2.4, l: 6, depth: 3.2, run: 5 }; // steps over the first 5 m, then a landing
+export const ENTER_AT = 0.8; // how far down the steps (0–1) you go below
+const WALL = 0.3;
+
+// World ↔ exit frame. Rotating by ry maps the exit's +b to (sin ry, cos ry).
+export function toLocal(ex, x, z) {
+  const dx = x - ex.at[0], dz = z - ex.at[1];
+  const c = Math.cos(ex.ry), s = Math.sin(ex.ry);
+  return [dx * c - dz * s, dx * s + dz * c];
+}
+export function toWorld(ex, a, b) {
+  const c = Math.cos(ex.ry), s = Math.sin(ex.ry);
+  return [ex.at[0] + a * c + b * s, ex.at[1] - a * s + b * c];
+}
+const rect = (ex, a0, a1, b0, b1) => [[a0, b0], [a1, b0], [a1, b1], [a0, b1]].map(([a, b]) => toWorld(ex, a, b));
+
+// The hole in the ground (also where the steps are).
+export const holeOf = (ex) => rect(ex, -PIT.w / 2, PIT.w / 2, -PIT.l / 2, PIT.l / 2);
+// Walls you can't walk through: both sides and the far end. The mouth is open.
+export function blockersOf(ex) {
+  const h = PIT.w / 2, L = PIT.l / 2;
+  return [
+    { p: rect(ex, -h - WALL, -h, -L, L + WALL) },
+    { p: rect(ex, h, h + WALL, -L, L + WALL) },
+    { p: rect(ex, -h - WALL, h + WALL, L, L + WALL) },
+  ];
+}
+// The whole entrance, for things that must not stand in it (street trees).
+// (Keeps a clear patch in front of the mouth too.)
+export const footprintOf = (ex, pad = 0.6) => ({ p: rect(ex, -PIT.w / 2 - WALL - pad, PIT.w / 2 + WALL + pad, -PIT.l / 2 - pad - 3, PIT.l / 2 + WALL + pad) });
+// Where you come out: just outside the mouth, facing away from the stairs.
+export function outsideOf(ex, dist = 1.6) {
+  const [x, z] = toWorld(ex, 0, -PIT.l / 2 - dist);
+  return { x, z, ry: ex.ry + Math.PI };
+}
+
+// Which stairwell (x, z) is in, how deep, and how far down the steps (0–1).
+export function streetStairs(sub, x, z) {
+  for (let i = 0; i < (sub?.exits?.length || 0); i++) {
+    const ex = sub.exits[i];
+    const [a, b] = toLocal(ex, x, z);
+    if (Math.abs(a) > PIT.w / 2 || b < -PIT.l / 2 || b > PIT.l / 2) continue;
+    const frac = Math.min(1, Math.max(0, (b + PIT.l / 2) / PIT.run));
+    return { i, frac, y: -PIT.depth * frac };
+  }
+  return null;
+}
+
+// ---------- Station hall (its own scene) ----------
+// Seen from above: the concourse at the west end (the stairs up to the exits,
+// ticket machines), a row of ticket gates across the hall, then an island
+// platform running east between two tracks: up trains on the south track,
+// down trains on the north one, each behind screen doors.
+
+export const HALL = { w: 52, d: 30, h: 4.4 };
+export const GATE_X = -9; // ticket gates: the concourse is west (x < GATE_X), the platform east
+export const GATE_LANES = [-3, -1.5, 0, 1.5, 3]; // lane centres (z)
+export const FARE = 2; // coins, paid at the gate on the way in (going out is free)
+export const DOOR_Z = 7.5; // screen doors on both sides of the island platform
+const TRACK_Z = 10.6;
+const PLAT_X = [-8.5, 25.5];
+// Up trains run on the south track (+z), heading east; down trains on the north track.
+export const TRACKS = [
+  { dir: 1, z: TRACK_Z, doorZ: DOOR_Z, offset: 0 },
+  { dir: -1, z: -TRACK_Z, doorZ: -DOOR_Z, offset: 5 },
+];
+export const trackOn = (z) => TRACKS[z >= 0 ? 0 : 1];
+// Standing at the gates? Which lane is nearest and which side you're on.
+export function gateAt(x, z) {
+  if (Math.abs(x - GATE_X) > 1.8 || z < GATE_LANES[0] - 1.2 || z > GATE_LANES[GATE_LANES.length - 1] + 1.2) return null;
+  const lane = GATE_LANES.reduce((a, b) => (Math.abs(b - z) < Math.abs(a - z) ? b : a));
+  return { lane, inside: x > GATE_X };
+}
+
+// Train timetable, the same for everyone (it runs on the clock): a train every
+// 10 s on each track. It pulls in (2.5 s), stands with the doors open (5 s),
+// then leaves (2.5 s). The two tracks are 5 s apart.
+export const HEADWAY = 10, PULL_IN = 2.5, DOORS = 5;
+export function trainPhase(tSec, offset = 0) {
+  const t = (((tSec + offset) % HEADWAY) + HEADWAY) % HEADWAY;
+  if (t < PULL_IN) return { phase: 'in', k: t / PULL_IN, left: PULL_IN - t };
+  if (t < PULL_IN + DOORS) return { phase: 'open', k: (t - PULL_IN) / DOORS, left: PULL_IN + DOORS - t };
+  return { phase: 'out', k: (t - PULL_IN - DOORS) / (HEADWAY - PULL_IN - DOORS), left: HEADWAY - t };
+}
+
+// Riding: stations form a loop in list order. Up goes forward, down backward.
+export const STOP_SECONDS = 2.5;
+export function stopsBetween(from, to, dir, n) {
+  return ((((to - from) * dir) % n) + n) % n;
+}
+// The other stations in the order a train going dir reaches them.
+export function lineAhead(from, dir, n) {
+  const out = [];
+  for (let k = 1; k < n; k++) out.push(((from + dir * k) % n + n) % n);
+  return out;
+}
+
+const STAIR = { w: 2.6, len: 7, rise: 3.4 };
+export const HALL_EXIT_AT = 0.8;
+
+// The stairs up to exit i, along the north and south walls of the concourse,
+// climbing west. The foot faces into the concourse.
+export function hallStairs(n) {
+  return Array.from({ length: n }, (_, i) => {
+    const side = i % 2 ? 1 : -1, row = i >> 1;
+    const sgn = -1, top = -HALL.w / 2 + 0.5, foot = top + STAIR.len;
+    const z = side * (HALL.d / 2 - 1.5 - row * 3.4);
+    return { i, sgn, top, foot, z, w: STAIR.w, arrive: { x: foot + 1.4, z, ry: Math.PI / 2 } };
+  });
+}
+// Height on the hall stairs at (x, z), and how far up (0–1), or null.
+export function hallStairsAt(stairs, x, z) {
+  for (const st of stairs) {
+    if (Math.abs(z - st.z) > st.w / 2) continue;
+    const along = (x - st.foot) * st.sgn;
+    if (along < 0 || along > STAIR.len) continue;
+    const frac = along / STAIR.len;
+    return { i: st.i, frac, y: STAIR.rise * frac };
+  }
+  return null;
+}
+
+const mats = {};
+const mat = (c, o) => (mats[c + JSON.stringify(o || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
+
+// Sign texture: Korean first, English (or the chosen language) below, as on
+// real Seoul station signs. opts.num: an exit number box on the left.
+export function signTexture(ko, sub2, { bg = '#f4f5f7', fg = '#22252b', num = null, numBg = '#f5a200', line = null, w = 512, h = 128 } = {}) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+  let x0 = 24;
+  if (num != null) {
+    g.fillStyle = numBg;
+    g.beginPath(); g.roundRect(14, 14, h - 28, h - 28, 14); g.fill();
+    g.fillStyle = '#1b1b1b';
+    g.font = `900 ${h * 0.56}px system-ui, sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(num), h / 2, h / 2 + 4);
+    x0 = h + 4;
+  }
+  if (line) { // the line colour as a dot
+    g.fillStyle = line;
+    g.beginPath(); g.arc(x0 + 18, h * 0.36, 14, 0, Math.PI * 2); g.fill();
+    x0 += 44;
+  }
+  g.fillStyle = fg;
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.font = `800 ${h * 0.36}px system-ui, sans-serif`;
+  g.fillText(ko, x0, h * 0.36, w - x0 - 16);
+  g.font = `600 ${h * 0.2}px system-ui, sans-serif`;
+  g.fillStyle = fg + 'cc';
+  if (sub2) g.fillText(sub2, x0, h * 0.75, w - x0 - 16);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+function signMesh(tex, w, h) {
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+}
+
+// ---------- Street entrances ----------
+
+export class SubwayEntrances {
+  constructor(scene, sub) {
+    this.sub = sub;
+    this.items = (sub?.exits || []).map((ex, i) => this._build(scene, ex, i));
+  }
+
+  _build(scene, ex, i) {
+    const line = this.sub.line?.color || '#f5a200';
+    const g = new THREE.Group();
+    g.position.set(ex.at[0], 0, ex.at[1]);
+    g.rotation.y = ex.ry;
+    const box = (sx, sy, sz, x, y, z, m) => {
+      const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m);
+      o.position.set(x, y, z);
+      g.add(o);
+      return o;
+    };
+    const { w, l, depth, run } = PIT;
+    const L = l / 2, hw = w / 2;
+    const tile = mat('#d9dde3'), stone = mat('#b9bec7'), steel = mat('#5d6470'), stepM = mat('#9aa1ab'), nose = mat('#f2c230');
+    // Steps down, then a landing and a lit doorway at the bottom.
+    const n = 16, stepRun = run / n, rise = depth / n;
+    for (let k = 0; k < n; k++) {
+      const top = -(k + 1) * rise, b = -L + (k + 0.5) * stepRun;
+      box(w, 0.3, stepRun, 0, top - 0.15, b, stepM);
+      box(w, 0.02, 0.06, 0, top + 0.005, b - stepRun / 2 + 0.03, nose); // yellow step edges
+    }
+    box(w, 0.3, l - run + 0.02, 0, -depth - 0.15, L - (l - run) / 2, stepM);
+    // Stairwell walls (below the street) and the far wall with the doorway.
+    for (const s of [-1, 1]) {
+      box(0.2, depth + 0.6, l + 0.2, s * (hw + 0.1), -(depth + 0.6) / 2, 0, tile);
+      box(0.05, 0.25, l, s * (hw - 0.02), -1.6, 0, mat(line)); // a stripe in the line colour
+      const rail = box(0.06, 0.06, Math.hypot(run, depth) + 0.2, s * (hw - 0.12), 0, 0, steel); // handrail
+      rail.position.set(s * (hw - 0.12), -depth / 2 + 0.9, -L + run / 2);
+      rail.rotation.x = Math.atan2(depth, run);
+    }
+    box(w + 0.4, depth + 0.6, 0.2, 0, -(depth + 0.6) / 2, L + 0.1, tile);
+    const door = box(1.6, 2.2, 0.04, 0, -depth + 1.1, L - 0.01, new THREE.MeshBasicMaterial({ color: '#fff6dc' }));
+    door.name = 'doorway';
+    // Above the street: low stone walls with glass on top, posts and a glass roof.
+    for (const s of [-1, 1]) {
+      box(WALL, 1.0, l + WALL, s * (hw + WALL / 2), 0.5, WALL / 2, stone);
+      box(0.04, 1.6, l + WALL, s * (hw + WALL / 2), 1.8, WALL / 2, glass());
+      for (const b of [-L, L + WALL / 2]) box(0.14, 2.75, 0.14, s * (hw + WALL / 2), 1.375, b, steel);
+    }
+    box(w + WALL * 2, 1.0, WALL, 0, 0.5, L + WALL / 2, stone);
+    box(w + WALL * 2, 1.6, 0.04, 0, 1.8, L + WALL / 2, glass());
+    box(w + 1.0, 0.08, l + 1.0, 0, 2.78, WALL / 2, glass(0.35));
+    for (const s of [-1, 1]) box(0.1, 0.12, l + 1.0, s * (hw + 0.5), 2.74, WALL / 2, steel);
+    box(w + 1.0, 0.12, 0.1, 0, 2.74, -L - 0.35, steel);
+    // Signs on the front (above the mouth) and the back.
+    const front = signMesh(null, w + 0.8, (w + 0.8) / 4);
+    front.position.set(0, 3.15, -L - 0.4);
+    front.rotation.y = Math.PI;
+    const back = front.clone();
+    back.material = front.material.clone();
+    back.position.set(0, 3.15, L + WALL + 0.25);
+    back.rotation.y = 0;
+    box(w + 0.9, (w + 0.8) / 4 + 0.1, 0.12, 0, 3.15, -L - 0.33, steel); // sign holders
+    box(w + 0.9, (w + 0.8) / 4 + 0.1, 0.12, 0, 3.15, L + WALL + 0.18, steel);
+    g.add(front, back);
+    scene.add(g);
+    const it = { ex, n: ex.n ?? i + 1, group: g, signs: [front, back] };
+    this._sign(it, false, 'en');
+    return it;
+  }
+
+  _sign(it, translated, lang) {
+    const name = this.sub.name || {};
+    const second = translated ? (name[lang] || name.en) : name.en;
+    const ko = (name.ko || '') + '역';
+    const tex = signTexture(ko, `${second} · Exit ${it.n}`, { num: it.n, line: this.sub.line?.color });
+    for (const s of it.signs) { s.material.map?.dispose(); s.material.map = tex; s.material.needsUpdate = true; }
+  }
+
+  // "Translate signs": the second line in the chosen language.
+  setTranslated(on, lang) { for (const it of this.items) this._sign(it, on, lang); }
+}
+
+function glass(opacity = 0.25) {
+  return mat('#bfe4f2', { transparent: true, opacity, depthWrite: false });
+}
+
+// ---------- The station hall ----------
+
+// store.subway: the station's data; store.towards: { up, down } names of the
+// next station each way (or null when there's nowhere to go).
+export function buildStation(store, ROOM) {
+  const sub = store.subway;
+  const line = sub.line?.color || '#f5a200';
+  const { w, d, h } = ROOM;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#2a2d33');
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8bcc4, 2.0));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const colliders = [];
+  const block = (x0, z0, x1, z1) => colliders.push({ p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] });
+  const box = (sx, sy, sz, x, y, z, m, parent = scene) => {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), typeof m === 'string' ? mat(m) : m);
+    o.position.set(x, y, z);
+    parent.add(o);
+    return o;
+  };
+  const sign = (tex, sw, sh, x, y, z, ry = 0) => {
+    const m = signMesh(tex, sw, sh);
+    m.position.set(x, y, z); m.rotation.y = ry; scene.add(m);
+    return m;
+  };
+  const name = sub.name || {};
+  const lineName = sub.line?.name || {};
+
+  // Floor; yellow tactile strips along both platform edges.
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: tileTexture(w, d) })));
+  const platL = PLAT_X[1] - PLAT_X[0], platC = (PLAT_X[0] + PLAT_X[1]) / 2;
+  for (const s of [-1, 1]) box(platL, 0.02, 0.5, platC, 0.01, s * (DOOR_Z - 0.6), '#f2c230');
+  // Walls (inward-facing, so the camera can look in from outside), with a
+  // stripe in the line colour.
+  const wallM = new THREE.MeshLambertMaterial({ color: '#e6e8ec' });
+  const wall = (len, x, z, ry, color) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, h + 1), color ? mat(color) : wallM);
+    m.position.set(x, (h - 1) / 2, z); m.rotation.y = ry; scene.add(m);
+    if (color) return;
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.35), mat(line));
+    s.position.set(x + Math.sin(ry) * 0.01, 2.2, z + Math.cos(ry) * 0.01); s.rotation.y = ry; scene.add(s);
+  };
+  const cw = GATE_X + w / 2; // concourse width
+  wall(cw, -w / 2 + cw / 2, -d / 2, 0);
+  wall(cw, -w / 2 + cw / 2, d / 2, Math.PI);
+  wall(d, -w / 2, 0, Math.PI / 2);
+  wall(platL + 0.5, platC, -d / 2, 0, '#3a3d44'); // tunnel walls behind the tracks
+  wall(platL + 0.5, platC, d / 2, Math.PI, '#3a3d44');
+  wall(d, w / 2, 0, -Math.PI / 2, '#3a3d44');
+
+  // Tracks: a sunken bed with rails, walled off from the concourse.
+  for (const tr of TRACKS) {
+    const z0 = Math.sign(tr.z) * DOOR_Z, z1 = Math.sign(tr.z) * d / 2;
+    box(platL + 0.5, 0.1, Math.abs(z1 - z0), platC, -0.9, (z0 + z1) / 2, '#3a3d44');
+    for (const off of [-0.7, 0.7]) box(platL + 0.5, 0.08, 0.08, platC, -0.8, tr.z + off, '#9aa1ab');
+    block(GATE_X - 0.3, Math.min(z0, z1), w / 2, Math.max(z0, z1));
+    // The end of the track zone facing the concourse: a wall with the line stripe.
+    box(0.3, h, Math.abs(z1 - z0), GATE_X - 0.15, h / 2, (z0 + z1) / 2, '#d9dde3');
+  }
+
+  // Screen doors along both platform edges: glass on a frame; each pair slides
+  // open while a train stands there.
+  const doors = [[], []];
+  const pitch = 4.25;
+  for (let t = 0; t < 2; t++) {
+    const z = TRACKS[t].doorZ;
+    for (let x = PLAT_X[0] + pitch / 2; x < PLAT_X[1]; x += pitch) {
+      box(0.18, 2.5, 0.18, x - pitch / 2 + 0.09, 1.25, z, '#8a919c');
+      for (const s of [-1, 1]) doors[t].push({ pane: box(1.0, 2.1, 0.05, x + s * 0.5, 1.05, z, glass(0.4)), x0: x + s * 0.5, s });
+      box(pitch - 0.2, 0.3, 0.2, x, 2.45, z, '#30343b');
+    }
+  }
+
+  // Concourse: ticket machines and the station sign on the west wall.
+  for (let k = 0; k < 3; k++) {
+    const z = -2.2 + k * 2.2;
+    box(0.6, 1.7, 1.6, -w / 2 + 0.35, 0.85, z, '#3c6fb4');
+    box(0.04, 0.6, 1.1, -w / 2 + 0.67, 1.25, z, '#d8ecff');
+  }
+  block(-w / 2, -3.4, -w / 2 + 0.75, 3.4);
+  sign(signTexture(`${name.ko || ''}역 · ${lineName.ko || ''}`, `${name.en || ''} Station · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 6, 1, -w / 2 + 0.02, 2.9, 0, Math.PI / 2);
+
+  // Gates: waist-high cabinets across the hall; each lane has red flaps. You
+  // pay at the gate (an action) and are walked through.
+  let prev = -DOOR_Z;
+  for (const lz of [...GATE_LANES, DOOR_Z + 0.45]) {
+    const z0 = prev, z1 = lz - 0.45;
+    if (z1 > z0) {
+      box(0.8, 1.0, z1 - z0, GATE_X, 0.5, (z0 + z1) / 2, '#c9ced6');
+      box(0.8, 0.04, z1 - z0, GATE_X, 1.02, (z0 + z1) / 2, '#30343b');
+      block(GATE_X - 0.4, z0, GATE_X + 0.4, z1);
+    }
+    prev = lz + 0.45;
+  }
+  for (const lz of GATE_LANES) {
+    box(0.05, 0.12, 0.3, GATE_X - 0.38, 1.12, lz, '#3ad17a'); // green arrows
+    for (const s of [-1, 1]) box(0.06, 0.5, 0.32, GATE_X, 0.75, lz + s * 0.27, '#d0453a'); // flaps
+    block(GATE_X - 0.1, lz - 0.45, GATE_X + 0.1, lz + 0.45);
+  }
+
+  // Up-stairs to the street along the concourse walls, with daylight at the top.
+  const stairs = hallStairs(sub.exits.length);
+  for (const st of stairs) {
+    const n = 18, run = STAIR.len / n, rise = STAIR.rise / n;
+    for (let k = 0; k < n; k++) {
+      const top = (k + 1) * rise, x = st.foot + st.sgn * (k + 0.5) * run;
+      box(run, top, st.w, x, top / 2, st.z, '#a7aeb8');
+      box(0.06, 0.02, st.w, x - st.sgn * run / 2 + st.sgn * 0.03, top + 0.005, st.z, '#f2c230');
+    }
+    // A low wall that climbs with the steps on the open side (so the camera
+    // can still see you), a handrail, and the daylight at the top.
+    const side = st.z - Math.sign(st.z) * (st.w / 2 + 0.2);
+    const prof = new THREE.Shape([[0, 0], [STAIR.len, 0], [STAIR.len, STAIR.rise + 1.0], [0, 1.0]].map(([u, v]) => new THREE.Vector2(u, v)));
+    const sideWall = new THREE.Mesh(new THREE.ExtrudeGeometry(prof, { depth: 0.2, bevelEnabled: false }), mat('#d9dde3', { side: THREE.DoubleSide }));
+    sideWall.scale.x = st.sgn; // climbs towards the end wall
+    sideWall.position.set(st.foot, 0, side);
+    scene.add(sideWall);
+    block(Math.min(st.foot, st.top) - 0.5, side, Math.max(st.foot, st.top), side + 0.2);
+    // Rows further in (a third or fourth exit) also need the wall on the far side.
+    const far = st.z + Math.sign(st.z) * (st.w / 2);
+    if (Math.abs(far) < d / 2 - 0.6) block(Math.min(st.foot, st.top) - 0.5, far, Math.max(st.foot, st.top), far + Math.sign(st.z) * 0.2);
+    const rail = box(Math.hypot(STAIR.len, STAIR.rise), 0.07, 0.07, st.foot + st.sgn * STAIR.len / 2, STAIR.rise / 2 + 1.0, side + 0.1, '#5d6470');
+    rail.rotation.z = st.sgn * Math.atan2(STAIR.rise, STAIR.len);
+    box(0.05, 2.2, st.w, st.top + st.sgn * 0.45, STAIR.rise + 1.1, st.z, new THREE.MeshBasicMaterial({ color: '#dff2ff' }));
+    // Exit sign over the foot of the stairs: "나가는 곳 1번 · Way Out".
+    const n2 = sub.exits[st.i].n ?? st.i + 1;
+    sign(signTexture(`나가는 곳 ${n2}번`, `Way Out · Exit ${n2}`, { num: n2, bg: '#2f3540', fg: '#ffffff' }), 2.8, 0.7, st.foot + 0.2, 3.3, st.z, Math.PI / 2);
+  }
+
+  // Platform: benches back to back down the middle (sit facing a track),
+  // pillars, the station name and which way each track goes.
+  const seats = [];
+  for (const x of [-1, 11, 21]) {
+    box(2.4, 0.08, 1.0, x, 0.4, 0, '#c08a52');
+    box(2.4, 0.5, 0.08, x, 0.7, 0, '#c08a52');
+    for (const s of [-1, 1]) box(0.08, 0.4, 0.95, x + s * 1.1, 0.2, 0, '#5d6470');
+    block(x - 1.2, -0.5, x + 1.2, 0.5);
+    for (const sx of [-0.6, 0.6]) {
+      seats.push({ x: x + sx, z: 0.3, ry: 0, stand: [x + sx, 1.3] });
+      seats.push({ x: x + sx, z: -0.3, ry: Math.PI, stand: [x + sx, -1.3] });
+    }
+  }
+  for (const x of [5, 16]) {
+    box(0.7, h, 0.7, x, h / 2, 0, '#d9dde3');
+    block(x - 0.35, -0.35, x + 0.35, 0.35);
+  }
+  const code = sub.code ? '  ' + sub.code : '';
+  const towards = store.towards || {};
+  for (const [t, tr] of TRACKS.entries()) {
+    const s = Math.sign(tr.z);
+    // Station name boards on the pillars, facing each track.
+    for (const x of [5, 16]) sign(signTexture(`${name.ko || ''}${code}`, `${name.en || ''} · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 4.2, 0.7, x, 3.0, s * 0.37, s > 0 ? 0 : Math.PI);
+    // Over the screen doors: which way this track goes.
+    const to = t === 0 ? towards.up : towards.down;
+    const label = t === 0 ? ['상행', 'Up'] : ['하행', 'Down'];
+    const txt = to ? [`${label[0]} · ${to.ko} 방면`, `${label[1]} · for ${to.en}`] : [`${label[0]}`, 'Not in service'];
+    for (const x of [platC - 8, platC + 8]) sign(signTexture(txt[0], txt[1], { bg: '#2f3540', fg: '#ffffff', line, w: 640, h: 128 }), 3.5, 0.7, x, 3.2, s * (DOOR_Z - 0.4), s > 0 ? Math.PI : 0);
+  }
+
+  // LED board over the gates, facing the concourse.
+  const ledC = document.createElement('canvas');
+  ledC.width = 512; ledC.height = 64;
+  const ledTex = new THREE.CanvasTexture(ledC);
+  sign(ledTex, 4, 0.5, GATE_X - 0.42, 3.0, 0, -Math.PI / 2);
+  let ledLast = '';
+  const drawLed = (txt) => {
+    if (txt === ledLast) return;
+    ledLast = txt;
+    const g = ledC.getContext('2d');
+    g.fillStyle = '#111'; g.fillRect(0, 0, 512, 64);
+    g.fillStyle = '#ffb21e'; g.font = '700 26px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(txt, 256, 33, 496);
+    ledTex.needsUpdate = true;
+  };
+
+  // Trains: silver cars with a stripe in the line colour, clipped to the
+  // platform so they appear out of the tunnel.
+  const clip = [new THREE.Plane(new THREE.Vector3(1, 0, 0), -(GATE_X)), new THREE.Plane(new THREE.Vector3(-1, 0, 0), w / 2)];
+  const cm = (c) => new THREE.MeshLambertMaterial({ color: c, clippingPlanes: clip });
+  const carL = 10, cars = 3, gap = 0.5, trainLen = cars * carL + (cars - 1) * gap;
+  const body = cm('#d6dae0'), stripe = cm(line), win = cm('#33404f'), doorM = cm('#aeb4bd');
+  const trains = TRACKS.map((tr) => {
+    const g = new THREE.Group();
+    for (let k = 0; k < cars; k++) {
+      const cx = -k * (carL + gap);
+      box(carL, 2.6, 2.7, cx, 0.6, 0, body, g);
+      box(carL + 0.02, 0.25, 2.72, cx, 0.1, 0, stripe, g);
+      for (const j of [-3, 0, 3]) box(1.6, 0.8, 2.74, cx + j, 1.15, 0, win, g);
+      for (const j of [-1.5, 1.5]) box(1.3, 2.0, 2.76, cx + j, 0.5, 0, doorM, g);
+    }
+    g.rotation.y = tr.dir > 0 ? 0 : Math.PI; // the front leads the way
+    g.position.set(0, -0.4, tr.z);
+    g.visible = false;
+    scene.add(g);
+    // Where the front car stands so the train is centred on the platform.
+    const stopX = platC + tr.dir * (trainLen / 2 - carL / 2);
+    const runIn = platL + trainLen; // from out of sight to the stop
+    return { g, tr, stopX, runIn };
+  });
+
+  const status = TRACKS.map(() => trainPhase(0));
+  function animate() {
+    const now = Date.now() / 1000;
+    let led = `${name.ko || ''}역 · ${name.en || ''} Station`;
+    for (let t = 0; t < 2; t++) {
+      const { g, tr, stopX, runIn } = trains[t];
+      const ph = trainPhase(now, tr.offset);
+      status[t] = ph;
+      g.visible = true;
+      if (ph.phase === 'in') g.position.x = stopX - tr.dir * runIn * (1 - ph.k) * (1 - ph.k);
+      else if (ph.phase === 'open') g.position.x = stopX;
+      else g.position.x = stopX + tr.dir * runIn * ph.k * ph.k;
+      // Doors: open over 0.4 s, close in the last 0.4 s.
+      const e = ph.phase === 'open' ? Math.min(1, (DOORS - ph.left) / 0.4, ph.left / 0.4) : 0;
+      for (const dr of doors[t]) dr.pane.position.x = dr.x0 + dr.s * e * 0.95;
+      if (ph.phase === 'in') led = t === 0 ? '상행 열차가 들어옵니다 · Up train arriving' : '하행 열차가 들어옵니다 · Down train arriving';
+    }
+    drawLed(led);
+  }
+  animate();
+
+  return {
+    scene, products: [], colliders, seats, clerk: null, turntable: null, stations: {}, room: ROOM,
+    exit: { x: 1e4, z: 1e4 }, // no door: walk up the stairs
+    animate,
+    subway: {
+      stairs,
+      // Track t: the doors are open now, and for how much longer (s).
+      doorsOpen: (t) => (status[t].phase === 'open' && status[t].left > 0.3 ? status[t].left : 0),
+      train: { get phase() { return status[0].phase; } },
+    },
+  };
+}
+
+// ---------- Inside a train car ----------
+
+export const CAR = { w: 18, d: 3.4, h: 3 };
+export function buildTrainCar(store, ROOM) {
+  const line = store.line || '#00a84d';
+  const { w, d, h } = ROOM;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#15171b');
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa1ab, 2.2));
+  const colliders = [];
+  const block = (x0, z0, x1, z1) => colliders.push({ p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] });
+  const box = (sx, sy, sz, x, y, z, c, parent = scene) => {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), typeof c === 'string' ? mat(c) : c);
+    o.position.set(x, y, z);
+    parent.add(o);
+    return o;
+  };
+  box(w, 0.05, d, 0, -0.025, 0, '#8d939c'); // floor
+  // Long bench seats along both sides, under the windows; doors between.
+  const seats = [];
+  for (const s of [-1, 1]) {
+    for (const x0 of [-6.5, 0, 6.5]) {
+      box(4.2, 0.4, 0.5, x0, 0.2, s * (d / 2 - 0.25), line);
+      box(4.2, 0.6, 0.1, x0, 0.7, s * (d / 2 - 0.05), line);
+      block(x0 - 2.1, s > 0 ? d / 2 - 0.5 : -d / 2, x0 + 2.1, s > 0 ? d / 2 : -d / 2 + 0.5);
+      for (const k of [-1.5, -0.5, 0.5, 1.5]) seats.push({ x: x0 + k, z: s * (d / 2 - 0.3), ry: s > 0 ? Math.PI : 0, stand: [x0 + k, s * (d / 2 - 1.1)] });
+      // Wall with windows onto the tunnel.
+      box(4.2, 0.6, 0.06, x0, 1.0, s * (d / 2), '#d6dae0');
+      box(4.2, 0.6, 0.06, x0, 2.5, s * (d / 2), '#d6dae0');
+      box(4.2, 0.9, 0.04, x0, 1.75, s * (d / 2), '#202a36');
+    }
+    for (const x0 of [-3.25, 3.25]) box(1.6, 2.4, 0.06, x0, 1.2, s * (d / 2), '#aeb4bd'); // doors
+    for (const x0 of [-3.25, 3.25]) box(0.05, 2.3, 0.05, x0, 1.15, s * 0.6, '#c9ced6'); // poles
+  }
+  for (const s of [-1, 1]) box(0.08, h, d, s * w / 2, h / 2, 0, '#d6dae0'); // car ends
+  // Tunnel lights streaming past the windows while the train moves.
+  const lights = [];
+  for (let k = 0; k < 8; k++) for (const s of [-1, 1]) {
+    lights.push(box(0.6, 0.12, 0.05, -w / 2 + k * (w / 8), 1.9, s * (d / 2 + 0.6), new THREE.MeshBasicMaterial({ color: '#ffd28a' })));
+  }
+  // The LED strip at both car ends: next stop.
+  const ledC = document.createElement('canvas');
+  ledC.width = 768; ledC.height = 64;
+  const ledTex = new THREE.CanvasTexture(ledC);
+  for (const s of [-1, 1]) {
+    const m = signMesh(ledTex, 3, 0.25);
+    m.position.set(s * (w / 2 - 0.05), 2.4, 0);
+    m.rotation.y = -s * Math.PI / 2;
+    scene.add(m);
+  }
+  const setLed = (txt) => {
+    const g = ledC.getContext('2d');
+    g.fillStyle = '#111'; g.fillRect(0, 0, 768, 64);
+    g.fillStyle = '#ff5a3c'; g.font = '700 28px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(txt, 384, 33, 752);
+    ledTex.needsUpdate = true;
+  };
+  setLed('');
+  let moving = false;
+  function animate(dt) {
+    if (!moving) return;
+    for (const l of lights) {
+      l.position.x -= dt * 22;
+      if (l.position.x < -w / 2) l.position.x += w;
+    }
+  }
+  return {
+    scene, products: [], colliders, seats, clerk: null, turntable: null, stations: {}, room: ROOM,
+    exit: { x: 1e4, z: 1e4 }, animate,
+    train: { setLed, setMoving: (m) => { moving = m; } },
+  };
+}
+
+function tileTexture(w, d) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#cfd3d9'; g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(80,90,100,0.18)'; g.lineWidth = 2;
+  for (let v = 0; v <= 128; v += 64) { g.beginPath(); g.moveTo(0, v); g.lineTo(128, v); g.stroke(); g.beginPath(); g.moveTo(v, 0); g.lineTo(v, 128); g.stroke(); }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(w / 2, d / 2);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}

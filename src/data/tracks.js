@@ -91,6 +91,23 @@ export const TRACKS = [
     kick: [0, 3], snare: [], rim: [2, 5, 6], hat: null,
     scale: [62, 65, 67, 69, 72, 74], melodyFrom: 8, melody: 0.55, lead: 'gayageum',
   },
+  {
+    id: 'busking',
+    icon: '🎸',
+    color: '#e0457b',
+    name: { en: 'Hongdae Street Song', ko: '홍대 거리의 노래', ja: '弘大ストリートソング', zh: '弘大街头之歌' },
+    desc: {
+      en: 'Acoustic pop, like a busker on Hongdae Walking Street: strummed guitar chords, a light beat and a catchy hook.',
+      ko: '홍대 걷고싶은거리 버스커 같은 어쿠스틱 팝: 기타 스트로크, 가벼운 비트, 귀에 남는 멜로디.',
+      ja: '弘大の歩きたい通りのバスカーのようなアコースティックポップ：ギターのストローク、軽いビート、耳に残るメロディ。',
+      zh: '像弘大步行街街头艺人一样的原声流行乐：扫弦吉他、轻快节拍和朗朗上口的旋律。',
+    },
+    bpm: 96, swing: 1.08,
+    chords: [[55, 59, 62, 67], [54, 57, 62, 66], [52, 55, 59, 64], [52, 55, 60, 64]],
+    bass: [43, 38, 40, 36], bassHits: [[0, 0, 1.6], [4, 7, 1.4]],
+    kick: [0, 4], snare: [2, 6], hat: 'odd',
+    scale: [67, 69, 71, 74, 76, 79], melodyFrom: 8, melody: 0.5, lead: 'pluck',
+  },
 ];
 
 export const trackById = (id) => TRACKS.find((tr) => tr.id === id) || TRACKS[0];

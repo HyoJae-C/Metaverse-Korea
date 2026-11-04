@@ -43,6 +43,12 @@ export function pickNewer(localAt, remoteAt, localData, remoteData, switched = f
   return remoteAt > localAt ? 'remote' : 'local';
 }
 
+// Remember (for this tab) that we left for Google's sign-in, so the start
+// screen can skip straight into the game when we come back.
+function markOAuth() {
+  try { sessionStorage.setItem('mk.oauth', '1'); } catch { /* ignore */ }
+}
+
 export class CloudSave {
   constructor(cfg) {
     this.cfg = cfg;
@@ -144,6 +150,7 @@ export class CloudSave {
   async linkGoogle() {
     if (!this.client || !this.user) return 'offline';
     await this._upload().catch(() => {}); // save right before leaving the page
+    markOAuth();
     const { error } = await this.client.auth.linkIdentity({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
     if (!error) return null;
     console.info('[cloud-save] link failed:', error.message);
@@ -154,6 +161,7 @@ export class CloudSave {
   // account's save then replaces this device's guest data.
   async signInGoogle() {
     if (!this.client) return 'offline';
+    markOAuth();
     const { error } = await this.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
     return error ? 'notReady' : null;
   }

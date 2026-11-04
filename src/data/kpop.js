@@ -6,8 +6,8 @@
 export const KPOP = [
   { id: 'BS7tz2rAOSA', artist: 'DAY6', title: '예뻤어 (You Were Beautiful)', channel: 'JYP Entertainment' },
   { id: 'pZvTd430IgI', artist: 'iKON', title: '지못미 (APOLOGY) · Dance ver.', channel: 'iKON' },
-  { id: 'FB5-rPa5wBA', artist: 'gareth.t', title: '玻璃 (glass)', channel: 'Gareth.T' },
   { id: 'gI882nr8bK8', artist: 'A2O LITE', title: 'NEON', channel: 'Moka Labels' },
+  { id: '7mDDM0eBWR0', artist: 'SOYEON', title: '퇴사할게여 (I’m gonna TOESA) (Narr. 기안84)', channel: 'i-dle (아이들)' },
 ];
 export const kpopById = (id) => KPOP.find((s) => s.id === id) || null;
 
