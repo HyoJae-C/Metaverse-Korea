@@ -711,8 +711,9 @@ function onboardHi5() {
   setTimeout(() => {
     talkToGuide(); // the first mission
     setOnboard(2);
-    // Then: the info centre, or explore on your own.
-    setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
+    // Then: the info centre, or explore on your own. After the guide's tip
+    // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
+    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }); }, 15000);
   }, 5600);
 }
 
@@ -2665,6 +2666,7 @@ function setAutoWalk(on) {
 $('guide-auto').onclick = () => setAutoWalk(!autoWalk);
 function setGuide(g) {
   guide = g;
+  if (onboard >= 2) $('info-hint').hidden = true; // a way is chosen: the info centre card would cover the guide bar
   routePoly = null; // plan a new route
   $('guide').hidden = mode !== 'street';
   routeTimer = 0; // draw the route on the next frame
@@ -3885,11 +3887,22 @@ function questText(q) {
   if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
+// Where an errand happens (for the 🧭 button next to the chip): its shop,
+// or the square guide once it is done. Null: no one place (talk, taxi).
+function questPlace(q, ready) {
+  if (ready || q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
+  const it = target && storefronts.get(target);
+  return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
+}
 function refreshQuestChip() {
   const q = quests.active;
-  $('quest-chip').hidden = !q;
+  $('quest-bar').hidden = !q;
   if (!q) return;
   const ready = quests.ready(questCtx());
+  const place = questPlace(q, ready);
+  $('quest-go').hidden = !place;
+  $('quest-go').textContent = '🧭 ' + t('mission.go');
   const count = q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '';
   // Folded: just the icon (and the count); tap the chip to unfold or fold it.
   $('quest-chip').classList.toggle('folded', questFolded);
@@ -3914,6 +3927,9 @@ function talkToGuide() {
   } else if (q) {
     say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
+    // On the first path, say the tip again too (it is easy to miss the first time).
+    const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
+    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
   } else if (quests.left) {
     const a = quests.start({
       stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
@@ -3929,6 +3945,13 @@ function talkToGuide() {
   }
   refreshQuestChip();
 }
+$('quest-go').onclick = () => {
+  const q = quests.active;
+  const place = q && questPlace(q, quests.ready(questCtx()));
+  if (!place) return;
+  if (interior) leaveStore();
+  setGuide(place);
+};
 $('quest-chip').onclick = () => {
   questFolded = !questFolded;
   try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }

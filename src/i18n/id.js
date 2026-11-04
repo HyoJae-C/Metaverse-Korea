@@ -187,6 +187,7 @@ export const ID = {
   'cat.bar': 'Bar',
   'cat.info': 'Info',
   'cat.library': 'Perpustakaan',
+  'cat.school': 'Sekolah',
   'cat.petshop': 'Toko hewan',
   'fish.open': 'Memancing',
   'fish.title': 'Memancing di Sungai Han',
