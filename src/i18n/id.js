@@ -8,6 +8,7 @@ export const ID = {
   'car.noRoad': 'Mobil mulai dari jalan besar. Jalan kaki dulu ke jalan utama.',
   'car.alley': 'Mobil tidak bisa masuk gang. Turun dan jalan kaki!',
   'credit.privacy': 'Privasi',
+  'credit.terms': 'Ketentuan',
   'cloud.guest': 'Tersimpan di server (akun tamu)',
   'cloud.account': 'Tersimpan di akunmu',
   'cloud.local': 'Hanya tersimpan di perangkat ini',
