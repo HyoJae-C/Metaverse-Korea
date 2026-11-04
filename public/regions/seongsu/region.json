@@ -212,47 +212,184 @@
     "note": "Underground stations. Add one by adding an entry to stations. exits[].at is a spot on the world map (Seongsu coordinates; other districts include their offset), ry the direction the stairs go down (radians). Move exits freely: the hole, walls and canopy follow.",
     "stations": [
       {
-        "id": "seoul-forest-station",
+        "id": "seongsu-station",
         "name": {
-          "ko": "서울숲",
-          "en": "Seoul Forest",
-          "ja": "ソウルの森",
-          "zh": "首尔林"
+          "ko": "성수",
+          "en": "Seongsu",
+          "ja": "聖水",
+          "zh": "圣水"
         },
-        "code": "K211",
+        "code": "211",
         "line": {
-          "color": "#f5a200",
+          "color": "#00a84d",
           "name": {
-            "ko": "수인분당선",
-            "en": "Suin-Bundang Line",
-            "ja": "水仁・盆唐線",
-            "zh": "水仁盆唐线"
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
           }
         },
         "prev": {
-          "ko": "왕십리",
-          "en": "Wangsimni"
+          "ko": "뚝섬",
+          "en": "Ttukseom"
         },
         "next": {
-          "ko": "압구정로데오",
-          "en": "Apgujeong Rodeo"
+          "ko": "건대입구",
+          "en": "Konkuk Univ."
+        },
+        "note": "Near the Achasan-ro Crossing (zone F). The real Seongsu Station is elevated; in the game you go down to its hall.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -165,
+              -104
+            ],
+            "ry": 4.3485
+          },
+          {
+            "n": 2,
+            "at": [
+              -180,
+              -56
+            ],
+            "ry": 4.3485
+          }
+        ]
+      },
+      {
+        "id": "gyeongbokgung-station",
+        "name": {
+          "ko": "경복궁",
+          "en": "Gyeongbokgung",
+          "ja": "景福宮",
+          "zh": "景福宫"
+        },
+        "code": "327",
+        "line": {
+          "color": "#ef7c1c",
+          "name": {
+            "ko": "3호선",
+            "en": "Line 3",
+            "ja": "3号線",
+            "zh": "3号线"
+          }
+        },
+        "prev": {
+          "ko": "독립문",
+          "en": "Dongnimmun"
+        },
+        "next": {
+          "ko": "안국",
+          "en": "Anguk"
         },
         "exits": [
           {
             "n": 1,
             "at": [
-              -21.0,
-              253.1
+              -1857,
+              -911
             ],
-            "ry": -1.9313
+            "ry": -1.5708
           },
           {
             "n": 2,
             "at": [
-              9.4,
-              251.4
+              -1837,
+              -889
             ],
-            "ry": 1.2336
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "itaewon-station",
+        "name": {
+          "ko": "이태원",
+          "en": "Itaewon",
+          "ja": "梨泰院",
+          "zh": "梨泰院"
+        },
+        "code": "630",
+        "line": {
+          "color": "#cd7c2f",
+          "name": {
+            "ko": "6호선",
+            "en": "Line 6",
+            "ja": "6号線",
+            "zh": "6号线"
+          }
+        },
+        "prev": {
+          "ko": "녹사평",
+          "en": "Noksapyeong"
+        },
+        "next": {
+          "ko": "한강진",
+          "en": "Hangangjin"
+        },
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1354,
+              183
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              -1284,
+              203
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "jamsil-station",
+        "name": {
+          "ko": "잠실",
+          "en": "Jamsil",
+          "ja": "蚕室",
+          "zh": "蚕室"
+        },
+        "code": "216",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "잠실나루",
+          "en": "Jamsillaru"
+        },
+        "next": {
+          "ko": "잠실새내",
+          "en": "Jamsilsaenae"
+        },
+        "note": "Songpa-daero / Olympic-ro corner. Line 8 also stops here; the signs show Line 2.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              502,
+              511
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              538,
+              529
+            ],
+            "ry": 1.5708
           }
         ]
       }

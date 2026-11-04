@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/seongsu/region.json', import.meta.url)));
-const map = JSON.parse(readFileSync(new URL('../public/regions/seongsu/map.json', import.meta.url)));
 const stations = region.subway.stations;
 const ex = { at: [10, 20], ry: 0.7 };
 
@@ -45,21 +44,34 @@ test('hall stairs: arrive at the foot, climb to leave', () => {
   }
 });
 
-// The stairwells cut holes in the ground: they must not sit on a road or in a building.
-test('Seongsu station exits are clear of roads and buildings', () => {
+// The stairwells cut holes in the ground: they must not sit on a road or in a building,
+// in whichever district they are (district maps are placed at their offsets).
+test('station exits are clear of roads and buildings', () => {
   const segDist = (px, pz, [ax, az], [bx, bz]) => {
     const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;
     const t = L ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L)) : 0;
     return Math.hypot(px - ax - t * dx, pz - az - t * dz);
   };
   const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const roads = [], solids = [];
+  for (const d of region.districts) {
+    const m = JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + d.map, import.meta.url)));
+    const sh = (p) => p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]);
+    for (const r of m.roads) roads.push({ ...r, p: sh(r.p) });
+    for (const b of m.buildings) if (!(b.m > 2)) solids.push(sh(b.p));
+    for (const b of m.blockers || []) solids.push(sh(b.p));
+    for (const a of m.areas || []) if (a.k === 'water') solids.push(sh(a.p));
+  }
   assert.ok(stations.length >= 1);
+  const ids = new Set();
   for (const st of stations) {
+    assert.ok(st.id && !ids.has(st.id), 'unique id');
+    ids.add(st.id);
     assert.ok(st.name?.en && st.name?.ko && st.line?.color, 'name and line');
     for (const e of st.exits) {
       for (const [x, z] of blockersOf(e).flatMap((w) => w.p).concat(holeOf(e))) {
-        for (const r of map.roads) for (let i = 1; i < r.p.length; i++) assert.ok(segDist(x, z, r.p[i - 1], r.p[i]) > r.w / 2 + 0.5, `exit ${e.n} on ${r.n?.en || r.k}`);
-        for (const b of map.buildings) assert.ok(!inPoly(x, z, b.p), `exit ${e.n} in a building`);
+        for (const r of roads) for (let i = 1; i < r.p.length; i++) assert.ok(segDist(x, z, r.p[i - 1], r.p[i]) > r.w / 2 + 0.5, `${st.id} exit ${e.n} on ${r.n?.en || r.k}`);
+        for (const p of solids) assert.ok(!inPoly(x, z, p), `${st.id} exit ${e.n} in a building or water`);
       }
     }
   }
