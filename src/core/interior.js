@@ -878,6 +878,44 @@ export function buildInterior(store) {
       box(0.36, 0.26, 0.22, 0, 1.36, sz + 2.6, '#1d1b22');
       block(0, sz + 2.6, 0.6, 0.6);
       stations.photo = [{ x: 0, z: sz, ry: 0, camZ: sz + 2.6, half: 0.4, solo: true }];
+    } else if (store.workshop === 'tarot') {
+      // Starlight Tarot: a round table with a purple cloth, a crystal ball,
+      // candles and a fanned deck. The reader sits behind it, you sit facing
+      // her; the reading opens from your chair.
+      const tz = -d / 2 + 2.6;
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.06, 24), mat('#4b2f7a'));
+      top.position.set(0, 0.76, tz);
+      scene.add(top);
+      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.08, 0.7, 24, 1, true), mat('#5b3f8c'));
+      cloth.position.set(0, 0.4, tz);
+      scene.add(cloth);
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
+      ball.position.set(0, 0.98, tz - 0.25);
+      scene.add(ball);
+      box(0.2, 0.05, 0.2, 0, 0.81, tz - 0.25, '#d4a73a'); // its stand
+      for (const sx of [-0.65, 0.65]) {
+        box(0.07, 0.18, 0.07, sx, 0.88, tz - 0.1, '#f7f1e3');
+        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
+        flame.position.set(sx, 1.0, tz - 0.1);
+        scene.add(flame);
+      }
+      for (let k = 0; k < 7; k++) { // a fanned deck, face down
+        const card = box(0.14, 0.01, 0.22, (k - 3) * 0.11, 0.8, tz + 0.3, '#2a1f4f');
+        card.rotation.y = (k - 3) * 0.12;
+      }
+      const glow = new THREE.PointLight(0xc9a6ff, 6, 6);
+      glow.position.set(0, 1.6, tz);
+      scene.add(glow);
+      for (const sx of [-1, 1]) box(0.5, 0.45, 0.5, sx * 0, 0.22, tz + sx * 1.05, '#3a2c3f'); // stools
+      block(0, tz, 2, 2);
+      seats.push({ x: 0, z: tz + 1.05, ry: Math.PI, stand: [0, tz + 1.9], tarot: true });
+      stations.tarotReader = { x: 0, z: tz - 1.05, ry: 0 };
+      // Star stickers on the back wall.
+      for (let k = 0; k < 14; k++) {
+        const star = new THREE.Mesh(new THREE.CircleGeometry(0.06 + (k % 3) * 0.03, 5), new THREE.MeshBasicMaterial({ color: k % 2 ? '#ffd36e' : '#c9a6ff' }));
+        star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.6, -d / 2 + 0.03);
+        scene.add(star);
+      }
     } else if (store.workshop === 'claw') {
       // A row of claw machines along the back wall.
       const n = Math.max(2, Math.min(4, Math.floor((w - 2) / 1.6)));
@@ -1135,7 +1173,7 @@ export function buildInterior(store) {
     box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
     box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
     block(cx, cz, 2.2, 0.8);
-    clerk = { x: cx, z: cz + 0.75, ry: Math.PI };
+    clerk = stations.tarotReader || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
   }
   // Plants in the corners.
   if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
