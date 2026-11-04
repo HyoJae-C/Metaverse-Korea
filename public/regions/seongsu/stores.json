@@ -532,14 +532,14 @@
       "products": []
     },
     {
-      "id": "haneul-land",
+      "id": "another-land",
       "category": "play",
       "workshop": "themepark",
       "size": "park",
-      "at": [-88, 45],
-      "name": { "en": "Haneul Land", "ko": "하늘랜드", "ja": "ハヌルランド", "zh": "天空乐园" },
-      "tagline": { "en": "Carousel, Ferris wheel and a swinging pirate ship", "ko": "회전목마, 대관람차, 바이킹", "ja": "メリーゴーランド・観覧車・バイキング", "zh": "旋转木马、摩天轮、海盗船" },
-      "colors": { "sign": "#7b3fe4", "awning": "#ffd0e0", "accent": "#fff3f7" },
+      "at": [316, 89],
+      "name": { "en": "Another Land", "ko": "어나더랜드", "ja": "アナザーランド", "zh": "另一乐园" },
+      "tagline": { "en": "A candy-house theme park: carousel, Ferris wheel, pirate ship and a drop tower", "ko": "과자의 집 놀이공원: 회전목마, 대관람차, 바이킹, 자이로드롭", "ja": "お菓子の家の遊園地：メリーゴーランド・観覧車・バイキング・フリーフォール", "zh": "糖果屋游乐园：旋转木马、摩天轮、海盗船、跳楼机" },
+      "colors": { "sign": "#e2508f", "awning": "#ffd0e0", "accent": "#fff3f7" },
       "products": []
     },
     {

@@ -1,4 +1,5 @@
 // The 🪙 emoji is a silver coin on iPhones and hard to see on our light UI.
+// (The money is now drawn as a little pay card: Seoul pays by card.)
 // Every 🪙 the game writes on the page is swapped for a gold coin drawn in
 // CSS (.coin in style.css), so the code can keep writing the emoji.
 const COIN = '🪙';

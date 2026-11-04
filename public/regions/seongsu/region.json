@@ -60,6 +60,14 @@
         -1324,
         193
       ]
+    },
+    {
+      "id": "anotherland",
+      "map": "districts/anotherland.json",
+      "offset": [
+        320,
+        89
+      ]
     }
   ],
   "links": [

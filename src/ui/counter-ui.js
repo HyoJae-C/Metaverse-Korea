@@ -11,11 +11,11 @@ export const coinPrice = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 100
 export const heldFor = (product, store) => (['skewer', 'bread', 'samgak', 'bowl', 'roll'].includes(product.model) ? 'food' : store?.takeaway || store?.category === 'cafe' ? 'coffee' : 'glass');
 
 const T = {
-  title: { en: 'Menu', ko: '메뉴', ja: 'メニュー', zh: '菜单', es: 'Carta', ar: 'القائمة', id: 'Menu' },
-  hint: { en: 'Order and pay with coins.', ko: '코인으로 주문해요.', ja: 'コインで注文できます。', zh: '用硬币点单。', es: 'Pide y paga con monedas.', ar: 'اطلب وادفع بالعملات.', id: 'Pesan dan bayar dengan koin.' },
-  coffeeHint: { en: 'Coffee to go: sip it while you walk and your stamina fills right up!', ko: '테이크아웃 커피: 들고 다니며 마시면 체력이 바로 가득 차요!', ja: 'テイクアウトコーヒー：飲むとスタミナがすぐ満タンに！', zh: '外带咖啡：边走边喝，体力马上回满！', es: 'Café para llevar: ¡bébelo y tu energía se llena al instante!', ar: 'قهوة للطريق: ارتشفها وأنت تمشي فتمتلئ طاقتك فورًا!', id: 'Kopi bawa pulang: seruput sambil jalan dan staminamu langsung penuh!' },
-  buy: { en: '🪙 {n}', ko: '🪙 {n}', ja: '🪙 {n}', zh: '🪙 {n}', es: '🪙 {n}', ar: '🪙 {n}', id: '🪙 {n}' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', id: 'Tutup' },
+  title: { en: 'Menu', ko: '메뉴', ja: 'メニュー', zh: '菜单', es: 'Carta', ar: 'القائمة', vi: 'Thực đơn', hi: 'मेन्यू', id: 'Menu' },
+  hint: { en: 'Order and pay with coins.', ko: '코인으로 주문해요.', ja: 'コインで注文できます。', zh: '用硬币点单。', es: 'Pide y paga con monedas.', ar: 'اطلب وادفع بالعملات.', vi: 'Gọi món và trả bằng xu.', hi: 'ऑर्डर करें और सिक्कों से भुगतान करें।', id: 'Pesan dan bayar dengan koin.' },
+  coffeeHint: { en: 'Coffee to go: sip it while you walk and your stamina fills right up!', ko: '테이크아웃 커피: 들고 다니며 마시면 체력이 바로 가득 차요!', ja: 'テイクアウトコーヒー：飲むとスタミナがすぐ満タンに！', zh: '外带咖啡：边走边喝，体力马上回满！', es: 'Café para llevar: ¡bébelo y tu energía se llena al instante!', ar: 'قهوة للطريق: ارتشفها وأنت تمشي فتمتلئ طاقتك فورًا!', vi: 'Cà phê mang đi: vừa đi vừa nhấp, thể lực sẽ hồi đầy ngay!', hi: 'टेकअवे कॉफ़ी: चलते-चलते पिएँ और आपकी ताक़त तुरंत भर जाएगी!', id: 'Kopi bawa pulang: seruput sambil jalan dan staminamu langsung penuh!' },
+  buy: { en: '🪙 {n}', ko: '🪙 {n}', ja: '🪙 {n}', zh: '🪙 {n}', es: '🪙 {n}', ar: '🪙 {n}', vi: '🪙 {n}', hi: '🪙 {n}', id: '🪙 {n}' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', hi: 'बंद करें', id: 'Tutup' },
 };
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

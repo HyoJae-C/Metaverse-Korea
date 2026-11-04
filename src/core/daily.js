@@ -102,7 +102,7 @@ export class Daily {
     this.s.total = (this.s.total || 0) + 1;
     write(this.s);
     const coins = this.s.streak % 7 === 0 ? REWARD.week : REWARD.checkIn;
-    this.wallet.add(coins);
+    this.wallet.add(coins, { k: 'ledger.checkIn' });
     this._emit();
     return coins;
   }
@@ -118,7 +118,7 @@ export class Daily {
     let coins = REWARD.mission, bonus = false;
     if (!this.s.bonus && this.allDone()) { this.s.bonus = bonus = true; coins += REWARD.allDone; }
     write(this.s);
-    this.wallet.add(coins);
+    this.wallet.add(coins, { k: 'ledger.mission' });
     this._emit();
     return { mission: m, coins, bonus };
   }
