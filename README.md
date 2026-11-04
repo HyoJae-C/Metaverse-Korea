@@ -1,4 +1,4 @@
-# Metaverse Korea
+# Another Seoul
 
 A browser-based 3D virtual trip to Korea for international visitors. No install: open the website and walk.
 First stop: **Seongsu-dong, Seoul**.
