@@ -342,4 +342,68 @@ export class Sfx {
       }
     }
   }
+
+  // ---- Subway sounds (all made here; no real metro recordings) ----
+  _tone(f, at, len, vol, type = 'sine', f2 = null) {
+    const c = this.ctx, t = c.currentTime + 0.02 + at;
+    const o = c.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + len);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.02, len / 4));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 2400;
+    o.connect(lp).connect(g).connect(c.destination);
+    o.start(t);
+    o.stop(t + len + 0.05);
+  }
+  _hiss(at, len, vol, from = 3000, to = 1200) {
+    const c = this.ctx, t = c.currentTime + 0.02 + at;
+    if (!this._white) {
+      const b = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      this._white = b;
+    }
+    const src = c.createBufferSource();
+    src.buffer = this._white;
+    src.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 0.7;
+    f.frequency.setValueAtTime(from, t);
+    f.frequency.exponentialRampToValueAtTime(to, t + len);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(t);
+    src.stop(t + len + 0.05);
+  }
+  // Doors opening: an air hiss and a soft two-note "ding-dong".
+  doorOpen() {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.7, 0.05);
+    this._tone(1047, 0.05, 0.6, 0.05); // C6
+    this._tone(880, 0.3, 0.8, 0.05); // A5
+  }
+  // Doors closing: three quick warning beeps, then the doors meet.
+  doorClose() {
+    if (!this.on || !this._ctx()) return;
+    for (let i = 0; i < 3; i++) this._tone(1319, i * 0.28, 0.14, 0.04, 'triangle'); // E6
+    this._hiss(0.85, 0.45, 0.04, 1800, 700);
+    this._tone(120, 1.25, 0.18, 0.08, 'sine', 60); // thud
+  }
+  // Departure signal: a short two-note horn, then the motor winding up.
+  depart() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(587, 0, 0.32, 0.035, 'square'); // D5
+    this._tone(784, 0.34, 0.5, 0.035, 'square'); // G5
+    this._tone(140, 0.5, 1.8, 0.03, 'sawtooth', 420); // motor whine rising
+  }
 }

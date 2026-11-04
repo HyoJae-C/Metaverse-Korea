@@ -436,7 +436,7 @@ export const ES = {
   'credit.weather': 'Tiempo',
   'hud.weatherNow': 'Tiempo en directo en Seongsu-dong',
   'start.next': 'Siguiente',
-  'app.disclaimer': 'Las calles se basan en datos reales de OpenStreetMap. Todas las tiendas, marcas y productos son muestras ficticias, no los negocios reales de esos lugares.',
+  'app.disclaimer': 'Las calles son un mapa de juego inspirado en barrios reales de Seúl, no una copia exacta. Todas las tiendas, marcas y productos son muestras ficticias, no negocios reales.',
   'start.back': 'Atrás',
   'look.title': 'Crea tu personaje',
   'look.random': 'Sorpréndeme',
@@ -508,5 +508,4 @@ export const ES = {
   'look.model': 'Personaje',
   'look.tee': 'Color de la camiseta',
   'credit.chars': 'Personajes',
-  'credit.map': 'Datos del mapa',
 };
