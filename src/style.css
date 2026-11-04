@@ -746,6 +746,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 a.setting-row { text-decoration: none; color: inherit; }
 .ride-options { display: grid; gap: 10px; }
 .ride-options .primary { margin: 0; }
+.train-panel .chip { background: #fff; padding: 10px 14px; font-weight: 700; }
+.train-panel #train-off { width: 100%; margin-top: 10px; }
+.train-panel #train-status { margin: 4px 0 10px; }
 
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
 .cloud-actions .chip { font-size: 13px; }

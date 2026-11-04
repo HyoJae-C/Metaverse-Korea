@@ -70,6 +70,14 @@
       ]
     },
     {
+      "id": "seodaemun",
+      "map": "districts/seodaemun.json",
+      "offset": [
+        -2400,
+        -900
+      ]
+    },
+    {
       "id": "hongdae",
       "map": "districts/hongdae.json",
       "offset": [
@@ -161,6 +169,26 @@
         "en": "To Jamsil Bridge",
         "ja": "蚕室大橋へ",
         "zh": "往蚕室大桥"
+      }
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          -1997,
+          -900
+        ],
+        [
+          -2180,
+          -900
+        ]
+      ],
+      "n": {
+        "ko": "사직로",
+        "en": "Sajik-ro",
+        "ja": "社稷路",
+        "zh": "社稷路"
       }
     },
     {
@@ -331,6 +359,52 @@
         ]
       },
       {
+        "id": "hongik-univ-station",
+        "name": {
+          "ko": "홍대입구",
+          "en": "Hongik Univ.",
+          "ja": "弘大入口",
+          "zh": "弘大入口"
+        },
+        "code": "239",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "합정",
+          "en": "Hapjeong"
+        },
+        "next": {
+          "ko": "신촌",
+          "en": "Sinchon"
+        },
+        "note": "Yanghwa-ro, by the foot of Hongdae Walking Street. The Airport Railroad and Gyeongui-Jungang Line also stop here; the signs show Line 2.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -2820,
+              -591
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              -2810,
+              -569
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
         "id": "itaewon-station",
         "name": {
           "ko": "이태원",
@@ -416,52 +490,6 @@
             "at": [
               538,
               529
-            ],
-            "ry": 1.5708
-          }
-        ]
-      },
-      {
-        "id": "hongik-univ-station",
-        "name": {
-          "ko": "홍대입구",
-          "en": "Hongik Univ.",
-          "ja": "弘大入口",
-          "zh": "弘大入口"
-        },
-        "code": "239",
-        "line": {
-          "color": "#00a84d",
-          "name": {
-            "ko": "2호선",
-            "en": "Line 2",
-            "ja": "2号線",
-            "zh": "2号线"
-          }
-        },
-        "prev": {
-          "ko": "합정",
-          "en": "Hapjeong"
-        },
-        "next": {
-          "ko": "신촌",
-          "en": "Sinchon"
-        },
-        "note": "Yanghwa-ro, by the foot of Hongdae Walking Street. The Airport Railroad and Gyeongui-Jungang Line also stop here; the signs show Line 2.",
-        "exits": [
-          {
-            "n": 1,
-            "at": [
-              -2820,
-              -591
-            ],
-            "ry": -1.5708
-          },
-          {
-            "n": 2,
-            "at": [
-              -2810,
-              -569
             ],
             "ry": 1.5708
           }
