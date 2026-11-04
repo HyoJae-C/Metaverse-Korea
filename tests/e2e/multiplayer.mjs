@@ -22,7 +22,9 @@ async function join(name) {
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
   if ((await page.inputValue('#nickname')) !== name) throw new Error('nickname field did not accept typing');
-  await page.click('#start-btn');
+  // Building the world blocks the page; with software GL and a first player
+  // already rendering, the second click can take over 30 s on CI runners.
+  await page.click('#start-btn', { timeout: 90000 });
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
   // First visit: the welcome coins card covers the screen until it's closed.
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
