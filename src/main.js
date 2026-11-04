@@ -1568,6 +1568,37 @@ function sprayPerfume() {
   else { setHeld({ ...held, sips: sprays }); shop.toast(fmt(L(PERFUME_TEXT.sprayed), { name, n: sprays })); }
   lastSent = null; // others see the scent at once
 }
+// Shops with "clerkRoams" (the big perfume houses): the clerk walks from
+// display to display, pauses there, and greets visitors who come close.
+const CLERK_HI = [['어서 오세요!', 'eoseo oseyo', 'Welcome!'], ['천천히 둘러보세요.', 'cheoncheonhi dulleoboseyo.', 'Take your time and look around.'], ['시향해 보시겠어요?', 'sihyang-hae bosigesseoyo?', 'Would you like to try a tester?']];
+const roam = { to: null, wait: 2, hiAt: 0, last: -1 };
+function roamClerk(dt, p) {
+  const r = clerk.ch.root.position;
+  const now = performance.now();
+  if (Math.hypot(p.x - r.x, p.z - r.z) < 2.4 && now - roam.hiAt > 20000) { // say hi, face them
+    roam.hiAt = now;
+    roam.wait = Math.max(roam.wait, 2.5);
+    roam.to = null;
+    clerk.ch.root.rotation.y = Math.atan2(p.x - r.x, p.z - r.z);
+    say(clerk, $('labels'), CLERK_HI[Math.floor(Math.random() * CLERK_HI.length)]);
+  }
+  if (roam.wait > 0) { roam.wait -= dt; return 0; }
+  if (!roam.to) {
+    const spots = interior.products;
+    if (!spots?.length) return 0;
+    let k = Math.floor(Math.random() * spots.length);
+    if (k === roam.last) k = (k + 1) % spots.length; // somewhere new each time
+    roam.last = k;
+    const s = spots[k].pos;
+    roam.to = { x: s.x, z: s.z };
+  }
+  const dx = roam.to.x - r.x, dz = roam.to.z - r.z, dist = Math.hypot(dx, dz);
+  if (dist < 0.15) { roam.to = null; roam.wait = 3 + Math.random() * 3; return 0; }
+  const step = Math.min(dist, dt * 1.1);
+  r.x += (dx / dist) * step; r.z += (dz / dist) * step;
+  clerk.ch.root.rotation.y = Math.atan2(dx, dz);
+  return 0.35;
+}
 // Someone in the same shop tried a tester: a burst and the name next to them.
 let lastSniffSent = 0;
 const sniffSeen = new Map(); // remote id -> time of their last tester
@@ -1953,10 +1984,14 @@ function enterStore(item) {
   if (built.clerk && !built.clerkNpc) {
     built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
+    // A roaming clerk starts on the shop floor, in front of the counter (all
+    // the displays are on that side, so the walk never cuts through it).
+    if (store.clerkRoams) built.clerkNpc.ch.root.position.set(built.clerk.x - 1.9, 0, built.clerk.z - 1.75);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
   }
   clerk = built.clerkNpc || null;
+  roam.to = null; roam.wait = 2; roam.hiAt = performance.now(); // (the door greeting is enough at first)
   if (built.trainer && !built.trainerNpc) {
     built.trainerNpc = makeNpc($('labels'), L(TRAINER_NAME), TRAINER_LOOK);
     built.trainerNpc.ch.root.position.set(built.trainer.x, 0, built.trainer.z);
@@ -4761,7 +4796,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels();
-    if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+    if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }
   if (squareNpc) {
