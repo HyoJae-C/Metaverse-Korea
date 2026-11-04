@@ -52,7 +52,7 @@ export const TOPICS = [
     text: { en: 'Treadmill, dumbbells, bench press and push-ups. Every set makes you a tiny bit faster (up to +1%).', ko: '러닝머신, 아령, 벤치프레스, 푸시업. 한 세트마다 이동속도가 아주 조금씩 빨라져요(최대 +1%).', ja: 'ランニングマシン、ダンベル、ベンチプレス、腕立て。1セットごとに少しずつ速く（最大+1%）。', zh: '跑步机、哑铃、卧推、俯卧撑。每完成一组速度会稍微提升（最多+1%）。' } },
   { icon: '📚', to: { store: 'chaekmaru-library' },
     title: { en: 'Korean books', ko: '한국어 책', ja: '韓国語の本', zh: '韩语书' },
-    text: { en: '10 books at the library: Hangul, greetings, idioms, new slang, dad jokes and more. Carry one and read it sitting anywhere.', ko: '도서관에 책 10권: 한글, 인사말, 사자성어, 신조어, 아재개그 등. 들고 가서 어디서든 앉아 읽어요.', ja: '図書館に10冊：ハングル、あいさつ、四字熟語、新語、おやじギャグなど。持ち出して座って読めます。', zh: '图书馆有10本书：韩文、问候语、成语、新词、冷笑话等。带走后坐下就能读。' } },
+    text: { en: '11 books at the library: Hangul, greetings, idioms, new slang, internet slang, dad jokes and more. Carry one and read it sitting anywhere.', ko: '도서관에 책 11권: 한글, 인사말, 사자성어, 신조어, 인터넷 용어, 아재개그 등. 들고 가서 어디서든 앉아 읽어요.', ja: '図書館に11冊：ハングル、あいさつ、四字熟語、新語、ネット用語、おやじギャグなど。持ち出して座って読めます。', zh: '图书馆有11本书：韩文、问候语、成语、新词、网络用语、冷笑话等。带走后坐下就能读。' } },
   { icon: '🎡', to: { store: 'haneul-land' },
     title: { en: 'Amusement park', ko: '놀이공원', ja: '遊園地', zh: '游乐园' },
     text: { en: 'Haneul Land: carousel, Ferris wheel and a pirate ship. 🪙 2 a ride.', ko: '하늘랜드: 회전목마, 대관람차, 바이킹. 한 번에 🪙 2.', ja: 'ハヌルランド：メリーゴーランド、観覧車、バイキング。1回 🪙 2。', zh: '天空乐园：旋转木马、摩天轮、海盗船。每次 🪙 2。' } },
