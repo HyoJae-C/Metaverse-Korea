@@ -62,11 +62,11 @@
       ]
     },
     {
-      "id": "anotherland",
-      "map": "districts/anotherland.json",
+      "id": "songpa",
+      "map": "districts/songpa.json",
       "offset": [
-        320,
-        89
+        520,
+        620
       ]
     }
   ],
@@ -129,6 +129,30 @@
         "en": "Itaewon-ro",
         "ja": "梨泰院路",
         "zh": "梨泰院路"
+      }
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          260,
+          351.7
+        ],
+        [
+          390,
+          355
+        ],
+        [
+          520,
+          358
+        ]
+      ],
+      "n": {
+        "ko": "잠실대교 가는 길",
+        "en": "To Jamsil Bridge",
+        "ja": "蚕室大橋へ",
+        "zh": "往蚕室大桥"
       }
     }
   ],
