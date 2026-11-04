@@ -44,7 +44,8 @@ OAuth consent screen (Branding):
 - Home page: `https://another-seoul.com/`
 - Privacy policy: `https://another-seoul.com/privacy.html`
 - Terms of service: `https://another-seoul.com/terms.html`
-- Authorized domains: `another-seoul.com` and `supabase.co`
+- Authorized domains: `another-seoul.com` and `qiefmpxiiercqfazigjv.supabase.co`
+  (Google rejects the bare `supabase.co`, a shared public suffix)
 
 While the app is in "Testing", only listed test users can sign in. Publish it
 to let everyone in (a logo upload triggers Google's brand review).
