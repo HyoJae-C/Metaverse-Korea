@@ -317,4 +317,29 @@ export class Sfx {
     k.start(t + len - 0.08);
     k.stop(t + len + 0.05);
   }
+
+  // Train arrival chime: our own short bell-like phrase (not a recording of
+  // any real metro jingle). Four soft notes rising, then a settling fifth.
+  arrivalChime() {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t0 = c.currentTime + 0.03;
+    const notes = [[76, 0], [79, 0.22], [84, 0.44], [83, 0.66], [79, 0.98]]; // E5 G5 C6 B5 G5
+    for (const [m, at] of notes) {
+      const f = 440 * 2 ** ((m - 69) / 12), t = t0 + at, len = 1.1;
+      for (const [mult, vol] of [[1, 0.07], [2.76, 0.012], [5.4, 0.005]]) { // bell partials
+        const o = c.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = f * mult;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + len / mult);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + len + 0.05);
+      }
+    }
+  }
 }

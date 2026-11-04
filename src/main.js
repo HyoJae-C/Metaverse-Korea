@@ -59,6 +59,9 @@ import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
+import { TarotUI } from './ui/tarot-ui.js';
+import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
@@ -454,6 +457,8 @@ const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
+// Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
 // that end back here (광장 미션), and a big screen (전광판) for ads.
@@ -1805,7 +1810,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
@@ -1972,9 +1977,11 @@ const METRO_TEXT = {
   leaving: { en: 'Doors close in {n}s', ko: '{n}초 뒤 문이 닫혀요', ja: 'あと{n}秒でドアが閉まります', zh: '{n}秒后关门' },
   moving: { en: 'Next: {name}', ko: '다음 역: {name}', ja: '次は {name}', zh: '下一站：{name}' },
   getOff: { en: 'Get off here', ko: '여기서 내리기', ja: 'ここで降りる', zh: '在这里下车' },
+  arriving: { en: 'Arriving at {name}', ko: '곧 {name}에 도착해요', ja: 'まもなく {name}', zh: '即将到达 {name}' },
   choose: { en: 'Pick a station first', ko: '먼저 내릴 역을 골라 주세요', ja: '先に降りる駅を選んでください', zh: '请先选择下车站' },
 };
-let metro = null; // { from, t, dir, leaveAt, dest, arriveAt }
+let metro = null; // { from, t, dir, leaveAt, dest, arriveAt, chimed }
+const CHIME_LEAD = 2; // seconds before arrival
 const stationIndex = () => stationStores.indexOf(interior?.store);
 const stationName = (k) => localName(stationStores[k].name, getLanguage());
 function boardTrain(t, left) {
@@ -2012,6 +2019,7 @@ $('train-off').onclick = () => metroGetOff();
 function pickStop(k) {
   if (!metro || metro.arriveAt && Date.now() > metro.arriveAt - 500) return;
   metro.dest = k;
+  metro.chimed = false;
   const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
   metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
   renderMetro();
@@ -2044,7 +2052,12 @@ function updateMetro(p) {
   interior.train.setMoving(moving);
   let led;
   if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
-  else if (metro.dest != null) led = fmt(L(METRO_TEXT.moving), { name: stationName(metro.dest) });
+  else if (metro.dest != null) {
+    // Chime and "arriving" a couple of seconds before the doors open there.
+    const soon = now >= metro.arriveAt - CHIME_LEAD * 1000;
+    if (soon && !metro.chimed) { metro.chimed = true; sfx.arrivalChime(); }
+    led = fmt(L(soon ? METRO_TEXT.arriving : METRO_TEXT.moving), { name: stationName(metro.dest) });
+  }
   else led = L(METRO_TEXT.pick);
   if (led !== metro.led) {
     metro.led = led;
@@ -3065,6 +3078,77 @@ const clawUi = new ClawUI({
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
+// Starlight Tarot (Hongdae): sit at the reader's table and draw three cards.
+const TAROT_TEXT = {
+  reader: { en: 'Tarot reader', ko: '타로 마스터', ja: 'タロット占い師', zh: '塔罗师', es: 'Tarotista', ar: 'قارئة التاروت', vi: 'Thầy bói tarot', hi: 'टैरो रीडर', id: 'Pembaca tarot' },
+  open: { en: 'Tarot reading', ko: '타로 보기', ja: 'タロット占い', zh: '塔罗占卜', es: 'Lectura de tarot', ar: 'قراءة التاروت', vi: 'Xem bài tarot', hi: 'टैरो रीडिंग', id: 'Baca tarot' },
+  hint: { en: 'Have a seat at my table and I\'ll read your cards.', ko: '테이블에 앉으시면 타로를 봐 드릴게요.', ja: 'テーブルに座ってください。カードを読みますね。', zh: '请在我的桌前坐下，我来为你解牌。', es: 'Siéntate a mi mesa y te leo las cartas.', ar: 'اجلس إلى طاولتي وسأقرأ لك البطاقات.', vi: 'Mời ngồi vào bàn, tôi sẽ xem bài cho bạn.', hi: 'मेरी मेज़ पर बैठिए, मैं आपके कार्ड पढ़ूँगी।', id: 'Silakan duduk di mejaku, aku bacakan kartumu.' },
+};
+const TAROT_LINES = [
+  ['어서 오세요, 앉으세요.', 'eoseo oseyo, anjeuseyo.', 'Welcome, have a seat.'],
+  ['카드가 좋게 나왔네요!', 'kadeuga joke nawanneyo!', 'The cards look good!'],
+  ['마음을 편하게 하고 골라 보세요.', 'maeumeul pyeonhage hago golla boseyo.', 'Relax and pick a card.'],
+];
+const tarotUi = new TarotUI({
+  root: $('tarot-panel'),
+  wallet,
+  onPick: () => sfx.pop?.(),
+  onRead: (cards) => {
+    refreshWallet();
+    if (clerk) { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[1]); }
+    showBubble(myLabel, $('labels'), cards.map((c) => c.icon).join(' '), 4000);
+  },
+});
+// Busking: step onto a busking stage and perform; the crowd tips now and then.
+const BUSK_TEXT = {
+  start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
+  stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
+  hi: { en: 'Say hi to the busker', ko: '버스커에게 인사', ja: 'バスカーにあいさつ', zh: '和街头艺人打招呼', es: 'Saludar al músico', ar: 'حيِّ العازف', vi: 'Chào nghệ sĩ', hi: 'कलाकार को नमस्ते', id: 'Sapa pengamen' },
+  begin: { en: '🎤 You\'re on! The crowd is listening. Moving ends the show.', ko: '🎤 공연 시작! 관객이 듣고 있어요. 움직이면 공연이 끝나요.', ja: '🎤 本番スタート！観客が聴いています。動くと終わります。', zh: '🎤 开演了！观众在听。移动就会结束表演。', es: '🎤 ¡A escena! El público escucha. Si te mueves, termina.', ar: '🎤 بدأ العرض! الجمهور يستمع. الحركة تنهي العرض.', vi: '🎤 Bắt đầu! Khán giả đang nghe. Di chuyển sẽ kết thúc.', hi: '🎤 शो शुरू! भीड़ सुन रही है। चलने से शो ख़त्म होगा।', id: '🎤 Mulai! Penonton mendengarkan. Bergerak mengakhiri pertunjukan.' },
+  tip: { en: '🪙 +{n} A listener dropped a tip in your guitar case!', ko: '🪙 +{n} 관객이 기타 케이스에 팁을 넣었어요!', ja: '🪙 +{n} 観客がギターケースにチップを入れました！', zh: '🪙 +{n} 有观众往吉他盒里放了小费！', es: '🪙 +{n} ¡Alguien dejó una propina!', ar: '🪙 +{n} ترك أحد المستمعين إكرامية!', vi: '🪙 +{n} Một khán giả đã boa cho bạn!', hi: '🪙 +{n} एक श्रोता ने टिप दी!', id: '🪙 +{n} Penonton memberi tip!' },
+  noTips: { en: 'Great show! No more tips today, but the crowd still loves you.', ko: '멋진 공연! 오늘 팁은 다 받았지만 관객은 여전히 좋아해요.', ja: '素敵なショー！今日のチップは終わりですが、観客は大喜び。', zh: '精彩的表演！今天的小费已经领完，但观众依然喜欢你。', es: '¡Gran show! Hoy no hay más propinas.', ar: 'عرض رائع! لا مزيد من الإكراميات اليوم.', vi: 'Diễn hay lắm! Hôm nay hết tiền boa rồi.', hi: 'शानदार शो! आज और टिप नहीं।', id: 'Pertunjukan hebat! Hari ini tip sudah habis.' },
+  note: { en: 'Busking tips', ko: '버스킹 팁', ja: 'バスキングのチップ', zh: '街头表演小费' },
+};
+let buskMusic = null; // { wasOn, track } while inside a busking zone
+function startBusking(s) {
+  busking.start(s);
+  me.root.position.set(s.x, 0, s.z);
+  me.root.rotation.y = 0; // face the crowd
+  showBubble(myLabel, $('labels'), '🎤🎶', 3000);
+  shop.toast(L(BUSK_TEXT.begin));
+  action = STALE;
+}
+function stopBusking() {
+  busking.stop();
+  me.play('bow');
+  action = STALE;
+}
+function buskTip() {
+  const next = takeTip(readTips(), dayKey());
+  if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
+  writeTips(next);
+  wallet.add(TIP, { name: BUSK_TEXT.note });
+  refreshWallet();
+  sfx.pop?.();
+  shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
+}
+// The busking song plays while you're in the zone (and the usual music after).
+function updateBuskMusic(p) {
+  const z = mode === 'street' ? busking.zoneAt(p.x, p.z) : null;
+  if (z === busking.inside) return;
+  busking.inside = z;
+  if (z) {
+    buskMusic = { wasOn: music.on, track: music.track.id === 'busking' ? 'lofi' : music.track.id };
+    music.setTrack('busking');
+    if (!music.on) music.setOn(true).then(applyMusicBtn);
+  } else if (buskMusic) {
+    const { wasOn, track } = buskMusic;
+    buskMusic = null;
+    if (music.track.id === 'busking') music.setTrack(track);
+    if (cafeMusic) cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
+    else if (!wasOn && music.on) music.setOn(false).then(applyMusicBtn);
+  }
+}
 // Name tag studio: emblems and name colours (a place to spend coins).
 const emblems = new EmblemCollection();
 const emblemUi = new EmblemUI({
@@ -3136,7 +3220,7 @@ const DANCE_TEXT = {
 };
 function currentActivity() {
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
-  if (dancing) return 'dance';
+  if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
   if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return 'fish';
@@ -4043,6 +4127,14 @@ function updateAction(p, tSec) {
       const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
       next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
       }
+    } else if (busking.performing) {
+      next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
+    } else if (!riding && busking.stageAt(p.x, p.z)) {
+      const s = busking.stageAt(p.x, p.z);
+      next = { key: 'busk', label: '🎤 ' + L(BUSK_TEXT.start), run: () => startBusking(s) };
+    } else if (busking.nearBusker(p.x, p.z)) {
+      const s = busking.nearBusker(p.x, p.z);
+      next = { key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) };
     } else {
       const n = npcs.nearest(p.x, p.z);
       if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
@@ -4087,6 +4179,8 @@ function updateAction(p, tSec) {
       next = dineAction();
     } else if (seated?.duck != null) { // in a duck boat: pedal out (or get off from the panel)
       next = { key: 'duck-go', label: '🚣 ' + L(DUCK_TEXT.go), run: () => duckUi.show() };
+    } else if (seated?.tarot) {
+      next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { clerk?.ch.wave(); tarotUi.show(); } };
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -4146,6 +4240,8 @@ function updateAction(p, tSec) {
       next = { key: 'emblem', label: '🏷️ ' + t('emblem.open'), run: () => { clerk.ch.wave(); emblemUi.show(); } };
     } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
+    } else if (interior.store.workshop === 'tarot' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); shop.toast(L(GOODS_TEXT.soon)); say(clerk, $('labels'), ['곧 열어요!', 'got yeoreoyo!', L(GOODS_TEXT.soon)]); } }; // fashion: coming soon
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
@@ -4305,6 +4401,7 @@ renderer.setAnimationLoop(() => {
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
@@ -4480,8 +4577,10 @@ renderer.setAnimationLoop(() => {
 
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
-  if (mode === 'street') npcs.update(dt, camera, w, h);
+  updateBuskMusic(p);
+  if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
+    busking.hideLabels();
     if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }

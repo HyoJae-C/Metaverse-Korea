@@ -7,6 +7,7 @@
     { "id": "achasan", "anchor": { "lat": 37.54525, "lon": 127.05430 } },
     { "id": "popup-square", "anchor": { "lat": 37.54370, "lon": 127.05660 } },
     { "id": "gwanghwamun", "at": [-1697, -810] },
-    { "id": "itaewon", "at": [-1344, 187] }
+    { "id": "itaewon", "at": [-1344, 187] },
+    { "id": "hongdae", "at": [-2890, -572] }
   ]
 }

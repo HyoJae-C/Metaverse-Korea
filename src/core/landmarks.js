@@ -157,6 +157,7 @@ const BUILD = {
       g.add(bulb);
     }
   },
+  busking: (g) => buskingStage(g),
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
     const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
@@ -224,6 +225,73 @@ function namsanTower(g, y0 = 0) {
     bulb.position.set(Math.cos(a) * 7.6, y0 + 55.5, Math.sin(a) * 7.6);
     g.add(bulb);
   }
+}
+
+// The busking zone on Hongdae Walking Street: a low round stage you can step
+// onto (flat, so no collision is needed), two amps, a mic stand, a painted
+// ring for the crowd, a sign and strings of bulbs that blink to the music.
+// The stage faces +z (the audience side).
+function buskingStage(g) {
+  const ring = document.createElement('canvas');
+  ring.width = ring.height = 512;
+  const r = ring.getContext('2d');
+  r.strokeStyle = '#ffd36e'; r.lineWidth = 14; r.setLineDash([34, 22]);
+  r.beginPath(); r.arc(256, 256, 236, 0, Math.PI * 2); r.stroke();
+  r.setLineDash([]);
+  r.fillStyle = '#ffffff'; r.font = '900 44px system-ui, sans-serif'; r.textAlign = 'center';
+  r.fillText('BUSKING ZONE', 256, 452);
+  r.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
+  r.fillText('버스킹존', 256, 496);
+  const ringTex = new THREE.CanvasTexture(ring);
+  ringTex.colorSpace = THREE.SRGBColorSpace;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false }));
+  floor.position.set(0, 0.03, 3);
+  g.add(floor);
+  // The stage: a flat disc with a coloured rim.
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.5, 0.12, 28), mat('#3a2c3f'));
+  deck.position.y = 0.06;
+  g.add(deck);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(3.45, 0.08, 6, 40).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff5d8f' }));
+  rim.position.y = 0.13;
+  g.add(rim);
+  // Amps and a mic stand.
+  for (const sx of [-1, 1]) {
+    box(g, 1.1, 1.3, 0.8, sx * 2.6, 0.65, -1.6, '#1d1b22');
+    const cone = new THREE.Mesh(new THREE.CircleGeometry(0.36, 16), mat('#55505e'));
+    cone.position.set(sx * 2.6, 0.75, -1.19);
+    g.add(cone);
+  }
+  box(g, 0.05, 1.5, 0.05, 0, 0.75, 0.6, '#8a8f99');
+  box(g, 0.12, 0.2, 0.12, 0, 1.55, 0.6, '#2b2230');
+  // A backdrop with a sign, and two poles holding the bulbs.
+  box(g, 8, 3.4, 0.2, 0, 1.7, -2.8, '#2a1f4f');
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 160;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2a1f4f'; x.fillRect(0, 0, 512, 160);
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#ffd36e'; x.font = '900 50px system-ui, sans-serif'; x.fillText('HONGDAE BUSKING', 256, 58, 480);
+  x.fillStyle = '#ff9bb3'; x.font = '800 44px "Noto Sans KR", system-ui, sans-serif'; x.fillText('홍대 버스킹존 🎤', 256, 122, 480);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 2.4), new THREE.MeshBasicMaterial({ map: tex }));
+  sign.position.set(0, 2.1, -2.68);
+  g.add(sign);
+  for (const sx of [-1, 1]) box(g, 0.14, 5, 0.14, sx * 4.6, 2.5, -2.6, '#8a8f99');
+  const bulbs = [];
+  const colors = ['#ffd36e', '#ff6b6b', '#6bd3ff', '#a6d97a'];
+  for (let i = 0; i <= 14; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: colors[i % 4] });
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 4), m);
+    b.position.set(-4.6 + (9.2 * i) / 14, 4.8 - Math.sin((Math.PI * i) / 14) * 0.9, -2.6);
+    g.add(b);
+    bulbs.push(m);
+  }
+  const base = colors.map((h) => new THREE.Color(h));
+  return (t) => {
+    const k = Math.floor(t * 2);
+    bulbs.forEach((m, i) => m.color.copy(base[i % 4]).multiplyScalar((i + k) % 3 === 0 ? 0.35 : 1));
+  };
 }
 
 // A gold-on-black name board with hanja.
