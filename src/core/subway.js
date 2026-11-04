@@ -73,7 +73,7 @@ const PLAT_X = [-8.5, 25.5];
 // Up trains run on the south track (+z), heading east; down trains on the north track.
 export const TRACKS = [
   { dir: 1, z: TRACK_Z, doorZ: DOOR_Z, offset: 0 },
-  { dir: -1, z: -TRACK_Z, doorZ: -DOOR_Z, offset: 5 },
+  { dir: -1, z: -TRACK_Z, doorZ: -DOOR_Z, offset: 7.5 },
 ];
 export const trackOn = (z) => TRACKS[z >= 0 ? 0 : 1];
 // Standing at the gates? Which lane is nearest and which side you're on.
@@ -84,9 +84,9 @@ export function gateAt(x, z) {
 }
 
 // Train timetable, the same for everyone (it runs on the clock): a train every
-// 10 s on each track. It pulls in (2.5 s), stands with the doors open (5 s),
-// then leaves (2.5 s). The two tracks are 5 s apart.
-export const HEADWAY = 10, PULL_IN = 2.5, DOORS = 5;
+// 15 s on each track. It pulls in (2.5 s), stands with the doors open (5 s),
+// then leaves (7.5 s). The two tracks are 7.5 s apart.
+export const HEADWAY = 15, PULL_IN = 2.5, DOORS = 5;
 export function trainPhase(tSec, offset = 0) {
   const t = (((tSec + offset) % HEADWAY) + HEADWAY) % HEADWAY;
   if (t < PULL_IN) return { phase: 'in', k: t / PULL_IN, left: PULL_IN - t };
@@ -460,13 +460,25 @@ export function buildStation(store, ROOM) {
   });
 
   const status = TRACKS.map(() => trainPhase(0));
+  // Sounds: onSound(kind, track) for 'arrive', 'open', 'closing', 'depart'.
+  // After a gap (the player was elsewhere) the phases resync silently.
+  const hall = { onSound: null };
+  const heard = TRACKS.map(() => null);
+  let lastT = 0;
+  const CLOSE_WARN = 1.6; // s before the doors shut
   function animate() {
     const now = Date.now() / 1000;
+    const fresh = now - lastT < 0.5;
+    lastT = now;
     let led = `${name.ko || ''}역 · ${name.en || ''} Station`;
     for (let t = 0; t < 2; t++) {
       const { g, tr, stopX, runIn } = trains[t];
       const ph = trainPhase(now, tr.offset);
       status[t] = ph;
+      const was = heard[t];
+      const key = ph.phase === 'open' && ph.left <= CLOSE_WARN ? 'closing' : ph.phase;
+      heard[t] = key;
+      if (fresh && was && was !== key && hall.onSound) hall.onSound({ in: 'arrive', open: 'open', closing: 'closing', out: 'depart' }[key], t);
       g.visible = true;
       if (ph.phase === 'in') g.position.x = stopX - tr.dir * runIn * (1 - ph.k) * (1 - ph.k);
       else if (ph.phase === 'open') g.position.x = stopX;
@@ -484,12 +496,12 @@ export function buildStation(store, ROOM) {
     scene, products: [], colliders, seats, clerk: null, turntable: null, stations: {}, room: ROOM,
     exit: { x: 1e4, z: 1e4 }, // no door: walk up the stairs
     animate,
-    subway: {
+    subway: Object.assign(hall, {
       stairs,
       // Track t: the doors are open now, and for how much longer (s).
       doorsOpen: (t) => (status[t].phase === 'open' && status[t].left > 0.3 ? status[t].left : 0),
       train: { get phase() { return status[0].phase; } },
-    },
+    }),
   };
 }
 
