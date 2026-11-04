@@ -1,6 +1,6 @@
-// Another Land (어나더랜드): an original candy-house theme park east of
-// Seongsu. This is the outside, seen from the street: a gingerbread gate
-// with a frosting sign (the door into the park, see themepark.js), a candy
+// Another Land (어나더랜드): an original candy-house theme park on the
+// island in Seokchon Lake's west lake (Songpa district). This is the
+// outside, seen from the lakeside: a gingerbread gate with a frosting sign (the door into the park, see themepark.js), a candy
 // castle, a giant Ferris wheel, a roller coaster and a drop tower, all tall
 // enough to spot from far away. Our own design, not modelled on any real park.
 // District-local metres: the gate faces west (-x), the park runs east.

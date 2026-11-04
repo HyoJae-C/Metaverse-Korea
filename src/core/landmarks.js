@@ -47,7 +47,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 }
 
 const BUILD = {
-  anotherland: (g) => buildAnotherLand(g), // the theme park east of Seongsu (animated)
+  anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
   gwanghwamun(g) {
     // Stone base with three arches; the middle one is the way in.
     for (const sx of [-1, 1]) box(g, 25, 9, 16, sx * 17.5, 4.5, 0, C.stone);
@@ -255,6 +255,32 @@ function wall(g, l) {
   }
 }
 
+// Cherry trees in blossom along a polyline (l.p, e.g. round Seokchon Lake):
+// one instanced mesh for the trunks and one for the pink crowns.
+function blossoms(g, l) {
+  const spots = [];
+  for (let i = 1; i < l.p.length; i++) {
+    const [x0, z0] = l.p[i - 1], [x1, z1] = l.p[i];
+    const n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / (l.gap || 9)));
+    for (let k = 0; k < n; k++) spots.push([x0 + ((x1 - x0) * k) / n, z0 + ((z1 - z0) * k) / n]);
+  }
+  const trunk = new THREE.CylinderGeometry(0.25, 0.35, 2.6, 6).translate(0, 1.3, 0);
+  const crown = new THREE.IcosahedronGeometry(2.3, 0).translate(0, 3.8, 0);
+  const trunks = new THREE.InstancedMesh(trunk, mat('#7a5240'), spots.length);
+  const crowns = new THREE.InstancedMesh(crown, mat('#ffc4dc'), spots.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  const pinks = ['#ffc4dc', '#ffd6e6', '#ffb3d1', '#fff0f5'].map((c) => new THREE.Color(c));
+  spots.forEach(([x, z], i) => {
+    const s = 0.85 + ((i * 37) % 10) / 30;
+    m4.compose(v.set(x, 0, z), q.setFromAxisAngle(v.clone().set(0, 1, 0), i * 1.3), sc.set(s, s, s));
+    trunks.setMatrixAt(i, m4);
+    crowns.setMatrixAt(i, m4);
+    crowns.setColorAt(i, pinks[i % pinks.length]);
+  });
+  crowns.material = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true });
+  g.add(trunks, crowns);
+}
+
 export function buildLandmarks(list = [], scene) {
   const root = new THREE.Group();
   root.name = 'landmarks';
@@ -262,6 +288,7 @@ export function buildLandmarks(list = [], scene) {
   for (const l of list) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
+    else if (l.type === 'blossoms') blossoms(g, l);
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);
