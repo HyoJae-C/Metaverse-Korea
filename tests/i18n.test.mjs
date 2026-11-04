@@ -4,11 +4,11 @@ import { LANGUAGES, STRINGS } from '../src/i18n/strings.js';
 import { localName, languageFromBrowser } from '../src/core/i18n.js';
 import { s2t } from '../src/i18n/hant.js';
 
-test('nine languages in the order the picker shows them, English first', () => {
-  assert.deepEqual(LANGUAGES.map((l) => l.code), ['en', 'es', 'ko', 'zh', 'zht', 'id', 'vi', 'ar', 'ja']);
+test('ten languages in the order the picker shows them, English first', () => {
+  assert.deepEqual(LANGUAGES.map((l) => l.code), ['en', 'es', 'ko', 'zh', 'zht', 'id', 'vi', 'hi', 'ar', 'ja']);
 });
 
-for (const code of ['id', 'ar', 'vi']) {
+for (const code of ['id', 'ar', 'vi', 'hi']) {
   test(`${code} covers every English key, with the same {placeholders}`, () => {
     const vars = (s) => (s.match(/\{\w+\}/g) || []).sort().join();
     for (const [k, v] of Object.entries(STRINGS.en)) {
@@ -39,8 +39,9 @@ test('browser language to ours', () => {
   assert.equal(languageFromBrowser('es-MX'), 'es');
 });
 
-test('Vietnamese: browser tag and every inline name object that has Arabic', async () => {
+test('Vietnamese and Hindi: browser tags and every inline name object that has Arabic', async () => {
   assert.equal(languageFromBrowser('vi-VN'), 'vi');
+  assert.equal(languageFromBrowser('hi-IN'), 'hi');
   const { readFileSync } = await import('node:fs');
   const files = ['src/main.js', 'src/core/inventory.js', 'src/data/starter-quests.js', 'src/data/updates.js',
     'src/ui/map-view.js', 'src/ui/emblem-ui.js', 'src/ui/shop-ui.js', 'src/ui/counter-ui.js', 'src/ui/duck-ui.js'];
@@ -48,5 +49,6 @@ test('Vietnamese: browser tag and every inline name object that has Arabic', asy
     const src = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
     const n = (re) => (src.match(re) || []).length;
     assert.equal(n(/\bvi: ['[]/g), n(/\bar: ['[]/g), f);
+    assert.equal(n(/\bhi: ['[]/g), n(/\bar: ['[]/g), f);
   }
 });

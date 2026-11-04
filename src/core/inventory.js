@@ -19,7 +19,7 @@ const OUTFIT_DESC = {
   ko: '코스튬 가게에서 산 옷이에요. "입기"로 입고, "벗기"로 티셔츠로 돌아가요.',
   ja: 'コスチューム店の服。「着る」で着替え、「脱ぐ」でTシャツに戻ります。',
   zh: '服装店买的服装。点“穿上”换上，点“脱下”换回T恤。',
-  es: 'Un disfraz de la tienda de disfraces. Toca Poner para vestirlo y Quitar para volver a tu camiseta.', ar: 'زيّ من متجر الأزياء. اضغط ارتدِ لتلبسه، واخلع لتعود إلى قميصك.', vi: 'Trang phục từ cửa hàng trang phục. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', id: 'Kostum dari toko kostum. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
+  es: 'Un disfraz de la tienda de disfraces. Toca Poner para vestirlo y Quitar para volver a tu camiseta.', ar: 'زيّ من متجر الأزياء. اضغط ارتدِ لتلبسه، واخلع لتعود إلى قميصك.', vi: 'Trang phục từ cửa hàng trang phục. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'कॉस्ट्यूम शॉप की पोशाक। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Kostum dari toko kostum. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
 // outfit: the character model it puts on; price: coins at the costume shop.
 function outfits(defs) {
@@ -52,24 +52,24 @@ export const ITEMS = {
   },
   car: {
     emoji: '🏎️',
-    name: { en: 'Red open sports car', ko: '빨간 오픈 스포츠카', ja: '赤いオープンスポーツカー', zh: '红色敞篷跑车', es: 'Deportivo descapotable rojo', ar: 'سيارة رياضية حمراء مكشوفة', vi: 'Xe thể thao mui trần màu đỏ', id: 'Mobil sport merah atap terbuka' },
+    name: { en: 'Red open sports car', ko: '빨간 오픈 스포츠카', ja: '赤いオープンスポーツカー', zh: '红色敞篷跑车', es: 'Deportivo descapotable rojo', ar: 'سيارة رياضية حمراء مكشوفة', vi: 'Xe thể thao mui trần màu đỏ', hi: 'लाल खुली स्पोर्ट्स कार', id: 'Mobil sport merah atap terbuka' },
     desc: {
       en: 'A low two-seater with the top down. Drive anywhere, alleys too, and invite one friend to the passenger seat.',
       ko: '지붕이 열린 낮은 2인승 스포츠카예요. 골목까지 어디든 달릴 수 있고, 옆자리에 친구 한 명을 태울 수 있어요.',
       ja: '屋根の開いた低い2人乗りスポーツカー。路地までどこでも走れて、助手席に友だちを1人乗せられます。',
       zh: '敞篷低趴双座跑车。哪里都能开，小巷也行，副驾驶可以邀请一位朋友。',
-      es: 'Un biplaza bajo y descapotable. Conduce por todas partes, callejones incluidos, e invita a un amigo al asiento del copiloto.', ar: 'سيارة منخفضة بمقعدين وسقف مفتوح. قُدها إلى أي مكان، حتى الأزقة، وادعُ صديقًا إلى مقعد الراكب.', vi: 'Xe thể thao hai chỗ gầm thấp, mui trần. Lái đi đâu cũng được, kể cả hẻm, và mời một người bạn ngồi ghế phụ.', id: 'Mobil dua kursi yang rendah dengan atap terbuka. Bisa ke mana saja, gang juga, dan ajak satu teman di kursi penumpang.',
+      es: 'Un biplaza bajo y descapotable. Conduce por todas partes, callejones incluidos, e invita a un amigo al asiento del copiloto.', ar: 'سيارة منخفضة بمقعدين وسقف مفتوح. قُدها إلى أي مكان، حتى الأزقة، وادعُ صديقًا إلى مقعد الراكب.', vi: 'Xe thể thao hai chỗ gầm thấp, mui trần. Lái đi đâu cũng được, kể cả hẻm, và mời một người bạn ngồi ghế phụ.', hi: 'खुली छत वाली नीची दो-सीटर। गलियों समेत कहीं भी चलाएँ, और एक दोस्त को बगल की सीट पर बुलाएँ।', id: 'Mobil dua kursi yang rendah dengan atap terbuka. Bisa ke mana saja, gang juga, dan ajak satu teman di kursi penumpang.',
     },
   },
   limo: {
     emoji: '🚘',
-    name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo', ar: 'ليموزين فاخرة', vi: 'Limousine sang trọng', id: 'Limusin mewah' },
+    name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo', ar: 'ليموزين فاخرة', vi: 'Limousine sang trọng', hi: 'शानदार लिमोज़ीन', id: 'Limusin mewah' },
     desc: {
       en: 'A pearl-white four-seater with a tall chrome grille and a silver winged crest. Drive anywhere and invite three friends.',
       ko: '높은 크롬 그릴과 은색 날개 엠블럼의 진주색 4인승 리무진이에요. 어디든 달릴 수 있고 친구 세 명을 태울 수 있어요.',
       ja: '背の高いクロームグリルと銀の翼のエンブレムのパールホワイト4人乗り。どこでも走れて、友だち3人を乗せられます。',
       zh: '珍珠白四座豪华轿车，高耸的镀铬格栅和银色飞翼徽标。哪里都能开，可以载三位朋友。',
-      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y emblema alado plateado. Conduce por todas partes e invita a tres amigos.', ar: 'ليموزين بأربعة مقاعد بلون اللؤلؤ مع شبكة كروم عالية وشعار مجنّح فضي. قُدها إلى أي مكان وادعُ ثلاثة أصدقاء.', vi: 'Limousine bốn chỗ màu trắng ngọc trai với lưới tản nhiệt mạ crôm cao và biểu tượng đôi cánh bạc. Lái đi đâu cũng được và mời ba người bạn.', id: 'Limusin empat kursi putih mutiara dengan gril krom tinggi dan lambang sayap perak. Bisa ke mana saja dan ajak tiga teman.',
+      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y emblema alado plateado. Conduce por todas partes e invita a tres amigos.', ar: 'ليموزين بأربعة مقاعد بلون اللؤلؤ مع شبكة كروم عالية وشعار مجنّح فضي. قُدها إلى أي مكان وادعُ ثلاثة أصدقاء.', vi: 'Limousine bốn chỗ màu trắng ngọc trai với lưới tản nhiệt mạ crôm cao và biểu tượng đôi cánh bạc. Lái đi đâu cũng được và mời ba người bạn.', hi: 'मोती-सफ़ेद चार-सीटर, ऊँची क्रोम ग्रिल और चाँदी के पंखों वाले प्रतीक के साथ। कहीं भी चलाएँ और तीन दोस्तों को बुलाएँ।', id: 'Limusin empat kursi putih mutiara dengan gril krom tinggi dan lambang sayap perak. Bisa ke mana saja dan ajak tiga teman.',
     },
   },
   moto: {
@@ -96,12 +96,12 @@ export const ITEMS = {
   },
   // Costumes from the costume shop: wear one instead of your plain clothes.
   ...outfits({
-    'outfit-rogue': [60, '🧝', { en: 'Ranger costume', ko: '레인저 옷', ja: 'レンジャーの服', zh: '游侠服装', es: 'Traje de explorador', ar: 'زي الحارس', vi: 'Trang phục kiểm lâm', id: 'Kostum ranger' }],
-    'outfit-ranger': [60, '🧭', { en: 'Explorer costume', ko: '탐험가 옷', ja: '探検家の服', zh: '探险家服装', es: 'Traje de aventurero', ar: 'زي المستكشف', vi: 'Trang phục nhà thám hiểm', id: 'Kostum penjelajah' }],
-    'outfit-barbarian': [80, '🧔', { en: 'Viking costume', ko: '바이킹 옷', ja: 'バイキングの服', zh: '维京服装', es: 'Traje de vikingo', ar: 'زي الفايكنغ', vi: 'Trang phục Viking', id: 'Kostum viking' }],
-    'outfit-hooded': [100, '🥷', { en: 'Ninja costume', ko: '닌자 옷', ja: '忍者の服', zh: '忍者服装', es: 'Traje de ninja', ar: 'زي النينجا', vi: 'Trang phục ninja', id: 'Kostum ninja' }],
-    'outfit-knight': [120, '💂', { en: 'Knight armour', ko: '기사 갑옷', ja: '騎士の鎧', zh: '骑士盔甲', es: 'Armadura de caballero', ar: 'درع الفارس', vi: 'Áo giáp hiệp sĩ', id: 'Baju zirah kesatria' }],
-    'outfit-mage': [150, '🧙', { en: 'Mage robe', ko: '마법사 로브', ja: '魔法使いのローブ', zh: '法师长袍', es: 'Túnica de mago', ar: 'رداء الساحر', vi: 'Áo choàng pháp sư', id: 'Jubah penyihir' }],
+    'outfit-rogue': [60, '🧝', { en: 'Ranger costume', ko: '레인저 옷', ja: 'レンジャーの服', zh: '游侠服装', es: 'Traje de explorador', ar: 'زي الحارس', vi: 'Trang phục kiểm lâm', hi: 'रेंजर पोशाक', id: 'Kostum ranger' }],
+    'outfit-ranger': [60, '🧭', { en: 'Explorer costume', ko: '탐험가 옷', ja: '探検家の服', zh: '探险家服装', es: 'Traje de aventurero', ar: 'زي المستكشف', vi: 'Trang phục nhà thám hiểm', hi: 'खोजकर्ता पोशाक', id: 'Kostum penjelajah' }],
+    'outfit-barbarian': [80, '🧔', { en: 'Viking costume', ko: '바이킹 옷', ja: 'バイキングの服', zh: '维京服装', es: 'Traje de vikingo', ar: 'زي الفايكنغ', vi: 'Trang phục Viking', hi: 'वाइकिंग पोशाक', id: 'Kostum viking' }],
+    'outfit-hooded': [100, '🥷', { en: 'Ninja costume', ko: '닌자 옷', ja: '忍者の服', zh: '忍者服装', es: 'Traje de ninja', ar: 'زي النينجا', vi: 'Trang phục ninja', hi: 'निंजा पोशाक', id: 'Kostum ninja' }],
+    'outfit-knight': [120, '💂', { en: 'Knight armour', ko: '기사 갑옷', ja: '騎士の鎧', zh: '骑士盔甲', es: 'Armadura de caballero', ar: 'درع الفارس', vi: 'Áo giáp hiệp sĩ', hi: 'योद्धा का कवच', id: 'Baju zirah kesatria' }],
+    'outfit-mage': [150, '🧙', { en: 'Mage robe', ko: '마법사 로브', ja: '魔法使いのローブ', zh: '法师长袍', es: 'Túnica de mago', ar: 'رداء الساحر', vi: 'Áo choàng pháp sư', hi: 'जादूगर का चोगा', id: 'Jubah penyihir' }],
   }),
   // Claw machine prizes (core/claw-game.js).
   ...plushies({

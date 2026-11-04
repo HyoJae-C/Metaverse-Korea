@@ -16,7 +16,7 @@ export const UPDATES = [
       zh: '欢迎来到Another Seoul！',
       es: '¡Bienvenido a Another Seoul!',
       id: 'Selamat datang di Another Seoul!',
-      ar: 'أهلًا بك في Another Seoul!', vi: 'Chào mừng đến với Another Seoul!',
+      ar: 'أهلًا بك في Another Seoul!', vi: 'Chào mừng đến với Another Seoul!', hi: 'Another Seoul में आपका स्वागत है!',
     },
     items: {
       ko: ['한국 사람도,\n한국을 찾은 친구도,\n누구나 함께 모여서\n\n재미있고 즐거운\n서울 라이프를 즐겨 보세요! 🎉'],
@@ -25,7 +25,7 @@ export const UPDATES = [
       zh: ['无论是韩国人，\n还是来自世界各地的朋友，\n大家一起聚在这里\n\n享受有趣又快乐的\n首尔生活吧！🎉'],
       es: ['Seas de Corea\no de cualquier otro lugar,\naquí todos son bienvenidos.\n\n¡Ven y disfruta de una vida\nen Seúl divertida y feliz! 🎉'],
       id: ['Orang Korea\natau dari mana pun,\nsemua boleh berkumpul di sini.\n\nAyo nikmati kehidupan Seoul\nyang seru dan menyenangkan! 🎉'],
-      ar: ['سواء كنت من كوريا\nأو من أي مكان آخر،\nالجميع مرحَّب بهم هنا.\n\nتعالَ واستمتع بحياة\nممتعة وسعيدة في سيول! 🎉'], vi: ['Dù bạn đến từ Hàn Quốc\nhay bất cứ nơi đâu,\nai cũng được chào đón ở đây.\n\nCùng nhau tận hưởng\ncuộc sống Seoul vui vẻ! 🎉'],
+      ar: ['سواء كنت من كوريا\nأو من أي مكان آخر،\nالجميع مرحَّب بهم هنا.\n\nتعالَ واستمتع بحياة\nممتعة وسعيدة في سيول! 🎉'], vi: ['Dù bạn đến từ Hàn Quốc\nhay bất cứ nơi đâu,\nai cũng được chào đón ở đây.\n\nCùng nhau tận hưởng\ncuộc sống Seoul vui vẻ! 🎉'], hi: ['कोरिया से हों\nया कहीं और से,\nयहाँ सबका स्वागत है।\n\nसाथ आइए और मज़ेदार,\nख़ुशहाल सियोल लाइफ़ का आनंद लीजिए! 🎉'],
     },
   },
 ];
