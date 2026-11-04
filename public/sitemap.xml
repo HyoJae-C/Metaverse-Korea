@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://another-seoul.com/</loc>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/ko/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/ja/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/zh-hans/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/zh-hant/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/about/es/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://another-seoul.com/about/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://another-seoul.com/about/ko/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://another-seoul.com/about/ja/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://another-seoul.com/about/zh-hans/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://another-seoul.com/about/zh-hant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://another-seoul.com/about/es/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://another-seoul.com/about/"/>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/privacy.html</loc>
+  </url>
+  <url>
+    <loc>https://another-seoul.com/terms.html</loc>
+  </url>
+</urlset>
