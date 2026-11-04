@@ -245,8 +245,12 @@ function showLook() {
   $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
 }
+// Made a character already: go straight into town after the language (and
+// login) step, with no name or clothes to pick (see startNow below).
+let startNow = null;
+const lookOrStart = () => (isReturning() && startNow ? startNow() : showLook());
 $('next-btn').onclick = () => {
-  if (!askLogin()) { showLook(); return; }
+  if (!askLogin()) { lookOrStart(); return; }
   $('step-lang').hidden = true;
   $('step-login').hidden = false;
   $('login-title').textContent = L(LOGIN_TEXT.title);
@@ -255,7 +259,7 @@ $('next-btn').onclick = () => {
   $('login-guest').textContent = L(LOGIN_TEXT.guest);
   $('login-note').textContent = L(LOGIN_TEXT.note);
 };
-$('login-guest').onclick = showLook;
+$('login-guest').onclick = lookOrStart;
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
 // after an IME has finished composing a syllable).
 const NAME_HINT = { en: 'Korean or English letters and numbers only.', ko: '한글, 영어, 숫자만 쓸 수 있어요.', ja: '韓国語（ハングル）・英字・数字のみ使えます。', zh: '只能使用韩文、英文字母和数字。' };
@@ -296,13 +300,36 @@ await new Promise((resolve) => {
     if (!isReturning() && name) {
       busy = true;
       $('start-btn').disabled = true;
+      $('status').textContent = '';
       const r = await cloud.claimName(name);
       busy = false;
       $('start-btn').disabled = false;
-      if (r === 'taken') { $('status').textContent = t('name.taken'); $('nickname').focus(); return; }
+      if (r === 'taken') {
+        $('status').textContent = t('name.taken');
+        $('nickname').classList.add('bad');
+        $('nickname').focus();
+        return;
+      }
+    } else if (name) {
+      // A name made before names were reserved: reserve it now so newcomers
+      // can't take it (no answer needed; an old clash just stays as it is).
+      cloud.claimName(name);
     }
     resolve();
   };
+  $('nickname').addEventListener('input', () => {
+    $('nickname').classList.remove('bad');
+    if ($('status').textContent === t('name.taken')) $('status').textContent = '';
+  });
+  startNow = () => {
+    showLook();
+    $('step-look').classList.add('quick'); // only the loading line shows
+    go();
+  };
+  // Back from Google sign-in with a character already made: straight in.
+  let fromGoogle = false;
+  try { fromGoogle = !!sessionStorage.getItem('mk.oauth'); sessionStorage.removeItem('mk.oauth'); } catch { /* ignore */ }
+  if (fromGoogle && isReturning()) startNow();
   $('start-btn').onclick = go;
   // Note: a handler body, not an expression. Returning false from an
   // on-handler cancels the key, which blocked typing in this field.

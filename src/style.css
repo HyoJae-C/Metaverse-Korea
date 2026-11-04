@@ -1135,6 +1135,12 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .acc.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
+/* Returning players going straight in: only the loading line shows */
+#step-look.quick > :not(.status) { display: none; }
+#step-look.quick .status { font-size: 17px; margin: 8px 0; }
+/* Name already used by someone else */
+#nickname.bad { border-color: #d64545; box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.25); }
+#step-look .status:not(:empty) { font-weight: 600; }
 .rename-input { width: 100%; box-sizing: border-box; font-size: 17px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.18); margin: 4px 0 8px; }
 /* Bicycle bell / horn while riding: next to the emote button. */
 .honk-btn {
