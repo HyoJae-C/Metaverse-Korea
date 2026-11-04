@@ -3,7 +3,7 @@
 // and the lip tint shop (꽃잎 립). Each option is a look field; null means
 // "the model's own" (free to go back to). You pay once for each field you
 // change. Choices: a fixed list of ids (labels in i18n), or a palette.
-import { HAIR_STYLES } from '../data/appearance.js';
+import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
@@ -22,6 +22,12 @@ export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25 }]; // colour len
 export const LIPS = [{ key: 'lip', palette: 'lip', price: 15 }]; // lip tint
 export const MENUS = { salon: SALON, clinic: CLINIC, clinic2: CLINIC2, lens: LENS, lips: LIPS };
 export const BEAUTY_SHOPS = Object.keys(MENUS);
+// A shop's menu: lip shops sell only their colour family ("only" limits the
+// palette to those shades).
+export function menuFor(kind, store) {
+  const fam = kind === 'lips' && LIP_FAMILIES[store?.lipFamily || 'mixed'];
+  return fam ? MENUS.lips.map((o) => ({ ...o, only: fam })) : MENUS[kind];
+}
 // Clinics: you lie on a bed and go through to surgery; the others: a chair in
 // front of a big mirror.
 export const isClinic = (kind) => kind === 'clinic' || kind === 'clinic2';

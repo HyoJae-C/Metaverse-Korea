@@ -3,8 +3,9 @@
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
+import { SIGN_SHAPES, signShape, signGeometry, signTexture } from './sign-shapes.js';
 
-const SIGN_W = 6.4, SIGN_H = 1.2;
+const SIGN_W = 6.4;
 
 export function latLonToLocal(center, lat, lon) {
   const R = 6378137;
@@ -96,46 +97,6 @@ function badgeTexture(icon, text, bg) {
   return tex;
 }
 
-// sub: a second, smaller line under the name (Itaewon signs: the name in the
-// shop's own language on top, Korean below).
-function signTexture(text, bg, fg = '#ffffff', sub = '') {
-  const c = document.createElement('canvas');
-  c.width = 640;
-  c.height = 120;
-  const g = c.getContext('2d');
-  g.fillStyle = bg;
-  const r = 28;
-  g.beginPath();
-  g.roundRect(4, 4, c.width - 8, c.height - 8, r);
-  g.fill();
-  g.strokeStyle = 'rgba(255,255,255,0.65)';
-  g.lineWidth = 5;
-  g.beginPath();
-  g.roundRect(14, 14, c.width - 28, c.height - 28, r - 10);
-  g.stroke();
-  g.fillStyle = fg;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  let size = sub ? 50 : 64;
-  const font = (s) => `800 ${s}px "Apple SD Gothic Neo", "Noto Sans KR", "Hiragino Sans", "PingFang SC", "Noto Sans Thai", "Leelawadee UI", "Tahoma", system-ui, sans-serif`;
-  g.font = font(size);
-  while (g.measureText(text).width > c.width - 70 && size > 22) g.font = font((size -= 4));
-  if (!sub) g.fillText(text, c.width / 2, c.height / 2 + 3);
-  else {
-    g.fillText(text, c.width / 2, c.height * 0.4);
-    let s2 = 30;
-    g.font = font(s2);
-    while (g.measureText(sub).width > c.width - 90 && s2 > 16) g.font = font((s2 -= 2));
-    g.globalAlpha = 0.9;
-    g.fillText(sub, c.width / 2, c.height * 0.74);
-    g.globalAlpha = 1;
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
 function awningTexture(color) {
   const c = document.createElement('canvas');
   c.width = 128;
@@ -167,18 +128,21 @@ export class Storefronts {
       group.rotation.y = Math.atan2(f.nx, f.nz); // +z faces the street
       scene.add(group);
 
-      const signMat = new THREE.MeshBasicMaterial({ map: signTexture(store.signLocal || store.name.ko, store.colors.sign, '#ffffff', store.signLocal ? store.name.ko : '') });
-      const sign = new THREE.Mesh(new THREE.BoxGeometry(SIGN_W, SIGN_H, 0.25), [
-        mat(store.colors.sign), mat(store.colors.sign), mat(store.colors.sign),
-        mat(store.colors.sign), signMat, mat(store.colors.sign),
-      ]);
-      sign.position.set(0, 3.9, 0.2);
-      group.add(sign);
       const home = store.category === 'home';
+      const shape = signShape(store);
+      const dim = SIGN_SHAPES[shape];
+      const signMat = new THREE.MeshBasicMaterial({ map: signTexture(store.signLocal || store.name.ko, store.colors.sign, '#ffffff', store.signLocal ? store.name.ko : '', shape) });
+      const sign = new THREE.Mesh(signGeometry(shape), [signMat, mat(store.colors.sign)]);
+      if (dim.blade) { // sticks out from the wall beside the door, seen from along the street
+        sign.position.set(2.95, 3.4 + dim.h / 2, 0.8);
+        sign.rotation.y = Math.PI / 2;
+      } else sign.position.set(0, 3.3 + dim.h / 2, 0.2);
+      group.add(sign);
       if (home) { // a smaller nameplate over a residential entrance
         sign.scale.set(0.6, 0.6, 1);
         sign.position.y = 3.2;
       }
+      const signTop = home ? 0 : sign.position.y + dim.h / 2;
 
       const awning = new THREE.Mesh(
         new THREE.BoxGeometry(5.4, 0.08, 1.6),
@@ -222,11 +186,11 @@ export class Storefronts {
       // Floating badge above the entrance (sprites always face the camera).
       const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(store.icon || ICONS[store.category] || '🛍️', store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
       badge.scale.set(6, 1.5, 1);
-      badge.position.set(0, home ? 5.2 : 6.4, 2.0);
+      badge.position.set(0, home ? 5.2 : Math.max(6.4, signTop + 1), 2.0);
       badge.renderOrder = 3;
       group.add(badge);
 
-      this.items.push({ store, group, sign, signMat, ring, badge, door: door3 });
+      this.items.push({ store, group, sign, signMat, shape, ring, badge, door: door3 });
     }
   }
 
@@ -236,7 +200,7 @@ export class Storefronts {
       const text = on ? localName(it.store.name, lang) : it.store.name.ko;
       const local = it.store.signLocal;
       it.signMat.map.dispose();
-      it.signMat.map = on || !local ? signTexture(text, it.store.colors.sign) : signTexture(local, it.store.colors.sign, '#ffffff', it.store.name.ko);
+      it.signMat.map = on || !local ? signTexture(text, it.store.colors.sign, '#ffffff', '', it.shape) : signTexture(local, it.store.colors.sign, '#ffffff', it.store.name.ko, it.shape);
       it.signMat.needsUpdate = true;
       it.badge.material.map.dispose();
       it.badge.material.map = badgeTexture(it.store.icon || ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);

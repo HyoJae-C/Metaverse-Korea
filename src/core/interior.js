@@ -7,6 +7,13 @@ import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
+import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+
+// Three lipsticks on each mirror shelf, from the shop's own colour family.
+function lipProps(store) {
+  const fam = LIP_FAMILIES[store.lipFamily] || ['camellia', 'pink', 'berry'];
+  return [0, Math.floor(fam.length / 2), fam.length - 1].map((i) => '#' + PALETTES.lip[fam[i]].toString(16).padStart(6, '0'));
+}
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -742,7 +749,7 @@ export function buildInterior(store) {
       glass.position.set(0, 1.55, mz + 0.05);
       scene.add(glass);
       box(mw, 0.08, 0.42, 0, 0.72, mz + 0.25, '#fffaf0'); // shelf under the mirror
-      const props = { salon: ['#f29bb6', '#4f7fd6', '#e8c27a'], lens: ['#3fc6d0', '#8a5cc9', '#4a9a5c'], lips: ['#d94c5f', '#ff8fb1', '#a8325e'] }[store.workshop];
+      const props = { salon: ['#f29bb6', '#4f7fd6', '#e8c27a'], lens: ['#3fc6d0', '#8a5cc9', '#4a9a5c'], lips: lipProps(store) }[store.workshop];
       stations.mirror = [];
       for (let i = 0; i < n; i++) {
         const mx = (i - (n - 1) / 2) * (mw / n);
