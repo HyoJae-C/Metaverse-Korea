@@ -20,7 +20,12 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="%VITE_SITE_URL%og.png" />
     <link rel="icon" type="image/png" href="./favicon.png" />
-    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <!-- Add to Home Screen (PWA): public/manifest.webmanifest, public/sw.js -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="application-name" content="Another Seoul" />
     <meta name="apple-mobile-web-app-title" content="Another Seoul" />
     <link rel="stylesheet" href="/src/style.css" />
@@ -213,6 +218,10 @@
       </form>
       <div class="stamina" id="stamina" hidden aria-hidden="true"><div class="stamina-fill" id="stamina-fill"></div></div>
       <div class="joystick" id="joystick" hidden><div class="knob"></div></div>
+      <div class="install-nudge" id="install-nudge" hidden>
+        <button class="install-go"><img src="./icon-192.png" alt="" /><span></span></button>
+        <button class="install-x" aria-label="Close">✕</button>
+      </div>
       <div class="help" id="help" hidden>
         <span id="help-text"></span>
         <button class="chip" id="help-ok" data-i18n="help.dismiss"></button>
@@ -330,6 +339,9 @@
         <button class="setting-row" id="news-btn">
           <span>📢</span><span class="setting-label" data-i18n="news.title"></span><b class="news-new pulse" id="news-dot" hidden>NEW</b><span class="setting-go">›</span>
         </button>
+        <button class="setting-row" id="install-btn" hidden>
+          <span>📲</span><span class="setting-label"></span><span class="setting-go">›</span>
+        </button>
         <button class="setting-row" id="music-btn" aria-pressed="false">
           <span>🎵</span><span class="setting-label" data-i18n="hud.music"></span><span class="switch"></span>
         </button>
@@ -369,6 +381,11 @@
         <div class="news-list" id="news-list"></div>
         <button class="primary" id="news-close" data-i18n="settings.done"></button>
       </div>
+    </div>
+
+    <!-- Add to Home Screen guide (ui/install-ui.js) -->
+    <div class="overlay dim" id="install-panel" hidden>
+      <div class="panel small install-card"></div>
     </div>
 
     <!-- Language picker (in game) -->
