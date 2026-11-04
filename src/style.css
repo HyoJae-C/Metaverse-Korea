@@ -1095,15 +1095,42 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bike-btns { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
 .bike-using { color: var(--accent); font-weight: 700; }
 
-/* Gold coin (replaces the 🪙 emoji, see ui/gold-coin.js) */
-.coin { /* a green banknote (the game's money) */
-  display: inline-block; width: 1.45em; height: 0.86em; vertical-align: -0.1em; border-radius: 0.14em; margin: 0 0.06em;
+/* Money icon (replaces the 🪙 emoji, see ui/gold-coin.js): a little pay
+   card, since Seoul pays by card far more than with cash. */
+.coin {
+  display: inline-block; width: 1.4em; height: 0.9em; vertical-align: -0.12em; border-radius: 0.16em; margin: 0 0.08em;
   background:
-    radial-gradient(ellipse 0.26em 0.26em at 50% 50%, #e9f7df 0 92%, transparent 100%),
-    linear-gradient(90deg, #4f9f5a 0 0.14em, transparent 0.14em calc(100% - 0.14em), #4f9f5a calc(100% - 0.14em)),
-    linear-gradient(180deg, #8fd18a, #5fb36a);
-  box-shadow: inset 0 0 0 0.06em #3d7f47, 0 0.04em 0 rgba(0, 0, 0, 0.15);
+    linear-gradient(135deg, #f6d77a 0 100%) 0.2em 0.26em / 0.36em 0.28em no-repeat, /* the chip */
+    linear-gradient(180deg, transparent 0 62%, rgba(255, 255, 255, 0.35) 62% 72%, transparent 72%),
+    linear-gradient(135deg, #3d7cf0, #7a5af5 60%, #e0609a);
+  box-shadow: inset 0 0 0 0.05em rgba(0, 0, 0, 0.18), 0 0.04em 0 rgba(0, 0, 0, 0.15);
 }
+/* The wallet's pay card and the budget book */
+.pay-card {
+  position: relative; margin: 10px 0 12px; padding: 14px 16px 12px; border-radius: 16px; color: #fff;
+  min-height: 118px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(135deg, #3d7cf0, #7a5af5 60%, #e0609a);
+  box-shadow: 0 8px 18px rgba(80, 70, 200, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.pay-card-name { position: absolute; top: 14px; inset-inline-start: 16px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; opacity: 0.92; }
+.pay-card-chip { position: absolute; top: 12px; inset-inline-end: 16px; width: 32px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #f8e19a, #d9b04a); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.pay-card-label { font-size: 12px; font-weight: 700; opacity: 0.9; }
+.pay-card .wallet-balance { margin: 0; color: #fff; }
+.pay-card .wallet-balance b { font-size: 30px; }
+.pay-card.big { max-width: 300px; aspect-ratio: 1.75; margin: 8px auto 12px; }
+.ledger-btn { margin: 0 0 10px; }
+.ledger-today { margin: 6px 0 8px; font-weight: 700; font-size: 14px; }
+.ledger-list { max-height: min(46vh, 360px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.ledger-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff8ec; }
+.ledger-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ledger-what strong { font-size: 14px; overflow-wrap: anywhere; }
+.ledger-what small, .ledger-bal { color: #6b625a; font-size: 12px; }
+.ledger-amt { flex: none; text-align: end; font-weight: 800; font-size: 15px; display: flex; flex-direction: column; }
+.ledger-amt.in { color: #2f8a4a; }
+.ledger-amt.out { color: #c2462f; }
+.welcome-card { text-align: center; }
+.welcome-card p { margin: 0 0 8px; line-height: 1.5; }
+.welcome-tips { text-align: start; margin: 0 0 14px; padding-inline-start: 20px; line-height: 1.5; font-size: 14px; }
 /* Restaurant menu (📖 메뉴판) */
 .menu-row .lp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .menu-row .lp-text small { color: #6b625a; }

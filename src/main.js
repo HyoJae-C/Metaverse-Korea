@@ -686,7 +686,7 @@ function onboardHi5() {
   squareNpc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(10);
+  wallet.add(10, { k: 'ledger.quest' });
   refreshWallet();
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
@@ -1028,7 +1028,7 @@ async function renameMe(raw) {
   if (next === nickname) return 'same';
   if (wallet.coins < RENAME_COST) return 'poor';
   if (await cloud.claimName(clean) === 'taken') return 'taken';
-  if (!wallet.spend(RENAME_COST)) return 'poor';
+  if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
   identity = { ...identity, name: clean, nameAt: Date.now() };
   saveIdentity(identity);
@@ -1222,7 +1222,7 @@ chatBar.addEventListener('submit', async (e) => {
     if (used.includes(ev.id)) { shop.toast(L(CODE_TEXT.used)); return; }
     used.push(ev.id);
     try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
-    wallet.add(ev.coins);
+    wallet.add(ev.coins, { k: 'ledger.gift' });
     refreshWallet();
     shop.toast(fmt(L(CODE_TEXT.coins), { n: ev.coins }));
     return;
@@ -1233,7 +1233,7 @@ chatBar.addEventListener('submit', async (e) => {
     const code = raw.slice(1).trim();
     const coinsFromCode = await coinCode(code);
     if (coinsFromCode) {
-      wallet.add(coinsFromCode);
+      wallet.add(coinsFromCode, { k: 'ledger.gift' });
       refreshWallet();
       shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
       return;
@@ -1307,7 +1307,7 @@ const shop = new ShopUI({
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
     if (held && !confirm(t('coffee.replace'))) return false;
-    if (!wallet.spend(coins)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
     setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -1346,7 +1346,7 @@ const counterUi = new CounterUI({
   root: $('counter-panel'),
   onBuy: (store, product, coins) => {
     if (held && !confirm(t('coffee.replace'))) return false;
-    if (!wallet.spend(coins)) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
@@ -1379,7 +1379,7 @@ function adoptPet(id) {
   const it = ITEMS[id];
   if (!it?.pet || !it.price) return;
   if (inventory.has(id)) { setPet(id); return; }
-  if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+  if (!wallet.spend(it.price, { name: it.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
   inventory.add(id);
   setPet(id);
   shop.closeProduct();
@@ -1411,7 +1411,7 @@ function updatePet(dt, p) {
     const po = poops.get(late.id);
     po?.mesh.removeFromParent();
     poops.delete(late.id);
-    const taken = wallet.take(FINE);
+    const taken = wallet.take(FINE, { k: 'ledger.fine' });
     showFine(taken, po?.street);
   }
   const soon = poopTimers.list.reduce((m, x) => Math.min(m, x.left), Infinity);
@@ -1538,7 +1538,7 @@ function buyUmbrella(product) {
   if (hasUmbrella()) return;
   if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
   const cost = product.coins || 5;
-  if (!wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
+  if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
   bag.add({ kind: 'umbrella' });
   refreshWallet();
   shop.toast(L(UMB_TEXT.bought));
@@ -1730,7 +1730,7 @@ function outfitAction(itemId) {
   const it = ITEMS[itemId];
   if (!it?.outfit) return;
   if (!inventory.has(itemId)) {
-    if (!wallet.spend(it.price)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
     refreshWallet();
     sfx.pop?.();
@@ -2283,7 +2283,7 @@ function orderFood(product, togo) {
   const cost = coinPrice(product.price);
   if (!togo && meal?.seat === seated) { shop.toast(L(DINE_TEXT.busy)); return; }
   if (togo && held && !confirm(t('coffee.replace'))) return;
-  if (!wallet.spend(cost)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
+  if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
   refreshWallet();
   recordFood(interior.store, product, true);
   const name = localName(product.name, getLanguage());
@@ -2503,7 +2503,7 @@ function rideTaxi(dest) {
   // The fare grows with the distance (core/taxi.js).
   const from = mode === 'street' ? me.root.position : interior.front.door;
   const fare = taxiFare(from.x, from.z, fx, fz);
-  if (!wallet.spend(fare)) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
+  if (!wallet.spend(fare, { k: 'ledger.taxi' })) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
   refreshWallet();
   if (mode === 'store') leaveStore();
   if (riding) setRiding(false);
@@ -2744,6 +2744,8 @@ $('piece-close').onclick = closePiece;
 
 // Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+// Budget-book note for coins earned or spent without one: the shop you are in.
+wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
 // Ordering practice at restaurants (food can't be eaten; you practise ordering).
 const orderUi = new OrderUI({
   root: $('order-panel'),
@@ -2981,7 +2983,7 @@ onLanguageChange(refreshDexBtn);
 let ride = null; // { kind, seat, t0, until, back: [x, z] }
 const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼' };
 function boardRide(st) {
-  if (!wallet.spend(RIDE_COST)) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
+  if (!wallet.spend(RIDE_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
   const now = interior.time();
   ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
   sendTimer = 0;
@@ -3092,7 +3094,7 @@ function deliveryArrived(storeId) {
   delivery = null;
   $('delivery-chip').hidden = true;
   if (!coins) return;
-  wallet.add(coins);
+  wallet.add(coins, { k: 'ledger.delivery' });
   me.play('cheer');
   shop.toast(t('delivery.done', { n: coins }));
   missionEvent('delivery');
@@ -3437,6 +3439,67 @@ function refreshItems() {
 // Bring back the pet I was walking last time.
 try { const saved = localStorage.getItem(PET_KEY); if (saved) setPet(saved); } catch { /* storage blocked */ }
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
+// Budget book (가계부): today's totals and the latest coins in and out.
+function ledgerLabel(e) {
+  const lang = getLanguage(), n = e.note || {};
+  const parts = [n.k && t(n.k, n.v), n.name && localName(n.name, lang), n.at && localName(n.at, lang)].filter(Boolean);
+  return parts.length ? parts.join(' · ') : t(e.n > 0 ? 'ledger.in' : 'ledger.out');
+}
+function renderLedger() {
+  const lang = getLanguage();
+  const day = wallet.dayTotals();
+  $('ledger-today').textContent = t('ledger.today', { in: day.in.toLocaleString(), out: day.out.toLocaleString() });
+  const when = (ms) => {
+    const d = new Date(ms), now = new Date();
+    const time = d.toLocaleTimeString(lang === 'zht' ? 'zh-Hant' : lang, { hour: 'numeric', minute: '2-digit' });
+    return d.toDateString() === now.toDateString() ? time : d.toLocaleDateString(lang === 'zht' ? 'zh-Hant' : lang, { month: 'short', day: 'numeric' }) + ' ' + time;
+  };
+  const rows = wallet.log.slice().reverse().map((e) => {
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    const what = document.createElement('span');
+    what.className = 'ledger-what';
+    const label = document.createElement('strong');
+    label.textContent = ledgerLabel(e);
+    const at = document.createElement('small');
+    at.textContent = when(e.t);
+    what.append(label, at);
+    const amt = document.createElement('span');
+    amt.className = 'ledger-amt ' + (e.n > 0 ? 'in' : 'out');
+    amt.textContent = (e.n > 0 ? '+' : '−') + Math.abs(e.n).toLocaleString();
+    const bal = document.createElement('small');
+    bal.className = 'ledger-bal';
+    bal.textContent = '🪙 ' + Number(e.bal ?? 0).toLocaleString();
+    amt.append(bal);
+    row.append(what, amt);
+    return row;
+  });
+  if (!rows.length) {
+    const p = document.createElement('p');
+    p.className = 'fine';
+    p.textContent = t('ledger.empty');
+    rows.push(p);
+  }
+  $('ledger-list').replaceChildren(...rows);
+}
+$('ledger-btn').onclick = () => { $('wallet-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
+$('ledger-close').onclick = () => { $('ledger-panel').hidden = true; };
+wallet.onChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+onLanguageChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+// Travel money, once: enough to explore without working part-time first,
+// with a word to spend it wisely. Players from before it get it too.
+{
+  const gift = wallet.welcome();
+  if (gift) {
+    refreshWallet();
+    $('welcome-coins').textContent = gift.toLocaleString();
+    const body = () => { $('welcome-body').textContent = t('welcome.body', { n: gift.toLocaleString() }); };
+    body();
+    onLanguageChange(body);
+    $('welcome-panel').hidden = false;
+    $('welcome-close').onclick = () => { $('welcome-panel').hidden = true; };
+  }
+}
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
   const music0 = music.on;
@@ -3541,7 +3604,7 @@ function talkToGuide() {
     // Busy square bonus: +1 for everyone else standing around the guide.
     const g = squareNpc.ch.root.position;
     const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
-    wallet.add(coins + crowd);
+    wallet.add(coins + crowd, { k: 'ledger.quest' });
     me.play('cheer');
     say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
     shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
@@ -3579,7 +3642,7 @@ function togetherBonus(kind) {
   const p = me.root.position;
   const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
   if (!friend) return;
-  wallet.add(TOGETHER_COINS[kind]);
+  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' });
   shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
 }
 
@@ -3604,7 +3667,7 @@ function hi5Done(id, { coins }) {
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins);
+  if (coins) wallet.add(coins, { k: 'ledger.together' });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }

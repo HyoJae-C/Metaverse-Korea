@@ -11,15 +11,33 @@
 // banner (CMP) for EU/UK visitors.
 
 const KEY = 'mk.wallet';
+// The budget book (가계부): the last LOG_MAX coins in and out, newest last.
+// Each entry: { t: time (ms), n: +earned / -spent, bal: balance after,
+// note: what it was for, or null }. A note is { k, v } (an i18n key and
+// its {vars}), { name, at } (a thing's and a place's name objects), or both.
+const LOG_KEY = 'mk.ledger';
+export const LOG_MAX = 100;
+// Travel money every player gets once (new players at the start; players
+// from before it existed the next time they play).
+export const WELCOME_COINS = 500;
 
 function read() {
   try {
     const w = JSON.parse(localStorage.getItem(KEY) || '{}');
-    return { coins: Math.max(0, Math.floor(Number(w.coins) || 0)), day: String(w.day || ''), ads: Number(w.ads) || 0 };
-  } catch { return { coins: 0, day: '', ads: 0 }; }
+    return { coins: Math.max(0, Math.floor(Number(w.coins) || 0)), day: String(w.day || ''), ads: Number(w.ads) || 0, gift: w.gift ? 1 : 0 };
+  } catch { return { coins: 0, day: '', ads: 0, gift: 0 }; }
 }
 function write(w) {
   try { localStorage.setItem(KEY, JSON.stringify(w)); } catch { /* storage blocked */ }
+}
+function readLog() {
+  try {
+    const l = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    return Array.isArray(l) ? l.filter((e) => e && Number.isFinite(e.n) && Number.isFinite(e.t)) : [];
+  } catch { return []; }
+}
+function writeLog(l) {
+  try { localStorage.setItem(LOG_KEY, JSON.stringify(l)); } catch { /* storage blocked */ }
 }
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -27,27 +45,54 @@ export class Wallet {
   constructor(cfg) {
     this.cfg = cfg;
     this.w = read();
+    this.log = readLog();
     this.listeners = [];
+    // What the player is doing right now ({ name } of the shop they are in,
+    // say), used as the note when a caller gives none. Set by the game.
+    this.context = null;
   }
   get coins() { return this.w.coins; }
+  // Gives the welcome travel money once; returns the coins given (0 if done before).
+  welcome(n = WELCOME_COINS) {
+    if (this.w.gift) return 0;
+    this.w.gift = 1;
+    this.add(n, { k: 'ledger.welcome' });
+    return n;
+  }
+  // Totals for one local day (default today): { in, out } in coins.
+  dayTotals(d = new Date()) {
+    const same = (t) => { const x = new Date(t); return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() && x.getDate() === d.getDate(); };
+    let inn = 0, out = 0;
+    for (const e of this.log) if (same(e.t)) { if (e.n > 0) inn += e.n; else out -= e.n; }
+    return { in: inn, out };
+  }
   adsLeft() {
     return this.w.day === today() ? Math.max(0, this.cfg.dailyLimit - this.w.ads) : this.cfg.dailyLimit;
   }
-  add(n) {
-    this.w.coins += n;
+  // note: what the coins were for (see LOG_KEY); left out, the current context.
+  add(n, note) {
+    n = Math.round(Number(n) || 0);
+    this.w.coins = Math.max(0, this.w.coins + n);
     write(this.w);
+    if (n) {
+      let ctx = null;
+      if (note === undefined) { try { ctx = this.context?.() || null; } catch { ctx = null; } }
+      this.log.push({ t: Date.now(), n, bal: this.w.coins, note: note === undefined ? ctx : note });
+      if (this.log.length > LOG_MAX) this.log.splice(0, this.log.length - LOG_MAX);
+      writeLog(this.log);
+    }
     this.listeners.forEach((f) => f(this.w.coins));
   }
   // Pay n coins if there are enough; returns true when paid.
-  spend(n) {
+  spend(n, note) {
     if (n > this.w.coins) return false;
-    this.add(-n);
+    this.add(-n, note);
     return true;
   }
   // Take up to n coins (a fine never makes the balance negative); returns what was taken.
-  take(n) {
+  take(n, note) {
     const k = Math.min(n, this.w.coins);
-    if (k > 0) this.add(-k);
+    if (k > 0) this.add(-k, note);
     return k;
   }
   onChange(f) { this.listeners.push(f); }
@@ -59,7 +104,7 @@ export class Wallet {
     if (!done) return 0;
     if (this.w.day !== today()) { this.w.day = today(); this.w.ads = 0; }
     this.w.ads += 1;
-    this.add(this.cfg.reward);
+    this.add(this.cfg.reward, { k: 'ledger.ad' });
     return this.cfg.reward;
   }
 }
