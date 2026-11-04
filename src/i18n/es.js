@@ -15,6 +15,7 @@ export const ES = {
   'cloud.link': 'Vincular cuenta de Google',
   'cloud.signin': 'Ya tengo una cuenta',
   'cloud.signinConfirm': '¿Iniciar sesión con la cuenta de Google que usaste antes? Su partida reemplazará el progreso de este dispositivo.',
+  'cloud.tapGoogle': 'Toca el botón de Google de arriba para entrar con esa cuenta.',
   'cloud.taken': 'Esa cuenta de Google ya tiene una partida. Usa «Ya tengo una cuenta».',
   'cloud.notReady': 'El inicio de sesión con Google aún no está listo. Inténtalo más tarde.',
   'guide.auto': 'Auto',

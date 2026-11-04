@@ -16,6 +16,7 @@ export const AR = {
   'cloud.link': 'ربط حساب Google',
   'cloud.signin': 'لديّ حساب بالفعل',
   'cloud.signinConfirm': 'تسجيل الدخول بحساب Google الذي استخدمته من قبل؟ سيحلّ حفظه محلّ التقدّم على هذا الجهاز.',
+  'cloud.tapGoogle': 'اضغط زر Google في الأعلى لتسجيل الدخول إلى ذلك الحساب.',
   'cloud.taken': 'لحساب Google هذا حفظ بالفعل. استخدم «لديّ حساب بالفعل».',
   'cloud.notReady': 'تسجيل الدخول عبر Google غير جاهز بعد. حاول لاحقًا.',
   'guide.auto': 'تلقائي',

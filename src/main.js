@@ -254,6 +254,12 @@ $('next-btn').onclick = () => {
   $('login-google').textContent = 'G  ' + L(LOGIN_TEXT.google);
   $('login-guest').textContent = L(LOGIN_TEXT.guest);
   $('login-note').textContent = L(LOGIN_TEXT.note);
+  // Google's own button where it works (shows this site's name on Google's
+  // screen); otherwise the redirect button below stays.
+  cloud.renderGoogleButton($('login-google-gis'), () => (freshStart() ? 'signin' : 'link'), {
+    locale: gisLocale(),
+    onError: (err) => { $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'); },
+  }).then((ok) => { $('login-google').hidden = ok; });
 };
 $('login-guest').onclick = showLook;
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
@@ -267,11 +273,13 @@ const tidyName = (e) => {
 $('nickname').addEventListener('input', tidyName);
 $('nickname').addEventListener('compositionend', tidyName);
 $('nickname').value = cleanName($('nickname').value);
+// Progress on this device: link it to Google (same save). A fresh start:
+// sign in, which also finds an account used on another device.
+const freshStart = () => !localStorage.getItem('mk.name') && !localStorage.getItem('mk.wallet');
+const GIS_LOCALE = { zh: 'zh-CN', hant: 'zh-TW' };
+const gisLocale = () => GIS_LOCALE[getLanguage()] || getLanguage();
 $('login-google').onclick = async () => {
-  // Progress on this device: link it to Google (same save). A fresh start:
-  // sign in, which also finds an account used on another device.
-  const fresh = !localStorage.getItem('mk.name') && !localStorage.getItem('mk.wallet');
-  const err = fresh ? await cloud.signInGoogle() : await cloud.linkGoogle();
+  const err = freshStart() ? await cloud.signInGoogle() : await cloud.linkGoogle();
   if (err) $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady');
 };
 $('back-btn').onclick = () => {
@@ -3322,11 +3330,20 @@ function refreshCloud() {
   $('cloud-actions').hidden = !(cloud.status === 'cloud' && cloud.guest);
 }
 const googleFail = (err) => err && shop.toast(t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'));
+// Settings: Google's own button links this guest; after "I already have an
+// account" the same button signs in to that account instead.
+let settingsGoogleMode = 'link';
+let settingsGis = false;
+const renderSettingsGoogle = () => cloud.renderGoogleButton($('google-link-gis'), () => settingsGoogleMode, { locale: gisLocale(), onError: googleFail })
+  .then((ok) => { settingsGis = ok; $('google-link').hidden = ok; });
 $('google-link').onclick = async () => googleFail(await cloud.linkGoogle());
 $('google-signin').onclick = async () => {
   if (!confirm(t('cloud.signinConfirm'))) return;
+  if (settingsGis) { settingsGoogleMode = 'signin'; shop.toast(t('cloud.tapGoogle')); return; }
   googleFail(await cloud.signInGoogle());
 };
+if (cloud.status === 'cloud' && cloud.guest) renderSettingsGoogle();
+onLanguageChange(() => { if (settingsGis) renderSettingsGoogle(); });
 cloud.onChange(refreshCloud);
 refreshCloud();
 onLanguageChange(refreshCloud);

@@ -69,3 +69,13 @@ Also keep **Allow anonymous sign-ins** on: guests link Google to their account.
 Open the site → Settings → "Link Google account". You should see Google's
 account picker, come back to the game, and Settings should say the save is on
 your account.
+
+## 5. Google's own sign-in button
+
+`VITE_GOOGLE_CLIENT_ID` in `.env` (the same public web client ID) turns on
+Google's sign-in button (Google Identity Services). The browser gets an ID
+token from Google and hands it to Supabase (`signInWithIdToken` /
+`linkIdentity`), so Google's screen names `another-seoul.com` instead of the
+Supabase project address, and the player stays on the page. It needs
+`https://another-seoul.com` in the client's Authorized JavaScript origins. If
+the script can't load, the game falls back to the redirect flow above.
