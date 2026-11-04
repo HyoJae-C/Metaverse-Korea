@@ -187,6 +187,7 @@ export const HI = {
   'cat.bar': 'बार',
   'cat.info': 'जानकारी',
   'cat.library': 'पुस्तकालय',
+  'cat.school': 'स्कूल',
   'cat.petshop': 'पेट शॉप',
   'fish.open': 'मछली पकड़ें',
   'fish.title': 'हान नदी में मछली पकड़ना',

@@ -187,6 +187,7 @@ export const AR = {
   'cat.bar': 'بار',
   'cat.info': 'معلومات',
   'cat.library': 'مكتبة',
+  'cat.school': 'مدرسة',
   'cat.petshop': 'متجر حيوانات',
   'fish.open': 'اذهب للصيد',
   'fish.title': 'الصيد في نهر هان',

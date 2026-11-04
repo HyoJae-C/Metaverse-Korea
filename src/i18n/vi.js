@@ -187,6 +187,7 @@ export const VI = {
   'cat.bar': 'Quán bar',
   'cat.info': 'Thông tin',
   'cat.library': 'Thư viện',
+  'cat.school': 'Trường học',
   'cat.petshop': 'Cửa hàng thú cưng',
   'fish.open': 'Đi câu cá',
   'fish.title': 'Câu cá sông Hàn',

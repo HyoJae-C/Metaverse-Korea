@@ -186,6 +186,7 @@ export const ES = {
   'cat.bar': 'Bar',
   'cat.info': 'Información',
   'cat.library': 'Biblioteca',
+  'cat.school': 'Escuela',
   'cat.petshop': 'Tienda de mascotas',
   'fish.open': 'Ir a pescar',
   'fish.title': 'Pesca en el río Han',

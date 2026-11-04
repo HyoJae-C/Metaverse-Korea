@@ -23,6 +23,7 @@ export const DISTRICT_NAME = {
   seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو', vi: 'Seongsu', hi: 'सोंगसू' },
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
+  songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
 };
 // The middle of each district's buildings.
@@ -34,7 +35,7 @@ export function districtCentres(map) {
       if (b.d !== id) continue;
       for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     }
-    if (x0 < x1) out.push({ id, x: (x0 + x1) / 2, z: (z0 + z1) / 2, name: DISTRICT_NAME[id] || { en: id } });
+    if (x0 < x1) out.push({ id, x: (x0 + x1) / 2, z: (z0 + z1) / 2, name: DISTRICT_NAME[id] || { en: id.charAt(0).toUpperCase() + id.slice(1) } });
   }
   return out;
 }

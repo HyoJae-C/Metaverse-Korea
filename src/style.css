@@ -391,7 +391,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .map-card > .map-controls { position: static; padding: 0 14px 8px; }
   .map-body { flex: 1 1 0; min-height: 0; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); }
   .map-list { min-height: 0; }
-  .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; } /* above the emote wheel's petals */
+  .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
   .store-banner {
@@ -872,6 +872,17 @@ body.beauty-mode #store-banner, body.beauty-mode #action-btn { display: none; }
   font-size: 13px; font-weight: 800; z-index: 4; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .in-store .quest-chip { display: none; }
+/* The square errand: the chip plus a 🧭 "show the way" button beside it. */
+.quest-bar {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));
+  display: flex; gap: 6px; align-items: center; max-width: min(92vw, 460px); z-index: 4;
+}
+.quest-bar .quest-chip { position: static; transform: none; min-width: 0; max-width: none; flex: 0 1 auto; }
+.quest-go {
+  flex: none; padding: 7px 12px; border-radius: 999px; background: var(--ink); color: var(--cream);
+  font-size: 13px; font-weight: 800; box-shadow: var(--shadow); white-space: nowrap;
+}
+.in-store .quest-bar { display: none; }
 
 /* K-POP café: the video on the wall screen (a box over the canvas), and a
    small now-playing bar */
@@ -962,7 +973,12 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px));
   transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
   background: var(--panel); border-radius: var(--radius); padding: 12px 14px;
-  box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 5;
+  box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 3; /* under the action button and sheets */
+}
+.in-store .info-hint { display: none; }
+@media (max-width: 700px) {
+  /* Hint cards stop short of the tool column, so Map, Chat and Bag stay tappable. */
+  .help, .info-hint { left: 12px; right: 80px; width: auto; max-width: none; transform: none; }
 }
 .info-hint p { margin: 0 0 8px; font-weight: 700; }
 .info-hint .order-actions { flex-wrap: wrap; }
