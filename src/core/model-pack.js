@@ -9,6 +9,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES } from '../data/appearance.js';
 import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
+import { buildOutfit } from './outfit-mesh.js';
 
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
@@ -35,7 +36,7 @@ function load(id) {
     // A failed load resolves to null and the character keeps its chibi body.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
-      .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); return g; })
+      .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); if (def.wear?.outfit) buildOutfit(g, def.wear.outfit, wearUv); return g; })
       .catch(() => null));
   }
   return cache.get(id);
@@ -56,7 +57,13 @@ function load(id) {
 //   The first matching rule wins. Roles: top, bottom, shoes, accent,
 //   accent2, accent3, skin (bared), cut (that part folded away), and hide
 //   (with cell '*': the whole mesh).
-export const WEAR_CELLS = { top: [0, 3], bottom: [1, 3], shoes: [2, 3], accent: [3, 3], accent2: [4, 3], accent3: [5, 3], skin: null, hide: null, cut: null };
+export const WEAR_CELLS = { top: [0, 3], bottom: [1, 3], shoes: [2, 3], accent: [3, 3], accent2: [4, 3], accent3: [5, 3], sole: [6, 3], stitch: [7, 3], skin: null, hide: null, cut: null };
+// The centre of the atlas cell a role is painted on (for outfit meshes).
+function wearUv(role) {
+  const A = PACK.atlas;
+  const [cx, cy] = role === 'skin' ? A.skin : WEAR_CELLS[role] || WEAR_CELLS.top;
+  return [(cx + 0.5) / A.cols, (cy + 0.5) / A.rows];
+}
 function applyWear(gltf, wear) {
   const A = PACK.atlas;
   const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
