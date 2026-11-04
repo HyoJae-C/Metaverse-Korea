@@ -6,7 +6,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
-import { buildStation, HALL } from './subway.js';
+import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -15,6 +15,7 @@ export const ROOM_SIZES = {
   large: { w: 22, d: 16, h: 4.6 },
   park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
   station: HALL, // subway station hall (see subway.js)
+  train: CAR, // inside a subway car
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -204,6 +205,7 @@ export function buildInterior(store) {
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
+  if (store.category === 'train') return buildTrainCar(store, ROOM);
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).

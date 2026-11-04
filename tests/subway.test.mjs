@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT } from '../src/core/subway.js';
+import { PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/seongsu/region.json', import.meta.url)));
 const stations = region.subway.stations;
@@ -42,6 +42,32 @@ test('hall stairs: arrive at the foot, climb to leave', () => {
     assert.equal(on.i, st.i);
     assert.ok(on.frac >= HALL_EXIT_AT && on.y > 2);
   }
+});
+
+test('a train every 10 s per track, doors open for 5 s, tracks 5 s apart', () => {
+  assert.equal(HEADWAY, 10);
+  assert.equal(DOORS, 5);
+  let open = 0;
+  for (let t = 0; t < HEADWAY; t += 0.01) if (trainPhase(t).phase === 'open') open += 0.01;
+  assert.ok(Math.abs(open - DOORS) < 0.05);
+  assert.equal(trainPhase(0, 0).phase, 'in');
+  assert.equal(trainPhase(0, 5).phase, 'open');
+  assert.equal(trainPhase(-3).phase, trainPhase(7).phase); // any clock value works
+  assert.deepEqual(TRACKS.map((t) => t.dir).sort(), [-1, 1]);
+});
+
+test('riding: up goes forward round the loop, down goes back', () => {
+  assert.deepEqual(lineAhead(0, 1, 4), [1, 2, 3]);
+  assert.deepEqual(lineAhead(0, -1, 4), [3, 2, 1]);
+  assert.equal(stopsBetween(0, 3, 1, 4), 3);
+  assert.equal(stopsBetween(0, 3, -1, 4), 1);
+  assert.equal(stopsBetween(2, 1, 1, 4), 3);
+});
+
+test('gates: the concourse is west of the gate row, the platform east', () => {
+  assert.equal(gateAt(GATE_X - 1, 0).inside, false);
+  assert.equal(gateAt(GATE_X + 1, 0).inside, true);
+  assert.equal(gateAt(GATE_X + 5, 0), null);
 });
 
 // The stairwells cut holes in the ground: they must not sit on a road or in a building,
