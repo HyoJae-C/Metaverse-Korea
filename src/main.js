@@ -1971,9 +1971,11 @@ const METRO_TEXT = {
   leaving: { en: 'Doors close in {n}s', ko: '{n}초 뒤 문이 닫혀요', ja: 'あと{n}秒でドアが閉まります', zh: '{n}秒后关门' },
   moving: { en: 'Next: {name}', ko: '다음 역: {name}', ja: '次は {name}', zh: '下一站：{name}' },
   getOff: { en: 'Get off here', ko: '여기서 내리기', ja: 'ここで降りる', zh: '在这里下车' },
+  arriving: { en: 'Arriving at {name}', ko: '곧 {name}에 도착해요', ja: 'まもなく {name}', zh: '即将到达 {name}' },
   choose: { en: 'Pick a station first', ko: '먼저 내릴 역을 골라 주세요', ja: '先に降りる駅を選んでください', zh: '请先选择下车站' },
 };
-let metro = null; // { from, t, dir, leaveAt, dest, arriveAt }
+let metro = null; // { from, t, dir, leaveAt, dest, arriveAt, chimed }
+const CHIME_LEAD = 2; // seconds before arrival
 const stationIndex = () => stationStores.indexOf(interior?.store);
 const stationName = (k) => localName(stationStores[k].name, getLanguage());
 function boardTrain(t, left) {
@@ -2011,6 +2013,7 @@ $('train-off').onclick = () => metroGetOff();
 function pickStop(k) {
   if (!metro || metro.arriveAt && Date.now() > metro.arriveAt - 500) return;
   metro.dest = k;
+  metro.chimed = false;
   const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
   metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
   renderMetro();
@@ -2043,7 +2046,12 @@ function updateMetro(p) {
   interior.train.setMoving(moving);
   let led;
   if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
-  else if (metro.dest != null) led = fmt(L(METRO_TEXT.moving), { name: stationName(metro.dest) });
+  else if (metro.dest != null) {
+    // Chime and "arriving" a couple of seconds before the doors open there.
+    const soon = now >= metro.arriveAt - CHIME_LEAD * 1000;
+    if (soon && !metro.chimed) { metro.chimed = true; sfx.arrivalChime(); }
+    led = fmt(L(soon ? METRO_TEXT.arriving : METRO_TEXT.moving), { name: stationName(metro.dest) });
+  }
   else led = L(METRO_TEXT.pick);
   if (led !== metro.led) {
     metro.led = led;
