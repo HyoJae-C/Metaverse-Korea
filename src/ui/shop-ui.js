@@ -17,8 +17,10 @@ const HOW = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' },
   note: { en: 'Paid with game coins only. No real money.', ko: '게임 코인으로만 사요. 실제 결제는 없어요.', ja: 'ゲーム内コインだけで買えます。実際の支払いはありません。', zh: '只用游戏硬币购买，不会真实付款。', es: 'Solo con monedas del juego. Sin dinero real.', ar: 'بعملات اللعبة فقط. لا أموال حقيقية.', vi: 'Chỉ thanh toán bằng xu trong game. Không dùng tiền thật.', hi: 'सिर्फ़ गेम के सिक्कों से भुगतान। असली पैसा नहीं।', id: 'Hanya pakai koin game. Tanpa uang sungguhan.' },
 };
-// Clothes and hats are not for sale for now.
-export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat');
+// Clothes and hats are not for sale for now, except the outfits of the
+// clothes shop (Daily Closet), bought with coins and worn on the spot.
+const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit);
+export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat') && !sellsOutfits(store);
 // How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
 // 'soon' (fashion, for now) or 'buy' (take it home in a shopping bag).
 export function howToGet(store) {
@@ -134,7 +136,7 @@ export class ShopUI {
       ab.onclick = () => this.onUmbrella?.(product);
       this.$('product-price').textContent = `🪙 ${product.coins}`;
     } else ab.disabled = false;
-    // Costume shop: buy a costume with coins, then wear it or take it off.
+    // Clothes shop: buy an outfit with coins, then wear it or take it off.
     const outfit = product.outfit && ITEMS[product.outfit];
     if (outfit) {
       const mine = this.owns?.(product.outfit), on = this.wearing?.() === outfit.outfit;

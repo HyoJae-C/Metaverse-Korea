@@ -210,8 +210,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
 let editor = null;
 let identity = readIdentity();
 const ID_TEXT = {
-  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the costume shop or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 코스튬 가게나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はコスチューム店かアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在服装店或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en la tienda de disfraces o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في متجر الأزياء أو من أغراضك.', vi: 'Chào mừng bạn trở lại! Đổi tên ở xưởng bảng tên, còn quần áo thì ở cửa hàng trang phục hoặc trong đồ của bạn.', hi: 'फिर से स्वागत है! नाम-टैग वर्कशॉप में अपना नाम बदलें, और कपड़े कॉस्ट्यूम शॉप में या अपनी चीज़ों से।', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di toko kostum atau dari barangmu.' },
-  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy costumes like mage or ninja at the costume shop.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 마법사·닌자 같은 옷은 코스튬 가게에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、魔法使いや忍者の服はコスチューム店で買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，法师、忍者等服装可在服装店购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar disfraces de mago o ninja en la tienda de disfraces.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء أزياء مثل الساحر أو النينجا من متجر الأزياء.', vi: 'Chọn tên và màu áo phông. Sau này bạn có thể đổi tên ở xưởng bảng tên, và mua trang phục như pháp sư hay ninja ở cửa hàng trang phục.', hi: 'एक नाम और टी-शर्ट का रंग चुनें। बाद में नाम-टैग वर्कशॉप में नाम बदल सकते हैं, और कॉस्ट्यूम शॉप से जादूगर या निंजा जैसी पोशाकें ख़रीद सकते हैं।', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli kostum seperti penyihir atau ninja di toko kostum.' },
+  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the Daily Closet or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 데일리 클로젯이나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はデイリークローゼットかアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在日常衣橱或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en Armario Diario o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في خزانة يومية أو من أغراضك.', vi: 'Chào mừng bạn trở lại! Đổi tên ở xưởng bảng tên, còn quần áo thì ở Daily Closet hoặc trong đồ của bạn.', hi: 'फिर से स्वागत है! नाम-टैग वर्कशॉप में अपना नाम बदलें, और कपड़े डेली क्लोज़ेट में या अपनी चीज़ों से।', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di Daily Closet atau dari barangmu.' },
+  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy clothes like hoodies or padded coats at the Daily Closet.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 후드티·패딩 같은 옷은 데일리 클로젯에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、パーカーやダウンなどの服はデイリークローゼットで買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，卫衣、羽绒服等衣服可在日常衣橱购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar ropa como sudaderas o abrigos acolchados en Armario Diario.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء ملابس مثل الهودي أو المعاطف المنفوخة من خزانة يومية.', vi: 'Chọn tên và màu áo phông. Sau này bạn có thể đổi tên ở xưởng bảng tên, và mua quần áo như áo hoodie hay áo phao ở Daily Closet.', hi: 'एक नाम और टी-शर्ट का रंग चुनें। बाद में नाम-टैग वर्कशॉप में नाम बदल सकते हैं, और डेली क्लोज़ेट से हुडी या पैडेड कोट जैसे कपड़े ख़रीद सकते हैं।', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli baju seperti hoodie atau mantel puffer di Daily Closet.' },
 };
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
@@ -237,7 +237,7 @@ function showLook() {
   $('step-look').hidden = false;
   editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
   // Coming back: the character is already made, so no clothes to pick here
-  // (change them later at the costume shop or from your items).
+  // (change them later at the clothes shop or from your items).
   // Name too: it is kept, and changed at the name tag workshop.
   const returning = isReturning();
   $('step-look').classList.toggle('returning', returning);
@@ -1714,7 +1714,7 @@ function hopOn(inv) {
 }
 // Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
-// Costumes are bought now. Players who already picked one at the start keep it.
+// Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
     if (OUTFIT_ITEM(myLook.model)) inventory.add(OUTFIT_ITEM(myLook.model));
@@ -1728,11 +1728,11 @@ const CODE_TEXT = {
   wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
 };
 const OUTFIT_TEXT = {
-  bought: { en: 'New costume! You are wearing it now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Disfraz nuevo! Ya lo llevas puesto.', ar: 'زيّ جديد! أنت ترتديه الآن.', vi: 'Trang phục mới! Bạn đang mặc nó rồi.', hi: 'नई पोशाक! आपने इसे अभी पहन लिया है।', id: 'Kostum baru! Sekarang sedang kamu pakai.' },
-  on: { en: 'Costume on!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Disfraz puesto!', ar: 'ارتديت الزي!', vi: 'Đã mặc trang phục!', hi: 'पोशाक पहन ली!', id: 'Kostum terpasang!' },
+  bought: { en: 'New clothes! You are wearing them now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Ropa nueva! Ya la llevas puesta.', ar: 'ملابس جديدة! أنت ترتديها الآن.', vi: 'Quần áo mới! Bạn đang mặc rồi.', hi: 'नए कपड़े! आपने इन्हें अभी पहन लिया है।', id: 'Baju baru! Sekarang sedang kamu pakai.' },
+  on: { en: 'Changed clothes!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Te cambiaste de ropa!', ar: 'غيّرت ملابسك!', vi: 'Đã thay đồ!', hi: 'कपड़े बदल लिए!', id: 'Sudah ganti baju!' },
   off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', vi: 'Đã trở lại áo phông.', hi: 'वापस अपनी टी-शर्ट में।', id: 'Kembali ke kaosmu.' },
 };
-// Costume shop and the items list: buy (coins), wear, or take off.
+// Clothes shop and the items list: buy (coins), wear, or take off.
 function outfitAction(itemId) {
   const it = ITEMS[itemId];
   if (!it?.outfit) return;

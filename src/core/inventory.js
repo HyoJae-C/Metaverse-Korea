@@ -15,13 +15,13 @@ function pets(defs) {
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
 const OUTFIT_DESC = {
-  en: 'A costume from the costume shop. Tap Wear to put it on, Take off to go back to your T-shirt.',
-  ko: '코스튬 가게에서 산 옷이에요. "입기"로 입고, "벗기"로 티셔츠로 돌아가요.',
-  ja: 'コスチューム店の服。「着る」で着替え、「脱ぐ」でTシャツに戻ります。',
-  zh: '服装店买的服装。点“穿上”换上，点“脱下”换回T恤。',
-  es: 'Un disfraz de la tienda de disfraces. Toca Poner para vestirlo y Quitar para volver a tu camiseta.', ar: 'زيّ من متجر الأزياء. اضغط ارتدِ لتلبسه، واخلع لتعود إلى قميصك.', vi: 'Trang phục từ cửa hàng trang phục. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'कॉस्ट्यूम शॉप की पोशाक। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Kostum dari toko kostum. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
+  en: 'Clothes from the Daily Closet. Tap Wear to put them on, Take off to go back to your T-shirt.',
+  ko: '데일리 클로젯에서 산 옷이에요. "입기"로 입고, "벗기"로 티셔츠로 돌아가요.',
+  ja: 'デイリークローゼットの服。「着る」で着替え、「脱ぐ」でTシャツに戻ります。',
+  zh: '日常衣橱买的衣服。点“穿上”换上，点“脱下”换回T恤。',
+  es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
-// outfit: the character model it puts on; price: coins at the costume shop.
+// outfit: the character model it puts on; price: coins at the clothes shop.
 function outfits(defs) {
   const out = {};
   for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price };
@@ -94,14 +94,15 @@ export const ITEMS = {
       zh: '一只一脸闷闷不乐的毛茸茸小家伙。点“穿上”即可穿上。',
     },
   },
-  // Costumes from the costume shop: wear one instead of your plain clothes.
+  // Everyday clothes from the clothes shop (Daily Closet): wear them instead
+  // of your T-shirt. The ids are the old costume ids, so bought items carry over.
   ...outfits({
-    'outfit-rogue': [60, '🧝', { en: 'Ranger costume', ko: '레인저 옷', ja: 'レンジャーの服', zh: '游侠服装', es: 'Traje de explorador', ar: 'زي الحارس', vi: 'Trang phục kiểm lâm', hi: 'रेंजर पोशाक', id: 'Kostum ranger' }],
-    'outfit-ranger': [60, '🧭', { en: 'Explorer costume', ko: '탐험가 옷', ja: '探検家の服', zh: '探险家服装', es: 'Traje de aventurero', ar: 'زي المستكشف', vi: 'Trang phục nhà thám hiểm', hi: 'खोजकर्ता पोशाक', id: 'Kostum penjelajah' }],
-    'outfit-barbarian': [80, '🧔', { en: 'Viking costume', ko: '바이킹 옷', ja: 'バイキングの服', zh: '维京服装', es: 'Traje de vikingo', ar: 'زي الفايكنغ', vi: 'Trang phục Viking', hi: 'वाइकिंग पोशाक', id: 'Kostum viking' }],
-    'outfit-hooded': [100, '🥷', { en: 'Ninja costume', ko: '닌자 옷', ja: '忍者の服', zh: '忍者服装', es: 'Traje de ninja', ar: 'زي النينجا', vi: 'Trang phục ninja', hi: 'निंजा पोशाक', id: 'Kostum ninja' }],
-    'outfit-knight': [120, '💂', { en: 'Knight armour', ko: '기사 갑옷', ja: '騎士の鎧', zh: '骑士盔甲', es: 'Armadura de caballero', ar: 'درع الفارس', vi: 'Áo giáp hiệp sĩ', hi: 'योद्धा का कवच', id: 'Baju zirah kesatria' }],
-    'outfit-mage': [150, '🧙', { en: 'Mage robe', ko: '마법사 로브', ja: '魔法使いのローブ', zh: '法师长袍', es: 'Túnica de mago', ar: 'رداء الساحر', vi: 'Áo choàng pháp sư', hi: 'जादूगर का चोगा', id: 'Jubah penyihir' }],
+    'outfit-rogue': [60, '🧥', { en: 'Denim jacket', ko: '청재킷', ja: 'デニムジャケット', zh: '牛仔夹克', es: 'Chaqueta vaquera', ar: 'سترة جينز', vi: 'Áo khoác jean', hi: 'डेनिम जैकेट', id: 'Jaket denim' }],
+    'outfit-ranger': [60, '👔', { en: 'Linen shirt & bandana', ko: '린넨 셔츠와 반다나', ja: 'リネンシャツとバンダナ', zh: '亚麻衬衫和方巾', es: 'Camisa de lino y pañuelo', ar: 'قميص كتان ومنديل', vi: 'Áo sơ mi linen và khăn bandana', hi: 'लिनन शर्ट और बंदाना', id: 'Kemeja linen & bandana' }],
+    'outfit-barbarian': [80, '🎽', { en: 'Sleeveless top & shorts', ko: '민소매와 반바지', ja: 'タンクトップと短パン', zh: '背心和短裤', es: 'Camiseta sin mangas y shorts', ar: 'قميص بلا أكمام وشورت', vi: 'Áo ba lỗ và quần short', hi: 'स्लीवलेस टॉप और शॉर्ट्स', id: 'Kaos tanpa lengan & celana pendek' }],
+    'outfit-hooded': [100, '🩶', { en: 'Grey hoodie', ko: '회색 후드티', ja: 'グレーのパーカー', zh: '灰色连帽卫衣', es: 'Sudadera gris con capucha', ar: 'هودي رمادي', vi: 'Áo hoodie xám', hi: 'ग्रे हुडी', id: 'Hoodie abu-abu' }],
+    'outfit-knight': [120, '🤍', { en: 'Puffer jacket', ko: '숏패딩', ja: 'ショートダウン', zh: '短款羽绒服', es: 'Chaqueta acolchada', ar: 'سترة منفوخة', vi: 'Áo phao ngắn', hi: 'पफ़र जैकेट', id: 'Jaket puffer' }],
+    'outfit-mage': [150, '🖤', { en: 'Long padded coat', ko: '롱패딩', ja: 'ロングダウンコート', zh: '长款羽绒服', es: 'Abrigo acolchado largo', ar: 'معطف منفوخ طويل', vi: 'Áo phao dài', hi: 'लंबा पैडेड कोट', id: 'Mantel puffer panjang' }],
   }),
   // Claw machine prizes (core/claw-game.js).
   ...plushies({
