@@ -101,9 +101,11 @@ export class RemotePlayers {
   }
   nameOf(id) { return this.players.get(id)?.name ?? null; }
   // Where another player is right now (x, z), or null.
+  // Where someone is, by their latest update (not where the smoothed
+  // character has got to yet: after a jump that can lag by many metres).
   positionOf(id) {
     const p = this.players.get(id);
-    return p ? p.ch.root.position : null;
+    return p ? (p.target || p.ch.root.position) : null;
   }
 
   chat(id, text, ms = 6000) {

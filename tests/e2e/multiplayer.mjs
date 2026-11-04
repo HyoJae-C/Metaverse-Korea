@@ -48,7 +48,8 @@ try {
   // On the street, chat from someone more than 10 m away is not shown.
   const [ax0, az0] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 25, z), [ax0, az0]);
-  await b.waitForTimeout(1500);
+  // Wait until A has B's new spot, so the check is about distance, not timing.
+  await a.waitForFunction(([x, z]) => __mk.peers().some((p) => p.name === 'E2E B' && Math.hypot(p.x - x, p.z - z) > 20), [ax0, az0], { timeout: 10000 });
   await b.fill('#chat-input', 'too far to hear');
   await b.press('#chat-input', 'Enter');
   await a.waitForTimeout(2500);
