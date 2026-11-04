@@ -16,6 +16,7 @@ export const ID = {
   'cloud.link': 'Tautkan akun Google',
   'cloud.signin': 'Saya sudah punya akun',
   'cloud.signinConfirm': 'Masuk dengan akun Google yang pernah kamu pakai? Data simpanannya akan menggantikan progres di perangkat ini.',
+  'cloud.tapGoogle': 'Ketuk tombol Google di atas untuk masuk ke akun itu.',
   'cloud.taken': 'Akun Google itu sudah punya data simpanan. Pakai “Saya sudah punya akun”.',
   'cloud.notReady': 'Login Google belum siap. Coba lagi nanti.',
   'guide.auto': 'Otomatis',

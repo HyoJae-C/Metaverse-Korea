@@ -16,6 +16,7 @@ export const VI = {
   'cloud.link': 'Liên kết tài khoản Google',
   'cloud.signin': 'Tôi đã có tài khoản',
   'cloud.signinConfirm': 'Đăng nhập bằng tài khoản Google bạn đã dùng trước đây? Dữ liệu đã lưu của tài khoản đó sẽ thay thế tiến trình trên thiết bị này.',
+  'cloud.tapGoogle': 'Nhấn nút Google ở trên để đăng nhập vào tài khoản đó.',
   'cloud.taken': 'Tài khoản Google đó đã có dữ liệu lưu. Hãy dùng “Tôi đã có tài khoản”.',
   'cloud.notReady': 'Đăng nhập Google chưa sẵn sàng. Vui lòng thử lại sau.',
   'guide.auto': 'Tự đi',

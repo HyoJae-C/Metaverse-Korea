@@ -110,6 +110,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .login-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink); }
 .login-note { margin: 0; font-size: 12px; color: var(--ink-soft); }
 #login-google, #login-guest { width: 100%; }
+.gis-slot { display: flex; justify-content: center; width: 100%; min-height: 0; }
+.gis-slot:empty { display: none; }
+.cloud-actions .gis-slot { margin-bottom: 6px; }
 .region { margin: 16px 0 10px; font-weight: 700; }
 .primary {
   width: 100%;
