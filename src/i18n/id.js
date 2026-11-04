@@ -443,7 +443,7 @@ export const ID = {
   'credit.weather': 'Cuaca',
   'hud.weatherNow': 'Cuaca langsung di Seongsu-dong',
   'start.next': 'Lanjut',
-  'app.disclaimer': 'Jalanannya berdasarkan data OpenStreetMap yang nyata. Semua toko, merek, dan produk di sini adalah contoh fiksi, bukan bisnis sungguhan di lokasi tersebut.',
+  'app.disclaimer': 'Jalanannya adalah peta permainan yang terinspirasi dari lingkungan nyata di Seoul, bukan salinan persis. Semua toko, merek, dan produk di sini adalah contoh fiksi, bukan bisnis sungguhan.',
   'start.back': 'Kembali',
   'look.title': 'Buat karaktermu',
   'look.random': 'Acak',
@@ -515,5 +515,4 @@ export const ID = {
   'look.model': 'Karakter',
   'look.tee': 'Warna kaos',
   'credit.chars': 'Karakter',
-  'credit.map': 'Data peta',
 };
