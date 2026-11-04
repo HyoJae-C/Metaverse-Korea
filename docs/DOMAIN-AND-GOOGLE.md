@@ -27,24 +27,24 @@ Then in GitHub:
 
 The old `hyojae-c.github.io/Metaverse-Korea/` address redirects to the new one.
 
-In the repo, set `VITE_SITE_URL` in `.env` to `https://metaverseseoul.co.kr/` (used for
+In the repo, set `VITE_SITE_URL` in `.env` to `https://another-seoul.com/` (used for
 link previews) and keep `public/CNAME` holding the same bare domain.
 
 ## 2. Google Cloud (OAuth client and consent screen)
 
 APIs & Services → Credentials → the Web OAuth client:
 
-- Authorized JavaScript origins: `https://metaverseseoul.co.kr` (keep `https://hyojae-c.github.io`
+- Authorized JavaScript origins: `https://another-seoul.com` (keep `https://hyojae-c.github.io`
   while the old address is still in use)
 - Authorized redirect URIs: `https://qiefmpxiiercqfazigjv.supabase.co/auth/v1/callback`
   (unchanged by the domain move)
 
 OAuth consent screen (Branding):
 
-- Home page: `https://metaverseseoul.co.kr/`
-- Privacy policy: `https://metaverseseoul.co.kr/privacy.html`
-- Terms of service: `https://metaverseseoul.co.kr/terms.html`
-- Authorized domains: `metaverseseoul.co.kr` and `supabase.co`
+- Home page: `https://another-seoul.com/`
+- Privacy policy: `https://another-seoul.com/privacy.html`
+- Terms of service: `https://another-seoul.com/terms.html`
+- Authorized domains: `another-seoul.com` and `supabase.co`
 
 While the app is in "Testing", only listed test users can sign in. Publish it
 to let everyone in (a logo upload triggers Google's brand review).
@@ -57,8 +57,8 @@ Authentication → Sign In / Providers → Google: paste the OAuth **client ID**
 
 Authentication → URL Configuration:
 
-- Site URL: `https://metaverseseoul.co.kr/`
-- Redirect URLs: `https://metaverseseoul.co.kr/**` (and `https://hyojae-c.github.io/**`
+- Site URL: `https://another-seoul.com/`
+- Redirect URLs: `https://another-seoul.com/**` (and `https://hyojae-c.github.io/**`
   during the move, plus `http://localhost:5173/**` for development)
 
 Also keep **Allow anonymous sign-ins** on: guests link Google to their account.
