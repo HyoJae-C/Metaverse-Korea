@@ -1207,3 +1207,9 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .news-item li + li { margin-top: 4px; }
 .news-item ul.single { list-style: none; padding: 4px 0 2px; font-size: 14px; line-height: 1.65; text-align: center; }
 .news-item h3 { text-align: inherit; }
+
+/* Seoul overview on the map */
+.map-body { position: relative; }
+.map-seoul { position: absolute; top: 8px; left: 8px; z-index: 1; min-height: 32px; padding: 0 12px; font-size: 13px; font-weight: 800; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.2); }
+.map-seoul.on { background: #4a3f35; color: #fffaf0; }
+.map-soon { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); z-index: 1; margin: 0; padding: 6px 14px; border-radius: 14px; background: rgba(74, 63, 53, 0.9); color: #fffaf0; font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; }

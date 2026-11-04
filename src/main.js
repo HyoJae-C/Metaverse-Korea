@@ -284,6 +284,7 @@ const storesPromise = optionalJson('stores.json');
 const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
 const bikesPromise = optionalJson('bikes.json');
+const seoulPromise = optionalJson('seoul.json'); // the gu overview on the map (scripts/build-seoul.mjs)
 
 await new Promise((resolve) => {
   // A new name must not be in use by someone else (checked on the server
@@ -2397,6 +2398,7 @@ $('guide-x').onclick = clearGuide;
 const mapView = new MapView({
   root: $('map-panel'),
   map,
+  seoul: await seoulPromise,
   zones: zones.items,
   stores: storefronts.items,
   getPlayers: () => {
@@ -4219,6 +4221,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     plateSeat: () => interior.seats.findIndex((s) => s.plate),
     project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
+    mapView: () => mapView,
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
     leave: () => leaveStore(),

@@ -39,10 +39,24 @@ export function districtCentres(map) {
   return out;
 }
 
+// Below this zoom (px per metre, before the screen's pixel ratio) the map
+// shows the Seoul overview instead of shops and zones.
+export const SEOUL_ZOOM = 0.12;
+function inPoly(x, z, p) {
+  let r = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [xi, zi] = p[i], [xj, zj] = p[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
+  }
+  return r;
+}
+
 export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
-  constructor({ root, map, zones, stores, getPlayers, onGuide, onTaxi }) {
-    Object.assign(this, { root, map, zones, stores, getPlayers, onGuide, onTaxi });
+  // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
+  // to see all of Seoul, open gu in colour, the rest "coming soon".
+  constructor({ root, map, seoul = null, zones, stores, getPlayers, onGuide, onTaxi }) {
+    Object.assign(this, { root, map, seoul, zones, stores, getPlayers, onGuide, onTaxi });
     this.taxi = false; // taxi mode: picking a place calls a taxi instead of guiding
     const taxiBtn = root.querySelector('.map-taxi');
     if (taxiBtn) {
@@ -126,6 +140,11 @@ export class MapView {
         if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy);
       });
     };
+    const lang = getLanguage();
+    const dpr = this.dpr;
+    const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
+    if (this.seoul) this._drawSeoul(g, poly, far, lang);
+    this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
     const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' }; // the rest: green
     const order = { plaza: 0, sand: 0, water: 2 };
     for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
@@ -146,9 +165,8 @@ export class MapView {
     g.strokeStyle = '#b8bcc4';
     g.lineWidth = Math.max(2, 7 * this.view.scale);
     for (const r of this.map.rail) { poly(r.p); g.stroke(); }
+    if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 
-    const lang = getLanguage();
-    const dpr = this.dpr;
     // Zones
     for (const z of this.zones) {
       const [sx, sy] = this.toScreen(z.x, z.z);
@@ -198,6 +216,13 @@ export class MapView {
       g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
       g.fillText(o.name, sx, sy - 13 * dpr);
     }
+    this._drawMe(g, me);
+    this._drawBadges(g, me);
+    void css;
+  }
+
+  _drawMe(g, me = this.getPlayers().me) {
+    const dpr = this.dpr;
     const [mx, my] = this.toScreen(me.x, me.z);
     g.save();
     g.translate(mx, my);
@@ -214,8 +239,48 @@ export class MapView {
     g.stroke();
     g.fill();
     g.restore();
-    this._drawBadges(g, me);
-    void css;
+  }
+
+  // Seoul's gu as tiles under everything, and the Han River. Open gu are
+  // light; the others grey ("coming soon").
+  _drawSeoul(g, poly, far) {
+    const { gu, river } = this.seoul;
+    g.lineJoin = 'round';
+    for (const d of gu) {
+      poly(d.p); g.closePath();
+      g.fillStyle = d.open ? '#f3ecdc' : '#d9d4ca';
+      g.fill();
+      g.strokeStyle = far ? '#ffffff' : 'rgba(255,255,255,0.7)';
+      g.lineWidth = (far ? 2 : 4) * this.dpr;
+      g.stroke();
+    }
+    poly(river);
+    g.strokeStyle = '#a9d8f0';
+    g.lineCap = 'round';
+    g.lineWidth = Math.max(5 * this.dpr, 220 * this.view.scale);
+    g.stroke();
+  }
+
+  _drawSeoulLabels(g, lang) {
+    const dpr = this.dpr;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    for (const d of this.seoul.gu) {
+      const [sx, sy] = this.toScreen(d.label[0], d.label[1]);
+      g.font = `800 ${(d.open ? 13 : 11) * dpr}px system-ui, sans-serif`;
+      g.fillStyle = d.open ? '#4a3f35' : 'rgba(74,63,53,0.45)';
+      g.fillText(localName(d.name, lang), sx, sy - (d.open ? 0 : 6 * dpr));
+      if (!d.open) {
+        g.font = `700 ${9 * dpr}px system-ui, sans-serif`;
+        g.fillText(t('map.soon'), sx, sy + 8 * dpr);
+      }
+    }
+  }
+
+  // The gu at a map point (zoomed out), or null.
+  _guAt(x, z) {
+    for (const d of this.seoul?.gu || []) if (inPoly(x, z, d.p)) return d;
+    return null;
   }
 
   // Districts off screen get a badge at the edge pointing towards them, so
@@ -389,6 +454,10 @@ export class MapView {
   }
 
   _hit(sx, sy) {
+    if (this.seoul && this.view.scale < SEOUL_ZOOM * this.dpr) {
+      const d = this._guAt(...this.toWorld(sx, sy));
+      return d ? { kind: 'gu', item: d } : null;
+    }
     for (const b of this.badges) if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) return { kind: 'district', item: b.d };
     const r = 20 * this.dpr;
     for (const s of this.stores) {
@@ -453,6 +522,11 @@ export class MapView {
         return;
       }
       if (hit.kind === 'district') { this.goTo(hit.item.x, hit.item.z); return; }
+      if (hit.kind === 'gu') { // an open gu: zoom in on its district; the rest are coming soon
+        const d = this.districts.find((q) => q.id === hit.item.district);
+        if (d) { this.view.scale = 0.35 * this.dpr; this.goTo(d.x, d.z); } else this._soon(hit.item, lang);
+        return;
+      }
       if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
@@ -470,10 +544,31 @@ export class MapView {
     }, { passive: false });
     this.root.querySelector('.map-zoom-in').onclick = () => { this._zoom(1.3); this.draw(); };
     this.root.querySelector('.map-zoom-out').onclick = () => { this._zoom(1 / 1.3); this.draw(); };
+    // Seoul overview: zoom right out (or back in to where you are).
+    const seoulBtn = this.root.querySelector('.map-seoul');
+    if (seoulBtn) {
+      seoulBtn.hidden = !this.seoul;
+      seoulBtn.onclick = () => {
+        if (this.view.scale < SEOUL_ZOOM * this.dpr) { const { me } = this.getPlayers(); this.view.scale = Math.min(this.canvas.width, this.canvas.height) / 520; this.view.cx = me.x; this.view.cz = me.z; }
+        else { this.view.scale = 0.045 * this.dpr; this.view.cx = -1900; this.view.cz = -300; }
+        this.draw();
+      };
+    }
     addEventListener('resize', () => { if (this.open) { this._resize(); this.draw(); } });
   }
 
   _zoom(f) {
-    this.view.scale = Math.max(0.25 * this.dpr, Math.min(6 * this.dpr, this.view.scale * f));
+    const min = (this.seoul ? 0.035 : 0.25) * this.dpr;
+    this.view.scale = Math.max(min, Math.min(6 * this.dpr, this.view.scale * f));
+  }
+
+  // A closed gu was tapped: say so for a moment.
+  _soon(d, lang) {
+    const el = this.root.querySelector('.map-soon');
+    if (!el) return;
+    el.textContent = `🚧 ${localName(d.name, lang)} · ${t('map.soon')}`;
+    el.hidden = false;
+    clearTimeout(this._soonT);
+    this._soonT = setTimeout(() => { el.hidden = true; }, 1800);
   }
 }
