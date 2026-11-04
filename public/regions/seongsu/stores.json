@@ -865,18 +865,18 @@
       "id": "costume-atelier",
       "category": "fashion",
       "size": "medium",
-      "icon": "🎭",
+      "icon": "👕",
       "at": [60, 95],
-      "name": { "en": "Costume Atelier", "ko": "코스튬 아틀리에", "ja": "コスチューム・アトリエ", "zh": "服装工作室", "es": "Taller de Disfraces" },
-      "tagline": { "en": "Costumes: mage, ninja, knight and more", "ko": "코스튬: 마법사, 닌자, 기사 등", "ja": "コスチューム：魔法使い、忍者、騎士など", "zh": "服装：法师、忍者、骑士等", "es": "Disfraces: mago, ninja, caballero y más" },
+      "name": { "en": "Daily Closet", "ko": "데일리 클로젯", "ja": "デイリークローゼット", "zh": "日常衣橱", "es": "Armario Diario" },
+      "tagline": { "en": "Everyday clothes: hoodies, jackets and padded coats", "ko": "일상복: 후드티, 재킷, 롱패딩 등", "ja": "普段着：パーカー、ジャケット、ダウンなど", "zh": "日常服装：卫衣、夹克、羽绒服等", "es": "Ropa diaria: sudaderas, chaquetas y abrigos acolchados" },
       "colors": { "sign": "#4b2a6b", "awning": "#c9a2f0", "accent": "#f7f2fb" },
       "products": [
-        { "id": "costume-ranger", "model": "tee", "color": "#3f9b5f", "price": 0, "outfit": "outfit-rogue", "name": { "en": "Ranger costume", "ko": "레인저 옷", "ja": "レンジャーの服", "zh": "游侠服装", "es": "Traje de explorador" }, "desc": { "en": "A green hunter's outfit with a leather vest.", "ko": "가죽 조끼를 입은 초록색 사냥꾼 옷이에요." } },
-        { "id": "costume-explorer", "model": "tee", "color": "#d9c29a", "price": 0, "outfit": "outfit-ranger", "name": { "en": "Explorer costume", "ko": "탐험가 옷", "ja": "探検家の服", "zh": "探险家服装", "es": "Traje de aventurero" }, "desc": { "en": "A sandy travel shirt and a blue bandana.", "ko": "모래색 여행 셔츠와 파란 반다나예요." } },
-        { "id": "costume-viking", "model": "tee", "color": "#8a5a3a", "price": 0, "outfit": "outfit-barbarian", "name": { "en": "Viking costume", "ko": "바이킹 옷", "ja": "バイキングの服", "zh": "维京服装", "es": "Traje de vikingo" }, "desc": { "en": "Fur, straps and a big beard.", "ko": "털옷과 가죽끈, 그리고 멋진 수염!" } },
-        { "id": "costume-ninja", "model": "tee", "color": "#2e2a36", "price": 0, "outfit": "outfit-hooded", "name": { "en": "Ninja costume", "ko": "닌자 옷", "ja": "忍者の服", "zh": "忍者服装", "es": "Traje de ninja" }, "desc": { "en": "All black, with a hood and a mask.", "ko": "후드와 복면까지 온통 까만 옷이에요." } },
-        { "id": "costume-knight", "model": "tee", "color": "#9ca9af", "price": 0, "outfit": "outfit-knight", "name": { "en": "Knight armour", "ko": "기사 갑옷", "ja": "騎士の鎧", "zh": "骑士盔甲", "es": "Armadura de caballero" }, "desc": { "en": "Shining steel armour.", "ko": "반짝이는 강철 갑옷이에요." } },
-        { "id": "costume-mage", "model": "tee", "color": "#5b4fa0", "price": 0, "outfit": "outfit-mage", "name": { "en": "Mage robe", "ko": "마법사 로브", "ja": "魔法使いのローブ", "zh": "法师长袍", "es": "Túnica de mago" }, "desc": { "en": "A purple robe for spell casting.", "ko": "주문을 외울 때 입는 보라색 로브예요." } }
+        { "id": "costume-ranger", "model": "tee", "color": "#7f9fcc", "price": 0, "outfit": "outfit-rogue", "name": {"en": "Denim jacket", "ko": "청재킷", "ja": "デニムジャケット", "zh": "牛仔夹克", "es": "Chaqueta vaquera"}, "desc": {"en": "A classic denim jacket with a white T-shirt underneath.", "ko": "흰 티셔츠 위에 걸친 기본 청재킷이에요."} },
+        { "id": "costume-explorer", "model": "tee", "color": "#f6f1e7", "price": 0, "outfit": "outfit-ranger", "name": {"en": "Linen shirt & bandana", "ko": "린넨 셔츠와 반다나", "ja": "リネンシャツとバンダナ", "zh": "亚麻衬衫和方巾", "es": "Camisa de lino y pañuelo"}, "desc": {"en": "A light shirt in your T-shirt colour, with a blue bandana.", "ko": "티셔츠 색의 가벼운 셔츠에 파란 반다나를 둘렀어요."} },
+        { "id": "costume-viking", "model": "tee", "color": "#8fd3c7", "price": 0, "outfit": "outfit-barbarian", "name": {"en": "Sleeveless top & shorts", "ko": "민소매와 반바지", "ja": "タンクトップと短パン", "zh": "背心和短裤", "es": "Camiseta sin mangas y shorts"}, "desc": {"en": "Sporty and cool, in your own colours. Gym ready!", "ko": "내 색깔로 입는 시원한 운동복이에요. 헬스장에 딱!"} },
+        { "id": "costume-ninja", "model": "tee", "color": "#9d9fa6", "price": 0, "outfit": "outfit-hooded", "name": {"en": "Grey hoodie", "ko": "회색 후드티", "ja": "グレーのパーカー", "zh": "灰色连帽卫衣", "es": "Sudadera gris con capucha"}, "desc": {"en": "A soft grey hoodie. Hood up!", "ko": "포근한 회색 후드티예요. 모자까지 푹!"} },
+        { "id": "costume-knight", "model": "tee", "color": "#e8e2d6", "price": 0, "outfit": "outfit-knight", "name": {"en": "Puffer jacket", "ko": "숏패딩", "ja": "ショートダウン", "zh": "短款羽绒服", "es": "Chaqueta acolchada"}, "desc": {"en": "A short cream puffer for chilly days.", "ko": "쌀쌀한 날 입는 크림색 숏패딩이에요."} },
+        { "id": "costume-mage", "model": "tee", "color": "#2b2b31", "price": 0, "outfit": "outfit-mage", "name": {"en": "Long padded coat", "ko": "롱패딩", "ja": "ロングダウンコート", "zh": "长款羽绒服", "es": "Abrigo acolchado largo"}, "desc": {"en": "The black long padded coat everyone in Seoul wears in winter.", "ko": "서울 겨울 필수템, 까만 롱패딩이에요."} }
       ]
     }
   ]
