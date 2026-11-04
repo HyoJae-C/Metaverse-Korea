@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Another Seoul",
+  "short_name": "Another Seoul",
+  "description": "Walk the streets of Seongsu-dong, Seoul, in 3D, right in your browser.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#bfe3ff",
+  "theme_color": "#bfe3ff",
+  "categories": ["games", "travel", "entertainment"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

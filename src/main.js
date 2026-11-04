@@ -39,6 +39,7 @@ import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
 import { createAreaNet } from './net/area.js';
+import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
@@ -58,6 +59,7 @@ import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
+import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
@@ -683,8 +685,10 @@ if (onboard >= 2) {
     me.root.rotation.y = last.ry;
   }
 }
+let tabParked = false; // another tab of this browser took over (see claimTab)
 let lastSpotTimer = 3;
 const rememberSpot = () => {
+  if (tabParked) return; // the newer tab owns the saved spot now
   try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
 };
 document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
@@ -899,7 +903,9 @@ const refreshOnline = () => {
   $('online').textContent = '🟢 ' + t('hud.online', { n });
 };
 onLanguageChange(refreshOnline);
-watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); }).catch(() => {});
+let stopOnline = null;
+watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
+  .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
@@ -921,6 +927,7 @@ let lastSent = null; // set to null to resend our state at once (e.g. when someo
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
+  if (tabParked) return;
   lastJoin = [room, roomScene, !!area];
   const token = ++joinToken;
   net?.disconnect();
@@ -1019,6 +1026,29 @@ function goSolo(roomScene) {
   refreshOnline();
 }
 net = SOLO;
+// Same browser, second tab: the newest tab plays, older ones step aside so
+// you never appear twice on the street (see core/single-tab.js).
+claimTab(() => {
+  tabParked = true;
+  joinToken++; // a join still connecting disconnects itself
+  net?.disconnect();
+  net = SOLO;
+  for (const id of [...others.players.keys()]) others.leave(id);
+  stopOnline?.();
+  renderer.setAnimationLoop(null);
+  try { music.ctx?.suspend(); sfx.ctx?.suspend(); } catch { /* still starting up */ }
+  const box = document.createElement('div');
+  box.className = 'overlay dim';
+  box.id = 'other-tab';
+  box.innerHTML = '<div class="panel small"><div class="logo">🗂️</div><h2></h2><p></p><button class="primary"></button></div>';
+  box.querySelector('h2').textContent = t('tab.elsewhere');
+  box.querySelector('p').textContent = t('tab.elsewhereHint');
+  const btn = box.querySelector('button');
+  btn.textContent = t('tab.playHere');
+  btn.onclick = () => location.reload(); // reloading claims this tab again
+  box.style.zIndex = 10000;
+  document.body.appendChild(box);
+});
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
@@ -3331,6 +3361,8 @@ $('google-signin').onclick = async () => {
 };
 cloud.onChange(refreshCloud);
 refreshCloud();
+// Add to Home Screen: settings row, guide sheet and a one-off nudge on phones.
+initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
 function refreshItems() {

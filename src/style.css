@@ -1240,3 +1240,32 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .map-seoul { position: absolute; top: 8px; left: 8px; z-index: 1; min-height: 32px; padding: 0 12px; font-size: 13px; font-weight: 800; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.2); }
 .map-seoul.on { background: #4a3f35; color: #fffaf0; }
 .map-soon { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); z-index: 1; margin: 0; padding: 6px 14px; border-radius: 14px; background: rgba(74, 63, 53, 0.9); color: #fffaf0; font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+
+/* Add to Home Screen (ui/install-ui.js) */
+.install-card { position: relative; text-align: center; }
+.install-card h2 { margin: 6px 0 4px; color: var(--ink); font-size: 19px; }
+.install-icon { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 3px 10px rgba(74, 63, 53, 0.25); }
+.install-why { margin: 0 0 12px; font-size: 14px; color: var(--ink-soft); line-height: 1.45; }
+.install-steps { margin: 0 0 12px; padding: 12px 14px 12px 34px; background: #fff; border-radius: 16px; text-align: left; font-size: 14px; line-height: 1.5; }
+.install-steps li + li { margin-top: 8px; }
+.install-steps li::marker { font-weight: 800; color: var(--accent, #e0604d); }
+.install-warn, .install-desktop { margin: 0 0 12px; padding: 10px 12px; background: #fff; border-radius: 14px; font-size: 14px; line-height: 1.45; text-align: left; }
+.install-warn { background: #fff3c4; }
+.install-done { font-size: 16px; font-weight: 800; }
+.install-note { margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; background: #effaf7; font-size: 12.5px; line-height: 1.45; text-align: left; }
+.install-close { margin-top: 12px; }
+html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
+.install-nudge {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: calc(max(12px, env(safe-area-inset-top)) + 62px);
+  display: flex; align-items: center; gap: 4px; z-index: 55;
+  max-width: calc(100vw - 32px); padding: 4px 4px 4px 4px;
+  background: var(--ink); color: var(--cream); border-radius: 999px; box-shadow: var(--shadow);
+  animation: install-in 0.3s ease-out;
+}
+.install-nudge[hidden] { display: none; }
+.install-go { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px 0 2px; background: none; color: inherit; font-weight: 800; font-size: 13.5px; text-align: left; }
+.install-go img { width: 34px; height: 34px; border-radius: 10px; flex: none; }
+.install-x { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); color: inherit; flex: none; }
+@keyframes install-in { from { transform: translate(-50%, -12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .install-nudge { animation: none; } }
