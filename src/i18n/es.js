@@ -410,7 +410,7 @@ export const ES = {
   "name.cancel": "Cancelar",
   'start.defaultName': 'Viajero',
   'hud.online': '{n} en línea',
-  'app.title': 'Metaverse Seoul',
+  'app.title': 'Another Seoul',
   'app.tagline': 'Pasea por las calles de Corea desde tu navegador.',
   'lang.choose': 'Elige tu idioma',
   'lang.change': 'Idioma',

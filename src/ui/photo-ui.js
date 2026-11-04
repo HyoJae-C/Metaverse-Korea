@@ -84,7 +84,7 @@ function drawCover(g, s, x, y, w, h) {
 }
 
 // Put four shots (canvases or images, any size) into a vertical strip.
-export function composeStrip(shots, frame = 'white', label = 'METAVERSE SEOUL', date = new Date(), { frames = FRAMES, mono = false, caption = '조각스튜디오' } = {}) {
+export function composeStrip(shots, frame = 'white', label = 'ANOTHER SEOUL', date = new Date(), { frames = FRAMES, mono = false, caption = '조각스튜디오' } = {}) {
   const [bg, ink] = frames[frame] || Object.values(frames)[0];
   const W = 360, cellW = 320, cellH = 220, pad = 20, gap = 12, foot = 70;
   const c = document.createElement('canvas');
@@ -192,8 +192,8 @@ export class PhotoUI {
     x.onclick = () => this.close();
     const img = el('img', 'photo-strip');
     img.src = strip.toDataURL('image/png');
-    img.alt = `METAVERSE SEOUL · ${this.mode.caption}`;
-    const name = `metaverse-seoul-${Date.now()}.png`;
+    img.alt = `ANOTHER SEOUL · ${this.mode.caption}`;
+    const name = `another-seoul-${Date.now()}.png`;
     const save = el('a', 'chip', '💾 ' + tt('save'));
     save.href = img.src;
     save.download = name;
@@ -203,7 +203,7 @@ export class PhotoUI {
       const share = el('button', 'chip', '📤 ' + tt('share'));
       share.onclick = () => strip.toBlob(async (blob) => {
         const file = new File([blob], name, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'METAVERSE SEOUL' }); } catch { /* cancelled */ } }
+        if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'ANOTHER SEOUL' }); } catch { /* cancelled */ } }
       });
       actions.append(share);
     }

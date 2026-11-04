@@ -411,7 +411,7 @@ export const AR = {
   "name.cancel": "إلغاء",
   'start.defaultName': 'مسافر',
   'hud.online': '{n} متصل',
-  'app.title': 'Metaverse Seoul',
+  'app.title': 'Another Seoul',
   'app.tagline': 'تجوّل في شوارع كوريا من متصفحك مباشرة.',
   'lang.choose': 'اختر لغتك',
   'lang.change': 'اللغة',

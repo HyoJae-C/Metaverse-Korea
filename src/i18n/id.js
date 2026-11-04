@@ -411,7 +411,7 @@ export const ID = {
   "name.cancel": "Batal",
   'start.defaultName': 'Pelancong',
   'hud.online': '{n} online',
-  'app.title': 'Metaverse Seoul',
+  'app.title': 'Another Seoul',
   'app.tagline': 'Jelajahi jalanan Korea, langsung dari browsermu.',
   'lang.choose': 'Pilih bahasamu',
   'lang.change': 'Bahasa',
