@@ -3654,7 +3654,7 @@ function openBeauty(kind) {
     me.root.rotation.y = cam.yaw; // turn to face the camera
   }
   lastSent = null;
-  beautyUi.show(kind, myLook);
+  beautyUi.show(kind, myLook, interior?.store);
   if (kind === 'salon') setLook({ ...myLook, head: null }); // hat off in the salon chair
 }
 function endBeautyCam() {

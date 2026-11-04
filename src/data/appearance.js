@@ -50,15 +50,35 @@ export const PALETTES = {
     silver: 0xc8ced6, gold: 0xe0b43a,
   },
   // Lip tints from Petal Lip (꽃잎 립).
+  // The colour-family lip shops on Yeonmujang-gil add their own shades
+  // (LIP_FAMILIES below says which shop sells which).
   lip: {
     camellia: 0xd94c5f, cherry: 0xc21f3a, coral: 0xff6f61, peach: 0xf7957a, rose: 0xe8798f,
     pink: 0xff8fb1, berry: 0xa8325e, plum: 0x7d2f52, nude: 0xc98a78, mauve: 0xb07489,
+    scarlet: 0xe0162b, tomato: 0xf0442e, ruby: 0xb3123f, brick: 0xa5302a, wine: 0x7b1e2b,
+    tangerine: 0xff7a2f, apricot: 0xffa067, mango: 0xffab3d, salmon: 0xf2836b, persimmon: 0xe8572a,
+    bubblegum: 0xff6fb5, hotpink: 0xff2e8a, sakura: 0xffb3c9, fuchsia: 0xd6247f, babypink: 0xf7a1c4,
+    lavender: 0xb48ae0, lilac: 0xc9a2e8, orchid: 0xc24fb0, violet: 0x8a3fc9, grape: 0x5e2a84,
+    mint: 0x7fdcb0, matcha: 0x8db255, emerald: 0x1f9e6e, olive: 0x6b7a2f, forest: 0x2f6b3f,
+    ice: 0xb8d9f0, sky: 0x7fb8f0, teal: 0x2a9a9a, cobalt: 0x2f5fd6, navy: 0x2b3f7a,
   },
   // Hat colours from the hat workshop.
   hat: {
     butter: 0xffd36e, sky: 0x86b8f0, coral: 0xff9b85, mint: 0x8fd3c7, lilac: 0xb9a6f0,
     black: 0x2b2230, cream: 0xf6f1e7, denim: 0x5b6c8f, olive: 0x6f8a55, berry: 0xc2456b,
   },
+};
+
+// Which lip shades each lip shop sells (a store's "lipFamily"; Petal Lip,
+// with no family, has the first ten).
+export const LIP_FAMILIES = {
+  mixed: ['camellia', 'cherry', 'coral', 'peach', 'rose', 'pink', 'berry', 'plum', 'nude', 'mauve'],
+  red: ['scarlet', 'tomato', 'cherry', 'ruby', 'brick', 'wine'],
+  coral: ['tangerine', 'apricot', 'mango', 'salmon', 'persimmon', 'coral'],
+  pink: ['bubblegum', 'hotpink', 'sakura', 'fuchsia', 'babypink', 'pink'],
+  purple: ['lavender', 'lilac', 'orchid', 'violet', 'grape', 'plum'],
+  green: ['mint', 'matcha', 'emerald', 'olive', 'forest'],
+  blue: ['ice', 'sky', 'teal', 'cobalt', 'navy'],
 };
 
 // Embroidered patches for workshop hats (drawn as a small badge on the front).
