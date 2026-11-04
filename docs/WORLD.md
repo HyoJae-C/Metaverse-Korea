@@ -15,8 +15,12 @@ is quick. That way all of Seoul can fit, and Tokyo can follow the same way.
 - Ads: a big screen and a brand space on each area's central square
 - Later: home decorating, seasonal events, brand coupons, a Tokyo world
 
-Right now detailed content comes first. Seongsu stays as it is (made from
-OpenStreetMap); the map code is ready for new areas.
+Seongsu is hand-made too (`scripts/build-seongsu.mjs`): a grid of shopping
+streets loosely shaped like the real neighbourhood (Achasan-ro under Line 2,
+Seongsui-ro, Yeonmujang-gil, the Red Brick Lane), with Seoul Forest to the west
+and the Han River to the south. Each street side that faces a shopping street is
+lined with small shop buildings; run `node scripts/build-seongsu.mjs --place`
+after adding a shop to `PLACE_NEW` to give it a free lot.
 
 ## How a region is put together
 

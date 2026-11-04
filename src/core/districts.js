@@ -38,7 +38,7 @@ export async function loadRegionMap(region, fetchJson) {
   return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || []));
 }
 
-// Elevated stations (e.g. Seongsu on Line 2) come from OpenStreetMap as
+// Elevated stations that come from map data (e.g. OpenStreetMap) as
 // ordinary buildings, so they were solid blocks across the streets below.
 // A building that an elevated railway runs through for 20 m or more is a
 // station deck: raise it so people walk underneath (like other overhangs).
@@ -73,7 +73,7 @@ function inPoly(x, z, p) {
 }
 
 // Where something stands: local metres ("at": [x, z], for hand-made
-// districts) or a lat/lon anchor (for maps made from OpenStreetMap).
+// districts) or a lat/lon anchor (for maps made from real coordinates).
 export function placeOf(item, center, latLonToLocal) {
   if (Array.isArray(item.at) && item.at.length === 2 && item.at.every(Number.isFinite)) return item.at;
   return latLonToLocal(center, item.anchor.lat, item.anchor.lon);

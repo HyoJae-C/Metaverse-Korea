@@ -12,29 +12,11 @@
     "lat": 37.5446,
     "lon": 127.0557
   },
-  "bbox": {
-    "south": 37.5395,
-    "west": 127.048,
-    "north": 37.5495,
-    "east": 127.064
-  },
-  "crop": [
-    -260,
-    -110,
-    260,
-    410
-  ],
   "spawn": {
-    "lat": 37.5443,
-    "lon": 127.0553,
+    "lat": 37.5446,
+    "lon": 127.0557,
     "heading": 200,
     "nearStore": "ongi-cafe"
-  },
-  "mapFile": "map.json",
-  "attribution": {
-    "text": "© OpenStreetMap contributors",
-    "license": "ODbL",
-    "url": "https://www.openstreetmap.org/copyright"
   },
   "districts": [
     {
@@ -77,7 +59,7 @@
       "p": [
         [
           -260,
-          -99
+          -86
         ],
         [
           -700,
@@ -159,8 +141,8 @@
   "screens": [
     {
       "at": [
-        -1.4,
-        102.4
+        15.5,
+        22
       ],
       "w": 28,
       "y": 6,
@@ -168,8 +150,8 @@
     },
     {
       "at": [
-        -1.4,
-        102.4
+        15.5,
+        22
       ],
       "along": -19,
       "w": 7,
@@ -183,8 +165,8 @@
     },
     {
       "at": [
-        -1.4,
-        102.4
+        15.5,
+        22
       ],
       "along": 19,
       "w": 7,
@@ -198,8 +180,8 @@
     },
     {
       "at": [
-        -1.4,
-        102.4
+        15.5,
+        22
       ],
       "w": 46,
       "h": 11.5,
@@ -207,7 +189,6 @@
       "text": "NEXT IS TOKYO AND HONG KONG..."
     }
   ],
-  "bbox_note": "Seongsu is cropped to a compact ~520 m neighbourhood (scripts/crop-map.mjs); bbox is the original OpenStreetMap download.",
   "subway": {
     "note": "Underground stations. Add one by adding an entry to stations. exits[].at is a spot on the world map (Seongsu coordinates; other districts include their offset), ry the direction the stairs go down (radians). Move exits freely: the hole, walls and canopy follow.",
     "stations": [
@@ -237,23 +218,23 @@
           "ko": "건대입구",
           "en": "Konkuk Univ."
         },
-        "note": "Near the Achasan-ro Crossing (zone F). The real Seongsu Station is elevated; in the game you go down to its hall.",
+        "note": "At the Achasan-ro / Seongsui-ro crossing (zone F). The real Seongsu Station is elevated; in the game you go down to its hall.",
         "exits": [
           {
             "n": 1,
             "at": [
-              -165,
-              -104
+              44.5,
+              -69.5
             ],
-            "ry": 4.3485
+            "ry": -1.5708
           },
           {
             "n": 2,
             "at": [
-              -180,
-              -56
+              75.5,
+              -69.5
             ],
-            "ry": 4.3485
+            "ry": 1.5708
           }
         ]
       },
@@ -394,5 +375,6 @@
         ]
       }
     ]
-  }
+  },
+  "note": "Seongsu is a hand-made game map (scripts/build-seongsu.mjs), loosely inspired by the real neighbourhood; it is not a copy of any map."
 }

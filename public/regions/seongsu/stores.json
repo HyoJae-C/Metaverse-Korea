@@ -11,7 +11,7 @@
       "size": "small",
       "name": { "ko": "떡잎 분식", "en": "Ddeokip Bunsik" },
       "tagline": { "en": "Korean snack bar: practise ordering in Korean", "ko": "분식집에서 한국어로 주문 연습하기" },
-      "anchor": { "lat": 37.5434, "lon": 127.0541 },
+      "at": [-59.2, 175],
       "colors": { "sign": "#d8452f", "awning": "#ffd166", "accent": "#fff4e0" },
       "products": [
         { "id": "tteokbokki", "model": "bowl", "color": "#e0452b", "price": 5000, "name": { "en": "Tteokbokki", "ko": "떡볶이", "ja": "トッポッキ", "zh": "炒年糕" }, "desc": { "en": "Chewy rice cakes in a sweet and spicy red sauce. Ask for 안 맵게 (not spicy) if you like it mild." } },
@@ -26,7 +26,7 @@
       "size": "large",
       "name": { "ko": "온기 카페", "en": "Ongi Café" },
       "tagline": { "en": "A warm corner to meet other travellers", "ko": "여행자들이 만나는 따뜻한 쉼터" },
-      "anchor": { "lat": 37.54418, "lon": 127.055386 },
+      "at": [-40.1, -2],
       "colors": { "sign": "#7a4a2e", "awning": "#e9b97a", "accent": "#fff1d6" },
       "social": true,
       "products": [
@@ -43,7 +43,7 @@
       "size": "small",
       "name": { "ko": "꽃잎 립", "en": "Petal Lip", "ja": "花びらリップ", "zh": "花瓣唇" },
       "tagline": { "en": "Ten lip tints: sit at the mirror and try them on", "ko": "거울 앞에 앉아 10가지 립 틴트를 발라 봐요", "ja": "鏡の前で10色のリップを試そう", "zh": "坐在镜子前试涂10种唇彩" },
-      "anchor": { "lat": 37.544069, "lon": 127.055769 },
+      "at": [20, -2],
       "colors": { "sign": "#e05a7a", "awning": "#ffc3d0", "accent": "#fff0f3" },
       "products": []
     },
@@ -52,7 +52,7 @@
       "category": "popup",
       "name": { "ko": "팝업 스테이션", "en": "Pop-up Station" },
       "tagline": { "en": "This month: Seongsu travel goods", "ko": "이달의 팝업: 성수 여행 굿즈" },
-      "anchor": { "lat": 37.543805, "lon": 127.056267 },
+      "at": [67.5, 214.6],
       "colors": { "sign": "#5b6cf0", "awning": "#ffd36e", "accent": "#eef0ff" },
       "products": [
         { "id": "bucket-hat", "model": "hat", "color": "#ffd36e", "price": 29000, "tryOn": { "head": "bucket" }, "name": { "en": "Sunny Bucket Hat", "ko": "써니 버킷햇" }, "desc": { "en": "A soft cotton bucket hat for city walks." } },
@@ -66,7 +66,7 @@
       "category": "lifestyle",
       "name": { "ko": "문구다방", "en": "Stationery Den" },
       "tagline": { "en": "Notebooks, pens and little paper joys", "ko": "노트, 펜, 그리고 작은 종이 행복" },
-      "anchor": { "lat": 37.544292, "lon": 127.055003 },
+      "at": [-60.1, -2],
       "colors": { "sign": "#3f7a5a", "awning": "#b4dc93", "accent": "#f1f8ea" },
       "products": [
         { "id": "grid-note", "model": "notebook", "color": "#8fd3c7", "price": 8000, "name": { "en": "Grid Notebook", "ko": "모눈 노트" }, "desc": { "en": "A5, 120 pages, lay-flat binding." } },
@@ -80,7 +80,7 @@
       "category": "fashion",
       "name": { "ko": "모노룸", "en": "MONOROOM" },
       "tagline": { "en": "Simple everyday clothes", "ko": "매일 입는 단정한 옷" },
-      "anchor": { "lat": 37.542472, "lon": 127.05533 },
+      "at": [20.7, 175],
       "colors": { "sign": "#3a3a3a", "awning": "#e8e2d8", "accent": "#fafaf7" },
       "products": [
         { "id": "tee-cream", "model": "tee", "color": "#f6f1e7", "price": 32000, "tryOn": { "shirt": "cream" }, "name": { "en": "Relaxed Tee · Cream", "ko": "릴렉스 티 · 크림" }, "desc": { "en": "Heavy cotton tee with a roomy fit." } },
@@ -94,7 +94,7 @@
       "category": "fashion",
       "name": { "ko": "성수 데님 공방", "en": "Seongsu Denim Lab" },
       "tagline": { "en": "Jeans made in a former shoe workshop", "ko": "옛 구두 공방에서 만드는 청바지" },
-      "anchor": { "lat": 37.542611, "lon": 127.054864 },
+      "at": [17.9, 165],
       "colors": { "sign": "#34495e", "awning": "#5b6c8f", "accent": "#eef2f7" },
       "products": [
         { "id": "jeans-indigo", "model": "jeans", "color": "#5b6c8f", "price": 79000, "tryOn": { "pants": "denim" }, "name": { "en": "Wide Jeans · Indigo", "ko": "와이드 진 · 인디고" }, "desc": { "en": "Wide straight leg, mid-weight denim." } },
@@ -108,7 +108,7 @@
       "category": "fashion",
       "name": { "ko": "구름신발", "en": "Cloud Steps" },
       "tagline": { "en": "Sneakers as light as clouds", "ko": "구름처럼 가벼운 스니커즈" },
-      "anchor": { "lat": 37.54274, "lon": 127.054123 },
+      "at": [3.1, 175],
       "colors": { "sign": "#4a8fd4", "awning": "#dff1fb", "accent": "#f3f9ff" },
       "products": [
         { "id": "sneaker-white", "model": "sneaker", "color": "#f6f1e7", "price": 89000, "name": { "en": "Cloud Runner · White", "ko": "클라우드 러너 · 화이트" }, "desc": { "en": "Cushioned everyday sneaker." } },
@@ -122,7 +122,7 @@
       "category": "beauty",
       "name": { "ko": "달빛 뷰티", "en": "Moonlight Beauty" },
       "tagline": { "en": "Gentle skincare, step by step", "ko": "순한 스킨케어, 한 단계씩" },
-      "anchor": { "lat": 37.542894, "lon": 127.053665 },
+      "at": [0.9, 165],
       "colors": { "sign": "#4b5d9a", "awning": "#d6dcf5", "accent": "#f4f6ff" },
       "products": [
         { "id": "toner", "model": "bottle", "color": "#dfe8f1", "price": 22000, "name": { "en": "Rice Water Toner", "ko": "쌀뜨물 토너" }, "desc": { "en": "Hydrating first step after cleansing." } },
@@ -138,7 +138,7 @@
       "size": "small",
       "name": { "ko": "성수 모자 공방", "en": "Seongsu Hat Atelier" },
       "tagline": { "en": "Make your own hat: shape, colour and an embroidered patch", "ko": "모양, 색, 자수 패치까지 나만의 모자 만들기" },
-      "anchor": { "lat": 37.54285, "lon": 127.0544 },
+      "at": [-75, 175],
       "colors": { "sign": "#5a4a8a", "awning": "#d9cff5", "accent": "#f7f3ff" },
       "products": []
     },
@@ -149,7 +149,7 @@
       "size": "medium",
       "name": { "ko": "냥냥 고양이 카페", "en": "Nyang Nyang Cat Café" },
       "tagline": { "en": "Six friendly cats live here. Say hi and give them a pat!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 인사하고 쓰다듬어 주세요!" },
-      "anchor": { "lat": 37.5436, "lon": 127.0558 },
+      "at": [-22, 114.2],
       "colors": { "sign": "#c2456b", "awning": "#ffd6e2", "accent": "#fff4f7" },
       "products": [
         { "id": "cat-latte", "model": "cup", "color": "#e6c9a8", "price": 6500, "name": { "en": "Cat Paw Latte", "ko": "고양이 발바닥 라떼" }, "desc": { "en": "A latte with a paw print drawn in the foam." } },
@@ -163,7 +163,7 @@
       "size": "medium",
       "name": { "ko": "너구리네 라쿤 카페", "en": "Neoguri Raccoon Café" },
       "tagline": { "en": "Five curious raccoons who love to explore. Watch your snacks!", "ko": "호기심 많은 라쿤 다섯 마리. 간식 조심하세요!" },
-      "anchor": { "lat": 37.54395, "lon": 127.0569 },
+      "at": [67.5, 93.9],
       "colors": { "sign": "#5b5550", "awning": "#d9d3cc", "accent": "#f6f3ef" },
       "products": [
         { "id": "raccoon-mocha", "model": "cup", "color": "#7a5a45", "price": 6500, "name": { "en": "Raccoon Mocha", "ko": "라쿤 모카" }, "desc": { "en": "Chocolate mocha with a striped cream tail on top." } },
@@ -177,7 +177,7 @@
       "size": "large",
       "name": { "ko": "왕발 대형견 카페", "en": "Big Paws Dog Café" },
       "tagline": { "en": "Six big, gentle dogs and lots of room to play", "ko": "순한 대형견 여섯 마리와 넓은 놀이 공간" },
-      "anchor": { "lat": 37.5428, "lon": 127.0562 },
+      "at": [143.7, 175],
       "colors": { "sign": "#3f6f4f", "awning": "#cfe8c4", "accent": "#f2f9ee" },
       "products": [
         { "id": "puppuccino", "model": "cup", "color": "#f3e6d0", "price": 5000, "name": { "en": "Paw Latte", "ko": "왕발 라떼" }, "desc": { "en": "Vanilla latte with a big paw print in the foam." } },
@@ -190,7 +190,7 @@
       "size": "small",
       "name": { "ko": "하늘 핸드드립", "en": "Haneul Hand Drip" },
       "tagline": { "en": "A tiny pour-over bar with two seats", "ko": "두 자리뿐인 작은 핸드드립 바" },
-      "anchor": { "lat": 37.54355, "lon": 127.05475 },
+      "at": [-28, 20.5],
       "colors": { "sign": "#2f5d7c", "awning": "#a9d3ee", "accent": "#eef7fc" },
       "products": [
         { "id": "hand-drip", "model": "cup", "color": "#6b4a35", "price": 6000, "name": { "en": "Hand Drip Coffee", "ko": "핸드드립 커피" }, "desc": { "en": "Single-origin beans, poured slowly by hand." } },
@@ -204,7 +204,7 @@
       "size": "small",
       "name": { "ko": "모래알 베이커리", "en": "Sandgrain Bakery" },
       "tagline": { "en": "Fresh salt bread every hour", "ko": "매시간 갓 구운 소금빵" },
-      "anchor": { "lat": 37.543053, "lon": 127.053479 },
+      "at": [-28, 196.4],
       "colors": { "sign": "#a8642f", "awning": "#f3d9a8", "accent": "#fff6e6" },
       "products": [
         { "id": "salt-bread", "model": "bread", "color": "#d9a066", "price": 3500, "name": { "en": "Salt Bread", "ko": "소금빵" }, "desc": { "en": "Buttery roll with a crisp, salty bottom." } },
@@ -218,7 +218,7 @@
       "category": "lifestyle",
       "name": { "ko": "향기공장", "en": "Scent Factory" },
       "tagline": { "en": "Candles poured in an old brick factory", "ko": "붉은 벽돌 공장에서 만드는 캔들" },
-      "anchor": { "lat": 37.543199, "lon": 127.053013 },
+      "at": [-22, 197.4],
       "colors": { "sign": "#8a3f2b", "awning": "#d49a8a", "accent": "#fbefea" },
       "products": [
         { "id": "candle-pine", "model": "candle", "color": "#9cc28a", "price": 26000, "name": { "en": "Candle · Seoul Forest Pine", "ko": "캔들 · 서울숲 소나무" }, "desc": { "en": "Green, woody and fresh." } },
@@ -233,7 +233,7 @@
       "size": "large",
       "name": { "ko": "책마루 도서관", "en": "Chaekmaru Library", "ja": "チェクマル図書館", "zh": "书廊图书馆" },
       "tagline": { "en": "A quiet place to read. Study corners are coming soon.", "ko": "조용히 책 읽는 곳. 공부 공간은 곧 열려요.", "ja": "静かに本を読める場所。勉強コーナーは準備中です。", "zh": "安静读书的地方。学习区即将开放。" },
-      "anchor": { "lat": 37.5449, "lon": 127.0549 },
+      "at": [113.6, -2],
       "colors": { "sign": "#3f5e4f", "awning": "#9cb89a", "accent": "#f4efe2" },
       "products": []
     },
@@ -244,7 +244,7 @@
       "size": "medium",
       "name": { "ko": "돼지마루 삼겹살", "en": "Dwaejimaru Samgyeopsal", "ja": "テジマル サムギョプサル", "zh": "猪廊五花肉" },
       "tagline": { "en": "Korean BBQ: grill pork belly with perfect timing", "ko": "삼겹살을 노릇노릇하게 구워 보세요", "ja": "韓国焼肉：タイミングよくサムギョプサルを焼こう", "zh": "韩式烤肉：看准时机烤五花肉" },
-      "anchor": { "lat": 37.5431, "lon": 127.0549 },
+      "at": [-57.8, 165],
       "colors": { "sign": "#7a2e1f", "awning": "#e8a23a", "accent": "#fff1e2" },
       "products": [
         { "id": "samgyeopsal", "model": "bacon", "color": "#f0b7a8", "price": 15000, "name": { "en": "Samgyeopsal (pork belly)", "ko": "삼겹살", "ja": "サムギョプサル", "zh": "五花肉" }, "desc": { "en": "Thick slices of pork belly grilled at the table. Wrap in lettuce with garlic and ssamjang." } },
@@ -259,7 +259,7 @@
       "size": "small",
       "name": { "ko": "메타 커피", "en": "META COFFEE", "ja": "META COFFEE", "zh": "META COFFEE" },
       "tagline": { "en": "Takeaway coffee: carry your cup around town and sip as you go", "ko": "테이크아웃 커피: 컵을 들고 다니며 마셔요", "ja": "テイクアウトコーヒー：カップを持って街を歩こう", "zh": "外带咖啡：拿着杯子边走边喝" },
-      "at": [-15, 40],
+      "at": [-43.4, -10],
       "colors": { "sign": "#1d1d22", "awning": "#e9e4da", "accent": "#f7f5f0" },
       "products": [
         { "id": "meta-americano", "model": "cup", "color": "#3b2418", "price": 4500, "name": { "en": "Americano", "ko": "아메리카노", "ja": "アメリカーノ", "zh": "美式咖啡" }, "desc": { "en": "Espresso with hot water. Koreans often order it iced: 아이스 아메리카노, even in winter." } },
@@ -275,7 +275,7 @@
       "size": "medium",
       "name": { "ko": "소리마루 LP카페", "en": "Sorimaru Record Café", "ja": "ソリマル LPカフェ", "zh": "声廊黑胶咖啡馆" },
       "tagline": { "en": "Pick a record and change the music. Only you hear your choice.", "ko": "LP를 골라 음악을 바꿔 보세요. 고른 음악은 나에게만 들려요.", "ja": "レコードを選んで音楽を変えよう。選んだ曲は自分にだけ聞こえます。", "zh": "挑一张唱片换音乐，只有你自己听得到。" },
-      "anchor": { "lat": 37.5438, "lon": 127.0566 },
+      "at": [-28, 111.9],
       "colors": { "sign": "#2b2340", "awning": "#c9a26a", "accent": "#f3ece0" },
       "products": [
         { "id": "lp-hand-drip", "model": "cup", "color": "#5a3a28", "price": 6000, "name": { "en": "Hand drip coffee", "ko": "핸드드립 커피", "ja": "ハンドドリップ", "zh": "手冲咖啡" }, "desc": { "en": "Brewed slowly by hand while the record spins." } },
@@ -290,7 +290,7 @@
       "size": "small",
       "name": { "ko": "햄찌네 햄스터 카페", "en": "Haemjji Hamster Café", "ja": "ヘムジのハムスターカフェ", "zh": "仓鼠咖啡馆" },
       "tagline": { "en": "Tiny hamsters scurry around the floor. Walk up and say hi gently.", "ko": "작은 햄스터들이 바닥을 쪼르르 돌아다녀요. 살살 다가가 인사해요.", "ja": "小さなハムスターがちょこちょこ歩き回ります。そっと近づいて挨拶しよう。", "zh": "小仓鼠在地上跑来跑去，轻轻走过去打个招呼吧。" },
-      "anchor": { "lat": 37.5441, "lon": 127.0538 },
+      "at": [67.5, 57.8],
       "colors": { "sign": "#d9884a", "awning": "#ffe2b8", "accent": "#fff8ee" },
       "products": [
         { "id": "hamster-latte", "model": "cup", "color": "#f0d2a8", "price": 5500, "name": { "en": "Honey milk latte", "ko": "꿀 우유 라테", "ja": "ハニーミルクラテ", "zh": "蜂蜜牛奶拿铁" }, "desc": { "en": "Warm milk with honey, as soft as a hamster." } },
@@ -303,7 +303,7 @@
       "size": "medium",
       "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
       "tagline": { "en": "Adopt a dog or a cat with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지나 고양이를 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗或小猫一起散步。一定要清理宠物的便便！" },
-      "anchor": { "lat": 37.5427, "lon": 127.0556 },
+      "at": [145.1, 165],
       "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
       "products": [
         { "id": "adopt-maltese", "model": "pet:dog", "color": "#fbf8f2", "accent": "#efe6da", "adopt": "pet-maltese", "price": 0, "name": { "en": "Maltese puppy · Mongi", "ko": "말티즈 · 몽이", "ja": "マルチーズ · モンイ", "zh": "马尔济斯 · 萌萌" }, "desc": { "en": "A small fluffy white dog who loves walks." } },
@@ -318,7 +318,7 @@
       "size": "park",
       "name": { "ko": "뚝섬 한강공원", "en": "Ttukseom Han River Park", "ja": "トゥクソム漢江公園", "zh": "纛岛汉江公园" },
       "tagline": { "en": "Fish from the pier and cook ramen by the river", "ko": "한강에서 낚시하고 라면 끓여 먹기", "ja": "桟橋で釣りをして、川辺でラーメンを作ろう", "zh": "在码头钓鱼，在江边煮拉面" },
-      "at": [60, 400], "note": "moved up to the south edge of compact Seongsu (the real park is ~450 m from the square)",
+      "at": [-60, 360],
       "colors": { "sign": "#2f8f5b", "awning": "#9fd8b4", "accent": "#e9f6ee" },
       "products": []
     },
@@ -329,7 +329,7 @@
       "size": "medium",
       "name": { "ko": "성수 수산시장", "en": "Seongsu Fish Market", "ja": "ソンス水産市場", "zh": "圣水水产市场" },
       "tagline": { "en": "Sell the fish you caught at the Han River", "ko": "한강에서 잡은 물고기를 팔아요", "ja": "漢江で釣った魚を売ろう", "zh": "出售你在汉江钓到的鱼" },
-      "anchor": { "lat": 37.5422, "lon": 127.0575 },
+      "at": [121.7, 266],
       "colors": { "sign": "#1f5f8b", "awning": "#9cc9e6", "accent": "#eef6fb" },
       "products": []
     },
@@ -340,7 +340,7 @@
       "size": "small",
       "name": { "ko": "가위손 헤어", "en": "Gawison Hair Salon", "ja": "カウィソン ヘア", "zh": "剪刀手美发" },
       "tagline": { "en": "Hair dye in ten colours, from ash to mint", "ko": "애쉬부터 민트까지, 열 가지 염색", "ja": "アッシュからミントまで、10色のカラー", "zh": "从灰色到薄荷色，十种染发颜色" },
-      "at": [35, 40],
+      "at": [3.2, -2],
       "colors": { "sign": "#2b2b2e", "awning": "#f2c6d4", "accent": "#fdf3f6" },
       "products": []
     },
@@ -351,7 +351,7 @@
       "size": "medium",
       "name": { "ko": "빛나 성형외과", "en": "Bitna Cosmetic Clinic", "ja": "ピンナ美容外科", "zh": "光彩整形外科" },
       "tagline": { "en": "Bigger or rounder eyes, skin tone and a smaller face", "ko": "큰 눈, 동그란 눈, 피부 톤, 작은 얼굴", "ja": "大きな目・丸い目、肌のトーン、小顔", "zh": "大眼睛、圆眼睛、肤色和小脸" },
-      "anchor": { "lat": 37.5437, "lon": 127.0533 },
+      "at": [-94.7, -10],
       "colors": { "sign": "#5a7fb0", "awning": "#d8e6f5", "accent": "#f6f9fd" },
       "products": []
     },
@@ -362,7 +362,7 @@
       "size": "medium",
       "name": { "ko": "새봄 성형외과", "en": "Saebom Eye Clinic", "ja": "セボム美容外科", "zh": "新春整形外科" },
       "tagline": { "en": "Cat eyes or puppy eyes", "ko": "고양이 눈, 강아지 눈", "ja": "猫目か子犬目", "zh": "猫眼或狗狗眼" },
-      "anchor": { "lat": 37.544, "lon": 127.053 },
+      "at": [-93.2, -2],
       "colors": { "sign": "#3f9a8a", "awning": "#d3efe8", "accent": "#f3fbf9" },
       "products": []
     },
@@ -373,7 +373,7 @@
       "size": "small",
       "name": { "ko": "렌즈마을", "en": "Lens Village", "ja": "レンズ村", "zh": "美瞳村" },
       "tagline": { "en": "Colour lenses in fourteen shades", "ko": "14가지 컬러렌즈", "ja": "14色のカラコン", "zh": "14种颜色的美瞳" },
-      "anchor": { "lat": 37.5433, "lon": 127.0536 },
+      "at": [39.2, 165],
       "colors": { "sign": "#6a4fc0", "awning": "#e3dbfa", "accent": "#f7f4ff" },
       "products": []
     },
@@ -384,7 +384,7 @@
       "size": "medium",
       "name": { "ko": "케이팝 카페 PLAY", "en": "K-POP Café PLAY", "ja": "K-POPカフェ PLAY", "zh": "K-POP咖啡馆 PLAY" },
       "tagline": { "en": "Music videos on the big TV, for everyone in the café", "ko": "큰 TV로 뮤직비디오를 다 같이 봐요", "ja": "大きなテレビでMVをみんなで", "zh": "在大电视上和大家一起看MV" },
-      "anchor": { "lat": 37.5441, "lon": 127.0561 },
+      "at": [-13.5, -2],
       "colors": { "sign": "#7b3fe4", "awning": "#f7d6ff", "accent": "#fbf6ff" },
       "products": []
     },
@@ -395,7 +395,7 @@
       "size": "medium",
       "name": { "ko": "신당 떡볶이 포차", "en": "Sindang Tteokbokki Stall", "ja": "シンダン トッポッキ屋台", "zh": "新堂炒年糕小摊" },
       "tagline": { "en": "Take orders in Korean, cook them, deliver by bike", "ko": "한국어 주문 받고 만들고, 따릉이로 배달까지", "ja": "韓国語で注文を受けて作って、自転車で配達", "zh": "用韩语接单、做菜，还能骑车送外卖" },
-      "anchor": { "lat": 37.5424, "lon": 127.0569 },
+      "at": [139.7, 266],
       "colors": { "sign": "#d8452f", "awning": "#ffb199", "accent": "#fff1ec" },
       "products": []
     },
@@ -406,7 +406,7 @@
       "size": "medium",
       "name": { "ko": "스타 코인노래방", "en": "Star Coin Noraebang", "ja": "スター コインカラオケ", "zh": "星星投币KTV" },
       "tagline": { "en": "Tap to the beat and beat the room's high score", "ko": "박자 맞춰 탭하고 방 최고 점수에 도전", "ja": "リズムに合わせてタップ、部屋のハイスコアに挑戦", "zh": "跟着节拍点击，挑战房间最高分" },
-      "anchor": { "lat": 37.5449, "lon": 127.0576 },
+      "at": [-12.3, -77.5],
       "colors": { "sign": "#3b2a8f", "awning": "#c9b8ff", "accent": "#f4f0ff" },
       "products": []
     },
@@ -417,7 +417,7 @@
       "size": "medium",
       "name": { "ko": "조각스튜디오", "en": "Jogak Studio", "ja": "チョガクスタジオ", "zh": "碎片工作室" },
       "tagline": { "en": "Four-cut photo strips with your friends, two booths", "ko": "친구들과 네 컷 사진, 부스 두 개", "ja": "友だちと4カット写真、ブース2台", "zh": "和朋友拍四格照，两个照相亭" },
-      "anchor": { "lat": 37.5445, "lon": 127.0544 },
+      "at": [22.8, -77.5],
       "colors": { "sign": "#2b2630", "awning": "#ffd6e5", "accent": "#fff7fa" },
       "products": []
     },
@@ -428,7 +428,7 @@
       "size": "medium",
       "name": { "ko": "추억사진관", "en": "Chueok Photo Studio", "ja": "チュオク写真館", "zh": "回忆照相馆" },
       "tagline": { "en": "One big portrait, just you", "ko": "나 혼자 한 장 크게", "ja": "自分だけの大きな1枚", "zh": "一个人拍一张大照片" },
-      "anchor": { "lat": 37.5447, "lon": 127.0556 },
+      "at": [-11.2, -10],
       "colors": { "sign": "#7a5a3a", "awning": "#f0e2c8", "accent": "#fbf6ec" },
       "products": []
     },
@@ -439,7 +439,7 @@
       "size": "medium",
       "name": { "ko": "메모리즈", "en": "Memories", "ja": "メモリーズ", "zh": "Memories" },
       "tagline": { "en": "Black-and-white photo booth", "ko": "흑백 사진 포토부스", "ja": "モノクロ写真ブース", "zh": "黑白照相亭" },
-      "anchor": { "lat": 37.5429, "lon": 127.0546 },
+      "at": [-75.7, 165],
       "colors": { "sign": "#1d1b22", "awning": "#d9d9d9", "accent": "#f4f4f4" },
       "products": []
     },
@@ -450,7 +450,7 @@
       "size": "small",
       "name": { "ko": "럭키 인형뽑기", "en": "Lucky Claw Machines", "ja": "ラッキー クレーンゲーム", "zh": "幸运抓娃娃" },
       "tagline": { "en": "Win plushies for your home and coin pouches", "ko": "집에 놓을 인형과 코인 주머니를 뽑아요", "ja": "家に飾るぬいぐるみやコインをGET", "zh": "抓可以摆在家里的玩偶和钱袋" },
-      "anchor": { "lat": 37.5433, "lon": 127.0584 },
+      "at": [3.3, -77.5],
       "colors": { "sign": "#e2457a", "awning": "#ffd0e0", "accent": "#fff3f7" },
       "products": []
     },
@@ -489,7 +489,7 @@
       "category": "info",
       "workshop": "info",
       "size": "small",
-      "at": [58.6, 50.6],
+      "at": [52.5, -55],
       "name": { "en": "Information Center", "ko": "안내센터", "ja": "インフォメーションセンター", "zh": "信息中心" },
       "tagline": { "en": "Everything you can do in town, and where to find it", "ko": "이 동네에서 할 수 있는 모든 것과 가는 길", "ja": "この街でできることと行き方", "zh": "城里能做的事和怎么去" },
       "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
@@ -500,7 +500,7 @@
       "category": "workshop",
       "workshop": "emblem",
       "size": "small",
-      "at": [44, 59],
+      "at": [39, -2],
       "name": { "en": "Name Tag Studio", "ko": "네임택 공방", "ja": "ネームタグ工房", "zh": "名牌工坊" },
       "tagline": { "en": "Emblems and colours for your nickname", "ko": "닉네임에 엠블럼과 색을 입혀요", "ja": "ニックネームにエンブレムと色を", "zh": "给昵称加徽章和颜色" },
       "colors": { "sign": "#7b3fe4", "awning": "#ffd36e", "accent": "#fbf6ff" },
@@ -511,7 +511,7 @@
       "category": "play",
       "workshop": "sauna",
       "size": "large",
-      "at": [-38, 114],
+      "at": [-28, 94.7],
       "name": { "en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕" },
       "tagline": { "en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋" },
       "colors": { "sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6" },
@@ -525,7 +525,7 @@
       "category": "play",
       "workshop": "gym",
       "size": "large",
-      "at": [-65, 83],
+      "at": [-28, 57.9],
       "name": { "en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房" },
       "tagline": { "en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快" },
       "colors": { "sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb" },
@@ -547,7 +547,7 @@
       "category": "market",
       "icon": "🏪",
       "size": "small",
-      "at": [-1, 24],
+      "at": [67.5, -54],
       "name": { "en": "HARU MART", "ko": "하루마트", "ja": "ハルマート", "zh": "HARU MART" },
       "tagline": { "en": "Open 24 hours: rice balls, cup ramen, milk, and umbrellas for rainy days", "ko": "24시간 편의점: 삼각김밥, 컵라면, 우유, 그리고 비 오는 날 우산", "ja": "24時間営業：おにぎり、カップ麺、牛乳、雨の日の傘", "zh": "24小时便利店：三角饭团、杯面、牛奶，还有雨天用的伞" },
       "colors": { "sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7" },
@@ -564,7 +564,7 @@
       "category": "school",
       "icon": "🏫",
       "size": "large",
-      "at": [4, -33],
+      "at": [95.2, -2],
       "name": { "en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂" },
       "tagline": { "en": "Korean courses from Hangul to TOPIK 4 and an advanced class, with quizzes and certificates", "ko": "한글부터 토픽 4급, 고급반까지: 퀴즈와 수료증이 있는 한국어 과정", "ja": "ハングルからTOPIK4級、上級クラスまで。クイズと修了証つき", "zh": "从韩文到TOPIK 4级和高级班，有测验和结业证书" },
       "colors": { "sign": "#2f5d46", "awning": "#e3efe6", "accent": "#f6faf7" },
@@ -851,7 +851,7 @@
       "workshop": "bike",
       "size": "small",
       "icon": "🚲",
-      "at": [72, 74],
+      "at": [-94.2, 165],
       "name": { "en": "Pedal Lab", "ko": "페달랩", "ja": "ペダルラボ", "zh": "踏板实验室" },
       "tagline": { "en": "Bike shop: faster bikes and repairs", "ko": "자전거 가게: 더 빠른 자전거와 수리", "ja": "自転車店：速い自転車と修理", "zh": "自行车店：更快的车和维修" },
       "colors": { "sign": "#2f6f5e", "awning": "#3fb59a", "accent": "#eef6f2" },
@@ -866,7 +866,7 @@
       "category": "fashion",
       "size": "medium",
       "icon": "👕",
-      "at": [60, 95],
+      "at": [67.5, 231.2],
       "name": { "en": "Daily Closet", "ko": "데일리 클로젯", "ja": "デイリークローゼット", "zh": "日常衣橱", "es": "Armario Diario" },
       "tagline": { "en": "Everyday clothes: hoodies, jackets and padded coats", "ko": "일상복: 후드티, 재킷, 롱패딩 등", "ja": "普段着：パーカー、ジャケット、ダウンなど", "zh": "日常服装：卫衣、夹克、羽绒服等", "es": "Ropa diaria: sudaderas, chaquetas y abrigos acolchados" },
       "colors": { "sign": "#4b2a6b", "awning": "#c9a2f0", "accent": "#f7f2fb" },
@@ -877,6 +877,458 @@
         { "id": "costume-ninja", "model": "tee", "color": "#9d9fa6", "price": 0, "outfit": "outfit-hooded", "name": {"en": "Grey hoodie", "ko": "회색 후드티", "ja": "グレーのパーカー", "zh": "灰色连帽卫衣", "es": "Sudadera gris con capucha"}, "desc": {"en": "A soft grey hoodie. Hood up!", "ko": "포근한 회색 후드티예요. 모자까지 푹!"} },
         { "id": "costume-knight", "model": "tee", "color": "#e8e2d6", "price": 0, "outfit": "outfit-knight", "name": {"en": "Puffer jacket", "ko": "숏패딩", "ja": "ショートダウン", "zh": "短款羽绒服", "es": "Chaqueta acolchada"}, "desc": {"en": "A short cream puffer for chilly days.", "ko": "쌀쌀한 날 입는 크림색 숏패딩이에요."} },
         { "id": "costume-mage", "model": "tee", "color": "#2b2b31", "price": 0, "outfit": "outfit-mage", "name": {"en": "Long padded coat", "ko": "롱패딩", "ja": "ロングダウンコート", "zh": "长款羽绒服", "es": "Abrigo acolchado largo"}, "desc": {"en": "The black long padded coat everyone in Seoul wears in winter.", "ko": "서울 겨울 필수템, 까만 롱패딩이에요."} }
+      ]
+    },
+    {
+      "id": "sudo-shoes",
+      "category": "fashion",
+      "icon": "👞",
+      "size": "medium",
+      "at": [-93.1, 175],
+      "name": { "ko": "수도 수제화", "en": "Sudo Handmade Shoes" },
+      "tagline": { "en": "Leather shoes made by hand, the Seongsu way", "ko": "성수에서 손으로 만드는 가죽 구두" },
+      "colors": { "sign": "#5a3a28", "awning": "#e9d8c6", "accent": "#fbf3ea" },
+      "products": [
+        { "id": "loafer-brown", "model": "sneaker", "color": "#7a4a2a", "price": 129000, "name": { "en": "Leather Loafer · Brown", "ko": "가죽 로퍼 · 브라운" }, "desc": { "en": "Soft calf leather, stitched by hand." } },
+        { "id": "derby-black", "model": "sneaker", "color": "#2b2230", "price": 139000, "name": { "en": "Derby Shoe · Black", "ko": "더비 슈즈 · 블랙" }, "desc": { "en": "A smart shoe for every day." } },
+        { "id": "mule-cream", "model": "sneaker", "color": "#f3e5c8", "price": 99000, "name": { "en": "Suede Mule · Cream", "ko": "스웨이드 뮬 · 크림" }, "desc": { "en": "Slip-on mule with a cushioned sole." } },
+        { "id": "shoe-care", "model": "jar", "color": "#d9c5a3", "price": 15000, "name": { "en": "Shoe Cream", "ko": "구두약" }, "desc": { "en": "Keeps leather soft and shiny." } }
+      ]
+    },
+    {
+      "id": "gaeul-vintage",
+      "category": "fashion",
+      "icon": "🧥",
+      "size": "medium",
+      "at": [40.6, 175],
+      "name": { "ko": "가을 빈티지", "en": "Gaeul Vintage" },
+      "tagline": { "en": "Second-hand clothes, picked one by one", "ko": "하나하나 골라 온 빈티지 옷" },
+      "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
+      "products": [
+        { "id": "vtg-tee-butter", "model": "tee", "color": "#ffe08a", "price": 25000, "name": { "en": "Vintage Tee · Butter", "ko": "빈티지 티 · 버터" }, "desc": { "en": "Washed soft, one of a kind." }, "tryOn": { "shirt": "butter" } },
+        { "id": "vtg-tee-peach", "model": "tee", "color": "#ffb59e", "price": 25000, "name": { "en": "Vintage Tee · Peach", "ko": "빈티지 티 · 피치" }, "desc": { "en": "A faded peach tee from the 90s." }, "tryOn": { "shirt": "peach" } },
+        { "id": "vtg-jeans", "model": "jeans", "color": "#4a6fa5", "price": 45000, "name": { "en": "Old-school Jeans", "ko": "올드스쿨 청바지" }, "desc": { "en": "Straight-leg denim, already broken in." }, "tryOn": { "pants": "denim" } },
+        { "id": "vtg-scarf", "model": "scarf", "color": "#c9a3c9", "price": 19000, "name": { "en": "Silk Scarf", "ko": "실크 스카프" }, "desc": { "en": "A patterned scarf from a flea market." }, "tryOn": { "neck": "scarf" } }
+      ]
+    },
+    {
+      "id": "tteugae-knit",
+      "category": "fashion",
+      "icon": "🧶",
+      "size": "small",
+      "at": [159.1, 175],
+      "name": { "ko": "뜨개 연구소", "en": "Tteugae Knit Lab" },
+      "tagline": { "en": "Soft knits in pastel colours", "ko": "파스텔 색 니트" },
+      "colors": { "sign": "#8a6fb0", "awning": "#efe4f7", "accent": "#f8f3fc" },
+      "products": [
+        { "id": "knit-butter", "model": "tee", "color": "#ffe08a", "price": 55000, "name": { "en": "Cotton Knit · Butter", "ko": "코튼 니트 · 버터" }, "desc": { "en": "Light knit for spring days." }, "tryOn": { "shirt": "butter" } },
+        { "id": "knit-mint", "model": "tee", "color": "#8fd3c7", "price": 55000, "name": { "en": "Cotton Knit · Mint", "ko": "코튼 니트 · 민트" }, "desc": { "en": "The same knit in mint." }, "tryOn": { "shirt": "mint" } },
+        { "id": "knit-scarf", "model": "scarf", "color": "#b9a6f0", "price": 29000, "name": { "en": "Chunky Knit Scarf", "ko": "두꺼운 니트 목도리" }, "desc": { "en": "Hand-knitted and very warm." }, "tryOn": { "neck": "scarf" } }
+      ]
+    },
+    {
+      "id": "wide-pants",
+      "category": "fashion",
+      "icon": "👖",
+      "size": "small",
+      "at": [-12.7, 175],
+      "name": { "ko": "와이드 팬츠 클럽", "en": "Wide Pants Club" },
+      "tagline": { "en": "Comfy wide trousers in every colour", "ko": "편한 와이드 팬츠 모든 색" },
+      "colors": { "sign": "#2f3e5c", "awning": "#dfe8f1", "accent": "#f3f6fa" },
+      "products": [
+        { "id": "wide-sand", "model": "jeans", "color": "#d9c5a3", "price": 49000, "name": { "en": "Wide Chinos · Sand", "ko": "와이드 치노 · 샌드" }, "desc": { "en": "Roomy cotton chinos." }, "tryOn": { "pants": "sand" } },
+        { "id": "wide-navy", "model": "jeans", "color": "#2f3e5c", "price": 49000, "name": { "en": "Wide Chinos · Navy", "ko": "와이드 치노 · 네이비" }, "desc": { "en": "A classic dark navy." }, "tryOn": { "pants": "navy" } },
+        { "id": "wide-charcoal", "model": "jeans", "color": "#3a3a3a", "price": 52000, "name": { "en": "Wide Slacks · Charcoal", "ko": "와이드 슬랙스 · 차콜" }, "desc": { "en": "Smart enough for a dinner out." }, "tryOn": { "pants": "charcoal" } }
+      ]
+    },
+    {
+      "id": "cap-yard",
+      "category": "fashion",
+      "icon": "🧢",
+      "size": "small",
+      "at": [163.4, 165],
+      "name": { "ko": "모자 마당", "en": "Cap Yard" },
+      "tagline": { "en": "Caps and bucket hats, embroidered on the spot", "ko": "즉석 자수 모자와 버킷햇" },
+      "colors": { "sign": "#d8452f", "awning": "#ffd9c7", "accent": "#fff4ef" },
+      "products": [
+        { "id": "cap-red", "model": "cap", "color": "#d8452f", "price": 27000, "name": { "en": "Ball Cap · Tomato", "ko": "볼캡 · 토마토" }, "desc": { "en": "Washed cotton with a curved brim." }, "tryOn": { "head": "cap" } },
+        { "id": "cap-sky", "model": "cap", "color": "#86b8f0", "price": 27000, "name": { "en": "Ball Cap · Sky", "ko": "볼캡 · 스카이" }, "desc": { "en": "Light blue for sunny walks." }, "tryOn": { "head": "cap" } },
+        { "id": "bucket-cream", "model": "hat", "color": "#f6f1e7", "price": 32000, "name": { "en": "Bucket Hat · Cream", "ko": "버킷햇 · 크림" }, "desc": { "en": "Soft and packable." }, "tryOn": { "head": "bucket" } }
+      ]
+    },
+    {
+      "id": "canvas-room",
+      "category": "fashion",
+      "icon": "👜",
+      "size": "small",
+      "at": [-13.4, 165],
+      "name": { "ko": "캔버스 룸", "en": "Canvas Room" },
+      "tagline": { "en": "Tote bags printed in the shop", "ko": "가게에서 직접 찍는 에코백" },
+      "colors": { "sign": "#3f7a5a", "awning": "#e2f2dc", "accent": "#f1f8ea" },
+      "products": [
+        { "id": "tote-forest", "model": "tote", "color": "#9cc28a", "price": 22000, "name": { "en": "Tote · Seoul Forest", "ko": "에코백 · 서울숲" }, "desc": { "en": "Printed with a little forest map." }, "tryOn": { "back": "tote" } },
+        { "id": "tote-river", "model": "tote", "color": "#8fb0c4", "price": 22000, "name": { "en": "Tote · Han River", "ko": "에코백 · 한강" }, "desc": { "en": "Printed with ducks on the river." }, "tryOn": { "back": "tote" } },
+        { "id": "tote-brick", "model": "tote", "color": "#d49a8a", "price": 22000, "name": { "en": "Tote · Red Brick", "ko": "에코백 · 붉은 벽돌" }, "desc": { "en": "A brick pattern for Seongsu fans." }, "tryOn": { "back": "tote" } }
+      ]
+    },
+    {
+      "id": "soga-leather",
+      "category": "lifestyle",
+      "icon": "👛",
+      "size": "small",
+      "at": [-40.7, 175],
+      "name": { "ko": "소가 가죽공방", "en": "Soga Leather" },
+      "tagline": { "en": "Small leather goods made in the back room", "ko": "안쪽 공방에서 만드는 가죽 소품" },
+      "colors": { "sign": "#7a4a2a", "awning": "#e9d8c6", "accent": "#fbf3ea" },
+      "products": [
+        { "id": "card-wallet", "model": "notebook", "color": "#7a4a2a", "price": 35000, "name": { "en": "Card Wallet", "ko": "카드 지갑" }, "desc": { "en": "Slim wallet for four cards." } },
+        { "id": "key-ring", "model": "notebook", "color": "#d8b98a", "price": 12000, "name": { "en": "Leather Key Ring", "ko": "가죽 키링" }, "desc": { "en": "Stamp your initials on it." } },
+        { "id": "leather-tote", "model": "tote", "color": "#5a3a28", "price": 149000, "name": { "en": "Leather Tote", "ko": "가죽 토트백" }, "desc": { "en": "Gets better with age." }, "tryOn": { "back": "tote" } }
+      ]
+    },
+    {
+      "id": "ohu-perfume",
+      "category": "beauty",
+      "icon": "🌸",
+      "size": "small",
+      "at": [-28, 211.4],
+      "name": { "ko": "향 연구소 오후", "en": "Ohu Perfume Lab" },
+      "tagline": { "en": "Mix your own perfume in 20 minutes", "ko": "20분 만에 나만의 향수 만들기" },
+      "colors": { "sign": "#6a5a8a", "awning": "#efe4f7", "accent": "#f8f3fc" },
+      "products": [
+        { "id": "perfume-fig", "model": "bottle", "color": "#c9a3c9", "price": 48000, "name": { "en": "Eau de Parfum · Fig Tree", "ko": "오 드 퍼퓸 · 무화과나무" }, "desc": { "en": "Green fig and warm wood." } },
+        { "id": "perfume-rain", "model": "bottle", "color": "#8fb0c4", "price": 48000, "name": { "en": "Eau de Parfum · Rainy Seoul", "ko": "오 드 퍼퓸 · 비 오는 서울" }, "desc": { "en": "Wet stone, moss and rain." } },
+        { "id": "perfume-mini", "model": "bottle", "color": "#ffb3c7", "price": 18000, "name": { "en": "Mini Perfume 10 ml", "ko": "미니 향수 10ml" }, "desc": { "en": "A small size to carry around." } }
+      ]
+    },
+    {
+      "id": "sonkkeut-nail",
+      "category": "beauty",
+      "icon": "💅",
+      "size": "small",
+      "at": [25.1, -10],
+      "name": { "ko": "손끝 네일", "en": "Sonkkeut Nails" },
+      "tagline": { "en": "Nail polish in Seoul colours", "ko": "서울 색 네일 폴리시" },
+      "colors": { "sign": "#e05aa8", "awning": "#ffd9e8", "accent": "#fff3f8" },
+      "products": [
+        { "id": "nail-cherry", "model": "bottle", "color": "#e0452b", "price": 9000, "name": { "en": "Nail Polish · Cherry", "ko": "네일 · 체리" }, "desc": { "en": "A bright, glossy red." } },
+        { "id": "nail-lilac", "model": "bottle", "color": "#b9a6f0", "price": 9000, "name": { "en": "Nail Polish · Lilac", "ko": "네일 · 라일락" }, "desc": { "en": "Soft spring purple." } },
+        { "id": "nail-care", "model": "jar", "color": "#f3e5c8", "price": 12000, "name": { "en": "Cuticle Balm", "ko": "큐티클 밤" }, "desc": { "en": "Keeps nails healthy." } }
+      ]
+    },
+    {
+      "id": "mulbangul-skin",
+      "category": "beauty",
+      "icon": "💧",
+      "size": "small",
+      "at": [7.4, -10],
+      "name": { "ko": "물방울 스킨", "en": "Mulbangul Skin" },
+      "tagline": { "en": "Simple skincare for travellers", "ko": "여행자를 위한 간단한 스킨케어" },
+      "colors": { "sign": "#4a8fd4", "awning": "#dff1fb", "accent": "#f3f9ff" },
+      "products": [
+        { "id": "toner-2", "model": "bottle", "color": "#cfe8f5", "price": 22000, "name": { "en": "Water Toner", "ko": "수분 토너" }, "desc": { "en": "Light toner for dry plane air." } },
+        { "id": "sheet-mask", "model": "notebook", "color": "#ffffff", "price": 3000, "name": { "en": "Sheet Mask", "ko": "시트 마스크" }, "desc": { "en": "A Korean classic: 15 minutes of calm." } },
+        { "id": "sun-cream-2", "model": "jar", "color": "#fff1d0", "price": 19000, "name": { "en": "Sun Cream SPF 50", "ko": "선크림 SPF 50" }, "desc": { "en": "No white cast, light finish." } }
+      ]
+    },
+    {
+      "id": "butterfold",
+      "category": "cafe",
+      "icon": "🥐",
+      "size": "small",
+      "at": [-64.4, -10],
+      "name": { "ko": "버터폴드", "en": "Butterfold Croissant" },
+      "tagline": { "en": "Croissants baked every 30 minutes", "ko": "30분마다 굽는 크루아상" },
+      "colors": { "sign": "#c8782a", "awning": "#ffe8c4", "accent": "#fff8ec" },
+      "products": [
+        { "id": "croissant", "model": "bread", "color": "#e0a050", "price": 4500, "name": { "en": "Butter Croissant", "ko": "버터 크루아상" }, "desc": { "en": "Flaky and very buttery." } },
+        { "id": "pain-choc", "model": "bread", "color": "#8a5a3a", "price": 5000, "name": { "en": "Chocolate Croissant", "ko": "초코 크루아상" }, "desc": { "en": "Two bars of dark chocolate inside." } },
+        { "id": "latte", "model": "cup", "color": "#d8c3a0", "price": 5500, "name": { "en": "Café Latte", "ko": "카페 라테" }, "desc": { "en": "Smooth milk coffee." } }
+      ]
+    },
+    {
+      "id": "sagye-gelato",
+      "category": "cafe",
+      "icon": "🍨",
+      "size": "small",
+      "at": [-22, 95.7],
+      "name": { "ko": "사계 젤라또", "en": "Sagye Gelato" },
+      "tagline": { "en": "Gelato flavours from four Korean seasons", "ko": "한국 사계절 맛 젤라또" },
+      "colors": { "sign": "#e05aa8", "awning": "#ffd9e8", "accent": "#fff3f8" },
+      "products": [
+        { "id": "gelato-strawberry", "model": "cup", "color": "#ff8fa3", "price": 5500, "name": { "en": "Gelato · Strawberry", "ko": "젤라또 · 딸기" }, "desc": { "en": "Korean winter strawberries." } },
+        { "id": "gelato-sesame", "model": "cup", "color": "#5a4a40", "price": 5500, "name": { "en": "Gelato · Black Sesame", "ko": "젤라또 · 흑임자" }, "desc": { "en": "Nutty and not too sweet." } },
+        { "id": "gelato-injeolmi", "model": "cup", "color": "#e6d6b2", "price": 5500, "name": { "en": "Gelato · Injeolmi", "ko": "젤라또 · 인절미" }, "desc": { "en": "Roasted soybean powder, like rice cake." } }
+      ]
+    },
+    {
+      "id": "matcha-garden",
+      "category": "cafe",
+      "icon": "🍵",
+      "size": "small",
+      "at": [-28, 36.2],
+      "name": { "ko": "말차 정원", "en": "Matcha Garden" },
+      "tagline": { "en": "Green tea drinks and sweets", "ko": "녹차 음료와 디저트" },
+      "colors": { "sign": "#3f7a5a", "awning": "#e2f2dc", "accent": "#f1f8ea" },
+      "products": [
+        { "id": "matcha-latte", "model": "cup", "color": "#9cc28a", "price": 6000, "name": { "en": "Matcha Latte", "ko": "말차 라테" }, "desc": { "en": "Whisked green tea with milk." } },
+        { "id": "green-tea", "model": "cup", "color": "#b7c7a0", "price": 5000, "name": { "en": "Jeju Green Tea", "ko": "제주 녹차" }, "desc": { "en": "Hot tea from Jeju Island." } },
+        { "id": "matcha-roll", "model": "bread", "color": "#9cc28a", "price": 6500, "name": { "en": "Matcha Roll Cake", "ko": "말차 롤케이크" }, "desc": { "en": "Soft sponge with cream." } }
+      ]
+    },
+    {
+      "id": "croffle-house",
+      "category": "cafe",
+      "icon": "🧇",
+      "size": "small",
+      "at": [92.8, -77.5],
+      "name": { "ko": "크로플 하우스", "en": "Croffle House" },
+      "tagline": { "en": "Croissant waffles with ice cream", "ko": "아이스크림 올린 크로플" },
+      "colors": { "sign": "#d8a24a", "awning": "#fff1d0", "accent": "#fffaf0" },
+      "products": [
+        { "id": "croffle-plain", "model": "bread", "color": "#e0a050", "price": 4500, "name": { "en": "Plain Croffle", "ko": "플레인 크로플" }, "desc": { "en": "Crispy, with a sugar crust." } },
+        { "id": "croffle-cream", "model": "bread", "color": "#f6f1e7", "price": 6500, "name": { "en": "Ice Cream Croffle", "ko": "아이스크림 크로플" }, "desc": { "en": "Topped with vanilla ice cream." } },
+        { "id": "iced-americano", "model": "cup", "color": "#5c3b2a", "price": 4500, "name": { "en": "Iced Americano", "ko": "아이스 아메리카노" }, "desc": { "en": "Seoul runs on this." } }
+      ]
+    },
+    {
+      "id": "slow-brunch",
+      "category": "cafe",
+      "icon": "🍳",
+      "size": "medium",
+      "at": [67.5, 111.1],
+      "name": { "ko": "느린 브런치", "en": "Slow Brunch" },
+      "tagline": { "en": "Eggs, toast and long chats", "ko": "계란, 토스트, 그리고 긴 수다" },
+      "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
+      "products": [
+        { "id": "egg-toast", "model": "bread", "color": "#ffd36e", "price": 8500, "name": { "en": "Egg Drop Toast", "ko": "에그 토스트" }, "desc": { "en": "Fluffy scrambled egg in thick toast." } },
+        { "id": "bacon-plate", "model": "bacon", "color": "#c0504d", "price": 13000, "name": { "en": "Bacon & Eggs", "ko": "베이컨 앤 에그" }, "desc": { "en": "A full plate to start the day." } },
+        { "id": "orange-juice", "model": "cup", "color": "#f2a03a", "price": 6000, "name": { "en": "Fresh Orange Juice", "ko": "생오렌지 주스" }, "desc": { "en": "Squeezed to order." } }
+      ]
+    },
+    {
+      "id": "hotteok-stand",
+      "category": "cafe",
+      "icon": "🥞",
+      "size": "small",
+      "at": [52.5, -35.6],
+      "name": { "ko": "달달 호떡", "en": "Daldal Hotteok" },
+      "tagline": { "en": "Sweet Korean pancakes, hot from the pan", "ko": "갓 구운 달달한 호떡" },
+      "colors": { "sign": "#a8642f", "awning": "#f3d9a8", "accent": "#fff6e6" },
+      "products": [
+        { "id": "hotteok-2", "model": "bread", "color": "#c8823a", "price": 2000, "name": { "en": "Hotteok", "ko": "호떡" }, "desc": { "en": "Filled with brown sugar and nuts. Careful, it is hot inside!" } },
+        { "id": "seed-hotteok", "model": "bread", "color": "#b5784a", "price": 2500, "name": { "en": "Seed Hotteok", "ko": "씨앗호떡" }, "desc": { "en": "Busan style, stuffed with seeds." } },
+        { "id": "sikhye-2", "model": "cup", "color": "#efe6d8", "price": 3000, "name": { "en": "Sikhye", "ko": "식혜" }, "desc": { "en": "Sweet rice drink, served cold." } }
+      ]
+    },
+    {
+      "id": "warehouse-roasters",
+      "category": "cafe",
+      "icon": "☕",
+      "size": "medium",
+      "at": [-79, -10],
+      "name": { "ko": "창고 로스터리", "en": "Warehouse Roasters" },
+      "tagline": { "en": "Coffee roasted in an old factory", "ko": "오래된 공장에서 볶는 커피" },
+      "colors": { "sign": "#3a3a3a", "awning": "#e8e2d8", "accent": "#fafaf7" },
+      "products": [
+        { "id": "hand-drip-2", "model": "cup", "color": "#5a3a28", "price": 6500, "name": { "en": "Hand Drip · Ethiopia", "ko": "핸드드립 · 에티오피아" }, "desc": { "en": "Bright and fruity." } },
+        { "id": "flat-white", "model": "cup", "color": "#c9a26a", "price": 5500, "name": { "en": "Flat White", "ko": "플랫 화이트" }, "desc": { "en": "Strong and silky." } },
+        { "id": "beans", "model": "jar", "color": "#5c3b2a", "price": 18000, "name": { "en": "Coffee Beans 200 g", "ko": "원두 200g" }, "desc": { "en": "House blend to take home." } }
+      ]
+    },
+    {
+      "id": "bingsu-lab",
+      "category": "cafe",
+      "icon": "🍧",
+      "size": "small",
+      "at": [115.5, 165],
+      "name": { "ko": "빙수 연구소", "en": "Bingsu Lab" },
+      "tagline": { "en": "Shaved milk ice with toppings", "ko": "우유 빙수와 토핑" },
+      "colors": { "sign": "#86b8f0", "awning": "#e3f0f7", "accent": "#f3f9ff" },
+      "products": [
+        { "id": "patbingsu", "model": "bowl", "color": "#b5784a", "price": 11000, "name": { "en": "Patbingsu", "ko": "팥빙수" }, "desc": { "en": "Milk ice with sweet red beans and rice cake." } },
+        { "id": "mango-bingsu", "model": "bowl", "color": "#ffc94a", "price": 14000, "name": { "en": "Mango Bingsu", "ko": "망고 빙수" }, "desc": { "en": "Fresh mango on top." } },
+        { "id": "injeolmi-bingsu", "model": "bowl", "color": "#e6d6b2", "price": 12000, "name": { "en": "Injeolmi Bingsu", "ko": "인절미 빙수" }, "desc": { "en": "Roasted soybean powder and rice cake." } }
+      ]
+    },
+    {
+      "id": "chorok-plants",
+      "category": "lifestyle",
+      "icon": "🪴",
+      "size": "small",
+      "at": [-28, 226.4],
+      "name": { "ko": "초록 식물가게", "en": "Chorok Plant Shop" },
+      "tagline": { "en": "Small plants for small rooms", "ko": "작은 방을 위한 작은 식물" },
+      "colors": { "sign": "#3f7a5a", "awning": "#b4dc93", "accent": "#f1f8ea" },
+      "products": [
+        { "id": "cactus", "model": "jar", "color": "#7aa86a", "price": 9000, "name": { "en": "Mini Cactus", "ko": "미니 선인장" }, "desc": { "en": "Hard to kill, easy to love." } },
+        { "id": "monstera", "model": "jar", "color": "#4f8a4a", "price": 25000, "name": { "en": "Baby Monstera", "ko": "몬스테라" }, "desc": { "en": "Big leaves in a little pot." } },
+        { "id": "watering", "model": "bottle", "color": "#e3f0f7", "price": 12000, "name": { "en": "Watering Can", "ko": "물뿌리개" }, "desc": { "en": "A tiny tin can." } }
+      ]
+    },
+    {
+      "id": "heuk-ceramics",
+      "category": "lifestyle",
+      "icon": "🏺",
+      "size": "small",
+      "at": [-22, 213.4],
+      "name": { "ko": "흙 도자기", "en": "Heuk Ceramics" },
+      "tagline": { "en": "Handmade cups and bowls", "ko": "손으로 빚은 컵과 그릇" },
+      "colors": { "sign": "#8a5a3a", "awning": "#e9d8c6", "accent": "#fbf3ea" },
+      "products": [
+        { "id": "mug", "model": "cup", "color": "#d9cbb8", "price": 22000, "name": { "en": "Stoneware Mug", "ko": "도자기 머그" }, "desc": { "en": "Each one a little different." } },
+        { "id": "rice-bowl", "model": "bowl", "color": "#efe6d8", "price": 18000, "name": { "en": "Rice Bowl", "ko": "밥그릇" }, "desc": { "en": "For your rice at home." } },
+        { "id": "vase", "model": "bottle", "color": "#8fb0c4", "price": 35000, "name": { "en": "Small Vase", "ko": "작은 화병" }, "desc": { "en": "A blue glaze like the river." } }
+      ]
+    },
+    {
+      "id": "kkot-flowers",
+      "category": "lifestyle",
+      "icon": "💐",
+      "size": "small",
+      "at": [-22, 130.1],
+      "name": { "ko": "꽃다발 상점", "en": "Kkot Flower Shop" },
+      "tagline": { "en": "Small bouquets for a walk in the park", "ko": "공원 산책용 작은 꽃다발" },
+      "colors": { "sign": "#e05aa8", "awning": "#ffd9e8", "accent": "#fff3f8" },
+      "products": [
+        { "id": "tulips", "model": "bottle", "color": "#ff8fa3", "price": 15000, "name": { "en": "Tulip Bunch", "ko": "튤립 다발" }, "desc": { "en": "Five pink tulips." } },
+        { "id": "dried", "model": "bottle", "color": "#d8b98a", "price": 18000, "name": { "en": "Dried Flower Bouquet", "ko": "드라이플라워" }, "desc": { "en": "Lasts for months." } },
+        { "id": "flower-card", "model": "notebook", "color": "#ffe08a", "price": 3000, "name": { "en": "Message Card", "ko": "메시지 카드" }, "desc": { "en": "Write a note in Korean." } }
+      ]
+    },
+    {
+      "id": "pan-records",
+      "category": "lifestyle",
+      "icon": "💿",
+      "size": "small",
+      "at": [-28, 128.7],
+      "name": { "ko": "판 레코드", "en": "Pan Records" },
+      "tagline": { "en": "Korean pop and indie on vinyl", "ko": "LP로 듣는 한국 가요와 인디" },
+      "colors": { "sign": "#2b2340", "awning": "#c9a26a", "accent": "#f3ece0" },
+      "products": [
+        { "id": "lp-citypop", "model": "notebook", "color": "#ff9b85", "price": 39000, "name": { "en": "LP · Seoul City Pop", "ko": "LP · 서울 시티팝" }, "desc": { "en": "A sunny mix of 80s sounds." } },
+        { "id": "lp-indie", "model": "notebook", "color": "#86b8f0", "price": 35000, "name": { "en": "LP · Hongdae Indie", "ko": "LP · 홍대 인디" }, "desc": { "en": "Guitars from small clubs." } },
+        { "id": "cassette", "model": "notebook", "color": "#ffd36e", "price": 15000, "name": { "en": "Cassette Tape", "ko": "카세트테이프" }, "desc": { "en": "Old format, new songs." } }
+      ]
+    },
+    {
+      "id": "bal-socks",
+      "category": "lifestyle",
+      "icon": "🧦",
+      "size": "small",
+      "at": [-28, 143.8],
+      "name": { "ko": "양말가게 발", "en": "Bal Sock Shop" },
+      "tagline": { "en": "Funny socks, three pairs at a time", "ko": "재미있는 양말, 세 켤레씩" },
+      "colors": { "sign": "#ff9b85", "awning": "#ffe8e0", "accent": "#fff6f2" },
+      "products": [
+        { "id": "socks-kimchi", "model": "notebook", "color": "#e0452b", "price": 9000, "name": { "en": "Kimchi Socks (3 pairs)", "ko": "김치 양말 3켤레" }, "desc": { "en": "Spicy feet." } },
+        { "id": "socks-duck", "model": "notebook", "color": "#ffd166", "price": 9000, "name": { "en": "Duck Boat Socks (3 pairs)", "ko": "오리배 양말 3켤레" }, "desc": { "en": "From the Han River." } },
+        { "id": "socks-tiger", "model": "notebook", "color": "#f08a2c", "price": 9000, "name": { "en": "Tiger Socks (3 pairs)", "ko": "호랑이 양말 3켤레" }, "desc": { "en": "Korea's favourite animal." } }
+      ]
+    },
+    {
+      "id": "k-goods",
+      "category": "popup",
+      "icon": "✨",
+      "size": "small",
+      "at": [67.5, -37],
+      "name": { "ko": "케이 굿즈", "en": "K-Goods Store" },
+      "tagline": { "en": "Light sticks, photo cards and fan goods", "ko": "응원봉, 포토카드, 팬 굿즈" },
+      "colors": { "sign": "#5b6cf0", "awning": "#eef0ff", "accent": "#f6f7ff" },
+      "products": [
+        { "id": "photocard", "model": "notebook", "color": "#ffb3c7", "price": 5000, "name": { "en": "Photo Card Pack", "ko": "포토카드 팩" }, "desc": { "en": "Five random cards (fictional idols)." } },
+        { "id": "lightstick", "model": "bottle", "color": "#b9a6f0", "price": 35000, "name": { "en": "Light Stick", "ko": "응원봉" }, "desc": { "en": "Glows in eight colours." } },
+        { "id": "fan-tote", "model": "tote", "color": "#86b8f0", "price": 20000, "name": { "en": "Fan Club Tote", "ko": "팬클럽 에코백" }, "desc": { "en": "Carry your goods in style." }, "tryOn": { "back": "tote" } }
+      ]
+    },
+    {
+      "id": "mallang-popup",
+      "category": "popup",
+      "icon": "🐰",
+      "size": "medium",
+      "at": [67.5, 198.3],
+      "name": { "ko": "말랑 팝업", "en": "Mallang Pop-up" },
+      "tagline": { "en": "This week: squishy character pop-up", "ko": "이번 주: 말랑 캐릭터 팝업" },
+      "colors": { "sign": "#ff8fa3", "awning": "#ffe8ef", "accent": "#fff6f9" },
+      "products": [
+        { "id": "mallang-plush", "model": "plush", "color": "#ffb3c7", "price": 25000, "name": { "en": "Mallang Plush", "ko": "말랑 인형" }, "desc": { "en": "The pop-up mascot, very squishy." } },
+        { "id": "mallang-cap", "model": "cap", "color": "#ffb3c7", "price": 28000, "name": { "en": "Mallang Cap", "ko": "말랑 볼캡" }, "desc": { "en": "Pink cap with tiny ears." }, "tryOn": { "head": "cap" } },
+        { "id": "mallang-note", "model": "notebook", "color": "#ffe08a", "price": 7000, "name": { "en": "Mallang Sticker Book", "ko": "말랑 스티커북" }, "desc": { "en": "Forty stickers." } }
+      ]
+    },
+    {
+      "id": "pixel-popup",
+      "category": "popup",
+      "icon": "🎮",
+      "size": "medium",
+      "at": [95.8, 175],
+      "name": { "ko": "픽셀 팝업", "en": "Pixel Pop-up" },
+      "tagline": { "en": "Retro game goods, limited time", "ko": "레트로 게임 굿즈 한정 판매" },
+      "colors": { "sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7" },
+      "products": [
+        { "id": "pixel-plush", "model": "plush", "color": "#8fd3c7", "price": 22000, "name": { "en": "Pixel Slime Plush", "ko": "픽셀 슬라임 인형" }, "desc": { "en": "From a game that does not exist (yet)." } },
+        { "id": "pixel-tee", "model": "tee", "color": "#86b8f0", "price": 35000, "name": { "en": "Pixel Tee · Sky", "ko": "픽셀 티 · 스카이" }, "desc": { "en": "8-bit print on a soft tee." }, "tryOn": { "shirt": "sky" } },
+        { "id": "pixel-bucket", "model": "hat", "color": "#ffd36e", "price": 29000, "name": { "en": "Pixel Bucket Hat", "ko": "픽셀 버킷햇" }, "desc": { "en": "Yellow, like a power-up." }, "tryOn": { "head": "bucket" } }
+      ]
+    },
+    {
+      "id": "son-kalguksu",
+      "category": "restaurant",
+      "icon": "🍜",
+      "size": "medium",
+      "at": [106.3, 266],
+      "name": { "ko": "손칼국수집", "en": "Son Kalguksu" },
+      "tagline": { "en": "Hand-cut noodle soup, a lunchtime favourite", "ko": "점심에 딱 좋은 손칼국수" },
+      "colors": { "sign": "#d8452f", "awning": "#ffd166", "accent": "#fff4e0" },
+      "products": [
+        { "id": "kalguksu", "model": "bowl", "color": "#efe6d8", "price": 9000, "name": { "en": "Kalguksu", "ko": "칼국수" }, "desc": { "en": "Knife-cut noodles in anchovy broth." } },
+        { "id": "sujebi", "model": "bowl", "color": "#e9d8c6", "price": 9000, "name": { "en": "Sujebi", "ko": "수제비" }, "desc": { "en": "Hand-torn dough soup." } },
+        { "id": "mandu", "model": "roll", "color": "#f3e5c8", "price": 7000, "name": { "en": "Steamed Dumplings", "ko": "찐만두" }, "desc": { "en": "Six pork and vegetable dumplings." } }
+      ]
+    },
+    {
+      "id": "golmok-chicken",
+      "category": "restaurant",
+      "icon": "🍗",
+      "size": "medium",
+      "at": [157.4, 266],
+      "name": { "ko": "골목 치킨", "en": "Golmok Chicken" },
+      "tagline": { "en": "Korean fried chicken, crispy and saucy", "ko": "바삭하고 양념 가득한 한국식 치킨" },
+      "colors": { "sign": "#f08a2c", "awning": "#fff1d0", "accent": "#fffaf0" },
+      "products": [
+        { "id": "fried-chicken", "model": "bowl", "color": "#e0a050", "price": 19000, "name": { "en": "Fried Chicken", "ko": "후라이드 치킨" }, "desc": { "en": "Twice-fried, very crunchy." } },
+        { "id": "yangnyeom", "model": "bowl", "color": "#c0392b", "price": 21000, "name": { "en": "Yangnyeom Chicken", "ko": "양념치킨" }, "desc": { "en": "Sweet and spicy red glaze." } },
+        { "id": "pickled-radish", "model": "bowl", "color": "#ffffff", "price": 1000, "name": { "en": "Pickled Radish", "ko": "치킨무" }, "desc": { "en": "Always comes with chicken." } }
+      ]
+    },
+    {
+      "id": "dal-tteok",
+      "category": "restaurant",
+      "icon": "🍡",
+      "size": "small",
+      "at": [91.6, 266],
+      "name": { "ko": "떡집 달", "en": "Dal Rice Cakes" },
+      "tagline": { "en": "Fresh rice cakes, made every morning", "ko": "매일 아침 만드는 떡" },
+      "colors": { "sign": "#8a6fb0", "awning": "#efe4f7", "accent": "#f8f3fc" },
+      "products": [
+        { "id": "injeolmi-2", "model": "roll", "color": "#e6d6b2", "price": 5000, "name": { "en": "Injeolmi", "ko": "인절미" }, "desc": { "en": "Chewy rice cake in soybean powder." } },
+        { "id": "songpyeon", "model": "roll", "color": "#cfe8d5", "price": 6000, "name": { "en": "Songpyeon", "ko": "송편" }, "desc": { "en": "Half-moon rice cakes, a Chuseok treat." } },
+        { "id": "baekseolgi", "model": "bread", "color": "#ffffff", "price": 5000, "name": { "en": "Baekseolgi", "ko": "백설기" }, "desc": { "en": "Plain white steamed rice cake." } }
+      ]
+    },
+    {
+      "id": "seongsu-mandu",
+      "category": "restaurant",
+      "icon": "🥟",
+      "size": "small",
+      "at": [67.5, 36.2],
+      "name": { "ko": "성수 만두", "en": "Seongsu Mandu" },
+      "tagline": { "en": "Big dumplings, steamed or fried", "ko": "찐만두와 군만두" },
+      "colors": { "sign": "#3a7a8a", "awning": "#d6e4ea", "accent": "#f2f7f9" },
+      "products": [
+        { "id": "gogi-mandu", "model": "roll", "color": "#f3e5c8", "price": 7000, "name": { "en": "Meat Dumplings", "ko": "고기만두" }, "desc": { "en": "Juicy pork filling." } },
+        { "id": "kimchi-mandu", "model": "roll", "color": "#ff9b85", "price": 7000, "name": { "en": "Kimchi Dumplings", "ko": "김치만두" }, "desc": { "en": "A little spicy." } },
+        { "id": "mandu-guk", "model": "bowl", "color": "#efe6d8", "price": 9000, "name": { "en": "Dumpling Soup", "ko": "만둣국" }, "desc": { "en": "Dumplings in beef broth." } }
       ]
     }
   ]

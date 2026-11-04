@@ -1,19 +1,20 @@
 {
   "note": "Meeting points for players. Zone names are game labels, not official place names (except the station).",
   "zones": [
-    { "id": "A", "color": "#ff9b85", "at": [42.2, 56.2], "snap": false, "pave": { "w": 30, "l": 56, "ry": -0.357 }, "radius": 45,
+    { "id": "A", "color": "#ff9b85", "at": [15, 46], "snap": false, "radius": 45,
       "name": { "en": "Seongsu Square", "ko": "성수 광장", "ja": "聖水広場", "zh": "圣水广场" } },
-    { "id": "B", "color": "#e9b97a", "anchor": { "lat": 37.544241, "lon": 127.055247 }, "radius": 60,
+    { "id": "B", "color": "#e9b97a", "at": [-40, -6], "radius": 50,
       "name": { "en": "Café Corner", "ko": "카페 코너", "ja": "カフェコーナー", "zh": "咖啡角" } },
-    { "id": "C", "color": "#86b8f0", "anchor": { "lat": 37.542696, "lon": 127.054567 }, "radius": 90,
+    { "id": "C", "color": "#86b8f0", "at": [20, 170], "radius": 80,
       "name": { "en": "Yeonmujang Street", "ko": "연무장길", "ja": "ヨンムジャンギル" } },
-    { "id": "D", "color": "#d49a8a", "anchor": { "lat": 37.543145, "lon": 127.053151 }, "radius": 80,
+    { "id": "D", "color": "#d49a8a", "at": [-25, 215], "radius": 60,
       "name": { "en": "Red Brick Lane", "ko": "붉은 벽돌 골목", "ja": "赤レンガ路地", "zh": "红砖小巷" } },
-    { "id": "E", "color": "#b9a6f0", "anchor": { "lat": 37.543774, "lon": 127.056323 }, "radius": 60,
+    { "id": "E", "color": "#b9a6f0", "at": [100, 225], "snap": false, "radius": 50,
       "name": { "en": "Pop-up Square", "ko": "팝업 광장", "ja": "ポップアップ広場", "zh": "快闪广场" } },
-    { "id": "F", "color": "#a6d97a", "anchor": { "lat": 37.545139, "lon": 127.054114 }, "radius": 80,
+    { "id": "F", "color": "#a6d97a", "at": [60, -72], "radius": 60,
       "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
     { "id": "G", "color": "#d4a73a", "at": [-1737, -770], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} },
-    { "id": "H", "color": "#e86fa8", "at": [-1324, 167], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} }
+    { "id": "H", "color": "#e86fa8", "at": [-1324, 167], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
+    { "id": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } }
   ]
 }

@@ -1,11 +1,12 @@
 {
   "note": "Bike-share stations (fictional service). Each anchor is snapped to the nearest street.",
   "stations": [
-    { "id": "station-plaza", "anchor": { "lat": 37.54452, "lon": 127.05610 } },
-    { "id": "yeonmujang", "anchor": { "lat": 37.54262, "lon": 127.05480 } },
-    { "id": "red-brick", "anchor": { "lat": 37.54300, "lon": 127.05300 } },
-    { "id": "achasan", "anchor": { "lat": 37.54525, "lon": 127.05430 } },
-    { "id": "popup-square", "anchor": { "lat": 37.54370, "lon": 127.05660 } },
+    { "id": "station-plaza", "at": [40, -75] },
+    { "id": "yeonmujang", "at": [0, 178] },
+    { "id": "red-brick", "at": [-25, 140] },
+    { "id": "achasan", "at": [-150, -76] },
+    { "id": "popup-square", "at": [85, 200] },
+    { "id": "seoul-forest", "at": [-118, 100] },
     { "id": "gwanghwamun", "at": [-1697, -810] },
     { "id": "itaewon", "at": [-1344, 187] }
   ]

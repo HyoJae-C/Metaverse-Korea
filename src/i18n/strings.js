@@ -459,7 +459,7 @@ export const STRINGS = {
     'credit.weather': 'Weather',
     'hud.weatherNow': 'Live weather in Seongsu-dong',
     'start.next': 'Next',
-    'app.disclaimer': 'Streets are based on real OpenStreetMap data. All shops, brands and products here are fictional samples, not the real businesses at these locations.',
+    'app.disclaimer': 'The streets are a game map inspired by real Seoul neighbourhoods, not an exact copy. All shops, brands and products here are fictional samples, not real businesses.',
     'start.back': 'Back',
     'look.title': 'Make your character',
     'look.random': 'Surprise me',
@@ -531,7 +531,6 @@ export const STRINGS = {
     'look.model': 'Character',
     'look.tee': 'T-shirt colour',
     'credit.chars': 'Characters',
-    'credit.map': 'Map data',
   },
   ko: {
     "ride.car": "오픈 스포츠카",
@@ -970,7 +969,7 @@ export const STRINGS = {
     'credit.weather': '날씨',
     'hud.weatherNow': '성수동 실시간 날씨',
     'start.next': '다음',
-    'app.disclaimer': '거리는 실제 OpenStreetMap 데이터를 바탕으로 했어요. 이곳의 가게, 브랜드, 상품은 모두 가상의 샘플이며 실제 그 자리에 있는 가게와는 관계가 없어요.',
+    'app.disclaimer': '거리는 실제 서울 동네를 참고해 새로 그린 게임 지도이며, 실제 지도를 그대로 옮긴 것이 아니에요. 이곳의 가게, 브랜드, 상품은 모두 가상의 샘플이며 실제 가게와는 관계가 없어요.',
     'start.back': '이전',
     'look.title': '내 캐릭터 만들기',
     'look.random': '랜덤으로',
@@ -1042,7 +1041,6 @@ export const STRINGS = {
     'look.model': '캐릭터',
     'look.tee': '티셔츠 색',
     'credit.chars': '캐릭터',
-    'credit.map': '지도 데이터',
   },
   ja: {
     "ride.car": "オープンスポーツカー",
@@ -1481,7 +1479,7 @@ export const STRINGS = {
     'credit.weather': '天気',
     'hud.weatherNow': '聖水洞のリアルタイム天気',
     'start.next': '次へ',
-    'app.disclaimer': '通りは実際のOpenStreetMapデータに基づいています。ここの店舗・ブランド・商品はすべて架空のサンプルで、実際にその場所にある店とは関係ありません。',
+    'app.disclaimer': '通りは実際のソウルの街を参考に描いたゲーム用の地図で、正確な複製ではありません。ここの店舗・ブランド・商品はすべて架空のサンプルで、実在の店とは関係ありません。',
     'start.back': '戻る',
     'look.title': 'キャラクターを作ろう',
     'look.random': 'おまかせ',
@@ -1553,7 +1551,6 @@ export const STRINGS = {
     'look.model': 'キャラクター',
     'look.tee': 'Tシャツの色',
     'credit.chars': 'キャラクター',
-    'credit.map': '地図データ',
   },
   zh: {
     "ride.car": "敞篷跑车",
@@ -1992,7 +1989,7 @@ export const STRINGS = {
     'credit.weather': '天气',
     'hud.weatherNow': '圣水洞实时天气',
     'start.next': '下一步',
-    'app.disclaimer': '街道基于真实的OpenStreetMap数据。这里的商店、品牌和商品均为虚构示例，与该位置的真实商家无关。',
+    'app.disclaimer': '街道是参考首尔真实街区绘制的游戏地图，并非精确复制。这里的商店、品牌和商品均为虚构示例，与真实商家无关。',
     'start.back': '返回',
     'look.title': '打造你的角色',
     'look.random': '随机搭配',
@@ -2064,7 +2061,6 @@ export const STRINGS = {
     'look.model': '角色',
     'look.tee': 'T恤颜色',
     'credit.chars': '角色',
-    'credit.map': '地图数据',
   },
 };
 
