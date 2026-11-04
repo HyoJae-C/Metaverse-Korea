@@ -35,7 +35,7 @@ export const STARTER_TEXT = {
     tip: { en: 'Tip: at the Name Tag Workshop you can decorate your name tag.', ko: '팁: 네임택 공방에서는 내 이름표를 꾸밀 수 있어요.', ja: 'ヒント：ネームタグ工房では名札を飾れるよ。', zh: '提示：在名牌工坊可以装饰自己的名牌。', es: 'Consejo: en el taller puedes decorar tu etiqueta de nombre.', id: 'Tips: di bengkel ini kamu bisa menghias label namamu.', ar: 'نصيحة: في الورشة يمكنك تزيين شارة اسمك.', vi: 'Mẹo: ở Xưởng bảng tên, bạn có thể trang trí bảng tên của mình.', hi: 'सुझाव: नाम-टैग वर्कशॉप में आप अपना नाम-टैग सजा सकते हैं।' },
   },
   pat: {
-    text: { en: 'Pat a dog at {store}', ko: '{store}에서 강아지 쓰다듬기', ja: '{store}で犬をなでる', zh: '在{store}摸摸狗狗', es: 'Acaricia un perro en {store}', id: 'Elus anjing di {store}', ar: 'داعِب كلبًا في {store}', vi: 'Vuốt ve một chú chó ở {store}', hi: '{store} में किसी कुत्ते को सहलाएँ' },
+    text: { en: 'Pat a cat at {store}', ko: '{store}에서 고양이 쓰다듬기', ja: '{store}で猫をなでる', zh: '在{store}摸摸猫咪', es: 'Acaricia un gato en {store}', id: 'Elus kucing di {store}', ar: 'داعِب قطة في {store}', vi: 'Vuốt ve một chú mèo ở {store}', hi: '{store} में किसी बिल्ली को सहलाएँ' },
     tip: { en: 'Tip: walk up to an animal and tap 🐾 to pat it.', ko: '팁: 동물에게 다가가서 🐾 버튼을 누르면 쓰다듬을 수 있어요.', ja: 'ヒント：動物に近づいて🐾を押すとなでられるよ。', zh: '提示：走近小动物，点🐾就能摸摸它。', es: 'Consejo: acércate a un animal y toca 🐾 para acariciarlo.', id: 'Tips: dekati hewan lalu ketuk 🐾 untuk mengelusnya.', ar: 'نصيحة: اقترب من حيوان واضغط 🐾 لتداعبه.', vi: 'Mẹo: lại gần con vật và chạm 🐾 để vuốt ve.', hi: 'सुझाव: किसी जानवर के पास जाएँ और सहलाने के लिए 🐾 टैप करें।' },
   },
 };
