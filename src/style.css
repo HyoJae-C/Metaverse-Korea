@@ -1270,6 +1270,44 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .map-seoul.on { background: #4a3f35; color: #fffaf0; }
 .map-soon { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); z-index: 1; margin: 0; padding: 6px 14px; border-radius: 14px; background: rgba(74, 63, 53, 0.9); color: #fffaf0; font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; }
 
+/* PC key hints (bottom left). Hidden on touch screens in JS. */
+.keys-panel {
+  position: absolute; left: 12px; bottom: 12px;
+  background: var(--panel); border-radius: 16px; padding: 6px 10px 8px;
+  box-shadow: 0 3px 0 rgba(74, 63, 53, 0.12), 0 6px 16px rgba(74, 63, 53, 0.14);
+  font-size: 12px; font-weight: 700; color: var(--ink);
+}
+.keys-toggle {
+  display: flex; align-items: center; gap: 4px; padding: 2px 0; margin: 0;
+  background: none; border: 0; box-shadow: none; font: inherit; font-size: 11px; font-weight: 800;
+  color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
+}
+.keys-caret { font-size: 10px; transition: transform 0.15s; }
+.keys-panel.folded { padding-bottom: 6px; }
+.keys-panel.folded .keys-caret { transform: rotate(180deg); }
+.keys-panel.folded .keys-list { display: none; }
+.keys-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; }
+.keys-list li { display: grid; grid-template-columns: 88px auto; align-items: center; gap: 8px; }
+.keys-list li[hidden] { display: none; }
+.keys-list li.hot span:last-child { color: var(--accent-dark); }
+.keys-k { display: flex; gap: 2px; }
+kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px;
+  font: inherit; font-size: 11px; font-weight: 800; color: var(--ink);
+  background: #fff; border-radius: 5px; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.25);
+}
+kbd.wide { padding: 0 7px; }
+.action kbd {
+  margin-left: 8px; vertical-align: 2px; color: var(--accent-dark);
+  box-shadow: 0 2px 0 var(--accent-dark);
+}
+body.beauty-mode #keys-panel { display: none; }
+/* Keep what used to sit at the bottom left above the key panel. */
+@media (pointer: fine) {
+  .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
+  .revert { bottom: max(44px, calc(var(--keys-h, 0px) + 22px)); }
+}
+
 /* Add to Home Screen (ui/install-ui.js) */
 .install-card { position: relative; text-align: center; }
 .install-card h2 { margin: 6px 0 4px; color: var(--ink); font-size: 19px; }

@@ -67,6 +67,18 @@
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
       <button class="action" id="action-btn" hidden></button>
+      <div class="keys-panel" id="keys-panel" hidden>
+        <button class="keys-toggle" id="keys-toggle" aria-expanded="true">⌨️ <span data-i18n="keys.title"></span> <b class="keys-caret" aria-hidden="true">▾</b></button>
+        <ul class="keys-list" id="keys-list">
+          <li><span class="keys-k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span data-i18n="keys.move"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Shift</kbd></span><span data-i18n="keys.run"></span></li>
+          <li class="hot"><span class="keys-k"><kbd>E</kbd><kbd class="wide">Space</kbd></span><span data-i18n="keys.act"></span></li>
+          <li><span class="keys-k"><kbd>M</kbd></span><span data-i18n="keys.map"></span></li>
+          <li><span class="keys-k"><kbd>T</kbd></span><span data-i18n="keys.chat"></span></li>
+          <li><span class="keys-k"><kbd id="keys-emote-range" class="wide">1–8</kbd></span><span data-i18n="keys.emote"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Esc</kbd></span><span data-i18n="keys.close"></span></li>
+        </ul>
+      </div>
       <div class="store-banner" id="store-banner" hidden>
         <div class="store-meta">
           <strong id="store-name"></strong>

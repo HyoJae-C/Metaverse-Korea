@@ -824,6 +824,29 @@ try {
 } catch {
   $('help').hidden = false;
 }
+// PC only: a small key list at the bottom left (phones have the joystick and
+// buttons instead). It folds down to one chip, and remembers that.
+if (!input.isTouch) {
+  const panel = $('keys-panel'), toggle = $('keys-toggle');
+  const setFolded = (folded) => {
+    panel.classList.toggle('folded', folded);
+    toggle.setAttribute('aria-expanded', String(!folded));
+  };
+  let folded = false;
+  try { folded = localStorage.getItem('mk.keysFolded') === '1'; } catch { /* ignore */ }
+  setFolded(folded);
+  toggle.onclick = () => {
+    folded = !folded;
+    setFolded(folded);
+    toggle.blur();
+    try { localStorage.setItem('mk.keysFolded', folded ? '1' : '0'); } catch { /* ignore */ }
+  };
+  panel.hidden = false;
+  // Keep the chat log and the "revert look" chip above the panel.
+  const fit = () => document.documentElement.style.setProperty('--keys-h', panel.offsetHeight + 'px');
+  new ResizeObserver(fit).observe(panel);
+  fit();
+}
 const refreshHelp = () => {
   $('help-text').textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
 };
@@ -1095,6 +1118,8 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 // send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
 const emoteBar = $('emotes');
 const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
+$('keys-emote-range').textContent = `1–${Math.min(9, emoteList.length)}`;
+$('keys-emote-range').closest('li').hidden = !emoteList.length;
 function sendEmote(em) {
   missionEvent('emote');
   if (onSquare()) missionEvent('squareEmote');
@@ -2795,8 +2820,27 @@ $('action-btn').addEventListener('pointerdown', (e) => {
   runAction();
 });
 $('action-btn').onclick = () => { if (performance.now() - actionTouchAt > 700) runAction(); };
+// On a keyboard the action button shows its key, and Space works like E:
+// walk up to a shop and press either to go in.
+function setActionLabel(label) {
+  const btn = $('action-btn');
+  btn.textContent = label;
+  if (input.isTouch) return;
+  const k = document.createElement('kbd');
+  k.textContent = 'E';
+  btn.append(k);
+}
+// Space is also the karaoke tap and the key for a focused button, so only
+// treat it as "act" when no game or sheet is taking keys.
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
+  || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
-  if (e.target instanceof HTMLInputElement) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
+  if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
+    e.preventDefault(); // don't also click whatever button kept focus
+    if (e.target instanceof HTMLButtonElement) e.target.blur();
+    runAction();
+  }
   if (e.code === 'KeyE' || e.code === 'Enter') runAction();
   if (e.code === 'KeyM') $('map-btn').click();
   if (e.code === 'Escape') {
@@ -4277,7 +4321,7 @@ function updateAction(p, tSec) {
   if (next?.key !== action?.key) {
     action = next;
     $('action-btn').hidden = !action;
-    if (action) $('action-btn').textContent = action.label;
+    if (action) setActionLabel(action.label);
     else shop.closeProduct();
   }
 }
