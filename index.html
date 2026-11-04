@@ -85,11 +85,24 @@
       <div class="sheet" id="wallet-panel" hidden>
         <button class="sheet-x" id="wallet-close" aria-label="Close">✕</button>
         <strong class="wallet-title">🪙 <span data-i18n="wallet.title"></span></strong>
-        <p class="wallet-balance"><b id="wallet-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+        <div class="pay-card" aria-live="polite">
+          <span class="pay-card-name">ANOTHER SEOUL PASS</span>
+          <i class="pay-card-chip" aria-hidden="true"></i>
+          <span class="pay-card-label" data-i18n="ledger.balance"></span>
+          <p class="wallet-balance"><b id="wallet-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+        </div>
+        <button class="chip ledger-btn" id="ledger-btn">📒 <span data-i18n="ledger.title"></span></button>
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
         <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
+      </div>
+      <div class="sheet ledger-panel" id="ledger-panel" hidden>
+        <button class="sheet-x" id="ledger-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">📒 <span data-i18n="ledger.title"></span></strong>
+        <p class="ledger-today" id="ledger-today"></p>
+        <div class="ledger-list" id="ledger-list"></div>
+        <p class="fine" data-i18n="ledger.note"></p>
       </div>
       <div class="sheet bag-panel" id="bag-panel" hidden>
         <strong class="items-title" id="wallet-items-title" hidden>🗂️ <span class="bag-owned"></span></strong>
@@ -363,6 +376,23 @@
     </div>
 
     <!-- Update board: notices for players (src/data/updates.js) -->
+    <div class="overlay dim" id="welcome-panel" hidden>
+      <div class="panel small welcome-card">
+        <h2>🎒 <span data-i18n="welcome.title"></span></h2>
+        <div class="pay-card big">
+          <span class="pay-card-name">ANOTHER SEOUL PASS</span>
+          <i class="pay-card-chip" aria-hidden="true"></i>
+          <p class="wallet-balance"><b id="welcome-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+        </div>
+        <p id="welcome-body"></p>
+        <ul class="welcome-tips">
+          <li data-i18n="welcome.tip1"></li>
+          <li data-i18n="welcome.tip2"></li>
+          <li data-i18n="welcome.tip3"></li>
+        </ul>
+        <button class="primary" id="welcome-close" data-i18n="welcome.go"></button>
+      </div>
+    </div>
     <div class="overlay dim" id="news-panel" hidden>
       <div class="panel small news-card">
         <h2>📢 <span data-i18n="news.title"></span></h2>
