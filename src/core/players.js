@@ -166,6 +166,7 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-4, Math.min(4, p.target.y)) : 0) - r.position.y) * k; // subway stairs
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
@@ -189,7 +190,7 @@ export class RemotePlayers {
       }
       if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, ry: r.rotation.y }, !!p.target?.bk, false);
       if (p.hidden) continue;
-      v.set(r.position.x, 1.55, r.position.z).project(camera);
+      v.set(r.position.x, r.position.y + 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       const dist = camera.position.distanceTo(r.position);
       const show = visible && dist < 60;

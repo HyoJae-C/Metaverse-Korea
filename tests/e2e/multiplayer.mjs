@@ -24,6 +24,8 @@ async function join(name) {
   if ((await page.inputValue('#nickname')) !== name) throw new Error('nickname field did not accept typing');
   await page.click('#start-btn');
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
+  // First visit: the welcome coins card covers the screen until it's closed.
+  if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   return page;
 }
 

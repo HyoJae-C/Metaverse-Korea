@@ -38,7 +38,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  group.add(makeGround(bounds));
+  group.add(makeGround(bounds, opts.holes));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
@@ -72,7 +72,7 @@ export function buildWorld(map, scene, opts = {}) {
   if (rail) group.add(rail);
 
   if (opts.collision) {
-    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500);
+    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas);
     if (trees) group.add(...trees);
   }
 
@@ -103,14 +103,15 @@ export function computeBounds(map) {
   return { minX, minZ, maxX, maxZ };
 }
 
-function makeGround(b) {
+// holes: polygons cut out of the ground (subway stairwells you walk down).
+function makeGround(b, holes = []) {
   const pad = 400;
-  const w = b.maxX - b.minX + pad * 2;
-  const d = b.maxZ - b.minZ + pad * 2;
-  const geo = new THREE.PlaneGeometry(w, d);
+  const x0 = b.minX - pad, x1 = b.maxX + pad, z0 = b.minZ - pad, z1 = b.maxZ + pad;
+  const shape = toShape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+  for (const h of holes) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+  const geo = new THREE.ShapeGeometry(shape);
   geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORS.ground }));
-  mesh.position.set((b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2);
   mesh.name = 'ground';
   mesh.receiveShadow = true;
   return mesh;
@@ -334,10 +335,27 @@ function makeRail(rails) {
   return mesh;
 }
 
-// Decorative round street trees along the edges of vehicle roads. These are
-// scenery, not map data: placed every ~14 m where nothing else is in the way.
-function makeStreetTrees(roads, collision, max) {
+// Decorative round street trees along the edges of vehicle roads, and a loose
+// grove in parks marked "trees" (e.g. Seoul Forest). These are scenery, not
+// map data: placed where nothing else is in the way.
+function makeStreetTrees(roads, collision, max, areas = []) {
   const spots = [];
+  // Wooded parks: a jittered grid, ~16 m apart, off the paths.
+  const PARK = 16;
+  for (const a of areas) {
+    if (!a.trees) continue;
+    const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
+      for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
+        if (spots.length >= max / 2) break;
+        const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+        const jx = (h - Math.floor(h) - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
+        const px = x + jx, pz = z + jz;
+        if (!pointInPolygon(px, pz, a.p) || collision.blocked(px, pz, 1.4) || onAnyRoad(roads, px, pz)) continue;
+        spots.push([px, pz]);
+      }
+    }
+  }
   const SPACING = 14;
   for (const r of roads) {
     if (r.k === 'walk' || r.k === 'service' || r.w < 6) continue;
@@ -381,6 +399,15 @@ function makeStreetTrees(roads, collision, max) {
   trunks.name = crowns.name = 'trees';
   trunks.castShadow = crowns.castShadow = true;
   return [trunks, crowns];
+}
+
+function pointInPolygon(x, z, p) {
+  let c = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [xi, zi] = p[i], [xj, zj] = p[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c;
+  }
+  return c;
 }
 
 function onAnyRoad(roads, x, z) {

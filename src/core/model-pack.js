@@ -35,10 +35,68 @@ function load(id) {
     // A failed load resolves to null and the character keeps its chibi body.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
-      .then((g) => { if (def.recolor) recolor(g, def.recolor); return g; })
+      .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); return g; })
       .catch(() => null));
   }
   return cache.get(id);
+}
+
+// Everyday clothes on the adventurer models. Each model's texture is an
+// 8×4 atlas of flat colour cells, and every part of the mesh points at one
+// cell. A wear rule moves a part onto a cell of the unused bottom row, which
+// dyedMaterial paints per look: the top in the T-shirt colour, the bottom in
+// the trousers colour, plus the outfit's own fixed colours (shoes, accents).
+// Moving a part to the skin cell bares it (short sleeves). The cell's
+// light-to-dark shading is kept because only the cell changes, not the spot
+// inside it.
+//   wear: { rules: [[mesh, 'col,row', role, min?, max?, axis?], ...], colors: { role: 0xrrggbb } }
+//   mesh: a regex source matched against the mesh name. min/max split a part
+//   along the mesh's own axis (-1..1): 'y' (default) up the body or leg, to
+//   cut a boot into trouser leg and shoe; 'hand' along an arm, 1 at the hand.
+//   The first matching rule wins. Roles: top, bottom, shoes, accent,
+//   accent2, accent3, skin (bared), cut (that part folded away), and hide
+//   (with cell '*': the whole mesh).
+export const WEAR_CELLS = { top: [0, 3], bottom: [1, 3], shoes: [2, 3], accent: [3, 3], accent2: [4, 3], accent3: [5, 3], skin: null, hide: null, cut: null };
+function applyWear(gltf, wear) {
+  const A = PACK.atlas;
+  const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
+  gltf.scene.traverse((o) => {
+    if (!o.isMesh) return;
+    const mine = rules.filter((r) => r.mesh.test(o.name));
+    if (!mine.length) return;
+    if (mine.some((r) => r.cell === '*' && r.role === 'hide')) { o.userData.wearHidden = true; return; }
+    // One triangle, one cell: unshare the vertices so a split can't smear.
+    const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    if (mine.some((r) => r.role === 'cut')) geo.setAttribute('position', geo.attributes.position.clone());
+    const pos = geo.attributes.position;
+    const uvSrc = geo.attributes.uv;
+    const uv = new THREE.Float32BufferAttribute(uvSrc.count * 2, 2);
+    for (let i = 0; i < uvSrc.count; i++) uv.setXY(i, uvSrc.getX(i), uvSrc.getY(i));
+    for (let t = 0; t < pos.count; t += 3) {
+      const u = (uv.getX(t) + uv.getX(t + 1) + uv.getX(t + 2)) / 3;
+      const v = (uv.getY(t) + uv.getY(t + 1) + uv.getY(t + 2)) / 3;
+      const cx = Math.floor(u * A.cols), cy = Math.floor(v * A.rows);
+      const y = (pos.getY(t) + pos.getY(t + 1) + pos.getY(t + 2)) / 3;
+      const hand = ((pos.getX(t) + pos.getX(t + 1) + pos.getX(t + 2)) / 3) * (/right/i.test(o.name) ? -1 : 1);
+      const r = mine.find((q) => {
+        const at = q.axis === 'hand' ? hand : y;
+        return (q.cell === '*' || q.cell === cx + ',' + cy) && at >= q.min && at < q.max;
+      });
+      if (!r) continue;
+      if (r.role === 'cut') { // fold the triangle away (furs, pouches)
+        for (let k = t + 1; k < t + 3; k++) pos.setXYZ(k, pos.getX(t), pos.getY(t), pos.getZ(t));
+        continue;
+      }
+      const to = r.role === 'skin' ? A.skin : WEAR_CELLS[r.role];
+      if (!to) continue;
+      for (let k = t; k < t + 3; k++) {
+        const fu = uv.getX(k) * A.cols - cx, fv = uv.getY(k) * A.rows - cy;
+        uv.setXY(k, (to[0] + Math.min(0.98, Math.max(0.02, fu))) / A.cols, (to[1] + Math.min(0.98, Math.max(0.02, fv))) / A.rows);
+      }
+    }
+    geo.setAttribute('uv', uv);
+    o.geometry = geo;
+  });
 }
 
 // Repaints one colour family in the model's texture atlas, e.g. the hooded
@@ -128,8 +186,19 @@ function dyedMaterial(id, src, look) {
     .filter(([cell, c]) => A?.[cell] && c != null);
   const shirtRule = PACK.models[id]?.shirt;
   const shirt = shirtRule && PALETTES.shirt[look.shirt];
+  const wear = PACK.models[id]?.wear;
+  if (wear) { // everyday clothes: the top, bottom, shoes and accent cells
+    const c = wear.colors || {};
+    const top = c.top ?? PALETTES.shirt[look.shirt] ?? PALETTES.shirt.coral;
+    const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
+    for (const [role, cell] of Object.entries(WEAR_CELLS)) {
+      if (!cell) continue;
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : c[role];
+      if (hex != null) paint.push([cell, hex]);
+    }
+  }
   if (!paint.length && shirt == null) return null;
-  const key = [id, look.dye, look.eyes, look.tone, shirt ? look.shirt : ''].join('|');
+  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
   let base = null;
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
@@ -158,7 +227,7 @@ function dyedMaterial(id, src, look) {
     g.putImageData(data, 0, 0);
   }
   for (const [cell, hex] of paint) {
-    const [cx, cy] = A[cell];
+    const [cx, cy] = Array.isArray(cell) ? cell : A[cell];
     const data = g.getImageData(cx * cw, cy * ch, cw, ch);
     const px = data.data;
     let mean = 0;
@@ -330,7 +399,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   m.traverse((o) => {
     if (!o.isMesh) return;
     if (dyeMat) o.material = dyeMat;
-    if (PACK.hide.test(o.name)) { o.visible = false; return; }
+    if (PACK.hide.test(o.name) || o.userData.wearHidden) { o.visible = false; return; }
     o.castShadow = true;
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;

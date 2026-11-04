@@ -28,6 +28,10 @@ html, body {
 input, textarea { user-select: text; -webkit-user-select: text; }
 #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+/* A short dip to black when walking down into (or up out of) the subway. */
+#fade { position: fixed; inset: 0; pointer-events: none; background: #000; opacity: 0; }
+#fade.go { animation: fade-in 0.45s ease-out; }
+@keyframes fade-in { from { opacity: 1; } to { opacity: 0; } }
 [hidden] { display: none !important; }
 
 button { font: inherit; color: inherit; cursor: pointer; border: 0; }
@@ -742,6 +746,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 a.setting-row { text-decoration: none; color: inherit; }
 .ride-options { display: grid; gap: 10px; }
 .ride-options .primary { margin: 0; }
+.train-panel .chip { background: #fff; padding: 10px 14px; font-weight: 700; }
+.train-panel #train-off { width: 100%; margin-top: 10px; }
+.train-panel #train-status { margin: 4px 0 10px; }
 
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
 .cloud-actions .chip { font-size: 13px; }
@@ -1095,15 +1102,42 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bike-btns { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
 .bike-using { color: var(--accent); font-weight: 700; }
 
-/* Gold coin (replaces the 🪙 emoji, see ui/gold-coin.js) */
-.coin { /* a green banknote (the game's money) */
-  display: inline-block; width: 1.45em; height: 0.86em; vertical-align: -0.1em; border-radius: 0.14em; margin: 0 0.06em;
+/* Money icon (replaces the 🪙 emoji, see ui/gold-coin.js): a little pay
+   card, since Seoul pays by card far more than with cash. */
+.coin {
+  display: inline-block; width: 1.4em; height: 0.9em; vertical-align: -0.12em; border-radius: 0.16em; margin: 0 0.08em;
   background:
-    radial-gradient(ellipse 0.26em 0.26em at 50% 50%, #e9f7df 0 92%, transparent 100%),
-    linear-gradient(90deg, #4f9f5a 0 0.14em, transparent 0.14em calc(100% - 0.14em), #4f9f5a calc(100% - 0.14em)),
-    linear-gradient(180deg, #8fd18a, #5fb36a);
-  box-shadow: inset 0 0 0 0.06em #3d7f47, 0 0.04em 0 rgba(0, 0, 0, 0.15);
+    linear-gradient(135deg, #f6d77a 0 100%) 0.2em 0.26em / 0.36em 0.28em no-repeat, /* the chip */
+    linear-gradient(180deg, transparent 0 62%, rgba(255, 255, 255, 0.35) 62% 72%, transparent 72%),
+    linear-gradient(135deg, #3d7cf0, #7a5af5 60%, #e0609a);
+  box-shadow: inset 0 0 0 0.05em rgba(0, 0, 0, 0.18), 0 0.04em 0 rgba(0, 0, 0, 0.15);
 }
+/* The wallet's pay card and the budget book */
+.pay-card {
+  position: relative; margin: 10px 0 12px; padding: 14px 16px 12px; border-radius: 16px; color: #fff;
+  min-height: 118px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(135deg, #3d7cf0, #7a5af5 60%, #e0609a);
+  box-shadow: 0 8px 18px rgba(80, 70, 200, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.pay-card-name { position: absolute; top: 14px; inset-inline-start: 16px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; opacity: 0.92; }
+.pay-card-chip { position: absolute; top: 12px; inset-inline-end: 16px; width: 32px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #f8e19a, #d9b04a); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.pay-card-label { font-size: 12px; font-weight: 700; opacity: 0.9; }
+.pay-card .wallet-balance { margin: 0; color: #fff; }
+.pay-card .wallet-balance b { font-size: 30px; }
+.pay-card.big { max-width: 300px; aspect-ratio: 1.75; margin: 8px auto 12px; }
+.ledger-btn { margin: 0 0 10px; }
+.ledger-today { margin: 6px 0 8px; font-weight: 700; font-size: 14px; }
+.ledger-list { max-height: min(46vh, 360px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.ledger-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff8ec; }
+.ledger-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ledger-what strong { font-size: 14px; overflow-wrap: anywhere; }
+.ledger-what small, .ledger-bal { color: #6b625a; font-size: 12px; }
+.ledger-amt { flex: none; text-align: end; font-weight: 800; font-size: 15px; display: flex; flex-direction: column; }
+.ledger-amt.in { color: #2f8a4a; }
+.ledger-amt.out { color: #c2462f; }
+.welcome-card { text-align: center; }
+.welcome-card p { margin: 0 0 8px; line-height: 1.5; }
+.welcome-tips { text-align: start; margin: 0 0 14px; padding-inline-start: 20px; line-height: 1.5; font-size: 14px; }
 /* Restaurant menu (📖 메뉴판) */
 .menu-row .lp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .menu-row .lp-text small { color: #6b625a; }
@@ -1135,6 +1169,12 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .acc.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
+/* Returning players going straight in: only the loading line shows */
+#step-look.quick > :not(.status) { display: none; }
+#step-look.quick .status { font-size: 17px; margin: 8px 0; }
+/* Name already used by someone else */
+#nickname.bad { border-color: #d64545; box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.25); }
+#step-look .status:not(:empty) { font-weight: 600; }
 .rename-input { width: 100%; box-sizing: border-box; font-size: 17px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.18); margin: 4px 0 8px; }
 /* Bicycle bell / horn while riding: next to the emote button. */
 .honk-btn {
@@ -1251,3 +1291,53 @@ body.beauty-mode #keys-panel { display: none; }
   .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
   .revert { bottom: max(44px, calc(var(--keys-h, 0px) + 22px)); }
 }
+
+/* Add to Home Screen (ui/install-ui.js) */
+.install-card { position: relative; text-align: center; }
+.install-card h2 { margin: 6px 0 4px; color: var(--ink); font-size: 19px; }
+.install-icon { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 3px 10px rgba(74, 63, 53, 0.25); }
+.install-why { margin: 0 0 12px; font-size: 14px; color: var(--ink-soft); line-height: 1.45; }
+.install-steps { margin: 0 0 12px; padding: 12px 14px 12px 34px; background: #fff; border-radius: 16px; text-align: left; font-size: 14px; line-height: 1.5; }
+.install-steps li + li { margin-top: 8px; }
+.install-steps li::marker { font-weight: 800; color: var(--accent, #e0604d); }
+.install-warn, .install-desktop { margin: 0 0 12px; padding: 10px 12px; background: #fff; border-radius: 14px; font-size: 14px; line-height: 1.45; text-align: left; }
+.install-warn { background: #fff3c4; }
+.install-done { font-size: 16px; font-weight: 800; }
+.install-note { margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; background: #effaf7; font-size: 12.5px; line-height: 1.45; text-align: left; }
+.install-close { margin-top: 12px; }
+html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
+.install-nudge {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: calc(max(12px, env(safe-area-inset-top)) + 62px);
+  display: flex; align-items: center; gap: 4px; z-index: 55;
+  max-width: calc(100vw - 32px); padding: 4px 4px 4px 4px;
+  background: var(--ink); color: var(--cream); border-radius: 999px; box-shadow: var(--shadow);
+  animation: install-in 0.3s ease-out;
+}
+.install-nudge[hidden] { display: none; }
+.install-go { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px 0 2px; background: none; color: inherit; font-weight: 800; font-size: 13.5px; text-align: left; }
+.install-go img { width: 34px; height: 34px; border-radius: 10px; flex: none; }
+.install-x { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); color: inherit; flex: none; }
+@keyframes install-in { from { transform: translate(-50%, -12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .install-nudge { animation: none; } }
+
+/* Tarot reading (Starlight Tarot, Hongdae) */
+.tarot-panel { background: #f6f1ff; }
+.tarot-panel > .order-actions { background: #f6f1ff; }
+.tarot-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
+.tarot-slot { display: grid; gap: 4px; justify-items: center; font-size: 13px; color: #4b3a78; }
+.tarot-card { width: 78px; height: 124px; border-radius: 10px; border: 2px dashed #c9b6f2; background: rgba(255, 255, 255, 0.6); }
+.tarot-card.up { border: 3px solid #d4a73a; background: linear-gradient(#fffaf0, #f3e7c9); }
+.tarot-face { height: 100%; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; padding: 4px 3px; box-sizing: border-box; }
+.tarot-num { font: 700 12px Georgia, serif; color: #6b5420; }
+.tarot-icon { font-size: 34px; }
+.tarot-name { font-size: 10.5px; font-weight: 700; color: #3a2c5c; text-align: center; line-height: 1.15; }
+.tarot-spread { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 4px 0; }
+.tarot-back { width: 38px; height: 60px; padding: 0; border-radius: 6px; border: 2px solid #d4a73a; transform: rotate(var(--tilt, 0)); cursor: pointer;
+  background: radial-gradient(circle at 50% 50%, #ffd36e 0 3px, transparent 4px), repeating-linear-gradient(45deg, #2a1f4f 0 6px, #3b2c6e 6px 12px); }
+.tarot-back:hover:not(:disabled) { transform: translateY(-6px) rotate(var(--tilt, 0)); }
+.tarot-back:disabled { opacity: 0.15; cursor: default; }
+.tarot-panel h4 { margin: 2px 0 0; font-size: 15px; }
+.tarot-reading { display: grid; gap: 6px; }
+.tarot-reading p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
+.tarot-reading b { color: #4b3a78; }

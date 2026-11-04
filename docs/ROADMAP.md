@@ -4,7 +4,7 @@ Decisions agreed with the project owner. Each step ships something playable.
 
 ## Step 1: Walk Seongsu together (done in PR #1)
 
-- 3D streets around Seongsu Station from OpenStreetMap
+- 3D streets around Seongsu Station (hand-made game map)
 - Cute chibi (2-heads-tall) original character, cozy pastel art style
 - Start-screen language picker; English default
 - Multiplayer with nicknames and emotes (Supabase Realtime, swappable adapter)
