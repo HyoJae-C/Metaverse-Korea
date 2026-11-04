@@ -56,6 +56,7 @@ export const AR = {
   'ride.carousel': 'اركب الدوّامة',
   'ride.wheel': 'اركب العجلة الدوّارة',
   'ride.viking': 'اركب سفينة القراصنة',
+  'ride.drop': 'اركب برج السقوط',
   'ride.off': 'انزل',
   'ride.noCoins': 'تحتاج 🪙 {n} للتذكرة.',
   'book.read': 'اقرأ',

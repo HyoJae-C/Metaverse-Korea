@@ -4,6 +4,7 @@
 // Low-poly and stylised, not to scale. Collision comes from the map's
 // "blockers", so these are only visual.
 import * as THREE from 'three';
+import { buildAnotherLand } from './anotherland.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -46,6 +47,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 }
 
 const BUILD = {
+  anotherland: (g) => buildAnotherLand(g), // the theme park east of Seongsu (animated)
   gwanghwamun(g) {
     // Stone base with three arches; the middle one is the way in.
     for (const sx of [-1, 1]) box(g, 25, 9, 16, sx * 17.5, 4.5, 0, C.stone);
@@ -256,11 +258,13 @@ function wall(g, l) {
 export function buildLandmarks(list = [], scene) {
   const root = new THREE.Group();
   root.name = 'landmarks';
+  const ticks = [];
   for (const l of list) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
     else if (BUILD[l.type]) {
-      BUILD[l.type](g, l);
+      const tick = BUILD[l.type](g, l);
+      if (typeof tick === 'function') ticks.push(tick);
       g.position.set(l.x, 0, l.z);
       g.rotation.y = l.ry || 0;
     } else continue;
@@ -268,5 +272,7 @@ export function buildLandmarks(list = [], scene) {
   }
   root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(root);
+  // Moving parts (Ferris wheel, coaster…): call with the time in seconds.
+  root.userData.tick = (t) => { for (const f of ticks) f(t); };
   return root;
 }
