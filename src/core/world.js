@@ -38,7 +38,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  group.add(makeGround(bounds));
+  group.add(makeGround(bounds, opts.holes));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
@@ -103,14 +103,15 @@ export function computeBounds(map) {
   return { minX, minZ, maxX, maxZ };
 }
 
-function makeGround(b) {
+// holes: polygons cut out of the ground (subway stairwells you walk down).
+function makeGround(b, holes = []) {
   const pad = 400;
-  const w = b.maxX - b.minX + pad * 2;
-  const d = b.maxZ - b.minZ + pad * 2;
-  const geo = new THREE.PlaneGeometry(w, d);
+  const x0 = b.minX - pad, x1 = b.maxX + pad, z0 = b.minZ - pad, z1 = b.maxZ + pad;
+  const shape = toShape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+  for (const h of holes) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+  const geo = new THREE.ShapeGeometry(shape);
   geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORS.ground }));
-  mesh.position.set((b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2);
   mesh.name = 'ground';
   mesh.receiveShadow = true;
   return mesh;

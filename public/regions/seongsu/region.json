@@ -175,5 +175,55 @@
       "text": "NEXT IS TOKYO AND HONG KONG..."
     }
   ],
-  "bbox_note": "Seongsu is cropped to a compact ~520 m neighbourhood (scripts/crop-map.mjs); bbox is the original OpenStreetMap download."
+  "bbox_note": "Seongsu is cropped to a compact ~520 m neighbourhood (scripts/crop-map.mjs); bbox is the original OpenStreetMap download.",
+  "subway": {
+    "note": "Underground stations. Add one by adding an entry to stations. exits[].at is a spot on the world map (Seongsu coordinates; other districts include their offset), ry the direction the stairs go down (radians). Move exits freely: the hole, walls and canopy follow.",
+    "stations": [
+      {
+        "id": "seoul-forest-station",
+        "name": {
+          "ko": "서울숲",
+          "en": "Seoul Forest",
+          "ja": "ソウルの森",
+          "zh": "首尔林"
+        },
+        "code": "K211",
+        "line": {
+          "color": "#f5a200",
+          "name": {
+            "ko": "수인분당선",
+            "en": "Suin-Bundang Line",
+            "ja": "水仁・盆唐線",
+            "zh": "水仁盆唐线"
+          }
+        },
+        "prev": {
+          "ko": "왕십리",
+          "en": "Wangsimni"
+        },
+        "next": {
+          "ko": "압구정로데오",
+          "en": "Apgujeong Rodeo"
+        },
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -21.0,
+              253.1
+            ],
+            "ry": -1.9313
+          },
+          {
+            "n": 2,
+            "at": [
+              9.4,
+              251.4
+            ],
+            "ry": 1.2336
+          }
+        ]
+      }
+    ]
+  }
 }

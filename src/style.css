@@ -28,6 +28,10 @@ html, body {
 input, textarea { user-select: text; -webkit-user-select: text; }
 #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+/* A short dip to black when walking down into (or up out of) the subway. */
+#fade { position: fixed; inset: 0; pointer-events: none; background: #000; opacity: 0; }
+#fade.go { animation: fade-in 0.45s ease-out; }
+@keyframes fade-in { from { opacity: 1; } to { opacity: 0; } }
 [hidden] { display: none !important; }
 
 button { font: inherit; color: inherit; cursor: pointer; border: 0; }
