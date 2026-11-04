@@ -17,6 +17,7 @@
     { "id": "H", "color": "#e86fa8", "at": [-1324, 167], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
     { "id": "I", "color": "#7fb89a", "at": [-2400, -1052], "snap": false, "radius": 40,
       "name": { "en": "Sinchon Square", "ko": "신촌 광장", "ja": "新村広場", "zh": "新村广场" } },
+    { "id": "J", "color": "#e0457b", "at": [-2966, -668], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
     { "id": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } }
   ]
 }

@@ -8,6 +8,7 @@
     { "id": "popup-square", "at": [85, 200] },
     { "id": "seoul-forest", "at": [-118, 100] },
     { "id": "gwanghwamun", "at": [-1697, -810] },
-    { "id": "itaewon", "at": [-1344, 187] }
+    { "id": "itaewon", "at": [-1344, 187] },
+    { "id": "hongdae", "at": [-2890, -572] }
   ]
 }

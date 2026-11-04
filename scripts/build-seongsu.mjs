@@ -110,7 +110,7 @@ const B = [
 
 // Parks and the river (not blocks: no buildings).
 const AREAS = [
-  { k: 'park', p: [[-260, 84], [-115, 84], [-115, 347], [-260, 347]] }, // Seoul Forest
+  { k: 'park', trees: true, p: [[-260, 84], [-115, 84], [-115, 347], [-260, 347]] }, // Seoul Forest (wooded)
   { k: 'grass', p: [[-260, 358], [260, 358], [260, 386], [-260, 386]] }, // Han River park
   { k: 'water', p: [[-260, 386], [260, 386], [260, 410], [-260, 410]] }, // Han River
 ];
@@ -257,8 +257,8 @@ export const PLACE_NEW = [
   ['sudo-shoes', 'ymjW'], ['soga-leather', 'ymjW'], ['gaeul-vintage', 'ymj'], ['wide-pants', 'ymj'], ['tteugae-knit', 'ymjE'],
   ['cap-yard', 'ymjE'], ['canvas-room', 'ymj'], ['ohu-perfume', 'brick'], ['heuk-ceramics', 'brick'], ['chorok-plants', 'brick'],
   ['sonkkeut-nail', 'square'], ['mulbangul-skin', 'square'], ['butterfold', 'cafe'], ['matcha-garden', 'cafe'],
-  ['croffle-house', 'station'], ['k-goods', 'station'], ['sagye-gelato', 'brickN'], ['pan-records', 'brickN'],
-  ['slow-brunch', 'sup2'], ['hotteok-stand', 'achasan'], ['warehouse-roasters', 'achasan'], ['bingsu-lab', 'ymjE'],
+  ['honey-croffle', 'station'], ['k-goods', 'station'], ['sagye-gelato', 'brickN'], ['pan-records', 'brickN'],
+  ['slow-brunch', 'sup2'], ['hotteok-stand', 'achasan'], ['warehouse-roasters', 'achasan'], ['snowflake-bingsu', 'ymjE'],
   ['kkot-flowers', 'seoulsup'], ['bal-socks', 'seoulsup'], ['mallang-popup', 'popup'], ['pixel-popup', 'popup'],
   ['son-kalguksu', 'fish'], ['golmok-chicken', 'fish'], ['dal-tteok', 'fish'], ['seongsu-mandu', 'sup2'],
   ['forest-lane-apt', 'fish'], ['sunny-villa', 'fish'],

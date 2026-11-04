@@ -336,14 +336,14 @@ function makeRail(rails) {
 }
 
 // Decorative round street trees along the edges of vehicle roads, and a loose
-// grove in each park. These are scenery, not map data: placed where nothing
-// else is in the way.
+// grove in parks marked "trees" (e.g. Seoul Forest). These are scenery, not
+// map data: placed where nothing else is in the way.
 function makeStreetTrees(roads, collision, max, areas = []) {
   const spots = [];
-  // Parks: a jittered grid, ~12 m apart, off the paths.
-  const PARK = 12;
+  // Wooded parks: a jittered grid, ~16 m apart, off the paths.
+  const PARK = 16;
   for (const a of areas) {
-    if (a.k !== 'park') continue;
+    if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
