@@ -55,7 +55,7 @@ import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag } from './core/bag.js';
-import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff } from './core/perfume.js';
+import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
@@ -1370,6 +1370,7 @@ const shop = new ShopUI({
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
+    if (!onSale(product)) return false; // a limited edition outside its dates
     if (held && !confirm(t('coffee.replace'))) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();

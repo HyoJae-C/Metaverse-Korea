@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { perfumeIndex, cleanFx, Scent, SCENT_MS, SCENT_KEY, STYLES, MOTIONS, nextPuff, PUFF_EVERY, PUFF_JITTER, SPRAYS } from '../src/core/perfume.js';
+import { perfumeIndex, onSale, cleanFx, Scent, SCENT_MS, SCENT_KEY, STYLES, MOTIONS, nextPuff, PUFF_EVERY, PUFF_JITTER, SPRAYS } from '../src/core/perfume.js';
 import { Bag } from '../src/core/bag.js';
 
 const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url), 'utf8')).stores;
@@ -10,20 +10,39 @@ const mem = (init = {}) => {
   return { getItem: (k) => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, removeItem: (k) => { delete d[k]; }, d };
 };
 
-test('Seongsu has 10 perfume shops with 3 perfumes each, 6 per style', () => {
+const FIVE = ['funny', 'elegant', 'cute', 'simple', 'clean'];
+test('Seongsu: 10 perfume shops (2 per style, 3 each), 4 handmade workshops and a pop-up', () => {
   const shops = stores.filter((s) => s.perfumery);
-  assert.equal(shops.length, 10);
-  const idx = perfumeIndex(stores);
-  assert.equal(idx.size, 30);
-  for (const s of shops) {
-    assert.equal(s.products.length, 3, s.id);
-    assert.ok(s.name.ko && s.name.en && s.at, s.id);
-    for (const p of s.products) assert.equal(p.perfume, s.perfumery, p.id);
+  const main = shops.filter((s) => FIVE.includes(s.perfumery));
+  assert.equal(main.length, 10);
+  for (const st of FIVE) {
+    const ps = main.filter((s) => s.perfumery === st).flatMap((s) => s.products);
+    assert.equal(ps.length, 6, st);
+    for (const p of ps) assert.equal(p.perfume, st, p.id);
   }
-  const per = {};
-  for (const { style } of idx.values()) per[style] = (per[style] || 0) + 1;
-  assert.deepEqual(Object.keys(per).sort(), Object.keys(STYLES).sort());
-  for (const n of Object.values(per)) assert.equal(n, 6);
+  for (const s of shops) {
+    assert.ok(s.name.ko && s.name.en && s.at && (s.at[0] || s.at[1]), s.id);
+    if (s.perfumery !== 'popup') assert.equal(s.products.length, 3, s.id);
+  }
+  const crafts = shops.filter((s) => s.perfumery === 'handmade');
+  assert.equal(crafts.length, 4);
+  for (const s of crafts) for (const p of s.products) assert.equal(p.perfume, 'handmade', p.id);
+  const pop = shops.find((s) => s.perfumery === 'popup');
+  assert.ok(pop.products.every((p) => p.limited), 'the pop-up sells limited editions');
+  const idx = perfumeIndex(stores);
+  assert.equal(idx.size, 43);
+  for (const { style } of idx.values()) assert.ok(STYLES[style], style);
+});
+
+test('limited editions are on sale only between their dates', () => {
+  const p = perfumeIndex(stores).get('pf-aerial-tramway').product;
+  assert.deepEqual(p.fx.e, ['🚡', '🟧', '➗', '🤿', '🏤']);
+  assert.equal(cleanFx(p.fx).e.length, 5);
+  assert.ok(onSale(p, new Date(2026, 10, 1)));
+  assert.ok(onSale(p, new Date(2026, 10, 30, 23, 59)));
+  assert.ok(!onSale(p, new Date(2026, 9, 31)));
+  assert.ok(!onSale(p, new Date(2026, 11, 1)));
+  assert.ok(onSale({ id: 'x' }), 'not limited: always');
 });
 
 test('every perfume has names, a price and an effect the renderer knows', () => {

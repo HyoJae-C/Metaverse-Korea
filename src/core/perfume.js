@@ -14,12 +14,14 @@ export const PUFF_JITTER = 1.5;
 export const PUFF_NEAR = 22; // others' effects only show within this many metres
 export const SCENT_KEY = 'mk.scent';
 
-// The five styles, 6 perfumes each in Seongsu.
+// The styles: five of 6 perfumes each in Seongsu's perfume shops, plus the
+// handmade workshops.
 export const STYLES = {
   funny: { icon: '🤪', en: 'Funny', ko: '재밌는', ja: 'おもしろ', zh: '搞笑', es: 'Divertido', ar: 'مضحك', vi: 'Hài hước', hi: 'मज़ेदार', id: 'Lucu' },
   elegant: { icon: '🥂', en: 'Elegant', ko: '우아한', ja: 'エレガント', zh: '优雅', es: 'Elegante', ar: 'أنيق', vi: 'Thanh lịch', hi: 'शानदार', id: 'Elegan' },
   cute: { icon: '🎀', en: 'Cute', ko: '귀여운', ja: 'かわいい', zh: '可爱', es: 'Tierno', ar: 'لطيف', vi: 'Dễ thương', hi: 'प्यारा', id: 'Imut' },
   simple: { icon: '🤍', en: 'Simple', ko: '심플한', ja: 'シンプル', zh: '简约', es: 'Sencillo', ar: 'بسيط', vi: 'Đơn giản', hi: 'सादा', id: 'Simpel' },
+  handmade: { icon: '⚗️', en: 'Handmade', ko: '핸드메이드', ja: 'ハンドメイド', zh: '手工', es: 'Artesanal', ar: 'يدوي', vi: 'Thủ công', hi: 'हस्तनिर्मित', id: 'Buatan tangan' },
   clean: { icon: '💧', en: 'Clean', ko: '깔끔한', ja: 'クリーン', zh: '清爽', es: 'Limpio', ar: 'منعش', vi: 'Sạch sẽ', hi: 'ताज़ा', id: 'Segar' },
 };
 
@@ -31,7 +33,7 @@ const isColor = (c) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
 
 // Keep an effect to what the renderer understands (it comes from data).
 export function cleanFx(fx) {
-  const e = (Array.isArray(fx?.e) ? fx.e : []).filter((s) => typeof s === 'string' && s.length > 0 && s.length <= 8).slice(0, 4);
+  const e = (Array.isArray(fx?.e) ? fx.e : []).filter((s) => typeof s === 'string' && s.length > 0 && s.length <= 8).slice(0, 5);
   const out = { e, m: MOTIONS.includes(fx?.m) ? fx.m : 'float' };
   if (isColor(fx?.c)) out.c = fx.c;
   if (!out.e.length && !out.c) out.e = ['@spark'];
@@ -48,6 +50,16 @@ export function perfumeIndex(stores = []) {
     }
   }
   return map;
+}
+
+// Limited editions ("limited": { from, to } as YYYY-MM-DD, local dates): on
+// sale only between those days. Bottles already bought keep working.
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export function onSale(product, date = new Date()) {
+  const l = product?.limited;
+  if (!l) return true;
+  const day = ymd(date);
+  return (!l.from || day >= l.from) && (!l.to || day <= l.to);
 }
 
 // Seconds to the next puff: about PUFF_EVERY, never in step with others.

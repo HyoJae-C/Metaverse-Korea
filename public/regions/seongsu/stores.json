@@ -1007,7 +1007,7 @@
       "perfumery": "funny",
       "icon": "👃",
       "size": "small",
-      "at": [96.6, 165],
+      "at": [113.8, -77.5],
       "name": { "ko": "킁킁상회", "en": "KKEUNG KKEUNG & CO." },
       "tagline": { "en": "Smells you will regret. Bestsellers anyway.", "ko": "후회할 냄새, 그래도 베스트셀러" },
       "colors": { "sign": "#5f7f1f", "awning": "#e6f2c2", "accent": "#fbfdf2" },
@@ -1023,7 +1023,7 @@
       "perfumery": "funny",
       "icon": "🤪",
       "size": "small",
-      "at": [182.2, 175],
+      "at": [67.5, 21.7],
       "name": { "ko": "웁스 퍼퓸", "en": "OOPS PARFUM" },
       "tagline": { "en": "Funny scents in very serious bottles", "ko": "웃긴 향, 진지한 병" },
       "colors": { "sign": "#e56a00", "awning": "#ffe3c2", "accent": "#fff8ef" },
@@ -1059,7 +1059,7 @@
       "size": "medium",
       "displays": 8,
       "clerkRoams": true,
-      "at": [77, 175],
+      "at": [78.9, 165],
       "name": { "ko": "아틀리에 누아", "en": "ATELIER NOIR" },
       "tagline": { "en": "Dark, rare scents in small batches", "ko": "어둡고 귀한 소량 생산 향수" },
       "colors": { "sign": "#141414", "awning": "#c9a45c", "accent": "#f3eee4" },
@@ -1091,7 +1091,7 @@
       "perfumery": "cute",
       "icon": "💘",
       "size": "small",
-      "at": [78.9, 165],
+      "at": [96.6, 165],
       "name": { "ko": "하트뿅뿅", "en": "HEART PPYONG PPYONG" },
       "tagline": { "en": "Spray once, hearts all day", "ko": "한 번 뿌리면 하트가 뿅뿅" },
       "colors": { "sign": "#e2365b", "awning": "#ffd1dc", "accent": "#fff4f6" },
@@ -1123,7 +1123,7 @@
       "perfumery": "simple",
       "icon": "☁️",
       "size": "small",
-      "at": [181, 165],
+      "at": [182.2, 175],
       "name": { "ko": "베이직 무드", "en": "BASIC MOOD" },
       "tagline": { "en": "Everyday scents in grey, beige and black", "ko": "회색, 베이지, 검정의 데일리 향" },
       "colors": { "sign": "#6e6a64", "awning": "#e7e0d6", "accent": "#f6f3ee" },
@@ -1139,7 +1139,7 @@
       "perfumery": "clean",
       "icon": "🧺",
       "size": "small",
-      "at": [112.8, 175],
+      "at": [77, 175],
       "name": { "ko": "빨래방 퍼퓸", "en": "LAUNDRY PARFUM" },
       "tagline": { "en": "The famous 'just washed' smell", "ko": "갓 빨래한 바로 그 냄새" },
       "colors": { "sign": "#2f6fb5", "awning": "#d8ecff", "accent": "#f4faff" },
@@ -1163,6 +1163,84 @@
         { "id": "pf-jeju-breeze", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍃", "🍊"], "m": "orbit" }, "color": "#7cc9a8", "price": 210000, "name": { "en": "Jeju Sea Breeze", "ko": "제주 바닷바람" }, "desc": { "en": "Sea salt, tangerine leaves and the wind.", "ko": "바다 소금, 귤나무 잎, 그리고 바람." } },
         { "id": "pf-lemon-soda", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍋", "@bubble"], "m": "rise" }, "color": "#fff27a", "price": 155000, "name": { "en": "Lemon Sparkling Water", "ko": "레몬 탄산수" }, "desc": { "en": "Fizzy lemon over ice.", "ko": "얼음 위로 톡 쏘는 레몬." } },
         { "id": "pf-mint-ice", "model": "bottle", "perfume": "clean", "fx": { "e": ["❄️", "🌿"], "m": "twinkle" }, "color": "#bff0e0", "price": 175000, "name": { "en": "Mint Ice", "ko": "민트 아이스" }, "desc": { "en": "Cold mint, clear glass and a deep breath.", "ko": "차가운 민트, 투명한 유리, 그리고 깊은 숨." } }
+      ]
+    },
+    {
+      "id": "aran-distillery",
+      "category": "workshop",
+      "perfumery": "handmade",
+      "icon": "⚗️",
+      "size": "small",
+      "at": [-77, -2],
+      "name": { "ko": "증류공방 아란", "en": "ARAN DISTILLERY" },
+      "tagline": { "en": "Small-batch perfumes distilled by hand", "ko": "손으로 증류해 조금씩 만드는 향수" },
+      "colors": { "sign": "#7a4a2a", "awning": "#f1dcc0", "accent": "#fbf4ea" },
+      "products": [
+        { "id": "pf-attic-clock", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🕰️", "🧭"], "c": "#c9a46a", "m": "twinkle" }, "color": "#b08a4a", "price": 180000, "name": { "en": "Grandma's Attic Clock", "ko": "할머니 다락방의 오래된 시계" }, "desc": { "en": "Dusty brass, old paper and a slow tick-tock.", "ko": "먼지 앉은 놋쇠, 오래된 종이, 느린 째깍 소리." } },
+        { "id": "pf-first-distill", "model": "bottle", "perfume": "handmade", "fx": { "e": ["⚗️", "@bubble"], "m": "rise" }, "color": "#d8c9a8", "price": 160000, "name": { "en": "First Distillation No.0", "ko": "첫 번째 증류 No.0" }, "desc": { "en": "The very first drop from the copper still.", "ko": "구리 증류기에서 처음 떨어진 한 방울." } },
+        { "id": "pf-clay-rose", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🏺", "🌹"], "m": "pop" }, "color": "#c96a5a", "price": 210000, "name": { "en": "Rose in a Clay Jar", "ko": "도자기 항아리 속 장미" }, "desc": { "en": "Rose petals kept a whole winter in an earthen jar.", "ko": "흙 항아리에 한겨울 동안 담가 둔 장미 꽃잎." } }
+      ]
+    },
+    {
+      "id": "punggyeong-scent",
+      "category": "workshop",
+      "perfumery": "handmade",
+      "icon": "🎐",
+      "size": "small",
+      "at": [-22, 137.4],
+      "name": { "ko": "풍경소리 향방", "en": "PUNGGYEONG SCENT ROOM" },
+      "tagline": { "en": "Scents that ring like wind chimes", "ko": "풍경처럼 맑게 울리는 향" },
+      "colors": { "sign": "#2f5f8a", "awning": "#dbe9f5", "accent": "#f5f9fc" },
+      "products": [
+        { "id": "pf-chime-night", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🎐", "🎑"], "m": "orbit" }, "color": "#8fb6d9", "price": 150000, "name": { "en": "Wind Chime on a Summer Night", "ko": "여름밤 풍경 소리" }, "desc": { "en": "Cool air, a paper fan and a chime under the eaves.", "ko": "선선한 바람, 부채, 처마 밑 풍경 소리." } },
+        { "id": "pf-lantern-alley", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🏮"], "c": "#ffb36b", "m": "twinkle" }, "color": "#ff9a5a", "price": 140000, "name": { "en": "Lantern Alley", "ko": "등불 골목" }, "desc": { "en": "Warm paper lanterns and street food in the air.", "ko": "따뜻한 종이 등불과 골목에 퍼지는 음식 냄새." } },
+        { "id": "pf-lucky-charm", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🧿", "🧂"], "m": "pop" }, "color": "#3d6fd6", "price": 130000, "name": { "en": "One Lucky Charm", "ko": "부적 한 장" }, "desc": { "en": "Blue glass, sea salt and a little luck.", "ko": "푸른 유리, 바다 소금, 그리고 약간의 행운." } }
+      ]
+    },
+    {
+      "id": "hut-hedgehog",
+      "category": "workshop",
+      "perfumery": "handmade",
+      "icon": "🦔",
+      "size": "small",
+      "at": [67.5, 136.6],
+      "name": { "ko": "숲속 오두막 향공방", "en": "HUT & HEDGEHOG" },
+      "tagline": { "en": "Forest perfumes mixed in a tiny hut", "ko": "작은 오두막에서 섞는 숲 향수" },
+      "colors": { "sign": "#5a6b2f", "awning": "#e3ead0", "accent": "#f8faf2" },
+      "products": [
+        { "id": "pf-hedgehog-nap", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🦔", "🍄"], "m": "orbit" }, "color": "#a98b6a", "price": 140000, "name": { "en": "Hedgehog's Nap", "ko": "고슴도치의 낮잠" }, "desc": { "en": "Moss, mushrooms and a warm little ball of spikes.", "ko": "이끼, 버섯, 그리고 따뜻하게 웅크린 가시 뭉치." } },
+        { "id": "pf-chestnut-bag", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🌰"], "c": "#a67b5b", "m": "rise" }, "color": "#8a5a3a", "price": 120000, "name": { "en": "A Bag of Roasted Chestnuts", "ko": "군밤 한 봉지" }, "desc": { "en": "Smoky chestnuts in a paper bag on a cold day.", "ko": "추운 날 종이봉투에 담긴 고소한 군밤." } },
+        { "id": "pf-peacock-feather", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🦚"], "c": "#4fb3a0", "m": "fall" }, "color": "#2f8a7a", "price": 240000, "name": { "en": "Peacock Feather", "ko": "공작새 깃털" }, "desc": { "en": "Green tea, iris and a shimmer of blue.", "ko": "녹차, 아이리스, 그리고 푸른 윤기." } }
+      ]
+    },
+    {
+      "id": "moai-scent-lab",
+      "category": "workshop",
+      "perfumery": "handmade",
+      "icon": "🗿",
+      "size": "small",
+      "at": [187.6, 266],
+      "name": { "ko": "모아이 향 실험실", "en": "MOAI SCENT LAB" },
+      "tagline": { "en": "Strange handmade scents, very serious faces", "ko": "이상한 수제 향수, 아주 진지한 표정" },
+      "colors": { "sign": "#55524c", "awning": "#e6e2da", "accent": "#f6f4f0" },
+      "products": [
+        { "id": "pf-poker-face", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🗿"], "c": "#b5b0a6", "m": "pop" }, "color": "#9a958c", "price": 170000, "name": { "en": "Poker Face", "ko": "무표정" }, "desc": { "en": "Volcanic stone and sea wind. Shows no emotion.", "ko": "화산석과 바닷바람. 아무 표정도 없어요." } },
+        { "id": "pf-mate-sip", "model": "bottle", "perfume": "handmade", "fx": { "e": ["🧉"], "c": "#9fbf6a", "m": "rise" }, "color": "#9fbf6a", "price": 125000, "name": { "en": "One Sip of Mate", "ko": "마테차 한 모금" }, "desc": { "en": "Grassy mate tea in a gourd, sipped slowly.", "ko": "호리병에 담아 천천히 마시는 풀내음 마테차." } },
+        { "id": "pf-postal-horn", "model": "bottle", "perfume": "handmade", "fx": { "e": ["📯", "✉️"], "m": "float" }, "color": "#e0b040", "price": 150000, "name": { "en": "The Postal Horn", "ko": "우편 나팔" }, "desc": { "en": "Brass, envelopes and good news on the way.", "ko": "놋쇠 나팔, 편지 봉투, 그리고 오고 있는 좋은 소식." } }
+      ]
+    },
+    {
+      "id": "scent-popup",
+      "category": "popup",
+      "perfumery": "popup",
+      "icon": "🚡",
+      "size": "small",
+      "at": [67.5, 249.5],
+      "name": { "ko": "향수 팝업", "en": "SCENT POP-UP" },
+      "tagline": { "en": "Limited-edition perfumes, this month only", "ko": "이번 달에만 파는 한정판 향수" },
+      "colors": { "sign": "#ff7a1a", "awning": "#ffe0c7", "accent": "#fff7f0" },
+      "products": [
+        { "id": "pf-aerial-tramway", "model": "bottle", "perfume": "funny", "fx": { "e": ["🚡", "🟧", "➗", "🤿", "🏤"], "m": "orbit" }, "limited": { "from": "2026-11-01", "to": "2026-11-30" }, "color": "#ff8c2a", "price": 111000, "name": { "en": "An aerial tramway and friends!", "ko": "케이블카와 친구들!" }, "desc": { "en": "Completely unused emojis. Top note: 🚡 · Middle notes: 🟧➗🤿 · Base note: 🏤. November only.", "ko": "완전 안 쓰는 이모지들. 탑 노트: 🚡 · 미들 노트: 🟧➗🤿 · 베이스 노트: 🏤. 11월 기간 한정." } }
       ]
     },
     {
