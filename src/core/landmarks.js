@@ -1,5 +1,6 @@
 // Landmark models placed on hand-made districts (map "landmarks"): palace
-// gates and halls with tiled roofs, a pavilion on a pond, statues, walls.
+// gates and halls with tiled roofs, a pavilion on a pond, statues, walls,
+// street arches and Namsan with its tower.
 // Low-poly and stylised, not to scale. Collision comes from the map's
 // "blockers", so these are only visual.
 import * as THREE from 'three';
@@ -162,7 +163,66 @@ const BUILD = {
     m.position.y = 50 * (l?.scale || 1);
     g.add(m);
   },
+  namsan(g, l) {
+    // Namsan above Itaewon: a round wooded hill (l.rx, l.rz, l.h) with a
+    // look-out tower on top. Scenery: the map's blockers keep you off it.
+    const rx = l.rx || 170, rz = l.rz || 110, h = l.h || 70;
+    const geo = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) { // a little unevenness, not a dome
+      const y = pos.getY(i);
+      if (y > 0.02 && y < 0.98) pos.setY(i, y * (1 + 0.08 * Math.sin(i * 12.9898) * Math.sin(i * 4.1414)));
+    }
+    geo.computeVertexNormals();
+    const hill = new THREE.Mesh(geo, mat('#86b56f'));
+    hill.scale.set(rx, h, rz);
+    g.add(hill);
+    // Trees on the slopes (one instanced mesh), none on the summit.
+    const tree = new THREE.ConeGeometry(4, 11, 6);
+    tree.translate(0, 5, 0);
+    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), 160);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    let n = 0, seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    while (n < 160) {
+      const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const y = h * Math.sqrt(Math.max(0, 1 - r * r)) - 1.5;
+      const s = 0.7 + rnd() * 0.7;
+      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x * rx, y, z * rz), q, sc.set(s, s, s)));
+    }
+    g.add(trees);
+    const tower = new THREE.Group();
+    namsanTower(tower);
+    tower.position.y = h - 1;
+    tower.scale.setScalar(l.tower || 0.75);
+    g.add(tower);
+  },
 };
+
+// The look-out tower on Namsan: a white shaft, a round deck with windows,
+// a red and white mast, and a ring of lights.
+function namsanTower(g, y0 = 0) {
+  const cyl = (rt, rb, ht, y, c) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, ht, 16), mat(c));
+    m.position.y = y + ht / 2;
+    g.add(m);
+    return m;
+  };
+  cyl(12, 13, 2, y0, C.stone); // terrace on the summit
+  cyl(7, 8, 7, y0 + 2, C.white); // base building
+  cyl(2.2, 3.4, 42, y0 + 9, '#e9e6df'); // shaft
+  cyl(7.5, 6, 3, y0 + 49, C.white);
+  cyl(7.2, 7.2, 5, y0 + 52, '#3f5470'); // windows
+  cyl(6, 7.5, 2.5, y0 + 57, C.white);
+  for (let i = 0; i < 6; i++) cyl(0.9 - i * 0.08, 1 - i * 0.08, 3.5, y0 + 59.5 + i * 3.5, i % 2 ? '#f3eee4' : '#d0463b'); // mast
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffe08a' }));
+    bulb.position.set(Math.cos(a) * 7.6, y0 + 55.5, Math.sin(a) * 7.6);
+    g.add(bulb);
+  }
+}
 
 // A gold-on-black name board with hanja.
 function signBoard(text, w, h) {
