@@ -54,7 +54,10 @@ export function placeLabels(o, camera, width, height) {
   for (const el of [o.tag, o.bubble]) {
     if (!el) continue;
     el.style.display = show ? '' : 'none';
-    el.style.transform = `translate(-50%, -100%) translate(${sx}px, ${sy - (el === o.bubble ? 24 : 0)}px)`;
+    // Keep a long bubble on screen when its speaker is near the edge.
+    const half = el === o.bubble && show ? Math.min(el.offsetWidth / 2, width / 2 - 8) : 0;
+    const x = half ? Math.max(half + 8, Math.min(width - half - 8, sx)) : sx;
+    el.style.transform = `translate(-50%, -100%) translate(${x}px, ${sy - (el === o.bubble ? 24 : 0)}px)`;
   }
 }
 

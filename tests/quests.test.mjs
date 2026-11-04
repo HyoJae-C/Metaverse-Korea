@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SquareQuests, pickQuest, QUESTS_PER_DAY, QUEST_REWARD } from '../src/core/quests.js';
+import { SquareQuests, pickQuest, QUESTS_PER_DAY, QUEST_REWARD, STARTER, STARTER_REWARD } from '../src/core/quests.js';
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
 const pool = { stores: ['meta-coffee', 'chaekmaru-library'] };
@@ -59,4 +59,34 @@ test('dance needs three emotes on the square; the day starts with a high five wi
   day.event('highfive');
   day.claim({});
   assert.notEqual(day.start({ stores: ['a'] }).kind, 'highfive');
+});
+
+test('new players get the first path in order, outside the daily limit', () => {
+  const store = memory();
+  const q = new SquareQuests(store, () => 'd1');
+  q.skipHighFive();
+  q.beginStarter();
+  assert.equal(q.onStarter, true);
+  const ctx = { held: 'coffee', pet: true };
+  for (let i = 0; i < STARTER.length; i++) {
+    const a = q.start(pool, () => 0);
+    assert.equal(a.kind, STARTER[i].kind);
+    assert.equal(a.target, STARTER[i].target);
+    const type = { visit: 'visit', taxi: 'taxi', eat: 'eat', pat: 'pet', talk: 'talk', dance: 'squareEmote' }[a.kind];
+    if (type) for (let k = 0; k < a.need; k++) q.event(type, a.target);
+    assert.equal(q.claim(ctx), STARTER_REWARD);
+  }
+  assert.equal(q.onStarter, false);
+  assert.equal(q.left, QUESTS_PER_DAY); // the day's errands are all still there
+  assert.equal(new SquareQuests(store, () => 'd1').onStarter, false); // saved
+});
+
+test('the first path stays near the square and has nine errands after the high five', () => {
+  assert.equal(STARTER.length, 9);
+  assert.ok(STARTER.every((s) => s.tip));
+});
+
+test('players from before never get the first path', () => {
+  const q = new SquareQuests(memory(), () => 'd1');
+  assert.equal(q.onStarter, false);
 });

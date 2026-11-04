@@ -18,6 +18,12 @@
     "north": 37.5495,
     "east": 127.064
   },
+  "crop": [
+    -260,
+    -110,
+    260,
+    410
+  ],
   "spawn": {
     "lat": 37.5443,
     "lon": 127.0553,
@@ -43,16 +49,16 @@
       "id": "gyeongbokgung",
       "map": "districts/gyeongbokgung.json",
       "offset": [
-        -1360,
-        -398.6
+        -1737,
+        -920
       ]
     },
     {
       "id": "itaewon",
       "map": "districts/itaewon.json",
       "offset": [
-        -1300,
-        390.7
+        -1324,
+        193
       ]
     }
   ],
@@ -62,12 +68,24 @@
       "w": 16,
       "p": [
         [
-          -971.7,
-          -378.6
+          -260,
+          -99
+        ],
+        [
+          -700,
+          -99
         ],
         [
           -1100,
-          -378.6
+          -500
+        ],
+        [
+          -1300,
+          -900
+        ],
+        [
+          -1477,
+          -900
         ]
       ],
       "n": {
@@ -82,12 +100,20 @@
       "w": 16,
       "p": [
         [
-          -800.2,
-          390.7
+          -260,
+          79
         ],
         [
-          -1040,
-          390.7
+          -700,
+          79
+        ],
+        [
+          -900,
+          193
+        ],
+        [
+          -1064,
+          193
         ]
       ],
       "n": {
@@ -99,9 +125,55 @@
     }
   ],
   "screens": [
-    { "at": [-1.4, 102.4], "w": 28, "y": 6, "image": "og.png" },
-    { "at": [-1.4, 102.4], "along": -19, "w": 7, "h": 14, "y": 6, "city": { "name": "TOKYO", "local": "東京", "hue": 330 } },
-    { "at": [-1.4, 102.4], "along": 19, "w": 7, "h": 14, "y": 6, "city": { "name": "HONG KONG", "local": "香港", "hue": 200 } },
-    { "at": [-1.4, 102.4], "w": 46, "h": 11.5, "y": 21.6, "text": "NEXT IS TOKYO AND HONG KONG..." }
-  ]
+    {
+      "at": [
+        -1.4,
+        102.4
+      ],
+      "w": 28,
+      "y": 6,
+      "image": "og.png"
+    },
+    {
+      "at": [
+        -1.4,
+        102.4
+      ],
+      "along": -19,
+      "w": 7,
+      "h": 14,
+      "y": 6,
+      "city": {
+        "name": "TOKYO",
+        "local": "東京",
+        "hue": 330
+      }
+    },
+    {
+      "at": [
+        -1.4,
+        102.4
+      ],
+      "along": 19,
+      "w": 7,
+      "h": 14,
+      "y": 6,
+      "city": {
+        "name": "HONG KONG",
+        "local": "香港",
+        "hue": 200
+      }
+    },
+    {
+      "at": [
+        -1.4,
+        102.4
+      ],
+      "w": 46,
+      "h": 11.5,
+      "y": 21.6,
+      "text": "NEXT IS TOKYO AND HONG KONG..."
+    }
+  ],
+  "bbox_note": "Seongsu is cropped to a compact ~520 m neighbourhood (scripts/crop-map.mjs); bbox is the original OpenStreetMap download."
 }
