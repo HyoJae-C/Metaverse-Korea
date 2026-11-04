@@ -1,7 +1,7 @@
 {
   "note": "Meeting points for players. Zone names are game labels, not official place names (except the station).",
   "zones": [
-    { "id": "A", "color": "#ff9b85", "at": [15, 46], "snap": false, "radius": 45,
+    { "id": "A", "color": "#ff9b85", "at": [15, 50], "snap": false, "pave": { "w": 62, "l": 38, "ry": 3.1416 }, "radius": 45,
       "name": { "en": "Seongsu Square", "ko": "성수 광장", "ja": "聖水広場", "zh": "圣水广场" } },
     { "id": "B", "color": "#e9b97a", "at": [-40, -6], "radius": 50,
       "name": { "en": "Café Corner", "ko": "카페 코너", "ja": "カフェコーナー", "zh": "咖啡角" } },
