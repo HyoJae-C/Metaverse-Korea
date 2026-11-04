@@ -10,6 +10,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { osmToMap, overpassQuery } from './lib/osm-to-map.mjs';
+import { cropMap, placedPoints } from './lib/crop-map.mjs';
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -47,7 +48,14 @@ if (!data) {
   process.exit(1);
 }
 
-const map = osmToMap(data, region);
+let map = osmToMap(data, region);
+// region.json "crop": keep the district compact (see scripts/crop-map.mjs).
+if (region.crop) {
+  const opt = async (f) => { try { return JSON.parse(await readFile(path.join(regionDir, f), 'utf8')); } catch { return null; } };
+  const docs = Object.fromEntries(await Promise.all(['stores', 'homes', 'zones', 'bikes'].map(async (f) => [f, await opt(`${f}.json`)])));
+  map = cropMap(map, region.crop, { keepNear: placedPoints(region, docs) });
+  map.meta = { ...map.meta, cropped: { box: region.crop, note: 'compact neighbourhood: scripts/crop-map.mjs' } };
+}
 const out = path.join(regionDir, region.mapFile || 'map.json');
 await writeFile(out, JSON.stringify(map));
-console.log(`Wrote ${path.relative(root, out)}`, map.meta.counts);
+console.log(`Wrote ${path.relative(root, out)}`, Object.fromEntries(['roads', 'buildings', 'areas', 'rail'].map((k) => [k, (map[k] || []).length])));

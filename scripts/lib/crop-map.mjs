@@ -78,4 +78,17 @@ export function cropMap(map, box, { keepNear = [], minBuilding = MIN_BUILDING, m
   return out;
 }
 
+// Where things are placed on a region (stores, homes, zones, bike stations),
+// in map metres: cropMap keeps the buildings next to them. docs: the parsed
+// stores.json, homes.json, zones.json and bikes.json (any may be missing).
+export function placedPoints(region, docs = {}) {
+  const c = region.center, mLat = (Math.PI / 180) * 6378137, mLon = mLat * Math.cos((c.lat * Math.PI) / 180);
+  const pos = (s) => (Array.isArray(s.at) ? s.at : s.anchor ? [(s.anchor.lon - c.lon) * mLon, -(s.anchor.lat - c.lat) * mLat] : null);
+  const out = [];
+  for (const [f, k] of [['stores', 'stores'], ['homes', 'homes'], ['zones', 'zones'], ['bikes', 'stations']]) {
+    for (const s of docs[f]?.[k] || []) { const p = pos(s); if (p) out.push(p); }
+  }
+  return out;
+}
+
 export { centroid };
