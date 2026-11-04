@@ -96,6 +96,7 @@ import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './co
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
+import { SubwayEntrances, gateAt, GATE_Z, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -427,8 +428,14 @@ Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, n
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
-const collision = new CollisionMap(map.buildings.concat(map.blockers || [])); // blockers: rivers, walls
-const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision });
+// Subway stations (region.json "subway.stations"): stair exits cut into the ground.
+const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
+const allExits = subwayStations.flatMap((st) => st.exits);
+const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf))); // blockers: rivers, walls
+const treeCollision = allExits.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)))) : collision;
+const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf) });
+const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
+renderer.localClippingEnabled = true; // the station's train stays inside the hall
 const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -1879,11 +1886,90 @@ function leaveStore() {
   joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 }
 
+// ---------- Subway station ----------
+// Walk down an exit's stairs to arrive in the station hall (a room like a
+// shop); walk up any exit's stairs there to come out at that exit.
+const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
+const stationStores = subwayStations.map((sub) => ({
+  id: 'subway-' + (sub.id || sub.name?.en || 'station'), category: 'station', size: 'station', subway: sub, products: [],
+  name: Object.fromEntries(Object.entries(sub.name || {}).map(([k, v]) => [k, v + (STATION_SUFFIX[k] ?? '')])),
+  tagline: sub.line?.name || {},
+  colors: { sign: sub.line?.color || '#f5a200', accent: '#e6e8ec', awning: sub.line?.color || '#f5a200' },
+}));
+// A shop-like "front" for each exit: leaving the hall puts you just outside its mouth.
+function exitFront(s, i) {
+  const out = outsideOf(subwayStations[s].exits[i], 0.4); // leaveStore steps another 1.2 m out
+  return { store: stationStores[s], door: { x: out.x, z: out.z }, group: { rotation: { y: out.ry } }, subwayExit: [s, i] };
+}
+let subwayCool = 0; // a moment after arriving, so you don't bounce straight back
+function enterStation(s, i) {
+  enterStore(exitFront(s, i));
+  const st = interior.subway.stairs[i];
+  moveMeTo(interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
+  cam.dist = 8;
+  cam.pitch = 0.6;
+  flashFade();
+  subwayCool = 0.6;
+}
+function leaveStation(i) {
+  const s = stationStores.indexOf(interior.store);
+  interior.front = exitFront(s, i);
+  leaveStore();
+  // Face away from the stairs, with the camera behind you.
+  const out = outsideOf(subwayStations[s].exits[i]);
+  const [x, z] = findFreeSpot(out.x, out.z);
+  moveMeTo(scene, x, z, out.ry);
+  flashFade();
+  subwayCool = 0.6;
+}
+function flashFade() {
+  const el = $('fade');
+  if (!el) return;
+  el.classList.remove('go');
+  void el.offsetWidth; // restart the animation
+  el.classList.add('go');
+}
+// Ticket gates: pay the fare to go through to the platform; going out is free.
+const GATE_TEXT = {
+  in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
+  out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
+  poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
+  paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
+};
+function passGate(g, paying) {
+  if (paying) {
+    if (!wallet.spend(FARE, { name: { en: 'Subway fare', ko: '지하철 요금', ja: '地下鉄運賃', zh: '地铁车费' }, at: interior.store.name })) { shop.toast(fmt(L(GATE_TEXT.poor), { n: FARE })); return; }
+    shop.toast(`🎫 ${L(GATE_TEXT.paid)} · -🪙 ${FARE}`);
+  }
+  sfx.pop?.();
+  const z = GATE_Z + (paying ? 1.3 : -1.3);
+  moveMeTo(interior.scene, g.lane, z, paying ? 0 : Math.PI, cam.yaw);
+  action = STALE;
+}
+
+// Called every frame after moving: follow the steps up or down.
+function updateSubway(dt, p, px0, pz0) {
+  if (!subwayStations.length) return;
+  subwayCool = Math.max(0, subwayCool - dt);
+  if (mode === 'street') {
+    let s = null, si = -1;
+    for (let k = 0; k < subwayStations.length && !s; k++) { s = streetStairs(subwayStations[k], p.x, p.z); si = k; }
+    if (s && riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
+    p.y = s ? s.y : 0;
+    if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
+  } else if (interior?.subway) {
+    const s = hallStairsAt(interior.subway.stairs, p.x, p.z);
+    p.y = s ? s.y : 0;
+    if (s && s.frac >= HALL_EXIT_AT && !subwayCool) leaveStation(s.i);
+  }
+}
+
 // Translate signs (storefronts and zone boards) into the chosen language.
 let signsTranslated = false;
 const applySigns = () => {
   storefronts.setTranslated(signsTranslated, getLanguage());
   zones.setTranslated(signsTranslated, getLanguage());
+  for (const e of subwayEntrances) e.setTranslated(signsTranslated, getLanguage());
   $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));
   $('signs-btn').title = t(signsTranslated ? 'hud.signsOn' : 'hud.signsOff');
 };
@@ -2458,6 +2544,10 @@ const mapView = new MapView({
   seoul: await seoulPromise,
   zones: zones.items,
   stores: storefronts.items,
+  marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
+    const [x, z] = toWorld(ex, 0, -PIT.l / 2);
+    return { x, z, icon: '🚇', color: sub.line?.color, label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}` };
+  })),
   getPlayers: () => {
     const pos = mode === 'street' ? me.root.position : interior.front.door;
     return {
@@ -3822,6 +3912,11 @@ function updateAction(p, tSec) {
     const seat = !seated && nearestSeat(p);
     if (surgery) {
       next = null;
+    } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
+      const g = gateAt(p.x, p.z);
+      next = g.inside
+        ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
+        : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -4173,7 +4268,8 @@ renderer.setAnimationLoop(() => {
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
-  if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles
+  if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
+  if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   updateMeal();
   if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
   updateAction(p, tSec);
@@ -4219,6 +4315,7 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
+    if (Math.abs(p.y) > 0.05) st.y = Math.round(p.y * 100) / 100; // on subway stairs
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
@@ -4228,7 +4325,7 @@ renderer.setAnimationLoop(() => {
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -4347,6 +4444,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     mapView: () => mapView,
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
+    subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
     leave: () => leaveStore(),
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),

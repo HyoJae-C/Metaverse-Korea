@@ -55,8 +55,8 @@ export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
   // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
   // to see all of Seoul, open gu in colour, the rest "coming soon".
-  constructor({ root, map, seoul = null, zones, stores, getPlayers, onGuide, onTaxi }) {
-    Object.assign(this, { root, map, seoul, zones, stores, getPlayers, onGuide, onTaxi });
+  constructor({ root, map, seoul = null, zones, stores, marks = [], getPlayers, onGuide, onTaxi }) {
+    Object.assign(this, { root, map, seoul, zones, stores, marks, getPlayers, onGuide, onTaxi });
     this.taxi = false; // taxi mode: picking a place calls a taxi instead of guiding
     const taxiBtn = root.querySelector('.map-taxi');
     if (taxiBtn) {
@@ -202,6 +202,21 @@ export class MapView {
         g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
         g.fillText(localName(s.store.name, lang), sx, sy + 24 * dpr);
         g.font = `${18 * dpr}px system-ui, sans-serif`;
+      }
+    }
+    // Other places: subway exits ({ x, z, icon, color, label })
+    for (const m of this.marks) {
+      const [sx, sy] = this.toScreen(m.x, m.z);
+      g.fillStyle = m.color || '#5d6470';
+      g.beginPath();
+      g.roundRect(sx - 12 * dpr, sy - 12 * dpr, 24 * dpr, 24 * dpr, 6 * dpr);
+      g.fill();
+      g.font = `${15 * dpr}px system-ui, sans-serif`;
+      g.fillText(m.icon || '🚇', sx, sy + 1);
+      if (m.label && this.view.scale > 0.9 * dpr) {
+        g.fillStyle = '#4a3f35';
+        g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
+        g.fillText(m.label(), sx, sy + 22 * dpr);
       }
     }
     // Players
