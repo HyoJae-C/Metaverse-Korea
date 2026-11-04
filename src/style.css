@@ -1279,3 +1279,24 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .install-x { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); color: inherit; flex: none; }
 @keyframes install-in { from { transform: translate(-50%, -12px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .install-nudge { animation: none; } }
+
+/* Tarot reading (Starlight Tarot, Hongdae) */
+.tarot-panel { background: #f6f1ff; }
+.tarot-panel > .order-actions { background: #f6f1ff; }
+.tarot-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
+.tarot-slot { display: grid; gap: 4px; justify-items: center; font-size: 13px; color: #4b3a78; }
+.tarot-card { width: 78px; height: 124px; border-radius: 10px; border: 2px dashed #c9b6f2; background: rgba(255, 255, 255, 0.6); }
+.tarot-card.up { border: 3px solid #d4a73a; background: linear-gradient(#fffaf0, #f3e7c9); }
+.tarot-face { height: 100%; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; padding: 4px 3px; box-sizing: border-box; }
+.tarot-num { font: 700 12px Georgia, serif; color: #6b5420; }
+.tarot-icon { font-size: 34px; }
+.tarot-name { font-size: 10.5px; font-weight: 700; color: #3a2c5c; text-align: center; line-height: 1.15; }
+.tarot-spread { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 4px 0; }
+.tarot-back { width: 38px; height: 60px; padding: 0; border-radius: 6px; border: 2px solid #d4a73a; transform: rotate(var(--tilt, 0)); cursor: pointer;
+  background: radial-gradient(circle at 50% 50%, #ffd36e 0 3px, transparent 4px), repeating-linear-gradient(45deg, #2a1f4f 0 6px, #3b2c6e 6px 12px); }
+.tarot-back:hover:not(:disabled) { transform: translateY(-6px) rotate(var(--tilt, 0)); }
+.tarot-back:disabled { opacity: 0.15; cursor: default; }
+.tarot-panel h4 { margin: 2px 0 0; font-size: 15px; }
+.tarot-reading { display: grid; gap: 6px; }
+.tarot-reading p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
+.tarot-reading b { color: #4b3a78; }
