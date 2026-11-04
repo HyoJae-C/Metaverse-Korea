@@ -1,6 +1,15 @@
 // Shopping UI: store banner, product card, cart. Prices are virtual.
 import { ITEMS } from '../core/inventory.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
+import { STYLES, SPRAYS, onSale } from '../core/perfume.js';
+
+const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const PERFUME_SNIFF = { en: 'Smell the tester (free)', ko: '시향하기 (무료)', ja: 'テスターを試す（無料）', zh: '试闻（免费）', es: 'Probar (gratis)', ar: 'جرّب العطر (مجانًا)', vi: 'Thử mùi (miễn phí)', hi: 'टेस्टर सूँघें (मुफ़्त)', id: 'Coba tester (gratis)' };
+const LIMITED = {
+  on: { en: '🗓️ Limited edition · {from} to {to}', ko: '🗓️ 기간 한정 · {from} ~ {to}', ja: '🗓️ 期間限定 · {from}〜{to}', zh: '🗓️ 限时发售 · {from} 至 {to}', es: '🗓️ Edición limitada · del {from} al {to}', ar: '🗓️ إصدار محدود · من {from} إلى {to}', vi: '🗓️ Phiên bản giới hạn · {from} đến {to}', hi: '🗓️ सीमित संस्करण · {from} से {to}', id: '🗓️ Edisi terbatas · {from} sampai {to}' },
+  off: { en: 'Not on sale now: this limited edition sells from {from} to {to}.', ko: '지금은 팔지 않아요. {from} ~ {to} 기간 한정 상품이에요.', ja: '今は販売していません。{from}〜{to}の期間限定です。', zh: '现在不卖。限时发售：{from} 至 {to}。', es: 'No está a la venta ahora: edición limitada del {from} al {to}.', ar: 'غير متاح للبيع الآن: إصدار محدود من {from} إلى {to}.', vi: 'Hiện không bán: phiên bản giới hạn từ {from} đến {to}.', hi: 'अभी बिक्री में नहीं: सीमित संस्करण {from} से {to}।', id: 'Sedang tidak dijual: edisi terbatas {from} sampai {to}.' },
+};
+const PERFUME_INFO = { en: '🧴 {n} sprays · each lasts 3 minutes · people nearby see the effect too', ko: '🧴 {n}번 뿌릴 수 있어요 · 한 번에 3분 · 근처 사람들도 이펙트를 봐요', ja: '🧴 {n}回分 · 1回3分 · 近くの人にもエフェクトが見えます', zh: '🧴 可喷{n}次 · 每次3分钟 · 附近的人也能看到特效', es: '🧴 {n} usos · cada uno dura 3 min · los de cerca ven el efecto', ar: '🧴 {n} رشّات · كل رشّة 3 دقائق · يرى من حولك التأثير', vi: '🧴 Xịt được {n} lần · mỗi lần 3 phút · người gần bạn cũng thấy hiệu ứng', hi: '🧴 {n} बार · हर बार 3 मिनट · पास वाले भी असर देखते हैं', id: '🧴 {n} semprotan · masing-masing 3 menit · orang di dekatmu ikut melihat efeknya' };
 
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
 const UMB = {
@@ -20,7 +29,7 @@ const HOW = {
 // Clothes and hats are not for sale for now, except the outfits of the
 // clothes shop (Daily Closet), bought with coins and worn on the spot.
 const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit);
-export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat') && !sellsOutfits(store);
+export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat') && !sellsOutfits(store) && !store.perfumery;
 // How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
 // 'soon' (fashion, for now) or 'buy' (take it home in a shopping bag).
 export function howToGet(store) {
@@ -72,8 +81,8 @@ export class Cart {
 
 export class ShopUI {
   // onBuy(product, coins): pay and hold it (shops that sell to take home).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -112,9 +121,15 @@ export class ShopUI {
     this.$('product-name-ko').textContent = lang === 'ko' ? '' : product.name.ko;
     this.$('product-price').textContent = formatPrice(product.price);
     this.$('product-desc').textContent = localName(product.desc, lang) || '';
+    if (product.perfume) { // which style, and how a bottle works
+      const st = STYLES[product.perfume];
+      const lim = product.limited ? '\n' + fmt(L(LIMITED.on), product.limited) : '';
+      this.$('product-desc').textContent = `${st ? st.icon + ' ' + L(st) + ' · ' : ''}${localName(product.desc, lang) || ''}${lim}\n${fmt(L(PERFUME_INFO), { n: SPRAYS })}`;
+    }
     const tryBtn = this.$('product-try');
-    tryBtn.hidden = !product.tryOn;
-    tryBtn.onclick = () => this.onTryOn(product);
+    tryBtn.hidden = !product.tryOn && !product.perfume;
+    tryBtn.textContent = product.perfume ? '👃 ' + L(PERFUME_SNIFF) : '🪞 ' + t('shop.tryOn');
+    tryBtn.onclick = () => (product.perfume ? this.onSniff?.(product) : this.onTryOn(product));
     // Restaurant dishes are a menu to read, not something to buy.
     // Takeaway shops (META COFFEE) hand you the drink to carry around.
     // Pet shop: adopt with coins (or walk a pet you already have).
@@ -160,6 +175,12 @@ export class ShopUI {
     add.hidden = special || how !== 'buy';
     add.textContent = `🪙 ${coins} · ${L(HOW.buy)}`;
     add.onclick = () => { if (this.onBuy?.(product, coins)) this.closeProduct(); };
+    if (!onSale(product)) { // a limited edition outside its dates
+      add.hidden = true;
+      howEl.hidden = false;
+      howEl.classList.add('soon');
+      howEl.textContent = fmt(L(LIMITED.off), product.limited);
+    }
     this.$('product-note').textContent = L(HOW.note);
   }
 

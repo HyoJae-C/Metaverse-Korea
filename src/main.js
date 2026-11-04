@@ -55,6 +55,8 @@ import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag } from './core/bag.js';
+import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
+import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
@@ -450,6 +452,7 @@ renderer.localClippingEnabled = true; // the station's train stays inside the ha
 const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
+const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
@@ -1025,6 +1028,7 @@ async function joinRoom(room, roomScene, area = null) {
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
         return;
       }
+      if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
@@ -1342,6 +1346,20 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => (metro ? metroGetOff() : leaveStore()),
+  // Perfume tester: see the effect once next to you, for free. Only you see
+  // it, and no scent stays on.
+  onSniff: (product) => {
+    const pf = perfumes.get(product.id);
+    if (!pf) return;
+    const p = me.root.position;
+    scentFx.attach(activeScene);
+    scentFx.puff(p.x, p.y, p.z, pf.fx, true);
+    sfx.pop?.();
+    // Friends shopping in the same shop see it too: one small message, only
+    // inside a shop (its own room), at most one every 2 seconds.
+    const now = performance.now();
+    if (interior && now - lastSniffSent > 2000) { lastSniffSent = now; net.sendEmote('sniff:' + pf.product.id); }
+  },
   onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
@@ -1352,14 +1370,16 @@ const shop = new ShopUI({
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
+    if (!onSale(product)) return false; // a limited edition outside its dates
     if (held && !confirm(t('coffee.replace'))) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
-    setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (product.perfume && perfumes.has(product.id)) setHeld({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
+    else setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
     if (kind !== 'gift') recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
-    shop.toast(fmt(L(GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
+    shop.toast(fmt(L(product.perfume ? PERFUME_TEXT.got : GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
     return true;
   },
   onTake: (product) => {
@@ -1515,15 +1535,129 @@ const DINE_TEXT = {
   stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', vi: '{name} đã ăn miếng cuối cùng!', hi: '{name} ने आख़िरी कौर खा लिया!', id: '{name} menghabiskan gigitan terakhir!' },
   boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
 };
+// Perfume (core/perfume.js): bought in a perfume shop, kept in the bag, and
+// sprayed from the hand. A spray lasts 3 minutes; meanwhile a small effect of
+// that perfume pops up next to you every ~7 seconds, and others nearby see it
+// too (one short id in the state we already send, no extra messages).
+const PERFUME_TEXT = {
+  spray: { en: 'Spray', ko: '뿌리기', ja: 'つける', zh: '喷', es: 'Rociar', ar: 'رشّ', vi: 'Xịt', hi: 'छिड़कें', id: 'Semprot' },
+  got: { en: 'You bought {name}! Tap 🧴 Spray to wear it, or keep it in your bag.', ko: '{name}을(를) 샀어요! 🧴 뿌리기를 누르거나 가방에 넣어 두세요.', ja: '{name}を買いました！🧴でつけるか、バッグにしまってね。', zh: '买了{name}！点🧴喷一下，或放进包里。', es: '¡Compraste {name}! Toca 🧴 Rociar o guárdalo en la bolsa.', ar: 'اشتريت {name}! اضغط 🧴 رشّ أو احفظه في الحقيبة.', vi: 'Bạn đã mua {name}! Nhấn 🧴 Xịt hoặc cất vào túi.', hi: 'आपने {name} ख़रीदा! 🧴 छिड़कें दबाएँ या बैग में रखें।', id: 'Kamu membeli {name}! Ketuk 🧴 Semprot atau simpan di tas.' },
+  sprayed: { en: '🧴 {name} · lasts 3 min · {n} sprays left', ko: '🧴 {name} · 3분 동안 향이 나요 · {n}번 남음', ja: '🧴 {name} · 3分間香ります · 残り{n}回', zh: '🧴 {name} · 香味持续3分钟 · 还剩{n}次', es: '🧴 {name} · dura 3 min · quedan {n}', ar: '🧴 {name} · يدوم 3 دقائق · بقيت {n} رشّات', vi: '🧴 {name} · thơm trong 3 phút · còn {n} lần', hi: '🧴 {name} · 3 मिनट तक · {n} बार बाक़ी', id: '🧴 {name} · tahan 3 menit · sisa {n} semprot' },
+  last: { en: '🧴 {name} · lasts 3 min · that was the last spray', ko: '🧴 {name} · 3분 동안 향이 나요 · 마지막 한 번이었어요', ja: '🧴 {name} · 3分間香ります · 最後の1回でした', zh: '🧴 {name} · 香味持续3分钟 · 这是最后一喷', es: '🧴 {name} · dura 3 min · era la última', ar: '🧴 {name} · يدوم 3 دقائق · كانت آخر رشّة', vi: '🧴 {name} · thơm trong 3 phút · đó là lần xịt cuối', hi: '🧴 {name} · 3 मिनट तक · यह आख़िरी बार था', id: '🧴 {name} · tahan 3 menit · itu semprotan terakhir' },
+  gone: { en: 'Your perfume has worn off. Spray again from your bag.', ko: '향수 향이 날아갔어요. 가방에서 꺼내 다시 뿌려요.', ja: '香水の香りが消えました。バッグから出してまたつけてね。', zh: '香水味散了。从包里拿出来再喷一次吧。', es: 'Tu perfume se ha desvanecido. Vuelve a rociarlo desde la bolsa.', ar: 'تلاشى عطرك. رشّه مجددًا من الحقيبة.', vi: 'Mùi nước hoa đã bay hết. Lấy từ túi ra xịt lại nhé.', hi: 'आपकी ख़ुशबू उड़ गई। बैग से निकालकर फिर छिड़कें।', id: 'Wangi parfummu sudah hilang. Semprot lagi dari tas.' },
+  desc: { en: '{style} perfume · {n} sprays left. Hold it and tap 🧴 Spray.', ko: '{style} 향수 · {n}번 남음. 손에 들고 🧴 뿌리기를 눌러요.', ja: '{style}な香水 · 残り{n}回。手に持って🧴をタップ。', zh: '{style}香水 · 还剩{n}次。拿在手上点🧴。', es: 'Perfume {style} · quedan {n}. Sostenlo y toca 🧴.', ar: 'عطر {style} · بقيت {n} رشّات. أمسكه واضغط 🧴.', vi: 'Nước hoa {style} · còn {n} lần. Cầm lên và nhấn 🧴.', hi: '{style} ख़ुशबू · {n} बार बाक़ी। हाथ में लेकर 🧴 दबाएँ।', id: 'Parfum {style} · sisa {n}. Pegang lalu ketuk 🧴.' },
+};
+const scent = new Scent(localStorage, (id) => perfumes.has(id));
+let myScent = scent.active();
+const scentFx = new ScentFx();
+let myPuffIn = 1;
+function sprayPerfume() {
+  const pf = perfumes.get(held?.p);
+  if (!pf) { setHeld(null); return; }
+  me.play('clap'); // lift the bottle
+  sfx.pop?.();
+  scent.spray(pf.product.id);
+  myScent = pf.product.id;
+  const p = me.root.position;
+  scentFx.attach(activeScene);
+  scentFx.puff(p.x, p.y, p.z, pf.fx, true);
+  myPuffIn = nextPuff();
+  showBubble(myLabel, $('labels'), '🧴 ' + localName(pf.product.name, getLanguage()), 2500);
+  const sprays = held.sips - 1;
+  const name = localName(pf.product.name, getLanguage());
+  if (sprays <= 0) { setHeld(null); shop.toast(fmt(L(PERFUME_TEXT.last), { name })); }
+  else { setHeld({ ...held, sips: sprays }); shop.toast(fmt(L(PERFUME_TEXT.sprayed), { name, n: sprays })); }
+  lastSent = null; // others see the scent at once
+}
+// Shops with "clerkRoams" (the big perfume houses): the clerk walks from
+// display to display, pauses there, and greets visitors who come close.
+const CLERK_HI = [['어서 오세요!', 'eoseo oseyo', 'Welcome!'], ['천천히 둘러보세요.', 'cheoncheonhi dulleoboseyo.', 'Take your time and look around.'], ['시향해 보시겠어요?', 'sihyang-hae bosigesseoyo?', 'Would you like to try a tester?']];
+const roam = { to: null, wait: 2, hiAt: 0, last: -1 };
+function roamClerk(dt, p) {
+  const r = clerk.ch.root.position;
+  const now = performance.now();
+  if (Math.hypot(p.x - r.x, p.z - r.z) < 2.4 && now - roam.hiAt > 20000) { // say hi, face them
+    roam.hiAt = now;
+    roam.wait = Math.max(roam.wait, 2.5);
+    roam.to = null;
+    clerk.ch.root.rotation.y = Math.atan2(p.x - r.x, p.z - r.z);
+    say(clerk, $('labels'), CLERK_HI[Math.floor(Math.random() * CLERK_HI.length)]);
+  }
+  if (roam.wait > 0) { roam.wait -= dt; return 0; }
+  if (!roam.to) {
+    const spots = interior.products;
+    if (!spots?.length) return 0;
+    let k = Math.floor(Math.random() * spots.length);
+    if (k === roam.last) k = (k + 1) % spots.length; // somewhere new each time
+    roam.last = k;
+    const s = spots[k].pos;
+    roam.to = { x: s.x, z: s.z };
+  }
+  const dx = roam.to.x - r.x, dz = roam.to.z - r.z, dist = Math.hypot(dx, dz);
+  if (dist < 0.15) { roam.to = null; roam.wait = 3 + Math.random() * 3; return 0; }
+  const step = Math.min(dist, dt * 1.1);
+  r.x += (dx / dist) * step; r.z += (dz / dist) * step;
+  clerk.ch.root.rotation.y = Math.atan2(dx, dz);
+  return 0.35;
+}
+// Someone in the same shop tried a tester: a burst and the name next to them.
+let lastSniffSent = 0;
+const sniffSeen = new Map(); // remote id -> time of their last tester
+function onPeerSniff(id, pid) {
+  const pf = perfumes.get(pid), o = others.players.get(id);
+  if (!pf || !o || o.hidden || !interior || safety.isBlocked(id, others.nameOf(id))) return;
+  const now = performance.now();
+  if (now - (sniffSeen.get(id) || 0) < 1500) return; // too many: skip
+  sniffSeen.set(id, now);
+  const r = o.ch.root.position;
+  scentFx.attach(activeScene);
+  scentFx.puff(r.x, r.y, r.z, pf.fx, true);
+  showBubble(o, $('labels'), '👃 ' + localName(pf.product.name, getLanguage()), 2500);
+}
+// Every frame: my puffs, and those of people near the camera who wear one.
+const scentSeen = new Map(); // remote id -> { sc, puffIn }
+function updateScents(dt) {
+  scentFx.attach(activeScene);
+  const now = Date.now();
+  if (myScent && !scent.active(now)) { myScent = null; lastSent = null; shop.toast(L(PERFUME_TEXT.gone)); }
+  if (myScent && (myPuffIn -= dt) <= 0) {
+    myPuffIn = nextPuff();
+    const p = me.root.position;
+    scentFx.puff(p.x, p.y, p.z, perfumes.get(myScent)?.fx);
+  }
+  for (const [id, o] of others.players) {
+    const sc = !o.hidden && perfumes.has(o.target?.sc) ? o.target.sc : null;
+    let seen = scentSeen.get(id);
+    if (!sc) { if (seen) scentSeen.delete(id); continue; }
+    const r = o.ch.root.position;
+    const near = camera.position.distanceTo(r) < PUFF_NEAR;
+    if (!seen || seen.sc !== sc) { // they just sprayed: show the name and a burst
+      seen = { sc, puffIn: nextPuff() };
+      scentSeen.set(id, seen);
+      if (near) {
+        scentFx.puff(r.x, r.y, r.z, perfumes.get(sc).fx, true);
+        showBubble(o, $('labels'), '🧴 ' + localName(perfumes.get(sc).product.name, getLanguage()), 2500);
+      }
+      continue;
+    }
+    if ((seen.puffIn -= dt) <= 0) {
+      seen.puffIn = nextPuff();
+      if (near) scentFx.puff(r.x, r.y, r.z, perfumes.get(sc).fx);
+    }
+  }
+  for (const id of scentSeen.keys()) if (!others.players.has(id)) scentSeen.delete(id);
+  scentFx.update(dt);
+}
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
 // hold in your hand. 20 slots for now.
-const bag = new Bag(localStorage, { isBook: (id) => !!bookById(id), maxSips: COFFEE_SIPS });
+const bag = new Bag(localStorage, { isBook: (id) => !!bookById(id), maxSips: COFFEE_SIPS, isPerfume: (id) => perfumes.has(id), maxSprays: SPRAYS });
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return { kind: 'gift', sips: 1, name: String(h.name || '').slice(0, 40), icon: String(h.icon || '🛍️').slice(0, 4) };
+    if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
 })();
@@ -1536,8 +1670,8 @@ function setHeld(h) {
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h || h.kind === 'gift'; // a shopping bag is just carried
   $('stow-btn').hidden = !h;
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : '☕';
-  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -1548,6 +1682,7 @@ function drink() {
     else shop.toast(t('book.sitToRead'));
     return;
   }
+  if (held.kind === 'perfume') { sprayPerfume(); return; }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   if (held.kind === 'coffee') { // any non-alcoholic drink: full stamina, and it stays full for 3 minutes
@@ -1605,6 +1740,10 @@ function describeEntry(e) {
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
+  if (e.kind === 'perfume') {
+    const pf = perfumes.get(e.p);
+    return { emoji: '🧴', name: pf ? localName(pf.product.name, getLanguage()) : e.name, desc: fmt(L(PERFUME_TEXT.desc), { style: L(STYLES[pf?.style] || STYLES.simple), n: e.sips }), canHold: true };
+  }
   return { emoji: e.kind === 'glass' ? '🍹' : '☕', name: e.name || 'Coffee', desc: fmt(L(DRINK_DESC), { n: e.sips }), canHold: true };
 }
 function stowHeld() {
@@ -1846,10 +1985,14 @@ function enterStore(item) {
   if (built.clerk && !built.clerkNpc) {
     built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
+    // A roaming clerk starts on the shop floor, in front of the counter (all
+    // the displays are on that side, so the walk never cuts through it).
+    if (store.clerkRoams) built.clerkNpc.ch.root.position.set(built.clerk.x - 1.9, 0, built.clerk.z - 1.75);
     built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
     built.scene.add(built.clerkNpc.ch.root);
   }
   clerk = built.clerkNpc || null;
+  roam.to = null; roam.wait = 2; roam.hiAt = performance.now(); // (the door greeting is enough at first)
   if (built.trainer && !built.trainerNpc) {
     built.trainerNpc = makeNpc($('labels'), L(TRAINER_NAME), TRAINER_LOOK);
     built.trainerNpc.ch.root.position.set(built.trainer.x, 0, built.trainer.z);
@@ -4636,8 +4779,9 @@ renderer.setAnimationLoop(() => {
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
     if (pet) st.pt = pet.id;
+    if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -4653,7 +4797,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels();
-    if (clerk) { clerk.ch.animate(dt, 0); placeLabels(clerk, camera, w, h); }
+    if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }
   if (squareNpc) {
@@ -4669,6 +4813,7 @@ renderer.setAnimationLoop(() => {
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
+  updateScents(dt);
 
   renderer.render(activeScene, camera);
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
@@ -4800,6 +4945,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     heldKind: () => heldKind(),
+    scent: () => myScent,
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],

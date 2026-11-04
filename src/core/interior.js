@@ -298,7 +298,12 @@ export function buildInterior(store) {
   // Restaurants with a menu: nothing on display, you order at your table.
   // META COFFEE, bars and clubs: you order from the staff instead (no displays).
   const counterMenu = store.takeaway || store.category === 'bar' || store.category === 'club';
-  (isDining(store) || counterMenu ? [] : store.products).forEach((product, i) => {
+  // "displays": n puts each product on several stands (busy shops, so that
+  // visitors spread out instead of crowding one table).
+  const shown = store.displays > store.products?.length
+    ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
+    : store.products;
+  (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
