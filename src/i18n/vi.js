@@ -437,7 +437,7 @@ export const VI = {
   'credit.weather': 'Thời tiết',
   'hud.weatherNow': 'Thời tiết trực tiếp ở Seongsu-dong',
   'start.next': 'Tiếp',
-  'app.disclaimer': 'Đường phố dựa trên dữ liệu OpenStreetMap thật. Mọi cửa hàng, thương hiệu và sản phẩm ở đây đều là mẫu hư cấu, không phải các cơ sở kinh doanh thật tại những địa điểm này.',
+  'app.disclaimer': 'Đường phố là bản đồ trò chơi lấy cảm hứng từ các khu phố thật ở Seoul, không phải bản sao chính xác. Mọi cửa hàng, thương hiệu và sản phẩm ở đây đều là mẫu hư cấu, không phải cơ sở kinh doanh thật.',
   'start.back': 'Quay lại',
   'look.title': 'Tạo nhân vật của bạn',
   'look.random': 'Ngẫu nhiên',
@@ -509,5 +509,4 @@ export const VI = {
   'look.model': 'Nhân vật',
   'look.tee': 'Màu áo phông',
   'credit.chars': 'Nhân vật',
-  'credit.map': 'Dữ liệu bản đồ',
 };

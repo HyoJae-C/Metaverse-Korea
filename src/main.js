@@ -1790,7 +1790,8 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 function enterStore(item) {
   setRiding(false);
-  sfx.doorbell(); // automatic door sliding open
+  const metroRoom = (st) => st?.category === 'station' || st?.category === 'train';
+  if (!metroRoom(item.store)) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
   const store = item.store;
   let built = interiorCache.get(store.id);
   if (!built) {
@@ -1873,7 +1874,7 @@ function leaveStore() {
   barkeep = null;
   if (counterUi.open) counterUi.close();
   npcs.setVisible(true);
-  sfx.doorbell();
+  if (interior.store?.category !== 'station' && interior.store?.category !== 'train') sfx.doorbell();
   const it = interior.front;
   mode = 'street';
   activeScene = scene;
@@ -2043,13 +2044,22 @@ function arriveOnPlatform(k, t) {
   cam.dist = 8;
   cam.pitch = 0.6;
   flashFade();
+  sfx.doorOpen();
   subwayCool = 0.8;
+}
+// Platform sounds: the arrival chime anywhere in the hall; doors and the
+// departure signal only on the platform side of the gates.
+function onPlatformSound(kind) {
+  if (kind !== 'arrive' && me.root.position.x < GATE_X) return;
+  ({ arrive: () => sfx.arrivalChime(), open: () => sfx.doorOpen(), closing: () => sfx.doorClose(), depart: () => sfx.depart() })[kind]?.();
 }
 function updateMetro(p) {
   if (!metro || !interior?.train) return;
   const now = Date.now();
   const moving = now >= metro.leaveAt;
   interior.train.setMoving(moving);
+  if (!metro.warned && now >= metro.leaveAt - 1600) { metro.warned = true; sfx.doorClose(); }
+  if (!metro.departed && moving) { metro.departed = true; sfx.depart(); }
   let led;
   if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
   else if (metro.dest != null) {
@@ -2084,6 +2094,7 @@ function updateSubway(dt, p, px0, pz0) {
     p.y = s ? s.y : 0;
     if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
   } else if (interior?.subway) {
+    interior.subway.onSound = onPlatformSound;
     const s = hallStairsAt(interior.subway.stairs, p.x, p.z);
     p.y = s ? s.y : 0;
     if (s && s.frac >= HALL_EXIT_AT && !subwayCool) leaveStation(s.i);
@@ -4674,7 +4685,13 @@ updateStreetCard();
 
 // Test hooks (only with ?debug in the URL).
 if (new URLSearchParams(location.search).has('debug')) {
+  const sfxLog = [];
+  for (const k of ['arrivalChime', 'doorOpen', 'doorClose', 'depart']) {
+    const fn = sfx[k].bind(sfx);
+    sfx[k] = () => { sfxLog.push([k, Date.now()]); fn(); };
+  }
   window.__mk = {
+    sfxLog: () => sfxLog.slice(),
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),

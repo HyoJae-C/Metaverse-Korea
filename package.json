@@ -8,7 +8,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "fetch:osm": "node scripts/fetch-osm.mjs seongsu",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
