@@ -1012,9 +1012,9 @@
       "tagline": { "en": "Smells you will regret. Bestsellers anyway.", "ko": "후회할 냄새, 그래도 베스트셀러" },
       "colors": { "sign": "#5f7f1f", "awning": "#e6f2c2", "accent": "#fbfdf2" },
       "products": [
-        { "id": "pf-dad-socks", "model": "bottle", "perfume": "funny", "fx": { "e": ["🧦", "😵"], "c": "#9bbf3a", "m": "rise" }, "color": "#9bbf3a", "price": 38000, "name": { "en": "1998: Dad's Socks & My Face", "ko": "1998년 아빠의 양말 냄새 그리고 내 표정" }, "desc": { "en": "Top: damp cotton. Heart: a long day at work. Base: your face when you smelled it.", "ko": "탑: 덜 마른 면. 미들: 길고 긴 퇴근길. 베이스: 그 냄새를 맡은 내 표정." } },
-        { "id": "pf-line2-monday", "model": "bottle", "perfume": "funny", "fx": { "e": ["💦", "😫"], "c": "#b7c4cf", "m": "rise" }, "color": "#b7c4cf", "price": 32000, "name": { "en": "Line 2, Monday 8:47 AM", "ko": "월요일 아침 8시 47분 2호선" }, "desc": { "en": "A packed train, wet umbrellas and someone's egg sandwich.", "ko": "꽉 찬 지하철, 젖은 우산, 그리고 누군가의 계란 샌드위치." } },
-        { "id": "pf-ramyeon-2am", "model": "bottle", "perfume": "funny", "fx": { "e": ["🍜", "♨️"], "c": "#f0a35e", "m": "rise" }, "color": "#f0a35e", "price": 35000, "name": { "en": "2 AM Ramyeon Before Finals", "ko": "시험 전날 새벽 2시 라면 국물" }, "desc": { "en": "Spicy broth, instant regret and one open textbook.", "ko": "매운 국물, 즉각적인 후회, 그리고 펼쳐만 둔 전공책." } }
+        { "id": "pf-dad-socks", "model": "bottle", "perfume": "funny", "fx": { "e": ["🧦", "😵"], "c": "#9bbf3a", "m": "rise" }, "color": "#9bbf3a", "price": 78000, "name": { "en": "1998: Dad's Socks & My Face", "ko": "1998년 아빠의 양말 냄새 그리고 내 표정" }, "desc": { "en": "Top: damp cotton. Heart: a long day at work. Base: your face when you smelled it.", "ko": "탑: 덜 마른 면. 미들: 길고 긴 퇴근길. 베이스: 그 냄새를 맡은 내 표정." } },
+        { "id": "pf-line2-monday", "model": "bottle", "perfume": "funny", "fx": { "e": ["💦", "😫"], "c": "#b7c4cf", "m": "rise" }, "color": "#b7c4cf", "price": 62000, "name": { "en": "Line 2, Monday 8:47 AM", "ko": "월요일 아침 8시 47분 2호선" }, "desc": { "en": "A packed train, wet umbrellas and someone's egg sandwich.", "ko": "꽉 찬 지하철, 젖은 우산, 그리고 누군가의 계란 샌드위치." } },
+        { "id": "pf-ramyeon-2am", "model": "bottle", "perfume": "funny", "fx": { "e": ["🍜", "♨️"], "c": "#f0a35e", "m": "rise" }, "color": "#f0a35e", "price": 70000, "name": { "en": "2 AM Ramyeon Before Finals", "ko": "시험 전날 새벽 2시 라면 국물" }, "desc": { "en": "Spicy broth, instant regret and one open textbook.", "ko": "매운 국물, 즉각적인 후회, 그리고 펼쳐만 둔 전공책." } }
       ]
     },
     {
@@ -1028,9 +1028,9 @@
       "tagline": { "en": "Funny scents in very serious bottles", "ko": "웃긴 향, 진지한 병" },
       "colors": { "sign": "#e56a00", "awning": "#ffe3c2", "accent": "#fff8ef" },
       "products": [
-        { "id": "pf-army-boots", "model": "bottle", "perfume": "funny", "fx": { "e": ["🥾", "💨"], "c": "#8a9a5b", "m": "orbit" }, "color": "#8a9a5b", "price": 40000, "name": { "en": "Big Bro's Army Boots, Day 1 of Leave", "ko": "휴가 나온 오빠의 군화" }, "desc": { "en": "Two weeks of marching, sealed fresh for you.", "ko": "2주 동안의 행군을 신선하게 밀봉했어요." } },
-        { "id": "pf-mom-slap", "model": "bottle", "perfume": "funny", "fx": { "e": ["💢", "⚡", "😱"], "m": "pop" }, "color": "#ff5a5a", "price": 45000, "name": { "en": "3 Seconds Before Mom's Back Slap", "ko": "엄마 등짝 스매싱 3초 전" }, "desc": { "en": "Sharp ginger, pure panic and a slammed door.", "ko": "알싸한 생강, 순수한 공포, 그리고 쾅 닫히는 방문." } },
-        { "id": "pf-hoesik-round3", "model": "bottle", "perfume": "funny", "fx": { "e": ["🎤", "🎵", "🎶"], "m": "float" }, "color": "#d99be0", "price": 42000, "name": { "en": "Team Dinner, Round 3: Noraebang", "ko": "회식 3차 노래방" }, "desc": { "en": "Microphone foam, a tambourine and grilled pork in your hair.", "ko": "마이크 스펀지, 탬버린, 그리고 머리카락에 밴 삼겹살." } }
+        { "id": "pf-army-boots", "model": "bottle", "perfume": "funny", "fx": { "e": ["🥾", "💨"], "c": "#8a9a5b", "m": "orbit" }, "color": "#8a9a5b", "price": 80000, "name": { "en": "Big Bro's Army Boots, Day 1 of Leave", "ko": "휴가 나온 오빠의 군화" }, "desc": { "en": "Two weeks of marching, sealed fresh for you.", "ko": "2주 동안의 행군을 신선하게 밀봉했어요." } },
+        { "id": "pf-mom-slap", "model": "bottle", "perfume": "funny", "fx": { "e": ["💢", "⚡", "😱"], "m": "pop" }, "color": "#ff5a5a", "price": 90000, "name": { "en": "3 Seconds Before Mom's Back Slap", "ko": "엄마 등짝 스매싱 3초 전" }, "desc": { "en": "Sharp ginger, pure panic and a slammed door.", "ko": "알싸한 생강, 순수한 공포, 그리고 쾅 닫히는 방문." } },
+        { "id": "pf-hoesik-round3", "model": "bottle", "perfume": "funny", "fx": { "e": ["🎤", "🎵", "🎶"], "m": "float" }, "color": "#d99be0", "price": 85000, "name": { "en": "Team Dinner, Round 3: Noraebang", "ko": "회식 3차 노래방" }, "desc": { "en": "Microphone foam, a tambourine and grilled pork in your hair.", "ko": "마이크 스펀지, 탬버린, 그리고 머리카락에 밴 삼겹살." } }
       ]
     },
     {
@@ -1044,9 +1044,9 @@
       "tagline": { "en": "Haute parfumerie by the forest", "ko": "숲 옆의 오트 퍼퓨머리" },
       "colors": { "sign": "#1f2a44", "awning": "#e9e2cf", "accent": "#f8f5ec" },
       "products": [
-        { "id": "pf-swan-dawn", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🤍", "@spark"], "c": "#ffffff", "m": "fall" }, "color": "#eef0f4", "price": 280000, "name": { "en": "Swan at Dawn · Extrait", "ko": "새벽의 백조 엑스트레" }, "desc": { "en": "White musk, iris and cold morning air over the pond.", "ko": "화이트 머스크, 아이리스, 연못 위 차가운 새벽 공기." } },
-        { "id": "pf-velvet-rose", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🌹", "🥀"], "m": "fall" }, "color": "#b0213f", "price": 250000, "name": { "en": "Velvet Rose No.7", "ko": "벨벳 로즈 No.7" }, "desc": { "en": "Damask rose, black pepper and one drop of oud.", "ko": "다마스크 장미, 블랙 페퍼, 그리고 우드 한 방울." } },
-        { "id": "pf-golden-han", "model": "bottle", "perfume": "elegant", "fx": { "e": ["✨", "🌟", "@spark"], "m": "twinkle" }, "color": "#e8b04a", "price": 220000, "name": { "en": "Golden Hour on the Han", "ko": "한강 골든아워" }, "desc": { "en": "Amber, neroli and warm city light on the water.", "ko": "앰버, 네롤리, 그리고 강물 위 따뜻한 도시 불빛." } }
+        { "id": "pf-swan-dawn", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🤍", "@spark"], "c": "#ffffff", "m": "fall" }, "color": "#eef0f4", "price": 690000, "name": { "en": "Swan at Dawn · Extrait", "ko": "새벽의 백조 엑스트레" }, "desc": { "en": "White musk, iris and cold morning air over the pond.", "ko": "화이트 머스크, 아이리스, 연못 위 차가운 새벽 공기." } },
+        { "id": "pf-velvet-rose", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🌹", "🥀"], "m": "fall" }, "color": "#b0213f", "price": 620000, "name": { "en": "Velvet Rose No.7", "ko": "벨벳 로즈 No.7" }, "desc": { "en": "Damask rose, black pepper and one drop of oud.", "ko": "다마스크 장미, 블랙 페퍼, 그리고 우드 한 방울." } },
+        { "id": "pf-golden-han", "model": "bottle", "perfume": "elegant", "fx": { "e": ["✨", "🌟", "@spark"], "m": "twinkle" }, "color": "#e8b04a", "price": 480000, "name": { "en": "Golden Hour on the Han", "ko": "한강 골든아워" }, "desc": { "en": "Amber, neroli and warm city light on the water.", "ko": "앰버, 네롤리, 그리고 강물 위 따뜻한 도시 불빛." } }
       ]
     },
     {
@@ -1060,9 +1060,9 @@
       "tagline": { "en": "Dark, rare scents in small batches", "ko": "어둡고 귀한 소량 생산 향수" },
       "colors": { "sign": "#141414", "awning": "#c9a45c", "accent": "#f3eee4" },
       "products": [
-        { "id": "pf-midnight-opera", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🌙", "⭐", "@spark"], "m": "orbit" }, "color": "#3b2a5a", "price": 300000, "name": { "en": "Midnight Opera", "ko": "미드나잇 오페라" }, "desc": { "en": "Violet, tonka and velvet curtains after the last aria.", "ko": "바이올렛, 통카빈, 마지막 아리아가 끝난 뒤의 벨벳 커튼." } },
-        { "id": "pf-oud-hanji", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🍂", "📜"], "c": "#8a6a4a", "m": "rise" }, "color": "#7a5a3a", "price": 290000, "name": { "en": "Oud & Hanji", "ko": "우드 앤 한지" }, "desc": { "en": "Smoky oud wrapped in mulberry paper and ink.", "ko": "스모키한 우드를 한지와 먹으로 감쌌어요." } },
-        { "id": "pf-pearl-secret", "model": "bottle", "perfume": "elegant", "fx": { "e": ["💎", "@pearl"], "m": "twinkle" }, "color": "#efe8dc", "price": 260000, "name": { "en": "The Pearl Necklace Secret", "ko": "진주 목걸이의 비밀" }, "desc": { "en": "Powdery iris, white tea and a secret you won't tell.", "ko": "파우더리한 아이리스, 백차, 그리고 말하지 않을 비밀." } }
+        { "id": "pf-midnight-opera", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🌙", "⭐", "@spark"], "m": "orbit" }, "color": "#3b2a5a", "price": 800000, "name": { "en": "Midnight Opera", "ko": "미드나잇 오페라" }, "desc": { "en": "Violet, tonka and velvet curtains after the last aria.", "ko": "바이올렛, 통카빈, 마지막 아리아가 끝난 뒤의 벨벳 커튼." } },
+        { "id": "pf-oud-hanji", "model": "bottle", "perfume": "elegant", "fx": { "e": ["🍂", "📜"], "c": "#8a6a4a", "m": "rise" }, "color": "#7a5a3a", "price": 750000, "name": { "en": "Oud & Hanji", "ko": "우드 앤 한지" }, "desc": { "en": "Smoky oud wrapped in mulberry paper and ink.", "ko": "스모키한 우드를 한지와 먹으로 감쌌어요." } },
+        { "id": "pf-pearl-secret", "model": "bottle", "perfume": "elegant", "fx": { "e": ["💎", "@pearl"], "m": "twinkle" }, "color": "#efe8dc", "price": 550000, "name": { "en": "The Pearl Necklace Secret", "ko": "진주 목걸이의 비밀" }, "desc": { "en": "Powdery iris, white tea and a secret you won't tell.", "ko": "파우더리한 아이리스, 백차, 그리고 말하지 않을 비밀." } }
       ]
     },
     {
@@ -1076,9 +1076,9 @@
       "tagline": { "en": "Squishy, sweet and very pink", "ko": "말랑하고 달콤하고 아주 핑크" },
       "colors": { "sign": "#ff5f9e", "awning": "#ffe0ee", "accent": "#fff6fa" },
       "products": [
-        { "id": "pf-pretty-rainbow", "model": "bottle", "perfume": "cute", "fx": { "e": ["💖", "🌈", "💗"], "m": "float" }, "color": "#ff9ccf", "price": 58000, "name": { "en": "Pretty Rainbow", "ko": "프리티 레인보우" }, "desc": { "en": "Candy hearts, berry soda and a rainbow after the rain.", "ko": "하트 캔디, 베리 소다, 그리고 비 온 뒤 무지개." } },
-        { "id": "pf-cotton-candy", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍭", "☁️"], "c": "#ffc2e0", "m": "float" }, "color": "#ffc2e0", "price": 48000, "name": { "en": "Cotton Candy Cloud Punch", "ko": "솜사탕 구름 펀치" }, "desc": { "en": "Spun sugar and a soft pink cloud you could punch.", "ko": "솜사탕, 그리고 주먹으로 콩 칠 수 있는 핑크 구름." } },
-        { "id": "pf-peach-cheeks", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍑", "💗"], "m": "pop" }, "color": "#ffb38a", "price": 52000, "name": { "en": "Squishy Peach Cheeks", "ko": "말랑 복숭아 볼" }, "desc": { "en": "Juicy white peach and baby powder.", "ko": "물 많은 백도와 베이비 파우더." } }
+        { "id": "pf-pretty-rainbow", "model": "bottle", "perfume": "cute", "fx": { "e": ["💖", "🌈", "💗"], "m": "float" }, "color": "#ff9ccf", "price": 120000, "name": { "en": "Pretty Rainbow", "ko": "프리티 레인보우" }, "desc": { "en": "Candy hearts, berry soda and a rainbow after the rain.", "ko": "하트 캔디, 베리 소다, 그리고 비 온 뒤 무지개." } },
+        { "id": "pf-cotton-candy", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍭", "☁️"], "c": "#ffc2e0", "m": "float" }, "color": "#ffc2e0", "price": 95000, "name": { "en": "Cotton Candy Cloud Punch", "ko": "솜사탕 구름 펀치" }, "desc": { "en": "Spun sugar and a soft pink cloud you could punch.", "ko": "솜사탕, 그리고 주먹으로 콩 칠 수 있는 핑크 구름." } },
+        { "id": "pf-peach-cheeks", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍑", "💗"], "m": "pop" }, "color": "#ffb38a", "price": 105000, "name": { "en": "Squishy Peach Cheeks", "ko": "말랑 복숭아 볼" }, "desc": { "en": "Juicy white peach and baby powder.", "ko": "물 많은 백도와 베이비 파우더." } }
       ]
     },
     {
@@ -1092,9 +1092,9 @@
       "tagline": { "en": "Spray once, hearts all day", "ko": "한 번 뿌리면 하트가 뿅뿅" },
       "colors": { "sign": "#e2365b", "awning": "#ffd1dc", "accent": "#fff4f6" },
       "products": [
-        { "id": "pf-first-sight", "model": "bottle", "perfume": "cute", "fx": { "e": ["💘", "💕"], "m": "float" }, "color": "#ff6f91", "price": 60000, "name": { "en": "Love at First Sight", "ko": "첫눈에 반함" }, "desc": { "en": "Strawberry, rose candy and a fast heartbeat.", "ko": "딸기, 장미 사탕, 그리고 빨라진 심장 소리." } },
-        { "id": "pf-jelly-paws", "model": "bottle", "perfume": "cute", "fx": { "e": ["🐾", "🐱"], "m": "orbit" }, "color": "#ffc9d6", "price": 55000, "name": { "en": "Kitten Jelly Beans", "ko": "아기 고양이 젤리 발바닥" }, "desc": { "en": "Warm milk, soft fur and tiny pink paws.", "ko": "따뜻한 우유, 보드라운 털, 작고 분홍빛인 발바닥." } },
-        { "id": "pf-strawberry-milk", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍓", "🎀", "🎂"], "m": "pop" }, "color": "#ffb3c7", "price": 50000, "name": { "en": "Strawberry Milk Birthday", "ko": "딸기우유 생일파티" }, "desc": { "en": "Strawberry milk, cake cream and party ribbons.", "ko": "딸기우유, 케이크 생크림, 그리고 파티 리본." } }
+        { "id": "pf-first-sight", "model": "bottle", "perfume": "cute", "fx": { "e": ["💘", "💕"], "m": "float" }, "color": "#ff6f91", "price": 130000, "name": { "en": "Love at First Sight", "ko": "첫눈에 반함" }, "desc": { "en": "Strawberry, rose candy and a fast heartbeat.", "ko": "딸기, 장미 사탕, 그리고 빨라진 심장 소리." } },
+        { "id": "pf-jelly-paws", "model": "bottle", "perfume": "cute", "fx": { "e": ["🐾", "🐱"], "m": "orbit" }, "color": "#ffc9d6", "price": 115000, "name": { "en": "Kitten Jelly Beans", "ko": "아기 고양이 젤리 발바닥" }, "desc": { "en": "Warm milk, soft fur and tiny pink paws.", "ko": "따뜻한 우유, 보드라운 털, 작고 분홍빛인 발바닥." } },
+        { "id": "pf-strawberry-milk", "model": "bottle", "perfume": "cute", "fx": { "e": ["🍓", "🎀", "🎂"], "m": "pop" }, "color": "#ffb3c7", "price": 99000, "name": { "en": "Strawberry Milk Birthday", "ko": "딸기우유 생일파티" }, "desc": { "en": "Strawberry milk, cake cream and party ribbons.", "ko": "딸기우유, 케이크 생크림, 그리고 파티 리본." } }
       ]
     },
     {
@@ -1108,9 +1108,9 @@
       "tagline": { "en": "One note. Nothing extra.", "ko": "한 가지 향, 더하지 않기" },
       "colors": { "sign": "#3a3a3a", "awning": "#eeeeea", "accent": "#fafaf8" },
       "products": [
-        { "id": "pf-white-tee", "model": "bottle", "perfume": "simple", "fx": { "e": ["🤍"], "c": "#ffffff", "m": "float" }, "color": "#f5f5f2", "price": 78000, "name": { "en": "White T-shirt", "ko": "화이트 티셔츠" }, "desc": { "en": "Clean cotton straight out of the packet.", "ko": "포장을 막 뜯은 깨끗한 면." } },
-        { "id": "pf-3pm-sun", "model": "bottle", "perfume": "simple", "fx": { "e": ["☀️", "@spark"], "c": "#ffe79a", "m": "twinkle" }, "color": "#ffe79a", "price": 85000, "name": { "en": "Sunlight at 3 PM", "ko": "오후 세 시 햇살" }, "desc": { "en": "Warm skin, dust in the light and a slow afternoon.", "ko": "따뜻한 피부, 빛 속의 먼지, 느린 오후." } },
-        { "id": "pf-pencil", "model": "bottle", "perfume": "simple", "fx": { "e": ["✏️"], "c": "#e3c9a0", "m": "fall" }, "color": "#e3c9a0", "price": 68000, "name": { "en": "Freshly Sharpened Pencil", "ko": "갓 깎은 연필" }, "desc": { "en": "Cedar shavings and graphite.", "ko": "시더우드 연필밥과 흑연." } }
+        { "id": "pf-white-tee", "model": "bottle", "perfume": "simple", "fx": { "e": ["🤍"], "c": "#ffffff", "m": "float" }, "color": "#f5f5f2", "price": 180000, "name": { "en": "White T-shirt", "ko": "화이트 티셔츠" }, "desc": { "en": "Clean cotton straight out of the packet.", "ko": "포장을 막 뜯은 깨끗한 면." } },
+        { "id": "pf-3pm-sun", "model": "bottle", "perfume": "simple", "fx": { "e": ["☀️", "@spark"], "c": "#ffe79a", "m": "twinkle" }, "color": "#ffe79a", "price": 200000, "name": { "en": "Sunlight at 3 PM", "ko": "오후 세 시 햇살" }, "desc": { "en": "Warm skin, dust in the light and a slow afternoon.", "ko": "따뜻한 피부, 빛 속의 먼지, 느린 오후." } },
+        { "id": "pf-pencil", "model": "bottle", "perfume": "simple", "fx": { "e": ["✏️"], "c": "#e3c9a0", "m": "fall" }, "color": "#e3c9a0", "price": 160000, "name": { "en": "Freshly Sharpened Pencil", "ko": "갓 깎은 연필" }, "desc": { "en": "Cedar shavings and graphite.", "ko": "시더우드 연필밥과 흑연." } }
       ]
     },
     {
@@ -1124,9 +1124,9 @@
       "tagline": { "en": "Everyday scents in grey, beige and black", "ko": "회색, 베이지, 검정의 데일리 향" },
       "colors": { "sign": "#6e6a64", "awning": "#e7e0d6", "accent": "#f6f3ee" },
       "products": [
-        { "id": "pf-skin-no1", "model": "bottle", "perfume": "simple", "fx": { "e": ["@spark"], "c": "#f1d9c7", "m": "float" }, "color": "#f1d9c7", "price": 90000, "name": { "en": "Skin No.1", "ko": "스킨 No.1" }, "desc": { "en": "Like your own skin, only a little better.", "ko": "내 살냄새 같은데, 조금 더 좋은." } },
-        { "id": "pf-grey-knit", "model": "bottle", "perfume": "simple", "fx": { "e": ["🧶", "☁️"], "c": "#c9c9c9", "m": "rise" }, "color": "#b9b9b9", "price": 82000, "name": { "en": "Grey Knit", "ko": "회색 니트" }, "desc": { "en": "Soft wool, rain outside and a warm room.", "ko": "부드러운 울, 창밖의 비, 따뜻한 방." } },
-        { "id": "pf-one-sip", "model": "bottle", "perfume": "simple", "fx": { "e": ["☕"], "c": "#c8a27a", "m": "rise" }, "color": "#c8a27a", "price": 72000, "name": { "en": "One Sip of Coffee", "ko": "커피 한 모금" }, "desc": { "en": "Roasted beans and steamed milk, nothing more.", "ko": "볶은 원두와 데운 우유, 그게 다예요." } }
+        { "id": "pf-skin-no1", "model": "bottle", "perfume": "simple", "fx": { "e": ["@spark"], "c": "#f1d9c7", "m": "float" }, "color": "#f1d9c7", "price": 220000, "name": { "en": "Skin No.1", "ko": "스킨 No.1" }, "desc": { "en": "Like your own skin, only a little better.", "ko": "내 살냄새 같은데, 조금 더 좋은." } },
+        { "id": "pf-grey-knit", "model": "bottle", "perfume": "simple", "fx": { "e": ["🧶", "☁️"], "c": "#c9c9c9", "m": "rise" }, "color": "#b9b9b9", "price": 190000, "name": { "en": "Grey Knit", "ko": "회색 니트" }, "desc": { "en": "Soft wool, rain outside and a warm room.", "ko": "부드러운 울, 창밖의 비, 따뜻한 방." } },
+        { "id": "pf-one-sip", "model": "bottle", "perfume": "simple", "fx": { "e": ["☕"], "c": "#c8a27a", "m": "rise" }, "color": "#c8a27a", "price": 170000, "name": { "en": "One Sip of Coffee", "ko": "커피 한 모금" }, "desc": { "en": "Roasted beans and steamed milk, nothing more.", "ko": "볶은 원두와 데운 우유, 그게 다예요." } }
       ]
     },
     {
@@ -1140,9 +1140,9 @@
       "tagline": { "en": "The famous 'just washed' smell", "ko": "갓 빨래한 바로 그 냄새" },
       "colors": { "sign": "#2f6fb5", "awning": "#d8ecff", "accent": "#f4faff" },
       "products": [
-        { "id": "pf-sun-blanket", "model": "bottle", "perfume": "clean", "fx": { "e": ["@bubble", "☀️"], "m": "rise" }, "color": "#fff4cf", "price": 70000, "name": { "en": "Sun-Dried Blanket", "ko": "햇볕에 바싹 마른 이불" }, "desc": { "en": "Cotton, sunshine and a rooftop clothes line.", "ko": "면 이불, 햇볕, 그리고 옥상 빨랫줄." } },
-        { "id": "pf-softener-love", "model": "bottle", "perfume": "clean", "fx": { "e": ["@bubble", "💙"], "m": "float" }, "color": "#a9d4ff", "price": 80000, "name": { "en": "Fabric Softener First Love", "ko": "섬유유연제 첫사랑" }, "desc": { "en": "The scent that walked past you in high school.", "ko": "고등학교 복도에서 스쳐 간 그 향기." } },
-        { "id": "pf-after-shower", "model": "bottle", "perfume": "clean", "fx": { "e": ["💧", "🧼", "@bubble"], "m": "pop" }, "color": "#d6f0ff", "price": 65000, "name": { "en": "Fresh Out of the Shower", "ko": "샤워 직후" }, "desc": { "en": "Soap, steam and a fluffy towel.", "ko": "비누, 김 서린 욕실, 폭신한 수건." } }
+        { "id": "pf-sun-blanket", "model": "bottle", "perfume": "clean", "fx": { "e": ["@bubble", "☀️"], "m": "rise" }, "color": "#fff4cf", "price": 165000, "name": { "en": "Sun-Dried Blanket", "ko": "햇볕에 바싹 마른 이불" }, "desc": { "en": "Cotton, sunshine and a rooftop clothes line.", "ko": "면 이불, 햇볕, 그리고 옥상 빨랫줄." } },
+        { "id": "pf-softener-love", "model": "bottle", "perfume": "clean", "fx": { "e": ["@bubble", "💙"], "m": "float" }, "color": "#a9d4ff", "price": 190000, "name": { "en": "Fabric Softener First Love", "ko": "섬유유연제 첫사랑" }, "desc": { "en": "The scent that walked past you in high school.", "ko": "고등학교 복도에서 스쳐 간 그 향기." } },
+        { "id": "pf-after-shower", "model": "bottle", "perfume": "clean", "fx": { "e": ["💧", "🧼", "@bubble"], "m": "pop" }, "color": "#d6f0ff", "price": 150000, "name": { "en": "Fresh Out of the Shower", "ko": "샤워 직후" }, "desc": { "en": "Soap, steam and a fluffy towel.", "ko": "비누, 김 서린 욕실, 폭신한 수건." } }
       ]
     },
     {
@@ -1156,9 +1156,9 @@
       "tagline": { "en": "Citrus, mint and cold water", "ko": "시트러스, 민트, 차가운 물" },
       "colors": { "sign": "#15897f", "awning": "#d6f5ef", "accent": "#f3fcfa" },
       "products": [
-        { "id": "pf-jeju-breeze", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍃", "🍊"], "m": "orbit" }, "color": "#7cc9a8", "price": 88000, "name": { "en": "Jeju Sea Breeze", "ko": "제주 바닷바람" }, "desc": { "en": "Sea salt, tangerine leaves and the wind.", "ko": "바다 소금, 귤나무 잎, 그리고 바람." } },
-        { "id": "pf-lemon-soda", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍋", "@bubble"], "m": "rise" }, "color": "#fff27a", "price": 66000, "name": { "en": "Lemon Sparkling Water", "ko": "레몬 탄산수" }, "desc": { "en": "Fizzy lemon over ice.", "ko": "얼음 위로 톡 쏘는 레몬." } },
-        { "id": "pf-mint-ice", "model": "bottle", "perfume": "clean", "fx": { "e": ["❄️", "🌿"], "m": "twinkle" }, "color": "#bff0e0", "price": 75000, "name": { "en": "Mint Ice", "ko": "민트 아이스" }, "desc": { "en": "Cold mint, clear glass and a deep breath.", "ko": "차가운 민트, 투명한 유리, 그리고 깊은 숨." } }
+        { "id": "pf-jeju-breeze", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍃", "🍊"], "m": "orbit" }, "color": "#7cc9a8", "price": 210000, "name": { "en": "Jeju Sea Breeze", "ko": "제주 바닷바람" }, "desc": { "en": "Sea salt, tangerine leaves and the wind.", "ko": "바다 소금, 귤나무 잎, 그리고 바람." } },
+        { "id": "pf-lemon-soda", "model": "bottle", "perfume": "clean", "fx": { "e": ["🍋", "@bubble"], "m": "rise" }, "color": "#fff27a", "price": 155000, "name": { "en": "Lemon Sparkling Water", "ko": "레몬 탄산수" }, "desc": { "en": "Fizzy lemon over ice.", "ko": "얼음 위로 톡 쏘는 레몬." } },
+        { "id": "pf-mint-ice", "model": "bottle", "perfume": "clean", "fx": { "e": ["❄️", "🌿"], "m": "twinkle" }, "color": "#bff0e0", "price": 175000, "name": { "en": "Mint Ice", "ko": "민트 아이스" }, "desc": { "en": "Cold mint, clear glass and a deep breath.", "ko": "차가운 민트, 투명한 유리, 그리고 깊은 숨." } }
       ]
     },
     {

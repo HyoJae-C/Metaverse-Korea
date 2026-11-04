@@ -1028,6 +1028,7 @@ async function joinRoom(room, roomScene, area = null) {
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
         return;
       }
+      if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
@@ -1345,6 +1346,20 @@ const shop = new ShopUI({
     shop.toast(t('shop.tried'));
   },
   onExit: () => (metro ? metroGetOff() : leaveStore()),
+  // Perfume tester: see the effect once next to you, for free. Only you see
+  // it, and no scent stays on.
+  onSniff: (product) => {
+    const pf = perfumes.get(product.id);
+    if (!pf) return;
+    const p = me.root.position;
+    scentFx.attach(activeScene);
+    scentFx.puff(p.x, p.y, p.z, pf.fx, true);
+    sfx.pop?.();
+    // Friends shopping in the same shop see it too: one small message, only
+    // inside a shop (its own room), at most one every 2 seconds.
+    const now = performance.now();
+    if (interior && now - lastSniffSent > 2000) { lastSniffSent = now; net.sendEmote('sniff:' + pf.product.id); }
+  },
   onAdd: (product) => recordFood(shop.store, product),
   onAdopt: (product) => adoptPet(product.adopt),
   owns: (id) => inventory.has(id),
@@ -1552,6 +1567,20 @@ function sprayPerfume() {
   if (sprays <= 0) { setHeld(null); shop.toast(fmt(L(PERFUME_TEXT.last), { name })); }
   else { setHeld({ ...held, sips: sprays }); shop.toast(fmt(L(PERFUME_TEXT.sprayed), { name, n: sprays })); }
   lastSent = null; // others see the scent at once
+}
+// Someone in the same shop tried a tester: a burst and the name next to them.
+let lastSniffSent = 0;
+const sniffSeen = new Map(); // remote id -> time of their last tester
+function onPeerSniff(id, pid) {
+  const pf = perfumes.get(pid), o = others.players.get(id);
+  if (!pf || !o || o.hidden || !interior || safety.isBlocked(id, others.nameOf(id))) return;
+  const now = performance.now();
+  if (now - (sniffSeen.get(id) || 0) < 1500) return; // too many: skip
+  sniffSeen.set(id, now);
+  const r = o.ch.root.position;
+  scentFx.attach(activeScene);
+  scentFx.puff(r.x, r.y, r.z, pf.fx, true);
+  showBubble(o, $('labels'), '👃 ' + localName(pf.product.name, getLanguage()), 2500);
 }
 // Every frame: my puffs, and those of people near the camera who wear one.
 const scentSeen = new Map(); // remote id -> { sc, puffIn }

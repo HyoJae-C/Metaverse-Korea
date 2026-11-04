@@ -18,13 +18,16 @@ const KEY = 'mk.wallet';
 const LOG_KEY = 'mk.ledger';
 export const LOG_MAX = 100;
 // Travel money every player gets once (new players at the start; players
-// from before it existed the next time they play).
-export const WELCOME_COINS = 500;
+// from before it existed the next time they play). When it goes up, players
+// who got the old amount get the difference on their next visit. `gift` in
+// the save is how much was given (1 = the first 500).
+export const WELCOME_COINS = 1000;
+const giftGiven = (g) => (g === 1 ? 500 : Math.max(0, Math.floor(Number(g) || 0)));
 
 function read() {
   try {
     const w = JSON.parse(localStorage.getItem(KEY) || '{}');
-    return { coins: Math.max(0, Math.floor(Number(w.coins) || 0)), day: String(w.day || ''), ads: Number(w.ads) || 0, gift: w.gift ? 1 : 0 };
+    return { coins: Math.max(0, Math.floor(Number(w.coins) || 0)), day: String(w.day || ''), ads: Number(w.ads) || 0, gift: w.gift === true ? 1 : Math.max(0, Math.floor(Number(w.gift) || 0)) };
   } catch { return { coins: 0, day: '', ads: 0, gift: 0 }; }
 }
 function write(w) {
@@ -54,10 +57,11 @@ export class Wallet {
   get coins() { return this.w.coins; }
   // Gives the welcome travel money once; returns the coins given (0 if done before).
   welcome(n = WELCOME_COINS) {
-    if (this.w.gift) return 0;
-    this.w.gift = 1;
-    this.add(n, { k: 'ledger.welcome' });
-    return n;
+    const more = n - giftGiven(this.w.gift);
+    if (more <= 0) return 0;
+    this.w.gift = n;
+    this.add(more, { k: 'ledger.welcome' });
+    return more;
   }
   // Totals for one local day (default today): { in, out } in coins.
   dayTotals(d = new Date()) {

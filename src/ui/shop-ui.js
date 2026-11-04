@@ -4,6 +4,7 @@ import { t, localName, getLanguage } from '../core/i18n.js';
 import { STYLES, SPRAYS } from '../core/perfume.js';
 
 const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const PERFUME_SNIFF = { en: 'Smell the tester (free)', ko: '시향하기 (무료)', ja: 'テスターを試す（無料）', zh: '试闻（免费）', es: 'Probar (gratis)', ar: 'جرّب العطر (مجانًا)', vi: 'Thử mùi (miễn phí)', hi: 'टेस्टर सूँघें (मुफ़्त)', id: 'Coba tester (gratis)' };
 const PERFUME_INFO = { en: '🧴 {n} sprays · each lasts 3 minutes · people nearby see the effect too', ko: '🧴 {n}번 뿌릴 수 있어요 · 한 번에 3분 · 근처 사람들도 이펙트를 봐요', ja: '🧴 {n}回分 · 1回3分 · 近くの人にもエフェクトが見えます', zh: '🧴 可喷{n}次 · 每次3分钟 · 附近的人也能看到特效', es: '🧴 {n} usos · cada uno dura 3 min · los de cerca ven el efecto', ar: '🧴 {n} رشّات · كل رشّة 3 دقائق · يرى من حولك التأثير', vi: '🧴 Xịt được {n} lần · mỗi lần 3 phút · người gần bạn cũng thấy hiệu ứng', hi: '🧴 {n} बार · हर बार 3 मिनट · पास वाले भी असर देखते हैं', id: '🧴 {n} semprotan · masing-masing 3 menit · orang di dekatmu ikut melihat efeknya' };
 
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
@@ -76,8 +77,8 @@ export class Cart {
 
 export class ShopUI {
   // onBuy(product, coins): pay and hold it (shops that sell to take home).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -121,8 +122,9 @@ export class ShopUI {
       this.$('product-desc').textContent = `${st ? st.icon + ' ' + L(st) + ' · ' : ''}${localName(product.desc, lang) || ''}\n${fmt(L(PERFUME_INFO), { n: SPRAYS })}`;
     }
     const tryBtn = this.$('product-try');
-    tryBtn.hidden = !product.tryOn;
-    tryBtn.onclick = () => this.onTryOn(product);
+    tryBtn.hidden = !product.tryOn && !product.perfume;
+    tryBtn.textContent = product.perfume ? '👃 ' + L(PERFUME_SNIFF) : '🪞 ' + t('shop.tryOn');
+    tryBtn.onclick = () => (product.perfume ? this.onSniff?.(product) : this.onTryOn(product));
     // Restaurant dishes are a menu to read, not something to buy.
     // Takeaway shops (META COFFEE) hand you the drink to carry around.
     // Pet shop: adopt with coins (or walk a pet you already have).
