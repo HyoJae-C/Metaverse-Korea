@@ -110,6 +110,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .login-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink); }
 .login-note { margin: 0; font-size: 12px; color: var(--ink-soft); }
 #login-google, #login-guest { width: 100%; }
+.gis-slot { display: flex; justify-content: center; width: 100%; min-height: 0; }
+.gis-slot:empty { display: none; }
+.cloud-actions .gis-slot { margin-bottom: 6px; }
 .region { margin: 16px 0 10px; font-weight: 700; }
 .primary {
   width: 100%;
@@ -391,7 +394,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .map-card > .map-controls { position: static; padding: 0 14px 8px; }
   .map-body { flex: 1 1 0; min-height: 0; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); }
   .map-list { min-height: 0; }
-  .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; } /* above the emote wheel's petals */
+  .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
   .store-banner {
@@ -872,6 +875,17 @@ body.beauty-mode #store-banner, body.beauty-mode #action-btn { display: none; }
   font-size: 13px; font-weight: 800; z-index: 4; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .in-store .quest-chip { display: none; }
+/* The square errand: the chip plus a 🧭 "show the way" button beside it. */
+.quest-bar {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));
+  display: flex; gap: 6px; align-items: center; max-width: min(92vw, 460px); z-index: 4;
+}
+.quest-bar .quest-chip { position: static; transform: none; min-width: 0; max-width: none; flex: 0 1 auto; }
+.quest-go {
+  flex: none; padding: 7px 12px; border-radius: 999px; background: var(--ink); color: var(--cream);
+  font-size: 13px; font-weight: 800; box-shadow: var(--shadow); white-space: nowrap;
+}
+.in-store .quest-bar { display: none; }
 
 /* K-POP café: the video on the wall screen (a box over the canvas), and a
    small now-playing bar */
@@ -962,7 +976,12 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px));
   transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
   background: var(--panel); border-radius: var(--radius); padding: 12px 14px;
-  box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 5;
+  box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 3; /* under the action button and sheets */
+}
+.in-store .info-hint { display: none; }
+@media (max-width: 700px) {
+  /* Hint cards stop short of the tool column, so Map, Chat and Bag stay tappable. */
+  .help, .info-hint { left: 12px; right: 80px; width: auto; max-width: none; transform: none; }
 }
 .info-hint p { margin: 0 0 8px; font-weight: 700; }
 .info-hint .order-actions { flex-wrap: wrap; }
@@ -1253,6 +1272,44 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .map-seoul { position: absolute; top: 8px; left: 8px; z-index: 1; min-height: 32px; padding: 0 12px; font-size: 13px; font-weight: 800; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.2); }
 .map-seoul.on { background: #4a3f35; color: #fffaf0; }
 .map-soon { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); z-index: 1; margin: 0; padding: 6px 14px; border-radius: 14px; background: rgba(74, 63, 53, 0.9); color: #fffaf0; font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+
+/* PC key hints (bottom left). Hidden on touch screens in JS. */
+.keys-panel {
+  position: absolute; left: 12px; bottom: 12px;
+  background: var(--panel); border-radius: 16px; padding: 6px 10px 8px;
+  box-shadow: 0 3px 0 rgba(74, 63, 53, 0.12), 0 6px 16px rgba(74, 63, 53, 0.14);
+  font-size: 12px; font-weight: 700; color: var(--ink);
+}
+.keys-toggle {
+  display: flex; align-items: center; gap: 4px; padding: 2px 0; margin: 0;
+  background: none; border: 0; box-shadow: none; font: inherit; font-size: 11px; font-weight: 800;
+  color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
+}
+.keys-caret { font-size: 10px; transition: transform 0.15s; }
+.keys-panel.folded { padding-bottom: 6px; }
+.keys-panel.folded .keys-caret { transform: rotate(180deg); }
+.keys-panel.folded .keys-list { display: none; }
+.keys-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; }
+.keys-list li { display: grid; grid-template-columns: 88px auto; align-items: center; gap: 8px; }
+.keys-list li[hidden] { display: none; }
+.keys-list li.hot span:last-child { color: var(--accent-dark); }
+.keys-k { display: flex; gap: 2px; }
+kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px;
+  font: inherit; font-size: 11px; font-weight: 800; color: var(--ink);
+  background: #fff; border-radius: 5px; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.25);
+}
+kbd.wide { padding: 0 7px; }
+.action kbd {
+  margin-left: 8px; vertical-align: 2px; color: var(--accent-dark);
+  box-shadow: 0 2px 0 var(--accent-dark);
+}
+body.beauty-mode #keys-panel { display: none; }
+/* Keep what used to sit at the bottom left above the key panel. */
+@media (pointer: fine) {
+  .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
+  .revert { bottom: max(44px, calc(var(--keys-h, 0px) + 22px)); }
+}
 
 /* Add to Home Screen (ui/install-ui.js) */
 .install-card { position: relative; text-align: center; }

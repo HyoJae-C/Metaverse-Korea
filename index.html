@@ -67,6 +67,18 @@
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
       <button class="action" id="action-btn" hidden></button>
+      <div class="keys-panel" id="keys-panel" hidden>
+        <button class="keys-toggle" id="keys-toggle" aria-expanded="true">⌨️ <span data-i18n="keys.title"></span> <b class="keys-caret" aria-hidden="true">▾</b></button>
+        <ul class="keys-list" id="keys-list">
+          <li><span class="keys-k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span data-i18n="keys.move"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Shift</kbd></span><span data-i18n="keys.run"></span></li>
+          <li class="hot"><span class="keys-k"><kbd>E</kbd><kbd class="wide">Space</kbd></span><span data-i18n="keys.act"></span></li>
+          <li><span class="keys-k"><kbd>M</kbd></span><span data-i18n="keys.map"></span></li>
+          <li><span class="keys-k"><kbd>T</kbd></span><span data-i18n="keys.chat"></span></li>
+          <li><span class="keys-k"><kbd id="keys-emote-range" class="wide">1–8</kbd></span><span data-i18n="keys.emote"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Esc</kbd></span><span data-i18n="keys.close"></span></li>
+        </ul>
+      </div>
       <div class="store-banner" id="store-banner" hidden>
         <div class="store-meta">
           <strong id="store-name"></strong>
@@ -174,7 +186,10 @@
         <button class="chip kpop-unmute" data-i18n="kpop.unmute" hidden></button>
       </div>
       <div class="poop-chip" id="poop-chip" hidden></div>
-      <button class="quest-chip" id="quest-chip" hidden></button>
+      <div class="quest-bar" id="quest-bar" hidden>
+        <button class="quest-chip" id="quest-chip"></button>
+        <button class="quest-go" id="quest-go" hidden></button>
+      </div>
       <button class="quest-chip delivery-chip" id="delivery-chip" hidden></button>
       <div class="sheet fine-panel" id="fine-panel" hidden>
         <div class="fine-head">📮 <span data-i18n="pet.fineTitle"></span></div>
@@ -290,6 +305,7 @@
         <div class="logo">💾</div>
         <h2 id="login-title"></h2>
         <p class="login-text" id="login-text"></p>
+        <div class="gis-slot" id="login-google-gis"></div>
         <button class="primary" id="login-google"></button>
         <button class="chip" id="login-guest"></button>
         <p class="login-note" id="login-note"></p>
@@ -378,6 +394,7 @@
           <span>☁️</span><span class="setting-label" id="cloud-label"></span>
         </div>
         <div class="cloud-actions" id="cloud-actions" hidden>
+          <div class="gis-slot" id="google-link-gis"></div>
           <button class="chip" id="google-link">🔗 <span data-i18n="cloud.link"></span></button>
           <button class="chip" id="google-signin" data-i18n="cloud.signin"></button>
         </div>

@@ -77,8 +77,11 @@ const WALKS = [
 // or 'open' (nothing). `area` paints the ground (plaza, park, grass).
 const E = (v) => ({ edge: v }); // map edge: no street
 const B = [
-  // North of Achasan-ro: offices under the Line 2 viaduct.
-  { x: [E(-260), E(260)], z: [E(-110), 'achasan'], sides: { s: 'plain' }, tall: true },
+  // North of Achasan-ro: offices along the Line 2 viaduct, and right across
+  // from Seongsu Station a 60 m screen tower (region.json "screens").
+  { x: [E(-260), 25], z: [E(-110), 'achasan'], sides: { s: 'plain' }, tall: true },
+  { x: [25, 95], z: [E(-110), 'achasan'], sides: { s: 'plain' }, h: 60 },
+  { x: [95, E(260)], z: [E(-110), 'achasan'], sides: { s: 'plain' }, tall: true },
   // West of Seongsuil-ro, between Achasan-ro and Seoulsup-gil: a pocket park and a big building.
   { x: [E(-260), 'west'], z: ['achasan', 'seoulsup'], sides: {}, area: 'park' },
   { x: ['west', 'seongsuil'], z: ['achasan', 'seoulsup'], sides: { n: 'plain' } },
@@ -90,7 +93,7 @@ const B = [
   { x: ['east2', E(260)], z: ['achasan', 'seoulsup'], sides: {}, area: 'park' },
   // Café Street to Seoulsup-gil.
   { x: ['seongsuil', 'brick'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', e: 'shop', s: 'plain', w: 'plain' } },
-  { x: ['brick', 'seongsui'], z: ['cafe', 'seoulsup'], sides: { n: 'shop' }, back: 10, area: 'plaza', square: true },
+  { x: ['brick', 'seongsui'], z: ['cafe', 'seoulsup'], sides: { n: 'shop' }, back: 14, area: 'plaza', square: true },
   { x: ['seongsui', 'east1'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', w: 'shop', s: 'plain', e: 'plain' } },
   // Seoulsup-gil to Yeonmujang-gil.
   { x: ['seongsuil', 'brick'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', e: 'shop', s: 'shop', w: 'plain' } },
@@ -160,7 +163,7 @@ function fillBlock(b) {
   const sides = b.sides || {};
   const cut = b.cut || {};
   const hShop = () => r1(pick(7.5, 13.5));
-  const hPlain = () => r1(b.tall ? pick(28, 48) : pick(9, 16));
+  const hPlain = () => b.h || r1(b.tall ? pick(28, 48) : pick(9, 16));
   const add = (kind, poly, face) => {
     const h = kind === 'shop' ? hShop() : hPlain();
     const bld = { h, p: poly };
@@ -176,7 +179,7 @@ function fillBlock(b) {
   if (sOn) shopRow(x0, x1, null, (s, e) => add('shop', rect(s, z1 - DEPTH, e, z1), { x: (s + e) / 2, z: z1, nx: 0, nz: 1 }));
   if (on('w')) shopRow(nOn && cut.nw ? z0 + DEPTH + GAP : zIn0, zIn1, null, (s, e) => add('shop', rect(x0, s, x0 + DEPTH, e), { x: x0, z: (s + e) / 2, nx: -1, nz: 0 }));
   if (on('e')) shopRow(zIn0, zIn1, null, (s, e) => add('shop', rect(x1 - DEPTH, s, x1, e), { x: x1, z: (s + e) / 2, nx: 1, nz: 0 }));
-  // A tall wall behind the north row, facing the square (for the big screens).
+  // A tall wall behind the north row, closing the square.
   if (b.back) buildings.push({ h: 24, p: rect(x0, zIn0, x1, zIn0 + b.back) });
   const plain = ['n', 's', 'e', 'w'].some((k) => sides[k] === 'plain');
   if (plain) {

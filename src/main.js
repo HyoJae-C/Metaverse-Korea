@@ -266,6 +266,12 @@ $('next-btn').onclick = () => {
   $('login-google').textContent = 'G  ' + L(LOGIN_TEXT.google);
   $('login-guest').textContent = L(LOGIN_TEXT.guest);
   $('login-note').textContent = L(LOGIN_TEXT.note);
+  // Google's own button where it works (shows this site's name on Google's
+  // screen); otherwise the redirect button below stays.
+  cloud.renderGoogleButton($('login-google-gis'), () => (freshStart() ? 'signin' : 'link'), {
+    locale: gisLocale(),
+    onError: (err) => { $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'); },
+  }).then((ok) => { $('login-google').hidden = ok; });
 };
 $('login-guest').onclick = lookOrStart;
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
@@ -279,11 +285,13 @@ const tidyName = (e) => {
 $('nickname').addEventListener('input', tidyName);
 $('nickname').addEventListener('compositionend', tidyName);
 $('nickname').value = cleanName($('nickname').value);
+// Progress on this device: link it to Google (same save). A fresh start:
+// sign in, which also finds an account used on another device.
+const freshStart = () => !localStorage.getItem('mk.name') && !localStorage.getItem('mk.wallet');
+const GIS_LOCALE = { zh: 'zh-CN', hant: 'zh-TW' };
+const gisLocale = () => GIS_LOCALE[getLanguage()] || getLanguage();
 $('login-google').onclick = async () => {
-  // Progress on this device: link it to Google (same save). A fresh start:
-  // sign in, which also finds an account used on another device.
-  const fresh = !localStorage.getItem('mk.name') && !localStorage.getItem('mk.wallet');
-  const err = fresh ? await cloud.signInGoogle() : await cloud.linkGoogle();
+  const err = freshStart() ? await cloud.signInGoogle() : await cloud.linkGoogle();
   if (err) $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady');
 };
 $('back-btn').onclick = () => {
@@ -714,8 +722,9 @@ function onboardHi5() {
   setTimeout(() => {
     talkToGuide(); // the first mission
     setOnboard(2);
-    // Then: the info centre, or explore on your own.
-    setTimeout(() => showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }), 3500);
+    // Then: the info centre, or explore on your own. After the guide's tip
+    // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
+    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }); }, 15000);
   }, 5600);
 }
 
@@ -825,6 +834,29 @@ try {
   if (!localStorage.getItem('mk.helpSeen')) $('help').hidden = false;
 } catch {
   $('help').hidden = false;
+}
+// PC only: a small key list at the bottom left (phones have the joystick and
+// buttons instead). It folds down to one chip, and remembers that.
+if (!input.isTouch) {
+  const panel = $('keys-panel'), toggle = $('keys-toggle');
+  const setFolded = (folded) => {
+    panel.classList.toggle('folded', folded);
+    toggle.setAttribute('aria-expanded', String(!folded));
+  };
+  let folded = false;
+  try { folded = localStorage.getItem('mk.keysFolded') === '1'; } catch { /* ignore */ }
+  setFolded(folded);
+  toggle.onclick = () => {
+    folded = !folded;
+    setFolded(folded);
+    toggle.blur();
+    try { localStorage.setItem('mk.keysFolded', folded ? '1' : '0'); } catch { /* ignore */ }
+  };
+  panel.hidden = false;
+  // Keep the chat log and the "revert look" chip above the panel.
+  const fit = () => document.documentElement.style.setProperty('--keys-h', panel.offsetHeight + 'px');
+  new ResizeObserver(fit).observe(panel);
+  fit();
 }
 const refreshHelp = () => {
   $('help-text').textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
@@ -1097,6 +1129,8 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 // send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
 const emoteBar = $('emotes');
 const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
+$('keys-emote-range').textContent = `1–${Math.min(9, emoteList.length)}`;
+$('keys-emote-range').closest('li').hidden = !emoteList.length;
 function sendEmote(em) {
   missionEvent('emote');
   if (onSquare()) missionEvent('squareEmote');
@@ -2743,6 +2777,7 @@ function setAutoWalk(on) {
 $('guide-auto').onclick = () => setAutoWalk(!autoWalk);
 function setGuide(g) {
   guide = g;
+  if (onboard >= 2) $('info-hint').hidden = true; // a way is chosen: the info centre card would cover the guide bar
   routePoly = null; // plan a new route
   $('guide').hidden = mode !== 'street';
   routeTimer = 0; // draw the route on the next frame
@@ -2871,8 +2906,27 @@ $('action-btn').addEventListener('pointerdown', (e) => {
   runAction();
 });
 $('action-btn').onclick = () => { if (performance.now() - actionTouchAt > 700) runAction(); };
+// On a keyboard the action button shows its key, and Space works like E:
+// walk up to a shop and press either to go in.
+function setActionLabel(label) {
+  const btn = $('action-btn');
+  btn.textContent = label;
+  if (input.isTouch) return;
+  const k = document.createElement('kbd');
+  k.textContent = 'E';
+  btn.append(k);
+}
+// Space is also the karaoke tap and the key for a focused button, so only
+// treat it as "act" when no game or sheet is taking keys.
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
+  || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
-  if (e.target instanceof HTMLInputElement) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
+  if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
+    e.preventDefault(); // don't also click whatever button kept focus
+    if (e.target instanceof HTMLButtonElement) e.target.blur();
+    runAction();
+  }
   if (e.code === 'KeyE' || e.code === 'Enter') runAction();
   if (e.code === 'KeyM') $('map-btn').click();
   if (e.code === 'Escape') {
@@ -3761,11 +3815,20 @@ function refreshCloud() {
   $('cloud-actions').hidden = !(cloud.status === 'cloud' && cloud.guest);
 }
 const googleFail = (err) => err && shop.toast(t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'));
+// Settings: Google's own button links this guest; after "I already have an
+// account" the same button signs in to that account instead.
+let settingsGoogleMode = 'link';
+let settingsGis = false;
+const renderSettingsGoogle = () => cloud.renderGoogleButton($('google-link-gis'), () => settingsGoogleMode, { locale: gisLocale(), onError: googleFail })
+  .then((ok) => { settingsGis = ok; $('google-link').hidden = ok; });
 $('google-link').onclick = async () => googleFail(await cloud.linkGoogle());
 $('google-signin').onclick = async () => {
   if (!confirm(t('cloud.signinConfirm'))) return;
+  if (settingsGis) { settingsGoogleMode = 'signin'; shop.toast(t('cloud.tapGoogle')); return; }
   googleFail(await cloud.signInGoogle());
 };
+if (cloud.status === 'cloud' && cloud.guest) renderSettingsGoogle();
+onLanguageChange(() => { if (settingsGis) renderSettingsGoogle(); });
 cloud.onChange(refreshCloud);
 refreshCloud();
 // Add to Home Screen: settings row, guide sheet and a one-off nudge on phones.
@@ -3963,11 +4026,22 @@ function questText(q) {
   if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
+// Where an errand happens (for the 🧭 button next to the chip): its shop,
+// or the square guide once it is done. Null: no one place (talk, taxi).
+function questPlace(q, ready) {
+  if (ready || q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
+  const it = target && storefronts.get(target);
+  return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
+}
 function refreshQuestChip() {
   const q = quests.active;
-  $('quest-chip').hidden = !q;
+  $('quest-bar').hidden = !q;
   if (!q) return;
   const ready = quests.ready(questCtx());
+  const place = questPlace(q, ready);
+  $('quest-go').hidden = !place;
+  $('quest-go').textContent = '🧭 ' + t('mission.go');
   const count = q.need > 1 ? ` (${Math.min(q.n, q.need)}/${q.need})` : '';
   // Folded: just the icon (and the count); tap the chip to unfold or fold it.
   $('quest-chip').classList.toggle('folded', questFolded);
@@ -3992,6 +4066,9 @@ function talkToGuide() {
   } else if (q) {
     say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
+    // On the first path, say the tip again too (it is easy to miss the first time).
+    const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
+    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
   } else if (quests.left) {
     const a = quests.start({
       stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
@@ -4007,6 +4084,13 @@ function talkToGuide() {
   }
   refreshQuestChip();
 }
+$('quest-go').onclick = () => {
+  const q = quests.active;
+  const place = q && questPlace(q, quests.ready(questCtx()));
+  if (!place) return;
+  if (interior) leaveStore();
+  setGuide(place);
+};
 $('quest-chip').onclick = () => {
   questFolded = !questFolded;
   try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }
@@ -4332,7 +4416,7 @@ function updateAction(p, tSec) {
   if (next?.key !== action?.key) {
     action = next;
     $('action-btn').hidden = !action;
-    if (action) $('action-btn').textContent = action.label;
+    if (action) setActionLabel(action.label);
     else shop.closeProduct();
   }
 }

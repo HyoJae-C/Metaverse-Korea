@@ -7,6 +7,8 @@ export const config = {
   net: {
     url: import.meta.env.VITE_REALTIME_URL || '',
     key: import.meta.env.VITE_REALTIME_PUBLIC_KEY || '',
+    // Google OAuth web client ID (public). Enables Google's own sign-in button.
+    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   },
   // Max position updates per second while walking / running (other players
   // interpolate in between). Nothing is sent while standing still except a

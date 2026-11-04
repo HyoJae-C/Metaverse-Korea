@@ -26,6 +26,9 @@ const T = {
 
 // Each topic: emoji, title, text, and where "Go" leads (a store id or a zone).
 export const TOPICS = [
+  { icon: '🧭', to: null,
+    title: { en: 'Getting around', ko: '이동하는 법', ja: '移動のしかた', zh: '怎么移动' },
+    text: { en: 'In 🗺️ Map, tap a place: a path appears and 🚶 Auto walks you there by itself. 🛵 Vehicle hops on a free bike. 🚕 Taxi (in the map) is fastest but costs coins. Walk down the subway stairs (🚇 on the map) to ride to other districts for 🪙 2.', ko: '🗺️ 지도에서 장소를 누르면 길이 나오고, 🚶 자동을 누르면 알아서 걸어가요. 🛵 탈것을 누르면 무료 자전거를 타요. 🚕 택시(지도 안)는 제일 빠르지만 코인이 들어요. 지하철 계단(지도의 🚇)으로 내려가면 🪙 2로 다른 동네에 갈 수 있어요.', ja: '🗺️地図で場所をタップすると道が出て、🚶自動で勝手に歩きます。🛵乗り物で無料の自転車に乗れます。🚕タクシー（地図の中）は一番速いけどコインがかかります。地下鉄の階段（地図の🚇）を下りると🪙 2で他の街へ行けます。', zh: '在🗺️地图上点一个地方会出现路线，点🚶自动就会自己走过去。🛵交通工具可以骑免费自行车。🚕出租车（在地图里）最快但要花金币。走下地铁楼梯（地图上的🚇），花🪙 2就能去别的街区。' } },
   { icon: '🪙', to: null,
     title: { en: 'Coins', ko: '코인', ja: 'コイン', zh: '金币' },
     text: { en: 'Earn coins from games, missions, fishing and deliveries. Spend them on games, photos, emblems and more.', ko: '게임, 미션, 낚시, 배달로 코인을 벌고 게임, 사진, 엠블럼 등에 써요.', ja: 'ゲーム・ミッション・釣り・配達でコインを稼ぎ、ゲームや写真、エンブレムに使えます。', zh: '通过游戏、任务、钓鱼、送外卖赚金币，用来玩游戏、拍照、买徽章等。' } },
