@@ -82,6 +82,11 @@ pack (for example a paid chibi pack), add its GLBs under `public/models/<pack>/`
 automatically. While a model loads, or if it fails, the simple built-in chibi is shown instead.
 `scripts/models/build-kaykit2.mjs` shows how the KayKit files were shrunk (capes and hats removed, only the clips we use kept).
 
+### Domain and Google sign-in
+
+The site lives at https://another-seoul.com/ (GitHub Pages with a custom domain). DNS, Google Cloud and
+Supabase settings for the domain and Google sign-in are in `docs/DOMAIN-AND-GOOGLE.md`.
+
 ### Cloud saves (guest accounts)
 
 Game data lives in localStorage keys starting with `mk.`. `src/core/cloud-save.js` signs the player in as an

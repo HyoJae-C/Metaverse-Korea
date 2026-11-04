@@ -7,6 +7,7 @@ export const ES = {
   'car.noRoad': 'Los coches salen de una avenida. Camina primero hasta una calle grande.',
   'car.alley': 'Los coches no entran en los callejones. ¡Bájate y camina!',
   'credit.privacy': 'Privacidad',
+  'credit.terms': 'Términos',
   'cloud.guest': 'Guardado en el servidor (cuenta de invitado)',
   'cloud.account': 'Guardado en tu cuenta',
   'cloud.local': 'Guardado solo en este dispositivo',
