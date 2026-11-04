@@ -5,7 +5,8 @@ import {
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap } from './core/districts.js';
-import { SquareQuests, QUEST_REWARD } from './core/quests.js';
+import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD } from './core/quests.js';
+import { STARTER_TEXT } from './data/starter-quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -660,6 +661,7 @@ function onboardHi5() {
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
   quests.skipHighFive(); // that was today's high five
+  quests.beginStarter(); // then the first path: errands near the square that each teach one thing
   // First the guide recommends the info centre, then gives the first mission.
   setTimeout(() => {
     say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
@@ -2468,6 +2470,7 @@ function rideTaxi(dest) {
     moveMeTo(scene, fx, fz, ry);
     if (dest.guide && Math.hypot(dest.x - fx, dest.z - fz) > 4) setGuide(dest.guide);
     showBubble(myLabel, $('labels'), '🚕');
+    missionEvent('taxi');
   };
   taxiTimers = [
     setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
@@ -3451,7 +3454,9 @@ function renderDaily() {
 // before this line, when a held item is restored.
 function questCtx() { return { held: held?.kind || null, pet: !!pet }; }
 function questText(q) {
-  const store = q.kind === 'visit' ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
+  const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
+  const st = q.starter != null && STARTER[q.starter];
+  if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 function refreshQuestChip() {
@@ -3489,7 +3494,10 @@ function talkToGuide() {
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
     });
     say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
-    shop.toast(t('quest.new', { coins: QUEST_REWARD }));
+    shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
+    // On the first path the guide also gives a tip for this errand.
+    const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
+    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
   } else {
     say(squareNpc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
   }

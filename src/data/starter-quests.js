@@ -1,0 +1,41 @@
+// Words for the new player's first path (core/quests.js STARTER): what each
+// errand asks ({store}: the shop's name in your language), and the tip the
+// square guide gives with it. By tip key.
+export const STARTER_TEXT = {
+  map: {
+    text: { en: 'Visit {store}', ko: '{store}에 다녀오기', ja: '{store}に行ってくる', zh: '去{store}看看', es: 'Visita {store}', id: 'Kunjungi {store}', ar: 'زُر {store}' },
+    tip: { en: 'Tip: open 🗺️ Map and tap a place. A path appears, and "Auto" walks you there by itself. A 🚲 bike gets you there faster!', ko: '팁: 🗺️ 지도에서 가고 싶은 곳을 누르면 길이 표시되고, "자동"을 누르면 알아서 걸어가요. 🚲 자전거를 타면 더 빨라요!', ja: 'ヒント：🗺️地図で行きたい場所をタップすると道が出て、「自動」で勝手に歩いてくれるよ。🚲自転車ならもっと速い！', zh: '提示：在🗺️地图上点想去的地方会显示路线，点“自动”就会自己走过去。骑🚲自行车更快！', es: 'Consejo: abre 🗺️ Mapa y toca un lugar. Aparece el camino y "Auto" te lleva solo. ¡En 🚲 bici llegas antes!', id: 'Tips: buka 🗺️ Peta dan ketuk tempat tujuan. Rute muncul, dan "Otomatis" mengantarmu jalan sendiri. Naik 🚲 sepeda lebih cepat!', ar: 'نصيحة: افتح 🗺️ الخريطة واضغط على مكان. يظهر الطريق، و"تلقائي" يمشي بك إليه. بـ🚲 الدراجة تصل أسرع!' },
+  },
+  taxi: {
+    text: { en: 'Take a taxi once', ko: '택시 한 번 타 보기', ja: 'タクシーに一度乗ってみる', zh: '坐一次出租车', es: 'Toma un taxi una vez', id: 'Naik taksi sekali', ar: 'اركب سيارة أجرة مرة واحدة' },
+    tip: { en: 'Tip: in 🗺️ Map, switch to 🚕 Taxi and pick a place. It is the fastest way, but it costs a lot of coins, from 🪙 30.', ko: '팁: 🗺️ 지도에서 🚕 택시로 바꾸고 목적지를 고르면 돼요. 제일 빠르지만 🪙 30부터 돈이 많이 들어요.', ja: 'ヒント：🗺️地図で🚕タクシーに切り替えて行き先を選んでね。一番速いけど🪙30からとお金がかかるよ。', zh: '提示：在🗺️地图里切换到🚕出租车再选目的地。最快，但要🪙30起，挺花钱的。', es: 'Consejo: en 🗺️ Mapa cambia a 🚕 Taxi y elige un lugar. Es lo más rápido, pero cuesta muchas monedas, desde 🪙 30.', id: 'Tips: di 🗺️ Peta, ganti ke 🚕 Taksi lalu pilih tujuan. Paling cepat, tapi mahal, mulai 🪙 30.', ar: 'نصيحة: في 🗺️ الخريطة بدّل إلى 🚕 تاكسي واختر مكانًا. إنه الأسرع لكنه يكلّف كثيرًا، من 🪙 30.' },
+  },
+  coffee: {
+    text: { en: 'Buy a coffee at {store} and bring it to me', ko: '{store}에서 커피 사 와서 전해 주기', ja: '{store}でコーヒーを買って持ってきて', zh: '在{store}买杯咖啡带给我', es: 'Compra un café en {store} y tráemelo', id: 'Beli kopi di {store} dan bawa ke saya', ar: 'اشترِ قهوة من {store} وأحضرها لي' },
+    tip: { en: 'Tip: in a café, talk to the staff at the counter to order.', ko: '팁: 카페에서는 카운터 직원에게 말을 걸어 주문해요.', ja: 'ヒント：カフェではカウンターの店員さんに話しかけて注文するよ。', zh: '提示：在咖啡店里，和柜台店员说话就能点单。', es: 'Consejo: en un café, habla con el personal del mostrador para pedir.', id: 'Tips: di kafe, ajak bicara staf di kasir untuk memesan.', ar: 'نصيحة: في المقهى، تحدّث إلى الموظف عند الكاونتر لتطلب.' },
+  },
+  eat: {
+    text: { en: 'Have a meal at {store}', ko: '{store}에서 한 끼 먹기', ja: '{store}でご飯を食べる', zh: '在{store}吃一顿', es: 'Come algo en {store}', id: 'Makan di {store}', ar: 'تناول وجبة في {store}' },
+    tip: { en: 'Tip: in a restaurant, sit at a table first, then order from the menu.', ko: '팁: 식당에서는 먼저 자리에 앉은 다음 메뉴를 보고 주문해요.', ja: 'ヒント：食堂ではまず席に座ってからメニューで注文するよ。', zh: '提示：在餐厅要先坐下，再看菜单点餐。', es: 'Consejo: en un restaurante, primero siéntate y luego pide del menú.', id: 'Tips: di restoran, duduk dulu lalu pesan dari menu.', ar: 'نصيحة: في المطعم اجلس أولًا ثم اطلب من القائمة.' },
+  },
+  talk: {
+    text: { en: 'Say hi to 3 people in town', ko: '동네 사람 3명에게 인사하기', ja: '町の人3人にあいさつする', zh: '和镇上3个人打招呼', es: 'Saluda a 3 personas del barrio', id: 'Sapa 3 orang di kota', ar: 'سلّم على 3 أشخاص في الحي' },
+    tip: { en: 'Tip: walk up to someone with a yellow name tag and tap 👋.', ko: '팁: 노란 이름표를 단 사람에게 다가가서 👋 버튼을 눌러요.', ja: 'ヒント：黄色い名札の人に近づいて👋を押してね。', zh: '提示：走近戴黄色名牌的人，点👋就行。', es: 'Consejo: acércate a alguien con etiqueta amarilla y toca 👋.', id: 'Tips: dekati orang dengan label nama kuning lalu ketuk 👋.', ar: 'نصيحة: اقترب من شخص بشارة اسم صفراء واضغط 👋.' },
+  },
+  dance: {
+    text: { en: 'Do 3 emotes in front of the big screen', ko: '광장 전광판 앞에서 이모티콘 3번 하기', ja: '広場の大型ビジョンの前でエモートを3回', zh: '在广场大屏幕前做3次表情动作', es: 'Haz 3 gestos frente a la gran pantalla', id: 'Lakukan 3 emote di depan layar besar', ar: 'قم بـ3 تعبيرات أمام الشاشة الكبيرة' },
+    tip: { en: 'Tip: the 😊 button at the bottom right opens the emotes.', ko: '팁: 오른쪽 아래 😊 버튼을 누르면 이모티콘이 나와요.', ja: 'ヒント：右下の😊ボタンでエモートが出るよ。', zh: '提示：点右下角的😊按钮就能做表情。', es: 'Consejo: el botón 😊 abajo a la derecha abre los gestos.', id: 'Tips: tombol 😊 di kanan bawah membuka emote.', ar: 'نصيحة: زر 😊 في الأسفل يمينًا يفتح التعبيرات.' },
+  },
+  hair: {
+    text: { en: 'Visit {store}', ko: '{store}에 다녀오기', ja: '{store}に行ってくる', zh: '去{store}看看', es: 'Visita {store}', id: 'Kunjungi {store}', ar: 'زُر {store}' },
+    tip: { en: 'Tip: sit in the salon chair to try new hairstyles and colours.', ko: '팁: 미용실 의자에 앉으면 머리 모양과 색을 바꿔 볼 수 있어요.', ja: 'ヒント：美容室の椅子に座ると髪型や色を変えられるよ。', zh: '提示：坐上美发椅就能换发型和发色。', es: 'Consejo: siéntate en la silla para probar peinados y colores.', id: 'Tips: duduk di kursi salon untuk mencoba gaya dan warna rambut.', ar: 'نصيحة: اجلس على كرسي الصالون لتجرّب تسريحات وألوانًا جديدة.' },
+  },
+  name: {
+    text: { en: 'Visit {store}', ko: '{store}에 다녀오기', ja: '{store}に行ってくる', zh: '去{store}看看', es: 'Visita {store}', id: 'Kunjungi {store}', ar: 'زُر {store}' },
+    tip: { en: 'Tip: at the Name Tag Workshop you can decorate your name tag.', ko: '팁: 네임택 공방에서는 내 이름표를 꾸밀 수 있어요.', ja: 'ヒント：ネームタグ工房では名札を飾れるよ。', zh: '提示：在名牌工坊可以装饰自己的名牌。', es: 'Consejo: en el taller puedes decorar tu etiqueta de nombre.', id: 'Tips: di bengkel ini kamu bisa menghias label namamu.', ar: 'نصيحة: في الورشة يمكنك تزيين شارة اسمك.' },
+  },
+  pat: {
+    text: { en: 'Pat a dog at {store}', ko: '{store}에서 강아지 쓰다듬기', ja: '{store}で犬をなでる', zh: '在{store}摸摸狗狗', es: 'Acaricia un perro en {store}', id: 'Elus anjing di {store}', ar: 'داعِب كلبًا في {store}' },
+    tip: { en: 'Tip: walk up to an animal and tap 🐾 to pat it.', ko: '팁: 동물에게 다가가서 🐾 버튼을 누르면 쓰다듬을 수 있어요.', ja: 'ヒント：動物に近づいて🐾を押すとなでられるよ。', zh: '提示：走近小动物，点🐾就能摸摸它。', es: 'Consejo: acércate a un animal y toca 🐾 para acariciarlo.', id: 'Tips: dekati hewan lalu ketuk 🐾 untuk mengelusnya.', ar: 'نصيحة: اقترب من حيوان واضغط 🐾 لتداعبه.' },
+  },
+};

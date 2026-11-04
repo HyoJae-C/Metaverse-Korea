@@ -13,7 +13,26 @@
 //   dance  do 3 emotes on the square (in front of the big screen)
 //   highfive  high-five the guide: always the first errand of the day, so it
 //             works even when nobody else is online
+//   taxi   take a taxi anywhere
+//   eat    sit down in a restaurant and finish a meal
+//   pat    pat an animal in an animal café
+//
+// New players get a fixed first path (STARTER) after the welcome high five:
+// errands close to the square (within ~300 m) that each teach one thing.
+// They don't count towards the daily limit and pay a bit more.
 export const QUEST_REWARD = 15;
+export const STARTER_REWARD = 30;
+export const STARTER = [
+  { kind: 'visit', target: 'nyang-cat-cafe', tip: 'map' }, // the map: tap a place, walk there by itself; or ride a bike
+  { kind: 'taxi', tip: 'taxi' }, // fast, but it costs
+  { kind: 'coffee', target: 'meta-coffee', tip: 'coffee' }, // order from the staff
+  { kind: 'eat', target: 'ddeok-bunsik', tip: 'eat' }, // sit down and order
+  { kind: 'talk', need: 3, tip: 'talk' },
+  { kind: 'dance', need: 3, tip: 'dance' },
+  { kind: 'visit', target: 'gawison-hair', tip: 'hair' },
+  { kind: 'visit', target: 'name-studio', tip: 'name' },
+  { kind: 'pat', target: 'big-paws-dog-cafe', tip: 'pat' },
+];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
 
@@ -31,7 +50,7 @@ export class SquareQuests {
     this.today = today;
     let s = {};
     try { s = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* ignore */ }
-    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null };
+    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null };
     this._roll();
   }
   _roll() {
@@ -40,12 +59,19 @@ export class SquareQuests {
   _save() { try { this.storage?.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ } }
 
   get active() { return this.s.active; }
-  get left() { this._roll(); return Math.max(0, QUESTS_PER_DAY - this.s.done); }
+  get left() { this._roll(); return this.onStarter ? STARTER.length - this.s.starter : Math.max(0, QUESTS_PER_DAY - this.s.done); }
+  // On the new player's first path (and how far along it).
+  get onStarter() { return this.s.starter != null && this.s.starter < STARTER.length; }
+  get starterStep() { return this.s.starter; }
+  beginStarter() { this.s.starter = 0; this._save(); }
 
   // Take a new errand (one at a time, a few a day).
   start(pool, rand) {
     if (this.s.active || !this.left) return null;
-    this.s.active = this.s.done === 0 && this.s.last !== 'highfive' ? { kind: 'highfive', need: 1, n: 0 } : pickQuest(pool, rand, this.s.last);
+    if (this.onStarter) {
+      const st = STARTER[this.s.starter];
+      this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
+    } else this.s.active = this.s.done === 0 && this.s.last !== 'highfive' ? { kind: 'highfive', need: 1, n: 0 } : pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
   }
@@ -56,7 +82,8 @@ export class SquareQuests {
     if (!q || q.n >= q.need) return false;
     const hit = (q.kind === 'visit' && type === 'visit' && target === q.target)
       || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk')
-      || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive');
+      || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive')
+      || (q.kind === 'taxi' && type === 'taxi') || (q.kind === 'eat' && type === 'eat') || (q.kind === 'pat' && type === 'pet');
     if (!hit) return false;
     q.n++;
     this._save();
@@ -75,11 +102,13 @@ export class SquareQuests {
   // Report back: returns the coins (0 if not done yet).
   claim(ctx) {
     if (!this.ready(ctx)) return 0;
+    const starter = this.s.active.starter != null;
     this.s.last = this.s.active.kind;
     this.s.active = null;
-    this.s.done++;
+    if (starter) this.s.starter++; // the first path doesn't use up the day's errands
+    else this.s.done++;
     this._save();
-    return QUEST_REWARD;
+    return starter ? STARTER_REWARD : QUEST_REWARD;
   }
 
   drop() { this.s.active = null; this._save(); }
