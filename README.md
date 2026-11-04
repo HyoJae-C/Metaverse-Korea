@@ -40,7 +40,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Auto-walk: after picking a destination on the map, tap 🚶 Auto in the guidance bar to walk (or bike) there along the streets without steering; touching the stick or keys takes over again
 - Tandem bike (an item): ride it up to someone and invite them onto the back seat; they ride along while you steer. Items are listed in the coin panel
 - Emotes with body motions: wave, bow (인사), laugh, angry, shrug, cheer, clap, cry, plus smile, heart and photo
-- Subway: Seoul Forest Station (Suin-Bundang Line) has two street exits with real stairwells. Walk down the steps into the station hall, pay 2 coins at the ticket gates to reach the platform (trains pull in and leave; riding comes later), and walk up either exit's stairs to come out there. Stations are a list in region.json (`subway.stations`), so more can be added as data
+- Subway: four underground stations, each with two street exits and real stairwells: Seongsu (Line 2, by the Achasan-ro Crossing), Gyeongbokgung (Line 3), Itaewon (Line 6) and Jamsil (Line 2). Walk down the steps into the station hall, pay 2 coins at the ticket gates to reach the platform (trains pull in and leave; riding comes later), and walk up either exit's stairs to come out there. Stations are a list in region.json (`subway.stations`), so more can be added as data
 
 ## Run locally
 
