@@ -228,6 +228,7 @@ export const SPOTS = {
   station: [60, -75], cafe: [-30, -6], square: [17, 30], ymj: [20, 170], ymjW: [-70, 170], ymjE: [140, 170],
   brick: [-25, 200], brickN: [-25, 110], clinic: [-150, -20], west: [-220, 20], forest: [-110, 120],
   popup: [95, 215], east: [165, 40], fish: [130, 300], achasan: [-20, -95], seoulsup: [-60, 79], sup2: [100, 79],
+  perfAlley: [-25, 240], perfYmj: [90, 170], perfYmjE: [182, 170], perfSquare: [42, -10],
 };
 export const PLACE = [
   // station & Achasan-ro
@@ -262,6 +263,13 @@ export const PLACE_NEW = [
   ['kkot-flowers', 'seoulsup'], ['bal-socks', 'seoulsup'], ['mallang-popup', 'popup'], ['pixel-popup', 'popup'],
   ['son-kalguksu', 'fish'], ['golmok-chicken', 'fish'], ['dal-tteok', 'fish'], ['seongsu-mandu', 'sup2'],
   ['forest-lane-apt', 'fish'], ['sunny-villa', 'fish'],
+  // Perfume shops (3 perfumes each): a perfume alley at the south end of the
+  // brick lane next to Ohu Perfume Lab, a row on Yeonmujang-gil, and one by
+  // Seongsu Square for people coming from the station.
+  ['monggeul-parfum', 'perfAlley'], ['maison-seoulsup', 'perfAlley'], ['plain-note', 'perfAlley'],
+  ['kkeung-sanghoe', 'perfYmj'], ['heart-ppyong', 'perfYmj'], ['atelier-noir', 'perfYmj'], ['laundry-parfum', 'perfYmj'],
+  ['oops-parfum', 'perfYmjE'], ['basic-mood', 'perfYmjE'],
+  ['clear-lab', 'perfSquare'],
 ];
 
 // Writes "at" into a hand-formatted JSON file without reformatting it: the

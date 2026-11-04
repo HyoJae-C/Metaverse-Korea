@@ -1,6 +1,10 @@
 // Shopping UI: store banner, product card, cart. Prices are virtual.
 import { ITEMS } from '../core/inventory.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
+import { STYLES, SPRAYS } from '../core/perfume.js';
+
+const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const PERFUME_INFO = { en: '🧴 {n} sprays · each lasts 3 minutes · people nearby see the effect too', ko: '🧴 {n}번 뿌릴 수 있어요 · 한 번에 3분 · 근처 사람들도 이펙트를 봐요', ja: '🧴 {n}回分 · 1回3分 · 近くの人にもエフェクトが見えます', zh: '🧴 可喷{n}次 · 每次3分钟 · 附近的人也能看到特效', es: '🧴 {n} usos · cada uno dura 3 min · los de cerca ven el efecto', ar: '🧴 {n} رشّات · كل رشّة 3 دقائق · يرى من حولك التأثير', vi: '🧴 Xịt được {n} lần · mỗi lần 3 phút · người gần bạn cũng thấy hiệu ứng', hi: '🧴 {n} बार · हर बार 3 मिनट · पास वाले भी असर देखते हैं', id: '🧴 {n} semprotan · masing-masing 3 menit · orang di dekatmu ikut melihat efeknya' };
 
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
 const UMB = {
@@ -112,6 +116,10 @@ export class ShopUI {
     this.$('product-name-ko').textContent = lang === 'ko' ? '' : product.name.ko;
     this.$('product-price').textContent = formatPrice(product.price);
     this.$('product-desc').textContent = localName(product.desc, lang) || '';
+    if (product.perfume) { // which style, and how a bottle works
+      const st = STYLES[product.perfume];
+      this.$('product-desc').textContent = `${st ? st.icon + ' ' + L(st) + ' · ' : ''}${localName(product.desc, lang) || ''}\n${fmt(L(PERFUME_INFO), { n: SPRAYS })}`;
+    }
     const tryBtn = this.$('product-try');
     tryBtn.hidden = !product.tryOn;
     tryBtn.onclick = () => this.onTryOn(product);
