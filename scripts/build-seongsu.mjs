@@ -251,8 +251,6 @@ export const PLACE = [
   ['bitna-clinic', 'clinic'], ['saebom-clinic', 'clinic'], ['pedal-lab', 'forest'],
   // south
   ['seongsu-fishmarket', 'fish'], ['sinjeon-pocha', 'fish'],
-  // until they move to Seodaemun
-  ['chaekmaru-library', 'east'], ['hyojae-academy', 'east'],
 ];
 // Shops added with the hand-made map, and the two homes (homes.json).
 export const PLACE_NEW = [

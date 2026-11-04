@@ -15,6 +15,8 @@
       "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
     { "id": "G", "color": "#d4a73a", "at": [-1737, -770], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} },
     { "id": "H", "color": "#e86fa8", "at": [-1324, 167], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
+    { "id": "I", "color": "#7fb89a", "at": [-2400, -1052], "snap": false, "radius": 40,
+      "name": { "en": "Sinchon Square", "ko": "신촌 광장", "ja": "新村広場", "zh": "新村广场" } },
     { "id": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } }
   ]
 }

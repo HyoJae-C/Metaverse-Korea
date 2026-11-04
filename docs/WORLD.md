@@ -43,7 +43,7 @@ lists **districts** joined into one map (`src/core/districts.js`):
   a river or a palace wall.
 - Stores, homes, meeting zones and bike stations can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
-  `anchor` (maps from OpenStreetMap).
+  `anchor` (maps drawn from real coordinates).
 
 ## Adding a district later (e.g. Gyeongbokgung)
 
