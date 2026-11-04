@@ -31,7 +31,7 @@ export const STARTER = [
   { kind: 'dance', need: 3, tip: 'dance' },
   { kind: 'visit', target: 'gawison-hair', tip: 'hair' },
   { kind: 'visit', target: 'name-studio', tip: 'name' },
-  { kind: 'pat', target: 'big-paws-dog-cafe', tip: 'pat' },
+  { kind: 'pat', target: 'nyang-cat-cafe', tip: 'pat' },
 ];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
