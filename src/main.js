@@ -2796,11 +2796,12 @@ const COLOR_NAME = {
 const TIER_STARS = ['★', '★★', '★★★'];
 let bikeTab = null, bikeShopId = 'pedal';
 const applyRide = () => { if (riding === 1) me.setBike(1, garage.rideSpec()); };
-// shop: a store with "workshop": "bike" (its "rideShop" picks which shop), or
+// which: a store with "workshop": "bike" (its "rideShop" picks which shop), or
 // a ride-shop id. With nothing, the shop last opened.
-function openBikeShop(shop) {
-  if (shop) {
-    let id = typeof shop === 'string' ? shop : shop.rideShop || 'pedal';
+// (Not named `shop`: that is the shop UI, whose toast the buttons below use.)
+function openBikeShop(which) {
+  if (which) {
+    let id = typeof which === 'string' ? which : which.rideShop || 'pedal';
     if (!RIDE_SHOPS[id]) id = 'pedal';
     if (id !== bikeShopId) bikeTab = null; // a new shop opens on its own tab
     bikeShopId = id;
