@@ -119,7 +119,7 @@ export class ShopUI {
     this.$('store-name-ko').textContent = lang === 'ko' ? '' : store.name.ko;
     this.$('store-tagline').textContent = localName(store.tagline, lang) || '';
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
-    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train';
+    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum';
   }
 
   leaveStore() {

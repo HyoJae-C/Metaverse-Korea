@@ -2388,6 +2388,21 @@
         {"id": "mihak-bell", "model": "cup", "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
         {"id": "mihak-seal", "model": "jar", "color": "#b3261e", "price": 15000, "name": {"en": "Name seal (dojang)", "ko": "이름 도장", "ja": "名前のはんこ", "zh": "名字印章"}, "desc": {"en": "Your name carved in Hangul.", "ko": "내 이름을 한글로 새겨 줘요."}}
       ]
+    },
+    {
+      "id": "national-museum",
+      "category": "museum",
+      "size": "museum",
+      "at": [-1324, 493],
+      "name": { "ko": "국립중앙미술관", "en": "National Central Art Museum", "ja": "国立中央美術館", "zh": "国立中央美术馆" },
+      "tagline": {
+        "en": "Old Korean paintings by Kim Hong-do, Sin Yun-bok, Jeong Seon and more. A made-up museum in the game, not a real institution and not linked to the National Museum of Korea.",
+        "ko": "김홍도, 신윤복, 정선 등의 옛 그림 전시. 실제 기관이 아닌 게임 속 가상 미술관으로, 국립중앙박물관과 관계없어요.",
+        "ja": "金弘道、申潤福、鄭敾などの昔の絵を展示。実在の施設ではないゲーム内の架空の美術館で、国立中央博物館とは関係ありません。",
+        "zh": "展出金弘道、申润福、郑敾等人的古画。这是游戏里虚构的美术馆，不是真实机构，与国立中央博物馆无关。"
+      },
+      "colors": { "sign": "#3a3633", "awning": "#b8a88a", "accent": "#f2eee6" },
+      "products": []
     }
   ]
 }

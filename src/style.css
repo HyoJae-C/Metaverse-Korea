@@ -1559,6 +1559,14 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-card-btns .chip { background: #fff; }
 @keyframes gift-pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
 html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
+
+/* Museum: one painting's card */
+.museum-panel { max-height: 86vh; overflow-y: auto; }
+.museum-img { display: block; max-width: 100%; max-height: 46vh; margin: 4px auto 10px; border: 6px solid #3b2a1e; background: #e9e0cc; }
+.museum-lang h3 { margin: 6px 0 2px; }
+.museum-lang p { margin: 0 0 6px; line-height: 1.5; }
+.museum-meta { color: #6b625a; font-size: 13px; }
+.museum-credit { font-size: 12px; color: #5a5048; }
 .item-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .pet-name-form { display: flex; gap: 6px; margin-top: 4px; }
 .pet-name-form input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; font-size: 16px; }
