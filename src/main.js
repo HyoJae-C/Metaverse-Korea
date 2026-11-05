@@ -120,6 +120,7 @@ import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
+import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
 
@@ -3878,218 +3879,15 @@ const beautyUi = new BeautyUI({
   },
   onCancel: () => { setLook(myLook); endBeautyCam(); },
 });
-function keepLook(look) {
-  myLook = { ...look };
-  saveLook(myLook);
-  setLook(myLook);
-  shop.toast(t('beauty.saved'));
-  clerk && say(clerk, $('labels'), ['정말 잘 어울려요!', 'jeongmal jal eoullyeoyo!', t('beauty.suits')]);
-}
-let beautyCam = null;
-const MIRROR_LOOK_Y = 0.74; // well below the face, so the whole head sits above the panel
-function openBeauty(kind) {
-  clerk?.ch.wave();
-  beautyCam = { ...cam };
-  document.body.classList.add('beauty-mode'); // hides the shop banner so your face shows
-  if (seated?.lie) { // lying on the bed: look down at the face from the foot end
-    Object.assign(cam, { yaw: seated.ry, dist: 2.0, pitch: 0.85 });
-    beautyCam.look = [seated.x, 0.7, seated.z - 0.75];
-  } else if (seated?.mirrorZ != null) { // in the chair: what the mirror sees, your face up close
-    // The mirror is only a metre away, so a wider lens fits your head in.
-    Object.assign(cam, { yaw: seated.ry + 0.12, dist: 1.05, pitch: 0.12 });
-    beautyCam.look = [seated.x, MIRROR_LOOK_Y, seated.z];
-    camera.fov = 84; camera.updateProjectionMatrix();
-  } else {
-    Object.assign(cam, { dist: 2.6, pitch: 0.12 }); // close-up
-    me.root.rotation.y = cam.yaw; // turn to face the camera
-  }
-  lastSent = null;
-  beautyUi.show(kind, myLook, interior?.store);
-  if (kind === 'salon') setLook({ ...myLook, head: null }); // hat off in the salon chair
-}
-function endBeautyCam() {
-  if (beautyCam) { const { look, ...c } = beautyCam; Object.assign(cam, c); }
-  beautyCam = null;
-  document.body.classList.remove('beauty-mode');
-  if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); }
-}
-
-// Surgery (clinics): the gurney rolls you into the operating room with the
-// doctor and three nurses, they operate, the lights go out for a moment, and
-// you walk out with the new look.
-const SURGERY = { roll: 4, operate: 4.2, dark: 1.2, after: 2.6 };
-let surgery = null;
-const STAFF_LOOKS = [
-  { model: 'basic', shirt: 'cream', pants: 'navy', hair: 'black', skin: 'fair', face: 'glasses' }, // the doctor
-  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'espresso', skin: 'light', head: 'cap' },
-  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'chestnut', skin: 'warm', head: 'cap' },
-  { model: 'basic', shirt: 'mint', pants: 'navy', hair: 'black', skin: 'tan', head: 'cap' },
-];
-function makeGurney() {
-  const g = new THREE.Group();
-  const m = (c) => new THREE.MeshLambertMaterial({ color: c });
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 2), m('#e8f1f4'));
-  top.position.y = 0.55;
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 1.8), m('#9ca9af'));
-  frame.position.y = 0.2;
-  g.add(top, frame);
-  for (const [x, z] of [[-0.3, -0.8], [0.3, -0.8], [-0.3, 0.8], [0.3, 0.8]]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 6), m('#9ca9af'));
-    leg.position.set(x, 0.3, z);
-    const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), m('#2b2b2e'));
-    wheel.position.set(x, 0.06, z);
-    g.add(leg, wheel);
-  }
-  return g;
-}
-function startSurgery(look) {
-  const st = interior.stations.surgery;
-  const p = me.root.position;
-  const path = [[p.x, p.z], [p.x, st.door[1] + 1.2], [st.door[0], st.door[1] + 1.2], [st.door[0], st.door[1] - 1.2], [st.table[0], st.door[1] - 1.2], [st.table[0], st.table[1]]];
-  const gurney = makeGurney();
-  gurney.position.set(p.x, 0, p.z);
-  interior.scene.add(gurney);
-  const staff = STAFF_LOOKS.map((l) => { const c = createCharacter(l); interior.scene.add(c.root); return c; });
-  const lens = [];
-  for (let i = 1; i < path.length; i++) lens.push(Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
-  surgery = { t: 0, look, st, gurney, staff, path, lens, total: lens.reduce((a, b) => a + b, 0), swapped: false, ry: 0 };
-  seated = { surgery: true, lie: true, x: p.x, z: p.z, ry: 0, stand: st.door };
-  Object.assign(cam, { dist: 7.5, pitch: 0.75 });
-  shop.toast(t('surgery.go'));
-  say(staff[0], $('labels'), ['걱정 마세요!', 'geokjeong maseyo!', t('surgery.doctor')]);
-}
-function surgeryAt(s, d) { // a point along the path, and the heading there
-  let k = 0;
-  while (k < s.lens.length - 1 && d > s.lens[k]) { d -= s.lens[k]; k++; }
-  const [ax, az] = s.path[k], [bx, bz] = s.path[k + 1];
-  const u = s.lens[k] ? Math.min(1, d / s.lens[k]) : 1;
-  return [ax + (bx - ax) * u, az + (bz - az) * u, Math.atan2(bx - ax, bz - az)];
-}
-const blackout = (() => { const el = document.createElement('div'); el.className = 'blackout'; document.body.append(el); return el; })();
-function updateSurgery(dt) {
-  const s = surgery;
-  if (!s) return;
-  s.t += dt;
-  const p = me.root.position;
-  const { roll, operate, dark, after } = SURGERY;
-  if (s.t < roll) { // rolling along, the staff walking beside the gurney
-    const e = s.t / roll;
-    const [x, z, ry] = surgeryAt(s, s.total * (e < 0.5 ? 2 * e * e : 1 - 2 * (1 - e) * (1 - e)));
-    s.ry += Math.atan2(Math.sin(ry - s.ry), Math.cos(ry - s.ry)) * Math.min(1, dt * 6);
-    s.gurney.position.set(x, 0, z);
-    s.gurney.rotation.y = s.ry;
-    p.set(x, 0, z);
-    me.root.rotation.y = s.ry + Math.PI; // head first
-    const c = Math.cos(s.ry), sn = Math.sin(s.ry);
-    [[0, 1.3], [0.75, 0.3], [-0.75, 0.3], [0, -1.35]].forEach(([ox, oz], i) => {
-      const r = s.staff[i].root;
-      r.position.set(x + ox * c + oz * sn, 0, z - ox * sn + oz * c);
-      r.rotation.y = s.ry;
-      s.staff[i].animate(dt, 0.35, false);
-    });
-  } else if (s.t < roll + operate + dark) { // on the table, the team around it
-    const [tx, tz] = s.st.table;
-    s.gurney.visible = false;
-    p.set(tx, s.st.tableTop - s.st.bedTop, tz);
-    me.root.rotation.y = 0;
-    s.st.staff.forEach(([x, z, ry], i) => {
-      const r = s.staff[i].root;
-      r.position.set(x, 0, z);
-      r.rotation.y = ry;
-      s.staff[i].animate(dt, 0, false);
-    });
-    s.beat = (s.beat || 0) - dt;
-    if (s.beat <= 0) { s.beat = 0.9; s.staff.forEach((c, i) => c.play(i === 0 ? 'clap' : ['shrug', 'clap', 'bow'][(Math.random() * 3) | 0])); }
-    const tDark = s.t - roll - operate; // the lights go out
-    blackout.style.opacity = tDark > 0 ? String(Math.min(1, tDark / 0.35)) : '0';
-    if (tDark > dark * 0.5 && !s.swapped) { s.swapped = true; myLook = { ...s.look }; saveLook(myLook); setLook(myLook); }
-  } else if (!s.done) { // lights back on: surgery complete, walk out of the OR
-    s.done = true;
-    blackout.style.opacity = '0';
-    seated = null;
-    p.set(s.st.door[0], 0, s.st.door[1] + 0.6);
-    cam.yaw = Math.PI * 0.15; cam.dist = 3.2; cam.pitch = 0.25;
-    me.root.rotation.y = cam.yaw; // turn round to show the new face
-    me.play('cheer');
-    $('photo-count').hidden = false;
-    $('photo-count').textContent = '✨ ' + t('surgery.done');
-    say(s.staff[0], $('labels'), ['수술 완료!', 'susul wallyo!', t('surgery.done')]);
-    sfx.pop?.();
-  } else if (s.t > roll + operate + dark + after) {
-    $('photo-count').hidden = true;
-    interior?.scene.remove(s.gurney);
-    for (const c of s.staff) c.root.removeFromParent();
-    surgery = null;
-    shop.toast(t('beauty.saved'));
-  } else s.staff.forEach((c) => c.animate(dt, 0, false));
-}
-// Salon: after you pay, the hairdresser steps up behind your chair, snips
-// away while bits of hair fall, and then the new style appears.
-const HAIRCUT = { snip: 2.6, after: 1.4 };
-let haircut = null;
-function startHaircut(look) {
-  const st = createCharacter({ model: 'basic', shirt: 'charcoal', pants: 'charcoal', hair: 'black', skin: 'light', neck: 'scarf' });
-  const side = seated.x <= 0 ? 1 : -1; // the camera looks from this side (towards the middle of the room)
-  const sx = seated.x - side * 0.35, sz = seated.z + 0.55; // behind the chair, on the far side
-  st.root.position.set(sx, 0, sz);
-  st.root.rotation.y = Math.atan2(seated.x - sx, seated.z - 0.1 - sz);
-  interior.scene.add(st.root);
-  st.activity('snip');
-  // From the side, towards the middle of the room: you, and the hairdresser behind you.
-  Object.assign(cam, { yaw: Math.atan2(side, -0.35), dist: 2.9, pitch: 0.15 });
-  if (beautyCam) beautyCam.look = [seated.x, 0.85, seated.z + 0.25];
-  const hairHex = '#' + (PALETTES.dye[myLook.dye] ?? PALETTES.hair[myLook.hair] ?? 0x3a2a20).toString(16).padStart(6, '0');
-  haircut = { t: 0, look, st, bits: [], spawn: 0, mat: new THREE.MeshLambertMaterial({ color: hairHex }), swapped: false };
-  say(st, $('labels'), ['예쁘게 잘라 드릴게요!', 'yeppeuge jalla deurilgeyo!', t('haircut.start')]);
-}
-const _headPos = new THREE.Vector3();
-function updateHaircut(dt) {
-  const h = haircut;
-  if (!h) return;
-  h.t += dt;
-  h.st.animate(dt, 0, false);
-  if (h.t < HAIRCUT.snip) { // bits of hair drift down from around the head
-    h.spawn -= dt;
-    const head = me.root.getObjectByName('head');
-    if (h.spawn <= 0 && head) {
-      h.spawn = 0.05;
-      head.getWorldPosition(_headPos);
-      for (let i = 0; i < 2; i++) {
-        const b = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.006, 0.012), h.mat);
-        b.position.set(_headPos.x + (Math.random() - 0.5) * 0.4, _headPos.y + 0.1 + Math.random() * 0.15, _headPos.z + (Math.random() - 0.5) * 0.4);
-        b.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-        b.userData.v = [(Math.random() - 0.5) * 0.3, -0.2, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 8];
-        interior.scene.add(b);
-        h.bits.push(b);
-      }
-    }
-  }
-  for (const b of h.bits) { // flutter down to the floor and stay there
-    if (b.position.y <= 0.01) continue;
-    const v = b.userData.v;
-    v[1] = Math.max(-0.9, v[1] - 1.2 * dt);
-    b.position.x += v[0] * dt; b.position.y = Math.max(0.01, b.position.y + v[1] * dt); b.position.z += v[2] * dt;
-    b.rotation.x += v[3] * dt; b.rotation.z += v[3] * 0.7 * dt;
-  }
-  if (h.t >= HAIRCUT.snip && !h.swapped) { // done: the new style
-    h.swapped = true;
-    h.st.activity(null);
-    keepLook(h.look);
-    me.play('cheer');
-    sfx.pop?.();
-  }
-  if (h.t >= HAIRCUT.snip + HAIRCUT.after) finishHaircut();
-}
-function finishHaircut() {
-  const h = haircut;
-  if (!h) return;
-  haircut = null;
-  if (!h.swapped) keepLook(h.look);
-  h.st.root.removeFromParent();
-  for (const b of h.bits) b.removeFromParent();
-  h.mat.dispose();
-  endBeautyCam();
-}
+// Beauty shops: mirror close-up, haircut, surgery (src/game/beauty.js).
+const beauty = createBeauty({
+  get me() { return me; }, get cam() { return cam; }, get camera() { return camera; }, get interior() { return interior; },
+  get clerk() { return clerk; }, get shop() { return shop; }, get sfx() { return sfx; }, get beautyUi() { return beautyUi; },
+  get seated() { return seated; }, set seated(v) { seated = v; },
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; },
+  setLook, resendState: () => { lastSent = null; },
+});
+const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
 const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 function openFishing() {
   me.root.rotation.y = Math.PI; // face the river (north)…
@@ -4650,7 +4448,7 @@ function updateAction(p, tSec) {
     const ex = interior.exit;
     const seat = !seated && nearestSeat(p);
     const tarotNext = interior.store?.workshop === 'tarot' && !seated?.tarot ? tarotAction(p, seat) : null;
-    if (surgery) {
+    if (beauty.surgery) {
       next = null;
     } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
       const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
@@ -4889,8 +4687,8 @@ renderer.setAnimationLoop(() => {
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beautyCam ? 0.05 : 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
+  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : 0.12, 1.25);
+  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -5013,8 +4811,8 @@ renderer.setAnimationLoop(() => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
-  if (beautyCam?.look) camera.lookAt(...beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatDraft || beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
+  else camera.lookAt(p.x, p.y + (hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
