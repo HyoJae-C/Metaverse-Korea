@@ -3527,13 +3527,12 @@ const kimchiSellUi = new KimchiSellUI({
 
 // Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
 // noraebang, the photo booth, the claw machines and the duck boats.
-const cookDone = (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); };
 const pochaUi = new PochaUI({
   root: $('pocha-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onDeliver: () => startDelivery(),
-  onMedal: cookDone,
+  onMedal: () => missionEvent('cook'), // practice only: no coins, no together bonus
 });
 const karaokeUi = new KaraokeUI({
   root: $('karaoke-panel'),
