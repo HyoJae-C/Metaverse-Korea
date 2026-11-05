@@ -2160,7 +2160,7 @@ function enterStore(item) {
   }
   barkeep = built.barkeepNpc || null;
   // Information Centers: the area guide next to the game guide (the clerk).
-  if (built.stations.areaGuide && !built.areaGuideNpc) {
+  if (built.stations?.areaGuide && !built.areaGuideNpc) { // (parks, stations and trains have no stations)
     const g = built.stations.areaGuide;
     built.areaGuideNpc = makeNpc($('labels'), '🗺️ ' + L(INFO_TEXT.areaGuide));
     built.areaGuideNpc.ch.root.position.set(g.x, 0, g.z);
