@@ -495,12 +495,12 @@
     }
   ],
   "adPosters": {
-    "L-116": { "image": "ads/seongsu-ss-yellow-v2.webp" },
-    "L-118": { "image": "ads/seongsu-red-v2.webp" },
-    "L-119": { "image": "ads/seongsu-fw-suit-v2.webp" },
-    "L-120": { "image": "ads/seongsu-blonde-v2.webp" },
-    "L-102": { "image": "ads/seongsu-mono-v2.webp" },
-    "L-98": { "image": "ads/seongsu-sunday-v2.webp" }
+    "L-115": { "image": "ads/seongsu-ss-yellow-v2.webp" },
+    "L-117": { "image": "ads/seongsu-red-v2.webp" },
+    "L-118": { "image": "ads/seongsu-fw-suit-v2.webp" },
+    "L-119": { "image": "ads/seongsu-blonde-v2.webp" },
+    "L-101": { "image": "ads/seongsu-mono-v2.webp" },
+    "L-97": { "image": "ads/seongsu-sunday-v2.webp" }
   },
   "storePosters": {
     "golmok-chicken": { "image": "ads/seongsu-puffer-v2.webp" },

@@ -614,15 +614,16 @@ if (square) {
   pave.receiveShadow = true;
   scene.add(pave);
 }
-// Notice boards side by side at one end of the square, facing it: free
-// board, inquiries, and the update board (with a NEW tag while unread).
+// Notice boards at one end of the square, facing it: free board, inquiries,
+// and the update board (with a NEW tag while unread). They stand either side
+// of the middle, clear of the walkway to Café Street.
 const noticeBoards = [];
 let newsTag = null;
 if (square) {
   const ry = square.zone.pave?.ry || 0;
   const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
   const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
-  for (const [board, side, color] of [['news', -5.1, '#e0a020'], ['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
+  for (const [board, side, color] of [['news', -8.2, '#e0a020'], ['free', -4.8, '#2f6fd6'], ['ask', 4.8, '#d8452f']]) {
     const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
     const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
     if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }

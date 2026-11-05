@@ -43,7 +43,7 @@
       "size": "small",
       "name": { "ko": "꽃잎 립", "en": "Petal Lip", "ja": "花びらリップ", "zh": "花瓣唇" },
       "tagline": { "en": "Ten lip tints: sit at the mirror and try them on", "ko": "거울 앞에 앉아 10가지 립 틴트를 발라 봐요", "ja": "鏡の前で10色のリップを試そう", "zh": "坐在镜子前试涂10种唇彩" },
-      "at": [21.3, -2],
+      "at": [24, -2],
       "colors": { "sign": "#e05a7a", "awning": "#ffc3d0", "accent": "#fff0f3" },
       "products": []
     },
@@ -457,7 +457,7 @@
       "size": "medium",
       "name": { "ko": "신당 떡볶이 포차", "en": "Sindang Tteokbokki Stall", "ja": "シンダン トッポッキ屋台", "zh": "新堂炒年糕小摊" },
       "tagline": { "en": "Take orders in Korean, cook them, deliver by bike", "ko": "한국어 주문 받고 만들고, 따릉이로 배달까지", "ja": "韓国語で注文を受けて作って、自転車で配達", "zh": "用韩语接单、做菜，还能骑车送外卖" },
-      "at": [15.3, 24.8],
+      "at": [67.5, 21.8],
       "colors": { "sign": "#d8452f", "awning": "#ffb199", "accent": "#fff1ec" },
       "products": []
     },
