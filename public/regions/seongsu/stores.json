@@ -241,7 +241,7 @@
       "id": "chaekmaru-library",
       "category": "library",
       "size": "large",
-      "name": { "ko": "책마루 도서관", "en": "Chaekmaru Library", "ja": "チェクマル図書館", "zh": "书廊图书馆" },
+      "name": { "ko": "효재대학교 도서관", "en": "Hyojae University Library", "ja": "ヒョジェ大学図書館", "zh": "孝在大学图书馆" },
       "tagline": { "en": "A quiet place to read. Study corners are coming soon.", "ko": "조용히 책 읽는 곳. 공부 공간은 곧 열려요.", "ja": "静かに本を読める場所。勉強コーナーは準備中です。", "zh": "安静读书的地方。学习区即将开放。" },
       "at": [-2408, -950],
       "colors": { "sign": "#3f5e4f", "awning": "#9cb89a", "accent": "#f4efe2" },
@@ -312,14 +312,17 @@
       "category": "petshop",
       "size": "medium",
       "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
-      "tagline": { "en": "Adopt a dog or a cat with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지나 고양이를 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗或小猫一起散步。一定要清理宠物的便便！" },
+      "tagline": { "en": "Adopt a dog, a cat or a small pet with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지, 고양이, 작은 동물을 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫、小動物を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗、小猫或小宠物一起散步。一定要清理宠物的便便！" },
       "at": [0.8, 66.2],
       "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
       "products": [
         { "id": "adopt-maltese", "model": "pet:dog", "color": "#fbf8f2", "accent": "#efe6da", "adopt": "pet-maltese", "price": 0, "name": { "en": "Maltese puppy · Mongi", "ko": "말티즈 · 몽이", "ja": "マルチーズ · モンイ", "zh": "马尔济斯 · 萌萌" }, "desc": { "en": "A small fluffy white dog who loves walks." } },
+        { "id": "adopt-poodle", "model": "pet:dog", "color": "#d9a066", "accent": "#f3d9b8", "adopt": "pet-poodle", "price": 0, "name": { "en": "Toy poodle puppy · Bori", "ko": "토이푸들 · 보리", "ja": "トイプードル · ボリ", "zh": "玩具贵宾 · 大麦" }, "desc": { "en": "A curly apricot poodle, small and very clever." } },
         { "id": "adopt-shiba", "model": "pet:dog", "color": "#e39a4f", "accent": "#fff3e3", "adopt": "pet-shiba", "price": 0, "name": { "en": "Shiba puppy · Kongtteok", "ko": "시바견 · 콩떡", "ja": "柴犬 · コントク", "zh": "柴犬 · 豆糕" }, "desc": { "en": "Curly tail, big smile, a bit stubborn." } },
         { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
-        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } }
+        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } },
+        { "id": "adopt-chinchilla", "model": "pet:chinchilla", "color": "#b9b6b8", "accent": "#f1eeee", "adopt": "pet-chinchilla", "price": 0, "name": { "en": "Chinchilla · Somi", "ko": "친칠라 · 솜이", "ja": "チンチラ · ソミ", "zh": "龙猫 · 棉棉" }, "desc": { "en": "The softest fur in the shop, with big round ears." } },
+        { "id": "adopt-guineapig", "model": "pet:guineapig", "color": "#b4733f", "accent": "#fff4e6", "adopt": "pet-guineapig", "price": 0, "name": { "en": "Guinea pig · Kkultteok", "ko": "기니피그 · 꿀떡", "ja": "モルモット · クルトク", "zh": "豚鼠 · 蜜糕" }, "desc": { "en": "A chubby little friend who squeaks when happy." } }
       ]
     },
     {
@@ -339,7 +342,7 @@
       "size": "medium",
       "name": { "ko": "성수 수산시장", "en": "Seongsu Fish Market", "ja": "ソンス水産市場", "zh": "圣水水产市场" },
       "tagline": { "en": "Sell the fish you caught at the Han River", "ko": "한강에서 잡은 물고기를 팔아요", "ja": "漢江で釣った魚を売ろう", "zh": "出售你在汉江钓到的鱼" },
-      "at": [10, 84.5],
+      "at": [67.5, 249.5],
       "colors": { "sign": "#1f5f8b", "awning": "#9cc9e6", "accent": "#eef6fb" },
       "products": []
     },
@@ -529,7 +532,12 @@
         { "id": "hanbok-pink-navy", "rent": "pink-navy", "model": "skirt", "color": "#2f3c66", "skirt": "chima-navy", "price": 15000, "name": {"en": "Pink jeogori & navy chima", "ko": "분홍 저고리 · 남색 치마", "ja": "ピンクのチョゴリ · 紺のチマ", "zh": "粉色上衣 · 藏青长裙", "es": "Jeogori rosa y chima azul marino", "ar": "جيوغوري وردية وتشيما كحلية", "vi": "Jeogori hồng & chima xanh navy", "hi": "गुलाबी जोगोरी और नेवी चीमा", "id": "Jeogori merah muda & chima biru tua"}, "desc": {"en": "Soft pink jeogori with navy cuffs and ribbon over a deep navy chima.", "ko": "남색 끝동과 고름을 단 연분홍 저고리에 남색 치마를 입어요."} },
         { "id": "hanbok-mint-pink", "rent": "mint-pink", "model": "skirt", "color": "#f29bb6", "skirt": "chima-pink", "price": 15000, "name": {"en": "Mint jeogori & pink chima", "ko": "민트 저고리 · 분홍 치마", "ja": "ミントのチョゴリ · ピンクのチマ", "zh": "薄荷色上衣 · 粉色长裙", "es": "Jeogori menta y chima rosa", "ar": "جيوغوري نعناعية وتشيما وردية", "vi": "Jeogori bạc hà & chima hồng", "hi": "मिंट जोगोरी और गुलाबी चीमा", "id": "Jeogori mint & chima merah muda"}, "desc": {"en": "A mint jeogori with pink cuffs over a pink chima: bright for spring photos.", "ko": "분홍 끝동의 민트 저고리에 분홍 치마. 봄 사진에 잘 어울려요."} },
         { "id": "hanbok-baji-blue", "rent": "baji-blue", "model": "tee", "color": "#9cc3e6", "price": 15000, "name": {"en": "Sky jeogori & baji trousers", "ko": "하늘색 저고리 · 바지", "ja": "水色のチョゴリ · パジ", "zh": "天蓝上衣 · 韩服裤", "es": "Jeogori celeste y pantalón baji", "ar": "جيوغوري سماوية وسروال باجي", "vi": "Jeogori xanh trời & quần baji", "hi": "आसमानी जोगोरी और बाजी पतलून", "id": "Jeogori biru langit & celana baji"}, "desc": {"en": "A sky-blue jeogori over roomy baji trousers, tied at the ankles.", "ko": "하늘색 저고리에 넉넉한 바지를 입어요."} },
-        { "id": "hanbok-durumagi-lilac", "rent": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "name": {"en": "Lilac durumagi overcoat", "ko": "연보라 두루마기", "ja": "薄紫のトゥルマギ", "zh": "淡紫长袍", "es": "Abrigo durumagi lila", "ar": "معطف دوروماغي بنفسجي فاتح", "vi": "Áo khoác durumagi tím nhạt", "hi": "हल्का बैंगनी दुरुमागी कोट", "id": "Mantel durumagi ungu muda"}, "desc": {"en": "A long overcoat (durumagi) worn over the jeogori and baji when going out.", "ko": "외출할 때 저고리와 바지 위에 입는 긴 두루마기예요."} }
+        { "id": "hanbok-durumagi-lilac", "rent": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "name": {"en": "Lilac durumagi overcoat", "ko": "연보라 두루마기", "ja": "薄紫のトゥルマギ", "zh": "淡紫长袍", "es": "Abrigo durumagi lila", "ar": "معطف دوروماغي بنفسجي فاتح", "vi": "Áo khoác durumagi tím nhạt", "hi": "हल्का बैंगनी दुरुमागी कोट", "id": "Mantel durumagi ungu muda"}, "desc": {"en": "A long overcoat (durumagi) worn over the jeogori and baji when going out.", "ko": "외출할 때 저고리와 바지 위에 입는 긴 두루마기예요."} },
+        { "id": "hanbok-baji-navy", "rent": "baji-navy", "model": "tee", "color": "#2f3c66", "price": 15000, "name": {"en": "Navy jeogori & baji trousers", "ko": "남색 저고리 · 바지", "ja": "紺のチョゴリ · パジ", "zh": "藏青上衣 · 韩服裤", "es": "Jeogori azul marino y pantalón baji", "ar": "جيوغوري كحلية وسروال باجي", "vi": "Jeogori xanh navy & quần baji", "hi": "नेवी जोगोरी और बाजी पतलून", "id": "Jeogori biru tua & celana baji"}, "desc": {"en": "A deep navy jeogori with gold cuffs over light baji trousers.", "ko": "금빛 끝동을 단 남색 저고리에 밝은 바지를 입어요."} },
+        { "id": "hanbok-baji-jade", "rent": "baji-jade", "model": "tee", "color": "#5fae8f", "price": 15000, "name": {"en": "Jade jeogori & baji trousers", "ko": "옥색 저고리 · 바지", "ja": "翡翠色のチョゴリ · パジ", "zh": "玉色上衣 · 韩服裤", "es": "Jeogori jade y pantalón baji", "ar": "جيوغوري يشمية وسروال باجي", "vi": "Jeogori xanh ngọc & quần baji", "hi": "जेड जोगोरी और बाजी पतलून", "id": "Jeogori hijau giok & celana baji"}, "desc": {"en": "A jade-green jeogori with navy cuffs: fresh for a palace walk.", "ko": "남색 끝동의 옥색 저고리. 궁궐 산책에 잘 어울려요."} },
+        { "id": "hanbok-baji-ivory", "rent": "baji-ivory", "model": "tee", "color": "#f3ecdc", "price": 15000, "name": {"en": "Ivory jeogori & grey baji", "ko": "상아색 저고리 · 회색 바지", "ja": "アイボリーのチョゴリ · グレーのパジ", "zh": "象牙白上衣 · 灰色韩服裤", "es": "Jeogori marfil y baji gris", "ar": "جيوغوري عاجية وباجي رمادي", "vi": "Jeogori ngà & quần baji xám", "hi": "आइवरी जोगोरी और ग्रे बाजी", "id": "Jeogori gading & baji abu-abu"}, "desc": {"en": "A plain ivory jeogori over grey baji, the everyday scholar's look.", "ko": "상아색 저고리에 회색 바지. 선비의 평상복 느낌이에요."} },
+        { "id": "hanbok-durumagi-navy", "rent": "durumagi-navy", "model": "tee", "color": "#34477a", "price": 18000, "name": {"en": "Navy durumagi overcoat", "ko": "남색 두루마기", "ja": "紺のトゥルマギ", "zh": "藏青长袍", "es": "Abrigo durumagi azul marino", "ar": "معطف دوروماغي كحلي", "vi": "Áo khoác durumagi xanh navy", "hi": "नेवी दुरुमागी कोट", "id": "Mantel durumagi biru tua"}, "desc": {"en": "A long navy overcoat (durumagi) worn over the jeogori and baji.", "ko": "저고리와 바지 위에 입는 남색 두루마기예요."} },
+        { "id": "hanbok-durumagi-gray", "rent": "durumagi-gray", "model": "tee", "color": "#8f939a", "price": 18000, "name": {"en": "Grey durumagi overcoat", "ko": "회색 두루마기", "ja": "グレーのトゥルマギ", "zh": "灰色长袍", "es": "Abrigo durumagi gris", "ar": "معطف دوروماغي رمادي", "vi": "Áo khoác durumagi xám", "hi": "ग्रे दुरुमागी कोट", "id": "Mantel durumagi abu-abu"}, "desc": {"en": "A calm grey durumagi with charcoal ties.", "ko": "짙은 회색 고름을 단 차분한 회색 두루마기예요."} }
       ]
     },
     {
@@ -764,7 +772,7 @@
       "category": "school",
       "size": "large",
       "at": [-2392, -950],
-      "name": { "en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂" },
+      "name": { "en": "Hyojae University Korean Academy", "ko": "효재대학교 어학당", "ja": "ヒョジェ大学 語学堂", "zh": "孝在大学语学堂" },
       "tagline": { "en": "Korean courses from Hangul to TOPIK 4 and an advanced class, with quizzes and certificates", "ko": "한글부터 토픽 4급, 고급반까지: 퀴즈와 수료증이 있는 한국어 과정", "ja": "ハングルからTOPIK4級、上級クラスまで。クイズと修了証つき", "zh": "从韩文到TOPIK 4级和高级班，有测验和结业证书" },
       "colors": { "sign": "#2f5d46", "awning": "#e3efe6", "accent": "#f6faf7" },
       "products": []
@@ -1690,7 +1698,7 @@
       "category": "popup",
       "perfumery": "popup",
       "size": "small",
-      "at": [67.5, 249.5],
+      "at": [10, 84.5],
       "name": { "ko": "향수 팝업", "en": "SCENT POP-UP" },
       "tagline": { "en": "Limited-edition perfumes, this month only", "ko": "이번 달에만 파는 한정판 향수" },
       "colors": { "sign": "#ff7a1a", "awning": "#ffe0c7", "accent": "#fff7f0" },

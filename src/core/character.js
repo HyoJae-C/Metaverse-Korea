@@ -144,6 +144,10 @@ export function createCharacter(rawLook) {
     head,
     // Put on a costume head (a THREE.Group in chibi head units).
     setMascot(g) { mascot?.removeFromParent(); mascot = g; headAcc.add(g); wearMascot(); },
+    // A costume piece on the head or body (NPC costumes), in the chibi's units
+    // like the accessories: 'head' (~0.65 m wide, centred) or 'body' (0 at the
+    // feet, shoulders at ~0.66).
+    addProp(where, g) { (where === 'body' ? bodyAcc : headAcc).add(g); },
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),

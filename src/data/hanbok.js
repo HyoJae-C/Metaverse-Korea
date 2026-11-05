@@ -15,6 +15,12 @@ export const HANBOK = {
   'mint-pink': set(15, { model: 'hanbok-mint', skirt: 'chima-pink', tee: null }),
   'baji-blue': set(15, { model: 'hanbok-baji', skirt: null, tee: null }),
   'durumagi-lilac': set(18, { model: 'hanbok-durumagi', skirt: null, tee: null }),
+  // more men's sets
+  'baji-navy': set(15, { model: 'hanbok-baji-navy', skirt: null, tee: null }),
+  'baji-jade': set(15, { model: 'hanbok-baji-jade', skirt: null, tee: null }),
+  'baji-ivory': set(15, { model: 'hanbok-baji-ivory', skirt: null, tee: null }),
+  'durumagi-navy': set(18, { model: 'hanbok-durumagi-navy', skirt: null, tee: null }),
+  'durumagi-gray': set(18, { model: 'hanbok-durumagi-gray', skirt: null, tee: null }),
 };
 
 export const hanbokById = (id) => (typeof id === 'string' && Object.hasOwn(HANBOK, id) ? HANBOK[id] : null);
