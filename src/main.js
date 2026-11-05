@@ -97,7 +97,6 @@ import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
-import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -118,8 +117,10 @@ import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './co
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
+import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
+import { createSubway } from './game/subway.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1436,7 +1437,7 @@ const shop = new ShopUI({
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
-  onExit: () => (metro ? metroGetOff() : leaveStore()),
+  onExit: () => (subway.metro ? metroGetOff() : leaveStore()),
   // Perfume tester: see the effect once next to you, for free. Only you see
   // it, and no scent stays on.
   onSniff: (product) => {
@@ -1520,104 +1521,15 @@ const counterUi = new CounterUI({
   },
 });
 
-// My pet: adopt at the pet shop (coins) or by code, then take it for walks.
-// It poops now and then on the street; clean up within CLEAN_SECONDS or a
-// fine notice (과태료) takes FINE coins. The poop is then cleared by the city.
-const PET_KEY = 'mk.pet';
-let pet = null; // Companion
-const poopTimers = new PoopTimers();
-const poops = new Map(); // id -> { id, mesh, x, z }
-function setPet(id) {
-  pet?.dispose();
-  pet = null;
-  if (id && inventory.has(id) && ITEMS[id]?.pet) {
-    pet = new Companion(id, ITEMS[id].pet);
-    activeScene.add(pet.root);
-    pet.place(me.root.position.x, me.root.position.z, me.root.rotation.y);
-  }
-  try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
-  refreshQuestChip();
-  if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
-}
-function adoptPet(id) {
-  const it = ITEMS[id];
-  if (!it?.pet || !it.price) return;
-  if (inventory.has(id)) { setPet(id); return; }
-  if (!wallet.spend(it.price, { name: it.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
-  inventory.add(id);
-  setPet(id);
-  shop.closeProduct();
-  clerk && say(clerk, $('labels'), ['잘 키워 주세요!', 'jal kiwo juseyo!', t('pet.takeCare')]);
-  shop.toast(t('pet.adopted', { name: petName(id) }) + ' ' + L(PET_NAME_TEXT.hint));
-}
-// Korean subject particle after a name: 이 after a final consonant, else 가.
-const subjectParticle = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '이' : '가'; };
-// The name you gave your pet (bag → ✏️), else the shop's name.
-const petName = (id) => {
-  const own = customPetName(id), def = ITEMS[id]?.pet;
-  if (own) return own;
-  return getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`;
-};
-const PET_NAME_TEXT = {
-  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
-  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
-  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
-  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
-  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
-};
-function nearestPoop(p) {
-  let best = null, bd = 1.6;
-  for (const po of poops.values()) {
-    const d = Math.hypot(po.x - p.x, po.z - p.z);
-    if (d < bd) { bd = d; best = po; }
-  }
-  return best;
-}
-function cleanPoop(po) {
-  poopTimers.clean(po.id);
-  po.mesh.removeFromParent();
-  poops.delete(po.id);
-  me.play('bow'); // bend down
-  shop.toast(t('pet.cleaned'));
-  action = STALE;
-}
-function updatePet(dt, p) {
-  // Fines for poop left too long (the timer runs even inside shops).
-  for (const late of poopTimers.step(dt)) {
-    const po = poops.get(late.id);
-    po?.mesh.removeFromParent();
-    poops.delete(late.id);
-    const taken = wallet.take(FINE, { k: 'ledger.fine' });
-    showFine(taken, po?.street);
-  }
-  const soon = poopTimers.list.reduce((m, x) => Math.min(m, x.left), Infinity);
-  $('poop-chip').hidden = soon === Infinity;
-  if (soon !== Infinity) $('poop-chip').textContent = `💩 ${t('pet.cleanIn', { s: Math.ceil(soon) })}`;
-  if (!pet) return;
-  if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y); }
-  const hidden = riding > 0 || seated;
-  if (pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, mode === 'street')) {
-    const pos = pet.root.position;
-    const mesh = makePoop();
-    mesh.position.set(pos.x, 0, pos.z);
-    scene.add(mesh);
-    const { id } = poopTimers.add();
-    poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
-    sfx.pop?.();
-    shop.toast(t('pet.pooped', { name: petName(pet.id), ga: subjectParticle(customPetName(pet.id) || pet.def.name), s: CLEAN_SECONDS }));
-  }
-}
-let fineShown = null; // { count, taken } while the notice is open (two fines at once add up)
-function showFine(taken, street) {
-  const box = $('fine-panel');
-  fineShown = box.hidden || !fineShown ? { count: 1, taken } : { count: fineShown.count + 1, taken: fineShown.taken + taken };
-  $('fine-street').textContent = street || t('pet.fineStreet');
-  $('fine-amount').textContent = `🪙 ${FINE}` + (fineShown.count > 1 ? ` × ${fineShown.count}` : '');
-  $('fine-paid').textContent = t('pet.finePaid', { n: fineShown.taken, left: wallet.coins });
-  box.hidden = false;
-  refreshWallet();
-}
-$('fine-close').onclick = () => { $('fine-panel').hidden = true; };
+// My pet: adopt, walk, clean up after it (src/game/pet-care.js).
+const petCare = createPetCare({
+  get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
+  get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
+  get shop() { return shop; }, get sfx() { return sfx; },
+  clearAction: () => { action = STALE; }, refreshQuestChip, refreshItems, refreshWallet,
+});
+const { setPet, adoptPet, nearestPoop, cleanPoop, updatePet } = petCare;
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
@@ -2127,7 +2039,7 @@ function giftFor(store, product) {
 }
 // Everyone I can see in this shop, closest first.
 function peopleHere() {
-  if (!interior || metro) return [];
+  if (!interior || subway.metro) return [];
   const p = me.root.position, out = [];
   for (const [id, o] of others.players) {
     if (o.hidden) continue;
@@ -2342,7 +2254,7 @@ function leaveStore() {
   // Trying something on only lasts while you are in the shop: walking out
   // without buying puts your own look back.
   if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
-  if (metro) endMetro(); // (a taxi or teleport from the train)
+  if (subway.metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
   cable = null;
   standUp();
@@ -2391,216 +2303,14 @@ function leaveStore() {
 }
 
 // ---------- Subway station ----------
-// Walk down an exit's stairs to arrive in the station hall (a room like a
-// shop); walk up any exit's stairs there to come out at that exit.
-const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
-const stationStores = subwayStations.map((sub) => ({
-  id: 'subway-' + (sub.id || sub.name?.en || 'station'), category: 'station', size: 'station', subway: sub, products: [],
-  name: Object.fromEntries(Object.entries(sub.name || {}).map(([k, v]) => [k, v + (STATION_SUFFIX[k] ?? '')])),
-  tagline: sub.line?.name || {},
-  colors: { sign: sub.line?.color || '#f5a200', accent: '#e6e8ec', awning: sub.line?.color || '#f5a200' },
-}));
-// The trains run round all the stations in list order: up = forward, down = back.
-for (const [i, st] of stationStores.entries()) {
-  const n = stationStores.length, nm = (k) => ({ ko: subwayStations[k].name?.ko || '', en: subwayStations[k].name?.en || '' });
-  st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
-}
-const TRAIN_STORE = {
-  id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',
-  name: { en: 'Subway train', ko: '지하철', ja: '地下鉄', zh: '地铁' },
-  tagline: { en: 'Choose where to get off', ko: '내릴 역을 고르세요', ja: '降りる駅を選んでください', zh: '请选择下车站' },
-  colors: { sign: '#5d6470', accent: '#d6dae0', awning: '#5d6470' },
-};
-// A shop-like "front" for each exit: leaving the hall puts you just outside its mouth.
-function exitFront(s, i) {
-  const out = outsideOf(subwayStations[s].exits[i], 0.4); // leaveStore steps another 1.2 m out
-  return { store: stationStores[s], door: { x: out.x, z: out.z }, group: { rotation: { y: out.ry } }, subwayExit: [s, i] };
-}
-let subwayCool = 0; // a moment after arriving, so you don't bounce straight back
-function enterStation(s, i) {
-  enterStore(exitFront(s, i));
-  const st = interior.subway.stairs[i];
-  moveMeTo(interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
-  cam.dist = 8;
-  cam.pitch = 0.6;
-  flashFade();
-  subwayCool = 0.6;
-}
-function leaveStation(i) {
-  const s = stationStores.indexOf(interior.store);
-  interior.front = exitFront(s, i);
-  leaveStore();
-  // Face away from the stairs, with the camera behind you.
-  const out = outsideOf(subwayStations[s].exits[i]);
-  const [x, z] = findFreeSpot(out.x, out.z);
-  moveMeTo(scene, x, z, out.ry);
-  flashFade();
-  subwayCool = 0.6;
-}
-function flashFade() {
-  const el = $('fade');
-  if (!el) return;
-  el.classList.remove('go');
-  void el.offsetWidth; // restart the animation
-  el.classList.add('go');
-}
-// Ticket gates: pay the fare to go through to the platform; going out is free.
-const GATE_TEXT = {
-  in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
-  out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
-  poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
-  paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
-};
-function passGate(g, paying) {
-  if (paying) {
-    if (!wallet.spend(FARE, { name: { en: 'Subway fare', ko: '지하철 요금', ja: '地下鉄運賃', zh: '地铁车费' }, at: interior.store.name })) { shop.toast(fmt(L(GATE_TEXT.poor), { n: FARE })); return; }
-    shop.toast(`🎫 ${L(GATE_TEXT.paid)} · -🪙 ${FARE}`);
-  }
-  sfx.pop?.();
-  moveMeTo(interior.scene, GATE_X + (paying ? 1.3 : -1.3), g.lane, paying ? Math.PI / 2 : -Math.PI / 2, cam.yaw);
-  action = STALE;
-}
-
-// ---------- Riding the train ----------
-// A train comes every 10 s on each platform side and keeps its doors open for
-// 5 s: walk in (or tap Board) while they're open. Inside, pick a station; the
-// train runs one stop per STOP_SECONDS and you step out on that station's platform.
-const METRO_TEXT = {
-  board: { en: 'Board', ko: '타기', ja: '乗る', zh: '上车' },
-  up: { en: 'Up', ko: '상행', ja: '上り', zh: '上行' },
-  down: { en: 'Down', ko: '하행', ja: '下り', zh: '下行' },
-  pick: { en: 'Where do you get off?', ko: '어디서 내릴까요?', ja: 'どこで降りますか？', zh: '在哪里下车？' },
-  stops: { en: '{n} stop(s)', ko: '{n}정거장', ja: '{n}駅', zh: '{n}站' },
-  leaving: { en: 'Doors close in {n}s', ko: '{n}초 뒤 문이 닫혀요', ja: 'あと{n}秒でドアが閉まります', zh: '{n}秒后关门' },
-  moving: { en: 'Next: {name}', ko: '다음 역: {name}', ja: '次は {name}', zh: '下一站：{name}' },
-  getOff: { en: 'Get off here', ko: '여기서 내리기', ja: 'ここで降りる', zh: '在这里下车' },
-  arriving: { en: 'Arriving at {name}', ko: '곧 {name}에 도착해요', ja: 'まもなく {name}', zh: '即将到达 {name}' },
-  choose: { en: 'Pick a station first', ko: '먼저 내릴 역을 골라 주세요', ja: '先に降りる駅を選んでください', zh: '请先选择下车站' },
-};
-let metro = null; // { from, t, dir, leaveAt, dest, arriveAt, chimed }
-const CHIME_LEAD = 2; // seconds before arrival
-const stationIndex = () => stationStores.indexOf(interior?.store);
-const stationName = (k) => localName(stationStores[k].name, getLanguage());
-function boardTrain(t, left) {
-  const from = stationIndex();
-  if (from < 0 || stationStores.length < 2) return;
-  const dir = METRO_TRACKS[t].dir;
-  metro = { from, t, dir, leaveAt: Date.now() + left * 1000, dest: null, arriveAt: 0 };
-  const front = exitFront(from, 0);
-  enterStore({ ...front, store: TRAIN_STORE });
-  interior.front = front; // the map shows you at the station you left
-  goSolo(interior.scene); // a short ride: just you in the car
-  moveMeTo(interior.scene, 0, 0, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
-  cam.dist = 6;
-  cam.pitch = 0.75;
-  flashFade();
-  sfx.pop?.();
-  renderMetro();
-  $('train-panel').hidden = false;
-}
-function renderMetro() {
-  if (!metro) return;
-  const n = stationStores.length;
-  $('train-title').textContent = `🚇 ${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${L(METRO_TEXT.pick)}`;
-  $('train-options').replaceChildren(...lineAhead(metro.from, metro.dir, n).map((k) => {
-    const b = document.createElement('button');
-    b.className = metro.dest === k ? 'primary' : 'chip';
-    b.textContent = `${stationName(k)} · ${fmt(L(METRO_TEXT.stops), { n: stopsBetween(metro.from, k, metro.dir, n) })}`;
-    b.onclick = () => pickStop(k);
-    return b;
-  }));
-  $('train-off').hidden = Date.now() >= metro.leaveAt;
-  $('train-off').textContent = '🚪 ' + L(METRO_TEXT.getOff);
-}
-$('train-off').onclick = () => metroGetOff();
-function pickStop(k) {
-  if (!metro || metro.arriveAt && Date.now() > metro.arriveAt - 500) return;
-  metro.dest = k;
-  metro.chimed = false;
-  const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
-  metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
-  renderMetro();
-}
-// Off before the doors close: back onto the platform you boarded from.
-function metroGetOff() {
-  if (!metro) return;
-  if (Date.now() >= metro.leaveAt) { shop.toast(L(METRO_TEXT.choose)); return; }
-  const { from, t } = metro;
-  endMetro();
-  arriveOnPlatform(from, t);
-}
-function endMetro() {
-  metro = null;
-  $('train-panel').hidden = true;
-}
-function arriveOnPlatform(k, t) {
-  enterStore(exitFront(k, 0));
-  const tr = METRO_TRACKS[t], s = Math.sign(tr.doorZ);
-  moveMeTo(interior.scene, 8.5 + (Math.random() - 0.5) * 6, tr.doorZ - s * 1.4, s > 0 ? Math.PI : 0);
-  cam.dist = 8;
-  cam.pitch = 0.6;
-  flashFade();
-  sfx.doorOpen();
-  subwayCool = 0.8;
-}
-// Platform sounds: the arrival chime anywhere in the hall; doors and the
-// departure signal only on the platform side of the gates.
-function onPlatformSound(kind) {
-  if (kind !== 'arrive' && me.root.position.x < GATE_X) return;
-  ({ arrive: () => sfx.arrivalChime(), open: () => sfx.doorOpen(), closing: () => sfx.doorClose(), depart: () => sfx.depart() })[kind]?.();
-}
-function updateMetro(p) {
-  if (!metro || !interior?.train) return;
-  const now = Date.now();
-  const moving = now >= metro.leaveAt;
-  interior.train.setMoving(moving);
-  if (!metro.warned && now >= metro.leaveAt - 1600) { metro.warned = true; sfx.doorClose(); }
-  if (!metro.departed && moving) { metro.departed = true; sfx.depart(); }
-  let led;
-  if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
-  else if (metro.dest != null) {
-    // Chime and "arriving" a couple of seconds before the doors open there.
-    const soon = now >= metro.arriveAt - CHIME_LEAD * 1000;
-    if (soon && !metro.chimed) { metro.chimed = true; sfx.arrivalChime(); }
-    led = fmt(L(soon ? METRO_TEXT.arriving : METRO_TEXT.moving), { name: stationName(metro.dest) });
-  }
-  else led = L(METRO_TEXT.pick);
-  if (led !== metro.led) {
-    metro.led = led;
-    interior.train.setLed(led);
-    $('train-status').textContent = led;
-    renderMetro();
-  }
-  if (metro.dest != null && now >= metro.arriveAt) {
-    const { dest, t } = metro;
-    endMetro();
-    arriveOnPlatform(dest, t);
-  }
-  void p;
-}
-
-// Called every frame after moving: follow the steps up or down.
-function updateSubway(dt, p, px0, pz0) {
-  if (!subwayStations.length) return;
-  subwayCool = Math.max(0, subwayCool - dt);
-  if (mode === 'street') {
-    let s = null, si = -1;
-    for (let k = 0; k < subwayStations.length && !s; k++) { s = streetStairs(subwayStations[k], p.x, p.z); si = k; }
-    if (s && riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
-    p.y = s ? s.y : 0;
-    if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
-  } else if (interior?.subway) {
-    interior.subway.onSound = onPlatformSound;
-    const s = hallStairsAt(interior.subway.stairs, p.x, p.z);
-    p.y = s ? s.y : 0;
-    if (s && s.frac >= HALL_EXIT_AT && !subwayCool) leaveStation(s.i);
-    // Walk into an open train door to board.
-    if (p.x > GATE_X + 0.5 && Math.abs(p.z) >= DOOR_Z - 0.6 && !subwayCool) {
-      const t = p.z >= 0 ? 0 : 1, left = interior.subway.doorsOpen(t);
-      if (left) boardTrain(t, left);
-    }
-  } else if (interior?.train) updateMetro(p);
-}
+// Station halls, ticket gates and riding the train (src/game/subway.js).
+const subway = createSubway(subwayStations, {
+  get interior() { return interior; }, get scene() { return scene; }, get cam() { return cam; },
+  get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
+  enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
+});
+const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
 let signsTranslated = false;
@@ -4620,7 +4330,7 @@ function refreshItems() {
     d.textContent = localName(it.desc, getLanguage());
     row.append(b, d);
     if (it.pet) { // walk this pet, or leave it at home
-      const walking = pet?.id === id;
+      const walking = petCare.pet?.id === id;
       const w = document.createElement('button');
       w.className = 'chip item-walk' + (walking ? ' on' : '');
       w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
@@ -4681,7 +4391,7 @@ function refreshItems() {
   }));
 }
 // Bring back the pet I was walking last time.
-try { const saved = localStorage.getItem(PET_KEY); if (saved) setPet(saved); } catch { /* storage blocked */ }
+petCare.restorePet();
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 // Budget book (가계부): today's totals and the latest coins in and out.
 function ledgerLabel(e) {
@@ -4820,7 +4530,7 @@ function renderDaily() {
 // talking to the guide (take an errand, see it again, or report back).
 // A function declaration (not a const): setHeld() runs during startup,
 // before this line, when a held item is restored.
-function questCtx() { return { held: held?.kind || null, pet: !!pet }; }
+function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
@@ -5551,7 +5261,7 @@ renderer.setAnimationLoop(() => {
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
-    if (pet) st.pt = pet.id;
+    if (petCare.pet) st.pt = petCare.pet.id;
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq;
@@ -5686,7 +5396,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
-    metro: () => metro && { ...metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },
+    metro: () => subway.metro && { ...subway.metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
@@ -5739,10 +5449,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
     ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
     music: () => ({ on: music.on, track: music.track.id }),
-    pet: () => pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible },
-    petPoop: () => { if (pet) pet.walked = pet.poopAt; },
-    poops: () => poopTimers.list.map((x) => ({ ...x, x: poops.get(x.id)?.x, z: poops.get(x.id)?.z })),
-    poopTime: (s) => poopTimers.list.forEach((x) => { x.left = s; }),
+    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible }; },
+    petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
+    poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
+    poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     bagList: () => bag.list(),
     owns: (id) => inventory.has(id),
