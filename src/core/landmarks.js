@@ -145,35 +145,6 @@ const BUILD = {
       g.add(stone);
     }
   },
-  fountain(g) {
-    // A round stone fountain on the plaza (the game's own design, not a copy
-    // of any artwork): a low granite basin, three river stones stacked in the
-    // middle, and a ring of small jets.
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.6, 0.7, 24), mat(C.stone));
-    rim.position.y = 0.35;
-    g.add(rim);
-    const pool = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 0.08, 24), new THREE.MeshLambertMaterial({ color: '#7cc4e8', transparent: true, opacity: 0.85 }));
-    pool.position.y = 0.73;
-    pool.userData.noShadow = true;
-    g.add(pool);
-    [[1.3, 0.45, 0.9], [1.0, 0.38, 1.45], [0.65, 0.32, 1.9]].forEach(([r, h, y], i) => {
-      const st = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 6), mat(i % 2 ? C.stoneDark : C.plinth));
-      st.scale.y = h / r;
-      st.position.y = y;
-      st.rotation.y = i;
-      g.add(st);
-    });
-    const jetMat = new THREE.MeshLambertMaterial({ color: '#d8f0f8', transparent: true, opacity: 0.6 });
-    const jets = [];
-    for (let k = 0; k < 8; k++) {
-      const a = (k / 8) * Math.PI * 2, jet = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 1.6, 6), jetMat);
-      jet.position.set(Math.cos(a) * 2.3, 1.45, Math.sin(a) * 2.3);
-      jet.userData.noShadow = true;
-      g.add(jet);
-      jets.push(jet);
-    }
-    return (t) => jets.forEach((j, k) => { const s = 0.75 + Math.sin(t * 3 + k) * 0.25; j.scale.y = s; j.position.y = 0.73 + 0.8 * s; });
-  },
   guard(g) {
     // A gate guard (수문장) in a red robe with a black hat and a flag.
     const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));
