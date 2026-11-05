@@ -9,6 +9,7 @@ export const ID = {
   'car.alley': 'Mobil tidak bisa masuk gang. Turun dan jalan kaki!',
   'credit.privacy': 'Privasi',
   'credit.terms': 'Ketentuan',
+  'credit.about': 'Tentang',
   'cloud.guest': 'Tersimpan di server (akun tamu)',
   'cloud.account': 'Tersimpan di akunmu',
   'cloud.local': 'Hanya tersimpan di perangkat ini',

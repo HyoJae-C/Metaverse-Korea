@@ -9,6 +9,7 @@ export const AR = {
   'car.alley': 'لا تدخل السيارات الأزقة. انزل وامشِ!',
   'credit.privacy': 'الخصوصية',
   'credit.terms': 'الشروط',
+  'credit.about': 'حول',
   'cloud.guest': 'محفوظ على الخادم (حساب ضيف)',
   'cloud.account': 'محفوظ في حسابك',
   'cloud.local': 'محفوظ على هذا الجهاز فقط',

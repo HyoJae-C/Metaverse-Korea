@@ -9,6 +9,7 @@ export const VI = {
   'car.alley': 'Ô tô không vào được hẻm. Xuống xe và đi bộ nhé!',
   'credit.privacy': 'Quyền riêng tư',
   'credit.terms': 'Điều khoản',
+  'credit.about': 'Giới thiệu',
   'cloud.guest': 'Đã lưu trên máy chủ (tài khoản khách)',
   'cloud.account': 'Đã lưu vào tài khoản của bạn',
   'cloud.local': 'Chỉ lưu trên thiết bị này',
