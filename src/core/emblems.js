@@ -51,6 +51,12 @@ export const NAME_COLORS = [
   { id: 'rainbow', tier: 'dazzling', css: 'linear-gradient(90deg,#ff4f4f,#ff9f1f,#e6c200,#2fb84b,#2f8fe0,#8a4fe0,#ff4f4f)', fx: 'flow', name: { en: 'Rainbow', ko: '무지개', ja: '虹', zh: '彩虹' } },
 ];
 
+// The operator badge: never sold. The operator turns it on with the master
+// code (chat "/<code>"). Other players only see it once the server confirms
+// that name belongs to an operator account (supabase/005_operators.sql), so
+// copying the flag doesn't make anyone an operator.
+export const OPERATOR_BADGE = { icon: '🛡️', name: { en: 'Operator', ko: '운영자', ja: '運営', zh: '运营', es: 'Operador', ar: 'المشرف', vi: 'Quản trị', hi: 'ऑपरेटर', id: 'Operator' } };
+
 export const emblemById = (id) => EMBLEMS.find((e) => e.id === id) || null;
 export const nameColorById = (id) => NAME_COLORS.find((c) => c.id === id) || null;
 export const priceOf = (it) => TIERS[it.tier].price;
@@ -80,10 +86,18 @@ export class EmblemCollection {
 
 // Draw a name tag: [emblem] name, in the chosen colour. Uses textContent only
 // (names come from other players).
-export function styleNameTag(tag, name, look = {}) {
+// opts.operator: show the operator badge (only when it has been checked).
+export function styleNameTag(tag, name, look = {}, opts = {}) {
   const em = emblemById(look.emblem);
   const col = nameColorById(look.nameColor);
   tag.replaceChildren();
+  if (opts.operator) {
+    const o = document.createElement('span');
+    o.className = 'tag-operator';
+    o.textContent = OPERATOR_BADGE.icon + ' ' + (OPERATOR_BADGE.name[opts.lang] || OPERATOR_BADGE.name.en);
+    tag.append(o);
+  }
+  tag.classList.toggle('operator', !!opts.operator);
   if (em) {
     const b = document.createElement('span');
     b.className = 'tag-emblem tier-' + em.tier + (em.fx ? ' fx-' + em.fx : '');

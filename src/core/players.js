@@ -1,7 +1,7 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
 import { parseRide } from './bike-garage.js';
-import { t } from './i18n.js';
+import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS } from './held.js';
 // Looping poses others can show (see Character.activity).
@@ -14,10 +14,24 @@ import { styleNameTag } from './emblems.js';
 import { sanitizeLook } from '../data/appearance.js';
 
 export class RemotePlayers {
-  constructor(scene, labelLayer) {
+  // isOperator(name) → Promise<boolean>: asks the server whether that name
+  // belongs to an operator (only asked when a player shows the badge).
+  constructor(scene, labelLayer, { isOperator } = {}) {
     this.scene = scene;
     this.layer = labelLayer;
     this.players = new Map();
+    this.isOperator = isOperator || (async () => false);
+  }
+
+  // Name tag with the operator badge only once the server has said yes.
+  _tag(p, look) {
+    const clean = sanitizeLook(look);
+    styleNameTag(p.tag, p.name, clean);
+    if (!clean.op) return;
+    const name = p.name;
+    this.isOperator(name).then((yes) => {
+      if (yes && this.players.get(p.id) === p && p.name === name) styleNameTag(p.tag, p.name, clean, { operator: true, lang: getLanguage() });
+    }).catch(() => {});
   }
 
   join(peer) {
@@ -27,12 +41,13 @@ export class RemotePlayers {
     const tag = document.createElement('div');
     tag.className = 'nametag';
     const name = String(peer.name || 'Traveler').slice(0, 16);
-    styleNameTag(tag, name, sanitizeLook(peer.look));
     this.layer.appendChild(tag);
-    this.players.set(peer.id, {
-      ch, tag, bubble: null, name,
+    const p = {
+      id: peer.id, ch, tag, bubble: null, name,
       target: null, ry: 0, s: 0,
-    });
+    };
+    this.players.set(peer.id, p);
+    this._tag(p, peer.look);
   }
 
   leave(id) {
@@ -50,7 +65,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
-    styleNameTag(p.tag, p.name, sanitizeLook(look));
+    this._tag(p, look);
     p.bk = false; // re-applied on the next update
     p.hd = null;
     p.ch.root.position.copy(old.position);

@@ -94,7 +94,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, isWorn, redeemCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -111,7 +111,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
@@ -287,6 +287,19 @@ $('next-btn').onclick = () => {
   }).then((ok) => { $('login-google').hidden = ok; });
 };
 $('login-guest').onclick = lookOrStart;
+// Operator badge (🛡️): on the name tag; others see it only once the server
+// confirms the name is an operator's (supabase/005_operators.sql).
+const OPERATOR_TEXT = {
+  on: { en: '🛡️ Operator badge on', ko: '🛡️ 운영자 엠블럼을 달았어요', ja: '🛡️ 運営バッジをつけました', zh: '🛡️ 已戴上运营徽章' },
+  off: { en: 'Operator badge off', ko: '운영자 엠블럼을 뗐어요', ja: '運営バッジを外しました', zh: '已摘下运营徽章' },
+};
+const RESERVED_TEXT = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
+const opChecks = new Map(); // name -> Promise<boolean>, once per session
+function isOperatorName(name) {
+  if (!opChecks.has(name)) opChecks.set(name, cloud.isOperator(name));
+  return opChecks.get(name);
+}
+function styleMyTag(look) { styleNameTag(myTag, nickname, look, { operator: !!look.op, lang: getLanguage() }); }
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
 // after an IME has finished composing a syllable).
 const NAME_HINT = { en: 'Korean or English letters and numbers only.', ko: '한글, 영어, 숫자만 쓸 수 있어요.', ja: '韓国語（ハングル）・英字・数字のみ使えます。', zh: '只能使用韩文、英文字母和数字。' };
@@ -326,6 +339,12 @@ await new Promise((resolve) => {
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
+    if (!isReturning() && isReservedName(name)) {
+      $('status').textContent = L(RESERVED_TEXT);
+      $('nickname').classList.add('bad');
+      $('nickname').focus();
+      return;
+    }
     if (!isReturning() && name) {
       busy = true;
       $('start-btn').disabled = true;
@@ -780,7 +799,7 @@ const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
-styleNameTag(myTag, nickname, myLook);
+styleMyTag(myLook);
 $('labels').appendChild(myTag);
 const myLabel = { tag: myTag, bubble: null };
 
@@ -982,7 +1001,7 @@ const weather = new WeatherSystem({
 });
 
 // ---------- Multiplayer ----------
-let others = new RemotePlayers(scene, $('labels'));
+let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
 let onlineAll = 0;
@@ -1026,7 +1045,7 @@ async function joinRoom(room, roomScene, area = null) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'));
+  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
   refreshOnline();
   const handlers = {
     onJoin: (p) => {
@@ -1102,6 +1121,7 @@ async function renameMe(raw) {
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
+  if (isReservedName(clean)) return 'reserved';
   if (wallet.coins < RENAME_COST) return 'poor';
   if (await cloud.claimName(clean) === 'taken') return 'taken';
   if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
@@ -1110,7 +1130,7 @@ async function renameMe(raw) {
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
   $('nickname').value = clean;
-  styleNameTag(myTag, nickname, myLook);
+  styleMyTag(myLook);
   emblemUi.name = nickname;
   me.play('cheer');
   if (lastJoin && net !== SOLO) {
@@ -1125,7 +1145,7 @@ function goSolo(roomScene) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'));
+  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
   refreshOnline();
 }
 net = SOLO;
@@ -1325,6 +1345,14 @@ chatBar.addEventListener('submit', async (e) => {
     chatInput.value = '';
     // Developer codes: "/<code>". A wrong one reads like any unknown command.
     const code = raw.slice(1).trim();
+    // The master code also switches the 🛡️ operator badge on or off.
+    if (await isMasterCode(code)) {
+      myLook = { ...myLook, op: !myLook.op || undefined };
+      if (!myLook.op) delete myLook.op;
+      saveLook(myLook);
+      setLook(myLook);
+      shop.toast(L(myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
+    }
     const coinsFromCode = await coinCode(code);
     if (coinsFromCode) {
       wallet.add(coinsFromCode, { k: 'ledger.gift' });
@@ -1846,7 +1874,7 @@ onLanguageChange(() => {
 
 function setLook(look) {
   currentLook = look;
-  styleNameTag(myTag, nickname, look);
+  styleMyTag(look);
   const old = me.root;
   me = createCharacter(look);
   me.root.position.copy(old.position);

@@ -222,6 +222,7 @@ export function sanitizeLook(raw) {
   if (skirtById(raw.skirt)) look.skirt = raw.skirt;
   if (typeof raw.emblem === 'string' && emblemById(raw.emblem)) look.emblem = raw.emblem; // name tag
   if (typeof raw.nameColor === 'string' && nameColorById(raw.nameColor)) look.nameColor = raw.nameColor;
+  if (raw.op === true) look.op = true; // asks for the operator badge (checked on the server)
   return look;
 }
 
