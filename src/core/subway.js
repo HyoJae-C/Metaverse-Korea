@@ -408,6 +408,24 @@ export function buildStation(store, ROOM) {
     box(0.04, 0.6, 1.1, -w / 2 + 0.67, 1.25, z, '#d8ecff');
   }
   block(-w / 2, -3.4, -w / 2 + 0.75, 3.4);
+  // Two drink vending machines against the north wall of the concourse.
+  const vending = [];
+  {
+    const cans = ['#2b2b2b', '#c8a27a', '#f2c230', '#6b3b22', '#1fb34f', '#ff8a1c', '#7fd1ff', '#c9a15a', '#e8f4ff'];
+    for (const [k, vx] of [-15.6, -14.3].entries()) {
+      const vz = -d / 2 + 0.45;
+      box(1.15, 1.95, 0.8, vx, 0.975, vz, k ? '#2f6fd0' : '#d8342c');
+      box(0.95, 1.0, 0.04, vx, 1.35, vz + 0.41, new THREE.MeshBasicMaterial({ color: '#f7fbff' })); // lit window
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        box(0.16, 0.24, 0.04, vx - 0.3 + c * 0.3, 1.05 + r * 0.32, vz + 0.44, new THREE.MeshBasicMaterial({ color: cans[(r * 3 + c + k * 4) % cans.length] }));
+      }
+      box(0.7, 0.18, 0.06, vx, 0.35, vz + 0.42, '#1b1d22'); // the slot drinks drop into
+      box(0.16, 0.3, 0.05, vx + 0.42, 0.85, vz + 0.42, '#c9ced6'); // coin slot and buttons
+      block(vx - 0.6, vz - 0.4, vx + 0.6, vz + 0.4);
+      vending.push({ x: vx, z: vz + 0.95 });
+    }
+    sign(signTexture('음료 자판기', 'Drinks · 🪙 1', { line, w: 512, h: 128 }), 2.4, 0.6, -14.95, 2.35, -d / 2 + 0.03, 0);
+  }
   sign(signTexture(`${name.ko || ''}역 · ${lineName.ko || ''}`, `${name.en || ''} Station · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 6, 1, -w / 2 + 0.02, 2.9, 0, Math.PI / 2);
 
   // Gates: waist-high cabinets across the hall; each lane has red flaps. You
@@ -500,10 +518,22 @@ export function buildStation(store, ROOM) {
       return to ? [`${l[0]} · ${to.ko} 방면`, `${l[1]} · for ${to.en}`] : [l[0], 'Not in service'];
     };
     const up = dirTxt(0), down = dirTxt(1);
-    const sx = PLAT_X[0] + 4, sw = 7.2, sh = 0.9, sy = 3.8;
-    sign(directionSignTexture(['◀ ' + down[0], down[1]], [up[0] + ' ▶', up[1]], line), sw, sh, sx, sy, 0, -Math.PI / 2);
-    sign(directionSignTexture(['◀ ' + up[0], up[1]], [down[0] + ' ▶', down[1]], line), sw, sh, sx + 0.04, sy, 0, Math.PI / 2);
-    for (const z of [-sw / 2 + 0.4, sw / 2 - 0.4]) box(0.04, h - sy - sh / 2, 0.04, sx + 0.02, (h + sy + sh / 2) / 2, z, '#9aa1ab');
+    const sw = 7.2, sh = 0.9, sy = 3.8;
+    const hang = (sx, front, back) => {
+      sign(front, sw, sh, sx, sy, 0, -Math.PI / 2); // read walking east
+      sign(back, sw, sh, sx + 0.04, sy, 0, Math.PI / 2); // read walking west
+      for (const z of [-sw / 2 + 0.4, sw / 2 - 0.4]) box(0.04, h - sy - sh / 2, 0.04, sx + 0.02, (h + sy + sh / 2) / 2, z, '#9aa1ab');
+    };
+    // Just past the gates, over the platform end.
+    hang(GATE_X + 2.6,
+      directionSignTexture(['◀ ' + down[0], down[1]], [up[0] + ' ▶', up[1]], line),
+      directionSignTexture(['◀ 나가는 곳', 'Way out · gates and stairs'], null, line));
+    // In the concourse before the gates: where the trains are, and the way out.
+    const upTo = towards.up, downTo = towards.down;
+    hang(GATE_X - 5,
+      directionSignTexture(['타는 곳 · Trains', '개찰구 지나서 · through the gates'],
+        upTo ? [`상행 ${upTo.ko} · 하행 ${downTo.ko} ▶`, `Up for ${upTo.en} · Down for ${downTo.en}`] : ['▶', ''], line),
+      directionSignTexture(['◀ 나가는 곳 · Exit 1, 2', '계단 위로 · stairs up to the street'], null, line));
   }
 
   // LED board over the gates, facing the concourse.
@@ -587,12 +617,27 @@ export function buildStation(store, ROOM) {
     animate,
     subway: Object.assign(hall, {
       stairs,
+      vending,
       // Track t: the doors are open now, and for how much longer (s).
       doorsOpen: (t) => (status[t].phase === 'open' && status[t].left > 0.3 ? status[t].left : 0),
       train: { get phase() { return status[0].phase; } },
     }),
   };
 }
+
+// Drinks from the station vending machines: all cheap (1 coin), all
+// non-alcoholic, so each one works like a coffee (sips that refill stamina).
+export const VENDING_DRINKS = [
+  { id: 'black-coffee', icon: '☕', price: 1, name: { ko: '블랙커피', en: 'Black coffee', ja: 'ブラックコーヒー', zh: '黑咖啡' } },
+  { id: 'milk-coffee', icon: '☕', price: 1, name: { ko: '밀크커피', en: 'Milk coffee', ja: 'ミルクコーヒー', zh: '牛奶咖啡' } },
+  { id: 'yuja-tea', icon: '🍋', price: 1, name: { ko: '유자차', en: 'Yuja tea', ja: 'ゆず茶', zh: '柚子茶' } },
+  { id: 'hot-choco', icon: '🍫', price: 1, name: { ko: '핫초코', en: 'Hot chocolate', ja: 'ホットチョコ', zh: '热巧克力' } },
+  { id: 'energy', icon: '⚡', price: 1, name: { ko: '에너지음료', en: 'Energy drink', ja: 'エナジードリンク', zh: '能量饮料' } },
+  { id: 'vitamin', icon: '🍊', price: 1, name: { ko: '비타민음료', en: 'Vitamin drink', ja: 'ビタミンドリンク', zh: '维生素饮料' } },
+  { id: 'cider', icon: '🥤', price: 1, name: { ko: '사이다', en: 'Lemon-lime soda (cider)', ja: 'サイダー', zh: '汽水' } },
+  { id: 'barley-tea', icon: '🍵', price: 1, name: { ko: '보리차', en: 'Barley tea', ja: '麦茶', zh: '大麦茶' } },
+  { id: 'water', icon: '💧', price: 1, name: { ko: '생수', en: 'Bottled water', ja: 'ミネラルウォーター', zh: '矿泉水' } },
+];
 
 // ---------- Inside a train car ----------
 
