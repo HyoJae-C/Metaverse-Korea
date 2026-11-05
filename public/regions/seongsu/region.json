@@ -500,10 +500,10 @@
     "L-118": { "image": "ads/seongsu-fw-suit-v2.webp" },
     "L-119": { "image": "ads/seongsu-blonde-v2.webp" },
     "L-101": { "image": "ads/seongsu-mono-v2.webp" },
-    "L-97": { "image": "ads/seongsu-sunday-v2.webp" }
+    "L-97": { "image": "ads/seongsu-sunday-v2.webp" },
+    "L-32": { "image": "ads/seongsu-puffer-v2.webp" }
   },
   "storePosters": {
-    "golmok-chicken": { "image": "ads/seongsu-puffer-v2.webp" },
     "sinjeon-pocha": { "image": "ads/seongsu-retro-v2.webp" },
     "son-kalguksu": { "image": "ads/seongsu-noir-v2.webp" },
     "sandgrain-bakery": { "image": "ads/seongsu-beanie-v2.webp" }
