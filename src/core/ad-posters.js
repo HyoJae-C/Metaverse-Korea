@@ -183,9 +183,9 @@ export class AdPosters {
       const lot = storeLot(buildings, placeOf(s, center, latLonToLocal));
       if (!lot) continue;
       const { b, front } = lot;
-      // Above the floating shop name (storefronts.js badge, up to ~7.2 m).
-      const bottom = 8.2, top = (b.h || 8) - 0.5;
-      const bw = Math.min(front.half * 2 - 1.2, 9, (top - bottom) / 0.62);
+      // Just above the shop sign, as wide as the building allows.
+      const bottom = 5.6, top = (b.h || 8) - 0.5;
+      const bw = Math.min(front.half * 2 - 0.8, 14, (top - bottom) / 0.62);
       if (bw < 3) continue;
       const bh = bw * 0.62;
       const g = new THREE.Group();
