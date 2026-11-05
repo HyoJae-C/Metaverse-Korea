@@ -2285,6 +2285,9 @@ function enterStore(item) {
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
 function leaveStore() {
   if (mode !== 'store') return;
+  // Trying something on only lasts while you are in the shop: walking out
+  // without buying puts your own look back.
+  if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
   if (metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
   cable = null;
