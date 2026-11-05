@@ -300,16 +300,17 @@ export function buildInterior(store) {
   wall(d, w / 2, 0, -Math.PI / 2);
   wall(w, 0, d / 2, Math.PI);
 
-  // Exit door on the front wall.
+  // Exit door on the front wall (none upstairs in the museum).
+  const noExit = store.category === 'museum' && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
   door.rotation.y = Math.PI;
   door.position.set(EXIT.x, 1.2, d / 2 - 0.03);
-  scene.add(door);
+  if (!noExit) scene.add(door);
   const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 1).rotateX(-Math.PI / 2), mat(store.colors.awning));
   mat2.position.set(EXIT.x, 0.01, d / 2 - 0.6);
-  scene.add(mat2);
+  if (!noExit) scene.add(mat2);
 
   // Name on the back wall.
   const c = document.createElement('canvas');
@@ -514,10 +515,12 @@ export function buildInterior(store) {
     scene.add(sign);
   } else if (store.category === 'museum') {
     // Old Korean paintings on the walls, benches, and a docent at the desk.
-    const gallery = buildGallery(scene, ROOM, { box, block, mat });
+    const gallery = buildGallery(scene, ROOM, { box, block, mat }, store.floor || 1);
     stations.paintings = gallery.looks;
+    stations.lift = gallery.lift;
     seats.push(...gallery.seats);
     clerk = gallery.clerk;
+    see = gallery.see;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any
@@ -1456,5 +1459,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT, noExit };
 }
