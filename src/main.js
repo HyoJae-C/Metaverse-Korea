@@ -51,16 +51,21 @@ import { Zones } from './core/zones.js';
 import { buildInterior, productModel } from './core/interior.js';
 import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES, mealSync, parseMealSync, biteMsg, parseBite, BITE_REACH, BITE_GAP_MS, foodScale } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart, howToGet, coinsFor } from './ui/shop-ui.js';
+import { ShopUI, Cart, howToGet, coinsFor, RENT } from './ui/shop-ui.js';
+import { hanbokById, isHanbokModel, RENT_HOURS } from './data/hanbok.js';
+import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, isRenting, formatLeft } from './core/hanbok-rental.js';
 import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { KimchiUI } from './ui/kimchi-ui.js';
+import { KimchiSellUI, ML as MARKET_L } from './ui/kimchi-sell-ui.js';
+import { BOSS_LINES } from './ui/market-text.js';
+import { kimchiJar } from './core/kimchi-market.js';
 import { KT as KIMCHI_TEXT } from './ui/kimchi-text.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
-import { Bag } from './core/bag.js';
+import { Bag, giftEntry } from './core/bag.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
@@ -1363,7 +1368,7 @@ const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑
 const shop = new ShopUI({
   cart,
   onTryOn: (product) => {
-    setLook({ ...currentLook, ...product.tryOn });
+    setLook({ ...currentLook, ...(hanbokById(product.rent)?.wear || product.tryOn) });
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
@@ -1388,6 +1393,8 @@ const shop = new ShopUI({
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
+  onRent: (product) => rentHanbok(product),
+  rentLeft: (product) => (isRenting(rental, product.rent) ? timeLeft(rental) : 0),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   canGift: (product) => canGift(product),
   onGift: (product) => startGift(interior?.store, product),
@@ -1683,7 +1690,7 @@ let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
-    if (h?.kind === 'gift') return { kind: 'gift', sips: 1, name: String(h.name || '').slice(0, 40), icon: String(h.icon || '🛍️').slice(0, 4) };
+    if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
   } catch { return null; }
@@ -1927,7 +1934,7 @@ try {
     localStorage.setItem('mk.outfitGift', '1');
   }
 } catch { /* storage blocked */ }
-if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
+if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
   coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
   used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
@@ -1964,6 +1971,64 @@ function outfitAction(itemId) {
   saveLook(myLook);
   setLook(myLook);
 }
+// Hanbok rental (Dano Hanbok Rental by Gyeongbokgung): pay coins, wear it for
+// a few hours, then your own clothes come back by themselves, also after a
+// reload (core/hanbok-rental.js). A chip shows the time left.
+const RENT_TEXT = {
+  rented: { en: '🪭 Rented! Enjoy your hanbok for {h} hours.', ko: '🪭 대여 완료! {h}시간 동안 한복을 즐겨요.', ja: '🪭 レンタル完了！{h}時間韓服を楽しんでね。', zh: '🪭 租好了！尽情穿{h}小时韩服吧。', es: '🪭 ¡Alquilado! Disfruta tu hanbok {h} horas.', ar: '🪭 تم الاستئجار! استمتع بالهانبوك لمدة {h} ساعات.', vi: '🪭 Đã thuê! Tận hưởng hanbok trong {h} giờ.', hi: '🪭 किराए पर लिया! {h} घंटे हानबोक का मज़ा लें।', id: '🪭 Tersewa! Nikmati hanbokmu selama {h} jam.' },
+  ended: { en: '🪭 Your hanbok rental is over: back in your own clothes.', ko: '🪭 한복 대여 시간이 끝나서 원래 옷으로 돌아왔어요.', ja: '🪭 韓服のレンタル時間が終わり、元の服に戻りました。', zh: '🪭 韩服租借时间到了，已换回原来的衣服。', es: '🪭 Terminó el alquiler del hanbok: vuelves a tu ropa.', ar: '🪭 انتهى إيجار الهانبوك: عدت إلى ملابسك.', vi: '🪭 Hết giờ thuê hanbok: bạn đã mặc lại đồ của mình.', hi: '🪭 हानबोक का किराया ख़त्म: आप अपने कपड़ों में वापस हैं।', id: '🪭 Sewa hanbok selesai: kembali ke bajumu sendiri.' },
+  returned: { en: '🪭 Hanbok returned. Thank you!', ko: '🪭 한복을 반납했어요. 감사합니다!', ja: '🪭 韓服を返却しました。ありがとう！', zh: '🪭 韩服已归还，谢谢！', es: '🪭 Hanbok devuelto. ¡Gracias!', ar: '🪭 أُعيد الهانبوك. شكرًا!', vi: '🪭 Đã trả hanbok. Cảm ơn!', hi: '🪭 हानबोक लौटा दिया। धन्यवाद!', id: '🪭 Hanbok dikembalikan. Terima kasih!' },
+  chipHint: { en: 'Your own clothes come back when the time is up. Return it early at the hanbok shop.', ko: '시간이 끝나면 원래 옷으로 돌아와요. 한복집에서 미리 반납할 수도 있어요.', ja: '時間が来ると元の服に戻ります。韓服店で早めに返すこともできます。', zh: '时间到了会换回原来的衣服，也可以在韩服店提前归还。', es: 'Tu ropa vuelve cuando se acaba el tiempo. Puedes devolverlo antes en la tienda.', ar: 'تعود ملابسك عند انتهاء الوقت. يمكنك إعادته مبكرًا في متجر الهانبوك.', vi: 'Hết giờ quần áo của bạn sẽ trở lại. Có thể trả sớm ở tiệm hanbok.', hi: 'समय पूरा होने पर आपके कपड़े लौट आते हैं। चाहें तो दुकान पर पहले लौटा दें।', id: 'Bajumu kembali saat waktunya habis. Bisa dikembalikan lebih awal di toko hanbok.' },
+};
+let rental = loadRental();
+function rentHanbok(product) {
+  const set = hanbokById(product.rent);
+  if (!set) return;
+  if (isRenting(rental, product.rent)) { // give it back early
+    myLook = endRental(myLook, rental);
+    rental = null;
+    shop.toast(L(RENT_TEXT.returned));
+  } else {
+    if (!wallet.spend(set.coins, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: set.coins - wallet.coins })); return; }
+    refreshWallet();
+    sfx.pop?.();
+    const r = startRental(myLook, product.rent, Date.now(), rental);
+    myLook = r.look;
+    rental = r.rental;
+    shop.toast(fmt(L(RENT_TEXT.rented), { h: RENT_HOURS }));
+  }
+  $('revert-look').hidden = true;
+  saveRental(rental);
+  saveLook(myLook);
+  setLook(myLook);
+  refreshRentChip();
+}
+function refreshRentChip() {
+  const chip = $('rent-chip');
+  chip.hidden = !rental;
+  if (rental) chip.textContent = '🪭 ' + formatLeft(timeLeft(rental));
+  chip.title = rental ? fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) }) : '';
+}
+// Time up (checked now, then every 20 s): your own clothes back.
+function tickRental() {
+  const r = checkRental(myLook, rental);
+  if (r.rental !== rental || r.look !== myLook) {
+    rental = r.rental;
+    saveRental(rental);
+    if (r.look !== myLook) {
+      myLook = r.look;
+      saveLook(myLook);
+      if (currentLook !== myLook) $('revert-look').hidden = true;
+      setLook(myLook);
+      if (r.ended) shop.toast(L(RENT_TEXT.ended));
+    }
+  }
+  refreshRentChip();
+}
+setTimeout(tickRental, 0);
+setInterval(tickRental, 20000);
+onLanguageChange(refreshRentChip);
+$('rent-chip').onclick = () => shop.toast(`${fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) })} · ${L(RENT_TEXT.chipHint)}`);
 // Gifts: buy something in a shop for someone else in the same shop (rules in
 // core/gifts.js). The giver pays now; the friend gets a card to accept, and
 // it goes into their bag (or their items, for clothes). No, no answer, or
@@ -1971,7 +2036,7 @@ function outfitAction(itemId) {
 // What a product becomes as a gift here, or null when it can't be one:
 // { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
 function giftFor(store, product) {
-  if (!store || !product || product.adopt || product.umbrella || !onSale(product)) return null;
+  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product)) return null;
   const name = product.name;
   const itemId = product.item || product.outfit;
   const it = itemId && ITEMS[itemId];
@@ -2136,7 +2201,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2214,6 +2279,7 @@ function leaveStore() {
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
+  if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
   for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi]) if (g.open) g.close();
@@ -3197,7 +3263,7 @@ function setActionLabel(label) {
 }
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3442,7 +3508,21 @@ const kimchiUi = new KimchiUI({
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onJar: () => bag.add({ kind: 'gift', sips: 1, name: localName(KIMCHI_TEXT.item, 'en'), icon: '🫙' }),
+  onJar: (score) => bag.add(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
+});
+// Yongmaru Market (Itaewon): the side-dish stall buys homemade kimchi, a few
+// jars a day (core/kimchi-market.js).
+const kimchiSellUi = new KimchiSellUI({
+  root: $('kimchi-sell-panel'),
+  bag,
+  wallet,
+  getHeld: () => held,
+  clearHeld: () => setHeld(null),
+  onSold: (coins, score) => {
+    shop.toast(MARKET_L('sold', { coins }));
+    clerk && say(clerk, $('labels'), score >= 75 ? BOSS_LINES.great : BOSS_LINES.ok);
+  },
+  onLimit: () => clerk && say(clerk, $('labels'), BOSS_LINES.enough),
 });
 
 // Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
@@ -4875,6 +4955,8 @@ function updateAction(p, tSec) {
     } else if (BEAUTY_SHOPS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       const hint = t(isClinic(interior.store.workshop) ? 'beauty.lie' : 'beauty.sit');
       next = { key: 'beauty-hint', label: '💬 ' + hint, run: () => { clerk.ch.wave(); shop.toast(hint); } };
+    } else if (interior.store.workshop === 'kimchi-buy' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'kimchi-sell', label: '🫙 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {

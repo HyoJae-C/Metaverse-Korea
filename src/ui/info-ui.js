@@ -57,7 +57,7 @@ export const AREA = {
     intro: { en: 'Gyeongbokgung: Gwanghwamun Square and the palace, a hanbok rental, a traditional tea house and a kimchi class.', ko: '경복궁: 광화문광장과 궁궐, 한복대여점, 전통찻집, 김치 만들기 교실.', ja: '景福宮：光化門広場と王宮、韓服レンタル、伝統茶房、キムチ教室。', zh: '景福宫：光化门广场和宫殿、韩服租赁、传统茶馆、泡菜课。' } },
   itaewon: { icon: '🌍', to: { zone: 'H' },
     name: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इतेवॉन', ar: 'إيتايوون' },
-    intro: { en: 'Itaewon: food from around the world on World Food Street, and clubs and a quiet bar on Itaewon-ro.', ko: '이태원: 세계음식거리의 각국 음식, 이태원로의 클럽과 조용한 바.', ja: '梨泰院：世界グルメ通りの各国料理、梨泰院路のクラブと静かなバー。', zh: '梨泰院：世界美食街的各国美食，梨泰院路上的夜店和安静的酒吧。' } },
+    intro: { en: 'Itaewon: World Food Street and cafés in the north-west, bars and clubs in the north-east, and Yongmaru Market (traditional market) south-west of the station.', ko: '이태원: 북서쪽 세계음식거리와 카페, 북동쪽 바와 클럽, 역 남서쪽의 용마루시장(전통시장).', ja: '梨泰院：北西に世界グルメ通りとカフェ、北東にバーとクラブ、駅の南西にヨンマル市場（伝統市場）。', zh: '梨泰院：西北是世界美食街和咖啡馆，东北是酒吧和夜店，车站西南是龙脊市场（传统市场）。' } },
   songpa: { icon: '🎡', to: { store: 'another-land' },
     name: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', vi: 'Songpa', hi: 'सोंगपा', ar: 'سونغبا' },
     intro: { en: 'Songpa: walks around Seokchon Lake and Another Land, the theme park on the lake island.', ko: '송파: 석촌호수 산책길과 호수 섬 위의 놀이공원 어나더랜드.', ja: '松坡：石村湖の散歩道と、湖の島の遊園地アナザーランド。', zh: '松坡：石村湖步道和湖心岛上的游乐园另一乐园。' } },

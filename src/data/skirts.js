@@ -46,6 +46,7 @@ const PATTERN_NAMES = {
 const LENGTH_NAMES = {
   mini: { en: 'mini skirt', ko: '미니스커트', ja: 'ミニスカート', zh: '短裙' },
   long: { en: 'long skirt', ko: '롱스커트', ja: 'ロングスカート', zh: '长裙' },
+  chima: { en: 'chima', ko: '치마', ja: 'チマ', zh: '韩服裙' },
 };
 
 // The name of a skirt in en/ko/ja/zh, from its colour, pattern and length.
@@ -113,4 +114,13 @@ export const SKIRTS = {
   'pleats-mini-black': sk('mini', 'pleats', 'black', 0x2b2b31),
 };
 
-export const skirtById = (id) => (typeof id === 'string' && Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : null);
+// Hanbok skirts (chima): only worn with a rented hanbok (data/hanbok.js),
+// never sold on their own, so they are kept out of SKIRTS.
+export const CHIMAS = {
+  'chima-red': sk('chima', 'pleats', 'red', 0xc8323f),
+  'chima-navy': sk('chima', 'pleats', 'navy', 0x2f3c66),
+  'chima-pink': sk('chima', 'pleats', 'pink', 0xf29bb6),
+};
+
+export const skirtById = (id) => (typeof id !== 'string' ? null
+  : Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : Object.hasOwn(CHIMAS, id) ? CHIMAS[id] : null);

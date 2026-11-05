@@ -29,6 +29,15 @@ const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, c
 // A short-sleeved shirt with a collar and a button placket.
 const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
 
+// Hanbok (rented at the hanbok shop, data/hanbok.js). A short jeogori over a
+// high chima (look.skirt), with a white collar (dongjeong), coloured cuffs
+// (kkeutdong) and a ribbon (goreum); a longer jeogori over baji trousers;
+// and a long durumagi overcoat. "bottom" is the baji's own colour.
+const IVORY = 0xfbf6ea;
+const JEOGORI = { outfit: { hem: 0.86, sleeve: 0.84, cuff: 'accent', collar: 'accent2', goreum: 'accent', bulk: 0.006 }, colors: { accent2: IVORY } };
+const BAJI = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent2', goreum: 'accent', bulk: 0.014 }, colors: { accent2: IVORY } };
+const DURUMAGI = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', collar: 'accent2', goreum: 'accent', bulk: 0.02 }, colors: { accent2: IVORY } };
+
 // Colour variants of a garment: { id: colours } -> model defs on one GLB.
 const variants = (glb, emoji, base, list, extra = {}) => Object.fromEntries(Object.entries(list).map(([id, colors]) => [id,
   { url: `models/kaykit2/${glb}.glb`, emoji, wear: wear({ ...base, colors: { ...base.colors, ...colors } }), ...extra }]));
@@ -64,6 +73,18 @@ export default {
     }),
     ...variants('mage', '🧥', LONG_PADDING, {
       'padding-white': { top: 0xeeeae2, accent: 0xa9a59c, stitch: 0xc4beb2 },
+    }),
+    // Hanbok: all on the basic model, so the face stays the same.
+    ...variants('rogue', '🪭', JEOGORI, {
+      'hanbok-yellow': { top: 0xffd36e, accent: 0xc8323f },
+      'hanbok-pink': { top: 0xffc2d2, accent: 0x2f3c66 },
+      'hanbok-mint': { top: 0x9edccf, accent: 0xe0607e },
+    }),
+    ...variants('rogue', '🪭', BAJI, {
+      'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
+    }),
+    ...variants('rogue', '🪭', DURUMAGI, {
+      'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },
     }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.

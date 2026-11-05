@@ -131,6 +131,14 @@ function torso(out, o) {
   if (o.panel) box(out, [0, 0.86, front(0.0)], [0.15, 0.48, 0.02], o.panel, [['spine', 0.5], ['chest', 0.5]]);
   if (o.pocket) box(out, [0, 0.72, front(0.0)], [0.26, 0.13, 0.03], o.pocket, [['spine', 1]]);
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
+  // Hanbok: the goreum, a ribbon tied on the right of the chest with two
+  // long ends hanging down (one longer than the other).
+  if (o.goreum) {
+    const z = front(0.03), w = [['spine', 0.4], ['chest', 0.6]];
+    box(out, [-0.07, 1.0, z], [0.07, 0.05, 0.03], o.goreum, w);
+    box(out, [-0.09, 0.86, z], [0.045, 0.26, 0.015], o.goreum, w);
+    box(out, [-0.04, 0.89, z + 0.004], [0.04, 0.2, 0.015], o.goreum, w);
+  }
 }
 
 function arm(out, o, side) {

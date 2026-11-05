@@ -938,6 +938,15 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 .photo-count[hidden] { display: none; }
 body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibility: hidden; }
 .delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 196px); bottom: auto; background: #ffefe0; }
+/* Hanbok rental: the time left, beside the coins. */
+.rent-chip { background: #fde4ea; color: #7a1f33; font-weight: 800; }
+.rent-chip[hidden] { display: none; }
+/* Narrow phones: below the chip row, not in it (the row is full). In a shop
+   the banner is there, and the product card shows the time instead. */
+@media (max-width: 480px) {
+  .top-right .rent-chip { position: absolute; top: calc(100% + 6px); right: 0; }
+  .in-store .top-right .rent-chip { display: none; }
+}
 
 /* Name tag emblems and colours (core/emblems.js) */
 .nametag { display: inline-flex; align-items: center; gap: 4px; }
