@@ -94,7 +94,9 @@ const B = [
   { x: ['east2', E(260)], z: ['achasan', 'seoulsup'], sides: {}, area: 'park' },
   // Café Street to Seoulsup-gil.
   { x: ['seongsuil', 'brick'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', e: 'shop', s: 'plain', w: 'plain' } },
-  { x: ['brick', 'seongsui'], z: ['cafe', 'seoulsup'], sides: { n: 'shop' }, back: 14, area: 'plaza', square: true },
+  // Seongsu Square: the shops around it are added after the blocks (see
+  // "Seongsu Square ring" below), so they face the square.
+  { x: ['brick', 'seongsui'], z: ['cafe', 'seoulsup'], sides: { n: 'shop' }, area: 'plaza', square: true },
   { x: ['seongsui', 'east1'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', w: 'shop', s: 'plain', e: 'plain' } },
   // Seoulsup-gil to Yeonmujang-gil.
   { x: ['seongsuil', 'brick'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', e: 'shop', s: 'shop', w: 'plain' } },
@@ -210,6 +212,69 @@ function fillBlock(b) {
 // ── Build ────────────────────────────────────────────────────────────────
 for (const b of B) fillBlock(b);
 
+// ── Seongsu Square ring ──────────────────────────────────────────────────
+// The square used to be an open plaza behind a tall blank wall, so arriving
+// there felt empty. Now shops stand all around it: a row behind the Café
+// Street shops facing the square, and on the west and east sides two rows
+// back to back (one facing the square, one facing the Red Brick Lane or
+// Seongsui-ro), with a passage in the middle of each side. Across
+// Seoulsup-gil, the blocks facing the square get a row of shops too.
+// These lots come after all the block lots and use their own random numbers,
+// so the lots elsewhere (and the ad spot numbers "L-07") stay the same.
+const SQUARE_LOT = 10.2; // narrow lots: more shop fronts around the square
+const sqRand = rng(20261105);
+const extraLots = [];
+function addLot(poly, face, h) {
+  const bld = { h, p: poly, f: [face.nx, face.nz] };
+  buildings.push(bld);
+  const lot = { b: bld, face };
+  lots.push(lot);
+  extraLots.push(lot);
+}
+// Lots of about SQUARE_LOT along [a0, a1].
+function evenRow(a0, a1, place) {
+  const n = Math.max(1, Math.round((a1 + GAP - a0) / (SQUARE_LOT + GAP)));
+  const w = (a1 - a0 - GAP * (n - 1)) / n;
+  for (let i = 0; i < n; i++) place(a0 + i * (w + GAP), a0 + i * (w + GAP) + w);
+}
+const sqH = () => r1(14 + sqRand() * 8);
+{
+  const [x0, z0, x1, z1] = B.find((b) => b.square).box;
+  const IN = 10, OUT = 8; // depth of the rows facing the square / the street
+  // Behind the Café Street row, between the side rows: shops facing south
+  // onto the square.
+  const nz0 = z0 + DEPTH + GAP, nz1 = nz0 + IN;
+  const wx = x0 + OUT + GAP + IN + GAP, ex = x1 - OUT - GAP - IN - GAP;
+  evenRow(wx, ex, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
+  // West and east sides, from the Café Street row down to Seoulsup-gil, with
+  // a passage in the middle.
+  // The street rows start right behind the Café Street row; the rows facing
+  // the square start below the north row (the corners between are plain).
+  const PASS = 5, mid = (nz1 + z1) / 2, iz0 = nz1 + GAP;
+  for (const [a, b, inner] of [[nz0, mid - PASS / 2, false], [iz0, mid - PASS / 2, true], [mid + PASS / 2, z1, false], [mid + PASS / 2, z1, true]]) {
+    if (inner) {
+      evenRow(a, b, (s, e) => addLot(rect(x0 + OUT + GAP, s, x0 + OUT + GAP + IN, e), { x: x0 + OUT + GAP + IN, z: (s + e) / 2, nx: 1, nz: 0 }, sqH())); // square
+      evenRow(a, b, (s, e) => addLot(rect(x1 - OUT - GAP - IN, s, x1 - OUT - GAP, e), { x: x1 - OUT - GAP - IN, z: (s + e) / 2, nx: -1, nz: 0 }, sqH())); // square
+    } else {
+      evenRow(a, b, (s, e) => addLot(rect(x0, s, x0 + OUT, e), { x: x0, z: (s + e) / 2, nx: -1, nz: 0 }, sqH())); // Red Brick Lane
+      evenRow(a, b, (s, e) => addLot(rect(x1 - OUT, s, x1, e), { x: x1, z: (s + e) / 2, nx: 1, nz: 0 }, sqH())); // Seongsui-ro
+    }
+  }
+  buildings.push({ h: 16, p: rect(x0 + OUT + GAP, nz0, x0 + OUT + GAP + IN, nz1) }, { h: 16, p: rect(x1 - OUT - GAP - IN, nz0, x1 - OUT - GAP, nz1) });
+}
+// Across Seoulsup-gil: the plain buildings facing the square give their
+// north side to a row of shops.
+for (const key of [['brick', 'seongsui'], ['seongsui', 'east1']]) {
+  const b = B.find((q) => q.x[0] === key[0] && q.x[1] === key[1] && q.z[0] === 'seoulsup');
+  const [bx0, bz0, bx1] = b.box;
+  const plain = buildings.filter((q) => !q.f && q.p.some(([, z]) => z === r1(bz0)) && q.p.every(([x]) => x >= bx0 - 0.1 && x <= bx1 + 0.1));
+  if (plain.length !== 1) throw new Error('expected one plain building north in block ' + key);
+  const xs = plain[0].p.map((q) => q[0]);
+  const px0 = Math.min(...xs), px1 = Math.max(...xs);
+  for (const q of plain[0].p) if (q[1] === r1(bz0)) q[1] = r1(bz0 + DEPTH + GAP);
+  evenRow(px0, px1, (s, e) => addLot(rect(s, bz0, e, bz0 + DEPTH), { x: (s + e) / 2, z: bz0, nx: 0, nz: -1 }, sqH()));
+}
+
 const roads = STREETS.map((s) => ({
   k: s.k, w: s.w,
   p: s.h !== undefined ? [[s.from, s.h], [s.to, s.h]] : [[s.v, s.from], [s.v, s.to]],
@@ -273,6 +338,7 @@ export const PLACE = [
   ['seongsu-fishmarket', 'fish'], ['sinjeon-pocha', 'fish'],
 ];
 // Shops added with the hand-made map, and the two homes (homes.json).
+// (Some of these later moved next to Seongsu Square: see TO_SQUARE / --square.)
 export const PLACE_NEW = [
   ['sudo-shoes', 'ymjW'], ['soga-leather', 'ymjW'], ['gaeul-vintage', 'ymj'], ['wide-pants', 'ymj'], ['tteugae-knit', 'ymjE'],
   ['cap-yard', 'ymjE'], ['canvas-room', 'ymj'], ['ohu-perfume', 'brick'], ['heuk-ceramics', 'brick'], ['chorok-plants', 'brick'],
@@ -334,6 +400,59 @@ if (process.argv.includes('--place')) {
   await writeFile(files.stores, text.stores);
   await writeFile(files.homes, text.homes);
   console.log(`placed ${used.size} shops; ${lots.length - used.size} shop lots left empty`);
+}
+// --square: move the shops listed in TO_SQUARE from the outskirts (the south
+// end of the Red Brick Lane, the east end of Yeonmujang-gil and the south
+// lane) onto the free lots around Seongsu Square (extraLots above). Each
+// takes the free lot nearest its target spot. Other shops keep their place.
+export const SQUARE_SPOTS = {
+  sqN: [15, 25], sqW: [-1, 45], sqE: [31, 45], lane: [-22, 45], road: [52, 45],
+  supW: [10, 84], supE: [100, 84],
+};
+export const TO_SQUARE = [
+  // food and the market, looking onto the square
+  ['sinjeon-pocha', 'sqN'], ['golmok-chicken', 'sqN'], ['son-kalguksu', 'sqN'], ['dal-tteok', 'sqN'], ['sandgrain-bakery', 'sqN'],
+  ['seongsu-fishmarket', 'supW'],
+  // the perfume alley moves to the square's east side
+  ['ohu-perfume', 'sqE'], ['maison-seoulsup', 'sqE'], ['monggeul-parfum', 'sqE'], ['plain-note', 'sqE'],
+  ['heart-ppyong', 'road'], ['basic-mood', 'road'], ['scent-factory', 'road'], ['moai-scent-lab', 'road'],
+  // knits, caps, pets and things for home on the west side
+  ['tteugae-knit', 'sqW'], ['cap-yard', 'sqW'], ['mungnyang-petshop', 'sqW'], ['heuk-ceramics', 'sqW'],
+  ['chorok-plants', 'lane'],
+  // the two homes, just across Seoulsup-gil
+  ['forest-lane-apt', 'supE'], ['sunny-villa', 'supE'],
+];
+if (process.argv.includes('--square')) {
+  const files = { stores: path.join(dir, 'stores.json'), homes: path.join(dir, 'homes.json') };
+  const text = { stores: await readFile(files.stores, 'utf8'), homes: await readFile(files.homes, 'utf8') };
+  const all = [...JSON.parse(text.stores).stores, ...JSON.parse(text.homes).homes];
+  const moving = new Set(TO_SQUARE.map(([id]) => id));
+  const pts = all.filter((s) => Array.isArray(s.at) && !moving.has(s.id)).map((s) => s.at);
+  // A lot is taken when a shop stands in front of it (same rule as the ad posters).
+  const taken = (l) => pts.some(([x, z]) => {
+    const dx = x - l.face.x, dz = z - l.face.z;
+    const ahead = dx * l.face.nx + dz * l.face.nz, along = Math.abs(dx * l.face.nz - dz * l.face.nx);
+    return ahead > -1 && ahead < 7 && along <= 6.5;
+  });
+  // Two shops on the same line across x (same z) need 7 m between them.
+  const clash = ([x, z]) => pts.some(([px, pz]) => Math.abs(pz - z) <= 0.5 && Math.abs(px - x) < 7);
+  for (const [id, spot] of TO_SQUARE) {
+    const [tx, tz] = SQUARE_SPOTS[spot];
+    let best = null, bd = Infinity;
+    for (const l of extraLots) {
+      const at = [r1(l.face.x + l.face.nx * 2), r1(l.face.z + l.face.nz * 2)];
+      if (taken(l) || clash(at)) continue;
+      const d = Math.hypot(l.face.x - tx, l.face.z - tz);
+      if (d < bd) { bd = d; best = at; }
+    }
+    if (!best) throw new Error('no free lot by the square for ' + id);
+    pts.push(best);
+    const key = text.homes.includes(`"id": "${id}"`) ? 'homes' : 'stores';
+    text[key] = setAt(text[key], id, best);
+  }
+  await writeFile(files.stores, text.stores);
+  await writeFile(files.homes, text.homes);
+  console.log(`moved ${TO_SQUARE.length} shops to the square; ${extraLots.filter((l) => !pts.some(([x, z]) => Math.hypot(x - l.face.x - l.face.nx * 2, z - l.face.z - l.face.nz * 2) < 0.2)).length} square lots left for ads`);
 }
 export { lots, buildings };
 // --stats: shop lots per block.

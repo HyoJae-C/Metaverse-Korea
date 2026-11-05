@@ -1314,6 +1314,41 @@ export function buildInterior(store) {
         scene.add(lidM);
       });
       block(jx0 + 2.4, jz, 5.4, 1.2);
+    } else if (store.workshop === 'emblem') {
+      // Name tag workshops: the same emblems and name colours everywhere, a
+      // different room. "leather": a craft bench and a pegboard of stitched
+      // leather tags (Seongsu). "neon": glowing tube signs and a sticker wall
+      // (Hongdae).
+      const neon = store.theme === 'neon';
+      const wz = -d / 2 + 0.06;
+      if (neon) {
+        box(w - 1.2, 2.2, 0.04, 0, 1.75, wz, '#1b1830'); // dark back panel
+        const tubes = ['#ff3ea5', '#3ef0ff', '#ffe23e', '#9b5bff', '#3eff8b'];
+        for (let i = 0; i < 5; i++) {
+          const tube = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.05), new THREE.MeshBasicMaterial({ color: tubes[i] }));
+          tube.position.set((i - 2) * 1.4, 1.3 + (i % 2) * 0.7, wz + 0.05);
+          tube.rotation.z = (i % 2 ? 1 : -1) * 0.25;
+          scene.add(tube);
+        }
+        for (let i = 0; i < 18; i++) { // stickers on the side walls
+          const c = tubes[i % tubes.length];
+          box(0.04, 0.3, 0.3, -w / 2 + 0.1, 0.9 + (i % 3) * 0.55, -d / 2 + 1.2 + Math.floor(i / 3) * 0.55, c);
+        }
+        const glow = new THREE.PointLight(0xff4fd8, 6, 7);
+        glow.position.set(0, 2.2, -d / 2 + 1.2);
+        scene.add(glow);
+      } else {
+        box(w - 2, 1.8, 0.05, 0, 1.6, wz, '#c89b6d'); // pegboard
+        const hides = ['#8a5a3a', '#b5763c', '#5b3a26', '#d2a46c', '#3f2a1e'];
+        for (let i = 0; i < 14; i++) { // leather tags hanging on pegs
+          const tx = -w / 2 + 1.6 + (i % 7) * ((w - 3.2) / 6), ty = 1.15 + Math.floor(i / 7) * 0.8;
+          box(0.36, 0.22, 0.03, tx, ty, wz + 0.05, hides[i % hides.length]);
+          box(0.05, 0.05, 0.05, tx, ty + 0.16, wz + 0.05, '#d4b45a'); // brass ring
+        }
+        box(2.4, 0.08, 0.9, -w / 2 + 2, 0.82, -d / 2 + 1.6, '#9a6b42'); // craft bench
+        for (const lx of [-w / 2 + 0.9, -w / 2 + 3.1]) box(0.1, 0.8, 0.8, lx, 0.4, -d / 2 + 1.6, '#6b4a34');
+        block(-w / 2 + 2, -d / 2 + 1.6, 2.4, 0.9);
+      }
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];
@@ -1331,11 +1366,28 @@ export function buildInterior(store) {
         block(tx, tz, 2.7, 1.3);
       }
     }
-    const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
-    box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
-    box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
-    block(cx, cz, 2.2, 0.8);
-    clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+    if (store.workshop === 'info') {
+      // Information Center: one long desk across the back of the room, right
+      // in front of you as you come in, with two guides behind it facing the
+      // door: game help on the left, the neighbourhood guide on the right.
+      const dz = -d / 2 + 2.4, dw = Math.min(5.6, w - 3);
+      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#fffaf0');
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // desk top
+      for (const [gx, color] of [[-dw / 4, '#f2a33a'], [dw / 4, '#3fa66b']]) {
+        box(0.5, 0.36, 0.04, gx, COUNTER_H + 0.42, dz + 0.3, color); // name plates on the desk
+        box(0.42, 0.28, 0.3, gx + 0.55, COUNTER_H + 0.3, dz - 0.15, '#3a3f4a'); // screens
+      }
+      block(0, dz, dw, 0.8);
+      clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
+      stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
+      block(dw / 4, dz - 0.85, 0.6, 0.5);
+    } else {
+      const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
+      box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
+      box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
+      block(cx, cz, 2.2, 0.8);
+      clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+    }
   }
   // Plants in the corners.
   if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {

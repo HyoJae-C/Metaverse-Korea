@@ -52,3 +52,7 @@ lists **districts** joined into one map (`src/core/districts.js`):
 2. Add the landmark as a 3D model on top (gate, palace hall, bridge…).
 3. Add it to `districts` with an offset, and a `link` road to its neighbour.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
+5. Give it an Information Center: a store with `"workshop": "info"` and
+   `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
+   Inside, the game guide (left) explains the game and the area guide (right)
+   lists the district's places.

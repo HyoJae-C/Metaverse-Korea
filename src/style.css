@@ -1461,3 +1461,4 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .kimchi-words div small { color: #8a7a68; }
 @media (max-width: 380px) { .kimchi-leaf { grid-template-columns: 70px 1.3fr 1fr; } .kimchi-shelf { grid-template-columns: 1fr; } .kimchi-words div { grid-template-columns: 52px 1fr; } .kimchi-words div span { grid-column: 1 / -1; } }
 .kimchi-legend { font-size: 12px; font-weight: 700; color: #6b5214; text-align: center; }
+.info-head { margin: 10px 2px 0; font-size: 14px; opacity: 0.75; }
