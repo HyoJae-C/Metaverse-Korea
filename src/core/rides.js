@@ -4,6 +4,7 @@
 // glow; each step is easy to tell apart without being loud. Front is +z,
 // wheels on the ground (y = 0), sized for our ~1 m tall characters.
 import * as THREE from 'three';
+import { drawPatternTile } from './ride-patterns.js';
 
 const DARK = '#2b2f36';
 const mats = {};
@@ -62,7 +63,7 @@ export function skinMaterial(color, pattern) {
   const g = c.getContext('2d');
   g.fillStyle = color; g.fillRect(0, 0, 128, 128);
   const ink = inkFor(color);
-  for (const [x, y, r] of [[32, 34, 20], [96, 30, 15], [64, 80, 17], [20, 104, 13], [104, 104, 19]]) drawMotif(g, pattern, x, y, r, ink);
+  if (!drawPatternTile(g, pattern, ink, color)) for (const [x, y, r] of [[32, 34, 20], [96, 30, 15], [64, 80, 17], [20, 104, 13], [104, 104, 19]]) drawMotif(g, pattern, x, y, r, ink);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;

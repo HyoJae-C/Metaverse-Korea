@@ -2331,6 +2331,55 @@
         { "id": "doganitang", "model": "bowl", "color": "#e8dcc6", "price": 16000, "name": { "en": "Doganitang (knee cartilage soup)", "ko": "도가니탕", "ja": "トガニタン", "zh": "牛膝骨汤" }, "desc": { "en": "Soft, chewy beef knee cartilage in the same milky broth.", "ko": "쫀득한 소 도가니를 넣은 뽀얀 국물이에요." } },
         { "id": "suyuk", "model": "bowl", "color": "#d9b8a0", "price": 25000, "name": { "en": "Beef suyuk", "ko": "소고기 수육", "ja": "牛肉スユク", "zh": "白切牛肉" }, "desc": { "en": "Boiled beef brisket slices to share, dipped in soy sauce with mustard.", "ko": "삶은 소고기를 얇게 썰었어요. 겨자 간장에 찍어 드세요." } }
       ]
+    },
+    {
+      "id": "bike-research-lab",
+      "category": "workshop",
+      "workshop": "bike",
+      "rideShop": "lab",
+      "size": "small",
+      "at": [-2939.5, -776],
+      "name": {"ko": "자전거연구소", "en": "Bike Research Lab", "ja": "自転車研究所", "zh": "自行车研究所", "es": "Laboratorio de Bicis"},
+      "tagline": {"en": "Ride upgrades: speed tune-ups and street-art skins", "ko": "탈것 업그레이드: 속도 튜닝과 스트리트 아트 스킨", "ja": "乗り物アップグレード：スピードチューンとストリートアートのスキン", "zh": "车辆升级：提速改装和街头涂鸦皮肤", "es": "Mejoras de vehículos: puesta a punto y aspectos de arte urbano"},
+      "colors": {"sign": "#1f1f2b", "awning": "#b6ff3b", "accent": "#f4ffe6"},
+      "products": [
+        {"id": "lab-spray-can", "model": "cup", "color": "#ff3ea5", "price": 7000, "name": {"en": "Spray paint can", "ko": "스프레이 페인트", "ja": "スプレー缶", "zh": "喷漆罐"}, "desc": {"en": "For touching up your frame.", "ko": "프레임 칠이 벗겨졌을 때 살짝 덧칠해요."}},
+        {"id": "lab-tire-gauge", "model": "pen", "color": "#9aa0a6", "price": 12000, "name": {"en": "Tyre pressure gauge", "ko": "타이어 공기압 게이지", "ja": "空気圧ゲージ", "zh": "胎压计"}, "desc": {"en": "The right pressure makes every ride faster.", "ko": "공기압만 맞춰도 훨씬 잘 나가요."}},
+        {"id": "lab-sticker-pack", "model": "notebook", "color": "#b6ff3b", "price": 5000, "name": {"en": "Lab sticker pack", "ko": "연구소 스티커 팩", "ja": "ラボのステッカー", "zh": "研究所贴纸包"}, "desc": {"en": "Stick them on your helmet or board.", "ko": "헬멧이나 보드에 붙여 꾸며요."}}
+      ]
+    },
+    {
+      "id": "ride-with-me",
+      "category": "workshop",
+      "workshop": "bike",
+      "rideShop": "rwm",
+      "size": "small",
+      "at": [-1385, 185.5],
+      "name": {"ko": "라이드 위드 미", "en": "RIDE WITH ME", "ja": "RIDE WITH ME", "zh": "RIDE WITH ME", "es": "RIDE WITH ME"},
+      "signLocal": "RIDE WITH ME",
+      "tagline": {"en": "Ride upgrades: long-ride kits and night skins", "ko": "탈것 업그레이드: 롱라이드 키트와 나이트 스킨", "ja": "乗り物アップグレード：ロングライドキットとナイトスキン", "zh": "车辆升级：长途套件和夜色皮肤", "es": "Mejoras de vehículos: kits de ruta larga y aspectos nocturnos"},
+      "colors": {"sign": "#1b2a4a", "awning": "#ff2e4d", "accent": "#f2f4fa"},
+      "products": [
+        {"id": "rwm-helmet", "model": "cap", "color": "#1b2a4a", "price": 39000, "name": {"en": "City helmet", "ko": "시티 헬멧", "ja": "シティヘルメット", "zh": "城市头盔"}, "desc": {"en": "Light and safe for night rides.", "ko": "가볍고 안전한 밤 라이딩용 헬멧이에요."}},
+        {"id": "rwm-reflector", "model": "pen", "color": "#c9ced6", "price": 6000, "name": {"en": "Reflector band", "ko": "반사 밴드", "ja": "反射バンド", "zh": "反光带"}, "desc": {"en": "Be seen after dark.", "ko": "어두워져도 잘 보이게 해 줘요."}},
+        {"id": "rwm-light", "model": "cup", "color": "#ff2e4d", "price": 15000, "name": {"en": "Rear light", "ko": "후미등", "ja": "テールライト", "zh": "尾灯"}, "desc": {"en": "Blinks red behind you.", "ko": "뒤에서 빨갛게 깜빡여요."}}
+      ]
+    },
+    {
+      "id": "hangeul-mihak",
+      "category": "workshop",
+      "workshop": "bike",
+      "rideShop": "hangul",
+      "size": "small",
+      "at": [-1654, -842.5],
+      "name": {"ko": "한글미학", "en": "Hangeul Mihak", "ja": "ハングル美学", "zh": "韩文美学", "es": "Hangeul Mihak"},
+      "tagline": {"en": "The Beauty of Hangeul: limited Hunminjeongeum ride skins, sold only here", "ko": "한글의 아름다움: 여기서만 파는 훈민정음 한정판 탈것 스킨", "ja": "ハングルの美：ここだけの訓民正音限定スキン", "zh": "韩文之美：只在这里卖的训民正音限定皮肤", "es": "La belleza del hangul: aspectos limitados Hunminjeongeum, solo aquí"},
+      "colors": {"sign": "#1e1e22", "awning": "#c0392b", "accent": "#efe6d2"},
+      "products": [
+        {"id": "mihak-bookmark", "model": "notebook", "color": "#efe6d2", "price": 4000, "name": {"en": "Hangul bookmark", "ko": "한글 책갈피", "ja": "ハングルのしおり", "zh": "韩文书签"}, "desc": {"en": "The 1446 preface in tiny print.", "ko": "훈민정음 서문이 작게 새겨져 있어요."}},
+        {"id": "mihak-bell", "model": "cup", "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
+        {"id": "mihak-seal", "model": "jar", "color": "#b3261e", "price": 15000, "name": {"en": "Name seal (dojang)", "ko": "이름 도장", "ja": "名前のはんこ", "zh": "名字印章"}, "desc": {"en": "Your name carved in Hangul.", "ko": "내 이름을 한글로 새겨 줘요."}}
+      ]
     }
   ]
 }
