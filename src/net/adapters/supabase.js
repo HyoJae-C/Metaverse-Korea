@@ -1,11 +1,11 @@
 // Supabase Realtime adapter: Presence tracks who is in the room, Broadcast
 // carries movement and emotes. No database tables are used.
 //
-// Chat goes over a second, private channel per room ('chat:<room>'). The
-// server checks who may use it (supabase/004_chat.sql): everyone can read,
-// only players signed in with Google (and not banned) can send. Until that
-// SQL has been run the private channel is refused, and chat falls back to
-// the public room channel as before.
+// Chat goes over one private channel per region ('chat:<room>', see
+// openChat below). The server checks who may use it (supabase/004_chat.sql):
+// everyone can read, only allowed players can send. Until that SQL has been
+// run the private channel is refused, and chat stays on the public room
+// channels as before.
 import { createClient } from '@supabase/supabase-js';
 
 // One client (one websocket) shared by every room we are in. cfg.accessToken
@@ -28,8 +28,6 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
   const client = sharedClient(cfg.url, cfg.key, cfg.accessToken);
   let channel = null;
-  let chatChannel = null; // the private chat channel we asked to join
-  let chat = null; // ...once the server let us in
   let self = null;
   let listening = false; // listen-only: receive, but don't appear in presence
   const known = new Set();
@@ -41,11 +39,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       // A room we just left may still be closing on the shared client; make
       // sure we get a fresh channel rather than the old one.
       const topic = 'room:' + room;
-      const chatTopic = 'chat:' + room;
       for (const old of client.getChannels()) {
-        if ([topic, chatTopic].some((t) => old.topic === 'realtime:' + t || old.topic === t)) client.removeChannel(old);
+        if (old.topic === 'realtime:' + topic || old.topic === topic) client.removeChannel(old);
       }
-      openChat(chatTopic);
       channel = client.channel(topic, {
         config: { broadcast: { self: false }, presence: { key: me.id } },
       });
@@ -76,8 +72,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
           if (known.has(payload.id)) onLook?.(payload.id, payload.look);
         })
         .on('broadcast', { event: 'c' }, ({ payload }) => {
-          // Old way (public room channel): only while the private one is not open.
-          if (!chat && known.has(payload.id)) onChat?.(payload.id, payload.t);
+          if (known.has(payload.id)) onChat?.(payload.id, payload.t);
         });
 
       return new Promise((resolve, reject) => {
@@ -101,8 +96,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       channel?.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
     },
     sendChat(t) {
-      // The server drops it on the private channel unless we may chat.
-      (chat || channel)?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
+      channel?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
     },
     sendLook(look) {
       self = { ...self, look };
@@ -120,27 +114,43 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     },
     disconnect() {
       if (channel) client.removeChannel(channel);
-      if (chatChannel) client.removeChannel(chatChannel);
-      channel = chat = chatChannel = null;
+      channel = null;
+    },
+    // The private chat channel for a whole region: { ready, send(id, t), close() }.
+    // ready turns true once the server lets us in; if it refuses, we try again
+    // twice, a minute apart (a join can't be retried every second: joins on
+    // one connection wait for each other).
+    openChat(room, onMessage) {
+      const topic = 'chat:' + room;
+      const link = { ready: false, closed: false, ch: null };
+      const join = (tries) => {
+        if (link.closed) return;
+        const ch = (link.ch = client.channel(topic, { config: { private: true, broadcast: { self: false } } }));
+        ch.on('broadcast', { event: 'c' }, ({ payload }) => onMessage(payload.id, payload.t));
+        ch.subscribe((status, err) => {
+          if (ch !== link.ch) return;
+          if (status === 'SUBSCRIBED') link.ready = true;
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (!link.ready) console.info('[chat] private channel not available, using room chat:', err?.message || status);
+            link.ready = false;
+            link.ch = null;
+            setTimeout(() => client.removeChannel(ch), 0);
+            if (tries < 2) setTimeout(() => join(tries + 1), 60000);
+          }
+        });
+      };
+      join(0);
+      return {
+        get ready() { return link.ready; },
+        // The server drops it unless we may chat.
+        send(id, t) { link.ch?.send({ type: 'broadcast', event: 'c', payload: { id, t } }); },
+        close() {
+          link.closed = true;
+          link.ready = false;
+          if (link.ch) client.removeChannel(link.ch);
+          link.ch = null;
+        },
+      };
     },
   };
-
-  // Joins the private chat channel. If the server refuses (its SQL isn't set
-  // up yet) we chat on the public room channel instead, and try the private
-  // one again a few times later rather than letting it retry every second.
-  function openChat(topic, tries = 0) {
-    const ch = (chatChannel = client.channel(topic, { config: { private: true, broadcast: { self: false } } }));
-    ch.on('broadcast', { event: 'c' }, ({ payload }) => {
-      if (known.has(payload.id)) onChat?.(payload.id, payload.t);
-    });
-    ch.subscribe((status) => {
-      if (ch !== chatChannel) return;
-      if (status === 'SUBSCRIBED') chat = ch;
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        chat = chatChannel = null;
-        client.removeChannel(ch);
-        if (tries < 2) setTimeout(() => { if (channel && !chatChannel) openChat(topic, tries + 1); }, 30000);
-      }
-    });
-  }
 }
