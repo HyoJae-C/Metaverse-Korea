@@ -4,7 +4,7 @@ import {
   LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
-import { loadRegionMap } from './core/districts.js';
+import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD } from './core/quests.js';
 import { STARTER_TEXT } from './data/starter-quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
@@ -19,7 +19,7 @@ import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
-import { InfoUI, showInfoHint } from './ui/info-ui.js';
+import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { GymUI } from './ui/gym-ui.js';
@@ -729,7 +729,7 @@ function onboardHi5() {
     setOnboard(2);
     // Then: the info centre, or explore on your own. After the guide's tip
     // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
-    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) }); }, 15000);
+    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) }); }, 15000);
   }, 5600);
 }
 
@@ -1816,6 +1816,7 @@ const interiorCache = new Map();
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
 let barkeep = null; // a club's bartender
+let areaGuide = null; // an Information Center's area guide (the clerk is the game guide)
 const TRAINER_LOOK = { model: 'barbarian', hair: 'black', skin: 'warm', shirt: 'charcoal' };
 let trainerLine = -1;
 function talkToTrainer() {
@@ -1995,7 +1996,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2019,6 +2020,15 @@ function enterStore(item) {
     built.scene.add(built.barkeepNpc.ch.root);
   }
   barkeep = built.barkeepNpc || null;
+  // Information Centers: the area guide next to the game guide (the clerk).
+  if (built.stations.areaGuide && !built.areaGuideNpc) {
+    const g = built.stations.areaGuide;
+    built.areaGuideNpc = makeNpc($('labels'), '🗺️ ' + L(INFO_TEXT.areaGuide));
+    built.areaGuideNpc.ch.root.position.set(g.x, 0, g.z);
+    built.areaGuideNpc.ch.root.rotation.y = g.ry;
+    built.scene.add(built.areaGuideNpc.ch.root);
+  }
+  areaGuide = built.areaGuideNpc || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets);
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2057,10 +2067,11 @@ function leaveStore() {
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  for (const o of [clerk, trainer, barkeep]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   clerk = null;
   trainer = null;
   barkeep = null;
+  areaGuide = null;
   if (counterUi.open) counterUi.close();
   npcs.setVisible(true);
   if (interior.store?.category !== 'station' && interior.store?.category !== 'train') sfx.doorbell();
@@ -3410,7 +3421,34 @@ function guideToPlace(to) {
   setGuide({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: localName(z.zone.name, getLanguage()) });
   return true;
 }
-const infoUi = new InfoUI({ root: $('info-panel'), guide: guideToPlace });
+// Information Centers: which district a place is in, the shops of a
+// district, and the nearest shop of a kind (the name tag workshops).
+const dBoxes = districtBoxes(map);
+const storeAt = (st) => placeOf(st, region.center, latLonToLocal);
+const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st));
+function nearestStore(test) {
+  const p = interior?.front?.door || me.root.position; // inside a shop: from its door
+  let best = null, bd = Infinity;
+  for (const it of storefronts.items) {
+    if (!test(it.store)) continue;
+    const d = Math.hypot(it.door.x - p.x, it.door.z - p.z);
+    if (d < bd) { bd = d; best = it.store.id; }
+  }
+  return best;
+}
+const infoUi = new InfoUI({
+  root: $('info-panel'),
+  guide: guideToPlace,
+  places: {
+    districtOf: (to) => {
+      if (to.store) { const st = storeData.find((x) => x.id === to.store); return st ? districtOfStore(st) : null; }
+      const z = zones.items.find((i) => i.zone.id === to.zone);
+      return z ? districtAt(dBoxes, z.x, z.z) : null;
+    },
+    storesIn: (d) => storeData.filter((st) => st.category !== 'home' && st.category !== 'info' && storefronts.get(st.id) && districtOfStore(st) === d),
+    nearest: (workshop) => nearestStore((st) => st.workshop === workshop),
+  },
+});
 // The first-time hint waits until the daily check-in card is closed.
 if (onboard === 0) { // first time: just the high five, nothing else in the way
   const box = $('info-hint');
@@ -3420,7 +3458,7 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
   box.hidden = false;
 } else setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
-  showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: 'info-center' }) });
+  showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
 // Jjimjilbang: hot kiln and ice room, and the sheep towel.
 const saunaUi = new SaunaUI({
@@ -4482,8 +4520,17 @@ function updateAction(p, tSec) {
       next = { key: 'order', label: '🍢 ' + t('order.start'), run: () => openOrder() };
     } else if (interior.store.workshop === 'emblem' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'emblem', label: '🏷️ ' + t('emblem.open'), run: () => { clerk.ch.wave(); emblemUi.show(); } };
-    } else if (interior.store.workshop === 'info' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'info', label: 'ℹ️ ' + t('info.open'), run: () => { clerk.ch.wave(); infoUi.show(); } };
+    } else if (interior.store.workshop === 'info' && (clerk || areaGuide)) {
+      // Two guides at the desk: whichever one you stand closer to.
+      const dist = (o) => (o ? Math.hypot(p.x - o.ch.root.position.x, p.z - o.ch.root.position.z) : Infinity);
+      const area = dist(areaGuide) < dist(clerk);
+      const d = districtOfStore(interior.store);
+      const name = L(AREA[d]?.name || { en: d });
+      if (Math.min(dist(clerk), dist(areaGuide)) < 2.8) {
+        next = area
+          ? { key: 'info-area', label: '🗺️ ' + fmt(L(INFO_TEXT.askArea), { name }), run: () => { areaGuide.ch.wave(); infoUi.showArea(d); } }
+          : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
+      }
     } else if (interior.store.workshop === 'tarot' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -4827,7 +4874,7 @@ renderer.setAnimationLoop(() => {
   else {
     busking.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
-    for (const o of [trainer, barkeep]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    for (const o of [trainer, barkeep, areaGuide]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }

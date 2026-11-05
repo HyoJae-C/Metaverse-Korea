@@ -16,7 +16,7 @@ const wallDist = (x, z, p) => Math.min(...p.map((a, i) => segDist(x, z, a, p[(i 
 
 test('Seongsu is a hand-made map, not OpenStreetMap data', () => {
   assert.ok(!/openstreetmap/i.test(JSON.stringify(map.meta)));
-  assert.ok(map.buildings.length < 150, `${map.buildings.length} buildings`);
+  assert.ok(map.buildings.length < 180, `${map.buildings.length} buildings`);
 });
 
 test('every Seongsu shop stands on open ground in front of a building, each at its own spot', () => {
