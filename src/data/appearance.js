@@ -15,7 +15,8 @@ import { emblemById, nameColorById } from '../core/emblems.js';
 import { skirtById } from './skirts.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
-export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp'];
+export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
+  'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 
