@@ -12,8 +12,10 @@ import * as THREE from 'three';
 import { namsanTower } from './landmarks.js';
 
 export const CABLE = {
-  dwell: 10, // seconds a cabin waits at each station with its doors open
-  trip: 24, // seconds from one station to the other
+  // With two cabins half a cycle apart, one is at each station every
+  // dwell + trip = 30 seconds (from either bay: you board whichever is in).
+  dwell: 8, // seconds a cabin waits at each station with its doors open
+  trip: 22, // seconds from one station to the other
   fare: 4, // coins for the way up; the way down is on the same ticket
 };
 CABLE.half = CABLE.dwell + CABLE.trip;
