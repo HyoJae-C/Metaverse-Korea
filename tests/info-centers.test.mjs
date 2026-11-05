@@ -41,3 +41,10 @@ test('the game guide and the area guide have their own topics', () => {
   assert.ok(PLACE_TOPICS.every((tp) => tp.to && (tp.to.store || tp.to.zone)));
   assert.ok(GAME_TOPICS.some((tp) => tp.to?.workshop === 'emblem')); // nearest name tag workshop
 });
+
+test('entering a park, station or train (no shop stations) does not break on the area guide', () => {
+  // Those rooms come from park.js / subway.js and have no `stations`, so
+  // enterStore must read it with ?. (Ttukseom Han River Park went blank).
+  const src = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.deepEqual(src.match(/if \(built\.stations\.\w+/g) || [], []);
+});
