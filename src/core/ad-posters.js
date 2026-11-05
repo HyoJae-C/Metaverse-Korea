@@ -121,6 +121,29 @@ function smallMaterials() {
   })));
 }
 
+// A photo poster in its own shape: fits a box of maxW × maxH metres
+// (bottom edge at `bottom`), sized once the image has loaded.
+const UNIT_PLANE = new THREE.PlaneGeometry(1, 1);
+const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+function photoPoster(g, url, maxW, maxH, bottom) {
+  const frame = new THREE.Mesh(UNIT_BOX, new THREE.MeshLambertMaterial({ color: 0x24262b }));
+  const poster = new THREE.Mesh(UNIT_PLANE, new THREE.MeshBasicMaterial());
+  frame.visible = poster.visible = false;
+  g.add(frame, poster);
+  const map = new THREE.TextureLoader().load(url, (tex) => {
+    const a = tex.image.width / tex.image.height;
+    const w = Math.min(maxW, maxH * a), h = w / a;
+    const y = bottom + h / 2;
+    poster.scale.set(w, h, 1);
+    poster.position.set(0, y, 0.12);
+    frame.scale.set(w + 0.3, h + 0.3, 0.1);
+    frame.position.set(0, y, 0.05);
+    frame.visible = poster.visible = true;
+  });
+  map.colorSpace = THREE.SRGBColorSpace;
+  poster.material.map = map;
+}
+
 // ── Meshes ──────────────────────────────────────────────────────────────
 const shutterMat = () => new THREE.MeshLambertMaterial({
   map: canvasTex(64, 64, (g, W, H) => {
@@ -159,14 +182,11 @@ export class AdPosters {
       // The big poster above the shutter.
       const top = (b.h || 8) - 0.6, bottom = sh + 0.6;
       const bw = Math.min(wide - 2, 10, ((top - bottom) / 0.62));
-      if (bw > 3) {
+      const ad = booked[id];
+      if (ad?.image) photoPoster(g, base + ad.image, Math.min(wide - 2, 10), top - bottom - 0.4, bottom + 0.4);
+      else if (bw > 3) {
         const bh = bw * 0.62;
-        const ad = booked[id];
-        let map;
-        if (ad?.image) {
-          map = new THREE.TextureLoader().load(base + ad.image);
-          map.colorSpace = THREE.SRGBColorSpace;
-        } else map = canvasTex(640, 400, (c, W, H) => (ad ? drawBooked(c, W, H, ad) : drawBig(c, W, H, id, k)));
+        const map = canvasTex(640, 400, (c, W, H) => (ad ? drawBooked(c, W, H, ad) : drawBig(c, W, H, id, k)));
         const frame = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.4, bh + 0.4, 0.12), new THREE.MeshLambertMaterial({ color: 0x24262b }));
         const poster = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), new THREE.MeshBasicMaterial({ map }));
         const y = Math.min(bottom + bh / 2 + 0.4, top - bh / 2);
@@ -183,22 +203,14 @@ export class AdPosters {
       const lot = storeLot(buildings, placeOf(s, center, latLonToLocal));
       if (!lot) continue;
       const { b, front } = lot;
-      // Just above the shop sign, as wide as the building allows.
+      // Just above the shop sign, in the photo's own shape, as big as the
+      // wall allows.
       const bottom = 5.6, top = (b.h || 8) - 0.5;
-      const bw = Math.min(front.half * 2 - 0.8, 14, (top - bottom) / 0.62);
-      if (bw < 3) continue;
-      const bh = bw * 0.62;
+      if (front.half * 2 < 4 || top - bottom < 3) continue;
       const g = new THREE.Group();
       g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
       g.rotation.y = Math.atan2(front.nx, front.nz);
-      const map = new THREE.TextureLoader().load(base + ad.image);
-      map.colorSpace = THREE.SRGBColorSpace;
-      const y = bottom + bh / 2;
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.3, bh + 0.3, 0.1), new THREE.MeshLambertMaterial({ color: 0x24262b }));
-      const poster = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), new THREE.MeshBasicMaterial({ map }));
-      frame.position.set(0, y, 0.05);
-      poster.position.set(0, y, 0.11);
-      g.add(frame, poster);
+      photoPoster(g, base + ad.image, front.half * 2 - 0.8, top - bottom, bottom);
       this.root.add(g);
     }
     scene.add(this.root);
