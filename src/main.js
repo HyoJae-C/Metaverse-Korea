@@ -35,6 +35,7 @@ import { STAMPS } from './data/stamps.js';
 import { StampBook, availableStamps, STAMP_REWARD } from './core/stamp-book.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
+import { PalaceShow } from './core/palace-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
 import { createCharacter } from './core/character.js';
@@ -507,6 +508,10 @@ const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
 // Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+// Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
+// the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
+const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
+const palaceShow = palaceAt ? new PalaceShow(scene, { fan: [palaceAt[0], palaceAt[1] - 150], mask: [palaceAt[0], palaceAt[1] + 40] }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
@@ -5548,7 +5553,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { palaceShow?.update(dt, p); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
