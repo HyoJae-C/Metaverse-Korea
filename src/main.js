@@ -904,15 +904,11 @@ const dismissHelp = () => {
 $('help-ok').onclick = dismissHelp;
 // Running stamina (see config.stamina*).
 const stamina = { v: 1, rest: 0, tired: false, boostUntil: 0 };
-// Drinks: any non-alcoholic drink keeps your stamina full for a few minutes;
-// a drink from the bar or a club makes you a little slower for a while.
+// Drinks (all alcohol-free, the bar and clubs too) keep your stamina full
+// for a few minutes.
 const DRINK_BOOST_MS = 3 * 60 * 1000;
-const TIPSY_MS = 2 * 60 * 1000, TIPSY_SPEED = 0.85;
-let tipsyUntil = 0;
-const drinkSpeed = () => (performance.now() < tipsyUntil ? TIPSY_SPEED : 1);
 const DRINK_TEXT = {
   boost: { en: '⚡ Energy up! You can run without getting tired for 3 minutes.', ko: '⚡ 기운이 났어요! 3분 동안 지치지 않고 달릴 수 있어요.', ja: '⚡ 元気が出た！3分間、疲れずに走れます。', zh: '⚡ 精神满满！3分钟内奔跑不会累。', es: '⚡ ¡Con energía! Puedes correr sin cansarte durante 3 minutos.', ar: '⚡ نشاط! يمكنك الركض دون تعب لمدة 3 دقائق.', vi: '⚡ Tràn đầy năng lượng! Bạn có thể chạy mà không mệt trong 3 phút.', hi: '⚡ ऊर्जा भर गई! 3 मिनट तक आप बिना थके दौड़ सकते हैं।', id: '⚡ Semangat! Kamu bisa lari tanpa lelah selama 3 menit.' },
-  tipsy: { en: '🥴 A little tipsy… you walk a bit slower for 2 minutes.', ko: '🥴 살짝 취했어요… 2분 동안 조금 느리게 걸어요.', ja: '🥴 ちょっと酔ったかも…2分間、少しゆっくり歩きます。', zh: '🥴 有点微醺……2分钟内走得慢一点。', es: '🥴 Un poco achispado… caminas algo más lento durante 2 minutos.', ar: '🥴 ثمل قليلًا… تمشي أبطأ قليلًا لمدة دقيقتين.', vi: '🥴 Hơi ngà ngà say… bạn sẽ đi chậm hơn một chút trong 2 phút.', hi: '🥴 थोड़ा नशा… 2 मिनट तक आप थोड़ा धीरे चलेंगे।', id: '🥴 Agak mabuk… kamu jalan sedikit lebih lambat selama 2 menit.' },
 };
 const staminaEl = document.getElementById('stamina');
 const staminaFill = document.getElementById('stamina-fill');
@@ -1779,14 +1775,11 @@ function drink() {
   if (held.kind === 'perfume') { sprayPerfume(); return; }
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
-  if (held.kind === 'coffee') { // any non-alcoholic drink: full stamina, and it stays full for 3 minutes
+  if (held.kind === 'coffee' || held.kind === 'glass') { // any drink: full stamina, and it stays full for 3 minutes
     const fresh = performance.now() > stamina.boostUntil - DRINK_BOOST_MS + 5000;
     stamina.v = 1; stamina.tired = false; stamina.rest = 0;
     stamina.boostUntil = performance.now() + DRINK_BOOST_MS;
     if (fresh) setTimeout(() => shop.toast(L(DRINK_TEXT.boost)), 1700);
-  } else if (held.kind === 'glass') { // a drink from the bar or a club: a little slower for a while
-    if (performance.now() > tipsyUntil) setTimeout(() => shop.toast(L(DRINK_TEXT.tipsy)), 1700);
-    tipsyUntil = performance.now() + TIPSY_MS;
   }
   const sips = held.sips - 1;
   const food = held.kind === 'food';
@@ -5347,7 +5340,7 @@ renderer.setAnimationLoop(() => {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost * drinkSpeed()) * Math.min(1, mag) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -5371,7 +5364,7 @@ renderer.setAnimationLoop(() => {
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost * drinkSpeed()) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }

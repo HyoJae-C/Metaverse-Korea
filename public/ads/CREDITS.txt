@@ -3,7 +3,7 @@ Seongsu fashion posters (public/ads/*.webp)
 Photos from Unsplash, used under the Unsplash License
 (https://unsplash.com/license): free for commercial use, no permission
 needed. Each poster also names its photographer on the poster itself.
-Titles and layouts were added for the game; one photo was cropped.
+Shown as the original photos, resized; one photo was cropped.
 
 seongsu-ss-yellow.webp  Hong Nguyen        https://unsplash.com/photos/FO-zQd7Wqio
 seongsu-fw-suit.webp    Becky Sherburn     https://unsplash.com/photos/GSiw5fsOrS8
