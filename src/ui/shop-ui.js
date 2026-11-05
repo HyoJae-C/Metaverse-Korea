@@ -11,6 +11,7 @@ const LIMITED = {
 };
 const PERFUME_INFO = { en: '🧴 {n} sprays · each lasts 3 minutes · people nearby see the effect too', ko: '🧴 {n}번 뿌릴 수 있어요 · 한 번에 3분 · 근처 사람들도 이펙트를 봐요', ja: '🧴 {n}回分 · 1回3分 · 近くの人にもエフェクトが見えます', zh: '🧴 可喷{n}次 · 每次3分钟 · 附近的人也能看到特效', es: '🧴 {n} usos · cada uno dura 3 min · los de cerca ven el efecto', ar: '🧴 {n} رشّات · كل رشّة 3 دقائق · يرى من حولك التأثير', vi: '🧴 Xịt được {n} lần · mỗi lần 3 phút · người gần bạn cũng thấy hiệu ứng', hi: '🧴 {n} बार · हर बार 3 मिनट · पास वाले भी असर देखते हैं', id: '🧴 {n} semprotan · masing-masing 3 menit · orang di dekatmu ikut melihat efeknya' };
 
+const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
 const UMB = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
@@ -26,10 +27,10 @@ const HOW = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' },
   note: { en: 'Paid with game coins only. No real money.', ko: '게임 코인으로만 사요. 실제 결제는 없어요.', ja: 'ゲーム内コインだけで買えます。実際の支払いはありません。', zh: '只用游戏硬币购买，不会真实付款。', es: 'Solo con monedas del juego. Sin dinero real.', ar: 'بعملات اللعبة فقط. لا أموال حقيقية.', vi: 'Chỉ thanh toán bằng xu trong game. Không dùng tiền thật.', hi: 'सिर्फ़ गेम के सिक्कों से भुगतान। असली पैसा नहीं।', id: 'Hanya pakai koin game. Tanpa uang sungguhan.' },
 };
-// Clothes and hats are not for sale for now, except the outfits of the
-// clothes shop (Daily Closet), bought with coins and worn on the spot.
-const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit);
-export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup' || store.workshop === 'hat') && !sellsOutfits(store) && !store.perfumery;
+// Clothes, shoes and accessories are bought with coins and worn on the
+// spot. A fashion shop or pop-up with nothing to wear yet is coming soon.
+const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit || p.item);
+export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup') && !sellsOutfits(store) && !store.perfumery;
 // How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
 // 'soon' (fashion, for now) or 'buy' (take it home in a shopping bag).
 export function howToGet(store) {
@@ -42,7 +43,8 @@ export const coinsFor = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 1000
 const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
-  cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙',
+  cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
+  backpack: '🎒', beanie: '🧶', beret: '🎨', ribbon: '🎀',
 };
 const CART_KEY = 'mk.cart';
 
@@ -151,14 +153,17 @@ export class ShopUI {
       ab.onclick = () => this.onUmbrella?.(product);
       this.$('product-price').textContent = `🪙 ${product.coins}`;
     } else ab.disabled = false;
-    // Clothes shop: buy an outfit with coins, then wear it or take it off.
-    const outfit = product.outfit && ITEMS[product.outfit];
+    // Clothes and accessory shops: buy with coins, then wear it or take it off.
+    const itemId = product.item || product.outfit;
+    const outfit = itemId && ITEMS[itemId]?.wear ? ITEMS[itemId] : null;
     if (outfit) {
-      const mine = this.owns?.(product.outfit), on = this.wearing?.() === outfit.outfit;
+      const mine = this.owns?.(itemId), on = this.wearing?.(itemId);
       ab.hidden = false;
-      ab.textContent = mine ? (on ? '👕 ' + t('tee.off') : '✨ ' + t('tee.wear')) : `🪙 ${outfit.price} · ${L(OUTFIT_BUY)}`;
+      ab.disabled = mine && on && !outfit.off; // trousers: swap, don't take off
+      ab.textContent = mine ? (on ? (outfit.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear')) : `🪙 ${outfit.price} · ${L(OUTFIT_BUY)}`;
       ab.onclick = () => { this.onOutfit?.(product); this.openProduct(product); };
       this.$('product-price').textContent = `🪙 ${outfit.price}`;
+      if (!product.desc) this.$('product-desc').textContent = localName(outfit.desc, lang) || '';
     }
     // No cart: restaurants take orders at the table, cafés at the counter,
     // fashion is coming soon, and other shops sell for coins to carry home.
