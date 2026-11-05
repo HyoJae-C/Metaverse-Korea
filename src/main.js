@@ -92,7 +92,6 @@ import { parseKpop } from './data/kpop.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
-import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -113,6 +112,7 @@ import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './co
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
+import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
@@ -1500,104 +1500,15 @@ const counterUi = new CounterUI({
   },
 });
 
-// My pet: adopt at the pet shop (coins) or by code, then take it for walks.
-// It poops now and then on the street; clean up within CLEAN_SECONDS or a
-// fine notice (과태료) takes FINE coins. The poop is then cleared by the city.
-const PET_KEY = 'mk.pet';
-let pet = null; // Companion
-const poopTimers = new PoopTimers();
-const poops = new Map(); // id -> { id, mesh, x, z }
-function setPet(id) {
-  pet?.dispose();
-  pet = null;
-  if (id && inventory.has(id) && ITEMS[id]?.pet) {
-    pet = new Companion(id, ITEMS[id].pet);
-    activeScene.add(pet.root);
-    pet.place(me.root.position.x, me.root.position.z, me.root.rotation.y);
-  }
-  try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
-  refreshQuestChip();
-  if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
-}
-function adoptPet(id) {
-  const it = ITEMS[id];
-  if (!it?.pet || !it.price) return;
-  if (inventory.has(id)) { setPet(id); return; }
-  if (!wallet.spend(it.price, { name: it.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
-  inventory.add(id);
-  setPet(id);
-  shop.closeProduct();
-  clerk && say(clerk, $('labels'), ['잘 키워 주세요!', 'jal kiwo juseyo!', t('pet.takeCare')]);
-  shop.toast(t('pet.adopted', { name: petName(id) }) + ' ' + L(PET_NAME_TEXT.hint));
-}
-// Korean subject particle after a name: 이 after a final consonant, else 가.
-const subjectParticle = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '이' : '가'; };
-// The name you gave your pet (bag → ✏️), else the shop's name.
-const petName = (id) => {
-  const own = customPetName(id), def = ITEMS[id]?.pet;
-  if (own) return own;
-  return getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`;
-};
-const PET_NAME_TEXT = {
-  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
-  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
-  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
-  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
-  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
-};
-function nearestPoop(p) {
-  let best = null, bd = 1.6;
-  for (const po of poops.values()) {
-    const d = Math.hypot(po.x - p.x, po.z - p.z);
-    if (d < bd) { bd = d; best = po; }
-  }
-  return best;
-}
-function cleanPoop(po) {
-  poopTimers.clean(po.id);
-  po.mesh.removeFromParent();
-  poops.delete(po.id);
-  me.play('bow'); // bend down
-  shop.toast(t('pet.cleaned'));
-  action = STALE;
-}
-function updatePet(dt, p) {
-  // Fines for poop left too long (the timer runs even inside shops).
-  for (const late of poopTimers.step(dt)) {
-    const po = poops.get(late.id);
-    po?.mesh.removeFromParent();
-    poops.delete(late.id);
-    const taken = wallet.take(FINE, { k: 'ledger.fine' });
-    showFine(taken, po?.street);
-  }
-  const soon = poopTimers.list.reduce((m, x) => Math.min(m, x.left), Infinity);
-  $('poop-chip').hidden = soon === Infinity;
-  if (soon !== Infinity) $('poop-chip').textContent = `💩 ${t('pet.cleanIn', { s: Math.ceil(soon) })}`;
-  if (!pet) return;
-  if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y); }
-  const hidden = riding > 0 || seated;
-  if (pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, mode === 'street')) {
-    const pos = pet.root.position;
-    const mesh = makePoop();
-    mesh.position.set(pos.x, 0, pos.z);
-    scene.add(mesh);
-    const { id } = poopTimers.add();
-    poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
-    sfx.pop?.();
-    shop.toast(t('pet.pooped', { name: petName(pet.id), ga: subjectParticle(customPetName(pet.id) || pet.def.name), s: CLEAN_SECONDS }));
-  }
-}
-let fineShown = null; // { count, taken } while the notice is open (two fines at once add up)
-function showFine(taken, street) {
-  const box = $('fine-panel');
-  fineShown = box.hidden || !fineShown ? { count: 1, taken } : { count: fineShown.count + 1, taken: fineShown.taken + taken };
-  $('fine-street').textContent = street || t('pet.fineStreet');
-  $('fine-amount').textContent = `🪙 ${FINE}` + (fineShown.count > 1 ? ` × ${fineShown.count}` : '');
-  $('fine-paid').textContent = t('pet.finePaid', { n: fineShown.taken, left: wallet.coins });
-  box.hidden = false;
-  refreshWallet();
-}
-$('fine-close').onclick = () => { $('fine-panel').hidden = true; };
+// My pet: adopt, walk, clean up after it (src/game/pet-care.js).
+const petCare = createPetCare({
+  get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
+  get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
+  get shop() { return shop; }, get sfx() { return sfx; },
+  clearAction: () => { action = STALE; }, refreshQuestChip, refreshItems, refreshWallet,
+});
+const { setPet, adoptPet, nearestPoop, cleanPoop, updatePet } = petCare;
 
 // Something in my hand (a META COFFEE cup): tap Drink to sip; the cup is gone
 // when it's finished. Saved, so a half-drunk coffee survives a reload.
@@ -4573,7 +4484,7 @@ function refreshItems() {
     d.textContent = localName(it.desc, getLanguage());
     row.append(b, d);
     if (it.pet) { // walk this pet, or leave it at home
-      const walking = pet?.id === id;
+      const walking = petCare.pet?.id === id;
       const w = document.createElement('button');
       w.className = 'chip item-walk' + (walking ? ' on' : '');
       w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
@@ -4634,7 +4545,7 @@ function refreshItems() {
   }));
 }
 // Bring back the pet I was walking last time.
-try { const saved = localStorage.getItem(PET_KEY); if (saved) setPet(saved); } catch { /* storage blocked */ }
+petCare.restorePet();
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 // Budget book (가계부): today's totals and the latest coins in and out.
 function ledgerLabel(e) {
@@ -4773,7 +4684,7 @@ function renderDaily() {
 // talking to the guide (take an errand, see it again, or report back).
 // A function declaration (not a const): setHeld() runs during startup,
 // before this line, when a held item is restored.
-function questCtx() { return { held: held?.kind || null, pet: !!pet }; }
+function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
@@ -5496,7 +5407,7 @@ renderer.setAnimationLoop(() => {
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
-    if (pet) st.pt = pet.id;
+    if (petCare.pet) st.pt = petCare.pet.id;
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (meal?.mesh && interior) st.ml = mealSync(meal, interior.seats, interior.store.products);
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq;
@@ -5682,10 +5593,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
     ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
     music: () => ({ on: music.on, track: music.track.id }),
-    pet: () => pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible },
-    petPoop: () => { if (pet) pet.walked = pet.poopAt; },
-    poops: () => poopTimers.list.map((x) => ({ ...x, x: poops.get(x.id)?.x, z: poops.get(x.id)?.z })),
-    poopTime: (s) => poopTimers.list.forEach((x) => { x.left = s; }),
+    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible }; },
+    petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
+    poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
+    poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     bagList: () => bag.list(),
     owns: (id) => inventory.has(id),
