@@ -13,10 +13,12 @@ test('poop cleaned in time is fine; left too long gets fined once', () => {
   assert.equal(t.step(100).length, 0); // never fined twice
 });
 
-test('the fine costs more than a pet, and poops are spaced out', () => {
+test('pets cost real pet-shop prices, the fine stings, and poops are spaced out', () => {
   const prices = Object.values(ITEMS).filter((i) => i.pet && i.price).map((i) => i.price);
-  assert.ok(prices.length >= 4);
-  assert.ok(FINE > Math.max(...prices));
+  assert.ok(prices.length >= 5);
+  assert.equal(ITEMS['pet-poodle'].price, 400); // ~₩400,000
+  assert.ok(Math.min(...prices) >= 200); // well above a perfume (🪙 48)
+  assert.ok(FINE >= 30 && FINE < Math.min(...prices));
   for (const r of [0, 0.5, 0.999]) {
     const d = nextPoopAt(() => r);
     assert.ok(d >= POOP_EVERY[0] && d <= POOP_EVERY[1]);
@@ -24,7 +26,7 @@ test('the fine costs more than a pet, and poops are spaced out', () => {
 });
 
 test('dogs and cats are for sale; chinchilla, guinea pig and monkey come from a code', async () => {
-  for (const id of ['pet-maltese', 'pet-shiba', 'pet-cheesecat', 'pet-bluecat']) assert.ok(isPet(id) && ITEMS[id].price > 0, id);
+  for (const id of ['pet-maltese', 'pet-poodle', 'pet-shiba', 'pet-cheesecat', 'pet-bluecat']) assert.ok(isPet(id) && ITEMS[id].price > 0, id);
   for (const id of ['pet-chinchilla', 'pet-guineapig', 'pet-monkey']) assert.ok(isPet(id) && !ITEMS[id].price, id);
   assert.equal(await redeemCode('pets'), null);
   for (const it of Object.values(ITEMS)) if (it.pet) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(it.name[l] && it.desc[l]);
