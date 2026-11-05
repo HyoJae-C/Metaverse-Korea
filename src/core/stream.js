@@ -77,17 +77,19 @@ export function lowBlockers(s) {
   return out;
 }
 
-// Holes in the ground: the channel and each stair.
+// The hole in the ground: the channel and its stairs as one outline (the
+// channel with a notch out for each stair). Separate holes that touch or
+// overlap break the ground's triangulation and leave the channel covered.
 export function holesOf(s) {
-  const [X, Z] = s.at, hw = s.w / 2;
-  const out = [rect(X, Z - hw, X + s.len, Z + hw)];
-  for (const st of s.stairs || []) {
-    const L = lane(s, st);
-    // Joined to the channel's hole so the two don't share an edge (the
-    // ground's triangulation dislikes touching holes): a little overlap.
-    out.push(rect(X + L.u0, Z + L.v0 - st.side * 0.01, X + L.u1, Z + L.v1));
-  }
-  return out;
+  const [X, Z] = s.at, hw = s.w / 2, pts = [];
+  const span = (side) => (s.stairs || []).filter((st) => st.side === side).map((st) => { const L = lane(s, st); return [Math.min(L.u0, L.u1), Math.max(L.u0, L.u1)]; }).sort((p, q) => p[0] - q[0]);
+  pts.push([X, Z - hw]);
+  for (const [a, b] of span(-1)) pts.push([X + a, Z - hw], [X + a, Z - hw - STAIR.w], [X + b, Z - hw - STAIR.w], [X + b, Z - hw]);
+  pts.push([X + s.len, Z - hw], [X + s.len, Z + hw]);
+  for (const [a, b] of span(1).reverse()) pts.push([X + b, Z + hw], [X + b, Z + hw + STAIR.w], [X + a, Z + hw + STAIR.w], [X + a, Z + hw]);
+  pts.push([X, Z + hw]);
+  // Drop repeated points (a stair that starts right at the west end).
+  return [pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1])];
 }
 
 // Where (x, z) is: on a stair (how far down), in the channel or on the
