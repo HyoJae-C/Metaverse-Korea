@@ -394,6 +394,12 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .map-card > .map-controls { position: static; padding: 0 14px 8px; }
   .map-body { flex: 1 1 0; min-height: 0; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 34%); }
   .map-list { min-height: 0; }
+  /* Typing in the search box: the panel fits above the keyboard and the
+     results take the map's place, right under the search box. */
+  .map-searching .map-card { height: 100%; }
+  .map-searching .map-body { grid-template-rows: minmax(0, 1fr); }
+  .map-searching :is(.map-canvas, .map-seoul, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
+  .map-searching .map-list { padding-top: 0; }
   .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {

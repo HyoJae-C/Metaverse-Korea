@@ -92,6 +92,7 @@ export class MapView {
 
   hide() {
     this.open = false;
+    this._setSearching(false);
     this.root.hidden = true;
     this.setTaxi(false);
   }
@@ -380,6 +381,15 @@ export class MapView {
       // on compositionend/keyup, so listen to those as well.
       for (const ev of ['input', 'compositionend', 'keyup', 'change']) this.search.addEventListener(ev, onType);
       this.search.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
+      // Phones: while typing, the on-screen keyboard covers the bottom of the
+      // screen, where the results list sits. Hide the map and show the results
+      // right under the search box instead, sized to the space above the keyboard.
+      this.search.addEventListener('focus', () => this._setSearching(true));
+      this.search.addEventListener('blur', () => {
+        // Wait a moment so a tap on a result lands before the layout changes back.
+        clearTimeout(this._blurTimer);
+        this._blurTimer = setTimeout(() => { if (document.activeElement !== this.search) this._setSearching(false); }, 200);
+      });
       this.chips = document.createElement('div');
       this.chips.className = 'map-cats';
       this.controls.append(this.search, this.chips);
@@ -403,6 +413,31 @@ export class MapView {
       b.onclick = () => { this.category = c; this._renderList(); this.draw(); };
       return b;
     }));
+  }
+
+  // Phone search mode: the results fill the card under the search box, and
+  // the panel shrinks to the visible area above the keyboard (visualViewport).
+  _setSearching(on) {
+    const narrow = globalThis.matchMedia?.('(max-width: 700px)').matches;
+    on = !!on && !!narrow && this.open;
+    this.root.classList.toggle('map-searching', on);
+    const vv = globalThis.visualViewport;
+    if (on && vv && !this._fitViewport) {
+      this._fitViewport = () => {
+        this.root.style.top = `${vv.offsetTop}px`;
+        this.root.style.height = `${vv.height}px`;
+        this.root.style.bottom = 'auto';
+      };
+      vv.addEventListener('resize', this._fitViewport);
+      vv.addEventListener('scroll', this._fitViewport);
+      this._fitViewport();
+    } else if (!on && this._fitViewport) {
+      vv?.removeEventListener('resize', this._fitViewport);
+      vv?.removeEventListener('scroll', this._fitViewport);
+      this._fitViewport = null;
+      this.root.style.top = this.root.style.height = this.root.style.bottom = '';
+    }
+    if (!on && this.open) { this._resize(); this.draw(); }
   }
 
   _renderList() {
