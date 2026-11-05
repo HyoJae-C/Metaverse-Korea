@@ -9,6 +9,30 @@ import { s2t } from '../i18n/hant.js';
 
 export const UPDATES = [
   {
+    id: '2026-11-05-refresh',
+    at: '2026.11.05 18:05',
+    title: {
+      ko: '🔄 새로고침하면 새 콘텐츠가!',
+      en: '🔄 Refresh for new content!',
+      ja: '🔄 リロードで新しいコンテンツ！',
+      zh: '🔄 刷新一下，可能有新内容！',
+      es: '🔄 ¡Recarga para ver novedades!',
+      id: '🔄 Muat ulang untuk konten baru!',
+      ar: '🔄 حدّث الصفحة لترى الجديد!', vi: '🔄 Tải lại để xem nội dung mới!', hi: '🔄 नई चीज़ों के लिए रीफ़्रेश कीजिए!',
+    },
+    items: {
+      ko: ['개발자가 하루에도 몇 번씩\n업데이트를 하고 있어요.\n\n10~15분마다 새로고침을 하면\n새 콘텐츠가 계속 생길 수도 있어요! ✨'],
+      en: ['The developer updates the game\nseveral times a day.\n\nRefresh the page every 10–15 minutes\nand you may find something new! ✨'],
+      ja: ['開発者が1日に何度も\nアップデートしています。\n\n10〜15分ごとにリロードすると\n新しいコンテンツが見つかるかも！✨'],
+      zh: ['开发者每天都会\n更新好几次。\n\n每隔10～15分钟刷新一下页面，\n也许就会发现新内容！✨'],
+      es: ['El desarrollador actualiza el juego\nvarias veces al día.\n\nRecarga la página cada 10–15 minutos\n¡y quizá encuentres algo nuevo! ✨'],
+      id: ['Pengembang memperbarui game\nbeberapa kali sehari.\n\nMuat ulang halaman setiap 10–15 menit,\nmungkin ada hal baru! ✨'],
+      ar: ['المطوّر يحدّث اللعبة\nعدة مرات في اليوم.\n\nحدّث الصفحة كل 10–15 دقيقة\nوقد تجد شيئًا جديدًا! ✨'],
+      vi: ['Nhà phát triển cập nhật game\nnhiều lần mỗi ngày.\n\nHãy tải lại trang mỗi 10–15 phút,\nbiết đâu sẽ có nội dung mới! ✨'],
+      hi: ['डेवलपर दिन में कई बार\nगेम अपडेट करते हैं।\n\nहर 10–15 मिनट में पेज रीफ़्रेश कीजिए,\nशायद कुछ नया मिल जाए! ✨'],
+    },
+  },
+  {
     id: '2026-11-05-subway',
     at: '2026.11.05 18:00',
     title: {
