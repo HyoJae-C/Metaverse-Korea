@@ -1329,11 +1329,7 @@
       "name": { "en": "Pedal Lab", "ko": "페달랩", "ja": "ペダルラボ", "zh": "踏板实验室" },
       "tagline": { "en": "Bike shop: faster bikes and repairs", "ko": "자전거 가게: 더 빠른 자전거와 수리", "ja": "自転車店：速い自転車と修理", "zh": "自行车店：更快的车和维修" },
       "colors": { "sign": "#2f6f5e", "awning": "#3fb59a", "accent": "#eef6f2" },
-      "products": [
-        { "id": "bike-bell", "model": "cup", "color": "#f2c84b", "price": 8000, "name": { "en": "Bike bell", "ko": "자전거 벨", "ja": "自転車のベル", "zh": "车铃" }, "desc": { "en": "Ring ring!", "ko": "따릉따릉!" } },
-        { "id": "bike-light", "model": "cup", "color": "#ffffff", "price": 15000, "name": { "en": "Front light", "ko": "앞 라이트", "ja": "フロントライト", "zh": "前灯" }, "desc": { "en": "Bright LED for night rides.", "ko": "밤에 달릴 때 쓰는 밝은 LED예요." } },
-        { "id": "water-bottle", "model": "cup", "color": "#5b8def", "price": 9000, "name": { "en": "Water bottle", "ko": "물통", "ja": "ボトル", "zh": "水壶" }, "desc": { "en": "Fits the bottle cage.", "ko": "자전거 물통 거치대에 쏙 들어가요." } }
-      ]
+      "products": []
     },
     {
       "id": "costume-atelier",
@@ -2342,11 +2338,7 @@
       "name": {"ko": "자전거연구소", "en": "Bike Research Lab", "ja": "自転車研究所", "zh": "自行车研究所", "es": "Laboratorio de Bicis"},
       "tagline": {"en": "Ride upgrades: speed tune-ups and street-art skins", "ko": "탈것 업그레이드: 속도 튜닝과 스트리트 아트 스킨", "ja": "乗り物アップグレード：スピードチューンとストリートアートのスキン", "zh": "车辆升级：提速改装和街头涂鸦皮肤", "es": "Mejoras de vehículos: puesta a punto y aspectos de arte urbano"},
       "colors": {"sign": "#1f1f2b", "awning": "#b6ff3b", "accent": "#f4ffe6"},
-      "products": [
-        {"id": "lab-spray-can", "model": "cup", "color": "#ff3ea5", "price": 7000, "name": {"en": "Spray paint can", "ko": "스프레이 페인트", "ja": "スプレー缶", "zh": "喷漆罐"}, "desc": {"en": "For touching up your frame.", "ko": "프레임 칠이 벗겨졌을 때 살짝 덧칠해요."}},
-        {"id": "lab-tire-gauge", "model": "pen", "color": "#9aa0a6", "price": 12000, "name": {"en": "Tyre pressure gauge", "ko": "타이어 공기압 게이지", "ja": "空気圧ゲージ", "zh": "胎压计"}, "desc": {"en": "The right pressure makes every ride faster.", "ko": "공기압만 맞춰도 훨씬 잘 나가요."}},
-        {"id": "lab-sticker-pack", "model": "notebook", "color": "#b6ff3b", "price": 5000, "name": {"en": "Lab sticker pack", "ko": "연구소 스티커 팩", "ja": "ラボのステッカー", "zh": "研究所贴纸包"}, "desc": {"en": "Stick them on your helmet or board.", "ko": "헬멧이나 보드에 붙여 꾸며요."}}
-      ]
+      "products": []
     },
     {
       "id": "ride-with-me",
@@ -2359,11 +2351,7 @@
       "signLocal": "RIDE WITH ME",
       "tagline": {"en": "Ride upgrades: long-ride kits and night skins", "ko": "탈것 업그레이드: 롱라이드 키트와 나이트 스킨", "ja": "乗り物アップグレード：ロングライドキットとナイトスキン", "zh": "车辆升级：长途套件和夜色皮肤", "es": "Mejoras de vehículos: kits de ruta larga y aspectos nocturnos"},
       "colors": {"sign": "#1b2a4a", "awning": "#ff2e4d", "accent": "#f2f4fa"},
-      "products": [
-        {"id": "rwm-helmet", "model": "cap", "color": "#1b2a4a", "price": 39000, "name": {"en": "City helmet", "ko": "시티 헬멧", "ja": "シティヘルメット", "zh": "城市头盔"}, "desc": {"en": "Light and safe for night rides.", "ko": "가볍고 안전한 밤 라이딩용 헬멧이에요."}},
-        {"id": "rwm-reflector", "model": "pen", "color": "#c9ced6", "price": 6000, "name": {"en": "Reflector band", "ko": "반사 밴드", "ja": "反射バンド", "zh": "反光带"}, "desc": {"en": "Be seen after dark.", "ko": "어두워져도 잘 보이게 해 줘요."}},
-        {"id": "rwm-light", "model": "cup", "color": "#ff2e4d", "price": 15000, "name": {"en": "Rear light", "ko": "후미등", "ja": "テールライト", "zh": "尾灯"}, "desc": {"en": "Blinks red behind you.", "ko": "뒤에서 빨갛게 깜빡여요."}}
-      ]
+      "products": []
     },
     {
       "id": "hangeul-mihak",
@@ -2375,11 +2363,7 @@
       "name": {"ko": "한글미학", "en": "Hangeul Mihak", "ja": "ハングル美学", "zh": "韩文美学", "es": "Hangeul Mihak"},
       "tagline": {"en": "The Beauty of Hangeul: limited Hunminjeongeum ride skins, sold only here", "ko": "한글의 아름다움: 여기서만 파는 훈민정음 한정판 탈것 스킨", "ja": "ハングルの美：ここだけの訓民正音限定スキン", "zh": "韩文之美：只在这里卖的训民正音限定皮肤", "es": "La belleza del hangul: aspectos limitados Hunminjeongeum, solo aquí"},
       "colors": {"sign": "#1e1e22", "awning": "#c0392b", "accent": "#efe6d2"},
-      "products": [
-        {"id": "mihak-bookmark", "model": "notebook", "color": "#efe6d2", "price": 4000, "name": {"en": "Hangul bookmark", "ko": "한글 책갈피", "ja": "ハングルのしおり", "zh": "韩文书签"}, "desc": {"en": "The 1446 preface in tiny print.", "ko": "훈민정음 서문이 작게 새겨져 있어요."}},
-        {"id": "mihak-bell", "model": "cup", "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
-        {"id": "mihak-seal", "model": "jar", "color": "#b3261e", "price": 15000, "name": {"en": "Name seal (dojang)", "ko": "이름 도장", "ja": "名前のはんこ", "zh": "名字印章"}, "desc": {"en": "Your name carved in Hangul.", "ko": "내 이름을 한글로 새겨 줘요."}}
-      ]
+      "products": []
     }
   ]
 }

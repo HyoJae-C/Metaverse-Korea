@@ -10,6 +10,8 @@ import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { skirtDisplay } from './skirt-mesh.js';
+import { makeRide, makeSkate1 } from './rides.js';
+import { RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS } from './bike-garage.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -420,6 +422,44 @@ export function buildInterior(store) {
     const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [ext[1], ext[0]] : ext;
     block(x, z, cx, cz);
   });
+
+  // Ride shops: the rides themselves on low stands (a bike, a skateboard, a
+  // kick scooter and inline skates, then more of each), wearing the shop's
+  // own skins, instead of small goods on tables. Buying is at the counter.
+  if (store.workshop === 'bike') {
+    const shop = RIDE_SHOPS[store.rideShop] ? store.rideShop : 'pedal';
+    const { colors, patterns } = RIDE_SHOPS[shop];
+    const order = ['bike', 'skate', 'kick', 'inline'].filter((t) => RIDE_TYPES.includes(t));
+    spots.forEach(([x, z, ry], i) => {
+      const type = order[i % order.length];
+      const tier = 2 - (Math.floor(i / order.length) % 3);
+      const color = SKIN_COLORS[colors[i % colors.length]];
+      const pattern = shop === 'pedal' && i < order.length ? null : patterns[i % patterns.length];
+      const stand = new THREE.Group();
+      stand.position.set(x, 0, z);
+      stand.rotation.y = ry;
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.9, 0.16, 28), mat(store.colors.awning));
+      base.position.y = 0.08;
+      stand.add(base);
+      const ride = new THREE.Group();
+      if (type === 'inline') { // a pair of skates, side by side
+        for (const s of [-1, 1]) {
+          const sk = makeSkate1({ tier, color, pattern });
+          sk.position.x = 0.13 * s;
+          ride.add(sk);
+        }
+        ride.scale.setScalar(2.4);
+      } else {
+        ride.add(makeRide({ type, tier, color, pattern }));
+        ride.rotation.y = Math.PI / 2; // side on, so you see the whole ride
+        ride.scale.setScalar(type === 'bike' ? 1.25 : 1.5);
+      }
+      ride.position.y = 0.16;
+      stand.add(ride);
+      scene.add(stand);
+      block(x, z, 1.7, 1.7);
+    });
+  }
 
   // Category extras.
   const seats = [];
