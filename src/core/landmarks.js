@@ -157,6 +157,35 @@ const BUILD = {
       g.add(bulb);
     }
   },
+  arcade(g, l) {
+    // A traditional market's roof (아케이드): a see-through barrel roof
+    // along z over the alley, on thin posts in the gaps between the stalls,
+    // with strings of round lamps under it. l.len: length, l.w: width,
+    // l.h: height of the eaves, l.gap: post spacing.
+    const len = l.len || 60, w = l.w || 12, h = l.h || 6, gap = l.gap || 12;
+    for (let z = -len / 2; z <= len / 2 + 0.01; z += gap) {
+      for (const sx of [-1, 1]) box(g, 0.18, h, 0.18, sx * (w / 2 - 0.9), h / 2, z, '#4a5560');
+      box(g, w - 1.4, 0.16, 0.18, 0, h, z, '#4a5560'); // cross beam
+    }
+    for (const sx of [-1, 1]) box(g, 0.16, 0.16, len, sx * (w / 2 - 0.9), h, 0, '#4a5560'); // side rails
+    const roof = new THREE.Mesh(
+      new THREE.CylinderGeometry(w / 2, w / 2, len, 20, 1, true, -Math.PI / 2, Math.PI),
+      new THREE.MeshLambertMaterial({ color: '#cfe6dc', transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }),
+    );
+    roof.rotation.x = Math.PI / 2;
+    roof.scale.set(1, 1, 0.35); // a low curve
+    roof.position.y = h;
+    roof.userData.noShadow = true;
+    g.add(roof);
+    box(g, 0.2, 0.2, len, 0, h + w / 2 * 0.35, 0, '#4a5560'); // ridge
+    const lamp = new THREE.SphereGeometry(0.22, 8, 6);
+    const lampMat = new THREE.MeshBasicMaterial({ color: '#ffe3a3' });
+    for (let z = -len / 2 + gap / 2; z < len / 2; z += gap / 2) {
+      const b = new THREE.Mesh(lamp, lampMat);
+      b.position.set(0, h - 0.5, z);
+      g.add(b);
+    }
+  },
   busking: (g) => buskingStage(g),
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
@@ -365,7 +394,7 @@ export function buildLandmarks(list = [], scene) {
     } else continue;
     root.add(g);
   }
-  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  root.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
   scene.add(root);
   // Moving parts (Ferris wheel, coaster…): call with the time in seconds.
   root.userData.tick = (t) => { for (const f of ticks) f(t); };
