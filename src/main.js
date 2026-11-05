@@ -113,8 +113,9 @@ import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
+import { createSubway } from './game/subway.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1416,7 +1417,7 @@ const shop = new ShopUI({
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
-  onExit: () => (metro ? metroGetOff() : leaveStore()),
+  onExit: () => (subway.metro ? metroGetOff() : leaveStore()),
   // Perfume tester: see the effect once next to you, for free. Only you see
   // it, and no scent stays on.
   onSniff: (product) => {
@@ -2018,7 +2019,7 @@ function giftFor(store, product) {
 }
 // Everyone I can see in this shop, closest first.
 function peopleHere() {
-  if (!interior || metro) return [];
+  if (!interior || subway.metro) return [];
   const p = me.root.position, out = [];
   for (const [id, o] of others.players) {
     if (o.hidden) continue;
@@ -2233,7 +2234,7 @@ function leaveStore() {
   // Trying something on only lasts while you are in the shop: walking out
   // without buying puts your own look back.
   if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
-  if (metro) endMetro(); // (a taxi or teleport from the train)
+  if (subway.metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
   cable = null;
   standUp();
@@ -2282,216 +2283,14 @@ function leaveStore() {
 }
 
 // ---------- Subway station ----------
-// Walk down an exit's stairs to arrive in the station hall (a room like a
-// shop); walk up any exit's stairs there to come out at that exit.
-const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
-const stationStores = subwayStations.map((sub) => ({
-  id: 'subway-' + (sub.id || sub.name?.en || 'station'), category: 'station', size: 'station', subway: sub, products: [],
-  name: Object.fromEntries(Object.entries(sub.name || {}).map(([k, v]) => [k, v + (STATION_SUFFIX[k] ?? '')])),
-  tagline: sub.line?.name || {},
-  colors: { sign: sub.line?.color || '#f5a200', accent: '#e6e8ec', awning: sub.line?.color || '#f5a200' },
-}));
-// The trains run round all the stations in list order: up = forward, down = back.
-for (const [i, st] of stationStores.entries()) {
-  const n = stationStores.length, nm = (k) => ({ ko: subwayStations[k].name?.ko || '', en: subwayStations[k].name?.en || '' });
-  st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
-}
-const TRAIN_STORE = {
-  id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',
-  name: { en: 'Subway train', ko: '지하철', ja: '地下鉄', zh: '地铁' },
-  tagline: { en: 'Choose where to get off', ko: '내릴 역을 고르세요', ja: '降りる駅を選んでください', zh: '请选择下车站' },
-  colors: { sign: '#5d6470', accent: '#d6dae0', awning: '#5d6470' },
-};
-// A shop-like "front" for each exit: leaving the hall puts you just outside its mouth.
-function exitFront(s, i) {
-  const out = outsideOf(subwayStations[s].exits[i], 0.4); // leaveStore steps another 1.2 m out
-  return { store: stationStores[s], door: { x: out.x, z: out.z }, group: { rotation: { y: out.ry } }, subwayExit: [s, i] };
-}
-let subwayCool = 0; // a moment after arriving, so you don't bounce straight back
-function enterStation(s, i) {
-  enterStore(exitFront(s, i));
-  const st = interior.subway.stairs[i];
-  moveMeTo(interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
-  cam.dist = 8;
-  cam.pitch = 0.6;
-  flashFade();
-  subwayCool = 0.6;
-}
-function leaveStation(i) {
-  const s = stationStores.indexOf(interior.store);
-  interior.front = exitFront(s, i);
-  leaveStore();
-  // Face away from the stairs, with the camera behind you.
-  const out = outsideOf(subwayStations[s].exits[i]);
-  const [x, z] = findFreeSpot(out.x, out.z);
-  moveMeTo(scene, x, z, out.ry);
-  flashFade();
-  subwayCool = 0.6;
-}
-function flashFade() {
-  const el = $('fade');
-  if (!el) return;
-  el.classList.remove('go');
-  void el.offsetWidth; // restart the animation
-  el.classList.add('go');
-}
-// Ticket gates: pay the fare to go through to the platform; going out is free.
-const GATE_TEXT = {
-  in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
-  out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
-  poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
-  paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
-};
-function passGate(g, paying) {
-  if (paying) {
-    if (!wallet.spend(FARE, { name: { en: 'Subway fare', ko: '지하철 요금', ja: '地下鉄運賃', zh: '地铁车费' }, at: interior.store.name })) { shop.toast(fmt(L(GATE_TEXT.poor), { n: FARE })); return; }
-    shop.toast(`🎫 ${L(GATE_TEXT.paid)} · -🪙 ${FARE}`);
-  }
-  sfx.pop?.();
-  moveMeTo(interior.scene, GATE_X + (paying ? 1.3 : -1.3), g.lane, paying ? Math.PI / 2 : -Math.PI / 2, cam.yaw);
-  action = STALE;
-}
-
-// ---------- Riding the train ----------
-// A train comes every 10 s on each platform side and keeps its doors open for
-// 5 s: walk in (or tap Board) while they're open. Inside, pick a station; the
-// train runs one stop per STOP_SECONDS and you step out on that station's platform.
-const METRO_TEXT = {
-  board: { en: 'Board', ko: '타기', ja: '乗る', zh: '上车' },
-  up: { en: 'Up', ko: '상행', ja: '上り', zh: '上行' },
-  down: { en: 'Down', ko: '하행', ja: '下り', zh: '下行' },
-  pick: { en: 'Where do you get off?', ko: '어디서 내릴까요?', ja: 'どこで降りますか？', zh: '在哪里下车？' },
-  stops: { en: '{n} stop(s)', ko: '{n}정거장', ja: '{n}駅', zh: '{n}站' },
-  leaving: { en: 'Doors close in {n}s', ko: '{n}초 뒤 문이 닫혀요', ja: 'あと{n}秒でドアが閉まります', zh: '{n}秒后关门' },
-  moving: { en: 'Next: {name}', ko: '다음 역: {name}', ja: '次は {name}', zh: '下一站：{name}' },
-  getOff: { en: 'Get off here', ko: '여기서 내리기', ja: 'ここで降りる', zh: '在这里下车' },
-  arriving: { en: 'Arriving at {name}', ko: '곧 {name}에 도착해요', ja: 'まもなく {name}', zh: '即将到达 {name}' },
-  choose: { en: 'Pick a station first', ko: '먼저 내릴 역을 골라 주세요', ja: '先に降りる駅を選んでください', zh: '请先选择下车站' },
-};
-let metro = null; // { from, t, dir, leaveAt, dest, arriveAt, chimed }
-const CHIME_LEAD = 2; // seconds before arrival
-const stationIndex = () => stationStores.indexOf(interior?.store);
-const stationName = (k) => localName(stationStores[k].name, getLanguage());
-function boardTrain(t, left) {
-  const from = stationIndex();
-  if (from < 0 || stationStores.length < 2) return;
-  const dir = METRO_TRACKS[t].dir;
-  metro = { from, t, dir, leaveAt: Date.now() + left * 1000, dest: null, arriveAt: 0 };
-  const front = exitFront(from, 0);
-  enterStore({ ...front, store: TRAIN_STORE });
-  interior.front = front; // the map shows you at the station you left
-  goSolo(interior.scene); // a short ride: just you in the car
-  moveMeTo(interior.scene, 0, 0, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
-  cam.dist = 6;
-  cam.pitch = 0.75;
-  flashFade();
-  sfx.pop?.();
-  renderMetro();
-  $('train-panel').hidden = false;
-}
-function renderMetro() {
-  if (!metro) return;
-  const n = stationStores.length;
-  $('train-title').textContent = `🚇 ${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${L(METRO_TEXT.pick)}`;
-  $('train-options').replaceChildren(...lineAhead(metro.from, metro.dir, n).map((k) => {
-    const b = document.createElement('button');
-    b.className = metro.dest === k ? 'primary' : 'chip';
-    b.textContent = `${stationName(k)} · ${fmt(L(METRO_TEXT.stops), { n: stopsBetween(metro.from, k, metro.dir, n) })}`;
-    b.onclick = () => pickStop(k);
-    return b;
-  }));
-  $('train-off').hidden = Date.now() >= metro.leaveAt;
-  $('train-off').textContent = '🚪 ' + L(METRO_TEXT.getOff);
-}
-$('train-off').onclick = () => metroGetOff();
-function pickStop(k) {
-  if (!metro || metro.arriveAt && Date.now() > metro.arriveAt - 500) return;
-  metro.dest = k;
-  metro.chimed = false;
-  const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
-  metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
-  renderMetro();
-}
-// Off before the doors close: back onto the platform you boarded from.
-function metroGetOff() {
-  if (!metro) return;
-  if (Date.now() >= metro.leaveAt) { shop.toast(L(METRO_TEXT.choose)); return; }
-  const { from, t } = metro;
-  endMetro();
-  arriveOnPlatform(from, t);
-}
-function endMetro() {
-  metro = null;
-  $('train-panel').hidden = true;
-}
-function arriveOnPlatform(k, t) {
-  enterStore(exitFront(k, 0));
-  const tr = METRO_TRACKS[t], s = Math.sign(tr.doorZ);
-  moveMeTo(interior.scene, 8.5 + (Math.random() - 0.5) * 6, tr.doorZ - s * 1.4, s > 0 ? Math.PI : 0);
-  cam.dist = 8;
-  cam.pitch = 0.6;
-  flashFade();
-  sfx.doorOpen();
-  subwayCool = 0.8;
-}
-// Platform sounds: the arrival chime anywhere in the hall; doors and the
-// departure signal only on the platform side of the gates.
-function onPlatformSound(kind) {
-  if (kind !== 'arrive' && me.root.position.x < GATE_X) return;
-  ({ arrive: () => sfx.arrivalChime(), open: () => sfx.doorOpen(), closing: () => sfx.doorClose(), depart: () => sfx.depart() })[kind]?.();
-}
-function updateMetro(p) {
-  if (!metro || !interior?.train) return;
-  const now = Date.now();
-  const moving = now >= metro.leaveAt;
-  interior.train.setMoving(moving);
-  if (!metro.warned && now >= metro.leaveAt - 1600) { metro.warned = true; sfx.doorClose(); }
-  if (!metro.departed && moving) { metro.departed = true; sfx.depart(); }
-  let led;
-  if (!moving) led = `${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${fmt(L(METRO_TEXT.leaving), { n: Math.ceil((metro.leaveAt - now) / 1000) })}`;
-  else if (metro.dest != null) {
-    // Chime and "arriving" a couple of seconds before the doors open there.
-    const soon = now >= metro.arriveAt - CHIME_LEAD * 1000;
-    if (soon && !metro.chimed) { metro.chimed = true; sfx.arrivalChime(); }
-    led = fmt(L(soon ? METRO_TEXT.arriving : METRO_TEXT.moving), { name: stationName(metro.dest) });
-  }
-  else led = L(METRO_TEXT.pick);
-  if (led !== metro.led) {
-    metro.led = led;
-    interior.train.setLed(led);
-    $('train-status').textContent = led;
-    renderMetro();
-  }
-  if (metro.dest != null && now >= metro.arriveAt) {
-    const { dest, t } = metro;
-    endMetro();
-    arriveOnPlatform(dest, t);
-  }
-  void p;
-}
-
-// Called every frame after moving: follow the steps up or down.
-function updateSubway(dt, p, px0, pz0) {
-  if (!subwayStations.length) return;
-  subwayCool = Math.max(0, subwayCool - dt);
-  if (mode === 'street') {
-    let s = null, si = -1;
-    for (let k = 0; k < subwayStations.length && !s; k++) { s = streetStairs(subwayStations[k], p.x, p.z); si = k; }
-    if (s && riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
-    p.y = s ? s.y : 0;
-    if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
-  } else if (interior?.subway) {
-    interior.subway.onSound = onPlatformSound;
-    const s = hallStairsAt(interior.subway.stairs, p.x, p.z);
-    p.y = s ? s.y : 0;
-    if (s && s.frac >= HALL_EXIT_AT && !subwayCool) leaveStation(s.i);
-    // Walk into an open train door to board.
-    if (p.x > GATE_X + 0.5 && Math.abs(p.z) >= DOOR_Z - 0.6 && !subwayCool) {
-      const t = p.z >= 0 ? 0 : 1, left = interior.subway.doorsOpen(t);
-      if (left) boardTrain(t, left);
-    }
-  } else if (interior?.train) updateMetro(p);
-}
+// Station halls, ticket gates and riding the train (src/game/subway.js).
+const subway = createSubway(subwayStations, {
+  get interior() { return interior; }, get scene() { return scene; }, get cam() { return cam; },
+  get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
+  enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
+});
+const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
 let signsTranslated = false;
@@ -5541,7 +5340,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
-    metro: () => metro && { ...metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },
+    metro: () => subway.metro && { ...subway.metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
