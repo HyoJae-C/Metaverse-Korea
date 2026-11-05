@@ -10,6 +10,7 @@ import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { skirtDisplay } from './skirt-mesh.js';
+import { buildGallery, ROOM_MUSEUM } from './museum.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -26,6 +27,7 @@ export const ROOM_SIZES = {
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
+  museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -510,6 +512,12 @@ export function buildInterior(store) {
     sign.position.set(-w / 2 + 0.05, 2.9, 0);
     sign.rotation.y = Math.PI / 2;
     scene.add(sign);
+  } else if (store.category === 'museum') {
+    // Old Korean paintings on the walls, benches, and a docent at the desk.
+    const gallery = buildGallery(scene, ROOM, { box, block, mat });
+    stations.paintings = gallery.looks;
+    seats.push(...gallery.seats);
+    clerk = gallery.clerk;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any

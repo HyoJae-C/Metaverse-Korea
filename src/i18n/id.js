@@ -209,6 +209,7 @@ export const ID = {
   'cat.bar': 'Bar',
   'cat.info': 'Info',
   'cat.library': 'Perpustakaan',
+  'cat.museum': 'Museum',
   'cat.school': 'Sekolah',
   'cat.petshop': 'Toko hewan',
   'fish.open': 'Memancing',

@@ -2380,6 +2380,21 @@
         {"id": "mihak-bell", "model": "cup", "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
         {"id": "mihak-seal", "model": "jar", "color": "#b3261e", "price": 15000, "name": {"en": "Name seal (dojang)", "ko": "이름 도장", "ja": "名前のはんこ", "zh": "名字印章"}, "desc": {"en": "Your name carved in Hangul.", "ko": "내 이름을 한글로 새겨 줘요."}}
       ]
+    },
+    {
+      "id": "national-museum",
+      "category": "museum",
+      "size": "museum",
+      "at": [-1324, 493],
+      "name": { "ko": "국립중앙박물관", "en": "National Museum of Korea", "ja": "国立中央博物館", "zh": "国立中央博物馆" },
+      "tagline": {
+        "en": "Old Korean paintings by Kim Hong-do, Sin Yun-bok, Jeong Seon and more. A game space, not linked to the real museum.",
+        "ko": "김홍도, 신윤복, 정선 등의 옛 그림 전시. 실제 박물관과 관계없는 게임 속 공간이에요.",
+        "ja": "金弘道、申潤福、鄭敾などの昔の絵を展示。実際の博物館とは関係のないゲーム内の空間です。",
+        "zh": "展出金弘道、申润福、郑敾等人的古画。这是游戏里的空间，与真实博物馆无关。"
+      },
+      "colors": { "sign": "#3a3633", "awning": "#b8a88a", "accent": "#f2eee6" },
+      "products": []
     }
   ]
 }
