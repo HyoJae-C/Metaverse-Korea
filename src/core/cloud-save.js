@@ -142,6 +142,14 @@ export class CloudSave {
     } catch { return 'offline'; }
   }
 
+  // This account's sign-in token, for realtime's private channels (the chat
+  // channel checks it on the server). Null without an account.
+  async accessToken() {
+    if (!this.client || !this.user) return null;
+    const { data } = await this.client.auth.getSession();
+    return data.session?.access_token || null;
+  }
+
   // The Google address once linked (or null).
   get email() { return this.user?.identities?.find((i) => i.provider === 'google')?.identity_data?.email || this.user?.email || null; }
 

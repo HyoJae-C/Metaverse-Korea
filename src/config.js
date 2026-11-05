@@ -38,6 +38,10 @@ export const config = {
   // Inside a shop or café everyone in the room hears everyone.
   chatStreetRadius: 15,
   chatStreetSeconds: 5,
+  // Only players signed in with Google can send chat (guests can still read
+  // it and see a sign-in prompt). Turn on together with chat_settings.google_only
+  // in supabase/004_chat.sql, which enforces it on the server.
+  chatGoogleOnly: false,
   // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
   rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
 };

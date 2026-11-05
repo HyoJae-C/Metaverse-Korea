@@ -643,6 +643,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 
 /* Chat safety: tap a name in the chat log to block or report */
 .chat-name { all: unset; color: #e0604d; font-weight: 800; cursor: pointer; pointer-events: auto; text-decoration: underline dotted; }
+.chat-signin { all: unset; display: inline-block; margin-top: 3px; padding: 2px 8px; border-radius: 10px; background: #fff; color: #3c6fd6; font-weight: 800; cursor: pointer; pointer-events: auto; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.2); }
 .person-menu {
   position: absolute; left: 50%; transform: translateX(-50%);
   bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
@@ -761,6 +762,7 @@ a.setting-row { text-decoration: none; color: inherit; }
 
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
 .cloud-actions .chip { font-size: 13px; }
+.cloud-actions .fine { flex-basis: 100%; margin: 0; text-align: left; }
 
 /* Samgyeopsal grill game */
 .grill-best { margin: 0; font-weight: 800; }
