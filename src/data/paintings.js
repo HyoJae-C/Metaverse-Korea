@@ -154,4 +154,171 @@ export const PAINTINGS = [
       en: 'Yun Du-seo (1668-1715), great-grandson of the poet Yun Seon-do, turned down office to spend his life on study and painting. The cover reads "Family Treasures": the album was handed down in his family.',
     },
   }),
+  P({
+    id: 'hwalssogi', relicId: 531, no: '본관6504-2', src: IMG + 'bon006/2016/1213161519678/700/bon006504-02-01.jpg', crop: [84, 34, 536, 631], w: 536, h: 631,
+    title: { ko: '활쏘기', en: 'Archery' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '활 쏘는 법을 배우는 젊은이들과 이를 가르치는 군관의 모습이에요. 시위를 당기는 사람의 힘준 얼굴과 자세를 고쳐 주는 손길을 눈여겨보세요.',
+      en: 'Young men learn to shoot a bow while an officer teaches them. Look at the strain on the archer\'s face and the hands correcting his stance.',
+    },
+  }),
+  P({
+    id: 'giwa', relicId: 532, no: '본관6504-3', src: IMG + 'bon006/2016/1213161551255/700/bon006504-03-01.jpg', crop: [69, 25, 529, 596], w: 529, h: 596,
+    title: { ko: '기와이기', en: 'Roofing with Tiles' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '집을 짓고 기와를 올리는 장면이에요. 아래에서 던진 기와를 맨손으로 받는 일꾼, 먹줄로 기둥이 바른지 살피는 목수, 대패질하는 목수가 생생해요.',
+      en: 'Builders put tiles on a new roof. One worker catches tiles thrown up from below with bare hands, a carpenter checks a pillar with a plumb line, and another planes a beam.',
+    },
+  }),
+  P({
+    id: 'daejanggan', relicId: 533, no: '본관6504-4', src: IMG + 'bon006/2016/1213161649247/700/bon006504-04-01.jpg', crop: [111, 34, 504, 598], w: 504, h: 598,
+    title: { ko: '대장간', en: 'Smithy' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '대장간에서 일하는 사람들이에요. 달군 쇠를 모루에 대는 사람, 망치로 내리치는 사람, 숫돌에 연장을 가는 사람, 풀무 줄을 당기는 어린 견습생까지 있어요.',
+      en: 'Blacksmiths at work: one holds the hot iron on the anvil, others swing hammers, one sharpens a finished tool, and a young apprentice pulls the bellows rope.',
+    },
+  }),
+  P({
+    id: 'nadeuri', relicId: 534, no: '본관6504-5', src: IMG + 'bon006/2016/1213161649247/700/bon006504-05-01.jpg', crop: [87, 23, 520, 617], w: 520, h: 617,
+    title: { ko: '나들이', en: 'On the Road' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '나귀를 탄 선비와 아이들과 길을 가는 부부가 마주친 장면이에요. 부채로 얼굴을 가린 선비가 아이를 안은 여인을 몰래 훔쳐보는 모습이 재미있어요.',
+      en: 'A scholar on a donkey passes a family on the road. Hiding behind his fan, he sneaks a look at the mother carrying her child.',
+    },
+  }),
+  P({
+    id: 'siju', relicId: 535, no: '본관6504-6', src: IMG + 'bon006/2016/1213161649247/700/bon006504-06-01.jpg', crop: [80, 25, 531, 632], w: 531, h: 632,
+    title: { ko: '시주', en: 'Asking for Alms' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '두 승려가 목탁과 타악기를 두드리며 시주를 청하고 있어요. 지나가던 여인이 장옷을 머리에 얹고 주머니에서 엽전을 꺼내려는 순간이에요.',
+      en: 'Two monks beat a wooden bell and a drum to ask for alms. A passing woman lifts her cloak onto her head and is about to take coins from her purse.',
+    },
+  }),
+  P({
+    id: 'narutbae', relicId: 536, no: '본관6504-7', src: IMG + 'bon006/2016/1213161649247/700/bon006504-07-01.jpg', crop: [86, 19, 533, 631], w: 533, h: 631,
+    title: { ko: '나룻배', en: 'Ferry Boats' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '두 척의 배에 여러 신분의 사람들과 짐이 가득 실려 있어요. 장으로 가는 길로 보여, 조선 후기 장사가 활발해진 모습을 엿볼 수 있어요.',
+      en: 'Two boats packed with people of every rank and their goods, probably on the way to market. It shows how trade grew in late Joseon.',
+    },
+  }),
+  P({
+    id: 'gonu', relicId: 538, no: '본관6504-9', src: IMG + 'bon006/2016/1213161649247/700/bon006504-09-01.jpg', crop: [94, 32, 510, 592], w: 510, h: 592,
+    title: { ko: '고누놀이', en: 'Playing Gonu' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '나무하러 왔던 아이들이 땅에 판을 그리고 고누를 두고 있어요. 고누는 오래전부터 전해 온 우리 놀이로, 지방마다 이름과 놀이법이 조금씩 달라요.',
+      en: 'Young woodcutters take a break to play gonu, an old Korean board game drawn on the ground. Its name and rules differ a little from region to region.',
+    },
+  }),
+  P({
+    id: 'ppallaeteo', relicId: 539, no: '본관6504-10', src: IMG + 'bon006/2016/1213161649247/700/bon006504-10-01.jpg', crop: [111, 35, 500, 589], w: 500, h: 589,
+    title: { ko: '빨래터', en: 'Washing by the Stream' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '냇가에서 빨래하는 여인들과 바위 뒤에서 몰래 엿보는 선비가 웃음을 자아내요. 간결한 선과 담백한 색이 돋보여요.',
+      en: 'Women wash clothes in a stream while a scholar peeks at them from behind a rock. Simple lines and soft colours make the joke work.',
+    },
+  }),
+  P({
+    id: 'jarijjagi', relicId: 542, no: '본관6504-13', src: IMG + 'bon006/2016/1213161649247/700/bon006504-13-01.jpg', crop: [75, 33, 534, 632], w: 534, h: 632,
+    title: { ko: '자리짜기', en: 'Weaving Mats' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '아버지는 자리를 짜고 어머니는 물레를 돌리는 동안, 아들이 서당에서 배운 천자문을 막대기로 짚으며 읽어 보여요. 서민 가정의 희망이 담긴 그림이에요.',
+      en: 'Father weaves a mat and mother spins thread while their son proudly reads out the characters he learned at school, pointing with a stick.',
+    },
+  }),
+  P({
+    id: 'byeotajak', relicId: 543, no: '본관6504-14', src: IMG + 'bon006/2016/1213161649247/700/bon006504-14-01.jpg', crop: [71, 34, 531, 632], w: 531, h: 632,
+    title: { ko: '벼타작', en: 'Threshing Rice' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '일꾼들이 볏단을 내리쳐 타작하고, 양반 지주는 비스듬히 누워 지켜봐요. 신분이 다른 사람들을 한 장면에 담았지만 김홍도는 해학의 눈으로 바라봤어요.',
+      en: 'Farmhands thresh sheaves of rice while the landowner lounges and watches. Kim Hong-do shows people of different classes with humour rather than anger.',
+    },
+  }),
+  P({
+    id: 'gilssam', relicId: 545, no: '본관6504-16', src: IMG + 'bon006/2016/1213161649247/700/bon006504-16-01.jpg', crop: [66, 34, 549, 631], w: 549, h: 631,
+    title: { ko: '길쌈', en: 'Weaving Cloth' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '베틀에서 베를 짜는 여인과 이를 바라보는 아이, 아이를 업은 할머니, 위쪽에서 실을 뽑는 여인까지 집안 여성들의 고된 일상이 담겨 있어요.',
+      en: 'A woman weaves at the loom, watched by a child and a grandmother carrying a baby, while another woman winds thread above. The hard daily work of women at home.',
+    },
+  }),
+  P({
+    id: 'gogijabi', relicId: 547, no: '본관6504-18', src: IMG + 'bon006/2016/1213161649247/700/bon006504-18-01.jpg', crop: [71, 35, 531, 628], w: 531, h: 628,
+    title: { ko: '고기잡이', en: 'Fishing' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '발을 둘러친 어장에서 그물로 고기를 잡는 모습이에요. 물새들이 고기떼를 따라 날아들고, 배 위에는 생선을 담을 독과 솥까지 실려 있어요.',
+      en: 'Fishermen haul fish from a fenced fish trap. Water birds follow the shoal, and the boats carry jars for the catch and even a cooking pot.',
+    },
+  }),
+  P({
+    id: 'sinhaeng', relicId: 548, no: '본관6504-19', src: IMG + 'bon006/2016/1213161649247/700/bon006504-19-01.jpg', crop: [89, 36, 530, 626], w: 530, h: 626,
+    title: { ko: '신행길', en: 'Wedding Procession' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '신랑이 신부 집으로 향하는 혼례 행렬이에요. 백마를 탄 신랑 앞에 청사초롱과 기러기를 든 사람이 앞장서고, 뒤에는 중매쟁이가 따라와요.',
+      en: 'A groom rides a white horse to the bride\'s house. Lantern bearers and a man carrying a wooden goose lead the way, and the matchmaker follows behind.',
+    },
+  }),
+  P({
+    id: 'jeomsim', relicId: 549, no: '본관6504-20', src: IMG + 'bon006/2016/1213161649247/700/bon006504-20-01.jpg', crop: [82, 36, 524, 626], w: 524, h: 626,
+    title: { ko: '점심', en: 'Lunch Break' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '들일을 하던 일꾼들이 점심을 먹고 있어요. 돌아앉아 아기에게 젖을 먹이는 여인과 따라온 강아지도 정겨워요.',
+      en: 'Field workers eat their lunch. A mother turns away to feed her baby, and a dog has come along too.',
+    },
+  }),
+  P({
+    id: 'jangteogil', relicId: 550, no: '본관6504-21', src: IMG + 'bon006/2016/1213161649247/700/bon006504-21-01.jpg', crop: [37, 10, 619, 348], w: 619, h: 348,
+    title: { ko: '장터길', en: 'Back from the Market' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '산모퉁이를 돌아가는 말과 소의 행렬이에요. 짐 없는 등을 보니 장에서 물건을 다 팔고 돌아가는 길인 듯해, 그림 전체가 밝고 경쾌해요.',
+      en: 'Riders and their animals round a hill. Their loads are gone, so they seem to be heading home after selling everything at the market, and the mood is cheerful.',
+    },
+  }),
+  P({
+    id: 'seodang', relicId: 552, no: '본관6504-23', src: IMG + 'bon006/2016/1213161649247/700/bon006504-23-01.jpg', crop: [78, 18, 542, 651], w: 542, h: 651,
+    title: { ko: '서당', en: 'Village School' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '훈장에게 혼나고 돌아앉아 훌쩍이는 아이를 가운데 두고, 둘레의 아이들이 키득거려요. 우는 아이의 표정과 친구들의 익살스러운 모습에 절로 웃음이 나요.',
+      en: 'A boy sobs after a scolding from the teacher, while the other pupils sitting around him try not to laugh. A scene that still makes people smile.',
+    },
+  }),
+  P({
+    id: 'mudong', relicId: 553, no: '본관6504-24', src: IMG + 'bon006/2016/1213161649247/700/bon006504-24-01.jpg', crop: [67, 24, 550, 649], w: 550, h: 649,
+    title: { ko: '춤추는 아이', en: 'Dancing Boy' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
+    desc: {
+      ko: '북과 장구, 피리, 해금 소리에 맞춰 아이가 덩실덩실 춤을 춰요. 악사들의 모습만 봐도 음악이 들리는 듯해요.',
+      en: 'A boy dances to a drum, an hourglass drum, flutes and a fiddle. You can almost hear the music from the players.',
+    },
+  }),
 ];
+
+// The museum's halls: three floors, each with Hall A on the left and Hall B
+// on the right of a central hall (see core/museum.js). Each hall shows one
+// kind of painting; add a painting by putting its id in a hall's list.
+// A hall with no paintings yet is shown as "coming soon".
+export const FLOORS = [1, 2, 3];
+export const HALLS = [
+  {
+    id: 'hongdo-work', floor: 1, side: 'A',
+    name: { ko: '김홍도관 Ⅰ · 일하는 사람들', en: 'Kim Hong-do Hall I · People at Work' },
+    paintings: ['nongari', 'byeotajak', 'jeomsim', 'giwa', 'daejanggan', 'pyeonja', 'jarijjagi', 'gilssam', 'dambae', 'gogijabi', 'haengsang'],
+  },
+  {
+    id: 'hongdo-life', floor: 1, side: 'B',
+    name: { ko: '김홍도관 Ⅱ · 놀이와 나들이', en: 'Kim Hong-do Hall II · Play and Outings' },
+    paintings: ['ssireum', 'mudong', 'seodang', 'hwalssogi', 'gonu', 'geurimgamsang', 'jumak', 'umulga', 'ppallaeteo', 'nadeuri', 'siju', 'narutbae', 'sinhaeng', 'jangteogil'],
+  },
+  {
+    id: 'landscape', floor: 2, side: 'A',
+    name: { ko: '산수화관 · 산과 물', en: 'Landscape Hall · Mountains and Water' },
+    paintings: ['inwang', 'gyeoulsansu', 'nosong', 'yundoseo'],
+  },
+  {
+    id: 'figures', floor: 2, side: 'B',
+    name: { ko: '인물·동물화관', en: 'Figures and Animals Hall' },
+    paintings: ['yeosokdo', 'tugye', 'mogyeon'],
+  },
+  { id: 'soon-a', floor: 3, side: 'A', name: { ko: '3층 A관', en: '3F Hall A' }, paintings: [] },
+  { id: 'soon-b', floor: 3, side: 'B', name: { ko: '3층 B관', en: '3F Hall B' }, paintings: [] },
+];
+export const COMING_SOON = { ko: '준비 중이에요', en: 'Coming soon' };

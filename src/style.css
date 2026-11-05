@@ -1567,6 +1567,12 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .museum-lang p { margin: 0 0 6px; line-height: 1.5; }
 .museum-meta { color: #6b625a; font-size: 13px; }
 .museum-credit { font-size: 12px; color: #5a5048; }
+.museum-floors { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.museum-floor { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #d9cfbd; border-radius: 12px; background: #fbf8f1; color: #2b2622; text-align: left; font: inherit; cursor: pointer; }
+.museum-floor b { font-size: 20px; min-width: 36px; }
+.museum-floor > span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.museum-floor em { color: #8a5a1e; font-style: normal; font-weight: 700; }
+.museum-floor:disabled { background: #efe7d6; cursor: default; }
 .item-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .pet-name-form { display: flex; gap: 6px; margin-top: 4px; }
 .pet-name-form input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; font-size: 16px; }

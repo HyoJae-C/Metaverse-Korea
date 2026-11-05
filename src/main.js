@@ -68,7 +68,7 @@ import { RamenUI } from './ui/ramen-ui.js';
 import { KimchiUI } from './ui/kimchi-ui.js';
 import { KimchiSellUI, ML as MARKET_L } from './ui/kimchi-sell-ui.js';
 import { MuseumUI, MUSEUM_TEXT } from './ui/museum-ui.js';
-import { nearestPainting } from './core/museum.js';
+import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
 import { BOSS_LINES } from './ui/market-text.js';
 import { kimchiJar } from './core/kimchi-market.js';
 import { KT as KIMCHI_TEXT } from './ui/kimchi-text.js';
@@ -2256,6 +2256,20 @@ function enterStore(item) {
     goSolo(built.scene); // your home is private for now
     openHome(store, built);
   } else joinRoom(`${roomId}-${store.id}`, built.scene);
+}
+
+// The museum's lift: each floor is its own interior; you step out by the lift.
+function goMuseumFloor(floor) {
+  if (mode !== 'store' || interior?.store.category !== 'museum' || floorOf(interior.store) === floor) return;
+  const front = interior.front;
+  standUp();
+  if (museumUi.open) museumUi.close();
+  if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; } // the docent stays downstairs
+  enterStore({ ...front, store: museumFloorStore(front.store, floor) });
+  const l = interior.stations.lift;
+  moveMeTo(interior.scene, l.x, l.z + 0.6, Math.PI); // facing the lift, so the camera is out in the hall
+  const fade = $('fade');
+  if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); }
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
@@ -4849,7 +4863,7 @@ function updateAction(p, tSec) {
       next = g.inside
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
-    } else if (Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
+    } else if (!interior.noExit && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
@@ -4891,6 +4905,8 @@ function updateAction(p, tSec) {
       next = { key: 'photo', label: '📸 ' + t(kind === 'photo1' ? 'game.photo1' : kind === 'photobw' ? 'game.photobw' : 'game.photo'), run: () => photoUi.show(kind) };
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
+    } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
+      next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor) };
     } else if (nearestPainting(interior.stations?.paintings, p.x, p.z)) {
       const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
       next = { key: 'painting:' + pt.id, label: `🖼️ ${L(MUSEUM_TEXT.look)} · ${getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
@@ -5234,7 +5250,7 @@ renderer.setAnimationLoop(() => {
   if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   updateMeal();
-  if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
+  if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
