@@ -17,6 +17,7 @@ useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
@@ -476,9 +477,15 @@ scene.add(sun, sun.target);
 // Subway stations (region.json "subway.stations"): stair exits cut into the ground.
 const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
 const allExits = subwayStations.flatMap((st) => st.exits);
-const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf))); // blockers: rivers, walls
-const treeCollision = allExits.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)))) : collision;
-const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf) });
+// Sunken streams (map "streams", core/stream.js): on the street the channel is
+// a wall that only bridges cross; down by the water you use streamCollision.
+const streams = map.streams || [];
+const streamWalls = streams.flatMap(streamStreetBlockers);
+const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls)); // blockers: rivers, walls
+const treeCollision = allExits.length || streams.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
+const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
+const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
 const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
@@ -2561,14 +2568,26 @@ function updateMetro(p) {
 }
 
 // Called every frame after moving: follow the steps up or down.
+// Down by a stream (core/stream.js): which layer you are on and how high.
+let byStream = null; // { i, y, low, stair } while on a stream's stairs or banks
+function updateStream(p, px0, pz0) {
+  if (!streams.length) return 0;
+  let s = streamAt(streams, p.x, p.z, !!byStream?.low);
+  if (s?.stair && riding) { p.x = px0; p.z = pz0; s = streamAt(streams, p.x, p.z, !!byStream?.low); } // no bikes down the steps
+  byStream = s && (s.low || s.stair) ? s : null;
+  if (mode === 'street') activeCollision = byStream?.low ? streamCollision : collision;
+  return s ? s.y : 0;
+}
+
 function updateSubway(dt, p, px0, pz0) {
-  if (!subwayStations.length) return;
+  const streamY = mode === 'street' ? updateStream(p, px0, pz0) : 0;
+  if (!subwayStations.length) { if (mode === 'street') p.y = streamY; return; }
   subwayCool = Math.max(0, subwayCool - dt);
   if (mode === 'street') {
     let s = null, si = -1;
     for (let k = 0; k < subwayStations.length && !s; k++) { s = streetStairs(subwayStations[k], p.x, p.z); si = k; }
     if (s && riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
-    p.y = s ? s.y : 0;
+    p.y = s ? s.y : streamY;
     if (s && s.frac >= ENTER_AT && !subwayCool && !seated) enterStation(si, s.i);
   } else if (interior?.subway) {
     interior.subway.onSound = onPlatformSound;
@@ -5325,6 +5344,7 @@ renderer.setAnimationLoop(() => {
   }
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
+  if (mode === 'street' && streams.length) streamModels.userData.tick(performance.now() / 1000); // ripples, waterfall
   updateRide(dt);
   updateCable();
   if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
@@ -5404,7 +5424,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'street') {
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
     for (let d = 1; d <= horiz; d += 0.5) {
-      if (collision.blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
+      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
     }
   }
   camHoriz += (horiz - camHoriz) * Math.min(1, dt * (horiz < camHoriz ? 20 : 4));
@@ -5451,7 +5471,7 @@ renderer.setAnimationLoop(() => {
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
     streetTimer = 0.4;
-    const s = nearestStreet(p.x, p.z);
+    const s = byStream?.low ? streams[byStream.i].name : nearestStreet(p.x, p.z); // down by the water: the stream's name
     if (s !== currentStreet) {
       currentStreet = s;
       updateStreetCard();
@@ -5693,6 +5713,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
+    stream: () => ({ y: +me.root.position.y.toFixed(2), low: !!byStream?.low, stair: !!byStream?.stair, street: currentStreet?.en || null }),
     route: (ax, az, bx, bz) => planRoute(ax, az, bx, bz),
     guideTo: (id) => guideToPlace({ store: id }),
     guiding: () => !!guide,

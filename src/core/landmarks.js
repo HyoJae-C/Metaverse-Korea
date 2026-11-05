@@ -110,6 +110,23 @@ const BUILD = {
       box(g, 9, 1, 2, 0, 0.5, 6, C.plinth); // the turtle-ship plinth in front
     }
   },
+  spring(g, l) {
+    // "Spring" (스프링), the tall shell-like spiral at Cheonggye Plaza: a red
+    // and blue ribbon coiling up to a point. (Claes Oldenburg and Coosje van
+    // Bruggen, 2006; stylised here.) l.h: height.
+    const H = l.h || 16;
+    box(g, 7, 0.4, 7, 0, 0.2, 0, C.stoneDark);
+    class Coil extends THREE.Curve {
+      constructor(phase, r0) { super(); this.phase = phase; this.r0 = r0; }
+      getPoint(t, out = new THREE.Vector3()) {
+        const r = this.r0 * (1 - t) ** 0.85 + 0.15, a = this.phase + t * Math.PI * 2 * 4.5;
+        return out.set(Math.cos(a) * r, 0.4 + t * H, Math.sin(a) * r);
+      }
+    }
+    const red = new THREE.Mesh(new THREE.TubeGeometry(new Coil(0, 3.2), 220, 0.32, 6), mat('#d8342c'));
+    const blue = new THREE.Mesh(new THREE.TubeGeometry(new Coil(Math.PI, 2.2), 220, 0.24, 6), mat('#2e5fb7'));
+    g.add(red, blue);
+  },
   guard(g) {
     // A gate guard (수문장) in a red robe with a black hat and a flag.
     const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));

@@ -18,13 +18,14 @@ const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
 
 export function mergeDistricts(parts, links = []) {
-  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [] };
+  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [] };
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
     const [dx, dz] = offset;
     for (const k of LISTS) for (const item of map[k] || []) out[k].push({ ...item, p: shiftPoly(item.p, dx, dz), d: id });
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
+    for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js
     out.meta.districts.push({ id, offset: [dx, dz] });
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
