@@ -30,8 +30,9 @@ function outfits(defs) {
   for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price, wear: { model: id.slice(7) }, off: { model: 'basic' } };
   return out;
 }
-// Is this item on (every part of its wear matches the look)?
-export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => v == null || look?.[k] === v);
+// Is this item on (every part of its wear matches the look)? A null part
+// doesn't count, except a skirt: trousers are only on when no skirt is.
+export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => (v == null ? k !== 'skirt' || !look?.skirt : look?.[k] === v));
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
   ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
