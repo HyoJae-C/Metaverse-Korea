@@ -1,12 +1,11 @@
 // Tteokbokki stall (떡볶이 포장마차) rules, no DOM so it can be unit-tested.
 // Customers order out loud in Korean: how spicy, and which toppings. Make
-// the bowl they asked for before they run out of patience. Each right bowl
-// pays a small tip; the round's score gives a medal (core/grill-game.js).
+// the bowl they asked for before they run out of patience. The round's score
+// gives a medal (core/grill-game.js). Practice only: no coins (deliveries pay).
 
 export const POCHA_GAME = 'pocha';
 export const CUSTOMERS = 5;
 export const PATIENCE = 16; // seconds per customer
-export const TIP = 1; // coins for a right bowl, +1 when served in half the time
 
 export const SPICE = [
   { id: 'mild', ko: '안 맵게', rom: 'an maepge', emoji: '🙂', name: { en: 'not spicy', ja: '辛くない', zh: '不辣' } },
@@ -56,4 +55,3 @@ export function servePoints(ok, timeLeft) {
   if (!ok) return 0;
   return Math.round(14 + 6 * Math.max(0, Math.min(1, timeLeft / PATIENCE)));
 }
-export const tipFor = (ok, timeLeft) => (ok ? TIP + (timeLeft >= PATIENCE / 2 ? 1 : 0) : 0);
