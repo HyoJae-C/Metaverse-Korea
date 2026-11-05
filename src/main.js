@@ -53,6 +53,8 @@ import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './c
 import { ShopUI, Cart, howToGet, coinsFor } from './ui/shop-ui.js';
 import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
+import { Bank, bankMsg, parseBank, FEE as BANK_FEE, SENDS_PER_DAY, DAY_IN } from './core/bank.js';
+import { BankUI, BANK_TEXT, whyText as bankWhy } from './ui/bank-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
@@ -1009,6 +1011,19 @@ let lastSent = null; // set to null to resend our state at once (e.g. when someo
 // Gifts between people in the same room (see startGift).
 const gifts = new GiftBox();
 const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
+// Bank transfers between people in the same bank (see openBank).
+// The oldest budget book entry tells how long players from before the bank
+// have been playing (the wallet itself is set up further down).
+const firstLedger = (() => { try { return JSON.parse(localStorage.getItem('mk.ledger') || '[]')[0]?.t || null; } catch { return null; } })();
+const bank = new Bank(globalThis.localStorage, undefined, undefined, firstLedger);
+const bankUi = new BankUI({
+  check: (to, coins) => {
+    const why = bank.why(coins, wallet.coins);
+    return why ? bankWhy(why, { name: bank.out?.name, daysToGo: bank.daysToGo(), left: bank.left().coins, sends: SENDS_PER_DAY, need: coins + BANK_FEE }) : '';
+  },
+  onSend: (o) => sendTransfer(o),
+  onAnswer: (tid, ok) => answerTransfer(tid, ok),
+});
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
@@ -1016,6 +1031,7 @@ async function joinRoom(room, roomScene, area = null) {
   lastJoin = [room, roomScene, !!area];
   const token = ++joinToken;
   dropGifts(); // gifts are between people in the same room
+  dropTransfers(); // and so are bank transfers
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
@@ -1033,6 +1049,7 @@ async function joinRoom(room, roomScene, area = null) {
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
+      if (parseBank(e)) { onBankMsg(id, parseBank(e)); return; }
       if (parseTarot(e)) {
         const m = parseTarot(e);
         if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
@@ -2081,6 +2098,93 @@ setInterval(() => {
   if (stale.length) showGiftCards();
   if (giftUi.open && !interior) giftUi.close();
 }, 1000);
+// Bank transfers (송금): send coins to a friend in the same bank (rules and
+// limits in core/bank.js). The sender pays the coins and the fee now; the
+// friend gets a card to accept. No, no answer, or someone leaving the bank
+// gives everything back.
+function plainName(name) { return { en: name }; }
+function openBank() {
+  const why = bank.daysToGo() > 0 ? 'new' : bank.out ? 'waiting' : !bank.left().sends ? 'sends' : null;
+  bankUi.show({
+    bank: localName(interior?.store?.name, getLanguage()) || '🏦',
+    coins: wallet.coins,
+    people: peopleHere(),
+    left: bank.left(),
+    blocked: why ? bankWhy(why, { name: bank.out?.name, daysToGo: bank.daysToGo(), sends: SENDS_PER_DAY }) : '',
+  });
+}
+function sendTransfer({ to, coins, memo }) {
+  if (!interior || interior.store.workshop !== 'bank') return;
+  if (!to || !others.players.has(to.id)) { shop.toast(L(BANK_TEXT.nobody)); return; }
+  const why = bank.why(coins, wallet.coins);
+  if (why) { shop.toast(bankWhy(why, { name: bank.out?.name, daysToGo: bank.daysToGo(), left: bank.left().coins, sends: SENDS_PER_DAY, need: coins + BANK_FEE })); return; }
+  if (!wallet.spend(coins + BANK_FEE, { name: plainName(to.name), at: BANK_TEXT.ledgerOut })) return;
+  refreshWallet();
+  const tid = bank.send({ to: to.id, name: to.name, coins, memo });
+  net.sendEmote(bankMsg('offer', to.id, tid, coins, memo));
+  sfx.pop?.();
+  shop.toast(fmt(L(BANK_TEXT.sent), { name: to.name, n: coins }));
+}
+function refundTransfer(tr, reason) {
+  const n = tr.coins + BANK_FEE;
+  wallet.add(n, { name: plainName(tr.name), at: BANK_TEXT.ledgerBack });
+  refreshWallet();
+  shop.toast(fmt(L(BANK_TEXT.back[reason] || BANK_TEXT.back.no), { name: tr.name, n }));
+}
+function showTransferCards() { bankUi.showCards(bank.cards()); }
+function onBankMsg(from, m) {
+  if (m.to !== myId) return;
+  const name = others.nameOf(from) || '?';
+  if (m.verb === 'offer') {
+    if (safety.isBlocked(from, name)) return; // blocked: as if it never came (their coins come back on time out)
+    if (interior?.store?.workshop !== 'bank') return; // only in a bank
+    const r = bank.heard(from, name, m);
+    if (r === 'show') { sfx.pop?.(); showTransferCards(); }
+    else if (r) net.sendEmote(bankMsg('no', from, m.tid, r));
+    return;
+  }
+  const r = bank.answer(from, m.tid, m.verb);
+  if (!r) return;
+  if (m.verb === 'ok') {
+    sfx.pop?.();
+    shop.toast(fmt(L(BANK_TEXT.accepted), { name: r.t.name, n: r.t.coins }));
+    if (bankUi.open) openBank();
+  } else refundTransfer(r.t, m.reason);
+}
+// I tapped Accept or No thanks on a card.
+function answerTransfer(tid, ok) {
+  const r = bank.reply(tid, ok);
+  showTransferCards();
+  if (!r) return;
+  const { t: tr } = r;
+  if (!r.ok) {
+    net.sendEmote(bankMsg('no', tr.from, tid, r.reason));
+    if (r.reason === 'limit') shop.toast(fmt(L(BANK_TEXT.mineLimit), { name: tr.name, max: DAY_IN }));
+    return;
+  }
+  wallet.add(tr.coins, { name: plainName(tr.name), at: BANK_TEXT.ledgerIn });
+  refreshWallet();
+  sfx.pop?.();
+  shop.toast(fmt(L(BANK_TEXT.got), { name: tr.name, n: tr.coins }));
+  net.sendEmote(bankMsg('ok', tr.from, tid));
+  if (bankUi.open) openBank();
+}
+// Changing room (leaving the bank): a transfer still waiting is called off.
+function dropTransfers() {
+  const tr = bank.cancelAll();
+  if (tr) refundTransfer(tr, 'gone');
+  bankUi.close();
+  showTransferCards();
+}
+setInterval(() => {
+  const gone = (id) => !others.players.has(id);
+  const tr = bank.expire(gone);
+  if (tr) refundTransfer(tr, gone(tr.to) ? 'gone' : 'late');
+  const stale = bank.stale(gone);
+  for (const c of stale) if (!gone(c.from)) net.sendEmote(bankMsg('no', c.from, c.tid, 'late'));
+  if (stale.length) showTransferCards();
+  if (bankUi.open && interior?.store?.workshop !== 'bank') bankUi.close();
+}, 1000);
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2135,7 +2239,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.workshop === 'bank' ? '🏦 ' + L(BANK_TEXT.teller) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -4828,6 +4932,8 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'tarot' && !seated && nearReader(p)) {
       const r = nearReader(p);
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
+    } else if (interior.store.workshop === 'bank' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'bank', label: '🏦 ' + L(BANK_TEXT.open), run: () => { clerk.ch.wave(); openBank(); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); openHatWorkshop(); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
@@ -5345,6 +5451,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     bagList: () => bag.list(),
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
+    bank: () => ({ out: !!bank.out, cards: bank.cards().length, left: bank.left(), days: bank.daysToGo() }),
+    bankAge: (days) => { bank.s.since = Date.now() - days * 864e5; bank._save(); },
+    openBank: () => openBank(),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     route: (ax, az, bx, bz) => planRoute(ax, az, bx, bz),

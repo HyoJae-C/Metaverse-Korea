@@ -187,6 +187,7 @@ export const ID = {
   'cat.club': 'Klub',
   'cat.bar': 'Bar',
   'cat.info': 'Info',
+  'cat.bank': 'Bank',
   'cat.library': 'Perpustakaan',
   'cat.school': 'Sekolah',
   'cat.petshop': 'Toko hewan',

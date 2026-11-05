@@ -187,6 +187,7 @@ export const VI = {
   'cat.club': 'Câu lạc bộ',
   'cat.bar': 'Quán bar',
   'cat.info': 'Thông tin',
+  'cat.bank': 'Ngân hàng',
   'cat.library': 'Thư viện',
   'cat.school': 'Trường học',
   'cat.petshop': 'Cửa hàng thú cưng',

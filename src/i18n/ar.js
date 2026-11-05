@@ -187,6 +187,7 @@ export const AR = {
   'cat.club': 'نادٍ ليلي',
   'cat.bar': 'بار',
   'cat.info': 'معلومات',
+  'cat.bank': 'بنك',
   'cat.library': 'مكتبة',
   'cat.school': 'مدرسة',
   'cat.petshop': 'متجر حيوانات',

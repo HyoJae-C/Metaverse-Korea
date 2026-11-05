@@ -187,6 +187,7 @@ export const HI = {
   'cat.club': 'क्लब',
   'cat.bar': 'बार',
   'cat.info': 'जानकारी',
+  'cat.bank': 'बैंक',
   'cat.library': 'पुस्तकालय',
   'cat.school': 'स्कूल',
   'cat.petshop': 'पेट शॉप',

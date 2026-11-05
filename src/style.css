@@ -1493,3 +1493,18 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-card-btns .chip { background: #fff; }
 @keyframes gift-pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
 html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
+
+/* Bank transfers: send coins to a friend in the same bank (ui/bank-ui.js). */
+.bank-panel { z-index: 7; max-height: calc(100dvh - 24px); overflow-y: auto; }
+.bank-panel h3 { margin: 0 36px 10px 0; }
+.bank-label { margin: 12px 0 6px; font-size: 12px; font-weight: 800; color: var(--ink-soft); }
+.bank-panel .gift-people { margin-top: 0; }
+.bank-amount, .bank-memos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bank-amount .chip, .bank-memos .chip, .bank-people .chip { background: #fff; padding: 7px 12px; }
+.bank-panel .chip.on { background: #1f8a6e; color: #fff; }
+.bank-amount input { width: 90px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid #cfd8d4; font: inherit; font-size: 15px; }
+.bank-total { margin: 12px 0 0; font-size: 14px; font-weight: 700; }
+.bank-err { margin: 4px 0 8px; min-height: 1em; font-size: 13px; color: #b8322a; }
+.bank-panel #bank-send:disabled { opacity: .45; }
+.bank-today { margin: 8px 0 0; font-size: 12px; color: var(--ink-soft); text-align: center; }
+html[lang='ar'] .bank-panel { direction: rtl; }
