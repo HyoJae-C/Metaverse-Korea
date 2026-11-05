@@ -11,6 +11,9 @@
 // A shop's own building can carry a big poster on its upper floors too,
 // above the shop front (region.json "storePosters"):
 //   "storePosters": { "golmok-chicken": { "image": "ads/brand.webp" } }
+// Any map building can carry a big photo on one wall (map file, on the
+// building; "face" is the direction the wall faces):
+//   { "h": 28, "p": [...], "wall": { "face": [1, 0], "image": "ads/x.webp", "credit": "Name" } }
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 
@@ -121,9 +124,9 @@ function smallMaterials() {
   })));
 }
 
-// The photographer's name in the poster's corner, small, like a magazine
-// photo credit: "Photo: Name".
-function creditTag(text) {
+// The photo's source in the poster's corner, small, like a magazine photo
+// credit: "UNSPLASH : Name".
+function creditTag(text, h = 0.26) {
   const H = 48;
   const probe = document.createElement('canvas').getContext('2d');
   probe.font = `600 28px ${FONT}`;
@@ -133,7 +136,6 @@ function creditTag(text) {
     g.fillStyle = '#fff'; g.font = `600 28px ${FONT}`; g.textBaseline = 'middle';
     g.fillText(text, 14, H / 2 + 1);
   });
-  const h = 0.26;
   const m = new THREE.Mesh(UNIT_PLANE, new THREE.MeshBasicMaterial({ map, transparent: true }));
   m.scale.set((h * W) / H, h, 1);
   return m;
@@ -159,8 +161,9 @@ function photoPoster(g, url, maxW, maxH, bottom, credit) {
     frame.position.set(0, y, 0.05);
     frame.visible = poster.visible = true;
     if (credit) {
-      const tag = creditTag('Photo: ' + credit);
-      tag.position.set(w / 2 - tag.scale.x / 2 - 0.08, y - h / 2 + tag.scale.y / 2 + 0.08, 0.14);
+      const tag = creditTag('UNSPLASH : ' + credit, Math.max(0.26, h * 0.028));
+      const pad = tag.scale.y * 0.3;
+      tag.position.set(w / 2 - tag.scale.x / 2 - pad, y - h / 2 + tag.scale.y / 2 + pad, 0.14);
       g.add(tag);
     }
   });
@@ -235,6 +238,19 @@ export class AdPosters {
       g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
       g.rotation.y = Math.atan2(front.nx, front.nz);
       photoPoster(g, base + ad.image, front.half * 2 - 0.8, top - bottom, bottom, ad.credit);
+      this.root.add(g);
+    }
+    // Big photos on the walls of ordinary buildings (e.g. round a square).
+    for (const b of buildings) {
+      const ad = b.wall;
+      if (!ad?.image || !Array.isArray(ad.face)) continue;
+      const front = lotFront({ ...b, f: ad.face });
+      const bottom = 4, top = (b.h || 8) - 1;
+      if (top - bottom < 3) continue;
+      const g = new THREE.Group();
+      g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
+      g.rotation.y = Math.atan2(front.nx, front.nz);
+      photoPoster(g, base + ad.image, Math.min(front.half * 2 - 4, 26), top - bottom, bottom, ad.credit);
       this.root.add(g);
     }
     scene.add(this.root);

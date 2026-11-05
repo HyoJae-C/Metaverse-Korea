@@ -56,8 +56,13 @@ export default {
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧢', wear: wear(HOODIE), hood: true },
     mage: { url: 'models/kaykit2/mage.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
     knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
-    barbarian: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
-    ranger: { url: 'models/kaykit2/ranger.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The tank top and the shirt are on the basic model too: the barbarian
+    // and ranger heads have a beard and a moustache, which grew on players'
+    // faces when they bought the clothes.
+    barbarian: { url: 'models/kaykit2/rogue.glb', emoji: '🎽', wear: wear(TANK) },
+    ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The gym trainer (an NPC) keeps the bearded head.
+    trainer: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
     // The same clothes in other colours, sold at the other clothes shops.
     ...variants('rogue', '🧥', JACKET, {
       'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
@@ -65,7 +70,7 @@ export default {
     ...variants('rogue_hooded', '🧢', HOODIE, {
       'hoodie-black': { top: 0x2b2b31, accent: 0x3a3a42 }, 'hoodie-wine': { top: 0x8a2f45, accent: 0x74263a }, 'hoodie-orange': { top: 0xff7a00, accent: 0xd96800 },
     }, { hood: true }),
-    ...variants('ranger', '👔', SHIRT, {
+    ...variants('rogue', '👔', SHIRT, {
       'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
     }),
     ...variants('knight', '🧥', PUFFER, {

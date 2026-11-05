@@ -391,7 +391,15 @@
           56,
           122
         ]
-      ]
+      ],
+      "wall": {
+        "face": [
+          -1,
+          0
+        ],
+        "image": "ads/gyeongbok-alley.webp",
+        "credit": "Grafi Jeremiah"
+      }
     },
     {
       "h": 28,
@@ -412,7 +420,15 @@
           -110,
           122
         ]
-      ]
+      ],
+      "wall": {
+        "face": [
+          1,
+          0
+        ],
+        "image": "ads/gyeongbok-corridor.webp",
+        "credit": "Jet dela Cruz"
+      }
     },
     {
       "h": 22,
@@ -475,7 +491,15 @@
           56,
           168
         ]
-      ]
+      ],
+      "wall": {
+        "face": [
+          -1,
+          0
+        ],
+        "image": "ads/gyeongbok-kimchi.webp",
+        "credit": "Daniel"
+      }
     },
     {
       "h": 28,
@@ -496,7 +520,15 @@
           -110,
           168
         ]
-      ]
+      ],
+      "wall": {
+        "face": [
+          1,
+          0
+        ],
+        "image": "ads/gyeongbok-lanterns.webp",
+        "credit": "JIEUN KWON"
+      }
     },
     {
       "h": 22,

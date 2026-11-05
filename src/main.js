@@ -1919,7 +1919,7 @@ let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
 let barkeep = null; // a club's bartender
 let areaGuide = null; // an Information Center's area guide (the clerk is the game guide)
-const TRAINER_LOOK = { model: 'barbarian', hair: 'black', skin: 'warm', shirt: 'charcoal' };
+const TRAINER_LOOK = { model: 'trainer', hair: 'black', skin: 'warm', shirt: 'charcoal' };
 let trainerLine = -1;
 function talkToTrainer() {
   trainerLine = nextTrainerLine(trainerLine);
@@ -5732,6 +5732,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),
+    setLook: (patch) => setLook({ ...currentLook, ...patch }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
     fishing: () => fishingUi.state,
