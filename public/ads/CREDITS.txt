@@ -3,6 +3,7 @@ Seongsu fashion posters (public/ads/*.webp)
 Photos from Unsplash, used under the Unsplash License
 (https://unsplash.com/license): free for commercial use, no permission
 needed. Shown as the original photos, resized; one photo was cropped.
+Each poster names its photographer small in the corner (region.json "credit").
 A changed photo gets a new file name (-v2, -v3...): players' browsers
 keep an old image under the same name for a while.
 

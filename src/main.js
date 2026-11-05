@@ -31,6 +31,11 @@ import { Academy } from './core/academy.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
+import { STAMPS } from './data/stamps.js';
+import { StampBook, availableStamps, STAMP_REWARD } from './core/stamp-book.js';
+import { StampStands } from './core/stamp-stands.js';
+import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
+import { PalaceShow } from './core/palace-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
 import { createCharacter } from './core/character.js';
@@ -503,6 +508,14 @@ const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
 // Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+// Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
+// the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
+const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
+const palaceShow = palaceAt ? new PalaceShow(scene, { fan: [palaceAt[0], palaceAt[1] - 150], mask: [palaceAt[0], palaceAt[1] + 40] }) : null;
+// Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
+// shop only appears once that shop is on the map.
+const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
+const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id));
 const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
@@ -3419,7 +3432,7 @@ function setActionLabel(label) {
 }
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4058,6 +4071,28 @@ const bookUi = new BookUI({
   getPage: (id) => bookPages[id] | 0,
   setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
 });
+const stampBook = new StampBook();
+const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps });
+function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
+$('stamp-btn').onclick = () => { $('wallet-panel').hidden = true; stampUi.show(); };
+refreshStampBtn();
+onLanguageChange(refreshStampBtn);
+// Press the stamp at a stand: the first time pays 🪙10 and opens the note.
+function pressStamp(it) {
+  const s = it.stamp;
+  stampStands.press(it);
+  me.play('bow');
+  sfx.pop?.();
+  if (stampBook.stamp(s.id)) {
+    const name = {};
+    for (const l of ['ko', 'en', 'ja', 'zh']) name[l] = fmt(STAMP_TEXT.ledger[l], { name: s.name[l] });
+    wallet.add(STAMP_REWARD, { name });
+    shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
+    refreshStampBtn();
+    setTimeout(() => stampUi.show(s.id), 450);
+  } else stampUi.show();
+  action = STALE;
+}
 const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
 function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
 $('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
@@ -5020,6 +5055,11 @@ function updateAction(p, tSec) {
       next = b.board === 'news'
         ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
         : { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
+    } else if (!riding && stampStands.nearest(p.x, p.z)) {
+      const it = stampStands.nearest(p.x, p.z);
+      next = stampBook.has(it.stamp.id)
+        ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
+        : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) };
     } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
       next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
     } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
@@ -5513,7 +5553,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { palaceShow?.update(dt, p); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -5616,6 +5656,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     sfx[k] = () => { sfxLog.push([k, Date.now()]); fn(); };
   }
   window.__mk = {
+    stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),

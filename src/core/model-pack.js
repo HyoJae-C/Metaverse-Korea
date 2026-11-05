@@ -3,6 +3,7 @@
 // a skeleton clone per character, and an AnimationMixer driven by our action
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
+import { FOLK_DANCES, makeFan, makeSleeve } from './folk-dance.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
@@ -551,6 +552,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
   let scissors = null; // the hairdresser's
+  let folkProps = null; // fans or long sleeves for the palace performers
   const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
   const lBones = Object.fromEntries(['hips', 'spine', 'head', 'upperlegl', 'lowerlegl', 'footl', 'upperlegr', 'lowerlegr', 'footr', 'upperarml', 'upperarmr', 'lowerarml', 'lowerarmr'].map((n) => [n, m.getObjectByName(n)]));
   const lRest = new Map(Object.values(lBones).filter(Boolean).map((b) => [b, b.quaternion.clone()]));
@@ -562,7 +564,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -603,6 +605,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       const snipping = activity === 'snip' && key === 'idle'; // cutting hair
       if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
       if (scissors) scissors.visible = snipping;
+      const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
+      if (folk && !folkProps && slotL && slotR) {
+        const make = folk === 'fan' ? makeFan : makeSleeve;
+        folkProps = [make(1.8), make(1.6)];
+        slotL.add(folkProps[0]); slotR.add(folkProps[1]);
+      }
+      if (folkProps) for (const f of folkProps) f.visible = !!folk;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       let stroke = null;
@@ -617,7 +626,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
-      if (dancing) {
+      if (folk) {
+        moves = FOLK_DANCES[folk](performance.now() / 1000);
+        bob = moves.bob || 0;
+        turn = moves.turn || 0;
+      } else if (dancing) {
         const { beat, phase } = beatNow();
         moves = globalThis.__dancePose || DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat); // debug override
         bob = moves.bob || 0;
@@ -629,7 +642,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
         m.position.y = PULLUP.hang; // corrected below, once the arms are posed
-      } else if (dancing) m.position.y = bob;
+      } else if (dancing || folk) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       // The clips don't key every bone: start the stroke bones from rest so
@@ -681,6 +694,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       }
       if (moves) {
         for (const [name, bone] of Object.entries(dBones)) {
+          const r = moves[name];
+          if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
+        }
+        for (const [name, bone] of [['legL', lBones.upperlegl], ['legR', lBones.upperlegr], ['kneeL', lBones.lowerlegl], ['kneeR', lBones.lowerlegr]]) {
           const r = moves[name];
           if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
