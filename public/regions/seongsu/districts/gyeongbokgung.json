@@ -2675,13 +2675,12 @@
       "z": -640
     },
     {
-      "type": "spring",
+      "type": "fountain",
       "x": 62,
       "z": 409,
-      "h": 16,
       "name": {
-        "ko": "스프링",
-        "en": "Spring (sculpture)"
+        "ko": "청계광장 분수",
+        "en": "Cheonggye Plaza fountain"
       }
     }
   ],
