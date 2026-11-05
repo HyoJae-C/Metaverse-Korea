@@ -36,6 +36,7 @@ const T = {
   same: { en: 'That is already your name.', ko: '지금 이름과 같아요.', ja: '今の名前と同じです。', zh: '和现在的名字一样。', es: 'Ya te llamas así.', ar: 'هذا اسمك بالفعل.', vi: 'Đó đã là tên của bạn rồi.', hi: 'यह पहले से आपका नाम है।', id: 'Itu sudah namamu.' },
   empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', vi: 'Hãy nhập tên trước.', hi: 'पहले कोई नाम लिखें।', id: 'Ketik nama dulu.' },
 };
+const RESERVED_NAME = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
 export const RENAME_COST = 30;
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
@@ -159,7 +160,7 @@ export class EmblemUI {
       const r = await this.rename(input.value);
       this.confirming = null;
       if (r === 'ok') { this.draft = null; this.render('🎉 ' + tt('renamed', { name: this.name })); return; }
-      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : r === 'taken' ? t('name.taken') : tt(r === 'same' ? 'same' : 'empty'));
+      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : r === 'taken' ? t('name.taken') : r === 'reserved' ? L(RESERVED_NAME) : tt(r === 'same' ? 'same' : 'empty'));
     };
     input.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) go.click(); };
     if (this.confirming) {

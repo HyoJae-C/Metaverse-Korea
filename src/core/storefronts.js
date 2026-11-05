@@ -184,7 +184,10 @@ export class Storefronts {
         group.position, group.quaternion, group.scale,
       ));
       // Floating badge above the entrance (sprites always face the camera).
-      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(storeIcon(store), store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
+      // Shops have a big sign already, so only homes (a small nameplate)
+      // get one, and it hides behind buildings.
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(storeIcon(store), store.name.ko, store.colors.sign), depthWrite: false, depthTest: true, transparent: true }));
+      badge.userData.home = home;
       badge.scale.set(6, 1.5, 1);
       badge.position.set(0, home ? 5.2 : Math.max(6.4, signTop + 1), 2.0);
       badge.renderOrder = 3;
@@ -215,8 +218,8 @@ export class Storefronts {
       it.ring.scale.set(s, 1, s);
       // Badges show through walls, so fade them out with distance.
       const d = Math.hypot(it.door.x - x, it.door.z - z);
-      it.badge.visible = d < 140;
-      it.badge.material.opacity = d < 90 ? 1 : 1 - (d - 90) / 50;
+      it.badge.visible = it.badge.userData.home && d < 60;
+      it.badge.material.opacity = d < 40 ? 1 : 1 - (d - 40) / 20;
       if (Math.hypot(it.door.x - x, it.door.z - z) < 2.2) hit = it;
     }
     return hit;

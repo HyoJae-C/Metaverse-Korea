@@ -8,6 +8,9 @@
 // from region.json:
 //   "adPosters": { "L-07": { "image": "ads/brand.png" } }
 //   "adPosters": { "L-07": { "text": "Grand opening", "sub": "Seongsu-ro 12", "color": "#e94e77" } }
+// A shop's own building can carry a big poster on its upper floors too,
+// above the shop front (region.json "storePosters"):
+//   "storePosters": { "golmok-chicken": { "image": "ads/brand.webp" } }
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 
@@ -43,6 +46,20 @@ export function emptyLots(buildings, points) {
     if (!taken) out.push({ id: 'L-' + String(count[d]).padStart(2, '0'), b, front });
   }
   return out;
+}
+
+// The lot a store stands in front of (or null).
+export function storeLot(buildings, [x, z]) {
+  let best = null, bd = Infinity;
+  for (const b of buildings) {
+    if (!b.f) continue;
+    const front = lotFront(b);
+    const dx = x - front.x, dz = z - front.z;
+    const ahead = dx * front.nx + dz * front.nz;
+    const along = Math.abs(dx * front.nz - dz * front.nx);
+    if (ahead > -1 && ahead < 7 && along <= front.half + 1.5 && ahead + along < bd) { bd = ahead + along; best = { b, front }; }
+  }
+  return best;
 }
 
 // ── Textures ────────────────────────────────────────────────────────────
@@ -104,6 +121,29 @@ function smallMaterials() {
   })));
 }
 
+// A photo poster in its own shape: fits a box of maxW × maxH metres
+// (bottom edge at `bottom`), sized once the image has loaded.
+const UNIT_PLANE = new THREE.PlaneGeometry(1, 1);
+const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+function photoPoster(g, url, maxW, maxH, bottom) {
+  const frame = new THREE.Mesh(UNIT_BOX, new THREE.MeshLambertMaterial({ color: 0x24262b }));
+  const poster = new THREE.Mesh(UNIT_PLANE, new THREE.MeshBasicMaterial());
+  frame.visible = poster.visible = false;
+  g.add(frame, poster);
+  const map = new THREE.TextureLoader().load(url, (tex) => {
+    const a = tex.image.width / tex.image.height;
+    const w = Math.min(maxW, maxH * a), h = w / a;
+    const y = bottom + h / 2;
+    poster.scale.set(w, h, 1);
+    poster.position.set(0, y, 0.12);
+    frame.scale.set(w + 0.3, h + 0.3, 0.1);
+    frame.position.set(0, y, 0.05);
+    frame.visible = poster.visible = true;
+  });
+  map.colorSpace = THREE.SRGBColorSpace;
+  poster.material.map = map;
+}
+
 // ── Meshes ──────────────────────────────────────────────────────────────
 const shutterMat = () => new THREE.MeshLambertMaterial({
   map: canvasTex(64, 64, (g, W, H) => {
@@ -114,7 +154,7 @@ const shutterMat = () => new THREE.MeshLambertMaterial({
 });
 
 export class AdPosters {
-  constructor(scene, buildings, stores, center, latLonToLocal, booked = {}, base = '/') {
+  constructor(scene, buildings, stores, center, latLonToLocal, booked = {}, base = '/', storePosters = {}) {
     this.root = new THREE.Group();
     this.spots = emptyLots(buildings, stores.map((s) => placeOf(s, center, latLonToLocal)));
     const smalls = smallMaterials();
@@ -142,14 +182,11 @@ export class AdPosters {
       // The big poster above the shutter.
       const top = (b.h || 8) - 0.6, bottom = sh + 0.6;
       const bw = Math.min(wide - 2, 10, ((top - bottom) / 0.62));
-      if (bw > 3) {
+      const ad = booked[id];
+      if (ad?.image) photoPoster(g, base + ad.image, Math.min(wide - 2, 10), top - bottom - 0.4, bottom + 0.4);
+      else if (bw > 3) {
         const bh = bw * 0.62;
-        const ad = booked[id];
-        let map;
-        if (ad?.image) {
-          map = new THREE.TextureLoader().load(base + ad.image);
-          map.colorSpace = THREE.SRGBColorSpace;
-        } else map = canvasTex(640, 400, (c, W, H) => (ad ? drawBooked(c, W, H, ad) : drawBig(c, W, H, id, k)));
+        const map = canvasTex(640, 400, (c, W, H) => (ad ? drawBooked(c, W, H, ad) : drawBig(c, W, H, id, k)));
         const frame = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.4, bh + 0.4, 0.12), new THREE.MeshLambertMaterial({ color: 0x24262b }));
         const poster = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), new THREE.MeshBasicMaterial({ map }));
         const y = Math.min(bottom + bh / 2 + 0.4, top - bh / 2);
@@ -159,6 +196,23 @@ export class AdPosters {
       }
       this.root.add(g);
     });
+    // Big posters on the upper floors of shop buildings.
+    for (const s of stores) {
+      const ad = storePosters[s.id];
+      if (!ad?.image) continue;
+      const lot = storeLot(buildings, placeOf(s, center, latLonToLocal));
+      if (!lot) continue;
+      const { b, front } = lot;
+      // Just above the shop sign, in the photo's own shape, as big as the
+      // wall allows.
+      const bottom = 5.6, top = (b.h || 8) - 0.5;
+      if (front.half * 2 < 4 || top - bottom < 3) continue;
+      const g = new THREE.Group();
+      g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
+      g.rotation.y = Math.atan2(front.nx, front.nz);
+      photoPoster(g, base + ad.image, front.half * 2 - 0.8, top - bottom, bottom);
+      this.root.add(g);
+    }
     scene.add(this.root);
   }
 }
