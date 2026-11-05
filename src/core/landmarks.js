@@ -5,6 +5,7 @@
 // "blockers", so these are only visual.
 import * as THREE from 'three';
 import { buildAnotherLand } from './anotherland.js';
+import { cableCarLandmark } from './cablecar.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -158,6 +159,7 @@ const BUILD = {
     }
   },
   busking: (g) => buskingStage(g),
+  cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
     const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
@@ -205,7 +207,7 @@ const BUILD = {
 
 // The look-out tower on Namsan: a white shaft, a round deck with windows,
 // a red and white mast, and a ring of lights.
-function namsanTower(g, y0 = 0) {
+export function namsanTower(g, y0 = 0) {
   const cyl = (rt, rb, ht, y, c) => {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, ht, 16), mat(c));
     m.position.y = y + ht / 2;

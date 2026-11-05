@@ -399,6 +399,7 @@ export const VI = {
   'ledger.together': "Thưởng cùng bạn bè",
   'ledger.taxi': "Taxi",
   'ledger.ride': "Trò chơi công viên",
+  'ledger.cable': "Cáp treo Namsan",
   'ledger.rename': "Đổi tên",
   'ledger.fine': "Phạt: để lại chất thải thú cưng",
   'ledger.gift': "Mã quà tặng",
