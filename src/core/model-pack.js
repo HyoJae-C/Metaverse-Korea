@@ -200,12 +200,12 @@ function dyedMaterial(id, src, look) {
     const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
     for (const [role, cell] of Object.entries(WEAR_CELLS)) {
       if (!cell) continue;
-      const hex = role === 'top' ? top : role === 'bottom' ? bottom : c[role];
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes : c[role];
       if (hex != null) paint.push([cell, hex]);
     }
   }
   if (!paint.length && shirt == null) return null;
-  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : ''].join('|');
+  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
   let base = null;
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });

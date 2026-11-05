@@ -89,10 +89,11 @@
       "at": [17, 165],
       "colors": { "sign": "#3a3a3a", "awning": "#e8e2d8", "accent": "#fafaf7" },
       "products": [
-        { "id": "tee-cream", "model": "tee", "color": "#f6f1e7", "price": 32000, "tryOn": { "shirt": "cream" }, "name": { "en": "Relaxed Tee · Cream", "ko": "릴렉스 티 · 크림" }, "desc": { "en": "Heavy cotton tee with a roomy fit." } },
-        { "id": "tee-sky", "model": "tee", "color": "#86b8f0", "price": 32000, "tryOn": { "shirt": "sky" }, "name": { "en": "Relaxed Tee · Sky", "ko": "릴렉스 티 · 스카이" }, "desc": { "en": "Same tee, in a soft sky blue." } },
-        { "id": "knit-lilac", "model": "tee", "color": "#b9a6f0", "price": 59000, "tryOn": { "shirt": "lilac" }, "name": { "en": "Soft Knit · Lilac", "ko": "소프트 니트 · 라일락" }, "desc": { "en": "Lightweight knit for cool evenings." } },
-        { "id": "scarf-wool", "model": "scarf", "color": "#e9735c", "price": 39000, "tryOn": { "neck": "scarf" }, "name": { "en": "Wool Scarf", "ko": "울 머플러" }, "desc": { "en": "A cosy brick-red scarf." } }
+        { "id": "mono-outfit-shirt-white", "model": "tee", "color": "#f4f1ea", "price": 50000, "item": "outfit-shirt-white", "name": { "en": "White shirt", "ko": "화이트 셔츠", "ja": "白シャツ", "zh": "白衬衫" }, "tryOn": { "model": "shirt-white" } },
+        { "id": "mono-outfit-hoodie-black", "model": "tee", "color": "#2b2b31", "price": 60000, "item": "outfit-hoodie-black", "name": { "en": "Black hoodie", "ko": "블랙 후드티", "ja": "黒のパーカー", "zh": "黑色连帽卫衣" }, "tryOn": { "model": "hoodie-black" } },
+        { "id": "mono-outfit-jacket-black", "model": "tee", "color": "#2b2b31", "price": 70000, "item": "outfit-jacket-black", "name": { "en": "Black denim jacket", "ko": "블랙 청재킷", "ja": "ブラックデニムジャケット", "zh": "黑色牛仔夹克" }, "tryOn": { "model": "jacket-black" } },
+        { "id": "mono-outfit-puffer-black", "model": "tee", "color": "#2b2b31", "price": 110000, "item": "outfit-puffer-black", "name": { "en": "Black puffer jacket", "ko": "블랙 숏패딩", "ja": "黒のショートダウン", "zh": "黑色短款羽绒服" }, "tryOn": { "model": "puffer-black" } },
+        { "id": "mono-outfit-padding-white", "model": "tee", "color": "#eeeae2", "price": 140000, "item": "outfit-padding-white", "name": { "en": "White long padded coat", "ko": "화이트 롱패딩", "ja": "白のロングダウン", "zh": "白色长款羽绒服" }, "tryOn": { "model": "padding-white" } }
       ]
     },
     {
@@ -103,10 +104,12 @@
       "at": [23.8, 175],
       "colors": { "sign": "#34495e", "awning": "#5b6c8f", "accent": "#eef2f7" },
       "products": [
-        { "id": "jeans-indigo", "model": "jeans", "color": "#5b6c8f", "price": 79000, "tryOn": { "pants": "denim" }, "name": { "en": "Wide Jeans · Indigo", "ko": "와이드 진 · 인디고" }, "desc": { "en": "Wide straight leg, mid-weight denim." } },
-        { "id": "jeans-black", "model": "jeans", "color": "#34495e", "price": 79000, "tryOn": { "pants": "navy" }, "name": { "en": "Wide Jeans · Night Navy", "ko": "와이드 진 · 나이트 네이비" }, "desc": { "en": "A deep navy wash." } },
-        { "id": "chino-sand", "model": "jeans", "color": "#c9b08f", "price": 65000, "tryOn": { "pants": "sand" }, "name": { "en": "Easy Chinos · Sand", "ko": "이지 치노 · 샌드" }, "desc": { "en": "Relaxed chinos with an elastic back." } },
-        { "id": "denim-tote", "model": "tote", "color": "#5b6c8f", "price": 35000, "name": { "en": "Denim Tote", "ko": "데님 토트백" }, "desc": { "en": "Made from leftover denim offcuts." } }
+        { "id": "deni-outfit-jacket-indigo", "model": "tee", "color": "#34477a", "price": 70000, "item": "outfit-jacket-indigo", "name": { "en": "Indigo denim jacket", "ko": "인디고 청재킷", "ja": "インディゴデニムジャケット", "zh": "靛蓝牛仔夹克" }, "tryOn": { "model": "jacket-indigo" } },
+        { "id": "deni-outfit-shirt-denim", "model": "tee", "color": "#8fb0d6", "price": 50000, "item": "outfit-shirt-denim", "name": { "en": "Denim shirt", "ko": "데님 셔츠", "ja": "デニムシャツ", "zh": "牛仔衬衫" }, "tryOn": { "model": "shirt-denim" } },
+        { "id": "deni-pants-denim", "model": "jeans", "color": "#5b6c8f", "price": 40000, "item": "pants-denim", "name": { "en": "Classic blue jeans", "ko": "기본 청바지", "ja": "ブルージーンズ", "zh": "经典蓝色牛仔裤" }, "tryOn": { "pants": "denim" } },
+        { "id": "deni-pants-indigo", "model": "jeans", "color": "#2f3f6e", "price": 40000, "item": "pants-indigo", "name": { "en": "Indigo jeans", "ko": "인디고 청바지", "ja": "インディゴジーンズ", "zh": "靛蓝牛仔裤" }, "tryOn": { "pants": "indigo" } },
+        { "id": "deni-pants-lightwash", "model": "jeans", "color": "#9db4d2", "price": 40000, "item": "pants-lightwash", "name": { "en": "Light-wash jeans", "ko": "연청바지", "ja": "ライトウォッシュジーンズ", "zh": "浅色牛仔裤" }, "tryOn": { "pants": "lightwash" } },
+        { "id": "deni-pants-black", "model": "jeans", "color": "#2b2b31", "price": 40000, "item": "pants-black", "name": { "en": "Black jeans", "ko": "흑청바지", "ja": "ブラックジーンズ", "zh": "黑色牛仔裤" }, "tryOn": { "pants": "black" } }
       ]
     },
     {
@@ -117,10 +120,11 @@
       "at": [7.6, 175],
       "colors": { "sign": "#4a8fd4", "awning": "#dff1fb", "accent": "#f3f9ff" },
       "products": [
-        { "id": "sneaker-white", "model": "sneaker", "color": "#f6f1e7", "price": 89000, "name": { "en": "Cloud Runner · White", "ko": "클라우드 러너 · 화이트" }, "desc": { "en": "Cushioned everyday sneaker." } },
-        { "id": "sneaker-mint", "model": "sneaker", "color": "#8fd3c7", "price": 89000, "name": { "en": "Cloud Runner · Mint", "ko": "클라우드 러너 · 민트" }, "desc": { "en": "The same sneaker in mint." } },
-        { "id": "slip-on", "model": "sneaker", "color": "#ff9b85", "price": 59000, "name": { "en": "Canvas Slip-on", "ko": "캔버스 슬립온" }, "desc": { "en": "Easy on, easy off." } },
-        { "id": "socks", "model": "notebook", "color": "#ffd36e", "price": 9000, "name": { "en": "Cloud Socks (3 pairs)", "ko": "구름 양말 3켤레" }, "desc": { "en": "Soft cotton socks with little clouds." } }
+        { "id": "clou-shoes-white", "model": "sneaker", "color": "#ffffff", "price": 45000, "item": "shoes-white", "name": { "en": "White sneakers", "ko": "흰 운동화", "ja": "白いスニーカー", "zh": "白色运动鞋" }, "tryOn": { "shoes": "white" } },
+        { "id": "clou-shoes-black", "model": "sneaker", "color": "#2b2b31", "price": 45000, "item": "shoes-black", "name": { "en": "Black sneakers", "ko": "검정 운동화", "ja": "黒いスニーカー", "zh": "黑色运动鞋" }, "tryOn": { "shoes": "black" } },
+        { "id": "clou-shoes-pink", "model": "sneaker", "color": "#ff9bb3", "price": 45000, "item": "shoes-pink", "name": { "en": "Pink sneakers", "ko": "핑크 운동화", "ja": "ピンクのスニーカー", "zh": "粉色运动鞋" }, "tryOn": { "shoes": "pink" } },
+        { "id": "clou-shoes-sky", "model": "sneaker", "color": "#86b8f0", "price": 45000, "item": "shoes-sky", "name": { "en": "Sky blue sneakers", "ko": "하늘색 운동화", "ja": "水色のスニーカー", "zh": "天蓝色运动鞋" }, "tryOn": { "shoes": "sky" } },
+        { "id": "clou-shoes-butter", "model": "sneaker", "color": "#ffd36e", "price": 45000, "item": "shoes-butter", "name": { "en": "Butter yellow sneakers", "ko": "버터 옐로 운동화", "ja": "バターイエローのスニーカー", "zh": "奶油黄运动鞋" }, "tryOn": { "shoes": "butter" } }
       ]
     },
     {
@@ -480,7 +484,6 @@
       "category": "workshop",
       "workshop": "kimchi",
       "size": "large",
-      "icon": "🥬",
       "name": {"ko": "손맛 김치학교", "en": "Sonmat Kimchi School", "ja": "ソンマット キムチ学校", "zh": "手艺泡菜学堂", "es": "Escuela de Kimchi Sonmat", "id": "Sekolah Kimchi Sonmat", "vi": "Trường Kim chi Sonmat", "hi": "सोनमात किमची स्कूल", "ar": "مدرسة سونمات للكيمتشي"},
       "tagline": {"en": "Make kimchi the kimjang way, step by step", "ko": "김장하듯 한 단계씩 김치를 담가 봐요", "ja": "キムジャンのように一歩ずつキムチ作り", "zh": "像过冬腌泡菜一样，一步步做泡菜", "es": "Haz kimchi como en el kimjang, paso a paso", "id": "Buat kimchi ala kimjang, langkah demi langkah", "vi": "Làm kim chi kiểu kimjang, từng bước một", "hi": "किमजांग की तरह, एक-एक कदम किमची बनाएँ", "ar": "اصنع الكيمتشي على طريقة الكيمجانغ خطوة بخطوة"},
       "at": [-1519, -1025],
@@ -567,7 +570,6 @@
     {
       "id": "haru-mart",
       "category": "market",
-      "icon": "🏪",
       "size": "small",
       "at": [52.5, -53.6],
       "name": { "en": "HARU MART", "ko": "하루마트", "ja": "ハルマート", "zh": "HARU MART" },
@@ -584,7 +586,6 @@
     {
       "id": "hyojae-academy",
       "category": "school",
-      "icon": "🏫",
       "size": "large",
       "at": [-2392, -950],
       "name": { "en": "Hyojae Korean Academy", "ko": "효재어학당", "ja": "ヒョジェ語学堂", "zh": "孝在语学堂" },
@@ -596,7 +597,6 @@
       "id": "warung-kuy",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍛",
       "at": [-1329, 212],
       "signLocal": "Warung Kuy",
       "name": { "en": "Warung Kuy", "ko": "와룽 쿠이", "ja": "ワルン・クイ", "zh": "Warung Kuy 小吃" },
@@ -613,7 +613,6 @@
       "id": "khammak-padthai",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍜",
       "at": [-1319, 212],
       "signLocal": "ขำมากผัดไทย",
       "name": { "en": "Khammak Pad Thai", "ko": "캄막팟타이", "ja": "カムマック・パッタイ", "zh": "开心泰式炒河粉" },
@@ -630,7 +629,6 @@
       "id": "my-mala",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🌶️",
       "at": [-1329, 228],
       "signLocal": "我的麻辣",
       "name": { "en": "My Mala", "ko": "나의 마라", "ja": "わたしの麻辣", "zh": "我的麻辣" },
@@ -647,7 +645,6 @@
       "id": "dim-gai",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🧋",
       "at": [-1319, 228],
       "signLocal": "點解!茶餐廳",
       "name": { "en": "Dim Gai! Cha Chaan Teng", "ko": "딤가이!차찬텡", "ja": "ディムガイ！茶餐廳", "zh": "點解！茶餐厅" },
@@ -664,7 +661,6 @@
       "id": "kiwami-sushi",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍣",
       "at": [-1329, 244],
       "signLocal": "きわみすし",
       "name": { "en": "Kiwami Sushi", "ko": "키와미스시", "ja": "きわみすし", "zh": "极致寿司" },
@@ -681,7 +677,6 @@
       "id": "pho-nang",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍜",
       "at": [-1319, 244],
       "signLocal": "Phở Nắng",
       "name": { "en": "Pho Nang", "ko": "퍼 낭", "ja": "フォー・ナン", "zh": "阳光河粉" },
@@ -698,7 +693,6 @@
       "id": "masala-ghar",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍛",
       "at": [-1329, 260],
       "signLocal": "मसाला घर",
       "name": { "en": "Masala Ghar", "ko": "마살라 가르", "ja": "マサラ・ガル", "zh": "香料之家" },
@@ -715,7 +709,6 @@
       "id": "tortilla-feliz",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🌮",
       "at": [-1319, 260],
       "signLocal": "La Tortilla Feliz",
       "name": { "en": "La Tortilla Feliz", "ko": "라 토르티야 펠리스", "ja": "ラ・トルティーヤ・フェリス", "zh": "快乐玉米饼" },
@@ -732,7 +725,6 @@
       "id": "nonna-lucia",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍝",
       "at": [-1329, 276],
       "signLocal": "Trattoria Nonna Lucia",
       "name": { "en": "Trattoria Nonna Lucia", "ko": "트라토리아 논나 루치아", "ja": "トラットリア・ノンナ・ルチア", "zh": "露西亚奶奶小馆" },
@@ -749,7 +741,6 @@
       "id": "kebapci-lale",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🥙",
       "at": [-1319, 276],
       "signLocal": "Kebapçı Lale",
       "name": { "en": "Kebapci Lale", "ko": "케밥츠 랄레", "ja": "ケバプチュ・ラーレ", "zh": "郁金香烤肉" },
@@ -766,7 +757,6 @@
       "id": "beit-hummus",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🧆",
       "at": [-1329, 292],
       "signLocal": "بيت الحمص",
       "name": { "en": "Beit al-Hummus", "ko": "베이트 알 훔무스", "ja": "ベイト・アル・フムス", "zh": "鹰嘴豆之家" },
@@ -783,7 +773,6 @@
       "id": "sunny-side-diner",
       "category": "restaurant",
       "size": "medium",
-      "icon": "🍔",
       "at": [-1319, 292],
       "signLocal": "Sunny Side Diner",
       "name": { "en": "Sunny Side Diner", "ko": "써니사이드 다이너", "ja": "サニーサイド・ダイナー", "zh": "阳面餐厅" },
@@ -800,7 +789,6 @@
       "id": "club-orbit",
       "category": "club",
       "size": "large",
-      "icon": "🎧",
       "at": [-1385, 188],
       "signLocal": "CLUB ORBIT",
       "name": { "en": "CLUB ORBIT", "ko": "클럽 오빗", "ja": "クラブ・オービット", "zh": "轨道俱乐部" },
@@ -818,7 +806,6 @@
       "id": "club-808",
       "category": "club",
       "size": "large",
-      "icon": "🎤",
       "at": [-1451, 188],
       "signLocal": "BASEMENT 808",
       "genre": "hiphop",
@@ -836,7 +823,6 @@
       "id": "club-heartbeat",
       "category": "club",
       "size": "large",
-      "icon": "💖",
       "at": [-1241, 188],
       "signLocal": "HEARTBEAT",
       "genre": "kpop",
@@ -854,7 +840,6 @@
       "id": "bar-hush",
       "category": "bar",
       "size": "medium",
-      "icon": "🍸",
       "at": [-1273, 188],
       "signLocal": "Bar Hush",
       "name": { "en": "Bar Hush", "ko": "바 허시", "ja": "バー・ハッシュ", "zh": "静语酒吧" },
@@ -872,7 +857,6 @@
       "category": "lifestyle",
       "workshop": "bike",
       "size": "small",
-      "icon": "🚲",
       "at": [-94.7, 165],
       "name": { "en": "Pedal Lab", "ko": "페달랩", "ja": "ペダルラボ", "zh": "踏板实验室" },
       "tagline": { "en": "Bike shop: faster bikes and repairs", "ko": "자전거 가게: 더 빠른 자전거와 수리", "ja": "自転車店：速い自転車と修理", "zh": "自行车店：更快的车和维修" },
@@ -887,7 +871,6 @@
       "id": "costume-atelier",
       "category": "fashion",
       "size": "medium",
-      "icon": "👕",
       "at": [67.5, 198.6],
       "name": { "en": "Daily Closet", "ko": "데일리 클로젯", "ja": "デイリークローゼット", "zh": "日常衣橱", "es": "Armario Diario" },
       "tagline": { "en": "Everyday clothes: hoodies, jackets and padded coats", "ko": "일상복: 후드티, 재킷, 롱패딩 등", "ja": "普段着：パーカー、ジャケット、ダウンなど", "zh": "日常服装：卫衣、夹克、羽绒服等", "es": "Ropa diaria: sudaderas, chaquetas y abrigos acolchados" },
@@ -904,99 +887,97 @@
     {
       "id": "sudo-shoes",
       "category": "fashion",
-      "icon": "👞",
       "size": "medium",
       "at": [-95.6, 175],
       "name": { "ko": "수도 수제화", "en": "Sudo Handmade Shoes" },
       "tagline": { "en": "Leather shoes made by hand, the Seongsu way", "ko": "성수에서 손으로 만드는 가죽 구두" },
       "colors": { "sign": "#5a3a28", "awning": "#e9d8c6", "accent": "#fbf3ea" },
       "products": [
-        { "id": "loafer-brown", "model": "sneaker", "color": "#7a4a2a", "price": 129000, "name": { "en": "Leather Loafer · Brown", "ko": "가죽 로퍼 · 브라운" }, "desc": { "en": "Soft calf leather, stitched by hand." } },
-        { "id": "derby-black", "model": "sneaker", "color": "#2b2230", "price": 139000, "name": { "en": "Derby Shoe · Black", "ko": "더비 슈즈 · 블랙" }, "desc": { "en": "A smart shoe for every day." } },
-        { "id": "mule-cream", "model": "sneaker", "color": "#f3e5c8", "price": 99000, "name": { "en": "Suede Mule · Cream", "ko": "스웨이드 뮬 · 크림" }, "desc": { "en": "Slip-on mule with a cushioned sole." } },
-        { "id": "shoe-care", "model": "jar", "color": "#d9c5a3", "price": 15000, "name": { "en": "Shoe Cream", "ko": "구두약" }, "desc": { "en": "Keeps leather soft and shiny." } }
+        { "id": "sudo-shoes-brown", "model": "sneaker", "color": "#6b4a2f", "price": 60000, "item": "shoes-brown", "name": { "en": "Brown leather loafers", "ko": "브라운 가죽 로퍼", "ja": "ブラウンの革ローファー", "zh": "棕色皮质乐福鞋" }, "tryOn": { "shoes": "brown" } },
+        { "id": "sudo-shoes-tan", "model": "sneaker", "color": "#c49a6c", "price": 60000, "item": "shoes-tan", "name": { "en": "Tan leather loafers", "ko": "탄 가죽 로퍼", "ja": "タンの革ローファー", "zh": "浅棕色皮质乐福鞋" }, "tryOn": { "shoes": "tan" } },
+        { "id": "sudo-shoes-burgundy", "model": "sneaker", "color": "#7a2a3a", "price": 60000, "item": "shoes-burgundy", "name": { "en": "Burgundy leather shoes", "ko": "버건디 가죽 구두", "ja": "バーガンディの革靴", "zh": "酒红色皮鞋" }, "tryOn": { "shoes": "burgundy" } },
+        { "id": "sudo-shoes-black", "model": "sneaker", "color": "#2b2b31", "price": 45000, "item": "shoes-black", "name": { "en": "Black sneakers", "ko": "검정 운동화", "ja": "黒いスニーカー", "zh": "黑色运动鞋" }, "tryOn": { "shoes": "black" } }
       ]
     },
     {
       "id": "gaeul-vintage",
       "category": "fashion",
-      "icon": "🧥",
       "size": "medium",
       "at": [41.1, 175],
       "name": { "ko": "가을 빈티지", "en": "Gaeul Vintage" },
       "tagline": { "en": "Second-hand clothes, picked one by one", "ko": "하나하나 골라 온 빈티지 옷" },
       "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
       "products": [
-        { "id": "vtg-tee-butter", "model": "tee", "color": "#ffe08a", "price": 25000, "name": { "en": "Vintage Tee · Butter", "ko": "빈티지 티 · 버터" }, "desc": { "en": "Washed soft, one of a kind." }, "tryOn": { "shirt": "butter" } },
-        { "id": "vtg-tee-peach", "model": "tee", "color": "#ffb59e", "price": 25000, "name": { "en": "Vintage Tee · Peach", "ko": "빈티지 티 · 피치" }, "desc": { "en": "A faded peach tee from the 90s." }, "tryOn": { "shirt": "peach" } },
-        { "id": "vtg-jeans", "model": "jeans", "color": "#4a6fa5", "price": 45000, "name": { "en": "Old-school Jeans", "ko": "올드스쿨 청바지" }, "desc": { "en": "Straight-leg denim, already broken in." }, "tryOn": { "pants": "denim" } },
-        { "id": "vtg-scarf", "model": "scarf", "color": "#c9a3c9", "price": 19000, "name": { "en": "Silk Scarf", "ko": "실크 스카프" }, "desc": { "en": "A patterned scarf from a flea market." }, "tryOn": { "neck": "scarf" } }
+        { "id": "gaeu-outfit-jacket-cocoa", "model": "tee", "color": "#8a5a3c", "price": 70000, "item": "outfit-jacket-cocoa", "name": { "en": "Brown corduroy jacket", "ko": "브라운 코듀로이 재킷", "ja": "ブラウンのコーデュロイジャケット", "zh": "棕色灯芯绒夹克" }, "tryOn": { "model": "jacket-cocoa" } },
+        { "id": "gaeu-outfit-hoodie-wine", "model": "tee", "color": "#8a2f45", "price": 60000, "item": "outfit-hoodie-wine", "name": { "en": "Burgundy hoodie", "ko": "버건디 후드티", "ja": "バーガンディのパーカー", "zh": "酒红色连帽卫衣" }, "tryOn": { "model": "hoodie-wine" } },
+        { "id": "gaeu-outfit-shirt-olive", "model": "tee", "color": "#7a8a55", "price": 50000, "item": "outfit-shirt-olive", "name": { "en": "Olive shirt", "ko": "올리브 셔츠", "ja": "オリーブのシャツ", "zh": "橄榄色衬衫" }, "tryOn": { "model": "shirt-olive" } },
+        { "id": "gaeu-acc-beret-black", "model": "beret", "color": "#2b2230", "price": 30000, "item": "acc-beret-black", "name": { "en": "Black beret", "ko": "검정 베레모", "ja": "黒いベレー帽", "zh": "黑色贝雷帽" }, "tryOn": { "head": "beret-black" } }
       ]
     },
     {
       "id": "tteugae-knit",
       "category": "fashion",
-      "icon": "🧶",
       "size": "small",
       "at": [159.8, 165],
       "name": { "ko": "뜨개 연구소", "en": "Tteugae Knit Lab" },
       "tagline": { "en": "Soft knits in pastel colours", "ko": "파스텔 색 니트" },
       "colors": { "sign": "#8a6fb0", "awning": "#efe4f7", "accent": "#f8f3fc" },
       "products": [
-        { "id": "knit-butter", "model": "tee", "color": "#ffe08a", "price": 55000, "name": { "en": "Cotton Knit · Butter", "ko": "코튼 니트 · 버터" }, "desc": { "en": "Light knit for spring days." }, "tryOn": { "shirt": "butter" } },
-        { "id": "knit-mint", "model": "tee", "color": "#8fd3c7", "price": 55000, "name": { "en": "Cotton Knit · Mint", "ko": "코튼 니트 · 민트" }, "desc": { "en": "The same knit in mint." }, "tryOn": { "shirt": "mint" } },
-        { "id": "knit-scarf", "model": "scarf", "color": "#b9a6f0", "price": 29000, "name": { "en": "Chunky Knit Scarf", "ko": "두꺼운 니트 목도리" }, "desc": { "en": "Hand-knitted and very warm." }, "tryOn": { "neck": "scarf" } }
+        { "id": "tteu-acc-beanie-cream", "model": "beanie", "color": "#efe6d2", "price": 20000, "item": "acc-beanie-cream", "name": { "en": "Cream knit beanie", "ko": "크림 니트 비니", "ja": "クリームのニット帽", "zh": "奶油色针织帽" }, "tryOn": { "head": "beanie-cream" } },
+        { "id": "tteu-acc-beanie-mustard", "model": "beanie", "color": "#d9a43a", "price": 20000, "item": "acc-beanie-mustard", "name": { "en": "Mustard knit beanie", "ko": "머스타드 니트 비니", "ja": "マスタードのニット帽", "zh": "芥末黄针织帽" }, "tryOn": { "head": "beanie-mustard" } },
+        { "id": "tteu-acc-scarf", "model": "scarf", "color": "#e9735c", "price": 25000, "item": "acc-scarf", "name": { "en": "Coral knit scarf", "ko": "코랄 니트 목도리", "ja": "コーラルのニットマフラー", "zh": "珊瑚色针织围巾" }, "tryOn": { "neck": "scarf" } },
+        { "id": "tteu-acc-scarf-cream", "model": "scarf", "color": "#efe6d2", "price": 25000, "item": "acc-scarf-cream", "name": { "en": "Cream knit scarf", "ko": "크림 니트 목도리", "ja": "クリームのニットマフラー", "zh": "奶油色针织围巾" }, "tryOn": { "neck": "scarf-cream" } },
+        { "id": "tteu-acc-scarf-mint", "model": "scarf", "color": "#8fd3c7", "price": 25000, "item": "acc-scarf-mint", "name": { "en": "Mint knit scarf", "ko": "민트 니트 목도리", "ja": "ミントのニットマフラー", "zh": "薄荷色针织围巾" }, "tryOn": { "neck": "scarf-mint" } }
       ]
     },
     {
       "id": "wide-pants",
       "category": "fashion",
-      "icon": "👖",
       "size": "small",
       "at": [-10.8, 175],
       "name": { "ko": "와이드 팬츠 클럽", "en": "Wide Pants Club" },
       "tagline": { "en": "Comfy wide trousers in every colour", "ko": "편한 와이드 팬츠 모든 색" },
       "colors": { "sign": "#2f3e5c", "awning": "#dfe8f1", "accent": "#f3f6fa" },
       "products": [
-        { "id": "wide-sand", "model": "jeans", "color": "#d9c5a3", "price": 49000, "name": { "en": "Wide Chinos · Sand", "ko": "와이드 치노 · 샌드" }, "desc": { "en": "Roomy cotton chinos." }, "tryOn": { "pants": "sand" } },
-        { "id": "wide-navy", "model": "jeans", "color": "#2f3e5c", "price": 49000, "name": { "en": "Wide Chinos · Navy", "ko": "와이드 치노 · 네이비" }, "desc": { "en": "A classic dark navy." }, "tryOn": { "pants": "navy" } },
-        { "id": "wide-charcoal", "model": "jeans", "color": "#3a3a3a", "price": 52000, "name": { "en": "Wide Slacks · Charcoal", "ko": "와이드 슬랙스 · 차콜" }, "desc": { "en": "Smart enough for a dinner out." }, "tryOn": { "pants": "charcoal" } }
+        { "id": "wide-pants-sand", "model": "jeans", "color": "#c9b08f", "price": 40000, "item": "pants-sand", "name": { "en": "Beige wide pants", "ko": "베이지 와이드 팬츠", "ja": "ベージュのワイドパンツ", "zh": "米色阔腿裤" }, "tryOn": { "pants": "sand" } },
+        { "id": "wide-pants-cream", "model": "jeans", "color": "#eee6d6", "price": 40000, "item": "pants-cream", "name": { "en": "Cream wide pants", "ko": "크림 와이드 팬츠", "ja": "クリームのワイドパンツ", "zh": "奶油色阔腿裤" }, "tryOn": { "pants": "cream" } },
+        { "id": "wide-pants-charcoal", "model": "jeans", "color": "#55505e", "price": 40000, "item": "pants-charcoal", "name": { "en": "Charcoal slacks", "ko": "차콜 슬랙스", "ja": "チャコールのスラックス", "zh": "炭灰色西裤" }, "tryOn": { "pants": "charcoal" } },
+        { "id": "wide-pants-olive", "model": "jeans", "color": "#4f7a5a", "price": 40000, "item": "pants-olive", "name": { "en": "Olive cargo pants", "ko": "올리브 카고 팬츠", "ja": "オリーブのカーゴパンツ", "zh": "橄榄色工装裤" }, "tryOn": { "pants": "olive" } },
+        { "id": "wide-pants-cocoa", "model": "jeans", "color": "#7a5c4a", "price": 40000, "item": "pants-cocoa", "name": { "en": "Brown cotton pants", "ko": "브라운 면바지", "ja": "ブラウンのチノパン", "zh": "棕色棉裤" }, "tryOn": { "pants": "cocoa" } }
       ]
     },
     {
       "id": "cap-yard",
       "category": "fashion",
-      "icon": "🧢",
       "size": "small",
       "at": [161.7, 175],
       "name": { "ko": "모자 마당", "en": "Cap Yard" },
       "tagline": { "en": "Caps and bucket hats, embroidered on the spot", "ko": "즉석 자수 모자와 버킷햇" },
       "colors": { "sign": "#d8452f", "awning": "#ffd9c7", "accent": "#fff4ef" },
       "products": [
-        { "id": "cap-red", "model": "cap", "color": "#d8452f", "price": 27000, "name": { "en": "Ball Cap · Tomato", "ko": "볼캡 · 토마토" }, "desc": { "en": "Washed cotton with a curved brim." }, "tryOn": { "head": "cap" } },
-        { "id": "cap-sky", "model": "cap", "color": "#86b8f0", "price": 27000, "name": { "en": "Ball Cap · Sky", "ko": "볼캡 · 스카이" }, "desc": { "en": "Light blue for sunny walks." }, "tryOn": { "head": "cap" } },
-        { "id": "bucket-cream", "model": "hat", "color": "#f6f1e7", "price": 32000, "name": { "en": "Bucket Hat · Cream", "ko": "버킷햇 · 크림" }, "desc": { "en": "Soft and packable." }, "tryOn": { "head": "bucket" } }
+        { "id": "cap--acc-cap-red", "model": "cap", "color": "#d8452f", "price": 25000, "item": "acc-cap-red", "name": { "en": "Red cap", "ko": "빨간 캡모자", "ja": "赤いキャップ", "zh": "红色棒球帽" }, "tryOn": { "head": "cap-red" } },
+        { "id": "cap--acc-cap-sky", "model": "cap", "color": "#86b8f0", "price": 25000, "item": "acc-cap-sky", "name": { "en": "Sky blue cap", "ko": "하늘색 캡모자", "ja": "水色のキャップ", "zh": "天蓝色棒球帽" }, "tryOn": { "head": "cap-sky" } },
+        { "id": "cap--acc-cap-black", "model": "cap", "color": "#2b2230", "price": 25000, "item": "acc-cap-black", "name": { "en": "Black cap", "ko": "검정 캡모자", "ja": "黒いキャップ", "zh": "黑色棒球帽" }, "tryOn": { "head": "cap-black" } },
+        { "id": "cap--acc-bucket-cream", "model": "hat", "color": "#f6f1e7", "price": 30000, "item": "acc-bucket-cream", "name": { "en": "Cream bucket hat", "ko": "크림 버킷햇", "ja": "クリームのバケットハット", "zh": "奶油色渔夫帽" }, "tryOn": { "head": "bucket-cream" } }
       ]
     },
     {
       "id": "canvas-room",
       "category": "fashion",
-      "icon": "👜",
       "size": "small",
       "at": [-13.1, 165],
       "name": { "ko": "캔버스 룸", "en": "Canvas Room" },
       "tagline": { "en": "Tote bags printed in the shop", "ko": "가게에서 직접 찍는 에코백" },
       "colors": { "sign": "#3f7a5a", "awning": "#e2f2dc", "accent": "#f1f8ea" },
       "products": [
-        { "id": "tote-forest", "model": "tote", "color": "#9cc28a", "price": 22000, "name": { "en": "Tote · Seoul Forest", "ko": "에코백 · 서울숲" }, "desc": { "en": "Printed with a little forest map." }, "tryOn": { "back": "tote" } },
-        { "id": "tote-river", "model": "tote", "color": "#8fb0c4", "price": 22000, "name": { "en": "Tote · Han River", "ko": "에코백 · 한강" }, "desc": { "en": "Printed with ducks on the river." }, "tryOn": { "back": "tote" } },
-        { "id": "tote-brick", "model": "tote", "color": "#d49a8a", "price": 22000, "name": { "en": "Tote · Red Brick", "ko": "에코백 · 붉은 벽돌" }, "desc": { "en": "A brick pattern for Seongsu fans." }, "tryOn": { "back": "tote" } }
+        { "id": "canv-acc-tote-forest", "model": "tote", "color": "#3f7a5a", "price": 25000, "item": "acc-tote-forest", "name": { "en": "Forest green tote bag", "ko": "숲 초록 에코백", "ja": "フォレストグリーンのトート", "zh": "森林绿帆布包" }, "tryOn": { "back": "tote-forest" } },
+        { "id": "canv-acc-tote-river", "model": "tote", "color": "#5b8fb9", "price": 25000, "item": "acc-tote-river", "name": { "en": "River blue tote bag", "ko": "강물 파랑 에코백", "ja": "リバーブルーのトート", "zh": "河水蓝帆布包" }, "tryOn": { "back": "tote-river" } },
+        { "id": "canv-acc-tote-brick", "model": "tote", "color": "#b5523b", "price": 25000, "item": "acc-tote-brick", "name": { "en": "Brick red tote bag", "ko": "벽돌 빨강 에코백", "ja": "レンガ色のトート", "zh": "砖红色帆布包" }, "tryOn": { "back": "tote-brick" } }
       ]
     },
     {
       "id": "soga-leather",
       "category": "lifestyle",
-      "icon": "👛",
       "size": "small",
       "at": [-40.4, 175],
       "name": { "ko": "소가 가죽공방", "en": "Soga Leather" },
@@ -1011,7 +992,6 @@
     {
       "id": "ohu-perfume",
       "category": "beauty",
-      "icon": "🌸",
       "size": "small",
       "at": [-28, 210.8],
       "name": { "ko": "향 연구소 오후", "en": "Ohu Perfume Lab" },
@@ -1027,7 +1007,6 @@
       "id": "kkeung-sanghoe",
       "category": "beauty",
       "perfumery": "funny",
-      "icon": "👃",
       "size": "small",
       "at": [113.8, -77.5],
       "name": { "ko": "킁킁상회", "en": "KKEUNG KKEUNG & CO." },
@@ -1043,7 +1022,6 @@
       "id": "oops-parfum",
       "category": "beauty",
       "perfumery": "funny",
-      "icon": "🤪",
       "size": "small",
       "at": [67.5, 21.7],
       "name": { "ko": "웁스 퍼퓸", "en": "OOPS PARFUM" },
@@ -1059,7 +1037,6 @@
       "id": "maison-seoulsup",
       "category": "beauty",
       "perfumery": "elegant",
-      "icon": "🦢",
       "size": "medium",
       "displays": 8,
       "clerkRoams": true,
@@ -1077,11 +1054,10 @@
       "id": "atelier-noir",
       "category": "beauty",
       "perfumery": "elegant",
-      "icon": "🖤",
       "size": "medium",
       "displays": 8,
       "clerkRoams": true,
-      "at": [78.9, 165],
+      "at": [27.5, 165],
       "name": { "ko": "아틀리에 누아", "en": "ATELIER NOIR" },
       "tagline": { "en": "Dark, rare scents in small batches", "ko": "어둡고 귀한 소량 생산 향수" },
       "colors": { "sign": "#141414", "awning": "#c9a45c", "accent": "#f3eee4" },
@@ -1095,7 +1071,6 @@
       "id": "monggeul-parfum",
       "category": "beauty",
       "perfumery": "cute",
-      "icon": "🎀",
       "size": "small",
       "at": [-28, 246.6],
       "name": { "ko": "몽글몽글 퍼퓸", "en": "MONGGEUL PARFUM" },
@@ -1111,9 +1086,8 @@
       "id": "heart-ppyong",
       "category": "beauty",
       "perfumery": "cute",
-      "icon": "💘",
       "size": "small",
-      "at": [96.6, 165],
+      "at": [145, 165],
       "name": { "ko": "하트뿅뿅", "en": "HEART PPYONG PPYONG" },
       "tagline": { "en": "Spray once, hearts all day", "ko": "한 번 뿌리면 하트가 뿅뿅" },
       "colors": { "sign": "#e2365b", "awning": "#ffd1dc", "accent": "#fff4f6" },
@@ -1127,7 +1101,6 @@
       "id": "plain-note",
       "category": "beauty",
       "perfumery": "simple",
-      "icon": "🤍",
       "size": "small",
       "at": [-22, 248.6],
       "name": { "ko": "플레인 노트", "en": "PLAIN NOTE" },
@@ -1143,7 +1116,6 @@
       "id": "basic-mood",
       "category": "beauty",
       "perfumery": "simple",
-      "icon": "☁️",
       "size": "small",
       "at": [182.2, 175],
       "name": { "ko": "베이직 무드", "en": "BASIC MOOD" },
@@ -1159,9 +1131,8 @@
       "id": "laundry-parfum",
       "category": "beauty",
       "perfumery": "clean",
-      "icon": "🧺",
       "size": "small",
-      "at": [77, 175],
+      "at": [83.5, 175],
       "name": { "ko": "빨래방 퍼퓸", "en": "LAUNDRY PARFUM" },
       "tagline": { "en": "The famous 'just washed' smell", "ko": "갓 빨래한 바로 그 냄새" },
       "colors": { "sign": "#2f6fb5", "awning": "#d8ecff", "accent": "#f4faff" },
@@ -1175,7 +1146,6 @@
       "id": "clear-lab",
       "category": "beauty",
       "perfumery": "clean",
-      "icon": "🍋",
       "size": "small",
       "at": [43.3, -10],
       "name": { "ko": "클리어 랩", "en": "CLEAR LAB" },
@@ -1191,7 +1161,6 @@
       "id": "aran-distillery",
       "category": "workshop",
       "perfumery": "handmade",
-      "icon": "⚗️",
       "size": "small",
       "at": [-77, -2],
       "name": { "ko": "증류공방 아란", "en": "ARAN DISTILLERY" },
@@ -1207,7 +1176,6 @@
       "id": "punggyeong-scent",
       "category": "workshop",
       "perfumery": "handmade",
-      "icon": "🎐",
       "size": "small",
       "at": [-22, 137.4],
       "name": { "ko": "풍경소리 향방", "en": "PUNGGYEONG SCENT ROOM" },
@@ -1223,7 +1191,6 @@
       "id": "hut-hedgehog",
       "category": "workshop",
       "perfumery": "handmade",
-      "icon": "🦔",
       "size": "small",
       "at": [67.5, 136.6],
       "name": { "ko": "숲속 오두막 향공방", "en": "HUT & HEDGEHOG" },
@@ -1239,7 +1206,6 @@
       "id": "moai-scent-lab",
       "category": "workshop",
       "perfumery": "handmade",
-      "icon": "🗿",
       "size": "small",
       "at": [187.6, 266],
       "name": { "ko": "모아이 향 실험실", "en": "MOAI SCENT LAB" },
@@ -1255,7 +1221,6 @@
       "id": "scent-popup",
       "category": "popup",
       "perfumery": "popup",
-      "icon": "🚡",
       "size": "small",
       "at": [67.5, 249.5],
       "name": { "ko": "향수 팝업", "en": "SCENT POP-UP" },
@@ -1268,7 +1233,6 @@
     {
       "id": "sonkkeut-nail",
       "category": "beauty",
-      "icon": "💅",
       "size": "small",
       "at": [26.2, -10],
       "name": { "ko": "손끝 네일", "en": "Sonkkeut Nails" },
@@ -1283,7 +1247,6 @@
     {
       "id": "mulbangul-skin",
       "category": "beauty",
-      "icon": "💧",
       "size": "small",
       "at": [7.7, -10],
       "name": { "ko": "물방울 스킨", "en": "Mulbangul Skin" },
@@ -1298,7 +1261,6 @@
     {
       "id": "butterfold",
       "category": "cafe",
-      "icon": "🥐",
       "size": "small",
       "at": [-59.1, -2],
       "name": { "ko": "버터폴드", "en": "Butterfold Croissant" },
@@ -1313,7 +1275,6 @@
     {
       "id": "sagye-gelato",
       "category": "cafe",
-      "icon": "🍨",
       "size": "small",
       "at": [-22, 95.8],
       "name": { "ko": "사계 젤라또", "en": "Sagye Gelato" },
@@ -1328,7 +1289,6 @@
     {
       "id": "matcha-garden",
       "category": "cafe",
-      "icon": "🍵",
       "size": "small",
       "at": [-63.6, -10],
       "name": { "ko": "말차 정원", "en": "Matcha Garden" },
@@ -1343,7 +1303,6 @@
     {
       "id": "honey-croffle",
       "category": "cafe",
-      "icon": "🧇",
       "size": "small",
       "at": [94.2, -77.5],
       "name": { "ko": "꿀 크로플", "en": "Honey Croffle" },
@@ -1358,7 +1317,6 @@
     {
       "id": "slow-brunch",
       "category": "cafe",
-      "icon": "🍳",
       "size": "medium",
       "at": [67.5, 114.2],
       "name": { "ko": "느린 브런치", "en": "Slow Brunch" },
@@ -1373,7 +1331,6 @@
     {
       "id": "hotteok-stand",
       "category": "cafe",
-      "icon": "🥞",
       "size": "small",
       "at": [52.5, -34.3],
       "name": { "ko": "달달 호떡", "en": "Daldal Hotteok" },
@@ -1388,7 +1345,6 @@
     {
       "id": "warehouse-roasters",
       "category": "cafe",
-      "icon": "☕",
       "size": "medium",
       "at": [-79.9, -10],
       "name": { "ko": "창고 로스터리", "en": "Warehouse Roasters" },
@@ -1403,7 +1359,6 @@
     {
       "id": "snowflake-bingsu",
       "category": "cafe",
-      "icon": "🍧",
       "size": "small",
       "at": [114.5, 165],
       "name": { "ko": "눈꽃 빙수", "en": "Snowflake Bingsu" },
@@ -1418,7 +1373,6 @@
     {
       "id": "chorok-plants",
       "category": "lifestyle",
-      "icon": "🪴",
       "size": "small",
       "at": [-28, 227.6],
       "name": { "ko": "초록 식물가게", "en": "Chorok Plant Shop" },
@@ -1433,7 +1387,6 @@
     {
       "id": "heuk-ceramics",
       "category": "lifestyle",
-      "icon": "🏺",
       "size": "small",
       "at": [-22, 214.7],
       "name": { "ko": "흙 도자기", "en": "Heuk Ceramics" },
@@ -1448,7 +1401,6 @@
     {
       "id": "kkot-flowers",
       "category": "lifestyle",
-      "icon": "💐",
       "size": "small",
       "at": [-28, 52],
       "name": { "ko": "꽃다발 상점", "en": "Kkot Flower Shop" },
@@ -1463,7 +1415,6 @@
     {
       "id": "pan-records",
       "category": "lifestyle",
-      "icon": "💿",
       "size": "small",
       "at": [-28, 135.6],
       "name": { "ko": "판 레코드", "en": "Pan Records" },
@@ -1478,7 +1429,6 @@
     {
       "id": "bal-socks",
       "category": "lifestyle",
-      "icon": "🧦",
       "size": "small",
       "at": [-28, 37.2],
       "name": { "ko": "양말가게 발", "en": "Bal Sock Shop" },
@@ -1493,7 +1443,6 @@
     {
       "id": "k-goods",
       "category": "popup",
-      "icon": "✨",
       "size": "small",
       "at": [67.5, -37.3],
       "name": { "ko": "케이 굿즈", "en": "K-Goods Store" },
@@ -1508,7 +1457,6 @@
     {
       "id": "mallang-popup",
       "category": "popup",
-      "icon": "🐰",
       "size": "medium",
       "at": [67.5, 233.2],
       "name": { "ko": "말랑 팝업", "en": "Mallang Pop-up" },
@@ -1523,7 +1471,6 @@
     {
       "id": "pixel-popup",
       "category": "popup",
-      "icon": "🎮",
       "size": "medium",
       "at": [93.1, 175],
       "name": { "ko": "픽셀 팝업", "en": "Pixel Pop-up" },
@@ -1538,7 +1485,6 @@
     {
       "id": "son-kalguksu",
       "category": "restaurant",
-      "icon": "🍜",
       "size": "medium",
       "at": [109.8, 266],
       "name": { "ko": "손칼국수집", "en": "Son Kalguksu" },
@@ -1553,7 +1499,6 @@
     {
       "id": "golmok-chicken",
       "category": "restaurant",
-      "icon": "🍗",
       "size": "medium",
       "at": [158.6, 266],
       "name": { "ko": "골목 치킨", "en": "Golmok Chicken" },
@@ -1568,7 +1513,6 @@
     {
       "id": "dal-tteok",
       "category": "restaurant",
-      "icon": "🍡",
       "size": "small",
       "at": [91.8, 266],
       "name": { "ko": "떡집 달", "en": "Dal Rice Cakes" },
@@ -1583,7 +1527,6 @@
     {
       "id": "seongsu-mandu",
       "category": "restaurant",
-      "icon": "🥟",
       "size": "small",
       "at": [67.5, 39.7],
       "name": { "ko": "성수 만두", "en": "Seongsu Mandu" },
@@ -1600,16 +1543,51 @@
     {"id": "bingsu-lab", "category": "cafe", "size": "small", "name": {"en": "BINGSU LAB", "ko": "빙수 연구소", "ja": "ビンス研究所", "zh": "刨冰研究所"}, "tagline": {"en": "Shaved-ice desserts, all year round", "ko": "사계절 빙수 디저트 카페", "ja": "一年中かき氷が食べられるカフェ", "zh": "一年四季都有刨冰的甜品店"}, "at": [-2957, -795], "colors": {"sign": "#3c6fb6", "awning": "#bfe3ff", "accent": "#f4fbff"}, "products": [{"id": "bs-injeolmi", "model": "bowl", "color": "#e2c58c", "price": 9000, "name": {"en": "Injeolmi Bingsu", "ko": "인절미 빙수", "ja": "きなこ餅ビンス", "zh": "黄豆粉年糕刨冰"}, "desc": {"en": "Milk ice with roasted soybean powder and chewy rice cake.", "ko": "우유 얼음에 콩고물과 쫄깃한 인절미를 올렸어요."}}, {"id": "bs-mango", "model": "bowl", "color": "#ffbf3f", "price": 12000, "name": {"en": "Mango Bingsu", "ko": "망고 빙수", "ja": "マンゴービンス", "zh": "芒果刨冰"}, "desc": {"en": "Milk ice under a mountain of fresh mango.", "ko": "우유 얼음 위에 생망고를 산처럼 쌓았어요."}}, {"id": "bs-patbingsu", "model": "bowl", "color": "#7a3b3b", "price": 8000, "name": {"en": "Classic Patbingsu", "ko": "옛날 팥빙수", "ja": "昔ながらのパッピンス", "zh": "传统红豆刨冰"}, "desc": {"en": "The old-school one: sweet red beans, rice cake and fruit.", "ko": "옛날식이에요. 달콤한 팥, 떡, 과일을 올렸어요."}}, {"id": "bs-tea", "model": "cup", "color": "#d7e9b9", "price": 4500, "name": {"en": "Citron Tea", "ko": "유자차", "ja": "ゆず茶", "zh": "柚子茶"}, "desc": {"en": "Hot yuja (citron) tea to warm up after the ice.", "ko": "빙수 먹고 몸을 녹이는 따뜻한 유자차예요."}}]},
     {"id": "moonbeam-dessert", "category": "cafe", "size": "small", "name": {"en": "MOONBEAM DESSERT", "ko": "달빛 디저트", "ja": "ムーンビーム・デザート", "zh": "月光甜品"}, "tagline": {"en": "Macarons and cakes in an alley café", "ko": "골목 안 마카롱과 케이크 카페", "ja": "路地裏のマカロンとケーキのカフェ", "zh": "小巷里的马卡龙和蛋糕咖啡馆"}, "at": [-3000, -755], "colors": {"sign": "#5b3f8c", "awning": "#f7c6e0", "accent": "#fff5fb"}, "products": [{"id": "mb-macaron", "model": "bread", "color": "#f7a6c8", "price": 3000, "name": {"en": "Fat Macaron (Ttungcaron)", "ko": "뚱카롱", "ja": "トゥンカロン", "zh": "胖马卡龙"}, "desc": {"en": "A Korean-style macaron, extra thick with filling.", "ko": "속을 두툼하게 채운 한국식 마카롱이에요."}}, {"id": "mb-cake", "model": "bread", "color": "#fff1d6", "price": 6500, "name": {"en": "Strawberry Shortcake", "ko": "딸기 생크림 케이크", "ja": "いちごショートケーキ", "zh": "草莓奶油蛋糕"}, "desc": {"en": "Soft sponge, cream and fresh strawberries.", "ko": "부드러운 시트와 생크림, 생딸기 케이크예요."}}, {"id": "mb-milktea", "model": "cup", "color": "#c79a6b", "price": 5500, "name": {"en": "Brown Sugar Milk Tea", "ko": "흑당 밀크티", "ja": "黒糖ミルクティー", "zh": "黑糖奶茶"}, "desc": {"en": "Milk tea with brown sugar syrup and chewy pearls.", "ko": "흑당 시럽과 쫄깃한 펄을 넣은 밀크티예요."}}, {"id": "mb-strawberry-latte", "model": "cup", "color": "#f4a3b5", "price": 6000, "name": {"en": "Strawberry Latte", "ko": "딸기 라테", "ja": "いちごラテ", "zh": "草莓拿铁"}, "desc": {"en": "Milk over chunky strawberry syrup.", "ko": "생딸기청 위에 우유를 부었어요."}}]},
     {"id": "gil-coffee", "category": "cafe", "size": "small", "takeaway": true, "name": {"en": "GIL COFFEE", "ko": "길 커피", "ja": "ギル・コーヒー", "zh": "路咖啡"}, "tagline": {"en": "Takeaway coffee by the station: grab a cup and walk", "ko": "역 앞 테이크아웃 커피: 들고 걸어요", "ja": "駅前のテイクアウトコーヒー：持って歩こう", "zh": "车站前的外带咖啡：拿着边走边喝"}, "at": [-2910, -592], "colors": {"sign": "#1f5f4a", "awning": "#e4f0e8", "accent": "#f7faf7"}, "products": [{"id": "gil-americano", "model": "cup", "color": "#3b2418", "price": 3000, "name": {"en": "Americano", "ko": "아메리카노", "ja": "アメリカーノ", "zh": "美式咖啡"}, "desc": {"en": "Hot or iced, the cheapest good coffee on the street.", "ko": "뜨겁게도 차갑게도, 이 거리에서 제일 싼 맛있는 커피예요."}}, {"id": "gil-latte", "model": "cup", "color": "#c9a27a", "price": 3800, "name": {"en": "Café Latte", "ko": "카페라테", "ja": "カフェラテ", "zh": "拿铁"}, "desc": {"en": "Espresso with steamed milk.", "ko": "에스프레소에 데운 우유를 넣었어요."}}, {"id": "gil-sweetpotato", "model": "cup", "color": "#c98a5a", "price": 4500, "name": {"en": "Sweet Potato Latte", "ko": "고구마 라테", "ja": "さつまいもラテ", "zh": "红薯拿铁"}, "desc": {"en": "Roasted sweet potato blended with milk: a Korean winter favourite.", "ko": "군고구마를 우유와 갈았어요. 한국 겨울의 인기 메뉴예요."}}, {"id": "gil-ade", "model": "cup", "color": "#8fd3a6", "price": 4500, "name": {"en": "Green Grape Ade", "ko": "청포도 에이드", "ja": "マスカットエイド", "zh": "青葡萄气泡饮"}, "desc": {"en": "Green grape soda with ice.", "ko": "얼음 가득 청포도 탄산음료예요."}}]},
-    {"id": "starlight-tarot", "category": "play", "workshop": "tarot", "size": "small", "icon": "🔮", "name": {"en": "STARLIGHT TAROT", "ko": "별빛 타로", "ja": "スターライト・タロット", "zh": "星光塔罗"}, "tagline": {"en": "Tarot café: draw three cards and hear what they say", "ko": "타로 카페: 카드 세 장을 뽑고 풀이를 들어요", "ja": "タロットカフェ：3枚引いて占ってもらおう", "zh": "塔罗咖啡馆：抽三张牌听听解读"}, "at": [-3000, -765], "colors": {"sign": "#2a1f4f", "awning": "#c9a6ff", "accent": "#1e1838"}, "products": []},
-    {"id": "moon-rose-tarot", "category": "play", "workshop": "tarot", "size": "small", "readers": 2, "tarotCloth": "#7a2f4f", "icon": "🌙", "name": {"en": "MOON & ROSE TAROT", "ko": "달과 장미 타로", "ja": "ムーン＆ローズ・タロット", "zh": "月与玫瑰塔罗"}, "tagline": {"en": "Cosy tarot room with two readers: dating, love and money luck, alone or with a friend", "ko": "타로 마스터 두 명의 아늑한 타로방: 연애운, 애정운, 금전운을 혼자 또는 친구와", "ja": "占い師が二人いる居心地のいいタロット部屋：恋愛運・愛情運・金運を一人でも友達とでも", "zh": "有两位塔罗师的温馨塔罗屋：恋爱运、爱情运、财运，一个人或和朋友一起"}, "at": [-28, 165], "colors": {"sign": "#3a1f33", "awning": "#e6a3b8", "accent": "#2a1a26"}, "products": []},
-    {"id": "lucky-piggy-tarot", "category": "play", "workshop": "tarot", "size": "small", "readers": 2, "tarotCloth": "#8a5a1f", "icon": "🐷", "name": {"en": "LUCKY PIGGY TAROT", "ko": "복돼지 타로", "ja": "ラッキーピギー・タロット", "zh": "福猪塔罗"}, "tagline": {"en": "Tarot café with two readers. In Korea a pig stands for good luck and money!", "ko": "타로 마스터 두 명의 타로 카페. 한국에서 돼지는 복과 재물을 뜻해요!", "ja": "占い師が二人いるタロットカフェ。韓国では豚は福とお金の象徴！", "zh": "有两位塔罗师的塔罗咖啡馆。在韩国，猪象征福气和财运！"}, "at": [-2971, -710], "colors": {"sign": "#4a2a1a", "awning": "#ffc2a8", "accent": "#2b1d16"}, "products": []},
+    {"id": "starlight-tarot", "category": "play", "workshop": "tarot", "size": "small", "name": {"en": "STARLIGHT TAROT", "ko": "별빛 타로", "ja": "スターライト・タロット", "zh": "星光塔罗"}, "tagline": {"en": "Tarot café: draw three cards and hear what they say", "ko": "타로 카페: 카드 세 장을 뽑고 풀이를 들어요", "ja": "タロットカフェ：3枚引いて占ってもらおう", "zh": "塔罗咖啡馆：抽三张牌听听解读"}, "at": [-3000, -765], "colors": {"sign": "#2a1f4f", "awning": "#c9a6ff", "accent": "#1e1838"}, "products": []},
+    {"id": "moon-rose-tarot", "category": "play", "workshop": "tarot", "size": "small", "readers": 2, "tarotCloth": "#7a2f4f", "name": {"en": "MOON & ROSE TAROT", "ko": "달과 장미 타로", "ja": "ムーン＆ローズ・タロット", "zh": "月与玫瑰塔罗"}, "tagline": {"en": "Cosy tarot room with two readers: dating, love and money luck, alone or with a friend", "ko": "타로 마스터 두 명의 아늑한 타로방: 연애운, 애정운, 금전운을 혼자 또는 친구와", "ja": "占い師が二人いる居心地のいいタロット部屋：恋愛運・愛情運・金運を一人でも友達とでも", "zh": "有两位塔罗师的温馨塔罗屋：恋爱运、爱情运、财运，一个人或和朋友一起"}, "at": [-28, 165], "colors": {"sign": "#3a1f33", "awning": "#e6a3b8", "accent": "#2a1a26"}, "products": []},
+    {"id": "lucky-piggy-tarot", "category": "play", "workshop": "tarot", "size": "small", "readers": 2, "tarotCloth": "#8a5a1f", "name": {"en": "LUCKY PIGGY TAROT", "ko": "복돼지 타로", "ja": "ラッキーピギー・タロット", "zh": "福猪塔罗"}, "tagline": {"en": "Tarot café with two readers. In Korea a pig stands for good luck and money!", "ko": "타로 마스터 두 명의 타로 카페. 한국에서 돼지는 복과 재물을 뜻해요!", "ja": "占い師が二人いるタロットカフェ。韓国では豚は福とお金の象徴！", "zh": "有两位塔罗师的塔罗咖啡馆。在韩国，猪象征福气和财运！"}, "at": [-2971, -710], "colors": {"sign": "#4a2a1a", "awning": "#ffc2a8", "accent": "#2b1d16"}, "products": []},
     {"id": "sticker-planet", "category": "lifestyle", "size": "small", "name": {"en": "STICKER PLANET", "ko": "스티커 행성", "ja": "ステッカー惑星", "zh": "贴纸星球"}, "tagline": {"en": "Stickers, photo cards and cute stationery", "ko": "스티커, 포토카드, 귀여운 문구", "ja": "ステッカー、フォトカード、かわいい文房具", "zh": "贴纸、小卡和可爱文具"}, "at": [-2943, -615], "colors": {"sign": "#ff5d8f", "awning": "#ffe066", "accent": "#fff8fb"}, "products": [{"id": "sp-stickers", "model": "notebook", "color": "#ffb3c7", "price": 4000, "name": {"en": "Sticker Pack · Seoul", "ko": "스티커 팩 · 서울", "ja": "ステッカーパック・ソウル", "zh": "首尔贴纸包"}, "desc": {"en": "Thirty little Seoul stickers: subway, tteokbokki, cats.", "ko": "지하철, 떡볶이, 고양이 등 서울 스티커 30장이에요."}}, {"id": "sp-binder", "model": "notebook", "color": "#b9a6f0", "price": 9000, "name": {"en": "Photo Card Binder", "ko": "포토카드 바인더", "ja": "フォトカードバインダー", "zh": "小卡收纳册"}, "desc": {"en": "A binder for collecting photo cards.", "ko": "포토카드를 모으는 바인더예요."}}, {"id": "sp-pen", "model": "pen", "color": "#86b8f0", "price": 2500, "name": {"en": "Glitter Gel Pen", "ko": "반짝이 젤펜", "ja": "ラメジェルペン", "zh": "闪粉中性笔"}, "desc": {"en": "A sparkly pen for decorating your diary.", "ko": "다이어리 꾸미기용 반짝이 펜이에요."}}, {"id": "sp-plush", "model": "plush", "color": "#ffd36e", "price": 15000, "name": {"en": "Mini Plush Keyring", "ko": "미니 인형 키링", "ja": "ミニぬいぐるみキーホルダー", "zh": "迷你玩偶钥匙扣"}, "desc": {"en": "A palm-size plush to hang on your bag.", "ko": "가방에 다는 손바닥만 한 인형이에요."}}]},
-    {"id": "vintage-garage", "category": "fashion", "size": "medium", "name": {"en": "VINTAGE GARAGE", "ko": "빈티지 창고", "ja": "ヴィンテージ・ガレージ", "zh": "古着仓库"}, "tagline": {"en": "Second-hand clothes sold by weight", "ko": "무게로 파는 구제 옷 가게", "ja": "量り売りの古着屋", "zh": "按重量卖的二手衣店"}, "at": [-2957, -638], "colors": {"sign": "#6b4f2a", "awning": "#d9c49a", "accent": "#f3ecdf"}, "products": [{"id": "vg-shirt", "model": "tee", "color": "#a6d97a", "price": 18000, "name": {"en": "Old School Tee · Leaf", "ko": "올드스쿨 티 · 리프", "ja": "古着Tシャツ・リーフ", "zh": "复古T恤·叶绿"}, "desc": {"en": "A soft, faded tee from the bargain rack.", "ko": "떨이 코너에서 찾은 부드러운 빈티지 티예요."}, "tryOn": {"shirt": "leaf"}}, {"id": "vg-jeans", "model": "jeans", "color": "#55505e", "price": 25000, "name": {"en": "Washed Black Jeans", "ko": "워싱 블랙 진", "ja": "ウォッシュブラックジーンズ", "zh": "水洗黑色牛仔裤"}, "desc": {"en": "Loose jeans, washed many times.", "ko": "여러 번 빨아 부드러운 통바지예요."}, "tryOn": {"pants": "charcoal"}}, {"id": "vg-cocoa", "model": "jeans", "color": "#7a5c4a", "price": 22000, "name": {"en": "Corduroy Pants · Cocoa", "ko": "코듀로이 팬츠 · 코코아", "ja": "コーデュロイパンツ・ココア", "zh": "灯芯绒裤·可可"}, "desc": {"en": "Brown corduroys with a 90s feel.", "ko": "90년대 느낌의 갈색 코듀로이 바지예요."}, "tryOn": {"pants": "cocoa"}}, {"id": "vg-beret", "model": "hat", "color": "#c2456b", "price": 12000, "name": {"en": "Wool Beret", "ko": "울 베레모", "ja": "ウールベレー帽", "zh": "羊毛贝雷帽"}, "desc": {"en": "The art-student look.", "ko": "미대생 느낌 베레모예요."}, "tryOn": {"head": "beret"}}]},
+    {"id": "vintage-garage", "category": "fashion", "size": "medium", "name": {"en": "VINTAGE GARAGE", "ko": "빈티지 창고", "ja": "ヴィンテージ・ガレージ", "zh": "古着仓库"}, "tagline": {"en": "Second-hand clothes sold by weight", "ko": "무게로 파는 구제 옷 가게", "ja": "量り売りの古着屋", "zh": "按重量卖的二手衣店"}, "at": [-2957, -638], "colors": {"sign": "#6b4f2a", "awning": "#d9c49a", "accent": "#f3ecdf"}, "products": [{"id": "vint-outfit-jacket-olive", "model": "tee", "color": "#6b7a45", "price": 70000, "item": "outfit-jacket-olive", "name": {"en": "Olive field jacket", "ko": "올리브 필드 재킷", "ja": "オリーブのフィールドジャケット", "zh": "橄榄色工装夹克"}, "tryOn": {"model": "jacket-olive"}}, {"id": "vint-outfit-puffer-mustard", "model": "tee", "color": "#d9a43a", "price": 110000, "item": "outfit-puffer-mustard", "name": {"en": "Mustard puffer jacket", "ko": "머스타드 숏패딩", "ja": "マスタードのショートダウン", "zh": "芥末黄短款羽绒服"}, "tryOn": {"model": "puffer-mustard"}}, {"id": "vint-outfit-hoodie-orange", "model": "tee", "color": "#ff7a00", "price": 60000, "item": "outfit-hoodie-orange", "name": {"en": "Orange hoodie", "ko": "오렌지 후드티", "ja": "オレンジのパーカー", "zh": "橙色连帽卫衣"}, "tryOn": {"model": "hoodie-orange"}}, {"id": "vint-acc-bucket-denim", "model": "hat", "color": "#5b6c8f", "price": 30000, "item": "acc-bucket-denim", "name": {"en": "Denim bucket hat", "ko": "데님 버킷햇", "ja": "デニムのバケットハット", "zh": "牛仔渔夫帽"}, "tryOn": {"head": "bucket-denim"}}]},
     {"id": "glow-lab", "category": "beauty", "size": "small", "name": {"en": "GLOW LAB", "ko": "글로우 랩", "ja": "グロウ・ラボ", "zh": "光彩实验室"}, "tagline": {"en": "K-beauty sheet masks, tints and sun cream", "ko": "마스크팩, 틴트, 선크림", "ja": "K-ビューティーのシートマスク、ティント、日焼け止め", "zh": "韩妆面膜、唇釉和防晒霜"}, "at": [-2943, -638], "colors": {"sign": "#e0457b", "awning": "#ffd9e6", "accent": "#fff7fa"}, "products": [{"id": "gl-mask", "model": "jar", "color": "#cfe9f5", "price": 2000, "name": {"en": "Sheet Mask · Aloe", "ko": "마스크팩 · 알로에", "ja": "シートマスク・アロエ", "zh": "芦荟面膜"}, "desc": {"en": "A cooling sheet mask. Koreans buy them in tens.", "ko": "시원한 알로에 마스크팩. 열 장씩 사는 게 보통이에요."}}, {"id": "gl-tint", "model": "lipstick", "color": "#d94c5f", "price": 9000, "name": {"en": "Water Tint · Cherry", "ko": "워터 틴트 · 체리", "ja": "ウォーターティント・チェリー", "zh": "水唇釉·樱桃"}, "desc": {"en": "A light lip tint that lasts all day.", "ko": "가볍게 발리고 오래가는 립 틴트예요."}}, {"id": "gl-sun", "model": "bottle", "color": "#fff3b0", "price": 15000, "name": {"en": "Daily Sun Cream SPF50", "ko": "데일리 선크림 SPF50", "ja": "デイリー日焼け止め SPF50", "zh": "日常防晒霜 SPF50"}, "desc": {"en": "Light, no white cast.", "ko": "가볍고 하얗게 뜨지 않아요."}}, {"id": "gl-cushion", "model": "jar", "color": "#f2d3b8", "price": 22000, "name": {"en": "Cushion Compact", "ko": "쿠션 팩트", "ja": "クッションファンデ", "zh": "气垫粉底"}, "desc": {"en": "Foundation in a sponge compact, the Korean way.", "ko": "스펀지에 담긴 파운데이션, 한국식 화장품이에요."}}]},
     {"id": "indie-record", "category": "lifestyle", "size": "medium", "name": {"en": "INDIE RECORD", "ko": "인디 레코드", "ja": "インディ・レコード", "zh": "独立唱片行"}, "tagline": {"en": "Vinyl, cassettes and band T-shirts of the local scene", "ko": "동네 인디씬의 LP, 카세트, 밴드 티셔츠", "ja": "地元インディーシーンのLP、カセット、バンドTシャツ", "zh": "本地独立音乐的黑胶、磁带和乐队T恤"}, "at": [-2929, -694], "colors": {"sign": "#111111", "awning": "#ff6f3c", "accent": "#f5f0e8"}, "products": [{"id": "ir-lp", "model": "notebook", "color": "#222222", "price": 32000, "name": {"en": "Indie Compilation LP", "ko": "인디 컴필레이션 LP", "ja": "インディーコンピレーションLP", "zh": "独立合辑黑胶"}, "desc": {"en": "Twelve songs by (fictional) Hongdae bands.", "ko": "(가상의) 홍대 밴드 12곡을 담은 LP예요."}}, {"id": "ir-tape", "model": "notebook", "color": "#ff6f3c", "price": 12000, "name": {"en": "Busking Live Cassette", "ko": "버스킹 라이브 카세트", "ja": "バスキングライブカセット", "zh": "街头现场磁带"}, "desc": {"en": "Recorded live on the street, crowd noise included.", "ko": "거리에서 녹음한 라이브, 관객 소리도 들어 있어요."}}, {"id": "ir-tote", "model": "tote", "color": "#f3e5c8", "price": 15000, "name": {"en": "Record Shop Tote", "ko": "레코드숍 에코백", "ja": "レコード店トート", "zh": "唱片店帆布包"}, "desc": {"en": "Fits about ten LPs.", "ko": "LP 열 장쯤 들어가요."}}, {"id": "ir-candle", "model": "candle", "color": "#d6a6ff", "price": 14000, "name": {"en": "Midnight Gig Candle", "ko": "미드나잇 공연 캔들", "ja": "ミッドナイトライブキャンドル", "zh": "午夜演出香薰"}, "desc": {"en": "Smells like a small club after the encore.", "ko": "앙코르가 끝난 작은 공연장 냄새가 나요."}}]},
-    {"id": "street-kick", "category": "fashion", "size": "medium", "name": {"en": "STREET KICK", "ko": "스트릿킥", "ja": "ストリートキック", "zh": "街头球鞋"}, "tagline": {"en": "Sneakers and street wear", "ko": "스니커즈와 스트릿 웨어", "ja": "スニーカーとストリートウェア", "zh": "球鞋和街头服饰"}, "at": [-2943, -795], "colors": {"sign": "#1d1d22", "awning": "#ff3b30", "accent": "#f2f2f2"}, "products": [{"id": "sk-high", "model": "sneaker", "color": "#f2f2f2", "price": 89000, "name": {"en": "High-top Sneakers · White", "ko": "하이탑 스니커즈 · 화이트", "ja": "ハイカットスニーカー・白", "zh": "高帮球鞋·白"}, "desc": {"en": "Chunky white high-tops.", "ko": "두툼한 흰색 하이탑이에요."}}, {"id": "sk-run", "model": "sneaker", "color": "#ff6f3c", "price": 79000, "name": {"en": "Retro Runners · Orange", "ko": "레트로 러너 · 오렌지", "ja": "レトロランナー・オレンジ", "zh": "复古跑鞋·橙"}, "desc": {"en": "Light runners in a loud colour.", "ko": "가볍고 색이 화려한 러닝화예요."}}, {"id": "sk-tee", "model": "tee", "color": "#8fd3c7", "price": 35000, "name": {"en": "Oversized Tee · Mint", "ko": "오버핏 티 · 민트", "ja": "オーバーサイズTシャツ・ミント", "zh": "宽松T恤·薄荷"}, "desc": {"en": "A big, boxy tee.", "ko": "넉넉한 박스핏 티셔츠예요."}, "tryOn": {"shirt": "mint"}}, {"id": "sk-cap", "model": "cap", "color": "#2b2230", "price": 29000, "name": {"en": "Logo-free Ball Cap", "ko": "무지 볼캡", "ja": "無地キャップ", "zh": "纯色棒球帽"}, "desc": {"en": "Plain black cap. Goes with everything.", "ko": "아무 데나 어울리는 검정 무지 모자예요."}, "tryOn": {"head": "cap"}}]},
-    {"id": "ear-candy", "category": "fashion", "size": "small", "name": {"en": "EAR CANDY", "ko": "이어캔디", "ja": "イヤーキャンディ", "zh": "耳朵糖果"}, "tagline": {"en": "Earrings, sunglasses and small accessories", "ko": "귀걸이, 선글라스, 작은 액세서리", "ja": "ピアス、サングラス、小物アクセサリー", "zh": "耳环、墨镜和小饰品"}, "at": [-2900, -755], "colors": {"sign": "#8a5cc9", "awning": "#ffe0f0", "accent": "#fffafc"}, "products": [{"id": "ec-sun", "model": "jar", "color": "#2b2230", "price": 19000, "name": {"en": "Round Sunglasses", "ko": "동그란 선글라스", "ja": "丸サングラス", "zh": "圆框墨镜"}, "desc": {"en": "Small round frames.", "ko": "작고 동그란 테예요."}, "tryOn": {"face": "sunglasses"}}, {"id": "ec-glasses", "model": "jar", "color": "#4a3f35", "price": 25000, "name": {"en": "Horn-rim Glasses", "ko": "뿔테 안경", "ja": "セル縁メガネ", "zh": "黑框眼镜"}, "desc": {"en": "Clear lenses, bold frames.", "ko": "도수 없는 뿔테 안경이에요."}, "tryOn": {"face": "glasses"}}, {"id": "ec-ribbon", "model": "hat", "color": "#ff9bb3", "price": 8000, "name": {"en": "Big Hair Ribbon", "ko": "큰 리본 핀", "ja": "大きいリボン", "zh": "大发夹蝴蝶结"}, "desc": {"en": "A big pink ribbon for your hair.", "ko": "머리에 다는 커다란 분홍 리본이에요."}, "tryOn": {"head": "ribbon"}}, {"id": "ec-scarf", "model": "scarf", "color": "#e9735c", "price": 21000, "name": {"en": "Knit Muffler", "ko": "니트 머플러", "ja": "ニットマフラー", "zh": "针织围巾"}, "desc": {"en": "Soft knit scarf for Hongdae nights.", "ko": "홍대 밤바람 막아 줄 니트 머플러예요."}, "tryOn": {"neck": "scarf"}}]},
+    {"id": "street-kick", "category": "fashion", "size": "medium", "name": {"en": "STREET KICK", "ko": "스트릿킥", "ja": "ストリートキック", "zh": "街头球鞋"}, "tagline": {"en": "Sneakers and street wear", "ko": "스니커즈와 스트릿 웨어", "ja": "スニーカーとストリートウェア", "zh": "球鞋和街头服饰"}, "at": [-2943, -795], "colors": {"sign": "#1d1d22", "awning": "#ff3b30", "accent": "#f2f2f2"}, "products": [{"id": "stre-shoes-red", "model": "sneaker", "color": "#e0402f", "price": 50000, "item": "shoes-red", "name": {"en": "Red high-tops", "ko": "빨간 하이탑", "ja": "赤いハイカット", "zh": "红色高帮鞋"}, "tryOn": {"shoes": "red"}}, {"id": "stre-shoes-lime", "model": "sneaker", "color": "#b5e04a", "price": 50000, "item": "shoes-lime", "name": {"en": "Lime high-tops", "ko": "라임 하이탑", "ja": "ライムのハイカット", "zh": "青柠色高帮鞋"}, "tryOn": {"shoes": "lime"}}, {"id": "stre-shoes-white", "model": "sneaker", "color": "#ffffff", "price": 45000, "item": "shoes-white", "name": {"en": "White sneakers", "ko": "흰 운동화", "ja": "白いスニーカー", "zh": "白色运动鞋"}, "tryOn": {"shoes": "white"}}, {"id": "stre-shoes-black", "model": "sneaker", "color": "#2b2b31", "price": 45000, "item": "shoes-black", "name": {"en": "Black sneakers", "ko": "검정 운동화", "ja": "黒いスニーカー", "zh": "黑色运动鞋"}, "tryOn": {"shoes": "black"}}]},
+    {"id": "ear-candy", "category": "fashion", "size": "small", "name": {"en": "EAR CANDY", "ko": "이어캔디", "ja": "イヤーキャンディ", "zh": "耳朵糖果"}, "tagline": {"en": "Earrings, sunglasses and small accessories", "ko": "귀걸이, 선글라스, 작은 액세서리", "ja": "ピアス、サングラス、小物アクセサリー", "zh": "耳环、墨镜和小饰品"}, "at": [-2900, -755], "colors": {"sign": "#8a5cc9", "awning": "#ffe0f0", "accent": "#fffafc"}, "products": [{"id": "ear--acc-hearts", "model": "earrings", "color": "#ff5c8a", "price": 15000, "item": "acc-hearts", "name": {"en": "Heart drop earrings", "ko": "하트 귀걸이", "ja": "ハートのピアス", "zh": "爱心耳坠"}, "tryOn": {"ear": "hearts"}}, {"id": "ear--acc-cherries", "model": "earrings", "color": "#d8203a", "price": 15000, "item": "acc-cherries", "name": {"en": "Cherry earrings", "ko": "체리 귀걸이", "ja": "さくらんぼのピアス", "zh": "樱桃耳坠"}, "tryOn": {"ear": "cherries"}}, {"id": "ear--acc-stars", "model": "earrings", "color": "#f5c842", "price": 15000, "item": "acc-stars", "name": {"en": "Star drop earrings", "ko": "별 귀걸이", "ja": "星のピアス", "zh": "星星耳坠"}, "tryOn": {"ear": "stars"}}, {"id": "ear--acc-sunglasses-pink", "model": "sunglasses", "color": "#ff6fa8", "price": 35000, "item": "acc-sunglasses-pink", "name": {"en": "Pink tinted sunglasses", "ko": "핑크 틴트 선글라스", "ja": "ピンクのカラーサングラス", "zh": "粉色墨镜"}, "tryOn": {"face": "sunglasses-pink"}}, {"id": "ear--acc-ribbon-red", "model": "ribbon", "color": "#e0405a", "price": 10000, "item": "acc-ribbon-red", "name": {"en": "Red hair ribbon", "ko": "빨간 리본 핀", "ja": "赤いリボン", "zh": "红色发带蝴蝶结"}, "tryOn": {"head": "ribbon-red"}}]},
     {"id": "gogo-cat-cafe", "category": "cafe", "pets": "gogocats", "size": "medium", "name": {"en": "Gogo Cat Café", "ko": "고고 고양이 카페", "ja": "ゴーゴー猫カフェ", "zh": "高高猫咖啡馆"}, "tagline": {"en": "Six playful cats, Mochi among them. They love visitors!", "ko": "모찌를 비롯한 장난꾸러기 고양이 여섯 마리. 손님을 정말 좋아해요!", "ja": "モチを含むやんちゃな猫が6匹。お客さんが大好き！", "zh": "包括麻糬在内的六只调皮猫咪，最喜欢客人了！"}, "at": [-2957, -825], "colors": {"sign": "#7a4fc2", "awning": "#e4d6ff", "accent": "#f8f4ff"}, "products": [{"id": "mochi-latte", "model": "cup", "color": "#f4ece2", "price": 6500, "name": {"en": "Mochi Milk Latte", "ko": "모찌 우유 라떼", "ja": "モチ・ミルクラテ", "zh": "麻糬牛奶拿铁"}, "desc": {"en": "A soft milk latte with a sleepy cat face in the foam."}}, {"id": "cat-macaron", "model": "bread", "color": "#f2b8c6", "price": 3500, "name": {"en": "Cat Ear Macaron", "ko": "고양이 귀 마카롱", "ja": "猫耳マカロン", "zh": "猫耳马卡龙"}, "desc": {"en": "A strawberry macaron with two little cat ears."}}]},
-    {"id": "graffiti-caps", "category": "fashion", "size": "small", "name": {"en": "GRAFFITI CAPS", "ko": "그래피티 캡", "ja": "グラフィティ・キャップ", "zh": "涂鸦帽子"}, "tagline": {"en": "Hats and backpacks with spray-paint designs", "ko": "스프레이 그림을 그린 모자와 가방", "ja": "スプレーペイントの帽子とリュック", "zh": "喷漆图案的帽子和背包"}, "at": [-2866, -670], "colors": {"sign": "#ff7a00", "awning": "#2b2230", "accent": "#f7f3ea"}, "products": [{"id": "gc-bucket", "model": "hat", "color": "#ffd36e", "price": 26000, "name": {"en": "Spray Bucket Hat", "ko": "스프레이 버킷햇", "ja": "スプレーバケットハット", "zh": "喷漆渔夫帽"}, "desc": {"en": "A bucket hat with hand-sprayed colours.", "ko": "손으로 스프레이를 뿌린 버킷햇이에요."}, "tryOn": {"head": "bucket"}}, {"id": "gc-beanie", "model": "hat", "color": "#ff9b85", "price": 18000, "name": {"en": "Chunky Beanie", "ko": "두툼한 비니", "ja": "ざっくりビーニー", "zh": "粗针毛线帽"}, "desc": {"en": "Warm knit beanie.", "ko": "따뜻한 니트 비니예요."}, "tryOn": {"head": "beanie"}}, {"id": "gc-backpack", "model": "tote", "color": "#8fd3c7", "price": 49000, "name": {"en": "Tag Backpack", "ko": "태그 백팩", "ja": "タグリュック", "zh": "涂鸦双肩包"}, "desc": {"en": "A backpack covered in tags.", "ko": "그래피티 태그가 가득한 백팩이에요."}, "tryOn": {"back": "backpack"}}, {"id": "gc-tee", "model": "tee", "color": "#ffb3c7", "price": 33000, "name": {"en": "Spray Tee · Peach", "ko": "스프레이 티 · 피치", "ja": "スプレーTシャツ・ピーチ", "zh": "喷漆T恤·蜜桃"}, "desc": {"en": "A tee with a sprayed pink cloud.", "ko": "분홍 구름을 스프레이로 그린 티예요."}, "tryOn": {"shirt": "peach"}}]}
+    {"id": "graffiti-caps", "category": "fashion", "size": "small", "name": {"en": "GRAFFITI CAPS", "ko": "그래피티 캡", "ja": "グラフィティ・キャップ", "zh": "涂鸦帽子"}, "tagline": {"en": "Hats and backpacks with spray-paint designs", "ko": "스프레이 그림을 그린 모자와 가방", "ja": "スプレーペイントの帽子とリュック", "zh": "喷漆图案的帽子和背包"}, "at": [-2866, -670], "colors": {"sign": "#ff7a00", "awning": "#2b2230", "accent": "#f7f3ea"}, "products": [{"id": "graf-acc-cap-orange", "model": "cap", "color": "#ff7a00", "price": 25000, "item": "acc-cap-orange", "name": {"en": "Orange graffiti cap", "ko": "오렌지 그래피티 캡", "ja": "オレンジのグラフィティキャップ", "zh": "橙色涂鸦棒球帽"}, "tryOn": {"head": "cap-orange"}}, {"id": "graf-acc-beanie-grey", "model": "beanie", "color": "#8e8a92", "price": 20000, "item": "acc-beanie-grey", "name": {"en": "Grey beanie", "ko": "회색 비니", "ja": "グレーのニット帽", "zh": "灰色毛线帽"}, "tryOn": {"head": "beanie-grey"}}, {"id": "graf-acc-bucket-denim", "model": "hat", "color": "#5b6c8f", "price": 30000, "item": "acc-bucket-denim", "name": {"en": "Denim bucket hat", "ko": "데님 버킷햇", "ja": "デニムのバケットハット", "zh": "牛仔渔夫帽"}, "tryOn": {"head": "bucket-denim"}}, {"id": "graf-acc-backpack-graffiti", "model": "backpack", "color": "#ff7a00", "price": 45000, "item": "acc-backpack-graffiti", "name": {"en": "Graffiti backpack", "ko": "그래피티 백팩", "ja": "グラフィティのリュック", "zh": "涂鸦双肩包"}, "tryOn": {"back": "backpack-graffiti"}}]},
+    {
+      "id": "ttoryeot-optical",
+      "category": "fashion",
+      "size": "small",
+      "at": [-40, 165],
+      "name": { "ko": "또렷 안경원", "en": "Ttoryeot Optical", "ja": "トリョッ眼鏡店", "zh": "清晰眼镜店" },
+      "tagline": { "en": "Glasses and sunglasses: try them on in the mirror", "ko": "안경과 선글라스, 써 보고 골라요", "ja": "メガネとサングラス、かけて選べます", "zh": "眼镜和墨镜，试戴后再挑" },
+      "colors": { "sign": "#2f5f8a", "awning": "#d6e6f5", "accent": "#f3f8fc" },
+      "products": [
+        { "id": "ttor-acc-glasses", "model": "glasses", "color": "#4a3f35", "price": 30000, "item": "acc-glasses", "name": { "en": "Brown round glasses", "ko": "브라운 동그란 안경", "ja": "ブラウンの丸メガネ", "zh": "棕色圆框眼镜" }, "tryOn": { "face": "glasses" } },
+        { "id": "ttor-acc-glasses-black", "model": "glasses", "color": "#1f1b22", "price": 30000, "item": "acc-glasses-black", "name": { "en": "Black round glasses", "ko": "검정 동그란 안경", "ja": "黒の丸メガネ", "zh": "黑色圆框眼镜" }, "tryOn": { "face": "glasses-black" } },
+        { "id": "ttor-acc-glasses-gold", "model": "glasses", "color": "#d4a640", "price": 35000, "item": "acc-glasses-gold", "name": { "en": "Gold wire glasses", "ko": "골드 메탈 안경", "ja": "ゴールドのメタルメガネ", "zh": "金色金属框眼镜" }, "tryOn": { "face": "glasses-gold" } },
+        { "id": "ttor-acc-glasses-pink", "model": "glasses", "color": "#f08bb0", "price": 30000, "item": "acc-glasses-pink", "name": { "en": "Pink round glasses", "ko": "핑크 동그란 안경", "ja": "ピンクの丸メガネ", "zh": "粉色圆框眼镜" }, "tryOn": { "face": "glasses-pink" } },
+        { "id": "ttor-acc-sunglasses", "model": "sunglasses", "color": "#2b2230", "price": 35000, "item": "acc-sunglasses", "name": { "en": "Black sunglasses", "ko": "검정 선글라스", "ja": "黒いサングラス", "zh": "黑色墨镜" }, "tryOn": { "face": "sunglasses" } },
+        { "id": "ttor-acc-sunglasses-brown", "model": "sunglasses", "color": "#8a5a32", "price": 35000, "item": "acc-sunglasses-brown", "name": { "en": "Brown tinted sunglasses", "ko": "브라운 틴트 선글라스", "ja": "ブラウンのカラーサングラス", "zh": "棕色墨镜" }, "tryOn": { "face": "sunglasses-brown" } },
+        { "id": "ttor-acc-sunglasses-blue", "model": "sunglasses", "color": "#3f7fd6", "price": 35000, "item": "acc-sunglasses-blue", "name": { "en": "Blue tinted sunglasses", "ko": "블루 틴트 선글라스", "ja": "ブルーのカラーサングラス", "zh": "蓝色墨镜" }, "tryOn": { "face": "sunglasses-blue" } }
+      ]
+    },
+    {
+      "id": "banjjak-earrings",
+      "category": "fashion",
+      "size": "small",
+      "at": [-50, 175],
+      "name": { "ko": "반짝 귀걸이", "en": "Banjjak Earrings", "ja": "パンチャク・ピアス", "zh": "闪闪耳环" },
+      "tagline": { "en": "Hoops, pearls and cute drop earrings", "ko": "링, 진주, 귀여운 드롭 귀걸이", "ja": "フープ、パール、かわいい揺れるピアス", "zh": "圈形、珍珠和可爱的耳坠" },
+      "colors": { "sign": "#c9558a", "awning": "#ffe0ee", "accent": "#fff7fb" },
+      "products": [
+        { "id": "banj-acc-hoops-gold", "model": "earrings", "color": "#e8b84a", "price": 20000, "item": "acc-hoops-gold", "name": { "en": "Gold hoop earrings", "ko": "골드 링 귀걸이", "ja": "ゴールドのフープピアス", "zh": "金色圈形耳环" }, "tryOn": { "ear": "hoops-gold" } },
+        { "id": "banj-acc-hoops-silver", "model": "earrings", "color": "#d9dde2", "price": 20000, "item": "acc-hoops-silver", "name": { "en": "Silver hoop earrings", "ko": "실버 링 귀걸이", "ja": "シルバーのフープピアス", "zh": "银色圈形耳环" }, "tryOn": { "ear": "hoops-silver" } },
+        { "id": "banj-acc-pearls", "model": "earrings", "color": "#fbf6ec", "price": 25000, "item": "acc-pearls", "name": { "en": "Pearl studs", "ko": "진주 귀걸이", "ja": "パールのピアス", "zh": "珍珠耳钉" }, "tryOn": { "ear": "pearls" } },
+        { "id": "banj-acc-stars", "model": "earrings", "color": "#f5c842", "price": 15000, "item": "acc-stars", "name": { "en": "Star drop earrings", "ko": "별 귀걸이", "ja": "星のピアス", "zh": "星星耳坠" }, "tryOn": { "ear": "stars" } },
+        { "id": "banj-acc-hearts", "model": "earrings", "color": "#ff5c8a", "price": 15000, "item": "acc-hearts", "name": { "en": "Heart drop earrings", "ko": "하트 귀걸이", "ja": "ハートのピアス", "zh": "爱心耳坠" }, "tryOn": { "ear": "hearts" } },
+        { "id": "banj-acc-cherries", "model": "earrings", "color": "#d8203a", "price": 15000, "item": "acc-cherries", "name": { "en": "Cherry earrings", "ko": "체리 귀걸이", "ja": "さくらんぼのピアス", "zh": "樱桃耳坠" }, "tryOn": { "ear": "cherries" } }
+      ]
+    }
   ]
 }

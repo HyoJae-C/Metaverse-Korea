@@ -1,0 +1,78 @@
+// Clothes, shoes and accessories from the clothes and accessory shops
+// (each shop product's `item` in stores.json). wear: what the item changes
+// on your look; off: what taking it off changes back (null: it can only be
+// swapped for another, like trousers).
+import { WEAR_DESC } from './wear-desc.js';
+
+const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price, wear, off, desc, name, ...extra });
+
+export const WEARABLES = {
+  // Clothes: the Daily Closet's clothes in other colours (data/characters).
+  'outfit-jacket-black': item('🧥', 70, { model: 'jacket-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black denim jacket', ko: '블랙 청재킷', ja: 'ブラックデニムジャケット', zh: '黑色牛仔夹克' }, { outfit: 'jacket-black' }),
+  'outfit-jacket-indigo': item('🧥', 70, { model: 'jacket-indigo' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Indigo denim jacket', ko: '인디고 청재킷', ja: 'インディゴデニムジャケット', zh: '靛蓝牛仔夹克' }, { outfit: 'jacket-indigo' }),
+  'outfit-jacket-cocoa': item('🧥', 70, { model: 'jacket-cocoa' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Brown corduroy jacket', ko: '브라운 코듀로이 재킷', ja: 'ブラウンのコーデュロイジャケット', zh: '棕色灯芯绒夹克' }, { outfit: 'jacket-cocoa' }),
+  'outfit-jacket-olive': item('🧥', 70, { model: 'jacket-olive' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Olive field jacket', ko: '올리브 필드 재킷', ja: 'オリーブのフィールドジャケット', zh: '橄榄色工装夹克' }, { outfit: 'jacket-olive' }),
+  'outfit-hoodie-black': item('🖤', 60, { model: 'hoodie-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black hoodie', ko: '블랙 후드티', ja: '黒のパーカー', zh: '黑色连帽卫衣' }, { outfit: 'hoodie-black' }),
+  'outfit-hoodie-wine': item('🍷', 60, { model: 'hoodie-wine' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Burgundy hoodie', ko: '버건디 후드티', ja: 'バーガンディのパーカー', zh: '酒红色连帽卫衣' }, { outfit: 'hoodie-wine' }),
+  'outfit-hoodie-orange': item('🧡', 60, { model: 'hoodie-orange' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Orange hoodie', ko: '오렌지 후드티', ja: 'オレンジのパーカー', zh: '橙色连帽卫衣' }, { outfit: 'hoodie-orange' }),
+  'outfit-shirt-white': item('👔', 50, { model: 'shirt-white' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'White shirt', ko: '화이트 셔츠', ja: '白シャツ', zh: '白衬衫' }, { outfit: 'shirt-white' }),
+  'outfit-shirt-denim': item('👔', 50, { model: 'shirt-denim' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Denim shirt', ko: '데님 셔츠', ja: 'デニムシャツ', zh: '牛仔衬衫' }, { outfit: 'shirt-denim' }),
+  'outfit-shirt-olive': item('👔', 50, { model: 'shirt-olive' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Olive shirt', ko: '올리브 셔츠', ja: 'オリーブのシャツ', zh: '橄榄色衬衫' }, { outfit: 'shirt-olive' }),
+  'outfit-puffer-black': item('🧥', 110, { model: 'puffer-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black puffer jacket', ko: '블랙 숏패딩', ja: '黒のショートダウン', zh: '黑色短款羽绒服' }, { outfit: 'puffer-black' }),
+  'outfit-puffer-mustard': item('🧥', 110, { model: 'puffer-mustard' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Mustard puffer jacket', ko: '머스타드 숏패딩', ja: 'マスタードのショートダウン', zh: '芥末黄短款羽绒服' }, { outfit: 'puffer-mustard' }),
+  'outfit-padding-white': item('🤍', 140, { model: 'padding-white' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'White long padded coat', ko: '화이트 롱패딩', ja: '白のロングダウン', zh: '白色长款羽绒服' }, { outfit: 'padding-white' }),
+  // Trousers (a colour of look.pants).
+  'pants-indigo': item('👖', 40, { pants: 'indigo' }, null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
+  'pants-lightwash': item('👖', 40, { pants: 'lightwash' }, null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
+  'pants-black': item('👖', 40, { pants: 'black' }, null, WEAR_DESC.swap, { en: 'Black jeans', ko: '흑청바지', ja: 'ブラックジーンズ', zh: '黑色牛仔裤' }),
+  'pants-sand': item('👖', 40, { pants: 'sand' }, null, WEAR_DESC.swap, { en: 'Beige wide pants', ko: '베이지 와이드 팬츠', ja: 'ベージュのワイドパンツ', zh: '米色阔腿裤' }),
+  'pants-charcoal': item('👖', 40, { pants: 'charcoal' }, null, WEAR_DESC.swap, { en: 'Charcoal slacks', ko: '차콜 슬랙스', ja: 'チャコールのスラックス', zh: '炭灰色西裤' }),
+  'pants-cream': item('👖', 40, { pants: 'cream' }, null, WEAR_DESC.swap, { en: 'Cream wide pants', ko: '크림 와이드 팬츠', ja: 'クリームのワイドパンツ', zh: '奶油色阔腿裤' }),
+  'pants-olive': item('👖', 40, { pants: 'olive' }, null, WEAR_DESC.swap, { en: 'Olive cargo pants', ko: '올리브 카고 팬츠', ja: 'オリーブのカーゴパンツ', zh: '橄榄色工装裤' }),
+  'pants-cocoa': item('👖', 40, { pants: 'cocoa' }, null, WEAR_DESC.swap, { en: 'Brown cotton pants', ko: '브라운 면바지', ja: 'ブラウンのチノパン', zh: '棕色棉裤' }),
+  'pants-denim': item('👖', 40, { pants: 'denim' }, null, WEAR_DESC.swap, { en: 'Classic blue jeans', ko: '기본 청바지', ja: 'ブルージーンズ', zh: '经典蓝色牛仔裤' }),
+  // Shoes (look.shoes; taking them off goes back to white sneakers).
+  'shoes-white': item('👟', 45, { shoes: 'white' }, { shoes: null }, WEAR_DESC.shoes, { en: 'White sneakers', ko: '흰 운동화', ja: '白いスニーカー', zh: '白色运动鞋' }),
+  'shoes-black': item('👟', 45, { shoes: 'black' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Black sneakers', ko: '검정 운동화', ja: '黒いスニーカー', zh: '黑色运动鞋' }),
+  'shoes-pink': item('👟', 45, { shoes: 'pink' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Pink sneakers', ko: '핑크 운동화', ja: 'ピンクのスニーカー', zh: '粉色运动鞋' }),
+  'shoes-sky': item('👟', 45, { shoes: 'sky' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Sky blue sneakers', ko: '하늘색 운동화', ja: '水色のスニーカー', zh: '天蓝色运动鞋' }),
+  'shoes-butter': item('👟', 45, { shoes: 'butter' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Butter yellow sneakers', ko: '버터 옐로 운동화', ja: 'バターイエローのスニーカー', zh: '奶油黄运动鞋' }),
+  'shoes-red': item('👟', 50, { shoes: 'red' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Red high-tops', ko: '빨간 하이탑', ja: '赤いハイカット', zh: '红色高帮鞋' }),
+  'shoes-lime': item('👟', 50, { shoes: 'lime' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Lime high-tops', ko: '라임 하이탑', ja: 'ライムのハイカット', zh: '青柠色高帮鞋' }),
+  'shoes-brown': item('👞', 60, { shoes: 'brown' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Brown leather loafers', ko: '브라운 가죽 로퍼', ja: 'ブラウンの革ローファー', zh: '棕色皮质乐福鞋' }),
+  'shoes-tan': item('👞', 60, { shoes: 'tan' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Tan leather loafers', ko: '탄 가죽 로퍼', ja: 'タンの革ローファー', zh: '浅棕色皮质乐福鞋' }),
+  'shoes-burgundy': item('👞', 60, { shoes: 'burgundy' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Burgundy leather shoes', ko: '버건디 가죽 구두', ja: 'バーガンディの革靴', zh: '酒红色皮鞋' }),
+  // Accessories: one per slot (data/appearance.js ACCESSORIES).
+  'acc-cap-red': item('🧢', 25, { head: 'cap-red', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Red cap', ko: '빨간 캡모자', ja: '赤いキャップ', zh: '红色棒球帽' }),
+  'acc-cap-sky': item('🧢', 25, { head: 'cap-sky', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Sky blue cap', ko: '하늘색 캡모자', ja: '水色のキャップ', zh: '天蓝色棒球帽' }),
+  'acc-cap-black': item('🧢', 25, { head: 'cap-black', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Black cap', ko: '검정 캡모자', ja: '黒いキャップ', zh: '黑色棒球帽' }),
+  'acc-cap-orange': item('🧢', 25, { head: 'cap-orange', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Orange graffiti cap', ko: '오렌지 그래피티 캡', ja: 'オレンジのグラフィティキャップ', zh: '橙色涂鸦棒球帽' }),
+  'acc-bucket-cream': item('👒', 30, { head: 'bucket-cream', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Cream bucket hat', ko: '크림 버킷햇', ja: 'クリームのバケットハット', zh: '奶油色渔夫帽' }),
+  'acc-bucket-denim': item('👒', 30, { head: 'bucket-denim', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Denim bucket hat', ko: '데님 버킷햇', ja: 'デニムのバケットハット', zh: '牛仔渔夫帽' }),
+  'acc-beanie-grey': item('🧶', 20, { head: 'beanie-grey', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Grey beanie', ko: '회색 비니', ja: 'グレーのニット帽', zh: '灰色毛线帽' }),
+  'acc-beanie-cream': item('🧶', 20, { head: 'beanie-cream', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Cream knit beanie', ko: '크림 니트 비니', ja: 'クリームのニット帽', zh: '奶油色针织帽' }),
+  'acc-beanie-mustard': item('🧶', 20, { head: 'beanie-mustard', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Mustard knit beanie', ko: '머스타드 니트 비니', ja: 'マスタードのニット帽', zh: '芥末黄针织帽' }),
+  'acc-beret-black': item('🎨', 30, { head: 'beret-black', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Black beret', ko: '검정 베레모', ja: '黒いベレー帽', zh: '黑色贝雷帽' }),
+  'acc-ribbon-red': item('🎀', 10, { head: 'ribbon-red', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Red hair ribbon', ko: '빨간 리본 핀', ja: '赤いリボン', zh: '红色发带蝴蝶结' }),
+  'acc-glasses': item('👓', 30, { face: 'glasses' }, { face: null }, WEAR_DESC.accessory, { en: 'Brown round glasses', ko: '브라운 동그란 안경', ja: 'ブラウンの丸メガネ', zh: '棕色圆框眼镜' }),
+  'acc-glasses-black': item('👓', 30, { face: 'glasses-black' }, { face: null }, WEAR_DESC.accessory, { en: 'Black round glasses', ko: '검정 동그란 안경', ja: '黒の丸メガネ', zh: '黑色圆框眼镜' }),
+  'acc-glasses-gold': item('👓', 35, { face: 'glasses-gold' }, { face: null }, WEAR_DESC.accessory, { en: 'Gold wire glasses', ko: '골드 메탈 안경', ja: 'ゴールドのメタルメガネ', zh: '金色金属框眼镜' }),
+  'acc-glasses-pink': item('👓', 30, { face: 'glasses-pink' }, { face: null }, WEAR_DESC.accessory, { en: 'Pink round glasses', ko: '핑크 동그란 안경', ja: 'ピンクの丸メガネ', zh: '粉色圆框眼镜' }),
+  'acc-sunglasses': item('🕶️', 35, { face: 'sunglasses' }, { face: null }, WEAR_DESC.accessory, { en: 'Black sunglasses', ko: '검정 선글라스', ja: '黒いサングラス', zh: '黑色墨镜' }),
+  'acc-sunglasses-brown': item('🕶️', 35, { face: 'sunglasses-brown' }, { face: null }, WEAR_DESC.accessory, { en: 'Brown tinted sunglasses', ko: '브라운 틴트 선글라스', ja: 'ブラウンのカラーサングラス', zh: '棕色墨镜' }),
+  'acc-sunglasses-pink': item('🕶️', 35, { face: 'sunglasses-pink' }, { face: null }, WEAR_DESC.accessory, { en: 'Pink tinted sunglasses', ko: '핑크 틴트 선글라스', ja: 'ピンクのカラーサングラス', zh: '粉色墨镜' }),
+  'acc-sunglasses-blue': item('🕶️', 35, { face: 'sunglasses-blue' }, { face: null }, WEAR_DESC.accessory, { en: 'Blue tinted sunglasses', ko: '블루 틴트 선글라스', ja: 'ブルーのカラーサングラス', zh: '蓝色墨镜' }),
+  'acc-hoops-gold': item('💛', 20, { ear: 'hoops-gold' }, { ear: null }, WEAR_DESC.accessory, { en: 'Gold hoop earrings', ko: '골드 링 귀걸이', ja: 'ゴールドのフープピアス', zh: '金色圈形耳环' }),
+  'acc-hoops-silver': item('🩶', 20, { ear: 'hoops-silver' }, { ear: null }, WEAR_DESC.accessory, { en: 'Silver hoop earrings', ko: '실버 링 귀걸이', ja: 'シルバーのフープピアス', zh: '银色圈形耳环' }),
+  'acc-pearls': item('🤍', 25, { ear: 'pearls' }, { ear: null }, WEAR_DESC.accessory, { en: 'Pearl studs', ko: '진주 귀걸이', ja: 'パールのピアス', zh: '珍珠耳钉' }),
+  'acc-stars': item('⭐', 15, { ear: 'stars' }, { ear: null }, WEAR_DESC.accessory, { en: 'Star drop earrings', ko: '별 귀걸이', ja: '星のピアス', zh: '星星耳坠' }),
+  'acc-hearts': item('💗', 15, { ear: 'hearts' }, { ear: null }, WEAR_DESC.accessory, { en: 'Heart drop earrings', ko: '하트 귀걸이', ja: 'ハートのピアス', zh: '爱心耳坠' }),
+  'acc-cherries': item('🍒', 15, { ear: 'cherries' }, { ear: null }, WEAR_DESC.accessory, { en: 'Cherry earrings', ko: '체리 귀걸이', ja: 'さくらんぼのピアス', zh: '樱桃耳坠' }),
+  'acc-scarf': item('🧣', 25, { neck: 'scarf' }, { neck: null }, WEAR_DESC.accessory, { en: 'Coral knit scarf', ko: '코랄 니트 목도리', ja: 'コーラルのニットマフラー', zh: '珊瑚色针织围巾' }),
+  'acc-scarf-mint': item('🧣', 25, { neck: 'scarf-mint' }, { neck: null }, WEAR_DESC.accessory, { en: 'Mint knit scarf', ko: '민트 니트 목도리', ja: 'ミントのニットマフラー', zh: '薄荷色针织围巾' }),
+  'acc-scarf-cream': item('🧣', 25, { neck: 'scarf-cream' }, { neck: null }, WEAR_DESC.accessory, { en: 'Cream knit scarf', ko: '크림 니트 목도리', ja: 'クリームのニットマフラー', zh: '奶油色针织围巾' }),
+  'acc-tote-forest': item('👜', 25, { back: 'tote-forest' }, { back: null }, WEAR_DESC.accessory, { en: 'Forest green tote bag', ko: '숲 초록 에코백', ja: 'フォレストグリーンのトート', zh: '森林绿帆布包' }),
+  'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
+  'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),
+  'acc-backpack-graffiti': item('🎒', 45, { back: 'backpack-graffiti' }, { back: null }, WEAR_DESC.accessory, { en: 'Graffiti backpack', ko: '그래피티 백팩', ja: 'グラフィティのリュック', zh: '涂鸦双肩包' }),
+};

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
 import { SIGN_SHAPES, signShape, signGeometry, signTexture } from './sign-shapes.js';
+import { storeIcon } from './store-icons.js';
 
 const SIGN_W = 6.4;
 
@@ -68,7 +69,6 @@ function pointInPoly(x, z, p) {
 
 // Floating label above a shop: an icon and the name, always facing the
 // camera so the shop is easy to spot from any angle or distance.
-const ICONS = { club: '🎧', bar: '🍸', cafe: '☕', fashion: '👕', beauty: '💄', lifestyle: '🕯️', popup: '✨', workshop: '🧢', home: '🏠', restaurant: '🍢', library: '📚', school: '🏫', play: '🎮', info: 'ℹ️' };
 function badgeTexture(icon, text, bg) {
   const c = document.createElement('canvas');
   c.width = 512; c.height = 128;
@@ -184,7 +184,7 @@ export class Storefronts {
         group.position, group.quaternion, group.scale,
       ));
       // Floating badge above the entrance (sprites always face the camera).
-      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(store.icon || ICONS[store.category] || '🛍️', store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(storeIcon(store), store.name.ko, store.colors.sign), depthWrite: false, depthTest: false, transparent: true }));
       badge.scale.set(6, 1.5, 1);
       badge.position.set(0, home ? 5.2 : Math.max(6.4, signTop + 1), 2.0);
       badge.renderOrder = 3;
@@ -203,7 +203,7 @@ export class Storefronts {
       it.signMat.map = on || !local ? signTexture(text, it.store.colors.sign, '#ffffff', '', it.shape) : signTexture(local, it.store.colors.sign, '#ffffff', it.store.name.ko, it.shape);
       it.signMat.needsUpdate = true;
       it.badge.material.map.dispose();
-      it.badge.material.map = badgeTexture(it.store.icon || ICONS[it.store.category] || '🛍️', text, it.store.colors.sign);
+      it.badge.material.map = badgeTexture(storeIcon(it.store), text, it.store.colors.sign);
     }
   }
 

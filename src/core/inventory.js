@@ -2,6 +2,8 @@
 // Later items will come from the shop or an account service; for testing,
 // the developer master code (typed in chat) adds every item.
 
+import { WEARABLES } from '../data/wearables.js';
+
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
   ko: '"산책"을 누르면 함께 다녀요. 가끔 똥을 싸니 바로 치워 주세요. 안 치우면 과태료가 나와요.',
@@ -22,11 +24,14 @@ const OUTFIT_DESC = {
   es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
 // outfit: the character model it puts on; price: coins at the clothes shop.
+// wear / off: the look it puts on and what taking it off changes back.
 function outfits(defs) {
   const out = {};
-  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price };
+  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price, wear: { model: id.slice(7) }, off: { model: 'basic' } };
   return out;
 }
+// Is this item on (every part of its wear matches the look)?
+export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => v == null || look?.[k] === v);
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
   ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
@@ -104,6 +109,8 @@ export const ITEMS = {
     'outfit-knight': [120, '🤍', { en: 'Puffer jacket', ko: '숏패딩', ja: 'ショートダウン', zh: '短款羽绒服', es: 'Chaqueta acolchada', ar: 'سترة منفوخة', vi: 'Áo phao ngắn', hi: 'पफ़र जैकेट', id: 'Jaket puffer' }],
     'outfit-mage': [150, '🖤', { en: 'Long padded coat', ko: '롱패딩', ja: 'ロングダウンコート', zh: '长款羽绒服', es: 'Abrigo acolchado largo', ar: 'معطف منفوخ طويل', vi: 'Áo phao dài', hi: 'लंबा पैडेड कोट', id: 'Mantel puffer panjang' }],
   }),
+  // The other clothes shops: clothes, trousers, shoes and accessories.
+  ...WEARABLES,
   // Claw machine prizes (core/claw-game.js).
   ...plushies({
     'plush-simurugi': ['😑', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],

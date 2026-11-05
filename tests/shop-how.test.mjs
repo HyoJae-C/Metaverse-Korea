@@ -8,10 +8,14 @@ test('no won prices: restaurants order at the table, cafés at the counter, fash
   assert.equal(howToGet({ category: 'restaurant' }), 'table');
   for (const c of ['cafe', 'bar', 'club']) assert.equal(howToGet({ category: c }), 'counter');
   assert.equal(howToGet({ category: 'lifestyle', takeaway: true }), 'counter');
-  for (const st of [{ category: 'fashion' }, { category: 'popup' }, { category: 'workshop', workshop: 'hat' }]) {
+  for (const st of [{ category: 'fashion' }, { category: 'popup' }, { category: 'fashion', products: [{ id: 'tee', model: 'tee' }] }]) {
     assert.equal(howToGet(st), 'soon');
     assert.ok(comingSoon(st));
   }
+  // Shops selling things to wear (clothes, shoes, accessories) are open,
+  // and so is the hat workshop.
+  assert.ok(!comingSoon({ category: 'fashion', products: [{ id: 'g', item: 'acc-glasses' }] }));
+  assert.ok(!comingSoon({ category: 'workshop', workshop: 'hat' }));
   for (const c of ['lifestyle', 'beauty', 'market', 'petshop']) assert.equal(howToGet({ category: c }), 'buy');
   assert.equal(coinsFor(26000), 26);
   assert.equal(coinsFor(6500), 7);

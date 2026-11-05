@@ -31,4 +31,10 @@ test('every Seongsu shop stands on open ground in front of a building, each at i
     assert.ok(!spots.has(key), `${s.id} shares a spot`);
     spots.add(key);
   }
+  // Two shops along the same side of a street need a whole shop front
+  // (about 6.4 m with the sign) between them, or their signs overlap.
+  for (const a of here) for (const b of here) {
+    if (a === b || Math.abs(a.at[1] - b.at[1]) > 0.5) continue;
+    assert.ok(Math.abs(a.at[0] - b.at[0]) >= 7, `${a.id} and ${b.id} overlap`);
+  }
 });

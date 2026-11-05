@@ -2,7 +2,9 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { club: '🎧', bar: '🍸', cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', school: '🏫', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮', info: 'ℹ️' };
+import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+
+export { CATEGORY_ICON };
 
 // Does a store match the search text? Looks at its names in every language,
 // tagline, category and product names, ignoring case and spaces.
@@ -199,7 +201,7 @@ export class MapView {
       g.strokeStyle = s.store.colors.sign;
       g.lineWidth = 3 * dpr;
       g.stroke();
-      g.fillText(s.store.icon || CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
+      g.fillText(storeIcon(s.store), sx, sy + 1);
       if (this.view.scale > 0.9 * dpr) {
         g.fillStyle = '#4a3f35';
         g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
@@ -498,7 +500,7 @@ export class MapView {
     }
     const byDist = [...shops].sort((a, b) => Math.hypot(a.door.x - me.x, a.door.z - me.z) - Math.hypot(b.door.x - me.x, b.door.z - me.z));
     for (const s of byDist) {
-      row(CATEGORY_ICON[s.store.category] || '🛍️', '#fffaf0', localName(s.store.name, lang),
+      row(storeIcon(s.store), '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
           this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
         });

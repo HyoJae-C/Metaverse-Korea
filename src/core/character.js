@@ -8,7 +8,7 @@ import { makeRide, makeSkate1, SKATE_LIFT } from './rides.js';
 import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
 
-import { PALETTES, PATCHES, sanitizeLook, accessory } from '../data/appearance.js';
+import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/appearance.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
 
 const geoCache = {};
@@ -389,6 +389,27 @@ function printMat(id) {
   return (printMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
+// Where earrings hang on the chibi head (head-local, the face looks down +z).
+const EAR_X = 0.315, EAR_Y = -0.1, EAR_Z = 0.0;
+// Glasses sit this far in front of the head's centre.
+const GLASS_Z = 0.27;
+// A small flat charm (star, heart) or a round cherry, about 5 cm across.
+function charmGeometry(kind) {
+  if (kind === 'cherry') return new THREE.SphereGeometry(0.028, 10, 8);
+  const sh = new THREE.Shape();
+  if (kind === 'star') {
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 0.012 : 0.03, a = Math.PI / 2 + (i * Math.PI) / 5;
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else { // heart
+    sh.moveTo(0, -0.028);
+    sh.bezierCurveTo(-0.04, 0, -0.022, 0.03, 0, 0.012);
+    sh.bezierCurveTo(0.022, 0.03, 0.04, 0, 0, -0.028);
+  }
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: false }).translate(0, 0, -0.005);
+}
+
 function addAccessories(look, head, torso, body) {
   // T-shirt print on the chest.
   if (TEE_PRINTS[look.tee]) {
@@ -398,23 +419,27 @@ function addAccessories(look, head, torso, body) {
   }
   const head1 = accessory('head', look.head);
   if (head1) {
-    const m = mat(look.hatColor ? PALETTES.hat[look.hatColor] : head1.color);
+    // Hat workshop hats (no shape: the plain ids) take the chosen colour and
+    // patch; a shop hat keeps its own colour.
+    const made = !head1.shape;
+    const m = mat(made && look.hatColor ? PALETTES.hat[look.hatColor] : head1.color);
+    const hat = shapeOf(head1);
     // Embroidered patch from the hat workshop, placed on the hat's front.
     const PATCH_AT = { bucket: [0, 0.3, 0.255, -0.25], cap: [0, 0.24, 0.29, -0.45], beanie: [0, 0.16, 0.325, -0.25], beret: [0.0, 0.25, 0.29, -0.6] };
-    if (look.hatPatch && PATCH_AT[head1.id]) {
-      const [px, py, pz, rx] = PATCH_AT[head1.id];
+    if (made && look.hatPatch && PATCH_AT[hat]) {
+      const [px, py, pz, rx] = PATCH_AT[hat];
       const badge = new THREE.Mesh(geo('patch', () => new THREE.CircleGeometry(0.065, 18)), patchMat(look.hatPatch));
       badge.position.set(px, py, pz);
       badge.rotation.x = rx;
       head.add(badge);
     }
-    if (head1.id === 'bucket') {
+    if (hat === 'bucket') {
       const crown = new THREE.Mesh(geo('bucketCrown', () => new THREE.CylinderGeometry(0.22, 0.28, 0.16, 18)), m);
       crown.position.set(0, 0.3, -0.02);
       const brim = new THREE.Mesh(geo('bucketBrim', () => new THREE.CylinderGeometry(0.4, 0.4, 0.03, 22)), m);
       brim.position.set(0, 0.23, -0.02);
       head.add(crown, brim);
-    } else if (head1.id === 'cap') {
+    } else if (hat === 'cap') {
       const crown = new THREE.Mesh(
         geo('capCrown', () => new THREE.SphereGeometry(0.33, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42)), m);
       crown.position.set(0, 0.05, -0.01);
@@ -422,7 +447,7 @@ function addAccessories(look, head, torso, body) {
       bill.position.set(0, 0.17, 0.3);
       bill.rotation.x = 0.12;
       head.add(crown, bill);
-    } else if (head1.id === 'ribbon') {
+    } else if (hat === 'ribbon') {
       const lobe = geo('ribbonLobe', () => new THREE.SphereGeometry(0.075, 10, 8));
       for (const sgn of [-1, 1]) {
         const l = new THREE.Mesh(lobe, m);
@@ -433,7 +458,7 @@ function addAccessories(look, head, torso, body) {
       const knot = new THREE.Mesh(geo('ribbonKnot', () => new THREE.SphereGeometry(0.04, 8, 6)), m);
       knot.position.set(0.17, 0.25, 0.09);
       head.add(knot);
-    } else if (head1.id === 'beret') {
+    } else if (hat === 'beret') {
       const top = new THREE.Mesh(geo('beret', () => new THREE.SphereGeometry(0.36, 18, 10)), m);
       top.scale.set(1, 0.32, 1);
       top.position.set(0.04, 0.26, -0.02);
@@ -441,7 +466,7 @@ function addAccessories(look, head, torso, body) {
       const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
       stalk.position.set(0.02, 0.38, -0.02);
       head.add(top, stalk);
-    } else if (head1.id === 'towel') {
+    } else if (hat === 'towel') {
       // 양머리: a towel band round the head with a rolled "sheep ear" each side.
       const cap = new THREE.Mesh(
         geo('towelCap', () => new THREE.SphereGeometry(0.35, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42)), m);
@@ -457,7 +482,7 @@ function addAccessories(look, head, torso, body) {
         swirl.position.set(sgn * 0.385, 0.24, -0.02);
         head.add(swirl);
       }
-    } else if (head1.id === 'beanie') {
+    } else if (hat === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);
       cap.position.set(0, 0.04, -0.01);
@@ -470,20 +495,49 @@ function addAccessories(look, head, torso, body) {
   const face = accessory('face', look.face);
   if (face) {
     const frame = mat(face.color);
-    const lens = face.id === 'sunglasses' ? frame
-      : new THREE.MeshLambertMaterial({ color: 0xdff1f8, transparent: true, opacity: 0.35 });
+    const sun = shapeOf(face) === 'sunglasses';
+    const lens = sun && face.lens != null
+      ? new THREE.MeshLambertMaterial({ color: face.lens, transparent: true, opacity: face.tint ?? 0.85 })
+      : sun ? frame
+        : new THREE.MeshLambertMaterial({ color: 0xdff1f8, transparent: true, opacity: 0.35 });
     const ring = geo('lensRing', () => new THREE.TorusGeometry(0.075, 0.012, 6, 16));
     const disc = geo('lensDisc', () => new THREE.CircleGeometry(0.072, 16));
     for (const sgn of [-1, 1]) {
       const r = new THREE.Mesh(ring, frame);
-      r.position.set(0.11 * sgn, -0.02, 0.305);
+      r.position.set(0.11 * sgn, -0.02, GLASS_Z + 0.002);
       const d = new THREE.Mesh(disc, lens);
-      d.position.set(0.11 * sgn, -0.02, 0.303);
+      d.position.set(0.11 * sgn, -0.02, GLASS_Z);
       head.add(r, d);
     }
     const bridge = new THREE.Mesh(geo('bridge', () => new THREE.BoxGeometry(0.07, 0.014, 0.014)), frame);
-    bridge.position.set(0, -0.01, 0.31);
+    bridge.position.set(0, -0.01, GLASS_Z + 0.007);
     head.add(bridge);
+  }
+
+  // Earrings: one on each ear, hanging just below the lobe.
+  const ear = accessory('ear', look.ear);
+  if (ear) {
+    const m = mat(ear.color);
+    const kind = shapeOf(ear);
+    for (const sgn of [-1, 1]) {
+      const g = new THREE.Group();
+      g.position.set(EAR_X * sgn, EAR_Y, EAR_Z);
+      g.rotation.y = sgn * Math.PI / 2; // face outwards
+      const stud = new THREE.Mesh(geo('earStud', () => new THREE.SphereGeometry(0.022, 8, 6)), m);
+      g.add(stud);
+      if (kind === 'hoops') {
+        const hoop = new THREE.Mesh(geo('earHoop', () => new THREE.TorusGeometry(0.045, 0.009, 6, 18)), m);
+        hoop.position.y = -0.045;
+        g.add(hoop);
+      } else if (kind === 'star' || kind === 'heart' || kind === 'cherry') {
+        const drop = new THREE.Mesh(geo('earDrop', () => new THREE.CylinderGeometry(0.004, 0.004, 0.05, 4)), mat(kind === 'cherry' ? 0x3f7a3a : 0xe8b84a));
+        drop.position.y = -0.03;
+        const charm = new THREE.Mesh(geo('earCharm:' + kind, () => charmGeometry(kind)), m);
+        charm.position.y = -0.07;
+        g.add(drop, charm);
+      } else stud.scale.setScalar(1.25); // pearl studs
+      head.add(g);
+    }
   }
 
   const neck = accessory('neck', look.neck);
@@ -501,14 +555,14 @@ function addAccessories(look, head, torso, body) {
   const back = accessory('back', look.back);
   if (back) {
     const m = mat(back.color);
-    if (back.id === 'backpack') {
+    if (shapeOf(back) === 'backpack') {
       const pack = new THREE.Mesh(geo('pack', () => new THREE.CapsuleGeometry(0.14, 0.12, 4, 10)), m);
       pack.scale.set(1.1, 1, 0.7);
       pack.position.set(0, 0.45, -0.21);
       const pocket = new THREE.Mesh(geo('pocket', () => new THREE.BoxGeometry(0.16, 0.1, 0.05)), mat(0xfff8ec));
       pocket.position.set(0, 0.38, -0.3);
       body.add(pack, pocket);
-    } else if (back.id === 'tote') {
+    } else if (shapeOf(back) === 'tote') {
       const bag = new THREE.Mesh(geo('tote', () => new THREE.BoxGeometry(0.22, 0.24, 0.07)), m);
       bag.position.set(0.27, 0.3, -0.02);
       const strap = new THREE.Mesh(geo('strap', () => new THREE.TorusGeometry(0.2, 0.012, 4, 20, Math.PI)), m);
