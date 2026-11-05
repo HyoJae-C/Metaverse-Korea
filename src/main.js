@@ -3428,14 +3428,122 @@ $('action-btn').addEventListener('pointerdown', (e) => {
 $('action-btn').onclick = () => { if (performance.now() - actionTouchAt > 700) runAction(); };
 // On a keyboard the action button shows its key, and Space works like E:
 // walk up to a shop and press either to go in.
-function setActionLabel(label) {
+function setActionLabel(label, choices = 0) {
   const btn = $('action-btn');
   btn.textContent = label;
+  btn.classList.toggle('has-more', choices > 1);
+  btn.setAttribute('aria-haspopup', choices > 1 ? 'menu' : 'false');
+  if (choices > 1) {
+    const more = document.createElement('b');
+    more.className = 'action-more';
+    more.textContent = `+${choices - 1} ▾`;
+    btn.append(more);
+  }
   if (input.isTouch) return;
   const k = document.createElement('kbd');
   k.textContent = 'E';
   btn.append(k);
 }
+
+// The chooser: when several actions are in reach at once, a tap on the
+// action button (or E) lists them all above it. Tap one, or press its number.
+const CHOOSER_TEXT = { en: 'What would you like to do?', ko: '무엇을 할까요?', ja: '何をしますか？', zh: '要做什么？' };
+const chooser = { open: false, sig: '', pick: 0 };
+function closeChooser() {
+  if (!chooser.open) return;
+  chooser.open = false;
+  chooser.sig = '';
+  $('action-menu').hidden = true;
+  $('action-btn').setAttribute('aria-expanded', 'false');
+}
+function toggleChooser() {
+  if (chooser.open) { closeChooser(); return; }
+  if (!action?.opts) return;
+  chooser.open = true;
+  chooser.pick = 0;
+  $('action-btn').setAttribute('aria-expanded', 'true');
+  syncChooser();
+}
+function runChoice(i) {
+  const o = action?.opts?.[i];
+  closeChooser();
+  if (!o) return;
+  o.run();
+  action = STALE; // refresh the button after whatever that did
+}
+// Keep the open list in step with what is in reach: rebuild it when the
+// choices change, and close it when only one (or none) is left.
+function syncChooser() {
+  if (!chooser.open) return;
+  const opts = action?.opts;
+  if (!opts) { closeChooser(); return; }
+  const sig = action.key + '\0' + getLanguage();
+  if (sig === chooser.sig) return;
+  // Keep the same choice highlighted when the list shifts under it.
+  const was = chooser.keys?.[chooser.pick];
+  chooser.sig = sig;
+  chooser.keys = opts.map((o) => o.key);
+  chooser.pick = Math.max(0, chooser.keys.indexOf(was));
+  const menu = $('action-menu');
+  menu.innerHTML = '';
+  const head = document.createElement('p');
+  head.className = 'action-menu-head';
+  head.textContent = L(CHOOSER_TEXT);
+  menu.append(head);
+  opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'menuitem');
+    b.className = 'action-choice' + (i === chooser.pick ? ' on' : '');
+    if (!input.isTouch) {
+      const k = document.createElement('kbd');
+      k.textContent = String(i + 1);
+      b.append(k);
+    }
+    const span = document.createElement('span');
+    span.textContent = o.label;
+    b.append(span);
+    // Same as the action button: act on the touch itself, so a second
+    // finger works while the first one is still on the joystick.
+    let touchAt = -1e9;
+    b.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') return;
+      e.preventDefault();
+      touchAt = performance.now();
+      runChoice(i);
+    });
+    b.onclick = () => { if (performance.now() - touchAt > 700) runChoice(i); };
+    menu.append(b);
+  });
+  menu.hidden = false;
+}
+function highlightChoice(i) {
+  const items = $('action-menu').querySelectorAll('.action-choice');
+  if (!items.length) return;
+  chooser.pick = (i + items.length) % items.length;
+  items.forEach((b, j) => b.classList.toggle('on', j === chooser.pick));
+}
+// A tap anywhere else closes the list (the joystick and the camera keep working).
+document.addEventListener('pointerdown', (e) => {
+  if (chooser.open && !e.target.closest?.('#action-menu, #action-btn')) closeChooser();
+}, true);
+// While the list is open, keys pick from it: numbers, arrows, and E / Enter /
+// Space for the highlighted one, Esc to close. Caught first so the number
+// keys don't also play an emote.
+addEventListener('keydown', (e) => {
+  if (!chooser.open) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
+  const n = /^Digit([1-9])$/.exec(e.code)?.[1] || /^Numpad([1-9])$/.exec(e.code)?.[1];
+  let used = true;
+  if (n && action?.opts?.[n - 1]) runChoice(n - 1);
+  else if (e.code === 'ArrowUp') highlightChoice(chooser.pick - 1);
+  else if (e.code === 'ArrowDown') highlightChoice(chooser.pick + 1);
+  else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') { if (!e.repeat) runChoice(chooser.pick); }
+  else if (e.code === 'Escape') closeChooser();
+  else used = false;
+  if (used) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
 const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi].some((g) => g?.open)
@@ -5043,13 +5151,72 @@ function hi5Action(o) {
   const asked = hi5.waiting(o.id);
   return { key: 'hi5:' + o.id + asked, label: '🙌 ' + t(asked ? 'hi5.accept' : 'hi5.ask', { name: o.name }), run: () => pressHi5(o) };
 }
-function updateAction(p, tSec) {
-  let next = null;
+// Street actions that can be next to each other (a shop door with people at
+// it, the guide among a crowd): built in one place so the chooser can list
+// them all, not only the one the button shows first.
+const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) });
+const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
+const boardAct = (b) => (b.board === 'news'
+  ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
+  : { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) });
+const stampAct = (it) => (stampBook.has(it.stamp.id)
+  ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
+  : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) });
+const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } });
+const buskerAct = (s) => ({ key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) });
+// The square guide: the first high five, today's errand, or a chat.
+function guideAct(p) {
+  if (!squareNpc) return null;
+  const d = Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z);
+  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
+  if (d >= 2.6) return null;
+  const q = quests.active;
+  if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // today's first errand: high five the guide
+    return { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
+      me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
+      missionEvent('highfive');
+      setTimeout(() => talkToGuide(), 700); // report straight away
+    } };
+  }
+  const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
+  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+}
+const MAX_CHOICES = 6;
+// Everything else close enough to do right now, besides what the button shows
+// first: every player for a high five, the shop door, the guide, products on
+// the shelf, a pet, a seat. Left out while riding, sitting or busy.
+function moreActions(p, door) {
+  const out = [];
+  const hi5s = () => { for (const o of others.nearbyFree(p.x, p.z, 2)) out.push(hi5Action(o)); };
   if (mode === 'street') {
-    const it = storefronts.nearby(p.x, p.z, tSec);
+    if (riding || busking.performing) return out;
+    if (door) out.push(storeAct(door));
+    hi5s();
+    const g = guideAct(p); if (g) out.push(g);
+    const b = boardAt(p); if (b) out.push(boardAct(b));
+    const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
+    const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
+    const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    return out;
+  }
+  if (!interior || seated || surgery || ride || decor?.editing) return out;
+  hi5s();
+  for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) out.push(petAct(pet, p));
+  const seat = nearestSeat(p);
+  if (seat) out.push({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
+  const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
+  for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
+  return out;
+}
+const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
+const lookAct = (pr) => ({ key: 'look:' + pr.product.id, label: '👀 ' + t('shop.look', { name: localName(pr.product.name, getLanguage()) }), run: () => shop.openProduct(pr.product) });
+function updateAction(p, tSec) {
+  let next = null, door = null;
+  if (mode === 'street') {
+    const it = door = storefronts.nearby(p.x, p.z, tSec);
     const poop = !riding && nearestPoop(p);
     if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
-    else if (it) next = { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) };
+    else if (it) next = storeAct(it);
     else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
       const seat = freeSeat();
@@ -5061,44 +5228,22 @@ function updateAction(p, tSec) {
     }
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
-    else if (!riding && noticeBoards.find((b) => Math.hypot(p.x - b.x, p.z - b.z) < 1.8)) {
-      const b = noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
-      next = b.board === 'news'
-        ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
-        : { key: 'board:' + b.board, label: (b.board === 'ask' ? '📮 ' : '📋 ') + L(BOARD_TEXT[b.board]), run: () => boardUi.show(b.board) };
-    } else if (!riding && stampStands.nearest(p.x, p.z)) {
-      const it = stampStands.nearest(p.x, p.z);
-      next = stampBook.has(it.stamp.id)
-        ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
-        : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) };
-    } else if (onboard === 0 && squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 3.2) {
-      next = { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
-    } else if (squareNpc && Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z) < 2.6) {
-      const q = quests.active;
-      if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // today's first errand: high five the guide
-        next = { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
-          me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
-          missionEvent('highfive');
-          setTimeout(() => talkToGuide(), 700); // report straight away
-        } };
-      } else {
-      const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
-      next = { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
-      }
-    } else if (busking.performing) {
+    else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
+    else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
+    else if (guideAct(p)) next = guideAct(p);
+    else if (busking.performing) {
       next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
     } else if (!riding && busking.stageAt(p.x, p.z)) {
       const s = busking.stageAt(p.x, p.z);
       next = { key: 'busk', label: '🎤 ' + L(BUSK_TEXT.start), run: () => startBusking(s) };
     } else if (busking.nearBusker(p.x, p.z)) {
-      const s = busking.nearBusker(p.x, p.z);
-      next = { key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) };
+      next = buskerAct(busking.nearBusker(p.x, p.z));
     } else if (palaceShow?.nearGuard(p.x, p.z)) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
       const n = npcs.nearest(p.x, p.z);
-      if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
+      if (n) next = npcAct(n, p);
     }
   } else {
     const ex = interior.exit;
@@ -5231,8 +5376,7 @@ function updateAction(p, tSec) {
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[interior?.store.category === 'library' ? 'library' : interior?.store.category === 'school' ? 'school' : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
-      const pet = interior.pets.nearest(p.x, p.z);
-      next = { key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } };
+      next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
       next = hi5Action(hi5Target(p));
     } else if (seat) {
@@ -5243,15 +5387,25 @@ function updateAction(p, tSec) {
         const d = Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z);
         if (d < bestD) { bestD = d; best = pr; }
       }
-      if (best) next = { key: 'look:' + best.product.id, label: '👀 ' + t('shop.look', { name: localName(best.product.name, getLanguage()) }), run: () => shop.openProduct(best.product) };
+      if (best) next = lookAct(best);
       else shop.closeProduct();
     }
+  }
+  // More than one thing in reach (a crowd to high five, the clerk and a
+  // product, a shop door with people at it): the button shows the first and
+  // a "+N", and a tap opens a list to pick from.
+  if (next || mode === 'street' || interior) {
+    const seen = new Set(), opts = [];
+    for (const o of [next, ...moreActions(p, door)]) if (o && !seen.has(o.key) && opts.length < MAX_CHOICES) { seen.add(o.key); opts.push(o); }
+    if (opts.length > 1) next = { key: 'pick:' + opts.map((o) => o.key).join('|'), label: opts[0].label, opts, run: () => toggleChooser() };
+    else next = opts[0] || null;
   }
   if (next?.key !== action?.key) {
     action = next;
     $('action-btn').hidden = !action;
-    if (action) setActionLabel(action.label);
+    if (action) setActionLabel(action.label, action.opts?.length);
     else shop.closeProduct();
+    syncChooser();
   }
 }
 onLanguageChange(() => { action = STALE; });
@@ -5699,6 +5853,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     bookShelf: () => bookUi.showShelf(),
     readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
+    choices: () => action?.opts?.map((o) => o.label) || null,
+    clerkAt: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
+    productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
