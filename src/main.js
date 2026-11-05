@@ -112,6 +112,7 @@ import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
+import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
@@ -1503,11 +1504,23 @@ function adoptPet(id) {
   setPet(id);
   shop.closeProduct();
   clerk && say(clerk, $('labels'), ['잘 키워 주세요!', 'jal kiwo juseyo!', t('pet.takeCare')]);
-  shop.toast(t('pet.adopted', { name: petName(it.pet) }));
+  shop.toast(t('pet.adopted', { name: petName(id) }) + ' ' + L(PET_NAME_TEXT.hint));
 }
 // Korean subject particle after a name: 이 after a final consonant, else 가.
 const subjectParticle = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '이' : '가'; };
-const petName = (def) => (getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`);
+// The name you gave your pet (bag → ✏️), else the shop's name.
+const petName = (id) => {
+  const own = customPetName(id), def = ITEMS[id]?.pet;
+  if (own) return own;
+  return getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`;
+};
+const PET_NAME_TEXT = {
+  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
+  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
+  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
+  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
+  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
+};
 function nearestPoop(p) {
   let best = null, bd = 1.6;
   for (const po of poops.values()) {
@@ -1547,7 +1560,7 @@ function updatePet(dt, p) {
     const { id } = poopTimers.add();
     poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
     sfx.pop?.();
-    shop.toast(t('pet.pooped', { name: petName(pet.def), ga: subjectParticle(pet.def.name), s: CLEAN_SECONDS }));
+    shop.toast(t('pet.pooped', { name: petName(pet.id), ga: subjectParticle(customPetName(pet.id) || pet.def.name), s: CLEAN_SECONDS }));
   }
 }
 let fineShown = null; // { count, taken } while the notice is open (two fines at once add up)
@@ -4532,7 +4545,9 @@ function refreshItems() {
     row.className = 'item-row';
     const it = ITEMS[id];
     const b = document.createElement('strong');
-    b.textContent = `${it.emoji} ${localName(it.name, getLanguage())}`;
+    const own = it.pet && customPetName(id);
+    // "Shiba · Kongtteok" → "Shiba · <your name>"
+    b.textContent = `${it.emoji} ${own ? localName(it.name, getLanguage()).split(' · ')[0] + ' · ' + own : localName(it.name, getLanguage())}`;
     const d = document.createElement('small');
     d.textContent = localName(it.desc, getLanguage());
     row.append(b, d);
@@ -4542,7 +4557,35 @@ function refreshItems() {
       w.className = 'chip item-walk' + (walking ? ' on' : '');
       w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
       w.onclick = () => setPet(walking ? null : id);
-      row.append(w);
+      const nb = document.createElement('button');
+      nb.className = 'chip item-walk';
+      nb.textContent = '✏️ ' + L(PET_NAME_TEXT.rename);
+      nb.onclick = () => {
+        const form = document.createElement('form');
+        form.className = 'pet-name-form';
+        const inp = document.createElement('input');
+        inp.maxLength = PET_NAME_MAX;
+        inp.placeholder = L(PET_NAME_TEXT.placeholder);
+        inp.value = customPetName(id) || it.pet.name;
+        inp.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
+        const ok = document.createElement('button');
+        ok.className = 'chip';
+        ok.textContent = L(PET_NAME_TEXT.save);
+        form.append(inp, ok);
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const n = setPetName(id, inp.value);
+          shop.toast(fmt(L(PET_NAME_TEXT.named), { name: n || it.pet.name }));
+          refreshItems();
+        };
+        nb.replaceWith(form);
+        inp.focus();
+        inp.select();
+      };
+      const btns = document.createElement('div');
+      btns.className = 'item-btns';
+      btns.append(w, nb);
+      row.append(btns);
     }
     if (it.wear) { // put it on, or take it off (trousers can only be swapped)
       const on = isWorn(it, myLook);
