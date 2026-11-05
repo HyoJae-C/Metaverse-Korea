@@ -21,6 +21,13 @@ export const WEAR_DESC = {
     zh: '买来的鞋。点“穿上”换上，点“脱下”换回白色运动鞋。',
     es: 'Zapatos que compraste. Toca Poner para calzarlos y Quitar para volver a las zapatillas blancas.', ar: 'حذاء اشتريته. اضغط ارتدِ لتلبسه، واخلع لتعود إلى الحذاء الرياضي الأبيض.', vi: 'Giày bạn đã mua. Chạm Mặc để đi, Cởi ra để trở lại giày thể thao trắng.', hi: 'आपके ख़रीदे जूते। पहनने के लिए पहनें, सफ़ेद स्नीकर्स पर लौटने के लिए उतारें।', id: 'Sepatu yang kamu beli. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke sneakers putih.',
   },
+  skirt: {
+    en: 'A skirt you bought. Tap Wear to put it on, Take off to go back to your trousers.',
+    ko: '산 치마예요. "입기"로 입고, "벗기"로 바지로 돌아가요.',
+    ja: '買ったスカート。「着る」ではき、「脱ぐ」でズボンに戻ります。',
+    zh: '买来的裙子。点“穿上”换上，点“脱下”换回裤子。',
+    es: 'Una falda que compraste. Toca Poner para ponértela y Quitar para volver a tus pantalones.', ar: 'تنورة اشتريتها. اضغط ارتدِ لتلبسها، واخلع لتعود إلى بنطالك.', vi: 'Chân váy bạn đã mua. Chạm Mặc để mặc vào, Cởi ra để trở lại quần.', hi: 'आपकी ख़रीदी स्कर्ट। पहनने के लिए पहनें, पतलून पर लौटने के लिए उतारें टैप करें।', id: 'Rok yang kamu beli. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke celanamu.',
+  },
   accessory: {
     en: 'An accessory you bought. Tap Wear to put it on, Take off to remove it.',
     ko: '산 액세서리예요. "입기"로 착용하고, "벗기"로 벗어요.',

@@ -8,6 +8,7 @@ import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+import { skirtDisplay } from './skirt-mesh.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -54,7 +55,7 @@ function floorTexture(base, room) {
 }
 
 // Small low-poly product models.
-export function productModel(kind, color) {
+export function productModel(kind, color, product = null) {
   const g = new THREE.Group();
   const m = mat(color);
   const add = (geo, x = 0, y = 0, z = 0, mm = m) => {
@@ -203,6 +204,13 @@ export function productModel(kind, color) {
     case 'beret':
       add(new THREE.SphereGeometry(0.17, 14, 8).scale(1, 0.32, 1), 0, 0.06);
       break;
+    case 'skirt': { // the skirt itself, in its pattern (core/skirt-mesh.js)
+      const sk = skirtDisplay(product?.skirt);
+      if (sk) g.add(sk);
+      else add(new THREE.CylinderGeometry(0.16, 0.26, 0.4, 16, 1, true), 0, 0.4);
+      add(new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), 0, 0.72, 0, mat('#8a8f99'));
+      break;
+    }
     case 'ribbon':
       for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.06, 10, 8).scale(1.3, 0.9, 0.6), 0.07 * s, 0.1);
       add(new THREE.SphereGeometry(0.03, 8, 6), 0, 0.1);
@@ -213,7 +221,7 @@ export function productModel(kind, color) {
   return g;
 }
 
-const HANGING = new Set(['tee', 'jeans', 'scarf']);
+const HANGING = new Set(['tee', 'jeans', 'scarf', 'skirt']);
 
 // Shrink the font until the text fits the canvas width (long shop names).
 function fitText(g, text, size, maxW, weight = 800) {
@@ -353,7 +361,7 @@ export function buildInterior(store) {
       const spot = new THREE.Group();
       spot.position.set(x, BAR_H + 0.03, z);
       spot.rotation.y = ry;
-      const model = productModel(product.model, product.color);
+      const model = productModel(product.model, product.color, product);
       model.scale.setScalar(1.6);
       spot.add(model);
       scene.add(spot);
@@ -386,7 +394,7 @@ export function buildInterior(store) {
     }
     const petKind = product.model.startsWith('pet:') ? product.model.slice(4) : null;
     // Pet shop: one animal sitting on a cushion on the table.
-    const model = petKind ? makeAnimal(petKind, product.color, product.accent || '#fff4e6').root : productModel(product.model, product.color);
+    const model = petKind ? makeAnimal(petKind, product.color, product.accent || '#fff4e6').root : productModel(product.model, product.color, product);
     if (petKind) {
       model.rotation.y = 0;
       const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 0.06, 18), mat(store.colors.awning));
@@ -398,7 +406,7 @@ export function buildInterior(store) {
     stand.add(model);
     // A second and third copy make the display look stocked.
     if (!petKind) for (const s of [-1, 1]) {
-      const copy = productModel(product.model, product.color);
+      const copy = productModel(product.model, product.color, product);
       copy.scale.setScalar(hanging ? 1.3 : 1.4);
       copy.position.set(0.5 * s, 0.95, hanging ? -0.05 : 0.1);
       stand.add(copy);

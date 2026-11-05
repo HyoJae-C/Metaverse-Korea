@@ -9,6 +9,7 @@ import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/appearance.js';
+import { skirtById } from '../data/skirts.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
 
 const geoCache = {};
@@ -21,7 +22,7 @@ const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
   const o = {
-    shirt: PALETTES.shirt[look.shirt], pants: PALETTES.pants[look.pants],
+    shirt: PALETTES.shirt[look.shirt], pants: skirtById(look.skirt)?.color ?? PALETTES.pants[look.pants],
     hair: PALETTES.hair[look.hair], skin: PALETTES.skin[look.skin],
   };
   const root = new THREE.Group();

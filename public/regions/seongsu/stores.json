@@ -106,10 +106,10 @@
       "products": [
         { "id": "deni-outfit-jacket-indigo", "model": "tee", "color": "#34477a", "price": 70000, "item": "outfit-jacket-indigo", "name": { "en": "Indigo denim jacket", "ko": "인디고 청재킷", "ja": "インディゴデニムジャケット", "zh": "靛蓝牛仔夹克" }, "tryOn": { "model": "jacket-indigo" } },
         { "id": "deni-outfit-shirt-denim", "model": "tee", "color": "#8fb0d6", "price": 50000, "item": "outfit-shirt-denim", "name": { "en": "Denim shirt", "ko": "데님 셔츠", "ja": "デニムシャツ", "zh": "牛仔衬衫" }, "tryOn": { "model": "shirt-denim" } },
-        { "id": "deni-pants-denim", "model": "jeans", "color": "#5b6c8f", "price": 40000, "item": "pants-denim", "name": { "en": "Classic blue jeans", "ko": "기본 청바지", "ja": "ブルージーンズ", "zh": "经典蓝色牛仔裤" }, "tryOn": { "pants": "denim" } },
-        { "id": "deni-pants-indigo", "model": "jeans", "color": "#2f3f6e", "price": 40000, "item": "pants-indigo", "name": { "en": "Indigo jeans", "ko": "인디고 청바지", "ja": "インディゴジーンズ", "zh": "靛蓝牛仔裤" }, "tryOn": { "pants": "indigo" } },
-        { "id": "deni-pants-lightwash", "model": "jeans", "color": "#9db4d2", "price": 40000, "item": "pants-lightwash", "name": { "en": "Light-wash jeans", "ko": "연청바지", "ja": "ライトウォッシュジーンズ", "zh": "浅色牛仔裤" }, "tryOn": { "pants": "lightwash" } },
-        { "id": "deni-pants-black", "model": "jeans", "color": "#2b2b31", "price": 40000, "item": "pants-black", "name": { "en": "Black jeans", "ko": "흑청바지", "ja": "ブラックジーンズ", "zh": "黑色牛仔裤" }, "tryOn": { "pants": "black" } }
+        { "id": "deni-pants-denim", "model": "jeans", "color": "#5b6c8f", "price": 40000, "item": "pants-denim", "name": { "en": "Classic blue jeans", "ko": "기본 청바지", "ja": "ブルージーンズ", "zh": "经典蓝色牛仔裤" }, "tryOn": { "pants": "denim", "skirt": null } },
+        { "id": "deni-pants-indigo", "model": "jeans", "color": "#2f3f6e", "price": 40000, "item": "pants-indigo", "name": { "en": "Indigo jeans", "ko": "인디고 청바지", "ja": "インディゴジーンズ", "zh": "靛蓝牛仔裤" }, "tryOn": { "pants": "indigo", "skirt": null } },
+        { "id": "deni-pants-lightwash", "model": "jeans", "color": "#9db4d2", "price": 40000, "item": "pants-lightwash", "name": { "en": "Light-wash jeans", "ko": "연청바지", "ja": "ライトウォッシュジーンズ", "zh": "浅色牛仔裤" }, "tryOn": { "pants": "lightwash", "skirt": null } },
+        { "id": "deni-pants-black", "model": "jeans", "color": "#2b2b31", "price": 40000, "item": "pants-black", "name": { "en": "Black jeans", "ko": "흑청바지", "ja": "ブラックジーンズ", "zh": "黑色牛仔裤" }, "tryOn": { "pants": "black", "skirt": null } }
       ]
     },
     {
@@ -700,7 +700,7 @@
       "category": "play",
       "workshop": "sauna",
       "size": "large",
-      "at": [-28, 65.4],
+      "at": [-2957, -650],
       "name": { "en": "Onsaem Jjimjilbang", "ko": "온샘 찜질방", "ja": "オンセム チムジルバン", "zh": "温泉汗蒸幕" },
       "tagline": { "en": "Hot kiln, ice room, sheep towels and baked eggs", "ko": "불가마, 얼음방, 양머리 수건과 맥반석 계란", "ja": "汗蒸幕・氷の部屋・羊タオル・ゆで卵", "zh": "火窑、冰屋、羊角毛巾和烤鸡蛋" },
       "colors": { "sign": "#c8573a", "awning": "#f6c9a0", "accent": "#fff3e6" },
@@ -714,7 +714,7 @@
       "category": "play",
       "workshop": "gym",
       "size": "large",
-      "at": [-28, 94.8],
+      "at": [-2943, -650],
       "name": { "en": "Geunyuk Fitness", "ko": "근육 피트니스", "ja": "クンユク フィットネス", "zh": "肌肉健身房" },
       "tagline": { "en": "Treadmills, dumbbells, bench press, push-ups: get a tiny bit faster", "ko": "러닝머신, 아령, 벤치프레스, 푸시업으로 조금씩 빨라져요", "ja": "ランニングマシン・ダンベル・ベンチプレス・腕立てで少しずつ速く", "zh": "跑步机、哑铃、卧推、俯卧撑，一点点变快" },
       "colors": { "sign": "#1f6fb2", "awning": "#cde6ff", "accent": "#f1f6fb" },
@@ -736,7 +736,7 @@
       "category": "market",
       "size": "small",
       "at": [52.5, -53.6],
-      "name": { "en": "HARU MART", "ko": "하루마트", "ja": "ハルマート", "zh": "HARU MART" },
+      "name": { "en": "DAILY MART", "ko": "데일리마트", "ja": "デイリーマート", "zh": "DAILY MART" },
       "tagline": { "en": "Open 24 hours: rice balls, cup ramen, milk, and umbrellas for rainy days", "ko": "24시간 편의점: 삼각김밥, 컵라면, 우유, 그리고 비 오는 날 우산", "ja": "24時間営業：おにぎり、カップ麺、牛乳、雨の日の傘", "zh": "24小时便利店：三角饭团、杯面、牛奶，还有雨天用的伞" },
       "colors": { "sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7" },
       "products": [
@@ -1103,11 +1103,11 @@
       "tagline": { "en": "Comfy wide trousers in every colour", "ko": "편한 와이드 팬츠 모든 색" },
       "colors": { "sign": "#2f3e5c", "awning": "#dfe8f1", "accent": "#f3f6fa" },
       "products": [
-        { "id": "wide-pants-sand", "model": "jeans", "color": "#c9b08f", "price": 40000, "item": "pants-sand", "name": { "en": "Beige wide pants", "ko": "베이지 와이드 팬츠", "ja": "ベージュのワイドパンツ", "zh": "米色阔腿裤" }, "tryOn": { "pants": "sand" } },
-        { "id": "wide-pants-cream", "model": "jeans", "color": "#eee6d6", "price": 40000, "item": "pants-cream", "name": { "en": "Cream wide pants", "ko": "크림 와이드 팬츠", "ja": "クリームのワイドパンツ", "zh": "奶油色阔腿裤" }, "tryOn": { "pants": "cream" } },
-        { "id": "wide-pants-charcoal", "model": "jeans", "color": "#55505e", "price": 40000, "item": "pants-charcoal", "name": { "en": "Charcoal slacks", "ko": "차콜 슬랙스", "ja": "チャコールのスラックス", "zh": "炭灰色西裤" }, "tryOn": { "pants": "charcoal" } },
-        { "id": "wide-pants-olive", "model": "jeans", "color": "#4f7a5a", "price": 40000, "item": "pants-olive", "name": { "en": "Olive cargo pants", "ko": "올리브 카고 팬츠", "ja": "オリーブのカーゴパンツ", "zh": "橄榄色工装裤" }, "tryOn": { "pants": "olive" } },
-        { "id": "wide-pants-cocoa", "model": "jeans", "color": "#7a5c4a", "price": 40000, "item": "pants-cocoa", "name": { "en": "Brown cotton pants", "ko": "브라운 면바지", "ja": "ブラウンのチノパン", "zh": "棕色棉裤" }, "tryOn": { "pants": "cocoa" } }
+        { "id": "wide-pants-sand", "model": "jeans", "color": "#c9b08f", "price": 40000, "item": "pants-sand", "name": { "en": "Beige wide pants", "ko": "베이지 와이드 팬츠", "ja": "ベージュのワイドパンツ", "zh": "米色阔腿裤" }, "tryOn": { "pants": "sand", "skirt": null } },
+        { "id": "wide-pants-cream", "model": "jeans", "color": "#eee6d6", "price": 40000, "item": "pants-cream", "name": { "en": "Cream wide pants", "ko": "크림 와이드 팬츠", "ja": "クリームのワイドパンツ", "zh": "奶油色阔腿裤" }, "tryOn": { "pants": "cream", "skirt": null } },
+        { "id": "wide-pants-charcoal", "model": "jeans", "color": "#55505e", "price": 40000, "item": "pants-charcoal", "name": { "en": "Charcoal slacks", "ko": "차콜 슬랙스", "ja": "チャコールのスラックス", "zh": "炭灰色西裤" }, "tryOn": { "pants": "charcoal", "skirt": null } },
+        { "id": "wide-pants-olive", "model": "jeans", "color": "#4f7a5a", "price": 40000, "item": "pants-olive", "name": { "en": "Olive cargo pants", "ko": "올리브 카고 팬츠", "ja": "オリーブのカーゴパンツ", "zh": "橄榄色工装裤" }, "tryOn": { "pants": "olive", "skirt": null } },
+        { "id": "wide-pants-cocoa", "model": "jeans", "color": "#7a5c4a", "price": 40000, "item": "pants-cocoa", "name": { "en": "Brown cotton pants", "ko": "브라운 면바지", "ja": "ブラウンのチノパン", "zh": "棕色棉裤" }, "tryOn": { "pants": "cocoa", "skirt": null } }
       ]
     },
     {
@@ -1751,6 +1751,131 @@
         { "id": "banj-acc-stars", "model": "earrings", "color": "#f5c842", "price": 15000, "item": "acc-stars", "name": { "en": "Star drop earrings", "ko": "별 귀걸이", "ja": "星のピアス", "zh": "星星耳坠" }, "tryOn": { "ear": "stars" } },
         { "id": "banj-acc-hearts", "model": "earrings", "color": "#ff5c8a", "price": 15000, "item": "acc-hearts", "name": { "en": "Heart drop earrings", "ko": "하트 귀걸이", "ja": "ハートのピアス", "zh": "爱心耳坠" }, "tryOn": { "ear": "hearts" } },
         { "id": "banj-acc-cherries", "model": "earrings", "color": "#d8203a", "price": 15000, "item": "acc-cherries", "name": { "en": "Cherry earrings", "ko": "체리 귀걸이", "ja": "さくらんぼのピアス", "zh": "樱桃耳坠" }, "tryOn": { "ear": "cherries" } }
+      ]
+    },
+    {
+      "id": "jureum-pleats",
+      "category": "fashion",
+      "size": "small",
+      "at": [-28, 65.4],
+      "name": { "ko": "주름 플리츠", "en": "Jureum Pleats", "ja": "チュルム・プリーツ", "zh": "褶褶百褶裙" },
+      "tagline": { "en": "Pleated skirts that swing when you walk (주름 means pleat)", "ko": "걸을 때마다 찰랑이는 플리츠 스커트", "ja": "歩くたびに揺れるプリーツスカート", "zh": "走起路来轻轻摆动的百褶裙" },
+      "colors": { "sign": "#2f3c66", "awning": "#dfe4f3", "accent": "#f4f6fb" },
+      "products": [
+        { "id": "pleats-pleats-mini-navy", "model": "skirt", "skirt": "pleats-mini-navy", "color": "#2f3c66", "price": 45000, "item": "skirt-pleats-mini-navy", "name": { "en": "Navy pleated mini skirt", "ko": "네이비 플리츠 미니스커트", "ja": "ネイビーのプリーツミニスカート", "zh": "藏青色百褶短裙" }, "tryOn": { "skirt": "pleats-mini-navy" } },
+        { "id": "pleats-pleats-mini-pink", "model": "skirt", "skirt": "pleats-mini-pink", "color": "#f4a6c0", "price": 45000, "item": "skirt-pleats-mini-pink", "name": { "en": "Pink pleated mini skirt", "ko": "핑크 플리츠 미니스커트", "ja": "ピンクのプリーツミニスカート", "zh": "粉色百褶短裙" }, "tryOn": { "skirt": "pleats-mini-pink" } },
+        { "id": "pleats-pleats-mini-white", "model": "skirt", "skirt": "pleats-mini-white", "color": "#f4f1ea", "price": 45000, "item": "skirt-pleats-mini-white", "name": { "en": "White pleated mini skirt", "ko": "화이트 플리츠 미니스커트", "ja": "ホワイトのプリーツミニスカート", "zh": "白色百褶短裙" }, "tryOn": { "skirt": "pleats-mini-white" } },
+        { "id": "pleats-pleats-long-black", "model": "skirt", "skirt": "pleats-long-black", "color": "#2b2b31", "price": 55000, "item": "skirt-pleats-long-black", "name": { "en": "Black pleated long skirt", "ko": "블랙 플리츠 롱스커트", "ja": "ブラックのプリーツロングスカート", "zh": "黑色百褶长裙" }, "tryOn": { "skirt": "pleats-long-black" } },
+        { "id": "pleats-pleats-long-sage", "model": "skirt", "skirt": "pleats-long-sage", "color": "#9db39a", "price": 55000, "item": "skirt-pleats-long-sage", "name": { "en": "Sage green pleated long skirt", "ko": "세이지 그린 플리츠 롱스커트", "ja": "セージグリーンのプリーツロングスカート", "zh": "鼠尾草绿百褶长裙" }, "tryOn": { "skirt": "pleats-long-sage" } }
+      ]
+    },
+    {
+      "id": "check-room",
+      "category": "fashion",
+      "size": "small",
+      "at": [-28, 94.8],
+      "name": { "ko": "체크룸", "en": "CHECK ROOM", "ja": "チェックルーム", "zh": "格子间" },
+      "tagline": { "en": "Tartan and gingham skirts, mini and long", "ko": "타탄 체크와 깅엄 체크 치마, 미니와 롱", "ja": "タータンとギンガムのスカート、ミニとロング", "zh": "格纹和小格子裙，短裙和长裙" },
+      "colors": { "sign": "#b0283a", "awning": "#f6d7da", "accent": "#fdf3f4" },
+      "products": [
+        { "id": "chk-tartan-mini-red", "model": "skirt", "skirt": "tartan-mini-red", "color": "#c0283a", "price": 45000, "item": "skirt-tartan-mini-red", "name": { "en": "Red tartan mini skirt", "ko": "레드 타탄 체크 미니스커트", "ja": "レッドのタータンチェックミニスカート", "zh": "红色格纹短裙" }, "tryOn": { "skirt": "tartan-mini-red" } },
+        { "id": "chk-tartan-mini-green", "model": "skirt", "skirt": "tartan-mini-green", "color": "#2f6b4a", "price": 45000, "item": "skirt-tartan-mini-green", "name": { "en": "Green tartan mini skirt", "ko": "그린 타탄 체크 미니스커트", "ja": "グリーンのタータンチェックミニスカート", "zh": "绿色格纹短裙" }, "tryOn": { "skirt": "tartan-mini-green" } },
+        { "id": "chk-gingham-mini-sky", "model": "skirt", "skirt": "gingham-mini-sky", "color": "#ffffff", "price": 45000, "item": "skirt-gingham-mini-sky", "name": { "en": "Sky blue gingham mini skirt", "ko": "하늘색 깅엄 체크 미니스커트", "ja": "水色のギンガムチェックミニスカート", "zh": "天蓝色小格子短裙" }, "tryOn": { "skirt": "gingham-mini-sky" } },
+        { "id": "chk-gingham-long-butter", "model": "skirt", "skirt": "gingham-long-butter", "color": "#ffffff", "price": 55000, "item": "skirt-gingham-long-butter", "name": { "en": "Butter yellow gingham long skirt", "ko": "버터 옐로 깅엄 체크 롱스커트", "ja": "バターイエローのギンガムチェックロングスカート", "zh": "奶油黄小格子长裙" }, "tryOn": { "skirt": "gingham-long-butter" } },
+        { "id": "chk-tartan-long-camel", "model": "skirt", "skirt": "tartan-long-camel", "color": "#c49a6c", "price": 55000, "item": "skirt-tartan-long-camel", "name": { "en": "Camel tartan long skirt", "ko": "카멜 타탄 체크 롱스커트", "ja": "キャメルのタータンチェックロングスカート", "zh": "驼色格纹长裙" }, "tryOn": { "skirt": "tartan-long-camel" } }
+      ]
+    },
+    {
+      "id": "ttaeng-dots",
+      "category": "fashion",
+      "size": "small",
+      "at": [-6.2, 73],
+      "name": { "ko": "땡땡이 상점", "en": "Ttaengttaengi Dots", "ja": "テンテンイ・ドット", "zh": "波点小铺" },
+      "tagline": { "en": "Polka-dot skirts (땡땡이 is Korean slang for polka dots)", "ko": "땡땡이 무늬 치마만 파는 가게", "ja": "水玉スカートの店（テンテンイは韓国語で水玉）", "zh": "只卖波点裙的小店（땡땡이是韩语里的“波点”）" },
+      "colors": { "sign": "#2b2b31", "awning": "#ffffff", "accent": "#f4f1ea" },
+      "products": [
+        { "id": "dot-dots-mini-black", "model": "skirt", "skirt": "dots-mini-black", "color": "#2b2b31", "price": 45000, "item": "skirt-dots-mini-black", "name": { "en": "Black polka-dot mini skirt", "ko": "블랙 도트 미니스커트", "ja": "ブラックのドットミニスカート", "zh": "黑色波点短裙" }, "tryOn": { "skirt": "dots-mini-black" } },
+        { "id": "dot-dots-mini-red", "model": "skirt", "skirt": "dots-mini-red", "color": "#d8303f", "price": 45000, "item": "skirt-dots-mini-red", "name": { "en": "Red polka-dot mini skirt", "ko": "레드 도트 미니스커트", "ja": "レッドのドットミニスカート", "zh": "红色波点短裙" }, "tryOn": { "skirt": "dots-mini-red" } },
+        { "id": "dot-dots-long-navy", "model": "skirt", "skirt": "dots-long-navy", "color": "#2f3c66", "price": 55000, "item": "skirt-dots-long-navy", "name": { "en": "Navy polka-dot long skirt", "ko": "네이비 도트 롱스커트", "ja": "ネイビーのドットロングスカート", "zh": "藏青色波点长裙" }, "tryOn": { "skirt": "dots-long-navy" } },
+        { "id": "dot-dots-long-pink", "model": "skirt", "skirt": "dots-long-pink", "color": "#f7b6c8", "price": 55000, "item": "skirt-dots-long-pink", "name": { "en": "Pink polka-dot long skirt", "ko": "핑크 도트 롱스커트", "ja": "ピンクのドットロングスカート", "zh": "粉色波点长裙" }, "tryOn": { "skirt": "dots-long-pink" } }
+      ]
+    },
+    {
+      "id": "kkotbat-skirt",
+      "category": "fashion",
+      "size": "small",
+      "at": [36.7, 73],
+      "name": { "ko": "꽃밭 스커트", "en": "Kkotbat Skirts", "ja": "コッパッ・スカート", "zh": "花田裙装" },
+      "tagline": { "en": "Flower-field skirts (꽃밭 means flower field)", "ko": "꽃밭처럼 화사한 꽃무늬 치마", "ja": "花畑のように華やかな花柄スカート", "zh": "像花田一样明艳的碎花裙" },
+      "colors": { "sign": "#e0607e", "awning": "#fde1e8", "accent": "#fff6f8" },
+      "products": [
+        { "id": "kkot-floral-mini-cream", "model": "skirt", "skirt": "floral-mini-cream", "color": "#f6eedc", "price": 45000, "item": "skirt-floral-mini-cream", "name": { "en": "Cream floral mini skirt", "ko": "크림 꽃무늬 미니스커트", "ja": "クリームの花柄ミニスカート", "zh": "奶油色碎花短裙" }, "tryOn": { "skirt": "floral-mini-cream" } },
+        { "id": "kkot-floral-mini-sky", "model": "skirt", "skirt": "floral-mini-sky", "color": "#8fbbe8", "price": 45000, "item": "skirt-floral-mini-sky", "name": { "en": "Sky blue floral mini skirt", "ko": "하늘색 꽃무늬 미니스커트", "ja": "水色の花柄ミニスカート", "zh": "天蓝色碎花短裙" }, "tryOn": { "skirt": "floral-mini-sky" } },
+        { "id": "kkot-floral-long-butter", "model": "skirt", "skirt": "floral-long-butter", "color": "#f6d77a", "price": 55000, "item": "skirt-floral-long-butter", "name": { "en": "Butter yellow floral long skirt", "ko": "버터 옐로 꽃무늬 롱스커트", "ja": "バターイエローの花柄ロングスカート", "zh": "奶油黄碎花长裙" }, "tryOn": { "skirt": "floral-long-butter" } },
+        { "id": "kkot-floral-long-black", "model": "skirt", "skirt": "floral-long-black", "color": "#2b2b31", "price": 55000, "item": "skirt-floral-long-black", "name": { "en": "Black floral long skirt", "ko": "블랙 꽃무늬 롱스커트", "ja": "ブラックの花柄ロングスカート", "zh": "黑色碎花长裙" }, "tryOn": { "skirt": "floral-long-black" } },
+        { "id": "kkot-floral-long-lilac", "model": "skirt", "skirt": "floral-long-lilac", "color": "#c4b0ec", "price": 55000, "item": "skirt-floral-long-lilac", "name": { "en": "Lilac floral long skirt", "ko": "라일락 꽃무늬 롱스커트", "ja": "ライラックの花柄ロングスカート", "zh": "淡紫色碎花长裙" }, "tryOn": { "skirt": "floral-long-lilac" } }
+      ]
+    },
+    {
+      "id": "nalgae-long",
+      "category": "fashion",
+      "size": "small",
+      "at": [67.5, 60.1],
+      "name": { "ko": "날개 롱스커트", "en": "Nalgae Long Skirts", "ja": "ナルゲ・ロングスカート", "zh": "翅膀长裙" },
+      "tagline": { "en": "Plain skirts in soft colours that flow like wings (날개 means wings)", "ko": "날개처럼 하늘거리는 무지 치마", "ja": "翼のようにふわりと揺れる無地のスカート", "zh": "像翅膀一样飘逸的纯色裙子" },
+      "colors": { "sign": "#8a6fc9", "awning": "#ece6fb", "accent": "#f8f6fe" },
+      "products": [
+        { "id": "nal-solid-long-cream", "model": "skirt", "skirt": "solid-long-cream", "color": "#efe6d2", "price": 55000, "item": "skirt-solid-long-cream", "name": { "en": "Cream long skirt", "ko": "크림 롱스커트", "ja": "クリームのロングスカート", "zh": "奶油色长裙" }, "tryOn": { "skirt": "solid-long-cream" } },
+        { "id": "nal-solid-long-lilac", "model": "skirt", "skirt": "solid-long-lilac", "color": "#b9a6f0", "price": 55000, "item": "skirt-solid-long-lilac", "name": { "en": "Lilac long skirt", "ko": "라일락 롱스커트", "ja": "ライラックのロングスカート", "zh": "淡紫色长裙" }, "tryOn": { "skirt": "solid-long-lilac" } },
+        { "id": "nal-solid-long-butter", "model": "skirt", "skirt": "solid-long-butter", "color": "#ffd36e", "price": 55000, "item": "skirt-solid-long-butter", "name": { "en": "Butter yellow long skirt", "ko": "버터 옐로 롱스커트", "ja": "バターイエローのロングスカート", "zh": "奶油黄长裙" }, "tryOn": { "skirt": "solid-long-butter" } },
+        { "id": "nal-solid-mini-black", "model": "skirt", "skirt": "solid-mini-black", "color": "#2b2b31", "price": 45000, "item": "skirt-solid-mini-black", "name": { "en": "Black mini skirt", "ko": "블랙 미니스커트", "ja": "ブラックのミニスカート", "zh": "黑色短裙" }, "tryOn": { "skirt": "solid-mini-black" } },
+        { "id": "nal-solid-mini-camel", "model": "skirt", "skirt": "solid-mini-camel", "color": "#c49a6c", "price": 45000, "item": "skirt-solid-mini-camel", "name": { "en": "Camel mini skirt", "ko": "카멜 미니스커트", "ja": "キャメルのミニスカート", "zh": "驼色短裙" }, "tryOn": { "skirt": "solid-mini-camel" } }
+      ]
+    },
+    {
+      "id": "cheongchima",
+      "category": "fashion",
+      "size": "small",
+      "at": [-2929, -726],
+      "name": { "ko": "청치마 공장", "en": "Cheongchima Factory", "ja": "チョンチマ工場", "zh": "牛仔裙工厂" },
+      "tagline": { "en": "Denim skirts in dark and light wash (청치마 means denim skirt)", "ko": "진청, 연청 청치마 전문", "ja": "濃色・淡色のデニムスカート専門", "zh": "深色、浅色牛仔裙专卖" },
+      "colors": { "sign": "#34477a", "awning": "#d6e1f2", "accent": "#f1f5fb" },
+      "products": [
+        { "id": "cheong-denim-mini-dark", "model": "skirt", "skirt": "denim-mini-dark", "color": "#34477a", "price": 45000, "item": "skirt-denim-mini-dark", "name": { "en": "Dark denim mini skirt", "ko": "진청 데님 미니스커트", "ja": "濃色のデニムミニスカート", "zh": "深色牛仔短裙" }, "tryOn": { "skirt": "denim-mini-dark" } },
+        { "id": "cheong-denim-mini-light", "model": "skirt", "skirt": "denim-mini-light", "color": "#8fb0d6", "price": 45000, "item": "skirt-denim-mini-light", "name": { "en": "Light denim mini skirt", "ko": "연청 데님 미니스커트", "ja": "淡色のデニムミニスカート", "zh": "浅色牛仔短裙" }, "tryOn": { "skirt": "denim-mini-light" } },
+        { "id": "cheong-denim-long-dark", "model": "skirt", "skirt": "denim-long-dark", "color": "#34477a", "price": 55000, "item": "skirt-denim-long-dark", "name": { "en": "Dark denim long skirt", "ko": "진청 데님 롱스커트", "ja": "濃色のデニムロングスカート", "zh": "深色牛仔长裙" }, "tryOn": { "skirt": "denim-long-dark" } },
+        { "id": "cheong-denim-long-light", "model": "skirt", "skirt": "denim-long-light", "color": "#8fb0d6", "price": 55000, "item": "skirt-denim-long-light", "name": { "en": "Light denim long skirt", "ko": "연청 데님 롱스커트", "ja": "淡色のデニムロングスカート", "zh": "浅色牛仔长裙" }, "tryOn": { "skirt": "denim-long-light" } }
+      ]
+    },
+    {
+      "id": "stripe-alley",
+      "category": "fashion",
+      "size": "small",
+      "at": [-2971, -726],
+      "name": { "ko": "줄무늬 골목", "en": "Stripe Alley", "ja": "ボーダー横丁", "zh": "条纹小巷" },
+      "tagline": { "en": "Striped skirts, sailor style", "ko": "마린룩 줄무늬 치마", "ja": "マリン風ボーダースカート", "zh": "海军风条纹裙" },
+      "colors": { "sign": "#d8303f", "awning": "#ffffff", "accent": "#f3f6fb" },
+      "products": [
+        { "id": "str-stripe-mini-navy", "model": "skirt", "skirt": "stripe-mini-navy", "color": "#ffffff", "price": 45000, "item": "skirt-stripe-mini-navy", "name": { "en": "Navy striped mini skirt", "ko": "네이비 스트라이프 미니스커트", "ja": "ネイビーのボーダーミニスカート", "zh": "藏青色条纹短裙" }, "tryOn": { "skirt": "stripe-mini-navy" } },
+        { "id": "str-stripe-mini-red", "model": "skirt", "skirt": "stripe-mini-red", "color": "#ffffff", "price": 45000, "item": "skirt-stripe-mini-red", "name": { "en": "Red striped mini skirt", "ko": "레드 스트라이프 미니스커트", "ja": "レッドのボーダーミニスカート", "zh": "红色条纹短裙" }, "tryOn": { "skirt": "stripe-mini-red" } },
+        { "id": "str-stripe-long-black", "model": "skirt", "skirt": "stripe-long-black", "color": "#ffffff", "price": 55000, "item": "skirt-stripe-long-black", "name": { "en": "Black striped long skirt", "ko": "블랙 스트라이프 롱스커트", "ja": "ブラックのボーダーロングスカート", "zh": "黑色条纹长裙" }, "tryOn": { "skirt": "stripe-long-black" } },
+        { "id": "str-stripe-long-mint", "model": "skirt", "skirt": "stripe-long-mint", "color": "#ffffff", "price": 55000, "item": "skirt-stripe-long-mint", "name": { "en": "Mint striped long skirt", "ko": "민트 스트라이프 롱스커트", "ja": "ミントのボーダーロングスカート", "zh": "薄荷色条纹长裙" }, "tryOn": { "skirt": "stripe-long-mint" } }
+      ]
+    },
+    {
+      "id": "wild-neon",
+      "category": "fashion",
+      "size": "small",
+      "at": [-2929, -663],
+      "name": { "ko": "와일드 네온", "en": "WILD NEON", "ja": "ワイルド・ネオン", "zh": "狂野霓虹" },
+      "tagline": { "en": "Leopard, neon and black: skirts for a Hongdae night out", "ko": "호피, 네온, 블랙: 홍대 밤 나들이 치마", "ja": "ヒョウ柄・ネオン・ブラック：弘大の夜遊びスカート", "zh": "豹纹、荧光、黑色：弘大夜游裙" },
+      "colors": { "sign": "#ff2e8a", "awning": "#2b2b31", "accent": "#fff0f7" },
+      "products": [
+        { "id": "wild-leopard-mini", "model": "skirt", "skirt": "leopard-mini", "color": "#d9a35a", "price": 45000, "item": "skirt-leopard-mini", "name": { "en": "Leopard mini skirt", "ko": "호피 미니스커트", "ja": "ヒョウ柄ミニスカート", "zh": "豹纹短裙" }, "tryOn": { "skirt": "leopard-mini" } },
+        { "id": "wild-leopard-long", "model": "skirt", "skirt": "leopard-long", "color": "#d9a35a", "price": 55000, "item": "skirt-leopard-long", "name": { "en": "Leopard long skirt", "ko": "호피 롱스커트", "ja": "ヒョウ柄ロングスカート", "zh": "豹纹长裙" }, "tryOn": { "skirt": "leopard-long" } },
+        { "id": "wild-solid-mini-neonpink", "model": "skirt", "skirt": "solid-mini-neonpink", "color": "#ff2e8a", "price": 45000, "item": "skirt-solid-mini-neonpink", "name": { "en": "Neon pink mini skirt", "ko": "네온 핑크 미니스커트", "ja": "ネオンピンクのミニスカート", "zh": "荧光粉短裙" }, "tryOn": { "skirt": "solid-mini-neonpink" } },
+        { "id": "wild-solid-mini-lime", "model": "skirt", "skirt": "solid-mini-lime", "color": "#b5e04a", "price": 45000, "item": "skirt-solid-mini-lime", "name": { "en": "Lime mini skirt", "ko": "라임 미니스커트", "ja": "ライムのミニスカート", "zh": "青柠色短裙" }, "tryOn": { "skirt": "solid-mini-lime" } },
+        { "id": "wild-pleats-mini-black", "model": "skirt", "skirt": "pleats-mini-black", "color": "#2b2b31", "price": 45000, "item": "skirt-pleats-mini-black", "name": { "en": "Black pleated mini skirt", "ko": "블랙 플리츠 미니스커트", "ja": "ブラックのプリーツミニスカート", "zh": "黑色百褶短裙" }, "tryOn": { "skirt": "pleats-mini-black" } }
       ]
     }
   ]

@@ -10,6 +10,8 @@ import { PACK } from '../data/characters/index.js';
 import { PALETTES } from '../data/appearance.js';
 import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
+import { addSkirt } from './skirt-mesh.js';
+import { skirtById } from '../data/skirts.js';
 
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
@@ -204,8 +206,10 @@ function dyedMaterial(id, src, look) {
       if (hex != null) paint.push([cell, hex]);
     }
   }
+  // Under a skirt the legs are bare: the trousers cells take the skin's.
+  const bareLegs = !!(wear?.outfit && skirtById(look.skirt));
   if (!paint.length && shirt == null) return null;
-  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : ''].join('|');
+  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : '', bareLegs ? 'legs' : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
   let base = null;
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
@@ -249,6 +253,10 @@ function dyedMaterial(id, src, look) {
       px[i + 2] = Math.min(255, target.b * 255 * k);
     }
     g.putImageData(data, cx * cw, cy * ch);
+  }
+  if (bareLegs) {
+    const [sx, sy] = A.skin, [bx, by] = WEAR_CELLS.bottom;
+    g.putImageData(g.getImageData(sx * cw, sy * ch, cw, ch), bx * cw, by * ch);
   }
   const tex = new THREE.CanvasTexture(c);
   for (const k of ['flipY', 'colorSpace', 'magFilter', 'minFilter', 'wrapS', 'wrapT']) tex[k] = base.map[k];
@@ -411,6 +419,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
   });
+  // A skirt over the everyday clothes (its own mesh and patterned material).
+  const outfit = PACK.models[id].wear?.outfit;
+  if (outfit && look.skirt) addSkirt(m, look.skirt, outfit);
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
