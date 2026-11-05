@@ -4192,11 +4192,14 @@ function cableAction(p) {
     const n = Math.ceil(c.next || c.leaves || 0);
     return { key: 'cable-ride:' + n, label: '🚡 ' + fmt(L(cable.from === 'low' ? CABLE_TEXT.toTop : CABLE_TEXT.toLow), { n }), run: () => {} };
   }
-  const bay = cableBay(p);
-  if (!bay) return null;
-  const wait = arrivesIn(bay.i, bay.st, now);
+  const near = cableBay(p);
+  if (!near) return null;
+  // Either cabin will do: whichever reaches this station first (one comes
+  // every half cycle), even if it stops at the bay next to you.
+  const bay = [near.i, 1 - near.i].map((i) => ({ i, st: near.st, wait: arrivesIn(i, near.st, now) })).sort((a, b) => a.wait - b.wait)[0];
+  const wait = bay.wait;
   if (wait > 0) { const n = Math.ceil(wait); return { key: 'cable-wait:' + n, label: '🚡 ' + fmt(L(CABLE_TEXT.wait), { n }), run: () => {} }; }
-  return { key: 'cable-board:' + bay.st, label: '🚡 ' + (bay.st === 'low' ? fmt(L(CABLE_TEXT.board), { n: CABLE.fare }) : L(CABLE_TEXT.down)), run: () => boardCable(bay.i, bay.st) };
+  return { key: 'cable-board:' + bay.st + bay.i, label: '🚡 ' + (bay.st === 'low' ? fmt(L(CABLE_TEXT.board), { n: CABLE.fare }) : L(CABLE_TEXT.down)), run: () => boardCable(bay.i, bay.st) };
 }
 const duckUi = new DuckUI({
   root: $('duck-panel'),

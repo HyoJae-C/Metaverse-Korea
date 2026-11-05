@@ -649,6 +649,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       // the offsets below don't pile up frame after frame.
       for (const [b, q] of lRest) b.quaternion.copy(q);
       mixer.update(dt);
+      // On a chair: thighs forward along the seat, shins down (the clip
+      // leaves the legs hanging straight).
+      if (key === 'sit' && !riding) {
+        const S = globalThis.__sitPose || PACK.sitPose; // debug: tune live
+        for (const [name, r] of Object.entries(S || {})) {
+          const bone = lBones[name];
+          if (bone) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
+        }
+      }
       // riding: true on a bike, 'car' driving, 'seat' a car passenger (the
       // plain sitting clip).
       if (seated && riding !== 'seat') {

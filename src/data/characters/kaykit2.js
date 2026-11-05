@@ -98,6 +98,9 @@ export default {
   ],
   scale: 0.57, // model is ~2.2 units tall; our characters are ~1.25 m
   sit: { y: -0.02, z: 0.24 }, // offset on a café chair (metres, after scale)
+  // Added to the chair clip, which leaves the legs hanging straight: thighs
+  // forward along the seat, knees bent so the shins go down.
+  sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
   lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
   // On a bike the sitting clip is bent a little more: lean forward, head down,
