@@ -125,7 +125,7 @@ export const PLACE_TOPICS = [
     title: { en: 'Amusement park', ko: '놀이공원', ja: '遊園地', zh: '游乐园' },
     text: { en: 'Another Land, the candy-house theme park on the island in Seokchon Lake, Songpa (over the Han River south-east of Seongsu): carousel, Ferris wheel, pirate ship and a drop tower. 🪙 2 a ride.', ko: '송파 석촌호수 섬 위의 과자의 집 놀이공원 어나더랜드(성수 남동쪽, 한강 건너): 회전목마, 대관람차, 바이킹, 자이로드롭. 한 번에 🪙 2.', ja: '松坡・石村湖の島にあるお菓子の家の遊園地アナザーランド（聖水の南東、漢江の向こう）：メリーゴーランド、観覧車、バイキング、フリーフォール。1回 🪙 2。', zh: '松坡石村湖岛上的糖果屋游乐园「另一乐园」（圣水东南，汉江对岸）：旋转木马、摩天轮、海盗船、跳楼机。每次 🪙 2。' } },
 { icon: '🏫', to: { store: 'hyojae-academy' },
-    title: { en: 'Hyojae Korean Academy', ko: '효재어학당', ja: 'ヒョジェ語学堂', zh: '孝在语学堂' },
+    title: { en: 'Hyojae University Korean Academy', ko: '효재대학교 어학당', ja: 'ヒョジェ大学 語学堂', zh: '孝在大学语学堂' },
     text: { en: 'Real Korean courses: Hangul, TOPIK 1-4 and an advanced class. Sit at a desk, study each lesson, pass the quiz and earn a certificate.', ko: '한글, 토픽 1~4급, 고급반까지 진짜 한국어 과정. 책상에 앉아 레슨을 공부하고 퀴즈를 통과해 수료증을 받아요.', ja: 'ハングル、TOPIK1〜4級、上級クラスの本格コース。席に座って学び、クイズに合格して修了証をもらおう。', zh: '真正的韩语课程：韩文、TOPIK 1-4级和高级班。坐到课桌前学习，通过测验获得结业证书。' } },
 { icon: '🏪', to: { store: 'haru-mart' },
     title: { en: 'Convenience store', ko: '편의점', ja: 'コンビニ', zh: '便利店' },
