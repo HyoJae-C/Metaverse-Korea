@@ -50,7 +50,9 @@ import { Zones } from './core/zones.js';
 import { buildInterior, productModel } from './core/interior.js';
 import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES, mealSync, parseMealSync, biteMsg, parseBite, BITE_REACH, BITE_GAP_MS, foodScale } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart } from './ui/shop-ui.js';
+import { ShopUI, Cart, howToGet, coinsFor } from './ui/shop-ui.js';
+import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
+import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
@@ -105,7 +107,7 @@ import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './co
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { SubwayEntrances, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1004,12 +1006,16 @@ const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
 // Street rooms are split into cells (see net/area.js); a shop is one room.
+// Gifts between people in the same room (see startGift).
+const gifts = new GiftBox();
+const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
   if (tabParked) return;
   lastJoin = [room, roomScene, !!area];
   const token = ++joinToken;
+  dropGifts(); // gifts are between people in the same room
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
@@ -1026,6 +1032,7 @@ async function joinRoom(room, roomScene, area = null) {
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
+      if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
       if (parseTarot(e)) {
         const m = parseTarot(e);
         if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
@@ -1381,6 +1388,9 @@ const shop = new ShopUI({
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
   wearing: (id) => isWorn(ITEMS[id], myLook),
+  canGift: (product) => canGift(product),
+  onGift: (product) => startGift(interior?.store, product),
+  giftLabel: () => L(GIFT_TEXT.button),
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
@@ -1424,6 +1434,8 @@ function orderAtCounter(p) {
 }
 const counterUi = new CounterUI({
   root: $('counter-panel'),
+  canGift: () => peopleHere().length > 0,
+  onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
     if (held && !confirm(t('coffee.replace'))) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
@@ -1951,6 +1963,124 @@ function outfitAction(itemId) {
   saveLook(myLook);
   setLook(myLook);
 }
+// Gifts: buy something in a shop for someone else in the same shop (rules in
+// core/gifts.js). The giver pays now; the friend gets a card to accept, and
+// it goes into their bag (or their items, for clothes). No, no answer, or
+// someone leaving the shop gives the coins back.
+// What a product becomes as a gift here, or null when it can't be one:
+// { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
+function giftFor(store, product) {
+  if (!store || !product || product.adopt || product.umbrella || !onSale(product)) return null;
+  const name = product.name;
+  const itemId = product.item || product.outfit;
+  const it = itemId && ITEMS[itemId];
+  if (it?.wear) return it.price > 0 ? { coins: it.price, icon: it.emoji || '👕', name, item: itemId } : null;
+  const how = howToGet(store);
+  if (how === 'counter') {
+    const kind = heldFor(product, store);
+    return { coins: coinPrice(product.price), icon: kind === 'food' ? '🥐' : kind === 'glass' ? '🍹' : '🥤', name, entry: { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
+  }
+  if (how !== 'buy') return null;
+  const coins = coinsFor(product.price);
+  if (product.perfume) return perfumes.has(product.id) ? { coins, icon: '🧴', name, entry: { kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(name, 'en') } } : null;
+  const kind = goodsKind(product), icon = SHOP_ICON[product.model] || '🛍️';
+  return { coins, icon, name, entry: kind === 'gift' ? { kind, sips: 1, name: localName(name, 'en'), icon } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
+}
+// Everyone I can see in this shop, closest first.
+function peopleHere() {
+  if (!interior || metro) return [];
+  const p = me.root.position, out = [];
+  for (const [id, o] of others.players) {
+    if (o.hidden) continue;
+    const at = o.ch.root.position;
+    out.push({ id, name: o.name || '?', d: Math.hypot(at.x - p.x, at.z - p.z) });
+  }
+  return out.sort((a, b) => a.d - b.d).slice(0, 12);
+}
+const canGift = (product) => !!giftFor(interior?.store, product) && peopleHere().length > 0;
+function startGift(store, product) {
+  const g = giftFor(store, product);
+  if (!g) return;
+  const name = localName(g.name, getLanguage());
+  shop.closeProduct();
+  counterUi.close();
+  giftUi.pick({ icon: g.icon, name, coins: g.coins }, peopleHere(), (to) => {
+    const why = gifts.why(to.id);
+    if (why) { shop.toast(fmt(L(GIFT_TEXT[why]), { name: to.name, n: GIFTS_PER_DAY })); return; }
+    if (!others.players.has(to.id)) { shop.toast(L(GIFT_TEXT.nobody)); return; }
+    if (!wallet.spend(g.coins, { name: g.name, at: GIFT_TEXT.ledger })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: g.coins })); return; }
+    refreshWallet();
+    const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins });
+    net.sendEmote(giftMsg('offer', to.id, gid, store.id, product.id));
+    sfx.pop?.();
+    shop.toast(fmt(L(GIFT_TEXT.sent), { name: to.name }));
+  });
+}
+function refundGift(g, reason) {
+  if (g.coins > 0) wallet.add(g.coins, { name: productById(g.store, g.product)?.name, at: GIFT_TEXT.refund });
+  refreshWallet();
+  shop.toast(fmt(L(GIFT_TEXT.back[reason] || GIFT_TEXT.back.no), { name: g.name, n: g.coins }));
+}
+const productById = (storeId, productId) => storeData.find((s) => s.id === storeId)?.products?.find((p) => p.id === productId) || null;
+function showGiftCards() {
+  giftUi.showCards(gifts.cards().map((c) => {
+    const g = giftFor(storeData.find((s) => s.id === c.store), productById(c.store, c.product));
+    return { gid: c.gid, name: c.name, item: g ? localName(g.name, getLanguage()) : '?', icon: g?.icon || '🎁' };
+  }));
+}
+function onGiftMsg(from, m) {
+  if (m.to !== myId) return;
+  const name = others.nameOf(from) || '?';
+  if (m.verb === 'offer') {
+    if (safety.isBlocked(from, name)) return; // blocked: as if it never came (their coins come back on time out)
+    const store = storeData.find((s) => s.id === m.store);
+    if (!giftFor(store, productById(m.store, m.product))) return; // not something this game version sells
+    const r = gifts.heard(from, name, m);
+    if (r === 'show') { sfx.pop?.(); showGiftCards(); }
+    else if (r) net.sendEmote(giftMsg('no', from, m.gid, r));
+    return;
+  }
+  const r = gifts.answer(from, m.gid, m.verb);
+  if (!r) return;
+  if (m.verb === 'ok') {
+    sfx.pop?.();
+    shop.toast(fmt(L(GIFT_TEXT.accepted), { name: r.gift.name, item: localName(productById(r.gift.store, r.gift.product)?.name, getLanguage()) || '🎁' }));
+  } else refundGift(r.gift, m.reason);
+}
+// I tapped Accept or No thanks on a card.
+function answerGift(gid, ok) {
+  const c = gifts.reply(gid, ok);
+  showGiftCards();
+  if (!c) return;
+  const g = giftFor(storeData.find((s) => s.id === c.store), productById(c.store, c.product));
+  if (!ok || !g) { net.sendEmote(giftMsg('no', c.from, gid, 'no')); return; }
+  const item = localName(g.name, getLanguage());
+  if (g.item) {
+    if (inventory.has(g.item)) { net.sendEmote(giftMsg('no', c.from, gid, 'have')); shop.toast(fmt(L(GIFT_TEXT.mineHave), { item, name: c.name })); return; }
+    inventory.add(g.item);
+    if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
+    shop.toast(fmt(L(GIFT_TEXT.gotItem), { item, name: c.name }));
+  } else {
+    if (!bag.add(g.entry)) { net.sendEmote(giftMsg('no', c.from, gid, 'full')); shop.toast(fmt(L(GIFT_TEXT.mineFull), { name: c.name })); return; }
+    shop.toast(fmt(L(GIFT_TEXT.gotBag), { item, name: c.name }));
+  }
+  sfx.pop?.();
+  net.sendEmote(giftMsg('ok', c.from, gid));
+}
+// Changing room (leaving a shop): every gift still waiting is called off.
+function dropGifts() {
+  for (const g of gifts.cancelAll()) refundGift(g, 'gone');
+  giftUi.close();
+  showGiftCards();
+}
+setInterval(() => {
+  const gone = (id) => !others.players.has(id);
+  for (const g of gifts.expire(gone)) refundGift(g, gone(g.to) ? 'gone' : 'late');
+  const stale = gifts.stale(gone);
+  for (const c of stale) if (!gone(c.from)) net.sendEmote(giftMsg('no', c.from, c.gid, 'late'));
+  if (stale.length) showGiftCards();
+  if (giftUi.open && !interior) giftUi.close();
+}, 1000);
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2749,6 +2879,42 @@ function orderFood(product, togo) {
   shop.toast(fmt(L(DINE_TEXT.ordered), { name }));
   clerk && say(clerk, $('labels'), ['네, 주문 받았습니다!', 'ne, jumun badatseumnida!', fmt(L(DINE_TEXT.ordered), { name })]);
   action = STALE;
+}
+// Station vending machines: cheap drinks that work like a coffee to go.
+const VENDING_TEXT = {
+  open: { en: 'Vending machine', ko: '음료 자판기', ja: '自動販売機', zh: '自动售货机' },
+  note: { en: 'Every drink is 1 coin. Sip it to refill your stamina.', ko: '모든 음료가 1코인이에요. 마시면 체력이 채워져요.', ja: '飲み物はすべて1コイン。飲むとスタミナが回復します。', zh: '所有饮料都是1枚硬币。喝了可以恢复体力。' },
+  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
+  got: { en: 'Clunk! {name} drops out.', ko: '덜컹! {name}이(가) 나왔어요.', ja: 'ガコン！{name}が出てきました。', zh: '咚！{name}掉出来了。' },
+};
+function buyVending(dr) {
+  if (held && !confirm(t('coffee.replace'))) return;
+  if (!wallet.spend(dr.price, { name: dr.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: dr.price })); return; }
+  refreshWallet();
+  sfx.pop?.();
+  setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
+  $('lp-panel').hidden = true;
+  shop.toast(fmt(L(VENDING_TEXT.got), { name: `${dr.icon} ${localName(dr.name, getLanguage())}` }));
+}
+function openVending() {
+  const root = $('lp-panel');
+  delete root.dataset.club;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const x = el('button', 'sheet-x', '✕');
+  x.onclick = () => { root.hidden = true; };
+  const list = el('div', 'lp-list');
+  const lang = getLanguage();
+  for (const dr of VENDING_DRINKS) {
+    const row = el('div', 'lp-row menu-row');
+    const text = el('span', 'lp-text');
+    text.append(el('strong', null, `${dr.icon} ${localName(dr.name, lang)}`), el('small', 'menu-price', `🪙 ${dr.price}`));
+    const b = el('button', 'chip', L(VENDING_TEXT.buy));
+    b.onclick = () => buyVending(dr);
+    row.append(text, b);
+    list.append(row);
+  }
+  root.replaceChildren(x, el('strong', 'wallet-title', '🥤 ' + L(VENDING_TEXT.open)), el('p', 'fine', L(VENDING_TEXT.note)), list);
+  root.hidden = false;
 }
 function openMenu() {
   const root = $('lp-panel');
@@ -4549,6 +4715,8 @@ function updateAction(p, tSec) {
     } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
       const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
       next = { key: 'metro-board:' + t, label: `🚇 ${L(METRO_TEXT.board)} · ${L(t === 0 ? METRO_TEXT.up : METRO_TEXT.down)} → ${to ? localName(to, getLanguage()) : ''}`, run: () => boardTrain(t, interior.subway.doorsOpen(t) || 0.5) };
+    } else if (interior.subway && !seated && interior.subway.vending?.some((v) => Math.hypot(p.x - v.x, p.z - v.z) < 1.3)) {
+      next = { key: 'vending', label: '🥤 ' + L(VENDING_TEXT.open), run: openVending };
     } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
       const g = gateAt(p.x, p.z);
       next = g.inside
@@ -5174,6 +5342,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     poops: () => poopTimers.list.map((x) => ({ ...x, x: poops.get(x.id)?.x, z: poops.get(x.id)?.z })),
     poopTime: (s) => poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
+    bagList: () => bag.list(),
+    owns: (id) => inventory.has(id),
+    gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     route: (ax, az, bx, bz) => planRoute(ax, az, bx, bz),
