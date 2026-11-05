@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
 import { attachModel } from './model-pack.js';
-import { makeRide, makeSkate1, SKATE_LIFT } from './rides.js';
+import { makeRide, makeSkate1, SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
 
@@ -108,7 +108,7 @@ export function createCharacter(rawLook) {
   let bike = null, tandem = null, car = null, limo = null, moto = null, helmet = null, riding = false;
   let bikeCode = null; // rideCode of the ride drawn
   let skates = null; // inline skates, one under each foot
-  let rideKind = true; // 'board' (skateboard, scooter), 'skates' or true (bike)
+  let rideKind = true; // 'board' (skateboard), 'kick' (scooter), 'skates' or true (bike)
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
@@ -165,7 +165,7 @@ export function createCharacter(rawLook) {
           bike = makeRide(r);
           bikeCode = code;
           root.add(bike);
-          rideKind = bike.userData.pose === 'board' ? 'board' : bike.userData.pose === 'skates' ? 'skates' : true;
+          rideKind = ['board', 'kick', 'skates'].includes(bike.userData.pose) ? bike.userData.pose : true;
           if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); root.add(sk); } }
         }
       }
@@ -176,7 +176,7 @@ export function createCharacter(rawLook) {
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
       for (const sk of skates || []) sk.visible = kind === 1;
-      if (kind === 1 && rideKind === 'board') model?.setBoardHeight?.(bike.userData.stand);
+      if (kind === 1 && (rideKind === 'board' || rideKind === 'kick')) model?.setBoardHeight?.(bike.userData.stand);
       if (tandem) tandem.visible = kind === 2;
       if (car) car.visible = kind === 4;
       if (limo) limo.visible = kind === 6;
@@ -190,7 +190,7 @@ export function createCharacter(rawLook) {
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
       if (model) {
-        if (riding === 'board' && bike) model.setBoardHeight?.(bike.userData.stand);
+        if ((riding === 'board' || riding === 'kick') && bike) model.setBoardHeight?.(bike.userData.stand);
         model.update(dt, speed01, sit, riding);
         if (skates && riding === 'skates' && model.feet[0]) {
           // Each skate follows its foot (in the body's frame, facing forward).
@@ -198,7 +198,7 @@ export function createCharacter(rawLook) {
           model.feet.forEach((f, i) => {
             if (!f || !skates[i]) return;
             root.worldToLocal(f.getWorldPosition(_fv));
-            skates[i].position.set(_fv.x, Math.max(0, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
+            skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
         if (held?.parent === model.hand) {
