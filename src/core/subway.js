@@ -169,6 +169,76 @@ export function signTexture(ko, sub2, { bg = '#f4f5f7', fg = '#22252b', num = nu
   t.anisotropy = 4;
   return t;
 }
+// A platform station board in the Seoul style: the station name large in the
+// middle, the line colour as a band, and along the bottom the previous
+// station (left) and the next one (right, with an arrow).
+export function nameBoardTexture({ ko = '', en = '', code = '', line = '#00a84d', next = null, prev = null }) {
+  const w = 1024, h = 288;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+  g.fillStyle = line; g.fillRect(0, 196, w, 92); // line-colour band
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (code) { // station number in a line-colour ring
+    g.lineWidth = 10; g.strokeStyle = line; g.fillStyle = '#fff';
+    g.beginPath(); g.arc(150, 84, 52, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = '#22252b'; g.font = '800 44px system-ui, sans-serif';
+    g.fillText(String(code), 150, 87);
+  }
+  g.fillStyle = '#22252b';
+  g.font = '900 92px system-ui, sans-serif';
+  g.fillText(ko, w / 2, 80, 560);
+  g.font = '600 40px system-ui, sans-serif';
+  g.fillStyle = '#555b66';
+  g.fillText(en, w / 2, 152, 560);
+  g.fillStyle = '#ffffff';
+  if (next) {
+    g.textAlign = 'right'; g.font = '800 46px system-ui, sans-serif';
+    g.fillText(`${next.ko} ▶`, w - 28, 228, w / 2 - 40);
+    g.font = '600 28px system-ui, sans-serif';
+    g.fillText(`다음 역 Next · ${next.en}`, w - 72, 266, w / 2 - 90);
+  }
+  if (prev) {
+    g.textAlign = 'left'; g.font = '700 38px system-ui, sans-serif';
+    g.globalAlpha = 0.8;
+    g.fillText(prev.ko, 28, 228, w / 2 - 40);
+    g.font = '600 26px system-ui, sans-serif';
+    g.fillText(`${prev.en} · 이전 역 Prev`, 28, 266, w / 2 - 40);
+    g.globalAlpha = 1;
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+// Hanging sign at the platform entrance: one direction on each half, each
+// on the side its track is on as you look at it.
+export function directionSignTexture(left, right, line) {
+  const w = 1280, h = 160;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2f3540'; g.fillRect(0, 0, w, h);
+  g.fillStyle = line; g.fillRect(w / 2 - 3, 16, 6, h - 32);
+  g.textBaseline = 'middle';
+  const half = (t, x, align) => {
+    if (!t) return;
+    g.textAlign = align;
+    g.fillStyle = '#ffd34d'; g.font = '900 50px system-ui, sans-serif';
+    g.fillText(t[0], x, 56, w / 2 - 60);
+    g.fillStyle = '#ffffff'; g.font = '600 34px system-ui, sans-serif';
+    g.fillText(t[1], x, 116, w / 2 - 60);
+  };
+  half(left, 30, 'left');
+  half(right, w - 30, 'right');
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 function signMesh(tex, w, h) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
 }
@@ -409,12 +479,31 @@ export function buildStation(store, ROOM) {
   for (const [t, tr] of TRACKS.entries()) {
     const s = Math.sign(tr.z);
     // Station name boards on the pillars, facing each track.
-    for (const x of [5, 16]) sign(signTexture(`${name.ko || ''}${code}`, `${name.en || ''} · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 4.2, 0.7, x, 3.0, s * 0.37, s > 0 ? 0 : Math.PI);
+    // (Facing a board, the trains on that side run off to your right, so the
+    // next station is always on the right.)
+    const next = t === 0 ? towards.up : towards.down, prev = t === 0 ? towards.down : towards.up;
+    const board = nameBoardTexture({ ko: name.ko || '', en: `${name.en || ''} · ${lineName.en || ''}`, code: sub.code, line, next, prev });
+    for (const x of [5, 16]) sign(board, 3.6, 1.01, x, 2.75, s * 0.37, s > 0 ? 0 : Math.PI);
     // Over the screen doors: which way this track goes.
     const to = t === 0 ? towards.up : towards.down;
     const label = t === 0 ? ['상행', 'Up'] : ['하행', 'Down'];
     const txt = to ? [`${label[0]} · ${to.ko} 방면`, `${label[1]} · for ${to.en}`] : [`${label[0]}`, 'Not in service'];
     for (const x of [platC - 8, platC + 8]) sign(signTexture(txt[0], txt[1], { bg: '#2f3540', fg: '#ffffff', line, w: 640, h: 128 }), 3.5, 0.7, x, 3.2, s * (DOOR_Z - 0.4), s > 0 ? Math.PI : 0);
+  }
+
+  // Hanging sign where you step onto the platform: which side goes where.
+  // Facing east (in from the gates) the up track (south, +z) is on the right.
+  {
+    const dirTxt = (t) => {
+      const to = t === 0 ? towards.up : towards.down;
+      const l = t === 0 ? ['상행', 'Up'] : ['하행', 'Down'];
+      return to ? [`${l[0]} · ${to.ko} 방면`, `${l[1]} · for ${to.en}`] : [l[0], 'Not in service'];
+    };
+    const up = dirTxt(0), down = dirTxt(1);
+    const sx = PLAT_X[0] + 4, sw = 7.2, sh = 0.9, sy = 3.8;
+    sign(directionSignTexture(['◀ ' + down[0], down[1]], [up[0] + ' ▶', up[1]], line), sw, sh, sx, sy, 0, -Math.PI / 2);
+    sign(directionSignTexture(['◀ ' + up[0], up[1]], [down[0] + ' ▶', down[1]], line), sw, sh, sx + 0.04, sy, 0, Math.PI / 2);
+    for (const z of [-sw / 2 + 0.4, sw / 2 - 0.4]) box(0.04, h - sy - sh / 2, 0.04, sx + 0.02, (h + sy + sh / 2) / 2, z, '#9aa1ab');
   }
 
   // LED board over the gates, facing the concourse.
