@@ -1541,3 +1541,4 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .kimbap-mat .kimbap-piece { transform: scale(calc(1 + var(--turns, 0) * .15)); transition: transform .2s; }
 .kimbap-mat.oiled .kimbap-piece { box-shadow: 0 0 10px 2px rgba(255,220,120,.8); }
 .kimbap-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 6px auto; padding: 10px; max-width: 280px; border-radius: 8px; background: #c79a62; }
+.japchae-heat .chip.on { background: #e8613c; border-color: #e8613c; color: #fff; }

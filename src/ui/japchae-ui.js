@@ -279,7 +279,7 @@ export class JapchaeUI {
     const heatRow = el('div', 'japchae-heat');
     const pick = (h) => () => {
       s.heat = h;
-      low.classList.toggle('primary', h === 'low'); high.classList.toggle('primary', h === 'high');
+      low.classList.toggle('on', h === 'low'); high.classList.toggle('on', h === 'high');
       pour.disabled = false;
     };
     const low = chip('🔥 ' + L('low'), pick('low'));
