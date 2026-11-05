@@ -17,16 +17,27 @@ const LONG = 900; // longest side in pixels
 const TARGET = 110 * 1024;
 mkdirSync(join(OUT, 'museum'), { recursive: true });
 
+// The museum's server sometimes drops a connection, so try a few times.
+async function get(url) {
+  for (let i = 1; ; i++) {
+    try { return await fetch(url); } catch (e) {
+      if (i >= 4) throw e;
+      await new Promise((r) => setTimeout(r, 2000 * i));
+    }
+  }
+}
+
 for (const p of PAINTINGS) {
   const out = join(OUT, p.file);
   if (existsSync(out) && !process.argv.includes('--all')) continue;
-  const res = await fetch(p.src);
+  const res = await get(p.src);
   if (!res.ok) { console.error(`${p.id}: HTTP ${res.status}`); continue; }
   const raw = join(tmpdir(), `museum-${p.id}`);
   writeFileSync(raw, Buffer.from(await res.arrayBuffer()));
   // Step the quality down until the file is small enough.
   for (const q of [82, 76, 70, 64, 58]) {
-    execFileSync('convert', [raw, '-resize', `${LONG}x${LONG}>`, '-strip', '-interlace', 'JPEG', '-quality', String(q), out]);
+    const crop = p.crop ? ['-crop', `${p.crop[2]}x${p.crop[3]}+${p.crop[0]}+${p.crop[1]}`, '+repage'] : [];
+    execFileSync('convert', [raw, ...crop, '-resize', `${LONG}x${LONG}>`, '-strip', '-interlace', 'JPEG', '-quality', String(q), out]);
     if (statSync(out).size <= TARGET) break;
   }
   rmSync(raw);

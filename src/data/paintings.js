@@ -7,7 +7,8 @@
 // can't be used here. KOGL Type 1 also forbids implying that the museum
 // endorses us, so the gallery shows DISCLAIMER by the door and in the card.
 //
-// `src` is the museum's 700 px image; `file` is our compressed copy in
+// `src` is the museum's 700 px image; `crop` ([x, y, w, h] in that image)
+// trims colour charts, mounts and labels off the scan; `file` is our compressed copy in
 // public/ (made by scripts/fetch-paintings.mjs, about 100 KB each), loaded
 // only when you walk into the museum. `w`/`h` give the shape on the wall.
 // Descriptions are short retellings of the museum's own text.
@@ -34,7 +35,7 @@ const P = (o) => ({ ...o, page: PAGE + o.relicId, file: `museum/${o.id}.jpg` });
 
 export const PAINTINGS = [
   P({
-    id: 'ssireum', relicId: 551, no: '본관6504-22', src: IMG + 'bon006/2016/1213161649247/700/bon006504-22-01.jpg', w: 222, h: 269,
+    id: 'ssireum', relicId: 551, no: '본관6504-22', src: IMG + 'bon006/2016/1213161649247/700/bon006504-22-01.jpg', crop: [128, 24, 442, 528], w: 442, h: 528,
     title: { ko: '씨름', en: 'Ssireum (Korean Wrestling)' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '김홍도 풍속화를 대표하는 그림이에요. 구경꾼들을 위아래에 둥글게 앉히고, 가운데에서 두 씨름꾼이 힘을 겨뤄요. 왼쪽의 엿장수와 벗어 놓은 신발도 찾아보세요.',
@@ -42,7 +43,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'jumak', relicId: 537, no: '본관6504-8', src: IMG + 'bon006/2016/1213161649247/700/bon006504-08-01.jpg', w: 239, h: 280,
+    id: 'jumak', relicId: 537, no: '본관6504-8', src: IMG + 'bon006/2016/1213161649247/700/bon006504-08-01.jpg', crop: [115, 20, 517, 595], w: 517, h: 595,
     title: { ko: '주막', en: 'Tavern' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '길을 가던 사람들이 길가 주막에서 요기하는 모습이에요. 국자로 막걸리를 뜨는 주모와 부뚜막 위 그릇들이 그 시절 주막 풍경을 보여 줘요.',
@@ -50,7 +51,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'umulga', relicId: 540, no: '본관6504-11', src: IMG + 'bon006/2016/1213161649247/700/bon006504-11-01.jpg', w: 239, h: 281,
+    id: 'umulga', relicId: 540, no: '본관6504-11', src: IMG + 'bon006/2016/1213161649247/700/bon006504-11-01.jpg', crop: [64, 32, 540, 631], w: 540, h: 631,
     title: { ko: '우물가', en: 'At the Well' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '여인들이 모인 우물가에 한 남자가 가슴을 드러낸 채 물을 마셔요. 여인들은 수줍어 고개를 돌려요. 남녀를 엄격히 구별하던 조선의 풍속이 보여요.',
@@ -58,7 +59,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'dambae', relicId: 541, no: '본관6504-12', src: IMG + 'bon006/2016/1213161649247/700/bon006504-12-01.jpg', w: 239, h: 280,
+    id: 'dambae', relicId: 541, no: '본관6504-12', src: IMG + 'bon006/2016/1213161649247/700/bon006504-12-01.jpg', crop: [78, 30, 538, 638], w: 538, h: 638,
     title: { ko: '담배썰기', en: 'Cutting Tobacco' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '넓은 담뱃잎의 줄기를 골라내고 작두로 썰고 있어요. 더워서 저고리를 벗은 일꾼들 옆에서 주인은 책을 펴 놓고 있어요.',
@@ -66,7 +67,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'geurimgamsang', relicId: 544, no: '본관6504-15', src: IMG + 'bon006/2016/1213161649247/700/bon006504-15-01.jpg', w: 239, h: 281,
+    id: 'geurimgamsang', relicId: 544, no: '본관6504-15', src: IMG + 'bon006/2016/1213161649247/700/bon006504-15-01.jpg', crop: [58, 33, 539, 634], w: 539, h: 634,
     title: { ko: '그림감상', en: 'Viewing a Painting' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '선비들이 긴 그림을 펼쳐 들고 둘러서서 감상해요. 침이 튈까 봐 부채로 입을 가린 사람이 눈에 띄어요. 종이에 아무것도 그려져 있지 않아 무엇을 보는지는 몰라요.',
@@ -74,7 +75,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'pyeonja', relicId: 546, no: '본관6504-17', src: IMG + 'bon006/2016/1213161649247/700/bon006504-17-01.jpg', w: 239, h: 280,
+    id: 'pyeonja', relicId: 546, no: '본관6504-17', src: IMG + 'bon006/2016/1213161649247/700/bon006504-17-01.jpg', crop: [57, 38, 543, 624], w: 543, h: 624,
     title: { ko: '편자박기', en: 'Shoeing a Horse' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '말을 눕히고 네 다리를 나무에 묶은 뒤 편자를 박고 있어요. 위쪽에는 땀 흘리는 두 사람이 마실 물이 놓여 있어요.',
@@ -82,7 +83,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'nongari', relicId: 530, no: '본관6504-1', src: IMG + 'bon006/2016/1213161228096/700/bon006504-01-01.jpg', w: 238, h: 278,
+    id: 'nongari', relicId: 530, no: '본관6504-1', src: IMG + 'bon006/2016/1213161228096/700/bon006504-01-01.jpg', crop: [82, 23, 531, 638], w: 531, h: 638,
     title: { ko: '논갈이', en: 'Ploughing the Fields' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '김홍도는 소탈한 서민의 생활과 일하는 모습을 많이 그렸어요. 이 그림에서는 소를 몰아 논밭을 갈아요.',
@@ -90,7 +91,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'haengsang', relicId: 39197, no: '본관6504-25', src: IMG + 'bon006/2016/1213161649247/700/bon006504-25-01.jpg', w: 237, h: 277,
+    id: 'haengsang', relicId: 39197, no: '본관6504-25', src: IMG + 'bon006/2016/1213161649247/700/bon006504-25-01.jpg', crop: [82, 30, 518, 595], w: 518, h: 595,
     title: { ko: '행상', en: 'Peddlers' }, artist: HONGDO, era: HONGDO_ERA, set: ALBUM,
     desc: {
       ko: '지게를 진 상인과 광주리를 인 아낙이 장사하러 떠나며 헤어지는 모습이에요. 저고리 안에 아이를 업은 엄마의 모습이 재미있어요.',
@@ -98,7 +99,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'tugye', relicId: 4425, no: '덕수2291-14', src: IMG + 'duk002/2016/1220152727617/700/duk002291-14-00.jpg', w: 236, h: 230,
+    id: 'tugye', relicId: 4425, no: '덕수2291-14', src: IMG + 'duk002/2016/1220152727617/700/duk002291-14-00.jpg', crop: [15, 12, 614, 600], w: 614, h: 600,
     title: { ko: '투계도', en: 'Cockfight' }, artist: { ko: '신윤복', en: 'Sin Yun-bok' }, era: { ko: '조선, 18세기 후반~19세기 초', en: 'Joseon, late 18th to early 19th century' },
     desc: {
       ko: '닭 그림이에요. 신윤복은 김홍도와 함께 조선 후기의 생활을 그린 대표 화가예요.',
@@ -106,7 +107,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'yeosokdo', relicId: 109850, no: '덕수1103', src: IMG + 'duk000/2019/0925162303635/700/duk001103-000-80001.jpg', w: 245, h: 297,
+    id: 'yeosokdo', relicId: 109850, no: '덕수1103', src: IMG + 'duk000/2019/0925162303635/700/duk001103-000-80001.jpg', w: 469, h: 700,
     title: { ko: '여속도첩', en: 'Album of Women’s Customs' }, artist: { ko: '신윤복', en: 'Sin Yun-bok' }, era: { ko: '조선, 18세기 후반~19세기 초', en: 'Joseon, late 18th to early 19th century' },
     desc: {
       ko: '신윤복은 부드럽고 여린 붓질과 청록, 빨강, 노랑 같은 화려한 색으로 사람들을 그렸어요. 김홍도가 서민을 주로 그렸다면 신윤복은 양반의 풍류를 은근히 풍자했어요.',
@@ -114,7 +115,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'inwang', relicId: 36549667, no: '건희1', src: IMG + 'lkh000/2023/0106142242505/700/lkh000001-000-80001.jpg', w: 1382, h: 792,
+    id: 'inwang', relicId: 36549667, no: '건희1', src: IMG + 'lkh000/2023/0106142242505/700/lkh000001-000-80001.jpg', w: 700, h: 400,
     title: { ko: '인왕제색도', en: 'Clearing after Rain on Mount Inwang' }, artist: { ko: '정선', en: 'Jeong Seon' }, era: { ko: '조선, 1751년', en: 'Joseon, 1751' }, set: { ko: '국보', en: 'National Treasure' },
     desc: {
       ko: '겸재 정선이 일흔여섯 살에 비 갠 뒤의 인왕산을 그린 그림이에요. 직접 보고 그린 한국의 산천, 진경산수화를 대표해요. 인왕산은 지금도 서울 경복궁 서쪽에 있어요.',
@@ -122,7 +123,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'nosong', relicId: 8486, no: '신수15765', src: IMG + 'ssu08/700/ssu15765.jpg', w: 1025, h: 420,
+    id: 'nosong', relicId: 8486, no: '신수15765', src: IMG + 'ssu08/700/ssu15765.jpg', crop: [95, 175, 521, 173], w: 521, h: 173,
     title: { ko: '노송도', en: 'Old Pine Tree' }, artist: { ko: '강세황', en: 'Gang Se-hwang' }, era: { ko: '조선, 18세기', en: 'Joseon, 18th century' },
     desc: {
       ko: '늙은 소나무 그림이에요. 소나무는 사계절 푸르러 오래 사는 것을 뜻해요. 강세황은 김홍도의 스승으로도 알려져 있어요.',
@@ -130,7 +131,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'mogyeon', relicId: 331, no: '본관255', src: IMG + 'bon000/2019/0925124355224/700/bon000255-000-80000.jpg', w: 555, h: 1630,
+    id: 'mogyeon', relicId: 331, no: '본관255', src: IMG + 'bon000/2019/0925124355224/700/bon000255-000-80000.jpg', w: 406, h: 700,
     title: { ko: '어미개와 강아지', en: 'Mother Dog and Puppies' }, artist: { ko: '이암', en: 'Yi Am' }, era: { ko: '조선, 16세기', en: 'Joseon, 16th century' },
     desc: {
       ko: '이암(1499-?)은 왕족 출신 화가로, 짐승 그림을 잘 그렸다고 해요. 중종의 초상을 그릴 화가로 추천되기도 했어요.',
@@ -138,7 +139,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'gyeoulsansu', relicId: 332, no: '본관281', src: IMG + 'bon000/2019/0925124358901/700/bon000281-000-80000.jpg', w: 460, h: 1190,
+    id: 'gyeoulsansu', relicId: 332, no: '본관281', src: IMG + 'bon000/2019/0925124358901/700/bon000281-000-80000.jpg', w: 270, h: 700,
     title: { ko: '겨울 산수', en: 'Winter Landscape' }, artist: { ko: '김수철', en: 'Kim Su-cheol' }, era: { ko: '조선, 19세기', en: 'Joseon, 19th century' },
     desc: {
       ko: '겨울 산과 물을 그린 세로로 긴 족자 그림이에요. 김수철은 19세기 조선의 화가예요.',
@@ -146,7 +147,7 @@ export const PAINTINGS = [
     },
   }),
   P({
-    id: 'yundoseo', relicId: 2386, no: '신수15103', src: IMG + 'ssu08/700/ssu15103.jpg', w: 170, h: 300,
+    id: 'yundoseo', relicId: 2386, no: '신수15103', src: IMG + 'ssu08/700/ssu15103.jpg', crop: [0, 0, 223, 396], w: 223, h: 396,
     title: { ko: '윤두서 필 화첩 (가물첩)', en: 'Album by Yun Du-seo (Family Treasures)' }, artist: { ko: '윤두서', en: 'Yun Du-seo' }, era: { ko: '조선, 17세기 말~18세기 초', en: 'Joseon, late 17th to early 18th century' },
     desc: {
       ko: '윤두서(1668-1715)는 윤선도의 증손으로, 벼슬을 마다하고 학문과 그림으로 평생을 보냈어요. 표지에 "가물첩(집안의 물건)"이라고 쓰여 있어 집안에서 대대로 전해 온 화첩임을 알 수 있어요.',
