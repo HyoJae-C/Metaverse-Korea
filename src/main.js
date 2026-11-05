@@ -50,7 +50,9 @@ import { Zones } from './core/zones.js';
 import { buildInterior, productModel } from './core/interior.js';
 import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES, mealSync, parseMealSync, biteMsg, parseBite, BITE_REACH, BITE_GAP_MS, foodScale } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart, howToGet, coinsFor } from './ui/shop-ui.js';
+import { ShopUI, Cart, howToGet, coinsFor, RENT } from './ui/shop-ui.js';
+import { hanbokById, isHanbokModel, RENT_HOURS } from './data/hanbok.js';
+import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, isRenting, formatLeft } from './core/hanbok-rental.js';
 import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { OrderUI } from './ui/order-ui.js';
@@ -1362,7 +1364,7 @@ const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑
 const shop = new ShopUI({
   cart,
   onTryOn: (product) => {
-    setLook({ ...currentLook, ...product.tryOn });
+    setLook({ ...currentLook, ...(hanbokById(product.rent)?.wear || product.tryOn) });
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
@@ -1387,6 +1389,8 @@ const shop = new ShopUI({
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
+  onRent: (product) => rentHanbok(product),
+  rentLeft: (product) => (isRenting(rental, product.rent) ? timeLeft(rental) : 0),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   canGift: (product) => canGift(product),
   onGift: (product) => startGift(interior?.store, product),
@@ -1926,7 +1930,7 @@ try {
     localStorage.setItem('mk.outfitGift', '1');
   }
 } catch { /* storage blocked */ }
-if (OUTFIT_ITEM(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
+if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
   coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
   used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
@@ -1963,6 +1967,64 @@ function outfitAction(itemId) {
   saveLook(myLook);
   setLook(myLook);
 }
+// Hanbok rental (Dano Hanbok Rental by Gyeongbokgung): pay coins, wear it for
+// a few hours, then your own clothes come back by themselves, also after a
+// reload (core/hanbok-rental.js). A chip shows the time left.
+const RENT_TEXT = {
+  rented: { en: '🪭 Rented! Enjoy your hanbok for {h} hours.', ko: '🪭 대여 완료! {h}시간 동안 한복을 즐겨요.', ja: '🪭 レンタル完了！{h}時間韓服を楽しんでね。', zh: '🪭 租好了！尽情穿{h}小时韩服吧。', es: '🪭 ¡Alquilado! Disfruta tu hanbok {h} horas.', ar: '🪭 تم الاستئجار! استمتع بالهانبوك لمدة {h} ساعات.', vi: '🪭 Đã thuê! Tận hưởng hanbok trong {h} giờ.', hi: '🪭 किराए पर लिया! {h} घंटे हानबोक का मज़ा लें।', id: '🪭 Tersewa! Nikmati hanbokmu selama {h} jam.' },
+  ended: { en: '🪭 Your hanbok rental is over: back in your own clothes.', ko: '🪭 한복 대여 시간이 끝나서 원래 옷으로 돌아왔어요.', ja: '🪭 韓服のレンタル時間が終わり、元の服に戻りました。', zh: '🪭 韩服租借时间到了，已换回原来的衣服。', es: '🪭 Terminó el alquiler del hanbok: vuelves a tu ropa.', ar: '🪭 انتهى إيجار الهانبوك: عدت إلى ملابسك.', vi: '🪭 Hết giờ thuê hanbok: bạn đã mặc lại đồ của mình.', hi: '🪭 हानबोक का किराया ख़त्म: आप अपने कपड़ों में वापस हैं।', id: '🪭 Sewa hanbok selesai: kembali ke bajumu sendiri.' },
+  returned: { en: '🪭 Hanbok returned. Thank you!', ko: '🪭 한복을 반납했어요. 감사합니다!', ja: '🪭 韓服を返却しました。ありがとう！', zh: '🪭 韩服已归还，谢谢！', es: '🪭 Hanbok devuelto. ¡Gracias!', ar: '🪭 أُعيد الهانبوك. شكرًا!', vi: '🪭 Đã trả hanbok. Cảm ơn!', hi: '🪭 हानबोक लौटा दिया। धन्यवाद!', id: '🪭 Hanbok dikembalikan. Terima kasih!' },
+  chipHint: { en: 'Your own clothes come back when the time is up. Return it early at the hanbok shop.', ko: '시간이 끝나면 원래 옷으로 돌아와요. 한복집에서 미리 반납할 수도 있어요.', ja: '時間が来ると元の服に戻ります。韓服店で早めに返すこともできます。', zh: '时间到了会换回原来的衣服，也可以在韩服店提前归还。', es: 'Tu ropa vuelve cuando se acaba el tiempo. Puedes devolverlo antes en la tienda.', ar: 'تعود ملابسك عند انتهاء الوقت. يمكنك إعادته مبكرًا في متجر الهانبوك.', vi: 'Hết giờ quần áo của bạn sẽ trở lại. Có thể trả sớm ở tiệm hanbok.', hi: 'समय पूरा होने पर आपके कपड़े लौट आते हैं। चाहें तो दुकान पर पहले लौटा दें।', id: 'Bajumu kembali saat waktunya habis. Bisa dikembalikan lebih awal di toko hanbok.' },
+};
+let rental = loadRental();
+function rentHanbok(product) {
+  const set = hanbokById(product.rent);
+  if (!set) return;
+  if (isRenting(rental, product.rent)) { // give it back early
+    myLook = endRental(myLook, rental);
+    rental = null;
+    shop.toast(L(RENT_TEXT.returned));
+  } else {
+    if (!wallet.spend(set.coins, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: set.coins - wallet.coins })); return; }
+    refreshWallet();
+    sfx.pop?.();
+    const r = startRental(myLook, product.rent, Date.now(), rental);
+    myLook = r.look;
+    rental = r.rental;
+    shop.toast(fmt(L(RENT_TEXT.rented), { h: RENT_HOURS }));
+  }
+  $('revert-look').hidden = true;
+  saveRental(rental);
+  saveLook(myLook);
+  setLook(myLook);
+  refreshRentChip();
+}
+function refreshRentChip() {
+  const chip = $('rent-chip');
+  chip.hidden = !rental;
+  if (rental) chip.textContent = '🪭 ' + formatLeft(timeLeft(rental));
+  chip.title = rental ? fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) }) : '';
+}
+// Time up (checked now, then every 20 s): your own clothes back.
+function tickRental() {
+  const r = checkRental(myLook, rental);
+  if (r.rental !== rental || r.look !== myLook) {
+    rental = r.rental;
+    saveRental(rental);
+    if (r.look !== myLook) {
+      myLook = r.look;
+      saveLook(myLook);
+      if (currentLook !== myLook) $('revert-look').hidden = true;
+      setLook(myLook);
+      if (r.ended) shop.toast(L(RENT_TEXT.ended));
+    }
+  }
+  refreshRentChip();
+}
+setTimeout(tickRental, 0);
+setInterval(tickRental, 20000);
+onLanguageChange(refreshRentChip);
+$('rent-chip').onclick = () => shop.toast(`${fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) })} · ${L(RENT_TEXT.chipHint)}`);
 // Gifts: buy something in a shop for someone else in the same shop (rules in
 // core/gifts.js). The giver pays now; the friend gets a card to accept, and
 // it goes into their bag (or their items, for clothes). No, no answer, or
@@ -1970,7 +2032,7 @@ function outfitAction(itemId) {
 // What a product becomes as a gift here, or null when it can't be one:
 // { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
 function giftFor(store, product) {
-  if (!store || !product || product.adopt || product.umbrella || !onSale(product)) return null;
+  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product)) return null;
   const name = product.name;
   const itemId = product.item || product.outfit;
   const it = itemId && ITEMS[itemId];

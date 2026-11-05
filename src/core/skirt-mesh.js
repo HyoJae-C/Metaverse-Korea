@@ -11,6 +11,8 @@ const WAIST_Y = 0.62; // tucked just under the top's hem
 const SHAPE = {
   mini: { hem: 0.3, rings: 7, waist: [0.293, 0.224], flare: [0.37, 0.31], repeat: [6, 1] },
   long: { hem: 0.13, rings: 11, waist: [0.293, 0.224], flare: [0.43, 0.36], repeat: [4, 1.5] },
+  // A hanbok chima: tied high under the short jeogori, full, to the floor.
+  chima: { top: 0.88, hem: 0.07, rings: 14, waist: [0.312, 0.242], flare: [0.5, 0.44], repeat: [6, 1.5] },
 };
 const SEG = 48;
 const PLEATS = 24;
@@ -24,7 +26,8 @@ function skirtRig(length, pleated, o = {}) {
   const pos = [], uv = [], wts = [], index = [];
   for (let i = 0; i < S.rings; i++) {
     const t = i / (S.rings - 1);
-    const y = WAIST_Y + (S.hem - WAIST_Y) * t;
+    const top = S.top ?? WAIST_Y;
+    const y = top + (S.hem - top) * t;
     const k = 1 - (1 - t) ** 1.4; // flares quickly over the hips, then falls straight
     let rx = S.waist[0] + (S.flare[0] - S.waist[0]) * k;
     let rz = S.waist[1] + (S.flare[1] - S.waist[1]) * k;
@@ -222,9 +225,9 @@ export function skirtDisplay(id) {
   const material = s && skirtMaterial(id);
   if (!material) return null;
   const geo = rigGeometry(skirtRig(s.length, s.pattern === 'pleats'));
-  geo.translate(0, -WAIST_Y, 0);
+  geo.translate(0, -(SHAPE[s.length]?.top ?? WAIST_Y), 0);
   const mesh = new THREE.Mesh(geo, material);
-  mesh.scale.setScalar(0.9);
+  mesh.scale.setScalar(s.length === 'chima' ? 0.75 : 0.9); // a chima is floor length
   mesh.position.y = 0.68; // the waist where trousers on a rail hang from
   return mesh;
 }
