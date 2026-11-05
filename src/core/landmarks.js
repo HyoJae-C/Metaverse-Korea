@@ -21,19 +21,47 @@ function box(g, sx, sy, sz, x, y, z, c) {
   return m;
 }
 
-// A hipped tile roof (팔작지붕 feel): a flattened 4-sided pyramid with the
-// long side along x, a little ridge on top, and upturned corner tips.
+// A hipped tile roof (팔작지붕 feel): long slopes front and back up to a
+// ridge along x, short triangles at the ends, eaves that lift a little at
+// the four corners, and a ridge beam on top.
+const roofGeo = new Map();
+function hipRoofGeometry(w, d, h) {
+  const key = [w, d, h].join();
+  if (roofGeo.has(key)) return roofGeo.get(key);
+  const hw = w / 2, hd = d / 2, r = Math.max(0, hw - hd * 0.9), lift = h * 0.18;
+  // eave corners (lifted), eave mid points, ridge ends
+  const P = {
+    a: [-hw, lift, hd], b: [hw, lift, hd], c: [hw, lift, -hd], dd: [-hw, lift, -hd],
+    m1: [0, 0, hd], m2: [0, 0, -hd], m3: [hw * 0.98, 0, 0], m4: [-hw * 0.98, 0, 0],
+    r1: [-r, h, 0], r2: [r, h, 0],
+  };
+  const tris = [
+    // front slope: a - m1 - b up to the ridge (a little sag in the middle of the eave)
+    ['a', 'm1', 'r1'], ['m1', 'r2', 'r1'], ['m1', 'b', 'r2'],
+    // back slope
+    ['c', 'm2', 'r2'], ['m2', 'r1', 'r2'], ['m2', 'dd', 'r1'],
+    // ends
+    ['b', 'm3', 'r2'], ['m3', 'c', 'r2'], ['dd', 'm4', 'r1'], ['m4', 'a', 'r1'],
+    // underside
+    ['a', 'b', 'm1'], ['b', 'c', 'm3'], ['c', 'dd', 'm2'], ['dd', 'a', 'm4'], ['a', 'c', 'b'], ['a', 'dd', 'c'],
+  ];
+  const pos = [];
+  for (const t of tris) for (const k of t) pos.push(...P[k]);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.computeVertexNormals();
+  roofGeo.set(key, geo);
+  return geo;
+}
 function roof(g, w, d, h, y, z = 0) {
-  const r = new THREE.Mesh(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1), mat(C.roof));
-  r.rotation.y = Math.PI / 4;
-  r.scale.set(w, h, d);
-  r.position.set(0, y + h / 2, z);
+  const r = new THREE.Mesh(hipRoofGeometry(w, d, h), new THREE.MeshLambertMaterial({ color: C.roof, flatShading: true, side: THREE.DoubleSide }));
+  r.position.set(0, y, z);
   g.add(r);
-  box(g, w * 0.55, h * 0.18, d * 0.12, 0, y + h * 0.82, z, C.roofEdge); // ridge
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { // corner tips
-    const tip = box(g, w * 0.06, h * 0.12, w * 0.06, sx * w * 0.5, y + h * 0.08, z + sz * d * 0.5, C.roofEdge);
-    tip.rotation.z = -sx * 0.4;
-  }
+  const ridgeLen = Math.max(1, w - d * 0.9);
+  box(g, ridgeLen + 0.6, h * 0.14, h * 0.14, 0, y + h + h * 0.03, z, C.roofEdge); // ridge beam
+  for (const sx of [-1, 1]) box(g, h * 0.18, h * 0.3, h * 0.14, sx * (ridgeLen / 2 + 0.2), y + h + h * 0.1, z, C.roofEdge); // ridge ends
+  box(g, w * 0.92, h * 0.06, d * 0.04, 0, y + h * 0.02, z + d / 2 - d * 0.02, C.roofEdge); // eave edge, front
+  box(g, w * 0.92, h * 0.06, d * 0.04, 0, y + h * 0.02, z - d / 2 + d * 0.02, C.roofEdge); // and back
 }
 
 // A wooden hall: red columns, a green painted band (단청), a roof.
@@ -50,10 +78,16 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 const BUILD = {
   anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
   gwanghwamun(g) {
-    // Stone base with three arches; the middle one is the way in.
-    for (const sx of [-1, 1]) box(g, 25, 9, 16, sx * 17.5, 4.5, 0, C.stone);
+    // Stone base with three open arches you can walk through: a wide one in
+    // the middle and a smaller one either side.
+    for (const sx of [-1, 1]) {
+      box(g, 17, 9, 16, sx * 21.5, 4.5, 0, C.stone); // outer block
+      box(g, 4, 9, 16, sx * 7, 4.5, 0, C.stone); // pier between the arches
+      box(g, 4, 4, 16, sx * 11, 7, 0, C.stone); // over the side arch
+      box(g, 4.6, 0.5, 16.2, sx * 11, 5.1, 0, C.stoneDark); // its arch band
+    }
     box(g, 10, 3, 16, 0, 7.5, 0, C.stone); // lintel over the middle arch
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 4, 5, 0.2, sx * 11, 2.5, sz * 8.05, C.door); // side arches (closed)
+    box(g, 10.6, 0.5, 16.2, 0, 6.1, 0, C.stoneDark);
     box(g, 61, 0.6, 17, 0, 9.3, 0, C.stoneDark);
     // Two-storey wooden gate tower
     hall(g, 34, 9, 5, 9.6, 0, 6);
@@ -64,10 +98,16 @@ const BUILD = {
     g.add(sign);
   },
   gate(g, l) {
+    // A one-storey gate (e.g. Heungnyemun): white walls either side, an open
+    // passage in the middle under the hall.
     const w = l.w || 24;
-    box(g, w + 4, 1.2, 10, 0, 0.6, 0, C.stone);
-    for (const sx of [-1, 1]) box(g, w / 2 - 4, 5, 6, sx * (w / 4 + 2), 3.7, 0, C.white);
-    hall(g, w, 6, 5.5, 1.2, 0, 7);
+    box(g, w + 4, 0.3, 10, 0, 0.15, 0, C.stone);
+    for (const sx of [-1, 1]) {
+      box(g, w / 2 - 4, 5, 6, sx * (w / 4 + 2), 2.8, 0, C.white);
+      for (const sz of [-1, 1]) box(g, 0.7, 5, 0.7, sx * 4, 2.8, sz * 3, C.wood); // door posts
+    }
+    box(g, 8.6, 0.8, 6.4, 0, 5.0, 0, C.wood); // beam over the passage
+    hall(g, w, 6, 2.4, 5.3, 0, 7);
   },
   hall(g) {
     // Two-tier stone platform (월대), the throne hall on top, double roof.
@@ -89,27 +129,23 @@ const BUILD = {
     for (const sx of [-1, 1]) box(g, 2, 0.6, 16, sx * 5, 0.3, 20, C.stone); // little bridges to the shore
   },
   statue(g, l) {
-    box(g, 6, 3, 8, 0, 1.5, 0, C.plinth);
-    if (l.kind === 'king') {
-      // King Sejong, seated, in gold.
-      box(g, 3.4, 2.4, 3, 0, 4.2, 0.3, C.gold); // lap / robe
-      box(g, 3, 3.2, 2.2, 0, 6.2, -0.4, C.gold); // body
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 8), mat(C.gold));
-      head.position.set(0, 8.4, -0.3);
-      g.add(head);
-      box(g, 1.6, 0.9, 1.6, 0, 9.3, -0.3, C.gold); // crown hat
-      box(g, 1.2, 0.2, 1.6, 1.3, 5.2, 1.2, C.white); // a book
-    } else {
-      // Admiral Yi, standing, in bronze, holding a sword.
-      box(g, 2.2, 5, 1.6, 0, 5.5, 0, C.bronze);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 8), mat(C.bronze));
-      head.position.set(0, 8.7, 0);
-      g.add(head);
-      box(g, 1.3, 0.8, 1.3, 0, 9.5, 0, C.bronze);
-      box(g, 0.2, 4, 0.2, 0.9, 5.5, 1, C.bronze); // sword
-      box(g, 9, 1, 2, 0, 0.5, 6, C.plinth); // the turtle-ship plinth in front
+    if (l.kind === 'king') sejong(g);
+    else admiralYi(g);
+    // An information stone in front, facing the square.
+    const info = STATUE_INFO[l.kind];
+    if (info) {
+      const stone = new THREE.Group();
+      box(stone, 3.2, 2.2, 0.4, 0, 1.5, 0, C.stoneDark);
+      box(stone, 3.6, 0.4, 0.8, 0, 0.2, 0, C.plinth);
+      const face = plaque(info, 2.9, 1.9);
+      face.position.set(0, 1.5, 0.21);
+      stone.add(face);
+      stone.position.set(l.kind === 'king' ? 5.5 : -5.5, 0, l.kind === 'king' ? 6.5 : 11);
+      stone.rotation.y = l.kind === 'king' ? -0.35 : 0.35;
+      g.add(stone);
     }
   },
+
   guard(g) {
     // A gate guard (수문장) in a red robe with a black hat and a flag.
     const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));
@@ -326,6 +362,144 @@ function buskingStage(g) {
 }
 
 // A gold-on-black name board with hanja.
+// The statues on Gwanghwamun Square, more detailed than the rest (they are
+// public monuments): King Sejong seated on his throne with a book, and
+// Admiral Yi Sun-sin standing with his sword, a turtle ship in front.
+const GILT = '#c9a23a', GILT_DARK = '#a8842c', BRONZE = '#4f5a52', BRONZE_DARK = '#3a433d';
+function cyl(g, rt, rb, h, x, y, z, c, seg = 12) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c));
+  m.position.set(x, y, z);
+  g.add(m);
+  return m;
+}
+function sphere(g, r, x, y, z, c, sx = 1, sy = 1, sz = 1) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), mat(c));
+  m.position.set(x, y, z); m.scale.set(sx, sy, sz);
+  g.add(m);
+  return m;
+}
+function sejong(g) {
+  // Granite base in steps, with a band where the reliefs are.
+  box(g, 9, 0.6, 11, 0, 0.3, 0, C.plinth);
+  box(g, 7.6, 2.6, 9.4, 0, 1.9, 0, C.stone);
+  box(g, 7.7, 0.7, 9.5, 0, 2.1, 0, C.stoneDark); // relief band
+  box(g, 8, 0.3, 9.8, 0, 3.35, 0, C.plinth);
+  const y0 = 3.5;
+  // The throne: seat, a tall back and arm rests.
+  box(g, 4.4, 1.6, 3.4, 0, y0 + 0.8, -0.4, GILT_DARK);
+  box(g, 4.6, 4.2, 0.6, 0, y0 + 2.9, -2.0, GILT_DARK);
+  box(g, 4.0, 0.5, 0.7, 0, y0 + 5.1, -2.0, GILT);
+  for (const sx of [-1, 1]) box(g, 0.5, 1.0, 2.6, sx * 2.2, y0 + 2.0, -0.6, GILT_DARK);
+  // The king in his dragon robe (곤룡포): lap, legs, body, wide sleeves.
+  box(g, 3.2, 1.0, 2.4, 0, y0 + 2.0, 0.1, GILT); // lap
+  box(g, 2.8, 1.8, 0.9, 0, y0 + 1.0, 1.25, GILT); // robe falling over the shins
+  box(g, 3.0, 0.3, 0.9, 0, y0 + 0.15, 1.6, GILT_DARK); // shoes / hem
+  box(g, 2.6, 2.6, 1.7, 0, y0 + 3.6, -0.5, GILT); // body
+  cyl(g, 0.55, 0.55, 0.12, 0, y0 + 3.9, 0.36, GILT_DARK, 16).rotation.x = Math.PI / 2; // dragon roundel on the chest
+  box(g, 2.7, 0.25, 1.8, 0, y0 + 2.9, -0.45, GILT_DARK); // belt
+  for (const sx of [-1, 1]) {
+    const arm = box(g, 0.9, 1.9, 1.1, sx * 1.65, y0 + 3.1, 0.1, GILT); // wide sleeve
+    arm.rotation.x = -0.5;
+    sphere(g, 0.25, sx * 0.9, y0 + 2.75, 0.95, GILT); // hand
+  }
+  // The open book in his left hand (훈민정음)
+  const book = new THREE.Group();
+  box(book, 0.8, 0.08, 1.0, -0.42, 0, 0, '#efe6cf');
+  box(book, 0.8, 0.08, 1.0, 0.42, 0, 0, '#efe6cf');
+  box(book, 1.7, 0.05, 1.05, 0, -0.05, 0, GILT_DARK);
+  book.position.set(-0.6, y0 + 2.9, 1.1);
+  book.rotation.set(-0.6, 0.2, 0.15);
+  g.add(book);
+  // Head: face, beard, and the winged crown (익선관).
+  cyl(g, 0.38, 0.45, 0.4, 0, y0 + 5.05, -0.4, GILT); // neck / collar
+  sphere(g, 0.75, 0, y0 + 5.75, -0.35, GILT, 1, 1.08, 1);
+  sphere(g, 0.32, 0, y0 + 5.25, 0.15, GILT_DARK, 1, 1.3, 0.7); // beard
+  for (const sx of [-1, 1]) sphere(g, 0.08, sx * 0.26, y0 + 5.9, 0.33, GILT_DARK); // eyes
+  cyl(g, 0.72, 0.78, 0.55, 0, y0 + 6.45, -0.4, GILT_DARK, 18); // crown
+  sphere(g, 0.55, 0, y0 + 6.75, -0.55, GILT_DARK, 1, 0.7, 0.9);
+  for (const sx of [-1, 1]) { const wing = box(g, 0.75, 0.55, 0.08, sx * 0.55, y0 + 7.0, -1.05, GILT_DARK); wing.rotation.z = sx * 0.35; }
+}
+function admiralYi(g) {
+  // A tall stone pedestal on a wide base.
+  box(g, 7, 0.8, 7, 0, 0.4, 0, C.plinth);
+  box(g, 5, 1.0, 5, 0, 1.3, 0, C.stoneDark);
+  box(g, 3.8, 6.0, 3.8, 0, 4.8, 0, C.stone);
+  box(g, 4.4, 0.6, 4.4, 0, 8.1, 0, C.stoneDark);
+  const y0 = 8.4;
+  // Armour: boots, a long armoured skirt, breastplate, shoulder guards, cape.
+  for (const sx of [-1, 1]) box(g, 0.6, 1.2, 0.8, sx * 0.45, y0 + 0.6, 0.1, BRONZE_DARK);
+  cyl(g, 1.0, 1.35, 2.2, 0, y0 + 2.2, 0, BRONZE, 10); // armoured skirt
+  for (let i = 0; i < 4; i++) cyl(g, 1.02 + i * 0.09, 1.04 + i * 0.09, 0.12, 0, y0 + 3.1 - i * 0.55, 0, BRONZE_DARK, 10); // plates
+  box(g, 2.2, 2.2, 1.4, 0, y0 + 4.3, 0, BRONZE); // breastplate
+  box(g, 2.3, 0.3, 1.5, 0, y0 + 3.3, 0, BRONZE_DARK); // belt
+  for (const sx of [-1, 1]) {
+    sphere(g, 0.55, sx * 1.25, y0 + 5.15, 0, BRONZE_DARK, 1, 0.7, 1); // shoulder guard
+    const arm = box(g, 0.55, 1.5, 0.6, sx * 0.85, y0 + 4.4, 0.55, BRONZE); // arms forward to the hilt
+    arm.rotation.x = -0.9; arm.rotation.z = sx * 0.35;
+  }
+  box(g, 2.6, 4.2, 0.2, 0, y0 + 3.3, -0.8, BRONZE_DARK).rotation.x = 0.08; // cape
+  // The great sword, point down in front, both hands on the hilt.
+  box(g, 0.22, 3.4, 0.1, 0, y0 + 2.4, 1.05, '#7d8a80'); // blade
+  box(g, 0.9, 0.18, 0.3, 0, y0 + 4.15, 1.05, BRONZE_DARK); // guard
+  box(g, 0.2, 0.8, 0.2, 0, y0 + 4.6, 1.05, BRONZE_DARK); // grip
+  sphere(g, 0.32, 0, y0 + 4.55, 1.0, BRONZE, 1.4, 0.8, 0.9); // hands
+  // Head with a helmet, its brim and a plume on top.
+  cyl(g, 0.35, 0.4, 0.4, 0, y0 + 5.55, 0, BRONZE);
+  sphere(g, 0.68, 0, y0 + 6.2, 0, BRONZE, 1, 1.08, 1);
+  for (const sx of [-1, 1]) sphere(g, 0.07, sx * 0.24, y0 + 6.3, 0.6, BRONZE_DARK);
+  sphere(g, 0.3, 0, y0 + 5.75, 0.45, BRONZE_DARK, 1, 1.1, 0.6); // beard
+  cyl(g, 0.72, 0.76, 0.55, 0, y0 + 6.75, 0, BRONZE_DARK, 16); // helmet
+  cyl(g, 0.95, 0.95, 0.08, 0, y0 + 6.5, 0, BRONZE_DARK, 18); // brim
+  cyl(g, 0.06, 0.06, 0.7, 0, y0 + 7.35, 0, BRONZE_DARK);
+  sphere(g, 0.22, 0, y0 + 7.75, 0, '#7d3b33', 1, 1.4, 1); // plume
+  // The turtle ship (거북선) in front: hull, spiked shell roof, dragon head.
+  const ship = new THREE.Group();
+  box(ship, 3.4, 0.9, 7.6, 0, 0.75, 0, '#6b4a2e');
+  box(ship, 3.8, 0.25, 8.0, 0, 1.3, 0, '#5a3d25');
+  const shell = sphere(ship, 1.9, 0, 1.4, 0, BRONZE, 1, 0.55, 2.0);
+  shell.rotation.y = 0;
+  for (let i = 0; i < 7; i++) for (const sx of [-1, 0, 1]) cyl(ship, 0.02, 0.07, 0.35, sx * 0.85, 2.3 - Math.abs(sx) * 0.25, -3 + i, BRONZE_DARK, 5); // spikes
+  for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) { const oar = box(ship, 0.08, 0.08, 1.4, sx * 2.1, 0.7, -2.5 + i, '#5a3d25'); oar.rotation.z = sx * 0.5; }
+  const neck = box(ship, 0.7, 0.7, 1.2, 0, 1.8, 4.2, BRONZE);
+  neck.rotation.x = -0.4;
+  sphere(ship, 0.55, 0, 2.3, 4.8, BRONZE, 1, 0.9, 1.3); // dragon head
+  for (const sx of [-1, 1]) sphere(ship, 0.1, sx * 0.3, 2.5, 5.25, '#d4a73a');
+  box(ship, 0.4, 0.15, 0.5, 0, 2.05, 5.4, '#7d3b33'); // mouth
+  box(ship, 4.6, 0.4, 9, 0, 0.2, 0, C.plinth);
+  ship.position.set(0, 0, 8.5);
+  g.add(ship);
+}
+const STATUE_INFO = {
+  king: {
+    title: '세종대왕 동상 · King Sejong the Great',
+    ko: ['조선의 제4대 왕 (1397–1450).', '1443년 백성이 쉽게 쓰는 글자 훈민정음(한글)을', '만들었어요. 측우기·해시계 같은 과학 기구도', '이때 만들어졌어요. 손에 든 책이 훈민정음이에요.'],
+    en: ['4th king of Joseon. In 1443 he created Hangeul,', 'the Korean alphabet, so everyone could read and write.'],
+  },
+  admiral: {
+    title: '이순신 장군 동상 · Admiral Yi Sun-sin',
+    ko: ['조선의 장군 (1545–1598). 임진왜란 때 바다에서', '23번 싸워 한 번도 지지 않았다고 전해져요.', '앞에 있는 배가 등에 쇠못을 박은 거북선이에요.', '광화문광장에서 남쪽 바다를 바라보고 서 있어요.'],
+    en: ['Joseon admiral who led the navy in the Imjin War', '(1592–1598). In front: the armoured turtle ship.'],
+  },
+};
+// A carved information plaque: a title, Korean lines, English lines.
+function plaque(info, w, h) {
+  const c = document.createElement('canvas');
+  c.width = 768; c.height = 504;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2b2a28'; x.fillRect(0, 0, 768, 504);
+  x.strokeStyle = '#c9a23a'; x.lineWidth = 6; x.strokeRect(10, 10, 748, 484);
+  x.fillStyle = '#e8c56a'; x.textAlign = 'center'; x.textBaseline = 'top';
+  x.font = '800 40px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif';
+  x.fillText(info.title, 384, 34);
+  x.fillStyle = '#f4efe4'; x.font = '500 30px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif';
+  info.ko.forEach((line, i) => x.fillText(line, 384, 106 + i * 44));
+  x.fillStyle = '#c9c2b4'; x.font = 'italic 25px sans-serif';
+  info.en.forEach((line, i) => x.fillText(line, 384, 106 + info.ko.length * 44 + 26 + i * 34));
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+}
+
 function signBoard(text, w, h) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 80;

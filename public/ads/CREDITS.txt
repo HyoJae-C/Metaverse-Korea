@@ -1,8 +1,10 @@
-Seongsu fashion posters (public/ads/*.webp)
+Photo posters (public/ads/*.webp)
 
 Photos from Unsplash, used under the Unsplash License
 (https://unsplash.com/license): free for commercial use, no permission
 needed. Shown as the original photos, resized; one photo was cropped.
+Each poster names its source small in the corner as "UNSPLASH : Name"
+(region.json or the map file's "credit").
 A changed photo gets a new file name (-v2, -v3...): players' browsers
 keep an old image under the same name for a while.
 
@@ -16,3 +18,9 @@ seongsu-puffer-v2.webp      Mike Von           https://unsplash.com/photos/bWUOx
 seongsu-mono-v2.webp        Chyntia Juls       https://unsplash.com/photos/HlVjI5WmoQY
 seongsu-retro-v2.webp       Alex Shaw          https://unsplash.com/photos/J4kxbw1SYwg (cropped)
 seongsu-beanie-v2.webp      Pesce Huang        https://unsplash.com/photos/Ndjb5iZUEHk
+
+Gwanghwamun Square walls (districts/gyeongbokgung.json "wall")
+gyeongbok-corridor.webp     Jet dela Cruz      https://unsplash.com/photos/AOI_fg7A28w
+gyeongbok-alley.webp        Grafi Jeremiah     https://unsplash.com/photos/UONyOCzyO8A
+gyeongbok-lanterns.webp     JIEUN KWON         https://unsplash.com/photos/VMgTeyPP5pM
+gyeongbok-kimchi.webp       Daniel             https://unsplash.com/photos/78jWkCp_jdM

@@ -318,6 +318,47 @@ export class Sfx {
     k.stop(t + len + 0.05);
   }
 
+  // Heartbeat for the tarot reveal: n low "lub-dub" thumps, speeding up.
+  heartbeat(n = 3) {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    let t = c.currentTime + 0.03;
+    for (let i = 0; i < n; i++) {
+      for (const [dt, vol] of [[0, 0.32], [0.16, 0.22]]) {
+        const o = c.createOscillator(), g = c.createGain(), at = t + dt;
+        o.type = 'sine';
+        o.frequency.setValueAtTime(70, at);
+        o.frequency.exponentialRampToValueAtTime(38, at + 0.14);
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.exponentialRampToValueAtTime(vol, at + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+        o.connect(g).connect(c.destination);
+        o.start(at); o.stop(at + 0.2);
+      }
+      t += Math.max(0.42, 0.7 - i * 0.1);
+    }
+  }
+  // The card turns over: a soft shimmer rising into a bell.
+  reveal(big = false) {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t0 = c.currentTime + 0.02;
+    const notes = big ? [72, 76, 79, 84, 88] : [76, 83, 88];
+    notes.forEach((m, i) => {
+      const f = 440 * 2 ** ((m - 69) / 12), t = t0 + i * 0.07, len = big ? 1.6 : 1.0;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g).connect(c.destination);
+      o.start(t); o.stop(t + len + 0.05);
+    });
+  }
+
   // Train arrival chime: our own short bell-like phrase (not a recording of
   // any real metro jingle). Four soft notes rising, then a settling fifth.
   arrivalChime() {

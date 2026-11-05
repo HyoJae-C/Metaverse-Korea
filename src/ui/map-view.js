@@ -407,14 +407,27 @@ export class MapView {
     else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
-    const cats = [...new Set(this.stores.map((s) => s.store.category))];
-    this.chips.replaceChildren(...[null, ...cats].map((c) => {
+    // Categories wrap onto rows (sideways scrolling was hard with a mouse and
+    // easy to miss on a phone). Folded, only the biggest few show, plus the
+    // chosen one and a "+n" chip that unfolds the rest.
+    const n = new Map();
+    for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
+    const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
+    const FOLDED = 5;
+    const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
+    const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');
-      b.className = 'map-cat' + (c === this.category ? ' on' : '');
-      b.textContent = c ? `${CATEGORY_ICON[c] || '🛍️'} ${t('cat.' + c)}` : t('map.all');
-      b.onclick = () => { this.category = c; this._renderList(); this.draw(); };
+      b.className = 'map-cat' + (on ? ' on' : '') + cls;
+      b.textContent = text;
+      b.onclick = run;
       return b;
-    }));
+    };
+    const pick = (c) => () => { this.category = c; this._renderList(); this.draw(); };
+    const toggle = (open) => () => { this.catsOpen = open; this._renderList(); };
+    this.chips.replaceChildren(
+      ...[null, ...shown].map((c) => chip(c ? `${CATEGORY_ICON[c] || '🛍️'} ${t('cat.' + c)}` : t('map.all'), c === this.category, pick(c))),
+      ...(shown.length < cats.length ? [chip(`+${cats.length - shown.length} ▾`, false, toggle(true), ' more')] : this.catsOpen ? [chip('▴', false, toggle(false), ' more')] : []),
+    );
   }
 
   // Phone search mode: the results fill the card under the search box, and
