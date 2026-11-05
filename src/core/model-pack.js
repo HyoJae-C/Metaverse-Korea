@@ -607,11 +607,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
       if (folk && !folkProps && slotL && slotR) {
-        const make = folk === 'fan' ? makeFan : makeSleeve;
-        folkProps = [make(1.8), make(1.6)];
-        slotL.add(folkProps[0]); slotR.add(folkProps[1]);
+        folkProps = folk === 'tal' ? [makeSleeve(1.6), makeSleeve(1.6)] : folk === 'rope' ? [null, makeFan(1.5)] : [makeFan(1.8), makeFan(1.8)];
+        if (folkProps[0]) slotL.add(folkProps[0]);
+        slotR.add(folkProps[1]);
       }
-      if (folkProps) for (const f of folkProps) f.visible = !!folk;
+      if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       let stroke = null;
