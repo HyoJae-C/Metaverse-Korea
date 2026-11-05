@@ -113,6 +113,15 @@ Supabase dashboard:
 Until both are done the game keeps saving on the device only (Settings shows which). Automated test rooms
 (`?debug`) skip cloud saves. The browser writes its own save, so coins and items are not cheat-proof yet.
 
+### Chat permissions
+
+Chat travels on private realtime channels (`chat:<room>`) so the server decides who may send. Run
+`supabase/004_chat.sql` once; until then chat uses the public room channels (anyone can send). After it:
+
+- `chat_settings.google_only` = true → only Google-signed-in players can send (guests still read). Also set
+  `chatGoogleOnly: true` in `src/config.js` so guests get a "sign in to chat" prompt. Both start off.
+- `chat_bans` → add an account's `user_id` (look it up by name in `player_names`) to stop it chatting.
+
 ### Swapping the realtime provider
 
 Game code talks only to the adapter interface in `src/net/index.js`. Add a file in `src/net/adapters/`,

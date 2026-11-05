@@ -232,10 +232,10 @@ const ID_TEXT = {
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
   text: {
-    en: 'Sign in with Google and your coins, items and home are saved to your account, so you can carry on from any device. As a guest, everything stays in this browser only and can be lost if you clear it or switch devices.',
-    ko: '구글로 로그인하면 코인, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 이 브라우저에만 저장돼서, 기록을 지우거나 기기를 바꾸면 사라질 수 있어요.',
-    ja: 'Googleでログインすると、コイン・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストはこのブラウザだけに保存され、履歴を消したり端末を変えると消えることがあります。',
-    zh: '用 Google 登录后，金币、物品和家会保存到账号，在任何设备上都能继续。游客只保存在这个浏览器里，清除记录或换设备可能会丢失。',
+    en: 'Sign in with Google and your coins, items and home are saved to your account, so you can carry on from any device. As a guest, your progress may be lost when the game is updated, or if you clear this browser or switch devices.',
+    ko: '구글로 로그인하면 코인, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 게임이 업데이트될 때 기록이 사라질 수 있고, 브라우저 기록을 지우거나 기기를 바꿔도 사라질 수 있어요.',
+    ja: 'Googleでログインすると、コイン・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストの記録は、ゲームのアップデート時や、ブラウザの履歴を消したり端末を変えたときに消えることがあります。',
+    zh: '用 Google 登录后，金币、物品和家会保存到账号，在任何设备上都能继续。游客的进度在游戏更新时可能会丢失，清除浏览器记录或换设备也可能丢失。',
   },
   google: { en: 'Sign in with Google (saves)', ko: '구글로 로그인 (저장돼요)', ja: 'Googleでログイン（保存されます）', zh: '用 Google 登录（会保存）' },
   guest: { en: 'Play as a guest', ko: '게스트로 시작', ja: 'ゲストで始める', zh: '以游客身份开始' },
@@ -1080,7 +1080,7 @@ async function joinRoom(room, roomScene, area = null) {
     },
   };
   try {
-    const n = await createAreaNet(config.netProvider, handlers, config.net, {
+    const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
       room, self: { id: myId, name: nickname, look: currentLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
     });
@@ -1279,9 +1279,25 @@ function openChat() {
   chatBar.hidden = false;
   input.keys.clear();
   chatInput.focus();
-  if (!chatNoticeShown) { chatNoticeShown = true; addChatLine('ℹ️', t('chat.notice'), 'note'); }
+  if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
 }
 function closeChat() { chatBar.hidden = true; chatInput.blur(); }
+const mustSignInToChat = () => config.chatGoogleOnly && config.netProvider === 'supabase' && !(cloud.user && !cloud.guest);
+// A note in the chat log with a Google sign-in button (links this guest, so
+// the save stays).
+function chatSignInPrompt() {
+  const line = document.createElement('div');
+  line.className = 'chat-line note';
+  const btn = document.createElement('button');
+  btn.className = 'chat-signin';
+  btn.textContent = 'G  ' + t('chat.signInBtn');
+  btn.onclick = async () => googleFail(await cloud.linkGoogle());
+  line.append(document.createTextNode('🔒 ' + t('chat.signIn') + ' '), btn);
+  chatLog.append(line);
+  while (chatLog.children.length > 6) chatLog.firstChild.remove();
+  setTimeout(() => line.classList.add('old'), 15000);
+  setTimeout(() => line.remove(), 16000);
+}
 $('chat-btn').hidden = !config.chatEnabled;
 $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
 chatBar.addEventListener('submit', async (e) => {
@@ -1322,6 +1338,9 @@ chatBar.addEventListener('submit', async (e) => {
     } else shop.toast(t('chat.unknownCommand'));
     return;
   }
+  // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
+  // instead. Event and developer codes above still work for them.
+  if (mustSignInToChat()) { chatSignInPrompt(); return; }
   const text = filterText(cleanChat(chatInput.value));
   const now = performance.now() / 1000;
   if (!text || now - lastChatAt < config.chatCooldown) return;
