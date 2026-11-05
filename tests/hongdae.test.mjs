@@ -7,14 +7,18 @@ import { tipsLeft, takeTip, TIPS_PER_DAY } from '../src/core/busking.js';
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
 const region = read('region.json');
 
-test('tarot: 22 major arcana, named and explained in each language', () => {
-  assert.equal(TAROT_CARDS.length, 22);
+test('tarot: 22 major and 56 minor arcana, named and explained in each language', () => {
+  assert.equal(TAROT_CARDS.length, 78);
   assert.equal(ROMAN.length, 22);
   TAROT_CARDS.forEach((c, i) => {
     assert.equal(c.n, i);
     assert.ok(c.icon);
-    for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(c.name[l] && c.mean[l], `${c.name.en}.${l}`);
+    for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(c.name[l] && c.mean[l] && c.love[l] && c.money[l], `${c.name.en}.${l}`);
   });
+  assert.equal(TAROT_CARDS.filter((c) => c.suit).length, 56);
+  assert.equal(TAROT_CARDS[22].name.en, 'Ace of Wands');
+  assert.equal(TAROT_CARDS[77].name.en, 'King of Pentacles');
+  assert.equal(new Set(TAROT_CARDS.map((c) => c.name.en)).size, 78);
   assert.equal(POSITIONS.length, 3);
 });
 

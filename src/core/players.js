@@ -82,6 +82,19 @@ export class RemotePlayers {
   }
 
   // Is someone already sitting on the chair at (x, z)?
+  // Who sits on the seat at (x, z), if anyone.
+  sitterAt(x, z) {
+    for (const [id, p] of this.players) if (p.target?.sit && Math.hypot(p.target.x - x, p.target.z - z) < 0.3) return id;
+    return null;
+  }
+
+  // Everyone holding a tarot café queue number (see core/tarot-queue.js).
+  tickets() {
+    const out = [];
+    for (const [id, p] of this.players) if (!p.hidden && p.target?.tq) out.push({ id, tq: p.target.tq });
+    return out;
+  }
+
   seatTaken(x, z) {
     for (const p of this.players.values()) {
       if (p.target?.sit && Math.hypot(p.target.x - x, p.target.z - z) < 0.3) return true;
