@@ -312,7 +312,7 @@
       "category": "petshop",
       "size": "medium",
       "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
-      "tagline": { "en": "Adopt a dog or a cat with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지나 고양이를 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗或小猫一起散步。一定要清理宠物的便便！" },
+      "tagline": { "en": "Adopt a dog, a cat or a small pet with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지, 고양이, 작은 동물을 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫、小動物を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗、小猫或小宠物一起散步。一定要清理宠物的便便！" },
       "at": [0.8, 66.2],
       "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
       "products": [
@@ -320,7 +320,9 @@
         { "id": "adopt-poodle", "model": "pet:dog", "color": "#d9a066", "accent": "#f3d9b8", "adopt": "pet-poodle", "price": 0, "name": { "en": "Toy poodle puppy · Bori", "ko": "토이푸들 · 보리", "ja": "トイプードル · ボリ", "zh": "玩具贵宾 · 大麦" }, "desc": { "en": "A curly apricot poodle, small and very clever." } },
         { "id": "adopt-shiba", "model": "pet:dog", "color": "#e39a4f", "accent": "#fff3e3", "adopt": "pet-shiba", "price": 0, "name": { "en": "Shiba puppy · Kongtteok", "ko": "시바견 · 콩떡", "ja": "柴犬 · コントク", "zh": "柴犬 · 豆糕" }, "desc": { "en": "Curly tail, big smile, a bit stubborn." } },
         { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
-        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } }
+        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } },
+        { "id": "adopt-chinchilla", "model": "pet:chinchilla", "color": "#b9b6b8", "accent": "#f1eeee", "adopt": "pet-chinchilla", "price": 0, "name": { "en": "Chinchilla · Somi", "ko": "친칠라 · 솜이", "ja": "チンチラ · ソミ", "zh": "龙猫 · 棉棉" }, "desc": { "en": "The softest fur in the shop, with big round ears." } },
+        { "id": "adopt-guineapig", "model": "pet:guineapig", "color": "#b4733f", "accent": "#fff4e6", "adopt": "pet-guineapig", "price": 0, "name": { "en": "Guinea pig · Kkultteok", "ko": "기니피그 · 꿀떡", "ja": "モルモット · クルトク", "zh": "豚鼠 · 蜜糕" }, "desc": { "en": "A chubby little friend who squeaks when happy." } }
       ]
     },
     {

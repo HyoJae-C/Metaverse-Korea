@@ -128,8 +128,8 @@ export const ITEMS = {
     'pet-shiba': [800, '🐕', { kind: 'dog', name: '콩떡', rom: 'Kongtteok', color: '#e39a4f', accent: '#fff3e3', scale: 0.95 }, { en: 'Shiba · Kongtteok', ko: '시바견 · 콩떡', ja: '柴犬 · コントク', zh: '柴犬 · 豆糕' }],
     'pet-cheesecat': [250, '🐱', { kind: 'cat', name: '레오', rom: 'Leo', color: '#ffc864', accent: '#fff4e6', scale: 0.9 }, { en: 'Cheese tabby · Leo', ko: '치즈 고양이 · 레오', ja: '茶トラ · レオ', zh: '橘猫 · 雷欧' }],
     'pet-bluecat': [500, '🐈', { kind: 'cat', name: '아톰', rom: 'Atom', color: '#8e98a6', accent: '#d9dee5', scale: 0.9 }, { en: 'Russian Blue · Atom', ko: '러시안블루 · 아톰', ja: 'ロシアンブルー · アトム', zh: '俄罗斯蓝猫 · 阿童木' }],
-    'pet-chinchilla': [0, '🐭', { kind: 'chinchilla', name: '솜이', rom: 'Somi', color: '#b9b6b8', accent: '#f1eeee', scale: 0.8 }, { en: 'Chinchilla · Somi', ko: '친칠라 · 솜이', ja: 'チンチラ · ソミ', zh: '龙猫 · 棉棉' }],
-    'pet-guineapig': [0, '🐹', { kind: 'guineapig', name: '꿀떡', rom: 'Kkultteok', color: '#b4733f', accent: '#fff4e6', scale: 0.8 }, { en: 'Guinea pig · Kkultteok', ko: '기니피그 · 꿀떡', ja: 'モルモット · クルトク', zh: '豚鼠 · 蜜糕' }],
+    'pet-chinchilla': [400, '🐭', { kind: 'chinchilla', name: '솜이', rom: 'Somi', color: '#b9b6b8', accent: '#f1eeee', scale: 0.8 }, { en: 'Chinchilla · Somi', ko: '친칠라 · 솜이', ja: 'チンチラ · ソミ', zh: '龙猫 · 棉棉' }],
+    'pet-guineapig': [60, '🐹', { kind: 'guineapig', name: '꿀떡', rom: 'Kkultteok', color: '#b4733f', accent: '#fff4e6', scale: 0.8 }, { en: 'Guinea pig · Kkultteok', ko: '기니피그 · 꿀떡', ja: 'モルモット · クルトク', zh: '豚鼠 · 蜜糕' }],
     'pet-monkey': [0, '🐵', { kind: 'monkey', name: '바나', rom: 'Bana', color: '#8a5a3a', accent: '#f0d2b0', scale: 0.9 }, { en: 'Little monkey · Bana', ko: '아기 원숭이 · 바나', ja: '子ザル · バナ', zh: '小猴子 · 巴纳' }],
   }),
 };
@@ -162,7 +162,8 @@ const CODES = {
   '9db9efa6cfeea17db7046ae247534ec49bf53b49f8e953416db0037e44145c44': ['car', 'limo'], // open sports car + limousine
   '6a4ae2320b9c19a6c29ba13e9daeb1a1aad96880fa89d9b9dd813c0785b2446b': ['moto'], // the red sports motorbike and helmet
   '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
-  // Pets not sold yet: one code each.
+  // Pet codes (the chinchilla and guinea pig are also sold now; the monkey
+  // is code only, since monkeys are not sold as pets in Korean pet shops).
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
   bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
