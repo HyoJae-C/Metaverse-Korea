@@ -6,7 +6,7 @@
 // Spot numbers ("L-07") count the shop lots of a district in map order, so
 // they stay the same while shops come and go. A booked spot shows its ad
 // from region.json:
-//   "adPosters": { "L-07": { "image": "ads/brand.png" } }
+//   "adPosters": { "L-07": { "image": "ads/brand.png", "credit": "Photographer Name" } }
 //   "adPosters": { "L-07": { "text": "Grand opening", "sub": "Seongsu-ro 12", "color": "#e94e77" } }
 // A shop's own building can carry a big poster on its upper floors too,
 // above the shop front (region.json "storePosters"):
@@ -121,11 +121,30 @@ function smallMaterials() {
   })));
 }
 
+// The photographer's name in the poster's corner, small, like a magazine
+// photo credit: "Photo: Name".
+function creditTag(text) {
+  const H = 48;
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = `600 28px ${FONT}`;
+  const W = Math.ceil(probe.measureText(text).width) + 28;
+  const map = canvasTex(W, H, (g) => {
+    g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#fff'; g.font = `600 28px ${FONT}`; g.textBaseline = 'middle';
+    g.fillText(text, 14, H / 2 + 1);
+  });
+  const h = 0.26;
+  const m = new THREE.Mesh(UNIT_PLANE, new THREE.MeshBasicMaterial({ map, transparent: true }));
+  m.scale.set((h * W) / H, h, 1);
+  return m;
+}
+
 // A photo poster in its own shape: fits a box of maxW × maxH metres
-// (bottom edge at `bottom`), sized once the image has loaded.
+// (bottom edge at `bottom`), sized once the image has loaded. `credit`
+// (optional) names the photographer in the bottom right corner.
 const UNIT_PLANE = new THREE.PlaneGeometry(1, 1);
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
-function photoPoster(g, url, maxW, maxH, bottom) {
+function photoPoster(g, url, maxW, maxH, bottom, credit) {
   const frame = new THREE.Mesh(UNIT_BOX, new THREE.MeshLambertMaterial({ color: 0x24262b }));
   const poster = new THREE.Mesh(UNIT_PLANE, new THREE.MeshBasicMaterial());
   frame.visible = poster.visible = false;
@@ -139,6 +158,11 @@ function photoPoster(g, url, maxW, maxH, bottom) {
     frame.scale.set(w + 0.3, h + 0.3, 0.1);
     frame.position.set(0, y, 0.05);
     frame.visible = poster.visible = true;
+    if (credit) {
+      const tag = creditTag('Photo: ' + credit);
+      tag.position.set(w / 2 - tag.scale.x / 2 - 0.08, y - h / 2 + tag.scale.y / 2 + 0.08, 0.14);
+      g.add(tag);
+    }
   });
   map.colorSpace = THREE.SRGBColorSpace;
   poster.material.map = map;
@@ -183,7 +207,7 @@ export class AdPosters {
       const top = (b.h || 8) - 0.6, bottom = sh + 0.6;
       const bw = Math.min(wide - 2, 10, ((top - bottom) / 0.62));
       const ad = booked[id];
-      if (ad?.image) photoPoster(g, base + ad.image, Math.min(wide - 2, 10), top - bottom - 0.4, bottom + 0.4);
+      if (ad?.image) photoPoster(g, base + ad.image, Math.min(wide - 2, 10), top - bottom - 0.4, bottom + 0.4, ad.credit);
       else if (bw > 3) {
         const bh = bw * 0.62;
         const map = canvasTex(640, 400, (c, W, H) => (ad ? drawBooked(c, W, H, ad) : drawBig(c, W, H, id, k)));
@@ -210,7 +234,7 @@ export class AdPosters {
       const g = new THREE.Group();
       g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
       g.rotation.y = Math.atan2(front.nx, front.nz);
-      photoPoster(g, base + ad.image, front.half * 2 - 0.8, top - bottom, bottom);
+      photoPoster(g, base + ad.image, front.half * 2 - 0.8, top - bottom, bottom, ad.credit);
       this.root.add(g);
     }
     scene.add(this.root);
