@@ -29,6 +29,10 @@ const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, c
 // A short-sleeved shirt with a collar and a button placket.
 const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
 
+// Colour variants of a garment: { id: colours } -> model defs on one GLB.
+const variants = (glb, emoji, base, list, extra = {}) => Object.fromEntries(Object.entries(list).map(([id, colors]) => [id,
+  { url: `models/kaykit2/${glb}.glb`, emoji, wear: wear({ ...base, colors: { ...base.colors, ...colors } }), ...extra }]));
+
 export default {
   id: 'kaykit2',
   models: {
@@ -45,6 +49,22 @@ export default {
     knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
     barbarian: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
     ranger: { url: 'models/kaykit2/ranger.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The same clothes in other colours, sold at the other clothes shops.
+    ...variants('rogue', '🧥', JACKET, {
+      'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
+    }),
+    ...variants('rogue_hooded', '🧢', HOODIE, {
+      'hoodie-black': { top: 0x2b2b31, accent: 0x3a3a42 }, 'hoodie-wine': { top: 0x8a2f45, accent: 0x74263a }, 'hoodie-orange': { top: 0xff7a00, accent: 0xd96800 },
+    }, { hood: true }),
+    ...variants('ranger', '👔', SHIRT, {
+      'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
+    }),
+    ...variants('knight', '🧥', PUFFER, {
+      'puffer-black': { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 }, 'puffer-mustard': { top: 0xd9a43a, accent: 0x8d6a2a, stitch: 0xa8822e },
+    }),
+    ...variants('mage', '🧥', LONG_PADDING, {
+      'padding-white': { top: 0xeeeae2, accent: 0xa9a59c, stitch: 0xc4beb2 },
+    }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.
   // The first ones are needed right away, the rest load in the background.

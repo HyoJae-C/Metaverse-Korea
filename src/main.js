@@ -83,7 +83,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, redeemCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, isWorn, redeemCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -1368,8 +1368,8 @@ const shop = new ShopUI({
   owns: (id) => inventory.has(id),
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
-  onOutfit: (product) => outfitAction(product.outfit),
-  wearing: () => myLook.model,
+  onOutfit: (product) => outfitAction(product.item || product.outfit),
+  wearing: (id) => isWorn(ITEMS[id], myLook),
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
@@ -1912,22 +1912,29 @@ const OUTFIT_TEXT = {
   bought: { en: 'New clothes! You are wearing them now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Ropa nueva! Ya la llevas puesta.', ar: 'ملابس جديدة! أنت ترتديها الآن.', vi: 'Quần áo mới! Bạn đang mặc rồi.', hi: 'नए कपड़े! आपने इन्हें अभी पहन लिया है।', id: 'Baju baru! Sekarang sedang kamu pakai.' },
   on: { en: 'Changed clothes!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Te cambiaste de ropa!', ar: 'غيّرت ملابسك!', vi: 'Đã thay đồ!', hi: 'कपड़े बदल लिए!', id: 'Sudah ganti baju!' },
   off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', vi: 'Đã trở lại áo phông.', hi: 'वापस अपनी टी-शर्ट में।', id: 'Kembali ke kaosmu.' },
+  boughtThing: { en: 'Bought! You are wearing it now.', ko: '샀어요! 바로 착용했어요.', ja: '買いました！さっそく着けています。', zh: '买好了！已经穿戴上了。', es: '¡Comprado! Ya lo llevas puesto.', ar: 'تم الشراء! أنت ترتديه الآن.', vi: 'Đã mua! Bạn đang đeo/mặc rồi.', hi: 'ख़रीद लिया! आपने इसे अभी पहन लिया है।', id: 'Sudah dibeli! Sekarang sedang kamu pakai.' },
+  offThing: { en: 'Taken off.', ko: '벗었어요.', ja: '外しました。', zh: '取下了。', es: 'Te lo quitaste.', ar: 'خلعته.', vi: 'Đã tháo ra.', hi: 'उतार दिया।', id: 'Sudah dilepas.' },
 };
-// Clothes shop and the items list: buy (coins), wear, or take off.
+// Clothes and accessory shops and the items list: buy (coins), wear, or
+// take off. Buying puts it on right away.
 function outfitAction(itemId) {
   const it = ITEMS[itemId];
-  if (!it?.outfit) return;
+  if (!it?.wear) return;
+  const on = isWorn(it, myLook);
   if (!inventory.has(itemId)) {
     if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
     refreshWallet();
     sfx.pop?.();
-    myLook = { ...myLook, model: it.outfit };
-    shop.toast(L(OUTFIT_TEXT.bought));
+    myLook = { ...myLook, ...it.wear };
+    shop.toast(L(it.outfit ? OUTFIT_TEXT.bought : OUTFIT_TEXT.boughtThing));
+  } else if (on) {
+    if (!it.off) return; // trousers: swap them for another pair instead
+    myLook = { ...myLook, ...it.off };
+    shop.toast(L(it.outfit ? OUTFIT_TEXT.off : OUTFIT_TEXT.offThing));
   } else {
-    const on = myLook.model === it.outfit;
-    myLook = { ...myLook, model: on ? 'basic' : it.outfit };
-    shop.toast(L(on ? OUTFIT_TEXT.off : OUTFIT_TEXT.on));
+    myLook = { ...myLook, ...it.wear };
+    shop.toast(L(OUTFIT_TEXT.on));
   }
   saveLook(myLook);
   setLook(myLook);
@@ -3903,6 +3910,7 @@ refreshCloud();
 initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
+const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
 function refreshItems() {
   const list = inventory.list();
   $('wallet-items-title').hidden = !list.length;
@@ -3923,11 +3931,12 @@ function refreshItems() {
       w.onclick = () => setPet(walking ? null : id);
       row.append(w);
     }
-    if (it.outfit) { // wear the costume, or go back to the T-shirt
-      const on = myLook.model === it.outfit;
+    if (it.wear) { // put it on, or take it off (trousers can only be swapped)
+      const on = isWorn(it, myLook);
       const w = document.createElement('button');
       w.className = 'chip item-walk' + (on ? ' on' : '');
-      w.textContent = on ? '👕 ' + t('tee.off') : '✨ ' + t('tee.wear');
+      w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear');
+      w.disabled = on && !it.off;
       w.onclick = () => { outfitAction(id); refreshItems(); };
       row.append(w);
     }
@@ -4461,7 +4470,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'tarot' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { clerk.ch.wave(); say(clerk, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); shop.toast(L(GOODS_TEXT.soon)); say(clerk, $('labels'), ['곧 열어요!', 'got yeoreoyo!', L(GOODS_TEXT.soon)]); } }; // fashion: coming soon
+      next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); openHatWorkshop(); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[interior?.store.category === 'library' ? 'library' : interior?.store.category === 'school' ? 'school' : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
@@ -4912,6 +4921,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     mapView: () => mapView,
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
     metro: () => metro && { ...metro, now: Date.now(), station: stationIndex(), mode: interior?.train ? 'train' : interior?.subway ? 'hall' : mode },

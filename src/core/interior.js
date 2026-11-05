@@ -171,6 +171,42 @@ export function productModel(kind, color) {
     case 'scarf':
       add(new THREE.TorusGeometry(0.13, 0.05, 8, 16), 0, 0.2).rotation.x = Math.PI / 2;
       break;
+    case 'glasses': // round frames on a little stand
+    case 'sunglasses': {
+      const lens = kind === 'sunglasses' ? mat(color, { transparent: true, opacity: 0.85 }) : mat('#dff1f8', { transparent: true, opacity: 0.4 });
+      const frame = kind === 'sunglasses' ? mat('#2b2230') : m;
+      for (const s of [-1, 1]) {
+        add(new THREE.TorusGeometry(0.07, 0.012, 6, 18), 0.085 * s, 0.14, 0, frame);
+        add(new THREE.CircleGeometry(0.066, 18), 0.085 * s, 0.14, -0.002, lens);
+        add(new THREE.BoxGeometry(0.012, 0.012, 0.16), 0.15 * s, 0.15, -0.08, frame); // arm
+      }
+      add(new THREE.BoxGeometry(0.04, 0.012, 0.012), 0, 0.15, 0, frame);
+      add(new THREE.CylinderGeometry(0.02, 0.05, 0.08, 10), 0, 0.04, -0.06, mat('#fffaf0'));
+      break;
+    }
+    case 'earrings': // a pair hanging from a small card
+      add(new THREE.BoxGeometry(0.2, 0.22, 0.015), 0, 0.15, -0.02, mat('#fffaf0'));
+      for (const s of [-1, 1]) {
+        add(new THREE.TorusGeometry(0.035, 0.008, 6, 16), 0.05 * s, 0.13, 0.0);
+        add(new THREE.SphereGeometry(0.014, 8, 6), 0.05 * s, 0.18, 0.0);
+      }
+      add(new THREE.CylinderGeometry(0.01, 0.05, 0.04, 10), 0, 0.02, -0.02, mat('#fffaf0'));
+      break;
+    case 'backpack':
+      add(new THREE.CapsuleGeometry(0.13, 0.12, 4, 10).scale(1.1, 1, 0.7), 0, 0.22);
+      add(new THREE.BoxGeometry(0.16, 0.1, 0.04), 0, 0.16, 0.1, mat('#fffaf0'));
+      break;
+    case 'beanie':
+      add(new THREE.SphereGeometry(0.15, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0, 0.02);
+      add(new THREE.SphereGeometry(0.04, 8, 6), 0, 0.18, 0, mat('#fff8ec'));
+      break;
+    case 'beret':
+      add(new THREE.SphereGeometry(0.17, 14, 8).scale(1, 0.32, 1), 0, 0.06);
+      break;
+    case 'ribbon':
+      for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.06, 10, 8).scale(1.3, 0.9, 0.6), 0.07 * s, 0.1);
+      add(new THREE.SphereGeometry(0.03, 8, 6), 0, 0.1);
+      break;
     default:
       add(new THREE.BoxGeometry(0.25, 0.25, 0.25), 0, 0.12);
   }
