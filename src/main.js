@@ -605,7 +605,7 @@ if (square) {
   for (const [board, side, color] of [['news', -5.1, '#e0a020'], ['free', -1.7, '#2f6fd6'], ['ask', 1.7, '#d8452f']]) {
     const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
     const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
-    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.45, 0.1); newsTag.visible = false; m.add(newsTag); }
+    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }
     m.position.set(x, 0, z);
     m.rotation.y = Math.atan2(-ax, -az);
     scene.add(m);
@@ -5339,7 +5339,7 @@ renderer.setAnimationLoop(() => {
     else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
-  if (newsTag?.visible) newsTag.position.y = 3.45 + Math.sin(performance.now() / 300) * 0.08;
+  if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
   for (const ws of wallScreens) ws.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
@@ -5477,6 +5477,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
@@ -5488,7 +5489,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z)]),
-    boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),

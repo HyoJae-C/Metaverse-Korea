@@ -5,7 +5,33 @@
 //   at:    when it was announced, Korea time ('YYYY.MM.DD HH:MM')
 //   title / items: per language; a language without its own text shows English.
 //   A notice with one item shows it as a message (no bullet); \n breaks a line.
+import { s2t } from '../i18n/hant.js';
+
 export const UPDATES = [
+  {
+    id: '2026-11-05-subway',
+    at: '2026.11.05 18:00',
+    title: {
+      ko: '🚇 지하철을 타 보세요!',
+      en: '🚇 Take the subway!',
+      ja: '🚇 地下鉄に乗ってみよう！',
+      zh: '🚇 来坐地铁吧！',
+      es: '🚇 ¡Sube al metro!',
+      id: '🚇 Ayo naik kereta bawah tanah!',
+      ar: '🚇 جرّب ركوب المترو!', vi: '🚇 Hãy thử đi tàu điện ngầm!', hi: '🚇 मेट्रो में सफ़र कीजिए!',
+    },
+    items: {
+      ko: ['길가의 지하철 입구 계단으로 내려가 보세요.\n개찰구를 지나 열차를 타면\n성수 · 경복궁 · 홍대입구 · 이태원 · 잠실\n다른 동네로 금방 갈 수 있어요! 🚉'],
+      en: ['Walk down the subway stairs on the street.\nPass the ticket gate and hop on a train\nto ride to Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon and Jamsil! 🚉'],
+      ja: ['道ばたの地下鉄の入口から階段を下りてみよう。\n改札を通って電車に乗れば\n聖水・景福宮・弘大入口・梨泰院・蚕室へ\nすぐに行けるよ！🚉'],
+      zh: ['从路边的地铁入口走下楼梯，\n通过闸机，坐上列车，\n就能很快去圣水、景福宫、\n弘大入口、梨泰院和蚕室！🚉'],
+      es: ['Baja por las escaleras del metro en la calle.\nPasa el torniquete y súbete a un tren\npara ir a Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon y Jamsil. 🚉'],
+      id: ['Turuni tangga stasiun di pinggir jalan.\nLewati gerbang tiket dan naik kereta\nuntuk pergi ke Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon, dan Jamsil! 🚉'],
+      ar: ['انزل درج المترو الموجود في الشارع.\nمرّ عبر بوابة التذاكر واركب القطار\nلتذهب إلى سيونغسو وكيونغبوكغونغ\nوهونغيك وإيتايوون وجامسيل! 🚉'],
+      vi: ['Hãy đi xuống cầu thang ga tàu bên đường.\nQua cổng soát vé và lên tàu\nđể đến Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon và Jamsil! 🚉'],
+      hi: ['सड़क पर मेट्रो की सीढ़ियों से नीचे जाइए।\nटिकट गेट पार करके ट्रेन में बैठिए\nऔर Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon व Jamsil पहुँचिए! 🚉'],
+    },
+  },
   {
     id: '2026-11-04-welcome',
     at: '2026.11.04 05:00',
@@ -30,8 +56,12 @@ export const UPDATES = [
   },
 ];
 
-// The text of a notice in a language (English when it has none).
+// The text of a notice in a language (English when it has none; 繁體中文
+// is made from the simplified Chinese text).
 export function updateText(u, lang) {
+  if (lang === 'zht' && !u.title.zht && u.title.zh) {
+    return { title: s2t(u.title.zh), items: (u.items.zht || u.items.zh || u.items.en).map(s2t) };
+  }
   return { title: u.title[lang] || u.title.en, items: u.items[lang] || u.items.en };
 }
 

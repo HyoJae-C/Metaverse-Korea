@@ -45,21 +45,64 @@ export function makeNoticeBoard(title, color) {
   return root;
 }
 
-// A bobbing "NEW" tag over a board while it has something unread.
-export function makeNewTag() {
+// A big bobbing, sparkling "!" over a board while it has something unread.
+// Call tag.userData.tick(seconds) every frame to make it pulse and twinkle.
+function canvasSprite(w, h, draw, scale) {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = '#e0604d';
-  g.beginPath(); g.roundRect(8, 16, 240, 96, 48); g.fill();
-  g.fillStyle = '#fff';
-  g.font = '900 64px sans-serif';
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('NEW', 128, 66);
+  c.width = w; c.height = h;
+  draw(c.getContext('2d'));
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-  sp.scale.set(1.0, 0.5, 1);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+  sp.scale.set(scale, scale * h / w, 1);
   sp.renderOrder = 5;
   return sp;
+}
+
+export function makeNewTag() {
+  const root = new THREE.Group();
+  const glow = canvasSprite(256, 256, (g) => {
+    const r = g.createRadialGradient(128, 128, 20, 128, 128, 128);
+    r.addColorStop(0, 'rgba(255, 230, 120, .95)');
+    r.addColorStop(.5, 'rgba(255, 200, 60, .45)');
+    r.addColorStop(1, 'rgba(255, 200, 60, 0)');
+    g.fillStyle = r; g.fillRect(0, 0, 256, 256);
+  }, 2.4);
+  glow.renderOrder = 4;
+  const bang = canvasSprite(256, 256, (g) => {
+    const r = g.createRadialGradient(100, 90, 10, 128, 128, 110);
+    r.addColorStop(0, '#ff9a7a'); r.addColorStop(.6, '#e8432c'); r.addColorStop(1, '#c42a18');
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(128, 128, 116, 0, Math.PI * 2); g.fill();
+    g.fillStyle = r;
+    g.beginPath(); g.arc(128, 128, 102, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff';
+    g.font = '900 170px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('!', 128, 138);
+  }, 1.25);
+  const star = (g) => {
+    g.fillStyle = '#ffe066'; g.shadowColor = '#fff6c0'; g.shadowBlur = 16;
+    g.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2, rr = k % 2 ? 14 : 54;
+      g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr);
+    }
+    g.closePath(); g.fill();
+  };
+  const sparks = [[-0.8, 0.55, 0.5, 0], [0.85, 0.35, 0.4, 2.1], [0.6, -0.6, 0.32, 4.2], [-0.7, -0.45, 0.28, 1.1]]
+    .map(([x, y, s, ph]) => { const sp = canvasSprite(128, 128, star, s); sp.position.set(x, y, 0); sp.userData = { s, ph }; return sp; });
+  root.add(glow, bang, ...sparks);
+  root.userData.tick = (t) => {
+    const p = 1 + Math.sin(t * 6) * 0.1;
+    bang.scale.set(1.25 * p, 1.25 * p, 1);
+    glow.scale.setScalar(2.4 * (1 + Math.sin(t * 6) * 0.15));
+    glow.material.opacity = 0.75 + Math.sin(t * 6) * 0.25;
+    for (const sp of sparks) {
+      const k = Math.max(0, Math.sin(t * 4 + sp.userData.ph));
+      sp.scale.set(sp.userData.s * k, sp.userData.s * k, 1);
+      sp.material.rotation = t * 2 + sp.userData.ph;
+    }
+  };
+  return root;
 }
