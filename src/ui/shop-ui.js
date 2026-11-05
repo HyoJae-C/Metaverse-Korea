@@ -144,7 +144,9 @@ export class ShopUI {
       this.$('product-desc').textContent = `${st ? st.icon + ' ' + L(st) + ' · ' : ''}${localName(product.desc, lang) || ''}${lim}\n${fmt(L(PERFUME_INFO), { n: SPRAYS })}`;
     }
     const tryBtn = this.$('product-try');
-    tryBtn.hidden = !product.tryOn && !product.perfume && !hanbokById(product.rent);
+    // Anything you can wear can be tried on: its own look is the try-on.
+    const wearLook = ITEMS[product.item || product.outfit]?.wear;
+    tryBtn.hidden = !product.tryOn && !wearLook && !product.perfume && !hanbokById(product.rent);
     tryBtn.textContent = product.perfume ? '👃 ' + L(PERFUME_SNIFF) : '🪞 ' + t('shop.tryOn');
     tryBtn.onclick = () => (product.perfume ? this.onSniff?.(product) : this.onTryOn(product));
     // Restaurant dishes are a menu to read, not something to buy.

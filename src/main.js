@@ -1387,7 +1387,7 @@ const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑
 const shop = new ShopUI({
   cart,
   onTryOn: (product) => {
-    setLook({ ...currentLook, ...(hanbokById(product.rent)?.wear || product.tryOn) });
+    setLook({ ...currentLook, ...(hanbokById(product.rent)?.wear || product.tryOn || ITEMS[product.item || product.outfit]?.wear) });
     $('revert-look').hidden = false;
     shop.toast(t('shop.tried'));
   },
