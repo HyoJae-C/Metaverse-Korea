@@ -248,6 +248,31 @@ function labelTexture(text, bg) {
   return tex;
 }
 
+// A dartboard face: 20 black/cream wedges, red/green double and triple
+// rings and the bull (the game itself is drawn in ui/darts-ui.js).
+function dartboardTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d'), C = 128, R = 104;
+  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, 256, 256);
+  const ring = (r0, r1, cols) => {
+    for (let i = 0; i < 20; i++) {
+      const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
+      g.fillStyle = cols[i % 2];
+      g.beginPath(); g.arc(C, C, r1 * R, a0, a1); g.arc(C, C, r0 * R, a1, a0, true); g.closePath(); g.fill();
+    }
+  };
+  ring(0.95, 1, ['#d9473c', '#2f8f5b']);
+  ring(0.63, 0.95, ['#1b1b20', '#f3e6c4']);
+  ring(0.58, 0.63, ['#d9473c', '#2f8f5b']);
+  ring(0.09, 0.58, ['#1b1b20', '#f3e6c4']);
+  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, 0.09 * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, 0.04 * R, 0, Math.PI * 2); g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
@@ -734,6 +759,21 @@ export function buildInterior(store) {
       }
       block(tx, tz, 2.3, 0.95);
     }
+    // A dartboard on the left wall (stores.json "darts": true), with the
+    // throw line on the floor in front of it.
+    if (store.darts) {
+      const dz = -0.6, bx = -w / 2 + 0.06;
+      box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
+      const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
+      face.rotation.y = Math.PI / 2;
+      face.position.set(bx + 0.08, 1.6, dz);
+      scene.add(face);
+      const spot = new THREE.PointLight(0xfff0d0, 3, 4); // (not 3.5: those are the candles that flicker)
+      spot.position.set(bx + 0.9, 2.6, dz);
+      scene.add(spot);
+      box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
+      stations.darts = [{ x: bx + 2.7, z: dz, ry: -Math.PI / 2 }]; // facing the board
+    }
     let t = 0;
     const flames = [];
     scene.traverse((o) => { if (o.isPointLight && o.distance === 3.5) flames.push(o); });
@@ -1029,6 +1069,51 @@ export function buildInterior(store) {
         star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
+    } else if (store.workshop === 'batting') {
+      // 야구 연습장: three netted lanes, a pitching machine at the far end of
+      // each, home plate at the open front where you stand to bat.
+      stations.batting = [];
+      const netMat = new THREE.MeshBasicMaterial({ color: '#2b2b2e', transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+      const z0 = -d / 2 + 0.3, z1 = 0.6, lw = 4.4, nh = 3.4;
+      for (const lx of [-6.5, 0, 6.5]) {
+        const turf = new THREE.Mesh(new THREE.PlaneGeometry(lw, z1 - z0).rotateX(-Math.PI / 2), mat('#3f8f5a'));
+        turf.position.set(lx, 0.012, (z0 + z1) / 2);
+        scene.add(turf);
+        for (const sx2 of [-lw / 2, lw / 2]) {
+          const net = new THREE.Mesh(new THREE.PlaneGeometry(z1 - z0, nh), netMat);
+          net.rotation.y = Math.PI / 2;
+          net.position.set(lx + sx2, nh / 2, (z0 + z1) / 2);
+          scene.add(net);
+          box(0.08, nh, 0.08, lx + sx2, nh / 2, z1, '#9ca9af'); // front posts
+          block(lx + sx2, (z0 + z1) / 2, 0.15, z1 - z0);
+        }
+        const roof = new THREE.Mesh(new THREE.PlaneGeometry(lw, z1 - z0).rotateX(Math.PI / 2), netMat);
+        roof.position.set(lx, nh, (z0 + z1) / 2);
+        scene.add(roof);
+        box(lw, 0.08, 0.08, lx, nh, z1, '#9ca9af');
+        // The pitching machine: a stand, two throwing wheels and a ball hopper.
+        const mz = z0 + 1.4;
+        box(0.8, 0.9, 0.8, lx, 0.45, mz, '#3a3f47');
+        for (const wx of [-0.22, 0.22]) {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 16), mat('#2b2b2e'));
+          wheel.position.set(lx + wx, 1.05, mz);
+          scene.add(wheel);
+        }
+        const hopper = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.15, 0.4, 12), mat('#c8463c'));
+        hopper.position.set(lx, 1.45, mz - 0.25);
+        scene.add(hopper);
+        block(lx, mz, 0.9, 0.9);
+        // Home plate.
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 5), mat('#f7f4ee'));
+        plate.rotation.y = Math.PI / 2;
+        plate.position.set(lx, 0.02, z1 - 1.3);
+        scene.add(plate);
+        stations.batting.push({ x: lx + 0.6, z: z1 - 1.1, ry: Math.PI }); // facing the machine
+      }
+      // A round HOME RUN target high on the back wall of the middle lane.
+      const hr = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ map: labelTexture('HOME RUN', '#d9473c') }));
+      hr.position.set(0, 2.7, -d / 2 + 0.05);
+      scene.add(hr);
     } else if (store.workshop === 'claw') {
       // A row of claw machines along the back wall.
       const n = Math.max(2, Math.min(4, Math.floor((w - 2) / 1.6)));
