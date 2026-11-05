@@ -339,7 +339,7 @@
       "size": "medium",
       "name": { "ko": "성수 수산시장", "en": "Seongsu Fish Market", "ja": "ソンス水産市場", "zh": "圣水水产市场" },
       "tagline": { "en": "Sell the fish you caught at the Han River", "ko": "한강에서 잡은 물고기를 팔아요", "ja": "漢江で釣った魚を売ろう", "zh": "出售你在汉江钓到的鱼" },
-      "at": [10, 84.5],
+      "at": [67.5, 249.5],
       "colors": { "sign": "#1f5f8b", "awning": "#9cc9e6", "accent": "#eef6fb" },
       "products": []
     },
@@ -1690,7 +1690,7 @@
       "category": "popup",
       "perfumery": "popup",
       "size": "small",
-      "at": [67.5, 249.5],
+      "at": [10, 84.5],
       "name": { "ko": "향수 팝업", "en": "SCENT POP-UP" },
       "tagline": { "en": "Limited-edition perfumes, this month only", "ko": "이번 달에만 파는 한정판 향수" },
       "colors": { "sign": "#ff7a1a", "awning": "#ffe0c7", "accent": "#fff7f0" },
