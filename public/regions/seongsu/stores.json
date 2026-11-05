@@ -476,6 +476,22 @@
       ]
     },
     {
+      "id": "sonmat-kimchi",
+      "category": "workshop",
+      "workshop": "kimchi",
+      "size": "large",
+      "icon": "🥬",
+      "name": {"ko": "손맛 김치학교", "en": "Sonmat Kimchi School", "ja": "ソンマット キムチ学校", "zh": "手艺泡菜学堂", "es": "Escuela de Kimchi Sonmat", "id": "Sekolah Kimchi Sonmat", "vi": "Trường Kim chi Sonmat", "hi": "सोनमात किमची स्कूल", "ar": "مدرسة سونمات للكيمتشي"},
+      "tagline": {"en": "Make kimchi the kimjang way, step by step", "ko": "김장하듯 한 단계씩 김치를 담가 봐요", "ja": "キムジャンのように一歩ずつキムチ作り", "zh": "像过冬腌泡菜一样，一步步做泡菜", "es": "Haz kimchi como en el kimjang, paso a paso", "id": "Buat kimchi ala kimjang, langkah demi langkah", "vi": "Làm kim chi kiểu kimjang, từng bước một", "hi": "किमजांग की तरह, एक-एक कदम किमची बनाएँ", "ar": "اصنع الكيمتشي على طريقة الكيمجانغ خطوة بخطوة"},
+      "at": [-1519, -1025],
+      "colors": { "sign": "#b5341f", "awning": "#e9d8b4", "accent": "#f8f1e2" },
+      "products": [
+        {"id": "mini-onggi", "model": "jar", "color": "#5a3422", "price": 12000, "name": {"en": "Mini onggi jar", "ko": "미니 옹기", "ja": "ミニ甕", "zh": "迷你陶瓮", "es": "Mini tinaja onggi", "id": "Guci onggi mini", "vi": "Vại onggi mini", "hi": "मिनी ओंग्गी मटका", "ar": "جرّة أونغي صغيرة"}, "desc": {"en": "A small earthenware jar like the big ones Korean families keep kimchi and sauces in. Its walls let a little air through.", "ko": "김치와 장을 담그는 큰 옹기를 닮은 작은 항아리예요. 옹기는 숨을 쉬어요."}},
+        {"id": "gochugaru-jar", "model": "jar", "color": "#c8321f", "price": 9000, "name": {"en": "Gochugaru (chilli flakes)", "ko": "고춧가루", "ja": "唐辛子粉", "zh": "韩式辣椒粉", "es": "Gochugaru (chile en copos)", "id": "Gochugaru (bubuk cabai)", "vi": "Gochugaru (ớt bột)", "hi": "गोचुगारू (मिर्च के गुच्छे)", "ar": "غوتشوغارو (رقائق الفلفل)"}, "desc": {"en": "Sun-dried red chilli flakes: the colour and gentle heat of kimchi.", "ko": "햇볕에 말린 고추로 만든 고춧가루. 김치의 빨간 색과 매운맛을 내요."}},
+        {"id": "kimchi-notebook", "model": "notebook", "color": "#e9d8b4", "price": 8000, "name": {"en": "Halmeoni's kimchi notebook", "ko": "할머니 김치 노트", "ja": "おばあちゃんのキムチノート", "zh": "奶奶的泡菜笔记", "es": "Cuaderno de kimchi de la halmeoni", "id": "Buku kimchi halmeoni", "vi": "Sổ kim chi của bà", "hi": "हलमनी की किमची नोटबुक", "ar": "دفتر كيمتشي الجدّة"}, "desc": {"en": "A notebook with a hand-drawn kimjang recipe on the first page.", "ko": "첫 장에 김장 레시피가 그려진 노트예요."}}
+      ]
+    },
+    {
       "id": "chaon-teahouse",
       "category": "cafe",
       "size": "small",

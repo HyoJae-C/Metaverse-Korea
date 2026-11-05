@@ -1366,3 +1366,84 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .tarot-reading { display: grid; gap: 6px; }
 .tarot-reading p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
 .tarot-reading b { color: #4b3a78; }
+
+/* Kimjang class (ui/kimchi-ui.js) */
+.kimchi-panel { max-height: min(80vh, 680px); }
+.kimchi-plan { margin: 0; padding: 0 0 0 20px; columns: 2; column-gap: 14px; font-size: 13px; font-weight: 700; }
+.kimchi-plan li { margin: 1px 0; }
+.kimchi-fact { margin: 0; padding: 8px 12px; border-radius: 12px; background: #fde6df; color: #7a2e1f; font-size: 13px; font-weight: 700; }
+.kimchi-head { display: grid; gap: 6px; font-size: 14px; }
+.kimchi-dots { display: flex; gap: 4px; }
+.kimchi-dots i { flex: 1; height: 6px; border-radius: 3px; background: #eadfce; }
+.kimchi-dots i.on { background: #d8452f; }
+.kimchi-dots i.now { background: #f2a33a; }
+.kimchi-body { display: grid; gap: 8px; }
+.kimchi-verdict { display: grid; gap: 3px; padding: 10px 12px; border-radius: 14px; font-size: 14px; }
+.kimchi-verdict.good { background: #e3f4dd; color: #2f5d2a; }
+.kimchi-verdict.ok { background: #fff1c9; color: #6b5214; }
+.kimchi-verdict.bad { background: #fde1dc; color: #8a2a1c; }
+.kimchi-said { margin: 0; min-height: 18px; font-weight: 700; font-size: 14px; }
+.kimchi-clock { text-align: center; font-size: 18px; }
+.kimchi-cabbages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kimchi-cabbage { display: grid; gap: 3px; justify-items: center; align-content: start; padding: 8px 6px; border-radius: 16px; background: #fff; box-shadow: 0 3px 0 rgba(74, 63, 53, 0.12); font: inherit; cursor: pointer; }
+.kimchi-cabbage small { font-size: 11px; line-height: 1.25; text-align: center; color: #4a3f35; }
+.kimchi-cabbage.picked { box-shadow: 0 0 0 3px #d8452f; }
+.kimchi-cab-icon { line-height: 1.1; height: 56px; display: grid; place-items: end center; }
+.kimchi-halve { position: relative; height: 70px; margin: 8px 0 18px; border-radius: 36px 14px 14px 36px; background: linear-gradient(90deg, #f7f3e4 0 30%, #e9f1c9 55%, #8fcf7a 100%); box-shadow: inset 0 -4px 0 rgba(0,0,0,.06); }
+.kimchi-halve .zone { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(216,69,47,.12) 0 6px, rgba(216,69,47,.22) 6px 12px); }
+.kimchi-halve .cut { position: absolute; left: 0; top: 50%; height: 3px; width: 0; background: #7a2e1f; transition: width .2s; }
+.kimchi-halve.split { background: linear-gradient(90deg, #f7f3e4 0 30%, #e9f1c9 55%, #8fcf7a 100%) top / 100% 48% no-repeat, linear-gradient(90deg, #f7f3e4 0 30%, #e9f1c9 55%, #8fcf7a 100%) bottom / 100% 48% no-repeat; }
+.kimchi-halve .knife { position: absolute; top: -6px; font-size: 30px; transform: translateX(-50%) rotate(-90deg); pointer-events: none; }
+.kimchi-halve small { position: absolute; bottom: -18px; font-size: 11px; font-weight: 700; color: #6b5214; }
+.kimchi-halve small.l { left: 6px; } .kimchi-halve small.r { right: 6px; }
+.kimchi-bowl { padding: 6px 10px; border-radius: 12px; background: #f1ece2; font-weight: 800; font-size: 13px; text-align: center; }
+.kimchi-bowl.red { background: #fbd9cf; color: #8a2a1c; }
+.kimchi-leaves { display: grid; gap: 5px; }
+.kimchi-leaf { display: grid; grid-template-columns: 92px 1.3fr 1fr; gap: 6px; align-items: center; }
+.kimchi-leaf small { font-size: 11px; font-weight: 700; color: #6b5214; }
+.kimchi-leaf .part { min-height: 38px; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 800; letter-spacing: 1px; cursor: pointer; text-align: left; padding: 0 10px; overflow: hidden; white-space: nowrap; }
+.kimchi-leaf .stem { background: #fbf8ec; color: #6b5214; box-shadow: inset 0 0 0 2px #ece3c6; }
+.kimchi-leaf .leaf { background: #b9e19c; color: #2f5d2a; box-shadow: inset 0 0 0 2px #9ccc7f; }
+.kimchi-leaves.stuff .part { background-image: linear-gradient(rgba(216, 59, 37, calc(var(--red, 0) * .85)), rgba(216, 59, 37, calc(var(--red, 0) * .85))); }
+.kimchi-tub, .kimchi-basin { display: grid; justify-items: center; gap: 4px; padding: 12px; border-radius: 22px; background: radial-gradient(ellipse at 50% 30%, #f05a4a 0 55%, #b9372a 100%); color: #fff; }
+.kimchi-basin { background: radial-gradient(ellipse at 50% 35%, #bfe3f5 0 55%, #7fb8d9 100%); font-size: 48px; line-height: 1.1; }
+.kimchi-basin.splash { animation: fish-tug .5s ease-in-out 2; }
+.kimchi-tub-cab { font-size: 48px; line-height: 1.1; transition: transform .4s; transform-origin: bottom; }
+.kimchi-tub-cab.flip { filter: hue-rotate(-12deg); }
+.kimchi-meter { position: relative; height: 14px; border-radius: 7px; background: #eadfce; overflow: hidden; }
+.kimchi-meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #e9a25a; }
+.kimchi-meter b { position: absolute; bottom: 0; height: 5px; background: #3f9a45; z-index: 1; }
+.kimchi-meter b.turn { background: #4f86d6; }
+.kimchi-pot .ramen-bowl.stir { animation: kimchi-stir .4s ease; }
+@keyframes kimchi-stir { 50% { transform: rotate(18deg) scale(1.06); } }
+.kimchi-recipe { padding: 10px 12px; border-radius: 14px; background: #fff8e4; box-shadow: inset 0 0 0 2px #f0dfae; font-size: 13px; }
+.kimchi-recipe ul { margin: 6px 0 0; padding-left: 4px; list-style: none; display: grid; gap: 2px; }
+.kimchi-shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.kimchi-ing { display: grid; gap: 4px; padding: 6px 8px; border-radius: 12px; background: #fff; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.1); }
+.kimchi-ing.in { box-shadow: 0 0 0 2px #f2a33a; }
+.kimchi-ing .nm { display: grid; line-height: 1.2; }
+.kimchi-ing .nm b { font-size: 13px; }
+.kimchi-ing .nm small { font-size: 11px; color: #8a7a68; }
+.kimchi-ing .ctl { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.kimchi-ing .ctl .chip { min-width: 34px; padding: 4px 0; font-size: 16px; }
+.kimchi-ing .ctl .n { font-size: 16px; }
+.kimchi-jar { position: relative; width: 150px; height: 160px; margin: 4px auto 0; border-radius: 46% 46% 38% 38% / 30% 30% 22% 22%; background: radial-gradient(ellipse at 35% 30%, #8a5a3a, #4a2c1c 75%); overflow: hidden; box-shadow: inset 0 -10px 0 rgba(0,0,0,.18); }
+.kimchi-jar .content { position: absolute; left: 10%; right: 10%; bottom: 6%; height: 0; border-radius: 10px 10px 30px 30px; background: repeating-linear-gradient(170deg, #d8452f 0 9px, #e9734f 9px 15px, #f4e4c4 15px 18px); transition: height .4s; }
+.kimchi-jar .content.covered { border-top: 10px solid #8fbf6a; }
+.kimchi-jar .line { position: absolute; left: 6%; right: 6%; bottom: 82%; border-top: 2px dashed #ffd166; }
+.kimchi-jar .line-label { position: absolute; right: 8%; bottom: 84%; font-size: 10px; color: #ffd166; font-weight: 800; }
+.kimchi-jar .bubbles { position: absolute; inset: 0; }
+.kimchi-jar .bubble { position: absolute; width: 26px; height: 26px; padding: 0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, rgba(255,255,255,.35) 60%); box-shadow: 0 0 0 2px rgba(255,255,255,.6); cursor: pointer; animation: kimchi-bob 1.2s ease-in-out infinite alternate; }
+@keyframes kimchi-bob { to { transform: translateY(-4px); } }
+.kimchi-jar.lid::before { content: ''; position: absolute; left: 4%; right: 4%; top: 0; height: 22%; border-radius: 50% 50% 12px 12px; background: #5a3a28; z-index: 2; box-shadow: 0 4px 0 #3b2418; }
+.kimchi-ripen { display: grid; gap: 6px; }
+.kimchi-opt { text-align: left; padding: 10px 12px; font-size: 14px; white-space: normal; }
+.kimchi-scores { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 13px; }
+.kimchi-scores li { display: flex; justify-content: space-between; gap: 6px; }
+.kimchi-scores b.good { color: #2f7d2a; } .kimchi-scores b.ok { color: #9a6b00; } .kimchi-scores b.bad { color: #b9372a; }
+.kimchi-words { display: grid; gap: 3px; padding: 10px 12px; border-radius: 14px; background: #fff; font-size: 13px; }
+.kimchi-words div { display: grid; grid-template-columns: 58px 96px 1fr; gap: 6px; align-items: baseline; }
+.kimchi-words div b { font-size: 15px; }
+.kimchi-words div small { color: #8a7a68; }
+@media (max-width: 380px) { .kimchi-leaf { grid-template-columns: 70px 1.3fr 1fr; } .kimchi-shelf { grid-template-columns: 1fr; } .kimchi-words div { grid-template-columns: 52px 1fr; } .kimchi-words div span { grid-column: 1 / -1; } }
+.kimchi-legend { font-size: 12px; font-weight: 700; color: #6b5214; text-align: center; }

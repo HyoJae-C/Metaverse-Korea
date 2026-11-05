@@ -1164,6 +1164,63 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'kimchi') {
+      // Sonmat Kimchi School: a long low work table with cabbages, bowls of
+      // red seasoning and a salt sack; a big red rubber tub (고무대야) of
+      // salted cabbage; a row of onggi jars (장독) by the front wall. The
+      // teacher stands at the head of the table; students stand along it.
+      const tz = -d * 0.06, tw = Math.min(7, w - 8);
+      box(tw, 0.08, 1.5, 0, 0.7, tz, '#c9955a'); // table top
+      for (const lx of [-tw / 2 + 0.3, tw / 2 - 0.3]) for (const lz of [-0.55, 0.55]) box(0.1, 0.7, 0.1, lx, 0.35, tz + lz, '#8a5a3a');
+      block(0, tz, tw, 1.5);
+      const spots = [];
+      for (let k = 0; k < 3; k++) {
+        const x = (k - 1) * (tw / 3.2);
+        // On the table at each place: a cabbage half, a bowl of seasoning.
+        const cab = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat('#c8e6a0'));
+        cab.scale.set(1.5, 0.7, 0.9);
+        for (const sz of [-1, 1]) {
+          const c2 = cab.clone();
+          c2.position.set(x - 0.2, 0.86, tz + sz * 0.42);
+          scene.add(c2);
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.12, 16), mat('#f3eee4'));
+          bowl.position.set(x + 0.35, 0.8, tz + sz * 0.42);
+          scene.add(bowl);
+          const red = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16), mat('#c8321f'));
+          red.position.set(x + 0.35, 0.86, tz + sz * 0.42);
+          scene.add(red);
+          spots.push({ x, z: tz + sz * 1.25 });
+        }
+      }
+      stations.kimchi = spots;
+      stations.kimchiTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      // Salt sack at the far end.
+      const sack = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.55, 12), mat('#efe6d2'));
+      sack.position.set(tw / 2 + 0.7, 0.28, tz - 0.4);
+      scene.add(sack);
+      // The red rubber tub with salted cabbages in it.
+      const tub = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.7, 0.5, 24, 1, true), mat('#d8352a', { side: THREE.DoubleSide }));
+      tub.position.set(tw / 2 + 1.6, 0.25, tz + 0.7);
+      scene.add(tub);
+      const brine = new THREE.Mesh(new THREE.CircleGeometry(0.8, 24).rotateX(-Math.PI / 2), mat('#e6f0c8'));
+      brine.position.set(tw / 2 + 1.6, 0.4, tz + 0.7);
+      scene.add(brine);
+      block(tw / 2 + 1.6, tz + 0.5, 1.8, 2.2);
+      // Onggi jars of different sizes on a low stone ledge, front-left.
+      const jx0 = -w / 2 + 1.2, jz = d / 2 - 1.9;
+      box(Math.min(6, w / 2 - 2.5), 0.2, 1.1, jx0 + Math.min(6, w / 2 - 2.5) / 2 - 0.4, 0.1, jz, '#9a9488');
+      [0.5, 0.38, 0.55, 0.32, 0.45].forEach((r, k) => {
+        const jx = jx0 + k * 1.15;
+        if (jx > -2.2) return; // keep the door path clear
+        const pot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat('#5a3422'));
+        pot.scale.set(1, 1.15, 1);
+        pot.position.set(jx, 0.2 + r * 1.1, jz);
+        scene.add(pot);
+        const lidM = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.55, r * 0.6, 0.08, 16), mat('#4a2a1a'));
+        lidM.position.set(jx, 0.2 + r * 2.2, jz);
+        scene.add(lidM);
+      });
+      block(jx0 + 2.4, jz, 5.4, 1.2);
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];
@@ -1185,7 +1242,7 @@ export function buildInterior(store) {
     box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
     box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
     block(cx, cz, 2.2, 0.8);
-    clerk = stations.tarotReader || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+    clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
   }
   // Plants in the corners.
   if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
