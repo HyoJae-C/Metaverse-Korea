@@ -117,6 +117,7 @@ export class AdPosters {
   constructor(scene, buildings, stores, center, latLonToLocal, booked = {}, base = '/') {
     this.root = new THREE.Group();
     this.spots = emptyLots(buildings, stores.map((s) => placeOf(s, center, latLonToLocal)));
+    this.posters = {}; // spot id -> the big poster mesh (for setPoster)
     const smalls = smallMaterials();
     const shutter = shutterMat();
     shutter.map.wrapS = shutter.map.wrapT = THREE.RepeatWrapping;
@@ -156,9 +157,21 @@ export class AdPosters {
         frame.position.set(0, y, 0.06);
         poster.position.set(0, y, 0.13);
         g.add(frame, poster);
+        this.posters[id] = poster;
       }
       this.root.add(g);
     });
     scene.add(this.root);
+  }
+
+  // Show another texture on a spot's big poster (e.g. a hiring ad). Returns
+  // false when the spot has no big poster (too low a wall).
+  setPoster(id, map) {
+    const poster = this.posters[id];
+    if (!poster) return false;
+    poster.material.map?.dispose?.();
+    poster.material.map = map;
+    poster.material.needsUpdate = true;
+    return true;
   }
 }

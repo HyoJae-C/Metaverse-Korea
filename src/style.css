@@ -1493,3 +1493,7 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-card-btns .chip { background: #fff; }
 @keyframes gift-pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
 html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
+
+/* Part-time job panel (ui/job-ui.js): a Korean answer with a short meaning under it. */
+.job-answer { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.job-answer small { font-size: 11px; font-weight: 600; opacity: 0.7; }
