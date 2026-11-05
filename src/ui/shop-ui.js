@@ -83,8 +83,10 @@ export class Cart {
 
 export class ShopUI {
   // onBuy(product, coins): pay and hold it (shops that sell to take home).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff });
+  // canGift(product): true when this can be bought for someone else here;
+  // onGift(product): pick a friend and send it (see ui/gift-ui.js).
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -186,6 +188,11 @@ export class ShopUI {
       howEl.classList.add('soon');
       howEl.textContent = fmt(L(LIMITED.off), product.limited);
     }
+    // Buy it for a friend in the shop instead.
+    const gift = this.$('product-gift');
+    gift.hidden = !this.canGift?.(product);
+    gift.textContent = this.giftLabel?.() || '🎁';
+    gift.onclick = () => this.onGift?.(product);
     this.$('product-note').textContent = L(HOW.note);
   }
 

@@ -1462,3 +1462,34 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 @media (max-width: 380px) { .kimchi-leaf { grid-template-columns: 70px 1.3fr 1fr; } .kimchi-shelf { grid-template-columns: 1fr; } .kimchi-words div { grid-template-columns: 52px 1fr; } .kimchi-words div span { grid-column: 1 / -1; } }
 .kimchi-legend { font-size: 12px; font-weight: 700; color: #6b5214; text-align: center; }
 .info-head { margin: 10px 2px 0; font-size: 14px; opacity: 0.75; }
+
+/* Gifts: buy for a friend in the same shop (ui/gift-ui.js). */
+.product-actions .gift-btn { grid-column: 1 / -1; background: #fff; }
+.counter-gift.chip { flex: none; width: 40px; height: 40px; padding: 0; background: #fff3f6; font-size: 18px; }
+.gift-panel { z-index: 7; }
+.gift-panel h3 { margin: 0 36px 10px 0; }
+.gift-thing { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 8px 12px; }
+.gift-thing strong { flex: 1; min-width: 0; font-size: 15px; }
+.gift-thing b { color: var(--accent-dark); }
+.gift-icon { font-size: 24px; }
+.gift-people { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; max-height: 30vh; overflow-y: auto; }
+.gift-person.chip { background: #fff; padding: 8px 14px; }
+.gift-cards {
+  position: absolute; left: 50%; transform: translateX(-50%); z-index: 8;
+  top: calc(max(12px, env(safe-area-inset-top)) + 112px);
+  display: grid; gap: 8px; width: min(400px, calc(100vw - 32px)); pointer-events: none;
+}
+.gift-card {
+  display: flex; align-items: center; gap: 10px; pointer-events: auto;
+  background: var(--panel); border-radius: 18px; padding: 10px 12px; box-shadow: var(--shadow);
+  animation: gift-pop .3s ease-out;
+}
+.gift-card-icon { font-size: 28px; flex: none; }
+.gift-card-text { display: grid; flex: 1; min-width: 0; }
+.gift-card-text strong { font-size: 14px; }
+.gift-card-text span { font-size: 13px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gift-card-btns { display: flex; gap: 6px; flex: none; }
+.gift-card-btns button { width: auto; margin: 0; padding: 8px 12px; font-size: 14px; }
+.gift-card-btns .chip { background: #fff; }
+@keyframes gift-pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
