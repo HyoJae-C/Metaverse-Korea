@@ -7,7 +7,7 @@ import { paintingUrl } from '../core/museum.js';
 
 export const MUSEUM_TEXT = {
   look: { en: 'Look at the painting', ko: '그림 보기', ja: '絵を見る', zh: '看画', es: 'Ver la pintura', id: 'Lihat lukisan', vi: 'Xem tranh', hi: 'चित्र देखें', ar: 'شاهد اللوحة' },
-  source: { en: 'See it on the museum’s site', ko: '박물관 사이트에서 보기', ja: '博物館のサイトで見る', zh: '在博物馆网站查看', es: 'Verla en el sitio del museo', id: 'Lihat di situs museum', vi: 'Xem trên trang của bảo tàng', hi: 'संग्रहालय की साइट पर देखें', ar: 'شاهدها على موقع المتحف' },
+  source: { en: 'See it on the National Museum of Korea site', ko: '국립중앙박물관 사이트에서 보기', ja: '国立中央博物館のサイトで見る', zh: '在国立中央博物馆网站查看', es: 'Verla en el sitio del Museo Nacional de Corea', id: 'Lihat di situs Museum Nasional Korea', vi: 'Xem trên trang của Bảo tàng Quốc gia Hàn Quốc', hi: 'राष्ट्रीय कोरिया संग्रहालय की साइट पर देखें', ar: 'شاهدها على موقع المتحف الوطني الكوري' },
   credit: { en: 'Image', ko: '이미지', ja: '画像', zh: '图片', es: 'Imagen', id: 'Gambar', vi: 'Ảnh', hi: 'तस्वीर', ar: 'الصورة' },
 };
 const T = (k) => localName(MUSEUM_TEXT[k], getLanguage());

@@ -30,7 +30,7 @@ export const PHRASES = {
     ['자리는 아무 데나 앉으셔도 돼요.', 'jarineun amu dena anjeusyeodo dwaeyo', 'You can sit anywhere.'],
   ],
   museum: [
-    ['국립중앙박물관에 오신 걸 환영해요. 천천히 둘러보세요.', 'gungnipjungangbangmulgwane osin geol hwanyeonghaeyo. cheoncheonhi dulleoboseyo', 'Welcome to the museum. Take your time looking around.'],
+    ['국립중앙미술관에 오신 걸 환영해요. 천천히 둘러보세요.', 'gungnipjungangmisulgwane osin geol hwanyeonghaeyo. cheoncheonhi dulleoboseyo', 'Welcome to the art museum. Take your time looking around.'],
     ['그림 앞에 서면 설명을 볼 수 있어요.', 'geurim ape seomyeon seolmyeong-eul bol su isseoyo', 'Stand in front of a painting to read about it.'],
     ['그림은 눈으로만 감상해 주세요.', 'geurimeun nuneuroman gamsanghae juseyo', 'Please enjoy the paintings with your eyes only.'],
   ],

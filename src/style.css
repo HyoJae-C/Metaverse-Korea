@@ -968,6 +968,14 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .nametag.dazzling { box-shadow: 0 2px 0 rgba(74, 63, 53, 0.15), 0 0 10px rgba(255, 208, 90, 0.75); }
 @keyframes tag-flow { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
 @keyframes tag-glow { from { box-shadow: inset 0 0 0 1.5px #fff, 0 0 3px #ff8a3d; } to { box-shadow: inset 0 0 0 1.5px #fff, 0 0 12px #ff5a2d; } }
+/* Operator badge: a navy pill nobody can buy (shown only when the server confirms) */
+.tag-operator {
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px;
+  background: linear-gradient(135deg, #1f3a8a, #2f6fd6); color: #fff;
+  font-size: 11px; font-weight: 900; letter-spacing: .02em; white-space: nowrap;
+  box-shadow: inset 0 0 0 1.5px #ffd75a;
+}
+.nametag.operator { box-shadow: 0 2px 0 rgba(74, 63, 53, 0.15), 0 0 0 2px #2f6fd6; }
 @media (prefers-reduced-motion: reduce) { .tag-emblem, .tag-grad { animation: none !important; } }
 
 .emblem-preview { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: #eef4f8; }
@@ -1522,3 +1530,6 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .museum-lang p { margin: 0 0 6px; line-height: 1.5; }
 .museum-meta { color: #6b625a; font-size: 13px; }
 .museum-credit { font-size: 12px; color: #5a5048; }
+.item-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.pet-name-form { display: flex; gap: 6px; margin-top: 4px; }
+.pet-name-form input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; font-size: 16px; }

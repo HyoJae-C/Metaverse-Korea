@@ -14,10 +14,10 @@
 
 export const CREDIT = { ko: '국립중앙박물관, 공공누리 제1유형', en: 'National Museum of Korea, KOGL Type 1' };
 export const DISCLAIMER = {
-  en: 'A place in the game, not run by or linked to the real National Museum of Korea. The paintings are images the museum shares for free use with credit.',
-  ko: '실제 국립중앙박물관과 관계없는 게임 속 공간이에요. 그림은 국립중앙박물관이 출처 표시 조건으로 공개한 이미지예요.',
-  ja: 'ゲームの中の空間で、実際の国立中央博物館とは関係ありません。絵は博物館が出典表示を条件に公開している画像です。',
-  zh: '这是游戏里的空间，与真实的国立中央博物馆无关。画作图片由博物馆以注明出处为条件公开。',
+  en: 'A made-up art museum in the game. It is not a real institution and is not run by or linked to the National Museum of Korea. The paintings are images the museum shares for free use with credit.',
+  ko: '실제 기관이 아닌 게임 속 가상 미술관이고, 국립중앙박물관과 관계없어요. 그림은 국립중앙박물관이 출처 표시 조건으로 공개한 이미지예요.',
+  ja: 'ゲームの中の架空の美術館で、実在の施設ではなく、国立中央博物館とは関係ありません。絵は博物館が出典表示を条件に公開している画像です。',
+  zh: '这是游戏里虚构的美术馆，不是真实机构，与国立中央博物馆无关。画作图片由博物馆以注明出处为条件公开。',
   es: 'Un lugar del juego, sin relación con el Museo Nacional de Corea real. Las pinturas son imágenes que el museo comparte con libre uso citando la fuente.',
   id: 'Tempat di dalam game, tidak terkait dengan Museum Nasional Korea yang asli. Lukisan adalah gambar yang dibagikan museum untuk dipakai bebas dengan mencantumkan sumber.',
   vi: 'Một nơi trong trò chơi, không liên quan đến Bảo tàng Quốc gia Hàn Quốc thật. Tranh là ảnh bảo tàng công bố cho dùng tự do khi ghi nguồn.',

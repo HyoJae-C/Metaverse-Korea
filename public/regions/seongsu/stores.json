@@ -1019,7 +1019,7 @@
       "at": [-1273, 188],
       "signLocal": "Bar Hush",
       "name": { "en": "Bar Hush", "ko": "바 허시", "ja": "バー・ハッシュ", "zh": "静语酒吧" },
-      "tagline": { "en": "A quiet cocktail bar", "ko": "조용한 칵테일 바", "ja": "静かなカクテルバー", "zh": "安静的鸡尾酒吧" },
+      "tagline": { "en": "A quiet alcohol-free mocktail bar", "ko": "조용한 무알코올 음료 바", "ja": "静かなノンアルコールのバー", "zh": "安静的无酒精饮品吧" },
       "colors": { "sign": "#2b1d14", "awning": "#c9a227", "accent": "#3a2a20" },
       "products": [
         { "id": "virgin-mojito", "model": "cocktail", "color": "#bfe39a", "price": 8000, "name": { "en": "Virgin mojito", "ko": "버진 모히토", "ja": "ヴァージン・モヒート", "zh": "无酒精莫吉托" }, "desc": { "en": "Lime, mint and soda, no alcohol.", "ko": "라임과 민트, 탄산수로 만든 무알코올 모히토예요." } },
@@ -2386,12 +2386,12 @@
       "category": "museum",
       "size": "museum",
       "at": [-1324, 493],
-      "name": { "ko": "국립중앙박물관", "en": "National Museum of Korea", "ja": "国立中央博物館", "zh": "国立中央博物馆" },
+      "name": { "ko": "국립중앙미술관", "en": "National Central Art Museum", "ja": "国立中央美術館", "zh": "国立中央美术馆" },
       "tagline": {
-        "en": "Old Korean paintings by Kim Hong-do, Sin Yun-bok, Jeong Seon and more. A game space, not linked to the real museum.",
-        "ko": "김홍도, 신윤복, 정선 등의 옛 그림 전시. 실제 박물관과 관계없는 게임 속 공간이에요.",
-        "ja": "金弘道、申潤福、鄭敾などの昔の絵を展示。実際の博物館とは関係のないゲーム内の空間です。",
-        "zh": "展出金弘道、申润福、郑敾等人的古画。这是游戏里的空间，与真实博物馆无关。"
+        "en": "Old Korean paintings by Kim Hong-do, Sin Yun-bok, Jeong Seon and more. A made-up museum in the game, not a real institution and not linked to the National Museum of Korea.",
+        "ko": "김홍도, 신윤복, 정선 등의 옛 그림 전시. 실제 기관이 아닌 게임 속 가상 미술관으로, 국립중앙박물관과 관계없어요.",
+        "ja": "金弘道、申潤福、鄭敾などの昔の絵を展示。実在の施設ではないゲーム内の架空の美術館で、国立中央博物館とは関係ありません。",
+        "zh": "展出金弘道、申润福、郑敾等人的古画。这是游戏里虚构的美术馆，不是真实机构，与国立中央博物馆无关。"
       },
       "colors": { "sign": "#3a3633", "awning": "#b8a88a", "accent": "#f2eee6" },
       "products": []
