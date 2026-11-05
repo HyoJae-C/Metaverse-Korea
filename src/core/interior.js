@@ -448,11 +448,11 @@ export function buildInterior(store) {
           sk.position.x = 0.13 * s;
           ride.add(sk);
         }
-        ride.scale.setScalar(2.4);
+        ride.scale.setScalar(3);
       } else {
         ride.add(makeRide({ type, tier, color, pattern }));
         ride.rotation.y = Math.PI / 2; // side on, so you see the whole ride
-        ride.scale.setScalar(type === 'bike' ? 1.25 : 1.5);
+        ride.scale.setScalar(type === 'bike' ? 1.5 : 1.9);
       }
       ride.position.y = 0.16;
       stand.add(ride);
