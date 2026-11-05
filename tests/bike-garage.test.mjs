@@ -94,3 +94,66 @@ test('broken saves fall back to the basic bike', () => {
   assert.equal(g.current.id, 'basic');
   assert.equal(g.durability(), 100);
 });
+
+test('ride shops: each sells its own skins; the Hunminjeongeum line only by the palace', async () => {
+  const { RIDE_SHOPS, SKIN_PATTERNS, shopOf, skinPrice } = await import('../src/core/bike-garage.js');
+  const { TILE_PATTERNS } = await import('../src/core/ride-patterns.js');
+  const sold = { colors: [], patterns: [] };
+  for (const shop of Object.values(RIDE_SHOPS)) { sold.colors.push(...shop.colors); sold.patterns.push(...shop.patterns); }
+  // Every skin is sold by exactly one shop.
+  assert.deepEqual([...sold.colors].sort(), Object.keys(SKIN_COLORS).sort());
+  assert.deepEqual([...sold.patterns].sort(), [...SKIN_PATTERNS].sort());
+  assert.ok(RIDE_SHOPS.hangul.limited && RIDE_SHOPS.hangul.patterns.length >= 8, 'lots of Hangul patterns');
+  // Shop patterns are drawn as whole tiles (ride-patterns.js).
+  for (const p of SKIN_PATTERNS) if (shopOf('pattern', p) !== 'pedal') assert.ok(TILE_PATTERNS.includes(p), p);
+  const g = new Garage(memory());
+  const w = walletOf(500);
+  assert.equal(g.buySkin('pattern', 'hunmin', w, 'lab'), 'elsewhere');
+  assert.equal(w.coins, 500);
+  assert.equal(g.buySkin('pattern', 'hunmin', w, 'hangul'), 'bought');
+  assert.equal(w.coins, 500 - skinPrice('pattern', 'hunmin'));
+  assert.ok(skinPrice('pattern', 'hunmin') > skinPrice('pattern', 'flame') && skinPrice('pattern', 'flame') > SKIN_PRICE.pattern);
+  // Once bought it goes on anywhere, and others see it.
+  assert.equal(g.rideSpec().pattern, 'hunmin');
+  assert.deepEqual(parseRide(rideCode(g.rideSpec())), g.rideSpec());
+});
+
+test('tune-ups make an owned ride a little faster; long-ride kits make it wear slower', async () => {
+  const { UPGRADE_MAX, TUNE_STEP, KIT_WEAR } = await import('../src/core/bike-garage.js');
+  const st = memory();
+  const g = new Garage(st);
+  const w = walletOf(1000);
+  assert.equal(g.upgrade('tune', 'road', w), 'unknown'); // not owned
+  assert.equal(g.upgrade('nitro', 'basic', w), 'unknown');
+  const base = g.speed();
+  for (let i = 0; i < UPGRADE_MAX; i++) assert.equal(g.upgrade('tune', 'basic', w), 'upgraded');
+  assert.equal(g.upgrade('tune', 'basic', w), 'max');
+  assert.ok(Math.abs(g.speed() - base - UPGRADE_MAX * TUNE_STEP) < 1e-9);
+  // Still under the next tier's top speed step: small on purpose.
+  assert.ok(UPGRADE_MAX * TUNE_STEP < 1);
+  assert.equal(g.upgrade('kit', 'basic', w), 'upgraded');
+  g.ride(500);
+  assert.ok(Math.abs(g.durability() - (100 - 500 * WEAR_PER_M * KIT_WEAR[1])) < 1e-9);
+  const again = new Garage(st);
+  assert.equal(again.level('tune', 'basic'), UPGRADE_MAX);
+  assert.equal(again.level('kit', 'basic'), 1);
+  assert.equal(again.level('kit', 'city'), 0);
+  const poor = walletOf(0);
+  assert.equal(again.upgrade('kit', 'basic', poor), 'poor');
+});
+
+test('Hongdae, Itaewon and Gyeongbokgung each have a ride shop of their own', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { RIDE_SHOPS } = await import('../src/core/bike-garage.js');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const shops = stores.filter((s) => s.workshop === 'bike');
+  const by = Object.fromEntries(shops.map((s) => [s.rideShop || 'pedal', s]));
+  assert.deepEqual(Object.keys(by).sort(), Object.keys(RIDE_SHOPS).sort());
+  assert.equal(by.lab.name.ko, '자전거연구소');
+  assert.equal(by.rwm.name.en, 'RIDE WITH ME');
+  assert.equal(by.hangul.name.ko, '한글미학');
+  // Roughly where each district is (region.json offsets).
+  assert.ok(by.lab.at[0] < -2750, 'Hongdae');
+  assert.ok(by.rwm.at[0] > -1650 && by.rwm.at[0] < -1000 && by.rwm.at[1] > 0, 'Itaewon');
+  assert.ok(by.hangul.at[1] < -560 && by.hangul.at[0] < -1480 && by.hangul.at[0] > -2000, 'Gyeongbokgung');
+});

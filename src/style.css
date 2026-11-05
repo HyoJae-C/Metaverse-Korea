@@ -1238,6 +1238,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .ride-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; padding-bottom: 2px; }
 .ride-tab { flex: none; padding: 6px 10px; border-radius: 999px; border: 0; background: #f3ece2; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; }
 .ride-tab.on { background: var(--accent); color: #fff; }
+.ride-tab.special:not(.on) { background: #fff3c4; box-shadow: inset 0 0 0 1.5px #e0b84a; }
 .tier-stars { font-size: 12px; letter-spacing: -1px; color: #c9b79c; }
 .tier-stars.t1 { color: #f2a33a; }
 .tier-stars.t2 { color: #e0475b; }
