@@ -65,9 +65,15 @@ test('each colour lip shop sells only its own family, Petal Lip the mixed ten', 
 test('salons by concept: three signature styles each, the basic cuts everywhere', () => {
   const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
   const salons = stores.filter((s) => s.workshop === 'salon');
-  const hongdae = salons.filter((s) => s.at[0] < -2800 && s.at[0] > -3100);
-  assert.equal(salons.length - hongdae.length, 5, 'Seongsu salons');
-  assert.equal(hongdae.length, 3, 'Hongdae salons');
+  // Salons are spread over the areas: Seongsu, Hongdae, Seodaemun (by the
+  // campus street) and Itaewon (a men's barber).
+  const area = (s) => (s.at[0] < -2800 && s.at[0] > -3100 ? 'hongdae'
+    : s.at[0] < -2188 && s.at[0] > -2612 && s.at[1] < -746 ? 'seodaemun'
+      : s.at[0] < -988 && s.at[0] > -1642 && s.at[1] > 17 && s.at[1] < 439 ? 'itaewon'
+        : Math.abs(s.at[0]) < 260 && s.at[1] > -110 && s.at[1] < 410 ? 'seongsu' : 'elsewhere');
+  const count = {};
+  for (const s of salons) count[area(s)] = (count[area(s)] || 0) + 1;
+  assert.deepEqual(count, { seongsu: 2, hongdae: 4, seodaemun: 1, itaewon: 1 });
   const seen = new Set();
   for (const s of salons) {
     assert.equal(s.hairStyles.length, 3, s.id);

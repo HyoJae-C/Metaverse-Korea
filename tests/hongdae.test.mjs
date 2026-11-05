@@ -61,8 +61,8 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   const cafes = stores.filter((s) => s.category === 'cafe').length;
   const shops = stores.filter((s) => ['fashion', 'beauty', 'lifestyle'].includes(s.category)).length;
   // Hongdae has more clothes and beauty shops than cafés now (hair salons,
-  // skirt shops), but cafés stay a big part of the street.
-  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 4, `cafés ${cafes}, shops ${shops}`);
+  // skirt shops, the perfume alley), but cafés stay a big part of the street.
+  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 9, `cafés ${cafes}, shops ${shops}`);
   assert.ok(stores.some((s) => s.workshop === 'tarot'), 'a tarot café');
   for (const s of stores) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
 });
@@ -77,4 +77,14 @@ test('animal cafés: Seongsu keeps only the cat café, the rest are in Hongdae w
   const hongdae = pets.filter(inHongdae).map((s) => s.pets).sort();
   assert.deepEqual(hongdae, ['bigdogs', 'gogocats', 'hamsters', 'raccoons']);
   assert.deepEqual(pets.filter((s) => !inHongdae(s)).map((s) => s.id), ['nyang-cat-cafe']);
+});
+
+test('Hongdae perfume alley: five perfume shops off the walking street, the funny ones among them', () => {
+  const d = region.districts.find((x) => x.id === 'hongdae');
+  const [ox, oz] = d.offset;
+  const perf = read('stores.json').stores.filter((s) => s.perfumery && Math.abs(s.at[0] - ox) < 200 && Math.abs(s.at[1] - oz) < 200);
+  assert.deepEqual(perf.map((s) => s.id).sort(), ['heart-ppyong', 'kkeung-sanghoe', 'moai-scent-lab', 'oops-parfum', 'punggyeong-scent']);
+  assert.equal(perf.filter((s) => s.perfumery === 'funny').length, 2);
+  // Shops on the same side of the alley keep a whole shop front apart.
+  for (const a of perf) for (const b of perf) if (a !== b && a.at[1] === b.at[1]) assert.ok(Math.abs(a.at[0] - b.at[0]) >= 7, `${a.id} ${b.id}`);
 });
