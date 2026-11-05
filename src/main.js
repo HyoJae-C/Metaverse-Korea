@@ -44,7 +44,8 @@ import { watchOnline } from './net/online.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
-import { Storefronts } from './core/storefronts.js';
+import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
+import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
 import { buildInterior, productModel } from './core/interior.js';
 import { isDining, coinPrice, takeoutKind, foodIcon, Meal, FOOD_BITES, mealSync, parseMealSync, biteMsg, parseBite, BITE_REACH, BITE_GAP_MS, foodScale } from './core/dining.js';
@@ -454,6 +455,8 @@ const storeData = [...((await storesPromise)?.stores || []), ...((await homesPro
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
+// Empty shop lots get ad posters (region.json "adPosters" books a spot).
+const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/');
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
@@ -3654,7 +3657,7 @@ function openBeauty(kind) {
     me.root.rotation.y = cam.yaw; // turn to face the camera
   }
   lastSent = null;
-  beautyUi.show(kind, myLook);
+  beautyUi.show(kind, myLook, interior?.store);
   if (kind === 'salon') setLook({ ...myLook, head: null }); // hat off in the salon chair
 }
 function endBeautyCam() {
@@ -4950,6 +4953,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
+    adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z)]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),

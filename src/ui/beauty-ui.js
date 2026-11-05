@@ -1,8 +1,8 @@
 // Hair salon and cosmetic clinic panel (menus and prices in core/beauty.js).
 // Pick options and see them on your character right away; Save pays and
 // keeps them, Cancel puts your look back.
-import { t } from '../core/i18n.js';
-import { MENUS, BEAUTY_ICON, beautyCost } from '../core/beauty.js';
+import { t, localName } from '../core/i18n.js';
+import { menuFor, BEAUTY_ICON, beautyCost } from '../core/beauty.js';
 import { PALETTES } from '../data/appearance.js';
 
 const el = (tag, cls, text) => {
@@ -22,9 +22,11 @@ export class BeautyUI {
 
   get open() { return !this.root.hidden; }
 
-  show(kind, look) {
+  // store: the shop you're in (a lip shop's own name and colour family).
+  show(kind, look, store = null) {
     this.kind = kind;
-    this.menu = MENUS[kind];
+    this.store = store;
+    this.menu = menuFor(kind, store);
     this.from = { ...look };
     this.draft = { ...look };
     this.root.hidden = false;
@@ -40,7 +42,7 @@ export class BeautyUI {
 
   // Options of one menu row: null (= my own), the palette keys or choices, or
   // off/on for a toggle.
-  options(o) { return o.toggle ? [false, true] : [null, ...(o.choices || Object.keys(PALETTES[o.palette]))]; }
+  options(o) { return o.toggle ? [false, true] : [null, ...(o.only || o.choices || Object.keys(PALETTES[o.palette]))]; }
 
   // Step the open row's option by +1 / -1 (the ◀ ▶ buttons and swipes).
   step(dir) {
@@ -65,7 +67,7 @@ export class BeautyUI {
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = () => this.close();
     const head = el('div', 'beauty-head');
-    head.append(el('strong', null, BEAUTY_ICON[this.kind] + ' ' + t(this.kind + '.title')));
+    head.append(el('strong', null, BEAUTY_ICON[this.kind] + ' ' + (this.store?.lipFamily ? localName(this.store.name) : t(this.kind + '.title'))));
     this.root.replaceChildren(x, head);
     if (this.menu.length > 1) {
       const tabs = el('div', 'beauty-tabs');

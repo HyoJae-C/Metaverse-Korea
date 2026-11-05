@@ -58,6 +58,7 @@ const STREETS = [
 ];
 const S = Object.fromEntries(STREETS.map((s) => [s.id, s]));
 const SIDEWALK = 2.5;
+const CENTER = [40, 90]; // the middle of the shop streets, between the square and Yeonmujang-gil
 
 // Paths through Seoul Forest and along the river.
 const WALKS = [
@@ -162,11 +163,24 @@ function fillBlock(b) {
   const x0 = L.at + L.inset, x1 = R.at - R.inset, z0 = T.at + T.inset, z1 = Bo.at - Bo.inset;
   const sides = b.sides || {};
   const cut = b.cut || {};
-  const hShop = () => r1(pick(7.5, 13.5));
-  const hPlain = () => b.h || r1(b.tall ? pick(28, 48) : pick(9, 16));
+  // Taller towards the middle of the neighbourhood (CENTER): a skyline that
+  // rises to the square and Seongsu-ro and falls off to the edges. One pick
+  // per building, so the lot layout stays the same.
+  const ring = (poly) => {
+    const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
+    const d = Math.hypot((Math.min(...xs) + Math.max(...xs)) / 2 - CENTER[0], (Math.min(...zs) + Math.max(...zs)) / 2 - CENTER[1]);
+    return d < 110 ? 0 : d < 190 ? 1 : 2;
+  };
+  const SHOP_H = [[14, 24], [10, 17], [7.5, 13.5]], PLAIN_H = [[32, 52], [18, 30], [9, 16]];
+  const hShop = (r) => r1(pick(...SHOP_H[r]));
+  const hPlain = (r) => b.h || r1(pick(...(b.tall ? [28, 48] : PLAIN_H[r])));
   const add = (kind, poly, face) => {
-    const h = kind === 'shop' ? hShop() : hPlain();
+    const r = ring(poly);
+    const h = kind === 'shop' ? hShop(r) : hPlain(r);
     const bld = { h, p: poly };
+    // Shop lots keep the direction their front faces (f: [nx, nz]), so the
+    // game can find the ones no shop took and hang ad posters there.
+    if (kind === 'shop') bld.f = [face.nx, face.nz];
     buildings.push(bld);
     if (kind === 'shop') lots.push({ b: bld, face });
   };
