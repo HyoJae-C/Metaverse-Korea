@@ -94,7 +94,7 @@ import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { Companion, PoopTimers, makePoop, CLEAN_SECONDS, FINE } from './core/companion.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, isWorn, redeemCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -111,7 +111,8 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
+import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, lineAhead, stopsBetween, FARE, blockersOf, holeOf, footprintOf, streetStairs, hallStairsAt, outsideOf, toWorld, PIT, ENTER_AT, HALL_EXIT_AT } from './core/subway.js';
 
@@ -286,6 +287,19 @@ $('next-btn').onclick = () => {
   }).then((ok) => { $('login-google').hidden = ok; });
 };
 $('login-guest').onclick = lookOrStart;
+// Operator badge (🛡️): on the name tag; others see it only once the server
+// confirms the name is an operator's (supabase/005_operators.sql).
+const OPERATOR_TEXT = {
+  on: { en: '🛡️ Operator badge on', ko: '🛡️ 운영자 엠블럼을 달았어요', ja: '🛡️ 運営バッジをつけました', zh: '🛡️ 已戴上运营徽章' },
+  off: { en: 'Operator badge off', ko: '운영자 엠블럼을 뗐어요', ja: '運営バッジを外しました', zh: '已摘下运营徽章' },
+};
+const RESERVED_TEXT = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
+const opChecks = new Map(); // name -> Promise<boolean>, once per session
+function isOperatorName(name) {
+  if (!opChecks.has(name)) opChecks.set(name, cloud.isOperator(name));
+  return opChecks.get(name);
+}
+function styleMyTag(look) { styleNameTag(myTag, nickname, look, { operator: !!look.op, lang: getLanguage() }); }
 // Names: Hangul, English letters, numbers and spaces (checked while typing,
 // after an IME has finished composing a syllable).
 const NAME_HINT = { en: 'Korean or English letters and numbers only.', ko: '한글, 영어, 숫자만 쓸 수 있어요.', ja: '韓国語（ハングル）・英字・数字のみ使えます。', zh: '只能使用韩文、英文字母和数字。' };
@@ -325,6 +339,12 @@ await new Promise((resolve) => {
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
+    if (!isReturning() && isReservedName(name)) {
+      $('status').textContent = L(RESERVED_TEXT);
+      $('nickname').classList.add('bad');
+      $('nickname').focus();
+      return;
+    }
     if (!isReturning() && name) {
       busy = true;
       $('start-btn').disabled = true;
@@ -467,7 +487,7 @@ const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
 const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
 // Empty shop lots get ad posters (region.json "adPosters" books a spot).
-const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/');
+const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
@@ -779,7 +799,7 @@ const STORE_WALK = 4.2, STORE_RUN = 7;
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
-styleNameTag(myTag, nickname, myLook);
+styleMyTag(myLook);
 $('labels').appendChild(myTag);
 const myLabel = { tag: myTag, bubble: null };
 
@@ -981,7 +1001,7 @@ const weather = new WeatherSystem({
 });
 
 // ---------- Multiplayer ----------
-let others = new RemotePlayers(scene, $('labels'));
+let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
 let onlineAll = 0;
@@ -1025,7 +1045,7 @@ async function joinRoom(room, roomScene, area = null) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'));
+  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
   refreshOnline();
   const handlers = {
     onJoin: (p) => {
@@ -1101,6 +1121,7 @@ async function renameMe(raw) {
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
+  if (isReservedName(clean)) return 'reserved';
   if (wallet.coins < RENAME_COST) return 'poor';
   if (await cloud.claimName(clean) === 'taken') return 'taken';
   if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
@@ -1109,7 +1130,7 @@ async function renameMe(raw) {
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
   $('nickname').value = clean;
-  styleNameTag(myTag, nickname, myLook);
+  styleMyTag(myLook);
   emblemUi.name = nickname;
   me.play('cheer');
   if (lastJoin && net !== SOLO) {
@@ -1124,7 +1145,7 @@ function goSolo(roomScene) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'));
+  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
   refreshOnline();
 }
 net = SOLO;
@@ -1324,6 +1345,14 @@ chatBar.addEventListener('submit', async (e) => {
     chatInput.value = '';
     // Developer codes: "/<code>". A wrong one reads like any unknown command.
     const code = raw.slice(1).trim();
+    // The master code also switches the 🛡️ operator badge on or off.
+    if (await isMasterCode(code)) {
+      myLook = { ...myLook, op: !myLook.op || undefined };
+      if (!myLook.op) delete myLook.op;
+      saveLook(myLook);
+      setLook(myLook);
+      shop.toast(L(myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
+    }
     const coinsFromCode = await coinCode(code);
     if (coinsFromCode) {
       wallet.add(coinsFromCode, { k: 'ledger.gift' });
@@ -1503,11 +1532,23 @@ function adoptPet(id) {
   setPet(id);
   shop.closeProduct();
   clerk && say(clerk, $('labels'), ['잘 키워 주세요!', 'jal kiwo juseyo!', t('pet.takeCare')]);
-  shop.toast(t('pet.adopted', { name: petName(it.pet) }));
+  shop.toast(t('pet.adopted', { name: petName(id) }) + ' ' + L(PET_NAME_TEXT.hint));
 }
 // Korean subject particle after a name: 이 after a final consonant, else 가.
 const subjectParticle = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '이' : '가'; };
-const petName = (def) => (getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`);
+// The name you gave your pet (bag → ✏️), else the shop's name.
+const petName = (id) => {
+  const own = customPetName(id), def = ITEMS[id]?.pet;
+  if (own) return own;
+  return getLanguage() === 'ko' ? def.name : `${def.rom} (${def.name})`;
+};
+const PET_NAME_TEXT = {
+  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
+  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
+  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
+  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
+  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
+};
 function nearestPoop(p) {
   let best = null, bd = 1.6;
   for (const po of poops.values()) {
@@ -1547,7 +1588,7 @@ function updatePet(dt, p) {
     const { id } = poopTimers.add();
     poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
     sfx.pop?.();
-    shop.toast(t('pet.pooped', { name: petName(pet.def), ga: subjectParticle(pet.def.name), s: CLEAN_SECONDS }));
+    shop.toast(t('pet.pooped', { name: petName(pet.id), ga: subjectParticle(customPetName(pet.id) || pet.def.name), s: CLEAN_SECONDS }));
   }
 }
 let fineShown = null; // { count, taken } while the notice is open (two fines at once add up)
@@ -1833,7 +1874,7 @@ onLanguageChange(() => {
 
 function setLook(look) {
   currentLook = look;
-  styleNameTag(myTag, nickname, look);
+  styleMyTag(look);
   const old = me.root;
   me = createCharacter(look);
   me.root.position.copy(old.position);
@@ -4532,7 +4573,9 @@ function refreshItems() {
     row.className = 'item-row';
     const it = ITEMS[id];
     const b = document.createElement('strong');
-    b.textContent = `${it.emoji} ${localName(it.name, getLanguage())}`;
+    const own = it.pet && customPetName(id);
+    // "Shiba · Kongtteok" → "Shiba · <your name>"
+    b.textContent = `${it.emoji} ${own ? localName(it.name, getLanguage()).split(' · ')[0] + ' · ' + own : localName(it.name, getLanguage())}`;
     const d = document.createElement('small');
     d.textContent = localName(it.desc, getLanguage());
     row.append(b, d);
@@ -4542,7 +4585,35 @@ function refreshItems() {
       w.className = 'chip item-walk' + (walking ? ' on' : '');
       w.textContent = walking ? '🏠 ' + t('pet.home') : '🐾 ' + t('pet.walk');
       w.onclick = () => setPet(walking ? null : id);
-      row.append(w);
+      const nb = document.createElement('button');
+      nb.className = 'chip item-walk';
+      nb.textContent = '✏️ ' + L(PET_NAME_TEXT.rename);
+      nb.onclick = () => {
+        const form = document.createElement('form');
+        form.className = 'pet-name-form';
+        const inp = document.createElement('input');
+        inp.maxLength = PET_NAME_MAX;
+        inp.placeholder = L(PET_NAME_TEXT.placeholder);
+        inp.value = customPetName(id) || it.pet.name;
+        inp.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
+        const ok = document.createElement('button');
+        ok.className = 'chip';
+        ok.textContent = L(PET_NAME_TEXT.save);
+        form.append(inp, ok);
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const n = setPetName(id, inp.value);
+          shop.toast(fmt(L(PET_NAME_TEXT.named), { name: n || it.pet.name }));
+          refreshItems();
+        };
+        nb.replaceWith(form);
+        inp.focus();
+        inp.select();
+      };
+      const btns = document.createElement('div');
+      btns.className = 'item-btns';
+      btns.append(w, nb);
+      row.append(btns);
     }
     if (it.wear) { // put it on, or take it off (trousers can only be swapped)
       const on = isWorn(it, myLook);
