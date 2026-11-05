@@ -58,6 +58,10 @@ import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
 import { KimchiUI } from './ui/kimchi-ui.js';
 import { KT as KIMCHI_TEXT } from './ui/kimchi-text.js';
+import { JapchaeUI } from './ui/japchae-ui.js';
+import { JT as JAPCHAE_TEXT } from './ui/japchae-text.js';
+import { KimbapUI } from './ui/kimbap-ui.js';
+import { BT as KIMBAP_TEXT } from './ui/kimbap-text.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag } from './core/bag.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
@@ -2135,7 +2139,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2212,6 +2216,8 @@ function leaveStore() {
   if (marketUi.open) marketUi.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
+  if (japchaeUi.open) japchaeUi.close();
+  if (kimbapUi.open) kimbapUi.close();
   tarotUi.close();
   leaveTarotLine(true);
   for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi]) if (g.open) g.close();
@@ -3195,7 +3201,7 @@ function setActionLabel(label) {
 }
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, tarotUi, counterUi, bagUi, dexUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3441,6 +3447,22 @@ const kimchiUi = new KimchiUI({
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
   onJar: () => bag.add({ kind: 'gift', sips: 1, name: localName(KIMCHI_TEXT.item, 'en'), icon: '🫙' }),
+});
+// Japchae class at Suragan Cooking Class, next to the kimchi school.
+const japchaeUi = new JapchaeUI({
+  root: $('japchae-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
+  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
+});
+// Free-style kimbap at the same class, at the bamboo mats on the near side.
+const kimbapUi = new KimbapUI({
+  root: $('kimbap-panel'),
+  wallet,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
+  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
 });
 
 // Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
@@ -4789,6 +4811,12 @@ function updateAction(p, tSec) {
       next = { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
     } else if (nearFishing(p)) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
+    } else if (nearStation(p, 'kimbap', 1.3)) {
+      next = { key: 'kimbap', label: '🍙 ' + L(KIMBAP_TEXT.open), run: () => { clerk?.ch.wave(); kimbapUi.show(); } };
+    } else if (nearStation(p, 'japchae', 1.3)) {
+      next = { key: 'japchae', label: '🍝 ' + L(JAPCHAE_TEXT.open), run: () => { clerk?.ch.wave(); japchaeUi.show(); } };
+    } else if (interior.store.workshop === 'japchae' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
+      next = { key: 'japchae-hint', label: '💬 ' + L(JAPCHAE_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(JAPCHAE_TEXT.hint)); } };
     } else if (nearStation(p, 'kimchi', 1.3)) {
       next = { key: 'kimchi', label: '🥬 ' + L(KIMCHI_TEXT.open), run: () => { clerk?.ch.wave(); kimchiUi.show(); } };
     } else if (interior.store.workshop === 'kimchi' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
