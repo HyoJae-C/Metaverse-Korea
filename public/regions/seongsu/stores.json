@@ -2169,6 +2169,156 @@
         { "id": "wild-solid-mini-lime", "model": "skirt", "skirt": "solid-mini-lime", "color": "#b5e04a", "price": 45000, "item": "skirt-solid-mini-lime", "name": { "en": "Lime mini skirt", "ko": "라임 미니스커트", "ja": "ライムのミニスカート", "zh": "青柠色短裙" }, "tryOn": { "skirt": "solid-mini-lime" } },
         { "id": "wild-pleats-mini-black", "model": "skirt", "skirt": "pleats-mini-black", "color": "#2b2b31", "price": 45000, "item": "skirt-pleats-mini-black", "name": { "en": "Black pleated mini skirt", "ko": "블랙 플리츠 미니스커트", "ja": "ブラックのプリーツミニスカート", "zh": "黑色百褶短裙" }, "tryOn": { "skirt": "pleats-mini-black" } }
       ]
+    },
+    {
+      "id": "baro-imat-galbitang",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Baro Imat Galbitang", "ko": "바로 이맛 갈비탕", "ja": "パロイマッ・カルビタン", "zh": "就是这味排骨汤" },
+      "tagline": { "en": "Clear beef short rib soup, simmered for hours", "ko": "오래 끓인 맑은 갈비탕", "ja": "じっくり煮込んだ澄んだカルビスープ", "zh": "慢火熬煮的清炖牛排骨汤" },
+      "at": [-3059.5, -744],
+      "colors": { "sign": "#8a3b1f", "awning": "#f3d9b1", "accent": "#fff6ea" },
+      "products": [
+        { "id": "galbitang", "model": "bowl", "color": "#e9d6b4", "price": 14000, "name": { "en": "Galbitang", "ko": "갈비탕", "ja": "カルビタン", "zh": "排骨汤" }, "desc": { "en": "Beef short ribs in a clear, mild broth with glass noodles and a little egg. Season it with salt at the table.", "ko": "당면과 달걀 지단을 올린 맑은 소갈비 국물이에요. 소금으로 간을 맞춰 드세요." } },
+        { "id": "wang-galbitang", "model": "bowl", "color": "#e2c79c", "price": 18000, "name": { "en": "King Galbitang", "ko": "왕갈비탕", "ja": "王カルビタン", "zh": "大排骨汤" }, "desc": { "en": "The big bowl, with extra-long ribs that stick out of the pot.", "ko": "뚝배기 밖으로 삐져나올 만큼 큰 갈비가 들어간 왕 사이즈예요." } },
+        { "id": "galbijjim", "model": "bowl", "color": "#7a3a1c", "price": 32000, "name": { "en": "Galbijjim (braised short ribs)", "ko": "갈비찜", "ja": "カルビチム", "zh": "炖排骨" }, "desc": { "en": "Short ribs braised in sweet soy sauce with radish, carrot and chestnuts. Good for sharing.", "ko": "무, 당근, 밤을 넣고 달콤한 간장에 졸인 갈비찜이에요. 나눠 먹기 좋아요." } },
+        { "id": "sikhye", "model": "cup", "color": "#e8dcc0", "price": 2000, "name": { "en": "Sikhye (rice punch)", "ko": "식혜", "ja": "シッケ", "zh": "甜米露" }, "desc": { "en": "A sweet, cold rice drink, nice after a hot soup.", "ko": "뜨거운 국물 뒤에 딱 좋은 달콤하고 시원한 식혜예요." } }
+      ]
+    },
+    {
+      "id": "siwon-kalguksu",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Siwon Kalguksu", "ko": "시원 칼국수", "ja": "シウォン・カルグクス", "zh": "爽口刀切面" },
+      "tagline": { "en": "Knife-cut noodles in a refreshing clam broth", "ko": "시원한 바지락 국물의 칼국수", "ja": "あさりスープのさっぱりカルグクス", "zh": "清爽蛤蜊汤刀切面" },
+      "at": [-3040.5, -744],
+      "colors": { "sign": "#2f7f8a", "awning": "#cdeef0", "accent": "#f2fbfc" },
+      "products": [
+        { "id": "bajirak-kalguksu", "model": "bowl", "color": "#efe6d8", "price": 10000, "name": { "en": "Clam kalguksu", "ko": "바지락 칼국수", "ja": "あさりカルグクス", "zh": "蛤蜊刀切面" }, "desc": { "en": "Hand-cut wheat noodles in a clear clam broth. Koreans call a hot, clean soup 'siwon' (refreshing).", "ko": "시원한 바지락 국물에 직접 썬 면을 넣었어요." } },
+        { "id": "deulkkae-kalguksu", "model": "bowl", "color": "#d9c7a7", "price": 10000, "name": { "en": "Perilla seed kalguksu", "ko": "들깨 칼국수", "ja": "エゴマカルグクス", "zh": "苏子刀切面" }, "desc": { "en": "Thick, nutty noodle soup made creamy with ground perilla seeds.", "ko": "들깨를 갈아 넣어 고소하고 걸쭉한 칼국수예요." } },
+        { "id": "kimchi-mandu", "model": "roll", "color": "#f0dcc0", "price": 7000, "name": { "en": "Kimchi dumplings", "ko": "김치만두", "ja": "キムチ餃子", "zh": "泡菜饺子" }, "desc": { "en": "Five steamed dumplings with kimchi, tofu and pork. A little spicy.", "ko": "김치, 두부, 돼지고기를 넣은 찐만두 다섯 개예요. 살짝 매워요." } },
+        { "id": "boribap", "model": "bowl", "color": "#b99a6b", "price": 4000, "name": { "en": "Barley rice bibimbap", "ko": "보리밥", "ja": "麦ご飯", "zh": "大麦拌饭" }, "desc": { "en": "A small bowl of barley rice with vegetables and red pepper paste, served before the noodles.", "ko": "칼국수 전에 먹는 나물과 고추장을 넣은 작은 보리밥이에요." } }
+      ]
+    },
+    {
+      "id": "chuncheon-dakgalbi",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Chuncheon Dakgalbi", "ko": "춘천 닭갈비", "ja": "春川タッカルビ", "zh": "春川铁板鸡" },
+      "tagline": { "en": "Spicy chicken stir-fried on a big iron pan at your table", "ko": "철판에 볶아 먹는 매콤한 닭갈비", "ja": "鉄板で炒めるピリ辛タッカルビ", "zh": "在铁板上现炒的辣炒鸡" },
+      "at": [-3059.5, -731],
+      "colors": { "sign": "#d1462f", "awning": "#ffd2a6", "accent": "#fff3e8" },
+      "products": [
+        { "id": "dakgalbi", "model": "bowl", "color": "#c8452a", "price": 14000, "name": { "en": "Dakgalbi", "ko": "닭갈비", "ja": "タッカルビ", "zh": "铁板鸡" }, "desc": { "en": "Chicken, cabbage, sweet potato and rice cakes stir-fried in a red pepper sauce. The staff cook it for you on the table.", "ko": "닭고기, 양배추, 고구마, 떡을 고추장 양념에 볶아요. 직원이 테이블에서 볶아 줘요." } },
+        { "id": "cheese-dakgalbi", "model": "bowl", "color": "#e7a83a", "price": 16000, "name": { "en": "Cheese dakgalbi", "ko": "치즈 닭갈비", "ja": "チーズタッカルビ", "zh": "芝士铁板鸡" }, "desc": { "en": "The same dakgalbi with a ring of melted cheese around it. Less spicy with each bite.", "ko": "녹인 치즈를 둘러 덜 맵게 즐기는 닭갈비예요." } },
+        { "id": "makguksu", "model": "bowl", "color": "#8b6f4e", "price": 9000, "name": { "en": "Makguksu (cold buckwheat noodles)", "ko": "막국수", "ja": "マッグクス", "zh": "荞麦冷面" }, "desc": { "en": "Chewy buckwheat noodles in a cold broth, a Chuncheon classic.", "ko": "춘천의 대표 음식, 시원한 국물의 메밀국수예요." } },
+        { "id": "bokkeumbap", "model": "bowl", "color": "#a8642e", "price": 3000, "name": { "en": "Fried rice on the pan", "ko": "볶음밥", "ja": "ポックンパ", "zh": "炒饭" }, "desc": { "en": "Rice, seaweed and sesame oil fried in the leftover sauce at the end. Don't skip it!", "ko": "남은 양념에 밥, 김, 참기름을 넣어 볶아요. 꼭 드셔 보세요!" } }
+      ]
+    },
+    {
+      "id": "mujeok-samgyeopsal",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Mujeok Samgyeopsal", "ko": "무적 삼겹살", "ja": "無敵サムギョプサル", "zh": "无敌五花肉" },
+      "tagline": { "en": "Unbeatable grilled pork belly", "ko": "무적의 맛, 삼겹살 구이", "ja": "無敵のサムギョプサル焼肉", "zh": "无敌美味的烤五花肉" },
+      "at": [-3040.5, -728],
+      "colors": { "sign": "#3b3b3b", "awning": "#f2b5a0", "accent": "#fff1ec" },
+      "products": [
+        { "id": "samgyeopsal", "model": "bacon", "color": "#e9b8a4", "price": 16000, "name": { "en": "Samgyeopsal (pork belly)", "ko": "삼겹살", "ja": "サムギョプサル", "zh": "五花肉" }, "desc": { "en": "Thick slices of pork belly grilled at the table. Wrap them in lettuce with garlic and ssamjang sauce.", "ko": "테이블에서 굽는 두툼한 삼겹살이에요. 상추에 마늘, 쌈장과 함께 싸 드세요." } },
+        { "id": "moksal", "model": "bacon", "color": "#d99f8a", "price": 16000, "name": { "en": "Moksal (pork neck)", "ko": "목살", "ja": "モクサル（豚肩ロース）", "zh": "猪颈肉" }, "desc": { "en": "Leaner, juicy pork neck, grilled the same way.", "ko": "기름이 적고 육즙이 많은 목살 구이예요." } },
+        { "id": "doenjang-jjigae", "model": "bowl", "color": "#a8742f", "price": 3000, "name": { "en": "Doenjang jjigae", "ko": "된장찌개", "ja": "テンジャンチゲ", "zh": "大酱汤" }, "desc": { "en": "Soybean paste stew with tofu and zucchini, perfect with grilled meat.", "ko": "두부와 애호박을 넣은 된장찌개예요. 고기와 잘 어울려요." } },
+        { "id": "naengmyeon", "model": "bowl", "color": "#9c8a72", "price": 8000, "name": { "en": "Naengmyeon (cold noodles)", "ko": "냉면", "ja": "冷麺", "zh": "冷面" }, "desc": { "en": "Ice-cold buckwheat noodles to finish the meal.", "ko": "고기를 먹은 뒤 마무리로 좋은 시원한 냉면이에요." } }
+      ]
+    },
+    {
+      "id": "haengbok-gopchang",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Haengbokhan Gopchang", "ko": "행복한 곱창", "ja": "幸せなコプチャン", "zh": "幸福烤肠" },
+      "tagline": { "en": "Grilled beef tripe and intestines, a late-night favourite", "ko": "밤에 더 맛있는 곱창구이", "ja": "夜に人気のホルモン焼き", "zh": "深夜人气烤牛肠" },
+      "at": [-3059.5, -720],
+      "colors": { "sign": "#e07b24", "awning": "#ffe08a", "accent": "#fff8e6" },
+      "products": [
+        { "id": "sogopchang-gui", "model": "bowl", "color": "#d9a066", "price": 22000, "name": { "en": "Grilled beef gopchang", "ko": "소곱창구이", "ja": "牛コプチャン焼き", "zh": "烤牛小肠" }, "desc": { "en": "Beef small intestines grilled until crispy outside and soft inside, with onions and chives.", "ko": "겉은 바삭하고 속은 부드럽게 구운 소곱창이에요. 양파, 부추와 함께 나와요." } },
+        { "id": "gopchang-jeongol", "model": "bowl", "color": "#c2452d", "price": 15000, "name": { "en": "Gopchang hot pot", "ko": "곱창전골", "ja": "コプチャン鍋", "zh": "牛肠火锅" }, "desc": { "en": "A spicy hot pot of beef intestines, vegetables and noodles.", "ko": "곱창, 채소, 면을 넣은 얼큰한 전골이에요." } },
+        { "id": "makchang", "model": "skewer", "color": "#b9773e", "price": 18000, "name": { "en": "Makchang (grilled pork intestine)", "ko": "막창구이", "ja": "マクチャン焼き", "zh": "烤猪大肠" }, "desc": { "en": "Chewy grilled pork large intestine, dipped in soybean paste sauce.", "ko": "쫄깃한 돼지 막창 구이예요. 된장 소스에 찍어 드세요." } },
+        { "id": "gopchang-bokkeumbap", "model": "bowl", "color": "#a8642e", "price": 3000, "name": { "en": "Fried rice", "ko": "볶음밥", "ja": "ポックンパ", "zh": "炒饭" }, "desc": { "en": "Rice fried on the grill in the last of the juices.", "ko": "불판에 남은 기름으로 볶은 밥이에요." } }
+      ]
+    },
+    {
+      "id": "masitda-chadolbagi",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Masitda! Chadolbagi", "ko": "맛있다!차돌박이", "ja": "マシッタ！チャドルバギ", "zh": "好吃！牛胸肉" },
+      "tagline": { "en": "Paper-thin beef brisket, grilled in seconds", "ko": "얇게 썰어 금방 굽는 차돌박이", "ja": "薄切り牛バラをさっと焼く", "zh": "薄切牛胸肉，几秒就烤好" },
+      "at": [-3040.5, -715],
+      "colors": { "sign": "#b8325a", "awning": "#ffc8d8", "accent": "#fff0f4" },
+      "products": [
+        { "id": "chadolbagi", "model": "bacon", "color": "#f0c2c8", "price": 18000, "name": { "en": "Chadolbagi (beef brisket)", "ko": "차돌박이", "ja": "チャドルバギ", "zh": "牛胸肉" }, "desc": { "en": "Very thin slices of fatty beef brisket. They cook in a few seconds, so eat them hot.", "ko": "아주 얇게 썬 차돌박이예요. 몇 초면 익으니 바로 드세요." } },
+        { "id": "chadol-doenjang", "model": "bowl", "color": "#a8742f", "price": 9000, "name": { "en": "Brisket doenjang jjigae", "ko": "차돌 된장찌개", "ja": "チャドル・テンジャンチゲ", "zh": "牛胸肉大酱汤" }, "desc": { "en": "Soybean paste stew made richer with brisket.", "ko": "차돌박이를 넣어 더 깊은 맛의 된장찌개예요." } },
+        { "id": "chadol-sukju", "model": "bowl", "color": "#e3d6a8", "price": 17000, "name": { "en": "Brisket with bean sprouts", "ko": "차돌 숙주볶음", "ja": "チャドルともやし炒め", "zh": "牛胸肉炒豆芽" }, "desc": { "en": "Brisket stir-fried with crunchy mung bean sprouts and black pepper.", "ko": "아삭한 숙주와 후추를 넣어 볶은 차돌박이예요." } },
+        { "id": "chadol-ssambap", "model": "bowl", "color": "#6f9a4a", "price": 6000, "name": { "en": "Rice and lettuce wraps", "ko": "쌈밥", "ja": "サムパプ", "zh": "包饭" }, "desc": { "en": "A bowl of rice with lettuce and leaves for wrapping the meat.", "ko": "고기를 싸 먹을 상추와 쌈 채소, 밥이 함께 나와요." } }
+      ]
+    },
+    {
+      "id": "deumppuk-yukhoe",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Deumppuk Yukhoe", "ko": "듬뿍육회", "ja": "たっぷりユッケ", "zh": "满满生拌牛肉" },
+      "tagline": { "en": "Korean beef tartare, piled high", "ko": "듬뿍 담아 주는 육회", "ja": "山盛りの韓国風ユッケ", "zh": "堆得满满的韩式生拌牛肉" },
+      "at": [-3059.5, -709],
+      "colors": { "sign": "#c0392b", "awning": "#f8c9a8", "accent": "#fff3ec" },
+      "products": [
+        { "id": "yukhoe", "model": "bowl", "color": "#b8324a", "price": 19000, "name": { "en": "Yukhoe (beef tartare)", "ko": "육회", "ja": "ユッケ", "zh": "生拌牛肉" }, "desc": { "en": "Raw beef strips seasoned with sesame oil and pear, topped with an egg yolk. Served raw.", "ko": "배와 참기름으로 무친 생소고기에 노른자를 올렸어요. 날것으로 먹는 음식이에요." } },
+        { "id": "yukhoe-bibimbap", "model": "bowl", "color": "#d7743a", "price": 11000, "name": { "en": "Yukhoe bibimbap", "ko": "육회비빔밥", "ja": "ユッケビビンバ", "zh": "生牛肉拌饭" }, "desc": { "en": "Rice with vegetables and fresh yukhoe on top. Mix it all with red pepper paste.", "ko": "나물과 육회를 올린 비빔밥이에요. 고추장과 함께 비벼 드세요." } },
+        { "id": "yukhoe-sushi", "model": "roll", "color": "#c9485a", "price": 12000, "name": { "en": "Yukhoe sushi", "ko": "육회 초밥", "ja": "ユッケ寿司", "zh": "生牛肉寿司" }, "desc": { "en": "Six bites of rice topped with seasoned raw beef.", "ko": "양념한 육회를 올린 초밥 여섯 개예요." } },
+        { "id": "sogogi-muguk", "model": "bowl", "color": "#d9b98a", "price": 4000, "name": { "en": "Beef and radish soup", "ko": "소고기뭇국", "ja": "牛肉と大根のスープ", "zh": "萝卜牛肉汤" }, "desc": { "en": "A light, warm soup to go with the cold dishes.", "ko": "차가운 육회와 함께 먹기 좋은 따뜻한 국이에요." } }
+      ]
+    },
+    {
+      "id": "chammat-gejang",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Chammat Ganjang Gejang", "ko": "참맛간장게장", "ja": "チャムマッ醤油ケジャン", "zh": "真味酱蟹" },
+      "tagline": { "en": "Soy-marinated raw crab, the 'rice thief'", "ko": "밥도둑 간장게장 전문", "ja": "ご飯泥棒、醤油ケジャン", "zh": "下饭神器酱蟹" },
+      "at": [-3040.5, -702],
+      "colors": { "sign": "#5a3a7a", "awning": "#e0cff2", "accent": "#f8f3fd" },
+      "products": [
+        { "id": "ganjang-gejang", "model": "bowl", "color": "#7a4a2a", "price": 32000, "name": { "en": "Ganjang gejang set", "ko": "간장게장 정식", "ja": "醤油ケジャン定食", "zh": "酱蟹套餐" }, "desc": { "en": "Raw crab marinated in soy sauce, with rice and side dishes. Mix rice in the shell! Served raw.", "ko": "간장에 숙성한 생게에 밥과 반찬이 나와요. 게딱지에 밥을 비벼 드세요! 날것으로 먹는 음식이에요." } },
+        { "id": "yangnyeom-gejang", "model": "bowl", "color": "#c2402a", "price": 30000, "name": { "en": "Yangnyeom gejang set", "ko": "양념게장 정식", "ja": "ヤンニョムケジャン定食", "zh": "辣酱蟹套餐" }, "desc": { "en": "Raw crab in a sweet and spicy red sauce. Served raw.", "ko": "달콤하고 매콤한 양념에 버무린 생게예요. 날것으로 먹는 음식이에요." } },
+        { "id": "saeu-jang", "model": "bowl", "color": "#e08a5a", "price": 22000, "name": { "en": "Soy-marinated shrimp", "ko": "간장새우장", "ja": "醤油エビ漬け", "zh": "酱虾" }, "desc": { "en": "Raw shrimp in soy sauce, sweeter and softer than crab.", "ko": "간장에 숙성한 생새우예요. 게보다 달고 부드러워요." } },
+        { "id": "albap", "model": "bowl", "color": "#f0a040", "price": 9000, "name": { "en": "Albap (fish roe rice)", "ko": "알밥", "ja": "アルパプ", "zh": "鱼子拌饭" }, "desc": { "en": "Hot stone bowl of rice with crunchy fish roe and vegetables.", "ko": "톡톡 터지는 날치알과 채소를 올린 돌솥 알밥이에요." } }
+      ]
+    },
+    {
+      "id": "tojong-sundae-gukbap",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Tojong Sundae Gukbap", "ko": "토종순대국밥", "ja": "トジョン・スンデクッパ", "zh": "土种血肠汤饭" },
+      "tagline": { "en": "Hearty pork soup with Korean sausage and rice", "ko": "든든한 순대국밥 한 그릇", "ja": "具だくさんのスンデクッパ", "zh": "暖胃的血肠汤饭" },
+      "at": [-3059.5, -699],
+      "colors": { "sign": "#6b4a2f", "awning": "#e8d2b0", "accent": "#fbf5ec" },
+      "products": [
+        { "id": "sundae-gukbap", "model": "bowl", "color": "#e6d8c2", "price": 10000, "name": { "en": "Sundae gukbap", "ko": "순대국밥", "ja": "スンデクッパ", "zh": "血肠汤饭" }, "desc": { "en": "Milky pork bone soup with sundae (Korean sausage) and rice. Add perilla powder and chilli to taste.", "ko": "뽀얀 돼지 뼈 국물에 순대와 밥을 넣었어요. 들깨가루와 다대기로 입맛에 맞추세요." } },
+        { "id": "eolkeun-sundaeguk", "model": "bowl", "color": "#c8452a", "price": 10000, "name": { "en": "Spicy sundae soup", "ko": "얼큰 순대국", "ja": "辛口スンデクッ", "zh": "辣血肠汤" }, "desc": { "en": "The same soup with a spicy red broth.", "ko": "얼큰한 빨간 국물의 순대국이에요." } },
+        { "id": "modum-sundae", "model": "roll", "color": "#4a3038", "price": 14000, "name": { "en": "Sundae platter", "ko": "모둠순대", "ja": "スンデ盛り合わせ", "zh": "血肠拼盘" }, "desc": { "en": "Steamed sundae with liver and other parts, dipped in salt or shrimp sauce.", "ko": "순대와 간, 내장을 함께 담았어요. 소금이나 새우젓에 찍어 드세요." } },
+        { "id": "pyeonyuk", "model": "bowl", "color": "#e3c3b0", "price": 18000, "name": { "en": "Boiled pork slices", "ko": "머리고기 수육", "ja": "豚肉のスユク", "zh": "白切猪肉" }, "desc": { "en": "Tender boiled pork, sliced thin and served with kimchi.", "ko": "부드럽게 삶은 돼지고기를 얇게 썰어 김치와 함께 내요." } }
+      ]
+    },
+    {
+      "id": "gungmin-seolleongtang",
+      "category": "restaurant",
+      "size": "medium",
+      "name": { "en": "Gungmin Seolleongtang", "ko": "국민설렁탕", "ja": "国民ソルロンタン", "zh": "国民雪浓汤" },
+      "tagline": { "en": "Milky beef bone soup that everyone loves", "ko": "온 국민이 사랑하는 설렁탕", "ja": "みんなが愛する白いソルロンタン", "zh": "全民喜爱的牛骨雪浓汤" },
+      "at": [-3040.5, -691],
+      "colors": { "sign": "#2f5d8a", "awning": "#d6e6f5", "accent": "#f3f8fd" },
+      "products": [
+        { "id": "seolleongtang", "model": "bowl", "color": "#f3eee4", "price": 11000, "name": { "en": "Seolleongtang", "ko": "설렁탕", "ja": "ソルロンタン", "zh": "雪浓汤" }, "desc": { "en": "Ox bone soup boiled until white, with sliced beef and noodles. Add salt and green onion yourself.", "ko": "하얗게 우린 사골 국물에 고기와 소면을 넣었어요. 소금과 파는 직접 넣어 드세요." } },
+        { "id": "teuk-seolleongtang", "model": "bowl", "color": "#ece3d2", "price": 15000, "name": { "en": "Special seolleongtang", "ko": "특 설렁탕", "ja": "特ソルロンタン", "zh": "特大雪浓汤" }, "desc": { "en": "The large bowl with extra beef.", "ko": "고기를 듬뿍 더 넣은 특 사이즈예요." } },
+        { "id": "doganitang", "model": "bowl", "color": "#e8dcc6", "price": 16000, "name": { "en": "Doganitang (knee cartilage soup)", "ko": "도가니탕", "ja": "トガニタン", "zh": "牛膝骨汤" }, "desc": { "en": "Soft, chewy beef knee cartilage in the same milky broth.", "ko": "쫀득한 소 도가니를 넣은 뽀얀 국물이에요." } },
+        { "id": "suyuk", "model": "bowl", "color": "#d9b8a0", "price": 25000, "name": { "en": "Beef suyuk", "ko": "소고기 수육", "ja": "牛肉スユク", "zh": "白切牛肉" }, "desc": { "en": "Boiled beef brisket slices to share, dipped in soy sauce with mustard.", "ko": "삶은 소고기를 얇게 썰었어요. 겨자 간장에 찍어 드세요." } }
+      ]
     }
   ]
 }
