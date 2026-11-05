@@ -135,12 +135,18 @@ function makeBikeRide({ tier, color, pattern }) {
   return g;
 }
 
+// Roads and walkways are drawn a few cm above the ground the characters
+// stand on, so boards, scooters and skates ride this much higher (or their
+// small wheels sink into the street).
+export const RIDE_CLEAR = 0.05;
+
 // Skateboard: a deck with kicked-up tails. Tier 1: coloured wheels and a
 // stripe of grip; tier 2: a longer longboard with a soft underglow.
 function makeSkate({ tier, color, pattern }) {
   const g = new THREE.Group();
   const box = boxer(g);
-  const len = tier === 2 ? 0.92 : 0.76, wid = tier === 2 ? 0.25 : 0.22, y = 0.1;
+  const R = tier === 2 ? 0.06 : 0.05; // wheel radius
+  const len = tier === 2 ? 0.92 : 0.76, wid = tier === 2 ? 0.25 : 0.22, y = RIDE_CLEAR + 2 * R + 0.025;
   const deck = skinMaterial(color, pattern);
   box(wid, 0.03, len, 0, y, 0, deck);
   for (const s of [-1, 1]) box(wid, 0.03, 0.12, 0, y + 0.03, s * (len / 2 + 0.04), deck, s * 0.45); // tails
@@ -149,11 +155,11 @@ function makeSkate({ tier, color, pattern }) {
   const wm = tier >= 1 ? mat(tier === 2 ? '#ffd93d' : '#ff8fc7') : mat('#f0ece2');
   for (const z of [-len * 0.33, len * 0.33]) {
     box(wid * 0.7, 0.025, 0.05, 0, y - 0.03, z, mat('#b8bcc4')); // truck
-    for (const s of [-1, 1]) wheel(g, tier === 2 ? 0.042 : 0.035, 0.04, s * wid * 0.42, tier === 2 ? 0.042 : 0.035, z, wm);
+    for (const s of [-1, 1]) wheel(g, R, 0.045, s * wid * 0.42, RIDE_CLEAR + R, z, wm);
   }
   if (tier === 2) {
     const under = new THREE.Mesh(new THREE.PlaneGeometry(wid * 0.8, len * 0.8).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false }));
-    under.position.y = 0.012;
+    under.position.y = RIDE_CLEAR + 0.012;
     g.add(under);
   }
   g.userData.pose = 'board';
@@ -167,18 +173,19 @@ function makeKick({ tier, color, pattern }) {
   const g = new THREE.Group();
   const box = boxer(g);
   const body = skinMaterial(color, pattern);
-  const wid = tier === 2 ? 0.17 : 0.14, y = 0.09, r = tier === 2 ? 0.07 : 0.06;
+  const r = tier === 2 ? 0.085 : 0.075; // wheel radius
+  const wid = tier === 2 ? 0.17 : 0.14, y = RIDE_CLEAR + r + 0.01, bar = y + 0.42;
   box(wid, 0.035, 0.6, 0, y, -0.02, body); // deck
   box(wid * 0.45, 0.006, 0.44, 0, y + 0.02, -0.04, mat('#2a2a2e')); // grip
-  wheel(g, r, 0.04, 0, r, -0.36, mat(tier >= 1 ? shade(color, 0.6) : DARK));
-  wheel(g, r, 0.04, 0, r, 0.33, mat(tier >= 1 ? shade(color, 0.6) : DARK));
-  box(0.04, 0.42, 0.04, 0, 0.31, 0.3, body, -0.12); // stem
-  box(0.36, 0.035, 0.035, 0, 0.51, 0.28, mat(DARK)); // T-bar
+  wheel(g, r, 0.045, 0, RIDE_CLEAR + r, -0.38, mat(tier >= 1 ? shade(color, 0.6) : DARK));
+  wheel(g, r, 0.045, 0, RIDE_CLEAR + r, 0.35, mat(tier >= 1 ? shade(color, 0.6) : DARK));
+  box(0.04, bar - y, 0.04, 0, (bar + y) / 2, 0.3, body, -0.12); // stem
+  box(0.36, 0.035, 0.035, 0, bar, 0.28, mat(DARK)); // T-bar
   const grip = mat(tier >= 1 ? shade(color, 1.3) : '#3a3d44');
-  for (const s of [-1, 1]) box(0.07, 0.04, 0.04, s * 0.16, 0.51, 0.28, grip);
-  if (tier >= 1) box(0.06, 0.04, 0.03, 0, 0.42, 0.33, glow('#fff6c8')); // front light
+  for (const s of [-1, 1]) box(0.07, 0.04, 0.04, s * 0.16, bar, 0.28, grip);
+  if (tier >= 1) box(0.06, 0.04, 0.03, 0, bar - 0.09, 0.33, glow('#fff6c8')); // front light
   if (tier === 2) box(wid * 0.8, 0.01, 0.5, 0, y - 0.022, -0.02, glow(shade(color, 1.4))); // LED strip
-  g.userData.pose = 'board';
+  g.userData.pose = 'kick'; // one foot on the deck, the other kicking, hands on the T-bar
   g.userData.stand = y + 0.02;
   return g;
 }
@@ -190,14 +197,15 @@ export function makeSkate1({ tier, color, pattern }) {
   const g = new THREE.Group();
   const box = boxer(g);
   const boot = skinMaterial(color, pattern);
-  box(0.1, 0.07, 0.17, 0, 0.075, 0.01, boot); // boot
-  box(0.105, 0.03, 0.08, 0, 0.12, -0.04, tier >= 1 ? mat(shade(color, 1.35)) : mat('#e9e4da')); // cuff
-  box(0.03, 0.025, 0.2, 0, 0.032, 0.01, mat(tier === 2 ? '#d7dde2' : DARK)); // frame
+  const R = 0.034, d = 2 * R - 0.048; // bigger wheels: everything above them sits d higher
+  box(0.1, 0.07, 0.17, 0, 0.075 + d, 0.01, boot); // boot
+  box(0.105, 0.03, 0.08, 0, 0.12 + d, -0.04, tier >= 1 ? mat(shade(color, 1.35)) : mat('#e9e4da')); // cuff
+  box(0.03, 0.025, 0.24, 0, 0.032 + d, 0.01, mat(tier === 2 ? '#d7dde2' : DARK)); // frame
   const wm = tier === 2 ? glow(shade(color, 1.5)) : mat(tier === 1 ? shade(color, 0.75) : '#3a3d44');
-  for (let k = 0; k < 4; k++) wheel(g, 0.024, 0.025, 0, 0.024, -0.07 + k * 0.05, wm);
+  for (let k = 0; k < 4; k++) wheel(g, R, 0.026, 0, R, -0.095 + k * 0.07, wm);
   return g;
 }
-export const SKATE_LIFT = 0.05; // how much skates lift you
+export const SKATE_LIFT = 0.05 + (2 * 0.034 - 0.048) * 1.35; // how much the skates (drawn 1.35x) lift your feet
 
 export function makeRide(spec) {
   if (spec.type === 'skate') return makeSkate(spec);
