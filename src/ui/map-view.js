@@ -423,7 +423,14 @@ export class MapView {
     this.root.classList.toggle('map-searching', on);
     const vv = globalThis.visualViewport;
     if (on && vv && !this._fitViewport) {
+      // Android: the back button hides the keyboard but leaves the search box
+      // focused (no blur), so watch the height: once the keyboard has come up
+      // and then gone away again, leave search mode and show the map.
+      let full = vv.height, keyboard = false;
       this._fitViewport = () => {
+        full = Math.max(full, vv.height);
+        if (vv.height < full * 0.75) keyboard = true;
+        else if (keyboard && vv.height > full * 0.9) { this.search.blur(); return; }
         this.root.style.top = `${vv.offsetTop}px`;
         this.root.style.height = `${vv.height}px`;
         this.root.style.bottom = 'auto';
