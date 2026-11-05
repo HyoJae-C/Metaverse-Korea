@@ -1427,6 +1427,23 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .tarot-face.wands { background: linear-gradient(#fff8f0, #f5e3cf); }
 .tarot-panel h4 { margin: 2px 0 0; font-size: 15px; }
 .tarot-reading { display: grid; gap: 6px; }
+/* Suspense while a picked card waits face down: the panel goes dark, the
+   card glows and trembles, then turns over. */
+.tarot-panel { transition: background 0.6s, color 0.6s; }
+.tarot-panel.tarot-tension { background: #1c1430; color: #e9e2ff; }
+.tarot-panel.tarot-tension > .order-actions { background: #1c1430; }
+.tarot-panel.tarot-tension .tarot-slot { color: #cdbdf5; }
+.tarot-panel.tarot-tension .tarot-spread { opacity: 0.25; transition: opacity 0.6s; }
+.tarot-hush { background: rgba(255, 255, 255, 0.08); color: #f3e6b5; text-align: center; letter-spacing: 1px; animation: tarot-breathe 1.2s ease-in-out infinite; }
+.tarot-card.pending { border: 3px solid #d4a73a; background: repeating-linear-gradient(45deg, #3b2a6b 0 6px, #4b3787 6px 12px); animation: tarot-tremble 0.55s ease-in-out infinite, tarot-glow 1.1s ease-in-out infinite; }
+.tarot-card.pending.last { animation: tarot-tremble 0.4s ease-in-out infinite, tarot-glow 0.8s ease-in-out infinite; }
+.tarot-card.flip { animation: tarot-flip 0.7s cubic-bezier(0.3, 0.7, 0.3, 1) both, tarot-shine 1.4s ease-out; }
+@keyframes tarot-tremble { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-2px) rotate(-1.2deg); } 75% { transform: translateY(-2px) rotate(1.2deg); } }
+@keyframes tarot-glow { 0%, 100% { box-shadow: 0 0 6px rgba(212, 167, 58, 0.4); } 50% { box-shadow: 0 0 22px rgba(255, 214, 110, 0.95); } }
+@keyframes tarot-flip { from { transform: perspective(500px) rotateY(180deg) scale(1.15); } to { transform: perspective(500px) rotateY(0) scale(1); } }
+@keyframes tarot-shine { from { box-shadow: 0 0 34px 8px rgba(255, 220, 120, 0.95); } to { box-shadow: 0 0 0 rgba(255, 220, 120, 0); } }
+@keyframes tarot-breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tarot-card.pending, .tarot-card.flip, .tarot-hush { animation: none; } }
 .tarot-reading p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
 .tarot-reading b { color: #4b3a78; }
 

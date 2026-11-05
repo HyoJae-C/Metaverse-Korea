@@ -82,9 +82,16 @@ export default {
     }),
     ...variants('rogue', '🪭', BAJI, {
       'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
+      // more men's sets
+      'hanbok-baji-navy': { top: 0x2f3c66, accent: 0xc8a24a, bottom: 0xd8d2c2 },
+      'hanbok-baji-jade': { top: 0x5fae8f, accent: 0x2f3c66, bottom: 0xe8e0cc },
+      'hanbok-baji-ivory': { top: 0xf3ecdc, accent: 0x8a5a34, bottom: 0x6b6f7a },
     }),
     ...variants('rogue', '🪭', DURUMAGI, {
       'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },
+      'hanbok-durumagi-navy': { top: 0x34477a, accent: 0x1f2a4a, bottom: 0xefe6d2 },
+      'hanbok-durumagi-gray': { top: 0x8f939a, accent: 0x4a4e57, bottom: 0xd8d2c2 },
+      'hanbok-durumagi-white': { top: 0xf3eee2, accent: 0x9a8f7a, bottom: 0xefe6d2 },
     }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.

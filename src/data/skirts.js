@@ -122,5 +122,16 @@ export const CHIMAS = {
   'chima-pink': sk('chima', 'pleats', 'pink', 0xf29bb6),
 };
 
+// The palace fan dancers' chimas (core/palace-show.js): twenty colours
+// spread evenly round the colour wheel, so no two dancers match.
+const hsl = (h, s, l) => {
+  const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return (Math.round(f(0) * 255) << 16) | (Math.round(f(8) * 255) << 8) | Math.round(f(4) * 255);
+};
+export const DANCER_CHIMAS = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [
+  'chima-dance-' + (i + 1), sk('chima', 'pleats', null, hsl(i * 18, 0.68, i % 2 ? 0.62 : 0.5)),
+]));
+
 export const skirtById = (id) => (typeof id !== 'string' ? null
-  : Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : Object.hasOwn(CHIMAS, id) ? CHIMAS[id] : null);
+  : Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : Object.hasOwn(CHIMAS, id) ? CHIMAS[id] : Object.hasOwn(DANCER_CHIMAS, id) ? DANCER_CHIMAS[id] : null);

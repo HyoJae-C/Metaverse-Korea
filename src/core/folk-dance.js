@@ -55,9 +55,24 @@ const TAL = [
   },
 ];
 
+// 줄타기 (tightrope): arms out for balance, the fan in the right hand,
+// small steps along the rope, and a springy bounce now and then.
+function rope(t) {
+  const step = Math.sin(t * 3.2), sway = Math.sin(t * 0.9);
+  const c = t % 9, hop = c > 7.6 ? Math.sin(((c - 7.6) / 1.4) * Math.PI) : 0; // bounce on the rope
+  return {
+    bob: 0.35 * hop, turn: 0,
+    armL: [-0.3, -1.3 + 0.25 * sway, 0], armR: [-0.7, 1.15 - 0.25 * sway, 0], foreR: [-0.4, 0, 0],
+    legL: [-0.3 * Math.max(0, step) - 0.9 * hop, 0, 0], kneeL: [0.4 * Math.max(0, step) + 1.4 * hop, 0, 0],
+    legR: [-0.3 * Math.max(0, -step) - 0.9 * hop, 0, 0], kneeR: [0.4 * Math.max(0, -step) + 1.4 * hop, 0, 0],
+    spine: [0, 0, 0.1 * sway], head: [0, 0, -0.08 * sway],
+  };
+}
+
 export const FOLK_DANCES = {
   fan: (t) => cycle(FAN, t, 4),
   tal: (t) => cycle(TAL, t, 5),
+  rope,
 };
 
 const mats = {};

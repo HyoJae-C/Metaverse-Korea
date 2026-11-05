@@ -511,7 +511,13 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const palaceShow = palaceAt ? new PalaceShow(scene, { fan: [palaceAt[0], palaceAt[1] - 150], mask: [palaceAt[0], palaceAt[1] + 40] }) : null;
+const palaceShow = palaceAt ? new PalaceShow(scene, {
+  fan: [palaceAt[0], palaceAt[1] - 150], // Geunjeongjeon's courtyard
+  mask: [palaceAt[0], palaceAt[1] + 150], // on the square, just before King Sejong's statue
+  rope: [palaceAt[0] - 18, palaceAt[1] + 144], // the tightrope beside it
+  guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  layer: $('labels'),
+}) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
@@ -3788,6 +3794,8 @@ const tarotUi = new TarotUI({
   root: $('tarot-panel'),
   wallet,
   onPick: () => sfx.pop?.(),
+  onTension: (last) => sfx.heartbeat?.(last ? 5 : 3),
+  onReveal: (last) => sfx.reveal?.(last),
   onRead: (cards) => {
     refreshWallet();
     const r = tarotReader();
@@ -5085,6 +5093,9 @@ function updateAction(p, tSec) {
     } else if (busking.nearBusker(p.x, p.z)) {
       const s = busking.nearBusker(p.x, p.z);
       next = { key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) };
+    } else if (palaceShow?.nearGuard(p.x, p.z)) {
+      const g = palaceShow.nearGuard(p.x, p.z);
+      next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
       const n = npcs.nearest(p.x, p.z);
       if (n) next = { key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } };
@@ -5556,9 +5567,9 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { palaceShow?.update(dt, p); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
   }
