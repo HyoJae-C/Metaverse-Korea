@@ -184,6 +184,15 @@ const BREEDS = {
     { kind: 'cat', name: '회색이', rom: 'Hoesaek', color: '#9a9aa3', accent: '#e6e6ea' },
     { kind: 'cat', name: '모카', rom: 'Mocha', color: '#a87a5a', accent: '#f2e2cf' },
   ],
+  // Gogo Cat Café in Hongdae: its own six cats, Mochi first.
+  gogocats: [
+    { kind: 'cat', name: '모찌', rom: 'Mochi', color: '#fbf7f2', accent: '#f6c9cf' }, // white, pink nose
+    { kind: 'cat', name: '고등어', rom: 'Godeungeo', color: '#7d8088', accent: '#e9e6e1' }, // mackerel tabby
+    { kind: 'cat', name: '삼색이', rom: 'Samsaek', color: '#e7a35e', accent: '#2f2a2b' }, // calico
+    { kind: 'cat', name: '호두', rom: 'Hodu', color: '#8a5f3f', accent: '#f1e1cc' },
+    { kind: 'cat', name: '별이', rom: 'Byeori', color: '#2c2a33', accent: '#f4f1ec' }, // tuxedo
+    { kind: 'cat', name: '단추', rom: 'Danchu', color: '#d8c3a5', accent: '#ffffff' },
+  ],
   dogs: [
     { kind: 'dog', name: '초코', rom: 'Choco', color: '#8a5a3a', accent: '#c98b4f' },
     { kind: 'dog', name: '보리', rom: 'Bori', color: '#e8c58f', accent: '#b8864f' },
