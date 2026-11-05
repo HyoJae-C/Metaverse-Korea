@@ -1,0 +1,17 @@
+Seongsu fashion posters (public/ads/*.webp)
+
+Photos from Unsplash, used under the Unsplash License
+(https://unsplash.com/license): free for commercial use, no permission
+needed. Each poster also names its photographer on the poster itself.
+Titles and layouts were added for the game; one photo was cropped.
+
+seongsu-ss-yellow.webp  Hong Nguyen        https://unsplash.com/photos/FO-zQd7Wqio
+seongsu-fw-suit.webp    Becky Sherburn     https://unsplash.com/photos/GSiw5fsOrS8
+seongsu-red.webp        Marjan Taghipour   https://unsplash.com/photos/1tjMpBTvFAA
+seongsu-noir.webp       Christian Agbede   https://unsplash.com/photos/EiYH9QupDls
+seongsu-blonde.webp     David Banjo        https://unsplash.com/photos/yePFqWHER8I
+seongsu-sunday.webp     Haley Lawrence     https://unsplash.com/photos/6ugQ978v-zg
+seongsu-puffer.webp     Mike Von           https://unsplash.com/photos/bWUOx0SaSAk
+seongsu-mono.webp       Chyntia Juls       https://unsplash.com/photos/HlVjI5WmoQY
+seongsu-retro.webp      Alex Shaw          https://unsplash.com/photos/J4kxbw1SYwg (cropped)
+seongsu-beanie.webp     Pesce Huang        https://unsplash.com/photos/Ndjb5iZUEHk
