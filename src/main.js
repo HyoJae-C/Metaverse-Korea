@@ -32,6 +32,7 @@ import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
+import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
@@ -2267,6 +2268,7 @@ function leaveStore() {
   if (mode !== 'store') return;
   if (metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
+  cable = null;
   standUp();
   clearMeal();
   closeHome();
@@ -3933,6 +3935,79 @@ function updateRide(dt) {
   if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
   if (now >= ride.until) endRide();
 }
+// Namsan Sky Cable: stand at a cabin bay, get in while the doors are open,
+// ride up (or down) on the shared clock and step out at the other station.
+// The way up costs CABLE.fare; the way down is on the same ticket, so
+// nobody gets stuck on the summit without coins.
+let cable = null; // { cabin, from: 'low' | 'top', dx }
+const CABLE_TEXT = {
+  board: { en: 'Get in · 🪙 {n} round trip', ko: '탑승 · 왕복 🪙 {n}', ja: '乗車 · 往復 🪙 {n}', zh: '上车 · 往返 🪙 {n}', es: 'Subir · ida y vuelta 🪙 {n}', id: 'Naik · pulang-pergi 🪙 {n}', ar: 'اركب · ذهاب وعودة 🪙 {n}', vi: 'Lên cabin · khứ hồi 🪙 {n}', hi: 'बैठें · आना-जाना 🪙 {n}' },
+  down: { en: 'Ride down (your ticket covers it)', ko: '내려가기 (왕복권 포함)', ja: '下りに乗る（往復券に含まれます）', zh: '乘缆车下山（往返票已含）', es: 'Bajar (incluido en el billete)', id: 'Turun (sudah termasuk tiket)', ar: 'انزل (مشمول في التذكرة)', vi: 'Đi xuống (đã gồm trong vé)', hi: 'नीचे जाएँ (टिकट में शामिल)' },
+  wait: { en: 'Next cabin in {n} s', ko: '다음 캐빈까지 {n}초', ja: '次のキャビンまで {n} 秒', zh: '下一班缆车 {n} 秒后到', es: 'Próxima cabina en {n} s', id: 'Kabin berikutnya {n} dtk lagi', ar: 'المقصورة التالية بعد {n} ث', vi: 'Cabin tiếp theo sau {n} giây', hi: 'अगला केबिन {n} सेकंड में' },
+  leaves: { en: 'Get off (leaves in {n} s)', ko: '내리기 ({n}초 뒤 출발)', ja: '降りる（{n} 秒後に出発）', zh: '下车（{n} 秒后出发）', es: 'Bajar (sale en {n} s)', id: 'Turun (berangkat {n} dtk lagi)', ar: 'انزل (تنطلق بعد {n} ث)', vi: 'Xuống (khởi hành sau {n} giây)', hi: 'उतरें ({n} सेकंड में रवाना)' },
+  toTop: { en: 'Going up to the summit · {n} s', ko: '정상으로 올라가는 중 · {n}초', ja: '山頂へ向かっています · {n} 秒', zh: '正在上山 · {n} 秒', es: 'Subiendo a la cima · {n} s', id: 'Naik ke puncak · {n} dtk', ar: 'صعودًا إلى القمة · {n} ث', vi: 'Đang lên đỉnh · {n} giây', hi: 'चोटी की ओर · {n} सेकंड' },
+  toLow: { en: 'Going down to the lower station · {n} s', ko: '아래 승강장으로 내려가는 중 · {n}초', ja: '下の乗り場へ向かっています · {n} 秒', zh: '正在下山 · {n} 秒', es: 'Bajando a la estación · {n} s', id: 'Turun ke stasiun bawah · {n} dtk', ar: 'نزولًا إلى المحطة السفلى · {n} ث', vi: 'Đang xuống ga dưới · {n} giây', hi: 'नीचे स्टेशन की ओर · {n} सेकंड' },
+  top: { en: 'Welcome to the top of Namsan! Walk round the tower and look out over Seoul.', ko: '남산 정상에 오신 걸 환영해요! 타워 주변을 걸으며 서울을 내려다보세요.', ja: '南山の山頂へようこそ！タワーの周りを歩いてソウルを見渡してみましょう。', zh: '欢迎来到南山山顶！绕着塔走一走，俯瞰首尔吧。', es: '¡Bienvenido a la cima de Namsan! Pasea alrededor de la torre y mira Seúl.', id: 'Selamat datang di puncak Namsan! Jalan-jalan di sekitar menara dan lihat Seoul.', ar: 'أهلًا بك في قمة نامسان! تجوّل حول البرج وشاهد سيول من الأعلى.', vi: 'Chào mừng lên đỉnh Namsan! Đi quanh tháp và ngắm Seoul nhé.', hi: 'नामसान की चोटी पर स्वागत है! टावर के चारों ओर घूमें और सियोल देखें।' },
+  low: { en: 'Back at the lower station. The exit is behind you.', ko: '아래 승강장에 도착했어요. 출구는 뒤쪽이에요.', ja: '下の乗り場に着きました。出口は後ろです。', zh: '回到下站了，出口在身后。', es: 'De vuelta en la estación. La salida está detrás.', id: 'Kembali di stasiun bawah. Pintu keluar ada di belakang.', ar: 'عدت إلى المحطة السفلى. المخرج خلفك.', vi: 'Đã về ga dưới. Lối ra ở phía sau.', hi: 'नीचे स्टेशन पर वापस। निकास पीछे है।' },
+};
+const cableStation = (p) => (p.z < CC.edge ? 'top' : 'low');
+function cableBay(p) {
+  const st = cableStation(p);
+  for (const i of [0, 1]) { const s = boardSpot(i, st); if (Math.hypot(p.x - s.x, p.z - s.z) < 1.8) return { i, st }; }
+  return null;
+}
+function boardCable(i, st) {
+  const c = cabinAt(i, cableClock());
+  if (c.at !== st || !doorsOpen(c)) return;
+  if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
+  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2 };
+  cam.yaw = st === 'low' ? 0 : Math.PI; // look along the way, the view behind
+  sendTimer = 0;
+  if (st === 'low') missionEvent('ride');
+}
+function getOffCable(refund) {
+  if (!cable) return;
+  const s = boardSpot(cable.cabin, cable.from);
+  if (refund && cable.from === 'low') wallet.add(CABLE.fare, { k: 'ledger.cable' });
+  me.root.position.set(s.x, s.y, s.z);
+  cable = null;
+  sendTimer = 0;
+}
+function updateCable() {
+  if (!cable) return;
+  if (!interior?.cablecar) { cable = null; return; }
+  const c = cabinAt(cable.cabin, cableClock());
+  const to = cable.from === 'low' ? 'top' : 'low';
+  if (c.at === to) { // arrived: step out onto the platform
+    const s = boardSpot(cable.cabin, to);
+    me.root.position.set(s.x, s.y, s.z);
+    me.root.rotation.y = to === 'top' ? Math.PI : 0;
+    cam.yaw = me.root.rotation.y + Math.PI;
+    cable = null;
+    sendTimer = 0;
+    shop.toast(L(CABLE_TEXT[to]));
+    if (to === 'top') me.play('cheer');
+    return;
+  }
+  const s = cabinPos(cable.cabin, c.k);
+  me.root.position.set(s.x + cable.dx, s.y + 0.02, s.z);
+  me.root.rotation.y = cable.from === 'low' ? Math.PI : 0; // face uphill on the way up
+}
+function cableAction(p) {
+  const now = cableClock();
+  if (cable) {
+    const c = cabinAt(cable.cabin, now);
+    // (the countdown is in the key so the button text updates every second)
+    if (c.at === cable.from && doorsOpen(c)) { const n = Math.ceil(c.leaves); return { key: 'cable-off:' + n, label: '🚪 ' + fmt(L(CABLE_TEXT.leaves), { n }), run: () => getOffCable(true) }; }
+    const n = Math.ceil(c.next || c.leaves || 0);
+    return { key: 'cable-ride:' + n, label: '🚡 ' + fmt(L(cable.from === 'low' ? CABLE_TEXT.toTop : CABLE_TEXT.toLow), { n }), run: () => {} };
+  }
+  const bay = cableBay(p);
+  if (!bay) return null;
+  const wait = arrivesIn(bay.i, bay.st, now);
+  if (wait > 0) { const n = Math.ceil(wait); return { key: 'cable-wait:' + n, label: '🚡 ' + fmt(L(CABLE_TEXT.wait), { n }), run: () => {} }; }
+  return { key: 'cable-board:' + bay.st, label: '🚡 ' + (bay.st === 'low' ? fmt(L(CABLE_TEXT.board), { n: CABLE.fare }) : L(CABLE_TEXT.down)), run: () => boardCable(bay.i, bay.st) };
+}
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   wallet,
@@ -4813,6 +4888,8 @@ function updateAction(p, tSec) {
       if (decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
       else if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
       else if (!decor.picked) closePiece();
+    } else if (interior.cablecar && cableAction(p)) {
+      next = cableAction(p);
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
@@ -5064,6 +5141,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.tick?.(dt); // amusement park rides
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   updateRide(dt);
+  updateCable();
   if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
   updateDucks(dt);
   updateSurgery(dt);
@@ -5074,7 +5152,7 @@ renderer.setAnimationLoop(() => {
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated && !ride && riding !== 3) {
+  if (mag > 0.05 && !seated && !ride && !cable && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -5178,6 +5256,7 @@ renderer.setAnimationLoop(() => {
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
+  if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   updateMeal();
   if (mode === 'store') interior?.see?.(p.x, p.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
