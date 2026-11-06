@@ -76,6 +76,7 @@ const STRIDE = {
   },
 };
 
+const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
 
@@ -564,7 +565,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -589,7 +590,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (emote && !seated && speed01 < 0.3) key = emote.key;
       else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
-      else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
+      else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && action(activity)) key = activity;
@@ -612,7 +613,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         slotR.add(folkProps[1]);
       }
       if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
-      to(key);
+      // Lying down: the pack's lying clip doesn't turn the hips on these
+      // models (the body stayed upright, as if sitting), so the standing
+      // idle is laid flat on its back instead: head towards -z, face up.
+      to(key === 'lie' ? 'idle' : key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       let stroke = null;
       if (board || kick || skates) {
@@ -623,7 +627,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
       }
-      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
+      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (folk) {
@@ -637,6 +641,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : 0) - m.rotation.x) * Math.min(1, dt * 12);
       let pull = 0;
       if (hanging) {
         pullT += dt;
