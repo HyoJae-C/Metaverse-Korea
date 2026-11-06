@@ -68,6 +68,7 @@
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
         <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
+        <button class="tool" id="notes-btn"><span>📓</span><small data-i18n="hud.notes"></small></button>
         <button class="tool" id="cart-btn" hidden><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
@@ -124,9 +125,16 @@
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
-        <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
-        <button class="chip dex-btn" id="stamp-btn">🔖 <span></span></button>
-        <button class="chip dex-btn" id="fishbook-btn">🎣 <span></span></button>
+      </div>
+      <div class="sheet notes-panel" id="notes-panel" hidden>
+        <button class="sheet-x" id="notes-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">📓 <span data-i18n="notes.title"></span></strong>
+        <p class="fine" data-i18n="notes.note"></p>
+        <div class="notes-list">
+          <button class="chip notes-item" id="stamp-btn">🔖 <span></span></button>
+          <button class="chip notes-item" id="dex-btn">🍽️ <span></span></button>
+          <button class="chip notes-item" id="fishbook-btn">🎣 <span></span></button>
+        </div>
       </div>
       <div class="sheet ledger-panel" id="ledger-panel" hidden>
         <button class="sheet-x" id="ledger-close" aria-label="Close">✕</button>
