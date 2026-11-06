@@ -916,6 +916,16 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #4cc38a, #2f8f5b); transition: width .08s linear; }
 .fish-time { display: block; text-align: center; font-weight: 700; }
 .fish-reel { font-size: 18px; padding: 14px 22px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.fish-reels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fish-reels .fish-reel { min-height: 64px; padding: 14px 8px; }
+.fish-reels .fish-reel:active { transform: scale(.94); }
+.fish-reel-hint { display: block; text-align: center; font-size: 12px; opacity: .7; }
+.fish-meter.drain i { background: linear-gradient(90deg, #ffb347, #e0613a); }
+.fish-meter.auto i { background: linear-gradient(90deg, #8ec5ff, #4b8ec7); transition: width .25s linear; }
+.fish-water.rare { background: linear-gradient(#ff7a59, #b7243a); box-shadow: 0 0 0 3px #ffd166 inset; }
+.fish-callout { font-size: 26px; font-weight: 900; color: #ffe066; text-shadow: 0 2px 0 #7a1020, 0 0 12px rgba(255, 224, 102, .8); letter-spacing: .02em; animation: fish-callout .5s cubic-bezier(.2, 1.6, .4, 1) both, fish-pulse .5s ease-in-out .5s infinite; }
+@keyframes fish-callout { from { transform: scale(2.4) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.fish-auto-note { margin: 0; padding: 8px 10px; border-radius: 12px; background: #fff4d6; color: #7a5200; font-size: 13px; font-weight: 700; line-height: 1.4; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
 .fish-card.escaped .fish-big { filter: grayscale(1); }
 .fish-card { display: grid; justify-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #f2f7fb; text-align: center; }

@@ -685,6 +685,25 @@ export function escapeChance(fish, spare = 0) {
   return [0, 0.10, 0.14, 0.18, 0.23, 0.28][fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
 }
 
+// Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
+// a second, so you have to keep reeling (two reel buttons, both thumbs).
+export const isRare = fish => !fish.trash && fish.rarity >= 3;
+export const drainFor = fish => (isRare(fish) ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
+
+// Auto fishing: catches on its own while you stay at the spot with the game
+// open, but slowly (AUTO_RATE of hands-on fishing, which lands a fish about
+// every MANUAL_SECONDS) and never a rare fish. Lower AUTO_RATE to slow it.
+export const MANUAL_SECONDS = 10;
+export const AUTO_RATE = 1 / 10;
+export const AUTO_SECONDS = MANUAL_SECONDS / AUTO_RATE;
+export const AUTO_FISH = AVAILABLE_FISH.filter(f => !isRare(f));
+export function rollAutoCatch(rand = Math.random) {
+  const total = AUTO_FISH.reduce((a, f) => a + f.chance, 0);
+  let r = rand() * total;
+  for (const f of AUTO_FISH) { r -= f.chance; if (r < 0) return f; }
+  return AUTO_FISH.at(-1);
+}
+
 // Seconds to wait for a bite, and how long the bite lasts.
 export const biteWait = (rand = Math.random) => 2.5 + rand() * 4.5;
 export const BITE_WINDOW = 1.2;

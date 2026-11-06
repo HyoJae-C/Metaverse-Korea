@@ -46,15 +46,35 @@ export function makeHeld(kind) {
     g.add(shaft, blade, tassel);
   } else if (kind === 'rod') {
     // A fishing rod tilted forward over the water, with a reel and a line.
+    // The pole is three jointed pieces so it can bend (fishing-rig.js casts
+    // it, bends it on a bite and spins the reel); userData.rod has the parts.
     const rod = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.014, 1.5, 8), mat('#2b3a4a'));
-    pole.position.y = 0.6;
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.22, 8), mat('#b5462f'));
     grip.position.y = -0.05;
-    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.025, 12), mat('#c9cdd2'));
-    reel.rotation.z = Math.PI / 2;
-    reel.position.set(0.03, 0.08, 0);
-    rod.add(pole, grip, reel);
+    const reel = new THREE.Group(); // spins about its axle (x)
+    reel.position.set(0.04, 0.08, 0);
+    const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.025, 12), mat('#c9cdd2'));
+    spool.rotation.z = Math.PI / 2;
+    const knob = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.045), mat('#2b2230'));
+    knob.position.set(0.016, 0, 0.022);
+    reel.add(spool, knob);
+    rod.add(grip, reel);
+    const segs = [];
+    let joint = rod;
+    for (let i = 0; i < 3; i++) {
+      const j = new THREE.Group();
+      j.position.y = i ? 0.5 : -0.15;
+      const r0 = 0.014 - i * 0.0027, r1 = 0.014 - (i + 1) * 0.0027;
+      const piece = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, 0.5, 8), mat(i === 2 ? '#e8473b' : '#2b3a4a'));
+      piece.position.y = 0.25;
+      j.add(piece);
+      joint.add(j);
+      segs.push(j);
+      joint = j;
+    }
+    const tip = new THREE.Object3D();
+    tip.position.y = 0.5;
+    joint.add(tip);
     rod.rotation.x = 0.95; // lean forward, over the water
     // The line hangs straight down from the tip (1.35 m up the tilted pole).
     const tipY = 1.35 * Math.cos(0.95), tipZ = 1.35 * Math.sin(0.95);
@@ -64,6 +84,7 @@ export function makeHeld(kind) {
     wrap.scale.setScalar(0.55); // the hand scales held things up 1.8x
     wrap.add(rod, line);
     g.add(wrap);
+    g.userData.rod = { pivot: rod, segs, tip, reel, line };
   } else if (kind === 'book') {
     // A hardback held upright: cover, pages and a spine band.
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.12), mat('#3f6e8c'));
