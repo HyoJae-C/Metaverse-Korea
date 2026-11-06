@@ -194,7 +194,7 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
-        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-4, Math.min(4, p.target.y)) : 0) - r.position.y) * k; // subway stairs
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-4, Math.min(60, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;

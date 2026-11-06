@@ -42,7 +42,7 @@ export function buildWorld(map, scene, opts = {}) {
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
-    const polys = map.areas.filter((a) => a.k === kind).map((a) => a.p);
+    const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
     const mesh = makeFlatPolys(polys, COLORS[kind], y);
     if (mesh) group.add(mesh);
   }

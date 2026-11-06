@@ -209,6 +209,7 @@ export const HI = {
   'cat.bar': 'बार',
   'cat.info': 'जानकारी',
   'cat.library': 'पुस्तकालय',
+  'cat.museum': 'संग्रहालय',
   'cat.school': 'स्कूल',
   'cat.petshop': 'पेट शॉप',
   'fish.open': 'मछली पकड़ें',

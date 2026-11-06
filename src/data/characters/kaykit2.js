@@ -56,8 +56,13 @@ export default {
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧢', wear: wear(HOODIE), hood: true },
     mage: { url: 'models/kaykit2/mage.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
     knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
-    barbarian: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
-    ranger: { url: 'models/kaykit2/ranger.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The tank top and the shirt are on the basic model too: the barbarian
+    // and ranger heads have a beard and a moustache, which grew on players'
+    // faces when they bought the clothes.
+    barbarian: { url: 'models/kaykit2/rogue.glb', emoji: '🎽', wear: wear(TANK) },
+    ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The gym trainer (an NPC) keeps the bearded head.
+    trainer: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
     // The same clothes in other colours, sold at the other clothes shops.
     ...variants('rogue', '🧥', JACKET, {
       'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
@@ -65,7 +70,7 @@ export default {
     ...variants('rogue_hooded', '🧢', HOODIE, {
       'hoodie-black': { top: 0x2b2b31, accent: 0x3a3a42 }, 'hoodie-wine': { top: 0x8a2f45, accent: 0x74263a }, 'hoodie-orange': { top: 0xff7a00, accent: 0xd96800 },
     }, { hood: true }),
-    ...variants('ranger', '👔', SHIRT, {
+    ...variants('rogue', '👔', SHIRT, {
       'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
     }),
     ...variants('knight', '🧥', PUFFER, {
@@ -82,9 +87,16 @@ export default {
     }),
     ...variants('rogue', '🪭', BAJI, {
       'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
+      // more men's sets
+      'hanbok-baji-navy': { top: 0x2f3c66, accent: 0xc8a24a, bottom: 0xd8d2c2 },
+      'hanbok-baji-jade': { top: 0x5fae8f, accent: 0x2f3c66, bottom: 0xe8e0cc },
+      'hanbok-baji-ivory': { top: 0xf3ecdc, accent: 0x8a5a34, bottom: 0x6b6f7a },
     }),
     ...variants('rogue', '🪭', DURUMAGI, {
       'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },
+      'hanbok-durumagi-navy': { top: 0x34477a, accent: 0x1f2a4a, bottom: 0xefe6d2 },
+      'hanbok-durumagi-gray': { top: 0x8f939a, accent: 0x4a4e57, bottom: 0xd8d2c2 },
+      'hanbok-durumagi-white': { top: 0xf3eee2, accent: 0x9a8f7a, bottom: 0xefe6d2 },
     }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.
@@ -98,6 +110,9 @@ export default {
   ],
   scale: 0.57, // model is ~2.2 units tall; our characters are ~1.25 m
   sit: { y: -0.02, z: 0.24 }, // offset on a café chair (metres, after scale)
+  // Added to the chair clip, which leaves the legs hanging straight: thighs
+  // forward along the seat, knees bent so the shins go down.
+  sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
   lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
   // On a bike the sitting clip is bent a little more: lean forward, head down,

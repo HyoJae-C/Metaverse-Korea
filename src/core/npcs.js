@@ -29,6 +29,11 @@ export const PHRASES = {
     ['책은 자유롭게 읽으세요.', 'chaegeun jayuropge ilgeuseyo', 'Feel free to read any book.'],
     ['자리는 아무 데나 앉으셔도 돼요.', 'jarineun amu dena anjeusyeodo dwaeyo', 'You can sit anywhere.'],
   ],
+  museum: [
+    ['국립중앙미술관에 오신 걸 환영해요. 천천히 둘러보세요.', 'gungnipjungangmisulgwane osin geol hwanyeonghaeyo. cheoncheonhi dulleoboseyo', 'Welcome to the art museum. Take your time looking around.'],
+    ['그림 앞에 서면 설명을 볼 수 있어요.', 'geurim ape seomyeon seolmyeong-eul bol su isseoyo', 'Stand in front of a painting to read about it.'],
+    ['그림은 눈으로만 감상해 주세요.', 'geurimeun nuneuroman gamsanghae juseyo', 'Please enjoy the paintings with your eyes only.'],
+  ],
   school: [
     ['여러분, 안녕하세요! 자리에 앉으세요.', 'yeoreobun, annyeonghaseyo! jarie anjeuseyo', 'Hello, everyone! Please take a seat.'],
     ['오늘도 열심히 공부해 봐요!', 'oneuldo yeolsimhi gongbuhae bwayo!', "Let's study hard today too!"],

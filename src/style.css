@@ -329,6 +329,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   background: var(--panel); border-radius: 26px; padding: 18px; box-shadow: var(--shadow); z-index: 5;
 }
 .sheet-x { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: #fff; }
+/* Long panels scroll: keep their ✕ pinned to the top right instead of
+   scrolling away with the content (it takes no room in the layout). */
+.sheet:not(.person-menu) > .sheet-x:first-child { position: sticky; top: 0; float: right; margin: -8px -8px -32px 0; justify-self: end; align-self: flex-end; z-index: 3; box-shadow: 0 1px 6px rgba(74, 63, 53, 0.18); }
 .product-head { display: flex; gap: 14px; align-items: center; padding-right: 30px; }
 .product-head > div { display: grid; gap: 2px; min-width: 0; }
 .product-head strong { font-size: 18px; }
@@ -378,8 +381,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .map-list { overflow: auto; padding: 4px 12px 12px; display: grid; align-content: start; gap: 6px; }
 .map-controls { position: sticky; top: 0; z-index: 1; background: var(--panel); display: grid; gap: 6px; padding: 6px 0 4px; }
 .map-search { width: 100%; min-height: 40px; border-radius: 12px; border: 2px solid #eadfcd; background: #fff; padding: 0 12px; font: inherit; font-size: 16px; /* 16px: iOS doesn't zoom in on focus */ }
-.map-cats { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.map-cats { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 2px; }
 .map-cat { flex: none; min-height: 32px; padding: 0 10px; border-radius: 16px; background: #fff; border: 2px solid #eadfcd; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.map-cat.more { background: #f6efe3; color: var(--ink-soft); }
 .map-cat.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .map-results { display: grid; align-content: start; gap: 6px; }
 .map-empty { margin: 8px 0; color: var(--ink-soft); font-size: 14px; }
@@ -1055,6 +1059,22 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .dex-emoji { font-size: 26px; }
 .dex-card strong { font-size: 12px; line-height: 1.2; }
 .dex-card small { font-size: 10px; opacity: 0.7; }
+.stamp-panel { background: #f4efe4; }
+.stamp-kicker { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: #b0282e; }
+.stamp-head { display: grid; gap: 4px; }
+.stamp-bar { height: 8px; border-radius: 4px; background: #e2d8c6; overflow: hidden; }
+.stamp-bar i { display: block; height: 100%; background: #c8323a; border-radius: 4px; transition: width 0.6s; }
+.stamp-count { margin: 0; font-weight: 800; font-size: 13px; }
+.stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.stamp-cell { display: grid; justify-items: center; gap: 1px; padding: 8px 6px; border-radius: 12px; background: #fffaf0; text-align: center; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
+.stamp-art { width: 100px; height: 100px; }
+.stamp-art svg { width: 100%; height: 100%; display: block; }
+.stamp-cell.empty .stamp-art { border: 2px dashed #cfc3ae; border-radius: 50%; box-sizing: border-box; }
+.stamp-cell strong { font-size: 12px; line-height: 1.2; }
+.stamp-cell small { font-size: 10px; opacity: 0.7; }
+.stamp-cell em { font-size: 10px; font-style: normal; font-weight: 800; color: #8a7d6e; }
+.stamp-cell.fresh .stamp-art { animation: stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes stamp-in { from { transform: scale(1.9); opacity: 0; } 60% { opacity: 1; } to { transform: scale(1); } }
 .dex-card em { font-size: 11px; font-style: normal; font-weight: 800; }
 
 /* 효재어학당 course book */
@@ -1407,6 +1427,23 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .tarot-face.wands { background: linear-gradient(#fff8f0, #f5e3cf); }
 .tarot-panel h4 { margin: 2px 0 0; font-size: 15px; }
 .tarot-reading { display: grid; gap: 6px; }
+/* Suspense while a picked card waits face down: the panel goes dark, the
+   card glows and trembles, then turns over. */
+.tarot-panel { transition: background 0.6s, color 0.6s; }
+.tarot-panel.tarot-tension { background: #1c1430; color: #e9e2ff; }
+.tarot-panel.tarot-tension > .order-actions { background: #1c1430; }
+.tarot-panel.tarot-tension .tarot-slot { color: #cdbdf5; }
+.tarot-panel.tarot-tension .tarot-spread { opacity: 0.25; transition: opacity 0.6s; }
+.tarot-hush { background: rgba(255, 255, 255, 0.08); color: #f3e6b5; text-align: center; letter-spacing: 1px; animation: tarot-breathe 1.2s ease-in-out infinite; }
+.tarot-card.pending { border: 3px solid #d4a73a; background: repeating-linear-gradient(45deg, #3b2a6b 0 6px, #4b3787 6px 12px); animation: tarot-tremble 0.55s ease-in-out infinite, tarot-glow 1.1s ease-in-out infinite; }
+.tarot-card.pending.last { animation: tarot-tremble 0.4s ease-in-out infinite, tarot-glow 0.8s ease-in-out infinite; }
+.tarot-card.flip { animation: tarot-flip 0.7s cubic-bezier(0.3, 0.7, 0.3, 1) both, tarot-shine 1.4s ease-out; }
+@keyframes tarot-tremble { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-2px) rotate(-1.2deg); } 75% { transform: translateY(-2px) rotate(1.2deg); } }
+@keyframes tarot-glow { 0%, 100% { box-shadow: 0 0 6px rgba(212, 167, 58, 0.4); } 50% { box-shadow: 0 0 22px rgba(255, 214, 110, 0.95); } }
+@keyframes tarot-flip { from { transform: perspective(500px) rotateY(180deg) scale(1.15); } to { transform: perspective(500px) rotateY(0) scale(1); } }
+@keyframes tarot-shine { from { box-shadow: 0 0 34px 8px rgba(255, 220, 120, 0.95); } to { box-shadow: 0 0 0 rgba(255, 220, 120, 0); } }
+@keyframes tarot-breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tarot-card.pending, .tarot-card.flip, .tarot-hush { animation: none; } }
 .tarot-reading p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
 .tarot-reading b { color: #4b3a78; }
 
@@ -1522,6 +1559,20 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-card-btns .chip { background: #fff; }
 @keyframes gift-pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
 html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
+
+/* Museum: one painting's card */
+.museum-panel { max-height: 86vh; overflow-y: auto; }
+.museum-img { display: block; max-width: 100%; max-height: 46vh; margin: 4px auto 10px; border: 6px solid #3b2a1e; background: #e9e0cc; }
+.museum-lang h3 { margin: 6px 0 2px; }
+.museum-lang p { margin: 0 0 6px; line-height: 1.5; }
+.museum-meta { color: #6b625a; font-size: 13px; }
+.museum-credit { font-size: 12px; color: #5a5048; }
+.museum-floors { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.museum-floor { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #d9cfbd; border-radius: 12px; background: #fbf8f1; color: #2b2622; text-align: left; font: inherit; cursor: pointer; }
+.museum-floor b { font-size: 20px; min-width: 36px; }
+.museum-floor > span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.museum-floor em { color: #8a5a1e; font-style: normal; font-weight: 700; }
+.museum-floor:disabled { background: #efe7d6; cursor: default; }
 .item-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .pet-name-form { display: flex; gap: 6px; margin-top: 4px; }
 .pet-name-form input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; font-size: 16px; }

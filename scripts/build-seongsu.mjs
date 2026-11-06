@@ -245,7 +245,21 @@ const sqH = () => r1(14 + sqRand() * 8);
   // onto the square.
   const nz0 = z0 + DEPTH + GAP, nz1 = nz0 + IN;
   const wx = x0 + OUT + GAP + IN + GAP, ex = x1 - OUT - GAP - IN - GAP;
-  evenRow(wx, ex, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
+  // A walkway in the middle runs from the square through both rows to Café
+  // Street, so the square opens to the north instead of ending in a wall.
+  const NPASS = 7, nmid = (wx + ex) / 2, pa = r1(nmid - NPASS / 2), pb = r1(nmid + NPASS / 2);
+  evenRow(wx, pa, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
+  evenRow(pb, ex, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
+  sqRand(); // the lot the walkway replaced: keeps the other lots' heights
+  for (const lot of lots) {
+    const xs = lot.b.p.map((q) => q[0]), zs = lot.b.p.map((q) => q[1]);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs);
+    if (Math.min(...zs) !== r1(z0) || Math.max(...zs) > nz0 || bx1 <= pa || bx0 >= pb) continue;
+    const cut = (bx0 + bx1) / 2 < nmid ? (x) => Math.min(x, pa) : (x) => Math.max(x, pb);
+    for (const q of lot.b.p) q[0] = cut(q[0]);
+    lot.face.x = (Math.min(...lot.b.p.map((q) => q[0])) + Math.max(...lot.b.p.map((q) => q[0]))) / 2;
+  }
+  WALKS.push({ w: NPASS, p: [[r1(nmid), -2.5], [r1(nmid), nz1]] });
   // West and east sides, from the Café Street row down to Seoulsup-gil, with
   // a passage in the middle.
   // The street rows start right behind the Café Street row; the rows facing

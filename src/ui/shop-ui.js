@@ -51,7 +51,7 @@ export function howToGet(store) {
   return 'buy';
 }
 export const coinsFor = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 1000));
-const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
+const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱', 'pet:chinchilla': '🐭', 'pet:guineapig': '🐹',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
@@ -119,7 +119,7 @@ export class ShopUI {
     this.$('store-name-ko').textContent = lang === 'ko' ? '' : store.name.ko;
     this.$('store-tagline').textContent = localName(store.tagline, lang) || '';
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
-    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train';
+    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum';
   }
 
   leaveStore() {
