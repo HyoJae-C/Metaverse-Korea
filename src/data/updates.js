@@ -9,6 +9,75 @@ import { s2t } from '../i18n/hant.js';
 
 export const UPDATES = [
   {
+    id: '2026-11-06-hangang-park',
+    at: '2026.11.06 20:15',
+    title: {
+      ko: '🦆 뚝섬한강공원에 놀러 오세요!',
+      en: '🦆 Come play at Ttukseom Han River Park!',
+      ja: '🦆 トゥクソム漢江公園に遊びに来てね！',
+      zh: '🦆 来纛岛汉江公园玩吧！',
+      es: '🦆 ¡Ven a divertirte al Parque Ttukseom del río Han!',
+      id: '🦆 Ayo main ke Taman Sungai Han Ttukseom!',
+      ar: '🦆 تعالَ والعب في حديقة نهر هان في تتوكسوم!', vi: '🦆 Hãy đến chơi ở Công viên sông Hàn Ttukseom!', hi: '🦆 Ttukseom हान नदी पार्क में घूमने आइए!',
+    },
+    items: {
+      ko: [
+        '🎣 낚시: 새로 생긴 낚시 도감을 채워 보세요. 자동 낚시도 되고, 귀한 희귀 물고기도 기다리고 있어요!',
+        '🍜 한강라면: 데일리마트에서 라면을 사서 강변에서 직접 끓여 먹어요.',
+        '🦆 오리배: 무료로 타고 친구와 함께 강 위를 마음껏 달려 보세요.',
+        '🍢 강변장터: 떡볶이, 꼬치, 호떡, 치킨까지 다양한 먹거리가 준비되어 있어요!',
+      ],
+      en: [
+        '🎣 Fishing: fill the new fish book. Try auto fishing, and look out for rare fish!',
+        '🍜 Han River ramyeon: buy a pack at DAILY MART and cook it yourself by the river.',
+        '🦆 Duck boats: ride for free and steer around the river with a friend.',
+        '🍢 Riverside market: tteokbokki, skewers, hotteok, chicken and lots more to eat!',
+      ],
+      ja: [
+        '🎣 釣り：新しい釣り図鑑を埋めよう。自動釣りもできて、レアな魚も待っているよ！',
+        '🍜 漢江ラーメン：DAILY MARTでラーメンを買って、川辺で自分で作って食べよう。',
+        '🦆 アヒルボート：無料で乗れて、友だちと川の上を自由に走れるよ。',
+        '🍢 川辺市場：トッポッキ、串焼き、ホットク、チキンなど食べ物がいっぱい！',
+      ],
+      zh: [
+        '🎣 钓鱼：来填满全新的钓鱼图鉴吧。可以自动钓鱼，还有稀有鱼等着你！',
+        '🍜 汉江拉面：在DAILY MART买一包拉面，在江边亲手煮来吃。',
+        '🦆 鸭子船：免费乘坐，和朋友一起在江上自由畅游。',
+        '🍢 江边集市：炒年糕、烤串、糖饼、炸鸡，各种美食等你来尝！',
+      ],
+      es: [
+        '🎣 Pesca: completa el nuevo libro de peces. Prueba la pesca automática ¡y busca peces raros!',
+        '🍜 Ramyeon del río Han: compra un paquete en DAILY MART y cocínalo tú mismo junto al río.',
+        '🦆 Botes pato: súbete gratis y navega por el río con un amigo.',
+        '🍢 Mercado ribereño: tteokbokki, brochetas, hotteok, pollo ¡y mucho más para comer!',
+      ],
+      id: [
+        '🎣 Memancing: lengkapi buku ikan yang baru. Coba memancing otomatis dan cari ikan langka!',
+        '🍜 Ramyeon Sungai Han: beli ramyeon di DAILY MART dan masak sendiri di tepi sungai.',
+        '🦆 Perahu bebek: naik gratis dan jelajahi sungai bersama teman.',
+        '🍢 Pasar tepi sungai: tteokbokki, sate, hotteok, ayam, dan banyak makanan lainnya!',
+      ],
+      ar: [
+        '🎣 الصيد: املأ كتاب الأسماك الجديد. جرّب الصيد التلقائي وابحث عن الأسماك النادرة!',
+        '🍜 رامين نهر هان: اشترِ عبوة من DAILY MART واطبخها بنفسك على ضفة النهر.',
+        '🦆 قوارب البطة: اركب مجانًا وتجوّل في النهر مع صديق.',
+        '🍢 سوق ضفة النهر: تتوكبوكي وأسياخ وهوتوك ودجاج وأطعمة كثيرة أخرى!',
+      ],
+      vi: [
+        '🎣 Câu cá: hãy hoàn thành sổ tay cá mới. Thử câu tự động và săn cá hiếm nhé!',
+        '🍜 Mì ramyeon sông Hàn: mua một gói ở DAILY MART rồi tự nấu bên bờ sông.',
+        '🦆 Thuyền vịt: đi miễn phí và lướt trên sông cùng bạn bè.',
+        '🍢 Chợ ven sông: tteokbokki, xiên nướng, hotteok, gà rán và nhiều món ngon khác!',
+      ],
+      hi: [
+        '🎣 मछली पकड़ना: नई फ़िश बुक भरिए। ऑटो फ़िशिंग आज़माइए और दुर्लभ मछलियाँ खोजिए!',
+        '🍜 हान नदी रामयन: DAILY MART से पैकेट ख़रीदिए और नदी किनारे ख़ुद पकाइए।',
+        '🦆 बत्तख नाव: मुफ़्त में सवारी कीजिए और दोस्त के साथ नदी पर घूमिए।',
+        '🍢 नदी किनारे बाज़ार: तेओकबोक्की, सीख कबाब, होत्तेओक, चिकन और बहुत कुछ!',
+      ],
+    },
+  },
+  {
     id: '2026-11-05-refresh',
     at: '2026.11.05 18:05',
     title: {
