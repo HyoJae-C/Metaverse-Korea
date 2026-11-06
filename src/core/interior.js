@@ -23,6 +23,7 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
@@ -290,9 +291,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar';
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema;
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
@@ -353,7 +354,7 @@ export function buildInterior(store) {
   const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
-  if (store.category !== 'home') scene.add(title);
+  if (store.category !== 'home' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -1364,6 +1365,65 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'japchae') {
+      // Suragan Cooking Class: a long cooking table with a burner and a pan
+      // at each place, bowls of coloured vegetables down the middle, and a
+      // big mixing bowl at the far end. The teacher stands at the head.
+      const tz = -d * 0.06, tw = Math.min(7, w - 8);
+      box(tw, 0.08, 1.6, 0, 0.7, tz, '#d9d2c4'); // stainless-look top
+      box(tw, 0.62, 1.5, 0, 0.33, tz, '#8a5a3a');
+      block(0, tz, tw, 1.6);
+      const spots = [], rolls = [];
+      const vegCol = ['#f08a2c', '#3f8f3f', '#d8402c', '#7a5236', '#f3e7c9', '#ffd23a'];
+      for (let k = 0; k < 3; k++) {
+        const x = (k - 1) * (tw / 3.2);
+        // Back side: a burner and a pan (japchae).
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
+        burner.position.set(x, 0.76, tz - 0.42);
+        scene.add(burner);
+        const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
+        pan.position.set(x, 0.82, tz - 0.42);
+        scene.add(pan);
+        box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz - 0.42, '#3a3a3e'); // handle
+        spots.push({ x, z: tz - 1.3 });
+        // Front side: a bamboo mat (김발) with a sheet of gim and rice (kimbap).
+        box(0.5, 0.02, 0.44, x, 0.75, tz + 0.42, '#c9b27a');
+        box(0.42, 0.012, 0.36, x, 0.767, tz + 0.42, '#1f2a1c');
+        box(0.38, 0.03, 0.24, x, 0.782, tz + 0.37, '#f4f1e8');
+        rolls.push({ x, z: tz + 1.3 });
+        // Little bowls of sliced vegetables between the places.
+        for (let j = 0; j < 2; j++) {
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.07, 12), mat('#f7f3ea'));
+          bowl.position.set(x - 0.15 + j * 0.3, 0.78, tz);
+          scene.add(bowl);
+          const veg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 12), mat(vegCol[(k * 2 + j) % vegCol.length]));
+          veg.position.set(x - 0.15 + j * 0.3, 0.82, tz);
+          scene.add(veg);
+        }
+      }
+      stations.japchae = spots;
+      stations.kimbap = rolls;
+      stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      // The big mixing bowl with glossy noodles at the far end.
+      const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
+      big.position.set(tw / 2 + 1.1, 1.0, tz);
+      scene.add(big);
+      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat('#9a6a45'));
+      noodles.position.set(tw / 2 + 1.1, 0.88, tz);
+      scene.add(noodles);
+      box(0.9, 0.55, 0.9, tw / 2 + 1.1, 0.28, tz, '#8a5a3a'); // its stand
+      block(tw / 2 + 1.1, tz, 1, 1);
+      // A low stone ledge of sauce jars (간장 · soy sauce) by the front-left wall.
+      const jx0 = -w / 2 + 1.2, jz = d / 2 - 1.9;
+      box(5, 0.2, 1.1, jx0 + 2.1, 0.1, jz, '#9a9488');
+      [0.42, 0.32, 0.46, 0.3].forEach((r, k) => {
+        const jx = jx0 + k * 1.2;
+        const pot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat('#4a2c1c'));
+        pot.scale.set(1, 1.15, 1);
+        pot.position.set(jx, 0.2 + r * 1.1, jz);
+        scene.add(pot);
+      });
+      block(jx0 + 2.1, jz, 5, 1.2);
     } else if (store.workshop === 'kimchi') {
       // Sonmat Kimchi School: a long low work table with cabbages, bowls of
       // red seasoning and a salt sack; a big red rubber tub (고무대야) of
@@ -1488,16 +1548,16 @@ export function buildInterior(store) {
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
       stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
       block(dw / 4, dz - 0.85, 0.6, 0.5);
-    } else {
+    } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
       const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.tarotReader || stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
+  if (store.category !== 'home' && !store.cinema) for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);
@@ -1532,9 +1592,66 @@ export function buildInterior(store) {
     turntable = { x: tx, z: tz + 0.9, platter };
   }
   // K-POP café: a big TV on the back wall (the video plays in the corner of
-  // the screen; this is the room's look).
+  // the screen; this is the room's look). The cinema has a big screen.
   let tv = null;
-  if (store.kpop) {
+  if (store.cinema) {
+    // Cinema: a big 16:9 screen in a black frame on the back wall, rows of
+    // red seats facing it (a middle aisle and a side aisle to walk), dim
+    // step lights, and a film kiosk by the door where you pick what's on.
+    const sw = Math.min(11.2, w - 3), sh = sw * 9 / 16, sy = h - 0.5 - sh / 2, sz = -d / 2 + 0.25;
+    box(sw + 0.5, sh + 0.5, 0.2, 0, sy, sz - 0.05, '#050507');
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), new THREE.MeshBasicMaterial({ color: '#2a2833' }));
+    glow.position.set(0, sy, sz + 0.07);
+    scene.add(glow);
+    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, store.colors.sign); // curtains
+    box(sw + 1, 0.5, 0.6, 0, 0.25, sz + 0.6, '#1a1820'); // stage step
+    block(0, sz + 0.5, sw + 2.4, 1);
+    const seatC = store.colors.sign;
+    const cols = [-6.4, -5.4, -4.4, -3.4, -2.4, -1.4, 1.4, 2.4, 3.4, 4.4, 5.4, 6.4];
+    const rows = 5, z0 = -d / 2 + 5, rowGap = 1.7;
+    for (let r = 0; r < rows; r++) {
+      const rz = z0 + r * rowGap;
+      for (const cx of cols) {
+        box(0.78, 0.12, 0.62, cx, SEAT_H - 0.06, rz, seatC); // seat
+        box(0.78, 0.66, 0.12, cx, SEAT_H + 0.3, rz + 0.33, seatC); // back
+        box(0.08, SEAT_H + 0.18, 0.62, cx - 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c'); // arm
+        seats.push({ x: cx, z: rz - 0.02, ry: Math.PI, stand: [cx, rz - 0.85] });
+      }
+      box(0.08, SEAT_H + 0.18, 0.62, cols[5] + 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c');
+      box(0.08, SEAT_H + 0.18, 0.62, cols[cols.length - 1] + 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c');
+      // Each half-row is one collider, thin enough to leave a walkway in
+      // front of it to stand up into.
+      block((cols[0] + cols[5]) / 2, rz + 0.12, cols[5] - cols[0] + 0.95, 0.5);
+      block((cols[6] + cols[cols.length - 1]) / 2, rz + 0.12, cols[cols.length - 1] - cols[6] + 0.95, 0.5);
+    }
+    // Step lights along the aisles.
+    const stepMat = new THREE.MeshBasicMaterial({ color: '#ffb84a' });
+    for (let r = 0; r <= rows; r++) for (const ax of [-0.55, 0.55, -w / 2 + 1.1, w / 2 - 1.1]) {
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08).rotateX(-Math.PI / 2), stepMat);
+      l.position.set(ax, 0.012, z0 - 0.9 + r * rowGap);
+      scene.add(l);
+    }
+    // Film kiosk by the door, left side.
+    const kx = -w / 2 + 2.2, kz = d / 2 - 2.4;
+    box(1.1, 1.2, 0.6, kx, 0.6, kz, '#1d1b24');
+    const kScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.55), new THREE.MeshBasicMaterial({ color: store.colors.awning }));
+    kScreen.position.set(kx, 1.05, kz + 0.31);
+    kScreen.rotation.x = -0.35;
+    scene.add(kScreen);
+    block(kx, kz, 1.2, 0.7);
+    // Popcorn stand on the right.
+    const px = w / 2 - 2.4, pz = d / 2 - 2.6;
+    box(1.6, COUNTER_H, 0.8, px, COUNTER_H / 2, pz, '#b3262e');
+    box(0.6, 0.7, 0.5, px - 0.3, COUNTER_H + 0.35, pz, '#f3e3b0'); // popcorn machine
+    box(0.62, 0.08, 0.52, px - 0.3, COUNTER_H + 0.74, pz, '#b3262e');
+    block(px, pz, 1.7, 0.9);
+    clerk = { x: px, z: pz + 0.75, ry: Math.PI };
+    // A soft light over the seats, so people can find a seat in the dark.
+    const hall = new THREE.PointLight(0xffd9b0, 10, 22);
+    hall.position.set(0, h - 1, d / 4);
+    scene.add(hall);
+    tv = { x: kx, z: kz + 1.1, screen: glow, width: sw };
+  } else if (store.kpop) {
     const tvz = -d / 2 + 0.3;
     box(5.2, 3, 0.2, 0, 2.3, tvz, '#1b1b20');
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(4.9, 2.7), new THREE.MeshBasicMaterial({ color: store.colors.awning }));

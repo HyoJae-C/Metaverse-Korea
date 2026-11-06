@@ -154,6 +154,17 @@ export class RemotePlayers {
     return best;
   }
 
+  // Everyone visible within r metres who is not riding, closest first.
+  nearbyFree(x, z, r) {
+    const out = [];
+    for (const [id, p] of this.players) {
+      if (p.hidden || p.target?.bk) continue;
+      const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
+      if (d < r) out.push({ id, name: p.name, d });
+    }
+    return out.sort((a, b) => a.d - b.d);
+  }
+
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
   // Where someone is right now, predicted from their last update and speed

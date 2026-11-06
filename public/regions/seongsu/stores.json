@@ -454,6 +454,19 @@
       "products": []
     },
     {
+      "id": "byeolbit-cinema",
+      "category": "play",
+      "workshop": "cinema",
+      "cinema": true,
+      "size": "cinema",
+      
+      "name": { "ko": "별빛 시네마", "en": "Byeolbit Cinema", "ja": "ビョルビッ シネマ", "zh": "星光影院" },
+      "tagline": { "en": "Short AI films on the big screen, watched together", "ko": "큰 스크린으로 다 같이 보는 짧은 AI 영화", "ja": "大きなスクリーンでみんなで観るショートAI映画", "zh": "在大银幕上一起看AI短片" },
+      "at": [-21.5, 6],
+      "colors": { "sign": "#b3262e", "awning": "#ffd7a8", "accent": "#2a2230" },
+      "products": []
+    },
+    {
       "id": "sinjeon-pocha",
       "category": "restaurant",
       "workshop": "pocha",
@@ -564,6 +577,20 @@
         {"id": "mini-onggi", "model": "jar", "color": "#5a3422", "price": 12000, "name": {"en": "Mini onggi jar", "ko": "미니 옹기", "ja": "ミニ甕", "zh": "迷你陶瓮", "es": "Mini tinaja onggi", "id": "Guci onggi mini", "vi": "Vại onggi mini", "hi": "मिनी ओंग्गी मटका", "ar": "جرّة أونغي صغيرة"}, "desc": {"en": "A small earthenware jar like the big ones Korean families keep kimchi and sauces in. Its walls let a little air through.", "ko": "김치와 장을 담그는 큰 옹기를 닮은 작은 항아리예요. 옹기는 숨을 쉬어요."}},
         {"id": "gochugaru-jar", "model": "jar", "color": "#c8321f", "price": 9000, "name": {"en": "Gochugaru (chilli flakes)", "ko": "고춧가루", "ja": "唐辛子粉", "zh": "韩式辣椒粉", "es": "Gochugaru (chile en copos)", "id": "Gochugaru (bubuk cabai)", "vi": "Gochugaru (ớt bột)", "hi": "गोचुगारू (मिर्च के गुच्छे)", "ar": "غوتشوغارو (رقائق الفلفل)"}, "desc": {"en": "Sun-dried red chilli flakes: the colour and gentle heat of kimchi.", "ko": "햇볕에 말린 고추로 만든 고춧가루. 김치의 빨간 색과 매운맛을 내요."}},
         {"id": "kimchi-notebook", "model": "notebook", "color": "#e9d8b4", "price": 8000, "name": {"en": "Halmeoni's kimchi notebook", "ko": "할머니 김치 노트", "ja": "おばあちゃんのキムチノート", "zh": "奶奶的泡菜笔记", "es": "Cuaderno de kimchi de la halmeoni", "id": "Buku kimchi halmeoni", "vi": "Sổ kim chi của bà", "hi": "हलमनी की किमची नोटबुक", "ar": "دفتر كيمتشي الجدّة"}, "desc": {"en": "A notebook with a hand-drawn kimjang recipe on the first page.", "ko": "첫 장에 김장 레시피가 그려진 노트예요."}}
+      ]
+    },
+    {
+      "id": "suragan-cooking",
+      "category": "workshop",
+      "workshop": "japchae",
+      "size": "large",
+      "name": {"ko": "수라간 요리교실", "en": "Suragan Cooking Class", "ja": "スラッカン料理教室", "zh": "御膳房料理教室", "es": "Clase de cocina Suragan", "id": "Kelas Masak Suragan", "vi": "Lớp nấu ăn Suragan", "hi": "सुरागान कुकिंग क्लास", "ar": "صف طبخ سوراغان"},
+      "tagline": {"en": "Cook Korean dishes by hand: japchae and free-style kimbap", "ko": "손으로 만드는 한국 음식: 잡채와 자유 김밥", "ja": "手作りの韓国料理：チャプチェと自由キンパ", "zh": "亲手做韩国菜：杂菜和自由紫菜包饭", "es": "Cocina coreana a mano: japchae y kimbap libre", "id": "Masak hidangan Korea dengan tangan: japchae dan kimbap bebas", "vi": "Tự tay nấu món Hàn: japchae và kimbap tự do", "hi": "हाथ से कोरियाई खाना: जापचे और फ़्री-स्टाइल किम्बाप", "ar": "اطبخ الأطباق الكورية بيديك: الجابتشي والكيمباب على ذوقك"},
+      "at": [-1519, -1065],
+      "colors": { "sign": "#7a2e5a", "awning": "#efd9a8", "accent": "#fbf4e6" },
+      "products": [
+        {"id": "sesame-oil", "model": "bottle", "color": "#c9a227", "price": 11000, "name": {"en": "Roasted sesame oil", "ko": "참기름", "ja": "ごま油", "zh": "香油", "es": "Aceite de sésamo tostado", "id": "Minyak wijen sangrai", "vi": "Dầu mè rang", "hi": "भुने तिल का तेल", "ar": "زيت السمسم المحمّص"}, "desc": {"en": "Nutty, toasty oil that finishes japchae, namul and bibimbap.", "ko": "고소한 참기름. 잡채, 나물, 비빔밥의 마무리예요."}},
+        {"id": "suragan-notebook", "model": "notebook", "color": "#c94f3d", "price": 8000, "name": {"en": "Suragan recipe notebook", "ko": "수라간 레시피 노트", "ja": "スラッカンのレシピノート", "zh": "御膳房食谱本", "es": "Cuaderno de recetas Suragan", "id": "Buku resep Suragan", "vi": "Sổ công thức Suragan", "hi": "सुरागान रेसिपी नोटबुक", "ar": "دفتر وصفات سوراغان"}, "desc": {"en": "A notebook with the japchae recipe from today's class on the first page.", "ko": "첫 장에 오늘 배운 잡채 레시피가 적힌 노트예요."}}
       ]
     },
     {
