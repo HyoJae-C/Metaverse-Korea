@@ -75,6 +75,8 @@ const T = {
   teamLost: { en: 'The other team wins, {b} to {a}. Rematch?', ko: '{b} 대 {a}로 상대 팀 승리. 한 판 더?', ja: '{b}対{a}で相手チームの勝ち。もう一戦？', zh: '对方队伍以{b}比{a}获胜。再来一局？', es: 'Gana el otro equipo, {b} a {a}. ¿Revancha?', id: 'Tim lawan menang, {b} : {a}. Tanding ulang?', vi: 'Đội kia thắng, {b} - {a}. Đấu lại?', hi: 'दूसरी टीम {b}–{a} से जीती। फिर से?', ar: 'فاز الفريق الآخر، {b} مقابل {a}. جولة أخرى؟' },
   allLeft: { en: 'Everyone else left the game.', ko: '다른 사람들이 모두 게임을 나갔어요.', ja: 'ほかの全員が抜けました。', zh: '其他人都离开了游戏。', es: 'Todos los demás dejaron la partida.', id: 'Semua yang lain keluar dari permainan.', vi: 'Mọi người khác đã rời ván.', hi: 'बाकी सब खेल छोड़ गए।', ar: 'غادر الجميع اللعبة.' },
   again2: { en: 'Play again with {names}', ko: '{names}님과 한 판 더', ja: '{names}さんともう一戦', zh: '和{names}再来一局', es: 'Otra con {names}', id: 'Main lagi dengan {names}', vi: 'Chơi lại với {names}', hi: '{names} के साथ फिर से', ar: 'العب مجددًا مع {names}' },
+  forfeit: { en: 'Give up', ko: '기권', ja: '棄権', zh: '认输', es: 'Rendirse', id: 'Menyerah', vi: 'Bỏ cuộc', hi: 'हार मानें', ar: 'استسلام' },
+  gaveUp: { en: 'You gave up.', ko: '기권했어요.', ja: '棄権しました。', zh: '你认输了。', es: 'Te rendiste.', id: 'Kamu menyerah.', vi: 'Bạn đã bỏ cuộc.', hi: 'आपने हार मान ली।', ar: 'لقد استسلمت.' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', ar: 'إغلاق' },
 };
 export const DARTS_TEXT = T;
@@ -350,6 +352,10 @@ export class DartsUI {
     vsLine.hidden = ids.length < 2;
     const btn = el('button', 'primary karaoke-pad', '🎯 ' + tt('throw'));
     btn.onpointerdown = (e) => { e.preventDefault(); this.throwDart(); };
+    // Give up: stop this game but stay at the board (the others play on).
+    const quit = el('button', 'chip darts-forfeit', '🏳️ ' + tt('forfeit'));
+    quit.onclick = () => this.forfeit();
+    this.root.querySelector('h3')?.append(quit);
     this.root.append(cv, status, vsLine, btn);
     const colors = this.colors?.(ids) || ids.map((_, i) => i % DART_COLORS.length);
     const players = ids.map((id, i) => ({
@@ -358,7 +364,7 @@ export class DartsUI {
     }));
     const multi = ids.length > 1;
     this.game = {
-      cv, status, vsLine, btn, players, mode: multi ? mode : 'solo', multi, me: players.findIndex((p) => p.me),
+      cv, status, vsLine, btn, quit, players, mode: multi ? mode : 'solo', multi, me: players.findIndex((p) => p.me),
       each: multi ? dartsEach(ids.length) : TOTAL, recent: [], flying: null, over: false, turn: null, last: null,
       n: 0, inbox: [], t0: performance.now() / 1000, sway: this.rand() * 20,
     };
@@ -450,6 +456,15 @@ export class DartsUI {
     parts.forEach((x, i) => { if (i) g.vsLine.append('  ·  '); g.vsLine.append(x); });
   }
 
+  // Give up the game in play: with friends, they are told we left (our
+  // turns are skipped, as if we had walked away); then back to the start.
+  forfeit() {
+    const g = this.game;
+    if (!g || g.over) return;
+    this._leaveAll();
+    this.renderStart(tt('gaveUp'));
+  }
+
   throwDart() {
     const g = this.game;
     if (!g || g.over || g.flying || !g.turn?.mine) return;
@@ -497,6 +512,7 @@ export class DartsUI {
     if (!g || g.ended) return;
     Object.assign(g, { ended: true, over: true, turn: null });
     g.btn.disabled = true;
+    if (g.quit) g.quit.hidden = true;
     this._hud();
     const me = g.players[g.me];
     const rest = g.players.filter((p) => !p.me);
