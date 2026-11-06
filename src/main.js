@@ -6322,6 +6322,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
     arcade: () => arcade,
+    stations: () => interior?.stations ?? null,
     loveLock: (view) => loveLockUi.show(view),
   };
 }

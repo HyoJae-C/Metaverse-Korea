@@ -61,6 +61,10 @@
         <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
         <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot news-bang" id="settings-dot" hidden>!</b></button>
       </div>
+      <!-- Notes sit alone in the top-left corner, away from the emote wheel's petals. -->
+      <div class="tools-corner">
+        <button class="tool" id="notes-btn"><span>📓</span><small data-i18n="hud.notes"></small></button>
+      </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
         <button class="tool" id="bike-btn"><span>🛵</span><small id="bike-label" data-i18n="hud.bike"></small></button>
@@ -68,7 +72,6 @@
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
         <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
-        <button class="tool" id="notes-btn"><span>📓</span><small data-i18n="hud.notes"></small></button>
         <button class="tool" id="cart-btn" hidden><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
