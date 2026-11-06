@@ -138,7 +138,7 @@ export const PLACE_TOPICS = [
     text: { en: 'Rice balls, cup ramen and banana milk. An umbrella (🪙 5) opens by itself on rainy and snowy days, so you walk almost as fast as usual.', ko: '삼각김밥, 컵라면, 바나나 우유. 우산(🪙 5)은 비나 눈 오는 날 저절로 펴져서 평소처럼 걸을 수 있어요.', ja: 'おにぎり、カップ麺、バナナ牛乳。傘（🪙 5）は雨や雪の日に自動で開き、いつも通りに近い速さで歩けます。', zh: '饭团、杯面、香蕉牛奶。雨伞（🪙 5）在雨雪天自动撑开，走路几乎和平时一样快。' } },
 { icon: '🦆', to: { store: 'ttukseom-hangang' },
     title: { en: 'Han River park', ko: '한강공원', ja: '漢江公園', zh: '汉江公园' },
-    text: { en: 'Fishing, duck boats with a friend, and a picnic.', ko: '낚시, 친구와 오리배, 그리고 피크닉.', ja: '釣り、友だちとアヒルボート、ピクニック。', zh: '钓鱼、和朋友踩鸭子船、野餐。' } },
+    text: { en: 'Fishing, duck boats with a friend, a picnic, and the riverside market: tteokbokki, skewers, hotteok, chicken and handmade crafts.', ko: '낚시, 친구와 오리배, 피크닉, 그리고 강변장터: 떡볶이, 꼬치, 호떡, 치킨, 손작업 소품.', ja: '釣り、友だちとアヒルボート、ピクニック、そして川辺市場：トッポッキ、串焼き、ホットク、チキン、手作り雑貨。', zh: '钓鱼、和朋友踩鸭子船、野餐，还有江边集市：炒年糕、烤串、糖饼、炸鸡和手工小物。' } },
 { icon: '🐟', to: { store: 'seongsu-fishmarket' },
     title: { en: 'Fish market', ko: '수산시장', ja: '魚市場', zh: '水产市场' },
     text: { en: 'Sell the fish you catch.', ko: '잡은 물고기를 팔아요.', ja: '釣った魚を売れます。', zh: '卖掉钓到的鱼。' } },

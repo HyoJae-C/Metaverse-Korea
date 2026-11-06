@@ -6,6 +6,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
+import { buildHauntedHouse } from './haunted.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
@@ -24,7 +25,7 @@ export const ROOM_SIZES = {
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
-  park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
+  park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
@@ -111,6 +112,14 @@ export function productModel(kind, color, product = null) {
     case 'plush':
       add(new THREE.SphereGeometry(0.15, 14, 10), 0, 0.15);
       for (const s of [-1, 1]) add(new THREE.CapsuleGeometry(0.035, 0.12, 4, 8), 0.06 * s, 0.33);
+      break;
+    case 'ramyeon': // an instant-noodle pack: a red pillow bag with a yellow label
+      add(new THREE.BoxGeometry(0.34, 0.07, 0.26), 0, 0.035);
+      add(new THREE.BoxGeometry(0.16, 0.075, 0.12), -0.05, 0.036, 0.02, mat('#ffd166'));
+      break;
+    case 'egg': // a small tray of eggs
+      add(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, 0.02, 0, mat('#d9c7a6'));
+      for (const ex of [-0.09, 0, 0.09]) for (const ez of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.04, 10, 8).scale(1, 1.3, 1), ex, 0.07, ez);
       break;
     case 'notebook':
       add(new THREE.BoxGeometry(0.3, 0.04, 0.4), 0, 0.02);
@@ -284,6 +293,7 @@ export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
@@ -767,6 +777,9 @@ export function buildInterior(store) {
       glow.position.set(tx, 1.0, tz);
       scene.add(glow);
       for (const s2 of [-1, 1]) {
+        // With darts, the chair against the left wall makes way for the
+        // second dartboard's players.
+        if (store.darts && tx < 0 && s2 < 0) continue;
         const chx = tx + 0.85 * s2;
         box(0.42, 0.06, 0.42, chx, SEAT_H - 0.03, tz, '#6b2f2f');
         box(0.08, 0.5, 0.42, chx + 0.2 * s2, SEAT_H + 0.22, tz, '#6b2f2f');
@@ -774,20 +787,28 @@ export function buildInterior(store) {
       }
       block(tx, tz, 2.3, 0.95);
     }
-    // A dartboard on the left wall (stores.json "darts": true), with the
-    // throw line on the floor in front of it.
+    // Two dartboards side by side on the left wall (stores.json "darts":
+    // true), each with its throw line on the floor in front of it. Darts
+    // thrown there stick in the board for everyone in the bar to see
+    // (core/dart-pins.js); dartboards[i] is board i's face.
     if (store.darts) {
-      const dz = -0.6, bx = -w / 2 + 0.06;
-      box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
-      const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
-      face.rotation.y = Math.PI / 2;
-      face.position.set(bx + 0.08, 1.6, dz);
-      scene.add(face);
-      const spot = new THREE.PointLight(0xfff0d0, 3, 4); // (not 3.5: those are the candles that flicker)
-      spot.position.set(bx + 0.9, 2.6, dz);
-      scene.add(spot);
-      box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
-      stations.darts = [{ x: bx + 2.7, z: dz, ry: -Math.PI / 2 }]; // facing the board
+      const bx = -w / 2 + 0.06;
+      stations.darts = [];
+      stations.dartboards = [];
+      [-1.4, 0.4].forEach((dz, i) => {
+        box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
+        const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
+        face.rotation.y = Math.PI / 2;
+        face.position.set(bx + 0.08, 1.6, dz);
+        scene.add(face);
+        const spot = new THREE.PointLight(0xfff0d0, 2.5, 4); // (not 3.5: those are the candles that flicker)
+        spot.position.set(bx + 0.9, 2.6, dz);
+        scene.add(spot);
+        box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
+        stations.darts.push({ x: bx + 2.7, z: dz, ry: -Math.PI / 2, board: i }); // facing the board
+        // The scoring area (r = 1 in core/arcade.js) is 104/128 of the face.
+        stations.dartboards.push({ x: bx + 0.08, y: 1.6, z: dz, ry: Math.PI / 2, r: 0.34 * 104 / 128 });
+      });
     }
     let t = 0;
     const flames = [];

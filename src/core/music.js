@@ -278,6 +278,96 @@ export class Sfx {
     o.start(t);
     o.stop(t + 0.15);
   }
+  // ---- Fishing (Han River). All synthesised here. ----
+  // The cast: the rod whipping through the air, then the line running out.
+  castWhoosh() {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.28, 0.16, 700, 3800); // swish
+    this._hiss(0.16, 0.7, 0.035, 5200, 2600); // line zipping off the spool
+    this._tone(1500, 0.16, 0.6, 0.012, 'sawtooth', 700);
+  }
+  // The bobber (or a fish) hitting the water. big 0..1.
+  splash(big = 0.5) {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.18 + big * 0.3, 0.09 + big * 0.16, 2600, 350);
+    this._tone(420 + big * 80, 0, 0.14, 0.07 + big * 0.05, 'sine', 140); // plop
+    if (big > 0.6) this._hiss(0.12, 0.5, 0.05, 1800, 500); // water falling back
+  }
+  // Two duck boats (or bumper cars) bumping: a rubbery "boing" and a slosh.
+  // hard 0..1, loud 0..1 (quieter far away).
+  bump(hard = 0.5, loud = 1) {
+    if (!this.on || !this._ctx() || loud < 0.05) return;
+    this._tone(210 + hard * 60, 0, 0.22, (0.08 + hard * 0.08) * loud, 'sine', 120); // boing
+    this.tock((0.35 + hard * 0.4) * loud, 320);
+    this._hiss(0.03, 0.25 + hard * 0.2, (0.04 + hard * 0.06) * loud, 2200, 400); // water slosh
+  }
+  // A fish nibbling: a tiny "plip" from the bobber.
+  plip() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(980, 0, 0.07, 0.035, 'sine', 520);
+  }
+  // A bite: the bobber is pulled under (two bloops) and the line goes taut.
+  bite() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(360, 0, 0.12, 0.12, 'sine', 120);
+    this._tone(300, 0.13, 0.14, 0.12, 'sine', 100);
+    this._hiss(0, 0.2, 0.08, 2000, 500);
+    this._tone(520, 0.05, 0.28, 0.035, 'triangle', 1350); // the line singing
+  }
+  // One turn of the reel: a quick ratchet "tik-tik-tik".
+  reelClick(n = 3) {
+    if (!this.on || !this._ctx()) return;
+    const c = this.ctx;
+    for (let i = 0; i < n; i++) {
+      const t = c.currentTime + 0.01 + i * 0.032;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(2300 + Math.random() * 300, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.022, t + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+      o.connect(g).connect(c.destination);
+      o.start(t); o.stop(t + 0.03);
+    }
+  }
+  // Winding an empty line back in (missed or got away).
+  reelIn(len = 0.6) {
+    if (!this.on || !this._ctx()) return;
+    for (let t = 0; t < len; t += 0.11) setTimeout(() => this.reelClick(3), t * 1000);
+  }
+  // The line snapping as a fish escapes.
+  snap() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(1300, 0, 0.22, 0.06, 'sawtooth', 180);
+    this.tock(0.6, 1400);
+  }
+  // Pulling the catch out of the water: a big splash and a rising swoosh.
+  landed() {
+    if (!this.on || !this._ctx()) return;
+    this.splash(0.9);
+    this._hiss(0.05, 0.35, 0.08, 600, 3200);
+  }
+  // A soft, wobbly "wooo" for the haunted house's ghost: a sine that
+  // slides down with a slow vibrato. Quiet; nothing sudden.
+  ghostly() {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.02;
+    const o = c.createOscillator(), lfo = c.createOscillator(), depth = c.createGain(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(620, t);
+    o.frequency.exponentialRampToValueAtTime(300, t + 1.3);
+    lfo.frequency.value = 6;
+    depth.gain.value = 18;
+    lfo.connect(depth).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(g).connect(c.destination);
+    o.start(t); lfo.start(t);
+    o.stop(t + 1.45); lfo.stop(t + 1.45);
+  }
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)

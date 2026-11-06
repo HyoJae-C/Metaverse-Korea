@@ -124,13 +124,75 @@ export function dartLand(aim, rand = Math.random) {
   return { x: aim.x + Math.cos(a) * d, y: aim.y + Math.sin(a) * d };
 }
 
-// Darts with a friend in the same bar: invite, accept, then each sends their
-// running total after every dart. kind: i = invite, a = accept, s = score,
-// n = no / left. round = darts thrown so far (0..15).
-export const dartsMsg = (to, kind, thrown = 0, total = 0) => `darts:${to}:${kind}:${thrown | 0}:${total | 0}`;
+// Each dart must be thrown within 7 seconds, alone or with a friend.
+export const DART_SECONDS = 7;
+// Darts with friends in the same bar: invite, accept, then you take turns,
+// one dart each (see dartsEach below); the host throws first. The thrower
+// tells the other side when their aim starts swaying (with its phase, so
+// both screens show the same sway) and exactly where the dart landed, so
+// both screens show the same throw and the same score.
+// kind: i = invite, a = accept, n = no / left,
+//   t = my turn starts (thrown = dart number 0..19, total = sway phase),
+//   h = hit (thrown = dart number, total / extra = where, see dartAt),
+//   x = out of time (thrown = dart number).
+export const DARTS_EACH = 10;
+export const dartsMsg = (to, kind, thrown = 0, total = 0, extra) => `darts:${to}:${kind}:${thrown | 0}:${total | 0}` + (extra != null ? `:${extra | 0}` : '');
 export function parseDarts(e) {
-  const m = /^darts:([\w-]{1,64}):([ians]):(\d{1,2}):(\d{1,4})$/.exec(String(e));
-  return m ? { to: m[1], kind: m[2], thrown: +m[3], total: +m[4] } : null;
+  const m = /^darts:([\w-]{1,64}):([ianthx]):(\d{1,2}):(\d{1,4})(?::(\d{1,4}))?$/.exec(String(e));
+  return m ? { to: m[1], kind: m[2], thrown: +m[3], total: +m[4], extra: m[5] != null ? +m[5] : null } : null;
+}
+// A board position (-2..2) as a whole number for a message, and back.
+export const dartPack = (v) => Math.round((Math.max(-2, Math.min(2, v)) + 2) * 1000);
+export const dartUnpack = (n) => n / 1000 - 2;
+// The sway phase (0..20 s) as a whole number for a message, and back.
+export const swayPack = (s) => Math.round(Math.max(0, Math.min(19.99, s)) * 500);
+export const swayUnpack = (n) => n / 500;
+// Dart number n (0 = the very first) in a match: is it the challenger's?
+export const challengerThrows = (n) => n % 2 === 0;
+
+// Up to 4 players in one game. The host invites, everyone who accepted is
+// told the line-up and the mode with a start message, then they throw one
+// dart each in that order, round and round: 10 darts each for two players,
+// 6 each for three or four. Modes: 'f' = each for themselves (1:1, 1:1:1,
+// 1:1:1:1), 't' = 2:2 teams (four players: 1st and 3rd against 2nd and 4th,
+// so the teams take turns). Every thrower sends t / h / x to each of the
+// others (dartsMsg), so all screens show every throw.
+export const DARTS_MAX_PLAYERS = 4;
+export const dartsEach = (players) => (players <= 2 ? DARTS_EACH : 6);
+export const throwerOf = (n, players) => n % players; // who throws dart number n
+export const teamOf = (i) => i % 2; // 2:2: the player in line-up place i
+export const dartsGoMsg = (to, mode, ids) => `dartsgo:${to}:${mode}:${ids.join(',')}`;
+export function parseDartsGo(e) {
+  const m = /^dartsgo:([\w-]{1,64}):([ft]):([\w,-]{1,300})$/.exec(String(e));
+  if (!m) return null;
+  const ids = m[3].split(',');
+  if (ids.length < 2 || ids.length > DARTS_MAX_PLAYERS || ids.some((id) => !/^[\w-]{1,64}$/.test(id)) || new Set(ids).size !== ids.length) return null;
+  if (m[2] === 't' && ids.length !== 4) return null;
+  return { to: m[1], mode: m[2], ids };
+}
+
+// Darts stick in the bar's wall boards for everyone in the room to see
+// (core/dart-pins.js). Every thrower has their own flight colour: one picked
+// from their id, moved on to the next free one when somebody on the boards
+// (or the friend you play) already throws that colour.
+export const DART_COLORS = ['#ffd36e', '#6ec8ff', '#ff6fa8', '#7be08a', '#c79bff', '#ff9b4a', '#f4f4f4', '#3fd8c8'];
+export function dartColorOf(id) {
+  let h = 0;
+  for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h % DART_COLORS.length;
+}
+export function pickDartColor(preferred, taken = []) {
+  for (let k = 0; k < DART_COLORS.length; k++) {
+    const c = (preferred + k) % DART_COLORS.length;
+    if (!taken.includes(c)) return c;
+  }
+  return preferred % DART_COLORS.length;
+}
+// Sent to the whole room when a dart hits: board, colour, where (dartPack).
+export const dartPinMsg = (board, color, x, y) => `dartpin:${board | 0}:${color | 0}:${x | 0}:${y | 0}`;
+export function parseDartPin(e) {
+  const m = /^dartpin:([0-3]):([0-7]):(\d{1,4}):(\d{1,4})$/.exec(String(e));
+  return m && +m[3] <= 4000 && +m[4] <= 4000 ? { board: +m[1], color: +m[2], x: dartUnpack(+m[3]), y: dartUnpack(+m[4]) } : null;
 }
 
 // ── Records ──────────────────────────────────────────────────────────────

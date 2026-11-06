@@ -158,9 +158,13 @@
       "pets": "cats",
       "size": "medium",
       "name": { "ko": "냥냥 고양이 카페", "en": "Nyang Nyang Cat Café" },
-      "tagline": { "en": "Six friendly cats live here. Say hi and give them a pat!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 인사하고 쓰다듬어 주세요!" },
+      "tagline": { "en": "Six friendly cats live here, and two kittens are waiting for a family. Say hi, give them a pat, maybe adopt one!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 가족을 기다리는 아기 고양이 두 마리도 있어요. 인사하고 쓰다듬고, 분양도 받아 보세요!" },
       "at": [-22, 114.9],
       "colors": { "sign": "#c2456b", "awning": "#ffd6e2", "accent": "#fff4f7" },
+      "adopt": [
+        { "pet": "pet-cheesecat", "desc": {"en": "An orange kitten that follows you everywhere.", "ko": "어디든 졸졸 따라다니는 주황색 아기 고양이예요."} },
+        { "pet": "pet-bluecat", "desc": {"en": "A quiet grey cat with green eyes.", "ko": "초록 눈을 가진 조용한 회색 고양이예요."} }
+      ],
       "products": [
         { "id": "cat-latte", "model": "cup", "color": "#e6c9a8", "price": 6500, "name": { "en": "Cat Paw Latte", "ko": "고양이 발바닥 라떼" }, "desc": { "en": "A latte with a paw print drawn in the foam." } },
         { "id": "fish-bread", "model": "bread", "color": "#d99a52", "price": 3000, "name": { "en": "Bungeoppang", "ko": "붕어빵" }, "desc": { "en": "Fish-shaped pastry filled with sweet red bean." } }
@@ -309,20 +313,20 @@
     },
     {
       "id": "mungnyang-petshop",
-      "category": "petshop",
+      "category": "cafe",
+      "pets": "retrievers",
       "size": "medium",
-      "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
-      "tagline": { "en": "Adopt a dog, a cat or a small pet with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지, 고양이, 작은 동물을 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫、小動物を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗、小猫或小宠物一起散步。一定要清理宠物的便便！" },
+      "name": { "ko": "멍냥 리트리버 카페", "en": "Mungnyang Retriever Café", "ja": "モンニャン レトリバーカフェ", "zh": "汪喵寻回犬咖啡馆" },
+      "tagline": { "en": "Two big, gentle retrievers play here, and two puppies are waiting for a family. Meet them and adopt one!", "ko": "순한 리트리버 두 마리가 뛰노는 카페. 가족을 기다리는 강아지 두 마리도 있어요. 만나 보고 분양받아 보세요!", "ja": "やさしいレトリバー2匹が遊ぶカフェ。家族を待つ子犬も2匹います。会って迎えてみてね！", "zh": "两只温顺的寻回犬在这里玩耍，还有两只小狗在等待家人。来见见它们，领养一只吧！" },
       "at": [0.8, 66.2],
       "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
+      "adopt": [
+        { "pet": "pet-maltese", "desc": {"en": "A small fluffy white dog who loves walks.", "ko": "산책을 정말 좋아하는 작고 복슬복슬한 하얀 강아지예요."} },
+        { "pet": "pet-poodle", "desc": {"en": "A curly apricot poodle, small and very clever.", "ko": "곱슬곱슬한 살구색 털, 작고 아주 똑똑한 푸들이에요."} }
+      ],
       "products": [
-        { "id": "adopt-maltese", "model": "pet:dog", "color": "#fbf8f2", "accent": "#efe6da", "adopt": "pet-maltese", "price": 0, "name": { "en": "Maltese puppy · Mongi", "ko": "말티즈 · 몽이", "ja": "マルチーズ · モンイ", "zh": "马尔济斯 · 萌萌" }, "desc": { "en": "A small fluffy white dog who loves walks." } },
-        { "id": "adopt-poodle", "model": "pet:dog", "color": "#d9a066", "accent": "#f3d9b8", "adopt": "pet-poodle", "price": 0, "name": { "en": "Toy poodle puppy · Bori", "ko": "토이푸들 · 보리", "ja": "トイプードル · ボリ", "zh": "玩具贵宾 · 大麦" }, "desc": { "en": "A curly apricot poodle, small and very clever." } },
-        { "id": "adopt-shiba", "model": "pet:dog", "color": "#e39a4f", "accent": "#fff3e3", "adopt": "pet-shiba", "price": 0, "name": { "en": "Shiba puppy · Kongtteok", "ko": "시바견 · 콩떡", "ja": "柴犬 · コントク", "zh": "柴犬 · 豆糕" }, "desc": { "en": "Curly tail, big smile, a bit stubborn." } },
-        { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
-        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } },
-        { "id": "adopt-chinchilla", "model": "pet:chinchilla", "color": "#b9b6b8", "accent": "#f1eeee", "adopt": "pet-chinchilla", "price": 0, "name": { "en": "Chinchilla · Somi", "ko": "친칠라 · 솜이", "ja": "チンチラ · ソミ", "zh": "龙猫 · 棉棉" }, "desc": { "en": "The softest fur in the shop, with big round ears." } },
-        { "id": "adopt-guineapig", "model": "pet:guineapig", "color": "#b4733f", "accent": "#fff4e6", "adopt": "pet-guineapig", "price": 0, "name": { "en": "Guinea pig · Kkultteok", "ko": "기니피그 · 꿀떡", "ja": "モルモット · クルトク", "zh": "豚鼠 · 蜜糕" }, "desc": { "en": "A chubby little friend who squeaks when happy." } }
+        { "id": "retriever-latte", "model": "cup", "color": "#e8c58f", "price": 6000, "name": { "en": "Golden Latte", "ko": "골든 라떼", "ja": "ゴールデンラテ", "zh": "金毛拿铁" }, "desc": { "en": "A honey latte as golden as the café's retrievers." } },
+        { "id": "paw-madeleine", "model": "bread", "color": "#d9a066", "price": 3000, "name": { "en": "Paw Madeleine", "ko": "발바닥 마들렌", "ja": "肉球マドレーヌ", "zh": "爪印玛德琳" }, "desc": { "en": "A butter madeleine shaped like a paw (for people, not dogs)." } }
       ]
     },
     {
@@ -330,10 +334,38 @@
       "category": "park",
       "size": "park",
       "name": { "ko": "뚝섬 한강공원", "en": "Ttukseom Han River Park", "ja": "トゥクソム漢江公園", "zh": "纛岛汉江公园" },
-      "tagline": { "en": "Fish from the pier and cook ramen by the river", "ko": "한강에서 낚시하고 라면 끓여 먹기", "ja": "桟橋で釣りをして、川辺でラーメンを作ろう", "zh": "在码头钓鱼，在江边煮拉面" },
+      "tagline": {"en": "Fish from the pier, cook ramen and shop at the riverside market", "ko": "한강에서 낚시하고 라면 끓여 먹고, 강변장터 구경하기", "ja": "桟橋で釣り、川辺でラーメン、そして川辺市場でお買い物", "zh": "在码头钓鱼、江边煮拉面，再逛逛江边集市"},
       "at": [-60, 360],
       "colors": { "sign": "#2f8f5b", "awning": "#9fd8b4", "accent": "#e9f6ee" },
-      "products": []
+      "kiosk": {"name": {"ko": "데일리마트", "en": "DAILY MART", "ja": "デイリーマート", "zh": "DAILY MART"}, "color": "#2f9e6e"},
+      "market": {
+        "name": {"en": "Ttukseom Riverside Market", "ko": "뚝섬 강변장터", "ja": "トゥクソム川辺市場", "zh": "纛岛江边集市"},
+        "color": "#7a3b2e",
+        "stalls": [
+          {"id": "tteokbokki", "name": {"en": "Tteokbokki", "ko": "떡볶이 포차", "ja": "トッポッキ屋台", "zh": "炒年糕摊"}, "color": "#d8452f", "awning": "#fff1e0"},
+          {"id": "skewers", "name": {"en": "Grilled Skewers", "ko": "꼬치구이", "ja": "串焼き", "zh": "烤串"}, "color": "#9a5a2a", "awning": "#fbe7c6", "lantern": "#ffb347"},
+          {"id": "hotteok", "name": {"en": "Hotteok & Bungeoppang", "ko": "호떡·붕어빵", "ja": "ホットク・たい焼き", "zh": "糖饼·鲫鱼饼"}, "color": "#c97a2b", "awning": "#fff4dc"},
+          {"id": "ade", "name": {"en": "Fresh Ade", "ko": "생과일 에이드", "ja": "フレッシュエイド", "zh": "鲜果汽水"}, "color": "#e8a317", "awning": "#fffbe0", "lantern": "#ffe066"},
+          {"id": "chicken", "name": {"en": "Riverside Chicken", "ko": "강변 치킨", "ja": "川辺チキン", "zh": "江边炸鸡"}, "color": "#e07a1f", "awning": "#fff0dc"},
+          {"id": "crafts", "name": {"en": "Handmade Crafts", "ko": "손작업 공방", "ja": "ハンドメイド工房", "zh": "手作工坊"}, "color": "#4f8a6b", "awning": "#eaf5ee", "lantern": "#9be7c4"}
+        ]
+      },
+      "products": [
+        {"id": "ramyeon-pack", "model": "ramyeon", "color": "#d8452f", "price": 1000, "ingredient": "ramyeon", "name": {"en": "Ramyeon pack", "ko": "라면 한 봉지", "ja": "袋ラーメン", "zh": "袋装拉面"}, "desc": {"en": "Instant noodles with the soup powder inside. It goes in your bag: take it to the Han River ramen machine and cook it there (the water is free).", "ko": "스프가 들어 있는 봉지 라면. 가방에 들어가요. 한강 라면 기계에 가져가서 끓여요(물은 무료).", "ja": "スープの素入りの袋ラーメン。バッグに入ります。漢江ラーメンの機械で作ろう（水は無料）。", "zh": "内含汤料的袋装方便面。会放进包里，拿到汉江拉面机去煮（水免费）。"}, "kiosk": true},
+        {"id": "egg", "model": "egg", "color": "#fff6e6", "price": 500, "ingredient": "egg", "name": {"en": "Egg", "ko": "계란", "ja": "卵", "zh": "鸡蛋"}, "desc": {"en": "One fresh egg, to crack into your Han River ramen. It goes in your bag.", "ko": "한강 라면에 톡 깨 넣을 신선한 계란 한 알. 가방에 들어가요.", "ja": "漢江ラーメンに割り入れる新鮮な卵1個。バッグに入ります。", "zh": "一个新鲜鸡蛋，可以打进汉江拉面里。会放进包里。"}, "kiosk": true},
+        {"id": "mk-tteokbokki", "stall": "tteokbokki", "model": "bowl", "color": "#e0452b", "price": 5000, "name": {"en": "Tteokbokki", "ko": "떡볶이", "ja": "トッポッキ", "zh": "炒年糕"}, "desc": {"en": "Chewy rice cakes simmered in sweet and spicy gochujang sauce, with fish cake and boiled egg.", "ko": "달콤 매콤한 고추장 양념에 졸인 쫄깃한 떡. 어묵과 삶은 달걀도 들어 있어요.", "ja": "甘辛いコチュジャンソースで煮込んだもちもちのお餅。おでんとゆで卵入り。", "zh": "用甜辣辣椒酱炖煮的筋道年糕，还有鱼饼和水煮蛋。"}},
+        {"id": "mk-eomuk", "stall": "tteokbokki", "model": "skewer", "color": "#e8c99a", "price": 2000, "name": {"en": "Fish cake skewers (eomuk)", "ko": "어묵꼬치", "ja": "おでん串（オムク）", "zh": "鱼饼串"}, "desc": {"en": "Folded fish cake on a stick, kept warm in broth. The broth is free to sip on a cold evening.", "ko": "꼬치에 꽂아 국물에 담가 둔 어묵. 쌀쌀한 저녁에는 국물을 마음껏 떠 마셔요.", "ja": "串に刺してだしに浸したおでん。肌寒い夜はスープも飲み放題。", "zh": "串在竹签上泡在汤里的鱼饼。凉爽的傍晚可以随意喝汤。"}},
+        {"id": "mk-dakkochi", "stall": "skewers", "model": "skewer", "color": "#b5651d", "price": 4000, "name": {"en": "Chicken skewer (dakkochi)", "ko": "닭꼬치", "ja": "タッコチ（焼き鳥）", "zh": "鸡肉串"}, "desc": {"en": "Chicken and green onion grilled over charcoal and brushed with sweet soy glaze.", "ko": "닭고기와 대파를 숯불에 굽고 달콤한 간장 소스를 발랐어요.", "ja": "鶏肉とネギを炭火で焼き、甘い醤油だれを塗りました。", "zh": "鸡肉和大葱用炭火烤制，刷上甜酱油汁。"}},
+        {"id": "mk-corn", "stall": "skewers", "model": "bread", "color": "#f2c53d", "price": 4000, "name": {"en": "Butter-grilled corn", "ko": "버터구이 옥수수", "ja": "バター焼きとうもろこし", "zh": "黄油烤玉米"}, "desc": {"en": "A whole cob grilled with butter and a little sugar.", "ko": "옥수수 한 개를 버터와 설탕을 살짝 발라 구웠어요.", "ja": "とうもろこし1本をバターと少しの砂糖で焼きました。", "zh": "整根玉米涂上黄油和少许糖烤制。"}},
+        {"id": "mk-hotteok", "stall": "hotteok", "model": "bread", "color": "#c98a3a", "price": 2000, "name": {"en": "Hotteok", "ko": "호떡", "ja": "ホットク", "zh": "糖饼"}, "desc": {"en": "A pan-fried pancake filled with melted brown sugar, cinnamon and nuts. Careful, the filling is hot!", "ko": "흑설탕, 계피, 견과류가 녹아 있는 철판 호떡. 속이 뜨거우니 조심해요!", "ja": "黒糖、シナモン、ナッツが溶けた鉄板焼きのホットク。中が熱いので気をつけて！", "zh": "夹着融化的红糖、肉桂和坚果的煎饼。小心，馅很烫！"}},
+        {"id": "mk-bungeoppang", "stall": "hotteok", "model": "bread", "color": "#d9a24a", "price": 3000, "name": {"en": "Bungeoppang (3 pcs)", "ko": "붕어빵 3개", "ja": "たい焼き（3個）", "zh": "鲫鱼饼（3个）"}, "desc": {"en": "Fish-shaped pastries filled with sweet red bean. Do you start with the head or the tail?", "ko": "달콤한 팥이 든 붕어 모양 빵. 머리부터 먹어요, 꼬리부터 먹어요?", "ja": "甘いあんこ入りの魚の形のパン。頭から食べる？しっぽから？", "zh": "包着甜红豆馅的鲫鱼形面包。你先吃头还是先吃尾？"}},
+        {"id": "mk-lemon-ade", "stall": "ade", "model": "cup", "color": "#f7e36a", "price": 5000, "name": {"en": "Lemon ade", "ko": "레몬 에이드", "ja": "レモンエイド", "zh": "柠檬汽水"}, "desc": {"en": "Fresh lemon and sparkling water over lots of ice.", "ko": "생레몬과 탄산수에 얼음을 가득 넣었어요.", "ja": "生レモンと炭酸水に氷をたっぷり。", "zh": "鲜柠檬加苏打水和满满的冰块。"}},
+        {"id": "mk-strawberry-milk", "stall": "ade", "model": "cup", "color": "#f28fa6", "price": 5500, "name": {"en": "Fresh strawberry milk", "ko": "생딸기 우유", "ja": "生いちごミルク", "zh": "鲜草莓牛奶"}, "desc": {"en": "Chopped fresh strawberries at the bottom, cold milk on top. Stir before you drink.", "ko": "잘게 썬 생딸기 위에 차가운 우유. 저어서 마셔요.", "ja": "刻んだ生いちごの上に冷たい牛乳。混ぜて飲んでね。", "zh": "切碎的鲜草莓上倒入冰牛奶。搅一搅再喝。"}},
+        {"id": "mk-fried-chicken", "stall": "chicken", "model": "bowl", "color": "#d98a2b", "price": 20000, "name": {"en": "Fried chicken", "ko": "후라이드 치킨", "ja": "フライドチキン", "zh": "炸鸡"}, "desc": {"en": "Crispy fried chicken to share on a picnic mat. Chicken by the river is a Seoul summer favourite.", "ko": "돗자리에서 나눠 먹는 바삭한 치킨. 한강에서 먹는 치킨은 서울의 여름 별미예요.", "ja": "レジャーシートで分け合うサクサクのチキン。漢江で食べるチキンはソウルの夏の定番。", "zh": "在野餐垫上分享的酥脆炸鸡。在汉江边吃炸鸡是首尔夏天的乐趣。"}},
+        {"id": "mk-yangnyeom", "stall": "chicken", "model": "bowl", "color": "#b5381f", "price": 21000, "name": {"en": "Yangnyeom chicken", "ko": "양념 치킨", "ja": "ヤンニョムチキン", "zh": "调味炸鸡"}, "desc": {"en": "Fried chicken tossed in a sticky sweet, spicy and garlicky sauce.", "ko": "달콤 매콤하고 마늘 향 나는 끈적한 양념을 버무린 치킨.", "ja": "甘辛くニンニクの効いたタレを絡めたチキン。", "zh": "裹满甜辣蒜香酱汁的炸鸡。"}},
+        {"id": "mk-duck-plush", "stall": "crafts", "model": "plush", "color": "#ffd166", "price": 12000, "name": {"en": "Duck boat plush", "ko": "오리배 인형", "ja": "アヒルボートのぬいぐるみ", "zh": "鸭子船玩偶"}, "desc": {"en": "A soft little duck, sewn by hand after the park's pedal boats.", "ko": "공원의 오리배를 보고 손으로 꿰매 만든 작고 부드러운 오리 인형.", "ja": "公園のアヒルボートをモデルに手縫いした、小さくてふわふわのアヒル。", "zh": "照着公园的鸭子船手工缝制的柔软小鸭子。"}},
+        {"id": "mk-river-tote", "stall": "crafts", "model": "tote", "color": "#8fc1e3", "price": 15000, "name": {"en": "River print tote", "ko": "한강 에코백", "ja": "漢江エコバッグ", "zh": "汉江帆布袋"}, "desc": {"en": "A cotton tote printed with bridges and the river, block-printed by hand.", "ko": "다리와 강을 손으로 찍어 낸 면 에코백.", "ja": "橋と川を手押しでプリントしたコットンのトートバッグ。", "zh": "手工印上桥和江水图案的棉质帆布袋。"}}
+      ]
     },
     {
       "id": "seongsu-fishmarket",
@@ -793,12 +825,12 @@
     {
       "id": "haru-mart",
       "category": "market",
-      "size": "small",
+      "size": "medium",
       "at": [52.5, -53.6],
       "name": { "en": "DAILY MART", "ko": "데일리마트", "ja": "デイリーマート", "zh": "DAILY MART" },
       "tagline": { "en": "Open 24 hours: rice balls, cup ramen, milk, and umbrellas for rainy days", "ko": "24시간 편의점: 삼각김밥, 컵라면, 우유, 그리고 비 오는 날 우산", "ja": "24時間営業：おにぎり、カップ麺、牛乳、雨の日の傘", "zh": "24小时便利店：三角饭团、杯面、牛奶，还有雨天用的伞" },
       "colors": { "sign": "#2f9e6e", "awning": "#d9f2e6", "accent": "#f3fbf7" },
-      "products": [
+      "products": [{"id": "ramyeon-pack", "model": "ramyeon", "color": "#d8452f", "price": 1000, "ingredient": "ramyeon", "name": {"en": "Ramyeon pack", "ko": "라면 한 봉지", "ja": "袋ラーメン", "zh": "袋装拉面"}, "desc": {"en": "Instant noodles with the soup powder inside. It goes in your bag: take it to the Han River ramen machine and cook it there (the water is free).", "ko": "스프가 들어 있는 봉지 라면. 가방에 들어가요. 한강 라면 기계에 가져가서 끓여요(물은 무료).", "ja": "スープの素入りの袋ラーメン。バッグに入ります。漢江ラーメンの機械で作ろう（水は無料）。", "zh": "内含汤料的袋装方便面。会放进包里，拿到汉江拉面机去煮（水免费）。"}}, {"id": "egg", "model": "egg", "color": "#fff6e6", "price": 500, "ingredient": "egg", "name": {"en": "Egg", "ko": "계란", "ja": "卵", "zh": "鸡蛋"}, "desc": {"en": "One fresh egg, to crack into your Han River ramen. It goes in your bag.", "ko": "한강 라면에 톡 깨 넣을 신선한 계란 한 알. 가방에 들어가요.", "ja": "漢江ラーメンに割り入れる新鮮な卵1個。バッグに入ります。", "zh": "一个新鲜鸡蛋，可以打进汉江拉面里。会放进包里。"}}, 
         { "id": "umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5, "name": { "en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞" }, "desc": { "en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。" } },
         { "id": "samgak-tuna", "model": "samgak", "color": "#2b3a2b", "price": 1300, "name": { "en": "Tuna-mayo rice ball", "ko": "참치마요 삼각김밥", "ja": "ツナマヨおにぎり", "zh": "金枪鱼蛋黄酱饭团" }, "desc": { "en": "The convenience-store classic. Pull tab 1, then the sides, and the seaweed wraps itself on.", "ko": "편의점 대표 메뉴. 1번을 당기고 양옆을 빼면 김이 저절로 싸져요." } },
         { "id": "samgak-bulgogi", "model": "samgak", "color": "#3a2b22", "price": 1400, "name": { "en": "Bulgogi rice ball", "ko": "불고기 삼각김밥", "ja": "プルコギおにぎり", "zh": "烤肉饭团" }, "desc": { "en": "Sweet soy-marinated beef inside rice and seaweed.", "ko": "달짝지근한 불고기가 들어간 삼각김밥." } },

@@ -55,6 +55,59 @@ function inPoly(x, z, p) {
   return r;
 }
 
+// Readability helpers. Markers closer than `r` screen pixels are merged into
+// one cluster (drawn at its first member), so pins never pile up on top of
+// each other; zooming in splits them again.
+// `seeds` ({ sx, sy }) are fixed markers (meeting zones) that soak up the pins
+// around them; they come back first, with `seed` set.
+export function clusterPoints(pts, r, seeds = []) {
+  const out = [];
+  const cell = new Map(); // grid of r-sized cells, for a quick neighbour look-up
+  const key = (i, j) => i * 100003 + j;
+  const add = (c) => {
+    out.push(c);
+    const k = key(Math.floor(c.sx / r), Math.floor(c.sy / r));
+    if (!cell.has(k)) cell.set(k, []);
+    cell.get(k).push(c);
+  };
+  for (const sd of seeds) add({ sx: sd.sx, sy: sd.sy, items: [], seed: sd });
+  for (const p of pts) {
+    const i = Math.floor(p.sx / r), j = Math.floor(p.sy / r);
+    let best = null, bd = r;
+    for (let a = i - 1; a <= i + 1; a++) for (let b = j - 1; b <= j + 1; b++) {
+      for (const c of cell.get(key(a, b)) || []) {
+        const d = Math.hypot(c.sx - p.sx, c.sy - p.sy);
+        if (d < bd) { bd = d; best = c; }
+      }
+    }
+    if (best) best.items.push(p.item);
+    else add({ sx: p.sx, sy: p.sy, items: [p.item] });
+  }
+  return out;
+}
+
+const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+// Labels that would cover another label or a marker are left out; each label
+// tries below its marker first, then right, above and left. `taken` holds the
+// boxes already in use ({ x, y, w, h }) and grows as labels are placed.
+export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
+  const spots = [
+    [sx - w / 2, sy + gap], // below
+    [sx + gap, sy - h / 2], // right
+    [sx - w / 2, sy - gap - h], // above
+    [sx - gap - w, sy - h / 2], // left
+  ];
+  for (const [x, y] of spots) {
+    const box = { x, y, w, h };
+    if (bounds && (x < bounds.x || y < bounds.y || x + w > bounds.x + bounds.w || y + h > bounds.y + bounds.h)) continue;
+    if (taken.some((t) => overlaps(t, box))) continue;
+    taken.push(box);
+    return box;
+  }
+  return null;
+}
+
 export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
   // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
@@ -87,7 +140,7 @@ export class MapView {
     this.view.cx = px;
     this.view.cz = pz;
     this._resize();
-    this.view.scale = Math.min(this.canvas.width, this.canvas.height) / 520;
+    this.view.scale = this._homeScale();
     this._renderList();
     this.draw();
   }
@@ -114,6 +167,12 @@ export class MapView {
     this.hide();
   }
 
+  // Opening zoom: the whole card's worth of streets, but never so far out on
+  // a small phone screen that the shop pins all merge into bubbles.
+  _homeScale() {
+    return Math.max(Math.min(this.canvas.width, this.canvas.height) / 520, 0.8 * this.dpr);
+  }
+
   _resize() {
     const r = this.canvas.getBoundingClientRect();
     const dpr = Math.min(devicePixelRatio, 2);
@@ -135,7 +194,6 @@ export class MapView {
   draw() {
     if (!this.open) return;
     const g = this.canvas.getContext('2d');
-    const css = getComputedStyle(document.documentElement);
     g.fillStyle = '#f3ecdc';
     g.fillRect(0, 0, this.canvas.width, this.canvas.height);
     const poly = (p) => {
@@ -172,73 +230,162 @@ export class MapView {
     for (const r of this.map.rail) { poly(r.p); g.stroke(); }
     if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 
-    // Zones
+    // Markers first, then names in the gaps between them (see placeLabel),
+    // so nothing is drawn on top of anything else.
+    const W = this.canvas.width, H = this.canvas.height;
+    const taken = []; // screen boxes in use
+    const labels = []; // { text, sx, sy, gap, weight, color }, most important first
+    const mark = (sx, sy, r) => taken.push({ x: sx - r, y: sy - r, w: r * 2, h: r * 2 });
+    const onScreen = (sx, sy, m = 40 * dpr) => sx > -m && sy > -m && sx < W + m && sy < H + m;
+    this.hits = [];
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+
+    // Zones: a tinted area under everything; the lettered disc comes later.
     for (const z of this.zones) {
       const [sx, sy] = this.toScreen(z.x, z.z);
-      g.fillStyle = z.zone.color + '33';
+      g.fillStyle = z.zone.color + '2b';
       g.beginPath();
       g.arc(sx, sy, z.zone.radius * this.view.scale, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = z.zone.color;
-      g.beginPath();
-      g.arc(sx, sy, 15 * dpr, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = '#fffaf0';
-      g.font = `900 ${16 * dpr}px system-ui, sans-serif`;
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(z.zone.id, sx, sy + 1);
     }
-    // Stores
-    g.font = `${18 * dpr}px system-ui, sans-serif`;
-    for (const s of this.stores) {
-      if (!this._match(s)) continue;
-      const [sx, sy] = this.toScreen(s.door.x, s.door.z);
+
+    // Stores: pins that would overlap become one numbered bubble; tap it to
+    // zoom in on them.
+    const shown = this.stores.filter((s) => this._match(s)).map((s) => { const [sx, sy] = this.toScreen(s.door.x, s.door.z); return { sx, sy, item: s }; });
+    // Nearest the middle of the screen first, so those keep their own pin and name.
+    shown.sort((a, b) => Math.hypot(a.sx - W / 2, a.sy - H / 2) - Math.hypot(b.sx - W / 2, b.sy - H / 2));
+    const filtered = !!(this.category || norm(this.query));
+    // Meeting zones' discs take in the pins right around them (see below).
+    const zoneSeeds = this.zones.map((z) => { const [sx, sy] = this.toScreen(z.x, z.z); return { sx, sy, z }; });
+    const zoneShops = new Map();
+    for (const c of clusterPoints(shown, 34 * dpr, zoneSeeds)) {
+      if (c.seed) { zoneShops.set(c.seed.z, c.items.length); continue; }
+      if (!onScreen(c.sx, c.sy)) continue;
+      if (c.items.length > 1) {
+        const n = c.items.length, r = (n > 9 ? 16 : 14) * dpr;
+        g.fillStyle = filtered ? '#ff6f5b' : '#4a3f35';
+        g.strokeStyle = '#fffaf0';
+        g.lineWidth = 3 * dpr;
+        g.beginPath();
+        g.arc(c.sx, c.sy, r, 0, Math.PI * 2);
+        g.fill();
+        g.stroke();
+        g.fillStyle = '#fffaf0';
+        g.font = `900 ${(n > 99 ? 11 : 13) * dpr}px system-ui, sans-serif`;
+        g.fillText(String(n), c.sx, c.sy + 1);
+        mark(c.sx, c.sy, r + 2 * dpr);
+        this.hits.push({ sx: c.sx, sy: c.sy, r: r + 6 * dpr, kind: 'cluster', item: c });
+        continue;
+      }
+      const s = c.items[0];
       g.fillStyle = '#fffaf0';
       g.beginPath();
-      g.arc(sx, sy, 14 * dpr, 0, Math.PI * 2);
+      g.arc(c.sx, c.sy, 14 * dpr, 0, Math.PI * 2);
       g.fill();
       g.strokeStyle = s.store.colors.sign;
       g.lineWidth = 3 * dpr;
       g.stroke();
-      g.fillText(storeIcon(s.store), sx, sy + 1);
-      if (this.view.scale > 0.9 * dpr) {
-        g.fillStyle = '#4a3f35';
-        g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
-        g.fillText(localName(s.store.name, lang), sx, sy + 24 * dpr);
-        g.font = `${18 * dpr}px system-ui, sans-serif`;
-      }
+      g.font = `${17 * dpr}px system-ui, sans-serif`;
+      g.fillStyle = '#4a3f35';
+      g.fillText(storeIcon(s.store), c.sx, c.sy + 1);
+      mark(c.sx, c.sy, 16 * dpr);
+      this.hits.push({ sx: c.sx, sy: c.sy, r: 20 * dpr, kind: 'store', item: s });
+      if (this.view.scale > 0.5 * dpr) labels.push({ text: localName(s.store.name, lang), sx: c.sx, sy: c.sy, gap: 17 * dpr, weight: 700, size: 12, color: '#4a3f35', pri: 3 });
     }
-    // Other places: subway exits ({ x, z, icon, color, label })
-    for (const m of this.marks) {
-      const [sx, sy] = this.toScreen(m.x, m.z);
-      g.fillStyle = m.color || '#5d6470';
+
+    // Zone discs with a letter and the zone's name, on top of shop pins.
+    for (const z of this.zones) {
+      const [sx, sy] = this.toScreen(z.x, z.z);
+      if (!onScreen(sx, sy)) continue;
+      g.fillStyle = z.zone.color;
+      g.strokeStyle = '#fffaf0';
+      g.lineWidth = 2.5 * dpr;
       g.beginPath();
-      g.roundRect(sx - 12 * dpr, sy - 12 * dpr, 24 * dpr, 24 * dpr, 6 * dpr);
+      g.arc(sx, sy, 15 * dpr, 0, Math.PI * 2);
       g.fill();
-      g.font = `${15 * dpr}px system-ui, sans-serif`;
-      g.fillText(m.icon || '🚇', sx, sy + 1);
-      if (m.label && this.view.scale > 0.9 * dpr) {
-        g.fillStyle = '#4a3f35';
-        g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
-        g.fillText(m.label(), sx, sy + 22 * dpr);
+      g.stroke();
+      g.fillStyle = '#fffaf0';
+      g.font = `900 ${16 * dpr}px system-ui, sans-serif`;
+      g.fillText(z.zone.id, sx, sy + 1);
+      mark(sx, sy, 16 * dpr);
+      // Shops hidden under the disc: a small count; zoom in to see them.
+      const n = zoneShops.get(z) || 0;
+      if (n) {
+        const bx = sx + 13 * dpr, by = sy - 13 * dpr;
+        g.fillStyle = filtered ? '#ff6f5b' : '#4a3f35';
+        g.beginPath();
+        g.arc(bx, by, 9 * dpr, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = '#fffaf0';
+        g.lineWidth = 2 * dpr;
+        g.stroke();
+        g.fillStyle = '#fffaf0';
+        g.font = `900 ${10 * dpr}px system-ui, sans-serif`;
+        g.fillText(String(n), bx, by + 1);
+        mark(bx, by, 10 * dpr);
       }
+      this.hits.push({ sx, sy, r: 20 * dpr, kind: 'zone', item: z });
+      if (z.zone.name) labels.push({ text: localName(z.zone.name, lang), sx, sy, gap: 17 * dpr, weight: 800, size: 13, color: '#3b322a', pri: 0 });
     }
+
+    // Subway exits ({ x, z, icon, color, label, group }): exits of one
+    // station that sit close together become one sign with the station's name.
+    const exits = clusterPoints(this.marks.map((m) => { const [sx, sy] = this.toScreen(m.x, m.z); return { sx, sy, item: m }; }), 30 * dpr);
+    for (const c of exits) {
+      if (!onScreen(c.sx, c.sy)) continue;
+      const m = c.items[0];
+      g.fillStyle = m.color || '#5d6470';
+      g.strokeStyle = '#fffaf0';
+      g.lineWidth = 2 * dpr;
+      g.beginPath();
+      g.roundRect(c.sx - 12 * dpr, c.sy - 12 * dpr, 24 * dpr, 24 * dpr, 6 * dpr);
+      g.fill();
+      g.stroke();
+      g.font = `${15 * dpr}px system-ui, sans-serif`;
+      g.fillText(m.icon || '🚇', c.sx, c.sy + 1);
+      mark(c.sx, c.sy, 13 * dpr);
+      const text = c.items.length > 1 ? m.group?.() : m.label?.();
+      if (text && this.view.scale > 0.5 * dpr) labels.push({ text, sx: c.sx, sy: c.sy, gap: 14 * dpr, weight: 700, size: 12, color: '#3b322a', pri: 2 });
+    }
+
     // Players
     const { me, others } = this.getPlayers();
     for (const o of others) {
       const [sx, sy] = this.toScreen(o.x, o.z);
+      if (!onScreen(sx, sy)) continue;
       g.fillStyle = '#5b6cf0';
+      g.strokeStyle = '#fffaf0';
+      g.lineWidth = 2 * dpr;
       g.beginPath();
       g.arc(sx, sy, 6 * dpr, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = '#4a3f35';
-      g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
-      g.fillText(o.name, sx, sy - 13 * dpr);
+      g.stroke();
+      mark(sx, sy, 7 * dpr);
+      labels.push({ text: o.name, sx, sy, gap: 8 * dpr, weight: 700, size: 11, color: '#3d4bc4', pri: 1 });
     }
     this._drawMe(g, me);
+    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 14 * dpr); }
+    // Edge badges for other districts, before the names so names keep clear of them.
     this._drawBadges(g, me);
-    void css;
+    taken.push(...this.badges);
+
+    // Names, each with a soft outline so it reads over streets and parks.
+    // Shop names go after zones, stations and people, so those win a tight spot.
+    labels.sort((a, b) => a.pri - b.pri);
+    g.lineJoin = 'round';
+    for (const l of labels) {
+      g.font = `${l.weight} ${l.size * dpr}px system-ui, sans-serif`;
+      const w = g.measureText(l.text).width, h = (l.size + 3) * dpr;
+      const box = placeLabel(taken, { sx: l.sx, sy: l.sy, w: w + 4 * dpr, h, gap: l.gap }, { x: 0, y: 0, w: W, h: H });
+      if (!box) continue;
+      const tx = box.x + box.w / 2, ty = box.y + box.h / 2 + 1;
+      g.strokeStyle = 'rgba(255,250,240,0.95)';
+      g.lineWidth = 4 * dpr;
+      g.strokeText(l.text, tx, ty);
+      g.fillStyle = l.color;
+      g.fillText(l.text, tx, ty);
+    }
   }
 
   _drawMe(g, me = this.getPlayers().me) {
@@ -268,7 +415,7 @@ export class MapView {
     g.lineJoin = 'round';
     for (const d of gu) {
       poly(d.p); g.closePath();
-      g.fillStyle = d.open ? '#f3ecdc' : '#d9d4ca';
+      g.fillStyle = d.open ? (far ? '#ffe9b8' : '#f3ecdc') : '#d9d4ca';
       g.fill();
       g.strokeStyle = far ? '#ffffff' : 'rgba(255,255,255,0.7)';
       g.lineWidth = (far ? 2 : 4) * this.dpr;
@@ -281,20 +428,68 @@ export class MapView {
     g.stroke();
   }
 
+  // Gu names: the open ones first and bold, then the "coming soon" ones,
+  // lighter, wherever they fit without touching another name. A legend in the
+  // corner says what the grey means, instead of "Coming soon" under every gu.
   _drawSeoulLabels(g, lang) {
-    const dpr = this.dpr;
+    const dpr = this.dpr, H = this.canvas.height;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    for (const d of this.seoul.gu) {
+    g.lineJoin = 'round';
+    const { me } = this.getPlayers();
+    const [mx, my] = this.toScreen(me.x, me.z);
+    const taken = [{ x: mx - 14 * dpr, y: my - 14 * dpr, w: 28 * dpr, h: 28 * dpr }]; // keep clear of your arrow
+    // Open gu first, and the one you're in before the rest, so its name sits next to you.
+    const here = this._guAt(me.x, me.z);
+    const rank = (d) => (d === here ? 2 : d.open ? 1 : 0);
+    const gu = [...this.seoul.gu].sort((a, b) => rank(b) - rank(a));
+    for (const d of gu) {
       const [sx, sy] = this.toScreen(d.label[0], d.label[1]);
-      g.font = `800 ${(d.open ? 13 : 11) * dpr}px system-ui, sans-serif`;
-      g.fillStyle = d.open ? '#4a3f35' : 'rgba(74,63,53,0.45)';
-      g.fillText(localName(d.name, lang), sx, sy - (d.open ? 0 : 6 * dpr));
-      if (!d.open) {
-        g.font = `700 ${9 * dpr}px system-ui, sans-serif`;
-        g.fillText(t('map.soon'), sx, sy + 8 * dpr);
-      }
+      const size = (d.open ? 14 : 11) * dpr;
+      g.font = `${d.open ? 900 : 700} ${size}px system-ui, sans-serif`;
+      const text = localName(d.name, lang);
+      const w = g.measureText(text).width + 6 * dpr, h = size + 4 * dpr;
+      const box = { x: sx - w / 2, y: sy - h / 2, w, h };
+      const hits = () => taken.some((b) => box.x < b.x + b.w && b.x < box.x + box.w && box.y < b.y + b.h && b.y < box.y + box.h);
+      // An open gu's name nudges up or down to find room rather than vanish.
+      const tries = d.open ? [[0, 0], [0, -1], [0, 1], [0.6, 0], [-0.6, 0], [-0.6, 1], [0.6, 1], [-0.6, -1], [0.6, -1], [0, -2], [0, 2]] : [[0, 0]];
+      const spots = tries.map(([kx, ky]) => [sx - w / 2 + kx * w, sy - h / 2 + ky * (h + dpr)]);
+      if (d === here) spots.unshift([mx - w / 2, my + 15 * dpr], [mx - w / 2, my - 15 * dpr - h]); // just under (or over) your arrow
+      if (!spots.some(([x, y]) => { box.x = x; box.y = y; return !hits(); })) continue;
+      taken.push(box);
+      const ty = box.y + h / 2;
+      g.strokeStyle = d.open ? '#fffaf0' : 'rgba(255,255,255,0.75)';
+      g.lineWidth = (d.open ? 4 : 3) * dpr;
+      const tx = box.x + w / 2;
+      g.strokeText(text, tx, ty + 1);
+      g.fillStyle = d.open ? '#3b322a' : 'rgba(74,63,53,0.6)';
+      g.fillText(text, tx, ty + 1);
     }
+    // Legend
+    g.font = `700 ${12 * dpr}px system-ui, sans-serif`;
+    const items = [['#ffe9b8', t('map.open')], ['#d9d4ca', t('map.soon')]];
+    let x = 10 * dpr;
+    const y = H - 30 * dpr;
+    const lw = items.reduce((a, [, s]) => a + g.measureText(s).width + 30 * dpr, 6 * dpr);
+    g.fillStyle = 'rgba(255,250,240,0.92)';
+    g.beginPath();
+    g.roundRect(x, y - 2 * dpr, lw, 24 * dpr, 12 * dpr);
+    g.fill();
+    x += 10 * dpr;
+    g.textAlign = 'left';
+    for (const [c, s] of items) {
+      g.fillStyle = c;
+      g.strokeStyle = '#b9ad98';
+      g.lineWidth = 1 * dpr;
+      g.beginPath();
+      g.roundRect(x, y + 4 * dpr, 12 * dpr, 12 * dpr, 3 * dpr);
+      g.fill();
+      g.stroke();
+      g.fillStyle = '#4a3f35';
+      g.fillText(s, x + 17 * dpr, y + 10 * dpr + 1);
+      x += g.measureText(s).width + 30 * dpr;
+    }
+    g.textAlign = 'center';
   }
 
   // The gu at a map point (zoomed out), or null.
@@ -308,6 +503,8 @@ export class MapView {
   _drawBadges(g, me) {
     const W = this.canvas.width, H = this.canvas.height, dpr = this.dpr;
     const pad = 34 * dpr;
+    const top = 50 * dpr; // under the "All of Seoul" button
+    const narrow = W / dpr < 520;
     this.badges = [];
     const lang = getLanguage();
     for (const d of this.districts) {
@@ -318,16 +515,27 @@ export class MapView {
       const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
       const x = cx + dx * k, y = cy + dy * k;
       const km = Math.hypot(d.x - me.x, d.z - me.z) / 1000;
-      const label = `${localName(d.name, lang)} · ${km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km'}`;
-      g.font = `800 ${13 * dpr}px system-ui, sans-serif`;
-      const w = g.measureText(label).width + 34 * dpr, h = 28 * dpr;
-      const bx = Math.max(6 * dpr, Math.min(W - w - 6 * dpr, x - w / 2)), by = Math.max(6 * dpr, Math.min(H - h - 6 * dpr, y - h / 2));
+      const away = km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+      // Narrow maps (phones): smaller badges, so they cover less of the streets.
+      const label = narrow ? `${localName(d.name, lang)} ${away}` : `${localName(d.name, lang)} · ${away}`;
+      g.font = `800 ${(narrow ? 11 : 13) * dpr}px system-ui, sans-serif`;
+      const w = g.measureText(label).width + (narrow ? 28 : 34) * dpr, h = (narrow ? 22 : 28) * dpr;
+      let bx = Math.max(6 * dpr, Math.min(W - w - 6 * dpr, x - w / 2)), by = Math.max(top, Math.min(H - h - 6 * dpr, y - h / 2));
+      // Badges on the same edge would stack on top of each other: slide this
+      // one along the edge (down, or up near the bottom) until it is clear.
+      const side = Math.abs(dx) * (H / 2 - pad) > Math.abs(dy) * (W / 2 - pad); // left or right edge
+      for (let tries = 0; tries < this.districts.length; tries++) {
+        const hit = this.badges.find((b) => bx < b.x + b.w && b.x < bx + w && by < b.y + b.h && b.y < by + h);
+        if (!hit) break;
+        if (side) by = hit.y + hit.h + 5 * dpr > H - h - 6 * dpr ? hit.y - h - 5 * dpr : hit.y + hit.h + 5 * dpr;
+        else bx = hit.x + hit.w + 5 * dpr > W - w - 6 * dpr ? hit.x - w - 5 * dpr : hit.x + hit.w + 5 * dpr;
+      }
       g.fillStyle = 'rgba(74,63,53,0.88)';
       g.beginPath();
       g.roundRect(bx, by, w, h, h / 2);
       g.fill();
       // Arrow towards the district.
-      const a = Math.atan2(dy, dx), ax = bx + 15 * dpr, ay = by + h / 2;
+      const a = Math.atan2(dy, dx), ax = bx + (narrow ? 12 : 15) * dpr, ay = by + h / 2;
       g.save();
       g.translate(ax, ay);
       g.rotate(a);
@@ -340,7 +548,7 @@ export class MapView {
       g.fillStyle = '#fffaf0';
       g.textAlign = 'left';
       g.textBaseline = 'middle';
-      g.fillText(label, bx + 27 * dpr, by + h / 2 + 1);
+      g.fillText(label, bx + (narrow ? 22 : 27) * dpr, by + h / 2 + 1);
       g.textAlign = 'center';
       this.badges.push({ x: bx, y: by, w, h, d });
     }
@@ -413,7 +621,7 @@ export class MapView {
     const n = new Map();
     for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
     const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
-    const FOLDED = 5;
+    const FOLDED = narrow ? 3 : 5; // phones: fewer rows of chips, more room for the map
     const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
     const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');
@@ -533,17 +741,13 @@ export class MapView {
       return d ? { kind: 'gu', item: d } : null;
     }
     for (const b of this.badges) if (sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h) return { kind: 'district', item: b.d };
-    const r = 20 * this.dpr;
-    for (const s of this.stores) {
-      if (!this._match(s)) continue;
-      const [x, y] = this.toScreen(s.door.x, s.door.z);
-      if (Math.hypot(x - sx, y - sy) < r) return { kind: 'store', item: s };
+    // What was drawn last is on top: shops and bubbles before zones.
+    let best = null, bd = Infinity;
+    for (const h of this.hits || []) {
+      const d = Math.hypot(h.sx - sx, h.sy - sy);
+      if (d < h.r && (d < bd || (best?.kind === 'zone' && h.kind !== 'zone'))) { best = h; bd = d; }
     }
-    for (const z of this.zones) {
-      const [x, y] = this.toScreen(z.x, z.z);
-      if (Math.hypot(x - sx, y - sy) < r) return { kind: 'zone', item: z };
-    }
-    return null;
+    return best && { kind: best.kind, item: best.item };
   }
 
   _bindInput() {
@@ -596,6 +800,12 @@ export class MapView {
         return;
       }
       if (hit.kind === 'district') { this.goTo(hit.item.x, hit.item.z); return; }
+      if (hit.kind === 'cluster') { // a bubble of shops: zoom in on it
+        const [x, z] = this.toWorld(hit.item.sx, hit.item.sy);
+        this._zoom(2.5);
+        this.goTo(x, z);
+        return;
+      }
       if (hit.kind === 'gu') { // an open gu: zoom in on its district; the rest are coming soon
         const d = this.districts.find((q) => q.id === hit.item.district);
         if (d) { this.view.scale = 0.35 * this.dpr; this.goTo(d.x, d.z); } else this._soon(hit.item, lang);
@@ -623,7 +833,7 @@ export class MapView {
     if (seoulBtn) {
       seoulBtn.hidden = !this.seoul;
       seoulBtn.onclick = () => {
-        if (this.view.scale < SEOUL_ZOOM * this.dpr) { const { me } = this.getPlayers(); this.view.scale = Math.min(this.canvas.width, this.canvas.height) / 520; this.view.cx = me.x; this.view.cz = me.z; }
+        if (this.view.scale < SEOUL_ZOOM * this.dpr) { const { me } = this.getPlayers(); this.view.scale = this._homeScale(); this.view.cx = me.x; this.view.cz = me.z; }
         else { this.view.scale = 0.045 * this.dpr; this.view.cx = -1900; this.view.cz = -300; }
         this.draw();
       };
