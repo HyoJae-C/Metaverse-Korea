@@ -40,3 +40,12 @@ test('stamp entries are complete and unique', () => {
     assert.ok(['circle', 'square'].includes(s.shape));
   }
 });
+
+test('the Namsan stamp stands on the summit plaza, inside the cable car room', async () => {
+  const { roomSpots } = await import('../src/core/stamp-stands.js');
+  const { cableFloor, CC } = await import('../src/core/cablecar.js');
+  const [spot] = roomSpots(STAMPS, 'namsan-sky-cable');
+  assert.equal(spot.stamp.id, 'namsan');
+  assert.equal(cableFloor(spot.x, spot.z), CC.top);
+  assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
+});
