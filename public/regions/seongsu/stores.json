@@ -534,6 +534,17 @@
       "products": []
     },
     {
+      "id": "homerun-batting",
+      "category": "play",
+      "workshop": "batting",
+      "size": "large",
+      "name": { "ko": "홈런 야구연습장", "en": "Home Run Batting Cage", "ja": "ホームラン バッティングセンター", "zh": "全垒打棒球练习场", "es": "Jaula de bateo Home Run", "id": "Batting Cage Home Run", "vi": "Lồng đánh bóng Home Run", "hi": "होम रन बैटिंग केज", "ar": "قفص الضرب هوم رن" },
+      "tagline": { "en": "Pick a pitch speed from 80 to 140 km/h and swing for the fence", "ko": "80~140km/h 공 속도를 골라 홈런에 도전", "ja": "球速80〜140km/hを選んでホームランを狙おう", "zh": "选80到140公里的球速，挑战全垒打" },
+      "at": [77.3, -2],
+      "colors": { "sign": "#1f4e8c", "awning": "#cfe0f5", "accent": "#eef3f8" },
+      "products": []
+    },
+    {
       "id": "dano-hanbok",
       "category": "fashion",
       "size": "medium",
@@ -1089,8 +1100,9 @@
       "size": "medium",
       "at": [-1273, 188],
       "signLocal": "Bar Hush",
+      "darts": true,
       "name": { "en": "Bar Hush", "ko": "바 허시", "ja": "バー・ハッシュ", "zh": "静语酒吧" },
-      "tagline": { "en": "A quiet alcohol-free mocktail bar", "ko": "조용한 무알코올 음료 바", "ja": "静かなノンアルコールのバー", "zh": "安静的无酒精饮品吧" },
+      "tagline": { "en": "A quiet alcohol-free mocktail bar with a dartboard", "ko": "다트를 던질 수 있는 조용한 무알코올 음료 바", "ja": "ダーツのある静かなノンアルコールのバー", "zh": "可以玩飞镖的安静无酒精饮品吧" },
       "colors": { "sign": "#2b1d14", "awning": "#c9a227", "accent": "#3a2a20" },
       "products": [
         { "id": "virgin-mojito", "model": "cocktail", "color": "#bfe39a", "price": 8000, "name": { "en": "Virgin mojito", "ko": "버진 모히토", "ja": "ヴァージン・モヒート", "zh": "无酒精莫吉托" }, "desc": { "en": "Lime, mint and soda, no alcohol.", "ko": "라임과 민트, 탄산수로 만든 무알코올 모히토예요." } },

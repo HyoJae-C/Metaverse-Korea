@@ -203,6 +203,20 @@ export function buildThemePark(store, ROOM, EXIT) {
   box(1.8, 0.1, 1.1, 6, 1.9, d / 2 - 4.5, '#ff9bb3');
   block(6, d / 2 - 4.5, 1.7, 1);
 
+  // Balloon shooting gallery (풍선 사격): a striped booth with rows of
+  // balloons, toy cork guns on the counter (the game is ui/gallery-ui.js).
+  const G = { x: -14.5, z: -10.5 };
+  box(4.4, 2.8, 0.2, G.x, 1.4, G.z - 1, '#fff3d6'); // back wall
+  for (const sx of [-2.1, 2.1]) box(0.2, 2.8, 2, G.x + sx, 1.4, G.z, '#ff7a8a'); // sides
+  for (let i = 0; i < 6; i++) box(0.75, 0.3, 2.3, G.x - 1.9 + i * 0.76, 2.95, G.z + 0.1, i % 2 ? '#fffaf3' : '#ff5a5f'); // awning
+  box(4.2, 1, 0.5, G.x, 0.5, G.z + 0.9, '#ffd36e'); // counter
+  for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) {
+    add(new THREE.SphereGeometry(0.17, 10, 8), ['#ff5a5f', '#ffd36e', '#8fd0ff', '#c9a8ff', '#8fe3c7'][(i + r * 2) % 5], G.x - 1.5 + i * 0.6, 1.2 + r * 0.55, G.z - 0.82);
+  }
+  for (const sx of [-0.8, 0.8]) box(0.6, 0.08, 0.1, G.x + sx, 1.05, G.z + 0.9, '#7a4a2e'); // toy guns
+  block(G.x, G.z, 4.4, 2.4);
+  const stations = { gallery: [{ x: G.x, z: G.z + 2.2, ry: Math.PI }] }; // facing the targets
+
   // Benches.
   const seats = [];
   for (const bx of [-12, 12]) {
@@ -235,6 +249,6 @@ export function buildThemePark(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: d / 2 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, tick, time: () => time, park: true,
+    rides, stations, tick, time: () => time, park: true,
   };
 }
