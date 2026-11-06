@@ -158,9 +158,13 @@
       "pets": "cats",
       "size": "medium",
       "name": { "ko": "냥냥 고양이 카페", "en": "Nyang Nyang Cat Café" },
-      "tagline": { "en": "Six friendly cats live here. Say hi and give them a pat!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 인사하고 쓰다듬어 주세요!" },
+      "tagline": { "en": "Six friendly cats live here, and two kittens are waiting for a family. Say hi, give them a pat, maybe adopt one!", "ko": "다정한 고양이 여섯 마리가 사는 곳. 가족을 기다리는 아기 고양이 두 마리도 있어요. 인사하고 쓰다듬고, 분양도 받아 보세요!" },
       "at": [-22, 114.9],
       "colors": { "sign": "#c2456b", "awning": "#ffd6e2", "accent": "#fff4f7" },
+      "adopt": [
+        { "pet": "pet-cheesecat", "desc": {"en": "An orange kitten that follows you everywhere.", "ko": "어디든 졸졸 따라다니는 주황색 아기 고양이예요."} },
+        { "pet": "pet-bluecat", "desc": {"en": "A quiet grey cat with green eyes.", "ko": "초록 눈을 가진 조용한 회색 고양이예요."} }
+      ],
       "products": [
         { "id": "cat-latte", "model": "cup", "color": "#e6c9a8", "price": 6500, "name": { "en": "Cat Paw Latte", "ko": "고양이 발바닥 라떼" }, "desc": { "en": "A latte with a paw print drawn in the foam." } },
         { "id": "fish-bread", "model": "bread", "color": "#d99a52", "price": 3000, "name": { "en": "Bungeoppang", "ko": "붕어빵" }, "desc": { "en": "Fish-shaped pastry filled with sweet red bean." } }
@@ -309,17 +313,20 @@
     },
     {
       "id": "mungnyang-petshop",
-      "category": "petshop",
+      "category": "cafe",
+      "pets": "retrievers",
       "size": "medium",
-      "name": { "ko": "멍냥 펫샵", "en": "Mungnyang Pet Shop", "ja": "モンニャン ペットショップ", "zh": "汪喵宠物店" },
-      "tagline": { "en": "Adopt a dog, a cat or a small pet with coins and take it for walks. Always clean up after your pet!", "ko": "코인으로 강아지, 고양이, 작은 동물을 입양해 함께 산책해요. 배변은 꼭 치워 주세요!", "ja": "コインで犬や猫、小動物を迎えて一緒にお散歩。フンは必ず片付けてね！", "zh": "用金币领养小狗、小猫或小宠物一起散步。一定要清理宠物的便便！" },
+      "name": { "ko": "멍냥 리트리버 카페", "en": "Mungnyang Retriever Café", "ja": "モンニャン レトリバーカフェ", "zh": "汪喵寻回犬咖啡馆" },
+      "tagline": { "en": "Two big, gentle retrievers play here, and two puppies are waiting for a family. Meet them and adopt one!", "ko": "순한 리트리버 두 마리가 뛰노는 카페. 가족을 기다리는 강아지 두 마리도 있어요. 만나 보고 분양받아 보세요!", "ja": "やさしいレトリバー2匹が遊ぶカフェ。家族を待つ子犬も2匹います。会って迎えてみてね！", "zh": "两只温顺的寻回犬在这里玩耍，还有两只小狗在等待家人。来见见它们，领养一只吧！" },
       "at": [0.8, 66.2],
       "colors": { "sign": "#3f7a5a", "awning": "#b9e0c6", "accent": "#f2faf4" },
+      "adopt": [
+        { "pet": "pet-maltese", "desc": {"en": "A small fluffy white dog who loves walks.", "ko": "산책을 정말 좋아하는 작고 복슬복슬한 하얀 강아지예요."} },
+        { "pet": "pet-poodle", "desc": {"en": "A curly apricot poodle, small and very clever.", "ko": "곱슬곱슬한 살구색 털, 작고 아주 똑똑한 푸들이에요."} }
+      ],
       "products": [
-        { "id": "adopt-maltese", "model": "pet:dog", "color": "#fbf8f2", "accent": "#efe6da", "adopt": "pet-maltese", "price": 0, "name": { "en": "Maltese puppy · Mongi", "ko": "말티즈 · 몽이", "ja": "マルチーズ · モンイ", "zh": "马尔济斯 · 萌萌" }, "desc": { "en": "A small fluffy white dog who loves walks." } },
-        { "id": "adopt-poodle", "model": "pet:dog", "color": "#d9a066", "accent": "#f3d9b8", "adopt": "pet-poodle", "price": 0, "name": { "en": "Toy poodle puppy · Bori", "ko": "토이푸들 · 보리", "ja": "トイプードル · ボリ", "zh": "玩具贵宾 · 大麦" }, "desc": { "en": "A curly apricot poodle, small and very clever." } },
-        { "id": "adopt-cheese", "model": "pet:cat", "color": "#ffc864", "accent": "#fff4e6", "adopt": "pet-cheesecat", "price": 0, "name": { "en": "Cheese tabby kitten · Leo", "ko": "치즈 고양이 · 레오", "ja": "茶トラ子猫 · レオ", "zh": "橘猫 · 雷欧" }, "desc": { "en": "An orange kitten that follows you everywhere." } },
-        { "id": "adopt-blue", "model": "pet:cat", "color": "#8e98a6", "accent": "#d9dee5", "adopt": "pet-bluecat", "price": 0, "name": { "en": "Russian Blue kitten · Atom", "ko": "러시안블루 · 아톰", "ja": "ロシアンブルー · アトム", "zh": "俄罗斯蓝猫 · 阿童木" }, "desc": { "en": "A quiet grey cat with green eyes." } }
+        { "id": "retriever-latte", "model": "cup", "color": "#e8c58f", "price": 6000, "name": { "en": "Golden Latte", "ko": "골든 라떼", "ja": "ゴールデンラテ", "zh": "金毛拿铁" }, "desc": { "en": "A honey latte as golden as the café's retrievers." } },
+        { "id": "paw-madeleine", "model": "bread", "color": "#d9a066", "price": 3000, "name": { "en": "Paw Madeleine", "ko": "발바닥 마들렌", "ja": "肉球マドレーヌ", "zh": "爪印玛德琳" }, "desc": { "en": "A butter madeleine shaped like a paw (for people, not dogs)." } }
       ]
     },
     {

@@ -67,7 +67,7 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   for (const s of stores) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
 });
 
-test('animal cafés: Seongsu keeps only the cat café, the rest are in Hongdae with a second cat café', () => {
+test('animal cafés: Seongsu keeps the cat café and the retriever café (the old pet shop), the rest are in Hongdae with a second cat café', () => {
   const d = region.districts.find((x) => x.id === 'hongdae');
   const map = read(d.map);
   const [ox, oz] = d.offset;
@@ -76,7 +76,7 @@ test('animal cafés: Seongsu keeps only the cat café, the rest are in Hongdae w
   const pets = read('stores.json').stores.filter((s) => s.pets);
   const hongdae = pets.filter(inHongdae).map((s) => s.pets).sort();
   assert.deepEqual(hongdae, ['bigdogs', 'gogocats', 'hamsters', 'raccoons']);
-  assert.deepEqual(pets.filter((s) => !inHongdae(s)).map((s) => s.id), ['nyang-cat-cafe']);
+  assert.deepEqual(pets.filter((s) => !inHongdae(s)).map((s) => s.id).sort(), ['mungnyang-petshop', 'nyang-cat-cafe']);
 });
 
 test('Hongdae perfume alley: five perfume shops off the walking street, the funny ones among them', () => {
