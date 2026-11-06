@@ -95,6 +95,7 @@ import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } f
 import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
+import { dartsMsg, parseDarts } from './core/arcade.js';
 import { pickDelivery, timeFor, deliveryPay } from './core/delivery.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { CounterUI, heldFor } from './ui/counter-ui.js';
@@ -1106,6 +1107,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
+      if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseHonk(e)) {
         const at = others.positionOf(id);
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
@@ -2477,7 +2479,7 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
+  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -3332,7 +3334,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3673,6 +3675,73 @@ const clawUi = new ClawUI({
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
+// The batting cage, the shooting gallery in Another Land and darts at Bar
+// Hush (core/arcade.js). Free skill games: no coins in or out, only your own
+// best record. Their panels are loaded the first time you play one.
+const arcade = {}; // kind → its UI, once loaded
+const arcadePanel = (kind) => ({ get open() { return !!arcade[kind]?.open; }, close() { arcade[kind]?.close(); } });
+const battingUi = arcadePanel('batting'), galleryUi = arcadePanel('gallery'), dartsUi = arcadePanel('darts');
+let dartsInvite = null; // { from, name, at }: someone in the bar challenged you
+const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < 60000 && others.nameOf(dartsInvite.from) ? dartsInvite : null);
+async function openArcade(kind) {
+  // Turn to face the cage, the targets or the board, with the camera behind you.
+  const p = me.root.position, st = interior?.stations?.[kind]?.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.5);
+  if (st?.ry != null) { me.root.rotation.y = st.ry; cam.yaw = st.ry + Math.PI; }
+  if (!arcade[kind]) {
+    let ui;
+    if (kind === 'batting') {
+      const { BattingUI } = await import('./ui/batting-ui.js');
+      ui = new BattingUI({
+        root: $('batting-panel'), store: localStorage,
+        onResult: (r) => {
+          if (r === 'homerun' || r === 'hit') sfx.tock(1, r === 'homerun' ? 1200 : 900);
+          if (r === 'homerun') me.play('cheer');
+        },
+      });
+    } else if (kind === 'gallery') {
+      const { GalleryUI } = await import('./ui/gallery-ui.js');
+      ui = new GalleryUI({ root: $('gallery-panel'), store: localStorage, onPop: () => sfx.tock(0.6, 1500) });
+    } else {
+      const { DartsUI } = await import('./ui/darts-ui.js');
+      ui = new DartsUI({
+        root: $('darts-panel'), store: localStorage,
+        friend: () => others.nearestFree(me.root.position.x, me.root.position.z, 6),
+        invite: freshInvite,
+        clearInvite: () => { dartsInvite = null; },
+        send: (to, k, thrown, total) => net.sendEmote(dartsMsg(to, k, thrown, total)),
+        onThrow: (pts) => { sfx.tock(0.7, 600); if (pts >= 50) me.play('cheer'); },
+      });
+    }
+    arcade[kind] ||= ui;
+  }
+  arcade[kind].show();
+}
+// Darts messages for me: a challenge waits up to a minute for you to walk to
+// the board; the rest goes to the darts panel.
+function onDartsMsg(from, m) {
+  if (safety.isBlocked(from, others.nameOf(from))) return;
+  if (m.kind === 'i') {
+    dartsInvite = { from, name: others.nameOf(from) || '?', at: performance.now() };
+    shop.toast(fmt(L(DARTS_INVITE), { name: dartsInvite.name }));
+  } else if (m.kind === 'n' && dartsInvite?.from === from) dartsInvite = null;
+  arcade.darts?.heard(from, m);
+}
+const DARTS_INVITE = {
+  en: '🎯 {name} challenges you to darts! Go to the dartboard to play.',
+  ko: '🎯 {name}님이 다트 대결을 신청했어요! 다트판으로 가서 받아 보세요.',
+  ja: '🎯 {name}さんがダーツで勝負を挑んできました！ダーツボードへ。',
+  zh: '🎯 {name}向你发起飞镖挑战！去飞镖靶那里接受吧。',
+  es: '🎯 ¡{name} te reta a los dardos! Ve a la diana para jugar.',
+  id: '🎯 {name} menantangmu main dart! Pergi ke papan dart untuk main.',
+  vi: '🎯 {name} thách bạn chơi phi tiêu! Đến bảng phi tiêu để chơi.',
+  hi: '🎯 {name} ने आपको डार्ट्स की चुनौती दी! खेलने के लिए डार्टबोर्ड पर जाएँ।',
+  ar: '🎯 {name} يتحداك في رمي السهام! اذهب إلى اللوحة لتلعب.',
+};
+const ARCADE_OPEN = {
+  batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', hi: 'बैटिंग', ar: 'قفص الضرب' },
+  gallery: { en: 'Balloon shooting', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', ar: 'رماية البالونات' },
+  darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', ar: 'العب السهام' },
+};
 // Tarot cafés (Starlight and Lucky Piggy in Hongdae, Moon & Rose in Seongsu):
 // sit at a reader's table and draw three cards, alone or with a friend. When
 // the tables are taken, take a number and wait on the sofa (core/tarot-queue.js).
@@ -4799,7 +4868,7 @@ function moreActions(p, door) {
     const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
-  if (!interior || seated || surgery || ride || decor?.editing) return out;
+  if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
   hi5s();
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) out.push(petAct(pet, p));
   const seat = nearestSeat(p);
@@ -4923,6 +4992,12 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
+    } else if (nearStation(p, 'batting', 1.8)) {
+      next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
+    } else if (nearStation(p, 'gallery', 2.2)) {
+      next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
+    } else if (nearStation(p, 'darts', 1.6)) {
+      next = { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
     } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
       const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
       next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
@@ -5541,5 +5616,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
+    arcade: () => arcade,
   };
 }

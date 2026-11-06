@@ -259,6 +259,25 @@ export class Sfx {
     if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume(); }
     return this.ctx;
   }
+  // A short wooden "tock": a bat meeting the ball, a dart in the board, a
+  // cork popping a balloon. loud 0..1, pitch in Hz.
+  tock(loud = 1, pitch = 900) {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.01;
+    const o = c.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(pitch, t);
+    o.frequency.exponentialRampToValueAtTime(pitch * 0.45, t + 0.08);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.25 * loud, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(c.destination);
+    o.start(t);
+    o.stop(t + 0.15);
+  }
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)
