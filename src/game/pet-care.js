@@ -102,7 +102,9 @@ export function createPetCare(g) {
     const me = g.me, activeScene = g.activeScene;
     if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y); }
     const hidden = g.riding > 0 || g.seated;
-    if (pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, g.mode === 'street')) {
+    const poop = pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, g.mode === 'street');
+    if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it
+    if (poop) {
       const pos = pet.root.position;
       const mesh = makePoop();
       mesh.position.set(pos.x, 0, pos.z);

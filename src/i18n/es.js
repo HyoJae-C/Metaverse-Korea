@@ -438,6 +438,7 @@ export const ES = {
   'ledger.taxi': "Taxi",
   'ledger.ride': "Atracción",
   'ledger.cable': "Teleférico de Namsan",
+  'ledger.loveLock': "Candado del amor (Namsan)",
   'ledger.rename': "Cambio de nombre",
   'ledger.fine': "Multa: caca de mascota sin recoger",
   'ledger.gift': "Código de regalo",

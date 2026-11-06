@@ -41,7 +41,9 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow } from './core/palace-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
-import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
+import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
+import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
+import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
@@ -2645,7 +2647,7 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
-  for (const g of [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -3547,7 +3549,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3562,6 +3564,7 @@ addEventListener('keydown', (e) => {
     if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
+    else if (loveLockUi.open) loveLockUi.close();
     else if (wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
@@ -4465,6 +4468,23 @@ function boardStore() {
   return boardBackend;
 }
 const boardUi = new BoardUI({ root: $('board-panel'), store: boardStore, name: () => nickname, toast: (m) => shop.toast(m) });
+// Love locks on the Namsan summit: in Supabase when signed in to it (the
+// coins are taken there too, with the note), else on this device.
+let lockBackend = null;
+function loveLockStore() {
+  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
+  if (live && !(lockBackend instanceof SupabaseLoveLocks)) lockBackend = new SupabaseLoveLocks(cloud, wallet);
+  if (!live && !lockBackend) lockBackend = new LocalLoveLocks(wallet);
+  return lockBackend;
+}
+const loveLockUi = new LoveLockUI({
+  root: $('love-lock-panel'), store: loveLockStore, wallet, name: () => nickname, toast: (m) => shop.toast(m),
+  onHung: () => { refreshWallet(); me.play('cheer'); },
+});
+const loveLockActs = () => [
+  { key: 'lovelock-hang', label: '🔒 ' + L(LOCK_TEXT.hang), run: () => loveLockUi.show('write') },
+  { key: 'lovelock-read', label: '💌 ' + L(LOCK_TEXT.read), run: () => loveLockUi.show('list') },
+];
 const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
@@ -5423,6 +5443,7 @@ function moreActions(p, door) {
   }
   if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
   hi5s();
+  if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
   if (seat) out.push(sitAct(seat));
@@ -5525,6 +5546,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (interior.cablecar && cableAction(p)) {
       next = cableAction(p);
+    } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
+      next = loveLockActs()[0]; // and "read the messages" (moreActions)
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
     } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
@@ -5904,6 +5927,11 @@ renderer.setAnimationLoop(() => {
     for (let d = 1; d <= horiz; d += 0.5) {
       if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
     }
+  } else if (interior?.camBlocked) { // outdoor rooms (the Namsan summit): stop short of the tower
+    const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+    for (let d = 1; d <= horiz; d += 0.5) {
+      if (interior.camBlocked(p.x + sy * d, p.z + cy0 * d)) { horiz = Math.max(1.5, d - 0.6); break; }
+    }
   }
   camHoriz += (horiz - camHoriz) * Math.min(1, dt * (horiz < camHoriz ? 20 : 4));
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
@@ -5936,6 +5964,7 @@ renderer.setAnimationLoop(() => {
   updateCarry();
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
+  if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -6240,5 +6269,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
     arcade: () => arcade,
+    loveLock: (view) => loveLockUi.show(view),
   };
 }
