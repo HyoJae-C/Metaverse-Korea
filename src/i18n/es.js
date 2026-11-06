@@ -379,6 +379,7 @@ export const ES = {
   'hud.signsOn': 'Letreros traducidos',
   'hud.music': 'Música',
   'settings.title': 'Ajustes',
+  'settings.steady': 'Paso constante (sin correr)',
   'settings.signs': 'Traducir letreros',
   'settings.done': 'Listo',
   "news.title": "Novedades",

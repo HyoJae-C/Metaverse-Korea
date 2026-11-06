@@ -380,6 +380,7 @@ export const ID = {
   'hud.signsOn': 'Papan nama diterjemahkan',
   'hud.music': 'Musik',
   'settings.title': 'Pengaturan',
+  'settings.steady': 'Jalan stabil (tanpa lari)',
   'settings.signs': 'Terjemahkan papan nama toko',
   'settings.done': 'Selesai',
   "news.title": "Pembaruan",

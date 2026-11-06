@@ -380,6 +380,7 @@ export const AR = {
   'hud.signsOn': 'اللافتات مترجمة',
   'hud.music': 'الموسيقى',
   'settings.title': 'الإعدادات',
+  'settings.steady': 'مشي ثابت (بدون ركض)',
   'settings.signs': 'ترجمة لافتات المتاجر',
   'settings.done': 'تم',
   "news.title": "التحديثات",

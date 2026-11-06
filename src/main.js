@@ -850,6 +850,14 @@ const garage = new Garage();
 const isCar = (k) => k === 4 || k === 6; // sports car, limousine
 const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
+// Steady walk (a setting, PC and phone): a pace between walking and running
+// that never turns into a run, however long you keep moving. No stamina used;
+// the gym boost still applies on top, as with walking.
+const STEADY = 9, STORE_STEADY = 5.6;
+const STEADY_ANIM = 0.52; // speed01 for the steady pace: stays on the walk animation
+const STEADY_KEY = 'mk.steadyWalk';
+let steadyWalk = false;
+try { steadyWalk = localStorage.getItem(STEADY_KEY) === '1'; } catch { /* ignore */ }
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
@@ -2732,6 +2740,12 @@ $('sfx-btn').onclick = () => {
   try { localStorage.setItem('mk.sfx', sfx.on ? '1' : '0'); } catch { /* ignore */ }
   if (sfx.on) sfx.doorbell(); // preview
   else motionSound.stopAll();
+};
+$('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
+$('steady-btn').onclick = () => {
+  steadyWalk = !steadyWalk;
+  $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
+  try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
 };
 $('haptics-btn').setAttribute('aria-pressed', String(haptics.on));
 $('haptics-btn').onclick = () => {
@@ -5778,12 +5792,14 @@ renderer.setAnimationLoop(() => {
   updatePeerRigs(dt);
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
-  const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
+  const steady = steadyWalk && !riding;
+  const running = updateStamina(dt, input.run && !riding && !steadyWalk, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && !ride && !cable && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
+    const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -5801,13 +5817,14 @@ renderer.setAnimationLoop(() => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
+    const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
+    speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
   } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
-    const running = updateStamina(dt, input.run && !riding, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
+    const running = updateStamina(dt, input.run && !riding && !steadyWalk, true);
+    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
@@ -5819,7 +5836,7 @@ renderer.setAnimationLoop(() => {
     let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 8);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, steady ? STEADY_ANIM : speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
@@ -5910,7 +5927,7 @@ renderer.setAnimationLoop(() => {
   }
   motionSound.update(dt, {
     walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
-    running: input.run && !stamina.tired,
+    running: input.run && !stamina.tired && !steadyWalk,
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',
