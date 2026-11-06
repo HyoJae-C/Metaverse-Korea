@@ -27,7 +27,7 @@ export function stationList(marks) {
   for (const m of marks || []) {
     if (m.station == null) continue;
     let st = by.get(m.station);
-    if (!st) by.set(m.station, (st = { key: m.station, name: m.name || {}, line: m.line, color: m.color, exits: [] }));
+    if (!st) by.set(m.station, (st = { key: m.station, name: m.name || {}, exits: [] }));
     st.exits.push(m);
   }
   return [...by.values()];
@@ -763,7 +763,8 @@ export class MapView {
       .sort((a, b) => Math.hypot(a.ex.x - me.x, a.ex.z - me.z) - Math.hypot(b.ex.x - me.x, b.ex.z - me.z));
     if (stations.length) head('map.stations');
     for (const { st, ex } of stations) {
-      row('🚇', st.color || '#5d6470', localName(st.name, lang), [st.line && localName(st.line, lang), dist(ex.x, ex.z)].filter(Boolean).join(' · '), () => this._pickStation(ex, localName(st.name, lang)));
+      // One look for every station, no line names: no transfers to think about for now.
+      row('🚇', '#5d6470', localName(st.name, lang), dist(ex.x, ex.z), () => this._pickStation(ex, localName(st.name, lang)));
     }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');

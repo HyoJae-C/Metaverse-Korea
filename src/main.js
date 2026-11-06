@@ -3370,7 +3370,7 @@ const mapView = new MapView({
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
     const go = outsideOf(ex); // guidance ends on the pavement just outside the stairs
     return {
-      x, z, icon: '🚇', color: sub.line?.color, station: s, name: stationStores[s].name, line: sub.line?.name, go: { x: go.x, z: go.z },
+      x, z, icon: '🚇', color: sub.line?.color, station: s, name: stationStores[s].name, go: { x: go.x, z: go.z },
       label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()),
     };
   })),
