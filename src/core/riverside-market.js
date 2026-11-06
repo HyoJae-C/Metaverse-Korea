@@ -53,9 +53,9 @@ export function signBoard(w, h, bg) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
-  const draw = (text, sub = '') => {
+  const draw = (text, sub = '', color = bg) => {
     const g = c.getContext('2d');
-    g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
     g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 6;
     g.strokeRect(8, 8, c.width - 16, c.height - 16);
     g.fillStyle = '#fff';
@@ -66,7 +66,9 @@ export function signBoard(w, h, bg) {
     while (g.measureText(text).width > c.width - 44 && px > 14) g.font = font(--px); // long names in some languages
     g.fillText(text, c.width / 2, c.height * (sub ? 0.38 : 0.53));
     if (sub) {
-      g.font = `600 ${Math.round(c.height * 0.2)}px system-ui, sans-serif`;
+      let sp = Math.round(c.height * 0.2);
+      g.font = `600 ${sp}px system-ui, sans-serif`;
+      while (g.measureText(sub).width > c.width - 44 && sp > 12) g.font = `600 ${--sp}px system-ui, sans-serif`;
       g.fillText(sub, c.width / 2, c.height * 0.75);
     }
     tex.needsUpdate = true;

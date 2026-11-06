@@ -3874,6 +3874,7 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
+  lucky: () => { const p = me.root.position; return !!interior?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
