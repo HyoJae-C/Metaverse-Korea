@@ -96,7 +96,10 @@ import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { duckMsg, parseDuck } from './core/duck-boat.js';
 import { dartsMsg, parseDarts } from './core/arcade.js';
-import { pickDelivery, timeFor, deliveryPay } from './core/delivery.js';
+import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js';
+import { JOB_TEXT, SHIFTS_PER_DAY, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
+import { JobUI } from './ui/job-ui.js';
+import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { CounterUI, heldFor } from './ui/counter-ui.js';
 import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
@@ -2479,7 +2482,7 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
-  for (const g of [pochaUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -2535,10 +2538,13 @@ const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop
 
 // Translate signs (storefronts and zone boards) into the chosen language.
 let signsTranslated = false;
+const hiringRedraws = []; // hiring posters (set up below), redrawn in the sign language
+const hiringPlaces = []; // [shop id, 'spot' | 'wall', spot id or [x, z]] (for checks)
 const applySigns = () => {
   storefronts.setTranslated(signsTranslated, getLanguage());
   zones.setTranslated(signsTranslated, getLanguage());
   for (const e of subwayEntrances) e.setTranslated(signsTranslated, getLanguage());
+  for (const f of hiringRedraws) f(signsTranslated ? getLanguage() : 'en');
   $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));
   $('signs-btn').title = t(signsTranslated ? 'hud.signsOn' : 'hud.signsOff');
 };
@@ -3334,7 +3340,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3622,6 +3628,22 @@ const pochaUi = new PochaUI({
   onDeliver: () => startDelivery(),
   onMedal: () => missionEvent('cook'), // practice only: no coins, no together bonus
 });
+// Part-time jobs (core/jobs.js): a few shifts a day, all jobs together.
+const shifts = {
+  left: () => shiftsLeft(readShifts(), dayKey()),
+  take: () => { const n = takeShift(readShifts(), dayKey()); if (!n) return false; writeShifts(n); return true; },
+};
+const jobUi = new JobUI({
+  root: $('job-panel'),
+  wallet,
+  shifts,
+  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } },
+});
+function openJob(job) {
+  if (job === 'delivery') startDelivery();
+  else jobUi.show(job, interior.store);
+}
 const karaokeUi = new KaraokeUI({
   root: $('karaoke-panel'),
   wallet,
@@ -3951,6 +3973,65 @@ function guideToPlace(to) {
 const dBoxes = districtBoxes(map);
 const storeAt = (st) => placeOf(st, region.center, latLonToLocal);
 const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st));
+// "알바급구!" posters for the shops that hire (core/hiring-ads.js): on the
+// empty ad lots nearest each Seongsu job, a few more there for the jobs in
+// other districts (Seongsu is where everyone starts), on a wall down the
+// street in districts without empty lots, as slides on the square's screen,
+// and a paper sign by each hiring shop's door.
+{
+  const signLang = () => (signsTranslated ? getLanguage() : 'en');
+  const jobs = storefronts.items.filter((i) => jobOf(i.store)).map((i) => ({
+    item: i, id: i.store.id, x: i.door.x, z: i.door.z, district: districtOfStore(i.store),
+    ad: { job: jobOf(i.store), shopNames: i.store.name, district: districtOfStore(i.store), color: i.store.colors?.sign },
+  }));
+  const spotById = Object.fromEntries(adPosters.spots.map((sp) => [sp.id, sp]));
+  const used = new Set();
+  const free = () => adPosters.spots.filter((sp) => !used.has(sp.id) && adPosters.posters[sp.id]);
+  const putOnSpot = (j, spotId) => {
+    const sp = spotById[spotId];
+    used.add(spotId);
+    const meters = Math.hypot(sp.front.x - j.x, sp.front.z - j.z);
+    const tex = hiringTexture({ ...j.ad, meters }, signLang());
+    if (adPosters.setPoster(spotId, tex)) { hiringRedraws.push(tex.redraw); hiringPlaces.push([j.id, 'spot', spotId, Math.round(meters)]); }
+  };
+  // Two empty lots per job within a short walk.
+  for (let round = 0; round < 2; round++) {
+    const got = assignSpots(jobs, free(), 260);
+    for (const j of jobs) if (got[j.id]) { putOnSpot(j, got[j.id].spot); j.local = true; }
+  }
+  // Jobs far from any empty lot: one poster in Seongsu, near where people
+  // start (the square), and one on a wall near the shop.
+  const hub = square ? { x: square.x, z: square.z } : { x: 0, z: 0 };
+  for (const j of jobs.filter((q) => !q.local)) {
+    const got = assignSpots([{ id: j.id, x: hub.x, z: hub.z }], free(), 400);
+    if (got[j.id]) putOnSpot(j, got[j.id].spot);
+    const ry = j.item.group.rotation.y, f = j.item.group.position;
+    const nx = Math.sin(ry), nz = Math.cos(ry), ax = Math.cos(ry), az = -Math.sin(ry);
+    for (const k of [14, -14, 20, -20, 26, -26, 34, -34]) {
+      const wall = wallNear(map.buildings, f.x + ax * k - nx * 0.5, f.z + az * k - nz * 0.5, 6);
+      if (!wall || wall.d > 4 || wall.nx * nx + wall.nz * nz < 0.9 || wall.h < 8) continue;
+      // Not over another shop's sign.
+      if (storefronts.items.some((o) => Math.hypot(o.group.position.x - wall.x, o.group.position.z - wall.z) < 6)) continue;
+      const w = Math.min(5.6, wall.len - 1);
+      const tex = hiringTexture({ ...j.ad, meters: Math.hypot(wall.x - j.x, wall.z - j.z) }, signLang());
+      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 7.2), w));
+      hiringRedraws.push(tex.redraw);
+      hiringPlaces.push([j.id, 'wall', [Math.round(wall.x), Math.round(wall.z), +wall.nx.toFixed(2), +wall.nz.toFixed(2)]]);
+      break;
+    }
+  }
+  // Paper sign by the door.
+  for (const j of jobs) {
+    const tex = doorSticker(j.item.group, localName(JOB_TEXT.sticker, signLang()));
+    hiringRedraws.push((l) => tex.redraw(localName(JOB_TEXT.sticker, l)));
+  }
+  // The square's big screen: a hiring slide after every few house ads.
+  if (billboard) {
+    const slides = jobs.map((j) => ({ seconds: 7, anim: (g) => drawHiring(g, j.ad, signLang()) }));
+    let k = 0;
+    for (let i = 3; i < billboard.slides.length && slides.length; i += 5) billboard.slides.splice(i, 0, slides[k++ % slides.length]);
+  }
+}
 function nearestStore(test) {
   const p = interior?.front?.door || me.root.position; // inside a shop: from its door
   let best = null, bd = Infinity;
@@ -4258,15 +4339,25 @@ function updateDucks(dt) {
 // Delivery run from the tteokbokki stall: ride to another shop in time.
 let delivery = null; // { id, name, until }
 function startDelivery() {
+  if (delivery) { shop.toast(t('delivery.cancelHint')); return; }
   const from = interior?.front?.door || me.root.position;
-  const stores = storefronts.items.filter((i) => i.store.category !== 'home' && i.store.category !== 'park' && i.store.id !== interior?.store.id)
-    .map((i) => ({ id: i.store.id, x: i.door.x, z: i.door.z, item: i }));
+  // Only shops reachable within a minute along the streets.
+  const stores = storefronts.items.filter((i) => i.store.category !== 'home' && i.store.category !== 'park' && i.store.category !== 'station' && i.store.id !== interior?.store.id)
+    .map((i) => ({ id: i.store.id, x: i.door.x, z: i.door.z, item: i }))
+    .filter((s) => { const d = Math.hypot(s.x - from.x, s.z - from.z); return d > 30 && d <= MAX_ROAD; })
+    .map((s) => {
+      const poly = roadGraph.route(from.x, from.z, s.x, s.z);
+      let road = 0;
+      for (let k = 1; k < poly.length; k++) road += Math.hypot(poly[k][0] - poly[k - 1][0], poly[k][1] - poly[k - 1][1]);
+      return { ...s, road };
+    });
   const target = pickDelivery(stores, from);
   if (!target) return;
-  const secs = timeFor(target.d);
+  if (!shifts.take()) { shop.toast(fmt(L(JOB_TEXT.noShifts), { all: SHIFTS_PER_DAY })); return; }
+  const secs = timeFor(target.road);
   const name = localName(target.item.store.name, getLanguage());
-  delivery = { id: target.id, name, until: performance.now() + secs * 1000 };
-  shop.toast(t('delivery.start', { name, s: secs }));
+  delivery = { id: target.id, name, until: performance.now() + secs * 1000, emoji: interior?.store?.jobEmoji || '🛵' };
+  shop.toast(t('delivery.start', { name, s: secs }) + ' · ' + fmt(L(JOB_TEXT.shiftsLeft), { n: shifts.left(), all: SHIFTS_PER_DAY }));
   if (mode === 'store') leaveStore();
   setGuide({ kind: 'store', id: target.id, x: target.x, z: target.z, label: name });
 }
@@ -4292,7 +4383,7 @@ function updateDelivery() {
     return;
   }
   $('delivery-chip').hidden = false;
-  $('delivery-chip').textContent = `🛵 ${delivery.name} · ${Math.ceil(left)}s`;
+  $('delivery-chip').textContent = `🛵${delivery.emoji === '🛵' ? '' : delivery.emoji} ${delivery.name} · ${Math.ceil(left)}s`;
 }
 $('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancelHint')); };
 // Beauty shops (core/beauty.js): sit in front of the big mirror (salon,
@@ -5061,6 +5152,9 @@ function updateAction(p, tSec) {
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
     } else if (interior.store.workshop === 'hat' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'hat', label: '🧢 ' + t('hat.make'), run: () => { clerk.ch.wave(); openHatWorkshop(); } };
+    } else if (jobOf(interior.store) && interior.store.workshop !== 'pocha' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      const job = jobOf(interior.store);
+      next = { key: 'job', label: '💼 ' + fmt(L(JOB_TEXT.work), { role: L(JOB_TEXT.role[job]) }), run: () => { clerk.ch.wave(); openJob(job); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
       next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
@@ -5574,7 +5668,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
-    adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z)]),
+    hiring: () => hiringPlaces,
+    delivery: () => delivery && { ...delivery, left: (delivery.until - performance.now()) / 1000 },
+    adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z), s.front.nx, s.front.nz]),
+    boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),

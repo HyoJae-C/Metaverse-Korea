@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeOrder, orderLine, rightBowl, servePoints, PATIENCE, CUSTOMERS } from '../src/core/pocha-game.js';
-import { pickDelivery, timeFor, deliveryPay } from '../src/core/delivery.js';
+import { pickDelivery, timeFor, deliveryPay, reachable, BIKE_MS, MAX_ROAD, MAX_SECONDS } from '../src/core/delivery.js';
 import { chartFor, judge, karaokeScore, karaokeMsg, parseKaraoke, LEAD_BEATS } from '../src/core/karaoke-game.js';
 import { layPrizes, drop, clawX, PRIZES } from '../src/core/claw-game.js';
 import { DuckBoat, COURSE, duckPay, duckMsg, parseDuck } from '../src/core/duck-boat.js';
@@ -22,10 +22,14 @@ test('stall: orders read as Korean and only the exact bowl counts', () => {
   for (let i = 0; i < 50; i++) { const r = makeOrder(); assert.ok(r.toppings.length <= 2 && new Set(r.toppings).size === r.toppings.length); }
 });
 
-test('delivery: a shop at a fair distance, time for a bike, pay for speed', () => {
-  const stores = [{ id: 'near', x: 10, z: 0 }, { id: 'mid', x: 200, z: 0 }, { id: 'far', x: 2000, z: 0 }];
+test('delivery: only shops reachable within a minute, time for a bike, pay for speed', () => {
+  const stores = [{ id: 'near', x: 10, z: 0 }, { id: 'mid', x: 200, z: 0, road: 260 }, { id: 'far', x: 2000, z: 0 }, { id: 'winding', x: 300, z: 0, road: 900 }];
   assert.equal(pickDelivery(stores, { x: 0, z: 0 }, () => 0).id, 'mid');
-  assert.equal(timeFor(200), Math.round(200 * 1.6 / 16 + 25));
+  assert.equal(pickDelivery(stores, { x: 0, z: 0 }, () => 0.99).id, 'mid', 'the far and winding ones take over a minute');
+  assert.equal(pickDelivery([{ id: 'far', x: 2000, z: 0 }], { x: 0, z: 0 }), null);
+  assert.equal(timeFor(260), Math.round(260 / BIKE_MS + 20));
+  assert.ok(timeFor(MAX_ROAD) <= MAX_SECONDS && timeFor(5000) === MAX_SECONDS);
+  assert.ok(reachable(MAX_ROAD) && !reachable(MAX_ROAD + 20));
   assert.equal(deliveryPay(-1), 0);
   assert.equal(deliveryPay(0), 4);
   assert.equal(deliveryPay(100), 8);

@@ -468,6 +468,7 @@
     },
     {
       "id": "sinjeon-pocha",
+      "job": "delivery", "jobEmoji": "🥘",
       "category": "restaurant",
       "workshop": "pocha",
       "size": "medium",
@@ -806,6 +807,40 @@
       ]
     },
     {
+      "id": "soda24-mart",
+      "category": "market",
+      "job": "mart",
+      "size": "small",
+      "at": [-2959, -742],
+      "name": { "en": "SODA 24", "ko": "소다24", "ja": "ソーダ24", "zh": "苏打24" },
+      "tagline": { "en": "Late-night snacks by the busking street. Part-timers wanted!", "ko": "버스킹 거리 옆 야식 편의점. 알바 구해요!", "ja": "バスキング通りの夜食コンビニ。アルバイト募集！", "zh": "街头表演街旁的夜宵便利店。招兼职！" },
+      "colors": { "sign": "#1e88c9", "awning": "#bfe3f7", "accent": "#f0f8fd" },
+      "products": [
+        { "id": "umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5, "name": { "en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞" }, "desc": { "en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。" } },
+        { "id": "samgak-tuna", "model": "samgak", "color": "#2b3a2b", "price": 1300, "name": { "en": "Tuna-mayo rice ball", "ko": "참치마요 삼각김밥", "ja": "ツナマヨおにぎり", "zh": "金枪鱼蛋黄酱饭团" }, "desc": { "en": "The convenience-store classic. Pull tab 1, then the sides, and the seaweed wraps itself on.", "ko": "편의점 대표 메뉴. 1번을 당기고 양옆을 빼면 김이 저절로 싸져요." } },
+        { "id": "samgak-bulgogi", "model": "samgak", "color": "#3a2b22", "price": 1400, "name": { "en": "Bulgogi rice ball", "ko": "불고기 삼각김밥", "ja": "プルコギおにぎり", "zh": "烤肉饭团" }, "desc": { "en": "Sweet soy-marinated beef inside rice and seaweed.", "ko": "달짝지근한 불고기가 들어간 삼각김밥." } },
+        { "id": "cup-ramen", "model": "cup", "color": "#d9473a", "price": 1500, "name": { "en": "Cup ramen", "ko": "컵라면", "ja": "カップラーメン", "zh": "杯面" }, "desc": { "en": "Add hot water from the store's kettle and wait three minutes. Best with a rice ball.", "ko": "편의점 온수기로 물 붓고 3분. 삼각김밥이랑 같이 먹으면 최고." } },
+        { "id": "banana-milk", "model": "milk", "color": "#f2d45c", "price": 1700, "name": { "en": "Banana milk", "ko": "바나나 우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶" }, "desc": { "en": "Sweet banana-flavoured milk in a round little pot, a favourite after the jjimjilbang.", "ko": "동글동글 통에 든 달콤한 바나나 우유. 찜질방 다음엔 이거죠." } }
+      ]
+    },
+    {
+      "id": "byeolbit-mart",
+      "category": "market",
+      "job": "mart",
+      "size": "small",
+      "at": [-2941, -600.5],
+      "name": { "en": "BYEOLBIT MART", "ko": "별빛마트", "ja": "ビョルビッマート", "zh": "星光便利店" },
+      "tagline": { "en": "24-hour convenience store. Now hiring: work the counter!", "ko": "24시간 편의점. 계산대 알바 구해요!", "ja": "24時間コンビニ。レジのアルバイト募集中！", "zh": "24小时便利店。招收银兼职！" },
+      "colors": { "sign": "#7b3fb5", "awning": "#e2d1f5", "accent": "#f7f2fc" },
+      "products": [
+        { "id": "umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5, "name": { "en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞" }, "desc": { "en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。" } },
+        { "id": "samgak-tuna", "model": "samgak", "color": "#2b3a2b", "price": 1300, "name": { "en": "Tuna-mayo rice ball", "ko": "참치마요 삼각김밥", "ja": "ツナマヨおにぎり", "zh": "金枪鱼蛋黄酱饭团" }, "desc": { "en": "The convenience-store classic. Pull tab 1, then the sides, and the seaweed wraps itself on.", "ko": "편의점 대표 메뉴. 1번을 당기고 양옆을 빼면 김이 저절로 싸져요." } },
+        { "id": "samgak-bulgogi", "model": "samgak", "color": "#3a2b22", "price": 1400, "name": { "en": "Bulgogi rice ball", "ko": "불고기 삼각김밥", "ja": "プルコギおにぎり", "zh": "烤肉饭团" }, "desc": { "en": "Sweet soy-marinated beef inside rice and seaweed.", "ko": "달짝지근한 불고기가 들어간 삼각김밥." } },
+        { "id": "cup-ramen", "model": "cup", "color": "#d9473a", "price": 1500, "name": { "en": "Cup ramen", "ko": "컵라면", "ja": "カップラーメン", "zh": "杯面" }, "desc": { "en": "Add hot water from the store's kettle and wait three minutes. Best with a rice ball.", "ko": "편의점 온수기로 물 붓고 3분. 삼각김밥이랑 같이 먹으면 최고." } },
+        { "id": "banana-milk", "model": "milk", "color": "#f2d45c", "price": 1700, "name": { "en": "Banana milk", "ko": "바나나 우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶" }, "desc": { "en": "Sweet banana-flavoured milk in a round little pot, a favourite after the jjimjilbang.", "ko": "동글동글 통에 든 달콤한 바나나 우유. 찜질방 다음엔 이거죠." } }
+      ]
+    },
+    {
       "id": "hyojae-academy",
       "category": "school",
       "size": "large",
@@ -945,6 +980,7 @@
     },
     {
       "id": "nonna-lucia",
+      "job": "serving",
       "category": "restaurant",
       "size": "medium",
       "at": [-1438, 110],
@@ -2013,6 +2049,7 @@
     },
     {
       "id": "golmok-chicken",
+      "job": "delivery", "jobEmoji": "🍗",
       "category": "restaurant",
       "size": "medium",
       "at": [4.6, 24.8],

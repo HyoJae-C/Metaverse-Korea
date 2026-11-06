@@ -1699,6 +1699,10 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .kimbap-mat.oiled .kimbap-piece { box-shadow: 0 0 10px 2px rgba(255,220,120,.8); }
 .kimbap-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 6px auto; padding: 10px; max-width: 280px; border-radius: 8px; background: #c79a62; }
 .japchae-heat .chip.on { background: #e8613c; border-color: #e8613c; color: #fff; }
+
+/* Part-time job panel (ui/job-ui.js): a Korean answer with a short meaning under it. */
+.job-answer { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.job-answer small { font-size: 11px; font-weight: 600; opacity: 0.7; }
 /* Museum: one painting's card */
 .museum-panel { max-height: 86vh; overflow-y: auto; }
 .museum-img { display: block; max-width: 100%; max-height: 46vh; margin: 4px auto 10px; border: 6px solid #3b2a1e; background: #e9e0cc; }
