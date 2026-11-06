@@ -375,6 +375,7 @@ export const ES = {
   'settings.done': 'Listo',
   "news.title": "Novedades",
   'settings.sfx': 'Efectos de sonido',
+  'settings.haptics': 'Vibración y sacudida de pantalla',
   'install.row': 'Añadir a pantalla de inicio',
   'install.title': 'Juega como en una app',
   'install.why': 'Pon Another Seoul en tu pantalla de inicio y ábrelo con un toque, a pantalla completa. Sin tienda de apps.',

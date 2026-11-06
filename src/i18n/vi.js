@@ -376,6 +376,7 @@ export const VI = {
   'settings.done': 'Xong',
   'news.title': 'Cập nhật',
   'settings.sfx': 'Hiệu ứng âm thanh',
+  'settings.haptics': 'Rung & rung màn hình',
   'install.row': 'Thêm vào Màn hình chính',
   'install.title': 'Chơi như một ứng dụng',
   'install.why': 'Đưa Another Seoul lên màn hình chính để mở toàn màn hình chỉ với một chạm. Không cần kho ứng dụng.',

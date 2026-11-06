@@ -1859,3 +1859,9 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-odds-tier.tier-4 { background: #ffe5d6; }
 .fish-odds-tier.tier-5 { background: #fde2f1; }
 .fish-odds-row.trash { margin-top: 8px; opacity: .8; }
+
+/* Haptics fallback: a short screen shake (★5 legend bites and catches). */
+.shake-big { animation: shake-big 0.6s ease both; }
+.shake-small { animation: shake-small 0.25s ease both; }
+@keyframes shake-big { 0%, 100% { translate: 0 0; } 10% { translate: -10px 6px; } 20% { translate: 9px -7px; } 30% { translate: -8px -4px; } 40% { translate: 7px 6px; } 55% { translate: -5px 3px; } 70% { translate: 4px -3px; } 85% { translate: -2px 1px; } }
+@keyframes shake-small { 0%, 100% { translate: 0 0; } 33% { translate: -3px 2px; } 66% { translate: 3px -2px; } }

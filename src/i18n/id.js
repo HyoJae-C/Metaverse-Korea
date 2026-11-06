@@ -376,6 +376,7 @@ export const ID = {
   'settings.done': 'Selesai',
   "news.title": "Pembaruan",
   'settings.sfx': 'Efek suara',
+  'settings.haptics': 'Getar & guncangan layar',
   'install.row': 'Tambahkan ke Layar Utama',
   'install.title': 'Main seperti aplikasi',
   'install.why': 'Pasang Another Seoul di layar utama dan buka dengan sekali ketuk, layar penuh. Tanpa toko aplikasi.',

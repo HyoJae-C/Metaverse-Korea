@@ -2,6 +2,7 @@
 // an egg) come out of your bag, the water is free. The pot boils by itself,
 // then you cheer the noodles on — "꼬들꼬들해져라~" — until they're chewy.
 // No score and no failing: you always get a bowl to eat at a parasol table.
+import { buzz } from '../core/haptics.js';
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { BOIL_SECONDS, RAMEN_TAPS, INGREDIENTS, ingredientAt, ingredientCount, canCook, chewy } from '../core/ramen-game.js';
 
@@ -132,7 +133,7 @@ export class RamenUI {
       if (s.t < BOIL_SECONDS || s.done) return;
       s.taps++;
       bowl.classList.remove('cheer'); void bowl.offsetWidth; bowl.classList.add('cheer'); // replay the bounce
-      navigator.vibrate?.(15);
+      buzz(15);
       paint();
       if (s.taps >= RAMEN_TAPS) { s.done = true; setTimeout(() => this.finish(s), 350); }
     };
