@@ -50,7 +50,7 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(dex.kinds,3);
   assert.equal(bag.add(TRASH.id),false);
   assert.equal(dex.add(TRASH.id),false);
-  assert.equal(bag.sellAll(),424);
+  assert.equal(bag.sellAll(),4006);
   assert.equal(new FishDex(st,bag).total,4);
   assert.equal(dex.add('whale'),false);
   assert.equal(dex.count('whale'),2);

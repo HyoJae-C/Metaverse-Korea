@@ -27,7 +27,7 @@ export const FISH = [
     "rarity": 1,
     "released": true,
     "page": 0,
-    "price": 1
+    "price": 2
   },
   {
     "id": "catfish",
@@ -42,7 +42,7 @@ export const FISH = [
     "rarity": 1,
     "released": true,
     "page": 0,
-    "price": 1
+    "price": 2
   },
   {
     "id": "loach",
@@ -94,7 +94,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 0,
-    "price": 6
+    "price": 10
   },
   {
     "id": "scallop",
@@ -107,7 +107,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 0,
-    "price": 3
+    "price": 4
   },
   {
     "id": "bluegill",
@@ -135,7 +135,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 2
+    "price": 4
   },
   {
     "id": "jellyfish",
@@ -187,7 +187,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 3
+    "price": 4
   },
   {
     "id": "cutlassfish",
@@ -200,7 +200,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 1,
-    "price": 6
+    "price": 10
   },
   {
     "id": "herring",
@@ -213,7 +213,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 3
+    "price": 4
   },
   {
     "id": "salmon",
@@ -228,7 +228,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 1,
-    "price": 8
+    "price": 12
   },
   {
     "id": "trout",
@@ -241,7 +241,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 1,
-    "price": 6
+    "price": 8
   },
   {
     "id": "seabream",
@@ -254,7 +254,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 2,
-    "price": 6
+    "price": 14
   },
   {
     "id": "sea-cucumber",
@@ -267,7 +267,7 @@ export const FISH = [
     "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 3
+    "price": 6
   },
   {
     "id": "sea-urchin",
@@ -280,7 +280,7 @@ export const FISH = [
     "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 3
+    "price": 6
   },
   {
     "id": "rockfish",
@@ -293,7 +293,7 @@ export const FISH = [
     "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 3
+    "price": 5
   },
   {
     "id": "flounder",
@@ -306,7 +306,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 2,
-    "price": 6
+    "price": 10
   },
   {
     "id": "puffer",
@@ -319,7 +319,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 2,
-    "price": 6
+    "price": 14
   },
   {
     "id": "wakame",
@@ -345,7 +345,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 2,
-    "price": 20
+    "price": 60
   },
   {
     "id": "moray",
@@ -358,7 +358,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 2,
-    "price": 20
+    "price": 70
   },
   {
     "id": "crayfish",
@@ -373,7 +373,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 3,
-    "price": 3
+    "price": 4
   },
   {
     "id": "crab",
@@ -388,7 +388,7 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 3,
-    "price": 4
+    "price": 6
   },
   {
     "id": "snow-crab",
@@ -401,7 +401,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 3,
-    "price": 6
+    "price": 16
   },
   {
     "id": "lobster",
@@ -414,7 +414,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 3,
-    "price": 20
+    "price": 120
   },
   {
     "id": "shrimp",
@@ -427,7 +427,7 @@ export const FISH = [
     "rarity": 1,
     "released": false,
     "page": 3,
-    "price": 1
+    "price": 2
   },
   {
     "id": "octopus",
@@ -440,7 +440,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 3,
-    "price": 6
+    "price": 10
   },
   {
     "id": "marlin",
@@ -453,7 +453,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 5
+    "price": 16
   },
   {
     "id": "cuttlefish",
@@ -466,7 +466,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 3,
-    "price": 6
+    "price": 10
   },
   {
     "id": "webfoot-octopus",
@@ -479,7 +479,7 @@ export const FISH = [
     "rarity": 2,
     "released": false,
     "page": 3,
-    "price": 3
+    "price": 5
   },
   {
     "id": "clownfish",
@@ -492,7 +492,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 4,
-    "price": 6
+    "price": 8
   },
   {
     "id": "blue-tang",
@@ -505,7 +505,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 4,
-    "price": 6
+    "price": 8
   },
   {
     "id": "butterflyfish",
@@ -518,7 +518,7 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 4,
-    "price": 6
+    "price": 8
   },
   {
     "id": "seahorse",
@@ -531,7 +531,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 4,
-    "price": 20
+    "price": 80
   },
   {
     "id": "manta",
@@ -544,7 +544,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 4,
-    "price": 20
+    "price": 150
   },
   {
     "id": "blobfish",
@@ -557,7 +557,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 4,
-    "price": 20
+    "price": 100
   },
   {
     "id": "kelp",
@@ -583,7 +583,7 @@ export const FISH = [
     "rarity": 5,
     "released": false,
     "page": 4,
-    "price": 60
+    "price": 800
   },
   {
     "id": "sunfish",
@@ -596,7 +596,7 @@ export const FISH = [
     "rarity": 4,
     "released": false,
     "page": 4,
-    "price": 20
+    "price": 120
   },
   {
     "id": "tuna",
@@ -611,7 +611,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 20
+    "price": 100
   },
   {
     "id": "giant-squid",
@@ -624,7 +624,7 @@ export const FISH = [
     "rarity": 5,
     "released": false,
     "page": 5,
-    "price": 60
+    "price": 1200
   },
   {
     "id": "shark",
@@ -639,7 +639,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 5,
-    "price": 60
+    "price": 500
   },
   {
     "id": "whale",
@@ -654,7 +654,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 5,
-    "price": 300
+    "price": 3000
   }
 ];
 
