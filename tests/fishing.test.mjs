@@ -65,8 +65,8 @@ test('available collection can finish before the full catalogue, and future reco
   for(const f of AVAILABLE_FISH)dex.add(f.id);
   assert.equal(dex.availableComplete,true);
   assert.equal(dex.complete,false);
-  dex.add('swordfish');
-  assert.equal(new FishDex(st).count('swordfish'),1);
+  dex.add('giant-squid');
+  assert.equal(new FishDex(st).count('giant-squid'),1);
   for(const f of FISH)dex.add(f.id);
   assert.equal(dex.complete,true);
   st.setItem('mk.fishdex','broken');
@@ -82,4 +82,22 @@ test('three bite lines for each of the five rarities; auto fishing never rolls a
   assert.ok(AUTO_FISH.length && AUTO_FISH.every(f => f.released && !isRare(f)));
   for (let i = 0; i < 200; i++) assert.ok(!isRare(rollAutoCatch()));
   assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 0, 1.2, 2, 2.8]);
+});
+
+test('every kind has a picture, and saves with swapped-out kinds keep their counts', async () => {
+  const { RENAMED } = await import('../src/core/fishing.js');
+  const ui = await import('node:fs').then(fs => fs.readFileSync(new URL('../src/ui/fishing-ui.js', import.meta.url), 'utf8'));
+  const sheet = ui.slice(ui.indexOf('new Map(['), ui.indexOf('].map((id, index)')).match(/'[a-z-]+'/g).map(x => x.slice(1, -1));
+  assert.deepEqual([...sheet].sort(), FISH.map(f => f.id).sort());
+  const st = memory();
+  st.setItem('mk.fish', JSON.stringify({ bass: 2, squid: 1, carp: 1 }));
+  st.setItem('mk.fishdex', JSON.stringify({ bass: 3, scallop: 1, swordfish: 1 }));
+  const bag = new FishBag(st), dex = new FishDex(st, bag);
+  assert.equal(bag.count('scallop'), 2);
+  assert.equal(bag.count('marlin'), 1);
+  assert.equal(bag.size, 4);
+  assert.equal(dex.count('scallop'), 4);
+  assert.equal(dex.count('giant-squid'), 1);
+  for (const id of Object.values(RENAMED)) assert.ok(fishById(id), id);
+  for (const id of Object.keys(RENAMED)) assert.equal(fishById(id), null, id);
 });
