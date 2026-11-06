@@ -3733,7 +3733,6 @@ const fishingUi = new FishingUI({
       sfx.reveal(true);
     }
     missionEvent('fish', f.id);
-    togetherBonus('fish');
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
