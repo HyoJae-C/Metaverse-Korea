@@ -99,7 +99,8 @@ import { DUCK_SEATS } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
 import { Contacts, touching, wobble } from './core/bump.js';
-import { dartsMsg, parseDarts } from './core/arcade.js';
+import { dartsMsg, parseDarts, dartsGoMsg, parseDartsGo, dartPinMsg, parseDartPin, dartPack, dartColorOf, pickDartColor } from './core/arcade.js';
+import { DartPins } from './core/dart-pins.js';
 import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js';
 import { JOB_TEXT, SHIFTS_PER_DAY, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
 import { JobUI } from './ui/job-ui.js';
@@ -1102,7 +1103,7 @@ async function joinRoom(room, roomScene, area = null) {
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
-    onLeave: (id) => { tandemGone(id); others.leave(id); refreshOnline(); },
+    onLeave: (id) => { tandemGone(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
@@ -1119,6 +1120,8 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
+      if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
+      if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
       if (parseHonk(e)) {
         const at = others.positionOf(id);
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
@@ -2424,7 +2427,9 @@ function enterStore(item) {
     built.collision = new CollisionMap(built.colliders);
     interiorCache.set(store.id, built);
     built.setSignLang?.(signsTranslated ? getLanguage() : null);
+    if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
   }
+  built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
   mode = 'store';
   activeScene = built.scene;
@@ -3918,10 +3923,22 @@ const arcadePanel = (kind) => ({ get open() { return !!arcade[kind]?.open; }, cl
 const battingUi = arcadePanel('batting'), galleryUi = arcadePanel('gallery'), hauntUi = arcadePanel('hauntGallery'), dartsUi = arcadePanel('darts');
 const arcadeLoading = {}; // kind → its panel's import, while it loads
 let dartsInvite = null; // { from, name, at }: someone in the bar challenged you
+let dartsBoard = 0; // which of the bar's wall boards you play at
+// Flight colours (DART_COLORS), one per player: with friends, in line-up
+// order each takes the colour from their id or the next one still free (the
+// same on every screen); alone, a colour nobody on the boards throws now.
+function dartColors(ids) {
+  if (ids.length === 1) return [pickDartColor(dartColorOf(myId), interior?.dartPins?.colorsInUse(myId) || [])];
+  const out = [];
+  for (const id of ids) out.push(pickDartColor(dartColorOf(id), out));
+  return out;
+}
 const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < 60000 && others.nameOf(dartsInvite.from) ? dartsInvite : null);
 async function openArcade(kind) {
   // Turn to face the cage, the targets or the board, with the camera behind you.
-  const p = me.root.position, st = interior?.stations?.[kind]?.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.5);
+  const p = me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
+  const st = (interior?.stations?.[kind] || []).filter((q) => near(q) < 2.5).sort((a, b) => near(a) - near(b))[0];
+  if (kind === 'darts') dartsBoard = st?.board ?? 0; // the bar has two boards: the one you stand at
   if (st?.ry != null) { me.root.rotation.y = st.ry; cam.yaw = st.ry + Math.PI; }
   if (!arcade[kind]) {
     // The first time, the panel loads: by then you may have walked off or
@@ -3955,11 +3972,19 @@ async function makeArcade(kind) {
       const { DartsUI } = await import('./ui/darts-ui.js');
       ui = new DartsUI({
         root: $('darts-panel'), store: localStorage,
-        friend: () => others.nearestFree(me.root.position.x, me.root.position.z, 6),
+        myId, nameOf: (id) => others.nameOf(id),
+        friends: () => others.nearbyFree(me.root.position.x, me.root.position.z, 6),
+        sendGo: (to, mode, ids) => net.sendEmote(dartsGoMsg(to, mode, ids)),
         invite: freshInvite,
         clearInvite: () => { dartsInvite = null; },
         send: (to, k, thrown, total, extra) => net.sendEmote(dartsMsg(to, k, thrown, total, extra)),
         onThrow: (pts) => { sfx.tock(0.7, 600); if (pts >= 50) me.play('cheer'); },
+        colors: dartColors,
+        // Our dart sticks in the wall board, and everyone in the bar sees it.
+        onDart: (at, color) => {
+          interior?.dartPins?.add(myId, dartsBoard, color, at.x, at.y);
+          net.sendEmote(dartPinMsg(dartsBoard, color, dartPack(at.x), dartPack(at.y)));
+        },
       });
     }
     return ui;
@@ -5806,6 +5831,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
+  if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
   if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   updateMeal();
@@ -6018,6 +6044,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
+    dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decor?.items.length ?? -1,
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,

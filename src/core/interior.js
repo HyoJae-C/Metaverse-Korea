@@ -777,6 +777,9 @@ export function buildInterior(store) {
       glow.position.set(tx, 1.0, tz);
       scene.add(glow);
       for (const s2 of [-1, 1]) {
+        // With darts, the chair against the left wall makes way for the
+        // second dartboard's players.
+        if (store.darts && tx < 0 && s2 < 0) continue;
         const chx = tx + 0.85 * s2;
         box(0.42, 0.06, 0.42, chx, SEAT_H - 0.03, tz, '#6b2f2f');
         box(0.08, 0.5, 0.42, chx + 0.2 * s2, SEAT_H + 0.22, tz, '#6b2f2f');
@@ -784,20 +787,28 @@ export function buildInterior(store) {
       }
       block(tx, tz, 2.3, 0.95);
     }
-    // A dartboard on the left wall (stores.json "darts": true), with the
-    // throw line on the floor in front of it.
+    // Two dartboards side by side on the left wall (stores.json "darts":
+    // true), each with its throw line on the floor in front of it. Darts
+    // thrown there stick in the board for everyone in the bar to see
+    // (core/dart-pins.js); dartboards[i] is board i's face.
     if (store.darts) {
-      const dz = -0.6, bx = -w / 2 + 0.06;
-      box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
-      const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
-      face.rotation.y = Math.PI / 2;
-      face.position.set(bx + 0.08, 1.6, dz);
-      scene.add(face);
-      const spot = new THREE.PointLight(0xfff0d0, 3, 4); // (not 3.5: those are the candles that flicker)
-      spot.position.set(bx + 0.9, 2.6, dz);
-      scene.add(spot);
-      box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
-      stations.darts = [{ x: bx + 2.7, z: dz, ry: -Math.PI / 2 }]; // facing the board
+      const bx = -w / 2 + 0.06;
+      stations.darts = [];
+      stations.dartboards = [];
+      [-1.4, 0.4].forEach((dz, i) => {
+        box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
+        const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
+        face.rotation.y = Math.PI / 2;
+        face.position.set(bx + 0.08, 1.6, dz);
+        scene.add(face);
+        const spot = new THREE.PointLight(0xfff0d0, 2.5, 4); // (not 3.5: those are the candles that flicker)
+        spot.position.set(bx + 0.9, 2.6, dz);
+        scene.add(spot);
+        box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
+        stations.darts.push({ x: bx + 2.7, z: dz, ry: -Math.PI / 2, board: i }); // facing the board
+        // The scoring area (r = 1 in core/arcade.js) is 104/128 of the face.
+        stations.dartboards.push({ x: bx + 0.08, y: 1.6, z: dz, ry: Math.PI / 2, r: 0.34 * 104 / 128 });
+      });
     }
     let t = 0;
     const flames = [];
