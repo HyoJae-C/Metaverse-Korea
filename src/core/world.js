@@ -38,6 +38,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
+  let obstacles = [];
   group.add(makeGround(bounds, opts.holes));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
@@ -75,7 +76,7 @@ export function buildWorld(map, scene, opts = {}) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
     const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
-    if (trees) group.add(...trees);
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; }
   }
 
   if (!lowSpec) {
@@ -86,7 +87,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds };
+  return { group, bounds, obstacles };
 }
 
 export function computeBounds(map) {
@@ -350,20 +351,43 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const isClear = (x, z, r) => clear.every(([cx, cz, cr]) => (x - cx) ** 2 + (z - cz) ** 2 > (cr + r) ** 2);
   // Wooded parks: a jittered grid, ~12 m apart, off the paths.
   const PARK = 12;
+  // Round crowns in the parks: mostly green, some ginkgo yellow.
+  const parkGreens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d, 0x6fb85f].map((h) => new THREE.Color(h));
+  const yellows = [0xf2c94c, 0xe8b730, 0xf5d76e].map((h) => new THREE.Color(h));
+  const crownColor = (h) => (h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    // The edge of the wood: two rows of big trees just inside its outline.
+    for (const [inset, gap] of [[3.5, 6.5], [9, 8]]) {
+      for (let i = 0; i < a.p.length; i++) {
+        const [x1, z1] = a.p[i], [x2, z2] = a.p[(i + 1) % a.p.length];
+        const len = Math.hypot(x2 - x1, z2 - z1);
+        if (len < 1) continue;
+        const ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+        for (let d = gap / 2; d < len; d += gap) {
+          for (const side of [1, -1]) { // (inside is whichever side is in the polygon)
+            const h = hash(x1 + d, z1 + inset), h2 = hash(z1 + d * 1.3, x1 + inset);
+            const px = x1 + ux * d - uz * inset * side + (h - 0.5) * 2, pz = z1 + uz * d + ux * inset * side + (h2 - 0.5) * 2;
+            if (!pointInPolygon(px, pz, a.p) || edgeDist(px, pz, a.p) < inset - 2.5) continue;
+            const pine = h2 < 0.3, s = pine ? 2.2 + h * 1.0 : 2.3 + h * 1.1;
+            if (isClear(px, pz, 0.9 * s) && !collision.blocked(px, pz, 1.2) && !onAnyRoad(roads, px, pz, 2)) (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(h2)]);
+          }
+        }
+      }
+    }
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
         if (spots.length + pines.length >= max / 2) break;
         const h = hash(x, z), h2 = hash(z, x);
+        if (edgeDist(x, z, a.p) < 12) continue; // (the edge rows are there)
         const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
         const px = x + jx, pz = z + jz;
-        // Sizes from a sapling to a big old tree; about one in four pointed.
-        const pine = h2 < 0.26, s = pine ? 0.8 + ((h2 * 13) % 1) * 1.0 : 0.6 + ((h2 * 17) % 1) ** 1.4 * 1.6;
-        const r = 1.1 * s;
+        // Sizes from a young tree to a big old one; about one in four pointed.
+        const pine = h2 < 0.26, s = pine ? 1.3 + ((h2 * 13) % 1) * 1.2 : 1.1 + ((h2 * 17) % 1) ** 1.3 * 1.8;
+        const r = 0.9 * s;
         if (pointInPolygon(px, pz, a.p) && isClear(px, pz, r) && !collision.blocked(px, pz, r) && !onAnyRoad(roads, px, pz, r - 0.6)) {
-          (pine ? pines : spots).push([px, pz, s]);
+          (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(hash(px, pz))]);
         }
         // A bush or two between the trees.
         for (let k = 0; k < 2; k++) {
@@ -374,6 +398,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
       }
     }
   }
+  const parkRound = spots.length; // (street trees come after the park's)
   const SPACING = 14;
   for (const r of roads) {
     if (r.k === 'walk' || r.k === 'service' || r.w < 6) continue;
@@ -413,7 +438,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
       q.setFromAxisAngle(up, i * 1.7);
       m.compose(pos.set(x, 0, z), q, sc.set(s, s * yScale, s));
       mesh.setMatrixAt(i, m);
-      if (colors) mesh.setColorAt(i, colors[i % colors.length]);
+      if (colors) mesh.setColorAt(i, list[i][3] || colors[i % colors.length]);
     });
     mesh.name = 'trees';
     mesh.castShadow = true;
@@ -433,7 +458,22 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     instanced(pines, pine, tint, [0x5f9e5a, 0x6fae62, 0x4f8f4f].map((h) => new THREE.Color(h)), 1.1);
   }
   if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
+  // What stands on the park lawns, for things put down on the grass (picnic
+  // mats): [x, z, r] trunks and bushes.
+  out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
   return out;
+}
+
+// Distance from (x, z) to the nearest side of polygon p.
+function edgeDist(x, z, p) {
+  let best = Infinity;
+  for (let i = 0; i < p.length; i++) {
+    const [x1, z1] = p[i], [x2, z2] = p[(i + 1) % p.length];
+    const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2));
+    best = Math.min(best, Math.hypot(x1 + t * dx - x, z1 + t * dz - z));
+  }
+  return best;
 }
 
 function pointInPolygon(x, z, p) {
@@ -445,7 +485,7 @@ function pointInPolygon(x, z, p) {
   return c;
 }
 
-function onAnyRoad(roads, x, z, pad = 0.3) {
+export function onAnyRoad(roads, x, z, pad = 0.3) {
   for (const r of roads) {
     const hw = r.w / 2 + Math.max(0.3, pad);
     for (let i = 0; i < r.p.length - 1; i++) {

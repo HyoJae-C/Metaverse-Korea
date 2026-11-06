@@ -42,3 +42,9 @@ test('spread in front of you; a tie on the same spot goes to the lower id', () =
   assert.equal(keepsMat('a', 'b'), true);
   assert.equal(keepsMat('b', 'a'), false);
 });
+
+test('a mat can be kept off things the lawn itself does not know about', () => {
+  const path = (r) => r.x0 < 4 && r.x1 > 4; // a path crossing at x = 4
+  assert.equal(canSpread({ x: 4, z: 6 }, { lawns, blocked: path }), 'lawn');
+  assert.equal(canSpread({ x: 8, z: 6 }, { lawns, blocked: path }), 'ok');
+});

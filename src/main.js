@@ -17,9 +17,9 @@ import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
-import { buildWorld, COLORS } from './core/world.js';
+import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
-import { benchSeats, sculptureNear, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
+import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
@@ -517,7 +517,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -2695,7 +2695,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => updateStream(p, px0, pz0), // down by a stream
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
@@ -3094,12 +3094,35 @@ const dining = createDining({
 });
 const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, orderFood } = dining;
 // Picnic mats on the Han River park lawn (src/game/picnic.js).
+// The street's wooded parks (Seoul Forest) take picnic mats too: on the
+// grass, off the paths, clear of trees, benches and sculptures.
+const streetLawns = map.areas.filter((a) => a.k === 'park' && a.trees).map((a) => {
+  const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+  return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+});
+const hills = (map.landmarks || []).filter((l) => l.type === 'hill').map((l) => [l.x, l.z, l.r || 13]); // (not on the slope)
+const lawnBlocks = lawnObstacles.concat(hills);
+const lawnRoads = map.roads.filter((r) => r.p.some(([x, z]) => streetLawns.some((l) => x > l.x0 - 40 && x < l.x1 + 40 && z > l.z0 - 40 && z < l.z1 + 40)));
+const streetPicnic = streetLawns.length ? {
+  scene, lawns: streetLawns, colliders: [], seats: streetSeats,
+  blocked(r) {
+    for (const [x, z, rad] of lawnBlocks) {
+      const cx = Math.max(r.x0, Math.min(x, r.x1)), cz = Math.max(r.z0, Math.min(z, r.z1));
+      if ((cx - x) ** 2 + (cz - z) ** 2 < rad * rad) return true;
+    }
+    for (const fx of [0, 0.5, 1]) for (const fz of [0, 0.5, 1]) {
+      const x = r.x0 + (r.x1 - r.x0) * fx, z = r.z0 + (r.z1 - r.z0) * fz;
+      if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
+    }
+    return false;
+  },
+} : null;
 const picnic = createPicnic({
   get interior() { return interior; }, get mode() { return mode; }, get seated() { return seated; },
   get me() { return me; }, get others() { return others; }, get bag() { return bag; }, get shop() { return shop; },
   get myId() { return myId; },
   standUp: () => standUp(), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
-});
+}, streetPicnic);
 bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spread
 // Station vending machines: cheap drinks that work like a coffee to go.
 const VENDING_TEXT = {
@@ -4405,7 +4428,7 @@ const DANCE_TEXT = {
   stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
 };
 function currentActivity() {
-  if (seated?.mat) return 'mat'; // a picnic mat in the Han River park
+  if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
@@ -5391,6 +5414,8 @@ function moreActions(p, door) {
     const b = boardAt(p); if (b) out.push(boardAct(b));
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
+    if (bs?.mat) out.push(matSitAct(bs));
+    const pm = !seated && picnic.action(p); if (pm) out.push(pm);
     const ic = sculptureNear(map.landmarks, p.x, p.z); if (ic) out.push(sculptureAct(ic));
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
     const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
@@ -5401,6 +5426,7 @@ function moreActions(p, door) {
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
   if (seat) out.push(sitAct(seat));
+  if (seat?.mat) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
@@ -5426,6 +5452,8 @@ const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pa
 const sitAct = (seat) => (seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
   : { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
+// On a picnic mat you can also sit up, facing the foot of the mat.
+const matSitAct = (seat) => ({ key: 'sit-mat', label: '🧺 ' + L(MAT_TEXT.sit), run: () => sitDown({ ...seat, lie: false }) });
 const lookAct = (pr) => ({ key: 'look:' + pr.product.id, label: '👀 ' + t('shop.look', { name: localName(pr.product.name, getLanguage()) }), run: () => shop.openProduct(pr.product) });
 function updateAction(p, tSec) {
   let next = null, door = null;
@@ -5449,6 +5477,7 @@ function updateAction(p, tSec) {
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
+    else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
     else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
     else if (guideAct(p)) next = guideAct(p);
     else if (busking.performing) {
@@ -6002,7 +6031,7 @@ renderer.setAnimationLoop(() => {
   for (const ws of wallScreens) ws.update(dt);
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
-  tmp.set(p.x, 1.55, p.z).project(camera);
+  tmp.set(p.x, p.y + 1.55, p.z).project(camera); // (p.y: up a hill, on stairs)
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
@@ -6155,6 +6184,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     holdNew: (h) => holdNew(h),
     takeout: (i = 0) => orderFood(interior.store.products[i], true),
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }); refreshWallet(); },
+    giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
+    face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),
     scent: () => myScent,

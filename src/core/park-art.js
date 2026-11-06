@@ -229,4 +229,107 @@ function rosegarden(g, l) {
   g.add(hedge);
 }
 
-export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden };
+// A grassy hill (l.r across, l.h high) with wooden stairs up its slope on
+// the side the group faces (+z) to a look-out deck on top. You walk on it:
+// hillY gives the ground height, so the whole slope can be climbed.
+const HILL = { r: 13, h: 4, top: 3.2, deck: 2.8 };
+function hillShape(l) {
+  return { r: l.r || HILL.r, h: l.h || HILL.h, top: l.top || HILL.top, deck: l.deck || HILL.deck };
+}
+// Height of the hill's grass at distance d from its middle: flat on top,
+// a smooth slope down to the ground at r.
+function hillAt(H, d) {
+  if (d >= H.r) return 0;
+  if (d <= H.top) return H.h;
+  return H.h * 0.5 * (1 + Math.cos((Math.PI * (d - H.top)) / (H.r - H.top)));
+}
+export function hillY(list = [], x, z) {
+  for (const l of list) {
+    if (l.type !== 'hill') continue;
+    const H = hillShape(l), d = Math.hypot(x - l.x, z - l.z);
+    if (d >= H.r) continue;
+    return d < H.deck ? H.h + 0.12 : hillAt(H, d); // (the deck's boards sit a little higher)
+  }
+  return 0;
+}
+function hill(g, l) {
+  const H = hillShape(l);
+  g.add(new THREE.Mesh(hillGeometry(H), mat('#93cf78'))); // the mound
+  // Wooden stairs straight up the slope on the +z side, from the foot to the deck.
+  const wood = mat('#b98352'), dark = mat('#8a5a36');
+  const STEP = 0.55;
+  for (let d = H.r - 0.2; d > H.deck; d -= STEP) {
+    const y = hillAt(H, d);
+    const step = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.16, STEP + 0.04), wood);
+    step.position.set(0, y - 0.06, d); // (top flush with the slope: you walk on it)
+    g.add(step);
+    const riser = new THREE.Mesh(new THREE.BoxGeometry(2.2, Math.max(0.05, hillAt(H, d - STEP) - y) + 0.12, 0.08), dark);
+    riser.position.set(0, (y + hillAt(H, d - STEP)) / 2 + 0.04, d - STEP / 2);
+    g.add(riser);
+  }
+  // Hand rails: posts either side every few steps, a rail along their tops.
+  const posts = [];
+  for (let d = H.r - 0.4; d > H.deck; d -= 1.4) posts.push([d, hillAt(H, d)]);
+  for (const sx of [-1.2, 1.2]) {
+    posts.forEach(([d, y], i) => {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), dark);
+      post.position.set(sx, y + 0.45, d);
+      g.add(post);
+      const next = posts[i + 1];
+      if (!next) return;
+      const len = Math.hypot(d - next[0], y - next[1]);
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, len), wood);
+      rail.position.set(sx, (y + next[1]) / 2 + 0.9, (d + next[0]) / 2);
+      rail.rotation.x = Math.atan2(next[1] - y, d - next[0]);
+      g.add(rail);
+    });
+  }
+  // The look-out deck on top: round boards, a railing with a gap for the stairs.
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(H.deck, H.deck, 0.3, 24), wood);
+  deck.position.y = H.h - 0.03;
+  g.add(deck);
+  const n = 20;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    if (Math.abs(Math.sin(a)) > 0.92 && Math.sin(a) > 0) continue; // the way to the stairs (+z)
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 0.1), dark);
+    post.position.set(Math.cos(a) * (H.deck - 0.1), H.h + 0.6, Math.sin(a) * (H.deck - 0.1));
+    g.add(post);
+  }
+  const top = new THREE.Mesh(new THREE.TorusGeometry(H.deck - 0.1, 0.05, 4, 32, Math.PI * 2 - 0.85), wood);
+  top.rotation.x = Math.PI / 2;
+  top.rotation.z = Math.PI / 2 + 0.425; // the opening over the stairs
+  top.position.y = H.h + 1.1;
+  g.add(top);
+  // A few flowers on the slope.
+  flowerBorder(g, H.r - 2.5, Math.PI * 0.62, Math.PI * 2.38, 1.6, ['#ffd166', '#ff8fab', '#ffffff']);
+  g.children.at(-1).position.y = hillAt(H, H.r - 2.5);
+  g.children.at(-2).position.y = hillAt(H, H.r - 2.5);
+}
+// The mound: rings of vertices following hillAt, so the slope is smooth.
+function hillGeometry(H) {
+  const rings = 14, segs = 48, pos = [], idx = [];
+  pos.push(0, H.h, 0);
+  for (let k = 1; k <= rings; k++) {
+    const d = (k / rings) * H.r;
+    for (let i = 0; i < segs; i++) {
+      const a = (i / segs) * Math.PI * 2;
+      pos.push(Math.cos(a) * d, hillAt(H, d) + 0.02, Math.sin(a) * d);
+    }
+  }
+  for (let i = 0; i < segs; i++) idx.push(0, 1 + ((i + 1) % segs), 1 + i);
+  for (let k = 1; k < rings; k++) {
+    const a0 = 1 + (k - 1) * segs, a1 = 1 + k * segs;
+    for (let i = 0; i < segs; i++) {
+      const j = (i + 1) % segs;
+      idx.push(a0 + i, a0 + j, a1 + i, a0 + j, a1 + j, a1 + i);
+    }
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  out.setIndex(idx);
+  out.computeVertexNormals();
+  return out;
+}
+
+export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill };
