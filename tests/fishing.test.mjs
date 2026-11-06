@@ -120,7 +120,7 @@ test('every kind has a picture, and saves with swapped-out kinds keep their coun
   for (const id of Object.keys(RENAMED)) assert.equal(fishById(id), null, id);
 });
 
-test('a bite comes after 3 to 10 seconds', () => {
-  assert.equal(biteWait(() => 0), 3);
+test('a bite comes after 2.5 to 10 seconds', () => {
+  assert.equal(biteWait(() => 0), 2.5);
   assert.equal(biteWait(() => 0.999999).toFixed(2), '10.00');
 });

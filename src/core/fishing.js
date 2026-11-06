@@ -776,8 +776,8 @@ export function rollAutoCatch(rand = Math.random) {
   return AUTO_FISH.at(-1);
 }
 
-// Seconds to wait for a bite (anywhere from 3 to 10), and how long the bite lasts.
-export const biteWait = (rand = Math.random) => 3 + rand() * 7;
+// Seconds to wait for a bite (anywhere from 2.5 to 10), and how long the bite lasts.
+export const biteWait = (rand = Math.random) => 2.5 + rand() * 7.5;
 export const BITE_WINDOW = 1.2;
 
 // The fish bag: { id: count }, saved on this device (and in the cloud save).
