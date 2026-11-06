@@ -114,10 +114,7 @@ export default {
   // forward along the seat, knees bent so the shins go down.
   sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
-  // Lying flat on the back (the model is turned about its feet): up by half
-  // the body's depth, and forward so the middle of the body is on the spot.
-  lie: { y: 0.7, z: 0.6 }, // on a clinic bed (top at 0.55 m)
-  lieMat: { y: 0.16, z: 0.6 }, // on a picnic mat on the grass
+  lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
   // On a bike the sitting clip is bent a little more: lean forward, head down,
   // arms reaching for the handlebar (radians added to the clip, per bone).
   ridePose: { spine: [0.35, 0, 0], head: [0.15, 0, 0], upperarml: [-1.25, 0, 0], upperarmr: [-1.25, 0, 0], lowerarml: [-0.25, 0, 0], lowerarmr: [-0.25, 0, 0] },

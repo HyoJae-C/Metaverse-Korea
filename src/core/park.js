@@ -84,14 +84,8 @@ export function buildPark(store, ROOM, EXIT) {
   // Fishing pier into the river.
   const pierLen = 8;
   box(3, 0.2, pierLen, 0, -0.1, bank - pierLen / 2, '#a8794f');
-  // A low wooden fence on the pier (posts and two rails, knee-to-hip high),
-  // so the river is in view over it while you fish.
-  const FENCE_H = 0.55;
-  for (const s of [-1, 1]) {
-    for (const y of [FENCE_H, FENCE_H * 0.5]) box(0.07, 0.07, pierLen, s * 1.5, y, bank - pierLen / 2, '#7a5636');
-    for (let z = 0; z <= pierLen; z += 2) box(0.1, FENCE_H + 0.05, 0.1, s * 1.5, FENCE_H / 2, bank - z, '#6b4a2e');
-  }
-  for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
+  for (const s of [-1, 1]) box(0.08, 0.9, pierLen, s * 1.5, 0.45, bank - pierLen / 2, '#7a5636');
+  box(3, 0.9, 0.08, 0, 0.45, bank - pierLen, '#7a5636');
   // Far bank skyline and a bridge.
   for (let i = 0; i < 26; i++) {
     const h = 6 + ((i * 37) % 11) * 2.2;
@@ -126,10 +120,6 @@ export function buildPark(store, ROOM, EXIT) {
     block(x, z, 0.8, 0.8);
   }
 
-  // A few light touches (all plain boxes and low-poly shapes, no extra
-  // lights): flower beds along the path, round bushes and lamp posts.
-  decorate(scene, box, block, bank);
-
   // Benches facing the river.
   const seats = [];
   for (const bx of [-9, -5, 5, 9]) {
@@ -158,9 +148,9 @@ export function buildPark(store, ROOM, EXIT) {
   box(0.5, 0.05, 2.85, cx, 0.64, kz, mart.color);
   block(kx - 0.5, kz, 4.4, 5.4); // kiosk, clerk's corner and counter
   const products = [];
-  const goods = store.products.filter((p) => p.kiosk).slice(0, 3);
+  const goods = store.products.filter((p) => p.kiosk).slice(0, 2);
   goods.forEach((product, i) => {
-    const z = kz + (i - (goods.length - 1) / 2) * 0.9;
+    const z = kz + (i ? 0.65 : -0.65);
     const g = new THREE.Group();
     g.position.set(cx, 0.67, z);
     g.rotation.y = -Math.PI / 2;
@@ -242,56 +232,5 @@ export function buildPark(store, ROOM, EXIT) {
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang,
-    // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
-    // the benches and the back, right of the market and left of DAILY MART.
-    lawns: [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }],
   };
-}
-
-// Flower beds, bushes and lamp posts. Flowers are one InstancedMesh per
-// colour, so the whole lot is a handful of draw calls (light on phones).
-const FLOWERS = ['#ff8fab', '#ffd166', '#ffffff', '#c9a6f0'];
-function decorate(scene, box, block, bank) {
-  const bedZ = bank + 3.6; // in line with the benches, between the path and the lawn
-  const beds = [[-13.5, 3], [-7, 1.6], [-2.6, 1.6], [7, 1.6], [14.6, 2.8]].map(([x, len]) => ({ x, len }));
-  const spots = FLOWERS.map(() => []);
-  for (const b of beds) {
-    box(b.len, 0.18, 0.6, b.x, 0.09, bedZ, '#9a6b47'); // the bed's edge
-    box(b.len - 0.1, 0.02, 0.5, b.x, 0.185, bedZ, '#6b4a32'); // soil
-    const n = Math.round(b.len * 5);
-    for (let i = 0; i < n; i++) {
-      const fx = b.x - b.len / 2 + 0.12 + (i / (n - 1)) * (b.len - 0.24);
-      const fz = bedZ + ((i * 7) % 3 - 1) * 0.14;
-      spots[i % FLOWERS.length].push([fx, fz]);
-    }
-    block(b.x, bedZ, b.len, 0.6);
-  }
-  const head = new THREE.IcosahedronGeometry(0.09, 0);
-  const m4 = new THREE.Matrix4();
-  FLOWERS.forEach((c, k) => {
-    const inst = new THREE.InstancedMesh(head, mat(c), spots[k].length);
-    spots[k].forEach(([x, z], i) => inst.setMatrixAt(i, m4.makeTranslation(x, 0.3, z)));
-    scene.add(inst);
-  });
-  const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.11, 0).scale(1.4, 0.6, 1.4), mat('#4f9a4c'), beds.length * 6);
-  let li = 0;
-  for (const b of beds) for (let i = 0; i < 6; i++) leaves.setMatrixAt(li++, m4.makeTranslation(b.x - b.len / 2 + 0.25 + (i / 5) * (b.len - 0.5), 0.22, bedZ));
-  scene.add(leaves);
-
-  // Round bushes at the edges of the lawn.
-  const bushes = [[-12, 13.2], [-7.5, 13.4], [13.5, 13.3], [19.6, 13.2], [-11.8, 6.5]];
-  const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.55, 1).scale(1.2, 0.8, 1), mat('#6dbb5f'), bushes.length);
-  bushes.forEach(([x, z], i) => { bush.setMatrixAt(i, m4.makeTranslation(x, 0.38, z)); block(x, z, 1.2, 1); });
-  scene.add(bush);
-
-  // Lamp posts along the river path (just shapes; no light sources).
-  for (const x of [-17, -11, 11, 18]) {
-    const z = bank + 2.9;
-    box(0.1, 2.6, 0.1, x, 1.3, z, '#3d4650');
-    box(0.34, 0.08, 0.34, x, 2.62, z, '#3d4650');
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), mat('#fff4cf', { emissive: '#ffe9a8', emissiveIntensity: 0.5 }));
-    glow.position.set(x, 2.45, z);
-    scene.add(glow);
-    block(x, z, 0.25, 0.25);
-  }
 }
