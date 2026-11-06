@@ -12,6 +12,7 @@ const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
 const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
+const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
 
 export const DUCK_BOATS = 4;
 // Where the two riders sit, in the boat's own space (it faces -z).
@@ -185,6 +186,24 @@ export function buildPark(store, ROOM, EXIT) {
     sign2.rotation.y = 0.2;
   }
 
+  // Fish buyer by the pier: an ice-box stand where your catch can be sold
+  // without going back to the fish market (same prices).
+  const fbx = 2.7, fbz = bank + 3.7;
+  box(1.5, 0.8, 0.7, fbx, 0.4, fbz, '#2f78b0'); // counter
+  box(1.3, 0.32, 0.5, fbx, 0.96, fbz, '#f2f7fb'); // ice box
+  box(1.32, 0.06, 0.52, fbx, 1.14, fbz, '#5fb0de'); // its lid
+  for (const sx of [-0.7, 0.7]) box(0.07, 1.6, 0.07, fbx + sx, 1.4, fbz + 0.3, '#55504a'); // sign posts
+  const fSign = signBoard(1.6, 0.48, '#2f78b0');
+  fSign.mesh.position.set(fbx, 2.2, fbz + 0.32);
+  fSign.mesh.rotation.y = Math.PI; // faces the path and the river
+  scene.add(fSign.mesh);
+  const fishBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), mat('#9aa7b4'));
+  fishBody.scale.set(1.6, 0.7, 0.45);
+  fishBody.position.set(fbx - 0.25, 1.27, fbz - 0.05);
+  scene.add(fishBody);
+  block(fbx, fbz, 1.6, 0.8);
+  const fishBuy = { x: fbx, z: fbz - 1.1 };
+
   // Four duck boats (오리배) moored to the right of the pier. Each waits at
   // the dock until someone gets in; two people fit side by side. They face
   // the river (-z), so riders look out over the water.
@@ -206,11 +225,12 @@ export function buildPark(store, ROOM, EXIT) {
     market.setSignLang(lang);
     martSign.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
+    fSign.draw(lang ? localName(FISH_SIGN, lang) : FISH_SIGN.ko, lang ? '' : FISH_SIGN.en);
   };
   setSignLang(null);
 
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang,
+    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang,
   };
 }
