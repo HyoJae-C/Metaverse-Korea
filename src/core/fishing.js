@@ -757,7 +757,7 @@ export const BITE_LINES = {
     { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' }],
   4: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
     { ko: '낚싯대가 부러질 것 같아!!!', en: "The rod's about to snap!!!", ja: '竿が折れそうだ!!!', zh: '鱼竿快要断了!!!' },
-    { ko: '전설급 손맛이다!!!', en: 'A legendary pull!!!', ja: '伝説級の手応えだ!!!', zh: '传说级的手感!!!' }],
+    { ko: '신비로운 놈이 걸렸다!!!', en: 'Something mythic is on!!!', ja: '神秘的なヤツがかかった!!!', zh: '钓到了神秘的家伙!!!' }],
   5: [{ ko: '강의 주인이 나타났다!!!!', en: 'The lord of the river appears!!!!', ja: '川の主が現れた!!!!', zh: '河之主出现了!!!!' },
     { ko: '이건… 전설의 그 녀석?!', en: 'Is this… the legend?!', ja: 'これは…伝説のアイツ?!', zh: '难道是…传说中的那家伙?!' },
     { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],

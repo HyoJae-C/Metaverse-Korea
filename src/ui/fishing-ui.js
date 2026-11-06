@@ -293,7 +293,7 @@ export class FishingUI {
     this.state = 'bite';
     this.fish = rollCatch();
     this.onPhase?.('bite', this.fish);
-    water.className = 'fish-water bite' + (isRare(this.fish) ? ' rare' : '');
+    water.className = 'fish-water bite' + (this.fish.trash ? '' : ' t' + this.fish.rarity) + (isRare(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
     this.shout = biteLine(this.fish); // kept for the reel-in too
     if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));

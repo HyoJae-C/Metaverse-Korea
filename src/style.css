@@ -1917,3 +1917,16 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .bubble.trophy.tier-5 .trophy-pic .fish-stamp-fish { font-size: 90px; }
 .bubble.trophy.tier-5 .trophy-rays { inset: -26px; }
 .bubble.trophy.tier-5 .trophy-stars { font-size: 16px; }
+
+/* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
+   and the card and its shout grow with the stars. */
+.fish-water.bite.t1 { padding: 14px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
+.fish-water.bite.t2 { padding: 16px 12px; background: linear-gradient(135deg, #9ae9a4, #2a9a52); box-shadow: none; }
+.fish-water.bite.t3 { padding: 19px 12px; color: #4a2c00; background: linear-gradient(135deg, #fff08a, #f0b400); box-shadow: 0 0 0 3px #fff6c8 inset, 0 0 14px rgba(240, 180, 0, .55); }
+.fish-water.bite.t4 { padding: 23px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
+.fish-water.bite.t5 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
+.fish-water.bite .fish-callout.tier-1 { font-size: 18px; }
+.fish-water.bite .fish-callout.tier-2 { font-size: 21px; }
+.fish-water.bite .fish-callout.tier-3 { font-size: 24px; color: #6b2a00; text-shadow: 0 2px 0 #fff6c8, 0 0 10px rgba(255, 255, 255, .8); }
+.fish-water.bite .fish-callout.tier-4 { font-size: 27px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
+.fish-water.bite .fish-callout.tier-5 { font-size: 31px; }
