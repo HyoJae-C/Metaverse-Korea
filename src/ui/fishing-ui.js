@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, rollFish, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -12,7 +12,8 @@ const el = (tag, cls, text) => {
   return e;
 };
 export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.name, getLanguage())} · ${f.ko} (${f.rom})`);
-const pct = (c) => (c < 1 ? c.toFixed(1) : String(c)) + '%';
+const pct = c => (c < 0.1 ? c.toFixed(2) : c.toFixed(1)) + '%';
+const text = (ko, en) => localName({ ko, en });
 
 // One round red-ink stamp for a fish: the fish, "한강 낚시" and its name.
 // Uncaught kinds are an empty dashed ring with the fish's dark silhouette.
@@ -28,29 +29,51 @@ export function fishStamp(f, caught = true) {
 export function fishBook(dex, fresh = null) {
   const wrap = el('div', 'fish-book');
   const head = el('div', 'stamp-head');
-  const bar = el('div', 'stamp-bar');
-  const fill = el('i');
-  fill.style.width = (dex.kinds / FISH.length) * 100 + '%';
-  bar.append(fill);
-  head.append(el('span', 'stamp-kicker', 'HAN RIVER FISHING · 한강 낚시 도감'), el('p', 'dex-summary', t('fish.bookSummary', { k: dex.kinds, all: FISH.length, n: dex.total })), bar);
-  wrap.append(head, el('p', 'order-hint', dex.complete ? t('fish.bookDone') : t('fish.bookHint')));
+  const available = AVAILABLE_FISH.filter(f => dex.has(f.id)).length;
+  head.append(el('span', 'stamp-kicker', 'ANOTHER SEOUL · FISHING JOURNAL'),
+    el('strong', 'fish-book-title', text('나의 낚시 도감', 'My fishing journal')),
+    el('p', 'dex-summary', text('공개된 27종 중 ', 'Available collection ') + available + '/' + AVAILABLE_FISH.length),
+    el('small', null, text('전체 49종 · 새 친구들이 차례로 찾아와요', '49 species planned · more friends to come')));
+  const bar = el('div', 'stamp-bar'), fill = el('i');
+  fill.style.width = available / AVAILABLE_FISH.length * 100 + '%';
+  bar.append(fill); head.append(bar);
   const grid = el('div', 'stamp-grid');
-  for (const f of FISH) {
+  const detail = el('div', 'fish-book-detail'); detail.setAttribute('aria-live', 'polite');
+  const nav = el('div', 'fish-book-nav');
+  const previous = el('button', 'chip', text('이전', 'Previous'));
+  const next = el('button', 'chip', text('다음', 'Next'));
+  previous.type = next.type = 'button';
+  const number = el('span'); number.setAttribute('aria-live', 'polite');
+  nav.append(previous, number, next);
+  let page = Math.max(0, FISH.findIndex(f => f.id === fresh)) / 9 | 0;
+  const showDetail = f => {
     const n = dex.count(f.id);
-    const cell = el('div', 'stamp-cell fish-cell' + (n ? '' : ' empty') + (f.id === fresh ? ' fresh' : ''));
-    cell.append(fishStamp(f, !!n), el('i', 'fish-stars', '★'.repeat(rarityStars(f))));
-    if (n) {
-      cell.append(
-        el('small', null, `${f.rom} · ${localName(f.name, getLanguage())}`),
-        el('small', null, `${pct(f.chance)} · 🪙 ${f.price}`),
-        el('em', 'fish-n', `× ${n}`),
-      );
-    } else {
-      cell.append(el('em', null, t('fish.unknown')));
+    detail.replaceChildren(el('strong', null, fishName(f)), el('p', null,
+      !f.released ? text('추후 공개 예정이에요.', 'Coming in a future release.') : n
+      ? text('누적 ', 'Caught ') + n + text('마리 · 판매 ', ' times · Sell ') + f.price + text('코인', ' coins')
+      : text('아직 만나지 못했어요. 낚시로 도장을 모아보세요!', 'Not caught yet. Go fishing to earn this stamp!')));
+  };
+  const render = () => {
+    grid.replaceChildren();
+    grid.classList.toggle('fish-special-page', page === 5);
+    for (const f of FISH.slice(page * 9, page * 9 + 9)) {
+      const n = dex.count(f.id);
+      const cell = el('button', 'stamp-cell fish-cell' + (n ? '' : ' empty') + (f.id === fresh ? ' fresh' : ''));
+      cell.type = 'button';
+      cell.setAttribute('aria-label', fishName(f) + ' · ' + (n ? text('수집 완료', 'Collected') : f.released ? text('미발견', 'Undiscovered') : text('공개 예정', 'Coming soon')));
+      cell.append(fishStamp(f, !!n), el('i', 'fish-stars', '★'.repeat(rarityStars(f))),
+        el('small', null, n ? '× ' + n : f.released ? text('미발견', 'Undiscovered') : text('공개 예정', 'Coming soon')));
+      cell.onclick = () => showDetail(f);
+      grid.append(cell);
     }
-    grid.append(cell);
-  }
-  wrap.append(grid);
+    number.textContent = (page + 1) + ' / 6' + (page === 5 ? text(' · 특별 수집', ' · Special catches') : '');
+    previous.disabled = page === 0; next.disabled = page === 5;
+    detail.replaceChildren(el('p', null, text('도장을 눌러 자세히 보기', 'Select a stamp to see details')));
+  };
+  previous.onclick = () => { page--; render(); };
+  next.onclick = () => { page++; render(); };
+  wrap.append(head, grid, nav, detail);
+  render();
   return wrap;
 }
 
@@ -66,14 +89,14 @@ export function stampPop(f, dex, { onSlam, onClose, onBook } = {}) {
   const st = fishStamp(f, true);
   st.classList.add('slam');
   page.append(el('span', 'fish-pop-big', f.emoji), st, el('span', 'fish-pop-ink'), el('b', 'fish-pop-bang', '콱!'));
-  const done = dex.complete;
+  const done = dex.availableComplete;
   const ok = el('button', 'primary', '📖 ' + t('fish.book'));
   card.append(
     el('span', 'stamp-kicker', 'NEW · ' + t('fish.book')),
     page,
     el('strong', 'fish-pop-name', `${f.ko} · ${f.rom}`),
     el('small', null, `${localName(f.name, getLanguage())} · ${'★'.repeat(rarityStars(f))}`),
-    el('p', 'fish-pop-count', done ? t('fish.bookDone') : t('fish.bookNew', { k: dex.kinds, all: FISH.length })),
+    el('p', 'fish-pop-count', done ? text('공개된 27종을 모두 모았어요!', 'All 27 available species collected!') : t('fish.bookNew', { k: dex.kinds, all: FISH.length })),
     ok,
   );
   pop.append(card);
@@ -172,7 +195,7 @@ export class FishingUI {
     const d = el('details', 'fish-odds');
     d.append(el('summary', null, t('fish.guide')));
     const list = el('div', 'fish-list');
-    for (const f of FISH) {
+    for (const f of AVAILABLE_FISH) {
       const row = el('div', 'fish-row');
       row.append(el('span', 'fish-emoji', f.emoji), el('span', 'fish-name', fishName(f)), el('small', null, `${pct(f.chance)} · 🪙 ${f.price} · 💨 ${Math.round(escapeChance(f) * 100)}%`));
       list.append(row);
@@ -195,7 +218,7 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    this.fish = rollFish();
+    this.fish = rollCatch();
     water.className = 'fish-water bite';
     water.querySelector('p').textContent = t('fish.bite');
     btn.classList.add('pulse');
@@ -239,10 +262,28 @@ export class FishingUI {
     }, 100);
   }
 
+  renderTrash(item) {
+    this._frame();
+    const card = el('div', 'fish-card fish-trash-card');
+    const image = el('img', 'fish-trash-image');
+    image.src = item.image;
+    image.alt = text('물에서 건진 고물장화', 'An old boot recovered from the water');
+    image.width = image.height = 160;
+    card.append(el('span', 'stamp-kicker', text('쓰레기를 건졌어요', 'Litter recovered')), image,
+      el('strong', null, text('고물장화', 'Old boot')),
+      el('p', null, text('물가에 쓰레기를 버리지 마세요.', 'Please do not litter near the water.')),
+      el('small', null, text('건져낸 장화는 수거했어요. 물가가 조금 더 깨끗해졌어요!', 'The boot has been collected for disposal. The water is a little cleaner!')));
+    const again = el('button', 'primary', t('fish.again'));
+    again.disabled = this.bag.full;
+    again.onclick = () => this.cast();
+    this.root.append(card, again);
+  }
+
   landed(spare = 0) {
     clearInterval(this.tick);
     this.state = 'landed';
     const f = this.fish;
+    if (f.trash) { this.renderTrash(f); return; }
     if (Math.random() < escapeChance(f, spare)) { this.escaped(f); return; }
     const kept = this.bag.add(f.id);
     const isNew = this.dex ? this.dex.add(f.id) : false;

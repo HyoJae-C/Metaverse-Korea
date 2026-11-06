@@ -1,47 +1,688 @@
-// Fishing at the Han River and selling the catch at the fish market (no DOM,
-// so it can be unit-tested). Ten kinds of catch, each with a chance per bite
-// (they add up to 100%) and a price: the rarer, the pricier. Rarer fish also
-// fight harder: more reel taps in the same time, and get away more often.
-//
-// Yes, whales and sharks don't live in the Han River. It's a game. 🐋
-
+// Permanent 49-entry catalogue. Stable IDs preserve bags and lifetime records.
+// Twenty-seven species are available in the first release.
 export const FISH = [
-  { id: 'crucian', emoji: '🐟', ko: '붕어', rom: 'bungeo', name: { en: 'Crucian carp', ja: 'フナ', zh: '鲫鱼' }, chance: 30, price: 1 },
-  { id: 'catfish', emoji: '🐟', ko: '메기', rom: 'megi', name: { en: 'Catfish', ja: 'ナマズ', zh: '鲶鱼' }, chance: 20, price: 1 },
-  { id: 'mackerel', emoji: '🐟', ko: '고등어', rom: 'godeungeo', name: { en: 'Mackerel', ja: 'サバ', zh: '鲭鱼' }, chance: 14, price: 2 },
-  { id: 'crayfish', emoji: '🦞', ko: '가재', rom: 'gajae', name: { en: 'Crayfish', ja: 'ザリガニ', zh: '小龙虾' }, chance: 12, price: 3 },
-  { id: 'crab', emoji: '🦀', ko: '게', rom: 'ge', name: { en: 'Crab', ja: 'カニ', zh: '螃蟹' }, chance: 9, price: 4 },
-  { id: 'squid', emoji: '🦑', ko: '오징어', rom: 'ojingeo', name: { en: 'Squid', ja: 'イカ', zh: '鱿鱼' }, chance: 7, price: 5 },
-  { id: 'salmon', emoji: '🐟', ko: '연어', rom: 'yeoneo', name: { en: 'Salmon', ja: 'サケ', zh: '三文鱼' }, chance: 5, price: 8 },
-  { id: 'tuna', emoji: '🐟', ko: '참치', rom: 'chamchi', name: { en: 'Tuna', ja: 'マグロ', zh: '金枪鱼' }, chance: 2, price: 20 },
-  { id: 'shark', emoji: '🦈', ko: '상어', rom: 'sangeo', name: { en: 'Shark', ja: 'サメ', zh: '鲨鱼' }, chance: 0.9, price: 60 },
-  { id: 'whale', emoji: '🐋', ko: '고래', rom: 'gorae', name: { en: 'Whale', ja: 'クジラ', zh: '鲸鱼' }, chance: 0.1, price: 300 },
+  {
+    "id": "crucian",
+    "emoji": "🐟",
+    "ko": "붕어",
+    "rom": "bungeo",
+    "name": {
+      "en": "Crucian carp",
+      "ja": "フナ",
+      "zh": "鲫鱼"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "carp",
+    "emoji": "🐟",
+    "ko": "잉어",
+    "rom": "ingeo",
+    "name": {
+      "en": "Carp"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "catfish",
+    "emoji": "🐟",
+    "ko": "메기",
+    "rom": "megi",
+    "name": {
+      "en": "Catfish",
+      "ja": "ナマズ",
+      "zh": "鲶鱼"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "loach",
+    "emoji": "🐟",
+    "ko": "미꾸라지",
+    "rom": "mikkuraji",
+    "name": {
+      "en": "Loach"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "minnow",
+    "emoji": "🐟",
+    "ko": "피라미",
+    "rom": "pirami",
+    "name": {
+      "en": "Pale chub"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "ricefish",
+    "emoji": "🐟",
+    "ko": "송사리",
+    "rom": "songsari",
+    "name": {
+      "en": "Ricefish"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "mandarin",
+    "emoji": "🐟",
+    "ko": "쏘가리",
+    "rom": "ssogari",
+    "name": {
+      "en": "Mandarin fish"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 0,
+    "price": 6
+  },
+  {
+    "id": "bass",
+    "emoji": "🐟",
+    "ko": "배스",
+    "rom": "baeseu",
+    "name": {
+      "en": "Bass"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 0,
+    "price": 3
+  },
+  {
+    "id": "bluegill",
+    "emoji": "🐟",
+    "ko": "블루길",
+    "rom": "beullugil",
+    "name": {
+      "en": "Bluegill"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 0,
+    "price": 3
+  },
+  {
+    "id": "mackerel",
+    "emoji": "🐟",
+    "ko": "고등어",
+    "rom": "godeungeo",
+    "name": {
+      "en": "Mackerel",
+      "ja": "サバ",
+      "zh": "鲭鱼"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 1,
+    "price": 2
+  },
+  {
+    "id": "horse-mackerel",
+    "emoji": "🐟",
+    "ko": "전갱이",
+    "rom": "jeongaengi",
+    "name": {
+      "en": "Horse mackerel"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 1,
+    "price": 3
+  },
+  {
+    "id": "sardine",
+    "emoji": "🐟",
+    "ko": "정어리",
+    "rom": "jeongeori",
+    "name": {
+      "en": "Sardine"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 1,
+    "price": 1
+  },
+  {
+    "id": "anchovy",
+    "emoji": "🐟",
+    "ko": "멸치",
+    "rom": "myeolchi",
+    "name": {
+      "en": "Anchovy"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 1,
+    "price": 1
+  },
+  {
+    "id": "saury",
+    "emoji": "🐟",
+    "ko": "꽁치",
+    "rom": "kkongchi",
+    "name": {
+      "en": "Pacific saury"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 1,
+    "price": 3
+  },
+  {
+    "id": "cutlassfish",
+    "emoji": "🐟",
+    "ko": "갈치",
+    "rom": "galchi",
+    "name": {
+      "en": "Cutlassfish"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 1,
+    "price": 6
+  },
+  {
+    "id": "herring",
+    "emoji": "🐟",
+    "ko": "청어",
+    "rom": "cheongeo",
+    "name": {
+      "en": "Herring"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 1,
+    "price": 3
+  },
+  {
+    "id": "salmon",
+    "emoji": "🐟",
+    "ko": "연어",
+    "rom": "yeoneo",
+    "name": {
+      "en": "Salmon",
+      "ja": "サケ",
+      "zh": "三文鱼"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 1,
+    "price": 8
+  },
+  {
+    "id": "trout",
+    "emoji": "🐟",
+    "ko": "무지개송어",
+    "rom": "mujigaesongeo",
+    "name": {
+      "en": "Rainbow trout"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 1,
+    "price": 6
+  },
+  {
+    "id": "seabream",
+    "emoji": "🐟",
+    "ko": "참돔",
+    "rom": "chamdom",
+    "name": {
+      "en": "Red seabream"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 2,
+    "price": 6
+  },
+  {
+    "id": "sea-cucumber",
+    "emoji": "🐟",
+    "ko": "해삼",
+    "rom": "haesam",
+    "name": {
+      "en": "Sea cucumber"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 2,
+    "price": 3
+  },
+  {
+    "id": "sea-urchin",
+    "emoji": "🐟",
+    "ko": "성게",
+    "rom": "seongge",
+    "name": {
+      "en": "Sea urchin"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 2,
+    "price": 3
+  },
+  {
+    "id": "rockfish",
+    "emoji": "🐟",
+    "ko": "우럭",
+    "rom": "ureok",
+    "name": {
+      "en": "Rockfish"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 2,
+    "price": 3
+  },
+  {
+    "id": "flounder",
+    "emoji": "🐟",
+    "ko": "광어",
+    "rom": "gwangeo",
+    "name": {
+      "en": "Olive flounder"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 2,
+    "price": 6
+  },
+  {
+    "id": "puffer",
+    "emoji": "🐡",
+    "ko": "복어",
+    "rom": "bogeo",
+    "name": {
+      "en": "Pufferfish"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 2,
+    "price": 6
+  },
+  {
+    "id": "filefish",
+    "emoji": "🐟",
+    "ko": "쥐치",
+    "rom": "jwichi",
+    "name": {
+      "en": "Filefish"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 2,
+    "price": 3
+  },
+  {
+    "id": "anglerfish",
+    "emoji": "🐟",
+    "ko": "아귀",
+    "rom": "agwi",
+    "name": {
+      "en": "Anglerfish"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 2,
+    "price": 20
+  },
+  {
+    "id": "moray",
+    "emoji": "🐟",
+    "ko": "곰치",
+    "rom": "gomchi",
+    "name": {
+      "en": "Moray eel"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 2,
+    "price": 20
+  },
+  {
+    "id": "crayfish",
+    "emoji": "🦞",
+    "ko": "가재",
+    "rom": "gajae",
+    "name": {
+      "en": "Crayfish",
+      "ja": "ザリガニ",
+      "zh": "小龙虾"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 3,
+    "price": 3
+  },
+  {
+    "id": "crab",
+    "emoji": "🦀",
+    "ko": "꽃게",
+    "rom": "kkotge",
+    "name": {
+      "en": "Swimming crab",
+      "ja": "ワタリガニ",
+      "zh": "梭子蟹"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 3,
+    "price": 4
+  },
+  {
+    "id": "snow-crab",
+    "emoji": "🦀",
+    "ko": "대게",
+    "rom": "daege",
+    "name": {
+      "en": "Snow crab"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 3,
+    "price": 6
+  },
+  {
+    "id": "lobster",
+    "emoji": "🦞",
+    "ko": "바닷가재",
+    "rom": "badatgajae",
+    "name": {
+      "en": "Lobster"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 3,
+    "price": 20
+  },
+  {
+    "id": "shrimp",
+    "emoji": "🦐",
+    "ko": "새우",
+    "rom": "saeu",
+    "name": {
+      "en": "Shrimp"
+    },
+    "rarity": 1,
+    "released": false,
+    "page": 3,
+    "price": 1
+  },
+  {
+    "id": "octopus",
+    "emoji": "🐙",
+    "ko": "문어",
+    "rom": "muneo",
+    "name": {
+      "en": "Octopus"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 3,
+    "price": 6
+  },
+  {
+    "id": "squid",
+    "emoji": "🦑",
+    "ko": "오징어",
+    "rom": "ojingeo",
+    "name": {
+      "en": "Squid",
+      "ja": "イカ",
+      "zh": "鱿鱼"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 3,
+    "price": 5
+  },
+  {
+    "id": "cuttlefish",
+    "emoji": "🐟",
+    "ko": "갑오징어",
+    "rom": "gabojingeo",
+    "name": {
+      "en": "Cuttlefish"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 3,
+    "price": 6
+  },
+  {
+    "id": "webfoot-octopus",
+    "emoji": "🐙",
+    "ko": "주꾸미",
+    "rom": "jukkumi",
+    "name": {
+      "en": "Webfoot octopus"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 3,
+    "price": 3
+  },
+  {
+    "id": "clownfish",
+    "emoji": "🐠",
+    "ko": "흰동가리",
+    "rom": "huindonggari",
+    "name": {
+      "en": "Clownfish"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 4,
+    "price": 6
+  },
+  {
+    "id": "blue-tang",
+    "emoji": "🐠",
+    "ko": "블루탱",
+    "rom": "beullutaeng",
+    "name": {
+      "en": "Blue tang"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 4,
+    "price": 6
+  },
+  {
+    "id": "butterflyfish",
+    "emoji": "🐠",
+    "ko": "나비고기",
+    "rom": "nabigogi",
+    "name": {
+      "en": "Butterflyfish"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 4,
+    "price": 6
+  },
+  {
+    "id": "seahorse",
+    "emoji": "🐟",
+    "ko": "해마",
+    "rom": "haema",
+    "name": {
+      "en": "Seahorse"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 20
+  },
+  {
+    "id": "lionfish",
+    "emoji": "🐟",
+    "ko": "쏠배감펭",
+    "rom": "ssolbaegampaeng",
+    "name": {
+      "en": "Lionfish"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 20
+  },
+  {
+    "id": "mandarinfish",
+    "emoji": "🐠",
+    "ko": "만다린피시",
+    "rom": "mandarinpisi",
+    "name": {
+      "en": "Mandarinfish"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 20
+  },
+  {
+    "id": "parrotfish",
+    "emoji": "🐠",
+    "ko": "앵무고기",
+    "rom": "aengmugogi",
+    "name": {
+      "en": "Parrotfish"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 4,
+    "price": 6
+  },
+  {
+    "id": "ray",
+    "emoji": "🐟",
+    "ko": "가오리",
+    "rom": "gaori",
+    "name": {
+      "en": "Ray"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 20
+  },
+  {
+    "id": "sunfish",
+    "emoji": "🐟",
+    "ko": "개복치",
+    "rom": "gaebokchi",
+    "name": {
+      "en": "Ocean sunfish"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 20
+  },
+  {
+    "id": "tuna",
+    "emoji": "🐟",
+    "ko": "참치",
+    "rom": "chamchi",
+    "name": {
+      "en": "Tuna",
+      "ja": "マグロ",
+      "zh": "金枪鱼"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 5,
+    "price": 20
+  },
+  {
+    "id": "swordfish",
+    "emoji": "🐟",
+    "ko": "황새치",
+    "rom": "hwangsaechi",
+    "name": {
+      "en": "Swordfish"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 5,
+    "price": 20
+  },
+  {
+    "id": "shark",
+    "emoji": "🦈",
+    "ko": "백상아리",
+    "rom": "baeksangari",
+    "name": {
+      "en": "Great white shark",
+      "ja": "ホホジロザメ",
+      "zh": "大白鲨"
+    },
+    "rarity": 5,
+    "released": true,
+    "page": 5,
+    "price": 60
+  },
+  {
+    "id": "whale",
+    "emoji": "🐋",
+    "ko": "흰수염고래",
+    "rom": "huinsuyeomgorae",
+    "name": {
+      "en": "Blue whale",
+      "ja": "シロナガスクジラ",
+      "zh": "蓝鲸"
+    },
+    "rarity": 5,
+    "released": true,
+    "page": 5,
+    "price": 300
+  }
 ];
-export const fishById = (id) => FISH.find((f) => f.id === id) || null;
 
-// Pick what bit, by chance. rand() in [0, 1).
+export const AVAILABLE_FISH = FISH.filter(f => f.released);
+// Weights are normalized so adding a species cannot break the lottery.
+const weights = [0, 12, 7, 3, 0.8, 0.15];
+const totalWeight = AVAILABLE_FISH.reduce((sum, f) => sum + (f.id === 'whale' ? 0.03 : weights[f.rarity]), 0);
+for (const f of FISH) f.chance = f.released ? (f.id === 'whale' ? 0.03 : weights[f.rarity]) / totalWeight * 100 : 0;
+export const fishById = id => FISH.find(f => f.id === id) || null;
 export function rollFish(rand = Math.random) {
   let r = rand() * 100;
-  for (const f of FISH) {
-    r -= f.chance;
-    if (r < 0) return f;
-  }
-  return FISH[0];
+  for (const f of AVAILABLE_FISH) { r -= f.chance; if (r < 0) return f; }
+  return AVAILABLE_FISH.at(-1);
 }
 
-// Reel taps needed: common fish 5, a whale 24. Time to do it: REEL_SECONDS.
+export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
+export const TRASH_CHANCE = 0.04;
+export function rollCatch(rand = Math.random) {
+  const value = rand();
+  return value < TRASH_CHANCE ? TRASH : rollFish(() => (value - TRASH_CHANCE) / (1 - TRASH_CHANCE));
+}
 export const REEL_SECONDS = 5;
-export function tapsFor(fish) {
-  const rank = FISH.indexOf(fish); // 0 = most common
-  return 5 + Math.round(rank * rank * 0.24);
-}
-
-// A hooked fish can still get away just as you land it: 10% for the most
-// common, up to 37% for a whale. Reeling it in fast (time to spare) halves
-// that at best. spare: the share of REEL_SECONDS left, 0..1.
+export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
 export function escapeChance(fish, spare = 0) {
-  const rank = Math.max(0, FISH.indexOf(fish));
-  return (0.1 + rank * 0.03) * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
+  if (fish.trash) return 0;
+  return [0, 0.10, 0.14, 0.18, 0.23, 0.28][fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
 }
 
 // Seconds to wait for a bite, and how long the bite lasts.
@@ -106,7 +747,8 @@ export class FishDex {
   has(id) { return !!this.c[id]; }
   get kinds() { return Object.keys(this.c).length; }
   get total() { return Object.values(this.c).reduce((a, b) => a + b, 0); }
-  get complete() { return this.kinds === FISH.length; }
+  get complete() { return FISH.every(f => this.has(f.id)); }
+  get availableComplete() { return AVAILABLE_FISH.every(f => this.has(f.id)); }
   // Record a catch; returns true the first time this kind is caught.
   add(id) {
     if (!fishById(id)) return false;
@@ -118,5 +760,4 @@ export class FishDex {
   _save() { try { this.storage?.setItem(DEX_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
 }
 
-// 1 to 5 stars, from the 30% crucian carp to the 0.1% whale.
-export const rarityStars = (f) => (f.chance >= 20 ? 1 : f.chance >= 9 ? 2 : f.chance >= 5 ? 3 : f.chance >= 1 ? 4 : 5);
+export const rarityStars = f => f.rarity;
