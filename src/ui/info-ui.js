@@ -63,7 +63,7 @@ export const AREA = {
     intro: { en: 'Songpa: walks around Seokchon Lake and Another Land, the theme park on the lake island.', ko: '송파: 석촌호수 산책길과 호수 섬 위의 놀이공원 어나더랜드.', ja: '松坡：石村湖の散歩道と、湖の島の遊園地アナザーランド。', zh: '松坡：石村湖步道和湖心岛上的游乐园另一乐园。' } },
   seodaemun: { icon: '📚', to: { zone: 'I' },
     name: { en: 'Sinchon', ko: '신촌', ja: '新村', zh: '新村', es: 'Sinchon', id: 'Sinchon', vi: 'Sinchon', hi: 'सिनचोन', ar: 'سينتشون' },
-    intro: { en: 'Sinchon (Seodaemun): a campus street with a Korean academy and a library full of Korean books.', ko: '신촌(서대문): 어학당과 한국어 책이 가득한 도서관이 있는 대학가.', ja: '新村（西大門）：語学堂と韓国語の本でいっぱいの図書館がある大学街。', zh: '新村（西大门）：有语学堂和满是韩语书的图书馆的大学街。' } },
+    intro: { en: 'Sinchon (Seodaemun): a campus street with a Korean academy, a library full of Korean books, and three cinemas on Sinchon-ro: Byeolbit Cinema, Doodle Cinema 2D and the black-and-white Silver Screen Theater.', ko: '신촌(서대문): 어학당과 한국어 책이 가득한 도서관이 있는 대학가. 신촌로에는 별빛 시네마, 두들 시네마 2D, 흑백 영화관 은막 흑백극장이 모여 있어요.', ja: '新村（西大門）：語学堂と韓国語の本でいっぱいの図書館がある大学街。新村路にはビョルビッ シネマ、ドゥードゥル シネマ 2D、白黒の銀幕モノクロ劇場が並んでいます。', zh: '新村（西大门）：有语学堂和满是韩语书的图书馆的大学街。新村路上有星光影院、涂鸦影院 2D 和黑白的银幕黑白剧场。' } },
   hongdae: { icon: '🎸', to: { zone: 'J' },
     name: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', hi: 'होंगदे', ar: 'هونغداي' },
     intro: { en: 'Hongdae: buskers on the Walking Street, indie shops, animal cafés, tarot and a neon name tag shop.', ko: '홍대: 걷고싶은거리의 버스킹, 인디 가게, 동물 카페, 타로, 네온 네임택 가게.', ja: '弘大：歩きたい通りのバスキング、インディーの店、動物カフェ、タロット、ネオンのネームタグ店。', zh: '弘大：步行街的街头表演、独立小店、动物咖啡馆、塔罗和霓虹名牌店。' } },

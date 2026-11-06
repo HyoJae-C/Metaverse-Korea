@@ -2584,7 +2584,7 @@ function enterStore(item) {
   deliveryArrived(store.id);
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
-  if (store.cinema) enterKpopCafe('cinema');
+  if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (store.genre) enterClub(store.genre);
   const quiet = store.category === 'library';
@@ -2813,9 +2813,12 @@ let cafeMusic = null; // { wasOn } while inside a music café
 // (ui/kpop-room.js). Our own background music pauses while inside.
 let kpopMusic = null;
 // The cinema works the same way, with its own films.
-async function enterKpopCafe(kind = 'kpop') {
+// The black-and-white cinema shows the whole hall, its film and the people
+// in it in black and white (a filter on the 3D view and the video).
+async function enterKpopCafe(kind = 'kpop', cinema = true) {
   kpopMusic = { wasOn: music.on };
-  kpop.enter(kind);
+  kpop.enter(kind, cinema);
+  document.body.classList.toggle('cinema-silver', cinema === 'silver');
   if (music.on) { await music.setOn(false); applyMusicBtn(); }
 }
 async function leaveKpopCafe() {
@@ -2823,6 +2826,7 @@ async function leaveKpopCafe() {
   const { wasOn } = kpopMusic;
   kpopMusic = null;
   kpop.leave();
+  document.body.classList.remove('cinema-silver');
   if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
 }
 async function enterMusicCafe(track = 'lofi') {
