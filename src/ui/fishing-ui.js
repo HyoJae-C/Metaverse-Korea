@@ -15,12 +15,34 @@ export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.n
 const pct = c => (c < 0.1 ? c.toFixed(2) : c.toFixed(1)) + '%';
 const text = (ko, en) => localName({ ko, en });
 
+// Sprite positions are keyed by stable IDs, independently of the book order.
+const fishIconPositions = new Map([
+  'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
+  'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
+  'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
+  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'crayfish',
+  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
+  'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
+  'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
+].map((id, index) => [id, `${(index % 7) * 100 / 6}% ${Math.floor(index / 7) * 100 / 6}%`]));
+
+function fishStampIcon(f) {
+  const position = fishIconPositions.get(f.id);
+  const icon = el('span', 'fish-stamp-fish', position ? null : f.emoji);
+  icon.setAttribute('aria-hidden', 'true');
+  if (position) {
+    icon.classList.add('fish-stamp-sprite');
+    icon.style.backgroundPosition = position;
+  }
+  return icon;
+}
+
 // One round red-ink stamp for a fish: the fish, "한강 낚시" and its name.
 // Uncaught kinds are an empty dashed ring with the fish's dark silhouette.
 export function fishStamp(f, caught = true) {
   const st = el('div', 'fish-stamp' + (caught ? '' : ' empty'));
   st.style.setProperty('--tilt', ((FISH.indexOf(f) * 37) % 17) - 8 + 'deg');
-  st.append(el('small', 'fish-stamp-top', caught ? '한강 낚시' : ''), el('span', 'fish-stamp-fish', f.emoji), el('b', 'fish-stamp-name', caught ? f.ko : '???'));
+  st.append(el('small', 'fish-stamp-top', caught ? '한강 낚시' : ''), fishStampIcon(f), el('b', 'fish-stamp-name', caught ? f.ko : '???'));
   return st;
 }
 

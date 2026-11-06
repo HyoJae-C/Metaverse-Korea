@@ -1760,6 +1760,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
+.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp") no-repeat; background-size: 700% 700%; }
 .fish-stamp-name { font-size: 12px; font-weight: 900; line-height: 1; }
 .fish-stamp.empty { border: 2px dashed #cfc3ae; box-shadow: none; background: none; color: #9a8f82; transform: none; }
 .fish-stamp.empty .fish-stamp-fish { filter: brightness(0); opacity: 0.35; }
