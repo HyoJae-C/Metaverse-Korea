@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { biteWait } from '../src/core/fishing.js';
 import { FISH, AVAILABLE_FISH, rollFish, rollCatch, TRASH, TRASH_CHANCE, tapsFor, escapeChance, fishById, FishBag, FishDex, BAG_MAX } from '../src/core/fishing.js';
 
 const memory = () => {
@@ -117,4 +118,9 @@ test('every kind has a picture, and saves with swapped-out kinds keep their coun
   assert.equal(dex.count('giant-squid'), 1);
   for (const id of Object.values(RENAMED)) assert.ok(fishById(id), id);
   for (const id of Object.keys(RENAMED)) assert.equal(fishById(id), null, id);
+});
+
+test('a bite comes after 3 to 10 seconds', () => {
+  assert.equal(biteWait(() => 0), 3);
+  assert.equal(biteWait(() => 0.999999).toFixed(2), '10.00');
 });
