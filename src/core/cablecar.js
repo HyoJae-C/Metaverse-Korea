@@ -14,9 +14,9 @@ import { LOCK_SHAPES } from './love-locks.js';
 
 export const CABLE = {
   // With two cabins half a cycle apart, one is at each station every
-  // dwell + trip = 30 seconds (from either bay: you board whichever is in).
-  dwell: 8, // seconds a cabin waits at each station with its doors open
-  trip: 22, // seconds from one station to the other
+  // dwell + trip = 15 seconds (from either bay: you board whichever is in).
+  dwell: 6, // seconds a cabin waits at each station with its doors open
+  trip: 9, // seconds from one station to the other
   fare: 4, // coins for the way up; the way down is on the same ticket
 };
 CABLE.half = CABLE.dwell + CABLE.trip;

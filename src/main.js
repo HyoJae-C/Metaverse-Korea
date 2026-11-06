@@ -2510,6 +2510,7 @@ function enterStore(item) {
     interiorCache.set(store.id, built);
     built.setSignLang?.(signsTranslated ? getLanguage() : null);
     if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
   }
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
@@ -5593,6 +5594,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (interior.cablecar && cableAction(p)) {
       next = cableAction(p);
+    } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
+      next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
     } else if (ride) {
