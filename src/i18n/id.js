@@ -460,6 +460,7 @@ export const ID = {
   'map.title': 'Peta Seoul',
   "map.seoul": "Seluruh Seoul",
   "map.soon": "Segera hadir",
+  'map.open': 'Sudah dibuka',
   'map.zones': 'Zona kumpul',
   'map.shops': 'Toko',
   'guide.to': '{label} · {m} m',

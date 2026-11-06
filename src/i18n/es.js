@@ -459,6 +459,7 @@ export const ES = {
   'map.title': 'Mapa de Seúl',
   "map.seoul": "Todo Seúl",
   "map.soon": "Próximamente",
+  'map.open': 'Abierto',
   'map.zones': 'Zonas de encuentro',
   'map.shops': 'Tiendas',
   'guide.to': '{label} · {m} m',

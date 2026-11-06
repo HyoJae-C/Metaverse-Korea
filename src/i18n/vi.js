@@ -460,6 +460,7 @@ export const VI = {
   'map.title': 'Bản đồ Seoul',
   'map.seoul': 'Toàn Seoul',
   'map.soon': 'Sắp ra mắt',
+  'map.open': 'Đã mở',
   'map.zones': 'Khu gặp gỡ',
   'map.shops': 'Cửa hàng',
   'guide.to': '{label} · {m} m',
