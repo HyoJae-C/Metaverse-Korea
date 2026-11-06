@@ -207,6 +207,7 @@ export const ES = {
   'cat.club': 'Discoteca',
   'cat.bar': 'Bar',
   'cat.info': 'Información',
+  'cat.bank': 'Banco',
   'cat.library': 'Biblioteca',
   'cat.museum': 'Museo',
   'cat.school': 'Escuela',

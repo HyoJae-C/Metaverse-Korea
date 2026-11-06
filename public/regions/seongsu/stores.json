@@ -583,6 +583,17 @@
       "products": []
     },
     {
+      "id": "haetsal-bank",
+      "category": "bank",
+      "workshop": "bank",
+      "size": "medium",
+      "at": [67.5, -20.9],
+      "name": { "en": "Haetsal Bank", "ko": "햇살은행", "ja": "ヘッサル銀行", "zh": "阳光银行" },
+      "tagline": { "en": "Send coins to a friend: come in together and visit the teller", "ko": "친구에게 코인 송금: 함께 들어와서 창구로 가요", "ja": "友だちにコインを送金：一緒に入って窓口へ", "zh": "给朋友转硬币：一起进来到柜台办理" },
+      "colors": { "sign": "#1f8a6e", "awning": "#d4f0e6", "accent": "#f3faf7" },
+      "products": []
+    },
+    {
       "id": "info-gyeongbokgung",
       "category": "info",
       "workshop": "info",
