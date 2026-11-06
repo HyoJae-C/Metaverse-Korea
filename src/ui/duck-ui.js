@@ -1,27 +1,30 @@
-// Duck boat panel (rules in core/duck-boat.js): tap the left and right pedals
-// in turn to reach the buoy. With a friend next to you, both pedal the same
-// boat: strokes are sent to each other a few times a second.
-import { COURSE, RACE_SECONDS, FRIEND_BONUS, DuckBoat, duckPay } from '../core/duck-boat.js';
+// Duck boat (rules in core/duck-boat.js): a short sheet before setting off,
+// and a small clock at the top while out on the water. Steering uses the
+// normal movement controls (joystick on phones, WASD / arrows on a PC).
+import { RIDE_SECONDS, clock } from '../core/duck-boat.js';
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
-  title: { en: 'Duck boat', ko: '한강 오리배', ja: 'アヒルボート', zh: '鸭子船' },
+  title: { en: 'Duck boat', ko: '한강 오리배', ja: 'アヒルボート', zh: '鸭子船', es: 'Bote pato', ar: 'قارب البطة', vi: 'Thuyền vịt', hi: 'बत्तख नाव', id: 'Perahu bebek' },
   howTo: {
-    en: 'Tap ◀ and ▶ in turn to pedal to the buoy in 30 seconds. With a friend next to you, pick "Ride together": your pedalling adds up!',
-    ko: '◀ ▶를 번갈아 눌러 30초 안에 부표까지 가요. 옆에 친구가 있으면 "같이 타기"를 고르세요. 둘의 페달이 합쳐져요!',
-    ja: '◀ ▶を交互に押して30秒以内にブイまで。そばに友だちがいれば「一緒に乗る」を選ぶと、2人のペダルが合わさります！',
-    zh: '交替按 ◀ ▶ 踩踏板，30秒内到达浮标。旁边有朋友就选“一起坐”，两人的踩踏会叠加！',
+    en: 'Free ride! Pedal anywhere on the river for up to 1 minute. Steer with the joystick (or WASD / arrow keys). When time is up, the boat brings you back to the dock.',
+    ko: '무료예요! 최대 1분 동안 강 위를 자유롭게 다녀요. 조이스틱(또는 WASD·방향키)으로 움직이고, 시간이 끝나면 배가 선착장으로 돌아와요.',
+    ja: '無料です！最大1分間、川の上を自由にこげます。ジョイスティック（またはWASD・矢印キー）で操作。時間になるとボートが乗り場に戻ります。',
+    zh: '免费！在江面上自由踩船，最多1分钟。用摇杆（或WASD/方向键）掌舵，时间到了船会自己回到码头。',
+    es: '¡Gratis! Pedalea por el río hasta 1 minuto. Dirige con el joystick (o WASD / flechas). Al acabar el tiempo, el bote vuelve solo al muelle.',
+    ar: 'مجانًا! جدّف في النهر بحرّية لمدة دقيقة واحدة كحدّ أقصى. وجّه القارب بعصا التحكم (أو WASD / الأسهم). عند انتهاء الوقت يعود القارب إلى الرصيف.',
+    vi: 'Miễn phí! Đạp thuyền tự do trên sông tối đa 1 phút. Điều khiển bằng cần điều khiển (hoặc WASD / phím mũi tên). Hết giờ, thuyền tự quay về bến.',
+    hi: 'मुफ़्त! नदी पर 1 मिनट तक जहाँ चाहें पैडल मारें। जॉयस्टिक (या WASD / तीर कुंजियों) से चलाएँ। समय पूरा होने पर नाव आपको घाट पर वापस ले आएगी।',
+    id: 'Gratis! Kayuh bebas di sungai hingga 1 menit. Kemudikan dengan joystick (atau WASD / tombol panah). Saat waktu habis, perahu kembali sendiri ke dermaga.',
   },
-  solo: { en: 'Ride alone', ko: '혼자 타기', ja: 'ひとりで乗る', zh: '一个人坐' },
-  together: { en: 'Ride together with {name}', ko: '{name}님과 같이 타기', ja: '{name}さんと一緒に乗る', zh: '和{name}一起坐' },
-  left: { en: '{m} m to the buoy · {s} s', ko: '부표까지 {m}m · {s}초', ja: 'ブイまで {m}m · {s}秒', zh: '距浮标 {m}米 · {s}秒' },
-  partner: { en: 'Pedalling with {name}', ko: '{name}님과 함께 페달 중', ja: '{name}さんと一緒にこいでいます', zh: '正和{name}一起踩' },
-  win: { en: 'You reached the buoy! 🪙 +{n}', ko: '부표 도착! 🪙 +{n}', ja: 'ブイに到着！🪙 +{n}', zh: '到达浮标！🪙 +{n}' },
-  winTogether: { en: 'Together bonus 🪙 +{n}', ko: '같이 타기 보너스 🪙 +{n}', ja: '一緒ボーナス 🪙 +{n}', zh: '一起奖励 🪙 +{n}' },
-  lose: { en: "Time's up! {m} m to go.", ko: '시간 끝! {m}m 남았어요.', ja: '時間切れ！あと {m}m。', zh: '时间到！还差{m}米。' },
-  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次' },
+  go: { en: 'Set off (free · 1 min)', ko: '출발 (무료 · 1분)', ja: '出発（無料・1分）', zh: '出发（免费 · 1分钟）', es: 'Salir (gratis · 1 min)', ar: 'انطلق (مجانًا · دقيقة)', vi: 'Xuất phát (miễn phí · 1 phút)', hi: 'चलें (मुफ़्त · 1 मिनट)', id: 'Berangkat (gratis · 1 mnt)' },
+  partner: { en: '{name} is steering. Enjoy the view!', ko: '{name}님이 운전 중이에요. 경치를 즐겨요!', ja: '{name}さんが運転中。景色を楽しんで！', zh: '{name}正在掌舵，欣赏风景吧！', es: '{name} lleva el timón. ¡Disfruta la vista!', ar: '{name} يقود القارب. استمتع بالمنظر!', vi: '{name} đang lái. Ngắm cảnh nhé!', hi: '{name} नाव चला रहे हैं। नज़ारे का मज़ा लीजिए!', id: '{name} sedang mengemudi. Nikmati pemandangannya!' },
+  steer: { en: 'Steer with the joystick', ko: '조이스틱으로 움직여요', ja: 'ジョイスティックで操作', zh: '用摇杆掌舵', es: 'Dirige con el joystick', ar: 'وجّه بعصا التحكم', vi: 'Lái bằng cần điều khiển', hi: 'जॉयस्टिक से चलाएँ', id: 'Kemudikan dengan joystick' },
+  steerKeys: { en: 'Steer with WASD / arrow keys', ko: 'WASD·방향키로 움직여요', ja: 'WASD・矢印キーで操作', zh: '用WASD/方向键掌舵', es: 'Dirige con WASD / flechas', ar: 'وجّه بـ WASD / الأسهم', vi: 'Lái bằng WASD / phím mũi tên', hi: 'WASD / तीर कुंजियों से चलाएँ', id: 'Kemudikan dengan WASD / panah' },
+  riding: { en: 'Riding with {name}', ko: '{name}님과 같이 타는 중', ja: '{name}さんと乗っています', zh: '和{name}一起坐船', es: 'Paseando con {name}', ar: 'مع {name}', vi: 'Đang đi cùng {name}', hi: '{name} के साथ सवारी', id: 'Naik bersama {name}' },
+  returning: { en: 'Heading back to the dock…', ko: '선착장으로 돌아가는 중…', ja: '乗り場に戻っています…', zh: '正在返回码头…', es: 'Volviendo al muelle…', ar: 'العودة إلى الرصيف…', vi: 'Đang quay về bến…', hi: 'घाट पर लौट रहे हैं…', id: 'Kembali ke dermaga…' },
   leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', vi: 'Xuống', hi: 'उतरें', id: 'Turun' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', hi: 'बंद करें', id: 'Tutup' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
@@ -30,112 +33,52 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
+const touch = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 export class DuckUI {
-  // friend(): { id, name } of someone right next to you, or null;
-  // send(msg) to the room; wallet; onDone(finished, together).
-  // onProgress(k): 0 at the dock … 1 at the buoy, as you pedal.
-  // onLeave(): get off the boat (shown when set).
-  constructor({ root, wallet, friend, send, onDone, onProgress, onLeave }) {
-    Object.assign(this, { root, wallet, friend, send, onDone, onProgress, onLeave });
-    this.timer = 0;
+  // root: the sheet; hudRoot: the clock bar (heading back early is the
+  // action button's job). onStart(): set off; onLeave(): get off at the dock.
+  constructor({ root, hudRoot, onStart, onLeave }) {
+    Object.assign(this, { root, hudRoot, onStart, onLeave });
+    this._hudKey = '';
   }
   get open() { return !this.root.hidden; }
-  show() { this.root.hidden = false; this.renderStart(); }
-  close() { this._stop(); this.root.hidden = true; }
-  _stop() { clearInterval(this.timer); this.timer = 0; this.race = null; }
+  close() { this.root.hidden = true; }
 
-  // A partner's strokes ('duck:<me>:<n>').
-  heard(from, strokes) {
-    if (this.race?.partner?.id === from) this.race.boat.heard(strokes);
-  }
-
-  _frame() {
-    this._stop();
+  // The sheet at the dock. partner: name of a friend already steering this boat.
+  show(partner) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', tt('close'));
     x.onclick = () => this.close();
-    this.root.replaceChildren(x, el('h3', null, '🦆 ' + tt('title')));
-  }
-
-  renderStart() {
-    this._frame();
-    const f = this.friend?.();
     const actions = el('div', 'order-actions');
-    const solo = el('button', f ? 'chip' : 'primary', '🦆 ' + tt('solo'));
-    solo.onclick = () => this.play(null);
-    actions.append(solo);
-    if (f) {
-      const two = el('button', 'primary', '👫 ' + tt('together', { name: f.name }));
-      two.onclick = () => this.play(f);
-      actions.append(two);
+    if (!partner) {
+      const go = el('button', 'primary', '🚣 ' + tt('go'));
+      go.onclick = () => { this.close(); this.onStart?.(); };
+      actions.append(go);
     }
-    if (this.onLeave) {
-      const off = el('button', 'chip', '🧍 ' + tt('leave'));
-      off.onclick = () => { this.close(); this.onLeave(); };
-      actions.append(off);
-    }
-    this.root.append(el('p', 'order-hint', tt('howTo')), actions);
+    const off = el('button', 'chip', '🧍 ' + tt('leave'));
+    off.onclick = () => { this.close(); this.onLeave?.(); };
+    actions.append(off);
+    this.root.replaceChildren(x, el('h3', null, '🦆 ' + tt('title')),
+      el('p', 'order-hint', partner ? tt('partner', { name: partner }) : tt('howTo')), actions);
+    this.root.hidden = false;
   }
 
-  play(partner) {
-    this._frame();
-    const boat = new DuckBoat();
-    const race = (this.race = { boat, partner, left: RACE_SECONDS, sent: -1 });
-    const cv = el('canvas', 'duck-lane');
-    cv.width = 640; cv.height = 150;
-    const info = el('p', 'karaoke-status');
-    const pads = el('div', 'duck-pads');
-    const pedal = (side) => (e) => { e.preventDefault(); if (this.race === race && race.left > 0) { boat.pedal(side); paint(); } };
-    const lb = el('button', 'primary duck-pad', '◀');
-    const rb = el('button', 'primary duck-pad', '▶');
-    lb.onpointerdown = pedal('L');
-    rb.onpointerdown = pedal('R');
-    pads.append(lb, rb);
-    this.root.append(cv, info);
-    if (partner) this.root.append(el('p', 'order-hint', '👫 ' + tt('partner', { name: partner.name })));
-    this.root.append(pads);
-    const paint = () => {
-      const c = cv.getContext('2d');
-      const g = c.createLinearGradient(0, 0, 0, cv.height);
-      g.addColorStop(0, '#7cc4e8'); g.addColorStop(1, '#3d8fc4');
-      c.fillStyle = g; c.fillRect(0, 0, cv.width, cv.height);
-      c.strokeStyle = 'rgba(255,255,255,0.35)';
-      for (let i = 0; i < 8; i++) { const wx = ((i * 97 - boat.dist * 6) % 700 + 700) % 700 - 30; c.beginPath(); c.arc(wx, 40 + (i % 3) * 35, 10, 0, Math.PI); c.stroke(); }
-      const x = 40 + (Math.min(boat.dist, COURSE) / COURSE) * (cv.width - 120);
-      c.font = '44px system-ui'; c.textAlign = 'center';
-      c.fillText('🛟', cv.width - 40, 95);
-      c.fillText('🦆', x, 95);
-      this.onProgress?.(Math.min(boat.dist, COURSE) / COURSE);
-      info.textContent = tt('left', { m: Math.max(0, Math.ceil(COURSE - boat.dist)), s: Math.max(0, race.left).toFixed(1) });
-      if (boat.done) this.finish(race);
-    };
-    paint();
-    this.timer = setInterval(() => {
-      if (this.race !== race) return;
-      race.left -= 0.1;
-      // Tell the partner my stroke count a few times a second.
-      if (partner && boat.mine !== race.sent && Math.round(race.left * 10) % 3 === 0) { race.sent = boat.mine; this.send(partner.id, boat.mine); }
-      paint();
-      if (race.left <= 0 && this.race === race) this.finish(race);
-    }, 100);
-  }
-
-  finish(race) {
-    if (this.race !== race) return;
-    if (race.partner) this.send(race.partner.id, race.boat.mine);
-    const ok = race.boat.done;
-    const coins = duckPay(ok, race.left) + (ok && race.partner ? FRIEND_BONUS : 0);
-    if (coins) this.wallet.add(coins);
-    this._frame();
-    const res = el('div', 'grill-result');
-    res.append(el('span', 'grill-medal', ok ? '🛟' : '🦆'), el('strong', null, ok ? tt('win', { n: coins }) : tt('lose', { m: Math.ceil(COURSE - race.boat.dist) })));
-    if (ok && race.partner) res.append(el('p', 'order-hint', tt('winTogether', { n: FRIEND_BONUS })));
-    const again = el('button', 'primary', tt('again'));
-    again.onclick = () => this.renderStart();
-    const actions = el('div', 'order-actions');
-    actions.append(again);
-    this.root.append(res, actions);
-    this.onDone?.(ok, !!race.partner);
+  // The clock while out: null hides it. s = { left, returning, driver } where
+  // driver is a friend's name when they steer.
+  hud(s) {
+    const h = this.hudRoot;
+    if (!s) { if (!h.hidden) { h.hidden = true; this._hudKey = ''; } return; }
+    const t = s.returning ? '⚓' : clock(s.left);
+    const key = [t, s.returning, s.driver || ''].join('|');
+    if (key === this._hudKey && !h.hidden) return;
+    this._hudKey = key;
+    const time = el('b', 'duck-clock', '🦆 ' + t);
+    time.classList.toggle('low', !s.returning && s.left <= 10);
+    const note = el('span', 'duck-note', s.returning ? tt('returning') : s.driver ? tt('riding', { name: s.driver }) : tt(touch() ? 'steer' : 'steerKeys'));
+    const bar = el('i', 'duck-bar');
+    bar.style.width = `${s.returning ? 0 : Math.max(0, Math.min(1, s.left / RIDE_SECONDS)) * 100}%`;
+    h.replaceChildren(time, note, bar);
+    h.hidden = false;
   }
 }

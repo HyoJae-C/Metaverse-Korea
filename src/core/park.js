@@ -16,8 +16,6 @@ const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラ�
 export const DUCK_BOATS = 4;
 // Where the two riders sit, in the boat's own space (it faces -z).
 export const DUCK_SEATS = [[-0.3, 0.15], [0.3, 0.15]];
-// How far out a full race takes the boat, in metres.
-export const DUCK_TRIP = 26;
 // A pedal boat shaped like a duck: white hull, yellow neck and head with an
 // orange beak at the front, a coloured canopy on four posts, a bench.
 export function makeDuckBoat(roof) {
