@@ -109,7 +109,7 @@ import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
-import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, fishStampIcon } from './ui/fishing-ui.js';
+import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, fishStampIcon, showMs } from './ui/fishing-ui.js';
 import { FishBag, FishDex, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
@@ -3668,7 +3668,7 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
-  showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), 5000, 'trophy');
+  showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
   for (const [id, rig] of peerRigs) {
@@ -3701,10 +3701,10 @@ const fishingUi = new FishingUI({
   onCatch: (f) => {
     sfx.pop?.();
     refreshFishBookBtn();
-    showBubbleEl(myLabel, $('labels'), fishStampIcon(f, 'bubble-fish'), 2500);
+    showBubbleEl(myLabel, $('labels'), fishStampIcon(f, 'bubble-fish tier-' + f.rarity), showMs(f));
     if (f.chance <= 2) me.play('cheer'); // a rare one!
     if (f.rarity >= TROPHY_RARITY) { // ★4–★5: a trophy over my head, for everyone nearby
-      showBubbleEl(myLabel, $('labels'), trophy(f, nickname), 5000, 'trophy');
+      showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
     }

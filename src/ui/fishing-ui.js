@@ -39,6 +39,10 @@ export function fishStampIcon(f, cls = 'fish-stamp-fish') {
 // A ★4–★5 catch, shown over the angler's head for everyone nearby: the
 // fish's picture in a burst of light and "<name> caught <fish>!".
 export const TROPHY_RARITY = 4;
+// How long a catch shows over the catcher's head, by rarity (ms): the rarer,
+// the longer (a ★5 legend stays up for 12 seconds).
+export const SHOW_MS = [0, 2500, 3000, 4500, 8000, 12000];
+export const showMs = (f) => SHOW_MS[f?.rarity] || 2500;
 export function trophy(f, name) {
   const w = el('div', 'trophy-in tier-' + f.rarity);
   const pic = el('span', 'trophy-pic');
