@@ -31,3 +31,14 @@ test('dogs, cats, chinchilla and guinea pig are for sale; the monkey comes from 
   assert.equal(await redeemCode('pets'), null);
   for (const it of Object.values(ITEMS)) if (it.pet) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(it.name[l] && it.desc[l]);
 });
+
+test('the pet shop sells only two dogs and two cats; old pets still work', async () => {
+  const { readFileSync } = await import('node:fs');
+  const data = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url)));
+  const shop = (data.stores || data).find((s) => s.id === 'mungnyang-petshop');
+  const sold = shop.products.map((p) => p.adopt);
+  assert.deepEqual(sold, ['pet-maltese', 'pet-poodle', 'pet-cheesecat', 'pet-bluecat']);
+  assert.deepEqual(shop.products.map((p) => p.model).sort(), ['pet:cat', 'pet:cat', 'pet:dog', 'pet:dog']);
+  // Taken off sale, but pets players already own (or get by code) still exist.
+  for (const id of ['pet-shiba', 'pet-chinchilla', 'pet-guineapig']) assert.ok(isPet(id), id);
+});
