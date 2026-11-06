@@ -293,6 +293,14 @@ export class Sfx {
     this._tone(420 + big * 80, 0, 0.14, 0.07 + big * 0.05, 'sine', 140); // plop
     if (big > 0.6) this._hiss(0.12, 0.5, 0.05, 1800, 500); // water falling back
   }
+  // Two duck boats (or bumper cars) bumping: a rubbery "boing" and a slosh.
+  // hard 0..1, loud 0..1 (quieter far away).
+  bump(hard = 0.5, loud = 1) {
+    if (!this.on || !this._ctx() || loud < 0.05) return;
+    this._tone(210 + hard * 60, 0, 0.22, (0.08 + hard * 0.08) * loud, 'sine', 120); // boing
+    this.tock((0.35 + hard * 0.4) * loud, 320);
+    this._hiss(0.03, 0.25 + hard * 0.2, (0.04 + hard * 0.06) * loud, 2200, 400); // water slosh
+  }
   // A fish nibbling: a tiny "plip" from the bobber.
   plip() {
     if (!this.on || !this._ctx()) return;
