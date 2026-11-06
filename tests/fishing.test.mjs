@@ -59,3 +59,27 @@ test('fish can get away: rarer ones more often, less if you reel fast', () => {
   const ev = FISH.reduce((a, f) => a + (f.chance / 100) * f.price * (1 - escapeChance(f, 0.3)), 0);
   assert.ok(ev > 2.4 && ev < 3.2, String(ev));
 });
+
+test('fish book: kinds, totals, first catch, saved, seeded from the bag once', async () => {
+  const { FishDex, rarityStars } = await import('../src/core/fishing.js');
+  const s = memory();
+  const dex = new FishDex(s);
+  assert.equal(dex.kinds, 0);
+  assert.equal(dex.add('crucian'), true);
+  assert.equal(dex.add('crucian'), false);
+  assert.equal(dex.add('whale'), true);
+  assert.equal(dex.add('nope'), false);
+  assert.deepEqual([dex.kinds, dex.total, dex.count('crucian')], [2, 3, 2]);
+  const again = new FishDex(s);
+  assert.deepEqual([again.kinds, again.total], [2, 3]);
+  // Selling empties the bag, never the book.
+  const s2 = memory();
+  const bag = new FishBag(s2);
+  bag.add('crab'); bag.add('crab'); bag.add('squid');
+  const seeded = new FishDex(s2, bag);
+  assert.deepEqual([seeded.kinds, seeded.total], [2, 3]);
+  bag.sellAll();
+  assert.equal(new FishDex(s2, bag).total, 3);
+  assert.equal(new FishDex(memory(), { count: () => 1 }).total, 10); // fresh save, full bag
+  assert.deepEqual(FISH.map(rarityStars), [1, 1, 2, 2, 2, 3, 3, 4, 5, 5]);
+});
