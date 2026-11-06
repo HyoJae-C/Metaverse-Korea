@@ -376,6 +376,7 @@ export const HI = {
   'settings.done': 'हो गया',
   'news.title': 'अपडेट',
   'settings.sfx': 'साउंड इफ़ेक्ट',
+  'settings.haptics': 'कंपन और स्क्रीन हिलना',
   'install.row': 'होम स्क्रीन पर जोड़ें',
   'install.title': 'ऐप की तरह खेलें',
   'install.why': 'Another Seoul को अपनी होम स्क्रीन पर रखें और एक टैप में फ़ुल स्क्रीन में खोलें। ऐप स्टोर की ज़रूरत नहीं।',

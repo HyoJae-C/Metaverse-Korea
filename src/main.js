@@ -1,3 +1,4 @@
+import { haptics, buzz, shake } from './core/haptics.js';
 import * as THREE from 'three';
 import { setBeat } from './core/model-pack.js';
 import {
@@ -2666,6 +2667,12 @@ $('sfx-btn').onclick = () => {
   if (sfx.on) sfx.doorbell(); // preview
   else motionSound.stopAll();
 };
+$('haptics-btn').setAttribute('aria-pressed', String(haptics.on));
+$('haptics-btn').onclick = () => {
+  haptics.on = !haptics.on;
+  $('haptics-btn').setAttribute('aria-pressed', String(haptics.on));
+  buzz(40); // preview
+};
 
 // Background music (off by default; the choice is remembered on this device).
 const music = new Music();
@@ -3668,6 +3675,7 @@ function updatePeerRigs(dt) {
     rig.update(dt, p.ch);
   }
 }
+let legendOn = false, legendTug = 0;
 const fishRig = createFishingRig({ sfx, waterY: () => interior?.river?.position.y ?? -0.25 });
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
@@ -3680,7 +3688,13 @@ const fishingUi = new FishingUI({
     if (FISH_PHASES.has(ph)) net.sendEmote('fishph:' + ph + (data?.id && !data.trash ? ':' + data.id : ''));
     if (ph === 'cast') me.play('cast');
     else if (ph === 'land' || ph === 'trash') me.play('catch');
-    else if (ph === 'bite') navigator.vibrate?.(60);
+    else if (ph === 'bite') buzz(60);
+    // ★5 legends: a long rumble on the bite, a tug while you reel, a fanfare when landed.
+    const legend = data?.rarity === 5;
+    if (ph === 'bite' && legend) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
+    if (ph === 'reel' && legendOn) { clearInterval(legendTug); legendTug = setInterval(() => { buzz(40); shake([$('scene')], false); }, 900); }
+    if (ph !== 'reel' && ph !== 'tap' && ph !== 'progress' && ph !== 'bite') { clearInterval(legendTug); legendOn = false; }
+    if (ph === 'land' && legend) { buzz([120, 60, 120, 60, 120, 60, 700]); shake([$('scene'), $('fish-panel')]); }
   },
   onCatch: (f) => {
     sfx.pop?.();
@@ -3698,7 +3712,7 @@ const fishingUi = new FishingUI({
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
-  onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); navigator.vibrate?.(40); },
+  onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 });
 const marketUi = new FishMarketUI({
   root: $('market-panel'),
