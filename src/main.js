@@ -2086,7 +2086,42 @@ const bagUi = new BagUI({
     refreshItems();
     return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
   },
+  rides: () => (garage.s.own.length > 1 ? { nodes: [bagRideList()], count: garage.s.own.length } : null),
 });
+// The bag's Rides tab: every ride you own (bike, board, skates, scooter), to
+// switch without going back to a ride shop. On the street and on foot,
+// "Ride this" also gets you on it.
+function bagRideList() {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const list = el('div', 'bag-rides');
+  for (const m of BIKE_MODELS.filter((b) => garage.has(b.id))) {
+    const on = garage.s.use === m.id;
+    const row = el('div', 'lp-row bike-row' + (on ? ' on' : ''));
+    const sw = el('span', 'bike-swatch');
+    sw.style.background = m.color;
+    const text = el('span', 'lp-text');
+    const name = el('strong', null, `${VEHICLE_ICON[m.type]} ${L(m.name)} `);
+    name.append(el('span', 'tier-stars t' + m.tier, TIER_STARS[m.tier]));
+    text.append(name, el('small', null, `${L(BIKE_TEXT.speed)} ${garage.speedOf(m.id).toFixed(1)} · ${fmt(L(BIKE_TEXT.dur), { n: Math.floor(garage.durability(m.id)) })}`));
+    const btns = el('span', 'bike-btns');
+    if (on) btns.append(el('small', 'bike-using', '✓ ' + L(riding === 1 ? BIKE_TEXT.using : BIKE_TEXT.picked)));
+    else {
+      const b = el('button', 'chip', L(BIKE_TEXT.use));
+      b.onclick = () => {
+        garage.use(m.id);
+        sfx.pop?.();
+        if (riding === 1) applyRide();
+        else if (!riding && mode === 'street') { bagUi.hide(); setRiding(1); }
+        shop.toast(fmt(L(riding === 1 ? BIKE_TEXT.switched : BIKE_TEXT.pickedNote), { name: `${VEHICLE_ICON[m.type]} ${L(m.name)}` }));
+        if (!$('bag-panel').hidden) bagUi.render();
+      };
+      btns.append(b);
+    }
+    row.append(sw, text, btns);
+    list.append(row);
+  }
+  return list;
+}
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
 $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
 onLanguageChange(() => {
@@ -2864,6 +2899,9 @@ const BIKE_TEXT = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar' },
   use: { en: 'Ride this', ko: '이걸로 타기', ja: 'これに乗る', zh: '用这个', es: 'Usar' },
   using: { en: 'Riding', ko: '타는 중', ja: '使用中', zh: '使用中', es: 'En uso' },
+  picked: { en: 'Picked', ko: '선택됨', ja: '選択中', zh: '已选', es: 'Elegido' },
+  switched: { en: 'Now riding {name}.', ko: '{name}(으)로 바꿔 탔어요.', ja: '{name}に乗り換えました。', zh: '换成了{name}。', es: 'Ahora vas en {name}.' },
+  pickedNote: { en: '{name} is ready. Tap 🚲 on the street to ride.', ko: '{name}을(를) 골랐어요. 거리에서 🚲를 누르면 타요.', ja: '{name}を選びました。通りで🚲を押すと乗れます。', zh: '已选{name}。在街上点🚲就能骑。', es: '{name} listo. Toca 🚲 en la calle para subir.' },
   repair: { en: 'Repair', ko: '수리', ja: '修理', zh: '修理', es: 'Reparar' },
   upgrade: { en: 'Upgrade', ko: '업그레이드', ja: 'アップグレード', zh: '升级', es: 'Mejorar' },
   maxed: { en: 'Max', ko: '최고 단계', ja: '最大', zh: '已满级', es: 'Máx.' },
