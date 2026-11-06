@@ -1,8 +1,10 @@
 // Ttukseom Han River Park: an outdoor "room" entered like a shop. Grass and a
 // riverside path in front, the river behind with a fishing pier, the far bank
-// and a bridge in the distance, benches to sit on, and a convenience-store
-// kiosk with a ramen machine (한강 라면). Same shape as buildInterior's result.
+// and a bridge in the distance, benches to sit on, a convenience-store
+// kiosk with a ramen machine (한강 라면), and a little outdoor market in the
+// left corner (riverside-market.js). Same shape as buildInterior's result.
 import * as THREE from 'three';
+import { buildMarket } from './riverside-market.js';
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
@@ -107,8 +109,8 @@ export function buildPark(store, ROOM, EXIT) {
   block(-w / 2 + 0.2 - t / 2, 0, t, d);
   block(w / 2 - 0.2 + t / 2, 0, t, d);
 
-  // Trees on the grass.
-  for (const [x, z] of [[-14, 6], [-10, 10], [12, 9], [15, 4], [-15, -1], [9, 12]]) {
+  // Trees on the grass (the left corner is the market's).
+  for (const [x, z] of [[-4, 12.2], [12, 9], [15, 4], [-15, -1], [9, 12]]) {
     box(0.4, 1.6, 0.4, x, 0.8, z, '#8a5a3a');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 1), mat('#5fae5a'));
     leaf.position.set(x, 2.6, z);
@@ -174,8 +176,11 @@ export function buildPark(store, ROOM, EXIT) {
   const sign3 = box(0.9, 0.5, 0.05, duck.x + 4.4, 1.2, bank + 0.4, '#ffd166');
   sign3.rotation.y = -0.2;
 
+  // The riverside market: stalls with sellers, and parasol tables.
+  const market = buildMarket(scene, store, block, seats);
+
   return {
-    scene, products: [], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, ramen, river, duck, ducks, park: true,
+    scene, products: market.products, colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
+    fishing, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang: market.setSignLang,
   };
 }
