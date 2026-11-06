@@ -190,7 +190,13 @@ WALKS.push({ w: 3, p: [[-200.5, 267.5], [HILL.x + HILL.r + 0.5, HILL.z]] }); // 
 {
   const AX = -200, Z0 = 85, Z1 = 346, OFF = 4.5, GAP = 6;
   WALKS.push({ w: 4, clear: 5, p: [[AX, Z0], [AX, Z1]], n: name('메타세쿼이아길', 'Metasequoia Avenue', 'メタセコイア並木', '水杉大道') });
-  const avoid = [...LANDMARKS.filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]), [-190, 215, 3]]; // (+ the meeting sign)
+  LANDMARKS.push({ type: 'sign', x: AX + 3.4, z: Z0 + 1.6, ry: Math.PI, clear: 1.5, // at the north end, facing people coming in
+    title: name('메타세쿼이아길', 'Metasequoia Avenue', 'メタセコイア並木', '水杉大道'),
+    text: name('키 큰 메타세쿼이아가 양옆으로 늘어선 숲길이에요. 가을에는 주황빛 나무 터널이 돼요. 길 끝 초코콘 옆에서 스탬프를 찍어 보세요!',
+      'A forest walk lined with tall metasequoia trees, an orange tree tunnel in autumn. Get the stamp beside the chocolate cone at the far end!',
+      '背の高いメタセコイアが両側に並ぶ森の道。秋にはオレンジ色の木のトンネルに。道の先のチョコアイスの横でスタンプを押してね！',
+      '两旁种满高大水杉的林间小路，秋天会变成橙色的树木隧道。到路尽头的巧克力甜筒旁盖个印章吧！') });
+  const avoid = [...LANDMARKS.filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]), [-190, 215, 3], [-210, 93, 5.5], [-196.6, 338, 1.6]]; // (+ the meeting sign, Seoul Forest Station's exit 2 (region.json), the stamp stand (data/stamps.js))
   const nearWalk = (x, z) => WALKS.some((w) => w.p.some((q, i) => {
     const r = w.p[i + 1];
     if (!r || (w.p[0][0] === AX && w.p.length === 2)) return false;
@@ -222,9 +228,17 @@ WALKS.push({ w: 3, p: [[-145.25, 138.75], [GH.x, GH.z - GH.d / 2 - 0.5]] }); // 
   const side = (w - door) / 2;
   wall(x - w / 2 + side / 2, z - d / 2, side, t); wall(x + w / 2 - side / 2, z - d / 2, side, t);
 }
-sculpture('mint-chocolate', GH.x, GH.z + 0.5, Math.PI); // facing the door
 const POND = { x: GH.x, z: GH.z + GH.d / 2 + 9, r: 5.5 };
-LANDMARKS.push({ type: 'pond', x: POND.x, z: POND.z, r: POND.r, clear: POND.r + 3 });
+LANDMARKS.push({ type: 'pond', x: POND.x, z: POND.z, r: POND.r, statue: true, clear: POND.r + 3 });
+// The mint chocolate sculpture stands on top of the fountain, facing the greenhouse door path.
+LANDMARKS.push({ type: 'icecream', model: 'mint-chocolate', x: POND.x, z: POND.z, y: 1.3, ry: 0, s: ICE_S, reach: POND.r + 1.5, clear: 2 + ICE_S });
+// Signs (core/park-signs.js): Korean, or the player's language with signs translated.
+LANDMARKS.push({ type: 'sign', x: GH.x + 3.6, z: GH.z - GH.d / 2 - 2.2, ry: Math.PI, clear: 1.5,
+  title: name('나비 온실', 'Butterfly Greenhouse', '蝶の温室', '蝴蝶温室'),
+  text: name('따뜻한 유리 온실 안에서 나비들이 꽃 사이를 날아다녀요. 천천히 걸으며 구경해 보세요. 밖에는 분수 연못이 있어요.',
+    'Butterflies flutter among the flowers in this warm glass house. Walk in slowly and enjoy them. The fountain pond is just outside.',
+    '暖かいガラスの温室で、蝶が花のあいだを飛んでいます。ゆっくり歩いて眺めてね。外には噴水の池があります。',
+    '在温暖的玻璃温室里，蝴蝶在花丛间飞舞。慢慢走，好好欣赏吧。外面还有喷泉池。') });
 BLOCKERS.push({ p: Array.from({ length: 12 }, (_, k) => [r2(POND.x + Math.cos((k * Math.PI) / 6) * (POND.r + 0.3)), r2(POND.z + Math.sin((k * Math.PI) / 6) * (POND.r + 0.3))]) });
 for (const a of [Math.PI * 0.15, Math.PI * 0.5, Math.PI * 0.85]) { // benches round the pond, facing the fountain
   const bx = POND.x + Math.cos(a) * (POND.r + 2.2), bz = POND.z + Math.sin(a) * (POND.r + 2.2);
