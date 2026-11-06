@@ -1,0 +1,102 @@
+// Stamp stands for the stamp tour: a small wooden podium with an ink pad and
+// a rubber stamp on top, and a board showing that place's stamp. A stand at
+// a shop goes beside its door (far enough that "enter" doesn't take over).
+import * as THREE from 'three';
+import { STAMP_NEAR } from './stamp-book.js';
+import { stampSvg } from '../ui/stamp-art.js';
+
+const SIDE = 3.8; // metres along the shop front from the door
+
+// Where each stamp's stand goes: [{ stamp, x, z, ry }].
+export function standSpots(stamps, getFront) {
+  const out = [];
+  for (const s of stamps) {
+    if (s.place?.store) {
+      const f = getFront(s.place.store);
+      if (!f) continue;
+      const ry = f.group.rotation.y, ax = Math.cos(ry), az = -Math.sin(ry); // along the front
+      const side = s.place.side ?? 1;
+      out.push({ stamp: s, x: f.door.x + ax * SIDE * side, z: f.door.z + az * SIDE * side, ry });
+    } else if (Array.isArray(s.place?.at)) out.push({ stamp: s, x: s.place.at[0], z: s.place.at[1], ry: s.place.ry || 0 });
+  }
+  return out;
+}
+
+const wood = new THREE.MeshLambertMaterial({ color: '#8a5a34' });
+const dark = new THREE.MeshLambertMaterial({ color: '#4a3020' });
+const paper = new THREE.MeshLambertMaterial({ color: '#f4efe4' });
+
+function boardTexture(stamp) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f4efe4'; g.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const img = new Image();
+  img.onload = () => { g.drawImage(img, 14, 14, 228, 228); tex.needsUpdate = true; };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(stampSvg(stamp, 0, { ink: false }));
+  return tex;
+}
+
+function makeStand(stamp) {
+  const g = new THREE.Group();
+  const ink = new THREE.MeshLambertMaterial({ color: stamp.color });
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.95, 0.55), wood);
+  box.position.y = 0.475; box.castShadow = true; g.add(box);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.65), dark);
+  top.position.y = 0.98; g.add(top);
+  const pad = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.2), ink);
+  pad.position.set(-0.18, 1.03, 0.08); g.add(pad);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 16), ink);
+  base.position.set(0.2, 1.04, 0.08); g.add(base);
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.14, 12), wood);
+  knob.position.set(0.2, 1.13, 0.08); g.add(knob);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), wood);
+  ball.position.set(0.2, 1.22, 0.08); g.add(ball);
+  // the board behind: the stamp you'll get, on a little roof-topped sign
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.2, 0.06), dark);
+  post.position.set(0, 1.55, -0.24); g.add(post);
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.86, 0.05), ink);
+  frame.position.set(0, 2.05, -0.2); g.add(frame);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.76, 0.76), new THREE.MeshBasicMaterial({ map: boardTexture(stamp) }));
+  face.position.set(0, 2.05, -0.17); g.add(face);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(0.76, 0.76), paper);
+  back.position.set(0, 2.05, -0.23); back.rotation.y = Math.PI; g.add(back);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.07, 0.24), dark);
+  roof.position.set(0, 2.52, -0.2); g.add(roof);
+  return g;
+}
+
+export class StampStands {
+  constructor(scene, stamps, getFront) {
+    this.items = standSpots(stamps, getFront).map((s) => {
+      const m = makeStand(s.stamp);
+      m.position.set(s.x, 0, s.z);
+      m.rotation.y = s.ry;
+      scene.add(m);
+      // you use it from the front
+      return { ...s, mesh: m, ux: s.x + Math.sin(s.ry) * 0.9, uz: s.z + Math.cos(s.ry) * 0.9 };
+    });
+  }
+  nearest(x, z) {
+    let best = null, bd = STAMP_NEAR;
+    for (const it of this.items) {
+      const d = Math.hypot(x - it.ux, z - it.uz);
+      if (d < bd) { bd = d; best = it; }
+    }
+    return best;
+  }
+  // A little press-down bounce on the stand's rubber stamp.
+  press(it) {
+    const kids = it.mesh.children.slice(4, 7);
+    const t0 = performance.now();
+    const step = () => {
+      const k = Math.min(1, (performance.now() - t0) / 450);
+      const dy = -Math.sin(k * Math.PI) * 0.06;
+      kids[0].position.y = 1.04 + dy; kids[1].position.y = 1.13 + dy; kids[2].position.y = 1.22 + dy;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    step();
+  }
+}
