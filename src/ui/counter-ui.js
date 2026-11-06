@@ -23,7 +23,7 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-const ICON = { cup: '🥤', cocktail: '🍹', skewer: '🍢', bread: '🥐' };
+const ICON = { cup: '🥤', cocktail: '🍹', skewer: '🍢', bread: '🥐', ramyeon: '🍜', egg: '🥚' };
 
 export class CounterUI {
   // onBuy(store, product, coins): pay and hand it over; true when done.
