@@ -4580,7 +4580,7 @@ function moreActions(p, door) {
     const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
-  if (!interior || seated || surgery || ride || decor?.editing) return out;
+  if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
   hi5s();
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) out.push(petAct(pet, p));
   const seat = nearestSeat(p);
