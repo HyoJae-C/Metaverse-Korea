@@ -496,6 +496,8 @@ export const AR = {
   'tab.elsewhere': 'أنت تلعب في علامة تبويب أخرى',
   'tab.elsewhereHint': 'Another Seoul مفتوح في علامة تبويب أخرى في هذا المتصفح، لذا تظهر هناك. أغلق هذه العلامة أو العب هنا.',
   'tab.playHere': 'العب هنا',
+  'device.elsewhere': 'أنت تلعب على جهاز آخر',
+  'device.elsewhereHint': 'فُتح هذا الحساب على هاتف أو كمبيوتر آخر، لذا يُحفظ تقدّمك هناك الآن. العب هنا لتحميل أحدث حفظ.',
   'app.title': 'Another Seoul',
   'app.tagline': 'تجوّل في شوارع كوريا من متصفحك مباشرة.',
   'lang.choose': 'اختر لغتك',
