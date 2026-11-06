@@ -22,14 +22,32 @@ export const STALL = { w: 2.4, d: 1.4 };
 // Where each stall stands: [x, z, ry]. ry 0 faces the lawn (+z), π/2 faces
 // right (+x). Front row along the top of the lawn, two along the left edge.
 export const STALL_SPOTS = [
-  [-15.2, 4.2, 0], [-12.4, 4.2, 0], [-9.6, 4.2, 0], [-6.8, 4.2, 0],
-  [-16.6, 8.4, Math.PI / 2], [-16.6, 11.2, Math.PI / 2],
+  [-23.2, 4.2, 0], [-20.4, 4.2, 0], [-17.6, 4.2, 0], [-14.8, 4.2, 0],
+  [-24.6, 8.4, Math.PI / 2], [-24.6, 11.2, Math.PI / 2],
 ];
 // Parasol tables with four stools each (between the two rows).
-export const TABLES = [[-12, 10.4], [-8.4, 12.2]]; // (back from the stalls, so the parasols don't hide them)
+export const TABLES = [[-20, 10.4], [-16.4, 12.2]]; // (back from the stalls, so the parasols don't hide them)
+
+// A picnic table under a parasol, with four stools (seats marked parasol:
+// true, where you can eat the Han River ramen).
+export const PARASOLS = ['#e85d5d', '#3fa7d6', '#f2b33a', '#7cc47c'];
+export function parasolTable(scene, block, seats, tx, tz, color) {
+  const add = (geo, px, py, pz, m) => { const mesh = new THREE.Mesh(geo, mat(m)); mesh.position.set(px, py, pz); scene.add(mesh); return mesh; };
+  add(new THREE.BoxGeometry(1.5, 0.05, 0.8), tx, 0.56, tz, '#f4f1ea');
+  for (const sx of [-0.65, 0.65]) add(new THREE.BoxGeometry(0.06, 0.56, 0.6), tx + sx, 0.28, tz, '#8a8f99');
+  add(new THREE.CylinderGeometry(0.03, 0.03, 2.0, 8), tx, 1.0, tz, '#d9dde2');
+  add(new THREE.ConeGeometry(1.25, 0.42, 8), tx, 2.12, tz, color);
+  block(tx, tz, 1.6, 0.9);
+  for (const side of [-1, 1]) for (const sx of [-0.4, 0.4]) {
+    const sz = tz + side * 0.75;
+    add(new THREE.CylinderGeometry(0.17, 0.15, SEAT_H, 10), tx + sx, SEAT_H / 2, sz, '#3f8fd6');
+    // Facing the table: the stool on the near (+z) side looks towards -z.
+    seats.push({ x: tx + sx, z: sz, ry: side > 0 ? Math.PI : 0, stand: [tx + sx, sz + side * 0.7], parasol: true });
+  }
+}
 
 // A sign whose text can be redrawn (Korean, or translated).
-function signBoard(w, h, bg) {
+export function signBoard(w, h, bg) {
   const c = document.createElement('canvas');
   c.width = 512; c.height = Math.round(512 * h / w);
   const tex = new THREE.CanvasTexture(c);
@@ -121,35 +139,22 @@ export function buildMarket(scene, store, block, seats) {
   });
 
   // Parasol tables with stools.
-  const parasols = ['#e85d5d', '#3fa7d6', '#f2b33a'];
-  TABLES.forEach(([tx, tz], i) => {
-    const add = (geo, px, py, pz, m) => { const mesh = new THREE.Mesh(geo, mat(m)); mesh.position.set(px, py, pz); scene.add(mesh); return mesh; };
-    add(new THREE.BoxGeometry(1.5, 0.05, 0.8), tx, 0.56, tz, '#f4f1ea');
-    for (const sx of [-0.65, 0.65]) add(new THREE.BoxGeometry(0.06, 0.56, 0.6), tx + sx, 0.28, tz, '#8a8f99');
-    add(new THREE.CylinderGeometry(0.03, 0.03, 2.0, 8), tx, 1.0, tz, '#d9dde2');
-    add(new THREE.ConeGeometry(1.25, 0.42, 8), tx, 2.12, tz, parasols[i % parasols.length]);
-    block(tx, tz, 1.6, 0.9);
-    for (const side of [-1, 1]) for (const sx of [-0.4, 0.4]) {
-      const sz = tz + side * 0.75;
-      add(new THREE.CylinderGeometry(0.17, 0.15, SEAT_H, 10), tx + sx, SEAT_H / 2, sz, '#3f8fd6');
-      // Facing the table: the stool on the near (+z) side looks towards -z.
-      seats.push({ x: tx + sx, z: sz, ry: side > 0 ? Math.PI : 0, stand: [tx + sx, sz + side * 0.7] });
-    }
-  });
+  TABLES.forEach(([tx, tz], i) => parasolTable(scene, block, seats, tx, tz, PARASOLS[i % PARASOLS.length]));
 
   // The market's name board at the corner of the lawn.
+  const BX = -12.4; // the name board, at the corner of the lawn
   const board = signBoard(3, 0.9, market.color || '#7a3b2e');
-  board.mesh.position.set(-4.4, 2.2, 6.6);
+  board.mesh.position.set(BX, 2.2, 6.6);
   scene.add(board.mesh);
   for (const sx of [-1.4, 1.4]) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.7, 0.1), mat('#6b5a4a'));
-    post.position.set(-4.4 + sx, 1.35, 6.58);
+    post.position.set(BX + sx, 1.35, 6.58);
     scene.add(post);
-    block(-4.4 + sx, 6.58, 0.2, 0.2);
+    block(BX + sx, 6.58, 0.2, 0.2);
   }
   for (const sx of [-1.1, -0.37, 0.37, 1.1]) { // lanterns along the top
     const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8).scale(1, 1.25, 1), glow('#ff7a59'));
-    lamp.position.set(-4.4 + sx, 2.85, 6.66);
+    lamp.position.set(BX + sx, 2.85, 6.66);
     scene.add(lamp);
   }
 

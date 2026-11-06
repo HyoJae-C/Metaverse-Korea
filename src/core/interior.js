@@ -25,7 +25,7 @@ export const ROOM_SIZES = {
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
-  park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
+  park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
@@ -112,6 +112,14 @@ export function productModel(kind, color, product = null) {
     case 'plush':
       add(new THREE.SphereGeometry(0.15, 14, 10), 0, 0.15);
       for (const s of [-1, 1]) add(new THREE.CapsuleGeometry(0.035, 0.12, 4, 8), 0.06 * s, 0.33);
+      break;
+    case 'ramyeon': // an instant-noodle pack: a red pillow bag with a yellow label
+      add(new THREE.BoxGeometry(0.34, 0.07, 0.26), 0, 0.035);
+      add(new THREE.BoxGeometry(0.16, 0.075, 0.12), -0.05, 0.036, 0.02, mat('#ffd166'));
+      break;
+    case 'egg': // a small tray of eggs
+      add(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, 0.02, 0, mat('#d9c7a6'));
+      for (const ex of [-0.09, 0, 0.09]) for (const ez of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.04, 10, 8).scale(1, 1.3, 1), ex, 0.07, ez);
       break;
     case 'notebook':
       add(new THREE.BoxGeometry(0.3, 0.04, 0.4), 0, 0.02);
