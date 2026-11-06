@@ -127,6 +127,70 @@ const EXTRA = [
 ];
 const BLOCKERS = [{ p: [[-260, 388], [260, 388], [260, 410], [-260, 410]] }]; // the river
 
+// ── Seoul Forest decor ──────────────────────────────────────────────────
+// A round rose garden off the trail, benches along the paths, and ice cream
+// sculptures (art by Yozi, public/models/icecream): one of each flavour, all
+// the same size, each at its own spot in the park.
+// Landmarks are drawn by core/landmarks.js + core/park-art.js; "clear" keeps
+// the park's trees away; the sculptures and benches also get blockers.
+const FOREST_TRAIL = WALKS[4].p;
+const LANDMARKS = [];
+const r2 = (v) => Math.round(v * 100) / 100;
+const faceTo = (x, z, tx, tz) => r2(Math.atan2(tx - x, tz - z));
+// A w × d box turned by ry (the same turn as a three.js group's rotation.y).
+function rotBox(x, z, w, d, ry) {
+  const c = Math.cos(ry), s = Math.sin(ry);
+  return [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]]
+    .map(([lx, lz]) => [r2(x + lx * c + lz * s), r2(z - lx * s + lz * c)]);
+}
+function bench(x, z, ry) {
+  LANDMARKS.push({ type: 'bench', x: r2(x), z: r2(z), ry: r2(ry), clear: 2.2 });
+  BLOCKERS.push({ p: rotBox(x, z, 1.9, 0.6, ry) });
+}
+const ICE_S = 1.6; // every sculpture this many times the 2.8 m model
+function sculpture(model, x, z, ry, s = ICE_S) {
+  LANDMARKS.push({ type: 'icecream', model, x: r2(x), z: r2(z), ry: r2(ry), s, clear: 2 + s });
+  BLOCKERS.push({ p: rotBox(x, z, 1.25 * s, 1.25 * s, ry) });
+}
+// A point on the trail (segment i, t along it) and its sideways normal.
+function onTrail(i, t, side) {
+  const [x1, z1] = FOREST_TRAIL[i], [x2, z2] = FOREST_TRAIL[i + 1];
+  const len = Math.hypot(x2 - x1, z2 - z1), ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+  const px = x1 + (x2 - x1) * t, pz = z1 + (z2 - z1) * t;
+  return { px, pz, x: px - uz * side, z: pz + ux * side };
+}
+// Rose garden: beds in two rings, cross paths, arches, a sculpture in the middle.
+const GARDEN = { x: -158, z: 238, r: 14 };
+LANDMARKS.push({ type: 'rosegarden', x: GARDEN.x, z: GARDEN.z, r: GARDEN.r, clear: GARDEN.r + 3 });
+WALKS.push({ w: 3, p: [[-207.5, 252.5], [GARDEN.x - GARDEN.r - 0.5, GARDEN.z]] }); // from the trail to the garden's west arch
+sculpture('strawberry', GARDEN.x, GARDEN.z, faceTo(GARDEN.x, GARDEN.z, GARDEN.x - 20, GARDEN.z)); // the garden's middle, facing its path in
+for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, facing the middle
+  const a = Math.PI / 4 + (k * Math.PI) / 2, x = GARDEN.x + Math.cos(a) * 9.1, z = GARDEN.z + Math.sin(a) * 9.1;
+  bench(x, z, faceTo(x, z, GARDEN.x, GARDEN.z));
+}
+// Benches along the trail, facing it, alternating sides.
+[[0, 0.35, 1], [0, 0.75, -1], [1, 0.3, 1], [1, 0.7, -1], [2, 0.25, -1], [2, 0.6, 1], [3, 0.4, 1], [3, 0.8, -1]].forEach(([i, t, side]) => {
+  const p = onTrail(i, t, side * 3.4);
+  bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
+});
+// Two more by the trail, facing the walkers: at the east gate and near the south end.
+[['chocolate', 0, 0.12, 5], ['soft-serve', 3, 0.6, -5.5]].forEach(([model, i, t, side]) => {
+  const p = onTrail(i, t, side);
+  sculpture(model, p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
+});
+// A grassy hill with wooden stairs up to a look-out deck, west of the trail
+// (walkable: core/park-art.js hillY). The stairs face the path to the trail.
+const HILL = { x: -238, z: 270, r: 13 };
+LANDMARKS.push({ type: 'hill', x: HILL.x, z: HILL.z, r: HILL.r, ry: faceTo(HILL.x, HILL.z, -200, 270), clear: HILL.r + 2 });
+WALKS.push({ w: 3, p: [[-200.5, 267.5], [HILL.x + HILL.r + 0.5, HILL.z]] }); // from the trail to the foot of the stairs
+// One on a little round plaza on the lawn east of the trail, with benches to look at it.
+const PLAZA = { x: -140, z: 188 };
+LANDMARKS.push({ type: 'parkplaza', x: PLAZA.x, z: PLAZA.z + 1.5, r: 7.5, clear: 10 }); // round paving under them
+WALKS.push({ w: 3, p: [[-145.25, 138.75], [PLAZA.x, PLAZA.z - 6]] }); // from the trail
+sculpture('mint-chocolate', PLAZA.x, PLAZA.z - 1.2, 0);
+bench(PLAZA.x, PLAZA.z + 6, Math.PI);
+bench(PLAZA.x - 4, PLAZA.z + 6.5, faceTo(PLAZA.x - 4, PLAZA.z + 6.5, PLAZA.x, PLAZA.z));
+
 // ── Geometry helpers ─────────────────────────────────────────────────────
 function line(ref, axis) {
   if (ref && typeof ref === 'object') return { at: ref.edge, inset: 1 };
@@ -311,6 +375,7 @@ const map = {
   rail: [{ e: 1, p: [[-260, -86], [260, -86]] }], // Line 2 viaduct over Achasan-ro
   areas,
   blockers: BLOCKERS,
+  landmarks: LANDMARKS,
   pois: [],
 };
 

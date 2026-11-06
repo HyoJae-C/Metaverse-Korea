@@ -1,6 +1,7 @@
-// Picnic mats (돗자리) in the Han River park. Bought at DAILY MART, kept in
-// the bag, spread on the lawn. A mat fits four people lying side by side;
-// anyone can lie on a free spot of anyone's mat. Only one mat per spot of
+// Picnic mats (돗자리) in the Han River park and Seoul Forest. Bought at
+// DAILY MART, kept in the bag, spread on the lawn. A mat fits four people
+// side by side, lying down or sitting; anyone can take a free spot of
+// anyone's mat. Only one mat per spot of
 // lawn: a new one can't overlap a mat that's already there.
 //
 // The owner shares the mat in their state as "mt": "x,z,c" (centre, colour
@@ -19,7 +20,8 @@ export function matRect(x, z, gap = 0) {
 const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.z0 < b.z1 && b.z0 < a.z1;
 export const matsOverlap = (a, b) => overlaps(matRect(a.x, a.z, MAT_GAP / 2), matRect(b.x, b.z, MAT_GAP / 2));
 
-// The four lying spots, head towards the river (-z), like the clinic beds.
+// The four spots, head towards the river (-z), like the clinic beds. Each
+// one can be lain on or sat on (sitting faces +z, towards the foot).
 export function matSpots(m) {
   const step = MAT.w / MAT_SPOTS;
   return Array.from({ length: MAT_SPOTS }, (_, i) => ({
@@ -53,10 +55,12 @@ function bbox(c) {
 
 // Can a mat go down at (x, z)? 'ok', or why not: 'lawn' (not on the
 // grass, or on a tree / bench / table) or 'taken' (someone's mat is there).
-export function canSpread(m, { lawns, colliders = [], mats = [] }) {
+// blocked(rect): anything else in the way (a park path, a tree on the street).
+export function canSpread(m, { lawns, colliders = [], mats = [], blocked = null }) {
   if (!onLawn(m, lawns)) return 'lawn';
   const r = matRect(m.x, m.z);
   if (colliders.some((c) => c.p && overlaps(r, bbox(c)))) return 'lawn';
+  if (blocked?.(r)) return 'lawn';
   if (mats.some((o) => matsOverlap(m, o))) return 'taken';
   return 'ok';
 }

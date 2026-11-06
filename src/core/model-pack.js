@@ -77,6 +77,7 @@ const STRIDE = {
 };
 
 const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
+const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
 
@@ -565,7 +566,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -591,6 +592,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
       else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
+      else if (sit && activity === 'matsit' && action('floor')) key = 'floor'; // sitting on a picnic mat
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && action(activity)) key = activity;
@@ -627,7 +629,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
       }
-      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : PACK.sit) : null;
+      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (folk) {
