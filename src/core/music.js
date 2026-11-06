@@ -278,6 +278,27 @@ export class Sfx {
     o.start(t);
     o.stop(t + 0.15);
   }
+  // A soft, wobbly "wooo" for the haunted house's ghost: a sine that
+  // slides down with a slow vibrato. Quiet; nothing sudden.
+  ghostly() {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.02;
+    const o = c.createOscillator(), lfo = c.createOscillator(), depth = c.createGain(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(620, t);
+    o.frequency.exponentialRampToValueAtTime(300, t + 1.3);
+    lfo.frequency.value = 6;
+    depth.gain.value = 18;
+    lfo.connect(depth).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(g).connect(c.destination);
+    o.start(t); lfo.start(t);
+    o.stop(t + 1.45); lfo.stop(t + 1.45);
+  }
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)

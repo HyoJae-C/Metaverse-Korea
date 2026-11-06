@@ -4,6 +4,7 @@
 // boarding spot; on a ride the player is carried by seatAt(). Same shape as
 // buildInterior's result, plus tick(dt) to animate the rides.
 import * as THREE from 'three';
+import { HAUNT, HAUNT_SPOT, buildHauntedFacade } from './haunted.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -215,7 +216,19 @@ export function buildThemePark(store, ROOM, EXIT) {
   }
   for (const sx of [-0.8, 0.8]) box(0.6, 0.08, 0.1, G.x + sx, 1.05, G.z + 0.9, '#7a4a2e'); // toy guns
   block(G.x, G.z, 4.4, 2.4);
-  const stations = { gallery: [{ x: G.x, z: G.z + 2.2, ry: Math.PI }] }; // facing the targets
+  // Haunted house (귀신의 집, core/haunted.js): left of the entrance, facing
+  // into the park. Its door leads into its own interior.
+  const haunt = buildHauntedFacade();
+  haunt.group.position.set(HAUNT.x, 0, HAUNT.z);
+  haunt.group.rotation.y = Math.PI;
+  haunt.group.updateMatrix();
+  haunt.group.matrixAutoUpdate = false;
+  scene.add(haunt.group);
+  block(HAUNT.x, HAUNT.z - 0.1, 6.2, 4.6);
+  const stations = {
+    gallery: [{ x: G.x, z: G.z + 2.2, ry: Math.PI }], // facing the targets
+    hauntedHouse: [HAUNT_SPOT],
+  };
 
   // Benches.
   const seats = [];
@@ -249,6 +262,6 @@ export function buildThemePark(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: d / 2 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, park: true,
+    rides, stations, tick, time: () => time, park: true, setSignLang: haunt.setSignLang,
   };
 }
