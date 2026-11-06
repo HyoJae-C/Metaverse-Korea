@@ -1023,6 +1023,8 @@ body.beauty-mode #store-banner, body.beauty-mode #action-btn, body.beauty-mode #
    small now-playing bar */
 .kpop-layer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; background: #000; } /* behind the canvas */
 .kpop-layer[hidden] { display: none; }
+/* The black-and-white cinema (Silver Screen Theater): hall, people and film in black and white. */
+.cinema-silver #scene, .cinema-silver .kpop-layer, .cinema-silver #labels { filter: grayscale(1) contrast(1.12); }
 .kpop-video { position: absolute; left: 0; top: 0; width: 640px; height: 360px; transform-origin: 0 0; overflow: hidden; background: #000; pointer-events: none; }
 .kpop-video iframe, .kpop-video > div { width: 100%; height: 100%; border: 0; display: block; }
 .kpop-tv {

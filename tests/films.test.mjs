@@ -20,3 +20,14 @@ test('every film has an id and a title; messages round-trip; the programme wraps
   assert.equal(parseFilm('kpop:stop'), null);
   assert.equal(nextFilm(FILMS[FILMS.length - 1].id).id, FILMS[0].id);
 });
+
+test('each cinema has its own programme; a film with no `in` plays in all of them', async () => {
+  const { filmsFor, cinemaKey } = await import('../src/data/films.js');
+  assert.equal(cinemaKey(true), 'byeolbit');
+  for (const c of [true, 'doodle', 'silver']) {
+    const list = filmsFor(c);
+    assert.ok(list.length > 0, String(c));
+    for (const f of list) assert.ok(!f.in || f.in.includes(cinemaKey(c)));
+    assert.equal(nextFilm(list[list.length - 1].id, c).id, list[0].id);
+  }
+});

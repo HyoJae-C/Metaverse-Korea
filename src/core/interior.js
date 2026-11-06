@@ -40,6 +40,35 @@ const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
 const mats = {};
 const mat = (c, opts) => (mats[c + JSON.stringify(opts || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...opts }));
 
+// The 2D cinema (Doodle Cinema): the hall looks hand-drawn, like a cartoon.
+// Every surface gets one flat colour (no light or shade) and a black ink
+// outline round each shape. `keep` (the screen) is left as it is.
+const flatMats = new Map();
+const INK = new THREE.LineBasicMaterial({ color: '#1b1820' });
+const INK_RIM = new THREE.MeshBasicMaterial({ color: '#1b1820', side: THREE.BackSide });
+function drawFlat(scene, keep) {
+  const meshes = [];
+  scene.traverse((o) => { if (o.isMesh && o !== keep) meshes.push(o); });
+  for (const m of meshes) {
+    const old = m.material;
+    if (!old || Array.isArray(old) || old.isMeshBasicMaterial) continue; // (lights and screens already glow flat)
+    const key = old.color?.getHexString() + (old.map?.uuid || '') + (old.transparent ? old.opacity : '') + old.side;
+    // Pushed back a little in depth, so the ink lines on their edges always show.
+    if (!flatMats.has(key)) flatMats.set(key, new THREE.MeshBasicMaterial({ color: old.color, map: old.map || null, transparent: old.transparent, opacity: old.opacity, side: old.side, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+    m.material = flatMats.get(key);
+    const g = m.geometry?.type;
+    if (g === 'BoxGeometry') {
+      // A bold outline: a slightly bigger black copy, seen only from inside
+      // (its back faces), so it shows as a rim round the shape.
+      const { width, height, depth } = m.geometry.parameters, t = 0.05;
+      const rim = new THREE.Mesh(m.geometry, INK_RIM);
+      rim.scale.set((width + 2 * t) / width, (height + 2 * t) / height, (depth + 2 * t) / depth);
+      m.add(rim);
+    }
+    if (g === 'BoxGeometry' || g === 'PlaneGeometry') m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), INK));
+  }
+}
+
 function floorTexture(base, room) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
@@ -317,7 +346,7 @@ export function buildInterior(store) {
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -1628,10 +1657,10 @@ export function buildInterior(store) {
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), new THREE.MeshBasicMaterial({ color: '#2a2833' }));
     glow.position.set(0, sy, sz + 0.07);
     scene.add(glow);
-    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, store.colors.sign); // curtains
+    const seatC = store.colors.seat || store.colors.sign; // seats and curtains
+    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, seatC); // curtains
     box(sw + 1, 0.5, 0.6, 0, 0.25, sz + 0.6, '#1a1820'); // stage step
     block(0, sz + 0.5, sw + 2.4, 1);
-    const seatC = store.colors.sign;
     const cols = [-6.4, -5.4, -4.4, -3.4, -2.4, -1.4, 1.4, 2.4, 3.4, 4.4, 5.4, 6.4];
     const rows = 5, z0 = -d / 2 + 5, rowGap = 1.7;
     for (let r = 0; r < rows; r++) {
@@ -1676,6 +1705,7 @@ export function buildInterior(store) {
     hall.position.set(0, h - 1, d / 4);
     scene.add(hall);
     tv = { x: kx, z: kz + 1.1, screen: glow, width: sw };
+    if (store.cinema === 'doodle') drawFlat(scene, glow); // the 2D cinema
   } else if (store.kpop) {
     const tvz = -d / 2 + 0.3;
     box(5.2, 3, 0.2, 0, 2.3, tvz, '#1b1b20');

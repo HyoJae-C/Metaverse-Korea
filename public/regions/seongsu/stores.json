@@ -494,8 +494,35 @@
       
       "name": { "ko": "별빛 시네마", "en": "Byeolbit Cinema", "ja": "ビョルビッ シネマ", "zh": "星光影院" },
       "tagline": { "en": "Short AI films on the big screen, watched together", "ko": "큰 스크린으로 다 같이 보는 짧은 AI 영화", "ja": "大きなスクリーンでみんなで観るショートAI映画", "zh": "在大银幕上一起看AI短片" },
-      "at": [-21.5, 6],
+      "district": "seodaemun",
+      "at": [-2335, -890],
       "colors": { "sign": "#b3262e", "awning": "#ffd7a8", "accent": "#2a2230" },
+      "products": []
+    },
+    {
+      "id": "doodle-cinema",
+      "category": "play",
+      "workshop": "cinema",
+      "cinema": "doodle",
+      "size": "cinema",
+      "district": "seodaemun",
+      "name": { "ko": "두들 시네마 2D", "en": "Doodle Cinema 2D", "ja": "ドゥードゥル シネマ 2D", "zh": "涂鸦影院 2D" },
+      "tagline": { "en": "A hand-drawn cartoon cinema: flat colours and ink lines", "ko": "손그림 만화 같은 2D 영화관: 납작한 색과 검은 선", "ja": "手描きマンガみたいな2D映画館：フラットな色と黒い線", "zh": "像手绘漫画一样的2D影院：平涂颜色和黑色线条" },
+      "at": [-2355, -890],
+      "colors": { "sign": "#ff5a36", "awning": "#fff1a8", "accent": "#fff8e6" },
+      "products": []
+    },
+    {
+      "id": "silver-screen-theater",
+      "category": "play",
+      "workshop": "cinema",
+      "cinema": "silver",
+      "size": "cinema",
+      "district": "seodaemun",
+      "name": { "ko": "은막 흑백극장", "en": "Silver Screen B&W Theater", "ja": "銀幕モノクロ劇場", "zh": "银幕黑白剧场" },
+      "tagline": { "en": "Every film in black and white, like the old days", "ko": "옛날 극장처럼 모든 영화를 흑백으로", "ja": "昔の映画館みたいに、全部の映画を白黒で", "zh": "像老电影院一样，所有电影都是黑白的" },
+      "at": [-2317, -890],
+      "colors": { "sign": "#2e2e2e", "awning": "#dcdcdc", "accent": "#bdbdbd", "seat": "#c85a5a" },
       "products": []
     },
     {
