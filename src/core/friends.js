@@ -98,7 +98,12 @@ export class SupabaseFriends {
     try {
       const { data, error } = await this.client.rpc(fn, args);
       const e = errCode(error);
-      if (e === 'missing') this.missing = true;
+      // Not sticky: once the SQL has been run, the next call clears it.
+      this.missing = e === 'missing' || (this.missing && !!e);
+      if (error) {
+        this.lastError = `${fn}: ${error.code || ''} ${error.message || ''}`.trim();
+        console.info('[friends]', this.lastError);
+      }
       return e ? { error: e } : { data };
     } catch { return { error: 'network' }; }
   }

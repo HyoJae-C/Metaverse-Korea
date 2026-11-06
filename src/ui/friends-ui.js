@@ -112,7 +112,12 @@ export class FriendsUI {
     x.onclick = () => this.close();
     const st = this.app.store();
     if (!st || st.missing) {
-      this.root.replaceChildren(x, el('strong', 'wallet-title', '👥 ' + L(FRIEND_TEXT.title)), el('p', 'board-empty', L(st ? FRIEND_TEXT.missing : FRIEND_TEXT.noAccount)));
+      const parts = [x, el('strong', 'wallet-title', '👥 ' + L(FRIEND_TEXT.title)), el('p', 'board-empty', L(st ? FRIEND_TEXT.missing : FRIEND_TEXT.noAccount))];
+      // What the server said, so a setup problem can be told apart.
+      if (st?.lastError) parts.push(el('p', 'fine', st.lastError));
+      this.root.replaceChildren(...parts);
+      // Ask again: it may have been set up since.
+      if (st && !this._retrying) { this._retrying = true; setTimeout(() => { this._retrying = false; if (this.open) this.app.refresh(); }, 5000); }
       return;
     }
     if (this.view) this.renderChat(x, this.view);
