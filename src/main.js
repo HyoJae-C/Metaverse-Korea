@@ -1588,6 +1588,7 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
+    if (product.ingredient) { buyIngredient(product, coins); counterUi.render(shopToastText); return false; } // (stays open to buy more)
     if (itemSoon(store, product) || !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -3077,14 +3078,22 @@ const INGREDIENT_TEXT = {
   got: { en: '{name} is in your bag 🎒', ko: '{name}을(를) 가방에 넣었어요 🎒', ja: '{name}をバッグに入れました 🎒', zh: '{name}放进包里了 🎒' },
   sit: { en: 'Take the ramen to a parasol table ⛱️ and sit down to eat it.', ko: '라면은 파라솔 테이블 ⛱️에 앉아서 먹어요.', ja: 'ラーメンはパラソルのテーブル ⛱️ に座って食べよう。', zh: '把拉面端到遮阳伞桌 ⛱️ 坐下来吃吧。' },
 };
+// The park's DAILY MART counter: near the kiosk clerk, the counter menu with
+// the kiosk's goods (the products on the counter can still be looked at).
+const MART_TEXT = { buy: { en: 'Buy at {name}', ko: '{name}에서 사기', ja: '{name}で買う', zh: '在{name}购买' } };
+const martStore = () => ({ ...interior.store, name: interior.store.kiosk.name, products: interior.store.products.filter((q) => q.kiosk) });
+const martCounter = (p) => !!(interior?.park && interior.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
+let shopToastText = '';
 function buyIngredient(product, coins) {
-  if (product.ingredient === 'mat' && hasMat(bag)) { shop.toast(L(MAT_TEXT.have)); return false; } // one is enough
-  if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return false; }
-  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+  const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
+  if (product.ingredient === 'mat' && hasMat(bag)) return fail(L(MAT_TEXT.have)); // one is enough
+  if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
+  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
   bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient });
   clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
-  shop.toast(fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) }));
+  shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
+  shop.toast(shopToastText);
   return true;
 }
 
@@ -4957,6 +4966,9 @@ function updateAction(p, tSec) {
     } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
       const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
       next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
+    } else if (martCounter(p)) {
+      // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
+      next = { key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(interior.store.kiosk.name, getLanguage()) }), run: () => { clerk?.ch.wave(); counterUi.show(martStore()); } };
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
