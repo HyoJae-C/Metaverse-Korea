@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -158,8 +158,9 @@ export class FishingUI {
   // bag: FishBag; onRod(on): show or hide the rod; onCatch(fish): after a catch.
   // dex: FishDex, every catch is recorded there too.
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
-  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase }) {
-    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase });
+  // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
+  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky }) {
+    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -205,6 +206,7 @@ export class FishingUI {
   renderIdle(note) {
     this.state = 'idle';
     this._frame(note ? el('p', 'order-hint', note) : null);
+    if (this.lucky?.()) this.root.append(el('p', 'fish-lucky', '🍀 ' + text('행운 포인트! 지금 여기서는 귀한 물고기가 더 잘 물어요.', 'Lucky spot! Rarer fish bite more often here right now.')));
     this.root.append(this._water(t('fish.ready'), 'calm'));
     const cast = el('button', 'primary', '🎣 ' + t('fish.cast'));
     cast.disabled = this.bag.full;
@@ -268,7 +270,8 @@ export class FishingUI {
     }
     const boot = el('div', 'fish-odds-row trash');
     boot.append(el('span', 'fish-emoji', '🥾'), el('span', 'fish-name', text('고물장화 (쓰레기)', 'Old boot (litter)')), el('b', null, pct(TRASH_CHANCE * 100)), el('span', null, '—'), el('span', null, '0'));
-    wrap.append(boot, el('p', 'fish-odds-note', text(`자동낚시는 약 ${AUTO_SECONDS}초에 한 마리 · 공개된 ${AVAILABLE_FISH.length}종 기준`, `Auto fishing lands about one fish every ${AUTO_SECONDS} s · ${AVAILABLE_FISH.length} kinds available now`)));
+    wrap.append(boot, el('p', 'fish-odds-note', '🍀 ' + text(`행운 포인트(금색 표지판)에서는 ★2 이상이 ${LUCKY_BOOST}배 잘 물고 장화는 절반으로 줄어요. 행운 포인트는 몇 분마다 바뀌어요.`,
+      `At the lucky spot (gold sign) ★2 and up bite ${LUCKY_BOOST}× as often and boots half as often. It moves every few minutes.`)), el('p', 'fish-odds-note', text(`자동낚시는 약 ${AUTO_SECONDS}초에 한 마리 · 공개된 ${AVAILABLE_FISH.length}종 기준`, `Auto fishing lands about one fish every ${AUTO_SECONDS} s · ${AVAILABLE_FISH.length} kinds available now`)));
     const back = el('button', 'primary', '🎣 ' + t('fish.back'));
     back.onclick = () => this.renderIdle();
     const actions = el('div', 'order-actions');
@@ -291,7 +294,7 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    this.fish = rollCatch();
+    this.fish = rollCatch(Math.random, !!this.lucky?.());
     this.onPhase?.('bite', this.fish);
     water.className = 'fish-water bite' + (this.fish.trash ? '' : ' t' + this.fish.rarity) + (isRare(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');

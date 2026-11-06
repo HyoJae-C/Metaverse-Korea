@@ -7,12 +7,16 @@ import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
 import { productModel } from './interior.js';
 import { localName } from './i18n.js';
+import { luckySpot } from './fishing.js';
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
 const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
 const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
+const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
+const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
+const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
 
 export const DUCK_BOATS = 4;
 // Where the two riders sit, in the boat's own space (it faces -z).
@@ -189,12 +193,49 @@ export function buildPark(store, ROOM, EXIT) {
   // Parasol tables next to the shop.
   for (const [i, [tx, tz]] of [[14.6, 8.4], [18.4, 10.2], [14.6, 12]].entries()) parasolTable(scene, block, seats, tx, tz, PARASOLS[(i + 1) % PARASOLS.length]);
 
-  // Fishing spots: the end of the pier and the railing on both sides.
-  const fishing = [[0, bank - pierLen + 0.8], [-6, bank + 0.7], [7, bank + 0.7]].map(([x, z]) => ({ x, z }));
-  for (const f of fishing) {
-    const sign2 = box(0.5, 0.35, 0.05, f.x + 0.7, 1.1, f.z + 0.3, '#ffd166'); // little 🎣 board
-    sign2.rotation.y = 0.2;
-  }
+  // Four fishing spots spread along the water: two on the left railing, the
+  // end of the pier, and the right railing past the duck boats. Each has a
+  // low "낚시 가능" board on a short post, facing the path.
+  const fishing = [[-20, bank + 0.7], [-8, bank + 0.7], [0, bank - pierLen + 0.8], [20, bank + 0.7]].map(([x, z]) => ({ x, z }));
+  const spotSigns = fishing.map((f) => {
+    const sx = f.x + 0.9, sz = f.z + 0.35;
+    box(0.06, 0.5, 0.06, sx, 0.25, sz - 0.02, '#55504a'); // post
+    const sign = signBoard(0.86, 0.4, SPOT_COLOR);
+    sign.mesh.position.set(sx, 0.66, sz);
+    scene.add(sign.mesh);
+    return sign;
+  });
+  // The lucky spot (행운 포인트, see luckySpot in fishing.js): a gold sign,
+  // a glowing ring on the ground and a clover spinning over it.
+  const luckRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.7, depthWrite: false }));
+  const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
+  scene.add(luckRing, luckGem);
+  let signLang = null, lucky = -1, luckT = 0;
+  const drawSpotSigns = () => spotSigns.forEach((sign, i) => {
+    const luck = i === lucky;
+    if (signLang) sign.draw('🎣 ' + localName(FISHING_OK, signLang), luck ? '🍀 ' + localName(LUCKY_SIGN, signLang) : '', luck ? LUCKY_COLOR : SPOT_COLOR);
+    else sign.draw('🎣 ' + FISHING_OK.ko, luck ? '🍀 ' + LUCKY_SIGN.ko + ' · ' + LUCKY_SIGN.en : FISHING_OK.en, luck ? LUCKY_COLOR : SPOT_COLOR);
+  });
+  const updateLucky = (now = Date.now()) => {
+    const i = luckySpot(fishing.length, now);
+    fishing.forEach((f, k) => { f.lucky = k === i; });
+    if (i === lucky) return;
+    lucky = i;
+    luckRing.position.set(fishing[i].x, 0.03, fishing[i].z);
+    drawSpotSigns();
+  };
+  updateLucky();
+  const tick = (dt) => {
+    luckT += dt;
+    if (luckT > 1e4) luckT = 0;
+    updateLucky();
+    const f = fishing[lucky];
+    luckGem.position.set(f.x, 1.9 + Math.sin(luckT * 2.4) * 0.12, f.z);
+    luckGem.rotation.y = luckT * 1.8;
+    luckRing.material.opacity = 0.45 + Math.sin(luckT * 3) * 0.25;
+  };
+  tick(0);
 
   // Fish buyer by the pier: an ice-box stand where your catch can be sold
   // without going back to the fish market (same prices).
@@ -232,6 +273,8 @@ export function buildPark(store, ROOM, EXIT) {
   // The riverside market: stalls with sellers, and parasol tables.
   const market = buildMarket(scene, store, block, seats);
   const setSignLang = (lang) => {
+    signLang = lang;
+    drawSpotSigns();
     market.setSignLang(lang);
     martSign.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
@@ -241,7 +284,7 @@ export function buildPark(store, ROOM, EXIT) {
 
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang,
+    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
     // the benches and the back, right of the market and left of DAILY MART.
     lawns: [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }],

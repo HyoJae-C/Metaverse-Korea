@@ -130,3 +130,23 @@ test('rarer catches stay up longer over your head', async () => {
   for (let r = 2; r <= 5; r++) assert.ok(SHOW_MS[r] > SHOW_MS[r - 1]);
   assert.equal(SHOW_MS[5], 12000);
 });
+
+test('the lucky spot moves around, boosts ★2 and up a little and halves the boot', async () => {
+  const { luckySpot, luckyChance, LUCKY_BOOST, LUCKY_MINUTES, LUCKY_TRASH_CHANCE } = await import('../src/core/fishing.js');
+  const slot = LUCKY_MINUTES * 60000, seen = new Set();
+  for (let k = 0; k < 200; k++) {
+    const i = luckySpot(4, k * slot);
+    assert.ok(i >= 0 && i < 4);
+    assert.equal(luckySpot(4, k * slot + slot - 1), i); // steady within a slot
+    seen.add(i);
+  }
+  assert.equal(seen.size, 4); // every spot gets its turn
+  assert.ok(Math.abs(AVAILABLE_FISH.reduce((a, f) => a + luckyChance(f), 0) - 100) < 1e-9);
+  for (const f of AVAILABLE_FISH) {
+    if (f.rarity >= 2) assert.ok(luckyChance(f) > f.chance && luckyChance(f) < f.chance * LUCKY_BOOST, f.id);
+    else assert.ok(luckyChance(f) < f.chance, f.id);
+  }
+  assert.equal(rollCatch(() => LUCKY_TRASH_CHANCE - 1e-6, true), TRASH);
+  assert.notEqual(rollCatch(() => LUCKY_TRASH_CHANCE, true), TRASH);
+  assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
+});

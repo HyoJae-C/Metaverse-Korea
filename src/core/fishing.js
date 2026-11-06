@@ -716,17 +716,35 @@ const migrate = (raw) => {
   }
   return out;
 };
-export function rollFish(rand = Math.random) {
+// The lucky spot (행운 포인트): one of the park's fishing spots, a different
+// one picked at random every LUCKY_MINUTES. There ★2 and up bite LUCKY_BOOST
+// times as often (shared out of the common tier) and the old boot half as
+// often. It comes from the clock, so everyone in the park sees the same spot.
+export const LUCKY_MINUTES = 5;
+export const LUCKY_BOOST = 1.5;
+const luckyWeight = f => f.chance * (f.rarity >= 2 ? LUCKY_BOOST : 1);
+const luckyTotal = AVAILABLE_FISH.reduce((a, f) => a + luckyWeight(f), 0);
+// A fish's chance (in % of fish) at the lucky spot.
+export const luckyChance = f => (f.released ? luckyWeight(f) / luckyTotal * 100 : 0);
+export function luckySpot(n, now = Date.now()) {
+  if (n < 2) return 0;
+  let x = Math.floor(now / (LUCKY_MINUTES * 60000)) | 0; // the time slot, hashed
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+  return ((x ^ (x >>> 16)) >>> 0) % n;
+}
+export function rollFish(rand = Math.random, lucky = false) {
   let r = rand() * 100;
-  for (const f of AVAILABLE_FISH) { r -= f.chance; if (r < 0) return f; }
+  for (const f of AVAILABLE_FISH) { r -= lucky ? luckyChance(f) : f.chance; if (r < 0) return f; }
   return AVAILABLE_FISH.at(-1);
 }
 
 export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
 export const TRASH_CHANCE = 0.04;
-export function rollCatch(rand = Math.random) {
-  const value = rand();
-  return value < TRASH_CHANCE ? TRASH : rollFish(() => (value - TRASH_CHANCE) / (1 - TRASH_CHANCE));
+export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
+export function rollCatch(rand = Math.random, lucky = false) {
+  const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
+  return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky);
 }
 export const REEL_SECONDS = 5;
 export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
