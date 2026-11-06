@@ -1696,7 +1696,8 @@ const shop = new ShopUI({
     if (product.perfume && perfumes.has(product.id)) setHeld({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
     else setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
     if (kind !== 'gift') recordFood(shop.store, product, true);
-    clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+    const seller = sellerOf(product) || clerk;
+    seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
     shop.toast(fmt(L(product.perfume ? PERFUME_TEXT.got : GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
     return true;
   },
@@ -1709,6 +1710,23 @@ const shop = new ShopUI({
   },
 });
 
+// Market sellers call out to you as you walk past their stall (now and then).
+const STALL_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], ['맛보고 가세요!', 'matbogo gaseyo!', 'Come have a taste!'], ['방금 만들었어요!', 'banggeum mandeureosseoyo!', 'Freshly made!'], ['구경하고 가세요!', 'gugyeonghago gaseyo!', 'Take a look!']];
+let stallHiAt = 0;
+function greetAtStalls(p) {
+  const now = performance.now();
+  if (now - stallHiAt < 12000) return;
+  const o = interior.vendorNpcs.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
+  if (!o) return;
+  stallHiAt = o.hiAt = now;
+  o.ch.wave();
+  say(o, $('labels'), STALL_HI[Math.floor(Math.random() * STALL_HI.length)]);
+}
+// At the park's market, the stall's own seller thanks you (not the kiosk clerk).
+function sellerOf(product) {
+  const i = interior?.vendors?.findIndex((v) => v.stall === product.stall);
+  return i >= 0 ? interior.vendorNpcs?.[i] : null;
+}
 // What a bought thing becomes in your hand.
 const SHOP_ICON = { notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
 const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
@@ -2432,6 +2450,18 @@ function enterStore(item) {
     });
   }
   interior.readerNpcs = built.readerNpcs || null;
+  // The Han River park's market: a seller behind each stall.
+  if (built.vendors?.length && !built.vendorNpcs) {
+    built.vendorNpcs = built.vendors.map((v) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
+      o.ch.root.position.set(v.x, 0, v.z);
+      o.ch.root.rotation.y = v.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.vendorNpcs = built.vendorNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2539,7 +2569,7 @@ function leaveStore() {
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  for (const o of [clerk, trainer, barkeep, areaGuide, ...(interior.readerNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   clerk = null;
   trainer = null;
   barkeep = null;
@@ -5608,7 +5638,8 @@ renderer.setAnimationLoop(() => {
   else {
     busking.hideLabels(); palaceShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
-    for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    if (interior?.vendorNpcs) greetAtStalls(p);
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
