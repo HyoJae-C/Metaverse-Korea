@@ -1719,3 +1719,46 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .item-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .pet-name-form { display: flex; gap: 6px; margin-top: 4px; }
 .pet-name-form input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; font-size: 16px; }
+
+/* Fish book (낚시 도감): a stamp book. Caught kinds are red-ink stamps,
+   the rest dashed rings with a dark silhouette. */
+.fish-book { display: grid; gap: 8px; background: #f4efe4; border-radius: 16px; padding: 10px; }
+.fish-book .stamp-grid { max-height: 46vh; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.fish-stamp { --ink: #c8323a; width: 86px; height: 86px; border-radius: 50%; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center; padding: 8px 4px 9px; box-sizing: border-box;
+  border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
+.fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
+.fish-stamp-fish { font-size: 32px; line-height: 1; }
+.fish-stamp-name { font-size: 12px; font-weight: 900; line-height: 1; }
+.fish-stamp.empty { border: 2px dashed #cfc3ae; box-shadow: none; background: none; color: #9a8f82; transform: none; }
+.fish-stamp.empty .fish-stamp-fish { filter: brightness(0); opacity: 0.35; }
+.fish-cell.fresh .fish-stamp { animation: fish-stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes fish-stamp-in { from { transform: scale(1.9) rotate(var(--tilt, -6deg)); opacity: 0; } 60% { opacity: 1; } to { transform: scale(1) rotate(var(--tilt, -6deg)); } }
+.fish-stars { font-style: normal; font-size: 10px; letter-spacing: 1px; color: #e0a100; }
+.fish-cell.empty .fish-stars { color: #b3a898; }
+.fish-n { color: #b0282e !important; font-size: 12px !important; }
+.fish-new { font-size: 12px; font-weight: 900; color: #fff; background: #e0613a; padding: 3px 10px; border-radius: 999px; margin-bottom: 4px; }
+
+/* First catch: the stamp window. The fish shows, then the stamp slams (콱!). */
+.fish-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(20, 24, 32, 0.55); animation: fish-pop-fade 0.2s ease both; }
+.fish-pop.out { animation: fish-pop-fade 0.2s ease reverse both; }
+.fish-pop-card { display: grid; justify-items: center; gap: 4px; width: min(320px, 100%); padding: 18px 16px 16px; border-radius: 22px; background: #f4efe4; text-align: center; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35); animation: fish-pop-up 0.3s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.fish-pop-card.hit { animation: fish-pop-shake 0.35s ease both; }
+.fish-pop-page { position: relative; width: 200px; height: 170px; display: grid; place-items: center; }
+.fish-pop-big { font-size: 96px; line-height: 1; animation: fish-bob 2.4s ease-in-out infinite; }
+.fish-pop-page .fish-stamp { position: absolute; right: 2px; bottom: 0; width: 104px; height: 104px; background: rgba(255, 250, 240, 0.7); }
+.fish-pop-page .fish-stamp .fish-stamp-fish { font-size: 38px; }
+.fish-pop-page .fish-stamp .fish-stamp-name { font-size: 14px; }
+.fish-stamp.slam { animation: fish-slam 0.55s cubic-bezier(0.7, 0, 0.9, 0.6) both; }
+.fish-pop-ink { position: absolute; right: 2px; bottom: 0; width: 104px; height: 104px; border-radius: 50%; border: 6px solid rgba(200, 50, 58, 0.5); opacity: 0; pointer-events: none; }
+.hit .fish-pop-ink { animation: fish-ink 0.5s ease-out both; }
+.fish-pop-bang { position: absolute; left: 0; top: 4px; font-size: 34px; font-weight: 900; color: #c8323a; -webkit-text-stroke: 2px #fff; paint-order: stroke; transform: rotate(-14deg) scale(0); }
+.hit .fish-pop-bang { animation: fish-bang 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both; }
+.fish-pop-name { font-size: 18px; font-weight: 900; }
+.fish-pop-count { margin: 4px 0 6px; font-weight: 800; color: #b0282e; }
+@keyframes fish-pop-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fish-pop-up { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fish-slam { 0% { transform: translateY(-120px) scale(3) rotate(-30deg); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(0) scale(1) rotate(var(--tilt, -8deg)); opacity: 1; } }
+@keyframes fish-pop-shake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 4px) rotate(-1deg); } 40% { transform: translate(5px, -3px) rotate(1deg); } 60% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } }
+@keyframes fish-ink { from { transform: scale(0.9); opacity: 0.9; } to { transform: scale(1.7); opacity: 0; } }
+@keyframes fish-bang { from { transform: rotate(-14deg) scale(0); } 70% { transform: rotate(-14deg) scale(1.2); } to { transform: rotate(-14deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .fish-stamp.slam, .fish-pop-card.hit, .fish-pop-big { animation: none; } }

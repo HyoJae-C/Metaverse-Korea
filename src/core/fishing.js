@@ -82,3 +82,41 @@ export class FishBag {
   sellAll() { return FISH.reduce((a, f) => a + this.sell(f.id), 0); }
   _save() { try { this.storage?.setItem(BAG_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
 }
+
+// Fish book (낚시 도감): every fish you land is recorded, even after you sell
+// it. { id: count }, saved on this device as mk.fishdex (so the cloud save,
+// which copies every "mk." key, carries it too). A player who fished before
+// the book existed starts with what is in their bag.
+const DEX_KEY = 'mk.fishdex';
+export class FishDex {
+  constructor(storage = globalThis.localStorage, bag = null) {
+    this.storage = storage;
+    let saved = null;
+    try { saved = storage?.getItem(DEX_KEY) ?? null; } catch { /* storage blocked */ }
+    let raw = {};
+    try { raw = JSON.parse(saved || '{}') || {}; } catch { /* broken save */ }
+    this.c = {};
+    for (const f of FISH) if (Number.isInteger(raw[f.id]) && raw[f.id] > 0) this.c[f.id] = raw[f.id];
+    if (saved == null && bag) {
+      for (const f of FISH) if (bag.count(f.id)) this.c[f.id] = bag.count(f.id);
+      if (this.kinds) this._save();
+    }
+  }
+  count(id) { return this.c[id] || 0; }
+  has(id) { return !!this.c[id]; }
+  get kinds() { return Object.keys(this.c).length; }
+  get total() { return Object.values(this.c).reduce((a, b) => a + b, 0); }
+  get complete() { return this.kinds === FISH.length; }
+  // Record a catch; returns true the first time this kind is caught.
+  add(id) {
+    if (!fishById(id)) return false;
+    const isNew = !this.c[id];
+    this.c[id] = (this.c[id] || 0) + 1;
+    this._save();
+    return isNew;
+  }
+  _save() { try { this.storage?.setItem(DEX_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
+}
+
+// 1 to 5 stars, from the 30% crucian carp to the 0.1% whale.
+export const rarityStars = (f) => (f.chance >= 20 ? 1 : f.chance >= 9 ? 2 : f.chance >= 5 ? 3 : f.chance >= 1 ? 4 : 5);

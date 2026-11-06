@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, rollFish, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX } from '../core/fishing.js';
+import { FISH, rollFish, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -14,10 +14,92 @@ const el = (tag, cls, text) => {
 export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.name, getLanguage())} · ${f.ko} (${f.rom})`);
 const pct = (c) => (c < 1 ? c.toFixed(1) : String(c)) + '%';
 
+// One round red-ink stamp for a fish: the fish, "한강 낚시" and its name.
+// Uncaught kinds are an empty dashed ring with the fish's dark silhouette.
+export function fishStamp(f, caught = true) {
+  const st = el('div', 'fish-stamp' + (caught ? '' : ' empty'));
+  st.style.setProperty('--tilt', ((FISH.indexOf(f) * 37) % 17) - 8 + 'deg');
+  st.append(el('small', 'fish-stamp-top', caught ? '한강 낚시' : ''), el('span', 'fish-stamp-fish', f.emoji), el('b', 'fish-stamp-name', caught ? f.ko : '???'));
+  return st;
+}
+
+// The fish book is a stamp book: one stamp per kind caught, with how many,
+// and the rest as silhouettes with only their rarity shown.
+export function fishBook(dex, fresh = null) {
+  const wrap = el('div', 'fish-book');
+  const head = el('div', 'stamp-head');
+  const bar = el('div', 'stamp-bar');
+  const fill = el('i');
+  fill.style.width = (dex.kinds / FISH.length) * 100 + '%';
+  bar.append(fill);
+  head.append(el('span', 'stamp-kicker', 'HAN RIVER FISHING · 한강 낚시 도감'), el('p', 'dex-summary', t('fish.bookSummary', { k: dex.kinds, all: FISH.length, n: dex.total })), bar);
+  wrap.append(head, el('p', 'order-hint', dex.complete ? t('fish.bookDone') : t('fish.bookHint')));
+  const grid = el('div', 'stamp-grid');
+  for (const f of FISH) {
+    const n = dex.count(f.id);
+    const cell = el('div', 'stamp-cell fish-cell' + (n ? '' : ' empty') + (f.id === fresh ? ' fresh' : ''));
+    cell.append(fishStamp(f, !!n), el('i', 'fish-stars', '★'.repeat(rarityStars(f))));
+    if (n) {
+      cell.append(
+        el('small', null, `${f.rom} · ${localName(f.name, getLanguage())}`),
+        el('small', null, `${pct(f.chance)} · 🪙 ${f.price}`),
+        el('em', 'fish-n', `× ${n}`),
+      );
+    } else {
+      cell.append(el('em', null, t('fish.unknown')));
+    }
+    grid.append(cell);
+  }
+  wrap.append(grid);
+  return wrap;
+}
+
+// First catch of a kind: a stamp card pops up over everything, shows the
+// fish, then the stamp slams down (콱!) with a shake and an ink splash.
+// onSlam: at the moment of impact (for the sound). Tap anywhere to close;
+// the button opens the book (onBook).
+export function stampPop(f, dex, { onSlam, onClose, onBook } = {}) {
+  document.querySelector('.fish-pop')?.remove();
+  const pop = el('div', 'fish-pop');
+  const card = el('div', 'fish-pop-card');
+  const page = el('div', 'fish-pop-page');
+  const st = fishStamp(f, true);
+  st.classList.add('slam');
+  page.append(el('span', 'fish-pop-big', f.emoji), st, el('span', 'fish-pop-ink'), el('b', 'fish-pop-bang', '콱!'));
+  const done = dex.complete;
+  const ok = el('button', 'primary', '📖 ' + t('fish.book'));
+  card.append(
+    el('span', 'stamp-kicker', 'NEW · ' + t('fish.book')),
+    page,
+    el('strong', 'fish-pop-name', `${f.ko} · ${f.rom}`),
+    el('small', null, `${localName(f.name, getLanguage())} · ${'★'.repeat(rarityStars(f))}`),
+    el('p', 'fish-pop-count', done ? t('fish.bookDone') : t('fish.bookNew', { k: dex.kinds, all: FISH.length })),
+    ok,
+  );
+  pop.append(card);
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    clearTimeout(timer);
+    pop.classList.add('out');
+    setTimeout(() => pop.remove(), 220);
+    onClose?.();
+  };
+  pop.onclick = close;
+  ok.onclick = (e) => { e.stopPropagation(); close(); onBook?.(); };
+  document.body.append(pop);
+  // The stamp lands 0.55 s in (see .fish-stamp.slam in style.css).
+  setTimeout(() => { card.classList.add('hit'); onSlam?.(); }, 550);
+  const timer = setTimeout(close, 6000);
+  return { el: pop, close };
+}
+
 export class FishingUI {
   // bag: FishBag; onRod(on): show or hide the rod; onCatch(fish): after a catch.
-  constructor({ root, bag, onRod, onCatch, onEscape, onClose }) {
-    Object.assign(this, { root, bag, onRod, onCatch, onEscape, onClose });
+  // dex: FishDex, every catch is recorded there too.
+  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp }) {
+    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -65,8 +147,24 @@ export class FishingUI {
     cast.onclick = () => this.cast();
     const actions = el('div', 'order-actions');
     actions.append(cast);
+    if (this.dex) {
+      const book = el('button', 'chip', `📖 ${t('fish.book')} · ${this.dex.kinds}/${FISH.length} · 🐟 ${this.dex.total}`);
+      book.onclick = () => this.renderBook();
+      actions.append(book);
+    }
     if (this.bag.full) this.root.append(el('p', 'order-hint', t('fish.full')));
     this.root.append(actions, this._odds());
+  }
+
+  renderBook() {
+    this.state = 'book';
+    this._frame();
+    const back = el('button', 'primary', '🎣 ' + t('fish.back'));
+    back.onclick = () => this.renderIdle();
+    const actions = el('div', 'order-actions');
+    actions.append(back);
+    this.root.append(fishBook(this.dex, this.fresh), actions);
+    this.fresh = null;
   }
 
   // The catch list with chances and prices (a small "fish guide").
@@ -147,8 +245,12 @@ export class FishingUI {
     const f = this.fish;
     if (Math.random() < escapeChance(f, spare)) { this.escaped(f); return; }
     const kept = this.bag.add(f.id);
+    const isNew = this.dex ? this.dex.add(f.id) : false;
+    this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
     const card = el('div', 'fish-card' + (f.chance <= 2 ? ' rare' : ''));
+    if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
+    if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(
       el('span', 'fish-big', f.emoji),
       el('strong', null, f.ko),
@@ -161,8 +263,13 @@ export class FishingUI {
     again.disabled = this.bag.full;
     const actions = el('div', 'order-actions');
     actions.append(again);
+    if (this.dex) {
+      const book = el('button', 'chip', `📖 ${t('fish.book')} · ${this.dex.kinds}/${FISH.length}`);
+      book.onclick = () => this.renderBook();
+      actions.append(book);
+    }
     this.root.append(actions);
-    if (kept) this.onCatch?.(f);
+    if (kept) this.onCatch?.(f, isNew);
   }
 }
 
@@ -227,5 +334,21 @@ export class FishMarketUI {
     if (coins) this.wallet.add(coins);
     this.onSold?.(coins);
     this.render();
+  }
+}
+
+// The fish book on its own (opened from the wallet).
+export class FishBookUI {
+  constructor({ root, dex }) {
+    Object.assign(this, { root, dex });
+  }
+  get open() { return !this.root.hidden; }
+  close() { this.root.hidden = true; }
+  show() {
+    this.root.hidden = false;
+    const x = el('button', 'sheet-x', '✕');
+    x.setAttribute('aria-label', t('order.close'));
+    x.onclick = () => this.close();
+    this.root.replaceChildren(x, el('h3', null, '📖 ' + t('fish.book')), fishBook(this.dex));
   }
 }

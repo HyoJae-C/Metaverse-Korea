@@ -107,8 +107,8 @@ import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
-import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
-import { FishBag } from './core/fishing.js';
+import { FishingUI, FishMarketUI, FishBookUI } from './ui/fishing-ui.js';
+import { FishBag, FishDex, FISH } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
@@ -3392,7 +3392,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3600,18 +3600,29 @@ const grillUi = new GrillUI({
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
 const fishBag = new FishBag();
+// Fish book (mk.fishdex): every catch, kept even after selling.
+const fishDex = new FishDex(globalThis.localStorage, fishBag);
+const fishBookUi = new FishBookUI({ root: $('fishbook-panel'), dex: fishDex });
+function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textContent = `${t('fish.book')} · ${fishDex.kinds}/${FISH.length} · 🐟 ${fishDex.total}`; }
+$('fishbook-btn').onclick = () => { $('wallet-panel').hidden = true; fishBookUi.show(); };
+refreshFishBookBtn();
+onLanguageChange(refreshFishBookBtn);
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
+  dex: fishDex,
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onCatch: (f) => {
     sfx.pop?.();
+    refreshFishBookBtn();
     showBubble(myLabel, $('labels'), f.emoji);
     if (f.chance <= 2) me.play('cheer'); // a rare one!
     missionEvent('fish', f.id);
     togetherBonus('fish');
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
+  // The stamp slamming down on a first catch: a deep double thud.
+  onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); navigator.vibrate?.(40); },
 });
 const marketUi = new FishMarketUI({
   root: $('market-panel'),
@@ -5768,6 +5779,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     setLook: (patch) => setLook({ ...currentLook, ...patch }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
+    fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
     spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
     ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
