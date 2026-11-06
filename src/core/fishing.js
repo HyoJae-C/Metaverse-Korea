@@ -84,12 +84,12 @@ export const FISH = [
     "price": 1
   },
   {
-    "id": "mandarin",
-    "emoji": "🐟",
-    "ko": "쏘가리",
-    "rom": "ssogari",
+    "id": "sea-turtle",
+    "emoji": "🐢",
+    "ko": "바다거북",
+    "rom": "badageobuk",
     "name": {
-      "en": "Mandarin fish"
+      "en": "Sea turtle"
     },
     "rarity": 3,
     "released": true,
@@ -97,12 +97,12 @@ export const FISH = [
     "price": 6
   },
   {
-    "id": "bass",
-    "emoji": "🐟",
-    "ko": "배스",
-    "rom": "baeseu",
+    "id": "scallop",
+    "emoji": "🐚",
+    "ko": "가리비",
+    "rom": "garibi",
     "name": {
-      "en": "Bass"
+      "en": "Scallop"
     },
     "rarity": 2,
     "released": true,
@@ -138,12 +138,12 @@ export const FISH = [
     "price": 2
   },
   {
-    "id": "horse-mackerel",
-    "emoji": "🐟",
-    "ko": "전갱이",
-    "rom": "jeongaengi",
+    "id": "jellyfish",
+    "emoji": "🪼",
+    "ko": "해파리",
+    "rom": "haepari",
     "name": {
-      "en": "Horse mackerel"
+      "en": "Jellyfish"
     },
     "rarity": 2,
     "released": true,
@@ -322,17 +322,17 @@ export const FISH = [
     "price": 6
   },
   {
-    "id": "filefish",
-    "emoji": "🐟",
-    "ko": "쥐치",
-    "rom": "jwichi",
+    "id": "wakame",
+    "emoji": "🌿",
+    "ko": "미역",
+    "rom": "miyeok",
     "name": {
-      "en": "Filefish"
+      "en": "Wakame seaweed"
     },
-    "rarity": 2,
+    "rarity": 1,
     "released": false,
     "page": 2,
-    "price": 3
+    "price": 1
   },
   {
     "id": "anglerfish",
@@ -443,14 +443,12 @@ export const FISH = [
     "price": 6
   },
   {
-    "id": "squid",
-    "emoji": "🦑",
-    "ko": "오징어",
-    "rom": "ojingeo",
+    "id": "marlin",
+    "emoji": "🐟",
+    "ko": "청새치",
+    "rom": "cheongsaechi",
     "name": {
-      "en": "Squid",
-      "ja": "イカ",
-      "zh": "鱿鱼"
+      "en": "Blue marlin"
     },
     "rarity": 3,
     "released": true,
@@ -536,12 +534,12 @@ export const FISH = [
     "price": 20
   },
   {
-    "id": "lionfish",
+    "id": "manta",
     "emoji": "🐟",
-    "ko": "쏠배감펭",
-    "rom": "ssolbaegampaeng",
+    "ko": "만타가오리",
+    "rom": "mantagaori",
     "name": {
-      "en": "Lionfish"
+      "en": "Manta ray"
     },
     "rarity": 4,
     "released": false,
@@ -549,43 +547,43 @@ export const FISH = [
     "price": 20
   },
   {
-    "id": "mandarinfish",
-    "emoji": "🐠",
-    "ko": "만다린피시",
-    "rom": "mandarinpisi",
-    "name": {
-      "en": "Mandarinfish"
-    },
-    "rarity": 4,
-    "released": false,
-    "page": 4,
-    "price": 20
-  },
-  {
-    "id": "parrotfish",
-    "emoji": "🐠",
-    "ko": "앵무고기",
-    "rom": "aengmugogi",
-    "name": {
-      "en": "Parrotfish"
-    },
-    "rarity": 3,
-    "released": false,
-    "page": 4,
-    "price": 6
-  },
-  {
-    "id": "ray",
+    "id": "blobfish",
     "emoji": "🐟",
-    "ko": "가오리",
-    "rom": "gaori",
+    "ko": "블롭피시",
+    "rom": "beullopisi",
     "name": {
-      "en": "Ray"
+      "en": "Blobfish"
     },
     "rarity": 4,
     "released": false,
     "page": 4,
     "price": 20
+  },
+  {
+    "id": "kelp",
+    "emoji": "🌿",
+    "ko": "다시마",
+    "rom": "dasima",
+    "name": {
+      "en": "Kelp"
+    },
+    "rarity": 1,
+    "released": false,
+    "page": 4,
+    "price": 1
+  },
+  {
+    "id": "orca",
+    "emoji": "🐋",
+    "ko": "범고래",
+    "rom": "beomgorae",
+    "name": {
+      "en": "Orca"
+    },
+    "rarity": 5,
+    "released": false,
+    "page": 4,
+    "price": 60
   },
   {
     "id": "sunfish",
@@ -616,17 +614,17 @@ export const FISH = [
     "price": 20
   },
   {
-    "id": "swordfish",
-    "emoji": "🐟",
-    "ko": "황새치",
-    "rom": "hwangsaechi",
+    "id": "giant-squid",
+    "emoji": "🦑",
+    "ko": "대왕오징어",
+    "rom": "daewangojingeo",
     "name": {
-      "en": "Swordfish"
+      "en": "Giant squid"
     },
-    "rarity": 4,
+    "rarity": 5,
     "released": false,
     "page": 5,
-    "price": 20
+    "price": 60
   },
   {
     "id": "shark",
@@ -666,6 +664,21 @@ const weights = [0, 12, 7, 3, 0.8, 0.15];
 const totalWeight = AVAILABLE_FISH.reduce((sum, f) => sum + (f.id === 'whale' ? 0.03 : weights[f.rarity]), 0);
 for (const f of FISH) f.chance = f.released ? (f.id === 'whale' ? 0.03 : weights[f.rarity]) / totalWeight * 100 : 0;
 export const fishById = id => FISH.find(f => f.id === id) || null;
+// Kinds swapped out of the catalogue (to match the fish book's pictures),
+// each moved to the new kind of the same rarity in its place, so bags and
+// fish books saved before keep their counts.
+export const RENAMED = {
+  mandarin: 'sea-turtle', bass: 'scallop', 'horse-mackerel': 'jellyfish', squid: 'marlin',
+  filefish: 'wakame', parrotfish: 'kelp', lionfish: 'manta', mandarinfish: 'blobfish', ray: 'orca', swordfish: 'giant-squid',
+};
+const migrate = (raw) => {
+  const out = { ...raw };
+  for (const [old, id] of Object.entries(RENAMED)) {
+    if (Number.isInteger(out[old]) && out[old] > 0) out[id] = (Number.isInteger(out[id]) ? out[id] : 0) + out[old];
+    delete out[old];
+  }
+  return out;
+};
 export function rollFish(rand = Math.random) {
   let r = rand() * 100;
   for (const f of AVAILABLE_FISH) { r -= f.chance; if (r < 0) return f; }
@@ -690,6 +703,25 @@ export function escapeChance(fish, spare = 0) {
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
 export const drainFor = fish => (isRare(fish) ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
 
+// What you shout when a fish bites: three lines per rarity (★1–★5), one
+// picked at random each bite. ★3 and up are the rare ones.
+export const BITE_LINES = {
+  1: [{ ko: '작은 녀석이 물었다!', en: 'A little one bit!', ja: '小さいのがかかった！', zh: '小家伙上钩了！' },
+    { ko: '오, 입질이다!', en: 'Oh, a bite!', ja: 'おっ、アタリだ！', zh: '哦，有鱼咬钩！' },
+    { ko: '귀여운 녀석이네!', en: 'A cute one!', ja: 'かわいいヤツだ！', zh: '可爱的小家伙！' }],
+  2: [{ ko: '제법인데?', en: 'Not bad at all!', ja: 'なかなかやるな！', zh: '还不错嘛！' },
+    { ko: '손맛이 좋은데!', en: 'Nice pull!', ja: 'いい手応えだ！', zh: '手感不错！' },
+    { ko: '꽤 묵직하다!', en: 'Pretty heavy!', ja: 'けっこう重いぞ！', zh: '还挺沉的！' }],
+  3: [{ ko: '대단한 녀석이다!!', en: 'What a monster!!', ja: 'すごいヤツだ!!', zh: '好厉害的家伙!!' },
+    { ko: '이건 보통 놈이 아니야!!', en: 'This is no ordinary fish!!', ja: 'こいつはただ者じゃない!!', zh: '这可不是普通的鱼!!' },
+    { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' }],
+  4: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
+    { ko: '낚싯대가 부러질 것 같아!!!', en: "The rod's about to snap!!!", ja: '竿が折れそうだ!!!', zh: '鱼竿快要断了!!!' },
+    { ko: '전설급 손맛이다!!!', en: 'A legendary pull!!!', ja: '伝説級の手応えだ!!!', zh: '传说级的手感!!!' }],
+  5: [{ ko: '강의 주인이 나타났다!!!!', en: 'The lord of the river appears!!!!', ja: '川の主が現れた!!!!', zh: '河之主出现了!!!!' },
+    { ko: '이건… 전설의 그 녀석?!', en: 'Is this… the legend?!', ja: 'これは…伝説のアイツ?!', zh: '难道是…传说中的那家伙?!' },
+    { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],
+};
 // Auto fishing: catches on its own while you stay at the spot with the game
 // open, but slowly (AUTO_RATE of hands-on fishing, which lands a fish about
 // every MANUAL_SECONDS) and never a rare fish. Lower AUTO_RATE to slow it.
@@ -716,6 +748,7 @@ export class FishBag {
     this.storage = storage;
     let raw = {};
     try { raw = JSON.parse(storage?.getItem(BAG_KEY) || '{}') || {}; } catch { /* ignore */ }
+    raw = migrate(raw);
     this.c = {};
     for (const f of FISH) if (Number.isInteger(raw[f.id]) && raw[f.id] > 0) this.c[f.id] = Math.min(BAG_MAX, raw[f.id]);
   }
@@ -755,6 +788,7 @@ export class FishDex {
     try { saved = storage?.getItem(DEX_KEY) ?? null; } catch { /* storage blocked */ }
     let raw = {};
     try { raw = JSON.parse(saved || '{}') || {}; } catch { /* broken save */ }
+    raw = migrate(raw);
     this.c = {};
     for (const f of FISH) if (Number.isInteger(raw[f.id]) && raw[f.id] > 0) this.c[f.id] = raw[f.id];
     if (saved == null && bag) {

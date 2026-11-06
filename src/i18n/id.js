@@ -253,7 +253,6 @@ export const ID = {
   'fish.bookNew': '📖 Baru di buku ikanmu! {k} / {all}',
   'fish.bookDone': '🏆 Semua jenis sudah tertangkap. Buku ikan lengkap!',
   'fish.back': 'Kembali memancing',
-  'fish.rareOne': 'Monster yang hebat!!',
   'fish.fightBack': 'Ikannya melawan! Terus gulung atau pengukurnya turun!',
   'fish.reelHint': 'Ketuk kedua tombol Gulung bergantian dengan dua jempol (tombol ← →)',
   'fish.auto': 'Memancing otomatis',
