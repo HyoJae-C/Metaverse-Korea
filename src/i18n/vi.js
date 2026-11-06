@@ -380,6 +380,7 @@ export const VI = {
   'hud.signsOn': 'Biển hiệu đã dịch',
   'hud.music': 'Nhạc',
   'settings.title': 'Cài đặt',
+  'settings.steady': 'Đi bộ đều (không chạy)',
   'settings.signs': 'Dịch biển hiệu cửa hàng',
   'settings.done': 'Xong',
   'news.title': 'Cập nhật',

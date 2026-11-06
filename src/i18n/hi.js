@@ -380,6 +380,7 @@ export const HI = {
   'hud.signsOn': 'साइनबोर्ड अनुवादित',
   'hud.music': 'संगीत',
   'settings.title': 'सेटिंग्स',
+  'settings.steady': 'एक जैसी चाल (दौड़ना नहीं)',
   'settings.signs': 'दुकानों के साइनबोर्ड का अनुवाद करें',
   'settings.done': 'हो गया',
   'news.title': 'अपडेट',
