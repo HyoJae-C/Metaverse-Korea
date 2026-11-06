@@ -93,6 +93,7 @@ import { ClawUI } from './ui/claw-ui.js';
 import { TarotUI } from './ui/tarot-ui.js';
 import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
 import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { buskingGroundY } from './core/busking-layout.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
@@ -545,7 +546,7 @@ const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
-// Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+// Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
@@ -2733,7 +2734,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill or the busking bank
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
