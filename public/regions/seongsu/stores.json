@@ -569,6 +569,20 @@
       ]
     },
     {
+      "id": "suragan-cooking",
+      "category": "workshop",
+      "workshop": "japchae",
+      "size": "large",
+      "name": {"ko": "수라간 요리교실", "en": "Suragan Cooking Class", "ja": "スラッカン料理教室", "zh": "御膳房料理教室", "es": "Clase de cocina Suragan", "id": "Kelas Masak Suragan", "vi": "Lớp nấu ăn Suragan", "hi": "सुरागान कुकिंग क्लास", "ar": "صف طبخ سوراغان"},
+      "tagline": {"en": "Cook Korean dishes by hand: japchae and free-style kimbap", "ko": "손으로 만드는 한국 음식: 잡채와 자유 김밥", "ja": "手作りの韓国料理：チャプチェと自由キンパ", "zh": "亲手做韩国菜：杂菜和自由紫菜包饭", "es": "Cocina coreana a mano: japchae y kimbap libre", "id": "Masak hidangan Korea dengan tangan: japchae dan kimbap bebas", "vi": "Tự tay nấu món Hàn: japchae và kimbap tự do", "hi": "हाथ से कोरियाई खाना: जापचे और फ़्री-स्टाइल किम्बाप", "ar": "اطبخ الأطباق الكورية بيديك: الجابتشي والكيمباب على ذوقك"},
+      "at": [-1519, -1065],
+      "colors": { "sign": "#7a2e5a", "awning": "#efd9a8", "accent": "#fbf4e6" },
+      "products": [
+        {"id": "sesame-oil", "model": "bottle", "color": "#c9a227", "price": 11000, "name": {"en": "Roasted sesame oil", "ko": "참기름", "ja": "ごま油", "zh": "香油", "es": "Aceite de sésamo tostado", "id": "Minyak wijen sangrai", "vi": "Dầu mè rang", "hi": "भुने तिल का तेल", "ar": "زيت السمسم المحمّص"}, "desc": {"en": "Nutty, toasty oil that finishes japchae, namul and bibimbap.", "ko": "고소한 참기름. 잡채, 나물, 비빔밥의 마무리예요."}},
+        {"id": "suragan-notebook", "model": "notebook", "color": "#c94f3d", "price": 8000, "name": {"en": "Suragan recipe notebook", "ko": "수라간 레시피 노트", "ja": "スラッカンのレシピノート", "zh": "御膳房食谱本", "es": "Cuaderno de recetas Suragan", "id": "Buku resep Suragan", "vi": "Sổ công thức Suragan", "hi": "सुरागान रेसिपी नोटबुक", "ar": "دفتر وصفات سوراغان"}, "desc": {"en": "A notebook with the japchae recipe from today's class on the first page.", "ko": "첫 장에 오늘 배운 잡채 레시피가 적힌 노트예요."}}
+      ]
+    },
+    {
       "id": "chaon-teahouse",
       "category": "cafe",
       "size": "small",

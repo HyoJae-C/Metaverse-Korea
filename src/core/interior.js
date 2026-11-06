@@ -1280,6 +1280,65 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'japchae') {
+      // Suragan Cooking Class: a long cooking table with a burner and a pan
+      // at each place, bowls of coloured vegetables down the middle, and a
+      // big mixing bowl at the far end. The teacher stands at the head.
+      const tz = -d * 0.06, tw = Math.min(7, w - 8);
+      box(tw, 0.08, 1.6, 0, 0.7, tz, '#d9d2c4'); // stainless-look top
+      box(tw, 0.62, 1.5, 0, 0.33, tz, '#8a5a3a');
+      block(0, tz, tw, 1.6);
+      const spots = [], rolls = [];
+      const vegCol = ['#f08a2c', '#3f8f3f', '#d8402c', '#7a5236', '#f3e7c9', '#ffd23a'];
+      for (let k = 0; k < 3; k++) {
+        const x = (k - 1) * (tw / 3.2);
+        // Back side: a burner and a pan (japchae).
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
+        burner.position.set(x, 0.76, tz - 0.42);
+        scene.add(burner);
+        const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
+        pan.position.set(x, 0.82, tz - 0.42);
+        scene.add(pan);
+        box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz - 0.42, '#3a3a3e'); // handle
+        spots.push({ x, z: tz - 1.3 });
+        // Front side: a bamboo mat (김발) with a sheet of gim and rice (kimbap).
+        box(0.5, 0.02, 0.44, x, 0.75, tz + 0.42, '#c9b27a');
+        box(0.42, 0.012, 0.36, x, 0.767, tz + 0.42, '#1f2a1c');
+        box(0.38, 0.03, 0.24, x, 0.782, tz + 0.37, '#f4f1e8');
+        rolls.push({ x, z: tz + 1.3 });
+        // Little bowls of sliced vegetables between the places.
+        for (let j = 0; j < 2; j++) {
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.07, 12), mat('#f7f3ea'));
+          bowl.position.set(x - 0.15 + j * 0.3, 0.78, tz);
+          scene.add(bowl);
+          const veg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 12), mat(vegCol[(k * 2 + j) % vegCol.length]));
+          veg.position.set(x - 0.15 + j * 0.3, 0.82, tz);
+          scene.add(veg);
+        }
+      }
+      stations.japchae = spots;
+      stations.kimbap = rolls;
+      stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      // The big mixing bowl with glossy noodles at the far end.
+      const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
+      big.position.set(tw / 2 + 1.1, 1.0, tz);
+      scene.add(big);
+      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat('#9a6a45'));
+      noodles.position.set(tw / 2 + 1.1, 0.88, tz);
+      scene.add(noodles);
+      box(0.9, 0.55, 0.9, tw / 2 + 1.1, 0.28, tz, '#8a5a3a'); // its stand
+      block(tw / 2 + 1.1, tz, 1, 1);
+      // A low stone ledge of sauce jars (간장 · soy sauce) by the front-left wall.
+      const jx0 = -w / 2 + 1.2, jz = d / 2 - 1.9;
+      box(5, 0.2, 1.1, jx0 + 2.1, 0.1, jz, '#9a9488');
+      [0.42, 0.32, 0.46, 0.3].forEach((r, k) => {
+        const jx = jx0 + k * 1.2;
+        const pot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat('#4a2c1c'));
+        pot.scale.set(1, 1.15, 1);
+        pot.position.set(jx, 0.2 + r * 1.1, jz);
+        scene.add(pot);
+      });
+      block(jx0 + 2.1, jz, 5, 1.2);
     } else if (store.workshop === 'kimchi') {
       // Sonmat Kimchi School: a long low work table with cabbages, bowls of
       // red seasoning and a salt sack; a big red rubber tub (고무대야) of
@@ -1409,7 +1468,7 @@ export function buildInterior(store) {
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.tarotReader || stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
     }
   }
   // Plants in the corners.
