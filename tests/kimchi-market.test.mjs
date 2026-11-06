@@ -91,3 +91,28 @@ test('Itaewon: restaurants north-west, bar and clubs north-east, the market sout
   const [bx, bz] = local(buyer);
   assert.ok(bx < 0 && bz > 0, 'the market is south-west');
 });
+
+test('japchae and kimbap sell too, sharing the daily limit with kimchi', async () => {
+  const { DISHES, dishOf, isHomemade } = await import('../src/core/kimchi-market.js');
+  const { JT } = await import('../src/ui/japchae-text.js');
+  const { BT } = await import('../src/ui/kimbap-text.js');
+  const store = mem();
+  const bag = new Bag(store);
+  bag.add({ kind: 'gift', sips: 1, name: 'Homemade japchae', icon: '🍝', g: 'japchae', q: 95 });
+  bag.add({ kind: 'gift', sips: 1, name: 'Homemade kimbap', icon: '🍙', g: 'kimbap', q: 60 });
+  bag.add(kimchiJar(80));
+  bag.add({ kind: 'gift', sips: 1, name: 'Homemade kimbap', icon: '🍙', g: 'kimbap', q: 99 });
+  const list = new Bag(store).list(); // kept across a reload
+  assert.deepEqual(list.map(dishOf), ['japchae', 'kimbap', 'kimchi', 'kimbap']);
+  assert.ok(list.every(isHomemade));
+  assert.equal(kimchiPrice(list[0]), DISHES.japchae.price.gold);
+  assert.equal(kimchiPrice(list[1]), DISHES.kimbap.price.bronze);
+  const sales = new KimchiSales(mem());
+  let coins = 0;
+  for (let i = 0; i < SELL_PER_DAY; i++) coins += sales.sell(bag, 0);
+  assert.equal(coins, DISHES.japchae.price.gold + DISHES.kimbap.price.bronze + KIMCHI_PRICE.silver);
+  assert.equal(sales.sell(bag, 0), 0); // the fourth dish waits for tomorrow
+  assert.equal(bag.size, 1);
+  for (const d of Object.values(DISHES)) assert.ok(d.price.gold > d.price.silver && d.price.silver > d.price.bronze && d.price.bronze > d.price.none);
+  for (const l of LANGS) { assert.ok(JT.canSell[l], `japchae canSell.${l}`); assert.ok(BT.canSell[l], `kimbap canSell.${l}`); }
+});
