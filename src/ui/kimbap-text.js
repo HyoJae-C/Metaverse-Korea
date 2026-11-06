@@ -124,7 +124,7 @@ const F = {
   gummy: ['Gummy bears', '젤리', 'グミ', '软糖', 'Ositos de goma', 'Permen jeli', 'Kẹo dẻo', 'गमी बेयर', 'حلوى جيلي'],
 };
 // Shared with the japchae class.
-for (const k of ['next', 'done', 'again', 'quit', 'tryAgain', 'words']) BT[k] = JT[k];
+for (const k of ['next', 'done', 'again', 'quit', 'tryAgain', 'words', 'canSell']) BT[k] = JT[k];
 const LANG_ORDER = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
 for (const [id, names] of Object.entries(F)) BT['f.' + id] = Object.fromEntries(LANG_ORDER.map((l, i) => [l, names[i]]));
 
