@@ -64,7 +64,7 @@
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
         <button class="tool" id="bike-btn"><span>🛵</span><small id="bike-label" data-i18n="hud.bike"></small></button>
-        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
+        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small><b class="badge" id="chat-unread" hidden>0</b></button>
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
         <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
@@ -77,6 +77,7 @@
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
       <button class="action" id="action-btn" hidden></button>
+      <div class="action-menu" id="action-menu" role="menu" hidden></div>
       <div class="keys-panel" id="keys-panel" hidden>
         <button class="keys-toggle" id="keys-toggle" aria-expanded="true">⌨️ <span data-i18n="keys.title"></span> <b class="keys-caret" aria-hidden="true">▾</b></button>
         <ul class="keys-list" id="keys-list">
@@ -138,6 +139,7 @@
         <div class="items-list" id="wallet-items"></div>
       </div>
       <div class="sheet board-panel" id="board-panel" hidden></div>
+      <div class="sheet friends-panel" id="friends-panel" hidden></div>
       <div class="sheet train-panel" id="train-panel" hidden>
         <strong class="wallet-title" id="train-title"></strong>
         <p class="fine" id="train-status"></p>
@@ -262,9 +264,13 @@
         <strong id="person-name"></strong>
         <button class="chip" id="person-block">🚫 <span data-i18n="safety.block"></span></button>
         <button class="chip" id="person-report">🚩 <span data-i18n="safety.report"></span></button>
+        <button class="chip" id="person-friend" hidden></button>
         <button class="sheet-x" id="person-close" aria-label="Close">✕</button>
       </div>
       <form class="chat-bar" id="chat-bar" hidden>
+        <!-- Who hears it: everyone nearby (not kept), all friends or one friend (kept, see the 👥 panel). -->
+        <select id="chat-to" aria-label="Send to"></select>
+        <button class="chip chat-friends" id="friends-btn" type="button" aria-label="Friends">👥<b class="dot" id="friends-dot" hidden></b></button>
         <input id="chat-input" type="text" autocomplete="off" enterkeyhint="send" maxlength="80" data-i18n-placeholder="chat.placeholder" />
         <button class="primary" type="submit" data-i18n="chat.send"></button>
       </form>

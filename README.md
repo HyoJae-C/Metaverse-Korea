@@ -126,6 +126,18 @@ Chat travels on private realtime channels (`chat:<room>`) so the server decides 
   `chatGoogleOnly: true` in `src/config.js` so guests get a "sign in to chat" prompt. Both start off.
 - `chat_bans` → add an account's `user_id` (look it up by name in `player_names`) to stop it chatting.
 
+### Friends and friend chat
+
+Public chat is never stored; the last lines just stay on screen until newer ones push them up. Friend chat is
+kept like a phone messenger. Run `supabase/006_friends.sql` once (needs 003 and 004); until then the 👥 panel
+says friends are being set up.
+
+- Add a friend by tapping their name in the chat log (➕ Add friend) or by player name in the 👥 panel; they
+  accept in their panel. The chat bar's picker sends to 🌐 everyone nearby, 👥 all friends, or one friend.
+- Messages are only readable by the two friends (or the sender's friends, for All friends), go through
+  `friend_send` (same `can_chat()` rules: Google-only and chat bans apply), max 200 characters, 5 per 10 s, and
+  are deleted after 180 days. New ones are pushed on a private realtime channel `friend:<account id>`.
+
 ### Swapping the realtime provider
 
 Game code talks only to the adapter interface in `src/net/index.js`. Add a file in `src/net/adapters/`,

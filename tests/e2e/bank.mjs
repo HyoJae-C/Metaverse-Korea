@@ -23,9 +23,12 @@ async function join(name) {
     });
     await page.addInitScript(() => {
       const Real = window.BroadcastChannel, open = new Set();
-      window.__bcDeliver = (c, d) => { for (const ch of open) if (ch.name === c && !ch.closed) ch.onmessage?.({ data: d }); };
+      window.__bcDeliver = (c, d) => { for (const ch of open) if (ch.name === c && !ch.closed) ch.emit({ data: d }); };
       window.BroadcastChannel = class {
-        constructor(name) { this.name = name; this.real = new Real(name); this.real.onmessage = (e) => this.onmessage?.(e); open.add(this); }
+        constructor(name) { this.name = name; this.fns = []; this.real = new Real(name); this.real.onmessage = (e) => this.emit(e); open.add(this); }
+        emit(e) { this.onmessage?.(e); for (const f of this.fns) f(e); }
+        addEventListener(t, f) { if (t === 'message') this.fns.push(f); }
+        removeEventListener(t, f) { this.fns = this.fns.filter((g) => g !== f); }
         postMessage(d) { this.real.postMessage(d); if (!this.name.includes('active-tab')) window.__bcSend(this.name, JSON.parse(JSON.stringify(d))); }
         close() { this.closed = true; open.delete(this); this.real.close(); }
       };

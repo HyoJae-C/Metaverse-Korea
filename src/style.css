@@ -300,6 +300,30 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   z-index: 4; /* above the hint cards, so they never swallow the tap (sheets stay above) */
 }
 .action:active { transform: translate(-50%, 3px); box-shadow: 0 2px 0 var(--accent-dark); }
+/* Several things in reach: "+N ▾" on the button, and a list to pick from above it. */
+.action-more {
+  display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28); font-size: 13px; vertical-align: 1px;
+}
+.action-menu {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: max(170px, calc(env(safe-area-inset-bottom) + 160px));
+  width: min(360px, calc(100vw - 32px)); max-height: 46vh; overflow-y: auto;
+  display: grid; gap: 6px; padding: 10px; border-radius: 22px;
+  background: var(--panel); box-shadow: var(--shadow); z-index: 4;
+}
+.action-menu[hidden] { display: none; }
+.action-menu-head { margin: 2px 6px 2px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.action-choice {
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  min-height: 48px; padding: 8px 14px; border-radius: 16px;
+  background: #fff; color: var(--ink); font-weight: 800; font-size: 16px;
+  box-shadow: 0 2px 0 rgba(74, 63, 53, 0.15);
+}
+.action-choice span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.action-choice.on { background: var(--accent); color: #fff; box-shadow: 0 3px 0 var(--accent-dark); }
+.action-choice.on kbd { color: var(--accent-dark); }
+.action-choice:active { transform: translateY(2px); }
 .store-banner {
   position: absolute; left: 50%; transform: translateX(-50%);
   top: max(12px, env(safe-area-inset-top));
@@ -350,6 +374,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .in-store .revert { top: calc(max(12px, env(safe-area-inset-top)) + 110px); }
   .guide { top: calc(max(12px, env(safe-area-inset-top)) + 152px); }
   .action { bottom: max(196px, calc(env(safe-area-inset-bottom) + 186px)); }
+  .action-menu { bottom: max(256px, calc(env(safe-area-inset-bottom) + 246px)); max-height: calc(100vh - 340px); }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
@@ -514,7 +539,12 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
   width: min(320px, 70vw); display: flex; flex-direction: column; gap: 4px;
   pointer-events: none;
+  /* Lines stay (no fading); the newest few show, older ones scroll up. */
+  max-height: 172px; overflow: hidden; justify-content: flex-start;
 }
+.chat-log > .chat-line { flex: none; }
+/* While typing, the log can be scrolled back. */
+.chat-open .chat-log { pointer-events: auto; overflow-y: auto; scrollbar-width: thin; }
 .chat-line {
   background: rgba(255, 255, 255, 0.88); border-radius: 12px; padding: 4px 10px;
   font-size: 13px; color: #4a3f35; overflow-wrap: anywhere;
@@ -524,6 +554,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .chat-line.mine b { color: #2f8f6b; }
 .chat-line.note { font-size: 12px; background: rgba(255, 246, 220, 0.92); }
 .chat-line.old { opacity: 0; }
+.chat-line.friend { background: rgba(232, 244, 255, 0.94); box-shadow: 0 2px 0 rgba(60, 111, 214, 0.18); }
+.chat-line.friend b, .chat-line.friend .chat-name { color: #3c6fd6; }
+.chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
 .chat-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
   bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
@@ -534,6 +567,56 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   border-radius: 999px; border: 2px solid #fff; background: rgba(255, 255, 255, 0.95);
 }
 .chat-bar button { flex: 0 0 auto; width: auto; margin: 0; padding: 0 18px; min-height: 44px; }
+.chat-bar select {
+  flex: 0 1 auto; max-width: 34%; min-width: 0; font: inherit; font-size: 14px; font-weight: 700; padding: 0 8px;
+  border-radius: 999px; border: 2px solid #fff; background: rgba(255, 255, 255, 0.95); color: var(--ink);
+}
+.chat-bar.to-friend input, .chat-bar.to-friend select { border-color: #9fc0f5; }
+.chat-bar .chat-friends { position: relative; padding: 0 12px; background: #fff; font-size: 18px; }
+/* Phones: who-to on its own row above the text box. */
+@media (max-width: 520px) {
+  .chat-bar { flex-wrap: wrap; }
+  .chat-bar select { flex: 1 1 calc(100% - 72px); max-width: none; min-height: 40px; }
+  .chat-bar .chat-friends { min-height: 40px; }
+  .chat-bar input { flex: 1 1 0; order: 3; }
+  .chat-bar button[type='submit'] { order: 4; }
+}
+.chat-friends .dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
+
+/* Friends: a phone-style messenger */
+.friends-panel { max-height: min(80dvh, 640px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.friends-panel .wallet-title { padding-right: 36px; }
+.friends-panel .fine { margin: 0; text-align: left; }
+.fr-section { font-size: 12px; font-weight: 800; color: var(--ink-soft); margin-top: 4px; }
+.fr-list { display: grid; gap: 6px; }
+.fr-row { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 16px; padding: 8px 10px; box-shadow: inset 0 0 0 1.5px #f1e8dc; }
+button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; background: #fff; border-radius: 16px; padding: 8px 10px; box-shadow: inset 0 0 0 1.5px #f1e8dc; cursor: pointer; }
+.fr-row .chip { flex: none; padding: 4px 12px; min-height: 32px; }
+.fr-avatar { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #eaf2ff; font-size: 20px; }
+.fr-text { display: grid; min-width: 0; flex: 1; }
+.fr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-request .fr-name { flex: 1; min-width: 0; }
+.fr-last { color: var(--ink-soft); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-time { flex: none; align-self: flex-start; color: var(--ink-soft); font-size: 11px; }
+.fr-unread { flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #e0604d; color: #fff; font-size: 12px; line-height: 20px; text-align: center; }
+.fr-out { background: transparent; box-shadow: none; padding: 0 4px; justify-content: space-between; }
+.fr-wait { color: var(--ink-soft); }
+.fr-add, .fr-send { display: flex; gap: 8px; }
+.fr-add input, .fr-send input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid #eadfd2; background: #fff; }
+.fr-add button, .fr-send button { flex: 0 0 auto; width: auto; margin: 0; padding: 0 16px; min-height: 42px; }
+.fr-head { display: flex; align-items: center; gap: 8px; padding-right: 36px; }
+.fr-head .chip { flex: none; padding: 4px 10px; min-height: 32px; font-size: 13px; }
+.fr-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.fr-msgs {
+  display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 18px;
+  background: #e7eef7; min-height: 180px; max-height: min(50dvh, 420px); overflow-y: auto;
+}
+.fr-msg { align-self: flex-start; max-width: 78%; background: #fff; border-radius: 16px 16px 16px 4px; padding: 6px 10px; display: grid; gap: 2px; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
+.fr-msg.mine { align-self: flex-end; background: #ffe58a; border-radius: 16px 16px 4px 16px; }
+.fr-from { font-size: 12px; color: #3c6fd6; }
+.fr-body { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+.fr-at { font-size: 10px; color: var(--ink-soft); justify-self: end; }
+.fr-msgs .board-empty { margin: auto; }
 @media (pointer: coarse) {
   .chat-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); }
   .chat-bar { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 12px); }
@@ -855,7 +938,7 @@ a.setting-row { text-decoration: none; color: inherit; }
 
 /* Hair salon and clinic */
 /* Beauty panel: a slim bar so your face stays visible above it. */
-body.beauty-mode #store-banner, body.beauty-mode #action-btn { display: none; }
+body.beauty-mode #store-banner, body.beauty-mode #action-btn, body.beauty-mode #action-menu { display: none; }
 .sheet.order-panel.beauty-panel { padding: 10px 14px 12px; gap: 8px; max-height: 42vh; }
 .beauty-head { display: flex; align-items: baseline; gap: 10px; padding-right: 36px; }
 .beauty-head strong { font-size: 15px; }
