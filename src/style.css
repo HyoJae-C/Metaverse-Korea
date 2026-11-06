@@ -1762,3 +1762,27 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes fish-ink { from { transform: scale(0.9); opacity: 0.9; } to { transform: scale(1.7); opacity: 0; } }
 @keyframes fish-bang { from { transform: rotate(-14deg) scale(0); } 70% { transform: rotate(-14deg) scale(1.2); } to { transform: rotate(-14deg) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fish-stamp.slam, .fish-pop-card.hit, .fish-pop-big { animation: none; } }
+
+
+/* Fishing journal: nine stamps per page, with a four-stamp finale. */
+.fish-book { background: #faf4e8; color: #4c3b32; padding: 16px; border: 1px solid #dfcfb8; box-shadow: inset 5px 0 #eadcc8; }
+.fish-book-title { display: block; font-size: 22px; margin: 5px 0; }
+.fish-book .stamp-head { color: #654d40; }
+.fish-book .stamp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-height: none; overflow: visible; gap: 8px; }
+.fish-book .fish-special-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fish-book .fish-cell { min-width: 0; width: 100%; padding: 10px 2px; background: #fffaf1; color: #6b5042; border: 1px solid #e7dac7; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; }
+.fish-book .fish-cell:hover { background: #f4e6d2; }
+.fish-book .fish-cell:focus-visible { outline: 3px solid #a7373d; outline-offset: 2px; }
+.fish-book .fish-stamp { width: min(86px, 100%); height: auto; aspect-ratio: 1; }
+.fish-book .fish-stamp-name { font-size: 11px; }
+.fish-book .fish-stamp-top { font-size: 7px; letter-spacing: 0; }
+.fish-book .fish-cell small { font-size: 11px; }
+.fish-book-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 6px; }
+.fish-book-nav button { min-height: 44px; }
+.fish-book-nav span { font-size: 12px; }
+.fish-book-detail { min-height: 64px; border-top: 1px dashed #cfbca2; padding-top: 10px; font-size: 13px; }
+.fish-book-detail p { margin: 4px 0; }
+.fish-trash-card { background: #f0f4e7; color: #354834; }
+.fish-trash-image { display: block; width: 160px; height: 160px; object-fit: contain; margin: 8px auto; }
+@media (max-width: 380px) { .fish-book { padding: 10px; } .fish-book .stamp-grid { gap: 5px; } .fish-book .fish-stamp-fish { font-size: 26px; } }
+@media (prefers-reduced-motion: reduce) { .fish-cell.fresh .fish-stamp { animation: none; } }
