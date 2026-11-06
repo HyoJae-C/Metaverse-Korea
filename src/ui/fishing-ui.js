@@ -3,6 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
+import { ROD_SKINS } from '../core/rod-skins.js';
 import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
@@ -38,6 +39,10 @@ export function fishStampIcon(f, cls = 'fish-stamp-fish') {
 // A ★4–★5 catch, shown over the angler's head for everyone nearby: the
 // fish's picture in a burst of light and "<name> caught <fish>!".
 export const TROPHY_RARITY = 4;
+// How long a catch shows over the catcher's head, by rarity (ms): the rarer,
+// the longer (a ★5 legend stays up for 12 seconds).
+export const SHOW_MS = [0, 2500, 3000, 4500, 8000, 12000];
+export const showMs = (f) => SHOW_MS[f?.rarity] || 2500;
 export function trophy(f, name) {
   const w = el('div', 'trophy-in tier-' + f.rarity);
   const pic = el('span', 'trophy-pic');
@@ -465,15 +470,19 @@ FishingUI.prototype.escaped = function escaped(f) {
 
 // Fish market: sell one, a whole kind, or everything.
 export class FishMarketUI {
-  constructor({ root, bag, wallet, onSold }) {
-    Object.assign(this, { root, bag, wallet, onSold });
+  // rods (RodSkins) adds a second tab to buy and wear rod skins; onRodSkin(id)
+  // tells the game which skin is now worn.
+  constructor({ root, bag, wallet, onSold, rods, onRodSkin, onShort }) {
+    Object.assign(this, { root, bag, wallet, onSold, rods, onRodSkin, onShort });
+    this.tab = 'sell';
   }
 
   get open() { return !this.root.hidden; }
   close() { this.root.hidden = true; }
 
-  show() {
+  show(tab = 'sell') {
     this.root.hidden = false;
+    this.tab = tab;
     this.render();
   }
 
@@ -482,6 +491,17 @@ export class FishMarketUI {
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = () => this.close();
     this.root.replaceChildren(x, el('h3', null, '🐟 ' + t('fish.market')));
+    if (this.rods) {
+      const tabs = el('div', 'fish-tabs');
+      for (const [key, label] of [['sell', '🐟 ' + t('fish.tabSell')], ['rods', '🎣 ' + t('fish.tabRods')]]) {
+        const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
+        b.setAttribute('aria-pressed', String(this.tab === key));
+        b.onclick = () => { this.tab = key; this.render(); };
+        tabs.append(b);
+      }
+      this.root.append(tabs);
+    }
+    if (this.tab === 'rods' && this.rods) { this._renderRods(); return; }
     const items = this.bag.list();
     if (!items.length) {
       this.root.append(el('p', 'fine', t('fish.empty')));
@@ -502,6 +522,29 @@ export class FishMarketUI {
     const actions = el('div', 'order-actions');
     actions.append(sellAll);
     this.root.append(list, actions);
+  }
+
+  // Rod skins: a swatch of each, its price, and buy / wear.
+  _renderRods() {
+    const grid = el('div', 'rod-skins');
+    for (const s of ROD_SKINS) {
+      const owned = this.rods.has(s.id), worn = this.rods.equipped === s.id;
+      const card = el('div', 'rod-skin' + (worn ? ' worn' : '') + (s.glow ? ' glow' : s.shine ? ' shine' : ''));
+      const sw = el('i', 'rod-swatch');
+      sw.style.background = `linear-gradient(90deg, ${s.grip} 0 18%, ${s.reel} 18% 26%, ${s.pole} 26% 82%, ${s.tip} 82%)`;
+      const btn = el('button', worn ? 'chip on' : owned ? 'chip' : 'primary small',
+        worn ? t('fish.rodWorn') : owned ? t('fish.rodWear') : t('fish.rodBuy', { coins: s.price }));
+      btn.disabled = worn;
+      btn.onclick = () => {
+        if (owned) this.rods.equip(s.id);
+        else if (!this.rods.buy(s.id, this.wallet, { name: s.name })) { this.onShort?.(s); return; }
+        this.onRodSkin?.(s.id, !owned);
+        this.render();
+      };
+      card.append(sw, el('b', null, localName(s.name)), btn);
+      grid.append(card);
+    }
+    this.root.append(el('p', 'fine', t('fish.rodHint')), grid);
   }
 
   _sell(id, n) {

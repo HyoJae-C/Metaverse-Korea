@@ -124,3 +124,9 @@ test('a bite comes after 2.5 to 8.5 seconds', () => {
   assert.equal(biteWait(() => 0), 2.5);
   assert.equal(biteWait(() => 0.999999).toFixed(2), '8.50');
 });
+
+test('rarer catches stay up longer over your head', async () => {
+  const { SHOW_MS } = await import('../src/ui/fishing-ui.js');
+  for (let r = 2; r <= 5; r++) assert.ok(SHOW_MS[r] > SHOW_MS[r - 1]);
+  assert.equal(SHOW_MS[5], 12000);
+});
