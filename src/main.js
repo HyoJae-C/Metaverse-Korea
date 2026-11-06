@@ -1689,6 +1689,7 @@ const shop = new ShopUI({
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
     if (!onSale(product)) return false; // a limited edition outside its dates
+    if (product.ingredient) return buyIngredient(product, coins);
     if (held && !confirm(t('coffee.replace'))) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
@@ -1728,7 +1729,7 @@ function sellerOf(product) {
   return i >= 0 ? interior.vendorNpcs?.[i] : null;
 }
 // What a bought thing becomes in your hand.
-const SHOP_ICON = { notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
+const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
 const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
 const GOODS_TEXT = {
   got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', id: 'Kamu membeli {name}!' },
@@ -1898,7 +1899,7 @@ let held = (() => {
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
-    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}) } : null;
   } catch { return null; }
 })();
 // A fishing rod while the fishing panel is open shows instead of the cup.
@@ -1923,6 +1924,7 @@ function drink() {
     return;
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
+  if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   if (held.kind === 'coffee' || held.kind === 'glass') { // any drink: full stamina, and it stays full for 3 minutes
@@ -3664,12 +3666,38 @@ const marketUi = new FishMarketUI({
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
 });
+// The ramen machine takes a ramyeon pack (and an egg) from the bag, bought
+// at DAILY MART; the bowl is carried to a parasol table to eat.
 const ramenUi = new RamenUI({
   root: $('ramen-panel'),
-  wallet,
+  bag,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
+  beforeCook: () => !held || confirm(t('coffee.replace')),
+  onCooked: ({ egg }) => {
+    setHeld({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
+    me.play('cheer');
+    missionEvent('cook');
+    togetherBonus('cook');
+  },
 });
+const RAMEN_BOWL = {
+  plain: { en: 'Han River ramen', ko: '한강 라면' },
+  egg: { en: 'Han River ramen with egg', ko: '계란 한강 라면' },
+};
+// DAILY MART's ramyeon and eggs go in the bag (for the ramen machine).
+const INGREDIENT_TEXT = {
+  got: { en: '{name} is in your bag 🎒', ko: '{name}을(를) 가방에 넣었어요 🎒', ja: '{name}をバッグに入れました 🎒', zh: '{name}放进包里了 🎒' },
+  sit: { en: 'Take the ramen to a parasol table ⛱️ and sit down to eat it.', ko: '라면은 파라솔 테이블 ⛱️에 앉아서 먹어요.', ja: 'ラーメンはパラソルのテーブル ⛱️ に座って食べよう。', zh: '把拉面端到遮阳伞桌 ⛱️ 坐下来吃吧。' },
+};
+function buyIngredient(product, coins) {
+  if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return false; }
+  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+  refreshWallet();
+  bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient });
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+  shop.toast(fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) }));
+  return true;
+}
 
 // Kimjang class at Sonmat Kimchi School (Gyeongbokgung): ten steps from the
 // cabbage to the jar; the finished kimchi goes in the bag.

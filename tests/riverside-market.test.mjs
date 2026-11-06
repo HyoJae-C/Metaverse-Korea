@@ -18,7 +18,7 @@ test('the Han River park has a market with stalls and goods', () => {
     assert.ok(goods.length >= 1 && goods.length <= 2, `${st.id}: one or two kinds on the counter`);
   }
   for (const p of products) {
-    assert.ok(ids.has(p.stall), `${p.id} belongs to a stall`);
+    assert.ok(ids.has(p.stall) || p.kiosk, `${p.id} belongs to a stall or the DAILY MART kiosk`);
     assert.ok(p.price > 0 && p.name.en && p.name.ko && p.desc.en, p.id);
   }
   assert.equal(new Set(products.map((p) => p.id)).size, products.length);
@@ -28,4 +28,12 @@ test('market food goes in the food dex', () => {
   const food = park.products.filter((p) => isFood(park, p));
   assert.ok(food.length >= 8);
   assert.ok(!isFood(park, park.products.find((p) => p.model === 'tote')));
+});
+
+test('DAILY MART in the park sells the ramen ingredients, which go in the bag', () => {
+  const kiosk = park.products.filter((p) => p.kiosk);
+  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'ramyeon']);
+  assert.ok(park.kiosk.name.ko && park.kiosk.name.en);
+  const street = data.stores.find((s) => s.id === 'haru-mart');
+  assert.ok(street.products.some((p) => p.ingredient === 'ramyeon'));
 });

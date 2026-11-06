@@ -1,23 +1,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ramenScore, noodleState, potClock, COOK_TARGET } from '../src/core/ramen-game.js';
-import { medalFor } from '../src/core/grill-game.js';
+import { ingredientAt, ingredientCount, canCook, chewy, RAMEN_TAPS } from '../src/core/ramen-game.js';
 
-test('perfect ramen gets gold; mistakes lower the medal', () => {
-  const ok = { boiled: true, soup: true, cook: COOK_TARGET };
-  assert.equal(medalFor(ramenScore(ok)), 'gold');
-  assert.equal(medalFor(ramenScore({ ...ok, cook: COOK_TARGET + 0.5 })), 'silver');
-  assert.equal(medalFor(ramenScore({ ...ok, boiled: false })), 'bronze');
-  assert.equal(medalFor(ramenScore({ ...ok, soup: false, boiled: false })), null);
-  assert.equal(medalFor(ramenScore({ ...ok, cook: 7 })), null);
-  assert.ok(ramenScore({ ...ok, cook: COOK_TARGET + 0.3, toppings: 2 }) > ramenScore({ ...ok, cook: COOK_TARGET + 0.3 }));
-  assert.equal(ramenScore({ ...ok, toppings: 2 }), 100);
+const pack = { kind: 'gift', name: 'Ramyeon', icon: '🍜', g: 'ramyeon' };
+const egg = { kind: 'gift', name: 'Egg', icon: '🥚', g: 'egg' };
+
+test('the machine needs a ramyeon pack from the bag; the egg is optional', () => {
+  assert.equal(canCook([]), false);
+  assert.equal(canCook([egg]), false);
+  assert.equal(canCook([{ kind: 'umbrella' }, pack]), true);
+  assert.equal(ingredientAt([{ kind: 'umbrella' }, egg, pack], 'ramyeon'), 2);
+  assert.equal(ingredientAt([pack], 'egg'), -1);
+  assert.equal(ingredientCount([pack, egg, pack], 'ramyeon'), 2);
 });
 
-test('noodle state and the pot clock', () => {
-  assert.equal(noodleState(2), 'firm');
-  assert.equal(noodleState(4.2), 'perfect');
-  assert.equal(noodleState(5.5), 'soggy');
-  assert.equal(potClock(4.5), '4:30');
-  assert.equal(potClock(0), '0:00');
+test('cheering fills the chewiness bar, never past full', () => {
+  assert.equal(chewy(0), 0);
+  assert.equal(chewy(RAMEN_TAPS), 1);
+  assert.equal(chewy(RAMEN_TAPS + 3), 1);
+  assert.ok(chewy(2) > chewy(1));
 });

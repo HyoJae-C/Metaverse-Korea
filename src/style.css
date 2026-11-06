@@ -931,7 +931,12 @@ a.setting-row { text-decoration: none; color: inherit; }
 .ramen-pot.boiling .ramen-bowl, .ramen-pot.cooking .ramen-bowl { animation: fish-tug .5s ease-in-out infinite; }
 .ramen-meter { position: relative; }
 .ramen-meter i { background: linear-gradient(90deg, #7cc4f0, #e0613a); }
-.ramen-meter.cook::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(4 / 7 * 100% - 6%); width: 12%; background: rgba(255, 209, 102, .55); } /* 4:00 */
+@keyframes ramen-cheer { 0% { transform: scale(1); } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
+.ramen-pot .ramen-bowl.cheer { animation: ramen-cheer .35s ease-out; }
+.ramen-pantry { margin: 0; text-align: center; font-weight: 700; font-size: 14px; }
+.ramen-need { margin: 0; padding: 8px 10px; border-radius: 12px; background: #fff3d6; color: #7a4a00; font-weight: 700; text-align: center; }
+.ramen-chant { display: grid; gap: 2px; justify-items: center; font-size: 18px; min-height: 52px; }
+.ramen-chant small { font-size: 12px; font-weight: 600; opacity: .85; }
 .ramen-meter.cook i { background: linear-gradient(90deg, #ffd166, #c98a4a); }
 .ramen-clock { margin: 0; text-align: center; font-weight: 800; font-size: 18px; }
 .ramen-steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
