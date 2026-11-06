@@ -19,6 +19,37 @@ export function storeMatches(store, query, category, catLabel = '') {
   return texts.some((x) => norm(x).includes(q));
 }
 
+// Subway stations from the map's exit marks ({ station, name, go, … }):
+// one entry per station with all its exits, so every station in every
+// district (and any added later in region.json) can be searched and picked.
+export function stationList(marks) {
+  const by = new Map();
+  for (const m of marks || []) {
+    if (m.station == null) continue;
+    let st = by.get(m.station);
+    if (!st) by.set(m.station, (st = { key: m.station, name: m.name || {}, line: m.line, color: m.color, exits: [] }));
+    st.exits.push(m);
+  }
+  return [...by.values()];
+}
+// Does a station match the search text? Its name in any language, or a
+// word for "subway" / "station" (extra: e.g. the heading in the UI language).
+const STATION_WORDS = ['subway', 'metro', 'station', 'train', '지하철', '전철', '역', '地下鉄', '駅', '地铁', '站'];
+export function stationMatches(st, query, extra = '') {
+  const q = norm(query);
+  if (!q) return true;
+  return [...Object.values(st.name || {}), ...STATION_WORDS, extra].some((x) => norm(x).includes(q));
+}
+// The exit of a station nearest to (x, z): where guidance goes.
+export function nearestExit(exits, x, z) {
+  let best = null, bd = Infinity;
+  for (const e of exits) {
+    const p = e.go || e, d = Math.hypot(p.x - x, p.z - z);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
 // Districts of a joined city (see core/districts.js), with names for the
 // "more over here" badges at the map's edge.
 export const DISTRICT_NAME = {
@@ -165,6 +196,12 @@ export class MapView {
     if (this.taxi) this.onTaxi({ ...g, guide: g });
     else this.onGuide(g);
     this.hide();
+  }
+
+  // Guide to a subway exit: just outside its stairs.
+  _pickStation(ex, label) {
+    const p = ex.go || ex;
+    this._pick({ kind: 'station', id: ex.station, x: p.x, z: p.z, label: label || localName(ex.name, getLanguage()) });
   }
 
   // Opening zoom: the whole card's worth of streets, but never so far out on
@@ -345,6 +382,7 @@ export class MapView {
       g.font = `${15 * dpr}px system-ui, sans-serif`;
       g.fillText(m.icon || '🚇', c.sx, c.sy + 1);
       mark(c.sx, c.sy, 13 * dpr);
+      if (m.station != null) this.hits.push({ sx: c.sx, sy: c.sy, r: 16 * dpr, kind: 'station', item: c.items });
       const text = c.items.length > 1 ? m.group?.() : m.label?.();
       if (text && this.view.scale > 0.5 * dpr) labels.push({ text, sx: c.sx, sy: c.sy, gap: 14 * dpr, weight: 700, size: 12, color: '#3b322a', pri: 2 });
     }
@@ -718,9 +756,18 @@ export class MapView {
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
       });
     }
+    // Subway stations in every district: guide to the nearest exit.
+    const stations = this.category ? [] : stationList(this.marks)
+      .filter((st) => !filtering || stationMatches(st, this.query, t('map.stations')))
+      .map((st) => ({ st, ex: nearestExit(st.exits, me.x, me.z) }))
+      .sort((a, b) => Math.hypot(a.ex.x - me.x, a.ex.z - me.z) - Math.hypot(b.ex.x - me.x, b.ex.z - me.z));
+    if (stations.length) head('map.stations');
+    for (const { st, ex } of stations) {
+      row('🚇', st.color || '#5d6470', localName(st.name, lang), [st.line && localName(st.line, lang), dist(ex.x, ex.z)].filter(Boolean).join(' · '), () => this._pickStation(ex, localName(st.name, lang)));
+    }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length && !dists.length) {
+    if (!shops.length && !zones.length && !dists.length && !stations.length) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
@@ -811,7 +858,11 @@ export class MapView {
         if (d) { this.view.scale = 0.35 * this.dpr; this.goTo(d.x, d.z); } else this._soon(hit.item, lang);
         return;
       }
-      if (hit.kind === 'store') {
+      if (hit.kind === 'station') { // an exit (or a station's exits drawn as one sign)
+        const first = hit.item[0], { me } = this.getPlayers();
+        const ex = hit.item.length > 1 ? nearestExit(hit.item.filter((m) => m.station === first.station), me.x, me.z) : first;
+        this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
+      } else if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
       } else {

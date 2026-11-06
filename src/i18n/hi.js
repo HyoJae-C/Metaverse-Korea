@@ -491,6 +491,7 @@ export const HI = {
   'map.soon': 'जल्द आ रहा है',
   'map.open': 'खुला है',
   'map.zones': 'मिलने की जगहें',
+  'map.stations': 'मेट्रो स्टेशन',
   'map.shops': 'दुकानें',
   'guide.to': '{label} · {m} मी.',
   'guide.arrived': 'आप {label} पहुँच गए',

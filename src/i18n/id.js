@@ -491,6 +491,7 @@ export const ID = {
   "map.soon": "Segera hadir",
   'map.open': 'Sudah dibuka',
   'map.zones': 'Zona kumpul',
+  'map.stations': 'Stasiun kereta bawah tanah',
   'map.shops': 'Toko',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Kamu sudah sampai di {label}',

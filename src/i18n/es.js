@@ -490,6 +490,7 @@ export const ES = {
   "map.soon": "Próximamente",
   'map.open': 'Abierto',
   'map.zones': 'Zonas de encuentro',
+  'map.stations': 'Estaciones de metro',
   'map.shops': 'Tiendas',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Has llegado a {label}',
