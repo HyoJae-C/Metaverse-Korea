@@ -36,7 +36,7 @@ export const DINE_TEXT = {
 /**
  * game: { interior, seated, mode, me, clerk, others, net, safety, held, wallet,
  * shop, sfx, canvas, camera } as getters, plus missionEvent, refreshWallet,
- * recordFood, setHeld, openMenu, clearAction() and resendState().
+ * recordFood, setHeld, holdNew, handReady, openMenu, clearAction() and resendState().
  */
 export function createDining(game) {
   // The dish comes to your table a few seconds later; eat it in 5 bites. Or
@@ -174,14 +174,14 @@ export function createDining(game) {
   function orderFood(product, togo) {
     const cost = coinPrice(product.price);
     if (!togo && meal?.seat === game.seated) { game.shop.toast(L(DINE_TEXT.busy)); return; }
-    if (togo && game.held && !confirm(t('coffee.replace'))) return;
+    if (togo && !game.handReady()) return;
     if (!game.wallet.spend(cost, { name: product.name, at: game.interior?.store.name })) { game.shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
     game.refreshWallet();
     game.recordFood(game.interior.store, product, true);
     const name = localName(product.name, getLanguage());
     $('lp-panel').hidden = true;
     if (togo) {
-      game.setHeld({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
+      game.holdNew({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
       game.shop.toast(fmt(L(DINE_TEXT.packed), { name }));
       game.clerk && say(game.clerk, $('labels'), ['포장해 드릴게요!', 'pojanghae deurilgeyo!', fmt(L(DINE_TEXT.packed), { name })]);
       return;

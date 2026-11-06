@@ -145,6 +145,10 @@ import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockers
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
+// The bag's item lists move in and out of the bag panel as its tabs change,
+// so they're looked up once (a detached node isn't found by id).
+const itemEls = {};
+const itemEl = (id) => (itemEls[id] ||= $(id));
 
 // Safety net: if the player or the camera ever ends up at an invalid
 // position (NaN), put them back at the last good one, and show a short note
@@ -1694,12 +1698,12 @@ const shop = new ShopUI({
   onBuy: (product, coins) => {
     if (!onSale(product)) return false; // a limited edition outside its dates
     if (product.ingredient) return buyIngredient(product, coins);
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
-    if (product.perfume && perfumes.has(product.id)) setHeld({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
-    else setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
+    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
     if (kind !== 'gift') recordFood(shop.store, product, true);
     const seller = sellerOf(product) || clerk;
     seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
@@ -1707,8 +1711,8 @@ const shop = new ShopUI({
     return true;
   },
   onTake: (product) => {
-    if (held && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (!handReady()) return;
+    holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
@@ -1754,9 +1758,9 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
-    setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
     who && say(who, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
@@ -1997,6 +2001,21 @@ function stowHeld() {
   sfx.pop?.();
   shop.toast(fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
 }
+// Taking something new in your hand puts what you were holding into the bag
+// (it used to just vanish). Only when the bag is full do we ask first, since
+// then the old thing would be thrown away.
+function handReady() {
+  if (!held || !bag.full) return true;
+  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.cap }));
+}
+function holdNew(h) {
+  const old = held;
+  if (old && bag.add(old)) {
+    const name = describeEntry(old).name;
+    setTimeout(() => shop.toast(fmt(L(BAG_TEXT.autoStow), { name, n: bag.size, cap: bag.cap })), 1800);
+  }
+  setHeld(h);
+}
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
 const bagUi = new BagUI({
@@ -2011,8 +2030,12 @@ const bagUi = new BagUI({
   onDrop: (i) => bag.take(i),
   extra: () => {
     refreshItems();
-    $('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
-    return [$('wallet-items-title'), $('wallet-items')];
+    itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
+    return [itemEl('wallet-items-title'), itemEl('wallet-items')];
+  },
+  closet: () => {
+    refreshItems();
+    return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
   },
 });
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
@@ -3009,7 +3032,7 @@ const dining = createDining({
   get me() { return me; }, get clerk() { return clerk; }, get others() { return others; }, get net() { return net; },
   get safety() { return safety; }, get held() { return held; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; }, get canvas() { return canvas; }, get camera() { return camera; },
-  missionEvent, refreshWallet, recordFood, setHeld, openMenu,
+  missionEvent, refreshWallet, recordFood, setHeld, holdNew, handReady, openMenu,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 });
 const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, orderFood } = dining;
@@ -3021,11 +3044,11 @@ const VENDING_TEXT = {
   got: { en: 'Clunk! {name} drops out.', ko: '덜컹! {name}이(가) 나왔어요.', ja: 'ガコン！{name}が出てきました。', zh: '咚！{name}掉出来了。' },
 };
 function buyVending(dr) {
-  if (held && !confirm(t('coffee.replace'))) return;
+  if (!handReady()) return;
   if (!wallet.spend(dr.price, { name: dr.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: dr.price })); return; }
   refreshWallet();
   sfx.pop?.();
-  setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
+  holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
   $('lp-panel').hidden = true;
   shop.toast(fmt(L(VENDING_TEXT.got), { name: `${dr.icon} ${localName(dr.name, getLanguage())}` }));
 }
@@ -3741,9 +3764,9 @@ const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   bag,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  beforeCook: () => !held || confirm(t('coffee.replace')),
+  beforeCook: () => handReady(),
   onCooked: ({ egg }) => {
-    setHeld({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
+    holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
     me.play('cheer');
     missionEvent('cook');
     togetherBonus('cook');
@@ -4337,8 +4360,8 @@ const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
   take: (id) => {
-    if (held?.kind === 'coffee' && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'book', book: id });
+    if (!handReady()) return;
+    holdNew({ kind: 'book', book: id });
     shop.toast(t('book.taken'));
   },
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
@@ -4721,10 +4744,18 @@ initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) 
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
 const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
+// Clothes live in the bag's Wardrobe tab; everything else (pets, ...) in the
+// bag's collection.
+const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
-  $('wallet-items-title').hidden = !list.length;
-  $('wallet-items').replaceChildren(...list.map((id) => {
+  const own = list.filter((id) => !isClothes(id));
+  itemEl('wallet-items-title').hidden = !own.length;
+  itemEl('wallet-items').replaceChildren(...own.map(itemRow));
+  itemEl('wardrobe-items').replaceChildren(...list.filter(isClothes).map(itemRow));
+}
+function itemRow(id) {
+  {
     const row = document.createElement('div');
     row.className = 'item-row';
     const it = ITEMS[id];
@@ -4794,7 +4825,7 @@ function refreshItems() {
       row.append(w);
     }
     return row;
-  }));
+  }
 }
 // Bring back the pet I was walking last time.
 petCare.restorePet();
@@ -5945,6 +5976,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
+    perfumeIds: () => [...perfumes.keys()],
+    holdNew: (h) => holdNew(h),
+    takeout: (i = 0) => orderFood(interior.store.products[i], true),
+    giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }); refreshWallet(); },
+    bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),
     scent: () => myScent,
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
