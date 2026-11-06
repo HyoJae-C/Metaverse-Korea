@@ -541,7 +541,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
   width: min(320px, 70vw); display: flex; flex-direction: column; gap: 4px;
   pointer-events: none;
-  /* Lines stay (no fading); the newest few show, older ones scroll up. */
+  /* The newest few show, older ones scroll up; each fades after a minute (main.js). */
   max-height: 172px; overflow: hidden; justify-content: flex-start;
 }
 .chat-log > .chat-line { flex: none; }
@@ -556,6 +556,16 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .chat-line.mine b { color: #2f8f6b; }
 .chat-line.note { font-size: 12px; background: rgba(255, 246, 220, 0.92); }
 .chat-line.old { opacity: 0; }
+/* A minute old: faded out and out of the way, back again while the chat is open. */
+.chat-line.stale { opacity: 0; }
+.chat-line.gone { display: none; }
+.chat-open .chat-line.stale { opacity: 1; }
+.chat-open .chat-line.gone { display: block; }
+/* Phones: a small tab beside the log folds it away. */
+.chat-fold { display: none; }
+.chat-folded:not(.chat-open) .chat-log { visibility: hidden; }
+@keyframes chat-blink { 0%, 100% { box-shadow: none; transform: scale(1); } 50% { box-shadow: 0 0 0 3px #ffd84a, 0 0 12px 3px rgba(255, 216, 74, .8); transform: scale(1.08); } }
+#chat-btn.chat-blink { animation: chat-blink .7s ease-in-out 3; }
 .chat-line.friend { background: rgba(232, 244, 255, 0.94); box-shadow: 0 2px 0 rgba(60, 111, 214, 0.18); }
 .chat-line.friend b, .chat-line.friend .chat-name { color: #3c6fd6; }
 .chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
@@ -621,6 +631,13 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .fr-msgs .board-empty { margin: auto; }
 @media (pointer: coarse) {
   .chat-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); }
+  .chat-fold {
+    display: block; position: absolute; left: max(12px, env(safe-area-inset-left, 0px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 172px); min-width: 30px; height: 24px;
+    padding: 0 8px; border: 0; border-radius: 12px; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 24px;
+    background: rgba(255, 255, 255, 0.82); color: #4a3f35; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.12);
+  }
+  .chat-open .chat-fold { display: none; }
   .chat-bar { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 12px); }
 }
 

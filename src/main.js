@@ -1302,9 +1302,11 @@ addEventListener('keydown', (e) => {
   if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
 });
 
-// Text chat: a speech bubble over your head and a log of the last lines,
-// which stay on screen (older ones scroll up; while typing you can scroll
-// back). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
+// Text chat: a speech bubble over your head and a log of the last lines.
+// Each line fades off the screen a minute after it arrives so it does not
+// cover the view; opening the chat shows them all again (scroll back while
+// typing). On phones the log can also be folded away (the small tab by it);
+// while folded, a new line makes the 💬 button blink. Opens with 💬, or T or / on a keyboard. Text only, never HTML.
 // The picker in the chat bar chooses who hears it: everyone nearby (public,
 // not stored anywhere), all friends, or one friend. Friend chat is kept like
 // a phone messenger (core/friends.js, the 👥 panel).
@@ -1312,6 +1314,34 @@ const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-inpu
 let lastChatAt = 0, chatNoticeShown = false;
 const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
 const CHAT_LOG_LINES = 40;
+const CHAT_LINE_MS = 60000; // how long a line stays on screen when the chat is closed
+const chatFoldBtn = $('chat-fold');
+let chatFolded = false;
+try { chatFolded = localStorage.getItem('mk.chatFolded') === '1'; } catch { /* ignore */ }
+function setChatFolded(on) {
+  chatFolded = on;
+  $('hud').classList.toggle('chat-folded', on);
+  chatFoldBtn.textContent = on ? '💬 ▸' : '◂';
+  chatFoldBtn.setAttribute('aria-label', on ? 'Show chat' : 'Hide chat');
+  if (!on) $('chat-btn').classList.remove('chat-blink');
+  try { localStorage.setItem('mk.chatFolded', on ? '1' : '0'); } catch { /* ignore */ }
+}
+chatFoldBtn.onclick = () => setChatFolded(!chatFolded);
+setChatFolded(chatFolded);
+// A line goes "stale" after a minute: it fades out, then takes no room.
+function ageChatLine(line) {
+  setTimeout(() => {
+    line.classList.add('stale');
+    setTimeout(() => line.classList.add('gone'), 1000);
+  }, CHAT_LINE_MS);
+}
+function nudgeChatBtn() {
+  if (!chatFolded || !chatBar.hidden) return;
+  const btn = $('chat-btn');
+  btn.classList.remove('chat-blink');
+  void btn.offsetWidth; // restart the animation
+  btn.classList.add('chat-blink');
+}
 // opts.onName: what tapping the name does (default: the block/report menu
 // for someone else's id). opts.tag: a small label before the name (friend chat).
 function addChatLine(name, text, kind = '', id = null, opts = {}) {
@@ -1329,6 +1359,8 @@ function addChatLine(name, text, kind = '', id = null, opts = {}) {
   chatLog.append(line);
   while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
   if (atEnd || !chatBar || chatBar.hidden) chatLog.scrollTop = chatLog.scrollHeight;
+  ageChatLine(line);
+  if (!/\bmine\b/.test(kind)) nudgeChatBtn();
   return line;
 }
 let personFor = null;
@@ -1369,6 +1401,7 @@ function openChat() {
   for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
   chatBar.hidden = false;
   $('hud').classList.add('chat-open');
+  $('chat-btn').classList.remove('chat-blink');
   chatLog.scrollTop = chatLog.scrollHeight;
   input.keys.clear();
   chatInput.focus();
@@ -1394,6 +1427,7 @@ function chatSignInPrompt() {
   setTimeout(() => line.remove(), 16000);
 }
 $('chat-btn').hidden = !config.chatEnabled;
+chatFoldBtn.hidden = !config.chatEnabled;
 $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
 chatBar.addEventListener('submit', async (e) => {
   e.preventDefault();
