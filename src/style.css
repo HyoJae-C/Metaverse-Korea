@@ -461,7 +461,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .look-panel { width: min(720px, 100%); }
   .look-layout { grid-template-columns: 220px 1fr; display: grid; gap: 12px; align-items: start; }
   .look-stage { height: 200px; aspect-ratio: auto; }
-  .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 88px; flex-direction: column; }
+  .tools { top: auto; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); right: 88px; flex-direction: column; 
+    /* keep clear of the coin chip: a second column grows to the left */
+    flex-wrap: wrap-reverse; align-content: flex-end; max-height: calc(100dvh - max(44px, calc(env(safe-area-inset-bottom) + 36px)) - 72px); }
   .help { top: max(12px, env(safe-area-inset-top)); bottom: auto; }
 }
 
@@ -1143,6 +1145,9 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 
 /* Food dex */
 .dex-btn { justify-self: start; margin-top: 6px; }
+.notes-panel .wallet-title { padding-inline-end: 40px; }
+.notes-list { display: grid; gap: 8px; }
+.notes-item { width: 100%; min-height: 52px; justify-content: flex-start; text-align: start; font-size: 15px; padding: 10px 14px; }
 .dex-summary { margin: 0; font-weight: 900; font-size: 15px; }
 .dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
 .dex-card { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 14px; background: #fff; text-align: center; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.12); }

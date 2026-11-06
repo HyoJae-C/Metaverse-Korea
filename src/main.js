@@ -3423,7 +3423,7 @@ onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
 const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
-  || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
+  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
   if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
@@ -3436,6 +3436,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
+    else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
     else if (wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
@@ -3634,7 +3635,7 @@ const fishBag = new FishBag();
 const fishDex = new FishDex(globalThis.localStorage, fishBag);
 const fishBookUi = new FishBookUI({ root: $('fishbook-panel'), dex: fishDex });
 function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textContent = `${t('fish.book')} · ${fishDex.kinds}/${FISH.length} · 🐟 ${fishDex.total}`; }
-$('fishbook-btn').onclick = () => { $('wallet-panel').hidden = true; fishBookUi.show(); };
+$('fishbook-btn').onclick = () => { $('notes-panel').hidden = true; fishBookUi.show(); };
 refreshFishBookBtn();
 onLanguageChange(refreshFishBookBtn);
 const fishingUi = new FishingUI({
@@ -4251,7 +4252,7 @@ const bookUi = new BookUI({
 const stampBook = new StampBook();
 const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps });
 function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
-$('stamp-btn').onclick = () => { $('wallet-panel').hidden = true; stampUi.show(); };
+$('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
 onLanguageChange(refreshStampBtn);
 // Press the stamp at a stand: the first time pays 🪙10 and opens the note.
@@ -4272,7 +4273,7 @@ function pressStamp(it) {
 }
 const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
 function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
-$('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
+$('dex-btn').onclick = () => { $('notes-panel').hidden = true; dexUi.show(); };
 refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
@@ -4659,6 +4660,10 @@ function refreshItems() {
 // Bring back the pet I was walking last time.
 petCare.restorePet();
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
+// Notebook: the place stamps, food book and fish book live behind their own
+// HUD button so people find them (they used to hide inside the wallet).
+$('notes-btn').onclick = () => { const p = $('notes-panel'); p.hidden = !p.hidden; if (!p.hidden) $('wallet-panel').hidden = true; };
+$('notes-close').onclick = () => { $('notes-panel').hidden = true; };
 // Budget book (가계부): today's totals and the latest coins in and out.
 function ledgerLabel(e) {
   const lang = getLanguage(), n = e.note || {};
