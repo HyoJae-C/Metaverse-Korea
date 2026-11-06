@@ -35,7 +35,7 @@ test('normalized lottery never selects unreleased entries and follows every prob
 test('difficulty is bounded for all 49 species and trash cannot escape', () => {
   for (const f of FISH) {
     assert.ok(tapsFor(f) >= 5 && tapsFor(f) <= 18);
-    assert.ok(escapeChance(f) >= 0 && escapeChance(f) <= 0.28);
+    assert.ok(escapeChance(f) >= 0 && escapeChance(f) <= 0.3);
     assert.equal(escapeChance(f, 1), escapeChance(f) / 2);
     assert.equal(tapsFor({...f}), tapsFor(f));
   }

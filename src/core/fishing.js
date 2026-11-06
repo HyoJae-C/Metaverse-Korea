@@ -659,10 +659,22 @@ export const FISH = [
 ];
 
 export const AVAILABLE_FISH = FISH.filter(f => f.released);
-// Weights are normalized so adding a species cannot break the lottery.
-const weights = [0, 12, 7, 3, 0.8, 0.15];
-const totalWeight = AVAILABLE_FISH.reduce((sum, f) => sum + (f.id === 'whale' ? 0.03 : weights[f.rarity]), 0);
-for (const f of FISH) f.chance = f.released ? (f.id === 'whale' ? 0.03 : weights[f.rarity]) / totalWeight * 100 : 0;
+// How often each rarity bites, in % of fish (trash comes on top). Each tier's
+// share is fixed and split among its released kinds, so releasing a new kind
+// never makes its whole tier more common.
+export const TIER_SHARE = [0, 57.38, 30, 12, 0.5, 0.12];
+// Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
+// less often (a blue whale is a third as likely as a great white).
+export const TIER_WEIGHT = {
+  carp: 0.7, catfish: 0.7, crab: 0.7,
+  trout: 1.3, cutlassfish: 1.2, flounder: 1.2, seabream: 0.8, puffer: 0.8, marlin: 0.5,
+  shark: 3, whale: 1,
+};
+const weightOf = f => TIER_WEIGHT[f.id] ?? 1;
+const tierTotals = {};
+for (const f of AVAILABLE_FISH) tierTotals[f.rarity] = (tierTotals[f.rarity] || 0) + weightOf(f);
+const sharesTotal = Object.keys(tierTotals).reduce((a, r) => a + TIER_SHARE[r], 0);
+for (const f of FISH) f.chance = f.released ? TIER_SHARE[f.rarity] * weightOf(f) / tierTotals[f.rarity] / sharesTotal * 100 : 0;
 export const fishById = id => FISH.find(f => f.id === id) || null;
 // The picture sheet (public/assets/fishing/fish-icons.webp, 7×7): kinds in
 // reading order. Every kind in FISH has exactly one picture here.
@@ -705,9 +717,12 @@ export function rollCatch(rand = Math.random) {
 }
 export const REEL_SECONDS = 5;
 export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
+// Chance a landed fish still slips off the hook at the end, by rarity
+// (halved by reeling in with time to spare).
+export const ESCAPE = [0, 0.05, 0.08, 0.12, 0.2, 0.3];
 export function escapeChance(fish, spare = 0) {
   if (fish.trash) return 0;
-  return [0, 0.10, 0.14, 0.18, 0.23, 0.28][fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
+  return ESCAPE[fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
 }
 
 // Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
