@@ -125,6 +125,8 @@ import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
+import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, SupabaseFriends, LocalFriends, convKey, cleanBody as cleanFriendText } from './core/friends.js';
+import { FriendsUI, FRIEND_TEXT } from './ui/friends-ui.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -1123,7 +1125,7 @@ async function joinRoom(room, roomScene, area = null) {
       const ms = street ? config.chatStreetSeconds * 1000 : 6000;
       const name = others.chat(id, text, ms);
       if (!name) return;
-      addChatLine(name, text, '', id, street ? ms + 3000 : 0);
+      addChatLine(name, text, '', id);
       const log = (recentLines.get(id) || []).concat(text).slice(-10);
       recentLines.set(id, log);
     },
@@ -1154,6 +1156,7 @@ async function renameMe(raw) {
   if (await cloud.claimName(clean) === 'taken') return 'taken';
   if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
+  if (friendBackend instanceof LocalFriends) friendBackend.setName(nickname);
   identity = { ...identity, name: clean, nameAt: Date.now() };
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
@@ -1275,29 +1278,40 @@ addEventListener('keydown', (e) => {
   if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
 });
 
-// Text chat: a speech bubble over your head and a short log (last 6 lines,
-// fading out). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
+// Text chat: a speech bubble over your head and a log of the last lines,
+// which stay on screen (older ones scroll up; while typing you can scroll
+// back). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
+// The picker in the chat bar chooses who hears it: everyone nearby (public,
+// not stored anywhere), all friends, or one friend. Friend chat is kept like
+// a phone messenger (core/friends.js, the 👥 panel).
 const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
 let lastChatAt = 0, chatNoticeShown = false;
 const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
-// removeAfter (ms): drop the line from the log after this long (street chat).
-function addChatLine(name, text, kind = '', id = null, removeAfter = 0) {
+const CHAT_LOG_LINES = 40;
+// opts.onName: what tapping the name does (default: the block/report menu
+// for someone else's id). opts.tag: a small label before the name (friend chat).
+function addChatLine(name, text, kind = '', id = null, opts = {}) {
   const line = document.createElement('div');
   line.className = 'chat-line ' + kind;
+  if (opts.tag) line.append(Object.assign(document.createElement('span'), { className: 'chat-tag', textContent: opts.tag }));
   // Someone else's name is a button: tap it to block or report them.
-  const b = document.createElement(id ? 'button' : 'b');
+  const tap = opts.onName || (id ? () => openPersonMenu(id, name) : null);
+  const b = document.createElement(tap ? 'button' : 'b');
   b.textContent = name;
-  if (id) { b.className = 'chat-name'; b.onclick = () => openPersonMenu(id, name); }
+  if (tap) { b.className = 'chat-name'; b.onclick = tap; }
   line.append(b, document.createTextNode(' ' + text));
+  if (id) line.dataset.who = name;
+  const atEnd = chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 24;
   chatLog.append(line);
-  while (chatLog.children.length > 6) chatLog.firstChild.remove();
-  setTimeout(() => line.classList.add('old'), removeAfter ? removeAfter - 1000 : 15000);
-  if (removeAfter) setTimeout(() => line.remove(), removeAfter);
+  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
+  if (atEnd || !chatBar || chatBar.hidden) chatLog.scrollTop = chatLog.scrollHeight;
+  return line;
 }
 let personFor = null;
 function openPersonMenu(id, name) {
   personFor = { id, name };
   $('person-name').textContent = name;
+  refreshPersonFriend();
   $('person-menu').hidden = false;
 }
 function blockPerson(report) {
@@ -1307,8 +1321,11 @@ function blockPerson(report) {
   else safety.block(id, name);
   others.hide(id);
   for (const el of chatLog.querySelectorAll('.chat-line')) {
-    if (el.querySelector('.chat-name')?.textContent === name) el.remove();
+    if (el.dataset.who === name || el.querySelector('.chat-name')?.textContent === name) el.remove();
   }
+  // Blocking a friend also ends the friendship.
+  const f = friendList.friends.concat(friendList.incoming, friendList.outgoing).find((x) => x.name === name);
+  if (f) friendStore()?.remove(f.uid).then(refreshFriends);
   $('person-menu').hidden = true;
   shop.toast(t(report ? 'safety.reported' : 'safety.blocked', { name }));
   refreshUnblock();
@@ -1327,11 +1344,13 @@ function openChat() {
   // Close any open panel first (daily missions, wallet, cart…) so the chat bar is not hidden behind it.
   for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
   chatBar.hidden = false;
+  $('hud').classList.add('chat-open');
+  chatLog.scrollTop = chatLog.scrollHeight;
   input.keys.clear();
   chatInput.focus();
   if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
 }
-function closeChat() { chatBar.hidden = true; chatInput.blur(); }
+function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
 const mustSignInToChat = () => config.chatGoogleOnly && config.netProvider === 'supabase' && !(cloud.user && !cloud.guest);
 // A note in the chat log with a Google sign-in button (links this guest, so
 // the save stays).
@@ -1344,7 +1363,9 @@ function chatSignInPrompt() {
   btn.onclick = async () => googleFail(await cloud.linkGoogle());
   line.append(document.createTextNode('🔒 ' + t('chat.signIn') + ' '), btn);
   chatLog.append(line);
-  while (chatLog.children.length > 6) chatLog.firstChild.remove();
+  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
+  chatLog.scrollTop = chatLog.scrollHeight;
+  // Only this notice goes away by itself; chat lines stay.
   setTimeout(() => line.classList.add('old'), 15000);
   setTimeout(() => line.remove(), 16000);
 }
@@ -1399,6 +1420,14 @@ chatBar.addEventListener('submit', async (e) => {
   // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
   // instead. Event and developer codes above still work for them.
   if (mustSignInToChat()) { chatSignInPrompt(); return; }
+  if (chatTo !== PUBLIC) {
+    const body = filterText(cleanFriendBody(chatInput.value));
+    if (!body) return;
+    chatInput.value = '';
+    sendFriend(chatTo, body);
+    if (input.isTouch) closeChat();
+    return;
+  }
   const text = filterText(cleanChat(chatInput.value));
   const now = performance.now() / 1000;
   if (!text || now - lastChatAt < config.chatCooldown) return;
@@ -1418,6 +1447,170 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyT' || e.code === 'Slash') { e.preventDefault(); openChat(); }
 });
 
+
+// ---------- Friends and friend chat ----------
+// Friends are accounts (found by player name), so friend chat works across
+// rooms and areas, and its messages are kept. On Supabase it needs the
+// online save (a guest account is enough to add friends; sending follows the
+// same chat rules as public chat). Local play: other tabs of this browser.
+const PUBLIC = 'public';
+let chatTo = PUBLIC; // who the chat bar sends to: PUBLIC, FRIENDS_ALL or a friend's uid
+let friendList = { friends: [], incoming: [], outgoing: [] };
+let friendBackend = null, friendInbox = null, stopFriendWatch = null;
+const cleanFriendBody = (s) => cleanFriendText(s);
+const READ_KEY = 'mk.friendRead'; // last read message per chat (in the save, so it follows the account)
+function readMarks() {
+  try { const r = JSON.parse(localStorage.getItem(READ_KEY) || '{}'); return r && typeof r === 'object' ? r : {}; } catch { return {}; }
+}
+function saveMarks(m) { try { localStorage.setItem(READ_KEY, JSON.stringify(m)); } catch { /* storage blocked */ } }
+function friendStore() {
+  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
+  let want = null;
+  if (live) want = friendBackend instanceof SupabaseFriends && friendBackend.uid === cloud.user.id ? friendBackend : new SupabaseFriends(cloud.client, cloud.user.id);
+  else if (config.netProvider !== 'supabase') want = friendBackend instanceof LocalFriends ? friendBackend : new LocalFriends(myId, nickname);
+  if (want !== friendBackend) {
+    stopFriendWatch?.();
+    friendBackend = want;
+    friendInbox = want ? new Inbox(want.uid, readMarks()) : null;
+    friendList = { friends: [], incoming: [], outgoing: [] };
+    friendsUi.loaded.clear();
+    refreshFriends.primed = false;
+    knownRequests = null;
+    stopFriendWatch = want ? want.watch(onFriendMessage, () => refreshFriends()) : null;
+    if (want) setTimeout(refreshFriends, 0);
+  }
+  return friendBackend;
+}
+let knownRequests = null; // uids of requests already seen (null = first load)
+async function refreshFriends() {
+  const st = friendStore();
+  if (!st) return;
+  const r = await st.list();
+  if (r.error || st !== friendBackend) { friendsUi.update(); return; }
+  // Hide people I've blocked.
+  const ok = (f) => !safety.isBlocked(null, f.name);
+  friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
+  const seen = new Set(friendList.incoming.map((f) => f.uid));
+  if (knownRequests) for (const f of friendList.incoming) if (!knownRequests.has(f.uid)) shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }));
+  knownRequests = seen;
+  if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
+  // Fetch the newest lines of each chat once, for unread counts and previews.
+  if (!refreshFriends.primed) {
+    refreshFriends.primed = true;
+    for (const k of [FRIENDS_ALL, ...friendList.friends.map((f) => f.uid)]) {
+      st.history(k).then((h) => { if (Array.isArray(h) && st === friendBackend) { friendInbox.add(h); friendsUi.loaded.add(k); refreshFriendBadge(); friendsUi.update(); } });
+    }
+  }
+  renderChatTo();
+  refreshFriendBadge();
+  refreshPersonFriend();
+  friendsUi.update();
+}
+function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
+function onFriendMessage(m) {
+  if (!friendInbox || m.from === friendBackend?.uid) return;
+  const name = friendName(m.from) || m.name || '?';
+  if (safety.isBlocked(null, name)) return;
+  if (!friendInbox.add({ ...m, name }).length) return;
+  const key = convKey(m, friendBackend.uid);
+  const reading = friendsUi.open && friendsUi.view === key;
+  if (!reading) {
+    addChatLine(name, filterText(cleanFriendBody(m.body)), 'friend', null, {
+      tag: key === FRIENDS_ALL ? '👥' : '💌',
+      onName: () => { closeChat(); friendsUi.show(key); },
+    });
+    try { sfx.pop?.(); } catch { /* sound not set up yet */ }
+  }
+  refreshFriendBadge();
+  friendsUi.update();
+}
+async function sendFriend(key, body) {
+  const st = friendStore();
+  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return false; }
+  const r = await st.send(key, body);
+  if (r.error) {
+    if (r.error === 'chat' && mustSignInToChat()) chatSignInPrompt();
+    else shop.toast(friendsUi.errorText(r.error));
+    return false;
+  }
+  friendInbox?.add({ ...r.message, name: nickname });
+  friendInbox && saveMarks(friendInbox.markRead(key));
+  const to = key === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(key) || '?';
+  if (!(friendsUi.open && friendsUi.view === key)) {
+    addChatLine(nickname + ' → ' + to, body, 'mine friend', null, { tag: key === FRIENDS_ALL ? '👥' : '💌', onName: () => { closeChat(); friendsUi.show(key); } });
+  }
+  friendsUi.update();
+  return true;
+}
+const friendsUi = new FriendsUI($('friends-panel'), {
+  store: () => friendStore(),
+  inbox: () => friendInbox,
+  me: () => friendBackend?.uid,
+  friends: () => friendList,
+  refresh: () => refreshFriends(),
+  toast: (m) => shop.toast(m),
+  clean: (s) => filterText(cleanFriendBody(s)),
+  isBlocked: (uid, name) => safety.isBlocked(null, name),
+  onRead: (key) => { if (friendInbox) { saveMarks(friendInbox.markRead(key)); refreshFriendBadge(); } },
+  send: (key, text) => {
+    if (mustSignInToChat()) { shop.toast(friendsUi.errorText('chat')); return false; }
+    const body = filterText(cleanFriendBody(text));
+    return body ? sendFriend(key, body) : false;
+  },
+});
+function refreshFriendBadge() {
+  const n = friendInbox?.totalUnread() || 0;
+  $('chat-unread').hidden = !n;
+  $('chat-unread').textContent = n > 99 ? '99+' : String(n);
+  $('friends-dot').hidden = !(n || friendList.incoming.length);
+}
+// The chat bar's "send to" picker.
+function renderChatTo() {
+  const sel = $('chat-to');
+  const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
+  if (friendBackend) {
+    opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
+    for (const f of friendList.friends) opts.push([f.uid, '💌 ' + f.name]);
+  }
+  sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
+  sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;
+  chatTo = sel.value;
+  sel.hidden = opts.length < 2;
+  applyChatTo();
+}
+function applyChatTo() {
+  const friend = chatTo !== PUBLIC;
+  chatBar.classList.toggle('to-friend', friend);
+  chatInput.maxLength = friend ? FRIEND_MAX_BODY : config.chatMaxLength;
+  chatInput.placeholder = friend
+    ? '💬 ' + (chatTo === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(chatTo) || '') + ' · ' + L(FRIEND_TEXT.ph)
+    : t('chat.placeholder');
+}
+$('chat-to').onchange = (e) => { chatTo = e.target.value; applyChatTo(); chatInput.focus(); };
+$('friends-btn').onclick = () => { closeChat(); friendsUi.show(null); };
+// Person menu: add as a friend, or open the chat with a friend.
+function refreshPersonFriend() {
+  const btn = $('person-friend');
+  if (!personFor || !friendBackend) { btn.hidden = true; return; }
+  const f = friendList.friends.find((x) => x.name === personFor.name);
+  const out = friendList.outgoing.some((x) => x.name === personFor.name);
+  btn.hidden = false;
+  btn.disabled = out;
+  btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : '➕ ' + L(FRIEND_TEXT.addFriend);
+}
+$('person-friend').onclick = async () => {
+  if (!personFor) return;
+  const st = friendStore();
+  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return; }
+  const f = friendList.friends.find((x) => x.name === personFor.name);
+  $('person-menu').hidden = true;
+  if (f) { friendsUi.show(f.uid); return; }
+  friendsUi._result(await st.add(personFor.name), personFor.name);
+};
+onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
+cloud.onChange(() => friendStore());
+friendStore();
+renderChatTo();
 
 // ---------- Stores, zones, map, guide ----------
 let mode = 'street';
