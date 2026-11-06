@@ -454,6 +454,19 @@
       "products": []
     },
     {
+      "id": "byeolbit-cinema",
+      "category": "play",
+      "workshop": "cinema",
+      "cinema": true,
+      "size": "cinema",
+      
+      "name": { "ko": "별빛 시네마", "en": "Byeolbit Cinema", "ja": "ビョルビッ シネマ", "zh": "星光影院" },
+      "tagline": { "en": "Short AI films on the big screen, watched together", "ko": "큰 스크린으로 다 같이 보는 짧은 AI 영화", "ja": "大きなスクリーンでみんなで観るショートAI映画", "zh": "在大银幕上一起看AI短片" },
+      "at": [-21.5, 6],
+      "colors": { "sign": "#b3262e", "awning": "#ffd7a8", "accent": "#2a2230" },
+      "products": []
+    },
+    {
       "id": "sinjeon-pocha",
       "category": "restaurant",
       "workshop": "pocha",

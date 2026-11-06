@@ -97,6 +97,7 @@ import { CounterUI, heldFor } from './ui/counter-ui.js';
 import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
+import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
 import { FishBag } from './core/fishing.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
@@ -1098,6 +1099,7 @@ async function joinRoom(room, roomScene, area = null) {
         return;
       }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
+      if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
       if (parseHonk(e)) {
@@ -2419,6 +2421,7 @@ function enterStore(item) {
   deliveryArrived(store.id);
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
+  if (store.cinema) enterKpopCafe('cinema');
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (store.genre) enterClub(store.genre);
   const quiet = store.category === 'library';
@@ -2585,10 +2588,11 @@ let cafeMusic = null; // { wasOn } while inside a music café
 // K-POP café: everyone in the room watches and hears the same music video
 // (ui/kpop-room.js). Our own background music pauses while inside.
 let kpopMusic = null;
-async function enterKpopCafe() {
+// The cinema works the same way, with its own films.
+async function enterKpopCafe(kind = 'kpop') {
   kpopMusic = { wasOn: music.on };
+  kpop.enter(kind);
   if (music.on) { await music.setOn(false); applyMusicBtn(); }
-  kpop.enter();
 }
 async function leaveKpopCafe() {
   if (!kpopMusic) return;
@@ -4906,7 +4910,9 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'pocha' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'pocha', label: '🌶️ ' + t('game.pocha'), run: () => { clerk.ch.wave(); pochaUi.show(); } };
     } else if (interior.tv && Math.hypot(p.x - interior.tv.x, p.z - interior.tv.z) < 2.6) {
-      next = { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
+      next = interior.store.cinema
+        ? { key: 'kpop', label: '🎬 ' + t('cinema.open'), run: () => kpop.open() }
+        : { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
     } else if (nearFishing(p)) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
     } else if (nearStation(p, 'kimchi', 1.3)) {
