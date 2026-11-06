@@ -1764,6 +1764,11 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
 .fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp") no-repeat; background-size: 700% 700%; }
+.fish-pop-big.fish-stamp-sprite { width: 120px; }
+.fish-big.fish-stamp-sprite { width: 76px; }
+.fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
+.bubble-fish.fish-stamp-sprite { display: block; width: 40px; }
+.trophy-pic .fish-stamp-sprite { width: 60px; }
 .fish-stamp-name { font-size: 12px; font-weight: 900; line-height: 1; }
 .fish-stamp.empty { border: 2px dashed #cfc3ae; box-shadow: none; background: none; color: #9a8f82; transform: none; }
 .fish-stamp.empty .fish-stamp-fish { filter: brightness(0); opacity: 0.35; }
@@ -1822,3 +1827,35 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-trash-image { display: block; width: 160px; height: 160px; object-fit: contain; margin: 8px auto; }
 @media (max-width: 380px) { .fish-book { padding: 10px; } .fish-book .stamp-grid { gap: 5px; } .fish-book .fish-stamp-fish { font-size: 26px; } }
 @media (prefers-reduced-motion: reduce) { .fish-cell.fresh .fish-stamp { animation: none; } }
+
+/* A ★4–★5 catch over the angler's head (everyone nearby sees it, 5 s). */
+.bubble.trophy { font-size: 14px; padding: 6px 12px 8px; border-radius: 18px; background: linear-gradient(#fffdf2, #ffe9a8); box-shadow: 0 0 0 2px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .75); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both, trophy-glow 1.2s ease-in-out .6s infinite; }
+.trophy-in { display: grid; justify-items: center; gap: 2px; width: max-content; max-width: 220px; white-space: normal; text-align: center; }
+.trophy-pic { position: relative; display: grid; place-items: center; width: 64px; height: 64px; margin-top: -34px; }
+.trophy-pic .fish-stamp-fish { position: relative; font-size: 44px; width: 60px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .3)); animation: trophy-bob 1s ease-in-out infinite; }
+.trophy-rays { position: absolute; inset: -16px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 214, 92, .9) 0 12deg, rgba(255, 214, 92, 0) 12deg 30deg); -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); mask: radial-gradient(circle, #000 30%, transparent 70%); animation: trophy-spin 4s linear infinite; }
+.trophy-stars { color: #f4a300; font-size: 13px; letter-spacing: 1px; text-shadow: 0 1px 0 #fff; }
+.trophy-text { color: #5a3a00; font-weight: 900; line-height: 1.25; }
+.trophy-in.tier-5 .trophy-rays { background: repeating-conic-gradient(rgba(255, 120, 200, .85) 0 10deg, rgba(120, 200, 255, .85) 10deg 20deg, rgba(255, 255, 255, 0) 20deg 30deg); }
+@keyframes trophy-in { from { scale: .2; opacity: 0; } }
+@keyframes trophy-glow { 50% { box-shadow: 0 0 0 2px #ffd166, 0 0 36px 12px rgba(255, 209, 102, .95); } }
+@keyframes trophy-spin { to { transform: rotate(360deg); } }
+@keyframes trophy-bob { 50% { transform: translateY(-4px) rotate(-6deg); } }
+
+/* The odds table (fishing panel → 📊): grouped by stars, readable on phones. */
+.fish-odds { display: grid; gap: 2px; max-height: 52vh; overflow-y: auto; font-size: 15px; color: #2b2230; }
+.fish-odds-note { margin: 4px 0; font-size: 12.5px; line-height: 1.4; color: #5b5560; }
+.fish-odds-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 52px 46px 30px; align-items: center; gap: 4px; padding: 5px 2px; border-bottom: 1px solid #eee6da; }
+.fish-odds-row > :nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+.fish-odds-row .fish-name { font-weight: 700; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.fish-odds-row .fish-name small { display: block; font-weight: 600; font-size: 11.5px; color: #8a8290; }
+.fish-odds-row b { font-size: 15px; }
+.fish-odds-row.head { position: sticky; top: 0; z-index: 1; background: #fffaf2; font-size: 12px; font-weight: 800; color: #6b6470; border-bottom: 2px solid #e2d6c4; }
+.fish-odds-tier { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; padding: 6px 10px; border-radius: 10px; background: #eef4f9; font-weight: 800; }
+.fish-odds-tier b { color: #f4a300; letter-spacing: 1px; }
+.fish-odds-tier span { flex: 1; min-width: 0; font-size: 13px; }
+.fish-odds-tier small { font-size: 13px; white-space: nowrap; }
+.fish-odds-tier.tier-3 { background: #fff1e0; }
+.fish-odds-tier.tier-4 { background: #ffe5d6; }
+.fish-odds-tier.tier-5 { background: #fde2f1; }
+.fish-odds-row.trash { margin-top: 8px; opacity: .8; }

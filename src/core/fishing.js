@@ -664,6 +664,18 @@ const weights = [0, 12, 7, 3, 0.8, 0.15];
 const totalWeight = AVAILABLE_FISH.reduce((sum, f) => sum + (f.id === 'whale' ? 0.03 : weights[f.rarity]), 0);
 for (const f of FISH) f.chance = f.released ? (f.id === 'whale' ? 0.03 : weights[f.rarity]) / totalWeight * 100 : 0;
 export const fishById = id => FISH.find(f => f.id === id) || null;
+// The picture sheet (public/assets/fishing/fish-icons.webp, 7×7): kinds in
+// reading order. Every kind in FISH has exactly one picture here.
+export const FISH_SHEET = [
+  'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
+  'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
+  'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
+  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'crayfish',
+  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
+  'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
+  'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
+];
+export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp';
 // Kinds swapped out of the catalogue (to match the fish book's pictures),
 // each moved to the new kind of the same rarity in its place, so bags and
 // fish books saved before keep their counts.

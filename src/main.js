@@ -44,7 +44,7 @@ import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
-import { RemotePlayers, showBubble } from './core/players.js';
+import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
@@ -107,8 +107,8 @@ import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
-import { FishingUI, FishMarketUI, FishBookUI } from './ui/fishing-ui.js';
-import { FishBag, FishDex, FISH } from './core/fishing.js';
+import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, fishStampIcon } from './ui/fishing-ui.js';
+import { FishBag, FishDex, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -1118,6 +1118,8 @@ async function joinRoom(room, roomScene, area = null) {
         return;
       }
       if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
+      if (typeof e === 'string' && e.startsWith('fishph:')) { onPeerFishing(id, e.slice(7)); return; }
+      if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
@@ -3641,6 +3643,31 @@ $('fishbook-btn').onclick = () => { $('notes-panel').hidden = true; fishBookUi.s
 refreshFishBookBtn();
 onLanguageChange(refreshFishBookBtn);
 // The cast, bobber, bite and reel in 3D (core/fishing-rig.js).
+const FISH_PHASES = new Set(['idle', 'cast', 'bite', 'reel', 'land', 'trash', 'escape', 'retrieve', 'off']);
+const peerRigs = new Map(); // other anglers' rigs, by player id
+function onPeerFishing(id, msg) {
+  const [ph, fid] = msg.split(':');
+  const p = others.players.get(id);
+  if (!FISH_PHASES.has(ph) || !p || p.hidden) return;
+  let rig = peerRigs.get(id);
+  if (!rig) { rig = createFishingRig({ remote: true, waterY: () => interior?.river?.position.y ?? -0.25 }); peerRigs.set(id, rig); }
+  const f = fid ? fishById(fid) : null;
+  rig.phase(ph, f || (ph === 'land' ? { rarity: 1 } : undefined));
+  if (ph === 'cast') p.ch.play('cast');
+  else if (ph === 'land' || ph === 'trash') p.ch.play('catch');
+}
+function onPeerTrophy(id, fid) {
+  const f = fishById(fid), p = others.players.get(id);
+  if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
+  showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), 5000, 'trophy');
+}
+function updatePeerRigs(dt) {
+  for (const [id, rig] of peerRigs) {
+    const p = others.players.get(id);
+    if (!p) { rig.dispose(); peerRigs.delete(id); continue; }
+    rig.update(dt, p.ch);
+  }
+}
 const fishRig = createFishingRig({ sfx, waterY: () => interior?.river?.position.y ?? -0.25 });
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
@@ -3649,6 +3676,8 @@ const fishingUi = new FishingUI({
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);
+    // Others nearby see the cast, the bite, the reel and the catch too.
+    if (FISH_PHASES.has(ph)) net.sendEmote('fishph:' + ph + (data?.id && !data.trash ? ':' + data.id : ''));
     if (ph === 'cast') me.play('cast');
     else if (ph === 'land' || ph === 'trash') me.play('catch');
     else if (ph === 'bite') navigator.vibrate?.(60);
@@ -3656,8 +3685,13 @@ const fishingUi = new FishingUI({
   onCatch: (f) => {
     sfx.pop?.();
     refreshFishBookBtn();
-    showBubble(myLabel, $('labels'), f.emoji);
+    showBubbleEl(myLabel, $('labels'), fishStampIcon(f, 'bubble-fish'), 2500);
     if (f.chance <= 2) me.play('cheer'); // a rare one!
+    if (f.rarity >= TROPHY_RARITY) { // ★4–★5: a trophy over my head, for everyone nearby
+      showBubbleEl(myLabel, $('labels'), trophy(f, nickname), 5000, 'trophy');
+      net.sendEmote('bigfish:' + f.id);
+      sfx.reveal(true);
+    }
     missionEvent('fish', f.id);
     togetherBonus('fish');
   },
@@ -5546,6 +5580,7 @@ renderer.setAnimationLoop(() => {
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   fishRig.update(dt, me);
+  updatePeerRigs(dt);
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);

@@ -253,6 +253,7 @@ export const VI = {
   'fish.bookNew': '📖 Mới trong sổ cá! {k} / {all}',
   'fish.bookDone': '🏆 Bạn đã câu đủ mọi loài. Sổ cá hoàn thành!',
   'fish.back': 'Quay lại câu cá',
+  'fish.trophy': '{name} đã câu được {fish}!',
   'fish.fightBack': 'Nó đang vùng vẫy! Tiếp tục quay không thì thanh sẽ tụt!',
   'fish.reelHint': 'Nhấn luân phiên hai nút Quay bằng hai ngón cái (phím ← →)',
   'fish.auto': 'Câu cá tự động',

@@ -243,6 +243,18 @@ export class RemotePlayers {
   }
 }
 
+// A bubble holding built elements (a picture and text), e.g. the big-catch
+// trophy over someone's head.
+export function showBubbleEl(p, layer, content, ms = 5000, kind = '') {
+  p.bubble?.remove();
+  const b = document.createElement('div');
+  b.className = kind ? 'bubble ' + kind : 'bubble';
+  b.append(content);
+  layer.appendChild(b);
+  p.bubble = b;
+  setTimeout(() => { if (p.bubble === b) { b.remove(); p.bubble = null; } }, ms);
+}
+
 export function showBubble(p, layer, text, ms = 2500, kind = '') {
   p.bubble?.remove();
   const b = document.createElement('div');

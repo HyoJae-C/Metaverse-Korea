@@ -85,10 +85,15 @@ test('three bite lines for each of the five rarities; auto fishing never rolls a
 });
 
 test('every kind has a picture, and saves with swapped-out kinds keep their counts', async () => {
-  const { RENAMED } = await import('../src/core/fishing.js');
-  const ui = await import('node:fs').then(fs => fs.readFileSync(new URL('../src/ui/fishing-ui.js', import.meta.url), 'utf8'));
-  const sheet = ui.slice(ui.indexOf('new Map(['), ui.indexOf('].map((id, index)')).match(/'[a-z-]+'/g).map(x => x.slice(1, -1));
-  assert.deepEqual([...sheet].sort(), FISH.map(f => f.id).sort());
+  const { RENAMED, FISH_SHEET } = await import('../src/core/fishing.js');
+  assert.deepEqual([...FISH_SHEET].sort(), FISH.map(f => f.id).sort());
+  // The book, the stamp pop-up, catch cards, the guide and the market all draw
+  // the fish with fishStampIcon (the sheet), never the emoji directly.
+  const fs = await import('node:fs');
+  const ui = fs.readFileSync(new URL('../src/ui/fishing-ui.js', import.meta.url), 'utf8');
+  assert.equal(ui.match(/\bf\.emoji\b/g).length, 1, 'only fishStampIcon\'s fallback uses the emoji');
+  const rig = fs.readFileSync(new URL('../src/core/fishing-rig.js', import.meta.url), 'utf8');
+  assert.ok(rig.includes('FISH_SHEET_URL') && !/\.emoji\b/.test(rig), 'the fish on the line uses the sheet too');
   const st = memory();
   st.setItem('mk.fish', JSON.stringify({ bass: 2, squid: 1, carp: 1 }));
   st.setItem('mk.fishdex', JSON.stringify({ bass: 3, scallop: 1, swordfish: 1 }));
