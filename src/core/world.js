@@ -487,7 +487,7 @@ function pointInPolygon(x, z, p) {
 
 export function onAnyRoad(roads, x, z, pad = 0.3) {
   for (const r of roads) {
-    const hw = r.w / 2 + Math.max(0.3, pad);
+    const hw = r.w / 2 + Math.max(0.3, pad, r.clear || 0); // clear: an avenue's own trees line it, keep the others back
     for (let i = 0; i < r.p.length - 1; i++) {
       const [x1, z1] = r.p[i];
       const [x2, z2] = r.p[i + 1];

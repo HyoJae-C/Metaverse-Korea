@@ -288,7 +288,7 @@ function hill(g, l) {
   const deck = new THREE.Mesh(new THREE.CylinderGeometry(H.deck, H.deck, 0.3, 24), wood);
   deck.position.y = H.h - 0.03;
   g.add(deck);
-  const n = 20;
+  const n = Math.round(H.deck * 7); // railing posts, about 0.9 m apart
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
     if (Math.abs(Math.sin(a)) > 0.92 && Math.sin(a) > 0) continue; // the way to the stairs (+z)
@@ -330,6 +330,27 @@ function hillGeometry(H) {
   out.setIndex(idx);
   out.computeVertexNormals();
   return out;
+}
+
+// An avenue of tall, slim metasequoias in autumn orange (l.trees: [x, z] map
+// positions), like Seoul Forest's tree tunnels.
+export function avenue(g, l) {
+  const spots = l.trees || [];
+  if (!spots.length) return;
+  const trunk = new THREE.CylinderGeometry(0.22, 0.34, 4, 6).translate(0, 2, 0);
+  const crown = new THREE.ConeGeometry(1.5, 9, 8).translate(0, 7.4, 0);
+  const trunks = new THREE.InstancedMesh(trunk, mat('#7a5240'), spots.length);
+  const crowns = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), spots.length);
+  const oranges = ['#e8892b', '#d9771f', '#f0a23a', '#c9661a', '#f2b046'].map((c) => new THREE.Color(c));
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  spots.forEach(([x, z], i) => {
+    const s = 0.9 + ((i * 37) % 10) / 40;
+    m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 1.3), sc.set(s, s, s));
+    trunks.setMatrixAt(i, m4);
+    crowns.setMatrixAt(i, m4);
+    crowns.setColorAt(i, oranges[(i * 7) % oranges.length]);
+  });
+  g.add(trunks, crowns);
 }
 
 export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill };
