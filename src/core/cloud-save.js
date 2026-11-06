@@ -142,6 +142,19 @@ export class CloudSave {
     } catch { return 'offline'; }
   }
 
+  // An empty name gets the next numbered default name from the server
+  // (supabase/007_default_names.sql): 여행자100, 여행자101, … Returns that
+  // name, or null when the server can't be asked (the caller then makes
+  // a number up itself).
+  async claimDefaultName(prefix, timeoutMs = 4000) {
+    if (!this.client || !this.user) return null;
+    try {
+      const call = this.client.rpc('claim_default_name', { prefix: String(prefix) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      return !error && typeof data === 'string' && data ? data.slice(0, 16) : null;
+    } catch { return null; }
+  }
+
   // Does this player name belong to an operator account? (005_operators.sql)
   // False when it can't be asked: no badge is better than a fake one.
   async isOperator(name, timeoutMs = 4000) {

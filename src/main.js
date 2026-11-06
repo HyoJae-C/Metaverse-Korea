@@ -130,7 +130,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
@@ -364,6 +364,23 @@ await new Promise((resolve) => {
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
+    if (isDefaultName(name)) {
+      // No name (or just "여행자"): the server hands out the next number,
+      // 여행자100, 여행자101, …, reserved for this account like any name.
+      busy = true;
+      $('start-btn').disabled = true;
+      const prefix = defaultNamePrefix(t('start.defaultName'));
+      const given = (await cloud.claimDefaultName(prefix)) || localDefaultName(prefix);
+      busy = false;
+      $('start-btn').disabled = false;
+      $('nickname').value = given;
+      if (isReturning()) {
+        identity = { ...identity, name: given };
+        saveIdentity(identity);
+      }
+      resolve();
+      return;
+    }
     if (!isReturning() && isReservedName(name)) {
       $('status').textContent = L(RESERVED_TEXT);
       $('nickname').classList.add('bad');
