@@ -2849,11 +2849,12 @@ const COLOR_NAME = {
 const TIER_STARS = ['★', '★★', '★★★'];
 let bikeTab = null, bikeShopId = 'pedal';
 const applyRide = () => { if (riding === 1) me.setBike(1, garage.rideSpec()); };
-// shop: a store with "workshop": "bike" (its "rideShop" picks which shop), or
-// a ride-shop id. With nothing, the shop last opened.
-function openBikeShop(shop) {
-  if (shop) {
-    let id = typeof shop === 'string' ? shop : shop.rideShop || 'pedal';
+// place: a store with "workshop": "bike" (its "rideShop" picks which shop), or
+// a ride-shop id. With nothing, the shop last opened. (Not named `shop`: that
+// would hide the shop UI below, and every buy/upgrade toast would throw.)
+function openBikeShop(place) {
+  if (place) {
+    let id = typeof place === 'string' ? place : place.rideShop || 'pedal';
     if (!RIDE_SHOPS[id]) id = 'pedal';
     if (id !== bikeShopId) bikeTab = null; // a new shop opens on its own tab
     bikeShopId = id;
