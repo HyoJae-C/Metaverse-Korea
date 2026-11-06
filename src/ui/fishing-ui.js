@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -97,7 +97,7 @@ export function fishBook(dex, fresh = null) {
       cell.onclick = () => showDetail(f);
       grid.append(cell);
     }
-    number.textContent = (page + 1) + ' / 6' + (page === 5 ? text(' · 특별 수집', ' · Special catches') : '');
+    number.textContent = (page + 1) + ' / 6' + (page === 5 ? ' · ' + localName(TIER_NAMES[5]) : '');
     previous.disabled = page === 0; next.disabled = page === 5;
     detail.replaceChildren(el('p', null, text('도장을 눌러 자세히 보기', 'Select a stamp to see details')));
   };
@@ -250,7 +250,7 @@ export class FishingUI {
       if (!kinds.length) continue;
       const hand = kinds.reduce((a, f) => a + f.chance, 0) * (1 - TRASH_CHANCE);
       const tier = el('div', 'fish-odds-tier tier-' + r);
-      tier.append(el('b', null, '★'.repeat(r)), el('span', null, text(r >= 3 ? '희귀 · 자동낚시 불가' : '자동낚시 가능', r >= 3 ? 'Rare · hand fishing only' : 'Auto fishing too')), el('small', null, pct(hand)));
+      tier.append(el('b', null, '★'.repeat(r)), el('span', null, localName(TIER_NAMES[r]) + ' · ' + text(r >= 3 ? '자동낚시 불가' : '자동낚시 가능', r >= 3 ? 'hand fishing only' : 'auto fishing too')), el('small', null, pct(hand)));
       wrap.append(tier);
       for (const f of kinds) {
         const row = el('div', 'fish-odds-row');
