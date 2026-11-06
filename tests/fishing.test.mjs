@@ -72,3 +72,14 @@ test('available collection can finish before the full catalogue, and future reco
   st.setItem('mk.fishdex','broken');
   assert.equal(new FishDex(st).kinds,0);
 });
+
+test('three bite lines for each of the five rarities; auto fishing never rolls a rare fish', async () => {
+  const { BITE_LINES, AUTO_FISH, rollAutoCatch, isRare, drainFor } = await import('../src/core/fishing.js');
+  for (const r of [1, 2, 3, 4, 5]) {
+    assert.equal(BITE_LINES[r].length, 3, `rarity ${r}`);
+    for (const l of BITE_LINES[r]) assert.ok(l.ko && l.en, `rarity ${r}`);
+  }
+  assert.ok(AUTO_FISH.length && AUTO_FISH.every(f => f.released && !isRare(f)));
+  for (let i = 0; i < 200; i++) assert.ok(!isRare(rollAutoCatch()));
+  assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 0, 1.2, 2, 2.8]);
+});

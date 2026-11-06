@@ -252,7 +252,6 @@ export const ES = {
   'fish.bookNew': '📖 ¡Nuevo en tu libro de peces! {k} / {all}',
   'fish.bookDone': '🏆 Pescaste todas las especies. ¡Libro completo!',
   'fish.back': 'Volver a pescar',
-  'fish.rareOne': '¡¡Qué bestia!!',
   'fish.fightBack': '¡Está luchando! Sigue recogiendo o la barra baja.',
   'fish.reelHint': 'Toca los dos botones de Recoger por turnos con los pulgares (teclas ← →)',
   'fish.auto': 'Pesca automática',

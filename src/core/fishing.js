@@ -690,6 +690,25 @@ export function escapeChance(fish, spare = 0) {
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
 export const drainFor = fish => (isRare(fish) ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
 
+// What you shout when a fish bites: three lines per rarity (★1–★5), one
+// picked at random each bite. ★3 and up are the rare ones.
+export const BITE_LINES = {
+  1: [{ ko: '작은 녀석이 물었다!', en: 'A little one bit!', ja: '小さいのがかかった！', zh: '小家伙上钩了！' },
+    { ko: '오, 입질이다!', en: 'Oh, a bite!', ja: 'おっ、アタリだ！', zh: '哦，有鱼咬钩！' },
+    { ko: '귀여운 녀석이네!', en: 'A cute one!', ja: 'かわいいヤツだ！', zh: '可爱的小家伙！' }],
+  2: [{ ko: '제법인데?', en: 'Not bad at all!', ja: 'なかなかやるな！', zh: '还不错嘛！' },
+    { ko: '손맛이 좋은데!', en: 'Nice pull!', ja: 'いい手応えだ！', zh: '手感不错！' },
+    { ko: '꽤 묵직하다!', en: 'Pretty heavy!', ja: 'けっこう重いぞ！', zh: '还挺沉的！' }],
+  3: [{ ko: '대단한 녀석이다!!', en: 'What a monster!!', ja: 'すごいヤツだ!!', zh: '好厉害的家伙!!' },
+    { ko: '이건 보통 놈이 아니야!!', en: 'This is no ordinary fish!!', ja: 'こいつはただ者じゃない!!', zh: '这可不是普通的鱼!!' },
+    { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' }],
+  4: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
+    { ko: '낚싯대가 부러질 것 같아!!!', en: "The rod's about to snap!!!", ja: '竿が折れそうだ!!!', zh: '鱼竿快要断了!!!' },
+    { ko: '전설급 손맛이다!!!', en: 'A legendary pull!!!', ja: '伝説級の手応えだ!!!', zh: '传说级的手感!!!' }],
+  5: [{ ko: '강의 주인이 나타났다!!!!', en: 'The lord of the river appears!!!!', ja: '川の主が現れた!!!!', zh: '河之主出现了!!!!' },
+    { ko: '이건… 전설의 그 녀석?!', en: 'Is this… the legend?!', ja: 'これは…伝説のアイツ?!', zh: '难道是…传说中的那家伙?!' },
+    { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],
+};
 // Auto fishing: catches on its own while you stay at the spot with the game
 // open, but slowly (AUTO_RATE of hands-on fishing, which lands a fish about
 // every MANUAL_SECONDS) and never a rare fish. Lower AUTO_RATE to slow it.

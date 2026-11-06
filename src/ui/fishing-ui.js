@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, AUTO_SECONDS, rollAutoCatch } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, BITE_LINES, AUTO_SECONDS, rollAutoCatch } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -14,6 +14,11 @@ const el = (tag, cls, text) => {
 export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.name, getLanguage())} · ${f.ko} (${f.rom})`);
 const pct = c => (c < 0.1 ? c.toFixed(2) : c.toFixed(1)) + '%';
 const text = (ko, en) => localName({ ko, en });
+
+export const biteLine = (f, rand = Math.random) => {
+  const lines = !f || f.trash ? null : BITE_LINES[f.rarity];
+  return lines ? localName(lines[Math.floor(rand() * lines.length) % lines.length]) : null;
+};
 
 // Sprite positions are keyed by stable IDs, independently of the book order.
 const fishIconPositions = new Map([
@@ -253,7 +258,8 @@ export class FishingUI {
     this.onPhase?.('bite', this.fish);
     water.className = 'fish-water bite' + (isRare(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
-    if (isRare(this.fish)) water.prepend(el('b', 'fish-callout', t('fish.rareOne')));
+    this.shout = biteLine(this.fish); // kept for the reel-in too
+    if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));
     btn.classList.add('pulse');
     btn.onclick = () => this.reel();
     this.timer = setTimeout(() => { this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
@@ -269,7 +275,7 @@ export class FishingUI {
     this.onPhase?.('reel', { big });
     const rare = isRare(this.fish);
     const water = this._water(rare ? t('fish.fightBack') : big ? t('fish.bigOne') : t('fish.reeling'), 'reel' + (rare ? ' rare' : ''));
-    if (rare) water.prepend(el('b', 'fish-callout', t('fish.rareOne')));
+    if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));
     const bar = el('div', 'fish-meter' + (drain ? ' drain' : ''));
     const fill = el('i');
     bar.append(fill);
