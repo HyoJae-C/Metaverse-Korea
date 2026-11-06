@@ -1,0 +1,5 @@
+# Another Seoul: everything public may be crawled.
+User-agent: *
+Allow: /
+
+Sitemap: https://another-seoul.com/sitemap.xml

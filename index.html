@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#bfe3ff" />
-    <meta name="description" content="Walk the streets of Seongsu-dong, Seoul, in 3D, right in your browser." />
-    <title>Another Seoul</title>
+    <title>Another Seoul · Walk Seoul in 3D in your browser (어나더서울)</title>
+    <meta name="description" content="Walk Seoul in 3D, free in your browser. Explore Seongsu-dong, Hongdae and Itaewon with friends, shop, visit cafés and practise Korean. No download." />
+    <!-- Search engines: one canonical address. Plain-text "about" pages in
+         several languages live in public/about/ (scripts/build-seo-pages.mjs). -->
+    <link rel="canonical" href="https://another-seoul.com/" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Another Seoul","alternateName":["어나더서울","アナザー・ソウル"],"url":"https://another-seoul.com/"}</script>
     <!-- Link previews (KakaoTalk, LINE, WeChat, iMessage, Discord…): a picture
          with a character, a title and a line about the game. -->
     <meta property="og:type" content="website" />
@@ -31,6 +35,11 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <noscript>
+      <h1>Another Seoul</h1>
+      <p>A free 3D virtual trip to Seoul, Korea, in your web browser. Walk Seongsu-dong, Hongdae and Itaewon, shop in sample stores, visit cafés and practise Korean. Please turn on JavaScript to play.</p>
+      <p><a href="about/">About</a> · <a href="about/ko/">한국어</a> · <a href="about/ja/">日本語</a> · <a href="about/zh-hans/">简体中文</a> · <a href="about/zh-hant/">繁體中文</a> · <a href="about/es/">Español</a></p>
+    </noscript>
     <canvas id="scene"></canvas>
     <div id="labels"></div>
     <div id="fade" aria-hidden="true"></div>
@@ -47,9 +56,10 @@
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
+        <button class="online coin-chip rent-chip" id="rent-chip" hidden></button>
         <button class="online coin-chip daily-chip" id="daily-btn" aria-label="Daily">📅<b class="dot" id="daily-dot" hidden></b></button>
         <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
-        <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot" id="settings-dot" hidden></b></button>
+        <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot news-bang" id="settings-dot" hidden>!</b></button>
       </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
@@ -67,6 +77,18 @@
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
       <button class="action" id="action-btn" hidden></button>
+      <div class="keys-panel" id="keys-panel" hidden>
+        <button class="keys-toggle" id="keys-toggle" aria-expanded="true">⌨️ <span data-i18n="keys.title"></span> <b class="keys-caret" aria-hidden="true">▾</b></button>
+        <ul class="keys-list" id="keys-list">
+          <li><span class="keys-k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span data-i18n="keys.move"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Shift</kbd></span><span data-i18n="keys.run"></span></li>
+          <li class="hot"><span class="keys-k"><kbd>E</kbd><kbd class="wide">Space</kbd></span><span data-i18n="keys.act"></span></li>
+          <li><span class="keys-k"><kbd>M</kbd></span><span data-i18n="keys.map"></span></li>
+          <li><span class="keys-k"><kbd>T</kbd></span><span data-i18n="keys.chat"></span></li>
+          <li><span class="keys-k"><kbd id="keys-emote-range" class="wide">1–8</kbd></span><span data-i18n="keys.emote"></span></li>
+          <li><span class="keys-k"><kbd class="wide">Esc</kbd></span><span data-i18n="keys.close"></span></li>
+        </ul>
+      </div>
       <div class="store-banner" id="store-banner" hidden>
         <div class="store-meta">
           <strong id="store-name"></strong>
@@ -102,6 +124,7 @@
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
         <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
+        <button class="chip dex-btn" id="stamp-btn">🔖 <span></span></button>
       </div>
       <div class="sheet ledger-panel" id="ledger-panel" hidden>
         <button class="sheet-x" id="ledger-close" aria-label="Close">✕</button>
@@ -151,6 +174,9 @@
       <div class="sheet order-panel fish-panel" id="fish-panel" hidden></div>
       <div class="sheet order-panel fish-panel" id="market-panel" hidden></div>
       <div class="sheet order-panel ramen-panel" id="ramen-panel" hidden></div>
+      <div class="sheet order-panel kimchi-panel" id="kimchi-panel" hidden></div>
+      <div class="sheet order-panel fish-panel" id="kimchi-sell-panel" hidden></div>
+      <div class="sheet order-panel museum-panel" id="museum-panel" hidden></div>
       <div class="sheet order-panel beauty-panel" id="beauty-panel" hidden></div>
       <div class="sheet order-panel counter-panel" id="counter-panel" hidden></div>
       <div class="sheet order-panel lp-panel" id="kpop-panel" hidden></div>
@@ -166,6 +192,7 @@
       <div class="sheet order-panel game-panel" id="book-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="academy-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="dex-panel" hidden></div>
+      <div class="sheet order-panel game-panel stamp-panel" id="stamp-panel" hidden></div>
       <div class="info-hint" id="info-hint" hidden></div>
       <div class="sheet order-panel game-panel" id="duck-panel" hidden></div>
       <div class="photo-count" id="photo-count" hidden></div>
@@ -174,7 +201,10 @@
         <button class="chip kpop-unmute" data-i18n="kpop.unmute" hidden></button>
       </div>
       <div class="poop-chip" id="poop-chip" hidden></div>
-      <button class="quest-chip" id="quest-chip" hidden></button>
+      <div class="quest-bar" id="quest-bar" hidden>
+        <button class="quest-chip" id="quest-chip"></button>
+        <button class="quest-go" id="quest-go" hidden></button>
+      </div>
       <button class="quest-chip delivery-chip" id="delivery-chip" hidden></button>
       <div class="sheet fine-panel" id="fine-panel" hidden>
         <div class="fine-head">📮 <span data-i18n="pet.fineTitle"></span></div>
@@ -215,6 +245,7 @@
           <button class="primary" id="product-adopt" hidden></button>
           <button class="primary" id="product-take" hidden>☕ <span data-i18n="coffee.take"></span></button>
           <button class="primary" id="product-add"></button>
+          <button class="chip gift-btn" id="product-gift" hidden></button>
         </div>
         <p class="fine" id="product-note"></p>
       </div>
@@ -290,6 +321,7 @@
         <div class="logo">💾</div>
         <h2 id="login-title"></h2>
         <p class="login-text" id="login-text"></p>
+        <div class="gis-slot" id="login-google-gis"></div>
         <button class="primary" id="login-google"></button>
         <button class="chip" id="login-guest"></button>
         <p class="login-note" id="login-note"></p>
@@ -378,8 +410,10 @@
           <span>☁️</span><span class="setting-label" id="cloud-label"></span>
         </div>
         <div class="cloud-actions" id="cloud-actions" hidden>
+          <div class="gis-slot" id="google-link-gis"></div>
           <button class="chip" id="google-link">🔗 <span data-i18n="cloud.link"></span></button>
           <button class="chip" id="google-signin" data-i18n="cloud.signin"></button>
+          <p class="fine" data-i18n="cloud.guestNote"></p>
         </div>
         <a class="setting-row" href="privacy.html" target="_blank" rel="noopener">
           <span>🔒</span><span class="setting-label" data-i18n="credit.privacy"></span><span class="setting-go">›</span>

@@ -142,6 +142,25 @@ export class CloudSave {
     } catch { return 'offline'; }
   }
 
+  // Does this player name belong to an operator account? (005_operators.sql)
+  // False when it can't be asked: no badge is better than a fake one.
+  async isOperator(name, timeoutMs = 4000) {
+    if (!this.client) return false;
+    try {
+      const call = this.client.rpc('is_operator', { player_name: String(name).slice(0, 16) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      return !error && data === true;
+    } catch { return false; }
+  }
+
+  // This account's sign-in token, for realtime's private channels (the chat
+  // channel checks it on the server). Null without an account.
+  async accessToken() {
+    if (!this.client || !this.user) return null;
+    const { data } = await this.client.auth.getSession();
+    return data.session?.access_token || null;
+  }
+
   // The Google address once linked (or null).
   get email() { return this.user?.identities?.find((i) => i.provider === 'google')?.identity_data?.email || this.user?.email || null; }
 
@@ -166,6 +185,83 @@ export class CloudSave {
     return error ? 'notReady' : null;
   }
 
+  // Google's own sign-in button (Google Identity Services). Google then shows
+  // this site's address on its sign-in screen instead of the Supabase project
+  // address, and the player never leaves the page. Returns false when it
+  // can't be used (no client ID, script blocked), so the caller keeps the
+  // redirect buttons above. mode(): 'link' (keep this guest's save) or
+  // 'signin' (load an account used before). The page reloads after sign-in
+  // so the save is loaded the normal way.
+  async renderGoogleButton(el, mode, { locale = 'en', onError } = {}) {
+    const clientId = this.cfg?.googleClientId;
+    if (!this.client || !clientId || !el) return false;
+    try {
+      const gis = await loadGis();
+      if (!this._gisReady) {
+        this._gisReady = true;
+        this._nonce = randomNonce();
+        gis.initialize({
+          client_id: clientId,
+          nonce: await sha256Hex(this._nonce),
+          use_fedcm_for_button: true,
+          callback: (res) => this._onGoogleToken(res.credential).then((err) => (err ? this._gisError?.(err) : location.reload())),
+        });
+      }
+      this._gisMode = mode;
+      this._gisError = onError;
+      el.replaceChildren();
+      gis.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', locale, width: buttonWidth(el) });
+      return true;
+    } catch (e) {
+      console.info('[cloud-save] Google button unavailable:', e?.message || e);
+      return false;
+    }
+  }
+
+  async _onGoogleToken(token) {
+    const signin = this._gisMode?.() === 'signin' || !this.user;
+    if (!signin) await this._upload().catch(() => {});
+    const creds = { provider: 'google', token, nonce: this._nonce };
+    const { error } = signin ? await this.client.auth.signInWithIdToken(creds) : await this.client.auth.linkIdentity(creds);
+    if (!error) return null;
+    console.info('[cloud-save] Google sign-in failed:', error.message);
+    return /already|exists/i.test(error.message) ? 'taken' : 'notReady';
+  }
+
   onChange(f) { this.listeners.push(f); }
   _set(s) { this.status = s; this.listeners.forEach((f) => f(s)); }
+}
+
+let gisPromise = null;
+function loadGis() {
+  if (globalThis.google?.accounts?.id) return Promise.resolve(globalThis.google.accounts.id);
+  gisPromise ||= new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => (globalThis.google?.accounts?.id ? resolve(globalThis.google.accounts.id) : reject(new Error('no gis')));
+    script.onerror = () => { gisPromise = null; reject(new Error('gis blocked')); };
+    document.head.appendChild(script);
+    setTimeout(() => reject(new Error('gis timeout')), 8000);
+  });
+  return gisPromise;
+}
+
+function randomNonce() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(text) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Google's button needs a pixel width (200-400). The empty slot is hidden, so
+// measure the panel around it instead.
+function buttonWidth(el) {
+  const box = el.parentElement;
+  const pad = box ? parseFloat(getComputedStyle(box).paddingLeft) + parseFloat(getComputedStyle(box).paddingRight) : 0;
+  const w = (box?.clientWidth || 0) - pad;
+  return Math.round(Math.min(400, Math.max(200, w || 280)));
 }

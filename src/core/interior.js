@@ -6,7 +6,17 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
+import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
+import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+import { skirtDisplay } from './skirt-mesh.js';
+import { buildGallery, ROOM_MUSEUM } from './museum.js';
+
+// Three lipsticks on each mirror shelf, from the shop's own colour family.
+function lipProps(store) {
+  const fam = LIP_FAMILIES[store.lipFamily] || ['camellia', 'pink', 'berry'];
+  return [0, Math.floor(fam.length / 2), fam.length - 1].map((i) => '#' + PALETTES.lip[fam[i]].toString(16).padStart(6, '0'));
+}
 
 // Room sizes (metres). A store picks one with "size" in stores.json.
 export const ROOM_SIZES = {
@@ -15,8 +25,10 @@ export const ROOM_SIZES = {
   large: { w: 22, d: 16, h: 4.6 },
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
+  cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
+  museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -48,7 +60,7 @@ function floorTexture(base, room) {
 }
 
 // Small low-poly product models.
-export function productModel(kind, color) {
+export function productModel(kind, color, product = null) {
   const g = new THREE.Group();
   const m = mat(color);
   const add = (geo, x = 0, y = 0, z = 0, mm = m) => {
@@ -165,13 +177,56 @@ export function productModel(kind, color) {
     case 'scarf':
       add(new THREE.TorusGeometry(0.13, 0.05, 8, 16), 0, 0.2).rotation.x = Math.PI / 2;
       break;
+    case 'glasses': // round frames on a little stand
+    case 'sunglasses': {
+      const lens = kind === 'sunglasses' ? mat(color, { transparent: true, opacity: 0.85 }) : mat('#dff1f8', { transparent: true, opacity: 0.4 });
+      const frame = kind === 'sunglasses' ? mat('#2b2230') : m;
+      for (const s of [-1, 1]) {
+        add(new THREE.TorusGeometry(0.07, 0.012, 6, 18), 0.085 * s, 0.14, 0, frame);
+        add(new THREE.CircleGeometry(0.066, 18), 0.085 * s, 0.14, -0.002, lens);
+        add(new THREE.BoxGeometry(0.012, 0.012, 0.16), 0.15 * s, 0.15, -0.08, frame); // arm
+      }
+      add(new THREE.BoxGeometry(0.04, 0.012, 0.012), 0, 0.15, 0, frame);
+      add(new THREE.CylinderGeometry(0.02, 0.05, 0.08, 10), 0, 0.04, -0.06, mat('#fffaf0'));
+      break;
+    }
+    case 'earrings': // a pair hanging from a small card
+      add(new THREE.BoxGeometry(0.2, 0.22, 0.015), 0, 0.15, -0.02, mat('#fffaf0'));
+      for (const s of [-1, 1]) {
+        add(new THREE.TorusGeometry(0.035, 0.008, 6, 16), 0.05 * s, 0.13, 0.0);
+        add(new THREE.SphereGeometry(0.014, 8, 6), 0.05 * s, 0.18, 0.0);
+      }
+      add(new THREE.CylinderGeometry(0.01, 0.05, 0.04, 10), 0, 0.02, -0.02, mat('#fffaf0'));
+      break;
+    case 'backpack':
+      add(new THREE.CapsuleGeometry(0.13, 0.12, 4, 10).scale(1.1, 1, 0.7), 0, 0.22);
+      add(new THREE.BoxGeometry(0.16, 0.1, 0.04), 0, 0.16, 0.1, mat('#fffaf0'));
+      break;
+    case 'beanie':
+      add(new THREE.SphereGeometry(0.15, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0, 0.02);
+      add(new THREE.SphereGeometry(0.04, 8, 6), 0, 0.18, 0, mat('#fff8ec'));
+      break;
+    case 'beret':
+      add(new THREE.SphereGeometry(0.17, 14, 8).scale(1, 0.32, 1), 0, 0.06);
+      break;
+    case 'skirt': { // the skirt itself, in its pattern (core/skirt-mesh.js)
+      const sk = skirtDisplay(product?.skirt);
+      if (sk) g.add(sk);
+      else add(new THREE.CylinderGeometry(0.16, 0.26, 0.4, 16, 1, true), 0, 0.4);
+      add(new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), 0, 0.72, 0, mat('#8a8f99'));
+      break;
+    }
+    case 'ribbon':
+      for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.06, 10, 8).scale(1.3, 0.9, 0.6), 0.07 * s, 0.1);
+      add(new THREE.SphereGeometry(0.03, 8, 6), 0, 0.1);
+      break;
     default:
       add(new THREE.BoxGeometry(0.25, 0.25, 0.25), 0, 0.12);
   }
   return g;
 }
 
-const HANGING = new Set(['tee', 'jeans', 'scarf']);
+const HANGING = new Set(['tee', 'jeans', 'scarf', 'skirt']);
 
 // Shrink the font until the text fits the canvas width (long shop names).
 function fitText(g, text, size, maxW, weight = 800) {
@@ -204,6 +259,7 @@ export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
   if (store.category === 'train') return buildTrainCar(store, ROOM);
@@ -211,17 +267,18 @@ export function buildInterior(store) {
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
   const night = store.category === 'club' || store.category === 'bar' || !!store.cinema;
+  const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
   scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : '#1a120d') : accent.clone().multiplyScalar(0.92);
-  scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, 1.7));
+  scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
-  const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : 25, Math.max(18, ROOM.w * 1.2));
+  const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
   lamp.position.set(0, ROOM.h - 0.4, 0);
   scene.add(lamp);
 
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -244,16 +301,17 @@ export function buildInterior(store) {
   wall(d, w / 2, 0, -Math.PI / 2);
   wall(w, 0, d / 2, Math.PI);
 
-  // Exit door on the front wall.
+  // Exit door on the front wall (none upstairs in the museum).
+  const noExit = store.category === 'museum' && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
   door.rotation.y = Math.PI;
   door.position.set(EXIT.x, 1.2, d / 2 - 0.03);
-  scene.add(door);
+  if (!noExit) scene.add(door);
   const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 1).rotateX(-Math.PI / 2), mat(store.colors.awning));
   mat2.position.set(EXIT.x, 0.01, d / 2 - 0.6);
-  scene.add(mat2);
+  if (!noExit) scene.add(mat2);
 
   // Name on the back wall.
   const c = document.createElement('canvas');
@@ -299,13 +357,18 @@ export function buildInterior(store) {
   // Restaurants with a menu: nothing on display, you order at your table.
   // META COFFEE, bars and clubs: you order from the staff instead (no displays).
   const counterMenu = store.takeaway || store.category === 'bar' || store.category === 'club';
-  (isDining(store) || counterMenu ? [] : store.products).forEach((product, i) => {
+  // "displays": n puts each product on several stands (busy shops, so that
+  // visitors spread out instead of crowding one table).
+  const shown = store.displays > store.products?.length
+    ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
+    : store.products;
+  (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();
       spot.position.set(x, BAR_H + 0.03, z);
       spot.rotation.y = ry;
-      const model = productModel(product.model, product.color);
+      const model = productModel(product.model, product.color, product);
       model.scale.setScalar(1.6);
       spot.add(model);
       scene.add(spot);
@@ -338,7 +401,7 @@ export function buildInterior(store) {
     }
     const petKind = product.model.startsWith('pet:') ? product.model.slice(4) : null;
     // Pet shop: one animal sitting on a cushion on the table.
-    const model = petKind ? makeAnimal(petKind, product.color, product.accent || '#fff4e6').root : productModel(product.model, product.color);
+    const model = petKind ? makeAnimal(petKind, product.color, product.accent || '#fff4e6').root : productModel(product.model, product.color, product);
     if (petKind) {
       model.rotation.y = 0;
       const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 0.06, 18), mat(store.colors.awning));
@@ -350,7 +413,7 @@ export function buildInterior(store) {
     stand.add(model);
     // A second and third copy make the display look stocked.
     if (!petKind) for (const s of [-1, 1]) {
-      const copy = productModel(product.model, product.color);
+      const copy = productModel(product.model, product.color, product);
       copy.scale.setScalar(hanging ? 1.3 : 1.4);
       copy.position.set(0.5 * s, 0.95, hanging ? -0.05 : 0.1);
       stand.add(copy);
@@ -451,6 +514,14 @@ export function buildInterior(store) {
     sign.position.set(-w / 2 + 0.05, 2.9, 0);
     sign.rotation.y = Math.PI / 2;
     scene.add(sign);
+  } else if (store.category === 'museum') {
+    // Old Korean paintings on the walls, benches, and a docent at the desk.
+    const gallery = buildGallery(scene, ROOM, { box, block, mat }, store.floor || 1);
+    stations.paintings = gallery.looks;
+    stations.lift = gallery.lift;
+    seats.push(...gallery.seats);
+    clerk = gallery.clerk;
+    see = gallery.see;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any
@@ -743,7 +814,7 @@ export function buildInterior(store) {
       glass.position.set(0, 1.55, mz + 0.05);
       scene.add(glass);
       box(mw, 0.08, 0.42, 0, 0.72, mz + 0.25, '#fffaf0'); // shelf under the mirror
-      const props = { salon: ['#f29bb6', '#4f7fd6', '#e8c27a'], lens: ['#3fc6d0', '#8a5cc9', '#4a9a5c'], lips: ['#d94c5f', '#ff8fb1', '#a8325e'] }[store.workshop];
+      const props = { salon: [store.colors?.sign || '#f29bb6', store.colors?.awning || '#4f7fd6', '#e8c27a'], lens: ['#3fc6d0', '#8a5cc9', '#4a9a5c'], lips: lipProps(store) }[store.workshop];
       stations.mirror = [];
       for (let i = 0; i < n; i++) {
         const mx = (i - (n - 1) / 2) * (mw / n);
@@ -880,41 +951,97 @@ export function buildInterior(store) {
       block(0, sz + 2.6, 0.6, 0.6);
       stations.photo = [{ x: 0, z: sz, ry: 0, camZ: sz + 2.6, half: 0.4, solo: true }];
     } else if (store.workshop === 'tarot') {
-      // Starlight Tarot: a round table with a purple cloth, a crystal ball,
-      // candles and a fanned deck. The reader sits behind it, you sit facing
-      // her; the reading opens from your chair.
-      const tz = -d / 2 + 2.6;
-      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.06, 24), mat('#4b2f7a'));
-      top.position.set(0, 0.76, tz);
-      scene.add(top);
-      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.08, 0.7, 24, 1, true), mat('#5b3f8c'));
-      cloth.position.set(0, 0.4, tz);
-      scene.add(cloth);
-      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
-      ball.position.set(0, 0.98, tz - 0.25);
-      scene.add(ball);
-      box(0.2, 0.05, 0.2, 0, 0.81, tz - 0.25, '#d4a73a'); // its stand
-      for (const sx of [-0.65, 0.65]) {
-        box(0.07, 0.18, 0.07, sx, 0.88, tz - 0.1, '#f7f1e3');
-        const flame = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
-        flame.position.set(sx, 1.0, tz - 0.1);
-        scene.add(flame);
+      // A tarot café: dim and cosy, with one or two reading tables (store.readers),
+      // each with a reader behind it and two cushioned stools in front (for you
+      // and a friend). A curtain screens the tables from each other, and a sofa
+      // by the door is where people wait for their turn.
+      const cloth = store.tarotCloth || '#4b2f7a';
+      const n = Math.max(1, Math.min(2, store.readers || 1));
+      const tz = -d / 2 + 2.3;
+      const xs = n === 2 ? [-w / 4 - 0.1, w / 4 + 0.1] : [0];
+      stations.tarotReaders = [];
+      stations.tarotTables = [];
+      xs.forEach((tx, k) => {
+        const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.02, 28), mat(k % 2 ? '#7a3b4f' : '#5a3a6e'));
+        rug.position.set(tx, 0.01, tz + 0.2);
+        scene.add(rug);
+        const top = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.06, 24), mat(cloth));
+        top.position.set(tx, 0.76, tz);
+        scene.add(top);
+        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, 0.7, 24, 1, true), mat(cloth));
+        skirt.position.set(tx, 0.4, tz);
+        scene.add(skirt);
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
+        ball.position.set(tx, 0.96, tz - 0.3);
+        scene.add(ball);
+        box(0.18, 0.05, 0.18, tx, 0.81, tz - 0.3, '#d4a73a'); // its stand
+        for (const s2 of [-1, 1]) { // candles
+          box(0.06, 0.16, 0.06, tx + s2 * 0.55, 0.87, tz - 0.15, '#f7f1e3');
+          const flame = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
+          flame.position.set(tx + s2 * 0.55, 0.98, tz - 0.15);
+          scene.add(flame);
+        }
+        for (let q = 0; q < 7; q++) { // a fanned deck, face down
+          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, 0.8, tz + 0.25, '#2a1f4f');
+          card.rotation.y = (q - 3) * 0.12;
+        }
+        // A hanging lamp with a fabric shade, and a warm pool of light.
+        box(0.02, 0.9, 0.02, tx, h - 0.45, tz, '#3b2a20');
+        const shade = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.4, 16, 1, true), new THREE.MeshLambertMaterial({ color: store.colors.awning, side: THREE.DoubleSide, emissive: store.colors.awning, emissiveIntensity: 0.35 }));
+        shade.position.set(tx, h - 1.05, tz);
+        scene.add(shade);
+        const glow = new THREE.PointLight(0xffc98a, 7, 5.5);
+        glow.position.set(tx, h - 1.3, tz);
+        scene.add(glow);
+        // The reader's armchair, and two cushioned stools for you and a friend.
+        box(0.7, 0.45, 0.6, tx, 0.22, tz - 1.05, '#4a2f3f');
+        box(0.7, 0.7, 0.12, tx, 0.75, tz - 1.37, '#4a2f3f');
+        stations.tarotReaders.push({ x: tx, z: tz - 0.95, ry: 0 });
+        for (const [j, s2] of [[0, -1], [1, 1]]) {
+          const cx = tx + s2 * 0.48;
+          box(0.42, 0.42, 0.42, cx, 0.21, tz + 1.0, '#3a2c3f');
+          box(0.44, 0.08, 0.44, cx, 0.46, tz + 1.0, k % 2 ? '#e6a3b8' : '#c9a6ff'); // cushion
+          seats.push({ x: cx, z: tz + 1.0, ry: Math.PI, stand: [cx, tz + 1.85], tarot: true, table: k, side: j });
+        }
+        block(tx, tz, 1.8, 1.8);
+        block(tx, tz - 1.15, 0.8, 0.7);
+        stations.tarotTables.push({ x: tx, z: tz });
+      });
+      stations.tarotReader = stations.tarotReaders[0];
+      if (n === 2) { // a velvet curtain between the two tables, for privacy
+        const curtain = new THREE.Mesh(new THREE.PlaneGeometry(3.4, h - 0.3), new THREE.MeshLambertMaterial({ color: '#5a2340', side: THREE.DoubleSide }));
+        curtain.rotation.y = Math.PI / 2;
+        curtain.position.set(0, (h - 0.3) / 2, -d / 2 + 1.7);
+        scene.add(curtain);
+        box(0.06, 0.06, 3.5, 0, h - 0.3, -d / 2 + 1.7, '#d4a73a'); // its rail
+        block(0, -d / 2 + 1.7, 0.2, 3.4);
       }
-      for (let k = 0; k < 7; k++) { // a fanned deck, face down
-        const card = box(0.14, 0.01, 0.22, (k - 3) * 0.11, 0.8, tz + 0.3, '#2a1f4f');
-        card.rotation.y = (k - 3) * 0.12;
+      // The waiting sofa by the door, a low table with tea, and a bookshelf.
+      const sofaX = -w / 2 + 0.75;
+      box(0.75, 0.42, 2.4, sofaX, 0.21, 1.5, '#7a3b4f');
+      box(0.2, 0.9, 2.4, sofaX - 0.33, 0.6, 1.5, '#6a2f42');
+      for (const z of [0.7, 1.5, 2.3]) {
+        box(0.5, 0.08, 0.62, sofaX + 0.05, 0.46, z, '#f0d9a8'); // cushions
+        seats.push({ x: sofaX + 0.1, z, ry: Math.PI / 2, stand: [sofaX + 1.0, z], wait: true });
       }
-      const glow = new THREE.PointLight(0xc9a6ff, 6, 6);
-      glow.position.set(0, 1.6, tz);
-      scene.add(glow);
-      for (const sx of [-1, 1]) box(0.5, 0.45, 0.5, sx * 0, 0.22, tz + sx * 1.05, '#3a2c3f'); // stools
-      block(0, tz, 2, 2);
-      seats.push({ x: 0, z: tz + 1.05, ry: Math.PI, stand: [0, tz + 1.9], tarot: true });
-      stations.tarotReader = { x: 0, z: tz - 1.05, ry: 0 };
-      // Star stickers on the back wall.
+      block(sofaX - 0.05, 1.5, 0.8, 2.5);
+      box(0.6, 0.4, 1.0, sofaX + 1.35, 0.2, 1.5, '#5c3b2a');
+      box(0.16, 0.14, 0.16, sofaX + 1.35, 0.47, 1.3, '#f2e6d0'); // teapot
+      for (const z of [1.6, 1.75]) box(0.07, 0.07, 0.07, sofaX + 1.35, 0.44, z, '#f2e6d0'); // cups
+      block(sofaX + 1.35, 1.5, 0.6, 1.0);
+      box(0.4, 2.0, 1.4, -w / 2 + 0.25, 1.0, -0.6, '#4a3326'); // bookshelf
+      for (let r = 0; r < 4; r++) for (let q = 0; q < 5; q++) box(0.22, 0.32, 0.1, -w / 2 + 0.35, 0.3 + r * 0.48, -1.1 + q * 0.24, ['#c9a6ff', '#e6a3b8', '#ffd36e', '#7fb7a8', '#d98b5f'][(r + q) % 5]);
+      block(-w / 2 + 0.25, -0.6, 0.4, 1.4);
+      // Fairy lights along the back wall, and star stickers above them.
+      for (let k = 0; k < 18; k++) {
+        const x = -w / 2 + 0.5 + k * (w - 1) / 17;
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), new THREE.MeshBasicMaterial({ color: k % 3 ? '#ffd9a0' : '#ffb3c8' }));
+        bulb.position.set(x, h - 0.7 - Math.sin((k % 6) / 5 * Math.PI) * 0.25, -d / 2 + 0.06);
+        scene.add(bulb);
+      }
       for (let k = 0; k < 14; k++) {
         const star = new THREE.Mesh(new THREE.CircleGeometry(0.06 + (k % 3) * 0.03, 5), new THREE.MeshBasicMaterial({ color: k % 2 ? '#ffd36e' : '#c9a6ff' }));
-        star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.6, -d / 2 + 0.03);
+        star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
     } else if (store.workshop === 'claw') {
@@ -1153,6 +1280,98 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'kimchi') {
+      // Sonmat Kimchi School: a long low work table with cabbages, bowls of
+      // red seasoning and a salt sack; a big red rubber tub (고무대야) of
+      // salted cabbage; a row of onggi jars (장독) by the front wall. The
+      // teacher stands at the head of the table; students stand along it.
+      const tz = -d * 0.06, tw = Math.min(7, w - 8);
+      box(tw, 0.08, 1.5, 0, 0.7, tz, '#c9955a'); // table top
+      for (const lx of [-tw / 2 + 0.3, tw / 2 - 0.3]) for (const lz of [-0.55, 0.55]) box(0.1, 0.7, 0.1, lx, 0.35, tz + lz, '#8a5a3a');
+      block(0, tz, tw, 1.5);
+      const spots = [];
+      for (let k = 0; k < 3; k++) {
+        const x = (k - 1) * (tw / 3.2);
+        // On the table at each place: a cabbage half, a bowl of seasoning.
+        const cab = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat('#c8e6a0'));
+        cab.scale.set(1.5, 0.7, 0.9);
+        for (const sz of [-1, 1]) {
+          const c2 = cab.clone();
+          c2.position.set(x - 0.2, 0.86, tz + sz * 0.42);
+          scene.add(c2);
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.12, 16), mat('#f3eee4'));
+          bowl.position.set(x + 0.35, 0.8, tz + sz * 0.42);
+          scene.add(bowl);
+          const red = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16), mat('#c8321f'));
+          red.position.set(x + 0.35, 0.86, tz + sz * 0.42);
+          scene.add(red);
+          spots.push({ x, z: tz + sz * 1.25 });
+        }
+      }
+      stations.kimchi = spots;
+      stations.kimchiTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      // Salt sack at the far end.
+      const sack = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.55, 12), mat('#efe6d2'));
+      sack.position.set(tw / 2 + 0.7, 0.28, tz - 0.4);
+      scene.add(sack);
+      // The red rubber tub with salted cabbages in it.
+      const tub = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.7, 0.5, 24, 1, true), mat('#d8352a', { side: THREE.DoubleSide }));
+      tub.position.set(tw / 2 + 1.6, 0.25, tz + 0.7);
+      scene.add(tub);
+      const brine = new THREE.Mesh(new THREE.CircleGeometry(0.8, 24).rotateX(-Math.PI / 2), mat('#e6f0c8'));
+      brine.position.set(tw / 2 + 1.6, 0.4, tz + 0.7);
+      scene.add(brine);
+      block(tw / 2 + 1.6, tz + 0.5, 1.8, 2.2);
+      // Onggi jars of different sizes on a low stone ledge, front-left.
+      const jx0 = -w / 2 + 1.2, jz = d / 2 - 1.9;
+      box(Math.min(6, w / 2 - 2.5), 0.2, 1.1, jx0 + Math.min(6, w / 2 - 2.5) / 2 - 0.4, 0.1, jz, '#9a9488');
+      [0.5, 0.38, 0.55, 0.32, 0.45].forEach((r, k) => {
+        const jx = jx0 + k * 1.15;
+        if (jx > -2.2) return; // keep the door path clear
+        const pot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat('#5a3422'));
+        pot.scale.set(1, 1.15, 1);
+        pot.position.set(jx, 0.2 + r * 1.1, jz);
+        scene.add(pot);
+        const lidM = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.55, r * 0.6, 0.08, 16), mat('#4a2a1a'));
+        lidM.position.set(jx, 0.2 + r * 2.2, jz);
+        scene.add(lidM);
+      });
+      block(jx0 + 2.4, jz, 5.4, 1.2);
+    } else if (store.workshop === 'emblem') {
+      // Name tag workshops: the same emblems and name colours everywhere, a
+      // different room. "leather": a craft bench and a pegboard of stitched
+      // leather tags (Seongsu). "neon": glowing tube signs and a sticker wall
+      // (Hongdae).
+      const neon = store.theme === 'neon';
+      const wz = -d / 2 + 0.06;
+      if (neon) {
+        box(w - 1.2, 2.2, 0.04, 0, 1.75, wz, '#1b1830'); // dark back panel
+        const tubes = ['#ff3ea5', '#3ef0ff', '#ffe23e', '#9b5bff', '#3eff8b'];
+        for (let i = 0; i < 5; i++) {
+          const tube = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.05), new THREE.MeshBasicMaterial({ color: tubes[i] }));
+          tube.position.set((i - 2) * 1.4, 1.3 + (i % 2) * 0.7, wz + 0.05);
+          tube.rotation.z = (i % 2 ? 1 : -1) * 0.25;
+          scene.add(tube);
+        }
+        for (let i = 0; i < 18; i++) { // stickers on the side walls
+          const c = tubes[i % tubes.length];
+          box(0.04, 0.3, 0.3, -w / 2 + 0.1, 0.9 + (i % 3) * 0.55, -d / 2 + 1.2 + Math.floor(i / 3) * 0.55, c);
+        }
+        const glow = new THREE.PointLight(0xff4fd8, 6, 7);
+        glow.position.set(0, 2.2, -d / 2 + 1.2);
+        scene.add(glow);
+      } else {
+        box(w - 2, 1.8, 0.05, 0, 1.6, wz, '#c89b6d'); // pegboard
+        const hides = ['#8a5a3a', '#b5763c', '#5b3a26', '#d2a46c', '#3f2a1e'];
+        for (let i = 0; i < 14; i++) { // leather tags hanging on pegs
+          const tx = -w / 2 + 1.6 + (i % 7) * ((w - 3.2) / 6), ty = 1.15 + Math.floor(i / 7) * 0.8;
+          box(0.36, 0.22, 0.03, tx, ty, wz + 0.05, hides[i % hides.length]);
+          box(0.05, 0.05, 0.05, tx, ty + 0.16, wz + 0.05, '#d4b45a'); // brass ring
+        }
+        box(2.4, 0.08, 0.9, -w / 2 + 2, 0.82, -d / 2 + 1.6, '#9a6b42'); // craft bench
+        for (const lx of [-w / 2 + 0.9, -w / 2 + 3.1]) box(0.1, 0.8, 0.8, lx, 0.4, -d / 2 + 1.6, '#6b4a34');
+        block(-w / 2 + 2, -d / 2 + 1.6, 2.4, 0.9);
+      }
     } else if (store.workshop === 'fishmarket') {
       // Ice tables with fish on them.
       const fish = ['#8fa6b8', '#c7d1d9', '#e07a5f', '#5f7f9f', '#d9824f'];
@@ -1170,12 +1389,27 @@ export function buildInterior(store) {
         block(tx, tz, 2.7, 1.3);
       }
     }
-    if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
+    if (store.workshop === 'info') {
+      // Information Center: one long desk across the back of the room, right
+      // in front of you as you come in, with two guides behind it facing the
+      // door: game help on the left, the neighbourhood guide on the right.
+      const dz = -d / 2 + 2.4, dw = Math.min(5.6, w - 3);
+      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#fffaf0');
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // desk top
+      for (const [gx, color] of [[-dw / 4, '#f2a33a'], [dw / 4, '#3fa66b']]) {
+        box(0.5, 0.36, 0.04, gx, COUNTER_H + 0.42, dz + 0.3, color); // name plates on the desk
+        box(0.42, 0.28, 0.3, gx + 0.55, COUNTER_H + 0.3, dz - 0.15, '#3a3f4a'); // screens
+      }
+      block(0, dz, dw, 0.8);
+      clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
+      stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
+      block(dw / 4, dz - 0.85, 0.6, 0.5);
+    } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
       const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
     }
   }
   // Plants in the corners.
@@ -1283,5 +1517,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT };
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT, noExit };
 }

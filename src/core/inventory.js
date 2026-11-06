@@ -2,6 +2,8 @@
 // Later items will come from the shop or an account service; for testing,
 // the developer master code (typed in chat) adds every item.
 
+import { WEARABLES } from '../data/wearables.js';
+
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
   ko: '"산책"을 누르면 함께 다녀요. 가끔 똥을 싸니 바로 치워 주세요. 안 치우면 과태료가 나와요.',
@@ -22,11 +24,15 @@ const OUTFIT_DESC = {
   es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
 // outfit: the character model it puts on; price: coins at the clothes shop.
+// wear / off: the look it puts on and what taking it off changes back.
 function outfits(defs) {
   const out = {};
-  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price };
+  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price, wear: { model: id.slice(7) }, off: { model: 'basic' } };
   return out;
 }
+// Is this item on (every part of its wear matches the look)? A null part
+// doesn't count, except a skirt: trousers are only on when no skirt is.
+export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => (v == null ? k !== 'skirt' || !look?.skirt : look?.[k] === v));
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
   ko: '인형뽑기 경품이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
@@ -104,6 +110,8 @@ export const ITEMS = {
     'outfit-knight': [120, '🤍', { en: 'Puffer jacket', ko: '숏패딩', ja: 'ショートダウン', zh: '短款羽绒服', es: 'Chaqueta acolchada', ar: 'سترة منفوخة', vi: 'Áo phao ngắn', hi: 'पफ़र जैकेट', id: 'Jaket puffer' }],
     'outfit-mage': [150, '🖤', { en: 'Long padded coat', ko: '롱패딩', ja: 'ロングダウンコート', zh: '长款羽绒服', es: 'Abrigo acolchado largo', ar: 'معطف منفوخ طويل', vi: 'Áo phao dài', hi: 'लंबा पैडेड कोट', id: 'Mantel puffer panjang' }],
   }),
+  // The other clothes shops: clothes, trousers, shoes and accessories.
+  ...WEARABLES,
   // Claw machine prizes (core/claw-game.js).
   ...plushies({
     'plush-simurugi': ['😑', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
@@ -112,13 +120,16 @@ export const ITEMS = {
     'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
   }),
   // Pets: adopted at the pet shop for coins (price), or by code only (no price).
+  // Prices follow Korean pet-shop prices at 🪙1 = ₩1,000 (a toy poodle is
+  // about ₩400,000), so a pet costs far more than a perfume or a jacket.
   ...pets({
-    'pet-maltese': [30, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],
-    'pet-shiba': [30, '🐕', { kind: 'dog', name: '콩떡', rom: 'Kongtteok', color: '#e39a4f', accent: '#fff3e3', scale: 0.95 }, { en: 'Shiba · Kongtteok', ko: '시바견 · 콩떡', ja: '柴犬 · コントク', zh: '柴犬 · 豆糕' }],
-    'pet-cheesecat': [30, '🐱', { kind: 'cat', name: '레오', rom: 'Leo', color: '#ffc864', accent: '#fff4e6', scale: 0.9 }, { en: 'Cheese tabby · Leo', ko: '치즈 고양이 · 레오', ja: '茶トラ · レオ', zh: '橘猫 · 雷欧' }],
-    'pet-bluecat': [30, '🐈', { kind: 'cat', name: '아톰', rom: 'Atom', color: '#8e98a6', accent: '#d9dee5', scale: 0.9 }, { en: 'Russian Blue · Atom', ko: '러시안블루 · 아톰', ja: 'ロシアンブルー · アトム', zh: '俄罗斯蓝猫 · 阿童木' }],
-    'pet-chinchilla': [0, '🐭', { kind: 'chinchilla', name: '솜이', rom: 'Somi', color: '#b9b6b8', accent: '#f1eeee', scale: 0.8 }, { en: 'Chinchilla · Somi', ko: '친칠라 · 솜이', ja: 'チンチラ · ソミ', zh: '龙猫 · 棉棉' }],
-    'pet-guineapig': [0, '🐹', { kind: 'guineapig', name: '꿀떡', rom: 'Kkultteok', color: '#b4733f', accent: '#fff4e6', scale: 0.8 }, { en: 'Guinea pig · Kkultteok', ko: '기니피그 · 꿀떡', ja: 'モルモット · クルトク', zh: '豚鼠 · 蜜糕' }],
+    'pet-maltese': [400, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],
+    'pet-poodle': [400, '🐩', { kind: 'dog', name: '보리', rom: 'Bori', color: '#d9a066', accent: '#f3d9b8', scale: 0.85 }, { en: 'Toy poodle · Bori', ko: '토이푸들 · 보리', ja: 'トイプードル · ボリ', zh: '玩具贵宾 · 大麦' }],
+    'pet-shiba': [800, '🐕', { kind: 'dog', name: '콩떡', rom: 'Kongtteok', color: '#e39a4f', accent: '#fff3e3', scale: 0.95 }, { en: 'Shiba · Kongtteok', ko: '시바견 · 콩떡', ja: '柴犬 · コントク', zh: '柴犬 · 豆糕' }],
+    'pet-cheesecat': [250, '🐱', { kind: 'cat', name: '레오', rom: 'Leo', color: '#ffc864', accent: '#fff4e6', scale: 0.9 }, { en: 'Cheese tabby · Leo', ko: '치즈 고양이 · 레오', ja: '茶トラ · レオ', zh: '橘猫 · 雷欧' }],
+    'pet-bluecat': [500, '🐈', { kind: 'cat', name: '아톰', rom: 'Atom', color: '#8e98a6', accent: '#d9dee5', scale: 0.9 }, { en: 'Russian Blue · Atom', ko: '러시안블루 · 아톰', ja: 'ロシアンブルー · アトム', zh: '俄罗斯蓝猫 · 阿童木' }],
+    'pet-chinchilla': [400, '🐭', { kind: 'chinchilla', name: '솜이', rom: 'Somi', color: '#b9b6b8', accent: '#f1eeee', scale: 0.8 }, { en: 'Chinchilla · Somi', ko: '친칠라 · 솜이', ja: 'チンチラ · ソミ', zh: '龙猫 · 棉棉' }],
+    'pet-guineapig': [60, '🐹', { kind: 'guineapig', name: '꿀떡', rom: 'Kkultteok', color: '#b4733f', accent: '#fff4e6', scale: 0.8 }, { en: 'Guinea pig · Kkultteok', ko: '기니피그 · 꿀떡', ja: 'モルモット · クルトク', zh: '豚鼠 · 蜜糕' }],
     'pet-monkey': [0, '🐵', { kind: 'monkey', name: '바나', rom: 'Bana', color: '#8a5a3a', accent: '#f0d2b0', scale: 0.9 }, { en: 'Little monkey · Bana', ko: '아기 원숭이 · 바나', ja: '子ザル · バナ', zh: '小猴子 · 巴纳' }],
   }),
 };
@@ -151,7 +162,8 @@ const CODES = {
   '9db9efa6cfeea17db7046ae247534ec49bf53b49f8e953416db0037e44145c44': ['car', 'limo'], // open sports car + limousine
   '6a4ae2320b9c19a6c29ba13e9daeb1a1aad96880fa89d9b9dd813c0785b2446b': ['moto'], // the red sports motorbike and helmet
   '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
-  // Pets not sold yet: one code each.
+  // Pet codes (the chinchilla and guinea pig are also sold now; the monkey
+  // is code only, since monkeys are not sold as pets in Korean pet shops).
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
   bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],

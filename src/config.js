@@ -7,6 +7,8 @@ export const config = {
   net: {
     url: import.meta.env.VITE_REALTIME_URL || '',
     key: import.meta.env.VITE_REALTIME_PUBLIC_KEY || '',
+    // Google OAuth web client ID (public). Enables Google's own sign-in button.
+    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   },
   // Max position updates per second while walking / running (other players
   // interpolate in between). Nothing is sent while standing still except a
@@ -36,6 +38,10 @@ export const config = {
   // Inside a shop or café everyone in the room hears everyone.
   chatStreetRadius: 15,
   chatStreetSeconds: 5,
+  // Only players signed in with Google can send chat (guests can still read
+  // it and see a sign-in prompt). Turn on together with chat_settings.google_only
+  // in supabase/004_chat.sql, which enforces it on the server.
+  chatGoogleOnly: false,
   // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
   rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
 };

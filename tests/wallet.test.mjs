@@ -27,6 +27,15 @@ test('players from before the gift get it too, on top of what they had', () => {
   assert.equal(w.coins, 42 + WELCOME_COINS);
 });
 
+test('players who got the old 500 get the rest once when the gift goes up', () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ coins: 120, day: '', ads: 0, gift: 1 });
+  const w = new Wallet(cfg);
+  assert.equal(w.welcome(), WELCOME_COINS - 500);
+  assert.equal(w.coins, 120 + WELCOME_COINS - 500);
+  assert.equal(new Wallet(cfg).welcome(), 0, 'only once');
+});
+
 test('every coin in and out is logged with a note, or the current context', () => {
   const w = fresh();
   w.context = () => ({ at: { en: 'Cafe' } });

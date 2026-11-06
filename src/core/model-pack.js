@@ -3,12 +3,78 @@
 // a skeleton clone per character, and an AnimationMixer driven by our action
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
-import { SKATE_LIFT } from './rides.js';
+import { FOLK_DANCES, makeFan, makeSleeve } from './folk-dance.js';
+import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES } from '../data/appearance.js';
 import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
+import { buildOutfit } from './outfit-mesh.js';
+import { addSkirt } from './skirt-mesh.js';
+import { skirtById } from '../data/skirts.js';
+
+// Kick scooter and inline skate strokes, added to the idle clip per bone
+// (radians). pose(t, a): t the stroke phase, a 0 standing … 1 moving.
+// rate: strokes per second, kept slow whatever the speed so skating reads as
+// long glides rather than running.
+const STRIDE = {
+  kick: {
+    rate: 0.8,
+    pose(t, a) {
+      // sin: the kicking foot from forward (-) to pushed back (+); it pushes
+      // along the ground on the way back and lifts, knee bent, to come forward.
+      const s = Math.sin(t), push = Math.max(0, Math.cos(t)), back = Math.max(0, -Math.cos(t));
+      return {
+        spine: [0.2, 0, 0], head: [-0.1, 0, 0],
+        upperarml: [-1.05, 0, 0.12], upperarmr: [-1.05, 0, -0.12], lowerarml: [-0.3, 0, 0], lowerarmr: [-0.3, 0, 0],
+        // the standing leg bends as the other one reaches down to the ground
+        upperlegl: [-a * (0.1 + 0.25 * push), 0, 0], lowerlegl: [a * (0.2 + 0.5 * push), 0, 0], footl: [-a * (0.1 + 0.25 * push), 0, 0],
+        upperlegr: [a * (0.15 + 0.6 * s), 0, 0.15 * a], lowerlegr: [a * (0.05 + 1.0 * back), 0, 0],
+        y: -a * (0.015 + 0.05 * push),
+      };
+    },
+  },
+  board: {
+    rate: 1 / 3.2, // one push every few seconds, gliding in between
+    pose(t, a) {
+      // u: where we are in the cycle. The first PUSH of it is one kick of the
+      // back foot along the ground (like the scooter); then both feet on the
+      // board, knees soft, arms out a little for balance.
+      const PUSH = 0.32, u = (t / (Math.PI * 2)) % 1;
+      const k = u < PUSH ? (u / PUSH) * Math.PI * 2 : 0, w = u < PUSH ? Math.sin((u / PUSH) * Math.PI) : 0;
+      const s = -Math.cos(k), push = w * Math.max(0, Math.sin(k)), back = w * Math.max(0, -Math.sin(k));
+      const glide = a * (1 - w);
+      return {
+        spine: [a * (0.08 + 0.12 * w), 0, 0],
+        upperarml: [0, 0, -0.35 * glide], upperarmr: [0, 0, 0.35 * glide],
+        upperlegl: [-a * (0.15 + 0.2 * push), 0, 0], lowerlegl: [a * (0.3 + 0.45 * push), 0, 0], footl: [-a * (0.15 + 0.25 * push), 0, 0],
+        upperlegr: [a * (-0.15 * (1 - w) + w * (0.15 + 0.55 * s)), 0, 0.15 * a * w], lowerlegr: [a * (0.3 * (1 - w) + w * (0.05 + 0.9 * back)), 0, 0],
+        footr: [-0.15 * glide, 0, 0],
+        y: -a * (0.03 + 0.04 * push),
+      };
+    },
+  },
+  skates: {
+    rate: 0.5,
+    pose(t, a) {
+      const s = Math.sin(t), pl = Math.max(0, s), pr = Math.max(0, -s); // which leg is pushing out
+      const c = 0.5 * a; // knees bent
+      const leg = (p, side) => ({ // side: -1 left, 1 right (z out)
+        up: [-c + 0.55 * a * p, 0, side * 0.6 * a * p], low: [c * 1.7 - 0.5 * a * p, 0, 0], foot: [-c * 0.7, 0, 0],
+      });
+      const L = leg(pl, -1), R = leg(pr, 1);
+      return {
+        spine: [0.35 * a, 0.15 * a * s, 0],
+        head: [-0.2 * a, -0.12 * a * s, 0],
+        upperarml: [0.6 * a * s, 0, 0], upperarmr: [-0.6 * a * s, 0, 0],
+        upperlegl: L.up, lowerlegl: L.low, footl: L.foot,
+        upperlegr: R.up, lowerlegr: R.low, footr: R.foot,
+        y: -0.05 * a,
+      };
+    },
+  },
+};
 
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
@@ -35,7 +101,7 @@ function load(id) {
     // A failed load resolves to null and the character keeps its chibi body.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
-      .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); return g; })
+      .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); if (def.wear?.outfit) buildOutfit(g, def.wear.outfit, wearUv); return g; })
       .catch(() => null));
   }
   return cache.get(id);
@@ -56,7 +122,13 @@ function load(id) {
 //   The first matching rule wins. Roles: top, bottom, shoes, accent,
 //   accent2, accent3, skin (bared), cut (that part folded away), and hide
 //   (with cell '*': the whole mesh).
-export const WEAR_CELLS = { top: [0, 3], bottom: [1, 3], shoes: [2, 3], accent: [3, 3], accent2: [4, 3], accent3: [5, 3], skin: null, hide: null, cut: null };
+export const WEAR_CELLS = { top: [0, 3], bottom: [1, 3], shoes: [2, 3], accent: [3, 3], accent2: [4, 3], accent3: [5, 3], sole: [6, 3], stitch: [7, 3], skin: null, hide: null, cut: null };
+// The centre of the atlas cell a role is painted on (for outfit meshes).
+function wearUv(role) {
+  const A = PACK.atlas;
+  const [cx, cy] = role === 'skin' ? A.skin : WEAR_CELLS[role] || WEAR_CELLS.top;
+  return [(cx + 0.5) / A.cols, (cy + 0.5) / A.rows];
+}
 function applyWear(gltf, wear) {
   const A = PACK.atlas;
   const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
@@ -193,12 +265,14 @@ function dyedMaterial(id, src, look) {
     const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
     for (const [role, cell] of Object.entries(WEAR_CELLS)) {
       if (!cell) continue;
-      const hex = role === 'top' ? top : role === 'bottom' ? bottom : c[role];
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes : c[role];
       if (hex != null) paint.push([cell, hex]);
     }
   }
+  // Under a skirt the legs are bare: the trousers cells take the skin's.
+  const bareLegs = !!(wear?.outfit && skirtById(look.skirt));
   if (!paint.length && shirt == null) return null;
-  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : ''].join('|');
+  const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : '', bareLegs ? 'legs' : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
   let base = null;
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
@@ -242,6 +316,10 @@ function dyedMaterial(id, src, look) {
       px[i + 2] = Math.min(255, target.b * 255 * k);
     }
     g.putImageData(data, cx * cw, cy * ch);
+  }
+  if (bareLegs) {
+    const [sx, sy] = A.skin, [bx, by] = WEAR_CELLS.bottom;
+    g.putImageData(g.getImageData(sx * cw, sy * ch, cw, ch), bx * cw, by * ch);
   }
   const tex = new THREE.CanvasTexture(c);
   for (const k of ['flipY', 'colorSpace', 'magFilter', 'minFilter', 'wrapS', 'wrapT']) tex[k] = base.map[k];
@@ -404,6 +482,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
   });
+  // A skirt over the everyday clothes (its own mesh and patterned material).
+  const outfit = PACK.models[id].wear?.outfit;
+  if (outfit && look.skirt) addSkirt(m, look.skirt, outfit);
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
@@ -471,7 +552,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
   let scissors = null; // the hairdresser's
+  let folkProps = null; // fans or long sleeves for the palace performers
   const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
+  const lBones = Object.fromEntries(['hips', 'spine', 'head', 'upperlegl', 'lowerlegl', 'footl', 'upperlegr', 'lowerlegr', 'footr', 'upperarml', 'upperarmr', 'lowerarml', 'lowerarmr'].map((n) => [n, m.getObjectByName(n)]));
+  const lRest = new Map(Object.values(lBones).filter(Boolean).map((b) => [b, b.quaternion.clone()]));
+  let strideT = 0, strideAmp = 0; // kick scooter / inline skates: stroke phase and how much of it shows
   const dBones = { spine: m.getObjectByName('spine'), head: headBone, armL: m.getObjectByName('upperarml'), armR: m.getObjectByName('upperarmr'), foreL: m.getObjectByName('lowerarml'), foreR: m.getObjectByName('lowerarmr') };
   return {
     // Where held things go. The loader drops dots from names (handslot.r → handslotr).
@@ -479,7 +564,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -496,12 +581,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         if (emote.t >= emote.dur || (speed01 > 0.3 && !riding) || sit) emote = null;
       }
       let key;
-      // Standing on a board or scooter: idle pose, raised by the deck height.
-      // On inline skates: walk/run as usual, a little taller.
-      const board = riding === 'board', skates = riding === 'skates';
-      const seated = riding && !board && !skates;
+      // On a skateboard: glide, with a push of the back foot every few seconds.
+      // On a kick scooter: hands on the T-bar, one foot kicking the ground.
+      // On inline skates: crouched, long slow side pushes (see STRIDE).
+      const board = riding === 'board', kick = riding === 'kick', skates = riding === 'skates';
+      const seated = riding && !board && !kick && !skates;
       if (emote && !seated && speed01 < 0.3) key = emote.key;
-      else if (board) key = 'idle';
+      else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
       else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
       else if (speed01 > 0.55) key = 'run';
@@ -519,12 +605,32 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       const snipping = activity === 'snip' && key === 'idle'; // cutting hair
       if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
       if (scissors) scissors.visible = snipping;
+      const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
+      if (folk && !folkProps && slotL && slotR) {
+        folkProps = folk === 'tal' ? [makeSleeve(1.6), makeSleeve(1.6)] : folk === 'rope' ? [null, makeFan(1.5)] : [makeFan(1.8), makeFan(1.8)];
+        if (folkProps[0]) slotL.add(folkProps[0]);
+        slotR.add(folkProps[1]);
+      }
+      if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
       to(key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
-      const off = board ? { y: boardY } : skates ? { y: SKATE_LIFT } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
+      let stroke = null;
+      if (board || kick || skates) {
+        const S = globalThis.__stride?.[riding] || STRIDE[riding]; // debug: tune live
+        const moving = speed01 > 0.01 && !emote;
+        strideAmp += ((moving ? 1 : 0) - strideAmp) * Math.min(1, dt * 3);
+        if (strideAmp > 0.01) strideT += dt * S.rate * Math.PI * 2;
+        else strideT = 0;
+        stroke = S.pose(strideT, strideAmp);
+      }
+      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
-      if (dancing) {
+      if (folk) {
+        moves = FOLK_DANCES[folk](performance.now() / 1000);
+        bob = moves.bob || 0;
+        turn = moves.turn || 0;
+      } else if (dancing) {
         const { beat, phase } = beatNow();
         moves = globalThis.__dancePose || DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat); // debug override
         bob = moves.bob || 0;
@@ -536,10 +642,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
         m.position.y = PULLUP.hang; // corrected below, once the arms are posed
-      } else if (dancing) m.position.y = bob;
+      } else if (dancing || folk) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
+      // The clips don't key every bone: start the stroke bones from rest so
+      // the offsets below don't pile up frame after frame.
+      for (const [b, q] of lRest) b.quaternion.copy(q);
       mixer.update(dt);
+      // On a chair: thighs forward along the seat, shins down (the clip
+      // leaves the legs hanging straight).
+      if (key === 'sit' && !riding) {
+        const S = globalThis.__sitPose || PACK.sitPose; // debug: tune live
+        for (const [name, r] of Object.entries(S || {})) {
+          const bone = lBones[name];
+          if (bone) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
+        }
+      }
       // riding: true on a bike, 'car' driving, 'seat' a car passenger (the
       // plain sitting clip).
       if (seated && riding !== 'seat') {
@@ -547,6 +665,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [bone, r] of riding === 'car' ? carPose : ridePose) {
           const [x, y, z] = tune?.[bone.name] || r;
           bone.rotation.set(bone.rotation.x + x, bone.rotation.y + y, bone.rotation.z + z);
+        }
+      }
+      if (stroke) {
+        for (const [name, r] of Object.entries(stroke)) {
+          const bone = lBones[name];
+          if (bone && Array.isArray(r)) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
       }
       if (hanging) { // arms up to the bar, elbows bending as you pull
@@ -579,6 +703,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       }
       if (moves) {
         for (const [name, bone] of Object.entries(dBones)) {
+          const r = moves[name];
+          if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
+        }
+        for (const [name, bone] of [['legL', lBones.upperlegl], ['legR', lBones.upperlegr], ['kneeL', lBones.lowerlegl], ['kneeR', lBones.lowerlegr]]) {
           const r = moves[name];
           if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }

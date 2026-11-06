@@ -2,7 +2,9 @@
 // Tap a zone or store (on the map or in the list) to get walking guidance.
 import { t, localName, getLanguage } from '../core/i18n.js';
 
-export const CATEGORY_ICON = { club: '🎧', bar: '🍸', cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🕯️', restaurant: '🍢', workshop: '🧢', home: '🏠', library: '📚', school: '🏫', petshop: '🐶', park: '🌳', market: '🐟', play: '🎮', info: 'ℹ️' };
+import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+
+export { CATEGORY_ICON };
 
 // Does a store match the search text? Looks at its names in every language,
 // tagline, category and product names, ignoring case and spaces.
@@ -23,6 +25,7 @@ export const DISTRICT_NAME = {
   seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو', vi: 'Seongsu', hi: 'सोंगसू' },
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
+  songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
 };
@@ -35,7 +38,7 @@ export function districtCentres(map) {
       if (b.d !== id) continue;
       for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     }
-    if (x0 < x1) out.push({ id, x: (x0 + x1) / 2, z: (z0 + z1) / 2, name: DISTRICT_NAME[id] || { en: id } });
+    if (x0 < x1) out.push({ id, x: (x0 + x1) / 2, z: (z0 + z1) / 2, name: DISTRICT_NAME[id] || { en: id.charAt(0).toUpperCase() + id.slice(1) } });
   }
   return out;
 }
@@ -91,6 +94,7 @@ export class MapView {
 
   hide() {
     this.open = false;
+    this._setSearching(false);
     this.root.hidden = true;
     this.setTaxi(false);
   }
@@ -197,7 +201,7 @@ export class MapView {
       g.strokeStyle = s.store.colors.sign;
       g.lineWidth = 3 * dpr;
       g.stroke();
-      g.fillText(s.store.icon || CATEGORY_ICON[s.store.category] || '🛍️', sx, sy + 1);
+      g.fillText(storeIcon(s.store), sx, sy + 1);
       if (this.view.scale > 0.9 * dpr) {
         g.fillStyle = '#4a3f35';
         g.font = `700 ${11 * dpr}px system-ui, sans-serif`;
@@ -379,6 +383,15 @@ export class MapView {
       // on compositionend/keyup, so listen to those as well.
       for (const ev of ['input', 'compositionend', 'keyup', 'change']) this.search.addEventListener(ev, onType);
       this.search.addEventListener('keydown', (e) => e.stopPropagation()); // don't walk while typing
+      // Phones: while typing, the on-screen keyboard covers the bottom of the
+      // screen, where the results list sits. Hide the map and show the results
+      // right under the search box instead, sized to the space above the keyboard.
+      this.search.addEventListener('focus', () => this._setSearching(true));
+      this.search.addEventListener('blur', () => {
+        // Wait a moment so a tap on a result lands before the layout changes back.
+        clearTimeout(this._blurTimer);
+        this._blurTimer = setTimeout(() => { if (document.activeElement !== this.search) this._setSearching(false); }, 200);
+      });
       this.chips = document.createElement('div');
       this.chips.className = 'map-cats';
       this.controls.append(this.search, this.chips);
@@ -394,14 +407,59 @@ export class MapView {
     else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
-    const cats = [...new Set(this.stores.map((s) => s.store.category))];
-    this.chips.replaceChildren(...[null, ...cats].map((c) => {
+    // Categories wrap onto rows (sideways scrolling was hard with a mouse and
+    // easy to miss on a phone). Folded, only the biggest few show, plus the
+    // chosen one and a "+n" chip that unfolds the rest.
+    const n = new Map();
+    for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
+    const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
+    const FOLDED = 5;
+    const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
+    const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');
-      b.className = 'map-cat' + (c === this.category ? ' on' : '');
-      b.textContent = c ? `${CATEGORY_ICON[c] || '🛍️'} ${t('cat.' + c)}` : t('map.all');
-      b.onclick = () => { this.category = c; this._renderList(); this.draw(); };
+      b.className = 'map-cat' + (on ? ' on' : '') + cls;
+      b.textContent = text;
+      b.onclick = run;
       return b;
-    }));
+    };
+    const pick = (c) => () => { this.category = c; this._renderList(); this.draw(); };
+    const toggle = (open) => () => { this.catsOpen = open; this._renderList(); };
+    this.chips.replaceChildren(
+      ...[null, ...shown].map((c) => chip(c ? `${CATEGORY_ICON[c] || '🛍️'} ${t('cat.' + c)}` : t('map.all'), c === this.category, pick(c))),
+      ...(shown.length < cats.length ? [chip(`+${cats.length - shown.length} ▾`, false, toggle(true), ' more')] : this.catsOpen ? [chip('▴', false, toggle(false), ' more')] : []),
+    );
+  }
+
+  // Phone search mode: the results fill the card under the search box, and
+  // the panel shrinks to the visible area above the keyboard (visualViewport).
+  _setSearching(on) {
+    const narrow = globalThis.matchMedia?.('(max-width: 700px)').matches;
+    on = !!on && !!narrow && this.open;
+    this.root.classList.toggle('map-searching', on);
+    const vv = globalThis.visualViewport;
+    if (on && vv && !this._fitViewport) {
+      // Android: the back button hides the keyboard but leaves the search box
+      // focused (no blur), so watch the height: once the keyboard has come up
+      // and then gone away again, leave search mode and show the map.
+      let full = vv.height, keyboard = false;
+      this._fitViewport = () => {
+        full = Math.max(full, vv.height);
+        if (vv.height < full * 0.75) keyboard = true;
+        else if (keyboard && vv.height > full * 0.9) { this.search.blur(); return; }
+        this.root.style.top = `${vv.offsetTop}px`;
+        this.root.style.height = `${vv.height}px`;
+        this.root.style.bottom = 'auto';
+      };
+      vv.addEventListener('resize', this._fitViewport);
+      vv.addEventListener('scroll', this._fitViewport);
+      this._fitViewport();
+    } else if (!on && this._fitViewport) {
+      vv?.removeEventListener('resize', this._fitViewport);
+      vv?.removeEventListener('scroll', this._fitViewport);
+      this._fitViewport = null;
+      this.root.style.top = this.root.style.height = this.root.style.bottom = '';
+    }
+    if (!on && this.open) { this._resize(); this.draw(); }
   }
 
   _renderList() {
@@ -462,7 +520,7 @@ export class MapView {
     }
     const byDist = [...shops].sort((a, b) => Math.hypot(a.door.x - me.x, a.door.z - me.z) - Math.hypot(b.door.x - me.x, b.door.z - me.z));
     for (const s of byDist) {
-      row(CATEGORY_ICON[s.store.category] || '🛍️', '#fffaf0', localName(s.store.name, lang),
+      row(storeIcon(s.store), '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
           this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
         });

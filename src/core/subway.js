@@ -169,6 +169,76 @@ export function signTexture(ko, sub2, { bg = '#f4f5f7', fg = '#22252b', num = nu
   t.anisotropy = 4;
   return t;
 }
+// A platform station board in the Seoul style: the station name large in the
+// middle, the line colour as a band, and along the bottom the previous
+// station (left) and the next one (right, with an arrow).
+export function nameBoardTexture({ ko = '', en = '', code = '', line = '#00a84d', next = null, prev = null }) {
+  const w = 1024, h = 288;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+  g.fillStyle = line; g.fillRect(0, 196, w, 92); // line-colour band
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (code) { // station number in a line-colour ring
+    g.lineWidth = 10; g.strokeStyle = line; g.fillStyle = '#fff';
+    g.beginPath(); g.arc(150, 84, 52, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = '#22252b'; g.font = '800 44px system-ui, sans-serif';
+    g.fillText(String(code), 150, 87);
+  }
+  g.fillStyle = '#22252b';
+  g.font = '900 92px system-ui, sans-serif';
+  g.fillText(ko, w / 2, 80, 560);
+  g.font = '600 40px system-ui, sans-serif';
+  g.fillStyle = '#555b66';
+  g.fillText(en, w / 2, 152, 560);
+  g.fillStyle = '#ffffff';
+  if (next) {
+    g.textAlign = 'right'; g.font = '800 46px system-ui, sans-serif';
+    g.fillText(`${next.ko} ▶`, w - 28, 228, w / 2 - 40);
+    g.font = '600 28px system-ui, sans-serif';
+    g.fillText(`다음 역 Next · ${next.en}`, w - 72, 266, w / 2 - 90);
+  }
+  if (prev) {
+    g.textAlign = 'left'; g.font = '700 38px system-ui, sans-serif';
+    g.globalAlpha = 0.8;
+    g.fillText(prev.ko, 28, 228, w / 2 - 40);
+    g.font = '600 26px system-ui, sans-serif';
+    g.fillText(`${prev.en} · 이전 역 Prev`, 28, 266, w / 2 - 40);
+    g.globalAlpha = 1;
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+// Hanging sign at the platform entrance: one direction on each half, each
+// on the side its track is on as you look at it.
+export function directionSignTexture(left, right, line) {
+  const w = 1280, h = 160;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2f3540'; g.fillRect(0, 0, w, h);
+  g.fillStyle = line; g.fillRect(w / 2 - 3, 16, 6, h - 32);
+  g.textBaseline = 'middle';
+  const half = (t, x, align) => {
+    if (!t) return;
+    g.textAlign = align;
+    g.fillStyle = '#ffd34d'; g.font = '900 50px system-ui, sans-serif';
+    g.fillText(t[0], x, 56, w / 2 - 60);
+    g.fillStyle = '#ffffff'; g.font = '600 34px system-ui, sans-serif';
+    g.fillText(t[1], x, 116, w / 2 - 60);
+  };
+  half(left, 30, 'left');
+  half(right, w - 30, 'right');
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 function signMesh(tex, w, h) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
 }
@@ -338,6 +408,24 @@ export function buildStation(store, ROOM) {
     box(0.04, 0.6, 1.1, -w / 2 + 0.67, 1.25, z, '#d8ecff');
   }
   block(-w / 2, -3.4, -w / 2 + 0.75, 3.4);
+  // Two drink vending machines against the north wall of the concourse.
+  const vending = [];
+  {
+    const cans = ['#2b2b2b', '#c8a27a', '#f2c230', '#6b3b22', '#1fb34f', '#ff8a1c', '#7fd1ff', '#c9a15a', '#e8f4ff'];
+    for (const [k, vx] of [-15.6, -14.3].entries()) {
+      const vz = -d / 2 + 0.45;
+      box(1.15, 1.95, 0.8, vx, 0.975, vz, k ? '#2f6fd0' : '#d8342c');
+      box(0.95, 1.0, 0.04, vx, 1.35, vz + 0.41, new THREE.MeshBasicMaterial({ color: '#f7fbff' })); // lit window
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        box(0.16, 0.24, 0.04, vx - 0.3 + c * 0.3, 1.05 + r * 0.32, vz + 0.44, new THREE.MeshBasicMaterial({ color: cans[(r * 3 + c + k * 4) % cans.length] }));
+      }
+      box(0.7, 0.18, 0.06, vx, 0.35, vz + 0.42, '#1b1d22'); // the slot drinks drop into
+      box(0.16, 0.3, 0.05, vx + 0.42, 0.85, vz + 0.42, '#c9ced6'); // coin slot and buttons
+      block(vx - 0.6, vz - 0.4, vx + 0.6, vz + 0.4);
+      vending.push({ x: vx, z: vz + 0.95 });
+    }
+    sign(signTexture('음료 자판기', 'Drinks · 🪙 1', { line, w: 512, h: 128 }), 2.4, 0.6, -14.95, 2.35, -d / 2 + 0.03, 0);
+  }
   sign(signTexture(`${name.ko || ''}역 · ${lineName.ko || ''}`, `${name.en || ''} Station · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 6, 1, -w / 2 + 0.02, 2.9, 0, Math.PI / 2);
 
   // Gates: waist-high cabinets across the hall; each lane has red flaps. You
@@ -409,12 +497,43 @@ export function buildStation(store, ROOM) {
   for (const [t, tr] of TRACKS.entries()) {
     const s = Math.sign(tr.z);
     // Station name boards on the pillars, facing each track.
-    for (const x of [5, 16]) sign(signTexture(`${name.ko || ''}${code}`, `${name.en || ''} · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 4.2, 0.7, x, 3.0, s * 0.37, s > 0 ? 0 : Math.PI);
+    // (Facing a board, the trains on that side run off to your right, so the
+    // next station is always on the right.)
+    const next = t === 0 ? towards.up : towards.down, prev = t === 0 ? towards.down : towards.up;
+    const board = nameBoardTexture({ ko: name.ko || '', en: `${name.en || ''} · ${lineName.en || ''}`, code: sub.code, line, next, prev });
+    for (const x of [5, 16]) sign(board, 3.6, 1.01, x, 2.75, s * 0.37, s > 0 ? 0 : Math.PI);
     // Over the screen doors: which way this track goes.
     const to = t === 0 ? towards.up : towards.down;
     const label = t === 0 ? ['상행', 'Up'] : ['하행', 'Down'];
     const txt = to ? [`${label[0]} · ${to.ko} 방면`, `${label[1]} · for ${to.en}`] : [`${label[0]}`, 'Not in service'];
     for (const x of [platC - 8, platC + 8]) sign(signTexture(txt[0], txt[1], { bg: '#2f3540', fg: '#ffffff', line, w: 640, h: 128 }), 3.5, 0.7, x, 3.2, s * (DOOR_Z - 0.4), s > 0 ? Math.PI : 0);
+  }
+
+  // Hanging sign where you step onto the platform: which side goes where.
+  // Facing east (in from the gates) the up track (south, +z) is on the right.
+  {
+    const dirTxt = (t) => {
+      const to = t === 0 ? towards.up : towards.down;
+      const l = t === 0 ? ['상행', 'Up'] : ['하행', 'Down'];
+      return to ? [`${l[0]} · ${to.ko} 방면`, `${l[1]} · for ${to.en}`] : [l[0], 'Not in service'];
+    };
+    const up = dirTxt(0), down = dirTxt(1);
+    const sw = 7.2, sh = 0.9, sy = 3.8;
+    const hang = (sx, front, back) => {
+      sign(front, sw, sh, sx, sy, 0, -Math.PI / 2); // read walking east
+      sign(back, sw, sh, sx + 0.04, sy, 0, Math.PI / 2); // read walking west
+      for (const z of [-sw / 2 + 0.4, sw / 2 - 0.4]) box(0.04, h - sy - sh / 2, 0.04, sx + 0.02, (h + sy + sh / 2) / 2, z, '#9aa1ab');
+    };
+    // Just past the gates, over the platform end.
+    hang(GATE_X + 2.6,
+      directionSignTexture(['◀ ' + down[0], down[1]], [up[0] + ' ▶', up[1]], line),
+      directionSignTexture(['◀ 나가는 곳', 'Way out · gates and stairs'], null, line));
+    // In the concourse before the gates: where the trains are, and the way out.
+    const upTo = towards.up, downTo = towards.down;
+    hang(GATE_X - 5,
+      directionSignTexture(['타는 곳 · Trains', '개찰구 지나서 · through the gates'],
+        upTo ? [`상행 ${upTo.ko} · 하행 ${downTo.ko} ▶`, `Up for ${upTo.en} · Down for ${downTo.en}`] : ['▶', ''], line),
+      directionSignTexture(['◀ 나가는 곳 · Exit 1, 2', '계단 위로 · stairs up to the street'], null, line));
   }
 
   // LED board over the gates, facing the concourse.
@@ -498,12 +617,27 @@ export function buildStation(store, ROOM) {
     animate,
     subway: Object.assign(hall, {
       stairs,
+      vending,
       // Track t: the doors are open now, and for how much longer (s).
       doorsOpen: (t) => (status[t].phase === 'open' && status[t].left > 0.3 ? status[t].left : 0),
       train: { get phase() { return status[0].phase; } },
     }),
   };
 }
+
+// Drinks from the station vending machines: all cheap (1 coin), all
+// non-alcoholic, so each one works like a coffee (sips that refill stamina).
+export const VENDING_DRINKS = [
+  { id: 'black-coffee', icon: '☕', price: 1, name: { ko: '블랙커피', en: 'Black coffee', ja: 'ブラックコーヒー', zh: '黑咖啡' } },
+  { id: 'milk-coffee', icon: '☕', price: 1, name: { ko: '밀크커피', en: 'Milk coffee', ja: 'ミルクコーヒー', zh: '牛奶咖啡' } },
+  { id: 'yuja-tea', icon: '🍋', price: 1, name: { ko: '유자차', en: 'Yuja tea', ja: 'ゆず茶', zh: '柚子茶' } },
+  { id: 'hot-choco', icon: '🍫', price: 1, name: { ko: '핫초코', en: 'Hot chocolate', ja: 'ホットチョコ', zh: '热巧克力' } },
+  { id: 'energy', icon: '⚡', price: 1, name: { ko: '에너지음료', en: 'Energy drink', ja: 'エナジードリンク', zh: '能量饮料' } },
+  { id: 'vitamin', icon: '🍊', price: 1, name: { ko: '비타민음료', en: 'Vitamin drink', ja: 'ビタミンドリンク', zh: '维生素饮料' } },
+  { id: 'cider', icon: '🥤', price: 1, name: { ko: '사이다', en: 'Lemon-lime soda (cider)', ja: 'サイダー', zh: '汽水' } },
+  { id: 'barley-tea', icon: '🍵', price: 1, name: { ko: '보리차', en: 'Barley tea', ja: '麦茶', zh: '大麦茶' } },
+  { id: 'water', icon: '💧', price: 1, name: { ko: '생수', en: 'Bottled water', ja: 'ミネラルウォーター', zh: '矿泉水' } },
+];
 
 // ---------- Inside a train car ----------
 

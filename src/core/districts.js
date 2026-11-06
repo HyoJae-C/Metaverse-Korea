@@ -18,13 +18,14 @@ const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
 
 export function mergeDistricts(parts, links = []) {
-  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [] };
+  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [] };
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
     const [dx, dz] = offset;
     for (const k of LISTS) for (const item of map[k] || []) out[k].push({ ...item, p: shiftPoly(item.p, dx, dz), d: id });
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
+    for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js
     out.meta.districts.push({ id, offset: [dx, dz] });
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
@@ -77,4 +78,29 @@ function inPoly(x, z, p) {
 export function placeOf(item, center, latLonToLocal) {
   if (Array.isArray(item.at) && item.at.length === 2 && item.at.every(Number.isFinite)) return item.at;
   return latLonToLocal(center, item.anchor.lat, item.anchor.lon);
+}
+
+// Which district a point is in: the one whose buildings' bounding box (plus
+// a margin) holds it, else the one with the nearest box centre. `map` is a
+// joined map (mergeDistricts); a single-file map has no districts (null).
+export function districtBoxes(map) {
+  const out = [];
+  for (const { id } of map?.meta?.districts || []) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const b of map.buildings || []) {
+      if (b.d !== id) continue;
+      for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    }
+    if (x0 < x1) out.push({ id, x0, x1, z0, z1 });
+  }
+  return out;
+}
+export function districtAt(boxes, x, z, margin = 40) {
+  let best = null, bd = Infinity;
+  for (const b of boxes) {
+    if (x >= b.x0 - margin && x <= b.x1 + margin && z >= b.z0 - margin && z <= b.z1 + margin) return b.id;
+    const d = Math.hypot(x - (b.x0 + b.x1) / 2, z - (b.z0 + b.z1) / 2);
+    if (d < bd) { bd = d; best = b.id; }
+  }
+  return best;
 }

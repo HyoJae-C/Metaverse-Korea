@@ -9,7 +9,7 @@
       "size": "medium",
       "name": { "ko": "숲길 아파트", "en": "Forest Lane Apartments" },
       "tagline": { "en": "Your apartment: decorate it your way", "ko": "나만의 아파트, 마음대로 꾸며 보세요" },
-      "at": [173.4, 266],
+      "at": [97.8, 84.5],
       "colors": { "sign": "#3d6b4f", "awning": "#cfe8d5", "accent": "#f6f1e7" },
       "products": []
     },
@@ -20,7 +20,7 @@
       "size": "small",
       "name": { "ko": "햇살 빌라", "en": "Sunny Villa" },
       "tagline": { "en": "A cosy villa room (a Korean low-rise flat)", "ko": "아늑한 빌라 원룸" },
-      "at": [76.6, 266],
+      "at": [108.5, 84.5],
       "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
       "products": []
     }

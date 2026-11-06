@@ -2,79 +2,45 @@
 // Animations" 1.1 pack, both by Kay Lousberg (CC0, https://kaylousberg.com).
 // Capes, hats, helmets and the quiver are stripped from the GLBs, and only
 // the clips we use are kept (scripts/models/build-kaykit2.mjs).
-// Everyday outfits: [mesh, 'col,row' atlas cell ('*' any), role, yMin, yMax].
-// Roles are listed in core/model-pack.js (WEAR_CELLS).
-const wear = ({ rules, colors }) => ({ rules, colors: { shoes: 0xf1eee8, accent: 0x3b3a40, ...colors } });
-// The rogue's legs: trousers down to the ankle, then sneakers.
-const ROGUE_LEGS = [['Leg', '7,1', 'bottom'], ['Leg', '3,2', 'bottom', -0.45], ['Leg', '3,2', 'shoes']];
-// A T-shirt and jeans: short sleeves (gloves and bracers bared), the tunic's
-// hem and belt become the top of the trousers.
-const TEE = {
-  rules: [
-    ['Arm', '0,1', 'top'], ['Arm', '5,0', 'top'], ['Arm', '1,1', 'skin'], ['Arm', '7,2', 'skin'], ['Arm', '3,0', 'skin'],
-    ['Body', '0,1', 'top', -0.45], ['Body', '0,1', 'bottom'], ['Body', '1,1', 'top'], ['Body', '5,0', 'top'],
-    ['Body', '6,0', 'bottom'], ['Body', '3,0', 'bottom'], ['Body', '7,1', 'bottom'],
-    ...ROGUE_LEGS,
-  ],
-};
-// A denim jacket with a white T-shirt collar showing.
-const JACKET = {
-  colors: { top: 0x7f9fcc, accent: 0xf4f1ea },
-  rules: [
-    ['Arm', '0,1', 'top'], ['Arm', '5,0', 'top'], ['Arm', '1,1', 'top'], ['Arm', '7,2', 'top'], ['Arm', '3,0', 'top'],
-    ['Body', '0,1', 'top', -0.45], ['Body', '0,1', 'bottom'], ['Body', '1,1', 'accent'], ['Body', '5,0', 'top'],
-    ['Body', '6,0', 'bottom'], ['Body', '3,0', 'bottom'], ['Body', '7,1', 'bottom'],
-    ...ROGUE_LEGS,
-  ],
-};
-// A grey hoodie, hood up (the ninja's mask is left off).
-const HOODIE = {
-  colors: { top: 0x9d9fa6 },
-  rules: [
-    ['Mask', '*', 'hide'],
-    ['Head', '1,1', 'top'],
-    ...JACKET.rules.map((r) => (r[0] === 'Body' && r[1] === '1,1' ? ['Body', '1,1', 'top'] : r)),
-  ],
-};
-// A black long padded coat (롱패딩) over the mage's robe, sneakers below.
-const LONG_PADDING = {
-  colors: { top: 0x2b2b31, accent: 0x55565e },
-  rules: [
-    ['Arm', '0,1', 'top'], ['Arm', '4,0', 'top'],
-    ['Body', '0,1', 'top'], ['Body', '4,0', 'top'], ['Body', '5,0', 'top'], ['Body', '0,2', 'top'], ['Body', '2,2', 'top'],
-    ['Body', '7,1', 'accent'], ['Body', '3,0', 'accent'],
-    ...ROGUE_LEGS,
-  ],
-};
-// A short puffer jacket on the knight: the plates become the padding.
-const PUFFER = {
-  colors: { top: 0xe8e2d6, accent: 0x6b6a70 },
-  rules: [
-    ['Arm', '*', 'skin', 0.72, Infinity, 'hand'], ['Arm', '*', 'top'],
-    ['Body', '3,0', 'top', -0.5], ['Body', '3,0', 'bottom'], ['Body', '7,0', 'top'], ['Body', '7,1', 'accent'],
-    ['Body', '0,1', 'cut'], ['Body', '1,1', 'cut'], ['Body', '2,1', 'bottom'], ['Body', '6,0', 'bottom'], // (no rosette)
-    ['Leg', '7,0', 'cut'], ['Leg', '3,0', 'bottom', -0.55], ['Leg', '3,0', 'shoes'], ['Leg', '*', 'bottom'], // (no knee plates)
-  ],
-};
-// A sleeveless sports top and shorts on the barbarian, bare calves.
-const TANK = {
-  rules: [
-    ['Arm', '2,1', 'skin'], ['Arm', '3,0', 'skin'], ['Arm', '5,1', 'skin'], ['Arm', '6,0', 'skin'], ['Arm', '7,2', 'skin'],
-    ['Body', '0,0', 'top'], ['Body', '7,0', 'cut'], ['Body', '6,1', 'top'], ['Body', '1,3', 'top'],
-    ['Body', '2,1', 'bottom'], ['Body', '3,0', 'bottom'], ['Body', '6,0', 'bottom'], ['Body', '7,1', 'bottom'],
-    ['Leg', '2,1', 'bottom'], ['Leg', '7,1', 'bottom'], ['Leg', '6,1', 'accent2'], ['Leg', '3,1', 'shoes'],
-    ['Leg', '3,2', 'skin', -0.45], ['Leg', '3,2', 'shoes'],
-  ],
-  colors: { accent2: 0xf4f1ea },
-};
-// A casual shirt with a bandana on the ranger.
-const SHIRT = {
-  rules: [
-    ['Arm', '1,1', 'top'], ['Arm', '3,0', 'top'], ['Arm', '6,0', 'top'], ['Arm', '7,0', 'top'], ['Arm', '7,2', 'skin'],
-    ['Body', '5,0', 'top'], ['Body', '6,0', 'top'], ['Body', '3,0', 'bottom'], ['Body', '7,0', 'bottom'], ['Body', '7,1', 'bottom'],
-    ...ROGUE_LEGS,
-  ],
-};
+// Everyday clothes: each model's own torso, legs and sleeves are swapped for
+// modern clothes built in code (core/outfit-mesh.js), keeping its head.
+// outfit: the shape (hem height, sleeve length, collar, pockets...);
+// colors: fixed colours for roles ("top" and "bottom" default to the look's
+// T-shirt and trouser colours); wear: atlas rules for what is left of the
+// model's head (core/model-pack.js, applyWear), e.g. no earrings.
+const HANDS = [['Head', '3,0', 'cut']]; // no earrings
+const wear = ({ outfit, colors, rules = [] }) => ({
+  outfit,
+  rules: [...rules, ...HANDS],
+  colors: { shoes: 0xffffff, sole: 0x5d5952, accent: 0x3b3a40, stitch: 0x1d1d22, ...colors },
+});
+// A crew-neck T-shirt, jeans and sneakers.
+const TEE = { outfit: { hem: 0.6, sleeve: 0.42, collar: 'top' } };
+// A denim jacket, open over a white T-shirt.
+const JACKET = { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', bulk: 0.012 }, colors: { top: 0x7f9fcc, accent: 0xf4f1ea } };
+// A grey hoodie with a front pocket, hood up.
+const HOODIE = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'top', pocket: 'accent', bulk: 0.012 }, colors: { top: 0x9d9fa6, accent: 0x8a8c93 }, rules: [['Head', '1,1', 'top']] };
+// A black long padded coat (롱패딩) down to the knees.
+const LONG_PADDING = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', quilt: true, bulk: 0.03, zip: 'accent', collar: 'top' }, colors: { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 } };
+// A short cream puffer jacket.
+const PUFFER = { outfit: { hem: 0.5, sleeve: 0.84, cuff: 'top', quilt: true, bulk: 0.045, zip: 'accent', collar: 'top' }, colors: { top: 0xe8e2d6, accent: 0x8d8a84, stitch: 0xb9b2a5 } };
+// A sleeveless sports top, shorts and white socks.
+const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, colors: { accent2: 0xf4f1ea } };
+// A short-sleeved shirt with a collar and a button placket.
+const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
+
+// Hanbok (rented at the hanbok shop, data/hanbok.js). A short jeogori over a
+// high chima (look.skirt), with a white collar (dongjeong), coloured cuffs
+// (kkeutdong) and a ribbon (goreum); a longer jeogori over baji trousers;
+// and a long durumagi overcoat. "bottom" is the baji's own colour.
+const IVORY = 0xfbf6ea;
+const JEOGORI = { outfit: { hem: 0.86, sleeve: 0.84, cuff: 'accent', collar: 'accent2', goreum: 'accent', bulk: 0.006 }, colors: { accent2: IVORY } };
+const BAJI = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent2', goreum: 'accent', bulk: 0.014 }, colors: { accent2: IVORY } };
+const DURUMAGI = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', collar: 'accent2', goreum: 'accent', bulk: 0.02 }, colors: { accent2: IVORY } };
+
+// Colour variants of a garment: { id: colours } -> model defs on one GLB.
+const variants = (glb, emoji, base, list, extra = {}) => Object.fromEntries(Object.entries(list).map(([id, colors]) => [id,
+  { url: `models/kaykit2/${glb}.glb`, emoji, wear: wear({ ...base, colors: { ...base.colors, ...colors } }), ...extra }]));
 
 export default {
   id: 'kaykit2',
@@ -90,8 +56,48 @@ export default {
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧢', wear: wear(HOODIE), hood: true },
     mage: { url: 'models/kaykit2/mage.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
     knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
-    barbarian: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
-    ranger: { url: 'models/kaykit2/ranger.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The tank top and the shirt are on the basic model too: the barbarian
+    // and ranger heads have a beard and a moustache, which grew on players'
+    // faces when they bought the clothes.
+    barbarian: { url: 'models/kaykit2/rogue.glb', emoji: '🎽', wear: wear(TANK) },
+    ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
+    // The gym trainer (an NPC) keeps the bearded head.
+    trainer: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
+    // The same clothes in other colours, sold at the other clothes shops.
+    ...variants('rogue', '🧥', JACKET, {
+      'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
+    }),
+    ...variants('rogue_hooded', '🧢', HOODIE, {
+      'hoodie-black': { top: 0x2b2b31, accent: 0x3a3a42 }, 'hoodie-wine': { top: 0x8a2f45, accent: 0x74263a }, 'hoodie-orange': { top: 0xff7a00, accent: 0xd96800 },
+    }, { hood: true }),
+    ...variants('rogue', '👔', SHIRT, {
+      'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
+    }),
+    ...variants('knight', '🧥', PUFFER, {
+      'puffer-black': { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 }, 'puffer-mustard': { top: 0xd9a43a, accent: 0x8d6a2a, stitch: 0xa8822e },
+    }),
+    ...variants('mage', '🧥', LONG_PADDING, {
+      'padding-white': { top: 0xeeeae2, accent: 0xa9a59c, stitch: 0xc4beb2 },
+    }),
+    // Hanbok: all on the basic model, so the face stays the same.
+    ...variants('rogue', '🪭', JEOGORI, {
+      'hanbok-yellow': { top: 0xffd36e, accent: 0xc8323f },
+      'hanbok-pink': { top: 0xffc2d2, accent: 0x2f3c66 },
+      'hanbok-mint': { top: 0x9edccf, accent: 0xe0607e },
+    }),
+    ...variants('rogue', '🪭', BAJI, {
+      'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
+      // more men's sets
+      'hanbok-baji-navy': { top: 0x2f3c66, accent: 0xc8a24a, bottom: 0xd8d2c2 },
+      'hanbok-baji-jade': { top: 0x5fae8f, accent: 0x2f3c66, bottom: 0xe8e0cc },
+      'hanbok-baji-ivory': { top: 0xf3ecdc, accent: 0x8a5a34, bottom: 0x6b6f7a },
+    }),
+    ...variants('rogue', '🪭', DURUMAGI, {
+      'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },
+      'hanbok-durumagi-navy': { top: 0x34477a, accent: 0x1f2a4a, bottom: 0xefe6d2 },
+      'hanbok-durumagi-gray': { top: 0x8f939a, accent: 0x4a4e57, bottom: 0xd8d2c2 },
+      'hanbok-durumagi-white': { top: 0xf3eee2, accent: 0x9a8f7a, bottom: 0xefe6d2 },
+    }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.
   // The first ones are needed right away, the rest load in the background.
@@ -104,6 +110,9 @@ export default {
   ],
   scale: 0.57, // model is ~2.2 units tall; our characters are ~1.25 m
   sit: { y: -0.02, z: 0.24 }, // offset on a café chair (metres, after scale)
+  // Added to the chair clip, which leaves the legs hanging straight: thighs
+  // forward along the seat, knees bent so the shins go down.
+  sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
   lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
   // On a bike the sitting clip is bent a little more: lean forward, head down,

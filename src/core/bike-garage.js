@@ -24,13 +24,50 @@ export const BIKE_MODELS = [
   { id: 'kick3', type: 'kick', tier: 2, speed: 16, price: 340, color: '#20c4c4', name: { en: 'Pro kick scooter', ko: '프로 킥보드', ja: 'プロ・キックボード', zh: '专业滑板车' } },
 ];
 
-// Skins: a colour and a pattern, bought once and used on any ride.
+// Skins: a colour and a pattern, bought once and used on any ride. Each ride
+// shop sells its own set (SKIN_SHOP; Pedal Lab has the first nine colours and
+// five patterns). Hangeul Mihak by Gyeongbokgung sells a limited Hunminjeongeum
+// line you can only get there.
 export const SKIN_COLORS = {
   red: '#ff5a5f', orange: '#ff9f43', yellow: '#ffd93d', mint: '#3ddc97', sky: '#4dabf7',
   purple: '#9b6bff', pink: '#ff8fc7', black: '#2b2d33', white: '#f5f6f8',
+  // Bike Research Lab (Hongdae): spray-can street colours
+  lime: '#b6ff3b', spray: '#ff3ea5', concrete: '#9aa0a6',
+  // RIDE WITH ME (Itaewon): night-out colours
+  midnight: '#1b2a4a', chrome: '#c9ced6', gold: '#d4a640', neonred: '#ff2e4d',
+  // Hangeul Mihak (Gyeongbokgung): paper, ink and palace colours
+  hanji: '#efe6d2', meok: '#1e1e22', dancheong: '#c0392b', celadon: '#7fb5a5', jjok: '#2e4a7d',
 };
-export const SKIN_PATTERNS = ['flower', 'bolt', 'heart', 'star', 'hangul'];
+export const SKIN_PATTERNS = [
+  'flower', 'bolt', 'heart', 'star', 'hangul',
+  'graffiti', 'checker', 'drip', 'splat',
+  'flame', 'stripe', 'dots', 'wave',
+  'hunmin', 'naratmal', 'cheonjiin', 'jaeum', 'moeum', 'gana', 'dojang', 'panbon', 'jamo-ring', 'brush',
+];
+// The ride shops: their own skins, and what else they do. 'pedal' is Pedal
+// Lab (Seongsu); every shop sells and repairs the rides themselves.
+export const RIDE_SHOPS = {
+  pedal: { colors: ['red', 'orange', 'yellow', 'mint', 'sky', 'purple', 'pink', 'black', 'white'], patterns: ['flower', 'bolt', 'heart', 'star', 'hangul'], extra: null },
+  lab: { colors: ['lime', 'spray', 'concrete'], patterns: ['graffiti', 'checker', 'drip', 'splat'], extra: 'tune' },
+  rwm: { colors: ['midnight', 'chrome', 'gold', 'neonred'], patterns: ['flame', 'stripe', 'dots', 'wave'], extra: 'kit' },
+  hangul: { colors: ['hanji', 'meok', 'dancheong', 'celadon', 'jjok'], patterns: ['hunmin', 'naratmal', 'cheonjiin', 'jaeum', 'moeum', 'gana', 'dojang', 'panbon', 'jamo-ring', 'brush'], extra: null, limited: true },
+};
+export const shopOf = (kind, id) => Object.keys(RIDE_SHOPS).find((k) => RIDE_SHOPS[k][kind === 'color' ? 'colors' : 'patterns'].includes(id)) || null;
 export const SKIN_PRICE = { color: 20, pattern: 40 };
+// Shop-only skins cost a little more; the limited Hangul line the most.
+export function skinPrice(kind, id) {
+  const shop = shopOf(kind, id);
+  const base = SKIN_PRICE[kind];
+  return shop === 'hangul' ? base + 30 : shop && shop !== 'pedal' ? base + 15 : base;
+}
+
+// Upgrades for a ride you own, three steps each, small on purpose:
+// tune (Bike Research Lab) makes it a little faster, kit (RIDE WITH ME)
+// makes it wear out more slowly.
+export const UPGRADE_MAX = 3;
+export const TUNE_STEP = 0.25; // speed per tune step (a ride step is ~1.2)
+export const KIT_WEAR = [1, 0.75, 0.5, 0.3]; // wear by kit step
+export const UPGRADE_PRICE = { tune: [60, 110, 170], kit: [40, 80, 120] };
 
 // What others need to draw your ride: "type.tier.colour.pattern" (- = none).
 export function rideCode({ type, tier, color, pattern }) {
@@ -73,7 +110,15 @@ function clean(raw) {
     color: colors.includes(raw?.skin?.color) ? raw.skin.color : null,
     pattern: patterns.includes(raw?.skin?.pattern) ? raw.skin.pattern : null,
   };
-  return { own, use, dur, colors, patterns, skin };
+  const steps = (o) => {
+    const out = {};
+    for (const id of own) {
+      const n = Number(o?.[id]) | 0;
+      if (n > 0) out[id] = Math.min(UPGRADE_MAX, n);
+    }
+    return out;
+  };
+  return { own, use, dur, colors, patterns, skin, tune: steps(raw?.tune), kit: steps(raw?.kit) };
 }
 
 export class Garage {
@@ -88,7 +133,26 @@ export class Garage {
   get current() { return bikeModel(this.s.use); }
   has(id) { return this.s.own.includes(id); }
   durability(id = this.s.use) { return this.s.dur[id] ?? 100; }
-  speed() { return wornSpeed(this.current.speed, this.durability()); }
+  speed() { return wornSpeed(this.current.speed + this.level('tune') * TUNE_STEP, this.durability()); }
+  // Upgrade step of a ride (0–3): kind 'tune' | 'kit'.
+  level(kind, id = this.s.use) { return this.s[kind]?.[id] || 0; }
+  // Next step's price, or null when it is at the top.
+  upgradePrice(kind, id = this.s.use) {
+    const n = this.level(kind, id);
+    return n >= UPGRADE_MAX ? null : UPGRADE_PRICE[kind][n];
+  }
+  // 'upgraded', 'max', 'poor', 'unknown' (not a kind, or a ride you don't own).
+  upgrade(kind, id, wallet) {
+    if (!UPGRADE_PRICE[kind] || !this.has(id)) return 'unknown';
+    const price = this.upgradePrice(kind, id);
+    if (price == null) return 'max';
+    if (!wallet.spend(price)) return 'poor';
+    this.s[kind][id] = this.level(kind, id) + 1;
+    this._save();
+    return 'upgraded';
+  }
+  // Speed of any owned ride, with its tune and wear.
+  speedOf(id) { return wornSpeed(bikeModel(id).speed + this.level('tune', id) * TUNE_STEP, this.durability(id)); }
   // How the ride in use looks: its type and tier, the skin colour (or the
   // model's own) and pattern.
   rideSpec() {
@@ -96,12 +160,15 @@ export class Garage {
     return { type: m.type, tier: m.tier, color: SKIN_COLORS[this.s.skin.color] || m.color, pattern: this.s.skin.pattern };
   }
   hasSkin(kind, id) { return (kind === 'color' ? this.s.colors : this.s.patterns).includes(id); }
-  // kind 'color' | 'pattern'. Buying also puts it on. 'bought', 'owned', 'poor' or 'unknown'.
-  buySkin(kind, id, wallet) {
+  // kind 'color' | 'pattern'. Buying also puts it on. 'bought', 'owned',
+  // 'poor', 'unknown', or 'elsewhere' when `shop` is given and that shop
+  // doesn't sell it (shop-only and limited skins).
+  buySkin(kind, id, wallet, shop = null) {
     const ok = kind === 'color' ? !!SKIN_COLORS[id] : SKIN_PATTERNS.includes(id);
     if (!ok) return 'unknown';
     if (this.hasSkin(kind, id)) return 'owned';
-    if (!wallet.spend(SKIN_PRICE[kind])) return 'poor';
+    if (shop && shopOf(kind, id) !== shop) return 'elsewhere';
+    if (!wallet.spend(skinPrice(kind, id))) return 'poor';
     (kind === 'color' ? this.s.colors : this.s.patterns).push(id);
     this.s.skin[kind] = id;
     this._save();
@@ -138,7 +205,7 @@ export class Garage {
     if (!(m > 0)) return false;
     const id = this.s.use;
     const before = this.durability(id);
-    this.s.dur[id] = Math.max(0, before - m * WEAR_PER_M);
+    this.s.dur[id] = Math.max(0, before - m * WEAR_PER_M * KIT_WEAR[this.level('kit', id)]);
     // Save now and then, not every frame.
     if (Math.floor(before) !== Math.floor(this.s.dur[id])) this._save();
     return before >= LOW && this.s.dur[id] < LOW;

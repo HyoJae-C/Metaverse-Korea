@@ -1,4 +1,4 @@
-// Ordering at the counter (META COFFEE, the cocktail bar, the clubs): talk to
+// Ordering at the counter (META COFFEE, the mocktail bar, the clubs): talk to
 // the clerk or bartender, pick from the menu and pay coins. The drink is
 // handed over to carry around.
 import { localName, getLanguage } from '../core/i18n.js';
@@ -27,8 +27,9 @@ const ICON = { cup: '🥤', cocktail: '🍹', skewer: '🍢', bread: '🥐' };
 
 export class CounterUI {
   // onBuy(store, product, coins): pay and hand it over; true when done.
-  constructor({ root, onBuy }) {
-    Object.assign(this, { root, onBuy });
+  // canGift() / onGift(store, product): buy a drink for a friend here.
+  constructor({ root, onBuy, canGift, onGift }) {
+    Object.assign(this, { root, onBuy, canGift, onGift });
   }
   get open() { return !this.root.hidden; }
   show(store) { this.store = store; this.root.hidden = false; this.render(); }
@@ -41,6 +42,7 @@ export class CounterUI {
     this.root.replaceChildren(x, el('h3', null, `🧾 ${localName(s.name, lang)} · ${L(T.title)}`), el('p', 'order-hint', L(s.takeaway || s.category === 'cafe' ? T.coffeeHint : T.hint)));
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const list = el('div', 'counter-list');
+    const gifts = !!this.canGift?.();
     for (const p of s.products) {
       const row = el('div', 'counter-row');
       const icon = el('span', 'counter-icon', ICON[p.model] || '🥤');
@@ -50,7 +52,14 @@ export class CounterUI {
       const n = coinPrice(p.price);
       const buy = el('button', 'primary counter-buy', fmt(L(T.buy), { n }));
       buy.onclick = () => { if (this.onBuy?.(s, p, n)) this.close(); };
-      row.append(icon, txt, buy);
+      row.append(icon, txt);
+      if (gifts) {
+        const g = el('button', 'chip counter-gift', '🎁');
+        g.setAttribute('aria-label', 'Gift');
+        g.onclick = () => this.onGift?.(s, p);
+        row.append(g);
+      }
+      row.append(buy);
       list.append(row);
     }
     this.root.append(list);

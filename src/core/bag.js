@@ -6,18 +6,36 @@
 //   { kind: 'book', book: '<id>' }
 //   { kind: 'coffee' | 'glass' | 'food', sips: 1-5, name: '<drink name>' }
 //   { kind: 'umbrella' }
+//   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
+//   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
 export const MAX_CAP = 60;
 
+// A carried thing (kind 'gift'). Homemade goods also keep what they are
+// (g, e.g. 'kimchi') and how well they were made (q, 0-100), so they can be
+// sold at the market (core/kimchi-market.js).
+export function giftEntry(e) {
+  const out = { kind: 'gift', sips: 1, name: String(e.name || '').slice(0, 40), icon: String(e.icon || '🛍️').slice(0, 4) };
+  if (typeof e.g === 'string' && /^[a-z]{1,16}$/.test(e.g)) {
+    out.g = e.g;
+    if (Number.isFinite(e.q)) out.q = Math.max(0, Math.min(100, Math.round(e.q)));
+  }
+  return out;
+}
+
 // Keep only entries the game understands. isBook(id) tells whether a book id
 // still exists in the library.
-export function cleanEntry(e, { isBook = () => true, maxSips = 5 } = {}) {
+export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = () => true, maxSprays = 5 } = {}) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
-  if (e.kind === 'gift') return { kind: 'gift', sips: 1, name: String(e.name || '').slice(0, 40), icon: String(e.icon || '🛍️').slice(0, 4) }; // a shop purchase
+  if (e.kind === 'perfume') {
+    const sips = Math.min(maxSprays, e.sips | 0);
+    return sips > 0 && typeof e.p === 'string' && isPerfume(e.p) ? { kind: 'perfume', p: e.p, sips, name: String(e.name || '').slice(0, 60) } : null;
+  }
+  if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
     return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;
