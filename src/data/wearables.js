@@ -3,8 +3,11 @@
 // on your look; off: what taking it off changes back (null: it can only be
 // swapped for another, like trousers).
 import { WEAR_DESC } from './wear-desc.js';
+import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
 
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price, wear, off, desc, name, ...extra });
+// Trousers also take a skirt off (look.skirt), so a pair can be put back on.
+const pants = (id) => ({ pants: id, skirt: null });
 
 export const WEARABLES = {
   // Clothes: the Daily Closet's clothes in other colours (data/characters).
@@ -22,15 +25,15 @@ export const WEARABLES = {
   'outfit-puffer-mustard': item('🧥', 110, { model: 'puffer-mustard' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Mustard puffer jacket', ko: '머스타드 숏패딩', ja: 'マスタードのショートダウン', zh: '芥末黄短款羽绒服' }, { outfit: 'puffer-mustard' }),
   'outfit-padding-white': item('🤍', 140, { model: 'padding-white' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'White long padded coat', ko: '화이트 롱패딩', ja: '白のロングダウン', zh: '白色长款羽绒服' }, { outfit: 'padding-white' }),
   // Trousers (a colour of look.pants).
-  'pants-indigo': item('👖', 40, { pants: 'indigo' }, null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
-  'pants-lightwash': item('👖', 40, { pants: 'lightwash' }, null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
-  'pants-black': item('👖', 40, { pants: 'black' }, null, WEAR_DESC.swap, { en: 'Black jeans', ko: '흑청바지', ja: 'ブラックジーンズ', zh: '黑色牛仔裤' }),
-  'pants-sand': item('👖', 40, { pants: 'sand' }, null, WEAR_DESC.swap, { en: 'Beige wide pants', ko: '베이지 와이드 팬츠', ja: 'ベージュのワイドパンツ', zh: '米色阔腿裤' }),
-  'pants-charcoal': item('👖', 40, { pants: 'charcoal' }, null, WEAR_DESC.swap, { en: 'Charcoal slacks', ko: '차콜 슬랙스', ja: 'チャコールのスラックス', zh: '炭灰色西裤' }),
-  'pants-cream': item('👖', 40, { pants: 'cream' }, null, WEAR_DESC.swap, { en: 'Cream wide pants', ko: '크림 와이드 팬츠', ja: 'クリームのワイドパンツ', zh: '奶油色阔腿裤' }),
-  'pants-olive': item('👖', 40, { pants: 'olive' }, null, WEAR_DESC.swap, { en: 'Olive cargo pants', ko: '올리브 카고 팬츠', ja: 'オリーブのカーゴパンツ', zh: '橄榄色工装裤' }),
-  'pants-cocoa': item('👖', 40, { pants: 'cocoa' }, null, WEAR_DESC.swap, { en: 'Brown cotton pants', ko: '브라운 면바지', ja: 'ブラウンのチノパン', zh: '棕色棉裤' }),
-  'pants-denim': item('👖', 40, { pants: 'denim' }, null, WEAR_DESC.swap, { en: 'Classic blue jeans', ko: '기본 청바지', ja: 'ブルージーンズ', zh: '经典蓝色牛仔裤' }),
+  'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
+  'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
+  'pants-black': item('👖', 40, pants('black'), null, WEAR_DESC.swap, { en: 'Black jeans', ko: '흑청바지', ja: 'ブラックジーンズ', zh: '黑色牛仔裤' }),
+  'pants-sand': item('👖', 40, pants('sand'), null, WEAR_DESC.swap, { en: 'Beige wide pants', ko: '베이지 와이드 팬츠', ja: 'ベージュのワイドパンツ', zh: '米色阔腿裤' }),
+  'pants-charcoal': item('👖', 40, pants('charcoal'), null, WEAR_DESC.swap, { en: 'Charcoal slacks', ko: '차콜 슬랙스', ja: 'チャコールのスラックス', zh: '炭灰色西裤' }),
+  'pants-cream': item('👖', 40, pants('cream'), null, WEAR_DESC.swap, { en: 'Cream wide pants', ko: '크림 와이드 팬츠', ja: 'クリームのワイドパンツ', zh: '奶油色阔腿裤' }),
+  'pants-olive': item('👖', 40, pants('olive'), null, WEAR_DESC.swap, { en: 'Olive cargo pants', ko: '올리브 카고 팬츠', ja: 'オリーブのカーゴパンツ', zh: '橄榄色工装裤' }),
+  'pants-cocoa': item('👖', 40, pants('cocoa'), null, WEAR_DESC.swap, { en: 'Brown cotton pants', ko: '브라운 면바지', ja: 'ブラウンのチノパン', zh: '棕色棉裤' }),
+  'pants-denim': item('👖', 40, pants('denim'), null, WEAR_DESC.swap, { en: 'Classic blue jeans', ko: '기본 청바지', ja: 'ブルージーンズ', zh: '经典蓝色牛仔裤' }),
   // Shoes (look.shoes; taking them off goes back to white sneakers).
   'shoes-white': item('👟', 45, { shoes: 'white' }, { shoes: null }, WEAR_DESC.shoes, { en: 'White sneakers', ko: '흰 운동화', ja: '白いスニーカー', zh: '白色运动鞋' }),
   'shoes-black': item('👟', 45, { shoes: 'black' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Black sneakers', ko: '검정 운동화', ja: '黒いスニーカー', zh: '黑色运动鞋' }),
@@ -75,4 +78,7 @@ export const WEARABLES = {
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
   'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),
   'acc-backpack-graffiti': item('🎒', 45, { back: 'backpack-graffiti' }, { back: null }, WEAR_DESC.accessory, { en: 'Graffiti backpack', ko: '그래피티 백팩', ja: 'グラフィティのリュック', zh: '涂鸦双肩包' }),
+  // Skirts (look.skirt, data/skirts.js): two lengths, many colours and patterns.
+  ...Object.fromEntries(Object.entries(SKIRTS).map(([id, sk]) => ['skirt-' + id,
+    item('👗', SKIRT_PRICE[sk.length], { skirt: id }, { skirt: null }, WEAR_DESC.skirt, skirtName(sk))])),
 };

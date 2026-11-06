@@ -54,6 +54,11 @@ export function localHour(offsetHours = 9, now = new Date()) {
 // Game clock: a whole day every 2 hours, the same for everyone. Daytime
 // (05:30-19:30, dawn and dusk included) takes 90 minutes, the night 30, so
 // it's light most of the time but you still see night come round.
+// Night is switched off for now: starting a first visit in the dark made the
+// colours look dull. Set to true to bring the day/night cycle back.
+// (?hour=21 still forces a time for testing.)
+export const DAY_NIGHT = false;
+const DAY_HOUR = 13;
 export const DAY_CYCLE_MS = 2 * 60 * 60 * 1000;
 const DAY_SHARE = 0.75;
 export function gameHour(nowMs = Date.now()) {
@@ -99,7 +104,7 @@ export class WeatherSystem {
 
   hour() {
     return Number.isFinite(this.forcedHour) && new URLSearchParams(location.search).has('hour')
-      ? this.forcedHour : gameHour();
+      ? this.forcedHour : DAY_NIGHT ? gameHour() : DAY_HOUR;
   }
 
   status() {

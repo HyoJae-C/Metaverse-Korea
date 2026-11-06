@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -35,6 +35,15 @@ export function makeHeld(kind) {
     lemon.position.set(-0.03, 0.125, 0);
     lemon.rotation.z = Math.PI / 2;
     g.add(glass, drink, straw, lemon);
+  } else if (kind === 'spear') {
+    // A gate guard's spear (창) with a red tassel, held upright.
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.95, 8), mat('#6b4426'));
+    shaft.position.y = 0.3;
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.09, 6), mat('#d7dde2'));
+    blade.position.y = 0.82;
+    const tassel = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), mat('#d23a3a'));
+    tassel.position.y = 0.76; tassel.scale.set(1, 1.6, 1);
+    g.add(shaft, blade, tassel);
   } else if (kind === 'rod') {
     // A fishing rod tilted forward over the water, with a reel and a line.
     const rod = new THREE.Group();

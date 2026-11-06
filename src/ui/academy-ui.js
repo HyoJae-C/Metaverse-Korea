@@ -1,4 +1,4 @@
-// 효재어학당 course book: pick a course (grouped by stage), sign up, study
+// 효재대학교 어학당 course book: pick a course (grouped by stage), sign up, study
 // each lesson (teaching points and new words), then take its quiz. A course
 // finished end to end gives a certificate (수료증). Rules in core/academy.js.
 import { COURSES, STAGES, courseById } from '../data/academy.js';
@@ -6,7 +6,7 @@ import { PASS_RATIO, LESSON_COINS, COURSE_COINS, shuffled } from '../core/academ
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
-  title: { en: 'Hyojae Korean Academy', ko: '효재어학당', ja: 'ヒョジェ語学堂', zh: '孝在语学堂' },
+  title: { en: 'Hyojae University Korean Academy', ko: '효재대학교 어학당', ja: 'ヒョジェ大学 語学堂', zh: '孝在大学语学堂' },
   intro: {
     en: 'Choose a course and sign up. Lessons open one by one: study, then pass the quiz (3 of 4) to move on. Finish every lesson for a certificate!',
     ko: '과정을 골라 수강 신청하세요. 레슨은 하나씩 열려요. 공부하고 퀴즈(4문제 중 3개)를 통과하면 다음 레슨으로! 모두 마치면 수료증을 드려요.',
@@ -38,7 +38,7 @@ const T = {
   toLesson: { en: 'Back to the lesson', ko: '레슨 다시 보기', ja: 'レッスンに戻る', zh: '回到课程' },
   toCourse: { en: 'Course list', ko: '레슨 목록', ja: 'レッスン一覧', zh: '课程列表' },
   cert: { en: 'Certificate of Completion', ko: '수료증', ja: '修了証', zh: '结业证书' },
-  certText: { en: '{name} has completed the {course} course at Hyojae Korean Academy.', ko: '위 사람은 효재어학당 {course} 과정을 성실히 마쳤기에 이 수료증을 드립니다.', ja: '{name}さんは、ヒョジェ語学堂{course}コースを修了しました。', zh: '{name} 已完成孝在语学堂{course}课程。' },
+  certText: { en: '{name} has completed the {course} course at Hyojae University Korean Academy.', ko: '위 사람은 효재대학교 어학당 {course} 과정을 성실히 마쳤기에 이 수료증을 드립니다.', ja: '{name}さんは、ヒョジェ大学 語学堂{course}コースを修了しました。', zh: '{name} 已完成孝在大学语学堂{course}课程。' },
   certShow: { en: '🎓 See certificate', ko: '🎓 수료증 보기', ja: '🎓 修了証を見る', zh: '🎓 查看证书' },
   certNew: { en: 'Course complete! 🎓 Here is your certificate.', ko: '과정 수료! 🎓 수료증을 받았어요.', ja: 'コース修了！🎓 修了証をどうぞ。', zh: '课程结业！🎓 这是你的证书。' },
   rewards: { en: 'Rewards: 🪙 {l} for each lesson you pass, 🪙 {c} for finishing a course.', ko: '보상: 레슨 통과마다 🪙 {l}, 과정 수료 시 🪙 {c}', ja: '報酬：レッスン合格ごとに🪙 {l}、コース修了で🪙 {c}', zh: '奖励：每通过一课 🪙 {l}，结业 🪙 {c}' },
@@ -257,7 +257,7 @@ export class AcademyUI {
       el('p', 'ac-cert-course', `${c.icon} ${c.name.ko} · ${c.name.en}`),
       el('p', 'ac-cert-text', tt('certText', { name: this.name(), course: L(c.name) })),
       el('p', 'ac-cert-date', `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`),
-      el('p', 'ac-cert-seal', '효재어학당장 🔴'),
+      el('p', 'ac-cert-seal', '효재대학교 어학당장 🔴'),
     );
     this.root.append(card);
   }

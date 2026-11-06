@@ -42,7 +42,13 @@ export class BeautyUI {
 
   // Options of one menu row: null (= my own), the palette keys or choices, or
   // off/on for a toggle.
-  options(o) { return o.toggle ? [false, true] : [null, ...(o.only || o.choices || Object.keys(PALETTES[o.palette]))]; }
+  // A style you already wear from another salon stays on the list (free to keep).
+  options(o) {
+    if (o.toggle) return [false, true];
+    const list = o.only || o.choices || Object.keys(PALETTES[o.palette]);
+    const mine = this.from?.[o.key];
+    return mine && o.choices && !list.includes(mine) ? [null, mine, ...list] : [null, ...list];
+  }
 
   // Step the open row's option by +1 / -1 (the ◀ ▶ buttons and swipes).
   step(dir) {
@@ -67,7 +73,7 @@ export class BeautyUI {
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = () => this.close();
     const head = el('div', 'beauty-head');
-    head.append(el('strong', null, BEAUTY_ICON[this.kind] + ' ' + (this.store?.lipFamily ? localName(this.store.name) : t(this.kind + '.title'))));
+    head.append(el('strong', null, BEAUTY_ICON[this.kind] + ' ' + (this.store?.lipFamily || (this.kind === 'salon' && this.store?.name) ? localName(this.store.name) : t(this.kind + '.title'))));
     this.root.replaceChildren(x, head);
     if (this.menu.length > 1) {
       const tabs = el('div', 'beauty-tabs');
@@ -98,7 +104,8 @@ export class BeautyUI {
     }
     const name = o.toggle ? t(cur ? 'beauty.smallOn' : 'beauty.smallOff') : cur === null ? t('beauty.own') : o.choices ? t(o.label + '.' + cur) : '';
     if (name) now.append(el('span', null, name));
-    now.append(el('small', null, `${idx + 1} / ${opts.length}`));
+    const sig = o.signature?.includes(cur); // this salon's own style
+    now.append(el('small', null, (sig ? `★ ${t('salon.signature')} · ` : '') + `${idx + 1} / ${opts.length}`));
     stepper.append(prev, now, next);
     // Swipe left / right on the bar to flip through.
     let sx = null;

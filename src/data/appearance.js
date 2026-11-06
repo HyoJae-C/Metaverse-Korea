@@ -3,6 +3,7 @@
 //
 // A "look" is what gets saved and sent to other players:
 //   { shirt, pants, hair, skin, head, face, ear, neck, back }
+// plus shoes and skirt (the shoe and skirt shops),
 // plus hatColor/hatPatch (hat workshop), dye and hairStyle (hair salon), lip
 // (Petal Lip), and eyes, tone and
 // small (clinic: eye colour, skin tone, a smaller head).
@@ -11,9 +12,11 @@
 
 import { PACK } from './characters/index.js';
 import { emblemById, nameColorById } from '../core/emblems.js';
+import { skirtById } from './skirts.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
-export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp'];
+export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
+  'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 
@@ -169,6 +172,7 @@ export const DEFAULT_LOOK = {
   eyes: null, tone: null, small: false, // clinic
   tee: null, // printed T-shirt (an item from the bag)
   shoes: null, // shoe colour from the shoe shops
+  skirt: null, // a skirt from the skirt shops (data/skirts.js), worn over the trousers
 };
 
 // A new player's trousers: the first six colours (the rest are sold).
@@ -215,8 +219,10 @@ export function sanitizeLook(raw) {
   else if (raw.small === 'big') look.small = 'big';
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
   if (typeof raw.shoes === 'string' && Object.hasOwn(PALETTES.shoes, raw.shoes)) look.shoes = raw.shoes;
+  if (skirtById(raw.skirt)) look.skirt = raw.skirt;
   if (typeof raw.emblem === 'string' && emblemById(raw.emblem)) look.emblem = raw.emblem; // name tag
   if (typeof raw.nameColor === 'string' && nameColorById(raw.nameColor)) look.nameColor = raw.nameColor;
+  if (raw.op === true) look.op = true; // asks for the operator badge (checked on the server)
   return look;
 }
 

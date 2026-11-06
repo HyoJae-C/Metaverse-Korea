@@ -183,6 +183,18 @@ export const KT = {
   gift: { en: '🫙 A jar of your homemade kimchi went into your bag.', ko: '🫙 직접 담근 김치 한 통이 가방에 들어갔어요.', ja: '🫙 手作りキムチがバッグに入りました。', zh: '🫙 一罐亲手腌的泡菜放进了包里。', es: '🫙 Un tarro de tu kimchi casero entró en tu bolsa.', id: '🫙 Sebotol kimchi buatanmu masuk ke tas.', vi: '🫙 Một hũ kim chi tự làm đã vào túi của bạn.', hi: '🫙 आपकी घर की बनी किमची का एक जार बैग में चला गया।', ar: '🫙 دخلت جرّة من الكيمتشي المنزلي إلى حقيبتك.' },
   bagFull: { en: 'Your bag is full, so the kimchi stays at the school.', ko: '가방이 가득 차서 김치는 학교에 두고 가요.', ja: 'バッグがいっぱいなので、キムチは教室に置いていきます。', zh: '包满了，泡菜先留在学校。', es: 'Tu bolsa está llena, así que el kimchi se queda en la escuela.', id: 'Tasmu penuh, jadi kimchinya tinggal di sekolah.', vi: 'Túi đầy rồi nên kim chi để lại ở trường.', hi: 'बैग भरा है, इसलिए किमची स्कूल में ही रहेगी।', ar: 'حقيبتك ممتلئة، فسيبقى الكيمتشي في المدرسة.' },
   item: { en: 'Homemade kimchi', ko: '직접 담근 김치', ja: '手作りキムチ', zh: '自制泡菜', es: 'Kimchi casero', id: 'Kimchi buatan sendiri', vi: 'Kim chi tự làm', hi: 'घर की बनी किमची', ar: 'كيمتشي منزلي' },
+  // Shown at the end of the kimjang class, under "a jar went into your bag".
+  canSell: {
+    en: '🪙 You can sell it at the side-dish stall in Yongmaru Market, Itaewon (up to 3 jars a day).',
+    ko: '🪙 이태원 용마루시장의 반찬가게에 팔 수 있어요 (하루 3통까지).',
+    ja: '🪙 梨泰院のヨンマル市場の惣菜屋で売れます（1日3個まで）。',
+    zh: '🪙 可以卖给梨泰院龙脊市场的小菜店（每天最多3罐）。',
+    es: '🪙 Puedes venderlo en el puesto de banchan del mercado Yongmaru, en Itaewon (hasta 3 tarros al día).',
+    id: '🪙 Kamu bisa menjualnya di kios banchan Pasar Yongmaru, Itaewon (maks. 3 toples sehari).',
+    vi: '🪙 Bạn có thể bán ở sạp banchan của chợ Yongmaru, Itaewon (tối đa 3 hũ mỗi ngày).',
+    hi: '🪙 इसे इतेवॉन के योंगमारू बाज़ार की बनचान दुकान पर बेच सकते हैं (दिन में 3 जार तक)।',
+    ar: '🪙 يمكنك بيعه في محل البانتشان بسوق يونغمارو في إيتايوون (حتى 3 برطمانات في اليوم).',
+  },
   share: { en: 'In Korea, fresh kimjang kimchi is shared with neighbours, friends and family. 🧡 November 22 is Kimchi Day.', ko: '한국에서는 갓 담근 김장 김치를 이웃, 친구, 가족과 나눠 먹어요. 🧡 11월 22일은 김치의 날이에요.', ja: '韓国では漬けたてのキムジャンキムチを近所や友だち、家族と分け合います。🧡 11月22日はキムチの日です。', zh: '在韩国，刚腌好的越冬泡菜会分给邻居、朋友和家人。🧡 11月22日是泡菜日。', es: 'En Corea, el kimchi recién hecho se comparte con vecinos, amigos y familia. 🧡 El 22 de noviembre es el Día del Kimchi.', id: 'Di Korea, kimchi kimjang yang baru dibuat dibagikan ke tetangga, teman dan keluarga. 🧡 22 November adalah Hari Kimchi.', vi: 'Ở Hàn Quốc, kim chi kimjang mới làm được chia cho hàng xóm, bạn bè và gia đình. 🧡 Ngày 22 tháng 11 là Ngày Kim chi.', hi: 'कोरिया में ताज़ा किमजांग किमची पड़ोसियों, दोस्तों और परिवार के साथ बाँटी जाती है। 🧡 22 नवंबर किमची डे है।', ar: 'في كوريا يُتقاسم كيمتشي الكيمجانغ الطازج مع الجيران والأصدقاء والعائلة. 🧡 يوم 22 نوفمبر هو يوم الكيمتشي.' },
   'w.gimjang': { en: 'making winter kimchi together', ko: '겨울 김치를 함께 담그기', ja: '冬のキムチをみんなで漬けること', zh: '一起腌越冬泡菜', es: 'hacer juntos el kimchi del invierno', id: 'membuat kimchi musim dingin bersama', vi: 'cùng nhau muối kim chi mùa đông', hi: 'मिलकर सर्दियों की किमची बनाना', ar: 'صنع كيمتشي الشتاء معًا' },
   'w.baechu': { en: 'napa cabbage', ko: '배추', ja: '白菜', zh: '白菜', es: 'col china', id: 'sawi putih', vi: 'cải thảo', hi: 'नापा पत्तागोभी', ar: 'ملفوف صيني' },

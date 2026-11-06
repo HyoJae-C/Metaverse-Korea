@@ -44,3 +44,9 @@ test('names keep only Hangul, English letters, numbers and spaces', () => {
   assert.equal(cleanName('ゆうじ★Yozi✨_!'), 'Yozi');
   assert.equal(cleanName('ㅎㅛ'), 'ㅎㅛ'); // half-typed Korean stays while typing
 });
+
+test('official-looking names are reserved', async () => {
+  const { isReservedName } = await import('../src/core/identity.js');
+  for (const n of ['운영자', '게임 운영자', '관리자1', 'Admin', 'GM', 'gm2', 'Official Kim', '개 발 자']) assert.ok(isReservedName(n), n);
+  for (const n of ['효재', 'Sigma', 'Gemma', '운동하자', 'Kim']) assert.ok(!isReservedName(n), n);
+});
