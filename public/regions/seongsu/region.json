@@ -302,25 +302,10 @@
           "ja": "ソウルの森",
           "zh": "首尔林"
         },
-        "code": "K211",
         "line": {
-          "color": "#f5a200",
-          "name": {
-            "ko": "수인분당선",
-            "en": "Suin-Bundang Line",
-            "ja": "水仁・盆唐線",
-            "zh": "水仁盆唐线"
-          }
+          "color": "#00a84d"
         },
-        "prev": {
-          "ko": "왕십리",
-          "en": "Wangsimni"
-        },
-        "next": {
-          "ko": "압구정로데오",
-          "en": "Apgujeong Rodeo"
-        },
-        "note": "Seoul Forest's north-east corner by Seoulsup-gil: exit 1 on the park corner, exit 2 at the head of Metasequoia Avenue.",
+        "note": "Seoul Forest's north-east corner by Seoulsup-gil: exit 1 on the park corner, exit 2 at the head of Metasequoia Avenue. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
         "exits": [
           {
             "n": 1,

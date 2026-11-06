@@ -426,7 +426,8 @@ export function buildStation(store, ROOM) {
     }
     sign(signTexture('음료 자판기', 'Drinks · 🪙 1', { line, w: 512, h: 128 }), 2.4, 0.6, -14.95, 2.35, -d / 2 + 0.03, 0);
   }
-  sign(signTexture(`${name.ko || ''}역 · ${lineName.ko || ''}`, `${name.en || ''} Station · ${lineName.en || ''}`, { line, w: 768, h: 128 }), 6, 1, -w / 2 + 0.02, 2.9, 0, Math.PI / 2);
+  const sep = (a, b) => (b ? `${a} · ${b}` : a); // (a station may have no line name)
+  sign(signTexture(sep(`${name.ko || ''}역`, lineName.ko), sep(`${name.en || ''} Station`, lineName.en), { line, w: 768, h: 128 }), 6, 1, -w / 2 + 0.02, 2.9, 0, Math.PI / 2);
 
   // Gates: waist-high cabinets across the hall; each lane has red flaps. You
   // pay at the gate (an action) and are walked through.
@@ -500,7 +501,7 @@ export function buildStation(store, ROOM) {
     // (Facing a board, the trains on that side run off to your right, so the
     // next station is always on the right.)
     const next = t === 0 ? towards.up : towards.down, prev = t === 0 ? towards.down : towards.up;
-    const board = nameBoardTexture({ ko: name.ko || '', en: `${name.en || ''} · ${lineName.en || ''}`, code: sub.code, line, next, prev });
+    const board = nameBoardTexture({ ko: name.ko || '', en: lineName.en ? `${name.en || ''} · ${lineName.en}` : name.en || '', code: sub.code, line, next, prev });
     for (const x of [5, 16]) sign(board, 3.6, 1.01, x, 2.75, s * 0.37, s > 0 ? 0 : Math.PI);
     // Over the screen doors: which way this track goes.
     const to = t === 0 ? towards.up : towards.down;
