@@ -72,7 +72,9 @@ export function buildWorld(map, scene, opts = {}) {
   if (rail) group.add(rail);
 
   if (opts.collision) {
-    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas);
+    // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
+    const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
+    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) group.add(...trees);
   }
 
@@ -335,24 +337,40 @@ function makeRail(rails) {
   return mesh;
 }
 
-// Decorative round street trees along the edges of vehicle roads, and a loose
-// grove in parks marked "trees" (e.g. Seoul Forest). These are scenery, not
-// map data: placed where nothing else is in the way.
-function makeStreetTrees(roads, collision, max, areas = []) {
-  const spots = [];
-  // Wooded parks: a jittered grid, ~16 m apart, off the paths.
-  const PARK = 16;
+// Decorative round street trees along the edges of vehicle roads, and a
+// loose grove in parks marked "trees" (e.g. Seoul Forest): round trees big
+// and small, tall pointed ones, and bushes in between. These are scenery,
+// not map data: placed where nothing else is in the way (clear: [x, z, r]
+// circles kept free, e.g. a rose garden).
+function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
+  const spots = []; // [x, z, scale] round trees
+  const pines = []; // [x, z, scale] pointed trees (parks)
+  const bushes = []; // [x, z, scale] (parks)
+  const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
+  const isClear = (x, z, r) => clear.every(([cx, cz, cr]) => (x - cx) ** 2 + (z - cz) ** 2 > (cr + r) ** 2);
+  // Wooded parks: a jittered grid, ~12 m apart, off the paths.
+  const PARK = 12;
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
-        if (spots.length >= max / 2) break;
-        const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
-        const jx = (h - Math.floor(h) - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
+        if (spots.length + pines.length >= max / 2) break;
+        const h = hash(x, z), h2 = hash(z, x);
+        const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
         const px = x + jx, pz = z + jz;
-        if (!pointInPolygon(px, pz, a.p) || collision.blocked(px, pz, 1.4) || onAnyRoad(roads, px, pz)) continue;
-        spots.push([px, pz]);
+        // Sizes from a sapling to a big old tree; about one in four pointed.
+        const pine = h2 < 0.26, s = pine ? 0.8 + ((h2 * 13) % 1) * 1.0 : 0.6 + ((h2 * 17) % 1) ** 1.4 * 1.6;
+        const r = 1.1 * s;
+        if (pointInPolygon(px, pz, a.p) && isClear(px, pz, r) && !collision.blocked(px, pz, r) && !onAnyRoad(roads, px, pz, r - 0.6)) {
+          (pine ? pines : spots).push([px, pz, s]);
+        }
+        // A bush or two between the trees.
+        for (let k = 0; k < 2; k++) {
+          const bx = x + ((h * (31 + k * 17)) % 1 - 0.5) * PARK, bz = z + ((h2 * (23 + k * 11)) % 1 - 0.5) * PARK;
+          const bs = 0.5 + ((h * (5 + k)) % 1) * 0.6;
+          if (pointInPolygon(bx, bz, a.p) && isClear(bx, bz, bs) && !collision.blocked(bx, bz, bs) && !onAnyRoad(roads, bx, bz)) bushes.push([bx, bz, bs]);
+        }
       }
     }
   }
@@ -372,33 +390,50 @@ function makeStreetTrees(roads, collision, max, areas = []) {
         for (const side of [1, -1]) {
           const x = x1 + ux * d - uz * off * side;
           const z = z1 + uz * d + ux * off * side;
-          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z)) spots.push([x, z]);
+          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z) && isClear(x, z, 1.4)) spots.push([x, z, 0.85 + ((spots.length * 37) % 10) / 25]);
         }
       }
       carry = d - len;
     }
   }
-  if (!spots.length) return null;
-  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0);
-  const crownGeo = new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0xa47a55 }), spots.length);
-  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), spots.length);
+  if (!spots.length && !pines.length) return null;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const sc = new THREE.Vector3();
   const pos = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
   const greens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d].map((h) => new THREE.Color(h));
-  spots.forEach(([x, z], i) => {
-    const s = 0.85 + ((i * 37) % 10) / 25;
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.7);
-    m.compose(pos.set(x, 0, z), q, sc.set(s, s, s));
-    trunks.setMatrixAt(i, m);
-    crowns.setMatrixAt(i, m);
-    crowns.setColorAt(i, greens[i % greens.length]);
-  });
-  trunks.name = crowns.name = 'trees';
-  trunks.castShadow = crowns.castShadow = true;
-  return [trunks, crowns];
+  const out = [];
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
+  const tint = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  // instanced(list, geometry, material, colours?)
+  const instanced = (list, geo, material, colors, yScale = 1) => {
+    const mesh = new THREE.InstancedMesh(geo, material, list.length);
+    list.forEach(([x, z, s], i) => {
+      q.setFromAxisAngle(up, i * 1.7);
+      m.compose(pos.set(x, 0, z), q, sc.set(s, s * yScale, s));
+      mesh.setMatrixAt(i, m);
+      if (colors) mesh.setColorAt(i, colors[i % colors.length]);
+    });
+    mesh.name = 'trees';
+    mesh.castShadow = true;
+    out.push(mesh);
+  };
+  if (spots.length) {
+    instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
+    instanced(spots, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  }
+  if (pines.length) {
+    const pine = mergeGeometries([
+      new THREE.ConeGeometry(1.35, 2.2, 7).translate(0, 2.1, 0),
+      new THREE.ConeGeometry(1.0, 1.9, 7).translate(0, 3.2, 0),
+      new THREE.ConeGeometry(0.62, 1.4, 7).translate(0, 4.2, 0),
+    ].map((g) => { g.deleteAttribute('uv'); return g.index ? g.toNonIndexed() : g; }));
+    instanced(pines, new THREE.CylinderGeometry(0.14, 0.2, 1.2, 6).translate(0, 0.6, 0), trunkMat);
+    instanced(pines, pine, tint, [0x5f9e5a, 0x6fae62, 0x4f8f4f].map((h) => new THREE.Color(h)), 1.1);
+  }
+  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
+  return out;
 }
 
 function pointInPolygon(x, z, p) {
@@ -410,9 +445,9 @@ function pointInPolygon(x, z, p) {
   return c;
 }
 
-function onAnyRoad(roads, x, z) {
+function onAnyRoad(roads, x, z, pad = 0.3) {
   for (const r of roads) {
-    const hw = r.w / 2 + 0.3;
+    const hw = r.w / 2 + Math.max(0.3, pad);
     for (let i = 0; i < r.p.length - 1; i++) {
       const [x1, z1] = r.p[i];
       const [x2, z2] = r.p[i + 1];

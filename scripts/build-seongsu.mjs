@@ -127,6 +127,68 @@ const EXTRA = [
 ];
 const BLOCKERS = [{ p: [[-260, 388], [260, 388], [260, 410], [-260, 410]] }]; // the river
 
+// ── Seoul Forest decor ──────────────────────────────────────────────────
+// A round rose garden off the trail, benches along the paths, and ice cream
+// sculptures (art by Yozi, public/models/icecream) dotted around the park.
+// Landmarks are drawn by core/landmarks.js + core/park-art.js; "clear" keeps
+// the park's trees away; the sculptures and benches also get blockers.
+const FOREST_TRAIL = WALKS[4].p;
+const LANDMARKS = [];
+const r2 = (v) => Math.round(v * 100) / 100;
+const faceTo = (x, z, tx, tz) => r2(Math.atan2(tx - x, tz - z));
+// A w × d box turned by ry (the same turn as a three.js group's rotation.y).
+function rotBox(x, z, w, d, ry) {
+  const c = Math.cos(ry), s = Math.sin(ry);
+  return [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]]
+    .map(([lx, lz]) => [r2(x + lx * c + lz * s), r2(z - lx * s + lz * c)]);
+}
+function bench(x, z, ry) {
+  LANDMARKS.push({ type: 'bench', x: r2(x), z: r2(z), ry: r2(ry), clear: 2.2 });
+  BLOCKERS.push({ p: rotBox(x, z, 1.9, 0.6, ry) });
+}
+function sculpture(model, x, z, ry, s = 1) {
+  LANDMARKS.push({ type: 'icecream', model, x: r2(x), z: r2(z), ry: r2(ry), s, clear: 2 + s });
+  BLOCKERS.push({ p: rotBox(x, z, 1.25 * s, 1.25 * s, ry) });
+}
+// A point on the trail (segment i, t along it) and its sideways normal.
+function onTrail(i, t, side) {
+  const [x1, z1] = FOREST_TRAIL[i], [x2, z2] = FOREST_TRAIL[i + 1];
+  const len = Math.hypot(x2 - x1, z2 - z1), ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+  const px = x1 + (x2 - x1) * t, pz = z1 + (z2 - z1) * t;
+  return { px, pz, x: px - uz * side, z: pz + ux * side };
+}
+// Rose garden: beds in two rings, cross paths, arches, a sculpture in the middle.
+const GARDEN = { x: -158, z: 238, r: 14 };
+LANDMARKS.push({ type: 'rosegarden', x: GARDEN.x, z: GARDEN.z, r: GARDEN.r, clear: GARDEN.r + 3 });
+WALKS.push({ w: 3, p: [[-207.5, 252.5], [GARDEN.x - GARDEN.r - 0.5, GARDEN.z]] }); // from the trail to the garden's west arch
+sculpture('strawberry', GARDEN.x, GARDEN.z, faceTo(GARDEN.x, GARDEN.z, GARDEN.x - 20, GARDEN.z), 1.5);
+for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, facing the middle
+  const a = Math.PI / 4 + (k * Math.PI) / 2, x = GARDEN.x + Math.cos(a) * 9.1, z = GARDEN.z + Math.sin(a) * 9.1;
+  bench(x, z, faceTo(x, z, GARDEN.x, GARDEN.z));
+}
+// Benches along the trail, facing it, alternating sides.
+[[0, 0.35, 1], [0, 0.75, -1], [1, 0.3, 1], [1, 0.7, -1], [2, 0.25, -1], [2, 0.6, 1], [3, 0.4, 1], [3, 0.8, -1]].forEach(([i, t, side]) => {
+  const p = onTrail(i, t, side * 3.4);
+  bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
+});
+// Ice cream sculptures by the paths, facing the walkers.
+[
+  ['chocolate', 0, 0.12, 4.5, 1.3], ['mint-chocolate', 1, 0.5, -5, 1.2], ['soft-serve', 1, 0.92, 5, 1.1],
+  ['mint-chocolate', 2, 0.85, 5, 1.25], ['chocolate', 3, 0.6, -5, 1.2], ['soft-serve', 3, 0.95, 5, 1.35],
+].forEach(([model, i, t, side, s]) => {
+  const p = onTrail(i, t, side);
+  sculpture(model, p.x, p.z, faceTo(p.x, p.z, p.px, p.pz), s);
+});
+// An ice cream trio on the lawn east of the trail, with a bench to look at it.
+const TRIO = { x: -140, z: 188 };
+LANDMARKS.push({ type: 'parkplaza', x: TRIO.x, z: TRIO.z + 1.5, r: 7.5, clear: 10 }); // round paving under them
+WALKS.push({ w: 3, p: [[-145.25, 138.75], [TRIO.x, TRIO.z - 6]] }); // from the trail
+[['soft-serve', -3.2, 0, 1.1], ['strawberry', 0, -1.2, 1.6], ['mint-chocolate', 3.2, 0, 1.2]].forEach(([model, dx, dz, s]) => {
+  sculpture(model, TRIO.x + dx, TRIO.z + dz, 0, s);
+});
+bench(TRIO.x, TRIO.z + 6, Math.PI);
+bench(TRIO.x - 4, TRIO.z + 6.5, faceTo(TRIO.x - 4, TRIO.z + 6.5, TRIO.x, TRIO.z));
+
 // ── Geometry helpers ─────────────────────────────────────────────────────
 function line(ref, axis) {
   if (ref && typeof ref === 'object') return { at: ref.edge, inset: 1 };
@@ -311,6 +373,7 @@ const map = {
   rail: [{ e: 1, p: [[-260, -86], [260, -86]] }], // Line 2 viaduct over Achasan-ro
   areas,
   blockers: BLOCKERS,
+  landmarks: LANDMARKS,
   pois: [],
 };
 
