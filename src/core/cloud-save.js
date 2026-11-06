@@ -112,6 +112,16 @@ export class CloudSave {
     localStorage.setItem(AT_KEY, String(now.getTime()));
   }
 
+  // Upload now (before the server works on the save itself, such as taking
+  // coins for a love lock). Resolves true once the server has this data.
+  async flush() {
+    if (!this.client || !this.user) return false;
+    try {
+      if (JSON.stringify(snapshot()) !== this.lastJson) await this._upload();
+      return true;
+    } catch { return false; }
+  }
+
   // Upload when the saved data changes (checked every few seconds and when
   // the page is hidden or closed).
   _watch() {

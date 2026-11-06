@@ -439,6 +439,7 @@ export const AR = {
   'ledger.taxi': "تاكسي",
   'ledger.ride': "لعبة ملاهٍ",
   'ledger.cable': "تلفريك نامسان",
+  'ledger.loveLock': "قفل الحب في نامسان",
   'ledger.rename': "تغيير الاسم",
   'ledger.fine': "غرامة: فضلات حيوان أليف لم تُنظَّف",
   'ledger.gift': "رمز هدية",
