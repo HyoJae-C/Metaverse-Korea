@@ -460,6 +460,7 @@ export const HI = {
   'map.title': 'सियोल का नक्शा',
   'map.seoul': 'पूरा सियोल',
   'map.soon': 'जल्द आ रहा है',
+  'map.open': 'खुला है',
   'map.zones': 'मिलने की जगहें',
   'map.shops': 'दुकानें',
   'guide.to': '{label} · {m} मी.',

@@ -460,6 +460,7 @@ export const AR = {
   'map.title': 'خريطة سيول',
   "map.seoul": "كل سيول",
   "map.soon": "قريبًا",
+  'map.open': 'مفتوح للاستكشاف',
   'map.zones': 'مناطق اللقاء',
   'map.shops': 'المتاجر',
   'guide.to': '{label} · {m} م',
