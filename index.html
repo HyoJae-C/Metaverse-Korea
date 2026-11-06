@@ -56,9 +56,10 @@
       <div class="top-right">
         <span class="online" id="weather" hidden></span>
         <span class="online" id="online" hidden></span>
+        <button class="online coin-chip rent-chip" id="rent-chip" hidden></button>
         <button class="online coin-chip daily-chip" id="daily-btn" aria-label="Daily">📅<b class="dot" id="daily-dot" hidden></b></button>
         <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
-        <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot" id="settings-dot" hidden></b></button>
+        <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot news-bang" id="settings-dot" hidden>!</b></button>
       </div>
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
@@ -123,6 +124,7 @@
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
         <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
+        <button class="chip dex-btn" id="stamp-btn">🔖 <span></span></button>
       </div>
       <div class="sheet ledger-panel" id="ledger-panel" hidden>
         <button class="sheet-x" id="ledger-close" aria-label="Close">✕</button>
@@ -175,6 +177,8 @@
       <div class="sheet order-panel kimchi-panel" id="kimchi-panel" hidden></div>
       <div class="sheet order-panel kimchi-panel" id="japchae-panel" hidden></div>
       <div class="sheet order-panel kimchi-panel" id="kimbap-panel" hidden></div>
+      <div class="sheet order-panel fish-panel" id="kimchi-sell-panel" hidden></div>
+      <div class="sheet order-panel museum-panel" id="museum-panel" hidden></div>
       <div class="sheet order-panel beauty-panel" id="beauty-panel" hidden></div>
       <div class="sheet order-panel counter-panel" id="counter-panel" hidden></div>
       <div class="sheet order-panel lp-panel" id="kpop-panel" hidden></div>
@@ -190,6 +194,7 @@
       <div class="sheet order-panel game-panel" id="book-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="academy-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="dex-panel" hidden></div>
+      <div class="sheet order-panel game-panel stamp-panel" id="stamp-panel" hidden></div>
       <div class="info-hint" id="info-hint" hidden></div>
       <div class="sheet order-panel game-panel" id="duck-panel" hidden></div>
       <div class="photo-count" id="photo-count" hidden></div>
@@ -410,6 +415,7 @@
           <div class="gis-slot" id="google-link-gis"></div>
           <button class="chip" id="google-link">🔗 <span data-i18n="cloud.link"></span></button>
           <button class="chip" id="google-signin" data-i18n="cloud.signin"></button>
+          <p class="fine" data-i18n="cloud.guestNote"></p>
         </div>
         <a class="setting-row" href="privacy.html" target="_blank" rel="noopener">
           <span>🔒</span><span class="setting-label" data-i18n="credit.privacy"></span><span class="setting-go">›</span>

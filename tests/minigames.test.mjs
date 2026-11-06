@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeOrder, orderLine, rightBowl, servePoints, tipFor, PATIENCE, CUSTOMERS } from '../src/core/pocha-game.js';
+import { makeOrder, orderLine, rightBowl, servePoints, PATIENCE, CUSTOMERS } from '../src/core/pocha-game.js';
 import { pickDelivery, timeFor, deliveryPay } from '../src/core/delivery.js';
 import { chartFor, judge, karaokeScore, karaokeMsg, parseKaraoke, LEAD_BEATS } from '../src/core/karaoke-game.js';
 import { layPrizes, drop, clawX, PRIZES } from '../src/core/claw-game.js';
@@ -19,8 +19,6 @@ test('stall: orders read as Korean and only the exact bowl counts', () => {
   assert.ok(!rightBowl(o, { spice: 'medium', toppings: ['egg'] }));
   assert.equal(servePoints(true, PATIENCE) * CUSTOMERS, 100);
   assert.equal(servePoints(false, PATIENCE), 0);
-  assert.equal(tipFor(true, PATIENCE), 2);
-  assert.equal(tipFor(true, 1), 1);
   for (let i = 0; i < 50; i++) { const r = makeOrder(); assert.ok(r.toppings.length <= 2 && new Set(r.toppings).size === r.toppings.length); }
 });
 

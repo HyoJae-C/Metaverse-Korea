@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import { makeAnimal, turn } from './pets.js';
 
 export const CLEAN_SECONDS = 45;
-export const FINE = 60; // twice a pet's price: clean up!
+// Like the real fine in Korea for not picking up after a dog (₩50,000).
+export const FINE = 50;
 // Metres walked between poops (random in this range).
 export const POOP_EVERY = [150, 260];
 export const nextPoopAt = (rand = Math.random) => POOP_EVERY[0] + rand() * (POOP_EVERY[1] - POOP_EVERY[0]);

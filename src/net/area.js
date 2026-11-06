@@ -31,6 +31,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   let ownKey = null;
   let me = { ...self };
   let closed = false;
+  let chatLink = null; // the region's private chat channel (Supabase only)
 
   const seen = (id, key, peer) => {
     let set = peerCells.get(id);
@@ -65,7 +66,8 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
       onState: (id, st) => known(id) && handlers.onState(id, st),
       onEmote: (id, e) => known(id) && handlers.onEmote(id, e),
       onLook: (id, look) => known(id) && handlers.onLook?.(id, look),
-      onChat: (id, t) => known(id) && handlers.onChat?.(id, t),
+      // Room chat only while the private chat channel isn't open.
+      onChat: (id, t) => !chatLink?.ready && known(id) && handlers.onChat?.(id, t),
     };
     const adapter = await createNet(provider, cellHandlers, cfg);
     const entry = { adapter, listenOnly };
@@ -106,6 +108,11 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   await moveTo(x, z);
   const own = () => cells.get(ownKey)?.adapter;
   if (!own() || cells.get(ownKey).failed) throw new Error('Realtime unavailable');
+  // One private chat channel for the whole region, opened a moment after the
+  // rooms so its (slower, checked) join never holds up joining them.
+  const chatTimer = own().openChat && setTimeout(() => {
+    if (!closed) chatLink = own()?.openChat(room, (id, t) => known(id) && handlers.onChat?.(id, t));
+  }, 3000);
 
   return {
     update(px, pz) {
@@ -113,7 +120,10 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     },
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
-    sendChat(t) { own()?.sendChat?.(t); },
+    sendChat(t) {
+      if (chatLink?.ready) chatLink.send(me.id, t);
+      else own()?.sendChat?.(t);
+    },
     sendLook(look) {
       me = { ...me, look };
       for (const { adapter } of cells.values()) adapter.updateSelf?.(me);
@@ -121,6 +131,9 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     },
     disconnect() {
       closed = true;
+      clearTimeout(chatTimer);
+      chatLink?.close();
+      chatLink = null;
       for (const k of [...cells.keys()]) {
         cells.get(k).adapter.disconnect();
         cells.delete(k);

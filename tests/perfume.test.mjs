@@ -11,8 +11,11 @@ const mem = (init = {}) => {
 };
 
 const FIVE = ['funny', 'elegant', 'cute', 'simple', 'clean'];
-test('Seongsu: 10 perfume shops (2 per style, 3 each), 4 handmade workshops and a pop-up', () => {
+test('10 perfume shops (2 per style, 3 each), 4 handmade workshops and a pop-up, split between Seongsu and Hongdae', () => {
   const shops = stores.filter((s) => s.perfumery);
+  const hongdae = shops.filter((s) => s.at[0] < -2750 && s.at[0] > -3150);
+  assert.equal(hongdae.length, 5, 'five moved to Hongdae');
+  assert.equal(shops.length - hongdae.length, 10, 'ten stay in Seongsu');
   const main = shops.filter((s) => FIVE.includes(s.perfumery));
   assert.equal(main.length, 10);
   for (const st of FIVE) {
