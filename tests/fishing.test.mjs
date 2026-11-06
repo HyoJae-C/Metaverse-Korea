@@ -18,6 +18,18 @@ test('49 stable catalogue entries, 27 released, nine stamps per page and four sp
   for (const f of FISH) assert.ok(f.name.en && f.ko && f.rom);
 });
 
+test('tiers follow the agreed fish book: 14/14/11/6/4, legends alone on the last page', () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map(r => FISH.filter(f => f.rarity === r).length), [14, 14, 11, 6, 4]);
+  assert.deepEqual(FISH.filter(f => f.page === 5).map(f => f.id).sort(), ['blobfish', 'giant-squid', 'manta', 'whale']);
+  for (let i = 1; i < FISH.length; i++) assert.ok(FISH[i].rarity >= FISH[i - 1].rarity, FISH[i].id);
+  assert.equal(fishById('shark').rarity, 4);
+  assert.equal(fishById('tuna').ko, '참다랑어');
+  assert.equal(fishById('trout').ko, '송어');
+  assert.equal(fishById('anglerfish').ko, '초롱아귀');
+  // Higher tiers always pay more than lower ones.
+  for (let r = 2; r <= 5; r++) assert.ok(Math.min(...FISH.filter(f => f.rarity === r).map(f => f.price)) > Math.max(...FISH.filter(f => f.rarity === r - 1).map(f => f.price)), `tier ${r}`);
+});
+
 test('normalized lottery never selects unreleased entries and follows every probability boundary', () => {
   assert.ok(Math.abs(AVAILABLE_FISH.reduce((sum,f) => sum + f.chance,0) - 100) < 1e-9);
   let cumulative = 0;
@@ -50,7 +62,7 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(dex.kinds,3);
   assert.equal(bag.add(TRASH.id),false);
   assert.equal(dex.add(TRASH.id),false);
-  assert.equal(bag.sellAll(),4006);
+  assert.equal(bag.sellAll(),745);
   assert.equal(new FishDex(st,bag).total,4);
   assert.equal(dex.add('whale'),false);
   assert.equal(dex.count('whale'),2);

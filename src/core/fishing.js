@@ -2,14 +2,12 @@
 // Twenty-seven species are available in the first release.
 export const FISH = [
   {
-    "id": "crucian",
+    "id": "loach",
     "emoji": "🐟",
-    "ko": "붕어",
-    "rom": "bungeo",
+    "ko": "미꾸라지",
+    "rom": "mikkuraji",
     "name": {
-      "en": "Crucian carp",
-      "ja": "フナ",
-      "zh": "鲫鱼"
+      "en": "Loach"
     },
     "rarity": 1,
     "released": true,
@@ -17,40 +15,12 @@ export const FISH = [
     "price": 1
   },
   {
-    "id": "carp",
+    "id": "anchovy",
     "emoji": "🐟",
-    "ko": "잉어",
-    "rom": "ingeo",
+    "ko": "멸치",
+    "rom": "myeolchi",
     "name": {
-      "en": "Carp"
-    },
-    "rarity": 1,
-    "released": true,
-    "page": 0,
-    "price": 2
-  },
-  {
-    "id": "catfish",
-    "emoji": "🐟",
-    "ko": "메기",
-    "rom": "megi",
-    "name": {
-      "en": "Catfish",
-      "ja": "ナマズ",
-      "zh": "鲶鱼"
-    },
-    "rarity": 1,
-    "released": true,
-    "page": 0,
-    "price": 2
-  },
-  {
-    "id": "loach",
-    "emoji": "🐟",
-    "ko": "미꾸라지",
-    "rom": "mikkuraji",
-    "name": {
-      "en": "Loach"
+      "en": "Anchovy"
     },
     "rarity": 1,
     "released": true,
@@ -71,6 +41,21 @@ export const FISH = [
     "price": 1
   },
   {
+    "id": "crucian",
+    "emoji": "🐟",
+    "ko": "붕어",
+    "rom": "bungeo",
+    "name": {
+      "en": "Crucian carp",
+      "ja": "フナ",
+      "zh": "鲫鱼"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
     "id": "ricefish",
     "emoji": "🐟",
     "ko": "송사리",
@@ -84,71 +69,17 @@ export const FISH = [
     "price": 1
   },
   {
-    "id": "sea-turtle",
-    "emoji": "🐢",
-    "ko": "바다거북",
-    "rom": "badageobuk",
-    "name": {
-      "en": "Sea turtle"
-    },
-    "rarity": 3,
-    "released": true,
-    "page": 0,
-    "price": 10
-  },
-  {
-    "id": "scallop",
-    "emoji": "🐚",
-    "ko": "가리비",
-    "rom": "garibi",
-    "name": {
-      "en": "Scallop"
-    },
-    "rarity": 2,
-    "released": true,
-    "page": 0,
-    "price": 4
-  },
-  {
-    "id": "bluegill",
+    "id": "carp",
     "emoji": "🐟",
-    "ko": "블루길",
-    "rom": "beullugil",
+    "ko": "잉어",
+    "rom": "ingeo",
     "name": {
-      "en": "Bluegill"
+      "en": "Carp"
     },
-    "rarity": 2,
+    "rarity": 1,
     "released": true,
     "page": 0,
-    "price": 3
-  },
-  {
-    "id": "mackerel",
-    "emoji": "🐟",
-    "ko": "고등어",
-    "rom": "godeungeo",
-    "name": {
-      "en": "Mackerel",
-      "ja": "サバ",
-      "zh": "鲭鱼"
-    },
-    "rarity": 2,
-    "released": true,
-    "page": 1,
-    "price": 4
-  },
-  {
-    "id": "jellyfish",
-    "emoji": "🪼",
-    "ko": "해파리",
-    "rom": "haepari",
-    "name": {
-      "en": "Jellyfish"
-    },
-    "rarity": 2,
-    "released": true,
-    "page": 1,
-    "price": 3
+    "price": 2
   },
   {
     "id": "sardine",
@@ -160,21 +91,49 @@ export const FISH = [
     },
     "rarity": 1,
     "released": true,
-    "page": 1,
+    "page": 0,
     "price": 1
   },
   {
-    "id": "anchovy",
+    "id": "herring",
     "emoji": "🐟",
-    "ko": "멸치",
-    "rom": "myeolchi",
+    "ko": "청어",
+    "rom": "cheongeo",
     "name": {
-      "en": "Anchovy"
+      "en": "Herring"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "wakame",
+    "emoji": "🌿",
+    "ko": "미역",
+    "rom": "miyeok",
+    "name": {
+      "en": "Wakame seaweed"
+    },
+    "rarity": 1,
+    "released": false,
+    "page": 0,
+    "price": 1
+  },
+  {
+    "id": "mackerel",
+    "emoji": "🐟",
+    "ko": "고등어",
+    "rom": "godeungeo",
+    "name": {
+      "en": "Mackerel",
+      "ja": "サバ",
+      "zh": "鲭鱼"
     },
     "rarity": 1,
     "released": true,
     "page": 1,
-    "price": 1
+    "price": 2
   },
   {
     "id": "saury",
@@ -184,31 +143,87 @@ export const FISH = [
     "name": {
       "en": "Pacific saury"
     },
+    "rarity": 1,
+    "released": true,
+    "page": 1,
+    "price": 2
+  },
+  {
+    "id": "shrimp",
+    "emoji": "🦐",
+    "ko": "새우",
+    "rom": "saeu",
+    "name": {
+      "en": "Shrimp"
+    },
+    "rarity": 1,
+    "released": false,
+    "page": 1,
+    "price": 2
+  },
+  {
+    "id": "kelp",
+    "emoji": "🌿",
+    "ko": "다시마",
+    "rom": "dasima",
+    "name": {
+      "en": "Kelp"
+    },
+    "rarity": 1,
+    "released": false,
+    "page": 1,
+    "price": 1
+  },
+  {
+    "id": "scallop",
+    "emoji": "🐚",
+    "ko": "가리비",
+    "rom": "garibi",
+    "name": {
+      "en": "Scallop"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 1,
+    "price": 2
+  },
+  {
+    "id": "seabream",
+    "emoji": "🐟",
+    "ko": "참돔",
+    "rom": "chamdom",
+    "name": {
+      "en": "Red seabream"
+    },
     "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 4
+    "price": 6
   },
   {
-    "id": "cutlassfish",
+    "id": "catfish",
     "emoji": "🐟",
-    "ko": "갈치",
-    "rom": "galchi",
+    "ko": "메기",
+    "rom": "megi",
     "name": {
-      "en": "Cutlassfish"
+      "en": "Catfish",
+      "ja": "ナマズ",
+      "zh": "鲶鱼"
     },
-    "rarity": 3,
+    "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 10
+    "price": 3
   },
   {
-    "id": "herring",
+    "id": "trout",
     "emoji": "🐟",
-    "ko": "청어",
-    "rom": "cheongeo",
+    "ko": "송어",
+    "rom": "songeo",
     "name": {
-      "en": "Herring"
+      "en": "Trout",
+      "ja": "マス",
+      "zh": "鳟鱼"
     },
     "rarity": 2,
     "released": true,
@@ -225,62 +240,51 @@ export const FISH = [
       "ja": "サケ",
       "zh": "三文鱼"
     },
-    "rarity": 3,
+    "rarity": 2,
     "released": true,
     "page": 1,
-    "price": 12
+    "price": 5
   },
   {
-    "id": "trout",
-    "emoji": "🐟",
-    "ko": "무지개송어",
-    "rom": "mujigaesongeo",
+    "id": "jellyfish",
+    "emoji": "🪼",
+    "ko": "해파리",
+    "rom": "haepari",
     "name": {
-      "en": "Rainbow trout"
-    },
-    "rarity": 3,
-    "released": true,
-    "page": 1,
-    "price": 8
-  },
-  {
-    "id": "seabream",
-    "emoji": "🐟",
-    "ko": "참돔",
-    "rom": "chamdom",
-    "name": {
-      "en": "Red seabream"
-    },
-    "rarity": 3,
-    "released": true,
-    "page": 2,
-    "price": 14
-  },
-  {
-    "id": "sea-cucumber",
-    "emoji": "🐟",
-    "ko": "해삼",
-    "rom": "haesam",
-    "name": {
-      "en": "Sea cucumber"
+      "en": "Jellyfish"
     },
     "rarity": 2,
-    "released": false,
+    "released": true,
     "page": 2,
-    "price": 6
+    "price": 3
   },
   {
-    "id": "sea-urchin",
+    "id": "bluegill",
     "emoji": "🐟",
-    "ko": "성게",
-    "rom": "seongge",
+    "ko": "블루길",
+    "rom": "beullugil",
     "name": {
-      "en": "Sea urchin"
+      "en": "Bluegill"
     },
     "rarity": 2,
-    "released": false,
+    "released": true,
     "page": 2,
-    "price": 6
+    "price": 3
+  },
+  {
+    "id": "crab",
+    "emoji": "🦀",
+    "ko": "꽃게",
+    "rom": "kkotge",
+    "name": {
+      "en": "Swimming crab",
+      "ja": "ワタリガニ",
+      "zh": "梭子蟹"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 2,
+    "price": 5
   },
   {
     "id": "rockfish",
@@ -293,7 +297,7 @@ export const FISH = [
     "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 5
+    "price": 4
   },
   {
     "id": "flounder",
@@ -303,62 +307,62 @@ export const FISH = [
     "name": {
       "en": "Olive flounder"
     },
-    "rarity": 3,
+    "rarity": 2,
     "released": true,
     "page": 2,
-    "price": 10
+    "price": 5
   },
   {
-    "id": "puffer",
-    "emoji": "🐡",
-    "ko": "복어",
-    "rom": "bogeo",
+    "id": "octopus",
+    "emoji": "🐙",
+    "ko": "문어",
+    "rom": "muneo",
     "name": {
-      "en": "Pufferfish"
+      "en": "Octopus"
     },
-    "rarity": 3,
-    "released": true,
-    "page": 2,
-    "price": 14
-  },
-  {
-    "id": "wakame",
-    "emoji": "🌿",
-    "ko": "미역",
-    "rom": "miyeok",
-    "name": {
-      "en": "Wakame seaweed"
-    },
-    "rarity": 1,
+    "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 1
+    "price": 5
   },
   {
-    "id": "anglerfish",
+    "id": "webfoot-octopus",
+    "emoji": "🐙",
+    "ko": "주꾸미",
+    "rom": "jukkumi",
+    "name": {
+      "en": "Webfoot octopus"
+    },
+    "rarity": 2,
+    "released": false,
+    "page": 2,
+    "price": 4
+  },
+  {
+    "id": "sea-cucumber",
     "emoji": "🐟",
-    "ko": "아귀",
-    "rom": "agwi",
+    "ko": "해삼",
+    "rom": "haesam",
     "name": {
-      "en": "Anglerfish"
+      "en": "Sea cucumber"
     },
-    "rarity": 4,
+    "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 60
+    "price": 5
   },
   {
-    "id": "moray",
+    "id": "sea-urchin",
     "emoji": "🐟",
-    "ko": "곰치",
-    "rom": "gomchi",
+    "ko": "성게",
+    "rom": "seongge",
     "name": {
-      "en": "Moray eel"
+      "en": "Sea urchin"
     },
-    "rarity": 4,
+    "rarity": 2,
     "released": false,
     "page": 2,
-    "price": 70
+    "price": 5
   },
   {
     "id": "crayfish",
@@ -373,69 +377,28 @@ export const FISH = [
     "rarity": 2,
     "released": true,
     "page": 3,
-    "price": 4
+    "price": 3
   },
   {
-    "id": "crab",
-    "emoji": "🦀",
-    "ko": "꽃게",
-    "rom": "kkotge",
+    "id": "sunfish",
+    "emoji": "🐟",
+    "ko": "개복치",
+    "rom": "gaebokchi",
     "name": {
-      "en": "Swimming crab",
-      "ja": "ワタリガニ",
-      "zh": "梭子蟹"
-    },
-    "rarity": 2,
-    "released": true,
-    "page": 3,
-    "price": 6
-  },
-  {
-    "id": "snow-crab",
-    "emoji": "🦀",
-    "ko": "대게",
-    "rom": "daege",
-    "name": {
-      "en": "Snow crab"
+      "en": "Ocean sunfish"
     },
     "rarity": 3,
     "released": false,
     "page": 3,
-    "price": 16
+    "price": 15
   },
   {
-    "id": "lobster",
-    "emoji": "🦞",
-    "ko": "바닷가재",
-    "rom": "badatgajae",
+    "id": "clownfish",
+    "emoji": "🐠",
+    "ko": "흰동가리",
+    "rom": "huindonggari",
     "name": {
-      "en": "Lobster"
-    },
-    "rarity": 4,
-    "released": false,
-    "page": 3,
-    "price": 120
-  },
-  {
-    "id": "shrimp",
-    "emoji": "🦐",
-    "ko": "새우",
-    "rom": "saeu",
-    "name": {
-      "en": "Shrimp"
-    },
-    "rarity": 1,
-    "released": false,
-    "page": 3,
-    "price": 2
-  },
-  {
-    "id": "octopus",
-    "emoji": "🐙",
-    "ko": "문어",
-    "rom": "muneo",
-    "name": {
-      "en": "Octopus"
+      "en": "Clownfish"
     },
     "rarity": 3,
     "released": false,
@@ -443,17 +406,17 @@ export const FISH = [
     "price": 10
   },
   {
-    "id": "marlin",
-    "emoji": "🐟",
-    "ko": "청새치",
-    "rom": "cheongsaechi",
+    "id": "puffer",
+    "emoji": "🐡",
+    "ko": "복어",
+    "rom": "bogeo",
     "name": {
-      "en": "Blue marlin"
+      "en": "Pufferfish"
     },
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 16
+    "price": 12
   },
   {
     "id": "cuttlefish",
@@ -469,30 +432,30 @@ export const FISH = [
     "price": 10
   },
   {
-    "id": "webfoot-octopus",
-    "emoji": "🐙",
-    "ko": "주꾸미",
-    "rom": "jukkumi",
+    "id": "lobster",
+    "emoji": "🦞",
+    "ko": "바닷가재",
+    "rom": "badatgajae",
     "name": {
-      "en": "Webfoot octopus"
-    },
-    "rarity": 2,
-    "released": false,
-    "page": 3,
-    "price": 5
-  },
-  {
-    "id": "clownfish",
-    "emoji": "🐠",
-    "ko": "흰동가리",
-    "rom": "huindonggari",
-    "name": {
-      "en": "Clownfish"
+      "en": "Lobster"
     },
     "rarity": 3,
     "released": false,
-    "page": 4,
-    "price": 8
+    "page": 3,
+    "price": 18
+  },
+  {
+    "id": "snow-crab",
+    "emoji": "🦀",
+    "ko": "대게",
+    "rom": "daege",
+    "name": {
+      "en": "Snow crab"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 3,
+    "price": 18
   },
   {
     "id": "blue-tang",
@@ -504,8 +467,34 @@ export const FISH = [
     },
     "rarity": 3,
     "released": false,
+    "page": 3,
+    "price": 10
+  },
+  {
+    "id": "seahorse",
+    "emoji": "🐟",
+    "ko": "해마",
+    "rom": "haema",
+    "name": {
+      "en": "Seahorse"
+    },
+    "rarity": 3,
+    "released": false,
+    "page": 3,
+    "price": 14
+  },
+  {
+    "id": "cutlassfish",
+    "emoji": "🐟",
+    "ko": "갈치",
+    "rom": "galchi",
+    "name": {
+      "en": "Cutlassfish"
+    },
+    "rarity": 3,
+    "released": true,
     "page": 4,
-    "price": 8
+    "price": 10
   },
   {
     "id": "butterflyfish",
@@ -518,59 +507,20 @@ export const FISH = [
     "rarity": 3,
     "released": false,
     "page": 4,
-    "price": 8
+    "price": 10
   },
   {
-    "id": "seahorse",
+    "id": "moray",
     "emoji": "🐟",
-    "ko": "해마",
-    "rom": "haema",
+    "ko": "곰치",
+    "rom": "gomchi",
     "name": {
-      "en": "Seahorse"
+      "en": "Moray eel"
     },
-    "rarity": 4,
+    "rarity": 3,
     "released": false,
     "page": 4,
-    "price": 80
-  },
-  {
-    "id": "manta",
-    "emoji": "🐟",
-    "ko": "만타가오리",
-    "rom": "mantagaori",
-    "name": {
-      "en": "Manta ray"
-    },
-    "rarity": 4,
-    "released": false,
-    "page": 4,
-    "price": 150
-  },
-  {
-    "id": "blobfish",
-    "emoji": "🐟",
-    "ko": "블롭피시",
-    "rom": "beullopisi",
-    "name": {
-      "en": "Blobfish"
-    },
-    "rarity": 4,
-    "released": false,
-    "page": 4,
-    "price": 100
-  },
-  {
-    "id": "kelp",
-    "emoji": "🌿",
-    "ko": "다시마",
-    "rom": "dasima",
-    "name": {
-      "en": "Kelp"
-    },
-    "rarity": 1,
-    "released": false,
-    "page": 4,
-    "price": 1
+    "price": 12
   },
   {
     "id": "orca",
@@ -580,51 +530,10 @@ export const FISH = [
     "name": {
       "en": "Orca"
     },
-    "rarity": 5,
-    "released": false,
-    "page": 4,
-    "price": 800
-  },
-  {
-    "id": "sunfish",
-    "emoji": "🐟",
-    "ko": "개복치",
-    "rom": "gaebokchi",
-    "name": {
-      "en": "Ocean sunfish"
-    },
     "rarity": 4,
     "released": false,
     "page": 4,
-    "price": 120
-  },
-  {
-    "id": "tuna",
-    "emoji": "🐟",
-    "ko": "참치",
-    "rom": "chamchi",
-    "name": {
-      "en": "Tuna",
-      "ja": "マグロ",
-      "zh": "金枪鱼"
-    },
-    "rarity": 4,
-    "released": true,
-    "page": 5,
-    "price": 100
-  },
-  {
-    "id": "giant-squid",
-    "emoji": "🦑",
-    "ko": "대왕오징어",
-    "rom": "daewangojingeo",
-    "name": {
-      "en": "Giant squid"
-    },
-    "rarity": 5,
-    "released": false,
-    "page": 5,
-    "price": 1200
+    "price": 150
   },
   {
     "id": "shark",
@@ -636,10 +545,79 @@ export const FISH = [
       "ja": "ホホジロザメ",
       "zh": "大白鲨"
     },
-    "rarity": 5,
+    "rarity": 4,
     "released": true,
+    "page": 4,
+    "price": 120
+  },
+  {
+    "id": "marlin",
+    "emoji": "🐟",
+    "ko": "청새치",
+    "rom": "cheongsaechi",
+    "name": {
+      "en": "Blue marlin"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 4,
+    "price": 40
+  },
+  {
+    "id": "tuna",
+    "emoji": "🐟",
+    "ko": "참다랑어",
+    "rom": "chamdarangeo",
+    "name": {
+      "en": "Bluefin tuna",
+      "ja": "クロマグロ",
+      "zh": "蓝鳍金枪鱼"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 4,
+    "price": 30
+  },
+  {
+    "id": "sea-turtle",
+    "emoji": "🐢",
+    "ko": "바다거북",
+    "rom": "badageobuk",
+    "name": {
+      "en": "Sea turtle"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 4,
+    "price": 25
+  },
+  {
+    "id": "anglerfish",
+    "emoji": "🐟",
+    "ko": "초롱아귀",
+    "rom": "chorongagwi",
+    "name": {
+      "en": "Football fish",
+      "ja": "チョウチンアンコウ",
+      "zh": "灯笼鮟鱇"
+    },
+    "rarity": 4,
+    "released": false,
+    "page": 4,
+    "price": 50
+  },
+  {
+    "id": "manta",
+    "emoji": "🐟",
+    "ko": "만타가오리",
+    "rom": "mantagaori",
+    "name": {
+      "en": "Manta ray"
+    },
+    "rarity": 5,
+    "released": false,
     "page": 5,
-    "price": 500
+    "price": 250
   },
   {
     "id": "whale",
@@ -654,7 +632,33 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 5,
-    "price": 3000
+    "price": 500
+  },
+  {
+    "id": "giant-squid",
+    "emoji": "🦑",
+    "ko": "대왕오징어",
+    "rom": "daewangojingeo",
+    "name": {
+      "en": "Giant squid"
+    },
+    "rarity": 5,
+    "released": false,
+    "page": 5,
+    "price": 600
+  },
+  {
+    "id": "blobfish",
+    "emoji": "🐟",
+    "ko": "블롭피시",
+    "rom": "beullopisi",
+    "name": {
+      "en": "Blobfish"
+    },
+    "rarity": 5,
+    "released": false,
+    "page": 5,
+    "price": 300
   }
 ];
 
@@ -662,14 +666,23 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // How often each rarity bites, in % of fish (trash comes on top). Each tier's
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
-export const TIER_SHARE = [0, 57.38, 30, 12, 0.5, 0.12];
+export const TIER_SHARE = [0, 58.7, 28, 10, 3.2, 0.1];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
-// less often (a blue whale is a third as likely as a great white).
+// less often. At a cast every 10 s this gives bluefin tuna about every
+// 15 min, the great white about every hour, the blue whale about every 3 h.
 export const TIER_WEIGHT = {
-  carp: 0.7, catfish: 0.7, crab: 0.7,
-  trout: 1.3, cutlassfish: 1.2, flounder: 1.2, seabream: 0.8, puffer: 0.8, marlin: 0.5,
-  shark: 3, whale: 1,
+  carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
+  'sea-turtle': 2, tuna: 2, marlin: 1, shark: 0.5, orca: 0.4, anglerfish: 0.8,
+  manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
+// What each rarity is called (the fish book and the odds table).
+export const TIER_NAMES = [null,
+  { ko: '흔함', en: 'Common', ja: 'ふつう', zh: '常见' },
+  { ko: '특별', en: 'Special', ja: 'とくべつ', zh: '特别' },
+  { ko: '진귀', en: 'Precious', ja: '珍しい', zh: '珍贵' },
+  { ko: '신비', en: 'Mythic', ja: '神秘', zh: '神秘' },
+  { ko: '전설', en: 'Legendary', ja: '伝説', zh: '传说' },
+];
 const weightOf = f => TIER_WEIGHT[f.id] ?? 1;
 const tierTotals = {};
 for (const f of AVAILABLE_FISH) tierTotals[f.rarity] = (tierTotals[f.rarity] || 0) + weightOf(f);
