@@ -11,11 +11,19 @@
 //
 // Note: the browser writes its own save, so coins and items are not cheat-
 // proof yet. Paid items must be checked on the server later.
+//
+// One device at a time: a signed-in account can be open on a phone and a PC
+// at once. Each page load claims the save, and every upload only goes
+// through if nobody else has written since this device last did (the row's
+// updated_at is the version). If another device got there first, this one
+// stops saving and tells the player, instead of overwriting the other
+// device's progress with its own older copy.
 
 const PREFIX = 'mk.';
 const AT_KEY = 'mkcloud.at'; // when local data last changed (ms), not synced
 const TABLE = 'saves';
 const OWNER_KEY = 'mkcloud.uid'; // which account the data on this device belongs to
+const DEVICE_KEY = 'mkcloud.device'; // inside the row's data: which page load wrote it last
 
 export function snapshot(storage = localStorage) {
   const out = {};
@@ -43,6 +51,15 @@ export function pickNewer(localAt, remoteAt, localData, remoteData, switched = f
   return remoteAt > localAt ? 'remote' : 'local';
 }
 
+// Was the save written by another device since this one last wrote it?
+// row: { updated_at, data } as read now; mine: the updated_at this device
+// last wrote or read; device: this page load's id.
+export function takenOver(row, mine, device) {
+  if (!row || !mine) return false;
+  if (Date.parse(row.updated_at) === Date.parse(mine)) return false;
+  return row.data?.[DEVICE_KEY] !== device;
+}
+
 // Remember (for this tab) that we left for Google's sign-in, so the start
 // screen can skip straight into the game when we come back.
 function markOAuth() {
@@ -57,6 +74,10 @@ export class CloudSave {
     this.status = 'local'; // 'local' | 'cloud' | 'error'
     this.lastJson = null;
     this.listeners = [];
+    this.device = globalThis.crypto?.randomUUID?.() || String(Math.random()).slice(2);
+    this.version = null; // updated_at of the row as this device last saw it
+    this.parked = false; // another device took over: stop saving
+    this.elsewhereListeners = [];
   }
 
   get guest() { return !!this.user?.is_anonymous; }
@@ -93,23 +114,67 @@ export class CloudSave {
     const owner = localStorage.getItem(OWNER_KEY);
     const which = pickNewer(localAt, remoteAt, local, row?.data || {}, !!owner && owner !== this.user.id);
     localStorage.setItem(OWNER_KEY, this.user.id);
-    if (which === 'remote') {
-      applySnapshot(row.data);
-      localStorage.setItem(AT_KEY, String(remoteAt));
-      this.lastJson = JSON.stringify(snapshot());
-    } else if (which === 'local') {
-      await this._upload(local);
-    } else this.lastJson = JSON.stringify(local);
+    this.version = row?.updated_at || null;
+    if (which === 'remote') applySnapshot(row.data);
+    // Claim the save for this device (also when nothing changed), so a
+    // device that was open before stops saving over it.
+    await this._upload(which === 'remote' ? snapshot() : local);
     this._set('cloud');
   }
 
-  async _upload(data = snapshot()) {
+  // Write the save, but only if no other device wrote since we last did.
+  // Returns false (and parks this device) when another device took over.
+  async _upload(data = snapshot(), tries = 2) {
+    if (this.parked) return false;
     const json = JSON.stringify(data);
-    const now = new Date();
-    const { error } = await this.client.from(TABLE).upsert({ user_id: this.user.id, data, updated_at: now.toISOString() });
-    if (error) throw error;
+    const now = new Date().toISOString();
+    const row = { data: { ...data, [DEVICE_KEY]: this.device }, updated_at: now };
+    let written;
+    if (this.version) {
+      const res = await this.client.from(TABLE).update(row).eq('user_id', this.user.id).eq('updated_at', this.version).select('updated_at');
+      if (res.error) throw res.error;
+      written = res.data?.length > 0;
+    } else {
+      const res = await this.client.from(TABLE).insert({ user_id: this.user.id, ...row });
+      if (res.error && res.error.code !== '23505') throw res.error; // 23505: a row appeared meanwhile
+      written = !res.error;
+    }
+    if (!written) {
+      // Someone wrote in between. If it was another device, step aside.
+      const { data: cur, error } = await this.client.from(TABLE).select('data, updated_at').eq('user_id', this.user.id).maybeSingle();
+      if (error) throw error;
+      if (cur && cur.data?.[DEVICE_KEY] !== this.device) { this._park(); return false; }
+      if (!tries) throw new Error('save kept changing');
+      this.version = cur?.updated_at || null;
+      return this._upload(data, tries - 1);
+    }
+    this.version = now;
     this.lastJson = json;
-    localStorage.setItem(AT_KEY, String(now.getTime()));
+    localStorage.setItem(AT_KEY, String(Date.parse(now)));
+    return true;
+  }
+
+  // Another device has the save now. Stop uploading, and make sure that when
+  // this page is reloaded, the account's save wins over what is left here.
+  _park() {
+    if (this.parked) return;
+    this.parked = true;
+    localStorage.setItem(AT_KEY, '0');
+    this.elsewhereListeners.forEach((f) => f());
+  }
+
+  // This tab stepped aside for another tab of the same browser (they share
+  // the saved data): just stop uploading from here.
+  stop() { this.parked = true; this.stoppedForTab = true; }
+
+  // Coming back to this tab: if another device saved meanwhile, park now
+  // rather than on the next change.
+  async _check() {
+    if (this.parked || !this.client || !this.user || !this.version) return;
+    try {
+      const { data: row, error } = await this.client.from(TABLE).select('data, updated_at').eq('user_id', this.user.id).maybeSingle();
+      if (!error && takenOver(row, this.version, this.device)) this._park();
+    } catch { /* offline: try again next time */ }
   }
 
   // Upload when the saved data changes (checked every few seconds and when
@@ -118,13 +183,13 @@ export class CloudSave {
     const tick = async () => {
       const data = snapshot();
       const json = JSON.stringify(data);
-      if (json === this.lastJson) return;
+      if (this.parked || json === this.lastJson) return;
       localStorage.setItem(AT_KEY, String(Date.now())); // changed here, now
       if (!this.client || !this.user) return;
-      try { await this._upload(data); this._set('cloud'); } catch { this._set('error'); }
+      try { if (await this._upload(data)) this._set('cloud'); } catch { this._set('error'); }
     };
     setInterval(tick, 8000);
-    addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tick(); });
+    addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tick(); else this._check(); });
     addEventListener('pagehide', tick);
   }
 
@@ -229,6 +294,8 @@ export class CloudSave {
   }
 
   onChange(f) { this.listeners.push(f); }
+  // Called once when another device takes over this account's save.
+  onElsewhere(f) { this.elsewhereListeners.push(f); if (this.parked && !this.stoppedForTab) f(); }
   _set(s) { this.status = s; this.listeners.forEach((f) => f(s)); }
 }
 
