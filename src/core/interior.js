@@ -1052,6 +1052,7 @@ export function buildInterior(store) {
       const cloth = store.tarotCloth || '#4b2f7a';
       const n = Math.max(1, Math.min(2, store.readers || 1));
       const tz = -d / 2 + 2.3;
+      const TT = 0.62; // tabletop height: low, so you look down at the cards
       const xs = n === 2 ? [-w / 4 - 0.1, w / 4 + 0.1] : [0];
       stations.tarotReaders = [];
       stations.tarotTables = [];
@@ -1060,23 +1061,23 @@ export function buildInterior(store) {
         rug.position.set(tx, 0.01, tz + 0.2);
         scene.add(rug);
         const top = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.06, 24), mat(cloth));
-        top.position.set(tx, 0.76, tz);
+        top.position.set(tx, TT, tz);
         scene.add(top);
-        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, 0.7, 24, 1, true), mat(cloth));
-        skirt.position.set(tx, 0.4, tz);
+        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, TT - 0.06, 24, 1, true), mat(cloth));
+        skirt.position.set(tx, (TT - 0.06) / 2 + 0.02, tz);
         scene.add(skirt);
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
-        ball.position.set(tx, 0.96, tz - 0.3);
+        ball.position.set(tx, TT + 0.2, tz - 0.3);
         scene.add(ball);
-        box(0.18, 0.05, 0.18, tx, 0.81, tz - 0.3, '#d4a73a'); // its stand
+        box(0.18, 0.05, 0.18, tx, TT + 0.05, tz - 0.3, '#d4a73a'); // its stand
         for (const s2 of [-1, 1]) { // candles
-          box(0.06, 0.16, 0.06, tx + s2 * 0.55, 0.87, tz - 0.15, '#f7f1e3');
+          box(0.06, 0.16, 0.06, tx + s2 * 0.55, TT + 0.11, tz - 0.15, '#f7f1e3');
           const flame = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
-          flame.position.set(tx + s2 * 0.55, 0.98, tz - 0.15);
+          flame.position.set(tx + s2 * 0.55, TT + 0.22, tz - 0.15);
           scene.add(flame);
         }
         for (let q = 0; q < 7; q++) { // a fanned deck, face down
-          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, 0.8, tz + 0.25, '#2a1f4f');
+          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, TT + 0.04, tz + 0.25, '#2a1f4f');
           card.rotation.y = (q - 3) * 0.12;
         }
         // A hanging lamp with a fabric shade, and a warm pool of light.
@@ -1110,7 +1111,8 @@ export function buildInterior(store) {
         box(0.06, 0.06, 3.5, 0, h - 0.3, -d / 2 + 1.7, '#d4a73a'); // its rail
         block(0, -d / 2 + 1.7, 0.2, 3.4);
       }
-      // The waiting sofa by the door, a low table with tea, and a bookshelf.
+      // The waiting sofa by the door (left), armchairs on the right where a
+      // shop counter would be, and a bookshelf. The space between is left open.
       const sofaX = -w / 2 + 0.75;
       box(0.75, 0.42, 2.4, sofaX, 0.21, 1.5, '#7a3b4f');
       box(0.2, 0.9, 2.4, sofaX - 0.33, 0.6, 1.5, '#6a2f42');
@@ -1119,10 +1121,15 @@ export function buildInterior(store) {
         seats.push({ x: sofaX + 0.1, z, ry: Math.PI / 2, stand: [sofaX + 1.0, z], wait: true });
       }
       block(sofaX - 0.05, 1.5, 0.8, 2.5);
-      box(0.6, 0.4, 1.0, sofaX + 1.35, 0.2, 1.5, '#5c3b2a');
-      box(0.16, 0.14, 0.16, sofaX + 1.35, 0.47, 1.3, '#f2e6d0'); // teapot
-      for (const z of [1.6, 1.75]) box(0.07, 0.07, 0.07, sofaX + 1.35, 0.44, z, '#f2e6d0'); // cups
-      block(sofaX + 1.35, 1.5, 0.6, 1.0);
+      const chairX = w / 2 - 0.7;
+      for (const z of [1.0, 1.9, 2.8]) { // waiting armchairs on the right wall, facing the room
+        box(0.62, 0.42, 0.62, chairX, 0.21, z, '#5a3a6e');
+        box(0.14, 0.82, 0.62, chairX + 0.26, 0.61, z, '#4a2f5e'); // backrest
+        for (const s2 of [-1, 1]) box(0.5, 0.18, 0.1, chairX + 0.02, 0.5, z + s2 * 0.29, '#4a2f5e'); // arms
+        box(0.46, 0.08, 0.46, chairX - 0.04, 0.46, z, '#f0d9a8'); // cushion
+        seats.push({ x: chairX - 0.1, z, ry: -Math.PI / 2, stand: [chairX - 1.0, z], wait: true });
+      }
+      block(chairX + 0.05, 1.9, 0.75, 2.6);
       box(0.4, 2.0, 1.4, -w / 2 + 0.25, 1.0, -0.6, '#4a3326'); // bookshelf
       for (let r = 0; r < 4; r++) for (let q = 0; q < 5; q++) box(0.22, 0.32, 0.1, -w / 2 + 0.35, 0.3 + r * 0.48, -1.1 + q * 0.24, ['#c9a6ff', '#e6a3b8', '#ffd36e', '#7fb7a8', '#d98b5f'][(r + q) % 5]);
       block(-w / 2 + 0.25, -0.6, 0.4, 1.4);
@@ -1602,12 +1609,14 @@ export function buildInterior(store) {
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
       stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
       block(dw / 4, dz - 0.85, 0.6, 0.5);
+    } else if (store.workshop === 'tarot') {
+      clerk = stations.tarotReader; // no shop counter: the reader sits at her table
     } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
       const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI };
     }
   }
   // Plants in the corners.
