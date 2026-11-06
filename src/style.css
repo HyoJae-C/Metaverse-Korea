@@ -300,6 +300,30 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   z-index: 4; /* above the hint cards, so they never swallow the tap (sheets stay above) */
 }
 .action:active { transform: translate(-50%, 3px); box-shadow: 0 2px 0 var(--accent-dark); }
+/* Several things in reach: "+N ▾" on the button, and a list to pick from above it. */
+.action-more {
+  display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28); font-size: 13px; vertical-align: 1px;
+}
+.action-menu {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: max(170px, calc(env(safe-area-inset-bottom) + 160px));
+  width: min(360px, calc(100vw - 32px)); max-height: 46vh; overflow-y: auto;
+  display: grid; gap: 6px; padding: 10px; border-radius: 22px;
+  background: var(--panel); box-shadow: var(--shadow); z-index: 4;
+}
+.action-menu[hidden] { display: none; }
+.action-menu-head { margin: 2px 6px 2px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.action-choice {
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  min-height: 48px; padding: 8px 14px; border-radius: 16px;
+  background: #fff; color: var(--ink); font-weight: 800; font-size: 16px;
+  box-shadow: 0 2px 0 rgba(74, 63, 53, 0.15);
+}
+.action-choice span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.action-choice.on { background: var(--accent); color: #fff; box-shadow: 0 3px 0 var(--accent-dark); }
+.action-choice.on kbd { color: var(--accent-dark); }
+.action-choice:active { transform: translateY(2px); }
 .store-banner {
   position: absolute; left: 50%; transform: translateX(-50%);
   top: max(12px, env(safe-area-inset-top));
@@ -350,6 +374,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .in-store .revert { top: calc(max(12px, env(safe-area-inset-top)) + 110px); }
   .guide { top: calc(max(12px, env(safe-area-inset-top)) + 152px); }
   .action { bottom: max(196px, calc(env(safe-area-inset-bottom) + 186px)); }
+  .action-menu { bottom: max(256px, calc(env(safe-area-inset-bottom) + 246px)); max-height: calc(100vh - 340px); }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
@@ -855,7 +880,7 @@ a.setting-row { text-decoration: none; color: inherit; }
 
 /* Hair salon and clinic */
 /* Beauty panel: a slim bar so your face stays visible above it. */
-body.beauty-mode #store-banner, body.beauty-mode #action-btn { display: none; }
+body.beauty-mode #store-banner, body.beauty-mode #action-btn, body.beauty-mode #action-menu { display: none; }
 .sheet.order-panel.beauty-panel { padding: 10px 14px 12px; gap: 8px; max-height: 42vh; }
 .beauty-head { display: flex; align-items: baseline; gap: 10px; padding-right: 36px; }
 .beauty-head strong { font-size: 15px; }
