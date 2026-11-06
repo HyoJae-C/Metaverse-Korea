@@ -124,14 +124,31 @@ export function dartLand(aim, rand = Math.random) {
   return { x: aim.x + Math.cos(a) * d, y: aim.y + Math.sin(a) * d };
 }
 
-// Darts with a friend in the same bar: invite, accept, then each sends their
-// running total after every dart. kind: i = invite, a = accept, s = score,
-// n = no / left. round = darts thrown so far (0..15).
-export const dartsMsg = (to, kind, thrown = 0, total = 0) => `darts:${to}:${kind}:${thrown | 0}:${total | 0}`;
+// Each dart must be thrown within 7 seconds, alone or with a friend.
+export const DART_SECONDS = 7;
+// Darts with a friend in the same bar: invite, accept, then you take turns,
+// one dart each, 10 darts each; the challenger throws first. The thrower
+// tells the other side when their aim starts swaying (with its phase, so
+// both screens show the same sway) and exactly where the dart landed, so
+// both screens show the same throw and the same score.
+// kind: i = invite, a = accept, n = no / left,
+//   t = my turn starts (thrown = dart number 0..19, total = sway phase),
+//   h = hit (thrown = dart number, total / extra = where, see dartAt),
+//   x = out of time (thrown = dart number).
+export const DARTS_EACH = 10;
+export const dartsMsg = (to, kind, thrown = 0, total = 0, extra) => `darts:${to}:${kind}:${thrown | 0}:${total | 0}` + (extra != null ? `:${extra | 0}` : '');
 export function parseDarts(e) {
-  const m = /^darts:([\w-]{1,64}):([ians]):(\d{1,2}):(\d{1,4})$/.exec(String(e));
-  return m ? { to: m[1], kind: m[2], thrown: +m[3], total: +m[4] } : null;
+  const m = /^darts:([\w-]{1,64}):([ianthx]):(\d{1,2}):(\d{1,4})(?::(\d{1,4}))?$/.exec(String(e));
+  return m ? { to: m[1], kind: m[2], thrown: +m[3], total: +m[4], extra: m[5] != null ? +m[5] : null } : null;
 }
+// A board position (-2..2) as a whole number for a message, and back.
+export const dartPack = (v) => Math.round((Math.max(-2, Math.min(2, v)) + 2) * 1000);
+export const dartUnpack = (n) => n / 1000 - 2;
+// The sway phase (0..20 s) as a whole number for a message, and back.
+export const swayPack = (s) => Math.round(Math.max(0, Math.min(19.99, s)) * 500);
+export const swayUnpack = (n) => n / 500;
+// Dart number n (0 = the very first) in a match: is it the challenger's?
+export const challengerThrows = (n) => n % 2 === 0;
 
 // ── Records ──────────────────────────────────────────────────────────────
 export const RECORD_KEY = 'mk.arcade';

@@ -3838,7 +3838,7 @@ async function makeArcade(kind) {
         friend: () => others.nearestFree(me.root.position.x, me.root.position.z, 6),
         invite: freshInvite,
         clearInvite: () => { dartsInvite = null; },
-        send: (to, k, thrown, total) => net.sendEmote(dartsMsg(to, k, thrown, total)),
+        send: (to, k, thrown, total, extra) => net.sendEmote(dartsMsg(to, k, thrown, total, extra)),
         onThrow: (pts) => { sfx.tock(0.7, 600); if (pts >= 50) me.play('cheer'); },
       });
     }
