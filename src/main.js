@@ -1,4 +1,5 @@
 import { haptics, buzz, shake } from './core/haptics.js';
+import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
 import { setBeat } from './core/model-pack.js';
 import {
@@ -1907,7 +1908,8 @@ let held = (() => {
 })();
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
-const heldKind = () => (rodOut ? 'rod' : held?.kind || null);
+const rodSkins = new RodSkins();
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
@@ -3718,6 +3720,13 @@ const marketUi = new FishMarketUI({
   root: $('market-panel'),
   bag: fishBag,
   wallet,
+  rods: rodSkins,
+  // A new rod skin: show it in hand right away if fishing, and tell the world.
+  onRodSkin: (id, bought) => {
+    if (bought) { shop.toast(t('fish.rodBought', { name: localName(rodSkin(id).name) })); sfx.reveal?.(true); }
+    if (rodOut) { me.setHeld(heldKind()); lastSent = null; }
+  },
+  onShort: (s) => shop.toast(t('fish.rodShort', { name: localName(s.name) })),
   onSold: (coins) => {
     if (!coins) return;
     shop.toast(t('fish.sold', { coins }));
