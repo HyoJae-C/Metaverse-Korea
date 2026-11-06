@@ -353,4 +353,164 @@ export function avenue(g, l) {
   g.add(trunks, crowns);
 }
 
-export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill };
+// A butterfly greenhouse (l.w × l.d, door l.door wide in the -z wall): a
+// white frame with glass walls and a glass gable roof, planters of leafy
+// plants and flowers round the inside, and butterflies fluttering about.
+// Returns a tick (time in seconds) that flies them.
+function greenhouse(g, l) {
+  const w = l.w || 14, d = l.d || 10, door = l.door || 2.6, H = 3.6, roofH = 2.2;
+  const frame = mat('#f6f7f2');
+  const glass = new THREE.MeshLambertMaterial({ color: '#d8f1ee', transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide });
+  const add = (geo, m, x, y, z, noShadow) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); if (noShadow) o.userData.noShadow = true; g.add(o); return o; };
+  // floor: pale stone tiles
+  add(new THREE.BoxGeometry(w, 0.08, d), mat('#e4ddd0'), 0, 0.04, 0, true);
+  // posts round the walls, every ~2 m, and beams along the tops
+  const postGeo = new THREE.BoxGeometry(0.12, H, 0.12);
+  const nx = Math.round(w / 2), nz = Math.round(d / 2);
+  for (let i = 0; i <= nx; i++) for (const sz of [-1, 1]) {
+    const x = -w / 2 + (w * i) / nx;
+    if (sz < 0 && Math.abs(x) < door / 2 - 0.05) continue; // (the doorway)
+    add(postGeo, frame, x, H / 2, (sz * d) / 2);
+  }
+  for (let k = 1; k < nz; k++) for (const sx of [-1, 1]) add(postGeo, frame, (sx * w) / 2, H / 2, -d / 2 + (d * k) / nz);
+  for (const sz of [-1, 1]) add(new THREE.BoxGeometry(w, 0.14, 0.14), frame, 0, H, (sz * d) / 2);
+  for (const sx of [-1, 1]) add(new THREE.BoxGeometry(0.14, 0.14, d), frame, (sx * w) / 2, H, 0);
+  // glass walls (the front one in two halves either side of the door, and a glass panel over it)
+  add(new THREE.PlaneGeometry(w, H), glass, 0, H / 2, d / 2, true);
+  for (const sx of [-1, 1]) add(new THREE.PlaneGeometry(d, H), glass, (sx * w) / 2, H / 2, 0, true).rotation.y = Math.PI / 2;
+  const side = (w - door) / 2;
+  for (const sx of [-1, 1]) add(new THREE.PlaneGeometry(side, H), glass, sx * (door / 2 + side / 2), H / 2, -d / 2, true);
+  add(new THREE.PlaneGeometry(door, H - 2.6), glass, 0, 2.6 + (H - 2.6) / 2, -d / 2, true);
+  add(new THREE.BoxGeometry(door + 0.2, 0.14, 0.16), frame, 0, 2.6, -d / 2); // door lintel
+  // gable roof along x: two glass slopes, end triangles, rafters and a ridge
+  const slope = Math.hypot(d / 2, roofH), tilt = Math.atan2(roofH, d / 2);
+  for (const sz of [-1, 1]) {
+    const r = add(new THREE.PlaneGeometry(w, slope), glass, 0, H + roofH / 2, (sz * d) / 4, true);
+    r.rotation.x = -sz * (Math.PI / 2 - tilt); // from the eave up to the ridge
+  }
+  const tri = new THREE.BufferGeometry();
+  tri.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -d / 2, 0, 0, d / 2, 0, roofH, 0], 3));
+  tri.computeVertexNormals();
+  for (const sx of [-1, 1]) add(tri, glass, (sx * w) / 2, H, 0, true);
+  add(new THREE.BoxGeometry(w + 0.2, 0.16, 0.16), frame, 0, H + roofH, 0); // ridge
+  for (let i = 0; i <= nx; i++) for (const sz of [-1, 1]) {
+    const raf = add(new THREE.BoxGeometry(0.1, 0.1, slope), frame, -w / 2 + (w * i) / nx, H + roofH / 2, (sz * d) / 4);
+    raf.rotation.x = sz * tilt;
+  }
+  // planters along the walls inside: soil boxes, leafy plants, flowers
+  const leaf = new THREE.IcosahedronGeometry(0.45, 0), frond = new THREE.ConeGeometry(0.35, 1.4, 5);
+  const bloomGeo = new THREE.IcosahedronGeometry(0.13, 0);
+  const plants = [];
+  const bed = (x, z, sx, sz) => {
+    add(new THREE.BoxGeometry(sx, 0.4, sz), mat('#9a6a45'), x, 0.2, z);
+    add(new THREE.BoxGeometry(sx - 0.1, 0.05, sz - 0.1), mat('#5b4030'), x, 0.41, z, true);
+    const n = Math.max(2, Math.round((sx * sz) / 0.7));
+    for (let i = 0; i < n; i++) {
+      const u = ((i * 0.618) % 1) - 0.5, v = ((i * 0.381 + 0.17) % 1) - 0.5;
+      plants.push([x + u * (sx - 0.4), z + v * (sz - 0.4), i]);
+    }
+  };
+  bed(0, d / 2 - 0.7, w - 1.2, 1); // back wall
+  for (const sx of [-1, 1]) bed((sx * (w / 2 - 0.7)), 0.3, 1, d - 2.6); // side walls
+  for (const sx of [-1, 1]) bed(sx * (door / 2 + side / 2 + 0.2), -d / 2 + 0.7, side - 1.2, 0.9); // either side of the door
+  const leaves = new THREE.InstancedMesh(leaf, new THREE.MeshLambertMaterial({ color: '#ffffff' }), plants.length);
+  const fronds = new THREE.InstancedMesh(frond, mat('#3f8f4a'), plants.length);
+  const blooms = new THREE.InstancedMesh(bloomGeo, new THREE.MeshLambertMaterial({ color: '#ffffff' }), plants.length * 2);
+  const greens = ['#4f9e4a', '#6fbf5a', '#3f8a52', '#7cc46e'].map((c) => new THREE.Color(c));
+  const flowers = ['#ff6f91', '#ffd166', '#c9a6f0', '#ff9f43', '#ffffff'].map((c) => new THREE.Color(c));
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  plants.forEach(([x, z, i], k) => {
+    const s = 0.8 + ((i * 7) % 5) / 8;
+    m4.compose(v.set(x, 0.75 * s, z), q.setFromAxisAngle(up, i), sc.set(s, s, s));
+    leaves.setMatrixAt(k, m4);
+    leaves.setColorAt(k, greens[k % greens.length]);
+    m4.compose(v.set(x + 0.15, 0.9 * s + 0.2, z - 0.1), q.setFromAxisAngle(sc.set(0.3, 0, 1).normalize(), 0.35), sc.set(s, s, s));
+    fronds.setMatrixAt(k, m4);
+    for (let b = 0; b < 2; b++) {
+      m4.makeTranslation(x + (b ? 0.3 : -0.25) * s, (1.05 + b * 0.15) * s, z + (b ? -0.2 : 0.25) * s);
+      blooms.setMatrixAt(k * 2 + b, m4);
+      blooms.setColorAt(k * 2 + b, flowers[(k + b * 2) % flowers.length]);
+    }
+  });
+  g.add(leaves, fronds, blooms);
+  // Butterflies: two wings each, flapping, on slow looping paths inside.
+  const wingGeo = new THREE.CircleGeometry(0.16, 6).translate(0.15, 0, 0);
+  const colors = ['#ffb627', '#5ec8f2', '#ff6fae', '#ffffff', '#b38cf2', '#ff8a3d'];
+  const flock = [];
+  for (let i = 0; i < 14; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: colors[i % colors.length], side: THREE.DoubleSide });
+    const b = new THREE.Group();
+    const wings = [-1, 1].map((sx) => { const wg = new THREE.Mesh(wingGeo, m); wg.scale.x = sx; wg.userData.noShadow = true; b.add(wg); return wg; });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.2), mat('#2b2230'));
+    body.userData.noShadow = true;
+    b.add(body);
+    g.add(b);
+    flock.push({ b, wings, cx: ((i * 0.37) % 1 - 0.5) * (w - 3), cz: ((i * 0.61) % 1 - 0.5) * (d - 3), rx: 0.8 + (i % 4) * 0.4, rz: 0.6 + (i % 3) * 0.4, y: 1.2 + (i % 5) * 0.35, sp: 0.35 + (i % 4) * 0.12, ph: i * 1.7 });
+  }
+  return (t) => {
+    for (const f of flock) {
+      const a = t * f.sp + f.ph;
+      const x = f.cx + Math.cos(a) * f.rx, z = f.cz + Math.sin(a * 1.3) * f.rz;
+      f.b.position.set(x, f.y + Math.sin(a * 2.1) * 0.25, z);
+      f.b.rotation.y = Math.atan2(-Math.sin(a) * f.rx, Math.cos(a * 1.3) * 1.3 * f.rz);
+      const flap = Math.sin(t * 14 + f.ph) * 0.9;
+      f.wings[0].rotation.z = flap; f.wings[1].rotation.z = -flap;
+    }
+  };
+}
+
+// A round pond (l.r) with a stone rim, lily pads, and a tiered fountain in
+// the middle whose jets bob up and down. Returns its tick.
+function pond(g, l) {
+  const r = l.r || 5.5;
+  const water = new THREE.Mesh(new THREE.CircleGeometry(r, 40).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#69bfe6' }));
+  water.position.y = 0.12;
+  water.userData.noShadow = true;
+  g.add(water);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r + 0.15, 0.3, 6, 40), mat('#cfc7b8'));
+  rim.rotation.x = Math.PI / 2;
+  rim.scale.z = 0.8;
+  rim.position.y = 0.22;
+  g.add(rim);
+  const pad = new THREE.CircleGeometry(0.35, 10, 0.4, Math.PI * 2 - 0.8).rotateX(-Math.PI / 2);
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.3, d = r * (0.55 + ((i * 0.37) % 0.35));
+    const p = new THREE.Mesh(pad, mat('#4f9e4a'));
+    p.position.set(Math.cos(a) * d, 0.14, Math.sin(a) * d);
+    p.rotation.y = i;
+    p.userData.noShadow = true;
+    g.add(p);
+    if (i % 3 === 0) { const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), mat('#ffb3c7')); f.position.set(p.position.x, 0.22, p.position.z); g.add(f); }
+  }
+  // fountain: a basin on a column, a smaller bowl on top
+  const stone = mat('#e8e2d6');
+  const tier = (rad, h, y) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, h, 20), stone); c.position.y = y; g.add(c); };
+  tier(1.5, 0.4, 0.3); tier(0.35, 1.0, 0.9); tier(0.8, 0.25, 1.45); tier(0.15, 0.6, 1.85);
+  const jetMat = new THREE.MeshLambertMaterial({ color: '#dff4ff', transparent: true, opacity: 0.7, depthWrite: false });
+  const top = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.2, 8, 1, true).translate(0, 0.6, 0), jetMat);
+  top.position.y = 2.1;
+  top.userData.noShadow = true;
+  g.add(top);
+  const arcs = [];
+  for (let i = 0; i < 6; i++) { // little arcs falling from the bowl into the basin
+    const a = (i / 6) * Math.PI * 2;
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.04, 4, 10, Math.PI / 2), jetMat);
+    arc.position.set(Math.cos(a) * 0.8, 1.15, Math.sin(a) * 0.8);
+    arc.rotation.y = -a;
+    arc.userData.noShadow = true;
+    g.add(arc);
+    arcs.push(arc);
+  }
+  const ripple = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.75, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.5, depthWrite: false }));
+  ripple.position.y = 0.14;
+  ripple.userData.noShadow = true;
+  g.add(ripple);
+  return (t) => {
+    top.scale.y = 0.85 + Math.sin(t * 3) * 0.15;
+    const k = (t * 0.5) % 1;
+    ripple.scale.setScalar(1 + k * 1.6);
+    ripple.material.opacity = 0.5 * (1 - k);
+  };
+}
+
+export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill, greenhouse, pond };

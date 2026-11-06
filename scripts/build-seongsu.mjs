@@ -173,11 +173,8 @@ for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, fac
   const p = onTrail(i, t, side * 3.4);
   bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
 });
-// One more by the trail at the east gate, facing the walkers.
-[['chocolate', 0, 0.12, 5]].forEach(([model, i, t, side]) => {
-  const p = onTrail(i, t, side);
-  sculpture(model, p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
-});
+// The chocolate one closes the south end of Metasequoia Avenue (below), facing up it.
+sculpture('chocolate', -200, 341.5, Math.PI);
 // A grassy hill with wooden stairs up to a look-out deck, west of the trail
 // (walkable: core/park-art.js hillY). The stairs face the path to the trail.
 // A wide flat top with a big round deck, and the soft serve sculpture on it.
@@ -211,13 +208,28 @@ WALKS.push({ w: 3, p: [[-200.5, 267.5], [HILL.x + HILL.r + 0.5, HILL.z]] }); // 
   }
   LANDMARKS.push({ type: 'avenue', trees });
 }
-// One on a little round plaza on the lawn east of the trail, with benches to look at it.
-const PLAZA = { x: -140, z: 188 };
-LANDMARKS.push({ type: 'parkplaza', x: PLAZA.x, z: PLAZA.z + 1.5, r: 7.5, clear: 10 }); // round paving under them
-WALKS.push({ w: 3, p: [[-145.25, 138.75], [PLAZA.x, PLAZA.z - 6]] }); // from the trail
-sculpture('mint-chocolate', PLAZA.x, PLAZA.z - 1.2, 0);
-bench(PLAZA.x, PLAZA.z + 6, Math.PI);
-bench(PLAZA.x - 4, PLAZA.z + 6.5, faceTo(PLAZA.x - 4, PLAZA.z + 6.5, PLAZA.x, PLAZA.z));
+// A butterfly greenhouse on the lawn east of the trail (glass walls, plants,
+// butterflies, the mint chocolate sculpture in the middle), its door on the
+// north side where the path comes in; outside it to the south, a round pond
+// with a fountain and benches to sit by it.
+const GH = { x: -138, z: 184, w: 14, d: 10, door: 2.6 };
+LANDMARKS.push({ type: 'greenhouse', x: GH.x, z: GH.z, w: GH.w, d: GH.d, door: GH.door, clear: 10 });
+WALKS.push({ w: 3, p: [[-145.25, 138.75], [GH.x, GH.z - GH.d / 2 - 0.5]] }); // from the trail to the door
+{ // glass walls (the north one with the door gap)
+  const { x, z, w, d, door } = GH, t = 0.3;
+  const wall = (cx, cz, sx, sz) => BLOCKERS.push({ p: rotBox(cx, cz, sx, sz, 0) });
+  wall(x, z + d / 2, w, t); wall(x - w / 2, z, t, d); wall(x + w / 2, z, t, d);
+  const side = (w - door) / 2;
+  wall(x - w / 2 + side / 2, z - d / 2, side, t); wall(x + w / 2 - side / 2, z - d / 2, side, t);
+}
+sculpture('mint-chocolate', GH.x, GH.z + 0.5, Math.PI); // facing the door
+const POND = { x: GH.x, z: GH.z + GH.d / 2 + 9, r: 5.5 };
+LANDMARKS.push({ type: 'pond', x: POND.x, z: POND.z, r: POND.r, clear: POND.r + 3 });
+BLOCKERS.push({ p: Array.from({ length: 12 }, (_, k) => [r2(POND.x + Math.cos((k * Math.PI) / 6) * (POND.r + 0.3)), r2(POND.z + Math.sin((k * Math.PI) / 6) * (POND.r + 0.3))]) });
+for (const a of [Math.PI * 0.15, Math.PI * 0.5, Math.PI * 0.85]) { // benches round the pond, facing the fountain
+  const bx = POND.x + Math.cos(a) * (POND.r + 2.2), bz = POND.z + Math.sin(a) * (POND.r + 2.2);
+  bench(bx, bz, faceTo(bx, bz, POND.x, POND.z));
+}
 
 // ── Geometry helpers ─────────────────────────────────────────────────────
 function line(ref, axis) {
