@@ -46,6 +46,7 @@ const PATTERN_NAMES = {
 const LENGTH_NAMES = {
   mini: { en: 'mini skirt', ko: '미니스커트', ja: 'ミニスカート', zh: '短裙' },
   long: { en: 'long skirt', ko: '롱스커트', ja: 'ロングスカート', zh: '长裙' },
+  chima: { en: 'chima', ko: '치마', ja: 'チマ', zh: '韩服裙' },
 };
 
 // The name of a skirt in en/ko/ja/zh, from its colour, pattern and length.
@@ -113,4 +114,24 @@ export const SKIRTS = {
   'pleats-mini-black': sk('mini', 'pleats', 'black', 0x2b2b31),
 };
 
-export const skirtById = (id) => (typeof id === 'string' && Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : null);
+// Hanbok skirts (chima): only worn with a rented hanbok (data/hanbok.js),
+// never sold on their own, so they are kept out of SKIRTS.
+export const CHIMAS = {
+  'chima-red': sk('chima', 'pleats', 'red', 0xc8323f),
+  'chima-navy': sk('chima', 'pleats', 'navy', 0x2f3c66),
+  'chima-pink': sk('chima', 'pleats', 'pink', 0xf29bb6),
+};
+
+// The palace fan dancers' chimas (core/palace-show.js): twenty colours
+// spread evenly round the colour wheel, so no two dancers match.
+const hsl = (h, s, l) => {
+  const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return (Math.round(f(0) * 255) << 16) | (Math.round(f(8) * 255) << 8) | Math.round(f(4) * 255);
+};
+export const DANCER_CHIMAS = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [
+  'chima-dance-' + (i + 1), sk('chima', 'pleats', null, hsl(i * 18, 0.68, i % 2 ? 0.62 : 0.5)),
+]));
+
+export const skirtById = (id) => (typeof id !== 'string' ? null
+  : Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : Object.hasOwn(CHIMAS, id) ? CHIMAS[id] : Object.hasOwn(DANCER_CHIMAS, id) ? DANCER_CHIMAS[id] : null);

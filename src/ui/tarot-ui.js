@@ -8,6 +8,7 @@
 import { TAROT_CARDS, TAROT_COST, TOPICS, PAIR_POSITIONS, topicById, cardText, cardMark, shuffleDeck, seeded } from '../data/tarot.js';
 import { L, fmt } from './pocha-ui.js';
 
+export const REVEAL_MS = 1500, REVEAL_LAST_MS = 2600; // face down this long before a picked card turns over
 export const SPREAD = 22; // face-down cards fanned out to pick from (the top of the shuffled deck)
 
 export const TAROT_UI_TEXT = {
@@ -24,6 +25,7 @@ export const TAROT_UI_TEXT = {
     ja: 'お遊びとして楽しんでください！本当の占いとは違い、科学的根拠はまったくありません。未来は自分でつくるもの。',
     zh: '仅供娱乐！这些占卜不是真正的算命，完全没有科学依据。未来由你自己创造。',
   },
+  hush: { en: 'The card is turning…', ko: '카드가 펼쳐지는 중…', ja: 'カードがめくられます…', zh: '牌正在翻开…' },
   pick: { en: 'Pick a card: {pos} ({i}/3)', ko: '카드를 골라 주세요: {pos} ({i}/3)', ja: 'カードを選んで：{pos}（{i}/3）', zh: '请选一张牌：{pos}（{i}/3）' },
   theirPick: { en: '{name} is picking: {pos} ({i}/3)', ko: '{name} 님이 고르는 중: {pos} ({i}/3)', ja: '{name}さんが選んでいます：{pos}（{i}/3）', zh: '{name}正在选：{pos}（{i}/3）' },
   done: { en: 'Your reading', ko: '타로 풀이', ja: 'あなたの占い結果', zh: '你的占卜结果' },
@@ -72,8 +74,8 @@ export class TarotUI {
   // wallet: { spend(n, note) }; onRead(cards, topic): after the third card
   // flips; partner(): { id, name } of a friend at the same table, or null;
   // send(verb, to, a, b): a message to them; myName(): our own name.
-  constructor({ root, wallet, onRead, onPick, partner = () => null, send = () => {}, myName = () => '', toast = () => {}, rand = Math.random }) {
-    Object.assign(this, { root, wallet, onRead, onPick, partner, send, myName, toast, rand });
+  constructor({ root, wallet, onRead, onPick, onTension, onReveal, partner = () => null, send = () => {}, myName = () => '', toast = () => {}, rand = Math.random }) {
+    Object.assign(this, { root, wallet, onRead, onPick, onTension, onReveal, partner, send, myName, toast, rand });
     this.state = null; // { topic, deck, picked, taken, pair?: { host, other, a, b } }
     this.inviting = null; // { to, name, topic }: waiting for a friend to join
     this.offer = null; // { from, name, topic }: a friend asked us
@@ -170,12 +172,32 @@ export class TarotUI {
     const s = this.state;
     if (!s || s.picked.length >= 3 || !(i >= 0 && i < SPREAD) || s.taken.includes(i)) return;
     if (!remote && !this.myTurn()) return;
+    if (s.revealing != null) return; // wait for the card being turned over
     s.picked.push(s.deck[i]);
     s.taken.push(i);
     if (!remote && s.pair && !s.pair.gone) this.send('pick', s.pair.other, String(i));
     this.onPick?.(s.picked.length);
+    // Suspense: the room darkens, the card waits face down while the heart
+    // beats, then turns over slowly. The last card takes longest.
+    const k = s.picked.length - 1, last = k === 2;
+    s.revealing = k;
+    this.onTension?.(last);
     this.render();
-    if (s.picked.length === 3) this.onRead?.(s.picked.map(cardById), s.topic, !!s.pair);
+    clearTimeout(this._reveal);
+    this._reveal = setTimeout(() => {
+      if (this.state !== s) return;
+      s.revealing = null;
+      s.flipped = k;
+      this.onReveal?.(last);
+      this.render();
+      // Let the turn-over play, then carry on (or show the reading).
+      setTimeout(() => {
+        if (this.state !== s || s.flipped !== k) return;
+        s.flipped = null;
+        this.render();
+        if (s.picked.length === 3) this.onRead?.(s.picked.map(cardById), s.topic, !!s.pair);
+      }, 900);
+    }, last ? REVEAL_LAST_MS : REVEAL_MS);
   }
 
   positions() {
@@ -224,6 +246,7 @@ export class TarotUI {
     const topic = topicById(s?.topic);
     const parts = [x, el('h3', null, (s ? topic.icon + ' ' + L(topic.name) : '🔮 ' + tt('title')))];
     if (!s) {
+      this.root.classList.remove('tarot-tension');
       this.menu(parts);
       parts.push(el('p', 'fine tarot-fun', tt('fun')));
       if (note) parts.push(el('p', 'order-hint claw-note', note));
@@ -236,16 +259,20 @@ export class TarotUI {
     pos.forEach((p, k) => {
       const slot = el('div', 'tarot-slot');
       const n = s.picked[k];
-      const card = el('div', 'tarot-card' + (n != null ? ' up' : ''));
-      if (n != null) card.append(cardFace(cardById(n)));
+      const waiting = s.revealing === k;
+      const card = el('div', 'tarot-card' + (waiting ? ' pending' : n != null ? ' up' : '') + (s.flipped === k ? ' flip' : '') + (waiting && k === 2 ? ' last' : ''));
+      if (n != null && !waiting) card.append(cardFace(cardById(n)));
       slot.append(el('b', null, p.label), card);
       slots.append(slot);
     });
     parts.push(slots);
-    if (s.picked.length < 3) {
-      const k = s.picked.length;
-      const mine = this.myTurn();
-      parts.push(el('p', 'order-hint', mine ? tt('pick', { pos: pos[k].label, i: k + 1 }) : tt('theirPick', { name: s.pair.host ? s.pair.b : s.pair.a, pos: pos[k].label, i: k + 1 })));
+    const done = s.picked.length === 3 && s.revealing == null && s.flipped == null;
+    if (!done && (s.picked.length < 3 || s.revealing != null || s.flipped != null)) {
+      const k = Math.min(s.picked.length, 2);
+      const busy = s.revealing != null || s.picked.length >= 3;
+      const mine = this.myTurn() && !busy;
+      if (busy) parts.push(el('p', 'order-hint tarot-hush', tt('hush')));
+      else parts.push(el('p', 'order-hint', mine ? tt('pick', { pos: pos[k].label, i: k + 1 }) : tt('theirPick', { name: s.pair.host ? s.pair.b : s.pair.a, pos: pos[k].label, i: k + 1 })));
       const spread = el('div', 'tarot-spread' + (mine ? '' : ' wait'));
       for (let i = 0; i < SPREAD; i++) {
         const b = el('button', 'tarot-back');
@@ -269,11 +296,12 @@ export class TarotUI {
     }
     parts.push(el('p', 'fine tarot-fun', tt('fun')));
     if (note) parts.push(el('p', 'order-hint claw-note', note));
-    if (s.picked.length === 3) {
+    if (done) {
       const actions = el('div', 'order-actions');
       actions.append(button('primary', '🃏 ' + tt('again'), () => { this.state = null; this.render(); }));
       parts.push(actions);
     }
+    this.root.classList.toggle('tarot-tension', s.revealing != null);
     this.root.replaceChildren(...parts);
   }
 }

@@ -6,6 +6,10 @@ export const LOCK_DAYS = 7;
 
 // Names use Korean (Hangul), English letters, numbers and spaces only.
 export const cleanName = (s) => String(s || '').replace(/[^가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9 ]/g, '').replace(/ {2,}/g, ' ').slice(0, 16);
+// Names that look official are not allowed, so nobody can pose as the
+// operator by name (the real one has the 🛡️ badge).
+const RESERVED = /운영자|운영진|운영팀|관리자|개발자|admin|operator|moderator|official|staff|developer|^gm\d*$/i;
+export const isReservedName = (s) => RESERVED.test(String(s || '').replace(/\s+/g, ''));
 const DAY = 24 * 60 * 60 * 1000;
 const KEY = 'mk.identity';
 

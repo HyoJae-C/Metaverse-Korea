@@ -56,3 +56,18 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
    Inside, the game guide (left) explains the game and the area guide (right)
    lists the district's places.
+
+## Sunken streams (Cheonggyecheon)
+
+A district map can list `streams`: a stone channel below the street that runs
+east from `at` for `len` metres, with walkways on both banks, water in the
+middle, `bridges` (`arch` or `slab`), `stairs` down from the sidewalk and
+`stones` (stepping stones). Positions along the channel are `u`, metres from
+its west end. See `src/core/stream.js`.
+
+Collision is 2D, so a stream has two layers. On the street the channel is a
+wall that only bridge decks cross (these walls are part of the normal
+collision map, so routes, trees and passers-by keep out of it). Halfway down a
+stair you switch to the low layer, where the banks' walls and the water are
+what you bump into, and a bridge is a roof overhead.
+

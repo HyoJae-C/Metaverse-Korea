@@ -494,5 +494,19 @@
       }
     }
   ],
+  "adPosters": {
+    "L-115": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
+    "L-117": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
+    "L-118": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
+    "L-119": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
+    "L-101": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
+    "L-97": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
+    "L-32": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
+  },
+  "storePosters": {
+    "sinjeon-pocha": { "image": "ads/seongsu-retro-v2.webp", "credit": "Alex Shaw" },
+    "son-kalguksu": { "image": "ads/seongsu-noir-v2.webp", "credit": "Christian Agbede" },
+    "sandgrain-bakery": { "image": "ads/seongsu-beanie-v2.webp", "credit": "Pesce Huang" }
+  },
   "note": "Seongsu is a hand-made game map (scripts/build-seongsu.mjs), loosely inspired by the real neighbourhood; it is not a copy of any map."
 }
