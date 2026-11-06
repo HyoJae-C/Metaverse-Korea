@@ -3144,7 +3144,8 @@ const streetLawns = map.areas.filter((a) => a.k === 'park' && a.trees).map((a) =
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });
-const hills = (map.landmarks || []).filter((l) => l.type === 'hill').map((l) => [l.x, l.z, l.r || 13]); // (not on the slope)
+const hills = (map.landmarks || []).filter((l) => ['hill', 'pond', 'greenhouse'].includes(l.type)) // (not on a slope, in a pond or in the greenhouse)
+  .map((l) => [l.x, l.z, l.type === 'greenhouse' ? Math.hypot(l.w, l.d) / 2 : l.r || 13]);
 const lawnBlocks = lawnObstacles.concat(hills);
 const lawnRoads = map.roads.filter((r) => r.p.some(([x, z]) => streetLawns.some((l) => x > l.x0 - 40 && x < l.x1 + 40 && z > l.z0 - 40 && z < l.z1 + 40)));
 const streetPicnic = streetLawns.length ? {

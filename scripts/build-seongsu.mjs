@@ -173,23 +173,63 @@ for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, fac
   const p = onTrail(i, t, side * 3.4);
   bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
 });
-// Two more by the trail, facing the walkers: at the east gate and near the south end.
-[['chocolate', 0, 0.12, 5], ['soft-serve', 3, 0.6, -5.5]].forEach(([model, i, t, side]) => {
-  const p = onTrail(i, t, side);
-  sculpture(model, p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
-});
+// The chocolate one closes the south end of Metasequoia Avenue (below), facing up it.
+sculpture('chocolate', -200, 341.5, Math.PI);
 // A grassy hill with wooden stairs up to a look-out deck, west of the trail
 // (walkable: core/park-art.js hillY). The stairs face the path to the trail.
-const HILL = { x: -238, z: 270, r: 13 };
-LANDMARKS.push({ type: 'hill', x: HILL.x, z: HILL.z, r: HILL.r, ry: faceTo(HILL.x, HILL.z, -200, 270), clear: HILL.r + 2 });
+// A wide flat top with a big round deck, and the soft serve sculpture on it.
+const HILL = { x: -238, z: 270, r: 18, h: 4.5, top: 8.5, deck: 7 };
+LANDMARKS.push({ type: 'hill', x: HILL.x, z: HILL.z, r: HILL.r, h: HILL.h, top: HILL.top, deck: HILL.deck, ry: faceTo(HILL.x, HILL.z, -200, 270), clear: HILL.r + 2 });
+LANDMARKS.push({ type: 'icecream', model: 'soft-serve', x: HILL.x, z: HILL.z, y: HILL.h + 0.12, ry: faceTo(HILL.x, HILL.z, -200, 270), s: ICE_S, clear: 2 + ICE_S });
+BLOCKERS.push({ p: rotBox(HILL.x, HILL.z, 1.25 * ICE_S, 1.25 * ICE_S, 0) });
 WALKS.push({ w: 3, p: [[-200.5, 267.5], [HILL.x + HILL.r + 0.5, HILL.z]] }); // from the trail to the foot of the stairs
-// One on a little round plaza on the lawn east of the trail, with benches to look at it.
-const PLAZA = { x: -140, z: 188 };
-LANDMARKS.push({ type: 'parkplaza', x: PLAZA.x, z: PLAZA.z + 1.5, r: 7.5, clear: 10 }); // round paving under them
-WALKS.push({ w: 3, p: [[-145.25, 138.75], [PLAZA.x, PLAZA.z - 6]] }); // from the trail
-sculpture('mint-chocolate', PLAZA.x, PLAZA.z - 1.2, 0);
-bench(PLAZA.x, PLAZA.z + 6, Math.PI);
-bench(PLAZA.x - 4, PLAZA.z + 6.5, faceTo(PLAZA.x - 4, PLAZA.z + 6.5, PLAZA.x, PLAZA.z));
+// Metasequoia Avenue: a long straight path north to south through the wood,
+// lined both sides with tall trees in autumn orange (core/park-art.js
+// avenue). Its walk keeps the other trees back ("clear"); the avenue's own
+// trees skip the spots where something else stands (benches, the trail).
+{
+  const AX = -200, Z0 = 85, Z1 = 346, OFF = 4.5, GAP = 6;
+  WALKS.push({ w: 4, clear: 5, p: [[AX, Z0], [AX, Z1]], n: name('메타세쿼이아길', 'Metasequoia Avenue', 'メタセコイア並木', '水杉大道') });
+  const avoid = [...LANDMARKS.filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]), [-190, 215, 3]]; // (+ the meeting sign)
+  const nearWalk = (x, z) => WALKS.some((w) => w.p.some((q, i) => {
+    const r = w.p[i + 1];
+    if (!r || (w.p[0][0] === AX && w.p.length === 2)) return false;
+    const dx = r[0] - q[0], dz = r[1] - q[1], l2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - q[0]) * dx + (z - q[1]) * dz) / l2));
+    return Math.hypot(q[0] + t * dx - x, q[1] + t * dz - z) < w.w / 2 + 1.5;
+  }));
+  const trees = [];
+  for (let z = Z0 + 3; z < Z1 - 1; z += GAP) {
+    for (const side of [-1, 1]) {
+      const x = AX + side * OFF;
+      if (avoid.some(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) < cr) || nearWalk(x, z)) continue;
+      trees.push([r2(x), r2(z)]);
+    }
+  }
+  LANDMARKS.push({ type: 'avenue', trees });
+}
+// A butterfly greenhouse on the lawn east of the trail (glass walls, plants,
+// butterflies, the mint chocolate sculpture in the middle), its door on the
+// north side where the path comes in; outside it to the south, a round pond
+// with a fountain and benches to sit by it.
+const GH = { x: -138, z: 184, w: 14, d: 10, door: 2.6 };
+LANDMARKS.push({ type: 'greenhouse', x: GH.x, z: GH.z, w: GH.w, d: GH.d, door: GH.door, clear: 10 });
+WALKS.push({ w: 3, p: [[-145.25, 138.75], [GH.x, GH.z - GH.d / 2 - 0.5]] }); // from the trail to the door
+{ // glass walls (the north one with the door gap)
+  const { x, z, w, d, door } = GH, t = 0.3;
+  const wall = (cx, cz, sx, sz) => BLOCKERS.push({ p: rotBox(cx, cz, sx, sz, 0) });
+  wall(x, z + d / 2, w, t); wall(x - w / 2, z, t, d); wall(x + w / 2, z, t, d);
+  const side = (w - door) / 2;
+  wall(x - w / 2 + side / 2, z - d / 2, side, t); wall(x + w / 2 - side / 2, z - d / 2, side, t);
+}
+sculpture('mint-chocolate', GH.x, GH.z + 0.5, Math.PI); // facing the door
+const POND = { x: GH.x, z: GH.z + GH.d / 2 + 9, r: 5.5 };
+LANDMARKS.push({ type: 'pond', x: POND.x, z: POND.z, r: POND.r, clear: POND.r + 3 });
+BLOCKERS.push({ p: Array.from({ length: 12 }, (_, k) => [r2(POND.x + Math.cos((k * Math.PI) / 6) * (POND.r + 0.3)), r2(POND.z + Math.sin((k * Math.PI) / 6) * (POND.r + 0.3))]) });
+for (const a of [Math.PI * 0.15, Math.PI * 0.5, Math.PI * 0.85]) { // benches round the pond, facing the fountain
+  const bx = POND.x + Math.cos(a) * (POND.r + 2.2), bz = POND.z + Math.sin(a) * (POND.r + 2.2);
+  bench(bx, bz, faceTo(bx, bz, POND.x, POND.z));
+}
 
 // ── Geometry helpers ─────────────────────────────────────────────────────
 function line(ref, axis) {
@@ -358,7 +398,7 @@ const roads = STREETS.map((s) => ({
   p: s.h !== undefined ? [[s.from, s.h], [s.to, s.h]] : [[s.v, s.from], [s.v, s.to]],
   ...(s.n ? { n: s.n } : {}),
 }));
-for (const w of WALKS) roads.push({ k: 'walk', w: w.w, p: w.p, ...(w.n ? { n: w.n } : {}) });
+for (const w of WALKS) roads.push({ k: 'walk', w: w.w, p: w.p, ...(w.n ? { n: w.n } : {}), ...(w.clear ? { clear: w.clear } : {}) });
 
 const areas = [...AREAS];
 for (const b of B) if (b.area) areas.push({ k: b.area, p: b.areaPoly });

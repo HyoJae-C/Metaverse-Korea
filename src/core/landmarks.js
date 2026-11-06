@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { buildAnotherLand } from './anotherland.js';
 import { cableCarLandmark } from './cablecar.js';
-import { PARK_BUILD } from './park-art.js';
+import { PARK_BUILD, avenue } from './park-art.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -563,10 +563,11 @@ export function buildLandmarks(list = [], scene) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
+    else if (l.type === 'avenue') avenue(g, l); // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);
-      g.position.set(l.x, 0, l.z);
+      g.position.set(l.x, l.y || 0, l.z); // (l.y: standing up on something, e.g. a hill's deck)
       g.rotation.y = l.ry || 0;
     } else continue;
     root.add(g);
