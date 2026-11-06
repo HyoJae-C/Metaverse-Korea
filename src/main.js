@@ -109,6 +109,7 @@ import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI } from './ui/fishing-ui.js';
 import { FishBag, FishDex, FISH } from './core/fishing.js';
+import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
@@ -3639,11 +3640,19 @@ function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textCont
 $('fishbook-btn').onclick = () => { $('notes-panel').hidden = true; fishBookUi.show(); };
 refreshFishBookBtn();
 onLanguageChange(refreshFishBookBtn);
+// The cast, bobber, bite and reel in 3D (core/fishing-rig.js).
+const fishRig = createFishingRig({ sfx, waterY: () => interior?.river?.position.y ?? -0.25 });
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
   dex: fishDex,
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
+  onPhase: (ph, data) => {
+    fishRig.phase(ph, data);
+    if (ph === 'cast') me.play('cast');
+    else if (ph === 'land' || ph === 'trash') me.play('catch');
+    else if (ph === 'bite') navigator.vibrate?.(60);
+  },
   onCatch: (f) => {
     sfx.pop?.();
     refreshFishBookBtn();
@@ -3653,6 +3662,7 @@ const fishingUi = new FishingUI({
     togetherBonus('fish');
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
+  onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); navigator.vibrate?.(40); },
 });
@@ -4232,7 +4242,7 @@ function currentActivity() {
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
   if (seated && held?.kind === 'book' && bookUi.open) return 'read';
-  if (fishingUi.open) return 'fish';
+  if (fishingUi.open) return fishingUi.state === 'reel' ? 'reel' : 'fish'; // reeling in: the reel clip
   return null;
 }
 // Gym: each finished set makes walking a tiny bit faster.
@@ -4588,9 +4598,13 @@ const beauty = createBeauty({
 });
 const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
 const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
+let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
   me.root.rotation.y = Math.PI; // face the river (north)…
-  cam.yaw = 0; // …with the camera behind you
+  // …with the camera low behind one shoulder, so the cast and the bobber
+  // out on the water are in view above the panel.
+  fishCam = { pitch: cam.pitch, dist: cam.dist };
+  Object.assign(cam, { yaw: innerWidth < innerHeight ? -0.4 : -0.7, pitch: 0.3, dist: 6 });
   fishingUi.show();
 }
 function openMarket() {
@@ -5528,6 +5542,7 @@ renderer.setAnimationLoop(() => {
   if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
+  fishRig.update(dt, me);
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);

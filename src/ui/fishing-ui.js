@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, AUTO_SECONDS, rollAutoCatch } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -121,8 +121,9 @@ export function stampPop(f, dex, { onSlam, onClose, onBook } = {}) {
 export class FishingUI {
   // bag: FishBag; onRod(on): show or hide the rod; onCatch(fish): after a catch.
   // dex: FishDex, every catch is recorded there too.
-  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp }) {
-    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp });
+  // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
+  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase }) {
+    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -132,14 +133,17 @@ export class FishingUI {
   show() {
     this.root.hidden = false;
     this.onRod?.(true);
+    this.onPhase?.('idle');
     this.renderIdle();
   }
 
   close() {
     clearTimeout(this.timer);
     clearInterval(this.tick);
+    this._unkey?.(); this._unkey = null;
     this.state = 'idle';
     this.root.hidden = true;
+    this.onPhase?.('off');
     this.onRod?.(false);
     this.onClose?.();
   }
@@ -147,6 +151,7 @@ export class FishingUI {
   _frame(extra) {
     clearTimeout(this.timer);
     clearInterval(this.tick);
+    this._unkey?.(); this._unkey = null;
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = () => this.close();
@@ -169,7 +174,10 @@ export class FishingUI {
     cast.disabled = this.bag.full;
     cast.onclick = () => this.cast();
     const actions = el('div', 'order-actions');
-    actions.append(cast);
+    const auto = el('button', 'chip', '🤖 ' + t('fish.auto'));
+    auto.disabled = this.bag.full;
+    auto.onclick = () => this.autoFish();
+    actions.append(cast, auto);
     if (this.dex) {
       const book = el('button', 'chip', `📖 ${t('fish.book')} · ${this.dex.kinds}/${FISH.length} · 🐟 ${this.dex.total}`);
       book.onclick = () => this.renderBook();
@@ -206,10 +214,11 @@ export class FishingUI {
 
   cast() {
     this.state = 'waiting';
+    this.onPhase?.('cast');
     this._frame();
     const water = this._water(t('fish.waiting'), 'waiting');
     const btn = el('button', 'primary fish-hook', t('fish.hook'));
-    btn.onclick = () => this.renderIdle(t('fish.tooEarly')); // nothing has bitten yet
+    btn.onclick = () => { this.onPhase?.('retrieve'); this.renderIdle(t('fish.tooEarly')); }; // nothing has bitten yet
     const actions = el('div', 'order-actions');
     actions.append(btn);
     this.root.append(water, actions);
@@ -219,47 +228,111 @@ export class FishingUI {
   bite(water, btn) {
     this.state = 'bite';
     this.fish = rollCatch();
-    water.className = 'fish-water bite';
+    this.onPhase?.('bite', this.fish);
+    water.className = 'fish-water bite' + (isRare(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
+    if (isRare(this.fish)) water.prepend(el('b', 'fish-callout', t('fish.rareOne')));
     btn.classList.add('pulse');
     btn.onclick = () => this.reel();
-    this.timer = setTimeout(() => this.renderIdle(t('fish.slow')), BITE_WINDOW * 1000);
+    this.timer = setTimeout(() => { this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
   }
 
   reel() {
     this.state = 'reel';
     const need = tapsFor(this.fish);
+    const drain = drainFor(this.fish); // rare fish pull the gauge back down
     let taps = 0, left = REEL_SECONDS;
     this._frame();
     const big = need >= 12;
-    const water = this._water(big ? t('fish.bigOne') : t('fish.reeling'), 'reel');
-    const bar = el('div', 'fish-meter');
+    this.onPhase?.('reel', { big });
+    const rare = isRare(this.fish);
+    const water = this._water(rare ? t('fish.fightBack') : big ? t('fish.bigOne') : t('fish.reeling'), 'reel' + (rare ? ' rare' : ''));
+    if (rare) water.prepend(el('b', 'fish-callout', t('fish.rareOne')));
+    const bar = el('div', 'fish-meter' + (drain ? ' drain' : ''));
     const fill = el('i');
     bar.append(fill);
     const time = el('small', 'fish-time');
-    const btn = el('button', 'primary fish-reel', '🌀 ' + t('fish.reel'));
     const paint = () => {
       fill.style.width = Math.min(100, (taps / need) * 100) + '%';
       time.textContent = t('fish.time', { s: Math.max(0, left).toFixed(1) });
     };
-    // pointerdown, not click: fast taps register at once (and no
-    // double-tap zoom on phones, see .fish-reel in style.css).
-    btn.onpointerdown = (e) => {
-      e.preventDefault();
+    const tap = () => {
       if (this.state !== 'reel') return;
       taps++;
+      this.onPhase?.('tap', taps / need);
       paint();
       if (taps >= need) this.landed(Math.max(0, left) / REEL_SECONDS);
     };
-    const actions = el('div', 'order-actions');
-    actions.append(btn);
-    this.root.append(water, bar, time, actions);
+    // Two reel buttons, left and right, to tap with both thumbs (← → or
+    // A D on a keyboard). pointerdown, not click: fast taps register at
+    // once (and no double-tap zoom on phones, see .fish-reel in style.css).
+    const pads = el('div', 'fish-reels');
+    for (const side of ['left', 'right']) {
+      const b = el('button', 'primary fish-reel ' + side, (side === 'left' ? '◀ ' : '') + '🌀 ' + t('fish.reel') + (side === 'right' ? ' ▶' : ''));
+      b.onpointerdown = (e) => { e.preventDefault(); tap(); };
+      pads.append(b);
+    }
+    const onKey = (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'Space'].includes(e.code)) return;
+      e.preventDefault(); e.stopPropagation(); // don't walk away
+      if (!e.repeat) tap();
+    };
+    window.addEventListener('keydown', onKey, true);
+    this._unkey = () => window.removeEventListener('keydown', onKey, true);
+    this.root.append(water, bar, time, pads, el('small', 'fish-reel-hint', t('fish.reelHint')));
     paint();
     this.tick = setInterval(() => {
       left -= 0.1;
+      if (drain && taps > 0) { taps = Math.max(0, taps - drain * 0.1); this.onPhase?.('progress', taps / need); }
       paint();
-      if (left <= 0) this.renderIdle(t('fish.gotAway'));
+      if (left <= 0) { this.onPhase?.('retrieve'); this.renderIdle(t('fish.gotAway')); }
     }, 100);
+  }
+
+  // Auto fishing: the line goes out and a common fish comes in every
+  // AUTO_SECONDS while you stay here with the game open (a hidden tab
+  // doesn't count). Rare fish only bite for hands-on fishing.
+  autoFish() {
+    this.state = 'auto';
+    this._frame();
+    let got = 0, waited = 0, last = performance.now();
+    const water = this._water(t('fish.autoWaiting'), 'waiting');
+    const bar = el('div', 'fish-meter auto');
+    const fill = el('i');
+    bar.append(fill);
+    const status = el('small', 'fish-time');
+    const stop = el('button', 'primary', '⏹ ' + t('fish.autoStop'));
+    stop.onclick = () => { this.onPhase?.('retrieve'); this.renderIdle(); };
+    const actions = el('div', 'order-actions');
+    actions.append(stop);
+    this.root.append(el('p', 'fish-auto-note', '⚠️ ' + t('fish.autoNote')), water, bar, status, actions);
+    const paint = () => {
+      fill.style.width = Math.min(100, waited / AUTO_SECONDS * 100) + '%';
+      status.textContent = t('fish.autoStatus', { n: got, s: Math.ceil(Math.max(0, AUTO_SECONDS - waited)) });
+    };
+    this.onPhase?.('cast');
+    paint();
+    this.tick = setInterval(() => {
+      const now = performance.now(), dt = Math.min(1, (now - last) / 1000);
+      last = now;
+      if (globalThis.document?.hidden) return; // only while you're here
+      waited += dt;
+      if (waited >= AUTO_SECONDS) {
+        waited = 0;
+        const f = rollAutoCatch();
+        if (!this.bag.add(f.id)) { this.onPhase?.('retrieve'); this.renderIdle(t('fish.full')); return; }
+        got++;
+        const isNew = this.dex ? this.dex.add(f.id) : false;
+        this.onPhase?.('land', f);
+        if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp });
+        this.root.querySelector('.fish-bag').textContent = t('fish.bag', { n: this.bag.size, max: BAG_MAX, coins: this.bag.value });
+        water.querySelector('p').textContent = t('fish.caught', { name: fishName(f) });
+        this.onCatch?.(f, isNew);
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => { if (this.state === 'auto') { water.querySelector('p').textContent = t('fish.autoWaiting'); this.onPhase?.('cast'); } }, 3000);
+      }
+      paint();
+    }, 250);
   }
 
   renderTrash(item) {
@@ -283,8 +356,9 @@ export class FishingUI {
     clearInterval(this.tick);
     this.state = 'landed';
     const f = this.fish;
-    if (f.trash) { this.renderTrash(f); return; }
-    if (Math.random() < escapeChance(f, spare)) { this.escaped(f); return; }
+    if (f.trash) { this.onPhase?.('trash'); this.renderTrash(f); return; }
+    if (Math.random() < escapeChance(f, spare)) { this.onPhase?.('escape'); this.escaped(f); return; }
+    this.onPhase?.('land', f);
     const kept = this.bag.add(f.id);
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
