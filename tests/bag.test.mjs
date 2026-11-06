@@ -55,3 +55,12 @@ test('a broken save gives an empty bag', () => {
     assert.equal(b.cap, BASE_CAP, v);
   }
 });
+
+test('a Han River ramen bowl stays a ramen bowl in the bag', () => {
+  const b = new Bag(mem());
+  assert.equal(b.add({ kind: 'food', sips: 3, name: 'Ramen', ramen: true }), true);
+  assert.equal(b.list()[0].ramen, true);
+  b.add({ kind: 'food', sips: 3, name: 'Box', ramen: true, extra: 1 });
+  assert.equal(b.add({ kind: 'coffee', sips: 2, ramen: true }), true);
+  assert.equal(b.list()[2].ramen, undefined);
+});
