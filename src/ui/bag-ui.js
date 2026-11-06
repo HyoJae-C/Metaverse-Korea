@@ -22,15 +22,19 @@ export const BAG_TEXT = {
   tabCloset: { en: 'Wardrobe', ko: '옷장', ja: 'クローゼット', zh: '衣橱', es: 'Armario', ar: 'خزانة الملابس', vi: 'Tủ đồ', hi: 'अलमारी', id: 'Lemari' },
   closetEmpty: { en: 'No clothes yet. Buy some in a fashion shop and they will hang here.', ko: '아직 옷이 없어요. 옷 가게에서 사면 여기에 걸려요.', ja: 'まだ服がありません。服屋で買うとここに掛かります。', zh: '还没有衣服。在服装店买了就会挂在这里。', es: 'Aún no tienes ropa. Cómprala en una tienda de moda y aparecerá aquí.', ar: 'لا ملابس بعد. اشترِ من متجر أزياء وستظهر هنا.', vi: 'Chưa có quần áo. Mua ở cửa hàng thời trang thì sẽ treo ở đây.', hi: 'अभी कोई कपड़े नहीं। फ़ैशन दुकान से खरीदें, वे यहाँ टंगेंगे।', id: 'Belum ada pakaian. Beli di toko fesyen dan akan tergantung di sini.' },
   closetNote: { en: 'Clothes don\'t use bag slots.', ko: '옷은 가방 칸을 차지하지 않아요.', ja: '服はバッグの枠を使いません。', zh: '衣服不占背包格子。', es: 'La ropa no ocupa huecos de la bolsa.', ar: 'الملابس لا تشغل خانات الحقيبة.', vi: 'Quần áo không chiếm ô trong túi.', hi: 'कपड़े बैग के खाने नहीं लेते।', id: 'Pakaian tidak memakai slot tas.' },
+  tabRides: { en: 'Rides', ko: '탈것', ja: '乗り物', zh: '车', es: 'Vehículos', ar: 'المركبات', vi: 'Xe', hi: 'सवारी', id: 'Kendaraan' },
+  ridesNote: { en: 'Switch between rides you own here. Buy, repair and upgrade them at a ride shop.', ko: '산 탈것은 여기서 바로 바꿔 탈 수 있어요. 구매·수리·업그레이드는 탈것 가게에서 해요.', ja: '持っている乗り物はここで切り替えられます。購入・修理・アップグレードは乗り物店で。', zh: '已拥有的车可以在这里切换。购买、修理和升级请去车店。', es: 'Cambia aquí entre los vehículos que tienes. Cómpralos, repáralos y mejóralos en una tienda de vehículos.', ar: 'بدّل هنا بين المركبات التي تملكها. الشراء والإصلاح والترقية في متجر المركبات.', vi: 'Đổi qua lại các xe bạn có ở đây. Mua, sửa và nâng cấp ở cửa hàng xe.', hi: 'अपनी सवारियाँ यहाँ बदलें। खरीदना, मरम्मत और अपग्रेड सवारी की दुकान पर।', id: 'Ganti kendaraan milikmu di sini. Beli, perbaiki, dan tingkatkan di toko kendaraan.' },
   owned: { en: 'Collection (no slots used)', ko: '소장품 (칸 차지 안 함)', ja: 'コレクション（枠を使いません）', zh: '收藏（不占格子）' },
 };
 
 export class BagUI {
   // describe(entry) → { emoji, name, desc, canHold }
   // extra() → nodes shown under the bag slots (the collection);
-  // closet() → { nodes, count } for the Wardrobe tab (clothes you own).
-  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet }) {
-    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet });
+  // closet() → { nodes, count } for the Wardrobe tab (clothes you own);
+  // rides() → { nodes, count } for the Rides tab (bikes, boards, scooters you
+  // own), or null to leave the tab out (only the basic bike).
+  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides }) {
+    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides });
     this.sel = -1;
     this.tab = 'bag';
     bag.onChange(() => { if (!root.hidden) this.render(); });
@@ -47,12 +51,16 @@ export class BagUI {
     x.onclick = () => this.hide();
     const head = el('div', 'bag-head');
     head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), { n: bag.size, cap: bag.cap })));
-    // Two tabs: the bag's slots, and the wardrobe (clothes you own).
+    // Tabs: the bag's slots, the wardrobe (clothes you own) and the rides
+    // you own (to switch without going back to a ride shop).
     const closet = this.closet ? this.closet() : null;
+    const rides = this.rides ? this.rides() : null;
+    if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabBag)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + (closet?.count ? ` ${closet.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabBag)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + (closet?.count ? ` ${closet.count}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
       if (key === 'closet' && !closet) continue;
+      if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(this.tab === key));
@@ -62,6 +70,10 @@ export class BagUI {
     if (this.tab === 'closet' && closet) {
       const body = closet.count ? closet.nodes : [el('p', 'fine bag-closet-empty', L(BAG_TEXT.closetEmpty))];
       root.replaceChildren(x, head, tabs, ...body, el('p', 'fine bag-more', L(BAG_TEXT.closetNote)));
+      return;
+    }
+    if (this.tab === 'rides' && rides) {
+      root.replaceChildren(x, head, tabs, ...rides.nodes, el('p', 'fine bag-more', L(BAG_TEXT.ridesNote)));
       return;
     }
     const grid = el('div', 'bag-grid');
