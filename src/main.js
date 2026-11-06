@@ -97,7 +97,8 @@ import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
-import { DuckRide } from './core/duck-boat.js';
+import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
+import { Contacts, touching, wobble } from './core/bump.js';
 import { dartsMsg, parseDarts, dartsGoMsg, parseDartsGo, dartPinMsg, parseDartPin, dartPack, dartColorOf, pickDartColor } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
 import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js';
@@ -146,6 +147,10 @@ import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockers
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
+// The bag's item lists move in and out of the bag panel as its tabs change,
+// so they're looked up once (a detached node isn't found by id).
+const itemEls = {};
+const itemEl = (id) => (itemEls[id] ||= $(id));
 
 // Safety net: if the player or the camera ever ends up at an invalid
 // position (NaN), put them back at the last good one, and show a short note
@@ -1697,12 +1702,12 @@ const shop = new ShopUI({
   onBuy: (product, coins) => {
     if (!onSale(product)) return false; // a limited edition outside its dates
     if (product.ingredient) return buyIngredient(product, coins);
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
-    if (product.perfume && perfumes.has(product.id)) setHeld({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
-    else setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
+    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
     if (kind !== 'gift') recordFood(shop.store, product, true);
     const seller = sellerOf(product) || clerk;
     seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
@@ -1710,8 +1715,8 @@ const shop = new ShopUI({
     return true;
   },
   onTake: (product) => {
-    if (held && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (!handReady()) return;
+    holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
@@ -1757,9 +1762,9 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
-    setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
     who && say(who, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
@@ -2000,6 +2005,21 @@ function stowHeld() {
   sfx.pop?.();
   shop.toast(fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
 }
+// Taking something new in your hand puts what you were holding into the bag
+// (it used to just vanish). Only when the bag is full do we ask first, since
+// then the old thing would be thrown away.
+function handReady() {
+  if (!held || !bag.full) return true;
+  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.cap }));
+}
+function holdNew(h) {
+  const old = held;
+  if (old && bag.add(old)) {
+    const name = describeEntry(old).name;
+    setTimeout(() => shop.toast(fmt(L(BAG_TEXT.autoStow), { name, n: bag.size, cap: bag.cap })), 1800);
+  }
+  setHeld(h);
+}
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
 const bagUi = new BagUI({
@@ -2014,8 +2034,12 @@ const bagUi = new BagUI({
   onDrop: (i) => bag.take(i),
   extra: () => {
     refreshItems();
-    $('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
-    return [$('wallet-items-title'), $('wallet-items')];
+    itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
+    return [itemEl('wallet-items-title'), itemEl('wallet-items')];
+  },
+  closet: () => {
+    refreshItems();
+    return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
   },
 });
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
@@ -3014,7 +3038,7 @@ const dining = createDining({
   get me() { return me; }, get clerk() { return clerk; }, get others() { return others; }, get net() { return net; },
   get safety() { return safety; }, get held() { return held; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; }, get canvas() { return canvas; }, get camera() { return camera; },
-  missionEvent, refreshWallet, recordFood, setHeld, openMenu,
+  missionEvent, refreshWallet, recordFood, setHeld, holdNew, handReady, openMenu,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 });
 const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, orderFood } = dining;
@@ -3026,11 +3050,11 @@ const VENDING_TEXT = {
   got: { en: 'Clunk! {name} drops out.', ko: '덜컹! {name}이(가) 나왔어요.', ja: 'ガコン！{name}が出てきました。', zh: '咚！{name}掉出来了。' },
 };
 function buyVending(dr) {
-  if (held && !confirm(t('coffee.replace'))) return;
+  if (!handReady()) return;
   if (!wallet.spend(dr.price, { name: dr.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: dr.price })); return; }
   refreshWallet();
   sfx.pop?.();
-  setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
+  holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
   $('lp-panel').hidden = true;
   shop.toast(fmt(L(VENDING_TEXT.got), { name: `${dr.icon} ${localName(dr.name, getLanguage())}` }));
 }
@@ -3715,7 +3739,6 @@ const fishingUi = new FishingUI({
       sfx.reveal(true);
     }
     missionEvent('fish', f.id);
-    togetherBonus('fish');
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
@@ -3746,9 +3769,9 @@ const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   bag,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  beforeCook: () => !held || confirm(t('coffee.replace')),
+  beforeCook: () => handReady(),
   onCooked: ({ egg }) => {
-    setHeld({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
+    holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
     me.play('cheer');
     missionEvent('cook');
     togetherBonus('cook');
@@ -4362,8 +4385,8 @@ const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
   take: (id) => {
-    if (held?.kind === 'coffee' && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'book', book: id });
+    if (!handReady()) return;
+    holdNew({ kind: 'book', book: id });
     shop.toast(t('book.taken'));
   },
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
@@ -4558,6 +4581,35 @@ function placeBoat(d, b) {
 }
 // Each frame in the park: steer my boat (or ride in a friend's), carry me
 // with it, and put other people's boats where they sit.
+// Boats bump into each other (core/bump.js). I only push my own boat; the
+// other drivers push theirs on their screens, and everyone sees it through
+// the usual position updates. The wobble, splash and boing play for all.
+const duckContacts = new Contacts();
+let duckRings = null; // little splash rings where two boats met
+function duckSplash(x, z, big) {
+  if (!duckRings || duckRings.scene !== interior.scene) {
+    const geo = new THREE.RingGeometry(0.8, 1, 24).rotateX(-Math.PI / 2);
+    duckRings = { scene: interior.scene, list: [0, 1, 2].map(() => {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false }));
+      m.visible = false; interior.scene.add(m); return m;
+    }) };
+  }
+  const m = duckRings.list.find((r) => !r.visible) || duckRings.list[0];
+  m.visible = true; m.position.set(x, -0.2, z);
+  m.userData.t = 0; m.userData.size = 0.8 + big * 1.4;
+}
+// Where the other boats are this frame (not mine): moving if someone steers
+// it, otherwise parked (it won't budge).
+function otherBoats(mine) {
+  const list = [];
+  for (const d of interior.ducks) {
+    if (d.i === mine) continue;
+    let driven = false;
+    for (const o of others.players.values()) if (o.target?.db === d.i + 1 && o.target.dr) { driven = true; break; }
+    list.push({ x: d.g.position.x, z: d.g.position.z, vx: d.vx || 0, vz: d.vz || 0, fixed: !driven, i: d.i });
+  }
+  return list;
+}
 function updateDucks(dt) {
   if (!interior?.ducks) { if (duckRide) duckRide = null; duckUi.hud(null); return; }
   const moved = new Set();
@@ -4570,6 +4622,7 @@ function updateDucks(dt) {
       const { x: mx, y: my } = input.move;
       const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw), rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw);
       duckRide.steer(fx * my + rx * mx, fz * my + rz * mx, dt);
+      duckRide.bump(otherBoats(seated.duck));
       b = duckRide;
       duckUi.hud({ left: duckRide.left, returning: duckRide.returning });
       if (duckRide.docked) { duckRide = null; standUp(); shop.toast(L(DUCK_TEXT.docked)); action = STALE; return; }
@@ -4584,7 +4637,6 @@ function updateDucks(dt) {
       duckUi.hud(null);
     }
     placeBoat(d, b);
-    d.g.rotation.z = Math.sin(performance.now() / 700) * 0.04;
     const [sx, sz] = DUCK_SEATS[seated.duckSeat || 0];
     me.root.position.set(b.x + sx * Math.cos(b.ry) + sz * Math.sin(b.ry), 0, b.z - sx * Math.sin(b.ry) + sz * Math.cos(b.ry));
     me.root.rotation.y = b.ry + Math.PI;
@@ -4602,6 +4654,41 @@ function updateDucks(dt) {
     d.g.position.z += (d.home.z - d.g.position.z) * Math.min(1, dt * 2);
     d.g.position.y = Math.sin(performance.now() / 600 + d.i) * 0.03;
     d.g.rotation.y += (0 - d.g.rotation.y) * Math.min(1, dt * 2);
+  }
+  // Every boat: how fast it is going, bumps (wobble, splash, boing), sway.
+  const now = performance.now() / 1000;
+  for (const d of interior.ducks) {
+    const p = d.g.position;
+    if (dt > 0 && d.px != null) {
+      const k = Math.min(1, dt * 10); // smooth out jumpy network updates
+      d.vx = (d.vx || 0) + ((p.x - d.px) / dt - (d.vx || 0)) * k;
+      d.vz = (d.vz || 0) + ((p.z - d.pz) / dt - (d.vz || 0)) * k;
+    }
+    d.px = p.x; d.pz = p.z;
+  }
+  const poses = interior.ducks.map((d) => ({ x: d.g.position.x, z: d.g.position.z }));
+  for (const [i, j] of duckContacts.update(touching(poses, DUCK_BUMP))) {
+    const a = interior.ducks[i], c = interior.ducks[j];
+    const hard = Math.min(1, Math.hypot((a.vx || 0) - (c.vx || 0), (a.vz || 0) - (c.vz || 0)) / DUCK_BUMP.maxKick);
+    if (hard < 0.05 && !moved.has(i) && !moved.has(j)) continue; // two parked boats side by side
+    a.bumpAt = c.bumpAt = now; a.bumpAmp = c.bumpAmp = 0.08 + hard * 0.16;
+    const mx = (a.g.position.x + c.g.position.x) / 2, mz = (a.g.position.z + c.g.position.z) / 2;
+    duckSplash(mx, mz, hard);
+    const far = Math.hypot(me.root.position.x - mx, me.root.position.z - mz);
+    sfx.bump?.(hard, Math.max(0, 1 - far / 30));
+  }
+  for (const d of interior.ducks) {
+    const t = now - (d.bumpAt ?? -99);
+    const sway = seated?.duck === d.i ? Math.sin(performance.now() / 700) * 0.04 : 0;
+    d.g.rotation.z = sway + wobble(t, d.bumpAmp || 0);
+    d.g.rotation.x = wobble(t - 0.05, (d.bumpAmp || 0) * 0.5, 9);
+  }
+  if (duckRings) for (const m of duckRings.list) if (m.visible) {
+    m.userData.t += dt;
+    const k = m.userData.t / 0.8;
+    if (k >= 1) { m.visible = false; continue; }
+    m.scale.setScalar(0.3 + k * m.userData.size);
+    m.material.opacity = 0.8 * (1 - k);
   }
 }
 
@@ -4746,10 +4833,18 @@ initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) 
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
 const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
+// Clothes live in the bag's Wardrobe tab; everything else (pets, ...) in the
+// bag's collection.
+const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
-  $('wallet-items-title').hidden = !list.length;
-  $('wallet-items').replaceChildren(...list.map((id) => {
+  const own = list.filter((id) => !isClothes(id));
+  itemEl('wallet-items-title').hidden = !own.length;
+  itemEl('wallet-items').replaceChildren(...own.map(itemRow));
+  itemEl('wardrobe-items').replaceChildren(...list.filter(isClothes).map(itemRow));
+}
+function itemRow(id) {
+  {
     const row = document.createElement('div');
     row.className = 'item-row';
     const it = ITEMS[id];
@@ -4819,7 +4914,7 @@ function refreshItems() {
       row.append(w);
     }
     return row;
-  }));
+  }
 }
 // Bring back the pet I was walking last time.
 petCare.restorePet();
@@ -5963,6 +6058,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    duckBoard: (i) => boardDuck(i),
+    duckGo: () => startDuckRide(),
+    duck: () => duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) },
+    duckBoats: () => interior?.ducks?.map((d) => [+d.g.position.x.toFixed(2), +d.g.position.z.toFixed(2), +d.g.rotation.z.toFixed(3)]),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
@@ -5972,6 +6071,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
+    perfumeIds: () => [...perfumes.keys()],
+    holdNew: (h) => holdNew(h),
+    takeout: (i = 0) => orderFood(interior.store.products[i], true),
+    giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }); refreshWallet(); },
+    bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),
     scent: () => myScent,
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },

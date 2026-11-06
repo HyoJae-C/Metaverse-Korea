@@ -38,7 +38,10 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
-    return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;
+    if (sips <= 0) return null;
+    const out = { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) };
+    if (e.kind === 'food' && e.ramen) out.ramen = true; // a Han River ramen bowl stays one
+    return out;
   }
   return null;
 }
