@@ -3,7 +3,7 @@
 //   cast → wait for a bite (tapping too early scares the fish) → tap to hook
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, BITE_LINES, AUTO_SECONDS, rollAutoCatch } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -20,26 +20,30 @@ export const biteLine = (f, rand = Math.random) => {
   return lines ? localName(lines[Math.floor(rand() * lines.length) % lines.length]) : null;
 };
 
-// Sprite positions are keyed by stable IDs, independently of the book order.
-const fishIconPositions = new Map([
-  'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
-  'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
-  'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
-  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'crayfish',
-  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
-  'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
-  'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
-].map((id, index) => [id, `${(index % 7) * 100 / 6}% ${Math.floor(index / 7) * 100 / 6}%`]));
+// Every picture of a fish (book, stamps, catch cards, guide, market, the
+// trophy and the fish on the line) comes from one sheet: FISH_SHEET.
+const fishIconPositions = new Map(FISH_SHEET.map((id, index) => [id, `${(index % 7) * 100 / 6}% ${Math.floor(index / 7) * 100 / 6}%`]));
 
-function fishStampIcon(f) {
+export function fishStampIcon(f, cls = 'fish-stamp-fish') {
   const position = fishIconPositions.get(f.id);
-  const icon = el('span', 'fish-stamp-fish', position ? null : f.emoji);
+  const icon = el('span', cls, position ? null : f.emoji);
   icon.setAttribute('aria-hidden', 'true');
   if (position) {
     icon.classList.add('fish-stamp-sprite');
     icon.style.backgroundPosition = position;
   }
   return icon;
+}
+
+// A ★4–★5 catch, shown over the angler's head for everyone nearby: the
+// fish's picture in a burst of light and "<name> caught <fish>!".
+export const TROPHY_RARITY = 4;
+export function trophy(f, name) {
+  const w = el('div', 'trophy-in tier-' + f.rarity);
+  const pic = el('span', 'trophy-pic');
+  pic.append(el('i', 'trophy-rays'), fishStampIcon(f));
+  w.append(pic, el('span', 'trophy-stars', '★'.repeat(f.rarity)), el('b', 'trophy-text', t('fish.trophy', { name, fish: fishName(f) })));
+  return w;
 }
 
 // One round red-ink stamp for a fish: the fish, "한강 낚시" and its name.
@@ -115,7 +119,7 @@ export function stampPop(f, dex, { onSlam, onClose, onBook } = {}) {
   const page = el('div', 'fish-pop-page');
   const st = fishStamp(f, true);
   st.classList.add('slam');
-  page.append(el('span', 'fish-pop-big', f.emoji), st, el('span', 'fish-pop-ink'), el('b', 'fish-pop-bang', '콱!'));
+  page.append(fishStampIcon(f, 'fish-pop-big'), st, el('span', 'fish-pop-ink'), el('b', 'fish-pop-bang', '콱!'));
   const done = dex.availableComplete;
   const ok = el('button', 'primary', '📖 ' + t('fish.book'));
   card.append(
@@ -211,7 +215,10 @@ export class FishingUI {
       actions.append(book);
     }
     if (this.bag.full) this.root.append(el('p', 'order-hint', t('fish.full')));
-    this.root.append(actions, this._odds());
+    const odds = el('button', 'chip fish-odds-btn', '📊 ' + t('fish.guide'));
+    odds.onclick = () => this.renderOdds();
+    actions.append(odds);
+    this.root.append(actions);
   }
 
   renderBook() {
@@ -225,18 +232,43 @@ export class FishingUI {
     this.fresh = null;
   }
 
-  // The catch list with chances and prices (a small "fish guide").
-  _odds() {
-    const d = el('details', 'fish-odds');
-    d.append(el('summary', null, t('fish.guide')));
-    const list = el('div', 'fish-list');
-    for (const f of AVAILABLE_FISH) {
-      const row = el('div', 'fish-row');
-      row.append(el('span', 'fish-emoji', f.emoji), el('span', 'fish-name', fishName(f)), el('small', null, `${pct(f.chance)} · 🪙 ${f.price} · 💨 ${Math.round(escapeChance(f) * 100)}%`));
-      list.append(row);
+  // The odds table: every catchable kind grouped by stars, with its chance
+  // when you fish by hand (the old boot included) and with auto fishing
+  // (common kinds only), its price, and how often it slips off the hook.
+  renderOdds() {
+    this.state = 'odds';
+    this._frame();
+    const autoTotal = AUTO_FISH.reduce((a, f) => a + f.chance, 0);
+    const wrap = el('div', 'fish-odds');
+    wrap.append(el('p', 'fish-odds-note', text('직접 낚시 = 직접 던지고 감을 때 · 자동 = 자동낚시 · 💨 = 마지막에 놓칠 확률',
+      'Hand = fishing yourself · Auto = auto fishing · 💨 = chance it slips off at the end')));
+    const head = el('div', 'fish-odds-row head');
+    head.append(el('span'), el('span', null, text('물고기', 'Fish')), el('span', null, text('직접', 'Hand')), el('span', null, text('자동', 'Auto')), el('span', null, '🪙'));
+    wrap.append(head);
+    for (const r of [1, 2, 3, 4, 5]) {
+      const kinds = AVAILABLE_FISH.filter(f => f.rarity === r);
+      if (!kinds.length) continue;
+      const hand = kinds.reduce((a, f) => a + f.chance, 0) * (1 - TRASH_CHANCE);
+      const tier = el('div', 'fish-odds-tier tier-' + r);
+      tier.append(el('b', null, '★'.repeat(r)), el('span', null, text(r >= 3 ? '희귀 · 자동낚시 불가' : '자동낚시 가능', r >= 3 ? 'Rare · hand fishing only' : 'Auto fishing too')), el('small', null, pct(hand)));
+      wrap.append(tier);
+      for (const f of kinds) {
+        const row = el('div', 'fish-odds-row');
+        const name = el('span', 'fish-name', fishName(f));
+        if (escapeChance(f)) name.append(el('small', null, `💨 ${Math.round(escapeChance(f) * 100)}%`));
+        row.append(fishStampIcon(f, 'fish-emoji'), name,
+          el('b', null, pct(f.chance * (1 - TRASH_CHANCE))), el('span', null, isRare(f) ? '—' : pct(f.chance / autoTotal * 100)), el('span', null, String(f.price)));
+        wrap.append(row);
+      }
     }
-    d.append(list);
-    return d;
+    const boot = el('div', 'fish-odds-row trash');
+    boot.append(el('span', 'fish-emoji', '🥾'), el('span', 'fish-name', text('고물장화 (쓰레기)', 'Old boot (litter)')), el('b', null, pct(TRASH_CHANCE * 100)), el('span', null, '—'), el('span', null, '0'));
+    wrap.append(boot, el('p', 'fish-odds-note', text(`자동낚시는 약 ${AUTO_SECONDS}초에 한 마리 · 공개된 ${AVAILABLE_FISH.length}종 기준`, `Auto fishing lands about one fish every ${AUTO_SECONDS} s · ${AVAILABLE_FISH.length} kinds available now`)));
+    const back = el('button', 'primary', '🎣 ' + t('fish.back'));
+    back.onclick = () => this.renderIdle();
+    const actions = el('div', 'order-actions');
+    actions.append(back);
+    this.root.append(wrap, actions);
   }
 
   cast() {
@@ -395,7 +427,7 @@ export class FishingUI {
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(
-      el('span', 'fish-big', f.emoji),
+      fishStampIcon(f, 'fish-big'),
       el('strong', null, f.ko),
       el('small', 'order-rom', f.rom),
       el('small', null, `${localName(f.name, getLanguage())} · ${pct(f.chance)} · 🪙 ${f.price}`),
@@ -420,7 +452,7 @@ export class FishingUI {
 FishingUI.prototype.escaped = function escaped(f) {
   this._frame();
   const card = el('div', 'fish-card escaped');
-  card.append(el('span', 'fish-big', f.emoji), el('strong', null, f.ko), el('small', 'order-rom', f.rom));
+  card.append(fishStampIcon(f, 'fish-big'), el('strong', null, f.ko), el('small', 'order-rom', f.rom));
   this.root.append(card, el('p', 'order-hint', t('fish.escaped', { name: fishName(f) })));
   const again = el('button', 'primary', '🎣 ' + t('fish.again'));
   again.onclick = () => this.cast();
@@ -462,7 +494,7 @@ export class FishMarketUI {
       one.onclick = () => this._sell(f.id, 1);
       const all = el('button', 'chip', t('fish.sellKind', { n, coins: f.price * n }));
       all.onclick = () => this._sell(f.id);
-      row.append(el('span', 'fish-emoji', f.emoji), el('span', 'fish-name', `${fishName(f)} × ${n}`), one, all);
+      row.append(fishStampIcon(f, 'fish-emoji'), el('span', 'fish-name', `${fishName(f)} × ${n}`), one, all);
       list.append(row);
     }
     const sellAll = el('button', 'primary', t('fish.sellAll', { coins: this.bag.value }));
