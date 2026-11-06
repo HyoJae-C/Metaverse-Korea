@@ -35,3 +35,22 @@ test('search ignores case, spaces and dashes; districts have a centre for the ed
   assert.deepEqual(c.map((d) => [d.id, d.x, d.z]), [['seongsu', 5, 10], ['itaewon', -1290, 390]]);
   assert.equal(c[1].name.ko, '이태원');
 });
+
+test('every subway station is a destination: grouped from its exits, searchable, nearest exit picked', async () => {
+  const { stationList, stationMatches, nearestExit } = await import('../src/ui/map-view.js');
+  const name = (en, ko) => ({ en: en + ' Station', ko: ko + '역' });
+  const marks = [
+    { station: 0, name: name('Seongsu', '성수'), x: 0, z: 0, go: { x: 0, z: 2 } },
+    { station: 0, name: name('Seongsu', '성수'), x: 40, z: 0, go: { x: 40, z: 2 } },
+    { station: 1, name: name('Itaewon', '이태원'), x: -1300, z: 400, go: { x: -1300, z: 402 } },
+    { x: 5, z: 5 }, // not a station exit
+  ];
+  const list = stationList(marks);
+  assert.deepEqual(list.map((s) => [s.key, s.exits.length]), [[0, 2], [1, 1]]);
+  assert.ok(stationMatches(list[1], 'itaewon'));
+  assert.ok(stationMatches(list[1], '이태원역'));
+  assert.ok(stationMatches(list[1], 'subway'));
+  assert.ok(stationMatches(list[1], '지하철'));
+  assert.ok(!stationMatches(list[1], 'seongsu'));
+  assert.equal(nearestExit(list[0].exits, 35, 5), marks[1]);
+});

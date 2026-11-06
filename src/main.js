@@ -146,7 +146,7 @@ import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, SupabaseFriends, LocalFriends, convKey, cleanBody as cleanFriendText } from './core/friends.js';
 import { FriendsUI, FRIEND_TEXT } from './ui/friends-ui.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -3366,7 +3366,11 @@ const mapView = new MapView({
   stores: storefronts.items,
   marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
-    return { x, z, icon: '🚇', color: sub.line?.color, label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()) };
+    const go = outsideOf(ex); // guidance ends on the pavement just outside the stairs
+    return {
+      x, z, icon: '🚇', color: sub.line?.color, station: s, name: stationStores[s].name, line: sub.line?.name, go: { x: go.x, z: go.z },
+      label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()),
+    };
   })),
   getPlayers: () => {
     const pos = mode === 'street' ? me.root.position : interior.front.door;
