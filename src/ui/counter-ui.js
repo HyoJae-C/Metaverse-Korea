@@ -1,4 +1,4 @@
-// Ordering at the counter (META COFFEE, the cocktail bar, the clubs): talk to
+// Ordering at the counter (META COFFEE, the mocktail bar, the clubs): talk to
 // the clerk or bartender, pick from the menu and pay coins. The drink is
 // handed over to carry around.
 import { localName, getLanguage } from '../core/i18n.js';

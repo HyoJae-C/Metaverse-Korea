@@ -54,10 +54,10 @@ export const AREA = {
     intro: { en: 'Seongsu: café streets, fashion and beauty shops, perfume houses and pop-ups around Seongsu Square, with Seoul Forest and the Han River close by.', ko: '성수: 성수 광장을 둘러싼 카페 거리, 패션·뷰티 가게, 향수 가게와 팝업. 서울숲과 한강도 가까워요.', ja: '聖水：聖水広場を囲むカフェ通り、ファッション・ビューティーの店、香水店とポップアップ。ソウルの森と漢江もすぐ近く。', zh: '圣水：圣水广场周围的咖啡街、时装美妆店、香水店和快闪店，首尔林和汉江也很近。' } },
   gyeongbokgung: { icon: '🏯', to: { zone: 'G' },
     name: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', ar: 'غيونغبوكغونغ' },
-    intro: { en: 'Gyeongbokgung: Gwanghwamun Square and the palace, a hanbok rental, a traditional tea house and a kimchi class.', ko: '경복궁: 광화문광장과 궁궐, 한복대여점, 전통찻집, 김치 만들기 교실.', ja: '景福宮：光化門広場と王宮、韓服レンタル、伝統茶房、キムチ教室。', zh: '景福宫：光化门广场和宫殿、韩服租赁、传统茶馆、泡菜课。' } },
+    intro: { en: 'Gyeongbokgung: Gwanghwamun Square and the palace, a hanbok rental, a traditional tea house and a kimchi class. South of the square, Cheonggyecheon Stream starts at Cheonggye Plaza.', ko: '경복궁: 광화문광장과 궁궐, 한복대여점, 전통찻집, 김치 만들기 교실. 광장 남쪽 청계광장에서 청계천이 시작돼요.', ja: '景福宮：光化門広場と王宮、韓服レンタル、伝統茶房、キムチ教室。広場の南、清渓広場から清渓川が始まります。', zh: '景福宫：光化门广场和宫殿、韩服租赁、传统茶馆、泡菜课。广场南边的清溪广场是清溪川的起点。' } },
   itaewon: { icon: '🌍', to: { zone: 'H' },
     name: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इतेवॉन', ar: 'إيتايوون' },
-    intro: { en: 'Itaewon: food from around the world on World Food Street, and clubs and a quiet bar on Itaewon-ro.', ko: '이태원: 세계음식거리의 각국 음식, 이태원로의 클럽과 조용한 바.', ja: '梨泰院：世界グルメ通りの各国料理、梨泰院路のクラブと静かなバー。', zh: '梨泰院：世界美食街的各国美食，梨泰院路上的夜店和安静的酒吧。' } },
+    intro: { en: 'Itaewon: World Food Street and cafés in the north-west, bars and clubs in the north-east, and Yongmaru Market (traditional market) south-west of the station.', ko: '이태원: 북서쪽 세계음식거리와 카페, 북동쪽 바와 클럽, 역 남서쪽의 용마루시장(전통시장).', ja: '梨泰院：北西に世界グルメ通りとカフェ、北東にバーとクラブ、駅の南西にヨンマル市場（伝統市場）。', zh: '梨泰院：西北是世界美食街和咖啡馆，东北是酒吧和夜店，车站西南是龙脊市场（传统市场）。' } },
   songpa: { icon: '🎡', to: { store: 'another-land' },
     name: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', vi: 'Songpa', hi: 'सोंगपा', ar: 'سونغبا' },
     intro: { en: 'Songpa: walks around Seokchon Lake and Another Land, the theme park on the lake island.', ko: '송파: 석촌호수 산책길과 호수 섬 위의 놀이공원 어나더랜드.', ja: '松坡：石村湖の散歩道と、湖の島の遊園地アナザーランド。', zh: '松坡：石村湖步道和湖心岛上的游乐园另一乐园。' } },
@@ -131,7 +131,7 @@ export const PLACE_TOPICS = [
     title: { en: 'Amusement park', ko: '놀이공원', ja: '遊園地', zh: '游乐园' },
     text: { en: 'Another Land, the candy-house theme park on the island in Seokchon Lake, Songpa (over the Han River south-east of Seongsu): carousel, Ferris wheel, pirate ship and a drop tower (🪙 2 a ride), and a free balloon shooting gallery.', ko: '송파 석촌호수 섬 위의 과자의 집 놀이공원 어나더랜드(성수 남동쪽, 한강 건너): 회전목마, 대관람차, 바이킹, 자이로드롭(한 번에 🪙 2), 무료 풍선 사격장.', ja: '松坡・石村湖の島にあるお菓子の家の遊園地アナザーランド（聖水の南東、漢江の向こう）：メリーゴーランド、観覧車、バイキング、フリーフォール（1回 🪙 2）、無料の風船射的。', zh: '松坡石村湖岛上的糖果屋游乐园「另一乐园」（圣水东南，汉江对岸）：旋转木马、摩天轮、海盗船、跳楼机（每次 🪙 2），还有免费的气球射击。' } },
 { icon: '🏫', to: { store: 'hyojae-academy' },
-    title: { en: 'Hyojae Korean Academy', ko: '효재어학당', ja: 'ヒョジェ語学堂', zh: '孝在语学堂' },
+    title: { en: 'Hyojae University Korean Academy', ko: '효재대학교 어학당', ja: 'ヒョジェ大学 語学堂', zh: '孝在大学语学堂' },
     text: { en: 'Real Korean courses: Hangul, TOPIK 1-4 and an advanced class. Sit at a desk, study each lesson, pass the quiz and earn a certificate.', ko: '한글, 토픽 1~4급, 고급반까지 진짜 한국어 과정. 책상에 앉아 레슨을 공부하고 퀴즈를 통과해 수료증을 받아요.', ja: 'ハングル、TOPIK1〜4級、上級クラスの本格コース。席に座って学び、クイズに合格して修了証をもらおう。', zh: '真正的韩语课程：韩文、TOPIK 1-4级和高级班。坐到课桌前学习，通过测验获得结业证书。' } },
 { icon: '🏪', to: { store: 'haru-mart' },
     title: { en: 'Convenience store', ko: '편의점', ja: 'コンビニ', zh: '便利店' },
@@ -145,6 +145,9 @@ export const PLACE_TOPICS = [
 { icon: '🏯', to: { zone: 'G' },
     title: { en: 'Gyeongbokgung Palace', ko: '경복궁', ja: '景福宮', zh: '景福宫' },
     text: { en: 'West along Sajik-ro: Gwanghwamun Square, the palace, a hanbok rental and a tea house. Taxis go there too.', ko: '사직로를 따라 서쪽으로: 광화문광장, 경복궁, 한복대여점, 전통찻집. 택시로도 갈 수 있어요.', ja: '社稷路を西へ：光化門広場、景福宮、韓服レンタル、伝統茶房。タクシーでも行けます。', zh: '沿社稷路向西：光化门广场、景福宫、韩服租赁、传统茶馆。也可以坐出租车。' } },
+{ icon: '🌊', to: { zone: 'L' },
+    title: { en: 'Cheonggyecheon Stream', ko: '청계천', ja: '清渓川', zh: '清溪川' },
+    text: { en: 'South of Gwanghwamun Square, a stream flows below the street from Cheonggye Plaza. Take the stairs down to the water, cross the stepping stones and walk under Mojeongyo and Gwangtonggyo bridges. A short stretch: the real stream runs on for about 11 km.', ko: '광화문광장 남쪽 청계광장에서 시작해 길 아래로 흐르는 개천. 계단으로 물가에 내려가 징검다리를 건너고 모전교와 광통교 밑을 걸어 봐요. 짧은 구간만 있고, 실제 청계천은 약 11km 이어져요.', ja: '光化門広場の南、清渓広場から道の下を流れる小川。階段で水辺に下り、飛び石を渡って毛廛橋と広通橋の下を歩こう。短い区間だけで、本物の清渓川は約11km続きます。', zh: '光化门广场南边，从清溪广场开始在街道下方流淌的溪流。走楼梯下到水边，踩着踏石过溪，从毛廛桥和广通桥下走过。这里只有一小段，真实的清溪川长约11公里。' } },
 ];
 
 const el = (tag, cls, text) => {

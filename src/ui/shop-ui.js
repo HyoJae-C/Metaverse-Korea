@@ -2,6 +2,8 @@
 import { ITEMS } from '../core/inventory.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
 import { STYLES, SPRAYS, onSale } from '../core/perfume.js';
+import { hanbokById, RENT_HOURS } from '../data/hanbok.js';
+import { formatLeft } from '../core/hanbok-rental.js';
 
 const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 const PERFUME_SNIFF = { en: 'Smell the tester (free)', ko: '시향하기 (무료)', ja: 'テスターを試す（無料）', zh: '试闻（免费）', es: 'Probar (gratis)', ar: 'جرّب العطر (مجانًا)', vi: 'Thử mùi (miễn phí)', hi: 'टेस्टर सूँघें (मुफ़्त)', id: 'Coba tester (gratis)' };
@@ -10,6 +12,15 @@ const LIMITED = {
   off: { en: 'Not on sale now: this limited edition sells from {from} to {to}.', ko: '지금은 팔지 않아요. {from} ~ {to} 기간 한정 상품이에요.', ja: '今は販売していません。{from}〜{to}の期間限定です。', zh: '现在不卖。限时发售：{from} 至 {to}。', es: 'No está a la venta ahora: edición limitada del {from} al {to}.', ar: 'غير متاح للبيع الآن: إصدار محدود من {from} إلى {to}.', vi: 'Hiện không bán: phiên bản giới hạn từ {from} đến {to}.', hi: 'अभी बिक्री में नहीं: सीमित संस्करण {from} से {to}।', id: 'Sedang tidak dijual: edisi terbatas {from} sampai {to}.' },
 };
 const PERFUME_INFO = { en: '🧴 {n} sprays · each lasts 3 minutes · people nearby see the effect too', ko: '🧴 {n}번 뿌릴 수 있어요 · 한 번에 3분 · 근처 사람들도 이펙트를 봐요', ja: '🧴 {n}回分 · 1回3分 · 近くの人にもエフェクトが見えます', zh: '🧴 可喷{n}次 · 每次3分钟 · 附近的人也能看到特效', es: '🧴 {n} usos · cada uno dura 3 min · los de cerca ven el efecto', ar: '🧴 {n} رشّات · كل رشّة 3 دقائق · يرى من حولك التأثير', vi: '🧴 Xịt được {n} lần · mỗi lần 3 phút · người gần bạn cũng thấy hiệu ứng', hi: '🧴 {n} बार · हर बार 3 मिनट · पास वाले भी असर देखते हैं', id: '🧴 {n} semprotan · masing-masing 3 menit · orang di dekatmu ikut melihat efeknya' };
+
+// Hanbok rental (data/hanbok.js): worn for a few hours, then your own clothes come back.
+export const RENT = {
+  rent: { en: 'Rent for {h} hours', ko: '{h}시간 대여하기', ja: '{h}時間レンタル', zh: '租{h}小时', es: 'Alquilar {h} horas', ar: 'استأجر لمدة {h} ساعات', vi: 'Thuê {h} giờ', hi: '{h} घंटे के लिए किराए पर लें', id: 'Sewa {h} jam' },
+  back: { en: 'Return it now', ko: '지금 반납하기', ja: '今すぐ返却', zh: '现在归还', es: 'Devolver ahora', ar: 'أعِده الآن', vi: 'Trả ngay', hi: 'अभी लौटाएँ', id: 'Kembalikan sekarang' },
+  left: { en: '⏳ Rented · {t} left', ko: '⏳ 대여 중 · {t} 남음', ja: '⏳ レンタル中 · 残り{t}', zh: '⏳ 租借中 · 剩余{t}', es: '⏳ Alquilado · quedan {t}', ar: '⏳ مستأجَر · بقي {t}', vi: '⏳ Đang thuê · còn {t}', hi: '⏳ किराए पर · {t} बाकी', id: '⏳ Disewa · sisa {t}' },
+  info: { en: '🪭 Rental: wear it for {h} hours, then your own clothes come back by themselves. Renting another one swaps it and starts the {h} hours again.', ko: '🪭 대여: {h}시간 동안 입을 수 있고, 시간이 지나면 원래 옷으로 자동으로 돌아와요. 다른 한복을 빌리면 바꿔 입고 {h}시간이 새로 시작돼요.', ja: '🪭 レンタル：{h}時間着られて、時間が過ぎると自動で元の服に戻ります。別の韓服を借りると着替えて{h}時間がまた始まります。', zh: '🪭 租借：可以穿{h}小时，时间到了会自动换回原来的衣服。租另一套会换上并重新计时{h}小时。', es: '🪭 Alquiler: llévalo {h} horas y luego vuelve tu ropa sola. Si alquilas otro, te lo cambias y las {h} horas empiezan de nuevo.', ar: '🪭 إيجار: ارتدِه {h} ساعات، ثم تعود ملابسك تلقائيًا. استئجار آخر يبدّله ويبدأ الساعات من جديد.', vi: '🪭 Thuê: mặc trong {h} giờ, sau đó quần áo của bạn tự trở lại. Thuê bộ khác sẽ đổi bộ và tính lại {h} giờ.', hi: '🪭 किराया: इसे {h} घंटे पहनें, फिर आपके अपने कपड़े अपने आप लौट आते हैं। दूसरा किराए पर लेने से बदल जाता है और {h} घंटे फिर शुरू होते हैं।', id: '🪭 Sewa: pakai selama {h} jam, lalu bajumu sendiri kembali otomatis. Menyewa yang lain akan menggantinya dan {h} jam dimulai lagi.' },
+  palace: { en: 'Tip: at Seoul\'s royal palaces, visitors wearing hanbok get in free.', ko: '팁: 서울의 고궁은 한복을 입으면 무료로 입장할 수 있어요.', ja: 'ヒント：ソウルの古宮は韓服を着ると無料で入れます。', zh: '提示：穿韩服可以免费参观首尔的古宫。', es: 'Consejo: en los palacios reales de Seúl, quien va en hanbok entra gratis.', ar: 'نصيحة: في قصور سيول الملكية، يدخل من يرتدي الهانبوك مجانًا.', vi: 'Mẹo: ở các cung điện Seoul, khách mặc hanbok được vào miễn phí.', hi: 'सुझाव: सियोल के शाही महलों में हानबोक पहनने वालों का प्रवेश मुफ़्त है।', id: 'Tips: di istana kerajaan Seoul, pengunjung berhanbok masuk gratis.' },
+};
 
 const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
@@ -29,7 +40,7 @@ const HOW = {
 };
 // Clothes, shoes and accessories are bought with coins and worn on the
 // spot. A fashion shop or pop-up with nothing to wear yet is coming soon.
-const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit || p.item);
+const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit || p.item || p.rent);
 export const comingSoon = (store) => !!store && (store.category === 'fashion' || store.category === 'popup') && !sellsOutfits(store) && !store.perfumery;
 // How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
 // 'soon' (fashion, for now) or 'buy' (take it home in a shopping bag).
@@ -40,7 +51,7 @@ export function howToGet(store) {
   return 'buy';
 }
 export const coinsFor = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 1000));
-const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱',
+const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱', 'pet:chinchilla': '🐭', 'pet:guineapig': '🐹',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
@@ -85,8 +96,10 @@ export class ShopUI {
   // onBuy(product, coins): pay and hold it (shops that sell to take home).
   // canGift(product): true when this can be bought for someone else here;
   // onGift(product): pick a friend and send it (see ui/gift-ui.js).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel });
+  // onRent(product): rent a hanbok, or give it back; rentLeft(product): ms
+  // left on this hanbok's rental (0: not renting it).
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -106,7 +119,7 @@ export class ShopUI {
     this.$('store-name-ko').textContent = lang === 'ko' ? '' : store.name.ko;
     this.$('store-tagline').textContent = localName(store.tagline, lang) || '';
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
-    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train';
+    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum';
   }
 
   leaveStore() {
@@ -131,7 +144,9 @@ export class ShopUI {
       this.$('product-desc').textContent = `${st ? st.icon + ' ' + L(st) + ' · ' : ''}${localName(product.desc, lang) || ''}${lim}\n${fmt(L(PERFUME_INFO), { n: SPRAYS })}`;
     }
     const tryBtn = this.$('product-try');
-    tryBtn.hidden = !product.tryOn && !product.perfume;
+    // Anything you can wear can be tried on: its own look is the try-on.
+    const wearLook = ITEMS[product.item || product.outfit]?.wear;
+    tryBtn.hidden = !product.tryOn && !wearLook && !product.perfume && !hanbokById(product.rent);
     tryBtn.textContent = product.perfume ? '👃 ' + L(PERFUME_SNIFF) : '🪞 ' + t('shop.tryOn');
     tryBtn.onclick = () => (product.perfume ? this.onSniff?.(product) : this.onTryOn(product));
     // Restaurant dishes are a menu to read, not something to buy.
@@ -167,11 +182,22 @@ export class ShopUI {
       this.$('product-price').textContent = `🪙 ${outfit.price}`;
       if (!product.desc) this.$('product-desc').textContent = localName(outfit.desc, lang) || '';
     }
+    // Hanbok rental: rent with coins for a few hours, or give it back early.
+    const rent = hanbokById(product.rent);
+    if (rent) {
+      const left = this.rentLeft?.(product) || 0;
+      ab.hidden = false;
+      ab.disabled = false;
+      ab.textContent = left ? '↩️ ' + L(RENT.back) : `🪙 ${rent.coins} · ${fmt(L(RENT.rent), { h: RENT_HOURS })}`;
+      ab.onclick = () => { this.onRent?.(product); this.openProduct(product); };
+      this.$('product-price').textContent = left ? fmt(L(RENT.left), { t: formatLeft(left) }) : `🪙 ${rent.coins}`;
+      this.$('product-desc').textContent = `${localName(product.desc, lang) || ''}\n${fmt(L(RENT.info), { h: RENT_HOURS })}\n${L(RENT.palace)}`;
+    }
     // No cart: restaurants take orders at the table, cafés at the counter,
     // fashion is coming soon, and other shops sell for coins to carry home.
     const how = howToGet(this.store);
     this.$('product-take').hidden = true;
-    const special = adopt || product.umbrella || outfit;
+    const special = adopt || product.umbrella || outfit || rent;
     const howEl = this.$('product-how');
     howEl.hidden = special && how !== 'soon' || how === 'buy';
     howEl.textContent = L(HOW[how] || HOW.soon);

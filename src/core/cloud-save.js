@@ -142,6 +142,25 @@ export class CloudSave {
     } catch { return 'offline'; }
   }
 
+  // Does this player name belong to an operator account? (005_operators.sql)
+  // False when it can't be asked: no badge is better than a fake one.
+  async isOperator(name, timeoutMs = 4000) {
+    if (!this.client) return false;
+    try {
+      const call = this.client.rpc('is_operator', { player_name: String(name).slice(0, 16) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      return !error && data === true;
+    } catch { return false; }
+  }
+
+  // This account's sign-in token, for realtime's private channels (the chat
+  // channel checks it on the server). Null without an account.
+  async accessToken() {
+    if (!this.client || !this.user) return null;
+    const { data } = await this.client.auth.getSession();
+    return data.session?.access_token || null;
+  }
+
   // The Google address once linked (or null).
   get email() { return this.user?.identities?.find((i) => i.provider === 'google')?.identity_data?.email || this.user?.email || null; }
 
