@@ -167,7 +167,7 @@ function makeMonkey(color, accent, scale = 1) {
   return { root, body, head, tail, legs };
 }
 
-const BREEDS = {
+export const BREEDS = {
   hamsters: [
     { kind: 'hamster', name: '햄찌', rom: 'Haemjji', color: '#f0b46a', accent: '#fff6ea', scale: 0.85 }, // golden
     { kind: 'hamster', name: '쿠키', rom: 'Cookie', color: '#c99a6b', accent: '#fff3e6', scale: 0.80 },
@@ -207,6 +207,13 @@ const BREEDS = {
     { kind: 'dog', name: '라떼', rom: 'Latte', color: '#d9b77e', accent: '#b8955c', scale: 1.6 },
     { kind: 'dog', name: '진돌', rom: 'Jindol', color: '#e9c48a', accent: '#fff6e6', scale: 1.6 },
   ],
+  // Mungnyang Retriever Café in Seongsu: two retrievers, a bit bigger than the
+  // small dogs (a Maltese is 0.85) but smaller than the Big Paws dogs, who
+  // love to play together.
+  retrievers: [
+    { kind: 'dog', name: '해피', rom: 'Happy', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, playful: true }, // golden retriever
+    { kind: 'dog', name: '두부', rom: 'Dubu', color: '#f1dcb0', accent: '#d9bd86', scale: 1.2, playful: true }, // cream golden
+  ],
   raccoons: [
     { kind: 'raccoon', name: '너구리', rom: 'Neoguri', color: '#8f8a88', accent: '#ffffff' },
     { kind: 'raccoon', name: '라쿠', rom: 'Raku', color: '#7a7471', accent: '#f4efe9' },
@@ -218,12 +225,15 @@ const BREEDS = {
 
 export class Pets {
   // room: { w, d }; blocked(x, z, r) from the room's collision map.
-  constructor(scene, room, blocked, kind = 'cats', count = 6) {
+  // extra: more animals to add, such as pets waiting to be adopted
+  // ({ kind, name, rom, color, accent, scale, adopt: item id }).
+  constructor(scene, room, blocked, kind = 'cats', count = 6, extra = []) {
     this.room = room;
     this.blocked = blocked;
-    const breeds = BREEDS[kind] || BREEDS.cats;
+    this.scene = scene;
+    const breeds = [...(BREEDS[kind] || BREEDS.cats).slice(0, count), ...extra];
     this.radius = 0.35 * Math.max(...breeds.map((b) => b.scale || 1));
-    this.list = breeds.slice(0, count).map((b) => {
+    this.list = breeds.map((b) => {
       const a = makeAnimal(b.kind, b.color, b.accent, b.scale);
       const [x, z] = this._freeSpot();
       a.root.position.set(x, 0, z);
@@ -254,6 +264,12 @@ export class Pets {
     return best;
   }
 
+  // An adopted animal leaves the café (it now follows its new family).
+  remove(p) {
+    this.list = this.list.filter((q) => q !== p);
+    this.scene.remove(p.root);
+  }
+
   // Being petted: a happy hop and a wagging tail.
   pet(p, x, z) {
     p.state = 'happy';
@@ -264,7 +280,14 @@ export class Pets {
   _pick(p, player) {
     const r = Math.random();
     const near = player && Math.hypot(player.x - p.root.position.x, player.z - p.root.position.z) < 6;
-    if (near && r < 0.2) { // come over to the visitor
+    const buddy = p.playful && this.list.find((q) => q !== p && q.playful);
+    if (buddy && r >= 0.55 && r < 0.9) { // playful dogs run to each other and play (instead of sitting or napping)
+      if (Math.hypot(buddy.root.position.x - p.root.position.x, buddy.root.position.z - p.root.position.z) < 1.6) {
+        p.state = 'play'; p.t = 2 + Math.random() * 2;
+      } else {
+        p.state = 'walk'; p.target = [buddy.root.position.x + (Math.random() - 0.5), buddy.root.position.z + (Math.random() - 0.5)]; p.t = 5;
+      }
+    } else if (near && r < 0.2) { // come over to the visitor
       p.state = 'walk';
       p.target = [player.x + (Math.random() - 0.5) * 1.2, player.z + (Math.random() - 0.5) * 1.2];
       p.t = 6;

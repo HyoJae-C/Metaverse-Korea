@@ -119,10 +119,11 @@ export const ITEMS = {
     'plush-bear': ['🧸', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
     'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
   }),
-  // Pets: adopted at the pet shop for coins (price), or by code only (no price).
-  // The pet shop (stores.json) lists only the Maltese, the poodle and the two
-  // cats; the shiba, chinchilla and guinea pig stay here so pets players already
-  // own keep working (and the chinchilla / guinea pig codes still give them).
+  // Pets: adopted for coins (price), or by code only (no price).
+  // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
+  // at the retriever café, the two cats at the cat café, and the price is the
+  // adoption fee. The shiba, chinchilla and guinea pig stay here so pets players
+  // already own keep working (and the chinchilla / guinea pig codes still give them).
   // Prices follow Korean pet-shop prices at 🪙1 = ₩1,000 (a toy poodle is
   // about ₩400,000), so a pet costs far more than a perfume or a jacket.
   ...pets({
@@ -165,7 +166,7 @@ const CODES = {
   '9db9efa6cfeea17db7046ae247534ec49bf53b49f8e953416db0037e44145c44': ['car', 'limo'], // open sports car + limousine
   '6a4ae2320b9c19a6c29ba13e9daeb1a1aad96880fa89d9b9dd813c0785b2446b': ['moto'], // the red sports motorbike and helmet
   '1ce34a27523c7405edbff33ab0e1ca61f755f21714248edd4895e63d98c2f001': ['tee-simurugi'],
-  // Pet codes. The pet shop sells only two dogs and two cats, so the
+  // Pet codes. Only two dogs and two cats can be adopted, so the
   // chinchilla and guinea pig come from these codes (the monkey is code only,
   // since monkeys are not sold as pets in Korean pet shops).
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
