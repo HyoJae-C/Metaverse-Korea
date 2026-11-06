@@ -41,7 +41,9 @@ import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themep
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
+import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM, DEFAULT_LOOK } from './data/appearance.js';
+import { Receipts, sellable } from './core/resale.js';
+import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble } from './core/players.js';
@@ -2095,6 +2097,9 @@ function hopOn(inv) {
 }
 // Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
+// What I paid for clothes I bought myself: only those can be sold at a
+// second-hand shop (core/resale.js).
+const receipts = new Receipts();
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2109,14 +2114,14 @@ const CODE_TEXT = {
   wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
 };
 const OUTFIT_TEXT = {
-  bought: { en: 'New clothes! You are wearing them now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Ropa nueva! Ya la llevas puesta.', ar: 'ملابس جديدة! أنت ترتديها الآن.', vi: 'Quần áo mới! Bạn đang mặc rồi.', hi: 'नए कपड़े! आपने इन्हें अभी पहन लिया है।', id: 'Baju baru! Sekarang sedang kamu pakai.' },
   on: { en: 'Changed clothes!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Te cambiaste de ropa!', ar: 'غيّرت ملابسك!', vi: 'Đã thay đồ!', hi: 'कपड़े बदल लिए!', id: 'Sudah ganti baju!' },
   off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', vi: 'Đã trở lại áo phông.', hi: 'वापस अपनी टी-शर्ट में।', id: 'Kembali ke kaosmu.' },
-  boughtThing: { en: 'Bought! You are wearing it now.', ko: '샀어요! 바로 착용했어요.', ja: '買いました！さっそく着けています。', zh: '买好了！已经穿戴上了。', es: '¡Comprado! Ya lo llevas puesto.', ar: 'تم الشراء! أنت ترتديه الآن.', vi: 'Đã mua! Bạn đang đeo/mặc rồi.', hi: 'ख़रीद लिया! आपने इसे अभी पहन लिया है।', id: 'Sudah dibeli! Sekarang sedang kamu pakai.' },
+  bagged: { en: 'Bought! It is in your bag 🎒. Tap Wear to put it on.', ko: '샀어요! 가방 🎒에 넣었어요. "입기"를 누르면 입어요.', ja: '買いました！バッグ 🎒 に入れました。「着る」で着られます。', zh: '买好了！已放进背包 🎒。点“穿上”就能穿。', es: '¡Comprado! Está en tu bolsa 🎒. Toca Poner para llevarlo.', ar: 'تم الشراء! إنه في حقيبتك 🎒. اضغط ارتدِ لتلبسه.', vi: 'Đã mua! Đồ đã vào túi 🎒. Chạm Mặc để mặc vào.', hi: 'ख़रीद लिया! यह आपके बैग 🎒 में है। पहनने के लिए पहनें टैप करें।', id: 'Sudah dibeli! Ada di tasmu 🎒. Ketuk Pakai untuk memakainya.' },
   offThing: { en: 'Taken off.', ko: '벗었어요.', ja: '外しました。', zh: '取下了。', es: 'Te lo quitaste.', ar: 'خلعته.', vi: 'Đã tháo ra.', hi: 'उतार दिया।', id: 'Sudah dilepas.' },
 };
 // Clothes and accessory shops and the items list: buy (coins), wear, or
-// take off. Buying puts it on right away.
+// take off. Buying puts it in your bag; tap Wear (here or in the bag) to
+// put it on. Try it on in the shop first to see how it looks.
 function outfitAction(itemId) {
   const it = ITEMS[itemId];
   if (!it?.wear) return;
@@ -2124,10 +2129,12 @@ function outfitAction(itemId) {
   if (!inventory.has(itemId)) {
     if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
+    receipts.record(itemId, it.price);
     refreshWallet();
     sfx.pop?.();
-    myLook = { ...myLook, ...it.wear };
-    shop.toast(L(it.outfit ? OUTFIT_TEXT.bought : OUTFIT_TEXT.boughtThing));
+    shop.toast(L(OUTFIT_TEXT.bagged));
+    if (!$('bag-panel').hidden) refreshItems();
+    return;
   } else if (on) {
     if (!it.off) return; // trousers: swap them for another pair instead
     myLook = { ...myLook, ...it.off };
@@ -2463,6 +2470,7 @@ function leaveStore() {
   if (grillUi.open) grillUi.close();
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
+  if (resaleUi.open) resaleUi.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
   if (kimchiSellUi.open) kimchiSellUi.close();
@@ -3322,7 +3330,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, karaokeUi, photoUi, clawUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3553,6 +3561,32 @@ const marketUi = new FishMarketUI({
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
 });
+// Second-hand shops: sell clothes I bought (core/resale.js). Clothes bought
+// before receipts existed are found once in the budget book.
+receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+const resaleUi = new ResaleUI({
+  root: $('resale-panel'),
+  list: () => sellable(inventory.list(), ITEMS, receipts),
+  wearing: (id) => isWorn(ITEMS[id], myLook),
+  onSell: (r) => sellClothes(r),
+});
+function sellClothes({ id, coins }) {
+  const it = ITEMS[id];
+  if (!it || !inventory.has(id) || receipts.paid(id) <= 0) return;
+  if (isWorn(it, myLook)) { // take it off first (trousers: back to plain jeans)
+    myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants } : {})) };
+    saveLook(myLook);
+    setLook(myLook);
+  }
+  inventory.remove(id);
+  receipts.forget(id);
+  wallet.add(coins, { name: it.name, at: interior?.store.name });
+  refreshWallet();
+  sfx.pop?.();
+  shop.toast(fmt(L(RESALE_TEXT.sold), { n: coins }));
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(RESALE_TEXT.thanks)]);
+  if (!$('bag-panel').hidden) refreshItems();
+}
 const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   wallet,
@@ -4922,6 +4956,8 @@ function updateAction(p, tSec) {
       next = { key: 'kimchi-sell', label: '🫙 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
+    } else if (interior.store.resale && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'resale', label: '♻️ ' + L(RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
     } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (clubState && !seated) { // anywhere on the club floor: dance to the beat
@@ -5482,6 +5518,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     bagList: () => bag.list(),
+    items: () => inventory.list(),
+    toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
