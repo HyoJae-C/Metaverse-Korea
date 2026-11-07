@@ -1080,11 +1080,14 @@ watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refres
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // Our spot on the map for operators' live view (net/where.js, admin.html).
 // Inside a shop we report the street spot we came in from, and the shop.
+// A hidden tab keeps reporting (browsers slow the timer down to about once a
+// minute): it is still in multiplayer, and an operator watching admin.html
+// in another tab of the same browser should still see their own game.
 let streetSpot = null;
 startWhereReports({
   get: () => {
     try {
-      if (tabParked || document.hidden || !me?.root) return null;
+      if (tabParked || !me?.root) return null;
       if (mode === 'street') streetSpot = { x: me.root.position.x, z: me.root.position.z };
       if (!streetSpot) return null;
       return { name: nickname, place: mode === 'street' ? 'street' : interior?.store?.id || mode, ...streetSpot };
