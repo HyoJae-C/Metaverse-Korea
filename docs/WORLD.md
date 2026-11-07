@@ -49,6 +49,12 @@ built, and nothing needs moving when something new is added next to it.
   everything placed in world metres inside it: stores, zones, bike stations,
   homes, screens, subway exits, busking zones, stamps, and the ends of link
   roads. Check the link roads on the map afterwards.
+- **Keep streets clear.** When you re-draw a road or move a district, move
+  or trim the buildings (and blockers) that end up on it: the map still shows
+  a street, but you walk into a wall. Songpa-daero once ran straight through
+  three towers this way. `tests/roads-clear.test.mjs` (in `npm test`) fails
+  when a building or blocker stands in the middle half of any street; a
+  street blocked on purpose goes in its `ALLOWED` list with the reason.
 - **Credit.** The gu outlines are © OpenStreetMap contributors (ODbL); the map
   shows that line in its corner (`credit` in `seoul.json`).
 
@@ -87,6 +93,11 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `npm test`) then checks that it sits in its gu and overlaps no other
    district.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
+   A meeting zone's id is a new single letter: its two passers-by take their
+   names from that letter (`src/data/npc-names.js`), so daily "find someone"
+   missions name one person who stays in that area. `npm test`
+   (`tests/npc-missions.test.mjs`) checks every zone stands in a district
+   next to its own streets.
 5. Give it an Information Center: a store with `"workshop": "info"` and
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
    Inside, the game guide (left) explains the game and the area guide (right)

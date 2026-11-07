@@ -571,7 +571,7 @@ function planRoute(ax, az, bx, bz) {
 const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, x: z.x, z: z.z })));
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
@@ -5357,13 +5357,13 @@ function bukchonY(x, z) { return bukchonAt ? bukchonGround(x - bukchonAt[0], z -
 const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
 const HANBOK_MEN = [['baji-blue', 'short'], ['durumagi-lilac', 'crop'], ['baji-navy', 'pomp'], ['durumagi-gray', 'short'], ['baji-jade', 'crop']];
 const bukchonIn = (x, z) => !!bukchonAt && inPolygonXZ(x - bukchonAt[0], z - bukchonAt[1], [[BUKCHON.area[0], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[3]], [BUKCHON.area[0], BUKCHON.area[3]]]);
-const hanbokNpcs = bukchonAt ? new StreetNpcs(scene, $('labels'), roadGraph, BUKCHON.villagers.map(([x, z]) => [x + bukchonAt[0], z + bukchonAt[1]]), 2, {
+const hanbokNpcs = bukchonAt ? new StreetNpcs(scene, $('labels'), roadGraph, BUKCHON.villagers.map(([x, z]) => ({ id: 'bukchon', x: x + bukchonAt[0], z: z + bukchonAt[1] })), 2, {
   keepIn: bukchonIn,
   phrases: PHRASES.bukchon,
   groundY: bukchonY,
   who: (i) => {
     const [set, hairStyle] = (i % 2 ? HANBOK_MEN : HANBOK_WOMEN)[Math.floor(i / 2) % 5];
-    return { name: (i % 2 ? ['지훈', '도윤', '준서', '현우', '시우'] : ['서연', '하은', '지아', '수빈', '다은'])[Math.floor(i / 2) % 5], look: { ...randomLook(), hairStyle, ...hanbokById(set).wear } };
+    return { name: (i % 2 ? ['민준', '도하', '선우', '이준', '주호'] : ['소연', '지유', '하윤', '예나', '서아'])[Math.floor(i / 2) % 5], look: { ...randomLook(), hairStyle, ...hanbokById(set).wear } };
   },
 }) : null;
 
@@ -6118,12 +6118,19 @@ $('ad-btn').onclick = async () => {
 
 // Daily check-in and three daily missions (see core/daily.js).
 daily = new Daily(wallet, {
-  npcs: [...new Set(npcs.list.map((o) => o.name))],
+  npcs: npcs.list.map((o) => o.name), // one person each (data/npc-names.js)
   stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home'),
 });
 const storeById = (id) => storefronts.items.find((i) => i.store.id === id);
 function missionText(m) {
-  if (m.type === 'talk') return t('mission.talk', { name: getLanguage() === 'ko' ? m.target : `${m.target} (${NAME_ROMAN[m.target] || ''})` });
+  if (m.type === 'talk') {
+    // Say where they hang out (their meeting zone), so it's clear which part of town to go to.
+    const lang = getLanguage(), o = npcs.list.find((n) => n.name === m.target);
+    const zone = o && zones.items.find((z) => z.zone.id === o.zone)?.zone;
+    const where = zone ? localName(zone.name, lang) : '';
+    const extra = [lang === 'ko' ? '' : NAME_ROMAN[m.target], where].filter(Boolean).join(', ');
+    return t('mission.talk', { name: extra ? `${m.target} (${extra})` : m.target });
+  }
   if (m.type === 'visit') return t('mission.visit', { store: localName(storeById(m.target)?.store.name, getLanguage()) || m.target });
   return t('mission.' + m.type, { n: m.need });
 }
@@ -7246,7 +7253,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
-    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
+    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),

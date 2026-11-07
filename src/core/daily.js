@@ -74,8 +74,25 @@ export class Daily {
       this.s.missions = missionsFor(today, this.pool);
       this.s.bonus = false;
       write(this.s);
-    }
+    } else if (!this._checked) this._repair(today);
+    this._checked = true;
     return today;
+  }
+
+  // Today's missions were saved before the map changed: a person or shop
+  // they name may be gone (renamed, moved away). Swap an unfinished one
+  // like that for today's fresh pick of the same kind, so it can be done.
+  _repair(today) {
+    const has = { talk: (t) => this.pool.npcs.includes(t), visit: (t) => this.pool.stores.some((s) => s.id === t) };
+    const fresh = missionsFor(today, this.pool);
+    let changed = false;
+    this.s.missions = this.s.missions.map((m) => {
+      if (!has[m.type] || m.n >= m.need || has[m.type](m.target)) return m;
+      const f = fresh.find((x) => x.type === m.type);
+      changed = true;
+      return f ? { ...f } : { ...m, n: m.need }; // nothing left to pick: count it as done
+    });
+    if (changed) write(this.s);
   }
 
   get missions() { this._roll(); return this.s.missions; }

@@ -87,13 +87,20 @@ function yeonnam() {
   row('parkEastN', 'z', -97, -36, 70, 1, 11, H);
   row('laneW', 'z', -97, -36, 103, -1, 12, H); // west side of the east lane
   row('laneW2', 'z', -24, 97, 103, -1, 12, H);
-  row('laneE', 'z', -97, 97, 115, 1, 12, H); // east side of the east lane
+  row('laneE', 'z', -97, -36, 115, 1, 12, H); // east side of the east lane (gap for Seongmisan-ro)
+  row('laneE2', 'z', -24, 97, 115, 1, 12, H);
   // West of Donggyo-ro: a row facing it, then the back lanes.
   row('donggyoWS', 'z', -24, 36, -46, -1, 12, H);
   row('donggyoWS2', 'z', 44, 97, -46, -1, 12, H);
   row('donggyoWN', 'z', -97, -36, -46, -1, 12, H);
-  row('westLane', 'z', -97, 97, -104, 1, 11, H); // east side of the west lane
-  row('westEdge', 'z', -97, 97, -116, -1, 12, H); // west side of the west lane
+  // The west lane's rows leave gaps where Seongmisan-ro (z -30) and the
+  // alley (z 40) cross it, so no building stands on either street.
+  row('westLane', 'z', -97, -36, -104, 1, 11, H); // east side of the west lane
+  row('westLane2', 'z', -24, 36, -104, 1, 11, H);
+  row('westLane3', 'z', 44, 97, -104, 1, 11, H);
+  row('westEdge', 'z', -97, -36, -116, -1, 12, H); // west side of the west lane
+  row('westEdge2', 'z', -24, 36, -116, -1, 12, H);
+  row('westEdge3', 'z', 44, 97, -116, -1, 12, H);
   // Along Seongmisan-ro and the alley (fronts facing them, between the rows).
   row('seongmisanS', 'x', -92, -59, -25, 1, 10, H);
   row('seongmisanN', 'x', -92, -59, -35, -1, 10, H);
