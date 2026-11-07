@@ -38,7 +38,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  let obstacles = [];
+  let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
@@ -76,7 +76,7 @@ export function buildWorld(map, scene, opts = {}) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
     const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
-    if (trees) { group.add(...trees); obstacles = trees.obstacles; }
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 
   if (!lowSpec) {
@@ -87,7 +87,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds, obstacles };
+  return { group, bounds, obstacles, treeSpots };
 }
 
 export function computeBounds(map) {
@@ -462,6 +462,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
   // What stands on the park lawns, for things put down on the grass (picnic
   // mats): [x, z, r] trunks and bushes.
+  out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters
   out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
   return out;
 }

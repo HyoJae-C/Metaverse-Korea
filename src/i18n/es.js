@@ -8,6 +8,8 @@ export const ES = {
   'car.alley': 'Los coches no entran en los callejones. ¡Bájate y camina!',
   'credit.privacy': 'Privacidad',
   'credit.terms': 'Términos',
+  'support.title': 'Apoya al creador',
+  'support.sub': 'Lo hace una sola persona. Un café ayuda a que siga creciendo.',
   'credit.about': 'Acerca de',
   'cloud.guest': 'Guardado en el servidor (cuenta de invitado)',
   'cloud.account': 'Guardado en tu cuenta',

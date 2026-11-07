@@ -117,6 +117,7 @@ import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js
 import { JOB_TEXT, SHIFTS_PER_DAY, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
 import { JobUI } from './ui/job-ui.js';
 import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
+import { supportTexture, pickSupportSpots } from './core/support-poster.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { CounterUI, heldFor } from './ui/counter-ui.js';
 import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
@@ -528,7 +529,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -890,6 +891,11 @@ $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
 $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+// "Support the creator" (Buy Me a Coffee link). Hidden until a URL is set in config.
+if (/^https:\/\//.test(config.supportUrl)) {
+  $('support-link').href = config.supportUrl;
+  $('support-link').hidden = false;
+}
 $('settings-panel').onclick = (e) => {
   if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
 };
@@ -2797,6 +2803,7 @@ const subway = createSubway(subwayStations, {
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
+const supportPlaces = []; // [district, 'spot' | 'wall', where] (debug)
 const hiringRedraws = []; // hiring posters (set up below), redrawn in the sign language
 const hiringPlaces = []; // [shop id, 'spot' | 'wall', spot id or [x, z]] (for checks)
 const applySigns = () => {
@@ -4544,6 +4551,61 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
   const spotById = Object.fromEntries(adPosters.spots.map((sp) => [sp.id, sp]));
   const used = new Set();
   const free = () => adPosters.spots.filter((sp) => !used.has(sp.id) && adPosters.posters[sp.id]);
+  // One "buy me a coffee" poster per district (core/support-poster.js), on
+  // the free ad lot nearest the subway exit (or the square), before the
+  // hiring posters take theirs. Never more than one per district.
+  if (/^https:\/\//.test(config.supportUrl)) {
+    const hubs = {};
+    const dOf = (x, z) => districtAt(dBoxes, x, z) || 'map';
+    for (const b of dBoxes) hubs[b.id] = { x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 };
+    for (const st of subwayStations) { const [x, z] = st.exits[0].at; hubs[dOf(x, z)] = { x, z }; }
+    if (square) hubs[dOf(square.x, square.z)] = { x: square.x, z: square.z };
+    const spotDistrict = (sp) => dOf(sp.front.x, sp.front.z);
+    // Spot ids repeat across districts; setPoster reaches the last one.
+    const spots = adPosters.spots.filter((sp) => spotById[sp.id] === sp).map((sp) => ({ ...sp, b: { d: spotDistrict(sp) } }));
+    const picked = pickSupportSpots(spots, hubs, (sp) => adPosters.posters[sp.id] && !used.has(sp.id));
+    const qrUrl = (import.meta.env.BASE_URL || '/') + 'ads/support-qr.png';
+    const label = config.supportUrl.replace(/^https:\/\/(www\.)?/, '');
+    for (const [d, hub] of Object.entries(hubs)) {
+      const tex = supportTexture(signLang(), { qrUrl, label });
+      if (picked[d] && picked[d].dist < 300 && adPosters.setPoster(picked[d].id, tex)) {
+        used.add(picked[d].id); hiringRedraws.push(tex.redraw); supportPlaces.push([d, 'spot', picked[d].id]);
+        continue;
+      }
+      // No free lot nearby: the nearest tall wall to the hub.
+      const edges = [];
+      for (const bd of map.buildings) {
+        if ((bd.d || 'map') !== d || (bd.h || 10) < 7) continue;
+        bd.p.forEach(([x1, z1], i) => {
+          const [x2, z2] = bd.p[(i + 1) % bd.p.length];
+          if (Math.hypot(x2 - x1, z2 - z1) < 7) return;
+          const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2;
+          edges.push({ mx, mz, dist: Math.hypot(mx - hub.x, mz - hub.z) });
+        });
+      }
+      edges.sort((p, q) => p.dist - q.dist);
+      let wall = null;
+      for (const e of edges) {
+        if (e.dist < 12 || e.dist > 300) continue;
+        const w = wallNear(map.buildings, e.mx, e.mz, 7);
+        if (!w || (w.b.d || 'map') !== d || w.h < 7) continue;
+        // Facing the hub side, not over a subway entrance or a shop's sign.
+        if ((hub.x - w.x) * w.nx + (hub.z - w.z) * w.nz < 0) continue;
+        if (allExits.some((ex) => Math.hypot(ex.at[0] - w.x, ex.at[1] - w.z) < 14)) continue;
+        if (storefronts.items.some((o) => Math.hypot(o.group.position.x - w.x, o.group.position.z - w.z) < 7)) continue;
+        // No street tree right in front hiding it.
+        if (treeSpots.some(([x, z]) => {
+          const ahead = (x - w.x) * w.nx + (z - w.z) * w.nz, along = Math.abs((x - w.x) * w.nz - (z - w.z) * w.nx);
+          return ahead > 0 && ahead < 14 && along < 5.5;
+        })) continue;
+        wall = w; break;
+      }
+      if (!wall) { tex.dispose(); continue; }
+      const w = Math.min(5.6, wall.len - 1);
+      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w));
+      hiringRedraws.push(tex.redraw); supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
+    }
+  }
   const putOnSpot = (j, spotId) => {
     const sp = spotById[spotId];
     used.add(spotId);
@@ -6512,6 +6574,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     hiring: () => hiringPlaces,
     delivery: () => delivery && { ...delivery, left: (delivery.until - performance.now()) / 1000 },
+    supportPosters: () => supportPlaces,
     adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z), s.front.nx, s.front.nz]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
