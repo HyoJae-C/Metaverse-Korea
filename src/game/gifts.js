@@ -64,14 +64,14 @@ export function createGifts(game) {
       if (!game.others.players.has(to.id)) { shop.toast(L(GIFT_TEXT.nobody)); return; }
       if (!game.wallet.spend(g.coins, { name: g.name, at: GIFT_TEXT.ledger })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: g.coins })); return; }
       refreshWallet();
-      const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins });
+      const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins, paid: game.wallet.lastOp });
       game.net.sendEmote(giftMsg('offer', to.id, gid, store.id, product.id));
       game.sfx.pop?.();
       shop.toast(fmt(L(GIFT_TEXT.sent), { name: to.name }));
     });
   }
   function refundGift(g, reason) {
-    if (g.coins > 0) game.wallet.add(g.coins, { name: productById(g.store, g.product)?.name, at: GIFT_TEXT.refund });
+    if (g.coins > 0) game.wallet.refund(g.coins, g.paid, { name: productById(g.store, g.product)?.name, at: GIFT_TEXT.refund });
     refreshWallet();
     shop.toast(fmt(L(GIFT_TEXT.back[reason] || GIFT_TEXT.back.no), { name: g.name, n: g.coins }));
   }

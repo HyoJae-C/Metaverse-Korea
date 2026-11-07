@@ -17,6 +17,7 @@ import { fishCode, forceNextCatch } from '../core/fish-luck.js';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
+import { opIdFor } from '../core/wallet.js';
 
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -171,7 +172,8 @@ export function createChat(game) {
       if (used.includes(ev.id)) { game.shop.toast(L(game.CODE_TEXT.used)); return; }
       used.push(ev.id);
       try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
-      game.wallet.add(ev.coins, { k: 'ledger.gift' });
+      // A fixed op id: the server wallet also takes it once per account.
+      game.wallet.add(ev.coins, { k: 'ledger.gift' }, { id: await opIdFor(`event:${ev.id}`) });
       refreshWallet();
       game.shop.toast(fmt(L(game.CODE_TEXT.coins), { n: ev.coins }));
       return;

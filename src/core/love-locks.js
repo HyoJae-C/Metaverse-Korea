@@ -109,21 +109,27 @@ export class SupabaseLoveLocks {
     if (error) { this._err(error); return LOVE_LOCK.price; }
     return Number.isFinite(data) ? data : LOVE_LOCK.price;
   }
-  // The coins are taken on the server (from the cloud save) in the same
-  // step as saving the note; the wallet here then takes the same amount
-  // (once per request id) so the two copies agree. The save is uploaded
-  // first so the server sees the coins this browser has right now.
+  // The coins are taken on the server in the same step as saving the note.
+  // With the server wallet (015_wallet.sql) its waiting coin changes are
+  // sent first and the wallet then shows the server's balance. Before that,
+  // the coins came out of the cloud save: it is uploaded first and the
+  // wallet here takes the same amount (once per request id).
   async hang({ requestId, shape, name, text, price }, note) {
     const c = cleanNote(text);
     if (c.error) return { error: c.error };
     if (!LOCK_SHAPES.includes(shape)) return { error: 'shape' };
-    if (!(await this.cloud.flush())) return { error: 'network' };
+    const onServer = !!this.wallet.server;
+    if (!(await (onServer ? this.wallet.flush() : this.cloud.flush()))) return { error: 'network' };
     const { data, error } = await this.client.rpc('hang_love_lock', { p_request_id: requestId, p_shape: shape, p_name: String(name || '?').slice(0, LOVE_LOCK.maxName), p_body: c.body, p_price: price });
     const e = this._err(error);
     if (e) return { error: e };
     if (!data || data.status !== 'ok') return { error: data?.status || 'network', price: data?.price };
     const p = Number(data.price) || price;
-    if (!this.applied.has(requestId)) { this.applied.add(requestId); this.wallet.add(-p, note); }
+    if (!this.applied.has(requestId)) {
+      this.applied.add(requestId);
+      if (onServer && data.ver != null) { if (data.charged) this.wallet.charged(p, data, note); else this.wallet.charged(0, data); }
+      else this.wallet.add(-p, note);
+    }
     return { lock: data.lock, charged: !!data.charged };
   }
   async page(before = null, n = LOVE_LOCK.pageSize) {
