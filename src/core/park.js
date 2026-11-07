@@ -7,11 +7,16 @@ import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
 import { productModel } from './interior.js';
 import { localName } from './i18n.js';
+import { luckySpot } from './fishing.js';
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
 const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
+const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
+const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
+const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
+const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
 
 export const DUCK_BOATS = 4;
 // Where the two riders sit, in the boat's own space (it faces -z).
@@ -83,8 +88,14 @@ export function buildPark(store, ROOM, EXIT) {
   // Fishing pier into the river.
   const pierLen = 8;
   box(3, 0.2, pierLen, 0, -0.1, bank - pierLen / 2, '#a8794f');
-  for (const s of [-1, 1]) box(0.08, 0.9, pierLen, s * 1.5, 0.45, bank - pierLen / 2, '#7a5636');
-  box(3, 0.9, 0.08, 0, 0.45, bank - pierLen, '#7a5636');
+  // A low wooden fence on the pier (posts and two rails, knee-to-hip high),
+  // so the river is in view over it while you fish.
+  const FENCE_H = 0.55;
+  for (const s of [-1, 1]) {
+    for (const y of [FENCE_H, FENCE_H * 0.5]) box(0.07, 0.07, pierLen, s * 1.5, y, bank - pierLen / 2, '#7a5636');
+    for (let z = 0; z <= pierLen; z += 2) box(0.1, FENCE_H + 0.05, 0.1, s * 1.5, FENCE_H / 2, bank - z, '#6b4a2e');
+  }
+  for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
   // Far bank skyline and a bridge.
   for (let i = 0; i < 26; i++) {
     const h = 6 + ((i * 37) % 11) * 2.2;
@@ -119,6 +130,10 @@ export function buildPark(store, ROOM, EXIT) {
     block(x, z, 0.8, 0.8);
   }
 
+  // A few light touches (all plain boxes and low-poly shapes, no extra
+  // lights): flower beds along the path, round bushes and lamp posts.
+  decorate(scene, box, block, bank);
+
   // Benches facing the river.
   const seats = [];
   for (const bx of [-9, -5, 5, 9]) {
@@ -147,9 +162,9 @@ export function buildPark(store, ROOM, EXIT) {
   box(0.5, 0.05, 2.85, cx, 0.64, kz, mart.color);
   block(kx - 0.5, kz, 4.4, 5.4); // kiosk, clerk's corner and counter
   const products = [];
-  const goods = store.products.filter((p) => p.kiosk).slice(0, 2);
+  const goods = store.products.filter((p) => p.kiosk).slice(0, 3);
   goods.forEach((product, i) => {
-    const z = kz + (i ? 0.65 : -0.65);
+    const z = kz + (i - (goods.length - 1) / 2) * 0.9;
     const g = new THREE.Group();
     g.position.set(cx, 0.67, z);
     g.rotation.y = -Math.PI / 2;
@@ -178,12 +193,67 @@ export function buildPark(store, ROOM, EXIT) {
   // Parasol tables next to the shop.
   for (const [i, [tx, tz]] of [[14.6, 8.4], [18.4, 10.2], [14.6, 12]].entries()) parasolTable(scene, block, seats, tx, tz, PARASOLS[(i + 1) % PARASOLS.length]);
 
-  // Fishing spots: the end of the pier and the railing on both sides.
-  const fishing = [[0, bank - pierLen + 0.8], [-6, bank + 0.7], [7, bank + 0.7]].map(([x, z]) => ({ x, z }));
-  for (const f of fishing) {
-    const sign2 = box(0.5, 0.35, 0.05, f.x + 0.7, 1.1, f.z + 0.3, '#ffd166'); // little 🎣 board
-    sign2.rotation.y = 0.2;
-  }
+  // Four fishing spots spread along the water: two on the left railing, the
+  // end of the pier, and the right railing past the duck boats. Each has a
+  // low "낚시 가능" board on a short post, facing the path.
+  const fishing = [[-20, bank + 0.7], [-8, bank + 0.7], [0, bank - pierLen + 0.8], [20, bank + 0.7]].map(([x, z]) => ({ x, z }));
+  const spotSigns = fishing.map((f) => {
+    const sx = f.x + 0.9, sz = f.z + 0.35;
+    box(0.06, 0.5, 0.06, sx, 0.25, sz - 0.02, '#55504a'); // post
+    const sign = signBoard(0.86, 0.4, SPOT_COLOR);
+    sign.mesh.position.set(sx, 0.66, sz);
+    scene.add(sign.mesh);
+    return sign;
+  });
+  // The lucky spot (행운 포인트, see luckySpot in fishing.js): a gold sign,
+  // a glowing ring on the ground and a clover spinning over it.
+  const luckRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.7, depthWrite: false }));
+  const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
+  scene.add(luckRing, luckGem);
+  let signLang = null, lucky = -1, luckT = 0;
+  const drawSpotSigns = () => spotSigns.forEach((sign, i) => {
+    const luck = i === lucky;
+    if (signLang) sign.draw('🎣 ' + localName(FISHING_OK, signLang), luck ? '🍀 ' + localName(LUCKY_SIGN, signLang) : '', luck ? LUCKY_COLOR : SPOT_COLOR);
+    else sign.draw('🎣 ' + FISHING_OK.ko, luck ? '🍀 ' + LUCKY_SIGN.ko + ' · ' + LUCKY_SIGN.en : FISHING_OK.en, luck ? LUCKY_COLOR : SPOT_COLOR);
+  });
+  const updateLucky = (now = Date.now()) => {
+    const i = luckySpot(fishing.length, now);
+    fishing.forEach((f, k) => { f.lucky = k === i; });
+    if (i === lucky) return;
+    lucky = i;
+    luckRing.position.set(fishing[i].x, 0.03, fishing[i].z);
+    drawSpotSigns();
+  };
+  updateLucky();
+  const tick = (dt) => {
+    luckT += dt;
+    if (luckT > 1e4) luckT = 0;
+    updateLucky();
+    const f = fishing[lucky];
+    luckGem.position.set(f.x, 1.9 + Math.sin(luckT * 2.4) * 0.12, f.z);
+    luckGem.rotation.y = luckT * 1.8;
+    luckRing.material.opacity = 0.45 + Math.sin(luckT * 3) * 0.25;
+  };
+  tick(0);
+
+  // Fish buyer by the pier: an ice-box stand where your catch can be sold
+  // without going back to the fish market (same prices).
+  const fbx = 2.7, fbz = bank + 3.7;
+  box(1.5, 0.8, 0.7, fbx, 0.4, fbz, '#2f78b0'); // counter
+  box(1.3, 0.32, 0.5, fbx, 0.96, fbz, '#f2f7fb'); // ice box
+  box(1.32, 0.06, 0.52, fbx, 1.14, fbz, '#5fb0de'); // its lid
+  for (const sx of [-0.7, 0.7]) box(0.07, 1.6, 0.07, fbx + sx, 1.4, fbz + 0.3, '#55504a'); // sign posts
+  const fSign = signBoard(1.6, 0.48, '#2f78b0');
+  fSign.mesh.position.set(fbx, 2.2, fbz + 0.32);
+  fSign.mesh.rotation.y = Math.PI; // faces the path and the river
+  scene.add(fSign.mesh);
+  const fishBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), mat('#9aa7b4'));
+  fishBody.scale.set(1.6, 0.7, 0.45);
+  fishBody.position.set(fbx - 0.25, 1.27, fbz - 0.05);
+  scene.add(fishBody);
+  block(fbx, fbz, 1.6, 0.8);
+  const fishBuy = { x: fbx, z: fbz - 1.1 };
 
   // Four duck boats (오리배) moored to the right of the pier. Each waits at
   // the dock until someone gets in; two people fit side by side. They face
@@ -203,14 +273,68 @@ export function buildPark(store, ROOM, EXIT) {
   // The riverside market: stalls with sellers, and parasol tables.
   const market = buildMarket(scene, store, block, seats);
   const setSignLang = (lang) => {
+    signLang = lang;
+    drawSpotSigns();
     market.setSignLang(lang);
     martSign.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
+    fSign.draw(lang ? localName(FISH_SIGN, lang) : FISH_SIGN.ko, lang ? '' : FISH_SIGN.en);
   };
   setSignLang(null);
 
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
-    fishing, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang,
+    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
+    // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
+    // the benches and the back, right of the market and left of DAILY MART.
+    lawns: [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }],
   };
+}
+
+// Flower beds, bushes and lamp posts. Flowers are one InstancedMesh per
+// colour, so the whole lot is a handful of draw calls (light on phones).
+const FLOWERS = ['#ff8fab', '#ffd166', '#ffffff', '#c9a6f0'];
+function decorate(scene, box, block, bank) {
+  const bedZ = bank + 3.6; // in line with the benches, between the path and the lawn
+  const beds = [[-13.5, 3], [-7, 1.6], [-2.6, 1.6], [7, 1.6], [14.6, 2.8]].map(([x, len]) => ({ x, len }));
+  const spots = FLOWERS.map(() => []);
+  for (const b of beds) {
+    box(b.len, 0.18, 0.6, b.x, 0.09, bedZ, '#9a6b47'); // the bed's edge
+    box(b.len - 0.1, 0.02, 0.5, b.x, 0.185, bedZ, '#6b4a32'); // soil
+    const n = Math.round(b.len * 5);
+    for (let i = 0; i < n; i++) {
+      const fx = b.x - b.len / 2 + 0.12 + (i / (n - 1)) * (b.len - 0.24);
+      const fz = bedZ + ((i * 7) % 3 - 1) * 0.14;
+      spots[i % FLOWERS.length].push([fx, fz]);
+    }
+    block(b.x, bedZ, b.len, 0.6);
+  }
+  const head = new THREE.IcosahedronGeometry(0.09, 0);
+  const m4 = new THREE.Matrix4();
+  FLOWERS.forEach((c, k) => {
+    const inst = new THREE.InstancedMesh(head, mat(c), spots[k].length);
+    spots[k].forEach(([x, z], i) => inst.setMatrixAt(i, m4.makeTranslation(x, 0.3, z)));
+    scene.add(inst);
+  });
+  const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.11, 0).scale(1.4, 0.6, 1.4), mat('#4f9a4c'), beds.length * 6);
+  let li = 0;
+  for (const b of beds) for (let i = 0; i < 6; i++) leaves.setMatrixAt(li++, m4.makeTranslation(b.x - b.len / 2 + 0.25 + (i / 5) * (b.len - 0.5), 0.22, bedZ));
+  scene.add(leaves);
+
+  // Round bushes at the edges of the lawn.
+  const bushes = [[-12, 13.2], [-7.5, 13.4], [13.5, 13.3], [19.6, 13.2], [-11.8, 6.5]];
+  const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.55, 1).scale(1.2, 0.8, 1), mat('#6dbb5f'), bushes.length);
+  bushes.forEach(([x, z], i) => { bush.setMatrixAt(i, m4.makeTranslation(x, 0.38, z)); block(x, z, 1.2, 1); });
+  scene.add(bush);
+
+  // Lamp posts along the river path (just shapes; no light sources).
+  for (const x of [-17, -11, 11, 18]) {
+    const z = bank + 2.9;
+    box(0.1, 2.6, 0.1, x, 1.3, z, '#3d4650');
+    box(0.34, 0.08, 0.34, x, 2.62, z, '#3d4650');
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), mat('#fff4cf', { emissive: '#ffe9a8', emissiveIntensity: 0.5 }));
+    glow.position.set(x, 2.45, z);
+    scene.add(glow);
+    block(x, z, 0.25, 0.25);
+  }
 }

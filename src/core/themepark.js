@@ -1,13 +1,15 @@
 // Another Land (어나더랜드), the candy-house theme park: an outdoor "room"
 // entered through its gate east of Seongsu (the outside is anotherland.js),
-// with a carousel, a Ferris wheel, a swinging pirate ship and a drop tower. Each ride has a
+// with a carousel, a Ferris wheel, a swinging pirate ship, a drop tower and
+// bumper cars (game/bumper.js). Each ride has a
 // boarding spot; on a ride the player is carried by seatAt(). Same shape as
 // buildInterior's result, plus tick(dt) to animate the rides.
 import * as THREE from 'three';
 import { HAUNT, HAUNT_SPOT, buildHauntedFacade } from './haunted.js';
+import { matCache } from './three-kit.js';
+import { buildBumperRink } from './bumper-rink.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = matCache({ flatShading: true });
 
 export const RIDE_COST = 2;
 export const RIDE_SECONDS = { carousel: 24, wheel: 32, viking: 22, drop: 16 };
@@ -230,6 +232,9 @@ export function buildThemePark(store, ROOM, EXIT) {
     hauntedHouse: [HAUNT_SPOT],
   };
 
+  // Bumper cars (범퍼카, core/bumper-rink.js): right of the plaza.
+  const bumper = buildBumperRink(scene, block);
+
   // Benches.
   const seats = [];
   for (const bx of [-12, 12]) {
@@ -257,11 +262,12 @@ export function buildThemePark(store, ROOM, EXIT) {
     cabins.forEach((c, i) => { const s = seatAt('wheel', i, time); c.position.set(s.x, s.y + W.drop, W.z + 0.2); });
     swing.rotation.z = V.max * Math.sin(time * 1.25);
     dropRing.position.y = dropY(time);
+    bumper.tick(dt);
   };
   tick(0);
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: d / 2 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, park: true, setSignLang: haunt.setSignLang,
+    rides, stations, tick, time: () => time, park: true, bumper, setSignLang: haunt.setSignLang,
   };
 }

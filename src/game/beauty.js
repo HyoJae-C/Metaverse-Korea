@@ -9,9 +9,14 @@ import { t } from '../core/i18n.js';
 import { createCharacter } from '../core/character.js';
 import { saveLook } from '../core/look-editor.js';
 import { PALETTES } from '../data/appearance.js';
-import { say } from '../core/npcs.js';
+import { say, placeLabels } from '../core/npcs.js';
 
 const $ = (id) => document.getElementById(id);
+// The surgery team and the hairdresser are plain characters with no name tag;
+// this gives one a speech bubble that follows them and goes away with them.
+const speaker = (ch) => ({ ch, tag: null, bubble: null });
+const placeSpeaker = (o, camera) => o.bubble && placeLabels(o, camera, innerWidth, innerHeight);
+const dropSpeaker = (o) => { o.bubble?.remove(); o.bubble = null; };
 
 /**
  * game: { me, cam, camera, interior, clerk, shop, sfx, beautyUi } as getters,
@@ -83,6 +88,7 @@ export function createBeauty(game) {
     return g;
   }
   function startSurgery(look) {
+    if (surgery) return; // already on the way in
     const st = game.interior.stations.surgery;
     const p = game.me.root.position;
     const path = [[p.x, p.z], [p.x, st.door[1] + 1.2], [st.door[0], st.door[1] + 1.2], [st.door[0], st.door[1] - 1.2], [st.table[0], st.door[1] - 1.2], [st.table[0], st.table[1]]];
@@ -92,11 +98,11 @@ export function createBeauty(game) {
     const staff = STAFF_LOOKS.map((l) => { const c = createCharacter(l); game.interior.scene.add(c.root); return c; });
     const lens = [];
     for (let i = 1; i < path.length; i++) lens.push(Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
-    surgery = { t: 0, look, st, gurney, staff, path, lens, total: lens.reduce((a, b) => a + b, 0), swapped: false, ry: 0 };
+    surgery = { t: 0, look, st, gurney, staff, doctor: speaker(staff[0]), path, lens, total: lens.reduce((a, b) => a + b, 0), swapped: false, ry: 0 };
     game.seated = { surgery: true, lie: true, x: p.x, z: p.z, ry: 0, stand: st.door };
     Object.assign(game.cam, { dist: 7.5, pitch: 0.75 });
     game.shop.toast(t('surgery.go'));
-    say(staff[0], $('labels'), ['걱정 마세요!', 'geokjeong maseyo!', t('surgery.doctor')]);
+    say(surgery.doctor, $('labels'), ['걱정 마세요!', 'geokjeong maseyo!', t('surgery.doctor')]);
   }
   function surgeryAt(s, d) { // a point along the path, and the heading there
     let k = 0;
@@ -153,21 +159,24 @@ export function createBeauty(game) {
       game.me.play('cheer');
       $('photo-count').hidden = false;
       $('photo-count').textContent = '✨ ' + t('surgery.done');
-      say(s.staff[0], $('labels'), ['수술 완료!', 'susul wallyo!', t('surgery.done')]);
+      say(s.doctor, $('labels'), ['수술 완료!', 'susul wallyo!', t('surgery.done')]);
       game.sfx.pop?.();
     } else if (s.t > roll + operate + dark + after) {
       $('photo-count').hidden = true;
       game.interior?.scene.remove(s.gurney);
       for (const c of s.staff) c.root.removeFromParent();
+      dropSpeaker(s.doctor);
       surgery = null;
       game.shop.toast(t('beauty.saved'));
     } else s.staff.forEach((c) => c.animate(dt, 0, false));
+    if (surgery) placeSpeaker(s.doctor, game.camera);
   }
   // Salon: after you pay, the hairdresser steps up behind your chair, snips
   // away while bits of hair fall, and then the new style appears.
   const HAIRCUT = { snip: 2.6, after: 1.4 };
   let haircut = null;
   function startHaircut(look) {
+    if (haircut) return; // already cutting
     const st = createCharacter({ model: 'basic', shirt: 'charcoal', pants: 'charcoal', hair: 'black', skin: 'light', neck: 'scarf' });
     const side = game.seated.x <= 0 ? 1 : -1; // the camera looks from this side (towards the middle of the room)
     const sx = game.seated.x - side * 0.35, sz = game.seated.z + 0.55; // behind the chair, on the far side
@@ -179,8 +188,8 @@ export function createBeauty(game) {
     Object.assign(game.cam, { yaw: Math.atan2(side, -0.35), dist: 2.9, pitch: 0.15 });
     if (beautyCam) beautyCam.look = [game.seated.x, 0.85, game.seated.z + 0.25];
     const hairHex = '#' + (PALETTES.dye[game.myLook.dye] ?? PALETTES.hair[game.myLook.hair] ?? 0x3a2a20).toString(16).padStart(6, '0');
-    haircut = { t: 0, look, st, bits: [], spawn: 0, mat: new THREE.MeshLambertMaterial({ color: hairHex }), swapped: false };
-    say(st, $('labels'), ['예쁘게 잘라 드릴게요!', 'yeppeuge jalla deurilgeyo!', t('haircut.start')]);
+    haircut = { t: 0, look, st, who: speaker(st), bits: [], spawn: 0, mat: new THREE.MeshLambertMaterial({ color: hairHex }), swapped: false };
+    say(haircut.who, $('labels'), ['예쁘게 잘라 드릴게요!', 'yeppeuge jalla deurilgeyo!', t('haircut.start')]);
   }
   const _headPos = new THREE.Vector3();
   function updateHaircut(dt) {
@@ -219,6 +228,7 @@ export function createBeauty(game) {
       game.sfx.pop?.();
     }
     if (h.t >= HAIRCUT.snip + HAIRCUT.after) finishHaircut();
+    else placeSpeaker(h.who, game.camera);
   }
   function finishHaircut() {
     const h = haircut;
@@ -226,6 +236,7 @@ export function createBeauty(game) {
     haircut = null;
     if (!h.swapped) keepLook(h.look);
     h.st.root.removeFromParent();
+    dropSpeaker(h.who);
     for (const b of h.bits) b.removeFromParent();
     h.mat.dispose();
     endBeautyCam();
@@ -234,6 +245,7 @@ export function createBeauty(game) {
   return {
     get beautyCam() { return beautyCam; },
     get surgery() { return surgery; },
+    get haircut() { return haircut; },
     keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut,
   };
 }

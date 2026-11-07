@@ -4,7 +4,7 @@
 export const CATEGORY_ICON = {
   club: '🎧', bar: '🍸', cafe: '☕', beauty: '💄', fashion: '👕', popup: '🎪', lifestyle: '🛍️',
   restaurant: '🍽️', workshop: '🛠️', home: '🏠', library: '📚', school: '🏫', petshop: '🐶',
-  park: '🌳', market: '🛒', play: '🎮', info: 'ℹ️', museum: '🏛️',
+  park: '🌳', market: '🛒', play: '🎮', info: 'ℹ️', museum: '🏛️', memorial: '🕊️', culture: '🖼️',
 };
 const PERFUME = '🧴';
 

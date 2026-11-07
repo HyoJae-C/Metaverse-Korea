@@ -6,7 +6,6 @@
 // along the streets (the timer never goes over a minute), so even on foot,
 // running, you can make it.
 
-export const DELIVERY_GAME = 'delivery';
 export const BIKE_MS = 13.5; // basic bike speed in m/s (main.js BIKE)
 export const GRACE = 20; // seconds to find a bike and park
 export const MAX_SECONDS = 60; // a delivery never takes longer than a minute

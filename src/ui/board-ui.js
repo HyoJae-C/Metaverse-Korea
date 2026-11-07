@@ -18,6 +18,7 @@ export const BOARD_TEXT = {
   delAsk: { en: 'Delete this post? It still counts for today.', ko: '이 글을 삭제할까요? 삭제해도 오늘 쓴 개수에는 포함돼요.', ja: 'この投稿を削除しますか？削除しても今日の件数に数えられます。', zh: '要删除这条吗？删除后仍计入今天的数量。' },
   none: { en: 'No posts yet. Be the first!', ko: '아직 글이 없어요. 첫 글을 남겨 보세요!', ja: 'まだ投稿がありません。最初の投稿をどうぞ！', zh: '还没有帖子，来发第一条吧！' },
   noneAsk: { en: 'No inquiries yet.', ko: '아직 남긴 문의가 없어요.', ja: 'まだお問い合わせはありません。', zh: '还没有咨询。' },
+  reply: { en: 'Reply from the operator', ko: '운영자 답변', ja: '運営からの返信', zh: '管理员回复' },
   loading: { en: 'Loading…', ko: '불러오는 중…', ja: '読み込み中…', zh: '加载中…' },
   posted: { en: 'Posted!', ko: '글을 올렸어요!', ja: '投稿しました！', zh: '已发布！' },
   e_empty: { en: 'Write something first.', ko: '내용을 먼저 써 주세요.', ja: '先に内容を書いてください。', zh: '请先写点内容。' },
@@ -122,6 +123,11 @@ export class BoardUI {
         head.append(d);
       }
       card.append(head, el('p', 'board-body', p.body));
+      if (p.reply) {
+        const r = el('div', 'board-reply');
+        r.append(el('b', '', '🛡️ ' + L(BOARD_TEXT.reply)), el('small', '', p.replied_at ? ' · ' + ago(p.replied_at) : ''), el('p', 'board-body', p.reply));
+        card.append(r);
+      }
       list.append(card);
     }
     parts.push(list);

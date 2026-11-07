@@ -3,10 +3,11 @@
 import { parseRide } from './bike-garage.js';
 import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
-import { HELD_KINDS } from './held.js';
+import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'pullup', 'curl', 'snip', 'read']);
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive']);
 import { seatPosition } from './bikes.js';
+import { trickPose, TRICK_BY_ID } from './skatepark.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';
 import { ITEMS, isPet } from './inventory.js';
@@ -45,6 +46,7 @@ export class RemotePlayers {
     const p = {
       id: peer.id, ch, tag, bubble: null, name,
       target: null, ry: 0, s: 0,
+      model: peer.look?.model ?? null, // (debug: what they wear)
     };
     this.players.set(peer.id, p);
     this._tag(p, peer.look);
@@ -65,6 +67,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
+    p.model = look?.model ?? null;
     this._tag(p, look);
     p.bk = false; // re-applied on the next update
     p.hd = null;
@@ -193,7 +196,7 @@ export class RemotePlayers {
     p.pet = new Companion(id, ITEMS[id].pet);
     this.scene.add(p.pet.root);
     const r = p.ch.root;
-    p.pet.place(r.position.x, r.position.z, r.rotation.y);
+    p.pet.place(r.position.x, r.position.z, r.rotation.y, r.position.y);
   }
 
   update(dt, camera, width, height) {
@@ -205,7 +208,7 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
-        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-4, Math.min(60, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(60, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
@@ -215,7 +218,16 @@ export class RemotePlayers {
           p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;
           p.ch.setBike(p.bk, p.bk === 1 ? parseRide(bv) || undefined : undefined, inCar); // their ride and skin
         }
-        if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
+        // A skate park trick ("id.n"): play it here too.
+        const tk = p.target.bk === 1 && typeof p.target.tk === 'string' ? p.target.tk.slice(0, 24) : '';
+        if (tk !== (p.tk || '')) { p.tk = tk; const id = tk.split('.')[0]; p.trick = TRICK_BY_ID[id] ? { id, t: 0 } : null; }
+        if (p.trick) {
+          p.trick.t += dt;
+          const pose = trickPose(p.trick.id, p.trick.t);
+          p.ch.setTrick(pose, 0);
+          if (!pose) p.trick = null;
+        }
+        if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(heldBase(p.target.hd)) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);
         p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing
         if (p.target.ac === 'read' && !p.bubble) showBubble(p, this.layer, t('book.reading'), 3000); // 📖 reading…
@@ -227,7 +239,7 @@ export class RemotePlayers {
         const d = this.players.get(p.target.on);
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
-      if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, ry: r.rotation.y }, !!p.target?.bk, false);
+      if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
       if (p.hidden) continue;
       v.set(r.position.x, r.position.y + 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
@@ -243,11 +255,36 @@ export class RemotePlayers {
   }
 }
 
+// A new bubble starts where its speaker's name tag already is, so it never
+// shows for a moment at the corner of the screen before the next frame
+// places it. A speaker without a placed tag keeps it hidden until then.
+function placeLikeTag(p, b) {
+  const tr = p.tag?.style.transform;
+  if (tr) {
+    b.style.transform = tr + ' translateY(-24px)';
+    b.style.display = p.tag.style.display;
+  } else b.style.display = 'none';
+}
+
+// A bubble holding built elements (a picture and text), e.g. the big-catch
+// trophy over someone's head.
+export function showBubbleEl(p, layer, content, ms = 5000, kind = '') {
+  p.bubble?.remove();
+  const b = document.createElement('div');
+  b.className = kind ? 'bubble ' + kind : 'bubble';
+  b.append(content);
+  placeLikeTag(p, b);
+  layer.appendChild(b);
+  p.bubble = b;
+  setTimeout(() => { if (p.bubble === b) { b.remove(); p.bubble = null; } }, ms);
+}
+
 export function showBubble(p, layer, text, ms = 2500, kind = '') {
   p.bubble?.remove();
   const b = document.createElement('div');
   b.className = kind ? 'bubble ' + kind : 'bubble';
   b.textContent = text; // always text, never HTML
+  placeLikeTag(p, b);
   layer.appendChild(b);
   p.bubble = b;
   setTimeout(() => {

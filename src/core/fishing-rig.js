@@ -6,6 +6,9 @@
 //                      | escape | retrieve
 //   update(dt, ch): every frame, ch = the local character.
 import * as THREE from 'three';
+import { FISH_SHEET, FISH_SHEET_URL } from './fishing.js';
+
+let sheet = null; // the picture sheet, loaded once
 
 const REST = 0.95; // the rod's lean while waiting (held.js)
 const RELEASE = 0.62; // s into the cast when the bobber leaves the tip
@@ -21,7 +24,9 @@ function castAngle(t) {
   return lerp(1.45, REST + 0.05, smooth((t - 0.64) / 0.5));
 }
 
-export function createFishingRig({ sfx, waterY = () => -0.25 } = {}) {
+// remote: another player's rig, driven by their phases over the network (no
+// reel taps arrive, so the fish comes in at a steady pace instead).
+export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } = {}) {
   // The line: a chain of thin rods (a 1-pixel GL line is too faint to see).
   const N = 16;
   const line = new THREE.Group();
@@ -124,13 +129,16 @@ export function createFishingRig({ sfx, waterY = () => -0.25 } = {}) {
     eye.position.set(0, -0.1, 0.09);
     g.add(body, tail, eye);
     g.scale.setScalar(s);
-    if (f?.emoji && typeof document !== 'undefined') {
-      const c = document.createElement('canvas');
-      c.width = c.height = 128;
-      const x = c.getContext('2d');
-      x.font = '96px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.fillText(f.emoji, 64, 70);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false }));
+    const cell = FISH_SHEET.indexOf(f?.id);
+    if (cell >= 0 && typeof document !== 'undefined') {
+      // Its picture from the fish book's sheet, on a card beside it.
+      sheet ||= new THREE.TextureLoader().load(FISH_SHEET_URL, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; });
+      const map = sheet.clone();
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.repeat.set(1 / 7, 1 / 7);
+      map.offset.set((cell % 7) / 7, 1 - (Math.floor(cell / 7) + 1) / 7);
+      map.needsUpdate = true;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map, depthTest: false }));
       sp.scale.setScalar(0.45 / s);
       sp.position.set(0.32 / s, -0.1, 0);
       sp.renderOrder = 5;
@@ -279,6 +287,7 @@ export function createFishingRig({ sfx, waterY = () => -0.25 } = {}) {
         if (splashT <= 0) { splashT = 0.35; ring(bob, 0.8, 0.6); }
       } else if (phase === 'reel') {
         slack = 0;
+        if (remote) progress = Math.min(0.9, t / 3.5);
         const k = smooth(Math.min(1, progress));
         bob.lerpVectors(from, near, k * 0.85);
         const zig = Math.sin(t * 6 + k * 4) * (0.5 + heavy * 0.6) * (1 - k * 0.6);
@@ -320,5 +329,6 @@ export function createFishingRig({ sfx, waterY = () => -0.25 } = {}) {
       drawLine(slack);
     },
   };
+  api.dispose = () => { dropCatch(); root.removeFromParent(); scene = null; };
   return api;
 }

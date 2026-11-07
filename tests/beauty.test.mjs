@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { loadAll, layout, ownerOf } from '../scripts/place-districts.mjs';
 import { SALON, CLINIC, CLINIC2, LENS, LIPS, MENUS, EYE_SHAPES, BASIC_HAIR, beautyCost, menuFor } from '../src/core/beauty.js';
 import { sanitizeLook, PALETTES, HAIR_STYLES, EYE_SHAPE_IDS, LIP_FAMILIES } from '../src/data/appearance.js';
 import { STRINGS } from '../src/i18n/strings.js';
@@ -51,7 +52,7 @@ test('every menu option has a palette or labelled choices in every language', ()
 test('each colour lip shop sells only its own family, Petal Lip the mixed ten', async () => {
   const { menuFor } = await import('../src/core/beauty.js');
   const { readFileSync } = await import('node:fs');
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const lipShops = stores.filter((s) => s.workshop === 'lips');
   assert.ok(lipShops.length >= 7);
   for (const s of lipShops) {
@@ -63,14 +64,12 @@ test('each colour lip shop sells only its own family, Petal Lip the mixed ten', 
 });
 
 test('salons by concept: three signature styles each, the basic cuts everywhere', () => {
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const salons = stores.filter((s) => s.workshop === 'salon');
   // Salons are spread over the areas: Seongsu, Hongdae, Seodaemun (by the
   // campus street) and Itaewon (a men's barber).
-  const area = (s) => (s.at[0] < -2800 && s.at[0] > -3100 ? 'hongdae'
-    : s.at[0] < -2188 && s.at[0] > -2612 && s.at[1] < -746 ? 'seodaemun'
-      : s.at[0] < -988 && s.at[0] > -1642 && s.at[1] > 17 && s.at[1] < 439 ? 'itaewon'
-        : Math.abs(s.at[0]) < 260 && s.at[1] > -110 && s.at[1] < 410 ? 'seongsu' : 'elsewhere');
+  const rows = layout(...Object.values(loadAll()));
+  const area = (s) => ownerOf(rows, s.at[0], s.at[1])?.id || 'elsewhere';
   const count = {};
   for (const s of salons) count[area(s)] = (count[area(s)] || 0) + 1;
   assert.deepEqual(count, { seongsu: 2, hongdae: 4, seodaemun: 1, itaewon: 1 });

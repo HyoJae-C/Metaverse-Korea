@@ -3,6 +3,7 @@
 import { t, localName, getLanguage } from '../core/i18n.js';
 
 import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+import { inPoly } from '../core/geom.js';
 
 export { CATEGORY_ICON };
 
@@ -19,6 +20,37 @@ export function storeMatches(store, query, category, catLabel = '') {
   return texts.some((x) => norm(x).includes(q));
 }
 
+// Subway stations from the map's exit marks ({ station, name, go, … }):
+// one entry per station with all its exits, so every station in every
+// district (and any added later in region.json) can be searched and picked.
+export function stationList(marks) {
+  const by = new Map();
+  for (const m of marks || []) {
+    if (m.station == null) continue;
+    let st = by.get(m.station);
+    if (!st) by.set(m.station, (st = { key: m.station, name: m.name || {}, exits: [] }));
+    st.exits.push(m);
+  }
+  return [...by.values()];
+}
+// Does a station match the search text? Its name in any language, or a
+// word for "subway" / "station" (extra: e.g. the heading in the UI language).
+const STATION_WORDS = ['subway', 'metro', 'station', 'train', '지하철', '전철', '역', '地下鉄', '駅', '地铁', '站'];
+export function stationMatches(st, query, extra = '') {
+  const q = norm(query);
+  if (!q) return true;
+  return [...Object.values(st.name || {}), ...STATION_WORDS, extra].some((x) => norm(x).includes(q));
+}
+// The exit of a station nearest to (x, z): where guidance goes.
+export function nearestExit(exits, x, z) {
+  let best = null, bd = Infinity;
+  for (const e of exits) {
+    const p = e.go || e, d = Math.hypot(p.x - x, p.z - z);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
 // Districts of a joined city (see core/districts.js), with names for the
 // "more over here" badges at the map's edge.
 export const DISTRICT_NAME = {
@@ -26,8 +58,12 @@ export const DISTRICT_NAME = {
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
   songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
+  bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन' },
+  'olympic-park': { en: 'Olympic Park', ko: '올림픽공원', ja: 'オリンピック公園', zh: '奥林匹克公园', es: 'Parque Olímpico', id: 'Taman Olimpiade', ar: 'الحديقة الأولمبية', vi: 'Công viên Olympic', hi: 'ओलंपिक पार्क' },
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
+  yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग' },
+  mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग' },
 };
 // The middle of each district's buildings.
 export function districtCentres(map) {
@@ -46,14 +82,6 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of
@@ -91,6 +119,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -167,6 +196,12 @@ export class MapView {
     this.hide();
   }
 
+  // Guide to a subway exit: just outside its stairs.
+  _pickStation(ex, label) {
+    const p = ex.go || ex;
+    this._pick({ kind: 'station', id: ex.station, x: p.x, z: p.z, label: label || localName(ex.name, getLanguage()) });
+  }
+
   // Opening zoom: the whole card's worth of streets, but never so far out on
   // a small phone screen that the shop pins all merge into bubbles.
   _homeScale() {
@@ -192,6 +227,29 @@ export class MapView {
   }
 
   draw() {
+    this._draw();
+    this._drawCredit();
+  }
+
+  // The gu outlines come from OpenStreetMap, whose licence asks for this
+  // credit wherever they are shown: small, in the bottom-right corner.
+  _drawCredit() {
+    const credit = this.seoul?.credit;
+    if (!credit || !this.open) return;
+    const g = this.canvas.getContext('2d'), dpr = this.dpr, W = this.canvas.width, H = this.canvas.height;
+    g.save();
+    g.font = `600 ${10 * dpr}px system-ui, sans-serif`;
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+    const w = g.measureText(credit).width + 10 * dpr, h = 16 * dpr;
+    g.fillStyle = 'rgba(255,250,240,0.8)';
+    g.fillRect(W - w - 4 * dpr, H - h - 4 * dpr, w, h);
+    g.fillStyle = 'rgba(74,63,53,0.85)';
+    g.fillText(credit, W - 9 * dpr, H - 4 * dpr - h / 2 + 1);
+    g.restore();
+  }
+
+  _draw() {
     if (!this.open) return;
     const g = this.canvas.getContext('2d');
     g.fillStyle = '#f3ecdc';
@@ -208,8 +266,8 @@ export class MapView {
     const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
     if (this.seoul) this._drawSeoul(g, poly, far, lang);
     this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
-    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' }; // the rest: green
-    const order = { plaza: 0, sand: 0, water: 2 };
+    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
+    const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
     for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
       g.fillStyle = AREA[a.k] || '#bfe3a8';
       poly(a.p); g.fill();
@@ -345,10 +403,19 @@ export class MapView {
       g.font = `${15 * dpr}px system-ui, sans-serif`;
       g.fillText(m.icon || '🚇', c.sx, c.sy + 1);
       mark(c.sx, c.sy, 13 * dpr);
+      if (m.station != null) this.hits.push({ sx: c.sx, sy: c.sy, r: 16 * dpr, kind: 'station', item: c.items });
       const text = c.items.length > 1 ? m.group?.() : m.label?.();
       if (text && this.view.scale > 0.5 * dpr) labels.push({ text, sx: c.sx, sy: c.sy, gap: 14 * dpr, weight: 700, size: 12, color: '#3b322a', pri: 2 });
     }
 
+    // Named park spots (map landmarks with a label: Seoul Forest's gardens, hill…), when zoomed in.
+    if (this.view.scale > 0.9 * dpr) {
+      for (const l of this.map.landmarks || []) {
+        if (!l.label) continue;
+        const [sx, sy] = this.toScreen(l.x, l.z);
+        if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: 0, weight: 700, size: 11, color: '#2f6b3f', pri: 4 });
+      }
+    }
     // Players
     const { me, others } = this.getPlayers();
     for (const o of others) {
@@ -718,9 +785,19 @@ export class MapView {
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
       });
     }
+    // Subway stations in every district: guide to the nearest exit.
+    const stations = this.category ? [] : stationList(this.marks)
+      .filter((st) => !filtering || stationMatches(st, this.query, t('map.stations')))
+      .map((st) => ({ st, ex: nearestExit(st.exits, me.x, me.z) }))
+      .sort((a, b) => Math.hypot(a.ex.x - me.x, a.ex.z - me.z) - Math.hypot(b.ex.x - me.x, b.ex.z - me.z));
+    if (stations.length) head('map.stations');
+    for (const { st, ex } of stations) {
+      // One look for every station, no line names: no transfers to think about for now.
+      row('🚇', '#5d6470', localName(st.name, lang), dist(ex.x, ex.z), () => this._pickStation(ex, localName(st.name, lang)));
+    }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length && !dists.length) {
+    if (!shops.length && !zones.length && !dists.length && !stations.length) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
@@ -811,7 +888,11 @@ export class MapView {
         if (d) { this.view.scale = 0.35 * this.dpr; this.goTo(d.x, d.z); } else this._soon(hit.item, lang);
         return;
       }
-      if (hit.kind === 'store') {
+      if (hit.kind === 'station') { // an exit (or a station's exits drawn as one sign)
+        const first = hit.item[0], { me } = this.getPlayers();
+        const ex = hit.item.length > 1 ? nearestExit(hit.item.filter((m) => m.station === first.station), me.x, me.z) : first;
+        this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
+      } else if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
       } else {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isFood } from '../src/core/food-dex.js';
 
-const data = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url)));
+const data = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
 const park = data.stores.find((s) => s.id === 'ttukseom-hangang');
 
 test('the Han River park has a market with stalls and goods', () => {
@@ -30,9 +30,9 @@ test('market food goes in the food dex', () => {
   assert.ok(!isFood(park, park.products.find((p) => p.model === 'tote')));
 });
 
-test('DAILY MART in the park sells the ramen ingredients, which go in the bag', () => {
+test('DAILY MART in the park sells the ramen ingredients and a picnic mat, which go in the bag', () => {
   const kiosk = park.products.filter((p) => p.kiosk);
-  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'ramyeon']);
+  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'mat', 'ramyeon']);
   assert.ok(park.kiosk.name.ko && park.kiosk.name.en);
   const street = data.stores.find((s) => s.id === 'haru-mart');
   assert.ok(street.products.some((p) => p.ingredient === 'ramyeon'));

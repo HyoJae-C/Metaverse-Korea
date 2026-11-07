@@ -2,11 +2,16 @@
 // Not a game: get in at the dock, steer anywhere on the water for up to a
 // minute (free), then the boat pedals itself back to the dock.
 // Positions are in the park's space (park.js): the river is z < BANK.
+// Boats bump into each other (core/bump.js): a soft, slidey shove on water.
+
+import { Knock, collide } from './bump.js';
 
 export const RIDE_SECONDS = 60;
 export const BOAT_SPEED = 3.2; // metres per second at full stick
 export const TURN_RATE = 1.8; // radians per second the bow can swing
 export const BOAT_R = 1.1; // keep this far from the edges
+// How boats bump: lazy and slidey (water), unlike a snappy bumper car.
+export const DUCK_BUMP = { radius: 1.0, bounce: 0.8, minKick: 1.2, maxKick: 4, damping: 1.8, spin: 1.4 };
 const BANK = -4; // park.js: where the land ends and the river starts
 // The water a boat may use: in front of the park, short of the bridge.
 export const WATER = { minX: -24, maxX: 24, minZ: BANK - 40, maxZ: BANK - 1.5 };
@@ -38,19 +43,40 @@ export class DuckRide {
     this.left = seconds;
     this.returning = false; // time up (or asked): heading back to the dock
     this.docked = false;
+    this.vx = 0; this.vz = 0; // m/s last frame (for how hard we hit)
+    this.knock = new Knock(DUCK_BUMP);
+  }
+  // Bump into other boats: [{ x, z, vx, vz, fixed }]. Moves me off them and
+  // starts my slide away; returns the hardest hit this frame or null.
+  bump(others) {
+    if (this.docked || !others.length) return null;
+    const { dx, dz, hit } = collide(this, others, this.knock, DUCK_BUMP);
+    if (dx || dz) [this.x, this.z] = onWater(this.x + dx, this.z + dz);
+    return hit;
   }
   // Steer towards the world direction (dx, dz); |(dx, dz)| is the throttle,
   // 0..1. Returns the metres moved.
   steer(dx, dz, dt) {
-    if (this.docked) return 0;
+    if (this.docked) { this.vx = this.vz = 0; return 0; }
+    const x0 = this.x, z0 = this.z;
     if (!this.returning) {
       this.left -= dt;
       if (this.left <= 0) { this.left = 0; this.returning = true; }
     }
-    if (this.returning) return this._home(dt);
-    const mag = Math.min(1, Math.hypot(dx, dz));
-    if (mag < 0.05) return 0;
-    return this._go(Math.atan2(-dx, -dz), mag, dt);
+    let moved = 0;
+    if (this.returning) moved = this._home(dt);
+    else {
+      const mag = Math.min(1, Math.hypot(dx, dz));
+      if (mag >= 0.05) moved = this._go(Math.atan2(-dx, -dz), mag, dt);
+    }
+    // Still sliding (and spinning) from a bump.
+    const [kx, kz, kry] = this.knock.step(dt);
+    if (kx || kz || kry) {
+      [this.x, this.z] = onWater(this.x + kx, this.z + kz);
+      if (!this.docked) this.ry = wrap(this.ry + kry);
+    }
+    if (dt > 0) { this.vx = (this.x - x0) / dt; this.vz = (this.z - z0) / dt; }
+    return moved;
   }
   // Head back now, before the minute is up.
   goBack() { this.returning = true; }

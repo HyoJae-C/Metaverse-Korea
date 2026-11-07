@@ -28,6 +28,17 @@ const PUFFER = { outfit: { hem: 0.5, sleeve: 0.84, cuff: 'top', quilt: true, bul
 const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, colors: { accent2: 0xf4f1ea } };
 // A short-sleeved shirt with a collar and a button placket.
 const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
+// A dark suit jacket, open over a white dress shirt (front and collar), with
+// black leather shoes: the guide at the War History Museum's information
+// desk wears it with a suit skirt (look.skirt).
+const SUIT = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, shoes: 0x1d1d22, sole: 0x111114 } };
+
+// Swimwear (the changing rooms at Olympic Park Pool, core/pool-hall.js):
+// a sleeveless one-piece, or a short-sleeved rash guard over swim shorts,
+// barefoot, with a swim cap (cap: its colour; hood: the cap hides the hair).
+// Only worn inside the pool hall, like trying clothes on.
+const SWIM_ONE = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.5, barefoot: true } };
+const SWIM_GUARD = { outfit: { hem: 0.6, sleeve: 0.42, cuff: 'accent', shorts: 0.36, barefoot: true } };
 
 // Hanbok (rented at the hanbok shop, data/hanbok.js). A short jeogori over a
 // high chima (look.skirt), with a white collar (dongjeong), coloured cuffs
@@ -63,6 +74,8 @@ export default {
     ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
     // The gym trainer (an NPC) keeps the bearded head.
     trainer: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
+    // The museum guide (an NPC): a suit over a white shirt.
+    suit: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SUIT) },
     // The same clothes in other colours, sold at the other clothes shops.
     ...variants('rogue', '🧥', JACKET, {
       'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
@@ -84,6 +97,10 @@ export default {
       'hanbok-yellow': { top: 0xffd36e, accent: 0xc8323f },
       'hanbok-pink': { top: 0xffc2d2, accent: 0x2f3c66 },
       'hanbok-mint': { top: 0x9edccf, accent: 0xe0607e },
+      // a court lady (궁녀) in the Gyeongbokgung procession
+      'hanbok-gungnyeo': { top: 0x5f9e6e, accent: 0x7a2e3a },
+      // the queen (왕비): a light green jeogori over a red chima
+      'hanbok-queen': { top: 0xb4e07a, accent: 0xc8323f },
     }),
     ...variants('rogue', '🪭', BAJI, {
       'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
@@ -97,7 +114,23 @@ export default {
       'hanbok-durumagi-navy': { top: 0x34477a, accent: 0x1f2a4a, bottom: 0xefe6d2 },
       'hanbok-durumagi-gray': { top: 0x8f939a, accent: 0x4a4e57, bottom: 0xd8d2c2 },
       'hanbok-durumagi-white': { top: 0xf3eee2, accent: 0x9a8f7a, bottom: 0xefe6d2 },
+      // the Gyeongbokgung procession: the king's red robe (곤룡포) and the
+      // eunuch's dark green robe (단령)
+      'hanbok-gonryongpo': { top: 0xc23a33, accent: 0xd9a43a, bottom: 0xc23a33 },
+      'hanbok-dallyeong': { top: 0x2f5a4a, accent: 0x1d1b22, bottom: 0x2f5a4a },
+      // the bearers of the red parasol and the ceremonial fan (홍포)
+      'hanbok-hongpo': { top: 0xb8322c, accent: 0x1d1b22, bottom: 0xb8322c },
     }),
+    // Swimwear (Olympic Park Pool).
+    ...variants('rogue', '🩱', SWIM_ONE, {
+      'swim-navy': { top: 0x24407a, bottom: 0x24407a },
+      'swim-coral': { top: 0xff7a6b, bottom: 0xff7a6b },
+    }, { hood: true, cap: true }),
+    ...variants('rogue', '🩳', SWIM_GUARD, {
+      'swim-mint': { top: 0x7cd3c7, accent: 0x1f4e8c, bottom: 0x1f4e8c },
+      'swim-yellow': { top: 0xffd93d, accent: 0x1d1b22, bottom: 0x1d1b22 },
+      'swim-red': { top: 0xe5383b, accent: 0xffffff, bottom: 0xe5383b }, // the lifeguard's
+    }, { hood: true, cap: true }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.
   // The first ones are needed right away, the rest load in the background.
@@ -114,7 +147,10 @@ export default {
   // forward along the seat, knees bent so the shins go down.
   sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
   ride: { y: 0.24, z: 0.16 }, // offset on a bike
-  lie: { y: 0.6, z: 0 }, // offset lying on a clinic bed
+  // Lying flat on the back (the model is turned about its feet): up by half
+  // the body's depth, and forward so the middle of the body is on the spot.
+  lie: { y: 0.7, z: 0.6 }, // on a clinic bed (top at 0.55 m)
+  lieMat: { y: 0.16, z: 0.6 }, // on a picnic mat on the grass
   // On a bike the sitting clip is bent a little more: lean forward, head down,
   // arms reaching for the handlebar (radians added to the clip, per bone).
   ridePose: { spine: [0.35, 0, 0], head: [0.15, 0, 0], upperarml: [-1.25, 0, 0], upperarmr: [-1.25, 0, 0], lowerarml: [-0.25, 0, 0], lowerarmr: [-0.25, 0, 0] },

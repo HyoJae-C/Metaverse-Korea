@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TAROT_CARDS, POSITIONS, ROMAN, shuffleDeck } from '../src/data/tarot.js';
 import { tipsLeft, takeTip, TIPS_PER_DAY } from '../src/core/busking.js';
+import { bankHeight, BANK, CROWD, SINGER, GIRLS, BOYS } from '../src/core/busking-layout.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 
 test('tarot: 22 major and 56 minor arcana, named and explained in each language', () => {
@@ -65,6 +66,25 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 9, `cafés ${cafes}, shops ${shops}`);
   assert.ok(stores.some((s) => s.workshop === 'tarot'), 'a tarot café');
   for (const s of stores) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
+  // The busking zone: the audience bank, the dancers and the singer stay
+  // clear of the buildings and keep 3 m from every shop's door.
+  const [cx, cz] = spot.at;
+  for (const [dx, dz] of [...CROWD, SINGER, ...GIRLS, ...BOYS]) assert.ok(!inside(cx + dx, cz + dz), `busking spot ${dx},${dz} in the open`);
+  for (const s of stores) {
+    for (let x = BANK.back; x <= BANK.front; x += 0.5) for (let z = BANK.z0; z <= BANK.z1; z += 0.5) {
+      if (bankHeight(x, z) > 0) assert.ok(Math.hypot(cx + x - s.at[0], cz + z - s.at[1]) > 3, `the bank keeps clear of ${s.id}`);
+    }
+  }
+});
+
+test('busking bank: flat ground around it, highest along the back, the crowd standing on it', () => {
+  assert.equal(bankHeight(BANK.front + 1, 0), 0);
+  assert.equal(bankHeight(BANK.back - 1, 0), 0);
+  assert.equal(bankHeight(-14, BANK.z1 + 1), 0);
+  assert.equal(bankHeight(-14, 0), BANK.h);
+  assert.ok(bankHeight(-10, 0) < bankHeight(-12, 0) && bankHeight(-12, 0) < BANK.h);
+  for (const [x, z] of CROWD) assert.ok(bankHeight(x, z) > 0.1, `listener ${x},${z} up on the bank`);
+  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 10, 'the acts across the street from the bank');
 });
 
 test('animal cafés: Seongsu keeps the cat café and the retriever café (the old pet shop), the rest are in Hongdae with a second cat café', () => {

@@ -1,0 +1,737 @@
+{
+  "id": "another-seoul",
+  "name": {
+    "en": "Seongsu-dong",
+    "ko": "성수동"
+  },
+  "city": {
+    "en": "Seoul",
+    "ko": "서울"
+  },
+  "center": {
+    "lat": 37.5446,
+    "lon": 127.0557
+  },
+  "spawn": {
+    "lat": 37.5446,
+    "lon": 127.0557,
+    "heading": 200,
+    "nearStore": "ongi-cafe"
+  },
+  "districts": [
+    {
+      "id": "seongsu",
+      "map": "map.json",
+      "offset": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "gyeongbokgung",
+      "map": "districts/gyeongbokgung.json",
+      "offset": [
+        -1741,
+        -911
+      ],
+      "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0], "nudge": [0, -40], "why": "The palace is built larger than 1/4, so the gate sits a little north of its spot to let Gwanghwamun Square and Cheonggye Plaza (local z 225) reach theirs." }
+    },
+    {
+      "id": "bukchon",
+      "map": "districts/bukchon.json",
+      "offset": [
+        -1547,
+        -891
+      ],
+      "anchor": { "place": "Anguk Station (Yulgok-ro)", "lat": 37.5765, "lon": 126.9856, "local": [0, 3] }
+    },
+    {
+      "id": "jongmyo",
+      "map": "districts/jongmyo.json",
+      "offset": [
+        -1361,
+        -789
+      ],
+      "anchor": { "place": "Oedaemun, Jongmyo's main gate (on Jongno)", "lat": 37.5713, "lon": 126.994, "local": [0, 0], "nudge": [0, -46], "why": "Jongno is drawn at z -765 in the game (it runs on from Gwanghwamun), north of its real line; the gate stands behind Jongmyo Square on Jongno's north side, and the shrine fills the room up to Yulgok-ro." }
+    },
+    {
+      "id": "itaewon",
+      "map": "districts/itaewon.json",
+      "offset": [
+        -1348,
+        281
+      ],
+      "anchor": { "place": "Itaewon Station", "lat": 37.5345, "lon": 126.9946, "local": [0, 0] }
+    },
+    {
+      "id": "songpa",
+      "map": "districts/songpa.json",
+      "offset": [
+        438,
+        620
+      ],
+      "anchor": { "place": "Jamsil Station (Songpa-daero / Olympic-ro)", "lat": 37.5133, "lon": 127.1, "local": [540, 100], "nudge": [0, -151], "why": "Its Han River bank (local z -188) lines up with Seongsu's; the full-size Seongsu district puts the river nearer than the real 1/4 distance." }
+    },
+    {
+      "id": "olympic-park",
+      "map": "districts/olympic-park.json",
+      "offset": [
+        287,
+        446
+      ],
+      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250] }
+    },
+    {
+      "id": "seodaemun",
+      "map": "districts/seodaemun.json",
+      "offset": [
+        -2520,
+        -388
+      ],
+      "anchor": { "place": "Yonsei University campus (Campus-gil)", "lat": 37.565, "lon": 126.9415, "local": [0, -180] }
+    },
+    {
+      "id": "hongdae",
+      "map": "districts/hongdae.json",
+      "offset": [
+        -2961,
+        -248
+      ],
+      "anchor": { "place": "Hongdae Walking Street busking zone", "lat": 37.5535, "lon": 126.9215, "local": [0, 0] }
+    },
+    {
+      "id": "yeonnam",
+      "map": "districts/yeonnam.json",
+      "offset": [
+        -3011,
+        -570
+      ],
+      "anchor": { "place": "Gyeongui Line Forest Park at Seongmisan-ro (Yeonnam-dong)", "lat": 37.5612, "lon": 126.923, "local": [50, -30], "nudge": [-33, -138], "why": "Hongdae is drawn full size and reaches over the real south end of the park, so Yeonnam sits just north of it, its forest path running straight on from Hongdae Walking Street." }
+    },
+    {
+      "id": "mangwon",
+      "map": "districts/mangwon.json",
+      "offset": [
+        -3372,
+        -202
+      ],
+      "anchor": { "place": "Mangwon Market", "lat": 37.556, "lon": 126.9065, "local": [80, -115] }
+    },
+    {
+      "id": "euljiro",
+      "map": "districts/euljiro.json",
+      "offset": [
+        -1000,
+        -525
+      ],
+      "anchor": { "place": "Dongdaemun Design Plaza (DDP)", "lat": 37.5667, "lon": 127.009, "local": [-10, 0], "nudge": [20, 90], "why": "DDP's real spot is under the south row of towers along Cheonggyecheon, so the district sits just south of that strip: Eulji-ro runs along its north edge and the walk from DDP's corner leads straight north to Ogansugyo Bridge." }
+    }
+  ],
+  "links": [
+    {
+      "k": "tertiary",
+      "w": 8,
+      "p": [[-1004, -708.5], [-1004, -800]],
+      "n": { "ko": "흥인지문 가는 길", "en": "To Heunginjimun", "ja": "興仁之門へ", "zh": "往兴仁之门" },
+      "note": "From the north end of Ogansugyo Bridge (Cheonggyecheon-ro) north between the towers to Heunginjimun's island: DDP, the bridge and the gate in one line."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [[-1720, -440], [-1133, -440]],
+      "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
+      "note": "Toegye-ro starts at Sungnyemun and runs east to Namsangol and DDP."
+    },
+    {
+      "k": "primary",
+      "w": 14,
+      "p": [[-1774, -465], [-1774, -520], [-1699, -580], [-1699, -615]],
+      "n": { "ko": "세종대로", "en": "Sejong-daero", "ja": "世宗大路", "zh": "世宗大路" },
+      "note": "From Sungnyemun north to Cheonggye Plaza (the south end of Gwanghwamun's Sejong-daero)."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [[-1699, -597], [-1133, -597]],
+      "n": { "ko": "을지로", "en": "Eulji-ro", "ja": "乙支路", "zh": "乙支路" },
+      "note": "Eulji-ro from Sejong-daero (by City Hall) east to DDP."
+    },
+    {
+      "k": "tertiary",
+      "w": 8,
+      "p": [[-1004, -605], [-1004, -659]],
+      "n": { "ko": "오간수교 가는 길", "en": "To Ogansugyo Bridge", "ja": "五間水橋へ", "zh": "往五间水桥" },
+      "note": "From Eulji-ro at DDP's corner north between the towers to Cheonggyecheon-ro, at the foot of Ogansugyo Bridge."
+    },
+    {
+      "k": "tertiary",
+      "w": 8,
+      "p": [[-1133, -605], [-1133, -659]],
+      "n": { "ko": "창경궁로", "en": "Changgyeonggung-ro", "ja": "昌慶宮路", "zh": "昌庆宫路" },
+      "note": "Changgyeonggung-ro, the west edge of the DDP district, north through the gap in the towers to Cheonggyecheon-ro and Baeogae Bridge."
+    },
+    {
+      "k": "secondary",
+      "w": 10,
+      "p": [[-935, -605], [-935, -659]],
+      "n": { "ko": "장충단로", "en": "Jangchungdan-ro", "ja": "奨忠壇路", "zh": "奖忠坛路" },
+      "note": "From DDP and the fashion malls north to Cheonggyecheon-ro."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [[-840, -440], [-735, -440]],
+      "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
+      "note": "Toegye-ro east from Euljiro's district to Wangsimni-ro (to Seongsu)."
+    },
+    {
+      "k": "secondary",
+      "w": 12,
+      "p": [[1238, 720], [1238, 650], [1247, 626]],
+      "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
+      "note": "From Jamsil Station (east end of Songpa's Olympic-ro) north past the Peace Plaza to Olympic Park's Olympic-ro."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [[-335, -86], [-735, -99], [-735, -663.5], [-741, -663.5]],
+      "n": { "ko": "왕십리로", "en": "Wangsimni-ro", "ja": "往十里路", "zh": "往十里路" },
+      "note": "From Seongsu north-west to the east end of Cheonggyecheon (Hwanghakgyo)."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          -335,
+          79
+        ],
+        [
+          -700,
+          79
+        ],
+        [
+          -900,
+          193
+        ],
+        [
+          -960,
+          281
+        ],
+        [
+          -1088,
+          281
+        ]
+      ],
+      "n": {
+        "ko": "이태원로",
+        "en": "Itaewon-ro",
+        "ja": "梨泰院路",
+        "zh": "梨泰院路"
+      }
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          260,
+          351.7
+        ],
+        [
+          308,
+          355
+        ],
+        [
+          438,
+          358
+        ]
+      ],
+      "n": {
+        "ko": "잠실대교 가는 길",
+        "en": "To Jamsil Bridge",
+        "ja": "蚕室大橋へ",
+        "zh": "往蚕室大桥"
+      }
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [
+        [
+          -2001,
+          -891
+        ],
+        [
+          -2300,
+          -388
+        ]
+      ],
+      "n": {
+        "ko": "사직로",
+        "en": "Sajik-ro",
+        "ja": "社稷路",
+        "zh": "社稷路"
+      }
+    },
+    {
+      "k": "primary",
+      "w": 14,
+      "p": [
+        [
+          -2761,
+          -448
+        ],
+        [
+          -2740,
+          -388
+        ]
+      ],
+      "n": {
+        "ko": "신촌로",
+        "en": "Sinchon-ro",
+        "ja": "新村路",
+        "zh": "新村路"
+      }
+    },
+    {"k": "walk", "w": 5, "p": [[-2961, -470], [-2961, -443]], "n": {"ko": "경의선숲길", "en": "Gyeongui Line Forest Path", "ja": "京義線森の道", "zh": "京义线林荫路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3051, -470], [-3051, -448]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
+    {"k": "primary", "w": 14, "p": [[-3182, -362], [-3168, -420], [-3161, -448]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
+    {"k": "tertiary", "w": 8, "p": [[-3182, -272], [-3170, -290], [-3161, -308]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3161, -128]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}},
+    {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."}
+  ],
+  "screens": [
+    {
+      "at": [
+        60,
+        -97
+      ],
+      "w": 28,
+      "y": 14,
+      "image": "og.png"
+    },
+    {
+      "at": [
+        60,
+        -97
+      ],
+      "along": -19,
+      "w": 7,
+      "h": 14,
+      "y": 14,
+      "city": {
+        "name": "TOKYO",
+        "local": "東京",
+        "hue": 330
+      }
+    },
+    {
+      "at": [
+        60,
+        -97
+      ],
+      "along": 19,
+      "w": 7,
+      "h": 14,
+      "y": 14,
+      "city": {
+        "name": "HONG KONG",
+        "local": "香港",
+        "hue": 200
+      }
+    },
+    {
+      "at": [
+        60,
+        -97
+      ],
+      "w": 46,
+      "h": 11.5,
+      "y": 30,
+      "text": "NEXT IS TOKYO AND HONG KONG..."
+    },
+    {
+      "at": [
+        -1512,
+        -714
+      ],
+      "w": 22,
+      "h": 30,
+      "y": 22
+    },
+    {
+      "at": [
+        -1449,
+        -658
+      ],
+      "w": 30,
+      "h": 16,
+      "y": 26
+    },
+    {
+      "at": [
+        -1383,
+        -714
+      ],
+      "w": 18,
+      "h": 30,
+      "y": 28
+    },
+    {
+      "at": [
+        -1248,
+        -714
+      ],
+      "w": 20,
+      "h": 28,
+      "y": 20
+    },
+    {
+      "at": [
+        -1165,
+        -658
+      ],
+      "w": 28,
+      "h": 18,
+      "y": 24
+    }
+  ],
+  "subway": {
+    "note": "Underground stations. Add one by adding an entry to stations. exits[].at is a spot on the world map (Seongsu coordinates; other districts include their offset), ry the direction the stairs go down (radians). Move exits freely: the hole, walls and canopy follow.",
+    "stations": [
+      {
+        "id": "seongsu-station",
+        "name": {
+          "ko": "성수",
+          "en": "Seongsu",
+          "ja": "聖水",
+          "zh": "圣水"
+        },
+        "code": "211",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "뚝섬",
+          "en": "Ttukseom"
+        },
+        "next": {
+          "ko": "건대입구",
+          "en": "Konkuk Univ."
+        },
+        "note": "At the Achasan-ro / Seongsui-ro crossing (zone F). The real Seongsu Station is elevated; in the game you go down to its hall.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              44.5,
+              -69.5
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              75.5,
+              -69.5
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "seoul-forest-station",
+        "name": {
+          "ko": "서울숲",
+          "en": "Seoul Forest",
+          "ja": "ソウルの森",
+          "zh": "首尔林"
+        },
+        "line": {
+          "color": "#00a84d"
+        },
+        "note": "Seoul Forest's north-east corner by Seoulsup-gil: exit 1 on the park corner, exit 2 at the head of Metasequoia Avenue. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -195.5,
+              63
+            ],
+            "ry": 3.1416
+          },
+          {
+            "n": 2,
+            "at": [
+              -210,
+              93
+            ],
+            "ry": -1.5708
+          }
+        ]
+      },
+      {
+        "id": "gyeongbokgung-station",
+        "name": {
+          "ko": "경복궁",
+          "en": "Gyeongbokgung",
+          "ja": "景福宮",
+          "zh": "景福宫"
+        },
+        "code": "327",
+        "line": {
+          "color": "#ef7c1c",
+          "name": {
+            "ko": "3호선",
+            "en": "Line 3",
+            "ja": "3号線",
+            "zh": "3号线"
+          }
+        },
+        "prev": {
+          "ko": "독립문",
+          "en": "Dongnimmun"
+        },
+        "next": {
+          "ko": "안국",
+          "en": "Anguk"
+        },
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1861,
+              -902
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              -1841,
+              -880
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "anguk-station",
+        "name": {
+          "ko": "안국",
+          "en": "Anguk",
+          "ja": "安国",
+          "zh": "安国"
+        },
+        "code": "328",
+        "line": {
+          "color": "#ef7c1c",
+          "name": {
+            "ko": "3호선",
+            "en": "Line 3",
+            "ja": "3号線",
+            "zh": "3号线"
+          }
+        },
+        "prev": {
+          "ko": "경복궁",
+          "en": "Gyeongbokgung"
+        },
+        "next": {
+          "ko": "종로3가",
+          "en": "Jongno 3(sam)-ga"
+        },
+        "note": "On Yulgok-ro at the foot of Bukchon-ro. Exit 2 is on the Bukchon side.",
+        "exits": [
+          {
+            "n": 2,
+            "at": [-1535, -902],
+            "ry": 1.5708
+          },
+          {
+            "n": 3,
+            "at": [-1397, -902],
+            "ry": -1.5708
+          }
+        ]
+      },
+      {
+        "id": "hongik-univ-station",
+        "name": {
+          "ko": "홍대입구",
+          "en": "Hongik Univ.",
+          "ja": "弘大入口",
+          "zh": "弘大入口"
+        },
+        "code": "239",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "합정",
+          "en": "Hapjeong"
+        },
+        "next": {
+          "ko": "신촌",
+          "en": "Sinchon"
+        },
+        "note": "Yanghwa-ro, by the foot of Hongdae Walking Street. The Airport Railroad and Gyeongui-Jungang Line also stop here; the signs show Line 2.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -2831,
+              -139
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              -2821,
+              -117
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "Worldcup-ro, a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3264, -352.5], "ry": -1.5708}, {"n": 2, "at": [-3240, -352.5], "ry": 1.5708}]},
+      { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro at the north-west corner of DDP, by the park. Lines 4 and 5 also stop here; the signs show Line 2.", "exits": [{ "n": 1, "at": [-1100, -584], "ry": -1.5708 }, { "n": 2, "at": [-1080, -584], "ry": 1.5708 }] },
+      {
+        "id": "itaewon-station",
+        "name": {
+          "ko": "이태원",
+          "en": "Itaewon",
+          "ja": "梨泰院",
+          "zh": "梨泰院"
+        },
+        "code": "630",
+        "line": {
+          "color": "#cd7c2f",
+          "name": {
+            "ko": "6호선",
+            "en": "Line 6",
+            "ja": "6号線",
+            "zh": "6号线"
+          }
+        },
+        "prev": {
+          "ko": "녹사평",
+          "en": "Noksapyeong"
+        },
+        "next": {
+          "ko": "한강진",
+          "en": "Hangangjin"
+        },
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1378,
+              271
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              -1308,
+              291
+            ],
+            "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "jamsil-station",
+        "name": {
+          "ko": "잠실",
+          "en": "Jamsil",
+          "ja": "蚕室",
+          "zh": "蚕室"
+        },
+        "code": "216",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "잠실나루",
+          "en": "Jamsillaru"
+        },
+        "next": {
+          "ko": "잠실새내",
+          "en": "Jamsilsaenae"
+        },
+        "note": "Songpa-daero / Olympic-ro corner. Line 8 also stops here; the signs show Line 2.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              960,
+              729
+            ],
+            "ry": -1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              996,
+              729
+            ],
+            "ry": 1.5708
+          }
+        ]
+      }
+    ]
+  },
+  "busking": [
+    {
+      "id": "hongdae-busking",
+      "at": [
+        -2961,
+        -230
+      ],
+      "radius": 22,
+      "name": {
+        "en": "Hongdae Busking Zone",
+        "ko": "홍대 버스킹존",
+        "ja": "弘大バスキングゾーン",
+        "zh": "弘大街头表演区"
+      }
+    }
+  ],
+  "adPosters": {
+    "L-115": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
+    "L-117": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
+    "L-118": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
+    "L-119": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
+    "L-101": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
+    "L-97": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
+    "L-32": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
+  },
+  "storePosters": {
+    "sinjeon-pocha": { "image": "ads/seongsu-retro-v2.webp", "credit": "Alex Shaw" },
+    "son-kalguksu": { "image": "ads/seongsu-noir-v2.webp", "credit": "Christian Agbede" },
+    "sandgrain-bakery": { "image": "ads/seongsu-beanie-v2.webp", "credit": "Pesce Huang" }
+  },
+  "note": "Seongsu is a hand-made game map (scripts/build-seongsu.mjs), loosely inspired by the real neighbourhood; it is not a copy of any map."
+}

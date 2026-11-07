@@ -5,7 +5,7 @@ import { SKIRTS, SKIRT_LENGTHS, SKIRT_PATTERNS, skirtName } from '../src/data/sk
 import { ITEMS, isWorn } from '../src/core/inventory.js';
 import { sanitizeLook, DEFAULT_LOOK } from '../src/data/appearance.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const stores = read('stores.json').stores;
 const region = read('region.json');
 const hd = region.districts.find((d) => d.id === 'hongdae');

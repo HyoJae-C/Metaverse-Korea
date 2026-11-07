@@ -17,6 +17,7 @@ const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
+const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
@@ -26,8 +27,14 @@ export function createCharacter(rawLook) {
     hair: PALETTES.hair[look.hair], skin: PALETTES.skin[look.skin],
   };
   const root = new THREE.Group();
+  // Everything but the shadow hangs on the rig, so a trick (a spin, a flip,
+  // a jump) can turn the rider and the ride together without changing
+  // which way the character is heading (root's rotation).
+  const rig = new THREE.Group();
+  rig.rotation.order = 'YXZ'; // spin round the vertical first, then flip
+  root.add(rig);
   const body = new THREE.Group(); // bobs while walking
-  root.add(body);
+  rig.add(body);
 
   // Total height ≈ 1.2 m: head ≈ 0.6, body+legs ≈ 0.6 (2 heads tall).
   const torso = new THREE.Mesh(geo('torso', () => new THREE.CapsuleGeometry(0.2, 0.16, 6, 12)), mat(o.shirt));
@@ -112,10 +119,12 @@ export function createCharacter(rawLook) {
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
+  let tube = null; // a swim ring (the pool)
   const attachHeld = () => {
     if (!held) return;
     if (model?.hand) {
@@ -138,7 +147,7 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); wearMascot(); });
+  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
   return {
     root,
     head,
@@ -168,15 +177,15 @@ export function createCharacter(rawLook) {
         if (!bike) {
           bike = makeRide(r);
           bikeCode = code;
-          root.add(bike);
+          rig.add(bike);
           rideKind = ['board', 'kick', 'skates'].includes(bike.userData.pose) ? bike.userData.pose : true;
-          if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); root.add(sk); } }
+          if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); rig.add(sk); } }
         }
       }
-      if (kind === 2 && !tandem) { tandem = makeTandem(); root.add(tandem); }
-      if (kind === 4 && !car) { car = makeCar(); root.add(car); }
-      if (kind === 6 && !limo) { limo = makeLimo(); root.add(limo); }
-      if (kind === 5 && !moto) { moto = makeMoto(); root.add(moto); }
+      if (kind === 2 && !tandem) { tandem = makeTandem(); rig.add(tandem); }
+      if (kind === 4 && !car) { car = makeCar(); rig.add(car); }
+      if (kind === 6 && !limo) { limo = makeLimo(); rig.add(limo); }
+      if (kind === 5 && !moto) { moto = makeMoto(); rig.add(moto); }
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
       for (const sk of skates || []) sk.visible = kind === 1;
@@ -191,6 +200,30 @@ export function createCharacter(rawLook) {
       // wheel in a car; upright and relaxed as a car passenger.
       riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
     },
+    // A trick in the skate park (core/skatepark.js trickPose): spin, flip
+    // and roll turn rider and ride together; rideRoll / rideSpin turn only
+    // the board, bike or scooter (kickflips, tail whips); tuck crouches.
+    // air: how high above the ground we are (the shadow stays down there).
+    setTrick(pose, air = 0) {
+      const P = pose || {};
+      // Turn about the middle of the body, not the feet.
+      const cy = 0.5;
+      rig.rotation.set(P.flip || 0, P.spin || 0, P.roll || 0);
+      const q = rig.quaternion;
+      _fv.set(0, cy, 0).applyQuaternion(q);
+      rig.position.set(-_fv.x, cy - _fv.y - (P.tuck || 0) * 0.08, -_fv.z);
+      if (bike) {
+        // The board or bike turns about its own middle (just under the
+        // feet), lifted a little while it flips.
+        bike.rotation.set(0, P.rideSpin || 0, P.rideRoll || 0);
+        const by = bike.userData.stand || 0.4;
+        _fv.set(0, by, 0).applyEuler(bike.rotation);
+        const lift = P.rideRoll ? Math.abs(Math.sin(P.rideRoll / 2)) * 0.2 : (P.tuck || 0) * 0.05;
+        bike.position.set(-_fv.x, by - _fv.y + lift, -_fv.z);
+      }
+      blob.position.y = 0.07 - Math.max(0, air);
+      blob.scale.setScalar(Math.max(0.45, 1 - air * 0.25));
+    },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
       if (model) {
@@ -198,18 +231,18 @@ export function createCharacter(rawLook) {
         model.update(dt, speed01, sit, riding);
         if (skates && riding === 'skates' && model.feet[0]) {
           // Each skate follows its foot (in the body's frame, facing forward).
-          root.updateWorldMatrix(false, true);
+          rig.updateWorldMatrix(true, true);
           model.feet.forEach((f, i) => {
             if (!f || !skates[i]) return;
-            root.worldToLocal(f.getWorldPosition(_fv));
+            rig.worldToLocal(f.getWorldPosition(_fv));
             skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
-          root.updateWorldMatrix(false, true);
+          rig.updateWorldMatrix(true, true);
           model.hand.getWorldQuaternion(qHand);
-          root.getWorldQuaternion(qRoot);
+          rig.getWorldQuaternion(qRoot);
           held.quaternion.copy(qHand.invert().multiply(qRoot));
         }
         return;
@@ -272,7 +305,7 @@ export function createCharacter(rawLook) {
         umbrella = makeUmbrella();
         umbrella.position.set(0.16, 0.62, 0.05);
         umbrella.rotation.z = -0.08;
-        root.add(umbrella);
+        rig.add(umbrella);
       } else { umbrella.removeFromParent(); umbrella = null; }
     },
     // Hold something in the right hand ('coffee'), or nothing (null).
@@ -295,10 +328,22 @@ export function createCharacter(rawLook) {
       model?.setActivity(name);
       // Reading: the book goes from the hand onto the table in front, open.
       if (held) held.visible = name !== 'read';
-      if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); root.add(openBook); }
+      if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); rig.add(openBook); }
       if (openBook) openBook.visible = name === 'read';
+      // Floating in a tube (Olympic Park Pool): a ring round the waist.
+      if (name === 'tube' && !tube) {
+        tube = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.15, 10, 22).rotateX(Math.PI / 2), mat(TUBE_COLORS[Math.floor(Math.random() * TUBE_COLORS.length)]));
+        tube.position.set(0, 0.64, 0.12);
+        rig.add(tube);
+      }
+      if (tube) tube.visible = name === 'tube';
     },
     get activityName() { return activityName; },
+    // A scripted move: fn() returns bone offsets each frame (armL, armR,
+    // foreL, foreR, spine, head, legL, legR, kneeL, kneeR, in radians, as
+    // the dances use), laid over the idle or running clip. null stops it.
+    // Used for basketball shots (core/basketball-game.js shotMove).
+    setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);
@@ -415,6 +460,27 @@ function charmGeometry(kind) {
     sh.bezierCurveTo(0.022, 0.03, 0.04, 0, 0, -0.028);
   }
   return new THREE.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: false }).translate(0, 0, -0.005);
+}
+
+// A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
+// blossom (five petals) or a round tag (the 복 "luck" charm).
+function pendantGeometry(kind) {
+  const sh = new THREE.Shape();
+  if (kind === 'moon') {
+    sh.absarc(0, 0, 0.036, Math.PI * 0.35, Math.PI * 1.65, false);
+    sh.absarc(0.016, 0, 0.028, Math.PI * 1.55, Math.PI * 0.45, true);
+  } else if (kind === 'plum') {
+    for (let i = 0; i <= 60; i++) { // five round petals: r(θ) = a + b |cos(5θ/2)|
+      const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else {
+    sh.absarc(0, 0, 0.032, 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.moveTo(-0.014, -0.004); hole.lineTo(0.014, -0.004); hole.lineTo(0.014, 0.004); hole.lineTo(-0.014, 0.004); hole.lineTo(-0.014, -0.004);
+    sh.holes.push(hole); // a little bar across, like the stroke of a carved 복
+  }
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
 }
 
 function addAccessories(look, head, torso, body) {
@@ -548,7 +614,18 @@ function addAccessories(look, head, torso, body) {
   }
 
   const neck = accessory('neck', look.neck);
-  if (neck) {
+  if (neck && shapeOf(neck) === 'pendant') {
+    // A fine chain round the neck and a charm on the chest.
+    const m = mat(neck.color);
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.155, 0.012, 5, 24)), m);
+    chain.rotation.x = Math.PI / 2 - 0.35;
+    chain.position.set(0, 0.6, 0.03);
+    const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
+    charm.position.set(0, 0.5, 0.2);
+    charm.rotation.x = -0.15;
+    charm.scale.setScalar(1.5);
+    body.add(chain, charm);
+  } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
     wrap.rotation.x = Math.PI / 2;

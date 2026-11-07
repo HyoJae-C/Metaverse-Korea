@@ -5,8 +5,8 @@
 // the other's message already waiting, so both sides finish on their own.
 // The first high five with each person pays a few coins, a few times a day.
 //
-// Together bonus: finishing the grill or ramen game, or catching a fish,
-// with another player close by pays a little extra (TOGETHER_COINS).
+// Together bonus: finishing the grill or ramen game with another player
+// close by pays a little extra (TOGETHER_COINS). Fishing has none.
 
 export const HI5_WINDOW = 6000; // ms
 export const HI5_COINS = 3;
@@ -20,7 +20,7 @@ export function parseHi5(e) {
   return m ? m[1] : null;
 }
 
-export const TOGETHER_COINS = { cook: 3, fish: 1 };
+export const TOGETHER_COINS = { cook: 3 };
 
 export class HighFives {
   constructor(storage = globalThis.localStorage, today = () => new Date().toDateString(), now = () => Date.now()) {
