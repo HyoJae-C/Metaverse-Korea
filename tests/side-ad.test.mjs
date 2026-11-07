@@ -21,7 +21,7 @@ test('no slot or no publisher ID: no banner', () => {
   assert.equal(mountSideAd({ cfg: { enabled: true, slot: '' }, client: 'ca-pub-1', win: fakeWin(true), doc: fakeDom() }), null);
 });
 
-test('wide screen: the 300x250 slot is added and filled once', () => {
+test('wide screen: the 468x60 slot is added and filled once', () => {
   const doc = fakeDom(), win = fakeWin(true);
   const box = mountSideAd({ cfg, client: 'ca-pub-1', test: true, win, doc });
   assert.equal(doc.body.kids[0], box);
@@ -46,4 +46,10 @@ test('the CSS shows the banner only for the same screens as the code', () => {
   const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
   assert.ok(css.includes(`@media ${SIDE_AD_MEDIA}`));
   assert.match(css, /\.side-ad:has\(ins\[data-ad-status="unfilled"\]\) \{ display: none; \}/);
+});
+
+test('the banner steps aside for shop banners and the update notice', () => {
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.match(css, /\.in-store \.side-ad \{ display: none; \}/);
+  assert.match(css, /body:has\(\.update-banner:not\(\[hidden\]\)\) \.side-ad \{ display: none; \}/);
 });
