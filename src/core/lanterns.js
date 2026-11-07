@@ -2,13 +2,13 @@
 // lantern festivals held on Cheonggyecheon: big hanji lantern figures standing
 // in the water, rows of cheongsachorong (청사초롱) along the railings, strings
 // of round lanterns across the channel, glowing lanterns under the bridges,
-// a tunnel of coloured light arches over one walkway, a tiled wall painting of
-// King Jeongjo's royal procession, and a wish lantern corner at the east end
+// a tunnel of coloured light arches over one walkway, a wall of tile panels
+// showing the real painting of King Jeongjo's royal procession, and a wish lantern corner at the east end
 // where small lanterns float down and gather.
 //
 // The game has no night for now, so everything is bright and colourful by
 // day; only the lanterns under the bridges, in the shade, look lit.
-// All designs here are original.
+// All designs here are original, except the procession painting (credited below).
 //
 // Map data, on a stream (u along the channel from its west end, v across it):
 //   "lanterns": {
@@ -474,103 +474,76 @@ function lightTunnel(root, s, c) {
   };
 }
 
-// King Jeongjo's royal procession (정조대왕 능행반차도), after the long tiled
-// wall painting on the real Cheonggyecheon: in 1795 the king travelled to
-// Hwaseong in Suwon with his mother, Lady Hyegyeong, for her 60th birthday
-// and to visit his father's tomb, and the procession was recorded in a
-// painting. This is a simple drawing in that spirit (flag bearers, guards on
-// horseback, musicians and palanquins), not a copy of the painting.
-export const PROCESSION_PANEL = 16; // metres of wall per repeat of the drawing
-function processionTexture() {
-  const W = 2048, H = 192;
-  return canvasTex(W, H, (g) => {
-    g.fillStyle = '#f3e9d2'; g.fillRect(0, 0, W, H);
-    // Tile joints.
-    g.strokeStyle = 'rgba(150,130,100,0.35)'; g.lineWidth = 1;
-    for (let x = 0; x <= W; x += 24) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
-    for (let y = 0; y <= H; y += 24) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-    // A border band top and bottom.
-    g.fillStyle = '#7a4a2a'; g.fillRect(0, 0, W, 8); g.fillRect(0, H - 8, W, 8);
-    g.fillStyle = 'rgba(120,150,90,0.35)'; g.fillRect(0, H - 40, W, 32); // the road
-    const robes = ['#c8402f', '#2f4f8f', '#d9a93a', '#3f7f5a', '#8a3a6a'];
-    const person = (x, y, robe, item) => {
-      g.fillStyle = robe;
-      g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x + 9, y); g.lineTo(x + 5, y - 30); g.lineTo(x - 5, y - 30); g.fill();
-      g.fillStyle = '#f0c9a0'; g.beginPath(); g.arc(x, y - 36, 6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#1d1a18'; // black gat: the brim and the crown
-      g.beginPath(); g.ellipse(x, y - 40, 11, 2.5, 0, 0, Math.PI * 2); g.fill();
-      g.fillRect(x - 4, y - 49, 8, 9);
-      g.strokeStyle = '#5a3a20'; g.lineWidth = 2;
-      if (item === 'flag') {
-        g.beginPath(); g.moveTo(x + 8, y - 4); g.lineTo(x + 8, y - 92); g.stroke();
-        g.fillStyle = robes[(x / 37 | 0) % robes.length];
-        g.beginPath(); g.moveTo(x + 8, y - 92); g.lineTo(x + 34, y - 82); g.lineTo(x + 8, y - 70); g.fill();
-      } else if (item === 'spear') {
-        g.beginPath(); g.moveTo(x + 8, y - 2); g.lineTo(x + 8, y - 74); g.stroke();
-        g.fillStyle = '#9aa0a6'; g.beginPath(); g.moveTo(x + 5, y - 74); g.lineTo(x + 11, y - 74); g.lineTo(x + 8, y - 86); g.fill();
-        g.fillStyle = '#c8402f'; g.fillRect(x + 5, y - 74, 6, 4);
-      } else if (item === 'drum') {
-        g.fillStyle = '#c8402f'; g.beginPath(); g.ellipse(x + 10, y - 20, 7, 9, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#d9a93a'; g.fillRect(x + 4, y - 22, 12, 3);
-      } else if (item === 'horn') {
-        g.strokeStyle = '#d9a93a'; g.lineWidth = 3;
-        g.beginPath(); g.moveTo(x + 4, y - 36); g.lineTo(x + 26, y - 44); g.stroke();
-        g.fillStyle = '#d9a93a'; g.beginPath(); g.arc(x + 27, y - 44, 4, 0, Math.PI * 2); g.fill();
-      }
-    };
-    const horse = (x, y, coat, robe) => {
-      g.fillStyle = coat;
-      g.beginPath(); g.ellipse(x, y - 30, 24, 11, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.moveTo(x + 18, y - 34); g.lineTo(x + 34, y - 54); g.lineTo(x + 40, y - 48); g.lineTo(x + 26, y - 28); g.fill(); // neck and head
-      g.strokeStyle = coat; g.lineWidth = 4;
-      for (const dx of [-16, -9, 12, 19]) { g.beginPath(); g.moveTo(x + dx, y - 24); g.lineTo(x + dx + (dx % 2 ? 2 : -2), y); g.stroke(); }
-      g.strokeStyle = '#3a2a1a'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 24, y - 32); g.lineTo(x - 32, y - 16); g.stroke(); // tail
-      g.fillStyle = '#c8402f'; g.fillRect(x - 10, y - 42, 20, 6); // saddle cloth
-      person(x, y - 40, robe, null);
-    };
-    const palanquin = (x, y) => {
-      g.strokeStyle = '#5a3a20'; g.lineWidth = 3;
-      g.beginPath(); g.moveTo(x - 60, y - 40); g.lineTo(x + 60, y - 40); g.stroke();
-      g.fillStyle = '#b8322a'; g.fillRect(x - 24, y - 84, 48, 44);
-      g.fillStyle = '#2f4f8f'; g.fillRect(x - 20, y - 76, 40, 24);
-      g.fillStyle = '#d9a93a';
-      g.beginPath(); g.moveTo(x - 32, y - 84); g.lineTo(x, y - 102); g.lineTo(x + 32, y - 84); g.fill();
-      for (const dx of [-50, -30, 30, 50]) person(x + dx, y, '#3f7f5a', null);
-    };
-    // The procession, left to right: banners, guards, musicians, riders and
-    // two palanquins, then banners again so the repeat runs on.
-    const y = H - 14;
-    let x = 20;
-    const seq = ['flag', 'flag', 'spear', 'spear', 'horse', 'horn', 'drum', 'horn', 'flag', 'horse', 'horse', 'spear', 'palanquin', 'spear', 'flag', 'horse', 'drum', 'horn', 'flag', 'spear', 'horse', 'palanquin', 'flag', 'spear', 'spear', 'horse', 'flag'];
-    for (const [i, it] of seq.entries()) {
-      const robe = robes[i % robes.length];
-      if (it === 'horse') { horse(x + 18, y, i % 3 ? '#e8e0d0' : '#8a5a3a', robe); x += 84; }
-      else if (it === 'palanquin') { x += 50; palanquin(x, y); x += 110; }
-      else { person(x, y, robe, it); x += 44; }
-      if (x > W - 60) break;
-    }
-  });
+// King Jeongjo's royal procession, after the long tiled wall painting on the
+// real Cheonggyecheon: in 1795 the king travelled to Hwaseong in Suwon with
+// his mother, Lady Hyegyeong, for her 60th birthday and to visit his father's
+// tomb, and court painters recorded the procession in a banchado.
+//
+// The wall shows the real painting: "정조의 화성행차" (華城園幸班次圖, 덕수 2507)
+// from the National Museum of Korea, released under KOGL Type 1 (공공누리
+// 제1유형, free use with credit; the credit is on the sign's info panel).
+// Page: https://www.emuseum.go.kr/detail?relicId=PS0100100100500250700000
+// The museum shares the scroll in segments; public/museum/banchado.jpg holds
+// ten of them, trimmed of the grey scan background and stacked one under the
+// other. Each becomes a tile panel on the wall, in a stone frame.
+export const BANCHADO = {
+  url: 'museum/banchado.jpg',
+  w: 1280, h: 2704,
+  rows: [[0, 295], [295, 251], [546, 253], [799, 252], [1051, 294], [1345, 297], [1642, 295], [1937, 253], [2190, 294], [2484, 220]], // [y, height] of each segment
+};
+// Panels laid along a wall of length len: [start, width] for each, scaled to fit with a gap between.
+export function banchadoPanels(len, h, gap = 0.16) {
+  const want = BANCHADO.rows.map(([, rh]) => (h * BANCHADO.w) / rh);
+  const k = (len - gap * (want.length - 1)) / want.reduce((a, b) => a + b, 0);
+  let x = 0;
+  return want.map((w) => { const p = [x, w * k]; x += w * k + gap; return p; });
 }
+const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 function procession(root, s, c) {
   const hw = s.w / 2, D = s.depth || 4, sd = c.side || -1;
   const len = c.to - c.from, h = 2.1;
-  const tex = processionTexture();
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.repeat.set(len / PROCESSION_PANEL, 1);
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(len, h), new THREE.MeshLambertMaterial({ map: tex }));
-  wall.position.set(c.from + len / 2, -D + 0.55 + h / 2, sd * (hw - 0.31));
-  if (sd > 0) wall.rotation.y = Math.PI; // face the water
-  wall.userData.noShadow = true;
-  root.add(wall);
-  // A frame of dark stone round it.
+  // Plain paper colour until the painting has loaded (it waits a few seconds
+  // so it doesn't slow down the start of the game).
+  const mat = new THREE.MeshLambertMaterial({ color: '#efe3c8' });
+  if (typeof document !== 'undefined') {
+    setTimeout(() => new THREE.TextureLoader().load(BASE + BANCHADO.url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      mat.map = tex; mat.color.set('#ffffff'); mat.needsUpdate = true;
+    }), 6000);
+  }
+  const geos = [];
+  banchadoPanels(len, h).forEach(([x, w], i) => {
+    const [ry, rh] = BANCHADO.rows[i];
+    const g = new THREE.PlaneGeometry(w, h);
+    const v0 = 1 - (ry + rh) / BANCHADO.h, v1 = 1 - ry / BANCHADO.h;
+    const uv = g.attributes.uv;
+    for (let j = 0; j < uv.count; j++) uv.setY(j, uv.getY(j) > 0.5 ? v1 : v0);
+    if (sd > 0) { g.rotateY(Math.PI); g.translate(len - x - w / 2, 0, 0); } // face the water, still reading left to right
+    else g.translate(x + w / 2, 0, 0);
+    geos.push(g);
+  });
+  for (const g of geos) {
+    const m = new THREE.Mesh(g, mat);
+    m.position.set(c.from, -D + 0.55 + h / 2, sd * (hw - 0.31));
+    m.userData.noShadow = true;
+    root.add(m);
+  }
+  // A frame of dark stone round it, and between the panels.
   const frame = lam('#6f655a');
   for (const y of [-D + 0.5, -D + 0.6 + h]) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(len + 0.3, 0.12, 0.1), frame);
     b.position.set(c.from + len / 2, y, sd * (hw - 0.33));
     root.add(b);
   }
+  const joints = banchadoPanels(len, h).slice(1).map(([x]) => x - 0.08);
+  for (const x of [-0.08, ...joints, len + 0.08]) {
+    const j = new THREE.Mesh(new THREE.BoxGeometry(0.12, h + 0.1, 0.1), frame);
+    j.position.set(c.from + (sd > 0 ? len - x : x), -D + 0.55 + h / 2, sd * (hw - 0.33));
+    root.add(j);
+  }
   // A small sign on a post at the start, on the walkway.
-  const sign = signPost(['정조대왕', '능행반차도']);
+  const sign = signPost(['정조대왕', '화성행차']);
   sign.position.set(c.from - 1.5, -D, sd * (hw - 1.6));
   sign.rotation.y = sd > 0 ? Math.PI : 0;
   root.add(sign);

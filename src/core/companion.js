@@ -58,23 +58,25 @@ export class Companion {
   }
 
   // Put the pet next to the owner at once (on adopting, entering a room…).
-  place(x, z, ry) {
-    this.root.position.set(x - Math.sin(ry) * 1.1 + Math.cos(ry) * 0.5, 0, z - Math.cos(ry) * 1.1 - Math.sin(ry) * 0.5);
+  place(x, z, ry, y = 0) {
+    this.root.position.set(x - Math.sin(ry) * 1.1 + Math.cos(ry) * 0.5, y, z - Math.cos(ry) * 1.1 - Math.sin(ry) * 0.5);
     this.root.rotation.y = ry;
   }
 
-  // owner: { x, z, ry }; riding: hide and wait. Returns true when it poops.
+  // owner: { x, z, ry, y }; riding: hide and wait. Returns true when it poops.
+  // y is the owner's height (down by a stream, on the stairs, up a hill), so
+  // the pet walks on the same ground and not in the air above it.
   update(dt, owner, riding, canPoop) {
     this.phase += dt;
     this.root.visible = !riding;
-    if (riding) { this.place(owner.x, owner.z, owner.ry); return false; }
+    if (riding) { this.place(owner.x, owner.z, owner.ry, owner.y || 0); return false; }
     const r = this.root.position;
     // Aim for a spot behind and a little to the side of the owner.
     const tx = owner.x - Math.sin(owner.ry) * 1.1 + Math.cos(owner.ry) * 0.5;
     const tz = owner.z - Math.cos(owner.ry) * 1.1 - Math.sin(owner.ry) * 0.5;
     const dx = tx - r.x, dz = tz - r.z, d = Math.hypot(dx, dz);
     let moving = false;
-    if (d > 12) this.place(owner.x, owner.z, owner.ry); // left behind: catch up
+    if (d > 12) this.place(owner.x, owner.z, owner.ry, owner.y || 0); // left behind: catch up
     else if (this.squat > 0) this.squat -= dt;
     else if (d > 0.35) {
       const sp = Math.min(d, Math.max(1.6, d * 2.2) * dt); // trot faster when further behind
@@ -84,6 +86,7 @@ export class Companion {
       moving = true;
       this.walked += sp;
     } else turn(this.root, owner.ry, dt);
+    r.y += ((owner.y || 0) - r.y) * Math.min(1, dt * 8); // follow the owner up and down the stairs
     // Pose: trotting legs, wagging tail, sit when still, squat to poop.
     const step = moving ? Math.sin(this.phase * 16) * 0.5 : 0;
     this.legs.forEach((l, i) => { l.rotation.x = i % 2 === (i < 2 ? 0 : 1) ? step : -step; });

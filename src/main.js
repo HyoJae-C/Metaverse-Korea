@@ -6525,7 +6525,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
     ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
     music: () => ({ on: music.on, track: music.track.id }),
-    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible }; },
+    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
     poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
