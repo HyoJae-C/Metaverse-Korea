@@ -234,6 +234,40 @@ export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f
 // The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
+// Paving, drawn once. 'alley': across the alley (u 0..1), dark grey slabs
+// down the middle with pale granite kerbs at both edges, as on Bukchon-ro
+// 11-gil; one tile is 2 m along. 'yard': big pale granite slabs, 1.6 m.
+const paveCache = {};
+function pavingTexture(kind) {
+  if (kind in paveCache) return paveCache[kind];
+  if (typeof document === 'undefined') return (paveCache[kind] = null);
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const x = c.getContext('2d');
+  if (kind === 'alley') {
+    x.fillStyle = '#c9c2b4'; x.fillRect(0, 0, 128, 128); // kerb stones
+    x.fillStyle = '#b7b0a3';
+    for (let i = 0; i < 4; i++) { x.fillRect(0, i * 32 + 30, 20, 2); x.fillRect(108, i * 32 + 30, 20, 2); }
+    x.fillStyle = '#6f6d6b'; x.fillRect(20, 0, 88, 128); // joints
+    const tones = ['#8e8b87', '#85827e', '#97938e', '#8a8783'];
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 2; i++) {
+      x.fillStyle = tones[(r + i * 2) % 4];
+      x.fillRect(22 + i * 43 + (r % 2 ? 6 : 0) * (i ? -1 : 1), r * 32 + 1, 41, 30);
+    }
+  } else {
+    x.fillStyle = '#bdb5a6'; x.fillRect(0, 0, 128, 128);
+    const tones = ['#ddd5c5', '#d5ccbb', '#e3dccd', '#d0c7b6'];
+    for (let r = 0; r < 2; r++) for (let i = 0; i < 2; i++) {
+      x.fillStyle = tones[r * 2 + i];
+      x.fillRect(i * 64 + 2 + (r ? 16 : 0) % 64, r * 64 + 2, 60, 60);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return (paveCache[kind] = t);
+}
+
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
@@ -246,11 +280,15 @@ export function buildBukchonHill(roads, [ox, oz]) {
     pos.setXYZ(i, x + ox, ground(x, Math.min(z, foot - 0.01)) + 0.02, z + oz);
   }
   geo.computeVertexNormals();
-  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: '#eadfc6' }));
+  { // the hillside between the houses is paved too (granite slabs, see pavingTexture)
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 1.6, pos.getZ(i) / 1.6);
+  }
+  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' }));
   earth.receiveShadow = true;
   g.add(earth);
   // Alleys: ribbons along each footpath, on the slope.
-  const pts = [], STEP = 1.5;
+  const pts = [], uvs = [], STEP = 1.5;
   for (const r of roads) {
     if (r.k !== 'walk') continue;
     for (let i = 1; i < r.p.length; i++) {
@@ -263,14 +301,17 @@ export function buildBukchonHill(roads, [ox, oz]) {
         });
         const [[a, b], [c, d]] = quad;
         pts.push(...a, ...b, ...d, ...a, ...d, ...c);
+        const v0 = (k * len) / n / 2, v1 = ((k + 1) * len) / n / 2; // one tile every 2 m along
+        uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
       }
     }
   }
   if (pts.length) {
     const rg = new THREE.BufferGeometry();
     rg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    rg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     rg.computeVertexNormals();
-    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ color: '#cbc2b1', side: THREE.DoubleSide }));
+    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(pavingTexture('alley') ? { map: pavingTexture('alley'), side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
     alleys.receiveShadow = true;
     g.add(alleys);
   }

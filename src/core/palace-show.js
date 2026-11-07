@@ -5,14 +5,60 @@
 //    two-person lion, on the square near King Sejong's statue.
 //  - 줄타기: a tightrope master crossing a rope beside the mask dance.
 //  - 수문장: gate guards in front of Gwanghwamun, with lines when greeted.
+//  - 어가 행렬: the king, a eunuch with his parasol and four court ladies
+//    walking from stop to stop round the palace, pausing for photos.
+// A rope ring round the fan dance keeps visitors from walking into it.
 // They only move while you're near (like the busking crowd).
 import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import { DANCER_CHIMAS } from '../data/skirts.js';
 import { makeNpc, say } from './npcs.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const NEAR = 110; // metres: closer than this, they perform
+
+// The fan dance is a group dance (군무): the formation matters, so a rope
+// ring keeps visitors this far from its centre (main.js makes it a blocker).
+export const FAN_KEEP = 10;
+// A circle as a polygon (for the collision map).
+export function ringPoly(x, z, r, n = 24) {
+  return Array.from({ length: n }, (_, i) => [x + Math.sin((i / n) * Math.PI * 2) * r, z + Math.cos((i / n) * Math.PI * 2) * r]);
+}
+
+// The royal procession (어가 행렬): the king with a eunuch holding his
+// parasol, and court ladies before and behind, walking round the palace.
+// Stops and the paths between them, in the palace district's metres (x
+// east, z south; Gwanghwamun at (0, 0)). Every path keeps clear of the halls,
+// the walls and the fan dance's rope ring.
+export const ROYAL_ROUTE = {
+  stops: [
+    [0, -45], // 0 the front court, between Gwanghwamun and Heungnyemun
+    [0, -104], // 1 just inside Heungnyemun
+    [-40, -118], [40, -118], // 2, 3 the lower courtyard
+    [-45, -185], [45, -185], // 4, 5 either side of Geunjeongjeon
+    [-45, -262], [45, -262], [0, -262], // 6, 7, 8 behind the hall
+    [-110, -45], [-160, -150], [-160, -310], [-110, -345], [-20, -355], // 9-13 round the west side, by the pond
+    [60, -45], // 14 the east of the front court
+  ],
+  links: [[0, 1], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [6, 8], [7, 8], [0, 9], [9, 10], [10, 11], [11, 12], [12, 13], [0, 14]],
+};
+export const ROYAL_PAUSE = 10; // seconds standing still at each stop (for photos)
+const ROYAL_SPEED = 1.1; // m/s, a stately walk
+// Who walks where: metres behind the front of the procession, and to the side.
+const ROYAL_ORDER = [
+  { who: 'lady', back: 0, side: -0.9 }, { who: 'lady', back: 0, side: 0.9 },
+  { who: 'king', back: 2.4, side: 0 },
+  { who: 'eunuch', back: 3.9, side: 0 },
+  { who: 'lady', back: 5.5, side: -0.9 }, { who: 'lady', back: 5.5, side: 0.9 },
+];
+// The next stop: a random neighbour, not straight back unless it's a dead end.
+export function nextStop(route, at, prev, rand = Math.random) {
+  const near = route.links.filter((l) => l.includes(at)).map((l) => (l[0] === at ? l[1] : l[0]));
+  const ahead = near.filter((n) => n !== prev);
+  const list = ahead.length ? ahead : near;
+  return list[Math.floor(rand() * list.length) % list.length];
+}
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 const ball = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => {
@@ -185,13 +231,88 @@ function guardRobe() {
   return g;
 }
 
+// The king's ikseongwan (익선관): a round black cap with two little wings
+// standing up at the back; the gold dragon roundel (흉배) on his chest.
+function ikseongwan() {
+  const g = new THREE.Group();
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('#1d1b22'));
+  cap.position.y = 0.1;
+  g.add(cap, ball(0.47, '#1d1b22', 0, 0.12, -0.08, 1, 0.35, 1));
+  for (const s of [-1, 1]) g.add(ball(0.11, '#1d1b22', 0.15 * s, 0.6, -0.26, 0.8, 1.25, 0.45));
+  return g;
+}
+function roundel() {
+  const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), mat('#e2b443'));
+  disc.position.set(0, 0.5, 0.26);
+  const dragon = new THREE.Mesh(new THREE.CircleGeometry(0.055, 12), mat('#c23a33'));
+  dragon.position.set(0, 0.5, 0.262);
+  g.add(disc, dragon);
+  return g;
+}
+// The eunuch's samo (사모): a black cap with two flat wings out to the sides.
+function samo() {
+  const g = new THREE.Group();
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('#1d1b22'));
+  cap.position.y = 0.1;
+  g.add(cap);
+  for (const s of [-1, 1]) {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.13, 0.02), mat('#1d1b22'));
+    wing.position.set(0.55 * s, 0.38, -0.2);
+    g.add(wing);
+  }
+  return g;
+}
+// The red royal parasol (일산) the eunuch holds up over the king ahead.
+function parasol() {
+  const g = new THREE.Group();
+  const lean = 0.5;
+  const pole = new THREE.Group();
+  pole.position.set(0.22, 0.35, 0.15);
+  pole.rotation.x = lean;
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.3, 6), mat('#6b3a1f'));
+  stick.position.y = 1.15;
+  const top = new THREE.Group();
+  top.position.y = 2.3;
+  top.rotation.x = -lean;
+  const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.3, 16, 1, true), mat('#c23a33'));
+  canopy.material.side = THREE.DoubleSide;
+  const fringe = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.22, 16, 1, true), mat('#e2b443'));
+  fringe.material.side = THREE.DoubleSide;
+  fringe.position.y = -0.24;
+  top.add(canopy, fringe);
+  pole.add(stick, top);
+  g.add(pole);
+  return g;
+}
+// The rope ring round the fan dance: short red posts and a rope between.
+function ropeRing(r) {
+  const geos = { post: [], rope: [] }, n = 20;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, b = ((i + 1) / n) * Math.PI * 2;
+    geos.post.push(new THREE.CylinderGeometry(0.06, 0.08, 0.9, 8).translate(Math.sin(a) * r, 0.45, Math.cos(a) * r));
+    const mx = (Math.sin(a) + Math.sin(b)) / 2 * r, mz = (Math.cos(a) + Math.cos(b)) / 2 * r, len = 2 * r * Math.sin(Math.PI / n);
+    geos.rope.push(new THREE.CylinderGeometry(0.025, 0.025, len, 5).rotateZ(Math.PI / 2).rotateY((a + b) / 2).translate(mx, 0.78, mz));
+  }
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(mergeGeometries(geos.post), mat('#8a2f2a')), new THREE.Mesh(mergeGeometries(geos.rope), mat('#d9b46a')));
+  return g;
+}
+
 export class PalaceShow {
   // fan: [x, z] centre of the fan dance; mask: [x, z] centre of the mask dance.
   // fan: [x, z] centre of the fan dance; mask: [x, z] centre of the mask
   // dance; guards: [[x, z, ry], ...] gate guards; layer: name tags.
   // rope: [x, z] middle of the tightrope (runs along x).
-  constructor(scene, { fan, mask, rope, guards = [], layer = null }) {
+  // procession: [x, z] the palace district's offset (ROYAL_ROUTE is in its metres).
+  constructor(scene, { fan, mask, rope, guards = [], procession = null, layer = null }) {
     this.layer = layer;
+    if (fan) {
+      const ring = ropeRing(FAN_KEEP);
+      ring.position.set(fan[0], 0, fan[1]);
+      scene.add(ring);
+    }
+    if (procession && layer) this.royal = this.makeProcession(scene, procession);
     if (rope) {
       const rig = makeRopeRig();
       rig.position.set(rope[0], 0, rope[1]);
@@ -224,6 +345,74 @@ export class PalaceShow {
     }) : [];
     this.t = 0;
   }
+  makeProcession(scene, [ox, oz]) {
+    const stops = ROYAL_ROUTE.stops.map(([x, z]) => [x + ox, z + oz]);
+    const lady = () => performer(scene, { model: 'hanbok-gungnyeo', skirt: 'chima-navy', tee: null, hair: 'black', dye: 'black', hairStyle: 'bun' }, null);
+    const people = ROYAL_ORDER.map((o) => {
+      let ch, npc = null;
+      if (o.who === 'king') {
+        npc = makeNpc(this.layer, '👑 임금님', { ...randomLook(), model: 'hanbok-gonryongpo', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' });
+        ch = npc.ch;
+        ch.addProp('head', ikseongwan());
+        ch.addProp('body', roundel());
+        scene.add(ch.root);
+      } else if (o.who === 'eunuch') {
+        ch = performer(scene, { model: 'hanbok-dallyeong', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' }, null);
+        ch.addProp('head', samo());
+        ch.addProp('body', parasol());
+      } else ch = lady();
+      return { ...o, ch, npc };
+    });
+    const [sx, sz] = stops[0];
+    return { stops, people, at: 0, prev: -1, to: null, pause: 3, x: sx, z: sz, dir: [0, -1], trail: [[sx, sz], [sx, sz + 8]], waveT: 6 + Math.random() * 6 };
+  }
+  // Where the procession is now (for the debug hook and tests).
+  royalSpot() { return this.royal && { x: this.royal.x, z: this.royal.z, stopped: this.royal.pause > 0 }; }
+  // A point `back` metres behind the front, along the path it walked.
+  trailAt(back) {
+    const tr = this.royal.trail;
+    let left = back;
+    for (let i = tr.length - 1; i > 0; i--) {
+      const [ax, az] = tr[i], [bx, bz] = tr[i - 1], d = Math.hypot(bx - ax, bz - az);
+      if (d >= left) { const t = d ? left / d : 0; return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, dx: ax - bx, dz: az - bz }; }
+      left -= d;
+    }
+    const [x, z] = tr[0], [x1, z1] = tr[1] || tr[0];
+    return { x, z, dx: x1 - x, dz: z1 - z };
+  }
+  updateRoyal(dt, me, camera, w, h, placeLabels) {
+    const R = this.royal;
+    let moving = false;
+    if (R.pause > 0) {
+      const was = R.pause;
+      R.pause -= dt;
+      // Arriving: the king waves to whoever is watching and the ladies and
+      // the eunuch bow; then all stand still for the photos.
+      if (was > ROYAL_PAUSE - 0.05 && R.pause <= ROYAL_PAUSE - 0.05) {
+        for (const p of R.people) p.ch.play(p.who === 'king' ? 'wave' : 'bow');
+      }
+      if (R.pause <= 0) { R.to = nextStop(ROYAL_ROUTE, R.at, R.prev); R.prev = R.at; }
+    } else {
+      const [tx, tz] = R.stops[R.to], dx = tx - R.x, dz = tz - R.z, d = Math.hypot(dx, dz), step = ROYAL_SPEED * dt;
+      if (d <= step) {
+        R.x = tx; R.z = tz; R.at = R.to; R.pause = ROYAL_PAUSE + 0.01;
+      } else { R.x += (dx / d) * step; R.z += (dz / d) * step; moving = true; }
+      const last = R.trail[R.trail.length - 1];
+      if (Math.hypot(R.x - last[0], R.z - last[1]) > 0.3) { R.trail.push([R.x, R.z]); if (R.trail.length > 80) R.trail.shift(); }
+      // Now and then on the way, the king waves.
+      if ((R.waveT -= dt) <= 0) { R.waveT = 8 + Math.random() * 8; R.people.find((p) => p.who === 'king').ch.wave(); }
+    }
+    const on = Math.hypot(me.x - R.x, me.z - R.z) < NEAR;
+    for (const p of R.people) {
+      p.ch.root.visible = on;
+      if (!on) { if (p.npc) { p.npc.tag.style.display = 'none'; } continue; }
+      const t = this.trailAt(p.back), len = Math.hypot(t.dx, t.dz) || 1, fx = t.dx / len, fz = t.dz / len;
+      p.ch.root.position.set(t.x + fz * p.side, 0, t.z - fx * p.side);
+      if (moving) p.ch.root.rotation.y = Math.atan2(fx, fz);
+      p.ch.animate(dt, moving ? 0.32 : 0);
+      if (p.npc) placeLabels?.(p.npc, camera, w, h);
+    }
+  }
   // The gate guard you're next to, if any.
   nearGuard(x, z) {
     return this.guards.find((o) => Math.hypot(x - o.home.x, z - o.home.z) < 2.8) || null;
@@ -239,6 +428,7 @@ export class PalaceShow {
   update(dt, me, camera, w, h, placeLabels) {
     this.t += dt;
     const t = this.t;
+    if (this.royal) this.updateRoyal(dt, me, camera, w, h, placeLabels);
     for (const o of this.guards) {
       const on = Math.hypot(me.x - o.home.x, me.z - o.home.z) < NEAR;
       o.ch.root.visible = on;
@@ -311,5 +501,6 @@ export class PalaceShow {
   }
   hideLabels() {
     for (const o of this.guards) for (const el of [o.tag, o.bubble]) if (el) el.style.display = 'none';
+    for (const p of this.royal?.people || []) if (p.npc) for (const el of [p.npc.tag, p.npc.bubble]) if (el) el.style.display = 'none';
   }
 }

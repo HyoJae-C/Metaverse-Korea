@@ -33,11 +33,12 @@ const roads = [
   { k: 'secondary', w: 8, p: [[24, -8], [24, -40]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
   { k: 'tertiary', w: 7, p: [[-6, -40], [126, -40]], n: N('북촌로5길', 'Bukchon-ro 5-gil', '北村路5ギル', '北村路5街') },
   // Up the hill: the main alley to the top, two alleys across, two side alleys.
-  { k: 'walk', w: 4, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
-  { k: 'walk', w: 3.5, p: [[-6, -112], [126, -112]] },
-  { k: 'walk', w: 3.5, p: [[-6, -140], [126, -140]] },
-  { k: 'walk', w: 3.5, p: [[18, -66], [18, -158]] },
-  { k: 'walk', w: 3.5, p: [[102, -84], [102, -158]] },
+  // Narrow, like the real alleys: the house walls stand right at the edge.
+  { k: 'walk', w: 3.2, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
+  { k: 'walk', w: 2.6, p: [[-6, -112], [126, -112]] },
+  { k: 'walk', w: 2.6, p: [[-6, -140], [126, -140]] },
+  { k: 'walk', w: 2.6, p: [[18, -66], [18, -158]] },
+  { k: 'walk', w: 2.6, p: [[102, -84], [102, -158]] },
 ];
 
 const areas = [
@@ -52,29 +53,14 @@ for (let x = 31; x + 22 <= 126; x += 24) add(rect(x, -18, x + 22, -34), { fr: [0
 add(rect(-6, -18, 18, -34), { fr: [0, -1] });
 for (const [x0, x1] of [[-6, 16], [20, 42], [64, 80]]) add(rect(x0, -46, x1, -62), { fr: [0, 1] }); // north side
 
-// Everything up the hill is homes: a grid of small hanok, kept off the alleys
-// and out of the Open House and the lookout at the top.
+// Everything up the hill is homes: blocks between the alleys, filled with
+// small hanok side by side whose walls line the alleys (as in the real
+// Gahoe-dong lanes), kept out of the Open House and the lookout at the top.
 const OPEN = BUKCHON.openHouse.box; // [x0, z0, x1, z1]
 const segDist = (x, z, [x1, z1], [x2, z2]) => {
   const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz;
   const t = l2 ? Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2)) : 0;
   return Math.hypot(x - (x1 + dx * t), z - (z1 + dz * t));
-};
-const clearOfRoads = (x0, z0, x1, z1) => {
-  for (const r of roads) {
-    const keep = r.w / 2 + (r.k === 'walk' ? 0.8 : 1.6);
-    for (let i = 1; i < r.p.length; i++) {
-      for (const [x, z] of [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [(x0 + x1) / 2, z0], [(x0 + x1) / 2, z1], [x0, (z0 + z1) / 2], [x1, (z0 + z1) / 2], [(x0 + x1) / 2, (z0 + z1) / 2]]) {
-        if (segDist(x, z, r.p[i - 1], r.p[i]) < keep) return false;
-      }
-      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i];
-      for (let k = 0; k <= 20; k++) {
-        const x = ax + ((bx - ax) * k) / 20, z = az + ((bz - az) * k) / 20;
-        if (x > x0 - keep && x < x1 + keep && z < z0 + keep && z > z1 - keep) return false;
-      }
-    }
-  }
-  return true;
 };
 const overlaps = (x0, z0, x1, z1) => buildings.some((b) => {
   const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
@@ -83,17 +69,35 @@ const overlaps = (x0, z0, x1, z1) => buildings.some((b) => {
 const inOpen = (x0, z0, x1, z1) => x1 > OPEN[0] - 2 && x0 < OPEN[2] + 2 && z1 < OPEN[1] + 2 && z0 > OPEN[3] - 2;
 const LOOK = { x0: 18, x1: 102, z: -159 }; // the lookout at the top (terrace)
 const inLookout = (x0, z0, x1, z1) => x1 > LOOK.x0 && x0 < LOOK.x1 && z1 < LOOK.z;
-const D = 10, GAP = 1;
-for (let iz = 0, z = -66; z - D >= -184; iz++, z -= D + GAP) {
-  for (let ix = 0, x = -8; x + 10 <= 128; ix++) {
-    const W = 10 + ((ix * 7 + iz * 3) % 4); // 10-13 m wide: not all the same
-    const x0 = x, x1 = Math.min(x + W, 128), z0 = z, z1 = z - D;
-    x += W + GAP;
-    if (!clearOfRoads(x0, z0, x1, z1) || overlaps(x0, z0, x1, z1) || inOpen(x0, z0, x1, z1) || inLookout(x0, z0, x1, z1)) continue;
-    const r = Math.round;
-    add(rect(r(x0 * 10) / 10, r(z0 * 10) / 10, r(x1 * 10) / 10, r(z1 * 10) / 10), { h: 5 });
-  }
+// Splits [a, b] into n parts of slightly different sizes, a gap between them.
+const split = (a, b, n, gap, seed) => {
+  const wts = Array.from({ length: n }, (_, i) => 1 + 0.22 * Math.sin(seed * 1.7 + i * 2.3));
+  const sum = wts.reduce((s, w) => s + w, 0), free = b - a - gap * (n - 1), out = [];
+  let x = a;
+  for (const w of wts) { const len = (free * w) / sum; out.push([x, x + len]); x += len + gap; }
+  return out;
+};
+const walkX = roads.filter((r) => r.k === 'walk' && r.p[0][0] === r.p[1][0]).map((r) => ({ x: r.p[0][0], hw: r.w / 2 }));
+const walkZ = roads.filter((r) => r.k === 'walk' && r.p[0][1] === r.p[1][1]).map((r) => ({ z: r.p[0][1], hw: r.w / 2 }));
+const EDGE = 0.15; // from a house wall to the alley's edge
+const cols = [], bands = [];
+{
+  let x = -8;
+  for (const w of [...walkX].sort((a, b) => a.x - b.x)) { cols.push([x, w.x - w.hw - EDGE]); x = w.x + w.hw + EDGE; }
+  cols.push([x, 128]);
+  let z = -66;
+  for (const w of [...walkZ].sort((a, b) => b.z - a.z)) { bands.push([z, w.z + w.hw + EDGE]); z = w.z - w.hw - EDGE; }
+  bands.push([z, -184]);
 }
+const r1 = (v) => Math.round(v * 10) / 10;
+cols.forEach(([cx0, cx1], ci) => bands.forEach(([bz0, bz1], bi) => {
+  const xs = split(cx0, cx1, Math.max(1, Math.round((cx1 - cx0) / 12)), 0.4, ci * 5 + bi);
+  const zs = split(bz1, bz0, Math.max(1, Math.round((bz0 - bz1) / 11)), 0.4, ci + bi * 3);
+  for (const [x0, x1] of xs) for (const [z1, z0] of zs) {
+    if (overlaps(x0, z0, x1, z1) || inOpen(x0, z0, x1, z1) || inLookout(x0, z0, x1, z1)) continue;
+    add(rect(r1(x0), r1(z0), r1(x1), r1(z1)), { h: 5 });
+  }
+}));
 
 // Which way each hanok faces: towards its nearest street (fr, a unit step on
 // the map), and how high it stands on its stone terrace up the hill (lv, m:
@@ -121,6 +125,48 @@ for (const b of buildings) {
 
 }
 
+// A few homes open their courtyard to visitors (출입 가능): a sign by the
+// gate, the gate open, and you can walk into the yard. They are always ㄷ
+// shaped with the gate in the middle of the front (core/hanok.js), so the
+// solid parts can be listed here: the three wings and the front wall.
+const VISIT = N('출입 가능', 'Visitors welcome', '見学できます', '欢迎参观');
+const VISIT_TEXT = N(
+  '이 집은 마당을 방문객에게 열어 두었어요. 조용히 둘러봐 주시고, 방 안이나 장독대는 만지지 말아 주세요.',
+  'This home opens its courtyard to visitors. Look round quietly, and please don\'t go into the rooms or touch the jars.',
+  'この家は中庭を見学者に開放しています。静かに見て回り、部屋に入ったり甕に触れたりしないでください。',
+  '这户人家向游客开放院子。请安静参观，不要进入房间或触碰酱缸。',
+);
+const visitBlockers = [], visitMarks = [];
+{
+  const main = walkX.find((w) => w.x === 60);
+  const cands = buildings.filter((b) => {
+    if (b.h >= 6 || !b.fr || b.fr[1] !== 0) return false;
+    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+    const near = b.fr[0] < 0 ? Math.min(...xs) : Math.max(...xs);
+    return Math.abs(Math.abs(near - main.x) - main.hw - EDGE) < 0.3 && Math.max(...zs) - Math.min(...zs) >= 10 && Math.max(...xs) - Math.min(...xs) >= 9;
+  }).sort((a, b) => b.p[0][1] - a.p[0][1]);
+  const pickAt = [0, Math.floor(cands.length / 2), cands.length - 1];
+  for (const b of [...new Set(pickAt.map((i) => cands[i]).filter(Boolean))]) {
+    b.visit = 1;
+    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const L = Math.max(...zs) - Math.min(...zs), D = Math.max(...xs) - Math.min(...xs); // faces along x
+    const ry = Math.atan2(b.fr[0], b.fr[1]), c = Math.cos(ry), sn = Math.sin(ry);
+    const W = (lx, lz) => [r1(cx + lx * c + lz * sn), r1(cz - lx * sn + lz * c)];
+    const box = (ax, az, bx, bz) => ({ p: [W(ax, az), W(bx, az), W(bx, bz), W(ax, bz)] });
+    // (the same sizes as home() in core/hanok.js)
+    const back = Math.min(5.5, D * 0.48), side = Math.min(4.6, L * 0.34), zb = -D / 2 + back / 2 + 0.4, len = D - back - 1.6, zf = D / 2 - 0.3;
+    visitBlockers.push(box(-L / 2, -D / 2, L / 2, zb + back / 2 + 0.35)); // the main wing along the back
+    for (const sx of [-1, 1]) {
+      const x = sx * (L / 2 - side / 2 - 0.4);
+      visitBlockers.push(box(x - side / 2 - 0.4, zb + back / 2, x + side / 2 + 0.4, zb + back / 2 + 0.4 + len + 0.2)); // the side wings
+      visitBlockers.push(box(sx * 1.4, zf - 0.3, sx * L / 2, zf + 0.3)); // the front wall either side of the gate
+    }
+    const [sx, sz] = W(2.6, D / 2 + 0.25); // on the front wall, beside the gate
+    visitMarks.push({ type: 'sign', x: sx, z: sz, ry, y: r1(ground(sx, sz)), title: VISIT, text: VISIT_TEXT, visit: 1 });
+  }
+}
+
 // The Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south
 // wall. Its walls and wings are blockers (drawn by the landmark).
 const [ox0, oz0, ox1, oz1] = OPEN; // x0 < x1, z0 > z1 (z0 is the south side)
@@ -131,6 +177,7 @@ const blockers = [
   { p: rect(ox0, oz0, BUKCHON.openHouse.gate[0] - 2.5, oz0 - 1) }, // south wall, left of the gate
   { p: rect(BUKCHON.openHouse.gate[0] + 2.5, oz0, ox1, oz0 - 1) }, // and right of it
   { p: rect(58.5, -179.5, 61.5, -182.5) }, // the lookout's coin telescope
+  ...visitBlockers, // the homes open to visitors: their wings and front walls (not the yard)
 ];
 
 // A low granite retaining wall (chukdae) round the village holds up the hill
@@ -185,6 +232,7 @@ const landmarks = [
   ...GATES.map((g) => ({ type: 'bukchongate', x: g.at[0], z: g.at[1], ry: g.ry || 0, w: g.w, main: !!g.main })),
   { type: 'openhouse', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, w: ox1 - ox0, d: oz0 - oz1 },
   { type: 'terrace', x: 60, z: -172, y: ground(60, -172) }, // the lookout at the top, the photo spot in its gap
+  ...visitMarks, // 출입 가능 by the open homes' gates
   ...[[55, -86, 0], [14.5, -86, 0], [106, -86, 0]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, y: ground(x, z), title: QUIET.title, text: QUIET.text })),
 ];
 
