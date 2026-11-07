@@ -176,8 +176,8 @@ export const EXHIBITS = [
     id: 'brazier', kogl: 58582, era: { ko: '1952년', en: '1952' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
     title: { ko: '화롯불로 요리하는 모습', en: 'Cooking over a Small Brazier' },
     desc: {
-      ko: '1952년 7월 대구에서 찍은 사진이에요. 작은 화롯불로 요리를 하고 있어요.',
-      en: 'Taken in Daegu in July 1952: cooking over a small brazier.',
+      ko: '1952년 7월 대구에서 찍은 사진이에요. 한복을 입은 두 사람이 작은 화로에 냄비를 올려 요리하고 있어요.',
+      en: 'Taken in Daegu in July 1952: two women in hanbok cooking on small braziers.',
     },
   }),
   E({
@@ -192,8 +192,8 @@ export const EXHIBITS = [
     id: 'hospital-lounge', kogl: 58584, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
     title: { ko: '병원 휴게실', en: 'A Hospital Rest Room' },
     desc: {
-      ko: '1950년대 대구의 병원에서 근무하던 사람들이 쉬던 휴게실이에요.',
-      en: 'The room where hospital staff took their breaks, in 1950s Daegu.',
+      ko: '1950년대 대구의 병원에서 근무하던 사람들이 쉬던 휴게실이에요. 문 위 간판에 "DAY ROOM, 25th EVAC HOSPITAL"이라고 적혀 있어요.',
+      en: 'The room where hospital staff took their breaks, in 1950s Daegu. The sign over the door reads "Day Room, 25th Evac Hospital".',
     },
   }),
   E({
