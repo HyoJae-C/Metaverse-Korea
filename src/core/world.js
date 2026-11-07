@@ -235,6 +235,8 @@ function makeBuildings(buildings) {
     const tint = (bi * 7 + p.length) % WALL_TINTS.length;
     col.setHex(WALL_TINTS[tint]);
     roofCol.setHex(ROOF_TINTS[tint]);
+    if (b.wall) col.set(b.wall); // (a landmark building in its own stone, e.g. the War Memorial)
+    if (b.roof) roofCol.set(b.roof);
 
     let u = 0;
     for (let i = 0; i < p.length; i++) {
