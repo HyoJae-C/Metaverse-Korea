@@ -4435,7 +4435,7 @@ function skateTick(dt, p) {
     }
   }
   const g = parkGround(x, z);
-  const { y, events } = skater.step(dt, g, railNear(x, z, skater.grind ? 0.9 : 0.6));
+  const { y, events } = skater.step(dt, g, railNear(x, z, skater.grind ? 1.1 : 0.9));
   const landedNow = !skater.air && !skater.grind && skateY - g.y > 0.25;
   skateY = y;
   if (landedNow && !events.some((e) => e.kind === 'bail')) sfx.skateLand(true);

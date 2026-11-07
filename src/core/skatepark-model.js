@@ -96,7 +96,7 @@ export function buildSkatepark(g) {
       // Curve up to the coping, then the deck (as thick as the wall behind it).
       const pts = [];
       for (let k = 0; k <= 16; k++) { const s = k / 16; pts.push([r.u0 + r.dir * s * r.len, r.h * s * s + 0.03]); }
-      const top = r.u0 + r.dir * r.len, back = top + r.dir * QP_WALL;
+      const top = r.u0 + r.dir * r.len, back = top + r.dir * ((r.deck || 0) + QP_WALL);
       pts.push([back, r.h + 0.03], [back, 0], [r.u0, 0]);
       profile(g, pts, r.z0, r.z1, mat(CONCRETE));
       const cop = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, r.z1 - r.z0, 10).rotateX(Math.PI / 2), mat(STEEL));
@@ -215,7 +215,7 @@ export function buildSkatepark(g) {
     for (const sx of [-0.9, 0.9]) box(g, 0.08, 0.45, 0.5, x + sx, 0.225, -hz + 1.2, '#3a3d44');
   }
   // A few cones by the south kickers.
-  for (const [x, z] of [[-3, 16], [0, 16.5], [3, 16]]) {
+  for (const [x, z] of [[-3, 21], [0, 21.5], [3, 21]]) {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 10), mat('#ff7a2f'));
     cone.position.set(x, 0.28, z);
     g.add(cone);

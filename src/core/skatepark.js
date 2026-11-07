@@ -3,10 +3,11 @@
 // it can be unit-tested; the scenery is in skatepark-model.js.
 //
 // Layout in metres from the park's centre: +x east, +z south (down on the
-// map). A concrete pad 64 × 44 m with a fence round it and the gate on the
+// map). A concrete pad 88 × 60 m with a fence round it and the gate on the
 // north side (towards Olympic-ro). Quarter pipes at the west and east
-// ends, a funbox in the middle, two kickers in the south (one jumping east,
-// one west, side by side) and two grind rails.
+// ends (with a flat deck on top), a funbox in the middle, two kickers in the
+// south (one jumping east, one west, in their own lanes) and two grind
+// rails, each with a low ramp up to its start.
 //
 // Riding (bike, skateboard, inline skates or kick scooter from the bike
 // shop) you go up and over the ramps; a ramp that ends in a lip throws you
@@ -14,33 +15,38 @@
 // while you are in the air. A trick that fits the air time left is picked
 // for you, so landing is easy; land in the middle of a trick and you bail.
 // Tricks one after another (in the air, or within a moment of landing)
-// make a combo: each trick in it counts once more.
+// make a combo: each different trick or rail in it raises the multiplier
+// (up to ×5). A grind is one entry that grows while you slide, up to a cap.
 
-export const PARK = { hx: 32, hz: 22, gate: [19, 31] }; // half-width, half-depth; the gate's x span on the north fence
+export const PARK = { hx: 44, hz: 30, gate: [16, 28] }; // half-width, half-depth; the gate's x span on the north fence
 export const PARK_SPEED = 9; // m/s: rides slow down to this inside the park (ramps are small)
 export const GRAVITY = 15;
 export const POP = 4.2; // m/s up for an ollie from flat ground
-export const MAX_VY = 7.5;
-export const VERT_POP_VY = 10; // popping on the way up a quarter pipe
+export const MAX_VY = 10;
+export const VERT_POP_VY = 14; // popping on the way up a quarter pipe
 export const COMBO_GAP = 1.2; // seconds on the ground before a combo is counted
 
 // Ramps along x: `dir` +1 rises towards +x, -1 towards -x. `u0` is the toe
 // (where it starts), `len` how far it rises, `h` its height.
-//   quarter: curves up to a wall (a quarter pipe); near the top you go
-//            straight up ("vert") and come back down.
+//   quarter: curves up to a flat deck `deck` m deep, with a wall behind it
+//            (a quarter pipe); near the top you go straight up ("vert")
+//            and come back down.
 //   kicker:  a straight wedge with a lip: ride off it into the air.
 //   funbox:  up, a flat top, and down the other side.
 export const RAMPS = [
-  { id: 'qp-west', kind: 'quarter', dir: -1, u0: -23, len: 7.5, h: 2.0, z0: -18, z1: 18 },
-  { id: 'qp-east', kind: 'quarter', dir: 1, u0: 23, len: 7.5, h: 2.0, z0: -18, z1: 18 },
-  { id: 'funbox', kind: 'funbox', u0: -6, len: 3, top: 6, h: 0.8, z0: -3.5, z1: 3.5 },
-  { id: 'kicker-west', kind: 'kicker', dir: 1, u0: -14, len: 3.6, h: 1.0, z0: 9, z1: 13 },
-  { id: 'kicker-east', kind: 'kicker', dir: -1, u0: 14, len: 3.6, h: 1.0, z0: 15, z1: 19 },
+  { id: 'qp-west', kind: 'quarter', dir: -1, u0: -31, len: 8.5, h: 3.0, deck: 3, z0: -26, z1: 26 },
+  { id: 'qp-east', kind: 'quarter', dir: 1, u0: 31, len: 8.5, h: 3.0, deck: 3, z0: -26, z1: 26 },
+  { id: 'funbox', kind: 'funbox', len: 4, top: 8, h: 1.4, z0: -6, z1: 6 },
+  { id: 'kicker-west', kind: 'kicker', dir: 1, u0: -22, len: 4.5, h: 1.6, z0: 13.5, z1: 20.5 },
+  { id: 'kicker-east', kind: 'kicker', dir: -1, u0: 22, len: 4.5, h: 1.6, z0: 21.5, z1: 28.5 },
+  // Low ramps up to the rails' starts: ride up and you're on the rail.
+  { id: 'rail-north-up', kind: 'kicker', dir: 1, u0: -22.5, len: 4, h: 0.6, z0: -19.2, z1: -16.8 },
+  { id: 'rail-east-up', kind: 'kicker', dir: 1, u0: 5.5, len: 4, h: 0.6, z0: 4.8, z1: 7.2 },
 ];
 // Grind rails: from a to b, top at height h.
 export const RAILS = [
-  { id: 'rail-north', a: [-15, -13], b: [3, -13], h: 0.5 },
-  { id: 'rail-east', a: [8, 3], b: [18, 3], h: 0.5 },
+  { id: 'rail-north', a: [-19, -18], b: [7, -18], h: 0.6 },
+  { id: 'rail-east', a: [9, 6], b: [27, 6], h: 0.6 },
 ];
 // Walls you can't ride through (park coordinates), besides the fence: the
 // backs of the quarter pipes.
@@ -64,7 +70,8 @@ function rampAt(r, x, z) {
     const s = u / r.len;
     return { y: r.h * Math.pow(s, 1.25), s, r };
   }
-  // quarter: curves up (steeper and steeper) to the wall at the top.
+  // quarter: curves up (steeper and steeper) to the deck at the top.
+  if (u > r.len + (r.deck || 0)) return null;
   const s = Math.min(1, u / r.len);
   return { y: r.h * s * s, s, r };
 }
@@ -83,7 +90,7 @@ export function parkGround(x, z) {
 export const inPark = (x, z, pad = 0) => Math.abs(x) <= PARK.hx + pad && Math.abs(z) <= PARK.hz + pad;
 
 // The nearest rail within `reach` of (x, z): { rail, t (0..1 along it), d }.
-export function railNear(x, z, reach = 0.6) {
+export function railNear(x, z, reach = 0.9) {
   let best = null;
   for (const rail of RAILS) {
     const [ax, az] = rail.a, [bx, bz] = rail.b;
@@ -96,7 +103,7 @@ export function railNear(x, z, reach = 0.6) {
 }
 
 // Polygons for the map's "blockers" (world metres): the fence (with the
-// gate left open) and the walls behind the quarter pipes.
+// gate left open) and the walls behind the quarter pipes' decks.
 export function parkBlockers(cx, cz) {
   const { hx, hz, gate } = PARK, T = 0.4;
   const rect = (x0, z0, x1, z1) => ({ p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => [cx + x, cz + z]) });
@@ -107,7 +114,7 @@ export function parkBlockers(cx, cz) {
     rect(-hx - T, -hz, -hx, hz), // west
     rect(hx, -hz, hx + T, hz), // east
     ...RAMPS.filter((r) => r.kind === 'quarter').map((r) => {
-      const top = r.u0 + r.dir * r.len; // the coping
+      const top = r.u0 + r.dir * (r.len + (r.deck || 0)); // the back of the deck
       const [x0, x1] = r.dir > 0 ? [top, top + QP_WALL] : [top - QP_WALL, top];
       return rect(x0, r.z0, x1, r.z1);
     }),
@@ -200,7 +207,9 @@ export const GRIND_NAME = {
   inline: { en: 'Soul Grind', ko: '소울 그라인드', ja: 'ソウルグラインド', zh: '灵魂滑杆' },
   kick: { en: 'Feeble Grind', ko: '피블 그라인드', ja: 'フィーブルグラインド', zh: '弱滑杆' },
 };
-export const GRIND_PTS = 60; // to get on the rail, then per second on it
+export const GRIND_PTS = 60; // to get on the rail
+export const GRIND_TICK = 10; // every half second on it
+export const GRIND_MAX = 200; // one grind's most
 export const NO_POSE = { spin: 0, flip: 0, roll: 0, rideRoll: 0, rideSpin: 0, tuck: 0 };
 
 // The trick's pose at t seconds after it started (null once it is over).
@@ -213,9 +222,10 @@ export function trickPose(id, t) {
 // Which trick to do with `air` seconds left in the air: the highest tier
 // whose tricks still fit, taking turns among its five.
 // n: how many tricks you have done (for the turns). null if nothing fits.
+export const TIER_AIR = [0, 0.45, 0.68, 1.0, 1.5]; // seconds of air each tier needs
 export function tierFor(air) {
   let t = 0;
-  for (let k = 1; k < TIER_DUR.length; k++) if (TIER_DUR[k] <= air * 0.95) t = k;
+  for (let k = 1; k < TIER_AIR.length; k++) if (air >= TIER_AIR[k]) t = k;
   return t;
 }
 export function pickTrick(type, air, n = 0) {
@@ -240,6 +250,8 @@ export class Skater {
   reset() {
     this.y = 0; this.vy = 0; this.air = false; this.vert = false;
     this.grind = null; // { rail, t, time }
+    this.offRail = null; // { rail, t }: just dropped off this rail
+    this.fromY = null; // height you took off from (in the air)
     this.trick = null; // { id, t }
     this.done = 0; // tricks done (for picking)
     this.combo = []; // points of tricks in the combo so far
@@ -248,7 +260,9 @@ export class Skater {
     this.popAsked = false;
   }
   get comboPts() { return this.combo.reduce((a, b) => a + b, 0); }
-  get mult() { return Math.min(5, this.combo.length); }
+  // Different tricks and rails in a combo raise the multiplier (up to ×5);
+  // doing the same one again doesn't.
+  get mult() { return Math.min(5, new Set(this.used).size); }
   // Tap Trick: pop off the ground (or the rail), or do a trick in the air.
   tap() { this.popAsked = true; }
   // Leaving the park or getting off: count the combo so far (if you were
@@ -262,6 +276,7 @@ export class Skater {
   // Stopped on a rail (or steered off it): drop down.
   leaveRail() {
     if (!this.grind) return;
+    this.offRail = { rail: this.grind.rail, t: 0.6 };
     this.grind = null;
     this.air = true;
     this.vy = 0;
@@ -280,6 +295,18 @@ export class Skater {
     this.ground = 0;
     events.push({ kind: 'trick', trick: k, pts, mult: this.mult });
   }
+  _startGrind(rail, events) {
+    this.y = rail.rail.h; this.fromY = null;
+    // The same rail again in one combo counts for less each time.
+    const key = 'grind:' + rail.rail.id, again = this.used.filter((id) => id === key).length;
+    this.used.push(key);
+    const scale = 1 / (1 + again);
+    this.grind = { rail: rail.rail, t: rail.t, t0: rail.t, best: rail.t, dir: 0, time: 0, entry: this.combo.length, scale };
+    const pts = Math.round(GRIND_PTS * scale);
+    this.combo.push(pts);
+    this.ground = 0;
+    events.push({ kind: 'grind', pts, mult: this.mult, start: true });
+  }
   _endCombo(events) {
     if (!this.combo.length) return;
     const mult = this.mult, total = this.comboPts * mult;
@@ -294,23 +321,35 @@ export class Skater {
     dt = Math.min(dt, 0.05);
     const tap = this.popAsked;
     this.popAsked = false;
+    if (this.offRail && (this.offRail.t -= dt) <= 0) this.offRail = null;
+    if (rail && this.offRail?.rail === rail.rail) rail = null;
     if (this.trick) {
       this.trick.t += dt;
       if (this.trick.t >= TRICK_BY_ID[this.trick.id].dur) this.trick = null;
     }
     if (this.grind) {
       // On the rail: follow it until you ride off its end (or pop off).
-      if (!rail || rail.rail !== this.grind.rail || rail.t <= 0 || rail.t >= 1 || tap) {
+      // Turning back along it drops you off too (no riding to and fro).
+      const back = this.grind.dir && rail && (rail.t - this.grind.best) * this.grind.dir < -0.01;
+      if (!rail || rail.rail !== this.grind.rail || rail.t <= 0 || rail.t >= 1 || tap || back) {
+        if (!tap) this.offRail = { rail: this.grind.rail, t: 0.6 }; // dropped off: not straight back on
         this.grind = null;
         this.air = true;
         this.vy = tap ? POP * 0.85 : 1.2;
         if (tap) this._startTrick(airTime(this.y, this.vy, g.y), events);
       } else {
+        if (!this.grind.dir && Math.abs(rail.t - this.grind.t0) > 0.01) this.grind.dir = Math.sign(rail.t - this.grind.t0);
+        if (this.grind.dir && (rail.t - this.grind.best) * this.grind.dir > 0) this.grind.best = rail.t;
         const before = Math.floor(this.grind.time * 2);
         this.grind.time += dt;
         this.grind.t = rail.t;
         this.y = rail.rail.h;
-        if (Math.floor(this.grind.time * 2) > before) { this.combo.push(GRIND_PTS / 2); events.push({ kind: 'grind', pts: GRIND_PTS / 2, mult: this.mult }); }
+        // The whole grind is one entry in the combo: it grows while you
+        // slide, up to GRIND_MAX (so it can't pile up the multiplier).
+        if (Math.floor(this.grind.time * 2) > before) {
+          const i = this.grind.entry, add = Math.round(Math.min(GRIND_TICK * this.grind.scale, GRIND_MAX * this.grind.scale - this.combo[i]));
+          if (add > 0) { this.combo[i] += add; events.push({ kind: 'grind', pts: add, mult: this.mult }); }
+        }
         return { y: this.y, events };
       }
     }
@@ -320,7 +359,7 @@ export class Skater {
         // higher up the more. You come down at the top (the coping).
         this.air = true; this.vert = true;
         // Air time (back down to the coping) grows the higher up you pop.
-        const A = 0.92 + 0.4 * clamp(g.s, 0, 1);
+        const A = 1.38 + 0.6 * clamp(g.s, 0, 1);
         this.vy = clamp((GRAVITY * A) / 2 - (this.y - g.r.h) / A, 5, VERT_POP_VY);
         this._startTrick(airTime(this.y, this.vy, g.r.h), events);
       } else if (tap) {
@@ -329,6 +368,11 @@ export class Skater {
         this.vy = clamp(Math.max(0, this.vy) + POP, POP, MAX_VY);
         this._startTrick(airTime(this.y, this.vy, g.y), events);
       } else {
+        // At the top of a rail's ramp, level with the rail: onto it.
+        if (rail && Math.abs(Math.max(g.y, this.y) - rail.rail.h) < 0.12 && rail.t > 0 && rail.t < 0.9) {
+          this._startGrind(rail, events);
+          return { y: this.y, events };
+        }
         // Stay on the ground only if it curves up at least as fast as a
         // throw would fall: off a lip or over a crest you fly.
         const yPred = this.y + this.vy * dt - 0.5 * GRAVITY * dt * dt;
@@ -353,29 +397,29 @@ export class Skater {
       }
     }
     // In the air.
+    if (this.fromY == null) this.fromY = this.y; // where you took off
     if (tap && !this.trick) this._startTrick(airTime(this.y, this.vy, g.y), events);
     this.vy -= GRAVITY * dt;
     this.y += this.vy * dt;
     // Coming down onto a rail: grind it.
     if (rail && this.vy < 0 && this.y <= rail.rail.h + 0.15 && this.y >= rail.rail.h - 0.35 && rail.t > 0.02 && rail.t < 0.98) {
-      this.air = false; this.vert = false; this.vy = 0; this.y = rail.rail.h;
+      this.air = false; this.vert = false; this.vy = 0;
       this.trick = null;
-      this.grind = { rail: rail.rail, t: rail.t, time: 0 };
-      this.combo.push(GRIND_PTS);
-      this.ground = 0;
-      events.push({ kind: 'grind', pts: GRIND_PTS, mult: this.mult, start: true });
+      this._startGrind(rail, events);
       return { y: this.y, events };
     }
     if (this.y <= g.y) {
-      // Landed. Mid-trick (less than three quarters done) is a bail.
+      // Landed. Mid-trick (less than three quarters done) is a bail, unless
+      // you came down on a ramp above where you took off (popped into it):
+      // then the trick is just cut short.
       const k = this.trick && TRICK_BY_ID[this.trick.id];
-      if (k && this.trick.t < k.dur * 0.75) {
+      if (k && this.trick.t < k.dur * 0.75 && g.y <= this.fromY + 0.15) {
         const lost = this.comboPts * this.mult;
         this.combo = []; this.used = [];
         events.push({ kind: 'bail', lost });
       }
       this.trick = null;
-      this.air = false; this.vert = false;
+      this.air = false; this.vert = false; this.fromY = null;
       this.y = g.y;
       this.vy = 0;
       this.ground = 0;
