@@ -138,9 +138,9 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1720, -440], [-1490, -440]],
+      "p": [[-1720, -440], [-1133, -440]],
       "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
-      "note": "Toegye-ro starts at Sungnyemun and runs east past Namsangol to DDP."
+      "note": "Toegye-ro starts at Sungnyemun and runs east to Namsangol and DDP."
     },
     {
       "k": "primary",
@@ -152,9 +152,9 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1699, -597], [-1490, -597]],
+      "p": [[-1699, -597], [-1133, -597]],
       "n": { "ko": "을지로", "en": "Eulji-ro", "ja": "乙支路", "zh": "乙支路" },
-      "note": "Eulji-ro from Sejong-daero (by City Hall) east into Euljiro."
+      "note": "Eulji-ro from Sejong-daero (by City Hall) east to DDP."
     },
     {
       "k": "tertiary",
@@ -164,18 +164,11 @@
       "note": "From Eulji-ro at DDP's corner north between the towers to Cheonggyecheon-ro, at the foot of Ogansugyo Bridge."
     },
     {
-      "k": "secondary",
-      "w": 10,
-      "p": [[-1410, -605], [-1410, -659]],
-      "n": { "ko": "수표로", "en": "Supyo-ro", "ja": "水標路", "zh": "水标路" },
-      "note": "Euljiro's Supyo-ro, north to Cheonggyecheon-ro."
-    },
-    {
       "k": "tertiary",
       "w": 8,
-      "p": [[-1275, -605], [-1275, -659]],
+      "p": [[-1133, -605], [-1133, -659]],
       "n": { "ko": "창경궁로", "en": "Changgyeonggung-ro", "ja": "昌慶宮路", "zh": "昌庆宫路" },
-      "note": "Euljiro's Changgyeonggung-ro, north to Cheonggyecheon-ro."
+      "note": "Changgyeonggung-ro, the west edge of the DDP district, north through the gap in the towers to Cheonggyecheon-ro and Baeogae Bridge."
     },
     {
       "k": "secondary",

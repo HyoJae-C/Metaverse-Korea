@@ -29,6 +29,7 @@
 // arrive later see it too. A few lanterns float by on their own, from the
 // clock, so the stream is never empty.
 import * as THREE from 'three';
+import { canvasTex } from './three-kit.js';
 
 export const WISH = { price: 5, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
 export const WISH_COLORS = ['#ff6b6b', '#ffb347', '#ffe066', '#7bd389', '#7ab8ff', '#c39bff', '#ff8fc7'];
@@ -50,7 +51,6 @@ const rng = (seed) => () => {
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
-const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const halfWater = (s) => (s.water || 8) / 2;
 
 // ---------- wish lanterns (pure) ----------
@@ -121,14 +121,6 @@ const mats = {};
 const lam = (c, o = {}) => (mats['l' + c + JSON.stringify(o)] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const glow = (c, o = {}) => (mats['g' + c + JSON.stringify(o)] ||= new THREE.MeshBasicMaterial({ color: c, ...o }));
 
-function canvasTex(w, h, draw) {
-  const cv = document.createElement('canvas');
-  cv.width = w; cv.height = h;
-  draw(cv.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(cv);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
 // A lantern's paper: a soft glow towards the middle and the thin dark ribs
 // of its frame.
 const paper = (base, rib = 'rgba(80,40,20,0.35)', ribs = 8) => canvasTex(64, 64, (g, w, h) => {
@@ -314,8 +306,6 @@ function moon() {
 
 const FIGURES = { carp, tiger, lotus, moon };
 export const FIGURE_KINDS = Object.keys(FIGURES);
-// How far around each figure the heron (core/heron.js) won't stand.
-export const FIGURE_CLEAR = 6;
 
 // Cheongsachorong: a red silk body with blue bands top and bottom and a gold cap.
 function corongParts() {

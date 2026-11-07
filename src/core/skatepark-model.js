@@ -6,17 +6,12 @@
 // you ride on. Collision is the map's "blockers" (parkBlockers).
 import * as THREE from 'three';
 import { PARK, RAMPS, RAILS, QP_WALL } from './skatepark.js';
+import { matCache, canvasTex as canvasTexture, addBox } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 const CONCRETE = '#c4c1ba', CONCRETE_DARK = '#a9a59d', STEEL = '#d9dde2', WOOD = '#c99a62', YELLOW = '#f2c230';
 
-function box(g, sx, sy, sz, x, y, z, c) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), typeof c === 'string' ? mat(c) : c);
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 // A side profile [x, y] (in park x and height) pushed across z0..z1.
 function profile(g, pts, z0, z1, m) {
   const sh = new THREE.Shape();
@@ -31,15 +26,7 @@ function profile(g, pts, z0, z1, m) {
   return mesh;
 }
 
-function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
+const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4 });
 
 // Painted wall art: bold blobs, drips and letters in spray-can colours.
 function graffiti(seed, words) {

@@ -4,9 +4,9 @@
 // low-poly parts in a few shared materials. Preview: dev/folk-games.html.
 import * as THREE from 'three';
 import { SPOT_XY, isBig } from './yut-game.js';
+import { matCache } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 function part(g, geo, m, x = 0, y = 0, z = 0) {
   const mesh = new THREE.Mesh(geo, typeof m === 'string' ? mat(m) : m);
   mesh.position.set(x, y, z);

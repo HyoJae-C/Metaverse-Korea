@@ -114,8 +114,8 @@ test('the ghost lantern keeps its own record next to the balloon booth', () => {
   assert.match(ui, /record: 'hauntGallery'/);
 });
 
-test('main.js opens the ghost lantern with its own panel (not the darts one)', () => {
-  const src = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+test('the arcade opens the ghost lantern with its own panel (not the darts one)', () => {
+  const src = readFileSync(new URL('../src/game/arcade.js', import.meta.url), 'utf8');
   assert.match(src, /kind === 'hauntGallery'[\s\S]{0,200}\$\('haunt-panel'\)/);
   assert.match(src, /else if \(kind === 'darts'\)/);
   assert.match(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /id="haunt-panel"/);

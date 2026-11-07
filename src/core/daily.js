@@ -4,6 +4,7 @@
 // Missions are picked from today's date, so everyone gets the same three on
 // the same day. Progress lives in this browser for now (like the wallet);
 // before rewards are worth anything, move it to the server.
+import { seededRandom } from './geom.js';
 
 const KEY = 'mk.daily';
 export const REWARD = { checkIn: 10, week: 30, mission: 10, allDone: 20 };
@@ -19,15 +20,7 @@ function prevDay(key) {
 }
 
 // Small deterministic RNG from a string (same day -> same missions).
-function rng(seed) {
-  let h = 2166136261;
-  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
-}
+const rng = seededRandom;
 
 // pool: { npcs: [name], stores: [{ id, pets }] }
 // Mission: { id, type, target?, need, n }

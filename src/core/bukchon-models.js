@@ -159,9 +159,9 @@ const BUILD = {
   // The rooftop view: a stone terrace with a railing on the south side and a
   // coin telescope.
   terrace(g) {
-    box(g, 82, 0.3, 22, 0, 0.15, 0, C.stone);
-    for (let x = -40; x <= 40; x += 4) if (Math.abs(x) > 6) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
-    for (const sx of [-1, 1]) box(g, 34, 0.15, 0.3, sx * 23, 1.4, 10.6, C.wood);
+    box(g, 24, 0.3, 22, 0, 0.15, 0, C.stone); // (small: houses line the alley right up to it)
+    for (let x = -11; x <= 11; x += 2.75) if (Math.abs(x) > 3) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
+    for (const sx of [-1, 1]) box(g, 8.5, 0.15, 0.3, sx * 7.4, 1.4, 10.6, C.wood);
     box(g, 0.5, 1.1, 0.5, 0, 0.85, -8, '#3a5a7a'); // telescope post
     box(g, 0.4, 0.4, 1.0, 0, 1.6, -7.8, '#3a5a7a');
   },
@@ -191,6 +191,25 @@ const BUILD = {
     box(g, len, H, 0.95, 0, H / 2 - y, 0, C.dark);
     for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.6, sz * 0.49, C.stone); // the stone pattern
     box(g, len + 0.1, 0.16, 1.05, 0, H - y + 0.08, 0, C.stone); // the capstones
+  },
+  // A stone planter with a small tree (a maple or a persimmon) or clipped
+  // shrubs, kept low.
+  planter(g, l) {
+    box(g, 1.6, 0.5, 1.6, 0, 0.25, 0, C.stone);
+    box(g, 1.4, 0.06, 1.4, 0, 0.5, 0, '#6b5a44');
+    const leaf = ['#7fae5a', '#d9773a', '#9cc06a'][Math.abs(Math.round(l.x * 7 + l.z)) % 3];
+    if (l.kind === 'bush') {
+      for (const [x, z, s] of [[-0.35, -0.3, 0.42], [0.35, 0.1, 0.38], [-0.1, 0.4, 0.34]]) {
+        const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(leaf));
+        b.position.set(x, 0.55 + s * 0.7, z);
+        g.add(b);
+      }
+    } else {
+      box(g, 0.18, 1.5, 0.18, 0, 1.25, 0, '#5e4330');
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 0), mat(leaf));
+      crown.position.set(0, 2.4, 0); crown.scale.set(1, 0.8, 1);
+      g.add(crown);
+    }
   },
   // The whole retaining wall as one landmark (l.segs: { x, z, len, ry, y },
   // x and z from the landmark's own spot), so it is one draw call, not one
@@ -234,23 +253,63 @@ export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f
 // The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
+// Paving, drawn once. 'alley': across the alley (u 0..1), dark grey slabs
+// down the middle with pale granite kerbs at both edges, as on Bukchon-ro
+// 11-gil; one tile is 2 m along. 'yard': big pale granite slabs, 1.6 m.
+const paveCache = {};
+function pavingTexture(kind) {
+  if (kind in paveCache) return paveCache[kind];
+  if (typeof document === 'undefined') return (paveCache[kind] = null);
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const x = c.getContext('2d');
+  if (kind === 'alley') {
+    x.fillStyle = '#c9c2b4'; x.fillRect(0, 0, 128, 128); // kerb stones
+    x.fillStyle = '#b7b0a3';
+    for (let i = 0; i < 4; i++) { x.fillRect(0, i * 32 + 30, 20, 2); x.fillRect(108, i * 32 + 30, 20, 2); }
+    x.fillStyle = '#6f6d6b'; x.fillRect(20, 0, 88, 128); // joints
+    const tones = ['#8e8b87', '#85827e', '#97938e', '#8a8783'];
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 2; i++) {
+      x.fillStyle = tones[(r + i * 2) % 4];
+      x.fillRect(22 + i * 43 + (r % 2 ? 6 : 0) * (i ? -1 : 1), r * 32 + 1, 41, 30);
+    }
+  } else {
+    x.fillStyle = '#bdb5a6'; x.fillRect(0, 0, 128, 128);
+    const tones = ['#ddd5c5', '#d5ccbb', '#e3dccd', '#d0c7b6'];
+    for (let r = 0; r < 2; r++) for (let i = 0; i < 2; i++) {
+      x.fillStyle = tones[r * 2 + i];
+      x.fillRect(i * 64 + 2 + (r ? 16 : 0) % 64, r * 64 + 2, 60, 60);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return (paveCache[kind] = t);
+}
+
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
   const [x0, , x1, z1] = BUKCHON.area, foot = BUKCHON.hill.foot;
-  const nx = 2, nz = Math.ceil((foot - z1) / 2);
+  // (fine enough across too: the hill is flat across x, but ground() is 0
+  // right on the edge, so the edge row is taken just inside it)
+  const nx = Math.ceil((x1 - x0) / 4), nz = Math.ceil((foot - z1) / 2);
   const geo = new THREE.PlaneGeometry(x1 - x0, foot - z1, nx, nz).rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (foot + z1) / 2;
-    pos.setXYZ(i, x + ox, ground(x, Math.min(z, foot - 0.01)) + 0.02, z + oz);
+    pos.setXYZ(i, x + ox, ground(Math.min(Math.max(x, x0 + 0.01), x1 - 0.01), Math.min(Math.max(z, z1 + 0.01), foot - 0.01)) + 0.02, z + oz);
   }
   geo.computeVertexNormals();
-  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: '#eadfc6' }));
+  { // the hillside between the houses is paved too (granite slabs, see pavingTexture)
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 1.6, pos.getZ(i) / 1.6);
+  }
+  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' }));
   earth.receiveShadow = true;
   g.add(earth);
   // Alleys: ribbons along each footpath, on the slope.
-  const pts = [], STEP = 1.5;
+  const pts = [], uvs = [], STEP = 1.5;
   for (const r of roads) {
     if (r.k !== 'walk') continue;
     for (let i = 1; i < r.p.length; i++) {
@@ -263,14 +322,17 @@ export function buildBukchonHill(roads, [ox, oz]) {
         });
         const [[a, b], [c, d]] = quad;
         pts.push(...a, ...b, ...d, ...a, ...d, ...c);
+        const v0 = (k * len) / n / 2, v1 = ((k + 1) * len) / n / 2; // one tile every 2 m along
+        uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
       }
     }
   }
   if (pts.length) {
     const rg = new THREE.BufferGeometry();
     rg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    rg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     rg.computeVertexNormals();
-    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ color: '#cbc2b1', side: THREE.DoubleSide }));
+    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(pavingTexture('alley') ? { map: pavingTexture('alley'), side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
     alleys.receiveShadow = true;
     g.add(alleys);
   }

@@ -137,12 +137,6 @@ const TAU = Math.PI * 2;
 const ease = (p) => p * p * (3 - 2 * p);
 const arc = (p) => Math.sin(p * Math.PI);
 export const TIER_DUR = [0, 0.42, 0.6, 0.82, 1.05]; // seconds a trick of each tier takes
-export const TIER_NAME = {
-  1: { en: 'Low air', ko: '낮은 체공', ja: '低い', zh: '低空' },
-  2: { en: 'Mid air', ko: '중간 체공', ja: '中くらい', zh: '中空' },
-  3: { en: 'High air', ko: '높은 체공', ja: '高い', zh: '高空' },
-  4: { en: 'Huge air', ko: '아주 높은 체공', ja: 'とても高い', zh: '超高空' },
-};
 const T = (tier, id, types, pts, name, pose) => ({ id, tier, types, dur: TIER_DUR[tier], pts, name, pose });
 const SK = ['skate'], IN = ['inline'], BK = ['bike', 'kick'];
 export const TRICKS = [

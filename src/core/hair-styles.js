@@ -48,7 +48,6 @@ export function buildHair(style, material, atlas, ey) {
     g.add(m);
     return m;
   };
-  const top = ey + 0.3; // forehead line
   // Every style starts from a cap over the skull, leaving the face clear.
   const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04) => add(sphere(r, 24, 14, 0, Math.PI * cover), 0, y, -0.04, 1.02, 1, 1, tilt);
   // A piece standing on the head at (x, y, z), its own +y pointing along dir

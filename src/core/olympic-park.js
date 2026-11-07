@@ -5,9 +5,9 @@
 // Collision for the gate's pillars comes from the map's blockers
 // (PEACE_GATE_PILLARS), so these are only visual.
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 
 // Pillar centres from the gate's centre (x along the wing, z across it) and
 // their half-size: shared with the map's blockers.

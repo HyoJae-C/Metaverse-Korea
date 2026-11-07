@@ -16,18 +16,13 @@
 //
 // Low-poly and not to scale; collision comes from the map's blockers.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = matCache({ flatShading: true });
 const GRANITE = '#cfcac0', GRANITE_DARK = '#a9a49a', NAMES = '#3a3d40', BRONZE = '#6f6a5a';
 const FONT = '"Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif';
 
-function box(g, sx, sy, sz, x, y, z, c) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 function cyl(g, rt, rb, h, x, y, z, c, seg = 12) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c));
   m.position.set(x, y, z);

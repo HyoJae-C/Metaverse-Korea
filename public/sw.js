@@ -8,6 +8,11 @@
 //   they are served from the cache once fetched;
 // - everything else (maps, models, books, sounds) is network-first with the
 //   cached copy as a fallback when offline.
+// "Network" means really asking the server: GitHub Pages tells browsers to
+// keep every file for 10 minutes, so a plain fetch() could hand back the old
+// page or old map data for that long after a deploy. Revalidating (cache:
+// 'no-cache') costs a small 304 when nothing changed and gets the new build
+// at once when something did.
 const VERSION = 'v1';
 const PAGES = `as-pages-${VERSION}`;
 const ASSETS = `as-assets-${VERSION}`;
@@ -29,7 +34,7 @@ self.addEventListener('activate', (e) => {
 async function networkFirst(req, cacheName, cacheKey = req) {
   const cache = await caches.open(cacheName);
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: 'no-cache' });
     if (res.ok && res.type === 'basic') cache.put(cacheKey, res.clone()).catch(() => {});
     return res;
   } catch (err) {
