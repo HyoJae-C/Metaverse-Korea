@@ -1,0 +1,566 @@
+{
+ "meta": {
+  "district": "olympic-park",
+  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park on the plaza is a game addition. Placed by its anchor, the World Peace Gate (region.json)."
+ },
+ "roads": [
+  {
+   "k": "secondary",
+   "w": 12,
+   "p": [
+    [
+     960,
+     180
+    ],
+    [
+     1300,
+     180
+    ]
+   ],
+   "n": {
+    "ko": "올림픽로",
+    "en": "Olympic-ro",
+    "ja": "オリンピック路",
+    "zh": "奥林匹克路"
+   }
+  },
+  {
+   "k": "walk",
+   "w": 7,
+   "p": [
+    [
+     1210,
+     186
+    ],
+    [
+     1210,
+     255
+    ]
+   ]
+  },
+  {
+   "k": "walk",
+   "w": 4,
+   "p": [
+    [
+     1120,
+     340
+    ],
+    [
+     1120,
+     520
+    ]
+   ]
+  },
+  {
+   "k": "walk",
+   "w": 4,
+   "p": [
+    [
+     970,
+     350
+    ],
+    [
+     1280,
+     350
+    ],
+    [
+     1280,
+     520
+    ],
+    [
+     970,
+     520
+    ],
+    [
+     970,
+     350
+    ]
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "h": 10,
+   "p": [
+    [
+     966,
+     198
+    ],
+    [
+     990,
+     198
+    ],
+    [
+     990,
+     214
+    ],
+    [
+     966,
+     214
+    ]
+   ],
+   "n": {
+    "ko": "올림픽공원 안내센터",
+    "en": "Olympic Park Information Center"
+   }
+  }
+ ],
+ "rail": [],
+ "areas": [
+  {
+   "k": "park",
+   "p": [
+    [
+     960,
+     340
+    ],
+    [
+     1290,
+     340
+    ],
+    [
+     1290,
+     530
+    ],
+    [
+     960,
+     530
+    ]
+   ]
+  },
+  {
+   "k": "plaza",
+   "p": [
+    [
+     960,
+     192
+    ],
+    [
+     1290,
+     192
+    ],
+    [
+     1290,
+     340
+    ],
+    [
+     960,
+     340
+    ]
+   ]
+  },
+  {
+   "k": "water",
+   "p": [
+    [
+     1160,
+     400
+    ],
+    [
+     1260,
+     400
+    ],
+    [
+     1260,
+     500
+    ],
+    [
+     1160,
+     500
+    ]
+   ]
+  }
+ ],
+ "blockers": [
+  {
+   "p": [
+    [
+     1162,
+     402
+    ],
+    [
+     1258,
+     402
+    ],
+    [
+     1258,
+     498
+    ],
+    [
+     1162,
+     498
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1036.1,
+     246.1
+    ],
+    [
+     1037.9,
+     246.1
+    ],
+    [
+     1037.9,
+     247.9
+    ],
+    [
+     1036.1,
+     247.9
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1036.1,
+     252.1
+    ],
+    [
+     1037.9,
+     252.1
+    ],
+    [
+     1037.9,
+     253.9
+    ],
+    [
+     1036.1,
+     253.9
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1062.1,
+     246.1
+    ],
+    [
+     1063.9,
+     246.1
+    ],
+    [
+     1063.9,
+     247.9
+    ],
+    [
+     1062.1,
+     247.9
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1062.1,
+     252.1
+    ],
+    [
+     1063.9,
+     252.1
+    ],
+    [
+     1063.9,
+     253.9
+    ],
+    [
+     1062.1,
+     253.9
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1059.4,
+     444.4
+    ],
+    [
+     1060.6,
+     444.4
+    ],
+    [
+     1060.6,
+     445.6
+    ],
+    [
+     1059.4,
+     445.6
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1143.6,
+     254.6
+    ],
+    [
+     1204,
+     254.6
+    ],
+    [
+     1204,
+     255
+    ],
+    [
+     1143.6,
+     255
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1216,
+     254.6
+    ],
+    [
+     1232.4,
+     254.6
+    ],
+    [
+     1232.4,
+     255
+    ],
+    [
+     1216,
+     255
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1143.6,
+     315
+    ],
+    [
+     1232.4,
+     315
+    ],
+    [
+     1232.4,
+     315.4
+    ],
+    [
+     1143.6,
+     315.4
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1143.6,
+     255
+    ],
+    [
+     1144,
+     255
+    ],
+    [
+     1144,
+     315
+    ],
+    [
+     1143.6,
+     315
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1232,
+     255
+    ],
+    [
+     1232.4,
+     255
+    ],
+    [
+     1232.4,
+     315
+    ],
+    [
+     1232,
+     315
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1144.9,
+     259
+    ],
+    [
+     1145.5,
+     259
+    ],
+    [
+     1145.5,
+     311
+    ],
+    [
+     1144.9,
+     311
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     1230.5,
+     259
+    ],
+    [
+     1231.1,
+     259
+    ],
+    [
+     1231.1,
+     311
+    ],
+    [
+     1230.5,
+     311
+    ]
+   ]
+  }
+ ],
+ "pois": [
+  {
+   "kind": "landmark",
+   "x": 1120,
+   "z": 380,
+   "name": {
+    "ko": "올림픽공원",
+    "en": "Olympic Park",
+    "ja": "オリンピック公園",
+    "zh": "奥林匹克公园"
+   }
+  },
+  {
+   "kind": "landmark",
+   "x": 1188,
+   "z": 285,
+   "name": {
+    "ko": "올림픽공원 스케이트파크",
+    "en": "Olympic Park Skate Park",
+    "ja": "オリンピック公園スケートパーク",
+    "zh": "奥林匹克公园滑板公园"
+   }
+  }
+ ],
+ "landmarks": [
+  {
+   "type": "peacegate",
+   "x": 1050,
+   "z": 250,
+   "label": {
+    "ko": "평화의문",
+    "en": "Peace Gate",
+    "ja": "平和の門",
+    "zh": "和平之门"
+   }
+  },
+  {
+   "type": "skatepark",
+   "x": 1188,
+   "z": 285,
+   "label": {
+    "ko": "스케이트파크",
+    "en": "Skate Park",
+    "ja": "スケートパーク",
+    "zh": "滑板公园"
+   }
+  },
+  {
+   "type": "lonetree",
+   "x": 1060,
+   "z": 445,
+   "label": {
+    "ko": "나홀로나무",
+    "en": "Lone Tree",
+    "ja": "ひとりぼっちの木",
+    "zh": "孤独树"
+   }
+  },
+  {
+   "type": "blossoms",
+   "p": [
+    [
+     972,
+     524
+    ],
+    [
+     1278,
+     524
+    ]
+   ],
+   "gap": 12
+  },
+  {
+   "type": "sign",
+   "x": 1080,
+   "z": 200,
+   "ry": 3.14159,
+   "title": {
+    "ko": "올림픽공원",
+    "en": "Olympic Park",
+    "ja": "オリンピック公園",
+    "zh": "奥林匹克公园",
+    "es": "Parque Olímpico",
+    "id": "Taman Olimpiade",
+    "vi": "Công viên Olympic",
+    "hi": "ओलंपिक पार्क",
+    "ar": "الحديقة الأولمبية"
+   },
+   "text": {
+    "ko": "1988 서울올림픽을 위해 만든 공원이에요. 평화의광장의 평화의문, 잔디 언덕 위 나홀로나무가 유명해요. 광장 동쪽 스케이트파크에서는 보드, 인라인, 자전거로 묘기를 부릴 수 있어요.",
+    "en": "A park built for the 1988 Seoul Olympics, known for the Peace Gate on the Peace Plaza and the lone tree on its grassy hill. In the skate park east of the plaza you can do tricks on boards, inline skates and bikes.",
+    "ja": "1988年ソウル五輪のために造られた公園。平和の広場の平和の門と、芝生の丘のひとりぼっちの木で有名です。広場東のスケートパークではスケボー・インライン・自転車で技を決められます。",
+    "zh": "为1988年首尔奥运会建造的公园，以和平广场上的和平之门和草坡上的孤独树闻名。广场东边的滑板公园可以用滑板、轮滑和自行车秀技巧。",
+    "es": "Parque construido para los Juegos Olímpicos de Seúl 1988, famoso por la Puerta de la Paz y el árbol solitario. En el skatepark puedes hacer trucos.",
+    "id": "Taman yang dibangun untuk Olimpiade Seoul 1988, terkenal dengan Gerbang Perdamaian dan pohon tunggal di bukit rumput. Di skatepark kamu bisa melakukan trik.",
+    "vi": "Công viên xây cho Thế vận hội Seoul 1988, nổi tiếng với Cổng Hòa bình và cây cô đơn trên đồi cỏ. Ở công viên trượt bạn có thể biểu diễn.",
+    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।",
+    "ar": "حديقة بُنيت لأولمبياد سيول 1988، تشتهر ببوابة السلام والشجرة الوحيدة على التل العشبي. في حديقة التزلج يمكنك أداء الحركات."
+   }
+  },
+  {
+   "type": "sign",
+   "x": 1202,
+   "z": 252.5,
+   "ry": 3.14159,
+   "title": {
+    "ko": "스케이트파크",
+    "en": "Skate Park",
+    "ja": "スケートパーク",
+    "zh": "滑板公园",
+    "es": "Skatepark",
+    "id": "Skatepark",
+    "vi": "Công viên trượt",
+    "hi": "स्केट पार्क",
+    "ar": "حديقة التزلج"
+   },
+   "text": {
+    "ko": "보드, 인라인, 자전거, 킥보드로 묘기를 부려 보세요. 탈것을 타고 묘기 버튼을 누르면 점프해요. 램프를 타고 날아오르고, 레일 위에 내려앉으면 그라인드! 탈것은 가방이나 자전거 가게에서.",
+    "en": "Do tricks on a board, inline skates, a bike or a kick scooter. Ride in and tap Trick to jump. Fly off the ramps, land on a rail to grind! Rides: your bag or a bike shop.",
+    "ja": "スケボー、インライン、自転車、キックボードで技を決めよう。乗ったまま「トリック」でジャンプ。ランプで飛び、レールに乗ればグラインド！乗り物はバッグか自転車店で。",
+    "zh": "用滑板、轮滑、自行车或滑板车来秀技巧吧。骑着按“技巧”就能跳。冲上坡道飞起来，落在栏杆上就能滑杆！车辆可在背包或自行车店获取。",
+    "es": "Haz trucos en tabla, patines, bici o patinete. Entra montado y pulsa Truco para saltar. ¡Vuela en las rampas y grindea en los rieles!",
+    "id": "Lakukan trik dengan papan, sepatu roda, sepeda atau skuter. Masuk sambil naik dan tekan Trik untuk melompat. Terbang dari ramp, mendarat di rel untuk grind!",
+    "vi": "Biểu diễn trên ván, giày patin, xe đạp hoặc xe trượt. Đi vào và bấm Mẹo để nhảy. Bay khỏi dốc, đáp lên thanh để trượt!",
+    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!",
+    "ar": "قم بالحركات على اللوح أو الزلاجات أو الدراجة أو السكوتر. ادخل راكبًا واضغط «حركة» للقفز. حلّق من المنحدرات وانزلق على القضبان!"
+   }
+  }
+ ]
+}

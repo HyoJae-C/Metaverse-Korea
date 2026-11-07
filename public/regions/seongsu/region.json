@@ -55,6 +55,15 @@
       "anchor": { "place": "Jamsil Station (Songpa-daero / Olympic-ro)", "lat": 37.5133, "lon": 127.1, "local": [540, 100], "nudge": [0, -151], "why": "Its Han River bank (local z -188) lines up with Seongsu's; the full-size Seongsu district puts the river nearer than the real 1/4 distance." }
     },
     {
+      "id": "olympic-park",
+      "map": "districts/olympic-park.json",
+      "offset": [
+        287,
+        446
+      ],
+      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250] }
+    },
+    {
       "id": "seodaemun",
       "map": "districts/seodaemun.json",
       "offset": [
@@ -74,6 +83,13 @@
     }
   ],
   "links": [
+    {
+      "k": "secondary",
+      "w": 12,
+      "p": [[1238, 720], [1238, 650], [1247, 626]],
+      "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
+      "note": "From Jamsil Station (east end of Songpa's Olympic-ro) north past the Peace Plaza to Olympic Park's Olympic-ro."
+    },
     {
       "k": "primary",
       "w": 16,

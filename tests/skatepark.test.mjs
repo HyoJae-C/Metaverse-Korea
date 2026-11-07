@@ -203,9 +203,9 @@ test('skate park: points add up for the day and keep the best combo (no coins)',
   assert.equal(next.best, 1000, 'best combo carries over');
 });
 
-test('skate park: on Olympic Park\'s Peace Plaza in Songpa, with a way in from Olympic-ro', () => {
+test('skate park: on Olympic Park\'s Peace Plaza, with a way in from Olympic-ro', () => {
   const region = read('region.json');
-  const d = region.districts.find((x) => x.id === 'songpa');
+  const d = region.districts.find((x) => x.id === 'olympic-park');
   const map = read(d.map);
   const lm = map.landmarks.find((l) => l.type === 'skatepark');
   assert.ok(lm);

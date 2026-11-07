@@ -709,10 +709,22 @@
       "category": "info",
       "workshop": "info",
       "size": "small",
-      "at": [898, 682],
+      "at": [930, 728],
       "district": "songpa",
       "name": { "en": "Songpa Information Center", "ko": "송파 안내센터", "ja": "松坡インフォメーションセンター", "zh": "松坡信息中心" },
       "tagline": { "en": "Two guides: how the game works, and everything around Seokchon Lake", "ko": "게임 안내와 송파 지역 안내, 두 명의 안내원", "ja": "ゲーム案内と松坡エリア案内の2人がご案内", "zh": "两位向导：游戏玩法和石村湖一带" },
+      "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
+      "products": []
+    },
+    {
+      "id": "info-olympic-park",
+      "category": "info",
+      "workshop": "info",
+      "size": "small",
+      "at": [1265, 638],
+      "district": "olympic-park",
+      "name": { "en": "Olympic Park Information Center", "ko": "올림픽공원 안내센터", "ja": "オリンピック公園インフォメーションセンター", "zh": "奥林匹克公园信息中心" },
+      "tagline": { "en": "Two guides: how the game works, and everything in Olympic Park", "ko": "게임 안내와 올림픽공원 안내, 두 명의 안내원", "ja": "ゲーム案内とオリンピック公園案内の2人がご案内", "zh": "两位向导：游戏玩法和奥林匹克公园" },
       "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
       "products": []
     },
