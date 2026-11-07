@@ -602,7 +602,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 150]; // Geunjeongjeon's courtyard
+const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 90]; // Geunjeongjeon's courtyard
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -3743,7 +3743,7 @@ const PALACE_TEXT = {
   leave: { en: 'Leave the palace', ko: '궁 밖으로 나가기', ja: '宮の外へ出る', zh: '出宫' },
   back: { en: 'For a better view for everyone, please stay a few steps back.', ko: '원활한 관람을 위해 몇 발자국 떨어져 주세요.', ja: '皆さまが快適にご覧いただけるよう、数歩下がってください。', zh: '为了大家更好地观看，请往后退几步。' },
 };
-const PALACE_SPOTS = { gate: [0, 13], inside: [0, -122], leave: [0, -100] }; // in the palace district's metres
+const PALACE_SPOTS = { gate: [0, 13], inside: [0, -68], leave: [0, -60] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
   const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;

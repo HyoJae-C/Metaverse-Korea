@@ -36,10 +36,10 @@ export function ringPoly(x, z, r, n = 24) {
 // courtyard (where 'Enter' brings you), so the king is never far away.
 export const ROYAL_ROUTE = {
   stops: [
-    [0, -104], // 0 just inside Heungnyemun
-    [-40, -118], [40, -118], // 1, 2 the lower courtyard
-    [-45, -185], [45, -185], // 3, 4 either side of Geunjeongjeon
-    [-45, -262], [45, -262], [0, -262], // 5, 6, 7 behind the hall
+    [0, -62], // 0 just inside Heungnyemun
+    [-24, -71], [24, -71], // 1, 2 the lower courtyard
+    [-33, -111], [33, -111], // 3, 4 either side of Geunjeongjeon
+    [-33, -160], [33, -160], [0, -160], // 5, 6, 7 behind the hall
   ],
   links: [[0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [6, 7]],
 };

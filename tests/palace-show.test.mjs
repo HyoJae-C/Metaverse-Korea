@@ -5,7 +5,7 @@ import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSl
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
-const FAN = [0, -150]; // main.js: the palace offset + (0, -150)
+const FAN = [0, -90]; // main.js: the palace offset + (0, -90)
 
 test('the fan dance has an unseen ring you cannot walk into', () => {
   const ring = ringPoly(FAN[0], FAN[1], FAN_KEEP);
@@ -112,4 +112,15 @@ test('now and then the last court lady trips, gets up flustered and hurries afte
   // she catches up: faster than the procession walks
   assert.ok(TRIP_RUN > 1.6 * 2);
   assert.equal(ROYAL_ORDER.filter((o) => o.who === 'lady').length, 2);
+});
+
+test('the palace is smaller and the king never leaves its inner court', () => {
+  const walls = map.landmarks.filter((l) => l.type === 'wall');
+  const outer = walls[0].p, xs = outer.map(([x]) => x), zs = outer.map(([, z]) => z);
+  assert.ok(Math.max(...xs) - Math.min(...xs) <= 170 && -Math.min(...zs) <= 270, 'about 60% of the old 270 x 440 m');
+  assert.deepEqual(map.meta.enclosure.box, [Math.min(...xs), 0, Math.max(...xs), Math.min(...zs)]);
+  // inside Heungnyemun's walls: the inner court round Geunjeongjeon
+  const inner = walls[1].p, ix = Math.max(...inner.map(([x]) => Math.abs(x))), iz = inner.map(([, z]) => z);
+  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.abs(x) < ix - 3 && z < Math.max(...iz) - 3 && z > Math.min(...iz) + 3, `stop ${x},${z} is outside the inner court`);
+  assert.ok(FAN[1] < Math.max(...iz) - FAN_KEEP && FAN[1] > Math.min(...iz) + FAN_KEEP);
 });
