@@ -24,7 +24,7 @@ function neighbourKeys(room, cellSize, x, z) {
   return keys;
 }
 
-export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0 }) {
+export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0, privateChat = true }) {
   const cells = new Map(); // key → { adapter, ready: Promise }
   const peerCells = new Map(); // peer id → Set of cell keys it was seen in
   const leaveTimers = new Map();
@@ -110,7 +110,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   if (!own() || cells.get(ownKey).failed) throw new Error('Realtime unavailable');
   // One private chat channel for the whole region, opened a moment after the
   // rooms so its (slower, checked) join never holds up joining them.
-  const chatTimer = own().openChat && setTimeout(() => {
+  const chatTimer = privateChat && own().openChat && setTimeout(() => {
     if (!closed) chatLink = own()?.openChat(room, (id, t) => known(id) && handlers.onChat?.(id, t));
   }, 3000);
 

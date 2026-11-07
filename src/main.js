@@ -1217,6 +1217,10 @@ async function joinRoom(room, roomScene, area = null) {
     const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
       room, self: { id: myId, name: nickname, look: currentLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
+      // Debug test rooms play without an account (no cloud save), and the
+      // private chat channel only carries chat from accounts: chat there on
+      // the room channels instead.
+      privateChat: !testRoom,
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;

@@ -43,12 +43,12 @@ try {
   await b.keyboard.up('KeyW');
   await b.click('#emote-main'); // open the emote wheel
   await b.click('#emotes button >> nth=0');
-  await a.waitForSelector('.bubble', { timeout: 5000 });
+  await a.waitForSelector('.bubble', { timeout: 15000 }); // CI renders at ~2 fps
   // Text chat reaches the other player as a bubble and a log line.
   await b.click('#chat-btn');
   await b.fill('#chat-input', 'hello from B');
   await b.press('#chat-input', 'Enter');
-  await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 5000 });
+  await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 15000 });
   // On the street, chat from someone more than 10 m away is not shown.
   const [ax0, az0] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 25, z), [ax0, az0]);
