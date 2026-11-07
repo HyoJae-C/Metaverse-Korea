@@ -217,6 +217,7 @@ export const HI = {
   'cat.info': 'जानकारी',
   'cat.library': 'पुस्तकालय',
   'cat.museum': 'संग्रहालय',
+  'cat.culture': 'सांस्कृतिक केंद्र',
   'cat.school': 'स्कूल',
   'cat.petshop': 'पेट शॉप',
   'fish.open': 'मछली पकड़ें',

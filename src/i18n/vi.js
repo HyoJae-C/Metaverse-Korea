@@ -217,6 +217,7 @@ export const VI = {
   'cat.info': 'Thông tin',
   'cat.library': 'Thư viện',
   'cat.museum': 'Bảo tàng',
+  'cat.culture': 'Trung tâm văn hóa',
   'cat.school': 'Trường học',
   'cat.petshop': 'Cửa hàng thú cưng',
   'fish.open': 'Đi câu cá',

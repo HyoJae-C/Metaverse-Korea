@@ -217,6 +217,7 @@ export const AR = {
   'cat.info': 'معلومات',
   'cat.library': 'مكتبة',
   'cat.museum': 'متحف',
+  'cat.culture': 'مركز ثقافي',
   'cat.school': 'مدرسة',
   'cat.petshop': 'متجر حيوانات',
   'fish.open': 'اذهب للصيد',

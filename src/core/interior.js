@@ -12,6 +12,7 @@ import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
+import { buildCulture } from './culture.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -590,6 +591,11 @@ export function buildInterior(store) {
     seats.push(...gallery.seats);
     clerk = gallery.clerk;
     see = gallery.see;
+  } else if (store.category === 'culture') {
+    // Seoul Forest's culture center and forest galleries (core/culture.js).
+    const room = buildCulture(scene, ROOM, { box, block, mat }, store);
+    seats.push(...room.seats);
+    clerk = room.clerk;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any

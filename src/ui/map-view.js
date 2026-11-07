@@ -122,6 +122,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -387,6 +388,14 @@ export class MapView {
       if (text && this.view.scale > 0.5 * dpr) labels.push({ text, sx: c.sx, sy: c.sy, gap: 14 * dpr, weight: 700, size: 12, color: '#3b322a', pri: 2 });
     }
 
+    // Named park spots (map landmarks with a label: Seoul Forest's gardens, hill…), when zoomed in.
+    if (this.view.scale > 0.9 * dpr) {
+      for (const l of this.map.landmarks || []) {
+        if (!l.label) continue;
+        const [sx, sy] = this.toScreen(l.x, l.z);
+        if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: 0, weight: 700, size: 11, color: '#2f6b3f', pri: 4 });
+      }
+    }
     // Players
     const { me, others } = this.getPlayers();
     for (const o of others) {

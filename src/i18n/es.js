@@ -216,6 +216,7 @@ export const ES = {
   'cat.info': 'Información',
   'cat.library': 'Biblioteca',
   'cat.museum': 'Museo',
+  'cat.culture': 'Centro cultural',
   'cat.school': 'Escuela',
   'cat.petshop': 'Tienda de mascotas',
   'fish.open': 'Ir a pescar',
