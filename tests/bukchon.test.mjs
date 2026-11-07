@@ -173,7 +173,16 @@ test('inside the wall is only drawn while you are in; the houses are built on th
 
 test('the alleys are narrow and lined with house walls', () => {
   const main = map.roads.find((r) => r.n?.en === 'Bukchon-ro 11-gil');
-  assert.ok(main.w <= 3.5);
+  // Narrow (Bukchon's charm), but six or more people still pass side by side
+  // (a person is 0.7 m across: PLAYER_R 0.35 in main.js).
+  for (const r of map.roads.filter((x) => x.k === 'walk')) assert.ok(r.w >= 6 * 0.7 && r.w <= 5.5, `an alley ${r.w} m wide`);
+  // No wide open squares beside the alleys: up the hill, walking along an
+  // alley, a house wall is right beside you (on one side at least) most of the way.
+  const hill = map.buildings.filter((b) => b.lv);
+  const walled = (x, z) => hill.some((b) => { const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]); return x >= Math.min(...xs) && x <= Math.max(...xs) && z >= Math.min(...zs) && z <= Math.max(...zs); });
+  let n = 0, near = 0;
+  for (let z = -90; z > -138; z -= 1) for (const s of [-1, 1]) { n++; if (walled(main.p[0][0] + s * (main.w / 2 + 0.6), z)) near++; }
+  assert.ok(near / n > 0.8, `11-gil is walled only ${Math.round((near / n) * 100)}% of the way`);
   const edge = main.p[0][0] + main.w / 2, edgeW = main.p[0][0] - main.w / 2;
   const lining = map.buildings.filter((b) => b.p.some(([x]) => Math.abs(x - edge) < 0.4 || Math.abs(x - edgeW) < 0.4));
   assert.ok(lining.length >= 8, `only ${lining.length} houses line 11-gil`);
