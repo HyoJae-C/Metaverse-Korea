@@ -41,6 +41,7 @@ export const LOG_MAX = 100;
 export const WELCOME_COINS = 1000;
 const giftGiven = (g) => (g === 1 ? 500 : Math.max(0, Math.floor(Number(g) || 0)));
 const BATCH = 50; // ops per wallet_apply call
+const RESELL_PCT = 10; // second-hand shops in a browser-only wallet (core/resale.js)
 const QUEUE_MAX = 500; // more than this waiting: the oldest are dropped
 // Server errors meaning "the SQL isn't run yet".
 const missing = (e) => !!e && (e.code === 'PGRST202' || e.code === '42883' || e.code === 'PGRST205' || /could not find the function|does not exist/i.test(e.message || ''));
@@ -94,7 +95,7 @@ function uuidFromBytes(b) {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
 }
 // A short text for the server's ledger, so the operator can see what it was for.
-function noteText(note) {
+export function noteText(note) {
   if (!note) return null;
   const nm = (x) => (x && typeof x === 'object' ? x.en || Object.values(x)[0] : x);
   const parts = [note.k, nm(note.name), nm(note.at)].filter((x) => typeof x === 'string' && x);
@@ -112,6 +113,9 @@ export class Wallet {
     this.client = null;
     this.welcomed = 0; // welcome money the server gave on opening
     this.lastOp = null; // the id of the last change (for a refund later)
+    // The share second-hand shops pay for clothes (core/resale.js): the
+    // server's when it has one, null when its SQL (017_resale.sql) isn't run.
+    this.resellPct = RESELL_PCT;
     this._sending = null;
     this._timer = null;
     this._retry = 0;
@@ -158,7 +162,50 @@ export class Wallet {
     this._saveState();
     this._notify();
     this.flush();
+    this._askResellPct(client, timeoutMs);
     return 'server';
+  }
+  async _askResellPct(client, timeoutMs) {
+    this.resellPct = null;
+    let res;
+    try { res = await withTimeout(client.rpc('wallet_resell_pct'), timeoutMs); } catch (e) { res = { error: e }; }
+    const n = Number(res?.data);
+    if (!res?.error && Number.isFinite(n)) this.resellPct = Math.max(0, Math.min(90, Math.round(n)));
+  }
+
+  // Sell something back at a second-hand shop (core/resale.js). r: { id
+  // (a fixed op id, so asking again never pays twice), n (coins asked), ref
+  // (the purchase's op id) or bn + paid (its note and price), note (for the
+  // budget book) }. With the server wallet this waits for the server, which
+  // pays from its own ledger. Resolves { ok, n (coins paid), why }: why is
+  // 'offline', 'closed' (the server doesn't buy yet), 'noref' (no such
+  // purchase there) or 'sold' (sold before: ok, nothing more paid).
+  async resell(r) {
+    if (!this.s) {
+      this.add(r.n, r.note);
+      return { ok: true, n: r.n };
+    }
+    if (!this.client) return { ok: false, n: 0, why: 'offline' };
+    if (this.resellPct == null) return { ok: false, n: 0, why: 'closed' };
+    if (!(await this.flush())) return { ok: false, n: 0, why: 'offline' }; // the purchase must be there first
+    const op = { id: r.id, n: Math.round(r.n), k: 'resell' };
+    if (r.ref) op.ref = r.ref;
+    else { op.bn = r.bn; op.paid = r.paid; }
+    const txt = noteText(r.note);
+    if (txt) op.note = txt;
+    let res;
+    try { res = await withTimeout(this.client.rpc('wallet_apply', { p_ops: [op] }), 8000); } catch (e) { res = { error: e }; }
+    const { data, error } = res || {};
+    const got = data?.results?.[0];
+    if (error || data?.status !== 'ok' || !got) return { ok: false, n: 0, why: 'offline' };
+    const n = Math.max(0, Number(got.n) || 0);
+    this._fromServer(data);
+    if (n) this._log(n, r.note);
+    this._notify();
+    if (got.status === 'ok' || got.status === 'cap') return { ok: true, n };
+    if (got.status === 'sold') return { ok: true, n: 0, why: 'sold' };
+    if (got.status === 'bad') return { ok: false, n: 0, why: 'closed' }; // an older wallet_apply
+    return { ok: false, n: 0, why: 'noref' };
   }
 
   // Gives the welcome travel money once; returns the coins given (0 if done before).

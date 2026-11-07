@@ -58,7 +58,9 @@ import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { OUTFIT_ITEM, randomLook } from './data/appearance.js';
+import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
+import { Receipts, sellable, resaleCoins } from './core/resale.js';
+import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -148,7 +150,7 @@ import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { BikeStations } from './core/bikes.js';
-import { Wallet, demoAd } from './core/wallet.js';
+import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
 import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
@@ -2049,6 +2051,9 @@ function hopOn(inv) {
 }
 // Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
+// What I paid for clothes I bought myself: only those can be sold back at a
+// second-hand shop (core/resale.js).
+const receipts = new Receipts();
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2078,8 +2083,10 @@ function outfitAction(itemId) {
   if (!it?.wear) return;
   const on = isWorn(it, myLook);
   if (!inventory.has(itemId)) {
-    if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    const note = { name: it.name, at: interior?.store.name };
+    if (!wallet.spend(it.price, note)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
+    receipts.record(itemId, it.price, wallet.lastOp, note);
     refreshWallet();
     sfx.pop?.();
     myLook = { ...myLook, ...it.wear };
@@ -2386,6 +2393,7 @@ function leaveStore() {
   if (grillUi.open) grillUi.close();
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
+  if (resaleUi.open) resaleUi.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
   if (japchaeUi.open) japchaeUi.close();
@@ -2862,7 +2870,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3036,6 +3044,51 @@ const fishingUi = new FishingUI({
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 });
+// Second-hand shops: sell clothes I bought back (core/resale.js), paid by
+// the server wallet from its own ledger. Clothes bought before receipts
+// existed are found once in the budget book.
+receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+const resaleUi = new ResaleUI({
+  root: $('resale-panel'),
+  pct: () => wallet.resellPct,
+  list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
+  wearing: (id) => isWorn(ITEMS[id], myLook),
+  onSell: (r) => sellClothes(r),
+});
+let selling = false; // one sale at a time
+async function sellClothes({ id }) {
+  const it = ITEMS[id], rc = receipts.get(id);
+  if (!it || !rc || !inventory.has(id) || selling) return;
+  selling = true;
+  try { return await sellNow(id, it, rc); } finally { selling = false; }
+}
+async function sellNow(id, it, rc) {
+  const coins = resaleCoins(rc.paid, wallet.resellPct);
+  const name = L(it.name);
+  const note = { name: it.name, at: interior?.store.name };
+  // A fixed id per purchase: asking again (a retry, a second tap) never pays twice.
+  const op = await opIdFor('resell:' + id + ':' + (rc.op || rc.bn || '') + ':' + rc.paid).catch(() => newOpId());
+  const res = await wallet.resell({ id: op, n: coins, ref: rc.op, bn: rc.bn, paid: rc.paid, note });
+  if (!res.ok) {
+    if (res.why === 'noref') { receipts.forget(id); return fmt(L(RESALE_TEXT.noref), { name }); }
+    return L(res.why === 'closed' ? RESALE_TEXT.closed : RESALE_TEXT.offline);
+  }
+  // Paid (or sold before): only now does it leave the closet.
+  if (isWorn(it, myLook)) { // take it off first (trousers: back to the plain jeans)
+    myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
+    saveLook(myLook);
+    setLook(myLook);
+  }
+  inventory.remove(id);
+  receipts.forget(id);
+  refreshWallet();
+  sfx.pop?.();
+  const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
+  shop.toast(msg);
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(RESALE_TEXT.thanks)]);
+  if (!$('bag-panel').hidden) refreshItems();
+  return msg;
+}
 const marketUi = new FishMarketUI({
   root: $('market-panel'),
   bag: fishBag,
@@ -4992,6 +5045,8 @@ function updateAction(p, tSec) {
       next = { key: 'kimchi-sell', label: '🫙 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
+    } else if (interior.store.resale && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'resale', label: '♻️ ' + L(RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
     } else if (clubs.clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
@@ -5626,6 +5681,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
     bagList: () => bag.list(),
+    items: () => inventory.list(),
+    toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
