@@ -2714,7 +2714,7 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if (e.code === 'KeyE' || e.code === 'Enter') runAction();
+  if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
@@ -4013,6 +4013,7 @@ const beautyUi = new BeautyUI({
   root: $('beauty-panel'),
   onPreview: (look) => setLook(beautyUi.kind === 'salon' ? { ...look, head: null } : look), // salon: hat off to see the hair
   onSave: (look, cost) => {
+    if (beauty.surgery || beauty.haircut) return false; // one at a time: no paying twice
     if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
     if (cost && isClinic(beautyUi.kind) && interior?.stations?.surgery) { setLook(myLook); endBeautyCam(); startSurgery(look); return true; }
     if (cost && beautyUi.kind === 'salon' && seated?.mirrorZ != null && (look.hairStyle !== myLook.hairStyle || look.dye !== myLook.dye)) { setLook(myLook); startHaircut(look); return true; }
