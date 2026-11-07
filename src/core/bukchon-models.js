@@ -4,8 +4,58 @@
 // and Changdeokgung's roofs seen from the east edge. Visual only: collision
 // comes from the map's blockers.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
-import { HANOK } from './hanok.js';
+import { HANOK, curvedRoof } from './hanok.js';
+
+// Many small boxes cost a draw call each: merge a landmark's plain meshes
+// into one per material (the ones with a texture or several materials stay).
+function mergeStatic(g) {
+  g.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+  const byMat = new Map(), drop = [];
+  g.traverse((o) => {
+    if (!o.isMesh || Array.isArray(o.material) || o.material.map) return;
+    const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    for (const a of Object.keys(geo.attributes)) if (!['position', 'normal', 'color'].includes(a)) geo.deleteAttribute(a);
+    if (!byMat.has(o.material)) byMat.set(o.material, []);
+    byMat.get(o.material).push({ geo, noShadow: o.userData.noShadow });
+    drop.push(o);
+  });
+  for (const o of drop) o.parent.remove(o);
+  for (const [m, list] of byMat) {
+    const ok = list.filter((x) => !!x.geo.attributes.color === !!list[0].geo.attributes.color);
+    const merged = mergeGeometries(ok.map((x) => x.geo));
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, m);
+    mesh.userData.noShadow = ok.every((x) => x.noShadow);
+    g.add(mesh);
+  }
+}
+const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
+  for (const geo of curvedRoof(w, d, h, o)) {
+    const m = new THREE.Mesh(geo, tileMat);
+    m.position.set(x, y, z);
+    m.rotation.y = ry;
+    g.add(m);
+  }
+}
+function signTexture(ko, en) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 160;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2b2118'; x.fillRect(0, 0, 512, 160);
+  x.strokeStyle = '#c9a25a'; x.lineWidth = 8; x.strokeRect(8, 8, 496, 144);
+  x.fillStyle = '#f3e3b5'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '800 64px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  x.fillText(ko, 256, 66);
+  x.font = '600 26px system-ui, sans-serif';
+  x.fillText(en, 256, 124);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -55,7 +105,7 @@ function wing(g, x, z, w, d, ry, { maru = false } = {}) {
   g.add(k);
 }
 
-export const BUKCHON_BUILD = {
+const BUILD = {
   // The Open House: l.w × l.d compound centred on (x, z). North: the main
   // hall with the maru; west and east wings; a south wall with a gate.
   openhouse(g, l) {
@@ -132,4 +182,39 @@ export const BUKCHON_BUILD = {
       roof(g, w * 1.35, 16, 5, 6.8, 16, z);
     }
   },
+  // The village wall (담장): a stone lower half, plaster above, a tiled cap.
+  // l.len long along x (turned by l.ry).
+  hanokwall(g, l) {
+    const len = l.len;
+    box(g, len, 1.7, 0.9, 0, 0.85, 0, C.dark);
+    for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.8, sz * 0.46, C.stone); // the stone pattern
+    box(g, len, 1.5, 0.7, 0, 2.45, 0, C.wall);
+    tiles(g, len + 0.4, 1.7, 0.55, 3.2, { hip: false, lift: 0.06, seg: Math.max(2, Math.round(len / 3)), rows: 1, color: new THREE.Color(C.roof), end: new THREE.Color(C.wall) });
+  },
+  // A village gate: two posts, painted beams (dancheong green and red), a
+  // signboard and a curved tiled roof. l.w wide (the opening), facing +z.
+  bukchongate(g, l) {
+    const w = l.w, hw = w / 2, H = l.main ? 6.2 : 5;
+    for (const sx of [-1, 1]) {
+      box(g, 0.7, H, 0.7, sx * (hw + 0.2), H / 2, 0, '#7a2e22');
+      box(g, 1.3, 0.5, 1.3, sx * (hw + 0.2), 0.25, 0, C.stone);
+      box(g, 2.2, 3.4, 0.9, sx * (hw + 1.6), 1.7, 0, C.wall); // a stub of wall each side
+      box(g, 2.2, 1.6, 0.95, sx * (hw + 1.6), 0.8, 0, C.dark);
+    }
+    box(g, w + 1.6, 0.5, 0.6, 0, H - 0.35, 0, '#2f8f6b');
+    box(g, w + 1.4, 0.3, 0.5, 0, H - 0.95, 0, '#a23a2c');
+    if (l.main) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.3), new THREE.MeshBasicMaterial({ map: signTexture('북촌한옥마을', 'Bukchon Hanok Village') }));
+      sign.position.set(0, H - 1.9, 0.36);
+      const back = sign.clone();
+      back.rotation.y = Math.PI;
+      back.position.z = -0.36;
+      g.add(sign, back);
+      box(g, 4.4, 1.45, 0.3, 0, H - 1.9, 0, '#2b2118');
+    }
+    tiles(g, w + 4.6, 4.2, l.main ? 2.0 : 1.6, H, { hip: true, lift: 0.7, seg: 4, rows: 3, color: new THREE.Color(C.roof) });
+  },
 };
+
+// Each builder's boxes merged into a few meshes (fewer draw calls).
+export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f]) => [k, (g, l) => { const t = f(g, l); mergeStatic(g); return t; }]));

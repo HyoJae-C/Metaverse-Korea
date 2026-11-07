@@ -30,7 +30,16 @@
           150
         ]
       }
-    ]
+    ],
+    "enclosure": {
+      "why": "inside the palace wall: the halls, the inner courts and the fan dance are drawn once you walk in through Gwanghwamun (core/enclosure.js)",
+      "box": [
+        -170,
+        0,
+        100,
+        -440
+      ]
+    }
   },
   "roads": [
     {

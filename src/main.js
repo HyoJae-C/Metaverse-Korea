@@ -49,6 +49,8 @@ import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralS
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { BukchonUI, BK_TEXT, craftEntry, CRAFT } from './ui/bukchon-ui.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt } from './data/bukchon.js';
+import { Enclosure, FarCull } from './core/enclosure.js';
+import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
@@ -5199,6 +5201,37 @@ const bukchonAt = (region.districts || []).find((d) => d.id === BUKCHON.district
 const viewBook = new ViewBook(), partBook = new PartBook();
 const bukchonMarks = bukchonAt ? new BukchonMarks(scene, bukchonAt) : null;
 bukchonMarks?.taken(viewBook);
+// Walled places (district meta "enclosure", core/enclosure.js): Bukchon and
+// Gyeongbokgung show their wall and gates from the street; what is inside is
+// drawn once you walk in. Bukchon's hanok are built on the first visit.
+const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
+  const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
+  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id);
+  if (hanoks.length) e.onFirstEnter = () => {
+    const g = buildHanoks(hanoks);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(g);
+    return [g];
+  };
+  return e;
+});
+const enclosureSkip = new Set([me.root, bukchonMarks?.group].filter(Boolean));
+for (const e of enclosures) {
+  e.collect([landmarks, scene], enclosureSkip);
+  e.adopt(storefronts.items.filter((i) => e.contains(i.group.position.x, i.group.position.z, 0.5)).map((i) => i.group));
+  if (e.id === BUKCHON.district) e.adopt([bukchonMarks?.group]);
+}
+// Shops, landmarks, subway entrances, stamp stands, meeting zones and the
+// stream's lanterns and stones past the fog are not drawn.
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+function updateEnclosures(p, dt = 0) {
+  farCull.update(dt, p);
+  for (const e of enclosures) {
+    const ev = e.update(p);
+    if (ev === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  }
+}
 const bukchonUi = new BukchonUI({
   root: $('bukchon-panel'), wallet,
   onMake: (kind, ci, si) => {
@@ -6862,7 +6895,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -7007,6 +7040,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
     cam: (o) => Object.assign(cam, o),
+    renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
     look: () => currentLook,
