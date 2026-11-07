@@ -76,6 +76,8 @@ const STRIDE = {
   },
 };
 
+const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
+const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
 export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
 
@@ -464,6 +466,54 @@ const DANCE_MOVES = [
   },
 ];
 
+// K-pop choreography for the busking dancers: sharper moves on the beat,
+// a new one every bar (4 beats), the same for everyone in the group so they
+// dance in unison. KPOP for the girl group, KPOP_B (heavier) for the boys.
+const hit = (ph) => Math.pow(Math.sin(Math.min(1, ph * 1.6) * Math.PI / 2), 0.6); // snaps in, holds
+const KPOP_ACTS = new Set(['kpop', 'kpopb', 'strum']);
+const KPOP = [
+  (ph, b) => { // point and hip: arm shoots up on 1 and 3
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.05, turn: (r ? 0.3 : -0.3), spine: [0, 0, (r ? -0.14 : 0.14) * k], head: [0, 0, (r ? 0.1 : -0.1)], armR: r ? [-2.7 * k, 0.3, 0] : [-0.2, 0.5, 0], armL: r ? [-0.2, -0.5, 0] : [-2.7 * k, -0.3, 0], foreL: [-0.6, 0, 0], foreR: [-0.6, 0, 0], legL: [r ? 0 : -0.3 * k, 0, 0], legR: [r ? -0.3 * k : 0, 0, 0] };
+  },
+  (ph, b) => { // hand hearts over the head, swaying
+    const s = (b % 2 ? 1 : -1) * Math.sin(ph * Math.PI);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.04, spine: [0, 0, 0.12 * s], head: [0, 0, -0.1 * s], armL: [-2.5, -0.6, 0], armR: [-2.5, 0.6, 0], foreL: [-1.5, 0, 0], foreR: [-1.5, 0, 0] };
+  },
+  (ph, b) => { // body wave, arms rolling forward
+    const w = Math.sin((ph + b % 2) * Math.PI);
+    return { bob: 0.04 + w * 0.04, spine: [0.25 * w, 0, 0], head: [-0.2 * w, 0, 0], armL: [-1.3 - 0.6 * w, -0.2, 0], armR: [-1.3 + 0.6 * w, 0.2, 0], foreL: [-0.8, 0, 0], foreR: [-0.8, 0, 0], kneeL: [0.3 * Math.max(0, w), 0, 0], kneeR: [0.3 * Math.max(0, w), 0, 0] };
+  },
+  (ph, b) => { // shoulder shimmy with a step to the side
+    const side = b % 2 ? 1 : -1, sh = Math.sin(ph * Math.PI * 4);
+    return { bob: Math.abs(sh) * 0.025, turn: side * 0.2, spine: [0, 0.15 * sh, 0], armL: [-0.5, -0.9 + 0.15 * sh, 0], armR: [-0.5, 0.9 + 0.15 * sh, 0], foreL: [-1.6, 0, 0], foreR: [-1.6, 0, 0], legL: [0, 0, side < 0 ? -0.25 : 0], legR: [0, 0, side > 0 ? 0.25 : 0] };
+  },
+];
+const KPOP_B = [
+  (ph, b) => { // power hits: both fists punch down on the beat
+    const k = hit(ph);
+    return { bob: -0.06 * k, spine: [0.2 * k, 0, 0], head: [0.15 * k, 0, 0], armL: [-0.6 + 0.4 * k, -0.7, 0], armR: [-0.6 + 0.4 * k, 0.7, 0], foreL: [-1.4 * (1 - k), 0, 0], foreR: [-1.4 * (1 - k), 0, 0], kneeL: [0.4 * k, 0, 0], kneeR: [0.4 * k, 0, 0], legL: [-0.25 * k, 0, 0], legR: [-0.25 * k, 0, 0] };
+  },
+  (ph, b) => { // arm sweep across the chest, turning
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: 0.03, turn: (r ? -0.45 : 0.45) * k, spine: [0, (r ? -0.25 : 0.25) * k, 0], armR: r ? [-1.5, 0.4 - 1.3 * k, 0] : [-0.3, 0.3, 0], armL: r ? [-0.3, -0.3, 0] : [-1.5, -0.4 + 1.3 * k, 0], foreL: [-0.3, 0, 0], foreR: [-0.3, 0, 0] };
+  },
+  (ph, b) => { // the bounce: knees and shoulders, one hand at the cap
+    const k = Math.abs(Math.sin(ph * Math.PI));
+    return { bob: -0.05 * k, spine: [0.12 * k, 0, 0], head: [0.2 * k, 0, 0], armR: [-2.6, 0.5, 0], foreR: [-1.9, 0, 0], armL: [-0.4, -0.6, 0], foreL: [-0.9 * k, 0, 0], kneeL: [0.35 * k, 0, 0], kneeR: [0.35 * k, 0, 0], legL: [-0.2 * k, 0, 0], legR: [-0.2 * k, 0, 0] };
+  },
+  (ph, b) => { // pointing out at the crowd, left then right
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.04, turn: r ? -0.3 : 0.3, armR: r ? [-1.6 * k, 0.5, 0] : [-0.2, 0.4, 0], armL: r ? [-0.2, -0.4, 0] : [-1.6 * k, -0.5, 0], foreL: [0, 0, 0], foreR: [0, 0, 0], head: [0, (r ? -0.2 : 0.2), 0] };
+  },
+];
+// Strumming a guitar held across the body: the right hand strums at the
+// sound hole, the left holds the neck up by the shoulder, the head nods.
+function strumPose(t) {
+  const st = Math.sin(t * Math.PI * 4); // two strums a second
+  return { bob: 0, spine: [0.05, 0, 0], head: [0.08 + 0.06 * Math.abs(Math.sin(t * Math.PI * 2)), 0, 0.05], armR: [-0.7, 0.15, 0], foreR: [-1.0 + 0.3 * st, 0, 0], armL: [-1.2, -0.2, 0], foreL: [-1.3, 0, 0] };
+}
+
 // Resolves to { update, play } once the model is on, or null on failure.
 export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const id = PACK.models[look.model] ? look.model : MODEL_IDS[0];
@@ -564,7 +614,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -589,12 +639,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (emote && !seated && speed01 < 0.3) key = emote.key;
       else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
-      else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
+      else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
+      else if (sit && activity === 'matsit' && action('floor')) key = 'floor'; // sitting on a picnic mat
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
-      else if (activity && activity !== 'dance' && action(activity)) key = activity;
+      else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
       else key = 'idle';
-      const dancing = activity === 'dance' && key === 'idle';
+      const dancing = (activity === 'dance' || KPOP_ACTS.has(activity)) && key === 'idle';
       const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
       const curling = activity === 'curl' && key === 'idle'; // dumbbell curls
       if (curling && !bells && slotL && slotR) {
@@ -612,7 +663,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         slotR.add(folkProps[1]);
       }
       if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
-      to(key);
+      // Lying down: the pack's lying clip doesn't turn the hips on these
+      // models (the body stayed upright, as if sitting), so the standing
+      // idle is laid flat on its back instead: head towards -z, face up.
+      to(key === 'lie' ? 'idle' : key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       let stroke = null;
       if (board || kick || skates) {
@@ -623,7 +677,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
       }
-      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
+      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (folk) {
@@ -632,11 +686,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       } else if (dancing) {
         const { beat, phase } = beatNow();
-        moves = globalThis.__dancePose || DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat); // debug override
+        moves = globalThis.__dancePose // debug override
+          || (activity === 'strum' ? strumPose(performance.now() / 1000)
+            : activity === 'kpop' ? KPOP[Math.floor(beat / 4) % KPOP.length](phase, beat)
+              : activity === 'kpopb' ? KPOP_B[Math.floor(beat / 4) % KPOP_B.length](phase, beat)
+                : DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat));
         bob = moves.bob || 0;
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : 0) - m.rotation.x) * Math.min(1, dt * 12);
       let pull = 0;
       if (hanging) {
         pullT += dt;

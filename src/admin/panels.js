@@ -1,0 +1,174 @@
+// The operator page's other tabs (admin.html): overview numbers, the inquiry
+// board with replies, free board moderation and the player list. All data
+// comes through operator-only functions in supabase/009_admin.sql.
+
+const SETUP = 'Run <code>supabase/009_admin.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.';
+const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42703');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
+
+export function createPanels({ client, $, escapeHtml, agoText, describePlace, setStatus, go, notOperator, badge }) {
+  const since = (iso) => (iso ? agoText((Date.now() - Date.parse(iso)) / 1000) : '–');
+
+  // Runs an operator function; shows setup / permission problems in `box`.
+  async function call(fn, args, box) {
+    const { data, error } = await client.rpc(fn, args);
+    if (!error) return { data };
+    if (error.code === '42501') notOperator();
+    else if (box) box.innerHTML = `<p class="empty">${missing(error) ? SETUP : escapeHtml(error.message)}</p>`;
+    else setStatus(error.message);
+    return { error };
+  }
+
+  // ---------- Overview ----------
+  let statsTimer = 0;
+  async function overview() {
+    clearTimeout(statsTimer);
+    const box = $('stats');
+    const { data } = await call('ops_stats', {}, box);
+    if (!data) return;
+    const tiles = [
+      ['online_now', 'Online now', 'live'],
+      ['played_today', 'Played today (KST)', 'live'],
+      ['played_7d', 'Played in 7 days', null],
+      ['open_inquiries', 'Open inquiries', 'ask'],
+      ['inquiries_today', 'Inquiries today', 'ask'],
+      ['free_today', 'Free board posts today', 'free'],
+      ['accounts', 'Accounts', 'players'],
+      ['accounts_google', 'Signed in with Google', 'players'],
+      ['new_today', 'New accounts today', 'players'],
+      ['names', 'Players with a name', 'players'],
+      ['chat_bans', 'Chat bans', 'players'],
+    ];
+    box.replaceChildren(...tiles.map(([k, label, tab]) => {
+      const t = el('div', 'stat' + (tab ? ' link' : '') + (k === 'open_inquiries' && data[k] ? ' alert' : ''));
+      t.append(el('b', '', String(data[k] ?? '–')), el('span', 'muted', label));
+      if (tab) t.onclick = () => go(tab);
+      return t;
+    }));
+    badge('askBadge', data.open_inquiries);
+    badge('liveBadge', data.online_now);
+    $('statsNote').textContent = '"Played" counts accounts whose game reported a spot (since 008_player_where.sql was run). Updated ' + new Date().toLocaleTimeString() + '.';
+    statsTimer = setTimeout(() => current === 'overview' && !document.hidden && overview(), 15000);
+  }
+
+  // ---------- Boards ----------
+  async function board(b) {
+    const box = $(b === 'ask' ? 'askList' : 'freeList');
+    box.innerHTML = '<p class="empty">Loading…</p>';
+    const onlyOpen = b === 'ask' && $('askOpen').checked;
+    const { data } = await call('ops_board', { b, only_open: onlyOpen, lim: 200 }, box);
+    if (!data) return;
+    if (b === 'ask') badge('askBadge', onlyOpen ? data.length : data.filter((p) => !p.done && !p.deleted).length);
+    if (!data.length) { box.innerHTML = `<p class="empty">${onlyOpen ? 'No open inquiries. 🎉' : 'No posts yet.'}</p>`; return; }
+    box.replaceChildren(...data.map((p) => (b === 'ask' ? askCard(p) : freeCard(p))));
+  }
+
+  function head(p) {
+    const h = el('div', 'head');
+    h.append(el('b', '', p.name), el('span', 'muted', `${when(p.created_at)} · ${since(p.created_at)}`));
+    if (p.deleted) h.append(el('span', 'tag red', 'deleted by writer'));
+    if (p.hidden) h.append(el('span', 'tag red', 'hidden'));
+    const who = el('button', '', 'Player');
+    who.title = 'Find this account in Players';
+    who.style.marginLeft = 'auto';
+    who.onclick = () => { $('playerQ').value = p.name; go('players'); };
+    h.append(who);
+    return h;
+  }
+
+  function askCard(p) {
+    const c = el('div', 'card' + (p.done ? ' done' : ''));
+    const h = head(p);
+    h.insertBefore(el('span', p.done ? 'tag green' : 'tag blue', p.done ? (p.reply ? 'answered' : 'done') : 'open'), h.children[2]);
+    c.append(h, el('div', 'body', p.body));
+    if (p.reply) c.append(el('div', 'reply', `🛡️ ${p.reply}\n— ${when(p.replied_at)}`));
+    const ta = el('textarea');
+    ta.placeholder = 'Reply (the player sees it under their inquiry in the game)';
+    ta.maxLength = 2000;
+    ta.value = p.reply || '';
+    const row = el('div', 'row');
+    const send = el('button', 'primary', p.reply ? 'Update reply' : 'Send reply');
+    send.onclick = async () => {
+      send.disabled = true;
+      const { error } = await call('ops_reply', { post_id: p.id, reply_text: ta.value }, null);
+      send.disabled = false;
+      if (!error) { setStatus('Reply saved'); board('ask'); }
+    };
+    const done = el('button', '', p.done ? 'Reopen' : 'Mark done (no reply)');
+    done.onclick = async () => { if (!(await call('ops_set_done', { post_id: p.id, on_off: !p.done }, null)).error) board('ask'); };
+    row.append(send, done);
+    c.append(ta, row);
+    return c;
+  }
+
+  function freeCard(p) {
+    const c = el('div', 'card' + (p.hidden || p.deleted ? ' off' : ''));
+    c.append(head(p), el('div', 'body', p.body));
+    const row = el('div', 'row');
+    const hide = el('button', p.hidden ? '' : 'danger', p.hidden ? 'Show again' : 'Hide from everyone');
+    hide.onclick = async () => { if (!(await call('ops_set_hidden', { post_id: p.id, on_off: !p.hidden }, null)).error) board('free'); };
+    row.append(hide);
+    c.append(row);
+    return c;
+  }
+
+  // ---------- Players ----------
+  async function players() {
+    const box = $('playerList');
+    const { data, error } = await call('ops_players', { q: $('playerQ').value.trim(), lim: 200 }, null);
+    if (error) { box.innerHTML = `<tr><td colspan="5" class="empty">${missing(error) ? SETUP : escapeHtml(error.message)}</td></tr>`; return; }
+    if (!data.length) { box.innerHTML = '<tr><td colspan="5" class="empty">Nobody found.</td></tr>'; return; }
+    box.replaceChildren(...data.map((u) => {
+      const tr = el('tr');
+      const name = el('td');
+      name.append(el('b', '', u.name || '(no name)'));
+      if (u.operator) name.append(' ', el('span', 'tag blue', 'operator'));
+      name.append(el('div', 'muted', u.uid));
+      const acct = el('td');
+      acct.append(el('span', u.guest ? 'tag' : 'tag green', u.guest ? 'guest' : 'Google'));
+      if (u.email) acct.append(el('div', 'muted', u.email));
+      if (u.posts) acct.append(el('div', 'muted', `${u.posts} board post${u.posts > 1 ? 's' : ''}`));
+      const joined = el('td', 'muted', when(u.joined));
+      const seen = el('td');
+      const fresh = u.last_seen && Date.now() - Date.parse(u.last_seen) < 90000;
+      seen.append(el('span', fresh ? 'tag green' : '', fresh ? 'online' : since(u.last_seen || u.last_save)));
+      if (u.place && fresh) seen.append(el('div', 'muted', describePlace(u.place)));
+      const chat = el('td');
+      if (u.banned) chat.append(el('span', 'tag red', 'banned'), el('div', 'muted', u.ban_reason || ''));
+      const b = el('button', u.banned ? '' : 'danger', u.banned ? 'Unban' : 'Ban chat');
+      b.onclick = async () => {
+        let why = null;
+        if (!u.banned) {
+          why = prompt(`Stop ${u.name || 'this account'} chatting? Reason (optional):`, '');
+          if (why === null) return;
+        }
+        if (!(await call('ops_set_ban', { target: u.uid, on_off: !u.banned, why }, null)).error) players();
+      };
+      chat.append(b);
+      tr.append(name, acct, joined, seen, chat);
+      return tr;
+    }));
+  }
+
+  // ---------- Wiring ----------
+  let current = null, searchTimer = 0;
+  $('askOpen').onchange = () => board('ask');
+  $('askReload').onclick = () => board('ask');
+  $('freeReload').onclick = () => board('free');
+  $('playerReload').onclick = () => players();
+  $('playerQ').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(players, 300); };
+  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players };
+  // The open-inquiry badge stays current even while another tab is open.
+  const badges = async () => {
+    if (document.hidden || current === 'overview') return;
+    const { data } = await client.rpc('ops_stats');
+    if (data) { badge('askBadge', data.open_inquiries); badge('liveBadge', data.online_now); }
+  };
+  setInterval(badges, 60000);
+  setTimeout(badges, 500);
+  return {
+    show(name) { current = name; OPEN[name]?.(); },
+    wake(name) { if (name === 'overview') overview(); },
+  };
+}

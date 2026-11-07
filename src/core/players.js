@@ -3,9 +3,9 @@
 import { parseRide } from './bike-garage.js';
 import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
-import { HELD_KINDS } from './held.js';
+import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'run', 'clap', 'lie', 'pullup', 'curl', 'snip', 'read']);
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read']);
 import { seatPosition } from './bikes.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';
@@ -154,6 +154,17 @@ export class RemotePlayers {
     return best;
   }
 
+  // Everyone visible within r metres who is not riding, closest first.
+  nearbyFree(x, z, r) {
+    const out = [];
+    for (const [id, p] of this.players) {
+      if (p.hidden || p.target?.bk) continue;
+      const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
+      if (d < r) out.push({ id, name: p.name, d });
+    }
+    return out.sort((a, b) => a.d - b.d);
+  }
+
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
   // Where someone is right now, predicted from their last update and speed
@@ -204,7 +215,7 @@ export class RemotePlayers {
           p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;
           p.ch.setBike(p.bk, p.bk === 1 ? parseRide(bv) || undefined : undefined, inCar); // their ride and skin
         }
-        if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(p.target.hd) ? p.target.hd : null; p.ch.setHeld(p.hd); }
+        if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(heldBase(p.target.hd)) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);
         p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing
         if (p.target.ac === 'read' && !p.bubble) showBubble(p, this.layer, t('book.reading'), 3000); // 📖 reading…
@@ -230,6 +241,18 @@ export class RemotePlayers {
       }
     }
   }
+}
+
+// A bubble holding built elements (a picture and text), e.g. the big-catch
+// trophy over someone's head.
+export function showBubbleEl(p, layer, content, ms = 5000, kind = '') {
+  p.bubble?.remove();
+  const b = document.createElement('div');
+  b.className = kind ? 'bubble ' + kind : 'bubble';
+  b.append(content);
+  layer.appendChild(b);
+  p.bubble = b;
+  setTimeout(() => { if (p.bubble === b) { b.remove(); p.bubble = null; } }, ms);
 }
 
 export function showBubble(p, layer, text, ms = 2500, kind = '') {

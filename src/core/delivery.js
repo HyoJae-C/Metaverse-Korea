@@ -1,23 +1,40 @@
-// Delivery race (따릉이 배달): take a tteokbokki order from the stall to
-// another shop before the timer runs out. A bike from a bike station makes it
-// in time; on foot you'd have to run the whole way. No DOM, unit-tested.
+// Delivery run (따릉이 배달): take an order from a shop that hires delivery
+// riders (the tteokbokki stall, the chicken place) to another shop before the
+// timer runs out. No DOM, unit-tested.
+//
+// Deliveries stay short: the destination must be reachable within one minute
+// along the streets (the timer never goes over a minute), so even on foot,
+// running, you can make it.
 
 export const DELIVERY_GAME = 'delivery';
-export const BIKE_MS = 16; // bike speed in m/s (main.js BIKE)
-export const MIN_DIST = 120, MAX_DIST = 450; // metres, straight line
+export const BIKE_MS = 13.5; // basic bike speed in m/s (main.js BIKE)
+export const GRACE = 20; // seconds to find a bike and park
+export const MAX_SECONDS = 60; // a delivery never takes longer than a minute
+export const MIN_ROAD = 100; // metres: shorter is not really a delivery
+// The longest street route that fits in a minute.
+export const MAX_ROAD = (MAX_SECONDS - GRACE) * BIKE_MS;
 
-// Pick where to deliver: a shop between MIN_DIST and MAX_DIST away (the
-// nearest-to-ideal ones if none fit). stores: [{ id, x, z }].
+// Street route length; without a route, a straight line ×1.4 for the bends.
+const roadOf = (s) => (Number.isFinite(s.road) ? s.road : s.d * 1.4);
+
+// Seconds allowed for a route of `road` metres: riding time plus time to get
+// a bike, never more than a minute.
+export const timeFor = (road) => Math.min(MAX_SECONDS, Math.round(road / BIKE_MS + GRACE));
+export const reachable = (road) => road / BIKE_MS + GRACE <= MAX_SECONDS;
+
+// Pick where to deliver: a shop reachable within a minute, at least MIN_ROAD
+// along the streets if there is one. stores: [{ id, x, z, road? }] (road:
+// street route length from `from`). Returns the store with d (straight) and
+// road (route) set, or null when nothing is close enough.
 export function pickDelivery(stores, from, rand = Math.random) {
-  const withD = stores.map((s) => ({ ...s, d: Math.hypot(s.x - from.x, s.z - from.z) })).filter((s) => s.d > 30);
-  const fit = withD.filter((s) => s.d >= MIN_DIST && s.d <= MAX_DIST);
-  const pool = fit.length ? fit : withD.sort((a, b) => Math.abs(a.d - 250) - Math.abs(b.d - 250)).slice(0, 3);
+  const withD = stores.map((s) => ({ ...s, d: Math.hypot(s.x - from.x, s.z - from.z) }))
+    .filter((s) => s.d > 30)
+    .map((s) => ({ ...s, road: roadOf(s) }))
+    .filter((s) => reachable(s.road));
+  const fit = withD.filter((s) => s.road >= MIN_ROAD);
+  const pool = fit.length ? fit : withD;
   return pool.length ? pool[Math.floor(rand() * pool.length)] : null;
 }
-
-// Seconds allowed: streets wind (×1.6 the straight line) at bike speed, plus
-// time to get a bike and park.
-export const timeFor = (dist) => Math.round((dist * 1.6) / BIKE_MS + 25);
 
 // Coins: 4 for making it, +1 for every 10 seconds to spare (up to +4).
 export function deliveryPay(secondsLeft) {

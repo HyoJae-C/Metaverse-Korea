@@ -6,6 +6,9 @@
 import * as THREE from 'three';
 import { buildAnotherLand } from './anotherland.js';
 import { cableCarLandmark } from './cablecar.js';
+import { PARK_BUILD, avenue } from './park-art.js';
+import { sign } from './park-signs.js';
+import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -224,6 +227,8 @@ const BUILD = {
   },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
+  sign, // wooden information boards (core/park-signs.js)
+  ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
     const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
@@ -293,71 +298,50 @@ export function namsanTower(g, y0 = 0) {
   }
 }
 
-// The busking zone on Hongdae Walking Street: a low round stage you can step
-// onto (flat, so no collision is needed), two amps, a mic stand, a painted
-// ring for the crowd, a sign and strings of bulbs that blink to the music.
-// The stage faces +z (the audience side).
+// The busking zone on Hongdae Walking Street (layout in core/busking-layout.js):
+// a long grassy bank for the audience on the west side, the words BUSKING
+// ZONE painted faintly on the street, and on the east side just a mic stand
+// and an open guitar case. No stage or backdrop: the performers are the show.
 function buskingStage(g) {
-  const ring = document.createElement('canvas');
-  ring.width = ring.height = 512;
-  const r = ring.getContext('2d');
-  r.strokeStyle = '#ffd36e'; r.lineWidth = 14; r.setLineDash([34, 22]);
-  r.beginPath(); r.arc(256, 256, 236, 0, Math.PI * 2); r.stroke();
-  r.setLineDash([]);
-  r.fillStyle = '#ffffff'; r.font = '900 44px system-ui, sans-serif'; r.textAlign = 'center';
-  r.fillText('BUSKING ZONE', 256, 452);
-  r.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
-  r.fillText('버스킹존', 256, 496);
-  const ringTex = new THREE.CanvasTexture(ring);
-  ringTex.colorSpace = THREE.SRGBColorSpace;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false }));
-  floor.position.set(0, 0.03, 3);
-  g.add(floor);
-  // The stage: a flat disc with a coloured rim.
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.5, 0.12, 28), mat('#3a2c3f'));
-  deck.position.y = 0.06;
-  g.add(deck);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(3.45, 0.08, 6, 40).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff5d8f' }));
-  rim.position.y = 0.13;
-  g.add(rim);
-  // Amps and a mic stand.
-  for (const sx of [-1, 1]) {
-    box(g, 1.1, 1.3, 0.8, sx * 2.6, 0.65, -1.6, '#1d1b22');
-    const cone = new THREE.Mesh(new THREE.CircleGeometry(0.36, 16), mat('#55505e'));
-    cone.position.set(sx * 2.6, 0.75, -1.19);
-    g.add(cone);
+  // The bank: a grid that follows bankHeight, so you can walk up it.
+  const B = BANK, nx = 24, nz = 60;
+  const geo = new THREE.PlaneGeometry(B.front - B.back, B.z1 - B.z0, nx, nz).rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + (B.front + B.back) / 2, z = pos.getZ(i) + (B.z1 + B.z0) / 2;
+    pos.setXYZ(i, x, bankHeight(x, z) + 0.03, z);
   }
-  box(g, 0.05, 1.5, 0.05, 0, 0.75, 0.6, '#8a8f99');
-  box(g, 0.12, 0.2, 0.12, 0, 1.55, 0.6, '#2b2230');
-  // A backdrop with a sign, and two poles holding the bulbs.
-  box(g, 8, 3.4, 0.2, 0, 1.7, -2.8, '#2a1f4f');
+  geo.computeVertexNormals();
+  g.add(new THREE.Mesh(geo, mat('#8fca72')));
+  // A low kerb of stones along the front edge.
+  for (let z = B.z0 + B.end; z < B.z1 - B.end; z += 1.6) box(g, 0.5, 0.18, 1.3, B.front - 0.5, 0.09, z + 0.65, '#c9c3b8');
+  // The words on the ground, faint, reading from the audience's side.
+  const T = GROUND_TEXT;
   const c = document.createElement('canvas');
-  c.width = 512; c.height = 160;
+  c.width = 1024; c.height = 256;
   const x = c.getContext('2d');
-  x.fillStyle = '#2a1f4f'; x.fillRect(0, 0, 512, 160);
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillStyle = '#ffd36e'; x.font = '900 50px system-ui, sans-serif'; x.fillText('HONGDAE BUSKING', 256, 58, 480);
-  x.fillStyle = '#ff9bb3'; x.font = '800 44px "Noto Sans KR", system-ui, sans-serif'; x.fillText('홍대 버스킹존 🎤', 256, 122, 480);
+  x.strokeStyle = '#5b4a6e'; x.lineWidth = 8; x.setLineDash([26, 18]);
+  x.strokeRect(8, 8, 1008, 240);
+  x.fillStyle = '#5b4a6e'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '900 104px system-ui, sans-serif'; x.fillText('BUSKING ZONE', 512, 104, 960);
+  x.font = '800 64px "Noto Sans KR", system-ui, sans-serif'; x.fillText('버스킹존', 512, 196, 960);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 2.4), new THREE.MeshBasicMaterial({ map: tex }));
-  sign.position.set(0, 2.1, -2.68);
-  g.add(sign);
-  for (const sx of [-1, 1]) box(g, 0.14, 5, 0.14, sx * 4.6, 2.5, -2.6, '#8a8f99');
-  const bulbs = [];
-  const colors = ['#ffd36e', '#ff6b6b', '#6bd3ff', '#a6d97a'];
-  for (let i = 0; i <= 14; i++) {
-    const m = new THREE.MeshBasicMaterial({ color: colors[i % 4] });
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 4), m);
-    b.position.set(-4.6 + (9.2 * i) / 14, 4.8 - Math.sin((Math.PI * i) / 14) * 0.9, -2.6);
-    g.add(b);
-    bulbs.push(m);
-  }
-  const base = colors.map((h) => new THREE.Color(h));
-  return (t) => {
-    const k = Math.floor(t * 2);
-    bulbs.forEach((m, i) => m.color.copy(base[i % 4]).multiplyScalar((i + k) % 3 === 0 ? 0.35 : 1));
-  };
+  const words = new THREE.Mesh(new THREE.PlaneGeometry(T.w, T.d), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.3, depthWrite: false }));
+  words.rotation.set(-Math.PI / 2, 0, -Math.PI / 2); // flat, the tops of the letters to the east
+  words.position.set(T.x, 0.1, T.z); // (above the plaza paving)
+  words.userData.noShadow = true;
+  g.add(words);
+  // The singer's mic stand and open guitar case (tips land in it).
+  box(g, 0.05, 1.5, 0.05, MIC[0], 0.75, MIC[1], '#8a8f99');
+  box(g, 0.12, 0.2, 0.12, MIC[0], 1.55, MIC[1], '#2b2230');
+  const caseG = new THREE.Group();
+  box(caseG, 0.42, 0.1, 1.05, 0, 0.05, 0, '#1d1b22');
+  box(caseG, 0.34, 0.03, 0.95, 0, 0.1, 0, '#b23a5a'); // the velvet lining
+  const lid = box(caseG, 0.42, 0.06, 1.05, -0.24, 0.3, 0, '#1d1b22');
+  lid.rotation.z = 1.25;
+  caseG.position.set(CASE[0], 0, CASE[1]);
+  g.add(caseG);
 }
 
 // A gold-on-black name board with hanja.
@@ -561,10 +545,11 @@ export function buildLandmarks(list = [], scene) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
+    else if (l.type === 'avenue') avenue(g, l); // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);
-      g.position.set(l.x, 0, l.z);
+      g.position.set(l.x, l.y || 0, l.z); // (l.y: standing up on something, e.g. a hill's deck)
       g.rotation.y = l.ry || 0;
     } else continue;
     root.add(g);

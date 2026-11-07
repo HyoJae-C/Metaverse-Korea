@@ -1,0 +1,4 @@
+Ice cream sculptures (strawberry, chocolate, mint-chocolate, soft-serve)
+Designed by Yozi for Another Seoul; 3D models made with AI help from Yozi's designs.
+Shown in Seoul Forest (scripts/build-seongsu.mjs, src/core/park-art.js).
+Optimised for the web with glTF-Transform (meshopt compression, quantised).

@@ -282,6 +282,8 @@ export function createCharacter(rawLook) {
       held = kind ? makeHeld(kind) : null;
       attachHeld();
     },
+    // The held thing's 3D object (the fishing rig moves the rod's parts).
+    get heldObject() { return held; },
     wave() {
       waveT = 1.6;
       model?.play('wave');

@@ -17,12 +17,12 @@
     <meta property="og:title" content="Another Seoul · 서울 성수동을 3D로 걸어요" />
     <meta property="og:description" content="브라우저에서 바로, 친구랑 같이 성수동 골목을 걷고 맛집·자전거·노래방을 즐겨요. Walk Seongsu-dong, Seoul, in 3D with friends." />
     <meta property="og:url" content="%VITE_SITE_URL%" />
-    <meta property="og:image" content="%VITE_SITE_URL%og.png" />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png?v=2" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Another Seoul: a character in front of a café in Seongsu-dong" />
+    <meta property="og:image:alt" content="Another Seoul: friends waving on a Seongsu street, at the Han River and on Namsan" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="%VITE_SITE_URL%og.png" />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png?v=2" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <!-- Add to Home Screen (PWA): public/manifest.webmanifest, public/sw.js -->
@@ -64,10 +64,11 @@
       <div class="tools">
         <button class="tool" id="map-btn"><span>🗺️</span><small data-i18n="hud.map"></small></button>
         <button class="tool" id="bike-btn"><span>🛵</span><small id="bike-label" data-i18n="hud.bike"></small></button>
-        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small></button>
+        <button class="tool" id="chat-btn"><span>💬</span><small data-i18n="hud.chat"></small><b class="badge" id="chat-unread" hidden>0</b></button>
         <button class="tool" id="drink-btn" hidden><span>☕</span><small data-i18n="coffee.drink"></small></button>
         <button class="tool" id="stow-btn" hidden><span>📥</span><small></small></button>
         <button class="tool" id="bag-btn"><span>🎒</span><small></small></button>
+        <button class="tool" id="notes-btn"><span>📓</span><small data-i18n="hud.notes"></small></button>
         <button class="tool" id="cart-btn" hidden><span>🛍️</span><small data-i18n="hud.cart"></small><b class="badge" id="cart-count" hidden>0</b></button>
       </div>
       <div class="guide" id="guide" hidden>
@@ -76,7 +77,9 @@
         <button class="guide-auto" id="guide-auto">🚶 <span id="guide-auto-label" data-i18n="guide.auto"></span></button>
         <button class="guide-x" id="guide-x" aria-label="Stop guidance">✕</button>
       </div>
+      <div class="duck-hud" id="duck-hud" role="status" hidden></div>
       <button class="action" id="action-btn" hidden></button>
+      <div class="action-menu" id="action-menu" role="menu" hidden></div>
       <div class="keys-panel" id="keys-panel" hidden>
         <button class="keys-toggle" id="keys-toggle" aria-expanded="true">⌨️ <span data-i18n="keys.title"></span> <b class="keys-caret" aria-hidden="true">▾</b></button>
         <ul class="keys-list" id="keys-list">
@@ -123,8 +126,16 @@
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
         <p class="fine" id="ad-left"></p>
         <p class="fine" data-i18n="wallet.note"></p>
-        <button class="chip dex-btn" id="dex-btn">🍽️ <span></span></button>
-        <button class="chip dex-btn" id="stamp-btn">🔖 <span></span></button>
+      </div>
+      <div class="sheet notes-panel" id="notes-panel" hidden>
+        <button class="sheet-x" id="notes-close" aria-label="Close">✕</button>
+        <strong class="wallet-title">📓 <span data-i18n="notes.title"></span></strong>
+        <p class="fine" data-i18n="notes.note"></p>
+        <div class="notes-list">
+          <button class="chip notes-item" id="stamp-btn">🔖 <span></span></button>
+          <button class="chip notes-item" id="dex-btn">🍽️ <span></span></button>
+          <button class="chip notes-item" id="fishbook-btn">🎣 <span></span></button>
+        </div>
       </div>
       <div class="sheet ledger-panel" id="ledger-panel" hidden>
         <button class="sheet-x" id="ledger-close" aria-label="Close">✕</button>
@@ -136,8 +147,11 @@
       <div class="sheet bag-panel" id="bag-panel" hidden>
         <strong class="items-title" id="wallet-items-title" hidden>🗂️ <span class="bag-owned"></span></strong>
         <div class="items-list" id="wallet-items"></div>
+        <div class="items-list bag-closet" id="wardrobe-items"></div>
       </div>
       <div class="sheet board-panel" id="board-panel" hidden></div>
+      <div class="sheet board-panel love-lock-panel" id="love-lock-panel" role="dialog" aria-modal="false" hidden></div>
+      <div class="sheet friends-panel" id="friends-panel" hidden></div>
       <div class="sheet train-panel" id="train-panel" hidden>
         <strong class="wallet-title" id="train-title"></strong>
         <p class="fine" id="train-status"></p>
@@ -175,15 +189,22 @@
       <div class="sheet order-panel fish-panel" id="market-panel" hidden></div>
       <div class="sheet order-panel ramen-panel" id="ramen-panel" hidden></div>
       <div class="sheet order-panel kimchi-panel" id="kimchi-panel" hidden></div>
+      <div class="sheet order-panel kimchi-panel" id="japchae-panel" hidden></div>
+      <div class="sheet order-panel kimchi-panel" id="kimbap-panel" hidden></div>
       <div class="sheet order-panel fish-panel" id="kimchi-sell-panel" hidden></div>
       <div class="sheet order-panel museum-panel" id="museum-panel" hidden></div>
       <div class="sheet order-panel beauty-panel" id="beauty-panel" hidden></div>
       <div class="sheet order-panel counter-panel" id="counter-panel" hidden></div>
       <div class="sheet order-panel lp-panel" id="kpop-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="pocha-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="job-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="karaoke-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="photo-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="claw-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="batting-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="gallery-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="haunt-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="darts-panel" hidden></div>
       <div class="sheet order-panel game-panel tarot-panel" id="tarot-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="emblem-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="info-panel" hidden></div>
@@ -192,6 +213,7 @@
       <div class="sheet order-panel game-panel" id="book-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="academy-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="dex-panel" hidden></div>
+      <div class="sheet order-panel game-panel stamp-panel" id="fishbook-panel" hidden></div>
       <div class="sheet order-panel game-panel stamp-panel" id="stamp-panel" hidden></div>
       <div class="info-hint" id="info-hint" hidden></div>
       <div class="sheet order-panel game-panel" id="duck-panel" hidden></div>
@@ -258,13 +280,18 @@
         <button class="emote-main" id="emote-main" aria-label="Emotes">😊</button>
       </div>
       <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <button class="chat-fold" id="chat-fold" type="button" aria-label="Hide chat">◂</button>
       <div class="person-menu" id="person-menu" hidden>
         <strong id="person-name"></strong>
         <button class="chip" id="person-block">🚫 <span data-i18n="safety.block"></span></button>
         <button class="chip" id="person-report">🚩 <span data-i18n="safety.report"></span></button>
+        <button class="chip" id="person-friend" hidden></button>
         <button class="sheet-x" id="person-close" aria-label="Close">✕</button>
       </div>
       <form class="chat-bar" id="chat-bar" hidden>
+        <!-- Who hears it: everyone nearby (not kept), all friends or one friend (kept, see the 👥 panel). -->
+        <select id="chat-to" aria-label="Send to"></select>
+        <button class="chip chat-friends" id="friends-btn" type="button" aria-label="Friends">👥<b class="dot" id="friends-dot" hidden></b></button>
         <input id="chat-input" type="text" autocomplete="off" enterkeyhint="send" maxlength="80" data-i18n-placeholder="chat.placeholder" />
         <button class="primary" type="submit" data-i18n="chat.send"></button>
       </form>
@@ -400,6 +427,12 @@
         </button>
         <button class="setting-row" id="sfx-btn" aria-pressed="true">
           <span>🔔</span><span class="setting-label" data-i18n="settings.sfx"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="haptics-btn" aria-pressed="true">
+          <span>📳</span><span class="setting-label" data-i18n="settings.haptics"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="steady-btn" aria-pressed="false">
+          <span>🚶</span><span class="setting-label" data-i18n="settings.steady"></span><span class="switch"></span>
         </button>
         <button class="setting-row" id="signs-btn" aria-pressed="false">
           <span>🔤</span><span class="setting-label" data-i18n="settings.signs"></span><span class="switch"></span>

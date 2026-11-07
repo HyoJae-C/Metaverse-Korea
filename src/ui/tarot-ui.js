@@ -1,11 +1,12 @@
 // Tarot reading at the tarot cafés: pick a kind of reading (past/present/
-// future, dating luck, love luck or money luck), pay, the reader shuffles the
+// future, dating luck, friendship luck or money luck), pay, the reader shuffles the
 // 78 cards, you pick three face-down cards, they flip over and the reader
-// explains each. Dating and love readings can be done with a friend sitting at
+// explains each. Dating and friendship readings can be done with a friend sitting at
 // the same table: you pick the first card, they pick the second on their
 // screen, you pick the third for the two of you. Just for fun; the deck is in
 // data/tarot.js, the messages in core/tarot-queue.js.
 import { TAROT_CARDS, TAROT_COST, TOPICS, PAIR_POSITIONS, topicById, cardText, cardMark, shuffleDeck, seeded } from '../data/tarot.js';
+import { readingSummary, readingVerdict } from '../data/tarot-summary.js';
 import { L, fmt } from './pocha-ui.js';
 
 export const REVEAL_MS = 1500, REVEAL_LAST_MS = 2600; // face down this long before a picked card turns over
@@ -34,10 +35,10 @@ export const TAROT_UI_TEXT = {
   again: { en: 'Another reading', ko: '다른 운세 보기', ja: '別の占い', zh: '再占一次' },
   together: { en: '👫 Read together with {name}', ko: '👫 {name} 님과 같이 보기', ja: '👫 {name}さんと一緒に占う', zh: '👫 和{name}一起占' },
   togetherHint: {
-    en: 'Dating and love luck can be read together with a friend sitting beside you.',
-    ko: '연애운과 애정운은 옆자리에 앉은 친구와 같이 볼 수 있어요.',
-    ja: '恋愛運と愛情運は、隣に座った友達と一緒に占えます。',
-    zh: '恋爱运和爱情运可以和坐在旁边的朋友一起占。',
+    en: 'Dating and friendship luck can be read together with a friend sitting beside you.',
+    ko: '연애운과 우정운은 옆자리에 앉은 친구와 같이 볼 수 있어요.',
+    ja: '恋愛運と友情運は、隣に座った友達と一緒に占えます。',
+    zh: '恋爱运和友情运可以和坐在旁边的朋友一起占。',
   },
   waiting: { en: 'Asking {name} to join…', ko: '{name} 님에게 같이 보자고 했어요…', ja: '{name}さんを誘っています…', zh: '正在邀请{name}…' },
   cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消' },
@@ -46,6 +47,7 @@ export const TAROT_UI_TEXT = {
   decline: { en: 'No thanks', ko: '괜찮아요', ja: '遠慮する', zh: '不了' },
   declined: { en: '{name} can\'t join right now.', ko: '{name} 님은 지금 같이 볼 수 없대요.', ja: '{name}さんは今は参加できません。', zh: '{name}现在不能加入。' },
   left: { en: '{name} left the reading. You can pick the rest.', ko: '{name} 님이 자리를 떠났어요. 남은 카드는 직접 골라요.', ja: '{name}さんが席を離れました。残りはあなたが選んで。', zh: '{name}离开了。剩下的牌由你来选。' },
+  summary: { en: 'Putting it all together', ko: '종합 풀이', ja: 'まとめ', zh: '综合解读' },
   pairDone: { en: 'Your reading together', ko: '두 사람의 타로 풀이', ja: 'ふたりの占い結果', zh: '你们俩的占卜结果' },
 };
 const T = TAROT_UI_TEXT;
@@ -293,6 +295,16 @@ export class TarotUI {
         list.append(row);
       });
       parts.push(el('h4', null, tt(s.pair ? 'pairDone' : 'done')), list);
+      // Then about ten lines that put the three cards together, and a funny
+      // one-word verdict to finish.
+      const cards = s.picked.map(cardById);
+      const names = s.pair ? { a: s.pair.a, b: s.pair.b } : null;
+      const sum = el('div', 'tarot-summary');
+      for (const line of readingSummary(cards, s.topic, names)) sum.append(el('p', null, L(line)));
+      const v = readingVerdict(cards, s.topic, names);
+      const verdict = el('div', 'tarot-verdict');
+      verdict.append(el('span', null, L(v.label)), el('b', null, L(v.word)));
+      parts.push(el('h4', null, tt('summary')), sum, verdict);
     }
     parts.push(el('p', 'fine tarot-fun', tt('fun')));
     if (note) parts.push(el('p', 'order-hint claw-note', note));

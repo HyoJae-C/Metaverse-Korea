@@ -43,7 +43,8 @@ export class CounterUI {
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const list = el('div', 'counter-list');
     const gifts = !!this.canGift?.();
-    for (const p of s.products) {
+    // Things that aren't a drink or a snack (a bag of beans) aren't on the menu yet.
+    for (const p of s.products.filter((q) => !q.goods)) {
       const row = el('div', 'counter-row');
       const icon = el('span', 'counter-icon', ICON[p.model] || '🥤');
       icon.style.background = p.color;

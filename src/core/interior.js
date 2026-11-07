@@ -6,11 +6,13 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
+import { buildHauntedHouse } from './haunted.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
+import { buildCulture } from './culture.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -23,7 +25,8 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
-  park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
+  cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
+  park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
@@ -37,6 +40,35 @@ const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
 
 const mats = {};
 const mat = (c, opts) => (mats[c + JSON.stringify(opts || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...opts }));
+
+// The 2D cinema (Doodle Cinema): the hall looks hand-drawn, like a cartoon.
+// Every surface gets one flat colour (no light or shade) and a black ink
+// outline round each shape. `keep` (the screen) is left as it is.
+const flatMats = new Map();
+const INK = new THREE.LineBasicMaterial({ color: '#1b1820' });
+const INK_RIM = new THREE.MeshBasicMaterial({ color: '#1b1820', side: THREE.BackSide });
+function drawFlat(scene, keep) {
+  const meshes = [];
+  scene.traverse((o) => { if (o.isMesh && o !== keep) meshes.push(o); });
+  for (const m of meshes) {
+    const old = m.material;
+    if (!old || Array.isArray(old) || old.isMeshBasicMaterial) continue; // (lights and screens already glow flat)
+    const key = old.color?.getHexString() + (old.map?.uuid || '') + (old.transparent ? old.opacity : '') + old.side;
+    // Pushed back a little in depth, so the ink lines on their edges always show.
+    if (!flatMats.has(key)) flatMats.set(key, new THREE.MeshBasicMaterial({ color: old.color, map: old.map || null, transparent: old.transparent, opacity: old.opacity, side: old.side, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+    m.material = flatMats.get(key);
+    const g = m.geometry?.type;
+    if (g === 'BoxGeometry') {
+      // A bold outline: a slightly bigger black copy, seen only from inside
+      // (its back faces), so it shows as a rim round the shape.
+      const { width, height, depth } = m.geometry.parameters, t = 0.05;
+      const rim = new THREE.Mesh(m.geometry, INK_RIM);
+      rim.scale.set((width + 2 * t) / width, (height + 2 * t) / height, (depth + 2 * t) / depth);
+      m.add(rim);
+    }
+    if (g === 'BoxGeometry' || g === 'PlaneGeometry') m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), INK));
+  }
+}
 
 function floorTexture(base, room) {
   const c = document.createElement('canvas');
@@ -110,6 +142,18 @@ export function productModel(kind, color, product = null) {
     case 'plush':
       add(new THREE.SphereGeometry(0.15, 14, 10), 0, 0.15);
       for (const s of [-1, 1]) add(new THREE.CapsuleGeometry(0.035, 0.12, 4, 8), 0.06 * s, 0.33);
+      break;
+    case 'ramyeon': // an instant-noodle pack: a red pillow bag with a yellow label
+      add(new THREE.BoxGeometry(0.34, 0.07, 0.26), 0, 0.035);
+      add(new THREE.BoxGeometry(0.16, 0.075, 0.12), -0.05, 0.036, 0.02, mat('#ffd166'));
+      break;
+    case 'picnicmat': // a rolled-up picnic mat with a white strap
+      add(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 12).rotateZ(Math.PI / 2), 0, 0.07);
+      for (const sx of [-0.12, 0.12]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 12).rotateZ(Math.PI / 2), sx, 0.07, 0, mat('#ffffff'));
+      break;
+    case 'egg': // a small tray of eggs
+      add(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, 0.02, 0, mat('#d9c7a6'));
+      for (const ex of [-0.09, 0, 0.09]) for (const ez of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.04, 10, 8).scale(1, 1.3, 1), ex, 0.07, ez);
       break;
     case 'notebook':
       add(new THREE.BoxGeometry(0.3, 0.04, 0.4), 0, 0.02);
@@ -252,12 +296,38 @@ function labelTexture(text, bg) {
   return tex;
 }
 
+// A dartboard face: 20 black/cream wedges, red/green double and triple
+// rings and the bull (the game itself is drawn in ui/darts-ui.js).
+function dartboardTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d'), C = 128, R = 104;
+  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, 256, 256);
+  const ring = (r0, r1, cols) => {
+    for (let i = 0; i < 20; i++) {
+      const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
+      g.fillStyle = cols[i % 2];
+      g.beginPath(); g.arc(C, C, r1 * R, a0, a1); g.arc(C, C, r0 * R, a1, a0, true); g.closePath(); g.fill();
+    }
+  };
+  ring(0.95, 1, ['#d9473c', '#2f8f5b']);
+  ring(0.63, 0.95, ['#1b1b20', '#f3e6c4']);
+  ring(0.58, 0.63, ['#d9473c', '#2f8f5b']);
+  ring(0.09, 0.58, ['#1b1b20', '#f3e6c4']);
+  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, 0.09 * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, 0.04 * R, 0, Math.PI * 2); g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
@@ -265,9 +335,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar';
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema;
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
@@ -277,7 +347,7 @@ export function buildInterior(store) {
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -328,7 +398,7 @@ export function buildInterior(store) {
   const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
-  if (store.category !== 'home') scene.add(title);
+  if (store.category !== 'home' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -521,6 +591,11 @@ export function buildInterior(store) {
     seats.push(...gallery.seats);
     clerk = gallery.clerk;
     see = gallery.see;
+  } else if (store.category === 'culture') {
+    // Seoul Forest's culture center and forest galleries (core/culture.js).
+    const room = buildCulture(scene, ROOM, { box, block, mat }, store);
+    seats.push(...room.seats);
+    clerk = room.clerk;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any
@@ -741,12 +816,38 @@ export function buildInterior(store) {
       glow.position.set(tx, 1.0, tz);
       scene.add(glow);
       for (const s2 of [-1, 1]) {
+        // With darts, the chair against the left wall makes way for the
+        // second dartboard's players.
+        if (store.darts && tx < 0 && s2 < 0) continue;
         const chx = tx + 0.85 * s2;
         box(0.42, 0.06, 0.42, chx, SEAT_H - 0.03, tz, '#6b2f2f');
         box(0.08, 0.5, 0.42, chx + 0.2 * s2, SEAT_H + 0.22, tz, '#6b2f2f');
         seats.push({ x: chx + 0.04 * s2, z: tz, ry: s2 > 0 ? -Math.PI / 2 : Math.PI / 2, stand: [chx, tz + 0.9] });
       }
       block(tx, tz, 2.3, 0.95);
+    }
+    // Two dartboards side by side on the left wall (stores.json "darts":
+    // true), each with its throw line on the floor in front of it. Darts
+    // thrown there stick in the board for everyone in the bar to see
+    // (core/dart-pins.js); dartboards[i] is board i's face.
+    if (store.darts) {
+      const bx = -w / 2 + 0.06;
+      stations.darts = [];
+      stations.dartboards = [];
+      [-1.4, 0.4].forEach((dz, i) => {
+        box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
+        const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
+        face.rotation.y = Math.PI / 2;
+        face.position.set(bx + 0.08, 1.6, dz);
+        scene.add(face);
+        const spot = new THREE.PointLight(0xfff0d0, 2.5, 4); // (not 3.5: those are the candles that flicker)
+        spot.position.set(bx + 0.9, 2.6, dz);
+        scene.add(spot);
+        box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
+        stations.darts.push({ x: bx + 2.7, z: dz, ry: -Math.PI / 2, board: i }); // facing the board
+        // The scoring area (r = 1 in core/arcade.js) is 104/128 of the face.
+        stations.dartboards.push({ x: bx + 0.08, y: 1.6, z: dz, ry: Math.PI / 2, r: 0.34 * 104 / 128 });
+      });
     }
     let t = 0;
     const flames = [];
@@ -957,6 +1058,7 @@ export function buildInterior(store) {
       const cloth = store.tarotCloth || '#4b2f7a';
       const n = Math.max(1, Math.min(2, store.readers || 1));
       const tz = -d / 2 + 2.3;
+      const TT = 0.62; // tabletop height: low, so you look down at the cards
       const xs = n === 2 ? [-w / 4 - 0.1, w / 4 + 0.1] : [0];
       stations.tarotReaders = [];
       stations.tarotTables = [];
@@ -965,23 +1067,23 @@ export function buildInterior(store) {
         rug.position.set(tx, 0.01, tz + 0.2);
         scene.add(rug);
         const top = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.06, 24), mat(cloth));
-        top.position.set(tx, 0.76, tz);
+        top.position.set(tx, TT, tz);
         scene.add(top);
-        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, 0.7, 24, 1, true), mat(cloth));
-        skirt.position.set(tx, 0.4, tz);
+        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, TT - 0.06, 24, 1, true), mat(cloth));
+        skirt.position.set(tx, (TT - 0.06) / 2 + 0.02, tz);
         scene.add(skirt);
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
-        ball.position.set(tx, 0.96, tz - 0.3);
+        ball.position.set(tx, TT + 0.2, tz - 0.3);
         scene.add(ball);
-        box(0.18, 0.05, 0.18, tx, 0.81, tz - 0.3, '#d4a73a'); // its stand
+        box(0.18, 0.05, 0.18, tx, TT + 0.05, tz - 0.3, '#d4a73a'); // its stand
         for (const s2 of [-1, 1]) { // candles
-          box(0.06, 0.16, 0.06, tx + s2 * 0.55, 0.87, tz - 0.15, '#f7f1e3');
+          box(0.06, 0.16, 0.06, tx + s2 * 0.55, TT + 0.11, tz - 0.15, '#f7f1e3');
           const flame = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
-          flame.position.set(tx + s2 * 0.55, 0.98, tz - 0.15);
+          flame.position.set(tx + s2 * 0.55, TT + 0.22, tz - 0.15);
           scene.add(flame);
         }
         for (let q = 0; q < 7; q++) { // a fanned deck, face down
-          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, 0.8, tz + 0.25, '#2a1f4f');
+          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, TT + 0.04, tz + 0.25, '#2a1f4f');
           card.rotation.y = (q - 3) * 0.12;
         }
         // A hanging lamp with a fabric shade, and a warm pool of light.
@@ -1015,7 +1117,8 @@ export function buildInterior(store) {
         box(0.06, 0.06, 3.5, 0, h - 0.3, -d / 2 + 1.7, '#d4a73a'); // its rail
         block(0, -d / 2 + 1.7, 0.2, 3.4);
       }
-      // The waiting sofa by the door, a low table with tea, and a bookshelf.
+      // The waiting sofa by the door (left), armchairs on the right where a
+      // shop counter would be, and a bookshelf. The space between is left open.
       const sofaX = -w / 2 + 0.75;
       box(0.75, 0.42, 2.4, sofaX, 0.21, 1.5, '#7a3b4f');
       box(0.2, 0.9, 2.4, sofaX - 0.33, 0.6, 1.5, '#6a2f42');
@@ -1024,10 +1127,15 @@ export function buildInterior(store) {
         seats.push({ x: sofaX + 0.1, z, ry: Math.PI / 2, stand: [sofaX + 1.0, z], wait: true });
       }
       block(sofaX - 0.05, 1.5, 0.8, 2.5);
-      box(0.6, 0.4, 1.0, sofaX + 1.35, 0.2, 1.5, '#5c3b2a');
-      box(0.16, 0.14, 0.16, sofaX + 1.35, 0.47, 1.3, '#f2e6d0'); // teapot
-      for (const z of [1.6, 1.75]) box(0.07, 0.07, 0.07, sofaX + 1.35, 0.44, z, '#f2e6d0'); // cups
-      block(sofaX + 1.35, 1.5, 0.6, 1.0);
+      const chairX = w / 2 - 0.7;
+      for (const z of [1.0, 1.9, 2.8]) { // waiting armchairs on the right wall, facing the room
+        box(0.62, 0.42, 0.62, chairX, 0.21, z, '#5a3a6e');
+        box(0.14, 0.82, 0.62, chairX + 0.26, 0.61, z, '#4a2f5e'); // backrest
+        for (const s2 of [-1, 1]) box(0.5, 0.18, 0.1, chairX + 0.02, 0.5, z + s2 * 0.29, '#4a2f5e'); // arms
+        box(0.46, 0.08, 0.46, chairX - 0.04, 0.46, z, '#f0d9a8'); // cushion
+        seats.push({ x: chairX - 0.1, z, ry: -Math.PI / 2, stand: [chairX - 1.0, z], wait: true });
+      }
+      block(chairX + 0.05, 1.9, 0.75, 2.6);
       box(0.4, 2.0, 1.4, -w / 2 + 0.25, 1.0, -0.6, '#4a3326'); // bookshelf
       for (let r = 0; r < 4; r++) for (let q = 0; q < 5; q++) box(0.22, 0.32, 0.1, -w / 2 + 0.35, 0.3 + r * 0.48, -1.1 + q * 0.24, ['#c9a6ff', '#e6a3b8', '#ffd36e', '#7fb7a8', '#d98b5f'][(r + q) % 5]);
       block(-w / 2 + 0.25, -0.6, 0.4, 1.4);
@@ -1043,6 +1151,51 @@ export function buildInterior(store) {
         star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
+    } else if (store.workshop === 'batting') {
+      // 야구 연습장: three netted lanes, a pitching machine at the far end of
+      // each, home plate at the open front where you stand to bat.
+      stations.batting = [];
+      const netMat = new THREE.MeshBasicMaterial({ color: '#2b2b2e', transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+      const z0 = -d / 2 + 0.3, z1 = 0.6, lw = 4.4, nh = 3.4;
+      for (const lx of [-6.5, 0, 6.5]) {
+        const turf = new THREE.Mesh(new THREE.PlaneGeometry(lw, z1 - z0).rotateX(-Math.PI / 2), mat('#3f8f5a'));
+        turf.position.set(lx, 0.012, (z0 + z1) / 2);
+        scene.add(turf);
+        for (const sx2 of [-lw / 2, lw / 2]) {
+          const net = new THREE.Mesh(new THREE.PlaneGeometry(z1 - z0, nh), netMat);
+          net.rotation.y = Math.PI / 2;
+          net.position.set(lx + sx2, nh / 2, (z0 + z1) / 2);
+          scene.add(net);
+          box(0.08, nh, 0.08, lx + sx2, nh / 2, z1, '#9ca9af'); // front posts
+          block(lx + sx2, (z0 + z1) / 2, 0.15, z1 - z0);
+        }
+        const roof = new THREE.Mesh(new THREE.PlaneGeometry(lw, z1 - z0).rotateX(Math.PI / 2), netMat);
+        roof.position.set(lx, nh, (z0 + z1) / 2);
+        scene.add(roof);
+        box(lw, 0.08, 0.08, lx, nh, z1, '#9ca9af');
+        // The pitching machine: a stand, two throwing wheels and a ball hopper.
+        const mz = z0 + 1.4;
+        box(0.8, 0.9, 0.8, lx, 0.45, mz, '#3a3f47');
+        for (const wx of [-0.22, 0.22]) {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 16), mat('#2b2b2e'));
+          wheel.position.set(lx + wx, 1.05, mz);
+          scene.add(wheel);
+        }
+        const hopper = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.15, 0.4, 12), mat('#c8463c'));
+        hopper.position.set(lx, 1.45, mz - 0.25);
+        scene.add(hopper);
+        block(lx, mz, 0.9, 0.9);
+        // Home plate.
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 5), mat('#f7f4ee'));
+        plate.rotation.y = Math.PI / 2;
+        plate.position.set(lx, 0.02, z1 - 1.3);
+        scene.add(plate);
+        stations.batting.push({ x: lx + 0.6, z: z1 - 1.1, ry: Math.PI }); // facing the machine
+      }
+      // A round HOME RUN target high on the back wall of the middle lane.
+      const hr = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ map: labelTexture('HOME RUN', '#d9473c') }));
+      hr.position.set(0, 2.7, -d / 2 + 0.05);
+      scene.add(hr);
     } else if (store.workshop === 'claw') {
       // A row of claw machines along the back wall.
       const n = Math.max(2, Math.min(4, Math.floor((w - 2) / 1.6)));
@@ -1279,6 +1432,65 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'japchae') {
+      // Suragan Cooking Class: a long cooking table with a burner and a pan
+      // at each place, bowls of coloured vegetables down the middle, and a
+      // big mixing bowl at the far end. The teacher stands at the head.
+      const tz = -d * 0.06, tw = Math.min(7, w - 8);
+      box(tw, 0.08, 1.6, 0, 0.7, tz, '#d9d2c4'); // stainless-look top
+      box(tw, 0.62, 1.5, 0, 0.33, tz, '#8a5a3a');
+      block(0, tz, tw, 1.6);
+      const spots = [], rolls = [];
+      const vegCol = ['#f08a2c', '#3f8f3f', '#d8402c', '#7a5236', '#f3e7c9', '#ffd23a'];
+      for (let k = 0; k < 3; k++) {
+        const x = (k - 1) * (tw / 3.2);
+        // Back side: a burner and a pan (japchae).
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
+        burner.position.set(x, 0.76, tz - 0.42);
+        scene.add(burner);
+        const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
+        pan.position.set(x, 0.82, tz - 0.42);
+        scene.add(pan);
+        box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz - 0.42, '#3a3a3e'); // handle
+        spots.push({ x, z: tz - 1.3 });
+        // Front side: a bamboo mat (김발) with a sheet of gim and rice (kimbap).
+        box(0.5, 0.02, 0.44, x, 0.75, tz + 0.42, '#c9b27a');
+        box(0.42, 0.012, 0.36, x, 0.767, tz + 0.42, '#1f2a1c');
+        box(0.38, 0.03, 0.24, x, 0.782, tz + 0.37, '#f4f1e8');
+        rolls.push({ x, z: tz + 1.3 });
+        // Little bowls of sliced vegetables between the places.
+        for (let j = 0; j < 2; j++) {
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.07, 12), mat('#f7f3ea'));
+          bowl.position.set(x - 0.15 + j * 0.3, 0.78, tz);
+          scene.add(bowl);
+          const veg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 12), mat(vegCol[(k * 2 + j) % vegCol.length]));
+          veg.position.set(x - 0.15 + j * 0.3, 0.82, tz);
+          scene.add(veg);
+        }
+      }
+      stations.japchae = spots;
+      stations.kimbap = rolls;
+      stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      // The big mixing bowl with glossy noodles at the far end.
+      const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
+      big.position.set(tw / 2 + 1.1, 1.0, tz);
+      scene.add(big);
+      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat('#9a6a45'));
+      noodles.position.set(tw / 2 + 1.1, 0.88, tz);
+      scene.add(noodles);
+      box(0.9, 0.55, 0.9, tw / 2 + 1.1, 0.28, tz, '#8a5a3a'); // its stand
+      block(tw / 2 + 1.1, tz, 1, 1);
+      // A low stone ledge of sauce jars (간장 · soy sauce) by the front-left wall.
+      const jx0 = -w / 2 + 1.2, jz = d / 2 - 1.9;
+      box(5, 0.2, 1.1, jx0 + 2.1, 0.1, jz, '#9a9488');
+      [0.42, 0.32, 0.46, 0.3].forEach((r, k) => {
+        const jx = jx0 + k * 1.2;
+        const pot = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat('#4a2c1c'));
+        pot.scale.set(1, 1.15, 1);
+        pot.position.set(jx, 0.2 + r * 1.1, jz);
+        scene.add(pot);
+      });
+      block(jx0 + 2.1, jz, 5, 1.2);
     } else if (store.workshop === 'kimchi') {
       // Sonmat Kimchi School: a long low work table with cabbages, bowls of
       // red seasoning and a salt sack; a big red rubber tub (고무대야) of
@@ -1403,16 +1615,18 @@ export function buildInterior(store) {
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
       stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
       block(dw / 4, dz - 0.85, 0.6, 0.5);
-    } else {
+    } else if (store.workshop === 'tarot') {
+      clerk = stations.tarotReader; // no shop counter: the reader sits at her table
+    } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
       const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || stations.kimchiTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI };
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
+  if (store.category !== 'home' && !store.cinema) for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);
@@ -1447,9 +1661,67 @@ export function buildInterior(store) {
     turntable = { x: tx, z: tz + 0.9, platter };
   }
   // K-POP café: a big TV on the back wall (the video plays in the corner of
-  // the screen; this is the room's look).
+  // the screen; this is the room's look). The cinema has a big screen.
   let tv = null;
-  if (store.kpop) {
+  if (store.cinema) {
+    // Cinema: a big 16:9 screen in a black frame on the back wall, rows of
+    // red seats facing it (a middle aisle and a side aisle to walk), dim
+    // step lights, and a film kiosk by the door where you pick what's on.
+    const sw = Math.min(11.2, w - 3), sh = sw * 9 / 16, sy = h - 0.5 - sh / 2, sz = -d / 2 + 0.25;
+    box(sw + 0.5, sh + 0.5, 0.2, 0, sy, sz - 0.05, '#050507');
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), new THREE.MeshBasicMaterial({ color: '#2a2833' }));
+    glow.position.set(0, sy, sz + 0.07);
+    scene.add(glow);
+    const seatC = store.colors.seat || store.colors.sign; // seats and curtains
+    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, seatC); // curtains
+    box(sw + 1, 0.5, 0.6, 0, 0.25, sz + 0.6, '#1a1820'); // stage step
+    block(0, sz + 0.5, sw + 2.4, 1);
+    const cols = [-6.4, -5.4, -4.4, -3.4, -2.4, -1.4, 1.4, 2.4, 3.4, 4.4, 5.4, 6.4];
+    const rows = 5, z0 = -d / 2 + 5, rowGap = 1.7;
+    for (let r = 0; r < rows; r++) {
+      const rz = z0 + r * rowGap;
+      for (const cx of cols) {
+        box(0.78, 0.12, 0.62, cx, SEAT_H - 0.06, rz, seatC); // seat
+        box(0.78, 0.66, 0.12, cx, SEAT_H + 0.3, rz + 0.33, seatC); // back
+        box(0.08, SEAT_H + 0.18, 0.62, cx - 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c'); // arm
+        seats.push({ x: cx, z: rz - 0.02, ry: Math.PI, stand: [cx, rz - 0.85] });
+      }
+      box(0.08, SEAT_H + 0.18, 0.62, cols[5] + 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c');
+      box(0.08, SEAT_H + 0.18, 0.62, cols[cols.length - 1] + 0.43, (SEAT_H + 0.18) / 2, rz, '#26232c');
+      // Each half-row is one collider, thin enough to leave a walkway in
+      // front of it to stand up into.
+      block((cols[0] + cols[5]) / 2, rz + 0.12, cols[5] - cols[0] + 0.95, 0.5);
+      block((cols[6] + cols[cols.length - 1]) / 2, rz + 0.12, cols[cols.length - 1] - cols[6] + 0.95, 0.5);
+    }
+    // Step lights along the aisles.
+    const stepMat = new THREE.MeshBasicMaterial({ color: '#ffb84a' });
+    for (let r = 0; r <= rows; r++) for (const ax of [-0.55, 0.55, -w / 2 + 1.1, w / 2 - 1.1]) {
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08).rotateX(-Math.PI / 2), stepMat);
+      l.position.set(ax, 0.012, z0 - 0.9 + r * rowGap);
+      scene.add(l);
+    }
+    // Film kiosk by the door, left side.
+    const kx = -w / 2 + 2.2, kz = d / 2 - 2.4;
+    box(1.1, 1.2, 0.6, kx, 0.6, kz, '#1d1b24');
+    const kScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.55), new THREE.MeshBasicMaterial({ color: store.colors.awning }));
+    kScreen.position.set(kx, 1.05, kz + 0.31);
+    kScreen.rotation.x = -0.35;
+    scene.add(kScreen);
+    block(kx, kz, 1.2, 0.7);
+    // Popcorn stand on the right.
+    const px = w / 2 - 2.4, pz = d / 2 - 2.6;
+    box(1.6, COUNTER_H, 0.8, px, COUNTER_H / 2, pz, '#b3262e');
+    box(0.6, 0.7, 0.5, px - 0.3, COUNTER_H + 0.35, pz, '#f3e3b0'); // popcorn machine
+    box(0.62, 0.08, 0.52, px - 0.3, COUNTER_H + 0.74, pz, '#b3262e');
+    block(px, pz, 1.7, 0.9);
+    clerk = { x: px, z: pz + 0.75, ry: Math.PI };
+    // A soft light over the seats, so people can find a seat in the dark.
+    const hall = new THREE.PointLight(0xffd9b0, 10, 22);
+    hall.position.set(0, h - 1, d / 4);
+    scene.add(hall);
+    tv = { x: kx, z: kz + 1.1, screen: glow, width: sw };
+    if (store.cinema === 'doodle') drawFlat(scene, glow); // the 2D cinema
+  } else if (store.kpop) {
     const tvz = -d / 2 + 0.3;
     box(5.2, 3, 0.2, 0, 2.3, tvz, '#1b1b20');
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(4.9, 2.7), new THREE.MeshBasicMaterial({ color: store.colors.awning }));
