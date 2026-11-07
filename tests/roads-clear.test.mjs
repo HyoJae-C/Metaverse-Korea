@@ -17,7 +17,7 @@ const ALLOWED = [
   // { d: 'district-id', name: 'Street name (en)', why: '...' },
 ];
 
-const R = new URL('../public/regions/seongsu/', import.meta.url);
+const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const readJson = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
 
 test('no building or blocker stands on a street', async () => {

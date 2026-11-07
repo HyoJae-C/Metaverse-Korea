@@ -6,7 +6,7 @@
 // anchor: lat/lon plus the local metres of that spot in the area's own map),
 // and its offset follows from that; see scripts/place-districts.mjs and
 // docs/WORLD.md. Each gu then has a fixed budget: its real outline at 1/4
-// (public/regions/seongsu/seoul.json). Buildings inside an area stay
+// (public/regions/another-seoul/seoul.json). Buildings inside an area stay
 // full size; only the distances between areas are shrunk.
 //
 // Game metres: x east, z south.

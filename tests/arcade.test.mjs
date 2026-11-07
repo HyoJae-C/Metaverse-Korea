@@ -102,7 +102,7 @@ test('no betting: the arcade games never touch the wallet', () => {
 });
 
 test('the batting cage, the gallery booth and the dartboard exist in the data', () => {
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   assert.ok(stores.find((s) => s.workshop === 'batting'));
   assert.ok(stores.find((s) => s.id === 'bar-hush')?.darts);
   assert.ok(stores.find((s) => s.workshop === 'themepark'));

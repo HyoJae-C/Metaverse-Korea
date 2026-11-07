@@ -2393,7 +2393,7 @@ STRINGS.vi = VI;
 STRINGS.hi = HI;
 
 export const REGION_NAMES = {
-  seongsu: {
+  'another-seoul': { // the first stop: Seongsu-dong
     en: 'Seongsu-dong', ko: '성수동', ja: '聖水洞', zh: '圣水洞', zht: '聖水洞', es: 'Seongsu-dong',
   },
   seoul: { en: 'Seoul', ko: '서울', ja: 'ソウル', zh: '首尔', zht: '首爾', es: 'Seúl' },

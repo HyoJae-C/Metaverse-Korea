@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { buildStreams } from '../src/core/stream.js';
 const q = new URLSearchParams(location.search), n = (k, d) => +(q.get(k) ?? d);
-const g = await (await fetch('/regions/seongsu/districts/gyeongbokgung.json')).json();
+const g = await (await fetch('/regions/another-seoul/districts/gyeongbokgung.json')).json();
 const s = { ...g.streams[0], at: [0, 0] };
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });

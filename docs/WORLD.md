@@ -31,7 +31,7 @@ between districts shrinks. So every place has a known spot before it is
 built, and nothing needs moving when something new is added next to it.
 
 - **Gu budgets.** The 25 gu are their real outlines at 1/4
-  (`public/regions/seongsu/seoul.json`, built by `scripts/build-seoul.mjs`
+  (`public/regions/another-seoul/seoul.json`, built by `scripts/build-seoul.mjs`
   from OpenStreetMap, `scripts/data/seoul-gu-osm.geojson`). A gu is the room
   its districts have to share, e.g. Mapo-gu about 1.5 km² for Hongdae,
   Yeonnam and Mangwon together, Jung-gu about 0.6 km² (790 m square).

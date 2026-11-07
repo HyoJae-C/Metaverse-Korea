@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds Seongsu's game map (public/regions/seongsu/map.json) from the
+// Builds Seongsu's game map (public/regions/another-seoul/map.json) from the
 // hand-made layout below. It is not a copy of a real map: only the big lines
 // of the neighbourhood are kept (Achasan-ro under Line 2, Seongsui-ro,
 // Yeonmujang-gil, Seoul Forest to the west, the Han River to the south), and
@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dir = path.join(root, 'public/regions/seongsu');
+const dir = path.join(root, 'public/regions/another-seoul');
 
 // Deterministic "random" so the map only changes when the layout does.
 function rng(seed) {

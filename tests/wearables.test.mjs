@@ -6,7 +6,7 @@ import { sanitizeLook, DEFAULT_LOOK } from '../src/data/appearance.js';
 import { comingSoon } from '../src/ui/shop-ui.js';
 import { storeIcon } from '../src/core/store-icons.js';
 
-const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 
 test('every shop product to wear is a real item that a look keeps (also over the network)', () => {
   let n = 0;

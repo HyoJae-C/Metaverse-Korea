@@ -6,7 +6,7 @@ import { FURNITURE, LAMP_IDS } from '../src/core/furniture.js';
 import { ITEMS } from '../src/core/inventory.js';
 import { usable } from '../src/ui/shop-ui.js';
 
-const g = JSON.parse(readFileSync(new URL('../public/regions/seongsu/districts/gyeongbokgung.json', import.meta.url)));
+const g = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const s = g.streams[0];
 const ww = s.water / 2;
 const now = 1_800_000_000;
@@ -67,7 +67,7 @@ test('you can float one only from the walkway by the water in the wish corner', 
 });
 
 test('every lamp is furniture, an item and sold in exactly one lighting shop', () => {
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const sold = stores.flatMap((st) => (st.products || []).filter((p) => p.furniture).map((p) => [st, p]));
   assert.equal(sold.length, LAMP_IDS.length);
   for (const [id] of LAMP_IDS) {

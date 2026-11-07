@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { districtBoxes, districtAt } from '../src/core/districts.js';
 import { AREA, GAME_TOPICS, PLACE_TOPICS } from '../src/ui/info-ui.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 const stores = read('stores.json').stores;
 

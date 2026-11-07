@@ -52,7 +52,7 @@ test('every menu option has a palette or labelled choices in every language', ()
 test('each colour lip shop sells only its own family, Petal Lip the mixed ten', async () => {
   const { menuFor } = await import('../src/core/beauty.js');
   const { readFileSync } = await import('node:fs');
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const lipShops = stores.filter((s) => s.workshop === 'lips');
   assert.ok(lipShops.length >= 7);
   for (const s of lipShops) {
@@ -64,7 +64,7 @@ test('each colour lip shop sells only its own family, Petal Lip the mixed ten', 
 });
 
 test('salons by concept: three signature styles each, the basic cuts everywhere', () => {
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const salons = stores.filter((s) => s.workshop === 'salon');
   // Salons are spread over the areas: Seongsu, Hongdae, Seodaemun (by the
   // campus street) and Itaewon (a men's barber).

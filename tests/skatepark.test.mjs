@@ -7,7 +7,7 @@ import {
 } from '../src/core/skatepark.js';
 import { RIDE_TYPES } from '../src/core/bike-garage.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 // Ride in a straight line along x at speed v, from x0 for `secs`, tapping
 // Trick at the times in `taps`. Returns the heights and all events.

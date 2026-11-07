@@ -116,7 +116,7 @@ player `me`, `mode`, `interior`, …) as getters, so the feature always reads th
 ### Adding a region
 
 Areas of Seoul are districts of the Seongsu region (see `docs/WORLD.md`): draw a small hand-made
-map file in `public/regions/seongsu/districts/`, add it to `districts` in `region.json` with an
+map file in `public/regions/another-seoul/districts/`, add it to `districts` in `region.json` with an
 offset, and place its stores, zone and bike station with `"at": [x, z]`.
 
 ### Swapping the character model pack

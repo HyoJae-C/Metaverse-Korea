@@ -6,7 +6,7 @@ import { craftEntry, CRAFT } from '../src/ui/bukchon-ui.js';
 import { districtBoxes, districtAt, mergeDistricts } from '../src/core/districts.js';
 import { cleanEntry } from '../src/core/bag.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 const map = read('districts/bukchon.json');
 const stores = read('stores.json').stores;

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds the Jongmyo district map (public/regions/seongsu/districts/jongmyo.json)
+// Builds the Jongmyo district map (public/regions/another-seoul/districts/jongmyo.json)
 // from the hand-made layout in src/data/jongmyo.js.
 //
 // Jongmyo Shrine and Seosunra-gil, Jongno-gu, loosely after the real streets
@@ -22,9 +22,9 @@ import path from 'node:path';
 import { JONGMYO } from '../src/data/jongmyo.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'public/regions/seongsu/districts/jongmyo.json');
-const storesFile = path.join(root, 'public/regions/seongsu/stores.json');
-const regionFile = path.join(root, 'public/regions/seongsu/region.json');
+const out = path.join(root, 'public/regions/another-seoul/districts/jongmyo.json');
+const storesFile = path.join(root, 'public/regions/another-seoul/stores.json');
+const regionFile = path.join(root, 'public/regions/another-seoul/region.json');
 
 const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];

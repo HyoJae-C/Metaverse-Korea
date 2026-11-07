@@ -7,7 +7,7 @@ import { sanitizeLook } from '../src/data/appearance.js';
 import { nearestPainting } from '../src/core/museum.js';
 import { STAMPS } from '../src/data/stamps.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 test('every photo is a War Memorial item on the KOGL portal, with Korean and English text', () => {
   const ids = new Set();

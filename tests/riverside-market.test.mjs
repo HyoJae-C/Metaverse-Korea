@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isFood } from '../src/core/food-dex.js';
 
-const data = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url)));
+const data = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
 const park = data.stores.find((s) => s.id === 'ttukseom-hangang');
 
 test('the Han River park has a market with stalls and goods', () => {

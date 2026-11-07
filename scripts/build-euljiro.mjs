@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Builds the Euljiro & Dongdaemun district map
-// (public/regions/seongsu/districts/euljiro.json) from the hand-made layout
+// (public/regions/another-seoul/districts/euljiro.json) from the hand-made layout
 // below.
 //
 // Jung-gu between Cheonggyecheon and Namsan, loosely after the real streets
@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'public/regions/seongsu/districts/euljiro.json');
+const out = path.join(root, 'public/regions/another-seoul/districts/euljiro.json');
 
 const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds Bukchon's district map (public/regions/seongsu/districts/bukchon.json)
+// Builds Bukchon's district map (public/regions/another-seoul/districts/bukchon.json)
 // from the hand-made layout below.
 //
 // Bukchon Hanok Village sits between Gyeongbokgung and Changdeokgung, uphill
@@ -23,7 +23,7 @@ import path from 'node:path';
 import { BUKCHON, ground } from '../src/data/bukchon.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'public/regions/seongsu/districts/bukchon.json');
+const out = path.join(root, 'public/regions/another-seoul/districts/bukchon.json');
 
 const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];

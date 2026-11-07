@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { heronAt, heronWater, heronPlan, flyTime, HERON } from '../src/core/heron.js';
 import { CollisionMap } from '../src/core/collision.js';
 
-const g = JSON.parse(readFileSync(new URL('../public/regions/seongsu/districts/gyeongbokgung.json', import.meta.url)));
+const g = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const s = g.streams[0];
 const ww = s.water / 2, D = s.depth;
 const t0 = 1_800_000_000; // any wall-clock time
