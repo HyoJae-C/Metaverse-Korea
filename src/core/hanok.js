@@ -119,8 +119,37 @@ export function curvedRoof(w, d, h, { hip = true, lift = 0.5, seg = 6, rows = 2,
 }
 
 // Collects coloured pieces under a stack of transforms.
+// Wall textures, drawn once: squared granite blocks (사괴석) with pale
+// mortar, and red-brown brick. One tile is TILE metres.
+const TILE = { w: 1.2, h: 0.6 };
+const texCache = {};
+export function wallTexture(kind) {
+  if (kind in texCache) return texCache[kind];
+  if (typeof document === 'undefined') return (texCache[kind] = null);
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 128;
+  const x = c.getContext('2d');
+  const stone = kind === 'stone';
+  x.fillStyle = stone ? '#e6e0d3' : '#d9cfbf'; // mortar
+  x.fillRect(0, 0, 256, 128);
+  const rows = stone ? 2 : 8, cols = stone ? 4 : 5, m = stone ? 5 : 3;
+  const tones = stone ? ['#9b968e', '#a9a39a', '#8f8a83', '#b1aba1', '#97928a'] : ['#9a4a3a', '#a65440', '#8c4234', '#b05f48', '#93473a'];
+  for (let r = 0; r < rows; r++) {
+    const h = 128 / rows, off = (r % 2) * (256 / cols) / 2;
+    for (let i = -1; i < cols; i++) {
+      const w = 256 / cols;
+      x.fillStyle = tones[(r * 3 + i * 7 + 20) % tones.length];
+      x.fillRect(off + i * w + m / 2, r * h + m / 2, w - m, h - m);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return (texCache[kind] = t);
+}
+
 class Kit {
-  constructor() { this.body = []; this.roof = []; this.m = new THREE.Matrix4(); }
+  constructor() { this.body = []; this.roof = []; this.stone = []; this.brick = []; this.m = new THREE.Matrix4(); }
   at(x, y, z, ry, fn) {
     const keep = this.m.clone();
     this.m.multiply(new THREE.Matrix4().makeRotationY(ry).setPosition(x, y, z));
@@ -136,6 +165,22 @@ class Kit {
   box(c, sx, sy, sz, x, y, z) { this.add(this.body, new THREE.BoxGeometry(sx, sy, sz).translate(x, y, z), c); }
   // A flat face (2 triangles, not a box's 12) facing +z, or -z when back.
   quad(c, w, h, x, y, z, back = false) { const g = new THREE.PlaneGeometry(w, h); if (back) g.rotateY(Math.PI); this.add(this.body, g.translate(x, y, z), c); }
+  // A textured face (stone blocks or brick, see wallTexture): w × h, facing
+  // +z (or -z with back), its texture at true size whatever the face's size.
+  face(kind, w, h, x, y, z, back = false) {
+    const g = new THREE.PlaneGeometry(w, h);
+    const uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / TILE.w, uv.getY(i) * h / TILE.h);
+    if (back) g.rotateY(Math.PI);
+    g.translate(x, y, z);
+    (kind === 'brick' ? this.brick : this.stone).push(g.toNonIndexed().applyMatrix4(this.m));
+  }
+  // The four sides of a box (sx × sy × sz centred at x, y, z) in one texture.
+  faces(kind, sx, sy, sz, x, y, z) {
+    this.face(kind, sx, sy, x, y, z + sz / 2 + 0.01);
+    this.face(kind, sx, sy, x, y, z - sz / 2 - 0.01, true);
+    this.at(x, 0, z, Math.PI / 2, () => { this.face(kind, sz, sy, 0, y, sx / 2 + 0.01); this.face(kind, sz, sy, 0, y, -sx / 2 - 0.01, true); });
+  }
   roofAt(y, w, d, h, o) { for (const g of curvedRoof(w, d, h, o)) this.add(this.roof, g.translate(0, y, 0)); }
 }
 
@@ -143,11 +188,14 @@ class Kit {
 function wing(k, L, D, o, { doors = true, tall = 0 } = {}) {
   const B = o.base, W = o.wall + tall, top = B + W;
   k.box(o.baseC, L + 0.7, B, D + 0.7, 0, B / 2, 0);
-  if (o.stone) {
-    k.box(o.stoneC, L, 1.0, D, 0, B + 0.5, 0);
-    for (let x = -L / 2 + 0.5; x < L / 2 - 0.3; x += 1.0) k.quad(tint(o.stoneC, 1.12), 0.42, 0.32, x, B + 0.62, D / 2 + 0.01); // the stone pattern
-    k.box(o.wallC, L - 0.02, W - 1.0, D - 0.02, 0, B + 1.0 + (W - 1.0) / 2, 0);
-  } else k.box(o.wallC, L, W, D, 0, B + W / 2, 0);
+  k.box(o.wallC, L, W, D, 0, B + W / 2, 0);
+  // The lower wall: squared stones (사괴석) or brick, all round; brick houses
+  // are brick up to the eaves at the back and the ends.
+  k.faces(o.band, L, 1.1, D, 0, B + 0.55, 0);
+  if (o.band === 'brick' && o.tallBrick) {
+    k.face('brick', L, W - 1.1, 0, B + 1.1 + (W - 1.1) / 2, -D / 2 - 0.01, true);
+    k.at(0, 0, 0, Math.PI / 2, () => { for (const s of [-1, 1]) k.face('brick', D, W - 1.1, 0, B + 1.1 + (W - 1.1) / 2, s * (L / 2 + 0.01), s < 0); });
+  }
   // Frame: corner posts, posts between bays, a beam under the eaves.
   const bays = Math.max(1, Math.round(L / 2.6));
   for (let i = 0; i <= bays; i++) {
@@ -177,6 +225,7 @@ function fence(k, x0, x1, z, o, ry = 0) {
   if (len < 0.4) return;
   k.at((x0 + x1) / 2, 0, z, ry, () => {
     k.box(o.stoneC, len, 0.9, 0.55, 0, 0.45, 0);
+    for (const s of [-1, 1]) k.face(o.band, len, 0.9, 0, 0.45, s * 0.285, s < 0); // stones (or brick) both sides
     k.box(o.wallC, len, 0.8, 0.45, 0, 1.3, 0);
     k.roofAt(1.7, len + 0.3, 1.1, 0.35, { hip: false, lift: 0.04, color: o.roofC, end: o.wallC, seg: Math.max(1, Math.round(len / 4)), rows: 1, ridgeEnds: false });
   });
@@ -187,8 +236,11 @@ function gate(k, x, z, o, ry = 0) {
   k.at(x, 0, z, ry, () => {
     for (const sx of [-1, 1]) k.box(o.woodC, 0.3, 2.6, 0.3, sx * 1.15, 1.3, 0);
     k.box(o.woodC, 2.6, 0.25, 0.35, 0, 2.5, 0);
-    k.box(PAL.door, 1.0, 2.1, 0.08, -0.55, 1.15, -0.2);
-    k.box(PAL.door, 1.0, 2.1, 0.08, 0.55, 1.15, -0.2);
+    if (o.visit) for (const sx of [-1, 1]) k.box(PAL.door, 0.08, 2.1, 1.0, sx * 1.0, 1.15, -0.75); // open, swung inwards
+    else {
+      k.box(PAL.door, 1.0, 2.1, 0.08, -0.55, 1.15, -0.2);
+      k.box(PAL.door, 1.0, 2.1, 0.08, 0.55, 1.15, -0.2);
+    }
     k.box(o.baseC, 2.4, 0.18, 0.9, 0, 0.09, 0.4);
     k.roofAt(2.65, 3.6, 1.9, 0.8, { hip: false, lift: 0.18, color: o.roofC, end: o.wallC, seg: 2, rows: 2 });
   });
@@ -229,7 +281,7 @@ function jars(k, x, z, r) { // jangdokdae (장독대): a stone step with onggi j
 function home(k, L, D, o, r) {
   const t = r(), back = Math.min(5.5, D * 0.48), side = Math.min(4.6, L * 0.34);
   const zb = -D / 2 + back / 2 + 0.4; // the main wing (안채) along the back
-  const shape = L < 10 ? 'ㅡ' : t < 0.42 ? 'ㄱ' : t < 0.72 ? 'ㄷ' : 'ㅡ';
+  const shape = o.visit ? 'ㄷ' : L < 10 ? 'ㅡ' : t < 0.42 ? 'ㄱ' : t < 0.72 ? 'ㄷ' : 'ㅡ'; // (open to visitors: always ㄷ, gate in the middle)
   wing(k, L - 0.8, back, o);
   const yard = { x0: -L / 2 + 0.6, x1: L / 2 - 0.6, z0: zb + back / 2 + 0.8, z1: D / 2 - 0.6 };
   const left = r() < 0.5;
@@ -291,8 +343,11 @@ function house(k, b, i) {
     stoneC: tint(pick(r, PAL.stone), 1),
     stone: r() < 0.45,
   };
+  o.band = o.stone || r() < 0.6 ? 'stone' : 'brick';
+  o.tallBrick = r() < 0.5;
+  o.visit = !!b.visit;
   k.at(cx, 0, cz, ry, () => {
-    if (lv > 0.05) k.box(o.stoneC, L, lv, D, 0, lv / 2, 0); // the stone terrace (축대) up the hill
+    if (lv > 0.05) { k.box(o.stoneC, L, lv, D, 0, lv / 2, 0); k.faces('stone', L, lv, D, 0, lv / 2, 0); } // the stone terrace (축대) up the hill
     k.at(0, lv, 0, 0, () => (b.h >= 6 ? shop(k, L, D, o, r) : home(k, L, D, o, r)));
   });
 }
@@ -309,6 +364,13 @@ export function buildHanoks(buildings) {
     if (!geo) continue;
     const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side }));
     mesh.name = name; // (walls cast shadows)
+    group.add(mesh);
+  }
+  for (const kind of ['stone', 'brick']) {
+    const list = k[kind];
+    if (!list.length) continue;
+    const mesh = new THREE.Mesh(mergeGeometries(list), new THREE.MeshLambertMaterial({ map: wallTexture(kind), color: wallTexture(kind) ? 0xffffff : kind === 'brick' ? 0x9a4a3a : 0x9a9284 }));
+    mesh.name = 'walls';
     group.add(mesh);
   }
   return group;

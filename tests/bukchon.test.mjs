@@ -169,3 +169,30 @@ test('inside the wall is only drawn while you are in; the houses are built on th
   far.update(1, { x: 50, z: 10 });
   assert.equal(hall.visible, false);
 });
+
+test('the alleys are narrow and lined with house walls', () => {
+  const main = map.roads.find((r) => r.n?.en === 'Bukchon-ro 11-gil');
+  assert.ok(main.w <= 3.5);
+  const edge = main.p[0][0] + main.w / 2, edgeW = main.p[0][0] - main.w / 2;
+  const lining = map.buildings.filter((b) => b.p.some(([x]) => Math.abs(x - edge) < 0.4 || Math.abs(x - edgeW) < 0.4));
+  assert.ok(lining.length >= 8, `only ${lining.length} houses line 11-gil`);
+});
+
+test('a few homes are open to visitors: a sign, an open gate and a yard you can walk into', () => {
+  const homes = map.buildings.filter((b) => b.visit);
+  assert.ok(homes.length >= 2 && homes.length <= 4);
+  const signs = map.landmarks.filter((l) => l.visit);
+  assert.equal(signs.length, homes.length);
+  for (const s of signs) assert.equal(s.title.ko, '출입 가능');
+  const blocks = map.blockers.map((b) => b.p);
+  for (const b of homes) {
+    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2, D = Math.max(...xs) - Math.min(...xs);
+    // from the alley, through the gate in the middle of the front, into the yard
+    for (let t = D / 2 + 1; t > 0.5; t -= 0.25) {
+      const x = cx + b.fr[0] * t;
+      assert.ok(!blocks.some((p) => inside(x, cz, p)), `the way into the home at ${cx},${cz} is shut at ${x}`);
+    }
+    assert.ok(signs.some((s) => Math.hypot(s.x - (cx + b.fr[0] * D / 2), s.z - cz) < 4), 'a sign by the gate');
+  }
+});

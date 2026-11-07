@@ -42,7 +42,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow } from './core/palace-show.js';
+import { PalaceShow, FAN_KEEP, ringPoly } from './core/palace-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -543,8 +543,14 @@ const allExits = subwayStations.flatMap((st) => st.exits);
 // a wall that only bridges cross; down by the water you use streamCollision.
 const streams = map.streams || [];
 const streamWalls = streams.flatMap(streamStreetBlockers);
-const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls)); // blockers: rivers, walls
-const treeCollision = allExits.length || streams.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
+// Gyeongbokgung's fan dance (core/palace-show.js): a rope ring round the
+// dancers that you can't step inside, so the formation isn't broken.
+const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
+const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 150]; // Geunjeongjeon's courtyard
+const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
+const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
+const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
+const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
 const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
 const streamModels = buildStreams(streams, scene);
@@ -575,9 +581,9 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
-const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
 const palaceShow = palaceAt ? new PalaceShow(scene, {
-  fan: [palaceAt[0], palaceAt[1] - 150], // Geunjeongjeon's courtyard
+  fan: fanAt,
+  procession: palaceAt, // the king's walk round the palace (ROYAL_ROUTE)
   mask: [palaceAt[0], palaceAt[1] + 52], // on the square, just before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
@@ -5352,7 +5358,13 @@ const muralAct = () => ({ key: 'mural', label: '📜 ' + L(WISH_TEXT.mural), run
 const bukchonAt = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
 const viewBook = new ViewBook(), partBook = new PartBook();
 // Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
-function bukchonY(x, z) { return bukchonAt ? bukchonGround(x - bukchonAt[0], z - bukchonAt[1]) : 0; }
+// In the yard of a home open to visitors, the ground is its flat terrace.
+const visitYards = map.buildings.filter((b) => b.visit).map((b) => ({ x0: Math.min(...b.p.map((q) => q[0])), x1: Math.max(...b.p.map((q) => q[0])), z0: Math.min(...b.p.map((q) => q[1])), z1: Math.max(...b.p.map((q) => q[1])), y: b.lv || 0 }));
+function bukchonY(x, z) {
+  if (!bukchonAt) return 0;
+  for (const v of visitYards) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1) return v.y;
+  return bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+}
 // Villagers in hanbok, men and women, strolling the alleys inside the wall.
 const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
 const HANBOK_MEN = [['baji-blue', 'short'], ['durumagi-lilac', 'crop'], ['baji-navy', 'pomp'], ['durumagi-gray', 'short'], ['baji-jade', 'crop']];
@@ -7271,6 +7283,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
+    royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
