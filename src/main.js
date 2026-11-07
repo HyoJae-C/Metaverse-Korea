@@ -67,7 +67,7 @@ import { startWhereReports } from './net/where.js';
 import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
-import { getEmote, ownedPacks } from './data/emotes.js';
+import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
@@ -83,18 +83,14 @@ import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { RamenUI } from './ui/ramen-ui.js';
-import { KimchiUI } from './ui/kimchi-ui.js';
-import { KimchiSellUI, ML as MARKET_L } from './ui/kimchi-sell-ui.js';
-import { MuseumUI, MUSEUM_TEXT } from './ui/museum-ui.js';
+import { ML as MARKET_L } from './ui/kimchi-sell-ui.js';
+import { MUSEUM_TEXT } from './ui/museum-ui.js';
 import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
 import { GUIDE_LOOK, MEMORIAL_TEXT, MEMORIAL_FLOORS, HALLS as MEMORIAL_HALLS, DONATED } from './data/war-memorial.js';
 import { HAUNT_STORE, HAUNT_SPOT } from './core/haunted.js';
 import { BOSS_LINES } from './ui/market-text.js';
-import { kimchiJar } from './core/kimchi-market.js';
 import { KT as KIMCHI_TEXT } from './ui/kimchi-text.js';
-import { JapchaeUI } from './ui/japchae-ui.js';
 import { JT as JAPCHAE_TEXT } from './ui/japchae-text.js';
-import { KimbapUI } from './ui/kimbap-ui.js';
 import { BT as KIMBAP_TEXT } from './ui/kimbap-text.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag, giftEntry } from './core/bag.js';
@@ -177,6 +173,8 @@ import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
+import { createCookingClasses } from './game/cooking-classes.js';
+import { createEmoteWheel } from './ui/emote-wheel.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1323,78 +1321,12 @@ claimTab(() => {
 });
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
-// Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
-// send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
-const emoteBar = $('emotes');
-const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
-$('keys-emote-range').textContent = `1–${Math.min(9, emoteList.length)}`;
-$('keys-emote-range').closest('li').hidden = !emoteList.length;
-function sendEmote(em) {
-  missionEvent('emote');
-  if (onSquare()) missionEvent('squareEmote');
-  if (em.anim) me.play(em.anim);
-  showBubble(myLabel, $('labels'), em.emoji);
-  net.sendEmote(em.id);
-}
-const petals = emoteList.map((em, i) => {
-  const b = document.createElement('button');
-  b.textContent = em.emoji;
-  b.setAttribute('aria-label', em.id);
-  // Fan out in a quarter circle above and to the left of the main button.
-  // Rings of 3, 4 and 5 petals so up to 12 fit without overlapping.
-  const ring = i < 3 ? 0 : i < 7 ? 1 : 2;
-  const start = [0, 3, 7][ring];
-  const n = Math.min([3, 4, 5][ring], emoteList.length - start);
-  const ang = Math.PI / 2 + (n > 1 ? ((i - start) / (n - 1)) : 0.5) * (Math.PI / 2);
-  const r = [80, 140, 200][ring];
-  b.style.setProperty('--dx', `${Math.cos(ang) * r}px`);
-  b.style.setProperty('--dy', `${-Math.sin(ang) * r}px`);
-  b.onclick = (e) => { e.stopPropagation(); sendEmote(em); closeWheel(); };
-  emoteBar.appendChild(b);
-  return b;
+// Emote wheel. (ui/emote-wheel.js)
+const emoteWheel = createEmoteWheel({
+  get onSquare() { return onSquare; }, get me() { return me; }, get net() { return net; }, $, missionEvent,
+  myLabel,
 });
-let wheelOpen = false, dragHot = null, dragStart = null;
-function openWheel() { wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open'); }
-function closeWheel() {
-  wheelOpen = false; emoteBar.hidden = true; $('emote-wheel').classList.remove('open');
-  petals.forEach((p) => p.classList.remove('hot'));
-  dragHot = null;
-}
-const mainBtn = $('emote-main');
-mainBtn.addEventListener('pointerdown', (e) => {
-  e.preventDefault();
-  mainBtn.setPointerCapture(e.pointerId);
-  dragStart = { x: e.clientX, y: e.clientY, wasOpen: wheelOpen, moved: false };
-  openWheel();
-});
-mainBtn.addEventListener('pointermove', (e) => {
-  if (!dragStart) return;
-  if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 12) dragStart.moved = true;
-  dragHot = null;
-  let best = 44;
-  for (const p of petals) {
-    const r = p.getBoundingClientRect();
-    const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
-    if (d < best) { best = d; dragHot = p; }
-  }
-  petals.forEach((p) => p.classList.toggle('hot', p === dragHot));
-});
-const endDrag = () => {
-  if (!dragStart) return;
-  const { moved, wasOpen } = dragStart;
-  dragStart = null;
-  if (dragHot) { sendEmote(emoteList[petals.indexOf(dragHot)]); closeWheel(); }
-  else if (moved || wasOpen) closeWheel(); // dragged off, or tapped again to close
-  // a plain tap leaves the wheel open for tapping a petal
-};
-mainBtn.addEventListener('pointerup', endDrag);
-mainBtn.addEventListener('pointercancel', () => { dragStart = null; closeWheel(); });
-addEventListener('pointerdown', (e) => { if (wheelOpen && !e.target.closest('#emote-wheel')) closeWheel(); });
-addEventListener('keydown', (e) => {
-  if (e.target instanceof HTMLInputElement) return;
-  const n = Number(e.key);
-  if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
-});
+const { closeWheel } = emoteWheel;
 
 // Text chat, chat codes, friends and friend chat. (game/chat.js)
 const chat = createChat({
@@ -2765,7 +2697,7 @@ addEventListener('keydown', (e) => {
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
     else if (loveLockUi.open) loveLockUi.close();
     else if (wishUi.open) wishUi.close();
-    else if (wheelOpen) closeWheel();
+    else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
 });
@@ -2940,46 +2872,12 @@ function buyIngredient(product, coins) {
   return true;
 }
 
-// Kimjang class at Sonmat Kimchi School (Gyeongbokgung): ten steps from the
-// cabbage to the jar; the finished kimchi goes in the bag.
-const kimchiUi = new KimchiUI({
-  root: $('kimchi-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onJar: (score) => bag.add(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
+// Cooking classes (kimchi, japchae, kimbap), the market's kimchi stall and the museums. (game/cooking-classes.js)
+const cookingClasses = createCookingClasses({
+  get clerk() { return clerk; }, get me() { return me; }, get held() { return held; }, $, bag, missionEvent,
+  setHeld, shop, togetherBonus, wallet,
 });
-// Yongmaru Market (Itaewon): the side-dish stall buys homemade kimchi, a few
-// jars a day (core/kimchi-market.js).
-const museumUi = new MuseumUI({ root: $('museum-panel') });
-const kimchiSellUi = new KimchiSellUI({
-  root: $('kimchi-sell-panel'),
-  bag,
-  wallet,
-  getHeld: () => held,
-  clearHeld: () => setHeld(null),
-  onSold: (coins, score) => {
-    shop.toast(MARKET_L('sold', { coins }));
-    clerk && say(clerk, $('labels'), score >= 75 ? BOSS_LINES.great : BOSS_LINES.ok);
-  },
-  onLimit: () => clerk && say(clerk, $('labels'), BOSS_LINES.enough),
-});
-// Japchae class at Suragan Cooking Class, next to the kimchi school.
-const japchaeUi = new JapchaeUI({
-  root: $('japchae-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
-});
-// Free-style kimbap at the same class, at the bamboo mats on the near side.
-const kimbapUi = new KimbapUI({
-  root: $('kimbap-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
-});
+const { museumUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi } = cookingClasses;
 
 // Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
 // noraebang, the photo booth, the claw machines and the duck boats.
