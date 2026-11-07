@@ -121,7 +121,6 @@ import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } f
 import { DUCK_SEATS } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
-import { fishCode, forceNextCatch } from './core/fish-luck.js';
 import { Contacts, touching, wobble } from './core/bump.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -140,7 +139,7 @@ import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -161,8 +160,7 @@ import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, SupabaseFriends, LocalFriends, convKey, cleanBody as cleanFriendText } from './core/friends.js';
-import { FriendsUI, FRIEND_TEXT } from './ui/friends-ui.js';
+import { LocalFriends } from './core/friends.js';
 import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
@@ -176,6 +174,7 @@ import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
+import { createChat } from './game/chat.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1273,7 +1272,7 @@ async function renameMe(raw) {
   if (await cloud.claimName(clean) === 'taken') return 'taken';
   if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
-  if (friendBackend instanceof LocalFriends) friendBackend.setName(nickname);
+  if (chat.friendBackend instanceof LocalFriends) chat.friendBackend.setName(nickname);
   identity = { ...identity, name: clean, nameAt: Date.now() };
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
@@ -1395,380 +1394,15 @@ addEventListener('keydown', (e) => {
   if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
 });
 
-// Text chat: a speech bubble over your head and a log of the last lines.
-// Each line fades off the screen a minute after it arrives so it does not
-// cover the view; opening the chat shows them all again (scroll back while
-// typing). On phones the log can also be folded away (the small tab by it);
-// while folded, a new line makes the 💬 button blink. Opens with 💬, or T or / on a keyboard. Text only, never HTML.
-// The picker in the chat bar chooses who hears it: everyone nearby (public,
-// not stored anywhere), all friends, or one friend. Friend chat is kept like
-// a phone messenger (core/friends.js, the 👥 panel).
-const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
-let lastChatAt = 0, chatNoticeShown = false;
-const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
-const CHAT_LOG_LINES = 40;
-const CHAT_LINE_MS = 60000; // how long a line stays on screen when the chat is closed
-const chatFoldBtn = $('chat-fold');
-let chatFolded = false;
-try { chatFolded = localStorage.getItem('mk.chatFolded') === '1'; } catch { /* ignore */ }
-function setChatFolded(on) {
-  chatFolded = on;
-  $('hud').classList.toggle('chat-folded', on);
-  chatFoldBtn.textContent = on ? '💬 ▸' : '◂';
-  chatFoldBtn.setAttribute('aria-label', on ? 'Show chat' : 'Hide chat');
-  if (!on) $('chat-btn').classList.remove('chat-blink');
-  try { localStorage.setItem('mk.chatFolded', on ? '1' : '0'); } catch { /* ignore */ }
-}
-chatFoldBtn.onclick = () => setChatFolded(!chatFolded);
-setChatFolded(chatFolded);
-// A line goes "stale" after a minute: it fades out, then takes no room.
-function ageChatLine(line) {
-  setTimeout(() => {
-    line.classList.add('stale');
-    setTimeout(() => line.classList.add('gone'), 1000);
-  }, CHAT_LINE_MS);
-}
-function nudgeChatBtn() {
-  if (!chatFolded || !chatBar.hidden) return;
-  const btn = $('chat-btn');
-  btn.classList.remove('chat-blink');
-  void btn.offsetWidth; // restart the animation
-  btn.classList.add('chat-blink');
-}
-// opts.onName: what tapping the name does (default: the block/report menu
-// for someone else's id). opts.tag: a small label before the name (friend chat).
-function addChatLine(name, text, kind = '', id = null, opts = {}) {
-  const line = document.createElement('div');
-  line.className = 'chat-line ' + kind;
-  if (opts.tag) line.append(Object.assign(document.createElement('span'), { className: 'chat-tag', textContent: opts.tag }));
-  // Someone else's name is a button: tap it to block or report them.
-  const tap = opts.onName || (id ? () => openPersonMenu(id, name) : null);
-  const b = document.createElement(tap ? 'button' : 'b');
-  b.textContent = name;
-  if (tap) { b.className = 'chat-name'; b.onclick = tap; }
-  line.append(b, document.createTextNode(' ' + text));
-  if (id) line.dataset.who = name;
-  const atEnd = chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 24;
-  chatLog.append(line);
-  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
-  if (atEnd || !chatBar || chatBar.hidden) chatLog.scrollTop = chatLog.scrollHeight;
-  ageChatLine(line);
-  if (!/\bmine\b/.test(kind)) nudgeChatBtn();
-  return line;
-}
-let personFor = null;
-function openPersonMenu(id, name) {
-  personFor = { id, name };
-  $('person-name').textContent = name;
-  refreshPersonFriend();
-  $('person-menu').hidden = false;
-}
-function blockPerson(report) {
-  if (!personFor) return;
-  const { id, name } = personFor;
-  if (report) safety.report(id, name, recentLines.get(id) || []);
-  else safety.block(id, name);
-  others.hide(id);
-  for (const el of chatLog.querySelectorAll('.chat-line')) {
-    if (el.dataset.who === name || el.querySelector('.chat-name')?.textContent === name) el.remove();
-  }
-  // Blocking a friend also ends the friendship.
-  const f = friendList.friends.concat(friendList.incoming, friendList.outgoing).find((x) => x.name === name);
-  if (f) friendStore()?.remove(f.uid).then(refreshFriends);
-  $('person-menu').hidden = true;
-  shop.toast(t(report ? 'safety.reported' : 'safety.blocked', { name }));
-  refreshUnblock();
-}
-$('person-block').onclick = () => blockPerson(false);
-$('person-report').onclick = () => blockPerson(true);
-$('person-close').onclick = () => { $('person-menu').hidden = true; };
-function refreshUnblock() {
-  $('unblock-label').textContent = t('safety.unblockAll', { n: safety.blockedCount });
-  $('unblock-btn').disabled = safety.blockedCount === 0;
-}
-$('unblock-btn').onclick = () => { safety.unblockAll(); refreshUnblock(); shop.toast(t('safety.unblocked')); };
-onLanguageChange(refreshUnblock);
-refreshUnblock();
-function openChat() {
-  // Close any open panel first (daily missions, wallet, cart…) so the chat bar is not hidden behind it.
-  for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
-  chatBar.hidden = false;
-  $('hud').classList.add('chat-open');
-  $('chat-btn').classList.remove('chat-blink');
-  chatLog.scrollTop = chatLog.scrollHeight;
-  input.keys.clear();
-  chatInput.focus();
-  if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
-}
-function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
-const mustSignInToChat = () => config.chatGoogleOnly && config.netProvider === 'supabase' && !(cloud.user && !cloud.guest);
-// A note in the chat log with a Google sign-in button (links this guest, so
-// the save stays).
-function chatSignInPrompt() {
-  const line = document.createElement('div');
-  line.className = 'chat-line note';
-  const btn = document.createElement('button');
-  btn.className = 'chat-signin';
-  btn.textContent = 'G  ' + t('chat.signInBtn');
-  btn.onclick = async () => googleFail(await cloud.linkGoogle());
-  line.append(document.createTextNode('🔒 ' + t('chat.signIn') + ' '), btn);
-  chatLog.append(line);
-  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
-  chatLog.scrollTop = chatLog.scrollHeight;
-  // Only this notice goes away by itself; chat lines stay.
-  setTimeout(() => line.classList.add('old'), 15000);
-  setTimeout(() => line.remove(), 16000);
-}
-$('chat-btn').hidden = !config.chatEnabled;
-chatFoldBtn.hidden = !config.chatEnabled;
-$('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
-chatBar.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  // Commands start with "/" and are never sent to other people.
-  const raw = cleanChat(chatInput.value);
-  // Event codes for everyone: "./EVENTSTART1" — coins, once per device.
-  if (isEventCode(raw)) {
-    chatInput.value = '';
-    const ev = await eventCode(raw);
-    if (!ev) { shop.toast(L(CODE_TEXT.wrong)); return; }
-    let used = [];
-    try { used = JSON.parse(localStorage.getItem('mk.eventCodes') || '[]'); } catch { /* broken save */ }
-    if (used.includes(ev.id)) { shop.toast(L(CODE_TEXT.used)); return; }
-    used.push(ev.id);
-    try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
-    wallet.add(ev.coins, { k: 'ledger.gift' });
-    refreshWallet();
-    shop.toast(fmt(L(CODE_TEXT.coins), { n: ev.coins }));
-    return;
-  }
-  if (raw.startsWith('/')) {
-    chatInput.value = '';
-    // Developer codes: "/<code>". A wrong one reads like any unknown command.
-    const code = raw.slice(1).trim();
-    // The master code also switches the 🛡️ operator badge on or off.
-    if (await isMasterCode(code)) {
-      myLook = { ...myLook, op: !myLook.op || undefined };
-      if (!myLook.op) delete myLook.op;
-      saveLook(myLook);
-      setLook(myLook);
-      shop.toast(L(myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
-    }
-    // Fishing code: the next bite (fishing by hand) is that fish, once.
-    const fishFromCode = await fishCode(code);
-    if (fishFromCode) {
-      forceNextCatch(fishFromCode);
-      shop.toast(L(CODE_TEXT.fish));
-      return;
-    }
-    const coinsFromCode = await coinCode(code);
-    if (coinsFromCode) {
-      wallet.add(coinsFromCode, { k: 'ledger.gift' });
-      refreshWallet();
-      shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
-      return;
-    }
-    const unlocked = await redeemCode(code);
-    if (unlocked) {
-      const added = inventory.add(...unlocked);
-      shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
-      refreshItems();
-    } else shop.toast(t('chat.unknownCommand'));
-    return;
-  }
-  // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
-  // instead. Event and developer codes above still work for them.
-  if (mustSignInToChat()) { chatSignInPrompt(); return; }
-  if (chatTo !== PUBLIC) {
-    const body = filterText(cleanFriendBody(chatInput.value));
-    if (!body) return;
-    chatInput.value = '';
-    sendFriend(chatTo, body);
-    if (input.isTouch) closeChat();
-    return;
-  }
-  const text = filterText(cleanChat(chatInput.value));
-  const now = performance.now() / 1000;
-  if (!text || now - lastChatAt < config.chatCooldown) return;
-  lastChatAt = now;
-  chatInput.value = '';
-  showBubble(myLabel, $('labels'), text, 6000, 'chat');
-  addChatLine(nickname, text, 'mine');
-  net.sendChat?.(text);
-  if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
+// Text chat, chat codes, friends and friend chat. (game/chat.js)
+const chat = createChat({
+  get others() { return others; }, get shop() { return shop; }, get googleFail() { return googleFail; },
+  get CODE_TEXT() { return CODE_TEXT; }, get wallet() { return wallet; },
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get inventory() { return inventory; },
+  get nickname() { return nickname; }, get net() { return net; }, get sfx() { return sfx; }, $, OPERATOR_TEXT,
+  cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
 });
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.isComposing) e.preventDefault(); // Korean/Japanese IME: finish the word first
-  if (e.key === 'Escape') closeChat();
-});
-addEventListener('keydown', (e) => {
-  if (!config.chatEnabled || e.target instanceof HTMLInputElement) return;
-  if (e.code === 'KeyT' || e.code === 'Slash') { e.preventDefault(); openChat(); }
-});
-
-
-// ---------- Friends and friend chat ----------
-// Friends are accounts (found by player name), so friend chat works across
-// rooms and areas, and its messages are kept. On Supabase it needs the
-// online save (a guest account is enough to add friends; sending follows the
-// same chat rules as public chat). Local play: other tabs of this browser.
-const PUBLIC = 'public';
-let chatTo = PUBLIC; // who the chat bar sends to: PUBLIC, FRIENDS_ALL or a friend's uid
-let friendList = { friends: [], incoming: [], outgoing: [] };
-let friendBackend = null, friendInbox = null, stopFriendWatch = null;
-const cleanFriendBody = (s) => cleanFriendText(s);
-const READ_KEY = 'mk.friendRead'; // last read message per chat (in the save, so it follows the account)
-function readMarks() {
-  try { const r = JSON.parse(localStorage.getItem(READ_KEY) || '{}'); return r && typeof r === 'object' ? r : {}; } catch { return {}; }
-}
-function saveMarks(m) { try { localStorage.setItem(READ_KEY, JSON.stringify(m)); } catch { /* storage blocked */ } }
-function friendStore() {
-  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
-  let want = null;
-  if (live) want = friendBackend instanceof SupabaseFriends && friendBackend.uid === cloud.user.id ? friendBackend : new SupabaseFriends(cloud.client, cloud.user.id);
-  else if (config.netProvider !== 'supabase') want = friendBackend instanceof LocalFriends ? friendBackend : new LocalFriends(myId, nickname);
-  if (want !== friendBackend) {
-    stopFriendWatch?.();
-    friendBackend = want;
-    friendInbox = want ? new Inbox(want.uid, readMarks()) : null;
-    friendList = { friends: [], incoming: [], outgoing: [] };
-    friendsUi.loaded.clear();
-    refreshFriends.primed = false;
-    knownRequests = null;
-    stopFriendWatch = want ? want.watch(onFriendMessage, () => refreshFriends()) : null;
-    if (want) setTimeout(refreshFriends, 0);
-  }
-  return friendBackend;
-}
-let knownRequests = null; // uids of requests already seen (null = first load)
-async function refreshFriends() {
-  const st = friendStore();
-  if (!st) return;
-  const r = await st.list();
-  if (r.error || st !== friendBackend) { friendsUi.update(); return; }
-  // Hide people I've blocked.
-  const ok = (f) => !safety.isBlocked(null, f.name);
-  friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
-  const seen = new Set(friendList.incoming.map((f) => f.uid));
-  if (knownRequests) for (const f of friendList.incoming) if (!knownRequests.has(f.uid)) shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }));
-  knownRequests = seen;
-  if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
-  // Fetch the newest lines of each chat once, for unread counts and previews.
-  if (!refreshFriends.primed) {
-    refreshFriends.primed = true;
-    for (const k of [FRIENDS_ALL, ...friendList.friends.map((f) => f.uid)]) {
-      st.history(k).then((h) => { if (Array.isArray(h) && st === friendBackend) { friendInbox.add(h); friendsUi.loaded.add(k); refreshFriendBadge(); friendsUi.update(); } });
-    }
-  }
-  renderChatTo();
-  refreshFriendBadge();
-  refreshPersonFriend();
-  friendsUi.update();
-}
-function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
-function onFriendMessage(m) {
-  if (!friendInbox || m.from === friendBackend?.uid) return;
-  const name = friendName(m.from) || m.name || '?';
-  if (safety.isBlocked(null, name)) return;
-  if (!friendInbox.add({ ...m, name }).length) return;
-  const key = convKey(m, friendBackend.uid);
-  const reading = friendsUi.open && friendsUi.view === key;
-  if (!reading) {
-    addChatLine(name, filterText(cleanFriendBody(m.body)), 'friend', null, {
-      tag: key === FRIENDS_ALL ? '👥' : '💌',
-      onName: () => { closeChat(); friendsUi.show(key); },
-    });
-    try { sfx.pop?.(); } catch { /* sound not set up yet */ }
-  }
-  refreshFriendBadge();
-  friendsUi.update();
-}
-async function sendFriend(key, body) {
-  const st = friendStore();
-  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return false; }
-  const r = await st.send(key, body);
-  if (r.error) {
-    if (r.error === 'chat' && mustSignInToChat()) chatSignInPrompt();
-    else shop.toast(friendsUi.errorText(r.error));
-    return false;
-  }
-  friendInbox?.add({ ...r.message, name: nickname });
-  friendInbox && saveMarks(friendInbox.markRead(key));
-  const to = key === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(key) || '?';
-  if (!(friendsUi.open && friendsUi.view === key)) {
-    addChatLine(nickname + ' → ' + to, body, 'mine friend', null, { tag: key === FRIENDS_ALL ? '👥' : '💌', onName: () => { closeChat(); friendsUi.show(key); } });
-  }
-  friendsUi.update();
-  return true;
-}
-const friendsUi = new FriendsUI($('friends-panel'), {
-  store: () => friendStore(),
-  inbox: () => friendInbox,
-  me: () => friendBackend?.uid,
-  friends: () => friendList,
-  refresh: () => refreshFriends(),
-  toast: (m) => shop.toast(m),
-  clean: (s) => filterText(cleanFriendBody(s)),
-  isBlocked: (uid, name) => safety.isBlocked(null, name),
-  onRead: (key) => { if (friendInbox) { saveMarks(friendInbox.markRead(key)); refreshFriendBadge(); } },
-  send: (key, text) => {
-    if (mustSignInToChat()) { shop.toast(friendsUi.errorText('chat')); return false; }
-    const body = filterText(cleanFriendBody(text));
-    return body ? sendFriend(key, body) : false;
-  },
-});
-function refreshFriendBadge() {
-  const n = friendInbox?.totalUnread() || 0;
-  $('chat-unread').hidden = !n;
-  $('chat-unread').textContent = n > 99 ? '99+' : String(n);
-  $('friends-dot').hidden = !(n || friendList.incoming.length);
-}
-// The chat bar's "send to" picker.
-function renderChatTo() {
-  const sel = $('chat-to');
-  const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
-  if (friendBackend) {
-    opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-    for (const f of friendList.friends) opts.push([f.uid, '💌 ' + f.name]);
-  }
-  sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
-  sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;
-  chatTo = sel.value;
-  sel.hidden = opts.length < 2;
-  applyChatTo();
-}
-function applyChatTo() {
-  const friend = chatTo !== PUBLIC;
-  chatBar.classList.toggle('to-friend', friend);
-  chatInput.maxLength = friend ? FRIEND_MAX_BODY : config.chatMaxLength;
-  chatInput.placeholder = friend
-    ? '💬 ' + (chatTo === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(chatTo) || '') + ' · ' + L(FRIEND_TEXT.ph)
-    : t('chat.placeholder');
-}
-$('chat-to').onchange = (e) => { chatTo = e.target.value; applyChatTo(); chatInput.focus(); };
-$('friends-btn').onclick = () => { closeChat(); friendsUi.show(null); };
-// Person menu: add as a friend, or open the chat with a friend.
-function refreshPersonFriend() {
-  const btn = $('person-friend');
-  if (!personFor || !friendBackend) { btn.hidden = true; return; }
-  const f = friendList.friends.find((x) => x.name === personFor.name);
-  const out = friendList.outgoing.some((x) => x.name === personFor.name);
-  btn.hidden = false;
-  btn.disabled = out;
-  btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : '➕ ' + L(FRIEND_TEXT.addFriend);
-}
-$('person-friend').onclick = async () => {
-  if (!personFor) return;
-  const st = friendStore();
-  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return; }
-  const f = friendList.friends.find((x) => x.name === personFor.name);
-  $('person-menu').hidden = true;
-  if (f) { friendsUi.show(f.uid); return; }
-  friendsUi._result(await st.add(personFor.name), personFor.name);
-};
-onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
-cloud.onChange(() => friendStore());
-friendStore();
-renderChatTo();
+const { cleanChat, addChatLine } = chat;
 
 // ---------- Stores, zones, map, guide ----------
 let mode = 'street';
