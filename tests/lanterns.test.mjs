@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { WISH, WISHES, WISH_COLORS, lanternAt, ambientLanterns, encodeLantern, decodeLantern, canFloat, wishFrom, muralSign, FIGURE_KINDS, BANCHADO, banchadoPanels } from '../src/core/lanterns.js';
+import { WISH, WISHES, WISH_COLORS, lanternAt, ambientLanterns, encodeLantern, decodeLantern, canFloat, wishFrom, wishTo, muralSign, FIGURE_KINDS, BANCHADO, banchadoPanels } from '../src/core/lanterns.js';
 import { FURNITURE, LAMP_IDS } from '../src/core/furniture.js';
 import { ITEMS } from '../src/core/inventory.js';
 import { usable } from '../src/ui/shop-ui.js';
@@ -36,7 +36,7 @@ test('a wish lantern drifts east, comes to rest by the east end, spreads across 
   const a = lanternAt(s, L, now + 10), b = lanternAt(s, L, now + 40);
   assert.ok(b.u > a.u && a.moving);
   const rest = lanternAt(s, L, now + WISH.life - 5);
-  assert.ok(!rest.moving && rest.u > s.len - 20 && rest.u < s.len - 2);
+  assert.ok(!rest.moving && rest.u > wishTo(s) - 20 && rest.u < wishTo(s) - 2);
   assert.ok(Math.abs(rest.v) < ww);
   assert.equal(lanternAt(s, L, now + WISH.life + 1), null);
 });
