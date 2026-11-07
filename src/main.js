@@ -619,7 +619,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 150]; // Geunjeongjeon's courtyard
+const fanAt = palaceAt && [palaceAt[0] - 38, palaceAt[1] - 28]; // the front court, past Gwanghwamun and before Heungnyemun (the king keeps to the inner court)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -662,6 +662,7 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   mask: [palaceAt[0], palaceAt[1] + 52], // on the square, just before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
@@ -3765,15 +3766,15 @@ for (const e of enclosures) {
 // stream's lanterns and stones past the fog are not drawn.
 const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
-// Gyeongbokgung is big: from just outside Gwanghwamun, 'Enter' takes you
-// straight to Geunjeongjeon's courtyard (the fan dance and the king), and
-// just inside Heungnyemun 'Leave' takes you back out to the gate.
+// Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
+// front court (the fan dance; the king walks the inner court past
+// Heungnyemun), and just inside either gate 'Leave' takes you back out.
 const PALACE_TEXT = {
   enter: { en: 'Enter Gyeongbokgung', ko: '경복궁 입장', ja: '景福宮に入る', zh: '进入景福宫' },
   leave: { en: 'Leave the palace', ko: '궁 밖으로 나가기', ja: '宮の外へ出る', zh: '出宫' },
   back: { en: 'For a better view for everyone, please stay a few steps back.', ko: '원활한 관람을 위해 몇 발자국 떨어져 주세요.', ja: '皆さまが快適にご覧いただけるよう、数歩下がってください。', zh: '为了大家更好地观看，请往后退几步。' },
 };
-const PALACE_SPOTS = { gate: [0, 13], inside: [0, -122], leave: [0, -100] }; // in the palace district's metres
+const PALACE_SPOTS = { gate: [0, 13], inside: [0, -17], leave: [[0, -9], [0, -60]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
   const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;
@@ -3781,7 +3782,7 @@ function palaceAct(p) {
     const [ix, iz] = PALACE_SPOTS.inside;
     moveMeTo(scene, palaceAt[0] + ix, palaceAt[1] + iz, Math.PI); // facing Geunjeongjeon
   } };
-  if (near(PALACE_SPOTS.leave, 4)) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
+  if (PALACE_SPOTS.leave.some((s) => near(s, 4))) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
     const [gx, gz] = PALACE_SPOTS.gate;
     moveMeTo(scene, palaceAt[0] + gx, palaceAt[1] + gz + 3, 0); // facing the square
   } };

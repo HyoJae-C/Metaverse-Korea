@@ -133,7 +133,7 @@ test('Bukchon is open on the field, with a low retaining wall: a gap at each gat
   }
   assert.equal(map.landmarks.filter((l) => l.type === 'bukchongate').length, BUKCHON.gates.length);
   // Gyeongbokgung's palace wall is still an enclosure you walk into.
-  assert.deepEqual(read('districts/gyeongbokgung.json').meta.enclosure.box, [-170, 0, 100, -440]);
+  assert.deepEqual(read('districts/gyeongbokgung.json').meta.enclosure.box, [-102, 0, 60, -264]);
 });
 
 test('inside the wall is only drawn while you are in; the houses are built on the first visit', async () => {
