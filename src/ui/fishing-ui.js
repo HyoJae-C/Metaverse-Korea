@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, ESCAPE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -15,8 +15,10 @@ const el = (tag, cls, text) => {
 export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.name, getLanguage())} · ${f.ko} (${f.rom})`);
 const pct = c => (c < 0.1 ? c.toFixed(2) : c.toFixed(1)) + '%';
 const text = (ko, en) => localName({ ko, en });
-// "💨 -20%": how much a rod cuts the escape chance.
-const holdText = (hold) => `💨 -${Math.round(hold * 100)}% ` + text('도망 확률', 'escape');
+// How much a rod cuts the escape chance, shown on the hardest fish (★5):
+// "💨 ★5 30% → 24%". The cut is relative, so this reads more honestly than "-20%".
+const pctOf = (x) => +(x * 100).toFixed(1) + '%';
+const holdText = (hold) => `💨 ★5 ${pctOf(ESCAPE[5])} → ${pctOf(ESCAPE[5] * (1 - hold))}`;
 
 export const biteLine = (f, rand = Math.random) => {
   const lines = !f || f.trash ? null : BITE_LINES[f.rarity];
@@ -212,7 +214,7 @@ export class FishingUI {
     this.state = 'idle';
     this._frame(note ? el('p', 'order-hint', note) : null);
     const rod = this.rodInUse;
-    this.root.append(el('p', 'fish-rod-line', '🎣 ' + localName(rod.name) + ' · ' + (rod.hold ? holdText(rod.hold) : text('도망 확률 감소 없음', 'no escape cut'))));
+    this.root.append(el('p', 'fish-rod-line', '🎣 ' + localName(rod.name) + ' · ' + (rod.hold ? holdText(rod.hold) : `💨 ★5 ${pctOf(ESCAPE[5])}`)));
     if (this.lucky?.()) this.root.append(el('p', 'fish-lucky', '🍀 ' + text('행운 포인트! 지금 여기서는 귀한 물고기가 더 잘 물어요.', 'Lucky spot! Rarer fish bite more often here right now.')));
     this.root.append(this._water(t('fish.ready'), 'calm'));
     const cast = el('button', 'primary', '🎣 ' + t('fish.cast'));
@@ -552,11 +554,11 @@ export class FishMarketUI {
         this.onRodSkin?.(s.id, !owned);
         this.render();
       };
-      card.append(sw, el('b', null, localName(s.name)), el('small', 'rod-hold' + (s.hold ? '' : ' none'), s.hold ? holdText(s.hold) : text('도망 감소 없음', 'No escape cut')), btn);
+      card.append(sw, el('b', null, localName(s.name)), el('small', 'rod-hold' + (s.hold ? '' : ' none'), s.hold ? holdText(s.hold) : `💨 ★5 ${pctOf(ESCAPE[5])}`), btn);
       grid.append(card);
     }
-    this.root.append(el('p', 'fine', t('fish.rodHint') + ' ' + text('좋은 낚싯대일수록 마지막에 물고기를 놓칠 확률(💨)이 줄어요. 잡히는 물고기 확률은 그대로예요.',
-      'Better rods lose fewer fish at the end (💨). Which fish bite stays the same.')), grid);
+    this.root.append(el('p', 'fine', t('fish.rodHint') + ' ' + text('좋은 낚싯대일수록 마지막에 물고기를 놓칠 확률(💨)이 조금 줄어요. 가장 잘 도망가는 ★5 기준으로 표시했어요. 잡히는 물고기 확률은 그대로예요.',
+      'Better rods lose a few fewer fish at the end (💨), shown for ★5, the hardest to land. Which fish bite stays the same.')), grid);
   }
 
   _sell(id, n) {
