@@ -9,6 +9,12 @@ import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
+import { buildSkatepark } from './skatepark-model.js';
+import { peaceGate, loneTree, poolHall } from './olympic-park.js';
+import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
+import { BUKCHON_BUILD } from './bukchon-models.js';
+import { EULJIRO_BUILD } from './euljiro-models.js';
+import { JONGMYO_BUILD } from './jongmyo-models.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -28,7 +34,7 @@ function box(g, sx, sy, sz, x, y, z, c) {
 // ridge along x, short triangles at the ends, eaves that lift a little at
 // the four corners, and a ridge beam on top.
 const roofGeo = new Map();
-function hipRoofGeometry(w, d, h) {
+export function hipRoofGeometry(w, d, h) {
   const key = [w, d, h].join();
   if (roofGeo.has(key)) return roofGeo.get(key);
   const hw = w / 2, hd = d / 2, r = Math.max(0, hw - hd * 0.9), lift = h * 0.18;
@@ -80,6 +86,10 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 
 const BUILD = {
   anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
+  skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
+  peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
+  lonetree: (g) => loneTree(g),
+  poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
   gwanghwamun(g) {
     // Stone base with three open arches you can walk through: a wide one in
     // the middle and a smaller one either side.
@@ -225,9 +235,25 @@ const BUILD = {
       g.add(b);
     }
   },
+  tracks(g, l) {
+    // A stretch of old railway left in a park's grass (Gyeongui Line Forest
+    // Park): two rails on wooden sleepers along z, flush with the ground so
+    // you can walk over them. l.len: length. Sleepers are one InstancedMesh.
+    const len = l.len || 100, gap = 0.9, n = Math.floor(len / gap);
+    const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(2.4, 0.08, 0.24), mat('#7a5a3a'), n);
+    const m4 = new THREE.Matrix4();
+    for (let i = 0; i < n; i++) sleepers.setMatrixAt(i, m4.makeTranslation(0, 0.04, -len / 2 + gap / 2 + i * gap));
+    g.add(sleepers);
+    for (const sx of [-0.72, 0.72]) box(g, 0.08, 0.1, len, sx, 0.11, 0, '#8a8f99');
+  },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
+  warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
+  outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
+  ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
+  ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
+  ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace, stone stairs (core/bukchon-models.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).

@@ -148,6 +148,9 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
+    // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
+    // a fine chain with a charm (charm: moon, plum blossom, or 복 "luck").
+    ...['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, emoji: charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
   ],
   back: [
     { id: 'backpack', emoji: '🎒', color: 0x8fd3c7 },

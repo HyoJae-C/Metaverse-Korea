@@ -17,6 +17,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -32,5 +33,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      - id: deployment
+      # GitHub's deploy step sometimes hangs until its 10-minute timeout and
+      # fails, though a normal deploy takes under a minute. Give up after 3
+      # minutes and try once more.
+      - id: first
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+        with:
+          timeout: 180000
+      - id: retry
+        if: steps.first.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 300000
+      - id: deployment
+        run: echo "page_url=${{ steps.retry.outputs.page_url || steps.first.outputs.page_url }}" >> "$GITHUB_OUTPUT"

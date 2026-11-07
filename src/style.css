@@ -516,6 +516,10 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .setting-row[aria-pressed='true'] .switch { background: var(--mint); }
 .setting-row[aria-pressed='true'] .switch::after { transform: translateX(18px); }
 .settings-card .primary { margin-top: 6px; }
+.setting-row[hidden] { display: none; }
+.support-row { background: #fff4f6; box-shadow: inset 0 0 0 2px #ffc9d4; }
+.support-row .setting-label { display: grid; gap: 2px; }
+.support-sub { margin: 0; text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-soft); line-height: 1.3; }
 
 /* Running stamina bar: shows only while not full. */
 .stamina {
@@ -578,6 +582,8 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 #chat-btn.chat-blink { animation: chat-blink .7s ease-in-out 3; }
 .chat-line.friend { background: rgba(232, 244, 255, 0.94); box-shadow: 0 2px 0 rgba(60, 111, 214, 0.18); }
 .chat-line.friend b, .chat-line.friend .chat-name { color: #3c6fd6; }
+.chat-line.notice { background: rgba(255, 236, 170, 0.97); color: #4a3510; font-weight: 600; border: 1.5px solid #e0a82e; box-shadow: 0 2px 0 rgba(176, 120, 20, 0.25); }
+.chat-line.notice b { color: #b05a00; font-weight: 800; }
 .chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
 .chat-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -964,7 +970,32 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
 .fish-card.escaped .fish-big { filter: grayscale(1); }
 .fish-card { display: grid; justify-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #f2f7fb; text-align: center; }
-.fish-card.rare { background: linear-gradient(135deg, #fff5d6, #ffe08a); box-shadow: 0 0 0 2px #ffd166 inset; }
+/* The catch card by rarity, in the bite card's colours: ★1 plain, ★2 green
+   stars only, ★3 a small gold glow, ★4 a big orange one, ★5 red and gold with
+   rainbow light and sparkles. */
+.fish-card.tier-2 .fish-card-stars { color: #2a9a52; }
+.fish-card.rare { position: relative; overflow: hidden; background: linear-gradient(135deg, #fffbe6, #ffe58a); box-shadow: 0 0 0 2px #f0b400 inset, 0 0 10px rgba(240, 180, 0, .45); animation: fish-card-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.fish-card.tier-3::after { display: none; }
+.fish-card.tier-3 .fish-card-stars { color: #9a6a00; }
+.fish-card.rare::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .75) 50%, transparent 65%); transform: translateX(-100%); animation: fish-card-shine 1.6s ease-in-out .3s infinite; pointer-events: none; }
+.fish-card.rare .fish-big { animation: trophy-bob 1s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 190, 0, .8)); }
+.fish-card.tier-4 { background: linear-gradient(135deg, #ffe0b8, #ff9f5a); box-shadow: 0 0 0 3px #e8590c inset, 0 0 26px 4px rgba(232, 89, 12, .6); }
+.fish-card.tier-4 .fish-card-stars { color: #7a2a00; }
+.fish-card.tier-4 .fish-big { filter: drop-shadow(0 0 10px rgba(255, 140, 40, .9)); }
+.fish-card.tier-5 { overflow: visible; background: linear-gradient(135deg, #ffe3e3, #ff8f8f 45%, #ffd166); box-shadow: 0 0 0 3px #ffd166 inset, 0 0 0 6px #c8102e inset, 0 0 34px 10px rgba(255, 80, 120, .55), 0 0 60px 18px rgba(120, 200, 255, .35); }
+.fish-card.tier-5::after { border-radius: inherit; }
+.fish-card.tier-5 .fish-card-stars { color: #7a0a1c; }
+.fish-card.tier-5 .fish-big { filter: drop-shadow(0 0 12px rgba(255, 255, 255, .95)); }
+/* ★5 sparkles (on the card and the trophy). */
+.fish-spark { position: absolute; z-index: 1; font-size: 20px; font-style: normal; pointer-events: none; filter: drop-shadow(0 0 4px #fff); animation: fish-spark 1.4s ease-in-out infinite; }
+.fish-spark.s1 { left: 6px; top: 30%; }
+.fish-spark.s2 { right: 6px; top: 50%; animation-delay: .45s; }
+.fish-spark.s3 { left: 8px; bottom: 6px; animation-delay: .9s; }
+@keyframes fish-spark { 50% { transform: scale(1.35) rotate(15deg); opacity: .55; } }
+.fish-card-stars { color: #b86e00; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 1px 0 #fff; }
+@keyframes fish-card-pop { from { scale: .6; opacity: 0; } }
+@keyframes fish-card-shine { 60%, 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
 .fish-big { font-size: 56px; line-height: 1; }
 .fish-odds summary { cursor: pointer; font-weight: 700; font-size: 13px; }
 .fish-list { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
@@ -1069,6 +1100,10 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 .karaoke-lane, .duck-lane, .claw-pit { width: 100%; height: auto; border-radius: 14px; display: block; }
 .karaoke-status { margin: 0; text-align: center; font-weight: 800; }
 .karaoke-pad { width: 100%; font-size: 22px; padding: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* The runway panel while the show is on: low, so you can watch yourself walk. */
+.runway-live { padding: 12px 14px; }
+.runway-live h3 { display: none; }
+.runway-live .karaoke-pad { padding: 12px; font-size: 20px; }
 .karaoke-board { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: #f4f0ff; }
 .karaoke-board:empty { display: none; }
 .karaoke-row { font-size: 13px; }
@@ -1225,6 +1260,15 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .stamp-bar { height: 8px; border-radius: 4px; background: #e2d8c6; overflow: hidden; }
 .stamp-bar i { display: block; height: 100%; background: #c8323a; border-radius: 4px; transition: width 0.6s; }
 .stamp-count { margin: 0; font-weight: 800; font-size: 13px; }
+.stamp-trails { display: grid; gap: 8px; margin-bottom: 12px; }
+.stamp-trail { padding: 10px 12px; border-radius: 12px; background: #f4ecdc; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
+.stamp-trail.done { background: #e5f2df; }
+.stamp-trail p { margin: 4px 0 6px; font-size: 12px; color: #6b5d50; }
+.stamp-trail small { font-weight: 700; color: #8a5a32; }
+.stamp-stops { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0 0 6px; padding: 0; list-style: none; counter-reset: stop; }
+.stamp-stops li { counter-increment: stop; padding: 2px 8px; border-radius: 999px; background: #fffaf0; font-size: 12px; color: #8a7d70; }
+.stamp-stops li::before { content: counter(stop) '. '; }
+.stamp-stops li.got { background: #2f8f6b; color: #fff; }
 .stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .stamp-cell { display: grid; justify-items: center; gap: 1px; padding: 8px 6px; border-radius: 12px; background: #fffaf0; text-align: center; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
 .stamp-art { width: 100px; height: 100px; }
@@ -1332,6 +1376,14 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .lock-shape { display: grid; justify-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; }
 .lock-shape small { font-size: 12px; }
 .lock-shape.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+/* Cheonggyecheon wish lanterns (ui/wish-ui.js) */
+.wish-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.wish-color { width: 36px; height: 36px; border-radius: 10px; background: var(--c); box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .12); }
+.wish-color.on { box-shadow: 0 0 0 3px #fff8ec, 0 0 0 5px #e2557f; }
+.wish-list { display: grid; gap: 6px; }
+.wish-item { text-align: left; padding: 9px 12px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; font-size: 14px; }
+.wish-item.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.wish-mural { margin: 0; line-height: 1.55; font-size: 14px; }
 .lock-memo { position: relative; border-radius: 6px 6px 14px 14px; background-color: #fffbe8; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #ecdcae 23px, #ecdcae 24px); background-position: 0 10px; box-shadow: 0 2px 0 #eadfc0, 0 6px 14px rgba(120, 90, 40, .12); padding: 10px 14px 12px; }
 .lock-memo::before { content: ''; position: absolute; left: 50%; top: -7px; width: 64px; height: 14px; transform: translateX(-50%) rotate(-2deg); background: rgba(255, 175, 200, .7); border-radius: 2px; }
 .lock-memo-text { display: block; width: 100%; box-sizing: border-box; min-height: 150px; max-height: 300px; resize: vertical; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; line-height: 24px; padding: 0; color: #4a3b2a; }
@@ -1449,6 +1501,30 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   background: var(--panel); box-shadow: var(--shadow); touch-action: none;
 }
 .honk-btn:active { transform: translateY(2px); }
+/* Bumper car boost (game/bumper.js): glows when charged. */
+.boost-btn { width: 64px; height: 64px; font-size: 30px; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); opacity: 0.55; }
+.boost-btn.ready { opacity: 1; box-shadow: 0 0 0 3px #ffe27a, var(--shadow); }
+.boost-btn[hidden] { display: none; }
+
+/* Skate park (Olympic Park): points under the top bar, trick names popping up. */
+.skate-hud {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 172px);
+  display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;
+  padding: 5px 14px; border-radius: 14px; background: rgba(29, 27, 34, 0.72); color: #fff; text-align: center;
+}
+.skate-hud b { font-size: 15px; }
+.skate-hud small { font-size: 12px; color: #b6ff3b; min-height: 0; }
+.skate-hud small:empty { display: none; }
+.skate-pop {
+  position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.6); pointer-events: none;
+  font: 900 30px/1.1 "Arial Black", system-ui, sans-serif; color: #fff; white-space: nowrap; opacity: 0;
+  text-shadow: 0 3px 0 #7a3cff, 0 0 12px rgba(0, 0, 0, .45); transition: opacity .25s, transform .25s;
+}
+.skate-pop.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.skate-pop.big { color: #b6ff3b; font-size: 36px; }
+.skate-pop.grind { color: #3dd6ff; }
+.skate-pop.land { color: #ffd93d; }
+.skate-pop.bail { color: #ff5a5f; text-shadow: 0 3px 0 #1d1b22; }
 
 /* Clinic surgery: the lights go out for a moment. */
 .blackout { position: fixed; inset: 0; z-index: 30; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s; }
@@ -1844,7 +1920,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
-.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp") no-repeat; background-size: 700% 700%; }
+.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=4") no-repeat; background-size: 700% 700%; }
 .fish-pop-big.fish-stamp-sprite { width: 120px; }
 .fish-big.fish-stamp-sprite { width: 76px; }
 .fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
@@ -1909,7 +1985,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @media (max-width: 380px) { .fish-book { padding: 10px; } .fish-book .stamp-grid { gap: 5px; } .fish-book .fish-stamp-fish { font-size: 26px; } }
 @media (prefers-reduced-motion: reduce) { .fish-cell.fresh .fish-stamp { animation: none; } }
 
-/* A ★4–★5 catch over the angler's head (everyone nearby sees it, 5 s). */
+/* A ★3–★5 catch over the angler's head (everyone nearby sees it). */
 .bubble.trophy { font-size: 14px; padding: 6px 12px 8px; border-radius: 18px; background: linear-gradient(#fffdf2, #ffe9a8); box-shadow: 0 0 0 2px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .75); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both, trophy-glow 1.2s ease-in-out .6s infinite; }
 .trophy-in { display: grid; justify-items: center; gap: 2px; width: max-content; max-width: 220px; white-space: normal; text-align: center; }
 .trophy-pic { position: relative; display: grid; place-items: center; width: 64px; height: 64px; margin-top: -34px; }
@@ -1976,6 +2052,22 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .bubble.trophy.tier-5 .trophy-pic .fish-stamp-fish { font-size: 90px; }
 .bubble.trophy.tier-5 .trophy-rays { inset: -26px; }
 .bubble.trophy.tier-5 .trophy-stars { font-size: 16px; }
+/* Trophy colours by rarity: ★3 small and gold, ★4 big and orange, ★5 red and
+   gold with rainbow rays and sparkles. ★2 shows only its stars (.bubble-catch). */
+.bubble.trophy.tier-3 { scale: .82; transform-origin: bottom center; box-shadow: 0 0 0 2px #f0b400, 0 0 12px 2px rgba(240, 180, 0, .5); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-3 .trophy-rays { inset: -8px; opacity: .7; }
+.bubble.trophy.tier-4 { background: linear-gradient(#fff4e6, #ffc489); box-shadow: 0 0 0 3px #e8590c, 0 0 30px 10px rgba(232, 89, 12, .6); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-4 .trophy-rays { inset: -24px; background: repeating-conic-gradient(rgba(255, 140, 40, .95) 0 12deg, rgba(255, 140, 40, 0) 12deg 30deg); }
+.bubble.trophy.tier-4 .trophy-stars, .bubble.trophy.tier-4 .trophy-text { color: #7a2a00; }
+.bubble.trophy.tier-5 { background: linear-gradient(#fff, #ffd6e0); box-shadow: 0 0 0 3px #ffd166, 0 0 0 6px #c8102e, 0 0 40px 16px rgba(255, 80, 120, .6), 0 0 80px 30px rgba(120, 200, 255, .35); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-5 .trophy-in { position: relative; }
+.bubble.trophy.tier-5 .trophy-rays { inset: -40px; background: repeating-conic-gradient(rgba(255, 120, 200, .9) 0 10deg, rgba(120, 200, 255, .9) 10deg 20deg, rgba(255, 230, 120, .95) 20deg 30deg, rgba(255, 255, 255, 0) 30deg 40deg); }
+.bubble.trophy.tier-5 .trophy-stars, .bubble.trophy.tier-5 .trophy-text { color: #7a0a1c; }
+.trophy-in .fish-spark.s1 { left: -16px; top: -30px; }
+.trophy-in .fish-spark.s2 { right: -14px; top: -6px; }
+.trophy-in .fish-spark.s3 { left: auto; right: 18%; top: -70px; bottom: auto; }
+.bubble-catch { display: grid; justify-items: center; gap: 1px; }
+.bubble-stars { color: #2a9a52; font-size: 12px; letter-spacing: 1px; line-height: 1; text-shadow: 0 1px 0 #fff; }
 
 /* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
    and the card and its shout grow with the stars. */
@@ -2013,3 +2105,81 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   .update-banner .ub-go { flex: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .update-banner { animation: none; } }
+
+/* Folk games: yutnori, tuho, jegichagi, neolttwigi (ui/yut-ui.js and friends) */
+.folk-panel { max-height: min(86vh, 760px); }
+.folk-panel .karaoke-status { white-space: pre-line; }
+.folk-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.folk-pick .order-label { margin-right: 4px; }
+.folk-pick .chip { min-width: 44px; justify-content: center; }
+.folk-pick .chip[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.yut-players { display: flex; flex-wrap: wrap; gap: 6px; }
+.yut-player { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: #fff; font-size: 13px; border: 2px solid transparent; }
+.yut-player i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); }
+.yut-player small { color: var(--ink-soft); font-weight: 700; }
+.yut-player.on { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }
+.yut-board { display: block; width: 100%; max-width: min(100%, 42vh); margin: 0 auto; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.yut-cloth { fill: #f3e6c4; stroke: #c9a467; stroke-width: 1.2; }
+.yut-lines { fill: none; stroke: #9a6c44; stroke-width: 0.9; }
+.yut-spot { fill: #fffaf0; stroke: #2c2a33; stroke-width: 0.9; }
+.yut-spot.big { fill: #fffaf0; stroke: #b8322a; stroke-width: 1.4; }
+.yut-start { font-size: 3.6px; font-weight: 800; fill: #7a4b2a; text-anchor: middle; }
+.yut-token circle { stroke: #fff; stroke-width: 1; filter: drop-shadow(0 0.6px 0.6px rgba(0,0,0,0.35)); }
+.yut-token.can { cursor: pointer; }
+.yut-token.can circle { stroke: #ffd166; stroke-width: 1.4; }
+.yut-token.sel circle { stroke: #1b1a24; stroke-width: 1.6; }
+.yut-count { font-size: 3.6px; font-weight: 900; fill: #fff; text-anchor: middle; pointer-events: none; }
+.yut-dest { cursor: pointer; }
+.yut-dest circle { fill: rgba(255, 209, 102, 0.55); stroke: #e6a400; stroke-width: 0.9; stroke-dasharray: 2 1.2; animation: yut-pulse 0.9s ease-in-out infinite alternate; }
+.yut-dest text { font-size: 4.6px; font-weight: 900; fill: #5a3c10; text-anchor: middle; pointer-events: none; }
+@keyframes yut-pulse { from { opacity: 0.65; } to { opacity: 1; } }
+.yut-mid { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 64px; }
+.yut-sticks { display: flex; gap: 6px; }
+.yut-stick { display: block; width: 12px; height: 56px; border-radius: 6px; background: linear-gradient(90deg, #a87a45, #d9b07a 45%, #a87a45); transform: rotate(var(--r)); animation: yut-toss 0.45s ease-out; }
+.yut-stick.flat { background: #f0d7a8; box-shadow: inset 0 0 0 2px #c79a5a; }
+.yut-stick.flat.marked { background: radial-gradient(circle at 50% 50%, #2a2622 0 3px, transparent 3.5px), #f0d7a8; }
+@keyframes yut-toss { from { transform: translateY(-26px) rotate(calc(var(--r) + 180deg)); opacity: 0.4; } }
+.yut-result { display: grid; gap: 1px; text-align: left; }
+.yut-result strong { font-size: 30px; line-height: 1; color: #b8322a; }
+.yut-result small { color: var(--ink-soft); font-weight: 700; }
+.yut-tray { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+.yut-pending { display: flex; gap: 6px; }
+.yut-throw { background: #fff4e0; font-weight: 800; }
+.yut-home { border: 2px solid var(--c); background: #fff; font-weight: 800; }
+.yut-home.sel { background: var(--c); color: #fff; }
+.yut-home:disabled { opacity: 0.45; }
+.yut-actions .primary:disabled { opacity: 0.5; }
+@media (prefers-reduced-motion: reduce) { .yut-stick, .yut-dest circle { animation: none; } }
+
+/* Mini basketball (ui/basketball-ui.js) */
+.bb-shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bb-shot { display: grid; gap: 4px; text-align: left; padding: 10px 12px; border-radius: 14px; background: #fff3e4; border: 2px solid #f1d2ad; }
+.bb-shot:hover, .bb-shot:focus-visible { border-color: #e8572a; }
+.bb-shot-name { font-weight: 900; font-size: 17px; }
+.bb-shot-pts { font-size: 12px; font-weight: 800; color: #b5532a; }
+.bb-shot-tiers { white-space: pre-line; font-size: 12px; color: #6b5d50; line-height: 1.35; }
+.bb-list { margin: 0 0 6px; padding-left: 22px; display: grid; gap: 2px; }
+.bb-list .out { color: #8a7d70; }
+.bb-sub { margin-top: -4px; }
+.museum-notice { font-size: 13px; background: #f3ead6; color: #5a4a30; border-radius: 8px; padding: 8px 10px; margin: 6px 0; line-height: 1.5; }
+
+/* AdSense banner, a thin strip at the top left on wide computer screens only
+   (core/side-ad.js); hidden inside shops, where the shop's banner is.
+   Above the start screen, below full-screen games; hidden when Google has no ad. */
+.side-ad { display: none; }
+@media (min-width: 1200px) and (min-height: 640px) and (pointer: fine) {
+  .side-ad {
+    display: flex; align-items: center; gap: 4px; position: fixed; z-index: 10;
+    top: max(12px, env(safe-area-inset-top)); left: 12px;
+    padding: 0 4px 0 6px; background: rgba(255, 250, 240, 0.7); border-radius: 8px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(74, 63, 53, 0.12);
+  }
+  .side-ad small { font-size: 9px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; }
+  .side-ad:has(ins[data-ad-status="unfilled"]) { display: none; }
+  .in-store .side-ad { display: none; } /* the shop's name banner is up there */
+  body:has(.update-banner:not([hidden])) .side-ad { display: none; } /* never under the update notice */
+}
+/* Curve Runway: the line and the latest walks */
+.runway-line { display: flex; flex-direction: column; gap: 6px; }
+.runway-order { margin: 0; padding-left: 22px; font-size: 14px; }
+.runway-order li.me { font-weight: 800; }

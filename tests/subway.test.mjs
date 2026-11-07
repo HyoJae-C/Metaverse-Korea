@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
-const region = JSON.parse(readFileSync(new URL('../public/regions/seongsu/region.json', import.meta.url)));
+const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const stations = region.subway.stations;
 const ex = { at: [10, 20], ry: 0.7 };
 
@@ -83,7 +83,7 @@ test('station exits are clear of roads and buildings', () => {
   const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
   const roads = [], solids = [];
   for (const d of region.districts) {
-    const m = JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + d.map, import.meta.url)));
+    const m = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url)));
     const sh = (p) => p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]);
     for (const r of m.roads) roads.push({ ...r, p: sh(r.p) });
     for (const b of m.buildings) if (!(b.m > 2)) solids.push(sh(b.p));

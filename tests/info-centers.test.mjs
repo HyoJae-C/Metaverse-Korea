@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { districtBoxes, districtAt } from '../src/core/districts.js';
 import { AREA, GAME_TOPICS, PLACE_TOPICS } from '../src/ui/info-ui.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 const stores = read('stores.json').stores;
 
@@ -19,10 +19,10 @@ test('every district has one Information Center, and the guide knows its name', 
 });
 
 test('each Information Center stands in its own district', () => {
-  const map = { meta: { districts: region.districts }, buildings: [] };
+  const map = { meta: { districts: region.districts.map((d) => ({ ...d, parts: read(d.map).meta?.parts })) }, buildings: [], areas: [] };
   for (const d of region.districts) {
     const m = read(d.map);
-    for (const b of m.buildings) map.buildings.push({ d: d.id, p: b.p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]) });
+    for (const k of ['buildings', 'areas']) for (const b of m[k] || []) map[k].push({ d: d.id, k: b.k, p: b.p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]) });
   }
   const boxes = districtBoxes(map);
   for (const s of stores.filter((x) => x.workshop === 'info')) assert.equal(districtAt(boxes, ...s.at), s.district, s.id);

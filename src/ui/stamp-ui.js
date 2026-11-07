@@ -3,6 +3,7 @@
 import { L, fmt } from './pocha-ui.js';
 import { stampSvg } from './stamp-art.js';
 import { STAMP_REWARD } from '../core/stamp-book.js';
+import { trailProgress } from '../core/trails.js';
 
 export const STAMP_TEXT = {
   title: { en: 'Seoul stamp note', ko: '서울 스탬프 노트', ja: 'ソウル スタンプノート', zh: '首尔印章本' },
@@ -15,6 +16,11 @@ export const STAMP_TEXT = {
   got: { en: 'Stamped! {name} +🪙{c}', ko: '스탬프 쾅! {name} +🪙{c}', ja: 'スタンプ！{name} +🪙{c}', zh: '盖章成功！{name} +🪙{c}' },
   ledger: { en: 'Stamp · {name}', ko: '스탬프 · {name}', ja: 'スタンプ · {name}', zh: '印章 · {name}' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
+  trails: { en: 'Courses', ko: '코스', ja: 'コース', zh: '路线' },
+  trailReward: { en: 'Finish: +🪙{c}', ko: '완주 보상 +🪙{c}', ja: '完走で +🪙{c}', zh: '完成奖励 +🪙{c}' },
+  trailFinished: { en: 'Finished!', ko: '완주!', ja: '完走！', zh: '已完成！' },
+  trailDone: { en: '{name} finished! +🪙{c}', ko: '{name} 완주! +🪙{c}', ja: '{name} 完走！ +🪙{c}', zh: '{name} 完成！ +🪙{c}' },
+  trailLedger: { en: 'Course finished · {name}', ko: '코스 완주 · {name}', ja: 'コース完走 · {name}', zh: '路线完成 · {name}' },
 };
 const tt = (k, v) => fmt(L(STAMP_TEXT[k]), v);
 const el = (tag, cls, text) => {
@@ -25,8 +31,25 @@ const el = (tag, cls, text) => {
 };
 
 export class StampUI {
-  constructor({ root, book, stamps }) {
-    Object.assign(this, { root, book, stamps });
+  constructor({ root, book, stamps, trails = [], trailLog = null }) {
+    Object.assign(this, { root, book, stamps, trails, trailLog });
+  }
+  // Courses: each one's stops in order, ticked when stamped.
+  trailList(list) {
+    const box = el('div', 'stamp-trails');
+    const byId = new Map(list.map((s) => [s.id, s]));
+    for (const tr of this.trails) {
+      const p = trailProgress(tr, list, this.book);
+      if (!p.all) continue;
+      const card = el('div', 'stamp-trail' + (p.done ? ' done' : ''));
+      card.append(el('strong', null, `${tr.icon} ${L(tr.name)} · ${p.got}/${p.all}`));
+      card.append(el('p', null, L(tr.intro)));
+      const stops = el('ol', 'stamp-stops');
+      for (const id of p.stops) stops.append(el('li', this.book.has(id) ? 'got' : null, (this.book.has(id) ? '✓ ' : '') + L(byId.get(id).name)));
+      card.append(stops, el('small', null, p.done || this.trailLog?.has(tr.id) ? tt('trailFinished') : tt('trailReward', { c: tr.reward })));
+      box.append(card);
+    }
+    return box.childElementCount ? box : null;
   }
   get open() { return !this.root.hidden; }
   close() { this.root.hidden = true; }
@@ -53,7 +76,8 @@ export class StampUI {
       cell.append(art, el('strong', null, L(s.name)), el('small', null, L(s.gu)), el('em', null, got ? got.replaceAll('-', '.') : tt('notYet')));
       grid.append(cell);
     });
-    this.root.replaceChildren(x, head, el('p', 'order-hint', tt('how', { c: STAMP_REWARD })), grid);
+    const trails = this.trailList(list);
+    this.root.replaceChildren(x, head, el('p', 'order-hint', tt('how', { c: STAMP_REWARD })), ...(trails ? [trails] : []), grid);
     if (fresh) this.root.querySelector('.stamp-cell.fresh')?.scrollIntoView({ block: 'nearest' });
   }
 }

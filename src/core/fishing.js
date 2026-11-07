@@ -1,5 +1,6 @@
 // Permanent 49-entry catalogue. Stable IDs preserve bags and lifetime records.
 // Twenty-seven species are available in the first release.
+import { takeForcedCatch } from './fish-luck.js';
 export const FISH = [
   {
     "id": "loach",
@@ -116,7 +117,7 @@ export const FISH = [
       "en": "Wakame seaweed"
     },
     "rarity": 1,
-    "released": false,
+    "released": true,
     "page": 0,
     "price": 1
   },
@@ -157,7 +158,7 @@ export const FISH = [
       "en": "Shrimp"
     },
     "rarity": 1,
-    "released": false,
+    "released": true,
     "page": 1,
     "price": 2
   },
@@ -295,7 +296,7 @@ export const FISH = [
       "en": "Rockfish"
     },
     "rarity": 2,
-    "released": false,
+    "released": true,
     "page": 2,
     "price": 4
   },
@@ -334,7 +335,7 @@ export const FISH = [
       "en": "Webfoot octopus"
     },
     "rarity": 2,
-    "released": false,
+    "released": true,
     "page": 2,
     "price": 4
   },
@@ -365,14 +366,14 @@ export const FISH = [
     "price": 5
   },
   {
-    "id": "crayfish",
-    "emoji": "🦞",
-    "ko": "가재",
-    "rom": "gajae",
+    "id": "starfish",
+    "emoji": "⭐",
+    "ko": "불가사리",
+    "rom": "bulgasari",
     "name": {
-      "en": "Crayfish",
-      "ja": "ザリガニ",
-      "zh": "小龙虾"
+      "en": "Starfish",
+      "ja": "ヒトデ",
+      "zh": "海星"
     },
     "rarity": 2,
     "released": true,
@@ -427,7 +428,7 @@ export const FISH = [
       "en": "Cuttlefish"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 10
   },
@@ -445,12 +446,14 @@ export const FISH = [
     "price": 18
   },
   {
-    "id": "snow-crab",
-    "emoji": "🦀",
-    "ko": "대게",
-    "rom": "daege",
+    "id": "dolphin",
+    "emoji": "🐬",
+    "ko": "돌고래",
+    "rom": "dolgorae",
     "name": {
-      "en": "Snow crab"
+      "en": "Dolphin",
+      "ja": "イルカ",
+      "zh": "海豚"
     },
     "rarity": 3,
     "released": false,
@@ -479,7 +482,7 @@ export const FISH = [
       "en": "Seahorse"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 14
   },
@@ -548,7 +551,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 120
+    "price": 70
   },
   {
     "id": "marlin",
@@ -561,7 +564,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 40
+    "price": 30
   },
   {
     "id": "tuna",
@@ -576,7 +579,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 30
+    "price": 22
   },
   {
     "id": "sea-turtle",
@@ -589,7 +592,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 25
+    "price": 20
   },
   {
     "id": "anglerfish",
@@ -617,7 +620,7 @@ export const FISH = [
     "rarity": 5,
     "released": false,
     "page": 5,
-    "price": 250
+    "price": 500
   },
   {
     "id": "whale",
@@ -643,9 +646,9 @@ export const FISH = [
       "en": "Giant squid"
     },
     "rarity": 5,
-    "released": false,
+    "released": true,
     "page": 5,
-    "price": 600
+    "price": 500
   },
   {
     "id": "blobfish",
@@ -658,7 +661,7 @@ export const FISH = [
     "rarity": 5,
     "released": false,
     "page": 5,
-    "price": 300
+    "price": 500
   }
 ];
 
@@ -666,10 +669,14 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // How often each rarity bites, in % of fish (trash comes on top). Each tier's
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
-export const TIER_SHARE = [0, 58.7, 28, 10, 3.2, 0.1];
+// Each tier, and each kind in it, bites less often than the tier below:
+// every ★3 kind (1.25% each of four) stays below any single ★2 kind, and
+// ★4 (3% for the tier, at most about 1.1% a kind) below ★3. Every park
+// shares this one table, so none pays better than another.
+export const TIER_SHARE = [0, 63.6, 28, 5, 3, 0.4];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
-// less often. At a cast every 10 s this gives bluefin tuna about every
-// 15 min, the great white about every hour, the blue whale about every 3 h.
+// less often. At a fish every 12 s this gives bluefin tuna about every
+// 20 min, the great white about every 80 min, the blue whale about every hour.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
   'sea-turtle': 2, tuna: 2, marlin: 1, shark: 0.5, orca: 0.4, anglerfish: 0.8,
@@ -689,24 +696,50 @@ for (const f of AVAILABLE_FISH) tierTotals[f.rarity] = (tierTotals[f.rarity] || 
 const sharesTotal = Object.keys(tierTotals).reduce((a, r) => a + TIER_SHARE[r], 0);
 for (const f of FISH) f.chance = f.released ? TIER_SHARE[f.rarity] * weightOf(f) / tierTotals[f.rarity] / sharesTotal * 100 : 0;
 export const fishById = id => FISH.find(f => f.id === id) || null;
+
+// Legends by park: every park shares the whole table except ★5, where each
+// park has its own legends (keyed by the park store's id). The ★5 tier keeps
+// its 0.4% at every park and every legend sells for the same price, so no park
+// pays better; parks only differ in which legend you can meet. A park not
+// listed here (or whose legends aren't out yet) gets every released legend.
+export const PARK_LEGENDS = {
+  'ttukseom-hangang': { name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' }, legends: ['whale'] },
+  'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' }, legends: ['giant-squid'] },
+};
+const legendsAt = park => {
+  const list = (PARK_LEGENDS[park]?.legends || []).map(fishById).filter(f => f?.released);
+  return list.length ? list : null;
+};
+// The park a legend bites at, or null (any park).
+export const legendPark = id => Object.values(PARK_LEGENDS).find(p => p.legends.includes(id)) || null;
+// A fish's chance (in % of fish, like f.chance) at a park (null: any park).
+export function chanceAt(f, park = null) {
+  if (!f.released) return 0;
+  const here = f.rarity === 5 && legendsAt(park);
+  if (!here) return f.chance;
+  if (!here.includes(f)) return 0;
+  return f.chance * tierTotals[5] / here.reduce((a, q) => a + weightOf(q), 0);
+}
 // The picture sheet (public/assets/fishing/fish-icons.webp, 7×7): kinds in
 // reading order. Every kind in FISH has exactly one picture here.
 export const FISH_SHEET = [
   'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
   'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
   'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
-  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'crayfish',
-  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
+  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'starfish',
+  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'dolphin', 'blue-tang',
   'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
   'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
 ];
-export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp';
+export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=4';
 // Kinds swapped out of the catalogue (to match the fish book's pictures),
 // each moved to the new kind of the same rarity in its place, so bags and
 // fish books saved before keep their counts.
 export const RENAMED = {
   mandarin: 'sea-turtle', bass: 'scallop', 'horse-mackerel': 'jellyfish', squid: 'marlin',
   filefish: 'wakame', parrotfish: 'kelp', lionfish: 'manta', mandarinfish: 'blobfish', ray: 'orca', swordfish: 'giant-squid',
+  crayfish: 'starfish', // too close to the lobster
+  'snow-crab': 'dolphin', // too close to the blue crab
 };
 const migrate = (raw) => {
   const out = { ...raw };
@@ -722,10 +755,11 @@ const migrate = (raw) => {
 // often. It comes from the clock, so everyone in the park sees the same spot.
 export const LUCKY_MINUTES = 5;
 export const LUCKY_BOOST = 1.5;
-const luckyWeight = f => f.chance * (f.rarity >= 2 ? LUCKY_BOOST : 1);
+const luckyWeight = (f, park = null) => chanceAt(f, park) * (f.rarity >= 2 ? LUCKY_BOOST : 1);
+// The same at every park (each park's ★5 still adds up to the tier's share).
 const luckyTotal = AVAILABLE_FISH.reduce((a, f) => a + luckyWeight(f), 0);
 // A fish's chance (in % of fish) at the lucky spot.
-export const luckyChance = f => (f.released ? luckyWeight(f) / luckyTotal * 100 : 0);
+export const luckyChance = (f, park = null) => (f.released ? luckyWeight(f, park) / luckyTotal * 100 : 0);
 export function luckySpot(n, now = Date.now()) {
   if (n < 2) return 0;
   let x = Math.floor(now / (LUCKY_MINUTES * 60000)) | 0; // the time slot, hashed
@@ -733,18 +767,27 @@ export function luckySpot(n, now = Date.now()) {
   x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
   return ((x ^ (x >>> 16)) >>> 0) % n;
 }
-export function rollFish(rand = Math.random, lucky = false) {
+export function rollFish(rand = Math.random, lucky = false, park = null) {
   let r = rand() * 100;
-  for (const f of AVAILABLE_FISH) { r -= lucky ? luckyChance(f) : f.chance; if (r < 0) return f; }
-  return AVAILABLE_FISH.at(-1);
+  let last = null;
+  for (const f of AVAILABLE_FISH) {
+    const c = lucky ? luckyChance(f, park) : chanceAt(f, park);
+    if (!c) continue;
+    last = f; r -= c; if (r < 0) return f;
+  }
+  return last;
 }
 
 export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
 export const TRASH_CHANCE = 0.04;
 export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
-export function rollCatch(rand = Math.random, lucky = false) {
+// A fish set up by a developer code (core/fish-luck.js) is the next bite,
+// once: a copy marked `sure` (no fight, never slips off).
+export function rollCatch(rand = Math.random, lucky = false, park = null) {
+  const forced = fishById(takeForcedCatch());
+  if (forced) return { ...forced, sure: true };
   const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
-  return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky);
+  return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park);
 }
 export const REEL_SECONDS = 5;
 export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
@@ -752,15 +795,16 @@ export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarit
 // (halved by reeling in with time to spare, and cut by a better rod's hold,
 // see rod-skins.js).
 export const ESCAPE = [0, 0.05, 0.08, 0.12, 0.2, 0.3];
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
 export function escapeChance(fish, spare = 0, hold = 0) {
-  if (fish.trash) return 0;
-  return ESCAPE[fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare))) * (1 - Math.min(1, Math.max(0, hold)));
+  if (fish.trash || fish.sure) return 0;
+  return ESCAPE[fish.rarity] * (1 - 0.5 * clamp01(spare)) * (1 - clamp01(hold));
 }
 
 // Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
 // a second, so you have to keep reeling (two reel buttons, both thumbs).
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
-export const drainFor = fish => (isRare(fish) ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
+export const drainFor = fish => (isRare(fish) && !fish.sure ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
 
 // What you shout when a fish bites: three lines per rarity (★1–★5), one
 // picked at random each bite. ★3 and up are the rare ones.
@@ -870,6 +914,51 @@ export class FishDex {
     return isNew;
   }
   _save() { try { this.storage?.setItem(DEX_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
+}
+
+// Fishing counters (mk.fishstats), for balancing: what happens to each cast.
+// The fish book only knows what was landed; these also count the casts, the
+// bites missed, the fish lost while reeling and the ones that slipped off.
+// Saved on this device, so the cloud save (every "mk." key) carries them.
+//   cast: lines thrown by hand   early: hooked before a bite
+//   bite: bites by rarity [trash, ★1…★5]   miss: bites not hooked in time
+//   lost: fish that got away while reeling, by rarity
+//   escape: fish that slipped off at the end, by rarity
+//   land: fish landed by hand, by rarity [trash, ★1…★5]
+//   lucky: bites at the lucky spot   auto: fish landed by auto fishing
+//   got: fish landed by hand, by kind { id: n }   gotAuto: the same for auto fishing
+//   since: when counting started (ms)
+const STATS_KEY = 'mk.fishstats';
+const tiers = () => [0, 0, 0, 0, 0, 0];
+export class FishStats {
+  constructor(storage = globalThis.localStorage, now = Date.now()) {
+    this.storage = storage;
+    let raw = {};
+    try { raw = JSON.parse(storage?.getItem(STATS_KEY) || '{}') || {}; } catch { raw = {}; }
+    const num = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const arr = v => tiers().map((_, i) => num(Array.isArray(v) ? v[i] : 0));
+    const kinds = v => Object.fromEntries(FISH.filter(f => num(v?.[f.id])).map(f => [f.id, num(v[f.id])]));
+    this.s = {
+      since: num(raw.since) || now,
+      cast: num(raw.cast), early: num(raw.early), miss: num(raw.miss), lucky: num(raw.lucky), auto: num(raw.auto),
+      bite: arr(raw.bite), lost: arr(raw.lost), escape: arr(raw.escape), land: arr(raw.land),
+      got: kinds(raw.got), gotAuto: kinds(raw.gotAuto),
+    };
+  }
+  // n: 'cast' | 'early' | 'miss' | 'lucky', a per-rarity counter
+  // ('bite' | 'lost' | 'escape' | 'land') with the fish, or 'auto' with the fish.
+  // Landing a fish (by hand or auto) also counts its kind in got / gotAuto.
+  add(n, fish) {
+    const v = this.s[n];
+    const kind = (k) => { if (fish && !fish.trash && fishById(fish.id)) this.s[k][fish.id] = (this.s[k][fish.id] || 0) + 1; };
+    if (n === 'land') kind('got');
+    if (n === 'auto') kind('gotAuto');
+    if (Array.isArray(v)) { if (!fish) return; v[fish.trash ? 0 : fish.rarity] += 1; }
+    else if (typeof v === 'number' && n !== 'since') this.s[n] = v + 1;
+    else return;
+    try { this.storage?.setItem(STATS_KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
+  }
+  get(n) { return this.s[n]; }
 }
 
 export const rarityStars = f => f.rarity;

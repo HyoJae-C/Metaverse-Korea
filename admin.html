@@ -43,7 +43,18 @@
       button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
       button.danger { color: #b2321f; }
       .empty { color: var(--muted); padding: 20px 0; text-align: center; }
+      #countries { margin-top: 14px; }
+      .crow { display: grid; grid-template-columns: minmax(120px, 210px) 1fr 70px; gap: 10px; align-items: center; padding: 4px 0; }
+      .crow .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .crow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .crow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .crow .n { text-align: right; font-variant-numeric: tabular-nums; }
       .scroll-x { overflow-x: auto; }
+      #tab-retention h3 { font-size: 15px; margin: 18px 0 8px; }
+      .rrow { display: grid; grid-template-columns: 96px 1fr minmax(120px, auto); gap: 10px; align-items: center; padding: 3px 0; }
+      .rrow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .rrow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .rrow .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
       header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
       header h1 { font-size: 16px; margin: 0; }
       #count { font-weight: 700; color: var(--street); }
@@ -83,10 +94,26 @@
       <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
       <button data-tab="free">Free board</button>
       <button data-tab="players">Players</button>
+      <button data-tab="notice">📢 Announce</button>
+      <button data-tab="retention">Retention</button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
       <div class="stats" id="stats"></div>
       <p class="muted" id="statsNote"></p>
+      <div class="card" id="countries">
+        <div class="tools" style="margin-bottom:8px">
+          <b style="font-size:15px">🌏 Countries</b>
+          <select id="countryDays" aria-label="Period">
+            <option value="1">Today (KST)</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="365">Last 12 months</option>
+          </select>
+          <span class="muted" id="countryTotal"></span>
+        </div>
+        <div id="countryList"></div>
+        <p class="muted" style="margin:8px 0 0">Guessed from each player's time zone setting, once a day per account (no IP addresses). Travellers whose phone keeps their home time zone count for home.</p>
+      </div>
     </div></section>
     <section class="tab" id="tab-live" hidden>
       <div id="map">
@@ -129,6 +156,27 @@
         <thead><tr><th>Player</th><th>Account</th><th>Joined</th><th>Last seen</th><th>Chat</th></tr></thead>
         <tbody id="playerList"></tbody>
       </table></div>
+    </div></section>
+    <section class="tab" id="tab-notice" hidden><div class="pad">
+      <div class="card">
+        <div class="head"><b>📢 Send a notice to every player</b><span class="muted">Shows in everyone's chat, in every area, as a gold 공지 line. Players who join in the next 10 minutes see it too.</span></div>
+        <textarea id="noticeText" placeholder="e.g. Server maintenance in 10 minutes. / 10분 뒤 점검이 있어요."></textarea>
+        <div class="row"><button id="noticeSend" class="primary" type="button">Send notice</button><span class="muted" id="noticeCount" style="margin-left:auto"></span></div>
+        <p class="muted" style="margin:8px 0 0">In the game, operators can also type <code>/공지 message</code> in chat.</p>
+      </div>
+      <div class="tools"><b>Sent</b><button id="noticeReload" type="button">Refresh</button></div>
+      <div id="noticeList"></div>
+    </div></section>
+    <section class="tab" id="tab-retention" hidden><div class="pad">
+      <div class="tools">
+        <select id="retDays" aria-label="Period">
+          <option value="14">Started in the last 14 days</option>
+          <option value="30" selected>Started in the last 30 days</option>
+          <option value="90">Started in the last 90 days</option>
+        </select>
+        <button id="retReload" type="button">Refresh</button>
+      </div>
+      <div id="retBody"><p class="empty">Loading…</p></div>
     </div></section>
     <div id="msg" hidden></div>
     <script type="module" src="/src/admin/admin.js"></script>

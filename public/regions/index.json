@@ -1,6 +1,6 @@
 {
-  "default": "seongsu",
+  "default": "another-seoul",
   "regions": [
-    { "id": "seongsu", "status": "live" }
+    { "id": "another-seoul", "status": "live" }
   ]
 }

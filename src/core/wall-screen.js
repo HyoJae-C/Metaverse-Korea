@@ -6,17 +6,10 @@
 // `along` metres sideways), facing out of the building. It shows `image`, a
 // `city` card ({ name, local }) for a tall screen, or a line of `text`.
 import * as THREE from 'three';
+import { inPoly } from './geom.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
 
 // The wall nearest (x, z) that is at least `minLen` long: its middle point
 // nearest (x, z), the outward normal, and the building height.
@@ -34,7 +27,7 @@ export function wallNear(buildings, x, z, minLen = 8) {
       let nx = -dz / len, nz = dx / len;
       const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2;
       if (inPoly(mx + nx * 0.5, mz + nz * 0.5, p)) { nx = -nx; nz = -nz; }
-      best = { d, x: px, z: pz, nx, nz, len, h: b.h || 10, ax: dx / len, az: dz / len, x1, z1, x2, z2 };
+      best = { d, x: px, z: pz, nx, nz, len, h: b.h || 10, ax: dx / len, az: dz / len, x1, z1, x2, z2, b };
     }
   }
   return best;

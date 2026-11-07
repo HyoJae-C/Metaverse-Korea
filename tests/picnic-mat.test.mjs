@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAT, MAT_SPOTS, matSpots, encodeMat, parseMat, canSpread, matsOverlap, keepsMat, matInFront } from '../src/core/picnic-mat.js';
+import { MAT, MAT_SPOTS, matSpots, encodeMat, parseMat, canSpread, matsOverlap, keepsMat, matInFront, matDir, matLost, MAT_AWAY, MAT_IDLE_MS } from '../src/core/picnic-mat.js';
 
 const lawns = [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }];
 
@@ -47,4 +47,30 @@ test('a mat can be kept off things the lawn itself does not know about', () => {
   const path = (r) => r.x0 < 4 && r.x1 > 4; // a path crossing at x = 4
   assert.equal(canSpread({ x: 4, z: 6 }, { lawns, blocked: path }), 'lawn');
   assert.equal(canSpread({ x: 8, z: 6 }, { lawns, blocked: path }), 'ok');
+});
+
+test('a mat lies the way you faced when spreading it: sitting on it you look that way', () => {
+  for (const [ry, d] of [[0, 0], [Math.PI / 2, 1], [Math.PI, 2], [-Math.PI / 2, 3], [0.6, 0], [1.0, 1]]) assert.equal(matDir(ry), d, `ry ${ry}`);
+  const m = { x: 5, z: 6, c: 0, d: 1 };
+  const spots = matSpots(m);
+  for (const s of spots) {
+    assert.ok(Math.abs(s.ry - Math.PI / 2) < 1e-9, 'everyone faces +x');
+    assert.ok(Math.abs(s.x - 5) < MAT.d / 2 && Math.abs(s.z - 6) < MAT.w / 2, 'on the turned mat');
+    assert.ok(s.stand[0] > 5 + MAT.d / 2, 'stand up off its foot');
+  }
+  assert.ok(Math.abs(spots[0].x - spots[1].x) < 1e-9, 'side by side along z');
+  // Turned a quarter, it is narrow along x: room next to it on the long side.
+  assert.equal(canSpread({ x: 2, z: 6, d: 1 }, { lawns, mats: [{ x: 2 + MAT.d + 0.2, z: 6, d: 1 }] }), 'ok');
+  assert.equal(canSpread({ x: 2, z: 6 }, { lawns, mats: [{ x: 2 + MAT.d + 0.2, z: 6, d: 1 }] }), 'taken');
+  assert.deepEqual(parseMat(encodeMat(m), lawns), m);
+  assert.deepEqual(parseMat('2,6,1', lawns), { x: 2, z: 6, c: 1 }, 'an older game sends no direction');
+  assert.equal(parseMat('2,6,1,4', lawns), null);
+});
+
+test('a mat left alone or far behind is lost (blown away)', () => {
+  const m = { x: 0, z: 0 };
+  assert.equal(matLost(m, 3, 0, 0, 1000), false);
+  assert.equal(matLost(m, MAT_AWAY + 1, 0, 1000, 1000), true, 'walked off');
+  assert.equal(matLost(m, 10, 0, 0, MAT_IDLE_MS - 1), false);
+  assert.equal(matLost(m, 10, 0, 0, MAT_IDLE_MS + 1), true, 'nobody by it for too long');
 });

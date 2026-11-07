@@ -5,6 +5,9 @@
 const SETUP = 'Run <code>supabase/009_admin.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.';
 const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42703');
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+import { createRetention } from './retention.js';
+import { MAX_NOTICE, cleanNotice, deleteNotice, sendNotice } from '../core/announce.js';
+
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
 
 export function createPanels({ client, $, escapeHtml, agoText, describePlace, setStatus, go, notOperator, badge }) {
@@ -50,7 +53,43 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
     badge('liveBadge', data.online_now);
     $('statsNote').textContent = '"Played" counts accounts whose game reported a spot (since 008_player_where.sql was run). Updated ' + new Date().toLocaleTimeString() + '.';
     statsTimer = setTimeout(() => current === 'overview' && !document.hidden && overview(), 15000);
+    countries();
   }
+
+  // ---------- Countries (supabase/010_countries.sql) ----------
+  const regionName = (() => {
+    try { const d = new Intl.DisplayNames(['en'], { type: 'region' }); return (cc) => d.of(cc); } catch { return (cc) => cc; }
+  })();
+  const flag = (cc) => String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+  async function countries() {
+    const box = $('countryList');
+    const { data, error } = await client.rpc('ops_countries', { days: +$('countryDays').value });
+    if (error) {
+      if (error.code === '42501') return notOperator();
+      box.innerHTML = `<p class="empty">${missing(error) ? 'Run <code>supabase/010_countries.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.' : escapeHtml(error.message)}</p>`;
+      $('countryTotal').textContent = '';
+      return;
+    }
+    const rows = data || [];
+    const total = rows.reduce((n, r) => n + Number(r.players), 0);
+    const top = Math.max(1, ...rows.map((r) => Number(r.players)));
+    $('countryTotal').textContent = rows.length ? `${rows.filter((r) => r.country !== 'XX').length} countries` : '';
+    if (!rows.length) { box.innerHTML = '<p class="empty">No players counted in this period yet.</p>'; return; }
+    box.replaceChildren(...rows.map((r) => {
+      const n = Number(r.players);
+      const known = r.country !== 'XX';
+      const row = el('div', 'crow');
+      const name = el('span', 'name', known ? `${flag(r.country)} ${regionName(r.country) || r.country}` : '❔ Unknown (UTC)');
+      name.title = `${r.country} · ${r.visits} player-days`;
+      const bar = el('span', 'bar');
+      const fill = el('i');
+      fill.style.width = `${Math.max(2, (n / top) * 100)}%`;
+      bar.append(fill);
+      row.append(name, bar, el('span', 'n', `${n} · ${Math.round((n / total) * 100)}%`));
+      return row;
+    }));
+  }
+  $('countryDays').onchange = countries;
 
   // ---------- Boards ----------
   async function board(b) {
@@ -151,14 +190,74 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
     }));
   }
 
+  // ---------- Announcements (012_announcements.sql) ----------
+  const NOTICE_SETUP = 'Run <code>supabase/012_announcements.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.';
+  async function notices() {
+    const box = $('noticeList');
+    const { data, error } = await client.rpc('ops_announcements', { lim: 30 });
+    if (error) {
+      if (error.code === '42501') return notOperator();
+      box.innerHTML = `<p class="empty">${missing(error) ? NOTICE_SETUP : escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data.length) { box.innerHTML = '<p class="empty">No notices sent yet.</p>'; return; }
+    box.replaceChildren(...data.map((n) => {
+      const c = el('div', 'card');
+      const h = el('div', 'head');
+      h.append(el('b', '', '📢 ' + (n.sender_name || 'operator')), el('span', 'muted', `${when(n.at)} · ${since(n.at)}`));
+      c.append(h, el('div', 'body', n.body));
+      const row = el('div', 'row');
+      const del = el('button', 'danger', 'Delete');
+      del.title = 'Remove it from the list and from everyone\'s chat';
+      del.onclick = async () => {
+        if (!confirm(`Delete this notice? It also disappears from the chat of everyone playing now.\n\n${n.body}`)) return;
+        del.disabled = true;
+        const r = await deleteNotice(client, n.id);
+        if (r.error === 'operator') return notOperator();
+        if (!r.ok) {
+          del.disabled = false;
+          setStatus(r.error === 'setup' ? 'Run supabase/013_announcement_delete.sql first.' : 'Could not delete: ' + r.error);
+          return;
+        }
+        setStatus('Notice deleted ' + new Date().toLocaleTimeString());
+        notices();
+      };
+      row.append(del);
+      c.append(row);
+      return c;
+    }));
+  }
+  const noticeText = $('noticeText');
+  noticeText.maxLength = MAX_NOTICE;
+  const noticeCount = () => { $('noticeCount').textContent = `${cleanNotice(noticeText.value).length} / ${MAX_NOTICE}`; };
+  noticeText.oninput = noticeCount;
+  noticeCount();
+  $('noticeSend').onclick = async () => {
+    const body = cleanNotice(noticeText.value);
+    if (!body) { noticeText.focus(); return; }
+    if (!confirm(`Send this notice to every player now?\n\n${body}`)) return;
+    $('noticeSend').disabled = true;
+    const r = await sendNotice(client, body);
+    $('noticeSend').disabled = false;
+    const ERR = { operator: 'Only operators can send notices.', setup: 'Run supabase/012_announcements.sql first.', busy: 'Too many notices: wait a minute.', empty: 'Write a notice first.' };
+    if (r.error === 'operator') notOperator();
+    if (!r.ok) { setStatus(ERR[r.error] || 'Could not send: ' + r.error); return; }
+    noticeText.value = '';
+    noticeCount();
+    setStatus('Notice sent ' + new Date().toLocaleTimeString());
+    notices();
+  };
+
   // ---------- Wiring ----------
   let current = null, searchTimer = 0;
   $('askOpen').onchange = () => board('ask');
   $('askReload').onclick = () => board('ask');
   $('freeReload').onclick = () => board('free');
   $('playerReload').onclick = () => players();
+  $('noticeReload').onclick = () => notices();
   $('playerQ').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(players, 300); };
-  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players };
+  const retention = createRetention({ client, $, escapeHtml, notOperator });
+  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players, retention: retention.load, notice: notices };
   // The open-inquiry badge stays current even while another tab is open.
   const badges = async () => {
     if (document.hidden || current === 'overview') return;

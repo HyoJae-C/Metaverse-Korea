@@ -8,10 +8,10 @@ const memory = () => {
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
 };
 
-test('49 stable catalogue entries, 27 released, nine stamps per page and four special catches', () => {
+test('49 stable catalogue entries, 34 released, nine stamps per page and four special catches', () => {
   assert.equal(FISH.length, 49);
   assert.equal(new Set(FISH.map(f => f.id)).size, 49);
-  assert.equal(AVAILABLE_FISH.length, 27);
+  assert.equal(AVAILABLE_FISH.length, 34);
   assert.deepEqual(Array.from({ length: 6 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,4]);
   assert.equal(fishById('whale').ko, '흰수염고래');
   assert.equal(fishById('shark').ko, '백상아리');
@@ -63,7 +63,7 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(dex.kinds,3);
   assert.equal(bag.add(TRASH.id),false);
   assert.equal(dex.add(TRASH.id),false);
-  assert.equal(bag.sellAll(),745);
+  assert.equal(bag.sellAll(), fishById('whale').price + 2 * fishById('shark').price + fishById('crab').price);
   assert.equal(new FishDex(st,bag).total,4);
   assert.equal(dex.add('whale'),false);
   assert.equal(dex.count('whale'),2);
@@ -78,8 +78,8 @@ test('available collection can finish before the full catalogue, and future reco
   for(const f of AVAILABLE_FISH)dex.add(f.id);
   assert.equal(dex.availableComplete,true);
   assert.equal(dex.complete,false);
-  dex.add('giant-squid');
-  assert.equal(new FishDex(st).count('giant-squid'),1);
+  dex.add('blobfish');
+  assert.equal(new FishDex(st).count('blobfish'),1);
   for(const f of FISH)dex.add(f.id);
   assert.equal(dex.complete,true);
   st.setItem('mk.fishdex','broken');
@@ -151,19 +151,48 @@ test('the lucky spot moves around, boosts ★2 and up a little and halves the bo
   assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
 });
 
-test('better rods cut the escape chance but never change which fish bite', async () => {
-  const { ROD_SKINS, rodHold } = await import('../src/core/rod-skins.js');
-  assert.equal(rodHold('basic'), 0);
-  assert.equal(rodHold('nope'), 0);
+test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishstats', async () => {
+  const { FishStats } = await import('../src/core/fishing.js');
+  const m = memory();
+  const s = new FishStats(m, 1000);
+  s.add('cast'); s.add('cast'); s.add('miss');
+  s.add('bite', fishById('whale')); s.add('escape', fishById('whale'));
+  s.add('land', TRASH); s.add('land', fishById('loach'));
+  s.add('since'); s.add('nope'); s.add('bite');
+  const again = new FishStats(m, 5000);
+  assert.equal(again.get('since'), 1000);
+  assert.equal(again.get('cast'), 2);
+  assert.equal(again.get('miss'), 1);
+  assert.deepEqual(again.get('bite'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('escape'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('land'), [1, 1, 0, 0, 0, 0]);
+  assert.deepEqual(again.get('got'), { loach: 1 });
+  again.add('auto', fishById('carp'));
+  assert.equal(again.get('auto'), 1);
+  assert.deepEqual(new FishStats(m).get('gotAuto'), { carp: 1 });
+  m.setItem('mk.fishstats', '{broken');
+  assert.equal(new FishStats(m, 7).get('cast'), 0);
+});
+
+test('each star tier bites less often in total than the one below it', () => {
+  const tier = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).reduce((a, f) => a + f.chance, 0);
+  for (let r = 2; r <= 5; r++) assert.ok(tier(r) < tier(r - 1), `★${r} ${tier(r)} < ★${r - 1} ${tier(r - 1)}`);
+  // and every ★4 kind is rarer than any ★3 kind
+  assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
+});
+
+test('better rods cut the escape chance a little but never change which fish bite', async () => {
+  const { ROD_SKINS, rodSkin } = await import('../src/core/rod-skins.js');
+  assert.equal(rodSkin('basic').hold, 0);
+  assert.equal(rodSkin('nope').hold, 0); // unknown skins fall back to the basic rod
   for (let i = 1; i < ROD_SKINS.length; i++) {
     assert.ok(ROD_SKINS[i].price > ROD_SKINS[i - 1].price);
     assert.ok(ROD_SKINS[i].hold > ROD_SKINS[i - 1].hold, ROD_SKINS[i].id); // pricier holds better
-    assert.ok(ROD_SKINS[i].hold < 1);
   }
-  const shark = fishById('shark');
+  assert.ok(ROD_SKINS.at(-1).hold <= 0.25); // a small edge, not a sure catch
+  const shark = AVAILABLE_FISH.find(f => f.rarity === 5 && escapeChance(f) > 0);
   assert.equal(escapeChance(shark, 0, 0), escapeChance(shark));
-  assert.ok(rodHold('aurora') <= 0.25); // a small edge, not a sure catch
-  assert.ok(Math.abs(escapeChance(shark, 0, rodHold('aurora')) - escapeChance(shark) * (1 - rodHold('aurora'))) < 1e-12);
-  assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - escapeChance(shark) * 0.5 * 0.8) < 1e-12);
+  assert.ok(Math.abs(escapeChance(shark, 0, 0.25) - 0.3 * 0.75) < 1e-12); // ★5: 30% → 22.5%
+  assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - 0.3 * 0.5 * 0.8) < 1e-12); // stacks with spare time
   assert.equal(escapeChance(TRASH, 0, 0.5), 0);
 });

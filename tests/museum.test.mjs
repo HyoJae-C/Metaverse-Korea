@@ -4,7 +4,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { PAINTINGS, CREDIT, DISCLAIMER, HALLS, FLOORS } from '../src/data/paintings.js';
 import { hallSlots, hallPaintings, displaySize, nearestPainting, museumFloorStore, floorOf, HALL_CAPACITY, ROOM_MUSEUM, LIFT } from '../src/core/museum.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 test('every painting is a National Museum of Korea item with Korean and English text', () => {
   assert.ok(PAINTINGS.length >= 10 && PAINTINGS.length <= 60, `${PAINTINGS.length} paintings`);

@@ -2,9 +2,9 @@
 // come over to say hi. Local only (each visitor sees their own animals).
 import * as THREE from 'three';
 import { getLanguage } from './i18n.js';
+import { matCache } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 const sphere = (r, w = 12, h = 10) => new THREE.SphereGeometry(r, w, h);
 
 function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {

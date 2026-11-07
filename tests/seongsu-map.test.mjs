@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const map = read('map.json');
 const shops = [...read('stores.json').stores, ...read('homes.json').homes];
 const inSeongsu = ([x, z]) => x >= -335 && x <= 260 && z >= -110 && z <= 410;

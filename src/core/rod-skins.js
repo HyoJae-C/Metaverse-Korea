@@ -1,8 +1,8 @@
 // Fishing rod skins: bought at the park's fish stand, worn whenever you fish,
 // and seen by everyone nearby (the held kind travels as 'rod:<skin>').
 // A better rod never changes which fish bite, but holds on better: hold is
-// how much it cuts the chance a hooked fish slips off at the end (0.2 = 20% fewer escapes,
-// so a ★5 that slips off 30% of the time slips off 24%).
+// how much it cuts the chance a hooked fish slips off at the end (0.25 = a
+// quarter fewer escapes, so a ★5 that slips off 30% of the time slips off 22.5%).
 export const ROD_SKINS = [
   { id: 'basic', price: 0, hold: 0, name: { ko: '기본 낚싯대', en: 'Basic rod', ja: '基本の釣り竿', zh: '基础鱼竿' },
     grip: '#b5462f', pole: '#2b3a4a', tip: '#e8473b', reel: '#c9cdd2', line: '#f2f2f2' },
@@ -17,7 +17,6 @@ export const ROD_SKINS = [
   { id: 'aurora', price: 1500, hold: 0.25, name: { ko: '오로라 낚싯대', en: 'Aurora rod', ja: 'オーロラの釣り竿', zh: '极光鱼竿' },
     grip: '#2d1b4e', pole: '#7b6cff', tip: '#7cf7d4', reel: '#c9b8ff', line: '#e2fbff', glow: true },
 ];
-export const rodHold = (id) => rodSkin(id).hold || 0;
 export const rodSkin = (id) => ROD_SKINS.find((s) => s.id === id) || ROD_SKINS[0];
 // The held kind for a skin ('rod' for the basic one, so older clients still see a rod).
 export const rodKind = (id) => (id && id !== 'basic' && ROD_SKINS.some((s) => s.id === id) ? 'rod:' + id : 'rod');

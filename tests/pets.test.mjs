@@ -35,7 +35,7 @@ test('pets have adoption fees (old ones too, for owners); the monkey comes from 
 test('dogs and cats are adopted at animal cafés, not sold on shelves', async () => {
   const { readFileSync } = await import('node:fs');
   const { BREEDS } = await import('../src/core/pets.js');
-  const { stores } = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url)));
+  const { stores } = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
   // No animal sits on a display table anywhere.
   for (const s of stores) for (const p of s.products || []) assert.ok(!String(p.model).startsWith('pet:'), `${s.id} ${p.id}`);
   const adopt = (id) => stores.find((s) => s.id === id).adopt.map((a) => a.pet);

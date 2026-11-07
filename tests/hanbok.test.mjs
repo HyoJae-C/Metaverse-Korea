@@ -8,7 +8,7 @@ import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, 
 import { comingSoon, howToGet } from '../src/ui/shop-ui.js';
 import { ITEMS } from '../src/core/inventory.js';
 
-const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url), 'utf8')).stores;
+const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8')).stores;
 const mem = (init = {}) => {
   const d = { ...init };
   return { getItem: (k) => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, removeItem: (k) => { delete d[k]; }, d };

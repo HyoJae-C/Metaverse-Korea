@@ -74,7 +74,7 @@ test('market text in every language; the boss speaks Korean with romanization', 
 });
 
 test('Itaewon: restaurants north-west, bar and clubs north-east, the market south-west', () => {
-  const R = new URL('../public/regions/seongsu/', import.meta.url);
+  const R = new URL('../public/regions/another-seoul/', import.meta.url);
   const region = JSON.parse(readFileSync(new URL('region.json', R)));
   const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
   const stores = JSON.parse(readFileSync(new URL('stores.json', R))).stores;

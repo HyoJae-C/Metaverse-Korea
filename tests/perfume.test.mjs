@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { perfumeIndex, onSale, cleanFx, Scent, SCENT_MS, SCENT_KEY, STYLES, MOTIONS, nextPuff, PUFF_EVERY, PUFF_JITTER, SPRAYS } from '../src/core/perfume.js';
 import { Bag } from '../src/core/bag.js';
 
-const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url), 'utf8')).stores;
+const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8')).stores;
 const mem = (init = {}) => {
   const d = { ...init };
   return { getItem: (k) => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, removeItem: (k) => { delete d[k]; }, d };

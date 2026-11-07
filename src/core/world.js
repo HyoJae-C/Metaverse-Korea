@@ -17,6 +17,7 @@ export const COLORS = {
   water: 0x7cc4e8,
   plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
   sand: 0xe6d6b2, // palace courtyards
+  stone: 0xdcd6ca, // flagstone paving (박석): Gyeongbokgung's courtyards (drawn with stoneTexture)
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
   railTrack: 0x8a8f99,
@@ -38,13 +39,17 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  let obstacles = [];
+  let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
-  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
+  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
     const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes); // (a stairwell in a park cuts the lawn too)
+    if (mesh && kind === 'stone') {
+      const map = stoneTexture();
+      if (map) { mesh.material.map = map; mesh.material.color.set(0xffffff); }
+    }
     if (mesh) group.add(mesh);
   }
 
@@ -65,9 +70,10 @@ export function buildWorld(map, scene, opts = {}) {
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
-  const { walls, roofs } = makeBuildings(map.buildings);
+  const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
   if (roofs) group.add(roofs);
+  // (Bukchon's hanok are built when you first walk in: core/enclosure.js, main.js)
 
   const rail = makeRail(map.rail);
   if (rail) group.add(rail);
@@ -76,7 +82,7 @@ export function buildWorld(map, scene, opts = {}) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
     const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
-    if (trees) { group.add(...trees); obstacles = trees.obstacles; }
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 
   if (!lowSpec) {
@@ -87,7 +93,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds, obstacles };
+  return { group, bounds, obstacles, treeSpots };
 }
 
 export function computeBounds(map) {
@@ -144,6 +150,61 @@ function makeFlatPolys(polys, color, y, holes = []) {
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
   mesh.receiveShadow = true;
   return mesh;
+}
+
+// Flagstone paving (박석) like a palace courtyard: big pale granite slabs of
+// uneven, roughly oblong shapes with darker joints between them. Drawn once
+// on a canvas as a tile that repeats every STONE_TILE metres (the shapes'
+// UVs are their x/z in metres).
+export const STONE_TILE = 8;
+let stoneTex;
+export function stoneCells(cols = 6, rows = 9, seed = 7) {
+  let r = seed;
+  const rand = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+  const cells = [];
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    cells.push({ x: (i + 0.2 + rand() * 0.6) / cols, y: (j + 0.2 + rand() * 0.6) / rows, tone: rand(), i, j });
+  }
+  return { cols, rows, cells };
+}
+function stoneTexture() {
+  if (stoneTex !== undefined) return stoneTex;
+  if (typeof document === 'undefined') return (stoneTex = null);
+  const N = 512, cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(N, N), d = img.data;
+  const { cols, rows, cells } = stoneCells();
+  const at = (i, j) => cells[((j + rows) % rows) * cols + ((i + cols) % cols)];
+  let seed = 3;
+  const noise = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let py = 0; py < N; py++) {
+    const v = py / N, cj = Math.floor(v * rows);
+    for (let px = 0; px < N; px++) {
+      const u = px / N, ci = Math.floor(u * cols);
+      let d1 = Infinity, d2 = Infinity, best = null;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const c = at(ci + di, cj + dj);
+        // the cell's point, moved across the tile's edge when it wraps
+        const cx = c.x + Math.floor((ci + di) / cols), cy = c.y + Math.floor((cj + dj) / rows);
+        const dx = (u - cx) * cols, dy = (v - cy) * rows * 0.75; // slabs a little longer than wide
+        const dd = Math.hypot(dx, dy);
+        if (dd < d1) { d2 = d1; d1 = dd; best = c; } else if (dd < d2) d2 = dd;
+      }
+      const edge = d2 - d1; // 0 on a joint
+      const base = 206 + best.tone * 26 + (noise() - 0.5) * 14; // pale granite, each slab its own shade
+      const k = edge < 0.028 ? 0.66 : edge < 0.06 ? 0.66 + (edge - 0.028) / 0.032 * 0.34 : 1;
+      const o = (py * N + px) * 4;
+      d[o] = base * k + 4; d[o + 1] = base * k; d[o + 2] = base * k - 8; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  stoneTex = new THREE.CanvasTexture(cv);
+  stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
+  stoneTex.repeat.set(1 / STONE_TILE, 1 / STONE_TILE);
+  stoneTex.colorSpace = THREE.SRGBColorSpace;
+  stoneTex.anisotropy = 4;
+  return stoneTex;
 }
 
 // Road polylines → flat ribbons with round joints.
@@ -228,6 +289,7 @@ function makeBuildings(buildings) {
   buildings.forEach((b, bi) => {
     let p = b.p;
     if (p.length < 3) return;
+    if (b.custom) return; // drawn by its landmark (e.g. Olympic Park Pool); still a wall and a shop front
     // Ensure counter-clockwise (in x,-z) so wall normals face outward.
     if (signedArea(p) < 0) p = [...p].reverse();
     const base = b.m || 0;
@@ -235,6 +297,8 @@ function makeBuildings(buildings) {
     const tint = (bi * 7 + p.length) % WALL_TINTS.length;
     col.setHex(WALL_TINTS[tint]);
     roofCol.setHex(ROOF_TINTS[tint]);
+    if (b.wall) col.set(b.wall); // (a landmark building in its own stone, e.g. the War Memorial)
+    if (b.roof) roofCol.set(b.roof);
 
     let u = 0;
     for (let i = 0; i < p.length; i++) {
@@ -462,6 +526,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
   // What stands on the park lawns, for things put down on the grass (picnic
   // mats): [x, z, r] trunks and bushes.
+  out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters
   out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
   return out;
 }

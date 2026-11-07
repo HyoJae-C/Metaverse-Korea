@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { emptyLots, lotFront } from '../src/core/ad-posters.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 test('lotFront finds the side a lot faces', () => {
   const b = { p: [[0, 0], [16, 0], [16, 12], [0, 12]], f: [0, 1] };

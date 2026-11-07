@@ -4,6 +4,7 @@
 import { getLanguage, localName } from '../core/i18n.js';
 import { CREDIT, DISCLAIMER, FLOORS, COMING_SOON } from '../data/paintings.js';
 import { paintingUrl, hallsOn } from '../core/museum.js';
+import { NOT_TRANSLATED } from '../data/war-memorial.js';
 
 export const MUSEUM_TEXT = {
   look: { en: 'Look at the painting', ko: '그림 보기', ja: '絵を見る', zh: '看画', es: 'Ver la pintura', id: 'Lihat lukisan', vi: 'Xem tranh', hi: 'चित्र देखें', ar: 'شاهد اللوحة' },
@@ -14,6 +15,18 @@ export const MUSEUM_TEXT = {
   credit: { en: 'Image', ko: '이미지', ja: '画像', zh: '图片', es: 'Imagen', id: 'Gambar', vi: 'Ảnh', hi: 'तस्वीर', ar: 'الصورة' },
 };
 const T = (k) => localName(MUSEUM_TEXT[k], getLanguage());
+
+// The War History Museum's history text comes in Korean, English, Japanese
+// and Chinese (data/war-memorial.js): a card shows Korean and the player's
+// language, or Korean and English with a notice in the other languages.
+const langsShown = () => {
+  const l = getLanguage();
+  return l === 'ko' || !['en', 'ja', 'zh', 'zht'].includes(l) ? ['ko', 'en'] : ['ko', l];
+};
+const notTranslated = () => {
+  const text = NOT_TRANSLATED[getLanguage()];
+  return text && !['en', 'ko'].includes(getLanguage()) ? el('p', 'museum-notice', text) : null;
+};
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -35,38 +48,68 @@ export class MuseumUI {
     img.src = paintingUrl(p);
     img.alt = `${p.title.en} (${p.title.ko})`;
     img.decoding = 'async';
-    const ko = el('div', 'museum-lang');
-    ko.lang = 'ko';
-    ko.append(el('h3', null, p.title.ko), el('p', 'museum-meta', [p.artist.ko, p.era.ko, p.set?.ko].filter(Boolean).join(' · ')), el('p', null, p.desc.ko));
-    const en = el('div', 'museum-lang');
-    en.lang = 'en';
-    en.append(el('h3', null, p.title.en), el('p', 'museum-meta', [p.artist.en, p.era.en, p.set?.en].filter(Boolean).join(' · ')), el('p', null, p.desc.en));
-    const link = el('a', null, T('source') + ' ↗');
+    img.onerror = () => { img.hidden = true; }; // (a War Memorial photo not added yet)
+    // Korean and English; a War History Museum photo shows Korean and the
+    // player's language where it has one (see langsShown).
+    const blocks = (p.credit ? langsShown() : ['ko', 'en']).map((lang) => {
+      const b = el('div', 'museum-lang');
+      b.lang = lang === 'zht' ? 'zh-Hant' : lang;
+      const L2 = (o) => (o ? localName(o, lang) : null);
+      b.append(el('h3', null, L2(p.title)), el('p', 'museum-meta', [L2(p.artist), L2(p.era), L2(p.set)].filter(Boolean).join(' · ')), el('p', null, L2(p.desc)));
+      return b;
+    });
+    const notice = p.credit ? notTranslated() : null;
+    // A painting from the museum, or a War Memorial photo with its own credit.
+    const credit0 = p.credit || CREDIT, disclaimer = p.disclaimer || DISCLAIMER;
+    const link = el('a', null, (p.source ? localName(p.source, getLanguage()) : T('source')) + ' ↗');
     link.href = p.page;
     link.target = '_blank';
     link.rel = 'noopener';
-    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${CREDIT.ko} (${CREDIT.en}) · ${p.no} · `);
+    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${credit0.ko} (${credit0.en}) · ${p.no} · `);
     credit.append(link);
-    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(DISCLAIMER, getLanguage())));
+    this.root.replaceChildren(x, img, ...(notice ? [notice] : []), ...blocks, credit, el('p', 'fine', localName(disclaimer, getLanguage())));
+    this.root.hidden = false;
+  }
+
+  // A reading panel (the War History Museum's lobby boards): a title and
+  // paragraphs in Korean, then in English.
+  // t: { title, lines: [{ ko, en, ja, zh }] }.
+  showText(t) {
+    const x = el('button', 'sheet-x', '✕');
+    x.setAttribute('aria-label', 'Close');
+    x.onclick = () => this.close();
+    const parts = [x];
+    const notice = notTranslated();
+    if (notice) parts.push(notice);
+    for (const lang of langsShown()) {
+      const box = el('div', 'museum-lang');
+      box.lang = lang === 'zht' ? 'zh-Hant' : lang;
+      box.append(el('h3', null, localName(t.title, lang)), ...t.lines.map((line) => el('p', null, localName(line, lang))));
+      parts.push(box);
+    }
+    this.root.replaceChildren(...parts);
     this.root.hidden = false;
   }
 
   // The lift: one button per floor, with the halls on it.
-  showLift(current, go) {
+  // floors: [{ floor, lines }] for another museum (the War History Museum);
+  // the art museum's floors and halls by default.
+  showLift(current, go, floors) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.close();
     const ko = getLanguage() === 'ko';
+    floors ||= FLOORS.map((f) => ({
+      floor: f,
+      lines: hallsOn(f).map((h) => `${h.side} · ${ko ? h.name.ko : h.name.en}${h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`}`),
+    }));
     const list = el('div', 'museum-floors');
-    for (const f of [...FLOORS].reverse()) {
+    for (const { floor: f, lines } of [...floors].reverse()) {
       const b = el('button', 'museum-floor');
       b.disabled = f === current;
       b.append(el('b', null, `${f}F`));
       const halls = el('span');
-      for (const h of hallsOn(f)) {
-        const soon = h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`;
-        halls.append(el('span', null, `${h.side} · ${ko ? h.name.ko : h.name.en}${soon}`));
-      }
+      for (const line of lines) halls.append(el('span', null, line));
       if (f === current) halls.append(el('em', null, T('here')));
       b.append(halls);
       b.onclick = () => { this.close(); go(f); };

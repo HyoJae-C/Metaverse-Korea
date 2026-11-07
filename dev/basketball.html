@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /><title>Mini basketball</title>
+<link rel="stylesheet" href="../src/style.css" />
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe6f2; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .bar { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 4; align-items: center; }
+  .bar .chip { background: #fff; }
+  .bar select { height: 36px; border-radius: 999px; border: 0; padding: 0 10px; font: inherit; }
+  .coins { margin-left: auto; padding: 6px 12px; border-radius: 999px; background: #fff; font-weight: 800; }
+  .moves { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 3; display: flex; flex-wrap: wrap; gap: 4px; }
+  .moves button { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 0; background: rgba(255,255,255,0.85); }
+  body:has(.sheet:not([hidden])) .moves { display: none; }
+  .toast { color: #2c2a33; position: fixed; left: 50%; top: 70px; transform: translateX(-50%); z-index: 4; padding: 8px 16px; border-radius: 16px; background: #fff; font-weight: 900; font-size: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+  .toast[hidden] { display: none; }
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <button class="chip" id="open">🏀 <span id="open-label"></span></button>
+  <select id="lang" aria-label="Language"></select>
+  <span class="coins">🪙 <b id="coins">0</b></span>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="moves" id="moves"></div>
+<div id="hud">
+  <div class="sheet order-panel kimchi-panel folk-panel" id="basket-panel" hidden></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { LANGUAGES } from '../src/i18n/strings.js';
+import { setLanguage, getLanguage } from '../src/core/i18n.js';
+import { createCharacter } from '../src/core/character.js';
+import { randomLook } from '../src/data/appearance.js';
+import { SHOTS, shotMove } from '../src/core/basketball-game.js';
+import { makeCourt, makeBall, COURT_STAND } from '../src/core/basketball-court.js';
+import { ShotPlayer } from '../src/core/basketball-play.js';
+import { BasketballUI } from '../src/ui/basketball-ui.js';
+import { BL } from '../src/ui/basketball-text.js';
+
+// Dev preview: the court on a lawn, a character, the panel. Not on the map
+// yet (docs/BASKETBALL.md). ?move=dunk:3 plays one move; ?lang=ko.
+const q = new URLSearchParams(location.search);
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xcfe6f2);
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x8fae7a, 1.4));
+const sun = new THREE.DirectionalLight(0xfff1d6, 1.3); sun.position.set(5, 9, 7); scene.add(sun);
+const lawn = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshLambertMaterial({ color: 0x9fd27f }));
+lawn.rotation.x = -Math.PI / 2; scene.add(lawn);
+const court = makeCourt();
+scene.add(court.group);
+const ball = makeBall(); ball.visible = false; scene.add(ball);
+const ch = createCharacter(randomLook());
+ch.root.position.set(COURT_STAND[0], 0, COURT_STAND[1]);
+ch.root.rotation.y = Math.PI;
+scene.add(ch.root);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const view = (q.get('view') || 'side');
+function placeCamera() {
+  const portrait = innerWidth < innerHeight;
+  if (view === 'front') { camera.position.set(0, 2.6, 8.5); camera.lookAt(0, 1.0, 1.0); }
+  else if (view === 'close') { camera.position.set(5.2, 1.7, 1.6); camera.lookAt(0, 1.1, 0.9); }
+  else { camera.position.set(6.5, 3.0, 4.8); camera.lookAt(0, 1.0, 1.4); }
+  camera.fov = portrait ? 62 : 40;
+}
+
+let coins = 0;
+const coinEl = document.getElementById('coins');
+const toast = document.getElementById('toast');
+let toastTimer = 0;
+const say = (text) => { toast.textContent = text; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 1800); };
+let play = null, after = null;
+function startMove(shot, tier, then) {
+  play?.stop();
+  const move = shotMove(shot, tier);
+  play = new ShotPlayer({
+    ch, court, ball, move,
+    onEvent: (ev, m) => {
+      if (ev.kind === 'cheer' || (ev.kind === 'bounce' && !m.made && ev.t > m.release)) {
+        if (ev.kind === 'cheer') say('🏀 ' + BL('made', { n: m.points }) + (m.tier === 3 ? ' · ' + BL('style') : ''));
+        else if (!after?.said) say(BL('missed'));
+        if (after) after.said = true;
+      }
+    },
+  });
+  after = { then, said: false };
+  window.__move = { shot, tier, dur: move.dur };
+}
+const ui = new BasketballUI({
+  root: document.getElementById('basket-panel'),
+  onShot: ({ shot, tier }) => startMove(shot, tier, () => ui.resume()),
+  onMedal: (medal, n) => { if (n) { coins += n; coinEl.textContent = coins; } },
+});
+window.__bb = { ui, startMove, get t() { return play?.t ?? null; }, seek(t) { if (play) { play.t = t - 0.001; } } };
+document.getElementById('open').onclick = () => ui.show();
+
+// One button per move, to look at each.
+const movesEl = document.getElementById('moves');
+function relabel() {
+  document.getElementById('open-label').textContent = BL('open');
+  movesEl.replaceChildren(...SHOTS.flatMap((s) => s.tiers.map((x, i) => {
+    const b = document.createElement('button');
+    b.textContent = s.icon + ' ' + (i + 1) + ' ' + BL(s.id + '.' + x.id);
+    b.onclick = () => startMove(s.id, i + 1);
+    return b;
+  })));
+}
+
+const clock = new THREE.Timer();
+renderer.setAnimationLoop(() => {
+  clock.update();
+  const dt = Math.min(0.05, clock.getDelta()) * (+q.get('slow') || 1);
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; placeCamera(); camera.updateProjectionMatrix();
+  let speed = 0;
+  if (play && !play.done) {
+    const s = play.step(dt);
+    ch.root.position.set(s.x, s.y, s.z);
+    ch.root.rotation.y = s.ry;
+    ch.setTrick({ spin: s.spin }, s.y);
+    speed = s.speed;
+    if (s.done) { const a = after; after = null; play = null; a?.then?.(); }
+  } else court.update(dt);
+  ch.animate(dt, speed);
+  renderer.render(scene, camera);
+});
+
+const sel = document.getElementById('lang');
+for (const l of LANGUAGES) sel.append(new Option(l.label || l.code, l.code));
+sel.onchange = () => { setLanguage(sel.value); relabel(); if (ui.open && !ui.playing) ui.show(); };
+setLanguage(q.get('lang') || 'en');
+sel.value = getLanguage();
+relabel();
+if (q.get('move')) { const [s, t] = q.get('move').split(':'); setTimeout(() => startMove(s, +t || 1), 600); }
+if (q.has('open')) ui.show();
+window.__ready = true;
+</script>
+</body>
+</html>

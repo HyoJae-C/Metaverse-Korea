@@ -145,7 +145,7 @@ test('tune-ups make an owned ride a little faster; long-ride kits make it wear s
 test('Hongdae, Itaewon and Gyeongbokgung each have a ride shop of their own', async () => {
   const { readFileSync } = await import('node:fs');
   const { RIDE_SHOPS } = await import('../src/core/bike-garage.js');
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const shops = stores.filter((s) => s.workshop === 'bike');
   const by = Object.fromEntries(shops.map((s) => [s.rideShop || 'pedal', s]));
   assert.deepEqual(Object.keys(by).sort(), Object.keys(RIDE_SHOPS).sort());

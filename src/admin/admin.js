@@ -12,7 +12,7 @@ import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
 import { describePlace, agoText, fitView } from './view.js';
 import { createPanels } from './panels.js';
 
-const REGION = 'seongsu';
+const REGION = 'another-seoul';
 const POLL_MS = 3000;
 const BASE = import.meta.env.BASE_URL;
 const $ = (id) => document.getElementById(id);
@@ -57,8 +57,8 @@ function draw() {
     g.beginPath();
     p.forEach(([x, z], i) => { const [sx, sy] = toScreen(x, z); if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy); });
   };
-  const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' };
-  const order = { plaza: 0, sand: 0, water: 2 };
+  const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' };
+  const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
   for (const a of [...map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
     g.fillStyle = AREA[a.k] || '#bfe3a8';
     poly(a.p); g.fill();
@@ -108,7 +108,7 @@ function draw() {
   }
 }
 
-const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)' };
+const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)', 'olympic-park': 'Olympic Park' };
 const districtName = (id) => DISTRICT_EN[id] || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
 
 function fitAll() {
@@ -296,7 +296,7 @@ async function start() {
 }
 
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'ask', 'free', 'players'];
+const TABS = ['overview', 'live', 'ask', 'free', 'players', 'notice', 'retention'];
 let tab = null, panels = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';

@@ -3,6 +3,7 @@
 import { t, localName, getLanguage } from '../core/i18n.js';
 
 import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+import { inPoly } from '../core/geom.js';
 
 export { CATEGORY_ICON };
 
@@ -57,8 +58,12 @@ export const DISTRICT_NAME = {
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
   songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
+  bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन' },
+  'olympic-park': { en: 'Olympic Park', ko: '올림픽공원', ja: 'オリンピック公園', zh: '奥林匹克公园', es: 'Parque Olímpico', id: 'Taman Olimpiade', ar: 'الحديقة الأولمبية', vi: 'Công viên Olympic', hi: 'ओलंपिक पार्क' },
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
+  yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग' },
+  mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग' },
 };
 // The middle of each district's buildings.
 export function districtCentres(map) {
@@ -77,14 +82,6 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of
@@ -122,7 +119,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
-const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹' };
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -230,6 +227,29 @@ export class MapView {
   }
 
   draw() {
+    this._draw();
+    this._drawCredit();
+  }
+
+  // The gu outlines come from OpenStreetMap, whose licence asks for this
+  // credit wherever they are shown: small, in the bottom-right corner.
+  _drawCredit() {
+    const credit = this.seoul?.credit;
+    if (!credit || !this.open) return;
+    const g = this.canvas.getContext('2d'), dpr = this.dpr, W = this.canvas.width, H = this.canvas.height;
+    g.save();
+    g.font = `600 ${10 * dpr}px system-ui, sans-serif`;
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+    const w = g.measureText(credit).width + 10 * dpr, h = 16 * dpr;
+    g.fillStyle = 'rgba(255,250,240,0.8)';
+    g.fillRect(W - w - 4 * dpr, H - h - 4 * dpr, w, h);
+    g.fillStyle = 'rgba(74,63,53,0.85)';
+    g.fillText(credit, W - 9 * dpr, H - 4 * dpr - h / 2 + 1);
+    g.restore();
+  }
+
+  _draw() {
     if (!this.open) return;
     const g = this.canvas.getContext('2d');
     g.fillStyle = '#f3ecdc';
@@ -246,8 +266,8 @@ export class MapView {
     const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
     if (this.seoul) this._drawSeoul(g, poly, far, lang);
     this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
-    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' }; // the rest: green
-    const order = { plaza: 0, sand: 0, water: 2 };
+    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
+    const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
     for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
       g.fillStyle = AREA[a.k] || '#bfe3a8';
       poly(a.p); g.fill();
