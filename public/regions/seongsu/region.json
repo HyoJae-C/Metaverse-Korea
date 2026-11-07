@@ -295,6 +295,37 @@
         ]
       },
       {
+        "id": "seoul-forest-station",
+        "name": {
+          "ko": "서울숲",
+          "en": "Seoul Forest",
+          "ja": "ソウルの森",
+          "zh": "首尔林"
+        },
+        "line": {
+          "color": "#00a84d"
+        },
+        "note": "Seoul Forest's north-east corner by Seoulsup-gil: exit 1 on the park corner, exit 2 at the head of Metasequoia Avenue. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -195.5,
+              63
+            ],
+            "ry": 3.1416
+          },
+          {
+            "n": 2,
+            "at": [
+              -210,
+              93
+            ],
+            "ry": -1.5708
+          }
+        ]
+      },
+      {
         "id": "gyeongbokgung-station",
         "name": {
           "ko": "경복궁",

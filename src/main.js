@@ -19,6 +19,7 @@ useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
@@ -2770,6 +2771,7 @@ const applySigns = () => {
   storefronts.setTranslated(signsTranslated, getLanguage());
   zones.setTranslated(signsTranslated, getLanguage());
   for (const e of subwayEntrances) e.setTranslated(signsTranslated, getLanguage());
+  setParkSignsLang(signsTranslated ? getLanguage() : null); // park information boards
   for (const f of hiringRedraws) f(signsTranslated ? getLanguage() : 'en');
   for (const b of interiorCache.values()) b.setSignLang?.(signsTranslated ? getLanguage() : null); // the haunted house
   $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));

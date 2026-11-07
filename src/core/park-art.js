@@ -58,6 +58,8 @@ function icecream(g, l) {
 
 // A park bench facing +z (the sitter looks the way the group turns).
 export const BENCH_SEAT_H = 0.42;
+const BENCH_W = 2.2; // long enough for three people (BENCH_SEATS)
+const BENCH_SEATS = [-0.66, 0, 0.66];
 function bench(g) {
   const wood = mat('#b5794a'), iron = mat('#4d4a46');
   const add = (sx, sy, sz, x, y, z, m) => {
@@ -65,22 +67,22 @@ function bench(g) {
     b.position.set(x, y, z);
     g.add(b);
   };
-  for (const z of [-0.14, 0, 0.14]) add(1.8, 0.05, 0.12, 0, BENCH_SEAT_H, z, wood); // seat slats
-  for (const y of [0.62, 0.8]) add(1.8, 0.12, 0.05, 0, y, -0.25, wood); // backrest
-  for (const x of [-0.78, 0.78]) {
+  for (const z of [-0.14, 0, 0.14]) add(BENCH_W, 0.05, 0.12, 0, BENCH_SEAT_H, z, wood); // seat slats
+  for (const y of [0.62, 0.8]) add(BENCH_W, 0.12, 0.05, 0, y, -0.25, wood); // backrest
+  for (const x of [-(BENCH_W / 2 - 0.12), BENCH_W / 2 - 0.12]) {
     add(0.07, BENCH_SEAT_H, 0.5, x, BENCH_SEAT_H / 2, 0, iron); // legs
     add(0.07, 0.5, 0.06, x, 0.68, -0.25, iron); // back posts
     add(0.07, 0.05, 0.42, x, 0.62, 0.02, iron); // arm rests
   }
 }
-// Where people sit on the benches: two places each, standing up in front.
+// Where people sit on the benches: three places each, standing up in front.
 export function benchSeats(list = []) {
   const out = [];
   for (const l of list) {
     if (l.type !== 'bench') continue;
     const c = Math.cos(l.ry || 0), s = Math.sin(l.ry || 0);
     const at = (lx, lz) => [l.x + lx * c + lz * s, l.z - lx * s + lz * c];
-    for (const lx of [-0.45, 0.45]) {
+    for (const lx of BENCH_SEATS) {
       const [x, z] = at(lx, 0.02);
       out.push({ x, z, ry: l.ry || 0, stand: at(lx, 0.85), street: true });
     }
@@ -93,7 +95,7 @@ export function sculptureNear(list = [], x, z) {
   for (const l of list) {
     if (l.type !== 'icecream') continue;
     const d = Math.hypot(x - l.x, z - l.z) - (l.s || 1) * 0.7;
-    if (d < 1.8 && d < bd) { bd = d; best = l; }
+    if (d < (l.reach || 1.8) && d < bd) { bd = d; best = l; } // reach: further for one up on a fountain
   }
   return best;
 }
@@ -411,6 +413,7 @@ function greenhouse(g, l) {
     }
   };
   bed(0, d / 2 - 0.7, w - 1.2, 1); // back wall
+  bed(0, 0.6, 3.2, 2); // centre bed, where the statue used to stand
   for (const sx of [-1, 1]) bed((sx * (w / 2 - 0.7)), 0.3, 1, d - 2.6); // side walls
   for (const sx of [-1, 1]) bed(sx * (door / 2 + side / 2 + 0.2), -d / 2 + 0.7, side - 1.2, 0.9); // either side of the door
   const leaves = new THREE.InstancedMesh(leaf, new THREE.MeshLambertMaterial({ color: '#ffffff' }), plants.length);
@@ -485,17 +488,23 @@ function pond(g, l) {
   // fountain: a basin on a column, a smaller bowl on top
   const stone = mat('#e8e2d6');
   const tier = (rad, h, y) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, h, 20), stone); c.position.y = y; g.add(c); };
-  tier(1.5, 0.4, 0.3); tier(0.35, 1.0, 0.9); tier(0.8, 0.25, 1.45); tier(0.15, 0.6, 1.85);
+  tier(1.5, 0.4, 0.3);
+  // statue mode: a wide plinth carries a sculpture (added as its own landmark)
+  if (l.statue) { tier(0.55, 0.85, 0.85); tier(0.85, 0.15, 1.24); }
+  else { tier(0.35, 1.0, 0.9); tier(0.8, 0.25, 1.45); tier(0.15, 0.6, 1.85); }
   const jetMat = new THREE.MeshLambertMaterial({ color: '#dff4ff', transparent: true, opacity: 0.7, depthWrite: false });
-  const top = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.2, 8, 1, true).translate(0, 0.6, 0), jetMat);
-  top.position.y = 2.1;
-  top.userData.noShadow = true;
-  g.add(top);
+  let top = null;
+  if (!l.statue) {
+    top = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.2, 8, 1, true).translate(0, 0.6, 0), jetMat);
+    top.position.y = 2.1;
+    top.userData.noShadow = true;
+    g.add(top);
+  }
   const arcs = [];
   for (let i = 0; i < 6; i++) { // little arcs falling from the bowl into the basin
     const a = (i / 6) * Math.PI * 2;
     const arc = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.04, 4, 10, Math.PI / 2), jetMat);
-    arc.position.set(Math.cos(a) * 0.8, 1.15, Math.sin(a) * 0.8);
+    arc.position.set(Math.cos(a) * (l.statue ? 1.2 : 0.8), l.statue ? 0.75 : 1.15, Math.sin(a) * (l.statue ? 1.2 : 0.8));
     arc.rotation.y = -a;
     arc.userData.noShadow = true;
     g.add(arc);
@@ -506,7 +515,7 @@ function pond(g, l) {
   ripple.userData.noShadow = true;
   g.add(ripple);
   return (t) => {
-    top.scale.y = 0.85 + Math.sin(t * 3) * 0.15;
+    if (top) top.scale.y = 0.85 + Math.sin(t * 3) * 0.15;
     const k = (t * 0.5) % 1;
     ripple.scale.setScalar(1 + k * 1.6);
     ripple.material.opacity = 0.5 * (1 - k);

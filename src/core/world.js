@@ -44,7 +44,7 @@ export function buildWorld(map, scene, opts = {}) {
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
-    const mesh = makeFlatPolys(polys, COLORS[kind], y);
+    const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes); // (a stairwell in a park cuts the lawn too)
     if (mesh) group.add(mesh);
   }
 
@@ -126,12 +126,14 @@ function toShape(p) {
   return new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
 }
 
-function makeFlatPolys(polys, color, y) {
+function makeFlatPolys(polys, color, y, holes = []) {
   if (!polys.length) return null;
   const geos = [];
   for (const p of polys) {
     if (p.length < 3) continue;
-    const g = new THREE.ShapeGeometry(toShape(p));
+    const shape = toShape(p);
+    for (const h of holes || []) if (h.every(([x, z]) => pointInPolygon(x, z, p))) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+    const g = new THREE.ShapeGeometry(shape);
     g.rotateX(-Math.PI / 2);
     g.translate(0, y, 0);
     geos.push(g);

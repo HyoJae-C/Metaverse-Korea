@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { buildAnotherLand } from './anotherland.js';
 import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
+import { sign } from './park-signs.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 
 const mats = {};
@@ -226,6 +227,7 @@ const BUILD = {
   },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
+  sign, // wooden information boards (core/park-signs.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
