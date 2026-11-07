@@ -33,6 +33,7 @@ export function heronWater(s) {
   const len = s.len, gaps = [[-1, 12], [len - 10, len + 1]];
   for (const t of s.stones || []) gaps.push([t.u - 5, t.u + 5]);
   for (const b of s.bridges || []) gaps.push([b.u - b.w / 2 - 12, b.u + b.w / 2 + 12]);
+  for (const f of s.lanterns?.figures || []) gaps.push([f.u - 6, f.u + 6]); // the lantern figures (core/lanterns.js)
   gaps.sort((p, q) => p[0] - q[0]);
   const out = [];
   let a = 0;
@@ -52,11 +53,16 @@ const halfWater = (s) => (s.water || 8) / 2 - 1.6;
 // Where the heron lands at the start of cycle k, and what it does there.
 export function heronPlan(s, k, seed = 1) {
   const r = rng((k * 7919) ^ (seed * 104729));
-  const water = heronWater(s), total = water.reduce((n, [a, b]) => n + b - a, 0);
-  let pick = r() * total, u = water[0][0];
+  // It wanders up and down the stream over the hours: each landing is near a
+  // slowly moving home spot, so one hop is never the whole stream long.
+  const water = heronWater(s), lo = water[0][0], hi = water[water.length - 1][1];
+  const home = lo + (hi - lo) * (0.5 + 0.5 * Math.sin(k * 0.23 + seed + Math.sin(k * 0.07 + seed) * 2));
+  const want = home + (r() * 2 - 1) * 45;
+  // The nearest water it may stand in.
+  let u = water[0][0], best = Infinity;
   for (const [a, b] of water) {
-    if (pick <= b - a) { u = a + pick; break; }
-    pick -= b - a;
+    const c = clamp(want, a, b);
+    if (Math.abs(c - want) < best) { best = Math.abs(c - want); u = c; }
   }
   // Keep the spot (and its wade) inside its stretch of water.
   const [a, b] = water.find(([a, b]) => u >= a - 1e-6 && u <= b + 1e-6) || water[0];

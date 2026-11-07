@@ -24,6 +24,8 @@ export const RENT = {
 
 const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
 const OUTFIT_BUY = { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' };
+const HOME_BUY = { en: 'Buy for your home', ko: '우리 집용으로 사기', ja: '家用に買う', zh: '买回家' };
+const HOME_HAVE = { en: 'Yours: place it with Decorate at home', ko: '구매 완료: 집에서 꾸미기로 놓아요', ja: '購入済み：家の模様替えで置けます', zh: '已拥有：在家点装饰摆放' };
 const UMB = {
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
   have: { en: 'You have one', ko: '이미 있어요', ja: '持っています', zh: '已经有了' },
@@ -49,7 +51,7 @@ export const goodsKind = (product) => (product?.goods ? 'gift' : FOOD_MODELS.inc
 // walk (pets), spray (perfume), cook with (ingredients), sit on (picnic
 // mat), keep dry (umbrella). A thing you could only carry around is not
 // sold: players felt they had wasted their coins.
-export const usable = (product) => !!product && !!(product.outfit || product.item || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || goodsKind(product) !== 'gift');
+export const usable = (product) => !!product && !!(product.outfit || product.item || product.furniture || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || goodsKind(product) !== 'gift');
 // Clothes, shoes and accessories are bought with coins and worn on the
 // spot. A fashion shop or pop-up with nothing to wear yet is coming soon,
 // and so is any shop whose goods could only be carried around (candles,
@@ -118,8 +120,8 @@ export class ShopUI {
   // onGift(product): pick a friend and send it (see ui/gift-ui.js).
   // onRent(product): rent a hanbok, or give it back; rentLeft(product): ms
   // left on this hanbok's rental (0: not renting it).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -153,7 +155,7 @@ export class ShopUI {
     const lang = getLanguage();
     const p = this.$('product-panel');
     p.hidden = false;
-    this.$('product-icon').textContent = MODEL_ICON[product.model] || '🛍️';
+    this.$('product-icon').textContent = ITEMS[product.furniture]?.emoji || MODEL_ICON[product.model] || '🛍️';
     this.$('product-icon').style.background = product.color;
     this.$('product-name').textContent = localName(product.name, lang);
     this.$('product-name-ko').textContent = lang === 'ko' ? '' : product.name.ko;
@@ -203,6 +205,16 @@ export class ShopUI {
       this.$('product-price').textContent = `🪙 ${outfit.price}`;
       if (!product.desc) this.$('product-desc').textContent = localName(outfit.desc, lang) || '';
     }
+    // Lamps and other things for your home: bought once, then placed with Decorate.
+    const home = product.furniture && ITEMS[product.furniture] ? product.furniture : null;
+    if (home) {
+      const mine = this.owns?.(home);
+      ab.hidden = false;
+      ab.disabled = !!mine;
+      ab.textContent = mine ? '✅ ' + L(HOME_HAVE) : `🪙 ${coinsFor(product.price)} · ${L(HOME_BUY)}`;
+      ab.onclick = () => { this.onFurniture?.(product); this.openProduct(product); };
+      this.$('product-price').textContent = `🪙 ${coinsFor(product.price)}`;
+    }
     // Hanbok rental: rent with coins for a few hours, or give it back early.
     const rent = hanbokById(product.rent);
     if (rent) {
@@ -218,7 +230,7 @@ export class ShopUI {
     // fashion is coming soon, and other shops sell for coins to carry home.
     const how = howToGet(this.store);
     this.$('product-take').hidden = true;
-    const special = adopt || product.umbrella || outfit || rent;
+    const special = adopt || product.umbrella || outfit || rent || home;
     const howEl = this.$('product-how');
     howEl.hidden = special && how !== 'soon' || how === 'buy';
     howEl.textContent = L(HOW[how] || HOW.soon);

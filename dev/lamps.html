@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Lamps</title>
+<style>html,body{margin:0;height:100%;background:#f3ead9}canvas{display:block;width:100%;height:100%}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+// The lamps sold on Cheonggyecheon-ro (src/core/furniture.js), in a row.
+import * as THREE from 'three';
+import { buildFurniture, LAMP_IDS } from '../src/core/furniture.js';
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x3a3550);
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x806a60, 1.2));
+const sun = new THREE.DirectionalLight(0xfff1d6, 1.2); sun.position.set(3, 6, 5); scene.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), new THREE.MeshLambertMaterial({ color: 0xc9a27a }));
+floor.rotation.x = -Math.PI / 2; scene.add(floor);
+LAMP_IDS.forEach(([id], i) => {
+  const f = buildFurniture(id);
+  f.position.set((i % 8 - 3.5) * 1.05, 0, Math.floor(i / 8) * 1.6 - 0.8);
+  f.rotation.y = -0.3;
+  scene.add(f);
+});
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+camera.position.set(0, 3.2, 7.5); camera.lookAt(0, 0.5, 0);
+function frame() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.render(scene, camera); }
+addEventListener('resize', frame); frame();
+window.__ready = true;
+</script>
+</body>
+</html>
