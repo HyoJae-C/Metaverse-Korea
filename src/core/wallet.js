@@ -5,10 +5,11 @@
 // rewards: keep the balance on the server and grant coins only after the ad
 // network confirms the view.
 //
-// A real provider plugs in behind showRewardedAd(): for the web that is Google
-// Ad Manager rewarded ads (GPT, googletag.enums.OutOfPageFormat.REWARDED),
-// which needs an approved Ad Manager account, a privacy policy and a consent
-// banner (CMP) for EU/UK visitors.
+// The real ad is Google's H5 Games Ads (core/h5-ads.js), passed to watchAd()
+// as `show`; it falls back to demoAd() below until AdSense serves ads. The
+// reward is still granted here in the browser: when coins move to the server,
+// grant them there instead (H5 ads have no server-side verification, so the
+// server should keep the daily limit).
 
 const KEY = 'mk.wallet';
 // The budget book (가계부): the last LOG_MAX coins in and out, newest last.

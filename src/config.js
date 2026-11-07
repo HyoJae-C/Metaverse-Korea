@@ -42,8 +42,19 @@ export const config = {
   // it and see a sign-in prompt). Turn on together with chat_settings.google_only
   // in supabase/004_chat.sql, which enforces it on the server.
   chatGoogleOnly: false,
-  // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
-  rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
+  // Rewarded ads behind "Watch an ad" (core/h5-ads.js). provider 'h5' uses
+  // Google's H5 Games Ads (AdSense) once `client` is set; until then, or when
+  // Google has no ad to show, the demo countdown runs instead.
+  // client: the AdSense publisher ID, e.g. 'ca-pub-1234567890123456'
+  //   (VITE_ADSENSE_CLIENT overrides it at build time). Also put
+  //   "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0" in public/ads.txt.
+  // test: true shows Google's test ads (no real money); set false after approval.
+  rewardedAd: {
+    provider: 'h5',
+    client: import.meta.env.VITE_ADSENSE_CLIENT || '',
+    test: true,
+    reward: 20, dailyLimit: 5, seconds: 5,
+  },
   // "Support the creator" link in Settings (e.g. https://buymeacoffee.com/name).
   // Empty = the row stays hidden. VITE_SUPPORT_URL overrides it at build time.
   supportUrl: import.meta.env.VITE_SUPPORT_URL || 'https://buymeacoffee.com/hjseoul',

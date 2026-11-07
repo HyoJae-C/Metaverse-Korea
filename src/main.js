@@ -146,6 +146,7 @@ import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/moti
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
+import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
@@ -4057,7 +4058,8 @@ function openOrder() {
   clerk.ch.wave();
   orderUi.show(interior.store);
 }
-const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+loadH5Ads(config.rewardedAd.provider === 'h5' ? config.rewardedAd : {});
+const showAd = rewardedShow(config.rewardedAd, demoAd($('ad-overlay'), $('ad-count'), $('ad-close')));
 function refreshWallet() {
   $('coin-count').textContent = wallet.coins;
   $('wallet-coins').textContent = wallet.coins;
