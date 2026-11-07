@@ -75,7 +75,6 @@ export const TRACKS = [
   { dir: 1, z: TRACK_Z, doorZ: DOOR_Z, offset: 0 },
   { dir: -1, z: -TRACK_Z, doorZ: -DOOR_Z, offset: 7.5 },
 ];
-export const trackOn = (z) => TRACKS[z >= 0 ? 0 : 1];
 // Standing at the gates? Which lane is nearest and which side you're on.
 export function gateAt(x, z) {
   if (Math.abs(x - GATE_X) > 1.8 || z < GATE_LANES[0] - 1.2 || z > GATE_LANES[GATE_LANES.length - 1] + 1.2) return null;

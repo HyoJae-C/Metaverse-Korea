@@ -10,6 +10,7 @@
 //
 // Map data: "heron": true on a stream (or { "seed": 7 } for another bird).
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
 
 export const HERON = { cycle: 60, minFly: 9, maxFly: 42, speed: 9, cruise: [6, 9], swing: 14 };
 
@@ -148,8 +149,7 @@ export function heronAt(s, t, seed = 1) {
 }
 
 // ---------- 3D ----------
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = matCache({ flatShading: true });
 const COL = { grey: '#8d969f', back: '#7a838d', white: '#ecebe6', black: '#2a2d31', bill: '#e3a63b', leg: '#c9a24a', primaries: '#3a3f46' };
 
 // The bird faces +x; its feet are at y = 0.

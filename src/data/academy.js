@@ -480,4 +480,3 @@ export const COURSES = [
 ];
 
 export const courseById = (id) => COURSES.find((c) => c.id === id) || null;
-export const lessonCount = () => COURSES.reduce((n, c) => n + c.lessons.length, 0);

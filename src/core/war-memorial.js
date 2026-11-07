@@ -23,6 +23,7 @@
 // music: a place to look and remember.
 import * as THREE from 'three';
 import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT, DONATED, ABOUT, TIMELINE, MONTH_TEXT, monthBoard } from '../data/war-memorial.js';
+import { canvasTex } from './three-kit.js';
 
 export const ROOM_MEMORIAL = { w: 44, d: 30, h: 7 };
 const PART_H = 4.2;
@@ -67,14 +68,6 @@ export function photoSlots(floor = 1) {
   return out;
 }
 
-function canvasTex(cw, ch, draw) {
-  const c = document.createElement('canvas');
-  c.width = cw; c.height = ch;
-  draw(c.getContext('2d'), cw, ch);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 function wrap(g, text, x, y, maxW, lh) {

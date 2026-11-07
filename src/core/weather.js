@@ -5,18 +5,6 @@ import * as THREE from 'three';
 
 const REFRESH_MS = 15 * 1000; // the clock chip and the next 30-minute weather slot
 
-// WMO weather code → our weather kind.
-export function weatherKind(code) {
-  if (code == null) return 'clear';
-  if (code === 0 || code === 1) return 'clear';
-  if (code === 2 || code === 3) return 'cloudy';
-  if (code === 45 || code === 48) return 'fog';
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
-  if (code >= 95) return 'storm';
-  return 'clear';
-}
-
 // Rain and snow slow you down a little outdoors: on foot and by bike.
 // An umbrella keeps the rain off, so walking is only a touch slower.
 export const WET = new Set(['rain', 'storm', 'snow']);
@@ -43,12 +31,6 @@ export function rolledWeather(nowMs = Date.now()) {
   let acc = 0;
   for (const [kind, p] of WEATHER_ODDS) { acc += p; if (u < acc) return kind; }
   return 'clear';
-}
-
-// Hour of day (fractional) in a fixed UTC offset.
-export function localHour(offsetHours = 9, now = new Date()) {
-  const h = now.getUTCHours() + now.getUTCMinutes() / 60 + offsetHours;
-  return ((h % 24) + 24) % 24;
 }
 
 // Game clock: a whole day every 2 hours, the same for everyone. Daytime

@@ -26,8 +26,6 @@ export const STYLES = {
 };
 
 export const MOTIONS = ['rise', 'float', 'fall', 'twinkle', 'orbit', 'pop'];
-// Drawn shapes (not emoji): look the same on every device.
-export const SHAPES = ['@spark', '@bubble', '@pearl'];
 
 const isColor = (c) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
 
