@@ -253,9 +253,10 @@ export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f
 // The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
-// Paving, drawn once. 'alley': across the alley (u 0..1), dark grey slabs
-// down the middle with pale granite kerbs at both edges, as on Bukchon-ro
-// 11-gil; one tile is 2 m along. 'yard': big pale granite slabs, 1.6 m.
+// Paving, drawn once. 'alley': across the alley (u 0..1), asphalt down the
+// middle with a narrow edging of grey setts at both sides, only a little
+// lighter than the asphalt; one texture is 2 m along. 'yard': big pale
+// granite slabs, 1.6 m.
 const paveCache = {};
 function pavingTexture(kind) {
   if (kind in paveCache) return paveCache[kind];
@@ -264,14 +265,18 @@ function pavingTexture(kind) {
   c.width = 128; c.height = 128;
   const x = c.getContext('2d');
   if (kind === 'alley') {
-    x.fillStyle = '#c9c2b4'; x.fillRect(0, 0, 128, 128); // kerb stones
-    x.fillStyle = '#b7b0a3';
-    for (let i = 0; i < 4; i++) { x.fillRect(0, i * 32 + 30, 20, 2); x.fillRect(108, i * 32 + 30, 20, 2); }
-    x.fillStyle = '#6f6d6b'; x.fillRect(20, 0, 88, 128); // joints
-    const tones = ['#8e8b87', '#85827e', '#97938e', '#8a8783'];
-    for (let r = 0; r < 4; r++) for (let i = 0; i < 2; i++) {
-      x.fillStyle = tones[(r + i * 2) % 4];
-      x.fillRect(22 + i * 43 + (r % 2 ? 6 : 0) * (i ? -1 : 1), r * 32 + 1, 41, 30);
+    x.fillStyle = '#5b5d60'; x.fillRect(0, 0, 128, 128); // asphalt
+    let s = 7; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let k = 0; k < 900; k++) { // its grain
+      const v = rnd();
+      x.fillStyle = v < 0.5 ? 'rgba(40,42,45,0.35)' : 'rgba(150,150,148,0.25)';
+      x.fillRect(Math.floor(rnd() * 128), Math.floor(rnd() * 128), 1, 1);
+    }
+    const E = 12; // the edging: about a tenth of the width on each side
+    for (const x0 of [0, 128 - E]) {
+      x.fillStyle = '#5f5e5a'; x.fillRect(x0, 0, E, 128); // joints
+      const tones = ['#77756f', '#7d7b75', '#73716c', '#7a7872'];
+      for (let r = 0; r < 8; r++) { x.fillStyle = tones[(r + (x0 ? 1 : 0)) % 4]; x.fillRect(x0 + 1, r * 16 + 1, E - 2, 14); }
     }
   } else {
     x.fillStyle = '#bdb5a6'; x.fillRect(0, 0, 128, 128);
@@ -317,7 +322,7 @@ export function buildBukchonHill(roads, [ox, oz]) {
       const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
       for (let k = 0; k < n; k++) {
         const quad = [k / n, (k + 1) / n].map((t) => {
-          const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.05;
+          const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
           return [[x - px, y, z - pz], [x + px, y, z + pz]];
         });
         const [[a, b], [c, d]] = quad;
