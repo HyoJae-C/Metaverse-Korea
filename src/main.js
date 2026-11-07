@@ -54,6 +54,8 @@ import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { startWhereReports } from './net/where.js';
+import { startUpdateCheck } from './core/update-check.js';
+import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
@@ -1078,6 +1080,12 @@ onLanguageChange(refreshOnline);
 let stopOnline = null;
 watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
+// A newer build deployed while we play: ask for a refresh (core/update-check.js).
+startUpdateCheck({
+  current: __BUILD_ID__,
+  fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v),
+  onNew: () => { if (!tabParked) showUpdateBanner(); },
+});
 // Our spot on the map for operators' live view (net/where.js, admin.html).
 // Inside a shop we report the street spot we came in from, and the shop.
 // A hidden tab keeps reporting (browsers slow the timer down to about once a
