@@ -117,8 +117,8 @@ the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
 Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street;
 Mangwon has Mangwon Market under an arcade roof, Poeun-ro (Mangridan-gil) and
 an open Han River park along its south edge. Its Mangwon Fishing Pier is a
-park room like Ttukseom's with `"fishPlace": "mangwon"`: some journal fish
-only bite there (`src/core/fish-places.js`). The script also sets the `at` of
+park room like Ttukseom's; every park's fishing spots share one catch table
+(`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
 ## Sunken streams (Cheonggyecheon)
