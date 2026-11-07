@@ -7,6 +7,8 @@ import { makeAnimal } from './pets.js';
 import { buildFurniture } from './furniture.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
+import { buildPoolHall } from './pool-hall.js';
+import { POOL_ROOM } from './pool.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
@@ -32,6 +34,7 @@ export const ROOM_SIZES = {
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
+  pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -335,6 +338,7 @@ export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);

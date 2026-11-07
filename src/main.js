@@ -100,6 +100,9 @@ import { TarotUI } from './ui/tarot-ui.js';
 import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
 import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
+import { WATER_Y, SWIM_Y, COMP, RACE_LEN, laneZ, waterAt, boardById, Race, rivalPaces, rivalLanes, diveHeight, maxFlips, FLIP_TIME, scoreDive, PoolLog } from './core/pool.js';
+import { POOL_TEXT, SWIMSUITS, RIVAL_NAMES, RIVAL_LOOKS, MEDALS } from './data/pool-text.js';
+import { LIFEGUARD_LOOK } from './core/pool-hall.js';
 import { Skater, parkGround, railNear, inPark, PARK_SPEED, GRIND_NAME, bankPoints, trickPose, TRICK_BY_ID } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
@@ -2322,6 +2325,7 @@ try {
     localStorage.setItem('mk.outfitGift', '1');
   }
 } catch { /* storage blocked */ }
+if (String(myLook.model).startsWith('swim-')) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); } // swimwear is only for the pool
 if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
   coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
@@ -2594,7 +2598,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : t('npc.clerk'), store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -4455,6 +4459,276 @@ function skateTick(dt, p) {
   skateHud();
 }
 
+// Olympic Park Pool (core/pool.js rules, core/pool-hall.js the hall): you
+// are in swimwear and a cap as soon as you come in (your own clothes come
+// back when you leave, like trying clothes on; other swimsuits are in the
+// lockers by the door), swim in any pool (flat on the water while moving, others see
+// it too), borrow a tube, race 50 m against three swimmers by tapping
+// Stroke! in rhythm, or climb the tower and dive, tapping Flip! for
+// somersaults. Records stay on this device; the first races of a day pay a
+// few coins.
+const PT = POOL_TEXT;
+const poolLog = new PoolLog();
+const pool = {
+  was: false, // inside the hall last frame
+  act: null, // the activity pose to show ('swim', 'tube', 'dive')
+  slow: 1, // walking speed factor (slower in the water)
+  tube: false,
+  mode: null, // null | { kind: 'board', b } | { kind: 'dive', b, t, queued, rot } | { kind: 'race', ... }
+  welcomed: 0, tip: -1,
+  suit: 0, // which swimsuit you wear in the hall
+};
+const wearingSwim = () => typeof currentLook?.model === 'string' && currentLook.model.startsWith('swim-');
+function wearSwim(id) {
+  const keep = { hair: myLook.hair, skin: myLook.skin, shirt: myLook.shirt, pants: myLook.pants, dye: myLook.dye, hairStyle: myLook.hairStyle, eyeShape: myLook.eyeShape, lip: myLook.lip, eyes: myLook.eyes, tone: myLook.tone, small: myLook.small, emblem: myLook.emblem, nameColor: myLook.nameColor, op: myLook.op };
+  setLook({ ...keep, model: id }); // no hat, glasses or bag in the water; the cap covers the hair
+  $('revert-look').hidden = true;
+  action = STALE;
+}
+function poolHud() {
+  const hud = $('pool-hud');
+  const on = mode === 'store' && !!interior?.pool;
+  hud.hidden = !on;
+  if (!on) return;
+  const m = pool.mode;
+  if (m?.kind === 'race') {
+    const r = m.race;
+    $('pool-score').textContent = fmt(L(PT.hudRace), { m: Math.floor(r.x), t: Math.max(0, r.t).toFixed(1) });
+    $('pool-sub').textContent = r.started ? '' : L(PT.ready);
+  } else {
+    const s = poolLog.s;
+    $('pool-score').textContent = fmt(L(PT.hudPool), { race: s.bestRace ? s.bestRace.toFixed(2) + 's' : '–', dive: s.bestDive || '–' });
+    $('pool-sub').textContent = '';
+  }
+}
+const hall = () => interior?.pool ? interior : null;
+
+// ---- the race ----
+function startRace(lane) {
+  if (pool.mode) return;
+  pool.tube = false;
+  const race = new Race(lane, rivalPaces());
+  const lanes = rivalLanes(lane);
+  const rivals = lanes.map((ln, i) => {
+    const o = makeNpc($('labels'), RIVAL_NAMES[i], RIVAL_LOOKS[i]);
+    o.lane = ln;
+    o.ch.root.position.set(COMP.x0 - 0.55, 0.58, laneZ(ln));
+    o.ch.root.rotation.y = Math.PI / 2;
+    interior.scene.add(o.ch.root);
+    return o;
+  });
+  pool.mode = { kind: 'race', race, rivals, lane, count: 4, after: 0 };
+  hall().setRaceMode(true);
+  me.root.position.set(COMP.x0 - 0.55, 0.58, laneZ(lane));
+  me.root.rotation.y = Math.PI / 2;
+  cam.yaw = 0.55; // from the deck side, looking along the lanes
+  shop.toast(L(PT.raceHint));
+  action = STALE;
+}
+function strokeTap() {
+  const m = pool.mode;
+  if (m?.kind !== 'race' || !m.race.started || m.race.done) return;
+  const q = m.race.tap(performance.now() / 1000);
+  if (q < 0.5) skatePop(L(PT.splash), 'bail');
+  else { sfx.splash?.(false); buzz(8); }
+}
+// Where a swimmer is, s metres into the race, t seconds after the start: a
+// short dive off the block first.
+function racePos(s, t, lane) {
+  const dive = Math.min(1, Math.max(0, t / 0.6));
+  if (t < 0.6) return { x: COMP.x0 - 0.55 + dive * 3.5, y: 0.58 + (SWIM_Y - 0.58) * dive + Math.sin(dive * Math.PI) * 0.6, z: laneZ(lane), air: true };
+  return { x: Math.max(COMP.x0 + 2.95, COMP.x0 + s), y: SWIM_Y, z: laneZ(lane), air: false };
+}
+function raceTick(dt, p) {
+  const m = pool.mode, r = m.race;
+  const before = Math.ceil(-r.t);
+  for (const ev of r.step(dt)) {
+    if (ev === 'go') { skatePop(L(PT.go), 'big'); sfx.skatePop(); action = STALE; }
+    if (ev === 'finish') finishRace();
+  }
+  if (!r.started && before !== Math.ceil(-r.t) && Math.ceil(-r.t) > 0) skatePop(String(Math.ceil(-r.t)));
+  const me0 = racePos(r.x, r.t, m.lane);
+  if (!r.started) { me0.x = COMP.x0 - 0.55; me0.y = 0.58; }
+  p.set(me0.x, me0.y, me0.z);
+  me.root.rotation.y = Math.PI / 2;
+  pool.act = r.started && !me0.air ? 'swim' : 'dive';
+  pool.speed01 = r.started && !me0.air ? Math.min(1, 0.35 + r.v / 4) : 0;
+  const dist = r.rivals();
+  m.rivals.forEach((o, i) => {
+    const q = racePos(dist[i], r.t, o.lane);
+    if (!r.started) { q.x = COMP.x0 - 0.55; q.y = 0.58; }
+    o.ch.root.position.set(q.x, q.y, q.z);
+    const swimming = r.started && !q.air && dist[i] < RACE_LEN;
+    o.ch.activity(r.started && !q.air ? 'swim' : 'dive');
+    o.ch.animate(dt, swimming ? 0.9 : 0, false);
+    placeLabels(o, camera, innerWidth, innerHeight);
+  });
+  if (r.done) {
+    m.after += dt;
+    const allIn = r.paces.every((pc) => pc <= r.t) || m.after > 6;
+    if (allIn && m.after > 2.5) endRace();
+  }
+}
+function finishRace() {
+  const m = pool.mode, r = m.race, { time, place } = r.done;
+  const { coins, best } = poolLog.finishRace(time, place);
+  skatePop(fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) }), place === 1 ? 'big' : 'land');
+  let msg = fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) });
+  if (best) msg += ' · ' + L(PT.newBest);
+  if (coins) { wallet.add(coins, { name: { en: '50 m race', ko: '50m 레이스' }, at: interior?.store.name }); refreshWallet(); msg += ' · ' + fmt(L(PT.coins), { n: coins }); }
+  shop.toast(msg);
+  sfx.landed?.();
+  const rows = [{ name: nickname || 'You', lane: m.lane + 1, time, me: true }, ...m.rivals.map((o, i) => ({ name: o.name.replace(/^\S+\s/, ''), lane: o.lane + 1, time: r.paces[i] }))]
+    .sort((a, b) => a.time - b.time)
+    .map((row, i) => ({ ...row, place: MEDALS[i] ? String(i + 1) : '', lane: String(row.lane), time: row.time.toFixed(2) }));
+  hall().drawBoard('50 m · ' + (getLanguage() === 'ko' ? '결과' : 'RESULTS'), rows);
+}
+function endRace() {
+  const m = pool.mode;
+  if (m?.kind !== 'race') return;
+  for (const o of m.rivals) { o.ch.root.removeFromParent(); o.tag.remove(); o.bubble?.remove(); }
+  hall()?.setRaceMode(false);
+  pool.mode = null;
+  action = STALE;
+}
+
+// ---- dives ----
+function climbBoard(b) {
+  if (pool.mode) return;
+  pool.tube = false;
+  pool.mode = { kind: 'board', b, at: performance.now() };
+  me.root.position.set(b.tip, b.h, b.z);
+  me.root.rotation.y = -Math.PI / 2; // facing the water
+  cam.yaw = -0.9; // from the pool side at an angle, clear of the other boards, so the flips show
+  if (performance.now() - (pool.diveHinted || 0) > 120e3) { pool.diveHinted = performance.now(); shop.toast(L(PT.diveHint)); }
+  action = STALE;
+}
+function climbDown() {
+  const m = pool.mode;
+  if (m?.kind !== 'board') return;
+  pool.mode = null;
+  me.root.position.set(m.b.foot[0], 0, m.b.foot[1]);
+  action = STALE;
+}
+function startDive() {
+  const m = pool.mode;
+  if (m?.kind !== 'board') return;
+  pool.mode = { kind: 'dive', b: m.b, t: 0, queued: 0, rot: 0 };
+  sfx.skatePop();
+  action = STALE;
+}
+function queueFlip() {
+  const m = pool.mode;
+  if (m?.kind === 'dive' && m.queued < maxFlips(m.b.h) + 1) m.queued++;
+}
+function diveTick(dt, p) {
+  const m = pool.mode;
+  m.t += dt;
+  if (m.rot < m.queued) m.rot = Math.min(m.queued, m.rot + dt / FLIP_TIME);
+  const y = diveHeight(m.b.h, m.t);
+  p.set(m.b.tip - 0.4 - 1.3 * m.t, y, m.b.z);
+  me.root.rotation.y = -Math.PI / 2;
+  const turning = m.rot < m.queued;
+  me.setTrick({ flip: m.rot * Math.PI * 2, tuck: turning ? 1 : 0 }, 0);
+  pool.act = turning ? null : 'dive';
+  pool.speed01 = 0;
+  if (y <= WATER_Y) {
+    const res = scoreDive(m.b.h, m.rot);
+    me.setTrick(null, 0);
+    const { best } = poolLog.finishDive(res.points);
+    skatePop(fmt(L(res.clean ? PT.clean : PT.flop), { n: res.flips, p: res.points }) + (best && res.clean ? ' 🎉' : ''), res.clean ? (res.flips >= 2 ? 'big' : 'land') : 'bail');
+    sfx.splash?.(true);
+    buzz(res.clean ? 20 : 70);
+    pool.mode = null;
+    p.y = WATER_Y - 1.3; // under for a moment, then up to the surface
+    action = STALE;
+  }
+}
+
+// Every frame, after the walking: in the hall, the water, the race, the dive.
+function poolTick(dt, p, mag = 0) {
+  const on = mode === 'store' && !!interior?.pool;
+  if (!on) {
+    if (pool.was) { // left the hall: own clothes back, nothing left running
+      pool.was = false;
+      if (pool.mode?.kind === 'race') endRace();
+      if (pool.mode?.kind === 'dive') me.setTrick(null, 0);
+      pool.mode = null;
+      pool.tube = false;
+      pool.act = null;
+      pool.slow = 1;
+      if (wearingSwim()) setLook(myLook);
+      poolHud();
+    }
+    return;
+  }
+  if (!pool.was) {
+    pool.was = true;
+    if (!wearingSwim()) wearSwim(SWIMSUITS[pool.suit % SWIMSUITS.length]);
+    if (performance.now() - pool.welcomed > 90e3) { pool.welcomed = performance.now(); shop.toast(L(PT.welcome)); }
+  }
+  pool.speed01 = null;
+  const m = pool.mode;
+  if (m?.kind === 'race') raceTick(dt, p);
+  else if (m?.kind === 'dive') diveTick(dt, p);
+  else if (m?.kind === 'board' && mag > 0.3 && performance.now() - m.at > 600) climbDown(); // walk away: back down the ladder
+  else if (m?.kind === 'board') {
+    p.set(m.b.tip, m.b.h, m.b.z);
+    me.root.rotation.y = -Math.PI / 2;
+    pool.act = 'dive';
+    pool.speed01 = 0;
+  } else {
+    const w = seated ? null : waterAt(p.x, p.z);
+    const target = w ? SWIM_Y : 0;
+    p.y += (target - p.y) * Math.min(1, dt * (w ? 6 : 10));
+    if (!w && p.y > -0.15) p.y = 0;
+    pool.act = w ? (pool.tube ? 'tube' : 'swim') : null;
+    pool.slow = w ? (pool.tube ? 0.4 : 0.6) : 1;
+    if (!!w !== !!pool.inWater) { pool.inWater = !!w; if (w) sfx.splash?.(false); action = STALE; }
+  }
+  if (pool.speed01 != null) speed01 = pool.speed01;
+  poolHud();
+}
+// The action button in the hall (before the general ones).
+function poolAction(p) {
+  const m = pool.mode;
+  if (m?.kind === 'race') return m.race.started && !m.race.done
+    ? { key: 'pool-stroke', label: '🏊 ' + L(PT.stroke), run: strokeTap }
+    : { key: 'pool-wait', label: '🏁 ' + L(m.race.done ? PT.go : PT.ready), run: () => {} };
+  if (m?.kind === 'board') return { key: 'pool-dive', label: '🤸 ' + L(PT.dive), run: startDive };
+  if (m?.kind === 'dive') return { key: 'pool-flip', label: '🔄 ' + L(PT.flip), run: queueFlip };
+  const near = (list, r) => (list || []).find((s) => Math.hypot(p.x - s.x, p.z - s.z) < r);
+  const st = interior.stations;
+  if (near(st.lockers, 1.8)) { // the first other swimsuit (the rest in the list)
+    const i = SWIMSUITS.findIndex((id) => id !== currentLook.model);
+    return { key: 'pool-suit', label: '🔐 ' + fmt(L(PT.locker), { name: L(PT.suits[SWIMSUITS[i]]) }), run: () => { pool.suit = i; wearSwim(SWIMSUITS[i]); } };
+  }
+  if (near(st.tubes, 1.8)) return pool.tube
+    ? { key: 'pool-tube-off', label: '🛟 ' + L(PT.tubePut), run: () => { pool.tube = false; action = STALE; } }
+    : { key: 'pool-tube', label: '🛟 ' + L(PT.tubeTake), run: () => { pool.tube = true; action = STALE; } };
+  const blk = !waterAt(p.x, p.z, 0) && near(st.blocks, 1.25);
+  if (blk) return { key: 'pool-race:' + blk.lane, label: '🏁 ' + fmt(L(PT.race), { n: blk.lane + 1 }), run: () => startRace(blk.lane) };
+  const lad = near(st.ladders, 1.3);
+  if (lad) { const b = boardById(lad.board); return { key: 'pool-climb:' + b.id, label: '🪜 ' + fmt(L(PT.climb), { h: b.h }), run: () => climbBoard(b) }; }
+  if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) return { key: 'pool-talk', label: '💬 ' + L(PT.talk), run: lifeguardTip };
+  return null;
+}
+// More choices: the other swimsuits at the lockers.
+function poolMore(p) {
+  const out = [];
+  if (pool.mode) return out;
+  if ((interior.stations.lockers || []).some((s) => Math.hypot(p.x - s.x, p.z - s.z) < 1.8)) {
+    SWIMSUITS.forEach((id, i) => { if (currentLook.model !== id) out.push({ key: 'pool-suit:' + id, label: (id.includes('navy') || id.includes('coral') ? '🩱 ' : '🩳 ') + L(PT.suits[id]), run: () => { pool.suit = i; wearSwim(id); } }); });
+  }
+  return out;
+}
+function lifeguardTip() {
+  pool.tip = (pool.tip + 1) % PT.tips.length;
+  const [ko, rom, tr] = PT.tips[pool.tip];
+  if (clerk) say(clerk, $('labels'), [ko, rom, L(tr)]);
+}
+onLanguageChange(poolHud);
+
 const BUSK_TEXT = {
   start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
   stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
@@ -4715,6 +4989,7 @@ const DANCE_TEXT = {
   stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
 };
 function currentActivity() {
+  if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
@@ -5782,6 +6057,7 @@ function moreActions(p, door) {
     return out;
   }
   if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
+  if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
   if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
@@ -5918,6 +6194,8 @@ function updateAction(p, tSec) {
       next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { tarotReader()?.ch.wave(); tarotUi.show(); } };
     } else if (tarotNext) {
       next = tarotNext;
+    } else if (interior.pool && !seated && poolAction(p)) {
+      next = poolAction(p);
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'karaoke')) {
@@ -6207,7 +6485,7 @@ renderer.setAnimationLoop(() => {
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
     const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow; // (slower in the pool's water)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -6318,6 +6596,7 @@ renderer.setAnimationLoop(() => {
   skateTick(dt, p);
   if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
+  poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
   picnic.tick(); // picnic mats on the park lawn
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
@@ -6531,6 +6810,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     clerkAt: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
+    pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decor?.items.length ?? -1,
@@ -6547,6 +6827,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
+    pool: () => ({ act: pool.act, mode: pool.mode?.kind || null, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], swim: wearingSwim(), tube: pool.tube, race: pool.mode?.race ? { t: +pool.mode.race.t.toFixed(2), x: +pool.mode.race.x.toFixed(1), v: +pool.mode.race.v.toFixed(2), done: pool.mode.race.done } : null, log: { ...poolLog.s } }),
     peerTricks: () => [...others.players.values()].map((o) => [o.tk || '', +o.ch.root.position.y.toFixed(2)]),
     rideOn: (id) => { if (id) { garage.s.own.includes(id) || garage.s.own.push(id); garage.use(id); } setRiding(0); setRiding(1); },
     face: (ry) => { me.root.rotation.y = ry; cam.yaw = ry + Math.PI; },

@@ -187,6 +187,13 @@ function leg(out, o, side) {
     add(0.12, 0.1, 'bottom');
   }
   sweep(out, rings, { power: 2 });
+  if (o.barefoot) { // swimwear: a bare foot instead of a sneaker
+    const foot = [];
+    const fAdd = (z, h, wd) => foot.push({ c: [x, h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role: 'skin', w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
+    fAdd(-0.08, 0.1, 0.07); fAdd(-0.04, 0.13, 0.08); fAdd(0.04, 0.1, 0.085); fAdd(0.12, 0.07, 0.08); fAdd(0.17, 0.05, 0.065);
+    sweep(out, foot, { power: 2.4 });
+    return;
+  }
   // A sneaker on the foot, toe to +z, and a sole round it.
   const shoe = [];
   const sAdd = (z, h, wd, role, y0 = 0) => shoe.push({ c: [x, y0 + h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role, w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });

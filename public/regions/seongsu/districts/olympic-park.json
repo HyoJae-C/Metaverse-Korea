@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "olympic-park",
-  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park on the plaza is a game addition. Placed by its anchor, the World Peace Gate (region.json)."
+  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park and the pool hall on the plaza are game additions. Placed by its anchor, the World Peace Gate (region.json)."
  },
  "roads": [
   {
@@ -104,6 +104,32 @@
     "ko": "올림픽공원 안내센터",
     "en": "Olympic Park Information Center"
    }
+  },
+  {
+   "h": 10,
+   "p": [
+    [
+     968,
+     292
+    ],
+    [
+     1016,
+     292
+    ],
+    [
+     1016,
+     328
+    ],
+    [
+     968,
+     328
+    ]
+   ],
+   "n": {
+    "ko": "올림픽공원 수영장",
+    "en": "Olympic Park Pool"
+   },
+   "custom": true
   }
  ],
  "rail": [],
@@ -456,6 +482,17 @@
     "ja": "オリンピック公園スケートパーク",
     "zh": "奥林匹克公园滑板公园"
    }
+  },
+  {
+   "kind": "landmark",
+   "x": 992,
+   "z": 310,
+   "name": {
+    "ko": "올림픽공원 수영장",
+    "en": "Olympic Park Pool",
+    "ja": "オリンピック公園プール",
+    "zh": "奥林匹克公园游泳馆"
+   }
   }
  ],
  "landmarks": [
@@ -561,6 +598,14 @@
     "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!",
     "ar": "قم بالحركات على اللوح أو الزلاجات أو الدراجة أو السكوتر. ادخل راكبًا واضغط «حركة» للقفز. حلّق من المنحدرات وانزلق على القضبان!"
    }
+  },
+  {
+   "type": "poolhall",
+   "x": 992,
+   "z": 310,
+   "w": 48,
+   "d": 36,
+   "h": 10
   }
  ]
 }

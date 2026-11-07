@@ -228,6 +228,7 @@ function makeBuildings(buildings) {
   buildings.forEach((b, bi) => {
     let p = b.p;
     if (p.length < 3) return;
+    if (b.custom) return; // drawn by its landmark (e.g. Olympic Park Pool); still a wall and a shop front
     // Ensure counter-clockwise (in x,-z) so wall normals face outward.
     if (signedArea(p) < 0) p = [...p].reverse();
     const base = b.m || 0;
