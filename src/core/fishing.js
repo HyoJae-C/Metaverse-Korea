@@ -749,11 +749,12 @@ export function rollCatch(rand = Math.random, lucky = false) {
 export const REEL_SECONDS = 5;
 export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
 // Chance a landed fish still slips off the hook at the end, by rarity
-// (halved by reeling in with time to spare).
+// (halved by reeling in with time to spare, and cut by a better rod's hold,
+// see rod-skins.js).
 export const ESCAPE = [0, 0.05, 0.08, 0.12, 0.2, 0.3];
-export function escapeChance(fish, spare = 0) {
+export function escapeChance(fish, spare = 0, hold = 0) {
   if (fish.trash) return 0;
-  return ESCAPE[fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
+  return ESCAPE[fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare))) * (1 - Math.min(1, Math.max(0, hold)));
 }
 
 // Rare fish (★3 and up) fight back: the reel gauge drains by this many taps

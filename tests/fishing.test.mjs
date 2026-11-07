@@ -150,3 +150,20 @@ test('the lucky spot moves around, boosts ★2 and up a little and halves the bo
   assert.notEqual(rollCatch(() => LUCKY_TRASH_CHANCE, true), TRASH);
   assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
 });
+
+test('better rods cut the escape chance but never change which fish bite', async () => {
+  const { ROD_SKINS, rodHold } = await import('../src/core/rod-skins.js');
+  assert.equal(rodHold('basic'), 0);
+  assert.equal(rodHold('nope'), 0);
+  for (let i = 1; i < ROD_SKINS.length; i++) {
+    assert.ok(ROD_SKINS[i].price > ROD_SKINS[i - 1].price);
+    assert.ok(ROD_SKINS[i].hold > ROD_SKINS[i - 1].hold, ROD_SKINS[i].id); // pricier holds better
+    assert.ok(ROD_SKINS[i].hold < 1);
+  }
+  const shark = fishById('shark');
+  assert.equal(escapeChance(shark, 0, 0), escapeChance(shark));
+  assert.ok(rodHold('aurora') <= 0.25); // a small edge, not a sure catch
+  assert.ok(Math.abs(escapeChance(shark, 0, rodHold('aurora')) - escapeChance(shark) * (1 - rodHold('aurora'))) < 1e-12);
+  assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - escapeChance(shark) * 0.5 * 0.8) < 1e-12);
+  assert.equal(escapeChance(TRASH, 0, 0.5), 0);
+});
