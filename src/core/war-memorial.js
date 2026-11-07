@@ -205,7 +205,7 @@ const comingCard = (p) => canvasTex(400, 300, (c, cw, ch) => {
   c.font = `800 26px ${FONT}`;
   let y = wrap(c, p.title.ko, cw / 2, 70, cw - 40, 32);
   c.font = `600 20px ${FONT}`;
-  y = wrap(c, p.title.en, cw / 2, y + 4, cw - 40, 25);
+  wrap(c, p.title.en, cw / 2, y + 4, cw - 40, 25);
   c.font = `500 18px ${FONT}`;
   c.fillText(`📷 ${COMING.ko} · ${COMING.en}`, cw / 2, ch - 46);
 });

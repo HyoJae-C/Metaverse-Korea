@@ -163,7 +163,6 @@ export class TuhoUI {
     // The jar.
     const [jx, jy] = proj(0, JAR_AT, 0);
     const s = F / JAR_AT;
-    const body = (y0, r0) => [jx, jy - y0 * s, r0 * s];
     c.fillStyle = '#6b4a2e'; c.fillRect(jx - 0.32 * s, jy - 0.12 * s, 0.64 * s, 0.12 * s);
     c.fillStyle = '#9c7a3c';
     c.beginPath();

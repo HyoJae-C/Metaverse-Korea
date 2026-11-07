@@ -619,7 +619,6 @@ export function buildStation(store, ROOM) {
     box(0.7, h, 0.7, x, h / 2, 0, '#d9dde3');
     block(x - 0.35, -0.35, x + 0.35, 0.35);
   }
-  const code = sub.code ? '  ' + sub.code : '';
   const towards = store.towards || {};
   for (const [t, tr] of TRACKS.entries()) {
     const s = Math.sign(tr.z);

@@ -118,7 +118,7 @@ const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
 // and what it is doing. Pure, so tests can check it never lands off the water.
 export function heronAt(s, t, seed = 1) {
   const k = Math.floor(t / HERON.cycle), c = t - k * HERON.cycle;
-  const A = heronPlan(s, k, seed), B = heronPlan(s, k + 1, seed);
+  const A = heronPlan(s, k, seed);
   const fly = flyTime(s, k, seed), stay = HERON.cycle - fly;
   if (c < stay) {
     const [u, v] = standPos(A, c);
