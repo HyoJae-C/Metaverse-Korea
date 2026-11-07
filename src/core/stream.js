@@ -96,6 +96,30 @@ export function holesOf(s) {
   return [pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1])];
 }
 
+// Places to sit on the stone edge of the water, your legs out over it, as
+// people do on the real Cheonggyecheon: every 1.5 m along both banks, but not
+// under a bridge, by the stepping stones or at the falls. Seats as main.js
+// uses them ({ x, z, ry, stand }), plus y (how low the body sits, so the hips
+// rest on the edge) and standY. `edge: true` tells them from park benches.
+export const EDGE_SEAT = { every: 1.5, sink: 0.22 };
+export function edgeSeats(streams) {
+  const out = [];
+  for (const s of streams) {
+    const ww = (s.water || 8) / 2, D = s.depth || 4;
+    const clear = (u) => u > 3 && u < s.len - 1
+      && !(s.bridges || []).some((b) => Math.abs(u - b.u) < b.w / 2 + 0.8)
+      && !(s.stones || []).some((st) => Math.abs(u - st.u) < 1.6);
+    for (let u = EDGE_SEAT.every; u < s.len; u += EDGE_SEAT.every) {
+      if (!clear(u)) continue;
+      for (const sd of [-1, 1]) {
+        const x = s.at[0] + u, z = s.at[1] + sd * (ww + 0.18);
+        out.push({ x, z, y: -D - EDGE_SEAT.sink, ry: sd > 0 ? Math.PI : 0, stand: [x, s.at[1] + sd * (ww + 1)], standY: -D, street: true, edge: true });
+      }
+    }
+  }
+  return out;
+}
+
 // Where (x, z) is: on a stair (how far down), in the channel or on the
 // street. `low` is whether you were down by the water a moment ago, which
 // decides whether a spot under a bridge is on the deck or below it.
