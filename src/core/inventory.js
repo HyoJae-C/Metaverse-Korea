@@ -3,6 +3,7 @@
 // the developer master code (typed in chat) adds every item.
 
 import { WEARABLES } from '../data/wearables.js';
+import { LAMP_IDS } from './furniture.js';
 
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
@@ -39,6 +40,13 @@ const PLUSH_DESC = {
   ja: 'クレーンゲームの景品。家の「模様替え」で置けます。',
   zh: '抓娃娃机的奖品。在家里点“装饰”就能摆放。',
 };
+const LAMP_DESC = {
+  en: 'A lamp from the lighting shops on Cheonggyecheon-ro. Put it in your home: Decorate at home, then pick it.',
+  ko: '청계천로 조명 가게에서 산 조명이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: '清渓川路の照明店で買ったランプ。家の「模様替え」で置けます。',
+  zh: '在清溪川路灯具店买的灯。在家里点“装饰”就能摆放。',
+};
+const lamps = () => Object.fromEntries(LAMP_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: LAMP_DESC, lamp: true }]));
 function plushies(defs) {
   const out = {};
   for (const [id, [emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: PLUSH_DESC, plush: true };
@@ -119,6 +127,8 @@ export const ITEMS = {
     'plush-bear': ['🧸', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
     'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
   }),
+  // Lamps for your home, from the lighting shops on Cheonggyecheon-ro (furniture.js).
+  ...lamps(),
   // Pets: adopted for coins (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the

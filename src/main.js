@@ -1742,6 +1742,9 @@ function recordFood(store, product, quiet = false) {
   refreshDexBtn();
   return true;
 }
+const HOME_TEXT = {
+  bought: { en: 'You bought {name}! At home, tap 🛋️ Decorate to place it.', ko: '{name}을(를) 샀어요! 집에서 🛋️ 꾸미기를 눌러 놓아 보세요.', ja: '{name}を買いました！家で🛋️模様替えを押して置いてね。', zh: '买了{name}！在家点🛋️装饰就能摆放。' },
+};
 const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑に登録！', zh: '图鉴新登记！' };
 const shop = new ShopUI({
   cart,
@@ -1777,6 +1780,19 @@ const shop = new ShopUI({
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
   onRent: (product) => rentHanbok(product),
+  // Lighting shops: a lamp for your home (core/furniture.js), placed with Decorate.
+  onFurniture: (product) => {
+    const id = product.furniture;
+    if (!ITEMS[id] || inventory.has(id)) return;
+    const coins = coinsFor(product.price);
+    if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
+    inventory.add(id);
+    refreshWallet();
+    labelDecor();
+    sfx.pop?.();
+    clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', 'Thank you!']);
+    shop.toast(fmt(L(HOME_TEXT.bought), { name: localName(product.name, getLanguage()) }));
+  },
   rentLeft: (product) => (isRenting(rental, product.rent) ? timeLeft(rental) : 0),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   canGift: (product) => canGift(product),

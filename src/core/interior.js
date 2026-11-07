@@ -4,6 +4,7 @@ import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
+import { buildFurniture } from './furniture.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
 import { buildHauntedHouse } from './haunted.js';
@@ -162,6 +163,13 @@ export function productModel(kind, color, product = null) {
     case 'pen':
       for (let i = 0; i < 3; i++) add(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8).rotateZ(Math.PI / 2), 0, 0.02, -0.06 + i * 0.06);
       break;
+    case 'furniture': { // a lamp for your home (lighting shops), shrunk to fit the display
+      const f = buildFurniture(product?.furniture);
+      const box = new THREE.Box3().setFromObject(f), size = box.getSize(new THREE.Vector3());
+      f.scale.setScalar(Math.min(1, 0.55 / Math.max(size.y, 0.01), 0.5 / Math.max(size.x, size.z, 0.01)));
+      g.add(f);
+      break;
+    }
     case 'candle':
       add(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 16), 0, 0.08, 0, mat('#ffffff', { transparent: true, opacity: 0.7 }));
       add(new THREE.CylinderGeometry(0.09, 0.09, 0.12, 16), 0, 0.06);
