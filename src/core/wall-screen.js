@@ -34,7 +34,7 @@ export function wallNear(buildings, x, z, minLen = 8) {
       let nx = -dz / len, nz = dx / len;
       const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2;
       if (inPoly(mx + nx * 0.5, mz + nz * 0.5, p)) { nx = -nx; nz = -nz; }
-      best = { d, x: px, z: pz, nx, nz, len, h: b.h || 10, ax: dx / len, az: dz / len, x1, z1, x2, z2 };
+      best = { d, x: px, z: pz, nx, nz, len, h: b.h || 10, ax: dx / len, az: dz / len, x1, z1, x2, z2, b };
     }
   }
   return best;
