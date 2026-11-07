@@ -36,10 +36,12 @@ export function loadH5Ads({ client, test = false, frequencyHint = '30s', win = g
 //   'viewed'      the player watched it to the end (give the reward)
 //   'dismissed'   the player closed it early (no reward)
 //   'unavailable' no ad could be shown (fall back or say so)
-// hooks.beforeAd/afterAd run around the ad itself (pause sound, say).
+// hooks.beforeAd/afterAd run around the ad itself (pause sound, say);
+// hooks.status(why) gets Google's breakStatus, or 'no-script' / 'timeout'.
 export function showRewarded({ name = 'coins', timeoutMs = 4000, hooks = {}, win = globalThis.window } = {}) {
   return new Promise((resolve) => {
-    if (typeof win?.adBreak !== 'function') { resolve('unavailable'); return; }
+    const tell = (why) => { try { hooks.status?.(why); } catch { /* ignore */ } };
+    if (typeof win?.adBreak !== 'function') { tell('no-script'); resolve('unavailable'); return; }
     let result = null;
     let started = false;
     const done = (r) => {
@@ -50,7 +52,7 @@ export function showRewarded({ name = 'coins', timeoutMs = 4000, hooks = {}, win
     };
     // Google calls beforeReward (an ad is ready) or adBreakDone (none) quickly;
     // if neither comes the script is blocked or still missing.
-    const timer = setTimeout(() => { if (!started) done('unavailable'); }, timeoutMs);
+    const timer = setTimeout(() => { if (!started) { tell('timeout'); done('unavailable'); } }, timeoutMs);
     try {
       win.adBreak({
         type: 'reward',
@@ -62,6 +64,7 @@ export function showRewarded({ name = 'coins', timeoutMs = 4000, hooks = {}, win
         adDismissed: () => done('dismissed'),
         adViewed: () => done('viewed'),
         adBreakDone: (info) => {
+          tell(info?.breakStatus || 'unknown');
           if (result) return;
           done(info?.breakStatus === 'viewed' ? 'viewed' : info?.breakStatus === 'dismissed' ? 'dismissed' : 'unavailable');
         },
@@ -72,14 +75,21 @@ export function showRewarded({ name = 'coins', timeoutMs = 4000, hooks = {}, win
 
 // The "show" function Wallet.watchAd() takes: a Google ad when one is
 // available, otherwise the fallback (the demo countdown) if given.
+// show.last tells what happened the last time: { google, why, demo }
+// (google: 'viewed' | 'dismissed' | 'unavailable' | 'off'), for ?adtest.
 export function rewardedShow(cfg, fallback, hooks = {}, win = globalThis.window) {
   const useGoogle = cfg.provider === 'h5' && !!cfg.client;
-  return async (seconds) => {
+  const show = async (seconds) => {
+    const last = show.last = { google: 'off', why: useGoogle ? '' : 'no publisher ID', demo: false };
     if (useGoogle) {
-      const r = await showRewarded({ name: 'coins', hooks, win });
+      const r = await showRewarded({ name: 'coins', hooks: { ...hooks, status: (why) => { last.why = why; } }, win });
+      last.google = r;
       if (r === 'viewed') return true;
       if (r === 'dismissed') return false;
     }
+    last.demo = !!fallback;
     return fallback ? fallback(seconds) : false;
   };
+  show.last = null;
+  return show;
 }

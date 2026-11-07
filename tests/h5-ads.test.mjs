@@ -66,3 +66,19 @@ test('ads.txt, the AdSense meta tag and config use the same publisher ID', async
   assert.match(read('public/ads.txt'), new RegExp(`^google\\.com, ${id}, DIRECT, f08c47fec0942fa0$`, 'm'));
   assert.match(read('index.html'), new RegExp(`name="google-adsense-account" content="ca-${id}"`));
 });
+
+test('show.last says what ran, for the ?adtest check', async () => {
+  const fallback = async () => true;
+  const cfg = { provider: 'h5', client: 'ca-pub-123' };
+  const none = fakeWin((o) => o.adBreakDone({ breakStatus: 'notReady' }));
+  const show = rewardedShow(cfg, fallback, {}, none);
+  await show(5);
+  assert.deepEqual(show.last, { google: 'unavailable', why: 'notReady', demo: true });
+  const watched = fakeWin((o) => o.beforeReward(() => { o.adViewed(); o.adBreakDone({ breakStatus: 'viewed' }); }));
+  const show2 = rewardedShow(cfg, fallback, {}, watched);
+  await show2(5);
+  assert.deepEqual(show2.last, { google: 'viewed', why: 'viewed', demo: false });
+  const blocked = rewardedShow(cfg, fallback, {}, {});
+  await blocked(5);
+  assert.equal(blocked.last.why, 'no-script');
+});
