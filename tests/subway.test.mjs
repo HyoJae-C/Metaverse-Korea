@@ -104,3 +104,33 @@ test('station exits are clear of roads and buildings', () => {
     }
   }
 });
+
+test('Mongchontoseong Station (Line 8) sits by the Peace Gate, exit 1 on the plaza side', () => {
+  const st = stations.find((s) => s.id === 'mongchontoseong-station');
+  assert.equal(st.code, '813');
+  assert.equal(st.line.name.en, 'Line 8');
+  assert.equal(st.next.en, 'Jamsil');
+  const park = region.districts.find((d) => d.id === 'olympic-park');
+  const gate = [1050 + park.offset[0], 250 + park.offset[1]];
+  const e1 = st.exits.find((e) => e.n === 1);
+  // Real station: about 260 m west of the gate, so about 65 m at 1/4.
+  assert.ok(Math.hypot(e1.at[0] - gate[0], e1.at[1] - gate[1]) < 90);
+  assert.ok(e1.at[0] < gate[0], 'west of the gate');
+});
+
+test('Gwanghwamun (Line 5) and Sinchon (Line 2) stations stand in their districts', () => {
+  const inDistrict = (id, st) => {
+    const d = region.districts.find((x) => x.id === id);
+    const m = JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + d.map, import.meta.url)));
+    const xs = m.roads.flatMap((r) => r.p.map((p) => p[0] + d.offset[0])), zs = m.roads.flatMap((r) => r.p.map((p) => p[1] + d.offset[1]));
+    return st.exits.every((e) => e.at[0] > Math.min(...xs) && e.at[0] < Math.max(...xs) && e.at[1] > Math.min(...zs) && e.at[1] < Math.max(...zs));
+  };
+  const gw = stations.find((s) => s.id === 'gwanghwamun-station');
+  assert.equal(gw.code, '533');
+  assert.equal(gw.line.name.en, 'Line 5');
+  assert.ok(inDistrict('gyeongbokgung', gw));
+  const sc = stations.find((s) => s.id === 'sinchon-station');
+  assert.equal(sc.code, '240');
+  assert.equal(sc.prev.en, 'Hongik Univ.');
+  assert.ok(inDistrict('seodaemun', sc));
+});
