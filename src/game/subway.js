@@ -6,7 +6,7 @@
 import { localName, getLanguage } from '../core/i18n.js';
 import {
   GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, FARE, lineAhead, stopsBetween,
-  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT,
+  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt,
 } from '../core/subway.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 
@@ -34,7 +34,7 @@ export function createSubway(stations, game) {
     const n = stationStores.length, nm = (k) => ({ ko: stations[k].name?.ko || '', en: stations[k].name?.en || '' });
     st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
     // The route map on the pillar inside the gates: every station on the loop.
-    st.loop = { stops: stations.map((x) => x.name || {}), index: i };
+    st.loop = { stops: stations.map((x) => ({ name: x.name || {}, at: stationAt(x) })), index: i };
   }
   const TRAIN_STORE = {
     id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',

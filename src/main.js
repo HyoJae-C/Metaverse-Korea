@@ -202,7 +202,7 @@ import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { LocalFriends } from './core/friends.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
@@ -726,7 +726,8 @@ sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
 // Subway stations (region.json "subway.stations"): stair exits cut into the ground.
-const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
+// In the order the trains run round them: one loop following the map (core/subway.js loopOrder).
+const subwayStations = loopOrder((region.subway?.stations || []).filter((st) => st.exits?.length));
 const allExits = subwayStations.flatMap((st) => st.exits);
 // Sunken streams (map "streams", core/stream.js): on the street the channel is
 // a wall that only bridges cross; down by the water you use streamCollision.
@@ -3259,6 +3260,34 @@ function openVending() {
   root.replaceChildren(x, el('strong', 'wallet-title', '🥤 ' + L(VENDING_TEXT.open)), el('p', 'fine', L(VENDING_TEXT.note)), list);
   root.hidden = false;
 }
+// The route map pillar in a station: walk up to it to see the map up close.
+function openRouteMap() {
+  const rm = interior?.subway?.routeMap;
+  if (!rm) return;
+  const root = $('route-panel');
+  const x = document.createElement('button');
+  x.className = 'sheet-x'; x.textContent = '✕';
+  x.onclick = () => { root.hidden = true; };
+  const title = document.createElement('strong');
+  title.className = 'wallet-title';
+  title.textContent = '🗺️ ' + L(ROUTE_MAP_TEXT.title);
+  const img = document.createElement('img');
+  img.src = rm.canvas.toDataURL();
+  img.alt = L(ROUTE_MAP_TEXT.title);
+  // On a narrow phone the map is shown larger and scrolls sideways, starting
+  // at your station.
+  const wrap = document.createElement('div');
+  wrap.className = 'route-scroll';
+  wrap.append(img);
+  root.replaceChildren(x, title, wrap);
+  root.hidden = false;
+  const fit = () => { if (rm.here && wrap.scrollWidth > wrap.clientWidth) wrap.scrollLeft = rm.here[0] / ROUTE_MAP.w * img.clientWidth - wrap.clientWidth / 2; };
+  if (img.complete) fit(); else img.onload = fit;
+}
+const nearRouteMap = (p) => {
+  const rm = interior?.subway?.routeMap;
+  return rm && Math.abs(p.x - rm.x) < 1.8 && Math.abs(p.z - rm.z) < 1.4;
+};
 function openMenu() {
   const root = $('lp-panel');
   delete root.dataset.club;
@@ -3740,7 +3769,8 @@ addEventListener('keydown', (e) => {
     else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
   }
   if (e.code === 'Escape') {
-    if (!$('map-panel').hidden) mapView.hide();
+    if (!$('route-panel').hidden) $('route-panel').hidden = true;
+    else if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
     else if (loveLockUi.open) loveLockUi.close();
@@ -6216,6 +6246,7 @@ const matSitAct = (seat) => ({ key: 'sit-mat', label: '🧺 ' + L(MAT_TEXT.sit),
 const lookAct = (pr) => ({ key: 'look:' + pr.product.id, label: '👀 ' + t('shop.look', { name: localName(pr.product.name, getLanguage()) }), run: () => shop.openProduct(pr.product) });
 function updateAction(p, tSec) {
   let next = null, door = null;
+  if (!$('route-panel').hidden && !(mode !== 'street' && nearRouteMap(p))) $('route-panel').hidden = true; // walked away
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
@@ -6274,6 +6305,8 @@ function updateAction(p, tSec) {
     } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
       const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
       next = { key: 'metro-board:' + t, label: `🚇 ${L(METRO_TEXT.board)} · ${L(t === 0 ? METRO_TEXT.up : METRO_TEXT.down)} → ${to ? localName(to, getLanguage()) : ''}`, run: () => boardTrain(t, interior.subway.doorsOpen(t) || 0.5) };
+    } else if (interior.subway && !seated && nearRouteMap(p)) {
+      next = { key: 'route-map', label: '🗺️ ' + L(ROUTE_MAP_TEXT.view), run: openRouteMap };
     } else if (interior.subway && !seated && interior.subway.vending?.some((v) => Math.hypot(p.x - v.x, p.z - v.z) < 1.3)) {
       next = { key: 'vending', label: '🥤 ' + L(VENDING_TEXT.open), run: openVending };
     } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
