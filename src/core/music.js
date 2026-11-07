@@ -347,6 +347,25 @@ export class Sfx {
     this.splash(0.9);
     this._hiss(0.05, 0.35, 0.08, 600, 3200);
   }
+  // ---- Skate park (Hongdae). ----
+  // Popping off the ground: the tail snapping on concrete.
+  skatePop() {
+    if (!this.on || !this._ctx()) return;
+    this.tock(0.7, 520);
+    this._hiss(0, 0.09, 0.05, 3000, 900);
+  }
+  // Landing: wheels hitting the ground. clean false: a bail (a bigger thud).
+  skateLand(clean = true) {
+    if (!this.on || !this._ctx()) return;
+    this.tock(clean ? 0.6 : 0.9, clean ? 260 : 170);
+    this._hiss(0, clean ? 0.12 : 0.3, clean ? 0.05 : 0.09, 1400, 300);
+  }
+  // Sliding along a rail: a short metal scrape.
+  grind() {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.45, 0.04, 5200, 3600);
+    this._tone(2400, 0, 0.3, 0.012, 'sawtooth', 1900);
+  }
   // A soft, wobbly "wooo" for the haunted house's ghost: a sine that
   // slides down with a slow vibrato. Quiet; nothing sudden.
   ghostly() {

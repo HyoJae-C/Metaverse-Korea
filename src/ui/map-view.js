@@ -122,7 +122,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
-const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹' };
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below

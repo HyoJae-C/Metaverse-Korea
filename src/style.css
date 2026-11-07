@@ -1483,6 +1483,26 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 }
 .honk-btn:active { transform: translateY(2px); }
 
+/* Skate park (Olympic Park): points under the top bar, trick names popping up. */
+.skate-hud {
+  position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 172px);
+  display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;
+  padding: 5px 14px; border-radius: 14px; background: rgba(29, 27, 34, 0.72); color: #fff; text-align: center;
+}
+.skate-hud b { font-size: 15px; }
+.skate-hud small { font-size: 12px; color: #b6ff3b; min-height: 0; }
+.skate-hud small:empty { display: none; }
+.skate-pop {
+  position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.6); pointer-events: none;
+  font: 900 30px/1.1 "Arial Black", system-ui, sans-serif; color: #fff; white-space: nowrap; opacity: 0;
+  text-shadow: 0 3px 0 #7a3cff, 0 0 12px rgba(0, 0, 0, .45); transition: opacity .25s, transform .25s;
+}
+.skate-pop.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.skate-pop.big { color: #b6ff3b; font-size: 36px; }
+.skate-pop.grind { color: #3dd6ff; }
+.skate-pop.land { color: #ffd93d; }
+.skate-pop.bail { color: #ff5a5f; text-shadow: 0 3px 0 #1d1b22; }
+
 /* Clinic surgery: the lights go out for a moment. */
 .blackout { position: fixed; inset: 0; z-index: 30; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s; }
 
