@@ -3032,6 +3032,7 @@ const fishingUi = new FishingUI({
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   park: () => interior?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!interior?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
