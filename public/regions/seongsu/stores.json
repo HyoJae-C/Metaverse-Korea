@@ -2546,10 +2546,10 @@
       "at": [-1808, 189],
       "name": { "ko": "전쟁역사박물관", "en": "War History Museum", "ja": "戦争歴史博物館", "zh": "战争历史博物馆" },
       "tagline": {
-        "en": "Photos from the Korean War and a quiet memorial room where you can lay a flower. A made-up museum in the game, modelled loosely on the War Memorial of Korea in Yongsan; not run by or linked to it.",
-        "ko": "6·25전쟁 사진과 헌화할 수 있는 조용한 추모실. 용산 전쟁기념관을 본떠 만든 게임 속 가상 박물관으로, 전쟁기념관이 운영하거나 관계된 곳은 아니에요.",
-        "ja": "朝鮮戦争の写真と、献花できる静かな追悼室。龍山の戦争記念館をもとにしたゲーム内の架空の博物館で、戦争記念館が運営・関与しているものではありません。",
-        "zh": "朝鲜战争的照片和可以献花的安静追悼室。这是参照龙山战争纪念馆制作的游戏内虚构博物馆，并非战争纪念馆运营或相关。"
+        "en": "Photos from the Korean War, veterans' donated photos on 2F, and a quiet memorial room where you can lay a flower. A made-up museum in the game, modelled loosely on the War Memorial of Korea in Yongsan; not run by or linked to it.",
+        "ko": "6·25전쟁 사진, 2층 참전 용사 기증 사진실, 헌화할 수 있는 조용한 추모실. 용산 전쟁기념관을 본떠 만든 게임 속 가상 박물관으로, 전쟁기념관이 운영하거나 관계된 곳은 아니에요.",
+        "ja": "朝鮮戦争の写真、2階の参戦兵士寄贈写真室、献花できる静かな追悼室。龍山の戦争記念館をもとにしたゲーム内の架空の博物館で、戦争記念館が運営・関与しているものではありません。",
+        "zh": "朝鲜战争的照片、二楼的参战老兵捐赠照片室，以及可以献花的安静追悼室。这是参照龙山战争纪念馆制作的游戏内虚构博物馆，并非战争纪念馆运营或相关。"
       },
       "colors": { "sign": "#2d3436", "awning": "#5b6770", "accent": "#ece8e0" },
       "products": []

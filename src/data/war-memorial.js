@@ -155,6 +155,112 @@ export const EXHIBITS = [
       en: 'The dedication poem "Nim-isiyeo" (O, Honoured Ones) on the memorial walls for Korean soldiers and police who gave their lives. Words by Yu Hui-nam, calligraphy by Jo Jong-suk. The walls of names stand in the corridors of the War Memorial of Korea.',
     },
   }),
+  // ── 2F, Hall C: Daegu in the 1950s (photos donated by Dale Myers) ──
+  E({
+    id: 'porter-load', kogl: 58578, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '짐을 진 지게꾼', en: 'A Porter with a Heavy Load' },
+    desc: {
+      ko: '1950년대 대구에서 지게꾼이 짐을 싣고 가는 모습이에요. 참전 용사 Dale Myers가 갖고 있던 사진으로, 2000년 한국을 찾아 기념관을 둘러본 뒤 기증했어요.',
+      en: 'A porter carrying a load on his jige in 1950s Daegu. Veteran Dale Myers kept the photo and donated it after visiting the memorial on a trip to Korea in 2000.',
+    },
+  }),
+  E({
+    id: 'porter-and-soldier', kogl: 58579, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '지게꾼과 유엔군', en: 'A Porter and a UN Soldier' },
+    desc: {
+      ko: '1950년대 대구에서 유엔군 병사가 지게꾼에게 부채질을 해 주는 모습이에요.',
+      en: 'In 1950s Daegu, a UN soldier fans a porter.',
+    },
+  }),
+  E({
+    id: 'brazier', kogl: 58582, era: { ko: '1952년', en: '1952' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '화롯불로 요리하는 모습', en: 'Cooking over a Small Brazier' },
+    desc: {
+      ko: '1952년 7월 대구에서 찍은 사진이에요. 작은 화롯불로 요리를 하고 있어요.',
+      en: 'Taken in Daegu in July 1952: cooking over a small brazier.',
+    },
+  }),
+  E({
+    id: 'six-children', kogl: 58583, era: { ko: '1952년', en: '1952' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '여섯 아이들', en: 'Six Children' },
+    desc: {
+      ko: '1952년 3월 대구에서 여섯 아이를 찍은 사진이에요.',
+      en: 'Six children, photographed in Daegu in March 1952.',
+    },
+  }),
+  E({
+    id: 'hospital-lounge', kogl: 58584, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '병원 휴게실', en: 'A Hospital Rest Room' },
+    desc: {
+      ko: '1950년대 대구의 병원에서 근무하던 사람들이 쉬던 휴게실이에요.',
+      en: 'The room where hospital staff took their breaks, in 1950s Daegu.',
+    },
+  }),
+  E({
+    id: 'convent-visit-1', kogl: 58585, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '수녀원 보육시설을 찾은 유엔군 1', en: 'UN Soldiers Visit a Convent Orphanage, 1' },
+    desc: {
+      ko: '1950년대 대구, 수녀원이 운영하던 보육시설을 유엔군이 찾아갔을 때의 사진이에요.',
+      en: "UN soldiers on a visit to a children's home run by a convent in 1950s Daegu.",
+    },
+  }),
+  E({
+    id: 'convent-visit-2', kogl: 58586, era: { ko: '1950년대', en: '1950s' }, artist: { ko: 'Dale Myers 기증', en: 'Donated by Dale Myers' },
+    title: { ko: '수녀원 보육시설을 찾은 유엔군 2', en: 'UN Soldiers Visit a Convent Orphanage, 2' },
+    desc: {
+      ko: '같은 수녀원 보육시설에서 아이들과 함께 찍은 사진이에요.',
+      en: "At the same convent children's home, with the children.",
+    },
+  }),
+  // ── 2F, Hall D: Records from the front ──
+  E({
+    id: 'comrade', kogl: 58595, era: { ko: '1952–1953년', en: '1952–1953' }, artist: { ko: 'Ernest Cowell 기증', en: 'Donated by Ernest Cowell' },
+    title: { ko: '함께 근무한 동료', en: 'A Comrade' },
+    desc: {
+      ko: '1952~1953년 미 육군 제7보병사단 소대장으로 참전한 Ernest Cowell이 찍은 사진이에요. 함께 근무한 동료의 모습이고, 사진 뒷면에 "오성관"이라는 이름이 적혀 있어요.',
+      en: 'Taken by Ernest Cowell, a platoon leader in the US Army 7th Infantry Division in 1952–1953. It shows a comrade he served with; the name "O Seong-gwan" is written on the back.',
+    },
+  }),
+  E({
+    id: 'incheon-sea', kogl: 58597, era: { ko: '1952–1953년', en: '1952–1953' }, artist: { ko: 'Ernest Cowell 기증', en: 'Donated by Ernest Cowell' },
+    title: { ko: '인천 앞바다', en: 'The Sea off Incheon' },
+    desc: {
+      ko: 'Ernest Cowell이 참전 당시 찍은 인천 앞바다의 모습이에요.',
+      en: 'The sea off Incheon, photographed by Ernest Cowell during his service in the war.',
+    },
+  }),
+  E({
+    id: 'tank', kogl: 58598, era: { ko: '1952–1953년', en: '1952–1953' }, artist: { ko: 'Ernest Cowell 기증', en: 'Donated by Ernest Cowell' },
+    title: { ko: '전차', en: 'A Tank' },
+    desc: {
+      ko: 'Ernest Cowell이 참전 당시 찍은 전차 사진이에요.',
+      en: 'A tank, photographed by Ernest Cowell during his service in the war.',
+    },
+  }),
+  E({
+    id: 'han-bridge-1', kogl: 58605, era: { ko: '6·25전쟁 당시', en: 'During the Korean War' }, artist: { ko: 'Allan R. Millet 기증', en: 'Donated by Allan R. Millet' },
+    title: { ko: '한강 교가 설치 1', en: 'Bridging the Han River, 1' },
+    desc: {
+      ko: '6·25전쟁 당시 미국 공병부대가 서울 남동쪽 한강에 교가(다리 받침틀)를 세우는 모습이에요. 교각 사이에 교가를 세우고 있어요.',
+      en: 'US Army engineers putting up bridge trestles across the Han River, southeast of Seoul, during the Korean War: raising a trestle between the piers.',
+    },
+  }),
+  E({
+    id: 'han-bridge-2', kogl: 58610, era: { ko: '6·25전쟁 당시', en: 'During the Korean War' }, artist: { ko: 'Allan R. Millet 기증', en: 'Donated by Allan R. Millet' },
+    title: { ko: '한강 교가 설치 2', en: 'Bridging the Han River, 2' },
+    desc: {
+      ko: '같은 한강 교가 공사에서 작업 중인 공병부대 대원들이에요.',
+      en: 'Engineers at work on the same Han River bridge.',
+    },
+  }),
+  E({
+    id: 'first-army', kogl: 58622, era: { ko: '1953년', en: '1953' }, artist: { ko: '강근영 기증', en: 'Donated by Kang Geun-yeong' },
+    title: { ko: '제1야전군 창설 기념촬영', en: 'The Founding of the First ROK Army' },
+    desc: {
+      ko: '1953년 12월 15일 제1야전군 창설을 기념해 찍은 사진이에요. 왼쪽부터 김웅수, 최영희, 강문봉, 이형근, 정일권, 백선엽 장군과 미군 Bruce C. Clarke 장군이에요. 초대 사령관은 백선엽 장군이었어요.',
+      en: 'Marking the founding of the First ROK Army on 15 December 1953. From the left: Generals Kim Ung-soo, Choi Young-hee, Kang Mun-bong, Lee Hyung-koon, Chung Il-kwon and Paik Sun-yup, with US General Bruce C. Clarke. General Paik was its first commander.',
+    },
+  }),
 ];
 
 // Where each photo hangs (core/war-memorial.js).
@@ -163,11 +269,30 @@ export const HALLS = {
   B: { name: { ko: '전쟁 속 일상', en: 'Life in Wartime' }, photos: ['daegu-station', 'boy-and-soldier', 'jige', 'daegu-street', 'town-buildings'] },
   lobby: { photos: ['opening-1994', 'peace-plaza'] },
   memorial: { name: { ko: '추모실', en: 'Memorial Room' }, photos: ['names-of-the-fallen'] },
+  // 2F: the donated photographs
+  C: { floor: 2, name: { ko: '1950년대 대구', en: 'Daegu in the 1950s' }, photos: ['porter-load', 'porter-and-soldier', 'brazier', 'six-children', 'hospital-lounge', 'convent-visit-1', 'convent-visit-2'] },
+  D: { floor: 2, name: { ko: '전선의 기록', en: 'Records from the Front' }, photos: ['comrade', 'incheon-sea', 'tank', 'han-bridge-1', 'han-bridge-2', 'first-army'] },
+};
+
+// The floors, for the lift.
+export const MEMORIAL_FLOORS = [
+  { floor: 1, halls: ['A', 'B', 'memorial'] },
+  { floor: 2, halls: ['C', 'D'] },
+];
+export const DONATED = {
+  title: { ko: '기증 사진실', en: 'Donated Photographs' },
+  ko: '6·25전쟁에 참전한 용사들과 가족들이 기증한 사진이에요. 전쟁 중의 일상과 전선의 모습을 담고 있어요.',
+  en: 'Photographs given by Korean War veterans and their families: everyday life during the war, and life at the front.',
 };
 
 export const MEMORIAL_TEXT = {
   look: { en: 'Look at the photo', ko: '사진 보기', ja: '写真を見る', zh: '看照片' },
   flower: { en: 'Lay a flower', ko: '헌화하기', ja: '献花する', zh: '献花' },
   laid: { en: 'You laid a white chrysanthemum in remembrance.', ko: '흰 국화 한 송이를 놓고 추모했어요.', ja: '白い菊を一輪供えて追悼しました。', zh: '你献上一朵白菊花，表达哀思。' },
+  guide: { en: 'Guide', ko: '안내원', ja: '案内係', zh: '讲解员' },
   remember: { ko: '나라를 위해 목숨을 바친 분들을 기억합니다', en: 'We remember those who gave their lives' },
 };
+
+// The guide at the information desk: hair up in a bun, a white dress shirt
+// under a dark suit jacket, a suit skirt and black shoes.
+export const GUIDE_LOOK = { model: 'suit', hairStyle: 'bun', dye: 'black', hair: 'black', skin: 'fair', shirt: 'cream', skirt: 'solid-mini-black', shoes: 'black' };

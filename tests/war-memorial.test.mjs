@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, statSync } from 'node:fs';
-import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT } from '../src/data/war-memorial.js';
-import { photoSlots, fitSize, FLOWER_SPOT, ROOM_MEMORIAL, hallPhotos } from '../src/core/war-memorial.js';
+import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, MEMORIAL_FLOORS, GUIDE_LOOK } from '../src/data/war-memorial.js';
+import { photoSlots, fitSize, FLOWER_SPOT, ROOM_MEMORIAL, hallPhotos, MEMORIAL_LIFT } from '../src/core/war-memorial.js';
+import { sanitizeLook } from '../src/data/appearance.js';
 import { nearestPainting } from '../src/core/museum.js';
 import { STAMPS } from '../src/data/stamps.js';
 
@@ -26,14 +27,19 @@ test('every photo hangs somewhere, once, inside the room', () => {
   const hung = Object.values(HALLS).flatMap((h) => h.photos);
   assert.equal(new Set(hung).size, hung.length);
   assert.deepEqual(new Set(hung), new Set(EXHIBITS.map((p) => p.id)));
-  const slots = photoSlots();
+  const slots = [...photoSlots(1), ...photoSlots(2)];
   assert.equal(slots.length, EXHIBITS.length);
   const { w, d } = ROOM_MEMORIAL;
   for (const sl of slots) {
     assert.ok(Math.abs(sl.x) <= w / 2 && Math.abs(sl.z) <= d / 2, sl.photo.id);
     assert.ok(Math.abs(sl.look.x) < w / 2 - 0.5 && Math.abs(sl.look.z) < d / 2 - 0.5, `${sl.photo.id}: look spot inside`);
+    assert.ok(Math.hypot(sl.look.x - MEMORIAL_LIFT.x, sl.look.z - MEMORIAL_LIFT.z) > 2.5, `${sl.photo.id}: not at the lift`);
   }
   for (const k of ['A', 'B']) assert.ok(hallPhotos(k).length <= 5, `hall ${k} has five spots`);
+  for (const k of ['C', 'D']) assert.ok(hallPhotos(k).length <= 8, `hall ${k} has eight spots`);
+  // The lift lists every hall, each on its own floor.
+  for (const { floor, halls } of MEMORIAL_FLOORS) for (const k of halls) assert.equal(HALLS[k].floor || 1, floor, k);
+  assert.deepEqual(new Set(MEMORIAL_FLOORS.flatMap((f) => f.halls)), new Set(Object.keys(HALLS).filter((k) => k !== 'lobby')));
 });
 
 test('the altar spot is its own: no photo is picked there', () => {
@@ -73,4 +79,9 @@ test('the memorial is on the Itaewon map, west along Itaewon-ro, with its store 
   const maxZ = Math.max(...b.p.map((q) => q[1]));
   assert.ok(lz > maxZ && lz - maxZ < 5 && Math.abs(lx + 460) < 1, `entrance at ${lx}, ${lz}`);
   assert.ok(STAMPS.some((s) => s.id === 'war-memorial' && s.place.store === 'war-memorial'));
+});
+
+test('the guide wears a suit, a skirt and black shoes, hair in a bun', () => {
+  const look = sanitizeLook(GUIDE_LOOK);
+  for (const k of ['model', 'hairStyle', 'skirt', 'shoes']) assert.equal(look[k], GUIDE_LOOK[k], k);
 });

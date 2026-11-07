@@ -380,8 +380,8 @@ export function buildInterior(store) {
   wall(d, w / 2, 0, -Math.PI / 2);
   wall(w, 0, d / 2, Math.PI);
 
-  // Exit door on the front wall (none upstairs in the museum).
-  const noExit = store.category === 'museum' && store.floor > 1;
+  // Exit door on the front wall (none upstairs in the museums).
+  const noExit = (store.category === 'museum' || store.category === 'memorial') && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
@@ -603,8 +603,9 @@ export function buildInterior(store) {
     see = gallery.see;
   } else if (store.category === 'memorial') {
     // The War History Museum: photos, the memorial room and its altar.
-    const hall = buildMemorial(scene, ROOM, { box, block, mat });
+    const hall = buildMemorial(scene, ROOM, { box, block, mat }, store.floor || 1);
     stations.paintings = hall.looks;
+    stations.lift = hall.lift;
     stations.flower = hall.flower;
     stations.layFlower = hall.layFlower;
     seats.push(...hall.seats);

@@ -1,13 +1,19 @@
 // Inside the War History Museum (전쟁역사박물관), the game's made-up museum
-// modelled loosely on the War Memorial of Korea: one quiet exhibition floor.
+// modelled loosely on the War Memorial of Korea: two quiet exhibition floors.
 //
+// 1F:
 //        ┌───────────┬──────[ memorial room ]─────┬───────────┐
 //        │  Hall A   │   altar, flowers, names    │  Hall B   │
 //        │ Korean War⌐      benches               ⌐ Wartime   │
 //        │           │                            │   life    │
 //        ├───────────┴──────┐          ┌──────────┴───────────┤
-//        │ notice   lobby: info desk, two photos   visit info │
+//        │ notice [lift] lobby: info desk, two photos  visit info │
 //        └─────────────────────[door]───────────────────────────┘
+//
+// 2F, the donated photographs: the same halls (C: Daegu in the 1950s, D:
+// records from the front), and in the middle, where the memorial room is
+// downstairs, a board about the donors and benches. The lift is in the
+// same place on both floors; the way out is downstairs.
 //
 // Photos (src/data/war-memorial.js) hang in Halls A and B and on the lobby
 // wall; each frame shows a "photo coming soon" card until its file is in
@@ -15,7 +21,7 @@
 // altar where you can lay a white chrysanthemum, and benches. No games, no
 // music: a place to look and remember.
 import * as THREE from 'three';
-import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT } from '../data/war-memorial.js';
+import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT, DONATED } from '../data/war-memorial.js';
 
 export const ROOM_MEMORIAL = { w: 44, d: 30, h: 7 };
 const PART_H = 4.2;
@@ -27,6 +33,7 @@ const ALTAR_Z = -12;
 const MAX_W = 2.4, MAX_H = 1.8; // a photo's largest size on the wall
 const CENTRE_Y = 2.1;
 export const FLOWER_SPOT = { x: 0, z: ALTAR_Z + 1.9 };
+export const MEMORIAL_LIFT = { x: -14, z: LOBBY_Z + 1.4 }; // where you stand to call the lift
 
 const byId = new Map(EXHIBITS.map((p) => [p.id, p]));
 export const hallPhotos = (key) => (HALLS[key]?.photos || []).map((id) => byId.get(id)).filter(Boolean);
@@ -36,16 +43,22 @@ export const photoUrl = (p) => BASE + p.file;
 
 // Wall spots: centre on the wall, the way the photo faces (ry), and where a
 // visitor stands to look at it.
-export function photoSlots() {
+export function photoSlots(floor = 1) {
   const { w, d } = ROOM_MEMORIAL;
   const out = [];
-  for (const [key, s] of [['A', -1], ['B', 1]]) {
+  // 1F halls: three on the outer wall, two on the back wall. 2F halls: three
+  // on the back wall and two more on the hall's own side of the partition.
+  const halls = floor === 1 ? [['A', -1], ['B', 1]] : [['C', -1], ['D', 1]];
+  for (const [key, s] of halls) {
     const outer = [-10, -4.5, 1].map((z) => ({ x: s * (w / 2 - 0.06), z, ry: -s * Math.PI / 2 }));
-    const back = [s * 18.2, s * 12.2].map((x) => ({ x, z: -d / 2 + 0.06, ry: 0 }));
-    hallPhotos(key).forEach((p, i) => { const sl = [...outer, ...back][i]; if (sl) out.push({ ...sl, photo: p }); });
+    const back = (floor === 1 ? [18.2, 12.2] : [19, 15, 11]).map((x) => ({ x: s * x, z: -d / 2 + 0.06, ry: 0 }));
+    const inner = floor === 1 ? [] : [-11, -5.5].map((z) => ({ x: s * (HALL_X + PART_T / 2 + 0.06), z, ry: s * Math.PI / 2 }));
+    hallPhotos(key).forEach((p, i) => { const sl = [...outer, ...back, ...inner][i]; if (sl) out.push({ ...sl, photo: p }); });
   }
-  hallPhotos('lobby').forEach((p, i) => out.push({ x: i ? 5.5 : -5.5, z: LOBBY_Z + PART_T / 2 + 0.06, ry: 0, photo: p }));
-  hallPhotos('memorial').forEach((p) => out.push({ x: 0, z: -d / 2 + 0.3, ry: 0, y: 3.3, photo: p, far: true }));
+  if (floor === 1) {
+    hallPhotos('lobby').forEach((p, i) => out.push({ x: i ? 5.5 : -5.5, z: LOBBY_Z + PART_T / 2 + 0.06, ry: 0, photo: p }));
+    hallPhotos('memorial').forEach((p) => out.push({ x: 0, z: -d / 2 + 0.3, ry: 0, y: 3.3, photo: p, far: true }));
+  }
   for (const sl of out) {
     const k = sl.far ? 6.5 : 1.7;
     sl.look = { x: sl.x + Math.sin(sl.ry) * k, z: sl.z + Math.cos(sl.ry) * k };
@@ -224,10 +237,19 @@ function chrysanthemum() {
   return g;
 }
 
-// Builds the hall into an interior scene. Returns the look-at spots
-// ({ x, z, painting }), benches, the guide at the desk, the flower spot and
-// `layFlower`, and `see` (fades a wall between the camera and you).
-export function buildMemorial(scene, room, { box, block }) {
+// The lift doors on the lobby wall, the same on both floors.
+function lift(scene, box, floor) {
+  const { x } = MEMORIAL_LIFT, z = LOBBY_Z + PART_T / 2;
+  box(2.2, 2.7, 0.06, x, 1.35, z + 0.03, '#8c8f93'); // frame
+  for (const k of [-1, 1]) box(0.86, 2.4, 0.04, x + k * 0.45, 1.2, z + 0.08, '#c9ccd0'); // doors
+  sign(scene, 1.3, 0.34, x, 2.95, z + 0.07, 0, `🛗 ${floor}F`, null, { bg: '#3a3d40' });
+}
+
+// Builds a floor into an interior scene. Returns the look-at spots
+// ({ x, z, painting }), benches, the guide at the desk (1F), the flower spot
+// and `layFlower` (1F), the lift spot, and `see` (fades a wall between the
+// camera and you).
+export function buildMemorial(scene, room, { box, block }, floor = 1) {
   const { w, d } = room;
   const loader = new THREE.TextureLoader();
   const walls = [];
@@ -255,11 +277,11 @@ export function buildMemorial(scene, room, { box, block }) {
 
   // Photos, and the hall names over the doorways.
   const looks = [];
-  for (const sl of photoSlots()) {
+  for (const sl of photoSlots(floor)) {
     hang(scene, sl, { box, block }, loader);
     if (!sl.photo.hold) looks.push({ x: sl.look.x, z: sl.look.z, painting: sl.photo });
   }
-  for (const [key, s] of [['A', -1], ['B', 1]]) {
+  for (const [key, s] of floor === 1 ? [['A', -1], ['B', 1]] : [['C', -1], ['D', 1]]) {
     const { ko, en } = HALLS[key].name;
     const x = s * HALL_X, zc = (DOOR_Z0 + DOOR_Z1) / 2;
     lintels[s].signs.push(
@@ -267,7 +289,37 @@ export function buildMemorial(scene, room, { box, block }) {
       sign(scene, 3.6, 0.62, x + s * 0.13, 3.5, zc, s * Math.PI / 2, ko, en),
     );
   }
-  way.signs.push(sign(scene, 4.4, 0.62, 0, 3.5, LOBBY_Z + 0.13, 0, '전시실 · 추모실', 'Exhibition Halls · Memorial Room'));
+  way.signs.push(floor === 1
+    ? sign(scene, 4.4, 0.62, 0, 3.5, LOBBY_Z + 0.13, 0, '전시실 · 추모실', 'Exhibition Halls · Memorial Room')
+    : sign(scene, 4.4, 0.62, 0, 3.5, LOBBY_Z + 0.13, 0, DONATED.title.ko, DONATED.title.en));
+  lift(scene, box, floor);
+  const see = (px, pz, cx, cz) => {
+    for (const wl of walls) {
+      const hide = cx != null && crosses(px, pz, cx, cz, wl.a[0], wl.a[1], wl.b[0], wl.b[1]);
+      const o = hide ? 0.18 : 1;
+      if (wl.mesh.material.opacity !== o) {
+        wl.mesh.material.opacity = o;
+        wl.mesh.material.depthWrite = !hide;
+        for (const sg of wl.signs) sg.visible = !hide;
+      }
+    }
+  };
+
+  if (floor !== 1) {
+    // 2F: in the middle, a board about the donors and benches facing it;
+    // the notice by the (closed) front wall.
+    board(scene, 4.6, 2.1, 0, 2.3, -d / 2 + 0.08, 0, `${DONATED.title.ko} · ${DONATED.title.en}`, [DONATED.ko, `📷 ${CREDIT.ko}`], [DONATED.en, `📷 ${CREDIT.en}`]);
+    const seats = [];
+    for (const x of [-3.2, 3.2]) {
+      const z = -d / 2 + 7;
+      box(2.8, 0.08, 0.6, x, 0.42, z, '#5b4a3a');
+      for (const k of [-1, 1]) box(0.1, 0.42, 0.5, x + k * 1.25, 0.21, z, '#3a2f25');
+      block(x, z, 2.8, 0.6);
+      for (const o of [-0.7, 0.7]) seats.push({ x: x + o, z, ry: Math.PI, stand: [x + o, z + 1] });
+    }
+    board(scene, 4.2, 1.9, -w / 2 + 6, 2.3, d / 2 - 0.05, Math.PI, '안내 · Notice', [DISCLAIMER.ko, `📷 ${CREDIT.ko}`], [DISCLAIMER.en, `📷 ${CREDIT.en}`]);
+    return { looks, seats, clerk: null, flower: [], layFlower: () => {}, lift: { ...MEMORIAL_LIFT }, see };
+  }
 
   // The memorial room at the back: dark stone, the words of remembrance,
   // an altar with candles, and two benches facing it.
@@ -314,22 +366,13 @@ export function buildMemorial(scene, room, { box, block }) {
   board(scene, 4.2, 1.9, -w / 2 + 6, 2.3, d / 2 - 0.05, Math.PI, '안내 · Notice', [DISCLAIMER.ko, `📷 ${CREDIT.ko}`], [DISCLAIMER.en, `📷 ${CREDIT.en}`]);
   board(scene, 4.2, 1.9, w / 2 - 6, 2.3, d / 2 - 0.05, Math.PI, '실제 전쟁기념관 방문 정보 · Visit the real War Memorial of Korea', VISIT.ko, VISIT.en);
   const iz = LOBBY_Z + 3.4;
-  box(4.2, 0.95, 0.8, 0, 0.475, iz, '#d9d4c9');
-  box(4.3, 0.06, 0.9, 0, 0.98, iz, '#3a3d40');
+  // Counter height, like the shops' counters: the guide's face shows over it.
+  box(4.2, 0.6, 0.8, 0, 0.3, iz, '#d9d4c9');
+  box(4.3, 0.05, 0.9, 0, 0.625, iz, '#3a3d40');
   block(0, iz, 4.2, 0.8);
-  sign(scene, 1.8, 0.42, 0, 0.55, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3a3d40' });
-  const clerk = { x: 0, z: iz - 0.75, ry: 0 };
-
-  const see = (px, pz, cx, cz) => {
-    for (const wl of walls) {
-      const hide = cx != null && crosses(px, pz, cx, cz, wl.a[0], wl.a[1], wl.b[0], wl.b[1]);
-      const o = hide ? 0.18 : 1;
-      if (wl.mesh.material.opacity !== o) {
-        wl.mesh.material.opacity = o;
-        wl.mesh.material.depthWrite = !hide;
-        for (const sg of wl.signs) sg.visible = !hide;
-      }
-    }
-  };
-  return { looks, seats, clerk, flower: [{ ...FLOWER_SPOT }], layFlower, see };
+  sign(scene, 1.6, 0.34, 0, 0.33, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3a3d40' });
+  // The guide stands at the end of the desk, facing the way in, so the
+  // whole uniform shows.
+  const clerk = { x: 2.75, z: iz - 0.1, ry: 0 };
+  return { looks, seats, clerk, flower: [{ ...FLOWER_SPOT }], layFlower, lift: { ...MEMORIAL_LIFT }, see };
 }

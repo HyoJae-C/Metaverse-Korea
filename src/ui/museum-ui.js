@@ -55,21 +55,24 @@ export class MuseumUI {
   }
 
   // The lift: one button per floor, with the halls on it.
-  showLift(current, go) {
+  // floors: [{ floor, lines }] for another museum (the War History Museum);
+  // the art museum's floors and halls by default.
+  showLift(current, go, floors) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.close();
     const ko = getLanguage() === 'ko';
+    floors ||= FLOORS.map((f) => ({
+      floor: f,
+      lines: hallsOn(f).map((h) => `${h.side} · ${ko ? h.name.ko : h.name.en}${h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`}`),
+    }));
     const list = el('div', 'museum-floors');
-    for (const f of [...FLOORS].reverse()) {
+    for (const { floor: f, lines } of [...floors].reverse()) {
       const b = el('button', 'museum-floor');
       b.disabled = f === current;
       b.append(el('b', null, `${f}F`));
       const halls = el('span');
-      for (const h of hallsOn(f)) {
-        const soon = h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`;
-        halls.append(el('span', null, `${h.side} · ${ko ? h.name.ko : h.name.en}${soon}`));
-      }
+      for (const line of lines) halls.append(el('span', null, line));
       if (f === current) halls.append(el('em', null, T('here')));
       b.append(halls);
       b.onclick = () => { this.close(); go(f); };
