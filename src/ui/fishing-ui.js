@@ -36,9 +36,9 @@ export function fishStampIcon(f, cls = 'fish-stamp-fish') {
   return icon;
 }
 
-// A ★4–★5 catch, shown over the angler's head for everyone nearby: the
+// A ★3–★5 catch, shown over the angler's head for everyone nearby: the
 // fish's picture in a burst of light and "<name> caught <fish>!".
-export const TROPHY_RARITY = 4;
+export const TROPHY_RARITY = 3;
 // How long a catch shows over the catcher's head, by rarity (ms): the rarer,
 // the longer (a ★5 legend stays up for 12 seconds).
 export const SHOW_MS = [0, 2500, 3000, 4500, 8000, 12000];
@@ -395,7 +395,7 @@ export class FishingUI {
         const f = rollAutoCatch();
         if (!this.bag.add(f.id)) { this.onPhase?.('retrieve'); this.renderIdle(t('fish.full')); return; }
         got++;
-        this.stats?.add('auto');
+        this.stats?.add('auto', f);
         const isNew = this.dex ? this.dex.add(f.id) : false;
         this.onPhase?.('land', f);
         if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp });
@@ -438,7 +438,8 @@ export class FishingUI {
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
-    const card = el('div', 'fish-card' + (f.chance <= 2 ? ' rare' : ''));
+    const card = el('div', 'fish-card' + (f.rarity >= 3 ? ' rare tier-' + f.rarity : ''));
+    if (f.rarity >= 3) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(

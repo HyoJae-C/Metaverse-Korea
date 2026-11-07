@@ -63,7 +63,7 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(dex.kinds,3);
   assert.equal(bag.add(TRASH.id),false);
   assert.equal(dex.add(TRASH.id),false);
-  assert.equal(bag.sellAll(),745);
+  assert.equal(bag.sellAll(), fishById('whale').price + 2 * fishById('shark').price + fishById('crab').price);
   assert.equal(new FishDex(st,bag).total,4);
   assert.equal(dex.add('whale'),false);
   assert.equal(dex.count('whale'),2);
@@ -166,6 +166,10 @@ test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishsta
   assert.deepEqual(again.get('bite'), [0, 0, 0, 0, 0, 1]);
   assert.deepEqual(again.get('escape'), [0, 0, 0, 0, 0, 1]);
   assert.deepEqual(again.get('land'), [1, 1, 0, 0, 0, 0]);
+  assert.deepEqual(again.get('got'), { loach: 1 });
+  again.add('auto', fishById('carp'));
+  assert.equal(again.get('auto'), 1);
+  assert.deepEqual(new FishStats(m).get('gotAuto'), { carp: 1 });
   m.setItem('mk.fishstats', '{broken');
   assert.equal(new FishStats(m, 7).get('cast'), 0);
 });

@@ -3895,8 +3895,8 @@ const fishingUi = new FishingUI({
     sfx.pop?.();
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), fishStampIcon(f, 'bubble-fish tier-' + f.rarity), showMs(f));
-    if (f.chance <= 2) me.play('cheer'); // a rare one!
-    if (f.rarity >= TROPHY_RARITY) { // ★4–★5: a trophy over my head, for everyone nearby
+    if (f.rarity >= 3) me.play('cheer'); // a rare one!
+    if (f.rarity >= TROPHY_RARITY) { // ★3–★5: a trophy over my head, for everyone nearby
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
