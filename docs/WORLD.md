@@ -39,7 +39,9 @@ built, and nothing needs moving when something new is added next to it.
 - **Anchors.** Each district in `region.json` names one real spot (`anchor`);
   its offset follows from it. A `nudge` (with a `why`) moves it off that spot
   on purpose: Songpa is nudged north so its Han River bank lines up with
-  Seongsu's.
+  Seongsu's. A big area can be split so each part sits on its own real spot:
+  Olympic Park is its own district (anchor: the World Peace Gate), joined to
+  Songpa by Olympic-ro.
 - **Seongsu** is the exception: the first district, full size and larger
   than its 1/4 share, so the river and gu edges just south of it are pushed
   south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).

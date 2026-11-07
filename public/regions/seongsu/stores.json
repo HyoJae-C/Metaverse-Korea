@@ -709,10 +709,22 @@
       "category": "info",
       "workshop": "info",
       "size": "small",
-      "at": [898, 682],
+      "at": [930, 728],
       "district": "songpa",
       "name": { "en": "Songpa Information Center", "ko": "송파 안내센터", "ja": "松坡インフォメーションセンター", "zh": "松坡信息中心" },
       "tagline": { "en": "Two guides: how the game works, and everything around Seokchon Lake", "ko": "게임 안내와 송파 지역 안내, 두 명의 안내원", "ja": "ゲーム案内と松坡エリア案内の2人がご案内", "zh": "两位向导：游戏玩法和石村湖一带" },
+      "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
+      "products": []
+    },
+    {
+      "id": "info-olympic-park",
+      "category": "info",
+      "workshop": "info",
+      "size": "small",
+      "at": [1265, 638],
+      "district": "olympic-park",
+      "name": { "en": "Olympic Park Information Center", "ko": "올림픽공원 안내센터", "ja": "オリンピック公園インフォメーションセンター", "zh": "奥林匹克公园信息中心" },
+      "tagline": { "en": "Two guides: how the game works, and everything in Olympic Park", "ko": "게임 안내와 올림픽공원 안내, 두 명의 안내원", "ja": "ゲーム案内とオリンピック公園案内の2人がご案内", "zh": "两位向导：游戏玩法和奥林匹克公园" },
       "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
       "products": []
     },
@@ -815,6 +827,18 @@
         { "id": "jjimjil-sikhye", "model": "cup", "color": "#efe2c4", "price": 3000, "name": { "en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露" }, "desc": { "en": "Ice-cold sweet rice drink: the classic after the kiln.", "ko": "불가마 다음엔 시원한 식혜가 국룰이죠." } },
         { "id": "baked-eggs", "model": "bread", "color": "#b57a4a", "price": 3000, "name": { "en": "Baked eggs (3)", "ko": "맥반석 계란 3개", "ja": "焼き卵 3個", "zh": "烤鸡蛋 3个" }, "desc": { "en": "Eggs baked on hot stones until the whites turn brown. Tradition says you crack them on your forehead.", "ko": "뜨거운 돌에 구워 흰자가 갈색이 된 계란. 이마에 깨 먹는 게 전통(?)이에요." } }
       ]
+    },
+    {
+      "id": "olympic-park-pool",
+      "category": "play",
+      "workshop": "pool",
+      "size": "pool",
+      "at": [1279, 735],
+      "district": "olympic-park",
+      "name": { "en": "Olympic Park Pool", "ko": "올림픽공원 수영장", "ja": "オリンピック公園プール", "zh": "奥林匹克公园游泳馆" },
+      "tagline": { "en": "50 m races, diving boards, tubes and loungers (a game pool, not the real venue)", "ko": "50m 레이스, 다이빙대, 튜브와 선베드 (게임 속 수영장이에요)", "ja": "50mレース、飛び込み台、浮き輪とデッキチェア（ゲームのプールです）", "zh": "50米比赛、跳台、泳圈和躺椅（游戏里的泳池）" },
+      "colors": { "sign": "#2f7fc1", "awning": "#bfe6ff", "accent": "#f4f9fc" },
+      "products": []
     },
     {
       "id": "muscle-gym",
