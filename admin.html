@@ -4,19 +4,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Live players · Another Seoul</title>
+    <title>Operator · Another Seoul</title>
     <link rel="icon" type="image/png" href="./favicon.png" />
     <style>
       :root { color-scheme: light; --bg: #f3ecdc; --panel: #fffdf7; --ink: #2b2620; --muted: #7a7064; --line: #e2d6c2; --street: #18a058; --shop: #8a4fff; --accent: #2f6fde; }
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; color: var(--ink); background: var(--bg); }
-      body { display: grid; grid-template-rows: auto 1fr; }
+      body { display: grid; grid-template-rows: auto auto 1fr; }
+      nav { display: flex; gap: 4px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
+      nav button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 10px 12px; white-space: nowrap; color: var(--muted); font-weight: 600; cursor: pointer; }
+      nav button.on { color: var(--ink); border-bottom-color: var(--accent); }
+      nav .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: #d8452f; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+      section.tab { min-height: 0; overflow: auto; }
+      section.tab[hidden] { display: none !important; }
+      .pad { padding: 16px; max-width: 980px; margin: 0 auto; }
+      .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+      .tools input[type=search] { font: inherit; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; min-width: 200px; flex: 1; max-width: 340px; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+      .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+      .stat b { display: block; font-size: 26px; line-height: 1.2; }
+      .stat.link { cursor: pointer; }
+      .stat.alert b { color: #d8452f; }
+      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+      .card.done { opacity: .7; }
+      .card.off { background: #f4f0ea; }
+      .card .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+      .card .body { white-space: pre-wrap; word-break: break-word; margin: 6px 0; }
+      .card .reply { background: #eef4ff; border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; margin: 6px 0; }
+      .card textarea { width: 100%; min-height: 70px; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+      .card .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+      .tag { font-size: 11px; padding: 1px 7px; border-radius: 8px; background: #efe7da; color: var(--muted); font-weight: 600; }
+      .tag.red { background: #fde3df; color: #b2321f; }
+      .tag.green { background: #dcf3e5; color: #12773f; }
+      .tag.blue { background: #e1ecff; color: #2253a8; }
+      table.grid { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+      table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.grid th { font-size: 12px; color: var(--muted); }
+      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      button.danger { color: #b2321f; }
+      .empty { color: var(--muted); padding: 20px 0; text-align: center; }
+      .scroll-x { overflow-x: auto; }
       header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
       header h1 { font-size: 16px; margin: 0; }
       #count { font-weight: 700; color: var(--street); }
       #status { color: var(--muted); font-size: 12px; margin-left: auto; }
       select, button { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
-      main { display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+      #tab-live { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; }
       #map { position: relative; min-height: 0; touch-action: none; cursor: grab; }
       #map canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
       aside { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; }
@@ -28,40 +61,76 @@
       aside tr.p:hover, aside tr.p.sel { background: #f1ebff; }
       .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
       .muted { color: var(--muted); font-size: 12px; }
-      #msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; }
+      #msg { position: fixed; inset: 0; z-index: 5; background: rgba(243,236,220,.85); display: grid; place-items: center; padding: 16px; }
+      #msg[hidden] { display: none; }
       #msg > div { max-width: 460px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
       #msg h2 { margin: 0 0 8px; font-size: 17px; }
       #msg code { background: #f3ecdc; padding: 1px 5px; border-radius: 5px; word-break: break-all; }
       @media (max-width: 760px) {
-        main { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
+        #tab-live { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; overflow: auto; }
         aside { border-left: 0; border-top: 1px solid var(--line); }
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>🛡️ Live players</h1>
-      <span><span id="count">–</span> <span id="countLabel">online</span></span>
-      <label class="muted">Show
-        <select id="within">
-          <option value="90">online now</option>
-          <option value="900">last 15 min</option>
-          <option value="3600">last hour</option>
-          <option value="86400">last 24 h</option>
-        </select>
-      </label>
-      <button id="fit" type="button">Fit all</button>
+      <h1>🛡️ Operator</h1>
       <span id="status"></span>
     </header>
-    <main>
-      <div id="map"><canvas id="cv"></canvas><div id="msg" hidden></div></div>
+    <nav id="tabs">
+      <button data-tab="overview">Overview</button>
+      <button data-tab="live">Live map <span class="badge" id="liveBadge" hidden></span></button>
+      <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
+      <button data-tab="free">Free board</button>
+      <button data-tab="players">Players</button>
+    </nav>
+    <section class="tab" id="tab-overview" hidden><div class="pad">
+      <div class="stats" id="stats"></div>
+      <p class="muted" id="statsNote"></p>
+    </div></section>
+    <section class="tab" id="tab-live" hidden>
+      <div id="map">
+        <canvas id="cv"></canvas>
+      </div>
       <aside>
+        <div class="tools" style="padding:10px 10px 0;margin:0">
+          <span><b id="count">–</b> <span id="countLabel">online</span></span>
+          <select id="within" aria-label="Show">
+            <option value="90">online now</option>
+            <option value="900">last 15 min</option>
+            <option value="3600">last hour</option>
+            <option value="86400">last 24 h</option>
+          </select>
+          <button id="fit" type="button">Fit all</button>
+        </div>
         <table>
           <thead><tr><th>Player</th><th>Where</th><th>Seen</th></tr></thead>
           <tbody id="list"></tbody>
         </table>
       </aside>
-    </main>
+    </section>
+    <section class="tab" id="tab-ask" hidden><div class="pad">
+      <div class="tools">
+        <label><input type="checkbox" id="askOpen" checked /> Only open</label>
+        <button id="askReload" type="button">Refresh</button>
+      </div>
+      <div id="askList"></div>
+    </div></section>
+    <section class="tab" id="tab-free" hidden><div class="pad">
+      <div class="tools"><button id="freeReload" type="button">Refresh</button></div>
+      <div id="freeList"></div>
+    </div></section>
+    <section class="tab" id="tab-players" hidden><div class="pad">
+      <div class="tools">
+        <input type="search" id="playerQ" placeholder="Search name or e-mail" />
+        <button id="playerReload" type="button">Refresh</button>
+      </div>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>Player</th><th>Account</th><th>Joined</th><th>Last seen</th><th>Chat</th></tr></thead>
+        <tbody id="playerList"></tbody>
+      </table></div>
+    </div></section>
+    <div id="msg" hidden></div>
     <script type="module" src="/src/admin/admin.js"></script>
   </body>
 </html>

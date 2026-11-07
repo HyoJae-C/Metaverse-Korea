@@ -1294,6 +1294,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .board-panel .wallet-title { padding-right: 36px; }
 .board-panel .fine { margin: 0; text-align: left; }
 .board-warn { color: #b0642a; }
+.board-reply { margin-top: 6px; padding: 8px 10px; border-radius: 12px; background: #eef4ff; border-left: 3px solid #2f6fde; }
+.board-reply .board-body { margin: 4px 0 0; }
 .board-form { display: grid; gap: 6px; }
 .board-input { width: 100%; box-sizing: border-box; min-height: 92px; max-height: 260px; resize: vertical; padding: 10px 12px; border-radius: 14px; border: 1.5px solid #eadfd2; background: #fff; font: inherit; font-size: 14px; line-height: 1.45; }
 .board-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

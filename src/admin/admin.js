@@ -1,4 +1,6 @@
-// Operators' live player map (admin.html). Shows where everyone playing is
+// The operator page (admin.html): overview, live player map, inquiries,
+// free board and players. This file is the page shell and the live map; the
+// other tabs are in ./panels.js. The map shows where everyone playing is
 // right now, from the spots the games report (net/where.js) and the server
 // only hands to operator accounts (supabase/008_player_where.sql).
 //
@@ -8,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { config } from '../config.js';
 import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
 import { describePlace, agoText, fitView } from './view.js';
+import { createPanels } from './panels.js';
 
 const REGION = 'seongsu';
 const POLL_MS = 3000;
@@ -39,7 +42,7 @@ function resize() {
   const r = cv.getBoundingClientRect();
   view.dpr = Math.min(2, devicePixelRatio || 1);
   const w = Math.round(r.width * view.dpr), h = Math.round(r.height * view.dpr);
-  if (w === cv.width && h === cv.height) return;
+  if (!w || !h || (w === cv.width && h === cv.height)) return; // hidden tab: keep the old size
   const k = cv.width ? w / cv.width : 1;
   cv.width = w; cv.height = h;
   view.scale *= k || 1;
@@ -223,11 +226,10 @@ let pollTimer = 0;
 
 async function poll() {
   clearTimeout(pollTimer);
-  if (document.hidden) return; // picks up again when the tab is shown
+  if (document.hidden || tab !== 'live') return; // picks up again when shown
   try {
     const { data, error } = await client.rpc('ops_where', { within_seconds: +$('within').value });
     if (error) return failed(error);
-    message(null);
     players = data || [];
     fetchedAt = Date.now();
     if (selected && !players.some((p) => p.uid === selected)) selected = null;
@@ -245,11 +247,11 @@ async function poll() {
 function failed(error) {
   $('status').textContent = '';
   if (error.code === 'PGRST202' || error.code === '42883') {
-    message('Server not set up yet', 'Run <code>supabase/008_player_where.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run), then reload this page.');
+    $('list').innerHTML = '<tr><td colspan="3" class="muted">Run <code>supabase/008_player_where.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run), then reload this page.</td></tr>';
   } else if (error.code === '42501') {
-    message('Operators only', `This account isn't an operator. Add its user id to the <code>operators</code> table (Table Editor → operators → Insert row), then reload.<br><br>Your user id: <code>${escapeHtml(myId)}</code>`);
+    notOperator();
   } else {
-    message('Could not load players', escapeHtml(error.message || String(error)));
+    $('status').textContent = 'Could not load players: ' + (error.message || String(error));
     pollTimer = setTimeout(poll, POLL_MS * 3);
   }
 }
@@ -280,10 +282,39 @@ async function start() {
     message('Not signed in', `Open <a href="${BASE}">the game</a> in this browser, sign in with your operator account, then come back to this page.`);
     return;
   }
+  // Operator? (am_operator comes with 009_admin.sql; without it the live
+  // map still finds out through ops_where.)
+  const op = await client.rpc('am_operator');
+  if (!op.error && op.data !== true) return notOperator();
+  panels = createPanels({ client, $, escapeHtml, agoText, describePlace: (pl) => describePlace(pl, stores), setStatus: (t) => { $('status').textContent = t; }, go: showTab, notOperator, badge });
   $('within').onchange = () => { view.fitted = false; poll(); };
   $('fit').onclick = fitAll;
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
-  poll();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); panels.wake(tab); } });
+  for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => showTab(b.dataset.tab);
+  addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+  showTab(location.hash.slice(1));
+}
+
+// ---------- Tabs ----------
+const TABS = ['overview', 'live', 'ask', 'free', 'players'];
+let tab = null, panels = null;
+function showTab(name) {
+  if (!TABS.includes(name)) name = 'overview';
+  if (name === tab) return;
+  tab = name;
+  if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+  for (const t of TABS) $('tab-' + t).hidden = t !== name;
+  for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === name);
+  if (name === 'live') { resize(); if (!view.fitted) fitAll(); poll(); } else clearTimeout(pollTimer);
+  panels?.show(name);
+}
+function badge(id, n) {
+  const el = $(id);
+  el.hidden = !n;
+  el.textContent = String(n || '');
+}
+function notOperator() {
+  message('Operators only', `This account isn't an operator. Add its user id to the <code>operators</code> table (Table Editor → operators → Insert row), then reload.<br><br>Your user id: <code>${escapeHtml(myId)}</code>`);
 }
 
 start().catch((e) => message('Something went wrong', escapeHtml(e.message)));

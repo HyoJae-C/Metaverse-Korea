@@ -61,7 +61,15 @@ First stop: **Seongsu-dong, Seoul**.
 
 ## Operators
 
-- Live player map: open `/admin.html` in the browser where you play with your operator account (see `supabase/005_operators.sql`). It shows everyone playing right now on the map (green on the street, purple inside a shop, with the shop's name), refreshed every 3 seconds; tap a name to zoom to them. The game reports its own spot every few seconds while walking and every 20 s while standing still (`src/net/where.js`); only operators can read it. Needs `supabase/008_player_where.sql` run once.
+Open `/admin.html` in the browser where you play with your operator account (see `supabase/005_operators.sql`). Not linked from the game; anyone else sees "Operators only". Tabs:
+
+- **Overview**: online now, played today / in 7 days, accounts (guest vs Google), new accounts, open inquiries, posts today, chat bans. Tap a number to jump to its tab.
+- **Live map**: everyone playing right now on the map (green on the street, purple inside a shop, with the shop's name), refreshed every 3 seconds; tap a name to zoom to them. The game reports its own spot every few seconds while walking and every 20 s while standing still (`src/net/where.js`); only operators can read it.
+- **Inquiries**: the inquiry board (문의게시판). Write a reply and the player sees it under their inquiry in the game; or mark it done without one.
+- **Free board**: hide or show posts.
+- **Players**: search by name or e-mail; guest/Google, joined, last seen, where they are; ban or unban from chat (`chat_bans`).
+
+Needs `supabase/008_player_where.sql` and `supabase/009_admin.sql` run once. Page code in `src/admin/`.
 
 ## Run locally
 
