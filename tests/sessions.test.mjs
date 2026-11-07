@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  cleanSrc, createCounts, deviceClass, firstSrc, newSessionId, someoneNear, startSessionReports,
+  cleanError, cleanSrc, createCounts, createErrorSender, createVisit, deviceClass, firstSrc, newSessionId, someoneNear, STAGE, startSessionReports,
 } from '../src/core/sessions.js';
-import { ratio, sumCohorts } from '../src/admin/retention.js';
+import { countryLabel, funnelRow, ratio, sumCohorts } from '../src/admin/retention.js';
 
 const memStorage = () => { const m = new Map(); return { m, getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 
@@ -40,9 +40,9 @@ test('wallet balance changes become earned, spent and purchases', () => {
   c.coins(1080);
   c.coins(1000);
   c.fish(); c.fish(); c.chat(); c.near(1.4); c.near(1.4);
-  assert.deepEqual(c.snapshot(), { fish: 2, coinsIn: 120, coinsOut: 120, buys: 2, chats: 1, nearSec: 3 });
+  assert.deepEqual(c.snapshot(), { fish: 2, coinsIn: 120, coinsOut: 120, buys: 2, chats: 1, nearSec: 3, ads: 0, errors: 0, quests: 0 });
   c.reset();
-  assert.deepEqual(c.snapshot(), { fish: 0, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0 });
+  assert.deepEqual(c.snapshot(), { fish: 0, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0, ads: 0, errors: 0, quests: 0 });
   c.coins(1010);
   assert.equal(c.snapshot().coinsIn, 10, 'balance tracking survives a reset');
 });
@@ -81,7 +81,7 @@ test('reports after 15 s, then once a minute, with this session\'s counts', asyn
   assert.equal(h.sent.length, 0);
   await h.step(1);
   assert.equal(h.sent.length, 1);
-  assert.deepEqual(h.sent[0], { id: 's1', region: 'seongsu', device: 'phone', src: 'ext', fps: 58, counts: { fish: 1, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0 } });
+  assert.deepEqual(h.sent[0], { id: 's1', region: 'seongsu', device: 'phone', src: 'ext', fps: 58, counts: { fish: 1, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0, ads: 0, errors: 0, quests: 0 } });
   await h.step(60);
   assert.equal(h.sent.length, 2);
   assert.equal(h.sent[1].id, 's1');
@@ -136,4 +136,71 @@ test('the session SQL stores no personal data and keeps the table private', () =
   assert.match(sql, /enable row level security/);
   assert.match(sql, /revoke all on public\.play_sessions from anon, authenticated/);
   assert.match(sql, /perform public\.ops_check\(\)/);
+});
+
+test('ads, errors and square missions are counted per session', () => {
+  const c = createCounts();
+  c.ad(); c.ad(); c.error(); c.quest();
+  const n = c.snapshot();
+  assert.equal(n.ads, 2); assert.equal(n.errors, 1); assert.equal(n.quests, 1);
+  c.reset();
+  assert.equal(c.snapshot().ads, 0);
+});
+
+test('error messages lose digits and links, and only a few are sent per visit', async () => {
+  assert.equal(cleanError('position reset (x=12.5, z=-3)'), 'position reset (x=#.#, z=-#)');
+  assert.equal(cleanError('boom @ https://another-seoul.com/assets/index-abc123.js:10:2'), 'boom @ <url>');
+  assert.ok(cleanError('x'.repeat(500)).length <= 120);
+  const sent = [];
+  const send = createErrorSender((m) => sent.push(m), 2);
+  assert.equal(send('a 1'), true);
+  assert.equal(send('a 2'), false, 'same message once digits are gone');
+  assert.equal(send('b'), true);
+  assert.equal(send('c'), false, 'cap reached');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(sent, ['a #', 'b']);
+});
+
+test('a visit moves forward through the funnel and times loading from Play', async () => {
+  const got = [];
+  let t = 1000;
+  const v = createVisit({ send: (r) => { got.push({ ...r }); return true; }, isNew: true, device: 'phone', newId: () => 'v1', now: () => t });
+  v.reach(STAGE.OPEN);
+  t = 5000; v.reach(STAGE.PRESSED);
+  t = 8500; v.reach(STAGE.LOADED);
+  assert.equal(v.reach(STAGE.PRESSED), false, 'never goes back');
+  v.reach(STAGE.MINUTE);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(got.map((r) => r.stage), [1, 2, 3, 4]);
+  assert.equal(got[2].loadMs, 3500);
+  assert.equal(got[0].isNew, true);
+  assert.equal(got[0].id, 'v1');
+});
+
+test('a failed load is reported once, and a missing server stops the reports', async () => {
+  let calls = 0;
+  const v = createVisit({ send: () => { calls++; return false; }, newId: () => 'v2' });
+  v.reach(STAGE.OPEN);
+  await new Promise((r) => setTimeout(r, 0));
+  v.fail(); v.reach(STAGE.PRESSED);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(calls, 1);
+});
+
+test('014 SQL keeps the old report_session signature and stores no account id with errors', () => {
+  const sql = readFileSync(new URL('../supabase/014_retention_more.sql', import.meta.url), 'utf8');
+  assert.match(sql, /create or replace function public\.report_session\(\s*p_id uuid, p_region text, p_device text, p_src text, p_fps int, p_counts jsonb\s*\)/);
+  const errTable = sql.match(/create table if not exists public\.client_errors \(([^;]*)\);/)[1];
+  assert.doesNotMatch(errTable, /user_id/);
+  for (const fn of ['report_visit', 'report_error', 'ops_retention_more']) assert.match(sql, new RegExp(`revoke all on function public\\.${fn}\\(`));
+  assert.match(sql, /ops_retention_more[\s\S]*perform public\.ops_check\(\)/);
+});
+
+test('funnel rows and country labels for the admin page', () => {
+  assert.deepEqual(funnelRow({ is_new: true, opened: 10, pressed: 8, loaded: 6, minute: 5, failed: 1, load_med_s: 4.2, load_p90_s: 11 }),
+    ['First visit', 10, '8/10 (80%)', '6/10 (60%)', '5/10 (50%)', '1/10 (10%)', '4.2 s / 11 s']);
+  assert.equal(funnelRow({ is_new: false, opened: 0, pressed: 0, loaded: 0, minute: 0, failed: 0, load_med_s: 0 })[6], '–');
+  assert.match(countryLabel('KR'), /^🇰🇷 /);
+  assert.equal(countryLabel('XX'), '❔ Unknown');
+  assert.equal(countryLabel('<b>'), '❔ Unknown');
 });
