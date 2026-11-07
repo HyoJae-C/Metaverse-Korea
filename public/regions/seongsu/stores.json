@@ -1963,7 +1963,7 @@
       "products": [
         { "id": "hand-drip-2", "model": "cup", "color": "#5a3a28", "price": 6500, "name": { "en": "Hand Drip · Ethiopia", "ko": "핸드드립 · 에티오피아" }, "desc": { "en": "Bright and fruity." } },
         { "id": "flat-white", "model": "cup", "color": "#c9a26a", "price": 5500, "name": { "en": "Flat White", "ko": "플랫 화이트" }, "desc": { "en": "Strong and silky." } },
-        { "id": "beans", "model": "jar", "color": "#5c3b2a", "price": 18000, "name": { "en": "Coffee Beans 200 g", "ko": "원두 200g" }, "desc": { "en": "House blend to take home." } }
+        { "id": "beans", "model": "jar", "goods": true, "color": "#5c3b2a", "price": 18000, "name": { "en": "Coffee Beans 200 g", "ko": "원두 200g" }, "desc": { "en": "House blend to take home." } }
       ]
     },
     {
@@ -2003,8 +2003,8 @@
       "tagline": { "en": "Handmade cups and bowls", "ko": "손으로 빚은 컵과 그릇" },
       "colors": { "sign": "#8a5a3a", "awning": "#e9d8c6", "accent": "#fbf3ea" },
       "products": [
-        { "id": "mug", "model": "cup", "color": "#d9cbb8", "price": 22000, "name": { "en": "Stoneware Mug", "ko": "도자기 머그" }, "desc": { "en": "Each one a little different." } },
-        { "id": "rice-bowl", "model": "bowl", "color": "#efe6d8", "price": 18000, "name": { "en": "Rice Bowl", "ko": "밥그릇" }, "desc": { "en": "For your rice at home." } },
+        { "id": "mug", "model": "cup", "goods": true, "color": "#d9cbb8", "price": 22000, "name": { "en": "Stoneware Mug", "ko": "도자기 머그" }, "desc": { "en": "Each one a little different." } },
+        { "id": "rice-bowl", "model": "bowl", "goods": true, "color": "#efe6d8", "price": 18000, "name": { "en": "Rice Bowl", "ko": "밥그릇" }, "desc": { "en": "For your rice at home." } },
         { "id": "vase", "model": "bottle", "color": "#8fb0c4", "price": 35000, "name": { "en": "Small Vase", "ko": "작은 화병" }, "desc": { "en": "A blue glaze like the river." } }
       ]
     },
@@ -2486,7 +2486,7 @@
       "tagline": {"en": "Ride upgrades: speed tune-ups and street-art skins", "ko": "탈것 업그레이드: 속도 튜닝과 스트리트 아트 스킨", "ja": "乗り物アップグレード：スピードチューンとストリートアートのスキン", "zh": "车辆升级：提速改装和街头涂鸦皮肤", "es": "Mejoras de vehículos: puesta a punto y aspectos de arte urbano"},
       "colors": {"sign": "#1f1f2b", "awning": "#b6ff3b", "accent": "#f4ffe6"},
       "products": [
-        {"id": "lab-spray-can", "model": "cup", "color": "#ff3ea5", "price": 7000, "name": {"en": "Spray paint can", "ko": "스프레이 페인트", "ja": "スプレー缶", "zh": "喷漆罐"}, "desc": {"en": "For touching up your frame.", "ko": "프레임 칠이 벗겨졌을 때 살짝 덧칠해요."}},
+        {"id": "lab-spray-can", "model": "cup", "goods": true, "color": "#ff3ea5", "price": 7000, "name": {"en": "Spray paint can", "ko": "스프레이 페인트", "ja": "スプレー缶", "zh": "喷漆罐"}, "desc": {"en": "For touching up your frame.", "ko": "프레임 칠이 벗겨졌을 때 살짝 덧칠해요."}},
         {"id": "lab-tire-gauge", "model": "pen", "color": "#9aa0a6", "price": 12000, "name": {"en": "Tyre pressure gauge", "ko": "타이어 공기압 게이지", "ja": "空気圧ゲージ", "zh": "胎压计"}, "desc": {"en": "The right pressure makes every ride faster.", "ko": "공기압만 맞춰도 훨씬 잘 나가요."}},
         {"id": "lab-sticker-pack", "model": "notebook", "color": "#b6ff3b", "price": 5000, "name": {"en": "Lab sticker pack", "ko": "연구소 스티커 팩", "ja": "ラボのステッカー", "zh": "研究所贴纸包"}, "desc": {"en": "Stick them on your helmet or board.", "ko": "헬멧이나 보드에 붙여 꾸며요."}}
       ]
@@ -2505,7 +2505,7 @@
       "products": [
         {"id": "rwm-helmet", "model": "cap", "color": "#1b2a4a", "price": 39000, "name": {"en": "City helmet", "ko": "시티 헬멧", "ja": "シティヘルメット", "zh": "城市头盔"}, "desc": {"en": "Light and safe for night rides.", "ko": "가볍고 안전한 밤 라이딩용 헬멧이에요."}},
         {"id": "rwm-reflector", "model": "pen", "color": "#c9ced6", "price": 6000, "name": {"en": "Reflector band", "ko": "반사 밴드", "ja": "反射バンド", "zh": "反光带"}, "desc": {"en": "Be seen after dark.", "ko": "어두워져도 잘 보이게 해 줘요."}},
-        {"id": "rwm-light", "model": "cup", "color": "#ff2e4d", "price": 15000, "name": {"en": "Rear light", "ko": "후미등", "ja": "テールライト", "zh": "尾灯"}, "desc": {"en": "Blinks red behind you.", "ko": "뒤에서 빨갛게 깜빡여요."}}
+        {"id": "rwm-light", "model": "cup", "goods": true, "color": "#ff2e4d", "price": 15000, "name": {"en": "Rear light", "ko": "후미등", "ja": "テールライト", "zh": "尾灯"}, "desc": {"en": "Blinks red behind you.", "ko": "뒤에서 빨갛게 깜빡여요."}}
       ]
     },
     {
@@ -2520,7 +2520,7 @@
       "colors": {"sign": "#1e1e22", "awning": "#c0392b", "accent": "#efe6d2"},
       "products": [
         {"id": "mihak-bookmark", "model": "notebook", "color": "#efe6d2", "price": 4000, "name": {"en": "Hangul bookmark", "ko": "한글 책갈피", "ja": "ハングルのしおり", "zh": "韩文书签"}, "desc": {"en": "The 1446 preface in tiny print.", "ko": "훈민정음 서문이 작게 새겨져 있어요."}},
-        {"id": "mihak-bell", "model": "cup", "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
+        {"id": "mihak-bell", "model": "cup", "goods": true, "color": "#d4a640", "price": 9000, "name": {"en": "Brass ride bell", "ko": "놋쇠 벨", "ja": "真鍮のベル", "zh": "黄铜车铃"}, "desc": {"en": "A soft ring, like a temple bell.", "ko": "절 종처럼 은은하게 울려요."}},
         {"id": "mihak-seal", "model": "jar", "color": "#b3261e", "price": 15000, "name": {"en": "Name seal (dojang)", "ko": "이름 도장", "ja": "名前のはんこ", "zh": "名字印章"}, "desc": {"en": "Your name carved in Hangul.", "ko": "내 이름을 한글로 새겨 줘요."}}
       ]
     },
