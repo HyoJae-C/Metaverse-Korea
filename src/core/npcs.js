@@ -48,6 +48,12 @@ export const PHRASES = {
     ['오늘도 열심히 공부해 봐요!', 'oneuldo yeolsimhi gongbuhae bwayo!', "Let's study hard today too!"],
     ['모르는 게 있으면 물어보세요.', 'moreuneun ge isseumyeon mureoboseyo', 'Ask me if there is anything you don’t know.'],
   ],
+  bukchon: [
+    ['안녕하세요! 여기는 주민들이 사는 동네라 조용히 다녀요.', 'annyeonghaseyo! yeogineun jumindeuri saneun dongnera joyonghi danyeoyo', 'Hello! People live here, so we walk quietly.'],
+    ['한복이 참 잘 어울려요!', 'hanbogi cham jal eoullyeoyo!', 'Hanbok really suits you!'],
+    ['북촌8경 몇 군데 찾았어요?', 'bukchon palgyeong myeot gunde chajasseoyo?', 'How many of the 8 Bukchon Views have you found?'],
+    ['남의 집 대문은 함부로 열면 안 돼요.', 'namui jip daemuneun hamburo yeolmyeon an dwaeyo', 'Never open someone’s gate without asking.'],
+  ],
   shop: [
     ['천천히 구경하세요!', 'cheoncheonhi gugyeonghaseyo', 'Take your time and look around!'],
     ['감사합니다!', 'gamsahamnida', 'Thank you!'],
@@ -90,15 +96,24 @@ export function say(o, layer, phrase) {
 
 export class StreetNpcs {
   // homes: [[x, z], ...] spots the NPCs stroll around (e.g. meeting zones).
-  constructor(scene, layer, graph, homes, perHome = 2) {
+  // opts.who(i): { name, look } for the i-th NPC (default: a random look);
+  // opts.keepIn(x, z): streets they may walk (e.g. inside Bukchon's wall);
+  // opts.phrases: what they say when greeted; opts.groundY(x, z): the street's
+// height where it is not flat (Bukchon's hill).
+  constructor(scene, layer, graph, homes, perHome = 2, opts = {}) {
     this.layer = layer;
     this.graph = graph;
     this.list = [];
+    this.keepIn = opts.keepIn || null;
+    this.phrases = opts.phrases || PHRASES.street;
+    this.groundY = opts.groundY || null; // (x, z) => height of the street (a hill)
     if (!graph.nodes.length) return;
     let i = 0;
     for (const [hx, hz] of homes) {
       for (let k = 0; k < perHome; k++) {
-        const o = makeNpc(layer, NAMES[i++ % NAMES.length]);
+        const who = opts.who ? opts.who(i++) : { name: NAMES[i++ % NAMES.length] };
+        const o = makeNpc(layer, who.name, who.look);
+        o.owner = this;
         o.home = [hx, hz];
         o.node = graph.nearest(hx + (Math.random() - 0.5) * 30, hz + (Math.random() - 0.5) * 30);
         o.prev = -1;
@@ -106,7 +121,7 @@ export class StreetNpcs {
         o.speed = 1.5 + Math.random() * 0.8;
         o.pause = Math.random() * 3;
         const [x, z] = graph.nodes[o.node];
-        o.ch.root.position.set(x, 0, z);
+        o.ch.root.position.set(x, this.groundY ? this.groundY(x, z) : 0, z);
         this._next(o);
         scene.add(o.ch.root);
         this.list.push(o);
@@ -117,8 +132,9 @@ export class StreetNpcs {
   // Pick the next street node: a random neighbour, heading home when far away.
   _next(o) {
     const g = this.graph;
-    const nbs = g.adj[o.node].map(([n]) => n).filter((n) => n !== o.prev);
-    const options = nbs.length ? nbs : g.adj[o.node].map(([n]) => n);
+    const ok = (n) => !this.keepIn || this.keepIn(g.nodes[n][0], g.nodes[n][1]);
+    const nbs = g.adj[o.node].map(([n]) => n).filter((n) => n !== o.prev && ok(n));
+    const options = nbs.length ? nbs : g.adj[o.node].map(([n]) => n).filter(ok);
     if (!options.length) { o.target = null; return; }
     const far = Math.hypot(g.nodes[o.node][0] - o.home[0], g.nodes[o.node][1] - o.home[1]) > 120;
     let n = pick(options);
@@ -141,7 +157,7 @@ export class StreetNpcs {
     o.talkT = 5;
     o.faceX = x; o.faceZ = z;
     o.ch.wave();
-    say(o, this.layer, pick(PHRASES.street));
+    say(o, this.layer, pick(this.phrases));
   }
 
   setVisible(on) {
@@ -155,7 +171,10 @@ export class StreetNpcs {
     const g = this.graph;
     for (const o of this.list) {
       const r = o.ch.root;
-      if (!r.visible) continue;
+      if (!r.visible) { // hidden (e.g. behind a wall you are outside of): no name tag either
+        if (o.tag.style.display !== 'none') { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; }
+        continue;
+      }
       let moving = false;
       if (o.talkT > 0) {
         o.talkT -= dt;
@@ -177,6 +196,7 @@ export class StreetNpcs {
           const step = Math.min(d, o.speed * dt);
           r.position.x += (dx / d) * step;
           r.position.z += (dz / d) * step;
+          if (this.groundY) r.position.y = this.groundY(r.position.x, r.position.z);
           turnTo(r, Math.atan2(dx, dz), dt);
           moving = true;
         }

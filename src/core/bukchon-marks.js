@@ -2,7 +2,7 @@
 // ring at each of the 8 Views (gold until you take the photo, then grey) with
 // a small numbered post, and a soft glowing ring at each Open House spot.
 import * as THREE from 'three';
-import { BUKCHON } from '../data/bukchon.js';
+import { BUKCHON, ground } from '../data/bukchon.js';
 
 function numberTexture(n) {
   const c = document.createElement('canvas');
@@ -25,7 +25,7 @@ export class BukchonMarks {
     const foot = new THREE.CircleGeometry(0.16, 10).rotateX(-Math.PI / 2).scale(1, 1, 1.9);
     for (const v of BUKCHON.views) {
       const g = new THREE.Group();
-      g.position.set(v.at[0] + ox, 0.08, v.at[1] + oz);
+      g.position.set(v.at[0] + ox, ground(...v.at) + 0.08, v.at[1] + oz);
       g.rotation.y = Math.atan2(v.face[0], v.face[1]); // footprints point the way to look
       const mat = new THREE.MeshBasicMaterial({ color: 0xe0a93a, transparent: true, opacity: 0.9, depthWrite: false });
       g.add(new THREE.Mesh(ring, mat));

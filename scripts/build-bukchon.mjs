@@ -3,13 +3,13 @@
 // from the hand-made layout below.
 //
 // Bukchon Hanok Village sits between Gyeongbokgung and Changdeokgung, uphill
-// from Anguk Station. The game keeps its big lines, loosely after the real
-// streets (OpenStreetMap, © OpenStreetMap contributors): Yulgok-ro along the
-// south edge with Anguk Station, Bukchon-ro climbing north from the station,
-// Gyedong-gil to the east, Bukchon-ro 5na-gil running west down the stone
-// stairs to Samcheong-dong, and the hanok alleys of Gahoe-dong (Bukchon-ro
-// 11-gil) on the hill, with a rooftop view at the top. Shops are on the lower
-// streets; the alleys up the hill are homes (the Quiet Zone).
+// from Anguk Station. The game makes it a small walled village on a hill,
+// loosely after the real streets (OpenStreetMap, © OpenStreetMap
+// contributors): the gate on Bukchon-ro by Anguk Station, a street of shops
+// and the Open House at the bottom (after Bukchon-ro 5-gil), then the hanok
+// alleys of Gahoe-dong climbing north, the main one after Bukchon-ro 11-gil,
+// to a lookout at the top: the famous view down the alley to the city. The
+// alleys up the hill are homes (the Quiet Zone).
 //
 //   node scripts/build-bukchon.mjs
 //
@@ -20,7 +20,7 @@
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { BUKCHON } from '../src/data/bukchon.js';
+import { BUKCHON, ground } from '../src/data/bukchon.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'public/regions/seongsu/districts/bukchon.json');
@@ -30,49 +30,30 @@ const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
 const roads = [
   { k: 'primary', w: 16, p: [[60, 0], [310, 0]], n: N('율곡로', 'Yulgok-ro', '栗谷路', '栗谷路') },
-  { k: 'secondary', w: 10, p: [[24, -8], [24, -130], [94, -200], [94, -342]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
-  { k: 'tertiary', w: 8, p: [[244, -8], [244, -332]], n: N('계동길', 'Gyedong-gil', '桂洞キル', '桂洞街') },
-  { k: 'tertiary', w: 7, p: [[24, -72], [244, -72]], n: N('북촌로5길', 'Bukchon-ro 5-gil', '北村路5ギル', '北村路5街') },
-  { k: 'walk', w: 4, p: [[28, -39], [240, -39]] }, // the back lane between the two shop rows
-  // West down the stone stairs to Samcheong-ro (Gyeongbokgung's east side).
-  { k: 'walk', w: 5, p: [[-72, -188], [82, -188]], n: N('북촌로5나길', 'Bukchon-ro 5na-gil', '北村路5ナギル', '北村路5Na街') },
-  { k: 'walk', w: 5, p: [[165, -72], [165, -102]] }, // up to the Open House gate
-  { k: 'walk', w: 4, p: [[64, -170], [244, -170]] }, // through the homes behind the Open House
-  // Samcheong-dong side homes
-  { k: 'walk', w: 4, p: [[40, -188], [40, -330]] },
-  { k: 'walk', w: 4, p: [[-6, -255], [89, -255]] },
-  // Gahoe-dong hanok alleys (the Quiet Zone)
-  { k: 'walk', w: 4, p: [[94, -215], [244, -215]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
-  { k: 'walk', w: 4, p: [[94, -268], [244, -268]] },
-  { k: 'walk', w: 4, p: [[134, -215], [134, -324]] },
-  { k: 'walk', w: 4, p: [[184, -215], [184, -324]] },
-  { k: 'walk', w: 4, p: [[94, -324], [214, -324]] },
-  // Wonseo-dong side (east of Gyedong-gil): the craft alley, and the lane
-  // to the spot that looks over at Changdeokgung.
-  { k: 'walk', w: 4, p: [[244, -150], [302, -150]] },
-  { k: 'walk', w: 4, p: [[244, -250], [302, -250]], n: N('원서동 공방길', 'Wonseo-dong Craft Alley', '苑西洞 工房通り', '苑西洞工坊街') },
+  { k: 'secondary', w: 8, p: [[24, -8], [24, -40]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
+  { k: 'tertiary', w: 7, p: [[-6, -40], [126, -40]], n: N('북촌로5길', 'Bukchon-ro 5-gil', '北村路5ギル', '北村路5街') },
+  // Up the hill: the main alley to the top, two alleys across, two side alleys.
+  { k: 'walk', w: 4, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
+  { k: 'walk', w: 3.5, p: [[-6, -112], [126, -112]] },
+  { k: 'walk', w: 3.5, p: [[-6, -140], [126, -140]] },
+  { k: 'walk', w: 3.5, p: [[18, -66], [18, -158]] },
+  { k: 'walk', w: 3.5, p: [[102, -84], [102, -158]] },
 ];
 
 const areas = [
-  { k: 'plaza', p: rect(118, -327, 202, -350) }, // the rooftop view terrace
-  { k: 'plaza', p: rect(150, -104, 180, -140) }, // the Open House courtyard (madang)
-  { k: 'plaza', p: rect(292, -142, 306, -158) }, // the Changdeokgung viewpoint
+  { k: 'plaza', p: rect(88, -50, 120, -72) }, // the Open House courtyard (madang)
 ];
 
-// Shop rows (hanok fronts), listed so stores.json can stand in front of them.
+// Shops (hanok fronts) on the street at the bottom, listed so stores.json can
+// stand in front of them.
 const buildings = [];
 const add = (p, extra) => buildings.push({ h: 6, hanok: 1, p, ...extra });
-for (let x = 31; x + 22 <= 240; x += 24) add(rect(x, -45, x + 22, -64)); // row B on 5-gil (south side)
-for (let x = 31; x + 22 <= 142; x += 24) add(rect(x, -79, x + 22, -98)); // row C on 5-gil (north side)
-for (let x = 192; x + 22 <= 240; x += 24) add(rect(x, -79, x + 22, -98));
-for (let z = -16; z - 22 >= -130; z -= 24) add(rect(-8, z, 17, z - 22)); // west of Bukchon-ro
+for (let x = 31; x + 22 <= 126; x += 24) add(rect(x, -18, x + 22, -34), { fr: [0, -1] }); // south side of 5-gil
+add(rect(-6, -18, 18, -34), { fr: [0, -1] });
+for (const [x0, x1] of [[-6, 16], [20, 42], [64, 80]]) add(rect(x0, -46, x1, -62), { fr: [0, 1] }); // north side
 
-// Gyedong-gil's east side: more shop hanok (bigger, on the street).
-for (let z = -16; z - 18 >= -138; z -= 21) add(rect(251, z, 300, z - 18), { fr: [-1, 0] });
-for (let z = -160; z - 18 >= -238; z -= 21) add(rect(251, z, 300, z - 18), { fr: [-1, 0] });
-
-// Everything else is homes: a grid of small hanok, kept off the streets and
-// out of the Open House compound.
+// Everything up the hill is homes: a grid of small hanok, kept off the alleys
+// and out of the Open House and the lookout at the top.
 const OPEN = BUKCHON.openHouse.box; // [x0, z0, x1, z1]
 const segDist = (x, z, [x1, z1], [x2, z2]) => {
   const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz;
@@ -83,11 +64,9 @@ const clearOfRoads = (x0, z0, x1, z1) => {
   for (const r of roads) {
     const keep = r.w / 2 + (r.k === 'walk' ? 0.8 : 1.6);
     for (let i = 1; i < r.p.length; i++) {
-      // the rectangle's distance to the segment: check corners, mid points and centre
       for (const [x, z] of [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [(x0 + x1) / 2, z0], [(x0 + x1) / 2, z1], [x0, (z0 + z1) / 2], [x1, (z0 + z1) / 2], [(x0 + x1) / 2, (z0 + z1) / 2]]) {
         if (segDist(x, z, r.p[i - 1], r.p[i]) < keep) return false;
       }
-      // and a road crossing right through it
       const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i];
       for (let k = 0; k <= 20; k++) {
         const x = ax + ((bx - ax) * k) / 20, z = az + ((bz - az) * k) / 20;
@@ -102,23 +81,23 @@ const overlaps = (x0, z0, x1, z1) => buildings.some((b) => {
   return x0 < Math.max(...xs) + 1 && x1 > Math.min(...xs) - 1 && z1 < Math.max(...zs) + 1 && z0 > Math.min(...zs) - 1;
 });
 const inOpen = (x0, z0, x1, z1) => x1 > OPEN[0] - 2 && x0 < OPEN[2] + 2 && z1 < OPEN[1] + 2 && z0 > OPEN[3] - 2;
-const inTerrace = (x0, z0, x1, z1) => x1 > 116 && x0 < 204 && z1 < -325;
-const D = 11, GAP = 1.2;
-for (let iz = 0, z = -100; z - D >= -350; iz++, z -= D + GAP) {
-  for (let ix = 0, x = -8; x + 12 <= 306; ix++) {
-    const W = 12 + ((ix * 7 + iz * 3) % 4); // 12-15 m wide: not all the same
-    const x0 = x, x1 = Math.min(x + W, 306), z0 = z, z1 = z - D;
+const LOOK = { x0: 18, x1: 102, z: -159 }; // the lookout at the top (terrace)
+const inLookout = (x0, z0, x1, z1) => x1 > LOOK.x0 && x0 < LOOK.x1 && z1 < LOOK.z;
+const D = 10, GAP = 1;
+for (let iz = 0, z = -66; z - D >= -184; iz++, z -= D + GAP) {
+  for (let ix = 0, x = -8; x + 10 <= 128; ix++) {
+    const W = 10 + ((ix * 7 + iz * 3) % 4); // 10-13 m wide: not all the same
+    const x0 = x, x1 = Math.min(x + W, 128), z0 = z, z1 = z - D;
     x += W + GAP;
-    if (x0 > 247 && z0 > -150) continue; // (the modern buildings)
-    if (!clearOfRoads(x0, z0, x1, z1) || overlaps(x0, z0, x1, z1) || inOpen(x0, z0, x1, z1) || inTerrace(x0, z0, x1, z1)) continue;
+    if (!clearOfRoads(x0, z0, x1, z1) || overlaps(x0, z0, x1, z1) || inOpen(x0, z0, x1, z1) || inLookout(x0, z0, x1, z1)) continue;
     const r = Math.round;
     add(rect(r(x0 * 10) / 10, r(z0 * 10) / 10, r(x1 * 10) / 10, r(z1 * 10) / 10), { h: 5 });
   }
 }
 
-// Which way each hanok faces: towards its nearest street (f, a unit step on
-// the map), and how high it stands on its stone terrace up the hill (lv, m):
-// Bukchon climbs north from Anguk Station.
+// Which way each hanok faces: towards its nearest street (fr, a unit step on
+// the map), and how high it stands on its stone terrace up the hill (lv, m:
+// the ground at its uphill edge, so the terrace shows on the downhill side).
 for (const b of buildings) {
   if (!b.hanok || b.fr) continue;
   const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
@@ -134,7 +113,12 @@ for (const b of buildings) {
     if (d < best) { best = d; f = dir; }
   }
   b.fr = f;
-  if (b.h < 6) b.lv = Math.round(Math.max(0, Math.min(1, (-cz - 120) / 210)) * 12) / 10;
+}
+for (const b of buildings) {
+  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+  const lv = ground((Math.min(...xs) + Math.max(...xs)) / 2, Math.min(...zs));
+  if (lv > 0.05) b.lv = Math.round(lv * 100) / 100;
+
 }
 
 // The Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south
@@ -146,14 +130,13 @@ const blockers = [
   { p: rect(ox1 - 9, oz0 - 4, ox1, oz1 + 12) }, // east wing (sarangbang)
   { p: rect(ox0, oz0, BUKCHON.openHouse.gate[0] - 2.5, oz0 - 1) }, // south wall, left of the gate
   { p: rect(BUKCHON.openHouse.gate[0] + 2.5, oz0, ox1, oz0 - 1) }, // and right of it
-  { p: rect(158.5, -346.5, 161.5, -349.5) }, // the terrace's coin telescope
+  { p: rect(58.5, -179.5, 61.5, -182.5) }, // the lookout's coin telescope
 ];
 
-// Bukchon is a walled village you enter through a gate: from the street you
-// see its stone wall and gates, and the village appears once you are inside
-// (core/enclosure.js; data/bukchon.js "area"). Gates: the main one on
-// Bukchon-ro by Anguk Station, one on Gyedong-gil, and the west gate down the
-// stone stairs to Samcheong-ro.
+// A low granite retaining wall (chukdae) round the village holds up the hill
+// (data/bukchon.js "area"); the village itself is open to see from the street.
+// The gate is on Bukchon-ro by Anguk Station. Up the hill the wall steps up
+// with the ground.
 const [AX0, AZ0, AX1, AZ1] = BUKCHON.area; // x0, z0 (south), x1, z1 (north)
 const GATES = BUKCHON.gates;
 const wallMarks = [];
@@ -162,9 +145,14 @@ const wallRun = (fixed, from, to, alongX) => { // a straight run with gaps for t
   let a = Math.min(from, to);
   const end = Math.max(from, to);
   for (const [c0, c1] of [...cuts, [end, end]]) {
+    // (along the slope, in short steps that follow the ground)
+    for (let s0 = a; c0 - s0 > 0.5;) {
+      const s1 = alongX ? c0 : Math.min(c0, s0 + 8), mid = (s0 + s1) / 2, len = s1 - s0;
+      const y = alongX ? ground(mid, fixed + (fixed < -100 ? 1 : -1)) : ground(fixed + 1, Math.min(s0, s1) + 0.01);
+      wallMarks.push(alongX ? { x: mid, z: fixed, len, ry: 0, y } : { x: fixed, z: mid, len: len + 0.3, ry: Math.PI / 2, y });
+      s0 = s1;
+    }
     if (c0 - a > 0.5) {
-      const mid = (a + c0) / 2, len = c0 - a;
-      wallMarks.push(alongX ? { type: 'hanokwall', x: mid, z: fixed, len, ry: 0 } : { type: 'hanokwall', x: fixed, z: mid, len, ry: Math.PI / 2 });
       blockers.push({ p: alongX ? rect(a, fixed + 0.5, c0, fixed - 0.5) : rect(fixed - 0.5, a, fixed + 0.5, c0) });
     }
     a = c1;
@@ -192,20 +180,18 @@ const QUIET = {
 };
 
 const landmarks = [
-  ...wallMarks,
+  { type: 'hanokwalls', x: (AX0 + AX1) / 2, z: (AZ0 + AZ1) / 2, segs: wallMarks.map((w) => ({ ...w, x: w.x - (AX0 + AX1) / 2, z: w.z - (AZ0 + AZ1) / 2 })) }, // one mesh for the whole wall (segs relative to it)
+  ...BUKCHON.signs.map(({ at: [x, z], ry }) => ({ type: 'sign', x, z, ry, title: BUKCHON.welcome.title, text: { ...Object.fromEntries(Object.entries(BUKCHON.welcome.rules).map(([k, v]) => [k, v])) } })),
   ...GATES.map((g) => ({ type: 'bukchongate', x: g.at[0], z: g.at[1], ry: g.ry || 0, w: g.w, main: !!g.main })),
   { type: 'openhouse', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, w: ox1 - ox0, d: oz0 - oz1 },
-  { type: 'terrace', x: 160, z: -340 },
-  ...[[98, -210, -Math.PI / 2], [240, -210, Math.PI / 2], [98, -263, -Math.PI / 2]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, title: QUIET.title, text: QUIET.text })),
-  { type: 'stonestairs', x: -40, z: -188, len: 30, ry: 0 },
-  { type: 'farpalace', x: 350, z: -150 }, // Changdeokgung, seen from the viewpoint (not walkable yet)
+  { type: 'terrace', x: 60, z: -172, y: ground(60, -172) }, // the lookout at the top, the photo spot in its gap
+  ...[[55, -86, 0], [14.5, -86, 0], [106, -86, 0]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, y: ground(x, z), title: QUIET.title, text: QUIET.text })),
 ];
 
 const pois = [
-  { kind: 'landmark', x: 160, z: -268, name: N('북촌한옥마을', 'Bukchon Hanok Village', '北村韓屋村', '北村韩屋村') },
-  { kind: 'landmark', x: 165, z: -122, name: N('북촌 열린 한옥', 'Bukchon Open House', '北村 オープンハウス', '北村开放韩屋') },
-  { kind: 'landmark', x: 160, z: -338, name: N('기와지붕 전망대', 'Rooftop View', '瓦屋根の展望台', '瓦顶观景台') },
-  { kind: 'landmark', x: -40, z: -188, name: N('삼청동 돌계단길', 'Samcheong-dong Stone Stairs', '三清洞 石段の道', '三清洞石阶路') },
+  { kind: 'landmark', x: 60, z: -120, name: N('북촌한옥마을', 'Bukchon Hanok Village', '北村韓屋村', '北村韩屋村') },
+  { kind: 'landmark', x: 104, z: -64, name: N('북촌 열린 한옥', 'Bukchon Open House', '北村 オープンハウス', '北村开放韩屋') },
+  { kind: 'landmark', x: 60, z: -168, name: N('북촌로11길 언덕', 'Bukchon-ro 11-gil Hilltop', '北村路11ギルの丘', '北村路11街坡顶') },
 ];
 
 const map = {
@@ -213,8 +199,7 @@ const map = {
     district: 'bukchon',
     // For the overlap check: the lane down to Samcheong-ro reaches into
     // Gyeongbokgung on purpose (scripts/place-districts.mjs).
-    parts: [{ why: 'the village, Anguk Station to the rooftop view', box: [-10, -352, 310, 0] }],
-    enclosure: { why: 'inside the village wall: the hanok are drawn once you walk in through a gate (core/enclosure.js)', box: BUKCHON.area },
+    parts: [{ why: 'the hill village, Anguk Station to the hilltop', box: [-10, -186, 130, 0] }],
     source: 'hand-made (game map, not to scale; loosely after Bukchon, Jongno-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-bukchon.mjs',
   },
   roads, buildings, rail: [], areas, blockers, pois, landmarks,

@@ -63,7 +63,7 @@ export const STAMPS = [
   },
   {
     // at the Open House gate, up the lane from Bukchon-ro 5-gil
-    id: 'bukchon', place: { at: [-1389, -985] }, color: '#5a4a3a', shape: 'square',
+    id: 'bukchon', place: { at: [-1495, -935] }, color: '#5a4a3a', shape: 'square',
     name: { ko: '북촌한옥마을', en: 'Bukchon Hanok Village', ja: '北村韓屋村', zh: '北村韩屋村' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // a hanok roof over a gate

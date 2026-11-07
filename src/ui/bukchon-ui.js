@@ -1,21 +1,21 @@
 // Bukchon's panel (data/bukchon.js):
-//   card(item, extra):  a short card about a place (one of the 8 Views, a part
-//                       of the Open House, the magpie's persimmons)
-//   views(book):        the Bukchon 8 Views photo walk: which ones you have
+//   card(item, extra):  a short card about a place (the photo spot, a part of
+//                       the Open House, the magpie's persimmons, the welcome)
+//   views(book):        the photo spots: which ones you have
 //   craft(kind):        the workshops (Maeum Knot Studio, Saekji Paper
 //                       Studio): pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
 
 export const BK_TEXT = {
-  photo: { en: 'Take a photo · Bukchon View {n}', ko: '사진 찍기 · 북촌 {n}경', ja: '写真を撮る · 北村{n}景', zh: '拍照 · 北村第{n}景' },
-  views: { en: 'Bukchon 8 Views', ko: '북촌8경', ja: '北村八景', zh: '北村八景' },
-  viewsHow: { en: 'Eight photo spots in Bukchon chosen by the city of Seoul. Find the footprint marks on the ground and take a photo at each: 🪙 {a} for each new one, 🪙 {b} more for all eight.', ko: '서울시가 고른 북촌의 사진 명소 여덟 곳이에요. 바닥의 발자국 표시를 찾아 사진을 찍어 보세요. 새로 찍을 때마다 🪙 {a}, 여덟 곳을 다 찍으면 🪙 {b}를 더 받아요.', ja: 'ソウル市が選んだ北村の写真スポット8か所。地面の足あとマークで写真を撮ろう。新しく撮るたびに🪙 {a}、8か所すべてで🪙 {b}追加。', zh: '首尔市选出的北村八个拍照点。找到地上的脚印标记拍照：每个新景点 🪙 {a}，集齐八个再得 🪙 {b}。' },
-  got: { en: '📸 Bukchon View {n}: {name} (+🪙 {c})', ko: '📸 북촌 {n}경: {name} (+🪙 {c})', ja: '📸 北村{n}景：{name}（+🪙 {c}）', zh: '📸 北村第{n}景：{name}（+🪙 {c}）' },
-  again: { en: '📸 Another nice shot of View {n}.', ko: '📸 {n}경을 한 장 더 찍었어요.', ja: '📸 {n}景をもう一枚。', zh: '📸 又拍了一张第{n}景。' },
-  allDone: { en: '🎉 All 8 Bukchon Views!', ko: '🎉 북촌8경 완성!', ja: '🎉 北村八景コンプリート！', zh: '🎉 集齐北村八景！' },
-  ledger: { en: 'Bukchon 8 Views photo', ko: '북촌8경 사진', ja: '北村八景の写真', zh: '北村八景照片' },
-  count: { en: '{n} / 8 taken', ko: '{n} / 8 찍음', ja: '{n} / 8 撮影', zh: '已拍 {n} / 8' },
+  photo: { en: 'Take a photo · {name}', ko: '사진 찍기 · {name}', ja: '写真を撮る · {name}', zh: '拍照 · {name}' },
+  views: { en: 'Bukchon photo spot', ko: '북촌 포토스팟', ja: '北村のフォトスポット', zh: '北村拍照点' },
+  viewsHow: { en: 'Climb the alley to the top of the hill and stand on the footprint mark: the famous view down Bukchon-ro 11-gil. 🪙 {a} for your first photo there.', ko: '골목을 따라 언덕 꼭대기까지 올라가 발자국 표시에 서 보세요. 북촌로11길을 내려다보는 그 유명한 장면이에요. 처음 찍으면 🪙 {a}를 받아요.', ja: '路地を丘のてっぺんまで登り、足あとマークに立とう。北村路11ギルを見下ろすあの有名な景色。初めて撮ると🪙 {a}。', zh: '沿着小巷爬到坡顶，站在脚印标记上：就是俯瞰北村路11街的那个有名景色。第一次拍照得 🪙 {a}。' },
+  got: { en: '📸 {name} (+🪙 {c})', ko: '📸 {name} (+🪙 {c})', ja: '📸 {name}（+🪙 {c}）', zh: '📸 {name}（+🪙 {c}）' },
+  again: { en: '📸 Another nice shot.', ko: '📸 한 장 더 찍었어요.', ja: '📸 もう一枚。', zh: '📸 又拍了一张。' },
+  allDone: { en: '🎉 Every Bukchon photo spot!', ko: '🎉 북촌 포토스팟을 다 찍었어요!', ja: '🎉 北村のフォトスポット制覇！', zh: '🎉 北村拍照点全部拍完！' },
+  ledger: { en: 'Bukchon photo spot', ko: '북촌 포토스팟 사진', ja: '北村フォトスポットの写真', zh: '北村拍照点照片' },
+  count: { en: '{n} / {all} taken', ko: '{n} / {all} 찍음', ja: '{n} / {all} 撮影', zh: '已拍 {n} / {all}' },
   explorer: { en: '🏯 Hanok Explorer: you know all five parts of a hanok! (+🪙 {c})', ko: '🏯 한옥 탐험가: 한옥의 다섯 부분을 다 알게 됐어요! (+🪙 {c})', ja: '🏯 韓屋探検家：韓屋の5つの部分をすべて知りました！（+🪙 {c}）', zh: '🏯 韩屋探险家：认识了韩屋的全部五个部分！（+🪙 {c}）' },
   explorerLedger: { en: 'Hanok Explorer', ko: '한옥 탐험가', ja: '韓屋探検家', zh: '韩屋探险家' },
   quiet: { en: '🤫 Quiet Zone: people live in these hanok. Walking only.', ko: '🤫 조용한 골목: 주민이 사는 한옥이에요. 걸어서만 다닐 수 있어요.', ja: '🤫 静かな路地：人が暮らす韓屋です。歩いてのみ通れます。', zh: '🤫 安静小巷：这里住着居民，只能步行。' },
@@ -98,7 +98,7 @@ export class BukchonUI {
   views(book, just = 0) {
     this.view = 'views';
     const parts = this._head('📸', L(BK_TEXT.views));
-    parts.push(el('p', 'fine', fmt(L(BK_TEXT.viewsHow), { a: VIEW_REWARD, b: ALL_VIEWS_REWARD })));
+    parts.push(el('p', 'fine', fmt(L(BK_TEXT.viewsHow), { a: VIEW_REWARD + ALL_VIEWS_REWARD })));
     const list = el('div', 'wish-list');
     for (const v of BUKCHON.views) {
       const b = el('div', 'wish-item' + (book.has(v.n) ? ' on' : ''), `${book.has(v.n) ? '✅' : '⬜'} ${v.n}. ${L(v.name)}`);
@@ -106,7 +106,7 @@ export class BukchonUI {
       list.append(b);
     }
     parts.push(list);
-    parts.push(el('b', 'lock-sub', book.done ? L(BK_TEXT.allDone) : fmt(L(BK_TEXT.count), { n: book.count })));
+    parts.push(el('b', 'lock-sub', book.done ? L(BK_TEXT.allDone) : fmt(L(BK_TEXT.count), { n: book.count, all: BUKCHON.views.length })));
     parts.push(this._ok());
     this.root.replaceChildren(...parts);
     this.root.hidden = false;
