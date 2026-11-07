@@ -42,6 +42,7 @@ export class BagUI {
 
   show(tab = 'bag') { this.sel = -1; this.tab = tab; this.root.hidden = false; this.render(); }
   hide() { this.root.hidden = true; }
+  get open() { return !this.root.hidden; }
 
   render() {
     const { bag, root } = this;
