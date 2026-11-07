@@ -62,7 +62,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart, howToGet, coinsFor, RENT } from './ui/shop-ui.js';
+import { ShopUI, Cart, howToGet, coinsFor, RENT, goodsKind, itemSoon } from './ui/shop-ui.js';
 import { hanbokById, isHanbokModel, RENT_HOURS } from './data/hanbok.js';
 import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, isRenting, formatLeft } from './core/hanbok-rental.js';
 import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
@@ -1748,7 +1748,7 @@ const shop = new ShopUI({
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
-    if (!onSale(product)) return false; // a limited edition outside its dates
+    if (!onSale(product) || itemSoon(shop.store, product)) return false; // a limited edition outside its dates, or not sold yet
     if (product.ingredient) return buyIngredient(product, coins);
     if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
@@ -1790,7 +1790,6 @@ function sellerOf(product) {
 }
 // What a bought thing becomes in your hand.
 const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
-const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
 const GOODS_TEXT = {
   got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', id: 'Kamu membeli {name}!' },
   gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', vi: 'Túi mua sắm · {name}', hi: 'शॉपिंग बैग · {name}', id: 'Tas belanja · {name}' },
@@ -1810,7 +1809,7 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
-    if (!handReady()) return false;
+    if (itemSoon(store, product) || !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
@@ -2357,7 +2356,7 @@ $('rent-chip').onclick = () => shop.toast(`${fmt(L(RENT.left), { t: formatLeft(t
 // What a product becomes as a gift here, or null when it can't be one:
 // { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
 function giftFor(store, product) {
-  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product)) return null;
+  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product) || itemSoon(store, product)) return null;
   const name = product.name;
   const itemId = product.item || product.outfit;
   const it = itemId && ITEMS[itemId];
