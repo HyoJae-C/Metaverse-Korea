@@ -9,6 +9,8 @@ export const AR = {
   'car.alley': 'لا تدخل السيارات الأزقة. انزل وامشِ!',
   'credit.privacy': 'الخصوصية',
   'credit.terms': 'الشروط',
+  'support.title': 'ادعم المطوّر',
+  'support.sub': 'يصنعها شخص واحد. فنجان قهوة منك يساعد على استمرار تطويرها.',
   'credit.about': 'حول',
   'cloud.guest': 'محفوظ على الخادم (حساب ضيف)',
   'cloud.account': 'محفوظ في حسابك',

@@ -890,6 +890,11 @@ $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
 $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+// "Support the creator" (Buy Me a Coffee link). Hidden until a URL is set in config.
+if (/^https:\/\//.test(config.supportUrl)) {
+  $('support-link').href = config.supportUrl;
+  $('support-link').hidden = false;
+}
 $('settings-panel').onclick = (e) => {
   if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
 };
