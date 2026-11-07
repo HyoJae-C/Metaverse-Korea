@@ -47,11 +47,12 @@ export const config = {
   // Google has no ad to show, the demo countdown runs instead.
   // client: the AdSense publisher ID, e.g. 'ca-pub-1234567890123456'
   //   (VITE_ADSENSE_CLIENT overrides it at build time). Also put
-  //   "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0" in public/ads.txt.
+  //   "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0" in public/ads.txt
+  //   (public/ads.txt must match the ID used here).
   // test: true shows Google's test ads (no real money); set false after approval.
   rewardedAd: {
     provider: 'h5',
-    client: import.meta.env.VITE_ADSENSE_CLIENT || '',
+    client: import.meta.env.VITE_ADSENSE_CLIENT || 'ca-pub-4337373973481597',
     test: true,
     reward: 20, dailyLimit: 5, seconds: 5,
   },
