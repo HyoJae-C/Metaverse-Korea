@@ -632,7 +632,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 5,
-    "price": 250
+    "price": 500
   },
   {
     "id": "giant-squid",
