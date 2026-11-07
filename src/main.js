@@ -98,6 +98,7 @@ import { TarotUI } from './ui/tarot-ui.js';
 import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
 import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
+import { Skater, parkGround, railNear, inPark, PARK_SPEED, GRIND_NAME, bankPoints, trickPose, TRICK_BY_ID } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
@@ -858,7 +859,11 @@ const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
 const isCar = (k) => k === 4 || k === 6; // sports car, limousine
-const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
+let inSkate = false; // in the Hongdae Skate Park (rides slow down there; see skateTick)
+const skater = new Skater();
+let skateY = 0; // ground (or air) height in the skate park
+let skateTk = null; // { code, at }: the last trick, sent to others for a moment
+const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
 // Steady walk (a setting, PC and phone): a pace between walking and running
 // that never turns into a run, however long you keep moving. No stamina used;
@@ -2769,7 +2774,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill or the busking bank
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z); }, // down by a stream, in the skate park, up a park hill or the busking bank
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
@@ -4314,6 +4319,119 @@ function tarotAction(p, seat) {
 }
 const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
 // Busking: step onto a busking stage and perform; the crowd tips now and then.
+// Hongdae Skate Park (core/skatepark.js, scenery in core/skatepark-model.js):
+// ride in on a board, inline skates, a bike or a kick scooter (bike button,
+// or a ride from the bag) and tap Trick to pop; ramps throw you into the air,
+// a rail under you is a grind. Tricks in a row make a combo; landing banks
+// it, and every few points banked pays a few coins (a few times a day).
+const SKATE_TEXT = {
+  trick: { en: 'Trick!', ko: '묘기!', ja: 'トリック！', zh: '技巧！', es: '¡Truco!', ar: 'حركة!', vi: 'Mẹo!', hi: 'ट्रिक!', id: 'Trik!' },
+  ride: { en: 'Ride to do tricks', ko: '타고 묘기 부리기', ja: '乗ってトリック', zh: '骑上去秀技巧', es: 'Monta para hacer trucos', ar: 'اركب لتؤدي الحركات', vi: 'Lên xe để biểu diễn', hi: 'सवार होकर करतब करें', id: 'Naik untuk trik' },
+  welcome: { en: '🛹 Hongdae Skate Park! Hop on a ride (bike button or your bag), then tap Trick to jump.', ko: '🛹 홍대 스케이트파크! 탈것에 올라타고(자전거 버튼이나 가방) 묘기 버튼으로 점프해요.', ja: '🛹 弘大スケートパーク！乗り物に乗って（自転車ボタンかバッグ）、トリックでジャンプ。', zh: '🛹 弘大滑板公园！骑上车（自行车按钮或背包），按“技巧”起跳。', es: '🛹 ¡Skatepark de Hongdae! Súbete a algo (botón de bici o tu bolsa) y pulsa Truco para saltar.', ar: '🛹 حديقة التزلج في هونغده! اركب (زر الدراجة أو حقيبتك) ثم اضغط «حركة» للقفز.', vi: '🛹 Công viên trượt Hongdae! Lên xe (nút xe đạp hoặc túi) rồi bấm Mẹo để nhảy.', hi: '🛹 होंगदे स्केट पार्क! सवारी पर चढ़ें (साइकिल बटन या बैग), फिर ट्रिक दबाकर कूदें।', id: '🛹 Skatepark Hongdae! Naik kendaraan (tombol sepeda atau tas), lalu tekan Trik untuk melompat.' },
+  howto: { en: '🤸 Tap Trick to pop. Ride up the ramps for big air, and land on a rail to grind!', ko: '🤸 묘기 버튼으로 점프! 램프를 타고 높이 날고, 레일 위에 내려앉으면 그라인드!', ja: '🤸 トリックでジャンプ！ランプで高く飛び、レールに乗ればグラインド！', zh: '🤸 按“技巧”起跳！冲上坡道飞得更高，落在栏杆上就能滑杆！', es: '🤸 Pulsa Truco para saltar. ¡Sube las rampas para volar y cae en un riel para grindear!', ar: '🤸 اضغط «حركة» للقفز. اصعد المنحدرات لتطير عاليًا، وانزل على القضيب للانزلاق!', vi: '🤸 Bấm Mẹo để nhảy. Lên dốc để bay cao, đáp lên thanh để trượt!', hi: '🤸 कूदने के लिए ट्रिक दबाएँ। ऊँची उड़ान के लिए रैंप पर चढ़ें, ग्राइंड के लिए रेल पर उतरें!', id: '🤸 Tekan Trik untuk melompat. Naik ramp untuk terbang tinggi, mendarat di rel untuk grind!' },
+  bail: { en: 'Bail! 💥', ko: '넘어졌어요! 💥', ja: '転倒！💥', zh: '摔倒了！💥', es: '¡Caída! 💥', ar: 'سقوط! 💥', vi: 'Ngã rồi! 💥', hi: 'गिर गए! 💥', id: 'Jatuh! 💥' },
+  combo: { en: 'Combo', ko: '콤보', ja: 'コンボ', zh: '连招', es: 'Combo', ar: 'كومبو', vi: 'Combo', hi: 'कॉम्बो', id: 'Kombo' },
+  score: { en: 'Today {n}', ko: '오늘 {n}점', ja: '今日 {n}点', zh: '今天 {n}分', es: 'Hoy {n}', ar: 'اليوم {n}', vi: 'Hôm nay {n}', hi: 'आज {n}', id: 'Hari ini {n}' },
+  best: { en: 'Best combo {n}', ko: '최고 콤보 {n}', ja: 'ベストコンボ {n}', zh: '最佳连招 {n}', es: 'Mejor combo {n}', ar: 'أفضل كومبو {n}', vi: 'Combo tốt nhất {n}', hi: 'सर्वश्रेष्ठ कॉम्बो {n}', id: 'Kombo terbaik {n}' },
+  coins: { en: '🪙 +{n} The crowd loved your tricks!', ko: '🪙 +{n} 구경꾼들이 묘기에 환호해요!', ja: '🪙 +{n} 見物人がトリックに大喝采！', zh: '🪙 +{n} 围观的人为你的技巧欢呼！', es: '🪙 +{n} ¡Al público le encantaron tus trucos!', ar: '🪙 +{n} أحب الجمهور حركاتك!', vi: '🪙 +{n} Mọi người reo hò vì màn biểu diễn!', hi: '🪙 +{n} भीड़ को आपके करतब पसंद आए!', id: '🪙 +{n} Penonton suka trikmu!' },
+  note: { en: 'Skate park tricks', ko: '스케이트파크 묘기', ja: 'スケートパークのトリック', zh: '滑板公园技巧', es: 'Trucos en el skatepark', ar: 'حركات حديقة التزلج', vi: 'Biểu diễn ở công viên trượt', hi: 'स्केट पार्क करतब', id: 'Trik skatepark' },
+};
+const SKATE_KEY = 'mk.skate'; // { day, pts, paid, best }
+const readSkate = () => { try { return JSON.parse(localStorage.getItem(SKATE_KEY) || 'null'); } catch { return null; } };
+const skateLm = map.landmarks.find((l) => l.type === 'skatepark') || null;
+let skateWelcomed = 0;
+let skateTkSeq = 0;
+let skatePopTimer = 0;
+function skatePop(text, kind = '') {
+  const el = $('skate-pop');
+  el.textContent = text;
+  el.className = 'skate-pop show ' + kind;
+  clearTimeout(skatePopTimer);
+  skatePopTimer = setTimeout(() => { el.className = 'skate-pop'; }, 1100);
+}
+function skateHud() {
+  const hud = $('skate-hud');
+  hud.hidden = !inSkate;
+  if (!inSkate) return;
+  const s = readSkate();
+  const today = s?.day === dayKey() ? s.pts : 0;
+  $('skate-score').textContent = '🛹 ' + fmt(L(SKATE_TEXT.score), { n: today.toLocaleString() });
+  const combo = skater.comboPts;
+  $('skate-combo').textContent = combo ? `${L(SKATE_TEXT.combo)}${skater.mult > 1 ? ' ×' + skater.mult : ''} · ${Math.round(combo).toLocaleString()}`
+    : s?.best ? fmt(L(SKATE_TEXT.best), { n: s.best.toLocaleString() }) : '';
+}
+function skateEvent(e) {
+  if (e.kind === 'trick') {
+    skatePop(`${localName(e.trick.name, getLanguage())}${e.mult > 1 ? ' ×' + e.mult : ''}`, e.trick.pts >= 250 ? 'big' : '');
+    sfx.skatePop();
+    skateTk = { code: `${e.trick.id}.${++skateTkSeq % 100}`, at: performance.now() };
+    sendTimer = 0;
+  } else if (e.kind === 'grind') {
+    if (e.start) { skatePop(localName(GRIND_NAME[skater.type] || GRIND_NAME.skate, getLanguage()), 'grind'); sfx.grind(); buzz(15); }
+    else sfx.grind();
+  } else if (e.kind === 'land') {
+    skatePop(`${e.mult > 1 ? L(SKATE_TEXT.combo) + ' ×' + e.mult + '  ' : ''}+${Math.round(e.total).toLocaleString()}`, 'land');
+    const { saved, coins } = bankPoints(readSkate(), dayKey(), e.total);
+    try { localStorage.setItem(SKATE_KEY, JSON.stringify(saved)); } catch { /* storage blocked */ }
+    if (coins > 0) {
+      wallet.add(coins, { name: SKATE_TEXT.note });
+      refreshWallet();
+      shop.toast(fmt(L(SKATE_TEXT.coins), { n: coins }));
+    }
+  } else if (e.kind === 'bail') {
+    skatePop(L(SKATE_TEXT.bail), 'bail');
+    sfx.skateLand(false);
+    buzz(60);
+  }
+}
+// Every frame on the street, before the ground height is used.
+function skateTick(dt, p) {
+  const was = inSkate;
+  const lx = skateLm ? p.x - skateLm.x : 1e9, lz = skateLm ? p.z - skateLm.z : 1e9;
+  inSkate = mode === 'street' && !!skateLm && inPark(lx, lz);
+  if (inSkate !== was) {
+    action = STALE;
+    if (inSkate && performance.now() - skateWelcomed > 90e3) {
+      skateWelcomed = performance.now();
+      shop.toast(L(riding === 1 ? SKATE_TEXT.howto : SKATE_TEXT.welcome));
+    }
+  }
+  if (!inSkate) {
+    if (was) { for (const e of skater.finish()) skateEvent(e); me.setTrick(null, 0); skateHud(); }
+    skateY = 0;
+    return;
+  }
+  if (riding !== 1) { // on foot (or in a car): just the ramps under you
+    if (skater.air || skater.grind || skater.combo.length) { for (const e of skater.finish()) skateEvent(e); me.setTrick(null, 0); }
+    skateY = parkGround(lx, lz).y;
+    skateHud();
+    return;
+  }
+  skater.type = garage.current.type;
+  let x = lx, z = lz;
+  if (skater.grind) {
+    // On a rail: stay on it while heading along it; stop and you drop off.
+    const r = skater.grind.rail;
+    const dx = r.b[0] - r.a[0], dz = r.b[1] - r.a[1], len = Math.hypot(dx, dz), ux = dx / len, uz = dz / len;
+    const dot = Math.sin(me.root.rotation.y) * ux + Math.cos(me.root.rotation.y) * uz;
+    if (speed01 < 0.15) skater.leaveRail();
+    else if (Math.abs(dot) > 0.45) {
+      const t = (x - r.a[0]) * ux + (z - r.a[1]) * uz;
+      x = r.a[0] + ux * t; z = r.a[1] + uz * t;
+      p.x = skateLm.x + x; p.z = skateLm.z + z;
+      me.root.rotation.y = Math.atan2(ux * Math.sign(dot), uz * Math.sign(dot));
+    }
+  }
+  const g = parkGround(x, z);
+  const { y, events } = skater.step(dt, g, railNear(x, z, skater.grind ? 0.9 : 0.6));
+  const landedNow = !skater.air && !skater.grind && skateY - g.y > 0.25;
+  skateY = y;
+  if (landedNow && !events.some((e) => e.kind === 'bail')) sfx.skateLand(true);
+  me.setTrick(skater.pose(), y - g.y);
+  for (const e of events) skateEvent(e);
+  skateHud();
+}
+
 const BUSK_TEXT = {
   start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
   stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
@@ -5575,7 +5693,8 @@ function updateAction(p, tSec) {
       const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
       const seat = freeSeat();
       next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
-    } else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    } else if (riding === 1 && inSkate) next = { key: 'trick', label: '🤸 ' + L(SKATE_TEXT.trick), run: () => skater.tap() }; // (the bike button gets off)
+    else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
@@ -5589,6 +5708,7 @@ function updateAction(p, tSec) {
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
     else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
     else if (guideAct(p)) next = guideAct(p);
+    else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
     else if (busking.performing) {
       next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
     } else if (!riding && busking.stageAt(p.x, p.z)) {
@@ -6058,6 +6178,7 @@ renderer.setAnimationLoop(() => {
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
+  skateTick(dt, p);
   if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   updateMeal();
@@ -6111,6 +6232,7 @@ renderer.setAnimationLoop(() => {
     if (Math.abs(p.y) > 0.05) st.y = Math.round(p.y * 100) / 100; // on subway stairs
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
+    if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
@@ -6121,7 +6243,7 @@ renderer.setAnimationLoop(() => {
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.tk !== lastSent.tk;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -6286,6 +6408,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
+    peerTricks: () => [...others.players.values()].map((o) => [o.tk || '', +o.ch.root.position.y.toFixed(2)]),
+    rideOn: (id) => { if (id) { garage.s.own.includes(id) || garage.s.own.push(id); garage.use(id); } setRiding(0); setRiding(1); },
+    face: (ry) => { me.root.rotation.y = ry; cam.yaw = ry + Math.PI; },
     duckBoard: (i) => boardDuck(i),
     duckGo: () => startDuckRide(),
     duck: () => duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) },

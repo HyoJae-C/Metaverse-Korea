@@ -7,6 +7,7 @@ import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
 const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read']);
 import { seatPosition } from './bikes.js';
+import { trickPose, TRICK_BY_ID } from './skatepark.js';
 import { createCharacter } from './character.js';
 import { Companion } from './companion.js';
 import { ITEMS, isPet } from './inventory.js';
@@ -214,6 +215,15 @@ export class RemotePlayers {
         if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar || bv !== (p.bv || '')) {
           p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;
           p.ch.setBike(p.bk, p.bk === 1 ? parseRide(bv) || undefined : undefined, inCar); // their ride and skin
+        }
+        // A skate park trick ("id.n"): play it here too.
+        const tk = p.target.bk === 1 && typeof p.target.tk === 'string' ? p.target.tk.slice(0, 24) : '';
+        if (tk !== (p.tk || '')) { p.tk = tk; const id = tk.split('.')[0]; p.trick = TRICK_BY_ID[id] ? { id, t: 0 } : null; }
+        if (p.trick) {
+          p.trick.t += dt;
+          const pose = trickPose(p.trick.id, p.trick.t);
+          p.ch.setTrick(pose, 0);
+          if (!pose) p.trick = null;
         }
         if ((p.target.hd || null) !== (p.hd || null)) { p.hd = HELD_KINDS.includes(heldBase(p.target.hd)) ? p.target.hd : null; p.ch.setHeld(p.hd); }
         p.ch.setUmbrella(p.target.um === 1);

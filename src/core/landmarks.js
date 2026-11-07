@@ -9,6 +9,7 @@ import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
+import { buildSkatepark } from './skatepark-model.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -80,6 +81,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 
 const BUILD = {
   anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
+  skatepark: (g) => buildSkatepark(g), // Hongdae Skate Park (layout: skatepark.js)
   gwanghwamun(g) {
     // Stone base with three open arches you can walk through: a wide one in
     // the middle and a smaller one either side.
