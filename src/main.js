@@ -1218,6 +1218,10 @@ async function joinRoom(room, roomScene, area = null) {
     const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
       room, self: { id: myId, name: nickname, look: currentLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
+      // Debug test rooms play without an account (no cloud save), and the
+      // private chat channel only carries chat from accounts: chat there on
+      // the room channels instead.
+      privateChat: !testRoom,
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
@@ -6528,6 +6532,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
     mapView: () => mapView,
+    chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
