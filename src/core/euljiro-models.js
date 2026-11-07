@@ -2,7 +2,7 @@
 // Dongdaemun Design Plaza (one long, curved silver building with a grass
 // roof walk), the stretch of the Seoul City Wall in Dongdaemun History &
 // Culture Park with its two-arch water gate, and Namsangol's hanok gate.
-// Low-poly and stylised. Visual only: collision comes from the map's
+// And Sungnyemun (Namdaemun) on its stone base. Low-poly and stylised. Visual only: collision comes from the map's
 // blockers.
 import * as THREE from 'three';
 import { hipRoofGeometry } from './landmarks.js';
@@ -69,7 +69,8 @@ export const EULJIRO_BUILD = {
     const n = Math.floor(len / 2.4);
     for (let i = 0; i < n; i++) if (i % 2 === 0) box(g, 1.2, 1, 2.2, 0, H + 0.5, -len / 2 + 1.2 + i * 2.4, '#bfb298'); // parapet
     // The water gate: two dark arches through the wall (seen from both sides).
-    for (const z of [len / 2 - 14, len / 2 - 8]) {
+    // l.gates: 0 for a plain stretch (beside Sungnyemun).
+    if (l.gates !== 0) for (const z of [len / 2 - 14, len / 2 - 8]) {
       for (const sx of [-1, 1]) {
         const arch = new THREE.Mesh(new THREE.CircleGeometry(1.8, 12, 0, Math.PI), mat('#3b3a36'));
         arch.position.set(sx * 2.04, 1.6, z);
@@ -77,6 +78,57 @@ export const EULJIRO_BUILD = {
         g.add(arch);
         box(g, 0.04, 1.6, 3.6, sx * 2.04, 0.8, z, '#3b3a36');
       }
+    }
+  },
+  // Sungnyemun (숭례문): a granite base with one round-topped arch through it
+  // (north-south), a low parapet, and a two-storey gate pavilion with red
+  // posts, green-and-red painted brackets and two hipped tile roofs; the
+  // name board hangs upright under the upper eaves.
+  sungnyemun(g) {
+    const stone = '#cfc4ae', W = 28, D = 12, B = 8.5, A = 2.5; // base width, depth, height; arch half-width
+    for (const sx of [-1, 1]) box(g, W / 2 - A, B, D, sx * (A + (W / 2 - A) / 2), B / 2, 0, stone);
+    // Above the arch: a block with the round top cut out.
+    const s = new THREE.Shape();
+    s.moveTo(-A, 4.2); s.lineTo(-A, B); s.lineTo(A, B); s.lineTo(A, 4.2);
+    s.absarc(0, 4.2, A, 0, Math.PI, false);
+    const top = new THREE.ExtrudeGeometry(s, { depth: D, bevelEnabled: false, curveSegments: 10 });
+    top.translate(0, 0, -D / 2);
+    g.add(new THREE.Mesh(top, mat(stone)));
+    for (let y = 1.4; y < B; y += 1.4) box(g, W + 0.06, 0.06, D + 0.06, 0, y, 0, '#b3a78f'); // courses
+    // The parapet round the top, a gap at each end for the stairs.
+    for (const sz of [-1, 1]) box(g, W - 4, 1, 0.6, 0, B + 0.5, sz * (D / 2 - 0.3), '#bfb298');
+    // Lower storey.
+    const red = '#a23a2c', green = '#2f8f6b', wall = '#f1e7d2';
+    box(g, 20, 0.5, 9, 0, B + 0.25, 0, '#b9ae98');
+    for (let i = 0; i < 6; i++) for (const sz of [-1, 1]) box(g, 0.6, 4.2, 0.6, -9 + i * 3.6, B + 2.6, sz * 3.8, red);
+    box(g, 18.6, 3.4, 7, 0, B + 2.4, 0, wall);
+    box(g, 21, 0.8, 9.4, 0, B + 4.9, 0, green); // painted brackets
+    const roof = (w, d, h, y) => {
+      const r = new THREE.Mesh(hipRoofGeometry(w, d, h), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
+      r.position.y = y;
+      g.add(r);
+      box(g, Math.max(1, w - d * 0.9) + 0.6, h * 0.15, h * 0.15, 0, y + h * 1.04, 0, '#2b3038'); // ridge
+    };
+    roof(27, 14, 2.6, B + 5.3);
+    // Upper storey.
+    box(g, 16, 3.6, 6, 0, B + 9.2, 0, wall);
+    for (let i = 0; i < 5; i++) for (const sz of [-1, 1]) box(g, 0.5, 3.6, 0.5, -7.2 + i * 3.6, B + 9.2, sz * 3, red);
+    box(g, 17.4, 0.7, 7.4, 0, B + 11.3, 0, green);
+    roof(23, 11.5, 3.6, B + 11.6);
+    // The name board, upright (as on the real gate), facing south.
+    const c = typeof document !== 'undefined' && document.createElement('canvas');
+    const x = c && c.getContext && c.getContext('2d');
+    if (x) {
+      c.width = 96; c.height = 256;
+      x.fillStyle = '#2b2a33'; x.fillRect(0, 0, 96, 256);
+      x.strokeStyle = '#d4a73a'; x.lineWidth = 8; x.strokeRect(4, 4, 88, 248);
+      x.fillStyle = '#f3eee4'; x.font = 'bold 64px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      ['崇', '禮', '門'].forEach((ch, i) => x.fillText(ch, 48, 50 + i * 78));
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const board = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 3.4), new THREE.MeshBasicMaterial({ map: tex }));
+      board.position.set(0, B + 8.4, 4.75);
+      g.add(board);
     }
   },
   // Namsangol's gate: two posts, a beam and a small tiled roof over a gap
