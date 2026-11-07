@@ -19,7 +19,7 @@
 //     "bridges": true,         // glowing lanterns under every bridge
 //     "tunnel": { "from": 332, "to": 388, "side": 1 },  // a light tunnel over a walkway
 //     "mural": { "from": 242, "to": 336, "side": -1 },  // the royal procession tiles on a wall
-//     "wish": { "from": 410 }  // where wish lanterns are floated; they gather at the east end
+//     "wish": { "from": 410, "to": 480 }  // where wish lanterns are floated; they gather at `to` (default: the east end)
 //   }
 //
 // Wish lanterns: anyone down by the water can float one (a colour and a wish
@@ -54,8 +54,10 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const halfWater = (s) => (s.water || 8) / 2;
 
 // ---------- wish lanterns (pure) ----------
-// The wish corner: from `lanterns.wish.from` to the east end of the stream.
-export const wishFrom = (s) => s.lanterns?.wish?.from ?? Math.max(4, s.len - 100);
+// The wish corner: from `lanterns.wish.from` to `lanterns.wish.to` (the east
+// end of the stream unless the stream runs on past the festival).
+export const wishTo = (s) => Math.min(s.len, s.lanterns?.wish?.to ?? s.len);
+export const wishFrom = (s) => s.lanterns?.wish?.from ?? Math.max(4, wishTo(s) - 100);
 const hash = (str) => {
   let h = 2166136261;
   for (const ch of String(str)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
@@ -70,7 +72,7 @@ export function lanternAt(s, L, t) {
   const age = t - L.t0;
   if (age < 0 || age > WISH.life) return null;
   const ww = halfWater(s), k = hash(L.id);
-  const stop = s.len - 2.5 - k * 16; // where it comes to rest
+  const stop = wishTo(s) - 2.5 - k * 16; // where it comes to rest
   const travel = Math.max(0, stop - L.u0) / WISH.speed;
   const moving = age < travel;
   const u = moving ? L.u0 + age * WISH.speed : Math.max(L.u0, stop);
@@ -102,7 +104,7 @@ export function decodeLantern(str, s, now) {
   const L = { id: String(id), c: +c, w: +w, u0: +u0, v: +v, t0: +t0 };
   if (!/^[a-z0-9]{1,16}$/i.test(L.id)) return null;
   if (!Number.isInteger(L.c) || L.c < 0 || L.c >= WISH_COLORS.length || !Number.isInteger(L.w) || L.w < 0 || L.w >= WISHES.length) return null;
-  if (!(L.u0 >= wishFrom(s) - 2 && L.u0 <= s.len) || !(Math.abs(L.v) <= halfWater(s)) || !Number.isFinite(L.t0)) return null;
+  if (!(L.u0 >= wishFrom(s) - 2 && L.u0 <= wishTo(s)) || !(Math.abs(L.v) <= halfWater(s)) || !Number.isFinite(L.t0)) return null;
   if (L.t0 > now + 60 || !lanternAt(s, L, Math.max(now, L.t0))) return null; // from the future, or long gone
   return L;
 }
@@ -111,7 +113,7 @@ export function decodeLantern(str, s, now) {
 // On the walkway right next to the water, in the wish corner.
 export function canFloat(s, u, v) {
   const ww = halfWater(s);
-  return u >= wishFrom(s) && u < s.len - 4 && Math.abs(v) > ww && Math.abs(v) < ww + 2;
+  return u >= wishFrom(s) && u < wishTo(s) - 4 && Math.abs(v) > ww && Math.abs(v) < ww + 2;
 }
 
 // ---------- 3D ----------

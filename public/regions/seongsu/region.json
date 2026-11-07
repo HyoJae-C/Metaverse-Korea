@@ -32,9 +32,9 @@
       "map": "districts/gyeongbokgung.json",
       "offset": [
         -1741,
-        -871
+        -911
       ],
-      "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0] }
+      "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0], "nudge": [0, -40], "why": "The palace is built larger than 1/4, so the gate sits a little north of its spot to let Gwanghwamun Square and Cheonggye Plaza (local z 225) reach theirs." }
     },
     {
       "id": "itaewon",
@@ -77,34 +77,9 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [
-        [
-          -335,
-          -86
-        ],
-        [
-          -700,
-          -99
-        ],
-        [
-          -1104,
-          -451
-        ],
-        [
-          -1304,
-          -851
-        ],
-        [
-          -1481,
-          -851
-        ]
-      ],
-      "n": {
-        "ko": "사직로",
-        "en": "Sajik-ro",
-        "ja": "社稷路",
-        "zh": "社稷路"
-      }
+      "p": [[-335, -86], [-735, -99], [-735, -663.5], [-741, -663.5]],
+      "n": { "ko": "왕십리로", "en": "Wangsimni-ro", "ja": "往十里路", "zh": "往十里路" },
+      "note": "From Seongsu north-west to the east end of Cheonggyecheon (Hwanghakgyo)."
     },
     {
       "k": "primary",
@@ -164,7 +139,7 @@
       "p": [
         [
           -2001,
-          -851
+          -891
         ],
         [
           -2300,
@@ -252,7 +227,7 @@
     {
       "at": [
         -1512,
-        -490
+        -714
       ],
       "w": 22,
       "h": 30,
@@ -261,7 +236,7 @@
     {
       "at": [
         -1449,
-        -434
+        -658
       ],
       "w": 30,
       "h": 16,
@@ -270,7 +245,7 @@
     {
       "at": [
         -1383,
-        -490
+        -714
       ],
       "w": 18,
       "h": 30,
@@ -279,7 +254,7 @@
     {
       "at": [
         -1248,
-        -490
+        -714
       ],
       "w": 20,
       "h": 28,
@@ -288,7 +263,7 @@
     {
       "at": [
         -1165,
-        -434
+        -658
       ],
       "w": 28,
       "h": 18,
@@ -406,7 +381,7 @@
             "n": 1,
             "at": [
               -1861,
-              -862
+              -902
             ],
             "ry": -1.5708
           },
@@ -414,7 +389,7 @@
             "n": 2,
             "at": [
               -1841,
-              -840
+              -880
             ],
             "ry": 1.5708
           }

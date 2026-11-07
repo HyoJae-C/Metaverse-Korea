@@ -13,13 +13,13 @@
       "name": { "en": "Pop-up Square", "ko": "팝업 광장", "ja": "ポップアップ広場", "zh": "快闪广场" } },
     { "id": "F", "color": "#a6d97a", "at": [60, -72], "radius": 60,
       "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
-    { "id": "G", "color": "#d4a73a", "at": [-1741, -721], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} },
+    { "id": "G", "color": "#d4a73a", "at": [-1741, -831], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} },
     { "id": "H", "color": "#e86fa8", "at": [-1348, 255], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
     { "id": "I", "color": "#7fb89a", "at": [-2520, -540], "snap": false, "radius": 40,
       "name": { "en": "Sinchon Square", "ko": "신촌 광장", "ja": "新村広場", "zh": "新村广场" } },
     { "id": "J", "color": "#e0457b", "at": [-2977, -216], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
     { "id": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } },
-    { "id": "L", "color": "#4fa3c7", "at": [-1651, -462], "snap": false, "radius": 40, "name": { "en": "Cheonggye Plaza", "ko": "청계광장", "ja": "清渓広場", "zh": "清溪广场" } },
+    { "id": "L", "color": "#4fa3c7", "at": [-1651, -686], "snap": false, "radius": 40, "name": { "en": "Cheonggye Plaza", "ko": "청계광장", "ja": "清渓広場", "zh": "清溪广场" } },
     { "id": "M", "color": "#3f7fd0", "at": [1558, 1000], "snap": false, "radius": 60, "name": { "en": "Olympic Park", "ko": "올림픽공원", "ja": "オリンピック公園", "zh": "奥林匹克公园" } }
   ]
 }

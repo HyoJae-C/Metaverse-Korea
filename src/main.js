@@ -45,7 +45,7 @@ import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themep
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
-import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom } from './core/lanterns.js';
+import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
@@ -561,8 +561,8 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
 const palaceShow = palaceAt ? new PalaceShow(scene, {
   fan: [palaceAt[0], palaceAt[1] - 150], // Geunjeongjeon's courtyard
-  mask: [palaceAt[0], palaceAt[1] + 150], // on the square, just before King Sejong's statue
-  rope: [palaceAt[0] - 18, palaceAt[1] + 144], // the tightrope beside it
+  mask: [palaceAt[0], palaceAt[1] + 52], // on the square, just before King Sejong's statue
+  rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
   layer: $('labels'),
 }) : null;
@@ -4792,7 +4792,7 @@ const wishUi = new WishUI({
     refreshWallet();
     lastWishAt = now;
     const ww = (f.s.water || 8) / 2;
-    const L0 = { id: Math.random().toString(36).slice(2, 10), c, w, u0: Math.min(Math.max(f.u, wishFrom(f.s)), f.s.len - 6), v: Math.sign(f.v) * (ww - 0.6), t0: now };
+    const L0 = { id: Math.random().toString(36).slice(2, 10), c, w, u0: Math.min(Math.max(f.u, wishFrom(f.s)), wishTo(f.s) - 6), v: Math.sign(f.v) * (ww - 0.6), t0: now };
     streamModels.userData.wish?.add(L0, nickname);
     myWish = L0;
     lastSent = null; // others see it at once
