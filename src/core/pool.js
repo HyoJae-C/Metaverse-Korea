@@ -85,6 +85,47 @@ export function rivalLanes(mine) {
   return order.filter((i) => i >= 0 && i < COMP.lanes).slice(0, RIVAL_PACES.length);
 }
 
+// ---- racing friends ----------------------------------------------------------
+// Anyone on a starting block can open a race while other players are in the
+// hall: for LOBBY seconds the others can step on a block and join, then the
+// countdown starts for everyone at once. A race with friends has no rival
+// swimmers; each racer reports their time and everyone ranks the same list.
+// Messages go out like emotes (main.js): open (with the seconds left before
+// the countdown, so late joiners line up), join, fin (the time), quit.
+export const LOBBY = 10; // seconds to join before the countdown
+export const FRIEND_WAIT = 25; // seconds the board waits for slower friends
+const RID = /^[a-z0-9]{1,10}$/;
+export function raceMsg(verb, rid, a = '') {
+  if (verb === 'open') return `prace:open:${rid}:${a.lane}:${Math.max(0, Math.round(a.left * 10))}`;
+  if (verb === 'join') return `prace:join:${rid}:${a}`;
+  if (verb === 'fin') return `prace:fin:${rid}:${Math.round(a * 100)}`;
+  return `prace:quit:${rid}`;
+}
+export function parseRaceMsg(e) {
+  if (typeof e !== 'string' || !e.startsWith('prace:')) return null;
+  const [, verb, rid, a, b] = e.split(':');
+  if (!RID.test(rid || '')) return null;
+  const lane = Number(a);
+  const okLane = Number.isInteger(lane) && lane >= 0 && lane < COMP.lanes;
+  if (verb === 'open' && okLane && /^\d{1,4}$/.test(b || '')) return { verb, rid, lane, left: Math.min(LOBBY, Number(b) / 10) };
+  if (verb === 'join' && okLane) return { verb, rid, lane };
+  if (verb === 'fin' && /^\d{1,6}$/.test(a || '')) { const time = Number(a) / 100; return time >= 5 ? { verb, rid, time } : null; }
+  if (verb === 'quit') return { verb, rid };
+  return null;
+}
+// The lane to swim in: the one you stand at, or the nearest free one.
+export function pickLane(want, taken) {
+  for (let k = 0; k < COMP.lanes; k++) {
+    for (const ln of k ? [want - k, want + k] : [want]) if (ln >= 0 && ln < COMP.lanes && !taken.has(ln)) return ln;
+  }
+  return -1;
+}
+// Places from everyone's times (null: not in yet), fastest first.
+export function rankTimes(rows) {
+  const done = rows.filter((r) => r.time != null).sort((a, b) => a.time - b.time);
+  return [...done.map((r, i) => ({ ...r, place: i + 1 })), ...rows.filter((r) => r.time == null).map((r) => ({ ...r, place: null }))];
+}
+
 export class Race {
   constructor(lane, paces) {
     this.lane = lane;

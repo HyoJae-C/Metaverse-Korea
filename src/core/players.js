@@ -46,6 +46,7 @@ export class RemotePlayers {
     const p = {
       id: peer.id, ch, tag, bubble: null, name,
       target: null, ry: 0, s: 0,
+      model: peer.look?.model ?? null, // (debug: what they wear)
     };
     this.players.set(peer.id, p);
     this._tag(p, peer.look);
@@ -66,6 +67,7 @@ export class RemotePlayers {
     if (!p) return;
     const old = p.ch.root;
     p.ch = createCharacter(look);
+    p.model = look?.model ?? null;
     this._tag(p, look);
     p.bk = false; // re-applied on the next update
     p.hd = null;
