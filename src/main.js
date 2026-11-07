@@ -166,6 +166,7 @@ import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockers
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
+import { createBumper } from './game/bumper.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createSkate } from './game/skate.js';
@@ -1874,9 +1875,11 @@ function bagRideList() {
 }
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
 $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+$('keys-bag').textContent = L(BAG_TEXT.title);
 onLanguageChange(() => {
   $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
   $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+  $('keys-bag').textContent = L(BAG_TEXT.title);
 });
 
 function setLook(look) {
@@ -2816,6 +2819,12 @@ addEventListener('keydown', (e) => {
   }
   if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
+  // B for Bag: closes it if open; opens it only when no game or sheet is
+  // taking keys and the bag button is on screen.
+  if (e.code === 'KeyB' && !e.repeat) {
+    if (bagUi.open) bagUi.hide();
+    else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
+  }
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
@@ -3168,6 +3177,14 @@ const tarot = createTarot({
   refreshWallet, safety, sfx, shop, sitDown, standUp, wallet,
 });
 const { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick } = tarot;
+// Bumper cars in Another Land: six a round, a waiting line. (game/bumper.js)
+const bumper = createBumper({
+  get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
+  get me() { return me; }, get others() { return others; },
+  get action() { return action; }, set action(v) { action = v; },
+  get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
+  $, STALE, myId, shop, sfx, wallet, input, moveRef, cam, sitDown, standUp, missionEvent: (...a) => missionEvent(...a),
+});
 // Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
 const basketball = createBasketball({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -4536,6 +4553,7 @@ function standUp() {
   if (seated.beauty && beautyUi.open) beautyUi.close();
   if (seated.duck != null) { if (duckUi.open) duckUi.close(); duckUi.hud(null); duckRide = null; duckFollowed = false; }
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
+  if (seated.bumper != null) bumper.onStandUp();
   seated = null;
   sendTimer = 0;
 }
@@ -4726,6 +4744,8 @@ function updateAction(p, tSec) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
+    } else if (interior.bumper && bumper.action(p)) {
+      next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
       next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
@@ -5037,8 +5057,9 @@ renderer.setAnimationLoop(() => {
   updateRide(dt);
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
-  if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
+  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
   updateDucks(dt);
+  bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubs.clubState)) { dancing = false; action = STALE; }
@@ -5225,6 +5246,7 @@ renderer.setAnimationLoop(() => {
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
+    bumper.state(st); // in a bumper car, or in line for one
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
@@ -5235,14 +5257,14 @@ renderer.setAnimationLoop(() => {
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.wl !== lastSent.wl || st.tk !== lastSent.tk;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
     // Carrying passengers: send more often so their seats keep up.
-    sendTimer = 1 / (passengers.size ? 12 : running ? config.netSendRateRun : config.netSendRate);
+    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : running ? config.netSendRateRun : config.netSendRate);
   }
 
   const w = innerWidth, h = innerHeight;
@@ -5415,6 +5437,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     face: (ry) => { me.root.rotation.y = ry; cam.yaw = ry + Math.PI; },
     duckBoard: (i) => boardDuck(i),
     duckGo: () => startDuckRide(),
+    bumper: () => bumper.debug(),
+    bumperBoard: () => bumper.board(),
     duck: () => duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) },
     duckBoats: () => interior?.ducks?.map((d) => [+d.g.position.x.toFixed(2), +d.g.position.z.toFixed(2), +d.g.rotation.z.toFixed(3)]),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },

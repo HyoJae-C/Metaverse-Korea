@@ -33,12 +33,15 @@ const roads = [
   { k: 'secondary', w: 8, p: [[24, -8], [24, -40]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
   { k: 'tertiary', w: 7, p: [[-6, -40], [126, -40]], n: N('북촌로5길', 'Bukchon-ro 5-gil', '北村路5ギル', '北村路5街') },
   // Up the hill: the main alley to the top, two alleys across, two side alleys.
-  // Narrow, like the real alleys: the house walls stand right at the edge.
-  { k: 'walk', w: 3.2, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
-  { k: 'walk', w: 2.6, p: [[-6, -112], [126, -112]] },
-  { k: 'walk', w: 2.6, p: [[-6, -140], [126, -140]] },
-  { k: 'walk', w: 2.6, p: [[18, -66], [18, -158]] },
-  { k: 'walk', w: 2.6, p: [[102, -84], [102, -158]] },
+  // Narrow, like the real alleys: the house walls stand right at the edge, and
+  // the houses stand side by side, so an alley is all the room there is
+  // between them. Still wide enough for six or more people abreast (a person
+  // is 0.7 m across, PLAYER_R in main.js).
+  { k: 'walk', w: 5, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
+  { k: 'walk', w: 4.4, p: [[-6, -112], [126, -112]] },
+  { k: 'walk', w: 4.4, p: [[-6, -140], [126, -140]] },
+  { k: 'walk', w: 4.4, p: [[18, -66], [18, -158]] },
+  { k: 'walk', w: 4.4, p: [[102, -84], [102, -158]] },
 ];
 
 const areas = [
@@ -62,7 +65,8 @@ const segDist = (x, z, [x1, z1], [x2, z2]) => {
   const t = l2 ? Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2)) : 0;
   return Math.hypot(x - (x1 + dx * t), z - (z1 + dz * t));
 };
-const overlaps = (x0, z0, x1, z1) => buildings.some((b) => {
+const shops = buildings.slice(); // (the houses up the hill only keep clear of these: side by side, they fill their blocks)
+const overlaps = (x0, z0, x1, z1) => shops.some((b) => {
   const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
   return x0 < Math.max(...xs) + 1 && x1 > Math.min(...xs) - 1 && z1 < Math.max(...zs) + 1 && z0 > Math.min(...zs) - 1;
 });
@@ -143,7 +147,7 @@ const visitBlockers = [], visitMarks = [];
     if (b.h >= 6 || !b.fr || b.fr[1] !== 0) return false;
     const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
     const near = b.fr[0] < 0 ? Math.min(...xs) : Math.max(...xs);
-    return Math.abs(Math.abs(near - main.x) - main.hw - EDGE) < 0.3 && Math.max(...zs) - Math.min(...zs) >= 10 && Math.max(...xs) - Math.min(...xs) >= 9;
+    return Math.abs(Math.abs(near - main.x) - main.hw - EDGE) < 0.3 && Math.max(...zs) - Math.min(...zs) >= 10 && Math.max(...xs) - Math.min(...xs) >= 11.5; // (deep enough for a yard behind the gate)
   }).sort((a, b) => b.p[0][1] - a.p[0][1]);
   const pickAt = [0, Math.floor(cands.length / 2), cands.length - 1];
   for (const b of [...new Set(pickAt.map((i) => cands[i]).filter(Boolean))]) {
