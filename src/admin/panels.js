@@ -6,7 +6,7 @@ const SETUP = 'Run <code>supabase/009_admin.sql</code> once in the Supabase dash
 const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42703');
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 import { createRetention } from './retention.js';
-import { MAX_NOTICE, cleanNotice, sendNotice } from '../core/announce.js';
+import { MAX_NOTICE, cleanNotice, deleteNotice, sendNotice } from '../core/announce.js';
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
 
@@ -170,6 +170,24 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
       const h = el('div', 'head');
       h.append(el('b', '', '📢 ' + (n.sender_name || 'operator')), el('span', 'muted', `${when(n.at)} · ${since(n.at)}`));
       c.append(h, el('div', 'body', n.body));
+      const row = el('div', 'row');
+      const del = el('button', 'danger', 'Delete');
+      del.title = 'Remove it from the list and from everyone\'s chat';
+      del.onclick = async () => {
+        if (!confirm(`Delete this notice? It also disappears from the chat of everyone playing now.\n\n${n.body}`)) return;
+        del.disabled = true;
+        const r = await deleteNotice(client, n.id);
+        if (r.error === 'operator') return notOperator();
+        if (!r.ok) {
+          del.disabled = false;
+          setStatus(r.error === 'setup' ? 'Run supabase/013_announcement_delete.sql first.' : 'Could not delete: ' + r.error);
+          return;
+        }
+        setStatus('Notice deleted ' + new Date().toLocaleTimeString());
+        notices();
+      };
+      row.append(del);
+      c.append(row);
       return c;
     }));
   }

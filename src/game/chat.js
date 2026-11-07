@@ -403,12 +403,15 @@ export function createChat(game) {
   };
   // ---------- Notices (공지) from operators ----------
   // Every area, every player; a gold line that stays a while, plus a toast.
-  const noticeFeed = new NoticeFeed(({ body }) => {
+  const noticeLines = new Map(); // notice id → its chat line (to take it back out when deleted)
+  const noticeFeed = new NoticeFeed(({ id, body }) => {
     const line = addChatLine('📢 ' + L(NOTICE_LABEL), body, 'notice');
     line.dataset.stay = '1';
+    noticeLines.set(id, line);
+    if (noticeLines.size > 20) noticeLines.delete(noticeLines.keys().next().value);
     game.shop.toast('📢 ' + body);
     try { game.sfx.pop?.(); } catch { /* sound not set up yet */ }
-  });
+  }, (id) => { noticeLines.get(id)?.remove(); noticeLines.delete(id); });
   let noticeClient = null, stopNotices = null;
   function watchForNotices() {
     if (!config.chatEnabled || !cloud.client || cloud.client === noticeClient) return;
