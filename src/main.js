@@ -102,6 +102,7 @@ import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
+import { RUNWAY_STORE } from './core/runway-game.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
@@ -2145,6 +2146,18 @@ function enterStore(item) {
     });
   }
   interior.audienceNpcs = built.audienceNpcs || null;
+  // DDP Hall: visitors already standing round, looking at the design pieces.
+  if (built.stations?.visitors && !built.visitorNpcs) {
+    built.visitorNpcs = built.stations.visitors.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.visitorNpcs = built.visitorNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2232,9 +2245,31 @@ function backToPark() {
   if (mode !== 'store' || !park || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
   if (hauntUi.open) hauntUi.close();
+  if (runwayUi.open) runwayUi.close();
+  standUp();
+  const fromRunway = interior.store.workshop === 'runway';
   enterStore(park);
-  // Out in front of the door, the camera to the side so the house stays in view.
-  moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
+  if (fromRunway) {
+    // Back in DDP Hall, in front of the runway's door, facing into the hall.
+    const d = interior.stations.runwayDoor[0];
+    moveMeTo(interior.scene, d.x, d.z + 0.6, 0, 0.5); // (the camera out in the hall)
+  } else {
+    // Out in front of the door, the camera to the side so the house stays in view.
+    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
+  }
+  hauntFade();
+}
+
+// DDP Hall's back door: the Curve Runway is its own room behind it (as with
+// the haunted house, the way out to the street is still the hall's front door;
+// the runway's door leads back into the hall).
+function enterRunwayRoom() {
+  if (mode !== 'store' || interior?.store.workshop !== 'ddp-hall' || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  const front = interior.front;
+  standUp();
+  for (const o of interior.visitorNpcs || []) { o.bubble?.remove(); o.bubble = null; }
+  enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
 }
 
@@ -4600,7 +4635,7 @@ function updateAction(p, tSec) {
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'haunt-out', label: '🚪 ' + L(HAUNT_TEXT.back), run: () => backToPark() };
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -4620,6 +4655,8 @@ function updateAction(p, tSec) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
+    } else if (nearStation(p, 'runwayDoor', 1.8)) {
+      next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
@@ -5147,6 +5184,7 @@ renderer.setAnimationLoop(() => {
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
+    for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
@@ -5259,6 +5297,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    backOut: () => backToPark(), // (the runway or haunted house back to its hall or park)
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,

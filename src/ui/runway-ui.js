@@ -33,6 +33,8 @@ export const RUNWAY_TEXT = {
   noBest: { en: 'No medal yet', ko: '아직 메달 없음', ja: 'まだメダルなし', zh: '还没有奖牌' },
   medal: { en: '{m} medal! 🪙 +{n}', ko: '{m} 메달! 🪙 +{n}', ja: '{m}メダル！🪙 +{n}', zh: '{m}奖牌！🪙 +{n}' },
   noMedal: { en: 'No medal this time', ko: '이번엔 메달 없음', ja: '今回はメダルなし', zh: '这次没有奖牌' },
+  enter: { en: 'Go in to the Curve Runway', ko: '커브 런웨이로 들어가기', ja: 'カーブ・ランウェイに入る', zh: '进入曲线T台' },
+  toHall: { en: 'Back to DDP Hall', ko: 'DDP 홀로 나가기', ja: 'DDPホールに戻る', zh: '回到DDP大厅' },
   back: { en: 'Walking back…', ko: '돌아가는 중…', ja: '戻っています…', zh: '往回走…' },
 };
 const tt = (k, v) => fmt(L(RUNWAY_TEXT[k]), v);
