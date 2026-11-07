@@ -145,7 +145,7 @@ function rotBox(x, z, w, d, ry) {
 }
 function bench(x, z, ry) {
   LANDMARKS.push({ type: 'bench', x: r2(x), z: r2(z), ry: r2(ry), clear: 2.2 });
-  BLOCKERS.push({ p: rotBox(x, z, 1.9, 0.6, ry) });
+  BLOCKERS.push({ p: rotBox(x, z, 2.3, 0.6, ry) }); // (core/park-art.js: a 2.2 m bench, three seats)
 }
 const ICE_S = 1.6; // every sculpture this many times the 2.8 m model
 function sculpture(model, x, z, ry, s = ICE_S) {

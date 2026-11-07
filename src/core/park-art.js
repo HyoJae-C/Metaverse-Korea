@@ -58,6 +58,8 @@ function icecream(g, l) {
 
 // A park bench facing +z (the sitter looks the way the group turns).
 export const BENCH_SEAT_H = 0.42;
+const BENCH_W = 2.2; // long enough for three people (BENCH_SEATS)
+const BENCH_SEATS = [-0.66, 0, 0.66];
 function bench(g) {
   const wood = mat('#b5794a'), iron = mat('#4d4a46');
   const add = (sx, sy, sz, x, y, z, m) => {
@@ -65,22 +67,22 @@ function bench(g) {
     b.position.set(x, y, z);
     g.add(b);
   };
-  for (const z of [-0.14, 0, 0.14]) add(1.8, 0.05, 0.12, 0, BENCH_SEAT_H, z, wood); // seat slats
-  for (const y of [0.62, 0.8]) add(1.8, 0.12, 0.05, 0, y, -0.25, wood); // backrest
-  for (const x of [-0.78, 0.78]) {
+  for (const z of [-0.14, 0, 0.14]) add(BENCH_W, 0.05, 0.12, 0, BENCH_SEAT_H, z, wood); // seat slats
+  for (const y of [0.62, 0.8]) add(BENCH_W, 0.12, 0.05, 0, y, -0.25, wood); // backrest
+  for (const x of [-(BENCH_W / 2 - 0.12), BENCH_W / 2 - 0.12]) {
     add(0.07, BENCH_SEAT_H, 0.5, x, BENCH_SEAT_H / 2, 0, iron); // legs
     add(0.07, 0.5, 0.06, x, 0.68, -0.25, iron); // back posts
     add(0.07, 0.05, 0.42, x, 0.62, 0.02, iron); // arm rests
   }
 }
-// Where people sit on the benches: two places each, standing up in front.
+// Where people sit on the benches: three places each, standing up in front.
 export function benchSeats(list = []) {
   const out = [];
   for (const l of list) {
     if (l.type !== 'bench') continue;
     const c = Math.cos(l.ry || 0), s = Math.sin(l.ry || 0);
     const at = (lx, lz) => [l.x + lx * c + lz * s, l.z - lx * s + lz * c];
-    for (const lx of [-0.45, 0.45]) {
+    for (const lx of BENCH_SEATS) {
       const [x, z] = at(lx, 0.02);
       out.push({ x, z, ry: l.ry || 0, stand: at(lx, 0.85), street: true });
     }
