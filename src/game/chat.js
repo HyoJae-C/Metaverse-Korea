@@ -416,8 +416,9 @@ export function createChat(game) {
     noticeClient = cloud.client;
     stopNotices = watchNotices(noticeClient, noticeFeed);
   }
-  cloud.onChange(watchForNotices);
-  watchForNotices();
+  // Start a little after the world is up, so this join never competes with
+  // the multiplayer room joins; notices from the last 10 minutes still come.
+  setTimeout(() => { cloud.onChange(watchForNotices); watchForNotices(); }, 8000);
 
   onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
   cloud.onChange(() => friendStore());
