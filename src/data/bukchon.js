@@ -18,6 +18,15 @@ const T = (en, ko, ja, zh) => ({ en, ko, ja, zh });
 
 export const BUKCHON = {
   district: 'bukchon',
+  // The walled village (district metres): x0, z0 (the south wall, along
+  // Yulgok-ro), x1, z1 (the north wall). Inside it the village is drawn; from
+  // outside you see the wall and the gates (core/enclosure.js).
+  area: [-11, -14.5, 308, -352],
+  gates: [
+    { at: [24, -14.5], w: 12, main: true }, // Bukchon-ro, by Anguk Station
+    { at: [244, -14.5], w: 10 }, // Gyedong-gil
+    { at: [-11, -188], w: 7, ry: -Math.PI / 2 }, // the west gate, down the stone stairs to Samcheong-dong
+  ],
   // The Quiet Zone (polygon): the Gahoe-dong alleys and the rooftop view.
   quiet: [[92, -207], [238, -207], [238, -352], [92, -352]],
   // Open House compound [x0, z0 (south), x1, z1 (north)] and its gate.

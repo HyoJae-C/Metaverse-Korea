@@ -62,16 +62,14 @@ const areas = [
 // Shop rows (hanok fronts), listed so stores.json can stand in front of them.
 const buildings = [];
 const add = (p, extra) => buildings.push({ h: 6, hanok: 1, p, ...extra });
-for (let x = 31; x + 22 <= 240; x += 24) add(rect(x, -14, x + 22, -33)); // row A on Yulgok-ro
 for (let x = 31; x + 22 <= 240; x += 24) add(rect(x, -45, x + 22, -64)); // row B on 5-gil (south side)
 for (let x = 31; x + 22 <= 142; x += 24) add(rect(x, -79, x + 22, -98)); // row C on 5-gil (north side)
 for (let x = 192; x + 22 <= 240; x += 24) add(rect(x, -79, x + 22, -98));
-for (let z = -14; z - 22 >= -130; z -= 24) add(rect(-8, z, 17, z - 22)); // west of Bukchon-ro
+for (let z = -16; z - 22 >= -130; z -= 24) add(rect(-8, z, 17, z - 22)); // west of Bukchon-ro
 
-// Gyedong-gil's east side, south part: ordinary low buildings (Bukchon has
-// modern ones too).
-for (let z = -14; z - 18 >= -138; z -= 21) buildings.push({ h: 8 + ((-z * 7) % 5), p: rect(251, z, 300, z - 18) });
-for (let z = -160; z - 18 >= -238; z -= 21) buildings.push({ h: 8 + ((-z * 7) % 5), p: rect(251, z, 300, z - 18) });
+// Gyedong-gil's east side: more shop hanok (bigger, on the street).
+for (let z = -16; z - 18 >= -138; z -= 21) add(rect(251, z, 300, z - 18), { fr: [-1, 0] });
+for (let z = -160; z - 18 >= -238; z -= 21) add(rect(251, z, 300, z - 18), { fr: [-1, 0] });
 
 // Everything else is homes: a grid of small hanok, kept off the streets and
 // out of the Open House compound.
@@ -118,6 +116,27 @@ for (let iz = 0, z = -100; z - D >= -350; iz++, z -= D + GAP) {
   }
 }
 
+// Which way each hanok faces: towards its nearest street (f, a unit step on
+// the map), and how high it stands on its stone terrace up the hill (lv, m):
+// Bukchon climbs north from Anguk Station.
+for (const b of buildings) {
+  if (!b.hanok || b.fr) continue;
+  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  const long = Math.max(x1 - x0, z1 - z0) / Math.min(x1 - x0, z1 - z0) > 1.1 ? (x1 - x0 > z1 - z0 ? 'x' : 'z') : null;
+  // Each side's middle: how far to the nearest street (a long side and a real
+  // street, not a footpath, are preferred).
+  let best = Infinity, f = [0, 1];
+  for (const [mx, mz, dir, along] of [[cx, z1, [0, 1], 'x'], [cx, z0, [0, -1], 'x'], [x1, cz, [1, 0], 'z'], [x0, cz, [-1, 0], 'z']]) {
+    let d = Infinity;
+    for (const r of roads) for (let i = 1; i < r.p.length; i++) d = Math.min(d, segDist(mx, mz, r.p[i - 1], r.p[i]) - r.w / 2 + (r.k === 'walk' ? 4 : 0));
+    if (long && along !== long) d += 8;
+    if (d < best) { best = d; f = dir; }
+  }
+  b.fr = f;
+  if (b.h < 6) b.lv = Math.round(Math.max(0, Math.min(1, (-cz - 120) / 210)) * 12) / 10;
+}
+
 // The Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south
 // wall. Its walls and wings are blockers (drawn by the landmark).
 const [ox0, oz0, ox1, oz1] = OPEN; // x0 < x1, z0 > z1 (z0 is the south side)
@@ -129,6 +148,36 @@ const blockers = [
   { p: rect(BUKCHON.openHouse.gate[0] + 2.5, oz0, ox1, oz0 - 1) }, // and right of it
   { p: rect(158.5, -346.5, 161.5, -349.5) }, // the terrace's coin telescope
 ];
+
+// Bukchon is a walled village you enter through a gate: from the street you
+// see its stone wall and gates, and the village appears once you are inside
+// (core/enclosure.js; data/bukchon.js "area"). Gates: the main one on
+// Bukchon-ro by Anguk Station, one on Gyedong-gil, and the west gate down the
+// stone stairs to Samcheong-ro.
+const [AX0, AZ0, AX1, AZ1] = BUKCHON.area; // x0, z0 (south), x1, z1 (north)
+const GATES = BUKCHON.gates;
+const wallMarks = [];
+const wallRun = (fixed, from, to, alongX) => { // a straight run with gaps for the gates on it
+  const cuts = GATES.filter((g) => (alongX ? g.at[1] === fixed : g.at[0] === fixed)).map((g) => { const c = alongX ? g.at[0] : g.at[1]; return [c - g.w / 2, c + g.w / 2]; }).sort((a, b) => a[0] - b[0]);
+  let a = Math.min(from, to);
+  const end = Math.max(from, to);
+  for (const [c0, c1] of [...cuts, [end, end]]) {
+    if (c0 - a > 0.5) {
+      const mid = (a + c0) / 2, len = c0 - a;
+      wallMarks.push(alongX ? { type: 'hanokwall', x: mid, z: fixed, len, ry: 0 } : { type: 'hanokwall', x: fixed, z: mid, len, ry: Math.PI / 2 });
+      blockers.push({ p: alongX ? rect(a, fixed + 0.5, c0, fixed - 0.5) : rect(fixed - 0.5, a, fixed + 0.5, c0) });
+    }
+    a = c1;
+  }
+};
+wallRun(AZ0, AX0, AX1, true);
+wallRun(AZ1, AX0, AX1, true);
+wallRun(AX0, AZ1, AZ0, false);
+wallRun(AX1, AZ1, AZ0, false);
+for (const g of GATES) for (const s of [-1, 1]) { // the gate posts are solid
+  const [x, z] = g.at, k = g.w / 2 + 0.2;
+  blockers.push({ p: g.ry ? rect(x - 0.6, z + s * k - 0.6, x + 0.6, z + s * k + 0.6) : rect(x + s * k - 0.6, z - 0.6, x + s * k + 0.6, z + 0.6) });
+}
 
 // The Quiet Zone signs at the alley entrances (the real rule, checked on
 // 2026-11-07: Seoul Metropolitan Government / Jongno-gu).
@@ -143,6 +192,8 @@ const QUIET = {
 };
 
 const landmarks = [
+  ...wallMarks,
+  ...GATES.map((g) => ({ type: 'bukchongate', x: g.at[0], z: g.at[1], ry: g.ry || 0, w: g.w, main: !!g.main })),
   { type: 'openhouse', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, w: ox1 - ox0, d: oz0 - oz1 },
   { type: 'terrace', x: 160, z: -340 },
   ...[[98, -210, -Math.PI / 2], [240, -210, Math.PI / 2], [98, -263, -Math.PI / 2]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, title: QUIET.title, text: QUIET.text })),
@@ -163,6 +214,7 @@ const map = {
     // For the overlap check: the lane down to Samcheong-ro reaches into
     // Gyeongbokgung on purpose (scripts/place-districts.mjs).
     parts: [{ why: 'the village, Anguk Station to the rooftop view', box: [-10, -352, 310, 0] }],
+    enclosure: { why: 'inside the village wall: the hanok are drawn once you walk in through a gate (core/enclosure.js)', box: BUKCHON.area },
     source: 'hand-made (game map, not to scale; loosely after Bukchon, Jongno-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-bukchon.mjs',
   },
   roads, buildings, rail: [], areas, blockers, pois, landmarks,

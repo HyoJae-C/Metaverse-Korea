@@ -168,7 +168,7 @@ export const PLACE_TOPICS = [
     text: { en: 'Find the footprint marks and photograph all eight views. Walk into the Open House up the lane from Bukchon-ro 5-gil and learn the parts of a hanok.', ko: '바닥의 발자국 표시를 찾아 여덟 곳을 모두 찍어 보세요. 북촌로5길에서 골목을 올라가면 열린 한옥이 있고, 한옥의 구조를 배울 수 있어요.', ja: '足あとマークを探して8か所すべてを撮ろう。北村路5ギルから路地を上るとオープンハウスがあり、韓屋のつくりを学べます。', zh: '找到脚印标记，拍下全部八景。从北村路5街沿小巷往上走就是开放韩屋，可以了解韩屋的结构。' } },
 { icon: '👘', to: { store: 'gahoe-hanbok' },
     title: { en: 'Gahoe Hanbok Rental', ko: '가회 한복대여', ja: '嘉会 韓服レンタル', zh: '嘉会韩服租赁' },
-    text: { en: 'Rent a hanbok for 2 hours, right by Anguk Station.', ko: '안국역 바로 앞에서 한복을 2시간 빌려요.', ja: '安国駅のすぐ前で韓服を2時間レンタル。', zh: '就在安国站前，租韩服2小时。' } },
+    text: { en: 'Rent a hanbok for 2 hours. Walk in through the Bukchon gate by Anguk Station; it is on Bukchon-ro 5-gil.', ko: '안국역 옆 북촌 대문으로 들어가 북촌로5길에서 한복을 2시간 빌려요.', ja: '安国駅そばの北村の門から入り、北村路5ギルで韓服を2時間レンタル。', zh: '从安国站旁的北村大门进去，在北村路5街租韩服2小时。' } },
 { icon: '🎀', to: { store: 'maeum-knot' },
     title: { en: 'Knot and hanji workshops', ko: '매듭·한지 공방', ja: '結び・韓紙の工房', zh: '绳结和韩纸工坊' },
     text: { en: 'Maeum Knot Studio: tie a maedeup knot charm. Saekji Paper Studio: make a hanji lantern. Talk to the teacher inside.', ko: '마음매듭에서 매듭 노리개를, 색지공방에서 한지 등을 만들어요. 안에서 선생님에게 말을 걸어요.', ja: 'マウム結び工房でメドゥプのお守り、セクチ韓紙工房で韓紙の灯りづくり。中の先生に話しかけて。', zh: '在心结工坊编绳结挂饰，在彩纸工坊做韩纸灯。进去和老师说话吧。' } },

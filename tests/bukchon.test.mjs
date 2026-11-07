@@ -106,3 +106,54 @@ test('workshop pieces are bag goods', () => {
   assert.equal(craftEntry('knot', 9, 0), null);
   assert.equal(craftEntry('knot', 0, 0).name, 'red butterfly knot charm');
 });
+
+test('Bukchon is walled: a gap at each gate, every house inside the wall', () => {
+  const [x0, z0, x1, z1] = BUKCHON.area;
+  assert.deepEqual(map.meta.enclosure.box, BUKCHON.area);
+  for (const b of map.buildings) for (const [x, z] of b.p) assert.ok(x > x0 && x < x1 && z < z0 && z > z1, 'a house outside the wall');
+  const walls = map.landmarks.filter((l) => l.type === 'hanokwall');
+  assert.ok(walls.length >= 7);
+  for (const g of BUKCHON.gates) {
+    // a step through the gate, from outside to inside, is clear
+    const [gx, gz] = g.at, [dx, dz] = g.ry ? [1, 0] : [0, 1];
+    for (const s of solids) assert.ok(!inside(gx + dx * 1.5, gz + dz * 1.5, s) && !inside(gx - dx * 1.5, gz - dz * 1.5, s), `gate at ${g.at} is shut`);
+  }
+  assert.equal(map.landmarks.filter((l) => l.type === 'bukchongate').length, BUKCHON.gates.length);
+  // Gyeongbokgung's palace wall is an enclosure too.
+  assert.deepEqual(read('districts/gyeongbokgung.json').meta.enclosure.box, [-170, 0, 100, -440]);
+});
+
+test('inside the wall is only drawn while you are in; the houses are built on the first visit', async () => {
+  const THREE = await import('three');
+  const { Enclosure, FarCull } = await import('../src/core/enclosure.js');
+  const hall = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2));
+  hall.position.set(50, 1, -50);
+  const gate = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 2));
+  gate.position.set(50, 2, 0); // on the wall line
+  const root = new THREE.Group();
+  root.add(hall, gate);
+  root.updateMatrixWorld(true);
+  let built = 0;
+  const houses = new THREE.Group();
+  const e = new Enclosure({ box: [0, 0, 100, -100], onFirstEnter: () => { built++; return [houses]; } });
+  assert.equal(e.collect([root]), 1);
+  assert.equal(e.update({ x: 50, z: 10 }), null); // first look: outside
+  assert.equal(hall.visible, false);
+  assert.equal(gate.visible, true);
+  assert.equal(built, 0);
+  assert.equal(e.update({ x: 50, z: -5 }), 'enter');
+  assert.ok(hall.visible && houses.visible);
+  assert.equal(e.update({ x: 50, z: 5 }), 'leave');
+  assert.ok(!hall.visible && !houses.visible);
+  e.update({ x: 50, z: -5 });
+  assert.equal(built, 1); // built once
+  // Past the fog: not drawn, and back when near; an enclosure's hiding still holds.
+  const far = new FarCull([hall], () => 300);
+  far.update(1, { x: 50, z: 1000 });
+  assert.equal(hall.visible, false);
+  far.update(1, { x: 50, z: -40 });
+  assert.equal(hall.visible, true);
+  e.update({ x: 50, z: 10 });
+  far.update(1, { x: 50, z: 10 });
+  assert.equal(hall.visible, false);
+});

@@ -91,6 +91,13 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
    Inside, the game guide (left) explains the game and the area guide (right)
    lists the district's places.
+6. Optional, for a big walled place: give the map `meta.enclosure`
+   (`{ "box": [x0, z0, x1, z1] }` in its own metres) and a wall with gates
+   on that box. From outside only the wall and gates are drawn; what stands
+   inside appears once you walk in (`src/core/enclosure.js`). Bukchon and
+   Gyeongbokgung do this, and Bukchon's hanok are only built on the first
+   visit. An L-shaped district can list `meta.parts` (boxes) for the overlap
+   check and for `districtAt`.
 
 ## Yeonnam-dong and Mangwon-dong
 
