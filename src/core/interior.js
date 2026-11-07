@@ -7,6 +7,8 @@ import { makeAnimal } from './pets.js';
 import { buildFurniture } from './furniture.js';
 import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
+import { buildPoolHall } from './pool-hall.js';
+import { POOL_ROOM } from './pool.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
@@ -14,6 +16,7 @@ import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
+import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -32,6 +35,8 @@ export const ROOM_SIZES = {
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
+  pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
+  memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -335,6 +340,7 @@ export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
@@ -378,8 +384,8 @@ export function buildInterior(store) {
   wall(d, w / 2, 0, -Math.PI / 2);
   wall(w, 0, d / 2, Math.PI);
 
-  // Exit door on the front wall (none upstairs in the museum).
-  const noExit = store.category === 'museum' && store.floor > 1;
+  // Exit door on the front wall (none upstairs in the museums).
+  const noExit = (store.category === 'museum' || store.category === 'memorial') && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
@@ -406,7 +412,7 @@ export function buildInterior(store) {
   const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
-  if (store.category !== 'home' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
+  if (store.category !== 'home' && store.category !== 'memorial' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -599,6 +605,16 @@ export function buildInterior(store) {
     seats.push(...gallery.seats);
     clerk = gallery.clerk;
     see = gallery.see;
+  } else if (store.category === 'memorial') {
+    // The War History Museum: photos, the memorial room and its altar.
+    const hall = buildMemorial(scene, ROOM, { box, block, mat }, store.floor || 1);
+    stations.paintings = hall.looks;
+    stations.lift = hall.lift;
+    stations.flower = hall.flower;
+    stations.layFlower = hall.layFlower;
+    seats.push(...hall.seats);
+    clerk = hall.clerk;
+    see = hall.see;
   } else if (store.category === 'culture') {
     // Seoul Forest's culture center and forest galleries (core/culture.js).
     const room = buildCulture(scene, ROOM, { box, block, mat }, store);

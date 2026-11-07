@@ -80,21 +80,24 @@ export function placeOf(item, center, latLonToLocal) {
   return latLonToLocal(center, item.anchor.lat, item.anchor.lon);
 }
 
-// Which district a point is in: the one whose buildings' bounding box (plus
-// a margin) holds it, else the one with the nearest box centre. `map` is a
-// joined map (mergeDistricts); a single-file map has no districts (null).
-// A district that lists meta.parts (boxes in its own metres, see
-// scripts/place-districts.mjs) uses those instead: e.g. Gyeongbokgung's palace
-// and stream, with Bukchon tucked into the corner between them.
+// Which district a point is in: the smallest box (its buildings and land
+// areas, not water) that holds it, else the smallest within a margin, else
+// the one with the nearest box centre. A small district beside a big one
+// (Olympic Park next to Songpa) wins inside its own box. `map` is a joined
+// map (mergeDistricts); a single-file map has no districts (null).
 export function districtBoxes(map) {
   const out = [];
+  const items = [...(map?.buildings || []), ...(map?.areas || []).filter((a) => a.k !== 'water')];
   for (const { id, offset = [0, 0], parts } of map?.meta?.districts || []) {
+    // A district that lists meta.parts (boxes in its own metres, see
+    // scripts/place-districts.mjs) uses those: e.g. Gyeongbokgung's palace and
+    // stream, with Bukchon tucked into the corner between them.
     if (parts?.length) {
       for (const { box: [x0, z0, x1, z1] } of parts) out.push({ id, x0: x0 + offset[0], x1: x1 + offset[0], z0: z0 + offset[1], z1: z1 + offset[1] });
       continue;
     }
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-    for (const b of map.buildings || []) {
+    for (const b of items) {
       if (b.d !== id) continue;
       for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     }
@@ -106,8 +109,8 @@ export function districtBoxes(map) {
 // sits inside the bigger box: the smallest box holding the point wins.
 export function districtAt(boxes, x, z, margin = 40) {
   const area = (b) => (b.x1 - b.x0) * (b.z1 - b.z0);
-  const holding = (m) => boxes.filter((b) => x >= b.x0 - m && x <= b.x1 + m && z >= b.z0 - m && z <= b.z1 + m).sort((a, b) => area(a) - area(b));
-  const hit = holding(0)[0] || holding(margin)[0];
+  const hold = (m) => boxes.filter((b) => x >= b.x0 - m && x <= b.x1 + m && z >= b.z0 - m && z <= b.z1 + m).sort((a, b) => area(a) - area(b));
+  const hit = hold(0)[0] || hold(margin)[0];
   if (hit) return hit.id;
   let best = null, bd = Infinity;
   for (const b of boxes) {

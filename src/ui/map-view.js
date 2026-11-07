@@ -58,6 +58,7 @@ export const DISTRICT_NAME = {
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
   songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
   bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन' },
+  'olympic-park': { en: 'Olympic Park', ko: '올림픽공원', ja: 'オリンピック公園', zh: '奥林匹克公园', es: 'Parque Olímpico', id: 'Taman Olimpiade', ar: 'الحديقة الأولمبية', vi: 'Công viên Olympic', hi: 'ओलंपिक पार्क' },
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग' },

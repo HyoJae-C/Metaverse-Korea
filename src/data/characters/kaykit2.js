@@ -28,6 +28,17 @@ const PUFFER = { outfit: { hem: 0.5, sleeve: 0.84, cuff: 'top', quilt: true, bul
 const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, colors: { accent2: 0xf4f1ea } };
 // A short-sleeved shirt with a collar and a button placket.
 const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
+// A dark suit jacket, open over a white dress shirt (front and collar), with
+// black leather shoes: the guide at the War History Museum's information
+// desk wears it with a suit skirt (look.skirt).
+const SUIT = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, shoes: 0x1d1d22, sole: 0x111114 } };
+
+// Swimwear (the changing rooms at Olympic Park Pool, core/pool-hall.js):
+// a sleeveless one-piece, or a short-sleeved rash guard over swim shorts,
+// barefoot, with a swim cap (cap: its colour; hood: the cap hides the hair).
+// Only worn inside the pool hall, like trying clothes on.
+const SWIM_ONE = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.5, barefoot: true } };
+const SWIM_GUARD = { outfit: { hem: 0.6, sleeve: 0.42, cuff: 'accent', shorts: 0.36, barefoot: true } };
 
 // Hanbok (rented at the hanbok shop, data/hanbok.js). A short jeogori over a
 // high chima (look.skirt), with a white collar (dongjeong), coloured cuffs
@@ -63,6 +74,8 @@ export default {
     ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
     // The gym trainer (an NPC) keeps the bearded head.
     trainer: { url: 'models/kaykit2/barbarian.glb', emoji: '🎽', wear: wear(TANK) },
+    // The museum guide (an NPC): a suit over a white shirt.
+    suit: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SUIT) },
     // The same clothes in other colours, sold at the other clothes shops.
     ...variants('rogue', '🧥', JACKET, {
       'jacket-black': { top: 0x2b2b31 }, 'jacket-indigo': { top: 0x34477a }, 'jacket-cocoa': { top: 0x8a5a3c }, 'jacket-olive': { top: 0x6b7a45 },
@@ -98,6 +111,16 @@ export default {
       'hanbok-durumagi-gray': { top: 0x8f939a, accent: 0x4a4e57, bottom: 0xd8d2c2 },
       'hanbok-durumagi-white': { top: 0xf3eee2, accent: 0x9a8f7a, bottom: 0xefe6d2 },
     }),
+    // Swimwear (Olympic Park Pool).
+    ...variants('rogue', '🩱', SWIM_ONE, {
+      'swim-navy': { top: 0x24407a, bottom: 0x24407a },
+      'swim-coral': { top: 0xff7a6b, bottom: 0xff7a6b },
+    }, { hood: true, cap: true }),
+    ...variants('rogue', '🩳', SWIM_GUARD, {
+      'swim-mint': { top: 0x7cd3c7, accent: 0x1f4e8c, bottom: 0x1f4e8c },
+      'swim-yellow': { top: 0xffd93d, accent: 0x1d1b22, bottom: 0x1d1b22 },
+      'swim-red': { top: 0xe5383b, accent: 0xffffff, bottom: 0xe5383b }, // the lifeguard's
+    }, { hood: true, cap: true }),
   },
   // Every model shares one rig ("Rig_Medium"); the clips are in these files.
   // The first ones are needed right away, the rest load in the background.

@@ -10,7 +10,8 @@ import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
-import { peaceGate, loneTree } from './olympic-park.js';
+import { peaceGate, loneTree, poolHall } from './olympic-park.js';
+import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
 
 const mats = {};
@@ -86,6 +87,7 @@ const BUILD = {
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   lonetree: (g) => loneTree(g),
+  poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
   gwanghwamun(g) {
     // Stone base with three open arches you can walk through: a wide one in
     // the middle and a smaller one either side.
@@ -244,6 +246,8 @@ const BUILD = {
   },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
+  warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
+  outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
   ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace, stone stairs (core/bukchon-models.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)

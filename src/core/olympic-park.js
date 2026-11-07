@@ -47,3 +47,53 @@ export function loneTree(g) {
     g.add(c);
   }
 }
+
+// Olympic Park Pool (the hall inside: core/pool-hall.js): a long glass hall
+// under a blue barrel roof, white columns, and a sign over the entrance on
+// the plaza side (-z). Its footprint is a building in the map with
+// "custom": true (collision and the shop door), drawn here instead of the
+// usual windowed block. w, d, h: footprint and wall height (map units).
+export function poolHall(g, l) {
+  const w = l.w || 48, d = l.d || 36, h = l.h || 10;
+  const glass = new THREE.MeshLambertMaterial({ color: '#9fd8f2' });
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glass);
+  walls.position.y = h / 2;
+  g.add(walls);
+  // Columns round the hall and a white band at the top.
+  for (let x = -w / 2; x <= w / 2 + 0.01; x += w / 8) for (const s of [-1, 1]) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.8, h, 0.8), mat('#f4f1ea'));
+    c.position.set(x, h / 2, s * (d / 2 + 0.1));
+    g.add(c);
+  }
+  for (let z = -d / 2; z <= d / 2 + 0.01; z += d / 4) for (const s of [-1, 1]) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.8, h, 0.8), mat('#f4f1ea'));
+    c.position.set(s * (w / 2 + 0.1), h / 2, z);
+    g.add(c);
+  }
+  const band = new THREE.Mesh(new THREE.BoxGeometry(w + 1, 1.2, d + 1), mat('#f4f1ea'));
+  band.position.y = h - 0.6;
+  g.add(band);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 1, d + 0.6), mat('#2f7fc1'));
+  base.position.y = 0.5;
+  g.add(base);
+  // The barrel roof, running along the hall (x).
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(d / 2 + 0.6, d / 2 + 0.6, w + 1.4, 28, 1, false, 0, Math.PI), mat('#2f7fc1'));
+  roof.rotation.z = Math.PI / 2;
+  roof.scale.set(0.32, 1, 1); // a low arch: squash the height (x before the turn)
+  roof.position.y = h;
+  g.add(roof);
+  // The sign over the entrance (Korean and English), facing the plaza.
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, 1024, 256);
+  x.fillStyle = '#2f7fc1'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '800 104px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif'; x.fillText('올림픽공원 수영장', 512, 92);
+  x.font = '800 62px system-ui, sans-serif'; x.fillText('OLYMPIC PARK POOL', 512, 196);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 4), new THREE.MeshBasicMaterial({ map: tex }));
+  sign.position.set(0, h - 2.6, -d / 2 - 0.25);
+  sign.rotation.y = Math.PI;
+  g.add(sign);
+}

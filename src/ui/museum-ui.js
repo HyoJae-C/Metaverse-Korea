@@ -35,38 +35,44 @@ export class MuseumUI {
     img.src = paintingUrl(p);
     img.alt = `${p.title.en} (${p.title.ko})`;
     img.decoding = 'async';
+    img.onerror = () => { img.hidden = true; }; // (a War Memorial photo not added yet)
     const ko = el('div', 'museum-lang');
     ko.lang = 'ko';
     ko.append(el('h3', null, p.title.ko), el('p', 'museum-meta', [p.artist.ko, p.era.ko, p.set?.ko].filter(Boolean).join(' · ')), el('p', null, p.desc.ko));
     const en = el('div', 'museum-lang');
     en.lang = 'en';
     en.append(el('h3', null, p.title.en), el('p', 'museum-meta', [p.artist.en, p.era.en, p.set?.en].filter(Boolean).join(' · ')), el('p', null, p.desc.en));
-    const link = el('a', null, T('source') + ' ↗');
+    // A painting from the museum, or a War Memorial photo with its own credit.
+    const credit0 = p.credit || CREDIT, disclaimer = p.disclaimer || DISCLAIMER;
+    const link = el('a', null, (p.source ? localName(p.source, getLanguage()) : T('source')) + ' ↗');
     link.href = p.page;
     link.target = '_blank';
     link.rel = 'noopener';
-    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${CREDIT.ko} (${CREDIT.en}) · ${p.no} · `);
+    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${credit0.ko} (${credit0.en}) · ${p.no} · `);
     credit.append(link);
-    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(DISCLAIMER, getLanguage())));
+    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(disclaimer, getLanguage())));
     this.root.hidden = false;
   }
 
   // The lift: one button per floor, with the halls on it.
-  showLift(current, go) {
+  // floors: [{ floor, lines }] for another museum (the War History Museum);
+  // the art museum's floors and halls by default.
+  showLift(current, go, floors) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.close();
     const ko = getLanguage() === 'ko';
+    floors ||= FLOORS.map((f) => ({
+      floor: f,
+      lines: hallsOn(f).map((h) => `${h.side} · ${ko ? h.name.ko : h.name.en}${h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`}`),
+    }));
     const list = el('div', 'museum-floors');
-    for (const f of [...FLOORS].reverse()) {
+    for (const { floor: f, lines } of [...floors].reverse()) {
       const b = el('button', 'museum-floor');
       b.disabled = f === current;
       b.append(el('b', null, `${f}F`));
       const halls = el('span');
-      for (const h of hallsOn(f)) {
-        const soon = h.paintings.length ? '' : ` · ${ko ? COMING_SOON.ko : COMING_SOON.en}`;
-        halls.append(el('span', null, `${h.side} · ${ko ? h.name.ko : h.name.en}${soon}`));
-      }
+      for (const line of lines) halls.append(el('span', null, line));
       if (f === current) halls.append(el('em', null, T('here')));
       b.append(halls);
       b.onclick = () => { this.close(); go(f); };

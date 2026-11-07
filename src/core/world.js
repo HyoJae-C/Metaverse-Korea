@@ -230,6 +230,7 @@ function makeBuildings(buildings) {
   buildings.forEach((b, bi) => {
     let p = b.p;
     if (p.length < 3) return;
+    if (b.custom) return; // drawn by its landmark (e.g. Olympic Park Pool); still a wall and a shop front
     // Ensure counter-clockwise (in x,-z) so wall normals face outward.
     if (signedArea(p) < 0) p = [...p].reverse();
     const base = b.m || 0;
@@ -237,6 +238,8 @@ function makeBuildings(buildings) {
     const tint = (bi * 7 + p.length) % WALL_TINTS.length;
     col.setHex(WALL_TINTS[tint]);
     roofCol.setHex(ROOF_TINTS[tint]);
+    if (b.wall) col.set(b.wall); // (a landmark building in its own stone, e.g. the War Memorial)
+    if (b.roof) roofCol.set(b.roof);
 
     let u = 0;
     for (let i = 0; i < p.length; i++) {

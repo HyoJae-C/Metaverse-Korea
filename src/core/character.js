@@ -17,6 +17,7 @@ const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
+const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
@@ -118,10 +119,12 @@ export function createCharacter(rawLook) {
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
+  let tube = null; // a swim ring (the pool)
   const attachHeld = () => {
     if (!held) return;
     if (model?.hand) {
@@ -144,7 +147,7 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); wearMascot(); });
+  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
   return {
     root,
     head,
@@ -327,8 +330,20 @@ export function createCharacter(rawLook) {
       if (held) held.visible = name !== 'read';
       if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); rig.add(openBook); }
       if (openBook) openBook.visible = name === 'read';
+      // Floating in a tube (Olympic Park Pool): a ring round the waist.
+      if (name === 'tube' && !tube) {
+        tube = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.15, 10, 22).rotateX(Math.PI / 2), mat(TUBE_COLORS[Math.floor(Math.random() * TUBE_COLORS.length)]));
+        tube.position.set(0, 0.64, 0.12);
+        rig.add(tube);
+      }
+      if (tube) tube.visible = name === 'tube';
     },
     get activityName() { return activityName; },
+    // A scripted move: fn() returns bone offsets each frame (armL, armR,
+    // foreL, foreR, spine, head, legL, legR, kneeL, kneeR, in radians, as
+    // the dances use), laid over the idle or running clip. null stops it.
+    // Used for basketball shots (core/basketball-game.js shotMove).
+    setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);
