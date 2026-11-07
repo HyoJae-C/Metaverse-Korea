@@ -119,7 +119,8 @@ export function createTarot(game) {
       const s = tarotQueue.secondsLeft(myId);
       if (tarotTurn.callable.includes(myId) && s != null) return { key: 'tarot-turn:' + s, label: '🔔 ' + fmt(L(TAROT_TEXT.turn), { s }), run: () => { if (game.seated) standUp(); } };
       const n = tarotTurn.order.indexOf(myId) + 1;
-      return { key: 'tarot-line:' + n, label: '🎫 ' + fmt(L(TAROT_TEXT.line), { n }), run: () => leaveTarotLine() };
+      return { key: 'tarot-line:' + n, label: '🎫 ' + fmt(L(TAROT_TEXT.line), { n }),
+        run: () => leaveTarotLine() };
     }
     // Every table taken, or people already waiting: offer a number.
     const tables = game.interior.stations?.tarotTables?.length || 0;
@@ -129,5 +130,6 @@ export function createTarot(game) {
     return null;
   }
   const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
-  return { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick, get myTicket() { return myTicket; }, get tarotTurn() { return tarotTurn; } };
+  return { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick,
+    get myTicket() { return myTicket; }, get tarotTurn() { return tarotTurn; } };
 }

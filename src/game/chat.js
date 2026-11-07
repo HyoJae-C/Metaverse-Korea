@@ -18,7 +18,8 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 
 export function createChat(game) {
-  const { $, OPERATOR_TEXT, cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook } = game;
+  const { $, OPERATOR_TEXT, cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet,
+    safety, setLook } = game;
   const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
   let lastChatAt = 0, chatNoticeShown = false;
   const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);

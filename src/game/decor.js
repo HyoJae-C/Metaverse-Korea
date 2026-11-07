@@ -38,7 +38,8 @@ export function createDecor(game) {
     game.interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
       const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
       const out = furnitureById(it.id).size[1] / 2 + 0.55;
-      return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
+      return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out,
+        it.z + fz * out] };
     });
     saveDecor();
     markPlaced();
@@ -158,5 +159,6 @@ export function createDecor(game) {
   };
   $('piece-close').onclick = closePiece;
 
-  return { labelDecor, openHome, closeHome, get decor() { return decor; }, nearestPiece, putDown, closePiece, openPiece, updateCarry };
+  return { labelDecor, openHome, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+    closePiece, openPiece, updateCarry };
 }

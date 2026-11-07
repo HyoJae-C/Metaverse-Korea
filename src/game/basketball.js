@@ -93,5 +93,6 @@ export function createBasketball(game) {
     if (s.done) { stopBasketShot(); basketUi.resume(); game.action = STALE; }
   }
 
-  return { get basketY() { return basketY; }, basketUi, get basketShot() { return basketShot; }, nearCourt, basketTick };
+  return { get basketY() { return basketY; }, basketUi, get basketShot() { return basketShot; },
+    nearCourt, basketTick };
 }

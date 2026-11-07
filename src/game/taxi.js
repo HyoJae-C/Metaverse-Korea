@@ -6,7 +6,8 @@ import { showBubble } from '../core/players.js';
 import { taxiFare } from '../core/taxi.js';
 
 export function createTaxi(game) {
-  const { $, clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene, setGuide, setRiding, shop } = game;
+  const { $, clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel,
+    refreshWallet, scene, setGuide, setRiding, shop } = game;
   const TAXI_LINES = [
     ['안녕하세요! 어디로 가세요?', 'annyeonghaseyo! eodiro gaseyo?', 'taxi.t1'],
     ['네, 출발할게요!', 'ne, chulbalhalgeyo!', 'taxi.t2'],

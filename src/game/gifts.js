@@ -17,7 +17,8 @@ import { getLanguage, localName } from '../core/i18n.js';
 import { heldFor } from '../ui/counter-ui.js';
 
 export function createGifts(game) {
-  const { $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes, refreshItems, refreshWallet, safety, shop, storeData } = game;
+  const { $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes, refreshItems,
+    refreshWallet, safety, shop, storeData } = game;
   function giftFor(store, product) {
     if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product) || itemSoon(store, product)) return null;
     const name = product.name;
@@ -27,13 +28,17 @@ export function createGifts(game) {
     const how = howToGet(store);
     if (how === 'counter') {
       const kind = heldFor(product, store);
-      return { coins: coinPrice(product.price), icon: kind === 'food' ? '🥐' : kind === 'glass' ? '🍹' : '🥤', name, entry: { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
+      return { coins: coinPrice(product.price),
+        icon: kind === 'food' ? '🥐' : kind === 'glass' ? '🍹' : '🥤', name, entry: { kind,
+        sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
     }
     if (how !== 'buy') return null;
     const coins = coinsFor(product.price);
     if (product.perfume) return perfumes.has(product.id) ? { coins, icon: '🧴', name, entry: { kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(name, 'en') } } : null;
     const kind = goodsKind(product), icon = SHOP_ICON[product.model] || '🛍️';
-    return { coins, icon, name, entry: kind === 'gift' ? { kind, sips: 1, name: localName(name, 'en'), icon } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
+    return { coins, icon, name, entry: kind === 'gift' ? { kind, sips: 1,
+      name: localName(name, 'en'), icon } : { kind,
+      sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
   }
   // Everyone I can see in this shop, closest first.
   function peopleHere() {
@@ -74,7 +79,8 @@ export function createGifts(game) {
   function showGiftCards() {
     giftUi.showCards(gifts.cards().map((c) => {
       const g = giftFor(storeData.find((s) => s.id === c.store), productById(c.store, c.product));
-      return { gid: c.gid, name: c.name, item: g ? localName(g.name, getLanguage()) : '?', icon: g?.icon || '🎁' };
+      return { gid: c.gid, name: c.name, item: g ? localName(g.name, getLanguage()) : '?',
+        icon: g?.icon || '🎁' };
     }));
   }
   function onGiftMsg(from, m) {

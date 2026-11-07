@@ -15,7 +15,8 @@ import { getLanguage, onLanguageChange } from '../core/i18n.js';
 import { makeNpc, placeLabels, say } from '../core/npcs.js';
 
 export function createPool(game) {
-  const { $, STALE, cam, camera, hiringRedraws, myId, refreshWallet, safety, setLook, sfx, shop, skatePop, wallet } = game;
+  const { $, STALE, cam, camera, hiringRedraws, myId, refreshWallet, safety, setLook, sfx, shop,
+    skatePop, wallet } = game;
   const PT = POOL_TEXT;
   const poolLog = new PoolLog();
   const pool = {
@@ -389,7 +390,8 @@ export function createPool(game) {
     const st = game.interior.stations;
     if (near(st.lockers, 1.8)) { // the first other swimsuit (the rest in the list)
       const i = SWIMSUITS.findIndex((id) => id !== game.currentLook.model);
-      return { key: 'pool-suit', label: '🔐 ' + fmt(L(PT.locker), { name: L(PT.suits[SWIMSUITS[i]]) }), run: () => { pool.suit = i; wearSwim(SWIMSUITS[i]); } };
+      return { key: 'pool-suit', label: '🔐 ' + fmt(L(PT.locker),
+        { name: L(PT.suits[SWIMSUITS[i]]) }), run: () => { pool.suit = i; wearSwim(SWIMSUITS[i]); } };
     }
     if (near(st.tubes, 1.8)) return pool.tube
       ? { key: 'pool-tube-off', label: '🛟 ' + L(PT.tubePut), run: () => { pool.tube = false; game.action = STALE; } }

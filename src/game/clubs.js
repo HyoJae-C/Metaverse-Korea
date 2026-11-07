@@ -88,5 +88,6 @@ export function createClubs(game) {
     root.hidden = false;
   }
 
-  return { enterClub, leaveClub, get clubState() { return clubState; }, CLUB_TEXT, openClubPanel, clubPulse };
+  return { enterClub, leaveClub, get clubState() { return clubState; }, CLUB_TEXT, openClubPanel,
+    clubPulse };
 }

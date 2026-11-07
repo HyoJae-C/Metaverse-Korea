@@ -80,5 +80,6 @@ export function createMusicCafe(game) {
     root.replaceChildren(x, h, note, list, actions);
     root.hidden = false;
   }
-  return { enterMusicCafe, enterKpopCafe, leaveMusicCafe, leaveKpopCafe, get cafeMusic() { return cafeMusic; }, openLpPanel };
+  return { enterMusicCafe, enterKpopCafe, leaveMusicCafe, leaveKpopCafe,
+    get cafeMusic() { return cafeMusic; }, openLpPanel };
 }
