@@ -189,10 +189,10 @@ for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, fac
   const p = onTrail(i, t, side * 3.4);
   bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
 });
-// The chocolate one greets you at the north end of Metasequoia Avenue (below),
-// on the right as you walk in from Seoulsup-gil, just past Seoul Forest
-// Station's exit 2, facing the way in.
-sculpture('chocolate', -209.5, 103, faceTo(-209.5, 103, -200, 85)); // just outside the avenue's west row of trees
+// The chocolate one greets you at the north end of Metasequoia Avenue (below):
+// at the very front on the right as you walk in from Seoulsup-gil, across the
+// path from the avenue's sign (mirrored), facing the street.
+sculpture('chocolate', -203.4, 86.6, Math.PI);
 // A grassy hill with wooden stairs up to a look-out deck, south of the
 // culture center (walkable: core/park-art.js hillY). The stairs face
 // Metasequoia Avenue, with a path across to it.
