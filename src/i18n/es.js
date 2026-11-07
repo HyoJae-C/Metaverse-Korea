@@ -534,6 +534,7 @@ export const ES = {
   'lang.choose': 'Elige tu idioma',
   'lang.change': 'Idioma',
   'start.region': 'Primera parada: {region}, {city}',
+  'start.last': 'Última ubicación: {place}',
   'start.button': 'Empezar a pasear',
   'loading': 'Cargando las calles…',
   'error.noMap': 'Los datos del mapa de esta zona aún no están listos. Vuelve pronto.',

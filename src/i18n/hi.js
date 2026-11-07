@@ -535,6 +535,7 @@ export const HI = {
   'lang.choose': 'अपनी भाषा चुनें',
   'lang.change': 'भाषा',
   'start.region': 'पहला पड़ाव: {region}, {city}',
+  'start.last': 'पिछली जगह: {place}',
   'start.button': 'घूमना शुरू करें',
   'loading': 'गलियाँ लोड हो रही हैं…',
   'error.noMap': 'इस इलाक़े का नक्शा डेटा अभी तैयार नहीं है। कृपया जल्द फिर देखें।',

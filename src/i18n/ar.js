@@ -535,6 +535,7 @@ export const AR = {
   'lang.choose': 'اختر لغتك',
   'lang.change': 'اللغة',
   'start.region': 'المحطة الأولى: {region}، {city}',
+  'start.last': 'آخر موقع: {place}',
   'start.button': 'ابدأ التجوّل',
   'loading': 'جارٍ تحميل الشوارع…',
   'error.noMap': 'بيانات الخريطة لهذه المنطقة غير جاهزة بعد. عُد قريبًا.',
