@@ -49,3 +49,15 @@ test('the Namsan stamp stands on the summit plaza, inside the cable car room', a
   assert.equal(cableFloor(spot.x, spot.z), CC.top);
   assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
 });
+
+test('the Han River stamp stands on the park lawn, inside the walls and clear of the exit', async () => {
+  const { roomSpots } = await import('../src/core/stamp-stands.js');
+  const { ROOM_SIZES, exitOf } = await import('../src/core/interior.js');
+  const [spot] = roomSpots(STAMPS, 'ttukseom-hangang');
+  assert.equal(spot.stamp.id, 'hangang');
+  const room = ROOM_SIZES.park, exit = exitOf(room);
+  assert.ok(Math.abs(spot.x) < room.w / 2 - 1 && spot.z < room.d / 2 - 1, 'inside the park walls');
+  assert.ok(spot.z > 0, 'on the land side, away from the river');
+  const ux = spot.x + Math.sin(spot.ry) * 0.9, uz = spot.z + Math.cos(spot.ry) * 0.9;
+  assert.ok(Math.hypot(ux - exit.x, uz - exit.z) > 2, 'not on top of the exit');
+});

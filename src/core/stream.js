@@ -10,7 +10,9 @@
 //     "falls": true,                                  // waterfall at the west end
 //     "bridges": [{ "u": 80, "w": 8, "style": "arch" }], // u: metres from the west end
 //     "stairs": [{ "u": 4, "side": -1, "dir": 1 }],   // side -1 north bank, 1 south; dir: way down (±x)
-//     "stones": [{ "u": 125 }] }                      // stepping stones across the water
+//     "stones": [{ "u": 125 }],                       // stepping stones across the water
+//     "heron": true,                                  // a grey heron (core/heron.js)
+//     "lanterns": { … } }                             // the lantern festival (core/lanterns.js)
 //
 // The ground is flat and collision is 2D, so the stream has two layers.
 // On the street the whole channel is a wall (only bridge decks cross it);
@@ -19,6 +21,8 @@
 // (the mouth) and into the channel at its bottom (the landing). Halfway down
 // you switch from the street layer to the low one.
 import * as THREE from 'three';
+import { buildHeron } from './heron.js';
+import { buildLanternFestival, WishLanterns } from './lanterns.js';
 
 export const STAIR = { w: 2.4, run: 9, landing: 3 };
 const WALL = 0.3;
@@ -125,6 +129,7 @@ export function buildStreams(streams, scene) {
     const g = new THREE.Group();
     g.position.set(s.at[0], 0, s.at[1]);
     ticks.push(buildOne(g, s));
+    if (g.userData.wish && !root.userData.wish) root.userData.wish = g.userData.wish; // core/lanterns.js
     root.add(g);
   }
   root.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
@@ -271,7 +276,14 @@ function buildOne(g, s) {
   box(len, len + WALL, -D, 0, -hw, hw, C.wall); // east end (the stream goes on in real life)
   // Bridges overhead.
   for (const b of s.bridges || []) bridge(g, s, b, D);
+  const heron = s.heron ? buildHeron(g, s) : null; // a grey heron fishing in the water (core/heron.js)
+  // The lantern festival and the wish lanterns (core/lanterns.js).
+  const fest = s.lanterns ? buildLanternFestival(g, s) : null;
+  if (s.lanterns) g.userData.wish = new WishLanterns(g, s);
   return (t) => {
+    heron?.();
+    fest?.tick(t);
+    g.userData.wish?.tick(Date.now() / 1000);
     for (const q of streaks) q.m.position.x = (q.u + t * q.sp * 2) % len;
     if (fallTex) fallTex.offset.y = (t * 1.6) % 1;
   };

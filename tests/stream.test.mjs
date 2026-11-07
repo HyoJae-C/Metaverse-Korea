@@ -43,16 +43,16 @@ test('on the street the channel is a wall except the bridge; below, the water is
   assert.ok(street.blocked(105, laneZ - STAIR.w / 2 - 0.1, R)); // the stair's outer wall
 });
 
-test('one hole for the channel and its four stairs on the Cheonggyecheon map', () => {
+test('one hole for the channel and its six stairs on the Cheonggyecheon map', () => {
   const g = JSON.parse(readFileSync(new URL('../public/regions/seongsu/districts/gyeongbokgung.json', import.meta.url)));
   const m = mergeDistricts([{ id: 'gyeongbokgung', map: g, offset: [-1737, -920] }]);
   assert.equal(m.streams.length, 1);
   const c = m.streams[0];
   assert.deepEqual(c.at, [120 - 1737, 409 - 920]);
-  assert.equal(c.stairs.length, 4);
+  assert.equal(c.stairs.length, 6);
   const holes = holesOf(c);
   assert.equal(holes.length, 1); // touching holes break the ground's triangulation
-  assert.equal(holes[0].length, 4 + 4 * 4);
+  assert.equal(holes[0].length, 4 + 4 * 6);
   // Stairs stay clear of the bridges, and every road stays out of the channel (but the bridges' walks).
   for (const st of c.stairs) for (const b of c.bridges) assert.ok(Math.min(Math.abs(st.u - b.u), Math.abs(st.u + st.dir * (STAIR.run + STAIR.landing) - b.u)) > b.w / 2 + 1);
   const walls = new CollisionMap(streetBlockers(c));

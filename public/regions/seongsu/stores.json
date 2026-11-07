@@ -2578,6 +2578,76 @@
       "tagline": { "en": "A little gallery in the west wood. Exhibition coming soon.", "ko": "서쪽 숲속의 작은 전시관. 전시 준비 중이에요.", "ja": "西の森の小さなギャラリー。展示準備中。", "zh": "西林里的小展馆，展览筹备中。" },
       "colors": { "sign": "#b0643a", "awning": "#f5d9c4", "accent": "#faf6f2" },
       "products": []
+    },
+    {
+      "id": "bitdam-hanji",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1317, -483],
+      "name": { "ko": "빛담 한지등", "en": "Bitdam Hanji Lamps", "ja": "ピッタム韓紙灯", "zh": "光潭韩纸灯" },
+      "tagline": { "en": "Lamps of Korean mulberry paper, the soft glow of the lantern festival", "ko": "한지로 만든 등, 등불 축제의 은은한 빛", "ja": "韓紙の灯り、灯籠祭りのやわらかな光", "zh": "韩纸做的灯，灯会般柔和的光" },
+      "colors": { "sign": "#b03a2e", "awning": "#f3e5c8", "accent": "#fff8ec" },
+      "products": [
+        { "id": "buy-lamp-hanji", "model": "furniture", "furniture": "lamp-hanji", "color": "#ffe9b8", "name": { "en": "Round hanji lamp", "ko": "둥근 한지 조명", "ja": "丸い韓紙ランプ", "zh": "圆形韩纸灯" }, "price": 38000, "desc": { "en": "Hanji paper on a bamboo frame, glowing like a little moon.", "ko": "대나무 살에 한지를 붙여 작은 달처럼 빛나요." } },
+        { "id": "buy-lamp-corong", "model": "furniture", "furniture": "lamp-corong", "color": "#ffe9b8", "name": { "en": "Cheongsachorong lantern stand", "ko": "청사초롱 스탠드", "ja": "青紗提灯スタンド", "zh": "青纱灯笼立灯" }, "price": 45000, "desc": { "en": "A red and blue silk lantern, the kind that lights up Korean festivals.", "ko": "빨강과 파랑 비단으로 만든, 잔치를 밝히는 그 초롱이에요." } },
+        { "id": "buy-lamp-lotus", "model": "furniture", "furniture": "lamp-lotus", "color": "#ffe9b8", "name": { "en": "Lotus lamp", "ko": "연꽃 조명", "ja": "蓮の花ランプ", "zh": "莲花灯" }, "price": 32000, "desc": { "en": "A pink lotus lamp like the ones hung for Buddha's Birthday.", "ko": "부처님 오신 날에 다는 연등처럼 생긴 분홍 연꽃 조명이에요." } }
+      ]
+    },
+    {
+      "id": "dalbit-lighting",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1289, -483],
+      "name": { "ko": "달빛조명", "en": "Dalbit Lighting", "ja": "タルビッ照明", "zh": "月光灯饰" },
+      "tagline": { "en": "Cute mood lights for your room", "ko": "방을 포근하게 만드는 귀여운 무드등", "ja": "部屋をあたたかくするかわいいムードライト", "zh": "让房间变温馨的可爱氛围灯" },
+      "colors": { "sign": "#2f3d6b", "awning": "#fff3b8", "accent": "#f4f6ff" },
+      "products": [
+        { "id": "buy-lamp-moon", "model": "furniture", "furniture": "lamp-moon", "color": "#ffe9b8", "name": { "en": "Moon lamp", "ko": "달 조명", "ja": "月のランプ", "zh": "月亮灯" }, "price": 28000, "desc": { "en": "A full moon to keep by your bed.", "ko": "침대 옆에 두는 보름달이에요." } },
+        { "id": "buy-lamp-mushroom", "model": "furniture", "furniture": "lamp-mushroom", "color": "#ffe9b8", "name": { "en": "Mushroom table lamp", "ko": "버섯 무드등", "ja": "きのこのテーブルランプ", "zh": "蘑菇台灯" }, "price": 18000, "desc": { "en": "A spotty red mushroom that glows.", "ko": "빨간 점박이 버섯이 반짝 빛나요." } },
+        { "id": "buy-lamp-star", "model": "furniture", "furniture": "lamp-star", "color": "#ffe9b8", "name": { "en": "Star night light", "ko": "별 수면등", "ja": "星のナイトライト", "zh": "星星小夜灯" }, "price": 15000, "desc": { "en": "A little yellow star for sleepy nights.", "ko": "잠들기 전에 켜 두는 노란 별이에요." } }
+      ]
+    },
+    {
+      "id": "neon-golmok",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1251, -483],
+      "name": { "ko": "네온골목", "en": "Neon Golmok", "ja": "ネオン路地", "zh": "霓虹小巷" },
+      "tagline": { "en": "Neon signs and LED lights, made in the alley", "ko": "골목에서 만드는 네온사인과 LED 조명", "ja": "路地で作るネオンサインとLEDライト", "zh": "小巷里手工制作的霓虹灯牌和LED灯" },
+      "colors": { "sign": "#1b1a24", "awning": "#ff4fa3", "accent": "#e8fbff" },
+      "products": [
+        { "id": "buy-lamp-neon-heart", "model": "furniture", "furniture": "lamp-neon-heart", "color": "#ffe9b8", "name": { "en": "Neon heart sign", "ko": "네온 하트 사인", "ja": "ネオンハートサイン", "zh": "霓虹爱心灯牌" }, "price": 42000, "desc": { "en": "A pink neon heart on a stand.", "ko": "받침대에 세운 분홍 네온 하트예요." } },
+        { "id": "buy-lamp-neon-hi", "model": "furniture", "furniture": "lamp-neon-hi", "color": "#ffe9b8", "name": { "en": "Neon “안녕” sign", "ko": "네온 “안녕” 사인", "ja": "ネオン「アンニョン」サイン", "zh": "霓虹“안녕”灯牌" }, "price": 48000, "desc": { "en": "안녕 (annyeong) means both hi and bye. Here it glows blue.", "ko": "파랗게 빛나는 \"안녕\" 네온사인이에요." } },
+        { "id": "buy-lamp-tube", "model": "furniture", "furniture": "lamp-tube", "color": "#ffe9b8", "name": { "en": "Rainbow LED tube lamp", "ko": "무지개 LED 튜브등", "ja": "虹色LEDチューブライト", "zh": "彩虹LED灯管" }, "price": 25000, "desc": { "en": "A stack of rainbow LED rings.", "ko": "무지개색 LED를 층층이 쌓은 조명이에요." } }
+      ]
+    },
+    {
+      "id": "mojeon-lamp",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1221, -483],
+      "name": { "ko": "모전램프상회", "en": "Mojeon Lamp Shop", "ja": "モジョンランプ商会", "zh": "毛廛灯具商会" },
+      "tagline": { "en": "Old-school lamps from a lighting shop that has been here for ages", "ko": "오래된 조명 가게의 레트로 램프", "ja": "古くからある照明店のレトロなランプ", "zh": "老灯具店里的复古灯" },
+      "colors": { "sign": "#2f6f6a", "awning": "#d9a93a", "accent": "#fbf3e6" },
+      "products": [
+        { "id": "buy-lamp-desk", "model": "furniture", "furniture": "lamp-desk", "color": "#ffe9b8", "name": { "en": "Retro desk lamp", "ko": "레트로 책상 스탠드", "ja": "レトロなデスクランプ", "zh": "复古台灯" }, "price": 30000, "desc": { "en": "A green desk lamp with a bendy arm, for late-night studying.", "ko": "팔이 꺾이는 초록 책상 스탠드예요. 밤샘 공부에 딱이에요." } },
+        { "id": "buy-lamp-arc", "model": "furniture", "furniture": "lamp-arc", "color": "#ffe9b8", "name": { "en": "Brass arc floor lamp", "ko": "황동 아크 플로어 램프", "ja": "真鍮のアーチ型フロアランプ", "zh": "黄铜弧形落地灯" }, "price": 68000, "desc": { "en": "A tall brass arc that leans over your sofa.", "ko": "소파 위로 휘어지는 키 큰 황동 램프예요." } },
+        { "id": "buy-lamp-lava", "model": "furniture", "furniture": "lamp-lava", "color": "#ffe9b8", "name": { "en": "Lava lamp", "ko": "라바 램프", "ja": "ラバランプ", "zh": "熔岩灯" }, "price": 35000, "desc": { "en": "Orange blobs float up and down in purple light.", "ko": "보랏빛 속에서 주황 방울이 둥실둥실 떠다녀요." } }
+      ]
+    },
+    {
+      "id": "banjjak-bulbs",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1169, -483],
+      "name": { "ko": "반짝전구", "en": "Banjjak Bulbs", "ja": "パンチャク電球", "zh": "闪闪灯泡" },
+      "tagline": { "en": "Light bulbs, fairy lights and candle lanterns", "ko": "전구, 줄조명, 캔들 랜턴", "ja": "電球、ガーランドライト、キャンドルランタン", "zh": "灯泡、串灯和烛台灯笼" },
+      "colors": { "sign": "#c98a3a", "awning": "#fff2c4", "accent": "#fffaf0" },
+      "products": [
+        { "id": "buy-lamp-string", "model": "furniture", "furniture": "lamp-string", "color": "#ffe9b8", "name": { "en": "Fairy light arch", "ko": "전구 줄조명 아치", "ja": "電球ガーランドのアーチ", "zh": "串灯拱门" }, "price": 26000, "desc": { "en": "Warm little bulbs strung over an arch.", "ko": "아치에 따뜻한 작은 전구를 줄줄이 달았어요." } },
+        { "id": "buy-lamp-bulb", "model": "furniture", "furniture": "lamp-bulb", "color": "#ffe9b8", "name": { "en": "Big Edison bulb lamp", "ko": "대형 에디슨 전구 램프", "ja": "大きなエジソン電球ランプ", "zh": "大号爱迪生灯泡灯" }, "price": 22000, "desc": { "en": "One giant old-style bulb with a glowing filament.", "ko": "필라멘트가 빛나는 커다란 옛날식 전구예요." } },
+        { "id": "buy-lamp-candle", "model": "furniture", "furniture": "lamp-candle", "color": "#ffe9b8", "name": { "en": "Candle lantern", "ko": "캔들 랜턴", "ja": "キャンドルランタン", "zh": "烛台灯笼" }, "price": 19000, "desc": { "en": "A black metal lantern with a candle inside.", "ko": "초가 들어 있는 검은 철제 랜턴이에요." } }
+      ]
     }
   ]
 }
