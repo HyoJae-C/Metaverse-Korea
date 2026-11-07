@@ -208,6 +208,9 @@ addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.rea
 // automated test rooms.
 const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
 await cloud.load();
+// Country statistics for the operator page: a guess from the time zone,
+// once a day per account (core/country.js). Loaded on the side; never waits.
+if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());

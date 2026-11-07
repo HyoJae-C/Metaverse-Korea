@@ -50,7 +50,43 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
     badge('liveBadge', data.online_now);
     $('statsNote').textContent = '"Played" counts accounts whose game reported a spot (since 008_player_where.sql was run). Updated ' + new Date().toLocaleTimeString() + '.';
     statsTimer = setTimeout(() => current === 'overview' && !document.hidden && overview(), 15000);
+    countries();
   }
+
+  // ---------- Countries (supabase/010_countries.sql) ----------
+  const regionName = (() => {
+    try { const d = new Intl.DisplayNames(['en'], { type: 'region' }); return (cc) => d.of(cc); } catch { return (cc) => cc; }
+  })();
+  const flag = (cc) => String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+  async function countries() {
+    const box = $('countryList');
+    const { data, error } = await client.rpc('ops_countries', { days: +$('countryDays').value });
+    if (error) {
+      if (error.code === '42501') return notOperator();
+      box.innerHTML = `<p class="empty">${missing(error) ? 'Run <code>supabase/010_countries.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.' : escapeHtml(error.message)}</p>`;
+      $('countryTotal').textContent = '';
+      return;
+    }
+    const rows = data || [];
+    const total = rows.reduce((n, r) => n + Number(r.players), 0);
+    const top = Math.max(1, ...rows.map((r) => Number(r.players)));
+    $('countryTotal').textContent = rows.length ? `${rows.filter((r) => r.country !== 'XX').length} countries` : '';
+    if (!rows.length) { box.innerHTML = '<p class="empty">No players counted in this period yet.</p>'; return; }
+    box.replaceChildren(...rows.map((r) => {
+      const n = Number(r.players);
+      const known = r.country !== 'XX';
+      const row = el('div', 'crow');
+      const name = el('span', 'name', known ? `${flag(r.country)} ${regionName(r.country) || r.country}` : '❔ Unknown (UTC)');
+      name.title = `${r.country} · ${r.visits} player-days`;
+      const bar = el('span', 'bar');
+      const fill = el('i');
+      fill.style.width = `${Math.max(2, (n / top) * 100)}%`;
+      bar.append(fill);
+      row.append(name, bar, el('span', 'n', `${n} · ${Math.round((n / total) * 100)}%`));
+      return row;
+    }));
+  }
+  $('countryDays').onchange = countries;
 
   // ---------- Boards ----------
   async function board(b) {

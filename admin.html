@@ -43,6 +43,12 @@
       button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
       button.danger { color: #b2321f; }
       .empty { color: var(--muted); padding: 20px 0; text-align: center; }
+      #countries { margin-top: 14px; }
+      .crow { display: grid; grid-template-columns: minmax(120px, 210px) 1fr 70px; gap: 10px; align-items: center; padding: 4px 0; }
+      .crow .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .crow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .crow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .crow .n { text-align: right; font-variant-numeric: tabular-nums; }
       .scroll-x { overflow-x: auto; }
       header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
       header h1 { font-size: 16px; margin: 0; }
@@ -87,6 +93,20 @@
     <section class="tab" id="tab-overview" hidden><div class="pad">
       <div class="stats" id="stats"></div>
       <p class="muted" id="statsNote"></p>
+      <div class="card" id="countries">
+        <div class="tools" style="margin-bottom:8px">
+          <b style="font-size:15px">🌏 Countries</b>
+          <select id="countryDays" aria-label="Period">
+            <option value="1">Today (KST)</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="365">Last 12 months</option>
+          </select>
+          <span class="muted" id="countryTotal"></span>
+        </div>
+        <div id="countryList"></div>
+        <p class="muted" style="margin:8px 0 0">Guessed from each player's time zone setting, once a day per account (no IP addresses). Travellers whose phone keeps their home time zone count for home.</p>
+      </div>
     </div></section>
     <section class="tab" id="tab-live" hidden>
       <div id="map">

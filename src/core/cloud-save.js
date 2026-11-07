@@ -176,6 +176,17 @@ export class CloudSave {
     return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
   }
 
+  // Report the country this player is probably in, for the operator's
+  // country statistics (core/country.js, supabase/010_countries.sql). Only
+  // a two-letter code and how it was guessed; true when the server took it.
+  async reportCountry({ country, source }) {
+    if (!this.client || !this.user) return false;
+    const { error } = await this.client.rpc('report_country', {
+      p_country: String(country || '').slice(0, 2), p_source: String(source || '').slice(0, 8),
+    });
+    return !error;
+  }
+
   // This account's sign-in token, for realtime's private channels (the chat
   // channel checks it on the server). Null without an account.
   async accessToken() {
