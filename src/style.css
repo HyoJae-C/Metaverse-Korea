@@ -1098,6 +1098,10 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 .karaoke-lane, .duck-lane, .claw-pit { width: 100%; height: auto; border-radius: 14px; display: block; }
 .karaoke-status { margin: 0; text-align: center; font-weight: 800; }
 .karaoke-pad { width: 100%; font-size: 22px; padding: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* The runway panel while the show is on: low, so you can watch yourself walk. */
+.runway-live { padding: 12px 14px; }
+.runway-live h3 { display: none; }
+.runway-live .karaoke-pad { padding: 12px; font-size: 20px; }
 .karaoke-board { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: #f4f0ff; }
 .karaoke-board:empty { display: none; }
 .karaoke-row { font-size: 13px; }

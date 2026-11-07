@@ -103,6 +103,7 @@ import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
+import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { TarotUI } from './ui/tarot-ui.js';
@@ -2802,7 +2803,7 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
-  for (const g of [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
   leaveMusicCafe();
   leaveKpopCafe();
@@ -3719,7 +3720,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4131,6 +4132,44 @@ const karaokeUi = new KaraokeUI({
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
 });
 let karaokeMusic = false;
+// Curve Runway (DDP, ui/runway-ui.js): while the show is on, the movement
+// loop walks the character down the runway and back (runwayStep), the
+// camera watching from the photographers' end; the poses play here.
+let runwayMusic = false, runwayCam = null, runwaySpin = 0;
+const runwayUi = new RunwayUI({
+  root: $('runway-panel'),
+  wallet,
+  onStart: () => {
+    runwayMusic = music.on; if (music.on) { music.setOn(false); applyMusicBtn(); }
+    runwayCam = { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist };
+    Object.assign(cam, { yaw: 0, pitch: 0.3, dist: 7 });
+  },
+  onEnd: () => {
+    if (runwayMusic && !music.on) { music.setOn(true); applyMusicBtn(); }
+    runwayMusic = false; runwaySpin = 0;
+    if (runwayCam) { Object.assign(cam, runwayCam); runwayCam = null; }
+  },
+  onPose: (i, kind, label) => {
+    if (!label) { me.play('shrug'); return; } // missed the beat
+    interior?.stations?.runway?.[0]?.flash?.();
+    sfx.snap();
+    if (kind === 'turn') runwaySpin = 0.7;
+    else { me.play(kind); net.sendEmote(kind); }
+  },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
+});
+// One frame of the show: where on the runway, facing which way.
+function runwayStep(p, dt) {
+  const st = interior?.stations?.runway?.[0], w = runwayUi.walkState();
+  if (!st || !w) return 0;
+  const z = st.z + (st.z1 - st.z) * w.along;
+  const moved = Math.abs(z - p.z);
+  p.x = st.x; p.z = z;
+  let ry = w.phase === 'back' ? Math.PI : 0;
+  if (runwaySpin > 0) { runwaySpin = Math.max(0, runwaySpin - dt); ry += (1 - runwaySpin / 0.7) * Math.PI * 2; }
+  me.root.rotation.y = ry;
+  return moved > 0.0005 ? 0.32 : 0; // a steady catwalk pace
+}
 let snapReq = null; // resolved with a copy of the canvas after the next render
 const photoUi = new PhotoUI({
   root: $('photo-panel'),
@@ -6627,6 +6666,12 @@ function updateAction(p, tSec) {
       next = poolAction(p);
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
+      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => {
+        const st = interior.stations.runway[0];
+        me.root.position.set(st.x, 0, st.z); me.root.rotation.y = st.ry;
+        runwayUi.show();
+      } };
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -6918,7 +6963,7 @@ renderer.setAnimationLoop(() => {
   const steady = steadyWalk && !riding;
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated && !ride && !cable && riding !== 3) {
+  if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -6961,6 +7006,8 @@ renderer.setAnimationLoop(() => {
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 8);
     speed01 = THREE.MathUtils.lerp(speed01, steady ? STEADY_ANIM : speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
+  } else if (runwayUi.walking && mode === 'store') {
+    speed01 = THREE.MathUtils.lerp(speed01, runwayStep(p, dt), Math.min(1, dt * 10));
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
