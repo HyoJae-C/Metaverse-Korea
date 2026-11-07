@@ -69,6 +69,7 @@ export const GATE_LANES = [-3, -1.5, 0, 1.5, 3]; // lane centres (z)
 export const FARE = 2; // coins, paid at the gate on the way in (going out is free)
 export const DOOR_Z = 7.5; // screen doors on both sides of the island platform
 const TRACK_Z = 10.6;
+const ROUTE_PILLAR_X = -1.6; // the route map pillar on the platform, between two benches
 const PLAT_X = [-8.5, 25.5];
 // Up trains run on the south track (+z), heading east; down trains on the north track.
 export const TRACKS = [
@@ -242,16 +243,22 @@ export function directionSignTexture(left, right, line) {
 // Route map for the pillar inside the ticket gates: all stations on one loop
 // (a rounded rectangle), in the order the trains run. The first station sits
 // at the top and the rest follow clockwise, the way "Up" trains go. The
-// current station has a red ring and a red arrow shows the Up direction.
+// current station has a red ring; a red arrow shows the Up direction and a
+// blue one the Down direction.
 // lang: the second line's language (null = English).
 export const ROUTE_MAP_TEXT = {
   title: { en: 'Route Map', ko: '노선도', ja: '路線図', zh: '线路图' },
   here: { en: 'You are here', ko: '현재 역', ja: '現在地', zh: '当前站' },
   up: { en: 'Up trains go clockwise', ko: '상행 열차 방향 (시계 방향)', ja: '上り列車は時計回り', zh: '上行列车顺时针行驶' },
+  down: { en: 'Down trains go counter-clockwise', ko: '하행 열차 방향 (반시계 방향)', ja: '下り列車は反時計回り', zh: '下行列车逆时针行驶' },
+  upShort: { en: 'Up', ko: '상행', ja: '上り', zh: '上行' },
+  downShort: { en: 'Down', ko: '하행', ja: '下り', zh: '下行' },
+  view: { en: 'View route map', ko: '노선도 자세히 보기', ja: '路線図を詳しく見る', zh: '查看线路图' },
   warn: { en: 'Riding the wrong way round can take longer!', ko: '반대 방향으로 타면 시간이 더 오래 걸릴 수 있어요!', ja: '逆方向に乗ると時間がもっとかかることがあります！', zh: '坐反方向可能要花更长时间！' },
   check: { en: 'Check the direction before you board.', ko: '타기 전에 방향을 확인하세요.', ja: '乗る前に方向を確認してください。', zh: '上车前请确认方向。' },
 };
-export const ROUTE_MAP = { w: 1024, h: 1560 };
+export const ROUTE_MAP = { w: 1024, h: 1640 };
+const UP_C = '#e02424', DOWN_C = '#1f6fd1';
 export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2fb24a' } = {}) {
   const { w, h } = ROUTE_MAP;
   c.width = w; c.height = h;
@@ -291,34 +298,43 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
   g.beginPath(); g.roundRect(x0, y0, W, H, r); g.stroke();
 
   const n = Math.max(1, stops.length), gap = P / n;
-  // Red arrow along the inside of the loop, from here towards the next station (Up).
+  // Arrows along the inside of the loop, from here towards the next station:
+  // red for Up (clockwise), blue for Down (counter-clockwise), each labelled.
   if (n > 1) {
-    const inset = 46, from = index * gap + 34, to = index * gap + gap * 0.62;
-    const cx = w / 2, cy = (y0 + y1) / 2;
-    const inner = (d) => { // pull the point towards the centre of the loop
+    const inset = 46, cx = w / 2, cy = (y0 + y1) / 2;
+    const inner = (d, ins = inset) => { // pull the point towards the centre of the loop
       const [px, py] = pointAt(d);
-      const dx = cx - px, dy = cy - py;
-      const kx = Math.abs(px - cx) > W / 2 - r - 1 ? Math.sign(dx) * inset : 0;
-      const ky = Math.abs(py - cy) > H / 2 - r - 1 ? Math.sign(dy) * inset : 0;
+      const kx = Math.abs(px - cx) > W / 2 - r - 1 ? Math.sign(cx - px) * ins : 0;
+      const ky = Math.abs(py - cy) > H / 2 - r - 1 ? Math.sign(cy - py) * ins : 0;
       return [px + kx, py + ky];
     };
-    g.strokeStyle = '#e02424'; g.fillStyle = '#e02424'; g.lineWidth = 14; g.lineCap = 'round';
-    g.beginPath();
-    for (let k = 0; k <= 40; k++) { const [px, py] = inner(from + (to - from) * k / 40); k ? g.lineTo(px, py) : g.moveTo(px, py); }
-    g.stroke();
-    const [ax, ay] = inner(to), [bx, by] = inner(to - 6);
-    const ang = Math.atan2(ay - by, ax - bx);
-    g.beginPath();
-    g.moveTo(ax + Math.cos(ang) * 30, ay + Math.sin(ang) * 30);
-    g.lineTo(ax + Math.cos(ang + 2.3) * 30, ay + Math.sin(ang + 2.3) * 30);
-    g.lineTo(ax + Math.cos(ang - 2.3) * 30, ay + Math.sin(ang - 2.3) * 30);
-    g.closePath(); g.fill();
+    const arrow = (dir, color, label) => {
+      const from = index * gap + dir * 34, to = index * gap + dir * gap * 0.62;
+      g.strokeStyle = color; g.fillStyle = color; g.lineWidth = 14; g.lineCap = 'round';
+      g.beginPath();
+      for (let k = 0; k <= 40; k++) { const [px, py] = inner(from + (to - from) * k / 40); k ? g.lineTo(px, py) : g.moveTo(px, py); }
+      g.stroke();
+      const [ax, ay] = inner(to), [bx, by] = inner(to - dir * 6);
+      const ang = Math.atan2(ay - by, ax - bx);
+      g.beginPath();
+      g.moveTo(ax + Math.cos(ang) * 30, ay + Math.sin(ang) * 30);
+      g.lineTo(ax + Math.cos(ang + 2.3) * 30, ay + Math.sin(ang + 2.3) * 30);
+      g.lineTo(ax + Math.cos(ang - 2.3) * 30, ay + Math.sin(ang - 2.3) * 30);
+      g.closePath(); g.fill();
+      // The label just inside the arrow's tip.
+      const [lx, ly] = inner(to - dir * 10, inset + 78);
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '900 34px system-ui, sans-serif'; g.fillText(label[0], lx, ly - 16, 150);
+      g.font = '700 24px system-ui, sans-serif'; g.fillText(label[1], lx, ly + 16, 150);
+    };
+    arrow(1, UP_C, both(ROUTE_MAP_TEXT.upShort));
+    arrow(-1, DOWN_C, both(ROUTE_MAP_TEXT.downShort));
   }
   // Stations: a white circle on the line, the name outside the loop.
   stops.forEach((nm, k) => {
     const [px, py, side] = pointAt(k * gap);
     const cur = k === index;
-    g.fillStyle = '#ffffff'; g.strokeStyle = cur ? '#e02424' : '#3b3f47'; g.lineWidth = cur ? 10 : 7;
+    g.fillStyle = '#ffffff'; g.strokeStyle = cur ? UP_C : '#3b3f47'; g.lineWidth = cur ? 10 : 7;
     g.beginPath(); g.arc(px, py, cur ? 28 : 22, 0, Math.PI * 2); g.fill(); g.stroke();
     if (cur) { g.lineWidth = 8; g.beginPath(); g.arc(px, py, 50, 0, Math.PI * 2); g.stroke(); }
     let lx = px, ly = py, align = 'center';
@@ -338,26 +354,26 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
     g.font = '600 32px system-ui, sans-serif';
     g.fillText(second(nm), lx, ly + (cur ? 58 : 52), maxW);
   });
-  // In the middle of the loop: which way Up trains go.
   const up = both(ROUTE_MAP_TEXT.up), here = both(ROUTE_MAP_TEXT.here);
-  const cy = (y0 + y1) / 2;
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillStyle = '#e8eaee'; g.font = '700 240px system-ui, sans-serif'; g.fillText('↻', w / 2, cy - 30);
-  // Legend under the loop: the red ring and the red arrow.
+  // Legend under the loop: the red ring, the red (Up) and blue (Down) arrows.
   const lgY = 1250;
   g.textAlign = 'left';
-  g.strokeStyle = '#e02424'; g.fillStyle = '#fff'; g.lineWidth = 7;
-  g.beginPath(); g.arc(80, lgY, 20, 0, Math.PI * 2); g.fill(); g.stroke();
-  g.fillStyle = '#e02424'; g.font = '800 32px system-ui, sans-serif'; g.fillText(here[0], 118, lgY - 16, 330);
-  g.font = '600 26px system-ui, sans-serif'; g.fillText(here[1], 118, lgY + 18, 330);
-  g.strokeStyle = '#e02424'; g.lineWidth = 10; g.lineCap = 'round';
-  g.beginPath(); g.moveTo(452, lgY); g.lineTo(500, lgY); g.stroke();
-  g.fillStyle = '#e02424'; g.beginPath(); g.moveTo(520, lgY); g.lineTo(496, lgY - 16); g.lineTo(496, lgY + 16); g.closePath(); g.fill();
-  g.fillStyle = '#22252b'; g.font = '800 28px system-ui, sans-serif'; g.fillText(up[0], 540, lgY - 16, w - 580);
-  g.fillStyle = '#555b66'; g.font = '600 24px system-ui, sans-serif'; g.fillText(up[1], 540, lgY + 18, w - 580);
+  g.strokeStyle = UP_C; g.fillStyle = '#fff'; g.lineWidth = 7;
+  g.beginPath(); g.arc(80, lgY + 30, 20, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.fillStyle = UP_C; g.font = '800 32px system-ui, sans-serif'; g.fillText(here[0], 118, lgY + 14, 300);
+  g.font = '600 26px system-ui, sans-serif'; g.fillText(here[1], 118, lgY + 48, 300);
+  const legendArrow = (y, color, txt) => {
+    g.strokeStyle = color; g.lineWidth = 10; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(432, y); g.lineTo(480, y); g.stroke();
+    g.fillStyle = color; g.beginPath(); g.moveTo(500, y); g.lineTo(476, y - 16); g.lineTo(476, y + 16); g.closePath(); g.fill();
+    g.fillStyle = color; g.font = '800 28px system-ui, sans-serif'; g.fillText(txt[0], 520, y - 15, w - 560);
+    g.fillStyle = '#555b66'; g.font = '600 24px system-ui, sans-serif'; g.fillText(txt[1], 520, y + 17, w - 560);
+  };
+  legendArrow(lgY - 4, UP_C, up);
+  legendArrow(lgY + 68, DOWN_C, both(ROUTE_MAP_TEXT.down));
   // Warning at the bottom: the wrong way round takes longer.
   g.textAlign = 'center';
-  const by0 = 1320;
+  const by0 = 1400;
   g.fillStyle = '#fff4d6'; g.strokeStyle = '#f2b01e'; g.lineWidth = 6;
   g.beginPath(); g.roundRect(40, by0, w - 80, 210, 24); g.fill(); g.stroke();
   const wn = both(ROUTE_MAP_TEXT.warn), ck = both(ROUTE_MAP_TEXT.check);
@@ -605,7 +621,7 @@ export function buildStation(store, ROOM) {
   // Platform: benches back to back down the middle (sit facing a track),
   // pillars, the station name and which way each track goes.
   const seats = [];
-  for (const x of [-1, 11, 21]) {
+  for (const x of [ROUTE_PILLAR_X - 3.6, ROUTE_PILLAR_X + 3.6, 11, 21]) {
     box(2.4, 0.08, 1.0, x, 0.4, 0, '#c08a52');
     box(2.4, 0.5, 0.08, x, 0.7, 0, '#c08a52');
     for (const s of [-1, 1]) box(0.08, 0.4, 0.95, x + s * 1.1, 0.2, 0, '#5d6470');
@@ -663,28 +679,30 @@ export function buildStation(store, ROOM) {
       directionSignTexture(['◀ 나가는 곳 · Exit 1, 2', '계단 위로 · stairs up to the street'], null, line));
   }
 
-  // Route map on a pillar just inside the gates: a big board on each face
-  // along the walk (seen coming through the gates and coming back to them).
-  let setSignLang;
+  // Route map on a slim pillar on the platform, between the first two
+  // benches (bench, map, bench), a board on each face along the walk. Walk up
+  // to it to see it up close (subway.routeMap).
+  let setSignLang, routeMap = null;
   const loop = store.loop;
   if (loop?.stops?.length > 1) {
-    const px = GATE_X + 4.4, pw = 2.3, pd = 0.6;
+    const px = ROUTE_PILLAR_X, pw = 1.15, pd = 0.3;
     box(pd, h, pw, px, h / 2, 0, '#d9dde3');
     block(px - pd / 2, -pw / 2, px + pd / 2, pw / 2);
     const mapC = document.createElement('canvas');
     const mapTex = new THREE.CanvasTexture(mapC);
     mapTex.colorSpace = THREE.SRGBColorSpace;
     mapTex.anisotropy = 4;
-    const mw = 2.0, mh = mw * ROUTE_MAP.h / ROUTE_MAP.w;
+    const mw = 1.0, mh = mw * ROUTE_MAP.h / ROUTE_MAP.w, my = 0.75 + mh / 2;
     for (const s of [-1, 1]) {
-      box(0.04, mh + 0.12, mw + 0.12, px + s * (pd / 2 + 0.01), 0.35 + mh / 2, 0, '#5d6470'); // frame
-      sign(mapTex, mw, mh, px + s * (pd / 2 + 0.035), 0.35 + mh / 2, 0, s < 0 ? -Math.PI / 2 : Math.PI / 2);
+      box(0.04, mh + 0.08, mw + 0.08, px + s * (pd / 2 + 0.01), my, 0, '#5d6470'); // frame
+      sign(mapTex, mw, mh, px + s * (pd / 2 + 0.035), my, 0, s < 0 ? -Math.PI / 2 : Math.PI / 2);
     }
     setSignLang = (lang) => {
       drawRouteMap(mapC, { stops: loop.stops, index: loop.index, lang: lang || null });
       mapTex.needsUpdate = true;
     };
     setSignLang(null);
+    routeMap = { x: px, z: 0, canvas: mapC };
   }
 
   // LED board over the gates, facing the concourse.
@@ -769,6 +787,7 @@ export function buildStation(store, ROOM) {
     subway: Object.assign(hall, {
       stairs,
       vending,
+      routeMap, // { x, z, canvas }: the route map pillar, or null
       // Track t: the doors are open now, and for how much longer (s).
       doorsOpen: (t) => (status[t].phase === 'open' && status[t].left > 0.3 ? status[t].left : 0),
       train: { get phase() { return status[0].phase; } },

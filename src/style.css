@@ -769,6 +769,9 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 }
 
 /* Ordering practice (restaurants) */
+/* Subway route map, seen up close: as big as the screen allows. */
+.sheet.order-panel.route-panel { width: min(600px, calc(100vw - 24px)); max-height: calc(100vh - 32px); top: 16px; bottom: auto; gap: 6px; padding: 12px; }
+.route-panel img { display: block; width: auto; max-width: 100%; max-height: calc(100vh - 110px); margin: 0 auto; border-radius: 12px; }
 .order-panel { display: grid; gap: 10px; max-height: min(74vh, 620px); overflow-y: auto; background: #fffaf2; z-index: 6; }
 /* Keep the main buttons in view while the panel scrolls. */
 .order-panel > .order-actions { position: sticky; bottom: -18px; margin: 0 -18px -18px; padding: 10px 18px 18px; background: #fffaf2; }
