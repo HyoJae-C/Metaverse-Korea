@@ -105,9 +105,9 @@ lists **districts** joined into one map (`src/core/districts.js`):
 6. Optional, for a big walled place: give the map `meta.enclosure`
    (`{ "box": [x0, z0, x1, z1] }` in its own metres) and a wall with gates
    on that box. From outside only the wall and gates are drawn; what stands
-   inside appears once you walk in (`src/core/enclosure.js`). Bukchon and
-   Gyeongbokgung do this, and Bukchon's hanok are only built on the first
-   visit. An L-shaped district can list `meta.parts` (boxes) for the overlap
+   inside appears once you walk in (`src/core/enclosure.js`). Gyeongbokgung
+   does this, and a district's hanok inside an enclosure are only built on
+   the first visit. Bukchon is small and open on the field instead. An L-shaped district can list `meta.parts` (boxes) for the overlap
    check and for `districtAt`.
 
 ## Yeonnam-dong and Mangwon-dong

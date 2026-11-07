@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
 import { HANOK, curvedRoof } from './hanok.js';
+import { BUKCHON, ground } from '../data/bukchon.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
 // into one per material (the ones with a texture or several materials stay).
@@ -111,8 +112,9 @@ const BUILD = {
   openhouse(g, l) {
     const w = l.w, d = l.d, hw = w / 2, hd = d / 2;
     wing(g, 0, -hd + 6, w, 11, 0, { maru: true }); // main hall (faces the courtyard, south)
-    wing(g, -hw + 4.5, 2, 32, 8, Math.PI / 2); // west wing, doors facing east
-    wing(g, hw - 4.5, 2, 32, 8, -Math.PI / 2); // east wing, doors facing west
+    const side = d - 16, sz = -hd + 12 + side / 2; // the side wings, from the hall to near the gate wall
+    wing(g, -hw + 4.5, sz, side, 8, Math.PI / 2); // west wing, doors facing east
+    wing(g, hw - 4.5, sz, side, 8, -Math.PI / 2); // east wing, doors facing west
     // South wall with a tiled cap, and the gate (대문)
     for (const sx of [-1, 1]) {
       const len = hw - 2.5;
@@ -123,7 +125,7 @@ const BUILD = {
     box(g, 5.2, 0.4, 0.6, 0, 3.1, hd - 0.5, C.wood);
     roof(g, 6.4, 3, 1.2, 3.3, 0, hd - 0.5);
     // Persimmon tree (감나무) with fruit, a magpie on top, near the west wing.
-    const tx = -hw + 15, tz = -hd + 40;
+    const tx = -hw + 12, tz = hd - 8;
     box(g, 0.5, 3.4, 0.5, tx, 1.7, tz, '#6b4a33');
     const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6, 0), mat('#7d9a4a'));
     crown.position.set(tx, 4.6, tz);
@@ -184,12 +186,23 @@ const BUILD = {
   },
   // The village wall (담장): a stone lower half, plaster above, a tiled cap.
   // l.len long along x (turned by l.ry).
-  hanokwall(g, l) {
-    const len = l.len;
-    box(g, len, 1.7, 0.9, 0, 0.85, 0, C.dark);
-    for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.8, sz * 0.46, C.stone); // the stone pattern
-    box(g, len, 1.5, 0.7, 0, 2.45, 0, C.wall);
-    tiles(g, len + 0.4, 1.7, 0.55, 3.2, { hip: false, lift: 0.06, seg: Math.max(2, Math.round(len / 3)), rows: 1, color: new THREE.Color(C.roof), end: new THREE.Color(C.wall) });
+  hanokwall(g, l) { // a granite retaining wall (chukdae) holding up the hill: low at the street, taller up the slope
+    const len = l.len, y = l.y || 0, H = y + 1.1;
+    box(g, len, H, 0.95, 0, H / 2 - y, 0, C.dark);
+    for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.6, sz * 0.49, C.stone); // the stone pattern
+    box(g, len + 0.1, 0.16, 1.05, 0, H - y + 0.08, 0, C.stone); // the capstones
+  },
+  // The whole retaining wall as one landmark (l.segs: { x, z, len, ry, y },
+  // x and z from the landmark's own spot), so it is one draw call, not one
+  // per step.
+  hanokwalls(g, l) {
+    for (const sg of l.segs) {
+      const sub = new THREE.Group();
+      BUILD.hanokwall(sub, sg);
+      sub.position.set(sg.x, (sg.y || 0) - (l.y || 0), sg.z);
+      sub.rotation.y = sg.ry || 0;
+      g.add(sub);
+    }
   },
   // A village gate: two posts, painted beams (dancheong green and red), a
   // signboard and a curved tiled roof. l.w wide (the opening), facing +z.
@@ -198,8 +211,7 @@ const BUILD = {
     for (const sx of [-1, 1]) {
       box(g, 0.7, H, 0.7, sx * (hw + 0.2), H / 2, 0, '#7a2e22');
       box(g, 1.3, 0.5, 1.3, sx * (hw + 0.2), 0.25, 0, C.stone);
-      box(g, 2.2, 3.4, 0.9, sx * (hw + 1.6), 1.7, 0, C.wall); // a stub of wall each side
-      box(g, 2.2, 1.6, 0.95, sx * (hw + 1.6), 0.8, 0, C.dark);
+      box(g, 2.2, 1.3, 0.95, sx * (hw + 1.6), 0.65, 0, C.dark); // a stub of the stone wall each side
     }
     box(g, w + 1.6, 0.5, 0.6, 0, H - 0.35, 0, '#2f8f6b');
     box(g, w + 1.4, 0.3, 0.5, 0, H - 0.95, 0, '#a23a2c');
@@ -218,3 +230,49 @@ const BUILD = {
 
 // Each builder's boxes merged into a few meshes (fewer draw calls).
 export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f]) => [k, (g, l) => { const t = f(g, l); mergeStatic(g); return t; }]));
+
+// The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
+// and the alleys paved in granite on it. roads: the district's roads (world
+// metres), [ox, oz]: its offset. Built with the village, on the first visit.
+export function buildBukchonHill(roads, [ox, oz]) {
+  const g = new THREE.Group();
+  g.name = 'bukchon-hill';
+  const [x0, , x1, z1] = BUKCHON.area, foot = BUKCHON.hill.foot;
+  const nx = 2, nz = Math.ceil((foot - z1) / 2);
+  const geo = new THREE.PlaneGeometry(x1 - x0, foot - z1, nx, nz).rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (foot + z1) / 2;
+    pos.setXYZ(i, x + ox, ground(x, Math.min(z, foot - 0.01)) + 0.02, z + oz);
+  }
+  geo.computeVertexNormals();
+  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: '#eadfc6' }));
+  earth.receiveShadow = true;
+  g.add(earth);
+  // Alleys: ribbons along each footpath, on the slope.
+  const pts = [], STEP = 1.5;
+  for (const r of roads) {
+    if (r.k !== 'walk') continue;
+    for (let i = 1; i < r.p.length; i++) {
+      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
+      const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
+      for (let k = 0; k < n; k++) {
+        const quad = [k / n, (k + 1) / n].map((t) => {
+          const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.05;
+          return [[x - px, y, z - pz], [x + px, y, z + pz]];
+        });
+        const [[a, b], [c, d]] = quad;
+        pts.push(...a, ...b, ...d, ...a, ...d, ...c);
+      }
+    }
+  }
+  if (pts.length) {
+    const rg = new THREE.BufferGeometry();
+    rg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    rg.computeVertexNormals();
+    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ color: '#cbc2b1', side: THREE.DoubleSide }));
+    alleys.receiveShadow = true;
+    g.add(alleys);
+  }
+  return g;
+}

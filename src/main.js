@@ -50,13 +50,14 @@ import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { BukchonUI, BK_TEXT, craftEntry, CRAFT } from './ui/bukchon-ui.js';
-import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt } from './data/bukchon.js';
+import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
+import { buildBukchonHill } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
+import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM, randomLook } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -2845,7 +2846,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z); }, // down by a stream, in the skate park, up a park hill or the busking bank
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank or Bukchon's hill
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
@@ -5350,11 +5351,39 @@ const muralAct = () => ({ key: 'mural', label: '📜 ' + L(WISH_TEXT.mural), run
 // parts, the magpie's persimmons, the Quiet Zone, and the craft workshops.
 const bukchonAt = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
 const viewBook = new ViewBook(), partBook = new PartBook();
+// Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
+function bukchonY(x, z) { return bukchonAt ? bukchonGround(x - bukchonAt[0], z - bukchonAt[1]) : 0; }
+// Villagers in hanbok, men and women, strolling the alleys inside the wall.
+const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
+const HANBOK_MEN = [['baji-blue', 'short'], ['durumagi-lilac', 'crop'], ['baji-navy', 'pomp'], ['durumagi-gray', 'short'], ['baji-jade', 'crop']];
+const bukchonIn = (x, z) => !!bukchonAt && inPolygonXZ(x - bukchonAt[0], z - bukchonAt[1], [[BUKCHON.area[0], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[3]], [BUKCHON.area[0], BUKCHON.area[3]]]);
+const hanbokNpcs = bukchonAt ? new StreetNpcs(scene, $('labels'), roadGraph, BUKCHON.villagers.map(([x, z]) => ({ id: 'bukchon', x: x + bukchonAt[0], z: z + bukchonAt[1] })), 2, {
+  keepIn: bukchonIn,
+  phrases: PHRASES.bukchon,
+  groundY: bukchonY,
+  who: (i) => {
+    const [set, hairStyle] = (i % 2 ? HANBOK_MEN : HANBOK_WOMEN)[Math.floor(i / 2) % 5];
+    return { name: (i % 2 ? ['민준', '도하', '선우', '이준', '주호'] : ['소연', '지유', '하윤', '예나', '서아'])[Math.floor(i / 2) % 5], look: { ...randomLook(), hairStyle, ...hanbokById(set).wear } };
+  },
+}) : null;
+
 const bukchonMarks = bukchonAt ? new BukchonMarks(scene, bukchonAt) : null;
 bukchonMarks?.taken(viewBook);
-// Walled places (district meta "enclosure", core/enclosure.js): Bukchon and
-// Gyeongbokgung show their wall and gates from the street; what is inside is
-// drawn once you walk in. Bukchon's hanok are built on the first visit.
+// Bukchon sits open on the field: its hanok and hill are built at once and
+// seen from Yulgok-ro; the stone walls are only the hill's retaining walls.
+const openHanok = [];
+for (const d of map.meta?.districts || []) {
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id);
+  if (!hanoks.length || d.enclosure) continue;
+  const g = buildHanoks(hanoks);
+  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
+  scene.add(g);
+  openHanok.push(g);
+}
+// Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
+// shows its wall and gates from the street; what is inside is drawn once you
+// walk in.
 const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
   const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
@@ -5367,20 +5396,26 @@ const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d
   };
   return e;
 });
-const enclosureSkip = new Set([me.root, bukchonMarks?.group].filter(Boolean));
+const enclosureSkip = new Set([me.root, bukchonMarks?.group, ...openHanok, ...(hanbokNpcs?.list || []).map((o) => o.ch.root)].filter(Boolean));
 for (const e of enclosures) {
   e.collect([landmarks, scene], enclosureSkip);
   e.adopt(storefronts.items.filter((i) => e.contains(i.group.position.x, i.group.position.z, 0.5)).map((i) => i.group));
-  if (e.id === BUKCHON.district) e.adopt([bukchonMarks?.group]);
 }
 // Shops, landmarks, subway entrances, stamp stands, meeting zones and the
 // stream's lanterns and stones past the fog are not drawn.
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+let bukchonWelcomed = false, wasInBukchon = null;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
-  for (const e of enclosures) {
-    const ev = e.update(p);
-    if (ev === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  // Walking up into Bukchon the first time this visit: what it is, and the rules.
+  const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
+  wasInBukchon = inBk;
+  if (entered && !bukchonWelcomed && mode === 'street' && !spaceBusy()) {
+    bukchonWelcomed = true;
+    const w = BUKCHON.welcome;
+    bukchonUi.card({ icon: '🏘️', name: w.title, text: w.text }, { sub: '🤫 ' + L(w.rules) });
+    bukchonUi.view = 'welcome';
   }
 }
 const bukchonUi = new BukchonUI({
@@ -5406,7 +5441,7 @@ function takeView(v) {
     wallet.add(c, { name: BK_TEXT.ledger });
     refreshWallet();
     shop.toast(fmt(L(BK_TEXT.got), { n: v.n, name: L(v.name), c }));
-    if (viewBook.done) setTimeout(() => shop.toast(L(BK_TEXT.allDone)), 1600);
+    if (viewBook.done && BUKCHON.views.length > 1) setTimeout(() => shop.toast(L(BK_TEXT.allDone)), 1600);
   } else shop.toast(fmt(L(BK_TEXT.again), { n: v.n }));
   bukchonMarks?.taken(viewBook);
   bukchonUi.views(viewBook, v.n);
@@ -5423,7 +5458,7 @@ function readPart(part) {
 function bukchonAct(p) {
   if (!bukchonAt || mode !== 'street') return null;
   const v = nearestAt(BUKCHON.views, p.x, p.z, bukchonAt, 2.4);
-  if (v) return { key: 'bk-view:' + v.n, label: '📸 ' + fmt(L(BK_TEXT.photo), { n: v.n }), run: () => takeView(v) };
+  if (v) return { key: 'bk-view:' + v.n, label: '📸 ' + fmt(L(BK_TEXT.photo), { name: L(v.name) }), run: () => takeView(v) };
   const oh = BUKCHON.openHouse;
   const part = nearestAt(oh.parts, p.x, p.z, bukchonAt, 2.2);
   if (part) return { key: 'bk-part:' + part.id, label: part.icon + ' ' + L(part.name), run: () => readPart(part) };
@@ -6389,7 +6424,7 @@ const boardAct = (b) => (b.board === 'news'
 const stampAct = (it) => (stampBook.has(it.stamp.id)
   ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
   : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) });
-const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } });
+const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { (n.owner || npcs).greet(n, p.x, p.z); missionEvent('talk', n.name); } });
 // Yozi's ice cream sculptures in Seoul Forest (core/park-art.js).
 const sculptureAct = (l) => ({ key: 'icecream:' + l.x + ',' + l.z, label: '🍦 ' + L(ICECREAM_TEXT.look), run: () => { me.play?.('wave'); shop.toast(fmt(L(ICECREAM_TEXT.about), { name: L(ICECREAM[l.model]) })); } });
 const buskerAct = (s) => ({ key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) });
@@ -6432,7 +6467,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
   if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
@@ -6514,7 +6549,7 @@ function updateAction(p, tSec) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
-      const n = npcs.nearest(p.x, p.z);
+      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z);
       if (n) next = npcAct(n, p);
     }
   } else {
@@ -6981,7 +7016,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
-  if (bukchonUi.open && (bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
+  if (bukchonUi.open && (bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -7066,7 +7101,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

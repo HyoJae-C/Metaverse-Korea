@@ -1,8 +1,7 @@
-// Walled places you enter (Bukchon, Gyeongbokgung): from outside you see the
-// wall and the gates; what stands inside is only drawn while you are in.
-// That keeps the open city light: the hanok village and the palace halls are
-// not drawn from the street, and Bukchon's houses are not even built until
-// you first walk in.
+// Walled places you enter (Gyeongbokgung): from outside you see the wall and
+// the gates; what stands inside is only drawn while you are in. That keeps
+// the open city light: the palace halls are not drawn from the street, and
+// hanok inside an enclosure are not even built until you first walk in.
 //
 //   const e = new Enclosure({ box: [x0, z0, x1, z1], onFirstEnter: () => [...objects] });
 //   e.collect([landmarks, scene], skip);   // objects that sit wholly inside
