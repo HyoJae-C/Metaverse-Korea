@@ -28,7 +28,7 @@ import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
-import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
+import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
 import { BookUI } from './ui/book-ui.js';
 import { AcademyUI } from './ui/academy-ui.js';
 import { Academy } from './core/academy.js';
@@ -140,7 +140,7 @@ import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
-import { MapView } from './ui/map-view.js';
+import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
@@ -261,9 +261,13 @@ function renderLangDropdown(el, onPick) {
   el.append(btn, list);
 }
 
+// Coming back: where you left off (the district of the saved spot), not the
+// first stop again. Only the very first visit says "First stop".
+let lastPlace = loadLastPlace();
 function refreshStartText() {
   const lang = getLanguage();
-  $('start-region').textContent = t('start.region', {
+  const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
+  $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
     region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
     city: localName(REGION_NAMES.seoul, lang),
   });
@@ -863,22 +867,33 @@ function onboardHi5() {
 }
 
 // Come back where you left off last time, if that spot is still open.
+const spotBoxes = districtBoxes(map);
 if (onboard >= 2) {
   const last = loadLastSpot();
   // Not out in the empty land between districts either (e.g. a spot saved
   // before a district moved to its real place, scripts/place-districts.mjs).
-  const spotBoxes = districtBoxes(map);
   const nearDistrict = (x, z) => !spotBoxes.length || spotBoxes.some((b) => x >= b.x0 - 40 && x <= b.x1 + 40 && z >= b.z0 - 40 && z <= b.z1 + 40);
   if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4) || !nearDistrict(x, z))) {
     me.root.position.set(last.x, 0, last.z);
     me.root.rotation.y = last.ry;
+    // A save from before districts were remembered: name it now.
+    if (!lastPlace && spotBoxes.length) {
+      lastPlace = districtAt(spotBoxes, last.x, last.z);
+      saveLastPlace(lastPlace);
+      refreshStartText();
+    }
   }
 }
 let tabParked = false; // another tab of this browser took over (see claimTab)
 let lastSpotTimer = 3;
 const rememberSpot = () => {
   if (tabParked) return; // the newer tab owns the saved spot now
-  try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
+  try {
+    if (mode !== 'street') return;
+    const { x, z } = me.root.position;
+    saveLastSpot(x, z, me.root.rotation.y);
+    if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
+  } catch { /* still starting up */ }
 };
 document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
 addEventListener('pagehide', rememberSpot);

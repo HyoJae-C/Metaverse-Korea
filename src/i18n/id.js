@@ -535,6 +535,7 @@ export const ID = {
   'lang.choose': 'Pilih bahasamu',
   'lang.change': 'Bahasa',
   'start.region': 'Pemberhentian pertama: {region}, {city}',
+  'start.last': 'Lokasi terakhir: {place}',
   'start.button': 'Mulai jalan-jalan',
   'loading': 'Memuat jalanan…',
   'error.noMap': 'Data peta untuk area ini belum siap. Silakan cek lagi nanti.',

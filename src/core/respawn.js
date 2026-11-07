@@ -22,3 +22,18 @@ export function usableSpot(s, bounds, blocked, now = Date.now()) {
   if (s.x < bounds.minX || s.x > bounds.maxX || s.z < bounds.minZ || s.z > bounds.maxZ) return false;
   return !blocked(s.x, s.z);
 }
+
+// The district that spot was in (e.g. 'bukchon'), so the start screen can say
+// "Last location: Bukchon" before the map has loaded. Only while the saved
+// spot itself is fresh enough to be used.
+const PLACE_KEY = 'mk.lastPlace';
+export function saveLastPlace(id, storage = globalThis.localStorage) {
+  if (typeof id !== 'string' || !id) return;
+  try { storage?.setItem(PLACE_KEY, id); } catch { /* storage blocked */ }
+}
+
+export function loadLastPlace(storage = globalThis.localStorage, now = Date.now()) {
+  const s = loadLastSpot(storage);
+  if (!s || !Number.isFinite(s.t) || now - s.t > MAX_AGE_DAYS * 86400000) return null;
+  try { return storage?.getItem(PLACE_KEY) || null; } catch { return null; }
+}

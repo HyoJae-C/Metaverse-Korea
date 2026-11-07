@@ -535,6 +535,7 @@ export const VI = {
   'lang.choose': 'Chọn ngôn ngữ',
   'lang.change': 'Ngôn ngữ',
   'start.region': 'Điểm đến đầu tiên: {region}, {city}',
+  'start.last': 'Vị trí lần trước: {place}',
   'start.button': 'Bắt đầu đi dạo',
   'loading': 'Đang tải đường phố…',
   'error.noMap': 'Dữ liệu bản đồ khu vực này chưa sẵn sàng. Vui lòng quay lại sau.',
