@@ -432,11 +432,21 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
+  /* Phones: a small card in the empty top-left corner, level with the
+     weather / online chips, so it doesn't cover the shop. */
   .store-banner {
-    left: 12px; right: 12px; transform: none; max-width: none;
-    top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+    left: 12px; right: auto; transform: none;
+    top: max(12px, env(safe-area-inset-top));
+    max-width: max(168px, calc(100vw - 360px));
+    gap: 6px; padding: 4px 5px 5px 10px; border-radius: 14px; border-top-width: 3px;
   }
-  .store-meta small { display: none; }
+  .store-meta strong { font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store-meta #store-name-ko, .store-meta small { display: none; }
+  .store-meta .sample {
+    margin-top: 1px; font-size: 8px; letter-spacing: 0; text-transform: none; padding: 1px 4px; border-radius: 4px;
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .store-banner .chip { min-height: 30px; padding: 0 8px; font-size: 12px; gap: 3px; }
   .in-store .tools { top: auto; }
 }
 
@@ -766,6 +776,11 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   .top-right { max-width: calc(100vw - 196px); flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
   .top-right .online { padding: 6px 9px; font-size: 12px; }
   .street-card { max-width: 168px; }
+  /* Stay left of the chip row (it can be 100vw - 196px wide). */
+  .store-banner { max-width: calc(100vw - 204px); }
+}
+@media (max-width: 360px) {
+  .store-banner .chip span { display: none; } /* just the door: room for the name */
 }
 
 /* Ordering practice (restaurants) */
