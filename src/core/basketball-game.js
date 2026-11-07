@@ -222,7 +222,6 @@ const H = HOOP.h, B = HOOP.ball;
 // Hand spots (player-local): ball at the chest, cocked over the head, high reach
 const CHEST = [0.02, 0.42, 0.2];
 const SET = [0.1, 0.92, 0.12];
-const HIGH = [0.12, 1.05, 0.2];
 const P = (o) => o; // pose literal
 
 // Standing shot pose: dip (knees), rise (arms set), release (arm extended).

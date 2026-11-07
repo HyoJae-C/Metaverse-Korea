@@ -2,6 +2,7 @@
 // The background-music songs (data/tracks.js) play; notes fall on the beat
 // and you tap as each one reaches the line. Everyone in the room sees each
 // other's scores (a "score battle").
+import { seededRandom } from './geom.js';
 
 export const KARAOKE_GAME = 'karaoke';
 export const SONGS = ['lofi', 'gugak', 'jazz', 'citypop']; // easy → hard (by tempo)
@@ -11,15 +12,7 @@ export const WINDOWS = [[0.07, 'perfect', 3], [0.14, 'great', 2], [0.22, 'good',
 
 // Small deterministic RNG, so a song's chart is the same every time and for
 // everyone in the room.
-function rng(seed) {
-  let h = 2166136261;
-  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
-}
+const rng = seededRandom;
 
 // Note times in seconds from the song's start: on-beats (they stay on the
 // grid even in swing songs), most beats filled, a few double-time pairs.

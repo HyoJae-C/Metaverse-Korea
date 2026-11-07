@@ -77,7 +77,6 @@ const T = {
   again2: { en: 'Play again with {names}', ko: '{names}님과 한 판 더', ja: '{names}さんともう一戦', zh: '和{names}再来一局', es: 'Otra con {names}', id: 'Main lagi dengan {names}', vi: 'Chơi lại với {names}', hi: '{names} के साथ फिर से', ar: 'العب مجددًا مع {names}' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', ar: 'إغلاق' },
 };
-export const DARTS_TEXT = T;
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

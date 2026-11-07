@@ -231,7 +231,6 @@ export async function isMasterCode(code) {
 
 // Ride messages (tandem bike and car) travel on the emote channel as
 // 'tandem:<verb>:<target id>[:<seat>]'.
-export const TANDEM_VERBS = ['invite', 'join', 'leave', 'end'];
 export function parseTandem(e) {
   const m = /^tandem:(invite|join|leave|end):([\w-]{1,64})(?::(\d))?$/.exec(String(e));
   return m ? { verb: m[1], target: m[2], seat: m[3] ? Number(m[3]) : 0 } : null;

@@ -19,6 +19,7 @@
 // first load. Every floor is its own interior (museumFloorStore below).
 import * as THREE from 'three';
 import { PAINTINGS, CREDIT, DISCLAIMER, HALLS, FLOORS, COMING_SOON } from '../data/paintings.js';
+import { canvasTex } from './three-kit.js';
 
 export const ROOM_MUSEUM = { w: 52, d: 32, h: 6 };
 const SPACING = 4.4; // metres between frame centres
@@ -92,14 +93,6 @@ export const HALL_CAPACITY = 15;
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 export const paintingUrl = (p) => BASE + p.file;
 
-function canvasTex(cw, ch, draw) {
-  const c = document.createElement('canvas');
-  c.width = cw; c.height = ch;
-  draw(c.getContext('2d'), cw, ch);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 function wrap(g, text, x, y, maxW, lh) {
