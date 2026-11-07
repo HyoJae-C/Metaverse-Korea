@@ -44,10 +44,7 @@ export const ROYAL_ROUTE = {
   links: [[0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [6, 7]],
 };
 export const ROYAL_PAUSE = 10; // seconds standing still at each stop (for photos)
-const ROYAL_SPEED = 1.6; // m/s, a stately walk
-// The walk clip is made for the player's brisk pace; slowed down to this
-// share, the steps match the procession's slow walk instead of sliding.
-export const ROYAL_STEP = 0.45;
+const ROYAL_SPEED = 1.8; // m/s, an unhurried walk, like the people on the streets (core/npcs.js)
 // Who walks where: metres behind the front of the procession, and to the
 // side (+ is the left-hand side, looking the way they walk). Front to back:
 // a guard on each flank; the king (left) and the queen (right); the bearer
@@ -418,8 +415,9 @@ export class PalaceShow {
   // dance; guards: [[x, z, ry], ...] gate guards; layer: name tags.
   // rope: [x, z] middle of the tightrope (runs along x).
   // procession: [x, z] the palace district's offset (ROYAL_ROUTE is in its metres).
-  constructor(scene, { fan, mask, rope, guards = [], procession = null, layer = null }) {
+  constructor(scene, { fan, mask, rope, guards = [], procession = null, layer = null, inside = () => true }) {
     this.layer = layer;
+    this.inside = inside; // inside the palace wall? The fan dance and the procession are only there for those inside
     if (procession && layer) this.royal = this.makeProcession(scene, procession);
     if (rope) {
       const rig = makeRopeRig();
@@ -442,7 +440,7 @@ export class PalaceShow {
     };
     if (this.mask) scene.add(this.mask.lion);
     this.guards = layer ? guards.map(([x, z, ry]) => {
-      const o = makeNpc(layer, '💂 수문장', { ...randomLook(), model: 'basic', pants: 'black', hair: 'black', dye: 'black', tee: null });
+      const o = makeNpc(layer, '💂 수문장', { ...randomLook(), model: 'basic', pants: 'black', hair: 'black', dye: 'black', tee: null, hairStyle: 'short' });
       o.ch.addProp('head', guardHat());
       o.ch.addProp('body', guardRobe());
       o.ch.setHeld('spear');
@@ -474,7 +472,7 @@ export class PalaceShow {
         ch.addProp('head', gatHat());
         ch.addProp('body', o.who === 'parasol' ? parasol() : bannerFan());
       } else if (o.who === 'guard') {
-        ch = performer(scene, { model: 'basic', pants: 'black', hair: 'black', dye: 'black', tee: null }, null);
+        ch = performer(scene, { model: 'basic', pants: 'black', hair: 'black', dye: 'black', tee: null, hairStyle: 'short' }, null);
         ch.addProp('head', guardHat());
         ch.addProp('body', guardRobe());
         ch.setHeld('spear');
@@ -533,7 +531,7 @@ export class PalaceShow {
         R.tripWait = TRIP_EVERY[0] + Math.random() * (TRIP_EVERY[1] - TRIP_EVERY[0]);
       }
     }
-    const on = Math.hypot(me.x - R.x, me.z - R.z) < NEAR;
+    const on = Math.hypot(me.x - R.x, me.z - R.z) < NEAR && this.inside();
     for (const p of R.people) {
       p.ch.root.visible = on;
       if (!on) { if (p.npc) { p.npc.tag.style.display = 'none'; } continue; }
@@ -541,7 +539,7 @@ export class PalaceShow {
       if (p.tripper && R.trip && this.updateTrip(dt, p, t.x + fz * p.side, t.z - fx * p.side, Math.atan2(fx, fz))) continue;
       p.ch.root.position.set(t.x + fz * p.side, 0, t.z - fx * p.side);
       if (moving) p.ch.root.rotation.y = turnTo(p.ch.root.rotation.y, Math.atan2(fx, fz), Math.min(1, dt * 6)); // turn corners smoothly
-      p.ch.animate(moving ? dt * ROYAL_STEP : dt, moving ? 0.1 : 0);
+      p.ch.animate(dt, moving ? ROYAL_SPEED / 12 : 0); // the same walk as the street NPCs
       if (p.npc) placeLabels?.(p.npc, camera, w, h);
     }
   }
@@ -647,7 +645,7 @@ export class PalaceShow {
       F.slotOf = F.part < 0 ? F.slotOf : assignSlots(from, to);
       F.part = P.index;
     }
-    const on = Math.hypot(me.x - F.x, me.z - F.z) < NEAR;
+    const on = Math.hypot(me.x - F.x, me.z - F.z) < NEAR && this.inside();
     F.dancers.forEach((ch, d) => {
       ch.root.visible = on;
       if (!on) return;

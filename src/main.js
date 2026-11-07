@@ -643,6 +643,7 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   mask: [palaceAt[0], palaceAt[1] + 52], // on the square, just before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
