@@ -56,7 +56,7 @@ export const STAMPS = [
     icon: '<path d="M60 104 h64 q14 0 18 -10 M60 104 q2 16 18 16 h42 q16 0 20 -26"/><path d="M122 104 q-2 -14 4 -24 M136 80 q4 10 -2 24"/><circle cx="130" cy="70" r="11"/><path d="M140 66 l12 4 l-11 4"/><circle cx="132" cy="67" r="2"/><path d="M62 82 h56 M68 82 v22 M112 82 v22"/><path d="M52 132 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
   {
-    id: 'gyeongbokgung', place: { at: [-1727, -1009] }, color: '#b0282e', shape: 'circle',
+    id: 'gyeongbokgung', place: { at: [-1734, -900] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
