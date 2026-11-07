@@ -6,6 +6,19 @@
 
 import { judge } from './karaoke-game.js';
 
+// The runway room as a virtual store: entered from the back door of DDP
+// Hall (store ddp-hall), not from the street; its door leads back to the hall.
+export const RUNWAY_STORE = {
+  id: 'curve-runway',
+  category: 'play',
+  workshop: 'runway',
+  size: 'runway',
+  name: { en: 'Curve Runway', ko: '커브 런웨이', ja: 'カーブ・ランウェイ', zh: '曲线T台' },
+  tagline: { en: 'Walk the runway to the beat and pose for the cameras', ko: '박자에 맞춰 런웨이를 걷고 카메라 앞에서 포즈', ja: 'リズムに合わせてランウェイを歩き、カメラの前でポーズ', zh: '踩着节拍走T台，在镜头前摆姿势' },
+  colors: { sign: '#24212b', awning: '#d9d3e6', accent: '#efedf3', seat: '#3a3545' },
+  products: [],
+};
+
 export const RUNWAY_GAME = 'runway'; // medal id (core/grill-game.js Medals)
 export const RUNWAY_TRACK = 'citypop';
 export const LEAD_BEATS = 4; // one bar of count-in, standing backstage

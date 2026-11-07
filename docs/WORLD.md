@@ -153,9 +153,12 @@ South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
 Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
 free for the folk games (docs/FOLK-GAMES.md).
 
-Inside DDP, through its main door on the plaza, the Curve Runway (store
-`curve-runway`, workshop `runway`; the design shop has the west door) is a
-rhythm walk in its own big room (size `runway`, seats either side, about a
+DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
+`ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
+visitors already there. Its back door leads into the Curve Runway
+(`RUNWAY_STORE` in `core/runway-game.js`, workshop `runway`; entered from the
+hall like the haunted house from Another Land, and its door leads back to the
+hall). The runway is a rhythm walk in its own big room (size `runway`, seats either side, about a
 third taken by a seated audience): a step a beat down the catwalk, then three poses for the
 cameras (`core/runway-game.js`, `ui/runway-ui.js`; main.js walks the
 character from `walkState()`). Medals as at the grill (game id `runway`).

@@ -30,6 +30,7 @@ export const ROOM_SIZES = {
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
   runway: { w: 26, d: 30, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
+  hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
@@ -362,7 +363,7 @@ export function buildInterior(store) {
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : store.workshop === 'runway' ? '#2a2733' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : store.workshop === 'runway' ? '#2a2733' : store.workshop === 'ddp-hall' ? '#e4e6ea' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -1021,6 +1022,64 @@ export function buildInterior(store) {
       box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
       for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
       block(fx, fz, 0.9, 2.3);
+    } else if (store.workshop === 'ddp-hall') {
+      // DDP Hall: DDP's bright lobby, entered from the plaza. White curving
+      // forms (a few design pieces on plinths), benches, people already
+      // looking round, and at the back a dark doorway to the Curve Runway
+      // (its own room: main.js walks you in, its door brings you back).
+      // The middle stays open from the front door to the back door.
+      const dz = -d / 2 + 0.2;
+      for (const sx2 of [-1.7, 1.7]) box(0.4, 3.4, 0.4, sx2, 1.7, dz + 0.1, '#c9ced6');
+      box(3.8, 0.4, 0.4, 0, 3.6, dz + 0.1, '#c9ced6');
+      box(3, 3.2, 0.06, 0, 1.6, dz - 0.08, '#24212b');
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.08).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffe9c4' }));
+      glow.position.set(0, 0.015, dz + 0.5);
+      scene.add(glow);
+      const runwaySign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.69), new THREE.MeshBasicMaterial({ map: labelTexture('커브 런웨이 · Curve Runway', '#24212b') }));
+      runwaySign.position.set(0, 4.25, dz + 0.02);
+      scene.add(runwaySign);
+      stations.runwayDoor = [{ x: 0, z: dz + 1.1 }];
+      // Design pieces on white plinths, along both sides.
+      const pieces = [['torus', '#c9ced6'], ['sphere', '#f2b8a0'], ['cone', '#9fb7d9'], ['knot', '#e7d38a']];
+      let n = 0;
+      for (const side of [-1, 1]) {
+        for (const pz of [-d * 0.22, d * 0.08]) {
+          const px = side * (w / 2 - 3.2);
+          box(1.2, 0.9, 1.2, px, 0.45, pz, '#f7f8fa');
+          const [kind, col] = pieces[n++ % pieces.length];
+          const geo = kind === 'torus' ? new THREE.TorusGeometry(0.42, 0.14, 12, 32)
+            : kind === 'sphere' ? new THREE.SphereGeometry(0.42, 24, 16)
+              : kind === 'cone' ? new THREE.ConeGeometry(0.38, 0.9, 24)
+                : new THREE.TorusKnotGeometry(0.3, 0.1, 64, 10);
+          const art = new THREE.Mesh(geo, mat(col));
+          art.position.set(px, 1.4, pz);
+          scene.add(art);
+          block(px, pz, 1.4, 1.4);
+        }
+      }
+      // A long curved white wall piece in each back corner, like DDP's skin.
+      for (const side of [-1, 1]) {
+        const arc = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 3.2, 24, 1, true, side < 0 ? Math.PI : Math.PI / 2, Math.PI / 2), mat('#f4f5f7', { side: THREE.DoubleSide }));
+        arc.position.set(side * (w / 2 - 3), 1.6, -d / 2 + 3);
+        scene.add(arc);
+        block(side * (w / 2 - 1.6), -d / 2 + 1.6, 3, 3);
+      }
+      // Benches in the middle of each side, facing the open floor.
+      for (const side of [-1, 1]) {
+        const bx = side * 4.6, bz = d * 0.28;
+        box(0.7, 0.4, 2.4, bx, 0.2, bz, '#c9ced6');
+        for (const o of [-0.6, 0.6]) seats.push({ x: bx, z: bz + o, ry: -side * Math.PI / 2, stand: [bx - side * 0.9, bz + o] });
+        block(bx, bz, 0.8, 2.5);
+      }
+      // People already here, looking at the pieces (main.js stands them up).
+      stations.visitors = [
+        { x: -w / 2 + 4.9, z: -d * 0.22 + 0.3, ry: -Math.PI / 2 },
+        { x: w / 2 - 4.9, z: d * 0.08 - 0.4, ry: Math.PI / 2 },
+        { x: w / 2 - 4.7, z: -d * 0.22 + 0.9, ry: Math.PI / 2 + 0.4 },
+        { x: -2.6, z: -d / 2 + 3.4, ry: Math.PI + 0.3 },
+        { x: -w / 2 + 4.7, z: d * 0.08 + 0.8, ry: -Math.PI / 2 - 0.3 },
+      ];
+      for (const v of stations.visitors) block(v.x, v.z, 0.5, 0.5);
     } else if (store.workshop === 'runway') {
       // Curve Runway (DDP, its own big room size): a long lit catwalk from a
       // backstage arch at the back wall towards the door, rows of seats
