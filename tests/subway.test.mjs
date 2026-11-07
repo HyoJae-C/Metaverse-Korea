@@ -104,3 +104,16 @@ test('station exits are clear of roads and buildings', () => {
     }
   }
 });
+
+test('Mongchontoseong Station (Line 8) sits by the Peace Gate, exit 1 on the plaza side', () => {
+  const st = stations.find((s) => s.id === 'mongchontoseong-station');
+  assert.equal(st.code, '813');
+  assert.equal(st.line.name.en, 'Line 8');
+  assert.equal(st.next.en, 'Jamsil');
+  const park = region.districts.find((d) => d.id === 'olympic-park');
+  const gate = [1050 + park.offset[0], 250 + park.offset[1]];
+  const e1 = st.exits.find((e) => e.n === 1);
+  // Real station: about 260 m west of the gate, so about 65 m at 1/4.
+  assert.ok(Math.hypot(e1.at[0] - gate[0], e1.at[1] - gate[1]) < 90);
+  assert.ok(e1.at[0] < gate[0], 'west of the gate');
+});

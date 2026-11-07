@@ -620,6 +620,52 @@
             "ry": 1.5708
           }
         ]
+      },
+      {
+        "id": "mongchontoseong-station",
+        "name": {
+          "ko": "몽촌토성",
+          "en": "Mongchontoseong",
+          "ja": "夢村土城",
+          "zh": "梦村土城"
+        },
+        "code": "813",
+        "line": {
+          "color": "#e6186c",
+          "name": {
+            "ko": "8호선",
+            "en": "Line 8",
+            "ja": "8号線",
+            "zh": "8号线"
+          }
+        },
+        "prev": {
+          "ko": "강동구청",
+          "en": "Gangdong-gu Office"
+        },
+        "next": {
+          "ko": "잠실",
+          "en": "Jamsil"
+        },
+        "note": "Olympic-ro by Olympic Park, just west of the Peace Gate (the real station's full name is Mongchontoseong (Peace Gate)). Exit 1 is on the Peace Plaza side as in real life, exit 2 across the road. Its real spot at 1/4 is about 65 m west of the gate.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              1299,
+              635
+            ],
+            "ry": 1.5708
+          },
+          {
+            "n": 2,
+            "at": [
+              1271,
+              617
+            ],
+            "ry": -1.5708
+          }
+        ]
       }
     ]
   },
