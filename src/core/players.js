@@ -5,7 +5,7 @@ import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read']);
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive']);
 import { seatPosition } from './bikes.js';
 import { trickPose, TRICK_BY_ID } from './skatepark.js';
 import { createCharacter } from './character.js';

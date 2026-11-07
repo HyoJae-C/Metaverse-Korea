@@ -404,6 +404,12 @@ function shapedHead(facts, geo, shape, key) {
   return out;
 }
 const LIP_FWD = 0.035;
+// Swimming (Olympic Park Pool): the body tips forward about the feet onto
+// the water (tilt), lifted and pulled back so the middle stays on the spot;
+// rate: strokes per second-ish; head: how far it lifts to look ahead.
+const SWIM_POSE = { tilt: 1.35, lift: 0.74, back: 0.5, rate: 6.5, head: 0.5 };
+// Sitting in a tube on the water (the chair clip, raised to the tube).
+const TUBE_SIT = { y: 0.3, z: 0.05 };
 function faceExtras(id, headMesh, headBone, look) {
   const A = PACK.atlas;
   const facts = headFacts(id, headMesh.geometry); // the model's own head
@@ -552,6 +558,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     headAcc.scale.set(s, s, size.z / CHIBI_HEAD_D);
     headAcc.updateMatrixWorld(true);
     headBone.attach(headAcc);
+    // Swimwear: a swim cap over the hair, in the suit's colour.
+    if (PACK.models[id].cap) {
+      const capMat = new THREE.MeshLambertMaterial({ color: PACK.models[id].wear?.colors?.top ?? 0x24407a });
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.34, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), capMat);
+      cap.name = 'swimcap';
+      cap.position.set(0, 0.03, -0.02);
+      cap.rotation.x = -0.3;
+      cap.scale.set(1.04, 0.98, 1.06);
+      headAcc.add(cap);
+    }
     if (chestBone && bodyMesh) {
       // Chibi torso: ~0.42 m wide, 0.36 m deep, scarf sits at ~0.6 m.
       bodyMesh.computeBoundingBox();
@@ -600,6 +616,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
   let pullT = 0;
+  let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
   let scissors = null; // the hairdresser's
@@ -615,7 +632,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     play(name) {
@@ -639,7 +656,14 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       // On inline skates: crouched, long slow side pushes (see STRIDE).
       const board = riding === 'board', kick = riding === 'kick', skates = riding === 'skates';
       const seated = riding && !board && !kick && !skates;
-      if (emote && !seated && speed01 < 0.3) key = emote.key;
+      // In the pool (core/pool-hall.js): swimming (flat on the water while
+      // moving, treading water upright when still), floating in a tube
+      // (sitting in it), or arms up for a dive.
+      const swimming = activity === 'swim' && !riding && !sit;
+      const tubing = activity === 'tube' && !riding;
+      if (swimming || (activity === 'dive' && !riding)) key = 'idle';
+      else if (tubing) key = 'sit';
+      else if (emote && !seated && speed01 < 0.3) key = emote.key;
       else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
       else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
@@ -680,7 +704,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
       }
-      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
+      swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
+      const off = tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (folk) {
@@ -698,7 +723,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
-      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : 0) - m.rotation.x) * Math.min(1, dt * 12);
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : 0) - m.rotation.x) * Math.min(1, dt * 12);
       let pull = 0;
       if (hanging) {
         pullT += dt;
@@ -734,6 +759,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           const bone = lBones[name];
           if (bone && Array.isArray(r)) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
+      }
+      if (swimming) { // front crawl while moving, treading water when still
+        const S = globalThis.__swim || SWIM_POSE; // debug: tune live
+        swimT += dt * (swimPr > 0.5 ? S.rate * (0.6 + 0.5 * speed01) : 2.2);
+        const add = (b, x, y, z) => { if (b) b.rotation.set(b.rotation.x + x, b.rotation.y + y, b.rotation.z + z); };
+        const crawl = swimPr, tread = 1 - swimPr;
+        for (const [side, ph] of [['L', 0], ['R', Math.PI]]) {
+          const a = ((swimT + ph) % (Math.PI * 2)); // one turn per stroke
+          add(dBones['arm' + side], -a * crawl + tread * (-0.5 + 0.35 * Math.sin(swimT + ph)), 0, tread * (side === 'L' ? 0.5 : -0.5));
+          add(dBones['fore' + side], tread * -0.6, 0, 0);
+          add(lBones['upperleg' + side.toLowerCase()], Math.sin(swimT * 2 + ph) * (0.35 * crawl + 0.2 * tread), 0, 0);
+        }
+        add(dBones.head, -S.head * crawl, 0, 0);
+      }
+      if (activity === 'dive' && key === 'idle') { // arms straight up over the head
+        for (const n of ['armL', 'armR']) { const b = dBones[n]; if (b) b.rotation.set(b.rotation.x - 2.95, b.rotation.y, b.rotation.z); }
       }
       if (hanging) { // arms up to the bar, elbows bending as you pull
         const bend = -1.5 * pull;

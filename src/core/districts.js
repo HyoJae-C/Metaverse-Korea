@@ -80,14 +80,17 @@ export function placeOf(item, center, latLonToLocal) {
   return latLonToLocal(center, item.anchor.lat, item.anchor.lon);
 }
 
-// Which district a point is in: the one whose buildings' bounding box (plus
-// a margin) holds it, else the one with the nearest box centre. `map` is a
-// joined map (mergeDistricts); a single-file map has no districts (null).
+// Which district a point is in: the smallest box (its buildings and land
+// areas, not water) that holds it, else the smallest within a margin, else
+// the one with the nearest box centre. A small district beside a big one
+// (Olympic Park next to Songpa) wins inside its own box. `map` is a joined
+// map (mergeDistricts); a single-file map has no districts (null).
 export function districtBoxes(map) {
   const out = [];
+  const items = [...(map?.buildings || []), ...(map?.areas || []).filter((a) => a.k !== 'water')];
   for (const { id } of map?.meta?.districts || []) {
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-    for (const b of map.buildings || []) {
+    for (const b of items) {
       if (b.d !== id) continue;
       for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     }
@@ -96,9 +99,12 @@ export function districtBoxes(map) {
   return out;
 }
 export function districtAt(boxes, x, z, margin = 40) {
+  const area = (b) => (b.x1 - b.x0) * (b.z1 - b.z0);
+  const hold = (m) => boxes.filter((b) => x >= b.x0 - m && x <= b.x1 + m && z >= b.z0 - m && z <= b.z1 + m).sort((a, b) => area(a) - area(b));
+  const hit = hold(0)[0] || hold(margin)[0];
+  if (hit) return hit.id;
   let best = null, bd = Infinity;
   for (const b of boxes) {
-    if (x >= b.x0 - margin && x <= b.x1 + margin && z >= b.z0 - margin && z <= b.z1 + margin) return b.id;
     const d = Math.hypot(x - (b.x0 + b.x1) / 2, z - (b.z0 + b.z1) / 2);
     if (d < bd) { bd = d; best = b.id; }
   }
