@@ -55,7 +55,7 @@ export const AREA = {
   gyeongbokgung: { icon: '🏯', to: { zone: 'G' },
     name: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', ar: 'غيونغبوكغونغ' },
     intro: { en: 'Gyeongbokgung: Gwanghwamun Square and the palace, a hanbok rental, a traditional tea house and a kimchi class. South of the square, Cheonggyecheon Stream starts at Cheonggye Plaza.', ko: '경복궁: 광화문광장과 궁궐, 한복대여점, 전통찻집, 김치 만들기 교실. 광장 남쪽 청계광장에서 청계천이 시작돼요.', ja: '景福宮：光化門広場と王宮、韓服レンタル、伝統茶房、キムチ教室。広場の南、清渓広場から清渓川が始まります。', zh: '景福宫：光化门广场和宫殿、韩服租赁、传统茶馆、泡菜课。广场南边的清溪广场是清溪川的起点。' } },
-  bukchon: { icon: '🏘️', to: { zone: 'N' },
+  bukchon: { icon: '🏘️', to: { zone: 'P' },
     name: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', vi: 'Bukchon', hi: 'बुकचोन', ar: 'بوكتشون' },
     intro: { en: 'Bukchon Hanok Village: hanok alleys on the hill between Gyeongbokgung and Changdeokgung, up from Anguk Station. Take photos at the Bukchon 8 Views, walk into the Open House, tie a knot charm or make a hanji lantern, and rent a hanbok. The alleys up the hill are a Quiet Zone: people live there, so walking only. Real Bukchon: in the Bukchon-ro 11-gil area visitors are welcome 10:00 to 17:00 (since Nov 2024). Check before you go.', ko: '북촌한옥마을: 안국역에서 올라가는 경복궁과 창덕궁 사이 언덕의 한옥 골목. 북촌8경에서 사진을 찍고, 열린 한옥에 들어가 보고, 매듭 노리개와 한지 등을 만들고, 한복도 빌려요. 언덕 위 골목은 주민이 사는 조용한 골목이라 걸어서만 다녀요. 실제 북촌로11길 일대는 관광객 방문 시간이 오전 10시~오후 5시예요(2024년 11월부터). 가기 전에 확인하세요.', ja: '北村韓屋村：安国駅から上る、景福宮と昌徳宮の間の丘の韓屋の路地。北村八景で写真を撮り、オープンハウスに入り、結びのお守りや韓紙の灯りを作り、韓服も借りられます。丘の路地は人が暮らす静かな路地なので歩いてのみ。実際の北村路11ギル一帯の観光客の訪問時間は10時〜17時（2024年11月から）。行く前に確認を。', zh: '北村韩屋村：从安国站往上走，景福宫和昌德宫之间山坡上的韩屋小巷。在北村八景拍照，走进开放韩屋，编绳结挂饰、做韩纸灯，还能租韩服。坡上的小巷住着居民，是安静小巷，只能步行。现实中北村路11街一带游客参观时间为10:00至17:00（2024年11月起），出发前请确认。' } },
   itaewon: { icon: '🌍', to: { zone: 'H' },
@@ -70,6 +70,12 @@ export const AREA = {
   hongdae: { icon: '🎸', to: { zone: 'J' },
     name: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', hi: 'होंगदे', ar: 'هونغداي' },
     intro: { en: 'Hongdae: buskers on the Walking Street, indie shops, animal cafés, tarot and a neon name tag shop.', ko: '홍대: 걷고싶은거리의 버스킹, 인디 가게, 동물 카페, 타로, 네온 네임택 가게.', ja: '弘大：歩きたい通りのバスキング、インディーの店、動物カフェ、タロット、ネオンのネームタグ店。', zh: '弘大：步行街的街头表演、独立小店、动物咖啡馆、塔罗和霓虹名牌店。' } },
+  yeonnam: { icon: '🌳', to: { zone: 'N' },
+    name: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', ar: 'يونّام دونغ' },
+    intro: { en: 'Yeonnam-dong: the Gyeongui Line Forest Park ("Yeontral Park") runs north from Hongdae Walking Street on an old railway. Buy a picnic mat and kimbap at Sopung Picnic and spread out on the grass. Small shops, a bookshop, a photo booth and a Korean-Chinese restaurant line the lanes. Try the walk from here to Mangwon: the forest path, then Mangwon Market, then the Han River.', ko: '연남동: 홍대 걷고싶은거리에서 북쪽으로 옛 철길 위의 경의선숲길(연트럴파크)이 이어져요. 소풍 피크닉에서 돗자리와 김밥을 사서 잔디에 펼쳐 보세요. 골목에는 소품샵, 책방, 사진관, 중식당이 있어요. 추천 코스: 숲길에서 망원시장을 지나 한강까지 걸어 보세요.', ja: '延南洞：弘大の歩きたい通りから北へ、旧線路の上に京義線森の道（ヨントラルパーク）が続きます。ソプン・ピクニックでレジャーシートとキンパを買って芝生に広げよう。路地には雑貨店、書店、写真館、中華料理店。おすすめコース：森の道から望遠市場を通って漢江まで歩いてみて。', zh: '延南洞：从弘大步行街往北，旧铁路上的京义线林荫路（延特尔公园）一路延伸。在郊游野餐买野餐垫和紫菜包饭，铺在草地上吧。小巷里有杂货店、书店、照相馆和中餐馆。推荐路线：从林荫路经望远市场走到汉江。' } },
+  mangwon: { icon: '🐟', to: { zone: 'O' },
+    name: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', ar: 'مانغوون دونغ' },
+    intro: { en: 'Mangwon-dong: Mangwon Market under its arcade roof (croquettes, dakgangjeong, rice cakes, side dishes, noodles), quiet cafés and a bakery on Poeun-ro (Mangridan-gil), and the open Han River park at the south end. The Mangwon Fishing Pier there has fish that only bite in Mangwon.', ko: '망원동: 아케이드 지붕 아래 망원시장(고로케, 닭강정, 떡, 반찬, 칼국수), 포은로(망리단길)의 조용한 카페와 빵집, 그리고 남쪽 끝의 탁 트인 한강공원. 망원 낚시 선착장에는 망원에서만 잡히는 물고기가 있어요.', ja: '望遠洞：アーケードの屋根の下の望遠市場（コロッケ、タッカンジョン、お餅、おかず、カルグクス）、圃隠路（望理団通り）の静かなカフェとパン屋、南の端の開放的な漢江公園。望遠釣り桟橋には望遠でしか釣れない魚がいます。', zh: '望远洞：拱廊顶棚下的望远市场（可乐饼、炸鸡块、年糕、小菜、刀切面），圃隐路（望理团路）上安静的咖啡馆和面包店，还有南端开阔的汉江公园。望远钓鱼码头有只在望远咬钩的鱼。' } },
 };
 
 // Game help (the game guide): how things work, anywhere.
@@ -151,7 +157,7 @@ export const PLACE_TOPICS = [
 { icon: '🌊', to: { zone: 'L' },
     title: { en: 'Cheonggyecheon Stream', ko: '청계천', ja: '清渓川', zh: '清溪川' },
     text: { en: 'South of Gwanghwamun Square, a stream flows below the street from Cheonggye Plaza. Take the stairs down to the water, cross the stepping stones and walk under Mojeongyo and Gwangtonggyo bridges. A short stretch: the real stream runs on for about 11 km.', ko: '광화문광장 남쪽 청계광장에서 시작해 길 아래로 흐르는 개천. 계단으로 물가에 내려가 징검다리를 건너고 모전교와 광통교 밑을 걸어 봐요. 짧은 구간만 있고, 실제 청계천은 약 11km 이어져요.', ja: '光化門広場の南、清渓広場から道の下を流れる小川。階段で水辺に下り、飛び石を渡って毛廛橋と広通橋の下を歩こう。短い区間だけで、本物の清渓川は約11km続きます。', zh: '光化门广场南边，从清溪广场开始在街道下方流淌的溪流。走楼梯下到水边，踩着踏石过溪，从毛廛桥和广通桥下走过。这里只有一小段，真实的清溪川长约11公里。' } },
-{ icon: '📸', to: { zone: 'N' },
+{ icon: '📸', to: { zone: 'P' },
     title: { en: 'Bukchon 8 Views and the Open House', ko: '북촌8경과 열린 한옥', ja: '北村八景とオープンハウス', zh: '北村八景和开放韩屋' },
     text: { en: 'Find the footprint marks and photograph all eight views. Walk into the Open House up the lane from Bukchon-ro 5-gil and learn the parts of a hanok.', ko: '바닥의 발자국 표시를 찾아 여덟 곳을 모두 찍어 보세요. 북촌로5길에서 골목을 올라가면 열린 한옥이 있고, 한옥의 구조를 배울 수 있어요.', ja: '足あとマークを探して8か所すべてを撮ろう。北村路5ギルから路地を上るとオープンハウスがあり、韓屋のつくりを学べます。', zh: '找到脚印标记，拍下全部八景。从北村路5街沿小巷往上走就是开放韩屋，可以了解韩屋的结构。' } },
 { icon: '👘', to: { store: 'gahoe-hanbok' },

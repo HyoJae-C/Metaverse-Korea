@@ -10,6 +10,9 @@
     { "id": "gwanghwamun", "at": [-1701, -801] },
     { "id": "itaewon", "at": [-1368, 275] },
     { "id": "hongdae", "at": [-2901, -120] },
-    { "id": "anguk", "at": [-1427, -898] }
+    { "id": "anguk", "at": [-1427, -898] },
+    { "id": "yeonnam", "at": [-3051, -510] },
+    { "id": "mangwon", "at": [-3432, -128] },
+    { "id": "mangwon-river", "at": [-3472, -64] }
   ]
 }

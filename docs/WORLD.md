@@ -90,6 +90,17 @@ lists **districts** joined into one map (`src/core/districts.js`):
    Inside, the game guide (left) explains the game and the area guide (right)
    lists the district's places.
 
+## Yeonnam-dong and Mangwon-dong
+
+Both are drawn by `scripts/build-mapo.mjs` (rows of small buildings along
+the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
+Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street;
+Mangwon has Mangwon Market under an arcade roof, Poeun-ro (Mangridan-gil) and
+an open Han River park along its south edge. Its Mangwon Fishing Pier is a
+park room like Ttukseom's with `"fishPlace": "mangwon"`: some journal fish
+only bite there (`src/core/fish-places.js`). The script also sets the `at` of
+the shops it lists in `SHOPS`, so run it again after moving a district.
+
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs

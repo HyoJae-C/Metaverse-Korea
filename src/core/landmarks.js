@@ -231,6 +231,17 @@ const BUILD = {
       g.add(b);
     }
   },
+  tracks(g, l) {
+    // A stretch of old railway left in a park's grass (Gyeongui Line Forest
+    // Park): two rails on wooden sleepers along z, flush with the ground so
+    // you can walk over them. l.len: length. Sleepers are one InstancedMesh.
+    const len = l.len || 100, gap = 0.9, n = Math.floor(len / gap);
+    const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(2.4, 0.08, 0.24), mat('#7a5a3a'), n);
+    const m4 = new THREE.Matrix4();
+    for (let i = 0; i < n; i++) sleepers.setMatrixAt(i, m4.makeTranslation(0, 0.04, -len / 2 + gap / 2 + i * gap));
+    g.add(sleepers);
+    for (const sx of [-0.72, 0.72]) box(g, 0.08, 0.1, len, sx, 0.11, 0, '#8a8f99');
+  },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
   sign, // wooden information boards (core/park-signs.js)
