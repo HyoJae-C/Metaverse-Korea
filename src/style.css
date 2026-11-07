@@ -1501,6 +1501,10 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   background: var(--panel); box-shadow: var(--shadow); touch-action: none;
 }
 .honk-btn:active { transform: translateY(2px); }
+/* Bumper car boost (game/bumper.js): glows when charged. */
+.boost-btn { width: 64px; height: 64px; font-size: 30px; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px)); opacity: 0.55; }
+.boost-btn.ready { opacity: 1; box-shadow: 0 0 0 3px #ffe27a, var(--shadow); }
+.boost-btn[hidden] { display: none; }
 
 /* Skate park (Olympic Park): points under the top bar, trick names popping up. */
 .skate-hud {
