@@ -56,7 +56,7 @@ import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM, randomLook } from './data/appearance.js';
+import { OUTFIT_ITEM, randomLook } from './data/appearance.js';
 import { CollisionMap, distSqToSeg } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -125,8 +125,7 @@ import { fishCode, forceNextCatch } from './core/fish-luck.js';
 import { Contacts, touching, wobble } from './core/bump.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
-import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js';
-import { JOB_TEXT, SHIFTS_PER_DAY, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
+import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
 import { JobUI } from './ui/job-ui.js';
 import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
 import { supportTexture, pickSupportSpots } from './core/support-poster.js';
@@ -175,6 +174,8 @@ import { createTaxi } from './game/taxi.js';
 import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
+import { createHatWorkshop } from './game/hat-workshop.js';
+import { createDelivery } from './game/delivery.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -4493,56 +4494,12 @@ function updateDucks(dt) {
   }
 }
 
-// Delivery run from the tteokbokki stall: ride to another shop in time.
-let delivery = null; // { id, name, until }
-function startDelivery() {
-  if (delivery) { shop.toast(t('delivery.cancelHint')); return; }
-  const from = interior?.front?.door || me.root.position;
-  // Only shops reachable within a minute along the streets.
-  const stores = storefronts.items.filter((i) => i.store.category !== 'home' && i.store.category !== 'park' && i.store.category !== 'station' && i.store.id !== interior?.store.id)
-    .map((i) => ({ id: i.store.id, x: i.door.x, z: i.door.z, item: i }))
-    .filter((s) => { const d = Math.hypot(s.x - from.x, s.z - from.z); return d > 30 && d <= MAX_ROAD; })
-    .map((s) => {
-      const poly = roadGraph.route(from.x, from.z, s.x, s.z);
-      let road = 0;
-      for (let k = 1; k < poly.length; k++) road += Math.hypot(poly[k][0] - poly[k - 1][0], poly[k][1] - poly[k - 1][1]);
-      return { ...s, road };
-    });
-  const target = pickDelivery(stores, from);
-  if (!target) return;
-  if (!shifts.take()) { shop.toast(fmt(L(JOB_TEXT.noShifts), { all: SHIFTS_PER_DAY })); return; }
-  const secs = timeFor(target.road);
-  const name = localName(target.item.store.name, getLanguage());
-  delivery = { id: target.id, name, until: performance.now() + secs * 1000, emoji: interior?.store?.jobEmoji || '🛵' };
-  shop.toast(t('delivery.start', { name, s: secs }) + ' · ' + fmt(L(JOB_TEXT.shiftsLeft), { n: shifts.left(), all: SHIFTS_PER_DAY }));
-  if (mode === 'store') leaveStore();
-  setGuide({ kind: 'store', id: target.id, x: target.x, z: target.z, label: name });
-}
-function deliveryArrived(storeId) {
-  if (!delivery || delivery.id !== storeId) return;
-  const left = (delivery.until - performance.now()) / 1000;
-  const coins = deliveryPay(left);
-  delivery = null;
-  $('delivery-chip').hidden = true;
-  if (!coins) return;
-  wallet.add(coins, { k: 'ledger.delivery' });
-  me.play('cheer');
-  shop.toast(t('delivery.done', { n: coins }));
-  missionEvent('delivery');
-}
-function updateDelivery() {
-  if (!delivery) return;
-  const left = (delivery.until - performance.now()) / 1000;
-  if (left <= 0) {
-    delivery = null;
-    $('delivery-chip').hidden = true;
-    shop.toast(t('delivery.late'));
-    return;
-  }
-  $('delivery-chip').hidden = false;
-  $('delivery-chip').textContent = `🛵${delivery.emoji === '🛵' ? '' : delivery.emoji} ${delivery.name} · ${Math.ceil(left)}s`;
-}
-$('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancelHint')); };
+// Delivery runs from the tteokbokki stall. (game/delivery.js)
+const deliveryGame = createDelivery({
+  get interior() { return interior; }, get me() { return me; }, get mode() { return mode; }, $, leaveStore,
+  missionEvent, roadGraph, setGuide, shifts, shop, storefronts, wallet,
+});
+const { deliveryArrived, startDelivery, updateDelivery } = deliveryGame;
 // Beauty shops (core/beauty.js): sit in front of the big mirror (salon,
 // lens shop, lip shop) or lie on a clinic bed, try options on, pay coins to
 // keep them. A clinic sends you through surgery first.
@@ -5006,51 +4963,12 @@ $('checkin-btn').onclick = () => {
   if (n) shop.toast(t('daily.checked', { n }));
 };
 
-// Hat workshop: pick a shape, colour and embroidered patch; the hat shows on
-// your character while you edit, and Save keeps it (others see it too).
-let hatDraft = null, savedCam = null;
-const hex = (n) => '#' + n.toString(16).padStart(6, '0');
-function hatButtons(rowId, items, render, onPick) {
-  const row = $(rowId);
-  row.replaceChildren(...items.map((id) => {
-    const b = document.createElement('button');
-    b.className = 'hat-opt';
-    b.dataset.id = id ?? '';
-    render(b, id);
-    b.onclick = () => { onPick(id); refreshHat(); };
-    return b;
-  }));
-}
-function refreshHat() {
-  for (const [row, key] of [['hat-shapes', 'head'], ['hat-colors', 'hatColor'], ['hat-patches', 'hatPatch']]) {
-    for (const b of $(row).children) b.classList.toggle('on', (hatDraft[key] ?? '') === b.dataset.id);
-  }
-  setLook(hatDraft);
-}
-function openHatWorkshop() {
-  hatDraft = { ...myLook, head: HAT_SHAPES.includes(myLook.head) ? myLook.head : 'bucket', hatColor: myLook.hatColor || 'butter' };
-  hatButtons('hat-shapes', HAT_SHAPES, (b, id) => { b.textContent = accessory('head', id).emoji; b.title = id; }, (id) => { hatDraft.head = id; });
-  hatButtons('hat-colors', Object.keys(PALETTES.hat), (b, id) => { b.style.background = hex(PALETTES.hat[id]); b.classList.add('swatch'); b.title = id; }, (id) => { hatDraft.hatColor = id; });
-  hatButtons('hat-patches', [null, ...Object.keys(PATCHES)], (b, id) => { b.textContent = id ? PATCHES[id] : '∅'; }, (id) => { hatDraft.hatPatch = id; });
-  $('hat-panel').hidden = false;
-  savedCam = { ...cam };
-  Object.assign(cam, { dist: 2.6, pitch: 0.12, yaw: me.root.rotation.y }); // close-up, facing you
-  refreshHat();
-}
-function closeHatWorkshop(save) {
-  if (!hatDraft) return;
-  $('hat-panel').hidden = true;
-  if (save) {
-    myLook = { ...hatDraft };
-    saveLook(myLook);
-    shop.toast(t('hat.saved'));
-  }
-  setLook(myLook);
-  hatDraft = null;
-  if (savedCam) Object.assign(cam, savedCam);
-}
-$('hat-save').onclick = () => closeHatWorkshop(true);
-$('hat-cancel').onclick = () => closeHatWorkshop(false);
+// Hat workshop: shape, colour and patch. (game/hat-workshop.js)
+const hatWorkshop = createHatWorkshop({
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get me() { return me; }, $, cam, setLook,
+  shop,
+});
+const { closeHatWorkshop, openHatWorkshop } = hatWorkshop;
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
@@ -5677,7 +5595,7 @@ renderer.setAnimationLoop(() => {
   const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -5977,7 +5895,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     hiring: () => hiringPlaces,
-    delivery: () => delivery && { ...delivery, left: (delivery.until - performance.now()) / 1000 },
+    delivery: () => deliveryGame.delivery && { ...deliveryGame.delivery, left: (deliveryGame.delivery.until - performance.now()) / 1000 },
     supportPosters: () => supportPlaces,
     adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z), s.front.nx, s.front.nz]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
