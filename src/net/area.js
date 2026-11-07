@@ -118,6 +118,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     update(px, pz) {
       if (!closed && cellSize) moveTo(px, pz);
     },
+    get chatReady() { return !!chatLink?.ready; }, // on the private chat channel (else room chat)
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
     sendChat(t) {
