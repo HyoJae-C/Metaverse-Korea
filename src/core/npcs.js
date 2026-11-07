@@ -34,6 +34,10 @@ export const PHRASES = {
     ['그림 앞에 서면 설명을 볼 수 있어요.', 'geurim ape seomyeon seolmyeong-eul bol su isseoyo', 'Stand in front of a painting to read about it.'],
     ['그림은 눈으로만 감상해 주세요.', 'geurimeun nuneuroman gamsanghae juseyo', 'Please enjoy the paintings with your eyes only.'],
   ],
+  culture: [
+    ['어서 오세요. 다음 전시를 준비하고 있어요.', 'eoseo oseyo. daeum jeonsireul junbihago isseoyo', 'Welcome! We are getting the next exhibition ready.'],
+    ['천천히 둘러보세요. 곧 새 작품이 걸릴 거예요.', 'cheoncheonhi dulleoboseyo. got sae jakpumi geollil geoyeyo', 'Take your time. New works will be hung soon.'],
+  ],
   school: [
     ['여러분, 안녕하세요! 자리에 앉으세요.', 'yeoreobun, annyeonghaseyo! jarie anjeuseyo', 'Hello, everyone! Please take a seat.'],
     ['오늘도 열심히 공부해 봐요!', 'oneuldo yeolsimhi gongbuhae bwayo!', "Let's study hard today too!"],

@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
 const map = read('map.json');
 const shops = [...read('stores.json').stores, ...read('homes.json').homes];
-const inSeongsu = ([x, z]) => x >= -260 && x <= 260 && z >= -110 && z <= 410;
+const inSeongsu = ([x, z]) => x >= -335 && x <= 260 && z >= -110 && z <= 410;
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 const segDist = (px, pz, [ax, az], [bx, bz]) => {
   const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;

@@ -2619,7 +2619,7 @@ function enterStore(item) {
   if (store.genre) enterClub(store.genre);
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
-  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : PHRASES.welcome[0];
+  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
   if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
@@ -5758,7 +5758,7 @@ function updateAction(p, tSec) {
       const job = jobOf(interior.store);
       next = { key: 'job', label: '💼 ' + fmt(L(JOB_TEXT.work), { role: L(JOB_TEXT.role[job]) }), run: () => { clerk.ch.wave(); openJob(job); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum', 'culture'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {

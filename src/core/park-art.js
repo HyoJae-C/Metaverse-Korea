@@ -522,4 +522,99 @@ function pond(g, l) {
   };
 }
 
-export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill, greenhouse, pond };
+// A small themed flower garden (l.kind: tulip, sunflower, hydrangea or
+// lavender): a round plot of l.r with a low hedge round it, a paved path
+// straight across (local z, the sign's side), and the flowers in the two
+// halves either side.
+const FLOWER_KINDS = {
+  tulip: { gap: 0.55, colors: ['#e8243c', '#ffd23f', '#ff7aa8', '#fff6ea', '#ff8a3d', '#c04be0'] },
+  sunflower: { gap: 1.05, colors: ['#ffc928', '#ffb400', '#ffd84d'] },
+  hydrangea: { gap: 1.35, colors: ['#6f9cf2', '#9b7ee8', '#f29ac7', '#7fc3f0', '#c7a6f5'] },
+  lavender: { gap: 0.6, colors: ['#8e6fd6', '#a487e3', '#7b5cc9'] },
+};
+function flowergarden(g, l) {
+  const R = l.r || 8, PATH = 0.9;
+  const K = FLOWER_KINDS[l.kind] || FLOWER_KINDS.tulip;
+  const soil = new THREE.Mesh(new THREE.CircleGeometry(R, 40).rotateX(-Math.PI / 2), mat(l.kind === 'lavender' ? '#a58a6a' : '#7a5a40'));
+  soil.position.y = 0.05;
+  soil.userData.noShadow = true;
+  g.add(soil);
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(PATH * 2, R * 2 + 1).rotateX(-Math.PI / 2), mat('#e6d8c0'));
+  path.position.y = 0.07;
+  path.userData.noShadow = true;
+  g.add(path);
+  // the hedge ring, open where the path goes through
+  const gapA = Math.asin(Math.min(1, (PATH + 0.3) / R));
+  for (const a0 of [Math.PI / 2 + gapA, -Math.PI / 2 + gapA]) {
+    const hedge = new THREE.Mesh(new THREE.TorusGeometry(R, 0.32, 5, 30, Math.PI - gapA * 2), mat('#4f8f45'));
+    hedge.rotation.set(Math.PI / 2, 0, a0);
+    hedge.scale.z = 1.6;
+    hedge.position.y = 0.3;
+    g.add(hedge);
+  }
+  // planting spots on a grid inside the circle, off the path
+  const spots = [];
+  for (let x = -R + 0.8; x <= R - 0.8; x += K.gap) {
+    if (Math.abs(x) < PATH + 0.45) continue;
+    for (let z = -R + 0.8; z <= R - 0.8; z += l.kind === 'lavender' ? K.gap * 0.7 : K.gap) {
+      const jx = l.kind === 'lavender' ? 0 : ((Math.sin(x * 12.9 + z * 7.3) * 43758.5) % 1) * 0.12;
+      if (Math.hypot(x, z) < R - 0.7) spots.push([x + jx, z, spots.length]);
+    }
+  }
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1), c = new THREE.Color();
+  const inst = (geo, material, n) => { const m = new THREE.InstancedMesh(geo, material, n); m.userData.noShadow = n > 200; g.add(m); return m; };
+  const white = () => new THREE.MeshLambertMaterial({ color: '#ffffff' });
+  const n = spots.length;
+  // colour by patch: stripes across for tulips, patches for hydrangeas
+  const colorAt = (x, z, i) => K.colors[(l.kind === 'tulip' ? Math.floor((x + R) / (K.gap * 3)) : l.kind === 'hydrangea' ? Math.floor((x + R) / 3) + Math.floor((z + R) / 3) : i) % K.colors.length];
+  if (l.kind === 'sunflower') {
+    const stems = inst(new THREE.CylinderGeometry(0.05, 0.06, 1, 5).translate(0, 0.5, 0), mat('#4f8f3a'), n);
+    const leaves = inst(new THREE.IcosahedronGeometry(0.3, 0), mat('#5fa046'), n);
+    const petals = inst(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 12).rotateX(Math.PI / 2), white(), n);
+    const disc = inst(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 10).rotateX(Math.PI / 2), mat('#6b4423'), n);
+    spots.forEach(([x, z, i], k) => {
+      const h = 1.5 + ((i * 7) % 5) * 0.15;
+      m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, h, 1)); stems.setMatrixAt(k, m4);
+      m4.compose(v.set(x, h * 0.45, z), q.identity(), sc.set(1, 0.5, 1)); leaves.setMatrixAt(k, m4);
+      q.setFromAxisAngle(v.set(1, 0, 0), -0.25);
+      m4.compose(v.set(x, h, z + 0.05), q, sc.set(1, 1, 1)); petals.setMatrixAt(k, m4); petals.setColorAt(k, c.set(colorAt(x, z, i)));
+      m4.compose(v.set(x, h, z + 0.09), q, sc.set(1, 1, 1)); disc.setMatrixAt(k, m4);
+    });
+  } else if (l.kind === 'hydrangea') {
+    const bush = inst(new THREE.IcosahedronGeometry(0.55, 0), mat('#4f8f45'), n);
+    const blooms = inst(new THREE.IcosahedronGeometry(0.3, 1), white(), n * 4);
+    spots.forEach(([x, z, i], k) => {
+      const s = 0.9 + ((i * 7) % 4) * 0.08;
+      m4.compose(v.set(x, 0.5 * s, z), q.identity(), sc.set(s, s * 0.85, s)); bush.setMatrixAt(k, m4);
+      for (let b = 0; b < 4; b++) {
+        const a = b * 1.7 + i;
+        m4.compose(v.set(x + Math.cos(a) * 0.3 * s, (0.75 + (b === 0 ? 0.2 : 0)) * s, z + Math.sin(a) * 0.3 * s), q.identity(), sc.set(s, s, s));
+        blooms.setMatrixAt(k * 4 + b, m4);
+        blooms.setColorAt(k * 4 + b, c.set(colorAt(x, z, i)).offsetHSL(0, 0, (b - 1.5) * 0.03));
+      }
+    });
+  } else if (l.kind === 'lavender') {
+    const clump = inst(new THREE.IcosahedronGeometry(0.3, 0), mat('#8fae84'), n);
+    const spikes = inst(new THREE.ConeGeometry(0.06, 0.45, 5).translate(0, 0.22, 0), white(), n * 3);
+    spots.forEach(([x, z, i], k) => {
+      m4.compose(v.set(x, 0.22, z), q.identity(), sc.set(1, 0.8, 1)); clump.setMatrixAt(k, m4);
+      for (let b = 0; b < 3; b++) {
+        q.setFromAxisAngle(v.set(Math.cos(b * 2.1), 0, Math.sin(b * 2.1)), 0.18);
+        m4.compose(v.set(x + Math.cos(b * 2.1 + i) * 0.1, 0.4, z + Math.sin(b * 2.1 + i) * 0.1), q, sc.set(1, 1, 1));
+        spikes.setMatrixAt(k * 3 + b, m4);
+        spikes.setColorAt(k * 3 + b, c.set(colorAt(x, z, i + b)));
+      }
+    });
+  } else { // tulips
+    const stems = inst(new THREE.CylinderGeometry(0.025, 0.025, 0.45, 4).translate(0, 0.22, 0), mat('#4f9e3f'), n);
+    const leaf = inst(new THREE.ConeGeometry(0.08, 0.3, 4).translate(0, 0.15, 0), mat('#5fae4a'), n);
+    const cups = inst(new THREE.CylinderGeometry(0.11, 0.06, 0.18, 6).translate(0, 0.09, 0), white(), n);
+    spots.forEach(([x, z, i], k) => {
+      m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, 1, 1)); stems.setMatrixAt(k, m4);
+      q.setFromAxisAngle(v.set(0, 0, 1), 0.3);
+      m4.compose(v.set(x + 0.05, 0.02, z), q, sc.set(1, 1, 1)); leaf.setMatrixAt(k, m4);
+      m4.compose(v.set(x, 0.45, z), q.identity(), sc.set(1, 1, 1)); cups.setMatrixAt(k, m4); cups.setColorAt(k, c.set(colorAt(x, z, i)));
+    });
+  }
+}
+export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill, greenhouse, pond, flowergarden };
