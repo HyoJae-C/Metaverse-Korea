@@ -1254,6 +1254,15 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .stamp-bar { height: 8px; border-radius: 4px; background: #e2d8c6; overflow: hidden; }
 .stamp-bar i { display: block; height: 100%; background: #c8323a; border-radius: 4px; transition: width 0.6s; }
 .stamp-count { margin: 0; font-weight: 800; font-size: 13px; }
+.stamp-trails { display: grid; gap: 8px; margin-bottom: 12px; }
+.stamp-trail { padding: 10px 12px; border-radius: 12px; background: #f4ecdc; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
+.stamp-trail.done { background: #e5f2df; }
+.stamp-trail p { margin: 4px 0 6px; font-size: 12px; color: #6b5d50; }
+.stamp-trail small { font-weight: 700; color: #8a5a32; }
+.stamp-stops { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0 0 6px; padding: 0; list-style: none; counter-reset: stop; }
+.stamp-stops li { counter-increment: stop; padding: 2px 8px; border-radius: 999px; background: #fffaf0; font-size: 12px; color: #8a7d70; }
+.stamp-stops li::before { content: counter(stop) '. '; }
+.stamp-stops li.got { background: #2f8f6b; color: #fff; }
 .stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .stamp-cell { display: grid; justify-items: center; gap: 1px; padding: 8px 6px; border-radius: 12px; background: #fffaf0; text-align: center; box-shadow: 0 1px 0 rgba(74, 63, 53, 0.1); }
 .stamp-art { width: 100px; height: 100px; }

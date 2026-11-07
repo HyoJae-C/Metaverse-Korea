@@ -142,3 +142,16 @@ in the script) kept free for the folk games (docs/FOLK-GAMES.md).
 A landmark's `p` is moved as world points when districts are joined
 (`core/districts.js`), so a shape drawn relative to the landmark's own
 `x, z` uses another name (DDP's `outline`).
+
+Two more parts of the same district stand at their gates' spots: Sungnyemun
+(on a lawn island in a ring of Sejong-daero, where Toegye-ro starts) and
+Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
+Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
+three boxes for the overlap check.
+
+## Stamp courses
+
+`src/data/trails.js` groups tour stamps into courses (the Seoul City Wall
+Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun). The stamp note shows
+each course's stops; the last stamp of a course pays its reward once
+(`core/trails.js`, saved under `mk.trails`).

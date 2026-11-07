@@ -46,6 +46,11 @@ export const EULJIRO = {
   // (37.5600, 126.9753 is world -1774, -429; this district's offset is
   // -1000, -525).
   gate: { x: -774, z: 96, ring: [-828, 60, -720, 132] },
+  // Heunginjimun: its own part north of the Cheonggyecheon strip. Its real
+  // spot (37.5711, 127.0095: world -1019, -737) is under the strip's north
+  // row of towers, so it stands just north of them, straight up from
+  // Ogansugyo Bridge (world x -1004). Jongno runs east-west through it.
+  heung: { x: -4, z: -318, ring: [-70, -275, 62, -360] },
 };
 const E = EULJIRO;
 
@@ -144,6 +149,17 @@ const blockers = [
   { p: rect(hx0, hz1 - 0.8, hx1, hz1 + 0.8) },
 ];
 
+// The board by Heunginjimun (facts checked 2026-11-07).
+const HEUNGINJIMUN = {
+  title: N('흥인지문', 'Heunginjimun', '興仁之門', '兴仁之门'),
+  text: {
+    ko: '한양도성의 동쪽 정문, 흔히 동대문이라고 불러요. 지금의 문은 1869년에 다시 지은 것이에요. 사대문 가운데 유일하게 문 앞을 반달 모양 성벽(옹성)이 감싸고 있어요.',
+    en: 'The great east gate of Seoul\'s old city wall, often called Dongdaemun. The gate standing today was rebuilt in 1869. It is the only one of the four great gates with an ongseong, the half-moon wall that wraps round its front.',
+    ja: '漢陽都城の東の正門で、よく東大門と呼ばれます。今の門は1869年に建て直されたものです。四大門の中で唯一、門の前を半月形の城壁（甕城）が囲んでいます。',
+    zh: '汉阳都城的东正门，常被称为东大门。现在的城门是1869年重建的。它是四大门中唯一一座门前有半月形瓮城环绕的城门。',
+  },
+};
+
 // The board by Sungnyemun (facts checked 2026-11-07: Cultural Heritage
 // Administration / Korea Heritage Service).
 const SUNGNYEMUN = {
@@ -196,6 +212,36 @@ const pois = [
   pois.push({ kind: 'landmark', x, z: z + 10, name: N('숭례문 (남대문)', 'Sungnyemun (Namdaemun)', '崇礼門（南大門）', '崇礼门（南大门）') });
 }
 
+// Heunginjimun (흥인지문, Dongdaemun): on an island in Jongno, which splits
+// round it. The arch runs east-west; the half-moon ongseong wraps its east
+// side, open to the north. A walk comes from the south road (the link from
+// Ogansugyo Bridge), crosses the lawn, goes through the arch and out of the
+// ongseong.
+{
+  const { x, z, ring: [rx0, rz0, rx1, rz1] } = E.heung;
+  roads.push({ k: 'primary', w: 14, p: [[rx0, rz0], [rx1, rz0], [rx1, rz1], [rx0, rz1], [rx0, rz0]], n: N('종로', 'Jongno', '鍾路', '钟路') });
+  areas.push({ k: 'park', p: rect(rx0 + 9, rz1 + 9, rx1 - 9, rz0 - 9) });
+  roads.push({ k: 'walk', w: 4, p: [[x, rz0 - 7], [x, z + 14], [x - 20, z + 14], [x - 20, z], [x + 10, z], [x + 10, rz1 + 7]] });
+  // The base: piers north and south of the arch; the ongseong's ring of wall
+  // (east of the base, open on its north side).
+  blockers.push({ p: rect(x - 6, z - 12, x + 6, z - 2.5) }, { p: rect(x - 6, z + 2.5, x + 6, z + 12) });
+  const R = 20, cx = x + 6;
+  const arc = [];
+  for (let a = -Math.PI / 2; a <= Math.PI / 2 - 0.5; a += Math.PI / 14) arc.push([r1(cx + Math.cos(a) * R * 0.9), r1(z - Math.sin(a) * R)]);
+  for (let i = 1; i < arc.length; i++) {
+    const [ax, az] = arc[i - 1], [bx, bz] = arc[i];
+    const nx = (az - bz), nz = (bx - ax), l = Math.hypot(nx, nz) || 1, t = 1.4 / l;
+    blockers.push({ p: [[ax + nx * t, az + nz * t], [bx + nx * t, bz + nz * t], [bx - nx * t, bz - nz * t], [ax - nx * t, az - nz * t]] });
+  }
+  landmarks.push({ type: 'heunginjimun', x, z, ry: Math.PI / 2 }); // the name board faces east, into the ongseong
+  landmarks.push({ type: 'wall', p: arc, h: 6 });
+  landmarks.push({ type: 'citywall', x, z: z - 22, len: 20, gates: 0 });
+  landmarks.push({ type: 'citywall', x, z: z + 22, len: 20, gates: 0 });
+  blockers.push({ p: rect(x - 2, z - 32, x + 2, z - 12) }, { p: rect(x - 2, z + 12, x + 2, z + 32) });
+  landmarks.push({ type: 'sign', x: x - 12, z: z + 20, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
+  pois.push({ kind: 'landmark', x, z: z - 14, name: N('흥인지문 (동대문)', 'Heunginjimun (Dongdaemun)', '興仁之門（東大門）', '兴仁之门（东大门）') });
+}
+
 const map = {
   meta: {
     district: 'euljiro',
@@ -203,6 +249,7 @@ const map = {
     parts: [
       { why: 'Euljiro, DDP, the fashion malls and Namsangol', box: [E.west, E.euljiro, E.east, 152] },
       { why: 'Sungnyemun on its island', box: E.gate.ring },
+      { why: 'Heunginjimun on its island, north of the Cheonggyecheon strip', box: [E.heung.ring[0], E.heung.ring[2], E.heung.ring[1], E.heung.ring[3]] },
     ],
     source: 'hand-made (game map, not to scale; loosely after Euljiro, Dongdaemun and Pil-dong, Jung-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-euljiro.mjs',
   },
