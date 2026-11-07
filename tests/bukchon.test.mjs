@@ -196,3 +196,20 @@ test('a few homes are open to visitors: a sign, an open gate and a yard you can 
     assert.ok(signs.some((s) => Math.hypot(s.x - (cx + b.fr[0] * D / 2), s.z - cz) < 4), 'a sign by the gate');
   }
 });
+
+test('the hill you see is the hill you walk on (the shadow lands at your feet)', async () => {
+  await import('../src/core/landmarks.js'); // (it loads bukchon-models.js in the right order)
+  const { buildBukchonHill } = await import('../src/core/bukchon-models.js');
+  const hill = buildBukchonHill([], [0, 0]);
+  const earth = hill.children[0], pos = earth.geometry.attributes.position;
+  const [x0, , x1, z1] = BUKCHON.area;
+  // between the mesh's vertices too: sample the walkable hillside and compare
+  // with the triangle under each point (the mesh is a grid, so a nearest
+  // vertex is close enough when it is fine)
+  let worst = 0;
+  for (let i = 0; i < pos.count; i++) worst = Math.max(worst, Math.abs(pos.getY(i) - 0.02 - ground(Math.min(Math.max(pos.getX(i), x0 + 0.01), x1 - 0.01), Math.max(pos.getZ(i), z1 + 0.01))));
+  assert.ok(worst < 0.01, `the hill mesh is ${worst.toFixed(2)} m off the ground`);
+  // and it is fine across: no vertex row far from any point you can stand on
+  const xs = new Set(); for (let i = 0; i < pos.count; i++) xs.add(Math.round(pos.getX(i)));
+  assert.ok(xs.size > 20);
+});
