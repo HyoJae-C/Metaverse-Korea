@@ -1,12 +1,12 @@
-// One AdSense display banner (300x250) at the right edge, only on wide
-// computer screens: on the start screen and in the game, beside the play
-// area and away from the buttons. Phones and small windows never see it.
+// One thin AdSense banner (468x60) at the top left, only on wide computer
+// screens: on the start screen and in the game (not inside shops). Phones
+// and small windows never see it.
 //
 // Needs the AdSense script (core/h5-ads.js loads it) and a display ad unit
 // (config.sideAd.slot). Without a slot nothing is shown; when Google has no
 // ad (before approval, no fill) the box hides itself (style.css).
 
-export const SIDE_AD_MEDIA = '(min-width: 1366px) and (min-height: 700px) and (pointer: fine)';
+export const SIDE_AD_MEDIA = '(min-width: 1200px) and (min-height: 640px) and (pointer: fine)';
 
 // True when the banner should be set up at all.
 export const sideAdOn = (cfg, client) => !!(cfg?.enabled && cfg.slot && client);
@@ -21,7 +21,7 @@ export function mountSideAd({ cfg, client, test = false, win = globalThis.window
   label.textContent = 'Ad';
   const ins = doc.createElement('ins');
   ins.className = 'adsbygoogle';
-  ins.style.cssText = 'display:block;width:300px;height:250px';
+  ins.style.cssText = 'display:block;width:468px;height:60px';
   ins.setAttribute('data-ad-client', client);
   ins.setAttribute('data-ad-slot', String(cfg.slot));
   if (test) ins.setAttribute('data-adtest', 'on');

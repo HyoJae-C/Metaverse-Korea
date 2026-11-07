@@ -2154,15 +2154,19 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .bb-sub { margin-top: -4px; }
 .museum-notice { font-size: 13px; background: #f3ead6; color: #5a4a30; border-radius: 8px; padding: 8px 10px; margin: 6px 0; line-height: 1.5; }
 
-/* AdSense banner at the right edge, wide computer screens only (core/side-ad.js).
+/* AdSense banner, a thin strip at the top left on wide computer screens only
+   (core/side-ad.js); hidden inside shops, where the shop's banner is.
    Above the start screen, below full-screen games; hidden when Google has no ad. */
 .side-ad { display: none; }
-@media (min-width: 1366px) and (min-height: 700px) and (pointer: fine) {
+@media (min-width: 1200px) and (min-height: 640px) and (pointer: fine) {
   .side-ad {
-    display: block; position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 10;
-    width: 300px; padding: 4px 0 0; background: rgba(255, 250, 240, 0.7); border-radius: 10px; overflow: hidden;
+    display: flex; align-items: center; gap: 4px; position: fixed; z-index: 10;
+    top: max(12px, env(safe-area-inset-top)); left: 12px;
+    padding: 0 4px 0 6px; background: rgba(255, 250, 240, 0.7); border-radius: 8px; overflow: hidden;
     box-shadow: 0 2px 10px rgba(74, 63, 53, 0.12);
   }
-  .side-ad small { display: block; padding: 0 8px 2px; font-size: 10px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; }
+  .side-ad small { font-size: 9px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; }
   .side-ad:has(ins[data-ad-status="unfilled"]) { display: none; }
+  .in-store .side-ad { display: none; } /* the shop's name banner is up there */
+  body:has(.update-banner:not([hidden])) .side-ad { display: none; } /* never under the update notice */
 }

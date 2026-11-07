@@ -56,7 +56,7 @@ export const config = {
     test: true,
     reward: 20, dailyLimit: 5, seconds: 5,
   },
-  // A 300x250 AdSense banner at the right edge on wide computer screens only
+  // A thin 468x60 AdSense banner at the top left, wide computer screens only
   // (start screen and game; core/side-ad.js). slot: the display ad unit's
   // data-ad-slot number from AdSense (Ads > By ad unit > Display ads); empty =
   // no banner. Uses rewardedAd.client and rewardedAd.test.
