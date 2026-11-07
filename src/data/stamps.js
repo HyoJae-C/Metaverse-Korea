@@ -70,6 +70,14 @@ export const STAMPS = [
     icon: '<path d="M52 92 q48 -34 96 0 q-6 -3 -12 1 h-72 q-6 -4 -12 -1 z"/><path d="M66 94 v32 h68 v-32 M88 126 v-22 h24 v22 M100 104 v22"/><path d="M60 92 l-6 -4 M140 92 l6 -4"/>',
   },
   {
+    // on DDP's front plaza
+    id: 'ddp', place: { at: [-1035, -468] }, color: '#5d6470', shape: 'circle',
+    name: { ko: '동대문디자인플라자', en: 'Dongdaemun Design Plaza', ja: '東大門デザインプラザ', zh: '东大门设计广场' },
+    gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
+    // the long, curved building with its roof walk
+    icon: '<path d="M44 124 q-4 -30 26 -38 q30 -8 60 -4 q30 4 28 30 q-2 12 -14 12 h-88 q-10 0 -12 0 z"/><path d="M62 96 q38 -10 76 -2"/><path d="M60 110 q40 -8 84 0"/><path d="M90 124 v-12 h20 v12"/><path d="M36 138 h128"/>',
+  },
+  {
     id: 'suragan', place: { store: 'sonmat-kimchi' }, color: '#1f7a5c', shape: 'square',
     name: { ko: '수라간', en: 'Suragan Kitchen', ja: '水刺間', zh: '水剌间' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
