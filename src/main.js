@@ -636,11 +636,12 @@ const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, x: z.x, z: z.z })));
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
-// the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
+// the Bukcheong lion dance on the square in front of Gwanghwamun
+// (core/palace-show.js, core/bukcheong.js).
 const palaceShow = palaceAt ? new PalaceShow(scene, {
   fan: fanAt,
   procession: palaceAt, // the king's walk round the palace (ROYAL_ROUTE)
-  mask: [palaceAt[0], palaceAt[1] + 52], // on the square, just before King Sejong's statue
+  mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
   layer: $('labels'),

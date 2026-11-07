@@ -92,12 +92,64 @@ const ILMU = [
   },
 ];
 
+// 북청사자놀음 (Bukcheong lion dance, core/bukcheong.js): the musicians and
+// the dancers round the lions.
+// 퉁소: the long bamboo flute, held down in front with both hands at the
+// mouth, swaying with the tune.
+function tungso(t) {
+  const s = Math.sin(t * 1.6);
+  return { bob: 0.015 * Math.abs(s), armL: [-1.0, -0.2, 0], armR: [-0.75, 0.2, 0], foreL: [-1.5, 0, 0], foreR: [-1.3, 0, 0], spine: [0.05 + 0.04 * s, 0, 0.04 * s], head: [0.12, 0, 0] };
+}
+// 북: a drum at the left hip, beaten with a stick in the right hand.
+function buk(t) {
+  const b = Math.abs(Math.sin(t * 4.2)); // the stroke
+  return { bob: 0.02 * b, armL: [-0.45, -0.35, 0], foreL: [-0.9, 0, 0], armR: [-1.5 + 0.9 * b, 0.3, 0], foreR: [-0.9 + 0.5 * b, 0, 0], spine: [0.08, 0, 0.05 * Math.sin(t * 2.1)], head: [0.1, 0, 0] };
+}
+// 장구: the hourglass drum across the waist; the stick in the right hand
+// and the left palm in turn.
+function janggu(t) {
+  const r = Math.max(0, Math.sin(t * 5.2)), l = Math.max(0, Math.sin(t * 2.6 + 1.5));
+  return { bob: 0.02 * (r + l) / 2, armL: [-0.75 + 0.4 * l, -0.45, 0], foreL: [-0.9, 0, 0], armR: [-1.25 + 0.6 * r, 0.4, 0], foreR: [-0.9, 0, 0], spine: [0.1, 0, 0], head: [0.08, 0, 0.05 * Math.sin(t * 1.3)] };
+}
+// The shoulder dance (어깨춤) of the Bukcheong dancers: an arm up with the
+// fan or sleeve, the knees bouncing on the beat.
+const BUKCHUM = [
+  (t) => { // one arm high, stepping from foot to foot
+    const s = Math.sin(t * 3.6), up = Math.max(0, s), dn = Math.max(0, -s);
+    return { bob: 0.06 * Math.abs(s), armL: [-0.6, -0.9, 0], armR: [-2.5, 0.4, 0], foreR: [-0.3, 0, 0], legL: [-0.6 * up, 0, 0], kneeL: [0.9 * up, 0, 0], legR: [-0.6 * dn, 0, 0], kneeR: [0.9 * dn, 0, 0], spine: [0.05, 0, 0.12 * s], head: [0, 0, -0.1 * s] };
+  },
+  (t) => { // arms out wide, the shoulders bouncing
+    const s = Math.sin(t * 4.4);
+    return { bob: 0.05 * Math.abs(s), turn: 0.5 * Math.sin(t * 0.9), armL: [-1.2, -1.1, 0], armR: [-1.2, 1.1, 0], foreL: [-0.5, 0, 0], foreR: [-0.5, 0, 0], spine: [0.1, 0, 0.1 * s], head: [0.12 * s, 0, 0] };
+  },
+  (t) => { // squat and spring, the arms in turn
+    const s = Math.sin(t * 3.0), k = (s + 1) / 2;
+    return { bob: -0.1 + 0.16 * k, armL: [-0.8 - 1.4 * k, -0.7, 0], armR: [-0.8 - 1.4 * (1 - k), 0.7, 0], legL: [-0.7 * (1 - k), 0, 0], kneeL: [1.2 * (1 - k), 0, 0], legR: [-0.7 * (1 - k), 0, 0], kneeR: [1.2 * (1 - k), 0, 0], spine: [0.15 * (1 - k), 0, 0] };
+  },
+];
+
 export const FOLK_DANCES = {
   fan: (t) => cycle(FAN, t, 4),
   tal: (t) => cycle(TAL, t, 5),
   ilmu: (t) => cycle(ILMU, t, 4.5),
   rope,
+  tungso, buk, janggu,
+  bukchum: (t) => cycle(BUKCHUM, t, 4.5), // with the long sleeves
+  yangban: (t) => cycle(BUKCHUM, t + 1.5, 4.5), // with a white fan
 };
+
+// What each dance holds in the hands: [left, right] (null: nothing).
+export function folkHandProps(folk) {
+  switch (folk) {
+    case 'tal': case 'bukchum': return [makeSleeve(1.6), makeSleeve(1.6)];
+    case 'rope': return [null, makeFan(1.5)];
+    case 'ilmu': return [makeYak(1.6), makeJeok(1.6)];
+    case 'tungso': return [null, null]; // (the flute is worn from the lips: core/bukcheong.js)
+    case 'buk': case 'janggu': return [null, makeDrumStick(1.6)];
+    case 'yangban': return [null, makePaperFan(1.6)];
+    default: return [makeFan(1.8), makeFan(1.8)];
+  }
+}
 
 const mats = {};
 const mat = (c, side) => (mats[c + side] ||= new THREE.MeshLambertMaterial({ color: c, side: side ? THREE.DoubleSide : THREE.FrontSide }));
@@ -160,5 +212,32 @@ export function makeJeok(size = 1) {
   tassel.position.y = 0.43 * size;
   tassel.rotation.x = Math.PI;
   g.add(staff, plume, tassel);
+  return g;
+}
+
+// A drumstick (북채 / 장구 열채): a thin wooden stick.
+export function makeDrumStick(size = 1) {
+  const g = new THREE.Group();
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.012 * size, 0.016 * size, 0.32 * size, 6), mat('#7a4b2a'));
+  stick.position.y = 0.1 * size;
+  g.add(stick);
+  return g;
+}
+let paperMat = null;
+// A plain white folding fan (합죽선) with dark ribs, opened.
+export function makePaperFan(size = 1) {
+  const g = new THREE.Group();
+  // (lit from inside a little, so the paper doesn't go grey in shade)
+  paperMat ||= new THREE.MeshLambertMaterial({ color: '#f6f1e4', emissive: '#6a665c', side: THREE.DoubleSide });
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.3 * size, 20, Math.PI * 0.15, Math.PI * 0.7), paperMat);
+  face.position.y = -0.04 * size;
+  g.add(face);
+  for (let i = 0; i <= 6; i++) {
+    const a = Math.PI * (0.15 + 0.7 * (i / 6));
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.008 * size, 0.3 * size, 0.012 * size), mat('#4a3a2a'));
+    rib.position.set(Math.cos(a) * 0.15 * size, -0.04 * size + Math.sin(a) * 0.15 * size, 0.004 * size);
+    rib.rotation.z = a - Math.PI / 2;
+    g.add(rib);
+  }
   return g;
 }
