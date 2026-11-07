@@ -833,7 +833,11 @@ function onboardHi5() {
 // Come back where you left off last time, if that spot is still open.
 if (onboard >= 2) {
   const last = loadLastSpot();
-  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
+  // Not out in the empty land between districts either (e.g. a spot saved
+  // before a district moved to its real place, scripts/place-districts.mjs).
+  const spotBoxes = districtBoxes(map);
+  const nearDistrict = (x, z) => !spotBoxes.length || spotBoxes.some((b) => x >= b.x0 - 40 && x <= b.x1 + 40 && z >= b.z0 - 40 && z <= b.z1 + 40);
+  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4) || !nearDistrict(x, z))) {
     me.root.position.set(last.x, 0, last.z);
     me.root.rotation.y = last.ry;
   }
