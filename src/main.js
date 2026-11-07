@@ -106,6 +106,7 @@ import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } f
 import { DUCK_SEATS } from './core/park.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
+import { fishCode, forceNextCatch } from './core/fish-luck.js';
 import { Contacts, touching, wobble } from './core/bump.js';
 import { dartsMsg, parseDarts, dartsGoMsg, parseDartsGo, dartPinMsg, parseDartPin, dartPack, dartColorOf, pickDartColor } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -1501,6 +1502,13 @@ chatBar.addEventListener('submit', async (e) => {
       setLook(myLook);
       shop.toast(L(myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
     }
+    // Fishing code: the next bite (fishing by hand) is that fish, once.
+    const fishFromCode = await fishCode(code);
+    if (fishFromCode) {
+      forceNextCatch(fishFromCode);
+      shop.toast(L(CODE_TEXT.fish));
+      return;
+    }
     const coinsFromCode = await coinCode(code);
     if (coinsFromCode) {
       wallet.add(coinsFromCode, { k: 'ledger.gift' });
@@ -2285,6 +2293,7 @@ if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(
 const CODE_TEXT = {
   coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
   used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
+  fish: { en: '🎣 Something huge is waiting... Cast your line!', ko: '🎣 뭔가 거대한 게 기다리고 있어요... 낚싯대를 던져 보세요!', ja: '🎣 何か大きなものが待っています…竿を投げてみて！', zh: '🎣 有个大家伙在等着……快抛竿吧！', es: '🎣 Algo enorme te espera... ¡Lanza la caña!', ar: '🎣 شيء ضخم ينتظر... ارمِ صنارتك!', vi: '🎣 Có thứ gì đó rất lớn đang chờ... Hãy quăng cần!', hi: '🎣 कुछ बहुत बड़ा इंतज़ार कर रहा है... कांटा डालो!', id: '🎣 Ada sesuatu yang besar menunggu... Lempar kailmu!' },
   wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
 };
 const OUTFIT_TEXT = {

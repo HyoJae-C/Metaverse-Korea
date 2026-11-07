@@ -1,5 +1,6 @@
 // Permanent 49-entry catalogue. Stable IDs preserve bags and lifetime records.
 // Twenty-seven species are available in the first release.
+import { takeForcedCatch } from './fish-luck.js';
 export const FISH = [
   {
     "id": "loach",
@@ -742,7 +743,11 @@ export function rollFish(rand = Math.random, lucky = false) {
 export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
 export const TRASH_CHANCE = 0.04;
 export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
+// A fish set up by a developer code (core/fish-luck.js) is the next bite,
+// once: a copy marked `sure` (no fight, never slips off).
 export function rollCatch(rand = Math.random, lucky = false) {
+  const forced = fishById(takeForcedCatch());
+  if (forced) return { ...forced, sure: true };
   const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
   return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky);
 }
@@ -752,14 +757,14 @@ export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarit
 // (halved by reeling in with time to spare).
 export const ESCAPE = [0, 0.05, 0.08, 0.12, 0.2, 0.3];
 export function escapeChance(fish, spare = 0) {
-  if (fish.trash) return 0;
+  if (fish.trash || fish.sure) return 0;
   return ESCAPE[fish.rarity] * (1 - 0.5 * Math.min(1, Math.max(0, spare)));
 }
 
 // Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
 // a second, so you have to keep reeling (two reel buttons, both thumbs).
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
-export const drainFor = fish => (isRare(fish) ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
+export const drainFor = fish => (isRare(fish) && !fish.sure ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
 
 // What you shout when a fish bites: three lines per rarity (★1–★5), one
 // picked at random each bite. ★3 and up are the rare ones.
