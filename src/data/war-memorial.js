@@ -19,6 +19,8 @@
 // The Statue of Brothers (형제의 상) is a sculptor's work, so the game leaves
 // its spot by the gate empty instead of modelling it.
 
+import { EXHIBIT_I18N, HALL_I18N, TEXT_I18N, HERO_I18N, DAY_I18N } from './war-memorial-i18n.js';
+
 export const CREDIT = { ko: '전쟁기념관, 공공누리 제1유형', en: 'The War Memorial of Korea, KOGL Type 1' };
 export const DISCLAIMER = {
   en: 'The War History Museum is a made-up museum in the game, modelled loosely on the War Memorial of Korea in Yongsan. It is not run by or linked to the War Memorial of Korea. The photos are ones the War Memorial of Korea shares for free use with credit (KOGL Type 1).',
@@ -388,3 +390,41 @@ export function monthBoard(date = new Date()) {
   const ym = `${date.getFullYear()}-${String(m).padStart(2, '0')}`;
   return { month: m, title: MONTH_TEXT.title(m), heroes: MONTH_HEROES[ym] || [], days: MONTH_DAYS[m] || [] };
 }
+
+// Japanese and Chinese (data/war-memorial-i18n.js) merged in. The history
+// text is shown only in the languages listed here; in the game's other
+// languages the cards and boards say so and show Korean and English
+// (NOT_TRANSLATED): an unchecked translation could get the history wrong.
+export const MEMORIAL_LANGS = ['ko', 'en', 'ja', 'zh'];
+export const NOT_TRANSLATED = {
+  en: 'To keep the history accurate, this text is shown in Korean and English only: we do not translate it into languages without a checked translation. If you are a language expert and would like to help translate or correct it, please contact us through the "Inquiry Board" in the game.',
+  es: 'Para mantener la exactitud histórica, este texto solo se muestra en coreano e inglés: no lo traducimos a idiomas sin una traducción revisada. Si eres experto en idiomas y quieres ayudar a traducirlo o corregirlo, escríbenos a través del «Inquiry Board» del juego.',
+  id: 'Demi ketepatan sejarah, teks ini hanya ditampilkan dalam bahasa Korea dan Inggris: kami tidak menerjemahkannya ke bahasa yang belum memiliki terjemahan yang diperiksa. Jika Anda ahli bahasa dan ingin membantu menerjemahkan atau memperbaikinya, hubungi kami melalui "Inquiry Board" di dalam game.',
+  vi: 'Để giữ chính xác về lịch sử, nội dung này chỉ hiển thị bằng tiếng Hàn và tiếng Anh: chúng tôi không dịch sang các ngôn ngữ chưa có bản dịch đã được kiểm duyệt. Nếu bạn là chuyên gia ngôn ngữ và muốn giúp dịch hoặc sửa nội dung, hãy liên hệ với chúng tôi qua "Inquiry Board" trong trò chơi.',
+  hi: 'इतिहास की सटीकता बनाए रखने के लिए यह सामग्री केवल कोरियाई और अंग्रेज़ी में दिखाई जाती है: जिन भाषाओं का जाँचा हुआ अनुवाद नहीं है, उनमें हम इसका अनुवाद नहीं करते। यदि आप भाषा विशेषज्ञ हैं और इसके अनुवाद या सुधार में मदद करना चाहते हैं, तो कृपया गेम के "Inquiry Board" से हमसे संपर्क करें।',
+  ar: 'حرصًا على الدقة التاريخية، يُعرض هذا النص بالكورية والإنجليزية فقط: لا نترجمه إلى لغات ليست لها ترجمة مُراجَعة. إذا كنت خبيرًا لغويًا وترغب في المساعدة في ترجمته أو تصحيحه، فتواصل معنا عبر "Inquiry Board" في اللعبة.',
+};
+for (const l of ['ja', 'zh']) {
+  for (const p of EXHIBITS) {
+    const t = EXHIBIT_I18N[p.id];
+    if (!t) continue;
+    for (const k of ['title', 'era', 'artist', 'desc']) p[k] = { ...p[k], [l]: t[k][l] }; // (copies: donors share objects)
+  }
+  for (const [k, n] of Object.entries(HALL_I18N)) HALLS[k].name[l] = n[l];
+  COMING[l] = TEXT_I18N.coming[l];
+  HOLD[l] = TEXT_I18N.hold[l];
+  VISIT[l] = TEXT_I18N.visit[l];
+  DONATED.title[l] = TEXT_I18N.donatedTitle[l];
+  DONATED[l] = TEXT_I18N.donated[l];
+  ABOUT.title[l] = TEXT_I18N.aboutTitle[l];
+  ABOUT[l] = TEXT_I18N.about[l];
+  TIMELINE.title[l] = TEXT_I18N.timelineTitle[l];
+  TIMELINE.events.forEach((e, i) => { e[l] = TEXT_I18N.timeline[l][i]; });
+  TIMELINE.note[l] = TEXT_I18N.timelineNote[l];
+  MONTH_TEXT.heroes[l] = TEXT_I18N.monthHeroes[l];
+  MONTH_TEXT.days[l] = TEXT_I18N.monthDays[l];
+  for (const [ym, hs] of Object.entries(HERO_I18N)) hs.forEach((h, i) => { const to = MONTH_HEROES[ym][i]; to.name[l] = h.name[l]; to[l] = h[l]; });
+  for (const [m, ds] of Object.entries(DAY_I18N)) ds.forEach((d, i) => { MONTH_DAYS[m][i][l] = d[l]; });
+}
+const monthTitle = MONTH_TEXT.title;
+MONTH_TEXT.title = (m) => ({ ...monthTitle(m), ...TEXT_I18N.monthTitle(m) });

@@ -414,10 +414,11 @@ export function buildMemorial(scene, room, { box, block }, floor = 1) {
   const mb = monthBoard();
   monthBoardMesh(scene, 6.4, 3.1, 0, 3.55, -d / 2 + 0.17, mb);
   // (read up close from either end of the altar)
+  // A reading panel's lines: one { ko, en, ja, zh } per paragraph.
+  const each = (o, f) => Object.fromEntries(Object.keys(o).map((l) => [l, f(l)]));
   const monthPanel = {
     kind: 'month', title: mb.title,
-    ko: [...mb.heroes.map((h) => `${h.name.ko}: ${h.ko}`), ...mb.days.map((x) => `${x.d}  ${x.ko}`)],
-    en: [...mb.heroes.map((h) => `${h.name.en}: ${h.en}`), ...mb.days.map((x) => `${x.d}  ${x.en}`)],
+    lines: [...mb.heroes.map((h) => each(h.name, (l) => `${h.name[l]}: ${h[l]}`)), ...mb.days.map((x) => each(x, (l) => l === 'd' ? null : `${x.d}  ${x[l]}`))],
   };
   const flowers = new THREE.Group();
   scene.add(flowers);
@@ -450,8 +451,8 @@ export function buildMemorial(scene, room, { box, block }, floor = 1) {
   timelineBoard(scene, 7, 3.1, w / 2 - 0.05, 2.4, bz, -Math.PI / 2);
   const panels = [
     ...[-2.9, 2.9].map((x) => ({ x, z: FLOWER_SPOT.z, painting: monthPanel })),
-    { x: -w / 2 + 1.7, z: bz, painting: { kind: 'about', title: ABOUT.title, ko: ABOUT.ko, en: ABOUT.en } },
-    { x: w / 2 - 1.7, z: bz, painting: { kind: 'timeline', title: TIMELINE.title, ko: [...TIMELINE.events.map((e) => `${e.d}  ${e.ko}`), TIMELINE.note.ko], en: [...TIMELINE.events.map((e) => `${e.d}  ${e.en}`), TIMELINE.note.en] } },
+    { x: -w / 2 + 1.7, z: bz, painting: { kind: 'about', title: ABOUT.title, lines: ABOUT.ko.map((_, i) => each(ABOUT.title, (l) => ABOUT[l][i])) } },
+    { x: w / 2 - 1.7, z: bz, painting: { kind: 'timeline', title: TIMELINE.title, lines: [...TIMELINE.events.map((e) => each(TIMELINE.title, (l) => `${e.d}  ${e[l]}`)), TIMELINE.note] } },
   ];
   // The information desk on the left of the way in (by the board about the
   // museum; the Korean War board is on the right), at counter height.

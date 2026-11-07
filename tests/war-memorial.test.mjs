@@ -105,3 +105,16 @@ test('the month board over the altar: the heroes for an announced month, days fo
   assert.equal(monthBoard(new Date(2030, 4, 1)).heroes.length, 0, 'no heroes before they are added');
   for (const days of Object.values(MONTH_DAYS)) for (const x of days) assert.ok(x.d && x.ko && x.en);
 });
+
+test('the history text is in Korean, English, Japanese and Chinese; other game languages get a notice', async () => {
+  const m = await import('../src/data/war-memorial.js');
+  const { LANGUAGES } = await import('../src/i18n/strings.js');
+  for (const p of m.EXHIBITS) for (const k of ['title', 'era', 'artist', 'desc']) for (const l of m.MEMORIAL_LANGS) assert.ok(p[k][l], `${p.id} ${k} ${l}`);
+  for (const l of m.MEMORIAL_LANGS) {
+    assert.ok(m.ABOUT[l]?.length === m.ABOUT.ko.length && m.TIMELINE.events.every((e) => e[l]) && m.VISIT[l], l);
+    for (const h of Object.values(m.HALLS)) if (h.name) assert.ok(h.name[l], l);
+  }
+  for (const { code } of LANGUAGES) {
+    if (!['ko', 'en', 'ja', 'zh', 'zht'].includes(code)) assert.ok(m.NOT_TRANSLATED[code], `notice in ${code}`);
+  }
+});
