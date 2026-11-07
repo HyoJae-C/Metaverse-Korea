@@ -1,10 +1,10 @@
-// Hongdae Skate Park (map landmark "skatepark"): the layout, the ground
+// The skate park on Olympic Park's Peace Plaza, Songpa (map landmark "skatepark"): the layout, the ground
 // height you ride on, and the tricks. Kept free of three.js and the DOM so
 // it can be unit-tested; the scenery is in skatepark-model.js.
 //
 // Layout in metres from the park's centre: +x east, +z south (down on the
 // map). A concrete pad 64 × 44 m with a fence round it and the gate on the
-// north side (towards the main road). Quarter pipes at the west and east
+// north side (towards Olympic-ro). Quarter pipes at the west and east
 // ends, a funbox in the middle, two kickers in the south (one jumping east,
 // one west, side by side) and two grind rails.
 //

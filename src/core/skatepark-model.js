@@ -1,4 +1,4 @@
-// The Hongdae Skate Park scenery (map landmark "skatepark"): a concrete pad,
+// The skate park scenery (map landmark "skatepark"): a concrete pad,
 // quarter pipes with steel coping, a funbox, two wooden kickers, grind
 // rails, a chain-link fence with the gate on the north side, floodlights,
 // benches and painted walls (original street art, no real crews or brands).
@@ -105,7 +105,7 @@ export function buildSkatepark(g) {
       // A painted wall above the deck, facing the park.
       const wall = new THREE.Group();
       box(wall, 0.25, 1.6, r.z1 - r.z0, 0, 0.8, 0, CONCRETE_DARK);
-      const art = new THREE.Mesh(new THREE.PlaneGeometry(r.z1 - r.z0, 1.5), new THREE.MeshLambertMaterial({ map: graffiti(r.dir > 0 ? 11 : 29, r.dir > 0 ? ['SKATE', '홍대', 'FLY'] : ['HONGDAE', 'RIDE', '묘기']) }));
+      const art = new THREE.Mesh(new THREE.PlaneGeometry(r.z1 - r.z0, 1.5), new THREE.MeshLambertMaterial({ map: graffiti(r.dir > 0 ? 11 : 29, r.dir > 0 ? ['SKATE', '송파', 'FLY'] : ['JAMSIL', 'RIDE', '묘기']) }));
       art.rotation.y = -r.dir * Math.PI / 2;
       art.position.set(-r.dir * 0.13, 0.8, 0);
       wall.add(art);
@@ -191,9 +191,9 @@ export function buildSkatepark(g) {
     x.fillStyle = '#1d1b22'; x.fillRect(10, 10, w - 20, h - 20);
     x.textAlign = 'center'; x.textBaseline = 'middle';
     x.fillStyle = '#b6ff3b'; x.font = '900 100px "Arial Black", system-ui, sans-serif';
-    x.fillText('HONGDAE SKATE PARK', w / 2, 100, w - 60);
+    x.fillText('OLYMPIC PARK SKATE PARK', w / 2, 100, w - 60);
     x.fillStyle = '#ffffff'; x.font = '800 60px "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif';
-    x.fillText('🛹 홍대 스케이트파크 🚲', w / 2, 192, w - 80);
+    x.fillText('🛹 올림픽공원 스케이트파크 🚲', w / 2, 192, w - 80);
   });
   const sign = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.6, (gw + 0.6) / 4, 0.2), [mat('#1d1b22'), mat('#1d1b22'), mat('#1d1b22'), mat('#1d1b22'), new THREE.MeshBasicMaterial({ map: board }), new THREE.MeshBasicMaterial({ map: board })]);
   sign.position.set(gx, 4.4 + (gw + 0.6) / 8, -hz);

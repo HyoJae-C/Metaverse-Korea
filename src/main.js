@@ -859,7 +859,7 @@ const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
 const isCar = (k) => k === 4 || k === 6; // sports car, limousine
-let inSkate = false; // in the Hongdae Skate Park (rides slow down there; see skateTick)
+let inSkate = false; // in the skate park (rides slow down there; see skateTick)
 const skater = new Skater();
 let skateY = 0; // ground (or air) height in the skate park
 let skateTk = null; // { code, at }: the last trick, sent to others for a moment
@@ -4319,7 +4319,7 @@ function tarotAction(p, seat) {
 }
 const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
 // Busking: step onto a busking stage and perform; the crowd tips now and then.
-// Hongdae Skate Park (core/skatepark.js, scenery in core/skatepark-model.js):
+// The skate park at Olympic Park (core/skatepark.js, scenery in core/skatepark-model.js):
 // ride in on a board, inline skates, a bike or a kick scooter (bike button,
 // or a ride from the bag) and tap Trick to pop; ramps throw you into the air,
 // a rail under you is a grind. Tricks in a row make a combo; landing banks
@@ -4327,7 +4327,7 @@ const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () =>
 const SKATE_TEXT = {
   trick: { en: 'Trick!', ko: '묘기!', ja: 'トリック！', zh: '技巧！', es: '¡Truco!', ar: 'حركة!', vi: 'Mẹo!', hi: 'ट्रिक!', id: 'Trik!' },
   ride: { en: 'Ride to do tricks', ko: '타고 묘기 부리기', ja: '乗ってトリック', zh: '骑上去秀技巧', es: 'Monta para hacer trucos', ar: 'اركب لتؤدي الحركات', vi: 'Lên xe để biểu diễn', hi: 'सवार होकर करतब करें', id: 'Naik untuk trik' },
-  welcome: { en: '🛹 Hongdae Skate Park! Hop on a ride (bike button or your bag), then tap Trick to jump.', ko: '🛹 홍대 스케이트파크! 탈것에 올라타고(자전거 버튼이나 가방) 묘기 버튼으로 점프해요.', ja: '🛹 弘大スケートパーク！乗り物に乗って（自転車ボタンかバッグ）、トリックでジャンプ。', zh: '🛹 弘大滑板公园！骑上车（自行车按钮或背包），按“技巧”起跳。', es: '🛹 ¡Skatepark de Hongdae! Súbete a algo (botón de bici o tu bolsa) y pulsa Truco para saltar.', ar: '🛹 حديقة التزلج في هونغده! اركب (زر الدراجة أو حقيبتك) ثم اضغط «حركة» للقفز.', vi: '🛹 Công viên trượt Hongdae! Lên xe (nút xe đạp hoặc túi) rồi bấm Mẹo để nhảy.', hi: '🛹 होंगदे स्केट पार्क! सवारी पर चढ़ें (साइकिल बटन या बैग), फिर ट्रिक दबाकर कूदें।', id: '🛹 Skatepark Hongdae! Naik kendaraan (tombol sepeda atau tas), lalu tekan Trik untuk melompat.' },
+  welcome: { en: '🛹 Olympic Park Skate Park! Hop on a ride (bike button or your bag), then tap Trick to jump.', ko: '🛹 올림픽공원 스케이트파크! 탈것에 올라타고(자전거 버튼이나 가방) 묘기 버튼으로 점프해요.', ja: '🛹 オリンピック公園スケートパーク！乗り物に乗って（自転車ボタンかバッグ）、トリックでジャンプ。', zh: '🛹 奥林匹克公园滑板公园！骑上车（自行车按钮或背包），按“技巧”起跳。', es: '🛹 ¡Skatepark del Parque Olímpico! Súbete a algo (botón de bici o tu bolsa) y pulsa Truco para saltar.', ar: '🛹 حديقة التزلج في الحديقة الأولمبية! اركب (زر الدراجة أو حقيبتك) ثم اضغط «حركة» للقفز.', vi: '🛹 Công viên trượt Olympic! Lên xe (nút xe đạp hoặc túi) rồi bấm Mẹo để nhảy.', hi: '🛹 ओलंपिक पार्क स्केट पार्क! सवारी पर चढ़ें (साइकिल बटन या बैग), फिर ट्रिक दबाकर कूदें।', id: '🛹 Skatepark Taman Olimpiade! Naik kendaraan (tombol sepeda atau tas), lalu tekan Trik untuk melompat.' },
   howto: { en: '🤸 Tap Trick to pop. Ride up the ramps for big air, and land on a rail to grind!', ko: '🤸 묘기 버튼으로 점프! 램프를 타고 높이 날고, 레일 위에 내려앉으면 그라인드!', ja: '🤸 トリックでジャンプ！ランプで高く飛び、レールに乗ればグラインド！', zh: '🤸 按“技巧”起跳！冲上坡道飞得更高，落在栏杆上就能滑杆！', es: '🤸 Pulsa Truco para saltar. ¡Sube las rampas para volar y cae en un riel para grindear!', ar: '🤸 اضغط «حركة» للقفز. اصعد المنحدرات لتطير عاليًا، وانزل على القضيب للانزلاق!', vi: '🤸 Bấm Mẹo để nhảy. Lên dốc để bay cao, đáp lên thanh để trượt!', hi: '🤸 कूदने के लिए ट्रिक दबाएँ। ऊँची उड़ान के लिए रैंप पर चढ़ें, ग्राइंड के लिए रेल पर उतरें!', id: '🤸 Tekan Trik untuk melompat. Naik ramp untuk terbang tinggi, mendarat di rel untuk grind!' },
   bail: { en: 'Bail! 💥', ko: '넘어졌어요! 💥', ja: '転倒！💥', zh: '摔倒了！💥', es: '¡Caída! 💥', ar: 'سقوط! 💥', vi: 'Ngã rồi! 💥', hi: 'गिर गए! 💥', id: 'Jatuh! 💥' },
   combo: { en: 'Combo', ko: '콤보', ja: 'コンボ', zh: '连招', es: 'Combo', ar: 'كومبو', vi: 'Combo', hi: 'कॉम्बो', id: 'Kombo' },

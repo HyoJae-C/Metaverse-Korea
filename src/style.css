@@ -1475,7 +1475,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 }
 .honk-btn:active { transform: translateY(2px); }
 
-/* Hongdae Skate Park: points under the top bar, trick names popping up. */
+/* Skate park (Olympic Park): points under the top bar, trick names popping up. */
 .skate-hud {
   position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 172px);
   display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;

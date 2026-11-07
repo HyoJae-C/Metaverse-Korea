@@ -114,9 +114,9 @@ test('skate park: points pay a few coins a day', () => {
   assert.equal(next.saved.best, PTS_PER_COIN_STEP);
 });
 
-test('skate park: on the Hongdae map, open ground south of the main road, with a way in', () => {
+test('skate park: on Olympic Park\'s Peace Plaza in Songpa, with a way in from Olympic-ro', () => {
   const region = read('region.json');
-  const d = region.districts.find((x) => x.id === 'hongdae');
+  const d = region.districts.find((x) => x.id === 'songpa');
   const map = read(d.map);
   const lm = map.landmarks.find((l) => l.type === 'skatepark');
   assert.ok(lm);
@@ -135,5 +135,8 @@ test('skate park: on the Hongdae map, open ground south of the main road, with a
   // A walkway from the main road reaches the gate.
   const path = map.roads.find((r) => r.k === 'walk' && r.p.some(([x, z]) => Math.abs(z - (lm.z - PARK.hz)) < 0.5));
   assert.ok(path && Math.abs(path.p[0][0] - gx) <= (PARK.gate[1] - PARK.gate[0]) / 2);
-  assert.ok(map.pois.some((p) => p.name?.en === 'Hongdae Skate Park'));
+  assert.ok(map.pois.some((p) => p.name?.en === 'Olympic Park Skate Park'));
+  // Nothing else solid on the pad (the lakes, the Peace Gate).
+  for (const b of map.blockers) if (!want.some((w) => JSON.stringify(b.p) === JSON.stringify(w.p.map(([x, z]) => [Math.round(x * 10) / 10, Math.round(z * 10) / 10])))) for (const [x, z] of b.p) assert.ok(!inPark(x - lm.x, z - lm.z, 1), 'blocker in the park');
+  assert.ok(map.landmarks.some((l) => l.type === 'peacegate') && map.landmarks.some((l) => l.type === 'lonetree'));
 });
