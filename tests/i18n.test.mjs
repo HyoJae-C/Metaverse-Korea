@@ -43,7 +43,7 @@ test('Vietnamese and Hindi: browser tags and every inline name object that has A
   assert.equal(languageFromBrowser('vi-VN'), 'vi');
   assert.equal(languageFromBrowser('hi-IN'), 'hi');
   const { readFileSync } = await import('node:fs');
-  const files = ['src/main.js', 'src/core/inventory.js', 'src/data/starter-quests.js', 'src/data/updates.js',
+  const files = ['src/main.js', 'src/ui/bike-shop-ui.js', 'src/game/pool.js', 'src/game/tarot.js', 'src/game/arcade.js', 'src/core/inventory.js', 'src/data/starter-quests.js', 'src/data/updates.js',
     'src/ui/map-view.js', 'src/ui/emblem-ui.js', 'src/ui/shop-ui.js', 'src/ui/counter-ui.js', 'src/ui/duck-ui.js'];
   for (const f of files) {
     const src = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
