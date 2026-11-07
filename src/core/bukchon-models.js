@@ -159,9 +159,9 @@ const BUILD = {
   // The rooftop view: a stone terrace with a railing on the south side and a
   // coin telescope.
   terrace(g) {
-    box(g, 82, 0.3, 22, 0, 0.15, 0, C.stone);
-    for (let x = -40; x <= 40; x += 4) if (Math.abs(x) > 6) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
-    for (const sx of [-1, 1]) box(g, 34, 0.15, 0.3, sx * 23, 1.4, 10.6, C.wood);
+    box(g, 24, 0.3, 22, 0, 0.15, 0, C.stone); // (small: houses line the alley right up to it)
+    for (let x = -11; x <= 11; x += 2.75) if (Math.abs(x) > 3) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
+    for (const sx of [-1, 1]) box(g, 8.5, 0.15, 0.3, sx * 7.4, 1.4, 10.6, C.wood);
     box(g, 0.5, 1.1, 0.5, 0, 0.85, -8, '#3a5a7a'); // telescope post
     box(g, 0.4, 0.4, 1.0, 0, 1.6, -7.8, '#3a5a7a');
   },
@@ -191,6 +191,25 @@ const BUILD = {
     box(g, len, H, 0.95, 0, H / 2 - y, 0, C.dark);
     for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.6, sz * 0.49, C.stone); // the stone pattern
     box(g, len + 0.1, 0.16, 1.05, 0, H - y + 0.08, 0, C.stone); // the capstones
+  },
+  // A stone planter with a small tree (a maple or a persimmon) or clipped
+  // shrubs, kept low.
+  planter(g, l) {
+    box(g, 1.6, 0.5, 1.6, 0, 0.25, 0, C.stone);
+    box(g, 1.4, 0.06, 1.4, 0, 0.5, 0, '#6b5a44');
+    const leaf = ['#7fae5a', '#d9773a', '#9cc06a'][Math.abs(Math.round(l.x * 7 + l.z)) % 3];
+    if (l.kind === 'bush') {
+      for (const [x, z, s] of [[-0.35, -0.3, 0.42], [0.35, 0.1, 0.38], [-0.1, 0.4, 0.34]]) {
+        const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(leaf));
+        b.position.set(x, 0.55 + s * 0.7, z);
+        g.add(b);
+      }
+    } else {
+      box(g, 0.18, 1.5, 0.18, 0, 1.25, 0, '#5e4330');
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 0), mat(leaf));
+      crown.position.set(0, 2.4, 0); crown.scale.set(1, 0.8, 1);
+      g.add(crown);
+    }
   },
   // The whole retaining wall as one landmark (l.segs: { x, z, len, ry, y },
   // x and z from the landmark's own spot), so it is one draw call, not one
@@ -272,12 +291,14 @@ export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
   const [x0, , x1, z1] = BUKCHON.area, foot = BUKCHON.hill.foot;
-  const nx = 2, nz = Math.ceil((foot - z1) / 2);
+  // (fine enough across too: the hill is flat across x, but ground() is 0
+  // right on the edge, so the edge row is taken just inside it)
+  const nx = Math.ceil((x1 - x0) / 4), nz = Math.ceil((foot - z1) / 2);
   const geo = new THREE.PlaneGeometry(x1 - x0, foot - z1, nx, nz).rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (foot + z1) / 2;
-    pos.setXYZ(i, x + ox, ground(x, Math.min(z, foot - 0.01)) + 0.02, z + oz);
+    pos.setXYZ(i, x + ox, ground(Math.min(Math.max(x, x0 + 0.01), x1 - 0.01), Math.min(Math.max(z, z1 + 0.01), foot - 0.01)) + 0.02, z + oz);
   }
   geo.computeVertexNormals();
   { // the hillside between the houses is paved too (granite slabs, see pavingTexture)

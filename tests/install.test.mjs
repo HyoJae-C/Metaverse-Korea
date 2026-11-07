@@ -49,4 +49,6 @@ test('the service worker never touches other sites (Supabase, Google sign-in)', 
   const sw = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
   assert.match(sw, /url\.origin !== self\.location\.origin\) return/);
   assert.match(sw, /req\.method !== 'GET'\) return/);
+  // network-first really asks the server, past Pages' 10-minute browser cache
+  assert.match(sw, /fetch\(req, \{ cache: 'no-cache' \}\)/);
 });

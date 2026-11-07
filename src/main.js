@@ -2092,6 +2092,19 @@ function enterStore(item) {
     });
   }
   interior.vendorNpcs = built.vendorNpcs || null;
+  // The Curve Runway's audience: people already sitting in some of the seats.
+  if (built.stations?.runway?.[0]?.audience && !built.audienceNpcs) {
+    built.audienceNpcs = built.stations.runway[0].audience.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      o.ch.activity('sit'); // the sitting clip, legs along the seat
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.audienceNpcs = built.audienceNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2934,10 +2947,15 @@ const runwayUi = new RunwayUI({
     if (!label) { me.play('shrug'); return; } // missed the beat
     interior?.stations?.runway?.[0]?.flash?.();
     sfx.snap();
+    for (const o of interior?.audienceNpcs || []) if (Math.random() < 0.6) o.ch.play('clap'); // the audience claps
     if (kind === 'turn') runwaySpin = 0.7;
     else { me.play(kind); net.sendEmote(kind); }
   },
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
+  onMedal: (medal, coins) => {
+    if (coins) shop.toast(t('grill.medalToast', { coins }));
+    me.play(medal ? 'cheer' : 'wave');
+    if (medal) for (const o of interior?.audienceNpcs || []) o.ch.play(Math.random() < 0.5 ? 'cheer' : 'clap');
+  },
 });
 // One frame of the show: where on the runway, facing which way.
 function runwayStep(p, dt) {
@@ -5085,6 +5103,7 @@ renderer.setAnimationLoop(() => {
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);
+    for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
