@@ -16,8 +16,9 @@ export const fishName = (f) => (getLanguage() === 'ko' ? f.ko : `${localName(f.n
 const pct = c => (c < 0.1 ? c.toFixed(2) : c.toFixed(1)) + '%';
 const text = (ko, en) => localName({ ko, en });
 
+// The shout when a fish bites; ★1 bites stay quiet (they are most of them).
 export const biteLine = (f, rand = Math.random) => {
-  const lines = !f || f.trash ? null : BITE_LINES[f.rarity];
+  const lines = !f || f.trash || f.rarity < 2 ? null : BITE_LINES[f.rarity];
   return lines ? localName(lines[Math.floor(rand() * lines.length) % lines.length]) : null;
 };
 
