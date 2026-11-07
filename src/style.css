@@ -964,15 +964,32 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
 .fish-card.escaped .fish-big { filter: grayscale(1); }
 .fish-card { display: grid; justify-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #f2f7fb; text-align: center; }
-.fish-card.rare { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff5d6, #ffe08a); box-shadow: 0 0 0 2px #ffd166 inset, 0 0 18px rgba(255, 196, 0, .45); animation: fish-card-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+/* The catch card by rarity, in the bite card's colours: ★1 plain, ★2 green
+   stars only, ★3 a small gold glow, ★4 a big orange one, ★5 red and gold with
+   rainbow light and sparkles. */
+.fish-card.tier-2 .fish-card-stars { color: #2a9a52; }
+.fish-card.rare { position: relative; overflow: hidden; background: linear-gradient(135deg, #fffbe6, #ffe58a); box-shadow: 0 0 0 2px #f0b400 inset, 0 0 10px rgba(240, 180, 0, .45); animation: fish-card-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.fish-card.tier-3::after { display: none; }
+.fish-card.tier-3 .fish-card-stars { color: #9a6a00; }
 .fish-card.rare::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .75) 50%, transparent 65%); transform: translateX(-100%); animation: fish-card-shine 1.6s ease-in-out .3s infinite; pointer-events: none; }
 .fish-card.rare .fish-big { animation: trophy-bob 1s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 190, 0, .8)); }
-.fish-card.tier-4 { background: linear-gradient(135deg, #ffe0b8, #ff9f5a); box-shadow: 0 0 0 2px #ff8a3d inset, 0 0 22px rgba(255, 120, 40, .55); }
-.fish-card.tier-5 { background: linear-gradient(135deg, #ffd6f2, #c9b8ff, #a8f0ff); box-shadow: 0 0 0 2px #b28cff inset, 0 0 28px rgba(160, 120, 255, .65); }
+.fish-card.tier-4 { background: linear-gradient(135deg, #ffe0b8, #ff9f5a); box-shadow: 0 0 0 3px #e8590c inset, 0 0 26px 4px rgba(232, 89, 12, .6); }
+.fish-card.tier-4 .fish-card-stars { color: #7a2a00; }
+.fish-card.tier-4 .fish-big { filter: drop-shadow(0 0 10px rgba(255, 140, 40, .9)); }
+.fish-card.tier-5 { overflow: visible; background: linear-gradient(135deg, #ffe3e3, #ff8f8f 45%, #ffd166); box-shadow: 0 0 0 3px #ffd166 inset, 0 0 0 6px #c8102e inset, 0 0 34px 10px rgba(255, 80, 120, .55), 0 0 60px 18px rgba(120, 200, 255, .35); }
+.fish-card.tier-5::after { border-radius: inherit; }
+.fish-card.tier-5 .fish-card-stars { color: #7a0a1c; }
+.fish-card.tier-5 .fish-big { filter: drop-shadow(0 0 12px rgba(255, 255, 255, .95)); }
+/* ★5 sparkles (on the card and the trophy). */
+.fish-spark { position: absolute; z-index: 1; font-size: 20px; font-style: normal; pointer-events: none; filter: drop-shadow(0 0 4px #fff); animation: fish-spark 1.4s ease-in-out infinite; }
+.fish-spark.s1 { left: 6px; top: 30%; }
+.fish-spark.s2 { right: 6px; top: 50%; animation-delay: .45s; }
+.fish-spark.s3 { left: 8px; bottom: 6px; animation-delay: .9s; }
+@keyframes fish-spark { 50% { transform: scale(1.35) rotate(15deg); opacity: .55; } }
 .fish-card-stars { color: #b86e00; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 1px 0 #fff; }
 @keyframes fish-card-pop { from { scale: .6; opacity: 0; } }
 @keyframes fish-card-shine { 60%, 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare .fish-big { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
 .fish-big { font-size: 56px; line-height: 1; }
 .fish-odds summary { cursor: pointer; font-weight: 700; font-size: 13px; }
 .fish-list { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
@@ -1917,7 +1934,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @media (max-width: 380px) { .fish-book { padding: 10px; } .fish-book .stamp-grid { gap: 5px; } .fish-book .fish-stamp-fish { font-size: 26px; } }
 @media (prefers-reduced-motion: reduce) { .fish-cell.fresh .fish-stamp { animation: none; } }
 
-/* A ★4–★5 catch over the angler's head (everyone nearby sees it, 5 s). */
+/* A ★3–★5 catch over the angler's head (everyone nearby sees it). */
 .bubble.trophy { font-size: 14px; padding: 6px 12px 8px; border-radius: 18px; background: linear-gradient(#fffdf2, #ffe9a8); box-shadow: 0 0 0 2px #ffd166, 0 0 24px 6px rgba(255, 209, 102, .75); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both, trophy-glow 1.2s ease-in-out .6s infinite; }
 .trophy-in { display: grid; justify-items: center; gap: 2px; width: max-content; max-width: 220px; white-space: normal; text-align: center; }
 .trophy-pic { position: relative; display: grid; place-items: center; width: 64px; height: 64px; margin-top: -34px; }
@@ -1981,6 +1998,22 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .bubble.trophy.tier-5 .trophy-pic .fish-stamp-fish { font-size: 90px; }
 .bubble.trophy.tier-5 .trophy-rays { inset: -26px; }
 .bubble.trophy.tier-5 .trophy-stars { font-size: 16px; }
+/* Trophy colours by rarity: ★3 small and gold, ★4 big and orange, ★5 red and
+   gold with rainbow rays and sparkles. ★2 shows only its stars (.bubble-catch). */
+.bubble.trophy.tier-3 { scale: .82; transform-origin: bottom center; box-shadow: 0 0 0 2px #f0b400, 0 0 12px 2px rgba(240, 180, 0, .5); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-3 .trophy-rays { inset: -8px; opacity: .7; }
+.bubble.trophy.tier-4 { background: linear-gradient(#fff4e6, #ffc489); box-shadow: 0 0 0 3px #e8590c, 0 0 30px 10px rgba(232, 89, 12, .6); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-4 .trophy-rays { inset: -24px; background: repeating-conic-gradient(rgba(255, 140, 40, .95) 0 12deg, rgba(255, 140, 40, 0) 12deg 30deg); }
+.bubble.trophy.tier-4 .trophy-stars, .bubble.trophy.tier-4 .trophy-text { color: #7a2a00; }
+.bubble.trophy.tier-5 { background: linear-gradient(#fff, #ffd6e0); box-shadow: 0 0 0 3px #ffd166, 0 0 0 6px #c8102e, 0 0 40px 16px rgba(255, 80, 120, .6), 0 0 80px 30px rgba(120, 200, 255, .35); animation: trophy-in .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.bubble.trophy.tier-5 .trophy-in { position: relative; }
+.bubble.trophy.tier-5 .trophy-rays { inset: -40px; background: repeating-conic-gradient(rgba(255, 120, 200, .9) 0 10deg, rgba(120, 200, 255, .9) 10deg 20deg, rgba(255, 230, 120, .95) 20deg 30deg, rgba(255, 255, 255, 0) 30deg 40deg); }
+.bubble.trophy.tier-5 .trophy-stars, .bubble.trophy.tier-5 .trophy-text { color: #7a0a1c; }
+.trophy-in .fish-spark.s1 { left: -16px; top: -30px; }
+.trophy-in .fish-spark.s2 { right: -14px; top: -6px; }
+.trophy-in .fish-spark.s3 { left: auto; right: 18%; top: -70px; bottom: auto; }
+.bubble-catch { display: grid; justify-items: center; gap: 1px; }
+.bubble-stars { color: #2a9a52; font-size: 12px; letter-spacing: 1px; line-height: 1; text-shadow: 0 1px 0 #fff; }
 
 /* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
    and the card and its shout grow with the stars. */
