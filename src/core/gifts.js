@@ -75,9 +75,10 @@ export class GiftBox {
   }
 
   // I paid and sent an offer: remember it. Returns the gift id.
-  send({ to, name, store, product, coins }) {
+  // paid: the wallet op id of the payment, so a refund gives back exactly that.
+  send({ to, name, store, product, coins, paid = null }) {
     const gid = `${this.now().toString(36)}${(this.seq++).toString(36)}`.slice(-12);
-    this.out.set(gid, { to, name, store, product, coins, at: this.now() });
+    this.out.set(gid, { to, name, store, product, coins, paid, at: this.now() });
     return gid;
   }
 

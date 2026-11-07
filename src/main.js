@@ -2849,8 +2849,10 @@ const decorGame = createDecor({
 });
 const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, openPiece, updateCarry } = decorGame;
 
-// Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
+// Coins and the rewarded-ad slot. The balance is kept on the server once
+// supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
 // Anonymous session reports for the operator's retention numbers
@@ -3881,7 +3883,7 @@ function boardCable(i, st) {
   const c = cabinAt(i, cableClock());
   if (c.at !== st || !doorsOpen(c)) return;
   if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
-  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2 };
+  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? wallet.lastOp : null };
   cam.yaw = st === 'low' ? 0 : Math.PI; // look along the way, the view behind
   sendTimer = 0;
   if (st === 'low') missionEvent('ride');
@@ -3889,7 +3891,7 @@ function boardCable(i, st) {
 function getOffCable(refund) {
   if (!cable) return;
   const s = boardSpot(cable.cabin, cable.from);
-  if (refund && cable.from === 'low') wallet.add(CABLE.fare, { k: 'ledger.cable' });
+  if (refund && cable.from === 'low') wallet.refund(CABLE.fare, cable.paid, { k: 'ledger.cable' });
   me.root.position.set(s.x, s.y, s.z);
   cable = null;
   sendTimer = 0;
@@ -4293,7 +4295,7 @@ $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
 createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
 // with a word to spend it wisely. Players from before it get it too.
-{
+walletReady.then(() => {
   const gift = wallet.welcome();
   if (gift) {
     refreshWallet();
@@ -4304,7 +4306,7 @@ createLedger({ $, wallet });
     $('welcome-panel').hidden = false;
     $('welcome-close').onclick = () => { $('welcome-panel').hidden = true; };
   }
-}
+});
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
   const music0 = music.on;
