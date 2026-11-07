@@ -57,3 +57,12 @@ test('rewardedShow uses the demo when Google has no ad, but not after a skip', a
   assert.equal(await rewardedShow({ provider: 'h5', client: '' }, fallback, {}, watched)(5), true);
   assert.equal(demo, 2);
 });
+
+test('ads.txt, the AdSense meta tag and config use the same publisher ID', async () => {
+  const { readFileSync } = await import('node:fs');
+  const read = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+  const id = read('src/config.js').match(/VITE_ADSENSE_CLIENT \|\| 'ca-(pub-\d{16})'/)?.[1];
+  assert.ok(id, 'publisher ID in config');
+  assert.match(read('public/ads.txt'), new RegExp(`^google\\.com, ${id}, DIRECT, f08c47fec0942fa0$`, 'm'));
+  assert.match(read('index.html'), new RegExp(`name="google-adsense-account" content="ca-${id}"`));
+});
