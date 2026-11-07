@@ -66,7 +66,7 @@ import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { startWhereReports } from './net/where.js';
-import { createCounts, createFpsMeter, deviceClass, firstSrc, someoneNear, startSessionReports } from './core/sessions.js';
+import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
@@ -197,8 +197,13 @@ const itemEl = (id) => (itemEls[id] ||= $(id));
 // first so a failure while the world loads shows up too.
 const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
 let errBox = null;
+// Problems are also counted for the operator's numbers once the cloud is up
+// (see onProblem below); ones before that wait here.
+let onProblem = null;
+const earlyProblems = [];
 function reportProblem(msg) {
   console.error('[mk]', msg);
+  if (onProblem) onProblem(msg); else if (earlyProblems.length < 5) earlyProblems.push(msg);
   if (!errBox) {
     errBox = document.createElement('div');
     errBox.className = 'err-box';
@@ -229,6 +234,25 @@ await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
 const playCounts = createCounts();
+// The loading funnel (core/sessions.js createVisit): page open → pressed
+// Play → world loaded → a minute of play. (Test rooms run with ?debug,
+// which has no cloud, so nothing is sent from them.)
+let firstVisit = true;
+try { firstVisit = !localStorage.getItem('mk.made'); } catch { /* storage blocked */ }
+const visitDevice = deviceClass({ touch: navigator.maxTouchPoints > 0, width: screen.width, height: screen.height });
+const visit = createVisit({
+  send: (r) => cloud.reportVisit(r),
+  isNew: firstVisit, device: visitDevice, src: firstSrc(location.search),
+});
+visit.reach(STAGE.OPEN);
+// Errors: counted in the session and the message (digits removed, no
+// account id) sent for the operator's error list, a few per visit.
+const sendError = createErrorSender((m) => cloud.reportError(m));
+onProblem = (msg) => { playCounts.error(); sendError(msg); };
+for (const m of earlyProblems.splice(0)) onProblem(m);
+// Country statistics for the operator page: a guess from the time zone,
+// once a day per account (core/country.js). Loaded on the side; never waits.
+if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
@@ -475,6 +499,7 @@ await new Promise((resolve) => {
   };
 });
 $('status').textContent = '';
+visit.reach(STAGE.PRESSED); // loading time counts from here
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
 // Costumes are bought now, so only the name is locked.
@@ -496,6 +521,7 @@ try {
   map = await mapPromise;
 } catch (err) {
   $('status').textContent = t(err.code === 'noMap' ? 'error.noMap' : 'error.generic');
+  visit.fail();
   throw err;
 }
 
@@ -951,6 +977,16 @@ const myLabel = { tag: myTag, bubble: null };
 const input = new Input(canvas, $('joystick'));
 $('hud').hidden = false;
 $('start').hidden = true;
+// The world is up: loading is done. A minute of visible play is the last
+// funnel step.
+visit.reach(STAGE.LOADED);
+{
+  let seen = 0;
+  const minute = setInterval(() => {
+    if (document.hidden) return;
+    if (++seen >= 60) { visit.reach(STAGE.MINUTE); clearInterval(minute); }
+  }, 1000);
+}
 $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
@@ -2827,7 +2863,9 @@ if (!testRoom) {
   const src = firstSrc(location.search);
   startSessionReports({
     get: () => (tabParked || !me?.root ? null : { region: regionId, device, src }),
-    send: (r) => cloud.reportSession(r),
+    // Plus how far along the first path the player is (-1: never on it)
+    // and the language setting, read fresh at each report.
+    send: (r) => cloud.reportSession({ ...r, counts: { ...r.counts, starter: quests.starterStep ?? -1, lang: getLanguage() } }),
     counts: playCounts,
     fps: createFpsMeter(),
     tick: (sec) => {
@@ -4272,6 +4310,7 @@ $('ad-btn').onclick = async () => {
   const music0 = music.on;
   if (music0) music.setOn(false); // a real ad has its own sound
   const n = await wallet.watchAd(showAd);
+  if (n) playCounts.ad(); // retention counts (core/sessions.js)
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
@@ -4326,7 +4365,9 @@ function talkToGuide() {
   squareNpc.ch.wave();
   const q = quests.active;
   if (q && quests.ready(questCtx())) {
+    const starterQuest = q.starter != null;
     const coins = quests.claim(questCtx());
+    if (!starterQuest) playCounts.quest(); // retention counts: a mission beyond the first path
     if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
     // Busy square bonus: +1 for everyone else standing around the guide.
     const g = squareNpc.ch.root.position;

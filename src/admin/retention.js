@@ -1,9 +1,13 @@
 // The operator page's Retention tab (admin.html): daily players, D1/D3/D7
 // return by join day, session length, days played per week, first-session
 // drop-off, alone vs together, devices and frame rate. Data comes from
-// ops_retention() in supabase/011_play_sessions.sql.
+// ops_retention() in supabase/011_play_sessions.sql. Below that, "More":
+// the loading funnel, D1/D7 by country, rewarded ads, the first path, what
+// new players did on day 1, languages, Google sign-in and errors, from
+// ops_retention_more() in supabase/014_retention_more.sql.
 
 const SETUP = 'Run <code>supabase/011_play_sessions.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page. Numbers start from the first game session after that.';
+const MORE_SETUP = 'For the loading funnel, countries, ads and errors: run <code>supabase/014_retention_more.sql</code> once (and <code>010_countries.sql</code> if not yet), then <code>notify pgrst, \'reload schema\';</code> and reload. Numbers start from then.';
 const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42703' || e.code === '42P01');
 
 // "3/7 (43%)" — with so few players the count matters more than the
@@ -30,6 +34,21 @@ export function sumCohorts(cohorts = []) {
     }
   }
   return out;
+}
+
+// One loading-funnel row: each step as a share of the visits opened.
+export function funnelRow(f) {
+  const time = f.load_med_s ? `${f.load_med_s} s / ${f.load_p90_s} s` : '–';
+  return [f.is_new ? 'First visit' : 'Returning', f.opened, ratio(f.pressed, f.opened), ratio(f.loaded, f.opened), ratio(f.minute, f.opened), ratio(f.failed, f.opened), time];
+}
+
+// 'KR' → '🇰🇷 South Korea'; 'XX' → 'Unknown'.
+export function countryLabel(cc) {
+  if (!/^[A-Z]{2}$/.test(cc || '') || cc === 'XX') return '❔ Unknown';
+  const flag = String.fromCodePoint(...[...cc].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+  let name = cc;
+  try { name = new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) || cc; } catch { /* old browser */ }
+  return `${flag} ${name}`;
 }
 
 export function createRetention({ client, $, escapeHtml, notOperator }) {
@@ -135,8 +154,86 @@ export function createRetention({ client, $, escapeHtml, notOperator }) {
     t5.append(tb5);
     parts.push(h5, t5);
 
+    parts.push(...await more());
+
     parts.push(el('p', 'muted', `Recording since ${data.since}. A session is one visit; the game reports once a minute while its tab is visible, so very short visits (under a minute) may not show. A player "starts" on their first recorded session. Updated ${new Date().toLocaleTimeString()}.`));
     box.replaceChildren(...parts);
+  }
+
+  // A table from a header row and rows of cells.
+  function table(head, rows) {
+    const t = el('table', 'grid');
+    const tr0 = el('tr');
+    for (const h of head) tr0.append(el('th', '', h));
+    const th = el('thead'); th.append(tr0);
+    const tb = el('tbody');
+    for (const r of rows) {
+      const tr = el('tr');
+      for (const v of r) tr.append(el('td', '', String(v)));
+      tb.append(tr);
+    }
+    t.append(th, tb);
+    const w = el('div', 'scroll-x');
+    w.append(t);
+    return w;
+  }
+
+  // The "More" numbers (ops_retention_more, supabase/014_retention_more.sql).
+  async function more() {
+    const { data: m, error } = await client.rpc('ops_retention_more', { days: +$('retDays').value });
+    if (error) {
+      const p = el('p', 'empty');
+      p.innerHTML = missing(error) ? MORE_SETUP : escapeHtml(error.message);
+      return [el('h3', '', 'More'), p];
+    }
+    const out = [];
+
+    // 1. Loading funnel
+    out.push(el('h3', '', `Loading funnel (page visits, last ${m.days} days)`));
+    out.push(table(['Visitor', 'Opened', 'Pressed Play', 'World loaded', 'Played 1 min', 'Load failed', 'Load time (median / slowest 10%)'],
+      m.funnel.map((f) => funnelRow(f))));
+    out.push(table(['Device', 'Opened', 'World loaded', 'Played 1 min', 'Median load'],
+      m.funnel_devices.map((f) => [f.device, f.opened, ratio(f.loaded, f.opened), ratio(f.minute, f.opened), f.load_med_s ? `${f.load_med_s} s` : '–'])));
+    out.push(el('p', 'muted', 'One row per page visit. "First visit" = nothing saved on that device yet. Load time runs from pressing Play to the world showing. People who close the page before the game reaches the server (very slow connections, blocked sites) can\'t show here.'));
+
+    // 2. Countries
+    out.push(el('h3', '', `Coming back by country (players who started in the last ${m.days} days)`));
+    out.push(table(['Country', 'Players', 'D1', 'D7'],
+      m.countries.map((c) => [countryLabel(c.country), c.players, ratio(c.d1, c.d1of), ratio(c.d7, c.d7of)])));
+    out.push(el('p', 'muted', 'Country is guessed from the device time zone (no IP addresses), so a traveller in Korea counts for home. Unknown = UTC or no country report yet.'));
+
+    // 3. Ads
+    const a = m.ads;
+    out.push(el('h3', '', 'Rewarded ads (last 7 days)'));
+    const at = el('div', 'stats');
+    at.append(
+      tile(a.watched, 'Ads watched'),
+      tile(ratio(a.watchers, a.players), 'Players who watched one'),
+      tile(a.per_player_day, 'Ads per player-day', 'All players, including those who watched none.'),
+      tile(a.per_watcher_day, 'Ads per watcher-day', 'Only days when the player watched at least one.'),
+      tile(a.max_day, 'Most by one player in a day'),
+    );
+    out.push(at);
+
+    // 4. First day
+    const st = m.starter;
+    out.push(el('h3', '', 'New players: the first path'));
+    out.push(table(['Errands done', ...st.reached.map((_, i) => String(i + 1))],
+      [['Players', ...st.reached.map((n) => ratio(n, st.players))]]));
+    out.push(el('h3', '', 'New players: what they did on day 1, and D1'));
+    out.push(table(['On day 1', 'Did it', 'D1 if did', "Didn't", "D1 if didn't"],
+      m.first_day.map((f) => [f.label, f.yes, ratio(f.yes_d1, f.yes_of), f.no, ratio(f.no_d1, f.no_of)])));
+    out.push(el('p', 'muted', 'The first path and the missions send every new player to shops, coffee and food, so those say little about taste. Fishing, chatting, time near others and ads are things nobody is told to do on day 1. A gap here is a hint, not proof: keen players do more of everything.'));
+
+    // 5. Language, Google, errors
+    out.push(el('h3', '', 'Language and sign-in (last 7 days)'));
+    out.push(table(['Language', 'Players'], m.languages.map((l) => [l.lang, l.players])));
+    out.push(el('p', '', `Linked to Google: ${ratio(m.google.linked, m.google.players)}`));
+    const e = m.errors;
+    out.push(el('h3', '', 'Errors (last 7 days)'));
+    out.push(el('p', '', `Sessions with an error: ${ratio(e.with_errors, e.sessions)}`));
+    if (e.top.length) out.push(table(['Message (numbers shown as #)', 'Times'], e.top.map((x) => [x.msg, x.n])));
+    return out;
   }
 
   $('retDays').onchange = load;

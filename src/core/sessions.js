@@ -56,12 +56,15 @@ export function newSessionId(rand = globalThis.crypto) {
 // The counts for one session. coins(balance) turns wallet balance changes
 // into earned / spent; spending also counts as a purchase.
 export function createCounts() {
-  const c = { fish: 0, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0 };
+  const c = { fish: 0, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0, ads: 0, errors: 0, quests: 0 };
   let bal = null;
   return {
     c,
     fish() { c.fish++; },
     chat() { c.chats++; },
+    ad() { c.ads++; }, // a rewarded ad watched to the end
+    error() { c.errors++; },
+    quest() { c.quests++; }, // a square mission reported (not the first path)
     near(sec) { c.nearSec += sec; },
     coins(balance) {
       const b = Math.max(0, Math.floor(Number(balance) || 0));
@@ -144,5 +147,56 @@ export function startSessionReports({
     off = true;
     clearTimer(timer);
     doc?.removeEventListener?.('visibilitychange', onVis);
+  };
+}
+
+// An error message as it is sent to the operator's error list
+// (supabase/014_retention_more.sql): digits become #, so no position or
+// other numbers leave the device, and it is cut short. No account id is
+// kept with it on the server.
+export function cleanError(msg) {
+  return String(msg ?? '').replace(/https?:\/\/\S+/g, '<url>').replace(/[0-9]+/g, '#').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+// Sends at most `max` different error messages per page visit, each once.
+export function createErrorSender(send, max = 3) {
+  const seen = new Set();
+  return (msg) => {
+    const m = cleanError(msg);
+    if (!m || seen.has(m) || seen.size >= max) return false;
+    seen.add(m);
+    Promise.resolve().then(() => send(m)).catch(() => {});
+    return true;
+  };
+}
+
+// One page visit and how far it got, for the loading funnel:
+// 1 page open, 2 pressed Play, 3 world loaded, 4 played a minute.
+// send(report) resolves false when the server can't take it (SQL not run
+// yet), which stops the reports for this visit. Each stage is sent once, in
+// order; a later stage implies the earlier ones.
+export const STAGE = { OPEN: 1, PRESSED: 2, LOADED: 3, MINUTE: 4 };
+export function createVisit({ send, isNew = false, device = '', src = '', newId = newSessionId, now = () => performance.now() }) {
+  const id = newId();
+  let stage = 0, failed = false, off = false, pressedAt = null, loadMs = 0;
+  const post = () => {
+    if (off) return;
+    const report = { id, stage, loadMs, isNew, failed, device, src };
+    Promise.resolve().then(() => send(report))
+      .then((ok) => { if (ok === false) off = true; }).catch(() => {});
+  };
+  return {
+    id,
+    get stage() { return stage; },
+    get loadMs() { return loadMs; },
+    reach(n) {
+      if (n <= stage) return false;
+      if (n === STAGE.PRESSED) pressedAt = now();
+      if (n === STAGE.LOADED && pressedAt !== null) loadMs = Math.max(1, Math.round(now() - pressedAt));
+      stage = n;
+      post();
+      return true;
+    },
+    fail() { if (failed) return; failed = true; post(); },
   };
 }

@@ -69,15 +69,15 @@ First stop: **Seongsu-dong, Seoul**.
 
 Open `/admin.html` in the browser where you play with your operator account (see `supabase/005_operators.sql`). Not linked from the game; anyone else sees "Operators only". Tabs:
 
-- **Overview**: online now, played today / in 7 days, accounts (guest vs Google), new accounts, open inquiries, posts today, chat bans. Tap a number to jump to its tab.
+- **Overview**: online now, played today / in 7 days, accounts (guest vs Google), new accounts, open inquiries, posts today, chat bans. Tap a number to jump to its tab. Below: **Countries**, players per country for today / 7 days / 30 days / 12 months. The country is guessed from the browser's time zone once a day per account (`src/core/country.js`, map built by `scripts/build-tz-country.mjs`); no IP addresses are used.
 - **Live map**: everyone playing right now on the map (green on the street, purple inside a shop, with the shop's name), refreshed every 3 seconds; tap a name to zoom to them. The game reports its own spot every few seconds while walking and every 20 s while standing still (`src/net/where.js`); only operators can read it.
 - **Inquiries**: the inquiry board (문의게시판). Write a reply and the player sees it under their inquiry in the game; or mark it done without one.
 - **Free board**: hide or show posts.
 - **Players**: search by name or e-mail; guest/Google, joined, last seen, where they are; ban or unban from chat (`chat_bans`).
 - **📢 Announce**: send a notice (공지) to every player. It shows in everyone's chat, in every area, as a gold 공지 line with a toast; players who join in the next 10 minutes see it too. In the game an operator can also type `/공지 message` (or `/notice`, `/announce`) in chat. Only accounts in `operators` can send; the server checks it. Needs `supabase/012_announcements.sql`. **Delete** removes a notice from the list and from the chat of everyone playing (needs `supabase/013_announcement_delete.sql`).
-- **Retention**: players per day, D1/D3/D7 return by start day, median session length, days played in the last week (4+ of 7 = habit), first sessions under 5 minutes, time spent with someone nearby, devices and frame rate. Add `?src=ext` (any short word) to an invite link to see those players as their own group. The game reports one anonymous row per visit once a minute (`src/core/sessions.js`); needs `supabase/011_play_sessions.sql`. No third-party tracker, no IP, no position, no chat text.
+- **Retention**: players per day, D1/D3/D7 return by start day, median session length, days played in the last week (4+ of 7 = habit), first sessions under 5 minutes, time spent with someone nearby, devices and frame rate. Add `?src=ext` (any short word) to an invite link to see those players as their own group. The game reports one anonymous row per visit once a minute (`src/core/sessions.js`); needs `supabase/011_play_sessions.sql`. No third-party tracker, no IP, no position, no chat text. Below, **More** (needs `supabase/014_retention_more.sql` after `010_countries.sql`): the loading funnel (page open → Play → world loaded → 1 minute, with load time), D1/D7 by country, rewarded ads per player, how far new players get along the first path, what they did on day 1 beyond the missions and their D1, languages, Google link rate, and the top error messages (digits removed, no account id).
 
-Needs `supabase/008_player_where.sql` and `supabase/009_admin.sql` run once. Page code in `src/admin/`.
+Needs `supabase/008_player_where.sql`, `supabase/009_admin.sql` and `supabase/010_countries.sql` run once. Page code in `src/admin/`.
 
 ## Run locally
 
