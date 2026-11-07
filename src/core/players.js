@@ -255,6 +255,17 @@ export class RemotePlayers {
   }
 }
 
+// A new bubble starts where its speaker's name tag already is, so it never
+// shows for a moment at the corner of the screen before the next frame
+// places it. A speaker without a placed tag keeps it hidden until then.
+function placeLikeTag(p, b) {
+  const tr = p.tag?.style.transform;
+  if (tr) {
+    b.style.transform = tr + ' translateY(-24px)';
+    b.style.display = p.tag.style.display;
+  } else b.style.display = 'none';
+}
+
 // A bubble holding built elements (a picture and text), e.g. the big-catch
 // trophy over someone's head.
 export function showBubbleEl(p, layer, content, ms = 5000, kind = '') {
@@ -262,6 +273,7 @@ export function showBubbleEl(p, layer, content, ms = 5000, kind = '') {
   const b = document.createElement('div');
   b.className = kind ? 'bubble ' + kind : 'bubble';
   b.append(content);
+  placeLikeTag(p, b);
   layer.appendChild(b);
   p.bubble = b;
   setTimeout(() => { if (p.bubble === b) { b.remove(); p.bubble = null; } }, ms);
@@ -272,6 +284,7 @@ export function showBubble(p, layer, text, ms = 2500, kind = '') {
   const b = document.createElement('div');
   b.className = kind ? 'bubble ' + kind : 'bubble';
   b.textContent = text; // always text, never HTML
+  placeLikeTag(p, b);
   layer.appendChild(b);
   p.bubble = b;
   setTimeout(() => {
