@@ -37,6 +37,15 @@
       "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0], "nudge": [0, -40], "why": "The palace is built larger than 1/4, so the gate sits a little north of its spot to let Gwanghwamun Square and Cheonggye Plaza (local z 225) reach theirs." }
     },
     {
+      "id": "bukchon",
+      "map": "districts/bukchon.json",
+      "offset": [
+        -1547,
+        -891
+      ],
+      "anchor": { "place": "Anguk Station (Yulgok-ro)", "lat": 37.5765, "lon": 126.9856, "local": [0, 3] }
+    },
+    {
       "id": "itaewon",
       "map": "districts/itaewon.json",
       "offset": [
@@ -431,6 +440,46 @@
               -880
             ],
             "ry": 1.5708
+          }
+        ]
+      },
+      {
+        "id": "anguk-station",
+        "name": {
+          "ko": "안국",
+          "en": "Anguk",
+          "ja": "安国",
+          "zh": "安国"
+        },
+        "code": "328",
+        "line": {
+          "color": "#ef7c1c",
+          "name": {
+            "ko": "3호선",
+            "en": "Line 3",
+            "ja": "3号線",
+            "zh": "3号线"
+          }
+        },
+        "prev": {
+          "ko": "경복궁",
+          "en": "Gyeongbokgung"
+        },
+        "next": {
+          "ko": "종로3가",
+          "en": "Jongno 3(sam)-ga"
+        },
+        "note": "On Yulgok-ro at the foot of Bukchon-ro. Exit 2 is on the Bukchon side.",
+        "exits": [
+          {
+            "n": 2,
+            "at": [-1535, -902],
+            "ry": 1.5708
+          },
+          {
+            "n": 3,
+            "at": [-1397, -902],
+            "ry": -1.5708
           }
         ]
       },

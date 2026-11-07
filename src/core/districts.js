@@ -26,7 +26,7 @@ export function mergeDistricts(parts, links = []) {
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
     for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js
-    out.meta.districts.push({ id, offset: [dx, dz] });
+    out.meta.districts.push({ id, offset: [dx, dz], ...(map.meta?.parts ? { parts: map.meta.parts } : {}) });
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
   return out;
@@ -88,7 +88,14 @@ export function placeOf(item, center, latLonToLocal) {
 export function districtBoxes(map) {
   const out = [];
   const items = [...(map?.buildings || []), ...(map?.areas || []).filter((a) => a.k !== 'water')];
-  for (const { id } of map?.meta?.districts || []) {
+  for (const { id, offset = [0, 0], parts } of map?.meta?.districts || []) {
+    // A district that lists meta.parts (boxes in its own metres, see
+    // scripts/place-districts.mjs) uses those: e.g. Gyeongbokgung's palace and
+    // stream, with Bukchon tucked into the corner between them.
+    if (parts?.length) {
+      for (const { box: [x0, z0, x1, z1] } of parts) out.push({ id, x0: x0 + offset[0], x1: x1 + offset[0], z0: z0 + offset[1], z1: z1 + offset[1] });
+      continue;
+    }
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (const b of items) {
       if (b.d !== id) continue;
@@ -98,6 +105,8 @@ export function districtBoxes(map) {
   }
   return out;
 }
+// A district tucked into another's corner (Bukchon beside Gyeongbokgung)
+// sits inside the bigger box: the smallest box holding the point wins.
 export function districtAt(boxes, x, z, margin = 40) {
   const area = (b) => (b.x1 - b.x0) * (b.z1 - b.z0);
   const hold = (m) => boxes.filter((b) => x >= b.x0 - m && x <= b.x1 + m && z >= b.z0 - m && z <= b.z1 + m).sort((a, b) => area(a) - area(b));

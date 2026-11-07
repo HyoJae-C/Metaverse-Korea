@@ -55,6 +55,9 @@ export const AREA = {
   gyeongbokgung: { icon: '🏯', to: { zone: 'G' },
     name: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', ar: 'غيونغبوكغونغ' },
     intro: { en: 'Gyeongbokgung: Gwanghwamun Square and the palace, a hanbok rental, a traditional tea house and a kimchi class. South of the square, Cheonggyecheon Stream starts at Cheonggye Plaza.', ko: '경복궁: 광화문광장과 궁궐, 한복대여점, 전통찻집, 김치 만들기 교실. 광장 남쪽 청계광장에서 청계천이 시작돼요.', ja: '景福宮：光化門広場と王宮、韓服レンタル、伝統茶房、キムチ教室。広場の南、清渓広場から清渓川が始まります。', zh: '景福宫：光化门广场和宫殿、韩服租赁、传统茶馆、泡菜课。广场南边的清溪广场是清溪川的起点。' } },
+  bukchon: { icon: '🏘️', to: { zone: 'P' },
+    name: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', vi: 'Bukchon', hi: 'बुकचोन', ar: 'بوكتشون' },
+    intro: { en: 'Bukchon Hanok Village: hanok alleys on the hill between Gyeongbokgung and Changdeokgung, up from Anguk Station. Take photos at the Bukchon 8 Views, walk into the Open House, tie a knot charm or make a hanji lantern, and rent a hanbok. The alleys up the hill are a Quiet Zone: people live there, so walking only. Real Bukchon: in the Bukchon-ro 11-gil area visitors are welcome 10:00 to 17:00 (since Nov 2024). Check before you go.', ko: '북촌한옥마을: 안국역에서 올라가는 경복궁과 창덕궁 사이 언덕의 한옥 골목. 북촌8경에서 사진을 찍고, 열린 한옥에 들어가 보고, 매듭 노리개와 한지 등을 만들고, 한복도 빌려요. 언덕 위 골목은 주민이 사는 조용한 골목이라 걸어서만 다녀요. 실제 북촌로11길 일대는 관광객 방문 시간이 오전 10시~오후 5시예요(2024년 11월부터). 가기 전에 확인하세요.', ja: '北村韓屋村：安国駅から上る、景福宮と昌徳宮の間の丘の韓屋の路地。北村八景で写真を撮り、オープンハウスに入り、結びのお守りや韓紙の灯りを作り、韓服も借りられます。丘の路地は人が暮らす静かな路地なので歩いてのみ。実際の北村路11ギル一帯の観光客の訪問時間は10時〜17時（2024年11月から）。行く前に確認を。', zh: '北村韩屋村：从安国站往上走，景福宫和昌德宫之间山坡上的韩屋小巷。在北村八景拍照，走进开放韩屋，编绳结挂饰、做韩纸灯，还能租韩服。坡上的小巷住着居民，是安静小巷，只能步行。现实中北村路11街一带游客参观时间为10:00至17:00（2024年11月起），出发前请确认。' } },
   itaewon: { icon: '🌍', to: { zone: 'H' },
     name: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इतेवॉन', ar: 'إيتايوون' },
     intro: { en: 'Itaewon: World Food Street and cafés in the north-west, bars and clubs in the north-east, and Yongmaru Market (traditional market) south-west of the station. West along Itaewon-ro: the War History Museum, a quiet place to remember.', ko: '이태원: 북서쪽 세계음식거리와 카페, 북동쪽 바와 클럽, 역 남서쪽의 용마루시장(전통시장). 이태원로를 따라 서쪽으로 가면 조용히 추모할 수 있는 전쟁역사박물관이 있어요.', ja: '梨泰院：北西に世界グルメ通りとカフェ、北東にバーとクラブ、駅の南西にヨンマル市場（伝統市場）。梨泰院路を西へ行くと、静かに追悼できる戦争歴史博物館があります。', zh: '梨泰院：西北是世界美食街和咖啡馆，东北是酒吧和夜店，车站西南是龙脊市场（传统市场）。沿梨泰院路往西是战争历史博物馆，一个可以静静缅怀的地方。' } },
@@ -157,6 +160,18 @@ export const PLACE_TOPICS = [
 { icon: '🌊', to: { zone: 'L' },
     title: { en: 'Cheonggyecheon Stream', ko: '청계천', ja: '清渓川', zh: '清溪川' },
     text: { en: 'South of Gwanghwamun Square, a stream flows below the street from Cheonggye Plaza. Take the stairs down to the water, cross the stepping stones and walk under Mojeongyo and Gwangtonggyo bridges. A short stretch: the real stream runs on for about 11 km.', ko: '광화문광장 남쪽 청계광장에서 시작해 길 아래로 흐르는 개천. 계단으로 물가에 내려가 징검다리를 건너고 모전교와 광통교 밑을 걸어 봐요. 짧은 구간만 있고, 실제 청계천은 약 11km 이어져요.', ja: '光化門広場の南、清渓広場から道の下を流れる小川。階段で水辺に下り、飛び石を渡って毛廛橋と広通橋の下を歩こう。短い区間だけで、本物の清渓川は約11km続きます。', zh: '光化门广场南边，从清溪广场开始在街道下方流淌的溪流。走楼梯下到水边，踩着踏石过溪，从毛廛桥和广通桥下走过。这里只有一小段，真实的清溪川长约11公里。' } },
+{ icon: '📸', to: { zone: 'P' },
+    title: { en: 'Bukchon 8 Views and the Open House', ko: '북촌8경과 열린 한옥', ja: '北村八景とオープンハウス', zh: '北村八景和开放韩屋' },
+    text: { en: 'Find the footprint marks and photograph all eight views. Walk into the Open House up the lane from Bukchon-ro 5-gil and learn the parts of a hanok.', ko: '바닥의 발자국 표시를 찾아 여덟 곳을 모두 찍어 보세요. 북촌로5길에서 골목을 올라가면 열린 한옥이 있고, 한옥의 구조를 배울 수 있어요.', ja: '足あとマークを探して8か所すべてを撮ろう。北村路5ギルから路地を上るとオープンハウスがあり、韓屋のつくりを学べます。', zh: '找到脚印标记，拍下全部八景。从北村路5街沿小巷往上走就是开放韩屋，可以了解韩屋的结构。' } },
+{ icon: '👘', to: { store: 'gahoe-hanbok' },
+    title: { en: 'Gahoe Hanbok Rental', ko: '가회 한복대여', ja: '嘉会 韓服レンタル', zh: '嘉会韩服租赁' },
+    text: { en: 'Rent a hanbok for 2 hours, right by Anguk Station.', ko: '안국역 바로 앞에서 한복을 2시간 빌려요.', ja: '安国駅のすぐ前で韓服を2時間レンタル。', zh: '就在安国站前，租韩服2小时。' } },
+{ icon: '🎀', to: { store: 'maeum-knot' },
+    title: { en: 'Knot and hanji workshops', ko: '매듭·한지 공방', ja: '結び・韓紙の工房', zh: '绳结和韩纸工坊' },
+    text: { en: 'Maeum Knot Studio: tie a maedeup knot charm. Saekji Paper Studio: make a hanji lantern. Talk to the teacher inside.', ko: '마음매듭에서 매듭 노리개를, 색지공방에서 한지 등을 만들어요. 안에서 선생님에게 말을 걸어요.', ja: 'マウム結び工房でメドゥプのお守り、セクチ韓紙工房で韓紙の灯りづくり。中の先生に話しかけて。', zh: '在心结工坊编绳结挂饰，在彩纸工坊做韩纸灯。进去和老师说话吧。' } },
+{ icon: '🍵', to: { store: 'noeul-teahouse' },
+    title: { en: 'Noeul Teahouse', ko: '노을찻집', ja: 'ノウル茶房', zh: '晚霞茶馆' },
+    text: { en: 'Omija and jujube tea, yakgwa and injeolmi bingsu.', ko: '오미자차, 대추차, 약과, 인절미 빙수.', ja: '五味子茶、なつめ茶、ヤックァ、きなこ餅かき氷。', zh: '五味子茶、大枣茶、药果和打糕刨冰。' } },
 ];
 
 const el = (tag, cls, text) => {

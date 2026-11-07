@@ -19,7 +19,7 @@ test('every district has one Information Center, and the guide knows its name', 
 });
 
 test('each Information Center stands in its own district', () => {
-  const map = { meta: { districts: region.districts }, buildings: [], areas: [] };
+  const map = { meta: { districts: region.districts.map((d) => ({ ...d, parts: read(d.map).meta?.parts })) }, buildings: [], areas: [] };
   for (const d of region.districts) {
     const m = read(d.map);
     for (const k of ['buildings', 'areas']) for (const b of m[k] || []) map[k].push({ d: d.id, k: b.k, p: b.p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]) });

@@ -12,6 +12,7 @@ import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
+import { BUKCHON_BUILD } from './bukchon-models.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -31,7 +32,7 @@ function box(g, sx, sy, sz, x, y, z, c) {
 // ridge along x, short triangles at the ends, eaves that lift a little at
 // the four corners, and a ridge beam on top.
 const roofGeo = new Map();
-function hipRoofGeometry(w, d, h) {
+export function hipRoofGeometry(w, d, h) {
   const key = [w, d, h].join();
   if (roofGeo.has(key)) return roofGeo.get(key);
   const hw = w / 2, hd = d / 2, r = Math.max(0, hw - hd * 0.9), lift = h * 0.18;
@@ -248,6 +249,7 @@ const BUILD = {
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
   outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
+  ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace, stone stairs (core/bukchon-models.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).

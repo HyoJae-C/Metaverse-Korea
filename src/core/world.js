@@ -1,6 +1,7 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { buildHanoks } from './hanok.js';
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -65,9 +66,10 @@ export function buildWorld(map, scene, opts = {}) {
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
-  const { walls, roofs } = makeBuildings(map.buildings);
+  const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
   if (roofs) group.add(roofs);
+  group.add(buildHanoks(map.buildings.filter((b) => b.hanok))); // Bukchon's houses (core/hanok.js)
 
   const rail = makeRail(map.rail);
   if (rail) group.add(rail);

@@ -154,8 +154,11 @@ export class Storefronts {
       group.add(awning);
 
       // Shop front: glass panes either side of a door.
-      const frame = mat('#fffaf0');
-      const glass = new THREE.MeshLambertMaterial({ color: 0xbfe0ee, transparent: true, opacity: 0.85 });
+      // Hanok shops (Bukchon, store.front 'hanok'): a dark wooden frame and
+      // paper-lattice panes instead of glass.
+      const hanok = store.front === 'hanok';
+      const frame = mat(hanok ? '#6b4630' : '#fffaf0');
+      const glass = hanok ? new THREE.MeshLambertMaterial({ color: 0xf3e6c8 }) : new THREE.MeshLambertMaterial({ color: 0xbfe0ee, transparent: true, opacity: 0.85 });
       const front = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.6, 0.12), frame);
       front.position.set(0, 1.3, 0.06);
       group.add(front);

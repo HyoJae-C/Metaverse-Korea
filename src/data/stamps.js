@@ -62,6 +62,14 @@ export const STAMPS = [
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
   },
   {
+    // at the Open House gate, up the lane from Bukchon-ro 5-gil
+    id: 'bukchon', place: { at: [-1389, -985] }, color: '#5a4a3a', shape: 'square',
+    name: { ko: '북촌한옥마을', en: 'Bukchon Hanok Village', ja: '北村韓屋村', zh: '北村韩屋村' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // a hanok roof over a gate
+    icon: '<path d="M52 92 q48 -34 96 0 q-6 -3 -12 1 h-72 q-6 -4 -12 -1 z"/><path d="M66 94 v32 h68 v-32 M88 126 v-22 h24 v22 M100 104 v22"/><path d="M60 92 l-6 -4 M140 92 l6 -4"/>',
+  },
+  {
     id: 'suragan', place: { store: 'sonmat-kimchi' }, color: '#1f7a5c', shape: 'square',
     name: { ko: '수라간', en: 'Suragan Kitchen', ja: '水刺間', zh: '水剌间' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
