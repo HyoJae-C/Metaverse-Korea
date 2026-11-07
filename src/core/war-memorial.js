@@ -15,7 +15,7 @@
 // altar where you can lay a white chrysanthemum, and benches. No games, no
 // music: a place to look and remember.
 import * as THREE from 'three';
-import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, MEMORIAL_TEXT } from '../data/war-memorial.js';
+import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT } from '../data/war-memorial.js';
 
 export const ROOM_MEMORIAL = { w: 44, d: 30, h: 7 };
 const PART_H = 4.2;
@@ -119,6 +119,13 @@ function board(scene, wd, ht, x, y, z, ry, title, ko, en) {
 const comingCard = (p) => canvasTex(400, 300, (c, cw, ch) => {
   c.fillStyle = '#e4e0d7'; c.fillRect(0, 0, cw, ch);
   c.fillStyle = '#6a655d'; c.textAlign = 'center'; c.textBaseline = 'top';
+  if (p.hold) { // on hold: only the notice, no title
+    c.font = `800 34px ${FONT}`;
+    c.fillText(HOLD.ko, cw / 2, 100);
+    c.font = `600 24px ${FONT}`;
+    c.fillText(HOLD.en, cw / 2, 150);
+    return;
+  }
   c.font = `800 26px ${FONT}`;
   let y = wrap(c, p.title.ko, cw / 2, 70, cw - 40, 32);
   c.font = `600 20px ${FONT}`;
@@ -168,6 +175,7 @@ function hang(scene, sl, { box, block }, loader) {
     }),
   }));
   g.add(label);
+  label.visible = !p.hold;
   const size = (W, H) => {
     frame.scale.set(W + 0.26, H + 0.26, 1);
     mount.scale.set(W + 0.14, H + 0.14, 1);
@@ -176,7 +184,7 @@ function hang(scene, sl, { box, block }, loader) {
   };
   const first = fitSize(4, 3);
   size(first.W, first.H);
-  loader.load(photoUrl(p), (tex) => {
+  if (!p.hold) loader.load(photoUrl(p), (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     art.map?.dispose();
     art.map = tex;
@@ -249,7 +257,7 @@ export function buildMemorial(scene, room, { box, block }) {
   const looks = [];
   for (const sl of photoSlots()) {
     hang(scene, sl, { box, block }, loader);
-    looks.push({ x: sl.look.x, z: sl.look.z, painting: sl.photo });
+    if (!sl.photo.hold) looks.push({ x: sl.look.x, z: sl.look.z, painting: sl.photo });
   }
   for (const [key, s] of [['A', -1], ['B', 1]]) {
     const { ko, en } = HALLS[key].name;

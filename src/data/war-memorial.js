@@ -28,6 +28,9 @@ export const DISCLAIMER = {
 };
 export const SOURCE = { en: 'See it on the KOGL portal', ko: '공공누리에서 보기', ja: '公共ヌリで見る', zh: '在公共努里查看' };
 export const COMING = { ko: '사진 준비 중', en: 'Photo coming soon' };
+// A photo on hold (`hold: true`): its frame says the exhibit is being
+// prepared, it can't be opened, and its file is not loaded.
+export const HOLD = { ko: '전시 준비 중', en: 'Exhibit in preparation' };
 
 // Visitor information on the board by the door. Only facts checked against
 // the War Memorial's own pages; opening hours change, so the board sends
@@ -143,7 +146,9 @@ export const EXHIBITS = [
   }),
   // ── Memorial room ──
   E({
-    id: 'names-of-the-fallen', kogl: 10289, era: { ko: '2019년 촬영', en: 'Photographed 2019' },
+    // On hold: the KOGL page titles it 전사자명비, but the photo shows the
+    // dedication poem; kept out of the game until that is checked.
+    id: 'names-of-the-fallen', kogl: 10289, hold: true, era: { ko: '2019년 촬영', en: 'Photographed 2019' },
     title: { ko: '전사자명비 (국군 및 경찰)', en: 'Names of the Fallen (Armed Forces and Police)' },
     desc: {
       ko: '나라를 지키다 숨진 국군과 경찰을 기리는 전사자명비의 헌시 「님이시여」예요. 유희남이 글을 짓고 조종숙이 글씨를 썼어요. 전사자명비는 전쟁기념관 회랑에 있어요.',
