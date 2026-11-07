@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSlot, fanPart, assignSlots, ROYAL_ROUTE, ROYAL_ORDER, ROYAL_PAUSE, nextStop, ringPoly } from '../src/core/palace-show.js';
+import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSlot, fanPart, assignSlots, tripPose, TRIP_EVERY, TRIP_RUN, ROYAL_ROUTE, ROYAL_ORDER, ROYAL_PAUSE, nextStop, ringPoly } from '../src/core/palace-show.js';
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
@@ -100,4 +100,16 @@ test('the procession stays round Geunjeongjeon, where Enter brings you', () => {
   const king = ROYAL_ORDER.find((o) => o.who === 'king'), par = ROYAL_ORDER.find((o) => o.who === 'parasol');
   assert.equal(par.side, king.side);
   assert.ok(par.back > king.back && par.back - king.back < 2);
+});
+
+test('now and then the last court lady trips, gets up flustered and hurries after the others', () => {
+  assert.ok(TRIP_EVERY[0] >= 30, 'only once in a long while');
+  const phases = [];
+  for (let t = 0; t < 5; t += 0.05) { const p = tripPose(t); if (phases.at(-1) !== p.phase) phases.push(p.phase); }
+  assert.deepEqual(phases, ['fall', 'down', 'up', 'fluster', 'hurry']);
+  assert.ok(tripPose(1).flip > 1.2, 'flat on her face');
+  assert.equal(tripPose(2.5).flip, 0, 'back on her feet');
+  // she catches up: faster than the procession walks
+  assert.ok(TRIP_RUN > 1.6 * 2);
+  assert.equal(ROYAL_ORDER.filter((o) => o.who === 'lady').length, 2);
 });

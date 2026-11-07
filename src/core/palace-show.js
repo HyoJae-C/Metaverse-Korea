@@ -61,6 +61,20 @@ export const ROYAL_ORDER = [
   { who: 'eunuch', back: 3.7, side: ROW }, { who: 'sanggung', back: 3.7, side: -ROW },
   { who: 'lady', back: 5.1, side: ROW }, { who: 'lady', back: 5.1, side: -ROW },
 ];
+// Once in a long while the last court lady trips: she falls flat on her
+// face, lies there a moment, gets up, looks round flustered, and hurries
+// after the others. tripPose(t): her pose t seconds into the trip.
+export const TRIP_EVERY = [40, 80]; // seconds of walking between trips
+export const TRIP_RUN = 3.6; // m/s, hurrying back to her place
+export function tripPose(t) {
+  const ease = (k) => k * k * (3 - 2 * k);
+  if (t < 0.35) { const k = ease(t / 0.35); return { phase: 'fall', flip: 1.4 * k, tuck: 4.3 * k }; }
+  if (t < 1.4) return { phase: 'down', flip: 1.4, tuck: 4.3 };
+  if (t < 1.9) { const k = 1 - ease((t - 1.4) / 0.5); return { phase: 'up', flip: 1.4 * k, tuck: 4.3 * k }; }
+  if (t < 3.4) return { phase: 'fluster', flip: 0, tuck: 0, look: Math.sin((t - 1.9) * 7) * 0.6 };
+  return { phase: 'hurry', flip: 0, tuck: 0 };
+}
+
 // The next stop: a random neighbour, not straight back unless it's a dead end.
 export function nextStop(route, at, prev, rand = Math.random) {
   const near = route.links.filter((l) => l.includes(at)).map((l) => (l[0] === at ? l[1] : l[0]));
@@ -475,7 +489,8 @@ export class PalaceShow {
       return { ...o, ch, npc };
     });
     const [sx, sz] = stops[0];
-    return { stops, people, at: 0, prev: -1, to: null, pause: 3, x: sx, z: sz, dir: [0, -1], trail: [[sx, sz], [sx, sz + 8]], waveT: 6 + Math.random() * 6 };
+    people.findLast((p) => p.who === 'lady').tripper = true;
+    return { stops, people, at: 0, prev: -1, to: null, pause: 3, x: sx, z: sz, dir: [0, -1], trail: [[sx, sz], [sx, sz + 8]], waveT: 6 + Math.random() * 6, trip: null, tripWait: TRIP_EVERY[0] + Math.random() * (TRIP_EVERY[1] - TRIP_EVERY[0]) };
   }
   // Where the procession is now (for the debug hook and tests).
   royalSpot() { return this.royal && { x: this.royal.x, z: this.royal.z, stopped: this.royal.pause > 0 }; }
@@ -512,17 +527,45 @@ export class PalaceShow {
       if (Math.hypot(R.x - last[0], R.z - last[1]) > 0.3) { R.trail.push([R.x, R.z]); if (R.trail.length > 80) R.trail.shift(); }
       // Now and then on the way, the king waves.
       if ((R.waveT -= dt) <= 0) { R.waveT = 8 + Math.random() * 8; R.people.find((p) => p.who === 'king').ch.wave(); }
+      if (!R.trip && (R.tripWait -= dt) <= 0) {
+        const ch = R.people.find((p) => p.tripper).ch;
+        R.trip = { t: 0, x: ch.root.position.x, z: ch.root.position.z };
+        R.tripWait = TRIP_EVERY[0] + Math.random() * (TRIP_EVERY[1] - TRIP_EVERY[0]);
+      }
     }
     const on = Math.hypot(me.x - R.x, me.z - R.z) < NEAR;
     for (const p of R.people) {
       p.ch.root.visible = on;
       if (!on) { if (p.npc) { p.npc.tag.style.display = 'none'; } continue; }
       const t = this.trailAt(p.back), len = Math.hypot(t.dx, t.dz) || 1, fx = t.dx / len, fz = t.dz / len;
+      if (p.tripper && R.trip && this.updateTrip(dt, p, t.x + fz * p.side, t.z - fx * p.side, Math.atan2(fx, fz))) continue;
       p.ch.root.position.set(t.x + fz * p.side, 0, t.z - fx * p.side);
       if (moving) p.ch.root.rotation.y = turnTo(p.ch.root.rotation.y, Math.atan2(fx, fz), Math.min(1, dt * 6)); // turn corners smoothly
       p.ch.animate(moving ? dt * ROYAL_STEP : dt, moving ? 0.1 : 0);
       if (p.npc) placeLabels?.(p.npc, camera, w, h);
     }
+  }
+  // The court lady's trip (tripPose); false once she is back in her place.
+  updateTrip(dt, p, hx, hz, hry) {
+    const T = this.royal.trip, ch = p.ch, was = tripPose(T.t).phase;
+    T.t += dt;
+    const P = tripPose(T.t);
+    ch.setTrick(P.flip ? { flip: P.flip, tuck: P.tuck } : null);
+    if (P.phase === 'fluster' && was !== 'fluster') { T.ry = ch.root.rotation.y; ch.play('shrug'); }
+    if (P.phase !== 'hurry') {
+      ch.root.position.set(T.x, 0, T.z);
+      if (P.phase === 'fluster') ch.root.rotation.y = T.ry + P.look;
+      ch.animate(dt, 0);
+      return true;
+    }
+    // hurrying after the others, back to her place
+    const dx = hx - T.x, dz = hz - T.z, d = Math.hypot(dx, dz), step = TRIP_RUN * dt;
+    if (d <= step + 0.05) { this.royal.trip = null; return false; }
+    T.x += (dx / d) * step; T.z += (dz / d) * step;
+    ch.root.position.set(T.x, 0, T.z);
+    ch.root.rotation.y = turnTo(ch.root.rotation.y, Math.atan2(dx, dz), Math.min(1, dt * 8));
+    ch.animate(dt, 0.6);
+    return true;
   }
   // The gate guard you're next to, if any.
   nearGuard(x, z) {
