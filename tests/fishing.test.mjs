@@ -173,3 +173,10 @@ test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishsta
   m.setItem('mk.fishstats', '{broken');
   assert.equal(new FishStats(m, 7).get('cast'), 0);
 });
+
+test('each star tier bites less often in total than the one below it', () => {
+  const tier = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).reduce((a, f) => a + f.chance, 0);
+  for (let r = 2; r <= 5; r++) assert.ok(tier(r) < tier(r - 1), `★${r} ${tier(r)} < ★${r - 1} ${tier(r - 1)}`);
+  // and every ★4 kind is rarer than any ★3 kind
+  assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
+});

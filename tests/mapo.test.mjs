@@ -105,7 +105,7 @@ test('the blue whale only bites at the Ttukseom Han River park, never at Mangwon
   const whale = fishById('whale');
   assert.ok(noBiteAt('mangwon', whale) && !noBiteAt(null, whale));
   assert.equal(usualChance(whale, 'mangwon'), 0);
-  assert.equal(usualChance(whale, null), whale.chance);
+  assert.ok(Math.abs(usualChance(whale, null) - whale.chance) < 1e-9);
   // The other usual kinds fill its part, at the lucky spot too.
   for (const lucky of [false, true]) {
     const sum = AVAILABLE_FISH.reduce((a, f) => a + usualChance(f, 'mangwon', lucky), 0);

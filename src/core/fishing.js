@@ -667,12 +667,13 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // How often each rarity bites, in % of fish (trash comes on top). Each tier's
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
+// Each tier, and each kind in it, bites less often than the tier below:
 // ★3 is kept below any single ★2 kind while only two ★3 kinds are out
-// (2% each); ★4 and ★5 were raised after the first day felt too stingy.
-export const TIER_SHARE = [0, 61.6, 28, 4, 6, 0.4];
+// (2% each), and ★4 (3% for the tier, at most about 1% a kind) below ★3.
+export const TIER_SHARE = [0, 64.6, 28, 4, 3, 0.4];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
 // less often. At a fish every 12 s this gives bluefin tuna about every
-// 10 min, the great white about every 40 min, the blue whale about every hour.
+// 20 min, the great white about every 80 min, the blue whale about every hour.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
   'sea-turtle': 2, tuna: 2, marlin: 1, shark: 0.5, orca: 0.4, anglerfish: 0.8,
