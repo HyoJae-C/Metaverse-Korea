@@ -53,6 +53,7 @@ import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
+import { startWhereReports } from './net/where.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
@@ -1077,6 +1078,20 @@ onLanguageChange(refreshOnline);
 let stopOnline = null;
 watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
+// Our spot on the map for operators' live view (net/where.js, admin.html).
+// Inside a shop we report the street spot we came in from, and the shop.
+let streetSpot = null;
+startWhereReports({
+  get: () => {
+    try {
+      if (tabParked || document.hidden || !me?.root) return null;
+      if (mode === 'street') streetSpot = { x: me.root.position.x, z: me.root.position.z };
+      if (!streetSpot) return null;
+      return { name: nickname, place: mode === 'street' ? 'street' : interior?.store?.id || mode, ...streetSpot };
+    } catch { return null; } // still starting up
+  },
+  send: (spot) => cloud.reportWhere(spot),
+});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).

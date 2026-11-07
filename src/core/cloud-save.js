@@ -163,6 +163,19 @@ export class CloudSave {
     } catch { return false; }
   }
 
+  // Report where we are on the map, for operators' live view (net/where.js,
+  // supabase/008_player_where.sql). Resolves false when the server can't
+  // take it (not set up yet), true otherwise.
+  async reportWhere({ name, place, x, z }) {
+    if (!this.client || !this.user) return true; // signed in later: keep trying
+    const { error } = await this.client.rpc('report_where', {
+      p_name: String(name || '').slice(0, 16), p_place: String(place || '').slice(0, 48),
+      p_x: Math.round(x * 10) / 10, p_z: Math.round(z * 10) / 10,
+    });
+    // PGRST202 / 42883: the function isn't there yet (SQL not run).
+    return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
+  }
+
   // This account's sign-in token, for realtime's private channels (the chat
   // channel checks it on the server). Null without an account.
   async accessToken() {
