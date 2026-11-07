@@ -6341,7 +6341,7 @@ renderer.setAnimationLoop(() => {
   }
   billboard?.update(dt);
   if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
-  for (const ws of wallScreens) ws.update(dt);
+  for (const ws of wallScreens) if (mode === 'street' && Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z) < 300) ws.update(dt); // only the ones you can see
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
   tmp.set(p.x, p.y + 1.55, p.z).project(camera); // (p.y: up a hill, on stairs)
