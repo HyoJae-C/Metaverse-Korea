@@ -858,7 +858,7 @@
       "size": "park",
       "at": [734, 900],
       "name": { "en": "Another Land", "ko": "어나더랜드", "ja": "アナザーランド", "zh": "另一乐园" },
-      "tagline": { "en": "A candy-house theme park: carousel, Ferris wheel, pirate ship and a drop tower", "ko": "과자의 집 놀이공원: 회전목마, 대관람차, 바이킹, 자이로드롭", "ja": "お菓子の家の遊園地：メリーゴーランド・観覧車・バイキング・フリーフォール", "zh": "糖果屋游乐园：旋转木马、摩天轮、海盗船、跳楼机" },
+      "tagline": { "en": "A candy-house theme park: carousel, Ferris wheel, pirate ship, drop tower and bumper cars", "ko": "과자의 집 놀이공원: 회전목마, 대관람차, 바이킹, 자이로드롭, 범퍼카", "ja": "お菓子の家の遊園地：メリーゴーランド・観覧車・バイキング・フリーフォール・バンパーカー", "zh": "糖果屋游乐园：旋转木马、摩天轮、海盗船、跳楼机、碰碰车" },
       "colors": { "sign": "#e2508f", "awning": "#ffd0e0", "accent": "#fff3f7" },
       "products": []
     },
