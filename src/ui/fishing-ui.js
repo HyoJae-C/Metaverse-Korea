@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, legendPark } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -95,7 +95,8 @@ export function fishBook(dex, fresh = null) {
   const showDetail = f => {
     const n = dex.count(f.id);
     detail.replaceChildren(el('strong', null, fishName(f)), el('p', null,
-      !f.released ? text('추후 공개 예정이에요.', 'Coming in a future release.') : n
+      !f.released ? text('추후 공개 예정이에요.', 'Coming in a future release.')
+      : !n && legendPark(f.id) ? text(`${legendPark(f.id).name.ko} 한강공원에서만 나타나는 전설이에요.`, `A legend that only appears at ${legendPark(f.id).name.en} Han River Park.`) : n
       ? text('누적 ', 'Caught ') + n + text('마리 · 판매 ', ' times · Sell ') + f.price + text('코인', ' coins')
       : text('아직 만나지 못했어요. 낚시로 도장을 모아보세요!', 'Not caught yet. Go fishing to earn this stamp!')));
   };
@@ -106,7 +107,8 @@ export function fishBook(dex, fresh = null) {
       const n = dex.count(f.id);
       const cell = el('button', 'stamp-cell fish-cell' + (n ? '' : ' empty') + (f.id === fresh ? ' fresh' : ''));
       cell.type = 'button';
-      const status = n ? '× ' + n : f.released ? text('미발견', 'Undiscovered') : text('공개 예정', 'Coming soon');
+      const where = !n && f.released && legendPark(f.id)?.name;
+      const status = n ? '× ' + n : where ? '📍 ' + text(`${where.ko} 전용`, `${where.en} only`) : f.released ? text('미발견', 'Undiscovered') : text('공개 예정', 'Coming soon');
       cell.setAttribute('aria-label', fishName(f) + ' · ' + (n ? text('수집 완료', 'Collected') : status));
       cell.append(fishStamp(f, !!n), el('i', 'fish-stars', '★'.repeat(rarityStars(f))), el('small', null, status));
       cell.onclick = () => showDetail(f);
@@ -170,9 +172,10 @@ export class FishingUI {
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
   // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
   // stats: FishStats (optional), counts what happens to each cast for balancing.
-  // Every park's fishing spots share one catch table (core/fishing.js).
-  constructor({ root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky }) {
-    Object.assign(this, { root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky });
+  // park(): the park store's id; every park shares one catch table except
+  // which ★5 legends bite there (PARK_LEGENDS in core/fishing.js).
+  constructor({ root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park }) {
+    Object.assign(this, { root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -265,9 +268,10 @@ export class FishingUI {
     head.append(el('span'), el('span', null, text('물고기', 'Fish')), el('span', null, text('직접', 'Hand')), el('span', null, text('자동', 'Auto')), el('span', null, '🪙'));
     wrap.append(head);
     for (const r of [1, 2, 3, 4, 5]) {
-      const kinds = AVAILABLE_FISH.filter(f => f.rarity === r);
+      const park = this.park?.() || null;
+      const kinds = AVAILABLE_FISH.filter(f => f.rarity === r && chanceAt(f, park)); // ★5: this park's legends
       if (!kinds.length) continue;
-      const hand = kinds.reduce((a, f) => a + f.chance, 0) * (1 - TRASH_CHANCE);
+      const hand = kinds.reduce((a, f) => a + chanceAt(f, park), 0) * (1 - TRASH_CHANCE);
       const tier = el('div', 'fish-odds-tier tier-' + r);
       tier.append(el('b', null, '★'.repeat(r)), el('span', null, localName(TIER_NAMES[r]) + ' · ' + text(r >= 3 ? '자동낚시 불가' : '자동낚시 가능', r >= 3 ? 'hand fishing only' : 'auto fishing too')), el('small', null, pct(hand)));
       wrap.append(tier);
@@ -276,7 +280,7 @@ export class FishingUI {
         const name = el('span', 'fish-name', fishName(f));
         if (escapeChance(f)) name.append(el('small', null, `💨 ${Math.round(escapeChance(f) * 100)}%`));
         row.append(fishStampIcon(f, 'fish-emoji'), name,
-          el('b', null, pct(f.chance * (1 - TRASH_CHANCE))), el('span', null, isRare(f) ? '—' : pct(f.chance / autoTotal * 100)), el('span', null, String(f.price)));
+          el('b', null, pct(chanceAt(f, park) * (1 - TRASH_CHANCE))), el('span', null, isRare(f) ? '—' : pct(f.chance / autoTotal * 100)), el('span', null, String(f.price)));
         wrap.append(row);
       }
     }
@@ -308,7 +312,7 @@ export class FishingUI {
   bite(water, btn) {
     this.state = 'bite';
     const lucky = !!this.lucky?.();
-    this.fish = rollCatch(Math.random, lucky);
+    this.fish = rollCatch(Math.random, lucky, this.park?.() || null);
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
     this.onPhase?.('bite', this.fish);
@@ -460,7 +464,7 @@ export class FishingUI {
       fishStampIcon(f, 'fish-big'),
       el('strong', null, f.ko),
       el('small', 'order-rom', f.rom),
-      el('small', null, `${localName(f.name, getLanguage())} · ${pct(f.chance)} · 🪙 ${f.price}`),
+      el('small', null, `${localName(f.name, getLanguage())} · ${pct(chanceAt(f, this.park?.() || null))} · 🪙 ${f.price}`),
     );
     this.root.append(card, el('p', 'order-hint', kept ? t('fish.caught', { name: fishName(f) }) : t('fish.full')));
     const again = el('button', 'primary', '🎣 ' + t('fish.again'));

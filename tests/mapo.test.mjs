@@ -60,14 +60,37 @@ test('all the new shops are fictional sample data with names in four languages',
   assert.equal(new Set(stores.map((s) => s.id)).size, stores.length, 'store ids are unique');
 });
 
-test('every park has the same catch: the Mangwon fish and the blue whale bite at all of them', () => {
-  // One table for all parks (no park pays better). The kinds first met at
-  // Mangwon are ordinary released fish now, the giant squid a ★5 beside the whale.
-  const kinds = ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid'].map(fishById);
-  for (const f of kinds) assert.ok(f.released && f.chance > 0, f.id);
-  assert.ok(fishById('whale').released);
-  assert.ok(stores.every((s) => !('fishPlace' in s)), 'no park has a catch of its own');
-  const legends = AVAILABLE_FISH.filter((f) => f.rarity === 5);
-  assert.ok(Math.abs(legends.reduce((a, f) => a + f.chance, 0) - 0.4) < 1e-9, 'the ★5 share stays 0.4% of fish');
+test('every park has the same catch except its ★5 legend, and every park pays the same', async () => {
+  const { chanceAt, rollCatch, PARK_LEGENDS, legendPark, TRASH_CHANCE } = await import('../src/core/fishing.js');
+  // The kinds first met at Mangwon are ordinary released fish now.
+  for (const id of ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid']) assert.ok(fishById(id).released, id);
+  assert.ok(stores.every((s) => !('fishPlace' in s)));
+  for (const id of Object.keys(PARK_LEGENDS)) assert.ok(stores.some((s) => s.id === id && s.category === 'park'), `${id} is a park`);
+  const legends = FISH.filter((f) => f.rarity === 5);
+  assert.equal(new Set(legends.map((f) => f.price)).size, 1, 'every legend sells for the same');
+  assert.equal(legendPark('whale').name.en, 'Ttukseom');
+  assert.equal(legendPark('giant-squid').name.en, 'Mangwon');
+  const parks = [...Object.keys(PARK_LEGENDS), null];
+  const income = (park) => AVAILABLE_FISH.reduce((a, f) => a + chanceAt(f, park) * f.price, 0);
+  for (const park of parks) {
+    const sum = AVAILABLE_FISH.reduce((a, f) => a + chanceAt(f, park), 0);
+    assert.ok(Math.abs(sum - 100) < 1e-9, `${park} ${sum}`);
+    const five = legends.reduce((a, f) => a + chanceAt(f, park), 0);
+    assert.ok(Math.abs(five - 0.4) < 1e-9, `${park}: ★5 keeps 0.4%`);
+    assert.ok(Math.abs(income(park) - income(null)) < 1e-9, `${park} pays the same`);
+  }
+  assert.equal(chanceAt(fishById('whale'), 'mangwon-hangang'), 0);
+  assert.equal(chanceAt(fishById('giant-squid'), 'ttukseom-hangang'), 0);
+  // Rolls: Mangwon never lands a whale, Ttukseom never a giant squid.
+  let seed = 3;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  let squid = 0;
+  for (let i = 0; i < 100000; i++) {
+    const a = rollCatch(rand, i % 2 === 0, 'mangwon-hangang'), b = rollCatch(rand, i % 2 === 0, 'ttukseom-hangang');
+    assert.notEqual(a.id, 'whale'); assert.notEqual(b.id, 'giant-squid');
+    if (a.id === 'giant-squid') squid++;
+  }
+  assert.ok(squid > 200 && squid < 700, `${squid} giant squid in 100000 (about 0.4%)`);
   assert.ok(FISH.every((f) => fishById(f.id)));
+  assert.ok(TRASH_CHANCE > 0);
 });
