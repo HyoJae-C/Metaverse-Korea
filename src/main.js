@@ -38,6 +38,8 @@ import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { STAMPS } from './data/stamps.js';
 import { StampBook, availableStamps, STAMP_REWARD } from './core/stamp-book.js';
+import { TRAILS } from './data/trails.js';
+import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow } from './core/palace-show.js';
@@ -5470,7 +5472,8 @@ const bookUi = new BookUI({
   setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
 });
 const stampBook = new StampBook();
-const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps });
+const trailLog = new TrailLog();
+const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
 function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
 $('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
@@ -5487,6 +5490,14 @@ function pressStamp(it) {
     wallet.add(STAMP_REWARD, { name });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
+    // The last stamp of a course (e.g. the City Wall Trail) pays its reward once.
+    for (const tr of trailsWith(TRAILS, s.id)) {
+      if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
+      const tname = {};
+      for (const l of ['ko', 'en', 'ja', 'zh']) tname[l] = fmt(STAMP_TEXT.trailLedger[l], { name: tr.name[l] });
+      wallet.add(tr.reward, { name: tname });
+      setTimeout(() => { shop.toast(tr.icon + ' ' + fmt(L(STAMP_TEXT.trailDone), { name: L(tr.name), c: tr.reward })); sfx.cheer?.(); }, 1400);
+    }
     setTimeout(() => stampUi.show(s.id), 450);
   } else stampUi.show();
   action = STALE;

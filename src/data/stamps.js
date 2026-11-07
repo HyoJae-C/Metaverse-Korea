@@ -70,6 +70,22 @@ export const STAMPS = [
     icon: '<path d="M52 92 q48 -34 96 0 q-6 -3 -12 1 h-72 q-6 -4 -12 -1 z"/><path d="M66 94 v32 h68 v-32 M88 126 v-22 h24 v22 M100 104 v22"/><path d="M60 92 l-6 -4 M140 92 l6 -4"/>',
   },
   {
+    // on Heunginjimun's lawn, by the walk up from Ogansugyo Bridge
+    id: 'heunginjimun', place: { at: [-1011, -817] }, color: '#2b5f8a', shape: 'square',
+    name: { ko: '흥인지문', en: 'Heunginjimun', ja: '興仁之門', zh: '兴仁之门' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // the gate with the half-moon ongseong in front
+    icon: '<path d="M70 120 h60 v-22 h-60 z M94 120 v-10 q6 -8 12 0 v10"/><path d="M62 98 q38 -22 76 0 q-5 -2 -8 2 h-60 q-3 -4 -8 -2 z"/><path d="M76 90 q24 -14 48 0"/><path d="M40 126 q60 30 120 0"/><path d="M40 126 v-10 M160 126 v-10"/>',
+  },
+  {
+    // in Dongdaemun History & Culture Park, by the city wall's water gate
+    id: 'igansumun', place: { at: [-1096, -503] }, color: '#6a5a3a', shape: 'circle',
+    name: { ko: '이간수문', en: 'Igansumun Water Gate', ja: '二間水門', zh: '二间水门' },
+    gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
+    // the wall with its two arches over water
+    icon: '<path d="M40 70 h120 v56 h-120 z"/><path d="M66 126 v-22 q14 -18 28 0 v22 M106 126 v-22 q14 -18 28 0 v22"/><path d="M40 70 v-10 h12 v10 M64 70 v-10 h12 v10 M88 70 v-10 h12 v10 M112 70 v-10 h12 v10 M136 70 v-10 h12 v10"/><path d="M36 140 q14 -6 28 0 q14 6 28 0 q14 -6 28 0 q14 6 28 0 q14 -6 28 0"/>',
+  },
+  {
     // on Sungnyemun's lawn, south of the gate
     id: 'sungnyemun', place: { at: [-1781, -408] }, color: '#8a3a2a', shape: 'square',
     name: { ko: '숭례문', en: 'Sungnyemun', ja: '崇礼門', zh: '崇礼门' },
