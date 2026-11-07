@@ -71,6 +71,24 @@
         -248
       ],
       "anchor": { "place": "Hongdae Walking Street busking zone", "lat": 37.5535, "lon": 126.9215, "local": [0, 0] }
+    },
+    {
+      "id": "yeonnam",
+      "map": "districts/yeonnam.json",
+      "offset": [
+        -3011,
+        -570
+      ],
+      "anchor": { "place": "Gyeongui Line Forest Park at Seongmisan-ro (Yeonnam-dong)", "lat": 37.5612, "lon": 126.923, "local": [50, -30], "nudge": [-33, -138], "why": "Hongdae is drawn full size and reaches over the real south end of the park, so Yeonnam sits just north of it, its forest path running straight on from Hongdae Walking Street." }
+    },
+    {
+      "id": "mangwon",
+      "map": "districts/mangwon.json",
+      "offset": [
+        -3372,
+        -202
+      ],
+      "anchor": { "place": "Mangwon Market", "lat": 37.556, "lon": 126.9065, "local": [80, -115] }
     }
   ],
   "links": [
@@ -172,7 +190,12 @@
         "ja": "新村路",
         "zh": "新村路"
       }
-    }
+    },
+    {"k": "walk", "w": 5, "p": [[-2961, -470], [-2961, -443]], "n": {"ko": "경의선숲길", "en": "Gyeongui Line Forest Path", "ja": "京義線森の道", "zh": "京义线林荫路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3051, -470], [-3051, -448]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
+    {"k": "primary", "w": 14, "p": [[-3182, -362], [-3168, -420], [-3161, -448]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
+    {"k": "tertiary", "w": 8, "p": [[-3182, -272], [-3170, -290], [-3161, -308]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3161, -128]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}}
   ],
   "screens": [
     {
@@ -441,6 +464,7 @@
           }
         ]
       },
+      {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "Worldcup-ro, a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3264, -352.5], "ry": -1.5708}, {"n": 2, "at": [-3240, -352.5], "ry": 1.5708}]},
       {
         "id": "itaewon-station",
         "name": {
