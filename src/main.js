@@ -47,6 +47,9 @@ import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
+import { BukchonUI, BK_TEXT, craftEntry, CRAFT } from './ui/bukchon-ui.js';
+import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt } from './data/bukchon.js';
+import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook } from './core/look-editor.js';
 import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
@@ -3669,7 +3672,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4805,6 +4808,70 @@ const wishUi = new WishUI({
 });
 const wishAct = () => ({ key: 'wish-float', label: `🏮 ${L(WISH_TEXT.float)} · 🪙 ${WISH.price}`, run: () => wishUi.show('wish') });
 const muralAct = () => ({ key: 'mural', label: '📜 ' + L(WISH_TEXT.mural), run: () => wishUi.show('mural') });
+// Bukchon (data/bukchon.js): the 8 Views photo walk, the Open House's hanok
+// parts, the magpie's persimmons, the Quiet Zone, and the craft workshops.
+const bukchonAt = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
+const viewBook = new ViewBook(), partBook = new PartBook();
+const bukchonMarks = bukchonAt ? new BukchonMarks(scene, bukchonAt) : null;
+bukchonMarks?.taken(viewBook);
+const bukchonUi = new BukchonUI({
+  root: $('bukchon-panel'), wallet,
+  onMake: (kind, ci, si) => {
+    const k = CRAFT[kind], entry = craftEntry(kind, ci, si);
+    if (!k || !entry) return false;
+    if (bag.full) { shop.toast(L(BK_TEXT.bagFull)); return false; }
+    if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+    refreshWallet();
+    bag.add(entry);
+    sfx.pop?.();
+    clerk && say(clerk, $('labels'), ['잘 만들었어요!', 'jal mandeureosseoyo!', 'Beautiful!']);
+    shop.toast(fmt(L(BK_TEXT.made), { icon: k.icon, name: entry.name }));
+    return true;
+  },
+});
+function takeView(v) {
+  me.play('wave');
+  sfx.pop?.();
+  const c = viewBook.take(v.n);
+  if (c) {
+    wallet.add(c, { name: BK_TEXT.ledger });
+    refreshWallet();
+    shop.toast(fmt(L(BK_TEXT.got), { n: v.n, name: L(v.name), c }));
+    if (viewBook.done) setTimeout(() => shop.toast(L(BK_TEXT.allDone)), 1600);
+  } else shop.toast(fmt(L(BK_TEXT.again), { n: v.n }));
+  bukchonMarks?.taken(viewBook);
+  bukchonUi.views(viewBook, v.n);
+  action = STALE;
+}
+function readPart(part) {
+  bukchonUi.card(part);
+  if (partBook.read(part.id)) {
+    wallet.add(EXPLORER_REWARD, { name: BK_TEXT.explorerLedger });
+    refreshWallet();
+    setTimeout(() => shop.toast(fmt(L(BK_TEXT.explorer), { c: EXPLORER_REWARD })), 500);
+  }
+}
+function bukchonAct(p) {
+  if (!bukchonAt || mode !== 'street') return null;
+  const v = nearestAt(BUKCHON.views, p.x, p.z, bukchonAt, 2.4);
+  if (v) return { key: 'bk-view:' + v.n, label: '📸 ' + fmt(L(BK_TEXT.photo), { n: v.n }), run: () => takeView(v) };
+  const oh = BUKCHON.openHouse;
+  const part = nearestAt(oh.parts, p.x, p.z, bukchonAt, 2.2);
+  if (part) return { key: 'bk-part:' + part.id, label: part.icon + ' ' + L(part.name), run: () => readPart(part) };
+  if (nearestAt([oh.tree], p.x, p.z, bukchonAt, 3.2)) return { key: 'bk-magpie', label: oh.tree.icon + ' ' + L(oh.tree.name), run: () => bukchonUi.card(oh.tree) };
+  return null;
+}
+const inQuietZone = (p) => !!bukchonAt && mode === 'street' && inPolygonXZ(p.x - bukchonAt[0], p.z - bukchonAt[1], BUKCHON.quiet);
+let quietWas = false, shhAt = 0;
+// In the Quiet Zone: walking only. Rides get parked, running turns into a walk.
+function updateQuiet(p, moving) {
+  const q = inQuietZone(p);
+  if (q && !quietWas) shop.toast(L(BK_TEXT.quiet));
+  if (q && riding && riding !== 3) { setRiding(false); shop.toast(L(BK_TEXT.noRide)); }
+  if (q && moving && input.run && performance.now() - shhAt > 9000) { shhAt = performance.now(); showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(BK_TEXT.shh)); }
+  quietWas = q;
+  return q;
+}
 // Other players' wish lanterns ride on their state ("wl"); add each new one.
 const wishSeen = new Map(); // remote id -> the lantern string we last saw
 function updateWishes() {
@@ -5771,6 +5838,7 @@ function moreActions(p, door) {
     const g = guideAct(p); if (g) out.push(g);
     const b = boardAt(p); if (b) out.push(boardAct(b));
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
+    const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -5837,6 +5905,7 @@ function updateAction(p, tSec) {
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
+    else if (!riding && bukchonAct(p)) next = bukchonAct(p);
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -5977,6 +6046,9 @@ function updateAction(p, tSec) {
       next = { key: 'japchae-hint', label: '💬 ' + L(JAPCHAE_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(JAPCHAE_TEXT.hint)); } };
     } else if (nearStation(p, 'kimchi', 1.3)) {
       next = { key: 'kimchi', label: '🥬 ' + L(KIMCHI_TEXT.open), run: () => { clerk?.ch.wave(); kimchiUi.show(); } };
+    } else if (CRAFT[interior.store.craft] && clerk && !seated && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      const kind = interior.store.craft;
+      next = { key: 'craft:' + kind, label: `${CRAFT[kind].icon} ${L(BK_TEXT[kind])} · 🪙 ${CRAFT[kind].price}`, run: () => { clerk.ch.wave(); bukchonUi.craft(kind); } };
     } else if (interior.store.workshop === 'kimchi' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
       next = { key: 'kimchi-hint', label: '💬 ' + L(KIMCHI_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(KIMCHI_TEXT.hint)); } };
     } else if (interior.fishBuy && Math.hypot(p.x - interior.fishBuy.x, p.z - interior.fishBuy.z) < 1.6) {
@@ -6201,7 +6273,8 @@ renderer.setAnimationLoop(() => {
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const steady = steadyWalk && !riding;
-  const running = updateStamina(dt, input.run && !riding && !steadyWalk, mag > 0.05 && !seated);
+  const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
+  const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (mag > 0.05 && !seated && !ride && !cable && riding !== 3) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
@@ -6231,7 +6304,7 @@ renderer.setAnimationLoop(() => {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
-    const running = updateStamina(dt, input.run && !riding && !steadyWalk, true);
+    const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, true);
     const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed();
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
@@ -6312,6 +6385,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
+  if (bukchonUi.open && (bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards

@@ -50,6 +50,16 @@ export function mapBox(map, [dx, dz] = [0, 0]) {
   return { x0, x1, z0, z1 };
 }
 
+// The parts of a district that other districts must keep out of: its
+// meta.parts boxes ([x0, z0, x1, z1] in its own metres) when it lists them,
+// e.g. an L-shaped district whose one bounding box would cover a neighbour
+// tucked into its corner, else its whole bounding box.
+export function mapParts(map, [dx, dz] = [0, 0]) {
+  const parts = map.meta?.parts;
+  if (!parts?.length) return [mapBox(map, [dx, dz])];
+  return parts.map(({ box: [x0, z0, x1, z1] }) => ({ x0: x0 + dx, x1: x1 + dx, z0: z0 + dz, z1: z1 + dz }));
+}
+
 // How much two boxes overlap (0 when they don't): [width, depth] in metres.
 export function boxOverlap(a, b) {
   const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), d = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0);

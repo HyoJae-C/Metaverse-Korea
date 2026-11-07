@@ -20,6 +20,7 @@
     { "id": "J", "color": "#e0457b", "at": [-2977, -216], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
     { "id": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } },
     { "id": "L", "color": "#4fa3c7", "at": [-1651, -686], "snap": false, "radius": 40, "name": { "en": "Cheonggye Plaza", "ko": "청계광장", "ja": "清渓広場", "zh": "清溪广场" } },
-    { "id": "M", "color": "#3f7fd0", "at": [1558, 1000], "snap": false, "radius": 60, "name": { "en": "Olympic Park", "ko": "올림픽공원", "ja": "オリンピック公園", "zh": "奥林匹克公园" } }
+    { "id": "M", "color": "#3f7fd0", "at": [1558, 1000], "snap": false, "radius": 60, "name": { "en": "Olympic Park", "ko": "올림픽공원", "ja": "オリンピック公園", "zh": "奥林匹克公园" } },
+    {"id": "N", "color": "#8a6a4a", "at": [-1523, -920], "radius": 50, "name": {"en": "Anguk Corner", "ko": "안국 코너", "ja": "安国コーナー", "zh": "安国角"}}
   ]
 }

@@ -22,7 +22,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { anchorOffset, mapBox, boxOverlap, inPolygon, toLatLon } from '../src/core/seoul-grid.js';
+import { anchorOffset, mapBox, mapParts, boxOverlap, inPolygon, toLatLon } from '../src/core/seoul-grid.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'seongsu');
@@ -36,7 +36,7 @@ export function layout(region, maps, seoul) {
     const map = maps[d.id];
     const want = d.anchor ? anchorOffset(d.anchor) : d.offset || [0, 0];
     const gu = seoul?.gu?.find((g) => g.district === d.id || (g.districts || []).includes(d.id));
-    return { id: d.id, offset: d.offset || [0, 0], want, anchor: d.anchor, box: mapBox(map, d.offset), wantBox: mapBox(map, want), gu };
+    return { id: d.id, offset: d.offset || [0, 0], want, anchor: d.anchor, box: mapBox(map, d.offset), wantBox: mapBox(map, want), wantParts: mapParts(map, want), gu };
   });
 }
 
@@ -58,7 +58,12 @@ export function problems(rows) {
     }
   }
   for (let i = 0; i < rows.length; i++) for (let j = i + 1; j < rows.length; j++) {
-    const [w, d] = boxOverlap(rows[i].wantBox, rows[j].wantBox);
+    let worst = [0, 0];
+    for (const a of rows[i].wantParts || [rows[i].wantBox]) for (const b of rows[j].wantParts || [rows[j].wantBox]) {
+      const o = boxOverlap(a, b);
+      if (Math.min(...o) > Math.min(...worst)) worst = o;
+    }
+    const [w, d] = worst;
     if (Math.min(w, d) > TOUCH) out.push(`${rows[i].id} and ${rows[j].id} overlap by ${Math.round(w)} x ${Math.round(d)} m`);
   }
   return out;

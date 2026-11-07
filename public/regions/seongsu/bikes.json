@@ -9,6 +9,7 @@
     { "id": "seoul-forest", "at": [-118, 100] },
     { "id": "gwanghwamun", "at": [-1701, -801] },
     { "id": "itaewon", "at": [-1368, 275] },
-    { "id": "hongdae", "at": [-2901, -120] }
+    { "id": "hongdae", "at": [-2901, -120] },
+    { "id": "anguk", "at": [-1427, -898] }
   ]
 }
