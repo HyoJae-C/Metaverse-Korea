@@ -41,7 +41,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow, FAN_KEEP, ringPoly } from './core/palace-show.js';
+import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { JONGMYO, JongmyoBook, onSamdo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
@@ -598,8 +598,9 @@ const allExits = subwayStations.flatMap((st) => st.exits);
 // a wall that only bridges cross; down by the water you use streamCollision.
 const streams = map.streams || [];
 const streamWalls = streams.flatMap(streamStreetBlockers);
-// Gyeongbokgung's fan dance (core/palace-show.js): a rope ring round the
-// dancers that you can't step inside, so the formation isn't broken.
+// Gyeongbokgung's fan dance (core/palace-show.js): an unseen ring round the
+// dancers that you can't step inside, so the formation isn't broken (no
+// fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
 const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 150]; // Geunjeongjeon's courtyard
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
@@ -3734,8 +3735,34 @@ for (const e of enclosures) {
 // stream's lanterns and stones past the fog are not drawn.
 const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
+// Gyeongbokgung is big: from just outside Gwanghwamun, 'Enter' takes you
+// straight to Geunjeongjeon's courtyard (the fan dance and the king), and
+// just inside Heungnyemun 'Leave' takes you back out to the gate.
+const PALACE_TEXT = {
+  enter: { en: 'Enter Gyeongbokgung', ko: '경복궁 입장', ja: '景福宮に入る', zh: '进入景福宫' },
+  leave: { en: 'Leave the palace', ko: '궁 밖으로 나가기', ja: '宮の外へ出る', zh: '出宫' },
+  back: { en: 'For a better view for everyone, please stay a few steps back.', ko: '원활한 관람을 위해 몇 발자국 떨어져 주세요.', ja: '皆さまが快適にご覧いただけるよう、数歩下がってください。', zh: '为了大家更好地观看，请往后退几步。' },
+};
+const PALACE_SPOTS = { gate: [0, 13], inside: [0, -122], leave: [0, -100] }; // in the palace district's metres
+function palaceAct(p) {
+  if (!palaceAt || mode !== 'street') return null;
+  const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;
+  if (near(PALACE_SPOTS.gate, 6)) return { key: 'palace-in', label: '🏯 ' + L(PALACE_TEXT.enter), run: () => {
+    const [ix, iz] = PALACE_SPOTS.inside;
+    moveMeTo(scene, palaceAt[0] + ix, palaceAt[1] + iz, Math.PI); // facing Geunjeongjeon
+  } };
+  if (near(PALACE_SPOTS.leave, 4)) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
+    const [gx, gz] = PALACE_SPOTS.gate;
+    moveMeTo(scene, palaceAt[0] + gx, palaceAt[1] + gz + 3, 0); // facing the square
+  } };
+  return null;
+}
+let fanNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
+  // At the fan dance's edge: please step back a little (once each time you come up).
+  if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
+  else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
   for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
@@ -4751,6 +4778,7 @@ function updateAction(p, tSec) {
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (!riding && bukchonAct(p)) next = bukchonAct(p);
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
+    else if (!riding && palaceAct(p)) next = palaceAct(p);
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -5515,6 +5543,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
+    palace: () => palaceShow, // (debug: the palace performers)
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
