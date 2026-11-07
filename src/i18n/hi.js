@@ -9,6 +9,7 @@ export const HI = {
   'car.alley': 'कारें गलियों में नहीं जा सकतीं। उतरकर पैदल चलें!',
   'credit.privacy': 'गोपनीयता',
   'credit.terms': 'शर्तें',
+  'credit.about': 'परिचय',
   'cloud.guest': 'सर्वर पर सहेजा गया (मेहमान खाता)',
   'cloud.account': 'आपके खाते में सहेजा गया',
   'cloud.local': 'सिर्फ़ इस डिवाइस पर सहेजा गया',
