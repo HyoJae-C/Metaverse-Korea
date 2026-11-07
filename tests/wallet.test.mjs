@@ -64,7 +64,7 @@ test('the budget book keeps only the latest entries', () => {
 });
 
 // A pretend server with the rules of supabase/015_wallet.sql (simplified).
-function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COINS, missing = false } = {}) {
+function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COINS, missing = false, resell = 10 } = {}) {
   const srv = { row: null, seen: new Map(), calls: [], down: false };
   srv.client = {
     rpc: async (fn, args) => {
@@ -72,6 +72,7 @@ function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COIN
       if (missing) return { error: { code: 'PGRST202', message: 'Could not find the function' } };
       if (srv.down) return { error: { message: 'fetch failed' } };
       const r = srv.row;
+      if (fn === 'wallet_resell_pct') return resell == null ? { error: { code: 'PGRST202', message: 'Could not find the function' } } : { data: resell };
       if (fn === 'wallet_open') {
         let created = false, given = 0;
         if (!r) { created = true; srv.row = { coins: Math.min(args.p_local, migrateMax), ver: 0, welcome: Math.min(args.p_gift, welcome), ads: 5 }; }
@@ -83,8 +84,18 @@ function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COIN
       if (fn === 'wallet_apply') {
         const results = [];
         for (const op of args.p_ops) {
-          if (srv.seen.has(op.id)) { results.push({ id: op.id, n: srv.seen.get(op.id) }); continue; }
+          if (srv.seen.has(op.id)) { results.push({ id: op.id, n: srv.seen.get(op.id), status: 'ok' }); continue; }
           let n = 0;
+          if (op.k === 'resell') { // 017_resale.sql
+            srv.sold ??= new Set();
+            const paid = srv.seen.get(op.ref);
+            const status = !(paid < 0) ? 'noref' : srv.sold.has(op.ref) ? 'sold' : 'ok';
+            if (status === 'ok') { n = Math.min(op.n, Math.floor((-paid * resell) / 100)); srv.sold.add(op.ref); }
+            srv.seen.set(op.id, n);
+            r.coins += n;
+            results.push({ id: op.id, n, status });
+            continue;
+          }
           if (op.k === 'spend') n = r.coins >= -op.n ? op.n : 0;
           else if (op.k === 'take') n = -Math.min(-op.n, r.coins);
           else if (op.k === 'refund') n = srv.seen.get(op.ref) < 0 ? Math.min(op.n, -srv.seen.get(op.ref)) : 0;
@@ -216,4 +227,45 @@ test('another account on this device does not get this copy', async () => {
   await w2.connect({ client: b.client, user: { id: 'u2' } });
   assert.equal(w2.coins, 7);
   assert.equal(w2.s.queue.length, 0);
+});
+
+test('second-hand shops: the server pays from its ledger, once per purchase, and only once the purchase is there', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  const srv = fakeServer();
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(w.resellPct, 10, 'the share comes from the server');
+  assert.equal(w.spend(60, { name: { en: 'Black hoodie' } }), true);
+  const buy = w.lastOp;
+  // Still queued: resell sends the purchase first.
+  const sold = await w.resell({ id: 'sell-1', n: 6, ref: buy, note: { name: { en: 'Black hoodie' } } });
+  assert.deepEqual(sold, { ok: true, n: 6 });
+  assert.equal(w.coins, 46);
+  assert.equal(srv.row.coins, 46);
+  assert.equal(w.log.at(-1).n, 6, 'in the budget book');
+  assert.deepEqual(await w.resell({ id: 'sell-1', n: 6, ref: buy }), { ok: true, n: 6 }, 'the same sale asked again pays nothing more');
+  assert.equal(srv.row.coins, 46);
+  assert.deepEqual(await w.resell({ id: 'sell-2', n: 6, ref: buy }), { ok: true, n: 0, why: 'sold' }, 'a purchase sells back once');
+  assert.equal(srv.row.coins, 46);
+  assert.deepEqual(await w.resell({ id: 'sell-3', n: 50, ref: 'made-up' }), { ok: false, n: 0, why: 'noref' });
+  assert.equal(w.coins, 46);
+  srv.down = true;
+  assert.equal((await w.resell({ id: 'sell-4', n: 6, ref: buy })).why, 'offline');
+});
+
+test('second-hand shops: closed until the SQL is run; a browser-only wallet pays at once', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  const srv = fakeServer({ resell: null });
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(w.resellPct, null);
+  assert.equal((await w.resell({ id: 'x', n: 6, ref: 'y' })).why, 'closed');
+  const local = fresh();
+  assert.equal(local.resellPct, 10);
+  assert.deepEqual(await local.resell({ id: 'x', n: 6 }), { ok: true, n: 6 });
+  assert.equal(local.coins, 6);
 });

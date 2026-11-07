@@ -163,6 +163,12 @@ export class Inventory {
     try { localStorage.setItem(KEY, JSON.stringify([...this.ids])); } catch { /* storage blocked */ }
     return added;
   }
+  // Take an item out (sold at a second-hand shop). Returns true if it was there.
+  remove(id) {
+    if (!this.ids.delete(id)) return false;
+    try { localStorage.setItem(KEY, JSON.stringify([...this.ids])); } catch { /* storage blocked */ }
+    return true;
+  }
 }
 
 // Developer codes, typed in chat as "/<code>" (no keyword, and a wrong
