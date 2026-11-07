@@ -1,6 +1,26 @@
 {
  "meta": {
   "district": "euljiro",
+  "parts": [
+   {
+    "why": "Euljiro, DDP, the fashion malls and Namsangol",
+    "box": [
+     -490,
+     -72,
+     160,
+     152
+    ]
+   },
+   {
+    "why": "Sungnyemun on its island",
+    "box": [
+     -828,
+     60,
+     -720,
+     132
+    ]
+   }
+  ],
   "source": "hand-made (game map, not to scale; loosely after Euljiro, Dongdaemun and Pil-dong, Jung-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-euljiro.mjs"
  },
  "roads": [
@@ -297,6 +317,52 @@
     [
      -136,
      31
+    ]
+   ]
+  },
+  {
+   "k": "primary",
+   "w": 14,
+   "p": [
+    [
+     -828,
+     60
+    ],
+    [
+     -720,
+     60
+    ],
+    [
+     -720,
+     132
+    ],
+    [
+     -828,
+     132
+    ],
+    [
+     -828,
+     60
+    ]
+   ],
+   "n": {
+    "ko": "세종대로",
+    "en": "Sejong-daero",
+    "ja": "世宗大路",
+    "zh": "世宗大路"
+   }
+  },
+  {
+   "k": "walk",
+   "w": 4,
+   "p": [
+    [
+     -774,
+     67
+    ],
+    [
+     -774,
+     125
     ]
    ]
   }
@@ -4976,6 +5042,27 @@
      150
     ]
    ]
+  },
+  {
+   "k": "park",
+   "p": [
+    [
+     -819,
+     69
+    ],
+    [
+     -729,
+     69
+    ],
+    [
+     -729,
+     123
+    ],
+    [
+     -819,
+     123
+    ]
+   ]
   }
  ],
  "blockers": [
@@ -5098,6 +5185,86 @@
      152.8
     ]
    ]
+  },
+  {
+   "p": [
+    [
+     -788,
+     90
+    ],
+    [
+     -776.5,
+     90
+    ],
+    [
+     -776.5,
+     102
+    ],
+    [
+     -788,
+     102
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     -771.5,
+     90
+    ],
+    [
+     -760,
+     90
+    ],
+    [
+     -760,
+     102
+    ],
+    [
+     -771.5,
+     102
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     -808,
+     94.5
+    ],
+    [
+     -788,
+     94.5
+    ],
+    [
+     -788,
+     97.5
+    ],
+    [
+     -808,
+     97.5
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     -760,
+     94.5
+    ],
+    [
+     -744,
+     94.5
+    ],
+    [
+     -744,
+     97.5
+    ],
+    [
+     -760,
+     97.5
+    ]
+   ]
   }
  ],
  "pois": [
@@ -5176,6 +5343,17 @@
     "en": "Namsangol Hanok Village",
     "ja": "南山コル韓屋村",
     "zh": "南山谷韩屋村"
+   }
+  },
+  {
+   "kind": "landmark",
+   "x": -774,
+   "z": 106,
+   "name": {
+    "ko": "숭례문 (남대문)",
+    "en": "Sungnyemun (Namdaemun)",
+    "ja": "崇礼門（南大門）",
+    "zh": "崇礼门（南大门）"
    }
   }
  ],
@@ -5385,6 +5563,45 @@
    "title": "DONGDAEMUN FASHION TOWN",
    "sub": "동대문 패션타운",
    "color": "#c2185b"
+  },
+  {
+   "type": "sungnyemun",
+   "x": -774,
+   "z": 96
+  },
+  {
+   "type": "citywall",
+   "x": -798,
+   "z": 96,
+   "len": 20,
+   "ry": 1.5707963267948966,
+   "gates": 0
+  },
+  {
+   "type": "citywall",
+   "x": -752,
+   "z": 96,
+   "len": 16,
+   "ry": 1.5707963267948966,
+   "gates": 0
+  },
+  {
+   "type": "sign",
+   "x": -766,
+   "z": 112,
+   "ry": 0,
+   "title": {
+    "ko": "숭례문",
+    "en": "Sungnyemun",
+    "ja": "崇礼門",
+    "zh": "崇礼门"
+   },
+   "text": {
+    "ko": "한양도성의 남쪽 정문으로 1398년에 처음 세워졌어요. 2008년 화재로 크게 불탔고 2013년에 복구됐어요. 국보로 지정된 첫 문화유산이에요.",
+    "en": "The south gate of Seoul's old city wall, first built in 1398. A fire badly burned it in 2008, and it was restored in 2013. It was the first site named a National Treasure of Korea.",
+    "ja": "漢陽都城の南の正門で、1398年に建てられました。2008年の火災で大きく焼け、2013年に復元されました。韓国の国宝に最初に指定された文化遺産です。",
+    "zh": "汉阳都城的南正门，始建于1398年。2008年遭大火严重焚毁，2013年修复。它是韩国第一个被指定为国宝的文化遗产。"
+   }
   }
  ]
 }

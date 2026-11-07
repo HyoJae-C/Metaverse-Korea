@@ -120,6 +120,27 @@
   ],
   "links": [
     {
+      "k": "primary",
+      "w": 16,
+      "p": [[-1720, -440], [-1490, -440]],
+      "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
+      "note": "Toegye-ro starts at Sungnyemun and runs east past Namsangol to DDP."
+    },
+    {
+      "k": "primary",
+      "w": 14,
+      "p": [[-1774, -465], [-1774, -520], [-1699, -580], [-1699, -615]],
+      "n": { "ko": "세종대로", "en": "Sejong-daero", "ja": "世宗大路", "zh": "世宗大路" },
+      "note": "From Sungnyemun north to Cheonggye Plaza (the south end of Gwanghwamun's Sejong-daero)."
+    },
+    {
+      "k": "primary",
+      "w": 16,
+      "p": [[-1699, -597], [-1490, -597]],
+      "n": { "ko": "을지로", "en": "Eulji-ro", "ja": "乙支路", "zh": "乙支路" },
+      "note": "Eulji-ro from Sejong-daero (by City Hall) east into Euljiro."
+    },
+    {
       "k": "tertiary",
       "w": 8,
       "p": [[-1004, -605], [-1004, -659]],

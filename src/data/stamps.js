@@ -70,6 +70,14 @@ export const STAMPS = [
     icon: '<path d="M52 92 q48 -34 96 0 q-6 -3 -12 1 h-72 q-6 -4 -12 -1 z"/><path d="M66 94 v32 h68 v-32 M88 126 v-22 h24 v22 M100 104 v22"/><path d="M60 92 l-6 -4 M140 92 l6 -4"/>',
   },
   {
+    // on Sungnyemun's lawn, south of the gate
+    id: 'sungnyemun', place: { at: [-1781, -408] }, color: '#8a3a2a', shape: 'square',
+    name: { ko: '숭례문', en: 'Sungnyemun', ja: '崇礼門', zh: '崇礼门' },
+    gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
+    // the gate: a stone base with its arch, two tiled roofs
+    icon: '<path d="M46 132 h108 v-28 h-108 z M92 132 v-14 q8 -10 16 0 v14"/><path d="M58 104 v-10 h84 v10"/><path d="M40 94 q60 -26 120 0 q-6 -2 -10 2 h-100 q-4 -4 -10 -2 z"/><path d="M70 86 v-10 h60 v10"/><path d="M56 76 q44 -22 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/>',
+  },
+  {
     // on DDP's front plaza
     id: 'ddp', place: { at: [-1035, -468] }, color: '#5d6470', shape: 'circle',
     name: { ko: '동대문디자인플라자', en: 'Dongdaemun Design Plaza', ja: '東大門デザインプラザ', zh: '东大门设计广场' },

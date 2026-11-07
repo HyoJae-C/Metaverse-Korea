@@ -12,7 +12,9 @@
 // Dongdaemun Design Plaza (DDP) with Dongdaemun History & Culture Park and a
 // stretch of the Seoul City Wall on its west side, and the Dongdaemun fashion
 // malls across Jangchungdan-ro. South of Toegye-ro, Namsangol Hanok Village
-// (Pil-dong): five hanok round a yard, inside a wall.
+// (Pil-dong): five hanok round a yard, inside a wall. Away to the west, on
+// its own part of the map (at its real spot, where Toegye-ro starts),
+// Sungnyemun (Namdaemun) on its lawn island inside a ring of road.
 //
 //   node scripts/build-euljiro.mjs
 //
@@ -40,6 +42,10 @@ export const EULJIRO = {
   wall: { x: -104, z0: -50, z1: 40 }, // the Seoul City Wall stretch in the park
   hanok: { box: [-400, 97, -296, 152], gate: -348, yard: [-372, 104, -324, 124] }, // Namsangol
   mall: [74, -62, 156, 75],
+  // Sungnyemun: its own part, at the gate's real spot on the Seoul grid
+  // (37.5600, 126.9753 is world -1774, -429; this district's offset is
+  // -1000, -525).
+  gate: { x: -774, z: 96, ring: [-828, 60, -720, 132] },
 };
 const E = EULJIRO;
 
@@ -138,6 +144,18 @@ const blockers = [
   { p: rect(hx0, hz1 - 0.8, hx1, hz1 + 0.8) },
 ];
 
+// The board by Sungnyemun (facts checked 2026-11-07: Cultural Heritage
+// Administration / Korea Heritage Service).
+const SUNGNYEMUN = {
+  title: N('숭례문', 'Sungnyemun', '崇礼門', '崇礼门'),
+  text: {
+    ko: '한양도성의 남쪽 정문으로 1398년에 처음 세워졌어요. 2008년 화재로 크게 불탔고 2013년에 복구됐어요. 국보로 지정된 첫 문화유산이에요.',
+    en: 'The south gate of Seoul\'s old city wall, first built in 1398. A fire badly burned it in 2008, and it was restored in 2013. It was the first site named a National Treasure of Korea.',
+    ja: '漢陽都城の南の正門で、1398年に建てられました。2008年の火災で大きく焼け、2013年に復元されました。韓国の国宝に最初に指定された文化遺産です。',
+    zh: '汉阳都城的南正门，始建于1398年。2008年遭大火严重焚毁，2013年修复。它是韩国第一个被指定为国宝的文化遗产。',
+  },
+};
+
 const landmarks = [
   { type: 'ddp', x: ddp.x, z: ddp.z, outline: ddpLocal }, // (not "p": that would be moved as world points)
   { type: 'citywall', x: E.wall.x, z: (E.wall.z0 + E.wall.z1) / 2, len: E.wall.z1 - E.wall.z0 },
@@ -158,9 +176,34 @@ const pois = [
   { kind: 'landmark', x: -348, z: 114, name: N('남산골 한옥마을', 'Namsangol Hanok Village', '南山コル韓屋村', '南山谷韩屋村') },
 ];
 
+// Sungnyemun (숭례문, Namdaemun): the south gate of the old city wall. A ring
+// road round a lawn island; the gate in the middle with short stretches of
+// the restored wall either side; a path through its arch (people walk
+// through it today).
+{
+  const { x, z, ring: [rx0, rz0, rx1, rz1] } = E.gate;
+  roads.push({ k: 'primary', w: 14, p: [[rx0, rz0], [rx1, rz0], [rx1, rz1], [rx0, rz1], [rx0, rz0]], n: N('세종대로', 'Sejong-daero', '世宗大路', '世宗大路') });
+  roads.push({ k: 'walk', w: 4, p: [[x, rz0 + 7], [x, rz1 - 7]] });
+  areas.push({ k: 'park', p: rect(rx0 + 9, rz0 + 9, rx1 - 9, rz1 - 9) });
+  // The stone base: two piers either side of the arch (5 m wide), and the
+  // wall stubs.
+  blockers.push({ p: rect(x - 14, z - 6, x - 2.5, z + 6) }, { p: rect(x + 2.5, z - 6, x + 14, z + 6) });
+  blockers.push({ p: rect(x - 34, z - 1.5, x - 14, z + 1.5) }, { p: rect(x + 14, z - 1.5, x + 30, z + 1.5) });
+  landmarks.push({ type: 'sungnyemun', x, z });
+  landmarks.push({ type: 'citywall', x: x - 24, z, len: 20, ry: Math.PI / 2, gates: 0 });
+  landmarks.push({ type: 'citywall', x: x + 22, z, len: 16, ry: Math.PI / 2, gates: 0 });
+  landmarks.push({ type: 'sign', x: x + 8, z: z + 16, ry: 0, title: SUNGNYEMUN.title, text: SUNGNYEMUN.text });
+  pois.push({ kind: 'landmark', x, z: z + 10, name: N('숭례문 (남대문)', 'Sungnyemun (Namdaemun)', '崇礼門（南大門）', '崇礼门（南大门）') });
+}
+
 const map = {
   meta: {
     district: 'euljiro',
+    // For the overlap check: Sungnyemun is a part of its own, far to the west.
+    parts: [
+      { why: 'Euljiro, DDP, the fashion malls and Namsangol', box: [E.west, E.euljiro, E.east, 152] },
+      { why: 'Sungnyemun on its island', box: E.gate.ring },
+    ],
     source: 'hand-made (game map, not to scale; loosely after Euljiro, Dongdaemun and Pil-dong, Jung-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-euljiro.mjs',
   },
   roads, buildings, rail: [], areas, blockers, pois, landmarks,
