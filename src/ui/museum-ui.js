@@ -35,19 +35,22 @@ export class MuseumUI {
     img.src = paintingUrl(p);
     img.alt = `${p.title.en} (${p.title.ko})`;
     img.decoding = 'async';
+    img.onerror = () => { img.hidden = true; }; // (a War Memorial photo not added yet)
     const ko = el('div', 'museum-lang');
     ko.lang = 'ko';
     ko.append(el('h3', null, p.title.ko), el('p', 'museum-meta', [p.artist.ko, p.era.ko, p.set?.ko].filter(Boolean).join(' · ')), el('p', null, p.desc.ko));
     const en = el('div', 'museum-lang');
     en.lang = 'en';
     en.append(el('h3', null, p.title.en), el('p', 'museum-meta', [p.artist.en, p.era.en, p.set?.en].filter(Boolean).join(' · ')), el('p', null, p.desc.en));
-    const link = el('a', null, T('source') + ' ↗');
+    // A painting from the museum, or a War Memorial photo with its own credit.
+    const credit0 = p.credit || CREDIT, disclaimer = p.disclaimer || DISCLAIMER;
+    const link = el('a', null, (p.source ? localName(p.source, getLanguage()) : T('source')) + ' ↗');
     link.href = p.page;
     link.target = '_blank';
     link.rel = 'noopener';
-    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${CREDIT.ko} (${CREDIT.en}) · ${p.no} · `);
+    const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${credit0.ko} (${credit0.en}) · ${p.no} · `);
     credit.append(link);
-    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(DISCLAIMER, getLanguage())));
+    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(disclaimer, getLanguage())));
     this.root.hidden = false;
   }
 

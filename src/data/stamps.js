@@ -23,6 +23,12 @@ export const STAMPS = [
     icon: '<rect x="66" y="62" width="68" height="56" rx="2"/><rect x="73" y="69" width="54" height="42"/><path d="M76 106 l15 -18 l10 11 l8 -8 l15 15" /><circle cx="114" cy="80" r="4"/>',
   },
   {
+    id: 'war-memorial', place: { store: 'war-memorial' }, color: '#4a5560', shape: 'square',
+    name: { ko: '전쟁기념관', en: 'War Memorial', ja: '戦争記念館', zh: '战争纪念馆' },
+    gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
+    icon: '<path d="M62 128 h76 M68 128 v-36 h64 v36 M64 92 h72"/><path d="M80 92 a20 20 0 0 1 40 0"/><path d="M100 72 v-8 M80 128 v-28 M93 128 v-28 M107 128 v-28 M120 128 v-28"/>',
+  },
+  {
     id: 'hongdae', place: { at: [-2965, -251] }, color: '#7b3fa0', shape: 'circle',
     name: { ko: '홍대 버스킹존', en: 'Hongdae Busking', ja: '弘大バスキング', zh: '弘大街头表演' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },

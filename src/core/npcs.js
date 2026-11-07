@@ -34,6 +34,11 @@ export const PHRASES = {
     ['그림 앞에 서면 설명을 볼 수 있어요.', 'geurim ape seomyeon seolmyeong-eul bol su isseoyo', 'Stand in front of a painting to read about it.'],
     ['그림은 눈으로만 감상해 주세요.', 'geurimeun nuneuroman gamsanghae juseyo', 'Please enjoy the paintings with your eyes only.'],
   ],
+  memorial: [
+    ['전쟁기념관에 오신 걸 환영합니다. 조용히 둘러봐 주세요.', 'jeonjaengginyeomgwane osin geol hwanyeonghamnida. joyonghi dulleobwa juseyo', 'Welcome to the War Memorial of Korea. Please look around quietly.'],
+    ['사진 앞에 서면 설명을 볼 수 있어요.', 'sajin ape seomyeon seolmyeong-eul bol su isseoyo', 'Stand in front of a photo to read about it.'],
+    ['안쪽 추모실에서 헌화할 수 있어요.', 'anjjok chumosireseo heonhwahal su isseoyo', 'You can lay a flower in the memorial room at the back.'],
+  ],
   culture: [
     ['어서 오세요. 다음 전시를 준비하고 있어요.', 'eoseo oseyo. daeum jeonsireul junbihago isseoyo', 'Welcome! We are getting the next exhibition ready.'],
     ['천천히 둘러보세요. 곧 새 작품이 걸릴 거예요.', 'cheoncheonhi dulleoboseyo. got sae jakpumi geollil geoyeyo', 'Take your time. New works will be hung soon.'],

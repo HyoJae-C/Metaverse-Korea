@@ -11,6 +11,7 @@ import { sign } from './park-signs.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree } from './olympic-park.js';
+import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -232,6 +233,8 @@ const BUILD = {
   },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
+  warmemorial: (g) => warMemorial(g), // the War Memorial of Korea, west along Itaewon-ro (core/war-memorial-site.js)
+  outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {

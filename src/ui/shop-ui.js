@@ -142,7 +142,7 @@ export class ShopUI {
     const tag = localName(store.tagline, lang) || '';
     this.$('store-tagline').textContent = comingSoon(store) ? `🚧 ${t('map.soon')}${tag ? ' · ' + tag : ''}` : tag;
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
-    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'culture';
+    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture';
   }
 
   leaveStore() {
