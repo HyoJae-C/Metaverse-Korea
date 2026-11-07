@@ -11,6 +11,10 @@ First stop: **Seongsu-dong, Seoul**.
 - Street name card in the original Korean, with a Translate button
 - Multiplayer: see other travellers in real time, with nicknames and emotes (Supabase Realtime)
 
+## Ready, not on the map yet
+
+- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. They wait for a folk games yard (Namsangol Hanok Village, Jung-gu) after the map is redrawn; try them at `dev/folk-games.html`. See docs/FOLK-GAMES.md
+
 ## Step 2 (in progress)
 
 - Meeting zones A–F with tall lettered signposts ("meet at B!")
