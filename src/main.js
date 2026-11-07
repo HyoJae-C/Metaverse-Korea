@@ -143,10 +143,9 @@ import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/moti
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
-import { Daily, REWARD } from './core/daily.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
-import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
+import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
@@ -175,6 +174,8 @@ import { createGifts } from './game/gifts.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
+import { createDaily } from './game/daily.js';
+import { createLedger } from './ui/ledger-ui.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -4072,53 +4073,8 @@ $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 // HUD button so people find them (they used to hide inside the wallet).
 $('notes-btn').onclick = () => { const p = $('notes-panel'); p.hidden = !p.hidden; if (!p.hidden) $('wallet-panel').hidden = true; };
 $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
-// Budget book (가계부): today's totals and the latest coins in and out.
-function ledgerLabel(e) {
-  const lang = getLanguage(), n = e.note || {};
-  const parts = [n.k && t(n.k, n.v), n.name && localName(n.name, lang), n.at && localName(n.at, lang)].filter(Boolean);
-  return parts.length ? parts.join(' · ') : t(e.n > 0 ? 'ledger.in' : 'ledger.out');
-}
-function renderLedger() {
-  const lang = getLanguage();
-  const day = wallet.dayTotals();
-  $('ledger-today').textContent = t('ledger.today', { in: day.in.toLocaleString(), out: day.out.toLocaleString() });
-  const when = (ms) => {
-    const d = new Date(ms), now = new Date();
-    const time = d.toLocaleTimeString(lang === 'zht' ? 'zh-Hant' : lang, { hour: 'numeric', minute: '2-digit' });
-    return d.toDateString() === now.toDateString() ? time : d.toLocaleDateString(lang === 'zht' ? 'zh-Hant' : lang, { month: 'short', day: 'numeric' }) + ' ' + time;
-  };
-  const rows = wallet.log.slice().reverse().map((e) => {
-    const row = document.createElement('div');
-    row.className = 'ledger-row';
-    const what = document.createElement('span');
-    what.className = 'ledger-what';
-    const label = document.createElement('strong');
-    label.textContent = ledgerLabel(e);
-    const at = document.createElement('small');
-    at.textContent = when(e.t);
-    what.append(label, at);
-    const amt = document.createElement('span');
-    amt.className = 'ledger-amt ' + (e.n > 0 ? 'in' : 'out');
-    amt.textContent = (e.n > 0 ? '+' : '−') + Math.abs(e.n).toLocaleString();
-    const bal = document.createElement('small');
-    bal.className = 'ledger-bal';
-    bal.textContent = '🪙 ' + Number(e.bal ?? 0).toLocaleString();
-    amt.append(bal);
-    row.append(what, amt);
-    return row;
-  });
-  if (!rows.length) {
-    const p = document.createElement('p');
-    p.className = 'fine';
-    p.textContent = t('ledger.empty');
-    rows.push(p);
-  }
-  $('ledger-list').replaceChildren(...rows);
-}
-$('ledger-btn').onclick = () => { $('wallet-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
-$('ledger-close').onclick = () => { $('ledger-panel').hidden = true; };
-wallet.onChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
-onLanguageChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+// Budget book. (ui/ledger-ui.js)
+createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
 // with a word to spend it wisely. Players from before it get it too.
 {
@@ -4143,75 +4099,12 @@ $('ad-btn').onclick = async () => {
   if (n) shop.toast(t('wallet.earned', { n }));
 };
 
-// Daily check-in and three daily missions (see core/daily.js).
-daily = new Daily(wallet, {
-  npcs: npcs.list.map((o) => o.name), // one person each (data/npc-names.js)
-  stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home'),
+// Daily check-in and today's three missions. (game/daily.js)
+const dailyGame = createDaily({
+  get daily() { return daily; }, set daily(v) { daily = v; }, get mode() { return mode; }, $, leaveStore,
+  npcs, setGuide, storefronts, wallet, zones,
 });
-const storeById = (id) => storefronts.items.find((i) => i.store.id === id);
-function missionText(m) {
-  if (m.type === 'talk') {
-    // Say where they hang out (their meeting zone), so it's clear which part of town to go to.
-    const lang = getLanguage(), o = npcs.list.find((n) => n.name === m.target);
-    const zone = o && zones.items.find((z) => z.zone.id === o.zone)?.zone;
-    const where = zone ? localName(zone.name, lang) : '';
-    const extra = [lang === 'ko' ? '' : NAME_ROMAN[m.target], where].filter(Boolean).join(', ');
-    return t('mission.talk', { name: extra ? `${m.target} (${extra})` : m.target });
-  }
-  if (m.type === 'visit') return t('mission.visit', { store: localName(storeById(m.target)?.store.name, getLanguage()) || m.target });
-  return t('mission.' + m.type, { n: m.need });
-}
-function renderDaily() {
-  const wd = daily.weekDay(), done = daily.checkedInToday();
-  $('daily-week').replaceChildren(...Array.from({ length: 7 }, (_, i) => {
-    const el = document.createElement('span');
-    const day = i + 1;
-    el.textContent = day === 7 ? '🎁' : String(day);
-    if (day === 7) el.classList.add('big');
-    if (day < wd || (day === wd && done)) el.classList.add('on');
-    if (day === wd) el.classList.add('today');
-    return el;
-  }));
-  const btn = $('checkin-btn');
-  btn.disabled = done;
-  btn.textContent = done ? t('daily.done') : t('daily.checkIn', { n: wd === 7 ? REWARD.week : REWARD.checkIn });
-  $('daily-streak').textContent = t('daily.streak', { n: done ? daily.streak : Math.max(0, wd - 1), w: REWARD.week });
-  $('daily-missions').replaceChildren(...daily.missions.map((m) => {
-    const li = document.createElement('li');
-    const finished = m.n >= m.need;
-    li.classList.toggle('done', finished);
-    const tick = document.createElement('span');
-    tick.className = 'tick';
-    tick.textContent = finished ? '✓' : '';
-    const text = document.createElement('span');
-    text.className = 'm-text';
-    text.textContent = missionText(m);
-    li.append(tick, text);
-    if (m.need > 1 && !finished) {
-      const prog = document.createElement('span');
-      prog.className = 'm-prog';
-      prog.textContent = `${m.n}/${m.need}`;
-      li.append(prog);
-    }
-    // Show the way: to the store, or to where the person is walking right now.
-    const target = m.type === 'visit' ? storeById(m.target) : m.type === 'talk' ? npcs.list.find((o) => o.name === m.target) : null;
-    if (target && !finished) {
-      const go = document.createElement('button');
-      go.className = 'chip';
-      go.textContent = '🧭 ' + t('mission.go');
-      go.onclick = () => {
-        $('daily-panel').hidden = true;
-        if (mode === 'store') leaveStore();
-        if (m.type === 'visit') setGuide({ kind: 'store', id: target.store.id, x: target.door.x, z: target.door.z, label: localName(target.store.name, getLanguage()) });
-        else setGuide({ kind: 'npc', id: target.name, x: target.ch.root.position.x, z: target.ch.root.position.z, label: target.name });
-      };
-      li.append(go);
-    }
-    return li;
-  }));
-  $('daily-bonus').textContent = daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
-  $('daily-dot').hidden = !daily.hasNews();
-}
+const { renderDaily } = dailyGame;
 // Square missions: what the guide can check on the spot, the HUD chip, and
 // talking to the guide (take an errand, see it again, or report back).
 // A function declaration (not a const): setHeld() runs during startup,
