@@ -189,8 +189,10 @@ for (let k = 0; k < 4; k++) { // benches in the ring path, on the diagonals, fac
   const p = onTrail(i, t, side * 3.4);
   bench(p.x, p.z, faceTo(p.x, p.z, p.px, p.pz));
 });
-// The chocolate one closes the south end of Metasequoia Avenue (below), facing up it.
-sculpture('chocolate', -200, 227.5, Math.PI);
+// The chocolate one greets you at the north end of Metasequoia Avenue (below):
+// at the very front on the right as you walk in from Seoulsup-gil, across the
+// path from the avenue's sign (mirrored), facing the street.
+sculpture('chocolate', -203.4, 86.6, Math.PI);
 // A grassy hill with wooden stairs up to a look-out deck, south of the
 // culture center (walkable: core/park-art.js hillY). The stairs face
 // Metasequoia Avenue, with a path across to it.
@@ -217,10 +219,10 @@ LANDMARKS.push({ type: 'sign', x: HILL.x + HILL.r + 1.5, z: HILL.z + 3.2, ry: Ma
   WALKS.push({ w: 4, clear: 5, p: [[AX, Z0], [AX, Z1]], n: name('메타세쿼이아길', 'Metasequoia Avenue', 'メタセコイア並木', '水杉大道') });
   LANDMARKS.push({ type: 'sign', x: AX + 3.4, z: Z0 + 1.6, ry: Math.PI, clear: 1.5, // at the north end, facing people coming in
     title: name('메타세쿼이아길', 'Metasequoia Avenue', 'メタセコイア並木', '水杉大道'),
-    text: name('키 큰 메타세쿼이아가 양옆으로 늘어선 숲길이에요. 가을에는 주황빛 나무 터널이 돼요. 길 끝 초코콘 옆에서 스탬프를 찍어 보세요!',
-      'A forest walk lined with tall metasequoia trees, an orange tree tunnel in autumn. Get the stamp beside the chocolate cone at the far end!',
-      '背の高いメタセコイアが両側に並ぶ森の道。秋にはオレンジ色の木のトンネルに。道の先のチョコアイスの横でスタンプを押してね！',
-      '两旁种满高大水杉的林间小路，秋天会变成橙色的树木隧道。到路尽头的巧克力甜筒旁盖个印章吧！') });
+    text: name('키 큰 메타세쿼이아가 양옆으로 늘어선 숲길이에요. 가을에는 주황빛 나무 터널이 돼요. 길 끝에서 서울숲 스탬프를 찍어 보세요!',
+      'A forest walk lined with tall metasequoia trees, an orange tree tunnel in autumn. Get the Seoul Forest stamp at the far end!',
+      '背の高いメタセコイアが両側に並ぶ森の道。秋にはオレンジ色の木のトンネルに。道の先でソウルの森のスタンプを押してね！',
+      '两旁种满高大水杉的林间小路，秋天会变成橙色的树木隧道。到路尽头盖个首尔林印章吧！') });
   const avoid = [...LANDMARKS.filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]), [-190, 215, 3], [-210, 93, 5.5], [-196.6, 224, 1.6]]; // (+ the meeting sign, Seoul Forest Station's exit 2 (region.json), the stamp stand (data/stamps.js))
   const nearWalk = (x, z) => WALKS.some((w) => w.p.some((q, i) => {
     const r = w.p[i + 1];
@@ -255,8 +257,8 @@ WALKS.push({ w: 3, p: [[-170, 165], [GH.x, GH.z - GH.d / 2 - 0.5]] }); // from t
 }
 const POND = { x: GH.x, z: GH.z + GH.d / 2 + 9, r: 5.5 };
 LANDMARKS.push({ type: 'pond', x: POND.x, z: POND.z, r: POND.r, statue: true, clear: POND.r + 3 });
-// The mint chocolate sculpture stands on top of the fountain, facing the greenhouse door path.
-LANDMARKS.push({ type: 'icecream', model: 'mint-chocolate', x: POND.x, z: POND.z, y: 1.3, ry: 0, s: ICE_S, reach: POND.r + 1.5, clear: 2 + ICE_S });
+// The mint chocolate sculpture stands on top of the fountain, turned a quarter to the right (clockwise seen from above).
+LANDMARKS.push({ type: 'icecream', model: 'mint-chocolate', x: POND.x, z: POND.z, y: 1.3, ry: -Math.PI / 2, s: ICE_S, reach: POND.r + 1.5, clear: 2 + ICE_S });
 // Signs (core/park-signs.js): Korean, or the player's language with signs translated.
 LANDMARKS.push({ type: 'sign', x: GH.x + 3.6, z: GH.z - GH.d / 2 - 2.2, ry: Math.PI, clear: 1.5,
   title: name('나비 온실', 'Butterfly Greenhouse', '蝶の温室', '蝴蝶温室'),
