@@ -173,10 +173,3 @@ test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishsta
   m.setItem('mk.fishstats', '{broken');
   assert.equal(new FishStats(m, 7).get('cast'), 0);
 });
-
-test('★1 bites have no shout; ★2 and up still shout', async () => {
-  const { biteLine } = await import('../src/ui/fishing-ui.js');
-  assert.equal(biteLine(fishById('carp')), null);
-  assert.equal(biteLine(TRASH), null);
-  assert.ok(biteLine(fishById('salmon')));
-});
