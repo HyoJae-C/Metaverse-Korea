@@ -1,13 +1,17 @@
 // Seoul stamp tour (서울 스탬프 투어): one stamp stand at each place.
 // To add a place, add one entry here. Nothing else needs to change.
 //   place: { store: 'id' } puts the stand beside that shop's door (and the
-//          stamp only exists once that shop is on the map), or
+//          stamp only exists once that shop is on the map),
+//          { store: 'id', room: true, at: [x, z], ry } puts it inside that
+//          shop's room (the Namsan summit, a park), at room position x, z,
+//          its front facing ry, or
 //          { at: [x, z] } puts it at a world position.
 //   shape: 'circle' | 'square' — the rubber stamp's frame.
 //   icon:  SVG drawn in a 200×200 box, in the stamp's ink colour.
 export const STAMPS = [
   {
-    id: 'namsan', place: { store: 'namsan-sky-cable' }, color: '#c8323a', shape: 'circle',
+    // on the Namsan summit plaza (up the cable car), across from the love locks
+    id: 'namsan', place: { store: 'namsan-sky-cable', room: true, at: [18.6, -43], ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
     name: { ko: '남산타워', en: 'N Seoul Tower', ja: 'Nソウルタワー', zh: 'N首尔塔' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M100 40 v12 M92 58 h16 l-3 10 h-10 z M97 68 l-5 62 h16 l-5 -62 M86 130 h28" /><circle cx="100" cy="62" r="2"/><path d="M60 138 q20 -18 40 -6 q22 -14 42 6" />',
@@ -19,7 +23,7 @@ export const STAMPS = [
     icon: '<rect x="66" y="62" width="68" height="56" rx="2"/><rect x="73" y="69" width="54" height="42"/><path d="M76 106 l15 -18 l10 11 l8 -8 l15 15" /><circle cx="114" cy="80" r="4"/>',
   },
   {
-    id: 'hongdae', place: { at: [-2958, -719] }, color: '#7b3fa0', shape: 'circle',
+    id: 'hongdae', place: { at: [-2954, -703] }, color: '#7b3fa0', shape: 'circle',
     name: { ko: '홍대 버스킹존', en: 'Hongdae Busking', ja: '弘大バスキング', zh: '弘大街头表演' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',

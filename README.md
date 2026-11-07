@@ -59,6 +59,18 @@ First stop: **Seongsu-dong, Seoul**.
 - Namsan Sky Cable (남산 하늘 케이블카, a fictional cable car) in Itaewon, next to the Namsan trail: two cabins shuttle up and down the hill on one shared clock (10 s at each station, 24 s on the way), so everyone sees the same cabin in the same place, and you can see them climbing from the street. Stand at a cabin bay and get in while the doors are open (🪙 4 for the round trip, the way down is free so nobody gets stuck), ride up over the forest and step out on the summit plaza round the look-out tower: railings hung with love locks, binoculars, and Seoul and the Han River below. Schedule and layout in `src/core/cablecar.js`. The real cable car's fares and hours are not used
 - Seoul Forest: a big wood, with rows of tall trees round its edge and round trees (some ginkgo yellow), pointed pines and bushes inside. Off the trail there is a round rose garden: eight colours of roses in two rings of beds, rose arches at the four ways in and a hedge round it. There is also a grassy hill with a wide flat top and wooden stairs up to a big round look-out deck (you can walk all over the slope), Metasequoia Avenue (a long straight path north to south lined with tall autumn-orange trees), and park benches you can sit on. A glass butterfly greenhouse full of plants and fluttering butterflies, with a round pond and fountain outside it. Four ice cream sculptures designed by Yozi (strawberry, chocolate, mint chocolate, soft serve), all the same size, each mark a place: strawberry in the rose garden, soft serve on the hill's deck, chocolate at the south end of Metasequoia Avenue and mint chocolate inside the greenhouse. Picnic mats can be spread on the grass here as well as in the Han River park, and on a mat you can lie down or sit. Layout in `scripts/build-seongsu.mjs`, models in `public/models/icecream` (meshopt-compressed, about 90 KB each), drawing in `src/core/park-art.js`
 
+## Operators
+
+Open `/admin.html` in the browser where you play with your operator account (see `supabase/005_operators.sql`). Not linked from the game; anyone else sees "Operators only". Tabs:
+
+- **Overview**: online now, played today / in 7 days, accounts (guest vs Google), new accounts, open inquiries, posts today, chat bans. Tap a number to jump to its tab.
+- **Live map**: everyone playing right now on the map (green on the street, purple inside a shop, with the shop's name), refreshed every 3 seconds; tap a name to zoom to them. The game reports its own spot every few seconds while walking and every 20 s while standing still (`src/net/where.js`); only operators can read it.
+- **Inquiries**: the inquiry board (문의게시판). Write a reply and the player sees it under their inquiry in the game; or mark it done without one.
+- **Free board**: hide or show posts.
+- **Players**: search by name or e-mail; guest/Google, joined, last seen, where they are; ban or unban from chat (`chat_bans`).
+
+Needs `supabase/008_player_where.sql` and `supabase/009_admin.sql` run once. Page code in `src/admin/`.
+
 ## Run locally
 
 ```bash

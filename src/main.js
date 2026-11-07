@@ -54,6 +54,9 @@ import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
+import { startWhereReports } from './net/where.js';
+import { startUpdateCheck } from './core/update-check.js';
+import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote, ownedPacks } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
@@ -63,7 +66,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart, howToGet, coinsFor, RENT } from './ui/shop-ui.js';
+import { ShopUI, Cart, howToGet, coinsFor, RENT, goodsKind, itemSoon } from './ui/shop-ui.js';
 import { hanbokById, isHanbokModel, RENT_HOURS } from './data/hanbok.js';
 import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, isRenting, formatLeft } from './core/hanbok-rental.js';
 import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
@@ -94,6 +97,7 @@ import { ClawUI } from './ui/claw-ui.js';
 import { TarotUI } from './ui/tarot-ui.js';
 import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
 import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { buskingGroundY } from './core/busking-layout.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
@@ -147,7 +151,7 @@ import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, SupabaseFriends, LocalFriends, convKey, cleanBody as cleanFriendText } from './core/friends.js';
 import { FriendsUI, FRIEND_TEXT } from './ui/friends-ui.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -546,7 +550,7 @@ const routeLine = new RouteLine(scene);
 const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
-// Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
+// Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
@@ -1077,6 +1081,29 @@ onLanguageChange(refreshOnline);
 let stopOnline = null;
 watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
+// A newer build deployed while we play: ask for a refresh (core/update-check.js).
+startUpdateCheck({
+  current: __BUILD_ID__,
+  fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v),
+  onNew: () => { if (!tabParked) showUpdateBanner(); },
+});
+// Our spot on the map for operators' live view (net/where.js, admin.html).
+// Inside a shop we report the street spot we came in from, and the shop.
+// A hidden tab keeps reporting (browsers slow the timer down to about once a
+// minute): it is still in multiplayer, and an operator watching admin.html
+// in another tab of the same browser should still see their own game.
+let streetSpot = null;
+startWhereReports({
+  get: () => {
+    try {
+      if (tabParked || !me?.root) return null;
+      if (mode === 'street') streetSpot = { x: me.root.position.x, z: me.root.position.z };
+      if (!streetSpot) return null;
+      return { name: nickname, place: mode === 'street' ? 'street' : interior?.store?.id || mode, ...streetSpot };
+    } catch { return null; } // still starting up
+  },
+  send: (spot) => cloud.reportWhere(spot),
+});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
@@ -1748,7 +1775,7 @@ const shop = new ShopUI({
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
-    if (!onSale(product)) return false; // a limited edition outside its dates
+    if (!onSale(product) || itemSoon(shop.store, product)) return false; // a limited edition outside its dates, or not sold yet
     if (product.ingredient) return buyIngredient(product, coins);
     if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
@@ -1790,7 +1817,6 @@ function sellerOf(product) {
 }
 // What a bought thing becomes in your hand.
 const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
-const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
 const GOODS_TEXT = {
   got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', id: 'Kamu membeli {name}!' },
   gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', vi: 'Túi mua sắm · {name}', hi: 'शॉपिंग बैग · {name}', id: 'Tas belanja · {name}' },
@@ -1810,7 +1836,7 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
-    if (!handReady()) return false;
+    if (itemSoon(store, product) || !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
@@ -2357,7 +2383,7 @@ $('rent-chip').onclick = () => shop.toast(`${fmt(L(RENT.left), { t: formatLeft(t
 // What a product becomes as a gift here, or null when it can't be one:
 // { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
 function giftFor(store, product) {
-  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product)) return null;
+  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product) || itemSoon(store, product)) return null;
   const name = product.name;
   const itemId = product.item || product.outfit;
   const it = itemId && ITEMS[itemId];
@@ -2511,6 +2537,7 @@ function enterStore(item) {
     interiorCache.set(store.id, built);
     built.setSignLang?.(signsTranslated ? getLanguage() : null);
     if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
   }
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
@@ -2733,7 +2760,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z); }, // down by a stream, up a park hill or the busking bank
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
@@ -3368,7 +3395,12 @@ const mapView = new MapView({
   stores: storefronts.items,
   marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
-    return { x, z, icon: '🚇', color: sub.line?.color, label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()) };
+    const go = outsideOf(ex); // guidance ends on the pavement just outside the stairs
+    return {
+      x, z, icon: '🚇', color: '#5d6470', // one colour for every line for now (no transfers to think about)
+      station: s, name: stationStores[s].name, go: { x: go.x, z: go.z },
+      label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()),
+    };
   })),
   getPlayers: () => {
     const pos = mode === 'street' ? me.root.position : interior.front.door;
@@ -3871,6 +3903,7 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
+  lucky: () => { const p = me.root.position; return !!interior?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
@@ -5591,6 +5624,8 @@ function updateAction(p, tSec) {
       else if (!decor.picked) closePiece();
     } else if (interior.cablecar && cableAction(p)) {
       next = cableAction(p);
+    } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
+      next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
     } else if (ride) {

@@ -48,7 +48,7 @@ const a = await join('Gift A');
 const b = await join('Gift B');
 let ok = false;
 try {
-  for (const [shop, idx, check] of [['stationery-den', 0, 'bag'], ['denim-lab', 0, 'item']]) {
+  for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item']]) {
     await a.evaluate((id) => __mk.enter(id), shop);
     await b.evaluate((id) => __mk.enter(id), shop);
     await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
@@ -80,10 +80,10 @@ try {
   }
   // A last one, declined: A gets the coins back, and B isn't asked again
   // by A for a while (the next offer is turned down on its own).
-  for (const page of [a, b]) await page.evaluate(() => __mk.enter('stationery-den'));
+  for (const page of [a, b]) await page.evaluate(() => __mk.enter('salam-halal'));
   await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
   const before = await a.evaluate(() => __mk.coins());
-  const sendOne = async () => { await a.evaluate(() => __mk.product(1)); await a.click('#product-gift'); await a.click('.gift-person'); };
+  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); };
   await sendOne();
   await b.waitForSelector('.gift-card', { timeout: 10000 });
   await b.click('.gift-card .chip');

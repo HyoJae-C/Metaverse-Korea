@@ -514,9 +514,9 @@
       "id": "hongdae-busking",
       "at": [
         -2950,
-        -724
+        -682
       ],
-      "radius": 16,
+      "radius": 22,
       "name": {
         "en": "Hongdae Busking Zone",
         "ko": "홍대 버스킹존",

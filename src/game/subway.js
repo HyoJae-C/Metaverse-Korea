@@ -33,6 +33,8 @@ export function createSubway(stations, game) {
   for (const [i, st] of stationStores.entries()) {
     const n = stationStores.length, nm = (k) => ({ ko: stations[k].name?.ko || '', en: stations[k].name?.en || '' });
     st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
+    // The route map on the pillar inside the gates: every station on the loop.
+    st.loop = { stops: stations.map((x) => x.name || {}), index: i };
   }
   const TRAIN_STORE = {
     id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',

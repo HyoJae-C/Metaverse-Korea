@@ -491,6 +491,7 @@ export const AR = {
   "map.soon": "قريبًا",
   'map.open': 'مفتوح للاستكشاف',
   'map.zones': 'مناطق اللقاء',
+  'map.stations': 'محطات المترو',
   'map.shops': 'المتاجر',
   'guide.to': '{label} · {m} م',
   'guide.arrived': 'وصلت إلى {label}',

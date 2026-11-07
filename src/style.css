@@ -1294,6 +1294,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .board-panel .wallet-title { padding-right: 36px; }
 .board-panel .fine { margin: 0; text-align: left; }
 .board-warn { color: #b0642a; }
+.board-reply { margin-top: 6px; padding: 8px 10px; border-radius: 12px; background: #eef4ff; border-left: 3px solid #2f6fde; }
+.board-reply .board-body { margin: 4px 0 0; }
 .board-form { display: grid; gap: 6px; }
 .board-input { width: 100%; box-sizing: border-box; min-height: 92px; max-height: 260px; resize: vertical; padding: 10px 12px; border-radius: 14px; border: 1.5px solid #eadfd2; background: #fff; font: inherit; font-size: 14px; line-height: 1.45; }
 .board-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1909,6 +1911,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 /* The odds table (fishing panel → 📊): grouped by stars, readable on phones. */
 .fish-odds { display: grid; gap: 2px; max-height: 52vh; overflow-y: auto; font-size: 15px; color: #2b2230; }
 .fish-odds-note { margin: 4px 0; font-size: 12.5px; line-height: 1.4; color: #5b5560; }
+.fish-lucky { margin: 0 0 6px; padding: 8px 12px; border-radius: 12px; background: #fff3c4; color: #6b4e00; font-size: 14px; font-weight: 700; box-shadow: inset 0 0 0 2px #e0a020; }
 .fish-odds-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 52px 46px 30px; align-items: center; gap: 4px; padding: 5px 2px; border-bottom: 1px solid #eee6da; }
 .fish-odds-row > :nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
 .fish-odds-row .fish-name { font-weight: 700; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -1968,3 +1971,27 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-water.bite .fish-callout.tier-3 { font-size: 24px; color: #6b2a00; text-shadow: 0 2px 0 #fff6c8, 0 0 10px rgba(255, 255, 255, .8); }
 .fish-water.bite .fish-callout.tier-4 { font-size: 27px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
 .fish-water.bite .fish-callout.tier-5 { font-size: 31px; }
+
+/* "New features, refresh" banner (ui/update-banner.js) */
+.update-banner {
+  position: fixed; z-index: 90; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 20px;
+  background: linear-gradient(120deg, #ff7eb3, #a46bff 55%, #5b8cff); color: #fff;
+  box-shadow: 0 8px 28px rgba(120, 60, 200, 0.45); animation: ub-in 0.45s ease-out, ub-glow 2.2s ease-in-out 0.45s infinite;
+}
+.update-banner[hidden] { display: none; }
+.update-banner .ub-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.update-banner b { font-size: 16px; font-weight: 900; line-height: 1.25; }
+.update-banner span { font-size: 13px; opacity: 0.95; }
+.update-banner button { border: 0; border-radius: 999px; font: inherit; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.update-banner .ub-go { background: #fff; color: #7a3fe0; padding: 9px 14px; font-size: 14px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15); }
+.update-banner .ub-later { background: transparent; color: #fff; opacity: 0.85; padding: 9px 6px; font-size: 13px; }
+@keyframes ub-in { from { opacity: 0; transform: translate(-50%, -16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes ub-glow { 0%, 100% { box-shadow: 0 8px 28px rgba(120, 60, 200, 0.45); } 50% { box-shadow: 0 8px 36px rgba(255, 126, 179, 0.85); } }
+@media (max-width: 420px) {
+  .update-banner { flex-wrap: wrap; }
+  .update-banner .ub-text { flex-basis: 100%; }
+  .update-banner .ub-go { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .update-banner { animation: none; } }
