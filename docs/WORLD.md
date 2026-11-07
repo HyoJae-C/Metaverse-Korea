@@ -162,6 +162,11 @@ hall). The runway is a rhythm walk in its own big room (size `runway`, seats eit
 third taken by a seated audience): a step a beat down the catwalk, then three poses for the
 cameras (`core/runway-game.js`, `ui/runway-ui.js`; main.js walks the
 character from `walkState()`). Medals as at the grill (game id `runway`).
+Every step and pose is judged in three tiers (`core/runway-fx.js`): a random
+sparkle burst (perfume effects), a small twinkle, or a wobble with a red "!";
+a pose that lands shows a word (Cute!, Chic!/Sexy!, Confident!). Friends walk
+it in turns (`core/runway-line.js`): a line of up to four kept by everyone in
+the room from `rwq:` emotes, the latest walks ranked on the panel.
 
 A landmark's `p` is moved as world points when districts are joined
 (`core/districts.js`), so a shape drawn relative to the landmark's own

@@ -2172,3 +2172,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   .in-store .side-ad { display: none; } /* the shop's name banner is up there */
   body:has(.update-banner:not([hidden])) .side-ad { display: none; } /* never under the update notice */
 }
+/* Curve Runway: the line and the latest walks */
+.runway-line { display: flex; flex-direction: column; gap: 6px; }
+.runway-order { margin: 0; padding-left: 22px; font-size: 14px; }
+.runway-order li.me { font-weight: 800; }
