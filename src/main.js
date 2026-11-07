@@ -228,6 +228,9 @@ await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
 const playCounts = createCounts();
+// Country statistics for the operator page: a guess from the time zone,
+// once a day per account (core/country.js). Loaded on the side; never waits.
+if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
