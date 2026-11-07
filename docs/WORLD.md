@@ -139,16 +139,24 @@ what you bump into, and a bridge is a roof overhead.
 ## Euljiro & Dongdaemun (Jung-gu)
 
 Drawn by `scripts/build-euljiro.mjs` in the band between the Cheonggyecheon
-strip and Namsan. Eulji-ro runs along its north edge just south of the
-Cheonggyecheon towers, and four link roads (Supyo-ro, Changgyeonggung-ro, the
+strip and Namsan, kept small on purpose (DDP and what is round it; the old
+Euljiro alleys were taken out, since the game has plenty of streets of small
+shops). Eulji-ro runs along its north edge just south of the Cheonggyecheon
+towers, and three link roads (Changgyeonggung-ro along the west edge, the
 walk to Ogansugyo Bridge, Jangchungdan-ro) go north between those towers to
-Cheonggyecheon-ro; Toegye-ro runs on east to Wangsimni-ro. West: Euljiro's
-old alleys (Nogari Alley, Print Shop Alley, the lighting shops). East: DDP, a
-custom building drawn by its landmark (`core/euljiro-models.js`) from the
-outline in the map, with Dongdaemun History & Culture Park and a stretch of
-the Seoul City Wall beside it, and the fashion malls across Jangchungdan-ro.
-South of Toegye-ro, Namsangol Hanok Village has a walled yard (`hanok.yard`
-in the script) kept free for the folk games (docs/FOLK-GAMES.md).
+Cheonggyecheon-ro; Eulji-ro and Toegye-ro run west to Sejong-daero and
+Sungnyemun as links, and Toegye-ro on east to Wangsimni-ro. DDP is a custom
+building drawn by its landmark (`core/euljiro-models.js`) from the outline in
+the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
+City Wall on its west side, and the fashion malls across Jangchungdan-ro.
+South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
+free for the folk games (docs/FOLK-GAMES.md).
+
+Inside DDP, the Curve Runway (store `curve-runway`, workshop `runway`) is a
+rhythm walk: a step a beat down the catwalk, then three poses for the
+cameras (`core/runway-game.js`, `ui/runway-ui.js`; main.js walks the
+character from `walkState()`). Medals as at the grill (game id `runway`).
 
 A landmark's `p` is moved as world points when districts are joined
 (`core/districts.js`), so a shape drawn relative to the landmark's own
