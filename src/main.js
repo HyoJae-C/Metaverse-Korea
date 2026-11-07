@@ -1168,6 +1168,10 @@ let lastSent = null; // set to null to resend our state at once (e.g. when someo
 // Gifts between people in the same room (see startGift).
 const gifts = new GiftBox();
 const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
+// Gifts (game/gifts.js) are set up further down, but joining the first room
+// (just below) already calls off any waiting gifts.
+let giftsGame = null;
+function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 async function joinRoom(room, roomScene, area = null) {
@@ -1972,13 +1976,13 @@ const hanbokRental = createHanbokRental({
 });
 const { rentHanbok } = hanbokRental;
 // Gifts for friends in the same shop. (game/gifts.js)
-const giftsGame = createGifts({
+giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
   get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
   get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
   refreshItems, refreshWallet, safety, shop, storeData,
 });
-const { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
+const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
