@@ -102,7 +102,9 @@ import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
-import { RUNWAY_STORE } from './core/runway-game.js';
+import { RUNWAY_STORE, POSES as RUNWAY_POSES } from './core/runway-game.js';
+import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
+import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, poseWord, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
@@ -1292,6 +1294,15 @@ async function joinRoom(room, roomScene, area = null) {
       if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseRaceMsg(e)) { onPoolRace(id, parseRaceMsg(e)); return; }
+      if (parseLineMsg(e)) {
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) runwayLine.heard(id, parseLineMsg(e), Date.now());
+        return;
+      }
+      if (parseRunwayMsg(e)) {
+        const m = parseRunwayMsg(e);
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) runwayReact(others.rootOf(id), m.tier, m.word);
+        return;
+      }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -1695,6 +1706,27 @@ function updateScents(dt) {
   }
   for (const id of scentSeen.keys()) if (!others.players.has(id)) scentSeen.delete(id);
   scentFx.update(dt);
+  runwayWords.update(dt);
+  for (const [root, t0] of wobbles) {
+    const t = t0 + dt;
+    root.rotation.z = wobbleAt(t);
+    if (t >= WOBBLE_S) { root.rotation.z = 0; wobbles.delete(root); } else wobbles.set(root, t);
+  }
+}
+// The Curve Runway's reactions (core/runway-fx.js), on me or on someone in
+// the room: a sparkle (perfect), a twinkle (close) or a wobble and "!" (miss),
+// and the pose's word over the head.
+const runwayWords = new WordFx();
+const wobbles = new Map(); // character root → seconds into its wobble
+function runwayReact(root, tier, word) {
+  if (!root || mode !== 'store') return;
+  const { x, y, z } = root.position;
+  scentFx.attach(activeScene);
+  runwayWords.attach(activeScene);
+  if (tier === 'p') scentFx.puff(x, y, z, pickPerfect(), true);
+  else if (tier === 'g') scentFx.puff(x, y, z, GOOD_FX, false);
+  else { wobbles.set(root, 0); runwayWords.pop(x + 0.45, y + 1.5, z, '!', '#ff6b6b', true); }
+  if (word) runwayWords.pop(x, y + 2.3, z, L(RUNWAY_WORDS[word]), tier === 'p' ? '#ffd166' : '#ffffff');
 }
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
@@ -1874,9 +1906,11 @@ function bagRideList() {
 }
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
 $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+$('keys-bag').textContent = L(BAG_TEXT.title);
 onLanguageChange(() => {
   $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
   $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+  $('keys-bag').textContent = L(BAG_TEXT.title);
 });
 
 function setLook(look) {
@@ -2285,6 +2319,7 @@ function backToPark() {
   if (runwayUi.open) runwayUi.close();
   standUp();
   const fromRunway = interior.store.workshop === 'runway';
+  if (fromRunway) { leaveRunwayLine(); runwayLine.clear(); }
   enterStore(park);
   if (fromRunway) {
     // Back in DDP Hall, in front of the runway's door, facing into the hall.
@@ -2306,6 +2341,7 @@ function enterRunwayRoom() {
   const front = interior.front;
   standUp();
   for (const o of interior.visitorNpcs || []) { o.bubble?.remove(); o.bubble = null; }
+  runwayLine.clear(); // (whoever is in line will say so)
   enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
 }
@@ -2319,6 +2355,7 @@ function leaveStore() {
   if (pool.mode?.kind === 'race') endRace(); // (friends hear we left)
   if (wearingSwim()) setLook(myLook); // out of the pool hall: own clothes back before the street sees you
   if (subway.metro) endMetro(); // (a taxi or teleport from the train)
+  if (interior.store?.workshop === 'runway') { leaveRunwayLine(); runwayLine.clear(); }
   endRide();
   cable = null;
   standUp();
@@ -2816,6 +2853,12 @@ addEventListener('keydown', (e) => {
   }
   if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
+  // B for Bag: closes it if open; opens it only when no game or sheet is
+  // taking keys and the bag button is on screen.
+  if (e.code === 'KeyB' && !e.repeat) {
+    if (bagUi.open) bagUi.hide();
+    else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
+  }
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
@@ -3082,6 +3125,10 @@ const runwayUi = new RunwayUI({
     if (runwayMusic && !music.on) { music.setOn(true); applyMusicBtn(); }
     runwayMusic = false; runwaySpin = 0;
     if (runwayCam) { Object.assign(cam, runwayCam); runwayCam = null; }
+    leaveRunwayLine(); // (the walk is over, or was stopped)
+    // Step aside off the start, so the next walker has it.
+    const st = interior?.stations?.runway?.[0], p = me.root.position;
+    if (st && Math.hypot(p.x - st.x, p.z - st.z) < 0.6) { p.x = st.x + 2.3; p.z = st.z + 0.3; me.root.rotation.y = -Math.PI / 2; lastSent = null; }
   },
   onPose: (i, kind, label) => {
     if (!label) { me.play('shrug'); return; } // missed the beat
@@ -3091,12 +3138,68 @@ const runwayUi = new RunwayUI({
     if (kind === 'turn') runwaySpin = 0.7;
     else { me.play(kind); net.sendEmote(kind); }
   },
+  onFinish: (score) => {
+    runwayLine.addScore(myId, score);
+    net.sendEmote(lineMsg.score(score));
+  },
+  line: {
+    status: () => {
+      const now = Date.now(), order = runwayLine.order(now);
+      const name = (id) => (id === myId ? nickname : others.nameOf(id) || '?');
+      return {
+        order: order.map((q) => ({ name: name(q.id), walking: q.walking, me: q.id === myId })),
+        board: runwayLine.board().map((r) => ({ name: name(r.id), n: r.n })),
+        inLine: runwayLine.has(), full: order.length >= 4,
+      };
+    },
+    join: () => { if (runwayLine.join(Date.now())) runwayHiAt = 0; },
+    leave: () => leaveRunwayLine(),
+  },
+  onJudge: (n, label) => {
+    const tier = tierOf(label);
+    const word = n.kind === 'pose' && (label === 'perfect' || label === 'great') ? poseWord(RUNWAY_POSES[n.i]) : null;
+    runwayReact(me.root, tier, word);
+    net.sendEmote(runwayMsg(tier, word));
+  },
   onMedal: (medal, coins) => {
     if (coins) shop.toast(t('grill.medalToast', { coins }));
     me.play(medal ? 'cheer' : 'wave');
     if (medal) for (const o of interior?.audienceNpcs || []) o.ch.play(Math.random() < 0.5 ? 'cheer' : 'clap');
   },
 });
+// Walking with friends (core/runway-line.js): a line of up to four in the
+// runway room. While in it I say so every LINE_HI_S seconds; when it is my
+// turn (and stays so a moment, so that two people joining at once settle),
+// I am taken to the start and the walk begins.
+const runwayLine = new RunwayLine(myId);
+let runwayHiAt = 0, runwayTurnFor = 0; // (wall clock: a slow frame rate must not slow the hellos)
+function leaveRunwayLine() {
+  if (!runwayLine.has()) return;
+  runwayLine.leave();
+  net.sendEmote(lineMsg.bye());
+}
+function runwayTick(dt) {
+  if (!runwayLine.has()) { runwayTurnFor = 0; return; }
+  const now = Date.now();
+  runwayLine.setWalking(!!runwayUi.game);
+  if (now - runwayHiAt >= LINE_HI_S * 1000) { runwayHiAt = now; net.sendEmote(lineMsg.hi(runwayLine.mine.at, !!runwayUi.game)); }
+  if (!runwayUi.game && runwayLine.myTurn(now)) {
+    runwayTurnFor += dt;
+    if (runwayTurnFor > 0.8) startRunwayTurn();
+  } else runwayTurnFor = 0;
+}
+function startRunwayTurn() {
+  runwayTurnFor = 0;
+  const st = interior?.stations?.runway?.[0];
+  if (!st) { leaveRunwayLine(); return; }
+  standUp();
+  me.root.position.set(st.x, 0, st.z); me.root.rotation.y = st.ry;
+  if (!runwayUi.open) runwayUi.show();
+  runwayUi.play().then(() => { if (!runwayUi.game) leaveRunwayLine(); }); // (no sound: can't walk)
+  runwayLine.setWalking(true);
+  runwayHiAt = 0; // tell everyone right away
+  shop.toast(L(RUNWAY_TEXT.yourTurn));
+}
 // One frame of the show: where on the runway, facing which way.
 function runwayStep(p, dt) {
   const st = interior?.stations?.runway?.[0], w = runwayUi.walkState();
@@ -4746,11 +4849,7 @@ function updateAction(p, tSec) {
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
-      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => {
-        const st = interior.stations.runway[0];
-        me.root.position.set(st.x, 0, st.z); me.root.rotation.y = st.ry;
-        runwayUi.show();
-      } };
+      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => runwayUi.show() };
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -5022,6 +5121,7 @@ renderer.setAnimationLoop(() => {
       speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
     }
   }
+  if (mode === 'store' && interior?.store.workshop === 'runway') runwayTick(dt); // (walking with friends: the line)
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
@@ -5362,6 +5462,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    runwayFx: (tier, word) => runwayReact(me.root, tier, word),
+    runwayLine: (on) => (on ? runwayUi.line.join() : runwayUi.line.leave()),
+    runwayOpen: () => runwayUi.show(),
+    runwayLineState: () => ({ ...runwayUi.line.status(), walking: !!runwayUi.game }),
     backOut: () => backToPark(), // (the runway or haunted house back to its hall or park)
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),

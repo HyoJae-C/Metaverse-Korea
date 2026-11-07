@@ -33,6 +33,16 @@ export const RUNWAY_TEXT = {
   noBest: { en: 'No medal yet', ko: '아직 메달 없음', ja: 'まだメダルなし', zh: '还没有奖牌' },
   medal: { en: '{m} medal! 🪙 +{n}', ko: '{m} 메달! 🪙 +{n}', ja: '{m}メダル！🪙 +{n}', zh: '{m}奖牌！🪙 +{n}' },
   noMedal: { en: 'No medal this time', ko: '이번엔 메달 없음', ja: '今回はメダルなし', zh: '这次没有奖牌' },
+  join: { en: 'Join the line', ko: '줄 서기', ja: '列に並ぶ', zh: '排队' },
+  leave: { en: 'Leave the line', ko: '줄에서 빠지기', ja: '列から抜ける', zh: '离开队伍' },
+  full: { en: 'The line is full (4)', ko: '줄이 꽉 찼어요 (4명)', ja: '列がいっぱいです（4人）', zh: '队伍已满（4人）' },
+  line: { en: 'In line', ko: '대기 줄', ja: '待機列', zh: '排队中' },
+  empty: { en: 'Nobody in line. Join and walk first!', ko: '아직 아무도 없어요. 줄 서면 바로 걸어요!', ja: 'まだ誰もいません。並ぶとすぐ歩けます！', zh: '还没有人，排队就能马上走！' },
+  walkingNow: { en: 'walking', ko: '워킹 중', ja: 'ウォーキング中', zh: '走秀中' },
+  you: { en: 'you', ko: '나', ja: '自分', zh: '我' },
+  waitHint: { en: 'You can close this and watch from a seat: your turn will bring you back.', ko: '창을 닫고 객석에서 구경해도 돼요. 차례가 되면 자동으로 무대로 불러요.', ja: '閉じて客席で見ていても大丈夫。順番が来たら呼ばれます。', zh: '可以关掉窗口在观众席观看，轮到你时会自动叫你。' },
+  yourTurn: { en: 'Your turn! 👠', ko: '내 차례예요! 👠', ja: 'あなたの番です！👠', zh: '轮到你了！👠' },
+  board: { en: 'Latest walks', ko: '최근 워킹 순위', ja: '最近のウォーキング順位', zh: '最近走秀排名' },
   enter: { en: 'Go in to the Curve Runway', ko: '커브 런웨이로 들어가기', ja: 'カーブ・ランウェイに入る', zh: '进入曲线T台' },
   toHall: { en: 'Back to DDP Hall', ko: 'DDP 홀로 나가기', ja: 'DDPホールに戻る', zh: '回到DDP大厅' },
   back: { en: 'Walking back…', ko: '돌아가는 중…', ja: '戻っています…', zh: '往回走…' },
@@ -51,9 +61,14 @@ const el = (tag, cls, text) => {
 export class RunwayUI {
   // wallet; onStart()/onEnd(): pause/resume the background music and take
   // or give back the camera; onPose(i, kind, label): pose i (POSES[i]) is
-  // due, label null when missed; onMedal(medal, coins).
-  constructor({ root, wallet, onStart, onEnd, onPose, onMedal }) {
-    Object.assign(this, { root, wallet, onStart, onEnd, onPose, onMedal });
+  // due, label null when missed; onJudge(note, label): every step and pose
+  // as it is judged (label 'miss' when it went by); onFinish(score) at the
+  // end of a walk; onMedal(medal, coins). line: walking with friends
+  // (core/runway-line.js, main.js): status() → { order: [{ name, walking,
+  // me }], board: [{ name, n }], inLine, full }, join(), leave().
+  constructor({ root, wallet, onStart, onEnd, onPose, onJudge, onFinish, onMedal, line }) {
+    Object.assign(this, { root, wallet, onStart, onEnd, onPose, onJudge, onFinish, onMedal, line });
+    this.lineTimer = 0;
     this.medals = new Medals();
     this.raf = 0;
     this.music = null;
@@ -77,6 +92,7 @@ export class RunwayUI {
   close() { this._stop(); this.root.hidden = true; }
   _stop() {
     cancelAnimationFrame(this.raf);
+    clearInterval(this.lineTimer);
     removeEventListener('keydown', this.onKey, true);
     if (this.game) { this.game = null; this.onEnd?.(); }
     const m = this.music;
@@ -100,11 +116,49 @@ export class RunwayUI {
       el('p', 'kimchi-fact', '🏙️ ' + tt('fact')),
       el('p', 'grill-best', best ? tt('best', { m: medalIcon(best) + ' ' + L(MEDAL[best]) }) : tt('noBest')),
     );
-    const go = el('button', 'primary', '👠 ' + tt('start'));
-    go.onclick = () => this.play();
+    if (!this.line) {
+      const go = el('button', 'primary', '👠 ' + tt('start'));
+      go.onclick = () => this.play();
+      const actions = el('div', 'order-actions');
+      actions.append(go);
+      this.root.append(actions);
+      return;
+    }
+    // The line (and the latest walks), kept up to date while this is open.
+    const box = el('div', 'runway-line');
+    this.root.append(box);
+    this.lineBox = box;
+    const draw = () => box.replaceChildren(...this._lineView());
+    draw();
+    this.lineTimer = setInterval(draw, 500);
+  }
+
+  _lineView() {
+    const st = this.line.status();
+    const out = [];
+    out.push(el('p', 'grill-best', '👥 ' + tt('line') + ` (${st.order.length}/4)`));
+    if (!st.order.length) out.push(el('p', 'order-hint', tt('empty')));
+    const list = el('ol', 'runway-order');
+    for (const p of st.order) {
+      const li = el('li', p.me ? 'me' : null, p.name + (p.me ? ` (${tt('you')})` : ''));
+      if (p.walking) li.append(el('span', null, '  👠 ' + tt('walkingNow')));
+      list.append(li);
+    }
+    if (st.order.length) out.push(list);
+    if (st.board.length) {
+      out.push(el('p', 'grill-best', '🏆 ' + tt('board')));
+      const b = el('ol', 'runway-order');
+      st.board.forEach((r, i) => b.append(el('li', null, `${['🥇', '🥈', '🥉'][i] || '  '} ${r.name} · ${r.n}`)));
+      out.push(b);
+    }
+    if (st.inLine) out.push(el('p', 'order-hint', tt('waitHint')));
+    const btn = el('button', st.inLine ? null : 'primary', st.inLine ? tt('leave') : st.full ? tt('full') : '👠 ' + tt('join'));
+    btn.disabled = !st.inLine && st.full;
+    btn.onclick = () => { if (st.inLine) this.line.leave(); else this.line.join(); this.lineBox?.replaceChildren(...this._lineView()); };
     const actions = el('div', 'order-actions');
-    actions.append(go);
-    this.root.append(actions);
+    actions.append(btn);
+    out.push(actions);
+    return out;
   }
 
   async play() {
@@ -134,6 +188,7 @@ export class RunwayUI {
       notes.forEach((n, i) => {
         if (!g.hit[i] && t - n.t > 0.22) {
           g.hit[i] = 'miss'; g.combo = 0; g.flash = { label: 'miss', at: t };
+          this.onJudge?.(n, 'miss');
           if (n.kind === 'pose') this._pose(n.i, null);
         }
       });
@@ -192,11 +247,13 @@ export class RunwayUI {
     g.combo++;
     g.flash = { label: j.label, at: t };
     const n = g.notes[j.index];
+    this.onJudge?.(n, j.label);
     if (n.kind === 'pose') this._pose(n.i, j.label);
   }
 
   finish(g) {
     const score = runwayScore(g.points, g.notes);
+    this.onFinish?.(score);
     this._frame();
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(RUNWAY_GAME, medal) : 0;
@@ -204,8 +261,8 @@ export class RunwayUI {
     const res = el('div', 'grill-result');
     res.append(el('span', 'grill-medal', medal ? medalIcon(medal) : '👠'), el('strong', null, tt('score', { n: score })));
     res.append(el('p', 'order-hint', medal ? (coins ? tt('medal', { m: L(MEDAL[medal]), n: coins }) : L(MEDAL[medal])) : tt('noMedal')));
-    const again = el('button', 'primary', tt('again'));
-    again.onclick = () => this.play();
+    const again = el('button', 'primary', this.line ? '👠 ' + tt('join') : tt('again'));
+    again.onclick = () => { if (this.line) { this.line.join(); this.renderStart(); } else this.play(); };
     const actions = el('div', 'order-actions');
     actions.append(again);
     this.root.append(res, actions);
