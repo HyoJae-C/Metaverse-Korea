@@ -3,7 +3,7 @@
 // a skeleton clone per character, and an AnimationMixer driven by our action
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
-import { FOLK_DANCES, makeFan, makeSleeve, makeYak, makeJeok } from './folk-dance.js';
+import { FOLK_DANCES, makeFan, makeSleeve, makeYak, makeJeok, makeWoodSword, makeWoodSpear } from './folk-dance.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
@@ -685,7 +685,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
       if (folk && !folkProps && slotL && slotR) {
-        folkProps = folk === 'tal' ? [makeSleeve(1.6), makeSleeve(1.6)] : folk === 'rope' ? [null, makeFan(1.5)] : folk === 'ilmu' ? [makeYak(1.6), makeJeok(1.6)] : [makeFan(1.8), makeFan(1.8)];
+        folkProps = folk === 'tal' ? [makeSleeve(1.6), makeSleeve(1.6)] : folk === 'rope' ? [null, makeFan(1.5)] : folk === 'ilmu' ? [makeYak(1.6), makeJeok(1.6)] : folk === 'mumu' ? [null, makeWoodSword(1.6)] : folk === 'mumuspear' ? [null, makeWoodSpear(1.6)] : [makeFan(1.8), makeFan(1.8)];
         if (folkProps[0]) slotL.add(folkProps[0]);
         slotR.add(folkProps[1]);
       }
