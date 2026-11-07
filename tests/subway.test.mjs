@@ -117,3 +117,20 @@ test('Mongchontoseong Station (Line 8) sits by the Peace Gate, exit 1 on the pla
   assert.ok(Math.hypot(e1.at[0] - gate[0], e1.at[1] - gate[1]) < 90);
   assert.ok(e1.at[0] < gate[0], 'west of the gate');
 });
+
+test('Gwanghwamun (Line 5) and Sinchon (Line 2) stations stand in their districts', () => {
+  const inDistrict = (id, st) => {
+    const d = region.districts.find((x) => x.id === id);
+    const m = JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + d.map, import.meta.url)));
+    const xs = m.roads.flatMap((r) => r.p.map((p) => p[0] + d.offset[0])), zs = m.roads.flatMap((r) => r.p.map((p) => p[1] + d.offset[1]));
+    return st.exits.every((e) => e.at[0] > Math.min(...xs) && e.at[0] < Math.max(...xs) && e.at[1] > Math.min(...zs) && e.at[1] < Math.max(...zs));
+  };
+  const gw = stations.find((s) => s.id === 'gwanghwamun-station');
+  assert.equal(gw.code, '533');
+  assert.equal(gw.line.name.en, 'Line 5');
+  assert.ok(inDistrict('gyeongbokgung', gw));
+  const sc = stations.find((s) => s.id === 'sinchon-station');
+  assert.equal(sc.code, '240');
+  assert.equal(sc.prev.en, 'Hongik Univ.');
+  assert.ok(inDistrict('seodaemun', sc));
+});

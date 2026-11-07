@@ -484,6 +484,98 @@
         ]
       },
       {
+        "id": "gwanghwamun-station",
+        "name": {
+          "ko": "광화문",
+          "en": "Gwanghwamun",
+          "ja": "光化門",
+          "zh": "光化门"
+        },
+        "code": "533",
+        "line": {
+          "color": "#996cac",
+          "name": {
+            "ko": "5호선",
+            "en": "Line 5",
+            "ja": "5号線",
+            "zh": "5号线"
+          }
+        },
+        "prev": {
+          "ko": "서대문",
+          "en": "Seodaemun"
+        },
+        "next": {
+          "ko": "종로3가",
+          "en": "Jongno 3(sam)-ga"
+        },
+        "note": "Under Sejong-daero: the two exits are at the south end of Gwanghwamun Square, behind the King Sejong statue, a short walk from Cheonggye Plaza. The real station runs a little further south, towards Sejong Center; exit numbers here are the game's.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1763,
+              -791
+            ],
+            "ry": 0
+          },
+          {
+            "n": 2,
+            "at": [
+              -1719,
+              -791
+            ],
+            "ry": 0
+          }
+        ]
+      },
+      {
+        "id": "sinchon-station",
+        "name": {
+          "ko": "신촌",
+          "en": "Sinchon",
+          "ja": "新村",
+          "zh": "新村"
+        },
+        "code": "240",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "홍대입구",
+          "en": "Hongik Univ."
+        },
+        "next": {
+          "ko": "이대",
+          "en": "Ewha Womans Univ."
+        },
+        "note": "Sinchon-ro, either side of Study Street, on the campus side of the road (the Seodaemun map is not to scale).",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -2555,
+              -404
+            ],
+            "ry": 3.1416
+          },
+          {
+            "n": 2,
+            "at": [
+              -2482,
+              -404
+            ],
+            "ry": 3.1416
+          }
+        ]
+      },
+      {
         "id": "hongik-univ-station",
         "name": {
           "ko": "홍대입구",
