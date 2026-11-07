@@ -6,13 +6,8 @@ import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import { showBubble } from './players.js';
-
-const NAMES = ['민지', '지훈', '서연', '도윤', '하은', '준서', '지아', '현우', '수빈', '예준', '다은', '시우'];
-// Revised Romanization, shown next to the Hangul in missions.
-export const NAME_ROMAN = {
-  민지: 'Minji', 지훈: 'Jihun', 서연: 'Seoyeon', 도윤: 'Doyun', 하은: 'Haeun', 준서: 'Junseo',
-  지아: 'Jia', 현우: 'Hyeonu', 수빈: 'Subin', 예준: 'Yejun', 다은: 'Daeun', 시우: 'Siu',
-};
+import { NAME_ROMAN, PER_ZONE, npcName } from '../data/npc-names.js';
+export { NAME_ROMAN };
 
 // Phrases: Korean, romanization (Revised Romanization), English.
 export const PHRASES = {
@@ -89,16 +84,18 @@ export function say(o, layer, phrase) {
 }
 
 export class StreetNpcs {
-  // homes: [[x, z], ...] spots the NPCs stroll around (e.g. meeting zones).
-  constructor(scene, layer, graph, homes, perHome = 2) {
+  // homes: [{ id, x, z }, ...] spots the NPCs stroll around (the meeting
+  // zones). Names come from the zone's id (data/npc-names.js), so each name
+  // is one person and stays in the same part of town.
+  constructor(scene, layer, graph, homes, perHome = PER_ZONE) {
     this.layer = layer;
     this.graph = graph;
     this.list = [];
     if (!graph.nodes.length) return;
-    let i = 0;
-    for (const [hx, hz] of homes) {
+    for (const { id, x: hx, z: hz } of homes) {
       for (let k = 0; k < perHome; k++) {
-        const o = makeNpc(layer, NAMES[i++ % NAMES.length]);
+        const o = makeNpc(layer, npcName(id, k));
+        o.zone = id;
         o.home = [hx, hz];
         o.node = graph.nearest(hx + (Math.random() - 0.5) * 30, hz + (Math.random() - 0.5) * 30);
         o.prev = -1;

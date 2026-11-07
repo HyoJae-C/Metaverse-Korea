@@ -87,6 +87,11 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `npm test`) then checks that it sits in its gu and overlaps no other
    district.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
+   A meeting zone's id is a new single letter: its two passers-by take their
+   names from that letter (`src/data/npc-names.js`), so daily "find someone"
+   missions name one person who stays in that area. `npm test`
+   (`tests/npc-missions.test.mjs`) checks every zone stands in a district
+   next to its own streets.
 5. Give it an Information Center: a store with `"workshop": "info"` and
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
    Inside, the game guide (left) explains the game and the area guide (right)
