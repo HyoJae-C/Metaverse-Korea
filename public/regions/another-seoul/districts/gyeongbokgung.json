@@ -2611,7 +2611,8 @@
     {
       "type": "gwanghwamun",
       "x": 0,
-      "z": 0
+      "z": 0,
+      "clear": 12
     },
     {
       "type": "gate",
