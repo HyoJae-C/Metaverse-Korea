@@ -104,7 +104,7 @@ import { TarotUI } from './ui/tarot-ui.js';
 import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
 import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
-import { WATER_Y, SWIM_Y, COMP, RACE_LEN, laneZ, waterAt, boardById, Race, rivalPaces, rivalLanes, diveHeight, maxFlips, FLIP_TIME, scoreDive, PoolLog } from './core/pool.js';
+import { WATER_Y, SWIM_Y, COMP, RACE_LEN, COUNTDOWN, LOBBY, laneZ, waterAt, boardById, Race, rivalPaces, rivalLanes, raceMsg, parseRaceMsg, pickLane, rankTimes, diveHeight, maxFlips, FLIP_TIME, scoreDive, PoolLog } from './core/pool.js';
 import { POOL_TEXT, SWIMSUITS, RIVAL_NAMES, RIVAL_LOOKS, MEDALS } from './data/pool-text.js';
 import { LIFEGUARD_LOOK } from './core/pool-hall.js';
 import { shotMove } from './core/basketball-game.js';
@@ -1202,6 +1202,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (typeof e === 'string' && e.startsWith('fishph:')) { onPeerFishing(id, e.slice(7)); return; }
       if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
+      if (parseRaceMsg(e)) { onPoolRace(id, parseRaceMsg(e)); return; }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -1225,9 +1226,10 @@ async function joinRoom(room, roomScene, area = null) {
       recentLines.set(id, log);
     },
   };
+  const joinedLook = currentLook;
   try {
     const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
-      room, self: { id: myId, name: nickname, look: currentLook },
+      room, self: { id: myId, name: nickname, look: joinedLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
       // Debug test rooms play without an account (no cloud save), and the
       // private chat channel only carries chat from accounts: chat there on
@@ -1236,6 +1238,9 @@ async function joinRoom(room, roomScene, area = null) {
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
+    // The look changed while we were connecting (the pool hall puts swimwear
+    // on as you come in and takes it off as you leave): tell the new room.
+    if (currentLook !== joinedLook) n.sendLook?.(currentLook);
   } catch (err) {
     // Keep playing solo if the realtime service is unreachable.
     console.warn('Multiplayer unavailable:', err);
@@ -2766,6 +2771,8 @@ function leaveStore() {
   // Trying something on only lasts while you are in the shop: walking out
   // without buying puts your own look back.
   if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
+  if (pool.mode?.kind === 'race') endRace(); // (friends hear we left)
+  if (wearingSwim()) setLook(myLook); // out of the pool hall: own clothes back before the street sees you
   if (subway.metro) endMetro(); // (a taxi or teleport from the train)
   endRide();
   cable = null;
@@ -4590,6 +4597,8 @@ const pool = {
   mode: null, // null | { kind: 'board', b } | { kind: 'dive', b, t, queued, rot } | { kind: 'race', ... }
   welcomed: 0, tip: -1,
   suit: 0, // which swimsuit you wear in the hall
+  opens: new Map(), // races friends opened in the hall: rid -> { from, name, lane, lanes, joined, endsAt }
+  lastRace: null, // our finished race with friends, while their times come in
 };
 const wearingSwim = () => typeof currentLook?.model === 'string' && currentLook.model.startsWith('swim-');
 function wearSwim(id) {
@@ -4607,7 +4616,7 @@ function poolHud() {
   if (m?.kind === 'race') {
     const r = m.race;
     $('pool-score').textContent = fmt(L(PT.hudRace), { m: Math.floor(r.x), t: Math.max(0, r.t).toFixed(1) });
-    $('pool-sub').textContent = r.started ? '' : L(PT.ready);
+    $('pool-sub').textContent = r.started ? '' : r.t < -COUNTDOWN ? fmt(L(PT.waiting), { s: Math.ceil(-r.t - COUNTDOWN), n: m.mates.size + 1 }) : L(PT.ready);
   } else {
     const s = poolLog.s;
     $('pool-score').textContent = fmt(L(PT.hudPool), { race: s.bestRace ? s.bestRace.toFixed(2) + 's' : '–', dive: s.bestDive || '–' });
@@ -4617,12 +4626,16 @@ function poolHud() {
 const hall = () => interior?.pool ? interior : null;
 
 // ---- the race ----
-function startRace(lane) {
-  if (pool.mode) return;
-  pool.tube = false;
-  const race = new Race(lane, rivalPaces());
-  const lanes = rivalLanes(lane);
-  const rivals = lanes.map((ln, i) => {
+// Alone in the hall: three rival swimmers, off after the countdown. With
+// other players in the hall the block opens a race first (LOBBY seconds,
+// or Start now): friends who step on a block join, everyone counts down
+// together, and the board ranks the real swimmers. Nobody joined: the
+// rivals swim instead. (Messages: core/pool.js raceMsg.)
+const raceRid = () => Math.random().toString(36).slice(2, 9);
+const poolFriends = () => others.players.size > 0;
+function spawnRivals(race, lane) {
+  race.paces = rivalPaces();
+  return rivalLanes(lane).map((ln, i) => {
     const o = makeNpc($('labels'), RIVAL_NAMES[i], RIVAL_LOOKS[i]);
     o.lane = ln;
     o.ch.root.position.set(COMP.x0 - 0.55, 0.58, laneZ(ln));
@@ -4630,13 +4643,101 @@ function startRace(lane) {
     interior.scene.add(o.ch.root);
     return o;
   });
-  pool.mode = { kind: 'race', race, rivals, lane, count: 4, after: 0 };
-  hall().setRaceMode(true);
+}
+function onBlock(lane) {
   me.root.position.set(COMP.x0 - 0.55, 0.58, laneZ(lane));
   me.root.rotation.y = Math.PI / 2;
   cam.yaw = 0.55; // from the deck side, looking along the lanes
+}
+function startRace(lane) {
+  if (pool.mode) return;
+  pool.tube = false;
+  const friends = poolFriends();
+  const race = new Race(lane, []);
+  if (friends) race.t = -(LOBBY + COUNTDOWN);
+  const m = { kind: 'race', race, rivals: [], lane, count: 4, after: 0, rid: friends ? raceRid() : null, host: true, mates: new Map(), sent: 0 };
+  if (!friends) m.rivals = spawnRivals(race, lane);
+  pool.mode = m;
+  pool.lastRace = null;
+  hall().setRaceMode(true);
+  onBlock(lane);
+  if (friends) { sendRaceOpen(m); shop.toast(fmt(L(PT.opened), { s: LOBBY })); } else shop.toast(L(PT.raceHint));
+  action = STALE;
+}
+const lobbyLeft = (r) => Math.max(0, -r.t - COUNTDOWN);
+function sendRaceOpen(m) { m.sent = performance.now(); net.sendEmote(raceMsg('open', m.rid, { lane: m.lane, left: lobbyLeft(m.race) })); }
+// Join a race a friend opened, in the lane you stand at or the nearest free one.
+function joinRace(o, want) {
+  if (pool.mode) return;
+  const lane = pickLane(want, o.lanes);
+  if (lane < 0) return;
+  pool.tube = false;
+  const race = new Race(lane, []);
+  race.t = -(Math.max(0, (o.endsAt - performance.now()) / 1000) + COUNTDOWN);
+  const mates = new Map([[o.from, { name: o.name, lane: o.lane, time: null }]]);
+  for (const [id, j] of o.joined) if (id !== myId) mates.set(id, { ...j, time: null });
+  pool.mode = { kind: 'race', race, rivals: [], lane, count: 4, after: 0, rid: o.rid, host: false, mates };
+  pool.lastRace = null;
+  o.lanes.add(lane);
+  hall().setRaceMode(true);
+  onBlock(lane);
+  net.sendEmote(raceMsg('join', o.rid, lane));
   shop.toast(L(PT.raceHint));
   action = STALE;
+}
+function raceStartNow() {
+  const m = pool.mode;
+  if (m?.kind !== 'race' || !m.host || m.race.t >= -COUNTDOWN) return;
+  m.race.t = -COUNTDOWN - 0.01;
+  if (m.rid) sendRaceOpen(m);
+}
+// A race message from someone in the hall.
+function onPoolRace(id, msg) {
+  if (!interior?.pool || safety.isBlocked(id, others.nameOf(id))) return;
+  const name = others.nameOf(id) || '?';
+  const now = performance.now();
+  const m = pool.mode?.kind === 'race' && pool.mode.rid === msg.rid ? pool.mode : null;
+  if (msg.verb === 'open') {
+    let o = pool.opens.get(msg.rid);
+    if (!o) {
+      o = { rid: msg.rid, from: id, name, lane: msg.lane, lanes: new Set([msg.lane]), joined: new Map() };
+      pool.opens.set(msg.rid, o);
+      if (!pool.mode && msg.left > 0.5) shop.toast(fmt(L(PT.invite), { name }));
+    }
+    o.endsAt = now + msg.left * 1000;
+    if (m && !m.race.started) { // line up with the host's clock
+      const want = -(msg.left + COUNTDOWN);
+      if (Math.abs(m.race.t - want) > 0.25) m.race.t = want;
+    }
+    action = STALE;
+  } else if (msg.verb === 'join') {
+    const o = pool.opens.get(msg.rid);
+    if (o) { o.lanes.add(msg.lane); o.joined.set(id, { name, lane: msg.lane }); }
+    if (m && !m.mates.has(id)) {
+      m.mates.set(id, { name, lane: msg.lane, time: null });
+      shop.toast(fmt(L(PT.joined), { name, n: msg.lane + 1 }));
+      if (m.host) sendRaceOpen(m); // so the newcomer's clock matches
+    }
+  } else if (msg.verb === 'fin') {
+    const r = m || (pool.lastRace?.rid === msg.rid ? pool.lastRace : null);
+    const mate = r?.mates.get(id);
+    if (mate && mate.time == null) { mate.time = msg.time; if (r.race?.done || r === pool.lastRace) drawFriendBoard(r); }
+  } else if (msg.verb === 'quit') {
+    pool.opens.get(msg.rid)?.joined.delete(id);
+    if (pool.opens.get(msg.rid)?.from === id) pool.opens.delete(msg.rid);
+    const r = m || (pool.lastRace?.rid === msg.rid ? pool.lastRace : null);
+    if (r?.mates.get(id)?.time == null) r?.mates.delete(id);
+  }
+}
+// The open race (not ours) a block could join, if any.
+function joinableRace() {
+  const now = performance.now();
+  let best = null;
+  for (const [rid, o] of pool.opens) {
+    if (o.endsAt < now - 500 || !others.players.has(o.from)) { if (o.endsAt < now - 60e3 || !others.players.has(o.from)) pool.opens.delete(rid); continue; }
+    if (o.endsAt > now + 300 && (!best || o.endsAt < best.endsAt)) best = o;
+  }
+  return best;
 }
 function strokeTap() {
   const m = pool.mode;
@@ -4655,11 +4756,30 @@ function racePos(s, t, lane) {
 function raceTick(dt, p) {
   const m = pool.mode, r = m.race;
   const before = Math.ceil(-r.t);
-  for (const ev of r.step(dt)) {
-    if (ev === 'go') { skatePop(L(PT.go), 'big'); sfx.skatePop(); action = STALE; }
-    if (ev === 'finish') finishRace();
+  const lobby = r.t < -COUNTDOWN;
+  // The race runs on the real clock, not the frame time (capped when frames
+  // are slow), so friends on slow and fast devices start and finish together.
+  const now = performance.now() / 1000;
+  let rdt = m.clock ? Math.min(1, now - m.clock) : dt;
+  m.clock = now;
+  while (rdt > 1e-6) {
+    const step = Math.min(0.05, rdt);
+    rdt -= step;
+    for (const ev of r.step(step)) {
+      if (ev === 'go') { skatePop(L(PT.go), 'big'); sfx.skatePop(); action = STALE; }
+      if (ev === 'finish') finishRace();
+    }
+    if (r.done) break;
   }
-  if (!r.started && before !== Math.ceil(-r.t) && Math.ceil(-r.t) > 0) skatePop(String(Math.ceil(-r.t)));
+  if (lobby && r.t >= -COUNTDOWN) { // the lobby closed
+    if (m.host && m.rid) sendRaceOpen(m);
+    if (m.host && !m.mates.size) { m.rivals = spawnRivals(r, m.lane); m.rid && net.sendEmote(raceMsg('quit', m.rid)); m.rid = null; shop.toast(L(PT.raceHint)); }
+    action = STALE;
+  }
+  if (lobby && m.host && m.rid && performance.now() - m.sent > 2000) sendRaceOpen(m); // for anyone who just came in
+  const n = Math.ceil(-r.t);
+  if (!r.started && before !== n && n > 0 && n <= COUNTDOWN) skatePop(String(n));
+  if (lobby && before !== n) action = STALE; // the countdown on the button
   const me0 = racePos(r.x, r.t, m.lane);
   if (!r.started) { me0.x = COMP.x0 - 0.55; me0.y = 0.58; }
   p.set(me0.x, me0.y, me0.z);
@@ -4678,12 +4798,22 @@ function raceTick(dt, p) {
   });
   if (r.done) {
     m.after += dt;
-    const allIn = r.paces.every((pc) => pc <= r.t) || m.after > 6;
+    const allIn = m.mates.size ? true : r.paces.every((pc) => pc <= r.t) || m.after > 6;
     if (allIn && m.after > 2.5) endRace();
   }
 }
+// The board for a race with friends: everyone in, fastest first, '–' for
+// those still swimming.
+function drawFriendBoard(r) {
+  const rows = rankTimes([{ name: nickname || 'You', lane: r.lane, time: r.mine, me: true }, ...[...r.mates.values()].map((x) => ({ name: x.name, lane: x.lane, time: x.time }))]);
+  hall()?.drawBoard(L(PT.friendsRace), rows.map((row) => ({ place: row.place ? String(row.place) : '', lane: String(row.lane + 1), name: (row.place && MEDALS[row.place - 1] ? MEDALS[row.place - 1] + ' ' : '') + row.name, time: row.time != null ? row.time.toFixed(2) : '–', me: row.me })), 60);
+}
 function finishRace() {
-  const m = pool.mode, r = m.race, { time, place } = r.done;
+  const m = pool.mode, r = m.race, { time } = r.done;
+  // With friends: your place among those already in (anyone faster has
+  // touched the wall before you, so their time is here already).
+  const place = m.mates.size ? 1 + [...m.mates.values()].filter((x) => x.time != null && x.time < time).length : r.done.place;
+  r.done.place = place;
   const { coins, best } = poolLog.finishRace(time, place);
   skatePop(fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) }), place === 1 ? 'big' : 'land');
   let msg = fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) });
@@ -4691,15 +4821,21 @@ function finishRace() {
   if (coins) { wallet.add(coins, { name: { en: '50 m race', ko: '50m 레이스' }, at: interior?.store.name }); refreshWallet(); msg += ' · ' + fmt(L(PT.coins), { n: coins }); }
   shop.toast(msg);
   sfx.landed?.();
+  if (m.rid) net.sendEmote(raceMsg('fin', m.rid, time));
+  m.mine = time;
+  if (m.mates.size) { drawFriendBoard(m); return; }
   const rows = [{ name: nickname || 'You', lane: m.lane + 1, time, me: true }, ...m.rivals.map((o, i) => ({ name: o.name.replace(/^\S+\s/, ''), lane: o.lane + 1, time: r.paces[i] }))]
     .sort((a, b) => a.time - b.time)
     .map((row, i) => ({ ...row, place: MEDALS[i] ? String(i + 1) : '', lane: String(row.lane), time: row.time.toFixed(2) }));
-  hall().drawBoard('50 m · ' + (getLanguage() === 'ko' ? '결과' : 'RESULTS'), rows);
+  hall().drawBoard(L(PT.results), rows, 60);
 }
 function endRace() {
   const m = pool.mode;
   if (m?.kind !== 'race') return;
   for (const o of m.rivals) { o.ch.root.removeFromParent(); o.tag.remove(); o.bubble?.remove(); }
+  if (m.rid && !m.race.done) net.sendEmote(raceMsg('quit', m.rid));
+  // Friends still swimming: their times keep coming onto the board.
+  pool.lastRace = m.rid && m.mates.size && m.race.done ? { rid: m.rid, lane: m.lane, mine: m.mine, mates: m.mates } : null;
   hall()?.setRaceMode(false);
   pool.mode = null;
   action = STALE;
@@ -4767,6 +4903,8 @@ function poolTick(dt, p, mag = 0) {
       if (pool.mode?.kind === 'race') endRace();
       if (pool.mode?.kind === 'dive') me.setTrick(null, 0);
       pool.mode = null;
+      pool.opens.clear();
+      pool.lastRace = null;
       pool.tube = false;
       pool.act = null;
       pool.slow = 1;
@@ -4777,9 +4915,13 @@ function poolTick(dt, p, mag = 0) {
   }
   if (!pool.was) {
     pool.was = true;
-    if (!wearingSwim()) wearSwim(SWIMSUITS[pool.suit % SWIMSUITS.length]);
     if (performance.now() - pool.welcomed > 90e3) { pool.welcomed = performance.now(); shop.toast(L(PT.welcome)); }
+    // The scoreboard's "buy me a coffee" panel between races (like the street posters).
+    if (/^https:\/\//.test(config.supportUrl)) hall().setSupport({ qrUrl: (import.meta.env.BASE_URL || '/') + 'ads/support-qr.png', label: config.supportUrl.replace(/^https:\/\/(www\.)?/, ''), lang: signsTranslated ? getLanguage() : 'en' });
   }
+  // Swimwear the whole time you are in the hall: whatever else changed your
+  // look in here (a shirt from the bag, a rental, an outfit) waits until you leave.
+  if (!wearingSwim()) wearSwim(SWIMSUITS[pool.suit % SWIMSUITS.length]);
   pool.speed01 = null;
   const m = pool.mode;
   if (m?.kind === 'race') raceTick(dt, p);
@@ -4790,8 +4932,10 @@ function poolTick(dt, p, mag = 0) {
     me.root.rotation.y = -Math.PI / 2;
     pool.act = 'dive';
     pool.speed01 = 0;
+  } else if (seated) {
+    pool.act = null; pool.slow = 1; // on a lounger or in the stands (sitDown set the height)
   } else {
-    const w = seated ? null : waterAt(p.x, p.z);
+    const w = waterAt(p.x, p.z);
     const target = w ? SWIM_Y : 0;
     p.y += (target - p.y) * Math.min(1, dt * (w ? 6 : 10));
     if (!w && p.y > -0.15) p.y = 0;
@@ -4807,7 +4951,9 @@ function poolAction(p) {
   const m = pool.mode;
   if (m?.kind === 'race') return m.race.started && !m.race.done
     ? { key: 'pool-stroke', label: '🏊 ' + L(PT.stroke), run: strokeTap }
-    : { key: 'pool-wait', label: '🏁 ' + L(m.race.done ? PT.go : PT.ready), run: () => {} };
+    : m.race.t < -COUNTDOWN
+      ? (m.host ? { key: 'pool-start-now:' + Math.ceil(-m.race.t - COUNTDOWN), label: '▶️ ' + L(PT.startNow) + ' · ' + Math.ceil(-m.race.t - COUNTDOWN), run: raceStartNow } : { key: 'pool-wait-start', label: '🏁 ' + L(PT.waitStart), run: () => {} })
+      : { key: 'pool-wait', label: '🏁 ' + L(m.race.done ? PT.go : PT.ready), run: () => {} };
   if (m?.kind === 'board') return { key: 'pool-dive', label: '🤸 ' + L(PT.dive), run: startDive };
   if (m?.kind === 'dive') return { key: 'pool-flip', label: '🔄 ' + L(PT.flip), run: queueFlip };
   const near = (list, r) => (list || []).find((s) => Math.hypot(p.x - s.x, p.z - s.z) < r);
@@ -4820,6 +4966,8 @@ function poolAction(p) {
     ? { key: 'pool-tube-off', label: '🛟 ' + L(PT.tubePut), run: () => { pool.tube = false; action = STALE; } }
     : { key: 'pool-tube', label: '🛟 ' + L(PT.tubeTake), run: () => { pool.tube = true; action = STALE; } };
   const blk = !waterAt(p.x, p.z, 0) && near(st.blocks, 1.25);
+  const open = blk && joinableRace();
+  if (open) return { key: 'pool-join:' + open.rid, label: '🏁 ' + fmt(L(PT.join), { name: open.name }), run: () => joinRace(open, blk.lane) };
   if (blk) return { key: 'pool-race:' + blk.lane, label: '🏁 ' + fmt(L(PT.race), { n: blk.lane + 1 }), run: () => startRace(blk.lane) };
   const lad = near(st.ladders, 1.3);
   if (lad) { const b = boardById(lad.board); return { key: 'pool-climb:' + b.id, label: '🪜 ' + fmt(L(PT.climb), { h: b.h }), run: () => climbBoard(b) }; }
@@ -4841,6 +4989,7 @@ function lifeguardTip() {
   if (clerk) say(clerk, $('labels'), [ko, rom, L(tr)]);
 }
 onLanguageChange(poolHud);
+hiringRedraws.push((lang) => hall()?.setSupportLang(lang)); // the sign-translate button
 
 const BUSK_TEXT = {
   start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
@@ -6144,7 +6293,8 @@ function nearestSeat(p) {
   let best = null, bd = 1.3;
   for (const s of (mode === 'street' ? streetSeats : interior?.seats) || []) {
     const d = Math.hypot(p.x - s.x, p.z - s.z);
-    if (d < bd && !others.seatTaken?.(s.x, s.z)) { bd = d; best = s; }
+    const dd = d - (s.reach || 0); // (stands: sit from the deck in front of them)
+    if (dd < bd && !others.seatTaken?.(s.x, s.z)) { bd = dd; best = s; }
   }
   return best;
 }
@@ -7017,9 +7167,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
-    peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
+    peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
+    poolBoard: () => interior?.boardCanvas?.toDataURL(),
     pool: () => ({ act: pool.act, mode: pool.mode?.kind || null, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], swim: wearingSwim(), tube: pool.tube, race: pool.mode?.race ? { t: +pool.mode.race.t.toFixed(2), x: +pool.mode.race.x.toFixed(1), v: +pool.mode.race.v.toFixed(2), done: pool.mode.race.done } : null, log: { ...poolLog.s } }),
     peerTricks: () => [...others.players.values()].map((o) => [o.tk || '', +o.ch.root.position.y.toFixed(2)]),
     rideOn: (id) => { if (id) { garage.s.own.includes(id) || garage.s.own.push(id); garage.use(id); } setRiding(0); setRiding(1); },
