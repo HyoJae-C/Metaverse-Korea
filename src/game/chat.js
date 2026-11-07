@@ -211,6 +211,7 @@ export function createChat(game) {
     showBubble(myLabel, $('labels'), text, 6000, 'chat');
     addChatLine(game.nickname, text, 'mine');
     game.net.sendChat?.(text);
+    game.onChatSent?.();
     if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
   });
   chatInput.addEventListener('keydown', (e) => {

@@ -5,6 +5,8 @@
 const SETUP = 'Run <code>supabase/009_admin.sql</code> once in the Supabase dashboard (SQL Editor → New query → paste → Run, then <code>notify pgrst, \'reload schema\';</code>), then reload this page.';
 const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42703');
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+import { createRetention } from './retention.js';
+
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
 
 export function createPanels({ client, $, escapeHtml, agoText, describePlace, setStatus, go, notOperator, badge }) {
@@ -158,7 +160,8 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
   $('freeReload').onclick = () => board('free');
   $('playerReload').onclick = () => players();
   $('playerQ').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(players, 300); };
-  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players };
+  const retention = createRetention({ client, $, escapeHtml, notOperator });
+  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players, retention: retention.load };
   // The open-inquiry badge stays current even while another tab is open.
   const badges = async () => {
     if (document.hidden || current === 'overview') return;

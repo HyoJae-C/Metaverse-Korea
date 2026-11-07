@@ -44,6 +44,11 @@
       button.danger { color: #b2321f; }
       .empty { color: var(--muted); padding: 20px 0; text-align: center; }
       .scroll-x { overflow-x: auto; }
+      #tab-retention h3 { font-size: 15px; margin: 18px 0 8px; }
+      .rrow { display: grid; grid-template-columns: 96px 1fr minmax(120px, auto); gap: 10px; align-items: center; padding: 3px 0; }
+      .rrow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .rrow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .rrow .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
       header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
       header h1 { font-size: 16px; margin: 0; }
       #count { font-weight: 700; color: var(--street); }
@@ -83,6 +88,7 @@
       <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
       <button data-tab="free">Free board</button>
       <button data-tab="players">Players</button>
+      <button data-tab="retention">Retention</button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
       <div class="stats" id="stats"></div>
@@ -129,6 +135,17 @@
         <thead><tr><th>Player</th><th>Account</th><th>Joined</th><th>Last seen</th><th>Chat</th></tr></thead>
         <tbody id="playerList"></tbody>
       </table></div>
+    </div></section>
+    <section class="tab" id="tab-retention" hidden><div class="pad">
+      <div class="tools">
+        <select id="retDays" aria-label="Period">
+          <option value="14">Started in the last 14 days</option>
+          <option value="30" selected>Started in the last 30 days</option>
+          <option value="90">Started in the last 90 days</option>
+        </select>
+        <button id="retReload" type="button">Refresh</button>
+      </div>
+      <div id="retBody"><p class="empty">Loading…</p></div>
     </div></section>
     <div id="msg" hidden></div>
     <script type="module" src="/src/admin/admin.js"></script>

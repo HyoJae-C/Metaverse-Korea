@@ -296,7 +296,7 @@ async function start() {
 }
 
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'ask', 'free', 'players'];
+const TABS = ['overview', 'live', 'ask', 'free', 'players', 'retention'];
 let tab = null, panels = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';
