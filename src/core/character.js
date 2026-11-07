@@ -118,6 +118,7 @@ export function createCharacter(rawLook) {
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
   let openBook = null; // the book lying open on the table while reading
@@ -144,7 +145,7 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); wearMascot(); });
+  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
   return {
     root,
     head,
@@ -329,6 +330,11 @@ export function createCharacter(rawLook) {
       if (openBook) openBook.visible = name === 'read';
     },
     get activityName() { return activityName; },
+    // A scripted move: fn() returns bone offsets each frame (armL, armR,
+    // foreL, foreR, spine, head, legL, legR, kneeL, kneeR, in radians, as
+    // the dances use), laid over the idle or running clip. null stops it.
+    // Used for basketball shots (core/basketball-game.js shotMove).
+    setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);

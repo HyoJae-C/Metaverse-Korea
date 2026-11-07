@@ -598,6 +598,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let emote = null; // { key, t, dur }
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  let extMoves = null; // a scripted move (basketball shots): () => bone offsets
   let pullT = 0;
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
@@ -615,6 +616,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
     setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    // A scripted move laid over the clip: fn() → bone offsets, or null.
+    setMoves(fn) { extMoves = fn || null; },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -760,6 +763,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
         }
       }
+      if (extMoves) moves = extMoves() || moves; // basketball shots and other scripted moves
       if (moves) {
         for (const [name, bone] of Object.entries(dBones)) {
           const r = moves[name];
