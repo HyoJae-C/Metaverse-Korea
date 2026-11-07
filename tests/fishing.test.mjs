@@ -162,7 +162,7 @@ test('better rods cut the escape chance but never change which fish bite', async
   }
   const shark = fishById('shark');
   assert.equal(escapeChance(shark, 0, 0), escapeChance(shark));
-  assert.ok(rodHold('aurora') <= 0.4); // an edge, not a sure catch
+  assert.ok(rodHold('aurora') <= 0.25); // a small edge, not a sure catch
   assert.ok(Math.abs(escapeChance(shark, 0, rodHold('aurora')) - escapeChance(shark) * (1 - rodHold('aurora'))) < 1e-12);
   assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - escapeChance(shark) * 0.5 * 0.8) < 1e-12);
   assert.equal(escapeChance(TRASH, 0, 0.5), 0);
