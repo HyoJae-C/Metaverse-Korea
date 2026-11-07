@@ -120,7 +120,7 @@ import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, fishStampIcon, showMs } from './ui/fishing-ui.js';
-import { FishBag, FishDex, FISH, fishById } from './core/fishing.js';
+import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -3875,6 +3875,7 @@ const fishingUi = new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
   dex: fishDex,
+  stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);
@@ -3894,8 +3895,8 @@ const fishingUi = new FishingUI({
     sfx.pop?.();
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), fishStampIcon(f, 'bubble-fish tier-' + f.rarity), showMs(f));
-    if (f.chance <= 2) me.play('cheer'); // a rare one!
-    if (f.rarity >= TROPHY_RARITY) { // ★4–★5: a trophy over my head, for everyone nearby
+    if (f.rarity >= 3) me.play('cheer'); // a rare one!
+    if (f.rarity >= TROPHY_RARITY) { // ★3–★5: a trophy over my head, for everyone nearby
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);

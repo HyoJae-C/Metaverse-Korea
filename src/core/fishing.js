@@ -548,7 +548,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 120
+    "price": 70
   },
   {
     "id": "marlin",
@@ -561,7 +561,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 40
+    "price": 30
   },
   {
     "id": "tuna",
@@ -576,7 +576,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 30
+    "price": 22
   },
   {
     "id": "sea-turtle",
@@ -589,7 +589,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 25
+    "price": 20
   },
   {
     "id": "anglerfish",
@@ -666,10 +666,12 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // How often each rarity bites, in % of fish (trash comes on top). Each tier's
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
-export const TIER_SHARE = [0, 58.7, 28, 10, 3.2, 0.1];
+// ★3 is kept below any single ★2 kind while only two ★3 kinds are out
+// (2% each); ★4 and ★5 were raised after the first day felt too stingy.
+export const TIER_SHARE = [0, 61.6, 28, 4, 6, 0.4];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
-// less often. At a cast every 10 s this gives bluefin tuna about every
-// 15 min, the great white about every hour, the blue whale about every 3 h.
+// less often. At a fish every 12 s this gives bluefin tuna about every
+// 10 min, the great white about every 40 min, the blue whale about every hour.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
   'sea-turtle': 2, tuna: 2, marlin: 1, shark: 0.5, orca: 0.4, anglerfish: 0.8,
@@ -869,6 +871,51 @@ export class FishDex {
     return isNew;
   }
   _save() { try { this.storage?.setItem(DEX_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
+}
+
+// Fishing counters (mk.fishstats), for balancing: what happens to each cast.
+// The fish book only knows what was landed; these also count the casts, the
+// bites missed, the fish lost while reeling and the ones that slipped off.
+// Saved on this device, so the cloud save (every "mk." key) carries them.
+//   cast: lines thrown by hand   early: hooked before a bite
+//   bite: bites by rarity [trash, ★1…★5]   miss: bites not hooked in time
+//   lost: fish that got away while reeling, by rarity
+//   escape: fish that slipped off at the end, by rarity
+//   land: fish landed by hand, by rarity [trash, ★1…★5]
+//   lucky: bites at the lucky spot   auto: fish landed by auto fishing
+//   got: fish landed by hand, by kind { id: n }   gotAuto: the same for auto fishing
+//   since: when counting started (ms)
+const STATS_KEY = 'mk.fishstats';
+const tiers = () => [0, 0, 0, 0, 0, 0];
+export class FishStats {
+  constructor(storage = globalThis.localStorage, now = Date.now()) {
+    this.storage = storage;
+    let raw = {};
+    try { raw = JSON.parse(storage?.getItem(STATS_KEY) || '{}') || {}; } catch { raw = {}; }
+    const num = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const arr = v => tiers().map((_, i) => num(Array.isArray(v) ? v[i] : 0));
+    const kinds = v => Object.fromEntries(FISH.filter(f => num(v?.[f.id])).map(f => [f.id, num(v[f.id])]));
+    this.s = {
+      since: num(raw.since) || now,
+      cast: num(raw.cast), early: num(raw.early), miss: num(raw.miss), lucky: num(raw.lucky), auto: num(raw.auto),
+      bite: arr(raw.bite), lost: arr(raw.lost), escape: arr(raw.escape), land: arr(raw.land),
+      got: kinds(raw.got), gotAuto: kinds(raw.gotAuto),
+    };
+  }
+  // n: 'cast' | 'early' | 'miss' | 'lucky', a per-rarity counter
+  // ('bite' | 'lost' | 'escape' | 'land') with the fish, or 'auto' with the fish.
+  // Landing a fish (by hand or auto) also counts its kind in got / gotAuto.
+  add(n, fish) {
+    const v = this.s[n];
+    const kind = (k) => { if (fish && !fish.trash && fishById(fish.id)) this.s[k][fish.id] = (this.s[k][fish.id] || 0) + 1; };
+    if (n === 'land') kind('got');
+    if (n === 'auto') kind('gotAuto');
+    if (Array.isArray(v)) { if (!fish) return; v[fish.trash ? 0 : fish.rarity] += 1; }
+    else if (typeof v === 'number' && n !== 'since') this.s[n] = v + 1;
+    else return;
+    try { this.storage?.setItem(STATS_KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
+  }
+  get(n) { return this.s[n]; }
 }
 
 export const rarityStars = f => f.rarity;

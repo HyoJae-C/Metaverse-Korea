@@ -36,9 +36,9 @@ export function fishStampIcon(f, cls = 'fish-stamp-fish') {
   return icon;
 }
 
-// A ★4–★5 catch, shown over the angler's head for everyone nearby: the
+// A ★3–★5 catch, shown over the angler's head for everyone nearby: the
 // fish's picture in a burst of light and "<name> caught <fish>!".
-export const TROPHY_RARITY = 4;
+export const TROPHY_RARITY = 3;
 // How long a catch shows over the catcher's head, by rarity (ms): the rarer,
 // the longer (a ★5 legend stays up for 12 seconds).
 export const SHOW_MS = [0, 2500, 3000, 4500, 8000, 12000];
@@ -159,8 +159,9 @@ export class FishingUI {
   // dex: FishDex, every catch is recorded there too.
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
   // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
-  constructor({ root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky }) {
-    Object.assign(this, { root, bag, dex, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky });
+  // stats: FishStats (optional), counts what happens to each cast for balancing.
+  constructor({ root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky }) {
+    Object.assign(this, { root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -281,11 +282,12 @@ export class FishingUI {
 
   cast() {
     this.state = 'waiting';
+    this.stats?.add('cast');
     this.onPhase?.('cast');
     this._frame();
     const water = this._water(t('fish.waiting'), 'waiting');
     const btn = el('button', 'primary fish-hook', t('fish.hook'));
-    btn.onclick = () => { this.onPhase?.('retrieve'); this.renderIdle(t('fish.tooEarly')); }; // nothing has bitten yet
+    btn.onclick = () => { this.stats?.add('early'); this.onPhase?.('retrieve'); this.renderIdle(t('fish.tooEarly')); }; // nothing has bitten yet
     const actions = el('div', 'order-actions');
     actions.append(btn);
     this.root.append(water, actions);
@@ -294,7 +296,10 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    this.fish = rollCatch(Math.random, !!this.lucky?.());
+    const lucky = !!this.lucky?.();
+    this.fish = rollCatch(Math.random, lucky);
+    this.stats?.add('bite', this.fish);
+    if (lucky) this.stats?.add('lucky');
     this.onPhase?.('bite', this.fish);
     water.className = 'fish-water bite' + (this.fish.trash ? '' : ' t' + this.fish.rarity) + (isRare(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
@@ -302,7 +307,7 @@ export class FishingUI {
     if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));
     btn.classList.add('pulse');
     btn.onclick = () => this.reel();
-    this.timer = setTimeout(() => { this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
+    this.timer = setTimeout(() => { this.stats?.add('miss'); this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
   }
 
   reel() {
@@ -353,7 +358,7 @@ export class FishingUI {
       left -= 0.1;
       if (drain && taps > 0) { taps = Math.max(0, taps - drain * 0.1); this.onPhase?.('progress', taps / need); }
       paint();
-      if (left <= 0) { this.onPhase?.('retrieve'); this.renderIdle(t('fish.gotAway')); }
+      if (left <= 0) { this.stats?.add('lost', this.fish); this.onPhase?.('retrieve'); this.renderIdle(t('fish.gotAway')); }
     }, 100);
   }
 
@@ -390,6 +395,7 @@ export class FishingUI {
         const f = rollAutoCatch();
         if (!this.bag.add(f.id)) { this.onPhase?.('retrieve'); this.renderIdle(t('fish.full')); return; }
         got++;
+        this.stats?.add('auto', f);
         const isNew = this.dex ? this.dex.add(f.id) : false;
         this.onPhase?.('land', f);
         if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp });
@@ -424,14 +430,16 @@ export class FishingUI {
     clearInterval(this.tick);
     this.state = 'landed';
     const f = this.fish;
-    if (f.trash) { this.onPhase?.('trash'); this.renderTrash(f); return; }
-    if (Math.random() < escapeChance(f, spare)) { this.onPhase?.('escape'); this.escaped(f); return; }
+    if (f.trash) { this.stats?.add('land', f); this.onPhase?.('trash'); this.renderTrash(f); return; }
+    if (Math.random() < escapeChance(f, spare)) { this.stats?.add('escape', f); this.onPhase?.('escape'); this.escaped(f); return; }
+    this.stats?.add('land', f);
     this.onPhase?.('land', f);
     const kept = this.bag.add(f.id);
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
-    const card = el('div', 'fish-card' + (f.chance <= 2 ? ' rare' : ''));
+    const card = el('div', 'fish-card' + (f.rarity >= 3 ? ' rare tier-' + f.rarity : ''));
+    if (f.rarity >= 3) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(

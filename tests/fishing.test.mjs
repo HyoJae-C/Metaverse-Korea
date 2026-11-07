@@ -63,7 +63,7 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(dex.kinds,3);
   assert.equal(bag.add(TRASH.id),false);
   assert.equal(dex.add(TRASH.id),false);
-  assert.equal(bag.sellAll(),745);
+  assert.equal(bag.sellAll(), fishById('whale').price + 2 * fishById('shark').price + fishById('crab').price);
   assert.equal(new FishDex(st,bag).total,4);
   assert.equal(dex.add('whale'),false);
   assert.equal(dex.count('whale'),2);
@@ -149,4 +149,27 @@ test('the lucky spot moves around, boosts ★2 and up a little and halves the bo
   assert.equal(rollCatch(() => LUCKY_TRASH_CHANCE - 1e-6, true), TRASH);
   assert.notEqual(rollCatch(() => LUCKY_TRASH_CHANCE, true), TRASH);
   assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
+});
+
+test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishstats', async () => {
+  const { FishStats } = await import('../src/core/fishing.js');
+  const m = memory();
+  const s = new FishStats(m, 1000);
+  s.add('cast'); s.add('cast'); s.add('miss');
+  s.add('bite', fishById('whale')); s.add('escape', fishById('whale'));
+  s.add('land', TRASH); s.add('land', fishById('loach'));
+  s.add('since'); s.add('nope'); s.add('bite');
+  const again = new FishStats(m, 5000);
+  assert.equal(again.get('since'), 1000);
+  assert.equal(again.get('cast'), 2);
+  assert.equal(again.get('miss'), 1);
+  assert.deepEqual(again.get('bite'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('escape'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('land'), [1, 1, 0, 0, 0, 0]);
+  assert.deepEqual(again.get('got'), { loach: 1 });
+  again.add('auto', fishById('carp'));
+  assert.equal(again.get('auto'), 1);
+  assert.deepEqual(new FishStats(m).get('gotAuto'), { carp: 1 });
+  m.setItem('mk.fishstats', '{broken');
+  assert.equal(new FishStats(m, 7).get('cast'), 0);
 });
