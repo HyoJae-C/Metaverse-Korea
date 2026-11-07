@@ -66,7 +66,7 @@ import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { startWhereReports } from './net/where.js';
-import { createCounts, createFpsMeter, deviceClass, firstSrc, someoneNear, startSessionReports } from './core/sessions.js';
+import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
@@ -102,6 +102,7 @@ import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
+import { RUNWAY_STORE } from './core/runway-game.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
@@ -197,8 +198,13 @@ const itemEl = (id) => (itemEls[id] ||= $(id));
 // first so a failure while the world loads shows up too.
 const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
 let errBox = null;
+// Problems are also counted for the operator's numbers once the cloud is up
+// (see onProblem below); ones before that wait here.
+let onProblem = null;
+const earlyProblems = [];
 function reportProblem(msg) {
   console.error('[mk]', msg);
+  if (onProblem) onProblem(msg); else if (earlyProblems.length < 5) earlyProblems.push(msg);
   if (!errBox) {
     errBox = document.createElement('div');
     errBox.className = 'err-box';
@@ -229,6 +235,25 @@ await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
 const playCounts = createCounts();
+// The loading funnel (core/sessions.js createVisit): page open → pressed
+// Play → world loaded → a minute of play. (Test rooms run with ?debug,
+// which has no cloud, so nothing is sent from them.)
+let firstVisit = true;
+try { firstVisit = !localStorage.getItem('mk.made'); } catch { /* storage blocked */ }
+const visitDevice = deviceClass({ touch: navigator.maxTouchPoints > 0, width: screen.width, height: screen.height });
+const visit = createVisit({
+  send: (r) => cloud.reportVisit(r),
+  isNew: firstVisit, device: visitDevice, src: firstSrc(location.search),
+});
+visit.reach(STAGE.OPEN);
+// Errors: counted in the session and the message (digits removed, no
+// account id) sent for the operator's error list, a few per visit.
+const sendError = createErrorSender((m) => cloud.reportError(m));
+onProblem = (msg) => { playCounts.error(); sendError(msg); };
+for (const m of earlyProblems.splice(0)) onProblem(m);
+// Country statistics for the operator page: a guess from the time zone,
+// once a day per account (core/country.js). Loaded on the side; never waits.
+if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
@@ -475,6 +500,7 @@ await new Promise((resolve) => {
   };
 });
 $('status').textContent = '';
+visit.reach(STAGE.PRESSED); // loading time counts from here
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
 // Costumes are bought now, so only the name is locked.
@@ -496,6 +522,7 @@ try {
   map = await mapPromise;
 } catch (err) {
   $('status').textContent = t(err.code === 'noMap' ? 'error.noMap' : 'error.generic');
+  visit.fail();
   throw err;
 }
 
@@ -951,6 +978,16 @@ const myLabel = { tag: myTag, bubble: null };
 const input = new Input(canvas, $('joystick'));
 $('hud').hidden = false;
 $('start').hidden = true;
+// The world is up: loading is done. A minute of visible play is the last
+// funnel step.
+visit.reach(STAGE.LOADED);
+{
+  let seen = 0;
+  const minute = setInterval(() => {
+    if (document.hidden) return;
+    if (++seen >= 60) { visit.reach(STAGE.MINUTE); clearInterval(minute); }
+  }, 1000);
+}
 $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
@@ -2146,6 +2183,18 @@ function enterStore(item) {
     });
   }
   interior.audienceNpcs = built.audienceNpcs || null;
+  // DDP Hall: visitors already standing round, looking at the design pieces.
+  if (built.stations?.visitors && !built.visitorNpcs) {
+    built.visitorNpcs = built.stations.visitors.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.visitorNpcs = built.visitorNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2233,9 +2282,31 @@ function backToPark() {
   if (mode !== 'store' || !park || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
   if (hauntUi.open) hauntUi.close();
+  if (runwayUi.open) runwayUi.close();
+  standUp();
+  const fromRunway = interior.store.workshop === 'runway';
   enterStore(park);
-  // Out in front of the door, the camera to the side so the house stays in view.
-  moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
+  if (fromRunway) {
+    // Back in DDP Hall, in front of the runway's door, facing into the hall.
+    const d = interior.stations.runwayDoor[0];
+    moveMeTo(interior.scene, d.x, d.z + 0.6, 0, 0.5); // (the camera out in the hall)
+  } else {
+    // Out in front of the door, the camera to the side so the house stays in view.
+    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
+  }
+  hauntFade();
+}
+
+// DDP Hall's back door: the Curve Runway is its own room behind it (as with
+// the haunted house, the way out to the street is still the hall's front door;
+// the runway's door leads back into the hall).
+function enterRunwayRoom() {
+  if (mode !== 'store' || interior?.store.workshop !== 'ddp-hall' || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  const front = interior.front;
+  standUp();
+  for (const o of interior.visitorNpcs || []) { o.bubble?.remove(); o.bubble = null; }
+  enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
 }
 
@@ -2779,8 +2850,10 @@ const decorGame = createDecor({
 });
 const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, openPiece, updateCarry } = decorGame;
 
-// Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
+// Coins and the rewarded-ad slot. The balance is kept on the server once
+// supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
 // Anonymous session reports for the operator's retention numbers
@@ -2793,7 +2866,9 @@ if (!testRoom) {
   const src = firstSrc(location.search);
   startSessionReports({
     get: () => (tabParked || !me?.root ? null : { region: regionId, device, src }),
-    send: (r) => cloud.reportSession(r),
+    // Plus how far along the first path the player is (-1: never on it)
+    // and the language setting, read fresh at each report.
+    send: (r) => cloud.reportSession({ ...r, counts: { ...r.counts, starter: quests.starterStep ?? -1, lang: getLanguage() } }),
     counts: playCounts,
     fps: createFpsMeter(),
     tick: (sec) => {
@@ -3817,7 +3892,7 @@ function boardCable(i, st) {
   const c = cabinAt(i, cableClock());
   if (c.at !== st || !doorsOpen(c)) return;
   if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
-  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2 };
+  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? wallet.lastOp : null };
   cam.yaw = st === 'low' ? 0 : Math.PI; // look along the way, the view behind
   sendTimer = 0;
   if (st === 'low') missionEvent('ride');
@@ -3825,7 +3900,7 @@ function boardCable(i, st) {
 function getOffCable(refund) {
   if (!cable) return;
   const s = boardSpot(cable.cabin, cable.from);
-  if (refund && cable.from === 'low') wallet.add(CABLE.fare, { k: 'ledger.cable' });
+  if (refund && cable.from === 'low') wallet.refund(CABLE.fare, cable.paid, { k: 'ledger.cable' });
   me.root.position.set(s.x, s.y, s.z);
   cable = null;
   sendTimer = 0;
@@ -4229,7 +4304,7 @@ $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
 createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
 // with a word to spend it wisely. Players from before it get it too.
-{
+walletReady.then(() => {
   const gift = wallet.welcome();
   if (gift) {
     refreshWallet();
@@ -4240,12 +4315,13 @@ createLedger({ $, wallet });
     $('welcome-panel').hidden = false;
     $('welcome-close').onclick = () => { $('welcome-panel').hidden = true; };
   }
-}
+});
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
   const music0 = music.on;
   if (music0) music.setOn(false); // a real ad has its own sound
   const n = await wallet.watchAd(showAd);
+  if (n) playCounts.ad(); // retention counts (core/sessions.js)
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
@@ -4300,7 +4376,9 @@ function talkToGuide() {
   squareNpc.ch.wave();
   const q = quests.active;
   if (q && quests.ready(questCtx())) {
+    const starterQuest = q.starter != null;
     const coins = quests.claim(questCtx());
+    if (!starterQuest) playCounts.quest(); // retention counts: a mission beyond the first path
     if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
     // Busy square bonus: +1 for everyone else standing around the guide.
     const g = squareNpc.ch.root.position;
@@ -4610,7 +4688,7 @@ function updateAction(p, tSec) {
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'haunt-out', label: '🚪 ' + L(HAUNT_TEXT.back), run: () => backToPark() };
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -4632,6 +4710,8 @@ function updateAction(p, tSec) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
+    } else if (nearStation(p, 'runwayDoor', 1.8)) {
+      next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
@@ -5161,6 +5241,7 @@ renderer.setAnimationLoop(() => {
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
+    for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
@@ -5273,6 +5354,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    backOut: () => backToPark(), // (the runway or haunted house back to its hall or park)
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
