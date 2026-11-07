@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { POOL_ROOM, WATER_Y, SWIM_Y, COMP, LANE_W, DIVE, LEISURE, BOARDS, laneZ } from './pool.js';
 import { createCharacter } from './character.js';
+import { drawSupport } from './support-poster.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -258,10 +259,35 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
     });
     boardTex.needsUpdate = true;
   };
-  drawBoard('OLYMPIC PARK POOL · 50 m', [
-    { place: '', lane: 'LANE', name: 'Race from the blocks at this end!', time: '' },
-    { place: '', lane: '', name: '출발대에서 50m 레이스를 시작해요', time: '' },
-  ]);
+  // Between races the board shows the welcome and a "buy me a coffee" panel
+  // (core/support-poster.js; main.js passes the QR and link with setSupport),
+  // and results stay up for a while after a race.
+  let support = null, hold = 0; // support: { qr, label, lang }; hold: seconds the results stay
+  const sub = document.createElement('canvas');
+  sub.width = 640; sub.height = 400;
+  const drawIdle = () => {
+    hold = 0;
+    if (!support) {
+      drawBoard('OLYMPIC PARK POOL · 50 m', [
+        { place: '', lane: 'LANE', name: 'Race from the blocks at this end!', time: '' },
+        { place: '', lane: '', name: '출발대에서 50m 레이스를 시작해요', time: '' },
+      ]);
+      return;
+    }
+    const g = boardCanvas.getContext('2d');
+    g.fillStyle = '#10161f'; g.fillRect(0, 0, 1024, 420);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#ffd93d';
+    fit(g, 'OLYMPIC PARK POOL', 40, 300); g.fillText('OLYMPIC PARK POOL', 182, 70);
+    g.font = `900 110px ${FONT}`; g.fillText('50 m', 182, 175);
+    g.fillStyle = '#e8eef5';
+    fit(g, 'Race from the blocks!', 30, 310, 700); g.fillText('Race from the blocks!', 182, 280);
+    fit(g, '출발대에서 레이스!', 30, 310, 700); g.fillText('출발대에서 레이스!', 182, 325);
+    drawSupport(sub.getContext('2d'), support.lang, support.qr, support.label);
+    g.drawImage(sub, 368, 10, 640, 400);
+    boardTex.needsUpdate = true;
+  };
+  drawIdle();
   const board = new THREE.Mesh(new THREE.PlaneGeometry(14, 14 * 420 / 1024), new THREE.MeshBasicMaterial({ map: boardTex }));
   board.position.set(-w / 2 + 0.06, 6.2, (COMP.z0 + COMP.z1) / 2);
   board.rotation.y = Math.PI / 2;
@@ -270,11 +296,18 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
   board.position.x += 0.12;
 
   // ---- stands along the back wall ----
+  const standSeats = [];
   const seatColors = ['#2f7fc1', '#ffd93d', '#e5383b', '#39b56a', '#1d1b22'];
   for (let i = 0; i < 3; i++) {
     const z = -d / 2 + 2.4 - i * 0.8, y = 0.5 * (i + 1);
     box(COMP.x1 - COMP.x0, y, 0.8, (COMP.x0 + COMP.x1) / 2, y / 2, z, '#c9d3d8');
-    for (let x = COMP.x0 + 0.6; x < COMP.x1 - 0.4; x += 0.75) box(0.5, 0.12, 0.42, x, y + 0.06, z + 0.1, seatColors[Math.floor((x - COMP.x0) / 6) % seatColors.length]);
+    for (let x = COMP.x0 + 0.6; x < COMP.x1 - 0.4; x += 0.75) {
+      box(0.5, 0.12, 0.42, x, y + 0.06, z + 0.1, seatColors[Math.floor((x - COMP.x0) / 6) % seatColors.length]);
+      // The two front rows are seats you can sit on to watch a race (the
+      // back row is out of reach from the deck). reach: sit from a little
+      // further away, since the deck ends at the stands.
+      if (i < 2) standSeats.push({ x, z: z + 0.1, y: y + 0.12 - 0.38, ry: 0, stand: [x, -d / 2 + 3.15], reach: 0.6 * i + 0.2, stands: true });
+    }
   }
   block((COMP.x0 + COMP.x1) / 2, -d / 2 + 1.4, COMP.x1 - COMP.x0, 2.8);
 
@@ -304,7 +337,7 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
   sign('다이빙', 'DIVING', (DIVE.x0 + DIVE.x1) / 2, 6.4, -d / 2 + 0.05, 0, 8);
 
   // ---- rest corner: loungers, little tables, plants; tubes to borrow ----
-  const seats = [];
+  const seats = [...standSeats];
   for (let i = 0; i < 6; i++) {
     const z = 4.4 + i * 2.6, x = w / 2 - 2.2;
     box(2.0, 0.42, 0.85, x, 0.21, z, '#f4f1ea');
@@ -407,6 +440,7 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
 
   let t = 0;
   const animate = (dt) => {
+    if (hold > 0 && !raceOn && (hold -= dt) <= 0) drawIdle();
     t += dt;
     for (const m of water) if (m.material.map) { m.material.map.offset.x = (t * 0.02) % 1; m.material.map.offset.y = Math.sin(t * 0.3) * 0.05; }
     for (const o of drift) {
@@ -436,7 +470,19 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
   return {
     scene, products: [], colliders, seats, clerk, trainer: null, barkeep: null, turntable: null, tv: null, stations, animate, see: null,
     room: ROOM, exit: EXIT, noExit: false, pool: true,
-    drawBoard,
+    boardCanvas, // (debug: what the scoreboard shows)
+    // Results (or anything else) on the board; after holdSec it goes back to
+    // the welcome and support panel.
+    drawBoard(title, rows, holdSec = 0) { drawBoard(title, rows); hold = holdSec; },
+    setSupport({ qrUrl, label = '', lang = 'en' }) {
+      support = { qr: null, label, lang };
+      if (!hold) drawIdle();
+      if (!qrUrl) return;
+      const img = new Image();
+      img.onload = () => { support.qr = img; if (!hold) drawIdle(); };
+      img.src = qrUrl;
+    },
+    setSupportLang(lang) { if (!support || support.lang === lang) return; support.lang = lang; if (!hold) drawIdle(); },
     setRaceMode(on) { raceOn = on; },
   };
 }

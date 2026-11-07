@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { FISH, fishById } from '../src/core/fishing.js';
-import { FISH_PLACES, placeFish, fishPlaceOf, placeChance, rollPlaceCatch, rollPlaceAuto } from '../src/core/fish-places.js';
+import { FISH_PLACES, placeFish, fishPlaceOf, placeChance, rollPlaceCatch, rollPlaceAuto, usualChance, noBiteAt } from '../src/core/fish-places.js';
+import { AVAILABLE_FISH } from '../src/core/fishing.js';
 import { forceNextCatch, takeForcedCatch } from '../src/core/fish-luck.js';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
@@ -96,4 +97,26 @@ test('fishing elsewhere never lands a Mangwon fish; at Mangwon about a fifth of 
   assert.equal(rollPlaceCatch('mangwon', () => 0).id, 'whale');
   takeForcedCatch();
   assert.ok(FISH.every((f) => fishById(f.id)));
+});
+
+test('the blue whale only bites at the Ttukseom Han River park, never at Mangwon', () => {
+  let seed = 11;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const whale = fishById('whale');
+  assert.ok(noBiteAt('mangwon', whale) && !noBiteAt(null, whale));
+  assert.equal(usualChance(whale, 'mangwon'), 0);
+  assert.equal(usualChance(whale, null), whale.chance);
+  // The other usual kinds fill its part, at the lucky spot too.
+  for (const lucky of [false, true]) {
+    const sum = AVAILABLE_FISH.reduce((a, f) => a + usualChance(f, 'mangwon', lucky), 0);
+    assert.ok(Math.abs(sum - 100) < 1e-9, `${sum}`);
+  }
+  // Pick rolls that would be a whale (the top of the usual table) and many more.
+  let whales = 0, home = 0;
+  for (let i = 0; i < 200000; i++) {
+    if (rollPlaceCatch('mangwon', rand, i % 2 === 0).id === 'whale') whales++;
+    if (rollPlaceCatch(null, rand).id === 'whale') home++;
+  }
+  assert.equal(whales, 0, 'no whale at Mangwon');
+  assert.ok(home > 400 && home < 1200, `${home} whales of 200000 at Ttukseom (0.4% of fish)`);
 });

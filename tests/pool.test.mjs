@@ -119,3 +119,19 @@ test('records and the paid races of the day', () => {
   assert.equal(again.paidLeft, DAILY_PAID, 'a new day');
   assert.equal(again.s.bestRace, 17, 'the best time stays');
 });
+
+test('racing friends: messages, lanes and places', async () => {
+  const { raceMsg, parseRaceMsg, pickLane, rankTimes, LOBBY } = await import('../src/core/pool.js');
+  assert.deepEqual(parseRaceMsg(raceMsg('open', 'ab12', { lane: 3, left: 7.46 })), { verb: 'open', rid: 'ab12', lane: 3, left: 7.5 });
+  assert.equal(parseRaceMsg(raceMsg('open', 'ab12', { lane: 3, left: 99 })).left, LOBBY); // never longer than the lobby
+  assert.deepEqual(parseRaceMsg(raceMsg('join', 'ab12', 5)), { verb: 'join', rid: 'ab12', lane: 5 });
+  assert.deepEqual(parseRaceMsg(raceMsg('fin', 'ab12', 21.456)), { verb: 'fin', rid: 'ab12', time: 21.46 });
+  assert.deepEqual(parseRaceMsg(raceMsg('quit', 'ab12')), { verb: 'quit', rid: 'ab12' });
+  for (const bad of ['prace:join:ab12:9', 'prace:join:AB!:1', 'prace:fin:ab12:100', 'prace:open:ab12:1', 'hi5:x', 42, null]) assert.equal(parseRaceMsg(bad), null);
+  assert.equal(pickLane(3, new Set()), 3);
+  assert.equal(pickLane(3, new Set([3])), 2);
+  assert.equal(pickLane(0, new Set([0, 1])), 2);
+  assert.equal(pickLane(0, new Set([0, 1, 2, 3, 4, 5, 6, 7])), -1);
+  const ranked = rankTimes([{ name: 'a', time: 22 }, { name: 'b', time: null }, { name: 'c', time: 19.5 }]);
+  assert.deepEqual(ranked.map((r) => [r.name, r.place]), [['c', 1], ['a', 2], ['b', null]]);
+});

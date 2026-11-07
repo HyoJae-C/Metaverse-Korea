@@ -4,6 +4,7 @@
 import { getLanguage, localName } from '../core/i18n.js';
 import { CREDIT, DISCLAIMER, FLOORS, COMING_SOON } from '../data/paintings.js';
 import { paintingUrl, hallsOn } from '../core/museum.js';
+import { NOT_TRANSLATED } from '../data/war-memorial.js';
 
 export const MUSEUM_TEXT = {
   look: { en: 'Look at the painting', ko: '그림 보기', ja: '絵を見る', zh: '看画', es: 'Ver la pintura', id: 'Lihat lukisan', vi: 'Xem tranh', hi: 'चित्र देखें', ar: 'شاهد اللوحة' },
@@ -14,6 +15,18 @@ export const MUSEUM_TEXT = {
   credit: { en: 'Image', ko: '이미지', ja: '画像', zh: '图片', es: 'Imagen', id: 'Gambar', vi: 'Ảnh', hi: 'तस्वीर', ar: 'الصورة' },
 };
 const T = (k) => localName(MUSEUM_TEXT[k], getLanguage());
+
+// The War History Museum's history text comes in Korean, English, Japanese
+// and Chinese (data/war-memorial.js): a card shows Korean and the player's
+// language, or Korean and English with a notice in the other languages.
+const langsShown = () => {
+  const l = getLanguage();
+  return l === 'ko' || !['en', 'ja', 'zh', 'zht'].includes(l) ? ['ko', 'en'] : ['ko', l];
+};
+const notTranslated = () => {
+  const text = NOT_TRANSLATED[getLanguage()];
+  return text && !['en', 'ko'].includes(getLanguage()) ? el('p', 'museum-notice', text) : null;
+};
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -36,12 +49,16 @@ export class MuseumUI {
     img.alt = `${p.title.en} (${p.title.ko})`;
     img.decoding = 'async';
     img.onerror = () => { img.hidden = true; }; // (a War Memorial photo not added yet)
-    const ko = el('div', 'museum-lang');
-    ko.lang = 'ko';
-    ko.append(el('h3', null, p.title.ko), el('p', 'museum-meta', [p.artist.ko, p.era.ko, p.set?.ko].filter(Boolean).join(' · ')), el('p', null, p.desc.ko));
-    const en = el('div', 'museum-lang');
-    en.lang = 'en';
-    en.append(el('h3', null, p.title.en), el('p', 'museum-meta', [p.artist.en, p.era.en, p.set?.en].filter(Boolean).join(' · ')), el('p', null, p.desc.en));
+    // Korean and English; a War History Museum photo shows Korean and the
+    // player's language where it has one (see langsShown).
+    const blocks = (p.credit ? langsShown() : ['ko', 'en']).map((lang) => {
+      const b = el('div', 'museum-lang');
+      b.lang = lang === 'zht' ? 'zh-Hant' : lang;
+      const L2 = (o) => (o ? localName(o, lang) : null);
+      b.append(el('h3', null, L2(p.title)), el('p', 'museum-meta', [L2(p.artist), L2(p.era), L2(p.set)].filter(Boolean).join(' · ')), el('p', null, L2(p.desc)));
+      return b;
+    });
+    const notice = p.credit ? notTranslated() : null;
     // A painting from the museum, or a War Memorial photo with its own credit.
     const credit0 = p.credit || CREDIT, disclaimer = p.disclaimer || DISCLAIMER;
     const link = el('a', null, (p.source ? localName(p.source, getLanguage()) : T('source')) + ' ↗');
@@ -50,7 +67,27 @@ export class MuseumUI {
     link.rel = 'noopener';
     const credit = el('p', 'museum-credit', `🖼️ ${T('credit')}: ${credit0.ko} (${credit0.en}) · ${p.no} · `);
     credit.append(link);
-    this.root.replaceChildren(x, img, ko, en, credit, el('p', 'fine', localName(disclaimer, getLanguage())));
+    this.root.replaceChildren(x, img, ...(notice ? [notice] : []), ...blocks, credit, el('p', 'fine', localName(disclaimer, getLanguage())));
+    this.root.hidden = false;
+  }
+
+  // A reading panel (the War History Museum's lobby boards): a title and
+  // paragraphs in Korean, then in English.
+  // t: { title, lines: [{ ko, en, ja, zh }] }.
+  showText(t) {
+    const x = el('button', 'sheet-x', '✕');
+    x.setAttribute('aria-label', 'Close');
+    x.onclick = () => this.close();
+    const parts = [x];
+    const notice = notTranslated();
+    if (notice) parts.push(notice);
+    for (const lang of langsShown()) {
+      const box = el('div', 'museum-lang');
+      box.lang = lang === 'zht' ? 'zh-Hant' : lang;
+      box.append(el('h3', null, localName(t.title, lang)), ...t.lines.map((line) => el('p', null, localName(line, lang))));
+      parts.push(box);
+    }
+    this.root.replaceChildren(...parts);
     this.root.hidden = false;
   }
 

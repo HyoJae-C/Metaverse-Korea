@@ -124,3 +124,21 @@ collision map, so routes, trees and passers-by keep out of it). Halfway down a
 stair you switch to the low layer, where the banks' walls and the water are
 what you bump into, and a bridge is a roof overhead.
 
+
+## Euljiro & Dongdaemun (Jung-gu)
+
+Drawn by `scripts/build-euljiro.mjs` in the band between the Cheonggyecheon
+strip and Namsan. Eulji-ro runs along its north edge just south of the
+Cheonggyecheon towers, and four link roads (Supyo-ro, Changgyeonggung-ro, the
+walk to Ogansugyo Bridge, Jangchungdan-ro) go north between those towers to
+Cheonggyecheon-ro; Toegye-ro runs on east to Wangsimni-ro. West: Euljiro's
+old alleys (Nogari Alley, Print Shop Alley, the lighting shops). East: DDP, a
+custom building drawn by its landmark (`core/euljiro-models.js`) from the
+outline in the map, with Dongdaemun History & Culture Park and a stretch of
+the Seoul City Wall beside it, and the fashion malls across Jangchungdan-ro.
+South of Toegye-ro, Namsangol Hanok Village has a walled yard (`hanok.yard`
+in the script) kept free for the folk games (docs/FOLK-GAMES.md).
+
+A landmark's `p` is moved as world points when districts are joined
+(`core/districts.js`), so a shape drawn relative to the landmark's own
+`x, z` uses another name (DDP's `outline`).
