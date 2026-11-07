@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   PARK, RAMPS, RAILS, PARK_SPEED, POP, COMBO_GAP, parkGround, railNear, inPark, parkBlockers,
-  TRICKS, pickTrick, trickPose, airTime, Skater, bankPoints, COIN_STEP, COIN_STEPS_PER_DAY, PTS_PER_COIN_STEP,
+  TRICKS, pickTrick, trickPose, airTime, Skater, bankPoints,
 } from '../src/core/skatepark.js';
 import { RIDE_TYPES } from '../src/core/bike-garage.js';
 
@@ -104,14 +104,15 @@ test('skate park: trick poses end where they started (no one lands sideways)', (
   }
 });
 
-test('skate park: points pay a few coins a day', () => {
-  let s = null, coins = 0;
-  for (let i = 0; i < 40; i++) { const r = bankPoints(s, '2026-11-07', 1000); s = r.saved; coins += r.coins; }
-  assert.equal(coins, COIN_STEP * COIN_STEPS_PER_DAY);
+test('skate park: points add up for the day and keep the best combo (no coins)', () => {
+  let s = null;
+  for (let i = 0; i < 40; i++) s = bankPoints(s, '2026-11-07', 1000);
+  assert.equal(s.pts, 40000);
   assert.equal(s.best, 1000);
-  const next = bankPoints(s, '2026-11-08', PTS_PER_COIN_STEP);
-  assert.equal(next.coins, COIN_STEP);
-  assert.equal(next.saved.best, PTS_PER_COIN_STEP);
+  assert.ok(!('coins' in s) && !('paid' in s));
+  const next = bankPoints(s, '2026-11-08', 300);
+  assert.equal(next.pts, 300);
+  assert.equal(next.best, 1000, 'best combo carries over');
 });
 
 test('skate park: on Olympic Park\'s Peace Plaza in Songpa, with a way in from Olympic-ro', () => {

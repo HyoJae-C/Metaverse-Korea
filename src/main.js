@@ -4323,7 +4323,7 @@ const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () =>
 // ride in on a board, inline skates, a bike or a kick scooter (bike button,
 // or a ride from the bag) and tap Trick to pop; ramps throw you into the air,
 // a rail under you is a grind. Tricks in a row make a combo; landing banks
-// it, and every few points banked pays a few coins (a few times a day).
+// it into today's score and your best combo (just for fun, no coins).
 const SKATE_TEXT = {
   trick: { en: 'Trick!', ko: '묘기!', ja: 'トリック！', zh: '技巧！', es: '¡Truco!', ar: 'حركة!', vi: 'Mẹo!', hi: 'ट्रिक!', id: 'Trik!' },
   ride: { en: 'Ride to do tricks', ko: '타고 묘기 부리기', ja: '乗ってトリック', zh: '骑上去秀技巧', es: 'Monta para hacer trucos', ar: 'اركب لتؤدي الحركات', vi: 'Lên xe để biểu diễn', hi: 'सवार होकर करतब करें', id: 'Naik untuk trik' },
@@ -4333,10 +4333,8 @@ const SKATE_TEXT = {
   combo: { en: 'Combo', ko: '콤보', ja: 'コンボ', zh: '连招', es: 'Combo', ar: 'كومبو', vi: 'Combo', hi: 'कॉम्बो', id: 'Kombo' },
   score: { en: 'Today {n}', ko: '오늘 {n}점', ja: '今日 {n}点', zh: '今天 {n}分', es: 'Hoy {n}', ar: 'اليوم {n}', vi: 'Hôm nay {n}', hi: 'आज {n}', id: 'Hari ini {n}' },
   best: { en: 'Best combo {n}', ko: '최고 콤보 {n}', ja: 'ベストコンボ {n}', zh: '最佳连招 {n}', es: 'Mejor combo {n}', ar: 'أفضل كومبو {n}', vi: 'Combo tốt nhất {n}', hi: 'सर्वश्रेष्ठ कॉम्बो {n}', id: 'Kombo terbaik {n}' },
-  coins: { en: '🪙 +{n} The crowd loved your tricks!', ko: '🪙 +{n} 구경꾼들이 묘기에 환호해요!', ja: '🪙 +{n} 見物人がトリックに大喝采！', zh: '🪙 +{n} 围观的人为你的技巧欢呼！', es: '🪙 +{n} ¡Al público le encantaron tus trucos!', ar: '🪙 +{n} أحب الجمهور حركاتك!', vi: '🪙 +{n} Mọi người reo hò vì màn biểu diễn!', hi: '🪙 +{n} भीड़ को आपके करतब पसंद आए!', id: '🪙 +{n} Penonton suka trikmu!' },
-  note: { en: 'Skate park tricks', ko: '스케이트파크 묘기', ja: 'スケートパークのトリック', zh: '滑板公园技巧', es: 'Trucos en el skatepark', ar: 'حركات حديقة التزلج', vi: 'Biểu diễn ở công viên trượt', hi: 'स्केट पार्क करतब', id: 'Trik skatepark' },
 };
-const SKATE_KEY = 'mk.skate'; // { day, pts, paid, best }
+const SKATE_KEY = 'mk.skate'; // { day, pts, best }
 const readSkate = () => { try { return JSON.parse(localStorage.getItem(SKATE_KEY) || 'null'); } catch { return null; } };
 const skateLm = map.landmarks.find((l) => l.type === 'skatepark') || null;
 let skateWelcomed = 0;
@@ -4371,13 +4369,8 @@ function skateEvent(e) {
     else sfx.grind();
   } else if (e.kind === 'land') {
     skatePop(`${e.mult > 1 ? L(SKATE_TEXT.combo) + ' ×' + e.mult + '  ' : ''}+${Math.round(e.total).toLocaleString()}`, 'land');
-    const { saved, coins } = bankPoints(readSkate(), dayKey(), e.total);
+    const saved = bankPoints(readSkate(), dayKey(), e.total);
     try { localStorage.setItem(SKATE_KEY, JSON.stringify(saved)); } catch { /* storage blocked */ }
-    if (coins > 0) {
-      wallet.add(coins, { name: SKATE_TEXT.note });
-      refreshWallet();
-      shop.toast(fmt(L(SKATE_TEXT.coins), { n: coins }));
-    }
   } else if (e.kind === 'bail') {
     skatePop(L(SKATE_TEXT.bail), 'bail');
     sfx.skateLand(false);

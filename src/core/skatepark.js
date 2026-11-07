@@ -323,18 +323,13 @@ export class Skater {
   pose() { return (this.trick && trickPose(this.trick.id, this.trick.t)) || NO_POSE; }
 }
 
-// --- Daily coins -----------------------------------------------------------
-// Every PTS_PER_COIN_STEP points banked in the park pays COIN_STEP coins, a
-// few times a day. saved: { day, pts, paid }.
-export const PTS_PER_COIN_STEP = 1500;
-export const COIN_STEP = 5;
-export const COIN_STEPS_PER_DAY = 8;
+// --- Score ------------------------------------------------------------------
+// A landed combo adds to today's points and may set a new best combo. Just
+// for fun: points don't pay coins. saved: { day, pts, best }.
 export function bankPoints(saved, day, pts) {
-  const s = saved?.day === day ? { ...saved } : { day, pts: 0, paid: 0, best: saved?.best || 0 };
+  const s = saved?.day === day ? { ...saved } : { day, pts: 0, best: saved?.best || 0 };
+  delete s.paid;
   s.pts += Math.max(0, Math.round(pts));
   s.best = Math.max(s.best || 0, Math.round(pts));
-  const due = Math.min(COIN_STEPS_PER_DAY, Math.floor(s.pts / PTS_PER_COIN_STEP));
-  const coins = Math.max(0, due - s.paid) * COIN_STEP;
-  s.paid = Math.max(s.paid, due);
-  return { saved: s, coins };
+  return s;
 }
