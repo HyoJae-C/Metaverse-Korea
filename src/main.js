@@ -102,7 +102,8 @@ import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
-import { RUNWAY_STORE } from './core/runway-game.js';
+import { RUNWAY_STORE, POSES as RUNWAY_POSES } from './core/runway-game.js';
+import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, poseWord, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
@@ -1291,6 +1292,11 @@ async function joinRoom(room, roomScene, area = null) {
       if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
       if (parseRaceMsg(e)) { onPoolRace(id, parseRaceMsg(e)); return; }
+      if (parseRunwayMsg(e)) {
+        const m = parseRunwayMsg(e);
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) runwayReact(others.rootOf(id), m.tier, m.word);
+        return;
+      }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -1694,6 +1700,27 @@ function updateScents(dt) {
   }
   for (const id of scentSeen.keys()) if (!others.players.has(id)) scentSeen.delete(id);
   scentFx.update(dt);
+  runwayWords.update(dt);
+  for (const [root, t0] of wobbles) {
+    const t = t0 + dt;
+    root.rotation.z = wobbleAt(t);
+    if (t >= WOBBLE_S) { root.rotation.z = 0; wobbles.delete(root); } else wobbles.set(root, t);
+  }
+}
+// The Curve Runway's reactions (core/runway-fx.js), on me or on someone in
+// the room: a sparkle (perfect), a twinkle (close) or a wobble and "!" (miss),
+// and the pose's word over the head.
+const runwayWords = new WordFx();
+const wobbles = new Map(); // character root → seconds into its wobble
+function runwayReact(root, tier, word) {
+  if (!root || mode !== 'store') return;
+  const { x, y, z } = root.position;
+  scentFx.attach(activeScene);
+  runwayWords.attach(activeScene);
+  if (tier === 'p') scentFx.puff(x, y, z, pickPerfect(), true);
+  else if (tier === 'g') scentFx.puff(x, y, z, GOOD_FX, false);
+  else { wobbles.set(root, 0); runwayWords.pop(x + 0.45, y + 1.5, z, '!', '#ff6b6b', true); }
+  if (word) runwayWords.pop(x, y + 2.3, z, L(RUNWAY_WORDS[word]), tier === 'p' ? '#ffd166' : '#ffffff');
 }
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
@@ -3087,6 +3114,12 @@ const runwayUi = new RunwayUI({
     for (const o of interior?.audienceNpcs || []) if (Math.random() < 0.6) o.ch.play('clap'); // the audience claps
     if (kind === 'turn') runwaySpin = 0.7;
     else { me.play(kind); net.sendEmote(kind); }
+  },
+  onJudge: (n, label) => {
+    const tier = tierOf(label);
+    const word = n.kind === 'pose' && (label === 'perfect' || label === 'great') ? poseWord(RUNWAY_POSES[n.i]) : null;
+    runwayReact(me.root, tier, word);
+    net.sendEmote(runwayMsg(tier, word));
   },
   onMedal: (medal, coins) => {
     if (coins) shop.toast(t('grill.medalToast', { coins }));
@@ -5339,6 +5372,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    runwayFx: (tier, word) => runwayReact(me.root, tier, word),
     backOut: () => backToPark(), // (the runway or haunted house back to its hall or park)
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),

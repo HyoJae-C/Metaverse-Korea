@@ -51,9 +51,10 @@ const el = (tag, cls, text) => {
 export class RunwayUI {
   // wallet; onStart()/onEnd(): pause/resume the background music and take
   // or give back the camera; onPose(i, kind, label): pose i (POSES[i]) is
-  // due, label null when missed; onMedal(medal, coins).
-  constructor({ root, wallet, onStart, onEnd, onPose, onMedal }) {
-    Object.assign(this, { root, wallet, onStart, onEnd, onPose, onMedal });
+  // due, label null when missed; onJudge(note, label): every step and pose
+  // as it is judged (label 'miss' when it went by); onMedal(medal, coins).
+  constructor({ root, wallet, onStart, onEnd, onPose, onJudge, onMedal }) {
+    Object.assign(this, { root, wallet, onStart, onEnd, onPose, onJudge, onMedal });
     this.medals = new Medals();
     this.raf = 0;
     this.music = null;
@@ -134,6 +135,7 @@ export class RunwayUI {
       notes.forEach((n, i) => {
         if (!g.hit[i] && t - n.t > 0.22) {
           g.hit[i] = 'miss'; g.combo = 0; g.flash = { label: 'miss', at: t };
+          this.onJudge?.(n, 'miss');
           if (n.kind === 'pose') this._pose(n.i, null);
         }
       });
@@ -192,6 +194,7 @@ export class RunwayUI {
     g.combo++;
     g.flash = { label: j.label, at: t };
     const n = g.notes[j.index];
+    this.onJudge?.(n, j.label);
     if (n.kind === 'pose') this._pose(n.i, j.label);
   }
 
