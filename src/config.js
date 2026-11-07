@@ -56,6 +56,11 @@ export const config = {
     test: true,
     reward: 20, dailyLimit: 5, seconds: 5,
   },
+  // A 300x250 AdSense banner at the right edge on wide computer screens only
+  // (start screen and game; core/side-ad.js). slot: the display ad unit's
+  // data-ad-slot number from AdSense (Ads > By ad unit > Display ads); empty =
+  // no banner. Uses rewardedAd.client and rewardedAd.test.
+  sideAd: { enabled: true, slot: import.meta.env.VITE_ADSENSE_SIDE_SLOT || '' },
   // "Support the creator" link in Settings (e.g. https://buymeacoffee.com/name).
   // Empty = the row stays hidden. VITE_SUPPORT_URL overrides it at build time.
   supportUrl: import.meta.env.VITE_SUPPORT_URL || 'https://buymeacoffee.com/hjseoul',

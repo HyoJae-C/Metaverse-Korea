@@ -147,6 +147,7 @@ import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
 import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
+import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
@@ -209,6 +210,15 @@ function reportProblem(msg) {
 }
 addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
 addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
+
+// Google ads (AdSense): the script for the rewarded "Watch an ad" button,
+// loaded early so the start screen's banner (wide computer screens) can fill.
+{
+  const ad = config.rewardedAd;
+  const google = ad.provider === 'h5' || sideAdOn(config.sideAd, ad.client);
+  loadH5Ads(google ? ad : {});
+  mountSideAd({ cfg: config.sideAd, client: ad.client, test: ad.test });
+}
 
 // Cloud save (guest account on Supabase). Runs before anything reads saved
 // data, so a newer save from the server is in place first. Skipped in
@@ -4076,7 +4086,6 @@ function openOrder() {
   clerk.ch.wave();
   orderUi.show(interior.store);
 }
-loadH5Ads(config.rewardedAd.provider === 'h5' ? config.rewardedAd : {});
 const showAd = rewardedShow(config.rewardedAd, demoAd($('ad-overlay'), $('ad-count'), $('ad-close')));
 function refreshWallet() {
   $('coin-count').textContent = wallet.coins;
