@@ -5,7 +5,7 @@
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS } from '../core/rod-skins.js';
 import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST } from '../core/fishing.js';
-import { FISH_PLACES, fishPlaceOf, placeFish, placeChance, rollPlaceCatch, rollPlaceAuto } from '../core/fish-places.js';
+import { FISH_PLACES, fishPlaceOf, placeFish, placeChance, rollPlaceCatch, rollPlaceAuto, noBiteAt, usualChance } from '../core/fish-places.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -278,9 +278,9 @@ export class FishingUI {
     head.append(el('span'), el('span', null, text('물고기', 'Fish')), el('span', null, text('직접', 'Hand')), el('span', null, text('자동', 'Auto')), el('span', null, '🪙'));
     wrap.append(head);
     for (const r of [1, 2, 3, 4, 5]) {
-      const kinds = AVAILABLE_FISH.filter(f => f.rarity === r);
+      const kinds = AVAILABLE_FISH.filter(f => f.rarity === r && !noBiteAt(place, f)); // e.g. no blue whale at Mangwon
       if (!kinds.length) continue;
-      const hand = kinds.reduce((a, f) => a + f.chance, 0) * (1 - TRASH_CHANCE) * rest;
+      const hand = kinds.reduce((a, f) => a + usualChance(f, place), 0) * (1 - TRASH_CHANCE) * rest;
       const tier = el('div', 'fish-odds-tier tier-' + r);
       tier.append(el('b', null, '★'.repeat(r)), el('span', null, localName(TIER_NAMES[r]) + ' · ' + text(r >= 3 ? '자동낚시 불가' : '자동낚시 가능', r >= 3 ? 'hand fishing only' : 'auto fishing too')), el('small', null, pct(hand)));
       wrap.append(tier);
@@ -289,7 +289,7 @@ export class FishingUI {
         const name = el('span', 'fish-name', fishName(f));
         if (escapeChance(f)) name.append(el('small', null, `💨 ${Math.round(escapeChance(f) * 100)}%`));
         row.append(fishStampIcon(f, 'fish-emoji'), name,
-          el('b', null, pct(f.chance * (1 - TRASH_CHANCE) * rest)), el('span', null, isRare(f) ? '—' : pct(f.chance / autoTotal * 100 * rest)), el('span', null, String(f.price)));
+          el('b', null, pct(usualChance(f, place) * (1 - TRASH_CHANCE) * rest)), el('span', null, isRare(f) ? '—' : pct(f.chance / autoTotal * 100 * rest)), el('span', null, String(f.price)));
         wrap.append(row);
       }
     }

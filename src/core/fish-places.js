@@ -3,10 +3,14 @@
 // of bites are Mangwon fish; the rest are the usual Han River catch, rolled
 // exactly as at Ttukseom (core/fishing.js). Ttukseom is unchanged.
 //
+// Some usual kinds never bite at a place (`noBite`): the blue whale lives
+// only in the Ttukseom Han River catch, so at Mangwon a bite that would have
+// been a whale is rolled again among the other usual fish.
+//
 // Place fish stay "released": false in FISH, so the usual odds, the lucky
 // spot and the "available collection" count don't change; the journal shows
 // them as found only at their place.
-import { fishById, rollCatch, rollAutoCatch, isRare } from './fishing.js';
+import { fishById, rollCatch, rollAutoCatch, isRare, AVAILABLE_FISH, luckyChance } from './fishing.js';
 import { pendingCatch } from './fish-luck.js';
 
 export const FISH_PLACES = {
@@ -16,6 +20,7 @@ export const FISH_PLACES = {
     // seahorse · ★5 giant squid (the legend of the pier: about 1 in 500 bites)
     kinds: ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid'],
     share: 0.2, // a fifth of the bites (hand fishing) are Mangwon fish
+    noBite: ['whale'], // the blue whale only bites at Ttukseom
   },
 };
 // Within a place's own fish, how often each rarity bites (per kind).
@@ -28,6 +33,18 @@ export const fishPlaceOf = (id) => Object.keys(FISH_PLACES).find((k) => FISH_PLA
 export const PLACE_FISH_IDS = new Set(Object.values(FISH_PLACES).flatMap((p) => p.kinds));
 // Fish you can catch somewhere now: released ones and place fish.
 export const catchable = (f) => f.released || PLACE_FISH_IDS.has(f.id);
+
+// True when the usual kind `f` never bites at `place`.
+export const noBiteAt = (place, f) => !!FISH_PLACES[place]?.noBite?.includes(f.id);
+// A usual (released) kind's chance at `place`, in % of fish like f.chance
+// (before the place's own share): kinds that never bite there drop out and
+// the rest grow to fill their part.
+export function usualChance(f, place, lucky = false) {
+  const w = (q) => (lucky ? luckyChance(q) : q.chance);
+  if (!f.released || noBiteAt(place, f)) return 0;
+  const left = AVAILABLE_FISH.filter((q) => !noBiteAt(place, q)).reduce((a, q) => a + w(q), 0);
+  return w(f) / left * 100;
+}
 
 function pick(list, weight, r) {
   const total = list.reduce((a, f) => a + weight(f), 0);
@@ -47,7 +64,13 @@ export function placeChance(f, place = fishPlaceOf(f.id)) {
 export function rollPlaceCatch(place, rand = Math.random, lucky = false) {
   const p = FISH_PLACES[place], list = placeFish(place);
   if (p && list.length && !pendingCatch() && rand() < p.share) return pick(list, localWeight, rand());
-  return rollCatch(rand, lucky);
+  const f = rollCatch(rand, lucky);
+  // A kind that never bites here: another usual fish instead (the old boot
+  // keeps its odds; a developer code's fish still comes).
+  if (p && !f.trash && !f.sure && noBiteAt(place, f)) {
+    return pick(AVAILABLE_FISH.filter((q) => !noBiteAt(place, q)), (q) => usualChance(q, place, lucky), rand());
+  }
+  return f;
 }
 
 // Auto fishing at `place`: the place's common (★1–★2) fish come in too.
