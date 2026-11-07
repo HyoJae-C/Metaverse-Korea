@@ -65,6 +65,7 @@ import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { startWhereReports } from './net/where.js';
+import { createCounts, createFpsMeter, deviceClass, firstSrc, someoneNear, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
@@ -210,6 +211,9 @@ addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.rea
 // automated test rooms.
 const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
 await cloud.load();
+// This play session's counts for the operator's retention numbers
+// (core/sessions.js); the reports start once the world is up (see below).
+const playCounts = createCounts();
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
@@ -1593,6 +1597,7 @@ chatBar.addEventListener('submit', async (e) => {
   showBubble(myLabel, $('labels'), text, 6000, 'chat');
   addChatLine(nickname, text, 'mine');
   net.sendChat?.(text);
+  playCounts.chat();
   if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
 });
 chatInput.addEventListener('keydown', (e) => {
@@ -3927,6 +3932,29 @@ $('piece-close').onclick = closePiece;
 const wallet = new Wallet(config.rewardedAd);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
+// Anonymous session reports for the operator's retention numbers
+// (core/sessions.js, supabase/011_play_sessions.sql): once a minute while
+// the tab is visible. Not in test rooms or while another tab owns the game.
+playCounts.coins(wallet.coins);
+wallet.onChange((c) => playCounts.coins(c));
+if (!testRoom) {
+  const device = deviceClass({ touch: input.isTouch, width: screen.width, height: screen.height });
+  const src = firstSrc(location.search);
+  startSessionReports({
+    get: () => (tabParked || !me?.root ? null : { region: regionId, device, src }),
+    send: (r) => cloud.reportSession(r),
+    counts: playCounts,
+    fps: createFpsMeter(),
+    tick: (sec) => {
+      try {
+        if (!me?.root) return;
+        const mine = me.root.position;
+        const near = someoneNear(mine, [...others.players.values()].map((p) => p.ch?.root?.position).filter(Boolean));
+        if (near) playCounts.near(sec);
+      } catch { /* still starting up */ }
+    },
+  });
+}
 // Ordering practice at restaurants (food can't be eaten; you practise ordering).
 const orderUi = new OrderUI({
   root: $('order-panel'),
@@ -4001,6 +4029,7 @@ const fishingUi = new FishingUI({
     if (ph === 'land' && legend) { buzz([120, 60, 120, 60, 120, 60, 700]); shake([$('scene'), $('fish-panel')]); }
   },
   onCatch: (f) => {
+    playCounts.fish();
     sfx.pop?.();
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));

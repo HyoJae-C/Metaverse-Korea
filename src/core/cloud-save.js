@@ -176,6 +176,19 @@ export class CloudSave {
     return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
   }
 
+  // Report this play session, for the operator's retention numbers
+  // (core/sessions.js, supabase/011_play_sessions.sql). Resolves false when
+  // the server can't take it (SQL not run yet), true otherwise.
+  async reportSession({ id, region, device, src, fps, counts }) {
+    if (!this.client || !this.user) return true; // signed in later: keep trying
+    const { error } = await this.client.rpc('report_session', {
+      p_id: id, p_region: String(region || '').slice(0, 32), p_device: String(device || '').slice(0, 8),
+      p_src: String(src || '').slice(0, 16), p_fps: Math.max(0, Math.min(240, Math.round(Number(fps) || 0))),
+      p_counts: counts || {},
+    });
+    return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
+  }
+
   // This account's sign-in token, for realtime's private channels (the chat
   // channel checks it on the server). Null without an account.
   async accessToken() {

@@ -74,6 +74,7 @@ Open `/admin.html` in the browser where you play with your operator account (see
 - **Inquiries**: the inquiry board (문의게시판). Write a reply and the player sees it under their inquiry in the game; or mark it done without one.
 - **Free board**: hide or show posts.
 - **Players**: search by name or e-mail; guest/Google, joined, last seen, where they are; ban or unban from chat (`chat_bans`).
+- **Retention**: players per day, D1/D3/D7 return by start day, median session length, days played in the last week (4+ of 7 = habit), first sessions under 5 minutes, time spent with someone nearby, devices and frame rate. Add `?src=ext` (any short word) to an invite link to see those players as their own group. The game reports one anonymous row per visit once a minute (`src/core/sessions.js`); needs `supabase/011_play_sessions.sql`. No third-party tracker, no IP, no position, no chat text.
 
 Needs `supabase/008_player_where.sql` and `supabase/009_admin.sql` run once. Page code in `src/admin/`.
 
