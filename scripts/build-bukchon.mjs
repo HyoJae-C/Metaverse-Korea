@@ -67,7 +67,7 @@ const overlaps = (x0, z0, x1, z1) => buildings.some((b) => {
   return x0 < Math.max(...xs) + 1 && x1 > Math.min(...xs) - 1 && z1 < Math.max(...zs) + 1 && z0 > Math.min(...zs) - 1;
 });
 const inOpen = (x0, z0, x1, z1) => x1 > OPEN[0] - 2 && x0 < OPEN[2] + 2 && z1 < OPEN[1] + 2 && z0 > OPEN[3] - 2;
-const LOOK = { x0: 18, x1: 102, z: -159 }; // the lookout at the top (terrace)
+const LOOK = { x0: 47, x1: 73, z: -159 }; // the lookout at the top (terrace, 24 m wide)
 const inLookout = (x0, z0, x1, z1) => x1 > LOOK.x0 && x0 < LOOK.x1 && z1 < LOOK.z;
 // Splits [a, b] into n parts of slightly different sizes, a gap between them.
 const split = (a, b, n, gap, seed) => {
@@ -167,6 +167,18 @@ const visitBlockers = [], visitMarks = [];
   }
 }
 
+// Little gardens by the houses: stone planters with a small tree or clipped
+// shrubs where a street corner or a gap between houses leaves room.
+const planters = [];
+{
+  const free = (x, z, r) => !buildings.some((b) => {
+    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+    return x + r > Math.min(...xs) && x - r < Math.max(...xs) && z + r > Math.min(...zs) && z - r < Math.max(...zs);
+  }) && !roads.some((rd) => rd.p.some((_, i) => i && segDist(x, z, rd.p[i - 1], rd.p[i]) < rd.w / 2 + r));
+  const spots = [[18, -51], [44, -48], [53, -48], [-3, -65], [123, -65], [46, -164], [74, -164], [8, -183], [112, -183], [33, -183], [87, -183]];
+  spots.forEach(([x, z], i) => { if (free(x, z, 1.1)) planters.push({ type: 'planter', x, z, y: r1(ground(x, z)), kind: i % 3 === 1 ? 'bush' : 'tree' }); });
+}
+
 // The Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south
 // wall. Its walls and wings are blockers (drawn by the landmark).
 const [ox0, oz0, ox1, oz1] = OPEN; // x0 < x1, z0 > z1 (z0 is the south side)
@@ -178,6 +190,7 @@ const blockers = [
   { p: rect(BUKCHON.openHouse.gate[0] + 2.5, oz0, ox1, oz0 - 1) }, // and right of it
   { p: rect(58.5, -179.5, 61.5, -182.5) }, // the lookout's coin telescope
   ...visitBlockers, // the homes open to visitors: their wings and front walls (not the yard)
+  ...planters.map((l) => ({ p: rect(l.x - 0.8, l.z + 0.8, l.x + 0.8, l.z - 0.8) })),
 ];
 
 // A low granite retaining wall (chukdae) round the village holds up the hill
@@ -233,6 +246,7 @@ const landmarks = [
   { type: 'openhouse', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, w: ox1 - ox0, d: oz0 - oz1 },
   { type: 'terrace', x: 60, z: -172, y: ground(60, -172) }, // the lookout at the top, the photo spot in its gap
   ...visitMarks, // 출입 가능 by the open homes' gates
+  ...planters,
   ...[[55, -86, 0], [14.5, -86, 0], [106, -86, 0]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, y: ground(x, z), title: QUIET.title, text: QUIET.text })),
 ];
 

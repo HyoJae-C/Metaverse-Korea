@@ -246,25 +246,18 @@ function gate(k, x, z, o, ry = 0) {
   });
 }
 
-function tree(k, x, z, r) {
-  const kind = r();
-  k.at(x, 0, z, r() * 6, () => {
-    if (kind < 0.3) { // a pine (소나무): a leaning trunk, flat dark tiers
-      k.box(PAL.trunk, 0.35, 3.6, 0.35, 0.2, 1.8, 0);
-      for (const [y, s] of [[3.2, 2.4], [4.1, 1.8], [4.8, 1.1]]) {
-        const g = new THREE.IcosahedronGeometry(1, 0).scale(s, 0.45, s * 0.8).translate(0.4, y, 0);
-        k.add(k.body, g, PAL.pine);
-      }
-      return;
-    }
-    const c = pick(r, PAL.leaf), s = 1.6 + r() * 0.9;
-    k.box(PAL.trunk, 0.32, 2.6, 0.32, 0, 1.3, 0);
-    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.85, 1).translate(0, 2.6 + s * 0.6, 0), c);
-    if (kind < 0.6) for (let i = 0; i < 7; i++) { // a persimmon tree (감나무) with fruit
-      const a = i * 2.3;
-      k.box(PAL.fruit, 0.24, 0.24, 0.24, Math.cos(a) * s * 0.85, 2.4 + s * 0.4 + (i % 3) * 0.4, Math.sin(a) * s * 0.85);
-    }
-  });
+// A low garden (화단): a stone edge, clipped shrubs and a few flowers, all
+// well under the eaves (a tall tree in a small yard pokes through the roof).
+function garden(k, x, z, w, d, r) {
+  w = Math.min(w, 3.2); d = Math.min(d, 1.6);
+  k.box(PAL.stone[1], w, 0.25, d, x, 0.12, z);
+  k.box('#6b5a44', w - 0.2, 0.06, d - 0.2, x, 0.27, z); // soil
+  const n = Math.max(2, Math.round(w / 0.9));
+  for (let i = 0; i < n; i++) {
+    const s = 0.32 + r() * 0.18, bx = x - w / 2 + 0.45 + (i * (w - 0.9)) / Math.max(1, n - 1);
+    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.8, 1).translate(bx, 0.3 + s * 0.7, z + (r() - 0.5) * (d - 0.8)), pick(r, PAL.leaf));
+    if (r() < 0.5) k.box(pick(r, ['#e0566b', '#f2c94c', '#f7f2e8', '#c77dd8']), 0.14, 0.14, 0.14, bx + 0.2, 0.3 + s * 1.3, z);
+  }
 }
 
 function jars(k, x, z, r) { // jangdokdae (장독대): a stone step with onggi jars
@@ -303,7 +296,7 @@ function home(k, L, D, o, r) {
   const w = yard.x1 - yard.x0, d = yard.z1 - yard.z0;
   if (w > 2.5 && d > 1.8) {
     const u = r();
-    if (u < 0.65) tree(k, yard.x0 + w * (left ? 0.75 : 0.25), yard.z0 + d * 0.5, r);
+    if (u < 0.65) garden(k, yard.x0 + w * (left ? 0.75 : 0.25), yard.z0 + d * 0.5, w * 0.4, d * 0.6, r);
     if (u > 0.45 && w > 4) jars(k, yard.x0 + w * (left ? 0.3 : 0.7), yard.z0 + Math.min(1.2, d * 0.4), r);
   }
 }
@@ -321,7 +314,7 @@ function shop(k, L, D, o, r) {
   k.at(0, 0, -D / 2 + back / 2 + 0.4, 0, () => wing(k, L * 0.7, back, { ...o, seed: o.seed + 5 }, { doors: true }));
   for (const sx of [-1, 1]) k.at(sx * (L / 2 - 0.3), 0, 0, Math.PI / 2, () => fence(k, -D / 2 + back + 0.6, D / 2 - front - 0.6, 0, o));
   const yard = D - front - back - 1.6;
-  if (yard > 2.5) tree(k, (r() - 0.5) * L * 0.5, -D / 2 + back + 0.8 + yard / 2, r);
+  if (yard > 2.5) garden(k, (r() - 0.5) * L * 0.3, -D / 2 + back + 0.8 + yard / 2, L * 0.4, yard * 0.6, r);
 }
 
 function house(k, b, i) {
