@@ -4240,6 +4240,11 @@ $('ad-btn').onclick = async () => {
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
+  // another-seoul.com/?adtest: say whether Google's ad or the demo ran.
+  if (new URLSearchParams(location.search).has('adtest') && showAd.last) {
+    const l = showAd.last;
+    shop.toast(`Google ad: ${l.google}${l.why ? ` (${l.why})` : ''}${l.demo ? ' → demo shown' : ''}`);
+  }
 };
 
 // Daily check-in and today's three missions. (game/daily.js)
