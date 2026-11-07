@@ -33,7 +33,7 @@ export const ROOM_SIZES = {
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
-  memorial: ROOM_MEMORIAL, // the War Memorial of Korea's exhibition floor (see war-memorial.js)
+  memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -602,7 +602,7 @@ export function buildInterior(store) {
     clerk = gallery.clerk;
     see = gallery.see;
   } else if (store.category === 'memorial') {
-    // The War Memorial of Korea: photos, the memorial room and its altar.
+    // The War History Museum: photos, the memorial room and its altar.
     const hall = buildMemorial(scene, ROOM, { box, block, mat });
     stations.paintings = hall.looks;
     stations.flower = hall.flower;

@@ -2671,7 +2671,7 @@ function enterStore(item) {
   } else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
-// The War Memorial's altar: a white chrysanthemum on it and a bow (others
+// The War History Museum's altar: a white chrysanthemum on it and a bow (others
 // see the bow; the flowers are only in your own view of the room).
 function layMemorialFlower() {
   interior?.stations?.layFlower?.();

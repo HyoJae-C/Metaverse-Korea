@@ -1,4 +1,5 @@
-// The War Memorial of Korea from outside (map landmarks on the Itaewon map,
+// The War History Museum (전쟁역사박물관) from outside: the game's made-up
+// museum, modelled loosely on the War Memorial of Korea (map landmarks on the Itaewon map,
 // west along Itaewon-ro, where the real one stands at 29 Itaewon-ro).
 //
 // warMemorial: drawn round the main building's centre, which faces south
@@ -140,9 +141,9 @@ export function warMemorial(g) {
     const name = panel(20, 2.2, (c, w, h) => {
       c.fillStyle = BRONZE; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.font = `800 ${h * 0.42}px ${FONT}`;
-      c.fillText('전쟁기념관', w / 2, h * 0.34, w - 16);
+      c.fillText('전쟁역사박물관', w / 2, h * 0.34, w - 16);
       c.font = `700 ${h * 0.24}px ${FONT}`;
-      c.fillText('THE WAR MEMORIAL OF KOREA', w / 2, h * 0.76, w - 16);
+      c.fillText('WAR HISTORY MUSEUM', w / 2, h * 0.76, w - 16);
     });
     name.position.set(28, 1.35, sz + side * 1.22);
     if (side < 0) name.rotation.y = Math.PI;
@@ -205,7 +206,7 @@ export function outdoorExhibits(g) {
     c.fillText('실제 전쟁기념관에는 퇴역한 전차와 항공기가 전시되어 있어요.', w / 2, h * 0.32, w - 20);
     c.fillText('여기 있는 것은 간단하게 만든 게임 모형이에요.', w / 2, h * 0.43, w - 20);
     c.fillStyle = '#c9c4ba'; c.font = `500 ${h * 0.07}px ${FONT}`;
-    c.fillText('Retired tanks and aircraft are shown outdoors at the real memorial.', w / 2, h * 0.62, w - 20);
+    c.fillText('Retired tanks and aircraft are shown outdoors at the real War Memorial of Korea.', w / 2, h * 0.62, w - 20);
     c.fillText('These are simplified game models, not exact replicas.', w / 2, h * 0.73, w - 20);
   });
   sign.position.set(0, 1.9, 92);

@@ -24,7 +24,7 @@ export const STAMPS = [
   },
   {
     id: 'war-memorial', place: { store: 'war-memorial' }, color: '#4a5560', shape: 'square',
-    name: { ko: '전쟁기념관', en: 'War Memorial', ja: '戦争記念館', zh: '战争纪念馆' },
+    name: { ko: '전쟁역사박물관', en: 'War History Museum', ja: '戦争歴史博物館', zh: '战争历史博物馆' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M62 128 h76 M68 128 v-36 h64 v36 M64 92 h72"/><path d="M80 92 a20 20 0 0 1 40 0"/><path d="M100 72 v-8 M80 128 v-28 M93 128 v-28 M107 128 v-28 M120 128 v-28"/>',
   },

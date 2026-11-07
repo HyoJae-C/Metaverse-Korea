@@ -1,4 +1,5 @@
-// Inside the War Memorial of Korea (전쟁기념관): one quiet exhibition floor.
+// Inside the War History Museum (전쟁역사박물관), the game's made-up museum
+// modelled loosely on the War Memorial of Korea: one quiet exhibition floor.
 //
 //        ┌───────────┬──────[ memorial room ]─────┬───────────┐
 //        │  Hall A   │   altar, flowers, names    │  Hall B   │
@@ -303,7 +304,7 @@ export function buildMemorial(scene, room, { box, block }) {
   // Lobby: the notice and the visitor board either side of the door, the
   // information desk in front of the way in.
   board(scene, 4.2, 1.9, -w / 2 + 6, 2.3, d / 2 - 0.05, Math.PI, '안내 · Notice', [DISCLAIMER.ko, `📷 ${CREDIT.ko}`], [DISCLAIMER.en, `📷 ${CREDIT.en}`]);
-  board(scene, 4.2, 1.9, w / 2 - 6, 2.3, d / 2 - 0.05, Math.PI, '방문 정보 · Plan a visit', VISIT.ko, VISIT.en);
+  board(scene, 4.2, 1.9, w / 2 - 6, 2.3, d / 2 - 0.05, Math.PI, '실제 전쟁기념관 방문 정보 · Visit the real War Memorial of Korea', VISIT.ko, VISIT.en);
   const iz = LOBBY_Z + 3.4;
   box(4.2, 0.95, 0.8, 0, 0.475, iz, '#d9d4c9');
   box(4.3, 0.06, 0.9, 0, 0.98, iz, '#3a3d40');

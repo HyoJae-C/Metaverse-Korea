@@ -1,5 +1,6 @@
-// The War Memorial of Korea (전쟁기념관), west along Itaewon-ro: what hangs
-// in its game exhibition halls (core/war-memorial.js).
+// The War History Museum (전쟁역사박물관), west along Itaewon-ro: a made-up
+// museum modelled loosely on the War Memorial of Korea (전쟁기념관), and what
+// hangs in its exhibition halls (core/war-memorial.js).
 //
 // Every photo is one the War Memorial of Korea shares on the KOGL portal
 // (kogl.or.kr) under KOGL Type 1 (공공누리 제1유형: 출처표시, free use with
@@ -10,8 +11,9 @@
 // photographed. KOGL Type 1 also forbids implying that the holder endorses
 // us, so the hall shows DISCLAIMER by the door and on each card.
 //
-// `file` is our compressed copy in public/ (memorial/<id>.jpg). Until a file
-// is there, its frame shows a "photo coming soon" card. Descriptions are
+// `file` is our compressed copy in public/ (memorial/<id>.jpg, at most 900 px,
+// downloaded from each KOGL page). Until a file is there, its frame shows a
+// "photo coming soon" card. Descriptions are
 // short retellings of the text on each KOGL page.
 //
 // The Statue of Brothers (형제의 상) is a sculptor's work, so the game leaves
@@ -19,10 +21,10 @@
 
 export const CREDIT = { ko: '전쟁기념관, 공공누리 제1유형', en: 'The War Memorial of Korea, KOGL Type 1' };
 export const DISCLAIMER = {
-  en: 'A game version of the War Memorial of Korea in Yongsan. It is not run by or linked to the War Memorial of Korea. The photos are ones the War Memorial shares for free use with credit (KOGL Type 1).',
-  ko: '용산 전쟁기념관을 게임 속에 옮겨 본 공간이에요. 전쟁기념관(전쟁기념사업회)이 운영하거나 관계된 곳이 아니에요. 사진은 전쟁기념관이 공공누리 제1유형(출처표시)으로 공개한 자료예요.',
-  ja: '龍山の戦争記念館をゲームの中に再現した場所です。戦争記念館が運営・関与しているものではありません。写真は戦争記念館が出典表示を条件に公開している資料（公共ヌリ第1類型）です。',
-  zh: '这是把龙山战争纪念馆搬进游戏里的空间，并非战争纪念馆运营或相关的场所。照片是战争纪念馆以注明出处为条件公开的资料（公共努里第1类型）。',
+  en: 'The War History Museum is a made-up museum in the game, modelled loosely on the War Memorial of Korea in Yongsan. It is not run by or linked to the War Memorial of Korea. The photos are ones the War Memorial of Korea shares for free use with credit (KOGL Type 1).',
+  ko: '전쟁역사박물관은 용산 전쟁기념관을 본떠 만든 게임 속 가상 박물관이에요. 전쟁기념관(전쟁기념사업회)이 운영하거나 관계된 곳이 아니에요. 사진은 전쟁기념관이 공공누리 제1유형(출처표시)으로 공개한 자료예요.',
+  ja: '戦争歴史博物館は龍山の戦争記念館をもとにしたゲーム内の架空の博物館です。戦争記念館が運営・関与しているものではありません。写真は戦争記念館が出典表示を条件に公開している資料（公共ヌリ第1類型）です。',
+  zh: '战争历史博物馆是参照龙山战争纪念馆制作的游戏内虚构博物馆，并非战争纪念馆运营或相关的场所。照片是战争纪念馆以注明出处为条件公开的资料（公共努里第1类型）。',
 };
 export const SOURCE = { en: 'See it on the KOGL portal', ko: '공공누리에서 보기', ja: '公共ヌリで見る', zh: '在公共努里查看' };
 export const COMING = { ko: '사진 준비 중', en: 'Photo coming soon' };
@@ -128,15 +130,15 @@ export const EXHIBITS = [
     title: { ko: '전쟁기념관 개관', en: 'The Memorial Opens' },
     desc: {
       ko: '전쟁기념관은 옛 육군본부 자리에 세워져 1994년 6월 10일 개관식을 열었고, 6월 14일부터 일반에 공개됐어요. 개관식에는 1만 5천여 명이 참석했어요.',
-      en: 'Built on the site of the former Army Headquarters, the memorial held its opening ceremony on 10 June 1994, with about 15,000 guests, and opened to the public on 14 June.',
+      en: 'Built on the site of the former Army Headquarters, the War Memorial of Korea held its opening ceremony on 10 June 1994, with about 15,000 guests, and opened to the public on 14 June.',
     },
   }),
   E({
     id: 'peace-plaza', kogl: 58742, era: { ko: '2018년', en: '2018' },
     title: { ko: '평화광장', en: 'The Peace Plaza' },
     desc: {
-      ko: '6,000㎡ 크기의 평화광장은 2018년, 우리나라 최고의 무공훈장인 태극무공훈장 모양으로 새로 꾸며졌어요. 광장 가운데에 "평화를 원하거든 전쟁을 기억하라"는 글이 새겨져 있어요.',
-      en: "The 6,000 m² Peace Plaza was redesigned in 2018 in the shape of the Order of Military Merit Taeguk, Korea's highest military decoration. Its centre carries the words \"If you want peace, remember war.\"",
+      ko: '전쟁기념관의 6,000㎡ 크기 평화광장은 2018년, 우리나라 최고의 무공훈장인 태극무공훈장 모양으로 새로 꾸며졌어요. 광장 가운데에 "평화를 원하거든 전쟁을 기억하라"는 글이 새겨져 있어요.',
+      en: "The 6,000 m² Peace Plaza at the War Memorial of Korea was redesigned in 2018 in the shape of the Order of Military Merit Taeguk, Korea's highest military decoration. Its centre carries the words \"If you want peace, remember war.\"",
     },
   }),
   // ── Memorial room ──
@@ -144,8 +146,8 @@ export const EXHIBITS = [
     id: 'names-of-the-fallen', kogl: 10289, era: { ko: '2019년 촬영', en: 'Photographed 2019' },
     title: { ko: '전사자명비 (국군 및 경찰)', en: 'Names of the Fallen (Armed Forces and Police)' },
     desc: {
-      ko: '나라를 지키다 숨진 국군과 경찰의 이름을 새긴 전사자명비예요. 전쟁기념관 회랑에서 볼 수 있어요.',
-      en: 'Walls carved with the names of Korean soldiers and police who gave their lives. They stand in the corridors of the memorial.',
+      ko: '나라를 지키다 숨진 국군과 경찰을 기리는 전사자명비의 헌시 「님이시여」예요. 유희남이 글을 짓고 조종숙이 글씨를 썼어요. 전사자명비는 전쟁기념관 회랑에 있어요.',
+      en: 'The dedication poem "Nim-isiyeo" (O, Honoured Ones) on the memorial walls for Korean soldiers and police who gave their lives. Words by Yu Hui-nam, calligraphy by Jo Jong-suk. The walls of names stand in the corridors of the War Memorial of Korea.',
     },
   }),
 ];
