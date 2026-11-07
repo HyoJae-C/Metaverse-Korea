@@ -7,7 +7,8 @@
 //        │ Korean War⌐      benches               ⌐ Wartime   │
 //        │           │                            │   life    │
 //        ├───────────┴──────┐          ┌──────────┴───────────┤
-//        │ notice [lift] lobby: info desk, two photos  visit info │
+//        │ about  [lift] lobby: info desk, two photos   timeline │
+//        │ notice                                     visit info │
 //        └─────────────────────[door]───────────────────────────┘
 //
 // 2F, the donated photographs: the same halls (C: Daegu in the 1950s, D:
@@ -21,7 +22,7 @@
 // altar where you can lay a white chrysanthemum, and benches. No games, no
 // music: a place to look and remember.
 import * as THREE from 'three';
-import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT, DONATED } from '../data/war-memorial.js';
+import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT, DONATED, ABOUT, TIMELINE, MONTH_TEXT, monthBoard } from '../data/war-memorial.js';
 
 export const ROOM_MEMORIAL = { w: 44, d: 30, h: 7 };
 const PART_H = 4.2;
@@ -124,6 +125,75 @@ function board(scene, wd, ht, x, y, z, ry, title, ko, en) {
   }));
   m.position.set(x, y, z);
   m.rotation.y = ry;
+  scene.add(m);
+  return m;
+}
+
+// The Korean War timeline: a date and a Korean line per event, the English
+// beneath, and the note on the UN nations at the foot.
+function timelineBoard(scene, wd, ht, x, y, z, ry) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshBasicMaterial({
+    map: canvasTex(Math.round(wd * 260), Math.round(ht * 260), (c, cw, ch) => {
+      c.fillStyle = '#2d3133'; c.fillRect(0, 0, cw, ch);
+      c.textBaseline = 'top';
+      c.fillStyle = '#e6d3a3'; c.font = `800 38px ${FONT}`;
+      c.fillText(`${TIMELINE.title.ko} · ${TIMELINE.title.en}`, 34, 26, cw - 68);
+      const rows = TIMELINE.events.length, top = 92, rowH = (ch - top - 64) / rows;
+      TIMELINE.events.forEach((e, i) => {
+        const yy = top + i * rowH;
+        c.fillStyle = '#e6d3a3'; c.font = `800 25px ${FONT}`;
+        c.fillText(e.d, 34, yy + 2);
+        c.fillStyle = '#f1ede4'; c.font = `600 25px ${FONT}`;
+        c.fillText(e.ko, 210, yy, cw - 250);
+        c.fillStyle = '#c9c4ba'; c.font = `500 21px ${FONT}`;
+        c.fillText(e.en, 210, yy + 30, cw - 250);
+      });
+      c.fillStyle = '#e6d3a3'; c.font = `600 22px ${FONT}`;
+      c.fillText(`${TIMELINE.note.ko}  ${TIMELINE.note.en}`, 34, ch - 46, cw - 68);
+    }),
+  }));
+  m.position.set(x, y, z);
+  m.rotation.y = ry;
+  scene.add(m);
+  return m;
+}
+
+// "이달의 기억": the month's war heroes and days to remember, hung on the
+// stone wall over the altar. Drawn for today's month when the room is built.
+function monthBoardMesh(scene, wd, ht, x, y, z, mb) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshBasicMaterial({
+    map: canvasTex(Math.round(wd * 180), Math.round(ht * 180), (c, cw, ch) => {
+      c.fillStyle = '#26282b'; c.fillRect(0, 0, cw, ch);
+      c.strokeStyle = '#8a7a55'; c.lineWidth = 4; c.strokeRect(10, 10, cw - 20, ch - 20);
+      c.textBaseline = 'top'; c.textAlign = 'center';
+      c.fillStyle = '#e6d3a3'; c.font = `800 40px ${FONT}`;
+      c.fillText(`${mb.title.ko} · ${mb.title.en}`, cw / 2, 30, cw - 60);
+      c.textAlign = 'left';
+      let y = 92;
+      const head = (t) => { c.fillStyle = '#e6d3a3'; c.font = `700 24px ${FONT}`; c.fillText(`${t.ko} · ${t.en}`, 40, y, cw - 80); y += 36; };
+      if (mb.heroes.length) {
+        head(MONTH_TEXT.heroes);
+        for (const h of mb.heroes) {
+          c.fillStyle = '#f1ede4'; c.font = `800 25px ${FONT}`;
+          c.fillText(`${h.name.ko} · ${h.name.en}`, 40, y, cw - 80); y += 32;
+          c.fillStyle = '#d9d4ca'; c.font = `500 21px ${FONT}`;
+          y = wrap(c, h.ko, 40, y, cw - 80, 27);
+          c.fillStyle = '#b9b4aa'; c.font = `500 19px ${FONT}`;
+          y = wrap(c, h.en, 40, y, cw - 80, 24) + 8;
+        }
+      }
+      if (mb.days.length) {
+        head(MONTH_TEXT.days);
+        for (const dd of mb.days) {
+          c.fillStyle = '#f1ede4'; c.font = `600 21px ${FONT}`;
+          y = wrap(c, `${dd.d}  ${dd.ko}`, 40, y, cw - 80, 27);
+          c.fillStyle = '#b9b4aa'; c.font = `500 19px ${FONT}`;
+          y = wrap(c, dd.en, 40, y, cw - 80, 24) + 6;
+        }
+      }
+    }),
+  }));
+  m.position.set(x, y, z);
   scene.add(m);
   return m;
 }
@@ -318,7 +388,7 @@ export function buildMemorial(scene, room, { box, block }, floor = 1) {
       for (const o of [-0.7, 0.7]) seats.push({ x: x + o, z, ry: Math.PI, stand: [x + o, z + 1] });
     }
     board(scene, 4.2, 1.9, -w / 2 + 6, 2.3, d / 2 - 0.05, Math.PI, '안내 · Notice', [DISCLAIMER.ko, `📷 ${CREDIT.ko}`], [DISCLAIMER.en, `📷 ${CREDIT.en}`]);
-    return { looks, seats, clerk: null, flower: [], layFlower: () => {}, lift: { ...MEMORIAL_LIFT }, see };
+    return { looks, seats, clerk: null, flower: [], layFlower: () => {}, lift: { ...MEMORIAL_LIFT }, panels: [], see };
   }
 
   // The memorial room at the back: dark stone, the words of remembrance,
@@ -341,6 +411,15 @@ export function buildMemorial(scene, room, { box, block }, floor = 1) {
   candle.position.set(0, 2, ALTAR_Z + 0.5);
   scene.add(candle);
   sign(scene, 1.6, 0.36, 0, 0.6, ALTAR_Z + 0.56, 0, `💐 ${MEMORIAL_TEXT.flower.ko} · ${MEMORIAL_TEXT.flower.en}`, null, { bg: '#1d1f21', fg: '#e6d3a3' });
+  const mb = monthBoard();
+  monthBoardMesh(scene, 6.4, 3.1, 0, 3.55, -d / 2 + 0.17, mb);
+  // (read up close from either end of the altar)
+  // A reading panel's lines: one { ko, en, ja, zh } per paragraph.
+  const each = (o, f) => Object.fromEntries(Object.keys(o).map((l) => [l, f(l)]));
+  const monthPanel = {
+    kind: 'month', title: mb.title,
+    lines: [...mb.heroes.map((h) => each(h.name, (l) => `${h.name[l]}: ${h[l]}`)), ...mb.days.map((x) => each(x, (l) => l === 'd' ? null : `${x.d}  ${x[l]}`))],
+  };
   const flowers = new THREE.Group();
   scene.add(flowers);
   let laid = 0;
@@ -365,14 +444,25 @@ export function buildMemorial(scene, room, { box, block }, floor = 1) {
   // information desk in front of the way in.
   board(scene, 4.2, 1.9, -w / 2 + 6, 2.3, d / 2 - 0.05, Math.PI, '안내 · Notice', [DISCLAIMER.ko, `📷 ${CREDIT.ko}`], [DISCLAIMER.en, `📷 ${CREDIT.en}`]);
   board(scene, 4.2, 1.9, w / 2 - 6, 2.3, d / 2 - 0.05, Math.PI, '실제 전쟁기념관 방문 정보 · Visit the real War Memorial of Korea', VISIT.ko, VISIT.en);
-  const iz = LOBBY_Z + 3.4;
-  // Counter height, like the shops' counters: the guide's face shows over it.
-  box(4.2, 0.6, 0.8, 0, 0.3, iz, '#d9d4c9');
-  box(4.3, 0.05, 0.9, 0, 0.625, iz, '#3a3d40');
-  block(0, iz, 4.2, 0.8);
-  sign(scene, 1.6, 0.34, 0, 0.33, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3a3d40' });
-  // The guide stands at the end of the desk, facing the way in, so the
-  // whole uniform shows.
-  const clerk = { x: 2.75, z: iz - 0.1, ry: 0 };
-  return { looks, seats, clerk, flower: [{ ...FLOWER_SPOT }], layFlower, lift: { ...MEMORIAL_LIFT }, see };
+  // On the lobby's side walls: about this museum (left) and the Korean War
+  // at a glance (right). Each can also be read up close (a panel).
+  const bz = (LOBBY_Z + d / 2) / 2;
+  board(scene, 5.6, 2.7, -w / 2 + 0.05, 2.3, bz, Math.PI / 2, `${ABOUT.title.ko} · ${ABOUT.title.en}`, ABOUT.ko, ABOUT.en);
+  timelineBoard(scene, 7, 3.1, w / 2 - 0.05, 2.4, bz, -Math.PI / 2);
+  const panels = [
+    ...[-2.9, 2.9].map((x) => ({ x, z: FLOWER_SPOT.z, painting: monthPanel })),
+    { x: -w / 2 + 1.7, z: bz, painting: { kind: 'about', title: ABOUT.title, lines: ABOUT.ko.map((_, i) => each(ABOUT.title, (l) => ABOUT[l][i])) } },
+    { x: w / 2 - 1.7, z: bz, painting: { kind: 'timeline', title: TIMELINE.title, lines: [...TIMELINE.events.map((e) => each(TIMELINE.title, (l) => `${e.d}  ${e[l]}`)), TIMELINE.note] } },
+  ];
+  // The information desk on the left of the way in (by the board about the
+  // museum; the Korean War board is on the right), at counter height.
+  const iz = LOBBY_Z + 4.5, ix = -8;
+  box(4.2, 0.6, 0.8, ix, 0.3, iz, '#d9d4c9');
+  box(4.3, 0.05, 0.9, ix, 0.625, iz, '#3a3d40');
+  block(ix, iz, 4.2, 0.8);
+  sign(scene, 1.6, 0.34, ix, 0.33, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3a3d40' });
+  // The guide stands at the end of the desk nearer the way in, facing the
+  // door, so the whole uniform shows.
+  const clerk = { x: ix + 2.75, z: iz - 0.1, ry: 0 };
+  return { looks, seats, clerk, flower: [{ ...FLOWER_SPOT }], layFlower, lift: { ...MEMORIAL_LIFT }, panels, see };
 }

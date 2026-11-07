@@ -610,6 +610,7 @@ export function buildInterior(store) {
     const hall = buildMemorial(scene, ROOM, { box, block, mat }, store.floor || 1);
     stations.paintings = hall.looks;
     stations.lift = hall.lift;
+    stations.panels = hall.panels;
     stations.flower = hall.flower;
     stations.layFlower = hall.layFlower;
     seats.push(...hall.seats);
