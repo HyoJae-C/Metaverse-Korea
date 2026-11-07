@@ -112,10 +112,6 @@ import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
 import { LIFEGUARD_LOOK } from './core/pool-hall.js';
-import { shotMove } from './core/basketball-game.js';
-import { makeCourt, makeBall, COURT_STAND, COURT_RADIUS } from './core/basketball-court.js';
-import { ShotPlayer } from './core/basketball-play.js';
-import { BasketballUI } from './ui/basketball-ui.js';
 import { BL } from './ui/basketball-text.js';
 import { Skater, parkGround, railNear, inPark, PARK_SPEED, GRIND_NAME, bankPoints } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
@@ -178,6 +174,7 @@ import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
 import { createArcade } from './game/arcade.js';
+import { createBasketball } from './game/basketball.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -2856,7 +2853,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank or Bukchon's hill
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank or Bukchon's hill
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
@@ -4014,90 +4011,16 @@ const SKATE_TEXT = {
 };
 const SKATE_KEY = 'mk.skate'; // { day, pts, best }
 const readSkate = () => { try { return JSON.parse(localStorage.getItem(SKATE_KEY) || 'null'); } catch { return null; } };
-// --- Mini basketball: a half court on Olympic Park's Peace Plaza (a
-// "basketball" landmark; rules and moves in core/basketball-game.js, see
-// docs/BASKETBALL.md). Pick a shot, play its gauge, and the panel steps
-// aside while you do the move: basketTick places you each frame.
-const courtLm = map.landmarks.find((l) => l.type === 'basketball') || null;
-let court = null, courtBall = null;
-if (courtLm) {
-  court = makeCourt();
-  court.group.position.set(courtLm.x, 0, courtLm.z);
-  court.group.rotation.y = courtLm.ry || 0;
-  court.group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
-  scene.add(court.group);
-  court.group.updateMatrixWorld(true);
-  courtBall = makeBall();
-  courtBall.visible = false;
-  scene.add(courtBall);
-}
-let basketShot = null; // the move playing (ShotPlayer)
-let basketY = 0; // feet off the floor while jumping
-const _courtV = new THREE.Vector3();
-function nearCourt(p) {
-  if (!court || mode !== 'street') return false;
-  const v = court.group.worldToLocal(_courtV.set(p.x, 0, p.z));
-  return Math.hypot(v.x - COURT_STAND[0], v.z - COURT_STAND[1]) < COURT_RADIUS;
-}
-const BASKET_SFX = {
-  bounce: () => sfx.bump(0.35, 0.7),
-  rim: () => sfx.tock(1, 620),
-  board: () => sfx.tock(0.8, 320),
-  dunk: () => { sfx.bump(1, 1); buzz(40); },
-  net: () => sfx.plip(),
-  cheer: () => sfx.landed(),
-};
-const basketUi = new BasketballUI({
-  root: $('basket-panel'),
-  wallet,
-  onShot: ({ shot, tier }) => startBasketShot(shot, tier),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
-  onClose: () => { action = STALE; },
+// Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
+const basketball = createBasketball({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get action() { return action; }, set action(v) { action = v; }, get riding() { return riding; },
+  get seated() { return seated; },
+  get manualCamT() { return manualCamT; }, set manualCamT(v) { manualCamT = v; },
+  get speed01() { return speed01; }, set speed01(v) { speed01 = v; }, $, STALE, cam, scene, setAutoWalk, sfx,
+  shop, wallet,
 });
-function startBasketShot(shot, tier) {
-  const p = me.root.position;
-  if (!court || !nearCourt(p) || riding || seated) { basketUi.resume(); return; }
-  setAutoWalk(false);
-  const move = shotMove(shot, tier);
-  basketShot = new ShotPlayer({
-    ch: me, court, ball: courtBall, move,
-    onEvent: (ev, m) => {
-      BASKET_SFX[ev.kind]?.();
-      if (ev.kind === 'cheer') shop.toast('🏀 ' + BL('made', { n: m.points }) + (m.tier === 3 ? ' · ' + BL('style') : ''));
-      else if (ev.kind === 'bounce' && !m.made && ev.t > m.release && !basketShot.said) { basketShot.said = true; shop.toast(BL('missed')); }
-    },
-  });
-  // Look from the side, so the hoop and the ball's flight are in view.
-  const ry = court.group.rotation.y;
-  cam.yaw = ry + (move.start[0] < 0 ? -0.75 : 0.75);
-  manualCamT = 1;
-  action = STALE;
-}
-function stopBasketShot() {
-  basketShot?.stop();
-  basketShot = null;
-  basketY = 0;
-  if (courtBall) courtBall.visible = false;
-  me.setTrick(null, 0);
-}
-// Every frame, before the ground height is used.
-function basketTick(dt, p) {
-  if (!court) return;
-  if (!basketShot) {
-    court.update(dt);
-    if (basketUi.open && !nearCourt(p)) basketUi.close(); // walked away
-    return;
-  }
-  if (mode !== 'street' || riding) { stopBasketShot(); basketUi.close(); return; }
-  const s = basketShot.step(dt);
-  p.x = s.x; p.z = s.z;
-  basketY = s.y;
-  me.root.rotation.y = s.ry;
-  me.setTrick({ spin: s.spin }, s.y);
-  speed01 = s.speed;
-  if (s.done) { stopBasketShot(); basketUi.resume(); action = STALE; }
-}
-
+const { basketUi, nearCourt, basketTick } = basketball;
 const skateLm = map.landmarks.find((l) => l.type === 'skatepark') || null;
 let skateWelcomed = 0;
 let skateTkSeq = 0;
@@ -5720,7 +5643,7 @@ function updateAction(p, tSec) {
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     const poop = !riding && nearestPoop(p);
-    if (basketShot) next = null; // mid-shot
+    if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (it) next = storeAct(it);
     else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
