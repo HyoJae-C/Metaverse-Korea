@@ -46,5 +46,5 @@ export const config = {
   rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
   // "Support the creator" link in Settings (e.g. https://buymeacoffee.com/name).
   // Empty = the row stays hidden. VITE_SUPPORT_URL overrides it at build time.
-  supportUrl: import.meta.env.VITE_SUPPORT_URL || '',
+  supportUrl: import.meta.env.VITE_SUPPORT_URL || 'https://buymeacoffee.com/hjseoul',
 };
