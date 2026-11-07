@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   PARK, RAMPS, RAILS, PARK_SPEED, POP, COMBO_GAP, parkGround, railNear, inPark, parkBlockers,
-  TRICKS, pickTrick, trickPose, airTime, Skater, bankPoints,
+  TRICKS, pickTrick, trickPose, airTime, Skater, bankPoints, TIER_DUR, tierFor,
 } from '../src/core/skatepark.js';
 import { RIDE_TYPES } from '../src/core/bike-garage.js';
 
@@ -63,6 +63,45 @@ test('skate park: an ollie on flat ground is a small trick, and the combo counts
     assert.ok(pickTrick(type, airTime(0, POP)), type);
     assert.ok(pickTrick(type, 1.3).pts >= 280, type);
   }
+});
+
+test('skate park: every ride has five tricks in each of four air tiers, picked by air time', () => {
+  for (const type of RIDE_TYPES) {
+    for (let tier = 1; tier <= 4; tier++) {
+      const list = TRICKS.filter((k) => k.tier === tier && k.types.includes(type));
+      assert.equal(list.length, 5, `${type} tier ${tier}`);
+      const air = TIER_DUR[tier] / 0.95 + 0.01;
+      assert.equal(tierFor(air), tier);
+      // The five take turns.
+      assert.deepEqual([0, 1, 2, 3, 4, 5].map((n) => pickTrick(type, air, n).id), [...list, list[0]].map((k) => k.id));
+    }
+  }
+  for (let tier = 2; tier <= 4; tier++) {
+    const lo = Math.max(...TRICKS.filter((k) => k.tier === tier - 1).map((k) => k.pts));
+    const hi = Math.min(...TRICKS.filter((k) => k.tier === tier).map((k) => k.pts));
+    assert.ok(hi > lo, `tier ${tier} pays more than tier ${tier - 1}`);
+  }
+  assert.equal(pickTrick('skate', 0.2), null, 'too little air');
+});
+
+test('skate park: flat pops are low, kickers middle or high, a pop high up a quarter pipe is huge', () => {
+  const tierOf = (r) => r.events.find((e) => e.kind === 'trick')?.trick.tier;
+  assert.equal(tierOf(ride(new Skater('skate'), { x0: -10, z: -18, v: 0, secs: 1, taps: [0.05] })), 1);
+  const lipAt = (-10.4 + 20) / PARK_SPEED;
+  assert.equal(tierOf(ride(new Skater('skate'), { x0: -20, z: 11, v: PARK_SPEED, secs: 3.6, taps: [lipAt - 0.05] })), 3);
+  // Up the west quarter pipe (the wall at the coping stops you).
+  const qp = (tap) => {
+    const sk = new Skater('bike'); const events = []; let x = -12;
+    for (let t = 0; t < 3; t += 1 / 60) {
+      if (tap >= t && tap < t + 1 / 60) sk.tap();
+      x = Math.max(-30.5, x - PARK_SPEED / 60);
+      events.push(...sk.step(1 / 60, parkGround(x, 0), null).events);
+    }
+    return { events };
+  };
+  assert.equal(tierOf(qp(1.35)), 3, 'low on the ramp');
+  assert.equal(tierOf(qp(1.7)), 4, 'high on the ramp');
+  assert.ok(!qp(1.7).events.some((e) => e.kind === 'bail'));
 });
 
 test('skate park: up a quarter pipe you go straight up and come back down', () => {
