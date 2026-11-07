@@ -44,7 +44,7 @@ test('Seosunra-gil is out for now; the Information Center stands on Jongno by a 
   assert.ok(map.buildings.some((b) => b.fr?.[1] === 1 && inside(x, z - 3, b.p)), 'its hanok behind it');
   const jongno = map.roads.find((r) => r.n?.en === 'Jongno');
   assert.ok(z < jongno.p[0][1] - jongno.w / 2, 'on the pavement, off the road');
-  assert.ok(map.landmarks.find((l) => l.type === 'shrinetrees').spots.some(([tx]) => tx < JONGMYO.wall[0] - 4), 'the grove west of the wall');
+  assert.ok(map.landmarks.filter((l) => l.type === 'shrinetrees').flatMap((l) => l.spots).some(([tx]) => tx < JONGMYO.wall[0] - 4), 'the grove west of the wall');
   // Fictional brands only (sample data).
   assert.ok(read('stores.json').sampleData);
 });
@@ -163,4 +163,28 @@ test('the guide\'s facts, the stamp and the Joseon Royal Walk', () => {
 
 test('the map credits OpenStreetMap', () => {
   assert.match(map.meta.source, /OpenStreetMap/);
+});
+
+test('Enter Jongmyo from in front of the stamp; the inside is built on the first visit', () => {
+  const { entry } = JONGMYO;
+  const stamp = STAMPS.find((s) => s.id === 'jongmyo');
+  const [sx, sz] = [stamp.place.at[0] - ox, stamp.place.at[1] - oz];
+  assert.ok(Math.hypot(entry.at[0] - sx, entry.at[1] - sz) < 5, 'by the stamp');
+  assert.ok(!inBox(...entry.at, JONGMYO.wall), 'the Enter spot is outside the wall');
+  assert.ok(inBox(...entry.inside, JONGMYO.wall) && !inSolid(...entry.inside), 'lands inside, on clear ground');
+  assert.ok(inBox(...entry.leave.at, JONGMYO.wall), 'Leave is inside the gate');
+  assert.ok(Math.hypot(entry.inside[0] - entry.leave.at[0], entry.inside[1] - entry.leave.at[1]) > entry.leave.r, 'you don\'t land on Leave');
+  assert.ok(!inBox(...entry.out, JONGMYO.wall) && !inSolid(...entry.out), 'leaving puts you on the square');
+  // The halls, terraces, stone path, inner woods and the rite sign wait for the first visit.
+  const inner = map.landmarks.filter((l) => l.inner);
+  for (const t of ['shrinehall', 'woldae', 'samdo', 'shrinetrees', 'sign']) assert.ok(inner.some((l) => l.type === t), t);
+  const [x0, z0, x1, z1] = JONGMYO.wall;
+  const inWall = (x, z) => x >= x0 - 1 && x <= x1 + 1 && z <= z0 + 1 && z >= z1 - 1;
+  for (const l of inner) assert.ok(l.p ? l.p.every(([x, z]) => inWall(x, z)) : inWall(l.x, l.z), l.type);
+  for (const l of inner.filter((q) => q.type === 'shrinetrees')) for (const [x, z] of l.spots) assert.ok(inWall(x, z), 'inner trees inside');
+  // The outer wall, the main gate and the square's trees stay built from the start.
+  assert.ok(map.landmarks.some((l) => l.type === 'jongmyogate' && !l.small && !l.inner));
+  assert.ok(map.landmarks.some((l) => l.type === 'shrinetrees' && !l.inner));
+  const src = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(src, /buildLandmarks\(map\.landmarks\.filter\(\(l\) => !l\.inner\)/);
 });

@@ -58,8 +58,8 @@ const areas = [
 // (a gap for its south gate). Blockers are 1 m thick along each run.
 const blockers = [];
 const landmarks = [];
-const wallLine = (pts, h) => {
-  landmarks.push({ type: 'wall', p: pts, h });
+const wallLine = (pts, h, inner) => {
+  landmarks.push({ type: 'wall', p: pts, h, ...(inner ? { inner: 1 } : {}) });
   for (let i = 1; i < pts.length; i++) {
     const [ax, az] = pts[i - 1], [bx, bz] = pts[i];
     blockers.push({ p: ax === bx ? rect(ax - 0.6, Math.min(az, bz), ax + 0.6, Math.max(az, bz)) : rect(Math.min(ax, bx), az - 0.6, Math.max(ax, bx), az + 0.6) });
@@ -69,7 +69,7 @@ const GW = JONGMYO.gate.w / 2;
 wallLine([[-GW, WZ0], [WX0, WZ0], [WX0, WZ1], [WX1, WZ1], [WX1, WZ0], [GW, WZ0]], 3.4);
 for (const yard of [JONGMYO.jeongjeon, JONGMYO.yeongnyeongjeon]) {
   const [x0, z0, x1, z1] = yard.yard, gx = yard.gate[0];
-  wallLine([[gx - 2.5, z0], [x0, z0], [x0, z1], [x1, z1], [x1, z0], [gx + 2.5, z0]], 2.4);
+  wallLine([[gx - 2.5, z0], [x0, z0], [x0, z1], [x1, z1], [x1, z0], [gx + 2.5, z0]], 2.4, true);
 }
 // The halls stand on a stone base; the pond is water.
 blockers.push({ p: rect(...JONGMYO.jeongjeon.hall) }, { p: rect(...JONGMYO.yeongnyeongjeon.hall) }, { p: rect(...JONGMYO.pond) });
@@ -81,15 +81,16 @@ const cx = (b) => (b[0] + b[2]) / 2, cz = (b) => (b[1] + b[3]) / 2;
 const jj = JONGMYO.jeongjeon, yn = JONGMYO.yeongnyeongjeon;
 landmarks.push(
   { type: 'jongmyogate', x: 0, z: 0, w: JONGMYO.gate.w },
-  { type: 'jongmyogate', x: jj.gate[0], z: jj.gate[1], w: 5, small: true }, // Namsinmun
-  { type: 'jongmyogate', x: yn.gate[0], z: yn.gate[1], w: 5, small: true },
-  { type: 'shrinehall', x: cx(jj.hall), z: cz(jj.hall), w: jj.hall[2] - jj.hall[0], d: jj.hall[1] - jj.hall[3], bays: 19, name: '正殿' },
-  { type: 'shrinehall', x: cx(yn.hall), z: cz(yn.hall), w: yn.hall[2] - yn.hall[0], d: yn.hall[1] - yn.hall[3], bays: 16, mid: 4, name: '永寧殿' },
-  { type: 'woldae', x: cx(jj.woldae), z: cz(jj.woldae), w: jj.woldae[2] - jj.woldae[0], d: jj.woldae[1] - jj.woldae[3] },
-  { type: 'woldae', x: cx(yn.woldae), z: cz(yn.woldae), w: yn.woldae[2] - yn.woldae[0], d: yn.woldae[1] - yn.woldae[3] },
-  { type: 'samdo', x: 0, z: 0, segs: JONGMYO.samdo, w: JONGMYO.samdoW, mid: JONGMYO.sindoW },
-  { type: 'squarepond', x: cx(JONGMYO.pond), z: cz(JONGMYO.pond), w: JONGMYO.pond[2] - JONGMYO.pond[0], d: JONGMYO.pond[1] - JONGMYO.pond[3] },
-  { type: 'jeryeband', x: (JONGMYO.rite.band.x0 + JONGMYO.rite.band.x1) / 2, z: JONGMYO.rite.band.z, w: JONGMYO.rite.band.x1 - JONGMYO.rite.band.x0 },
+  // Inside the wall ("inner": built on the first visit).
+  { type: 'jongmyogate', x: jj.gate[0], z: jj.gate[1], w: 5, small: true, inner: 1 }, // Namsinmun
+  { type: 'jongmyogate', x: yn.gate[0], z: yn.gate[1], w: 5, small: true, inner: 1 },
+  { type: 'shrinehall', x: cx(jj.hall), z: cz(jj.hall), w: jj.hall[2] - jj.hall[0], d: jj.hall[1] - jj.hall[3], bays: 19, name: '正殿', inner: 1 },
+  { type: 'shrinehall', x: cx(yn.hall), z: cz(yn.hall), w: yn.hall[2] - yn.hall[0], d: yn.hall[1] - yn.hall[3], bays: 16, mid: 4, name: '永寧殿', inner: 1 },
+  { type: 'woldae', x: cx(jj.woldae), z: cz(jj.woldae), w: jj.woldae[2] - jj.woldae[0], d: jj.woldae[1] - jj.woldae[3], inner: 1 },
+  { type: 'woldae', x: cx(yn.woldae), z: cz(yn.woldae), w: yn.woldae[2] - yn.woldae[0], d: yn.woldae[1] - yn.woldae[3], inner: 1 },
+  { type: 'samdo', x: 0, z: 0, segs: JONGMYO.samdo, w: JONGMYO.samdoW, mid: JONGMYO.sindoW, inner: 1 },
+  { type: 'squarepond', x: cx(JONGMYO.pond), z: cz(JONGMYO.pond), w: JONGMYO.pond[2] - JONGMYO.pond[0], d: JONGMYO.pond[1] - JONGMYO.pond[3], inner: 1 },
+  { type: 'jeryeband', x: (JONGMYO.rite.band.x0 + JONGMYO.rite.band.x1) / 2, z: JONGMYO.rite.band.z, w: JONGMYO.rite.band.x1 - JONGMYO.rite.band.x0, inner: 1 },
   ...JONGMYO.janggi.map(({ at: [x, z] }) => ({ type: 'janggitable', x, z })),
 );
 
@@ -101,7 +102,7 @@ const seg = (x, z, [ax, az], [bx, bz]) => {
   return Math.hypot(x - (ax + dx * t), z - (az + dz * t));
 };
 const inR = (x, z, [ax, az, bx, bz], m = 0) => x > Math.min(ax, bx) - m && x < Math.max(ax, bx) + m && z > Math.min(az, bz) - m && z < Math.max(az, bz) + m;
-const trees = [];
+const trees = []; // inside the wall
 for (let z = -5; z > WZ1 + 3; z -= 6.5) {
   for (let x = WX0 + 3.5; x < WX1 - 3; x += 6.5) {
     const jx = x + (((x * 7 + z * 13) % 5) + 5) % 5 * 0.4 - 0.8, jz = z + (((x * 3 + z * 11) % 5) + 5) % 5 * 0.4 - 0.8;
@@ -111,19 +112,20 @@ for (let z = -5; z > WZ1 + 3; z -= 6.5) {
     trees.push([Math.round(jx * 10) / 10, Math.round(jz * 10) / 10]);
   }
 }
+const outTrees = []; // the grove and the square
 for (let z = GROVE[1] - 3; z > GROVE[3] + 3; z -= 7) {
   for (let x = GROVE[0] + 3; x < GROVE[2] - 2; x += 7) {
     const jx = x + (((x * 5 + z * 7) % 5) + 5) % 5 * 0.5 - 1, jz = z + (((x * 11 + z * 3) % 5) + 5) % 5 * 0.5 - 1;
-    trees.push([Math.round(jx * 10) / 10, Math.round(jz * 10) / 10]);
+    outTrees.push([Math.round(jx * 10) / 10, Math.round(jz * 10) / 10]);
   }
 }
-for (let x = WX0 + 4; x < WX1 - 2; x += 9) if (Math.abs(x) > 8 && !JONGMYO.janggi.some(({ at }) => Math.abs(at[0] - x) < 3)) trees.push([x, 3]);
-landmarks.push({ type: 'shrinetrees', x: 0, z: 0, spots: trees });
+for (let x = WX0 + 4; x < WX1 - 2; x += 9) if (Math.abs(x) > 8 && !JONGMYO.janggi.some(({ at }) => Math.abs(at[0] - x) < 3)) outTrees.push([x, 3]);
+landmarks.push({ type: 'shrinetrees', x: 0, z: 0, spots: trees, inner: 1 }, { type: 'shrinetrees', x: 0, z: 0, spots: outTrees });
 
 // Signs: Jongmyo by the gate, the music and dances below Jeongjeon's terrace.
 const rs = JONGMYO.riteSign;
 landmarks.push(
-  { type: 'sign', x: rs.at[0], z: rs.at[1], ry: rs.ry, title: rs.title, text: rs.text },
+  { type: 'sign', x: rs.at[0], z: rs.at[1], ry: rs.ry, title: rs.title, text: rs.text, inner: 1 },
   { type: 'sign', x: 8, z: 6, ry: 0, title: JONGMYO.welcome.title, text: { en: JONGMYO.welcome.text.en + ' ' + JONGMYO.welcome.rules.en, ko: JONGMYO.welcome.text.ko + ' ' + JONGMYO.welcome.rules.ko, ja: JONGMYO.welcome.text.ja + ' ' + JONGMYO.welcome.rules.ja, zh: JONGMYO.welcome.text.zh + ' ' + JONGMYO.welcome.rules.zh } },
 );
 
@@ -165,4 +167,4 @@ if (off) {
     console.log(`stores.json: ${INFO.id} placed`);
   }
 }
-console.log(`jongmyo.json: ${roads.length} roads, ${buildings.length} buildings, ${trees.length} trees`);
+console.log(`jongmyo.json: ${roads.length} roads, ${buildings.length} buildings, ${trees.length + outTrees.length} trees`);

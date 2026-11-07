@@ -611,7 +611,9 @@ const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, {
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
-const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
+// Palace gates, halls, statues (hand-made districts). Those marked "inner"
+// (inside Jongmyo's wall) wait for the first visit (the enclosures below).
+const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -3717,11 +3719,22 @@ const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
   const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
-  if (hanoks.length) e.onFirstEnter = () => {
-    const g = buildHanoks(hanoks);
-    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    scene.add(g);
-    return [g];
+  const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
+  if (hanoks.length || inner.length) e.onFirstEnter = () => {
+    const out = [];
+    if (hanoks.length) {
+      const g = buildHanoks(hanoks);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(g);
+      out.push(g);
+    }
+    if (inner.length) { // Jongmyo's halls, terraces, stone path and woods
+      const g = buildLandmarks(inner, scene);
+      const tick = landmarks.userData.tick;
+      landmarks.userData.tick = (t) => { tick(t); g.userData.tick(t); };
+      out.push(g);
+    }
+    return out;
   };
   return e;
 });
@@ -3825,6 +3838,8 @@ const jongmyoBook = new JongmyoBook();
 const JM_TEXT = {
   ask: { en: 'Ask the guide', ko: '해설사에게 묻기', ja: '解説員に聞く', zh: '问讲解员' },
   hi: { en: 'Say hi to the grandpas', ko: '어르신께 인사하기', ja: 'おじいさんにあいさつ', zh: '和老爷爷打招呼' },
+  enter: { en: 'Enter Jongmyo', ko: '종묘 입장', ja: '宗廟に入る', zh: '进入宗庙' },
+  leave: { en: 'Leave Jongmyo', ko: '종묘에서 나가기', ja: '宗廟を出る', zh: '离开宗庙' },
   sindo: { en: '🛤️ The raised middle strip is the path for the ancestors\' spirits (sindo). People walk on the strips beside it.', ko: '🛤️ 가운데 높은 길은 조상의 혼령이 다니는 신도예요. 사람은 양옆 길로 걸어요.', ja: '🛤️ 中央の高い道は祖先の霊が通る神道です。人は両脇の道を歩きます。', zh: '🛤️ 中间高起的是祖先神灵走的神道，人走两侧的路。' },
   manners: { en: '🙇 You walked the stone path the right way, off the spirits\' strip! (+🪙 {c})', ko: '🙇 혼령의 길을 밟지 않고 돌길을 바르게 걸었어요! (+🪙 {c})', ja: '🙇 霊の道を踏まずに石畳を正しく歩きました！（+🪙 {c}）', zh: '🙇 没有踩神灵的路，正确地走完了石路！（+🪙 {c}）' },
   mannersLedger: { en: 'Jongmyo manners', ko: '종묘 예절', ja: '宗廟のマナー', zh: '宗庙礼仪' },
@@ -3838,6 +3853,10 @@ function jongmyoCard(item, sub = '') {
 }
 function jongmyoAct(p) {
   if (!jongmyoShow || mode !== 'street') return null;
+  // Enter from in front of the stamp; leave from just inside the gate.
+  const { entry } = JONGMYO, [ox, oz] = jongmyoAt;
+  if (Math.hypot(p.x - ox - entry.at[0], p.z - oz - entry.at[1]) < entry.r) return { key: 'jm-enter', label: '🏛️ ' + L(JM_TEXT.enter), run: () => moveMeTo(scene, entry.inside[0] + ox, entry.inside[1] + oz, Math.PI) };
+  if (Math.hypot(p.x - ox - entry.leave.at[0], p.z - oz - entry.leave.at[1]) < entry.leave.r) return { key: 'jm-leave', label: '🚪 ' + L(JM_TEXT.leave), run: () => moveMeTo(scene, entry.out[0] + ox, entry.out[1] + oz, 0) };
   if (jongmyoShow.nearGuide(p.x, p.z)) return { key: 'jm-guide', label: 'ℹ️ ' + L(JM_TEXT.ask), run: () => {
     jongmyoShow.greetGuide(p.x, p.z);
     const c = JONGMYO.guideCards[jmCard++ % JONGMYO.guideCards.length];

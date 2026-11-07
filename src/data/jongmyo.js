@@ -61,6 +61,11 @@ export const JONGMYO = {
     groups: [{ dance: 'ilmu', dx: -11 }, { dance: 'mumu', dx: 11 }],
     band: { z: -71.5, x0: 22, x1: 60, n: 15 },
   },
+  // Going in without the walk: an Enter spot just in front of the stamp on
+  // Jongmyo Square takes you inside Oedaemun; a Leave spot inside the gate
+  // brings you back out. (Walking through the gate works too.) What stands
+  // inside is built only on the first visit (landmarks marked "inner").
+  entry: { at: [-10, 4], r: 2.5, inside: [-3, -6], leave: { at: [-3, -2.5], r: 2 }, out: [-3, 6] },
   // The sign about the music and the two dances, below the terrace.
   riteSign: {
     at: [30, -37.5], ry: 0,

@@ -194,7 +194,10 @@ civil dance on the west half, the military dance with wooden swords and spears
 on the east half; 15 musicians behind them), built the first time you come
 near, and the grandpas. A sign below the terrace explains the two dances (at
 the real rite they take turns). Stepping onto the spirits' strip slides you
-back beside it (`offSindo`). Outside the west wall: a grove and the
+back beside it (`offSindo`). `🏛️ Enter Jongmyo` in front of the stamp takes you
+inside the gate and `🚪 Leave Jongmyo` just inside brings you back (walking
+through the gate works too). Landmarks marked `inner` (the halls, terraces,
+stone path, inner woods, rite sign) are built only on the first visit. Outside the west wall: a grove and the
 Information Center's hanok on Jongno. Seosunra-gil (the lane along the west
 wall with six hanok shops) was taken out for now because it felt too much
 like Bukchon; to bring it back, start from commit e4ebd13. Run the script
