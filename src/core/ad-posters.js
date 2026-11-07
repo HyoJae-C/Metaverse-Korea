@@ -16,6 +16,7 @@
 //   { "h": 28, "p": [...], "wall": { "face": [1, 0], "image": "ads/x.webp", "credit": "Name" } }
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
+import { canvasTex as canvasTexture } from './three-kit.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
@@ -66,15 +67,7 @@ export function storeLot(buildings, [x, z]) {
 }
 
 // ── Textures ────────────────────────────────────────────────────────────
-function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
+const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4 });
 
 const BIG_COLORS = ['#ff5a5f', '#2d6cdf', '#11a37f', '#f2a900', '#8e44ad', '#ff7a00', '#e94e77', '#1b998b'];
 

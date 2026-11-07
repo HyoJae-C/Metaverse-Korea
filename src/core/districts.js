@@ -13,6 +13,7 @@
 //
 // Map files may also have "blockers": polygons you can't walk into (a river,
 // a palace wall) that are not buildings.
+import { inPoly } from './geom.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
@@ -63,14 +64,6 @@ export function liftStations(map) {
     if (inside >= 20) b.m = Math.min(DECK_HEIGHT, b.h - 1);
   }
   return map;
-}
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
 }
 
 // Where something stands: local metres ("at": [x, z], for hand-made

@@ -29,6 +29,7 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  runway: { w: 26, d: 30, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
@@ -349,9 +350,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema;
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway'; // (the runway: a dark show room)
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
@@ -361,7 +362,7 @@ export function buildInterior(store) {
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : store.workshop === 'runway' ? '#2a2733' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -1020,6 +1021,79 @@ export function buildInterior(store) {
       box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
       for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
       block(fx, fz, 0.9, 2.3);
+    } else if (store.workshop === 'runway') {
+      // Curve Runway (DDP, its own big room size): a long lit catwalk from a
+      // backstage arch at the back wall towards the door, rows of seats
+      // either side facing it (some already taken by an audience, main.js),
+      // and photographers either side of its end. The middle stays open from
+      // the door to the catwalk: walk in, up the runway to backstage.
+      // Flat (at floor height), so walking it needs no climbing.
+      const z0 = -d / 2 + 1.8, z1 = d / 2 - 9, len = z1 - z0 + 1.4, mid = (z0 + z1) / 2;
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(2.6, len).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#f4f1f8' }));
+      strip.position.set(0, 0.012, mid);
+      scene.add(strip);
+      const glowMat = new THREE.MeshBasicMaterial({ color: '#ffe9c4' });
+      for (const sx2 of [-1.35, 1.35]) {
+        const edge = new THREE.Mesh(new THREE.PlaneGeometry(0.1, len).rotateX(-Math.PI / 2), glowMat);
+        edge.position.set(sx2, 0.016, mid);
+        scene.add(edge);
+      }
+      // Backstage: a silver arch with a dark curtain.
+      for (const sx2 of [-2, 2]) box(0.45, 4, 0.45, sx2, 2, -d / 2 + 0.5, '#c9ced6');
+      box(4.5, 0.55, 0.45, 0, 4.1, -d / 2 + 0.5, '#c9ced6');
+      box(3.6, 3.8, 0.06, 0, 1.9, -d / 2 + 0.12, '#2a2632');
+      // Seats: four rows each side, turned to the runway, in two blocks with
+      // a cross aisle between them (and aisles at both ends) to get in.
+      const audience = [];
+      const rowZs = [];
+      for (let z = z0 + 2; z <= z1 - 0.6; z += 1.15) rowZs.push(z);
+      const aisle = Math.floor(rowZs.length / 2);
+      const blocks = [rowZs.slice(0, aisle), rowZs.slice(aisle + 1)];
+      let k = 0;
+      for (const side of [-1, 1]) {
+        for (let r = 0; r < 4; r++) {
+          const sx2 = side * (2.9 + r * 1.25);
+          for (const zs of blocks) {
+            for (const z of zs) {
+              box(0.62, 0.12, 0.62, sx2, SEAT_H - 0.06, z, store.colors.seat || store.colors.sign);
+              box(0.12, 0.6, 0.62, sx2 + side * 0.3, SEAT_H + 0.28, z, store.colors.seat || store.colors.sign);
+              const seat = { x: sx2, z, ry: -side * Math.PI / 2, stand: [sx2 - side * 0.62, z] };
+              // About a third of the seats are taken already (the same ones
+              // for everyone); the rest are for players.
+              if ((k++ * 7) % 3 === 0) audience.push(seat); else seats.push(seat);
+            }
+            if (zs.length) block(sx2 + side * 0.12, (zs[0] + zs[zs.length - 1]) / 2, 0.45, zs[zs.length - 1] - zs[0] + 0.7);
+          }
+        }
+      }
+      // The photographers: cameras on tripods either side of the runway's
+      // end, leaving the middle open.
+      const flashes = [];
+      for (const fx of [-3.4, -2.2, 2.2, 3.4]) {
+        const pz = z1 + 1.4;
+        box(0.05, 1.2, 0.05, fx, 0.6, pz, '#3a3a40');
+        box(0.32, 0.22, 0.2, fx, 1.3, pz, '#1f1f24');
+        box(0.12, 0.12, 0.18, fx, 1.3, pz - 0.18, '#55555c'); // lens
+        block(fx, pz, 0.4, 0.4);
+        const fl = new THREE.PointLight(0xffffff, 0, 8);
+        fl.position.set(fx, 1.6, pz - 0.3);
+        scene.add(fl);
+        flashes.push(fl);
+      }
+      // Spotlights over the runway.
+      for (const sz of [mid, z1 - 1]) {
+        const spot = new THREE.PointLight(0xfff1dd, 14, 16);
+        spot.position.set(0, h - 0.5, sz);
+        scene.add(spot);
+      }
+      let flashT = 0;
+      animate = (dt) => {
+        flashT = Math.max(0, flashT - dt);
+        const on = flashT > 0 && Math.sin(flashT * 60) > 0 ? 40 : 0;
+        flashes.forEach((fl, i) => { fl.intensity = (i + Math.floor(flashT * 20)) % 2 ? on : 0; });
+      };
+      // Stand backstage to start; main.js walks you from z to z1 and back.
+      stations.runway = [{ x: 0, z: z0, ry: 0, z1, audience, flash: () => { flashT = 0.5; } }];
     } else if (store.workshop === 'karaoke') {
       // A small stage with a big lyrics screen and a mic stand.
       box(5, 0.2, 2.4, 0, 0.1, -d / 2 + 1.4, '#2b2240');

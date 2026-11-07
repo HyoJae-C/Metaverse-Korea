@@ -93,7 +93,6 @@ export function rivalLanes(mine) {
 // Messages go out like emotes (main.js): open (with the seconds left before
 // the countdown, so late joiners line up), join, fin (the time), quit.
 export const LOBBY = 10; // seconds to join before the countdown
-export const FRIEND_WAIT = 25; // seconds the board waits for slower friends
 const RID = /^[a-z0-9]{1,10}$/;
 export function raceMsg(verb, rid, a = '') {
   if (verb === 'open') return `prace:open:${rid}:${a.lane}:${Math.max(0, Math.round(a.left * 10))}`;

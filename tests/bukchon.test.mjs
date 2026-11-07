@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BUKCHON, ViewBook, PartBook, VIEW_REWARD, ALL_VIEWS_REWARD, inside, nearestAt } from '../src/data/bukchon.js';
+import { BUKCHON, ViewBook, PartBook, VIEW_REWARD, ALL_VIEWS_REWARD, inside, nearestAt, ground } from '../src/data/bukchon.js';
 import { craftEntry, CRAFT } from '../src/ui/bukchon-ui.js';
 import { districtBoxes, districtAt, mergeDistricts } from '../src/core/districts.js';
 import { cleanEntry } from '../src/core/bag.js';
@@ -22,17 +22,32 @@ test('Bukchon sits on its real spot at Anguk Station, next to Gyeongbokgung', ()
   assert.equal(st.prev.en, 'Gyeongbokgung');
 });
 
-test('the 8 Views are the official eight, in order, each on open ground', () => {
-  assert.deepEqual(BUKCHON.views.map((v) => v.n), [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.equal(BUKCHON.views[0].name.ko, '창덕궁 전경');
-  assert.equal(BUKCHON.views[7].name.ko, '삼청동 돌계단길');
-  for (const v of BUKCHON.views) {
-    assert.ok(v.name.en && v.name.ko && v.text.en && v.text.ko, v.n);
-    for (const p of solids) assert.ok(!inside(v.at[0], v.at[1], p), `view ${v.n} is inside a building`);
+test('the photo spot is at the top of the hill, looking down Bukchon-ro 11-gil', () => {
+  const [v] = BUKCHON.views;
+  assert.equal(BUKCHON.views.length, 1);
+  assert.equal(v.name.ko, '북촌로11길 언덕');
+  assert.deepEqual(v.face, [0, 1]); // looking south, down the alley to the city
+  assert.equal(ground(...v.at), BUKCHON.hill.h); // at the top
+  for (const p of solids) assert.ok(!inside(v.at[0], v.at[1], p), 'the spot is inside something');
+  const alley = map.roads.find((r) => r.n?.en === 'Bukchon-ro 11-gil');
+  assert.ok(Math.abs(alley.p[0][0] - v.at[0]) < 1, 'straight down the alley');
+  assert.ok(inside(v.at[0], v.at[1], BUKCHON.quiet));
+});
+
+test('Bukchon is small and on a hill: flat by the gate, climbing to the top', () => {
+  const [x0, z0, x1, z1] = BUKCHON.area;
+  assert.ok(x1 - x0 <= 150 && z0 - z1 <= 180, 'small enough to walk round');
+  assert.equal(ground(24, -30), 0); // by the gate and the shops
+  assert.equal(ground(60, -84), 0);
+  assert.ok(ground(60, -120) > 3 && ground(60, -120) < BUKCHON.hill.h);
+  assert.equal(ground(60, -170), BUKCHON.hill.h);
+  assert.equal(ground(200, -170), 0); // outside the wall
+  // Houses up the hill stand on terraces as high as the ground at their top edge.
+  for (const b of map.buildings) {
+    const zs = b.p.map((q) => q[1]), xs = b.p.map((q) => q[0]);
+    const want = ground((Math.min(...xs) + Math.max(...xs)) / 2, Math.min(...zs));
+    assert.ok(Math.abs((b.lv || 0) - want) < 0.06);
   }
-  // Views 4 to 7 are in the hanok alleys up the hill: the Quiet Zone.
-  for (const n of [4, 5, 6, 7]) { const v = BUKCHON.views[n - 1]; assert.ok(inside(v.at[0], v.at[1], BUKCHON.quiet), n); }
-  assert.ok(!inside(...BUKCHON.views[7].at, BUKCHON.quiet));
 });
 
 test('the Open House spots are in its courtyard, reachable through the gate', () => {
@@ -48,7 +63,7 @@ test('the Open House spots are in its courtyard, reachable through the gate', ()
 
 test('hanok houses keep off the streets', () => {
   const hanok = map.buildings.filter((b) => b.hanok);
-  assert.ok(hanok.length > 150);
+  assert.ok(hanok.length > 30);
   const segDist = (x, z, [ax, az], [bx, bz]) => { const dx = bx - ax, dz = bz - az, l = dx * dx + dz * dz; const t = l ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l)) : 0; return Math.hypot(x - ax - t * dx, z - az - t * dz); };
   for (const b of hanok) {
     const cx = b.p.reduce((s, q) => s + q[0], 0) / 4, cz = b.p.reduce((s, q) => s + q[1], 0) / 4;
@@ -73,16 +88,13 @@ test('Bukchon shops stand in Bukchon, with hanok fronts', () => {
   assert.deepEqual(stores.find((x) => x.id === 'gahoe-hanbok').products.map((p) => p.rent), a);
 });
 
-test('the 8 Views book pays once per view, and a bonus for all eight', () => {
+test('the photo spot pays once, and the Open House parts make a Hanok Explorer', () => {
   const st = mem();
   const book = new ViewBook(st);
-  let total = 0;
-  for (const n of [1, 2, 3, 4, 5, 6, 7]) total += book.take(n);
-  assert.equal(total, 7 * VIEW_REWARD);
-  assert.equal(book.take(3), 0);
-  assert.equal(book.take(8), VIEW_REWARD + ALL_VIEWS_REWARD);
+  assert.equal(book.take(1), VIEW_REWARD + ALL_VIEWS_REWARD);
+  assert.equal(book.take(1), 0);
   assert.ok(book.done);
-  assert.equal(new ViewBook(st).count, 8); // saved
+  assert.equal(new ViewBook(st).count, 1); // saved
   assert.equal(book.take(9), 0);
   const parts = new PartBook(mem());
   const ids = BUKCHON.openHouse.parts.map((p) => p.id);
@@ -92,7 +104,7 @@ test('the 8 Views book pays once per view, and a bonus for all eight', () => {
 
 test('spots are found near their place, with the district offset', () => {
   const off = [-1547, -891];
-  const v = BUKCHON.views[2];
+  const v = BUKCHON.views[0];
   assert.equal(nearestAt(BUKCHON.views, v.at[0] + off[0] + 1, v.at[1] + off[1], off, 2.4), v);
   assert.equal(nearestAt(BUKCHON.views, v.at[0] + off[0] + 5, v.at[1] + off[1], off, 2.4), null);
 });
@@ -107,19 +119,19 @@ test('workshop pieces are bag goods', () => {
   assert.equal(craftEntry('knot', 0, 0).name, 'red butterfly knot charm');
 });
 
-test('Bukchon is walled: a gap at each gate, every house inside the wall', () => {
+test('Bukchon is open on the field, with a low retaining wall: a gap at each gate, every house inside', () => {
   const [x0, z0, x1, z1] = BUKCHON.area;
-  assert.deepEqual(map.meta.enclosure.box, BUKCHON.area);
+  assert.equal(map.meta.enclosure, undefined); // seen from the street, no entering step
   for (const b of map.buildings) for (const [x, z] of b.p) assert.ok(x > x0 && x < x1 && z < z0 && z > z1, 'a house outside the wall');
-  const walls = map.landmarks.filter((l) => l.type === 'hanokwall');
-  assert.ok(walls.length >= 7);
+  const walls = map.landmarks.find((l) => l.type === 'hanokwalls').segs; // one landmark, one step per segment
+  assert.ok(walls.length >= 4);
   for (const g of BUKCHON.gates) {
     // a step through the gate, from outside to inside, is clear
     const [gx, gz] = g.at, [dx, dz] = g.ry ? [1, 0] : [0, 1];
     for (const s of solids) assert.ok(!inside(gx + dx * 1.5, gz + dz * 1.5, s) && !inside(gx - dx * 1.5, gz - dz * 1.5, s), `gate at ${g.at} is shut`);
   }
   assert.equal(map.landmarks.filter((l) => l.type === 'bukchongate').length, BUKCHON.gates.length);
-  // Gyeongbokgung's palace wall is an enclosure too.
+  // Gyeongbokgung's palace wall is still an enclosure you walk into.
   assert.deepEqual(read('districts/gyeongbokgung.json').meta.enclosure.box, [-170, 0, 100, -440]);
 });
 
@@ -156,4 +168,48 @@ test('inside the wall is only drawn while you are in; the houses are built on th
   e.update({ x: 50, z: 10 });
   far.update(1, { x: 50, z: 10 });
   assert.equal(hall.visible, false);
+});
+
+test('the alleys are narrow and lined with house walls', () => {
+  const main = map.roads.find((r) => r.n?.en === 'Bukchon-ro 11-gil');
+  assert.ok(main.w <= 3.5);
+  const edge = main.p[0][0] + main.w / 2, edgeW = main.p[0][0] - main.w / 2;
+  const lining = map.buildings.filter((b) => b.p.some(([x]) => Math.abs(x - edge) < 0.4 || Math.abs(x - edgeW) < 0.4));
+  assert.ok(lining.length >= 8, `only ${lining.length} houses line 11-gil`);
+});
+
+test('a few homes are open to visitors: a sign, an open gate and a yard you can walk into', () => {
+  const homes = map.buildings.filter((b) => b.visit);
+  assert.ok(homes.length >= 2 && homes.length <= 4);
+  const signs = map.landmarks.filter((l) => l.visit);
+  assert.equal(signs.length, homes.length);
+  for (const s of signs) assert.equal(s.title.ko, '출입 가능');
+  const blocks = map.blockers.map((b) => b.p);
+  for (const b of homes) {
+    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2, D = Math.max(...xs) - Math.min(...xs);
+    // from the alley, through the gate in the middle of the front, into the yard
+    for (let t = D / 2 + 1; t > 0.5; t -= 0.25) {
+      const x = cx + b.fr[0] * t;
+      assert.ok(!blocks.some((p) => inside(x, cz, p)), `the way into the home at ${cx},${cz} is shut at ${x}`);
+    }
+    assert.ok(signs.some((s) => Math.hypot(s.x - (cx + b.fr[0] * D / 2), s.z - cz) < 4), 'a sign by the gate');
+  }
+});
+
+test('the hill you see is the hill you walk on (the shadow lands at your feet)', async () => {
+  await import('../src/core/landmarks.js'); // (it loads bukchon-models.js in the right order)
+  const { buildBukchonHill } = await import('../src/core/bukchon-models.js');
+  const hill = buildBukchonHill([], [0, 0]);
+  const earth = hill.children[0], pos = earth.geometry.attributes.position;
+  const [x0, , x1, z1] = BUKCHON.area;
+  // between the mesh's vertices too: sample the walkable hillside and compare
+  // with the triangle under each point (the mesh is a grid, so a nearest
+  // vertex is close enough when it is fine)
+  let worst = 0;
+  for (let i = 0; i < pos.count; i++) worst = Math.max(worst, Math.abs(pos.getY(i) - 0.02 - ground(Math.min(Math.max(pos.getX(i), x0 + 0.01), x1 - 0.01), Math.max(pos.getZ(i), z1 + 0.01))));
+  assert.ok(worst < 0.01, `the hill mesh is ${worst.toFixed(2)} m off the ground`);
+  // and it is fine across: no vertex row far from any point you can stand on
+  const xs = new Set(); for (let i = 0; i < pos.count; i++) xs.add(Math.round(pos.getX(i)));
+  assert.ok(xs.size > 20);
 });

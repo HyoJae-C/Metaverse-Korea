@@ -10,19 +10,11 @@ import * as THREE from 'three';
 import { POOL_ROOM, WATER_Y, SWIM_Y, COMP, LANE_W, DIVE, LEISURE, BOARDS, laneZ } from './pool.js';
 import { createCharacter } from './character.js';
 import { drawSupport } from './support-poster.js';
+import { matCache, canvasTex as canvasTexture } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 
-function canvasTex(w, h, draw, repeat = null) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
-  return t;
-}
+const canvasTex = (w, h, draw, repeat = null) => canvasTexture(w, h, draw, { repeat });
 // Square tiles with grout lines.
 const tileTex = (base, grout, n = 4) => canvasTex(128, 128, (g, w) => {
   g.fillStyle = base; g.fillRect(0, 0, w, w);

@@ -3,6 +3,7 @@
 import { t, localName, getLanguage } from '../core/i18n.js';
 
 import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+import { inPoly } from '../core/geom.js';
 
 export { CATEGORY_ICON };
 
@@ -81,14 +82,6 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of

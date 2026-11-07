@@ -4,6 +4,7 @@
 // Missions are picked from today's date, so everyone gets the same three on
 // the same day. Progress lives in this browser for now (like the wallet);
 // before rewards are worth anything, move it to the server.
+import { seededRandom } from './geom.js';
 
 const KEY = 'mk.daily';
 export const REWARD = { checkIn: 10, week: 30, mission: 10, allDone: 20 };
@@ -19,15 +20,7 @@ function prevDay(key) {
 }
 
 // Small deterministic RNG from a string (same day -> same missions).
-function rng(seed) {
-  let h = 2166136261;
-  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
-}
+const rng = seededRandom;
 
 // pool: { npcs: [name], stores: [{ id, pets }] }
 // Mission: { id, type, target?, need, n }
@@ -74,8 +67,25 @@ export class Daily {
       this.s.missions = missionsFor(today, this.pool);
       this.s.bonus = false;
       write(this.s);
-    }
+    } else if (!this._checked) this._repair(today);
+    this._checked = true;
     return today;
+  }
+
+  // Today's missions were saved before the map changed: a person or shop
+  // they name may be gone (renamed, moved away). Swap an unfinished one
+  // like that for today's fresh pick of the same kind, so it can be done.
+  _repair(today) {
+    const has = { talk: (t) => this.pool.npcs.includes(t), visit: (t) => this.pool.stores.some((s) => s.id === t) };
+    const fresh = missionsFor(today, this.pool);
+    let changed = false;
+    this.s.missions = this.s.missions.map((m) => {
+      if (!has[m.type] || m.n >= m.need || has[m.type](m.target)) return m;
+      const f = fresh.find((x) => x.type === m.type);
+      changed = true;
+      return f ? { ...f } : { ...m, n: m.need }; // nothing left to pick: count it as done
+    });
+    if (changed) write(this.s);
   }
 
   get missions() { this._roll(); return this.s.missions; }

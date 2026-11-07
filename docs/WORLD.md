@@ -49,6 +49,12 @@ built, and nothing needs moving when something new is added next to it.
   everything placed in world metres inside it: stores, zones, bike stations,
   homes, screens, subway exits, busking zones, stamps, and the ends of link
   roads. Check the link roads on the map afterwards.
+- **Keep streets clear.** When you re-draw a road or move a district, move
+  or trim the buildings (and blockers) that end up on it: the map still shows
+  a street, but you walk into a wall. Songpa-daero once ran straight through
+  three towers this way. `tests/roads-clear.test.mjs` (in `npm test`) fails
+  when a building or blocker stands in the middle half of any street; a
+  street blocked on purpose goes in its `ALLOWED` list with the reason.
 - **Credit.** The gu outlines are © OpenStreetMap contributors (ODbL); the map
   shows that line in its corner (`credit` in `seoul.json`).
 
@@ -87,6 +93,11 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `npm test`) then checks that it sits in its gu and overlaps no other
    district.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
+   A meeting zone's id is a new single letter: its two passers-by take their
+   names from that letter (`src/data/npc-names.js`), so daily "find someone"
+   missions name one person who stays in that area. `npm test`
+   (`tests/npc-missions.test.mjs`) checks every zone stands in a district
+   next to its own streets.
 5. Give it an Information Center: a store with `"workshop": "info"` and
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
    Inside, the game guide (left) explains the game and the area guide (right)
@@ -94,9 +105,9 @@ lists **districts** joined into one map (`src/core/districts.js`):
 6. Optional, for a big walled place: give the map `meta.enclosure`
    (`{ "box": [x0, z0, x1, z1] }` in its own metres) and a wall with gates
    on that box. From outside only the wall and gates are drawn; what stands
-   inside appears once you walk in (`src/core/enclosure.js`). Bukchon and
-   Gyeongbokgung do this, and Bukchon's hanok are only built on the first
-   visit. An L-shaped district can list `meta.parts` (boxes) for the overlap
+   inside appears once you walk in (`src/core/enclosure.js`). Gyeongbokgung
+   does this, and a district's hanok inside an enclosure are only built on
+   the first visit. Bukchon is small and open on the field instead. An L-shaped district can list `meta.parts` (boxes) for the overlap
    check and for `districtAt`.
 
 ## Yeonnam-dong and Mangwon-dong
@@ -128,16 +139,26 @@ what you bump into, and a bridge is a roof overhead.
 ## Euljiro & Dongdaemun (Jung-gu)
 
 Drawn by `scripts/build-euljiro.mjs` in the band between the Cheonggyecheon
-strip and Namsan. Eulji-ro runs along its north edge just south of the
-Cheonggyecheon towers, and four link roads (Supyo-ro, Changgyeonggung-ro, the
+strip and Namsan, kept small on purpose (DDP and what is round it; the old
+Euljiro alleys were taken out, since the game has plenty of streets of small
+shops). Eulji-ro runs along its north edge just south of the Cheonggyecheon
+towers, and three link roads (Changgyeonggung-ro along the west edge, the
 walk to Ogansugyo Bridge, Jangchungdan-ro) go north between those towers to
-Cheonggyecheon-ro; Toegye-ro runs on east to Wangsimni-ro. West: Euljiro's
-old alleys (Nogari Alley, Print Shop Alley, the lighting shops). East: DDP, a
-custom building drawn by its landmark (`core/euljiro-models.js`) from the
-outline in the map, with Dongdaemun History & Culture Park and a stretch of
-the Seoul City Wall beside it, and the fashion malls across Jangchungdan-ro.
-South of Toegye-ro, Namsangol Hanok Village has a walled yard (`hanok.yard`
-in the script) kept free for the folk games (docs/FOLK-GAMES.md).
+Cheonggyecheon-ro; Eulji-ro and Toegye-ro run west to Sejong-daero and
+Sungnyemun as links, and Toegye-ro on east to Wangsimni-ro. DDP is a custom
+building drawn by its landmark (`core/euljiro-models.js`) from the outline in
+the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
+City Wall on its west side, and the fashion malls across Jangchungdan-ro.
+South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
+free for the folk games (docs/FOLK-GAMES.md).
+
+Inside DDP, through its main door on the plaza, the Curve Runway (store
+`curve-runway`, workshop `runway`; the design shop has the west door) is a
+rhythm walk in its own big room (size `runway`, seats either side, about a
+third taken by a seated audience): a step a beat down the catwalk, then three poses for the
+cameras (`core/runway-game.js`, `ui/runway-ui.js`; main.js walks the
+character from `walkState()`). Medals as at the grill (game id `runway`).
 
 A landmark's `p` is moved as world points when districts are joined
 (`core/districts.js`), so a shape drawn relative to the landmark's own

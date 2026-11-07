@@ -5,7 +5,6 @@
 // can be saved or shared.
 import { L, fmt } from './pocha-ui.js';
 
-export const PHOTO_COST = 3;
 export const SHOTS = 4;
 export const FRAMES = { white: ['#ffffff', '#2b2630'], black: ['#1d1b22', '#ffffff'], pink: ['#ffc8de', '#7a2d55'], mint: ['#c6efe2', '#245a4a'] };
 // Each booth kind (the store's workshop): shots, price, frames, black and white.
@@ -14,7 +13,6 @@ export const PHOTO_MODES = {
   photo1: { shots: 1, cost: 2, frames: { cream: ['#f6efe2', '#5a4632'], white: ['#ffffff', '#2b2630'], navy: ['#24324f', '#f3e9d2'], rose: ['#f3d0d6', '#6b2f3c'] }, mono: false, label: 'CHUEOK PHOTO', caption: '추억사진관' },
   photobw: { shots: 4, cost: 3, frames: { white: ['#ffffff', '#1d1b22'], black: ['#141316', '#f2f2f2'] }, mono: true, label: 'MEMORIES', caption: '메모리즈' },
 };
-export const PHOTO_WORKSHOPS = Object.keys(PHOTO_MODES);
 
 const T = {
   title: {
