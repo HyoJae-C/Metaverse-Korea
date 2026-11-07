@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { WISH, WISHES, WISH_COLORS, lanternAt, ambientLanterns, encodeLantern, decodeLantern, canFloat, wishFrom, muralSign, FIGURE_KINDS } from '../src/core/lanterns.js';
+import { WISH, WISHES, WISH_COLORS, lanternAt, ambientLanterns, encodeLantern, decodeLantern, canFloat, wishFrom, muralSign, FIGURE_KINDS, BANCHADO, banchadoPanels } from '../src/core/lanterns.js';
 import { FURNITURE, LAMP_IDS } from '../src/core/furniture.js';
 import { ITEMS } from '../src/core/inventory.js';
 import { usable } from '../src/ui/shop-ui.js';
@@ -80,4 +80,19 @@ test('every lamp is furniture, an item and sold in exactly one lighting shop', (
     assert.ok(p.name?.en && p.name?.ko && p.desc?.en && p.price > 0, p.id);
     assert.ok(st.products.every((q) => q.furniture), `${st.id} sells something that isn't a lamp`);
   }
+});
+
+test('the procession panels fill the wall in order, with gaps, keeping each segment roughly its shape', () => {
+  const len = 94, h = 2.1, gap = 0.16;
+  const ps = banchadoPanels(len, h, gap);
+  assert.equal(ps.length, BANCHADO.rows.length);
+  assert.equal(ps[0][0], 0);
+  for (let i = 1; i < ps.length; i++) assert.ok(Math.abs(ps[i][0] - (ps[i - 1][0] + ps[i - 1][1] + gap)) < 1e-9);
+  const last = ps.at(-1);
+  assert.ok(Math.abs(last[0] + last[1] - len) < 1e-9);
+  ps.forEach(([, w], i) => { const shape = (h * BANCHADO.w) / BANCHADO.rows[i][1]; assert.ok(w / shape > 0.85 && w / shape < 1.15, `panel ${i} stretched`); });
+  // The rows tile the atlas image top to bottom.
+  let y = 0;
+  for (const [ry, rh] of BANCHADO.rows) { assert.equal(ry, y); y += rh; }
+  assert.equal(y, BANCHADO.h);
 });
