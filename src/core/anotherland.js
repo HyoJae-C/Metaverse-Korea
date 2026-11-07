@@ -7,21 +7,16 @@
 // Collision comes from the district's blockers; this is only visual.
 // Returns tick(t) to turn the wheel, run the coaster and the drop tower.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = matCache({ flatShading: true });
 const K = {
   ginger: '#b8743f', gingerDark: '#8d5530', icing: '#fffaf3', pink: '#ff8fb8', hotPink: '#ff5f9e', mint: '#8fe3c7',
   lemon: '#ffe27a', lilac: '#c9a8ff', sky: '#8fd0ff', choco: '#6b3f2a', orange: '#ffad6b', cherry: '#ff5a5f',
 };
 const CANDY = [K.pink, K.mint, K.lemon, K.lilac, K.sky, K.orange, K.cherry];
 
-function box(g, sx, sy, sz, x, y, z, c) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 function cyl(g, rt, rb, h, x, y, z, c, seg = 16) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c));
   m.position.set(x, y + h / 2, z);

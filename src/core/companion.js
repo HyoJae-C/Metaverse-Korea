@@ -5,6 +5,7 @@
 // Other players see it too (sent as `pt` in our state); poop stays local.
 import * as THREE from 'three';
 import { makeAnimal, turn } from './pets.js';
+import { matCache } from './three-kit.js';
 
 export const CLEAN_SECONDS = 45;
 // Like the real fine in Korea for not picking up after a dog (₩50,000).
@@ -27,8 +28,7 @@ export class PoopTimers {
   }
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 // A cartoon poop swirl.
 export function makePoop() {
   const g = new THREE.Group();

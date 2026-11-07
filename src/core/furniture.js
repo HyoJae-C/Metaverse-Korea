@@ -2,16 +2,11 @@
 // Each piece has a footprint (w × d metres, before rotation) used for
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 
-function box(g, sx, sy, sz, x, y, z, color) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(color));
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 
 const glows = {};
 const glow = (c) => (glows[c] ||= new THREE.MeshBasicMaterial({ color: c }));

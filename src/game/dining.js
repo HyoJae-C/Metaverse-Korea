@@ -4,7 +4,7 @@
 // the other players…) comes in through `game`, whose getters are read only
 // when needed.
 import * as THREE from 'three';
-import { t, localName, getLanguage } from '../core/i18n.js';
+import { localName, getLanguage } from '../core/i18n.js';
 import { coinPrice, takeoutKind, Meal, FOOD_BITES, parseMealSync, biteMsg, BITE_REACH, BITE_GAP_MS, foodScale, isDining } from '../core/dining.js';
 import { productModel } from '../core/interior.js';
 import { say } from '../core/npcs.js';

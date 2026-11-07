@@ -5,9 +5,9 @@
 // buildInterior's result, plus tick(dt) to animate the rides.
 import * as THREE from 'three';
 import { HAUNT, HAUNT_SPOT, buildHauntedFacade } from './haunted.js';
+import { matCache } from './three-kit.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = matCache({ flatShading: true });
 
 export const RIDE_COST = 2;
 export const RIDE_SECONDS = { carousel: 24, wheel: 32, viking: 22, drop: 16 };
