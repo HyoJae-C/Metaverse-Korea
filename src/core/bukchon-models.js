@@ -11,7 +11,7 @@ import { BUKCHON, ground } from '../data/bukchon.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
 // into one per material (the ones with a texture or several materials stay).
-function mergeStatic(g) {
+export function mergeStatic(g) {
   g.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
   const byMat = new Map(), drop = [];

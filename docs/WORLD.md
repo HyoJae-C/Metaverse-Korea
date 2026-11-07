@@ -170,9 +170,28 @@ Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
 three boxes for the overlap check.
 
+## Jongmyo & Seosunra-gil (Jongno-gu)
+
+Drawn by `scripts/build-jongmyo.mjs` from `src/data/jongmyo.js`, in the room
+between Jongno and Yulgok-ro east of Bukchon. Jongno runs on east from
+Gwanghwamun (z -765); Oedaemun, the shrine's gate, stands on its north side
+behind Jongmyo Square (meeting zone R, the janggi grandpas, the stamp). The
+shrine is a walled place you walk into (`meta.enclosure`): the stone path
+(samdo; its raised middle strip is the spirits', `onSamdo`), Jeongjeon and
+Yeongnyeongjeon on their terraces in walled yards, the square pond, and the
+woods (one instanced landmark that also lines the square, so the treetops show
+over the wall). `core/jongmyo-show.js` has the guide inside the gate, the
+36 ilmu dancers and the orchestra on Jeongjeon's terrace (built the first time
+you come near), and the grandpas. Seosunra-gil runs along the west wall with
+one row of hanok shops facing it; an alley leads west to the Sejong-ro side
+street. A district's hanok outside its enclosure are built at start (the
+shops), those inside on the first visit. Run the script again after moving
+the district: it also sets the shops' `at` in stores.json.
+
 ## Stamp courses
 
 `src/data/trails.js` groups tour stamps into courses (the Seoul City Wall
-Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun). The stamp note shows
+Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun; the Joseon Royal Walk:
+Gyeongbokgung, Bukchon, Jongmyo). The stamp note shows
 each course's stops; the last stamp of a course pays its reward once
 (`core/trails.js`, saved under `mk.trails`).

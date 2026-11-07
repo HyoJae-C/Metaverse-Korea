@@ -42,13 +42,15 @@ import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, ringPoly } from './core/palace-show.js';
+import { JongmyoShow } from './core/jongmyo-show.js';
+import { JONGMYO, JongmyoBook, onSamdo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
-import { BukchonUI, BK_TEXT, craftEntry, CRAFT } from './ui/bukchon-ui.js';
+import { BukchonUI, BK_TEXT, craftEntry, craftWear, CRAFT } from './ui/bukchon-ui.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
 import { buildBukchonHill } from './core/bukchon-models.js';
@@ -3477,9 +3479,16 @@ bukchonMarks?.taken(viewBook);
 // Bukchon sits open on the field: its hanok and hill are built at once and
 // seen from Yulgok-ro; the stone walls are only the hill's retaining walls.
 const openHanok = [];
+// Hanok inside a district's enclosure wait for the first visit; the rest
+// (e.g. Seosunra-gil's shops outside Jongmyo's wall) are built at once.
+const inEnclosure = (d, b) => {
+  if (!d.enclosure) return false;
+  const [ax, az, bx, bz] = d.enclosure.box, [ox, oz] = d.offset;
+  return b.p.every(([x, z]) => x >= Math.min(ax, bx) + ox && x <= Math.max(ax, bx) + ox && z >= Math.min(az, bz) + oz && z <= Math.max(az, bz) + oz);
+};
 for (const d of map.meta?.districts || []) {
-  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id);
-  if (!hanoks.length || d.enclosure) continue;
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
+  if (!hanoks.length) continue;
   const g = buildHanoks(hanoks);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
@@ -3492,7 +3501,7 @@ for (const d of map.meta?.districts || []) {
 const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
   const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
-  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id);
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
   if (hanoks.length) e.onFirstEnter = () => {
     const g = buildHanoks(hanoks);
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -3526,8 +3535,19 @@ function updateEnclosures(p, dt = 0) {
 const bukchonUi = new BukchonUI({
   root: $('bukchon-panel'), wallet,
   onMake: (kind, ci, si) => {
-    const k = CRAFT[kind], entry = craftEntry(kind, ci, si);
-    if (!k || !entry) return false;
+    const k = CRAFT[kind], entry = craftEntry(kind, ci, si), wear = craftWear(kind, ci, si);
+    if (!k || (!entry && !wear)) return false;
+    if (wear) { // a piece you wear (Sunra Silver Studio's pendants): it goes to your items
+      if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
+      if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+      refreshWallet();
+      inventory.add(wear);
+      refreshItems();
+      sfx.pop?.();
+      clerk && say(clerk, $('labels'), ['잘 어울려요!', 'jal eoullyeoyo!', 'It suits you!']);
+      shop.toast(fmt(L(BK_TEXT.madeWear), { icon: k.icon, name: L(ITEMS[wear]?.name || { en: wear }) }));
+      return true;
+    }
     if (bag.full) { shop.toast(L(BK_TEXT.bagFull)); return false; }
     if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
     refreshWallet();
@@ -3580,6 +3600,67 @@ function updateQuiet(p, moving) {
   if (q && moving && input.run && performance.now() - shhAt > 9000) { shhAt = performance.now(); showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(BK_TEXT.shh)); }
   quietWas = q;
   return q;
+}
+// Jongmyo Shrine and Seosunra-gil (data/jongmyo.js): the guide and the
+// grandpas, the stone path's manners (keep off the spirits' middle strip),
+// and the ritual dance on Jeongjeon's terrace (core/jongmyo-show.js).
+const jongmyoAt = (region.districts || []).find((d) => d.id === JONGMYO.district)?.offset || null;
+const jongmyoShow = jongmyoAt ? new JongmyoShow(scene, jongmyoAt, $('labels')) : null;
+const jongmyoBook = new JongmyoBook();
+const JM_TEXT = {
+  ask: { en: 'Ask the guide', ko: '해설사에게 묻기', ja: '解説員に聞く', zh: '问讲解员' },
+  hi: { en: 'Say hi to the grandpas', ko: '어르신께 인사하기', ja: 'おじいさんにあいさつ', zh: '和老爷爷打招呼' },
+  sindo: { en: '🛤️ The raised middle strip is the spirits\' path (sindo). Please walk on a side strip.', ko: '🛤️ 가운데 높은 길은 혼령이 다니는 신도예요. 양옆 길로 걸어 주세요.', ja: '🛤️ 中央の高い道は霊の通る神道です。両脇の道を歩いてください。', zh: '🛤️ 中间高起的是神灵走的神道，请走两侧的路。' },
+  manners: { en: '🙇 You walked the stone path the right way, off the spirits\' strip! (+🪙 {c})', ko: '🙇 혼령의 길을 밟지 않고 돌길을 바르게 걸었어요! (+🪙 {c})', ja: '🙇 霊の道を踏まずに石畳を正しく歩きました！（+🪙 {c}）', zh: '🙇 没有踩神灵的路，正确地走完了石路！（+🪙 {c}）' },
+  mannersLedger: { en: 'Jongmyo manners', ko: '종묘 예절', ja: '宗廟のマナー', zh: '宗庙礼仪' },
+  rite: { en: '🥁 You watched the ilmu, the ritual dance of Jongmyo Jeryeak. (+🪙 {c})', ko: '🥁 종묘제례악의 일무를 끝까지 지켜봤어요. (+🪙 {c})', ja: '🥁 宗廟祭礼楽の佾舞を見届けました。（+🪙 {c}）', zh: '🥁 看完了宗庙祭礼乐的佾舞。（+🪙 {c}）' },
+  riteLedger: { en: 'Jongmyo Jeryeak', ko: '종묘제례악 관람', ja: '宗廟祭礼楽の観覧', zh: '观看宗庙祭礼乐' },
+};
+let jmCard = 0, jmSindoAt = 0, jmWatch = 0, jmWelcomed = false, jmWasIn = null;
+function jongmyoCard(item, sub = '') {
+  bukchonUi.card(item, { sub });
+  bukchonUi.view = 'jm';
+}
+function jongmyoAct(p) {
+  if (!jongmyoShow || mode !== 'street') return null;
+  if (jongmyoShow.nearGuide(p.x, p.z)) return { key: 'jm-guide', label: 'ℹ️ ' + L(JM_TEXT.ask), run: () => {
+    jongmyoShow.greetGuide(p.x, p.z);
+    const c = JONGMYO.guideCards[jmCard++ % JONGMYO.guideCards.length];
+    jongmyoCard(c, `${(jmCard - 1) % JONGMYO.guideCards.length + 1} / ${JONGMYO.guideCards.length}`);
+  } };
+  const e = jongmyoShow.nearElder(p.x, p.z);
+  if (e) return { key: 'jm-elder:' + e.home.x, label: '👴 ' + L(JM_TEXT.hi), run: () => jongmyoShow.greetElder(e, p.x, p.z) };
+  return null;
+}
+// Each frame on the street: the walk through the gate, the stone path, the rite.
+function updateJongmyo(p, dt) {
+  if (!jongmyoAt) return;
+  const x = p.x - jongmyoAt[0], z = p.z - jongmyoAt[1];
+  const inside = inBox(x, z, JONGMYO.wall);
+  if (inside && jmWasIn === false) { // walked in through Oedaemun
+    jongmyoBook.enter();
+    if (!jmWelcomed && mode === 'street' && !spaceBusy()) {
+      jmWelcomed = true;
+      const w = JONGMYO.welcome;
+      jongmyoCard({ icon: '🏛️', name: w.title, text: w.text }, '🛤️ ' + L(w.rules));
+    }
+  }
+  jmWasIn = inside;
+  if (!inside) { jmWatch = 0; return; }
+  if (onSamdo(x, z) === 'sindo') {
+    jongmyoBook.step();
+    if (performance.now() - jmSindoAt > 15000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
+  }
+  if (inBox(x, z, JONGMYO.jeongjeon.woldae)) {
+    const c = jongmyoBook.arrive();
+    if (c) { wallet.add(c, { name: JM_TEXT.mannersLedger }); refreshWallet(); me.play('bow'); shop.toast(fmt(L(JM_TEXT.manners), { c })); }
+  }
+  if (jongmyoShow.watching(p.x, p.z) && !jongmyoBook.rite) {
+    if ((jmWatch += dt) >= RITE_WATCH) {
+      const c = jongmyoBook.watched();
+      if (c) { wallet.add(c, { name: JM_TEXT.riteLedger }); refreshWallet(); me.play('clap'); shop.toast(fmt(L(JM_TEXT.rite), { c })); }
+    }
+  } else jmWatch = 0;
 }
 // Other players' wish lanterns ride on their state ("wl"); add each new one.
 const wishSeen = new Map(); // remote id -> the lantern string we last saw
@@ -4374,6 +4455,7 @@ function moreActions(p, door) {
     const b = boardAt(p); if (b) out.push(boardAct(b));
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
+    const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -4443,6 +4525,7 @@ function updateAction(p, tSec) {
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (!riding && bukchonAct(p)) next = bukchonAct(p);
+    else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -4938,7 +5021,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
-  if (bukchonUi.open && (bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
+  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -5023,9 +5106,9 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);

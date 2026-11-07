@@ -111,6 +111,7 @@ test('spots are found near their place, with the district offset', () => {
 
 test('workshop pieces are bag goods', () => {
   for (const kind of Object.keys(CRAFT)) {
+    if (CRAFT[kind].wear) continue; // worn, not carried (Sunra Silver Studio's pendants: tests/jongmyo.test.mjs)
     const e = craftEntry(kind, 0, 0);
     assert.deepEqual(cleanEntry(e), e);
     assert.ok(e.name.length <= 40);

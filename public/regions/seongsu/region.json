@@ -46,6 +46,15 @@
       "anchor": { "place": "Anguk Station (Yulgok-ro)", "lat": 37.5765, "lon": 126.9856, "local": [0, 3] }
     },
     {
+      "id": "jongmyo",
+      "map": "districts/jongmyo.json",
+      "offset": [
+        -1361,
+        -789
+      ],
+      "anchor": { "place": "Oedaemun, Jongmyo's main gate (on Jongno)", "lat": 37.5713, "lon": 126.994, "local": [0, 0], "nudge": [0, -46], "why": "Jongno is drawn at z -765 in the game (it runs on from Gwanghwamun), north of its real line; the gate stands behind Jongmyo Square on Jongno's north side, and the shrine fills the room up to Yulgok-ro." }
+    },
+    {
       "id": "itaewon",
       "map": "districts/itaewon.json",
       "offset": [
@@ -289,7 +298,8 @@
     {"k": "tertiary", "w": 9, "p": [[-3051, -470], [-3051, -448]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
     {"k": "primary", "w": 14, "p": [[-3182, -362], [-3168, -420], [-3161, -448]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
     {"k": "tertiary", "w": 8, "p": [[-3182, -272], [-3170, -290], [-3161, -308]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
-    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3161, -128]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}}
+    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3161, -128]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}},
+    {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."}
   ],
   "screens": [
     {

@@ -74,6 +74,12 @@ export const WEARABLES = {
   'acc-scarf': item('🧣', 25, { neck: 'scarf' }, { neck: null }, WEAR_DESC.accessory, { en: 'Coral knit scarf', ko: '코랄 니트 목도리', ja: 'コーラルのニットマフラー', zh: '珊瑚色针织围巾' }),
   'acc-scarf-mint': item('🧣', 25, { neck: 'scarf-mint' }, { neck: null }, WEAR_DESC.accessory, { en: 'Mint knit scarf', ko: '민트 니트 목도리', ja: 'ミントのニットマフラー', zh: '薄荷色针织围巾' }),
   'acc-scarf-cream': item('🧣', 25, { neck: 'scarf-cream' }, { neck: null }, WEAR_DESC.accessory, { en: 'Cream knit scarf', ko: '크림 니트 목도리', ja: 'クリームのニットマフラー', zh: '奶油色针织围巾' }),
+  // Pendants (Seosunra-gil): silver or gold, a moon, a plum blossom or the 복 (luck) charm.
+  ...Object.fromEntries(['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => {
+    const M = metal === 'gold' ? { en: 'Gold', ko: '골드', ja: 'ゴールドの', zh: '金色' } : { en: 'Silver', ko: '실버', ja: 'シルバーの', zh: '银色' };
+    const S = { moon: { en: 'moon', ko: '달', ja: '月', zh: '月亮' }, plum: { en: 'plum blossom', ko: '매화', ja: '梅', zh: '梅花' }, bok: { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' } }[charm];
+    return [`acc-pendant-${metal}-${charm}`, item(charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', metal === 'gold' ? 30 : 25, { neck: `pendant-${metal}-${charm}` }, { neck: null }, WEAR_DESC.accessory, { en: `${M.en} ${S.en} pendant`, ko: `${M.ko} ${S.ko} 펜던트`, ja: `${M.ja}${S.ja}ペンダント`, zh: `${M.zh}${S.zh}吊坠` })];
+  }))),
   'acc-tote-forest': item('👜', 25, { back: 'tote-forest' }, { back: null }, WEAR_DESC.accessory, { en: 'Forest green tote bag', ko: '숲 초록 에코백', ja: 'フォレストグリーンのトート', zh: '森林绿帆布包' }),
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
   'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),

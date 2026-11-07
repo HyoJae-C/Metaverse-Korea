@@ -3,7 +3,8 @@
 //                       the Open House, the magpie's persimmons, the welcome)
 //   views(book):        the photo spots: which ones you have
 //   craft(kind):        the workshops (Maeum Knot Studio, Saekji Paper
-//                       Studio): pick a colour and a pattern, pay, take it home
+//                       Studio, and Sunra Silver Studio on Seosunra-gil):
+//                       pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
 
@@ -35,6 +36,13 @@ export const BK_TEXT = {
   poor: { en: 'Not enough coins: it costs 🪙 {n}.', ko: '코인이 부족해요. 🪙 {n}이 필요해요.', ja: 'コインが足りません。🪙 {n} 必要です。', zh: '金币不够，需要 🪙 {n}。' },
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
+  // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
+  pendant: { en: 'Make a pendant', ko: '펜던트 만들기', ja: 'ペンダントを作る', zh: '做一个吊坠' },
+  pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm; the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양을 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフを選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，工匠会陪你一起切割、打磨、抛光。' },
+  pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
+  pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },
+  madeWear: { en: '{icon} You made a {name}! Wear it from your items.', ko: '{icon} {name} 완성! 내 아이템에서 착용할 수 있어요.', ja: '{icon} {name}が完成！アイテムから身につけられます。', zh: '{icon} 做好了{name}！可以在物品里戴上。' },
+  haveIt: { en: 'You already have this one: pick another metal or charm.', ko: '이미 가지고 있어요. 다른 금속이나 모양을 골라 보세요.', ja: 'もう持っています。別の金属かモチーフを選んで。', zh: '你已经有这个了，换一种金属或造型吧。' },
 };
 
 // Workshop choices. Names are in English for the bag (like other goods).
@@ -51,12 +59,26 @@ export const CRAFT = {
     shapes: [['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['butterfly', '나비', { en: 'Butterflies', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['cloud', '구름', { en: 'Clouds', ko: '구름', ja: '雲', zh: '云纹' }]],
     item: (c, s) => `${c} hanji lantern (${s})`,
   },
+  // Sunra Silver Studio: what you make is worn (an accessory item,
+  // data/wearables.js acc-pendant-<metal>-<charm>), not put in the bag.
+  pendant: {
+    icon: '📿', price: 25, labels: ['pickMetal', 'pickCharm'],
+    colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
+    shapes: [['moon', '달', { en: 'Moon', ko: '달', ja: '月', zh: '月亮' }], ['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['bok', '복', { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' }]],
+    wear: (c, s) => `acc-pendant-${c}-${s}`,
+  },
 };
+// The item a wearable craft makes (null for bag crafts).
+export function craftWear(kind, ci, si) {
+  const k = CRAFT[kind];
+  const c = k?.colors[ci], s = k?.shapes[si];
+  return k?.wear && c && s ? k.wear(c[1], s[0]) : null;
+}
 // The bag entry for a made piece (kind 'gift', like a shop bag).
 export function craftEntry(kind, ci, si) {
   const k = CRAFT[kind];
   const c = k?.colors[ci], s = k?.shapes[si];
-  if (!c || !s) return null;
+  if (!c || !s || !k.item) return null;
   return { kind: 'gift', sips: 1, name: k.item(c[1], s[0].replace('-', ' ')).slice(0, 40), icon: k.icon };
 }
 
@@ -122,7 +144,7 @@ export class BukchonUI {
     const k = CRAFT[this.kind];
     const parts = this._head(k.icon, L(BK_TEXT[this.kind]));
     parts.push(el('p', 'fine', L(BK_TEXT[this.kind + 'How'])));
-    parts.push(el('b', 'lock-sub', L(BK_TEXT.pickColor)));
+    parts.push(el('b', 'lock-sub', L(BK_TEXT[k.labels?.[0] || 'pickColor'])));
     const colors = el('div', 'wish-colors');
     colors.setAttribute('role', 'radiogroup');
     k.colors.forEach(([c, en], i) => {
@@ -136,7 +158,7 @@ export class BukchonUI {
       colors.append(b);
     });
     parts.push(colors);
-    parts.push(el('b', 'lock-sub', L(BK_TEXT.pickShape)));
+    parts.push(el('b', 'lock-sub', L(BK_TEXT[k.labels?.[1] || 'pickShape'])));
     const list = el('div', 'wish-list');
     list.setAttribute('role', 'radiogroup');
     k.shapes.forEach(([, , name], i) => {

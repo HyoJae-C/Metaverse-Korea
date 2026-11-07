@@ -69,9 +69,33 @@ function rope(t) {
   };
 }
 
+// 일무 (ilmu), the dance in rows at the royal ancestral rite (Jongmyo
+// Jeryeak), as the civil dance (문무): a short flute (약) in the left hand, a
+// feathered staff (적) in the right. Slow, solemn moves held long, the
+// whole troupe as one.
+const ILMU = [
+  (t) => { // hold the flute and the staff together before the chest
+    const w = Math.sin(t * 0.6);
+    return { bob: 0, armL: [-1.0, -0.15, 0], armR: [-1.0, 0.15, 0], foreL: [-1.0, 0, 0], foreR: [-1.0, 0, 0], spine: [0.02 * w, 0, 0], head: [0.05, 0, 0] };
+  },
+  (t) => { // a slow, deep bow
+    const w = Math.sin(t * 0.5);
+    return { bob: -0.05, armL: [-0.7, -0.1, 0], armR: [-0.7, 0.1, 0], foreL: [-1.1, 0, 0], foreR: [-1.1, 0, 0], spine: [0.45 + 0.03 * w, 0, 0], head: [0.25, 0, 0] };
+  },
+  (t) => { // the staff raised high on the right, the flute held out to the left
+    const w = Math.sin(t * 0.7);
+    return { bob: 0, turn: 0.25, armL: [-0.9, -0.7, 0], armR: [-2.5, 0.2, 0], foreL: [-0.6, 0, 0], foreR: [-0.3, 0, 0], spine: [0, 0, -0.06 + 0.02 * w], head: [-0.08, 0, -0.06] };
+  },
+  (t) => { // and turned the other way, the staff swept down and across
+    const w = Math.sin(t * 0.7);
+    return { bob: -0.02, turn: -0.25, armL: [-1.4, -0.4, 0], armR: [-1.1, -0.3, 0], foreL: [-0.8, 0, 0], foreR: [-0.9, 0, 0], spine: [0.1, 0, 0.06 + 0.02 * w], head: [0.06, 0, 0.06], legL: [-0.15, 0, 0], kneeL: [0.2, 0, 0] };
+  },
+];
+
 export const FOLK_DANCES = {
   fan: (t) => cycle(FAN, t, 4),
   tal: (t) => cycle(TAL, t, 5),
+  ilmu: (t) => cycle(ILMU, t, 4.5),
   rope,
 };
 
@@ -113,5 +137,28 @@ export function makeSleeve(size = 1) {
   g.add(cloth);
   const band = new THREE.Mesh(new THREE.BoxGeometry(0.13 * size, 0.04 * size, 0.02 * size), mat('#d23a3a'));
   g.add(band);
+  return g;
+}
+
+// The civil dancers' props at the royal rite (일무): the yak, a short
+// bamboo flute held in the left hand, and the jeok, a staff with a plume of
+// pheasant feathers and a red tassel, in the right.
+export function makeYak(size = 1) {
+  const g = new THREE.Group();
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.018 * size, 0.018 * size, 0.42 * size, 6), mat('#b48a4a'));
+  pipe.position.y = 0.12 * size;
+  g.add(pipe);
+  return g;
+}
+export function makeJeok(size = 1) {
+  const g = new THREE.Group();
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.016 * size, 0.016 * size, 0.55 * size, 6), mat('#7a4b2a'));
+  staff.position.y = 0.2 * size;
+  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.06 * size, 0.24 * size, 7), mat('#e9dfc8'));
+  plume.position.y = 0.58 * size;
+  const tassel = new THREE.Mesh(new THREE.ConeGeometry(0.035 * size, 0.1 * size, 6), mat('#c8323a'));
+  tassel.position.y = 0.43 * size;
+  tassel.rotation.x = Math.PI;
+  g.add(staff, plume, tassel);
   return g;
 }

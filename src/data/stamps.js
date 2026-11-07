@@ -70,6 +70,14 @@ export const STAMPS = [
     icon: '<path d="M52 92 q48 -34 96 0 q-6 -3 -12 1 h-72 q-6 -4 -12 -1 z"/><path d="M66 94 v32 h68 v-32 M88 126 v-22 h24 v22 M100 104 v22"/><path d="M60 92 l-6 -4 M140 92 l6 -4"/>',
   },
   {
+    // on Jongmyo Square, beside Oedaemun (the shrine's main gate on Jongno)
+    id: 'jongmyo', place: { at: [-1371, -781] }, color: '#7a2e22', shape: 'circle',
+    name: { ko: '종묘', en: 'Jongmyo Shrine', ja: '宗廟', zh: '宗庙' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // the long hall on its terrace, with the three-strip stone path
+    icon: '<path d="M40 92 q60 -18 120 0 q-4 -2 -8 2 h-104 q-4 -4 -8 -2 z"/><path d="M48 94 v22 h104 v-22 M60 94 v22 M72 94 v22 M84 94 v22 M96 94 v22 M108 94 v22 M120 94 v22 M132 94 v22 M144 94 v22"/><path d="M36 122 h128 M44 128 h112"/><path d="M92 128 l-4 18 M108 128 l4 18 M100 128 v18"/>',
+  },
+  {
     // on Heunginjimun's lawn, by the walk up from Ogansugyo Bridge
     id: 'heunginjimun', place: { at: [-1011, -817] }, color: '#2b5f8a', shape: 'square',
     name: { ko: '흥인지문', en: 'Heunginjimun', ja: '興仁之門', zh: '兴仁之门' },

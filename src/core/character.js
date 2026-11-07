@@ -462,6 +462,27 @@ function charmGeometry(kind) {
   return new THREE.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: false }).translate(0, 0, -0.005);
 }
 
+// A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
+// blossom (five petals) or a round tag (the 복 "luck" charm).
+function pendantGeometry(kind) {
+  const sh = new THREE.Shape();
+  if (kind === 'moon') {
+    sh.absarc(0, 0, 0.036, Math.PI * 0.35, Math.PI * 1.65, false);
+    sh.absarc(0.016, 0, 0.028, Math.PI * 1.55, Math.PI * 0.45, true);
+  } else if (kind === 'plum') {
+    for (let i = 0; i <= 60; i++) { // five round petals: r(θ) = a + b |cos(5θ/2)|
+      const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else {
+    sh.absarc(0, 0, 0.032, 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.moveTo(-0.014, -0.004); hole.lineTo(0.014, -0.004); hole.lineTo(0.014, 0.004); hole.lineTo(-0.014, 0.004); hole.lineTo(-0.014, -0.004);
+    sh.holes.push(hole); // a little bar across, like the stroke of a carved 복
+  }
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
+}
+
 function addAccessories(look, head, torso, body) {
   // T-shirt print on the chest.
   if (TEE_PRINTS[look.tee]) {
@@ -593,7 +614,18 @@ function addAccessories(look, head, torso, body) {
   }
 
   const neck = accessory('neck', look.neck);
-  if (neck) {
+  if (neck && shapeOf(neck) === 'pendant') {
+    // A fine chain round the neck and a charm on the chest.
+    const m = mat(neck.color);
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.155, 0.012, 5, 24)), m);
+    chain.rotation.x = Math.PI / 2 - 0.35;
+    chain.position.set(0, 0.6, 0.03);
+    const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
+    charm.position.set(0, 0.5, 0.2);
+    charm.rotation.x = -0.15;
+    charm.scale.setScalar(1.5);
+    body.add(chain, charm);
+  } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
     wrap.rotation.x = Math.PI / 2;
