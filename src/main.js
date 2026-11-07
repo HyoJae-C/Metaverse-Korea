@@ -43,6 +43,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
+import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
@@ -645,6 +646,10 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
   layer: $('labels'),
 }) : null;
+// A pungmul troupe of 75 on Olympic Park's Peace Plaza, between the Peace
+// Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
+const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
+const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[0], olympicAt[1] + PLAZA_SPOT[1]], { lowSpec: lowSpec || !!softwareGL }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
@@ -3757,12 +3762,28 @@ function palaceAct(p) {
   } };
   return null;
 }
-let fanNoted = false;
+let fanNoted = false, pungmulNoted = false;
+const PUNGMUL_TEXT = {
+  hello: {
+    en: 'A pungmul troupe! Drums, gongs and the long white ribbons of the sangmo hats spinning. Walk in and join the fun.',
+    ko: '풍물패예요! 북과 징, 그리고 상모의 긴 흰 끈이 빙글빙글. 안으로 들어가 함께 즐겨 보세요.',
+    ja: 'プンムルの一団！太鼓や銅鑼、サンモの長い白いリボンがくるくる。中に入って一緒に楽しもう。',
+    zh: '农乐队来啦！鼓声、锣声，象帽上的长白带飞旋。走进去一起热闹吧。',
+    es: '¡Una banda de pungmul! Tambores, gongs y las largas cintas blancas de los sombreros sangmo girando. Entra y únete.',
+    id: 'Rombongan pungmul! Genderang, gong, dan pita putih panjang topi sangmo yang berputar. Masuk dan ikut meriah.',
+    vi: 'Đoàn pungmul! Trống, chiêng và dải băng trắng dài trên mũ sangmo xoay tròn. Vào trong cùng vui nhé.',
+    hi: 'पुंगमुल मंडली! ढोल, घंटे और सांगमो टोपियों के लंबे सफ़ेद रिबन घूमते हुए। अंदर जाइए और मज़े में शामिल होइए।',
+    ar: 'فرقة بونغمول! طبول وصنوج وأشرطة بيضاء طويلة تدور فوق قبعات سانغمو. ادخل وشارك المرح.',
+  },
+};
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
+  // Coming up to the pungmul troupe: what it is (once each time you come up).
+  if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
+  else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
   for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
@@ -5362,7 +5383,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -5544,6 +5565,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)
+    pungmul: () => pungmul, // (debug: the pungmul troupe on Olympic Park's Peace Plaza)
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),

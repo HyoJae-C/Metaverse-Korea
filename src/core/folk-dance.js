@@ -4,6 +4,7 @@
 // -x swings the arm forward and up, y swings it out to the side (-y left,
 // +y right). t is seconds, shared, so a troupe moves together.
 import * as THREE from 'three';
+import { PUNGMUL_MOVES } from './pungmul-props.js';
 
 const smooth = (a, b, k) => a + (b - a) * (k * k * (3 - 2 * k));
 function mix(p, q, k) {
@@ -97,6 +98,7 @@ export const FOLK_DANCES = {
   tal: (t) => cycle(TAL, t, 5),
   ilmu: (t) => cycle(ILMU, t, 4.5),
   rope,
+  ...PUNGMUL_MOVES, // the pungmul troupe (core/pungmul.js)
 };
 
 const mats = {};

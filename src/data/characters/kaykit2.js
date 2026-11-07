@@ -108,6 +108,8 @@ export default {
       'hanbok-baji-navy': { top: 0x2f3c66, accent: 0xc8a24a, bottom: 0xd8d2c2 },
       'hanbok-baji-jade': { top: 0x5fae8f, accent: 0x2f3c66, bottom: 0xe8e0cc },
       'hanbok-baji-ivory': { top: 0xf3ecdc, accent: 0x8a5a34, bottom: 0x6b6f7a },
+      // the pungmul troupe (core/pungmul.js): white clothes, a blue collar and ties
+      'hanbok-pungmul': { top: 0xfbf8f0, accent: 0x2f5fb0, bottom: 0xfbf8f0 },
     }),
     ...variants('rogue', '🪭', DURUMAGI, {
       'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },
