@@ -21,6 +21,7 @@ export const PARK_SPEED = 9; // m/s: rides slow down to this inside the park (ra
 export const GRAVITY = 15;
 export const POP = 4.2; // m/s up for an ollie from flat ground
 export const MAX_VY = 7.5;
+export const VERT_POP_VY = 10; // popping on the way up a quarter pipe
 export const COMBO_GAP = 1.2; // seconds on the ground before a combo is counted
 
 // Ramps along x: `dir` +1 rises towards +x, -1 towards -x. `u0` is the toe
@@ -114,32 +115,83 @@ export function parkBlockers(cx, cz) {
 }
 
 // --- Tricks ---------------------------------------------------------------
+// Four tiers by air time, five tricks per tier for each ride. The more air
+// you have when you tap, the higher the tier (the biggest that still fits),
+// and the five in it take turns.
+//   1 low:        a pop on flat ground
+//   2 middle:     off a kicker or the funbox
+//   3 high:       a popped kicker, or up a quarter pipe
+//   4 very high:  big vert off a quarter pipe
 // pose(p) for p 0..1: spin (turn round, radians), flip (forward/back
 // flip), roll (sideways), rideRoll / rideSpin (the board or bike alone:
 // kickflips, shove-its, tail whips), tuck (crouch, 0..1).
 // `types`: which rides can do it. pts: base points.
 const TAU = Math.PI * 2;
 const ease = (p) => p * p * (3 - 2 * p);
+const arc = (p) => Math.sin(p * Math.PI);
+export const TIER_DUR = [0, 0.42, 0.6, 0.82, 1.05]; // seconds a trick of each tier takes
+export const TIER_NAME = {
+  1: { en: 'Low air', ko: '낮은 체공', ja: '低い', zh: '低空' },
+  2: { en: 'Mid air', ko: '중간 체공', ja: '中くらい', zh: '中空' },
+  3: { en: 'High air', ko: '높은 체공', ja: '高い', zh: '高空' },
+  4: { en: 'Huge air', ko: '아주 높은 체공', ja: 'とても高い', zh: '超高空' },
+};
+const T = (tier, id, types, pts, name, pose) => ({ id, tier, types, dur: TIER_DUR[tier], pts, name, pose });
+const SK = ['skate'], IN = ['inline'], BK = ['bike', 'kick'];
 export const TRICKS = [
-  // From flat ground: short and simple.
-  { id: 'ollie', types: ['skate'], dur: 0.32, pts: 50, name: { en: 'Ollie', ko: '알리', ja: 'オーリー', zh: '豚跳' }, pose: (p) => ({ tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'hop', types: ['bike', 'kick'], dur: 0.32, pts: 50, name: { en: 'Bunny Hop', ko: '버니합', ja: 'バニーホップ', zh: '兔跳' }, pose: (p) => ({ tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'jump', types: ['inline'], dur: 0.32, pts: 50, name: { en: 'Jump', ko: '점프', ja: 'ジャンプ', zh: '跳跃' }, pose: (p) => ({ tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'kickflip', types: ['skate'], dur: 0.45, pts: 120, name: { en: 'Kickflip', ko: '킥플립', ja: 'キックフリップ', zh: '尖翻' }, pose: (p) => ({ rideRoll: ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.7 }) },
-  { id: 'heelflip', types: ['skate'], dur: 0.45, pts: 120, name: { en: 'Heelflip', ko: '힐플립', ja: 'ヒールフリップ', zh: '跟翻' }, pose: (p) => ({ rideRoll: -ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.7 }) },
-  { id: 'shove', types: ['skate'], dur: 0.42, pts: 100, name: { en: 'Pop Shove-it', ko: '팝 쇼빗', ja: 'ポップショービット', zh: '转板' }, pose: (p) => ({ rideSpin: ease(p) * Math.PI, tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'whip', types: ['bike', 'kick'], dur: 0.48, pts: 130, name: { en: 'Tail Whip', ko: '테일윕', ja: 'テイルホイップ', zh: '甩尾' }, pose: (p) => ({ rideSpin: ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.5 }) },
-  { id: 'grab', types: ['inline', 'skate'], dur: 0.5, pts: 110, name: { en: 'Indy Grab', ko: '인디 그랩', ja: 'インディーグラブ', zh: '印第抓板' }, pose: (p) => ({ tuck: Math.sin(p * Math.PI), roll: Math.sin(p * Math.PI) * 0.35 }) },
-  { id: 'nohand', types: ['bike'], dur: 0.5, pts: 110, name: { en: 'Tabletop', ko: '테이블탑', ja: 'テーブルトップ', zh: '平台跳' }, pose: (p) => ({ roll: Math.sin(p * Math.PI) * 0.9, tuck: Math.sin(p * Math.PI) * 0.4 }) },
-  // Off a ramp: more air, bigger tricks.
-  { id: 'tre', types: ['skate'], dur: 0.62, pts: 250, name: { en: '360 Flip', ko: '360 플립', ja: '360フリップ', zh: '360尖翻' }, pose: (p) => ({ rideRoll: ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.8 }) },
-  { id: 'spin360', types: ['skate', 'bike', 'inline', 'kick'], dur: 0.7, pts: 280, name: { en: '360 Spin', ko: '360 스핀', ja: '360スピン', zh: '360旋转' }, pose: (p) => ({ spin: ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'whip360', types: ['bike', 'kick'], dur: 0.82, pts: 380, name: { en: '360 Tail Whip', ko: '360 테일윕', ja: '360テイルホイップ', zh: '360甩尾' }, pose: (p) => ({ spin: ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: Math.sin(p * Math.PI) * 0.6 }) },
-  { id: 'kfindy', types: ['skate'], dur: 0.8, pts: 360, name: { en: 'Kickflip Indy', ko: '킥플립 인디', ja: 'キックフリップインディー', zh: '尖翻抓板' }, pose: (p) => ({ rideRoll: ease(Math.min(1, p * 1.6)) * TAU, tuck: Math.sin(p * Math.PI), roll: Math.sin(p * Math.PI) * 0.3 }) },
-  { id: 'spin720', types: ['inline'], dur: 0.95, pts: 520, name: { en: '720 Spin', ko: '720 스핀', ja: '720スピン', zh: '720旋转' }, pose: (p) => ({ spin: ease(p) * TAU * 2, tuck: Math.sin(p * Math.PI) * 0.8 }) },
-  { id: 'backflip', types: ['skate', 'bike', 'inline', 'kick'], dur: 0.95, pts: 500, name: { en: 'Backflip', ko: '백플립', ja: 'バックフリップ', zh: '后空翻' }, pose: (p) => ({ flip: -ease(p) * TAU, tuck: Math.sin(p * Math.PI) }) },
-  { id: 'mctwist', types: ['skate', 'inline'], dur: 1.1, pts: 700, name: { en: 'McTwist', ko: '맥트위스트', ja: 'マックツイスト', zh: '麦克扭转' }, pose: (p) => ({ spin: ease(p) * TAU, flip: -ease(p) * TAU, tuck: Math.sin(p * Math.PI) }) },
-  { id: 'frontflip', types: ['bike', 'kick'], dur: 1.05, pts: 620, name: { en: 'Front Flip', ko: '프론트플립', ja: 'フロントフリップ', zh: '前空翻' }, pose: (p) => ({ flip: ease(p) * TAU, tuck: Math.sin(p * Math.PI) }) },
+  // 1. Low air
+  T(1, 'ollie', SK, 50, { en: 'Ollie', ko: '알리', ja: 'オーリー', zh: '豚跳' }, (p) => ({ tuck: arc(p) * 0.6 })),
+  T(1, 'kickflip', SK, 110, { en: 'Kickflip', ko: '킥플립', ja: 'キックフリップ', zh: '尖翻' }, (p) => ({ rideRoll: ease(p) * TAU, tuck: arc(p) * 0.7 })),
+  T(1, 'heelflip', SK, 110, { en: 'Heelflip', ko: '힐플립', ja: 'ヒールフリップ', zh: '跟翻' }, (p) => ({ rideRoll: -ease(p) * TAU, tuck: arc(p) * 0.7 })),
+  T(1, 'jump', IN, 50, { en: 'Jump', ko: '점프', ja: 'ジャンプ', zh: '跳跃' }, (p) => ({ tuck: arc(p) * 0.6 })),
+  T(1, 'spread', IN, 100, { en: 'Spread Eagle', ko: '스프레드 이글', ja: 'スプレッドイーグル', zh: '展翅跳' }, (p) => ({ roll: arc(p) * 0.45, tuck: arc(p) * 0.2 })),
+  T(1, 'hop', BK, 50, { en: 'Bunny Hop', ko: '버니합', ja: 'バニーホップ', zh: '兔跳' }, (p) => ({ tuck: arc(p) * 0.6 })),
+  T(1, 'nofoot', BK, 100, { en: 'No Footer', ko: '노 푸터', ja: 'ノーフッター', zh: '无脚' }, (p) => ({ roll: arc(p) * 0.35, tuck: arc(p) * 0.3 })),
+  T(1, 'nohand', BK, 110, { en: 'Tabletop', ko: '테이블탑', ja: 'テーブルトップ', zh: '平台跳' }, (p) => ({ roll: arc(p) * 0.9, tuck: arc(p) * 0.4 })),
+  T(1, 'tuckjump', ['inline', 'kick'], 100, { en: 'Tuck Jump', ko: '턱 점프', ja: 'タックジャンプ', zh: '抱膝跳' }, (p) => ({ tuck: arc(p) })),
+  T(1, 'shove', SK, 100, { en: 'Pop Shove-it', ko: '팝 쇼빗', ja: 'ポップショービット', zh: '转板' }, (p) => ({ rideSpin: ease(p) * Math.PI, tuck: arc(p) * 0.6 })),
+  T(1, 'nollie', SK, 90, { en: 'Nollie', ko: '놀리', ja: 'ノーリー', zh: '前豚跳' }, (p) => ({ flip: arc(p) * 0.3, tuck: arc(p) * 0.6 })),
+  T(1, 'mute', IN, 110, { en: 'Mute Grab', ko: '뮤트 그랩', ja: 'ミュートグラブ', zh: '静音抓' }, (p) => ({ tuck: arc(p) * 0.8, roll: -arc(p) * 0.3 })),
+  T(1, 'xjump', IN, 90, { en: 'X Jump', ko: 'X 점프', ja: 'Xジャンプ', zh: 'X跳' }, (p) => ({ roll: arc(p) * 0.25, flip: -arc(p) * 0.25 })),
+  T(1, 'onefoot', BK, 90, { en: 'One Footer', ko: '원 푸터', ja: 'ワンフッター', zh: '单脚' }, (p) => ({ roll: arc(p) * 0.2, tuck: arc(p) * 0.3 })),
+  T(1, 'seatgrab', ['bike'], 110, { en: 'Seat Grab', ko: '시트 그랩', ja: 'シートグラブ', zh: '抓座' }, (p) => ({ roll: arc(p) * 0.4, tuck: arc(p) * 0.6 })),
+  // 2. Middle air
+  T(2, 'tre', SK, 280, { en: '360 Flip', ko: '360 플립', ja: '360フリップ', zh: '360尖翻' }, (p) => ({ rideRoll: ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: arc(p) * 0.8 })),
+  T(2, 'varial', SK, 260, { en: 'Varial Kickflip', ko: '배리얼 킥플립', ja: 'ヴァリアルキックフリップ', zh: '转板尖翻' }, (p) => ({ rideRoll: ease(p) * TAU, rideSpin: ease(p) * Math.PI, tuck: arc(p) * 0.7 })),
+  T(2, 'grab', ['skate', 'inline'], 250, { en: 'Indy Grab', ko: '인디 그랩', ja: 'インディーグラブ', zh: '印第抓板' }, (p) => ({ tuck: arc(p), roll: arc(p) * 0.35 })),
+  T(2, 'japan', IN, 260, { en: 'Japan Air', ko: '재팬 에어', ja: 'ジャパンエア', zh: '日式腾空' }, (p) => ({ tuck: arc(p) * 0.9, roll: -arc(p) * 0.4 })),
+  T(2, 'rocket', IN, 270, { en: 'Rocket Air', ko: '로켓 에어', ja: 'ロケットエア', zh: '火箭腾空' }, (p) => ({ flip: arc(p) * 0.5, tuck: arc(p) * 0.8 })),
+  T(2, 'whip', BK, 280, { en: 'Tail Whip', ko: '테일윕', ja: 'テイルホイップ', zh: '甩尾' }, (p) => ({ rideSpin: ease(p) * TAU, tuck: arc(p) * 0.5 })),
+  T(2, 'superman', BK, 260, { en: 'Superman', ko: '슈퍼맨', ja: 'スーパーマン', zh: '超人' }, (p) => ({ flip: -arc(p) * 0.6, tuck: arc(p) * 0.2 })),
+  T(2, 'turndown', BK, 250, { en: 'Turndown', ko: '턴다운', ja: 'ターンダウン', zh: '下压转把' }, (p) => ({ rideRoll: -arc(p) * 0.9, roll: arc(p) * 0.3, tuck: arc(p) * 0.4 })),
+  T(2, 'hardflip', SK, 290, { en: 'Hardflip', ko: '하드플립', ja: 'ハードフリップ', zh: '硬翻' }, (p) => ({ rideRoll: ease(p) * TAU, rideSpin: -ease(p) * Math.PI, tuck: arc(p) * 0.8 })),
+  T(2, 'melon', SK, 255, { en: 'Melon Grab', ko: '멜론 그랩', ja: 'メロングラブ', zh: '甜瓜抓板' }, (p) => ({ tuck: arc(p), roll: -arc(p) * 0.35 })),
+  T(2, 'safety', IN, 255, { en: 'Safety Grab', ko: '세이프티 그랩', ja: 'セーフティグラブ', zh: '安全抓' }, (p) => ({ tuck: arc(p) })),
+  T(2, 'lui', IN, 290, { en: 'Lui Kang', ko: '루이 캉', ja: 'ルイカン', zh: '劈腿踢' }, (p) => ({ flip: -arc(p) * 0.4, roll: arc(p) * 0.5 })),
+  T(2, 'candybar', BK, 270, { en: 'Candy Bar', ko: '캔디바', ja: 'キャンディバー', zh: '糖果棒' }, (p) => ({ roll: arc(p) * 0.5, tuck: arc(p) * 0.5 })),
+  T(2, 'lookback', BK, 290, { en: 'Lookback', ko: '룩백', ja: 'ルックバック', zh: '回望' }, (p) => ({ spin: arc(p) * 0.6, rideRoll: arc(p) * 0.7, tuck: arc(p) * 0.3 })),
+  // 3. High air
+  T(3, 'spin360', ['skate', 'inline', 'bike', 'kick'], 400, { en: '360 Spin', ko: '360 스핀', ja: '360スピン', zh: '360旋转' }, (p) => ({ spin: ease(p) * TAU, tuck: arc(p) * 0.6 })),
+  T(3, 'backflip', ['skate', 'inline', 'bike', 'kick'], 450, { en: 'Backflip', ko: '백플립', ja: 'バックフリップ', zh: '后空翻' }, (p) => ({ flip: -ease(p) * TAU, tuck: arc(p) })),
+  T(3, 'kfindy', SK, 420, { en: 'Kickflip Indy', ko: '킥플립 인디', ja: 'キックフリップインディー', zh: '尖翻抓板' }, (p) => ({ rideRoll: ease(Math.min(1, p * 1.6)) * TAU, tuck: arc(p), roll: arc(p) * 0.3 })),
+  T(3, 'japan360', IN, 420, { en: '360 Japan', ko: '360 재팬', ja: '360ジャパン', zh: '360日式' }, (p) => ({ spin: ease(p) * TAU, tuck: arc(p) * 0.9, roll: -arc(p) * 0.4 })),
+  T(3, 'whip360', BK, 430, { en: '360 Tail Whip', ko: '360 테일윕', ja: '360テイルホイップ', zh: '360甩尾' }, (p) => ({ spin: ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: arc(p) * 0.6 })),
+  T(3, 'bigspin', SK, 440, { en: 'Bigspin', ko: '빅스핀', ja: 'ビッグスピン', zh: '大转' }, (p) => ({ spin: ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: arc(p) * 0.6 })),
+  T(3, 'doublekf', SK, 460, { en: 'Double Kickflip', ko: '더블 킥플립', ja: 'ダブルキックフリップ', zh: '双尖翻' }, (p) => ({ rideRoll: ease(p) * TAU * 2, tuck: arc(p) * 0.8 })),
+  T(3, 'mute360', IN, 430, { en: '360 Mute', ko: '360 뮤트', ja: '360ミュート', zh: '360静音抓' }, (p) => ({ spin: ease(p) * TAU, tuck: arc(p) * 0.8, roll: -arc(p) * 0.3 })),
+  T(3, 'cork360', IN, 460, { en: 'Cork 360', ko: '코크 360', ja: 'コーク360', zh: '螺旋360' }, (p) => ({ spin: ease(p) * TAU, roll: arc(p) * 0.8, tuck: arc(p) * 0.6 })),
+  T(3, 'doublewhip', BK, 460, { en: 'Double Tail Whip', ko: '더블 테일윕', ja: 'ダブルテイルホイップ', zh: '双甩尾' }, (p) => ({ rideSpin: ease(p) * TAU * 2, tuck: arc(p) * 0.6 })),
+  T(3, 'nohand360', BK, 440, { en: '360 No Hander', ko: '360 노 핸더', ja: '360ノーハンダー', zh: '360放手' }, (p) => ({ spin: ease(p) * TAU, roll: arc(p) * 0.6, tuck: arc(p) * 0.3 })),
+  // 4. Very high air
+  T(4, 'mctwist', ['skate', 'inline'], 750, { en: 'McTwist', ko: '맥트위스트', ja: 'マックツイスト', zh: '麦克扭转' }, (p) => ({ spin: ease(p) * TAU, flip: -ease(p) * TAU, tuck: arc(p) })),
+  T(4, 'spin720', ['skate', 'inline', 'bike', 'kick'], 700, { en: '720 Spin', ko: '720 스핀', ja: '720スピン', zh: '720旋转' }, (p) => ({ spin: ease(p) * TAU * 2, tuck: arc(p) * 0.8 })),
+  T(4, 'kfback', SK, 800, { en: 'Kickflip Backflip', ko: '킥플립 백플립', ja: 'キックフリップバックフリップ', zh: '尖翻后空翻' }, (p) => ({ flip: -ease(p) * TAU, rideRoll: ease(p) * TAU, tuck: arc(p) })),
+  T(4, 'doubleback', ['inline', 'bike', 'kick'], 850, { en: 'Double Backflip', ko: '더블 백플립', ja: 'ダブルバックフリップ', zh: '双后空翻' }, (p) => ({ flip: -ease(p) * TAU * 2, tuck: arc(p) })),
+  T(4, 'frontflip', ['skate', 'bike', 'kick'], 750, { en: 'Front Flip', ko: '프론트플립', ja: 'フロントフリップ', zh: '前空翻' }, (p) => ({ flip: ease(p) * TAU, tuck: arc(p) })),
+  T(4, 'whipback', BK, 800, { en: 'Backflip Tail Whip', ko: '백플립 테일윕', ja: 'バックフリップテイルホイップ', zh: '后空翻甩尾' }, (p) => ({ flip: -ease(p) * TAU, rideSpin: ease(p) * TAU, tuck: arc(p) })),
+  T(4, 'kfmctwist', SK, 880, { en: 'Kickflip McTwist', ko: '킥플립 맥트위스트', ja: 'キックフリップマックツイスト', zh: '尖翻麦克扭转' }, (p) => ({ spin: ease(p) * TAU, flip: -ease(p) * TAU, rideRoll: ease(p) * TAU, tuck: arc(p) })),
+  T(4, 'flair', ['inline', 'bike', 'kick'], 820, { en: 'Flair', ko: '플레어', ja: 'フレア', zh: '后空翻转体' }, (p) => ({ flip: -ease(p) * TAU, spin: ease(p) * TAU, roll: arc(p) * 0.4, tuck: arc(p) * 0.8 })),
+  T(4, 'spin1080', IN, 900, { en: '1080 Spin', ko: '1080 스핀', ja: '1080スピン', zh: '1080旋转' }, (p) => ({ spin: ease(p) * TAU * 3, tuck: arc(p) * 0.9 })),
 ];
 export const TRICK_BY_ID = Object.fromEntries(TRICKS.map((k) => [k.id, k]));
 export const GRIND_NAME = {
@@ -158,20 +210,24 @@ export function trickPose(id, t) {
   return { ...NO_POSE, ...k.pose(t / k.dur) };
 }
 
-// Which trick to do with `air` seconds left in the air: the best one that
-// still fits, taking turns among the best few so it isn't always the same.
+// Which trick to do with `air` seconds left in the air: the highest tier
+// whose tricks still fit, taking turns among its five.
 // n: how many tricks you have done (for the turns). null if nothing fits.
+export function tierFor(air) {
+  let t = 0;
+  for (let k = 1; k < TIER_DUR.length; k++) if (TIER_DUR[k] <= air * 0.95) t = k;
+  return t;
+}
 export function pickTrick(type, air, n = 0) {
-  const fits = TRICKS.filter((k) => k.types.includes(type) && k.dur <= air * 0.95).sort((a, b) => b.pts - a.pts);
-  if (!fits.length) return null;
-  const top = fits.filter((k) => k.pts >= fits[0].pts * 0.45).slice(0, 3);
-  return top[n % top.length];
+  const tier = tierFor(air);
+  const list = TRICKS.filter((k) => k.tier === tier && k.types.includes(type));
+  return list.length ? list[n % list.length] : null;
 }
 
 // Seconds until falling from y (going up at vy) back down to `ground`.
 export function airTime(y, vy, ground = 0, g = GRAVITY) {
-  const h = Math.max(0, y - ground);
-  return (vy + Math.sqrt(vy * vy + 2 * g * h)) / g;
+  const h = y - ground; // below `ground` (popping up a ramp): the time until you come down onto it
+  return Math.max(0, (vy + Math.sqrt(Math.max(0, vy * vy + 2 * g * h))) / g);
 }
 
 // One rider in the park. Call step() every frame with the ground under you
@@ -259,7 +315,15 @@ export class Skater {
       }
     }
     if (!this.air) {
-      if (tap) {
+      if (tap && g.r?.kind === 'quarter' && this.vy > 0.3) {
+        // Pop on the way up a quarter pipe: the biggest air in the park, the
+        // higher up the more. You come down at the top (the coping).
+        this.air = true; this.vert = true;
+        // Air time (back down to the coping) grows the higher up you pop.
+        const A = 0.92 + 0.4 * clamp(g.s, 0, 1);
+        this.vy = clamp((GRAVITY * A) / 2 - (this.y - g.r.h) / A, 5, VERT_POP_VY);
+        this._startTrick(airTime(this.y, this.vy, g.r.h), events);
+      } else if (tap) {
         // Pop: an ollie, plus whatever the ramp under you adds.
         this.air = true;
         this.vy = clamp(Math.max(0, this.vy) + POP, POP, MAX_VY);

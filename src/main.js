@@ -4379,7 +4379,7 @@ function skateHud() {
 }
 function skateEvent(e) {
   if (e.kind === 'trick') {
-    skatePop(`${localName(e.trick.name, getLanguage())}${e.mult > 1 ? ' ×' + e.mult : ''}`, e.trick.pts >= 250 ? 'big' : '');
+    skatePop(`${'★'.repeat(e.trick.tier || 1)} ${localName(e.trick.name, getLanguage())}${e.mult > 1 ? ' ×' + e.mult : ''}`, e.trick.tier >= 3 ? 'big' : '');
     sfx.skatePop();
     skateTk = { code: `${e.trick.id}.${++skateTkSeq % 100}`, at: performance.now() };
     sendTimer = 0;
