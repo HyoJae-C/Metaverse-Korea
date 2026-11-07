@@ -446,12 +446,14 @@ export const FISH = [
     "price": 18
   },
   {
-    "id": "snow-crab",
-    "emoji": "🦀",
-    "ko": "대게",
-    "rom": "daege",
+    "id": "nautilus",
+    "emoji": "🐚",
+    "ko": "앵무조개",
+    "rom": "aengmujogae",
     "name": {
-      "en": "Snow crab"
+      "en": "Nautilus",
+      "ja": "オウムガイ",
+      "zh": "鹦鹉螺"
     },
     "rarity": 3,
     "released": false,
@@ -725,11 +727,11 @@ export const FISH_SHEET = [
   'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
   'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
   'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'starfish',
-  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
+  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'nautilus', 'blue-tang',
   'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
   'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
 ];
-export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=2';
+export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=3';
 // Kinds swapped out of the catalogue (to match the fish book's pictures),
 // each moved to the new kind of the same rarity in its place, so bags and
 // fish books saved before keep their counts.
@@ -737,6 +739,7 @@ export const RENAMED = {
   mandarin: 'sea-turtle', bass: 'scallop', 'horse-mackerel': 'jellyfish', squid: 'marlin',
   filefish: 'wakame', parrotfish: 'kelp', lionfish: 'manta', mandarinfish: 'blobfish', ray: 'orca', swordfish: 'giant-squid',
   crayfish: 'starfish', // too close to the lobster
+  'snow-crab': 'nautilus', // too close to the blue crab
 };
 const migrate = (raw) => {
   const out = { ...raw };
