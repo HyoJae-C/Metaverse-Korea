@@ -23,6 +23,12 @@ export const STAMPS = [
     icon: '<rect x="66" y="62" width="68" height="56" rx="2"/><rect x="73" y="69" width="54" height="42"/><path d="M76 106 l15 -18 l10 11 l8 -8 l15 15" /><circle cx="114" cy="80" r="4"/>',
   },
   {
+    id: 'war-memorial', place: { store: 'war-memorial' }, color: '#4a5560', shape: 'square',
+    name: { ko: '전쟁역사박물관', en: 'War History Museum', ja: '戦争歴史博物館', zh: '战争历史博物馆' },
+    gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
+    icon: '<path d="M62 128 h76 M68 128 v-36 h64 v36 M64 92 h72"/><path d="M80 92 a20 20 0 0 1 40 0"/><path d="M100 72 v-8 M80 128 v-28 M93 128 v-28 M107 128 v-28 M120 128 v-28"/>',
+  },
+  {
     id: 'hongdae', place: { at: [-2965, -251] }, color: '#7b3fa0', shape: 'circle',
     name: { ko: '홍대 버스킹존', en: 'Hongdae Busking', ja: '弘大バスキング', zh: '弘大街头表演' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
@@ -72,5 +78,29 @@ export const STAMPS = [
     name: { ko: '효재대학교', en: 'Hyojae University', ja: 'ヒョジェ大学', zh: '孝才大学' },
     gu: { ko: '서대문구', en: 'Seodaemun-gu', ja: '西大門区', zh: '西大门区' },
     icon: '<path d="M100 60 l42 16 l-42 16 l-42 -16 z M76 84 v18 q24 14 48 0 v-18 M138 78 v22"/><path d="M70 120 h28 q2 0 2 3 q0 -3 2 -3 h28 v10 h-28 q-2 0 -2 3 q0 -3 -2 -3 h-28 z"/>',
+  },
+  {
+    // on the forest path's lawn in Yeonnam-dong, beside the old rails
+    id: 'yeonnam', place: { at: [-2971, -545], ry: Math.PI / 2 }, color: '#3f7a4f', shape: 'circle',
+    name: { ko: '경의선숲길', en: 'Gyeongui Line Forest Park', ja: '京義線森の道', zh: '京义线林荫路' },
+    gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
+    // a tree beside a stretch of railway
+    icon: '<path d="M60 132 l20 -60 M140 132 l-20 -60 M66 116 h68 M71 100 h58 M76 86 h48"/><path d="M100 70 q-22 -2 -18 -20 q4 -16 18 -12 q14 -4 18 12 q4 18 -18 20 z M100 70 v26"/>',
+  },
+  {
+    // at the south gate of Mangwon Market, on Poeun-ro
+    id: 'mangwon-market', place: { at: [-3282, -276] }, color: '#c0392b', shape: 'square',
+    name: { ko: '망원시장', en: 'Mangwon Market', ja: '望遠市場', zh: '望远市场' },
+    gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
+    // the arcade roof over a stall, a croquette on a skewer
+    icon: '<path d="M56 96 q44 -40 88 0 M60 96 v32 M140 96 v32 M56 128 h88"/><path d="M72 112 h56 v16 h-56 z"/><ellipse cx="100" cy="84" rx="12" ry="8"/><path d="M100 92 v12"/>',
+  },
+  {
+    // in the Mangwon Fishing Pier room (the same lawn spot as Ttukseom's)
+    id: 'mangwon-pier', place: { store: 'mangwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#2f78b0', shape: 'circle',
+    name: { ko: '망원한강공원', en: 'Mangwon Han River Park', ja: '望遠漢江公園', zh: '望远汉江公园' },
+    gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
+    // a fishing rod with a fish on the line, over the waves
+    icon: '<path d="M58 70 q40 -10 70 30 M128 100 v12"/><path d="M114 116 q14 -12 28 0 q-14 12 -28 0 z M142 116 l8 -6 v12 z"/><path d="M52 136 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
 ];

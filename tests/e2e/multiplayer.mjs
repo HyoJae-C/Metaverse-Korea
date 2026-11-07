@@ -5,7 +5,7 @@
 import { chromium } from 'playwright';
 
 const url = process.argv[2] || 'http://localhost:4173/';
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ executablePath: process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const errors = [];
 // A fresh room per run, so visitors on the live site (same Supabase project)
 // or a parallel CI run can't change the player count.
@@ -43,12 +43,12 @@ try {
   await b.keyboard.up('KeyW');
   await b.click('#emote-main'); // open the emote wheel
   await b.click('#emotes button >> nth=0');
-  await a.waitForSelector('.bubble', { timeout: 5000 });
+  await a.waitForSelector('.bubble', { timeout: 15000 }); // CI renders at ~2 fps
   // Text chat reaches the other player as a bubble and a log line.
   await b.click('#chat-btn');
   await b.fill('#chat-input', 'hello from B');
   await b.press('#chat-input', 'Enter');
-  await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 5000 });
+  await a.waitForFunction(() => document.querySelector('#chat-log')?.textContent.includes('hello from B'), null, { timeout: 15000 });
   // On the street, chat from someone more than 10 m away is not shown.
   const [ax0, az0] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 25, z), [ax0, az0]);
@@ -78,7 +78,10 @@ try {
       const t0 = performance.now(); let f = 0;
       await new Promise((r) => { const tick = () => (++f < 10 ? requestAnimationFrame(tick) : r()); requestAnimationFrame(tick); });
       const o = document.querySelector('#online');
-      return { online: o.hidden ? 'hidden' : o.textContent, near: window.__mk?.near?.(), fps: Math.round(10000 / (performance.now() - t0)) };
+      const me = window.__mk?.me?.();
+      const peers = (window.__mk?.peers?.() || []).map((p) => ({ name: p.name, dist: me ? +Math.hypot(p.x - me[0], p.z - me[1]).toFixed(1) : null }));
+      const log = [...document.querySelectorAll('#chat-log .chat-line')].map((l) => l.textContent).slice(-4);
+      return { online: o.hidden ? 'hidden' : o.textContent, near: window.__mk?.near?.(), peers, chat: window.__mk?.chatState?.(), log, fps: Math.round(10000 / (performance.now() - t0)) };
     }).catch((err) => ({ error: err.message }));
     errors.push(`${n}: ${JSON.stringify(info)}`);
   }
