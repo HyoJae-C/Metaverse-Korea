@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { JONGMYO, JongmyoBook, onSamdo, inBox, MANNERS_REWARD, RITE_REWARD } from '../src/data/jongmyo.js';
+import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, MANNERS_REWARD, RITE_REWARD } from '../src/data/jongmyo.js';
 import { inside } from '../src/data/bukchon.js';
 import { CRAFT, craftWear, craftEntry } from '../src/ui/bukchon-ui.js';
 import { WEARABLES } from '../src/data/wearables.js';
@@ -31,21 +31,20 @@ test('Jongmyo stands on its gate\'s real spot on Jongno, and Jongno runs on from
   assert.ok(Math.abs(jongno.p[0][0] + ox - (Math.max(...jongnoWest.p.map((q) => q[0])) + gb.offset[0])) < 1, 'it starts where the old one ends');
 });
 
-test('Seosunra-gil runs along the shrine\'s west wall, from Jongno to Yulgok-ro, shops facing the wall', () => {
-  const lane = map.roads.find((r) => r.n?.en === 'Seosunra-gil');
-  const [WX0] = JONGMYO.wall;
-  assert.equal(lane.p[0][0], JONGMYO.lane);
-  assert.ok(WX0 - (JONGMYO.lane + lane.w / 2) >= 1, 'a strip of pavement between the lane and the wall');
-  assert.ok(lane.p[1][1] + oz <= -883, 'reaches Yulgok-ro');
-  const shops = ['info-jongmyo', 'sunra-silver', 'sunra-jumak', 'doldam-cafe', 'yakgwa-dang', 'jongno-goldsmith'].map((id) => stores.find((s) => s.id === id));
-  for (const s of shops) {
-    assert.ok(s, 'shop on the map');
-    assert.equal(s.front, 'hanok');
-    const [x, z] = [s.at[0] - ox, s.at[1] - oz];
-    assert.ok(x < JONGMYO.lane && x > JONGMYO.lane - 4, `${s.id} stands on the lane's west side`);
-    assert.ok(!inSolid(x, z), `${s.id}'s door is clear`);
-    assert.ok(map.buildings.some((b) => b.fr?.[0] === 1 && inside(x - 3, z, b.p)), `${s.id} has its hanok behind it`);
-  }
+test('Seosunra-gil is out for now; the Information Center stands on Jongno by a grove', () => {
+  assert.ok(!map.roads.some((r) => r.n?.en === 'Seosunra-gil'), 'no lane');
+  assert.ok(!map.pois.some((p) => p.name?.en === 'Seosunra-gil'), 'no map label');
+  assert.ok(!JSON.stringify(map).includes('Seosunra'), 'no sign or note');
+  for (const id of ['sunra-silver', 'sunra-jumak', 'doldam-cafe', 'yakgwa-dang', 'jongno-goldsmith']) assert.ok(!stores.some((s) => s.id === id), id);
+  const info = stores.find((s) => s.id === 'info-jongmyo');
+  assert.equal(info.name.en, 'Jongmyo Information Center');
+  assert.equal(info.front, 'hanok');
+  const [x, z] = [info.at[0] - ox, info.at[1] - oz];
+  assert.ok(!inSolid(x, z), 'its door is clear');
+  assert.ok(map.buildings.some((b) => b.fr?.[1] === 1 && inside(x, z - 3, b.p)), 'its hanok behind it');
+  const jongno = map.roads.find((r) => r.n?.en === 'Jongno');
+  assert.ok(z < jongno.p[0][1] - jongno.w / 2, 'on the pavement, off the road');
+  assert.ok(map.landmarks.find((l) => l.type === 'shrinetrees').spots.some(([tx]) => tx < JONGMYO.wall[0] - 4), 'the grove west of the wall');
   // Fictional brands only (sample data).
   assert.ok(read('stores.json').sampleData);
 });
@@ -97,14 +96,40 @@ test('manners and the rite each pay once, and a walk on the spirits\' strip does
   assert.ok(again.manners && again.rite, 'saved');
 });
 
-test('the ritual dance: 6 × 6 dancers on Jeongjeon\'s terrace, the orchestra behind them', () => {
-  const { at: [x, z], rows, gap, band } = JONGMYO.rite;
-  const half = ((rows - 1) / 2) * gap;
-  for (const [dx, dz] of [[-half, -half], [half, half], [-half, half], [half, -half]]) assert.ok(inBox(x + dx, z + dz, JONGMYO.jeongjeon.woldae), 'every dancer on the terrace');
+test('the ritual dance: a quarter of the real troupe, civil and military dances side by side', () => {
+  const { at: [x, z], rows, cols, gap, groups, band } = JONGMYO.rite;
+  assert.equal(groups.length * rows * cols, 16, '16 dancers, a quarter of the full rite\'s 64');
+  assert.equal(band.n, 15, '15 musicians (57-60 on a real stage)');
+  assert.deepEqual(groups.map((g) => g.dance), ['ilmu', 'mumu']);
+  assert.ok(groups[0].dx < 0 && groups[1].dx > 0, 'civil on the west, military on the east');
+  const hx = ((cols - 1) / 2) * gap, hz = ((rows - 1) / 2) * gap;
+  for (const { dx } of groups) for (const [ax, az] of [[-hx, -hz], [hx, hz], [-hx, hz], [hx, -hz]]) assert.ok(inBox(x + dx + ax, z + az, JONGMYO.jeongjeon.woldae), 'every dancer on the terrace');
+  assert.ok(groups[1].dx - groups[0].dx > 2 * hx + gap, 'the two groups apart');
   assert.ok(inBox((band.x0 + band.x1) / 2, band.z, JONGMYO.jeongjeon.woldae));
-  assert.ok(band.z < z - half, 'the orchestra is behind (north of) the dancers');
-  const pose = FOLK_DANCES.ilmu(3);
-  assert.ok(pose.armL && pose.armR, 'a pose for the civil dance');
+  assert.ok(band.z < z - hz, 'the orchestra is behind (north of) the dancers');
+  for (const k of ['ilmu', 'mumu', 'mumuspear']) { const pose = FOLK_DANCES[k](3); assert.ok(pose.armL && pose.armR, k); }
+  // No arm raised overhead like a thrust: a lifted staff stays below the head.
+  for (let t = 0; t < 30; t += 0.5) for (const k of ['ilmu', 'mumu']) assert.ok(FOLK_DANCES[k](t).armR[0] > -1.8, `${k} at ${t}s`);
+  // The sign below the terrace explains the two dances and that they take turns.
+  const sign = map.landmarks.find((l) => l.type === 'sign' && l.title?.en === JONGMYO.riteSign.title.en);
+  assert.ok(sign && inBox(sign.x, sign.z, JONGMYO.jeongjeon.yard) && !inBox(sign.x, sign.z, JONGMYO.jeongjeon.woldae));
+  assert.match(sign.text.en, /take turns/);
+  for (const lang of ['en', 'ko', 'ja', 'zh']) assert.ok(sign.title[lang] && sign.text[lang], lang);
+});
+
+test('stepping up onto the spirits\' strip puts you back beside it', () => {
+  const [[a, b]] = JONGMYO.samdo;
+  const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+  assert.equal(offSindo(mx + 3, mz), null, 'off the path: nothing');
+  assert.equal(offSindo(mx + 1.2, mz), null, 'on a side strip: nothing');
+  for (const off of [0.4, -0.4, 0]) {
+    const [x, z] = offSindo(mx + off, mz);
+    assert.equal(onSamdo(x, z), 'side', `from ${off}`);
+    if (off) assert.equal(Math.sign(x - mx), Math.sign(off), 'down on the side you came from');
+  }
+  // At the corners of the path too.
+  for (const [[p]] of [JONGMYO.samdo.slice(1)]) { const r = offSindo(p[0] + 0.1, p[1] + 0.1); assert.ok(r && onSamdo(...r) !== 'sindo'); }
+  for (const [, q] of JONGMYO.samdo) { const r = offSindo(q[0], q[1]); assert.ok(r && onSamdo(...r) !== 'sindo', `${q}`); }
 });
 
 test('Sunra Silver Studio\'s pendants are worn: every metal and charm is a real accessory', () => {

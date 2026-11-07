@@ -1,4 +1,4 @@
-// Jongmyo Shrine and Seosunra-gil: places in the district's own metres (x
+// Jongmyo Shrine: places in the district's own metres (x
 // east, z south, (0, 0) in the middle of Oedaemun, Jongmyo's main gate on the
 // south wall). The game adds the district offset from region.json, so this
 // file never changes when the district moves. Built by
@@ -10,8 +10,8 @@
 // with its music and dance (Jongmyo Jeryeak). The game squeezes it into the
 // room between Jongno and Yulgok-ro: the gate and Jongmyo Square on Jongno,
 // the stone path (samdo) through the woods, the two halls in their walled
-// yards. Seosunra-gil is the lane along the shrine's west wall, where
-// patrols once walked; now hanok cafés and jewellery workshops line it.
+// yards. (Seosunra-gil, the lane along the west wall, was taken out for now
+// because it felt too much like Bukchon; it is in commit e4ebd13.)
 //
 // Real facts here were checked on 2026-11-07:
 // - Jongmyo: World Heritage since 1995; Jongmyo Jerye and Jeryeak on
@@ -22,10 +22,6 @@
 //   with a guided tour at set times (English tours too), on Saturdays you
 //   can walk around freely. Hours change with the season. (Korea Heritage
 //   Service; checked against travel guides.)
-// - Seosunra-gil: named after the patrols (sunra) that guarded Jongmyo's
-//   west side in the Joseon era; jewellery workshops and hanok cafés by
-//   Jongno 3-ga Station; car-free on weekends 10:00-18:00 (Seoul
-//   Metropolitan Government, mediahub.seoul.go.kr).
 
 const T = (en, ko, ja, zh) => ({ en, ko, ja, zh });
 
@@ -35,10 +31,8 @@ export const JONGMYO = {
   // (north)]. Inside it is drawn once you walk in (meta.enclosure).
   wall: [-56, 0, 84, -92],
   gate: { at: [0, 0], w: 8 }, // Oedaemun, three doors under one roof
-  // The streets (district metres): Jongno along the south, Seosunra-gil
-  // along the west wall, an alley west to the Sejong-ro side street.
+  // The street (district metres): Jongno along the south.
   jongno: 24, // Jongno's centre line (z)
-  lane: -62, // Seosunra-gil's centre line (x)
   // The stone path (삼도, samdo): three strips, the raised middle one (신도,
   // sindo) for the spirits. Runs from the gate to each hall's south gate.
   samdo: [
@@ -54,9 +48,29 @@ export const JONGMYO = {
   jeongjeon: { yard: [2, -34, 80, -90], gate: [40, -34], woldae: [6, -40, 76, -73], hall: [6, -75, 76, -87] },
   yeongnyeongjeon: { yard: [-52, -40, -14, -90], gate: [-34, -40], woldae: [-48, -48, -18, -73], hall: [-48, -75, -18, -86] },
   pond: [-46, -4, -26, -16], // the square pond with a round island (중지당지)
-  // The ritual dance on Jeongjeon's woldae (36 dancers, 6 × 6) and the
-  // musicians along the top of the terrace.
-  rite: { at: [41, -56], rows: 6, gap: 1.9, band: { z: -71.5, x0: 22, x1: 60 } },
+  // The ritual dance on Jeongjeon's woldae and the musicians along the top
+  // of the terrace, at about a quarter of the real thing: the full rite's
+  // 64 dancers (8 × 8) become 16, the 57-60 musicians and singers of a staged
+  // Jeryeak (National Gugak Center) become 15. The two dances side by side,
+  // 2 rows of 4 each: the civil dance
+  // (문무, flute and feathered staff) on the west half, the military dance
+  // (무무, wooden swords in front, spears behind) on the east half. At the
+  // real rite they take turns; the sign below the terrace says so.
+  rite: {
+    at: [41, -56], rows: 2, cols: 4, gap: 2.2,
+    groups: [{ dance: 'ilmu', dx: -11 }, { dance: 'mumu', dx: 11 }],
+    band: { z: -71.5, x0: 22, x1: 60, n: 15 },
+  },
+  // The sign about the music and the two dances, below the terrace.
+  riteSign: {
+    at: [30, -37.5], ry: 0,
+    title: T('Jongmyo Jeryeak: music and dance', '종묘제례악: 음악과 춤', '宗廟祭礼楽：音楽と舞', '宗庙祭礼乐：音乐与舞蹈'),
+    text: T(
+      'The music and dance of the royal ancestral rite. On the left, the civil dance (munmu, to Botaepyeong music) praises the kings\' wisdom: a flute in one hand, a feathered staff in the other. On the right, the military dance (mumu, to Jeongdaeeop music) praises their victories, with wooden swords and spears. At the real rite they take turns, the civil dance for the first offering and the military dance for the second and third; here they dance side by side, at about a quarter of the real number of dancers and musicians.',
+      '왕실 제사인 종묘제례의 음악과 춤이에요. 왼쪽은 문무(보태평에 맞춰 추는 춤)로, 왕의 학문과 덕을 기려요. 한 손에 약(피리), 다른 손에 적(깃털 단 막대)을 들어요. 오른쪽은 무무(정대업에 맞춰 추는 춤)로, 왕의 무공을 기리며 나무 칼과 창을 들어요. 실제 제례에서는 첫 잔을 올릴 때 문무, 둘째와 셋째 잔을 올릴 때 무무를 차례로 춰요. 여기서는 두 춤을 나란히, 실제 인원의 4분의 1쯤으로 보여 줘요.',
+      '王室の祭祀、宗廟祭礼の音楽と舞です。左は文舞（保太平の音楽で舞う）で、王の学徳をたたえます。片手に籥（笛）、もう片手に翟（羽飾りの棒）を持ちます。右は武舞（定大業の音楽で舞う）で、王の武功をたたえ、木の剣と槍を持ちます。実際の祭礼では最初の献杯で文舞、二杯目と三杯目で武舞を順に舞います。ここでは二つの舞を並べて、実際の人数の4分の1ほどで見せています。',
+      '王室祭祀宗庙祭礼的音乐与舞蹈。左边是文舞（配保太平之乐），颂扬君王的文德，一手持籥（笛），一手持翟（饰羽毛的杖）。右边是武舞（配定大业之乐），颂扬君王的武功，手持木剑和木枪。真实的祭礼中两种舞轮流进行：初献时跳文舞，亚献和终献时跳武舞。这里让两种舞并排表演，人数约为实际的四分之一。'),
+  },
   // People: the guide inside the gate, two grandpas playing janggi on
   // Jongmyo Square (the real square is known for it).
   guide: { at: [6, -4], ry: Math.PI },
@@ -118,16 +132,6 @@ export const JONGMYO = {
         '真实的宗庙在钟路3街站附近。周二闭馆，成人门票1,000韩元。平日只能跟随定时讲解参观（有英语讲解），周六可以自由参观。开放时间随季节变化，出发前请在国家遗产厅网站确认。'),
     },
   ],
-  // Seosunra-gil's sign (at the lane's south end, on Jongno).
-  laneSign: {
-    at: [-56.5, 13], ry: 0,
-    title: T('Seosunra-gil', '서순라길', '西巡邏キル', '西巡逻路'),
-    text: T(
-      'The lane along Jongmyo\'s west stone wall. In the Joseon era patrols (sunra) walked here at night to guard the shrine, which gave the lane its name. Today it is lined with hanok cafés, restaurants and jewellery workshops; the real lane is car-free on weekends, 10:00-18:00.',
-      '종묘 서쪽 돌담을 따라 난 길이에요. 조선 시대에 순라군이 밤마다 이 길을 돌며 종묘를 지켜서 서순라길이라는 이름이 붙었어요. 지금은 한옥 카페와 식당, 주얼리 공방이 늘어서 있고, 실제 서순라길은 주말 10시~18시에 차 없는 거리가 돼요.',
-      '宗廟の西の石垣に沿った道。朝鮮時代、巡邏軍が夜ごとにこの道を巡って宗廟を守ったことから名前がつきました。今は韓屋カフェや食堂、ジュエリー工房が並び、実際の西巡邏キルは週末10時〜18時に歩行者天国になります。',
-      '沿着宗庙西侧石墙的小路。朝鲜时代巡逻兵每晚沿这条路巡视守卫宗庙，因此得名。如今这里开满了韩屋咖啡馆、餐厅和首饰工坊，真实的西巡逻路周末10:00至18:00为步行街。'),
-  },
 };
 
 // Rewards (coins), each paid once.
@@ -148,6 +152,32 @@ export function onSamdo(x, z) {
     if (d <= samdoW / 2) best = 'side';
   }
   return best;
+}
+
+// Where to step down to from the spirits' strip: the nearest point on a side
+// strip, [x, z], or null when (x, z) is not on the sindo. Walking up onto it
+// gently puts you back beside it, so you learn the manners before the
+// terrace. Pushed out from every strip you stand on (the path's corners).
+export function offSindo(x, z) {
+  const { samdo, sindoW } = JONGMYO;
+  const out = sindoW / 2 + 0.35;
+  let moved = false;
+  for (let pass = 0; pass < 3; pass++) {
+    let hit = false;
+    for (const [[ax, az], [bx, bz]] of samdo) {
+      const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+      const cx = ax + dx * t, cz = az + dz * t;
+      let nx = x - cx, nz = z - cz;
+      const d = Math.hypot(nx, nz);
+      if (d > sindoW / 2) continue;
+      if (d < 1e-6) { const l = Math.sqrt(l2); nx = -dz / l; nz = dx / l; } else { nx /= d; nz /= d; }
+      x = cx + nx * out; z = cz + nz * out;
+      hit = moved = true;
+    }
+    if (!hit) break;
+  }
+  return moved ? [x, z] : null;
 }
 
 // Inside a box [x0, z0, x1, z1] (any corner order).

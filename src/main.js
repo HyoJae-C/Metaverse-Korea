@@ -43,7 +43,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, ringPoly } from './core/palace-show.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
-import { JONGMYO, JongmyoBook, onSamdo, inBox, RITE_WATCH } from './data/jongmyo.js';
+import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -3722,7 +3722,7 @@ const jongmyoBook = new JongmyoBook();
 const JM_TEXT = {
   ask: { en: 'Ask the guide', ko: '해설사에게 묻기', ja: '解説員に聞く', zh: '问讲解员' },
   hi: { en: 'Say hi to the grandpas', ko: '어르신께 인사하기', ja: 'おじいさんにあいさつ', zh: '和老爷爷打招呼' },
-  sindo: { en: '🛤️ The raised middle strip is the spirits\' path (sindo). Please walk on a side strip.', ko: '🛤️ 가운데 높은 길은 혼령이 다니는 신도예요. 양옆 길로 걸어 주세요.', ja: '🛤️ 中央の高い道は霊の通る神道です。両脇の道を歩いてください。', zh: '🛤️ 中间高起的是神灵走的神道，请走两侧的路。' },
+  sindo: { en: '🛤️ The raised middle strip is the path for the ancestors\' spirits (sindo). People walk on the strips beside it.', ko: '🛤️ 가운데 높은 길은 조상의 혼령이 다니는 신도예요. 사람은 양옆 길로 걸어요.', ja: '🛤️ 中央の高い道は祖先の霊が通る神道です。人は両脇の道を歩きます。', zh: '🛤️ 中间高起的是祖先神灵走的神道，人走两侧的路。' },
   manners: { en: '🙇 You walked the stone path the right way, off the spirits\' strip! (+🪙 {c})', ko: '🙇 혼령의 길을 밟지 않고 돌길을 바르게 걸었어요! (+🪙 {c})', ja: '🙇 霊の道を踏まずに石畳を正しく歩きました！（+🪙 {c}）', zh: '🙇 没有踩神灵的路，正确地走完了石路！（+🪙 {c}）' },
   mannersLedger: { en: 'Jongmyo manners', ko: '종묘 예절', ja: '宗廟のマナー', zh: '宗庙礼仪' },
   rite: { en: '🥁 You watched the ilmu, the ritual dance of Jongmyo Jeryeak. (+🪙 {c})', ko: '🥁 종묘제례악의 일무를 끝까지 지켜봤어요. (+🪙 {c})', ja: '🥁 宗廟祭礼楽の佾舞を見届けました。（+🪙 {c}）', zh: '🥁 看完了宗庙祭礼乐的佾舞。（+🪙 {c}）' },
@@ -3759,9 +3759,16 @@ function updateJongmyo(p, dt) {
   }
   jmWasIn = inside;
   if (!inside) { jmWatch = 0; return; }
-  if (onSamdo(x, z) === 'sindo') {
+  // Stepped up onto the spirits' strip: slide back down beside it (on foot;
+  // a ride just gets the notice), so the manners are learnt on the way.
+  const down = onSamdo(x, z) === 'sindo' ? offSindo(x, z) : null;
+  if (down) {
     jongmyoBook.step();
-    if (performance.now() - jmSindoAt > 15000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
+    if (!riding && !seated) {
+      const k = Math.min(1, dt * 12);
+      p.x += (down[0] - x) * k; p.z += (down[1] - z) * k;
+    }
+    if (performance.now() - jmSindoAt > 8000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
   }
   if (inBox(x, z, JONGMYO.jeongjeon.woldae)) {
     const c = jongmyoBook.arrive();

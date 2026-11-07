@@ -91,24 +91,25 @@ export class JongmyoShow {
     this.t = 0;
   }
   // The troupe and the orchestra are only made the first time you come
-  // near (36 dancers and 8 musicians cost a lot to build at start).
+  // near (the dancers and musicians cost a lot to build at start).
   _build() {
-    const { rows, gap, band } = JONGMYO.rite;
+    const { rows, cols, gap, groups, band } = JONGMYO.rite;
     this.rite.dancers = [];
-    for (let i = 0; i < rows; i++) for (let k = 0; k < rows; k++) {
+    for (const { dance, dx } of groups) for (let i = 0; i < rows; i++) for (let k = 0; k < cols; k++) {
       const ch = createCharacter({ ...randomLook(), ...ROBED });
       ch.addProp('body', redRobe());
       ch.addProp('head', blackHat());
-      ch.activity('ilmu');
-      ch.root.position.set(this.rite.x + (k - (rows - 1) / 2) * gap, 0.12, this.rite.z + (i - (rows - 1) / 2) * gap);
+      // The military dancers: wooden swords in the front row (south), spears behind.
+      ch.activity(dance === 'mumu' ? (i === rows - 1 ? 'mumu' : 'mumuspear') : dance);
+      ch.root.position.set(this.rite.x + dx + (k - (cols - 1) / 2) * gap, 0.12, this.rite.z + (i - (rows - 1) / 2) * gap);
       ch.root.rotation.y = Math.PI; // facing the hall (north)
       this.scene.add(ch.root);
       this.rite.dancers.push(ch);
     }
     this.rite.band = [];
-    const n = 8;
+    const n = band.n;
     for (let i = 0; i < n; i++) {
-      const x = band.x0 + 7 + (i * (band.x1 - band.x0 - 14)) / (n - 1);
+      const x = band.x0 + 4 + (i * (band.x1 - band.x0 - 8)) / (n - 1);
       const ch = createCharacter({ ...randomLook(), ...ROBED });
       ch.addProp('body', redRobe());
       ch.addProp('head', blackHat());
