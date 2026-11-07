@@ -3963,7 +3963,6 @@ const fishingUi = new FishingUI({
   bag: fishBag,
   dex: fishDex,
   stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
-  place: () => interior?.store?.fishPlace || null, // the Mangwon pier has fish of its own (core/fish-places.js)
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);

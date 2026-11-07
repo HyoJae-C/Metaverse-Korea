@@ -1,10 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { FISH, fishById } from '../src/core/fishing.js';
-import { FISH_PLACES, placeFish, fishPlaceOf, placeChance, rollPlaceCatch, rollPlaceAuto, usualChance, noBiteAt } from '../src/core/fish-places.js';
-import { AVAILABLE_FISH } from '../src/core/fishing.js';
-import { forceNextCatch, takeForcedCatch } from '../src/core/fish-luck.js';
+import { FISH, AVAILABLE_FISH, fishById } from '../src/core/fishing.js';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
 const region = read('region.json');
@@ -49,7 +46,6 @@ test('Mangwon-dong: market under an arcade, the open river park and the fishing 
   for (const s of here) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
   const pier = stores.find((s) => s.id === 'mangwon-hangang');
   assert.equal(pier.category, 'park');
-  assert.equal(pier.fishPlace, 'mangwon');
   assert.ok(here.includes(pier), 'the pier is in Mangwon');
   assert.ok(region.subway.stations.some((s) => s.id === 'mangwon-station' && s.line.name.en === 'Line 6'));
 });
@@ -64,59 +60,14 @@ test('all the new shops are fictional sample data with names in four languages',
   assert.equal(new Set(stores.map((s) => s.id)).size, stores.length, 'store ids are unique');
 });
 
-test('Mangwon fish: seven journal kinds that only bite at the Mangwon pier', () => {
-  const kinds = placeFish('mangwon');
-  assert.equal(kinds.length, 7);
-  for (const f of kinds) {
-    assert.equal(f.released, false, `${f.id} stays out of the usual odds`);
-    assert.equal(fishPlaceOf(f.id), 'mangwon');
-  }
-  assert.deepEqual(kinds.map((f) => f.rarity).sort(), [1, 1, 2, 2, 3, 3, 5]);
-  // The ★5 legend of the pier (giant squid): about 1 in 500 bites there,
-  // rarer than the blue whale anywhere (0.4%).
-  const legend = kinds.find((f) => f.rarity === 5);
-  assert.ok(placeChance(legend) > 0.1 && placeChance(legend) < 0.4, `${legend.id} ${placeChance(legend)}`);
-  const total = kinds.reduce((a, f) => a + placeChance(f), 0);
-  assert.ok(Math.abs(total - FISH_PLACES.mangwon.share * 100) < 1e-9);
-  // Each ★3 Mangwon fish is about as rare as the usual ★3 kinds.
-  for (const f of kinds.filter((q) => q.rarity === 3)) assert.ok(placeChance(f) > 0.5 && placeChance(f) < 2.5, `${f.id} ${placeChance(f)}`);
-});
-
-test('fishing elsewhere never lands a Mangwon fish; at Mangwon about a fifth of bites are', () => {
-  let seed = 7;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const local = new Set(placeFish('mangwon').map((f) => f.id));
-  let n = 0;
-  for (let i = 0; i < 4000; i++) assert.ok(!local.has(rollPlaceCatch(null, rand).id));
-  for (let i = 0; i < 4000; i++) if (local.has(rollPlaceCatch('mangwon', rand).id)) n++;
-  assert.ok(n > 4000 * 0.17 && n < 4000 * 0.23, `${n} of 4000`);
-  for (let i = 0; i < 2000; i++) { const f = rollPlaceAuto('mangwon', rand); assert.ok(f.rarity <= 2, 'auto fishing never lands a rare one'); }
-  for (let i = 0; i < 2000; i++) assert.ok(!local.has(rollPlaceAuto(null, rand).id));
-  // A developer code still decides the next bite, even at Mangwon.
-  forceNextCatch('whale');
-  assert.equal(rollPlaceCatch('mangwon', () => 0).id, 'whale');
-  takeForcedCatch();
+test('every park has the same catch: the Mangwon fish and the blue whale bite at all of them', () => {
+  // One table for all parks (no park pays better). The kinds first met at
+  // Mangwon are ordinary released fish now, the giant squid a ★5 beside the whale.
+  const kinds = ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid'].map(fishById);
+  for (const f of kinds) assert.ok(f.released && f.chance > 0, f.id);
+  assert.ok(fishById('whale').released);
+  assert.ok(stores.every((s) => !('fishPlace' in s)), 'no park has a catch of its own');
+  const legends = AVAILABLE_FISH.filter((f) => f.rarity === 5);
+  assert.ok(Math.abs(legends.reduce((a, f) => a + f.chance, 0) - 0.4) < 1e-9, 'the ★5 share stays 0.4% of fish');
   assert.ok(FISH.every((f) => fishById(f.id)));
-});
-
-test('the blue whale only bites at the Ttukseom Han River park, never at Mangwon', () => {
-  let seed = 11;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const whale = fishById('whale');
-  assert.ok(noBiteAt('mangwon', whale) && !noBiteAt(null, whale));
-  assert.equal(usualChance(whale, 'mangwon'), 0);
-  assert.ok(Math.abs(usualChance(whale, null) - whale.chance) < 1e-9);
-  // The other usual kinds fill its part, at the lucky spot too.
-  for (const lucky of [false, true]) {
-    const sum = AVAILABLE_FISH.reduce((a, f) => a + usualChance(f, 'mangwon', lucky), 0);
-    assert.ok(Math.abs(sum - 100) < 1e-9, `${sum}`);
-  }
-  // Pick rolls that would be a whale (the top of the usual table) and many more.
-  let whales = 0, home = 0;
-  for (let i = 0; i < 200000; i++) {
-    if (rollPlaceCatch('mangwon', rand, i % 2 === 0).id === 'whale') whales++;
-    if (rollPlaceCatch(null, rand).id === 'whale') home++;
-  }
-  assert.equal(whales, 0, 'no whale at Mangwon');
-  assert.ok(home > 400 && home < 1200, `${home} whales of 200000 at Ttukseom (0.4% of fish)`);
 });

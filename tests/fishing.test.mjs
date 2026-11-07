@@ -8,10 +8,10 @@ const memory = () => {
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
 };
 
-test('49 stable catalogue entries, 27 released, nine stamps per page and four special catches', () => {
+test('49 stable catalogue entries, 34 released, nine stamps per page and four special catches', () => {
   assert.equal(FISH.length, 49);
   assert.equal(new Set(FISH.map(f => f.id)).size, 49);
-  assert.equal(AVAILABLE_FISH.length, 27);
+  assert.equal(AVAILABLE_FISH.length, 34);
   assert.deepEqual(Array.from({ length: 6 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,4]);
   assert.equal(fishById('whale').ko, '흰수염고래');
   assert.equal(fishById('shark').ko, '백상아리');
@@ -78,8 +78,8 @@ test('available collection can finish before the full catalogue, and future reco
   for(const f of AVAILABLE_FISH)dex.add(f.id);
   assert.equal(dex.availableComplete,true);
   assert.equal(dex.complete,false);
-  dex.add('giant-squid');
-  assert.equal(new FishDex(st).count('giant-squid'),1);
+  dex.add('blobfish');
+  assert.equal(new FishDex(st).count('blobfish'),1);
   for(const f of FISH)dex.add(f.id);
   assert.equal(dex.complete,true);
   st.setItem('mk.fishdex','broken');
