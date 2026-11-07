@@ -1874,9 +1874,11 @@ function bagRideList() {
 }
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
 $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+$('keys-bag').textContent = L(BAG_TEXT.title);
 onLanguageChange(() => {
   $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
   $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+  $('keys-bag').textContent = L(BAG_TEXT.title);
 });
 
 function setLook(look) {
@@ -2816,6 +2818,12 @@ addEventListener('keydown', (e) => {
   }
   if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
+  // B for Bag: closes it if open; opens it only when no game or sheet is
+  // taking keys and the bag button is on screen.
+  if (e.code === 'KeyB' && !e.repeat) {
+    if (bagUi.open) bagUi.hide();
+    else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
+  }
   if (e.code === 'Escape') {
     if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
