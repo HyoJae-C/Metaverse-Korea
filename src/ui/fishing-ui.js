@@ -45,9 +45,19 @@ export const SHOW_MS = [0, 2500, 3000, 4500, 8000, 12000];
 export const showMs = (f) => SHOW_MS[f?.rarity] || 2500;
 export function trophy(f, name) {
   const w = el('div', 'trophy-in tier-' + f.rarity);
+  if (f.rarity >= 5) for (const k of [1, 2, 3]) w.append(el('i', 'fish-spark s' + k, k === 3 ? '⭐' : '✨'));
   const pic = el('span', 'trophy-pic');
   pic.append(el('i', 'trophy-rays'), fishStampIcon(f));
   w.append(pic, el('span', 'trophy-stars', '★'.repeat(f.rarity)), el('b', 'trophy-text', t('fish.trophy', { name, fish: fishName(f) })));
+  return w;
+}
+
+// The little picture over the catcher's head for every catch; ★2 adds its stars.
+export function catchBubble(f) {
+  const icon = fishStampIcon(f, 'bubble-fish tier-' + f.rarity);
+  if (f.rarity !== 2) return icon;
+  const w = el('span', 'bubble-catch');
+  w.append(icon, el('b', 'bubble-stars', '★★'));
   return w;
 }
 
@@ -438,8 +448,11 @@ export class FishingUI {
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
-    const card = el('div', 'fish-card' + (f.rarity >= 3 ? ' rare tier-' + f.rarity : ''));
-    if (f.rarity >= 3) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
+    // How loud a catch is, by rarity: ★1 plain, ★2 stars only, ★3 a small
+    // glow, ★4 a big one, ★5 the works (style.css .fish-card.tier-N).
+    const card = el('div', 'fish-card' + (f.rarity >= 2 ? ' tier-' + f.rarity : '') + (f.rarity >= 3 ? ' rare' : ''));
+    if (f.rarity >= 5) for (const k of [1, 2, 3]) card.append(el('i', 'fish-spark s' + k, k === 3 ? '⭐' : '✨'));
+    if (f.rarity >= 2) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(
