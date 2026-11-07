@@ -99,6 +99,8 @@ export default {
       'hanbok-mint': { top: 0x9edccf, accent: 0xe0607e },
       // a court lady (궁녀) in the Gyeongbokgung procession
       'hanbok-gungnyeo': { top: 0x5f9e6e, accent: 0x7a2e3a },
+      // the queen (왕비): a light green jeogori over a red chima
+      'hanbok-queen': { top: 0xb4e07a, accent: 0xc8323f },
     }),
     ...variants('rogue', '🪭', BAJI, {
       'hanbok-baji': { top: 0x9cc3e6, accent: 0x2f3c66, bottom: 0xd8d2c2 },
@@ -116,6 +118,8 @@ export default {
       // eunuch's dark green robe (단령)
       'hanbok-gonryongpo': { top: 0xc23a33, accent: 0xd9a43a, bottom: 0xc23a33 },
       'hanbok-dallyeong': { top: 0x2f5a4a, accent: 0x1d1b22, bottom: 0x2f5a4a },
+      // the bearers of the red parasol and the ceremonial fan (홍포)
+      'hanbok-hongpo': { top: 0xb8322c, accent: 0x1d1b22, bottom: 0xb8322c },
     }),
     // Swimwear (Olympic Park Pool).
     ...variants('rogue', '🩱', SWIM_ONE, {
