@@ -5,7 +5,7 @@ import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSl
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
-const FAN = [0, -90]; // main.js: the palace offset + (0, -90)
+const FAN = [-38, -28]; // main.js: the palace offset + (-38, -28), in the front court
 
 test('the fan dance has an unseen ring you cannot walk into', () => {
   const ring = ringPoly(FAN[0], FAN[1], FAN_KEEP);
@@ -91,7 +91,7 @@ test('the procession picks a new way on, pausing about 10 s for photos', () => {
 });
 
 test('the procession stays round Geunjeongjeon, where Enter brings you', () => {
-  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.hypot(x - FAN[0], z - FAN[1]) < 125, `stop ${x},${z} is out of sight of the courtyard`);
+  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.hypot(x, z - FAN[1]) < 170, `stop ${x},${z} is out of sight of the courtyard`);
   const who = ROYAL_ORDER.map((o) => o.who);
   for (const w of ['king', 'queen', 'parasol', 'fan', 'eunuch', 'sanggung']) assert.ok(who.includes(w), w);
   assert.equal(who.filter((w) => w === 'guard').length, 2);
@@ -122,5 +122,8 @@ test('the palace is smaller and the king never leaves its inner court', () => {
   // inside Heungnyemun's walls: the inner court round Geunjeongjeon
   const inner = walls[1].p, ix = Math.max(...inner.map(([x]) => Math.abs(x))), iz = inner.map(([, z]) => z);
   for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.abs(x) < ix - 3 && z < Math.max(...iz) - 3 && z > Math.min(...iz) + 3, `stop ${x},${z} is outside the inner court`);
-  assert.ok(FAN[1] < Math.max(...iz) - FAN_KEEP && FAN[1] > Math.min(...iz) + FAN_KEEP);
+  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -8) and Heungnyemun's wall
+  assert.ok(FAN[1] + FAN_KEEP < -8 && FAN[1] - FAN_KEEP > Math.max(...iz), 'the fan dance is in the front court');
+  const pass = Math.min(...outer.map(([x]) => x));
+  assert.ok(FAN[0] - FAN_KEEP > pass && FAN[0] + FAN_NOTE < 0, 'off the way from gate to gate, inside the wall');
 });
