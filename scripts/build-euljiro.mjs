@@ -1,0 +1,172 @@
+#!/usr/bin/env node
+// Builds the Euljiro & Dongdaemun district map
+// (public/regions/seongsu/districts/euljiro.json) from the hand-made layout
+// below.
+//
+// Jung-gu between Cheonggyecheon and Namsan, loosely after the real streets
+// (OpenStreetMap, © OpenStreetMap contributors): Euljiro (Eulji-ro) along the
+// north edge, just south of the Cheonggyecheon strip; Toegye-ro along the
+// south; Supyo-ro, Changgyeonggung-ro and Jangchungdan-ro crossing north to
+// south. West of the middle are Euljiro's old alleys (the nogari beer alley,
+// the print shop alleys, the lighting shops on Euljiro); in the east,
+// Dongdaemun Design Plaza (DDP) with Dongdaemun History & Culture Park and a
+// stretch of the Seoul City Wall on its west side, and the Dongdaemun fashion
+// malls across Jangchungdan-ro. South of Toegye-ro, Namsangol Hanok Village
+// (Pil-dong): five hanok round a yard, inside a wall.
+//
+//   node scripts/build-euljiro.mjs
+//
+// Coordinates are metres: x east, z south. (0, 0) is the centre of DDP (the
+// district's anchor in region.json).
+
+import { writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const out = path.join(root, 'public/regions/seongsu/districts/euljiro.json');
+
+const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
+const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+const r1 = (v) => Math.round(v * 10) / 10;
+
+// Street lines.
+export const EULJIRO = {
+  euljiro: -72, toegye: 85, // z of the two east-west roads
+  supyo: -410, changgyeong: -275, jangchung: 65, // x of the north-south roads
+  west: -490, east: 160,
+  ddp: { x: -8, z: 0, rx: 52, rz: 36 },
+  park: [-136, -62, -72, 76], // Dongdaemun History & Culture Park
+  wall: { x: -104, z0: -50, z1: 40 }, // the Seoul City Wall stretch in the park
+  hanok: { box: [-400, 97, -296, 152], gate: -348, yard: [-372, 104, -324, 124] }, // Namsangol
+  mall: [74, -62, 156, 75],
+};
+const E = EULJIRO;
+
+const roads = [
+  { k: 'primary', w: 16, p: [[E.west, E.euljiro], [E.east, E.euljiro]], n: N('을지로', 'Eulji-ro', '乙支路', '乙支路') },
+  { k: 'primary', w: 16, p: [[E.west, E.toegye], [E.east, E.toegye]], n: N('퇴계로', 'Toegye-ro', '退渓路', '退溪路') },
+  { k: 'secondary', w: 10, p: [[E.supyo, E.euljiro], [E.supyo, E.toegye]], n: N('수표로', 'Supyo-ro', '水標路', '水标路') },
+  { k: 'tertiary', w: 9, p: [[E.changgyeong, E.euljiro], [E.changgyeong, E.toegye]], n: N('창경궁로', 'Changgyeonggung-ro', '昌慶宮路', '昌庆宫路') },
+  { k: 'secondary', w: 12, p: [[E.jangchung, E.euljiro], [E.jangchung, E.toegye]], n: N('장충단로', 'Jangchungdan-ro', '奨忠壇路', '奖忠坛路') },
+  // Into Namsangol through its gate.
+  { k: 'walk', w: 6, p: [[E.hanok.gate, E.toegye + 8], [E.hanok.gate, E.hanok.yard[1]]] },
+  // Between the two fashion malls.
+  { k: 'walk', w: 6, p: [[E.jangchung + 6, 6], [E.east, 6]], n: N('패션타운길', 'Fashion Town Lane', 'ファッションタウン通り', '时装城小路') },
+  // Through the park, round DDP's front.
+  { k: 'walk', w: 6, p: [[E.park[2] - 6, -40], [E.park[2] - 6, 60], [E.jangchung - 6, 60]] },
+];
+
+// The old alleys: three blocks between the streets, each with lanes running
+// east-west. A lane's name is shown on the map.
+const LANES = [-42, -6, 31];
+const LANE_NAMES = {
+  '-490:-42': N('을지로 노가리골목', 'Euljiro Nogari Alley', '乙支路ノガリ横丁', '乙支路明太鱼干胡同'),
+  '-410:-6': N('인쇄골목', 'Print Shop Alley', '印刷横丁', '印刷胡同'),
+  '-275:-42': N('조명거리 뒷길', 'Lighting Street Back Lane', '照明通りの裏道', '灯具街后巷'),
+};
+const BLOCKS = [[E.west, E.supyo], [E.supyo, E.changgyeong], [E.changgyeong, E.park[0]]];
+for (const [x0, x1] of BLOCKS) for (const z of LANES) {
+  const n = LANE_NAMES[`${x0}:${z}`];
+  roads.push({ k: 'walk', w: 5, p: [[x0, z], [x1, z]], ...(n ? { n } : {}) });
+}
+
+// Rows of buildings, z ranges between the streets and lanes: front rows face
+// Eulji-ro and Toegye-ro, the others back onto each other.
+const ROWS = [[-62, -48], [-37, -25], [-24, -12], [0, 12], [13, 25], [37, 51], [55, 75]];
+const buildings = [];
+let seed = 11;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+function row(x0, x1, z0, z1, hMin, hMax) {
+  for (let x = x0; x < x1 - 7;) {
+    const w = Math.min(9 + Math.floor(rnd() * 6), x1 - x);
+    buildings.push({ h: Math.round(hMin + rnd() * (hMax - hMin)), p: rect(r1(x), z0, r1(x + w), z1) });
+    x += w + 1.2;
+  }
+}
+for (const [bx0, bx1] of BLOCKS) {
+  const x0 = bx0 + (bx0 === E.west ? 2 : 7), x1 = bx1 - 7;
+  for (const [z0, z1] of ROWS) row(x0, x1, z0, z1, 9, z0 < -50 ? 22 : 16); // low old buildings; taller on Eulji-ro
+}
+// South of Toegye-ro: a row each side of Namsangol.
+row(E.west + 2, E.supyo - 6, 95, 110, 10, 18);
+row(E.changgyeong + 6, E.park[0], 95, 110, 10, 18);
+row(E.park[0] + 4, E.jangchung - 6, 95, 110, 14, 26);
+// The fashion malls: two big blocks east of Jangchungdan-ro, open late.
+const [mx0, mz0, mx1, mz1] = E.mall;
+buildings.push({ h: 38, p: rect(mx0, mz0, mx1, 2), n: N('패션몰', 'Fashion mall', 'ファッションモール', '时装商场') });
+buildings.push({ h: 30, p: rect(mx0, 10, mx1, mz1), n: N('패션몰', 'Fashion mall', 'ファッションモール', '时装商场') });
+
+// Namsangol Hanok Village: five hanok round the yard.
+const [hx0, hz0, hx1, hz1] = E.hanok.box;
+for (const p of [rect(-392, 130, -368, 144), rect(-360, 132, -336, 146), rect(-328, 130, -304, 144), rect(-394, 104, -380, 124), rect(-316, 104, -302, 124)]) {
+  buildings.push({ h: 5, hanok: 1, p });
+}
+
+const areas = [
+  { k: 'park', p: rect(...E.park) },
+  { k: 'plaza', p: rect(E.park[2], 46, E.jangchung - 7, 76) }, // DDP's front plaza
+  { k: 'plaza', p: rect(...E.hanok.yard) }, // the folk games yard
+  { k: 'grass', p: rect(hx0 + 2, hz0 + 2, hx1 - 2, hz1 - 2) },
+];
+
+// DDP is one long, curved silver building, running a little south-west to
+// north-east like the real one: a superellipse, fuller at its east end, and
+// turned. The landmark is drawn from this same outline.
+const { ddp } = E;
+const ddpLocal = [];
+for (let i = 0; i < 32; i++) {
+  const a = (i / 32) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+  const k = 1 + 0.16 * Math.cos(a) - 0.06 * Math.cos(2 * a + 0.8);
+  const x = ddp.rx * k * Math.sign(c) * Math.abs(c) ** 0.7, z = ddp.rz * k * Math.sign(s) * Math.abs(s) ** 0.7;
+  const t = -0.18;
+  ddpLocal.push([r1(x * Math.cos(t) - z * Math.sin(t)), r1(x * Math.sin(t) + z * Math.cos(t))]);
+}
+const ddpOutline = ddpLocal.map(([x, z]) => [r1(ddp.x + x), r1(ddp.z + z)]);
+
+// DDP is a building drawn by its landmark (custom): it is still a wall, and
+// its shop can have a front on it.
+buildings.push({ h: 16, custom: 1, p: ddpOutline, n: N('동대문디자인플라자', 'Dongdaemun Design Plaza', '東大門デザインプラザ', '东大门设计广场') });
+
+// Walls you can't walk through: the city wall, Namsangol's wall (a gap
+// at the gate).
+const g = E.hanok.gate;
+const blockers = [
+  { p: rect(E.wall.x - 1.5, E.wall.z0, E.wall.x + 1.5, E.wall.z1) },
+  { p: rect(hx0, hz0 - 0.8, g - 3, hz0 + 0.8) }, { p: rect(g + 3, hz0 - 0.8, hx1, hz0 + 0.8) },
+  { p: rect(hx0 - 0.8, hz0, hx0 + 0.8, hz1) }, { p: rect(hx1 - 0.8, hz0, hx1 + 0.8, hz1) },
+  { p: rect(hx0, hz1 - 0.8, hx1, hz1 + 0.8) },
+];
+
+const landmarks = [
+  { type: 'ddp', x: ddp.x, z: ddp.z, outline: ddpLocal }, // (not "p": that would be moved as world points)
+  { type: 'citywall', x: E.wall.x, z: (E.wall.z0 + E.wall.z1) / 2, len: E.wall.z1 - E.wall.z0 },
+  { type: 'wall', p: [[g + 3, hz0], [hx1, hz0], [hx1, hz1], [hx0, hz1], [hx0, hz0], [g - 3, hz0]], h: 2.6 },
+  { type: 'hanokgate', x: g, z: hz0 },
+  { type: 'arch', x: E.west + 40, z: E.euljiro + 30, w: 7, ry: Math.PI / 2, title: 'NOGARI ALLEY', sub: '을지로 노가리골목', color: '#d4892a' },
+  { type: 'arch', x: E.supyo + 6, z: -6, w: 5, ry: Math.PI / 2, title: 'PRINT SHOP ALLEY', sub: '인쇄골목', color: '#3a5f8a' },
+  { type: 'arch', x: E.jangchung + 9, z: 6, w: 6, ry: Math.PI / 2, title: 'DONGDAEMUN FASHION TOWN', sub: '동대문 패션타운', color: '#c2185b' },
+];
+
+const pois = [
+  { kind: 'landmark', x: ddp.x, z: ddp.z, name: N('동대문디자인플라자 (DDP)', 'Dongdaemun Design Plaza (DDP)', '東大門デザインプラザ（DDP）', '东大门设计广场 (DDP)') },
+  { kind: 'landmark', x: -104, z: 60, name: N('동대문역사문화공원', 'Dongdaemun History & Culture Park', '東大門歴史文化公園', '东大门历史文化公园') },
+  { kind: 'landmark', x: E.wall.x, z: E.wall.z0 - 4, name: N('한양도성 성곽', 'Seoul City Wall', '漢陽都城の城壁', '汉阳都城城墙') },
+  { kind: 'landmark', x: E.west + 40, z: -42, name: N('을지로 노가리골목', 'Euljiro Nogari Alley', '乙支路ノガリ横丁', '乙支路明太鱼干胡同') },
+  { kind: 'landmark', x: -340, z: -6, name: N('을지로 인쇄골목', 'Euljiro Print Shop Alley', '乙支路印刷横丁', '乙支路印刷胡同') },
+  { kind: 'landmark', x: 115, z: 6, name: N('동대문 패션타운', 'Dongdaemun Fashion Town', '東大門ファッションタウン', '东大门时装城') },
+  { kind: 'landmark', x: -348, z: 114, name: N('남산골 한옥마을', 'Namsangol Hanok Village', '南山コル韓屋村', '南山谷韩屋村') },
+];
+
+const map = {
+  meta: {
+    district: 'euljiro',
+    source: 'hand-made (game map, not to scale; loosely after Euljiro, Dongdaemun and Pil-dong, Jung-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-euljiro.mjs',
+  },
+  roads, buildings, rail: [], areas, blockers, pois, landmarks,
+};
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await writeFile(out, JSON.stringify(map, null, 1) + '\n');
+  console.log(`euljiro.json: ${roads.length} roads, ${buildings.length} buildings`);
+}
