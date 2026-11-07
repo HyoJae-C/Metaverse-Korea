@@ -88,6 +88,7 @@
       <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
       <button data-tab="free">Free board</button>
       <button data-tab="players">Players</button>
+      <button data-tab="notice">📢 Announce</button>
       <button data-tab="retention">Retention</button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
@@ -135,6 +136,16 @@
         <thead><tr><th>Player</th><th>Account</th><th>Joined</th><th>Last seen</th><th>Chat</th></tr></thead>
         <tbody id="playerList"></tbody>
       </table></div>
+    </div></section>
+    <section class="tab" id="tab-notice" hidden><div class="pad">
+      <div class="card">
+        <div class="head"><b>📢 Send a notice to every player</b><span class="muted">Shows in everyone's chat, in every area, as a gold 공지 line. Players who join in the next 10 minutes see it too.</span></div>
+        <textarea id="noticeText" placeholder="e.g. Server maintenance in 10 minutes. / 10분 뒤 점검이 있어요."></textarea>
+        <div class="row"><button id="noticeSend" class="primary" type="button">Send notice</button><span class="muted" id="noticeCount" style="margin-left:auto"></span></div>
+        <p class="muted" style="margin:8px 0 0">In the game, operators can also type <code>/공지 message</code> in chat.</p>
+      </div>
+      <div class="tools"><b>Sent</b><button id="noticeReload" type="button">Refresh</button></div>
+      <div id="noticeList"></div>
     </div></section>
     <section class="tab" id="tab-retention" hidden><div class="pad">
       <div class="tools">

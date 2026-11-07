@@ -8,6 +8,7 @@
 // a phone messenger (core/friends.js, the 👥 panel).
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey } from '../core/friends.js';
 import { FRIEND_TEXT, FriendsUI } from '../ui/friends-ui.js';
+import { NOTICE_LABEL, NoticeFeed, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
 import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { config } from '../config.js';
@@ -16,6 +17,14 @@ import { fishCode, forceNextCatch } from '../core/fish-luck.js';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
+
+const NOTICE_TEXT = {
+  empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
+  operator: { en: 'Only operators can send notices', ko: '공지는 운영자만 보낼 수 있어요', ja: 'お知らせは運営者だけが送れます', zh: '只有运营者可以发送公告' },
+  setup: { en: 'Notices are not set up yet', ko: '공지 기능이 아직 준비되지 않았어요', ja: 'お知らせはまだ準備中です', zh: '公告功能尚未开启' },
+  busy: { en: 'Too many notices, wait a minute', ko: '공지가 너무 잦아요. 1분 뒤에 다시', ja: 'お知らせが多すぎます。1分後に', zh: '公告太频繁，请一分钟后再试' },
+  failed: { en: 'Could not send the notice', ko: '공지를 보내지 못했어요', ja: 'お知らせを送れませんでした', zh: '公告发送失败' },
+};
 
 export function createChat(game) {
   const { $, OPERATOR_TEXT, cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet,
@@ -41,6 +50,7 @@ export function createChat(game) {
   // A line goes "stale" after a minute: it fades out, then takes no room.
   function ageChatLine(line) {
     setTimeout(() => {
+      if (line.dataset.stay === '1') { delete line.dataset.stay; ageChatLine(line); return; } // notices: a second minute
       line.classList.add('stale');
       setTimeout(() => line.classList.add('gone'), 1000);
     }, CHAT_LINE_MS);
@@ -143,6 +153,14 @@ export function createChat(game) {
     e.preventDefault();
     // Commands start with "/" and are never sent to other people.
     const raw = cleanChat(chatInput.value);
+    // Operators: "/공지 message" sends a notice to everyone (the server checks).
+    const notice = parseNoticeCommand(chatInput.value);
+    if (notice !== null) {
+      chatInput.value = '';
+      const r = notice ? await sendNotice(cloud.client, notice) : { error: 'empty' };
+      if (!r.ok) game.shop.toast(L(NOTICE_TEXT[r.error] || NOTICE_TEXT.failed));
+      return;
+    }
     // Event codes for everyone: "./EVENTSTART1" — coins, once per device.
     if (isEventCode(raw)) {
       chatInput.value = '';
@@ -383,6 +401,24 @@ export function createChat(game) {
     if (f) { friendsUi.show(f.uid); return; }
     friendsUi._result(await st.add(personFor.name), personFor.name);
   };
+  // ---------- Notices (공지) from operators ----------
+  // Every area, every player; a gold line that stays a while, plus a toast.
+  const noticeFeed = new NoticeFeed(({ body }) => {
+    const line = addChatLine('📢 ' + L(NOTICE_LABEL), body, 'notice');
+    line.dataset.stay = '1';
+    game.shop.toast('📢 ' + body);
+    try { game.sfx.pop?.(); } catch { /* sound not set up yet */ }
+  });
+  let noticeClient = null, stopNotices = null;
+  function watchForNotices() {
+    if (!config.chatEnabled || !cloud.client || cloud.client === noticeClient) return;
+    stopNotices?.();
+    noticeClient = cloud.client;
+    stopNotices = watchNotices(noticeClient, noticeFeed);
+  }
+  cloud.onChange(watchForNotices);
+  watchForNotices();
+
   onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
   cloud.onChange(() => friendStore());
   friendStore();
