@@ -268,7 +268,8 @@ export const HALLS = {
   A: { name: { ko: '6·25전쟁 1950–1953', en: 'The Korean War 1950–1953' }, photos: ['incheon-extra', 'student-soldier', 'gangneung-hill', 'armistice-table', 'wac-insignia'] },
   B: { name: { ko: '전쟁 속 일상', en: 'Life in Wartime' }, photos: ['daegu-station', 'boy-and-soldier', 'jige', 'daegu-street', 'town-buildings'] },
   lobby: { photos: ['opening-1994', 'peace-plaza'] },
-  memorial: { name: { ko: '추모실', en: 'Memorial Room' }, photos: ['names-of-the-fallen'] },
+  // (the poem photo is on hold and not hung; the month's board hangs over the altar)
+  memorial: { name: { ko: '추모실', en: 'Memorial Room' }, photos: [] },
   // 2F: the donated photographs
   C: { floor: 2, name: { ko: '1950년대 대구', en: 'Daegu in the 1950s' }, photos: ['porter-load', 'porter-and-soldier', 'brazier', 'six-children', 'hospital-lounge', 'convent-visit-1', 'convent-visit-2'] },
   D: { floor: 2, name: { ko: '전선의 기록', en: 'Records from the Front' }, photos: ['comrade', 'incheon-sea', 'tank', 'han-bridge-1', 'han-bridge-2', 'first-army'] },
@@ -289,6 +290,7 @@ export const MEMORIAL_TEXT = {
   look: { en: 'Look at the photo', ko: '사진 보기', ja: '写真を見る', zh: '看照片' },
   flower: { en: 'Lay a flower', ko: '헌화하기', ja: '献花する', zh: '献花' },
   laid: { en: 'You laid a white chrysanthemum in remembrance.', ko: '흰 국화 한 송이를 놓고 추모했어요.', ja: '白い菊を一輪供えて追悼しました。', zh: '你献上一朵白菊花，表达哀思。' },
+  read: { en: 'Read the board', ko: '안내판 읽기', ja: '案内板を読む', zh: '阅读展板' },
   guide: { en: 'Guide', ko: '안내원', ja: '案内係', zh: '讲解员' },
   remember: { ko: '나라를 위해 목숨을 바친 분들을 기억합니다', en: 'We remember those who gave their lives' },
 };
@@ -296,3 +298,93 @@ export const MEMORIAL_TEXT = {
 // The guide at the information desk: hair up in a bun, a white dress shirt
 // under a dark suit jacket, a suit skirt and black shoes.
 export const GUIDE_LOOK = { model: 'suit', hairStyle: 'bun', dye: 'black', hair: 'black', skin: 'fair', shirt: 'cream', skirt: 'solid-mini-black', shoes: 'black' };
+
+// The two reading boards in the 1F lobby: about the museum, and the Korean
+// War at a glance. Dates are the commonly cited ones (Ministry of Patriots
+// and Veterans Affairs, the War Memorial of Korea); no casualty figures,
+// since the counts differ between sources.
+export const ABOUT = {
+  title: { ko: '전쟁역사박물관 안내', en: 'About the War History Museum' },
+  ko: [
+    '전쟁역사박물관은 게임 속에 만든 가상 박물관이에요. 서울 용산의 실제 전쟁기념관을 느슨하게 본떠 만들었고, 전쟁기념관이 운영하거나 관계된 곳은 아니에요.',
+    '1층에는 A관 "6·25전쟁", B관 "전쟁 속 일상", 그리고 안쪽에 흰 국화를 놓을 수 있는 추모실이 있어요. 2층은 참전 용사와 가족이 기증한 사진실이고, 엘리베이터는 로비 왼쪽에 있어요.',
+    '실제 전쟁기념관은 옛 육군본부 자리에 세워져 1994년에 문을 열었어요. 전쟁의 역사를 기록하고, 나라를 위해 희생한 분들을 기억하는 곳이에요.',
+    '전시 사진은 모두 전쟁기념관이 공공누리 제1유형으로 개방한 자료예요. 조용히 둘러봐 주세요.',
+  ],
+  en: [
+    'The War History Museum is a made-up museum in the game, modelled loosely on the real War Memorial of Korea in Yongsan, Seoul. It is not run by or linked to the War Memorial of Korea.',
+    'On 1F: Hall A, The Korean War; Hall B, Life in Wartime; and at the back, a memorial room where you can lay a white chrysanthemum. 2F holds photos donated by veterans and their families. The lift is on the left of the lobby.',
+    'The real War Memorial of Korea was built on the site of the former Army Headquarters and opened in 1994, to record the history of war and remember those who gave their lives for the country.',
+    'All the photos on show were released by the War Memorial of Korea under KOGL Type 1. Please look around quietly.',
+  ],
+};
+
+export const TIMELINE = {
+  title: { ko: '6·25전쟁 1950–1953', en: 'The Korean War, 1950–1953' },
+  events: [
+    { d: '1950.6.25', ko: '북한군이 38도선을 넘어 남침하며 전쟁이 시작됐어요.', en: 'North Korean forces cross the 38th parallel and invade the South. The war begins.' },
+    { d: '1950.6.28', ko: '서울이 북한군에 점령됐어요.', en: 'Seoul falls to North Korean forces.' },
+    { d: '1950.7–9', ko: '유엔군이 참전하고, 국군과 유엔군이 낙동강 방어선을 지켜 냈어요.', en: 'UN forces join the war; South Korean and UN troops hold the Nakdong River line.' },
+    { d: '1950.9.15', ko: '인천상륙작전으로 전세가 바뀌었어요.', en: 'The Incheon Landing turns the tide.' },
+    { d: '1950.9.28', ko: '서울을 되찾았어요.', en: 'Seoul is retaken.' },
+    { d: '1950.10', ko: '국군과 유엔군이 북쪽으로 진격했고, 중국군이 전쟁에 뛰어들었어요.', en: 'South Korean and UN troops advance north; Chinese forces enter the war.' },
+    { d: '1951.1.4', ko: '1·4후퇴: 서울을 다시 내주고 남쪽으로 물러났어요.', en: 'The January 4th Retreat: Seoul is lost again.' },
+    { d: '1951.3', ko: '서울을 다시 되찾았고, 전선은 38도선 부근에서 멈춰 섰어요.', en: 'Seoul is retaken once more, and the front settles near the 38th parallel.' },
+    { d: '1951.7.10', ko: '정전 회담이 시작됐지만, 2년 넘게 고지를 둘러싼 전투가 이어졌어요.', en: 'Armistice talks begin, but battles for the hills go on for two more years.' },
+    { d: '1953.7.27', ko: '판문점에서 정전협정이 맺어졌어요. 전쟁은 끝난 것이 아니라 멈춘 상태로 오늘에 이르러요.', en: 'The Armistice Agreement is signed at Panmunjom. The fighting stopped, but no peace treaty has followed.' },
+  ],
+  note: {
+    ko: '유엔군으로 16개국이 전투 병력을, 6개국이 의료 지원을 보냈어요.',
+    en: 'Under the UN Command, 16 nations sent combat troops and 6 sent medical support.',
+  },
+};
+
+// "이달의 기억" over the altar in the memorial room: changes with the month.
+// Heroes: the Ministry of Patriots and Veterans Affairs' "6·25 War Hero of
+// the Month" (since 2026, one Korean and one UN hero a month), added by month
+// once announced. Days: the month's dates to remember, the same every year.
+export const MONTH_HEROES = {
+  // Announced 30 Oct 2026 (newspim.com/news/view/20261030001004).
+  '2026-11': [
+    {
+      name: { ko: '박옥규 해군 중장', en: 'Vice Admiral Park Ok-kyu, ROK Navy' },
+      ko: '해군 최초의 전투함 백두산함 인수를 이끌어 1950년 4월 진해까지 몰고 왔어요. 뒤에 제2대 해군참모총장을 지냈어요.',
+      en: "Led the purchase of the ROKS Baekdusan, the Navy's first warship, and brought her to Jinhae in April 1950. He later became the second Chief of Naval Operations.",
+    },
+    {
+      name: { ko: '제임스 R. 스톤 캐나다 육군 중령', en: 'Lieutenant Colonel James R. Stone, Canadian Army' },
+      ko: '1951년 4월 가평 전투에서 프린세스 패트리샤 캐나다 경보병연대 2대대를 이끌고 677고지를 지켜 냈어요.',
+      en: "At the Battle of Kapyong in April 1951 he led the 2nd Battalion, Princess Patricia's Canadian Light Infantry, and held Hill 677.",
+    },
+  ],
+};
+export const MONTH_DAYS = {
+  1: [{ d: '1951.1.4', ko: '1·4후퇴: 서울을 다시 내주고 남쪽으로 물러났어요.', en: 'The January 4th Retreat: Seoul was lost again.' }],
+  2: [{ d: '1951.2.13–15', ko: '지평리 전투: 미군과 프랑스 대대가 포위 속에서 지평리를 지켜 냈어요.', en: 'The Battle of Chipyong-ni: US and French troops held the town while surrounded.' }],
+  3: [{ d: '1951.3.15', ko: '서울을 다시 되찾았어요.', en: 'Seoul was retaken once more.' }],
+  4: [{ d: '1951.4.22–25', ko: '가평 전투와 임진강 전투: 유엔군이 중국군의 대공세를 막아 냈어요.', en: 'The Battles of Kapyong and the Imjin River: UN troops held back the Chinese spring offensive.' }],
+  6: [
+    { d: '6.6', ko: '현충일: 나라를 위해 목숨을 바친 분들을 기리는 날이에요.', en: "Memorial Day: remembering those who gave their lives for the country." },
+    { d: '1950.6.25', ko: '6·25전쟁이 시작된 날이에요.', en: 'The day the Korean War began.' },
+  ],
+  7: [{ d: '7.27', ko: '유엔군 참전의 날: 1953년 정전협정이 맺어진 날이에요.', en: 'UN Forces Participation Day: the day the Armistice was signed in 1953.' }],
+  8: [{ d: '1950.8', ko: '다부동 전투: 국군과 유엔군이 낙동강 방어선을 지켜 냈어요.', en: 'The Battle of Tabu-dong: South Korean and UN troops held the Nakdong River line.' }],
+  9: [
+    { d: '1950.9.15', ko: '인천상륙작전', en: 'The Incheon Landing' },
+    { d: '1950.9.28', ko: '서울 수복', en: 'Seoul retaken' },
+  ],
+  10: [{ d: '10.1', ko: '국군의 날: 1950년 10월 1일 국군이 38도선을 넘은 날에서 비롯됐어요.', en: 'Armed Forces Day: it comes from 1 October 1950, when South Korean troops crossed the 38th parallel.' }],
+  11: [{ d: '11.11', ko: '턴 투워드 부산: 오전 11시, 부산 유엔기념공원을 향해 1분간 묵념하며 유엔 참전용사를 기려요. 2007년 캐나다 참전용사 빈센트 커트니가 제안했어요.', en: 'Turn Toward Busan: at 11 a.m., a minute of silence facing the UN Memorial Cemetery in Busan, for the UN veterans. Proposed in 2007 by Canadian veteran Vincent Courtenay.' }],
+  12: [{ d: '1950.12.15–24', ko: '흥남 철수: 군인과 함께 피란민 약 10만 명이 배를 타고 남쪽으로 내려왔어요.', en: 'The Hungnam Evacuation: about 100,000 refugees left by sea with the troops.' }],
+};
+export const MONTH_TEXT = {
+  title: (m) => ({ ko: `${m}월의 기억`, en: `Remembering in ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]}` }),
+  heroes: { ko: '이달의 6·25전쟁영웅 (국가보훈부 선정)', en: '6·25 War Heroes of the Month (Ministry of Patriots and Veterans Affairs)' },
+  days: { ko: '기억하는 날', en: 'Days to remember' },
+};
+// What the board shows for a date: its month's heroes (if announced) and days.
+export function monthBoard(date = new Date()) {
+  const m = date.getMonth() + 1;
+  const ym = `${date.getFullYear()}-${String(m).padStart(2, '0')}`;
+  return { month: m, title: MONTH_TEXT.title(m), heroes: MONTH_HEROES[ym] || [], days: MONTH_DAYS[m] || [] };
+}

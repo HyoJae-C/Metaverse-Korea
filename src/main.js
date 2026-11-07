@@ -6390,6 +6390,9 @@ function updateAction(p, tSec) {
       next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
     } else if (nearStation(p, 'flower', 1.3)) {
       next = { key: 'flower', label: '💐 ' + L(MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
+    } else if (nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
+      const pn = nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
+      next = { key: 'panel:' + pn.kind, label: `📖 ${L(MEMORIAL_TEXT.read)} · ${getLanguage() === 'ko' ? pn.title.ko : pn.title.en}`, run: () => museumUi.showText(pn) };
     } else if (nearestPainting(interior.stations?.paintings, p.x, p.z)) {
       const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
       next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? MEMORIAL_TEXT.look : MUSEUM_TEXT.look)} · ${getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };

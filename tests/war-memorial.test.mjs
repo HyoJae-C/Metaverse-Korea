@@ -26,9 +26,10 @@ test('every photo is a War Memorial item on the KOGL portal, with Korean and Eng
 test('every photo hangs somewhere, once, inside the room', () => {
   const hung = Object.values(HALLS).flatMap((h) => h.photos);
   assert.equal(new Set(hung).size, hung.length);
-  assert.deepEqual(new Set(hung), new Set(EXHIBITS.map((p) => p.id)));
+  // (a photo on hold is not hung)
+  assert.deepEqual(new Set(hung), new Set(EXHIBITS.filter((p) => !p.hold).map((p) => p.id)));
   const slots = [...photoSlots(1), ...photoSlots(2)];
-  assert.equal(slots.length, EXHIBITS.length);
+  assert.equal(slots.length, EXHIBITS.filter((p) => !p.hold).length);
   const { w, d } = ROOM_MEMORIAL;
   for (const sl of slots) {
     assert.ok(Math.abs(sl.x) <= w / 2 && Math.abs(sl.z) <= d / 2, sl.photo.id);
@@ -84,4 +85,23 @@ test('the memorial is on the Itaewon map, west along Itaewon-ro, with its store 
 test('the guide wears a suit, a skirt and black shoes, hair in a bun', () => {
   const look = sanitizeLook(GUIDE_LOOK);
   for (const k of ['model', 'hairStyle', 'skirt', 'shoes']) assert.equal(look[k], GUIDE_LOOK[k], k);
+});
+
+test('the lobby boards: about the museum, and a dated Korean War timeline in Korean and English', async () => {
+  const { ABOUT, TIMELINE } = await import('../src/data/war-memorial.js');
+  assert.equal(ABOUT.ko.length, ABOUT.en.length);
+  assert.ok(ABOUT.en.some((l) => /not run by or linked to/.test(l)), 'the disclaimer is on the board');
+  const dates = TIMELINE.events.map((e) => e.d);
+  assert.equal(dates[0], '1950.6.25');
+  assert.equal(dates.at(-1), '1953.7.27');
+  for (const e of TIMELINE.events) assert.ok(e.ko && e.en, e.d);
+});
+
+test('the month board over the altar: the heroes for an announced month, days for every month', async () => {
+  const { monthBoard, MONTH_DAYS } = await import('../src/data/war-memorial.js');
+  const nov = monthBoard(new Date(2026, 10, 7));
+  assert.equal(nov.heroes.length, 2);
+  assert.match(nov.days[0].en, /Turn Toward Busan/);
+  assert.equal(monthBoard(new Date(2030, 4, 1)).heroes.length, 0, 'no heroes before they are added');
+  for (const days of Object.values(MONTH_DAYS)) for (const x of days) assert.ok(x.d && x.ko && x.en);
 });

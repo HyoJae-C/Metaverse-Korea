@@ -54,6 +54,23 @@ export class MuseumUI {
     this.root.hidden = false;
   }
 
+  // A reading panel (the War History Museum's lobby boards): a title and
+  // paragraphs in Korean, then in English.
+  showText(t) {
+    const x = el('button', 'sheet-x', '✕');
+    x.setAttribute('aria-label', 'Close');
+    x.onclick = () => this.close();
+    const parts = [x];
+    for (const lang of ['ko', 'en']) {
+      const box = el('div', 'museum-lang');
+      box.lang = lang;
+      box.append(el('h3', null, t.title[lang]), ...t[lang].map((line) => el('p', null, line)));
+      parts.push(box);
+    }
+    this.root.replaceChildren(...parts);
+    this.root.hidden = false;
+  }
+
   // The lift: one button per floor, with the halls on it.
   // floors: [{ floor, lines }] for another museum (the War History Museum);
   // the art museum's floors and halls by default.
