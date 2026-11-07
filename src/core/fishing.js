@@ -366,14 +366,14 @@ export const FISH = [
     "price": 5
   },
   {
-    "id": "crayfish",
-    "emoji": "🦞",
-    "ko": "가재",
-    "rom": "gajae",
+    "id": "starfish",
+    "emoji": "⭐",
+    "ko": "불가사리",
+    "rom": "bulgasari",
     "name": {
-      "en": "Crayfish",
-      "ja": "ザリガニ",
-      "zh": "小龙虾"
+      "en": "Starfish",
+      "ja": "ヒトデ",
+      "zh": "海星"
     },
     "rarity": 2,
     "released": true,
@@ -724,18 +724,19 @@ export const FISH_SHEET = [
   'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
   'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
   'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
-  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'crayfish',
+  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'starfish',
   'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'snow-crab', 'blue-tang',
   'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
   'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
 ];
-export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp';
+export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=2';
 // Kinds swapped out of the catalogue (to match the fish book's pictures),
 // each moved to the new kind of the same rarity in its place, so bags and
 // fish books saved before keep their counts.
 export const RENAMED = {
   mandarin: 'sea-turtle', bass: 'scallop', 'horse-mackerel': 'jellyfish', squid: 'marlin',
   filefish: 'wakame', parrotfish: 'kelp', lionfish: 'manta', mandarinfish: 'blobfish', ray: 'orca', swordfish: 'giant-squid',
+  crayfish: 'starfish', // too close to the lobster
 };
 const migrate = (raw) => {
   const out = { ...raw };
