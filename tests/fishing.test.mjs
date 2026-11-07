@@ -150,3 +150,22 @@ test('the lucky spot moves around, boosts ★2 and up a little and halves the bo
   assert.notEqual(rollCatch(() => LUCKY_TRASH_CHANCE, true), TRASH);
   assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
 });
+
+test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishstats', async () => {
+  const { FishStats } = await import('../src/core/fishing.js');
+  const m = memory();
+  const s = new FishStats(m, 1000);
+  s.add('cast'); s.add('cast'); s.add('miss');
+  s.add('bite', fishById('whale')); s.add('escape', fishById('whale'));
+  s.add('land', TRASH); s.add('land', fishById('loach'));
+  s.add('since'); s.add('nope'); s.add('bite');
+  const again = new FishStats(m, 5000);
+  assert.equal(again.get('since'), 1000);
+  assert.equal(again.get('cast'), 2);
+  assert.equal(again.get('miss'), 1);
+  assert.deepEqual(again.get('bite'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('escape'), [0, 0, 0, 0, 0, 1]);
+  assert.deepEqual(again.get('land'), [1, 1, 0, 0, 0, 0]);
+  m.setItem('mk.fishstats', '{broken');
+  assert.equal(new FishStats(m, 7).get('cast'), 0);
+});

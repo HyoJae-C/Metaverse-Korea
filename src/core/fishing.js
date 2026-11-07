@@ -871,4 +871,42 @@ export class FishDex {
   _save() { try { this.storage?.setItem(DEX_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
 }
 
+// Fishing counters (mk.fishstats), for balancing: what happens to each cast.
+// The fish book only knows what was landed; these also count the casts, the
+// bites missed, the fish lost while reeling and the ones that slipped off.
+// Saved on this device, so the cloud save (every "mk." key) carries them.
+//   cast: lines thrown by hand   early: hooked before a bite
+//   bite: bites by rarity [trash, ★1…★5]   miss: bites not hooked in time
+//   lost: fish that got away while reeling, by rarity
+//   escape: fish that slipped off at the end, by rarity
+//   land: fish landed by hand, by rarity [trash, ★1…★5]
+//   lucky: bites at the lucky spot   auto: fish landed by auto fishing
+//   since: when counting started (ms)
+const STATS_KEY = 'mk.fishstats';
+const tiers = () => [0, 0, 0, 0, 0, 0];
+export class FishStats {
+  constructor(storage = globalThis.localStorage, now = Date.now()) {
+    this.storage = storage;
+    let raw = {};
+    try { raw = JSON.parse(storage?.getItem(STATS_KEY) || '{}') || {}; } catch { raw = {}; }
+    const num = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+    const arr = v => tiers().map((_, i) => num(Array.isArray(v) ? v[i] : 0));
+    this.s = {
+      since: num(raw.since) || now,
+      cast: num(raw.cast), early: num(raw.early), miss: num(raw.miss), lucky: num(raw.lucky), auto: num(raw.auto),
+      bite: arr(raw.bite), lost: arr(raw.lost), escape: arr(raw.escape), land: arr(raw.land),
+    };
+  }
+  // n: 'cast' | 'early' | 'miss' | 'lucky' | 'auto', or a per-rarity
+  // counter ('bite' | 'lost' | 'escape' | 'land') with the fish.
+  add(n, fish) {
+    const v = this.s[n];
+    if (Array.isArray(v)) { if (!fish) return; v[fish.trash ? 0 : fish.rarity] += 1; }
+    else if (typeof v === 'number' && n !== 'since') this.s[n] = v + 1;
+    else return;
+    try { this.storage?.setItem(STATS_KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
+  }
+  get(n) { return this.s[n]; }
+}
+
 export const rarityStars = f => f.rarity;
