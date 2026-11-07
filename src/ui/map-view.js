@@ -230,6 +230,29 @@ export class MapView {
   }
 
   draw() {
+    this._draw();
+    this._drawCredit();
+  }
+
+  // The gu outlines come from OpenStreetMap, whose licence asks for this
+  // credit wherever they are shown: small, in the bottom-right corner.
+  _drawCredit() {
+    const credit = this.seoul?.credit;
+    if (!credit || !this.open) return;
+    const g = this.canvas.getContext('2d'), dpr = this.dpr, W = this.canvas.width, H = this.canvas.height;
+    g.save();
+    g.font = `600 ${10 * dpr}px system-ui, sans-serif`;
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+    const w = g.measureText(credit).width + 10 * dpr, h = 16 * dpr;
+    g.fillStyle = 'rgba(255,250,240,0.8)';
+    g.fillRect(W - w - 4 * dpr, H - h - 4 * dpr, w, h);
+    g.fillStyle = 'rgba(74,63,53,0.85)';
+    g.fillText(credit, W - 9 * dpr, H - 4 * dpr - h / 2 + 1);
+    g.restore();
+  }
+
+  _draw() {
     if (!this.open) return;
     const g = this.canvas.getContext('2d');
     g.fillStyle = '#f3ecdc';

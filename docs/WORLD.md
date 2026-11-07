@@ -22,6 +22,34 @@ and the Han River to the south. Each street side that faces a shopping street is
 lined with small shop buildings; run `node scripts/build-seongsu.mjs --place`
 after adding a shop to `PLACE_NEW` to give it a free lot.
 
+## The Seoul grid: one fixed scale
+
+Seoul is real Seoul at **1/4** around Seongsu Station (`src/core/seoul-grid.js`):
+the distance and direction between two places is the real one divided by 4.
+Inside a district, streets and buildings stay full size; only the empty land
+between districts shrinks. So every place has a known spot before it is
+built, and nothing needs moving when something new is added next to it.
+
+- **Gu budgets.** The 25 gu are their real outlines at 1/4
+  (`public/regions/seongsu/seoul.json`, built by `scripts/build-seoul.mjs`
+  from OpenStreetMap, `scripts/data/seoul-gu-osm.geojson`). A gu is the room
+  its districts have to share, e.g. Mapo-gu about 1.5 km² for Hongdae,
+  Yeonnam and Mangwon together, Jung-gu about 0.6 km² (790 m square).
+  `node scripts/build-seoul.mjs` prints every gu's area.
+- **Anchors.** Each district in `region.json` names one real spot (`anchor`);
+  its offset follows from it. A `nudge` (with a `why`) moves it off that spot
+  on purpose: Songpa is nudged north so its Han River bank lines up with
+  Seongsu's.
+- **Seongsu** is the exception: the first district, full size and larger
+  than its 1/4 share, so the river and gu edges just south of it are pushed
+  south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).
+- **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
+  everything placed in world metres inside it: stores, zones, bike stations,
+  homes, screens, subway exits, busking zones, stamps, and the ends of link
+  roads. Check the link roads on the map afterwards.
+- **Credit.** The gu outlines are © OpenStreetMap contributors (ODbL); the map
+  shows that line in its corner (`credit` in `seoul.json`).
+
 ## How a region is put together
 
 `public/regions/<id>/region.json` either names one map file (`mapFile`) or
@@ -50,7 +78,12 @@ lists **districts** joined into one map (`src/core/districts.js`):
 1. Draw the district as a small map file: a square, the main street, a few
    blocks of plain buildings, and blockers for walls or water.
 2. Add the landmark as a 3D model on top (gate, palace hall, bridge…).
-3. Add it to `districts` with an offset, and a `link` road to its neighbour.
+3. Add it to `districts` with an `anchor` (a real spot in it: `lat`, `lon`,
+   and `local`, where that spot is in the district's map), run
+   `node scripts/place-districts.mjs --apply` to get its offset, and add a
+   `link` road to its neighbour. `node scripts/place-districts.mjs` (and
+   `npm test`) then checks that it sits in its gu and overlaps no other
+   district.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
 5. Give it an Information Center: a store with `"workshop": "info"` and
    `"district": "<id>"`, and its name and intro in `AREA` (src/ui/info-ui.js).
