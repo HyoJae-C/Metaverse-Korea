@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds the Seoul overview for the map (public/regions/seongsu/seoul.json):
+// Builds the Seoul overview for the map (public/regions/another-seoul/seoul.json):
 // the 25 districts (gu) with their real outlines, the Han River, and which gu
 // are open. Everything is on the Seoul grid (src/core/seoul-grid.js): real
 // Seoul at 1/4 around Seongsu Station, game metres (x east, z south).
@@ -25,7 +25,7 @@ import path from 'node:path';
 import { toGame, anchorOffset, inPolygon, SCALE } from '../src/core/seoul-grid.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const R = path.join(root, 'public', 'regions', 'seongsu');
+const R = path.join(root, 'public', 'regions', 'another-seoul');
 
 // [id, ko, en, ja, zh]
 const GU = [

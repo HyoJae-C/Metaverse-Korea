@@ -221,7 +221,9 @@ const playCounts = createCounts();
 
 // ---------- Start screen ----------
 const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
-const regionId = new URLSearchParams(location.search).get('region') || regionsIndex.default;
+// ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
+const askedRegion = new URLSearchParams(location.search).get('region');
+const regionId = regionsIndex.regions.some((r) => r.id === askedRegion) ? askedRegion : regionsIndex.default;
 // Realtime room name. Automated tests pass ?debug&room=<name> to get a private
 // room, so real visitors on the live site never mix into a test.
 const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');

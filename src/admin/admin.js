@@ -12,7 +12,7 @@ import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
 import { describePlace, agoText, fitView } from './view.js';
 import { createPanels } from './panels.js';
 
-const REGION = 'seongsu';
+const REGION = 'another-seoul';
 const POLL_MS = 3000;
 const BASE = import.meta.env.BASE_URL;
 const $ = (id) => document.getElementById(id);

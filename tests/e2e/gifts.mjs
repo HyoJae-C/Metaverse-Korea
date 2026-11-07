@@ -69,7 +69,7 @@ try {
     if ((await a.evaluate(() => __mk.coins())) !== before - paid) throw new Error('A was refunded after an accept');
     if (check === 'bag' && (await b.evaluate(() => __mk.bagList().length)) !== bagBefore + 1) throw new Error('gift not in B\'s bag');
     if (check === 'item') {
-      const res = await fetch(new URL('regions/seongsu/stores.json', url));
+      const res = await fetch(new URL('regions/another-seoul/stores.json', url));
       const p0 = (await res.json()).stores.find((s) => s.id === 'denim-lab').products[idx];
       const itemId = p0.item || p0.outfit;
       if (!(await b.evaluate((x) => __mk.owns(x), itemId))) throw new Error('clothes not in B\'s items');

@@ -7,7 +7,7 @@ import {
 } from '../src/core/jobs.js';
 import { assignSpots } from '../src/core/hiring-ads.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 test('part-time jobs: delivery in Seongsu (2), convenience stores in Hongdae (2), serving in Itaewon (1)', () => {
   const region = read('region.json');

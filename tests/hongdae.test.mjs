@@ -5,7 +5,7 @@ import { TAROT_CARDS, POSITIONS, ROMAN, shuffleDeck } from '../src/data/tarot.js
 import { tipsLeft, takeTip, TIPS_PER_DAY } from '../src/core/busking.js';
 import { bankHeight, BANK, CROWD, SINGER, GIRLS, BOYS } from '../src/core/busking-layout.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 
 test('tarot: 22 major and 56 minor arcana, named and explained in each language', () => {

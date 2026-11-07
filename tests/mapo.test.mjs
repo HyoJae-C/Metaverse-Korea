@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { FISH, AVAILABLE_FISH, fishById } from '../src/core/fishing.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 const stores = read('stores.json').stores;
 

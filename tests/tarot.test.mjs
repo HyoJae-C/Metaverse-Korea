@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { TAROT_CARDS, TOPICS, PAIR_POSITIONS, topicById, cardText, cardMark, shuffleDeck, seeded } from '../src/data/tarot.js';
 import { TarotQueue, TURN_MS, parseTarot, tarotMsg } from '../src/core/tarot-queue.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
 test('tarot: four kinds of reading, dating and love can be read together', () => {
   assert.deepEqual(TOPICS.map((t) => t.id), ['today', 'dating', 'friend', 'money']);

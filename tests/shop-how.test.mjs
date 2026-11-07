@@ -32,7 +32,7 @@ test('café orders become a cup or a snack box; bar drinks a glass; bought goods
 test('things you could only carry around are not sold: those shops are coming soon', async () => {
   const { readFile } = await import('node:fs/promises');
   const { usable, itemSoon } = await import('../src/ui/shop-ui.js');
-  const stores = JSON.parse(await readFile(new URL('../public/regions/seongsu/stores.json', import.meta.url), 'utf8')).stores;
+  const stores = JSON.parse(await readFile(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8')).stores;
   const byId = (id) => stores.find((s) => s.id === id);
   // A candle shop, a stationery shop, a record shop: nothing to do with what they sell.
   for (const id of ['scent-factory', 'stationery-den', 'indie-record', 'page-atlas', 'glow-lab']) {

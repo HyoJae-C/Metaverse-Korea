@@ -10,7 +10,7 @@ import { TRAILS } from '../src/data/trails.js';
 import { STAMPS } from '../src/data/stamps.js';
 import { FOLK_DANCES } from '../src/core/folk-dance.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 const map = read('districts/jongmyo.json');
 const stores = read('stores.json').stores;

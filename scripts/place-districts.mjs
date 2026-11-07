@@ -25,7 +25,7 @@ import path from 'node:path';
 import { anchorOffset, mapBox, mapParts, boxOverlap, inPolygon, toLatLon } from '../src/core/seoul-grid.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const R = path.join(root, 'public', 'regions', 'seongsu');
+const R = path.join(root, 'public', 'regions', 'another-seoul');
 const read = (f) => readFileSync(f, 'utf8');
 const NUM = '(-?\\d+(?:\\.\\d+)?)';
 const fmt = (v) => String(Math.round(v * 10) / 10);

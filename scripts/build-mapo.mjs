@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const R = path.join(root, 'public', 'regions', 'seongsu');
+const R = path.join(root, 'public', 'regions', 'another-seoul');
 const readJson = (f) => JSON.parse(readFileSync(path.join(R, f), 'utf8'));
 const r1 = (v) => Math.round(v * 10) / 10;
 

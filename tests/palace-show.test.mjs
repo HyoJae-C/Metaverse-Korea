@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { FAN_KEEP, ROYAL_ROUTE, ROYAL_PAUSE, nextStop, ringPoly } from '../src/core/palace-show.js';
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
-const map = JSON.parse(readFileSync(new URL('../public/regions/seongsu/districts/gyeongbokgung.json', import.meta.url)));
+const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const FAN = [0, -150]; // main.js: the palace offset + (0, -150)
 
 test('the fan dance has a rope ring you cannot walk into', () => {

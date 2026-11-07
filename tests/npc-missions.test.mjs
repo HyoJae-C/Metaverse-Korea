@@ -13,7 +13,7 @@ const { STARTER } = await import('../src/core/quests.js');
 const { loadRegionMap, districtBoxes, districtAt } = await import('../src/core/districts.js');
 const { RoadGraph } = await import('../src/core/route.js');
 
-const R = new URL('../public/regions/seongsu/', import.meta.url);
+const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const json = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
 const zones = json('zones.json').zones;
 const stores = [...json('stores.json').stores, ...(json('homes.json').homes || [])];
