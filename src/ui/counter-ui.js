@@ -23,7 +23,7 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-const ICON = { cup: '🥤', cocktail: '🍹', skewer: '🍢', bread: '🥐' };
+const ICON = { cup: '🥤', cocktail: '🍹', skewer: '🍢', bread: '🥐', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺' };
 
 export class CounterUI {
   // onBuy(store, product, coins): pay and hand it over; true when done.
@@ -54,7 +54,7 @@ export class CounterUI {
       const buy = el('button', 'primary counter-buy', fmt(L(T.buy), { n }));
       buy.onclick = () => { if (this.onBuy?.(s, p, n)) this.close(); };
       row.append(icon, txt);
-      if (gifts) {
+      if (gifts && !p.ingredient) { // (bag goods aren't a treat to hand over)
         const g = el('button', 'chip counter-gift', '🎁');
         g.setAttribute('aria-label', 'Gift');
         g.onclick = () => this.onGift?.(s, p);

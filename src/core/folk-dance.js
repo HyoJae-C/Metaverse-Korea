@@ -72,7 +72,9 @@ function rope(t) {
 // 일무 (ilmu), the dance in rows at the royal ancestral rite (Jongmyo
 // Jeryeak), as the civil dance (문무): a short flute (약) in the left hand, a
 // feathered staff (적) in the right. Slow, solemn moves held long, the
-// whole troupe as one.
+// whole troupe as one. The staff is lifted gently, never thrust: a raised
+// arm looked like a spear attack, which belongs to the military dance
+// (무무, wooden sword and spear), not this one.
 const ILMU = [
   (t) => { // hold the flute and the staff together before the chest
     const w = Math.sin(t * 0.6);
@@ -82,13 +84,35 @@ const ILMU = [
     const w = Math.sin(t * 0.5);
     return { bob: -0.05, armL: [-0.7, -0.1, 0], armR: [-0.7, 0.1, 0], foreL: [-1.1, 0, 0], foreR: [-1.1, 0, 0], spine: [0.45 + 0.03 * w, 0, 0], head: [0.25, 0, 0] };
   },
-  (t) => { // the staff raised high on the right, the flute held out to the left
-    const w = Math.sin(t * 0.7);
-    return { bob: 0, turn: 0.25, armL: [-0.9, -0.7, 0], armR: [-2.5, 0.2, 0], foreL: [-0.6, 0, 0], foreR: [-0.3, 0, 0], spine: [0, 0, -0.06 + 0.02 * w], head: [-0.08, 0, -0.06] };
+  (t) => { // the staff lifted to the right, up by the face, the flute held out to the left
+    const w = Math.sin(t * 0.5);
+    return { bob: 0, turn: 0.2, armL: [-0.9, -0.6, 0], armR: [-1.5, 0.3, 0], foreL: [-0.6, 0, 0], foreR: [-0.9, 0, 0], spine: [0, 0, -0.04 + 0.015 * w], head: [-0.05, 0, -0.05] };
   },
-  (t) => { // and turned the other way, the staff swept down and across
-    const w = Math.sin(t * 0.7);
-    return { bob: -0.02, turn: -0.25, armL: [-1.4, -0.4, 0], armR: [-1.1, -0.3, 0], foreL: [-0.8, 0, 0], foreR: [-0.9, 0, 0], spine: [0.1, 0, 0.06 + 0.02 * w], head: [0.06, 0, 0.06], legL: [-0.15, 0, 0], kneeL: [0.2, 0, 0] };
+  (t) => { // and turned the other way, the staff brought slowly across the chest
+    const w = Math.sin(t * 0.5);
+    return { bob: -0.02, turn: -0.2, armL: [-1.2, -0.3, 0], armR: [-1.0, -0.2, 0], foreL: [-0.9, 0, 0], foreR: [-1.0, 0, 0], spine: [0.08, 0, 0.04 + 0.015 * w], head: [0.06, 0, 0.05], legL: [-0.12, 0, 0], kneeL: [0.15, 0, 0] };
+  },
+];
+
+// 무무 (mumu), the military dance of the rite (Jeongdaeeop): a wooden sword
+// or spear in the right hand, the left hand open. Measured and slow like the
+// civil dance: the weapon is presented, pointed and drawn back, never swung.
+const MUMU = [
+  (t) => { // the weapon held upright before the chest
+    const w = Math.sin(t * 0.6);
+    return { bob: 0, armL: [-0.5, -0.2, 0], armR: [-1.0, 0.15, 0], foreL: [-0.8, 0, 0], foreR: [-1.1, 0, 0], spine: [0.02 * w, 0, 0], head: [0.05, 0, 0] };
+  },
+  (t) => { // a step forward on the left, the weapon pointed ahead and low
+    const w = Math.sin(t * 0.5);
+    return { bob: -0.04, turn: 0.15, armL: [-0.4, -0.5, 0], armR: [-1.3, 0.1, 0], foreL: [-0.4, 0, 0], foreR: [-0.2, 0, 0], spine: [0.08, 0, 0.02 * w], head: [0.02, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.3, 0, 0] };
+  },
+  (t) => { // drawn back to the shoulder, turned the other way
+    const w = Math.sin(t * 0.5);
+    return { bob: 0, turn: -0.2, armL: [-0.9, -0.4, 0], armR: [-0.6, 0.4, 0], foreL: [-0.7, 0, 0], foreR: [-1.6, 0, 0], spine: [0, 0, 0.04 + 0.015 * w], head: [-0.04, 0, 0.05] };
+  },
+  (t) => { // a bow, the weapon lowered
+    const w = Math.sin(t * 0.5);
+    return { bob: -0.05, armL: [-0.6, -0.1, 0], armR: [-0.6, 0.1, 0], foreL: [-1.0, 0, 0], foreR: [-0.9, 0, 0], spine: [0.4 + 0.03 * w, 0, 0], head: [0.25, 0, 0] };
   },
 ];
 
@@ -131,7 +155,9 @@ const BUKCHUM = [
 export const FOLK_DANCES = {
   fan: (t) => cycle(FAN, t, 4),
   tal: (t) => cycle(TAL, t, 5),
-  ilmu: (t) => cycle(ILMU, t, 4.5),
+  ilmu: (t) => cycle(ILMU, t, 6),
+  mumu: (t) => cycle(MUMU, t, 6), // with a wooden sword
+  mumuspear: (t) => cycle(MUMU, t, 6), // with a wooden spear
   rope,
   tungso, buk, janggu,
   bukchum: (t) => cycle(BUKCHUM, t, 4.5), // with the long sleeves
@@ -147,6 +173,8 @@ export function folkHandProps(folk) {
     case 'tungso': return [null, null]; // (the flute is worn from the lips: core/bukcheong.js)
     case 'buk': case 'janggu': return [null, makeDrumStick(1.6)];
     case 'yangban': return [null, makePaperFan(1.6)];
+    case 'mumu': return [null, makeWoodSword(1.6)];
+    case 'mumuspear': return [null, makeWoodSpear(1.6)];
     default: return [makeFan(1.8), makeFan(1.8)];
   }
 }
@@ -239,5 +267,30 @@ export function makePaperFan(size = 1) {
     rib.rotation.z = a - Math.PI / 2;
     g.add(rib);
   }
+  return g;
+}
+// The military dancers' props (무무): a wooden sword (목검) or a wooden
+// spear (목창) with a red tassel, in the right hand.
+export function makeWoodSword(size = 1) {
+  const g = new THREE.Group();
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.035 * size, 0.5 * size, 0.012 * size), mat('#c9a46a'));
+  blade.position.y = 0.33 * size;
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.1 * size, 0.02 * size, 0.03 * size), mat('#7a4b2a'));
+  guard.position.y = 0.08 * size;
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.015 * size, 0.015 * size, 0.12 * size, 6), mat('#5a3620'));
+  grip.position.y = 0.01 * size;
+  g.add(blade, guard, grip);
+  return g;
+}
+export function makeWoodSpear(size = 1) {
+  const g = new THREE.Group();
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.014 * size, 0.014 * size, 0.9 * size, 6), mat('#7a4b2a'));
+  shaft.position.y = 0.3 * size;
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.03 * size, 0.12 * size, 6), mat('#c9a46a'));
+  head.position.y = 0.81 * size;
+  const tassel = new THREE.Mesh(new THREE.ConeGeometry(0.035 * size, 0.1 * size, 6), mat('#c8323a'));
+  tassel.position.y = 0.7 * size;
+  tassel.rotation.x = Math.PI;
+  g.add(shaft, head, tassel);
   return g;
 }

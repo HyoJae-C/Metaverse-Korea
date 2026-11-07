@@ -43,7 +43,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
-import { JONGMYO, JongmyoBook, onSamdo, inBox, RITE_WATCH } from './data/jongmyo.js';
+import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -155,7 +155,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
@@ -455,6 +455,23 @@ await new Promise((resolve) => {
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
+    if (isDefaultName(name)) {
+      // No name (or just "여행자"): the server hands out the next number,
+      // 여행자100, 여행자101, …, reserved for this account like any name.
+      busy = true;
+      $('start-btn').disabled = true;
+      const prefix = defaultNamePrefix(t('start.defaultName'));
+      const given = (await cloud.claimDefaultName(prefix)) || localDefaultName(prefix);
+      busy = false;
+      $('start-btn').disabled = false;
+      $('nickname').value = given;
+      if (isReturning()) {
+        identity = { ...identity, name: given };
+        saveIdentity(identity);
+      }
+      resolve();
+      return;
+    }
     if (!isReturning() && isReservedName(name)) {
       $('status').textContent = L(RESERVED_TEXT);
       $('nickname').classList.add('bad');
@@ -602,7 +619,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0], palaceAt[1] - 150]; // Geunjeongjeon's courtyard
+const fanAt = palaceAt && [palaceAt[0] - 38, palaceAt[1] - 28]; // the front court, past Gwanghwamun and before Heungnyemun (the king keeps to the inner court)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -612,7 +629,9 @@ const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, {
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
-const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
+// Palace gates, halls, statues (hand-made districts). Those marked "inner"
+// (inside Jongmyo's wall) wait for the first visit (the enclosures below).
+const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -644,6 +663,7 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
   guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
@@ -1570,6 +1590,7 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
+    if (product.ingredient) { buyIngredient(product, coins); counterUi.render(shopToastText); return false; } // (stays open to buy more)
     if (itemSoon(store, product) || !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
@@ -3013,6 +3034,7 @@ const fishingUi = new FishingUI({
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   park: () => interior?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!interior?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
@@ -3059,14 +3081,22 @@ const INGREDIENT_TEXT = {
   got: { en: '{name} is in your bag 🎒', ko: '{name}을(를) 가방에 넣었어요 🎒', ja: '{name}をバッグに入れました 🎒', zh: '{name}放进包里了 🎒' },
   sit: { en: 'Take the ramen to a parasol table ⛱️ and sit down to eat it.', ko: '라면은 파라솔 테이블 ⛱️에 앉아서 먹어요.', ja: 'ラーメンはパラソルのテーブル ⛱️ に座って食べよう。', zh: '把拉面端到遮阳伞桌 ⛱️ 坐下来吃吧。' },
 };
+// The park's DAILY MART counter: near the kiosk clerk, the counter menu with
+// the kiosk's goods (the products on the counter can still be looked at).
+const MART_TEXT = { buy: { en: 'Buy at {name}', ko: '{name}에서 사기', ja: '{name}で買う', zh: '在{name}购买' } };
+const martStore = () => ({ ...interior.store, name: interior.store.kiosk.name, products: interior.store.products.filter((q) => q.kiosk) });
+const martCounter = (p) => !!(interior?.park && interior.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
+let shopToastText = '';
 function buyIngredient(product, coins) {
-  if (product.ingredient === 'mat' && hasMat(bag)) { shop.toast(L(MAT_TEXT.have)); return false; } // one is enough
-  if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return false; }
-  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+  const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
+  if (product.ingredient === 'mat' && hasMat(bag)) return fail(L(MAT_TEXT.have)); // one is enough
+  if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
+  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
   bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient });
   clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
-  shop.toast(fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) }));
+  shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
+  shop.toast(shopToastText);
   return true;
 }
 
@@ -3719,11 +3749,22 @@ const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
   const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
-  if (hanoks.length) e.onFirstEnter = () => {
-    const g = buildHanoks(hanoks);
-    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    scene.add(g);
-    return [g];
+  const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
+  if (hanoks.length || inner.length) e.onFirstEnter = () => {
+    const out = [];
+    if (hanoks.length) {
+      const g = buildHanoks(hanoks);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(g);
+      out.push(g);
+    }
+    if (inner.length) { // Jongmyo's halls, terraces, stone path and woods
+      const g = buildLandmarks(inner, scene);
+      const tick = landmarks.userData.tick;
+      landmarks.userData.tick = (t) => { tick(t); g.userData.tick(t); };
+      out.push(g);
+    }
+    return out;
   };
   return e;
 });
@@ -3736,15 +3777,15 @@ for (const e of enclosures) {
 // stream's lanterns and stones past the fog are not drawn.
 const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
-// Gyeongbokgung is big: from just outside Gwanghwamun, 'Enter' takes you
-// straight to Geunjeongjeon's courtyard (the fan dance and the king), and
-// just inside Heungnyemun 'Leave' takes you back out to the gate.
+// Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
+// front court (the fan dance; the king walks the inner court past
+// Heungnyemun), and just inside either gate 'Leave' takes you back out.
 const PALACE_TEXT = {
   enter: { en: 'Enter Gyeongbokgung', ko: '경복궁 입장', ja: '景福宮に入る', zh: '进入景福宫' },
   leave: { en: 'Leave the palace', ko: '궁 밖으로 나가기', ja: '宮の外へ出る', zh: '出宫' },
   back: { en: 'For a better view for everyone, please stay a few steps back.', ko: '원활한 관람을 위해 몇 발자국 떨어져 주세요.', ja: '皆さまが快適にご覧いただけるよう、数歩下がってください。', zh: '为了大家更好地观看，请往后退几步。' },
 };
-const PALACE_SPOTS = { gate: [0, 13], inside: [0, -122], leave: [0, -100] }; // in the palace district's metres
+const PALACE_SPOTS = { gate: [0, 13], inside: [0, -17], leave: [[0, -9], [0, -60]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
   const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;
@@ -3752,7 +3793,7 @@ function palaceAct(p) {
     const [ix, iz] = PALACE_SPOTS.inside;
     moveMeTo(scene, palaceAt[0] + ix, palaceAt[1] + iz, Math.PI); // facing Geunjeongjeon
   } };
-  if (near(PALACE_SPOTS.leave, 4)) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
+  if (PALACE_SPOTS.leave.some((s) => near(s, 4))) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
     const [gx, gz] = PALACE_SPOTS.gate;
     moveMeTo(scene, palaceAt[0] + gx, palaceAt[1] + gz + 3, 0); // facing the square
   } };
@@ -3853,7 +3894,9 @@ const jongmyoBook = new JongmyoBook();
 const JM_TEXT = {
   ask: { en: 'Ask the guide', ko: '해설사에게 묻기', ja: '解説員に聞く', zh: '问讲解员' },
   hi: { en: 'Say hi to the grandpas', ko: '어르신께 인사하기', ja: 'おじいさんにあいさつ', zh: '和老爷爷打招呼' },
-  sindo: { en: '🛤️ The raised middle strip is the spirits\' path (sindo). Please walk on a side strip.', ko: '🛤️ 가운데 높은 길은 혼령이 다니는 신도예요. 양옆 길로 걸어 주세요.', ja: '🛤️ 中央の高い道は霊の通る神道です。両脇の道を歩いてください。', zh: '🛤️ 中间高起的是神灵走的神道，请走两侧的路。' },
+  enter: { en: 'Enter Jongmyo', ko: '종묘 입장', ja: '宗廟に入る', zh: '进入宗庙' },
+  leave: { en: 'Leave Jongmyo', ko: '종묘에서 나가기', ja: '宗廟を出る', zh: '离开宗庙' },
+  sindo: { en: '🛤️ The raised middle strip is the path for the ancestors\' spirits (sindo). People walk on the strips beside it.', ko: '🛤️ 가운데 높은 길은 조상의 혼령이 다니는 신도예요. 사람은 양옆 길로 걸어요.', ja: '🛤️ 中央の高い道は祖先の霊が通る神道です。人は両脇の道を歩きます。', zh: '🛤️ 中间高起的是祖先神灵走的神道，人走两侧的路。' },
   manners: { en: '🙇 You walked the stone path the right way, off the spirits\' strip! (+🪙 {c})', ko: '🙇 혼령의 길을 밟지 않고 돌길을 바르게 걸었어요! (+🪙 {c})', ja: '🙇 霊の道を踏まずに石畳を正しく歩きました！（+🪙 {c}）', zh: '🙇 没有踩神灵的路，正确地走完了石路！（+🪙 {c}）' },
   mannersLedger: { en: 'Jongmyo manners', ko: '종묘 예절', ja: '宗廟のマナー', zh: '宗庙礼仪' },
   rite: { en: '🥁 You watched the ilmu, the ritual dance of Jongmyo Jeryeak. (+🪙 {c})', ko: '🥁 종묘제례악의 일무를 끝까지 지켜봤어요. (+🪙 {c})', ja: '🥁 宗廟祭礼楽の佾舞を見届けました。（+🪙 {c}）', zh: '🥁 看完了宗庙祭礼乐的佾舞。（+🪙 {c}）' },
@@ -3866,6 +3909,10 @@ function jongmyoCard(item, sub = '') {
 }
 function jongmyoAct(p) {
   if (!jongmyoShow || mode !== 'street') return null;
+  // Enter from in front of the stamp; leave from just inside the gate.
+  const { entry } = JONGMYO, [ox, oz] = jongmyoAt;
+  if (Math.hypot(p.x - ox - entry.at[0], p.z - oz - entry.at[1]) < entry.r) return { key: 'jm-enter', label: '🏛️ ' + L(JM_TEXT.enter), run: () => moveMeTo(scene, entry.inside[0] + ox, entry.inside[1] + oz, Math.PI) };
+  if (Math.hypot(p.x - ox - entry.leave.at[0], p.z - oz - entry.leave.at[1]) < entry.leave.r) return { key: 'jm-leave', label: '🚪 ' + L(JM_TEXT.leave), run: () => moveMeTo(scene, entry.out[0] + ox, entry.out[1] + oz, 0) };
   if (jongmyoShow.nearGuide(p.x, p.z)) return { key: 'jm-guide', label: 'ℹ️ ' + L(JM_TEXT.ask), run: () => {
     jongmyoShow.greetGuide(p.x, p.z);
     const c = JONGMYO.guideCards[jmCard++ % JONGMYO.guideCards.length];
@@ -3890,9 +3937,16 @@ function updateJongmyo(p, dt) {
   }
   jmWasIn = inside;
   if (!inside) { jmWatch = 0; return; }
-  if (onSamdo(x, z) === 'sindo') {
+  // Stepped up onto the spirits' strip: slide back down beside it (on foot;
+  // a ride just gets the notice), so the manners are learnt on the way.
+  const down = onSamdo(x, z) === 'sindo' ? offSindo(x, z) : null;
+  if (down) {
     jongmyoBook.step();
-    if (performance.now() - jmSindoAt > 15000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
+    if (!riding && !seated) {
+      const k = Math.min(1, dt * 12);
+      p.x += (down[0] - x) * k; p.z += (down[1] - z) * k;
+    }
+    if (performance.now() - jmSindoAt > 8000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
   }
   if (inBox(x, z, JONGMYO.jeongjeon.woldae)) {
     const c = jongmyoBook.arrive();
@@ -4915,6 +4969,9 @@ function updateAction(p, tSec) {
     } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
       const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
       next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
+    } else if (martCounter(p)) {
+      // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
+      next = { key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(interior.store.kiosk.name, getLanguage()) }), run: () => { clerk?.ch.wave(); counterUi.show(martStore()); } };
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };

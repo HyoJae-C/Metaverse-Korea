@@ -180,3 +180,19 @@ test('each star tier bites less often in total than the one below it', () => {
   // and every ★4 kind is rarer than any ★3 kind
   assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
 });
+
+test('better rods cut the escape chance a little but never change which fish bite', async () => {
+  const { ROD_SKINS, rodSkin } = await import('../src/core/rod-skins.js');
+  assert.equal(rodSkin('basic').hold, 0);
+  assert.equal(rodSkin('nope').hold, 0); // unknown skins fall back to the basic rod
+  for (let i = 1; i < ROD_SKINS.length; i++) {
+    assert.ok(ROD_SKINS[i].price > ROD_SKINS[i - 1].price);
+    assert.ok(ROD_SKINS[i].hold > ROD_SKINS[i - 1].hold, ROD_SKINS[i].id); // pricier holds better
+  }
+  assert.ok(ROD_SKINS.at(-1).hold <= 0.25); // a small edge, not a sure catch
+  const shark = AVAILABLE_FISH.find(f => f.rarity === 5 && escapeChance(f) > 0);
+  assert.equal(escapeChance(shark, 0, 0), escapeChance(shark));
+  assert.ok(Math.abs(escapeChance(shark, 0, 0.25) - 0.3 * 0.75) < 1e-12); // ★5: 30% → 22.5%
+  assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - 0.3 * 0.5 * 0.8) < 1e-12); // stacks with spare time
+  assert.equal(escapeChance(TRASH, 0, 0.5), 0);
+});
