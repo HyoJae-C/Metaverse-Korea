@@ -1,7 +1,6 @@
 import { haptics, buzz, shake } from './core/haptics.js';
 import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
-import { setBeat } from './core/model-pack.js';
 import {
   LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
 } from './core/i18n.js';
@@ -148,9 +147,6 @@ import { MapView } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
-import { ClubMusic } from './core/club-music.js';
-import { CLUB_TRACKS, CLUB_GENRES, songSeconds } from './data/club-tracks.js';
-import { TRACKS } from './data/tracks.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd } from './core/wallet.js';
 import { Daily, REWARD } from './core/daily.js';
@@ -177,6 +173,8 @@ import { createBasketball } from './game/basketball.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { createDecor } from './game/decor.js';
+import { createClubs } from './game/clubs.js';
+import { createMusicCafe } from './game/music-cafe.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -2933,83 +2931,11 @@ $('music-btn').onclick = async () => {
 applyMusicBtn();
 onLanguageChange(applyMusicBtn);
 
-// Music café: pick an LP to change the song. Only this player hears it (the
-// music plays in this browser). Leaving puts the usual music back.
-let cafeMusic = null; // { wasOn } while inside a music café
-// K-POP café: everyone in the room watches and hears the same music video
-// (ui/kpop-room.js). Our own background music pauses while inside.
-let kpopMusic = null;
-// The cinema works the same way, with its own films.
-// The black-and-white cinema shows the whole hall, its film and the people
-// in it in black and white (a filter on the 3D view and the video).
-async function enterKpopCafe(kind = 'kpop', cinema = true) {
-  kpopMusic = { wasOn: music.on };
-  kpop.enter(kind, cinema);
-  document.body.classList.toggle('cinema-silver', cinema === 'silver');
-  if (music.on) { await music.setOn(false); applyMusicBtn(); }
-}
-async function leaveKpopCafe() {
-  if (!kpopMusic) return;
-  const { wasOn } = kpopMusic;
-  kpopMusic = null;
-  kpop.leave();
-  document.body.classList.remove('cinema-silver');
-  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
-}
-async function enterMusicCafe(track = 'lofi') {
-  cafeMusic = { wasOn: music.on };
-  music.setTrack(track);
-  if (!music.on) { await music.setOn(true); applyMusicBtn(); } // the room's music plays on entering
-}
-async function leaveMusicCafe() {
-  if (!cafeMusic) return;
-  const { wasOn } = cafeMusic;
-  cafeMusic = null;
-  $('lp-panel').hidden = true;
-  music.setTrack('lofi');
-  if (!wasOn && music.on) { await music.setOn(false); applyMusicBtn(); }
-}
-function openLpPanel() {
-  const root = $('lp-panel');
-  const lang = getLanguage();
-  const x = document.createElement('button');
-  x.className = 'sheet-x';
-  x.textContent = '✕';
-  x.setAttribute('aria-label', t('order.close'));
-  x.onclick = () => { root.hidden = true; };
-  const h = document.createElement('h3');
-  h.textContent = '💿 ' + t('lp.title');
-  const note = document.createElement('p');
-  note.className = 'fine';
-  note.textContent = t('lp.note');
-  const list = document.createElement('div');
-  list.className = 'lp-list';
-  for (const tr of TRACKS) {
-    const b = document.createElement('button');
-    const playing = music.on && music.track.id === tr.id;
-    b.className = 'lp-row' + (playing ? ' on' : '');
-    b.innerHTML = `<span class="lp-disc"><i></i></span><span class="lp-text"><strong></strong><small></small></span>`;
-    b.querySelector('.lp-disc').style.background = `radial-gradient(circle, ${tr.color} 0 26%, #141418 27% 100%)`;
-    b.querySelector('strong').textContent = `${tr.icon} ${localName(tr.name, lang)}${playing ? ' · ' + t('lp.playing') : ''}`;
-    b.querySelector('small').textContent = localName(tr.desc, lang);
-    b.onclick = async () => {
-      music.setTrack(tr.id);
-      if (!music.on) { await music.setOn(true); applyMusicBtn(); }
-      shop.toast(t('lp.now', { name: localName(tr.name, lang) }));
-      openLpPanel();
-    };
-    list.append(b);
-  }
-  const off = document.createElement('button');
-  off.className = 'chip';
-  off.textContent = music.on ? '🔇 ' + t('lp.stop') : '🔊 ' + t('lp.play');
-  off.onclick = async () => { await music.setOn(!music.on); applyMusicBtn(); openLpPanel(); };
-  const actions = document.createElement('div');
-  actions.className = 'order-actions';
-  actions.append(off);
-  root.replaceChildren(x, h, note, list, actions);
-  root.hidden = false;
-}
+// Music café LPs, the K-POP café and the cinemas. (game/music-cafe.js)
+const musicCafe = createMusicCafe({
+  $, applyMusicBtn, kpop, music, shop,
+});
+const { enterMusicCafe, enterKpopCafe, leaveMusicCafe, leaveKpopCafe, openLpPanel } = musicCafe;
 // Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
 const bikeShop = createBikeShop({
   get riding() { return riding; }, get me() { return me; }, get wallet() { return wallet; }, $, garage,
@@ -3121,88 +3047,11 @@ function openMenu() {
   root.hidden = false;
 }
 
-// Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
-// songs run on the clock, so everyone inside hears the same song at the same
-// moment. Our own background music pauses while inside.
-const clubMusic = new ClubMusic();
-let clubState = null; // { wasOn, genre } while inside a club
-const CLUB_TEXT = {
-  open: { en: 'Playlist', ko: '플레이리스트', ja: 'プレイリスト', zh: '播放列表' },
-  now: { en: 'Now playing', ko: '지금 나오는 곡', ja: '再生中', zh: '正在播放' },
-  note: { en: 'Everyone in the club hears the same song. 10 songs, 2–3 minutes each, all made in your browser.', ko: '클럽 안의 모두가 같은 곡을 들어요. 2~3분짜리 10곡이 브라우저에서 바로 만들어져요.', ja: 'クラブの全員が同じ曲を聴いています。2〜3分の10曲をブラウザでその場で演奏します。', zh: '俱乐部里的每个人都听同一首歌。共10首，每首2–3分钟，在浏览器中实时生成。' },
-  mute: { en: 'Mute', ko: '음소거', ja: 'ミュート', zh: '静音' },
-  unmute: { en: 'Sound on', ko: '소리 켜기', ja: '音を出す', zh: '打开声音' },
-  left: { en: '{t} left', ko: '{t} 남음', ja: '残り{t}', zh: '剩余{t}' },
-};
-const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-clubMusic.onSong = (i) => {
-  if (!clubState) return;
-  const tr = CLUB_TRACKS[clubState.genre][i];
-  shop.toast('🎧 ' + localName(tr.name, getLanguage()));
-  if (!$('lp-panel').hidden && $('lp-panel').dataset.club) openClubPanel();
-};
-async function enterClub(genre) {
-  clubState = { wasOn: music.on, genre };
-  if (music.on) { await music.setOn(false); applyMusicBtn(); }
-  if (clubState?.genre === genre) await clubMusic.start(genre);
-}
-async function leaveClub() {
-  if (!clubState) return;
-  const { wasOn } = clubState;
-  clubState = null;
-  clubMusic.stop();
-  $('lp-panel').hidden = true;
-  delete $('lp-panel').dataset.club;
-  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
-}
-function clubPulse() {
-  if (!clubState || !clubMusic.on) return null;
-  const p = clubMusic.pulse();
-  return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
-}
-setBeat(() => clubPulse()); // dancers move to the club's beat
-function openClubPanel() {
-  if (!clubState) return;
-  const root = $('lp-panel');
-  root.dataset.club = '1';
-  const lang = getLanguage();
-  const g = CLUB_GENRES[clubState.genre];
-  const x = document.createElement('button');
-  x.className = 'sheet-x';
-  x.textContent = '✕';
-  x.onclick = () => { root.hidden = true; delete root.dataset.club; };
-  const h = document.createElement('strong');
-  h.className = 'wallet-title';
-  h.textContent = `${g.icon} ${localName(g.name, lang)} · ${L(CLUB_TEXT.open)}`;
-  const note = document.createElement('p');
-  note.className = 'fine';
-  note.textContent = localName(g.desc, lang) + ' ' + L(CLUB_TEXT.note);
-  const list = document.createElement('div');
-  list.className = 'lp-list';
-  const p = clubMusic.pulse();
-  CLUB_TRACKS[clubState.genre].forEach((tr, i) => {
-    const playing = clubMusic.on && clubMusic.index === i;
-    const row = document.createElement('div');
-    row.className = 'lp-row' + (playing ? ' on' : '');
-    row.innerHTML = '<span class="lp-text"><strong></strong><small></small></span>';
-    row.querySelector('strong').textContent = `${i + 1}. ${localName(tr.name, lang)}`;
-    const len = songSeconds(clubState.genre, tr);
-    row.querySelector('small').textContent = playing && p
-      ? `▶ ${L(CLUB_TEXT.now)} · ${fmt(L(CLUB_TEXT.left), { t: mmss(Math.max(0, len - p.pos)) })}`
-      : `${tr.bpm} BPM · ${mmss(len)}`;
-    list.append(row);
-  });
-  const mute = document.createElement('button');
-  mute.className = 'chip';
-  mute.textContent = clubMusic.muted ? '🔊 ' + L(CLUB_TEXT.unmute) : '🔇 ' + L(CLUB_TEXT.mute);
-  mute.onclick = () => { clubMusic.setMuted(!clubMusic.muted); openClubPanel(); };
-  const actions = document.createElement('div');
-  actions.className = 'order-actions';
-  actions.append(mute);
-  root.replaceChildren(x, h, note, list, actions);
-  root.hidden = false;
-}
-
+// Itaewon clubs: genre playlists on a shared clock. (game/clubs.js)
+const clubs = createClubs({
+  $, applyMusicBtn, music, shop,
+});
+const { enterClub, leaveClub, CLUB_TEXT, openClubPanel, clubPulse } = clubs;
 let musicWanted = false;
 try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
 if (musicWanted) {
@@ -3865,7 +3714,7 @@ function updateBuskMusic(p) {
     const { wasOn, track } = buskMusic;
     buskMusic = null;
     if (music.track.id === 'busking') music.setTrack(track);
-    if (cafeMusic) cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
+    if (musicCafe.cafeMusic) musicCafe.cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
     else if (!wasOn && music.on) music.setOn(false).then(applyMusicBtn);
   }
 }
@@ -5529,9 +5378,9 @@ function updateAction(p, tSec) {
       next = { key: 'kimchi-sell', label: '🫙 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
-    } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
+    } else if (clubs.clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
-    } else if (clubState && !seated) { // anywhere on the club floor: dance to the beat
+    } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
       next = { key: 'dance:' + dancing, label: (dancing ? '🛑 ' : '💃 ') + L(dancing ? DANCE_TEXT.stop : DANCE_TEXT.start), run: () => { dancing = !dancing; if (dancing) missionEvent('dance'); action = STALE; } };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
@@ -5732,7 +5581,7 @@ renderer.setAnimationLoop(() => {
   updateDucks(dt);
   updateSurgery(dt);
   updateHaircut(dt);
-  if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  if (dancing && (mag > 0.3 || !clubs.clubState)) { dancing = false; action = STALE; }
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   fishRig.update(dt, me);
