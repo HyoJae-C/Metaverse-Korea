@@ -204,3 +204,11 @@ test('funnel rows and country labels for the admin page', () => {
   assert.equal(countryLabel('XX'), '❔ Unknown');
   assert.equal(countryLabel('<b>'), '❔ Unknown');
 });
+
+test('016 SQL keeps operators out of every statistics table', () => {
+  const sql = readFileSync(new URL('../supabase/016_stats_skip_operators.sql', import.meta.url), 'utf8');
+  for (const t of ['play_sessions', 'play_visits', 'player_country_days', 'client_errors']) {
+    assert.match(sql, new RegExp(`create trigger skip_operator before insert on public\\.${t}\\b`), t);
+  }
+  assert.match(sql, /revoke all on function public\.stats_skip_operator\(\) from public, anon, authenticated/);
+});
