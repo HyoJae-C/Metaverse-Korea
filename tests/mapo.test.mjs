@@ -63,14 +63,18 @@ test('all the new shops are fictional sample data with names in four languages',
   assert.equal(new Set(stores.map((s) => s.id)).size, stores.length, 'store ids are unique');
 });
 
-test('Mangwon fish: six journal kinds that only bite at the Mangwon pier', () => {
+test('Mangwon fish: seven journal kinds that only bite at the Mangwon pier', () => {
   const kinds = placeFish('mangwon');
-  assert.equal(kinds.length, 6);
+  assert.equal(kinds.length, 7);
   for (const f of kinds) {
     assert.equal(f.released, false, `${f.id} stays out of the usual odds`);
     assert.equal(fishPlaceOf(f.id), 'mangwon');
   }
-  assert.deepEqual(kinds.map((f) => f.rarity).sort(), [1, 1, 2, 2, 3, 3]);
+  assert.deepEqual(kinds.map((f) => f.rarity).sort(), [1, 1, 2, 2, 3, 3, 5]);
+  // The ★5 legend of the pier (giant squid): about 1 in 500 bites there,
+  // rarer than the blue whale anywhere (0.4%).
+  const legend = kinds.find((f) => f.rarity === 5);
+  assert.ok(placeChance(legend) > 0.1 && placeChance(legend) < 0.4, `${legend.id} ${placeChance(legend)}`);
   const total = kinds.reduce((a, f) => a + placeChance(f), 0);
   assert.ok(Math.abs(total - FISH_PLACES.mangwon.share * 100) < 1e-9);
   // Each ★3 Mangwon fish is about as rare as the usual ★3 kinds.
