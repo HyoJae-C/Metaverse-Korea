@@ -1,8 +1,7 @@
 # Mini basketball (미니 농구)
 
-A half court with a mini hoop, planned for Olympic Park's Peace Plaza, just
-south of the skate park (Olympic Park district, local x about 1190, z 335;
-the map thread keeps x 1170-1210, z 320-350 free for it). Try it now at
+A half court with a mini hoop on Olympic Park's Peace Plaza, just south of
+the skate park. Also try it at
 `dev/basketball.html` (`npm run dev`, then open `/dev/basketball.html`;
 `?open` opens the panel, `?move=dunk:3` plays one move, `?lang=ko`,
 `?view=side|front|close`).
@@ -39,16 +38,14 @@ Moves pose the limbs through `character.setMoves(fn)` (added for this;
 `core/model-pack.js` lays the offsets over the idle or running clip, like
 the dances) and turn the body with `setTrick({ spin })` (the back dunk).
 
-## Putting it on the map
+## On the map
 
-After the Olympic Park district is in (`districts/olympic-park.json`):
-
-1. Add a landmark `{ "type": "basketball", "x": 1190, "z": 335, "ry": … }`
-   and a blocker for the pole (`COURT_POLE`).
-2. In `index.html`, add `<div class="sheet order-panel kimchi-panel folk-panel" id="basket-panel" hidden></div>`.
-3. In `main.js`, build the court from the landmark, show the action button
-   within `COURT_RADIUS` of `COURT_STAND`, open `BasketballUI`, and on
-   `onShot` run a `ShotPlayer` each frame: place `me` at its x/z (the height
-   on top of the ground), `setTrick({ spin }, y)`, and animate with its
-   `speed`; call `ui.resume()` when it is done. Add the panel to
-   `spaceBusy()` and to what closes when you leave.
+The court is the `basketball` landmark in `districts/olympic-park.json`
+(hoop at local x 1190, z 323, `ry` 0: the court runs south from the hoop,
+between the skate park's fence and the lawn path), with a blocker for the
+hoop's pole and a map label. `main.js` builds it from the landmark
+(`courtLm`), shows "Play basketball" within `COURT_RADIUS` of
+`COURT_STAND`, and `basketTick` plays each move (`ShotPlayer`): it places
+you, lifts you with `basketY` (in `streetY`) and hands control back with
+`ui.resume()` when the move is over. Other players see you move and jump
+but not the ball (moves are not sent over the network yet).

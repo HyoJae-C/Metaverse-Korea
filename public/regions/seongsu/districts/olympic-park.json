@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "olympic-park",
-  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park and the pool hall on the plaza are game additions. Placed by its anchor, the World Peace Gate (region.json)."
+  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park, the pool hall and the basketball court on the plaza are game additions. Placed by its anchor, the World Peace Gate (region.json)."
  },
  "roads": [
   {
@@ -458,6 +458,26 @@
      311
     ]
    ]
+  },
+  {
+   "p": [
+    [
+     1189.82,
+     321.87
+    ],
+    [
+     1190.18,
+     321.87
+    ],
+    [
+     1190.18,
+     322.23
+    ],
+    [
+     1189.82,
+     322.23
+    ]
+   ]
   }
  ],
  "pois": [
@@ -492,6 +512,17 @@
     "en": "Olympic Park Pool",
     "ja": "オリンピック公園プール",
     "zh": "奥林匹克公园游泳馆"
+   }
+  },
+  {
+   "kind": "landmark",
+   "x": 1190,
+   "z": 328,
+   "name": {
+    "ko": "평화의광장 농구장",
+    "en": "Peace Plaza Court",
+    "ja": "平和の広場コート",
+    "zh": "和平广场球场"
    }
   }
  ],
@@ -606,6 +637,18 @@
    "w": 48,
    "d": 36,
    "h": 10
+  },
+  {
+   "type": "basketball",
+   "x": 1190,
+   "z": 323,
+   "ry": 0,
+   "label": {
+    "ko": "농구장",
+    "en": "Basketball Court",
+    "ja": "バスケットコート",
+    "zh": "篮球场"
+   }
   }
  ]
 }

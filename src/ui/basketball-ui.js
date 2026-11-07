@@ -6,7 +6,8 @@
 //   the panel is hidden then. Play the move (shotMove), and call resume()
 //   when it is over: the panel comes back for the next shot or the result.
 //
-// Medals as at the grill (onMedal); the best score is kept on this device.
+// Medals as at the grill (coins go to `wallet`, then onMedal); the best
+// score is kept on this device.
 import { t } from '../core/i18n.js';
 import { Medals, medalIcon } from '../core/grill-game.js';
 import { BASKET_GAME, SHOTS, SHOT_BY_ID, SHOTS_PER_ROUND, BasketRound, ShotMeter, basketMedal, NEEDLE, DOUBLE, RHYTHM, MASH } from '../core/basketball-game.js';
@@ -22,8 +23,8 @@ const el = (tag, cls, text) => {
 };
 
 export class BasketballUI {
-  constructor({ root, store = globalThis.localStorage, onShot, onMedal, onClose }) {
-    Object.assign(this, { root, store, onShot, onMedal, onClose });
+  constructor({ root, store = globalThis.localStorage, wallet, onShot, onMedal, onClose }) {
+    Object.assign(this, { root, store, wallet, onShot, onMedal, onClose });
     this.medals = new Medals(store);
     this.raf = 0;
     this.round = null;
@@ -164,6 +165,7 @@ export class BasketballUI {
     if (pts > this.best) { try { this.store?.setItem(BEST_KEY, String(pts)); } catch { /* storage blocked */ } }
     const medal = basketMedal(pts);
     const coins = medal ? this.medals.add(BASKET_GAME, medal) : 0;
+    if (coins) this.wallet?.add(coins);
     this.onMedal?.(medal, coins);
     this._frame();
     const note = BL('done', { n: pts, m: made }) + (medal ? '  ' + medalIcon(medal) + ' ' + t('grill.' + medal) : '') + (coins ? '  🪙 +' + coins : '');
