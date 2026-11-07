@@ -12,13 +12,14 @@ import { pendingCatch } from './fish-luck.js';
 export const FISH_PLACES = {
   mangwon: {
     name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' },
-    // ★1 shrimp, wakame · ★2 rockfish, webfoot octopus · ★3 cuttlefish, seahorse
-    kinds: ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse'],
+    // ★1 shrimp, wakame · ★2 rockfish, webfoot octopus · ★3 cuttlefish,
+    // seahorse · ★5 giant squid (the legend of the pier: about 1 in 500 bites)
+    kinds: ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid'],
     share: 0.2, // a fifth of the bites (hand fishing) are Mangwon fish
   },
 };
 // Within a place's own fish, how often each rarity bites (per kind).
-const LOCAL_WEIGHT = [0, 1, 0.4, 0.15];
+const LOCAL_WEIGHT = [0, 1, 0.4, 0.15, 0.08, 0.03];
 const localWeight = (f) => LOCAL_WEIGHT[f.rarity] ?? 0.05;
 
 export const placeFish = (place) => (FISH_PLACES[place]?.kinds || []).map(fishById).filter(Boolean);
