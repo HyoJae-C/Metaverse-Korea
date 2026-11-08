@@ -34,11 +34,13 @@ const on = await page.evaluate(() => __mk.listening());
 console.log('listening:', on);
 assert(on.id && on.ac === 'listen' && on.pos > 0.5 && !on.music, 'the song plays, headphones on, café music paused');
 assert((await page.evaluate(() => __mk.action())) === '🎧 Take off headphones', 'the action takes them off');
-// Switch to the second song: its lyrics show under the list.
+// Switch to the second song; View lyrics shows its lyrics under the list.
 await page.click('#lp-panel .listen-row:nth-of-type(2)');
 await page.waitForFunction(() => __mk.listening().id === 'same-heart' && __mk.listening().pos > 0.5, null, { timeout: 15000 }).catch(() => {});
 assert((await page.evaluate(() => __mk.listening())).id === 'same-heart', 'switched to the second song');
-assert(await page.isVisible('#lp-panel .listen-lyrics'), 'its lyrics show');
+assert(!(await page.isVisible('#lp-panel .listen-lyrics')), 'lyrics stay folded at first');
+await page.click('#lp-panel .listen-lyrics-btn');
+assert(await page.isVisible('#lp-panel .listen-lyrics'), 'View lyrics opens them');
 assert(!(await page.evaluate(() => __mk.listening())).music, 'café music still paused after switching');
 if (S) await page.screenshot({ path: S + '/listen-lyrics.png' });
 if (S) { await page.click('#lp-panel .sheet-x'); await page.evaluate(() => __mk.cam({ dist: 6, pitch: 0.35, yaw: Math.PI * 1.1 })); await page.waitForTimeout(600); await page.screenshot({ path: S + '/listening.png' }); }

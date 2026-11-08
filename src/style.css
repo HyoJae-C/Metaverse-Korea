@@ -926,10 +926,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 /* The record café's listening bar (game/listening-bar.js): cover, title, play. */
 .listen-row .listen-cover { flex: none; width: 56px; height: 56px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
 .listen-row .lp-text { flex: 1; min-width: 0; }
-.listen-lyrics { margin-top: 10px; max-height: 38vh; overflow-y: auto; padding: 10px 14px; border-radius: 16px; background: #fff; }
+.listen-lyrics { max-height: 38vh; overflow-y: auto; padding: 10px 14px; border-radius: 16px; background: #fff; }
 .listen-lyrics h4 { margin: 0 0 6px; font-size: 14px; }
 .listen-lyrics p { display: grid; gap: 2px; margin: 0 0 10px; font-size: 14px; line-height: 1.5; }
-.listen-lyrics small { color: var(--ink-soft); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
 .listen-row .listen-go { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
 
 /* Pets: poop timer and the fine notice */

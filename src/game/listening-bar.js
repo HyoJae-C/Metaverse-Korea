@@ -17,6 +17,8 @@ export const LISTEN_TEXT = {
     zh: '戴上耳机听一听。只有你听得到，摘下耳机前咖啡馆的音乐会暂停。',
   },
   lyrics: { en: 'Lyrics (Korean)', ko: '가사', ja: '歌詞（韓国語）', zh: '歌词（韩语）' },
+  showLyrics: { en: 'View lyrics', ko: '가사 보기', ja: '歌詞を見る', zh: '查看歌词' },
+  hideLyrics: { en: 'Hide lyrics', ko: '가사 닫기', ja: '歌詞を閉じる', zh: '收起歌词' },
   listen: { en: 'Listen', ko: '듣기', ja: '聴く', zh: '试听' },
   playing: { en: 'listening', ko: '듣는 중', ja: '試聴中', zh: '正在听' },
   now: { en: '🎧 Now listening: {name}', ko: '🎧 듣는 중: {name}', ja: '🎧 試聴中：{name}', zh: '🎧 正在听：{name}' },
@@ -46,6 +48,7 @@ export function createListeningBar(game) {
   const { $, music, applyMusicBtn, shop, me, base = '/' } = game;
   let now = null; // { track, station, audio, wasOn }
   let tick = 0;
+  let lyricsOpen = false; // lyrics stay folded until asked for
 
   async function play(id, station) {
     const track = listenTrackById(id);
@@ -112,9 +115,9 @@ export function createListeningBar(game) {
       b.querySelector('.listen-go').textContent = on ? '🎧' : '▶ ' + L(LISTEN_TEXT.listen);
       b.onclick = () => play(tr.id, station);
       list.append(b);
+      if (on && tr.lyrics && lyricsOpen) list.append(lyricsBlock(tr.lyrics)); // right under its song
     }
     const children = [x, h, note, list];
-    if (now?.track.lyrics) children.push(lyricsBlock(now.track.lyrics));
     if (now) {
       const off = document.createElement('button');
       off.className = 'chip';
@@ -122,14 +125,22 @@ export function createListeningBar(game) {
       off.onclick = () => stop();
       const actions = document.createElement('div');
       actions.className = 'order-actions';
+      if (now.track.lyrics) {
+        const ly = document.createElement('button');
+        ly.className = 'chip listen-lyrics-btn';
+        ly.textContent = '📝 ' + L(lyricsOpen ? LISTEN_TEXT.hideLyrics : LISTEN_TEXT.showLyrics);
+        ly.onclick = () => { lyricsOpen = !lyricsOpen; open(station); };
+        actions.append(ly);
+      }
       actions.append(off);
       children.push(actions);
     }
     root.replaceChildren(...children);
     root.hidden = false;
+    root.querySelector('.listen-lyrics')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }
 
-  // The playing song's lyrics: [section] lines show as small labels.
+  // The playing song's lyrics, a paragraph per verse.
   function lyricsBlock(text) {
     const box = document.createElement('div');
     box.className = 'listen-lyrics';
@@ -139,9 +150,8 @@ export function createListeningBar(game) {
     for (const part of text.split(/\n\s*\n/)) {
       const p = document.createElement('p');
       for (const line of part.split('\n')) {
-        const tag = /^\[(.+)\]$/.exec(line.trim());
-        const el = document.createElement(tag ? 'small' : 'span');
-        el.textContent = tag ? tag[1] : line;
+        const el = document.createElement('span');
+        el.textContent = line;
         p.append(el);
       }
       box.append(p);
