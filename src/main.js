@@ -21,6 +21,7 @@ import { buildLandmarks } from './core/landmarks.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { splitInstances } from './core/split-instances.js';
+import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
@@ -6130,6 +6131,7 @@ function guardPosition() {
 // Big instanced meshes (trees, reeds, flowers…) cut into tiles so the ones
 // out of view are skipped (core/split-instances.js). Same picture, far less work.
 splitInstances(scene);
+const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
 renderer.setAnimationLoop(() => {
@@ -6449,6 +6451,7 @@ renderer.setAnimationLoop(() => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
+  if (activeScene === scene) farPeople.update(dt, scene, camera); // skip people too far away to see (core/far-people.js)
   renderer.render(activeScene, camera);
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
   // through things (signs, glass) would leave it below 1 and let the page
