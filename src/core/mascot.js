@@ -8,6 +8,7 @@ const m = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
 export function makeMascotHead() {
   const g = new THREE.Group();
+  g.userData.noSnow = true; // (core/snow-cover.js)
   const fur = m(0xffc24a), cream = m(0xfff1d6), stripe = m(0xe8892b), dark = m(0x2b2230);
   const pink = m(0xff9db0), white = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
