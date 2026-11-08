@@ -3,6 +3,7 @@
 import { listeningBar } from './listening-bar-model.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
+import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildFurniture } from './furniture.js';
@@ -821,13 +822,15 @@ export function buildInterior(store) {
   } else if (store.category === 'bar') {
     // A quiet cocktail bar: a long counter with stools, shelves of lit
     // bottles behind it, warm pendant lamps and two candle-lit tables.
+    // The style (core/bar-styles.js) adds what makes each bar its own place.
+    const style = barStyleOf(store);
     const cz = -d / 2 + 2.2;
     box(8.6, BAR_H, 0.8, 0, BAR_H / 2, cz, '#3b2418');
     box(8.8, 0.07, 0.95, 0, BAR_H + 0.01, cz, '#8a5a3a');
     block(0, cz, 8.8, 0.95);
     clerk = { x: 0.6, z: cz - 1.0, ry: 0 }; // the bartender
-    // Back shelves with bottles.
-    for (const y of [1.25, 1.85, 2.45]) {
+    // Back shelves with bottles (the taproom has its tap wall there instead).
+    for (const y of style === 'taproom' ? [] : [1.25, 1.85, 2.45]) {
       box(9, 0.06, 0.35, 0, y, -d / 2 + 0.25, '#5a3a28');
       for (let i = 0; i < 16; i++) {
         const bc = ['#3f8f5f', '#c9a227', '#a33a2c', '#d8e4ea', '#6b3f8c', '#2f5d8c'][(i * 5 + Math.round(y * 10)) % 6];
@@ -856,8 +859,8 @@ export function buildInterior(store) {
       pl.position.set(x, h - 1.3, cz + 0.2);
       scene.add(pl);
     }
-    // Two small tables with candles.
-    for (const tx of [-w / 2 + 2.2, w / 2 - 2.2]) {
+    // Two small tables with candles (the quiet bars).
+    for (const tx of style === 'hush' || style === 'speakeasy' ? [-w / 2 + 2.2, w / 2 - 2.2] : []) {
       const tz = d / 2 - 3.6;
       const top = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 20), mat('#5a3a28'));
       top.position.set(tx, 0.72, tz);
@@ -904,12 +907,15 @@ export function buildInterior(store) {
         stations.dartboards.push({ x: bx + 0.08, y: 1.6, z: dz, ry: Math.PI / 2, r: 0.34 * 104 / 128 });
       });
     }
+    const styled = decorateBar(style, { scene, box, block, mat, seats, stations, w, d, h, cz, store, BAR_H, SEAT_H });
+    if (style === 'hush') seatPatron({ seats, stations }, -2.4, cz + 0.95); // a regular at the end of the bar
     let t = 0;
     const flames = [];
     scene.traverse((o) => { if (o.isPointLight && o.distance === 3.5) flames.push(o); });
     animate = (dt) => {
       t += dt;
       flames.forEach((f, i) => { f.intensity = 2.2 + Math.sin(t * 9 + i * 2) * 0.35 + Math.sin(t * 23 + i) * 0.15; });
+      styled?.(dt);
     };
   } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
