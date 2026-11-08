@@ -30,28 +30,28 @@ alter table public.reward_rules enable row level security; -- only the wallet fu
 
 insert into public.reward_rules (r, op_max, day_max, day_n, what) values
   ('checkin',  70000,   70000,  1, 'daily travel money: 10k..70k by streak, once a day'),
-  ('mission',  70000,  110000,  3, 'daily missions: 20k each, +50k when all three are done'),
-  ('job',      30000,  150000,  5, 'part-time shift: 10k..30k, 5 shifts a day'),
-  ('delivery', 30000,  150000,  5, 'delivery run: 10k..30k (shares the 5 shifts)'),
-  ('fish',   1000000, 1000000, 60, 'selling fish: up to a full bag of 30'),
+  ('mission',  60000,   80000,  3, 'daily missions: 10k each, +50k when all three are done'),
+  ('job',       5000,   25000,  5, 'part-time shift: 5k, 5 shifts a day'),
+  ('delivery',  3500,   17500,  5, 'delivery run: 3.5k (shares the 5 shifts)'),
+  ('fish',    500000,  500000, 60, 'selling fish: about 160k an hour of steady fishing'),
   ('kimchi',   24000,   72000,  3, 'selling kimchi: 6k..24k, 3 a day'),
-  ('medal',    60000,  600000, 40, 'minigame medals, once per game and medal'),
-  ('stamp',    20000,  600000, 40, 'tour stamps, once each'),
-  ('trail',   100000,  300000,  4, 'finishing a stamp trail, once each'),
+  ('medal',    22000,  300000, 40, 'minigame medals 5k/7k/10k, once per game and medal (gold at once pays all three: 22k)'),
+  ('stamp',    10000,  400000, 40, 'tour stamps 10k, once each'),
+  ('trail',    30000,   30000,  1, 'finishing the Joseon Royal Walk: 30k, once'),
   ('view',     60000,  400000, 20, 'Bukchon views, Hanok Explorer, Jongmyo manners and rite, once each'),
-  ('order',    30000,  300000, 10, 'first time ordering a menu mission, once each'),
-  ('quest',    70000,  500000, 12, 'guide quests: 30k (+crowd up to 10k), starter path 60k, welcome high five 20k'),
+  ('order',    10000,  100000, 10, 'first time ordering a menu mission 10k, once each'),
+  ('quest',    30000,  300000, 15, 'guide quests: 10k (+crowd up to 10k), starter path 20k, welcome high five 20k'),
   ('academy',  24000,  200000, 20, 'Korean lessons: 4k a first pass, 20k a certificate'),
-  ('together',  6000,   60000, 10, 'cooking or a high five with someone near'),
-  ('busk',      5000,   30000,  6, 'busking tips, 6 a day'),
-  ('sauna',     4000,   24000,  6, 'sauna rounds: 3 a day, 4k each and 4k for the cold-pool combo'),
-  ('pool',      6000,   30000,  5, '50 m race'),
-  ('claw',      5000,   50000, 20, 'claw machine coin prizes (a try costs 1k)'),
+  ('together',  6000,   40000, 10, 'cooking with someone near 6k, a high five 5k (each person once a day)'),
   ('event',   100000,  200000,  2, 'event codes (each code once per account)'),
   ('late',    100000,  100000,  1, 'money earned while the wallet was first opening'),
   ('old',      30000,  100000, 20, 'a game from before rewards were named')
 on conflict (r) do update set op_max = excluded.op_max, day_max = excluded.day_max,
   day_n = excluded.day_n, what = excluded.what;
+
+-- Rewarded ads pay ₩5,000 until the ad network approves the game; then
+--   update public.wallet_settings set ad_reward = 10000 where id = 1;
+update public.wallet_settings set ad_reward = 5000, updated_at = now() where id = 1;
 
 alter table public.coin_ledger add column if not exists r text;
 create index if not exists coin_ledger_reward_day on public.coin_ledger (user_id, r, at) where kind = 'earn';

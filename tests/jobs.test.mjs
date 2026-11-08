@@ -25,8 +25,8 @@ test('shifts: a few a day for all jobs together, counted again the next day', ()
   assert.equal(shiftsLeft(s, '2026-11-05'), 0);
   assert.equal(takeShift(s, '2026-11-05'), null);
   assert.equal(shiftsLeft(s, '2026-11-06'), SHIFTS_PER_DAY);
-  assert.equal(shiftPay(0, 8), 10000);
-  assert.equal(shiftPay(4, 8), 20000);
+  assert.equal(shiftPay(0, 8), 5000);
+  assert.equal(shiftPay(4, 8), 5000);
   assert.equal(shiftPay(8, 8), MAX_PAY);
   assert.equal(shiftPay(0, 0), 0);
 });

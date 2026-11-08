@@ -16,8 +16,9 @@ test('every course stamp is a real stamp, and names and intros are in four langu
   }
 });
 
-test('the City Wall Trail runs Sungnyemun, Namsan, Igansumun, Heunginjimun', () => {
-  assert.deepEqual(TRAILS.find((t) => t.id === 'citywall').stamps, ['sungnyemun', 'namsan', 'igansumun', 'heunginjimun']);
+test('no City Wall course: the real one is the four great gates, and two of them are not on the map yet', () => {
+  assert.equal(TRAILS.find((t) => t.id === 'citywall'), undefined);
+  for (const id of ['sungnyemun', 'igansumun', 'heunginjimun']) assert.ok(STAMPS.some((s) => s.id === id), id + ' stays a stamp');
 });
 
 test('progress counts only stamps on this map; finishing pays once', () => {

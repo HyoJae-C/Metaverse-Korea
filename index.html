@@ -19,12 +19,12 @@
     <meta property="og:title" content="Another Seoul · 서울 성수동을 3D로 걸어요" />
     <meta property="og:description" content="브라우저에서 바로, 친구랑 같이 성수동 골목을 걷고 맛집·자전거·노래방을 즐겨요. Walk Seongsu-dong, Seoul, in 3D with friends." />
     <meta property="og:url" content="%VITE_SITE_URL%" />
-    <meta property="og:image" content="%VITE_SITE_URL%og.png?v=2" />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png?v=3" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Another Seoul: friends waving on a Seongsu street, at the Han River and on Namsan" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="%VITE_SITE_URL%og.png?v=2" />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png?v=3" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <!-- Add to Home Screen (PWA): public/manifest.webmanifest, public/sw.js -->
@@ -217,6 +217,7 @@
       <div class="sheet order-panel game-panel" id="emblem-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="info-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="sauna-panel" hidden></div>
+      <div class="sheet order-panel game-panel" id="taxi-share-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="gym-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="book-panel" hidden></div>
       <div class="sheet order-panel game-panel" id="academy-panel" hidden></div>
@@ -353,6 +354,7 @@
     <div class="overlay" id="start">
       <div class="panel" id="step-lang">
         <div class="logo">🏙️</div>
+        <div class="boot-note" id="boot-note" role="status"><p id="boot-msg">Loading…</p><button class="primary" id="boot-reload" hidden>Reload</button></div>
         <h1 data-i18n="app.title"></h1>
         <p class="tagline" data-i18n="app.tagline"></p>
         <h2 data-i18n="lang.choose"></h2>
@@ -522,5 +524,44 @@
     </div>
 
     <script type="module" src="/src/main.js"></script>
+    <!-- Before the game code arrives (about 1 MB; minutes on a slow phone
+         connection or VPN), say that it is loading instead of showing an
+         empty card, then offer a reload if it takes long or a build file
+         fails to download. src/main.js removes #boot-note once it runs. -->
+    <script>
+      (function () {
+        var T = {
+          en: ['Loading Another Seoul…', 'Still loading. The game is about 1 MB, so on a slow connection or a VPN it can take a minute or two.', "Couldn't download the game. Check your connection and try again.", 'Reload'],
+          ko: ['어나더서울 불러오는 중…', '아직 불러오는 중이에요. 게임이 약 1MB라 느린 인터넷이나 VPN에서는 1~2분 걸릴 수 있어요.', '게임을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', '새로고침'],
+          ja: ['Another Seoul を読み込み中…', 'まだ読み込み中です。ゲームは約1MBなので、遅い回線やVPNでは1〜2分かかることがあります。', 'ゲームをダウンロードできませんでした。接続を確認して、もう一度お試しください。', '再読み込み'],
+          zh: ['正在加载 Another Seoul…', '仍在加载。游戏约 1 MB，网络较慢或使用 VPN 时可能需要一两分钟。', '游戏下载失败。请检查网络后重试。', '重新加载'],
+          zht: ['正在載入 Another Seoul…', '仍在載入。遊戲約 1 MB，網路較慢或使用 VPN 時可能需要一兩分鐘。', '遊戲下載失敗。請檢查網路後重試。', '重新載入']
+        };
+        var code = '';
+        try { code = localStorage.getItem('mk.lang') || ''; } catch (e) { /* storage blocked */ }
+        if (!T[code]) {
+          var nav = (navigator.language || 'en').toLowerCase();
+          code = /^zh-(tw|hk|mo)|hant/.test(nav) ? 'zht' : nav.slice(0, 2);
+          if (!T[code]) code = 'en';
+        }
+        var t = T[code];
+        var msg = document.getElementById('boot-msg');
+        var btn = document.getElementById('boot-reload');
+        msg.textContent = t[0];
+        btn.textContent = t[3];
+        btn.onclick = function () { location.reload(); };
+        var show = function (i) {
+          if (!document.getElementById('boot-note')) return; // the game is up
+          msg.textContent = t[i];
+          btn.hidden = false;
+        };
+        var slow = setTimeout(function () { show(1); }, 15000);
+        addEventListener('error', function (e) {
+          var el = e.target;
+          var src = el && (el.src || el.href);
+          if (src && /\/assets\/[^/]+\.(js|css)$/.test(src)) { clearTimeout(slow); show(2); }
+        }, true);
+      })();
+    </script>
   </body>
 </html>

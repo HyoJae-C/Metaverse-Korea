@@ -9,7 +9,7 @@
 // close by pays a little extra (TOGETHER_COINS). Fishing has none.
 
 export const HI5_WINDOW = 6000; // ms
-export const HI5_COINS = 6000;
+export const HI5_COINS = 5000;
 export const HI5_PAID_PER_DAY = 5;
 export const TOGETHER_RADIUS = 4; // m
 const KEY = 'mk.hi5';
@@ -52,7 +52,8 @@ export class HighFives {
   }
 
   // { coins }: coins only for someone new today, a few times a day. People
-  // are told apart by name too, so rejoining doesn't pay twice.
+  // are told apart by name too, so rejoining doesn't pay twice (and the
+  // server takes each name once a day: main.js gives a fixed op id).
   _done(id, name) {
     this.mine.delete(id);
     this.theirs.delete(id);
@@ -64,7 +65,7 @@ export class HighFives {
       coins = HI5_COINS;
       try { this.storage?.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
     }
-    return { coins };
+    return { coins, who, day: this.s.day };
   }
 }
 

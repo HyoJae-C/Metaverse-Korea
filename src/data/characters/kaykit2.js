@@ -110,6 +110,8 @@ export default {
       'hanbok-baji-ivory': { top: 0xf3ecdc, accent: 0x8a5a34, bottom: 0x6b6f7a },
       // all in white: the Bukcheong lion dance musicians (core/bukcheong.js)
       'hanbok-baji-white': { top: 0xf7f4ec, accent: 0xe2dccd, bottom: 0xf3efe5 },
+      // the pungmul troupe (core/pungmul.js): white clothes, a blue collar and ties
+      'hanbok-pungmul': { top: 0xfbf8f0, accent: 0x2f5fb0, bottom: 0xfbf8f0 },
     }),
     ...variants('rogue', '🪭', DURUMAGI, {
       'hanbok-durumagi': { top: 0xb9a6f0, accent: 0x6b4fb8, bottom: 0xefe6d2 },

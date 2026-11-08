@@ -26,6 +26,7 @@ import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
+import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
@@ -43,6 +44,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
+import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
@@ -111,7 +113,7 @@ import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, poseWord, tierOf, 
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
-import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { BuskingZones, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
@@ -179,6 +181,7 @@ import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
+import { parseTaxi } from './core/taxi-share.js';
 import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
@@ -239,6 +242,29 @@ addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.rea
 // data, so a newer save from the server is in place first. Skipped in
 // automated test rooms.
 const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
+// The region list and region file start downloading now, while the cloud
+// save is checked (up to 3 s when the save server can't be reached, as in
+// mainland China). A failed download is tried twice more: on a shaky
+// connection the first try is often the one that drops.
+const getJson = async (url, tries = 3) => {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`${r.status} ${url}`);
+      return await r.json();
+    } catch (e) {
+      if (i >= tries) throw e;
+      await new Promise((ok) => setTimeout(ok, 800 * i));
+    }
+  }
+};
+const regionStart = getJson(`${BASE}regions/index.json`).then((index) => {
+  // ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
+  const asked = new URLSearchParams(location.search).get('region');
+  const id = index.regions.some((r) => r.id === asked) ? asked : index.default;
+  return getJson(`${BASE}regions/${id}/region.json`).then((region) => ({ index, id, region }));
+});
+regionStart.catch(() => {}); // awaited below; this only avoids an early "unhandled" note
 await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
@@ -264,15 +290,11 @@ for (const m of earlyProblems.splice(0)) onProblem(m);
 if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
-const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
-// ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
-const askedRegion = new URLSearchParams(location.search).get('region');
-const regionId = regionsIndex.regions.some((r) => r.id === askedRegion) ? askedRegion : regionsIndex.default;
+const { id: regionId, region } = await regionStart;
 // Realtime room name. Automated tests pass ?debug&room=<name> to get a private
 // room, so real visitors on the live site never mix into a test.
 const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
 const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
-const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
 // Language list: one row per language. On the start screen it is a dropdown
 // (the current language on a button; tap it to open the list below).
@@ -323,6 +345,7 @@ function refreshStartText() {
 }
 
 setLanguage(getSavedLanguage() || 'en'); // English until you pick one
+document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
 const pickLang = (code) => {
   setLanguage(code);
   renderLangDropdown($('lang-grid'), pickLang);
@@ -672,6 +695,10 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
+// A pungmul troupe of 75 on Olympic Park's Peace Plaza, between the Peace
+// Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
+const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
+const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[0], olympicAt[1] + PLAZA_SPOT[1]], { lowSpec: lowSpec || !!softwareGL }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
@@ -1329,12 +1356,17 @@ async function joinRoom(room, roomScene, area = null) {
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
-    onLeave: (id) => { tandemGone(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
+      if (parseTaxi(e)) {
+        const m = parseTaxi(e);
+        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && taxi.onMsg(id, others.nameOf(id) || '?', m)) action = STALE;
+        return;
+      }
       if (parseTarot(e)) {
         const m = parseTarot(e);
         if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
@@ -2208,7 +2240,16 @@ $('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
+const dayPasses = new DayPasses();
 function enterStore(item) {
+  // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
+  const fee = dayPasses.feeFor(item.store);
+  if (fee) {
+    const name = DAY_PASS_TEXT[item.store.workshop];
+    if (!dayPasses.enter(item.store, wallet, { name, at: item.store.name })) { shop.toast(fmt(L(DAY_PASS_TEXT.short), { name: L(name), n: fee })); return; }
+    refreshWallet();
+    shop.toast(fmt(L(DAY_PASS_TEXT.paid), { name: L(name), n: fee }));
+  }
   setRiding(false);
   const metroRoom = (st) => st?.category === 'station' || st?.category === 'train';
   if (!metroRoom(item.store)) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
@@ -2796,8 +2837,18 @@ const mapView = new MapView({
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
+  get others() { return others; }, get net() { return net; }, safety,
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop,
+  // The shop or place nearest (x, z), for a shared taxi's "going to …".
+  placeName: (x, z) => {
+    let best = null, bd = 80;
+    for (const it of storefronts.items) {
+      const d = Math.hypot(it.door.x - x, it.door.z - z);
+      if (d < bd) { bd = d; best = it.store; }
+    }
+    return best && localName(best.name, getLanguage());
+  },
 });
 const { rideTaxi } = taxi;
 // Action button (and E / Enter key).
@@ -3468,9 +3519,7 @@ const BUSK_TEXT = {
   stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
   hi: { en: 'Say hi to the busker', ko: '버스커에게 인사', ja: 'バスカーにあいさつ', zh: '和街头艺人打招呼', es: 'Saludar al músico', ar: 'حيِّ العازف', vi: 'Chào nghệ sĩ', hi: 'कलाकार को नमस्ते', id: 'Sapa pengamen' },
   begin: { en: '🎤 You\'re on! The crowd is listening. Moving ends the show.', ko: '🎤 공연 시작! 관객이 듣고 있어요. 움직이면 공연이 끝나요.', ja: '🎤 本番スタート！観客が聴いています。動くと終わります。', zh: '🎤 开演了！观众在听。移动就会结束表演。', es: '🎤 ¡A escena! El público escucha. Si te mueves, termina.', ar: '🎤 بدأ العرض! الجمهور يستمع. الحركة تنهي العرض.', vi: '🎤 Bắt đầu! Khán giả đang nghe. Di chuyển sẽ kết thúc.', hi: '🎤 शो शुरू! भीड़ सुन रही है। चलने से शो ख़त्म होगा।', id: '🎤 Mulai! Penonton mendengarkan. Bergerak mengakhiri pertunjukan.' },
-  tip: { en: '🪙 +{n} A listener dropped a tip in your guitar case!', ko: '🪙 +{n} 관객이 기타 케이스에 팁을 넣었어요!', ja: '🪙 +{n} 観客がギターケースにチップを入れました！', zh: '🪙 +{n} 有观众往吉他盒里放了小费！', es: '🪙 +{n} ¡Alguien dejó una propina!', ar: '🪙 +{n} ترك أحد المستمعين إكرامية!', vi: '🪙 +{n} Một khán giả đã boa cho bạn!', hi: '🪙 +{n} एक श्रोता ने टिप दी!', id: '🪙 +{n} Penonton memberi tip!' },
-  noTips: { en: 'Great show! No more tips today, but the crowd still loves you.', ko: '멋진 공연! 오늘 팁은 다 받았지만 관객은 여전히 좋아해요.', ja: '素敵なショー！今日のチップは終わりですが、観客は大喜び。', zh: '精彩的表演！今天的小费已经领完，但观众依然喜欢你。', es: '¡Gran show! Hoy no hay más propinas.', ar: 'عرض رائع! لا مزيد من الإكراميات اليوم.', vi: 'Diễn hay lắm! Hôm nay hết tiền boa rồi.', hi: 'शानदार शो! आज और टिप नहीं।', id: 'Pertunjukan hebat! Hari ini tip sudah habis.' },
-  note: { en: 'Busking tips', ko: '버스킹 팁', ja: 'バスキングのチップ', zh: '街头表演小费' },
+  tip: { en: '👏 A listener is clapping along!', ko: '👏 관객이 박수를 쳐 줘요!', ja: '👏 観客が手拍子してくれています！', zh: '👏 有观众在跟着拍手！', es: '👏 ¡Alguien aplaude contigo!', ar: '👏 أحد المستمعين يصفّق معك!', vi: '👏 Một khán giả đang vỗ tay theo!', hi: '👏 एक श्रोता ताली बजा रहा है!', id: '👏 Penonton ikut bertepuk tangan!' },
 };
 let buskMusic = null; // { wasOn, track } while inside a busking zone
 function startBusking(s) {
@@ -3486,14 +3535,13 @@ function stopBusking() {
   me.play('bow');
   action = STALE;
 }
+// Busking is for fun, not money: listeners clap along (a few times a day).
 function buskTip() {
   const next = takeTip(readTips(), dayKey());
-  if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
+  if (!next) return;
   writeTips(next);
-  wallet.add(TIP, { name: BUSK_TEXT.note }, { r: 'busk' });
-  refreshWallet();
   sfx.pop?.();
-  shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
+  shop.toast(L(BUSK_TEXT.tip));
 }
 // The busking song plays while you're in the zone (and the usual music after).
 function updateBuskMusic(p) {
@@ -3701,7 +3749,6 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
 // Jjimjilbang: hot kiln and ice room, and the sheep towel.
 const saunaUi = new SaunaUI({
   root: $('sauna-panel'),
-  wallet,
   log: new SaunaLog(),
   onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
   onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
@@ -3920,12 +3967,28 @@ function palaceAct(p) {
   } };
   return null;
 }
-let fanNoted = false;
+let fanNoted = false, pungmulNoted = false;
+const PUNGMUL_TEXT = {
+  hello: {
+    en: 'A pungmul troupe! Drums, gongs and the long white ribbons of the sangmo hats spinning. Walk in and join the fun.',
+    ko: '풍물패예요! 북과 징, 그리고 상모의 긴 흰 끈이 빙글빙글. 안으로 들어가 함께 즐겨 보세요.',
+    ja: 'プンムルの一団！太鼓や銅鑼、サンモの長い白いリボンがくるくる。中に入って一緒に楽しもう。',
+    zh: '农乐队来啦！鼓声、锣声，象帽上的长白带飞旋。走进去一起热闹吧。',
+    es: '¡Una banda de pungmul! Tambores, gongs y las largas cintas blancas de los sombreros sangmo girando. Entra y únete.',
+    id: 'Rombongan pungmul! Genderang, gong, dan pita putih panjang topi sangmo yang berputar. Masuk dan ikut meriah.',
+    vi: 'Đoàn pungmul! Trống, chiêng và dải băng trắng dài trên mũ sangmo xoay tròn. Vào trong cùng vui nhé.',
+    hi: 'पुंगमुल मंडली! ढोल, घंटे और सांगमो टोपियों के लंबे सफ़ेद रिबन घूमते हुए। अंदर जाइए और मज़े में शामिल होइए।',
+    ar: 'فرقة بونغمول! طبول وصنوج وأشرطة بيضاء طويلة تدور فوق قبعات سانغمو. ادخل وشارك المرح.',
+  },
+};
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
+  // Coming up to the pungmul troupe: what it is (once each time you come up).
+  if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
+  else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
   for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
@@ -4129,7 +4192,7 @@ function pressStamp(it) {
     wallet.add(STAMP_REWARD, { name }, { r: 'stamp', once: 'stamp:' + s.id });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
-    // The last stamp of a course (e.g. the City Wall Trail) pays its reward once.
+    // The last stamp of a course (e.g. the Joseon Royal Walk) pays its reward once.
     for (const tr of trailsWith(TRAILS, s.id)) {
       if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
       const tname = {};
@@ -4757,12 +4820,12 @@ function onHi5(id) {
   if (r) hi5Done(id, r);
   else { shop.toast(t('hi5.asked', { name })); action = null; } // refresh the button
 }
-function hi5Done(id, { coins }) {
+function hi5Done(id, { coins, who, day }) {
   me.play('cheer');
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together' });
+  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together', once: 'hi5:' + day + ':' + who });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
@@ -5556,7 +5619,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -5721,6 +5784,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    taxi: (x, z, label = 'test') => rideTaxi({ x, z, label }),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
     poolBoard: () => interior?.boardCanvas?.toDataURL(),
     pool: () => ({ act: pool.act, mode: pool.mode?.kind || null, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], swim: wearingSwim(), tube: pool.tube, race: pool.mode?.race ? { t: +pool.mode.race.t.toFixed(2), x: +pool.mode.race.x.toFixed(1), v: +pool.mode.race.v.toFixed(2), done: pool.mode.race.done } : null, log: { ...poolLog.s } }),
@@ -5740,6 +5804,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)
+    pungmul: () => pungmul, // (debug: the pungmul troupe on Olympic Park's Peace Plaza)
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),

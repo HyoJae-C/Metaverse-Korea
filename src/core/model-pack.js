@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
 import { SNOW_MOVES } from './snow-moves.js';
+import { PUNGMUL_HANDS } from './pungmul-props.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
@@ -687,7 +688,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
       const snowy = SNOW_MOVES[activity] && key === 'idle' ? activity : null; // making a snowball (core/snow-moves.js)
       if (folk && !folkProps && slotL && slotR) {
-        folkProps = folkHandProps(folk);
+        folkProps = PUNGMUL_HANDS[folk] ? PUNGMUL_HANDS[folk]() : folkHandProps(folk);
         if (folkProps[0]) slotL.add(folkProps[0]);
         if (folkProps[1]) slotR.add(folkProps[1]);
       }
