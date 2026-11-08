@@ -21,15 +21,21 @@ export const TURN_MS = 20000; // a called number has this long to get in
 export const BUMPER_COST = 4000; // won (the other rides: RIDE_PRICE in themepark.js)
 
 // The rink: inner floor (cars stay inside), with the gate on the west side
-// facing the plaza.
-export const RINK = { x: 20.3, z: 7.5, hx: 4.4, hz: 4 };
+// facing the plaza. It fills the park's south-east corner, from the drop
+// tower's walkway down to the front and over to the east fence.
+export const RINK = { x: 19.9, z: 8.1, hx: 5.3, hz: 4.8 };
 export const RAIL = 0.35; // rail thickness round the floor
 export const GATE = { x: RINK.x - RINK.hx - RAIL - 1, z: RINK.z }; // stand here to get in
+// Animals (pets walking with their people) keep out of this box: the floor,
+// its rail and a little more, so none trots under the cars.
+export const RINK_FENCE = { x: RINK.x, z: RINK.z, hx: RINK.hx + RAIL + 0.35, hz: RINK.hz + RAIL + 0.35 };
+// A round needs at least this many drivers; one alone gets the fare back.
+export const MIN_DRIVERS = 2;
 // One colour per car, all different.
 export const CAR_COLORS = ['#ff4f5e', '#ffd23f', '#3fa7ff', '#36cf8a', '#a77bff', '#ff9a3c'];
 // Where the cars wait: three along each long rail, facing in.
 // ry uses the characters' convention: facing (sin ry, cos ry).
-export const HOMES = [-2.7, 0, 2.7].flatMap((dx) => [
+export const HOMES = [-3.4, 0, 3.4].flatMap((dx) => [
   { x: RINK.x + dx, z: RINK.z - RINK.hz + 0.9, ry: 0 },
   { x: RINK.x + dx, z: RINK.z + RINK.hz - 0.9, ry: Math.PI },
 ]);
@@ -192,3 +198,6 @@ export const freeForLine = (phase, riders) => (phase === 'driving' ? 0 : Math.ma
 
 // Who bumped the most this round: [{ id, hits }] → sorted, best first.
 export const ranking = (list) => [...list].sort((a, b) => b.hits - a.hits || (a.id < b.id ? -1 : 1));
+
+// Too few drivers to start (counting me): the round can't run.
+export const tooFew = (drivers) => drivers < MIN_DRIVERS;

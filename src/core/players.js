@@ -5,7 +5,7 @@ import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive', 'listen', ...SNOW_POSES, ...Object.keys(STUDIO_MOVES)]); // (yoga poses, the reformer, the bench press)
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive', 'listen', 'bumper', ...SNOW_POSES, ...Object.keys(STUDIO_MOVES)]); // (yoga poses, the reformer, the bench press)
 import { seatPosition } from './bikes.js';
 import { trickPose, TRICK_BY_ID } from './skatepark.js';
 import { createCharacter } from './character.js';
@@ -284,6 +284,7 @@ export class RemotePlayers {
         const d = this.players.get(p.target.on);
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
+      if (p.pet) p.pet.fences = this.fences || null;
       if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
       if (p.hidden || !p.target) continue; // not placed yet (see join)
       v.set(r.position.x, r.position.y + 1.55, r.position.z).project(camera);

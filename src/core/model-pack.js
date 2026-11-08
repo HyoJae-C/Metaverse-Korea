@@ -429,6 +429,9 @@ const LIP_FWD = 0.035;
 const SWIM_POSE = { tilt: 1.35, lift: 0.74, back: 0.5, rate: 6.5, head: 0.5 };
 // Sitting in a tube on the water (the chair clip, raised to the tube).
 const TUBE_SIT = { y: 0.3, z: 0.05 };
+// Sitting in a bumper car (core/bumper-rink.js): the character's root is the
+// car's middle, so slide back onto the cushion, against the seat back.
+const BUMPER_SIT = { y: PACK.sit.y, z: PACK.sit.z - 0.19 };
 function faceExtras(id, headMesh, headBone, look) {
   const A = PACK.atlas;
   const facts = headFacts(id, headMesh.geometry); // the model's own head
@@ -725,7 +728,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     // Wind in the hair, 0..1 (the roller coaster).
@@ -741,6 +744,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     // How high a board or scooter deck holds you up.
     setBoardHeight(y) { boardY = y; },
     update(dt, speed01, sit, riding) {
+      // In a bumper car (activity 'bumper'): driving, like the open car,
+      // but sat back in the little car's seat.
+      const bumper = activity === 'bumper' && sit && !riding;
+      if (bumper) riding = 'car';
       if (emote) {
         emote.t += dt;
         if (emote.t >= emote.dur || (speed01 > 0.3 && !riding) || sit) emote = null;
@@ -808,7 +815,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         stroke = S.pose(strideT, strideAmp);
       }
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
-      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
+      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (studio) {

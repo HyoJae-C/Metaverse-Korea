@@ -77,7 +77,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
-- Stores, homes, meeting zones and bike stations can be placed with
+- `water` (region.json) adds river stretches between districts (the Han River
+  from Mangwon to Seongsu): each is a water area plus a blocker; give it
+  `blockers` split around a bridge to leave a gap.
+- Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
@@ -134,6 +137,25 @@ Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
 Hoenamu-ro. The park house on the bank is the door to the park room; its ★5
 legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
 
+## Samseong-dong (Gangnam-gu)
+
+Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,
+drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`; street lines
+after OpenStreetMap). The block north-west of the corner is KONEXT, a
+fictional shopping mall seen from outside only (`core/konext.js`: a custom
+building, so its walls still block): a long, low glass box with a wave
+skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media
+wall round its corner made of two region.json `screens` with `"wave": true`
+(a big wave rolling inside a box). The small glass pavilion on the square is
+KONEXT Aquarium's way in, closed with a "Coming soon" board until the
+aquarium is built under the mall. Bongeunsa, north of Bongeunsa-ro, is left
+as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
+Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
+towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
+so the overlap check doesn't count the empty corner its bounding box covers.
+The district is nudged north as far as Songpa, so the two keep their real
+distance. Meeting zone U is on KONEXT Square.
+
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs
@@ -163,8 +185,8 @@ building drawn by its landmark (`core/euljiro-models.js`) from the outline in
 the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
 City Wall on its west side, and the fashion malls across Jangchungdan-ro.
 South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
-Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
-free for the folk games (docs/FOLK-GAMES.md).
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) with
+the folk games yard in its middle (the `folkyard` landmark, docs/FOLK-GAMES.md).
 
 DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
@@ -240,3 +262,14 @@ Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun; the Joseon Royal Walk:
 Gyeongbokgung, Bukchon, Jongmyo). The stamp note shows
 each course's stops; the last stamp of a course pays its reward once
 (`core/trails.js`, saved under `mk.trails`).
+
+## Seokchon Lake's north shore (Songpa)
+
+HANEUL (하늘), a fictional brand, has a department store (north of the west
+lake) and a mall with HANEUL Tower (north of the east lake) between
+Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
+stands. Their footprints are `custom` buildings in `districts/songpa.json`
+drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
+are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone T
+(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
+behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.
