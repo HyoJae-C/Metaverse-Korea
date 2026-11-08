@@ -42,8 +42,8 @@ try {
   await wait(300);
   if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
   console.log('in hand: button shows');
-  await mk('place', 2, -2); await wait(400);
-  if ((await label()).includes('🥏')) throw new Error('frisbee on the path');
+  await mk('place', 2, -2); // the riverside path: the button goes (the button refreshes on its own beat, slow in a software renderer)
+  await until(async () => !(await label()).includes('🥏'), 5000, 'frisbee on the path');
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
   for (let round = 0; round < 3; round++) {
     await until(async () => (await label()).includes('🥏'));
