@@ -4,7 +4,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { buildMap, PENS } from '../scripts/build-grand-park.mjs';
-import { Zoo, feedPhase, fenceLines, FEED_CYCLE } from '../src/core/zoo.js';
+import { Zoo, feedPhase, fenceLines, FEED_CYCLE, FOOD_CUP } from '../src/core/zoo.js';
+import { makeZooAnimal, ZOO_LOOKS } from '../src/core/zoo-animals.js';
+
+// (name boards and signs draw on a canvas; tests don't look at them)
+globalThis.document ??= { createElement: () => ({ getContext: () => new Proxy({}, { get: () => () => ({ width: 0 }) }) }) };
 
 const map = buildMap();
 const box = (p) => [p.x - p.w / 2, p.z - p.d / 2, p.x + p.w / 2, p.z + p.d / 2];
@@ -17,7 +21,14 @@ test('pens sit inside the park, apart from each other and off the walking paths'
   for (const p of PENS) {
     const b = box(p);
     assert.ok(b[0] >= px0 && b[2] <= px1 && b[1] >= pz0 && b[3] <= pz1, `${p.id} inside the park`);
-    for (const q of PENS) if (q !== p) assert.ok(!overlap(b, box(q), 1), `${p.id} and ${q.id} apart`);
+    for (const q of PENS) {
+      if (q === p) continue;
+      if (p.in === q.id || q.in === p.id) { // a tank inside its hall: wholly inside
+        const [inner, outer] = p.in ? [b, box(q)] : [box(q), b];
+        assert.ok(inner[0] >= outer[0] && inner[2] <= outer[2] && inner[1] >= outer[1] && inner[3] <= outer[3], `${p.id} inside ${q.id}`);
+      } else if (p.in && p.in === q.in) assert.ok(!overlap(b, box(q), 0.3), `${p.id} and ${q.id} apart`);
+      else assert.ok(!overlap(b, box(q), 1), `${p.id} and ${q.id} apart`);
+    }
     for (const r of map.roads.filter((x) => x.k === 'walk')) {
       for (let i = 1; i < r.p.length; i++) {
         const [[x1, z1], [x2, z2]] = [r.p[i - 1], r.p[i]];
@@ -29,8 +40,8 @@ test('pens sit inside the park, apart from each other and off the walking paths'
 });
 
 test('every fence line is a blocker, and the petting pen has a gate onto the main path', () => {
-  const lines = PENS.reduce((n, p) => n + fenceLines(p).length, 0);
-  assert.equal(map.blockers.length, 2 + lines, 'gate pillars + one blocker per fence line');
+  const lines = PENS.reduce((n, p) => n + fenceLines(p).length + (p.solid || []).length, 0);
+  assert.equal(map.blockers.length, 2 + lines, 'gate pillars + one blocker per fence line and solid prop');
   const pet = PENS.find((p) => p.pet);
   assert.equal(pet.gate.side, 'n');
   assert.ok(pet.z - pet.d / 2 > 0 && pet.z - pet.d / 2 < 8, 'the gate opens just south of the main path (z 0)');
@@ -69,4 +80,72 @@ test('the hippo comes to the front, opens wide and crunches the watermelon', () 
   assert.equal(zoo.melon, null, 'finished');
   assert.ok(opened > 0.8, 'the mouth opened wide');
   assert.ok(notices.includes('crunch'));
+});
+
+test('the Sea Animals hall holds three tanks, one animal kind each, with a door onto the path', () => {
+  const hall = PENS.find((p) => p.id === 'sea');
+  assert.equal(hall.fence, 'hall');
+  assert.equal(hall.gate.side, 'n');
+  const tanks = PENS.filter((p) => p.in === 'sea');
+  assert.deepEqual(tanks.map((t) => t.groups[0].kind).sort(), ['polarbear', 'seal', 'walrus']);
+  for (const t of tanks) assert.equal(t.groups.length, 1);
+  const zoo = new Zoo(new THREE.Scene(), [hall]);
+  zoo.update(0.1, { x: hall.x, z: hall.z });
+  assert.equal(zoo.pens[0].roof.visible, false, 'the roof lifts away while you are inside');
+  zoo.update(0.1, { x: hall.x, z: hall.z - 30 });
+  assert.equal(zoo.pens[0].roof.visible, true);
+});
+
+test('the little animal village: a solid barn, food at its door, a keeper, and animals that eat from your hand', () => {
+  const pet = PENS.find((p) => p.pet);
+  const [sx, sz] = pet.shop.at;
+  const [x0, z0, x1, z1] = pet.solid[0];
+  assert.ok(sx > x0 && sx < x1 && sz > z1, 'the counter stands in front of the barn, outside it');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...pet, name: null }]);
+  assert.ok(zoo.shopSpot(pet.x + sx, pet.z + sz));
+  assert.ok(zoo.keeperSpot(pet.x + pet.keeper.at[0], pet.z + pet.keeper.at[1]));
+  const a = zoo.pens[0].animals[0];
+  assert.equal(zoo.feedPet(a, 0, 0), false, 'no food yet');
+  zoo.buyFood();
+  for (let i = 0; i < FOOD_CUP; i++) assert.ok(zoo.feedPet(a, 0, 0));
+  assert.equal(zoo.food, 0);
+  assert.equal(a.state, 'snack');
+});
+
+// Every zoo animal is one piece (no leg, tail, ear or flipper floating off
+// on its own) and its eyes sit on the face, not buried inside the head.
+test('zoo animals are joined up and their eyes show', () => {
+  const inside = (m, p, slack = 1) => {
+    const loc = m.worldToLocal(p.clone()), g = m.geometry;
+    if (g.type === 'SphereGeometry') return loc.length() < g.parameters.radius * slack;
+    g.computeBoundingBox();
+    return g.boundingBox.clone().expandByScalar(0.002).containsPoint(loc);
+  };
+  for (const kind of Object.keys(ZOO_LOOKS)) {
+    for (const c of ZOO_LOOKS[kind]) {
+      const a = makeZooAnimal(kind, c);
+      a.root.updateMatrixWorld(true);
+      const meshes = [];
+      a.root.traverse((o) => { if (o.isMesh && !o.material.transparent) meshes.push(o); });
+      const verts = meshes.map((m) => {
+        const p = m.geometry.attributes.position, out = [];
+        for (let i = 0; i < p.count; i++) out.push(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld));
+        return out;
+      });
+      const par = meshes.map((_, i) => i), f = (i) => (par[i] === i ? i : (par[i] = f(par[i])));
+      for (let i = 0; i < meshes.length; i++) for (let j = 0; j < meshes.length; j++) {
+        if (i !== j && f(i) !== f(j) && verts[i].some((v) => inside(meshes[j], v, 1.02))) par[f(i)] = f(j);
+      }
+      const roots = new Set(meshes.map((_, i) => f(i)));
+      assert.equal(roots.size, 1, `${kind} is one piece`);
+      const eyes = meshes.filter((m) => m.userData.eye);
+      assert.ok(eyes.length >= 2, `${kind} has eyes`);
+      for (const e of eyes) {
+        const r = e.geometry.parameters.radius * e.getWorldScale(new THREE.Vector3()).x;
+        const tip = e.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0, r * 0.85).applyQuaternion(e.getWorldQuaternion(new THREE.Quaternion())));
+        const over = meshes.find((m) => m !== e && !m.userData.eye && m.geometry.type === 'SphereGeometry' && inside(m, tip));
+        assert.ok(!over, `${kind}'s eye shows`);
+      }
+    }
+  }
 });
