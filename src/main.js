@@ -131,6 +131,7 @@ import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS } from './core/park.js';
+import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
 import { Contacts, touching, wobble } from './core/bump.js';
@@ -1060,6 +1061,7 @@ const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
 if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
+let roomVisit = 0; // counts rooms walked into (the drone show tilts the view once per visit)
 const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
@@ -2407,6 +2409,7 @@ function enterStore(item) {
   }
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
+  roomVisit++;
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
@@ -4740,6 +4743,44 @@ const duckUi = new DuckUI({
   onStart: () => startDuckRide(),
   onLeave: () => standUp(),
 });
+// Ttukseom drone light show (core/drone-show.js: the schedule; the park room
+// turns its sky to night and flies the drones). Here: the game-wide notice
+// 10 minutes before, the lift-off and photo-time notices in the park, the
+// show music (only if music is on), and a camera that can look up.
+const DRONE_TEXT = {
+  soon: { en: '🛸 Drone light show at Ttukseom Han River Park in 10 minutes', ko: '🛸 10분 뒤 뚝섬 한강공원에서 드론 라이트쇼가 시작돼요', ja: '🛸 10分後にトゥクソム漢江公園でドローンライトショー', zh: '🛸 10分钟后纛岛汉江公园有无人机灯光秀' },
+  lift: { en: '🛸 The drones are rising over the river. Look up!', ko: '🛸 강 위로 드론이 떠올라요. 하늘을 보세요!', ja: '🛸 川の上にドローンが上がります。空を見上げて！', zh: '🛸 无人机正从江面升起，抬头看！' },
+  photo: { en: '📸 Photo time! Stand by the river', ko: '📸 사진 찍을 시간! 강가에 서 보세요', ja: '📸 撮影タイム！川辺に立ってみて', zh: '📸 拍照时间！站到江边吧' },
+};
+const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
+const inDronePark = () => mode === 'store' && interior?.store?.id === 'ttukseom-hangang';
+// In the park while it's dark: the camera may tilt below level to look up.
+const skyLook = () => inDronePark() && (interior.show?.night || 0) > 0.5;
+function updateDroneShow() {
+  const s = droneShowAt();
+  if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
+  const park = inDronePark();
+  if (park) stampStands.showTimed(interior.store.id);
+  const show = park ? interior.show : null;
+  const t = show?.now?.t;
+  if (t != null) {
+    if (t >= -LIFT_SECONDS && t < -LIFT_SECONDS + 60 && droneShow.lifted !== show.now.start) {
+      droneShow.lifted = show.now.start;
+      shop.toast(L(DRONE_TEXT.lift));
+    }
+    // Walking in while it's dark (or the lift-off): tilt the view up to
+    // the sky once, unless the player is steering the camera.
+    if (show.night > 0.5 && droneShow.camRoom !== show.now.start + ':' + roomVisit && manualCamT <= 0) {
+      droneShow.camRoom = show.now.start + ':' + roomVisit;
+      cam.pitch = -0.08;
+    }
+    if (show.photo && t >= show.photo[0] && t < show.photo[0] + 20 && droneShow.photo !== show.now.start) { droneShow.photo = show.now.start; shop.toast(L(DRONE_TEXT.photo)); }
+  }
+  const wantMusic = !!(show?.now && show.night > 0.5 && show.now.on);
+  if (wantMusic && !droneShow.music && music.on && music.track.id !== 'droneshow') { droneShow.music = music.track.id; music.setTrack('droneshow'); }
+  else if (!wantMusic && droneShow.music) { if (music.track.id === 'droneshow') music.setTrack(droneShow.music); droneShow.music = null; }
+}
+
 // Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
 // someone gets in (two seats each). Not a game: whoever sets off steers the
 // boat freely on the river for up to a minute (free), then it pedals itself
@@ -5869,7 +5910,7 @@ renderer.setAnimationLoop(() => {
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : 0.12, 1.25);
+  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
 
   // Movement relative to the camera. While the stick is held in one
@@ -5907,6 +5948,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
+  updateDroneShow();
   updateRide(dt);
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
@@ -6016,7 +6058,8 @@ renderer.setAnimationLoop(() => {
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
   const cz = p.z + Math.cos(cam.yaw) * camHoriz;
   // Lower the camera with the distance so a close camera doesn't look straight down.
-  const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
   else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
@@ -6268,6 +6311,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
     forcePose: (n) => { debugPose = n || null; return me.activityName; },
     studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
