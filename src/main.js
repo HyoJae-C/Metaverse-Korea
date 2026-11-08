@@ -165,7 +165,8 @@ import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
-import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
+import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
+import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
@@ -1672,7 +1673,7 @@ function sellerOf(product) {
   return i >= 0 ? interior.vendorNpcs?.[i] : null;
 }
 // What a bought thing becomes in your hand.
-const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
+const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
 const GOODS_TEXT = {
   got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', fr: 'Tu as acheté {name} !', th: 'คุณซื้อ {name} แล้ว!', id: 'Kamu membeli {name}!' },
   gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', vi: 'Túi mua sắm · {name}', hi: 'शॉपिंग बैग · {name}', fr: 'Un sac de shopping · {name}', th: 'ถุงช้อปปิ้ง · {name}', id: 'Tas belanja · {name}' },
@@ -2724,6 +2725,12 @@ const picnic = createPicnic({
   standUp: () => standUp(), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 }, streetPicnic);
 bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spread
+// Fetch with your pet on the same picnic lawns (src/game/frisbee.js).
+const frisbee = createFrisbee({
+  get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; },
+  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get shop() { return shop; },
+  get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
+});
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js).
 const snowman = createSnowman({
   get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
@@ -3355,6 +3362,7 @@ let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
   if (product.ingredient === 'mat' && hasMat(bag)) return fail(L(MAT_TEXT.have)); // one is enough
+  if (product.ingredient === 'frisbee' && hasFrisbee(bag)) return fail(L(FRISBEE_TEXT.have));
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
   if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
@@ -5062,6 +5070,7 @@ function moreActions(p, door) {
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
+    const fb = frisbee.action(p); if (fb) out.push(fb);
     if (!seated) out.push(...snowman.more(p)); // put a snowball on a bigger one: a snowman
     const ic = sculptureNear(map.landmarks, p.x, p.z); if (ic) out.push(sculptureAct(ic));
     if (muralSpot(p)) out.push(muralAct());
@@ -5079,6 +5088,7 @@ function moreActions(p, door) {
   if (seat) out.push(sitAct(seat));
   if (seat?.mat) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
+  const fb = frisbee.action(p); if (fb) out.push(fb);
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   return out;
@@ -5136,6 +5146,7 @@ function updateAction(p, tSec) {
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
+    else if (!riding && frisbee.action(p)) next = frisbee.action(p); // fetch with your pet on the lawn
     else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
@@ -5355,6 +5366,8 @@ function updateAction(p, tSec) {
       next = hi5Action(hi5Target(p));
     } else if (picnic.action(p)) {
       next = picnic.action(p);
+    } else if (frisbee.action(p)) {
+      next = frisbee.action(p);
     } else if (seat) {
       next = sitAct(seat);
     } else {
@@ -5659,6 +5672,7 @@ renderer.setAnimationLoop(() => {
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
   picnic.tick(); // picnic mats on the park lawn
+  frisbee.tick(dt); // playing fetch on the lawn
   snowman.tick(dt); // snowballs and snowmen
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
@@ -5939,6 +5953,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     takeout: (i = 0) => orderFood(interior.store.products[i], true),
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
     giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
+    giveFrisbee: () => bag.add({ kind: 'gift', sips: 1, name: 'Frisbee', icon: '🥏', g: 'frisbee' }),
+    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying],
+    givePet: (id) => { inventory.add(id); setPet(id); },
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),

@@ -30,9 +30,9 @@ test('market food goes in the food dex', () => {
   assert.ok(!isFood(park, park.products.find((p) => p.model === 'tote')));
 });
 
-test('DAILY MART in the park sells the ramen ingredients and a picnic mat, which go in the bag', () => {
+test('DAILY MART in the park sells the ramen ingredients, a picnic mat and a frisbee, which go in the bag', () => {
   const kiosk = park.products.filter((p) => p.kiosk);
-  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'mat', 'ramyeon']);
+  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'frisbee', 'mat', 'ramyeon']);
   assert.ok(park.kiosk.name.ko && park.kiosk.name.en);
   const street = data.stores.find((s) => s.id === 'haru-mart');
   assert.ok(street.products.some((p) => p.ingredient === 'ramyeon'));
