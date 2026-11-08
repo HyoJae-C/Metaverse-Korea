@@ -39,7 +39,7 @@ export const SNOW_TEXT = {
   heavy: { en: 'A giant snowball! It takes two or more people to roll it.', ko: '거대 눈덩이예요! 2명 이상 같이 굴려야 움직여요.', ja: '巨大雪玉！2人以上で転がさないと動きません。', zh: '巨型雪球！需要两人以上一起滚才能动。' },
   full: { en: 'It can\'t get any bigger. Make a snowman with it!', ko: '더는 커지지 않아요. 이걸로 눈사람을 만들어 보세요!', ja: 'これ以上大きくなりません。雪だるまにしよう！', zh: '已经不能再大了，用它做个雪人吧！' },
   snowman: { en: 'A snowman! ⛄', ko: '눈사람 완성! ⛄', ja: '雪だるまの完成！⛄', zh: '雪人做好了！⛄' },
-  tooBig: { en: 'Too heavy to lift. A head can be up to chest-high (stage 5).', ko: '너무 무거워서 못 들어요. 머리는 5단계(가슴 높이)까지 올릴 수 있어요.', ja: '重くて持ち上げられません。頭は5段階（胸の高さ）までです。', zh: '太重了举不起来。头最多到第5阶段（胸口高）。' },
+  tooBig: { en: 'A giant is too heavy to lift. A head can be up to stage 7.', ko: '거대 눈덩이는 너무 무거워서 못 들어요. 머리는 7단계까지 올릴 수 있어요.', ja: '巨大雪玉は重くて持ち上げられません。頭は7段階までです。', zh: '巨型雪球太重了举不起来。头最多到第7阶段。' },
   oldMelted: { en: 'Your oldest snowball melted to make room for a new one.', ko: '새 눈덩이를 만들려고 가장 오래된 눈덩이가 녹았어요.', ja: '新しい雪玉のために、一番古い雪玉が溶けました。', zh: '为了做新雪球，最早的雪球融化了。' },
   names: [
     { en: 'Fist-sized', ko: '주먹만 한', ja: 'こぶし大の', zh: '拳头大的' },
@@ -47,6 +47,7 @@ export const SNOW_TEXT = {
     { en: 'Knee-high', ko: '무릎 높이', ja: 'ひざの高さの', zh: '齐膝高的' },
     { en: 'Waist-high', ko: '허리 높이', ja: '腰の高さの', zh: '齐腰高的' },
     { en: 'Chest-high', ko: '가슴 높이', ja: '胸の高さの', zh: '齐胸高的' },
+    { en: 'Shoulder-high', ko: '어깨 높이', ja: '肩の高さの', zh: '齐肩高的' },
     { en: 'Person-tall', ko: '사람 키만 한', ja: '人の背丈の', zh: '一人高的' },
     { en: 'Giant', ko: '거대', ja: '巨大', zh: '巨型' },
   ],
@@ -56,6 +57,7 @@ const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k] ?? '');
 const REACH = 1.1; // how far from a ball's surface you can work on it
 const MELT_EVERY_MS = 2500; // once the snow on the ground is gone: one step off each ball
 const WORK_POSE_MS = 2200; // the pose stays this long after a press
+const QUIET_MS = 1500; // after working a ball this long, the other snow choices come back
 const PUSH_MS = 420; // a push rolls the ball (and you behind it) over this long
 
 // ---------- models ----------
@@ -141,27 +143,29 @@ function makeFace(D, d, hat) {
   return f;
 }
 
-// A little snow duck from a duck maker, about 25 cm long, facing +z.
+// A little snow duck from a duck maker, about 30 cm long, facing +z. No
+// eyes: a soft grey outline (a slightly bigger back-faced shell) so it
+// stands out on white snow.
 const duckBodyGeo = new THREE.SphereGeometry(0.5, 14, 10);
+const duckLine = new THREE.MeshBasicMaterial({ color: 0x8a9099, side: THREE.BackSide });
+const DUCK_SIZE = 1.2;
 function makeDuck() {
   const g = new THREE.Group();
   g.userData.noSnow = true;
-  const body = new THREE.Mesh(duckBodyGeo, snowMaterial());
-  body.scale.set(0.17, 0.13, 0.25);
-  body.position.y = 0.065;
-  const tail = new THREE.Mesh(noseGeo, snowMaterial());
-  tail.scale.set(0.06, 0.05, 0.08);
-  tail.rotation.x = Math.PI + 0.5;
-  tail.position.set(0, 0.1, -0.1);
-  const head = new THREE.Mesh(duckBodyGeo, snowMaterial());
-  head.scale.setScalar(0.11);
-  head.position.set(0, 0.16, 0.08);
-  const beak = new THREE.Mesh(duckBodyGeo, snowMaterial());
-  beak.scale.set(0.06, 0.025, 0.07);
-  beak.position.set(0, 0.15, 0.14);
-  g.add(body, tail, head, beak);
-  for (const sx of [-1, 1]) { const e = new THREE.Mesh(dotGeo, coal); e.scale.setScalar(0.014); e.position.set(sx * 0.03, 0.175, 0.125); g.add(e); }
-  for (const m of g.children) m.castShadow = true;
+  const part = (geo, sx, sy, sz, x, y, z, rx = 0) => {
+    const m = new THREE.Mesh(geo, snowMaterial());
+    m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.rotation.x = rx;
+    m.castShadow = true;
+    const line = new THREE.Mesh(geo, duckLine);
+    line.scale.set(1 + 0.02 / sx, 1 + 0.02 / sy, 1 + 0.02 / sz); // (about 1 cm all round)
+    m.add(line);
+    g.add(m);
+  };
+  part(duckBodyGeo, 0.17, 0.13, 0.25, 0, 0.065, 0); // body
+  part(noseGeo, 0.06, 0.05, 0.08, 0, 0.1, -0.1, Math.PI + 0.5); // tail
+  part(duckBodyGeo, 0.11, 0.11, 0.11, 0, 0.16, 0.08); // head
+  part(duckBodyGeo, 0.06, 0.025, 0.07, 0, 0.15, 0.14); // beak
+  g.scale.setScalar(DUCK_SIZE);
   return g;
 }
 
@@ -185,7 +189,7 @@ export function createSnowman(game) {
   // they let go) }.
   let holding = null, glued = null, acc = 0, prevP = null, prevRy = 0;
   // The snow duck maker in my hand, and my snow ducks: { x, z, ry }.
-  let mold = false, duckAt = 0;
+  let mold = false, duckAt = 0, moldAt = 0;
   const ducks = [];
   const duckDrawn = new Map(); // owner -> { s (their state), groups }
   // Cold hands after working the snow too long (core/snowballs.js chillStep).
@@ -413,6 +417,7 @@ export function createSnowman(game) {
   function setMold(on) {
     if (mold === on) return;
     mold = on;
+    moldAt = Date.now();
     game.heldChanged();
     game.clearAction();
   }
@@ -517,9 +522,13 @@ export function createSnowman(game) {
 
   function more(p) {
     if (game.mode !== 'street' || holding || glued) return [];
+    // Mashing E on a ball (gathering, pushing, ducks): no other choices pop
+    // up to turn the button into a list until you stop for a moment.
+    if (Date.now() - Math.max(lastWork, duckAt, moldAt) < QUIET_MS) return [];
     const out = [];
     if (mold) return [{ key: 'sb-mold-in', label: '🦆 ' + L(SNOW_TEXT.moldIn), run: () => setMold(false) }];
-    if (game.depth >= MIN_SNOW && game.onFoot) out.push({ key: 'sb-mold-out', label: '🦆 ' + L(SNOW_TEXT.moldOut), run: () => setMold(true) });
+    const ballNear = balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5);
+    if (game.depth >= MIN_SNOW && game.onFoot && !ballNear) out.push({ key: 'sb-mold-out', label: '🦆 ' + L(SNOW_TEXT.moldOut), run: () => setMold(true) });
     const t = hatOf(game.look);
     const man = t && nearest(p, (q) => q.b.h && q.b.t !== t);
     if (man) out.push({ key: `sb-hat:${man.owner}:${man.b.k}`, label: '🎩 ' + L(SNOW_TEXT.hat), run: () => hatOn(man, t) });

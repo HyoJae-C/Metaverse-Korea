@@ -1,26 +1,28 @@
 // Snowballs and snowmen: the rules, with no three.js (see game/snowman.js
 // for the game and the models).
 //
-// A snowball grows one step with each press: 20 steps make a stage, seven
-// stages from a fist-sized ball to a giant one taller than a person.
+// A snowball grows one step with each press: 20 steps make a stage, eight
+// stages (a snowman looks like an 8) from a fist-sized ball to a giant one
+// taller than a person.
 // Stages 1-3 you gather snow into it with your hands; from stage 4 it's
 // too big for that and you roll it. Friends can push the same ball: every
 // push counts, and with more people pushing it rolls further each time.
-// Growing from stage 6 to 7, and rolling a stage-7 ball, takes at least two
+// Growing from stage 7 to 8, and rolling a stage-8 ball, takes at least two
 // people pushing together.
 
 export const STEPS = 20; // presses per stage
-export const STAGES = 7;
-export const MAX_N = STEPS * STAGES; // 140
+export const STAGES = 8;
+export const MAX_N = STEPS * STAGES; // 160
 export const ROLL_FROM = 4; // stages 1-3 gather, 4+ roll
-export const CREW_STAGE = 7; // reaching and rolling this stage needs two people
+export const CREW_STAGE = 8; // reaching and rolling this stage (the giant) needs two people
 export const CREW_WINDOW_MS = 2500; // pushes this close together count as pushing together
 export const MAX_BALLS = 3; // each player's snowballs and snowmen in the street
 export const MIN_SNOW = 0.5; // how deep the snow on the ground has to be to gather it
 
 // Diameter (m) at the start of each stage, and at the very end.
-// fist, palm, knee, waist, chest, a person, giant, (fully grown giant)
-export const DIAMETERS = [0.2, 0.32, 0.45, 0.7, 0.95, 1.3, 1.9, 2.3];
+// fist, palm, knee, waist, chest, shoulder, a person, giant, (fully grown
+// giant: the same size as when there were seven stages)
+export const DIAMETERS = [0.2, 0.3, 0.42, 0.6, 0.8, 1.02, 1.3, 1.75, 2.3];
 
 export const stageOf = (n) => Math.min(STAGES, Math.floor(Math.max(0, n) / STEPS) + 1);
 export const stepOf = (n) => (n >= MAX_N ? STEPS : Math.max(0, n) % STEPS); // presses into the stage
@@ -52,10 +54,11 @@ export function crewSize(pushes, now) {
   return Math.max(1, who.size);
 }
 
-// A snowman: a smaller ball put on top of a bigger one. Heads up to a
-// chest-high ball can be lifted (stage 5).
-export const canTop = (head, body) => head > 0 && head < body && stageOf(head) <= 5;
-export const liftable = (n) => stageOf(n) <= 5;
+// A snowman: a smaller ball put on top of a bigger one. Any head but a
+// giant can be lifted (up to stage 7).
+export const LIFT_STAGE = CREW_STAGE - 1;
+export const canTop = (head, body) => head > 0 && head < body && stageOf(head) <= LIFT_STAGE;
+export const liftable = (n) => stageOf(n) <= LIFT_STAGE;
 
 // Our balls go in our state as "k,x,z,n[,h,ry[,t]]" joined by ";": k a small
 // id, n the body's steps, h the head's (a snowman), ry the way its face
@@ -120,7 +123,7 @@ export function snowPose(n, helper = false) {
   const s = stageOf(n);
   if (s < ROLL_FROM) return 'snowscoop';
   if (s <= 5) return (s === 4) !== helper ? 'snowpush' : 'snowpushhigh';
-  return (s === 6) !== helper ? 'snowshoulder' : 'snowback';
+  return (s < CREW_STAGE) !== helper ? 'snowshoulder' : 'snowback';
 }
 export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulder', 'snowback', 'snowcold'];
 
@@ -130,7 +133,7 @@ export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulde
 // friend holding on counts too). A heavy ball slows you down; friends
 // holding on make it lighter. A giant won't move for one person alone.
 export const ROLL_PER_STEP = 0.35;
-const HOLD_PACE = { 4: 0.62, 5: 0.52, 6: 0.44, 7: 0.34 }; // of walking speed, alone
+const HOLD_PACE = { 4: 0.62, 5: 0.54, 6: 0.47, 7: 0.4, 8: 0.34 }; // of walking speed, alone
 export function holdSpeed(n, crew = 1) {
   const s = stageOf(n);
   if (s < ROLL_FROM) return 1;
@@ -138,7 +141,7 @@ export function holdSpeed(n, crew = 1) {
   return Math.min(1, HOLD_PACE[s] * (1 + 0.6 * (Math.max(1, Math.min(4, crew)) - 1)));
 }
 // Steps a ball of n grows over `metres` with `crew` people holding it.
-// Stops at the last step of stage 6 without a friend, and at the top.
+// Stops at the last step before the giant without a friend, and at the top.
 export function rollGrowth(n, crew, metres) {
   if (!rollable(n) || metres <= 0) return 0;
   const gate = (CREW_STAGE - 1) * STEPS - 1;
