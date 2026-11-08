@@ -681,7 +681,8 @@
             "ry": 1.5708
           }
         ]
-      }
+      },
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 729], "ry": -1.5708 }, { "n": 2, "at": [1372, 729], "ry": 1.5708 }] }
     ]
   },
   "busking": [
