@@ -23,6 +23,14 @@ test('Samseong-dong opens Gangnam-gu, its station corner on the real spot', () =
   assert.match(map.meta.source, /OpenStreetMap/, 'street lines credited to OpenStreetMap');
 });
 
+test('Samseong-dong stays on land, south of the Han River', () => {
+  const river = Array.isArray(seoul.river[0][0]) ? seoul.river : [seoul.river];
+  const wet = ([x, z]) => river.some((p) => inPolygon(...world([x, z]), p));
+  for (const list of [map.roads, map.areas, map.buildings]) {
+    for (const o of list) for (const q of o.p) assert.ok(!wet(q), `${o.n?.en || o.k || 'building'} at ${q} is in the river`);
+  }
+});
+
 test('KONEXT: a big mall seen from outside, with the aquarium pavilion closed for now', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');

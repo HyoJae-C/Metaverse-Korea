@@ -23,9 +23,13 @@ async function join(name) {
   await page.type('#nickname', name);
   if ((await page.inputValue('#nickname')) !== name) throw new Error('nickname field did not accept typing');
   // Building the world blocks the page; with software GL and a first player
-  // already rendering, the second click can take over 30 s on CI runners.
-  await page.click('#start-btn', { timeout: 90000 });
-  await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
+  // already rendering, the second player's start took 70-90 s on CI runners
+  // and a plain page.click() timed out waiting for the click to come back.
+  // So press the button from inside the page on the next tick (the same click
+  // handler runs) and wait for the HUD instead, with room for a slow runner.
+  await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible' });
+  await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
+  await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
   // First visit: the welcome coins card covers the screen until it's closed.
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   return page;
