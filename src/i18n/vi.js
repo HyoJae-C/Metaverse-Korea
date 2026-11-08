@@ -521,6 +521,7 @@ export const VI = {
   'look.none': 'Không có',
   'start.nickname': 'Biệt danh của bạn',
   'name.rule': '⚠️ Tên có từ chửi thề, thù ghét, từ ngữ tình dục hoặc bất cứ điều gì khiến người khác khó chịu có thể bị tự động đổi mà không báo trước, hoặc bị xóa ngay.',
+  'name.face': 'Tên là gương mặt của bạn trên mạng. Hãy chọn tên bạn tự hào khi cho người khác thấy.',
   'name.taken': 'Đã có người dùng tên đó. Hãy thử tên khác.',
   'name.confirm': 'Đổi tên thành “{name}”?',
   'name.confirmGo': 'Có, đổi đi',

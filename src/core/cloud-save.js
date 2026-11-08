@@ -148,7 +148,46 @@ export class CloudSave {
       const call = this.client.rpc('claim_name', { new_name: String(name).slice(0, 16) });
       const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
       if (error) return 'offline';
-      return data === 'taken' ? 'taken' : data === 'ok' ? 'ok' : 'offline';
+      // 'wait': changed too recently (019_chat_names.sql).
+      return data === 'taken' || data === 'ok' || data === 'wait' ? data : 'offline';
+    } catch { return 'offline'; }
+  }
+
+  // Can I change my name now? (019_chat_names.sql) { free, waitDays }:
+  // free = the first change after picking a name (no cost, no wait).
+  // null when the server can't be asked.
+  async nameStatus(timeoutMs = 4000) {
+    if (!this.client || !this.user) return null;
+    try {
+      const call = this.client.rpc('name_status');
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error || !data || typeof data !== 'object' || !data.has_name) return null;
+      return { free: !!data.free, waitDays: Math.max(0, Number(data.wait_days) || 0) };
+    } catch { return null; }
+  }
+
+  // Correct name tags (019_chat_names.sql): pairs [[id, announced name], …]
+  // → Map id → real name, or null for "not theirs" (show '?'). Only the
+  // ones to correct; an empty Map when the server can't be asked.
+  async tagNames(pairs, timeoutMs = 5000) {
+    const out = new Map();
+    if (!this.client || !pairs.length) return out;
+    try {
+      const call = this.client.rpc('tag_names', { ids: pairs.map((p) => String(p[0])), names: pairs.map((p) => String(p[1] ?? '')) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (!error && Array.isArray(data)) for (const r of data) if (r && typeof r.net_id === 'string') out.set(r.net_id, typeof r.name === 'string' ? r.name : null);
+    } catch { /* keep the announced names */ }
+    return out;
+  }
+
+  // Claim this page's player id for my account, so only I can chat with it
+  // (019_chat_names.sql): 'ok', 'taken', or 'offline'.
+  async claimChatId(id, timeoutMs = 4000) {
+    if (!this.client || !this.user) return 'offline';
+    try {
+      const call = this.client.rpc('chat_claim', { net_id: String(id).slice(0, 64) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      return !error && (data === 'ok' || data === 'taken') ? data : 'offline';
     } catch { return 'offline'; }
   }
 

@@ -1561,6 +1561,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 /* Name rules (start screen and rename) */
 .name-rule { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.4; color: #b4553f; }
 .order-hint.name-rule { margin: 6px 2px 0; }
+.name-face { display: block; font-size: 12px; font-weight: 700; line-height: 1.4; color: #3d5a80; }
+.order-hint.name-face { margin: 6px 2px 0; }
 .name-confirm { margin-top: 10px; padding: 12px; border-radius: 14px; background: #fff4ec; box-shadow: 0 0 0 2px #ffc7a8 inset; text-align: left; }
 .name-confirm strong { display: block; font-size: 15px; }
 .name-confirm p { margin: 6px 0 10px; font-size: 12.5px; color: #b4553f; line-height: 1.45; }

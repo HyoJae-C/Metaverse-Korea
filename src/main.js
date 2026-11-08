@@ -157,7 +157,7 @@ import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
@@ -1220,7 +1220,9 @@ const refreshOnline = () => {
 };
 onLanguageChange(refreshOnline);
 let stopOnline = null;
-watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
+// Its own id, not myId: the online count is open to everyone, and myId must
+// stay unseen until it is claimed for chat (claimChatId below).
+watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // A newer build deployed while we play: ask for a refresh (core/update-check.js).
 startUpdateCheck({
@@ -1272,6 +1274,39 @@ let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+// Name tags are announced by each player's own game: ask the server who
+// they really are (019_chat_names.sql) and correct a borrowed name. People
+// joining together are asked about in one go.
+const tagQueue = new Set();
+let tagTimer = 0;
+function checkTag(id) {
+  if (config.netProvider !== 'supabase' || testRoom) return;
+  tagQueue.add(id);
+  if (tagTimer) return;
+  tagTimer = setTimeout(async () => {
+    tagTimer = 0;
+    const room = others;
+    const pairs = [...tagQueue].slice(0, 50).map((pid) => [pid, room.nameOf(pid)]).filter((p) => p[1] != null);
+    for (const [pid] of pairs) tagQueue.delete(pid);
+    tagQueue.clear();
+    const fixes = await cloud.tagNames(pairs);
+    for (const [pid, real] of fixes) {
+      if (room !== others) return; // moved to another room meanwhile
+      room.setName(pid, real ? filterText(cleanName(real).trim()) || '?' : '?');
+    }
+  }, 400);
+}
+// Claim myId for this account before anyone can see it, so only we can chat
+// as myId (supabase/019_chat_names.sql). Asked once; asked again if the
+// server couldn't be reached.
+let chatIdClaim = null;
+function claimChatId() {
+  if (!chatIdClaim) {
+    chatIdClaim = cloud.claimChatId(myId, 3000);
+    chatIdClaim.then((r) => { if (r === 'offline') chatIdClaim = null; });
+  }
+  return chatIdClaim;
+}
 async function joinRoom(room, roomScene, area = null) {
   if (tabParked) return;
   lastJoin = [room, roomScene, !!area];
@@ -1286,6 +1321,7 @@ async function joinRoom(room, roomScene, area = null) {
     onJoin: (p) => {
       others.join({ ...p, name: filterText(cleanName(p.name).trim() || '?') });
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
+      checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
@@ -1332,7 +1368,9 @@ async function joinRoom(room, roomScene, area = null) {
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
     onLook: (id, look) => others.setLook(id, look),
-    onChat: (id, raw) => {
+    // serverName: the sender's real name, when the server sent it
+    // (019_chat_names.sql); the name tag itself comes from the sender.
+    onChat: (id, raw, serverName) => {
       if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
       const text = filterText(cleanChat(raw));
       if (!text) return;
@@ -1343,16 +1381,19 @@ async function joinRoom(room, roomScene, area = null) {
         if (!at || Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z) > config.chatStreetRadius) return;
       }
       const ms = street ? config.chatStreetSeconds * 1000 : 6000;
-      const name = others.chat(id, text, ms);
-      if (!name) return;
-      addChatLine(name, text, '', id);
+      const tagName = others.chat(id, text, ms);
+      if (!tagName) return;
+      const real = serverName && filterText(cleanName(serverName).trim());
+      addChatLine(real || tagName, text, '', id);
       const log = (recentLines.get(id) || []).concat(text).slice(-10);
       recentLines.set(id, log);
     },
   };
   const joinedLook = currentLook;
   try {
-    const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
+    if (config.netProvider === 'supabase' && !testRoom) await claimChatId();
+    if (token !== joinToken) return; // a newer join won
+    const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken(), claimChatId }, {
       room, self: { id: myId, name: nickname, look: joinedLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
       // Debug test rooms play without an account (no cloud save), and the
@@ -1374,18 +1415,29 @@ async function joinRoom(room, roomScene, area = null) {
 // Rename at the name tag workshop: costs coins; others see it after a quick
 // rejoin of the room we are in. Resolves to 'ok', 'same', 'empty', 'poor'
 // or 'taken' (someone else uses that name).
+// May I change my name now, and for how much? The first change after
+// picking a name is free and immediate, then one change per 7 days. The
+// server decides when it can be asked (019_chat_names.sql), this browser's
+// record otherwise. { free, waitDays, cost }
+async function renameInfo() {
+  const st = (await cloud.nameStatus()) || renameState(identity);
+  return { ...st, cost: st.free ? 0 : RENAME_COST };
+}
 async function renameMe(raw) {
   const clean = cleanName(raw).trim();
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
   if (isReservedName(clean)) return 'reserved';
-  if (wallet.coins < RENAME_COST) return 'poor';
-  if (await cloud.claimName(clean) === 'taken') return 'taken';
-  if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
+  const info = await renameInfo();
+  if (info.waitDays > 0) return 'wait';
+  if (wallet.coins < info.cost) return 'poor';
+  const claimed = await cloud.claimName(clean);
+  if (claimed === 'taken' || claimed === 'wait') return claimed;
+  if (info.cost && !wallet.spend(info.cost, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
   if (chat.friendBackend instanceof LocalFriends) chat.friendBackend.setName(nickname);
-  identity = { ...identity, name: clean, nameAt: Date.now() };
+  identity = { ...identity, name: clean, nameAt: Date.now(), renames: (identity.renames || 0) + 1, renamedAt: Date.now() };
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
   $('nickname').value = clean;
@@ -3454,6 +3506,7 @@ const emblemUi = new EmblemUI({
   wallet,
   name: nickname,
   rename: (raw) => renameMe(raw),
+  renameInfo: () => renameInfo(),
   getLook: () => myLook,
   wearLook: (patch) => {
     myLook = { ...myLook, ...patch };
