@@ -2024,6 +2024,7 @@ function buyUmbrella(product) {
   shop.openProduct(product); // the button now says you have one
 }
 if (held) setHeld(held);
+if (held?.kind === 'book') bag.removeKind('book'); // one library book out at a time: the one in hand
 
 // Put what's in my hand into the bag, and take things back out.
 const UMB_DESC = { en: 'Opens by itself outdoors when it rains or snows.', ko: '밖에서 비나 눈이 오면 저절로 펴져요.', ja: '外で雨や雪が降ると自動で開きます。', zh: '在外面下雨或下雪时会自动撑开。' };
@@ -4187,11 +4188,11 @@ function currentActivity() {
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
+  if (seated && !seated.lie && held?.kind === 'book' && bookUi.open) return 'read'; // reading on any seat (a bench, a picnic mat, a café chair)
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return gymUi.pose; // (the gym, a yoga mat, a reformer)
-  if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return fishingUi.state === 'reel' ? 'reel' : 'fish'; // reeling in: the reel clip
   return null;
 }
@@ -4583,13 +4584,24 @@ function updateWishes() {
   }
   for (const id of wishSeen.keys()) if (!others.players.has(id)) wishSeen.delete(id);
 }
+const BOOK_SWAP_TEXT = { en: 'Swapped books. "{name}" went back on the shelf. Sit anywhere and tap 📖 to read.', ko: '책을 바꿨어요. "{name}"은 책장에 돌려놨어요. 어디든 앉아서 📖를 누르면 읽을 수 있어요.', ja: '本を交換しました。「{name}」は本棚に戻しました。どこでも座って📖を押すと読めます。', zh: '换了一本书。《{name}》已放回书架。随便坐下点📖就能读。' };
+const BOOK_SIT_TEXT = { en: 'Tap 📖 Read to read your book here.', ko: '📖 읽기를 누르면 여기서 책을 읽을 수 있어요.', ja: '📖 読むを押すと、ここで本が読めます。', zh: '点📖阅读，就能在这里看书。' };
 const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
+  // One library book out at a time: picking another swaps it straight away
+  // (the old one goes back on the shelf, never into the bag).
   take: (id) => {
-    if (!handReady()) return;
-    holdNew({ kind: 'book', book: id });
-    shop.toast(t('book.taken'));
+    const back = held?.kind === 'book' ? held.book : bag.list().find((e) => e.kind === 'book')?.book;
+    if (back === id && held?.kind === 'book') return;
+    if (held?.kind === 'book') setHeld({ kind: 'book', book: id });
+    else {
+      if (!handReady()) return;
+      holdNew({ kind: 'book', book: id });
+    }
+    bag.removeKind('book');
+    const old = back && back !== id ? bookById(back) : null;
+    shop.toast(old ? fmt(L(BOOK_SWAP_TEXT), { name: localName(old.title, getLanguage()) }) : t('book.taken'));
   },
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
   getPage: (id) => bookPages[id] | 0,
@@ -5345,6 +5357,7 @@ function sitDown(seat) {
   missionEvent('sit');
   if (seat.academy) academyUi.show();
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
+  else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
 }
 function standUp() {
   if (!seated) return;
