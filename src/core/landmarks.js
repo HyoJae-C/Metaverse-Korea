@@ -21,6 +21,8 @@ import { BUKCHON_BUILD } from './bukchon-models.js';
 import { EULJIRO_BUILD } from './euljiro-models.js';
 import { JONGMYO_BUILD } from './jongmyo-models.js';
 import { BOSINGAK_BUILD } from './bosingak-model.js';
+import { YEOUIDO_BUILD } from './yeouido-models.js';
+import { seasonAt } from './weather-roll.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -290,6 +292,7 @@ const BUILD = {
   ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
   ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
   ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
+  ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
   ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
@@ -575,8 +578,19 @@ function wall(g, l) {
 }
 
 // Cherry trees in blossom along a polyline (l.p, e.g. round Seokchon Lake):
-// one instanced mesh for the trunks and one for the pink crowns.
+// one instanced mesh for the trunks and one for the pink crowns. With
+// l.seasonal (Yeouido's Yunjung-ro) they are only pink in spring (March to
+// May, Seoul time): green in summer, red and orange in autumn, and thin bare
+// crowns in winter.
+export const BLOSSOM_COLORS = {
+  spring: ['#ffc4dc', '#ffd6e6', '#ffb3d1', '#fff0f5'],
+  summer: ['#7cc46e', '#8fcf7a', '#6fb85f', '#95c97d'],
+  autumn: ['#e8892b', '#d9531f', '#f0a23a', '#c9401a'],
+  winter: ['#9a8478', '#8a7468', '#a8968a', '#7f6c62'],
+};
+export const blossomSeason = (l, ms = Date.now()) => (l.seasonal ? seasonAt(ms) : 'spring');
 function blossoms(g, l) {
+  const season = blossomSeason(l);
   const spots = [];
   for (let i = 1; i < l.p.length; i++) {
     const [x0, z0] = l.p[i - 1], [x1, z1] = l.p[i];
@@ -588,11 +602,13 @@ function blossoms(g, l) {
   const trunks = new THREE.InstancedMesh(trunk, mat('#7a5240'), spots.length);
   const crowns = new THREE.InstancedMesh(crown, mat('#ffc4dc'), spots.length);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
-  const pinks = ['#ffc4dc', '#ffd6e6', '#ffb3d1', '#fff0f5'].map((c) => new THREE.Color(c));
+  const pinks = BLOSSOM_COLORS[season].map((c) => new THREE.Color(c));
+  const thin = season === 'winter' ? 0.55 : 1; // (bare branches: a small crown)
   spots.forEach(([x, z], i) => {
     const s = 0.85 + ((i * 37) % 10) / 30;
     m4.compose(v.set(x, 0, z), q.setFromAxisAngle(v.clone().set(0, 1, 0), i * 1.3), sc.set(s, s, s));
     trunks.setMatrixAt(i, m4);
+    if (thin < 1) m4.compose(v.set(x, 1.8 * s, z), q, sc.set(s * thin, s * thin, s * thin));
     crowns.setMatrixAt(i, m4);
     crowns.setColorAt(i, pinks[i % pinks.length]);
   });

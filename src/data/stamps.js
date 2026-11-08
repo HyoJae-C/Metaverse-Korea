@@ -169,6 +169,14 @@ export const STAMPS = [
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
+    // in the Yeouido Han River Park room (the same lawn spot as the other parks)
+    id: 'yeouido', place: { store: 'yeouido-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1f8fa3', shape: 'circle',
+    name: { ko: '여의도 한강공원', en: 'Yeouido Han River Park', ja: '汝矣島漢江公園', zh: '汝矣岛汉江公园' },
+    gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
+    // the island in the river, the 63 tower on its tip and Seogang Bridge's arch
+    icon: '<path d="M126 128 v-70 l8 -6 l8 6 v70"/><path d="M134 52 v-10"/><path d="M48 128 q20 -30 40 0 M48 128 h48"/><path d="M40 128 q60 -12 120 0"/><path d="M44 144 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
+  },
+  {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate
     id: 'grand-park', place: { at: [452, -72], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
     name: { ko: '서울어린이대공원', en: "Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园' },

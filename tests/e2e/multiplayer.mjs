@@ -63,7 +63,8 @@ try {
   const [ax0, az0] = await a.evaluate(() => __mk.me());
   await b.evaluate(([x, z]) => __mk.goto(x + 25, z), [ax0, az0]);
   // Wait until A has B's new spot, so the check is about distance, not timing.
-  await a.waitForFunction(([x, z]) => __mk.peers().some((p) => p.name === 'E2E B' && Math.hypot(p.x - x, p.z - z) > 20), [ax0, az0], { timeout: 10000 });
+  // (At 1-2 fps on CI this took just over 10 s once.)
+  await a.waitForFunction(([x, z]) => __mk.peers().some((p) => p.name === 'E2E B' && Math.hypot(p.x - x, p.z - z) > 20), [ax0, az0], { timeout: 20000 });
   await b.fill('#chat-input', 'too far to hear');
   await b.press('#chat-input', 'Enter');
   await a.waitForTimeout(2500);

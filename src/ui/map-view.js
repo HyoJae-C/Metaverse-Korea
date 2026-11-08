@@ -67,6 +67,7 @@ export const DISTRICT_NAME = {
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด' },
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
   samseong: { en: 'Samseong-dong', ko: '삼성동', ja: '三成洞', zh: '三成洞', es: 'Samseong-dong', id: 'Samseong-dong', ar: 'سامسونغ دونغ', vi: 'Samseong-dong', hi: 'सामसोंग-दोंग', fr: 'Samseong-dong', th: 'ซัมซอง-ดง' },
+  yeouido: { en: 'Yeouido', ko: '여의도', ja: '汝矣島', zh: '汝矣岛', es: 'Yeouido', id: 'Yeouido', ar: 'يويدو', vi: 'Yeouido', hi: 'योइदो', fr: 'Yeouido', th: 'ยออีโด' },
   'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
   mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },
 };
@@ -483,7 +484,7 @@ export class MapView {
   // Seoul's gu as tiles under everything, and the Han River. Open gu are
   // light; the others grey ("coming soon").
   _drawSeoul(g, poly, far) {
-    const { gu, river } = this.seoul;
+    const { gu, river, riverW } = this.seoul;
     g.lineJoin = 'round';
     for (const d of gu) {
       poly(d.p); g.closePath();
@@ -493,11 +494,22 @@ export class MapView {
       g.lineWidth = (far ? 2 : 4) * this.dpr;
       g.stroke();
     }
-    poly(river);
     g.strokeStyle = '#a9d8f0';
     g.lineCap = 'round';
-    g.lineWidth = Math.max(5 * this.dpr, 220 * this.view.scale);
-    g.stroke();
+    const width = (m) => Math.max(5 * this.dpr, m * this.view.scale);
+    if (!riverW) { poly(river); g.lineWidth = width(220); g.stroke(); return; }
+    // Narrower where the game's own water is (riverW, m per point: Songpa's
+    // bank), so the line never paints land as river. Runs of one width are
+    // one stroke; round caps join the runs.
+    for (let i = 1; i < river.length;) {
+      const w = (riverW[i - 1] + riverW[i]) / 2;
+      let j = i;
+      while (j + 1 < river.length && Math.abs((riverW[j] + riverW[j + 1]) / 2 - w) < 1) j++;
+      poly(river.slice(i - 1, j + 1));
+      g.lineWidth = width(w);
+      g.stroke();
+      i = j + 1;
+    }
   }
 
   // Gu names: the open ones first and bold, then the "coming soon" ones,

@@ -19,11 +19,14 @@ import { sanitizeLook } from '../data/appearance.js';
 export class RemotePlayers {
   // isOperator(name) → Promise<boolean>: asks the server whether that name
   // belongs to an operator (only asked when a player shows the badge).
-  constructor(scene, labelLayer, { isOperator } = {}) {
+  // tick(p, players, dt): more to draw on each player every frame (the
+  // flying costumes, game/sky-flight.js).
+  constructor(scene, labelLayer, { isOperator, tick } = {}) {
     this.scene = scene;
     this.layer = labelLayer;
     this.players = new Map();
     this.isOperator = isOperator || (async () => false);
+    this.tick = tick || null;
   }
 
   // Name tag with the operator badge only once the server has said yes.
@@ -261,7 +264,7 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
-        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(60, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(p.target.fl || p.target.cr ? 260 : 60, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
@@ -292,6 +295,7 @@ export class RemotePlayers {
         const d = this.players.get(p.target.on);
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
+      if (p.target) this.tick?.(p, this, dt);
       if (p.pet) p.pet.fences = this.fences || null;
       if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
       if (p.hidden || !p.target) continue; // not placed yet (see join)
