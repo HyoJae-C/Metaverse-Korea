@@ -54,9 +54,12 @@ export function discAt(from, to, s, ground = 0) {
 }
 
 // The pets who play fetch: dogs (in the mouth) and monkeys (in one
-// hand). Cats and the small round pets only watch it fly.
+// hand). The small round pets only watch it fly. A cat usually just
+// watches too, but now and then (CAT_FETCH) it trots over once the disc
+// has landed and brings it back in its mouth.
 export const FETCHERS = new Set(['dog', 'monkey']);
 export const fetches = (kind) => FETCHERS.has(kind);
+export const CAT_FETCH = 0.04; // about 1 throw in 25
 
 // How fast a pet runs after it (m/s): big dogs are fastest, small round
 // pets slowest.
@@ -69,8 +72,9 @@ const bigness = (scale) => Math.min(1, Math.max(0, (scale - 0.8) / 0.9));
 
 // How often a dog that gets there in time makes the catch (rolled once per
 // throw): a Maltese about half the time, a big retriever most times.
-// A monkey, with hands, rarely misses.
-export const catchChance = (scale = 1, kind = 'dog') => (kind === 'monkey' ? 0.8 : 0.5 + 0.35 * bigness(scale));
+// A monkey, with hands, rarely misses. For a cat it's the chance it
+// bothers to fetch it at all.
+export const catchChance = (scale = 1, kind = 'dog') => (kind === 'cat' ? CAT_FETCH : kind === 'monkey' ? 0.8 : 0.5 + 0.35 * bigness(scale));
 
 // Can a dog under the disc snatch it out of the air? Close enough, and
 // low enough to reach with a leap (bigger dogs reach higher).

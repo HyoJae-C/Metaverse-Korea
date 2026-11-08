@@ -67,6 +67,13 @@ test('golden retrievers and monkeys play fetch too; cats only watch', () => {
   assert.ok(catchChance(1.25) > catchChance(0.85), 'the golden retriever (1.25) catches more than a Maltese');
 });
 
+test('a cat brings the frisbee back about 4% of the time, after it lands', () => {
+  assert.equal(catchChance(1, 'cat'), 0.04);
+  const fetch = readFileSync(new URL('../src/core/fetch.js', import.meta.url), 'utf8');
+  assert.match(fetch, /catFetch = kind === 'cat' && thr\.lucky/);
+  assert.match(fetch, /else if \(catFetch\) \{ phase = 'fetch'; on\('fetching'\); \}/, 'a lucky cat trots to the landed disc');
+});
+
 test('a frisbee held in the hand counts as well as one in the bag', async () => {
   const { hasFrisbee } = await import('../src/game/frisbee.js');
   const frisbee = { kind: 'gift', g: 'frisbee' }, bag = (items) => ({ list: () => items });
