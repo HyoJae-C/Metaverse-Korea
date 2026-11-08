@@ -15,6 +15,7 @@
       nav button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 10px 12px; white-space: nowrap; color: var(--muted); font-weight: 600; cursor: pointer; }
       nav button.on { color: var(--ink); border-bottom-color: var(--accent); }
       nav .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: #d8452f; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+      nav .badge[hidden] { display: none; }
       section.tab { min-height: 0; overflow: auto; }
       section.tab[hidden] { display: none !important; }
       .pad { padding: 16px; max-width: 980px; margin: 0 auto; }
@@ -81,6 +82,16 @@
         #tab-live { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; overflow: auto; }
         aside { border-left: 0; border-top: 1px solid var(--line); }
       }
+      #tab-chat { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+      #tab-chat[hidden] { display: none !important; }
+      .chatbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+      .chatbar input[type=search] { font: inherit; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; flex: 1; min-width: 160px; max-width: 320px; }
+      .chatbox { overflow: auto; padding: 12px 16px; min-height: 0; }
+      table.chat td { padding: 6px 10px; }
+      table.chat td:nth-child(1), table.chat td:nth-child(2) { white-space: nowrap; }
+      table.chat td.who { font-weight: 600; white-space: nowrap; }
+      table.chat td:last-child { width: 100%; word-break: break-word; }
+      @media (max-width: 760px) { table.chat td:nth-child(2) { white-space: normal; max-width: 110px; } }
       .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
       #tab-codes h3 { font-size: 15px; margin: 20px 0 8px; }
       #tab-codes table.grid td:first-child { white-space: nowrap; }
@@ -98,6 +109,7 @@
     <nav id="tabs">
       <button data-tab="overview">Overview</button>
       <button data-tab="live">Live map <span class="badge" id="liveBadge" hidden></span></button>
+      <button data-tab="chat">💬 Chat <span class="badge" id="chatBadge" hidden></span></button>
       <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
       <button data-tab="free">Free board</button>
       <button data-tab="players">Players</button>
@@ -144,6 +156,19 @@
           <tbody id="list"></tbody>
         </table>
       </aside>
+    </section>
+    <section class="tab" id="tab-chat" hidden>
+      <div class="chatbar">
+        <b>💬 Live chat (실시간 채팅)</b>
+        <input type="search" id="chatQ" placeholder="Filter by word, name or place" />
+        <label class="muted"><input type="checkbox" id="chatPause" /> Stop scrolling</label>
+        <button id="chatClear" type="button">Clear</button>
+        <span class="muted" id="chatCount"></span>
+      </div>
+      <div class="chatbox">
+        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent, while this page is open (nothing is stored, and friend messages are private). Shops are listened to while someone is inside, so a line in the first few seconds after someone walks in can be missed.</p>
+        <table class="grid chat"><tbody id="chatList"></tbody></table>
+      </div>
     </section>
     <section class="tab" id="tab-ask" hidden><div class="pad">
       <div class="tools">
