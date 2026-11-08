@@ -2,9 +2,10 @@ import { haptics, buzz, shake } from './core/haptics.js';
 import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
+  t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/languages.js';
+import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
@@ -310,38 +311,6 @@ const { id: regionId, region } = await regionStart;
 const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
 const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
 
-// Language list: one row per language. On the start screen it is a dropdown
-// (the current language on a button; tap it to open the list below).
-function renderLangList(el, onPick) {
-  el.innerHTML = '';
-  for (const l of LANGUAGES) {
-    const b = document.createElement('button');
-    b.textContent = l.label;
-    b.lang = l.code;
-    if (l.rtl) b.dir = 'rtl';
-    b.setAttribute('aria-pressed', String(l.code === getLanguage()));
-    b.onclick = () => onPick(l.code);
-    el.appendChild(b);
-  }
-}
-function renderLangDropdown(el, onPick) {
-  const cur = LANGUAGES.find((l) => l.code === getLanguage()) || LANGUAGES.find((l) => l.code === 'en');
-  el.innerHTML = '';
-  const btn = document.createElement('button');
-  btn.className = 'lang-current';
-  btn.setAttribute('aria-expanded', 'false');
-  btn.innerHTML = '<span>🌐</span><span class="lang-name"></span><span class="lang-caret">▾</span>';
-  btn.querySelector('.lang-name').textContent = cur.label;
-  const list = document.createElement('div');
-  list.className = 'lang-list';
-  list.hidden = true;
-  renderLangList(list, onPick);
-  btn.onclick = () => {
-    list.hidden = !list.hidden;
-    btn.setAttribute('aria-expanded', String(!list.hidden));
-  };
-  el.append(btn, list);
-}
 
 // Coming back: where you left off (the district of the saved spot), not the
 // first stop again. Only the very first visit says "First stop".
@@ -363,6 +332,7 @@ function refreshStartText() {
 await loadLanguage(getSavedLanguage() || 'en');
 setLanguage(getSavedLanguage() || 'en'); // English until you pick one
 document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
+document.body.dataset.gameUp = '1'; // (boot.js stops drawing the language picker)
 const pickLang = (code) => {
   setLanguage(code);
   renderLangDropdown($('lang-grid'), pickLang);
@@ -432,6 +402,7 @@ function showLook() {
 // login) step, with no name or clothes to pick (see startNow below).
 let startNow = null;
 const lookOrStart = () => (isReturning() && startNow ? startNow() : showLook());
+$('next-btn').disabled = false; // (boot.js kept it off until now)
 $('next-btn').onclick = () => {
   if (!askLogin()) { lookOrStart(); return; }
   $('step-lang').hidden = true;
