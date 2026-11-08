@@ -962,7 +962,11 @@ const ONBOARD_TEXT = {
   infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', vi: 'Trước khi làm nhiệm vụ, hãy ghé Trung tâm Thông tin nhé! Ở đó có tất cả những gì bạn có thể làm.', hi: 'मिशन से पहले सूचना केंद्र ज़रूर जाएँ! वहाँ वह सब दिखता है जो आप कर सकते हैं।', fr: 'Avant ta mission, passe au Centre d\'information ! Il te montre tout ce que tu peux faire.', th: 'ก่อนทำภารกิจ แวะศูนย์ข้อมูลก่อนนะ! ที่นั่นบอกทุกอย่างที่คุณทำได้', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
   done: { en: '🙌 Nice! 🪙 +{n}. Here is your first mission.', ko: '🙌 좋아요! 🪙 +{n}. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +{n}。最初のミッションです。', zh: '🙌 太棒了！🪙 +{n}。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +{n}. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +{n}. هذه مهمتك الأولى.', vi: '🙌 Tuyệt! 🪙 +{n}. Đây là nhiệm vụ đầu tiên của bạn.', hi: '🙌 बढ़िया! 🪙 +{n}। यह रहा आपका पहला मिशन।', fr: '🙌 Super ! 🪙 +{n}. Voici ta première mission.', th: '🙌 เยี่ยม! 🪙 +{n} นี่คือภารกิจแรกของคุณ', id: '🙌 Mantap! 🪙 +{n}. Ini misi pertamamu.' },
 };
-if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
+// Everyone without a saved spot to come back to starts here on the main
+// square, next to the guide, not in front of the subway exit and the café:
+// there the first thing you did was walk into a shop door. (A usable saved
+// spot moves returning players back where they left off, just below.)
+if (squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
   // Beside them (not between them and the square's sign post), so the
   // camera behind us sees the guide clearly.
