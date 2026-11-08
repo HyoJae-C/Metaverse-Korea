@@ -206,7 +206,7 @@
     </div></section>
     <section class="tab" id="tab-notice" hidden><div class="pad">
       <div class="card">
-        <div class="head"><b>📢 Send a notice to every player</b><span class="muted">Shows in everyone's chat, in every area, as a gold 공지 line. Players who join in the next 10 minutes see it too.</span></div>
+        <div class="head"><b>📢 Send a notice to every player</b><span class="muted">Pinned at the top of everyone's screen, in every area, until you delete it below. Players who join later see it too.</span></div>
         <textarea id="noticeText" placeholder="e.g. Server maintenance in 10 minutes. / 10분 뒤 점검이 있어요."></textarea>
         <div class="row"><button id="noticeSend" class="primary" type="button">Send notice</button><span class="muted" id="noticeCount" style="margin-left:auto"></span></div>
         <p class="muted" style="margin:8px 0 0">In the game, operators can also type <code>/공지 message</code> in chat.</p>
@@ -289,7 +289,7 @@
       <div class="scroll-x"><table class="grid">
         <thead><tr><th>Code</th><th>하는 일</th><th>누가</th></tr></thead>
         <tbody>
-          <tr><td><code>/공지 내용</code></td><td>모든 지역 모든 플레이어 채팅에 금색 공지를 보내요. <code>/notice</code>, <code>/announce</code>도 같아요. <a href="#notice">📢 Announce 탭</a>에서도 보낼 수 있어요.</td><td>운영자 계정만 (서버가 확인)</td></tr>
+          <tr><td><code>/공지 내용</code></td><td>모든 지역 모든 플레이어 화면 위에 공지를 고정해요. 아래 📢 Announce 탭에서 지우기 전까지 남아요. <code>/notice</code>, <code>/announce</code>도 같아요. <a href="#notice">📢 Announce 탭</a>에서도 보낼 수 있어요.</td><td>운영자 계정만 (서버가 확인)</td></tr>
           <tr><td><code>/마스터코드</code></td><td>모든 아이템을 받고, 🛡️ 운영자 배지를 켜고 꺼요 (한 번 더 치면 꺼짐). 배지는 operators 표에 있는 계정 이름일 때만 다른 사람에게 보여요.</td><td>코드를 아는 사람</td></tr>
           <tr><td><code>/코인단어+숫자</code></td><td>그 숫자만큼 코인을 받아요 (최대 1,000,000). 대소문자 상관없음. 예: <code>/단어5000</code>.</td><td>서버 지갑은 운영자만 반영</td></tr>
           <tr><td><code>/물고기코드</code></td><td>다음에 손으로 낚는 물고기가 흰수염고래 🐋가 돼요 (한 번, 놓치지 않음).</td><td>코드를 아는 사람</td></tr>

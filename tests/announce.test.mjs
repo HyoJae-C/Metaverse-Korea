@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_NOTICE, NoticeFeed, cleanNotice, deleteNotice, parseNoticeCommand, sendNotice, watchNotices } from '../src/core/announce.js';
+import { MAX_NOTICE, MAX_PINNED, NoticeFeed, PinnedNotices, cleanNotice, deleteNotice, parseNoticeCommand, sendNotice, watchNotices } from '../src/core/announce.js';
 
 test('the notice command is /공지, /notice or /announce', () => {
   assert.equal(parseNoticeCommand('/공지 점검 10분 전'), '점검 10분 전');
@@ -86,4 +86,39 @@ test('deleting: operators only, the server says', async () => {
   assert.deepEqual(ok.calls[0], ['rpc', 'ops_delete_announcement', { notice_id: 7 }]);
   assert.equal((await deleteNotice(fakeClient(() => ({ error: { code: '42501' } })), 7)).error, 'operator');
   assert.equal((await deleteNotice(null, 7)).error, 'setup');
+});
+
+test('pinned notices stay until deleted, newest first, a few at most', () => {
+  const seen = [];
+  const pins = new PinnedNotices((list) => seen.push(list.map((n) => n.id)));
+  assert.equal(pins.add({ id: 1, body: 'a', pinned: false }), false); // old, unpinned
+  assert.equal(pins.add({ id: 2, body: 'b', pinned: true }), true);
+  assert.equal(pins.add({ id: 2, body: 'b', pinned: true }), false);
+  for (const id of [3, 4, 5]) pins.add({ id, body: 'x', pinned: true });
+  assert.deepEqual(pins.list().map((n) => n.id), [5, 4, 3]);
+  assert.equal(pins.list().length, MAX_PINNED);
+  assert.equal(pins.remove(5), true);
+  assert.equal(pins.remove(5), false);
+  assert.deepEqual(pins.list().map((n) => n.id), [4, 3, 2]); // the hidden one comes back up
+  assert.deepEqual(seen.at(-1), [4, 3, 2]);
+});
+
+test('late joiners get every pinned notice; before 030 the last 10 minutes', async () => {
+  const c = fakeClient((fn) => fn === 'pinned_announcements'
+    ? { data: [{ id: 9, body: 'still up', pinned: true }, { id: 3, body: 'days old', pinned: true }] }
+    : { data: [] });
+  const got = [];
+  watchNotices(c, new NoticeFeed((n) => got.push([n.id, n.pinned])));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(got, [[3, true], [9, true]]);
+  assert.ok(!c.calls.some((x) => x[1] === 'recent_announcements'));
+
+  const old = fakeClient((fn) => fn === 'pinned_announcements'
+    ? { error: { code: 'PGRST202' } }
+    : { data: [{ id: 1, body: 'recent' }] });
+  const got2 = [];
+  watchNotices(old, new NoticeFeed((n) => got2.push([n.id, n.pinned])));
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(got2, [[1, false]]);
 });
