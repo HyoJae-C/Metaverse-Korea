@@ -134,6 +134,13 @@ try {
   const sm = await mk(a, 'snowballs');
   console.log('snowman', sm, 'B now', await mk(b, 'snowballs'));
   if (!/,90,/.test(sm)) throw new Error('no snowman');
+  // snowballs are solid: B stepping right into the giant ends up at its surface
+  await b.evaluate(([x, z]) => window.__mk.place(x + 0.3, z), [gx, gz]);
+  await wait(800);
+  const inside = await mk(b, 'pose');
+  const gap = Math.hypot(inside[1] - gx, inside[2] - gz);
+  console.log('B pushed out to', gap.toFixed(2), 'm from the centre');
+  if (gap < 1.1) throw new Error('B is inside the snowball: ' + gap);
   // B puts their hat on it
   console.log('B wears', await b.evaluate(() => window.__mk.wear({ head: 'bucket', hatColor: 'mint' })));
   await wait(500);

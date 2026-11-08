@@ -59,6 +59,7 @@ const REACH = 1.1; // how far from a ball's surface you can work on it
 const MELT_EVERY_MS = 2500; // once the snow on the ground is gone: one step off each ball
 const WORK_POSE_MS = 2200; // the pose stays this long after a press
 const QUIET_MS = 1500; // after working a ball this long, the other snow choices come back
+const BODY_R = 0.28; // how close a body comes to a snowball's surface
 const PUSH_MS = 420; // a push rolls the ball (and you behind it) over this long
 
 // ---------- models ----------
@@ -443,6 +444,20 @@ export function createSnowman(game) {
     for (const [id, d] of duckDrawn) if (!now.has(id)) { for (const g of d.groups) g.removeFromParent(); duckDrawn.delete(id); }
   }
 
+  // Snowballs are solid: walking into one (anyone's, any size) stops you at
+  // its surface instead of inside it.
+  function keepOut() {
+    const p = game.me.root.position;
+    for (const { b } of balls()) {
+      const min = diameterOf(b.n) / 2 + BODY_R;
+      const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz);
+      if (d >= min) continue;
+      const ux = d > 1e-3 ? dx / d : -Math.sin(game.me.root.rotation.y), uz = d > 1e-3 ? dz / d : -Math.cos(game.me.root.rotation.y);
+      const x = b.x + ux * min, z = b.z + uz * min;
+      if (!game.blocked(x, z, 0.3)) { p.x = x; p.z = z; }
+    }
+  }
+
   // ---------- snowman ----------
   // My hat (a copy) on a snowman, mine or a friend's.
   function hatOn(o, t) {
@@ -546,6 +561,7 @@ export function createSnowman(game) {
     if ((holding || glued) && !game.onFoot) letGo();
     if (holding) walkMine(now, dt);
     else if (glued) walkTheirs(now, dt);
+    keepOut();
     if (now - lastChill > 1500) chill = Math.max(0, chill - dt * WARM_RATE); // resting warms the hands
     // Melting once the snow on the ground is gone.
     if (game.depth <= 0 && !game.snowing && (mine.length || ducks.length)) {
