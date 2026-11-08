@@ -77,9 +77,9 @@
       "map": "districts/olympic-park.json",
       "offset": [
         287,
-        446
+        540
       ],
-      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250] }
+      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250], "nudge": [0, 94], "why": "Moved south so its Olympic-ro (local z 180) runs straight on from Songpa's Olympic-ro at Jamsil Station (world z 720): one straight road from the station to the Peace Gate, with no jog." }
     },
     {
       "id": "seodaemun",
@@ -183,13 +183,6 @@
       "p": [[-840, -440], [-735, -440]],
       "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
       "note": "Toegye-ro east from Euljiro's district to Wangsimni-ro (to Seongsu)."
-    },
-    {
-      "k": "secondary",
-      "w": 12,
-      "p": [[1238, 720], [1238, 650], [1247, 626]],
-      "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
-      "note": "From Jamsil Station (east end of Songpa's Olympic-ro) north past the Peace Plaza to Olympic Park's Olympic-ro."
     },
     {
       "k": "primary",
