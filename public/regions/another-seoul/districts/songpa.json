@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "songpa",
-  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json)."
+  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. No filler blocks: the open ground by the river and the lakes is left clear."
  },
  "roads": [
   {
@@ -41,7 +41,7 @@
      100
     ],
     [
-     800,
+     809,
      100
     ]
    ],
@@ -165,10 +165,30 @@
      440
     ],
     [
-     800,
+     819,
      440
     ]
    ]
+  },
+  {
+   "k": "walk",
+   "w": 4,
+   "p": [
+    [
+     771,
+     280
+    ],
+    [
+     819,
+     280
+    ]
+   ],
+   "n": {
+    "ko": "올림픽공원 가는 길",
+    "en": "Path to Olympic Park",
+    "ja": "オリンピック公園への道",
+    "zh": "通往奥林匹克公园的路"
+   }
   }
  ],
  "buildings": [
@@ -196,447 +216,6 @@
     "ko": "어나더랜드 정문",
     "en": "Another Land Main Gate"
    }
-  },
-  {
-   "h": 42,
-   "p": [
-    [
-     -394,
-     -160
-    ],
-    [
-     -366,
-     -160
-    ],
-    [
-     -366,
-     -140
-    ],
-    [
-     -394,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 36,
-   "p": [
-    [
-     -314,
-     -160
-    ],
-    [
-     -286,
-     -160
-    ],
-    [
-     -286,
-     -140
-    ],
-    [
-     -314,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 30,
-   "p": [
-    [
-     -94,
-     -160
-    ],
-    [
-     -66,
-     -160
-    ],
-    [
-     -66,
-     -140
-    ],
-    [
-     -94,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 34,
-   "p": [
-    [
-     66,
-     -160
-    ],
-    [
-     94,
-     -160
-    ],
-    [
-     94,
-     -140
-    ],
-    [
-     66,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 40,
-   "p": [
-    [
-     286,
-     -160
-    ],
-    [
-     314,
-     -160
-    ],
-    [
-     314,
-     -140
-    ],
-    [
-     286,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 28,
-   "p": [
-    [
-     366,
-     -160
-    ],
-    [
-     394,
-     -160
-    ],
-    [
-     394,
-     -140
-    ],
-    [
-     366,
-     -140
-    ]
-   ]
-  },
-  {
-   "h": 42,
-   "p": [
-    [
-     226,
-     470
-    ],
-    [
-     254,
-     470
-    ],
-    [
-     254,
-     490
-    ],
-    [
-     226,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 36,
-   "p": [
-    [
-     326,
-     470
-    ],
-    [
-     354,
-     470
-    ],
-    [
-     354,
-     490
-    ],
-    [
-     326,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 30,
-   "p": [
-    [
-     426,
-     470
-    ],
-    [
-     454,
-     470
-    ],
-    [
-     454,
-     490
-    ],
-    [
-     426,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 34,
-   "p": [
-    [
-     626,
-     470
-    ],
-    [
-     654,
-     470
-    ],
-    [
-     654,
-     490
-    ],
-    [
-     626,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 40,
-   "p": [
-    [
-     726,
-     470
-    ],
-    [
-     754,
-     470
-    ],
-    [
-     754,
-     490
-    ],
-    [
-     726,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 28,
-   "p": [
-    [
-     776,
-     470
-    ],
-    [
-     804,
-     470
-    ],
-    [
-     804,
-     490
-    ],
-    [
-     776,
-     490
-    ]
-   ]
-  },
-  {
-   "h": 42,
-   "p": [
-    [
-     141,
-     230
-    ],
-    [
-     169,
-     230
-    ],
-    [
-     169,
-     250
-    ],
-    [
-     141,
-     250
-    ]
-   ]
-  },
-  {
-   "h": 36,
-   "p": [
-    [
-     776,
-     230
-    ],
-    [
-     804,
-     230
-    ],
-    [
-     804,
-     250
-    ],
-    [
-     776,
-     250
-    ]
-   ]
-  },
-  {
-   "h": 30,
-   "p": [
-    [
-     776,
-     330
-    ],
-    [
-     804,
-     330
-    ],
-    [
-     804,
-     350
-    ],
-    [
-     776,
-     350
-    ]
-   ]
-  },
-  {
-   "h": 38,
-   "p": [
-    [
-     116,
-     -68
-    ],
-    [
-     144,
-     -68
-    ],
-    [
-     144,
-     -48
-    ],
-    [
-     116,
-     -48
-    ]
-   ]
-  },
-  {
-   "h": 30,
-   "p": [
-    [
-     236,
-     -15
-    ],
-    [
-     264,
-     -15
-    ],
-    [
-     264,
-     5
-    ],
-    [
-     236,
-     5
-    ]
-   ]
-  },
-  {
-   "h": 44,
-   "p": [
-    [
-     356,
-     40
-    ],
-    [
-     384,
-     40
-    ],
-    [
-     384,
-     60
-    ],
-    [
-     356,
-     60
-    ]
-   ]
-  },
-  {
-   "h": 34,
-   "p": [
-    [
-     -54,
-     -70
-    ],
-    [
-     -26,
-     -70
-    ],
-    [
-     -26,
-     -50
-    ],
-    [
-     -54,
-     -50
-    ]
-   ]
-  },
-  {
-   "h": 28,
-   "p": [
-    [
-     66,
-     -20
-    ],
-    [
-     94,
-     -20
-    ],
-    [
-     94,
-     0
-    ],
-    [
-     66,
-     0
-    ]
-   ]
-  },
-  {
-   "h": 40,
-   "p": [
-    [
-     186,
-     30
-    ],
-    [
-     214,
-     30
-    ],
-    [
-     214,
-     50
-    ],
-    [
-     186,
-     50
-    ]
-   ]
   },
   {
    "h": 12,
@@ -894,6 +473,27 @@
     [
      291,
      294
+    ]
+   ]
+  },
+  {
+   "k": "park",
+   "p": [
+    [
+     545,
+     180
+    ],
+    [
+     819,
+     180
+    ],
+    [
+     819,
+     380
+    ],
+    [
+     545,
+     380
     ]
    ]
   }
