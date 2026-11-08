@@ -12,6 +12,7 @@ import { farFree } from './far-textures.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
+import { domeOutside } from './dome.js';
 import { cgpGate } from './grand-park.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -93,6 +94,7 @@ const BUILD = {
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
+  dome: (g, l) => domeOutside(g, l), // Seoul Another Dome's outside (the stadium inside: core/dome.js)
   gwanghwamun(g) {
     // Stone base with three open arches you can walk through: a wide one in
     // the middle and a smaller one either side.

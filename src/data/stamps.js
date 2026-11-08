@@ -167,4 +167,12 @@ export const STAMPS = [
     // a lion's face in its mane
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },
+  {
+    // on the concourse of Seoul Another Dome, left of the door as you come in
+    id: 'another-dome', place: { store: 'seoul-another-dome', room: true, at: [-14, 54.5], ry: 2.89 }, color: '#1f4f8f', shape: 'circle',
+    name: { ko: '서울 어나더 돔', en: 'Seoul Another Dome', ja: 'ソウル・アナザードーム', zh: '首尔另一个巨蛋' },
+    gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
+    // a baseball with its stitches, and a bat across it
+    icon: '<circle cx="92" cy="104" r="30"/><path d="M72 82 q12 22 0 44 M112 82 q-12 22 0 44"/><path d="M118 70 l34 -34 l8 8 l-34 34 z M118 70 l-8 8"/>',
+  },
 ];
