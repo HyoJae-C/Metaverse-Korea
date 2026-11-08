@@ -7,8 +7,9 @@ These are the limits every change should stay inside, and how to stay there.
 
 | What | Budget | Now (2026-11-09) | Checked by |
 |---|---|---|---|
-| First visit download, gzipped (entry + preloads + CSS) | 1,150 KB | 1,097 KB + one language (~15 KB) | `node scripts/check-size.mjs` in CI |
-| Any single script, gzipped | 1,000 KB | 941 KB (main) | same |
+| Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 45 KB | `node scripts/check-size.mjs` in CI |
+| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,099 KB + one language (~15 KB) | same |
+| Any single script, gzipped | 1,000 KB | 788 KB (main.js) | same |
 | Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
 | Triangles per frame on a street | 150k | ~87k | same |
@@ -17,6 +18,14 @@ These are the limits every change should stay inside, and how to stay there.
 Known hot spots: the Banpo (~3,200), Ttukseom (~2,000) and Mangwon (~800)
 park gates draw every prop as its own mesh. The Han River park work is merging
 those.
+
+## How the page starts
+
+`index.html` runs `src/boot.js`, which only shows the language step and starts
+downloading `src/main.js`. On an emulated mid-range phone on 4G the language
+step appears in about 0.5 s instead of about 6 s; the game arrives while the
+player chooses. Keep `boot.js` tiny: anything it imports is on the critical
+path.
 
 ## Rules for new features
 
