@@ -1,0 +1,189 @@
+@id oldtales
+@kind children
+@icon 👹
+@color #4f8a3c
+@title.en Old Korean Tales
+@title.ko 옛날 옛적 전래동화
+@author.en Korean folk tales, retold for Another Seoul
+@author.ko 한국 전래동화 (Another Seoul이 새로 씀)
+@about.en Five folk tales every Korean child knows: goblins who buy a lump, a golden axe, a swallow's gift, a clever rabbit and a tiger who loves red bean porridge.
+@about.ko 혹부리 영감, 금도끼 은도끼, 흥부와 놀부, 토끼의 간, 팥죽 할머니와 호랑이. 누구나 아는 옛이야기 다섯 편이에요.
+@source Traditional Korean folk tales, told for hundreds of years with no single author.
+@license The old stories belong to everyone. This Korean and English retelling was written new for Another Seoul (free to use, CC0).
+===
+# 혹부리 영감 | The Old Man with the Lump
+옛날 어느 마을에 볼에 커다란 혹이 달린 착한 할아버지가 살았어요. 사람들은 할아버지를 혹부리 영감이라고 불렀지요.
+
+어느 날 할아버지는 산에서 나무를 하다가 날이 저물어 길을 잃었어요. 할아버지는 숲속의 빈집에 들어가 하룻밤을 지내기로 했어요. 무서움을 잊으려고 할아버지는 노래를 불렀어요. 목소리가 아주 고왔지요.
+
+그때 문이 벌컥 열리더니 도깨비들이 우르르 몰려왔어요. "그 좋은 노래는 어디서 나오는 거요?" 할아버지는 얼떨결에 혹을 가리켰어요. "이, 이 혹에서 나오지요."
+---
+Long ago, in a village, there lived a kind old man with a big lump on his cheek. People called him the Old Man with the Lump.
+
+One day, while he was cutting firewood on the mountain, night fell and he lost his way. He went into an empty house in the woods to spend the night. To forget his fear, he began to sing. He had a lovely voice.
+
+Suddenly the door burst open and a crowd of dokkaebi, Korean goblins, rushed in. "Where does that wonderful song come from?" Without thinking, the old man pointed to his lump. "F-from this lump."
+===
+도깨비들은 눈을 반짝였어요. "그 혹을 우리에게 파시오!" 도깨비들은 방망이로 금은보화를 잔뜩 내놓고, 할아버지의 혹을 똑 떼어 갔어요. 하나도 아프지 않았어요.
+
+혹도 없어지고 부자가 된 할아버지 소식을 듣고, 이웃 마을의 욕심쟁이 혹부리 영감이 찾아왔어요. "나도 보물을 받아 와야지!"
+
+욕심쟁이 영감은 그 빈집에 가서 일부러 큰 소리로 노래를 불렀어요. 도깨비들이 나타나자 영감은 말했어요. "노래는 이 혹에서 나오지요. 얼마에 사겠소?"
+---
+The goblins' eyes sparkled. "Sell us that lump!" With their magic clubs they piled up gold and treasure, and plucked the old man's lump right off. It did not hurt one bit.
+
+A greedy old man from the next village, who also had a lump, heard how the kind old man had lost his lump and become rich. "I'll go and get treasure too!"
+
+The greedy old man went to the empty house and sang loudly on purpose. When the goblins appeared, he said, "My songs come from this lump. How much will you pay?"
+===
+도깨비들은 화를 버럭 냈어요. "지난번에 산 혹에서는 노래가 하나도 안 나오더라! 이 거짓말쟁이 같으니!"
+
+도깨비들은 지난번에 떼어 간 혹을 욕심쟁이 영감의 다른 쪽 볼에 철썩 붙여 버렸어요.
+
+욕심쟁이 영감은 양쪽 볼에 혹을 달고 엉엉 울면서 집으로 돌아갔답니다.
+---
+The goblins flew into a rage. "Not a single song came out of the last lump we bought! You liar!"
+
+And they slapped the old lump onto the greedy man's other cheek.
+
+So the greedy old man went home crying, with a lump on each cheek.
+===
+# 금도끼 은도끼 | The Golden Axe and the Silver Axe
+옛날에 정직한 나무꾼이 살았어요. 어느 날 연못가에서 나무를 하다가 그만 쇠도끼를 물에 빠뜨리고 말았어요. "아이고, 하나뿐인 도끼인데 어쩌나!"
+
+그때 연못에서 하얀 수염의 산신령 할아버지가 나타났어요. 손에는 번쩍이는 금도끼를 들고 있었지요. "이 금도끼가 네 도끼냐?"
+
+"아닙니다. 제 도끼는 그렇게 좋은 것이 아니에요." 산신령은 이번에는 은도끼를 꺼냈어요. "그럼 이 은도끼가 네 도끼냐?" "아닙니다. 제 도끼는 낡은 쇠도끼예요."
+---
+Long ago there lived an honest woodcutter. One day, while chopping wood by a pond, he dropped his iron axe into the water. "Oh no, it's the only axe I have!"
+
+Then out of the pond rose an old mountain spirit with a long white beard. In his hand was a shining golden axe. "Is this golden axe yours?"
+
+"No, sir. My axe isn't nearly that fine." Next the spirit brought out a silver axe. "Then is this silver axe yours?" "No, sir. Mine is an old iron axe."
+===
+산신령은 마지막으로 쇠도끼를 꺼냈어요. "그렇습니다! 그게 제 도끼예요!"
+
+산신령은 껄껄 웃었어요. "참 정직한 사람이로구나. 상으로 금도끼와 은도끼도 모두 주마."
+
+이 이야기를 들은 욕심쟁이 나무꾼은 연못으로 달려가 일부러 도끼를 풍덩 던졌어요. 산신령이 금도끼를 들고 나타나자 소리쳤어요. "네, 네! 그 금도끼가 제 것입니다!"
+---
+At last the spirit brought out the iron axe. "Yes! That one is mine!"
+
+The spirit laughed heartily. "What an honest man you are. As a reward, take the golden axe and the silver axe too."
+
+A greedy woodcutter heard the story, ran to the pond and threw his axe in on purpose, splash! When the spirit appeared holding a golden axe, he shouted, "Yes, yes! That golden axe is mine!"
+===
+산신령은 얼굴을 찌푸렸어요. "거짓말을 하는구나!" 산신령은 금도끼도 주지 않고, 욕심쟁이의 쇠도끼도 돌려주지 않은 채 연못 속으로 사라졌어요.
+
+욕심쟁이 나무꾼은 도끼 하나 없이 터덜터덜 집으로 돌아갔답니다.
+---
+The spirit frowned. "You are lying!" And he vanished into the pond without giving him the golden axe, or even his own iron axe back.
+
+So the greedy woodcutter trudged home with no axe at all.
+===
+# 흥부와 놀부 | Heungbu and Nolbu
+옛날에 흥부와 놀부 형제가 살았어요. 형 놀부는 부자였지만 욕심이 많고 심술궂었어요. 아우 흥부는 가난했지만 마음씨가 착했지요. 놀부는 부모님이 남긴 재산을 혼자 차지하고 흥부네 식구를 집에서 쫓아냈어요.
+
+봄이 되자 흥부네 초가집 처마에 제비가 둥지를 틀었어요. 어느 날 아기 제비 한 마리가 둥지에서 떨어져 다리가 부러졌어요. 흥부는 아기 제비의 다리를 정성껏 감싸 주고 날마다 돌봐 주었어요.
+
+가을이 되자 다 나은 제비는 따뜻한 남쪽 나라로 날아갔어요.
+---
+Long ago there lived two brothers, Heungbu and Nolbu. Nolbu, the older one, was rich, but greedy and mean. Heungbu, the younger one, was poor, but kind-hearted. Nolbu kept all of their parents' fortune for himself and threw Heungbu's family out of the house.
+
+In spring, a swallow built a nest under the eaves of Heungbu's thatched cottage. One day a baby swallow fell from the nest and broke its leg. Heungbu carefully bandaged the little leg and looked after the bird every day.
+
+In autumn, the swallow, now healed, flew away to the warm lands of the south.
+===
+이듬해 봄, 제비가 돌아와 흥부 앞에 박씨 하나를 떨어뜨렸어요. 흥부가 박씨를 심자 지붕 위에 커다란 박이 주렁주렁 열렸어요.
+
+"영차, 영차!" 흥부 부부가 박을 톱으로 슬근슬근 타자, 박 속에서 쌀이 쏟아지고, 비단과 금은보화가 끝없이 나왔어요. 흥부네는 하루아침에 큰 부자가 되었지요.
+
+소식을 들은 놀부는 배가 아팠어요. 놀부는 제비를 잡아다 일부러 다리를 부러뜨리고 대충 감아 주었어요. "자, 너도 나한테 박씨를 물어 와라!"
+---
+The next spring, the swallow came back and dropped a gourd seed in front of Heungbu. When Heungbu planted it, huge gourds grew all over the roof.
+
+"Heave-ho, heave-ho!" Heungbu and his wife sawed the gourds open, and out poured rice, then silk, gold and jewels without end. Overnight, Heungbu's family became very rich.
+
+When Nolbu heard the news, he was green with envy. He caught a swallow, broke its leg on purpose, and wrapped it up carelessly. "Now, you bring me a gourd seed too!"
+===
+이듬해 봄, 그 제비도 놀부에게 박씨를 물어다 주었어요. 놀부의 지붕에도 커다란 박이 열렸지요.
+
+그런데 놀부가 박을 타자, 금은보화 대신 도깨비들이 튀어나와 놀부를 혼내 주고, 흙탕물이 쏟아져 집을 휩쓸어 버렸어요. 놀부는 하루아침에 빈털터리가 되었답니다.
+
+갈 곳이 없어진 놀부를 흥부는 따뜻하게 맞아 주었어요. 놀부는 잘못을 뉘우치고, 두 형제는 그 뒤로 사이좋게 살았대요.
+---
+The next spring, that swallow brought Nolbu a gourd seed too, and big gourds grew on his roof as well.
+
+But when Nolbu sawed them open, instead of treasure, out jumped goblins who gave him a good scolding, and a flood of muddy water poured out and swept his house away. Overnight, Nolbu lost everything.
+
+With nowhere to go, Nolbu came to Heungbu, who welcomed him warmly. Nolbu was sorry for what he had done, and from then on the two brothers lived happily together.
+===
+# 토끼의 간 | The Rabbit's Liver
+옛날 바다 깊은 곳 용궁에 사는 용왕님이 큰 병에 걸렸어요. 의원이 말했어요. "토끼의 간을 드셔야만 나으실 수 있습니다."
+
+하지만 바닷속에는 토끼가 없었어요. 그래서 느릿느릿하지만 충성스러운 자라가 육지로 토끼를 데리러 갔어요.
+
+자라는 산에서 토끼를 만나 말했어요. "토끼님, 용궁에 가면 맛있는 음식도 많고 높은 벼슬도 준답니다." 귀가 솔깃해진 토끼는 자라 등에 올라타고 바닷속으로 들어갔어요.
+---
+Long ago, the Dragon King, who lived in a palace deep under the sea, fell very ill. The doctor said, "Only a rabbit's liver can cure you, Your Majesty."
+
+But there were no rabbits under the sea. So the turtle, slow but loyal, set off for the land to bring back a rabbit.
+
+On a mountain the turtle met a rabbit. "Mr. Rabbit, at the Dragon Palace there is plenty of delicious food, and they will give you a high post." The rabbit liked the sound of that, climbed onto the turtle's back and went down into the sea.
+===
+용궁에 도착하자 신하들이 토끼를 꽁꽁 묶었어요. "용왕님을 위해 네 간을 내놓아라!"
+
+토끼는 깜짝 놀랐지만 꾀를 냈어요. "아이고, 어쩌지요? 제 간은 너무 귀해서 산속 바위 밑에 꺼내 숨겨 두고 왔는데요. 미리 말씀해 주셨으면 가져왔을 텐데!"
+
+용왕님은 그 말을 믿고 말했어요. "자라야, 어서 토끼를 데리고 가서 간을 가져오너라."
+---
+As soon as they arrived at the palace, the courtiers tied the rabbit up tight. "Hand over your liver for the Dragon King!"
+
+The rabbit was shocked, but he thought of a trick. "Oh dear, what a shame! My liver is so precious that I took it out and hid it under a rock on the mountain. If only you had told me, I would have brought it!"
+
+The Dragon King believed him. "Turtle, take the rabbit back at once and fetch the liver."
+===
+자라 등을 타고 육지에 닿자마자 토끼는 깡충 뛰어내려 숲으로 달아났어요.
+
+"이 어리석은 자라야! 세상에 간을 빼놓고 다니는 동물이 어디 있니?"
+
+토끼는 깔깔 웃으며 산속으로 사라졌고, 자라는 바닷가에 혼자 남아 멍하니 바라볼 뿐이었답니다.
+---
+The moment they reached the shore, the rabbit hopped off the turtle's back and ran into the forest.
+
+"You silly turtle! What animal goes around with its liver taken out?"
+
+Laughing, the rabbit disappeared into the mountains, and the turtle was left alone on the beach, staring after him.
+===
+# 팥죽 할머니와 호랑이 | Grandma Red Bean Porridge and the Tiger
+옛날 산골에 할머니 한 분이 팥밭을 매고 있었어요. 그때 커다란 호랑이가 나타났어요. "할멈, 잡아먹어야겠다!"
+
+할머니는 꾀를 냈어요. "이 팥이 다 자라면 동짓날 맛있는 팥죽을 쑬 테니, 그 팥죽이나 한 그릇 먹고 나를 잡아먹으렴." 호랑이는 입맛을 다시며 돌아갔어요.
+
+동짓날이 되자 할머니는 팥죽을 쑤며 엉엉 울었어요. 그때 알밤이 데구루루 굴러왔어요. "할머니, 왜 울어요?" "오늘 밤 호랑이가 나를 잡아먹으러 온단다." "팥죽 한 그릇 주면 도와줄게요."
+---
+Long ago, in a mountain village, a grandma was weeding her red bean field. Suddenly a huge tiger appeared. "Old woman, I'm going to eat you!"
+
+Grandma thought of a trick. "When these beans are grown, I'll cook delicious red bean porridge on the winter solstice. Have a bowl of that first, then eat me." The tiger licked his lips and went away.
+
+On the day of the winter solstice, Grandma cooked the porridge and wept and wept. Then a chestnut came rolling up. "Grandma, why are you crying?" "Tonight the tiger is coming to eat me." "Give me a bowl of porridge and I'll help you."
+===
+알밤도, 자라도, 쇠똥도, 송곳도, 돌절구도, 멍석도, 지게도 차례로 와서 팥죽 한 그릇씩 먹고 할머니를 돕기로 했어요. 알밤은 아궁이 속에, 자라는 물항아리 속에, 쇠똥은 부엌 바닥에, 송곳은 부엌 바닥에 꼿꼿이, 돌절구는 문 위에 숨었어요. 멍석과 지게는 마당에서 기다렸지요.
+
+밤이 되자 호랑이가 왔어요. "아이, 추워." 호랑이가 아궁이 앞에 앉자, 알밤이 탁! 튀어 올라 눈을 때렸어요. "아이고, 뜨거워!" 호랑이가 물항아리로 달려가자 자라가 코를 콱 물었어요.
+---
+The chestnut, a soft-shell turtle, a cow pat, an awl, a stone mortar, a straw mat and an A-frame carrier each came in turn, ate a bowl of porridge and promised to help. The chestnut hid in the fireplace, the turtle in the water jar, the cow pat on the kitchen floor, the awl standing up on the kitchen floor, and the stone mortar above the door. The straw mat and the A-frame waited in the yard.
+
+That night the tiger came. "Brrr, it's cold." When the tiger sat down by the fireplace, the chestnut popped out, bang! and hit him in the eye. "Ow, that's hot!" The tiger ran to the water jar, and the turtle bit his nose, snap!
+===
+호랑이는 놀라서 뒷걸음질 치다가 쇠똥을 밟고 미끄러졌어요. 철퍼덕 넘어지자 송곳이 엉덩이를 콕 찔렀지요. "아야야!" 호랑이가 문밖으로 도망치려는 순간, 돌절구가 쿵! 떨어졌어요.
+
+호랑이가 쭉 뻗자, 멍석이 호랑이를 둘둘 말았고, 지게가 멍석을 지고 멀리 강물에 풍덩 던져 버렸어요.
+
+할머니는 친구들과 함께 남은 팥죽을 나누어 먹으며 오래오래 행복하게 살았답니다.
+---
+The startled tiger stepped back, slipped on the cow pat, and fell flat, splat! Then the awl poked him in the bottom. "Ouch!" Just as the tiger tried to run out the door, the stone mortar fell on him, thump!
+
+When the tiger lay stretched out flat, the straw mat rolled him up, and the A-frame carried the mat far away and threw it into the river, splash!
+
+Grandma shared the rest of the porridge with her friends, and they all lived happily ever after.

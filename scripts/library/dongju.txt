@@ -1,0 +1,259 @@
+@id dongju
+@kind poems
+@icon ⭐
+@color #2d4a8a
+@title.en Counting Stars at Night: Poems by Yun Dong-ju
+@title.ko 별 헤는 밤 · 윤동주 시선
+@author.en Yun Dong-ju (1917–1945)
+@author.ko 윤동주 (1917–1945)
+@about.en Yun Dong-ju is one of Korea's most loved poets. This book has two of his famous poems and five gentle poems he wrote for children.
+@about.ko 「서시」와 「별 헤는 밤」, 그리고 어린이를 위해 쓴 동시 다섯 편을 모았어요.
+@source https://ko.wikisource.org/wiki/저자:윤동주
+@license Public domain. Yun Dong-ju died in 1945, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource (1948 and 1955 editions of "Sky, Wind, Stars and Poems"), changed to modern spelling. English translation written for Another Seoul (free to use, CC0).
+===
+# 서시 | Prologue
+죽는 날까지 하늘을 우러러
+한 점 부끄럼이 없기를,
+잎새에 이는 바람에도
+나는 괴로워했다.
+별을 노래하는 마음으로
+모든 죽어 가는 것을 사랑해야지
+그리고 나한테 주어진 길을
+걸어가야겠다.
+
+오늘 밤에도 별이 바람에 스치운다.
+---
+Until the day I die, looking up at the sky,
+I wish for not one speck of shame.
+Even at the wind stirring the leaves,
+my heart ached.
+With a heart that sings to the stars,
+I will love all things that are dying,
+and I will walk
+the road given to me.
+
+Tonight, again, the wind brushes past the stars.
+===
+# 별 헤는 밤 (1) | Counting Stars at Night (1)
+계절이 지나가는 하늘에는
+가을로 가득 차 있습니다.
+
+나는 아무 걱정도 없이
+가을 속의 별들을 다 헤일 듯합니다.
+
+가슴속에 하나 둘 새겨지는 별을
+이제 다 못 헤는 것은
+쉬이 아침이 오는 까닭이요,
+내일 밤이 남은 까닭이요,
+아직 나의 청춘이 다하지 않은 까닭입니다.
+
+별 하나에 추억과
+별 하나에 사랑과
+별 하나에 쓸쓸함과
+별 하나에 동경과
+별 하나에 시와
+별 하나에 어머니, 어머니,
+---
+The sky where the seasons pass
+is full of autumn.
+
+Without a single worry,
+I feel I could count every star in the autumn sky.
+
+If I cannot count them all now,
+the stars carved one by one into my heart,
+it is because morning comes too soon,
+because there is still tomorrow night,
+because my youth is not yet over.
+
+One star for a memory,
+one star for love,
+one star for loneliness,
+one star for longing,
+one star for a poem,
+one star for Mother, Mother,
+===
+# 별 헤는 밤 (2) | Counting Stars at Night (2)
+어머님, 나는 별 하나에 아름다운 말 한마디씩 불러 봅니다. 소학교 때 책상을 같이했던 아이들의 이름과, 패, 경, 옥 이런 이국 소녀들의 이름과, 벌써 아기 어머니 된 계집애들의 이름과, 가난한 이웃 사람들의 이름과, 비둘기, 강아지, 토끼, 노새, 노루, ‘프랑시스 잠’, ‘라이너 마리아 릴케’ 이런 시인의 이름을 불러 봅니다.
+
+이네들은 너무나 멀리 있습니다.
+별이 아스라이 멀듯이,
+
+어머님,
+그리고 당신은 멀리 북간도에 계십니다.
+---
+Mother, for each star I call out one beautiful word. The names of the children who shared my desk in primary school; the names of foreign girls, Pei, Jing, Yu; the names of girls who are already mothers of babies; the names of poor neighbors; dove, puppy, rabbit, mule, roe deer; and the names of poets, "Francis Jammes," "Rainer Maria Rilke."
+
+They are all so very far away,
+just as the stars are far, far away.
+
+Mother,
+and you are far away in North Jiandao.
+===
+# 별 헤는 밤 (3) | Counting Stars at Night (3)
+나는 무엇인지 그리워
+이 많은 별빛이 내린 언덕 위에
+내 이름자를 써 보고,
+흙으로 덮어 버리었습니다.
+
+딴은 밤을 새워 우는 벌레는
+부끄러운 이름을 슬퍼하는 까닭입니다.
+
+그러나 겨울이 지나고 나의 별에도 봄이 오면
+무덤 위에 파란 잔디가 피어나듯이
+내 이름자 묻힌 언덕 위에도
+자랑처럼 풀이 무성할 거외다.
+---
+Longing for something I cannot name,
+on the hill where all this starlight falls,
+I wrote my name
+and covered it over with earth.
+
+Indeed, the insects that cry all night long
+cry because they grieve for a shameful name.
+
+But when winter passes and spring comes to my star too,
+just as green grass grows over a grave,
+on the hill where my name is buried
+the grass will grow thick, like something to be proud of.
+===
+# 해바라기 얼굴 | Sunflower Face
+누나의 얼굴은
+해바라기 얼굴
+해가 금방 뜨자
+일터에 간다.
+
+해바라기 얼굴은
+누나의 얼굴
+얼굴이 숙어 들어
+집으로 온다.
+---
+My big sister's face
+is a sunflower face.
+As soon as the sun comes up
+she goes off to work.
+
+The sunflower face
+is my sister's face.
+Her face droops down
+as she comes home.
+===
+# 편지 | A Letter
+누나!
+이 겨울에도
+눈이 가득히 왔습니다.
+
+흰 봉투에
+눈을 한 줌 넣고
+글씨도 쓰지 말고
+우표도 붙이지 말고
+말쑥하게 그대로
+편지를 부칠까요?
+
+누나 가신 나라엔
+눈이 아니 온다기에.
+---
+Sister!
+This winter, too,
+the snow has come, piled high.
+
+Shall I put a handful of snow
+in a white envelope,
+write no words,
+stick on no stamp,
+and send it just as it is,
+clean and neat?
+
+They say it does not snow
+in the land where you have gone.
+===
+# 눈 | Snow
+지난밤에
+눈이 소오복이 왔네
+
+지붕이랑
+길이랑 밭이랑
+추워한다고
+덮어 주는 이불인가 봐
+
+그러기에
+추운 겨울에만 내리지
+---
+Last night
+the snow came, heaped up soft.
+
+On the roofs,
+on the roads and the fields:
+it must be a blanket
+to cover them, because they're cold.
+
+That's why
+it only falls in the cold winter.
+===
+# 햇비 | Sun Shower
+아씨처럼 내린다
+보슬보슬 햇비
+맞아 주자 다 같이
+옥수숫대처럼 크게
+닷 자 엿 자 자라게
+햇님이 웃는다
+나 보고 웃는다.
+
+하늘다리 놓였다
+알롱알롱 무지개
+노래하자 즐겁게
+동무들아 이리 오나
+다 같이 춤을 추자
+햇님이 웃는다
+즐거워 웃는다
+---
+Like a young lady it comes down,
+pitter-patter, sun shower.
+Let's all stand in it together
+and grow tall like cornstalks,
+five feet, six feet high.
+The sun is smiling,
+smiling at me.
+
+A sky bridge is built:
+a shimmering rainbow.
+Let's sing happily!
+Come here, friends,
+let's all dance together.
+The sun is smiling,
+smiling with joy.
+===
+# 빗자루 | The Broom
+요오리 조리 베면 저고리 되고
+이이렇게 베면 큰 총 되지.
+누나하고 나하고
+가위로 종이 쏠았더니
+어머니가 빗자루 들고
+누나 하나 나 하나
+엉덩이를 때렸소
+방바닥이 어지럽다고.
+
+아아니 아니
+고놈의 빗자루가
+방바닥 쓸기 싫으니
+그랬지 그랬어
+괘씸하여 벽장 속에 감췄더니
+이튿날 아침 빗자루가 없다고
+어머니가 야단이지요.
+---
+Snip it this way, that way, and it's a jacket;
+snip it like thi-is, and it's a big gun.
+My sister and I
+cut up paper with scissors,
+and Mother picked up the broom
+and gave one to Sister, one to me,
+right on the bottom,
+because the floor was a mess.
+
+No-o, no,
+it was that naughty broom:
+it didn't want to sweep the floor,
+that's why, that's why!
+It made me so cross I hid it in the closet,
+and the next morning, "Where's the broom?"
+Mother is making such a fuss.
