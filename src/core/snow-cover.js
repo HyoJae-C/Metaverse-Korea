@@ -12,16 +12,21 @@
 export const SETTLE_MS = 4 * 60 * 1000;
 export const MELT_MS = 6 * 60 * 1000;
 
-// How deep the snow is (0 bare - 1 white) at nowMs, from the weather of this
-// slot and the one before. slotMs/rolled come from weather.js (passed in to
-// keep this file free of three.js-less imports in tests).
-export function snowDepth(nowMs, slotMs, rolled) {
-  const start = Math.floor(nowMs / slotMs) * slotMs;
-  const t = nowMs - start;
-  const before = rolled(start - 1) === 'snow' ? 1 : 0; // a 30-minute slot is longer than settling or melting
-  return rolled(nowMs) === 'snow'
-    ? Math.min(1, before + t / SETTLE_MS)
-    : Math.max(0, before - t / MELT_MS);
+// How deep the snow is (0 bare - 1 white) at nowMs, from the weather of the
+// last few minutes: kindAt(ms) says what the weather was at a moment
+// (core/weather.js weatherAt). Further back than settling plus melting
+// takes doesn't matter, so it starts from there, bare or white.
+const LOOK_BACK_MS = 15 * 60 * 1000, STEP_MS = 15 * 1000;
+export function snowDepth(nowMs, kindAt) {
+  let t = nowMs - LOOK_BACK_MS;
+  let d = kindAt(t) === 'snow' ? 1 : 0;
+  while (t < nowMs) {
+    const step = Math.min(STEP_MS, nowMs - t);
+    const snowing = kindAt(t + step / 2) === 'snow';
+    d = Math.min(1, Math.max(0, d + (snowing ? step / SETTLE_MS : -step / MELT_MS)));
+    t += step;
+  }
+  return d;
 }
 
 // The one uniform every snowy material reads.

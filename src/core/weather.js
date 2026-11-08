@@ -17,22 +17,9 @@ export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
   return snow ? 0.88 : 0.92;
 }
 
-export const WEATHER_ICON = { clear: '☀️', cloudy: '☁️', fog: '🌫️', rain: '🌧️', snow: '❄️', storm: '⛈️' };
+export { WEATHER_ICON, WEATHER_SLOT_MS, WEATHER_ODDS, SEASON_ODDS, SEASONS, seasonAt, weatherSettings, weatherAt, rolledWeather } from './weather-roll.js';
+import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
 const NIGHT_ICON = { clear: '🌙' };
-
-// Game weather (no live data): every 30 minutes the same roll for everyone,
-// from the clock: clear 80 %, rain 10 %, snow 10 %.
-export const WEATHER_SLOT_MS = 30 * 60 * 1000;
-export const WEATHER_ODDS = [['clear', 0.8], ['rain', 0.1], ['snow', 0.1]];
-export function rolledWeather(nowMs = Date.now()) {
-  let h = Math.floor(nowMs / WEATHER_SLOT_MS) >>> 0; // integer hash of the slot
-  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
-  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
-  const u = ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-  let acc = 0;
-  for (const [kind, p] of WEATHER_ODDS) { acc += p; if (u < acc) return kind; }
-  return 'clear';
-}
 
 // Game clock: a whole day every 2 hours, the same for everyone. Daytime
 // (05:30-19:30, dawn and dusk included) takes 90 minutes, the night 30, so
@@ -67,6 +54,7 @@ export class WeatherSystem {
   constructor({ scene, sun, hemi, ambient, region, onUpdate }) {
     Object.assign(this, { scene, sun, hemi, ambient, region, onUpdate });
     this.kind = 'clear';
+    this.settings = null; // the operators' season / held weather (setSettings)
     this.temp = null;
     this.sky = new THREE.Color();
     this.particles = null;
@@ -79,10 +67,17 @@ export class WeatherSystem {
   }
 
   refresh() {
-    const kind = this.forced || rolledWeather();
+    const kind = this.forced || weatherAt(Date.now(), this.settings);
     if (kind !== this.kind || !this.started) this.setKind(kind);
     this.started = true;
     this.onUpdate?.(this.status());
+  }
+
+  // The operators' setting changed (supabase/023_weather.sql).
+  setSettings(raw) {
+    this.settings = raw ? weatherSettings(raw) : null;
+    this.depthAt = 0; // work the snow out again
+    this.refresh();
   }
 
   hour() {
@@ -106,6 +101,17 @@ export class WeatherSystem {
     }
     if (kind === 'rain' || kind === 'storm' || kind === 'snow') this.particles = makePrecip(kind);
     if (this.particles) this.scene.add(this.particles);
+  }
+
+  // How deep the snow is now, from the shared weather of the last few
+  // minutes (worked out once a second).
+  snowNow() {
+    const now = Date.now();
+    if (now - (this.depthAt || 0) >= 1000) {
+      this.depthAt = now;
+      this.depth = snowDepth(now, (ms) => weatherAt(ms, this.settings));
+    }
+    return this.depth;
   }
 
   // Call every frame with the player position.
@@ -135,7 +141,7 @@ export class WeatherSystem {
     const step = Math.min(dt, 0.1) * 1000;
     snowUniform.value = Number.isFinite(pinned) ? pinned
       : this.forced ? Math.min(1, Math.max(0, snowUniform.value + (this.kind === 'snow' ? step / SETTLE_MS : -step / MELT_MS)))
-      : snowDepth(Date.now(), WEATHER_SLOT_MS, rolledWeather);
+      : this.snowNow();
 
     if (this.particles) {
       // Drops move on the GPU: only two numbers change per frame, so rain

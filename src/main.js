@@ -77,6 +77,7 @@ import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
+import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -906,6 +907,7 @@ if (spawnStore) {
 // them, get the first mission, then the info centre is suggested (or just
 // explore). 0: high five · 1: getting the mission · 2+: done.
 const ONBOARD_KEY = 'mk.onboard';
+const ONBOARD_REWARD = 20000; // won, for the welcome high five (supabase/020_rewards.sql 'quest')
 let onboard = (() => {
   try {
     const v = localStorage.getItem(ONBOARD_KEY);
@@ -918,7 +920,7 @@ const ONBOARD_TEXT = {
   button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', vi: 'Đập tay với người hướng dẫn', hi: 'गाइड को हाई-फ़ाइव दें', id: 'Tos dengan pemandu' },
   // The guide, before the first mission: visit the info centre first.
   infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', vi: 'Trước khi làm nhiệm vụ, hãy ghé Trung tâm Thông tin nhé! Ở đó có tất cả những gì bạn có thể làm.', hi: 'मिशन से पहले सूचना केंद्र ज़रूर जाएँ! वहाँ वह सब दिखता है जो आप कर सकते हैं।', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
-  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', vi: '🙌 Tuyệt! 🪙 +10. Đây là nhiệm vụ đầu tiên của bạn.', hi: '🙌 बढ़िया! 🪙 +10। यह रहा आपका पहला मिशन।', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
+  done: { en: '🙌 Nice! 🪙 +{n}. Here is your first mission.', ko: '🙌 좋아요! 🪙 +{n}. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +{n}。最初のミッションです。', zh: '🙌 太棒了！🪙 +{n}。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +{n}. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +{n}. هذه مهمتك الأولى.', vi: '🙌 Tuyệt! 🪙 +{n}. Đây là nhiệm vụ đầu tiên của bạn.', hi: '🙌 बढ़िया! 🪙 +{n}। यह रहा आपका पहला मिशन।', id: '🙌 Mantap! 🪙 +{n}. Ini misi pertamamu.' },
 };
 if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
@@ -940,9 +942,9 @@ function onboardHi5() {
   squareNpc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(20000, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
+  wallet.add(ONBOARD_REWARD, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
   refreshWallet();
-  shop.toast(L(ONBOARD_TEXT.done));
+  shop.toast(fmt(L(ONBOARD_TEXT.done), { n: ONBOARD_REWARD }));
   action = STALE;
   quests.skipHighFive(); // that was today's high five
   quests.beginStarter(); // then the first path: errands near the square that each teach one thing
@@ -1234,6 +1236,18 @@ const weather = new WeatherSystem({
     el.title = t('credit.weather');
   },
 });
+
+// The operators' season and held weather (admin.html → Weather,
+// supabase/023_weather.sql), the same for everyone. A little after start,
+// so it never holds up joining the world.
+let weatherClient = null, stopWeather = null;
+function watchWeatherSetting() {
+  if (!cloud.client || cloud.client === weatherClient) return;
+  stopWeather?.();
+  weatherClient = cloud.client;
+  stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
+}
+setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
 // ---------- Multiplayer ----------
 let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
@@ -5724,6 +5738,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
     snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
+    weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
