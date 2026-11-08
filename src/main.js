@@ -169,7 +169,7 @@ import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
-import { createSnowman } from './game/snowman.js';
+import { createSnowman, SNOW_TEXT } from './game/snowman.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
@@ -1862,6 +1862,7 @@ let held = (() => {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
+    if (h?.kind === 'duckmold') return { kind: 'duckmold' };
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}) } : null;
   } catch { return null; }
@@ -1869,12 +1870,12 @@ let held = (() => {
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : snowman?.tool || held?.kind || null); // (the snow duck maker shows instead of the cup, like the rod)
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
-  $('drink-btn').hidden = !h || h.kind === 'gift'; // a shopping bag is just carried
+  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold'; // a shopping bag is just carried (the duck maker works with E)
   $('stow-btn').hidden = !h;
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
@@ -1938,6 +1939,7 @@ const BOOK_DESC = { en: 'Hold it and sit down to read.', ko: '손에 들고 앉�
 const DRINK_DESC = { en: '{n} sips left.', ko: '{n}모금 남았어요.', ja: '残り{n}口。', zh: '还剩{n}口。' };
 function describeEntry(e) {
   if (e.kind === 'umbrella') return { emoji: '☂️', name: L(UMB_NAME), desc: L(UMB_DESC), canHold: false };
+  if (e.kind === 'duckmold') return { emoji: '🦆', name: L(SNOW_TEXT.moldName), desc: L(SNOW_TEXT.moldDesc), canHold: true };
   if (e.kind === 'book') {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
@@ -2730,7 +2732,11 @@ const snowman = createSnowman({
   get shop() { return shop; }, get scene() { return scene; },
   get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
   get onFoot() { return !riding && !seated; }, get look() { return myLook; },
-  heldChanged: () => { me.setHeld(heldKind()); lastSent = null; },
+  get heldKind() { return heldKind(); },
+  snowNews: () => { // the snow has settled: a snow duck maker for the bag (once), and the news
+    const got = !bag.has('duckmold') && held?.kind !== 'duckmold' && bag.add({ kind: 'duckmold' });
+    shop.toast(L(got ? SNOW_TEXT.snowNewsGot : SNOW_TEXT.snowNews));
+  },
   send: (m) => net.sendEmote(m), blocked: (x, z, r) => collision.blocked(x, z, r),
   bubble: (text) => showBubble(myLabel, $('labels'), text), sfx: () => sfx,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
@@ -5851,7 +5857,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     sfxLog: () => sfxLog.slice(),
     snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
-    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
+    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),

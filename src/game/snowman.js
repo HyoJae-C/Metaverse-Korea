@@ -27,8 +27,10 @@ export const SNOW_TEXT = {
   walkIt: { en: 'Walk and it rolls along, growing as it goes. Friends can grab it too!', ko: '걸어 다니면 눈덩이가 굴러가며 커져요. 친구도 같이 붙잡을 수 있어요!', ja: '歩くと雪玉が転がって大きくなります。友だちも一緒につかめます！', zh: '走起来雪球就会滚着变大。朋友也可以一起抓住！' },
   hat: { en: 'Put my hat on the snowman', ko: '눈사람에 내 모자 씌우기', ja: '雪だるまに自分の帽子をかぶせる', zh: '给雪人戴上我的帽子' },
   cold: { en: 'Brr, cold hands! Warming them up… {s}', ko: '손이 시려요! 호호 녹이는 중… {s}', ja: '手が冷たい！はーっと温め中… {s}', zh: '手好冰！哈气暖手中… {s}' },
-  moldOut: { en: 'Take out the snow duck maker', ko: '눈오리 집게 꺼내기', ja: '雪あひるメーカーを出す', zh: '拿出雪鸭夹' },
-  moldIn: { en: 'Put the snow duck maker away', ko: '눈오리 집게 넣기', ja: '雪あひるメーカーをしまう', zh: '收起雪鸭夹' },
+  moldName: { en: 'Snow duck maker', ko: '눈오리 집게', ja: '雪あひるメーカー', zh: '雪鸭夹' },
+  moldDesc: { en: 'Hold it on a snowy street and press E to make a snow duck.', ko: '눈 쌓인 거리에서 손에 들고 E를 누르면 눈오리가 생겨요.', ja: '雪の積もった通りで手に持ってEを押すと雪あひるができます。', zh: '在积雪的街上拿在手里按E就能做雪鸭。' },
+  snowNews: { en: '❄️ It\'s snowing! Take the snow duck maker out of your bag and make snow ducks. 🦆', ko: '❄️ 눈이 와요! 가방에서 눈오리 집게를 꺼내 눈오리를 만들어 보세요. 🦆', ja: '❄️ 雪です！バッグから雪あひるメーカーを出して雪あひるを作ろう。🦆', zh: '❄️ 下雪啦！从包里拿出雪鸭夹做雪鸭吧。🦆' },
+  snowNewsGot: { en: '❄️ It\'s snowing! A snow duck maker is in your bag: take it out and make snow ducks. 🦆', ko: '❄️ 눈이 와요! 가방에 눈오리 집게를 넣어 뒀어요. 꺼내서 눈오리를 만들어 보세요. 🦆', ja: '❄️ 雪です！バッグに雪あひるメーカーを入れておきました。出して雪あひるを作ろう。🦆', zh: '❄️ 下雪啦！包里放了一个雪鸭夹，拿出来做雪鸭吧。🦆' },
   duck: { en: 'Make a snow duck', ko: '눈오리 만들기', ja: '雪あひるを作る', zh: '做雪鸭' },
   ducks: { en: 'Your oldest snow duck melted to make room.', ko: '가장 먼저 만든 눈오리가 녹고 새 눈오리가 생겼어요.', ja: '一番古い雪あひるが溶けて、新しいのができました。', zh: '最早的雪鸭融化了，新的做好了。' },
   hatOn: { en: 'Looking sharp! 🎩', ko: '모자 쓴 눈사람 완성! 🎩', ja: '帽子の雪だるまの完成！🎩', zh: '雪人戴上帽子啦！🎩' },
@@ -172,7 +174,8 @@ function makeDuck() {
  * game: getters { mode, me, others, myId, shop, scene, depth (0-1 snow on
  * the ground), snowing, onFoot (not riding or seated), look (ours) }, plus
  * send(msg), blocked(x, z, r), bubble(text), resendState(), clearAction(),
- * sfx(), heldChanged() (the duck maker went in or out of the hand).
+ * sfx(), snowNews() (the snow has settled: announce the duck maker),
+ * heldKind (what's in my hand: 'duckmold' makes ducks).
  */
 export function createSnowman(game) {
   const mine = []; // { k, x, z, n, h?, ry?, pushes: [{ who, at }] }
@@ -188,7 +191,8 @@ export function createSnowman(game) {
   // they let go) }.
   let holding = null, glued = null, acc = 0, prevP = null, prevRy = 0;
   // The snow duck maker in my hand, and my snow ducks: { x, z, ry }.
-  let mold = false, duckAt = 0, moldAt = 0;
+  let duckAt = 0, snowNews = false;
+  const mold = () => game.heldKind === 'duckmold'; // (from the bag: core/bag.js)
   const ducks = [];
   const duckDrawn = new Map(); // owner -> { s (their state), groups }
   // Cold hands after working the snow too long (core/snowballs.js chillStep).
@@ -413,13 +417,6 @@ export function createSnowman(game) {
   }
 
   // ---------- snow ducks ----------
-  function setMold(on) {
-    if (mold === on) return;
-    mold = on;
-    moldAt = Date.now();
-    game.heldChanged();
-    game.clearAction();
-  }
   function makeDuckHere() {
     if (cold()) return;
     const me = game.me.root, p = me.position, ry = me.rotation.y;
@@ -500,7 +497,7 @@ export function createSnowman(game) {
       const o = balls().find((q) => q.owner === glued.owner && q.b.k === glued.k);
       return { key: `sb-let:${glued.owner}:${glued.k}:${o?.b.n}`, label: `✋ ${L(SNOW_TEXT.letGo)}${o ? stepTxt(o.b.n) : ''}`, run: () => letGo() };
     }
-    if (mold) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
+    if (mold() && game.depth >= MIN_SNOW) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
     const o = nearest(p, (q) => !q.b.h);
     if (o) {
       const step = stepTxt(o.b.n);
@@ -522,11 +519,8 @@ export function createSnowman(game) {
     if (game.mode !== 'street' || holding || glued) return [];
     // Mashing E on a ball (gathering, pushing, ducks): no other choices pop
     // up to turn the button into a list until you stop for a moment.
-    if (Date.now() - Math.max(lastWork, duckAt, moldAt) < QUIET_MS) return [];
+    if (Date.now() - Math.max(lastWork, duckAt) < QUIET_MS) return [];
     const out = [];
-    if (mold) return [{ key: 'sb-mold-in', label: '🦆 ' + L(SNOW_TEXT.moldIn), run: () => setMold(false) }];
-    const ballNear = balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5);
-    if (game.depth >= MIN_SNOW && game.onFoot && !ballNear) out.push({ key: 'sb-mold-out', label: '🦆 ' + L(SNOW_TEXT.moldOut), run: () => setMold(true) });
     const t = hatOf(game.look);
     const man = t && nearest(p, (q) => q.b.h && q.b.t !== t);
     if (man) out.push({ key: `sb-hat:${man.owner}:${man.b.k}`, label: '🎩 ' + L(SNOW_TEXT.hat), run: () => hatOn(man, t) });
@@ -544,9 +538,11 @@ export function createSnowman(game) {
 
   // ---------- every frame ----------
   function tick(dt) {
-    if (game.mode !== 'street') { anim = null; if (holding || glued) letGo(); setMold(false); return; }
+    if (game.mode !== 'street') { anim = null; if (holding || glued) letGo(); return; }
     const now = Date.now();
-    if (mold && (!game.onFoot || holding || glued)) setMold(false);
+    // The snow has settled: tell everyone to get the duck maker out (once a snowfall).
+    if (game.depth >= MIN_SNOW && !snowNews) { snowNews = true; game.snowNews(); }
+    else if (game.depth <= 0) snowNews = false;
     if ((holding || glued) && !game.onFoot) letGo();
     if (holding) walkMine(now, dt);
     else if (glued) walkTheirs(now, dt);
@@ -628,8 +624,7 @@ export function createSnowman(game) {
       return snowPose(b.n, workHelper);
     },
     get count() { return mine.length; },
-    // The snow duck maker in my hand ('duckmold' to hold), and our ducks ("sd").
-    get tool() { return mold ? 'duckmold' : null; },
+    // Our snow ducks ("sd").
     get duckSync() { return ducks.length ? encodeDucks(ducks) : null; },
     // Walking speed while rolling a big ball along (1: normal; 0: it won't
     // budge, or I'm holding on to a friend's and go where it goes).
