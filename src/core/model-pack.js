@@ -4,6 +4,7 @@
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
 import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
+import { SNOW_MOVES } from './snow-moves.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
@@ -632,7 +633,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || FOLK_DANCES[name] || SNOW_MOVES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     play(name) {
@@ -684,6 +685,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
+      const snowy = SNOW_MOVES[activity] && key === 'idle' ? activity : null; // making a snowball (core/snow-moves.js)
       if (folk && !folkProps && slotL && slotR) {
         folkProps = folkHandProps(folk);
         if (folkProps[0]) slotL.add(folkProps[0]);
@@ -712,6 +714,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         moves = FOLK_DANCES[folk](performance.now() / 1000);
         bob = moves.bob || 0;
         turn = moves.turn || 0;
+      } else if (snowy) {
+        moves = SNOW_MOVES[snowy](performance.now() / 1000);
+        bob = moves.bob || 0;
+        turn = moves.turn || 0;
       } else if (dancing) {
         const { beat, phase } = beatNow();
         moves = globalThis.__dancePose // debug override
@@ -729,7 +735,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
         m.position.y = PULLUP.hang; // corrected below, once the arms are posed
-      } else if (dancing || folk) m.position.y = bob;
+      } else if (dancing || folk || snowy) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       // The clips don't key every bone: start the stroke bones from rest so

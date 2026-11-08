@@ -165,6 +165,8 @@ import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
 import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
+import { createSnowman } from './game/snowman.js';
+import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { LocalFriends } from './core/friends.js';
@@ -1330,6 +1332,7 @@ async function joinRoom(room, roomScene, area = null) {
     onLeave: (id) => { tandemGone(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
       if (parseTarot(e)) {
@@ -2639,6 +2642,15 @@ const picnic = createPicnic({
   standUp: () => standUp(), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 }, streetPicnic);
 bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spread
+// Snowballs and snowmen once the snow has settled (src/game/snowman.js).
+const snowman = createSnowman({
+  get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
+  get shop() { return shop; }, get scene() { return scene; },
+  get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
+  send: (m) => net.sendEmote(m), blocked: (x, z, r) => collision.blocked(x, z, r),
+  bubble: (text) => showBubble(myLabel, $('labels'), text), sfx: () => sfx,
+  clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
+});
 // Station vending machines: cheap drinks that work like a coffee to go.
 const VENDING_TEXT = {
   open: { en: 'Vending machine', ko: '음료 자판기', ja: '自動販売機', zh: '自动售货机' },
@@ -3712,6 +3724,7 @@ const DANCE_TEXT = {
   stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
 };
 function currentActivity() {
+  if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
@@ -4874,6 +4887,7 @@ function moreActions(p, door) {
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
+    if (!seated) out.push(...snowman.more(p)); // put a snowball on a bigger one: a snowman
     const ic = sculptureNear(map.landmarks, p.x, p.z); if (ic) out.push(sculptureAct(ic));
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
@@ -4922,6 +4936,7 @@ function updateAction(p, tSec) {
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     const poop = !riding && nearestPoop(p);
+    const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (it) next = storeAct(it);
@@ -4935,6 +4950,7 @@ function updateAction(p, tSec) {
       const inv = tandemInvite;
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
+    else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
     else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
@@ -4950,6 +4966,7 @@ function updateAction(p, tSec) {
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
     else if (guideAct(p)) next = guideAct(p);
+    else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
     else if (busking.performing) {
       next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
@@ -5462,6 +5479,7 @@ renderer.setAnimationLoop(() => {
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
   picnic.tick(); // picnic mats on the park lawn
+  snowman.tick(dt); // snowballs and snowmen
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
@@ -5522,9 +5540,10 @@ renderer.setAnimationLoop(() => {
     if (petCare.pet) st.pt = petCare.pet.id;
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
+    if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -5646,6 +5665,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
     snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
+    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),
