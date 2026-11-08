@@ -6102,11 +6102,11 @@ renderer.setAnimationLoop(() => {
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
-      idleTimer = onlineAll < config.netIdleSmallUntil ? config.netIdleIntervalSmall : config.netIdleInterval;
+      idleTimer = config.netIdleInterval;
     }
     // Carrying passengers: send more often so their seats keep up.
     // In a crowd, less often (net/rate.js).
-    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: config.netSendRateMin }));
+    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin }));
   }
 
   const w = innerWidth, h = innerHeight;

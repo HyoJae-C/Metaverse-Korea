@@ -16,10 +16,11 @@ export const config = {
   netSendRate: 6,
   netSendRateRun: 8,
   netIdleInterval: 10,
-  // While fewer than netIdleSmallUntil people are online, standing players
-  // send their heartbeat a little more often (netIdleIntervalSmall seconds).
-  netIdleIntervalSmall: 3.5,
-  netIdleSmallUntil: 1000,
+  // Riding (bike, car, any vehicle) moves fast, so a low rate shows as jumps:
+  // riders send at the running rate and, while fewer than netRideFloorUntil
+  // people are online, never less than netSendRateRide times a second.
+  netSendRateRide: 3.5,
+  netRideFloorUntil: 1000,
   // In a crowd each player sends less, so that what one player receives stays
   // near netRecvBudget messages a second (net/rate.js), never below
   // netSendRateMin. Realtime services count each message once per receiver.
