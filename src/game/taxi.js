@@ -33,6 +33,7 @@ export const SHARE_TEXT = {
   covered: { en: '{name} couldn\'t pay: you covered 🪙 {n}.', ko: '{name} 님이 돈이 모자라서 🪙 {n}을 대신 냈어요.', ja: '{name}さんが払えなかったので 🪙 {n} を立て替えました。', zh: '{name}付不起，你代付了 🪙 {n}。' },
   theirPick: { en: 'a place they picked', ko: '골라 둔 곳', ja: '選んだ場所', zh: '选好的地方' },
   paid: { en: 'you paid 🪙 {n}', ko: '내가 낸 돈 🪙 {n}', ja: 'あなたの支払い 🪙 {n}', zh: '你付了 🪙 {n}' },
+  free: { en: '🎁 Free ride', ko: '🎁 무료 탑승', ja: '🎁 無料乗車', zh: '🎁 免费乘车', es: '🎁 Viaje gratis', id: '🎁 Gratis', ar: '🎁 رحلة مجانية', vi: '🎁 Đi miễn phí', hi: '🎁 मुफ़्त सवारी' },
   together: { en: '🚕 With {names}', ko: '🚕 {names} 님과 함께', ja: '🚕 {names}さんと一緒', zh: '🚕 和{names}一起' },
 };
 const st = (k, v) => fmt(L(SHARE_TEXT[k]), v);
@@ -74,7 +75,7 @@ export function createTaxi(game) {
   const send = (verb, to, trip, ...nums) => game.net?.sendEmote(taxiMsg(verb, to, trip, ...nums));
 
   // The ride itself: the back-seat scene, then out at (fx, fz) facing (tx, tz).
-  function ride({ fx, fz, tx, tz, label, guide, fare, paid = fare, mates }) {
+  function ride({ fx, fz, tx, tz, label, guide, fare, paid = fare, mates, free = false, onArrive }) {
     if (game.mode === 'store') leaveStore();
     if (game.riding) setRiding(false);
     clearGuide();
@@ -85,7 +86,7 @@ export function createTaxi(game) {
       $('taxi-rom').textContent = rom;
       $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
     };
-    $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label }) + ' · ' + t('taxi.fare', { n: won(fare) }) + (paid !== fare ? ' (' + st('paid', { n: won(paid) }) + ')' : '') + (mates?.length ? ' · ' + st('together', { names: mates.join(', ') }) : '');
+    $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label }) + ' · ' + (free ? st('free') : t('taxi.fare', { n: won(fare) })) + (paid !== fare ? ' (' + st('paid', { n: won(paid) }) + ')' : '') + (mates?.length ? ' · ' + st('together', { names: mates.join(', ') }) : '');
     $('taxi-skip').textContent = t('taxi.skip');
     $('taxi-ride').hidden = false;
     input.keys.clear();
@@ -101,6 +102,7 @@ export function createTaxi(game) {
       if (guide && Math.hypot(tx - fx, tz - fz) > 4) setGuide(guide);
       showBubble(myLabel, $('labels'), '🚕');
       missionEvent('taxi');
+      onArrive?.();
     };
     taxiTimers = [
       setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
@@ -275,5 +277,11 @@ export function createTaxi(game) {
     mapView.show(pos.x, pos.z);
   };
 
-  return { rideTaxi, onMsg, onLeave };
+  // A ride someone else pays for (the new player's first taxi): no fare, no sharing.
+  function rideFree(dest, onArrive) {
+    const [rx, rz] = taxiDropOff(dest.x, dest.z);
+    const [fx, fz] = findFreeSpot(rx, rz);
+    ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
+  }
+  return { rideTaxi, rideFree, onMsg, onLeave };
 }

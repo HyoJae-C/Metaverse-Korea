@@ -155,6 +155,7 @@ import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/moti
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
+import { PROMOS } from './data/promos.js';
 import { won } from './core/money.js';
 import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
@@ -2860,6 +2861,58 @@ const taxi = createTaxi({
   },
 });
 const { rideTaxi } = taxi;
+// The new player's taxi errand (core/quests.js STARTER, tip 'taxi'): the
+// first ride is free, to Bukchon Hanok Village; on arrival a card says so and
+// a button puts you back beside the square guide to report.
+const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+const FIRST_TAXI_TEXT = {
+  offer: { en: '🚕 Your first taxi is on us! Ride to Bukchon Hanok Village.', ko: '🚕 첫 택시는 무료예요! 북촌 한옥마을까지 타 보세요.', ja: '🚕 初めてのタクシーは無料！北村韓屋村まで乗ってみよう。', zh: '🚕 第一次坐出租车免费！坐到北村韩屋村吧。', es: '🚕 ¡Tu primer taxi es gratis! Ve a la Aldea Hanok de Bukchon.', id: '🚕 Taksi pertamamu gratis! Naik ke Desa Hanok Bukchon.', ar: '🚕 أول سيارة أجرة مجانًا! اركب إلى قرية بوكتشون هانوك.', vi: '🚕 Chuyến taxi đầu tiên miễn phí! Đi tới Làng Hanok Bukchon nhé.', hi: '🚕 पहली टैक्सी मुफ़्त है! बुकचोन हानोक गाँव तक जाएँ।' },
+  go: { en: '🚕 Take the free taxi', ko: '🚕 무료 택시 타기', ja: '🚕 無料タクシーに乗る', zh: '🚕 坐免费出租车', es: '🚕 Tomar el taxi gratis', id: '🚕 Naik taksi gratis', ar: '🚕 اركب سيارة الأجرة المجانية', vi: '🚕 Đi taxi miễn phí', hi: '🚕 मुफ़्त टैक्सी लें' },
+  place: { en: 'Bukchon Hanok Village', ko: '북촌 한옥마을', ja: '北村韓屋村', zh: '北村韩屋村', es: 'Aldea Hanok de Bukchon', id: 'Desa Hanok Bukchon', ar: 'قرية بوكتشون هانوك', vi: 'Làng Hanok Bukchon', hi: 'बुकचोन हानोक गाँव' },
+  arrived: { en: '🚕 You arrived by taxi! This is Bukchon Hanok Village. Look around the hanok alleys, then go back to the guide.', ko: '🚕 택시로 도착했어요! 여기는 북촌 한옥마을이에요. 한옥 골목을 둘러보고 안내원에게 돌아가요.', ja: '🚕 タクシーで到着しました！ここは北村韓屋村。韓屋の路地を見てから案内係のところへ戻ろう。', zh: '🚕 坐出租车到了！这里是北村韩屋村。逛逛韩屋小巷，再回到向导那里吧。', es: '🚕 ¡Llegaste en taxi! Esto es la Aldea Hanok de Bukchon. Pasea por sus callejones y vuelve con el guía.', id: '🚕 Kamu tiba naik taksi! Ini Desa Hanok Bukchon. Jelajahi gang hanoknya, lalu kembali ke pemandu.', ar: '🚕 وصلت بسيارة الأجرة! هذه قرية بوكتشون هانوك. تجوّل في أزقتها ثم عُد إلى المرشد.', vi: '🚕 Bạn đã tới bằng taxi! Đây là Làng Hanok Bukchon. Dạo quanh các con hẻm rồi quay lại chỗ người hướng dẫn.', hi: '🚕 आप टैक्सी से पहुँच गए! यह बुकचोन हानोक गाँव है। हानोक गलियाँ घूमें, फिर गाइड के पास लौटें।' },
+  back: { en: '↩️ Back to the guide', ko: '↩️ 안내원에게 돌아가기', ja: '↩️ 案内係のところへ戻る', zh: '↩️ 回到向导那里', es: '↩️ Volver con el guía', id: '↩️ Kembali ke pemandu', ar: '↩️ العودة إلى المرشد', vi: '↩️ Quay lại chỗ người hướng dẫn', hi: '↩️ गाइड के पास लौटें' },
+  look: { en: 'Look around first', ko: '먼저 둘러보기', ja: '先に見て回る', zh: '先逛逛', es: 'Primero mirar', id: 'Lihat-lihat dulu', ar: 'أتجوّل أولًا', vi: 'Dạo một chút đã', hi: 'पहले घूम लूँ' },
+};
+let firstTaxiTimer = 0;
+function firstTaxiCard(lines, buttons) {
+  const box = $('info-hint');
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+  for (const [cls, label, run] of buttons) {
+    const b = document.createElement('button');
+    b.className = cls;
+    b.textContent = label;
+    b.onclick = () => { box.hidden = true; run(); };
+    actions.append(b);
+  }
+  const p = document.createElement('p');
+  p.textContent = lines;
+  box.replaceChildren(p, actions);
+  box.hidden = false;
+}
+function offerFirstTaxi() {
+  firstTaxiCard(L(FIRST_TAXI_TEXT.offer), [['primary', L(FIRST_TAXI_TEXT.go), () => {
+    taxi.rideFree({ ...FIRST_TAXI, label: L(FIRST_TAXI_TEXT.place) }, firstTaxiArrived);
+  }]]);
+}
+function firstTaxiArrived() {
+  clearTimeout(firstTaxiTimer);
+  firstTaxiCard(L(FIRST_TAXI_TEXT.arrived), [
+    ['primary', L(FIRST_TAXI_TEXT.back), backToGuide],
+    ['chip', L(FIRST_TAXI_TEXT.look), () => { firstTaxiTimer = setTimeout(() => { if (mode === 'street' && quests.active?.kind === 'taxi') firstTaxiArrived(); }, 60000); }],
+  ]);
+}
+// Straight back beside the square guide (no walk across the city).
+function backToGuide() {
+  clearTimeout(firstTaxiTimer);
+  if (!squareNpc) return;
+  if (mode === 'store') leaveStore();
+  const g = squareNpc.ch.root;
+  const sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
+  const [x, z] = findFreeSpot(g.position.x + sx * 2.2, g.position.z + sz * 2.2);
+  moveMeTo(scene, x, z, Math.atan2(g.position.x - x, g.position.z - z));
+  action = STALE;
+}
 // Action button (and E / Enter key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
@@ -4551,7 +4604,15 @@ function openOrder() {
 // The server wants 5 s between ads (wallet_settings.ad_gap_sec) and the ad is
 // 3 s, so the button rests a moment after one.
 let adCoolUntil = 0;
-const showAd = rewardedShow(config.rewardedAd, demoAd($('ad-overlay'), $('ad-count'), $('ad-close')));
+const ownAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+let promoAt = Math.floor(Math.random() * PROMOS.length);
+const showAd = rewardedShow(config.rewardedAd, (seconds) => { // a different place each time
+  const pr = PROMOS[promoAt++ % PROMOS.length];
+  $('ad-scene').src = BASE + pr.img;
+  $('ad-scene').hidden = false;
+  $('ad-place').textContent = t('promo.' + pr.id);
+  return ownAd(seconds);
+});
 function refreshWallet() {
   $('coin-count').textContent = won(wallet.coins);
   $('wallet-coins').textContent = won(wallet.coins);
@@ -4776,6 +4837,7 @@ function talkToGuide() {
     // On the first path, say the tip again too (it is easy to miss the first time).
     const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
     if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
+    if (q.starter != null && STARTER[q.starter]?.tip === 'taxi') offerFirstTaxi();
   } else if (quests.left) {
     const a = quests.start({
       stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
@@ -4786,6 +4848,7 @@ function talkToGuide() {
     // On the first path the guide also gives a tip for this errand.
     const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
     if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
+    if (a.starter != null && STARTER[a.starter].tip === 'taxi') offerFirstTaxi();
   } else {
     say(squareNpc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
   }
