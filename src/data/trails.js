@@ -6,7 +6,7 @@ export const TRAILS = [
   {
     // Inspired by the real Seoul City Wall walk (한양도성 순성길), whose walkers
     // also collect stamps along the wall (Seoul Metropolitan Government).
-    id: 'citywall', icon: '🏯', reward: 100000,
+    id: 'citywall', icon: '🏯', reward: 50000,
     name: { ko: '한양도성 성곽길', en: 'Seoul City Wall Trail', ja: '漢陽都城 城郭の道', zh: '汉阳都城城墙路' },
     intro: {
       ko: '숭례문에서 남산 정상(케이블카)을 지나 이간수문, 흥인지문까지 옛 도성의 성곽을 따라 걸어요. 실제 서울에서도 성곽길을 걷는 사람들이 성문에서 스탬프를 모아요.',
@@ -19,7 +19,7 @@ export const TRAILS = [
   {
     // The Joseon royal places in the game's Jongno-gu: the palace, the hanok
     // village beside it and the royal shrine, linked by Yulgok-ro.
-    id: 'royal', icon: '👑', reward: 80000,
+    id: 'royal', icon: '👑', reward: 50000,
     name: { ko: '조선 왕실 산책', en: 'Joseon Royal Walk', ja: '朝鮮王室さんぽ', zh: '朝鲜王室漫步' },
     intro: {
       ko: '조선의 왕이 살던 경복궁에서 출발해 양반들이 살던 북촌 한옥마을을 지나, 왕실 조상을 모신 종묘까지 율곡로를 따라 걸어요.',
