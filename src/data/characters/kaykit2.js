@@ -156,6 +156,9 @@ export default {
     // flight suit's armoured under-layer with light-bar trims.
     'sky-seoulman': { url: 'models/kaykit2/rogue.glb', emoji: '🦸', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.004 }, colors: { top: 0x1f9e5a, bottom: 0x2f5fd6, accent: 0xe0302f, shoes: 0xe0302f, sole: 0xb8262a } }) },
     'sky-armor': { url: 'models/kaykit2/rogue.glb', emoji: '🤖', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.03 }, colors: { top: 0x3a4658, bottom: 0x2e3746, accent: 0x5ff5d8, shoes: 0x262e3b, sole: 0x1b2029, stitch: 0x5ff5d8 } }) },
+    // The aquarium's diver keeper (core/aquarium.js): a full black wetsuit
+    // with a hood and bright blue trims.
+    'wetsuit': { url: 'models/kaykit2/rogue.glb', emoji: '🤿', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.01 }, colors: { top: 0x1d2329, bottom: 0x1d2329, accent: 0x35c2f0, shoes: 0x1d2329, sole: 0x111418, stitch: 0x35c2f0 } }), hood: true, cap: true },
     // Swimwear (Olympic Park Pool).
     ...variants('rogue', '🩱', SWIM_ONE, {
       'swim-navy': { top: 0x24407a, bottom: 0x24407a },
