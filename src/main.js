@@ -71,6 +71,7 @@ import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
+import { sendRate } from './net/rate.js';
 import { startWhereReports } from './net/where.js';
 import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck } from './core/update-check.js';
@@ -5930,7 +5931,8 @@ renderer.setAnimationLoop(() => {
       idleTimer = config.netIdleInterval;
     }
     // Carrying passengers: send more often so their seats keep up.
-    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : running ? config.netSendRateRun : config.netSendRate);
+    // In a crowd, less often (net/rate.js).
+    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: config.netSendRateMin }));
   }
 
   const w = innerWidth, h = innerHeight;
