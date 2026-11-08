@@ -7,7 +7,7 @@
 // the stretches low enough that you could walk into a passing train.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
-import { CARS, CAR_GAP, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
+import { CARS, CAR_GAP, GATE, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
 
 const mat = matCache({ flatShading: true });
 export const TRAIN_PINK = '#ff5f9e';
@@ -15,6 +15,8 @@ const ICING = '#fffaf3';
 const CHOC = '#7a4a2e';
 
 export const COASTER_NAME = { ko: '솜사탕 특급', en: 'Cotton Candy Express', ja: 'わたあめ特急', zh: '棉花糖特快', es: 'Expreso Algodón de Azúcar', id: 'Ekspres Gulali', vi: 'Tàu Lượn Kẹo Bông', hi: 'कॉटन कैंडी एक्सप्रेस', fr: 'Express Barbe à Papa', th: 'สายไหมเอ็กซ์เพรส', ar: 'قطار غزل البنات السريع' };
+// The boarding spot's own sign ("this is where you get on").
+export const BOARD_SIGN = { ko: '타는 곳', en: 'BOARDING', ja: 'のりば', zh: '乘车处', es: 'EMBARQUE', id: 'NAIK DI SINI', vi: 'LÊN TÀU', hi: 'यहाँ से बैठें', fr: 'EMBARQUEMENT', th: 'ทางขึ้น', ar: 'الصعود' };
 const WALK_UNDER = 1.9; // rail height you can walk under
 
 // The station's sign: Korean as built, or the player's language (translate).
@@ -35,6 +37,31 @@ function signBoard() {
     g.fillText(big, 256, 88, 490);
     g.font = '800 26px system-ui, sans-serif';
     g.fillStyle = '#ffe27a'; g.fillText(lang ? '🍭' : 'COTTON CANDY EXPRESS', 256, 140, 490);
+    tex.needsUpdate = true;
+  };
+  draw(null);
+  return { tex, draw };
+}
+
+// The boarding sign and the floor mark at the gate: Korean as built (with
+// the English under it), or the player's language when translated.
+function boardingTex(w, h, floor) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const draw = (lang) => {
+    g.fillStyle = floor ? '#ff5f9e' : '#fffaf3'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = floor ? '#fffaf3' : TRAIN_PINK; g.lineWidth = 14; g.strokeRect(10, 10, w - 20, h - 20);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const big = lang ? BOARD_SIGN[lang] || BOARD_SIGN.en : BOARD_SIGN.ko;
+    g.fillStyle = floor ? '#fffaf3' : '#b8336e';
+    g.font = `900 ${floor ? 64 : 76}px "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif`;
+    g.fillText('🎢 ' + big, w / 2, h * (floor ? 0.36 : 0.4), w - 40);
+    g.font = `800 ${floor ? 34 : 38}px system-ui, sans-serif`;
+    g.fillStyle = floor ? '#ffe27a' : TRAIN_PINK;
+    g.fillText(lang ? '⬆ ⬆ ⬆' : 'BOARDING ⬆', w / 2, h * 0.76, w - 40);
     tex.needsUpdate = true;
   };
   draw(null);
@@ -222,6 +249,25 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
   back.position.set(P.x + 1.33, 4.2, P.z1 - 2);
   scene.add(back);
 
+  // Where you get on: a pink mark on the deck at the gate (its arrows point
+  // at the train), and a tall sign at the platform's way in.
+  const mark = boardingTex(512, 320, true);
+  const mat2 = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.4).rotateX(-Math.PI / 2).rotateY(Math.PI / 2), new THREE.MeshLambertMaterial({ map: mark.tex }));
+  mat2.position.set(GATE.x - 0.5, 0.1, GATE.z);
+  scene.add(mat2);
+  const post = boardingTex(512, 300, false);
+  const sx = -25.9, sz = GATE.z - 1.5;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.6, 8), mat(TRAIN_PINK));
+  pole.position.set(sx, 1.3, sz);
+  scene.add(pole);
+  for (const ry of [Math.PI / 2, -Math.PI / 2]) { // readable from the park and from the platform
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1), new THREE.MeshBasicMaterial({ map: post.tex }));
+    face.position.set(sx + Math.sin(ry) * 0.04, 2.55, sz);
+    face.rotation.y = ry;
+    scene.add(face);
+  }
+  block(sx, sz, 0.3, 0.3);
+
   // The trains.
   const trains = [];
   for (let k = 0; k < TRAINS; k++) {
@@ -240,5 +286,5 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
     else if (Math.floor(t * 4) !== Math.floor((t - dt) * 4)) waveFlags(t);
   };
   tick(Date.now() / 1000, 0);
-  return { tick, trains, arches, setSignLang: (lang) => sign.draw(lang) };
+  return { tick, trains, arches, setSignLang: (lang) => { sign.draw(lang); mark.draw(lang); post.draw(lang); } };
 }

@@ -265,6 +265,8 @@ export function buildThemePark(store, ROOM, EXIT) {
   if (X0 < -60 && Z0 < -35) {
     coaster = buildCoaster(scene, block, { lowSpec: typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4) });
     stations.coaster = [{ x: COASTER_GATE.x, z: COASTER_GATE.z, ry: -Math.PI / 2 }];
+    // The attendant stands at the gate, facing people coming from the park.
+    stations.coasterStaff = [{ x: COASTER_GATE.x - 0.8, z: COASTER_GATE.z + 1.7, ry: Math.PI / 2 }];
     buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 });
     // The square's paving runs on to the platform.
     const wpath = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6).rotateX(-Math.PI / 2), mat('#efe2c4'));

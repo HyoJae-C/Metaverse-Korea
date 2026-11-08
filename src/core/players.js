@@ -19,9 +19,12 @@ import { sanitizeLook } from '../data/appearance.js';
 export class RemotePlayers {
   // isOperator(name) → Promise<boolean>: asks the server whether that name
   // belongs to an operator (only asked when a player shows the badge).
+  // coasterSeat(ch, cs, p): put a rider on the roller coaster (cs = their
+  // train and seat, sent once; the train itself runs on the shared clock).
   // tick(p, players, dt): more to draw on each player every frame (the
   // flying costumes, game/sky-flight.js).
-  constructor(scene, labelLayer, { isOperator, tick } = {}) {
+  constructor(scene, labelLayer, { isOperator, coasterSeat, tick } = {}) {
+    this.coasterSeat = coasterSeat || null;
     this.scene = scene;
     this.layer = labelLayer;
     this.players = new Map();
@@ -295,6 +298,10 @@ export class RemotePlayers {
         const d = this.players.get(p.target.on);
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
+      // On the roller coaster: their seat in the train, every frame, from
+      // the shared clock (no positions sent while they ride).
+      if (this.coasterSeat && p.target?.cs > 0) { this.coasterSeat(p.ch, p.target.cs, p); p.onCoaster = true; }
+      else if (p.onCoaster) { p.onCoaster = false; r.rotation.set(0, r.rotation.y, 0); p.ch.setMoves?.(null); p.ch.setWind?.(0); }
       if (p.target) this.tick?.(p, this, dt);
       if (p.pet) p.pet.fences = this.fences || null;
       if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
