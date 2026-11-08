@@ -1,9 +1,6 @@
-// Bike share: stations on the street where you can rent a bike and ride.
-// Fictional service (no real bike-share brand). Stations come from the
-// region's bikes.json; each is snapped to the nearest street.
+// Ride models: bikes, the tandem, motorbike, cars and helmets. Everyone has a
+// bike of their own (core/bike-garage.js), so there are no rental stations.
 import * as THREE from 'three';
-import { placeOf } from './districts.js';
-import { latLonToLocal } from './storefronts.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -390,61 +387,4 @@ export function seatPosition(front, kind, seat) {
   const [ox, oz] = SEATS[kind]?.[seat] || SEATS[2][0];
   const s = Math.sin(front.rotation.y), c = Math.cos(front.rotation.y);
   return [front.position.x + ox * c + oz * s, front.position.z - ox * s + oz * c];
-}
-
-export class BikeStations {
-  constructor(scene, stations, center, roadGraph, findFree) {
-    this.items = [];
-    for (const st of stations) {
-      const [ax, az] = placeOf(st, center, latLonToLocal);
-      const n = roadGraph.nodes[roadGraph.nearest(ax, az)] || [ax, az];
-      const [x, z] = findFree(n[0], n[1]);
-      const group = new THREE.Group();
-      group.position.set(x, 0, z);
-      group.rotation.y = Math.atan2(ax - x, az - z) || 0;
-      scene.add(group);
-      // Rack with three parked bikes and a sign post.
-      const rack = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#9aa3ad'));
-      rack.position.y = 0.04;
-      group.add(rack);
-      for (let i = -1; i <= 1; i++) {
-        const b = makeBike();
-        b.rotation.y = Math.PI / 2;
-        b.position.set(i * 0.8, 0, 0);
-        b.scale.setScalar(0.9);
-        group.add(b);
-      }
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.2, 0.1), mat(DARK));
-      post.position.set(1.6, 1.1, 0);
-      group.add(post);
-      const sign = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.08), new THREE.MeshBasicMaterial({ map: signTexture() }));
-      sign.position.set(1.6, 2.3, 0);
-      group.add(sign);
-      this.items.push({ station: st, group, x, z });
-    }
-  }
-
-  nearby(x, z) {
-    return this.items.find((it) => Math.hypot(it.x - x, it.z - z) < 2.6) || null;
-  }
-}
-
-let tex = null;
-function signTexture() {
-  if (tex) return tex;
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = FRAME;
-  g.fillRect(0, 0, 128, 128);
-  g.font = '64px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText('🚲', 64, 58);
-  g.fillStyle = '#fff';
-  g.font = '800 22px system-ui, sans-serif';
-  g.fillText('자전거', 64, 108);
-  tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
 }

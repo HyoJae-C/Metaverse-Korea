@@ -24,6 +24,7 @@
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { folkBlockers } from '../src/data/folk-yard.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'public/regions/another-seoul/districts/euljiro.json');
@@ -127,6 +128,11 @@ const blockers = [
   { p: rect(hx0 - 0.8, hz0, hx0 + 0.8, hz1) }, { p: rect(hx1 - 0.8, hz0, hx1 + 0.8, hz1) },
   { p: rect(hx0, hz1 - 0.8, hx1, hz1 + 0.8) },
 ];
+// The folk games yard in the middle of Namsangol's plaza (game/folk-yard.js):
+// the tuho jar, the jegi stool and the seesaw are solid.
+const [yx0, yz0, yx1, yz1] = E.hanok.yard;
+const folkYard = { x: (yx0 + yx1) / 2, z: (yz0 + yz1) / 2 };
+blockers.push(...folkBlockers(folkYard));
 
 // The board by Heunginjimun (facts checked 2026-11-07).
 const HEUNGINJIMUN = {
@@ -156,6 +162,7 @@ const landmarks = [
   { type: 'citywall', x: E.wall.x, z: (E.wall.z0 + E.wall.z1) / 2, len: E.wall.z1 - E.wall.z0 },
   { type: 'wall', p: [[g + 3, hz0], [hx1, hz0], [hx1, hz1], [hx0, hz1], [hx0, hz0], [g - 3, hz0]], h: 2.6 },
   { type: 'hanokgate', x: g, z: hz0 },
+  { type: 'folkyard', x: folkYard.x, z: folkYard.z }, // yutnori, tuho, jegichagi, neolttwigi
   { type: 'arch', x: E.jangchung + 9, z: 6, w: 6, ry: Math.PI / 2, title: 'DONGDAEMUN FASHION TOWN', sub: '동대문 패션타운', color: '#c2185b' },
 ];
 

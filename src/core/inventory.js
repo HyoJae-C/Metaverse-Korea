@@ -127,6 +127,17 @@ export const ITEMS = {
     'plush-bear': ['🧸', { en: 'Teddy bear', ko: '곰돌이 인형', ja: 'くまのぬいぐるみ', zh: '泰迪熊' }],
     'plush-mandu': ['🥟', { en: 'Mandu plush', ko: '만두 인형', ja: 'マンドゥのぬいぐるみ', zh: '饺子玩偶' }],
   }),
+  // The balloon booth's gold medal prize (core/arcade.js GALLERY_GOLD_PRIZE).
+  'plush-bear-small': {
+    emoji: '🧸', plush: true,
+    name: { en: 'Small teddy bear', ko: '작은 곰인형', ja: '小さなくまのぬいぐるみ', zh: '小泰迪熊', es: 'Osito de peluche', id: 'Boneka beruang kecil', vi: 'Gấu bông nhỏ', hi: 'छोटा टेडी बियर', fr: 'Petit ours en peluche', th: 'ตุ๊กตาหมีตัวเล็ก', ar: 'دب محشو صغير' },
+    desc: {
+      en: 'A gold medal prize from the balloon shooting gallery in Another Land. Put it in your home: Decorate at home, then pick it.',
+      ko: '어나더랜드 풍선 사격 금메달 선물이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+      ja: 'アナザーランドの風船射的、金メダルの景品。家の「模様替え」で置けます。',
+      zh: '另一乐园气球射击的金牌奖品。在家里点“装饰”就能摆放。',
+    },
+  },
   // Lamps for your home, from the lighting shops on Cheonggyecheon-ro (furniture.js).
   ...lamps(),
   // Pets: adopted for money (price), or by code only (no price).
