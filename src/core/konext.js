@@ -7,9 +7,9 @@
 //                  wave, the main entrance with a deep canopy facing the
 //                  plaza, and a tall KONEXT pylon by it. The media wall round
 //                  its corner is a pair of region.json "screens" (wave).
-//   aquariumsoon:  the small glass pavilion of KONEXT Aquarium on the plaza:
-//                  the way down to the aquarium, closed for now with a
-//                  "Coming soon" board on its door.
+//   aquarium:      the small glass pavilion of KONEXT Aquarium on the plaza:
+//                  the way down to the aquarium (core/aquarium.js), its door
+//                  is the "konext-aquarium" storefront.
 //   samseongbridge: kerbs, railings and lamps of Samseong Bridge, where
 //                  Teheran-ro crosses Tancheon (along x).
 import * as THREE from 'three';
@@ -97,7 +97,7 @@ export function konext(g, l) {
   }
 }
 
-export function aquariumSoon(g, l) {
+export function aquariumPavilion(g, l) {
   const w = l.w || 20, d = l.d || 16, h = l.h || 6;
   // A glass box in a blue frame, its door on the plaza side (+x).
   const glass = new THREE.MeshLambertMaterial({ color: '#7fc4e3', transparent: true, opacity: 0.8 });
@@ -121,8 +121,8 @@ export function aquariumSoon(g, l) {
     g.add(holder);
     fishes.push({ holder, r: 2 + (i % 4) * 1.2, y: 1.2 + (i % 3) * 1.3, sp: 0.35 + (i % 5) * 0.08, ph: i * 1.7 });
   }
-  // The door and its sign (facing +x), and the "Coming soon" board.
-  box(g, 0.2, 3, 4, w / 2 + 0.05, 1.5, 0, '#24323e');
+  // The big sign over the door (facing +x); the door itself is the
+  // storefront's (stores.json "konext-aquarium": walk in to the aquarium).
   const sign = textSign(14, 2.8, (c, W, H) => {
     c.fillStyle = KONEXT_BLUE; c.fillRect(0, 0, W, H);
     c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -132,15 +132,6 @@ export function aquariumSoon(g, l) {
   sign.rotation.y = Math.PI / 2;
   sign.position.set(w / 2 + 0.3, h + 1.6, 0);
   g.add(sign);
-  const soon = textSign(3.4, 2, (c, W, H) => {
-    c.fillStyle = '#fff8e6'; c.fillRect(0, 0, W, H);
-    c.fillStyle = '#c0392b'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `900 ${Math.round(H * 0.3)}px ${FONT}`; c.fillText('COMING SOON', W / 2, H * 0.36);
-    c.fillStyle = '#333'; c.font = `700 ${Math.round(H * 0.2)}px ${FONT}`; c.fillText('곧 문을 열어요', W / 2, H * 0.72);
-  }, 256);
-  soon.rotation.y = Math.PI / 2;
-  soon.position.set(w / 2 + 0.2, 1.7, 0);
-  g.add(soon);
   return (t) => {
     for (const f of fishes) {
       const a = t * f.sp + f.ph;

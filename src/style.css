@@ -2271,6 +2271,11 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 /* Library shelf tabs: one section per bookshelf */
 .book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }
 
+/* The roller coaster's speed lines and dark edge (ui/coaster-fx.js). */
+.coaster-fx { position: fixed; inset: 0; pointer-events: none; }
+.coaster-fx canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.coaster-vignette { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at center, transparent 45%, rgba(40, 10, 30, 0.85) 100%); transition: opacity 0.2s linear; }
+
 /* Seoul Bank's teller window (ui/bank-ui.js) */
 .bank-panel { z-index: 7; }
 .bank-panel h3 { margin: 0 36px 10px 0; }

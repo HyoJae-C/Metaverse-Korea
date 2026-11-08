@@ -18,7 +18,7 @@ export const SEATS = 6;
 export const BOARD_MS = 12000; // countdown after the first driver gets in
 export const ROUND_S = 60; // driving time
 export const TURN_MS = 20000; // a called number has this long to get in
-export const BUMPER_COST = 5000; // won, like the other rides
+export const BUMPER_COST = 4000; // won (the other rides: RIDE_PRICE in themepark.js)
 
 // The rink: inner floor (cars stay inside), with the gate on the west side
 // facing the plaza. It fills the park's south-east corner, from the drop

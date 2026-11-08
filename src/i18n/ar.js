@@ -394,6 +394,7 @@ export const AR = {
   "news.title": "التحديثات",
   'settings.sfx': 'المؤثرات الصوتية',
   'settings.haptics': 'الاهتزاز واهتزاز الشاشة',
+  'settings.rideFx': 'تأثيرات ألعاب أخف (دوار أقل)',
   'install.row': 'إضافة إلى الشاشة الرئيسية',
   'install.title': 'العب كأنه تطبيق',
   'install.why': 'أضف Another Seoul إلى شاشتك الرئيسية وافتحه بلمسة واحدة بملء الشاشة، دون متجر تطبيقات.',

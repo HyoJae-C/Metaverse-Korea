@@ -660,10 +660,24 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     }
   }
 
+  let styledHair = null; // (setWind blows its locks back)
   if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
+    if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
   }
+  // Wind: every piece but the cap over the skull streams back and up a
+  // little and flutters, the long ones (low and behind) the most.
+  let windK = 0, windT = 0;
+  const locks = styledHair ? styledHair.children.slice(1).map((m) => ({ m, p: m.position.clone(), r: m.rotation.x, w: Math.min(1, 0.35 + Math.max(0, -m.position.y) * 0.9 + Math.max(0, -m.position.z) * 0.5) })) : [];
+  const blow = (dt) => {
+    windT += dt;
+    for (const [i, l] of locks.entries()) {
+      const k = windK * l.w, fl = Math.sin(windT * 31 + i * 1.7) * 0.05 * k;
+      l.m.position.set(l.p.x, l.p.y + 0.14 * k, l.p.z - 0.32 * k + fl);
+      l.m.rotation.x = l.r - 0.55 * k + fl * 3;
+    }
+  };
 
   body.visible = false;
   root.add(m);
@@ -717,6 +731,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
+    // Wind in the hair, 0..1 (the roller coaster).
+    setWind(k) { if (!locks.length || (k < 0.01 && windK < 0.01)) { windK = k; return; } windK = k; if (k < 0.01) blow(0); },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -925,6 +941,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         barbell.position.addVectors(a, b).multiplyScalar(0.5);
         barbell.quaternion.setFromUnitVectors(_up, _hv3.subVectors(b, a).normalize());
       }
+      if (windK > 0.01) blow(dt);
       if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
     },
   };
