@@ -196,7 +196,10 @@ export class Storefronts {
       // Floating badge above the entrance (sprites always face the camera).
       // Shops have a big sign already, so only homes (a small nameplate)
       // get one, and it hides behind buildings.
-      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTexture(storeIcon(store), store.name.ko, store.colors.sign), depthWrite: false, depthTest: true, transparent: true }));
+      // (Only homes ever show it, so shops don't draw one: 240 of them were
+      // 60 MB of canvas memory for nothing.)
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: home ? badgeTexture(storeIcon(store), store.name.ko, store.colors.sign) : null, depthWrite: false, depthTest: true, transparent: true }));
+      badge.visible = false;
       badge.userData.home = home;
       badge.scale.set(6, 1.5, 1);
       badge.position.set(0, home ? 5.2 : Math.max(6.4, signTop + 1), 2.0);
@@ -216,6 +219,7 @@ export class Storefronts {
       const [t, sub] = on || !local ? [text, ''] : [local, it.store.name.ko];
       it.signMat.map = it.hanokStyle ? hanokSignTexture(it.hanokStyle, t, it.store.colors.sign, sub) : signTexture(t, it.store.colors.sign, '#ffffff', sub, it.shape);
       it.signMat.needsUpdate = true;
+      if (!it.badge.userData.home) continue;
       it.badge.material.map.dispose();
       it.badge.material.map = badgeTexture(storeIcon(it.store), text, it.store.colors.sign);
     }
