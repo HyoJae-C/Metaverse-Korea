@@ -708,6 +708,9 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 }
 .ad-box small { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #8a6d5a; }
 .ad-box strong { font-size: 22px; }
+.ad-scene { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; }
+.ad-place { font-size: 15px; color: #4a3f35; }
+.ad-place:empty { display: none; }
 .ad-line { margin: 0; font-size: 18px; font-weight: 800; color: #4a3f35; }
 .ad-count { font-size: 44px; font-weight: 800; color: var(--accent); }
 
@@ -2193,3 +2196,22 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .boot-note { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 8px 0 4px; text-align: center; }
 .boot-note p { margin: 0; font-size: 15px; line-height: 1.5; color: #5a4a40; word-break: keep-all; }
 .boot-note .primary[hidden] { display: none; }
+
+/* Start screen: scenes from the game cross-fade behind the panel, 3 s each. */
+.start-scenes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.start-scenes::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(40, 32, 26, 0.05), rgba(40, 32, 26, 0.35)); }
+.start-scenes .scene {
+  position: absolute; inset: 0; background: center / cover no-repeat;
+  opacity: 0; animation: start-scene 12s infinite;
+}
+.start-scenes .scene:nth-child(2) { animation-delay: 3s; }
+.start-scenes .scene:nth-child(3) { animation-delay: 6s; }
+.start-scenes .scene:nth-child(4) { animation-delay: 9s; }
+.start-scenes .scene span {
+  position: absolute; left: 16px; top: 16px; z-index: 1;
+  padding: 6px 12px; border-radius: 999px; font-weight: 800; font-size: 14px;
+  background: rgba(255, 250, 242, 0.92); color: #4a3f35;
+}
+@keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
+#start > .panel { position: relative; z-index: 1; }

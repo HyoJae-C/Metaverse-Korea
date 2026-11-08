@@ -181,6 +181,8 @@
       </div>
       <div class="ad-overlay" id="ad-overlay" hidden>
         <div class="ad-box">
+          <img class="ad-scene" id="ad-scene" alt="" hidden />
+          <b class="ad-place" id="ad-place"></b>
           <small data-i18n="wallet.adDemo"></small>
           <strong>🇰🇷 Another Seoul</strong>
           <p class="ad-line" data-i18n="wallet.adLine"></p>
@@ -354,6 +356,13 @@
 
     <!-- Start screen -->
     <div class="overlay" id="start">
+      <!-- Scenes from the game behind the start panel, 3 s each (style.css .start-scenes; src/data/promos.js) -->
+      <div class="start-scenes" aria-hidden="true">
+        <div class="scene" style="background-image: url('assets/promo/busking.webp?v=1')"><span data-i18n="promo.busking">🎸 Busking in Hongdae</span></div>
+        <div class="scene" style="background-image: url('assets/promo/palace.webp?v=1')"><span data-i18n="promo.palace">👑 The royal procession at Gyeongbokgung</span></div>
+        <div class="scene" style="background-image: url('assets/promo/bukchon.webp?v=1')"><span data-i18n="promo.bukchon">🏯 Bukchon Hanok Village</span></div>
+        <div class="scene" style="background-image: url('assets/promo/cablecar.webp?v=1')"><span data-i18n="promo.cablecar">🚡 Namsan cable car</span></div>
+      </div>
       <div class="panel" id="step-lang">
         <div class="logo">🏙️</div>
         <div class="boot-note" id="boot-note" role="status"><p id="boot-msg">Loading…</p><button class="primary" id="boot-reload" hidden>Reload</button></div>
