@@ -151,6 +151,11 @@ export default {
       // the bearers of the red parasol and the ceremonial fan (홍포)
       'hanbok-hongpo': { top: 0xb8322c, accent: 0x1d1b22, bottom: 0xb8322c },
     }),
+    // Sky view costumes (operators only, game/sky-flight.js): Seoulman's
+    // green suit with blue trousers and red cuffs, collar and boots; the
+    // flight suit's armoured under-layer with light-bar trims.
+    'sky-seoulman': { url: 'models/kaykit2/rogue.glb', emoji: '🦸', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.004 }, colors: { top: 0x1f9e5a, bottom: 0x2f5fd6, accent: 0xe0302f, shoes: 0xe0302f, sole: 0xb8262a } }) },
+    'sky-armor': { url: 'models/kaykit2/rogue.glb', emoji: '🤖', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.03 }, colors: { top: 0x3a4658, bottom: 0x2e3746, accent: 0x5ff5d8, shoes: 0x262e3b, sole: 0x1b2029, stitch: 0x5ff5d8 } }) },
     // Swimwear (Olympic Park Pool).
     ...variants('rogue', '🩱', SWIM_ONE, {
       'swim-navy': { top: 0x24407a, bottom: 0x24407a },

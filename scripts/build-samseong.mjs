@@ -7,8 +7,8 @@
 // (only its outside for now): a long, low building along Teheran-ro with a
 // wide plaza in front of its main entrance on the Yeongdong-daero side, a
 // media wall wrapped round its corner, a glass office tower behind it and
-// the small glass pavilion of KONEXT Aquarium (the aquarium is built under
-// the mall later; for now its door says "Coming soon"). Tancheon, the
+// the small glass pavilion of KONEXT Aquarium (its door leads into the
+// aquarium, core/aquarium.js). Tancheon, the
 // stream between Gangnam and Songpa, runs along the east edge; Teheran-ro
 // crosses it on Samseong Bridge and runs on towards Jamsil as Olympic-ro.
 //
@@ -100,7 +100,7 @@ function build() {
   const cx = (MALL.x0 + MALL.x1) / 2, cz = (MALL.z0 + MALL.z1) / 2;
   const landmarks = [
     { type: 'konext', x: cx, z: cz, ry: 0, w: MALL.x1 - MALL.x0, d: MALL.z1 - MALL.z0, h: MALL.h },
-    { type: 'aquariumsoon', x: (PAVILION.x0 + PAVILION.x1) / 2, z: (PAVILION.z0 + PAVILION.z1) / 2, ry: 0, w: PAVILION.x1 - PAVILION.x0, d: PAVILION.z1 - PAVILION.z0, h: PAVILION.h },
+    { type: 'aquarium', x: (PAVILION.x0 + PAVILION.x1) / 2, z: (PAVILION.z0 + PAVILION.z1) / 2, ry: 0, w: PAVILION.x1 - PAVILION.x0, d: PAVILION.z1 - PAVILION.z0, h: PAVILION.h },
     { type: 'samseongbridge', x: (TANCHEON.x0 + TANCHEON.x1) / 2, z: TEHERAN.z, ry: 0, len: TANCHEON.x1 - TANCHEON.x0 + 4, w: TEHERAN.w },
     { type: 'sign', x: -40, z: -24, ry: Math.PI,
       title: name('KONEXT', '코넥스트', 'コネクスト', 'KONEXT'),
