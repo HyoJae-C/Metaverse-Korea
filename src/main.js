@@ -178,6 +178,7 @@ import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
+import { parseTaxi } from './core/taxi-share.js';
 import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
@@ -1328,11 +1329,16 @@ async function joinRoom(room, roomScene, area = null) {
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
-    onLeave: (id) => { tandemGone(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
+      if (parseTaxi(e)) {
+        const m = parseTaxi(e);
+        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && taxi.onMsg(id, others.nameOf(id) || '?', m)) action = STALE;
+        return;
+      }
       if (parseTarot(e)) {
         const m = parseTarot(e);
         if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
@@ -2794,8 +2800,18 @@ const mapView = new MapView({
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
+  get others() { return others; }, get net() { return net; }, safety,
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop,
+  // The shop or place nearest (x, z), for a shared taxi's "going to …".
+  placeName: (x, z) => {
+    let best = null, bd = 80;
+    for (const it of storefronts.items) {
+      const d = Math.hypot(it.door.x - x, it.door.z - z);
+      if (d < bd) { bd = d; best = it.store; }
+    }
+    return best && localName(best.name, getLanguage());
+  },
 });
 const { rideTaxi } = taxi;
 // Action button (and E / Enter key).
@@ -5707,6 +5723,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
     peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    taxi: (x, z, label = 'test') => rideTaxi({ x, z, label }),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
     poolBoard: () => interior?.boardCanvas?.toDataURL(),
     pool: () => ({ act: pool.act, mode: pool.mode?.kind || null, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], swim: wearingSwim(), tube: pool.tube, race: pool.mode?.race ? { t: +pool.mode.race.t.toFixed(2), x: +pool.mode.race.x.toFixed(1), v: +pool.mode.race.v.toFixed(2), done: pool.mode.race.done } : null, log: { ...poolLog.s } }),
