@@ -10,6 +10,19 @@ export const cleanName = (s) => String(s || '').replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ
 // operator by name (the real one has the 🛡️ badge).
 const RESERVED = /운영자|운영진|운영팀|관리자|개발자|admin|operator|moderator|official|staff|developer|^gm\d*$/i;
 export const isReservedName = (s) => RESERVED.test(String(s || '').replace(/\s+/g, ''));
+// The plain default names ("여행자", "Traveler", …). Nobody owns them: a
+// player who leaves the name empty (or types one of these) gets a numbered
+// one instead, like 여행자100, so friend requests by name reach one person.
+const DEFAULT_NAMES = ['여행자', 'traveler', 'viajero', 'pelancong'];
+export const isDefaultName = (s) => !String(s || '').replace(/\s+/g, '') || DEFAULT_NAMES.includes(String(s).replace(/\s+/g, '').toLowerCase());
+// The prefix for a numbered name in this language; languages whose word
+// for "traveler" isn't in Hangul or Latin letters use "Traveler".
+export const defaultNamePrefix = (word) => {
+  const w = cleanName(word).replace(/\s+/g, '');
+  return DEFAULT_NAMES.includes(w.toLowerCase()) ? w : 'Traveler';
+};
+// When the server can't hand out a number (offline play), make one up.
+export const localDefaultName = (prefix, rand = Math.random) => prefix + (100 + Math.floor(rand() * 9900));
 const DAY = 24 * 60 * 60 * 1000;
 const KEY = 'mk.identity';
 

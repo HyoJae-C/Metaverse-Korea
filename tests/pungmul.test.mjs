@@ -63,7 +63,7 @@ test('nobody jumps: each person walks smoothly through the whole routine, at a b
       px = x; pz = z;
     }
   }
-  assert.ok(worst < 6, `fastest anyone moves: ${worst.toFixed(2)} m/s`);
+  assert.ok(worst < 4.5, `fastest anyone moves: ${worst.toFixed(2)} m/s`);
 });
 
 test('the column winds into a tight spiral (멍석말이) and the pan has rings', () => {

@@ -5,7 +5,7 @@ import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSl
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
-const FAN = [0, -150]; // main.js: the palace offset + (0, -150)
+const FAN = [-38, -28]; // main.js: the palace offset + (-38, -28), in the front court
 
 test('the fan dance has an unseen ring you cannot walk into', () => {
   const ring = ringPoly(FAN[0], FAN[1], FAN_KEEP);
@@ -91,7 +91,7 @@ test('the procession picks a new way on, pausing about 10 s for photos', () => {
 });
 
 test('the procession stays round Geunjeongjeon, where Enter brings you', () => {
-  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.hypot(x - FAN[0], z - FAN[1]) < 125, `stop ${x},${z} is out of sight of the courtyard`);
+  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.hypot(x, z - FAN[1]) < 170, `stop ${x},${z} is out of sight of the courtyard`);
   const who = ROYAL_ORDER.map((o) => o.who);
   for (const w of ['king', 'queen', 'parasol', 'fan', 'eunuch', 'sanggung']) assert.ok(who.includes(w), w);
   assert.equal(who.filter((w) => w === 'guard').length, 2);
@@ -112,4 +112,18 @@ test('now and then the last court lady trips, gets up flustered and hurries afte
   // she catches up: faster than the procession walks
   assert.ok(TRIP_RUN > 1.6 * 2);
   assert.equal(ROYAL_ORDER.filter((o) => o.who === 'lady').length, 2);
+});
+
+test('the palace is smaller and the king never leaves its inner court', () => {
+  const walls = map.landmarks.filter((l) => l.type === 'wall');
+  const outer = walls[0].p, xs = outer.map(([x]) => x), zs = outer.map(([, z]) => z);
+  assert.ok(Math.max(...xs) - Math.min(...xs) <= 170 && -Math.min(...zs) <= 270, 'about 60% of the old 270 x 440 m');
+  assert.deepEqual(map.meta.enclosure.box, [Math.min(...xs), 0, Math.max(...xs), Math.min(...zs)]);
+  // inside Heungnyemun's walls: the inner court round Geunjeongjeon
+  const inner = walls[1].p, ix = Math.max(...inner.map(([x]) => Math.abs(x))), iz = inner.map(([, z]) => z);
+  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.abs(x) < ix - 3 && z < Math.max(...iz) - 3 && z > Math.min(...iz) + 3, `stop ${x},${z} is outside the inner court`);
+  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -8) and Heungnyemun's wall
+  assert.ok(FAN[1] + FAN_KEEP < -8 && FAN[1] - FAN_KEEP > Math.max(...iz), 'the fan dance is in the front court');
+  const pass = Math.min(...outer.map(([x]) => x));
+  assert.ok(FAN[0] - FAN_KEEP > pass && FAN[0] + FAN_NOTE < 0, 'off the way from gate to gate, inside the wall');
 });

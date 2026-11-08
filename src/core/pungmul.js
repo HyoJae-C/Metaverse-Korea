@@ -67,7 +67,7 @@ export const ROUTINE = [
   { name: 'pan', len: 38 },
 ];
 export const CYCLE = ROUTINE.reduce((s, p) => s + p.len, 0);
-export const BLEND = 10; // seconds to walk from the circle into the pan's rings, and back out
+export const BLEND = 12; // seconds to walk from the circle into the pan's rings, and back out
 const smooth = (k) => { const c = Math.max(0, Math.min(1, k)); return c * c * (3 - 2 * c); };
 const lerp = (a, b, k) => a + (b - a) * k;
 
