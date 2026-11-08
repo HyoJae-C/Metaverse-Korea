@@ -5271,7 +5271,8 @@ function updateAction(p, tSec) {
       const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
       next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? MEMORIAL_TEXT.look : MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
     } else if (nearStation(p, 'books', 1.5)) {
-      next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
+      const shelf = interior.stations.books.reduce((a, st) => (Math.hypot(p.x - st.x, p.z - st.z) < Math.hypot(p.x - a.x, p.z - a.z) ? st : a));
+      next = { key: 'books:' + shelf.section, label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf(shelf.section) };
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
       next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => {
@@ -5915,7 +5916,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     stand: () => standUp(),
     tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarotUi.offer && { ...tarotUi.offer }, state: tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
     bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
-    bookShelf: () => bookUi.showShelf(),
+    bookShelf: (section) => bookUi.showShelf(section),
+    bookStations: () => interior?.stations?.books?.map((st) => ({ ...st })) ?? null,
     readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
     choices: () => action?.opts?.map((o) => o.label) || null,

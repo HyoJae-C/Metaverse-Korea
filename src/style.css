@@ -2244,3 +2244,5 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
 #start > .panel { position: relative; z-index: 1; }
+/* Library shelf tabs: one section per bookshelf */
+.book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }

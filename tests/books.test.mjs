@@ -65,3 +65,16 @@ test('parseBook rejects a page without a translation', async () => {
   assert.throws(() => parseBook(head + '===\n한국어만 있어요\n'), /---/);
   assert.equal(parseBook(head + '===\n# 제목 | Title\n본문입니다\n---\nBody text\n').pages[0].heading.en, 'Title');
 });
+
+test('library shelves: every book sits on exactly one section shelf', async () => {
+  const { SHELF_SECTIONS, booksInSection } = await import('../src/core/books.js');
+  assert.deepEqual(SHELF_SECTIONS.map((s) => s.id), ['learn', 'children', 'story', 'poems']);
+  const placed = SHELF_SECTIONS.flatMap((s) => booksInSection(s.id).map((b) => b.id));
+  assert.equal(placed.length, BOOKS.length);
+  assert.equal(new Set(placed).size, BOOKS.length);
+  for (const s of SHELF_SECTIONS) {
+    assert.ok(booksInSection(s.id).length > 0, s.id);
+    assert.ok(s.name.en && s.name.ko, s.id);
+  }
+  assert.ok(booksInSection('story').some((b) => b.id === 'unsu'));
+});

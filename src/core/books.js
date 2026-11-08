@@ -233,6 +233,14 @@ BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa
 // tales). The shelf knows only the title; the text is loaded from
 // public/library/<id>.json when the book is opened.
 export const LIT_KINDS = ['children', 'story', 'poems'];
+// The library's bookshelves: each shelf holds one section, labeled on top.
+export const SHELF_SECTIONS = [
+  { id: 'learn', icon: '🇰🇷', name: { en: 'Learn Korean', ko: '한국어 공부', ja: '韓国語の勉強', zh: '学韩语' } },
+  { id: 'children', icon: '🧸', name: { en: "Children's stories", ko: '어린이 동화', ja: '子ども向けのお話', zh: '儿童故事' } },
+  { id: 'story', icon: '📖', name: { en: 'Short stories', ko: '단편소설', ja: '短編小説', zh: '短篇小说' } },
+  { id: 'poems', icon: '🌸', name: { en: 'Poetry', ko: '시집', ja: '詩集', zh: '诗集' } },
+];
+export const booksInSection = (id) => BOOKS.filter((b) => (id === 'learn' ? !b.lit : b.lit?.kind === id));
 for (const b of LIBRARY) {
   BOOKS.push({ id: b.id, icon: b.icon, color: b.color, title: b.title, lit: { kind: b.kind, author: b.author, pages: b.pages }, pages: [] });
 }

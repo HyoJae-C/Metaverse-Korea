@@ -1,6 +1,6 @@
 // Library books: pick one from the shelf to carry, then read it page by page
 // while sitting anywhere (a café, a bench, the jjimjilbang...).
-import { BOOKS, bookById, pageCount, EDITIONS, defaultEdition, pageUrl, LIT_KINDS, litUrl } from '../core/books.js';
+import { bookById, pageCount, EDITIONS, defaultEdition, pageUrl, litUrl, SHELF_SECTIONS, booksInSection } from '../core/books.js';
 import { getLanguage } from '../core/i18n.js';
 import { L, fmt } from './pocha-ui.js';
 
@@ -20,11 +20,6 @@ const T = {
   next: { en: 'Next ▶', ko: '다음 ▶', ja: '次へ ▶', zh: '下一页 ▶' },
   putDown: { en: 'Put the book away', ko: '책 내려놓기', ja: '本をしまう', zh: '把书放下' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
-  library: { en: 'Library', ko: '도서관', ja: '図書館', zh: '图书馆' },
-  learn: { en: 'Learn Korean', ko: '한국어 공부', ja: '韓国語の勉強', zh: '学韩语' },
-  children: { en: "Children's stories", ko: '어린이 동화', ja: '子ども向けのお話', zh: '儿童故事' },
-  story: { en: 'Short stories', ko: '단편소설', ja: '短編小説', zh: '短篇小说' },
-  poems: { en: 'Poetry', ko: '시집', ja: '詩集', zh: '诗集' },
   freeNote: {
     en: 'Free to read: Korean classics whose copyright has ended, and old folk tales, with English translations.',
     ko: '저작권이 끝난 한국 문학과 옛이야기를 무료로 읽을 수 있어요. 영어 번역도 함께 있어요.',
@@ -68,29 +63,34 @@ export class BookUI {
     this.root.replaceChildren(x, el('h3', null, title));
   }
 
-  showShelf() {
+  // One bookshelf = one section. The chips on top switch to another shelf
+  // without walking over to it.
+  showShelf(section = this.section || 'learn') {
+    const sec = SHELF_SECTIONS.find((x) => x.id === section) || SHELF_SECTIONS[0];
+    this.section = sec.id;
     this.root.hidden = false;
     this.root.classList.remove('book-full', 'book-lit');
-    this._head('📚 ' + tt('library'));
-    this.root.append(el('p', 'order-hint', tt('shelfHow')));
-    const section = (title, list, note) => {
-      this.root.append(el('h4', 'book-shelf-title', title));
-      if (note) this.root.append(el('p', 'fine', note));
-      const grid = el('div', 'book-grid');
-      for (const b of list) {
-        const mine = this.carrying() === b.id;
-        const card = el('button', 'book-card' + (mine ? ' picked' : ''));
-        card.style.setProperty('--spine', b.color);
-        card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)));
-        if (b.lit) card.append(el('small', 'book-author', L(b.lit.author)));
-        card.append(el('small', null, mine ? tt('carrying') : tt('pages', { n: pageCount(b) })));
-        card.onclick = () => { this.take(b.id); this.showShelf(); };
-        grid.append(card);
-      }
-      this.root.append(grid);
-    };
-    section('🇰🇷 ' + tt('learn'), BOOKS.filter((b) => !b.lit));
-    LIT_KINDS.forEach((k, i) => section({ children: '🧸 ', story: '📖 ', poems: '🌸 ' }[k] + tt(k), BOOKS.filter((b) => b.lit?.kind === k), i === 0 ? tt('freeNote') : null));
+    this._head(`${sec.icon} ${L(sec.name)}`);
+    const tabs = el('div', 'lit-modes book-tabs');
+    for (const x of SHELF_SECTIONS) {
+      const c = el('button', 'chip' + (x.id === sec.id ? ' on' : ''), `${x.icon} ${L(x.name)}`);
+      c.onclick = () => this.showShelf(x.id);
+      tabs.append(c);
+    }
+    this.root.append(tabs, el('p', 'order-hint', tt('shelfHow')));
+    if (sec.id !== 'learn') this.root.append(el('p', 'fine', tt('freeNote')));
+    const grid = el('div', 'book-grid');
+    for (const b of booksInSection(sec.id)) {
+      const mine = this.carrying() === b.id;
+      const card = el('button', 'book-card' + (mine ? ' picked' : ''));
+      card.style.setProperty('--spine', b.color);
+      card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)));
+      if (b.lit) card.append(el('small', 'book-author', L(b.lit.author)));
+      card.append(el('small', null, mine ? tt('carrying') : tt('pages', { n: pageCount(b) })));
+      card.onclick = () => { this.take(b.id); this.showShelf(sec.id); };
+      grid.append(card);
+    }
+    this.root.append(grid);
   }
 
   read(id) {
