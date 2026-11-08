@@ -138,12 +138,10 @@ import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
-import { DUCK_SEATS } from './core/park.js';
 import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
-import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
-import { Contacts, touching, wobble } from './core/bump.js';
+import { createDuckBoats } from './game/duck-boats.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
 import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
@@ -3694,7 +3692,7 @@ function onPeerFishing(id, msg) {
   const p = others.players.get(id);
   if (!FISH_PHASES.has(ph) || !p || p.hidden) return;
   let rig = peerRigs.get(id);
-  if (!rig) { rig = createFishingRig({ remote: true, waterY: () => interior?.river?.position.y ?? -0.25 }); peerRigs.set(id, rig); }
+  if (!rig) { rig = createFishingRig({ remote: true, waterY: () => hanPark()?.river?.position.y ?? -0.25 }); peerRigs.set(id, rig); }
   const f = fid ? fishById(fid) : null;
   rig.phase(ph, f || (ph === 'land' ? { rarity: 1 } : undefined));
   if (ph === 'cast') p.ch.play('cast');
@@ -3713,7 +3711,7 @@ function updatePeerRigs(dt) {
   }
 }
 let legendOn = false, legendTug = 0;
-const fishRig = createFishingRig({ sfx, waterY: () => interior?.river?.position.y ?? -0.25 });
+const fishRig = createFishingRig({ sfx, waterY: () => hanPark()?.river?.position.y ?? -0.25 });
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
@@ -3750,7 +3748,7 @@ const fishingUi = new FishingUI({
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   park: () => interior?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
   rod: () => rodSkins.equipped,
-  lucky: () => { const p = me.root.position; return !!interior?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
+  lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
@@ -3846,7 +3844,7 @@ const INGREDIENT_TEXT = {
 // the kiosk's goods (the products on the counter can still be looked at).
 const MART_TEXT = { buy: { en: 'Buy at {name}', ko: '{name}에서 사기', ja: '{name}で買う', zh: '在{name}购买' } };
 const martStore = () => ({ ...interior.store, name: interior.store.kiosk.name, products: interior.store.products.filter((q) => q.kiosk) });
-const martCounter = (p) => !!(interior?.park && interior.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
+const martCounter = (p) => !!(hanPark()?.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
 let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
@@ -5285,168 +5283,15 @@ function updateFireworks() {
   }
 }
 
-// Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
-// someone gets in (two seats each). Not a game: whoever sets off steers the
-// boat freely on the river for up to a minute (free), then it pedals itself
-// back to the dock and they get off. A friend in the other seat rides along.
-const DUCK_TEXT = {
-  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', vi: 'Lên thuyền vịt', hi: 'बत्तख नाव में बैठें', fr: 'Monter dans le pédalo canard', th: 'ขึ้นเรือเป็ด', id: 'Naik perahu bebek' },
-  go: { en: 'Duck boat ride', ko: '오리배 출발', ja: 'アヒルボートで出発', zh: '鸭子船出发', es: 'Paseo en bote pato', ar: 'جولة بقارب البطة', vi: 'Đi thuyền vịt', hi: 'बत्तख नाव की सवारी', fr: 'Balade en pédalo canard', th: 'นั่งเรือเป็ด', id: 'Naik perahu bebek' },
-  back: { en: 'Back to dock', ko: '선착장으로 돌아가기', ja: '乗り場に戻る', zh: '回码头', es: 'Volver al muelle', ar: 'العودة إلى الرصيف', vi: 'Quay về bến', hi: 'घाट पर लौटें', fr: 'Retour au quai', th: 'กลับท่าเรือ', id: 'Kembali ke dermaga' },
-  docked: { en: 'Back at the dock. Thanks for riding! 🦆', ko: '선착장에 도착했어요. 즐거웠죠? 🦆', ja: '乗り場に着きました。楽しかった？🦆', zh: '回到码头了，玩得开心吗？🦆', es: '¡De vuelta en el muelle! Gracias por pasear 🦆', ar: 'عدت إلى الرصيف. شكرًا على الجولة! 🦆', vi: 'Đã về bến. Cảm ơn bạn đã đi thuyền! 🦆', hi: 'घाट पर वापस। सवारी के लिए धन्यवाद! 🦆', fr: 'De retour au quai. Merci d\'être monté ! 🦆', th: 'กลับถึงท่าเรือแล้ว ขอบคุณที่ใช้บริการ! 🦆', id: 'Sudah kembali di dermaga. Terima kasih! 🦆' },
-  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', vi: 'Thuyền này đã đầy', hi: 'यह नाव भर गई है', fr: 'Ce bateau est plein', th: 'เรือลำนี้เต็มแล้ว', id: 'Perahu ini penuh' },
-  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', vi: 'Đang chờ ở bến · {n}/2 người trên thuyền', hi: 'घाट पर इंतज़ार · {n}/2 सवार', fr: 'En attente au quai · {n}/2 à bord', th: 'รอที่ท่าเรือ · บนเรือ {n}/2', id: 'Menunggu di dermaga · {n}/2 naik' },
-};
-let duckRide = null; // my trip while I steer (core/duck-boat.js)
-let duckFollowed = false; // I rode along with a friend steering
-// Which boat each person is in (me and others), to place the boats.
-function duckRiders(i) {
-  let n = seated?.duck === i ? 1 : 0;
-  for (const o of others.players.values()) if (o.target?.db === i + 1) n++;
-  return n;
-}
-function boardDuck(i) {
-  const d = interior.ducks[i];
-  const taken = [...others.players.values()].filter((o) => o.target?.db === i + 1).map((o) => o.target.dbs | 0);
-  const seat = taken.includes(0) ? 1 : 0;
-  if (duckRiders(i) >= DUCK_SEATS.length) { shop.toast(L(DUCK_TEXT.full)); return; }
-  duckRide = null; duckFollowed = false;
-  sitDown({ x: d.home.x + DUCK_SEATS[seat][0], z: d.home.z + DUCK_SEATS[seat][1], ry: Math.PI, stand: [d.home.x, d.home.z + 2.6], duck: i, duckSeat: seat });
-  shop.toast(fmt(L(DUCK_TEXT.waiting), { n: duckRiders(i) }));
-}
-// Someone else in my boat who is steering it (they send st.dr).
-const duckDriver = () => {
-  if (seated?.duck == null) return null;
-  for (const [id, o] of others.players) if (o.target?.db === seated.duck + 1 && o.target.dr) return { id, o };
-  return null;
-};
-function startDuckRide() {
-  if (seated?.duck == null || duckDriver()) return;
-  duckRide = new DuckRide(interior.ducks[seated.duck].home);
-  cam.pitch = Math.min(cam.pitch, 0.3); cam.dist = Math.max(cam.dist, 8); // look out over the river
-  action = STALE;
-}
-// A boat's pose from a rider's (seat in the boat's own space, turned with it).
-function boatFromRider(rx, rz, rry, seat) {
-  const ry = rry - Math.PI, [sx, sz] = DUCK_SEATS[seat] || DUCK_SEATS[0];
-  return { x: rx - (sx * Math.cos(ry) + sz * Math.sin(ry)), z: rz - (-sx * Math.sin(ry) + sz * Math.cos(ry)), ry };
-}
-function placeBoat(d, b) {
-  d.g.position.set(b.x, Math.sin(performance.now() / 500 + d.i) * 0.03, b.z);
-  d.g.rotation.y = b.ry;
-}
-// Each frame in the park: steer my boat (or ride in a friend's), carry me
-// with it, and put other people's boats where they sit.
-// Boats bump into each other (core/bump.js). I only push my own boat; the
-// other drivers push theirs on their screens, and everyone sees it through
-// the usual position updates. The wobble, splash and boing play for all.
-const duckContacts = new Contacts();
-let duckRings = null; // little splash rings where two boats met
-function duckSplash(x, z, big) {
-  if (!duckRings || duckRings.scene !== interior.scene) {
-    const geo = new THREE.RingGeometry(0.8, 1, 24).rotateX(-Math.PI / 2);
-    duckRings = { scene: interior.scene, list: [0, 1, 2].map(() => {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false }));
-      m.visible = false; interior.scene.add(m); return m;
-    }) };
-  }
-  const m = duckRings.list.find((r) => !r.visible) || duckRings.list[0];
-  m.visible = true; m.position.set(x, -0.2, z);
-  m.userData.t = 0; m.userData.size = 0.8 + big * 1.4;
-}
-// Where the other boats are this frame (not mine): moving if someone steers
-// it, otherwise parked (it won't budge).
-function otherBoats(mine) {
-  const list = [];
-  for (const d of interior.ducks) {
-    if (d.i === mine) continue;
-    let driven = false;
-    for (const o of others.players.values()) if (o.target?.db === d.i + 1 && o.target.dr) { driven = true; break; }
-    list.push({ x: d.g.position.x, z: d.g.position.z, vx: d.vx || 0, vz: d.vz || 0, fixed: !driven, i: d.i });
-  }
-  return list;
-}
-function updateDucks(dt) {
-  if (!interior?.ducks) { if (duckRide) duckRide = null; duckUi.hud(null); return; }
-  const moved = new Set();
-  if (seated?.duck != null) {
-    const d = interior.ducks[seated.duck];
-    const drv = !duckRide && duckDriver();
-    let b;
-    if (duckRide) {
-      // The stick, camera-relative like walking: the bow turns towards it.
-      const { x: mx, y: my } = input.move;
-      const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw), rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw);
-      duckRide.steer(fx * my + rx * mx, fz * my + rz * mx, dt);
-      duckRide.bump(otherBoats(seated.duck));
-      b = duckRide;
-      duckUi.hud({ left: duckRide.left, returning: duckRide.returning });
-      if (duckRide.docked) { duckRide = null; standUp(); shop.toast(L(DUCK_TEXT.docked)); action = STALE; return; }
-    } else if (drv) {
-      const o = drv.o;
-      b = boatFromRider(o.ch.root.position.x, o.ch.root.position.z, o.ch.root.rotation.y, o.target.dbs | 0);
-      duckFollowed = true;
-      duckUi.hud({ left: Math.max(0, o.target.dr - 1), returning: o.target.dr === 1, driver: others.nameOf(drv.id) || '?' });
-    } else {
-      if (duckFollowed) { duckFollowed = false; standUp(); shop.toast(L(DUCK_TEXT.docked)); action = STALE; return; } // the friend docked and got off
-      b = { x: d.home.x, z: d.home.z, ry: 0 };
-      duckUi.hud(null);
-    }
-    placeBoat(d, b);
-    const [sx, sz] = DUCK_SEATS[seated.duckSeat || 0];
-    me.root.position.set(b.x + sx * Math.cos(b.ry) + sz * Math.sin(b.ry), 0, b.z - sx * Math.sin(b.ry) + sz * Math.cos(b.ry));
-    me.root.rotation.y = b.ry + Math.PI;
-    moved.add(seated.duck);
-  } else duckUi.hud(null);
-  for (const o of others.players.values()) {
-    const i = (o.target?.db | 0) - 1;
-    if (i < 0 || i >= interior.ducks.length || moved.has(i)) continue;
-    const r = o.ch.root;
-    placeBoat(interior.ducks[i], boatFromRider(r.position.x, r.position.z, r.rotation.y, o.target.dbs | 0));
-    moved.add(i);
-  }
-  for (const d of interior.ducks) if (!moved.has(d.i)) { // empty: back at the dock, bobbing
-    d.g.position.x += (d.home.x - d.g.position.x) * Math.min(1, dt * 2);
-    d.g.position.z += (d.home.z - d.g.position.z) * Math.min(1, dt * 2);
-    d.g.position.y = Math.sin(performance.now() / 600 + d.i) * 0.03;
-    d.g.rotation.y += (0 - d.g.rotation.y) * Math.min(1, dt * 2);
-  }
-  // Every boat: how fast it is going, bumps (wobble, splash, boing), sway.
-  const now = performance.now() / 1000;
-  for (const d of interior.ducks) {
-    const p = d.g.position;
-    if (dt > 0 && d.px != null) {
-      const k = Math.min(1, dt * 10); // smooth out jumpy network updates
-      d.vx = (d.vx || 0) + ((p.x - d.px) / dt - (d.vx || 0)) * k;
-      d.vz = (d.vz || 0) + ((p.z - d.pz) / dt - (d.vz || 0)) * k;
-    }
-    d.px = p.x; d.pz = p.z;
-  }
-  const poses = interior.ducks.map((d) => ({ x: d.g.position.x, z: d.g.position.z }));
-  for (const [i, j] of duckContacts.update(touching(poses, DUCK_BUMP))) {
-    const a = interior.ducks[i], c = interior.ducks[j];
-    const hard = Math.min(1, Math.hypot((a.vx || 0) - (c.vx || 0), (a.vz || 0) - (c.vz || 0)) / DUCK_BUMP.maxKick);
-    if (hard < 0.05 && !moved.has(i) && !moved.has(j)) continue; // two parked boats side by side
-    a.bumpAt = c.bumpAt = now; a.bumpAmp = c.bumpAmp = 0.08 + hard * 0.16;
-    const mx = (a.g.position.x + c.g.position.x) / 2, mz = (a.g.position.z + c.g.position.z) / 2;
-    duckSplash(mx, mz, hard);
-    const far = Math.hypot(me.root.position.x - mx, me.root.position.z - mz);
-    sfx.bump?.(hard, Math.max(0, 1 - far / 30));
-  }
-  for (const d of interior.ducks) {
-    const t = now - (d.bumpAt ?? -99);
-    const sway = seated?.duck === d.i ? Math.sin(performance.now() / 700) * 0.04 : 0;
-    d.g.rotation.z = sway + wobble(t, d.bumpAmp || 0);
-    d.g.rotation.x = wobble(t - 0.05, (d.bumpAmp || 0) * 0.5, 9);
-  }
-  if (duckRings) for (const m of duckRings.list) if (m.visible) {
-    m.userData.t += dt;
-    const k = m.userData.t / 0.8;
-    if (k >= 1) { m.visible = false; continue; }
-    m.scale.setScalar(0.3 + k * m.userData.size);
-    m.material.opacity = 0.8 * (1 - k);
-  }
-}
+// Duck boats at the Han River parks (src/game/duck-boats.js).
+// The park I'm in right now: its boats, fishing spots, kiosk and ramen
+// machine (core/park.js), or null.
+const hanPark = () => (mode === 'store' && interior?.park ? interior : null);
+const duckBoats = createDuckBoats({
+  park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
+  others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+});
+const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 
 // Delivery runs from the tteokbokki stall. (game/delivery.js)
 const deliveryGame = createDelivery({
@@ -5481,7 +5326,9 @@ const beauty = createBeauty({
   setLook, resendState: () => { lastSent = null; },
 });
 const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
-const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
+// Within r metres of a spot ({ x, z }) that may be missing.
+const nearSpot = (q, p, r) => !!q && Math.hypot(p.x - q.x, p.z - q.z) < r;
+const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
   me.root.rotation.y = Math.PI; // face the river (north)…
@@ -5901,7 +5748,7 @@ function standUp() {
   me.root.position.set(seated.stand[0], seated.standY || 0, seated.stand[1]);
   if (seated.sauna && saunaUi.open) saunaUi.close();
   if (seated.beauty && beautyUi.open) beautyUi.close();
-  if (seated.duck != null) { if (duckUi.open) duckUi.close(); duckUi.hud(null); duckRide = null; duckFollowed = false; }
+  if (seated.duck != null) duckBoats.onStandUp();
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
   if (seated.bumper != null) bumper.onStandUp();
   seated = null;
@@ -6163,10 +6010,8 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
     } else if (seated && isDining(interior.store)) {
       next = dineAction();
-    } else if (seated?.duck != null) { // in a duck boat: set off (or get off) from the sheet; out on the water, head back
-      if (duckRide && !duckRide.returning) next = { key: 'duck-back', label: '⚓ ' + L(DUCK_TEXT.back), run: () => { duckRide?.goBack(); action = STALE; } };
-      else if (duckRide || duckFollowed) next = null;
-      else next = { key: 'duck-go', label: '🚣 ' + L(DUCK_TEXT.go), run: () => { const drv = duckDriver(); duckUi.show(drv ? others.nameOf(drv.id) || '?' : null); } };
+    } else if (seated?.duck != null) { // in a duck boat (game/duck-boats.js)
+      next = duckBoats.seatedAction();
     } else if (seated?.pc) { // a free PC in the PC방
       next = { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('aim') };
     } else if (seated?.tarot) {
@@ -6232,9 +6077,8 @@ function updateAction(p, tSec) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
     } else if (nearStation(p, 'darts', 1.6)) {
       next = { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
-    } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
-      const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
-      next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
+    } else if (duckBoats.boardAction(p)) {
+      next = duckBoats.boardAction(p);
     } else if (martCounter(p)) {
       // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
       next = { key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(interior.store.kiosk.name, getLanguage()) }), run: () => { clerk?.ch.wave(); counterUi.show(martStore()); } };
@@ -6262,9 +6106,9 @@ function updateAction(p, tSec) {
       next = { key: 'craft:' + kind, label: `${CRAFT[kind].icon} ${L(BK_TEXT[kind])} · 🪙 ${CRAFT[kind].price}`, run: () => { clerk.ch.wave(); bukchonUi.craft(kind); } };
     } else if (interior.store.workshop === 'kimchi' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
       next = { key: 'kimchi-hint', label: '💬 ' + L(KIMCHI_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(KIMCHI_TEXT.hint)); } };
-    } else if (interior.fishBuy && Math.hypot(p.x - interior.fishBuy.x, p.z - interior.fishBuy.z) < 1.6) {
+    } else if (nearSpot(hanPark()?.fishBuy, p, 1.6)) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }; // the park's fish buyer
-    } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
+    } else if (nearSpot(hanPark()?.ramen, p, 1.8)) {
       next = { key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() };
     } else if (BEAUTY_SHOPS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       const hint = t(isClinic(interior.store.workshop) ? 'beauty.lie' : 'beauty.sit');
@@ -6705,6 +6549,7 @@ renderer.setAnimationLoop(() => {
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     bumper.state(st); // in a bumper car, or in line for one
+    const duckRide = duckBoats.ride;
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
@@ -6934,7 +6779,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     duckGo: () => startDuckRide(),
     bumper: () => bumper.debug(),
     bumperBoard: () => bumper.board(),
-    duck: () => duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) },
+    duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
     duckBoats: () => interior?.ducks?.map((d) => [+d.g.position.x.toFixed(2), +d.g.position.z.toFixed(2), +d.g.rotation.z.toFixed(3)]),
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
