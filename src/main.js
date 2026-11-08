@@ -26,7 +26,6 @@ import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as st
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
-import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
@@ -34,9 +33,6 @@ import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
 import { updateFarTextures } from './core/far-textures.js';
-import { BookUI } from './ui/book-ui.js';
-import { AcademyUI } from './ui/academy-ui.js';
-import { Academy } from './core/academy.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
@@ -99,15 +95,14 @@ import { hanbokById, isHanbokModel } from './data/hanbok.js';
 import { timeLeft, isRenting } from './core/hanbok-rental.js';
 import { GiftBox, parseGift } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
-import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
-import { RamenUI } from './ui/ramen-ui.js';
 import { ML as MARKET_L } from './ui/kimchi-sell-ui.js';
 import { MUSEUM_TEXT } from './ui/museum-ui.js';
 import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
 import { GUIDE_LOOK, MEMORIAL_TEXT, MEMORIAL_FLOORS, HALLS as MEMORIAL_HALLS, DONATED } from './data/war-memorial.js';
 import { HAUNT_STORE, HAUNT_SPOT } from './core/haunted.js';
 import { BOSS_LINES } from './ui/market-text.js';
+import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first use
 // (The classes' long texts load with the class: game/cooking-classes.js.)
 import { KIMCHI_LABELS as KIMCHI_TEXT, JAPCHAE_LABELS as JAPCHAE_TEXT, KIMBAP_LABELS as KIMBAP_TEXT } from './ui/cooking-labels.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
@@ -121,8 +116,6 @@ import { RUNWAY_STORE } from './core/runway-game.js';
 import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
 import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
 import { poseKind, poseAt, POSE_S } from './core/runway-poses.js';
-import { PhotoUI } from './ui/photo-ui.js';
-import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
 import { BuskingZones, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
@@ -146,7 +139,6 @@ import { Contacts, touching, wobble } from './core/bump.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
 import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
-import { JobUI } from './ui/job-ui.js';
 import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
 import { supportTexture, pickSupportSpots } from './core/support-poster.js';
 import { BeautyUI } from './ui/beauty-ui.js';
@@ -3662,12 +3654,12 @@ if (!testRoom) {
   });
 }
 // Ordering practice at restaurants (food can't be eaten; you practise ordering).
-const orderUi = new OrderUI({
+const orderUi = lazyPanel(() => import('./ui/order-ui.js').then(({ OrderUI }) => new OrderUI({
   root: $('order-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
-});
+})));
 // Samgyeopsal grilling minigame: medals for good timing.
 const grillUi = new GrillUI({
   root: $('grill-panel'),
@@ -3819,7 +3811,7 @@ const marketUi = new FishMarketUI({
 });
 // The ramen machine takes a ramyeon pack (and an egg) from the bag, bought
 // at DAILY MART; the bowl is carried to a parasol table to eat.
-const ramenUi = new RamenUI({
+const ramenUi = lazyPanel(() => import('./ui/ramen-ui.js').then(({ RamenUI }) => new RamenUI({
   root: $('ramen-panel'),
   bag,
   hand: { get held() { return held; }, take: () => setHeld(null) }, // a ramyeon pack or an egg in the hand counts too
@@ -3831,7 +3823,7 @@ const ramenUi = new RamenUI({
     missionEvent('cook');
     togetherBonus('cook');
   },
-});
+})));
 const RAMEN_BOWL = {
   plain: { en: 'Han River ramen', ko: '한강 라면' },
   egg: { en: 'Han River ramen with egg', ko: '계란 한강 라면' },
@@ -3882,13 +3874,13 @@ const shifts = {
   left: () => shiftsLeft(readShifts(), dayKey()),
   take: () => { const n = takeShift(readShifts(), dayKey()); if (!n) return false; writeShifts(n); return true; },
 };
-const jobUi = new JobUI({
+const jobUi = lazyPanel(() => import('./ui/job-ui.js').then(({ JobUI }) => new JobUI({
   root: $('job-panel'),
   wallet,
   shifts,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } },
-});
+})));
 function openJob(job) {
   if (job === 'delivery') startDelivery();
   else jobUi.show(job, interior.store);
@@ -4008,7 +4000,7 @@ function runwayStep(p, dt) {
   return moved > 0.0005 ? 0.32 : 0; // a steady catwalk pace
 }
 let snapReq = null; // resolved with a copy of the canvas after the next render
-const photoUi = new PhotoUI({
+const photoUi = lazyPanel(() => import('./ui/photo-ui.js').then(({ PhotoUI }) => new PhotoUI({
   root: $('photo-panel'),
   wallet,
   snap: () => new Promise((resolve) => { snapReq = resolve; }),
@@ -4023,7 +4015,7 @@ const photoUi = new PhotoUI({
     } else if (photoCam) { Object.assign(cam, photoCam); photoCam = null; }
   },
   countdown: (text) => { $('photo-count').hidden = !text; $('photo-count').textContent = text; },
-});
+})));
 let photoCam = null;
 // The booth you're at, and a free spot in it: friends already posing keep
 // their place, and you stand beside them instead of on top of them.
@@ -4046,13 +4038,13 @@ function boothSpot(st) {
 }
 // A prize for your home (claw machine plushies, the balloon booth's bear): true if new.
 const givePrize = (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; };
-const clawUi = new ClawUI({
+const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => new ClawUI({
   root: $('claw-panel'),
   wallet,
   give: givePrize,
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
-});
+})));
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
@@ -4354,7 +4346,7 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
 // Jjimjilbang: hot kiln and ice room, and the sheep towel.
-const saunaUi = new SaunaUI({
+const saunaUi = lazyPanel(() => import('./ui/sauna-ui.js').then(({ SaunaUI }) => new SaunaUI({
   root: $('sauna-panel'),
   log: new SaunaLog(),
   onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
@@ -4368,7 +4360,7 @@ const saunaUi = new SaunaUI({
       setLook(myLook);
     },
   },
-});
+})));
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).
 let dancing = false;
@@ -4410,12 +4402,15 @@ const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAG
 // 효재어학당: the course book opens when you sit at a desk or talk to the
 // teacher.
 const ACADEMY_OPEN = { en: 'Courses', ko: '수강 신청 · 수업', ja: '受講・授業', zh: '报名 · 上课' };
-const academyUi = new AcademyUI({
+const academyUi = lazyPanel(async () => {
+  const [{ AcademyUI }, { Academy }] = await Promise.all([import('./ui/academy-ui.js'), import('./core/academy.js')]);
+  return new AcademyUI({
   root: $('academy-panel'),
   academy: new Academy(),
   name: () => nickname,
   onReward: (n) => { wallet.add(n, undefined, { r: 'academy' }); refreshWallet(); },
   sfx: () => sfx.pop?.(),
+});
 });
 // Notice boards: in Supabase when signed in to it, else on this device.
 let boardBackend = null;
@@ -4851,7 +4846,7 @@ function updateWishes() {
 }
 const BOOK_SWAP_TEXT = { en: 'Swapped books. "{name}" went back on the shelf. Sit anywhere and tap 📖 to read.', ko: '책을 바꿨어요. "{name}"은 책장에 돌려놨어요. 어디든 앉아서 📖를 누르면 읽을 수 있어요.', ja: '本を交換しました。「{name}」は本棚に戻しました。どこでも座って📖を押すと読めます。', zh: '换了一本书。《{name}》已放回书架。随便坐下点📖就能读。' };
 const BOOK_SIT_TEXT = { en: 'Tap 📖 Read to read your book here.', ko: '📖 읽기를 누르면 여기서 책을 읽을 수 있어요.', ja: '📖 読むを押すと、ここで本が読めます。', zh: '点📖阅读，就能在这里看书。' };
-const bookUi = new BookUI({
+const bookUi = lazyPanel(() => import('./ui/book-ui.js').then(({ BookUI }) => new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
   // One library book out at a time: picking another swaps it straight away
@@ -4871,7 +4866,7 @@ const bookUi = new BookUI({
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
   getPage: (id) => bookPages[id] | 0,
   setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
-});
+})));
 const stampBook = new StampBook();
 const trailLog = new TrailLog();
 const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
@@ -6856,7 +6851,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
-    cookPanel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi })[k].show(), // (loads on first use: core/lazy-panel.js)
+    // Panels downloaded on first use (core/lazy-panel.js): __mk.panel('academy').show()
+    panel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi, academy: academyUi, book: bookUi, sauna: saunaUi, ramen: ramenUi, order: orderUi, job: jobUi, photo: photoUi, claw: clawUi })[k],
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),
     mealBites: () => dining.meal?.bites ?? null,
