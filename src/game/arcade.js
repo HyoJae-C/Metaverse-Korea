@@ -8,6 +8,7 @@ export function createArcade(game) {
   const { $, cam, myId, safety, sfx, shop } = game;
   const arcade = {}; // kind → its UI, once loaded
   const arcadePanel = (kind) => ({ get open() { return !!arcade[kind]?.open; }, close() { arcade[kind]?.close(); } });
+  const bowlingUi = arcadePanel('bowling'), climbUi = arcadePanel('climbing'), aimUi = arcadePanel('aim');
   const battingUi = arcadePanel('batting'), galleryUi = arcadePanel('gallery'), hauntUi = arcadePanel('hauntGallery'), dartsUi = arcadePanel('darts');
   const arcadeLoading = {}; // kind → its panel's import, while it loads
   let dartsInvite = null; // { from, name, at }: someone in the bar challenged you
@@ -50,6 +51,11 @@ export function createArcade(game) {
             if (r === 'homerun') game.me.play('cheer');
           },
         });
+      } else if (kind === 'bowling' || kind === 'climbing' || kind === 'aim') { // the modern activities (ui/activity-ui.js)
+        const { BowlingUI, ClimbUI, AimUI } = await import('../ui/activity-ui.js');
+        if (kind === 'bowling') ui = new BowlingUI({ root: $('bowling-panel'), store: localStorage, onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); } });
+        else if (kind === 'climbing') ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
+        else ui = new AimUI({ root: $('aim-panel'), store: localStorage, onHit: () => sfx.tock(0.5, 1400) });
       } else if (kind === 'gallery') {
         const { GalleryUI } = await import('../ui/gallery-ui.js');
         ui = new GalleryUI({
@@ -108,8 +114,11 @@ export function createArcade(game) {
     batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', hi: 'बैटिंग', fr: 'Cage de batting', th: 'ตู้ตีเบสบอล', ar: 'قفص الضرب' },
     gallery: { en: 'Balloon shooting', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', fr: 'Tir aux ballons', th: 'ยิงลูกโป่ง', ar: 'رماية البالونات' },
     hauntGallery: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', hi: 'भूत लालटेन', fr: 'Lanterne à fantômes', th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
+    bowling: { en: 'Bowl', ko: '볼링 치기', ja: 'ボウリングする', zh: '打保龄球', es: 'Jugar a los bolos', id: 'Main bowling', vi: 'Chơi bowling', hi: 'बॉलिंग खेलें', fr: 'Jouer au bowling', th: 'เล่นโบว์ลิ่ง', ar: 'العب البولينغ' },
+    climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', hi: 'चढ़ाई करें', fr: 'Grimper', th: 'ปีนผา', ar: 'تسلّق' },
+    aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
-  return { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, ARCADE_OPEN, openArcade,
+  return { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
