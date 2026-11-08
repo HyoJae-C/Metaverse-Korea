@@ -4310,8 +4310,14 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
   const box = $('info-hint');
   const p0 = document.createElement('p');
   p0.textContent = L(ONBOARD_TEXT.hi5);
-  box.replaceChildren(p0);
+  // The controls line goes in the same card instead of a second one on top of
+  // it (phones had both stacked over the street).
+  const p1 = document.createElement('p');
+  p1.className = 'fine';
+  p1.textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
+  box.replaceChildren(p0, p1);
   box.hidden = false;
+  dismissHelp();
 } else setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) });

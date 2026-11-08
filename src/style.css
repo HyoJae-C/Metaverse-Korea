@@ -786,6 +786,11 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 }
 .tool.on { background: var(--accent); color: #fff; }
 .in-store #bike-btn { display: none; }
+/* Phones in the game: no credit line over the street (it is in Settings:
+   privacy, terms, about and the KayKit credit). It stays on the start screen. */
+@media (pointer: coarse) {
+  body:has(#hud:not([hidden])) .credit { display: none; }
+}
 /* Narrow phones: keep the credit line on one row by dropping the labels. */
 @media (max-width: 480px) {
   .credit { font-size: 10px; padding-inline: 8px; }
@@ -1262,6 +1267,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   .help, .info-hint { left: 12px; right: 80px; width: auto; max-width: none; transform: none; }
 }
 .info-hint p { margin: 0 0 8px; font-weight: 700; }
+.info-hint p.fine { margin: 0; font-weight: 600; font-size: 12px; text-align: left; } /* the controls line on the first visit */
 .info-hint .order-actions { flex-wrap: wrap; }
 
 /* Jjimjilbang meter */
