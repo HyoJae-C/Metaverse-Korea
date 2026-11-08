@@ -224,6 +224,7 @@ export const HI = {
   'cat.bank': 'बैंक',
   'cat.library': 'पुस्तकालय',
   'cat.museum': 'संग्रहालय',
+  'cat.memorial': 'स्मारक संग्रहालय',
   'cat.culture': 'सांस्कृतिक केंद्र',
   'cat.school': 'स्कूल',
   'cat.petshop': 'पेट शॉप',

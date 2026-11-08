@@ -224,6 +224,7 @@ export const AR = {
   'cat.bank': 'بنك',
   'cat.library': 'مكتبة',
   'cat.museum': 'متحف',
+  'cat.memorial': 'متحف تذكاري',
   'cat.culture': 'مركز ثقافي',
   'cat.school': 'مدرسة',
   'cat.petshop': 'متجر حيوانات',
