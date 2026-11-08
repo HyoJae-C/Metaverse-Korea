@@ -3035,19 +3035,13 @@ const taxi = createTaxi({
   },
 });
 const { rideTaxi } = taxi;
-// The new player's taxi errand (core/quests.js STARTER, tip 'taxi'): the
-// first ride is free, to Bukchon Hanok Village; on arrival a card says so and
-// a button puts you back beside the square guide to report.
+// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// the cards that trip shows. "Back to the guide" puts you beside the square guide.
 const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
 const FIRST_TAXI_TEXT = {
-  offer: { en: '🚕 Your first taxi is on us! Ride to Bukchon Hanok Village.', ko: '🚕 첫 택시는 무료예요! 북촌 한옥마을까지 타 보세요.', ja: '🚕 初めてのタクシーは無料！北村韓屋村まで乗ってみよう。', zh: '🚕 第一次坐出租车免费！坐到北村韩屋村吧。', es: '🚕 ¡Tu primer taxi es gratis! Ve a la Aldea Hanok de Bukchon.', id: '🚕 Taksi pertamamu gratis! Naik ke Desa Hanok Bukchon.', ar: '🚕 أول سيارة أجرة مجانًا! اركب إلى قرية بوكتشون هانوك.', vi: '🚕 Chuyến taxi đầu tiên miễn phí! Đi tới Làng Hanok Bukchon nhé.', hi: '🚕 पहली टैक्सी मुफ़्त है! बुकचोन हानोक गाँव तक जाएँ।', fr: '🚕 Ton premier taxi est offert ! Va au village hanok de Bukchon.', th: '🚕 แท็กซี่คันแรกเราเลี้ยง! นั่งไปหมู่บ้านฮันอกบุกชอนกัน' },
-  go: { en: '🚕 Take the free taxi', ko: '🚕 무료 택시 타기', ja: '🚕 無料タクシーに乗る', zh: '🚕 坐免费出租车', es: '🚕 Tomar el taxi gratis', id: '🚕 Naik taksi gratis', ar: '🚕 اركب سيارة الأجرة المجانية', vi: '🚕 Đi taxi miễn phí', hi: '🚕 मुफ़्त टैक्सी लें', fr: '🚕 Prendre le taxi gratuit', th: '🚕 นั่งแท็กซี่ฟรี' },
   place: { en: 'Bukchon Hanok Village', ko: '북촌 한옥마을', ja: '北村韓屋村', zh: '北村韩屋村', es: 'Aldea Hanok de Bukchon', id: 'Desa Hanok Bukchon', ar: 'قرية بوكتشون هانوك', vi: 'Làng Hanok Bukchon', hi: 'बुकचोन हानोक गाँव', fr: 'Village hanok de Bukchon', th: 'หมู่บ้านฮันอกบุกชอน' },
-  arrived: { en: '🚕 You arrived by taxi! This is Bukchon Hanok Village. Look around the hanok alleys, then go back to the guide.', ko: '🚕 택시로 도착했어요! 여기는 북촌 한옥마을이에요. 한옥 골목을 둘러보고 안내원에게 돌아가요.', ja: '🚕 タクシーで到着しました！ここは北村韓屋村。韓屋の路地を見てから案内係のところへ戻ろう。', zh: '🚕 坐出租车到了！这里是北村韩屋村。逛逛韩屋小巷，再回到向导那里吧。', es: '🚕 ¡Llegaste en taxi! Esto es la Aldea Hanok de Bukchon. Pasea por sus callejones y vuelve con el guía.', id: '🚕 Kamu tiba naik taksi! Ini Desa Hanok Bukchon. Jelajahi gang hanoknya, lalu kembali ke pemandu.', ar: '🚕 وصلت بسيارة الأجرة! هذه قرية بوكتشون هانوك. تجوّل في أزقتها ثم عُد إلى المرشد.', vi: '🚕 Bạn đã tới bằng taxi! Đây là Làng Hanok Bukchon. Dạo quanh các con hẻm rồi quay lại chỗ người hướng dẫn.', hi: '🚕 आप टैक्सी से पहुँच गए! यह बुकचोन हानोक गाँव है। हानोक गलियाँ घूमें, फिर गाइड के पास लौटें।', fr: '🚕 Tu es arrivé en taxi ! Voici le village hanok de Bukchon. Promène-toi dans les ruelles de hanoks, puis retourne voir le guide.', th: '🚕 มาถึงด้วยแท็กซี่แล้ว! ที่นี่คือหมู่บ้านฮันอกบุกชอน เดินชมตรอกบ้านฮันอก แล้วกลับไปหาไกด์' },
-  back: { en: '↩️ Back to the guide', ko: '↩️ 안내원에게 돌아가기', ja: '↩️ 案内係のところへ戻る', zh: '↩️ 回到向导那里', es: '↩️ Volver con el guía', id: '↩️ Kembali ke pemandu', ar: '↩️ العودة إلى المرشد', vi: '↩️ Quay lại chỗ người hướng dẫn', hi: '↩️ गाइड के पास लौटें', fr: '↩️ Retour au guide', th: '↩️ กลับไปหาไกด์' },
   look: { en: 'Look around first', ko: '먼저 둘러보기', ja: '先に見て回る', zh: '先逛逛', es: 'Primero mirar', id: 'Lihat-lihat dulu', ar: 'أتجوّل أولًا', vi: 'Dạo một chút đã', hi: 'पहले घूम लूँ', fr: 'D\'abord faire un tour', th: 'เดินดูรอบๆ ก่อน' },
 };
-let firstTaxiTimer = 0;
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3064,43 +3058,22 @@ function firstTaxiCard(lines, buttons) {
   box.replaceChildren(p, actions);
   box.hidden = false;
 }
-function offerFirstTaxi() {
-  firstTaxiCard(L(FIRST_TAXI_TEXT.offer), [['primary', L(FIRST_TAXI_TEXT.go), () => {
-    if (mode === 'store') leaveStore(); // (errands can come from an Information Center now)
-    taxi.rideFree({ ...FIRST_TAXI, label: L(FIRST_TAXI_TEXT.place) }, firstTaxiArrived);
-  }]]);
-}
-function firstTaxiArrived() {
-  clearTimeout(firstTaxiTimer);
-  firstTaxiCard(L(FIRST_TAXI_TEXT.arrived), [
-    ['primary', L(FIRST_TAXI_TEXT.back), backToGuide],
-    ['chip', L(FIRST_TAXI_TEXT.look), () => { firstTaxiTimer = setTimeout(() => { if (mode === 'street' && quests.active?.kind === 'taxi') firstTaxiArrived(); }, 60000); }],
-  ]);
-}
-// Straight back beside the square guide (no walk across the city).
-function backToGuide() {
-  clearTimeout(firstTaxiTimer);
-  if (!squareNpc) return;
-  if (mode === 'store') leaveStore();
-  const g = squareNpc.ch.root;
-  const sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
-  const [x, z] = findFreeSpot(g.position.x + sx * 2.2, g.position.z + sz * 2.2);
-  moveMeTo(scene, x, z, Math.atan2(g.position.x - x, g.position.z - z));
-  action = STALE;
-}
 // The new player's first errand (core/quests.js STARTER 'trip', steps in
-// TRIP): a little tour. Take out the bike, ride to Seoul Forest and its
-// station, get off (no bikes on the stairs), the train to Anguk, up into
-// Bukchon, a walk to Cheonggyecheon; then report to any guide. Each step
+// TRIP): a little tour. Take out the bike, ride to Seongsu Station, get off
+// (no bikes on the stairs), one stop to Seoul Forest and a walk in the park,
+// the train on to Anguk, up into Bukchon, a walk to Cheonggyecheon; then a
+// free taxi back to the square guide. Each step
 // shows its line on the ground; "Later" moves on to the next errand.
 const TRIP_CARD = {
+  home: { en: "🚕 Back in Seongsu! Tell the guide you made it.", ko: "🚕 성수에 돌아왔어요! 안내원에게 보고해요.", ja: "🚕 聖水に戻ってきた！案内係に報告しよう。", zh: "🚕 回到圣水了！去向导那里汇报吧。", es: "🚕 ¡De vuelta en Seongsu! Avisa al guía.", id: "🚕 Kembali di Seongsu! Lapor ke pemandu.", ar: "🚕 عدت إلى سونغسو! أبلغ المرشد.", vi: "🚕 Đã về Seongsu! Báo cho người hướng dẫn nhé.", hi: "🚕 सोंगसू वापस! गाइड को बताएँ।", fr: "🚕 De retour à Seongsu ! Va le dire au guide.", th: "🚕 กลับถึงซองซูแล้ว! ไปรายงานไกด์กัน" },
+  taxi: { en: "🚕 Free taxi to Seongsu", ko: "🚕 무료 택시로 성수 가기", ja: "🚕 無料タクシーで聖水へ", zh: "🚕 坐免费出租车回圣水", es: "🚕 Taxi gratis a Seongsu", id: "🚕 Taksi gratis ke Seongsu", ar: "🚕 سيارة أجرة مجانية إلى سونغسو", vi: "🚕 Taxi miễn phí về Seongsu", hi: "🚕 सोंगसू तक मुफ़्त टैक्सी", fr: "🚕 Taxi gratuit pour Seongsu", th: "🚕 แท็กซี่ฟรีกลับซองซู" },
   offer: { en: "🚲 Let's take a little trip! First, take out your bike.", ko: "🚲 작은 여행을 떠나 봐요! 먼저 자전거를 꺼내요.", ja: "🚲 ちょっと旅に出よう！まずは自転車を出して。", zh: "🚲 来一次小旅行吧！先把自行车拿出来。", es: "🚲 ¡Hagamos un pequeño viaje! Primero, saca tu bici.", id: "🚲 Ayo jalan-jalan sebentar! Pertama, keluarkan sepedamu.", ar: "🚲 لنقم برحلة صغيرة! أولًا، أخرج دراجتك.", vi: "🚲 Cùng làm một chuyến đi nhỏ nhé! Trước tiên, lấy xe đạp ra.", hi: "🚲 चलिए छोटी सी सैर करें! पहले अपनी साइकिल निकालें।", fr: "🚲 Partons pour une petite balade ! D'abord, sors ton vélo.", th: "🚲 ไปเที่ยวทริปเล็กๆ กัน! ก่อนอื่นเอาจักรยานออกมา" },
   bike: { en: "🚲 Take out my bike", ko: "🚲 자전거 꺼내기", ja: "🚲 自転車を出す", zh: "🚲 拿出自行车", es: "🚲 Sacar mi bici", id: "🚲 Keluarkan sepeda", ar: "🚲 أخرج دراجتي", vi: "🚲 Lấy xe đạp", hi: "🚲 साइकिल निकालें", fr: "🚲 Sortir mon vélo", th: "🚲 เอาจักรยานออกมา" },
   later: { en: "Later", ko: "나중에", ja: "あとで", zh: "以后再说", es: "Más tarde", id: "Nanti saja", ar: "لاحقًا", vi: "Để sau", hi: "बाद में", fr: "Plus tard", th: "ไว้ทีหลัง" },
   getOff: { en: "🚲 No bikes on the stairs! Get off here and walk down to the trains.", ko: "🚲 계단에는 자전거를 못 가지고 가요! 여기서 내려서 걸어 내려가요.", ja: "🚲 階段は自転車では通れないよ！ここで降りて歩いて下りよう。", zh: "🚲 楼梯上不能骑车！在这里下车，走下去坐车吧。", es: "🚲 ¡No se puede bajar en bici! Bájate aquí y baja a pie hasta los trenes.", id: "🚲 Sepeda tidak boleh di tangga! Turun di sini dan jalan kaki ke kereta.", ar: "🚲 لا دراجات على الدرج! انزل هنا وامشِ إلى القطارات.", vi: "🚲 Không đi xe đạp xuống cầu thang được! Xuống xe ở đây và đi bộ xuống tàu.", hi: "🚲 सीढ़ियों पर साइकिल नहीं! यहीं उतरें और पैदल ट्रेन तक जाएँ।", fr: "🚲 Pas de vélo dans l'escalier ! Descends ici et va à pied jusqu'aux trains.", th: "🚲 ห้ามจักรยานลงบันได! ลงตรงนี้แล้วเดินลงไปขึ้นรถไฟ" },
   off: { en: "🚲 Get off", ko: "🚲 내리기", ja: "🚲 降りる", zh: "🚲 下车", es: "🚲 Bajarme", id: "🚲 Turun", ar: "🚲 انزل", vi: "🚲 Xuống xe", hi: "🚲 उतरें", fr: "🚲 Descendre", th: "🚲 ลงจากรถ" },
-  wrongStop: { en: "This is {name}. For Bukchon, get off at Anguk!", ko: "여기는 {name}이에요. 북촌은 안국역에서 내려요!", ja: "ここは{name}。北村へは安国で降りてね！", zh: "这里是{name}。去北村要在安国站下车！", es: "Esto es {name}. Para Bukchon, bájate en Anguk.", id: "Ini {name}. Untuk Bukchon, turun di Anguk!", ar: "هذه {name}. لبوكتشون انزل في أنغوك!", vi: "Đây là {name}. Muốn tới Bukchon, hãy xuống ở Anguk!", hi: "यह {name} है। बुकचोन के लिए आनगुक पर उतरें!", fr: "C'est {name}. Pour Bukchon, descends à Anguk !", th: "ที่นี่คือ {name} ไปบุกชอนต้องลงที่อันกุกนะ!" },
-  done: { en: "🏮 This is Cheonggyecheon! Trip done. Report to any guide for your coins: there are Information Centers nearby.", ko: "🏮 여기가 청계천이에요! 여행 완료. 아무 안내원에게 보고하면 보상을 받아요. 근처에 안내소가 있어요.", ja: "🏮 ここが清渓川！旅は完了。どの案内係に報告してもご褒美がもらえるよ。近くにインフォメーションセンターがあるよ。", zh: "🏮 这里就是清溪川！旅行完成。向任意向导汇报就能领奖励，附近就有信息中心。", es: "🏮 ¡Esto es Cheonggyecheon! Viaje completado. Avisa a cualquier guía para cobrar: hay Centros de Información cerca.", id: "🏮 Ini Cheonggyecheon! Perjalanan selesai. Lapor ke pemandu mana pun untuk hadiahmu: ada Pusat Informasi di dekat sini.", ar: "🏮 هذا تشونغيتشون! انتهت الرحلة. أبلغ أي مرشد لتأخذ مكافأتك: توجد مراكز معلومات قريبة.", vi: "🏮 Đây là Cheonggyecheon! Xong chuyến đi. Báo cho bất kỳ người hướng dẫn nào để nhận thưởng: gần đây có Trung tâm Thông tin.", hi: "🏮 यह चॉन्गेचॉन है! सैर पूरी। इनाम के लिए किसी भी गाइड को बताएँ: पास में सूचना केंद्र हैं।", fr: "🏮 Voici Cheonggyecheon ! Balade terminée. Va voir n'importe quel guide pour ta récompense : il y a des Centres d'information tout près.", th: "🏮 ที่นี่คือชองกเยชอน! จบทริปแล้ว ไปรายงานไกด์คนไหนก็ได้เพื่อรับรางวัล ใกล้ๆ มีศูนย์ข้อมูล" },
+  wrongStop: { en: "This is {name}. Get off at {stop}!", ko: "여기는 {name}이에요. {stop}에서 내려요!", ja: "ここは{name}。{stop}で降りてね！", zh: "这里是{name}。请在{stop}下车！", es: "Esto es {name}. ¡Bájate en {stop}!", id: "Ini {name}. Turun di {stop}!", ar: "هذه {name}. انزل في {stop}!", vi: "Đây là {name}. Hãy xuống ở {stop}!", hi: "यह {name} है। {stop} पर उतरें!", fr: "C'est {name}. Descends à {stop} !", th: "ที่นี่คือ {name} ลงที่ {stop} นะ!" },
+  done: { en: "🏮 This is Cheonggyecheon! Last step: the taxi back to Seongsu is on us. Then tell the square guide for your coins.", ko: "🏮 여기가 청계천이에요! 마지막은 무료 택시로 다시 성수로 돌아가요. 광장 안내원에게 보고하면 보상을 받아요.", ja: "🏮 ここが清渓川！最後は無料タクシーで聖水へ戻ろう。広場の案内係に報告するとご褒美がもらえるよ。", zh: "🏮 这里就是清溪川！最后一步：坐免费出租车回圣水，向广场向导汇报领取奖励。", es: "🏮 ¡Esto es Cheonggyecheon! Último paso: el taxi de vuelta a Seongsu es gratis. Luego avisa al guía de la plaza para cobrar.", id: "🏮 Ini Cheonggyecheon! Langkah terakhir: taksi gratis kembali ke Seongsu. Lalu lapor ke pemandu alun-alun untuk hadiahmu.", ar: "🏮 هذا تشونغيتشون! الخطوة الأخيرة: سيارة أجرة مجانية للعودة إلى سونغسو. ثم أبلغ مرشد الساحة لتأخذ مكافأتك.", vi: "🏮 Đây là Cheonggyecheon! Bước cuối: taxi miễn phí về lại Seongsu. Rồi báo cho người hướng dẫn quảng trường để nhận thưởng.", hi: "🏮 यह चॉन्गेचॉन है! आख़िरी कदम: सोंगसू वापसी की टैक्सी मुफ़्त है। फिर इनाम के लिए चौक के गाइड को बताएँ।", fr: "🏮 Voici Cheonggyecheon ! Dernière étape : le taxi du retour à Seongsu est offert. Ensuite, va voir le guide de la place pour ta récompense.", th: "🏮 ที่นี่คือชองกเยชอน! ขั้นสุดท้าย: นั่งแท็กซี่ฟรีกลับซองซู แล้วรายงานไกด์ประจำลานเพื่อรับรางวัล" },
 };
 const tripStep = () => (quests.active?.kind === 'trip' ? TRIP[quests.active.stage | 0]?.step || 'done' : null);
 // The pavement outside the subway exit nearest (x, z).
@@ -3118,7 +3091,7 @@ function tripPlace(step) {
   const here = myPlace();
   if (step === 'forest') return zonePlace('K');
   if (step === 'station' || step === 'down') return nearestSubwayExit(here.x, here.z);
-  if (step === 'anguk') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
+  if (step === 'forestStop' || step === 'anguk') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
   if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
   if (step === 'cheonggye') return zonePlace('L');
   return null;
@@ -3148,11 +3121,7 @@ function onTripStep() {
     if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
     sfx.pop?.();
     me.play('cheer');
-    const here = myPlace(), g = nearestGuidePlace(here.x, here.z);
-    firstTaxiCard(L(TRIP_CARD.done), [
-      ['primary', '🧭 ' + (g?.label || t('quest.guide')), () => { if (g) setGuide(g); }],
-      ['chip', L(FIRST_TAXI_TEXT.back), backToGuide],
-    ]);
+    tripTaxiCard();
     return;
   }
   if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true; // the last step's card
@@ -3161,6 +3130,19 @@ function onTripStep() {
     tripCard = $('info-hint').firstChild;
   } else shop.toast(L(TRIP_TEXT[step]));
   tripTick();
+}
+// The trip's end: a free taxi back to the square guide (or look around and
+// report to any guide later).
+function tripTaxiCard() {
+  firstTaxiCard(L(TRIP_CARD.done), [
+    ['primary', L(TRIP_CARD.taxi), () => {
+      if (!squareNpc) return;
+      if (mode === 'store') leaveStore();
+      const g = squareNpc.ch.root, sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
+      taxi.rideFree({ x: g.position.x + sx * 3, z: g.position.z + sz * 3, label: t('quest.guide') }, () => shop.toast(L(TRIP_CARD.home)));
+    }],
+    ['chip', L(FIRST_TAXI_TEXT.look), () => {}],
+  ]);
 }
 // Twice a second: the trip's places reached, and its line once per step.
 function tripTick() {
@@ -3184,7 +3166,9 @@ setInterval(tripTick, 500);
 function subwayArrived(k) {
   const id = stationStores[k].subway?.id;
   missionEvent('subway', id);
-  if (tripStep() === 'anguk' && id !== 'anguk-station') shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()) }));
+  const want = quests.active?.kind === 'trip' && TRIP[quests.active.stage | 0];
+  const stop = want?.on === 'subway' && want.target !== id && stationStores.find((st) => st.subway?.id === want.target);
+  if (stop) shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()), stop: localName(stop.name, getLanguage()) }));
 }
 // Where I am on the street map (inside: the door I came in by).
 function myPlace() {
@@ -5138,7 +5122,7 @@ function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
   if (q.kind === 'trip' && TRIP_TEXT[TRIP[q.stage | 0]?.step]) return L(TRIP_TEXT[TRIP[q.stage | 0].step]);
-  if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
+  if (st && st.kind === q.kind && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 // Where an errand happens (for the 🧭 button next to the chip): its shop,
@@ -5193,7 +5177,6 @@ function talkToGuide(npc = squareNpc) {
     // On the first path, say the tip again too (it is easy to miss the first time).
     const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
-    if (q.starter != null && STARTER[q.starter]?.tip === 'taxi') offerFirstTaxi();
     if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
     const d = !atSquare && here?.store ? districtOfStore(here.store) : null;
@@ -5207,7 +5190,6 @@ function talkToGuide(npc = squareNpc) {
     // On the first path the guide also gives a tip for this errand.
     const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
-    if (a.starter != null && STARTER[a.starter].tip === 'taxi') offerFirstTaxi();
     if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
     say(npc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
