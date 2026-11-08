@@ -12,7 +12,7 @@ import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
-import { PALETTES } from '../data/appearance.js';
+import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
 import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
@@ -450,6 +450,62 @@ function faceExtras(id, headMesh, headBone, look) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
   headBone.add(extras);
+  return hair;
+}
+
+// Hats (core/character.js addHat) are sized for the model's own head, so a
+// big salon style (curly, afro, pompadour, mohawk, spikes...) poked through
+// them. Under a hat the hair is tucked in: every point of it above the
+// hat's lower edge and outside the crown is pulled back inside, so the hair
+// still shows below the hat but not through it. In the head accessory
+// group's units (a chibi head, radius ~0.33): c the crown's centre, r its
+// radii, y0 the height above which hair is tucked.
+const HAT_CROWNS = {
+  cap: { c: [0, 0.05, -0.01], r: [0.33, 0.33, 0.33], y0: 0.11 },
+  beanie: { c: [0, 0.04, -0.01], r: [0.34, 0.34, 0.34], y0: 0.08 },
+  towel: { c: [0, 0.04, -0.01], r: [0.35, 0.35, 0.35], y0: 0.11 },
+  bucket: { c: [0, 0.1, -0.02], r: [0.28, 0.28, 0.28], y0: 0.21 },
+  beret: { c: [0.04, 0.24, -0.02], r: [0.36, 0.14, 0.36], y0: 0.2 },
+};
+const TUCK = 0.94; // how far inside the crown the hair goes
+const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out
+const _tm = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tp = new THREE.Vector3();
+function tuckHair(hair, headAcc, look) {
+  const crown = HAT_CROWNS[shapeOf(accessory('head', look.head))];
+  if (!hair || !crown) return;
+  const { c, r, y0 } = crown;
+  headAcc.updateMatrix();
+  const toAcc = new THREE.Matrix4().copy(headAcc.matrix).invert(); // head bone -> hat space
+  hair.parent.updateMatrix();
+  hair.updateMatrix();
+  for (const mesh of hair.children) {
+    if (!mesh.isMesh) continue;
+    mesh.updateMatrix();
+    _tm.copy(toAcc).multiply(hair.parent.matrix).multiply(hair.matrix).multiply(mesh.matrix);
+    _ti.copy(_tm).invert();
+    const geo = mesh.geometry.clone();
+    const pos = geo.attributes.position;
+    let moved = false;
+    for (let i = 0; i < pos.count; i++) {
+      _tp.fromBufferAttribute(pos, i).applyMatrix4(_tm);
+      // Fully inside above the edge; just under it the hair may bulge out
+      // more and more (pressed flat by the hat), with no step at the edge.
+      const below = (y0 - _tp.y) / TUCK_BAND;
+      if (below >= 1) continue;
+      const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
+      const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
+      const d = Math.hypot(dx, dy, dz);
+      if (d <= limit) continue;
+      const k = limit / d;
+      _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
+      pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
+      moved = true;
+    }
+    if (!moved) continue;
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+    mesh.geometry = geo;
+  }
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
@@ -601,7 +657,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     }
   }
 
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) faceExtras(id, headMesh, headBone, look);
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
+    const hair = faceExtras(id, headMesh, headBone, look);
+    if (hair && look.head) tuckHair(hair, headAcc, look);
+  }
 
   body.visible = false;
   root.add(m);
