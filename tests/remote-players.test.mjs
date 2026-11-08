@@ -37,3 +37,20 @@ test('a blocked player stays hidden after their first position', () => {
   others.state('b', { x: 1, z: 1, ry: 0, s: 0 });
   assert.equal(others.players.get('b').ch.root.visible, false);
 });
+
+// A taxi, map or warp jump (st.tp changes) puts them there at once: no slide
+// across the map, which also took many frames on a slow device.
+test('a jump puts the player at their new spot at once; walking still glides', () => {
+  const others = new RemotePlayers(new THREE.Scene(), el());
+  others.join({ id: 'c', name: 'mina', look: {} });
+  const p = others.players.get('c');
+  others.state('c', { x: 0, z: 0, ry: 0, s: 0 });
+  others.state('c', { x: 2, z: 0, ry: 0, s: 0.5 }); // a step: drawn by update()
+  assert.equal(p.ch.root.position.x, 0);
+  others.state('c', { x: 25, z: 3, ry: 1, s: 0, tp: 1 }); // a jump
+  assert.equal(p.ch.root.position.x, 25);
+  assert.equal(p.ch.root.position.z, 3);
+  assert.equal(p.ch.root.rotation.y, 1);
+  others.state('c', { x: 26, z: 3, ry: 1, s: 0.5, tp: 1 }); // walking on from there
+  assert.equal(p.ch.root.position.x, 25);
+});
