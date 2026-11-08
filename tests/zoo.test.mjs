@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { buildMap, PENS } from '../scripts/build-grand-park.mjs';
+import { buildMap, PENS, ZOO_OPEN, HOARDING } from '../scripts/build-grand-park.mjs';
 import { Zoo, feedPhase, fenceLines, FEED_CYCLE, FOOD_CUP } from '../src/core/zoo.js';
 import { makeZooAnimal, ZOO_LOOKS } from '../src/core/zoo-animals.js';
 
@@ -41,7 +41,8 @@ test('pens sit inside the park, apart from each other and off the walking paths'
 
 test('every fence line is a blocker, and the petting pen has a gate onto the main path', () => {
   const lines = PENS.reduce((n, p) => n + fenceLines(p).length + (p.solid || []).length, 0);
-  assert.equal(map.blockers.length, 2 + lines, 'gate pillars + one blocker per fence line and solid prop');
+  const hoard = ZOO_OPEN ? 0 : HOARDING.length - 1;
+  assert.equal(map.blockers.length, 2 + lines + hoard, 'gate pillars + one blocker per fence line, solid prop and hoarding side');
   const pet = PENS.find((p) => p.pet);
   assert.equal(pet.gate.side, 'n');
   assert.ok(pet.z - pet.d / 2 > 0 && pet.z - pet.d / 2 < 8, 'the gate opens just south of the main path (z 0)');
@@ -148,4 +149,16 @@ test('zoo animals are joined up and their eyes show', () => {
       }
     }
   }
+});
+
+test('before it opens, a hoarding closes the zoo off, and the gate plaza and station stay outside it', () => {
+  if (ZOO_OPEN) return;
+  const h = map.landmarks.find((l) => l.type === 'hoarding');
+  assert.equal(h.closes, 'zoo');
+  const xs = h.p.map((q) => q[0]), zs = h.p.map((q) => q[1]);
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  for (const p of PENS) assert.ok(p.x - p.w / 2 > x0 && p.x + p.w / 2 < x1 && p.z - p.d / 2 > z0 && p.z + p.d / 2 < z1, `${p.id} inside the hoarding`);
+  const gate = map.landmarks.find((l) => l.type === 'cgpgate');
+  assert.ok(gate.x < x0, 'the main gate and its plaza stay open');
+  assert.deepEqual(h.p[0], h.p[h.p.length - 1], 'a closed loop');
 });

@@ -13,7 +13,8 @@ import { farFree } from './far-textures.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
-import { cgpGate } from './grand-park.js';
+import { domeOutside } from './dome-outside.js';
+import { cgpGate, hoarding } from './grand-park.js';
 import { konext, aquariumSoon, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -101,6 +102,7 @@ const BUILD = {
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
+  dome: (g, l) => domeOutside(g, l), // Seoul Another Dome's outside (the stadium inside: core/dome.js)
   gwanghwamun(g) {
     // Stone base with three open arches you can walk through: a wide one in
     // the middle and a smaller one either side.
@@ -606,7 +608,8 @@ export function buildLandmarks(list = [], scene) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
-    else if (l.type === 'avenue') avenue(g, l); // (trees at map positions, like blossoms)
+    else if (l.type === 'avenue') avenue(g, l);
+    else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);

@@ -28,6 +28,6 @@
     { "id": "R", "color": "#7a2e22", "at": [-1347, -780], "snap": false, "radius": 30, "name": { "en": "Jongmyo Square", "ko": "종묘광장", "ja": "宗廟広場", "zh": "宗庙广场" } },
     { "id": "S", "color": "#e08a2e", "at": [443, -86], "snap": false, "radius": 30, "name": { "en": "Grand Park Main Gate", "ko": "어린이대공원 정문", "ja": "子供大公園 正門", "zh": "儿童大公园正门" } },
     { "id": "T", "color": "#4f8fd8", "at": [878, 755], "snap": false, "radius": 35, "name": { "en": "Seokchon Lakeside", "ko": "석촌호숫가", "ja": "石村湖のほとり", "zh": "石村湖畔" } },
-    { "id": "U", "color": "#1d5fa8", "at": [105, 753], "snap": false, "radius": 30, "name": { "en": "KONEXT Square", "ko": "코넥스트 광장", "ja": "コネクスト広場", "zh": "KONEXT广场" } }
+    { "id": "U", "color": "#1d5fa8", "at": [105, 883], "snap": false, "radius": 30, "name": { "en": "KONEXT Square", "ko": "코넥스트 광장", "ja": "コネクスト広場", "zh": "KONEXT广场" } }
   ]
 }

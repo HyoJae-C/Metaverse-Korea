@@ -20,6 +20,7 @@ import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
 import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
+import { ROOM_DOME } from './dome-outside.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -45,6 +46,7 @@ export const ROOM_SIZES = {
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
   pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
+  dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
@@ -348,6 +350,12 @@ function dartboardTexture() {
   return tex;
 }
 
+// Seoul Another Dome's stadium (core/dome.js) is loaded on the first visit:
+// main.js imports it, hands its builder over here, then builds the room.
+let domeBuilder = null;
+export const setDomeBuilder = (fn) => { domeBuilder = fn; };
+export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
+
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
@@ -355,6 +363,7 @@ export function buildInterior(store) {
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
   if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
+  if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
