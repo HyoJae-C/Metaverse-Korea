@@ -12,7 +12,7 @@ import { farFree } from './far-textures.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
-import { cgpGate } from './grand-park.js';
+import { cgpGate, hoarding } from './grand-park.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
 import { EULJIRO_BUILD } from './euljiro-models.js';
@@ -599,7 +599,8 @@ export function buildLandmarks(list = [], scene) {
     const g = new THREE.Group();
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
-    else if (l.type === 'avenue') avenue(g, l); // (trees at map positions, like blossoms)
+    else if (l.type === 'avenue') avenue(g, l);
+    else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);
