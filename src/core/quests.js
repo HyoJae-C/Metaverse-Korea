@@ -14,8 +14,7 @@
 //   highfive  high-five the guide (no longer handed out: it repeated the
 //             welcome high five; kept so a saved one can still be finished)
 //   taxi   take a taxi anywhere
-//   subway ride the subway to another station (the first errand: other
-//          districts are only a train ride away)
+//   trip   the first errand: a little tour in steps (TRIP), by bike and subway
 //   eat    sit down in a restaurant and finish a meal
 //   pat    pat an animal in an animal café
 //
@@ -25,7 +24,7 @@
 export const QUEST_REWARD = 10000;
 export const STARTER_REWARD = 20000;
 export const STARTER = [
-  { kind: 'subway', tip: 'subway' }, // other districts: a train ride away (an early "there's more" moment)
+  { kind: 'trip', tip: 'trip' }, // a little tour first: Seoul is bigger than the square (TRIP)
   { kind: 'visit', target: 'nyang-cat-cafe', tip: 'map' }, // the map: tap a place, walk there by itself; or ride a bike
   { kind: 'taxi', tip: 'taxi' }, // fast, but it costs
   { kind: 'coffee', target: 'meta-coffee', tip: 'coffee' }, // order from the staff
@@ -36,10 +35,23 @@ export const STARTER = [
   { kind: 'visit', target: 'name-studio', tip: 'name' },
   { kind: 'pat', target: 'nyang-cat-cafe', tip: 'pat' },
 ];
+// The first errand's steps, in order. Each is done by one game event (on,
+// and target when given): take out the bike, ride to Seoul Forest, on to its
+// subway exit, get off and go down, ride the train to Anguk, come up into
+// Bukchon, walk to Cheonggyecheon. Then report to any guide.
+export const TRIP = [
+  { step: 'bike', on: 'bike' },
+  { step: 'forest', on: 'place', target: 'K' }, // Seoul Forest (zones.json)
+  { step: 'station', on: 'place', target: 'subway' }, // any subway exit (Seoul Forest Station's is nearest)
+  { step: 'down', on: 'subwayIn' }, // off the bike and down the stairs
+  { step: 'anguk', on: 'subway', target: 'anguk-station' },
+  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
+  { step: 'cheonggye', on: 'place', target: 'L' }, // Cheonggye Plaza (zones.json)
+];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
-// Saved first-path steps count from 0. Version 2 put the subway errand in
-// front: a step saved before that is one later now.
+// Saved first-path steps count from 0. Version 2 put the trip in front: a
+// step saved before that is one later now.
 const VERSION = 2;
 
 export function pickQuest(pool, rand = Math.random, last = null) {
@@ -57,7 +69,7 @@ export class SquareQuests {
     let s = {};
     try { s = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* ignore */ }
     this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null, v: VERSION };
-    if ((s.v | 0) < VERSION && this.s.starter != null) { // saved before the subway errand
+    if ((s.v | 0) < VERSION && this.s.starter != null) { // saved before the trip
       this.s.starter++;
       if (Number.isInteger(this.s.active?.starter)) this.s.active.starter++;
       this._save();
@@ -82,6 +94,7 @@ export class SquareQuests {
     if (this.onStarter) {
       const st = STARTER[this.s.starter];
       this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
+      if (st.kind === 'trip') this.s.active.stage = 0;
     } else this.s.active = pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
@@ -91,10 +104,18 @@ export class SquareQuests {
   event(type, target) {
     const q = this.s.active;
     if (!q || q.n >= q.need) return false;
+    if (q.kind === 'trip') { // one step at a time
+      const st = TRIP[q.stage | 0];
+      if (!st || type !== st.on || (st.target && target !== st.target)) return false;
+      q.stage = (q.stage | 0) + 1;
+      if (q.stage >= TRIP.length) q.n = q.need;
+      this._save();
+      return true;
+    }
     const hit = (q.kind === 'visit' && type === 'visit' && target === q.target)
       || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk')
       || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive')
-      || (q.kind === 'taxi' && type === 'taxi') || (q.kind === 'subway' && type === 'subway') || (q.kind === 'eat' && type === 'eat') || (q.kind === 'pat' && type === 'pet');
+      || (q.kind === 'taxi' && type === 'taxi') || (q.kind === 'eat' && type === 'eat') || (q.kind === 'pat' && type === 'pet');
     if (!hit) return false;
     q.n++;
     this._save();
