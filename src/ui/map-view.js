@@ -65,6 +65,7 @@ export const DISTRICT_NAME = {
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)', fr: 'Seodaemun (Sinchon)', th: 'ซอแดมุน (ชินชน)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด' },
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
+  'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
   mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },
 };
 // The middle of each district's buildings.

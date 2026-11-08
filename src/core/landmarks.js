@@ -248,6 +248,28 @@ const BUILD = {
     g.add(sleepers);
     for (const sx of [-0.72, 0.72]) box(g, 0.08, 0.1, len, sx, 0.11, 0, '#8a8f99');
   },
+  jamsu(g, l) {
+    // Jamsu Bridge under Banpo Bridge (Banpo-Jamwon): the low deck you walk
+    // across at water level, with kerbs, railings and lamps along both sides,
+    // and the big Banpo Bridge deck high overhead on its piers. Along z;
+    // l.len: length, l.w: width of the walking deck (the road under it).
+    const len = l.len || 120, w = l.w || 14, half = w / 2;
+    for (const sx of [-1, 1]) {
+      box(g, 0.6, 0.35, len, sx * (half + 0.3), 0.175, 0, '#c9cdd2'); // kerb
+      box(g, 0.08, 0.08, len, sx * (half + 0.3), 1.2, 0, '#5a6470'); // hand rail
+      const posts = Math.floor(len / 3);
+      for (let i = 0; i <= posts; i++) box(g, 0.08, 0.85, 0.08, sx * (half + 0.3), 0.77, -len / 2 + (i * len) / posts, '#5a6470');
+      for (let z = -len / 2 + 10; z < len / 2; z += 24) { // lamps
+        box(g, 0.14, 4.2, 0.14, sx * (half + 0.3), 2.45, z, '#5a6470');
+        box(g, 0.9, 0.18, 0.36, sx * (half - 0.1), 4.5, z, '#f4f1e6');
+      }
+    }
+    // Banpo Bridge above: a wide deck on pairs of piers standing in the river.
+    const top = 9;
+    box(g, w + 8, 1.4, len, 0, top, 0, '#d9dde2');
+    for (const sx of [-1, 1]) box(g, 0.3, 0.9, len, sx * (half + 3.85), top + 1.15, 0, '#b8bec6'); // its parapets
+    for (let z = -len / 2 + 12; z < len / 2; z += 30) for (const sx of [-1, 1]) box(g, 1.6, top - 0.7, 2.2, sx * (half + 2.2), (top - 0.7) / 2, z, '#c3c8ce');
+  },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)

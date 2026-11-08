@@ -121,6 +121,19 @@ park room like Ttukseom's; every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
+## Banpo-Jamwon Han River Park (Seocho-gu)
+
+Banpo and Jamwon Han River Parks lie side by side on the south bank, so the
+game joins them into one riverside park halfway between the two
+(`scripts/build-banpo.mjs`, `districts/banpo-jamwon.json`). The Han runs
+south-west to north-east here, so the strip is drawn along the bank in its
+own frame (u along the bank, v across it). Jamsu Bridge, the low deck under
+Banpo Bridge, crosses from the north bank: the river's blocker has a gap for
+it, and the `jamsu` landmark draws its kerbs, railings, lamps and Banpo
+Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
+Hoenamu-ro. The park house on the bank is the door to the park room; its ★5
+legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
+
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs

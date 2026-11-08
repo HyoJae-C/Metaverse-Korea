@@ -118,6 +118,15 @@
       "anchor": { "place": "Mangwon Market", "lat": 37.556, "lon": 126.9065, "local": [80, -115] }
     },
     {
+      "id": "banpo-jamwon",
+      "map": "districts/banpo-jamwon.json",
+      "offset": [
+        -1129,
+        754
+      ],
+      "anchor": { "place": "South bank of the Han River halfway between Banpo and Jamwon Han River Parks (the park house)", "lat": 37.518, "lon": 127.004, "local": [-12.1, -13.3] }
+    },
+    {
       "id": "euljiro",
       "map": "districts/euljiro.json",
       "offset": [
@@ -128,6 +137,13 @@
     }
   ],
   "links": [
+    {
+      "k": "primary",
+      "w": 14,
+      "p": [[-1518, 445], [-1307.8, 705.8]],
+      "n": { "ko": "반포대교 가는 길", "en": "To Banpo Bridge", "ja": "盤浦大橋へ", "zh": "往盘浦大桥" },
+      "note": "From Itaewon's Hoenamu-ro at Bogwang-ro south-east to the north end of Jamsu Bridge (the low deck under Banpo Bridge), which crosses to Banpo-Jamwon Han River Park."
+    },
     {
       "k": "tertiary",
       "w": 8,
