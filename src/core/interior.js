@@ -38,6 +38,9 @@ export const ROOM_SIZES = {
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
+  // Another Land (themepark.js): the old 52 × 28 square plus the roller
+  // coaster's land to the west and north. Not centred: x0..x1, z0..z1.
+  themepark: { w: 96, d: 54, h: 8, x0: -70, x1: 26, z0: -40, z1: 14 },
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
@@ -48,7 +51,9 @@ export const ROOM_SIZES = {
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
-export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
+export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
+// A room's walkable box (most rooms are centred on 0).
+export const roomBox = (room) => ({ x0: room.x0 ?? -room.w / 2, x1: room.x1 ?? room.w / 2, z0: room.z0 ?? -room.d / 2, z1: room.z1 ?? room.d / 2 });
 const SEAT_H = 0.38; // chair seat height, sized for the chibi characters
 const COUNTER_H = 0.62; // shop counters: low enough to see the clerk's face over them
 const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
