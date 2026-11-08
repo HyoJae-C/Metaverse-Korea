@@ -9,7 +9,7 @@
 
 export const JOB_KINDS = ['delivery', 'mart', 'serving'];
 export const SHIFTS_PER_DAY = 5;
-export const MAX_PAY = 5000; // won a shift (a delivery pays the same)
+export const MAX_PAY = 5000; // won a shift (a delivery pays ₩3,500)
 const SHIFT_KEY = 'mk.jobShifts';
 
 // Shifts today: { day: 'YYYY-MM-DD', n }.

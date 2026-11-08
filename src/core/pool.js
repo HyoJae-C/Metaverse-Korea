@@ -55,8 +55,6 @@ export const STROKE = 1.0; // m/s a good stroke adds
 export const VMAX = 3.4;
 export const START_V = 2.2; // the push off the block
 export const GOOD = [0.32, 0.7]; // seconds between taps for a full stroke
-export const DAILY_PAID = 3; // races a day that pay coins
-export const PAY = { win: 6000, finish: 2000 };
 
 // How much of a stroke you get for tapping `gap` seconds after the last one.
 export function strokeQuality(gap) {
@@ -195,7 +193,7 @@ export function scoreDive(h, flips) {
   return { clean: true, flips: done, points };
 }
 
-// Best dive and race records, and paid races today. Saved on this device.
+// Best dive and race records. Saved on this device.
 const today = (d = new Date()) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 const KEY = 'mk.pool';
 export class PoolLog {
@@ -205,21 +203,19 @@ export class PoolLog {
     let raw = {};
     try { raw = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* broken save */ }
     const num = (v) => (Number.isFinite(v) && v > 0 ? v : null);
-    this.s = { day: raw.day === today(now()) ? raw.day : today(now()), paid: raw.day === today(now()) ? raw.paid | 0 : 0, bestRace: num(raw.bestRace), todayRace: raw.day === today(now()) ? num(raw.todayRace) : null, bestDive: num(raw.bestDive) };
+    this.s = { day: raw.day === today(now()) ? raw.day : today(now()), bestRace: num(raw.bestRace), todayRace: raw.day === today(now()) ? num(raw.todayRace) : null, bestDive: num(raw.bestDive) };
   }
   _save() { try { this.storage?.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ } }
-  _roll() { const d = today(this.now()); if (this.s.day !== d) this.s = { ...this.s, day: d, paid: 0, todayRace: null }; }
-  get paidLeft() { this._roll(); return Math.max(0, DAILY_PAID - this.s.paid); }
-  // A finished race: coins to pay, and whether it was a new best.
+  _roll() { const d = today(this.now()); if (this.s.day !== d) this.s = { ...this.s, day: d, todayRace: null }; }
+  // A finished race: whether it was a new best. (Races pay nothing: you pay
+  // to get in, core/day-pass.js.)
   finishRace(time, place) {
     this._roll();
     const best = !this.s.bestRace || time < this.s.bestRace;
     if (best) this.s.bestRace = time;
     if (!this.s.todayRace || time < this.s.todayRace) this.s.todayRace = time;
-    let coins = 0;
-    if (this.s.paid < DAILY_PAID) { this.s.paid++; coins = place === 1 ? PAY.win : PAY.finish; }
     this._save();
-    return { coins, best };
+    return { best };
   }
   finishDive(points) {
     const best = points > (this.s.bestDive || 0);

@@ -12,7 +12,7 @@ export const MEDALS = [
   ['silver', 75, '🥈'],
   ['bronze', 55, '🥉'],
 ];
-export const MEDAL_REWARD = { gold: 60000, silver: 40000, bronze: 20000 }; // first time each
+export const MEDAL_REWARD = { gold: 10000, silver: 7000, bronze: 5000 }; // first time each
 
 // One side's score, 0..1, from how cooked it is.
 export function sideScore(c) {

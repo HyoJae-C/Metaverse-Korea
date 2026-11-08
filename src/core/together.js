@@ -3,13 +3,13 @@
 // High five: stand next to someone and both press 🙌 within a few seconds of
 // each other. Each side sends 'hi5:<their id>'; whoever presses second sees
 // the other's message already waiting, so both sides finish on their own.
-// The first high five ever with each person pays a little, a few people a day.
+// The first high five with each person pays a few coins, a few times a day.
 //
 // Together bonus: finishing the grill or ramen game with another player
 // close by pays a little extra (TOGETHER_COINS). Fishing has none.
 
 export const HI5_WINDOW = 6000; // ms
-export const HI5_COINS = 6000;
+export const HI5_COINS = 5000;
 export const HI5_PAID_PER_DAY = 5;
 export const TOGETHER_RADIUS = 4; // m
 const KEY = 'mk.hi5';
@@ -31,7 +31,7 @@ export class HighFives {
     this.theirs = new Map(); // id -> when they pressed
     let s = {};
     try { s = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* ignore */ }
-    this.s = { day: s.day, with: Array.isArray(s.with) ? s.with : [], ever: Array.isArray(s.ever) ? s.ever : [] };
+    this.s = { day: s.day, with: Array.isArray(s.with) ? s.with : [] };
   }
   _roll() { if (this.s.day !== this.today()) { this.s.day = this.today(); this.s.with = []; } }
   _recent(map, id) { const at = map.get(id); return at != null && this.now() - at < HI5_WINDOW; }
@@ -51,23 +51,21 @@ export class HighFives {
     return this._recent(this.mine, id) ? this._done(id, name) : null;
   }
 
-  // { coins, who }: coins only the first time ever with someone, for a few
-  // people a day. People are told apart by name, so rejoining doesn't pay
-  // twice (the server takes each name once too: main.js gives a fixed op id).
+  // { coins }: coins only for someone new today, a few times a day. People
+  // are told apart by name too, so rejoining doesn't pay twice (and the
+  // server takes each name once a day: main.js gives a fixed op id).
   _done(id, name) {
     this.mine.delete(id);
     this.theirs.delete(id);
     this._roll();
     const who = name || id;
     let coins = 0;
-    if (!this.s.ever.includes(who) && this.s.with.length < HI5_PAID_PER_DAY) {
+    if (!this.s.with.includes(who) && this.s.with.length < HI5_PAID_PER_DAY) {
       this.s.with.push(who);
-      this.s.ever.push(who);
-      if (this.s.ever.length > 2000) this.s.ever.splice(0, this.s.ever.length - 2000);
       coins = HI5_COINS;
       try { this.storage?.setItem(KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
     }
-    return { coins, who };
+    return { coins, who, day: this.s.day };
   }
 }
 
