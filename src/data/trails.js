@@ -6,7 +6,7 @@ export const TRAILS = [
   {
     // The Joseon royal places in the game's Jongno-gu: the palace, the hanok
     // village beside it and the royal shrine, linked by Yulgok-ro.
-    id: 'royal', icon: '👑', reward: 50000,
+    id: 'royal', icon: '👑', reward: 30000,
     name: { ko: '조선 왕실 산책', en: 'Joseon Royal Walk', ja: '朝鮮王室さんぽ', zh: '朝鲜王室漫步' },
     intro: {
       ko: '조선의 왕이 살던 경복궁에서 출발해 양반들이 살던 북촌 한옥마을을 지나, 왕실 조상을 모신 종묘까지 율곡로를 따라 걸어요.',
