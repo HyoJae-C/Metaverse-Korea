@@ -3,6 +3,8 @@
 // (English, with a Korean note where it helps; other languages fall back to
 // English).
 
+import { LIBRARY } from '../data/library-shelf.js';
+
 const P = (ko, rom, en, kn) => ({ ko, rom, mean: kn ? { en, ko: kn } : { en } });
 
 export const BOOKS = [
@@ -227,7 +229,15 @@ const TB = (level, pages, color) => ({
   pages: [],
 });
 BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa0'), TB('5-6', 36, '#9c3d54'));
-export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.pages.length);
+// Free stories and poems (public-domain Korean works and retold folk
+// tales). The shelf knows only the title; the text is loaded from
+// public/library/<id>.json when the book is opened.
+export const LIT_KINDS = ['children', 'story', 'poems'];
+for (const b of LIBRARY) {
+  BOOKS.push({ id: b.id, icon: b.icon, color: b.color, title: b.title, lit: { kind: b.kind, author: b.author, pages: b.pages }, pages: [] });
+}
+export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.lit ? b.lit.pages : b.pages.length);
+export const litUrl = (b) => `library/${b.id}.json`;
 // The edition to show first: the reader's Chinese, else English.
 export const defaultEdition = (lang) => (lang === 'zh' ? 'hans' : lang === 'zht' ? 'hant' : 'en');
 export const pageUrl = (b, ed, i) => `books/${b.id}/${ed}/${String(i + 1).padStart(2, '0')}.webp`;

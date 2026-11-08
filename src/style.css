@@ -1252,6 +1252,28 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .book-rom { margin: 0; font-size: 13px; font-style: italic; opacity: 0.7; }
 .book-mean { margin: 0; font-size: 14px; }
 .book-num { align-self: center; font-size: 12px; font-weight: 700; }
+.book-shelf-title { margin: 6px 0 0; font-size: 15px; }
+.book-card .book-author { opacity: 0.85; }
+/* Library stories and poems: Korean original, English translation, or both */
+#book-panel.book-lit { width: min(560px, calc(100vw - 24px)); max-height: min(84vh, 760px); }
+.lit-modes { display: flex; gap: 6px; justify-content: center; }
+.lit-modes .chip { padding: 4px 12px; font-size: 13px; }
+.lit-modes .chip.on { background: var(--mint); color: #12352f; }
+.book-page.lit-page { display: block; text-align: start; min-height: 0; }
+.lit-heading { margin: 0 0 12px; font-size: 17px; line-height: 1.35; }
+.lit-sub { margin: 4px 0 10px; font-size: 15px; }
+.lit-text p { margin: 0 0 0.85em; white-space: pre-line; line-height: 1.75; overflow-wrap: break-word; }
+.lit-text p:last-child { margin-bottom: 0; }
+.lit-ko { font-size: 16px; word-break: keep-all; }
+.lit-en { font-size: 15px; color: #4a3f35; }
+.lit-ko + .lit-en { margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(74, 63, 53, 0.3); }
+.lit-cover { text-align: center; }
+.lit-cover-icon { font-size: 46px; line-height: 1.1; }
+.lit-cover-title { margin: 6px 0 0; font-size: 22px; font-weight: 900; word-break: keep-all; }
+.lit-cover-sub { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.lit-cover-author { margin: 6px 0 12px; font-size: 13px; opacity: 0.8; }
+.lit-about { margin: 0 0 14px; font-size: 14px; line-height: 1.6; }
+.lit-fine { margin: 0 0 6px; font-size: 11px; line-height: 1.5; opacity: 0.75; text-align: start; overflow-wrap: anywhere; }
 
 /* Food dex */
 .dex-btn { justify-self: start; margin-top: 6px; }
