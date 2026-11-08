@@ -520,6 +520,7 @@ export const ES = {
   'look.none': 'Nada',
   'start.nickname': 'Tu apodo',
   "name.rule": "⚠️ Si usas groserías, odio, palabras sexuales o algo que incomode a otros, tu nombre puede cambiarse automáticamente sin aviso o borrarse al instante.",
+  "name.face": "Tu nombre es tu cara en internet. Elige uno que te enorgullezca mostrar.",
   "name.taken": "Ese ID ya está en uso. Elige otro nombre.",
   "name.confirm": "¿Cambiar tu nombre a «{name}»?",
   "name.confirmGo": "Sí, cambiarlo",
