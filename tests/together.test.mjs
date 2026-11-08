@@ -9,16 +9,16 @@ test('a high five needs both to press within a few seconds', () => {
   const a = new HighFives(memory(), () => 'd1', () => now);
   assert.equal(a.press('b', 'Bora'), null); // waiting for them
   now += 2000;
-  assert.deepEqual(a.heard('b', 'Bora'), { coins: HI5_COINS });
+  assert.deepEqual(a.heard('b', 'Bora'), { coins: HI5_COINS, who: 'Bora' });
   // too slow: their press arrives after the window
   a.press('c', 'Chan');
   now += HI5_WINDOW + 1;
   assert.equal(a.heard('c', 'Chan'), null);
   assert.ok(a.waiting('c'));
-  assert.deepEqual(a.press('c', 'Chan'), { coins: HI5_COINS }); // pressing back now works
+  assert.deepEqual(a.press('c', 'Chan'), { coins: HI5_COINS, who: 'Chan' }); // pressing back now works
 });
 
-test('coins once per person a day, a few people a day', () => {
+test('coins only the first time with each person, a few people a day', () => {
   let day = 'd1';
   const st = memory();
   const a = new HighFives(st, () => day, () => 0);
@@ -30,7 +30,9 @@ test('coins once per person a day, a few people a day', () => {
   assert.equal(new HighFives(st, () => day).s.with.length, HI5_PAID_PER_DAY);
   day = 'd2';
   a.press('b', 'Bora');
-  assert.equal(a.heard('b', 'Bora').coins, HI5_COINS);
+  assert.equal(a.heard('b', 'Bora').coins, 0, 'not again the next day');
+  a.press('n', 'Nari');
+  assert.equal(a.heard('n', 'Nari').coins, HI5_COINS, 'someone new still pays');
 });
 
 test('messages, together and crowd bonuses', () => {

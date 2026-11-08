@@ -4743,12 +4743,12 @@ function onHi5(id) {
   if (r) hi5Done(id, r);
   else { shop.toast(t('hi5.asked', { name })); action = null; } // refresh the button
 }
-function hi5Done(id, { coins }) {
+function hi5Done(id, { coins, who }) {
   me.play('cheer');
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together' });
+  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together', once: 'hi5:' + who });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
