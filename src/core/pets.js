@@ -16,7 +16,7 @@ function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {
 }
 
 // A chibi animal; front is +z. Returns { root, body, head, tail, legs, ears }.
-// opts.ears: 'golden' for a golden retriever's long soft ears.
+// opts.earStyle: 'golden' for a golden retriever's long soft ears.
 // (No snow settles on animals: core/snow-cover.js.)
 export function makeAnimal(kind, color, accent, scale = 1, opts = {}) {
   const a = buildAnimal(kind, color, accent, scale, opts);
@@ -39,7 +39,7 @@ function buildAnimal(kind, color, accent, scale, opts = {}) {
   part(head, sphere(0.17), color, 0, 0, 0, 1.1, 1, 1);
   const ears = [];
   for (const s of [-1, 1]) {
-    if (dog && opts.ears === 'golden') ears.push(goldenEar(head, accent, s));
+    if (dog && opts.earStyle === 'golden') ears.push(goldenEar(head, accent, s));
     else if (dog) part(head, sphere(0.07, 8, 6), accent, 0.15 * s, -0.02, -0.02, 0.6, 1.4, 0.9); // floppy ears
     else part(head, new THREE.ConeGeometry(0.065, 0.13, 4), color, 0.1 * s, 0.15, 0, 1, 1, 0.7); // pointy ears
     part(head, sphere(0.025, 6, 6), '#2b2230', 0.065 * s, 0.03, 0.15); // eyes
@@ -231,7 +231,7 @@ export const BREEDS = {
   ],
   // Big dogs: golden retriever, samoyed, husky, bernese, labrador, jindo.
   bigdogs: [
-    { kind: 'dog', name: '골디', rom: 'Goldie', color: '#e2a85a', accent: '#c98a3e', scale: 1.7, ears: 'golden' },
+    { kind: 'dog', name: '골디', rom: 'Goldie', color: '#e2a85a', accent: '#c98a3e', scale: 1.7, earStyle: 'golden' },
     { kind: 'dog', name: '설이', rom: 'Seori', color: '#f7f5f0', accent: '#e8e2d6', scale: 1.65 },
     { kind: 'dog', name: '하늘', rom: 'Haneul', color: '#7d8590', accent: '#f2f2f2', scale: 1.7 },
     { kind: 'dog', name: '버니', rom: 'Bernie', color: '#2b2627', accent: '#c47a45', scale: 1.8 },
@@ -242,8 +242,8 @@ export const BREEDS = {
   // small dogs (a Maltese is 0.85) but smaller than the Big Paws dogs, who
   // love to play together.
   retrievers: [
-    { kind: 'dog', name: '해피', rom: 'Happy', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, playful: true, ears: 'golden' }, // golden retriever
-    { kind: 'dog', name: '두부', rom: 'Dubu', color: '#f1dcb0', accent: '#d9bd86', scale: 1.2, playful: true, ears: 'golden' }, // cream golden
+    { kind: 'dog', name: '해피', rom: 'Happy', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, playful: true, earStyle: 'golden' }, // golden retriever
+    { kind: 'dog', name: '두부', rom: 'Dubu', color: '#f1dcb0', accent: '#d9bd86', scale: 1.2, playful: true, earStyle: 'golden' }, // cream golden
   ],
   raccoons: [
     { kind: 'raccoon', name: '너구리', rom: 'Neoguri', color: '#8f8a88', accent: '#ffffff' },
