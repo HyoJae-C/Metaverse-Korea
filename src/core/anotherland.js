@@ -96,6 +96,9 @@ function signBoard(w, h) {
 }
 
 // Pure motion (unit-tested), seconds → position along each ride.
+// The park behind the gate is drawn at this scale; the numbers below are
+// before it (the gate itself is full size).
+export const PARK_SCALE = 0.75;
 export const WHEEL = { x: 78, z: -30, hub: 31, r: 26, cabins: 20, period: 90 };
 export const DROP = { x: 112, z: 2, top: 50, low: 2.5, cycle: 16 };
 export function dropHeight(t) {
@@ -141,6 +144,17 @@ export function buildAnotherLand(g) {
     g.add(hook);
   }
 
+  return buildPark(g);
+}
+
+// Everything behind the gate, drawn at PARK_SCALE round the gate so the park
+// looks smaller from the lake (you go inside to ride anyway) while the gate
+// keeps its size. The island in songpa.json is cut to fit: the wall stands
+// at x 0.75..97.5, z -45..45 from the gate.
+function buildPark(outer) {
+  const g = new THREE.Group();
+  g.scale.setScalar(PARK_SCALE);
+  outer.add(g);
   // ── Candy wall round the park: biscuit blocks with gumdrops on top.
   const wallSeg = (x0, z0, x1, z1) => {
     const len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(len / 4));

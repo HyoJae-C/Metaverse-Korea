@@ -109,6 +109,26 @@ export const TRACKS = [
     scale: [67, 69, 71, 74, 76, 79], melodyFrom: 8, melody: 0.5, lead: 'pluck',
   },
   {
+    // The Ttukseom drone light show's music (not in the record list): no
+    // drums, slow bright chords like a night sky, little bells, the river.
+    id: 'droneshow',
+    hidden: true,
+    icon: '🛸',
+    color: '#3b3f9e',
+    name: { en: 'Drones over the River', ko: '강 위의 드론', ja: '川の上のドローン', zh: '江上的无人机' },
+    desc: {
+      en: 'Drone show music: slow bright chords, little bells and the sound of the river at night.',
+      ko: '드론쇼 음악: 느리고 밝은 화음, 작은 종소리, 밤 강물 소리.',
+      ja: 'ドローンショーの音楽：ゆっくり明るい和音、小さなベル、夜の川の音。',
+      zh: '无人机表演音乐：缓慢明亮的和弦、小铃声和夜晚的江水声。',
+    },
+    bpm: 66, swing: 1,
+    chords: [[53, 60, 64, 69], [48, 55, 64, 67], [50, 57, 62, 65], [46, 53, 62, 65]],
+    bass: [41, 36, 38, 34], bassHits: [[0, 0, 7.5]], pad: true, waves: true,
+    kick: [], snare: [], hat: null,
+    scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.3, lead: 'bell',
+  },
+  {
     // The Curve Runway's show music (not in the music cafe's record list):
     // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
     // bass, tense like a fashion show's catwalk.

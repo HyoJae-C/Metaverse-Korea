@@ -1,7 +1,8 @@
 // Three skill games, no DOM so they can be unit-tested: the batting cage
 // (야구 연습장), the toy shooting gallery in Another Land (풍선 사격) and darts
-// at Bar Hush. They are free to play and pay out nothing: you only chase
-// your own best record (kept in this browser under "mk.arcade").
+// at Bar Hush. They are free to play and pay out no coins: you chase your
+// own best record (kept in this browser under "mk.arcade"). The one prize is
+// the balloon booth's small teddy bear for a gold medal.
 
 // ── Batting cage ─────────────────────────────────────────────────────────
 // The machine is 18.44 m away (pitcher's mound to home plate). Pick a speed;
@@ -52,6 +53,17 @@ export const TARGETS = {
   star: { points: 50, r: 0.035 },
 };
 const POP_BACK = 1.5; // seconds until a popped target is back
+// Medals for the balloon booth (the haunted house's lantern has none). A gold
+// medal wins a small teddy bear to put in your home: the only place it comes
+// from. Still no coins in or out.
+export const GALLERY_MEDALS = [
+  ['gold', 350, '🥇'],
+  ['silver', 250, '🥈'],
+  ['bronze', 150, '🥉'],
+];
+export const galleryMedal = (score) => GALLERY_MEDALS.find(([, min]) => score >= min)?.[0] || null;
+export const galleryMedalIcon = (m) => GALLERY_MEDALS.find(([id]) => id === m)?.[2] || '';
+export const GALLERY_GOLD_PRIZE = 'plush-bear-small';
 
 export class Gallery {
   constructor() {

@@ -231,6 +231,46 @@ export class CloudSave {
     } catch { return null; }
   }
 
+  // Seoul Bank (028_bank.sql). Can I send? { open, min, max }; open is false
+  // when it can't be asked (SQL not run, offline, not signed in): then the
+  // teller only says transfers are coming soon.
+  async bankStatus(timeoutMs = 4000) {
+    const closed = { open: false, min: 0, max: 0 };
+    if (!this.client || !this.user) return closed;
+    try {
+      const call = this.client.rpc('bank_status');
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error || data?.status !== 'ok') return closed;
+      return { open: data.open === true, min: Math.max(1, Math.round(Number(data.min) || 0)), max: Math.max(0, Math.round(Number(data.max) || 0)) };
+    } catch { return closed; }
+  }
+
+  // Send n won to the player named `to`: { status, coins, ver, name, n }.
+  // status 'offline' when it couldn't be asked (nothing moved, or the same
+  // op id sent again later only moves it once).
+  async bankSend({ op, to, n, memo }, timeoutMs = 8000) {
+    if (!this.client || !this.user) return { status: 'offline' };
+    try {
+      const call = this.client.rpc('bank_send', { p_op: op, p_to: String(to).slice(0, 16), p_n: Math.round(n), p_memo: memo });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error || !data || typeof data.status !== 'string') return { status: 'offline' };
+      return data;
+    } catch { return { status: 'offline' }; }
+  }
+
+  // Transfers sent to me since I was last told: { items: [{ name, n, memo }],
+  // coins, ver } or null.
+  async bankNews(timeoutMs = 4000) {
+    if (!this.client || !this.user) return null;
+    try {
+      const call = this.client.rpc('bank_news');
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error || data?.status !== 'ok' || !Array.isArray(data.items)) return null;
+      const items = data.items.map((i) => ({ name: String(i?.name || '').slice(0, 16), n: Math.max(0, Math.round(Number(i?.n) || 0)), memo: String(i?.memo || '') })).filter((i) => i.n > 0);
+      return { items, coins: data.coins, ver: data.ver };
+    } catch { return null; }
+  }
+
   // Does this player name belong to an operator account? (005_operators.sql)
   // False when it can't be asked: no badge is better than a fake one.
   async isOperator(name, timeoutMs = 4000) {

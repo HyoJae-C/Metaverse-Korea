@@ -1,10 +1,10 @@
 # Folk games (전통놀이)
 
-Four traditional Korean games, built and tested but **not placed on the map
-yet**. They are meant for a folk games yard, first planned for Namsangol
-Hanok Village (남산골 한옥마을, Pil-dong, Jung-gu), once the Seoul map is
-redrawn. Try them now at `dev/folk-games.html` (`npm run dev`, then open
-`/dev/folk-games.html`; `?open=yut|tuho|jegi|neol` and `?lang=ko` work too).
+Four traditional Korean games in the folk games yard of Namsangol Hanok
+Village (남산골 한옥마을, Pil-dong, Jung-gu): through the hanok gate south of
+Toegye-ro, in the middle of the yard. Also at `dev/folk-games.html`
+(`npm run dev`, then open `/dev/folk-games.html`; `?open=yut|tuho|jegi|neol`
+and `?lang=ko` work too).
 
 | Game | Rules (no DOM) | Panel | What you do |
 | --- | --- | --- | --- |
@@ -25,32 +25,36 @@ Tests: `tests/folk-games.test.mjs`.
 
 - Tuho, jegichagi and neolttwigi give medals through the grill's `Medals`
   (`core/grill-game.js`, game ids `tuho`, `jegi`, `neol`): each new tier pays
-  once (bronze 10, silver 20, gold 30 coins), like the cooking classes.
-- Yutnori calls `onWin()` when you win; return the coins you paid (or 0).
-  Suggested: 15 coins, at most a few wins a day, so it can't farm coins.
-  Wins are counted on the device (`mk.folk.yutWins`).
+  once (bronze ₩5,000, silver ₩7,000, gold ₩10,000), like the cooking classes.
+- Yutnori calls `onWin()` when you win and shows the coins it returns. In
+  the yard that is ₩5,000 for the first three wins of the day, then 0, so it
+  can't farm coins. All wins are counted on the device (`mk.folk.yutWins`).
 
-## Putting them on the map (later)
+## The yard (src/game/folk-yard.js)
 
-1. When the Seoul map is redrawn, add the hanok village as a district or as
-   part of the Jung-gu district: hanok buildings, a wall with a gate, and an
-   open yard of about 20 × 14 m. The map thread's notes (docs/WORLD.md):
-   districts are placed with an anchor (real lat/lon + local spot) in
-   region.json and `node scripts/place-districts.mjs --apply`; `npm test`
-   checks overlaps and the gu outline. Jung-gu content goes in the band
-   between the Gyeongbokgung/Cheonggyecheon strip and Itaewon/Namsan.
-2. Build the props from `FOLK_GAMES` in the yard (like `palace-show.js` adds
-   its dancers) and add their footprints to collision.
-3. In `index.html`, add four panels:
-   `<div class="sheet order-panel kimchi-panel folk-panel" id="yut-panel" hidden></div>`
-   (and `tuho-panel`, `jegi-panel`, `neol-panel`).
-4. In `main.js`, create the panels like the kimchi class (`onSay` makes
-   Grandpa Kim, a `makeNpc` standing in the yard, speak; `onMedal` shows the
-   medal toast, plays `cheer` and can count a mission), add them to
-   `spaceBusy()` and to the list closed when you leave, and add an action
-   button when you stand within `radius` of a game's `stand` spot
-   (`'🎲 ' + FL('yut.open')` and so on).
-5. Optional: let friends play yutnori together. `YutGame` is plain data
-   (`snapshot()` / `YutGame.restore()`), so the host can send the state after
-   each throw and move in the yard's room, and seats not taken by people
-   stay computer players.
+- The yard is the `folkyard` landmark in `districts/euljiro.json`, at the
+  centre of Namsangol's plaza (48 × 20 m, inside the hanok wall). Where the
+  props and the locals stand is `src/data/folk-yard.js` (`FOLK_YARD`); the
+  props are turned so you play facing the hanok houses with the gate behind
+  you, and the lane straight in from the gate stays clear.
+- The tuho jar and rack, the jegi stool and the seesaw are solid
+  (`FOLK_SOLID`); `scripts/build-euljiro.mjs` writes them into the map's
+  blockers. Move a prop, then run `node scripts/build-euljiro.mjs`.
+- The locals are there before you: Grandma, Minjun and Seoyeon sit on three
+  of the four cushions round the yut mat (you take the fourth), Grandpa Kim
+  keeps the tuho jar, a boy keeps a jegi up by the stool, and Suni waits on
+  the low end of the seesaw. Each game's lines come from its local
+  (`FOLK_YARD.speaker`).
+- Stand by a game for its action button (`🎲 Play yutnori` and so on). The
+  panel closes when you walk away from it.
+- Rewards: medals pay once per tier (wallet reason `medal`); a yutnori win
+  pays ₩5,000, three wins a day (counted on the device, `mk.folk.yutPaid`).
+- Tests: `tests/folk-yard.test.mjs` (layout, blockers, the open lane);
+  end to end: `tests/e2e/folk-yard.mjs`.
+
+## Later
+
+- Let friends play yutnori together. `YutGame` is plain data
+  (`snapshot()` / `YutGame.restore()`), so the host can send the state after
+  each throw and move in the yard's room, and seats not taken by people
+  stay computer players.
