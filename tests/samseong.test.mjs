@@ -31,12 +31,12 @@ test('Samseong-dong stays on land, south of the Han River', () => {
   }
 });
 
-test('KONEXT: a big mall seen from outside, with the aquarium pavilion closed for now', () => {
+test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the plaza', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');
   assert.ok(MALL.x1 - MALL.x0 >= 150 && MALL.z1 - MALL.z0 >= 80, 'the biggest building around');
   assert.ok(map.landmarks.some((l) => l.type === 'konext'));
-  assert.ok(map.landmarks.some((l) => l.type === 'aquariumsoon'), 'KONEXT Aquarium pavilion, "Coming soon"');
+  assert.ok(map.landmarks.some((l) => l.type === 'aquarium'), 'KONEXT Aquarium pavilion');
   assert.ok(map.buildings.some((b) => b.custom && b.h === PAVILION.h));
   // Nothing in the game calls it COEX: the real mall's name is a trademark.
   const text = JSON.stringify(map) + JSON.stringify(stores.filter((s) => s.district === 'samseong'));
@@ -92,4 +92,29 @@ test('meeting zone U on KONEXT Square, an Information Center and a stamp', () =>
   for (const b of map.buildings) assert.ok(!inPolygon(ix, iz, b.p), 'the door is outside its building');
   const stamp = STAMPS.find((s) => s.id === 'konext');
   assert.ok(stamp && stamp.gu.en === 'Gangnam-gu');
+});
+
+test('KONEXT Aquarium: you walk in through the pavilion, and on to the ocean tunnel', async () => {
+  const { AQUA_ROOM, OCEAN, TUNNEL, PENGUINS, REEF, RIVER, SEAFLOOR, JELLIES, WHALE } = await import('../src/core/aquarium.js');
+  const store = stores.find((s) => s.id === 'konext-aquarium');
+  assert.ok(store, 'the aquarium is a store you can enter');
+  assert.equal(store.workshop, 'aquarium');
+  assert.equal(store.district, 'samseong');
+  const [x, z] = local(store.at);
+  assert.ok(x > PAVILION.x1 && x - PAVILION.x1 < 6 && z > PAVILION.z0 && z < PAVILION.z1, 'its door is on the pavilion\'s plaza side');
+  for (const b of map.buildings) assert.ok(!inPolygon(x, z, b.p), 'the door is outside the building');
+  // Inside: the walk from the front door to the end of the tunnel is clear.
+  const tanks = [OCEAN, PENGUINS, REEF, RIVER, SEAFLOOR];
+  const exitZ = AQUA_ROOM.d / 2 - 0.9;
+  for (let zz = exitZ - 1.4; zz > TUNNEL.end + 0.5; zz -= 0.5) {
+    for (const xx of [-1, 0, 1]) {
+      const inTank = tanks.some((a) => xx > a.x0 && xx < a.x1 && zz > a.z0 && zz < a.z1) && !(Math.abs(xx) < TUNNEL.w / 2 && zz > TUNNEL.end);
+      assert.ok(!inTank, `path open at ${xx}, ${zz}`);
+      for (const [jx, jz] of JELLIES) assert.ok(Math.abs(xx - jx) > 1.2 || Math.abs(zz - jz) > 1.2, `no jellyfish column on the path at ${zz}`);
+    }
+  }
+  // The whale model is half the real length, and the line on the floor is the real 25 m.
+  assert.equal(WHALE.len, 25);
+  assert.equal(WHALE.scale, 2);
+  assert.ok(WHALE.z0 + WHALE.len < exitZ && WHALE.z0 > OCEAN.z1, 'the floor line fits in the hall');
 });

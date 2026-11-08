@@ -147,8 +147,13 @@ building, so its walls still block): a long, low glass box with a wave
 skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media
 wall round its corner made of two region.json `screens` with `"wave": true`
 (a big wave rolling inside a box). The small glass pavilion on the square is
-KONEXT Aquarium's way in, closed with a "Coming soon" board until the
-aquarium is built under the mall. Bongeunsa, north of Bongeunsa-ro, is left
+KONEXT Aquarium's way in: its door is the store "konext-aquarium"
+(workshop "aquarium"), whose hall is `core/aquarium.js`: a lobby with a river
+fish tank and a sea-floor tank, six jellyfish columns, a 1:2 blue whale model
+over a 25 m line on the floor (the real length), coral reef tanks, a penguin
+room, and an ocean tank across the back with a glass tunnel through it
+(sharks, a manta ray, turtles, dolphins, an orca, a sunfish). Free for now.
+Bongeunsa, north of Bongeunsa-ro, is left
 as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
 Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)

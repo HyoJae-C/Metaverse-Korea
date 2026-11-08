@@ -15,7 +15,7 @@ import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
 import { cgpGate, hoarding } from './grand-park.js';
-import { konext, aquariumSoon, samseongBridge } from './konext.js';
+import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
 import { EULJIRO_BUILD } from './euljiro-models.js';
@@ -98,7 +98,7 @@ const BUILD = {
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
   konext: (g, l) => konext(g, l), // KONEXT, the mall by Samseong Station (core/konext.js)
-  aquariumsoon: (g, l) => aquariumSoon(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)
+  aquarium: (g, l) => aquariumPavilion(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
