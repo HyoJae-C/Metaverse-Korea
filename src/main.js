@@ -208,6 +208,7 @@ import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
+import { createSkyFlight } from './game/sky-flight.js';
 import { createLedger } from './ui/ledger-ui.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -1651,7 +1652,14 @@ const emoteWheel = createEmoteWheel({
 const { closeWheel } = emoteWheel;
 
 // Text chat, chat codes, friends and friend chat. (game/chat.js)
+// Sky view for operators (game/sky-flight.js): chat codes, flying costumes.
+const sky = createSkyFlight({
+  get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
+  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || cable); },
+  cloud, input, scene, cam, bounds, blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
+});
 const chat = createChat({
+  sky,
   get others() { return others; }, get shop() { return shop; }, get googleFail() { return googleFail; },
   get CODE_TEXT() { return CODE_TEXT; }, get wallet() { return wallet; },
   get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get inventory() { return inventory; },
@@ -6076,7 +6084,7 @@ renderer.setAnimationLoop(() => {
   manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
+  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : sky.active ? 90 : 28);
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -6140,7 +6148,8 @@ renderer.setAnimationLoop(() => {
   const steady = steadyWalk && !riding;
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
+  if (sky.active) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
+  else if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
@@ -6208,7 +6217,7 @@ renderer.setAnimationLoop(() => {
   // Keep the camera out of buildings: walk back from the player and stop
   // just before the first wall.
   let horiz = Math.cos(cam.pitch) * cam.dist;
-  if (mode === 'street') {
+  if (mode === 'street' && !sky.active) {
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
     for (let d = 1; d <= horiz; d += 0.5) {
       if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
@@ -6261,7 +6270,8 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
   basketTick(dt, p); // a basketball move places you
   skateTick(dt, p);
-  if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
+  if (riding !== 3 && !seated && !sky.active) updateSubway(dt, p, px0, pz0);
+  sky.update(dt);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
@@ -6314,7 +6324,7 @@ renderer.setAnimationLoop(() => {
     };
     if (seated || ride) st.sit = 1;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
-    if (Math.abs(p.y) > 0.05) st.y = Math.round(p.y * 100) / 100; // on subway stairs
+    if (Math.abs(p.y) > 0.05 && !sky.active) st.y = Math.round(p.y * 100) / 100; // on subway stairs (flying: others see us on the ground)
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
@@ -6521,6 +6531,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
     riding: () => riding,
+    skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),

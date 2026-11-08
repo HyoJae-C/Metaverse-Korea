@@ -18,6 +18,7 @@ import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
+import { skyCode } from './sky-flight.js';
 
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -190,6 +191,8 @@ export function createChat(game) {
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
       }
+      // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /착지.
+      if (skyCode(code) && await game.sky?.command(skyCode(code))) return;
       // Fishing code: the next bite (fishing by hand) is that fish, once.
       const fishFromCode = await fishCode(code);
       if (fishFromCode) {
