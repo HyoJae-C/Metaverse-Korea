@@ -29,6 +29,22 @@ export function cleanBody(s) {
   return String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, MAX_BODY);
 }
 
+// Where someone is from me, as the screen sees it: { m, dir } with m in whole
+// metres and dir 'near' (a few steps), 'ahead', 'right', 'behind' or 'left'.
+// forward: the camera's facing on the ground (x, z), need not be unit length.
+export function whereIs(from, to, forward) {
+  const vx = to.x - from.x, vz = to.z - from.z;
+  const m = Math.round(Math.hypot(vx, vz));
+  if (m < 4) return { m, dir: 'near' };
+  const fl = Math.hypot(forward.x, forward.z) || 1;
+  const fx = forward.x / fl, fz = forward.z / fl;
+  const a = vx * fx + vz * fz; // along the view
+  const b = vx * -fz + vz * fx; // to the right (three.js: looking down -z, right is +x)
+  if (a >= Math.abs(b)) return { m, dir: 'ahead' };
+  if (a <= -Math.abs(b)) return { m, dir: 'behind' };
+  return { m, dir: b > 0 ? 'right' : 'left' };
+}
+
 // Conversations held in memory: merges history and live messages without
 // doubles, and counts what I haven't read. readMarks: { key: last read id }
 // (kept by the caller so it survives a reload).
