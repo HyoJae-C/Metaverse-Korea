@@ -7,12 +7,12 @@ import { paintingUrl, hallsOn } from '../core/museum.js';
 import { NOT_TRANSLATED } from '../data/war-memorial.js';
 
 export const MUSEUM_TEXT = {
-  look: { en: 'Look at the painting', ko: '그림 보기', ja: '絵を見る', zh: '看画', es: 'Ver la pintura', id: 'Lihat lukisan', vi: 'Xem tranh', hi: 'चित्र देखें', ar: 'شاهد اللوحة' },
-  source: { en: 'See it on the National Museum of Korea site', ko: '국립중앙박물관 사이트에서 보기', ja: '国立中央博物館のサイトで見る', zh: '在国立中央博物馆网站查看', es: 'Verla en el sitio del Museo Nacional de Corea', id: 'Lihat di situs Museum Nasional Korea', vi: 'Xem trên trang của Bảo tàng Quốc gia Hàn Quốc', hi: 'राष्ट्रीय कोरिया संग्रहालय की साइट पर देखें', ar: 'شاهدها على موقع المتحف الوطني الكوري' },
-  lift: { en: 'Elevator', ko: '엘리베이터', ja: 'エレベーター', zh: '电梯', es: 'Ascensor', id: 'Lift', vi: 'Thang máy', hi: 'लिफ़्ट', ar: 'المصعد' },
-  pick: { en: 'Which floor?', ko: '몇 층으로 갈까요?', ja: '何階に行きますか？', zh: '去几楼？', es: '¿A qué planta?', id: 'Ke lantai berapa?', vi: 'Lên tầng mấy?', hi: 'किस मंज़िल पर?', ar: 'أي طابق؟' },
-  here: { en: 'You are here', ko: '지금 있는 층', ja: '現在の階', zh: '当前楼层', es: 'Estás aquí', id: 'Anda di sini', vi: 'Bạn đang ở đây', hi: 'आप यहाँ हैं', ar: 'أنت هنا' },
-  credit: { en: 'Image', ko: '이미지', ja: '画像', zh: '图片', es: 'Imagen', id: 'Gambar', vi: 'Ảnh', hi: 'तस्वीर', ar: 'الصورة' },
+  look: { en: 'Look at the painting', ko: '그림 보기', ja: '絵を見る', zh: '看画', es: 'Ver la pintura', id: 'Lihat lukisan', vi: 'Xem tranh', hi: 'चित्र देखें', fr: 'Regarder le tableau', th: 'ชมภาพวาด', ar: 'شاهد اللوحة' },
+  source: { en: 'See it on the National Museum of Korea site', ko: '국립중앙박물관 사이트에서 보기', ja: '国立中央博物館のサイトで見る', zh: '在国立中央博物馆网站查看', es: 'Verla en el sitio del Museo Nacional de Corea', id: 'Lihat di situs Museum Nasional Korea', vi: 'Xem trên trang của Bảo tàng Quốc gia Hàn Quốc', hi: 'राष्ट्रीय कोरिया संग्रहालय की साइट पर देखें', fr: 'Le voir sur le site du Musée national de Corée', th: 'ดูในเว็บไซต์พิพิธภัณฑ์แห่งชาติเกาหลี', ar: 'شاهدها على موقع المتحف الوطني الكوري' },
+  lift: { en: 'Elevator', ko: '엘리베이터', ja: 'エレベーター', zh: '电梯', es: 'Ascensor', id: 'Lift', vi: 'Thang máy', hi: 'लिफ़्ट', fr: 'Ascenseur', th: 'ลิฟต์', ar: 'المصعد' },
+  pick: { en: 'Which floor?', ko: '몇 층으로 갈까요?', ja: '何階に行きますか？', zh: '去几楼？', es: '¿A qué planta?', id: 'Ke lantai berapa?', vi: 'Lên tầng mấy?', hi: 'किस मंज़िल पर?', fr: 'Quel étage ?', th: 'ไปชั้นไหน?', ar: 'أي طابق؟' },
+  here: { en: 'You are here', ko: '지금 있는 층', ja: '現在の階', zh: '当前楼层', es: 'Estás aquí', id: 'Anda di sini', vi: 'Bạn đang ở đây', hi: 'आप यहाँ हैं', fr: 'Tu es ici', th: 'คุณอยู่ที่นี่', ar: 'أنت هنا' },
+  credit: { en: 'Image', ko: '이미지', ja: '画像', zh: '图片', es: 'Imagen', id: 'Gambar', vi: 'Ảnh', hi: 'तस्वीर', fr: 'Image', th: 'ภาพ', ar: 'الصورة' },
 };
 const T = (k) => localName(MUSEUM_TEXT[k], getLanguage());
 

@@ -23,6 +23,8 @@ export const DISCLAIMER = {
   id: 'Tempat di dalam game, tidak terkait dengan Museum Nasional Korea yang asli. Lukisan adalah gambar yang dibagikan museum untuk dipakai bebas dengan mencantumkan sumber.',
   vi: 'Một nơi trong trò chơi, không liên quan đến Bảo tàng Quốc gia Hàn Quốc thật. Tranh là ảnh bảo tàng công bố cho dùng tự do khi ghi nguồn.',
   hi: 'यह गेम के अंदर की जगह है, असली राष्ट्रीय कोरिया संग्रहालय से इसका कोई संबंध नहीं। चित्र संग्रहालय द्वारा स्रोत बताने की शर्त पर मुफ़्त उपयोग के लिए दी गई तस्वीरें हैं।',
+  fr: 'Un musée d\'art imaginaire dans le jeu. Ce n\'est pas une vraie institution, il n\'est ni géré par le Musée national de Corée ni lié à lui. Les tableaux sont des images que le musée partage en libre usage avec mention de la source.',
+  th: 'พิพิธภัณฑ์ศิลปะสมมุติในเกม ไม่ใช่สถาบันจริง และไม่ได้ดำเนินการโดยหรือเกี่ยวข้องกับพิพิธภัณฑ์แห่งชาติเกาหลี ภาพวาดเป็นภาพที่พิพิธภัณฑ์เผยแพร่ให้ใช้ได้ฟรีโดยระบุที่มา',
   ar: 'مكان داخل اللعبة، لا علاقة له بالمتحف الوطني الكوري الحقيقي. اللوحات صور يتيحها المتحف للاستخدام الحر مع ذكر المصدر.',
 };
 

@@ -33,7 +33,7 @@ export const SHARE_TEXT = {
   covered: { en: '{name} couldn\'t pay: you covered 🪙 {n}.', ko: '{name} 님이 돈이 모자라서 🪙 {n}을 대신 냈어요.', ja: '{name}さんが払えなかったので 🪙 {n} を立て替えました。', zh: '{name}付不起，你代付了 🪙 {n}。' },
   theirPick: { en: 'a place they picked', ko: '골라 둔 곳', ja: '選んだ場所', zh: '选好的地方' },
   paid: { en: 'you paid 🪙 {n}', ko: '내가 낸 돈 🪙 {n}', ja: 'あなたの支払い 🪙 {n}', zh: '你付了 🪙 {n}' },
-  free: { en: '🎁 Free ride', ko: '🎁 무료 탑승', ja: '🎁 無料乗車', zh: '🎁 免费乘车', es: '🎁 Viaje gratis', id: '🎁 Gratis', ar: '🎁 رحلة مجانية', vi: '🎁 Đi miễn phí', hi: '🎁 मुफ़्त सवारी' },
+  free: { en: '🎁 Free ride', ko: '🎁 무료 탑승', ja: '🎁 無料乗車', zh: '🎁 免费乘车', es: '🎁 Viaje gratis', id: '🎁 Gratis', ar: '🎁 رحلة مجانية', vi: '🎁 Đi miễn phí', hi: '🎁 मुफ़्त सवारी', fr: '🎁 Course gratuite', th: '🎁 นั่งฟรี' },
   together: { en: '🚕 With {names}', ko: '🚕 {names} 님과 함께', ja: '🚕 {names}さんと一緒', zh: '🚕 和{names}一起' },
 };
 const st = (k, v) => fmt(L(SHARE_TEXT[k]), v);

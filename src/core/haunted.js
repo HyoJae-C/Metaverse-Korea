@@ -21,7 +21,7 @@ export const HAUNT_STORE = {
   category: 'play',
   workshop: 'haunted-house',
   size: 'medium',
-  name: { en: 'Haunted House', ko: '귀신의 집', ja: 'お化け屋敷', zh: '鬼屋', es: 'Casa encantada', id: 'Rumah Hantu', vi: 'Nhà ma', hi: 'भूतिया घर', ar: 'البيت المسكون' },
+  name: { en: 'Haunted House', ko: '귀신의 집', ja: 'お化け屋敷', zh: '鬼屋', es: 'Casa encantada', id: 'Rumah Hantu', vi: 'Nhà ma', hi: 'भूतिया घर', fr: 'Maison hantée', th: 'บ้านผีสิง', ar: 'البيت المسكون' },
   tagline: {
     en: 'A cute ghost mansion in Another Land: portraits that watch you and a ghost-lantern game',
     ko: '어나더랜드의 귀여운 유령 저택: 나를 쳐다보는 초상화와 유령 랜턴 게임',
@@ -250,7 +250,7 @@ export const BOARD_TEXT = {
   title: HAUNT_SIGN,
   how: {
     en: 'Tap the ghosts your lantern finds →', ko: '랜턴에 나타나는 유령을 탭해요 →', ja: 'ランタンに現れるおばけをタップ →', zh: '点击灯笼照到的幽灵 →',
-    es: 'Toca los fantasmas que encuentre tu farol →', id: 'Ketuk hantu yang ditemukan lenteramu →', vi: 'Chạm vào bóng ma mà đèn lồng tìm thấy →', hi: 'लालटेन में दिखे भूतों पर टैप करें →', ar: '← انقر على الأشباح التي يجدها فانوسك',
+    es: 'Toca los fantasmas que encuentre tu farol →', id: 'Ketuk hantu yang ditemukan lenteramu →', vi: 'Chạm vào bóng ma mà đèn lồng tìm thấy →', hi: 'लालटेन में दिखे भूतों पर टैप करें →', fr: 'Touche les fantômes que ta lanterne trouve →', th: 'แตะผีที่โคมไฟส่องเจอ →', ar: '← انقر على الأشباح التي يجدها فانوسك',
   },
 };
 

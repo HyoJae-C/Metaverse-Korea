@@ -4,10 +4,10 @@
 import { localName, getLanguage, onLanguageChange } from '../core/i18n.js';
 
 export const UPDATE_TEXT = {
-  title: { en: '✨ New features are here!', ko: '✨ 새로운 기능이 생겼어요!', ja: '✨ 新しい機能が追加されました！', zh: '✨ 新功能上线啦！', es: '✨ ¡Hay novedades!', id: '✨ Ada fitur baru!', ar: '✨ ميزات جديدة متاحة!', vi: '✨ Có tính năng mới!', hi: '✨ नई सुविधाएँ आ गई हैं!' },
-  sub: { en: 'Refresh to get the latest version.', ko: '새로고침하면 바로 만날 수 있어요.', ja: '再読み込みするとすぐに使えます。', zh: '刷新页面即可体验。', es: 'Recarga para ver la nueva versión.', id: 'Muat ulang untuk mendapatkan versi terbaru.', ar: 'أعد تحميل الصفحة للحصول على أحدث إصدار.', vi: 'Tải lại trang để dùng phiên bản mới nhất.', hi: 'नया संस्करण पाने के लिए पेज रीफ़्रेश करें।' },
-  go: { en: 'Refresh', ko: '새로고침', ja: '再読み込み', zh: '刷新', es: 'Recargar', id: 'Muat ulang', ar: 'إعادة التحميل', vi: 'Tải lại', hi: 'रीफ़्रेश करें' },
-  later: { en: 'Later', ko: '나중에', ja: 'あとで', zh: '稍后', es: 'Más tarde', id: 'Nanti', ar: 'لاحقًا', vi: 'Để sau', hi: 'बाद में' },
+  title: { en: '✨ New features are here!', ko: '✨ 새로운 기능이 생겼어요!', ja: '✨ 新しい機能が追加されました！', zh: '✨ 新功能上线啦！', es: '✨ ¡Hay novedades!', id: '✨ Ada fitur baru!', ar: '✨ ميزات جديدة متاحة!', vi: '✨ Có tính năng mới!', hi: '✨ नई सुविधाएँ आ गई हैं!', fr: '✨ De nouvelles fonctions sont arrivées !', th: '✨ มีฟีเจอร์ใหม่มาแล้ว!' },
+  sub: { en: 'Refresh to get the latest version.', ko: '새로고침하면 바로 만날 수 있어요.', ja: '再読み込みするとすぐに使えます。', zh: '刷新页面即可体验。', es: 'Recarga para ver la nueva versión.', id: 'Muat ulang untuk mendapatkan versi terbaru.', ar: 'أعد تحميل الصفحة للحصول على أحدث إصدار.', vi: 'Tải lại trang để dùng phiên bản mới nhất.', hi: 'नया संस्करण पाने के लिए पेज रीफ़्रेश करें।', fr: 'Actualise pour avoir la dernière version.', th: 'รีเฟรชเพื่อรับเวอร์ชันล่าสุด' },
+  go: { en: 'Refresh', ko: '새로고침', ja: '再読み込み', zh: '刷新', es: 'Recargar', id: 'Muat ulang', ar: 'إعادة التحميل', vi: 'Tải lại', hi: 'रीफ़्रेश करें', fr: 'Actualiser', th: 'รีเฟรช' },
+  later: { en: 'Later', ko: '나중에', ja: 'あとで', zh: '稍后', es: 'Más tarde', id: 'Nanti', ar: 'لاحقًا', vi: 'Để sau', hi: 'बाद में', fr: 'Plus tard', th: 'ไว้ทีหลัง' },
 };
 
 export const LATER_MS = 10 * 60 * 1000;

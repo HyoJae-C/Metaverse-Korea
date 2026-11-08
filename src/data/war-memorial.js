@@ -402,6 +402,8 @@ export const NOT_TRANSLATED = {
   id: 'Demi ketepatan sejarah, teks ini hanya ditampilkan dalam bahasa Korea dan Inggris: kami tidak menerjemahkannya ke bahasa yang belum memiliki terjemahan yang diperiksa. Jika Anda ahli bahasa dan ingin membantu menerjemahkan atau memperbaikinya, hubungi kami melalui "Inquiry Board" di dalam game.',
   vi: 'Để giữ chính xác về lịch sử, nội dung này chỉ hiển thị bằng tiếng Hàn và tiếng Anh: chúng tôi không dịch sang các ngôn ngữ chưa có bản dịch đã được kiểm duyệt. Nếu bạn là chuyên gia ngôn ngữ và muốn giúp dịch hoặc sửa nội dung, hãy liên hệ với chúng tôi qua "Inquiry Board" trong trò chơi.',
   hi: 'इतिहास की सटीकता बनाए रखने के लिए यह सामग्री केवल कोरियाई और अंग्रेज़ी में दिखाई जाती है: जिन भाषाओं का जाँचा हुआ अनुवाद नहीं है, उनमें हम इसका अनुवाद नहीं करते। यदि आप भाषा विशेषज्ञ हैं और इसके अनुवाद या सुधार में मदद करना चाहते हैं, तो कृपया गेम के "Inquiry Board" से हमसे संपर्क करें।',
+  fr: 'Pour garder l\'histoire exacte, ce texte n\'est affiché qu\'en coréen et en anglais : nous ne le traduisons pas dans des langues sans traduction vérifiée. Si tu es expert en langues et veux aider à le traduire ou le corriger, contacte-nous via le « Forum des questions » dans le jeu.',
+  th: 'เพื่อให้ประวัติศาสตร์ถูกต้อง ข้อความนี้แสดงเป็นภาษาเกาหลีและอังกฤษเท่านั้น เราไม่แปลเป็นภาษาที่ยังไม่มีคำแปลที่ตรวจสอบแล้ว หากคุณเป็นผู้เชี่ยวชาญด้านภาษาและอยากช่วยแปลหรือแก้ไข โปรดติดต่อเราผ่าน "กระดานสอบถาม" ในเกม',
   ar: 'حرصًا على الدقة التاريخية، يُعرض هذا النص بالكورية والإنجليزية فقط: لا نترجمه إلى لغات ليست لها ترجمة مُراجَعة. إذا كنت خبيرًا لغويًا وترغب في المساعدة في ترجمته أو تصحيحه، فتواصل معنا عبر "Inquiry Board" في اللعبة.',
 };
 for (const l of ['ja', 'zh']) {

@@ -8,7 +8,7 @@ import { Gallery, GALLERY_SHOTS, GALLERY_SECONDS, GALLERY_ROWS, TARGETS, loadRec
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
-  title: { en: 'Balloon shooting gallery', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', ar: 'رماية البالونات' },
+  title: { en: 'Balloon shooting gallery', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', fr: 'Stand de tir aux ballons', th: 'ซุ้มยิงลูกโป่ง', ar: 'رماية البالونات' },
   howTo: {
     en: 'A toy cork gun: tap the targets to pop them. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} corks, {s} seconds. Free to play.',
     ko: '장난감 코르크 총이에요. 과녁을 탭해서 맞혀요. 🎈 10 · 🦆 20 · ⭐ 50점. 코르크 {n}발, {s}초. 무료예요.',
@@ -18,15 +18,17 @@ const T = {
     id: 'Pistol gabus mainan: ketuk target untuk menembaknya. 🎈 10 · 🦆 20 · ⭐ 50 poin. {n} gabus, {s} detik. Gratis.',
     vi: 'Súng nút bần đồ chơi: chạm vào mục tiêu để bắn. 🎈 10 · 🦆 20 · ⭐ 50 điểm. {n} viên, {s} giây. Miễn phí.',
     hi: 'खिलौना कॉर्क गन: निशानों पर टैप करें। 🎈 10 · 🦆 20 · ⭐ 50 अंक। {n} कॉर्क, {s} सेकंड। मुफ़्त।',
+    fr: 'Un pistolet à bouchon : touche les cibles pour les faire éclater. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} bouchons, {s} secondes. Gratuit.',
+    th: 'ปืนจุกก๊อกของเล่น แตะเป้าเพื่อยิงให้แตก 🎈 10 · 🦆 20 · ⭐ 50 คะแนน มี {n} นัด {s} วินาที เล่นฟรี',
     ar: 'بندقية فلين لعبة: انقر على الأهداف لإصابتها. 🎈 10 · 🦆 20 · ⭐ 50 نقطة. {n} طلقات، {s} ثانية. مجاني.',
   },
-  best: { en: 'Your best: {n}', ko: '내 최고 점수: {n}', ja: '自己ベスト：{n}', zh: '我的最高分：{n}', es: 'Tu récord: {n}', id: 'Skor terbaikmu: {n}', vi: 'Điểm cao nhất: {n}', hi: 'आपका बेस्ट: {n}', ar: 'أفضل نتيجة لك: {n}' },
-  start: { en: 'Start', ko: '시작', ja: 'スタート', zh: '开始', es: 'Empezar', id: 'Mulai', vi: 'Bắt đầu', hi: 'शुरू', ar: 'ابدأ' },
-  hud: { en: 'Score {p} · corks {n} · {s} s', ko: '점수 {p} · 코르크 {n} · {s}초', ja: '得点 {p}・残り {n}発・{s}秒', zh: '得分 {p} · 剩 {n} 发 · {s}秒', es: 'Puntos {p} · corchos {n} · {s} s', id: 'Skor {p} · gabus {n} · {s} dtk', vi: 'Điểm {p} · còn {n} viên · {s} giây', hi: 'स्कोर {p} · कॉर्क {n} · {s} से', ar: 'النقاط {p} · الطلقات {n} · {s} ث' },
-  done: { en: '{p} points · {h} hits out of {n}', ko: '{p}점 · {n}발 중 {h}발 명중', ja: '{p}点・{n}発中{h}発命中', zh: '{p}分 · {n}发中{h}发', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', hi: '{p} अंक · {n} में {h} निशाने', ar: '{p} نقطة · {h} إصابات من {n}' },
-  record: { en: '🏆 New best!', ko: '🏆 신기록!', ja: '🏆 自己ベスト更新！', zh: '🏆 新纪录！', es: '🏆 ¡Nuevo récord!', id: '🏆 Rekor baru!', vi: '🏆 Kỷ lục mới!', hi: '🏆 नया रिकॉर्ड!', ar: '🏆 رقم جديد!' },
-  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', ar: 'مرة أخرى' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', ar: 'إغلاق' },
+  best: { en: 'Your best: {n}', ko: '내 최고 점수: {n}', ja: '自己ベスト：{n}', zh: '我的最高分：{n}', es: 'Tu récord: {n}', id: 'Skor terbaikmu: {n}', vi: 'Điểm cao nhất: {n}', hi: 'आपका बेस्ट: {n}', fr: 'Ton record : {n}', th: 'สถิติดีที่สุด: {n}', ar: 'أفضل نتيجة لك: {n}' },
+  start: { en: 'Start', ko: '시작', ja: 'スタート', zh: '开始', es: 'Empezar', id: 'Mulai', vi: 'Bắt đầu', hi: 'शुरू', fr: 'Commencer', th: 'เริ่ม', ar: 'ابدأ' },
+  hud: { en: 'Score {p} · corks {n} · {s} s', ko: '점수 {p} · 코르크 {n} · {s}초', ja: '得点 {p}・残り {n}発・{s}秒', zh: '得分 {p} · 剩 {n} 发 · {s}秒', es: 'Puntos {p} · corchos {n} · {s} s', id: 'Skor {p} · gabus {n} · {s} dtk', vi: 'Điểm {p} · còn {n} viên · {s} giây', hi: 'स्कोर {p} · कॉर्क {n} · {s} से', fr: 'Score {p} · bouchons {n} · {s} s', th: 'คะแนน {p} · กระสุน {n} · {s} วิ', ar: 'النقاط {p} · الطلقات {n} · {s} ث' },
+  done: { en: '{p} points · {h} hits out of {n}', ko: '{p}점 · {n}발 중 {h}발 명중', ja: '{p}点・{n}発中{h}発命中', zh: '{p}分 · {n}发中{h}发', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', hi: '{p} अंक · {n} में {h} निशाने', fr: '{p} points · {h} touchés sur {n}', th: '{p} คะแนน · ยิงโดน {h} จาก {n}', ar: '{p} نقطة · {h} إصابات من {n}' },
+  record: { en: '🏆 New best!', ko: '🏆 신기록!', ja: '🏆 自己ベスト更新！', zh: '🏆 新纪录！', es: '🏆 ¡Nuevo récord!', id: '🏆 Rekor baru!', vi: '🏆 Kỷ lục mới!', hi: '🏆 नया रिकॉर्ड!', fr: '🏆 Nouveau record !', th: '🏆 สถิติใหม่!', ar: '🏆 رقم جديد!' },
+  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
 };
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -192,7 +194,7 @@ export const BALLOON_THEME = {
 // lantern. Big ghosts 10, bats 20, little cursed stars 50. Each shape fills
 // the same hit circle as the target it replaces.
 const HT = {
-  title: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', hi: 'भूत लालटेन', ar: 'فانوس الأشباح' },
+  title: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', hi: 'भूत लालटेन', fr: 'Lanterne à fantômes', th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
   howTo: {
     en: 'Tap the ghosts your lantern finds! Your lantern shines where you last tapped. 👻 10 · 🦇 20 · ✴️ 50 points. {n} taps, {s} seconds. Free to play.',
     ko: '랜턴에 나타나는 유령을 탭해요! 랜턴은 마지막으로 탭한 곳을 비춰요. 👻 10 · 🦇 20 · ✴️ 50점. {n}번 탭, {s}초. 무료예요.',
@@ -202,10 +204,12 @@ const HT = {
     id: 'Ketuk hantu yang ditemukan lenteramu! Lentera menyinari tempat ketukan terakhirmu. 👻 10 · 🦇 20 · ✴️ 50 poin. {n} ketukan, {s} detik. Gratis.',
     vi: 'Chạm vào bóng ma mà đèn lồng tìm thấy! Đèn lồng chiếu sáng chỗ bạn chạm lần cuối. 👻 10 · 🦇 20 · ✴️ 50 điểm. {n} lần chạm, {s} giây. Miễn phí.',
     hi: 'लालटेन में दिखे भूतों पर टैप करें! लालटेन वहाँ चमकती है जहाँ आपने आख़िरी बार टैप किया। 👻 10 · 🦇 20 · ✴️ 50 अंक। {n} टैप, {s} सेकंड। मुफ़्त।',
+    fr: 'Touche les fantômes que ta lanterne trouve ! Ta lanterne éclaire là où tu as touché en dernier. 👻 10 · 🦇 20 · ✴️ 50 points. {n} touches, {s} secondes. Gratuit.',
+    th: 'แตะผีที่โคมไฟส่องเจอ! โคมจะส่องตรงจุดที่คุณแตะล่าสุด 👻 10 · 🦇 20 · ✴️ 50 คะแนน แตะได้ {n} ครั้ง {s} วินาที เล่นฟรี',
     ar: 'انقر على الأشباح التي يجدها فانوسك! يضيء الفانوس حيث نقرت آخر مرة. 👻 10 · 🦇 20 · ✴️ 50 نقطة. {n} نقرات، {s} ثانية. مجاني.',
   },
-  hud: { en: 'Score {p} · taps {n} · {s} s', ko: '점수 {p} · 남은 탭 {n} · {s}초', ja: '得点 {p}・残り {n}回・{s}秒', zh: '得分 {p} · 剩 {n} 次 · {s}秒', es: 'Puntos {p} · toques {n} · {s} s', id: 'Skor {p} · ketukan {n} · {s} dtk', vi: 'Điểm {p} · còn {n} lần · {s} giây', hi: 'स्कोर {p} · टैप {n} · {s} से', ar: 'النقاط {p} · النقرات {n} · {s} ث' },
-  done: { en: '{p} points · {h} ghosts caught out of {n} taps', ko: '{p}점 · {n}번 중 {h}번 명중', ja: '{p}点・{n}回中{h}回命中', zh: '{p}分 · {n}次中{h}次', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', hi: '{p} अंक · {n} में {h} निशाने', ar: '{p} نقطة · {h} إصابات من {n}' },
+  hud: { en: 'Score {p} · taps {n} · {s} s', ko: '점수 {p} · 남은 탭 {n} · {s}초', ja: '得点 {p}・残り {n}回・{s}秒', zh: '得分 {p} · 剩 {n} 次 · {s}秒', es: 'Puntos {p} · toques {n} · {s} s', id: 'Skor {p} · ketukan {n} · {s} dtk', vi: 'Điểm {p} · còn {n} lần · {s} giây', hi: 'स्कोर {p} · टैप {n} · {s} से', fr: 'Score {p} · touches {n} · {s} s', th: 'คะแนน {p} · แตะ {n} · {s} วิ', ar: 'النقاط {p} · النقرات {n} · {s} ث' },
+  done: { en: '{p} points · {h} ghosts caught out of {n} taps', ko: '{p}점 · {n}번 중 {h}번 명중', ja: '{p}点・{n}回中{h}回命中', zh: '{p}分 · {n}次中{h}次', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', hi: '{p} अंक · {n} में {h} निशाने', fr: '{p} points · {h} fantômes attrapés en {n} touches', th: '{p} คะแนน · จับผีได้ {h} ตัวจาก {n} ครั้ง', ar: '{p} نقطة · {h} إصابات من {n}' },
 };
 function hauntTarget(c, tg, x, y, r, t) {
   if (tg.kind === 'balloon') { // a big friendly ghost, bobbing

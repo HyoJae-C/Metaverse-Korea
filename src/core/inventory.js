@@ -22,7 +22,7 @@ const OUTFIT_DESC = {
   ko: '데일리 클로젯에서 산 옷이에요. "입기"로 입고, "벗기"로 티셔츠로 돌아가요.',
   ja: 'デイリークローゼットの服。「着る」で着替え、「脱ぐ」でTシャツに戻ります。',
   zh: '日常衣橱买的衣服。点“穿上”换上，点“脱下”换回T恤。',
-  es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
+  es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', fr: 'Vêtements du Daily Closet. Touche Porter pour les mettre, Enlever pour revenir à ton t-shirt.', th: 'เสื้อผ้าจาก Daily Closet แตะ สวมใส่ เพื่อใส่ หรือ ถอด เพื่อกลับไปใส่เสื้อยืด', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
 // outfit: the character model it puts on; price: won at the clothes shop (listed in ₩1,000s).
 // wear / off: the look it puts on and what taking it off changes back.
@@ -66,24 +66,24 @@ export const ITEMS = {
   },
   car: {
     emoji: '🏎️',
-    name: { en: 'Red open sports car', ko: '빨간 오픈 스포츠카', ja: '赤いオープンスポーツカー', zh: '红色敞篷跑车', es: 'Deportivo descapotable rojo', ar: 'سيارة رياضية حمراء مكشوفة', vi: 'Xe thể thao mui trần màu đỏ', hi: 'लाल खुली स्पोर्ट्स कार', id: 'Mobil sport merah atap terbuka' },
+    name: { en: 'Red open sports car', ko: '빨간 오픈 스포츠카', ja: '赤いオープンスポーツカー', zh: '红色敞篷跑车', es: 'Deportivo descapotable rojo', ar: 'سيارة رياضية حمراء مكشوفة', vi: 'Xe thể thao mui trần màu đỏ', hi: 'लाल खुली स्पोर्ट्स कार', fr: 'Voiture de sport rouge décapotable', th: 'รถสปอร์ตเปิดประทุนสีแดง', id: 'Mobil sport merah atap terbuka' },
     desc: {
       en: 'A low two-seater with the top down. Drive anywhere, alleys too, and invite one friend to the passenger seat.',
       ko: '지붕이 열린 낮은 2인승 스포츠카예요. 골목까지 어디든 달릴 수 있고, 옆자리에 친구 한 명을 태울 수 있어요.',
       ja: '屋根の開いた低い2人乗りスポーツカー。路地までどこでも走れて、助手席に友だちを1人乗せられます。',
       zh: '敞篷低趴双座跑车。哪里都能开，小巷也行，副驾驶可以邀请一位朋友。',
-      es: 'Un biplaza bajo y descapotable. Conduce por todas partes, callejones incluidos, e invita a un amigo al asiento del copiloto.', ar: 'سيارة منخفضة بمقعدين وسقف مفتوح. قُدها إلى أي مكان، حتى الأزقة، وادعُ صديقًا إلى مقعد الراكب.', vi: 'Xe thể thao hai chỗ gầm thấp, mui trần. Lái đi đâu cũng được, kể cả hẻm, và mời một người bạn ngồi ghế phụ.', hi: 'खुली छत वाली नीची दो-सीटर। गलियों समेत कहीं भी चलाएँ, और एक दोस्त को बगल की सीट पर बुलाएँ।', id: 'Mobil dua kursi yang rendah dengan atap terbuka. Bisa ke mana saja, gang juga, dan ajak satu teman di kursi penumpang.',
+      es: 'Un biplaza bajo y descapotable. Conduce por todas partes, callejones incluidos, e invita a un amigo al asiento del copiloto.', ar: 'سيارة منخفضة بمقعدين وسقف مفتوح. قُدها إلى أي مكان، حتى الأزقة، وادعُ صديقًا إلى مقعد الراكب.', vi: 'Xe thể thao hai chỗ gầm thấp, mui trần. Lái đi đâu cũng được, kể cả hẻm, và mời một người bạn ngồi ghế phụ.', hi: 'खुली छत वाली नीची दो-सीटर। गलियों समेत कहीं भी चलाएँ, और एक दोस्त को बगल की सीट पर बुलाएँ।', fr: 'Une biplace basse, capote baissée. Roule partout, ruelles comprises, et invite un ami sur le siège passager.', th: 'รถสองที่นั่งเตี้ยๆ เปิดประทุน ขับได้ทุกที่รวมถึงในซอย และชวนเพื่อนหนึ่งคนนั่งข้างคนขับได้', id: 'Mobil dua kursi yang rendah dengan atap terbuka. Bisa ke mana saja, gang juga, dan ajak satu teman di kursi penumpang.',
     },
   },
   limo: {
     emoji: '🚘',
-    name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo', ar: 'ليموزين فاخرة', vi: 'Limousine sang trọng', hi: 'शानदार लिमोज़ीन', id: 'Limusin mewah' },
+    name: { en: 'Grand limousine', ko: '럭셔리 리무진', ja: '高級リムジン', zh: '豪华轿车', es: 'Limusina de lujo', ar: 'ليموزين فاخرة', vi: 'Limousine sang trọng', hi: 'शानदार लिमोज़ीन', fr: 'Grande limousine', th: 'ลีมูซีนหรู', id: 'Limusin mewah' },
     desc: {
       en: 'A pearl-white four-seater with a tall chrome grille and a silver winged crest. Drive anywhere and invite three friends.',
       ko: '높은 크롬 그릴과 은색 날개 엠블럼의 진주색 4인승 리무진이에요. 어디든 달릴 수 있고 친구 세 명을 태울 수 있어요.',
       ja: '背の高いクロームグリルと銀の翼のエンブレムのパールホワイト4人乗り。どこでも走れて、友だち3人を乗せられます。',
       zh: '珍珠白四座豪华轿车，高耸的镀铬格栅和银色飞翼徽标。哪里都能开，可以载三位朋友。',
-      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y emblema alado plateado. Conduce por todas partes e invita a tres amigos.', ar: 'ليموزين بأربعة مقاعد بلون اللؤلؤ مع شبكة كروم عالية وشعار مجنّح فضي. قُدها إلى أي مكان وادعُ ثلاثة أصدقاء.', vi: 'Limousine bốn chỗ màu trắng ngọc trai với lưới tản nhiệt mạ crôm cao và biểu tượng đôi cánh bạc. Lái đi đâu cũng được và mời ba người bạn.', hi: 'मोती-सफ़ेद चार-सीटर, ऊँची क्रोम ग्रिल और चाँदी के पंखों वाले प्रतीक के साथ। कहीं भी चलाएँ और तीन दोस्तों को बुलाएँ।', id: 'Limusin empat kursi putih mutiara dengan gril krom tinggi dan lambang sayap perak. Bisa ke mana saja dan ajak tiga teman.',
+      es: 'Una limusina blanco perla de cuatro plazas con parrilla cromada y emblema alado plateado. Conduce por todas partes e invita a tres amigos.', ar: 'ليموزين بأربعة مقاعد بلون اللؤلؤ مع شبكة كروم عالية وشعار مجنّح فضي. قُدها إلى أي مكان وادعُ ثلاثة أصدقاء.', vi: 'Limousine bốn chỗ màu trắng ngọc trai với lưới tản nhiệt mạ crôm cao và biểu tượng đôi cánh bạc. Lái đi đâu cũng được và mời ba người bạn.', hi: 'मोती-सफ़ेद चार-सीटर, ऊँची क्रोम ग्रिल और चाँदी के पंखों वाले प्रतीक के साथ। कहीं भी चलाएँ और तीन दोस्तों को बुलाएँ।', fr: 'Une quatre places blanc nacré avec une haute calandre chromée et un emblème ailé argenté. Roule partout et invite trois amis.', th: 'รถสี่ที่นั่งสีขาวมุก กระจังหน้าโครเมียมสูงและตราปีกสีเงิน ขับได้ทุกที่และชวนเพื่อนได้สามคน', id: 'Limusin empat kursi putih mutiara dengan gril krom tinggi dan lambang sayap perak. Bisa ke mana saja dan ajak tiga teman.',
     },
   },
   moto: {
@@ -111,12 +111,12 @@ export const ITEMS = {
   // Everyday clothes from the clothes shop (Daily Closet): wear them instead
   // of your T-shirt. The ids are the old costume ids, so bought items carry over.
   ...outfits({
-    'outfit-rogue': [60, '🧥', { en: 'Denim jacket', ko: '청재킷', ja: 'デニムジャケット', zh: '牛仔夹克', es: 'Chaqueta vaquera', ar: 'سترة جينز', vi: 'Áo khoác jean', hi: 'डेनिम जैकेट', id: 'Jaket denim' }],
-    'outfit-ranger': [60, '👔', { en: 'Linen shirt & bandana', ko: '린넨 셔츠와 반다나', ja: 'リネンシャツとバンダナ', zh: '亚麻衬衫和方巾', es: 'Camisa de lino y pañuelo', ar: 'قميص كتان ومنديل', vi: 'Áo sơ mi linen và khăn bandana', hi: 'लिनन शर्ट और बंदाना', id: 'Kemeja linen & bandana' }],
-    'outfit-barbarian': [80, '🎽', { en: 'Sleeveless top & shorts', ko: '민소매와 반바지', ja: 'タンクトップと短パン', zh: '背心和短裤', es: 'Camiseta sin mangas y shorts', ar: 'قميص بلا أكمام وشورت', vi: 'Áo ba lỗ và quần short', hi: 'स्लीवलेस टॉप और शॉर्ट्स', id: 'Kaos tanpa lengan & celana pendek' }],
-    'outfit-hooded': [100, '🩶', { en: 'Grey hoodie', ko: '회색 후드티', ja: 'グレーのパーカー', zh: '灰色连帽卫衣', es: 'Sudadera gris con capucha', ar: 'هودي رمادي', vi: 'Áo hoodie xám', hi: 'ग्रे हुडी', id: 'Hoodie abu-abu' }],
-    'outfit-knight': [120, '🤍', { en: 'Puffer jacket', ko: '숏패딩', ja: 'ショートダウン', zh: '短款羽绒服', es: 'Chaqueta acolchada', ar: 'سترة منفوخة', vi: 'Áo phao ngắn', hi: 'पफ़र जैकेट', id: 'Jaket puffer' }],
-    'outfit-mage': [150, '🖤', { en: 'Long padded coat', ko: '롱패딩', ja: 'ロングダウンコート', zh: '长款羽绒服', es: 'Abrigo acolchado largo', ar: 'معطف منفوخ طويل', vi: 'Áo phao dài', hi: 'लंबा पैडेड कोट', id: 'Mantel puffer panjang' }],
+    'outfit-rogue': [60, '🧥', { en: 'Denim jacket', ko: '청재킷', ja: 'デニムジャケット', zh: '牛仔夹克', es: 'Chaqueta vaquera', ar: 'سترة جينز', vi: 'Áo khoác jean', hi: 'डेनिम जैकेट', fr: 'Veste en jean', th: 'แจ็กเก็ตยีนส์', id: 'Jaket denim' }],
+    'outfit-ranger': [60, '👔', { en: 'Linen shirt & bandana', ko: '린넨 셔츠와 반다나', ja: 'リネンシャツとバンダナ', zh: '亚麻衬衫和方巾', es: 'Camisa de lino y pañuelo', ar: 'قميص كتان ومنديل', vi: 'Áo sơ mi linen và khăn bandana', hi: 'लिनन शर्ट और बंदाना', fr: 'Chemise en lin et bandana', th: 'เสื้อเชิ้ตลินินและผ้าโพกหัว', id: 'Kemeja linen & bandana' }],
+    'outfit-barbarian': [80, '🎽', { en: 'Sleeveless top & shorts', ko: '민소매와 반바지', ja: 'タンクトップと短パン', zh: '背心和短裤', es: 'Camiseta sin mangas y shorts', ar: 'قميص بلا أكمام وشورت', vi: 'Áo ba lỗ và quần short', hi: 'स्लीवलेस टॉप और शॉर्ट्स', fr: 'Débardeur et short', th: 'เสื้อกล้ามและกางเกงขาสั้น', id: 'Kaos tanpa lengan & celana pendek' }],
+    'outfit-hooded': [100, '🩶', { en: 'Grey hoodie', ko: '회색 후드티', ja: 'グレーのパーカー', zh: '灰色连帽卫衣', es: 'Sudadera gris con capucha', ar: 'هودي رمادي', vi: 'Áo hoodie xám', hi: 'ग्रे हुडी', fr: 'Sweat à capuche gris', th: 'ฮู้ดดี้สีเทา', id: 'Hoodie abu-abu' }],
+    'outfit-knight': [120, '🤍', { en: 'Puffer jacket', ko: '숏패딩', ja: 'ショートダウン', zh: '短款羽绒服', es: 'Chaqueta acolchada', ar: 'سترة منفوخة', vi: 'Áo phao ngắn', hi: 'पफ़र जैकेट', fr: 'Doudoune', th: 'เสื้อขนเป็ด', id: 'Jaket puffer' }],
+    'outfit-mage': [150, '🖤', { en: 'Long padded coat', ko: '롱패딩', ja: 'ロングダウンコート', zh: '长款羽绒服', es: 'Abrigo acolchado largo', ar: 'معطف منفوخ طويل', vi: 'Áo phao dài', hi: 'लंबा पैडेड कोट', fr: 'Long manteau matelassé', th: 'เสื้อโค้ตบุนวมตัวยาว', id: 'Mantel puffer panjang' }],
   }),
   // The other clothes shops: clothes, trousers, shoes and accessories.
   ...WEARABLES,

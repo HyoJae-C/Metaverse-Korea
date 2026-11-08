@@ -55,7 +55,7 @@ export const NAME_COLORS = [
 // code (chat "/<code>"). Other players only see it once the server confirms
 // that name belongs to an operator account (supabase/005_operators.sql), so
 // copying the flag doesn't make anyone an operator.
-export const OPERATOR_BADGE = { icon: '🛡️', name: { en: 'Operator', ko: '운영자', ja: '運営', zh: '运营', es: 'Operador', ar: 'المشرف', vi: 'Quản trị', hi: 'ऑपरेटर', id: 'Operator' } };
+export const OPERATOR_BADGE = { icon: '🛡️', name: { en: 'Operator', ko: '운영자', ja: '運営', zh: '运营', es: 'Operador', ar: 'المشرف', vi: 'Quản trị', hi: 'ऑपरेटर', fr: 'Opérateur', th: 'ผู้ดูแล', id: 'Operator' } };
 
 export const emblemById = (id) => EMBLEMS.find((e) => e.id === id) || null;
 export const nameColorById = (id) => NAME_COLORS.find((c) => c.id === id) || null;

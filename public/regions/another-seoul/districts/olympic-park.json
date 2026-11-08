@@ -587,7 +587,7 @@
     "es": "Parque Olímpico",
     "id": "Taman Olimpiade",
     "vi": "Công viên Olympic",
-    "hi": "ओलंपिक पार्क",
+    "hi": "ओलंपिक पार्क", "fr": "Parc olympique", "th": "สวนโอลิมปิก",
     "ar": "الحديقة الأولمبية"
    },
    "text": {
@@ -598,7 +598,7 @@
     "es": "Parque construido para los Juegos Olímpicos de Seúl 1988, famoso por la Puerta de la Paz y el árbol solitario. En el skatepark puedes hacer trucos.",
     "id": "Taman yang dibangun untuk Olimpiade Seoul 1988, terkenal dengan Gerbang Perdamaian dan pohon tunggal di bukit rumput. Di skatepark kamu bisa melakukan trik.",
     "vi": "Công viên xây cho Thế vận hội Seoul 1988, nổi tiếng với Cổng Hòa bình và cây cô đơn trên đồi cỏ. Ở công viên trượt bạn có thể biểu diễn.",
-    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।",
+    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।", "fr": "Un parc construit pour les Jeux olympiques de Séoul 1988, connu pour la porte de la Paix sur la place de la Paix et l'arbre solitaire sur sa colline herbeuse. Au skatepark à l'est de la place, tu peux faire des figures en planche, en rollers et à vélo.", "th": "สวนที่สร้างขึ้นเพื่อโอลิมปิกโซลปี 1988 ขึ้นชื่อเรื่องประตูสันติภาพบนลานพีซพลาซ่าและต้นไม้ต้นเดียวบนเนินหญ้า ที่สเกตพาร์กทางตะวันออกของลาน คุณเล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต และจักรยานได้",
     "ar": "حديقة بُنيت لأولمبياد سيول 1988، تشتهر ببوابة السلام والشجرة الوحيدة على التل العشبي. في حديقة التزلج يمكنك أداء الحركات."
    }
   },
@@ -615,7 +615,7 @@
     "es": "Skatepark",
     "id": "Skatepark",
     "vi": "Công viên trượt",
-    "hi": "स्केट पार्क",
+    "hi": "स्केट पार्क", "fr": "Skatepark", "th": "สเกตพาร์ก",
     "ar": "حديقة التزلج"
    },
    "text": {
@@ -626,7 +626,7 @@
     "es": "Haz trucos en tabla, patines, bici o patinete. Entra montado y pulsa Truco para saltar. ¡Vuela en las rampas y grindea en los rieles!",
     "id": "Lakukan trik dengan papan, sepatu roda, sepeda atau skuter. Masuk sambil naik dan tekan Trik untuk melompat. Terbang dari ramp, mendarat di rel untuk grind!",
     "vi": "Biểu diễn trên ván, giày patin, xe đạp hoặc xe trượt. Đi vào và bấm Mẹo để nhảy. Bay khỏi dốc, đáp lên thanh để trượt!",
-    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!",
+    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!", "fr": "Fais des figures en planche, en rollers, à vélo ou en trottinette. Entre en roulant et touche Figure pour sauter. Décolle des rampes, atterris sur une rampe de grind pour glisser ! Véhicules : ton sac ou un magasin de vélos.", "th": "เล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต จักรยาน หรือสกู๊ตเตอร์ ขี่เข้าไปแล้วแตะ ทริก เพื่อกระโดด ลอยจากทางลาด ลงบนราวเพื่อไถล! ยานพาหนะ: ในกระเป๋าหรือร้านจักรยาน",
     "ar": "قم بالحركات على اللوح أو الزلاجات أو الدراجة أو السكوتر. ادخل راكبًا واضغط «حركة» للقفز. حلّق من المنحدرات وانزلق على القضبان!"
    }
   },
