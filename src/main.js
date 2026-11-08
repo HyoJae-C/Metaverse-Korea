@@ -6857,6 +6857,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     mapView: () => mapView,
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
+    onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
