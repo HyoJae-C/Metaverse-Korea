@@ -145,7 +145,7 @@ import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
 import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
-import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
+import { HELD_KINDS, COFFEE_SIPS, giftKind } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -1871,7 +1871,8 @@ let held = (() => {
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind || null);
+// (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
@@ -2723,15 +2724,18 @@ const streetPicnic = streetLawns.length ? {
 const picnic = createPicnic({
   get interior() { return interior; }, get mode() { return mode; }, get seated() { return seated; },
   get me() { return me; }, get others() { return others; }, get bag() { return bag; }, get shop() { return shop; },
-  get myId() { return myId; },
-  standUp: () => standUp(), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
+  get myId() { return myId; }, get held() { return held; },
+  standUp: () => standUp(), dropHeld: () => setHeld(null), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 }, streetPicnic);
-bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spread
+// Sold or given away: it can't stay spread. (After the change settles: taking
+// it out of the bag into the hand empties the bag a moment before the hand fills.)
+bag.onChange(() => queueMicrotask(() => picnic.checkBag()));
 // Fetch with your pet on the same picnic lawns (src/game/frisbee.js).
 const frisbee = createFrisbee({
   get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; },
-  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get shop() { return shop; },
+  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
   get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
+  handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
 });
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js).
 const snowman = createSnowman({
@@ -3341,8 +3345,9 @@ const marketUi = new FishMarketUI({
 const ramenUi = new RamenUI({
   root: $('ramen-panel'),
   bag,
+  hand: { get held() { return held; }, take: () => setHeld(null) }, // a ramyeon pack or an egg in the hand counts too
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  beforeCook: () => handReady(),
+  beforeCook: () => held?.g === 'ramyeon' || handReady(), // (a pack in the hand goes in the pot: the hand is free)
   onCooked: ({ egg }) => {
     holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
     me.play('cheer');
@@ -3367,8 +3372,8 @@ const martCounter = (p) => !!(interior?.park && interior.store.kiosk && clerk &&
 let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
-  if (product.ingredient === 'mat' && hasMat(bag)) return fail(L(MAT_TEXT.have)); // one is enough
-  if (product.ingredient === 'frisbee' && hasFrisbee(bag)) return fail(L(FRISBEE_TEXT.have));
+  if (product.ingredient === 'mat' && hasMat(bag, held)) return fail(L(MAT_TEXT.have)); // one is enough
+  if (product.ingredient === 'frisbee' && hasFrisbee(bag, held)) return fail(L(FRISBEE_TEXT.have));
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
   if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();

@@ -53,9 +53,15 @@ export function discAt(from, to, s, ground = 0) {
   };
 }
 
+// The pets who play fetch: dogs (in the mouth) and monkeys (with both
+// hands). Cats and the small round pets only watch it fly.
+export const FETCHERS = new Set(['dog', 'monkey']);
+export const fetches = (kind) => FETCHERS.has(kind);
+
 // How fast a pet runs after it (m/s): big dogs are fastest, small round
 // pets slowest.
 export function chaseSpeed(kind, scale = 1) {
+  if (kind === 'monkey') return 6.2; // quick on all fours
   if (kind !== 'dog') return kind === 'cat' ? 4 : 2.5;
   return 6 + 2 * bigness(scale); // 6 (small) .. 8 (big)
 }
@@ -63,11 +69,13 @@ const bigness = (scale) => Math.min(1, Math.max(0, (scale - 0.8) / 0.9));
 
 // How often a dog that gets there in time makes the catch (rolled once per
 // throw): a Maltese about half the time, a big retriever most times.
-export const catchChance = (scale = 1) => 0.5 + 0.35 * bigness(scale);
+// A monkey, with hands, rarely misses.
+export const catchChance = (scale = 1, kind = 'dog') => (kind === 'monkey' ? 0.8 : 0.5 + 0.35 * bigness(scale));
 
 // Can a dog under the disc snatch it out of the air? Close enough, and
 // low enough to reach with a leap (bigger dogs reach higher).
-export const canCatch = (dx, dz, y, scale = 1) => Math.hypot(dx, dz) < 0.6 && y < 0.75 + 0.35 * scale;
+// A monkey reaches up with its arms, higher than a dog its size.
+export const canCatch = (dx, dz, y, scale = 1, kind = 'dog') => Math.hypot(dx, dz) < 0.6 && y < (kind === 'monkey' ? 1.3 : 0.75 + 0.35 * scale);
 
 // The frisbee: a bright disc with a rim, flat side up.
 export function makeDisc(color = '#ff6b4a') {

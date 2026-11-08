@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { clearGrass, throwTarget, flightTime, discAt, chaseSpeed, canCatch, catchChance, THROW_MAX, THROW_MIN, HAND_Y } from '../src/core/frisbee.js';
+import { clearGrass, throwTarget, flightTime, discAt, chaseSpeed, canCatch, catchChance, fetches, THROW_MAX, THROW_MIN, HAND_Y } from '../src/core/frisbee.js';
 
 // The Han River park lawn (core/park.js).
 const park = { lawns: [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }], colliders: [] };
@@ -52,4 +52,21 @@ test('frisbees are sold only where picnic mats are, and the game only runs on th
   assert.ok(sells('frisbee').length >= 3);
   const game = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(game, /get room\(\) \{ return picnic\.room; \}/, 'the frisbee uses the picnic lawn');
+});
+
+test('golden retrievers and monkeys play fetch too; cats only watch', () => {
+  assert.ok(fetches('dog') && fetches('monkey'));
+  assert.ok(!fetches('cat') && !fetches('hamster') && !fetches('chinchilla'));
+  for (const d of [THROW_MIN, 8, THROW_MAX]) assert.ok(0.3 + (d + 1) / chaseSpeed('monkey', 0.9) < flightTime(d), `a monkey in time for ${d} m`);
+  assert.ok(canCatch(0.2, 0, 1.2, 0.9, 'monkey') && !canCatch(0.2, 0, 1.2, 0.9, 'dog'), 'arms reach higher');
+  assert.ok(catchChance(0.9, 'monkey') > catchChance(0.9, 'dog'));
+  assert.ok(catchChance(1.25) > catchChance(0.85), 'the golden retriever (1.25) catches more than a Maltese');
+});
+
+test('a frisbee held in the hand counts as well as one in the bag', async () => {
+  const { hasFrisbee } = await import('../src/game/frisbee.js');
+  const frisbee = { kind: 'gift', g: 'frisbee' }, bag = (items) => ({ list: () => items });
+  assert.ok(hasFrisbee(bag([frisbee])));
+  assert.ok(hasFrisbee(bag([]), frisbee), 'taken out of the bag into the hand');
+  assert.ok(!hasFrisbee(bag([{ kind: 'gift', g: 'mat' }]), { kind: 'coffee' }));
 });

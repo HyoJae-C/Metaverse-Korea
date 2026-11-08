@@ -35,6 +35,13 @@ try {
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
   await until(async () => (await label()).includes('🥏'));
   console.log('button:', await label());
+  // Held in the hand (out of the bag) it still works.
+  await mk('holdFromBag', 'gift');
+  if ((await mk('bagKinds')).includes('gift')) throw new Error('still in the bag');
+  if (await mk('heldNow') !== 'gift:frisbee') throw new Error('held as ' + await mk('heldNow'));
+  await wait(300);
+  if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
+  console.log('in hand: button shows');
   await mk('place', 2, -2); await wait(400);
   if ((await label()).includes('🥏')) throw new Error('frisbee on the path');
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
@@ -50,6 +57,20 @@ try {
     console.log('round', round, [...seen].join('>'), 'streak', (await mk('frisbee'))[1], 'pet at', pet.x.toFixed(1), pet.z.toFixed(1));
     if (!seen.has('back')) throw new Error('the dog never brought it back');
   }
+  // The golden retriever and the monkey play too (they come by code).
+  for (const id of ['pet-golden', 'pet-monkey']) {
+    await mk('givePet', id);
+    await mk('place', -10, 7); await mk('face', Math.PI / 2);
+    const seen = new Set();
+    for (let round = 0; round < 2; round++) {
+      await until(async () => (await label()).includes('🥏'), 15000, id + ' button');
+      const c = await mk('choices');
+      if (c) await mk('pick', c.findIndex((x) => x.includes('🥏'))); else await mk('act');
+      await until(async () => { const [ph] = await mk('frisbee'); seen.add(ph); return ph === 'idle' && seen.size > 1; }, 20000, id + ' fetch');
+    }
+    if (!seen.has('back')) throw new Error(id + ' never brought it back');
+    console.log(id, [...seen].join('>'), 'streak', (await mk('frisbee'))[1]);
+  }
   // A cat just watches; walk over to pick it up.
   await mk('givePet', 'pet-cheesecat');
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
@@ -62,6 +83,19 @@ try {
   await mk('place', at[0] - 0.5, at[1]);
   await until(async () => (await mk('frisbee'))[0] === 'idle', 3000, 'pick up');
   console.log('cat: watched, picked up');
+  // A picnic mat in the hand: held as a rolled mat, and it can be spread.
+  await mk('giveMat');
+  await mk('holdFromBag', 'gift'); // (swaps the frisbee in hand for the mat)
+  if (await mk('heldNow') !== 'gift:mat') throw new Error('mat held as ' + await mk('heldNow'));
+  await mk('place', -6, 9); await mk('face', Math.PI / 2);
+  await until(async () => (await label()).includes('🧺'), 5000, 'spread from hand');
+  const mc = await mk('choices');
+  const spreadAt = mc ? mc.findIndex((c) => c.includes('🧺')) : 0;
+  if (mc) await mk('pick', spreadAt); else await mk('act');
+  await wait(500);
+  if (await mk('heldNow') !== 'gift:mat') throw new Error('the mat left the hand: ' + await mk('heldNow'));
+  await until(async () => (await label()).includes('🧺'), 5000, 'fold button (mat stayed spread)');
+  console.log('mat: held as a mat, spread from the hand, stays spread:', await label());
   ok = !errors.length;
 } catch (e) { console.error('FAIL', e.message); }
 if (errors.length) console.error('page errors:', errors);
