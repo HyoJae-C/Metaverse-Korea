@@ -166,7 +166,7 @@ ${alternates}
 <meta property="og:title" content="${esc(p.title)}" />
 <meta property="og:description" content="${esc(p.description)}" />
 <meta property="og:url" content="${SITE}${p.path}" />
-<meta property="og:image" content="${SITE}og.png?v=2" />
+<meta property="og:image" content="${SITE}og.png?v=3" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
