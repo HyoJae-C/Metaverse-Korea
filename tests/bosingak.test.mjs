@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearStroke, nearBell, strikePose } from '../src/data/bosingak.js';
+import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearStroke, newYearRinging, nearBell, strikePose, bellGain, BELL_HOUSE } from '../src/data/bosingak.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
@@ -53,6 +53,40 @@ test('the New Year: 33 strokes from midnight KST, 1 January only', () => {
   assert.equal(seen.size, BOSINGAK.newYear.strikes);
 });
 
+test('and again at noon on 1 January, the bell keeper out a little before and after', () => {
+  const noon = Date.UTC(2027, 0, 1, 3, 0, 0); // 12:00 KST
+  assert.deepEqual(newYearRinging(noon - 60e3), { start: noon, stroke: -1, keeper: true });
+  assert.equal(newYearStroke(noon + 15500), 1);
+  assert.equal(newYearRinging(noon + 33 * 15000 + 30e3).stroke, -1); // done, still bowing
+  assert.equal(newYearRinging(noon + 33 * 15000 + 61e3), null);
+  assert.equal(newYearRinging(noon - 3 * 60e3), null);
+  // Just before midnight on 31 December he is already out for next year's.
+  const mid = Date.UTC(2026, 11, 31, 15);
+  assert.equal(newYearRinging(mid - 90e3).start, mid);
+  assert.equal(newYearRinging(Date.UTC(2026, 10, 9, 3)), null); // an ordinary noon
+});
+
+test("a ring by hand carries a few metres; the New Year's ringings carry along Jongno", () => {
+  const { ring, ceremony } = BOSINGAK.hear;
+  assert.ok(ring <= 25 && ceremony >= 400);
+  assert.equal(bellGain(0, ring), 1);
+  assert.equal(bellGain(ring, ring), 0);
+  assert.equal(bellGain(60, ring), 0);
+  assert.ok(bellGain(300, ceremony) > 0);
+});
+
+test('the people on the square stand on the paving, off the base, the steps and Jongno', () => {
+  const [px0, pz0, px1, pz1] = BOSINGAK.plaza, [bx0, bz0, bx1, bz1] = BOSINGAK.base;
+  assert.ok(BOSINGAK.people.length >= 3 && BOSINGAK.people.length <= 6);
+  for (const [x, z] of BOSINGAK.people) {
+    assert.ok(x > px0 && x < px1 && z > pz0 && z < pz1);
+    assert.ok(!(x > bx0 - 1 && x < bx1 + 1 && z > bz0 - 1 && z < bz1 + 1));
+    assert.ok(Math.hypot(x - BOSINGAK.ring.at[0], z - BOSINGAK.ring.at[1]) > BOSINGAK.ring.r + 1, 'in the way of the bell');
+  }
+  const [kx, kz] = BOSINGAK.keeper.at; // the keeper stands on the upper floor, inside the posts
+  assert.ok(Math.abs(kx - BOSINGAK.at[0]) < BELL_HOUSE.w / 2 - 0.8 && Math.abs(kz - BOSINGAK.at[1]) < BELL_HOUSE.d / 2 - 0.8);
+});
+
 test('the striker draws back, hits, and the bell hums after', () => {
   assert.deepEqual(strikePose(-1), { pull: 0, shake: 0 });
   assert.ok(strikePose(0.9).pull > 0.99);
@@ -61,6 +95,7 @@ test('the striker draws back, hits, and the bell hums after', () => {
 });
 
 test('its words are in Korean, English, Japanese and Chinese', () => {
-  for (const t of [...Object.values(BOSINGAK_TEXT), BOSINGAK_CARD.text]) for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(t[k], k);
+  const { keeper, ...rest } = BOSINGAK_TEXT;
+  for (const t of [...Object.values(rest), ...Object.values(keeper), BOSINGAK_CARD.text]) for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(t[k], k);
   for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(BOSINGAK_TEXT.rang[k].includes('{c}'));
 });

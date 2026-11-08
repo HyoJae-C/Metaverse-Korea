@@ -48,7 +48,8 @@ import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js'
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
-import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearStroke, nearBell, strikeBell } from './data/bosingak.js';
+import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
+import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -1441,6 +1442,7 @@ async function joinRoom(room, roomScene, area = null) {
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
         return;
       }
+      if (e === BELL_MSG) { onPeerBell(id); return; }
       if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
       if (typeof e === 'string' && e.startsWith('fishph:')) { onPeerFishing(id, e.slice(7)); return; }
       if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
@@ -4548,18 +4550,26 @@ function updateJongmyo(p, dt) {
   } else jmWatch = 0;
 }
 // Bosingak on Jongno (data/bosingak.js): in front of the steps, ring the
-// bell (the striker swings, the hum follows); the first ring ever pays a
-// little and shows what the pavilion is. On 1 January from midnight (KST) the
-// bell rings itself 33 times, the same moment for everyone.
+// bell (the striker swings, the hum follows; people round the square hear
+// it too). The first ring ever pays a little and shows what the pavilion is.
+// On 1 January at midnight and at noon (KST) the bell keeper comes out and
+// rings it 33 times, heard all along Jongno, the same moment for everyone.
 const bosingakAt = (region.districts || []).find((d) => d.id === BOSINGAK.district)?.offset || null;
+const bosingakShow = bosingakAt ? new BosingakShow(scene, bosingakAt, $('labels')) : null;
 const BOSINGAK_KEY = 'mk.bosingak';
-let bellRungAt = -1e9, newYearSeen = -1;
+const BELL_MSG = 'bosingak:ring';
+let bellRungAt = -1e9, ringingSeen = '';
 const bellRungBefore = () => { try { return globalThis.localStorage?.getItem(BOSINGAK_KEY) === '1'; } catch { return false; } };
-// How loud the bell is where you stand: full by the pavilion, gone ~250 m away.
-function bellLoudness(p) {
-  if (!bosingakAt) return 0;
-  const d = Math.hypot(p.x - bosingakAt[0] - BOSINGAK.at[0], p.z - bosingakAt[1] - BOSINGAK.at[1]);
-  return Math.max(0, 1 - d / 250) ** 1.5;
+// Metres from where you stand to the pavilion (or to the ringing spot).
+function bellDistance(p, [x, z] = BOSINGAK.at) {
+  if (!bosingakAt) return Infinity;
+  return Math.hypot(p.x - bosingakAt[0] - x, p.z - bosingakAt[1] - z);
+}
+// Someone rang it by hand: loud only round the square (BOSINGAK.hear.ring).
+function hearRing(p) {
+  strikeBell();
+  const loud = mode === 'street' ? bellGain(bellDistance(p, BOSINGAK.ring.at), BOSINGAK.hear.ring) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(loud), 1150); // when the log meets the bell
 }
 function bosingakCard() {
   bukchonUi.card(BOSINGAK_CARD);
@@ -4569,8 +4579,8 @@ function ringBosingak() {
   const now = performance.now() / 1000;
   if (now - bellRungAt < BOSINGAK.cooldown) { shop.toast(L(BOSINGAK_TEXT.humming)); return; }
   bellRungAt = now;
-  strikeBell(now);
-  setTimeout(() => sfx.bigBell(1), 1150); // when the log meets the bell
+  hearRing(me.root.position);
+  net.sendEmote(BELL_MSG);
   if (!bellRungBefore()) {
     try { globalThis.localStorage?.setItem(BOSINGAK_KEY, '1'); } catch { /* storage blocked */ }
     const c = BOSINGAK.firstRing;
@@ -4580,21 +4590,34 @@ function ringBosingak() {
   } else setTimeout(() => shop.toast(L(BOSINGAK_TEXT.again)), 1300);
   action = STALE;
 }
+// Another player rang it (their emote): the striker swings for everyone in
+// sight; the sound only reaches the square.
+function onPeerBell(id) {
+  if (!bosingakAt || safety.isBlocked(id, others.nameOf(id))) return;
+  const at = others.positionOf(id);
+  if (at && bellDistance(at, BOSINGAK.ring.at) > BOSINGAK.ring.r + 3) return; // not at the bell
+  hearRing(me.root.position);
+}
 function bosingakAct(p) {
   if (!bosingakAt || mode !== 'street' || !nearBell(p.x, p.z, bosingakAt)) return null;
   return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
 }
 const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
-// Each frame: the New Year's strokes.
-function updateBosingak(p) {
+// Each frame on the street: the people on the square, and the New Year's ringings.
+function updateBosingak(p, dt, w, h) {
   if (!bosingakAt) return;
-  const n = newYearStroke(Date.now());
-  if (n < 0 || n === newYearSeen) return;
-  newYearSeen = n;
+  const r = newYearRinging(Date.now());
+  bosingakShow.update(dt, p, camera, w, h, placeLabels, r);
+  if (!r || r.stroke < 0) return;
+  const key = r.start + ':' + r.stroke;
+  if (key === ringingSeen) return;
+  const first = !ringingSeen.startsWith(r.start + ':');
+  ringingSeen = key;
   strikeBell();
-  const loud = mode === 'street' ? bellLoudness(p) : 0;
-  if (loud > 0) setTimeout(() => sfx.bigBell(loud), 1150);
-  if (n === 0 && loud > 0.2 && !spaceBusy()) shop.toast(L(BOSINGAK_TEXT.newYear));
+  bosingakShow.pull();
+  const loud = mode === 'street' ? bellGain(bellDistance(p), BOSINGAK.hear.ceremony) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(Math.max(0.15, loud)), 1150);
+  if (first && loud > 0 && !spaceBusy()) shop.toast(L(new Date(r.start + 9 * 3600e3).getUTCHours() === 12 ? BOSINGAK_TEXT.noon : BOSINGAK_TEXT.newYear));
 }
 // Other players' wish lanterns ride on their state ("wl"); add each new one.
 const wishSeen = new Map(); // remote id -> the lantern string we last saw
@@ -6071,7 +6094,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
-  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellLoudness(p) < 0.85 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
+  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellDistance(p) > 25 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -6165,9 +6188,9 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);

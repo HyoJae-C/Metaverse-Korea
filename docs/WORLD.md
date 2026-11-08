@@ -195,13 +195,17 @@ three boxes for the overlap check.
 
 The bell pavilion stands on the north side of Jongno in the Gyeongbokgung
 district's map, east of Sejong-daero (`src/data/bosingak.js`, model in
-`core/bosingak-model.js`), on its own square where a plain building used to
-be. In front of the steps `🔔 Ring the bell` swings the striker into the bell
-and plays a long synthesised hum (`Sfx.bigBell`); the first ring pays once
-(reward rule `view`) and shows its card. On 1 January from 00:00 KST the bell
-rings itself 33 times, one stroke every 15 seconds, worked out from the clock
-so every player hears the same stroke. No event times are shown in the game:
-they change each year.
+`core/bosingak-model.js`, people in `core/bosingak-show.js`), on its own
+square where a plain building used to be, with a few visitors already there.
+In front of the steps `🔔 Ring the bell` swings the striker into the bell and
+plays a long synthesised hum (`Sfx.bigBell`), heard only round the square
+(`hear.ring`, about 20 m); other players there hear it too (emote
+`bosingak:ring`). The first ring pays once (reward rule `view`) and shows its
+card. On 1 January at midnight and at noon (KST) the bell keeper comes out on
+the upper floor and rings it 33 times, one stroke every 15 seconds, heard all
+along Jongno (`hear.ceremony`). It is worked out from the clock, so every
+player hears the same stroke. No real event times are shown in the game: they
+change each year.
 
 ## Jongmyo (Jongno-gu)
 

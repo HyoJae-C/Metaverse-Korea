@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
-import { strikePose, sinceStrike } from '../data/bosingak.js';
+import { strikePose, sinceStrike, BELL_HOUSE } from '../data/bosingak.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -27,8 +27,6 @@ const C = {
 };
 const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
 
-// The size of it, in metres (the base is BOSINGAK.base in the map: 16 × 12).
-export const BELL_HOUSE = { w: 16, d: 12, baseH: 3.2, postH: 5.4, bellH: 3.2, bellR: 1.15 };
 
 function bellPavilion(g) {
   const H = BELL_HOUSE, hw = H.w / 2, hd = H.d / 2, y0 = H.baseH;

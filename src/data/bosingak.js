@@ -14,8 +14,21 @@ export const BOSINGAK = {
   ring: { at: [155, 116], r: 4 }, // stand here, in front of the steps, to ring the bell
   cooldown: 7, // seconds before the bell can be rung again (it hums that long)
   firstRing: 10000, // won for the first ring (once; reward rule 'view')
-  newYear: { strikes: 33, gap: 15 }, // 제야의 종: 33 strokes from midnight on 1 January (KST)
+  // The New Year's ringings on 1 January (KST): at midnight (제야의 종) and
+  // again at noon, 33 strokes each. The bell keeper comes out a little
+  // before and goes back in a little after.
+  newYear: { strikes: 33, gap: 15, starts: [0, 12], comeOut: 120, stay: 60 },
+  // How far the bell carries (metres from the pavilion): a ring by a player
+  // only round the square; the New Year's ringings along all of Jongno.
+  hear: { ring: 20, ceremony: 450 },
+  // The few people already on the square, facing the pavilion: [x, z, what].
+  people: [[150, 129, 'photo'], [151, 122, 'pose'], [173, 127, 'coffee'], [133, 97, 'look']],
+  keeper: { who: 'official', at: [161, 106.8], ry: -Math.PI / 2 }, // on the upper floor, behind the striker, facing the bell ('official' in Joseon dress or 'monk')
 };
+
+// The pavilion's size, in metres (core/bosingak-model.js draws it; the base is
+// BOSINGAK.base in the map: 16 × 12, plus the steps).
+export const BELL_HOUSE = { w: 16, d: 12, baseH: 3.2, postH: 5.4, bellH: 3.2, bellR: 1.15 };
 
 export const BOSINGAK_TEXT = {
   name: { en: 'Bosingak Bell Pavilion', ko: '보신각', ja: '普信閣', zh: '普信阁' },
@@ -40,6 +53,17 @@ export const BOSINGAK_TEXT = {
     zh: '钟声还在回荡，等它渐渐消散吧。',
   },
   ledger: { en: 'Rang the Bosingak bell', ko: '보신각 타종', ja: '普信閣の鐘つき', zh: '普信阁敲钟' },
+  // The name tag over whoever rings the New Year's bell (BOSINGAK.keeper.who).
+  keeper: {
+    official: { en: '🔔 Bell keeper', ko: '🔔 타종관', ja: '🔔 鐘つき役', zh: '🔔 敲钟官' },
+    monk: { en: '🔔 Monk', ko: '🔔 스님', ja: '🔔 お坊さん', zh: '🔔 僧人' },
+  },
+  noon: {
+    en: '🔔 Bosingak\'s bell rings 33 times for the New Year. You can hear it all along Jongno.',
+    ko: '🔔 새해를 맞아 보신각 종이 33번 울려요. 종로 어디서나 들려요.',
+    ja: '🔔 新年を祝って普信閣の鐘が33回鳴ります。鍾路のどこでも聞こえます。',
+    zh: '🔔 为迎接新年，普信阁的钟将敲响33下，整条钟路都听得到。',
+  },
   newYear: {
     en: '🎆 Happy New Year! Bosingak is ringing in the year with 33 strokes, as it does every New Year\'s Eve.',
     ko: '🎆 새해 복 많이 받으세요! 해마다 그렇듯 보신각이 33번 종을 울려 새해를 맞아요.',
@@ -75,16 +99,25 @@ export const BOSINGAK_SIGN = {
 // Korean time (UTC+9, no daylight saving) for a moment in ms.
 const kst = (ms) => new Date(ms + 9 * 3600e3);
 
-// During the New Year's ringing (from 00:00 KST on 1 January, one stroke every
-// `gap` seconds), the number of the stroke that is due (0..32); otherwise -1.
-// Everyone's clock gives the same answer, so every player hears it together.
-export function newYearStroke(ms, { strikes, gap } = BOSINGAK.newYear) {
-  const d = kst(ms);
-  if (d.getUTCMonth() !== 0 || d.getUTCDate() !== 1) return -1;
-  const s = (d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds() + d.getUTCMilliseconds() / 1000);
-  const n = Math.floor(s / gap);
-  return n < strikes ? n : -1;
+// The New Year's ringing going on at `ms`, or null: { start (ms), stroke
+// (0..32 while ringing, -1 before the first and after the last), keeper (true
+// while the bell keeper is out) }. Everyone's clock gives the same answer, so
+// every player hears the same stroke.
+export function newYearRinging(ms, { strikes, gap, starts, comeOut, stay } = BOSINGAK.newYear) {
+  const y = kst(ms).getUTCFullYear();
+  for (const yr of [y, y + 1]) for (const h of starts) {
+    const start = Date.UTC(yr, 0, 1, h) - 9 * 3600e3, s = (ms - start) / 1000, end = strikes * gap;
+    if (s < -comeOut || s >= end + stay) continue;
+    return { start, stroke: s >= 0 && s < end ? Math.floor(s / gap) : -1, keeper: true };
+  }
+  return null;
 }
+// The stroke that is due (0..32) during a New Year's ringing, otherwise -1.
+export const newYearStroke = (ms, cfg) => newYearRinging(ms, cfg)?.stroke ?? -1;
+
+// How loud the bell is `d` metres from the pavilion: full close by, nothing
+// past `range` (BOSINGAK.hear.ring or .ceremony).
+export const bellGain = (d, range) => (d >= range ? 0 : (1 - d / range) ** 1.5);
 
 // Close enough (in world metres) to ring: off = the district's offset.
 export function nearBell(x, z, off) {
