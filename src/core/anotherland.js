@@ -3,7 +3,9 @@
 // outside, seen from the lakeside: a gingerbread gate with a frosting sign (the door into the park, see themepark.js), a candy
 // castle, a giant Ferris wheel, a roller coaster and a drop tower, all tall
 // enough to spot from far away. Our own design, not modelled on any real park.
-// District-local metres: the gate faces west (-x), the park runs east.
+// Model metres: the gate faces -x and the park runs +x. The map turns it
+// (songpa.json landmark ry) so the gate faces north, towards Olympic-ro and
+// Jamsil Station, and the park runs south across the island.
 // Collision comes from the district's blockers; this is only visual.
 // Returns tick(t) to turn the wheel, run the coaster and the drop tower.
 import * as THREE from 'three';
@@ -43,7 +45,7 @@ function candyRoof(g, r, h, x, y, z, c) {
   cyl(g, r * 1.04, r * 1.04, 0.5, x, y, z, K.icing);
   ball(g, Math.max(0.5, r * 0.18), x, y + h + 0.3, z, K.cherry);
 }
-// A lollipop: a stick and a swirl disc facing x (seen from Seongsu).
+// A lollipop: a stick and a swirl disc facing x (the way the gate faces).
 let swirlTex = null;
 function swirl() {
   if (swirlTex) return swirlTex;
@@ -70,7 +72,7 @@ function swirl() {
 function lollipop(g, r, stick, x, y, z) {
   cyl(g, r * 0.08, r * 0.08, stick, x, y, z, K.icing, 8);
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, r * 0.25, 28), [mat(K.hotPink), new THREE.MeshLambertMaterial({ map: swirl() }), new THREE.MeshLambertMaterial({ map: swirl() })]);
-  disc.rotation.z = Math.PI / 2; // flat faces look east and west
+  disc.rotation.z = Math.PI / 2; // flat faces look out of the gate and back
   disc.position.set(x, y + stick + r * 0.9, z);
   g.add(disc);
 }
@@ -91,7 +93,7 @@ function signBoard(w, h) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
-  m.rotation.y = -Math.PI / 2; // faces west
+  m.rotation.y = -Math.PI / 2; // faces out of the gate (-x)
   return m;
 }
 
@@ -150,7 +152,7 @@ export function buildAnotherLand(g) {
 // Everything behind the gate, drawn at PARK_SCALE round the gate so the park
 // looks smaller from the lake (you go inside to ride anyway) while the gate
 // keeps its size. The island in songpa.json is cut to fit: the wall stands
-// at x 0.75..97.5, z -45..45 from the gate.
+// 0.75..97.5 m behind the gate and 45 m to either side.
 function buildPark(outer) {
   const g = new THREE.Group();
   g.scale.setScalar(PARK_SCALE);
@@ -189,7 +191,7 @@ function buildPark(outer) {
   candyRoof(g, 5.6, 11, CX + 1, 31, 0, K.choco);
   lollipop(g, 3.4, 4, CX + 1, 42, 0);
 
-  // ── Giant Ferris wheel: the disc faces west so Seongsu sees it whole.
+  // ── Giant Ferris wheel: the disc faces the gate side (north on the map), towards Jamsil Station.
   const W = WHEEL;
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const leg = box(g, 1, Math.hypot(W.hub, 9) + 1, 1, W.x + sx * 2.5, W.hub / 2, W.z + sz * 4.5, K.icing);
