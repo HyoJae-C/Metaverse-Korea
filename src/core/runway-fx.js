@@ -4,9 +4,11 @@
 // each time (stars, hearts, twinkles: perfume effects, core/scent-fx.js).
 // Close (great, good): one small twinkle. Missed: you wobble as if about to
 // trip and a little "!" pops up. A pose that lands well also shows a word
-// over your head (Chic! Cute! Confident!). Others in the room see the same,
-// sent as a short emote ('rw:p', 'rw:g', 'rw:m', with ':word' for a pose).
+// over your head (one of Yozi's list at random, each its own colour). Others
+// in the room see the same, sent as a short emote ('rw:p', 'rw:g', 'rw:m',
+// with ':word:pose' for a photo).
 import * as THREE from 'three';
+import { poseKind } from './runway-poses.js';
 
 // Perfect: one of these at random (the scent-fx effect format).
 export const PERFECT_FX = [
@@ -21,28 +23,45 @@ export const PERFECT_FX = [
 export const GOOD_FX = { e: ['@spark'], m: 'rise' };
 export const pickPerfect = (rnd = Math.random) => PERFECT_FX[Math.floor(rnd() * PERFECT_FX.length) % PERFECT_FX.length];
 
-// The words, by pose (POSES in runway-game.js): the turn is chic or sexy.
+// The words over your head when a photo is taken: one at random each time,
+// each in its own colour (Yozi's list). Korean as written; the others say
+// the same feel, without gendered endings where the language has them.
+const W = (c, en, es, fr, ko, zh, id, vi, th, hi, ar, ja) => ({ c, en, es, fr, ko, zh, id, vi, th, hi, ar, ja });
 export const WORDS = {
-  cute: { en: 'Cute!', ko: '큐트!', ja: 'キュート！', zh: '可爱！' },
-  chic: { en: 'Chic!', ko: '도도!', ja: 'クール！', zh: '高冷！' },
-  sexy: { en: 'Sexy!', ko: '섹시!', ja: 'セクシー！', zh: '性感！' },
-  confident: { en: 'Confident!', ko: '자신감!', ja: '自信満々！', zh: '自信！' },
+  sexy: W('#ff3b5c', 'Sexy!', '¡Sexy!', 'Sexy !', '섹시!', '性感！', 'Seksi!', 'Gợi cảm!', 'เซ็กซี่!', 'सेक्सी!', 'إثارة!', 'セクシー！'),
+  cute: W('#ff8fc7', 'Cute!', '¡Cuqui!', 'Trop cute !', '큐트!', '可爱！', 'Imut!', 'Dễ thương!', 'น่ารัก!', 'क्यूट!', 'لطافة!', 'キュート！'),
+  chic: W('#b8a4ff', 'Chic!', '¡Chic!', 'Chic !', '도도!', '高冷！', 'Chic!', 'Kiêu kỳ!', 'ชิค!', 'स्टाइलिश!', 'أناقة باردة!', 'ツンとクール！'),
+  confident: W('#ffb703', 'Confident!', '¡Con confianza!', 'Confiance !', '자신감!', '自信！', 'Percaya diri!', 'Tự tin!', 'มั่นใจ!', 'आत्मविश्वास!', 'ثقة!', '自信満々！'),
+  charming: W('#ff6f91', 'Charming!', '¡Qué encanto!', 'Du charme !', '매력적!', '有魅力！', 'Menawan!', 'Cuốn hút!', 'มีเสน่ห์!', 'आकर्षक!', 'جاذبية!', '魅力的！'),
+  cool: W('#4cc9f0', 'Cool!', '¡Qué cool!', 'Cool !', '쿨!', '酷！', 'Keren!', 'Ngầu!', 'เท่!', 'कूल!', 'روعة!', 'クール！'),
+  alluring: W('#c651ff', 'Alluring!', '¡Fascinante!', 'Irrésistible !', '매혹적!', '迷人！', 'Memikat!', 'Mê hoặc!', 'น่าหลงใหล!', 'मनमोहक!', 'فتنة!', '魅惑的！'),
+  lovely: W('#ff85e4', 'Lovely!', '¡Adorable!', 'Adorable !', '러블리!', '惹人爱！', 'Cantik!', 'Đáng yêu!', 'เลิฟลี่!', 'लवली!', 'جمال!', 'ラブリー！'),
+  sweet: W('#ffd6a5', 'Sweet!', '¡Dulce!', 'Tout doux !', '스위트!', '甜美！', 'Manis!', 'Ngọt ngào!', 'หวาน!', 'स्वीट!', 'حلاوة!', 'スイート！'),
+  funky: W('#a3ff4f', 'Funky!', '¡Funky!', 'Funky !', '펑키!', '好潮！', 'Funky!', 'Funky!', 'ฟังกี้!', 'फंकी!', 'فانكي!', 'ファンキー！'),
+  presence: W('#ffd700', 'Star power!', '¡Presencia!', 'Quelle présence !', '존재감!', '气场全开！', 'Berkharisma!', 'Thần thái!', 'ออร่าพุ่ง!', 'जलवा!', 'حضور!', '存在感！'),
+  unique: W('#00f5d4', 'Unique!', '¡Original!', 'Unique !', '독특한!', '独特！', 'Unik!', 'Độc đáo!', 'ไม่เหมือนใคร!', 'यूनिक!', 'تميّز!', 'ユニーク！'),
+  elegant: W('#f1e3ff', 'Elegant!', '¡Elegante!', 'Élégance !', '우아하게!', '优雅！', 'Anggun!', 'Thanh lịch!', 'สง่างาม!', 'शालीन!', 'أناقة!', 'エレガント！'),
+  classy: W('#e9c46a', 'Classy!', '¡Con clase!', 'Quelle classe !', '기품있는!', '高贵！', 'Berkelas!', 'Quý phái!', 'มีระดับ!', 'शाही!', 'رُقيّ!', '気品！'),
+  free: W('#7ae582', 'Free spirit!', '¡Espíritu libre!', 'Esprit libre !', '자유롭게!', '自由自在！', 'Bebas!', 'Tự do!', 'อิสระ!', 'आज़ाद!', 'حرية!', '自由に！'),
+  mystic: W('#8b8cff', 'Mysterious!', '¡Misterio!', 'Quel mystère !', '신비롭게!', '神秘！', 'Misterius!', 'Bí ẩn!', 'ลึกลับ!', 'रहस्यमय!', 'غموض!', 'ミステリアス！'),
+  bubbly: W('#ff9f1c', 'Bubbly!', '¡Con chispa!', 'Du peps !', '발랄!', '活泼！', 'Ceria!', 'Tươi tắn!', 'สดใส!', 'ज़िंदादिल!', 'حيوية!', 'ハツラツ！'),
+  adorable: W('#ffe066', 'Adorable!', '¡Qué ternura!', 'Trop chou !', '깜찍!', '萌！', 'Gemas!', 'Xinh xắn!', 'น่าเอ็นดู!', 'क्यूटी!', 'ظرافة!', 'かわいい！'),
+  bold: W('#ff5400', 'Fierce!', '¡Con actitud!', 'Quelle assurance !', '당당하게!', '霸气！', 'Berani!', 'Hiên ngang!', 'สง่าผ่าเผย!', 'बेबाक!', 'شموخ!', '堂々と！'),
 };
-const POSE_WORDS = { wave: ['cute'], turn: ['chic', 'sexy'], cheer: ['confident'] };
-export function poseWord(pose, rnd = Math.random) {
-  const list = POSE_WORDS[pose] || ['confident'];
-  return list[Math.floor(rnd() * list.length) % list.length];
-}
+const WORD_IDS = Object.keys(WORDS);
+export const pickWord = (rnd = Math.random) => WORD_IDS[Math.floor(rnd() * WORD_IDS.length) % WORD_IDS.length];
+export const wordColor = (id) => WORDS[id]?.c || '#ffffff';
 
 // Labels (karaoke-game.js judge) to tiers.
 export const tierOf = (label) => (label === 'perfect' ? 'p' : label === 'great' || label === 'good' ? 'g' : 'm');
 
-export const runwayMsg = (tier, word) => 'rw:' + tier + (word ? ':' + word : '');
+// With the word and the pose of a photo: 'rw:p:chic:heart'.
+export const runwayMsg = (tier, word, pose) => 'rw:' + tier + (word || pose ? ':' + (word || '') : '') + (pose ? ':' + pose : '');
 export function parseRunwayMsg(e) {
   if (typeof e !== 'string' || !e.startsWith('rw:')) return null;
-  const [, tier, word] = e.split(':');
+  const [, tier, word, pose] = e.split(':');
   if (!['p', 'g', 'm'].includes(tier)) return null;
-  return { tier, word: WORDS[word] ? word : null };
+  return { tier, word: WORDS[word] ? word : null, pose: poseKind(pose) ? pose : null };
 }
 
 // The wobble of a missed step: a lean to one side and back, about half a
