@@ -11,7 +11,7 @@ import { buildBumperRink } from './bumper-rink.js';
 
 const mat = matCache({ flatShading: true });
 
-export const RIDE_COST = 2;
+export const RIDE_COST = 5000; // won
 export const RIDE_SECONDS = { carousel: 24, wheel: 32, viking: 22, drop: 16 };
 
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).

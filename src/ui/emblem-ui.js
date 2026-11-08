@@ -20,7 +20,7 @@ const T = {
   off: { en: 'Take off', ko: '빼기', ja: '外す', zh: '取下' },
   owned: { en: 'Owned', ko: '보유', ja: '所持', zh: '已有' },
   wearing: { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '佩戴中' },
-  poor: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
+  poor: { en: 'You need 🪙 {n}.', ko: '🪙 {n}이 필요해요.', ja: '🪙 {n} 必要です。', zh: '需要 🪙 {n}。' },
   bought: { en: 'Bought! It is on your name tag now.', ko: '구매 완료! 이름표에 달았어요.', ja: '購入しました！名札に付けました。', zh: '购买成功！已戴在名牌上。' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
   nameTab: { en: 'Change name', ko: '이름 바꾸기', ja: '名前変更', zh: '改名', es: 'Cambiar nombre', ar: 'غيّر الاسم', vi: 'Đổi tên', hi: 'नाम बदलें', id: 'Ganti nama' },
@@ -37,7 +37,7 @@ const T = {
   empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', vi: 'Hãy nhập tên trước.', hi: 'पहले कोई नाम लिखें।', id: 'Ketik nama dulu.' },
 };
 const RESERVED_NAME = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
-export const RENAME_COST = 30;
+export const RENAME_COST = 30000;
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

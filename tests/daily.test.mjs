@@ -6,7 +6,7 @@ globalThis.localStorage = {
   getItem: (k) => store[k] ?? null,
   setItem: (k, v) => { store[k] = String(v); },
 };
-const { Daily, missionsFor, dayKey, REWARD } = await import('../src/core/daily.js');
+const { Daily, missionsFor, dayKey, REWARD, CHECK_IN } = await import('../src/core/daily.js');
 
 const pool = { npcs: ['민지', '지훈', '서연'], stores: [{ id: 'a' }, { id: 'b' }, { id: 'cats', pets: 'cats' }] };
 const wallet = () => ({ coins: 0, add(n) { this.coins += n; } });
@@ -35,16 +35,18 @@ test('check-in once a day, streak grows and resets after a gap', () => {
   now = at(2026, 11, 4); // missed the 3rd
   d.checkIn();
   assert.equal(d.streak, 1);
-  assert.equal(w.coins, REWARD.checkIn * 3);
+  assert.equal(w.coins, CHECK_IN[0] + CHECK_IN[1] + CHECK_IN[0], 'day 1, day 2, then day 1 again');
 });
 
-test('day 7 of a streak pays the weekly reward', () => {
+test('travel support money grows each day of a streak, ₩10,000 to ₩70,000, then starts over', () => {
   for (const k of Object.keys(store)) delete store[k];
   const w = wallet();
   let day = 1;
   const d = new Daily(w, pool, () => new Date(2026, 10, day, 12));
   for (; day <= 7; day++) d.checkIn();
-  assert.equal(w.coins, REWARD.checkIn * 6 + REWARD.week);
+  assert.equal(w.coins, 280000);
+  // (day is 8 now)
+  assert.equal(d.checkIn(), 10000, 'day 8 is day 1 again');
 });
 
 test('finishing missions pays, all three add a bonus, then a new day rolls', () => {

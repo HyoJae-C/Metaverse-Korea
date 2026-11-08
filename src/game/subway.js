@@ -79,7 +79,7 @@ export function createSubway(stations, game) {
   const GATE_TEXT = {
     in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
     out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
-    poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
+    poor: { en: 'Not enough money for the fare (🪙 {n})', ko: '요금 🪙 {n}이 부족해요', ja: '運賃 🪙 {n} が足りません', zh: '车费 🪙 {n} 不够' },
     paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
   };
   function passGate(g, paying) {

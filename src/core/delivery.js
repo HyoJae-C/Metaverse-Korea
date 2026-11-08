@@ -35,8 +35,8 @@ export function pickDelivery(stores, from, rand = Math.random) {
   return pool.length ? pool[Math.floor(rand() * pool.length)] : null;
 }
 
-// Coins: 4 for making it, +1 for every 10 seconds to spare (up to +4).
+// Won: ₩10,000 for making it, +₩5,000 for every 10 seconds to spare (up to ₩30,000).
 export function deliveryPay(secondsLeft) {
   if (secondsLeft < 0) return 0;
-  return 4 + Math.min(4, Math.floor(secondsLeft / 10));
+  return (2 + Math.min(4, Math.floor(secondsLeft / 10))) * 5000;
 }

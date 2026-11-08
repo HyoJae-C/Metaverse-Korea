@@ -16,7 +16,7 @@ export const LOCK_SHAPES = ['heart', 'circle', 'square', 'star'];
 // 007_love_locks.sql), which wins whenever the game is online: change it
 // there to change it for everyone, and here for offline play.
 export const LOVE_LOCK = {
-  price: 30, // coins
+  price: 15000, // won (₩15,000, about what a padlock costs at Namsan)
   pageSize: 10, // notes per page in the list
   maxLines: 20,
   maxChars: 1000,
@@ -99,6 +99,8 @@ export class SupabaseLoveLocks {
     this.missing = false; // the SQL isn't set up yet
   }
   get client() { return this.cloud.client; }
+  // Won per server unit: 1 (018_won.sql) or 1000 on a server still in coins.
+  _sf() { return (this.wallet.server && this.wallet._sf?.()) || 1; }
   _err(error) {
     if (!error) return null;
     if (error.code === '42P01' || error.code === 'PGRST205' || error.code === 'PGRST202' || /does not exist|schema cache|could not find/i.test(error.message || '')) { this.missing = true; return 'missing'; }
@@ -107,7 +109,7 @@ export class SupabaseLoveLocks {
   async price() {
     const { data, error } = await this.client.rpc('love_lock_price');
     if (error) { this._err(error); return LOVE_LOCK.price; }
-    return Number.isFinite(data) ? data : LOVE_LOCK.price;
+    return Number.isFinite(data) ? data * this._sf() : LOVE_LOCK.price;
   }
   // The coins are taken on the server in the same step as saving the note.
   // With the server wallet (015_wallet.sql) its waiting coin changes are
@@ -120,11 +122,11 @@ export class SupabaseLoveLocks {
     if (!LOCK_SHAPES.includes(shape)) return { error: 'shape' };
     const onServer = !!this.wallet.server;
     if (!(await (onServer ? this.wallet.flush() : this.cloud.flush()))) return { error: 'network' };
-    const { data, error } = await this.client.rpc('hang_love_lock', { p_request_id: requestId, p_shape: shape, p_name: String(name || '?').slice(0, LOVE_LOCK.maxName), p_body: c.body, p_price: price });
+    const { data, error } = await this.client.rpc('hang_love_lock', { p_request_id: requestId, p_shape: shape, p_name: String(name || '?').slice(0, LOVE_LOCK.maxName), p_body: c.body, p_price: Math.round(price / this._sf()) });
     const e = this._err(error);
     if (e) return { error: e };
-    if (!data || data.status !== 'ok') return { error: data?.status || 'network', price: data?.price };
-    const p = Number(data.price) || price;
+    if (!data || data.status !== 'ok') return { error: data?.status || 'network', price: data?.price != null ? data.price * this._sf() : undefined };
+    const p = Number(data.price) * this._sf() || price;
     if (!this.applied.has(requestId)) {
       this.applied.add(requestId);
       if (onServer && data.ver != null) { if (data.charged) this.wallet.charged(p, data, note); else this.wallet.charged(0, data); }

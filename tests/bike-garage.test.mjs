@@ -16,7 +16,7 @@ test('the basic bike is a little faster than running; the others step up gently'
     for (let i = 1; i < line.length; i++) {
       const a = line[i - 1], b = line[i];
       assert.ok(b.speed > a.speed && b.speed - a.speed <= 1.5, b.id);
-      assert.ok(b.price > a.price && b.price <= 400, b.id);
+      assert.ok(b.price > a.price && b.price <= 400000, b.id);
       assert.ok(b.tier >= a.tier, b.id);
     }
     assert.equal(line.at(-1).tier, 2, type);
@@ -26,14 +26,14 @@ test('the basic bike is a little faster than running; the others step up gently'
 test('skins: buy a colour or pattern once, put it on or off, and others see it', () => {
   const st = memory();
   const g = new Garage(st);
-  const w = walletOf(SKIN_PRICE.color + SKIN_PRICE.pattern + 5);
+  const w = walletOf(SKIN_PRICE.color + SKIN_PRICE.pattern + 5000);
   assert.equal(g.rideSpec().pattern, null);
   assert.equal(g.buySkin('color', 'pink', w), 'bought');
   assert.equal(g.buySkin('color', 'pink', w), 'owned');
   assert.equal(g.buySkin('pattern', 'hangul', w), 'bought');
   assert.equal(g.buySkin('pattern', 'star', w), 'poor');
   assert.equal(g.buySkin('pattern', 'nope', w), 'unknown');
-  assert.equal(w.coins, 5);
+  assert.equal(w.coins, 5000);
   assert.deepEqual(g.rideSpec(), { type: 'bike', tier: 0, color: SKIN_COLORS.pink, pattern: 'hangul' });
   assert.ok(!g.setSkin('pattern', 'star'));
   assert.ok(g.setSkin('pattern', null));
@@ -54,10 +54,10 @@ test('buying, choosing and remembering bikes', () => {
   const st = memory();
   const g = new Garage(st);
   assert.equal(g.current.id, 'basic');
-  const w = walletOf(100);
+  const w = walletOf(100000);
   assert.equal(g.buy('road', w), 'poor');
   assert.equal(g.buy('city', w), 'bought');
-  assert.equal(w.coins, 20);
+  assert.equal(w.coins, 20000);
   assert.equal(g.current.id, 'city');
   assert.equal(g.buy('city', w), 'owned');
   assert.ok(g.use('basic'));
@@ -66,7 +66,7 @@ test('buying, choosing and remembering bikes', () => {
   assert.ok(again.has('city') && again.current.id === 'basic');
 });
 
-test('bikes wear very slowly and the shop repairs them for a few coins', () => {
+test('bikes wear very slowly and the shop repairs them for a little money', () => {
   const g = new Garage(memory());
   assert.equal(g.durability(), 100);
   g.ride(500);
@@ -76,11 +76,11 @@ test('bikes wear very slowly and the shop repairs them for a few coins', () => {
   for (let i = 0; i < 100 && !low; i++) low = g.ride(500);
   assert.ok(low, 'warns once when it gets low');
   assert.ok(g.speed() < BIKE_MODELS[0].speed && g.speed() >= BIKE_MODELS[0].speed * 0.9);
-  const w = walletOf(50);
+  const w = walletOf(50000);
   const cost = repairCost(g.durability());
-  assert.ok(cost > 0 && cost <= 10);
+  assert.ok(cost > 0 && cost <= 10000);
   assert.equal(g.repair('basic', w), 'fixed');
-  assert.equal(w.coins, 50 - cost);
+  assert.equal(w.coins, 50000 - cost);
   assert.equal(g.durability(), 100);
   assert.equal(g.repair('basic', w), 'fine');
   assert.equal(wornSpeed(10, 0), 9);
@@ -107,11 +107,11 @@ test('ride shops: each sells its own skins; the Hunminjeongeum line only by the 
   // Shop patterns are drawn as whole tiles (ride-patterns.js).
   for (const p of SKIN_PATTERNS) if (shopOf('pattern', p) !== 'pedal') assert.ok(TILE_PATTERNS.includes(p), p);
   const g = new Garage(memory());
-  const w = walletOf(500);
+  const w = walletOf(500000);
   assert.equal(g.buySkin('pattern', 'hunmin', w, 'lab'), 'elsewhere');
-  assert.equal(w.coins, 500);
+  assert.equal(w.coins, 500000);
   assert.equal(g.buySkin('pattern', 'hunmin', w, 'hangul'), 'bought');
-  assert.equal(w.coins, 500 - skinPrice('pattern', 'hunmin'));
+  assert.equal(w.coins, 500000 - skinPrice('pattern', 'hunmin'));
   assert.ok(skinPrice('pattern', 'hunmin') > skinPrice('pattern', 'flame') && skinPrice('pattern', 'flame') > SKIN_PRICE.pattern);
   // Once bought it goes on anywhere, and others see it.
   assert.equal(g.rideSpec().pattern, 'hunmin');
@@ -122,7 +122,7 @@ test('tune-ups make an owned ride a little faster; long-ride kits make it wear s
   const { UPGRADE_MAX, TUNE_STEP, KIT_WEAR } = await import('../src/core/bike-garage.js');
   const st = memory();
   const g = new Garage(st);
-  const w = walletOf(1000);
+  const w = walletOf(1000000);
   assert.equal(g.upgrade('tune', 'road', w), 'unknown'); // not owned
   assert.equal(g.upgrade('nitro', 'basic', w), 'unknown');
   const base = g.speed();

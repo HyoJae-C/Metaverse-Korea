@@ -16,9 +16,9 @@ test('poop cleaned in time is fine; left too long gets fined once', () => {
 test('pets cost real pet-shop prices, the fine stings, and poops are spaced out', () => {
   const prices = Object.values(ITEMS).filter((i) => i.pet && i.price).map((i) => i.price);
   assert.ok(prices.length >= 5);
-  assert.equal(ITEMS['pet-poodle'].price, 400); // ~₩400,000
-  assert.ok(ITEMS['pet-maltese'].price > 48 * 5); // a puppy is far more than a perfume (🪙 48)
-  assert.ok(FINE >= 30 && FINE < Math.min(...prices));
+  assert.equal(ITEMS['pet-poodle'].price, 400000); // ~₩400,000
+  assert.ok(ITEMS['pet-maltese'].price > 48000 * 5); // a puppy is far more than a perfume (₩48,000)
+  assert.ok(FINE >= 30000 && FINE < Math.min(...prices));
   for (const r of [0, 0.5, 0.999]) {
     const d = nextPoopAt(() => r);
     assert.ok(d >= POOP_EVERY[0] && d <= POOP_EVERY[1]);

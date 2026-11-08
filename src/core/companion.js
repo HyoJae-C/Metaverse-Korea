@@ -9,7 +9,7 @@ import { matCache } from './three-kit.js';
 
 export const CLEAN_SECONDS = 45;
 // Like the real fine in Korea for not picking up after a dog (₩50,000).
-export const FINE = 50;
+export const FINE = 50000;
 // Metres walked between poops (random in this range).
 export const POOP_EVERY = [150, 260];
 export const nextPoopAt = (rand = Math.random) => POOP_EVERY[0] + rand() * (POOP_EVERY[1] - POOP_EVERY[0]);

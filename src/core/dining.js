@@ -5,9 +5,8 @@
 export const FOOD_BITES = 5; // bites to finish a dish (at the table or to go)
 export const SERVE_MS = 4000; // order → on the table
 
-// Menu prices are in won (like every shop); you pay game coins at
-// 1 coin per 1,000 won, rounded (6,500원 → 7 coins), at least 1.
-export const coinPrice = (won) => Math.max(1, Math.round((Number(won) || 0) / 1000));
+// Menu prices are in won (like every shop), and so is the money you pay.
+export const coinPrice = (won) => Math.max(100, Math.round(Number(won) || 0));
 
 // Restaurants where you order from the menu at your table (the food isn't
 // laid out on display tables). The pocha has its own cooking game.

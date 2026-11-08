@@ -5,10 +5,10 @@ import { coinPrice, heldFor } from '../src/ui/counter-ui.js';
 
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 
-test('counter prices are coins: 1 per ₩1,000, rounded up', () => {
-  assert.equal(coinPrice(4500), 5);
-  assert.equal(coinPrice(2000), 2);
-  assert.equal(coinPrice(0), 1);
+test('counter prices are the won price tag (at least ₩100)', () => {
+  assert.equal(coinPrice(4500), 4500);
+  assert.equal(coinPrice(2000), 2000);
+  assert.equal(coinPrice(0), 100);
 });
 
 test('META COFFEE hands over coffee (stamina); bars and clubs a glass', () => {

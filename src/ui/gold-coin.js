@@ -1,25 +1,27 @@
-// The 🪙 emoji is a silver coin on iPhones and hard to see on our light UI.
-// (The money is now drawn as a little pay card: Seoul pays by card.)
-// Every 🪙 the game writes on the page is swapped for a gold coin drawn in
-// CSS (.coin in style.css), so the code can keep writing the emoji.
+// Money is Korean won. The game's text writes amounts as "🪙 4500" (or
+// "+20000 🪙"); every 🪙 on the page is turned into a won amount here:
+// "₩4,500", "+₩20,000". A 🪙 with no number next to it becomes "₩". So the
+// code and the translations can keep writing the emoji.
 const COIN = '🪙';
 const SKIP = new Set(['TEXTAREA', 'INPUT', 'SCRIPT', 'STYLE', 'CANVAS']);
+const NUM = '(\\d[\\d,]*)';
+const BEFORE = new RegExp(`([+\\-−]\\s*)?${COIN}\\s*([+\\-−]\\s*)?${NUM}`, 'gu');
+const AFTER = new RegExp(`([+\\-−]\\s*)?${NUM}\\s*${COIN}`, 'gu');
+const amount = (sign, digits) => `${(sign || '').trim().replace('−', '-')}₩${Number(digits.replace(/,/g, '')).toLocaleString('en-US')}`;
+
+// The text with every 🪙 turned into won (exported for tests).
+export function wonText(text) {
+  if (!text || !text.includes(COIN)) return text;
+  return text
+    .replace(BEFORE, (_, s1, s2, d) => amount(s1 || s2, d))
+    .replace(AFTER, (_, s, d) => amount(s, d))
+    .replace(new RegExp(`${COIN}\\s?`, 'gu'), '₩');
+}
 
 function swapText(node) {
   const text = node.nodeValue;
   if (!text || !text.includes(COIN) || SKIP.has(node.parentNode?.nodeName)) return;
-  const frag = document.createDocumentFragment();
-  text.split(COIN).forEach((part, i) => {
-    if (i) {
-      const c = document.createElement('i');
-      c.className = 'coin';
-      c.setAttribute('role', 'img');
-      c.setAttribute('aria-label', 'coin');
-      frag.append(c);
-    }
-    if (part) frag.append(part);
-  });
-  node.replaceWith(frag);
+  node.nodeValue = wonText(text);
 }
 
 function swapIn(root) {

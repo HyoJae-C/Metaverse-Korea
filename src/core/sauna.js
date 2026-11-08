@@ -5,8 +5,8 @@
 
 export const HOT_SECONDS = 20;
 export const ICE_SECONDS = 8;
-export const HOT_PAY = 2;
-export const COMBO_PAY = 2; // ice room right after the kiln
+export const HOT_PAY = 4000;
+export const COMBO_PAY = 4000; // ice room right after the kiln
 export const COMBO_WINDOW = 60; // seconds
 export const DAILY_ROUNDS = 3;
 

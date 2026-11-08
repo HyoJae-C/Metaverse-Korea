@@ -4,7 +4,7 @@ import { howToGet, coinsFor, comingSoon } from '../src/ui/shop-ui.js';
 import { heldFor } from '../src/ui/counter-ui.js';
 import { cleanEntry } from '../src/core/bag.js';
 
-test('no won prices: restaurants order at the table, cafés at the counter, fashion is coming soon, the rest sells for coins', () => {
+test('no won prices: restaurants order at the table, cafés at the counter, fashion is coming soon, the rest sells for won', () => {
   assert.equal(howToGet({ category: 'restaurant' }), 'table');
   for (const c of ['cafe', 'bar', 'club']) assert.equal(howToGet({ category: c }), 'counter');
   assert.equal(howToGet({ category: 'lifestyle', takeaway: true }), 'counter');
@@ -17,9 +17,9 @@ test('no won prices: restaurants order at the table, cafés at the counter, fash
   assert.ok(!comingSoon({ category: 'fashion', products: [{ id: 'g', item: 'acc-glasses' }] }));
   assert.ok(!comingSoon({ category: 'workshop', workshop: 'hat' }));
   for (const c of ['lifestyle', 'beauty', 'market', 'petshop']) assert.equal(howToGet({ category: c }), 'buy');
-  assert.equal(coinsFor(26000), 26);
-  assert.equal(coinsFor(6500), 7);
-  assert.equal(coinsFor(0), 1);
+  assert.equal(coinsFor(26000), 26000);
+  assert.equal(coinsFor(6500), 6500);
+  assert.equal(coinsFor(0), 100);
 });
 
 test('café orders become a cup or a snack box; bar drinks a glass; bought goods fit in the bag', () => {

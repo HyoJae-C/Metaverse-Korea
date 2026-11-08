@@ -14,6 +14,7 @@
 // ledger, so a receipt edited here can't raise the price or sell one
 // purchase twice (supabase/017_resale.sql).
 import { noteText } from './wallet.js';
+import { OLD_COIN_WON } from './money.js';
 
 export const RESALE_PCT = 10; // shops pay 10% of what you paid
 const KEY = 'mk.paid';
@@ -30,8 +31,9 @@ export class Receipts {
     try { raw = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* broken save */ }
     this.map = {};
     for (const [id, r] of Object.entries(raw)) {
-      const paid = Math.floor(Number(r?.paid) || 0);
-      if (paid > 0) this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null };
+      // Receipts from before won (no w) were in coins.
+      const paid = Math.floor(Number(r?.paid) || 0) * (r?.w ? 1 : OLD_COIN_WON);
+      if (paid > 0) this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null, w: 1 };
     }
   }
   // The receipt for this item, or null (it can't be sold).
@@ -40,7 +42,7 @@ export class Receipts {
   // paid: coins; op: the purchase's ledger id; note: its budget book note.
   record(id, paid, op = null, note = null) {
     if (!(paid > 0)) return;
-    this.map[id] = { paid: Math.floor(paid), op: op || null, bn: noteText(note) };
+    this.map[id] = { paid: Math.floor(paid), op: op || null, bn: noteText(note), w: 1 };
     this._save();
   }
   forget(id) {
@@ -74,7 +76,7 @@ export function scanLedger(log, owned, items, isGift = () => false) {
     const i = log.findIndex((e, k) => !used.has(k) && e?.n === -it.price && e.note?.name?.en === it.name.en && !isGift(e.note));
     if (i < 0) continue;
     used.add(i);
-    out[id] = { paid: it.price, op: null, bn: noteText(log[i].note) };
+    out[id] = { paid: it.price, op: null, bn: noteText(log[i].note), w: 1 };
   }
   return out;
 }

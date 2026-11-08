@@ -4,9 +4,9 @@
 // Kept free of DOM-only code at import time so it can be unit-tested.
 
 export const TIERS = {
-  basic: { price: 30, name: { en: 'Basic', ko: '기본', ja: 'ベーシック', zh: '基础' } },
-  fancy: { price: 80, name: { en: 'Fancy', ko: '화려함', ja: '華やか', zh: '华丽' } },
-  dazzling: { price: 200, name: { en: 'Dazzling', ko: '완전 화려함', ja: '超ド派手', zh: '超华丽' } },
+  basic: { price: 30000, name: { en: 'Basic', ko: '기본', ja: 'ベーシック', zh: '基础' } },
+  fancy: { price: 80000, name: { en: 'Fancy', ko: '화려함', ja: '華やか', zh: '华丽' } },
+  dazzling: { price: 200000, name: { en: 'Dazzling', ko: '완전 화려함', ja: '超ド派手', zh: '超华丽' } },
 };
 
 // 20 emblems. bg: badge colour (or a gradient for fancy/dazzling ones).

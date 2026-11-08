@@ -7,17 +7,17 @@ import { STRINGS } from '../src/i18n/strings.js';
 import { readFileSync } from 'node:fs';
 
 test('you pay for each change; going back to your own is free', () => {
-  assert.equal(beautyCost(SALON, {}, { dye: 'pink' }), 30);
-  assert.equal(beautyCost(SALON, {}, { dye: 'pink', hairStyle: 'bob' }), 70);
+  assert.equal(beautyCost(SALON, {}, { dye: 'pink' }), 30000);
+  assert.equal(beautyCost(SALON, {}, { dye: 'pink', hairStyle: 'bob' }), 70000);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
-  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: 'small' }), 130);
-  assert.equal(beautyCost(CLINIC, { small: 'small' }, { small: 'big' }), 45); // small to big
+  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: 'small' }), 130000);
+  assert.equal(beautyCost(CLINIC, { small: 'small' }, { small: 'big' }), 45000); // small to big
   assert.equal(beautyCost(CLINIC, { small: 'big' }, { small: null }), 0);
   assert.equal(beautyCost(CLINIC, { small: false }, { small: false }), 0);
-  assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50);
-  assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25);
-  assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 15);
+  assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50000);
+  assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25000);
+  assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 15000);
 });
 
 test('thirty hairstyles, ten lip tints, fourteen lens colours, two eye shapes per clinic', () => {

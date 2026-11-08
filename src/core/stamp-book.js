@@ -1,6 +1,6 @@
 // Stamp book (스탬프 노트): which tour stamps you have and the day you got
 // each. Saved under mk.stamps, so it follows you to other devices.
-export const STAMP_REWARD = 10; // 🪙 for each new stamp; no prize for a full book (places keep being added)
+export const STAMP_REWARD = 20000; // 🪙 for each new stamp; no prize for a full book (places keep being added)
 export const STAMP_NEAR = 1.6; // metres from the stand to use it
 
 // The stamps that exist on this map: a stand beside a shop needs that shop.

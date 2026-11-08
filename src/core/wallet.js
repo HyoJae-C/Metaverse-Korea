@@ -1,4 +1,5 @@
-// Coins (virtual, no cash value) and rewarded ads.
+// Money (Korean won, game money with no cash value) and rewarded ads.
+// The code still says "coins" for the balance; every amount is in won.
 //
 // The balance lives on the server (supabase/015_wallet.sql): the browser
 // can't change it, only ask the server to. The game still calls add(),
@@ -22,6 +23,8 @@
 // Note: rewards are still worked out by the games in the browser, so the
 // server can only cap them, not check them.
 
+import { OLD_COIN_WON } from './money.js';
+
 const KEY = 'mk.wallet'; // the browser-only wallet (local mode)
 // The server wallet's copy here: { uid, base (server balance), ver, ads,
 // adsDay, queue: [ops not yet confirmed] }. Not "mk." so the cloud save
@@ -38,19 +41,28 @@ export const LOG_MAX = 100;
 // who got the old amount get the difference on their next visit. `gift` in
 // the save is how much was given (1 = the first 500). With the server
 // wallet, the server gives it (wallet_settings.welcome).
-export const WELCOME_COINS = 1000;
-const giftGiven = (g) => (g === 1 ? 500 : Math.max(0, Math.floor(Number(g) || 0)));
+export const WELCOME_COINS = 1000000; // ₩1,000,000
+// gift saved before won (no `u` in the save) was in coins.
+const giftGiven = (g, old = false) => (g === 1 ? 500 * OLD_COIN_WON : Math.max(0, Math.floor(Number(g) || 0)) * (old ? OLD_COIN_WON : 1));
 const BATCH = 50; // ops per wallet_apply call
-const RESELL_PCT = 10; // second-hand shops in a browser-only wallet (core/resale.js)
+const RESELL_PCT = 10;
+// What the server counts in: 'krw' once supabase/018_won.sql has run. Before
+// that it still counts old coins, and the wallet changes amounts on the way
+// in and out (SERVER_OLD).
+const SERVER_OLD = OLD_COIN_WON; // second-hand shops in a browser-only wallet (core/resale.js)
 const QUEUE_MAX = 500; // more than this waiting: the oldest are dropped
 // Server errors meaning "the SQL isn't run yet".
 const missing = (e) => !!e && (e.code === 'PGRST202' || e.code === '42883' || e.code === 'PGRST205' || /could not find the function|does not exist/i.test(e.message || ''));
 
+// The browser-only wallet. `u: 1` marks a save in won; older saves (coins)
+// are turned into won here (also when one comes back from the cloud save).
 function read() {
   try {
     const w = JSON.parse(localStorage.getItem(KEY) || '{}');
-    return { coins: Math.max(0, Math.floor(Number(w.coins) || 0)), day: String(w.day || ''), ads: Number(w.ads) || 0, gift: w.gift === true ? 1 : Math.max(0, Math.floor(Number(w.gift) || 0)) };
-  } catch { return { coins: 0, day: '', ads: 0, gift: 0 }; }
+    const old = !w.u && w.coins != null;
+    const gift = w.gift === true ? 1 : Math.max(0, Math.floor(Number(w.gift) || 0));
+    return { u: 1, coins: Math.max(0, Math.floor(Number(w.coins) || 0)) * (old ? OLD_COIN_WON : 1), day: String(w.day || ''), ads: Number(w.ads) || 0, gift: giftGiven(gift, old) };
+  } catch { return { u: 1, coins: 0, day: '', ads: 0, gift: 0 }; }
 }
 function write(w) {
   try { localStorage.setItem(KEY, JSON.stringify(w)); } catch { /* storage blocked */ }
@@ -59,14 +71,19 @@ function readState() {
   try {
     const s = JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
     if (!s || typeof s.uid !== 'string') return null;
-    const queue = Array.isArray(s.queue) ? s.queue.filter((o) => o && typeof o.id === 'string' && Number.isFinite(o.n)) : [];
-    return { uid: s.uid, base: Math.max(0, Math.floor(Number(s.base) || 0)), ver: Number(s.ver) || 0, ads: Math.max(0, Number(s.ads) || 0), adsDay: String(s.adsDay || ''), queue };
+    // Ops queued before won (no `u`) are in coins.
+    const queue = Array.isArray(s.queue) ? s.queue.filter((o) => o && typeof o.id === 'string' && Number.isFinite(o.n))
+      .map((o) => (o.w ? o : { ...o, n: o.n * OLD_COIN_WON, w: 1 })) : [];
+    const f = s.u ? 1 : OLD_COIN_WON;
+    return { uid: s.uid, u: 1, unit: s.unit === 'krw' ? 'krw' : 'coin', base: Math.max(0, Math.floor(Number(s.base) || 0)) * f, ver: Number(s.ver) || 0, ads: Math.max(0, Number(s.ads) || 0), adsDay: String(s.adsDay || ''), queue };
   } catch { return null; }
 }
 function readLog() {
   try {
+    // Entries from before won (no `w`) were in coins.
     const l = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    return Array.isArray(l) ? l.filter((e) => e && Number.isFinite(e.n) && Number.isFinite(e.t)) : [];
+    return Array.isArray(l) ? l.filter((e) => e && Number.isFinite(e.n) && Number.isFinite(e.t))
+      .map((e) => (e.w ? e : { ...e, n: e.n * OLD_COIN_WON, bal: (Number(e.bal) || 0) * OLD_COIN_WON, w: 1 })) : [];
   } catch { return []; }
 }
 function writeLog(l) {
@@ -141,24 +158,31 @@ export class Wallet {
     this.client = client;
     let res;
     const local = this.w.coins;
-    try {
-      res = await withTimeout(client.rpc('wallet_open', { p_local: local, p_gift: giftGiven(this.w.gift) }), timeoutMs);
-    } catch (e) { res = { error: e }; }
+    const ask = (args) => withTimeout(client.rpc('wallet_open', args), timeoutMs).catch((e) => ({ error: e }));
+    // In won (018_won.sql); a server from before it only knows coins.
+    res = await ask({ p_local: local, p_gift: giftGiven(this.w.gift), p_unit: 'krw' });
+    let unit = 'krw';
+    if (missing(res?.error)) {
+      unit = 'coin';
+      res = await ask({ p_local: Math.floor(local / SERVER_OLD), p_gift: Math.floor(giftGiven(this.w.gift) / SERVER_OLD) });
+    }
     const { data, error } = res || {};
     if (error || data?.status !== 'ok') {
       if (missing(error)) { this.client = null; this.s = null; this._saveState(); return 'local'; }
       if (this.s) this._later();
       return this.s ? 'offline' : 'local';
     }
+    if (data.unit !== 'krw') unit = 'coin';
+    const f = unit === 'krw' ? 1 : SERVER_OLD;
     // Brought over just now: the queue (from this browser's balance) is in it.
     const queue = data.created || !this.s ? [] : this.s.queue;
-    this.s = { uid, base: Number(data.coins) || 0, ver: Number(data.ver) || 0, ads: Number(data.ads_left) || 0, adsDay: kstDay(), queue };
-    this.welcomed = Number(data.welcome) || 0;
+    this.s = { uid, u: 1, unit, base: (Number(data.coins) || 0) * f, ver: Number(data.ver) || 0, ads: Number(data.ads_left) || 0, adsDay: kstDay(), queue };
+    this.welcomed = (Number(data.welcome) || 0) * f;
     if (this.welcomed > 0) this._log(this.welcomed, { k: 'ledger.welcome' });
     // Coins that moved here while the server was being asked.
     const late = this.s && data.created ? this.w.coins - local : 0;
-    if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn' });
-    else if (late < 0) this.s.queue.push({ id: newOpId(), n: late, k: 'take' });
+    if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn', w: 1 });
+    else if (late < 0) this.s.queue.push({ id: newOpId(), n: late, k: 'take', w: 1 });
     this._saveState();
     this._notify();
     this.flush();
@@ -170,7 +194,7 @@ export class Wallet {
     let res;
     try { res = await withTimeout(client.rpc('wallet_resell_pct'), timeoutMs); } catch (e) { res = { error: e }; }
     const n = Number(res?.data);
-    if (!res?.error && Number.isFinite(n)) this.resellPct = Math.max(0, Math.min(90, Math.round(n)));
+    if (!res?.error && res?.data != null && Number.isFinite(n)) this.resellPct = Math.max(0, Math.min(90, Math.round(n)));
   }
 
   // Sell something back at a second-hand shop (core/resale.js). r: { id
@@ -188,17 +212,19 @@ export class Wallet {
     if (!this.client) return { ok: false, n: 0, why: 'offline' };
     if (this.resellPct == null) return { ok: false, n: 0, why: 'closed' };
     if (!(await this.flush())) return { ok: false, n: 0, why: 'offline' }; // the purchase must be there first
-    const op = { id: r.id, n: Math.round(r.n), k: 'resell' };
+    const op = { id: r.id, n: Math.round(r.n), k: 'resell', w: 1 };
     if (r.ref) op.ref = r.ref;
     else { op.bn = r.bn; op.paid = r.paid; }
     const txt = noteText(r.note);
     if (txt) op.note = txt;
+    const out = this._out(op);
+    if (out.paid != null) out.paid = this._sf() === 1 ? op.paid : Math.round(op.paid / this._sf());
     let res;
-    try { res = await withTimeout(this.client.rpc('wallet_apply', { p_ops: [op] }), 8000); } catch (e) { res = { error: e }; }
+    try { res = await withTimeout(this.client.rpc('wallet_apply', { p_ops: [out] }), 8000); } catch (e) { res = { error: e }; }
     const { data, error } = res || {};
     const got = data?.results?.[0];
     if (error || data?.status !== 'ok' || !got) return { ok: false, n: 0, why: 'offline' };
-    const n = Math.max(0, Number(got.n) || 0);
+    const n = Math.max(0, Number(got.n) || 0) * this._sf();
     this._fromServer(data);
     if (n) this._log(n, r.note);
     this._notify();
@@ -238,7 +264,7 @@ export class Wallet {
       if (n) {
         id = opt.id || newOpId();
         const kind = opt.kind || (n > 0 ? 'earn' : 'spend');
-        const op = { id, n, k: kind };
+        const op = { id, n, k: kind, w: 1 };
         if (kind === 'refund' && opt.ref) op.ref = opt.ref;
         const txt = noteText(note === undefined ? this._ctx() : note);
         if (txt) op.note = txt;
@@ -298,7 +324,7 @@ export class Wallet {
     clearTimeout(this._timer); this._timer = null;
     const ops = this.s.queue.slice(0, BATCH);
     let res;
-    try { res = await withTimeout(this.client.rpc('wallet_apply', { p_ops: ops }), 8000); } catch (e) { res = { error: e }; }
+    try { res = await withTimeout(this.client.rpc('wallet_apply', { p_ops: ops.map((o) => this._out(o)) }), 8000); } catch (e) { res = { error: e }; }
     const { data, error } = res || {};
     if (error || data?.status !== 'ok' || !this.s) { this._later(); return false; }
     const sent = new Set(ops.map((o) => o.id));
@@ -323,7 +349,7 @@ export class Wallet {
         const { data, error } = res || {};
         if (error || !data) continue;
         if (data.status !== 'ok') { if (data.status === 'limit') { this.s.ads = 0; this.s.adsDay = kstDay(); this._saveState(); } return 0; }
-        const n = Number(data.granted) || 0;
+        const n = (Number(data.granted) || 0) * this._sf();
         this.s.ads = Number(data.ads_left) || 0; this.s.adsDay = kstDay();
         if (n) this._log(n, { k: 'ledger.ad' });
         this._fromServer(data);
@@ -344,13 +370,21 @@ export class Wallet {
   _fromServer(r) {
     const ver = Number(r?.ver), coins = Number(r?.coins);
     if (!this.s || !Number.isFinite(coins) || !Number.isFinite(ver) || ver < this.s.ver) return;
-    this.s.base = Math.max(0, coins);
+    this.s.base = Math.max(0, coins) * this._sf();
     this.s.ver = ver;
     this._saveState();
   }
+  // How many won one server unit is: 1, or a coin on a server from before won.
+  _sf() { return this.s?.unit === 'krw' ? 1 : SERVER_OLD; }
+  // An op as the server wants it: in won with u: 'krw', or in coins.
+  _out(o) {
+    const { w: _w, ...op } = o;
+    if (this._sf() === 1) return { ...op, u: 'krw' };
+    return { ...op, n: Math.round(o.n / SERVER_OLD) };
+  }
   _ctx() { try { return this.context?.() || null; } catch { return null; } }
   _log(n, note) {
-    this.log.push({ t: Date.now(), n, bal: this.coins, note: note === undefined ? this._ctx() : note });
+    this.log.push({ t: Date.now(), n, bal: this.coins, note: note === undefined ? this._ctx() : note, w: 1 });
     if (this.log.length > LOG_MAX) this.log.splice(0, this.log.length - LOG_MAX);
     writeLog(this.log);
   }

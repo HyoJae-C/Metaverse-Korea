@@ -3,15 +3,15 @@
 // grabs, but it can still slip on the way up. Each try costs coins: this is
 // somewhere to spend them. Prizes are plushies to put in your home, or coins.
 
-export const CLAW_COST = 2;
+export const CLAW_COST = 1000; // won, like a real claw machine
 export const SLIP = 0.3; // a good grab still slips 30% of the time
 export const PRIZES = [
   { id: 'plush-simurugi', weight: 2, emoji: '😑', item: 'plush-simurugi' },
   { id: 'plush-mongle', weight: 3, emoji: '☁️', item: 'plush-mongle' },
   { id: 'plush-bear', weight: 3, emoji: '🧸', item: 'plush-bear' },
   { id: 'plush-mandu', weight: 3, emoji: '🥟', item: 'plush-mandu' },
-  { id: 'coins5', weight: 4, emoji: '💰', coins: 5 },
-  { id: 'coins2', weight: 6, emoji: '🪙', coins: 2 },
+  { id: 'coins5', weight: 4, emoji: '💰', coins: 5000 },
+  { id: 'coins2', weight: 6, emoji: '🪙', coins: 2000 },
 ];
 
 // The claw's x (0..1) at time t: a smooth swing, a bit faster each try.

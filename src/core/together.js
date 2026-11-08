@@ -9,7 +9,7 @@
 // close by pays a little extra (TOGETHER_COINS). Fishing has none.
 
 export const HI5_WINDOW = 6000; // ms
-export const HI5_COINS = 3;
+export const HI5_COINS = 6000;
 export const HI5_PAID_PER_DAY = 5;
 export const TOGETHER_RADIUS = 4; // m
 const KEY = 'mk.hi5';
@@ -20,7 +20,7 @@ export function parseHi5(e) {
   return m ? m[1] : null;
 }
 
-export const TOGETHER_COINS = { cook: 3 };
+export const TOGETHER_COINS = { cook: 6000 };
 
 export class HighFives {
   constructor(storage = globalThis.localStorage, today = () => new Date().toDateString(), now = () => Date.now()) {
@@ -70,4 +70,4 @@ export class HighFives {
 
 // Square crowd bonus: +1 coin for every other player near the guide when you
 // report a mission, up to 5. Busy squares pay more.
-export const crowdBonus = (people) => Math.min(5, Math.max(0, people | 0));
+export const crowdBonus = (people) => Math.min(5, Math.max(0, people | 0)) * 2000;

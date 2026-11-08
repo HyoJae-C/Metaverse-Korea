@@ -151,6 +151,7 @@ import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/moti
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
+import { won } from './core/money.js';
 import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
@@ -352,10 +353,10 @@ const ID_TEXT = {
 const LOGIN_TEXT = {
   title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
   text: {
-    en: 'Sign in with Google and your coins, items and home are saved to your account, so you can carry on from any device. As a guest, your progress may be lost when the game is updated, or if you clear this browser or switch devices.',
-    ko: '구글로 로그인하면 코인, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 게임이 업데이트될 때 기록이 사라질 수 있고, 브라우저 기록을 지우거나 기기를 바꿔도 사라질 수 있어요.',
-    ja: 'Googleでログインすると、コイン・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストの記録は、ゲームのアップデート時や、ブラウザの履歴を消したり端末を変えたときに消えることがあります。',
-    zh: '用 Google 登录后，金币、物品和家会保存到账号，在任何设备上都能继续。游客的进度在游戏更新时可能会丢失，清除浏览器记录或换设备也可能丢失。',
+    en: 'Sign in with Google and your money, items and home are saved to your account, so you can carry on from any device. As a guest, your progress may be lost when the game is updated, or if you clear this browser or switch devices.',
+    ko: '구글로 로그인하면 돈, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 게임이 업데이트될 때 기록이 사라질 수 있고, 브라우저 기록을 지우거나 기기를 바꿔도 사라질 수 있어요.',
+    ja: 'Googleでログインすると、お金・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストの記録は、ゲームのアップデート時や、ブラウザの履歴を消したり端末を変えたときに消えることがあります。',
+    zh: '用 Google 登录后，钱、物品和家会保存到账号，在任何设备上都能继续。游客的进度在游戏更新时可能会丢失，清除浏览器记录或换设备也可能丢失。',
   },
   google: { en: 'Sign in with Google (saves)', ko: '구글로 로그인 (저장돼요)', ja: 'Googleでログイン（保存されます）', zh: '用 Google 登录（会保存）' },
   guest: { en: 'Play as a guest', ko: '게스트로 시작', ja: 'ゲストで始める', zh: '以游客身份开始' },
@@ -912,7 +913,7 @@ function onboardHi5() {
   squareNpc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(10, { k: 'ledger.quest' });
+  wallet.add(20000, { k: 'ledger.quest' });
   refreshWallet();
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
@@ -1821,7 +1822,7 @@ const UMB_TEXT = {
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
   if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
-  const cost = product.coins || 5;
+  const cost = product.coins || 5000;
   if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
   bag.add({ kind: 'umbrella' });
   refreshWallet();
@@ -2066,7 +2067,7 @@ try {
 if (String(myLook.model).startsWith('swim-')) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); } // swimwear is only for the pool
 if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
 const CODE_TEXT = {
-  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
+  coins: { en: '+🪙 {n}!', ko: '🪙 {n}을 받았어요!', ja: '🪙 {n} もらいました！', zh: '获得 🪙 {n}！', es: '¡+🪙 {n}!', ar: '+🪙 {n}!', vi: '+🪙 {n}!', hi: '+🪙 {n}!', id: '+🪙 {n}!' },
   used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
   fish: { en: '🎣 Something huge is waiting... Cast your line!', ko: '🎣 뭔가 거대한 게 기다리고 있어요... 낚싯대를 던져 보세요!', ja: '🎣 何か大きなものが待っています…竿を投げてみて！', zh: '🎣 有个大家伙在等着……快抛竿吧！', es: '🎣 Algo enorme te espera... ¡Lanza la caña!', ar: '🎣 شيء ضخم ينتظر... ارمِ صنارتك!', vi: '🎣 Có thứ gì đó rất lớn đang chờ... Hãy quăng cần!', hi: '🎣 कुछ बहुत बड़ा इंतज़ार कर रहा है... कांटा डालो!', id: '🎣 Ada sesuatu yang besar menunggu... Lempar kailmu!' },
   wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
@@ -2587,7 +2588,7 @@ bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spre
 // Station vending machines: cheap drinks that work like a coffee to go.
 const VENDING_TEXT = {
   open: { en: 'Vending machine', ko: '음료 자판기', ja: '自動販売機', zh: '自动售货机' },
-  note: { en: 'Every drink is 1 coin. Sip it to refill your stamina.', ko: '모든 음료가 1코인이에요. 마시면 체력이 채워져요.', ja: '飲み物はすべて1コイン。飲むとスタミナが回復します。', zh: '所有饮料都是1枚硬币。喝了可以恢复体力。' },
+  note: { en: 'Cheap drinks, like a real station machine. Sip one to refill your stamina.', ko: '실제 역 자판기처럼 싼 음료예요. 마시면 체력이 채워져요.', ja: '本物の駅の自販機のように安い飲み物です。飲むとスタミナが回復します。', zh: '和真的车站售货机一样便宜。喝了可以恢复体力。' },
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
   got: { en: 'Clunk! {name} drops out.', ko: '덜컹! {name}이(가) 나왔어요.', ja: 'ガコン！{name}が出てきました。', zh: '咚！{name}掉出来了。' },
 };
@@ -4409,8 +4410,8 @@ function openOrder() {
 }
 const showAd = rewardedShow(config.rewardedAd, demoAd($('ad-overlay'), $('ad-count'), $('ad-close')));
 function refreshWallet() {
-  $('coin-count').textContent = wallet.coins;
-  $('wallet-coins').textContent = wallet.coins;
+  $('coin-count').textContent = won(wallet.coins);
+  $('wallet-coins').textContent = won(wallet.coins);
   $('ad-label').textContent = t('wallet.watch', { n: config.rewardedAd.reward });
   const left = wallet.adsLeft();
   $('ad-left').textContent = t('wallet.left', { n: left });
@@ -4545,7 +4546,7 @@ walletReady.then(() => {
   const gift = wallet.welcome();
   if (gift) {
     refreshWallet();
-    $('welcome-coins').textContent = gift.toLocaleString();
+    $('welcome-coins').textContent = won(gift);
     const body = () => { $('welcome-body').textContent = t('welcome.body', { n: gift.toLocaleString() }); };
     body();
     onLanguageChange(body);

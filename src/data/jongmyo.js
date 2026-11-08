@@ -140,8 +140,8 @@ export const JONGMYO = {
 };
 
 // Rewards (coins), each paid once.
-export const MANNERS_REWARD = 15; // reach Jeongjeon's terrace without stepping on the sindo
-export const RITE_REWARD = 15; // watch the ritual dance for a while
+export const MANNERS_REWARD = 30000; // reach Jeongjeon's terrace without stepping on the sindo
+export const RITE_REWARD = 30000; // watch the ritual dance for a while
 export const RITE_WATCH = 20; // seconds of watching that count
 
 // Which way a point is on the stone path: 'sindo' on the raised middle strip,

@@ -85,7 +85,7 @@ export function createRetention({ client, $, escapeHtml, notOperator }) {
       tile(w.sessions_per_player_day, 'Sessions per player-day'),
       tile(`${Math.round(w.together_share * 100)}%`, 'Time with someone near', `Share of play time with another player within 25 m.`),
       tile(w.fishing_players, 'Players who fished', `${w.fish} fish caught`),
-      tile(w.buying_players, 'Players who spent coins', `${w.coins_in} coins earned, ${w.coins_out} spent`),
+      tile(w.buying_players, 'Players who spent money', `₩${Number(w.coins_in).toLocaleString('en-US')} earned, ₩${Number(w.coins_out).toLocaleString('en-US')} spent`),
       tile(w.chatting_players, 'Players who chatted'),
     );
     parts.push(h1, tiles);

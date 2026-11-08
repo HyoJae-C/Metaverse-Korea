@@ -94,8 +94,8 @@ export const BUKCHON = {
   ],
 };
 
-export const VIEW_REWARD = 10; // coins for each new photo spot
-export const ALL_VIEWS_REWARD = 20; // and for having them all
+export const VIEW_REWARD = 20000; // coins for each new photo spot
+export const ALL_VIEWS_REWARD = 40000; // and for having them all
 
 // Height of the ground at district (x, z): the hill inside the wall.
 export function ground(x, z) {
@@ -154,7 +154,7 @@ export class PartBook {
     return this.done;
   }
 }
-export const EXPLORER_REWARD = 20;
+export const EXPLORER_REWARD = 40000;
 
 // The nearest spot within r of (x, z) among items with `at` (local metres),
 // for a district at offset [ox, oz].

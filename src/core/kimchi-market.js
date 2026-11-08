@@ -9,7 +9,7 @@ import { medalFor } from './grill-game.js';
 export const KIMCHI_GOODS = 'kimchi';
 export const SELL_PER_DAY = 3;
 // Coins for a jar by its medal (no medal still sells, cheaply).
-export const KIMCHI_PRICE = { gold: 12, silver: 9, bronze: 6, none: 3 };
+export const KIMCHI_PRICE = { gold: 24000, silver: 18000, bronze: 12000, none: 6000 };
 const KEY = 'mk.kimchiSold';
 
 // Jars made before jars kept their score: the same name and icon.
