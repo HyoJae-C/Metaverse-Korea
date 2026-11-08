@@ -6102,7 +6102,7 @@ renderer.setAnimationLoop(() => {
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
-      idleTimer = config.netIdleInterval;
+      idleTimer = onlineAll < config.netIdleSmallUntil ? config.netIdleIntervalSmall : config.netIdleInterval;
     }
     // Carrying passengers: send more often so their seats keep up.
     // In a crowd, less often (net/rate.js).

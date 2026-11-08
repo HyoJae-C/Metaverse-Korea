@@ -16,6 +16,10 @@ export const config = {
   netSendRate: 6,
   netSendRateRun: 8,
   netIdleInterval: 10,
+  // While fewer than netIdleSmallUntil people are online, standing players
+  // send their heartbeat a little more often (netIdleIntervalSmall seconds).
+  netIdleIntervalSmall: 3.5,
+  netIdleSmallUntil: 1000,
   // In a crowd each player sends less, so that what one player receives stays
   // near netRecvBudget messages a second (net/rate.js), never below
   // netSendRateMin. Realtime services count each message once per receiver.
