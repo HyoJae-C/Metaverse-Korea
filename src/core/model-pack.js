@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
 import { SNOW_MOVES } from './snow-moves.js';
+import { STUDIO_MOVES } from './studio-moves.js';
 import { listenPose } from './headphones.js';
 import { PUNGMUL_HANDS } from './pungmul-props.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
@@ -223,7 +224,18 @@ const BIG_HEAD = 1.12;
 const PULLUP = { hang: 0.5, bar: 2.03 };
 // Dumbbell curls: extra rotation (radians) on the upper arm and the forearm at the top of a curl.
 const CURL = { foreL: [0, 0, -2], foreR: [0, 0, 2] };
-const _hv = new THREE.Vector3();
+const _hv = new THREE.Vector3(), _hv2 = new THREE.Vector3(), _hv3 = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+// The bench press bar: a long bar with a plate at each end, along its y axis.
+function makeBarbell() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), new THREE.MeshLambertMaterial({ color: '#c9ced3' })));
+  for (const y of [-0.6, 0.6]) {
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 18), new THREE.MeshLambertMaterial({ color: '#2b2b2e' }));
+    plate.position.y = y;
+    g.add(plate);
+  }
+  return g;
+}
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
 // Hairdresser's scissors, held in the right hand while snipping.
 function makeScissors() {
@@ -626,6 +638,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
+  let barbell = null; // the bench press bar, made the first time you bench
   let scissors = null; // the hairdresser's
   let folkProps = null; // fans or long sleeves for the palace performers
   const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
@@ -639,7 +652,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || FOLK_DANCES[name] || SNOW_MOVES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     play(name) {
@@ -679,6 +692,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
       else key = 'idle';
+      // Yoga poses, the pilates reformer and the bench press
+      // (core/studio-moves.js): held while standing still.
+      const studio = STUDIO_MOVES[activity] && key === 'idle' ? (globalThis.__studio?.[activity] || STUDIO_MOVES[activity])(performance.now() / 1000) : null; // (__studio: debug, tune live)
+      if (studio?.clip && action(studio.clip)) key = studio.clip;
       const dancing = (activity === 'dance' || KPOP_ACTS.has(activity)) && key === 'idle';
       const listening = activity === 'listen' && key === 'idle'; // headphones on at the listening bar
       const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
@@ -699,6 +716,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         if (folkProps[1]) slotR.add(folkProps[1]);
       }
       if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
+      if (studio?.bar != null && !barbell && m.parent) { barbell = makeBarbell(); m.parent.add(barbell); }
+      if (barbell) barbell.visible = studio?.bar != null;
       // Lying down: the pack's lying clip doesn't turn the hips on these
       // models (the body stayed upright, as if sitting), so the standing
       // idle is laid flat on its back instead: head towards -z, face up.
@@ -714,10 +733,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         stroke = S.pose(strideT, strideAmp);
       }
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
-      const off = tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
+      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
-      if (folk) {
+      if (studio) {
+        moves = studio;
+        turn = studio.turn || 0;
+      } else if (folk) {
         moves = FOLK_DANCES[folk](performance.now() / 1000);
         bob = moves.bob || 0;
         turn = moves.turn || 0;
@@ -739,7 +761,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
-      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : 0) - m.rotation.x) * Math.min(1, dt * 12);
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : studio?.pitch || 0) - m.rotation.x) * Math.min(1, dt * 12);
       let pull = 0;
       if (hanging) {
         pullT += dt;
@@ -830,6 +852,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           const r = moves[name];
           if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
+      }
+      if (barbell?.visible && handL && handR) { // the bar runs from hand to hand
+        m.updateMatrixWorld(true);
+        const a = m.parent.worldToLocal(handL.getWorldPosition(_hv)), b = m.parent.worldToLocal(handR.getWorldPosition(_hv2));
+        barbell.position.addVectors(a, b).multiplyScalar(0.5);
+        barbell.quaternion.setFromUnitVectors(_up, _hv3.subVectors(b, a).normalize());
       }
       if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
     },

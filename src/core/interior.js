@@ -1572,14 +1572,18 @@ export function buildInterior(store) {
       bar.rotation.z = Math.PI / 2;
       bar.position.set(px, 1.2, pz - 0.6);
       scene.add(bar);
+      const racked = [bar]; // (hidden while someone has the bar: model-pack.js gives them their own)
       for (const sx2 of [-0.85, 0.85]) {
         const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.08, 18), mat('#2b2b2e'));
         plate.rotation.z = Math.PI / 2;
         plate.position.set(px + sx2, 1.2, pz - 0.6);
         scene.add(plate);
+        racked.push(plate);
       }
       block(px, pz, 1.6, 1.8);
-      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench' });
+      // You lie on the bench (head under the rack) while you lift.
+      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench', lie: { x: px, z: pz, ry: 0 } });
+      stations.benchBar = racked;
       // Dumbbell rack on the right wall.
       const rx = w / 2 - 0.8, rz = -d * 0.12;
       box(0.7, 0.8, 2.6, rx, 0.4, rz, '#4a4f57');
@@ -1618,6 +1622,95 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'yoga') {
+      // 숨 요가·필라테스: a yoga floor on the left (the instructor's mat at
+      // the front by the mirror, rows of mats facing her) and pilates
+      // reformers on the right. Some members are already in class; the
+      // middle stays clear from the door.
+      stations.studio = [];
+      box(9.4, 0.012, 12, -5.75, 0.006, -0.6, '#e7dccb'); // the yoga floor (a soft rug)
+      box(8.6, 0.012, 12, 5.9, 0.006, -0.6, '#dfe6e3'); // the pilates floor
+      const mirror = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.2), new THREE.MeshLambertMaterial({ color: '#d4e8f1' }));
+      mirror.position.set(-5.75, 1.4, -d / 2 + 0.03);
+      scene.add(mirror);
+      const yogaMat = (x, z, color) => {
+        box(0.72, 0.03, 1.9, x, 0.015, z, color);
+        box(0.6, 0.032, 0.04, x, 0.016, z - 0.85, '#ffffff'); // a stripe at the top end
+      };
+      // The instructor's mat, facing the class.
+      yogaMat(-5.75, -6.1, '#9b7fd1');
+      stations.instructor = { x: -5.75, z: -6.1, ry: 0 };
+      const matColors = ['#8fc9b4', '#f2b8a2', '#a9c4ef', '#f3d78a', '#c8b3ea'];
+      const members = new Set(['-8.5,-3', '-3,-3', '-5.75,-0.2', '-8.5,2.6']); // mats with someone on them
+      let n = 0;
+      for (const z of [-3, -0.2, 2.6]) {
+        for (const x of [-8.5, -5.75, -3]) {
+          yogaMat(x, z, matColors[n++ % matColors.length]);
+          stations.studio.push({ x, z, kind: 'yoga', face: Math.PI, npc: members.has(`${x},${z}`) });
+        }
+      }
+      // Reformers: a long frame, rails, a sliding padded carriage with
+      // shoulder rests at the head end (-z) and a foot bar with springs.
+      const reformer = (x, z) => {
+        box(0.78, 0.22, 2.5, x, 0.11, z, '#efe9de');
+        for (const s2 of [-0.33, 0.33]) box(0.06, 0.05, 2.5, x + s2, 0.245, z, '#b8bec4');
+        box(0.62, 0.09, 1.1, x, 0.31, z - 0.3, '#3f7f82'); // carriage
+        for (const s2 of [-0.17, 0.17]) box(0.1, 0.16, 0.1, x + s2, 0.43, z - 0.88, '#3f7f82'); // shoulder rests
+        box(0.3, 0.06, 0.18, x, 0.38, z - 0.93, '#3f7f82'); // headrest
+        for (const s2 of [-0.34, 0.34]) box(0.05, 0.5, 0.05, x + s2, 0.47, z + 1.05, '#b8bec4');
+        const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.74, 10), mat('#d6dbe0'));
+        fb.rotation.z = Math.PI / 2;
+        fb.position.set(x, 0.72, z + 1.05);
+        scene.add(fb);
+        for (const s2 of [-0.18, -0.06, 0.06, 0.18]) { // springs
+          const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.55, 6), mat(s2 < 0 ? '#e0566b' : '#f2b84b'));
+          sp.rotation.x = Math.PI / 2;
+          sp.position.set(x + s2, 0.2, z + 0.62);
+          scene.add(sp);
+        }
+        block(x, z, 0.85, 2.6);
+      };
+      const busy = new Set(['3.5,-4.2', '7.8,1.4']);
+      for (const z of [-4.2, 1.4]) {
+        for (const x of [3.5, 7.8]) {
+          reformer(x, z);
+          stations.studio.push({ x: x - 0.85, z, kind: 'reformer', lie: { x, z, ry: 0 }, npc: busy.has(`${x},${z}`) });
+        }
+      }
+      // A shelf of rolled-up mats and foam blocks by the yoga floor, plants in
+      // the corners, and the two room names on the side walls.
+      box(0.5, 1.1, 2.2, -w / 2 + 0.3, 0.55, d / 2 - 3, '#c9a27a');
+      block(-w / 2 + 0.3, d / 2 - 3, 0.6, 2.3);
+      for (let i = 0; i < 5; i++) {
+        const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.45, 12), mat(matColors[i]));
+        roll.rotation.z = Math.PI / 2;
+        roll.position.set(-w / 2 + 0.3, 1.2, d / 2 - 3.9 + i * 0.42);
+        scene.add(roll);
+      }
+      for (let i = 0; i < 3; i++) box(0.22, 0.12, 0.3, -w / 2 + 0.3, 0.75, d / 2 - 3.6 + i * 0.6, '#9b7fd1');
+      for (const [x, z] of [[-w / 2 + 0.7, d / 2 - 0.9], [-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7]]) {
+        box(0.5, 0.5, 0.5, x, 0.25, z, '#d8cbb8');
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), mat('#6f9e6a'));
+        leaf.position.set(x, 0.95, z);
+        scene.add(leaf);
+        block(x, z, 0.6, 0.6);
+      }
+      for (const [text, x, ry] of [['요가 · YOGA', -w / 2 + 0.03, Math.PI / 2], ['필라테스 · PILATES', w / 2 - 0.03, -Math.PI / 2]]) {
+        const c2 = document.createElement('canvas');
+        c2.width = 1024; c2.height = 160;
+        const g2 = c2.getContext('2d');
+        g2.fillStyle = store.colors.sign;
+        fitText(g2, text, 110, 1000);
+        g2.textAlign = 'center';
+        g2.textBaseline = 'middle';
+        g2.fillText(text, 512, 84);
+        const tx2 = new THREE.CanvasTexture(c2);
+        tx2.colorSpace = THREE.SRGBColorSpace;
+        const sign2 = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.66), new THREE.MeshBasicMaterial({ map: tx2, transparent: true }));
+        sign2.position.set(x, 2.9, -1);
+        sign2.rotation.y = ry;
+        scene.add(sign2);
+      }
     } else if (store.workshop === 'japchae') {
       // Suragan Cooking Class: a long cooking table with a burner and a pan
       // at each place, bowls of coloured vegetables down the middle, and a

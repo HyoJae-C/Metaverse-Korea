@@ -1238,6 +1238,11 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .gym-mark { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: #2b2630; }
 .gym-flash { min-height: 1.2em; text-align: center; font-weight: 800; }
 .gym-lift { min-width: 160px; }
+/* Yoga & pilates studio (ui/gym-ui.js) */
+.yoga-pose { font-weight: 800; font-size: 17px; color: #5b4790; }
+.breath-ring { width: 120px; height: 120px; margin: 6px auto; border-radius: 50%; background: radial-gradient(circle, #e6dcf5 0%, #b9a6f0 70%, #7a5fb0 100%); transition: transform 0.08s linear; }
+.breath-ring.out { background: radial-gradient(circle, #dff3ee 0%, #8fd3c7 70%, #3f7f82 100%); }
+.gym-lift.held { filter: brightness(0.88); transform: scale(0.97); }
 
 /* Library books */
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
