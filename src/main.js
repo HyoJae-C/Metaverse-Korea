@@ -74,6 +74,7 @@ import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
+import { coverScene, snowUniform } from './core/snow-cover.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -5265,6 +5266,11 @@ function guardPosition() {
   if (!Number.isFinite(cam.dist)) cam.dist = 9;
   if (!lastGood.ok && square) r.set(square.x, 0, square.z + 3);
 }
+// Snow settles on the street (core/snow-cover.js): everything built by now,
+// so the shaders are ready before it first snows; while there's snow, parts
+// of the city built later (first visits) are given it too.
+coverScene(scene);
+let snowCoverAt = 0;
 renderer.setAnimationLoop(() => {
   guardPosition();
   timer.update();
@@ -5425,6 +5431,8 @@ renderer.setAnimationLoop(() => {
 
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
+  if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
+  else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
     sun.position.set(p.x + 60, 120, p.z + 40);
@@ -5637,6 +5645,7 @@ if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
+    snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),

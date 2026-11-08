@@ -2,6 +2,7 @@
 // Weather: rolled from the clock (rolledWeather), the same for every player.
 // Time of day: the region's local clock (Seoul = UTC+9).
 import * as THREE from 'three';
+import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
 const REFRESH_MS = 15 * 1000; // the clock chip and the next 30-minute weather slot
 
@@ -126,6 +127,15 @@ export class WeatherSystem {
     this.sun.intensity = (0.4 + 1.6 * d) * (1 - overcast * 0.5);
     this.hemi.intensity = 0.85 + 1.15 * d;
     this.ambient.intensity = 0.75 + 0.5 * d;
+
+    // Snow on the ground: from the shared clock, so everyone sees the same
+    // depth; with ?weather= forced it settles from the moment you arrive
+    // (?snow=0.6 pins a depth for testing).
+    const pinned = this.pinnedSnow ??= Number(new URLSearchParams(location.search).get('snow') ?? NaN);
+    const step = Math.min(dt, 0.1) * 1000;
+    snowUniform.value = Number.isFinite(pinned) ? pinned
+      : this.forced ? Math.min(1, Math.max(0, snowUniform.value + (this.kind === 'snow' ? step / SETTLE_MS : -step / MELT_MS)))
+      : snowDepth(Date.now(), WEATHER_SLOT_MS, rolledWeather);
 
     if (this.particles) {
       // Drops move on the GPU: only two numbers change per frame, so rain

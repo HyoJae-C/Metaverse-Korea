@@ -16,7 +16,13 @@ function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {
 }
 
 // A chibi animal; front is +z. Returns { root, body, head, tail, legs }.
+// (No snow settles on animals: core/snow-cover.js.)
 export function makeAnimal(kind, color, accent, scale = 1) {
+  const a = buildAnimal(kind, color, accent, scale);
+  a.root.userData.noSnow = true;
+  return a;
+}
+function buildAnimal(kind, color, accent, scale) {
   if (kind === 'raccoon') return makeRaccoon(color, accent);
   if (kind === 'hamster' || kind === 'guineapig' || kind === 'chinchilla') return makeRodent(kind, color, accent, scale);
   if (kind === 'monkey') return makeMonkey(color, accent, scale);

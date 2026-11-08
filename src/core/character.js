@@ -27,6 +27,7 @@ export function createCharacter(rawLook) {
     hair: PALETTES.hair[look.hair], skin: PALETTES.skin[look.skin],
   };
   const root = new THREE.Group();
+  root.userData.noSnow = true; // (core/snow-cover.js: no snow on people)
   // Everything but the shadow hangs on the rig, so a trick (a spin, a flip,
   // a jump) can turn the rider and the ride together without changing
   // which way the character is heading (root's rotation).

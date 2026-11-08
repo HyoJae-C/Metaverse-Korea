@@ -50,7 +50,7 @@ export function buildWorld(map, scene, opts = {}) {
       const map = stoneTexture();
       if (map) { mesh.material.map = map; mesh.material.color.set(0xffffff); }
     }
-    if (mesh) group.add(mesh);
+    if (mesh) { mesh.name = mesh.name || kind; group.add(mesh); }
   }
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
@@ -62,6 +62,7 @@ export function buildWorld(map, scene, opts = {}) {
   const roadMesh = (list, color, y) => {
     const m = makeRibbons(list, color, y);
     if (m) {
+      m.name = 'roads';
       m.receiveShadow = true;
       group.add(m);
     }
@@ -84,6 +85,12 @@ export function buildWorld(map, scene, opts = {}) {
     const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
+
+  // Snow settles on whatever faces the sky (core/snow-cover.js); not on
+  // water, and not on tree trunks (only the leafy tops).
+  group.traverse((o) => {
+    if (o.name === 'trees' && o.material.color?.getHex() !== 0xffffff) o.userData.noSnow = true;
+  });
 
   if (!lowSpec) {
     group.traverse((o) => {
