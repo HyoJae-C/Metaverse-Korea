@@ -19,6 +19,8 @@ export const UPDATES = [
       es: '🦆 ¡Ven a divertirte al Parque Ttukseom del río Han!',
       id: '🦆 Ayo main ke Taman Sungai Han Ttukseom!',
       ar: '🦆 تعالَ والعب في حديقة نهر هان في تتوكسوم!', vi: '🦆 Hãy đến chơi ở Công viên sông Hàn Ttukseom!', hi: '🦆 Ttukseom हान नदी पार्क में घूमने आइए!',
+      fr: '🦆 Viens jouer au parc du fleuve Han de Ttukseom !',
+      th: '🦆 มาเล่นที่สวนริมแม่น้ำฮันตุกซอมกัน!',
     },
     items: {
       ko: [
@@ -75,6 +77,8 @@ export const UPDATES = [
         '🦆 बत्तख नाव: मुफ़्त में सवारी कीजिए और दोस्त के साथ नदी पर घूमिए।',
         '🍢 नदी किनारे बाज़ार: तेओकबोक्की, सीख कबाब, होत्तेओक, चिकन और बहुत कुछ!',
       ],
+      fr: ['🎣 Pêche : remplis le nouveau carnet des poissons. Essaie la pêche auto, et guette les poissons rares !', '🍜 Ramyeon du fleuve Han : achète un paquet au DAILY MART et cuisine-le toi-même au bord du fleuve.', '🦆 Pédalos canards : balade gratuite sur le fleuve avec un ami.', '🍢 Marché du bord du fleuve : tteokbokki, brochettes, hotteok, poulet frit et plein d\'autres choses à manger !'],
+      th: ['🎣 ตกปลา: เติมสมุดปลาเล่มใหม่ ลองตกปลาอัตโนมัติ แล้วคอยดูปลาหายาก!', '🍜 รามยอนริมแม่น้ำฮัน: ซื้อหนึ่งซองที่ DAILY MART แล้วต้มเองริมแม่น้ำ', '🦆 เรือเป็ด: นั่งฟรีและบังคับไปรอบแม่น้ำกับเพื่อน', '🍢 ตลาดริมแม่น้ำ: ต็อกบกกี ของเสียบไม้ ฮอตต็อก ไก่ทอด และอีกมากมาย!'],
     },
   },
   {
@@ -88,6 +92,8 @@ export const UPDATES = [
       es: '🔄 ¡Recarga para ver novedades!',
       id: '🔄 Muat ulang untuk konten baru!',
       ar: '🔄 حدّث الصفحة لترى الجديد!', vi: '🔄 Tải lại để xem nội dung mới!', hi: '🔄 नई चीज़ों के लिए रीफ़्रेश कीजिए!',
+      fr: '🔄 Actualise pour du nouveau contenu !',
+      th: '🔄 รีเฟรชเพื่อดูของใหม่!',
     },
     items: {
       ko: ['개발자가 하루에도 몇 번씩\n업데이트를 하고 있어요.\n\n10~15분마다 새로고침을 하면\n새 콘텐츠가 계속 생길 수도 있어요! ✨'],
@@ -99,6 +105,8 @@ export const UPDATES = [
       ar: ['المطوّر يحدّث اللعبة\nعدة مرات في اليوم.\n\nحدّث الصفحة كل 10–15 دقيقة\nوقد تجد شيئًا جديدًا! ✨'],
       vi: ['Nhà phát triển cập nhật game\nnhiều lần mỗi ngày.\n\nHãy tải lại trang mỗi 10–15 phút,\nbiết đâu sẽ có nội dung mới! ✨'],
       hi: ['डेवलपर दिन में कई बार\nगेम अपडेट करते हैं।\n\nहर 10–15 मिनट में पेज रीफ़्रेश कीजिए,\nशायद कुछ नया मिल जाए! ✨'],
+      fr: ['Le développeur met le jeu à jour\nplusieurs fois par jour.\n\nActualise la page toutes les 10–15 minutes\net tu trouveras peut-être du nouveau ! ✨'],
+      th: ['ผู้พัฒนาอัปเดตเกม\nหลายครั้งต่อวัน\n\nรีเฟรชหน้าทุก 10–15 นาที\nอาจเจออะไรใหม่ๆ ก็ได้! ✨'],
     },
   },
   {
@@ -112,6 +120,8 @@ export const UPDATES = [
       es: '🚇 ¡Sube al metro!',
       id: '🚇 Ayo naik kereta bawah tanah!',
       ar: '🚇 جرّب ركوب المترو!', vi: '🚇 Hãy thử đi tàu điện ngầm!', hi: '🚇 मेट्रो में सफ़र कीजिए!',
+      fr: '🚇 Prends le métro !',
+      th: '🚇 นั่งรถไฟใต้ดินกัน!',
     },
     items: {
       ko: ['길가의 지하철 입구 계단으로 내려가 보세요.\n개찰구를 지나 열차를 타면\n성수 · 경복궁 · 홍대입구 · 이태원 · 잠실\n다른 동네로 금방 갈 수 있어요! 🚉'],
@@ -123,6 +133,8 @@ export const UPDATES = [
       ar: ['انزل درج المترو الموجود في الشارع.\nمرّ عبر بوابة التذاكر واركب القطار\nلتذهب إلى سيونغسو وكيونغبوكغونغ\nوهونغيك وإيتايوون وجامسيل! 🚉'],
       vi: ['Hãy đi xuống cầu thang ga tàu bên đường.\nQua cổng soát vé và lên tàu\nđể đến Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon và Jamsil! 🚉'],
       hi: ['सड़क पर मेट्रो की सीढ़ियों से नीचे जाइए।\nटिकट गेट पार करके ट्रेन में बैठिए\nऔर Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon व Jamsil पहुँचिए! 🚉'],
+      fr: ['Descends l\'escalier du métro dans la rue.\nPasse le portillon et monte dans un train\npour aller à Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon et Jamsil ! 🚉'],
+      th: ['เดินลงบันไดรถไฟใต้ดินบนถนน\nผ่านประตูตรวจตั๋วแล้วขึ้นรถไฟ\nไป Seongsu, Gyeongbokgung,\nHongik Univ., Itaewon และ Jamsil! 🚉'],
     },
   },
   {
@@ -136,6 +148,8 @@ export const UPDATES = [
       es: '¡Bienvenido a Another Seoul!',
       id: 'Selamat datang di Another Seoul!',
       ar: 'أهلًا بك في Another Seoul!', vi: 'Chào mừng đến với Another Seoul!', hi: 'Another Seoul में आपका स्वागत है!',
+      fr: 'Bienvenue dans Another Seoul !',
+      th: 'ยินดีต้อนรับสู่ Another Seoul!',
     },
     items: {
       ko: ['한국 사람도,\n한국을 찾은 친구도,\n누구나 함께 모여서\n\n재미있고 즐거운\n서울 라이프를 즐겨 보세요! 🎉'],
@@ -145,6 +159,8 @@ export const UPDATES = [
       es: ['Seas de Corea\no de cualquier otro lugar,\naquí todos son bienvenidos.\n\n¡Ven y disfruta de una vida\nen Seúl divertida y feliz! 🎉'],
       id: ['Orang Korea\natau dari mana pun,\nsemua boleh berkumpul di sini.\n\nAyo nikmati kehidupan Seoul\nyang seru dan menyenangkan! 🎉'],
       ar: ['سواء كنت من كوريا\nأو من أي مكان آخر،\nالجميع مرحَّب بهم هنا.\n\nتعالَ واستمتع بحياة\nممتعة وسعيدة في سيول! 🎉'], vi: ['Dù bạn đến từ Hàn Quốc\nhay bất cứ nơi đâu,\nai cũng được chào đón ở đây.\n\nCùng nhau tận hưởng\ncuộc sống Seoul vui vẻ! 🎉'], hi: ['कोरिया से हों\nया कहीं और से,\nयहाँ सबका स्वागत है।\n\nसाथ आइए और मज़ेदार,\nख़ुशहाल सियोल लाइफ़ का आनंद लीजिए! 🎉'],
+      fr: ['Que tu viennes de Corée\nou d\'ailleurs,\ntout le monde est le bienvenu ici.\n\nViens profiter ensemble\nd\'une vie à Séoul joyeuse ! 🎉'],
+      th: ['ไม่ว่าจะมาจากเกาหลี\nหรือที่ไหนก็ตาม\nที่นี่ยินดีต้อนรับทุกคน\n\nมาสนุกด้วยกัน\nกับชีวิตในโซลที่แสนสุข! 🎉'],
     },
   },
 ];

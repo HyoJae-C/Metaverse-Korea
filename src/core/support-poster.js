@@ -13,21 +13,29 @@ export const SUPPORT_TEXT = {
     en: 'Enjoying Another Seoul?', ko: '어나더서울, 재밌으셨나요?', ja: 'アナザーソウル、楽しんでる？',
     zh: '喜欢另一个首尔吗？', es: '¿Te gusta Another Seoul?', vi: 'Bạn thích Another Seoul chứ?',
     id: 'Suka Another Seoul?', ar: 'هل تستمتع بـ Another Seoul؟', hi: 'Another Seoul पसंद आया?',
+    fr: 'Tu aimes Another Seoul ?',
+    th: 'ชอบ Another Seoul ไหม?',
   },
   body: {
     en: 'One person makes this city.', ko: '이 도시는 한 사람이 만들고 있어요.', ja: 'この街は一人で作っています。',
     zh: '这座城市由一个人制作。', es: 'Esta ciudad la hace una sola persona.', vi: 'Thành phố này do một người làm.',
     id: 'Kota ini dibuat oleh satu orang.', ar: 'يصنع هذه المدينة شخص واحد.', hi: 'इस शहर को एक व्यक्ति बना रहा है।',
+    fr: 'Une seule personne crée cette ville.',
+    th: 'เมืองนี้สร้างโดยคนคนเดียว',
   },
   ask: {
     en: 'A coffee keeps it growing!', ko: '커피 한 잔이 큰 힘이 돼요!', ja: 'コーヒー1杯が力になります！',
     zh: '请我喝杯咖啡吧！', es: '¡Un café ayuda a que crezca!', vi: 'Một ly cà phê giúp nó lớn lên!',
     id: 'Secangkir kopi membantu!', ar: 'فنجان قهوة يساعد على نموّها!', hi: 'एक कॉफ़ी से यह बढ़ता रहेगा!',
+    fr: 'Un café l\'aide à grandir !',
+    th: 'กาแฟหนึ่งแก้วช่วยให้เมืองเติบโต!',
   },
   how: {
     en: 'Scan, or ⚙️ Settings → Support', ko: 'QR 스캔 또는 ⚙️ 설정 → 후원', ja: 'QRか ⚙️ 設定 → 応援',
     zh: '扫码或 ⚙️ 设置 → 支持', es: 'Escanea o ⚙️ Ajustes → Apoyar', vi: 'Quét mã hoặc ⚙️ Cài đặt → Ủng hộ',
     id: 'Pindai atau ⚙️ Pengaturan → Dukung', ar: 'امسح الرمز أو ⚙️ الإعدادات ← ادعم', hi: 'स्कैन करें या ⚙️ सेटिंग्स → सहयोग',
+    fr: 'Scanne, ou ⚙️ Réglages → Soutenir',
+    th: 'สแกน หรือ ⚙️ การตั้งค่า → สนับสนุน',
   },
 };
 

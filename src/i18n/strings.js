@@ -7,15 +7,19 @@ import { ID } from './id.js';
 import { AR } from './ar.js';
 import { VI } from './vi.js';
 import { HI } from './hi.js';
+import { FR } from './fr.js';
+import { TH } from './th.js';
 
 export const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
   { code: 'ko', label: '한국어' },
   { code: 'zh', label: '简体中文' },
   { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
   { code: 'id', label: 'Bahasa Indonesia' },
   { code: 'vi', label: 'Tiếng Việt' },
+  { code: 'th', label: 'ไทย' },
   { code: 'hi', label: 'हिन्दी' },
   { code: 'ar', label: 'العربية', rtl: true },
   { code: 'ja', label: '日本語' },
@@ -2415,6 +2419,8 @@ STRINGS.id = ID;
 STRINGS.ar = AR;
 STRINGS.vi = VI;
 STRINGS.hi = HI;
+STRINGS.fr = FR;
+STRINGS.th = TH;
 
 export const REGION_NAMES = {
   'another-seoul': { // the first stop: Seongsu-dong

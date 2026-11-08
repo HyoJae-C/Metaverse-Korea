@@ -11,11 +11,11 @@ export const coinPrice = (krw) => Math.max(100, Math.round(Number(krw) || 0));
 export const heldFor = (product, store) => (['skewer', 'bread', 'samgak', 'bowl', 'roll'].includes(product.model) ? 'food' : store?.takeaway || store?.category === 'cafe' ? 'coffee' : 'glass');
 
 const T = {
-  title: { en: 'Menu', ko: '메뉴', ja: 'メニュー', zh: '菜单', es: 'Carta', ar: 'القائمة', vi: 'Thực đơn', hi: 'मेन्यू', id: 'Menu' },
-  hint: { en: 'Order and pay at the counter.', ko: '카운터에서 주문하고 계산해요.', ja: 'カウンターで注文して支払います。', zh: '在柜台点单付款。', es: 'Pide y paga en el mostrador.', ar: 'اطلب وادفع عند الكاونتر.', vi: 'Gọi món và trả tiền ở quầy.', hi: 'काउंटर पर ऑर्डर करें और भुगतान करें।', id: 'Pesan dan bayar di kasir.' },
-  coffeeHint: { en: 'Coffee to go: sip it while you walk and your stamina fills right up!', ko: '테이크아웃 커피: 들고 다니며 마시면 체력이 바로 가득 차요!', ja: 'テイクアウトコーヒー：飲むとスタミナがすぐ満タンに！', zh: '外带咖啡：边走边喝，体力马上回满！', es: 'Café para llevar: ¡bébelo y tu energía se llena al instante!', ar: 'قهوة للطريق: ارتشفها وأنت تمشي فتمتلئ طاقتك فورًا!', vi: 'Cà phê mang đi: vừa đi vừa nhấp, thể lực sẽ hồi đầy ngay!', hi: 'टेकअवे कॉफ़ी: चलते-चलते पिएँ और आपकी ताक़त तुरंत भर जाएगी!', id: 'Kopi bawa pulang: seruput sambil jalan dan staminamu langsung penuh!' },
-  buy: { en: '🪙 {n}', ko: '🪙 {n}', ja: '🪙 {n}', zh: '🪙 {n}', es: '🪙 {n}', ar: '🪙 {n}', vi: '🪙 {n}', hi: '🪙 {n}', id: '🪙 {n}' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', hi: 'बंद करें', id: 'Tutup' },
+  title: { en: 'Menu', ko: '메뉴', ja: 'メニュー', zh: '菜单', es: 'Carta', ar: 'القائمة', vi: 'Thực đơn', hi: 'मेन्यू', fr: 'Menu', th: 'เมนู', id: 'Menu' },
+  hint: { en: 'Order and pay at the counter.', ko: '카운터에서 주문하고 계산해요.', ja: 'カウンターで注文して支払います。', zh: '在柜台点单付款。', es: 'Pide y paga en el mostrador.', ar: 'اطلب وادفع عند الكاونتر.', vi: 'Gọi món và trả tiền ở quầy.', hi: 'काउंटर पर ऑर्डर करें और भुगतान करें।', fr: 'Commande et paie au comptoir.', th: 'สั่งและจ่ายเงินที่เคาน์เตอร์', id: 'Pesan dan bayar di kasir.' },
+  coffeeHint: { en: 'Coffee to go: sip it while you walk and your stamina fills right up!', ko: '테이크아웃 커피: 들고 다니며 마시면 체력이 바로 가득 차요!', ja: 'テイクアウトコーヒー：飲むとスタミナがすぐ満タンに！', zh: '外带咖啡：边走边喝，体力马上回满！', es: 'Café para llevar: ¡bébelo y tu energía se llena al instante!', ar: 'قهوة للطريق: ارتشفها وأنت تمشي فتمتلئ طاقتك فورًا!', vi: 'Cà phê mang đi: vừa đi vừa nhấp, thể lực sẽ hồi đầy ngay!', hi: 'टेकअवे कॉफ़ी: चलते-चलते पिएँ और आपकी ताक़त तुरंत भर जाएगी!', fr: 'Café à emporter : bois-le en marchant et ton endurance remonte tout de suite !', th: 'กาแฟแบบเทคอะเวย์: จิบไปเดินไป ค่าพลังจะเต็มทันที!', id: 'Kopi bawa pulang: seruput sambil jalan dan staminamu langsung penuh!' },
+  buy: { en: '🪙 {n}', ko: '🪙 {n}', ja: '🪙 {n}', zh: '🪙 {n}', es: '🪙 {n}', ar: '🪙 {n}', vi: '🪙 {n}', hi: '🪙 {n}', fr: '🪙 {n}', th: '🪙 {n}', id: '🪙 {n}' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', id: 'Tutup' },
 };
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

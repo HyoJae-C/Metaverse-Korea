@@ -16,11 +16,11 @@ const $ = (id) => document.getElementById(id);
 const PET_KEY = 'mk.pet';
 
 export const PET_NAME_TEXT = {
-  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
-  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
-  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
-  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
-  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
+  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', fr: 'Nom', th: 'ชื่อ', id: 'Beri nama' },
+  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', fr: 'Enregistrer', th: 'บันทึก', id: 'Simpan' },
+  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', fr: 'Le nom de ton animal', th: 'ชื่อสัตว์เลี้ยงของคุณ', id: 'Nama hewanmu' },
+  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', fr: 'Ton animal s\'appelle maintenant {name} !', th: 'ตอนนี้สัตว์เลี้ยงของคุณชื่อ {name} แล้ว!', id: 'Sekarang namanya {name}!' },
+  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', fr: 'Donne-lui ton propre nom dans le sac (✏️).', th: 'ตั้งชื่อเองได้ในกระเป๋า (✏️)', id: 'Beri nama di tas (✏️).' },
 };
 
 // Korean subject particle after a name: 이 after a final consonant, else 가.

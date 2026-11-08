@@ -8,10 +8,10 @@ import { MAT_COLORS, makeMat, matSpots, encodeMat, parseMat, canSpread, matInFro
 import { L } from '../ui/pocha-ui.js';
 
 export const MAT_TEXT = {
-  spread: { en: 'Spread picnic mat', ko: '돗자리 펴기', ja: 'レジャーシートを広げる', zh: '铺野餐垫', es: 'Extender la manta', id: 'Gelar tikar piknik', vi: 'Trải thảm picnic', hi: 'पिकनिक चटाई बिछाएँ', ar: 'افرش حصيرة النزهة' },
-  fold: { en: 'Fold up picnic mat', ko: '돗자리 접기', ja: 'レジャーシートをたたむ', zh: '收起野餐垫', es: 'Recoger la manta', id: 'Lipat tikar piknik', vi: 'Gấp thảm picnic', hi: 'पिकनिक चटाई समेटें', ar: 'اطوِ حصيرة النزهة' },
-  lie: { en: 'Lie down', ko: '눕기', ja: '寝転ぶ', zh: '躺下', es: 'Tumbarse', id: 'Berbaring', vi: 'Nằm xuống', hi: 'लेट जाएँ', ar: 'استلقِ' },
-  sit: { en: 'Sit on the mat', ko: '돗자리에 앉기', ja: 'シートに座る', zh: '坐在垫子上', es: 'Sentarse en la manta', id: 'Duduk di tikar', vi: 'Ngồi trên thảm', hi: 'चटाई पर बैठें', ar: 'اجلس على الحصيرة' },
+  spread: { en: 'Spread picnic mat', ko: '돗자리 펴기', ja: 'レジャーシートを広げる', zh: '铺野餐垫', es: 'Extender la manta', id: 'Gelar tikar piknik', vi: 'Trải thảm picnic', hi: 'पिकनिक चटाई बिछाएँ', fr: 'Étendre la nappe de pique-nique', th: 'ปูเสื่อปิกนิก', ar: 'افرش حصيرة النزهة' },
+  fold: { en: 'Fold up picnic mat', ko: '돗자리 접기', ja: 'レジャーシートをたたむ', zh: '收起野餐垫', es: 'Recoger la manta', id: 'Lipat tikar piknik', vi: 'Gấp thảm picnic', hi: 'पिकनिक चटाई समेटें', fr: 'Plier la nappe de pique-nique', th: 'พับเสื่อปิกนิก', ar: 'اطوِ حصيرة النزهة' },
+  lie: { en: 'Lie down', ko: '눕기', ja: '寝転ぶ', zh: '躺下', es: 'Tumbarse', id: 'Berbaring', vi: 'Nằm xuống', hi: 'लेट जाएँ', fr: 'S\'allonger', th: 'นอนลง', ar: 'استلقِ' },
+  sit: { en: 'Sit on the mat', ko: '돗자리에 앉기', ja: 'シートに座る', zh: '坐在垫子上', es: 'Sentarse en la manta', id: 'Duduk di tikar', vi: 'Ngồi trên thảm', hi: 'चटाई पर बैठें', fr: 'S\'asseoir sur la nappe', th: 'นั่งบนเสื่อ', ar: 'اجلس على الحصيرة' },
   spreadDone: { en: 'Mat spread! Up to four people can lie or sit on it. 🧺', ko: '돗자리를 폈어요! 네 명까지 눕거나 앉을 수 있어요. 🧺', ja: 'シートを広げました！4人まで寝転んだり座ったりできます。🧺', zh: '野餐垫铺好了！最多可以躺或坐四个人。🧺' },
   lawn: { en: 'Spread it on an open patch of green grass.', ko: '초록 잔디의 빈 곳에 펴 주세요.', ja: '緑の芝生の空いている所に広げてね。', zh: '请铺在空着的绿色草地上。' },
   taken: { en: 'Someone\'s mat is already there. Try a free spot.', ko: '이미 다른 사람의 돗자리가 있어요. 빈 곳을 찾아 보세요.', ja: 'そこには誰かのシートがあります。空いている所を探してね。', zh: '那里已经有别人的野餐垫了，换个空地吧。' },
