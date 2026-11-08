@@ -14,7 +14,7 @@ import { Contacts, touching, wobble } from '../core/bump.js';
 import { TarotQueue } from '../core/tarot-queue.js';
 import {
   BumperCar, BUMPER_BUMP, BUMPER_COST, CAR_R, BOARD_MS, GATE, HOMES, SEATS, TURN_MS,
-  phaseOf, roundGo, freeSlot, settleSlot, mayBoard, freeForLine, rammedBy, ranking,
+  MIN_DRIVERS, phaseOf, roundGo, freeSlot, settleSlot, mayBoard, freeForLine, rammedBy, ranking, tooFew,
 } from '../core/bumper-cars.js';
 
 const FLOOR_Y = 0.11; // the rink floor is a step up from the grass
@@ -40,6 +40,9 @@ export const BUMPER_TEXT = {
   over: { en: '🏁 Round over! You rammed {h} times.', ko: '🏁 끝! {h}번 들이받았어요.', ja: '🏁 終了！{h}回ぶつけました。', zh: '🏁 结束！你撞了{h}次。', es: '🏁 ¡Fin! Chocaste {h} veces.', ar: '🏁 انتهت الجولة! اصطدمت {h} مرات.', vi: '🏁 Hết lượt! Bạn đã đụng {h} lần.', hi: '🏁 राउंड खत्म! आपने {h} बार टक्कर मारी।', fr: '🏁 Manche terminée ! Tu as tamponné {h} fois.', th: '🏁 จบรอบแล้ว! คุณชนไป {h} ครั้ง', id: '🏁 Selesai! Kamu menabrak {h} kali.' },
   champ: { en: '🏆 Bump king: {name} ({h})', ko: '🏆 범퍼킹: {name} ({h}번)', ja: '🏆 バンプキング：{name}（{h}回）', zh: '🏆 碰撞王：{name}（{h}次）', es: '🏆 Rey del choque: {name} ({h})', ar: '🏆 ملك التصادم: {name} ({h})', vi: '🏆 Vua đụng xe: {name} ({h})', hi: '🏆 टक्कर किंग: {name} ({h})', fr: '🏆 Roi du tamponnage : {name} ({h})', th: '🏆 ราชาแห่งการชน: {name} ({h})', id: '🏆 Raja tabrak: {name} ({h})' },
   you: { en: 'you', ko: '나', ja: 'あなた', zh: '你', es: 'tú', ar: 'أنت', vi: 'bạn', hi: 'आप', fr: 'toi', th: 'คุณ', id: 'kamu' },
+  alone: { en: 'You need at least {n} drivers. If nobody else gets in, your coins come back.', ko: '최소 {n}명이 타야 출발해요. 아무도 안 타면 코인을 돌려드려요.', ja: '{n}人以上で出発します。誰も乗らなければコインを返します。', zh: '至少{n}人才能出发。没人上车的话会退还金币。', es: 'Hacen falta al menos {n} conductores. Si nadie más sube, te devolvemos las monedas.', ar: 'نحتاج إلى {n} سائقين على الأقل. إن لم يركب أحد، نعيد لك عملاتك.', vi: 'Cần ít nhất {n} người lái. Nếu không ai lên thêm, bạn sẽ được hoàn xu.', hi: 'कम से कम {n} ड्राइवर चाहिए। कोई और न बैठे तो आपके सिक्के लौट आएँगे।', fr: 'Il faut au moins {n} pilotes. Si personne d\'autre ne monte, tes pièces te sont rendues.', th: 'ต้องมีคนขับอย่างน้อย {n} คน ถ้าไม่มีใครขึ้นเพิ่ม จะคืนเหรียญให้', id: 'Butuh minimal {n} pengemudi. Kalau tidak ada yang naik lagi, koinmu dikembalikan.' },
+  solo: { en: 'Not enough riders, so the bumper cars can\'t run this time. Your 🪙 {n} has been refunded.', ko: '사람이 없어서 이번 판은 운행할 수 없어요. 🪙 {n}을 환불해 드렸어요.', ja: '人が足りないので今回は運行できません。🪙 {n}を返金しました。', zh: '人数不够，这一轮无法开始。已退还 🪙 {n}。', es: 'No hay suficientes conductores, así que esta vez no funciona. Te devolvimos 🪙 {n}.', ar: 'لا يوجد عدد كافٍ من الركاب، لذا لن تعمل هذه المرة. أعدنا لك 🪙 {n}.', vi: 'Không đủ người nên lượt này không chạy được. Đã hoàn 🪙 {n} cho bạn.', hi: 'सवार कम हैं, इसलिए इस बार बंपर कार नहीं चलेगी। 🪙 {n} वापस कर दिए गए।', fr: 'Pas assez de pilotes, les autos tamponneuses ne peuvent pas tourner cette fois. Tes 🪙 {n} t\'ont été remboursées.', th: 'คนไม่พอ รอบนี้จึงเปิดเล่นไม่ได้ คืน 🪙 {n} ให้แล้ว', id: 'Pengemudi kurang, jadi kali ini bom-bom car tidak bisa jalan. 🪙 {n} sudah dikembalikan.' },
+  soloFree: { en: 'Not enough riders, so the bumper cars can\'t run this time. Your next ride is still free.', ko: '사람이 없어서 이번 판은 운행할 수 없어요. 다음 탑승은 그대로 무료예요.', ja: '人が足りないので今回は運行できません。次の乗車は引き続き無料です。', zh: '人数不够，这一轮无法开始。下次乘坐仍然免费。', es: 'No hay suficientes conductores, así que esta vez no funciona. Tu próximo viaje sigue siendo gratis.', ar: 'لا يوجد عدد كافٍ من الركاب، لذا لن تعمل هذه المرة. ركوبك القادم ما زال مجانيًا.', vi: 'Không đủ người nên lượt này không chạy được. Lượt sau của bạn vẫn miễn phí.', hi: 'सवार कम हैं, इसलिए इस बार बंपर कार नहीं चलेगी। आपकी अगली सवारी अब भी मुफ़्त है।', fr: 'Pas assez de pilotes, les autos tamponneuses ne peuvent pas tourner cette fois. Ton prochain tour reste gratuit.', th: 'คนไม่พอ รอบนี้จึงเปิดเล่นไม่ได้ รอบหน้ายังขึ้นฟรีเหมือนเดิม', id: 'Pengemudi kurang, jadi kali ini bom-bom car tidak bisa jalan. Naik berikutnya tetap gratis.' },
   bounced: { en: 'Someone took that car at the same moment. You\'re first in line for the next round (already paid).', ko: '같은 순간에 다른 사람이 그 차를 탔어요. 다음 판 1번으로 대기할게요 (요금은 이미 냈어요).', ja: '同時に他の人がその車に乗りました。次の回の1番目です（料金は支払い済み）。', zh: '有人同时上了那辆车。你排下一轮第一位（已付款）。', es: 'Alguien tomó ese auto a la vez. Eres el primero para la próxima ronda (ya pagado).', ar: 'ركب شخص آخر السيارة في اللحظة نفسها. أنت الأول للجولة التالية (مدفوع).', vi: 'Có người lên xe cùng lúc. Bạn đứng đầu hàng lượt sau (đã trả tiền).', hi: 'किसी ने उसी पल वह कार ले ली। अगले राउंड में आप पहले हैं (भुगतान हो चुका)।', fr: 'Quelqu\'un a pris cette auto au même moment. Tu es premier dans la file pour la prochaine manche (déjà payé).', th: 'มีคนขึ้นรถคันนั้นพร้อมกันพอดี คุณได้คิวแรกของรอบถัดไป (จ่ายเงินแล้ว)', id: 'Ada yang naik mobil itu bersamaan. Kamu nomor satu ronde berikutnya (sudah bayar).' },
 };
 
@@ -52,6 +55,7 @@ export function createBumper(game) {
   let hits = 0; // times I rammed someone this round
   let ticket = 0; // my number in line (when I took it, ms); 1 = bounced to the front
   let paid = false; // already paid (bounced out of a car): the next ride is free
+  let payOp = null; // this ride's payment (wallet op id), to refund it if nobody else comes; false: rode free
   let turn = { order: [], callable: [], expired: [] };
   let view = { phase: 'idle', left: 0, riders: [], count: 0 }; // this frame, for the button
   let board = []; // the scores while driving, for the results
@@ -112,6 +116,7 @@ export function createBumper(game) {
     const slot = freeSlot(rs.map((r) => r.slot));
     if (slot < 0) { shop.toast(L(BUMPER_TEXT.full)); return; }
     if (!paid && !wallet.spend(BUMPER_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: BUMPER_COST })); return; }
+    payOp = paid ? false : wallet.lastOp;
     paid = false; ticket = 0;
     mySlot = slot; hits = 0; wentGo = false;
     myGo = phase === 'boarding' ? go : now + BOARD_MS;
@@ -128,6 +133,21 @@ export function createBumper(game) {
   function fireBoost() {
     if (!car || phaseOf(myGo, Date.now()).phase !== 'driving') return;
     if (car.boost()) { sfx.skatePop?.(); buzz(25); }
+  }
+
+  // The countdown ran out with only me in a car: out, and the fare back
+  // (or, if this ride was the free one, still free next time).
+  function soloOut() {
+    const free = payOp === false;
+    game.standUp();
+    if (free) { paid = true; shop.toast(L(BUMPER_TEXT.soloFree)); }
+    else {
+      wallet.refund(BUMPER_COST, payOp, { k: 'ledger.ride' });
+      shop.toast(fmt(L(BUMPER_TEXT.solo), { n: BUMPER_COST }));
+    }
+    payOp = null;
+    sfx.doorClose?.();
+    game.action = STALE;
   }
 
   // My round is over: get out and show who bumped the most.
@@ -196,6 +216,8 @@ export function createBumper(game) {
       if (slot !== mySlot) { mySlot = slot; game.seated.bumper = slot; car = new BumperCar(HOMES[slot]); game.sendTimer = 0; }
       const mp = phaseOf(myGo, now);
       if (mp.phase === 'over') { finish(); return; }
+      // Time to go but nobody else got in: no round alone. Give the fare back.
+      if (mp.phase === 'driving' && !wentGo && tooFew(1 + rs.length)) { soloOut(); return; }
       if (mp.phase === 'driving') {
         if (!wentGo) { wentGo = true; shop.toast(L(BUMPER_TEXT.go)); sfx.arrivalChime?.(); buzz([40, 40, 80]); game.action = STALE; }
         const shift = input.keys?.has('ShiftLeft') || input.keys?.has('ShiftRight');
@@ -298,7 +320,7 @@ export function createBumper(game) {
     let main = '', sub = '';
     if (mySlot >= 0) {
       const mp = phaseOf(myGo, now);
-      if (mp.phase === 'boarding') { main = fmt(L(BUMPER_TEXT.starts), { s: mp.left, n: view.count }); sub = L(BUMPER_TEXT.wait); }
+      if (mp.phase === 'boarding') { main = fmt(L(BUMPER_TEXT.starts), { s: mp.left, n: view.count }); sub = tooFew(view.count) ? fmt(L(BUMPER_TEXT.alone), { n: MIN_DRIVERS }) : L(BUMPER_TEXT.wait); }
       else if (mp.phase === 'driving') { main = fmt(L(BUMPER_TEXT.clock), { s: mp.left, h: hits }); sub = L(car.charge >= 1 ? BUMPER_TEXT.ready : BUMPER_TEXT.charging); }
     } else if (ticket) {
       const n = turn.order.indexOf(myId) + 1;
