@@ -733,7 +733,7 @@
       "category": "info",
       "workshop": "info",
       "size": "small",
-      "at": [440, -122],
+      "at": [433, -113],
       "district": "grand-park",
       "name": { "en": "Children's Grand Park Information Center", "ko": "서울어린이대공원 안내센터", "ja": "子供大公園インフォメーションセンター", "zh": "儿童大公园信息中心" },
       "tagline": { "en": "Two guides: how the game works, and everything in Children's Grand Park", "ko": "게임 안내와 어린이대공원 안내, 두 명의 안내원", "ja": "ゲーム案内と子供大公園案内の2人がご案内", "zh": "两位向导：游戏玩法和儿童大公园" },

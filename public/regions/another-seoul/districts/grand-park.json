@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "grand-park",
-  "source": "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza, and one loop path round the park; the zoo goes inside the loop. Placed by its anchor, Children's Grand Park Station (region.json)."
+  "source": "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo loop with its pens, wrapped in a strip of woods. The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json)."
  },
  "roads": [
   {
@@ -10,11 +10,11 @@
    "p": [
     [
      0,
-     -140
+     -80
     ],
     [
      0,
-     120
+     95
     ]
    ],
    "n": {
@@ -29,38 +29,38 @@
    "w": 6,
    "p": [
     [
+     50,
+     0
+    ],
+    [
+     180,
+     0
+    ]
+   ]
+  },
+  {
+   "k": "walk",
+   "w": 5,
+   "p": [
+    [
      60,
-     0
+     -44
     ],
     [
-     90,
-     0
-    ]
-   ]
-  },
-  {
-   "k": "walk",
-   "w": 6,
-   "p": [
-    [
-     90,
-     -100
+     180,
+     -44
     ],
     [
-     300,
-     -100
+     180,
+     44
     ],
     [
-     300,
-     100
+     60,
+     44
     ],
     [
-     90,
-     100
-    ],
-    [
-     90,
-     -100
+     60,
+     -44
     ]
    ]
   },
@@ -69,26 +69,12 @@
    "w": 5,
    "p": [
     [
-     90,
-     0
+     120,
+     -44
     ],
     [
-     300,
-     0
-    ]
-   ]
-  },
-  {
-   "k": "walk",
-   "w": 5,
-   "p": [
-    [
-     195,
-     -100
-    ],
-    [
-     195,
-     100
+     120,
+     44
     ]
    ]
   }
@@ -98,20 +84,20 @@
    "h": 8,
    "p": [
     [
-     20,
-     -56
+     14,
+     -46
     ],
     [
-     44,
-     -56
+     36,
+     -46
     ],
     [
-     44,
-     -42
+     36,
+     -32
     ],
     [
-     20,
-     -42
+     14,
+     -32
     ]
    ],
    "n": {
@@ -129,35 +115,35 @@
    "p": [
     [
      7,
-     -140
+     -80
     ],
     [
-     320,
-     -140
+     200,
+     -80
     ],
     [
-     320,
-     120
-    ],
-    [
-     7,
-     120
+     200,
+     95
     ],
     [
      7,
-     32
-    ],
-    [
-     64,
-     32
-    ],
-    [
-     64,
-     -32
+     95
     ],
     [
      7,
-     -32
+     22
+    ],
+    [
+     50,
+     22
+    ],
+    [
+     50,
+     -22
+    ],
+    [
+     7,
+     -22
     ]
    ]
   },
@@ -166,19 +152,19 @@
    "p": [
     [
      7,
-     -32
+     -22
     ],
     [
-     64,
-     -32
+     50,
+     -22
     ],
     [
-     64,
-     32
+     50,
+     22
     ],
     [
      7,
-     32
+     22
     ]
    ]
   },
@@ -187,20 +173,20 @@
    "trees": true,
    "p": [
     [
-     64,
-     -140
+     50,
+     -80
     ],
     [
-     320,
-     -140
+     200,
+     -80
     ],
     [
-     320,
-     -106
+     200,
+     -52
     ],
     [
-     64,
-     -106
+     50,
+     -52
     ]
    ]
   },
@@ -209,20 +195,20 @@
    "trees": true,
    "p": [
     [
-     306,
-     -106
+     188,
+     -52
     ],
     [
-     320,
-     -106
+     200,
+     -52
     ],
     [
-     320,
-     106
+     200,
+     95
     ],
     [
-     306,
-     106
+     188,
+     95
     ]
    ]
   },
@@ -231,20 +217,42 @@
    "trees": true,
    "p": [
     [
-     64,
-     106
+     126,
+     52
     ],
     [
-     320,
-     106
+     188,
+     52
     ],
     [
-     320,
-     120
+     188,
+     95
     ],
     [
-     64,
-     120
+     126,
+     95
+    ]
+   ]
+  },
+  {
+   "k": "park",
+   "trees": true,
+   "p": [
+    [
+     50,
+     76
+    ],
+    [
+     126,
+     76
+    ],
+    [
+     126,
+     95
+    ],
+    [
+     50,
+     95
     ]
    ]
   },
@@ -254,19 +262,19 @@
    "p": [
     [
      7,
-     -140
+     -80
     ],
     [
-     64,
-     -140
+     50,
+     -80
     ],
     [
-     64,
-     -62
+     50,
+     -52
     ],
     [
      7,
-     -62
+     -52
     ]
    ]
   },
@@ -276,19 +284,19 @@
    "p": [
     [
      7,
-     40
+     30
     ],
     [
-     84,
-     40
+     52,
+     30
     ],
     [
-     84,
-     120
+     52,
+     95
     ],
     [
      7,
-     120
+     95
     ]
    ]
   },
@@ -296,40 +304,19 @@
    "k": "grass",
    "p": [
     [
-     96,
-     -94
+     126,
+     -38
     ],
     [
-     189,
-     -94
+     174,
+     -38
     ],
     [
-     189,
+     174,
      -6
     ],
     [
-     96,
-     -6
-    ]
-   ]
-  },
-  {
-   "k": "grass",
-   "p": [
-    [
-     201,
-     -94
-    ],
-    [
-     294,
-     -94
-    ],
-    [
-     294,
-     -6
-    ],
-    [
-     201,
+     126,
      -6
     ]
    ]
@@ -338,41 +325,20 @@
    "k": "grass",
    "p": [
     [
-     96,
+     126,
      6
     ],
     [
-     189,
+     174,
      6
     ],
     [
-     189,
-     94
+     174,
+     38
     ],
     [
-     96,
-     94
-    ]
-   ]
-  },
-  {
-   "k": "grass",
-   "p": [
-    [
-     201,
-     6
-    ],
-    [
-     294,
-     6
-    ],
-    [
-     294,
-     94
-    ],
-    [
-     201,
-     94
+     126,
+     38
     ]
    ]
   }
@@ -381,19 +347,19 @@
   {
    "p": [
     [
-     39.2,
+     29.2,
      -7.8
     ],
     [
-     40.8,
+     30.8,
      -7.8
     ],
     [
-     40.8,
+     30.8,
      -6.2
     ],
     [
-     39.2,
+     29.2,
      -6.2
     ]
    ]
@@ -401,20 +367,280 @@
   {
    "p": [
     [
-     39.2,
+     29.2,
      6.2
     ],
     [
-     40.8,
+     30.8,
      6.2
     ],
     [
-     40.8,
+     30.8,
      7.8
     ],
     [
-     39.2,
+     29.2,
      7.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     -37.2
+    ],
+    [
+     108.2,
+     -37.2
+    ],
+    [
+     108.2,
+     -36.8
+    ],
+    [
+     71.8,
+     -36.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     -7.2
+    ],
+    [
+     108.2,
+     -7.2
+    ],
+    [
+     108.2,
+     -6.8
+    ],
+    [
+     71.8,
+     -6.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     -37.2
+    ],
+    [
+     72.2,
+     -37.2
+    ],
+    [
+     72.2,
+     -6.8
+    ],
+    [
+     71.8,
+     -6.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     107.8,
+     -37.2
+    ],
+    [
+     108.2,
+     -37.2
+    ],
+    [
+     108.2,
+     -6.8
+    ],
+    [
+     107.8,
+     -6.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     6.8
+    ],
+    [
+     88.2,
+     6.8
+    ],
+    [
+     88.2,
+     7.2
+    ],
+    [
+     71.8,
+     7.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     91.8,
+     6.8
+    ],
+    [
+     108.2,
+     6.8
+    ],
+    [
+     108.2,
+     7.2
+    ],
+    [
+     91.8,
+     7.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     36.8
+    ],
+    [
+     108.2,
+     36.8
+    ],
+    [
+     108.2,
+     37.2
+    ],
+    [
+     71.8,
+     37.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     71.8,
+     6.8
+    ],
+    [
+     72.2,
+     6.8
+    ],
+    [
+     72.2,
+     37.2
+    ],
+    [
+     71.8,
+     37.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     107.8,
+     6.8
+    ],
+    [
+     108.2,
+     6.8
+    ],
+    [
+     108.2,
+     37.2
+    ],
+    [
+     107.8,
+     37.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     77.8,
+     51.8
+    ],
+    [
+     122.2,
+     51.8
+    ],
+    [
+     122.2,
+     52.2
+    ],
+    [
+     77.8,
+     52.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     77.8,
+     71.8
+    ],
+    [
+     122.2,
+     71.8
+    ],
+    [
+     122.2,
+     72.2
+    ],
+    [
+     77.8,
+     72.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     77.8,
+     51.8
+    ],
+    [
+     78.2,
+     51.8
+    ],
+    [
+     78.2,
+     72.2
+    ],
+    [
+     77.8,
+     72.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     121.8,
+     51.8
+    ],
+    [
+     122.2,
+     51.8
+    ],
+    [
+     122.2,
+     72.2
+    ],
+    [
+     121.8,
+     72.2
     ]
    ]
   }
@@ -422,7 +648,7 @@
  "pois": [
   {
    "kind": "landmark",
-   "x": 195,
+   "x": 120,
    "z": 0,
    "name": {
     "ko": "서울어린이대공원",
@@ -430,12 +656,45 @@
     "ja": "ソウル子供大公園",
     "zh": "首尔儿童大公园"
    }
+  },
+  {
+   "kind": "landmark",
+   "x": 90,
+   "z": -22,
+   "name": {
+    "ko": "원숭이마을",
+    "en": "Monkey Village",
+    "ja": "サル村",
+    "zh": "猴子村"
+   }
+  },
+  {
+   "kind": "landmark",
+   "x": 90,
+   "z": 22,
+   "name": {
+    "ko": "꼬마동물마을",
+    "en": "Little Animal Village",
+    "ja": "こども動物村",
+    "zh": "小动物村"
+   }
+  },
+  {
+   "kind": "landmark",
+   "x": 100,
+   "z": 62,
+   "name": {
+    "ko": "새장",
+    "en": "Bird House",
+    "ja": "鳥の家",
+    "zh": "鸟舍"
+   }
   }
  ],
  "landmarks": [
   {
    "type": "cgpgate",
-   "x": 40,
+   "x": 30,
    "z": 0,
    "ry": 1.5708,
    "label": {
@@ -449,34 +708,34 @@
    "type": "blossoms",
    "p": [
     [
-     66,
+     52,
      -6
     ],
     [
-     88,
+     58,
      -6
     ]
    ],
-   "gap": 7
+   "gap": 6
   },
   {
    "type": "blossoms",
    "p": [
     [
-     66,
+     52,
      6
     ],
     [
-     88,
+     58,
      6
     ]
    ],
-   "gap": 7
+   "gap": 6
   },
   {
    "type": "sign",
-   "x": 22,
-   "z": -24,
+   "x": 42,
+   "z": -15,
    "ry": -1.5708,
    "title": {
     "ko": "서울어린이대공원",
@@ -484,26 +743,241 @@
     "ja": "ソウル子供大公園",
     "zh": "首尔儿童大公园",
     "es": "Gran Parque Infantil de Seúl",
-    "fr": "Grand Parc des enfants de Séoul",
     "id": "Taman Anak Raya Seoul",
     "vi": "Công viên Thiếu nhi Seoul",
     "hi": "सियोल चिल्ड्रन्स ग्रैंड पार्क",
+    "fr": "Grand Parc des enfants de Séoul",
     "th": "สวนสาธารณะเด็กโซล",
     "ar": "حديقة الأطفال الكبرى في سيول"
    },
    "text": {
-    "ko": "1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 동물원은 공원 안쪽 산책길을 따라 만들고 있어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.",
-    "en": "Opened on Children's Day 1973. The real park and its zoo are free to enter. The zoo is being built along the loop path inside the park. Animals in the game may differ from the real zoo.",
-    "ja": "1973年のこどもの日に開園した公園です。実際の公園と動物園は入場無料。動物園は園内の散歩道に沿って作っています。ゲームの動物は実際の動物園と違うことがあります。",
-    "zh": "1973年儿童节开园。真实的公园和动物园免费入场。动物园正沿着园内环路建设中。游戏中的动物可能与真实动物园不同。",
-    "es": "Abrió el Día del Niño de 1973. El parque real y su zoo son gratuitos. El zoo se está construyendo junto al camino circular del parque. Los animales del juego pueden ser distintos a los del zoo real.",
-    "id": "Dibuka pada Hari Anak 1973. Taman dan kebun binatang aslinya gratis. Kebun binatang sedang dibangun di sepanjang jalur keliling taman. Hewan di game bisa berbeda dari kebun binatang aslinya.",
-    "vi": "Mở cửa vào Ngày Thiếu nhi năm 1973. Công viên và sở thú thật đều miễn phí vào cửa. Sở thú đang được xây dọc con đường vòng trong công viên. Động vật trong game có thể khác sở thú thật.",
-    "hi": "1973 के बाल दिवस पर खुला। असली पार्क और चिड़ियाघर में प्रवेश मुफ़्त है। चिड़ियाघर पार्क के अंदर के घेरे वाले रास्ते पर बन रहा है। गेम के जानवर असली चिड़ियाघर से अलग हो सकते हैं।",
-    "fr": "Ouvert le jour des enfants 1973. Le vrai parc et son zoo sont gratuits. Le zoo se construit le long de la boucle du parc. Les animaux du jeu peuvent différer du vrai zoo.",
-    "th": "เปิดในวันเด็กปี 1973 สวนและสวนสัตว์จริงเข้าชมฟรี สวนสัตว์กำลังสร้างตามทางเดินวงรอบในสวน สัตว์ในเกมอาจต่างจากสวนสัตว์จริง",
-    "ar": "افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. تُبنى حديقة الحيوان على طول الممر الدائري داخل الحديقة. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية."
+    "ko": "1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.",
+    "en": "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.",
+    "ja": "1973年のこどもの日に開園した公園です。実際の公園と動物園は入場無料。ゲームの動物は実際の動物園と違うことがあります。",
+    "zh": "1973年儿童节开园。真实的公园和动物园免费入场。游戏中的动物可能与真实动物园不同。",
+    "es": "Abrió el Día del Niño de 1973. El parque real y su zoo son gratuitos. Los animales del juego pueden ser distintos a los del zoo real.",
+    "id": "Dibuka pada Hari Anak 1973. Taman dan kebun binatang aslinya gratis. Hewan di game bisa berbeda dari kebun binatang aslinya.",
+    "vi": "Mở cửa vào Ngày Thiếu nhi năm 1973. Công viên và sở thú thật đều miễn phí vào cửa. Động vật trong game có thể khác sở thú thật.",
+    "hi": "1973 के बाल दिवस पर खुला। असली पार्क और चिड़ियाघर में प्रवेश मुफ़्त है। गेम के जानवर असली चिड़ियाघर से अलग हो सकते हैं।",
+    "fr": "Ouvert le jour des enfants 1973. Le vrai parc et son zoo sont gratuits. Les animaux du jeu peuvent différer du vrai zoo.",
+    "th": "เปิดในวันเด็กปี 1973 สวนและสวนสัตว์จริงเข้าชมฟรี สัตว์ในเกมอาจต่างจากสวนสัตว์จริง",
+    "ar": "افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية."
    }
+  },
+  {
+   "type": "zoopen",
+   "id": "monkeys",
+   "x": 90,
+   "z": -22,
+   "w": 36,
+   "d": 30,
+   "fence": "mesh",
+   "ground": "grass",
+   "board": "s",
+   "name": {
+    "ko": "원숭이마을",
+    "en": "Monkey Village",
+    "ja": "サル村",
+    "zh": "猴子村"
+   },
+   "props": [
+    [
+     "log",
+     -6,
+     -4
+    ],
+    [
+     "log",
+     8,
+     5
+    ],
+    [
+     "tree",
+     -13,
+     9
+    ],
+    [
+     "tree",
+     13,
+     -9
+    ],
+    [
+     "rock",
+     0,
+     10
+    ]
+   ],
+   "groups": [
+    {
+     "kind": "macaque",
+     "n": 8
+    }
+   ]
+  },
+  {
+   "type": "zoopen",
+   "id": "petting",
+   "x": 90,
+   "z": 22,
+   "w": 36,
+   "d": 30,
+   "fence": "low",
+   "ground": "grass",
+   "board": "n",
+   "pet": true,
+   "gate": {
+    "side": "n",
+    "at": 0,
+    "w": 4
+   },
+   "name": {
+    "ko": "꼬마동물마을",
+    "en": "Little Animal Village",
+    "ja": "こども動物村",
+    "zh": "小动物村"
+   },
+   "props": [
+    [
+     "barn",
+     11,
+     8
+    ],
+    [
+     "hay",
+     3,
+     10
+    ],
+    [
+     "hay",
+     5,
+     12,
+     0.6
+    ],
+    [
+     "hutch",
+     -12,
+     9
+    ],
+    [
+     "hutch",
+     -15,
+     4,
+     0.4
+    ],
+    [
+     "tree",
+     -15,
+     -11
+    ]
+   ],
+   "groups": [
+    {
+     "kind": "goat",
+     "n": 3,
+     "box": [
+      0,
+      -12,
+      16,
+      4
+     ]
+    },
+    {
+     "kind": "sheep",
+     "n": 3,
+     "box": [
+      0,
+      -12,
+      16,
+      4
+     ]
+    },
+    {
+     "kind": "rabbit",
+     "n": 4,
+     "box": [
+      -16,
+      -2,
+      -3,
+      13
+     ]
+    },
+    {
+     "kind": "guineapig",
+     "n": 5,
+     "box": [
+      -16,
+      -2,
+      -3,
+      13
+     ]
+    }
+   ]
+  },
+  {
+   "type": "zoopen",
+   "id": "birds",
+   "x": 100,
+   "z": 62,
+   "w": 44,
+   "d": 20,
+   "fence": "aviary",
+   "ground": "grass",
+   "board": "n",
+   "name": {
+    "ko": "새장",
+    "en": "Bird House",
+    "ja": "鳥の家",
+    "zh": "鸟舍"
+   },
+   "pond": [
+    -9,
+    1,
+    6
+   ],
+   "props": [
+    [
+     "tree",
+     16,
+     3
+    ],
+    [
+     "rock",
+     6,
+     5
+    ]
+   ],
+   "groups": [
+    {
+     "kind": "flamingo",
+     "n": 8,
+     "box": [
+      -16,
+      -5,
+      -3,
+      7
+     ]
+    },
+    {
+     "kind": "pelican",
+     "n": 3,
+     "box": [
+      -18,
+      -7,
+      2,
+      7
+     ]
+    },
+    {
+     "kind": "peacock",
+     "n": 2,
+     "box": [
+      5,
+      -7,
+      20,
+      7
+     ]
+    }
+   ]
   }
  ]
 }
