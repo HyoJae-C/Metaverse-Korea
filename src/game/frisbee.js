@@ -3,19 +3,21 @@
 // bought next to the mats and stays in the bag; standing on the grass with
 // your pet, the button throws it the way you face.
 //
-// A dog races after it: in time, it leaps and catches it in the air (a run
-// of catches is counted), otherwise it picks it up off the grass. Either
-// way it trots back and drops it at your feet. A cat or a hamster just
-// watches it fly and sits down: walk over and pick it up yourself.
+// A dog (or a monkey) races after it: in time, it leaps and catches it in
+// the air (a run of catches is counted), otherwise it picks it up off the
+// grass. Either way it trots back and drops it at your feet: a dog carries
+// it in its mouth, a monkey in both hands. A cat or a hamster just watches
+// it fly and sits down: walk over and pick it up yourself.
 //
 // Local only: others see your pet follow you as usual, not the game.
-import { throwTarget, clearGrass, flightTime, discAt, chaseSpeed, canCatch, catchChance, makeDisc } from '../core/frisbee.js';
+import { throwTarget, clearGrass, flightTime, discAt, chaseSpeed, canCatch, catchChance, fetches, makeDisc } from '../core/frisbee.js';
 import { L } from '../ui/pocha-ui.js';
 
 export const FRISBEE_TEXT = {
   throw: { en: 'Throw the frisbee for {name}', ko: '{name}에게 원반 던지기', ja: '{name}にフリスビーを投げる', zh: '给{name}扔飞盘', es: 'Lanzar el frisbi a {name}', id: 'Lempar frisbee untuk {name}', vi: 'Ném đĩa bay cho {name}', hi: '{name} के लिए फ्रिस्बी फेंकें', fr: 'Lancer le frisbee à {name}', th: 'โยนจานร่อนให้ {name}', ar: 'ارمِ الفريسبي لـ{name}' },
   room: { en: 'Face the open grass to throw it.', ko: '탁 트인 잔디 쪽을 보고 던져 주세요.', ja: '開けた芝生の方を向いて投げてね。', zh: '请面向空旷的草地扔。', es: 'Mira hacia el césped abierto para lanzarlo.', fr: 'Tourne-toi vers la pelouse dégagée pour le lancer.' },
   caught: { en: '{name} leapt and caught it in the air! 🥏', ko: '{name}, 점프해서 공중에서 잡았어요! 🥏', ja: '{name}がジャンプして空中でキャッチ！🥏', zh: '{name}跳起来在空中接住了！🥏', es: '¡{name} saltó y lo atrapó en el aire! 🥏', fr: '{name} a sauté et l\'a attrapé en plein vol ! 🥏' },
+  caughtHands: { en: '{name} jumped up and caught it with both hands! 🥏', ko: '{name}, 펄쩍 뛰어서 두 손으로 잡았어요! 🥏', ja: '{name}がぴょんと跳んで両手でキャッチ！🥏', zh: '{name}跳起来用双手接住了！🥏', es: '¡{name} saltó y lo atrapó con las dos manos! 🥏', fr: '{name} a bondi et l\'a attrapé à deux mains ! 🥏' },
   streak: { en: '{n} catches in a row!', ko: '{n}번 연속 캐치!', ja: '{n}回連続キャッチ！', zh: '连续接住{n}次！', es: '¡{n} atrapadas seguidas!', fr: '{n} attrapés d\'affilée !' },
   fetched: { en: '{name} brought the frisbee back. Throw again!', ko: '{name}이(가) 원반을 물어 왔어요. 한 번 더!', ja: '{name}がフリスビーをくわえて戻ってきた。もう一回！', zh: '{name}把飞盘叼回来了。再扔一次！', es: '{name} trajo el frisbi. ¡Otra vez!', fr: '{name} a rapporté le frisbee. Encore !' },
   watched: { en: '{name} watched it fly… and sat down. Go and pick it up!', ko: '{name}은(는) 날아가는 원반을 구경만 하고 앉았어요. 직접 주우러 가요!', ja: '{name}は飛んでいくのを眺めて座っちゃった。拾いに行こう！', zh: '{name}看着飞盘飞走……然后坐下了。自己去捡吧！', es: '{name} lo vio volar… y se sentó. ¡Ve a recogerlo!', fr: '{name} l\'a regardé voler… et s\'est assis. Va le ramasser !' },
@@ -56,7 +58,7 @@ export function createFrisbee(game) {
     if (!at || !pet) { game.shop.toast(L(FRISBEE_TEXT.room)); return; }
     room = game.room;
     const ground = me.position.y;
-    flight = { from: { x: me.position.x, z: me.position.z }, to: at, T: flightTime(at.d), ground, react: 0.1 + Math.random() * 0.2, lucky: Math.random() < catchChance(pet.def.scale || 1) };
+    flight = { from: { x: me.position.x, z: me.position.z }, to: at, T: flightTime(at.d), ground, react: 0.1 + Math.random() * 0.2, lucky: Math.random() < catchChance(pet.def.scale || 1, pet.def.kind) };
     disc = makeDisc();
     room.scene.add(disc);
     pet.playing = true;
@@ -75,7 +77,7 @@ export function createFrisbee(game) {
     // Off the lawn (into a shop, onto a bike, sat down) or no pet: stop.
     if (!pet || game.room !== room || game.riding || !hasFrisbee(game.bag)) { end(); game.clearAction(); return; }
     t += dt;
-    const me = game.me.root.position, dog = pet.def.kind === 'dog', scale = pet.def.scale || 1;
+    const me = game.me.root.position, kind = pet.def.kind, fetcher = fetches(kind), scale = pet.def.scale || 1;
     const pr = pet.root.position;
     if (game.seated && phase !== 'lie') { end(); return; }
     if (phase === 'fly') {
@@ -84,18 +86,18 @@ export function createFrisbee(game) {
       disc.position.set(at.x, at.y, at.z);
       disc.rotation.y += dt * 18; // spinning
       disc.rotation.z = Math.sin(t * 3) * 0.08;
-      if (dog) {
+      if (fetcher) {
         if (t > flight.react) {
-          const left = pet.run(dt, flight.to.x, flight.to.z, chaseSpeed('dog', scale), catchHop);
+          const left = pet.run(dt, flight.to.x, flight.to.z, chaseSpeed(kind, scale), catchHop);
           if (left < 0.1) pet.watch(dt, at.x, at.z, 18);
         } else pet.watch(dt, at.x, at.z, 18);
         // Close under it: leap for it.
         const dx = at.x - pr.x, dz = at.z - pr.z;
-        if (Math.hypot(dx, dz) < 1.6 && s > 0.5 && s < 1) catchHop = 0.25 + 0.1 * scale;
-        if (s < 1 && flight.lucky && canCatch(dx, dz, at.y - flight.ground, scale)) {
+        if (Math.hypot(dx, dz) < 1.6 && s > 0.5 && s < 1) catchHop = kind === 'monkey' ? 0.4 : 0.25 + 0.1 * scale;
+        if (s < 1 && flight.lucky && canCatch(dx, dz, at.y - flight.ground, scale, kind)) {
           streak++;
           grab(pet);
-          const line = fmt(L(FRISBEE_TEXT.caught), { name: game.petName(pet.id) });
+          const line = fmt(L(kind === 'monkey' ? FRISBEE_TEXT.caughtHands : FRISBEE_TEXT.caught), { name: game.petName(pet.id) });
           game.shop.toast(streak > 1 ? line + ' ' + fmt(L(FRISBEE_TEXT.streak), { n: streak }) : line);
           game.sfx?.pop?.();
           phase = 'back';
@@ -105,7 +107,7 @@ export function createFrisbee(game) {
       if (s >= 1) {
         disc.position.y = flight.ground + 0.03;
         disc.rotation.z = 0;
-        if (dog) { streak = 0; phase = 'fetch'; } else {
+        if (fetcher) { streak = 0; phase = 'fetch'; } else {
           phase = 'lie';
           pet.playing = false; // back to following you
           game.shop.toast(fmt(L(FRISBEE_TEXT.watched), { name: game.petName(pet.id) }));
@@ -114,14 +116,14 @@ export function createFrisbee(game) {
       return;
     }
     if (phase === 'fetch') {
-      const left = pet.run(dt, disc.position.x, disc.position.z, chaseSpeed('dog', scale));
+      const left = pet.run(dt, disc.position.x, disc.position.z, chaseSpeed(kind, scale));
       if (left < 0.35) { grab(pet); phase = 'back'; }
       return;
     }
     if (phase === 'back') {
       // Trot back to just in front of you and drop it at your feet.
       const ry = game.me.root.rotation.y;
-      const left = pet.run(dt, me.x + Math.sin(ry) * 0.9, me.z + Math.cos(ry) * 0.9, chaseSpeed('dog', scale) * 0.8);
+      const left = pet.run(dt, me.x + Math.sin(ry) * 0.9, me.z + Math.cos(ry) * 0.9, chaseSpeed(kind, scale) * 0.8);
       lost += dt;
       if (left < 0.15 || lost > 15) {
         pet.watch(dt, me.x, me.z);
@@ -141,11 +143,11 @@ export function createFrisbee(game) {
     }
   }
 
-  // Into the dog's mouth (its head is scaled with its body).
+  // Into the dog's mouth, or a monkey's hands in front of its tummy (they
+  // are scaled with the body).
   function grab(pet) {
     const s = pet.def.scale || 1;
-    pet.head.add(disc);
-    disc.position.set(0, -0.06, 0.2);
+    if (pet.def.kind === 'monkey') { pet.body.add(disc); disc.position.set(0, 0.36, 0.2); } else { pet.head.add(disc); disc.position.set(0, -0.06, 0.2); }
     disc.rotation.set(Math.PI / 2, 0, 0);
     disc.scale.setScalar(1 / s);
     catchHop = 0;

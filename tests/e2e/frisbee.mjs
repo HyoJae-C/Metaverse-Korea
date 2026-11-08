@@ -50,6 +50,20 @@ try {
     console.log('round', round, [...seen].join('>'), 'streak', (await mk('frisbee'))[1], 'pet at', pet.x.toFixed(1), pet.z.toFixed(1));
     if (!seen.has('back')) throw new Error('the dog never brought it back');
   }
+  // The golden retriever and the monkey play too (they come by code).
+  for (const id of ['pet-golden', 'pet-monkey']) {
+    await mk('givePet', id);
+    await mk('place', -10, 7); await mk('face', Math.PI / 2);
+    const seen = new Set();
+    for (let round = 0; round < 2; round++) {
+      await until(async () => (await label()).includes('🥏'), 15000, id + ' button');
+      const c = await mk('choices');
+      if (c) await mk('pick', c.findIndex((x) => x.includes('🥏'))); else await mk('act');
+      await until(async () => { const [ph] = await mk('frisbee'); seen.add(ph); return ph === 'idle' && seen.size > 1; }, 20000, id + ' fetch');
+    }
+    if (!seen.has('back')) throw new Error(id + ' never brought it back');
+    console.log(id, [...seen].join('>'), 'streak', (await mk('frisbee'))[1]);
+  }
   // A cat just watches; walk over to pick it up.
   await mk('givePet', 'pet-cheesecat');
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
