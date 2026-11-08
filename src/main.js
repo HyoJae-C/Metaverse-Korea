@@ -4121,7 +4121,7 @@ function pressStamp(it) {
     wallet.add(STAMP_REWARD, { name }, { r: 'stamp', once: 'stamp:' + s.id });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
-    // The last stamp of a course (e.g. the City Wall Trail) pays its reward once.
+    // The last stamp of a course (e.g. the Joseon Royal Walk) pays its reward once.
     for (const tr of trailsWith(TRAILS, s.id)) {
       if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
       const tname = {};

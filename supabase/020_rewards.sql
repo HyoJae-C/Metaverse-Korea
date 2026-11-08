@@ -37,7 +37,7 @@ insert into public.reward_rules (r, op_max, day_max, day_n, what) values
   ('kimchi',   24000,   72000,  3, 'selling kimchi: 6k..24k, 3 a day'),
   ('medal',    22000,  300000, 40, 'minigame medals 5k/7k/10k, once per game and medal (gold at once pays all three: 22k)'),
   ('stamp',    10000,  400000, 40, 'tour stamps 10k, once each'),
-  ('trail',    50000,  200000,  4, 'finishing a stamp trail: 50k, once each'),
+  ('trail',    50000,  100000,  2, 'finishing a stamp trail: 50k, once each'),
   ('view',     60000,  400000, 20, 'Bukchon views, Hanok Explorer, Jongmyo manners and rite, once each'),
   ('order',    10000,  100000, 10, 'first time ordering a menu mission 10k, once each'),
   ('quest',    30000,  300000, 15, 'guide quests: 10k (+crowd up to 10k), starter path 20k, welcome high five 20k'),
