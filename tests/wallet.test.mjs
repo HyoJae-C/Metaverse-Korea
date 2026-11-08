@@ -409,3 +409,22 @@ test('balance changed on another device: one sync line on connect, none when it 
   await third.connect(srv.cloud);
   assert.equal(third.log.length, n + 1, 'nothing new when it matches');
 });
+
+test('signed in but the server wallet did not answer: asks again soon instead of staying on the browser balance', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 5003850, gift: WELCOME_COINS });
+  store['mk.ledger'] = JSON.stringify([{ t: 1, n: -70000, bal: 5003850, note: null, w: 1 }]);
+  const srv = fakeServer();
+  srv.row = { coins: WELCOME_COINS, ver: 1, welcome: WELCOME_COINS, ads: 5 };
+  const w = new Wallet(cfg);
+  w.reconnectMs = 5;
+  srv.down = true;
+  assert.equal(await w.connect(srv.cloud), 'local');
+  assert.equal(w.server, false);
+  srv.down = false;
+  await new Promise((r) => setTimeout(r, 60));
+  assert.equal(w.server, true, 'connected on the retry');
+  assert.equal(w.coins, WELCOME_COINS);
+  assert.deepEqual([w.log.at(-1).n, w.log.at(-1).note?.k], [WELCOME_COINS - 5003850, 'ledger.sync'], 'the change is in the book');
+  assert.equal(w._reTimer, null, 'no more retries');
+});

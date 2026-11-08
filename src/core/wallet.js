@@ -154,6 +154,9 @@ export class Wallet {
     // What the player is doing right now ({ name } of the shop they are in,
     // say), used as the note when a caller gives none. Set by the game.
     this.context = null;
+    this.reconnectMs = 5000; // first wait before asking for the server wallet again
+    this._reTimer = null;
+    this._reTries = 0;
   }
   // True once coins are kept on the server.
   get server() { return !!this.s; }
@@ -166,7 +169,7 @@ export class Wallet {
   // signed in). Brings this browser's coins over the first time. Resolves
   // 'server', 'offline' (server wallet, not reached now: keeps queueing) or
   // 'local'. Never throws.
-  async connect(cloud, timeoutMs = 4000) {
+  async connect(cloud, timeoutMs = 10000) {
     const client = cloud?.client, uid = cloud?.user?.id;
     if (!client || !uid) return this.s ? 'offline' : 'local';
     // Another account's copy (signed in to another account on this device):
@@ -189,8 +192,13 @@ export class Wallet {
     if (error || data?.status !== 'ok') {
       if (missing(error)) { this.client = null; this.s = null; this._saveState(); return 'local'; }
       if (this.s) this._later();
+      // Signed in but no answer (a slow network, or the answer was lost while
+      // the server opened the wallet): don't stay on this browser's own
+      // balance, which the server wallet never takes over. Ask again soon.
+      else this._reconnect(cloud, timeoutMs);
       return this.s ? 'offline' : 'local';
     }
+    clearTimeout(this._reTimer); this._reTimer = null; this._reTries = 0;
     if (data.unit !== 'krw') unit = 'coin';
     const f = unit === 'krw' ? 1 : SERVER_OLD;
     // Brought over just now: the queue (from this browser's balance) is in it.
@@ -214,6 +222,12 @@ export class Wallet {
     this.flush();
     this._askResellPct(client, timeoutMs);
     return 'server';
+  }
+  _reconnect(cloud, timeoutMs) {
+    if (this._reTimer) return;
+    const ms = Math.min(60000, this.reconnectMs * 2 ** (this._reTries || 0));
+    this._reTries = (this._reTries || 0) + 1;
+    this._reTimer = setTimeout(() => { this._reTimer = null; this.connect(cloud, timeoutMs); }, ms);
   }
   async _askResellPct(client, timeoutMs) {
     this.resellPct = null;
