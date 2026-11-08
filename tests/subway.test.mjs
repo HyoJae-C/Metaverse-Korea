@@ -104,3 +104,13 @@ test('station exits are clear of roads and buildings', () => {
     }
   }
 });
+
+test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the loop', () => {
+  const i = stations.findIndex((s) => s.id === 'mongchontoseong-station');
+  assert.ok(i > 0 && stations[i - 1].id === 'jamsil-station');
+  const st = stations[i];
+  assert.equal(st.line.name.en, 'Line 8');
+  const park = region.districts.find((d) => d.id === 'olympic-park');
+  const gate = [park.anchor.local[0] + park.offset[0], park.anchor.local[1] + park.offset[1]];
+  for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 80, `exit ${e.n} near the Peace Gate`);
+});
