@@ -38,20 +38,24 @@ export function listeningBar(scene, store, w, d, h, box, block) {
   signMesh.position.set(wallX - 0.05, BAR_H + 1.6, zc);
   scene.add(signMesh);
 
-  // The record sleeve (the first song's cover) framed in the middle.
+    // Each station shows one of the songs' covers, in turn.
   const base = import.meta.env?.BASE_URL || '/';
-  const coverMat = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-  if (LISTEN_TRACKS[0] && typeof document !== 'undefined') {
-    new THREE.TextureLoader().load(base + LISTEN_TRACKS[0].cover, (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      coverMat.map = tex; coverMat.needsUpdate = true;
-    });
-  }
+  const coverMats = LISTEN_TRACKS.map((tr) => {
+    const m = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+    if (typeof document !== 'undefined') {
+      new THREE.TextureLoader().load(base + tr.cover, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        m.map = tex; m.needsUpdate = true;
+      });
+    }
+    return m;
+  });
 
   const n = 3, gap = len / n;
   const stations = [];
   for (let i = 0; i < n; i++) {
     const z = z0 + gap * (i + 0.5);
+    const coverMat = coverMats[(n - 1 - i) % coverMats.length] || new THREE.MeshBasicMaterial({ color: '#2b2340' }); // (the station nearest the door shows the first song)
     // Headphones hung on a little stand on the bar.
     const post = box(0.03, 0.4, 0.03, bx + 0.1, BAR_H + 0.2, z + 0.28, '#8d8a96');
     post.castShadow = true;

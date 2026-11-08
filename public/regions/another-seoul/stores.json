@@ -289,7 +289,7 @@
       "size": "medium",
       "name": { "ko": "소리마루 LP카페", "en": "Sorimaru Record Café", "ja": "ソリマル LPカフェ", "zh": "声廊黑胶咖啡馆" },
       "tagline": { "en": "Pick a record and change the music. Only you hear your choice.", "ko": "LP를 골라 음악을 바꿔 보세요. 고른 음악은 나에게만 들려요.", "ja": "レコードを選んで音楽を変えよう。選んだ曲は自分にだけ聞こえます。", "zh": "挑一张唱片换音乐，只有你自己听得到。" },
-      "at": [-28, 112],
+      "at": [-2982, -210],
       "colors": { "sign": "#2b2340", "awning": "#c9a26a", "accent": "#f3ece0" },
       "products": [
         { "id": "lp-hand-drip", "model": "cup", "color": "#5a3a28", "price": 6000, "name": { "en": "Hand drip coffee", "ko": "핸드드립 커피", "ja": "ハンドドリップ", "zh": "手冲咖啡" }, "desc": { "en": "Brewed slowly by hand while the record spins." } },

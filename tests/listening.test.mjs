@@ -16,6 +16,7 @@ test('every listening-bar song has its file, cover and names', () => {
     }
     assert.ok(tr.title.en && tr.title.ko, tr.id);
     assert.ok(tr.seconds > 30, tr.id);
+    if (tr.lyrics) assert.ok(!/^\[.*\]$/m.test(tr.lyrics), tr.id + ': no [Verse] labels in the lyrics');
   }
   assert.equal(listenTrackById(LISTEN_TRACKS[0].id), LISTEN_TRACKS[0]);
   assert.equal(listenTrackById('nope'), null);
