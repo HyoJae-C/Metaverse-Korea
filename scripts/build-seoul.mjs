@@ -66,6 +66,45 @@ export function seongsuRoom([x, z]) {
   return [x, z + 150 * w];
 }
 
+// The game's river, west to east, where it differs from the real one: centre
+// line [x, z] and how wide to draw it (m), inside the game's water. Both ends
+// are points on the real river, so the bend fades in and out there.
+export const GAME_RIVER = [
+  [-1103, 584, 220], // Banpo-Jamwon (real river)
+  [-1026, 540, 190], // region.json water[1] from Banpo-Jamwon…
+  [-335, 291, 180], // …to Seongsu's river
+  [-200, 332, 130],
+  [-65, 373, 60],
+  [10, 398, 22],
+  [40, 423, 50], // where Songpa's Han River bank joins Seongsu's
+  [260, 425, 50],
+  [300, 432, 40],
+  [858, 432, 40], // Songpa's bank (z 405..460) ends
+  [975, 305, 220], // back on the real river, turning north-east
+];
+const interp = (pts, x, k) => {
+  if (x <= pts[0][0]) return pts[0][k];
+  for (let i = 1; i < pts.length; i++) {
+    const [x0] = pts[i - 1], [x1] = pts[i];
+    if (x <= x1) return pts[i - 1][k] + ((pts[i][k] - pts[i - 1][k]) * (x - x0)) / (x1 - x0 || 1);
+  }
+  return pts.at(-1)[k];
+};
+export function riverWidth(x) {
+  return x < GAME_RIVER[0][0] || x > GAME_RIVER.at(-1)[0] ? 220 : Math.round(interp(GAME_RIVER, x, 2));
+}
+// A point moves north or south by how far the game's river is from the real
+// one at its x: all the way within 120 m of the river, fading out by 520 m.
+export function bankWarp(real, game) {
+  const x0 = game[0][0], x1 = game.at(-1)[0];
+  return ([x, z]) => {
+    if (x <= x0 || x >= x1) return [x, z];
+    const rz = interp(real, x, 1), dz = interp(game, x, 1) - rz;
+    const w = Math.max(0, Math.min(1, (520 - Math.abs(z - rz)) / 400));
+    return [x, z + dz * w];
+  };
+}
+
 // Drop points closer than `eps` metres to the line between their neighbours.
 function simplify(p, eps) {
   if (p.length < 3) return p;
@@ -108,7 +147,7 @@ function labelSpot(p) {
 const osm = JSON.parse(await readFile(path.join(root, 'scripts', 'data', 'seoul-gu-osm.geojson'), 'utf8'));
 const region = JSON.parse(await readFile(path.join(R, 'region.json'), 'utf8'));
 const byEn = Object.fromEntries(osm.features.map((f) => [f.properties['name:en'], f]));
-const project = (ring) => ring.map(([lon, lat]) => seongsuRoom(toGame(lat, lon)));
+const projectRaw = (ring) => ring.map(([lon, lat]) => seongsuRoom(toGame(lat, lon)));
 
 // The river: points on a north-bank gu's edge that a south-bank gu shares
 // (within 20 real metres), west to east, thinned to one every ~60 m.
@@ -117,8 +156,26 @@ const near = 20 / 111000;
 const southRings = SOUTH_BANK.map(ll);
 const onSouth = ([lon, lat]) => southRings.some((r) => r.some(([x, y]) => Math.abs(x - lon) < near * 1.3 && Math.abs(y - lat) < near));
 let riverLL = NORTH_BANK.flatMap(ll).filter(onSouth).sort((a, b) => a[0] - b[0]);
-const river = [];
-for (const q of project(riverLL)) if (!river.length || Math.hypot(q[0] - river.at(-1)[0], q[1] - river.at(-1)[1]) > 60) river.push(q);
+const riverRaw = [];
+for (const q of projectRaw(riverLL)) if (!riverRaw.length || Math.hypot(q[0] - riverRaw.at(-1)[0], q[1] - riverRaw.at(-1)[1]) > 60) riverRaw.push(q);
+
+// From Banpo-Jamwon east to Jamsil the game's own river (region.json water,
+// Seongsu's river and Songpa's Han River bank) is not where the 1/4 map puts
+// the real one, so the map showed strips of land in the middle of the river
+// and Seoul Another Dome in the water. Bend the map's river (and the gu edges
+// along it) onto the game's water there.
+const bend = bankWarp(projectRaw(riverLL), GAME_RIVER); // (every shared edge point, so the gu edges land on the line)
+const project = (ring) => projectRaw(ring).map(bend);
+const [gx0, gx1] = [GAME_RIVER[0][0], GAME_RIVER.at(-1)[0]];
+const gameLine = [];
+for (let i = 1; i < GAME_RIVER.length; i++) { // one point every ~30 m along the game's river
+  const [ax, az] = GAME_RIVER[i - 1], [bx, bz] = GAME_RIVER[i], n = Math.max(1, Math.round(Math.hypot(bx - ax, bz - az) / 30));
+  for (let k = i === 1 ? 0 : 1; k <= n; k++) gameLine.push([ax + ((bx - ax) * k) / n, az + ((bz - az) * k) / n]);
+}
+const river = [...riverRaw.filter(([x]) => x < gx0), ...gameLine, ...riverRaw.filter(([x]) => x > gx1)];
+// Line width per river point: the game's water is narrower than the real Han
+// in places (Songpa's bank), so the map's river line must not spill onto land.
+const riverW = river.map(([x]) => riverWidth(x));
 
 const gu = GU.map(([id, ko, en, ja, zh]) => {
   const f = byEn[en];
@@ -141,7 +198,7 @@ const gu = GU.map(([id, ko, en, ja, zh]) => {
 const out = {
   note: 'Seoul at 1/4 around Seongsu Station (scripts/build-seoul.mjs). Gu outlines © OpenStreetMap contributors (ODbL), simplified; Seongsu has extra room south of it.',
   credit: '© OpenStreetMap contributors',
-  scale: SCALE, gu, river,
+  scale: SCALE, gu, river: round(river), riverW,
 };
 await writeFile(path.join(R, 'seoul.json'), JSON.stringify(out));
 console.log(gu.map((g) => `${g.id}${g.open ? `*(${g.districts})` : ''} ${(g.area / 1e6).toFixed(2)} km²`).join('\n'));

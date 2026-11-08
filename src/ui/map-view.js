@@ -484,7 +484,7 @@ export class MapView {
   // Seoul's gu as tiles under everything, and the Han River. Open gu are
   // light; the others grey ("coming soon").
   _drawSeoul(g, poly, far) {
-    const { gu, river } = this.seoul;
+    const { gu, river, riverW } = this.seoul;
     g.lineJoin = 'round';
     for (const d of gu) {
       poly(d.p); g.closePath();
@@ -494,11 +494,22 @@ export class MapView {
       g.lineWidth = (far ? 2 : 4) * this.dpr;
       g.stroke();
     }
-    poly(river);
     g.strokeStyle = '#a9d8f0';
     g.lineCap = 'round';
-    g.lineWidth = Math.max(5 * this.dpr, 220 * this.view.scale);
-    g.stroke();
+    const width = (m) => Math.max(5 * this.dpr, m * this.view.scale);
+    if (!riverW) { poly(river); g.lineWidth = width(220); g.stroke(); return; }
+    // Narrower where the game's own water is (riverW, m per point: Songpa's
+    // bank), so the line never paints land as river. Runs of one width are
+    // one stroke; round caps join the runs.
+    for (let i = 1; i < river.length;) {
+      const w = (riverW[i - 1] + riverW[i]) / 2;
+      let j = i;
+      while (j + 1 < river.length && Math.abs((riverW[j] + riverW[j + 1]) / 2 - w) < 1) j++;
+      poly(river.slice(i - 1, j + 1));
+      g.lineWidth = width(w);
+      g.stroke();
+      i = j + 1;
+    }
   }
 
   // Gu names: the open ones first and bold, then the "coming soon" ones,
