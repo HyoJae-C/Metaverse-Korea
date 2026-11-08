@@ -16,6 +16,7 @@ export const LISTEN_TEXT = {
     ja: 'ヘッドホンをつけて聴いてみよう。聞こえるのは自分だけ。外すまでカフェの音楽は止まります。',
     zh: '戴上耳机听一听。只有你听得到，摘下耳机前咖啡馆的音乐会暂停。',
   },
+  lyrics: { en: 'Lyrics (Korean)', ko: '가사', ja: '歌詞（韓国語）', zh: '歌词（韩语）' },
   listen: { en: 'Listen', ko: '듣기', ja: '聴く', zh: '试听' },
   playing: { en: 'listening', ko: '듣는 중', ja: '試聴中', zh: '正在听' },
   now: { en: '🎧 Now listening: {name}', ko: '🎧 듣는 중: {name}', ja: '🎧 試聴中：{name}', zh: '🎧 正在听：{name}' },
@@ -113,6 +114,7 @@ export function createListeningBar(game) {
       list.append(b);
     }
     const children = [x, h, note, list];
+    if (now?.track.lyrics) children.push(lyricsBlock(now.track.lyrics));
     if (now) {
       const off = document.createElement('button');
       off.className = 'chip';
@@ -125,6 +127,26 @@ export function createListeningBar(game) {
     }
     root.replaceChildren(...children);
     root.hidden = false;
+  }
+
+  // The playing song's lyrics: [section] lines show as small labels.
+  function lyricsBlock(text) {
+    const box = document.createElement('div');
+    box.className = 'listen-lyrics';
+    const h = document.createElement('h4');
+    h.textContent = '📝 ' + L(LISTEN_TEXT.lyrics);
+    box.append(h);
+    for (const part of text.split(/\n\s*\n/)) {
+      const p = document.createElement('p');
+      for (const line of part.split('\n')) {
+        const tag = /^\[(.+)\]$/.exec(line.trim());
+        const el = document.createElement(tag ? 'small' : 'span');
+        el.textContent = tag ? tag[1] : line;
+        p.append(el);
+      }
+      box.append(p);
+    }
+    return box;
   }
 
   // Every frame: the headphones come off when you walk away from the bar.
