@@ -3742,10 +3742,13 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
     const picked = pickSupportSpots(spots, hubs, (sp) => adPosters.posters[sp.id] && !used.has(sp.id));
     const qrUrl = (import.meta.env.BASE_URL || '/') + 'ads/support-qr.png';
     const label = config.supportUrl.replace(/^https:\/\/(www\.)?/, '');
+    // One poster texture shared by every district (they're all the same
+    // picture; one canvas each was 10 identical copies).
+    const tex = supportTexture(signLang(), { qrUrl, label });
+    hiringRedraws.push(tex.redraw);
     for (const [d, hub] of Object.entries(hubs)) {
-      const tex = supportTexture(signLang(), { qrUrl, label });
       if (picked[d] && picked[d].dist < 300 && adPosters.setPoster(picked[d].id, tex)) {
-        used.add(picked[d].id); hiringRedraws.push(tex.redraw); supportPlaces.push([d, 'spot', picked[d].id]);
+        used.add(picked[d].id); supportPlaces.push([d, 'spot', picked[d].id]);
         continue;
       }
       // No free lot nearby: the nearest tall wall to the hub.
@@ -3776,10 +3779,10 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
         })) continue;
         wall = w; break;
       }
-      if (!wall) { tex.dispose(); continue; }
+      if (!wall) continue;
       const w = Math.min(5.6, wall.len - 1);
       scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w));
-      hiringRedraws.push(tex.redraw); supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
+      supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
     }
   }
   const putOnSpot = (j, spotId) => {
