@@ -14,6 +14,8 @@
 //   highfive  high-five the guide (no longer handed out: it repeated the
 //             welcome high five; kept so a saved one can still be finished)
 //   taxi   take a taxi anywhere
+//   subway ride the subway to another station (the first errand: other
+//          districts are only a train ride away)
 //   eat    sit down in a restaurant and finish a meal
 //   pat    pat an animal in an animal café
 //
@@ -23,6 +25,7 @@
 export const QUEST_REWARD = 10000;
 export const STARTER_REWARD = 20000;
 export const STARTER = [
+  { kind: 'subway', tip: 'subway' }, // other districts: a train ride away (an early "there's more" moment)
   { kind: 'visit', target: 'nyang-cat-cafe', tip: 'map' }, // the map: tap a place, walk there by itself; or ride a bike
   { kind: 'taxi', tip: 'taxi' }, // fast, but it costs
   { kind: 'coffee', target: 'meta-coffee', tip: 'coffee' }, // order from the staff
@@ -35,6 +38,9 @@ export const STARTER = [
 ];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
+// Saved first-path steps count from 0. Version 2 put the subway errand in
+// front: a step saved before that is one later now.
+const VERSION = 2;
 
 export function pickQuest(pool, rand = Math.random, last = null) {
   const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
@@ -50,7 +56,12 @@ export class SquareQuests {
     this.today = today;
     let s = {};
     try { s = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* ignore */ }
-    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null };
+    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null, v: VERSION };
+    if ((s.v | 0) < VERSION && this.s.starter != null) { // saved before the subway errand
+      this.s.starter++;
+      if (Number.isInteger(this.s.active?.starter)) this.s.active.starter++;
+      this._save();
+    }
     this._roll();
   }
   _roll() {
@@ -83,7 +94,7 @@ export class SquareQuests {
     const hit = (q.kind === 'visit' && type === 'visit' && target === q.target)
       || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk')
       || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive')
-      || (q.kind === 'taxi' && type === 'taxi') || (q.kind === 'eat' && type === 'eat') || (q.kind === 'pat' && type === 'pet');
+      || (q.kind === 'taxi' && type === 'taxi') || (q.kind === 'subway' && type === 'subway') || (q.kind === 'eat' && type === 'eat') || (q.kind === 'pat' && type === 'pet');
     if (!hit) return false;
     q.n++;
     this._save();
@@ -112,6 +123,14 @@ export class SquareQuests {
   }
 
   drop() { this.s.active = null; this._save(); }
+  // "Later" on a first-path errand: on to the next one, without the coins.
+  skipStarter() {
+    if (this.s.active?.starter == null) return false;
+    this.s.active = null;
+    this.s.starter++;
+    this._save();
+    return true;
+  }
   // New players already high-fived the guide while getting started.
   skipHighFive() { this.s.last = 'highfive'; this._save(); }
 }

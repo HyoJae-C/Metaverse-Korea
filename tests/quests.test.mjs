@@ -71,7 +71,7 @@ test('new players get the first path in order, outside the daily limit', () => {
     const a = q.start(pool, () => 0);
     assert.equal(a.kind, STARTER[i].kind);
     assert.equal(a.target, STARTER[i].target);
-    const type = { visit: 'visit', taxi: 'taxi', eat: 'eat', pat: 'pet', talk: 'talk', dance: 'squareEmote' }[a.kind];
+    const type = { visit: 'visit', taxi: 'taxi', subway: 'subway', eat: 'eat', pat: 'pet', talk: 'talk', dance: 'squareEmote' }[a.kind];
     if (type) for (let k = 0; k < a.need; k++) q.event(type, a.target);
     assert.equal(q.claim(ctx), STARTER_REWARD);
   }
@@ -80,9 +80,38 @@ test('new players get the first path in order, outside the daily limit', () => {
   assert.equal(new SquareQuests(store, () => 'd1').onStarter, false); // saved
 });
 
-test('the first path stays near the square and has nine errands after the high five', () => {
-  assert.equal(STARTER.length, 9);
+test('the first path starts with a subway ride, then nine errands near the square', () => {
+  assert.equal(STARTER.length, 10);
+  assert.equal(STARTER[0].kind, 'subway');
   assert.ok(STARTER.every((s) => s.tip));
+});
+
+test('the subway errand is done by riding to another station; "Later" skips it without coins', () => {
+  const q = new SquareQuests(memory(), () => 'd1');
+  q.beginStarter();
+  assert.equal(q.start(pool).kind, 'subway');
+  assert.equal(q.event('taxi'), false);
+  assert.equal(q.event('subway'), true);
+  assert.equal(q.claim({}), STARTER_REWARD);
+  assert.equal(q.start(pool).kind, STARTER[1].kind);
+  const r = new SquareQuests(memory(), () => 'd1');
+  r.beginStarter();
+  r.start(pool);
+  assert.equal(r.skipStarter(), true);
+  assert.equal(r.active, null);
+  assert.equal(r.start(pool).target, STARTER[1].target);
+  r.drop();
+  r.s.active = { kind: 'talk', need: 3, n: 0 }; // not a first-path errand: nothing to skip
+  assert.equal(r.skipStarter(), false);
+});
+
+test('a first-path step saved before the subway errand keeps its place', () => {
+  const st = memory();
+  st.setItem('mk.quests', JSON.stringify({ day: 'd1', starter: 2, active: { kind: 'coffee', target: 'meta-coffee', need: 1, n: 0, starter: 2 } }));
+  const q = new SquareQuests(st, () => 'd1');
+  assert.equal(q.starterStep, 3);
+  assert.equal(STARTER[q.active.starter].kind, 'coffee');
+  assert.equal(new SquareQuests(st, () => 'd1').starterStep, 3); // moved once, not on every load
 });
 
 test('players from before never get the first path', () => {
