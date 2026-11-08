@@ -28,7 +28,7 @@ test('pets cost real pet-shop prices, the fine stings, and poops are spaced out'
 test('pets have adoption fees (old ones too, for owners); the monkey comes from a code', async () => {
   for (const id of ['pet-maltese', 'pet-poodle', 'pet-shiba', 'pet-cheesecat', 'pet-bluecat', 'pet-chinchilla', 'pet-guineapig']) assert.ok(isPet(id) && ITEMS[id].price > 0, id);
   for (const id of ['pet-monkey', 'pet-golden']) assert.ok(isPet(id) && !ITEMS[id].price, id);
-  assert.equal(ITEMS['pet-golden'].pet.ears, 'golden');
+  assert.equal(ITEMS['pet-golden'].pet.earStyle, 'golden');
   assert.equal(await redeemCode('pets'), null);
   for (const it of Object.values(ITEMS)) if (it.pet) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(it.name[l] && it.desc[l]);
 });
@@ -53,4 +53,12 @@ test('dogs and cats are adopted at animal cafés, not sold on shelves', async ()
   for (const r of BREEDS.retrievers) assert.ok(r.scale > ITEMS['pet-maltese'].pet.scale && r.scale < 1.6, r.name);
   // Taken off sale, but pets players already own (or get by code) still exist.
   for (const id of ['pet-shiba', 'pet-chinchilla', 'pet-guineapig']) assert.ok(isPet(id), id);
+});
+
+test('breed fields never overwrite the animal parts (a café spreads both into one object)', async () => {
+  const { BREEDS, makeAnimal } = await import('../src/core/pets.js');
+  const parts = Object.keys(makeAnimal('dog', '#e2a85a', '#c98a3e', 1, { earStyle: 'golden' }));
+  assert.ok(parts.includes('ears'));
+  const defs = [...Object.values(BREEDS).flat(), ...Object.values(ITEMS).filter((i) => i.pet).map((i) => i.pet)];
+  for (const b of defs) for (const k of Object.keys(b)) assert.ok(!parts.includes(k), `${b.name}.${k}`);
 });
