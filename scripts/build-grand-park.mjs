@@ -29,17 +29,22 @@ export const PENS = [
     id: 'monkeys', x: 90, z: -22, w: 36, d: 30, fence: 'mesh', ground: 'grass', board: 's',
     name: L('원숭이마을', 'Monkey Village', 'サル村', '猴子村'),
     props: [['log', -6, -4], ['log', 8, 5], ['tree', -13, 9], ['tree', 13, -9], ['rock', 0, 10]],
-    groups: [{ kind: 'macaque', n: 8 }],
-    feed: { at: [0, 11], offset: 480, food: 'greens' },
+    groups: [{ kind: 'macaque', n: 6 }],
+    feed: { at: [5, 11], offset: 480, food: 'fruit' },
   },
   {
     id: 'petting', x: 90, z: 22, w: 36, d: 30, fence: 'low', ground: 'grass', board: 'n', pet: true,
     gate: { side: 'n', at: 0, w: 4 },
     name: L('꼬마동물마을', 'Little Animal Village', 'こども動物村', '小动物村'),
     props: [['barn', 11, 8], ['hay', 3, 10], ['hay', 5, 12, 0.6], ['hutch', -12, 9], ['hutch', -15, 4, 0.4], ['tree', -15, -11]],
+    // The red barn is solid; at its door you buy a cup of animal food.
+    solid: [[8.4, 5.9, 13.6, 10.1]],
+    shop: { at: [11, 11.6], price: 1000 },
+    // The keeper by the gate, who tells you about the animals.
+    keeper: { at: [-4, -11], ry: Math.PI },
     groups: [
       { kind: 'goat', n: 3, box: [0, -12, 16, 4] },
-      { kind: 'sheep', n: 3, box: [0, -12, 16, 4] },
+      { kind: 'sheep', n: 6, box: [0, -12, 16, 4] },
       { kind: 'rabbit', n: 4, box: [-16, -2, -3, 13] },
       { kind: 'guineapig', n: 5, box: [-16, -2, -3, 13] },
     ],
@@ -76,12 +81,32 @@ export const PENS = [
     groups: [{ kind: 'bear', n: 2 }],
     feed: { at: [-4, 5], offset: 240, food: 'fish' },
   },
+  // Sea Animals: a building (walls, a door onto the main path, a roof that
+  // lifts away while you are inside) with three tanks behind glass along the
+  // back, one for each animal, and a walkway in front of them.
   {
-    id: 'sea', x: 138, z: 22, w: 24, d: 28, fence: 'glass', ground: 'stone', board: 'n',
+    id: 'sea', x: 138, z: 22, w: 24, d: 28, fence: 'hall', ground: 'stone', board: 'n',
+    gate: { side: 'n', at: 0, w: 4 },
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
-    pond: [0, 3, 9], props: [['rock', 8, -9], ['rock', -8, 11]],
-    groups: [{ kind: 'seal', n: 3 }, { kind: 'walrus', n: 1 }, { kind: 'polarbear', n: 1 }],
-    feed: { at: [0, -11], offset: 360, food: 'fish' },
+  },
+  {
+    id: 'seals', in: 'sea', x: 130, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    name: L('물개', 'Seals', 'アザラシ', '海豹'),
+    pond: [0, 1.5, 3.2], props: [['rock', 2, -4]],
+    groups: [{ kind: 'seal', n: 3 }],
+    feed: { at: [-1.5, -4.5], offset: 360, food: 'fish' },
+  },
+  {
+    id: 'walrus', in: 'sea', x: 138, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    name: L('바다코끼리', 'Walrus', 'セイウチ', '海象'),
+    pond: [0, 2, 3.2], props: [['rock', -2, -4.5]],
+    groups: [{ kind: 'walrus', n: 1 }],
+  },
+  {
+    id: 'polarbear', in: 'sea', x: 146, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    name: L('북극곰', 'Polar Bear', 'ホッキョクグマ', '北极熊'),
+    pond: [0, 2.5, 3], props: [['rock', 2, -4.5]],
+    groups: [{ kind: 'polarbear', n: 1 }],
   },
   {
     id: 'hippos', x: 163, z: 22, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
@@ -141,7 +166,7 @@ export function buildMap() {
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
       { kind: 'landmark', x: cx, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
-      ...PENS.map((p) => ({ kind: 'landmark', x: p.x, z: p.z, name: p.name })),
+      ...PENS.filter((p) => !p.in).map((p) => ({ kind: 'landmark', x: p.x, z: p.z, name: p.name })),
     ],
     landmarks: [
       { type: 'cgpgate', x: 30, z: 0, ry: 1.5708, label: L('정문', 'Main Gate', '正門', '正门') },
@@ -168,6 +193,7 @@ export function buildMap() {
     ],
   };
   for (const pen of PENS) for (const line of fenceLines(pen)) map.blockers.push(lineBlocker(line, pen.x, pen.z));
+  for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) map.blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
   return map;
 }
 
