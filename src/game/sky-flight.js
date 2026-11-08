@@ -11,7 +11,8 @@
 // Flying: move as usual; Space or R goes up, C or F down (or the ▲ ▼
 // buttons on a phone); Shift
 // (or the stick pushed all the way) flies fast. The suit and Seoulman fly
-// with the arms stretched back and flames from the hands and feet; the
+// with the arms stretched back and flames from the hands and feet (Seoulman
+// with a fist punched forward, no flames); the
 // wings flap. Other players see the costume's clothes and hair (the look is
 // sent as usual), walking on the ground under us.
 import * as THREE from 'three';
@@ -42,7 +43,7 @@ export const skyCode = (code) => SKY_CODES[String(code ?? '').trim().toLowerCase
 export const COSTUMES = {
   seoulman: {
     model: 'sky-seoulman', look: { hairStyle: 'slick', dye: 'black', head: null, face: null, back: null, skirt: null, tee: null },
-    swapAt: 0.45, ready: 1.5, flame: [0xbff4ff, 0x4fb8ff], fx: { e: ['✨', '💚', '💙', '❤️'], m: 'rise', c: '#9fe0ff' },
+    swapAt: 0.45, ready: 1.5, flame: null, fx: { e: ['✨', '💚', '💙', '❤️'], m: 'rise', c: '#9fe0ff' },
   },
   suit: {
     model: 'sky-armor', look: { head: null, back: null, skirt: null, tee: null },
@@ -399,6 +400,7 @@ export function createSkyFlight(game) {
 
   // Bone offsets laid over the idle clip (model-pack.js setMoves).
   let hf = 0; // how fast across, 0..1
+  let fist = 0; // Seoulman's raised fist, 0..1 (up while off the ground)
   function pose() {
     if (kind === 'wings') {
       return { armL: [0.15, -0.3, 0], armR: [0.15, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [0.15 * hf, 0, 0], legR: [0.25 * hf, 0, 0], kneeL: [0.35 - 0.25 * hf, 0, 0], kneeR: [0.2, 0, 0] };
@@ -406,6 +408,18 @@ export function createSkyFlight(game) {
     // Hovering: arms a little out, knees bent; flying: arms stretched back
     // along the body, legs straight together.
     const h = 1 - hf;
+    if (kind === 'seoulman' && fist > 0.01) {
+      // The flying hero: the right fist punched forward over the head, the
+      // left arm along the body, legs straight. Down again on landing.
+      const f = fist, n = 1 - fist;
+      const mix = (a, b) => a.map((v, i) => v * n + b[i] * f);
+      return {
+        armR: mix([0.1 * h + 0.6 * hf, 0.35 * h + 0.12 * hf, 0], [-2.95, 0.12, 0]), foreR: mix([-0.25 * h, 0, 0], [0, 0, 0]),
+        armL: mix([0.1 * h + 0.6 * hf, -0.35 * h - 0.12 * hf, 0], [0.45, -0.12, 0]), foreL: mix([-0.25 * h, 0, 0], [0, 0, 0]),
+        legL: [0.08 * hf, 0, 0], legR: [0.08 * hf + 0.1 * h, 0, 0], kneeL: [0.2 * h, 0, 0], kneeR: [0.45 * h, 0, 0],
+        head: [-0.5 * hf, 0, 0],
+      };
+    }
     return {
       armL: [0.1 * h + 0.6 * hf, -0.35 * h - 0.12 * hf, 0], armR: [0.1 * h + 0.6 * hf, 0.35 * h + 0.12 * hf, 0],
       foreL: [-0.25 * h, 0, 0], foreR: [-0.25 * h, 0, 0],
@@ -524,6 +538,7 @@ export function createSkyFlight(game) {
         p.z = Math.min(b.maxZ + 150, Math.max(b.minZ - 150, p.z));
       }
     }
+    fist += ((kind === 'seoulman' && p.y > 0.3 ? 1 : 0) - fist) * Math.min(1, dt * 5);
     const across = Math.hypot(vel.x, vel.z);
     if (phase !== 'off') hf += (clamp01(across / SPEED) - hf) * Math.min(1, dt * 4);
     // Face where we fly, banking into turns.
