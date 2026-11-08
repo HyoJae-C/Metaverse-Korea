@@ -187,6 +187,7 @@ import { parseTaxi } from './core/taxi-share.js';
 import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
+import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listening-bar.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
@@ -2367,6 +2368,22 @@ function enterStore(item) {
     });
   }
   interior.visitorNpcs = built.visitorNpcs || null;
+  // The record café: someone is already at the far end of the listening bar,
+  // headphones on, nodding along.
+  const bar = built.stations?.listening;
+  if (bar?.length > 1 && !built.listenerNpcs) {
+    const s = bar[0];
+    const o = makeNpc($('labels'), '');
+    o.tag.style.visibility = 'hidden';
+    o.ch.root.position.set(s.x, 0, s.z);
+    o.ch.root.rotation.y = s.ry;
+    o.ch.activity('listen');
+    built.scene.add(o.ch.root);
+    s.taken = true; s.npc = true;
+    if (s.rack) s.rack.visible = false;
+    built.listenerNpcs = [o];
+  }
+  interior.listenerNpcs = built.listenerNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
@@ -2514,6 +2531,7 @@ function leaveStore() {
   leaveTarotLine(true);
   for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
+  listenBar.stop(); // (puts the café's music back first)
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
@@ -2645,6 +2663,17 @@ const musicCafe = createMusicCafe({
   $, applyMusicBtn, kpop, music, shop,
 });
 const { enterMusicCafe, enterKpopCafe, leaveMusicCafe, leaveKpopCafe, openLpPanel } = musicCafe;
+// The record café's listening bar: headphones on, one song, only you hear
+// it. (game/listening-bar.js)
+const listenBar = createListeningBar({
+  $, applyMusicBtn, music, shop, me: () => me, base: BASE,
+  onChange: () => {
+    action = STALE;
+    // The headphones leave their stand while we wear them.
+    for (const s of interior?.stations?.listening || []) if (s.rack) s.rack.visible = !s.npc && s !== listenBar.station;
+    if (listenBar.station) me.root.rotation.y = listenBar.station.ry; // face the bar
+  },
+});
 // Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
 const bikeShop = createBikeShop({
   get riding() { return riding; }, get me() { return me; }, get wallet() { return wallet; }, $, garage,
@@ -3835,6 +3864,7 @@ const DANCE_TEXT = {
 function currentActivity() {
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
+  if (listenBar.listening) return 'listen'; // headphones on at the record café
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
@@ -5277,6 +5307,11 @@ function updateAction(p, tSec) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
       next = { key: 'dance:' + dancing, label: (dancing ? '🛑 ' : '💃 ') + L(dancing ? DANCE_TEXT.stop : DANCE_TEXT.start), run: () => { dancing = !dancing; if (dancing) missionEvent('dance'); action = STALE; } };
+    } else if (listenBar.listening) {
+      next = { key: 'listen-off', label: '🎧 ' + L(LISTEN_TEXT.off), run: () => listenBar.stop() };
+    } else if (interior.stations?.listening && nearestStation(interior.stations.listening, p.x, p.z)) {
+      const st = nearestStation(interior.stations.listening, p.x, p.z);
+      next = { key: 'listen', label: '🎧 ' + L(LISTEN_TEXT.open), run: () => listenBar.open(st) };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'bike' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -5703,6 +5738,8 @@ renderer.setAnimationLoop(() => {
     if (interior?.vendorNpcs) greetAtStalls(p);
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
+    for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
+    listenBar.update(dt, p);
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
@@ -5831,6 +5868,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
+    listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
+    listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => interior?.seats?.length ?? 0,
     sit: (i) => sitDown(interior.seats[i]),
     seated: () => !!seated,

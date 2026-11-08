@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
 import { SNOW_MOVES } from './snow-moves.js';
+import { listenPose } from './headphones.js';
 import { PUNGMUL_HANDS } from './pungmul-props.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -632,7 +633,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || FOLK_DANCES[name] || SNOW_MOVES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || FOLK_DANCES[name] || SNOW_MOVES[name] || PACK.anims[name]) ? name : null; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     play(name) {
@@ -673,6 +674,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
       else key = 'idle';
       const dancing = (activity === 'dance' || KPOP_ACTS.has(activity)) && key === 'idle';
+      const listening = activity === 'listen' && key === 'idle'; // headphones on at the listening bar
       const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
       const curling = activity === 'curl' && key === 'idle'; // dumbbell curls
       if (curling && !bells && slotL && slotR) {
@@ -717,6 +719,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         moves = SNOW_MOVES[snowy](performance.now() / 1000);
         bob = moves.bob || 0;
         turn = moves.turn || 0;
+      } else if (listening) {
+        moves = listenPose(performance.now() / 1000);
+        bob = moves.bob || 0;
       } else if (dancing) {
         const { beat, phase } = beatNow();
         moves = globalThis.__dancePose // debug override
@@ -734,7 +739,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
         m.position.y = PULLUP.hang; // corrected below, once the arms are posed
-      } else if (dancing || folk || snowy) m.position.y = bob;
+      } else if (dancing || folk || snowy || listening) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       // The clips don't key every bone: start the stroke bones from rest so

@@ -1,5 +1,6 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
+import { listeningBar } from './listening-bar-model.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
@@ -1818,6 +1819,7 @@ export function buildInterior(store) {
     crate.forEach((c, i) => box(0.04, 0.42, 0.42, tx + 0.95 + i * 0.07, 0.31, tz, c)); // LP sleeves
     block(tx + 0.3, tz, 2.1, 0.8);
     turntable = { x: tx, z: tz + 0.9, platter };
+    stations.listening = listeningBar(scene, store, w, d, h, box, block);
   }
   // K-POP café: a big TV on the back wall (the video plays in the corner of
   // the screen; this is the room's look). The cinema has a big screen.
