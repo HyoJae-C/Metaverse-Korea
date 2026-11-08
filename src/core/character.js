@@ -351,6 +351,11 @@ export function createCharacter(rawLook) {
     // the dances use), laid over the idle or running clip. null stops it.
     // Used for basketball shots (core/basketball-game.js shotMove).
     setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
+    // Wind in the hair (the roller coaster): k 0 still .. 1 full speed.
+    setWind(k) {
+      if (model) { model.setWind?.(k); return; }
+      hair.rotation.x = -0.25 - k * 0.3 + Math.sin(performance.now() / 25) * 0.04 * k;
+    },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);

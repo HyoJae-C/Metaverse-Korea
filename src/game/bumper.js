@@ -111,7 +111,7 @@ export function createBumper(game) {
     if (!mayBoard({ phase, riders: rs.length, turn, myId })) { shop.toast(L(BUMPER_TEXT.full)); return; }
     const slot = freeSlot(rs.map((r) => r.slot));
     if (slot < 0) { shop.toast(L(BUMPER_TEXT.full)); return; }
-    if (!paid && !wallet.spend(BUMPER_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: BUMPER_COST })); return; }
+    if (!paid && !game.ridePass?.() && !wallet.spend(BUMPER_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: BUMPER_COST })); return; }
     paid = false; ticket = 0;
     mySlot = slot; hits = 0; wentGo = false;
     myGo = phase === 'boarding' ? go : now + BOARD_MS;
@@ -319,7 +319,8 @@ export function createBumper(game) {
       return phaseOf(myGo, Date.now()).phase === 'driving' ? null : { key: 'bumper-out', label: '🚪 ' + L(BUMPER_TEXT.out), run: () => game.standUp() };
     }
     if (game.seated) return null;
-    const cost = paid ? '' : ` · 🪙 ${BUMPER_COST}`;
+    const free = game.ridePass?.(); // the park's ride-all day pass
+    const cost = paid ? '' : free ? ' · 🎫' : ` · 🪙 ${BUMPER_COST}`;
     if (ticket && turn.callable.includes(myId)) { // called: get in from anywhere in the park
       const s = queue.secondsLeft(myId) ?? 0;
       return { key: 'bumper-turn:' + s, label: '🔔 ' + fmt(L(BUMPER_TEXT.turn), { s }) + cost, run: boardCar };
@@ -330,7 +331,7 @@ export function createBumper(game) {
       return { key: 'bumper-line:' + n, label: '🎫 ' + fmt(L(BUMPER_TEXT.line), { n }), run: leaveLine };
     }
     if (mayBoard({ phase: view.phase, riders: view.riders.length, turn, myId })) {
-      return { key: 'bumper-board', label: '🚗 ' + fmt(L(BUMPER_TEXT.board), { n: BUMPER_COST }), run: boardCar };
+      return { key: 'bumper-board', label: '🚗 ' + fmt(L(BUMPER_TEXT.board), { n: BUMPER_COST }).replace(free ? `🪙 ${BUMPER_COST}` : '\0', '🎫'), run: boardCar };
     }
     return { key: 'bumper-ticket', label: '🎫 ' + L(BUMPER_TEXT.ticket), run: () => { if (view.phase === 'driving') shop.toast(L(BUMPER_TEXT.full)); takeTicket(); } };
   }

@@ -8,7 +8,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 
 const { HAUNT, HAUNT_SPOT, HAUNT_STORE, LAYOUT, buildHauntedFacade, buildHauntedHouse, nearPortraits, ghostTrigger } = await import('../src/core/haunted.js');
 const { buildThemePark } = await import('../src/core/themepark.js');
-const { ROOM_SIZES, exitOf, roomOf } = await import('../src/core/interior.js');
+const { ROOM_SIZES, exitOf, roomOf, roomBox } = await import('../src/core/interior.js');
 const { CollisionMap } = await import('../src/core/collision.js');
 const { saveRecord, loadRecords } = await import('../src/core/arcade.js');
 
@@ -32,7 +32,8 @@ function reachable(col, room, a, b, step = 0.25) {
     if (Math.hypot(x - b.x, z - b.z) < 0.6) return true;
     for (const [dx, dz] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
       const nx = x + dx, nz = z + dz;
-      if (Math.abs(nx) > room.w / 2 - 0.5 || Math.abs(nz) > room.d / 2 - 0.5 || seen.has(key(nx, nz)) || col.blocked(nx, nz, R)) continue;
+      const bx = roomBox(room);
+      if (nx < bx.x0 + 0.5 || nx > bx.x1 - 0.5 || nz < bx.z0 + 0.5 || nz > bx.z1 - 0.5 || seen.has(key(nx, nz)) || col.blocked(nx, nz, R)) continue;
       seen.add(key(nx, nz));
       q.push([nx, nz]);
     }
@@ -48,12 +49,12 @@ test('the house fits its outline and stays light for phones', () => {
 });
 
 test('in the park: the door spot is free, in bounds, and you can walk there from the gate', () => {
-  const room = ROOM_SIZES.park;
+  const room = ROOM_SIZES.themepark;
   const park = buildThemePark({}, room, exitOf(room));
   const col = new CollisionMap(park.colliders);
   assert.deepEqual(park.stations.hauntedHouse, [HAUNT_SPOT]);
   assert.ok(!col.blocked(HAUNT_SPOT.x, HAUNT_SPOT.z, R));
-  assert.ok(HAUNT.x - HAUNT.w / 2 > -room.w / 2 && HAUNT.z + HAUNT.d / 2 < room.d / 2);
+  assert.ok(HAUNT.x - HAUNT.w / 2 > roomBox(room).x0 && HAUNT.z + HAUNT.d / 2 < roomBox(room).z1);
   const spawn = { x: exitOf(room).x, z: exitOf(room).z - 1.4 };
   assert.ok(reachable(col, room, spawn, HAUNT_SPOT), 'gate → haunted house');
   // Not on top of a bench seat or a ride's boarding spot.

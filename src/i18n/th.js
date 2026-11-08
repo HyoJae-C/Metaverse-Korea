@@ -391,6 +391,7 @@ export const TH = {
   'news.title': 'อัปเดต',
   'settings.sfx': 'เสียงเอฟเฟกต์',
   'settings.haptics': 'การสั่นและหน้าจอสั่น',
+  'settings.rideFx': 'เอฟเฟกต์เครื่องเล่นแบบนุ่มนวล (ลดเวียนหัว)',
   'install.row': 'เพิ่มไปยังหน้าจอโฮม',
   'install.title': 'เล่นแบบแอป',
   'install.why': 'ใส่ Another Seoul ไว้บนหน้าจอโฮม แล้วเปิดเต็มจอได้ในแตะเดียว ไม่ต้องใช้ App Store',

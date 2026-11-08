@@ -391,6 +391,7 @@ export const FR = {
   'news.title': 'Nouveautés',
   'settings.sfx': 'Effets sonores',
   'settings.haptics': 'Vibrations et secousses d\'écran',
+  'settings.rideFx': 'Effets d\'attraction doux (moins de mal des transports)',
   'install.row': 'Ajouter à l\'écran d\'accueil',
   'install.title': 'Jouer comme une appli',
   'install.why': 'Mets Another Seoul sur ton écran d\'accueil et ouvre-le d\'un toucher, en plein écran. Pas besoin de magasin d\'applis.',
