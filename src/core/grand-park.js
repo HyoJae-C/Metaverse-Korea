@@ -79,3 +79,31 @@ export function hoarding(g, l) {
     }
   }
 }
+
+// A gap at the foot of the hoarding (l: x, z, ry: its face along local z): a
+// dark hole where a board is broken off, small enough to crawl through.
+// Only operators can (main.js), to look round before the zoo opens.
+export function doghole(g, l) {
+  const d = new THREE.Group();
+  d.position.set(l.x, 0, l.z);
+  d.rotation.y = l.ry || 0;
+  const dark = mat('#1d1a18');
+  for (const s of [-1, 1]) {
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 16, 0, Math.PI), dark);
+    hole.scale.y = 1.3;
+    hole.position.set(0, 0.01, 0.075 * s);
+    if (s < 0) hole.rotation.y = Math.PI;
+    d.add(hole);
+  }
+  for (const [x, z, ry] of [[0.6, 0.35, 0.4], [-0.5, 0.45, -0.8]]) { // the broken-off bits of board
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.16), mat('#e9e2d3'));
+    b.position.set(x, 0.02, z); b.rotation.y = ry;
+    d.add(b);
+  }
+  for (const x of [-0.55, 0.5]) { // grass at the foot
+    const t = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 5), mat('#5f9f48'));
+    t.position.set(x, 0.15, 0.2);
+    d.add(t);
+  }
+  g.add(d);
+}

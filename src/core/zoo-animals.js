@@ -493,6 +493,182 @@ function snake(c) {
   return { root, body, head, tail: new THREE.Group(), legs: [], segs, tongue, slithers: true };
 }
 
+// Coat textures for a torso whose pole runs along z (like the tiger's): u
+// goes round the body, v from nose (top) to tail (bottom).
+const coats = {};
+function coat(kind) {
+  if (coats[kind]) return coats[kind];
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 128;
+  const g = c.getContext('2d');
+  if (kind === 'zebra') { // black bands all the way round, a little wavy
+    g.fillStyle = '#f7f5f0'; g.fillRect(0, 0, 256, 128);
+    g.fillStyle = '#1f1c1e';
+    for (let i = 0; i < 12; i++) {
+      const v = 8 + i * 10;
+      g.beginPath();
+      g.moveTo(0, v);
+      for (let u = 0; u <= 256; u += 16) g.lineTo(u, v + Math.sin(u / 20 + i) * 2.5);
+      for (let u = 256; u >= 0; u -= 16) g.lineTo(u, v + 4.5 + Math.sin(u / 24 + i * 2) * 2);
+      g.fill();
+    }
+  } else { // giraffe: tan patches on a cream net
+    g.fillStyle = '#f3e3bf'; g.fillRect(0, 0, 256, 128);
+    g.fillStyle = '#b8652a';
+    for (let y = 0; y < 6; y++) for (let x = 0; x < 9; x++) {
+      const cx = x * 30 + (y % 2) * 15 + 6, cy = y * 22 + 10;
+      g.beginPath();
+      for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2 + x; g.lineTo(cx + Math.cos(a) * (11 + ((x + k) % 3)), cy + Math.sin(a) * (8 + ((y + k) % 3))); }
+      g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  coats[kind] = t;
+  return t;
+}
+const coatMat = (kind) => new THREE.MeshLambertMaterial({ map: coat(kind) });
+function torso(body, kind, r, y, z, sx, sy, sz) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14).rotateX(Math.PI / 2), coatMat(kind));
+  m.position.set(0, y, z);
+  m.scale.set(sx, sy, sz);
+  body.add(m);
+  return m;
+}
+// Legs on hip pivots inside the body, so they swing from there.
+function hipLegs(body, spots, y, r1, r2, hoof) {
+  const legs = [];
+  for (const [x, z, color] of spots) {
+    const leg = new THREE.Group();
+    leg.position.set(x, y, z);
+    body.add(leg);
+    part(leg, cyl(r1, r2, y, 8), color, 0, -y / 2, 0);
+    if (hoof) part(leg, cyl(r2 * 1.05, r2 * 1.2, Math.min(0.12, y * 0.12), 8), hoof, 0, -y + Math.min(0.06, y * 0.06), 0);
+    legs.push(leg);
+  }
+  return legs;
+}
+// A thin tail with a tuft: hangs from the rump.
+function tuftTail(body, y, z, len, r, color, tuft) {
+  const tail = new THREE.Group();
+  tail.position.set(0, y, z);
+  body.add(tail);
+  part(tail, cyl(r * 0.6, r, len, 6), color, 0, -len / 2, -0.03).rotation.x = 0.12;
+  part(tail, sphere(r * 1.8, 6, 6), tuft, 0, -len, -0.05, 1, 1.8, 1);
+  return tail;
+}
+
+// Elephant: a big grey barrel on pillar legs, big flapping ears (their own
+// groups), and a trunk of segments the zoo can curl, swing and raise.
+// c.calf: a little one (no tusks), which follows its mother.
+function elephant(c) {
+  const { root, body } = start();
+  part(body, sphere(1.0, 18, 14), c.color, 0, 1.65, 0, 1, 0.85, 1.25);
+  part(body, sphere(0.62), c.color, 0, 2.0, 0.65, 1, 1, 1); // shoulders, up to the head
+  const head = new THREE.Group();
+  head.position.set(0, 2.15, 1.1);
+  body.add(head);
+  part(head, sphere(0.6, 14, 12), c.color, 0, 0, 0, 1, 0.95, 0.9);
+  part(head, sphere(0.25), c.color, 0, -0.12, 0.42, 1.1, 1.2, 0.8); // the top of the trunk
+  eyes(head, 0.33, 0.12, 0.44, 0.05);
+  const ears = [];
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Group(); // pivot at the side of the head: flaps on y
+    ear.position.set(0.42 * s, 0.05, -0.12);
+    head.add(ear);
+    part(ear, sphere(0.5, 12, 10), c.color, 0.38 * s, -0.08, -0.05, 1, 1.15, 0.12);
+    part(ear, sphere(0.4, 10, 8), c.accent, 0.38 * s, -0.1, 0.0, 1, 1.1, 0.08); // pink inside
+    ear.rotation.y = 0.35 * s;
+    ears.push(ear);
+  }
+  // The trunk: a chain, each segment a group at the end of the last.
+  const trunk = [];
+  let at = head, len = 0.3;
+  for (let i = 0; i < 6; i++) {
+    const seg = new THREE.Group();
+    if (i === 0) seg.position.set(0, -0.22, 0.52); else seg.position.set(0, -len, 0);
+    seg.rotation.x = i === 0 ? 0.25 : 0.12;
+    at.add(seg);
+    const r0 = 0.17 - i * 0.017;
+    part(seg, cyl(r0 - 0.017, r0, len + 0.08, 8), c.color, 0, -len / 2, 0);
+    trunk.push(seg);
+    at = seg;
+  }
+  part(at, sphere(0.085, 8, 6), c.accent, 0, -len - 0.02, 0, 1, 0.6, 1); // the tip
+  if (!c.calf) for (const s of [-1, 1]) {
+    const tusk = part(head, new THREE.ConeGeometry(0.06, 0.45, 7), '#f4ecd8', 0.22 * s, -0.42, 0.48);
+    tusk.rotation.x = 2.3;
+  }
+  const legs = hipLegs(body, [[-0.5, 0.6, c.color], [0.5, 0.6, c.color], [-0.5, -0.6, c.color], [0.5, -0.6, c.color]], 1.3, 0.28, 0.3, c.accent2 || '#b7aca0');
+  const tail = tuftTail(body, 1.75, -1.2, 0.75, 0.04, c.color, '#4a4446');
+  if (c.calf) body.scale.setScalar(0.55);
+  shadow(root, c.calf ? 0.8 : 1.4);
+  return { root, body, head, tail, legs, ears, trunk, calf: !!c.calf };
+}
+
+// Giraffe: very long legs and neck, both spotted; little horns
+// (ossicones), a short mane. The neck is its own group so the zoo can bow it
+// to drink, stretch it up to the treetops, or swing it at a friend.
+function giraffe(c) {
+  const { root, body } = start();
+  torso(body, 'giraffe', 0.55, 2.0, 0, 0.75, 0.8, 1.3);
+  const neck = new THREE.Group();
+  neck.position.set(0, 2.1, 0.5);
+  neck.rotation.x = 0.35;
+  body.add(neck);
+  const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.17, 1.8, 10), coatMat('giraffe'));
+  nk.position.y = 0.85;
+  neck.add(nk);
+  part(neck, new THREE.BoxGeometry(0.05, 1.6, 0.08), '#7a4a24', 0, 0.85, -0.12).rotation.x = -0.04; // the mane
+  const head = new THREE.Group();
+  head.position.set(0, 1.78, 0.02);
+  head.rotation.x = -0.35; // level again
+  neck.add(head);
+  part(head, sphere(0.17, 12, 10), c.color, 0, 0, 0.04, 0.85, 0.85, 1);
+  part(head, sphere(0.13, 10, 8), c.color, 0, -0.05, 0.22, 0.8, 0.75, 1.2); // long face
+  part(head, sphere(0.08, 8, 6), c.accent, 0, -0.07, 0.34, 1, 0.8, 0.9); // muzzle
+  for (const s of [-1, 1]) {
+    part(head, cyl(0.025, 0.03, 0.18, 6), c.color, 0.06 * s, 0.17, -0.02); // ossicones
+    part(head, sphere(0.035, 6, 6), '#3a2a22', 0.06 * s, 0.27, -0.02);
+    part(head, sphere(0.05, 8, 6), c.color, 0.15 * s, 0.07, -0.04, 1.4, 0.5, 0.6).rotation.z = 0.4 * s; // ears
+  }
+  eyes(head, 0.13, 0.05, 0.12, 0.028);
+  const legs = hipLegs(body, [[-0.22, 0.42, c.color], [0.22, 0.42, c.color], [-0.22, -0.45, c.color], [0.22, -0.45, c.color]], 1.85, 0.07, 0.065, '#3a2a22');
+  const tail = tuftTail(body, 2.05, -0.65, 0.8, 0.025, c.color, '#3a2a22');
+  shadow(root, 0.8);
+  return { root, body, head, tail, legs, neck };
+}
+
+// Zebra: a striped pony, a black-and-white standing mane, a dark muzzle.
+function zebra(c) {
+  const { root, body } = start();
+  torso(body, 'zebra', 0.32, 0.95, 0, 0.8, 0.85, 1.55);
+  const neck = new THREE.Group();
+  neck.position.set(0, 1.0, 0.38);
+  neck.rotation.x = 0.6;
+  body.add(neck);
+  const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.55, 10), coatMat('zebra'));
+  nk.position.y = 0.25;
+  neck.add(nk);
+  for (let i = 0; i < 6; i++) part(neck, new THREE.BoxGeometry(0.04, 0.09, 0.08), i % 2 ? '#f7f5f0' : '#1f1c1e', 0, 0.06 + i * 0.085, -0.12); // the mane
+  const head = new THREE.Group();
+  head.position.set(0, 0.55, 0.02);
+  head.rotation.x = -0.6;
+  neck.add(head);
+  part(head, sphere(0.12, 12, 10), c.color, 0, 0, 0, 0.85, 0.9, 1);
+  part(head, sphere(0.1, 10, 8), c.color, 0, -0.06, 0.15, 0.75, 0.75, 1.3); // long face
+  part(head, sphere(0.07, 8, 6), '#2a2628', 0, -0.08, 0.27, 0.95, 0.85, 0.8); // dark muzzle
+  for (const y of [0.04, -0.03]) part(head, new THREE.BoxGeometry(0.17, 0.018, 0.12), '#1f1c1e', 0, y, 0.1); // face stripes
+  for (const s of [-1, 1]) part(head, new THREE.ConeGeometry(0.035, 0.12, 6), c.color, 0.06 * s, 0.14, -0.03).rotation.z = -0.25 * s; // ears
+  eyes(head, 0.075, 0.04, 0.09, 0.022);
+  const legs = hipLegs(body, [[-0.13, 0.33, c.color], [0.13, 0.33, c.color], [-0.13, -0.33, c.color], [0.13, -0.33, c.color]], 0.9, 0.055, 0.045, '#1f1c1e');
+  for (const l of legs) l.children[0].material = coatMat('zebra'); // striped legs too
+  const tail = tuftTail(body, 1.0, -0.47, 0.45, 0.02, c.color, '#1f1c1e');
+  shadow(root, 0.5);
+  return { root, body, head, tail, legs, neck };
+}
+
 // kind -> builder; c: { color, accent }.
 export function makeZooAnimal(kind, c) {
   if (kind === 'rabbit') return rabbit(c);
@@ -506,6 +682,9 @@ export function makeZooAnimal(kind, c) {
   if (kind === 'seal' || kind === 'walrus') return pinniped(c, kind === 'walrus');
   if (kind === 'hippo') return hippo(c);
   if (kind === 'snake') return snake(c);
+  if (kind === 'elephant') return elephant(c);
+  if (kind === 'giraffe') return giraffe(c);
+  if (kind === 'zebra') return zebra(c);
   throw new Error('no zoo animal ' + kind);
 }
 
@@ -527,4 +706,7 @@ export const ZOO_LOOKS = {
   walrus: [{ color: '#a77a5f', accent: '#c99d80' }],
   hippo: [{ color: '#8a7f8e', accent: '#d9a5b0' }, { color: '#7f7484', accent: '#d39daa' }],
   snake: [{ color: '#5e8a3a', accent: '#d9c45a' }],
+  elephant: [{ color: '#8d8a8f', accent: '#d9a5b0' }, { color: '#98949a', accent: '#e0b0ba', calf: true }],
+  giraffe: [{ color: '#d9a35a', accent: '#5a4636' }, { color: '#d39a52', accent: '#5a4636' }],
+  zebra: [{ color: '#f7f5f0', accent: '#1f1c1e' }, { color: '#f4f2ec', accent: '#1f1c1e' }, { color: '#f7f5f0', accent: '#1f1c1e' }],
 };

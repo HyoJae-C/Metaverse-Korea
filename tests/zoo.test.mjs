@@ -92,7 +92,14 @@ test('the Sea Animals hall holds three tanks, one animal kind each, with a door 
   for (const t of tanks) assert.equal(t.groups.length, 1);
   const zoo = new Zoo(new THREE.Scene(), [hall]);
   zoo.update(0.1, { x: hall.x, z: hall.z });
-  assert.equal(zoo.pens[0].roof.visible, false, 'the roof lifts away while you are inside');
+  assert.equal(zoo.pens[0].roof.visible, false, 'the outside shell lifts away while you are inside');
+  // ...but the room stays round you: walls facing in, a high ceiling.
+  const inner = zoo.pens[0].g.children.filter((o) => o.name === 'hall-inner');
+  assert.ok(inner.length >= 5 && inner.every((o) => o.visible && o.geometry.parameters.height >= 6), 'tall room walls');
+  for (const o of inner) { // each faces into the room
+    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(o.quaternion);
+    assert.ok(n.x * -o.position.x + n.z * -o.position.z > 0);
+  }
   zoo.update(0.1, { x: hall.x, z: hall.z - 30 });
   assert.equal(zoo.pens[0].roof.visible, true);
 });
@@ -180,4 +187,19 @@ test('while the zoo is closed, taxis cannot go in or drop you just over the hoar
   for (const l of map.landmarks) if (l.type === 'cgpgate' || (l.type === 'sign' && l.x < x0)) assert.equal(noTaxiAt(zones, l.x, l.z), null, l.type);
   // Once the hoarding comes down, so does the no-taxi area.
   assert.equal(noTaxiZones(map.landmarks.filter((l) => l.type !== 'hoarding')).length, 0);
+});
+
+test('a gap at the foot of the hoarding, on its line, for operators to crawl through', () => {
+  if (ZOO_OPEN) return;
+  const hole = map.landmarks.find((l) => l.type === 'doghole');
+  assert.ok(hole && hole.closes === 'zoo');
+  const onLine = HOARDING.slice(1).some(([x1, z1], i) => {
+    const [x0, z0] = HOARDING[i];
+    return Math.abs((x1 - x0) * (hole.z - z0) - (z1 - z0) * (hole.x - x0)) < 1e-6 && hole.x >= Math.min(x0, x1) && hole.x <= Math.max(x0, x1) && hole.z >= Math.min(z0, z1) && hole.z <= Math.max(z0, z1);
+  });
+  assert.ok(onLine, 'on the hoarding');
+  assert.ok(Math.abs(Math.sin(hole.ry)) === 1, 'faces across the west side');
+  // Still a wall for everyone: the blockers along the side aren't cut.
+  const blk = map.blockers.filter((b) => b.p.some(([x]) => x < hole.x) && b.p.some(([x]) => x > hole.x) && b.p.some(([, z]) => z <= hole.z) && b.p.some(([, z]) => z >= hole.z));
+  assert.ok(blk.length >= 1);
 });

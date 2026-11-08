@@ -24,6 +24,7 @@ const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 // the whole zoo with a sign at the end of the main path; the gate plaza,
 // the information center and the station stay open.
 export const ZOO_OPEN = false;
+export const DOGHOLE = [55, -34]; // on the hoarding's west side
 export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]]; // (between the plaza's blossom trees, x 52 and 58)
 
 // The zoo loop: a rectangle of paths, a main path along z 0 and a cross path.
@@ -121,6 +122,20 @@ export const PENS = [
     groups: [{ kind: 'hippo', n: 2 }],
     melon: [-3, -15.8], melonIn: [0, 1],
   },
+  // The savanna: elephants (a mother and her calf), giraffes and zebras
+  // together, on dry ground with a waterhole and trees to browse. A low glass
+  // wall at the front so you can watch them over it.
+  {
+    id: 'savanna', x: 157, z: 72, w: 56, d: 34, fence: 'glass', ground: 'dirt', board: 'n',
+    name: L('초식동물마을', 'Savanna', '草食動物の村', '草食动物村'),
+    pond: [-14, 6, 5], props: [['tree', 18, 8], ['tree', 22, -6], ['tree', 6, 12], ['rock', -4, -10]],
+    groups: [
+      { kind: 'elephant', n: 2, box: [-24, -12, -2, 13] },
+      { kind: 'giraffe', n: 2, box: [4, -12, 25, 13] },
+      { kind: 'zebra', n: 3, box: [-20, -13, 25, 13] },
+    ],
+    feed: { at: [0, -12], offset: 540, food: 'greens' },
+  },
   {
     id: 'reptiles', x: 90, z: -62, w: 14, d: 10, fence: 'house', ground: 'stone', board: 's',
     name: L('파충류관', 'Reptile House', '爬虫類館', '爬行动物馆'),
@@ -164,7 +179,7 @@ export function buildMap() {
       { k: 'park', trees: true, p: rect(172, -80, 200, -52) },
       { k: 'park', trees: true, p: rect(80, -80, 172, -72) },
       { k: 'park', trees: true, p: rect(188, -52, 200, 95) },
-      { k: 'park', trees: true, p: rect(126, 52, 188, 95) },
+      { k: 'park', trees: true, p: rect(126, 90, 188, 95) }, // (the savanna fills the rest)
       { k: 'park', trees: true, p: rect(50, 76, 126, 95) },
       { k: 'park', trees: true, p: rect(7, -80, 50, -52) },
       { k: 'park', trees: true, p: rect(7, 30, 52, 95) },
@@ -220,6 +235,9 @@ export function buildMap() {
       },
     });
     for (let i = 1; i < HOARDING.length; i++) map.blockers.push(lineBlocker([...HOARDING[i - 1], ...HOARDING[i]], 0, 0));
+    // A gap at the foot of the west side, out of sight of the plaza: only
+    // operators can crawl through it (main.js), to look round before it opens.
+    map.landmarks.push({ type: 'doghole', closes: 'zoo', x: DOGHOLE[0], z: DOGHOLE[1], ry: Math.PI / 2 });
   }
   return map;
 }

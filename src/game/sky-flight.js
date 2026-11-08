@@ -556,6 +556,7 @@ export function createSkyFlight(game) {
   return {
     command,
     fly,
+    isOperator, // (am_operator on the server; also lets operators through the zoo's gap)
     onMsg,
     gone,
     state,
