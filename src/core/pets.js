@@ -15,14 +15,15 @@ function part(g, geo, color, x, y, z, sx = 1, sy = 1, sz = 1) {
   return m;
 }
 
-// A chibi animal; front is +z. Returns { root, body, head, tail, legs }.
+// A chibi animal; front is +z. Returns { root, body, head, tail, legs, ears }.
+// opts.ears: 'golden' for a golden retriever's long soft ears.
 // (No snow settles on animals: core/snow-cover.js.)
-export function makeAnimal(kind, color, accent, scale = 1) {
-  const a = buildAnimal(kind, color, accent, scale);
+export function makeAnimal(kind, color, accent, scale = 1, opts = {}) {
+  const a = buildAnimal(kind, color, accent, scale, opts);
   a.root.userData.noSnow = true;
   return a;
 }
-function buildAnimal(kind, color, accent, scale) {
+function buildAnimal(kind, color, accent, scale, opts = {}) {
   if (kind === 'raccoon') return makeRaccoon(color, accent);
   if (kind === 'hamster' || kind === 'guineapig' || kind === 'chinchilla') return makeRodent(kind, color, accent, scale);
   if (kind === 'monkey') return makeMonkey(color, accent, scale);
@@ -36,8 +37,10 @@ function buildAnimal(kind, color, accent, scale) {
   head.position.set(0, 0.45, dog ? 0.27 : 0.22);
   body.add(head);
   part(head, sphere(0.17), color, 0, 0, 0, 1.1, 1, 1);
+  const ears = [];
   for (const s of [-1, 1]) {
-    if (dog) part(head, sphere(0.07, 8, 6), accent, 0.15 * s, -0.02, -0.02, 0.6, 1.4, 0.9); // floppy ears
+    if (dog && opts.ears === 'golden') ears.push(goldenEar(head, accent, s));
+    else if (dog) part(head, sphere(0.07, 8, 6), accent, 0.15 * s, -0.02, -0.02, 0.6, 1.4, 0.9); // floppy ears
     else part(head, new THREE.ConeGeometry(0.065, 0.13, 4), color, 0.1 * s, 0.15, 0, 1, 1, 0.7); // pointy ears
     part(head, sphere(0.025, 6, 6), '#2b2230', 0.065 * s, 0.03, 0.15); // eyes
   }
@@ -57,7 +60,29 @@ function buildAnimal(kind, color, accent, scale) {
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
   root.add(blob);
-  return { root, body, head, tail, legs };
+  return { root, body, head, tail, legs, ears };
+}
+
+// A golden retriever's ear: set high on the side of the head, folding over
+// at the top, then hanging flat and soft down past the cheek to the jaw,
+// a bit wider at the top with a rounded tip. It hangs from a pivot so it
+// can sway (swingEars).
+function goldenEar(head, color, s) {
+  const ear = new THREE.Group();
+  ear.position.set(0.15 * s, 0.1, -0.035);
+  ear.rotation.set(-0.12, 0, 0.14 * s); // tip a little forward and out from the cheek
+  head.add(ear);
+  part(ear, sphere(0.055, 8, 6), color, 0.012 * s, -0.01, 0, 0.6, 0.55, 1.3); // the fold where it is set on
+  part(ear, sphere(0.09, 10, 8), color, 0.03 * s, -0.08, 0, 0.3, 1.1, 0.85); // the wide hanging flap
+  part(ear, sphere(0.062, 10, 8), color, 0.034 * s, -0.14, 0.006, 0.28, 0.95, 0.72); // narrowing to a soft rounded tip
+  ear.userData.side = s;
+  ear.userData.rz = ear.rotation.z;
+  return ear;
+}
+
+// Long ears bounce while trotting and flap when happy.
+export function swingEars(ears, phase, amount) {
+  for (const e of ears) e.rotation.z = e.userData.rz + e.userData.side * Math.abs(Math.sin(phase)) * amount;
 }
 
 // Raccoon: grey with a black eye mask, round ears and a ringed tail.
@@ -94,7 +119,7 @@ function makeRaccoon(color, accent) {
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
   root.add(blob);
-  return { root, body, head, tail, legs };
+  return { root, body, head, tail, legs, ears: [] };
 }
 
 // Small round pets: hamster, guinea pig and chinchilla. Tiny legs, a round
@@ -134,7 +159,7 @@ function makeRodent(kind, color, accent, scale = 1) {
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
   root.add(blob);
-  return { root, body, head, tail, legs };
+  return { root, body, head, tail, legs, ears: [] };
 }
 
 // A little monkey: round head with a pale face, round ears, long curled tail.
@@ -170,7 +195,7 @@ function makeMonkey(color, accent, scale = 1) {
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
   root.add(blob);
-  return { root, body, head, tail, legs };
+  return { root, body, head, tail, legs, ears: [] };
 }
 
 export const BREEDS = {
@@ -206,7 +231,7 @@ export const BREEDS = {
   ],
   // Big dogs: golden retriever, samoyed, husky, bernese, labrador, jindo.
   bigdogs: [
-    { kind: 'dog', name: '골디', rom: 'Goldie', color: '#e2a85a', accent: '#c98a3e', scale: 1.7 },
+    { kind: 'dog', name: '골디', rom: 'Goldie', color: '#e2a85a', accent: '#c98a3e', scale: 1.7, ears: 'golden' },
     { kind: 'dog', name: '설이', rom: 'Seori', color: '#f7f5f0', accent: '#e8e2d6', scale: 1.65 },
     { kind: 'dog', name: '하늘', rom: 'Haneul', color: '#7d8590', accent: '#f2f2f2', scale: 1.7 },
     { kind: 'dog', name: '버니', rom: 'Bernie', color: '#2b2627', accent: '#c47a45', scale: 1.8 },
@@ -217,8 +242,8 @@ export const BREEDS = {
   // small dogs (a Maltese is 0.85) but smaller than the Big Paws dogs, who
   // love to play together.
   retrievers: [
-    { kind: 'dog', name: '해피', rom: 'Happy', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, playful: true }, // golden retriever
-    { kind: 'dog', name: '두부', rom: 'Dubu', color: '#f1dcb0', accent: '#d9bd86', scale: 1.2, playful: true }, // cream golden
+    { kind: 'dog', name: '해피', rom: 'Happy', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, playful: true, ears: 'golden' }, // golden retriever
+    { kind: 'dog', name: '두부', rom: 'Dubu', color: '#f1dcb0', accent: '#d9bd86', scale: 1.2, playful: true, ears: 'golden' }, // cream golden
   ],
   raccoons: [
     { kind: 'raccoon', name: '너구리', rom: 'Neoguri', color: '#8f8a88', accent: '#ffffff' },
@@ -240,7 +265,7 @@ export class Pets {
     const breeds = [...(BREEDS[kind] || BREEDS.cats).slice(0, count), ...extra];
     this.radius = 0.35 * Math.max(...breeds.map((b) => b.scale || 1));
     this.list = breeds.map((b) => {
-      const a = makeAnimal(b.kind, b.color, b.accent, b.scale);
+      const a = makeAnimal(b.kind, b.color, b.accent, b.scale, b);
       const [x, z] = this._freeSpot();
       a.root.position.set(x, 0, z);
       a.root.rotation.y = Math.random() * Math.PI * 2;
@@ -348,6 +373,7 @@ export class Pets {
       p.body.rotation.x = p.state === 'sit' ? -0.25 : 0;
       p.head.rotation.x = p.state === 'nap' ? 0.4 : Math.sin(p.phase * 1.3) * 0.08;
       p.tail.rotation.y = Math.sin(p.phase * wag) * 0.5;
+      swingEars(p.ears, p.phase * (moving ? 7 : 5.5), moving ? 0.22 : hop ? 0.3 : 0);
     }
   }
 }

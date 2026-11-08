@@ -144,6 +144,7 @@ export const ITEMS = {
     'pet-bluecat': [500, '🐈', { kind: 'cat', name: '아톰', rom: 'Atom', color: '#8e98a6', accent: '#d9dee5', scale: 0.9 }, { en: 'Russian Blue · Atom', ko: '러시안블루 · 아톰', ja: 'ロシアンブルー · アトム', zh: '俄罗斯蓝猫 · 阿童木' }],
     'pet-chinchilla': [400, '🐭', { kind: 'chinchilla', name: '솜이', rom: 'Somi', color: '#b9b6b8', accent: '#f1eeee', scale: 0.8 }, { en: 'Chinchilla · Somi', ko: '친칠라 · 솜이', ja: 'チンチラ · ソミ', zh: '龙猫 · 棉棉' }],
     'pet-guineapig': [60, '🐹', { kind: 'guineapig', name: '꿀떡', rom: 'Kkultteok', color: '#b4733f', accent: '#fff4e6', scale: 0.8 }, { en: 'Guinea pig · Kkultteok', ko: '기니피그 · 꿀떡', ja: 'モルモット · クルトク', zh: '豚鼠 · 蜜糕' }],
+    'pet-golden': [0, '🦮', { kind: 'dog', name: '누룽지', rom: 'Nurungji', color: '#e2a85a', accent: '#c98a3e', scale: 1.25, ears: 'golden' }, { en: 'Golden retriever · Nurungji', ko: '골든리트리버 · 누룽지', ja: 'ゴールデンレトリバー · ヌルンジ', zh: '金毛寻回犬 · 锅巴', es: 'Golden retriever · Nurungji', fr: 'Golden retriever · Nurungji', vi: 'Golden retriever · Nurungji', id: 'Golden retriever · Nurungji', th: 'โกลเดนรีทรีฟเวอร์ · นูรุงจี', hi: 'गोल्डन रिट्रीवर · नुरुंगजी', ar: 'غولدن ريتريفر · نورونغجي' }],
     'pet-monkey': [0, '🐵', { kind: 'monkey', name: '바나', rom: 'Bana', color: '#8a5a3a', accent: '#f0d2b0', scale: 0.9 }, { en: 'Little monkey · Bana', ko: '아기 원숭이 · 바나', ja: '子ザル · バナ', zh: '小猴子 · 巴纳' }],
   }),
 };
@@ -188,6 +189,7 @@ const CODES = {
   '5f91cb75c870dad21a6e9625a81fe0a7077a7fbe6a5e97f26c4e8bda3452e23c': ['pet-chinchilla'],
   bb28a6154fa42b99d0562f75e5167c61e49b69697ab09c65fc6deef34c5dcd48: ['pet-guineapig'],
   '8580d0842fc4424e83d6dc7f6672a93e519a96ca7dd549afdb31fffbabb245da': ['pet-monkey'],
+  '90398d4f6612bb38379cd693e3573dc5cffa193ad323ad6dd4dae5c7292a3d05': ['pet-golden'], // a golden retriever, code only (the café's retrievers are not for adoption)
 };
 
 // Developer coin codes: "/<word><number>" adds that many coins, every time
@@ -228,7 +230,8 @@ async function sha256(text) {
 // The item ids a code unlocks, or null.
 export async function redeemCode(code) {
   if (!globalThis.crypto?.subtle) return null;
-  return CODES[await sha256(code)] || null;
+  // A phone may capitalise the first letter, so lower case is tried too.
+  return CODES[await sha256(code)] || CODES[await sha256(String(code).toLowerCase())] || null;
 }
 
 export async function isMasterCode(code) {
