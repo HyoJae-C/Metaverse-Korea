@@ -13,6 +13,8 @@
 --        and puts the account's real player name on the message;
 --      - nobody can send on the chat channels directly any more.
 --    Until this is run the game keeps chatting the old way.
+--    Name tags: games ask tag_names which name each player id really has,
+--    so a changed game can't put someone else's name over its head.
 --
 -- 2. Names. The first change after picking a name is free and immediate;
 --    after that, one change per 7 days (claim_name answers 'wait').
@@ -170,3 +172,37 @@ begin
 end $$;
 revoke all on function public.claim_default_name(text) from public, anon;
 grant execute on function public.claim_default_name(text) to authenticated;
+
+-- 3. Name tags ----------------------------------------------------------
+-- The name over someone's head is announced by their own game, so a changed
+-- game could show someone else's name. Each game asks here about the people
+-- it meets: ids[i] announced names[i]. Answers only the ones to correct:
+-- their real name, or null (show '?') when the announced name belongs to
+-- another account. Everyone else's announced name stands.
+create or replace function public.tag_names(ids text[], names text[])
+returns table (net_id text, name text)
+language plpgsql stable security definer set search_path = public as $$
+declare
+  i int;
+  owner uuid;
+  real text;
+  named_by uuid;
+begin
+  for i in 1 .. least(coalesce(array_length(ids, 1), 0), coalesce(array_length(names, 1), 0), 50) loop
+    select c.user_id into owner from public.chat_ids c where c.net_id = ids[i];
+    real := null;
+    if owner is not null then
+      select n.name into real from public.player_names n where n.user_id = owner;
+    end if;
+    if real is not null then
+      if real is distinct from names[i] then net_id := ids[i]; name := real; return next; end if;
+      continue;
+    end if;
+    select n.user_id into named_by from public.player_names n where n.name_key = public.name_key(names[i]);
+    if named_by is not null and named_by is distinct from owner then
+      net_id := ids[i]; name := null; return next;
+    end if;
+  end loop;
+end $$;
+revoke all on function public.tag_names(text[], text[]) from public;
+grant execute on function public.tag_names(text[], text[]) to anon, authenticated;

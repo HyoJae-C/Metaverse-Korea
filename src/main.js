@@ -1274,6 +1274,28 @@ let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+// Name tags are announced by each player's own game: ask the server who
+// they really are (019_chat_names.sql) and correct a borrowed name. People
+// joining together are asked about in one go.
+const tagQueue = new Set();
+let tagTimer = 0;
+function checkTag(id) {
+  if (config.netProvider !== 'supabase' || testRoom) return;
+  tagQueue.add(id);
+  if (tagTimer) return;
+  tagTimer = setTimeout(async () => {
+    tagTimer = 0;
+    const room = others;
+    const pairs = [...tagQueue].slice(0, 50).map((pid) => [pid, room.nameOf(pid)]).filter((p) => p[1] != null);
+    for (const [pid] of pairs) tagQueue.delete(pid);
+    tagQueue.clear();
+    const fixes = await cloud.tagNames(pairs);
+    for (const [pid, real] of fixes) {
+      if (room !== others) return; // moved to another room meanwhile
+      room.setName(pid, real ? filterText(cleanName(real).trim()) || '?' : '?');
+    }
+  }, 400);
+}
 // Claim myId for this account before anyone can see it, so only we can chat
 // as myId (supabase/019_chat_names.sql). Asked once; asked again if the
 // server couldn't be reached.
@@ -1299,6 +1321,7 @@ async function joinRoom(room, roomScene, area = null) {
     onJoin: (p) => {
       others.join({ ...p, name: filterText(cleanName(p.name).trim() || '?') });
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
+      checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },

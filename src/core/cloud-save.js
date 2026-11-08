@@ -166,6 +166,20 @@ export class CloudSave {
     } catch { return null; }
   }
 
+  // Correct name tags (019_chat_names.sql): pairs [[id, announced name], …]
+  // → Map id → real name, or null for "not theirs" (show '?'). Only the
+  // ones to correct; an empty Map when the server can't be asked.
+  async tagNames(pairs, timeoutMs = 5000) {
+    const out = new Map();
+    if (!this.client || !pairs.length) return out;
+    try {
+      const call = this.client.rpc('tag_names', { ids: pairs.map((p) => String(p[0])), names: pairs.map((p) => String(p[1] ?? '')) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (!error && Array.isArray(data)) for (const r of data) if (r && typeof r.net_id === 'string') out.set(r.net_id, typeof r.name === 'string' ? r.name : null);
+    } catch { /* keep the announced names */ }
+    return out;
+  }
+
   // Claim this page's player id for my account, so only I can chat with it
   // (019_chat_names.sql): 'ok', 'taken', or 'offline'.
   async claimChatId(id, timeoutMs = 4000) {
