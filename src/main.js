@@ -167,6 +167,7 @@ import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
+import { Zoo } from './core/zoo.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
@@ -705,6 +706,24 @@ renderer.localClippingEnabled = true; // the station's train stays inside the ha
 // Palace gates, halls, statues (hand-made districts). Those marked "inner"
 // (inside Jongmyo's wall) wait for the first visit (the enclosures below).
 const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
+// Children's Grand Park's zoo (core/zoo.js): feeding times are told in a toast.
+const ZOO_TEXT = {
+  soon: { en: '🍖 Feeding time at {name} in a minute', ko: '🍖 1분 뒤 {name} 먹이 시간이에요', ja: '🍖 1分後に{name}のごはんの時間', zh: '🍖 1分钟后{name}喂食时间' },
+  now: { en: '🍖 Feeding time at {name}!', ko: '🍖 {name} 먹이 시간!', ja: '🍖 {name}のごはんの時間！', zh: '🍖 {name}喂食时间到！' },
+  melon: { en: 'Toss the hippo a watermelon', ko: '하마에게 수박 주기', ja: 'カバにスイカをあげる', zh: '给河马喂西瓜' },
+  crunch: { en: '🍉 Crunch! The hippo loved it', ko: '🍉 아삭! 하마가 정말 좋아해요', ja: '🍉 ガブッ！カバは大喜び', zh: '🍉 咔嚓！河马很喜欢' },
+  poor: { en: 'A watermelon costs 🪙 {n}', ko: '수박은 🪙 {n}이에요', ja: 'スイカは🪙 {n}', zh: '西瓜要🪙 {n}' },
+  buy: { en: 'Watermelon for the hippo', ko: '하마 수박', ja: 'カバのスイカ', zh: '河马的西瓜' },
+};
+const MELON_PRICE = 3000;
+const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
+  if (mode !== 'street') return;
+  shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
+});
+const melonAct = (P, p) => ({ key: 'zoo-melon', label: `🍉 ${L(ZOO_TEXT.melon)} · 🪙 ${MELON_PRICE.toLocaleString()}`, run: () => {
+  if (!wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { shop.toast(fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
+  if (zoo.feedMelon(P, p.x, p.z)) me.play?.('wave');
+} });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -5488,6 +5507,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
+    const za = zoo.nearest(p.x, p.z); if (za) out.push(zooPetAct(za, p));
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
@@ -5522,6 +5542,12 @@ const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(A
   shop.openProduct({ id: 'adopt-' + pet.adopt, model: 'pet:' + pet.kind, color: pet.color, adopt: pet.adopt, price: 0, name: it.name,
     desc: { en: fmt(ADOPT_TEXT.desc.en, { desc: pet.desc?.en || '' }), ko: fmt(ADOPT_TEXT.desc.ko, { desc: pet.desc?.ko || pet.desc?.en || '' }), ja: fmt(ADOPT_TEXT.desc.ja, { desc: pet.desc?.en || '' }), zh: fmt(ADOPT_TEXT.desc.zh, { desc: pet.desc?.en || '' }) } });
 } });
+// Petting in the zoo's little animal village (core/zoo.js).
+const ZOO_PET = {
+  rabbit: { en: 'rabbit', ko: '토끼', ja: 'ウサギ', zh: '兔子' }, guineapig: { en: 'guinea pig', ko: '기니피그', ja: 'モルモット', zh: '豚鼠' },
+  goat: { en: 'goat', ko: '염소', ja: 'ヤギ', zh: '山羊' }, sheep: { en: 'sheep', ko: '양', ja: 'ヒツジ', zh: '绵羊' },
+};
+const zooPetAct = (a, p) => ({ key: 'zoopet:' + a.kind, label: '🐾 ' + t('pet.pat', { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit) }), run: () => { zoo.pet(a, p.x, p.z); showBubble(myLabel, $('labels'), a.kind === 'goat' || a.kind === 'sheep' ? '😊' : '🥰'); missionEvent('pet'); } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
 const sitAct = (seat) => (seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
@@ -5566,6 +5592,8 @@ function updateAction(p, tSec) {
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
+    else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -6188,7 +6216,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -6380,6 +6408,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    zoo: () => zoo, // Children's Grand Park (core/zoo.js)
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)
