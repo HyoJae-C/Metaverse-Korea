@@ -4,6 +4,11 @@
 import * as THREE from 'three';
 import { STAMP_NEAR } from './stamp-book.js';
 import { stampSvg } from '../ui/stamp-art.js';
+import { droneShowAt } from './drone-show.js';
+
+// Stands that are only up at certain times (stamps.js onlyDuring).
+export const STAND_TIMES = { droneShow: (now = Date.now()) => !!droneShowAt(now)?.on };
+const standUp = (it) => !it.stamp.onlyDuring || !!STAND_TIMES[it.stamp.onlyDuring]?.();
 
 const SIDE = 3.8; // metres along the shop front from the door
 
@@ -101,10 +106,16 @@ export class StampStands {
     const items = storeId ? this.rooms.get(storeId) || [] : this.items;
     let best = null, bd = STAMP_NEAR;
     for (const it of items) {
+      if (!standUp(it)) continue;
       const d = Math.hypot(x - it.ux, z - it.uz);
       if (d < bd) { bd = d; best = it; }
     }
     return best;
+  }
+  // Show or hide the stands that are only up at certain times (each frame
+  // in that room is fine: a few checks).
+  showTimed(storeId) {
+    for (const it of this.rooms.get(storeId) || []) if (it.stamp.onlyDuring) it.mesh.visible = standUp(it);
   }
   // A little press-down bounce on the stand's rubber stamp.
   press(it) {

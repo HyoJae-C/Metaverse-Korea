@@ -8,6 +8,10 @@ import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-mark
 import { productModel } from './interior.js';
 import { localName } from './i18n.js';
 import { luckySpot } from './fishing.js';
+import { createCharacter } from './character.js';
+import { randomLook } from '../data/appearance.js';
+import * as droneShow from './drone-show.js';
+const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
@@ -17,6 +21,13 @@ const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買
 const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
 const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
 const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
+const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
+const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
+const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
+const DRONE_COLOR = '#2b3a7a';
+// Night during the drone show (drone-show.js): the park's own sky only.
+const DAY_SKY = new THREE.Color('#bfe0f4'), NIGHT_SKY = new THREE.Color('#141d3f');
+const DAY_RIVER = new THREE.Color('#4f9ccf'), NIGHT_RIVER = new THREE.Color('#1a2a52');
 
 export const DUCK_BOATS = 4;
 // Where the two riders sit, in the boat's own space (it faces -z).
@@ -47,14 +58,19 @@ export function makeDuckBoat(roof) {
 
 export function buildPark(store, ROOM, EXIT) {
   const { w, d } = ROOM;
+  // Ttukseom has the drone show (drone-show.js); the other Han River parks
+  // (Mangwon, Banpo-Jamwon) are built from the same code without it.
+  const drones = store.id === 'ttukseom-hangang';
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#bfe0f4');
   scene.fog = new THREE.Fog('#bfe0f4', 40, 140);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8fbf7a, 1.6));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x8fbf7a, 1.6);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.2);
   sun.position.set(10, 20, 8);
   scene.add(sun);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(ambient);
 
   const colliders = [];
   const block = (x, z, sx, sz) => colliders.push({
@@ -78,6 +94,7 @@ export function buildPark(store, ROOM, EXIT) {
   plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
   plane(w + 80, 3, 0, 0.01, bank + 1.6, '#d9c7a6'); // path along the river
   const river = plane(w + 300, 160, 0, -0.25, bank - 80, '#4f9ccf');
+  river.material = river.material.clone(); // (darkens at night on its own)
   box(w + 80, 0.4, 0.4, 0, -0.05, bank, '#b9b2a6'); // embankment edge
   // Railing along the bank, with gaps for the pier.
   for (const s of [-1, 1]) {
@@ -96,17 +113,62 @@ export function buildPark(store, ROOM, EXIT) {
     for (let z = 0; z <= pierLen; z += 2) box(0.1, FENCE_H + 0.05, 0.1, s * 1.5, FENCE_H / 2, bank - z, '#6b4a2e');
   }
   for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
-  // Far bank skyline and a bridge.
+  // Far bank skyline (Cheongdam across the river) and a bridge. Its windows
+  // light up during the drone show.
+  const lit = []; // [x, y] of each lit window
   for (let i = 0; i < 26; i++) {
-    const h = 6 + ((i * 37) % 11) * 2.2;
-    box(5 + (i % 3), h, 5, -95 + i * 7.6, h / 2 - 0.2, bank - 150, ['#c9d3dc', '#b7c3cf', '#dfe5ea'][i % 3]);
+    const h = 6 + ((i * 37) % 11) * 2.2, bw = 5 + (i % 3), bx = -95 + i * 7.6;
+    box(bw, h, 5, bx, h / 2 - 0.2, bank - 150, ['#c9d3dc', '#b7c3cf', '#dfe5ea'][i % 3]);
+    for (let fy = 2; fy < h - 1; fy += 2.2) for (let c = 0; c < 3; c++) if ((i * 7 + c * 3 + Math.round(fy) * 5) % 5 > 1) lit.push([bx + (c - 1) * bw * 0.28, fy]);
   }
-  box(260, 1.2, 4, 40, 7, bank - 70, '#d6dbe0'); // bridge deck
-  for (let x = -60; x <= 140; x += 25) box(2, 7, 2, x, 3.2, bank - 70, '#c4cad1');
-  for (let x = -60; x < 140; x += 25) { // arches
-    const arch = new THREE.Mesh(new THREE.TorusGeometry(12.5, 0.35, 6, 24, Math.PI), mat('#e07a5f'));
-    arch.position.set(x + 12.5, 7.4, bank - 70);
-    scene.add(arch);
+  const windows = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 1.1),
+    new THREE.MeshBasicMaterial({ color: '#ffd98a', transparent: true, opacity: 0, fog: false, depthWrite: false }), lit.length);
+  const m4w = new THREE.Matrix4();
+  lit.forEach(([x, y], k) => windows.setMatrixAt(k, m4w.makeTranslation(x, y, bank - 147.4)));
+  windows.visible = false;
+  scene.add(windows);
+  // Ttukseom: a low, flat two-deck girder bridge, like Cheongdam Bridge
+  // across from the real Ttukseom (road on top, the Line 7 subway inside the
+  // lower deck), low enough to leave the sky open for the drones. The other
+  // parks keep the arched bridge.
+  const bz = bank - 70;
+  if (drones) {
+    box(260, 0.7, 5, 40, 6.2, bz, '#d6dbe0'); // road deck
+    box(260, 0.3, 5.2, 40, 6.7, bz, '#c4cad1'); // its railing band
+    box(260, 1.8, 4.2, 40, 4.6, bz, '#b9c1ca'); // the subway deck below
+    for (let x = -80; x <= 160; x += 24) box(2.2, 4, 2.2, x, 1.6, bz, '#aab2bc'); // piers
+  } else {
+    box(260, 1.2, 4, 40, 7, bz, '#d6dbe0'); // bridge deck
+    for (let x = -60; x <= 140; x += 25) box(2, 7, 2, x, 3.2, bz, '#c4cad1');
+    for (let x = -60; x < 140; x += 25) { // arches
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(12.5, 0.35, 6, 24, Math.PI), mat('#e07a5f'));
+      arch.position.set(x + 12.5, 7.4, bz);
+      scene.add(arch);
+    }
+  }
+  // Lamps along the road deck and the subway's lit window band (at night).
+  const glowMat = new THREE.MeshBasicMaterial({ color: '#ffe3a0', transparent: true, opacity: 0, fog: false, depthWrite: false });
+  const lampN = 44;
+  const bridgeLamps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.28, 6, 4), glowMat, lampN);
+  for (let k = 0; k < lampN; k++) bridgeLamps.setMatrixAt(k, m4w.makeTranslation(-88 + k * 6, 7.3, bz + 2.6));
+  const trainBand = new THREE.Mesh(new THREE.PlaneGeometry(260, 0.5), new THREE.MeshBasicMaterial({ color: '#bfe6ff', transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  trainBand.position.set(40, 4.6, bz + 2.12);
+  const bridgeLights = new THREE.Group();
+  bridgeLights.add(bridgeLamps, trainBand);
+  bridgeLights.visible = false;
+  scene.add(bridgeLights);
+
+  // The drone show's launch barge (drone-show.js BARGE), out past where the
+  // duck boats go: a flat deck with a grid of landing pads. It floats there
+  // all day, a hint that something happens here at night.
+  if (drones) {
+    box(BARGE.w, 0.8, BARGE.d, BARGE.x, 0.1, BARGE.z, '#3b4048');
+    box(BARGE.w - 0.4, 0.06, BARGE.d - 0.4, BARGE.x, BARGE.deck - 0.02, BARGE.z, '#5d636c');
+    const padN = 12 * 4;
+    const pads = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), mat('#8a93a0'), padN);
+    for (let k = 0; k < padN; k++) pads.setMatrixAt(k, m4w.makeTranslation(BARGE.x + ((k % 12) - 5.5) * 1.15, BARGE.deck + 0.02, BARGE.z + (Math.floor(k / 12) - 1.5) * 1.25));
+    scene.add(pads);
+    for (const sx of [-1, 1]) box(0.2, 1.2, 0.2, BARGE.x + sx * (BARGE.w / 2 - 0.3), BARGE.deck + 0.6, BARGE.z + BARGE.d / 2 - 0.3, '#e05a3a'); // marker posts
   }
 
   // Walls of the play area: the river (except the pier) and the room edges.
@@ -132,7 +194,7 @@ export function buildPark(store, ROOM, EXIT) {
 
   // A few light touches (all plain boxes and low-poly shapes, no extra
   // lights): flower beds along the path, round bushes and lamp posts.
-  decorate(scene, box, block, bank);
+  const lamps = decorate(scene, box, block, bank);
 
   // Benches facing the river.
   const seats = [];
@@ -155,7 +217,7 @@ export function buildPark(store, ROOM, EXIT) {
   martSign.mesh.position.set(kx - 1.62, 3.1, kz);
   martSign.mesh.rotation.y = -Math.PI / 2;
   scene.add(martSign.mesh);
-  box(0.05, 1.6, 3.6, kx - 1.52, 1.25, kz, '#cfe8f5'); // shop window
+  const kioskWindow = box(0.05, 1.6, 3.6, kx - 1.52, 1.25, kz, '#cfe8f5').material = mat('#cfe8f5').clone(); // shop window (lit at night: its own material)
   // The counter in front, with the goods on it.
   const cx = kx - 2.8;
   box(0.45, 0.62, 2.8, cx, 0.31, kz, '#f5efe4');
@@ -226,7 +288,9 @@ export function buildPark(store, ROOM, EXIT) {
     drawSpotSigns();
   };
   updateLucky();
+  let tickShowRef = null; // (set below, once the boards are up)
   const tick = (dt) => {
+    tickShowRef?.(dt);
     luckT += dt;
     if (luckT > 1e4) luckT = 0;
     updateLucky();
@@ -270,6 +334,32 @@ export function buildPark(store, ROOM, EXIT) {
   const sign3 = box(0.9, 0.5, 0.05, duck.x + 4.4, 1.2, bank + 0.4, '#ffd166');
   sign3.rotation.y = -0.2;
 
+  // The drone show's board by the railing, left of the pier: the next show
+  // time in your own time zone (or "On now!").
+  const dsx = -4.6, dsz = bank + 0.75;
+  const droneSign = signBoard(1.7, 0.62, DRONE_COLOR);
+  if (drones) {
+    for (const sx of [-0.75, 0.75]) box(0.07, 1.5, 0.07, dsx + sx, 0.75, dsz, '#3d4650');
+    droneSign.mesh.position.set(dsx, 1.55, dsz + 0.04);
+    scene.add(droneSign.mesh);
+    block(dsx, dsz, 1.7, 0.2);
+  }
+  const showTime = (ms) => {
+    try { return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch { return ''; }
+  };
+  let droneSignKey = '';
+  const drawDroneSign = (now = Date.now()) => {
+    if (!drones) return;
+    const s = droneShowAt(now), on = !!s?.on;
+    const when = on ? null : showTime(nextDroneShow(now));
+    const key = `${signLang}|${on}|${when}`;
+    if (key === droneSignKey) return;
+    droneSignKey = key;
+    const title = '🛸 ' + (signLang ? localName(DRONE_SIGN, signLang) : DRONE_SIGN.ko);
+    const sub = on ? (signLang ? localName(DRONE_NOW, signLang) : DRONE_NOW.ko + ' · ' + DRONE_NOW.en) : `${signLang ? localName(DRONE_NEXT, signLang) : DRONE_NEXT.en} ${when}`;
+    droneSign.draw(title, sub);
+  };
+
   // The riverside market: stalls with sellers, and parasol tables.
   const market = buildMarket(scene, store, block, seats);
   const setSignLang = (lang) => {
@@ -279,12 +369,55 @@ export function buildPark(store, ROOM, EXIT) {
     martSign.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
     fSign.draw(lang ? localName(FISH_SIGN, lang) : FISH_SIGN.ko, lang ? '' : FISH_SIGN.en);
+    drawDroneSign();
   };
   setSignLang(null);
 
+  // The drone show (drone-show.js): the park's sky turns to night, the
+  // lights come on, and the drones (drone-sky.js, downloaded only now) rise
+  // from the barge. Everything else in the park carries on as usual.
+  const show = { now: null, night: 0 };
+  let nightShown = -1, sky = null, watchers = null, skyLoading = false, signT = 0;
+  const setNight = (k) => {
+    if (Math.abs(k - nightShown) < 0.002) return;
+    nightShown = k;
+    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+    scene.fog.color.copy(scene.background);
+    scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
+    hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+    river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    lamps.glowMat.emissiveIntensity = 0.5 + 2 * k;
+    lamps.poolMat.opacity = 0.32 * k; lamps.pools.visible = k > 0.01;
+    kioskWindow.emissive.set('#fff1c8'); kioskWindow.emissiveIntensity = 0.9 * k;
+    windows.material.opacity = k; windows.visible = k > 0.01;
+    glowMat.opacity = k; trainBand.material.opacity = 0.75 * k; bridgeLights.visible = k > 0.01;
+  };
+  const tickShow = (dt) => {
+    const now = Date.now(), s = droneShowAt(now);
+    show.now = s;
+    show.night = s ? s.night : 0;
+    setNight(show.night);
+    if ((signT -= dt) <= 0) { signT = 5; drawDroneSign(now); }
+    if (s && s.t > -LIFT_SECONDS - 60 && !sky && !skyLoading) {
+      skyLoading = true;
+      const phone = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+      import('./drone-sky.js').then((m) => {
+        m.useShow(droneShow);
+        sky = m.createDroneSky(scene, { count: phone ? 400 : 600 });
+        show.photo = m.PHOTO_TIME;
+        show.sky = sky;
+        watchers = m.createWatchers(scene, { createCharacter, randomLook });
+      }).catch(() => { skyLoading = false; }); // (offline: try again later)
+    }
+    if (sky) sky.update(s?.start, s?.t ?? 0, show.night);
+    watchers?.update(dt, show.night);
+  };
+
+  if (drones) tickShowRef = tickShow;
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
+    show, // the drone show right now: { now: droneShowAt(), night, photo } (main.js: camera, notices, music)
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
     // the benches and the back, right of the market and left of DAILY MART.
     lawns: [{ x0: -12.6, x1: 17, z0: 0.5, z1: 13.6 }],
@@ -327,14 +460,26 @@ function decorate(scene, box, block, bank) {
   bushes.forEach(([x, z], i) => { bush.setMatrixAt(i, m4.makeTranslation(x, 0.38, z)); block(x, z, 1.2, 1); });
   scene.add(bush);
 
-  // Lamp posts along the river path (just shapes; no light sources).
+  // Lamp posts along the river path (just shapes; no light sources). At
+  // night (the drone show) the lamp glows and a soft pool of light shows on
+  // the ground below it.
+  const glowMat = new THREE.MeshLambertMaterial({ color: '#fff4cf', emissive: '#ffe9a8', emissiveIntensity: 0.5 }); // (each park its own: it glows brighter at night)
+  const poolMat = new THREE.MeshBasicMaterial({ color: '#ffe2a0', transparent: true, opacity: 0, depthWrite: false });
+  const poolGeo = new THREE.CircleGeometry(2.4, 24).rotateX(-Math.PI / 2);
+  const pools = new THREE.Group();
   for (const x of [-17, -11, 11, 18]) {
     const z = bank + 2.9;
     box(0.1, 2.6, 0.1, x, 1.3, z, '#3d4650');
     box(0.34, 0.08, 0.34, x, 2.62, z, '#3d4650');
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), mat('#fff4cf', { emissive: '#ffe9a8', emissiveIntensity: 0.5 }));
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), glowMat);
     glow.position.set(x, 2.45, z);
     scene.add(glow);
+    const pool = new THREE.Mesh(poolGeo, poolMat);
+    pool.position.set(x, 0.03, z);
+    pools.add(pool);
     block(x, z, 0.25, 0.25);
   }
+  pools.visible = false;
+  scene.add(pools);
+  return { glowMat, poolMat, pools };
 }

@@ -390,6 +390,19 @@ export class Sfx {
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)
+  // ---- Seoul Another Dome (core/dome.js) ----
+  // The crowd roaring for a hit (loud 0..1; a home run is 1).
+  crowd(loud = 0.6) {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 1.2 + loud * 1.4, 0.05 + loud * 0.08, 1400, 700);
+    this._hiss(0.15, 0.9 + loud, 0.03 + loud * 0.05, 3200, 1800);
+  }
+  // A cheer chant's beat: drum, drum, then "짝짝 짝짝짝" (claps).
+  chant() {
+    if (!this.on || !this._ctx()) return;
+    for (const at of [0, 0.36]) this._tone(95, at, 0.2, 0.22, 'sine', 55); // the big drum
+    for (const at of [0.8, 1.0, 1.45, 1.65, 1.85]) this._hiss(at, 0.06, 0.12, 2600, 1500); // claps
+  }
   doorbell() {
     if (!this.on) return;
     const c = this._ctx();
