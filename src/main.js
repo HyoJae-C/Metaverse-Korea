@@ -48,6 +48,8 @@ import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js'
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
+import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
+import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -165,6 +167,7 @@ import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
+import { Zoo } from './core/zoo.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
@@ -704,6 +707,24 @@ renderer.localClippingEnabled = true; // the station's train stays inside the ha
 // Palace gates, halls, statues (hand-made districts). Those marked "inner"
 // (inside Jongmyo's wall) wait for the first visit (the enclosures below).
 const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
+// Children's Grand Park's zoo (core/zoo.js): feeding times are told in a toast.
+const ZOO_TEXT = {
+  soon: { en: '🍖 Feeding time at {name} in a minute', ko: '🍖 1분 뒤 {name} 먹이 시간이에요', ja: '🍖 1分後に{name}のごはんの時間', zh: '🍖 1分钟后{name}喂食时间' },
+  now: { en: '🍖 Feeding time at {name}!', ko: '🍖 {name} 먹이 시간!', ja: '🍖 {name}のごはんの時間！', zh: '🍖 {name}喂食时间到！' },
+  melon: { en: 'Toss the hippo a watermelon', ko: '하마에게 수박 주기', ja: 'カバにスイカをあげる', zh: '给河马喂西瓜' },
+  crunch: { en: '🍉 Crunch! The hippo loved it', ko: '🍉 아삭! 하마가 정말 좋아해요', ja: '🍉 ガブッ！カバは大喜び', zh: '🍉 咔嚓！河马很喜欢' },
+  poor: { en: 'A watermelon costs 🪙 {n}', ko: '수박은 🪙 {n}이에요', ja: 'スイカは🪙 {n}', zh: '西瓜要🪙 {n}' },
+  buy: { en: 'Watermelon for the hippo', ko: '하마 수박', ja: 'カバのスイカ', zh: '河马的西瓜' },
+};
+const MELON_PRICE = 3000;
+const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
+  if (mode !== 'street') return;
+  shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
+});
+const melonAct = (P, p) => ({ key: 'zoo-melon', label: `🍉 ${L(ZOO_TEXT.melon)} · 🪙 ${MELON_PRICE.toLocaleString()}`, run: () => {
+  if (!wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { shop.toast(fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
+  if (zoo.feedMelon(P, p.x, p.z)) me.play?.('wave');
+} });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -1441,6 +1462,7 @@ async function joinRoom(room, roomScene, area = null) {
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
         return;
       }
+      if (e === BELL_MSG) { onPeerBell(id); return; }
       if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
       if (typeof e === 'string' && e.startsWith('fishph:')) { onPeerFishing(id, e.slice(7)); return; }
       if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
@@ -4552,6 +4574,76 @@ function updateJongmyo(p, dt) {
     }
   } else jmWatch = 0;
 }
+// Bosingak on Jongno (data/bosingak.js): in front of the steps, ring the
+// bell (the striker swings, the hum follows; people round the square hear
+// it too). The first ring ever pays a little and shows what the pavilion is.
+// On 1 January at midnight and at noon (KST) the bell keeper comes out and
+// rings it 33 times, heard all along Jongno, the same moment for everyone.
+const bosingakAt = (region.districts || []).find((d) => d.id === BOSINGAK.district)?.offset || null;
+const bosingakShow = bosingakAt ? new BosingakShow(scene, bosingakAt, $('labels')) : null;
+const BOSINGAK_KEY = 'mk.bosingak';
+const BELL_MSG = 'bosingak:ring';
+let bellRungAt = -1e9, ringingSeen = '';
+const bellRungBefore = () => { try { return globalThis.localStorage?.getItem(BOSINGAK_KEY) === '1'; } catch { return false; } };
+// Metres from where you stand to the pavilion (or to the ringing spot).
+function bellDistance(p, [x, z] = BOSINGAK.at) {
+  if (!bosingakAt) return Infinity;
+  return Math.hypot(p.x - bosingakAt[0] - x, p.z - bosingakAt[1] - z);
+}
+// Someone rang it by hand: loud only round the square (BOSINGAK.hear.ring).
+function hearRing(p) {
+  strikeBell();
+  const loud = mode === 'street' ? bellGain(bellDistance(p, BOSINGAK.ring.at), BOSINGAK.hear.ring) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(loud), 1150); // when the log meets the bell
+}
+function bosingakCard() {
+  bukchonUi.card(BOSINGAK_CARD);
+  bukchonUi.view = 'bosingak';
+}
+function ringBosingak() {
+  const now = performance.now() / 1000;
+  if (now - bellRungAt < BOSINGAK.cooldown) { shop.toast(L(BOSINGAK_TEXT.humming)); return; }
+  bellRungAt = now;
+  hearRing(me.root.position);
+  net.sendEmote(BELL_MSG);
+  if (!bellRungBefore()) {
+    try { globalThis.localStorage?.setItem(BOSINGAK_KEY, '1'); } catch { /* storage blocked */ }
+    const c = BOSINGAK.firstRing;
+    wallet.add(c, { name: BOSINGAK_TEXT.ledger }, { r: 'view', once: 'bosingak:bell' });
+    refreshWallet();
+    setTimeout(() => { shop.toast(fmt(L(BOSINGAK_TEXT.rang), { c: c.toLocaleString() })); bosingakCard(); }, 1300);
+  } else setTimeout(() => shop.toast(L(BOSINGAK_TEXT.again)), 1300);
+  action = STALE;
+}
+// Another player rang it (their emote): the striker swings for everyone in
+// sight; the sound only reaches the square.
+function onPeerBell(id) {
+  if (!bosingakAt || safety.isBlocked(id, others.nameOf(id))) return;
+  const at = others.positionOf(id);
+  if (at && bellDistance(at, BOSINGAK.ring.at) > BOSINGAK.ring.r + 3) return; // not at the bell
+  hearRing(me.root.position);
+}
+function bosingakAct(p) {
+  if (!bosingakAt || mode !== 'street' || !nearBell(p.x, p.z, bosingakAt)) return null;
+  return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
+}
+const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
+// Each frame on the street: the people on the square, and the New Year's ringings.
+function updateBosingak(p, dt, w, h) {
+  if (!bosingakAt) return;
+  const r = newYearRinging(Date.now());
+  bosingakShow.update(dt, p, camera, w, h, placeLabels, r);
+  if (!r || r.stroke < 0) return;
+  const key = r.start + ':' + r.stroke;
+  if (key === ringingSeen) return;
+  const first = !ringingSeen.startsWith(r.start + ':');
+  ringingSeen = key;
+  strikeBell();
+  bosingakShow.pull();
+  const loud = mode === 'street' ? bellGain(bellDistance(p), BOSINGAK.hear.ceremony) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(Math.max(0.15, loud)), 1150);
+  if (first && loud > 0 && !spaceBusy()) shop.toast(L(new Date(r.start + 9 * 3600e3).getUTCHours() === 12 ? BOSINGAK_TEXT.noon : BOSINGAK_TEXT.newYear));
+}
 // Other players' wish lanterns ride on their state ("wl"); add each new one.
 const wishSeen = new Map(); // remote id -> the lantern string we last saw
 function updateWishes() {
@@ -5411,6 +5503,7 @@ function moreActions(p, door) {
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
+    const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -5420,6 +5513,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
+    const za = zoo.nearest(p.x, p.z); if (za) out.push(zooPetAct(za, p));
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
@@ -5454,6 +5548,12 @@ const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(A
   shop.openProduct({ id: 'adopt-' + pet.adopt, model: 'pet:' + pet.kind, color: pet.color, adopt: pet.adopt, price: 0, name: it.name,
     desc: { en: fmt(ADOPT_TEXT.desc.en, { desc: pet.desc?.en || '' }), ko: fmt(ADOPT_TEXT.desc.ko, { desc: pet.desc?.ko || pet.desc?.en || '' }), ja: fmt(ADOPT_TEXT.desc.ja, { desc: pet.desc?.en || '' }), zh: fmt(ADOPT_TEXT.desc.zh, { desc: pet.desc?.en || '' }) } });
 } });
+// Petting in the zoo's little animal village (core/zoo.js).
+const ZOO_PET = {
+  rabbit: { en: 'rabbit', ko: '토끼', ja: 'ウサギ', zh: '兔子' }, guineapig: { en: 'guinea pig', ko: '기니피그', ja: 'モルモット', zh: '豚鼠' },
+  goat: { en: 'goat', ko: '염소', ja: 'ヤギ', zh: '山羊' }, sheep: { en: 'sheep', ko: '양', ja: 'ヒツジ', zh: '绵羊' },
+};
+const zooPetAct = (a, p) => ({ key: 'zoopet:' + a.kind, label: '🐾 ' + t('pet.pat', { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit) }), run: () => { zoo.pet(a, p.x, p.z); showBubble(myLabel, $('labels'), a.kind === 'goat' || a.kind === 'sheep' ? '😊' : '🥰'); missionEvent('pet'); } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
 const sitAct = (seat) => (seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
@@ -5488,6 +5588,7 @@ function updateAction(p, tSec) {
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (!riding && bukchonAct(p)) next = bukchonAct(p);
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
+    else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -5497,6 +5598,8 @@ function updateAction(p, tSec) {
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
+    else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -6025,7 +6128,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
-  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
+  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellDistance(p) > 25 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -6120,9 +6223,9 @@ renderer.setAnimationLoop(() => {
   others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);
@@ -6312,6 +6415,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    zoo: () => zoo, // Children's Grand Park (core/zoo.js)
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)

@@ -134,6 +134,15 @@
         -525
       ],
       "anchor": { "place": "Dongdaemun Design Plaza (DDP)", "lat": 37.5667, "lon": 127.009, "local": [-10, 0], "nudge": [20, 90], "why": "DDP's real spot is under the south row of towers along Cheonggyecheon, so the district sits just south of that strip: Eulji-ro runs along its north edge and the walk from DDP's corner leads straight north to Ogansugyo Bridge." }
+    },
+    {
+      "id": "grand-park",
+      "map": "districts/grand-park.json",
+      "offset": [
+        408,
+        -86
+      ],
+      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0], "nudge": [0, 9], "why": "Moved a little south so Achasan-ro from Seongsu (world z -86) runs straight into the main gate." }
     }
   ],
   "links": [
@@ -143,6 +152,13 @@
       "p": [[-1518, 445], [-1307.8, 705.8]],
       "n": { "ko": "반포대교 가는 길", "en": "To Banpo Bridge", "ja": "盤浦大橋へ", "zh": "往盘浦大桥" },
       "note": "From Itaewon's Hoenamu-ro at Bogwang-ro south-east to the north end of Jamsu Bridge (the low deck under Banpo Bridge), which crosses to Banpo-Jamwon Han River Park."
+    },
+    {
+      "k": "secondary",
+      "w": 16,
+      "p": [[260, -86], [408, -86]],
+      "n": { "ko": "아차산로", "en": "Achasan-ro", "ja": "峨嵯山路", "zh": "峨嵯山路" },
+      "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro and Children's Grand Park's main gate."
     },
     {
       "k": "tertiary",
@@ -698,7 +714,20 @@
           }
         ]
       },
-      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 729], "ry": -1.5708 }, { "n": 2, "at": [1372, 729], "ry": 1.5708 }] }
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 729], "ry": -1.5708 }, { "n": 2, "at": [1372, 729], "ry": 1.5708 }] },
+      {
+        "id": "childrens-grand-park-station",
+        "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },
+        "code": "726",
+        "line": { "color": "#747f00", "name": { "ko": "7호선", "en": "Line 7", "ja": "7号線", "zh": "7号线" } },
+        "prev": { "ko": "군자", "en": "Gunja" },
+        "next": { "ko": "건대입구", "en": "Konkuk Univ." },
+        "note": "Under Neungdong-ro at Children's Grand Park's main gate (exit 1 by the gate). The real station is also named Sejong Univ.",
+        "exits": [
+          { "n": 1, "at": [420, -104], "ry": 3.14159 },
+          { "n": 2, "at": [396, -104], "ry": 3.14159 }
+        ]
+      }
     ]
   },
   "busking": [
