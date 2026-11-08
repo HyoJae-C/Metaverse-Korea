@@ -29,6 +29,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { BARGES } from '../src/core/fireworks-show.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -139,16 +140,19 @@ function build() {
     { type: 'seogang', ...xz(at(BRIDGE_U, BRIDGE_V / 2)), ry: ALONG_V, len: -BRIDGE_V, w: BRIDGE_W },
     { type: 'arch', ...xz(at(BRIDGE_U, 3)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'YEOUIDO HAN RIVER PARK', sub: '여의도 한강공원', color: '#1f7a8c' },
     { type: 'tower63', ...xz(at(277, 109)), ry: ALONG_U },
+    // The fireworks' launch barges in the main channel, facing the lawn
+    // (the same spots as BARGES in src/core/fireworks-show.js).
+    ...BARGES.map(([u, v]) => ({ type: 'fwbarge', ...xz(at(u, v)), ry: ALONG_U + Math.PI / 2 })),
     { type: 'mulbit', ...xz(at(145, 19.5)), ry: ALONG_U, w: 34, d: 17 },
     { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG - 6.5), at(290, YUNJUNG - 6.5)], gap: 9 },
     { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG + 6.5), at(290, YUNJUNG + 6.5)], gap: 9 },
     { type: 'sign', ...xz(at(-205, PATH - 3)), ry: FACE_RIVER,
       title: name('Yeouido Han River Park', '여의도 한강공원', '汝矣島漢江公園', '汝矣岛汉江公园'),
       text: {
-        en: 'Yeouido is an island in the middle of the Han River. Its riverside park has the widest lawn on the river: spread a mat and look across the water to Mapo. In spring, cherry trees bloom all along Yunjung-ro. The real Seoul International Fireworks Festival is held here once a year, in autumn. The blobfish, a legend, only bites here.',
-        ko: '여의도는 한강 한가운데 있는 섬이에요. 강변 공원에는 한강에서 가장 넓은 잔디밭이 있어요. 돗자리를 펴고 강 건너 마포를 바라보세요. 봄이면 윤중로를 따라 벚꽃이 피어요. 실제 서울세계불꽃축제가 1년에 한 번, 가을에 여기서 열려요. 전설의 블롭피시는 여기서만 잡혀요.',
-        ja: '汝矣島は漢江の真ん中にある島です。川辺の公園には漢江でいちばん広い芝生があります。シートを広げて、川の向こうの麻浦を眺めてみましょう。春には輪中路に沿って桜が咲きます。本物のソウル世界花火祭りは、年に一度、秋にここで開かれます。伝説のブロブフィッシュはここでしか釣れません。',
-        zh: '汝矣岛是汉江正中的一座岛。江边公园有汉江上最大的草坪：铺开野餐垫，眺望对岸的麻浦。春天，轮中路两旁樱花盛开。真实的首尔世界烟花节每年秋天在这里举办一次。传说中的水滴鱼只在这里咬钩。',
+        en: 'Yeouido is an island in the middle of the Han River. Its riverside park has the widest lawn on the river: spread a mat and look across the water to Mapo. In spring, cherry trees bloom all along Yunjung-ro. In the game, fireworks light up the sky here every day at 9:00 and 21:00 Korean time, for an hour, from three barges on the river. The real Seoul International Fireworks Festival is held here once a year, in autumn. The blobfish, a legend, only bites here.',
+        ko: '여의도는 한강 한가운데 있는 섬이에요. 강변 공원에는 한강에서 가장 넓은 잔디밭이 있어요. 돗자리를 펴고 강 건너 마포를 바라보세요. 봄이면 윤중로를 따라 벚꽃이 피어요. 게임에서는 매일 한국시간 9시와 21시에 한 시간씩, 강 위 바지선 세 척에서 불꽃놀이가 열려요. 실제 서울세계불꽃축제는 1년에 한 번, 가을에 여기서 열려요. 전설의 블롭피시는 여기서만 잡혀요.',
+        ja: '汝矣島は漢江の真ん中にある島です。川辺の公園には漢江でいちばん広い芝生があります。シートを広げて、川の向こうの麻浦を眺めてみましょう。春には輪中路に沿って桜が咲きます。ゲームでは毎日、韓国時間の9時と21時に1時間、川に浮かぶ3隻の台船から花火が上がります。本物のソウル世界花火祭りは、年に一度、秋にここで開かれます。伝説のブロブフィッシュはここでしか釣れません。',
+        zh: '汝矣岛是汉江正中的一座岛。江边公园有汉江上最大的草坪：铺开野餐垫，眺望对岸的麻浦。春天，轮中路两旁樱花盛开。游戏里每天韩国时间9点和21点，江上三艘驳船会放一小时烟花。真实的首尔世界烟花节每年秋天在这里举办一次。传说中的水滴鱼只在这里咬钩。',
       } },
   ];
   // Benches on the shore facing the river (none on the bridge's landing).

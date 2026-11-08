@@ -181,6 +181,19 @@ towers and the 63 tower on the east tip (a blocker and a landmark, not
 walkable). The park room's ★5 legend is the blobfish. Run the script again
 after moving the island: it rewrites the river and the doors.
 
+### Yeouido fireworks
+
+Twice a day, at 09:00 and 21:00 Korean time, for an hour
+(`src/core/fireworks-show.js`: the schedule, the acts and a program of
+bursts worked out from the show's start, so everyone sees the same sky).
+Three launch barges (`fwbarge`) sit in the main channel facing the lawn.
+During a show only Yeouido's sky turns to night: `weather.nightMix` is the
+show's night times `nearYeouido()` (1 on the island, Seogang Bridge and the
+Hongdae bank, fading out over 90 m). The sparks (`src/core/fireworks-sky.js`,
+one `THREE.Points`, moved on the graphics card) download only when you come
+within about 900 m around show time. Ten minutes before, every player gets a
+notice, like the drone show's.
+
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs

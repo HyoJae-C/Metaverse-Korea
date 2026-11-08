@@ -116,7 +116,9 @@ export class WeatherSystem {
 
   // Call every frame with the player position.
   update(dt, px, pz) {
-    const d = daylight(this.hour());
+    // nightMix (0–1): a show's own night in one place, e.g. over Yeouido
+    // during the fireworks (main.js), on top of the hour of the day.
+    const d = daylight(this.hour()) * (1 - (this.nightMix || 0));
     const overcast = { clear: 0, cloudy: 0.5, fog: 0.7, rain: 0.75, snow: 0.6, storm: 0.9 }[this.kind];
     // Sky: night → dusk → day, then greyed by clouds.
     const twilight = 1 - Math.abs(d - 0.5) * 2; // peaks mid-ramp
