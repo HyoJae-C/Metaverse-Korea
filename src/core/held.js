@@ -82,6 +82,13 @@ export function makeHeld(kind) {
     const tassel = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), mat('#d23a3a'));
     tassel.position.y = 0.76; tassel.scale.set(1, 1.6, 1);
     g.add(shaft, blade, tassel);
+  } else if (kind === 'bat') {
+    // A baseball bat (the batters at Seoul Another Dome), held upright.
+    const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.013, 0.62, 10), mat('#c99a5b'));
+    bat.position.y = 0.3;
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 10), mat('#3b2418'));
+    knob.position.y = -0.01;
+    g.add(bat, knob);
   } else if (kind === 'rod') {
     const k = skin.glow ? 0.6 : skin.shine ? 0.25 : 0;
     const sm = (c) => (k ? glowMat(c, k) : mat(c));

@@ -124,6 +124,7 @@ import { BuskingZones, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
+import { DOME_TEXT, DOME_SHOUT, chantPhrase } from './data/dome-text.js';
 import { LIFEGUARD_LOOK } from './core/pool-hall.js';
 import { BL } from './ui/basketball-text.js';
 import { Skater, PARK_SPEED } from './core/skatepark.js';
@@ -718,8 +719,11 @@ const ZOO_TEXT = {
   buy: { en: 'Watermelon for the hippo', ko: '하마 수박', ja: 'カバのスイカ', zh: '河马的西瓜' },
 };
 const MELON_PRICE = 3000;
+// Before the zoo opens a hoarding closes it off (scripts/build-grand-park.mjs
+// ZOO_OPEN): no feeding-time toasts then, and its animals stay still.
+const zooClosed = map.landmarks.some((l) => l.type === 'hoarding' && l.closes === 'zoo');
 const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
-  if (mode !== 'street') return;
+  if (mode !== 'street' || zooClosed) return;
   shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
 });
 // The little animal village: a cup of food at the barn door, and a keeper
@@ -2579,14 +2583,26 @@ function enterStore(item) {
     built.patronNpcs = built.stations.patrons.map((s) => {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
-      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.position.set(s.x, s.y || 0, s.z); // (y: up in the stands at Seoul Another Dome)
       o.ch.root.rotation.y = s.ry;
       if (s.sit) o.ch.activity('sit');
       built.scene.add(o.ch.root);
       return o;
     });
+    // Seoul Another Dome's cheer squads, on their stages: the cheer leader
+    // (with a name tag, for the chants) and the cheer dancers.
+    for (const s of built.stations.cheerSquad || []) {
+      const o = makeNpc($('labels'), s.role === 'leader' ? '📣 ' + L(DOME_TEXT.leader) : '');
+      if (s.role !== 'leader') o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, s.y, s.z);
+      o.ch.root.rotation.y = s.ry;
+      o.squad = s;
+      built.scene.add(o.ch.root);
+      built.patronNpcs.push(o);
+    }
   }
   interior.patronNpcs = built.patronNpcs || null;
+  if (built.dome) wireDome(built, store);
   // The sports pub: when someone scores on the big screen, the whole pub
   // jumps up and cheers, and someone shouts "골!".
   if (built.stations?.match) {
@@ -2735,6 +2751,45 @@ function enterRunwayRoom() {
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
 const GOAL_SHOUT = ['골!!!', 'gol', 'GOAL!!!']; // the sports pub's crowd
+// Seoul Another Dome (core/dome.js): the crowd and the cheer squads react to
+// the game, the cheer leader leads a chant now and then.
+function wireDome(built, store) {
+  const dome = built.dome;
+  if (performance.now() - (built.welcomedAt || -1e9) > 90e3) { built.welcomedAt = performance.now(); shop.toast(L(DOME_TEXT.welcome)); }
+  if (dome.ev.onCheer) return;
+  const here = () => interior?.store === store;
+  const squadOf = (side) => (built.patronNpcs || []).filter((o) => o.squad?.side === side);
+  const fans = () => (built.patronNpcs || []).filter((o) => !o.squad);
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+  dome.ev.onCheer = (res, team) => {
+    if (!here()) return;
+    if (res === 'crack') { sfx.tock(1, 1500); return; }
+    const side = dome.sideOf(team.id), other = side === 'home' ? 'away' : 'home';
+    if (['1B', '2B', '3B', 'HR'].includes(res)) {
+      dome.jump(side, res === 'HR' ? 1.4 : 0.9);
+      if (res === 'HR') dome.jump('all', 0.6);
+      sfx.crowd(res === 'HR' ? 1 : 0.55);
+      squadOf(side).forEach((o, i) => setTimeout(() => o.ch.play('cheer'), i * 120));
+      const crowd = fans();
+      crowd.forEach((o, i) => { if (i % 2 === 0) setTimeout(() => o.ch.play(i % 4 ? 'clap' : 'cheer'), i * 80); });
+      if (crowd.length) say(pickOne(crowd), $('labels'), pickOne(res === 'HR' ? DOME_SHOUT.HR : DOME_SHOUT.hit));
+    } else if (res === 'K') {
+      dome.jump(other, 0.6);
+      sfx.crowd(0.25);
+      const leader = squadOf(other).find((o) => o.squad.role === 'leader');
+      if (leader) say(leader, $('labels'), pickOne(DOME_SHOUT.K));
+    }
+  };
+  dome.ev.onChant = (side, team) => {
+    if (!here()) return;
+    const squad = squadOf(side);
+    const leader = squad.find((o) => o.squad.role === 'leader');
+    if (leader) say(leader, $('labels'), chantPhrase(team));
+    squad.forEach((o, i) => setTimeout(() => o.ch.play(i ? 'clap' : 'cheer'), 800 + i * 100));
+    dome.jump(side, 0.45);
+    sfx.chant();
+  };
+}
 function leaveStore() {
   if (mode !== 'store') return;
   // Trying something on only lasts while you are in the shop: walking out
@@ -6350,7 +6405,7 @@ renderer.setAnimationLoop(() => {
   others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { if (!zooClosed) zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

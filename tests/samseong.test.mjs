@@ -73,7 +73,10 @@ test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
   assert.deepEqual(link.p[0], end, 'starts at Teheran-ro\'s east end');
   const songpa = region.districts.find((d) => d.id === 'songpa');
   const olympic = read(songpa.map).roads.find((r) => r.n?.en === 'Olympic-ro');
-  assert.deepEqual(link.p.at(-1), [olympic.p[0][0] + songpa.offset[0], olympic.p[0][1] + songpa.offset[1]], 'ends on Olympic-ro');
+  // (Olympic-ro runs on west past the junction to the dome, so the link ends on the road, not at its end)
+  const [ex, ez] = [link.p.at(-1)[0] - songpa.offset[0], link.p.at(-1)[1] - songpa.offset[1]];
+  const [a, b] = olympic.p;
+  assert.ok(ez === a[1] && ez === b[1] && ex >= Math.min(a[0], b[0]) && ex <= Math.max(a[0], b[0]), 'ends on Olympic-ro');
 });
 
 test('meeting zone U on KONEXT Square, an Information Center and a stamp', () => {

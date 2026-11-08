@@ -891,6 +891,22 @@
       "products": []
     },
     {
+      "id": "seoul-another-dome",
+      "category": "play",
+      "workshop": "dome",
+      "size": "dome",
+      "at": [558, 683],
+      "district": "songpa",
+      "name": { "en": "Seoul Another Dome", "ko": "서울 어나더 돔", "ja": "ソウル・アナザードーム", "zh": "首尔另一个巨蛋" },
+      "tagline": { "en": "Watch a baseball game every 15 minutes and cheer with the crowd (a game stadium: no stadium like this is open here yet, check before you visit)", "ko": "15분마다 열리는 야구 경기를 보며 함께 응원해요 (게임 속 구장이에요. 지금 이곳에는 이런 구장이 영업하지 않으니 방문 전 확인하세요)", "ja": "15分ごとの野球の試合を観て、みんなで応援しよう（ゲームの球場です。現在ここにこのような球場は営業していないので、訪問前に確認してください）", "zh": "每15分钟一场棒球赛，和大家一起加油（游戏里的球场：这里目前没有这样的球场营业，出发前请确认）" },
+      "colors": { "sign": "#1f4f8f", "awning": "#cfe0ff", "accent": "#f2f6fb" },
+      "products": [
+        { "id": "dome-chicken-combo", "model": "bowl", "color": "#d98a2b", "price": 22000, "name": { "en": "Chicken Combo (fried chicken + cola)", "ko": "치킨 콤보 (치킨 + 콜라)", "ja": "チキンコンボ（フライドチキン＋コーラ）", "zh": "炸鸡套餐（炸鸡＋可乐）" }, "desc": { "en": "Crispy fried chicken with an ice-cold cola. Chicken at the ballpark is a Korean classic: many fans call it chimaek, chicken with beer.", "ko": "바삭한 치킨과 시원한 콜라. 야구장 치킨은 한국의 대표 먹거리예요. 맥주와 함께 먹는 걸 치맥이라고 불러요.", "ja": "サクサクのフライドチキンと冷たいコーラ。野球場のチキンは韓国の定番。ビールと一緒に食べるのを「チメク」と言います。", "zh": "酥脆炸鸡配冰可乐。在球场吃炸鸡是韩国的经典，配啤酒吃叫“炸鸡啤酒”。" } },
+        { "id": "dome-cola", "model": "cup", "color": "#3b1e14", "price": 2500, "name": { "en": "Cola", "ko": "콜라", "ja": "コーラ", "zh": "可乐" }, "desc": { "en": "A big cup of ice-cold cola for the game.", "ko": "경기 보면서 마시는 시원한 콜라 큰 컵.", "ja": "試合のお供に大きなカップの冷たいコーラ。", "zh": "看比赛喝的一大杯冰可乐。" } },
+        { "id": "dome-tteokbokki", "model": "bowl", "color": "#d8452f", "price": 5000, "name": { "en": "Tteokbokki cup", "ko": "컵 떡볶이", "ja": "カップトッポッキ", "zh": "杯装炒年糕" }, "desc": { "en": "Chewy rice cakes in sweet and spicy sauce, in a cup to eat in your seat.", "ko": "달콤 매콤한 소스의 쫄깃한 떡볶이. 자리에서 먹기 좋게 컵에 담았어요.", "ja": "甘辛いソースのもちもちトッポッキ。席で食べやすいカップ入り。", "zh": "甜辣酱汁的软糯年糕，装在杯里方便在座位上吃。" } }
+      ]
+    },
+    {
       "id": "muscle-gym",
       "category": "play",
       "workshop": "gym",

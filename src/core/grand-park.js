@@ -1,10 +1,13 @@
 // Seoul Children's Grand Park (Gwangjin-gu), stylised and not to scale:
 //   cgpgate: the main gate on the plaza by Neungdong-ro: two round pillars in
 //            bright stripes under a rainbow arch with balloons on top.
+//   hoarding: the fence round the zoo while it isn't open yet: panels in the
+//            park's colours, every other one painted "Opening soon"
+//            (polyline l.p; its collision is the map's blockers).
 // Collision for the pillars comes from the map's blockers
 // (CGP_GATE_PILLARS), so this is only visual.
 import * as THREE from 'three';
-import { matCache } from './three-kit.js';
+import { matCache, canvasTex } from './three-kit.js';
 
 const mat = matCache();
 
@@ -44,5 +47,35 @@ export function cgpGate(g) {
     const s = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), mat('#ffffff'));
     s.position.set(x, H + dy + 0.4, 0);
     g.add(s);
+  }
+}
+
+// The zoo's "opening soon" hoarding along a polyline (l.p, map coords).
+let soonTex = null;
+function openingSoon() {
+  return (soonTex ||= canvasTex(512, 256, (c, w, h) => {
+    c.fillStyle = '#fff6df'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#ef6f6c'; c.fillRect(0, 0, w, 28); c.fillRect(0, h - 28, w, 28);
+    c.textAlign = 'center'; c.fillStyle = '#4a3020';
+    c.font = 'bold 56px sans-serif'; c.fillText('동물원 개장 준비 중', w / 2, 104, w - 40);
+    c.font = '38px sans-serif'; c.fillText('The zoo is opening soon', w / 2, 162, w - 40);
+    c.font = '28px sans-serif'; c.fillText('近日オープン · 即将开放', w / 2, 210, w - 40);
+  }));
+}
+export function hoarding(g, l) {
+  const H = 2.6, PANEL = 4;
+  const painted = new THREE.MeshLambertMaterial({ map: openingSoon() });
+  for (let i = 1; i < l.p.length; i++) {
+    const [x0, z0] = l.p[i - 1], [x1, z1] = l.p[i];
+    const len = Math.hypot(x1 - x0, z1 - z0), ang = Math.atan2(z1 - z0, x1 - x0);
+    const n = Math.max(1, Math.round(len / PANEL));
+    for (let k = 0; k < n; k++) {
+      const u = (k + 0.5) / n;
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(len / n - 0.05, H, 0.12),
+        k % 2 ? mat(STRIPES[(i + k) % STRIPES.length]) : [mat('#e9e2d3'), mat('#e9e2d3'), mat('#e9e2d3'), mat('#e9e2d3'), painted, painted]);
+      panel.position.set(x0 + (x1 - x0) * u, H / 2, z0 + (z1 - z0) * u);
+      panel.rotation.y = -ang;
+      g.add(panel);
+    }
   }
 }
