@@ -5,6 +5,7 @@
 // "blockers", so these are only visual.
 import * as THREE from 'three';
 import { buildAnotherLand } from './anotherland.js';
+import { haneulStore, haneulTower } from './haneul.js';
 import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
@@ -88,6 +89,8 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 
 const BUILD = {
   anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
+  haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
+  haneultower: (g) => haneulTower(g),
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)

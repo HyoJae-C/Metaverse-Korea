@@ -224,3 +224,14 @@ Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun; the Joseon Royal Walk:
 Gyeongbokgung, Bukchon, Jongmyo). The stamp note shows
 each course's stops; the last stamp of a course pays its reward once
 (`core/trails.js`, saved under `mk.trails`).
+
+## Seokchon Lake's north shore (Songpa)
+
+HANEUL (하늘), a fictional brand, has a department store (north of the west
+lake) and a mall with HANEUL Tower (north of the east lake) between
+Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
+stands. Their footprints are `custom` buildings in `districts/songpa.json`
+drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
+are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone T
+(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
+behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.

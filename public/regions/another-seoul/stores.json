@@ -717,6 +717,44 @@
       "products": []
     },
     {
+      "id": "haneul-dept",
+      "category": "fashion",
+      "size": "large",
+      "at": [714, 728],
+      "district": "songpa",
+      "name": { "en": "HANEUL Department Store", "ko": "하늘 백화점", "ja": "ハヌル百貨店", "zh": "天空百货" },
+      "tagline": { "en": "The big department store by Seokchon Lake: earrings, sunglasses, hats, scarves and bags to try on", "ko": "석촌호수 옆 큰 백화점: 귀걸이, 선글라스, 모자, 목도리, 가방을 입어 보고 사요", "ja": "石村湖のそばの大きな百貨店：ピアス、サングラス、帽子、マフラー、バッグを試着できます", "zh": "石村湖边的大百货：耳环、墨镜、帽子、围巾、包包都能试戴" },
+      "colors": { "sign": "#4f8fd8", "awning": "#d6e6fa", "accent": "#f4f8fd" },
+      "products": [
+        {"id": "hn-pearls", "model": "earrings", "color": "#fbf6ec", "price": 25000, "item": "acc-pearls", "name": {"en": "Pearl studs", "ko": "진주 귀걸이", "ja": "パールのピアス", "zh": "珍珠耳钉"}, "tryOn": {"ear": "pearls"}},
+        {"id": "hn-hoops-gold", "model": "earrings", "color": "#e8b84a", "price": 20000, "item": "acc-hoops-gold", "name": {"en": "Gold hoop earrings", "ko": "골드 링 귀걸이", "ja": "ゴールドのフープピアス", "zh": "金色圈形耳环"}, "tryOn": {"ear": "hoops-gold"}},
+        {"id": "hn-sunglasses-pink", "model": "sunglasses", "color": "#ff6fa8", "price": 35000, "item": "acc-sunglasses-pink", "name": {"en": "Pink tinted sunglasses", "ko": "핑크 틴트 선글라스", "ja": "ピンクのカラーサングラス", "zh": "粉色墨镜"}, "tryOn": {"face": "sunglasses-pink"}},
+        {"id": "hn-sunglasses", "model": "sunglasses", "color": "#2b2230", "price": 35000, "item": "acc-sunglasses", "name": {"en": "Black sunglasses", "ko": "검정 선글라스", "ja": "黒いサングラス", "zh": "黑色墨镜"}, "tryOn": {"face": "sunglasses"}},
+        {"id": "hn-scarf-cream", "model": "scarf", "color": "#efe6d2", "price": 25000, "item": "acc-scarf-cream", "name": {"en": "Cream knit scarf", "ko": "크림 니트 목도리", "ja": "クリームのニットマフラー", "zh": "奶油色针织围巾"}, "tryOn": {"neck": "scarf-cream"}},
+        {"id": "hn-beret-black", "model": "beret", "color": "#2b2230", "price": 30000, "item": "acc-beret-black", "name": {"en": "Black beret", "ko": "검정 베레모", "ja": "黒いベレー帽", "zh": "黑色贝雷帽"}, "tryOn": {"head": "beret-black"}},
+        {"id": "hn-bucket-cream", "model": "hat", "color": "#f6f1e7", "price": 30000, "item": "acc-bucket-cream", "name": {"en": "Cream bucket hat", "ko": "크림 버킷햇", "ja": "クリームのバケットハット", "zh": "奶油色渔夫帽"}, "tryOn": {"head": "bucket-cream"}},
+        {"id": "hn-tote-river", "model": "tote", "color": "#5b8fb9", "price": 25000, "item": "acc-tote-river", "name": {"en": "River blue tote bag", "ko": "강물 파랑 에코백", "ja": "リバーブルーのトート", "zh": "河水蓝帆布包"}, "tryOn": {"back": "tote-river"}}
+      ]
+    },
+    {
+      "id": "haneul-mall",
+      "category": "lifestyle",
+      "size": "large",
+      "at": [1068, 730],
+      "district": "songpa",
+      "name": { "en": "HANEUL MALL", "ko": "하늘몰", "ja": "ハヌルモール", "zh": "天空购物中心" },
+      "tagline": { "en": "The lakeside mall under HANEUL Tower: picnic and park gear, umbrellas, caps and snacks for a lakeside walk", "ko": "하늘타워 아래 호숫가 쇼핑몰: 피크닉과 공원 놀이 용품, 우산, 모자, 호숫가 산책 간식", "ja": "ハヌルタワーの下の湖畔モール：ピクニックや公園の遊び道具、傘、帽子、湖畔散歩のおやつ", "zh": "天空塔下的湖畔商场：野餐和公园玩具、雨伞、帽子和湖边散步的零食" },
+      "colors": { "sign": "#2fa39a", "awning": "#cdeeea", "accent": "#f3fbfa" },
+      "products": [
+        {"id": "hm-umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5000, "name": {"en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞"}, "desc": {"en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。"}},
+        {"id": "hm-picnic-mat", "model": "picnicmat", "color": "#3f7fd0", "price": 3000, "ingredient": "mat", "name": {"en": "Picnic mat", "ko": "돗자리", "ja": "レジャーシート", "zh": "野餐垫"}, "desc": {"en": "A checked picnic mat (돗자리) big enough for four. It goes in your bag: spread it on the park's grass and lie down to watch the sky. Friends can lie down on it too.", "ko": "네 명이 누울 수 있는 체크무늬 돗자리. 가방에 들어가요. 공원 잔디에 펴고 누워서 하늘을 봐요. 친구들도 같이 누울 수 있어요.", "ja": "4人で寝転べるチェック柄のレジャーシート。バッグに入ります。公園の芝生に広げて寝転んで空を眺めよう。友だちも一緒に寝転べます。", "zh": "可以躺四个人的格子野餐垫。会放进包里，铺在公园草地上躺下看天空，朋友也能一起躺。"}, "kiosk": true},
+        {"id": "hm-frisbee", "model": "frisbee", "color": "#9b6bff", "price": 4000, "ingredient": "frisbee", "name": {"en": "Frisbee", "ko": "원반", "ja": "フリスビー", "zh": "飞盘"}, "desc": {"en": "A soft frisbee for dogs, in red, sky blue or purple. It goes in your bag: take it to a picnic lawn (Han River park, Seoul Forest) with your pet and throw it. Dogs race off and leap for it.", "ko": "빨강, 하늘색, 보라 중 하나가 나오는 강아지용 말랑한 원반. 가방에 들어가요. 반려동물과 함께 피크닉 잔디(한강공원, 서울숲)에 가서 던지면 강아지가 달려가 점프해서 잡아요.", "ja": "赤・水色・紫のどれかが出る犬用のやわらかいフリスビー。バッグに入ります。ペットとピクニックの芝生（漢江公園、ソウルの森）で投げると、犬が走ってジャンプしてキャッチ！", "zh": "狗狗用的软飞盘，颜色随机为红、天蓝或紫色。会放进包里。带宠物去野餐草坪（汉江公园、首尔林）扔出去，狗狗会冲过去跳起来接住。"}},
+        {"id": "hm-cap-sky", "model": "cap", "color": "#86b8f0", "price": 25000, "item": "acc-cap-sky", "name": {"en": "Sky blue cap", "ko": "하늘색 캡모자", "ja": "水色のキャップ", "zh": "天蓝色棒球帽"}, "tryOn": {"head": "cap-sky"}},
+        {"id": "hm-blossom-bread", "model": "bread", "color": "#f6c2cf", "price": 3500, "name": {"en": "Cherry blossom bread", "ko": "벚꽃빵", "ja": "桜パン", "zh": "樱花面包"}, "desc": {"en": "A soft bun with sweet bean and a pink blossom on top, for a walk round the lake.", "ko": "달콤한 팥소에 분홍 벚꽃을 올린 말랑한 빵이에요. 호수 한 바퀴 돌며 먹기 좋아요."}},
+        {"id": "hm-banana-milk", "model": "milk", "color": "#ffd84d", "price": 1800, "name": {"en": "Banana milk", "ko": "바나나우유", "ja": "バナナ牛乳", "zh": "香蕉牛奶"}, "desc": {"en": "Korea's favourite sweet banana milk in a round little bottle.", "ko": "한국 사람들이 좋아하는 달콤한 바나나맛 우유예요."}}
+      ]
+    },
+    {
       "id": "info-olympic-park",
       "category": "info",
       "workshop": "info",
