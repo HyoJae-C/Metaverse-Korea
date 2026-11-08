@@ -162,7 +162,7 @@ function makeRodent(kind, color, accent, scale = 1) {
   return { root, body, head, tail, legs, ears: [] };
 }
 
-// A little monkey: round head with a pale face, round ears, long curled tail.
+// A little monkey: round head with a pale face, round ears, a long straight tail.
 function makeMonkey(color, accent, scale = 1) {
   const root = new THREE.Group();
   const body = new THREE.Group();
@@ -187,10 +187,9 @@ function makeMonkey(color, accent, scale = 1) {
   const tail = new THREE.Group();
   tail.position.set(0, 0.22, -0.15);
   body.add(tail);
-  for (let i = 0; i < 6; i++) { // a tail that curls up at the end
-    const a = i * 0.45;
-    part(tail, sphere(0.03, 6, 6), color, 0, 0.02 + Math.sin(a) * 0.12 + i * 0.03, -0.04 - Math.cos(a) * 0.06 - i * 0.03);
-  }
+  // One straight tail, sticking out back and up.
+  const tl = 0.34, ta = -0.9; // length; tilt back from upright
+  part(tail, new THREE.CylinderGeometry(0.018, 0.026, tl, 6), color, 0, Math.cos(ta) * tl / 2, Math.sin(ta) * tl / 2).rotation.x = ta;
   const blob = new THREE.Mesh(new THREE.CircleGeometry(0.25 * scale, 14).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
