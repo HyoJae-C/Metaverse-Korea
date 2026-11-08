@@ -125,9 +125,25 @@
         -525
       ],
       "anchor": { "place": "Dongdaemun Design Plaza (DDP)", "lat": 37.5667, "lon": 127.009, "local": [-10, 0], "nudge": [20, 90], "why": "DDP's real spot is under the south row of towers along Cheonggyecheon, so the district sits just south of that strip: Eulji-ro runs along its north edge and the walk from DDP's corner leads straight north to Ogansugyo Bridge." }
+    },
+    {
+      "id": "grand-park",
+      "map": "districts/grand-park.json",
+      "offset": [
+        408,
+        -86
+      ],
+      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0], "nudge": [0, 9], "why": "Moved a little south so Achasan-ro from Seongsu (world z -86) runs straight into the main gate." }
     }
   ],
   "links": [
+    {
+      "k": "secondary",
+      "w": 16,
+      "p": [[260, -86], [408, -86]],
+      "n": { "ko": "아차산로", "en": "Achasan-ro", "ja": "峨嵯山路", "zh": "峨嵯山路" },
+      "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro and Children's Grand Park's main gate."
+    },
     {
       "k": "tertiary",
       "w": 8,
@@ -692,6 +708,19 @@
             ],
             "ry": 1.5708
           }
+        ]
+      },
+      {
+        "id": "childrens-grand-park-station",
+        "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },
+        "code": "726",
+        "line": { "color": "#747f00", "name": { "ko": "7호선", "en": "Line 7", "ja": "7号線", "zh": "7号线" } },
+        "prev": { "ko": "군자", "en": "Gunja" },
+        "next": { "ko": "건대입구", "en": "Konkuk Univ." },
+        "note": "Under Neungdong-ro at Children's Grand Park's main gate (exit 1 by the gate). The real station is also named Sejong Univ.",
+        "exits": [
+          { "n": 1, "at": [420, -104], "ry": 3.14159 },
+          { "n": 2, "at": [396, -104], "ry": 3.14159 }
         ]
       }
     ]

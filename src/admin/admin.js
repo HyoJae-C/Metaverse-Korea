@@ -109,7 +109,7 @@ function draw() {
   }
 }
 
-const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)', 'olympic-park': 'Olympic Park' };
+const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)', 'olympic-park': 'Olympic Park', 'grand-park': "Children's Grand Park" };
 const districtName = (id) => DISTRICT_EN[id] || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
 
 function fitAll() {
