@@ -45,11 +45,15 @@ test('a dog can make it to a long throw; cats and hamsters are slow', () => {
   assert.ok(!canCatch(1, 0, 0.2, 1), 'too far away');
 });
 
-test('frisbees are sold only where picnic mats are, and the game only runs on the picnic lawn', () => {
+test('frisbees are sold with the mats, at DAILY MART and at animal cafés; the game only runs on the picnic lawn', () => {
   const { stores } = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8'));
   const sells = (k) => stores.filter((s) => s.products?.some((p) => p.ingredient === k)).map((s) => s.id).sort();
-  assert.deepEqual(sells('frisbee'), sells('mat'));
-  assert.ok(sells('frisbee').length >= 3);
+  // Wherever mats are sold, at DAILY MART and at every animal café.
+  for (const id of sells('mat')) assert.ok(sells('frisbee').includes(id), id);
+  assert.ok(sells('frisbee').includes('haru-mart'));
+  for (const s of stores.filter((x) => x.pets)) assert.ok(sells('frisbee').includes(s.id), s.id);
+  const ids = stores.flatMap((x) => x.products || []).filter((p) => p.ingredient === 'frisbee').map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length, 'each shop\'s frisbee has its own id');
   const game = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(game, /get room\(\) \{ return picnic\.room; \}/, 'the frisbee uses the picnic lawn');
 });

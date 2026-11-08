@@ -1707,10 +1707,14 @@ const counterUi = new CounterUI({
   },
 });
 
+// Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
+// River parks, the theme park, the Namsan slope) and the street have them.
+const petIndoors = () => mode === 'store' && !(interior?.park || interior?.cablecar || interior?.lawns);
 // My pet: adopt, walk, clean up after it (src/game/pet-care.js).
 const petCare = createPetCare({
   get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
   get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get indoors() { return petIndoors(); },
   get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; },
   clearAction: () => { action = STALE; }, refreshQuestChip, refreshItems, refreshWallet,
@@ -5748,7 +5752,7 @@ renderer.setAnimationLoop(() => {
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
-    if (petCare.pet) st.pt = petCare.pet.id;
+    if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
@@ -5971,7 +5975,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
     giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
-    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying],
+    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face],
     givePet: (id) => { inventory.add(id); setPet(id); },
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
