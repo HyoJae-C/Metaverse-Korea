@@ -18,6 +18,7 @@ import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
 import { EULJIRO_BUILD } from './euljiro-models.js';
 import { JONGMYO_BUILD } from './jongmyo-models.js';
+import { BOSINGAK_BUILD } from './bosingak-model.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -283,6 +284,7 @@ const BUILD = {
   sign, // wooden information boards (core/park-signs.js)
   ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
   ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
+  ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
   ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
   ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {

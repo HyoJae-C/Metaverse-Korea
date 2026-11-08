@@ -733,27 +733,6 @@
       }
     },
     {
-      "h": 22,
-      "p": [
-        [
-          124,
-          86
-        ],
-        [
-          186,
-          86
-        ],
-        [
-          186,
-          122
-        ],
-        [
-          124,
-          122
-        ]
-      ]
-    },
-    {
       "h": 14,
       "p": [
         [
@@ -2117,6 +2096,28 @@
         ]
       ],
       "why": "the palace was made smaller (60%); lawn and trees where its old grounds were"
+    },
+    {
+      "k": "plaza",
+      "p": [
+        [
+          124,
+          84
+        ],
+        [
+          186,
+          84
+        ],
+        [
+          186,
+          140
+        ],
+        [
+          124,
+          140
+        ]
+      ],
+      "why": "Bosingak's square on Jongno (data/bosingak.js)"
     }
   ],
   "blockers": [
@@ -2559,6 +2560,27 @@
           125
         ]
       ]
+    },
+    {
+      "p": [
+        [
+          144.5,
+          100
+        ],
+        [
+          163,
+          100
+        ],
+        [
+          163,
+          112
+        ],
+        [
+          144.5,
+          112
+        ]
+      ],
+      "why": "Bosingak's stone base and its side steps"
     }
   ],
   "pois": [
@@ -2604,6 +2626,17 @@
         "en": "Cheonggyecheon Stream",
         "ja": "清渓川",
         "zh": "清溪川"
+      }
+    },
+    {
+      "kind": "landmark",
+      "x": 155,
+      "z": 106,
+      "name": {
+        "ko": "보신각",
+        "en": "Bosingak Bell Pavilion",
+        "ja": "普信閣",
+        "zh": "普信阁"
       }
     }
   ],
@@ -2740,6 +2773,33 @@
       "type": "mountain",
       "x": 0,
       "z": -640
+    },
+    {
+      "type": "bosingak",
+      "x": 155,
+      "z": 106,
+      "name": {
+        "ko": "보신각",
+        "en": "Bosingak Bell Pavilion"
+      }
+    },
+    {
+      "type": "sign",
+      "x": 170,
+      "z": 118,
+      "ry": -0.5,
+      "title": {
+        "en": "Bosingak Bell Pavilion",
+        "ko": "보신각",
+        "ja": "普信閣",
+        "zh": "普信阁"
+      },
+      "text": {
+        "en": "Joseon's bell pavilion on Jongno. Its bell opened and closed the city gates; now it rings in every New Year with 33 strokes.",
+        "ko": "종로의 조선 종루. 종을 쳐서 도성의 문을 열고 닫았고, 지금은 해마다 33번 울려 새해를 맞아요.",
+        "ja": "鍾路にある朝鮮の鐘楼。鐘で都の門を開け閉めし、今は毎年33回ついて新年を迎えます。",
+        "zh": "钟路上的朝鲜钟楼。钟声曾开关都城城门，如今每年敲33下迎接新年。"
+      }
     }
   ],
   "streams": [
