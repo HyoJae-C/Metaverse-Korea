@@ -2,6 +2,7 @@
 // Sizes are in metres; the caller scales them to the hand they sit in.
 import * as THREE from 'three';
 import { rodSkin } from './rod-skins.js';
+import { frisbeeColor } from './frisbee.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -15,7 +16,8 @@ export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'pe
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
-export const giftKind = (e) => (GIFT_LOOKS.includes(e?.g) ? 'gift:' + e.g : 'gift');
+// (a frisbee also carries its colour: 'gift:frisbee.2')
+export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -25,7 +27,7 @@ export function makeHeld(kind) {
   const sub = String(kind).split(':')[1];
   const skin = rodSkin(sub);
   kind = heldBase(kind);
-  if (kind === 'gift' && GIFT_LOOKS.includes(sub)) return giftLook(g, sub);
+  if (kind === 'gift' && GIFT_LOOKS.includes(String(sub).split('.')[0])) return giftLook(g, sub);
   if (kind === 'coffee') {
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.032, 0.12, 14), mat('#fbfaf6'));
     cup.position.y = 0.06;
@@ -174,9 +176,10 @@ export function makeHeld(kind) {
 function giftLook(g, sub) {
   g.name = 'held:gift:' + sub;
   const add = (geo, color, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); g.add(m); return m; };
-  if (sub === 'frisbee') { // held upright by its rim (game/frisbee.js)
-    add(new THREE.CylinderGeometry(0.12, 0.11, 0.02, 20).rotateZ(Math.PI / 2), '#ff6b4a', 0, 0.06);
-    add(new THREE.TorusGeometry(0.112, 0.01, 6, 20).rotateY(Math.PI / 2), '#ffffff', 0.006, 0.06);
+  const [base, variant] = sub.split('.');
+  if (base === 'frisbee') { // held upright by its rim (game/frisbee.js), in its colour
+    add(new THREE.CylinderGeometry(0.12, 0.11, 0.02, 20).rotateZ(Math.PI / 2), frisbeeColor({ q: +variant || 0 }), 0, 0.06);
+    add(new THREE.TorusGeometry(0.105, 0.0035, 4, 24).rotateY(Math.PI / 2), '#ffffff', 0.011, 0.06); // a thin white line on the face
   } else if (sub === 'mat') { // a rolled-up picnic mat with two white straps, carried across
     add(new THREE.CylinderGeometry(0.05, 0.05, 0.34, 12).rotateX(Math.PI / 2), '#3f7fd0', 0, 0.02);
     for (const z of [-0.09, 0.09]) add(new THREE.CylinderGeometry(0.054, 0.054, 0.025, 12).rotateX(Math.PI / 2), '#f4f8ff', 0, 0.02, z);

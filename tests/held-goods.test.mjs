@@ -9,7 +9,7 @@ const bag = (items) => ({ items, list() { return this.items; }, take(i) { return
 const gift = (g) => ({ kind: 'gift', sips: 1, name: g, icon: '🛍️', g });
 
 test('goods are held as themselves, and older clients still see a shopping bag', () => {
-  for (const g of ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap']) {
+  for (const g of ['mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap']) {
     assert.equal(giftKind(gift(g)), 'gift:' + g);
     assert.ok(HELD_KINDS.includes(heldBase(giftKind(gift(g)))), 'passes the held-kind check other players run');
   }
@@ -33,4 +33,14 @@ test('the ramen machine takes the pack and the egg from your hand too', async ()
   assert.ok(ui._use('ramyeon') && held === null, 'the pack in the hand goes in the pot');
   assert.ok(ui._use('egg') && b.items.length === 0, 'the egg from the bag');
   assert.ok(!ui._use('egg'), 'none left');
+});
+
+test('each frisbee is red, sky blue or purple, and keeps its colour in the hand', async () => {
+  const { newFrisbee, frisbeeColor, FRISBEE_COLORS } = await import('../src/core/frisbee.js');
+  const seen = new Set([0, 0.4, 0.9].map((r) => newFrisbee(() => r).q));
+  assert.deepEqual([...seen], [0, 1, 2]);
+  assert.equal(FRISBEE_COLORS.length, 3);
+  assert.equal(frisbeeColor({ kind: 'gift', g: 'frisbee' }), FRISBEE_COLORS[0], 'an older frisbee is red');
+  assert.equal(giftKind(newFrisbee(() => 0.9)), 'gift:frisbee.2');
+  assert.ok(HELD_KINDS.includes(heldBase('gift:frisbee.2')));
 });

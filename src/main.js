@@ -168,6 +168,7 @@ import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, d
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
+import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
@@ -3378,7 +3379,7 @@ function buyIngredient(product, coins) {
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
   if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
-  bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient });
+  bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient, ...(product.ingredient === 'frisbee' ? { q: newFrisbee().q } : {}) }); // (a frisbee comes in a random colour)
   clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
   shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
   shop.toast(shopToastText);
@@ -5969,7 +5970,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     takeout: (i = 0) => orderFood(interior.store.products[i], true),
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
     giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
-    giveFrisbee: () => bag.add({ kind: 'gift', sips: 1, name: 'Frisbee', icon: '🥏', g: 'frisbee' }),
+    giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying],
     givePet: (id) => { inventory.add(id); setPet(id); },
     face: (ry) => { me.root.rotation.y = ry; },
