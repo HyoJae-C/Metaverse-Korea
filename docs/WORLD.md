@@ -77,7 +77,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
-- Stores, homes, meeting zones and bike stations can be placed with
+- `water` (region.json) adds river stretches between districts (the Han River
+  from Mangwon to Seongsu): each is a water area plus a blocker; give it
+  `blockers` split around a bridge to leave a gap.
+- Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
@@ -151,7 +154,7 @@ Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
 so the overlap check doesn't count the empty corner its bounding box covers.
 The district is nudged north as far as Songpa, so the two keep their real
-distance. Meeting zone T is on KONEXT Square.
+distance. Meeting zone U is on KONEXT Square.
 
 ## Sunken streams (Cheonggyecheon)
 
@@ -182,8 +185,8 @@ building drawn by its landmark (`core/euljiro-models.js`) from the outline in
 the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
 City Wall on its west side, and the fashion malls across Jangchungdan-ro.
 South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
-Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
-free for the folk games (docs/FOLK-GAMES.md).
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) with
+the folk games yard in its middle (the `folkyard` landmark, docs/FOLK-GAMES.md).
 
 DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
@@ -209,6 +212,22 @@ Two more parts of the same district stand at their gates' spots: Sungnyemun
 Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
 three boxes for the overlap check.
+
+## Bosingak (Jongno)
+
+The bell pavilion stands on the north side of Jongno in the Gyeongbokgung
+district's map, east of Sejong-daero (`src/data/bosingak.js`, model in
+`core/bosingak-model.js`, people in `core/bosingak-show.js`), on its own
+square where a plain building used to be, with a few visitors already there.
+In front of the steps `🔔 Ring the bell` swings the striker into the bell and
+plays a long synthesised hum (`Sfx.bigBell`), heard only round the square
+(`hear.ring`, about 20 m); other players there hear it too (emote
+`bosingak:ring`). The first ring pays once (reward rule `view`) and shows its
+card. On 1 January at midnight and at noon (KST) the bell keeper comes out on
+the upper floor and rings it 33 times, one stroke every 15 seconds, heard all
+along Jongno (`hear.ceremony`). It is worked out from the clock, so every
+player hears the same stroke. No real event times are shown in the game: they
+change each year.
 
 ## Jongmyo (Jongno-gu)
 
@@ -243,3 +262,14 @@ Trail: Sungnyemun, Namsan, Igansumun, Heunginjimun; the Joseon Royal Walk:
 Gyeongbokgung, Bukchon, Jongmyo). The stamp note shows
 each course's stops; the last stamp of a course pays its reward once
 (`core/trails.js`, saved under `mk.trails`).
+
+## Seokchon Lake's north shore (Songpa)
+
+HANEUL (하늘), a fictional brand, has a department store (north of the west
+lake) and a mall with HANEUL Tower (north of the east lake) between
+Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
+stands. Their footprints are `custom` buildings in `districts/songpa.json`
+drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
+are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone T
+(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
+behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.

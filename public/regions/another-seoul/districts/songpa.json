@@ -21,7 +21,7 @@
     ]
    }
   ],
-  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. No filler blocks: the open ground by the river and the lakes is left clear."
+  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. No filler blocks: the open ground by the river and the lakes is left clear. The HANEUL department store, mall and tower (fictional brand) stand on the north shore between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; they are drawn by core/haneul.js. Another Land's island was cut down (x 292..404, z 228..332) with the park's outside, which is drawn at 3/4 size."
  },
  "roads": [
   {
@@ -261,6 +261,100 @@
     "ko": "송파 안내센터",
     "en": "Songpa Information Center"
    }
+  },
+  {
+   "h": 26,
+   "custom": true,
+   "p": [
+    [
+     222,
+     114
+    ],
+    [
+     330,
+     114
+    ],
+    [
+     330,
+     148
+    ],
+    [
+     222,
+     148
+    ]
+   ],
+   "n": {
+    "ko": "하늘 백화점",
+    "en": "HANEUL Department Store"
+   }
+  },
+  {
+   "h": 22,
+   "custom": true,
+   "p": [
+    [
+     572,
+     116
+    ],
+    [
+     688,
+     116
+    ],
+    [
+     688,
+     170
+    ],
+    [
+     572,
+     170
+    ]
+   ],
+   "n": {
+    "ko": "하늘몰",
+    "en": "HANEUL MALL"
+   }
+  },
+  {
+   "h": 114,
+   "custom": true,
+   "p": [
+    [
+     722,
+     156
+    ],
+    [
+     733.3,
+     151.3
+    ],
+    [
+     738,
+     140
+    ],
+    [
+     733.3,
+     128.7
+    ],
+    [
+     722,
+     124
+    ],
+    [
+     710.7,
+     128.7
+    ],
+    [
+     706,
+     140
+    ],
+    [
+     710.7,
+     151.3
+    ]
+   ],
+   "n": {
+    "ko": "하늘타워",
+    "en": "HANEUL Tower"
+   }
   }
  ],
  "rail": [],
@@ -278,11 +372,11 @@
     ],
     [
      515,
-     214
+     228
     ],
     [
      215,
-     214
+     228
     ]
    ]
   },
@@ -291,11 +385,11 @@
    "p": [
     [
      215,
-     346
+     332
     ],
     [
      515,
-     346
+     332
     ],
     [
      515,
@@ -312,11 +406,11 @@
    "p": [
     [
      215,
-     214
+     228
     ],
     [
      292,
-     214
+     228
     ],
     [
      292,
@@ -333,19 +427,19 @@
    "p": [
     [
      215,
-     275
-    ],
-    [
-     292,
-     275
+     285
     ],
     [
      292,
      285
+    ],
+    [
+     292,
+     332
     ],
     [
      215,
-     285
+     332
     ]
    ]
   },
@@ -353,41 +447,41 @@
    "k": "water",
    "p": [
     [
-     215,
-     285
-    ],
-    [
-     292,
-     285
-    ],
-    [
-     292,
-     346
-    ],
-    [
-     215,
-     346
-    ]
-   ]
-  },
-  {
-   "k": "water",
-   "p": [
-    [
-     436,
-     214
+     404,
+     228
     ],
     [
      515,
-     214
+     228
     ],
     [
      515,
-     346
+     332
     ],
     [
-     436,
-     346
+     404,
+     332
+    ]
+   ]
+  },
+  {
+   "k": "water",
+   "p": [
+    [
+     215,
+     275
+    ],
+    [
+     292,
+     275
+    ],
+    [
+     292,
+     285
+    ],
+    [
+     215,
+     285
     ]
    ]
   },
@@ -455,27 +549,6 @@
    ]
   },
   {
-   "k": "park",
-   "p": [
-    [
-     292,
-     214
-    ],
-    [
-     436,
-     214
-    ],
-    [
-     436,
-     346
-    ],
-    [
-     292,
-     346
-    ]
-   ]
-  },
-  {
    "k": "plaza",
    "p": [
     [
@@ -516,6 +589,27 @@
      380
     ]
    ]
+  },
+  {
+   "k": "park",
+   "p": [
+    [
+     292,
+     228
+    ],
+    [
+     404,
+     228
+    ],
+    [
+     404,
+     332
+    ],
+    [
+     292,
+     332
+    ]
+   ]
   }
  ],
  "blockers": [
@@ -531,11 +625,11 @@
     ],
     [
      515,
-     214
+     228
     ],
     [
      215,
-     214
+     228
     ]
    ]
   },
@@ -543,11 +637,11 @@
    "p": [
     [
      215,
-     346
+     332
     ],
     [
      515,
-     346
+     332
     ],
     [
      515,
@@ -563,11 +657,11 @@
    "p": [
     [
      215,
-     214
+     228
     ],
     [
      292,
-     214
+     228
     ],
     [
      292,
@@ -591,31 +685,131 @@
     ],
     [
      292,
-     346
+     332
     ],
     [
      215,
-     346
+     332
     ]
    ]
   },
   {
    "p": [
     [
-     436,
-     214
+     404,
+     228
     ],
     [
      515,
-     214
+     228
     ],
     [
      515,
-     346
+     332
     ],
     [
-     436,
-     346
+     404,
+     332
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     300,
+     235
+    ],
+    [
+     302,
+     235
+    ],
+    [
+     302,
+     274
+    ],
+    [
+     300,
+     274
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     300,
+     286
+    ],
+    [
+     302,
+     286
+    ],
+    [
+     302,
+     325
+    ],
+    [
+     300,
+     325
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     300,
+     234
+    ],
+    [
+     399,
+     234
+    ],
+    [
+     399,
+     236
+    ],
+    [
+     300,
+     236
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     300,
+     324
+    ],
+    [
+     399,
+     324
+    ],
+    [
+     399,
+     326
+    ],
+    [
+     300,
+     326
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     397,
+     234
+    ],
+    [
+     399,
+     234
+    ],
+    [
+     399,
+     326
+    ],
+    [
+     397,
+     326
     ]
    ]
   },
@@ -716,106 +910,6 @@
     [
      215,
      286
-    ]
-   ]
-  },
-  {
-   "p": [
-    [
-     300,
-     220
-    ],
-    [
-     302,
-     220
-    ],
-    [
-     302,
-     274
-    ],
-    [
-     300,
-     274
-    ]
-   ]
-  },
-  {
-   "p": [
-    [
-     300,
-     286
-    ],
-    [
-     302,
-     286
-    ],
-    [
-     302,
-     340
-    ],
-    [
-     300,
-     340
-    ]
-   ]
-  },
-  {
-   "p": [
-    [
-     300,
-     219
-    ],
-    [
-     430,
-     219
-    ],
-    [
-     430,
-     221
-    ],
-    [
-     300,
-     221
-    ]
-   ]
-  },
-  {
-   "p": [
-    [
-     300,
-     339
-    ],
-    [
-     430,
-     339
-    ],
-    [
-     430,
-     341
-    ],
-    [
-     300,
-     341
-    ]
-   ]
-  },
-  {
-   "p": [
-    [
-     429,
-     220
-    ],
-    [
-     431,
-     220
-    ],
-    [
-     431,
-     340
-    ],
-    [
-     429,
-     340
     ]
    ]
   },
@@ -1001,6 +1095,34 @@
      190
     ]
    ]
+  },
+  {
+   "type": "haneulstore",
+   "x": 276,
+   "z": 131,
+   "w": 108,
+   "d": 34,
+   "h": 26,
+   "title": "HANEUL",
+   "sub": "DEPARTMENT STORE",
+   "accent": "#4f8fd8"
+  },
+  {
+   "type": "haneulstore",
+   "x": 630,
+   "z": 143,
+   "w": 116,
+   "d": 54,
+   "h": 22,
+   "title": "HANEUL MALL",
+   "sub": "LAKESIDE SHOPPING",
+   "accent": "#2fa39a",
+   "vault": true
+  },
+  {
+   "type": "haneultower",
+   "x": 722,
+   "z": 140
   }
  ]
 }

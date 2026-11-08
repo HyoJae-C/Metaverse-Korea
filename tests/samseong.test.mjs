@@ -68,8 +68,8 @@ test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
   assert.deepEqual(link.p.at(-1), [olympic.p[0][0] + songpa.offset[0], olympic.p[0][1] + songpa.offset[1]], 'ends on Olympic-ro');
 });
 
-test('meeting zone T on KONEXT Square, an Information Center and a stamp', () => {
-  const zone = zones.find((z) => z.id === 'T');
+test('meeting zone U on KONEXT Square, an Information Center and a stamp', () => {
+  const zone = zones.find((z) => z.id === 'U');
   assert.ok(zone);
   const [zx, zz] = local(zone.at);
   const plaza = map.areas.find((a) => a.k === 'plaza');

@@ -160,7 +160,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     }
     writeFileSync(path.join(R, 'stores.json'), stores);
     console.log('exits:', JSON.stringify(EXITS.map((e) => ({ n: e.n, at: w(e.at), ry: r1(e.ry * 1e4) / 1e4 }))));
-    console.log('zone T at', JSON.stringify(w(ZONE)), ' stamp at', JSON.stringify(w(STAMP)));
+    console.log('zone U at', JSON.stringify(w(ZONE)), ' stamp at', JSON.stringify(w(STAMP)));
     console.log('Teheran-ro east end (link to Olympic-ro):', JSON.stringify(w([TEHERAN.x1, TEHERAN.z])));
   }
   console.log(`samseong: ${map.buildings.length} buildings`);

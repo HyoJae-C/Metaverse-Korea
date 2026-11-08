@@ -1,10 +1,11 @@
 // Shooting gallery panel in Another Land (rules in core/arcade.js): a toy
 // cork gun and three rows of sliding balloons, ducks and stars. Tap a target
-// to pop it. Free to play: chase your own best score.
+// to pop it. Free to play: chase your own best score. A gold medal at the
+// balloon booth wins a small teddy bear for your home (theme.prize).
 // The haunted house's ghost lantern is the same game in another theme
 // (HAUNT_THEME): same rules, its own look, words and record.
 // Loaded on first use (see openArcade in main.js).
-import { Gallery, GALLERY_SHOTS, GALLERY_SECONDS, GALLERY_ROWS, TARGETS, loadRecords, saveRecord } from '../core/arcade.js';
+import { Gallery, GALLERY_SHOTS, GALLERY_SECONDS, GALLERY_ROWS, GALLERY_MEDALS, GALLERY_GOLD_PRIZE, TARGETS, galleryMedal, galleryMedalIcon, loadRecords, saveRecord } from '../core/arcade.js';
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
@@ -27,6 +28,46 @@ const T = {
   hud: { en: 'Score {p} · corks {n} · {s} s', ko: '점수 {p} · 코르크 {n} · {s}초', ja: '得点 {p}・残り {n}発・{s}秒', zh: '得分 {p} · 剩 {n} 发 · {s}秒', es: 'Puntos {p} · corchos {n} · {s} s', id: 'Skor {p} · gabus {n} · {s} dtk', vi: 'Điểm {p} · còn {n} viên · {s} giây', hi: 'स्कोर {p} · कॉर्क {n} · {s} से', fr: 'Score {p} · bouchons {n} · {s} s', th: 'คะแนน {p} · กระสุน {n} · {s} วิ', ar: 'النقاط {p} · الطلقات {n} · {s} ث' },
   done: { en: '{p} points · {h} hits out of {n}', ko: '{p}점 · {n}발 중 {h}발 명중', ja: '{p}点・{n}発中{h}発命中', zh: '{p}分 · {n}发中{h}发', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', hi: '{p} अंक · {n} में {h} निशाने', fr: '{p} points · {h} touchés sur {n}', th: '{p} คะแนน · ยิงโดน {h} จาก {n}', ar: '{p} نقطة · {h} إصابات من {n}' },
   record: { en: '🏆 New best!', ko: '🏆 신기록!', ja: '🏆 自己ベスト更新！', zh: '🏆 新纪录！', es: '🏆 ¡Nuevo récord!', id: '🏆 Rekor baru!', vi: '🏆 Kỷ lục mới!', hi: '🏆 नया रिकॉर्ड!', fr: '🏆 Nouveau record !', th: '🏆 สถิติใหม่!', ar: '🏆 رقم جديد!' },
+  medals: {
+    en: 'Medals: {b} · {s} · {g} points. A gold medal wins a small teddy bear 🧸 for your home!',
+    ko: '메달: {b} · {s} · {g}점. 금메달을 따면 작은 곰인형 🧸을 선물로 드려요! 내 집에 놓을 수 있어요.',
+    ja: 'メダル：{b}・{s}・{g}点。金メダルで小さなくまのぬいぐるみ🧸をプレゼント！家に飾れます。',
+    zh: '奖牌：{b} · {s} · {g}分。拿到金牌就送你一只小泰迪熊🧸，可以摆在家里！',
+    es: 'Medallas: {b} · {s} · {g} puntos. ¡Con la medalla de oro te llevas un osito de peluche 🧸 para tu casa!',
+    id: 'Medali: {b} · {s} · {g} poin. Medali emas dapat hadiah boneka beruang kecil 🧸 untuk rumahmu!',
+    vi: 'Huy chương: {b} · {s} · {g} điểm. Huy chương vàng được tặng một chú gấu bông nhỏ 🧸 để đặt trong nhà!',
+    hi: 'मेडल: {b} · {s} · {g} अंक। गोल्ड मेडल पर घर के लिए एक छोटा टेडी बियर 🧸 तोहफ़ा!',
+    fr: 'Médailles : {b} · {s} · {g} points. La médaille d’or gagne un petit ours en peluche 🧸 pour ta maison !',
+    th: 'เหรียญ: {b} · {s} · {g} คะแนน ได้เหรียญทองรับตุ๊กตาหมีตัวเล็ก 🧸 ไปวางที่บ้าน!',
+    ar: 'الميداليات: {b} · {s} · {g} نقطة. الميدالية الذهبية تربح دبًا محشوًا صغيرًا 🧸 لبيتك!',
+  },
+  medal: { en: '{m} medal!', ko: '{m} 메달!', ja: '{m}メダル！', zh: '{m}奖牌！', es: '¡Medalla {m}!', id: 'Medali {m}!', vi: 'Huy chương {m}!', hi: '{m} मेडल!', fr: 'Médaille {m} !', th: 'เหรียญ{m}!', ar: 'ميدالية {m}!' },
+  gotBear: {
+    en: '🎁 Here is a small teddy bear! Put it in your home with Decorate.',
+    ko: '🎁 작은 곰인형을 선물로 받았어요! 내 집 꾸미기에서 놓을 수 있어요.',
+    ja: '🎁 小さなくまのぬいぐるみをプレゼント！家の模様替えで置けます。',
+    zh: '🎁 送你一只小泰迪熊！在家里点“装饰”就能摆放。',
+    es: '🎁 ¡Aquí tienes un osito de peluche! Ponlo en tu casa con Decorar.',
+    id: '🎁 Ini boneka beruang kecil untukmu! Taruh di rumahmu lewat Dekorasi.',
+    vi: '🎁 Tặng bạn một chú gấu bông nhỏ! Đặt nó trong nhà bằng Trang trí.',
+    hi: '🎁 यह रहा एक छोटा टेडी बियर! इसे सजाएँ से अपने घर में रखें।',
+    fr: '🎁 Voici un petit ours en peluche ! Place-le chez toi avec Décorer.',
+    th: '🎁 รับตุ๊กตาหมีตัวเล็กไปเลย! วางในบ้านได้ด้วยปุ่มตกแต่ง',
+    ar: '🎁 إليك دب محشو صغير! ضعه في بيتك من خلال التزيين.',
+  },
+  hadBear: {
+    en: 'You already have the small teddy bear. Well shot!',
+    ko: '작은 곰인형은 이미 받았어요. 멋진 사격이에요!',
+    ja: '小さなくまはもう持っています。お見事！',
+    zh: '你已经有小泰迪熊了。打得漂亮！',
+    es: 'Ya tienes el osito de peluche. ¡Buen tiro!',
+    id: 'Kamu sudah punya boneka beruang kecil. Tembakan hebat!',
+    vi: 'Bạn đã có gấu bông nhỏ rồi. Bắn giỏi lắm!',
+    hi: 'छोटा टेडी बियर आपके पास पहले से है। बढ़िया निशाना!',
+    fr: 'Tu as déjà le petit ours. Joli tir !',
+    th: 'คุณมีตุ๊กตาหมีตัวเล็กแล้ว ยิงเก่งมาก!',
+    ar: 'لديك الدب الصغير بالفعل. تصويب رائع!',
+  },
   again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
 };
@@ -36,14 +77,20 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
+const MEDAL = {
+  gold: { en: 'Gold', ko: '금', ja: '金', zh: '金', es: 'de oro', id: 'emas', vi: 'vàng', hi: 'गोल्ड', fr: 'd’or', th: 'ทอง', ar: 'ذهبية' },
+  silver: { en: 'Silver', ko: '은', ja: '銀', zh: '银', es: 'de plata', id: 'perak', vi: 'bạc', hi: 'सिल्वर', fr: 'd’argent', th: 'เงิน', ar: 'فضية' },
+  bronze: { en: 'Bronze', ko: '동', ja: '銅', zh: '铜', es: 'de bronce', id: 'perunggu', vi: 'đồng', hi: 'ब्रॉन्ज़', fr: 'de bronze', th: 'ทองแดง', ar: 'برونزية' },
+};
 const W = 600, H = 360;
 const COLORS = ['#ff5a5f', '#ffd36e', '#8fd0ff', '#c9a8ff', '#8fe3c7'];
 
 export class GalleryUI {
   // store: localStorage (records); onPop(kind) on each hit; theme: another
-  // look for the same game (default: the balloon booth).
-  constructor({ root, store, onPop, theme = BALLOON_THEME }) {
-    Object.assign(this, { root, store, onPop, theme });
+  // look for the same game (default: the balloon booth); give(itemId): put
+  // the gold medal prize in the bag, true if it is new; onGold() on a gold.
+  constructor({ root, store, onPop, theme = BALLOON_THEME, give, onGold }) {
+    Object.assign(this, { root, store, onPop, theme, give, onGold });
     this.raf = 0;
   }
   tt(k, v) { return fmt(L(this.theme.text?.[k] || T[k]), v); }
@@ -63,9 +110,14 @@ export class GalleryUI {
   renderStart(note) {
     this._frame();
     this.root.append(el('p', 'order-hint', this.tt('howTo', { n: GALLERY_SHOTS, s: GALLERY_SECONDS })));
+    if (this.theme.prize) {
+      const [g, sv, b] = GALLERY_MEDALS.map(([, min, icon]) => icon + ' ' + min);
+      this.root.append(el('p', 'order-hint', this.tt('medals', { g, s: sv, b })));
+    }
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const best = loadRecords(this.store)[this.theme.record];
-    if (best) this.root.append(el('p', 'order-hint', this.tt('best', { n: best })));
+    const bestMedal = this.theme.prize ? galleryMedalIcon(galleryMedal(best || 0)) : '';
+    if (best) this.root.append(el('p', 'order-hint', this.tt('best', { n: best }) + (bestMedal ? ' ' + bestMedal : '')));
     const go = el('button', 'primary', this.theme.icon + ' ' + (note ? this.tt('again') : this.tt('start')));
     go.onclick = () => this.play();
     const actions = el('div', 'order-actions');
@@ -109,7 +161,15 @@ export class GalleryUI {
   finish() {
     const gal = this.game.gal;
     const rec = saveRecord(this.store, this.theme.record, gal.score) && gal.score > 0;
-    this.renderStart(this.tt('done', { p: gal.score, h: gal.hits, n: GALLERY_SHOTS }) + (rec ? '  ' + this.tt('record') : ''));
+    let note = this.tt('done', { p: gal.score, h: gal.hits, n: GALLERY_SHOTS }) + (rec ? '  ' + this.tt('record') : '');
+    const medal = this.theme.prize ? galleryMedal(gal.score) : null;
+    if (medal) note += '  ' + galleryMedalIcon(medal) + ' ' + this.tt('medal', { m: L(MEDAL[medal]) });
+    if (medal === 'gold') {
+      // The small teddy bear: given once (it goes in your home); later golds just cheer.
+      note += '  ' + (this.give?.(GALLERY_GOLD_PRIZE) ? this.tt('gotBear') : this.tt('hadBear'));
+      this.onGold?.();
+    }
+    this.renderStart(note);
   }
 
   draw(g, t) {
@@ -179,7 +239,7 @@ function balloonTarget(c, tg, x, y, r) {
     }
 }
 export const BALLOON_THEME = {
-  icon: '🎯', record: 'gallery', popColor: '#e2457a', lantern: false,
+  icon: '🎯', record: 'gallery', popColor: '#e2457a', lantern: false, prize: true,
   back(c) {
     for (let i = 0; i < 12; i++) { c.fillStyle = i % 2 ? '#fff3d6' : '#ffd0e0'; c.fillRect((i * W) / 12, 0, W / 12 + 1, H); }
     c.fillStyle = '#ff7a8a';

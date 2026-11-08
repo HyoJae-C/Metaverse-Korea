@@ -1,6 +1,6 @@
 // The batting cage, the shooting gallery in Another Land and darts at Bar
 // Hush (core/arcade.js). Free skill games: no coins in or out, only your own
-// best record. Their panels are loaded the first time you play one.
+// best record (and a small teddy bear for a gold at the balloon booth). Their panels are loaded the first time you play one.
 import { L, fmt } from '../ui/pocha-ui.js';
 import { dartColorOf, dartPack, dartPinMsg, dartsGoMsg, dartsMsg, pickDartColor } from '../core/arcade.js';
 
@@ -52,7 +52,10 @@ export function createArcade(game) {
         });
       } else if (kind === 'gallery') {
         const { GalleryUI } = await import('../ui/gallery-ui.js');
-        ui = new GalleryUI({ root: $('gallery-panel'), store: localStorage, onPop: () => sfx.tock(0.6, 1500) });
+        ui = new GalleryUI({
+          root: $('gallery-panel'), store: localStorage, onPop: () => sfx.tock(0.6, 1500),
+          give: game.give, onGold: () => game.me.play('cheer'),
+        });
       } else if (kind === 'hauntGallery') { // the haunted house's ghost lantern (same rules, its own look and record)
         const { GalleryUI, HAUNT_THEME } = await import('../ui/gallery-ui.js');
         ui = new GalleryUI({ root: $('haunt-panel'), store: localStorage, theme: HAUNT_THEME, onPop: () => sfx.tock(0.5, 700) });
