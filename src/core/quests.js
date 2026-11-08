@@ -7,7 +7,8 @@
 //   visit  go into a shop (target: store id)
 //   coffee bring back a coffee (checked when you report; the guide takes it)
 //   fish   catch any fish
-//   cook   finish the grill or ramen game
+//   cook   finish the grill or ramen game (no longer handed out: too hard
+//          for now; kept so a saved one can still be finished)
 //   pet    come back walking your pet (checked when you report)
 //   talk   say hi to 3 passers-by
 //   dance  do 3 emotes on the square (in front of the big screen)
@@ -57,7 +58,7 @@ const KEY = 'mk.quests';
 const VERSION = 2;
 
 export function pickQuest(pool, rand = Math.random, last = null) {
-  const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
+  const kinds = ['visit', 'coffee', 'talk', 'fish', 'pet', 'dance'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
   const kind = kinds[Math.floor(rand() * kinds.length)] || 'talk';
   const q = { kind, need: kind === 'talk' || kind === 'dance' ? 3 : 1, n: 0 };
   if (kind === 'visit') q.target = pool.stores[Math.floor(rand() * pool.stores.length)];
