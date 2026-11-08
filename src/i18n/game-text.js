@@ -223,15 +223,6 @@ export const FIREWORKS_TEXT = {
   finale: { en: '🎆 The finale!', ko: '🎆 대피날레!', ja: '🎆 グランドフィナーレ！', zh: '🎆 压轴大结局！' },
 };
 
-export const DUCK_TEXT = {
-  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', vi: 'Lên thuyền vịt', hi: 'बत्तख नाव में बैठें', fr: 'Monter dans le pédalo canard', th: 'ขึ้นเรือเป็ด', id: 'Naik perahu bebek' },
-  go: { en: 'Duck boat ride', ko: '오리배 출발', ja: 'アヒルボートで出発', zh: '鸭子船出发', es: 'Paseo en bote pato', ar: 'جولة بقارب البطة', vi: 'Đi thuyền vịt', hi: 'बत्तख नाव की सवारी', fr: 'Balade en pédalo canard', th: 'นั่งเรือเป็ด', id: 'Naik perahu bebek' },
-  back: { en: 'Back to dock', ko: '선착장으로 돌아가기', ja: '乗り場に戻る', zh: '回码头', es: 'Volver al muelle', ar: 'العودة إلى الرصيف', vi: 'Quay về bến', hi: 'घाट पर लौटें', fr: 'Retour au quai', th: 'กลับท่าเรือ', id: 'Kembali ke dermaga' },
-  docked: { en: 'Back at the dock. Thanks for riding! 🦆', ko: '선착장에 도착했어요. 즐거웠죠? 🦆', ja: '乗り場に着きました。楽しかった？🦆', zh: '回到码头了，玩得开心吗？🦆', es: '¡De vuelta en el muelle! Gracias por pasear 🦆', ar: 'عدت إلى الرصيف. شكرًا على الجولة! 🦆', vi: 'Đã về bến. Cảm ơn bạn đã đi thuyền! 🦆', hi: 'घाट पर वापस। सवारी के लिए धन्यवाद! 🦆', fr: 'De retour au quai. Merci d\'être monté ! 🦆', th: 'กลับถึงท่าเรือแล้ว ขอบคุณที่ใช้บริการ! 🦆', id: 'Sudah kembali di dermaga. Terima kasih! 🦆' },
-  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', vi: 'Thuyền này đã đầy', hi: 'यह नाव भर गई है', fr: 'Ce bateau est plein', th: 'เรือลำนี้เต็มแล้ว', id: 'Perahu ini penuh' },
-  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', vi: 'Đang chờ ở bến · {n}/2 người trên thuyền', hi: 'घाट पर इंतज़ार · {n}/2 सवार', fr: 'En attente au quai · {n}/2 à bord', th: 'รอที่ท่าเรือ · บนเรือ {n}/2', id: 'Menunggu di dermaga · {n}/2 naik' },
-};
-
 export const ADOPT_TEXT = {
   meet: { en: 'Meet {name} · adopt', ko: '{name} 만나기 · 분양', ja: '{name}に会う · 迎える', zh: '认识{name} · 领养' },
   desc: { en: '{desc}\nWaiting for a family. The adoption fee helps the café care for the animals.', ko: '{desc}\n가족을 기다리고 있어요. 분양비는 카페 동물들을 돌보는 데 쓰여요.', ja: '{desc}\n家族を待っています。譲渡費はカフェの動物たちのお世話に使われます。', zh: '{desc}\n正在等待家人。领养费用于照顾咖啡馆里的动物。' },
