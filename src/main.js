@@ -3860,17 +3860,19 @@ function boothSpot(st) {
   }
   return [st.x + best, st.z];
 }
+// A prize for your home (claw machine plushies, the balloon booth's bear): true if new.
+const givePrize = (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; };
 const clawUi = new ClawUI({
   root: $('claw-panel'),
   wallet,
-  give: (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; },
+  give: givePrize,
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
 });
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, myId, safety, sfx, shop,
+  get net() { return net; }, $, cam, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
