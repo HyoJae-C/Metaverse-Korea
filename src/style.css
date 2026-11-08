@@ -594,6 +594,35 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .chat-line.friend b, .chat-line.friend .chat-name { color: #3c6fd6; }
 .chat-line.notice { background: rgba(255, 236, 170, 0.97); color: #4a3510; font-weight: 600; border: 1.5px solid #e0a82e; box-shadow: 0 2px 0 rgba(176, 120, 20, 0.25); }
 .chat-line.notice b { color: #b05a00; font-weight: 800; }
+/* Operator notices pinned at the top until deleted (game/chat.js). */
+.notice-pin {
+  position: absolute; z-index: 5;
+  top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left, 0px));
+  width: min(440px, calc(100vw - 460px)); min-width: 220px;
+  display: flex; flex-direction: column; gap: 4px; padding: 8px 34px 8px 12px;
+  background: rgba(255, 236, 170, 0.97); color: #4a3510; border: 1.5px solid #e0a82e; border-radius: 14px;
+  box-shadow: 0 2px 0 rgba(176, 120, 20, 0.25); font-size: 13px; font-weight: 600; overflow-wrap: anywhere;
+}
+.notice-pin[hidden] { display: none; }
+.notice-pin-row { max-height: 4.2em; overflow-y: auto; line-height: 1.4; }
+.notice-pin-row + .notice-pin-row { border-top: 1px dashed #e0a82e; padding-top: 4px; }
+.notice-pin-row b { color: #b05a00; font-weight: 800; }
+.notice-pin-fold {
+  position: absolute; top: 4px; right: 4px; min-width: 26px; height: 26px; padding: 0 6px;
+  border: 0; border-radius: 999px; background: #fff6d8; color: #8a5a10; font-weight: 800; cursor: pointer;
+}
+.notice-pin.folded { width: auto; min-width: 0; padding: 0; background: none; border: 0; box-shadow: none; }
+.notice-pin.folded .notice-pin-fold { position: static; height: 32px; padding: 0 12px; background: rgba(255, 236, 170, 0.97); border: 1.5px solid #e0a82e; }
+/* Under the shop's name banner, and under the wide-screen ad (core/side-ad.js). */
+.in-store .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 100px); }
+@media (min-width: 1200px) and (min-height: 640px) and (pointer: fine) {
+  body:has(#side-ad):not(.in-store) .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 82px); }
+}
+@media (max-width: 760px) {
+  /* Phones: under the top-right chips, left of the tool buttons. */
+  .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 62px); right: 80px; width: auto; min-width: 0; font-size: 12px; }
+  .notice-pin.folded { right: auto; }
+}
 .chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
 .chat-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
