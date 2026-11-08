@@ -35,6 +35,13 @@ try {
   await mk('place', -10, 7); await mk('face', Math.PI / 2);
   await until(async () => (await label()).includes('🥏'));
   console.log('button:', await label());
+  // Held in the hand (out of the bag) it still works.
+  await mk('holdFromBag', 'gift');
+  if ((await mk('bagKinds')).includes('gift')) throw new Error('still in the bag');
+  if (await mk('heldNow') !== 'frisbee') throw new Error('held as ' + await mk('heldNow'));
+  await wait(300);
+  if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
+  console.log('in hand: button shows');
   await mk('place', 2, -2); await wait(400);
   if ((await label()).includes('🥏')) throw new Error('frisbee on the path');
   await mk('place', -10, 7); await mk('face', Math.PI / 2);

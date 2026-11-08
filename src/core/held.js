@@ -11,7 +11,7 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'frisbee'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -146,6 +146,13 @@ export function makeHeld(kind) {
     const cap = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), mat('#2b2230'));
     cap.position.y = 0.097;
     g.add(glass, juice, collar, cap);
+  } else if (kind === 'frisbee') {
+    // A frisbee from the bag (game/frisbee.js), held upright by its rim.
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.02, 20).rotateZ(Math.PI / 2), mat('#ff6b4a'));
+    disc.position.y = 0.06;
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.01, 6, 20).rotateY(Math.PI / 2), mat('#ffffff'));
+    rim.position.set(0.006, 0.06, 0);
+    g.add(disc, rim);
   } else if (kind === 'gift') {
     // A paper shopping bag with rope handles (something bought in a shop).
     const bag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.13, 0.12), mat('#fff6ee'));

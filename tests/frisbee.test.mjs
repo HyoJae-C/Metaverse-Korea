@@ -62,3 +62,11 @@ test('golden retrievers and monkeys play fetch too; cats only watch', () => {
   assert.ok(catchChance(0.9, 'monkey') > catchChance(0.9, 'dog'));
   assert.ok(catchChance(1.25) > catchChance(0.85), 'the golden retriever (1.25) catches more than a Maltese');
 });
+
+test('a frisbee held in the hand counts as well as one in the bag', async () => {
+  const { hasFrisbee } = await import('../src/game/frisbee.js');
+  const frisbee = { kind: 'gift', g: 'frisbee' }, bag = (items) => ({ list: () => items });
+  assert.ok(hasFrisbee(bag([frisbee])));
+  assert.ok(hasFrisbee(bag([]), frisbee), 'taken out of the bag into the hand');
+  assert.ok(!hasFrisbee(bag([{ kind: 'gift', g: 'mat' }]), { kind: 'coffee' }));
+});

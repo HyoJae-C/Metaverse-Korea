@@ -25,12 +25,15 @@ export const FRISBEE_TEXT = {
   have: { en: 'You already have a frisbee in your bag.', ko: '가방에 이미 원반이 있어요.', ja: 'もうバッグにフリスビーがあります。', zh: '包里已经有飞盘了。', es: 'Ya tienes un frisbi en la bolsa.', fr: 'Tu as déjà un frisbee dans ton sac.' },
 };
 
-export const hasFrisbee = (bag) => bag.list().some((e) => e.kind === 'gift' && e.g === 'frisbee');
+// In the bag, or taken out and held in the hand (holding it takes it out of
+// the bag).
+const isFrisbee = (e) => e?.kind === 'gift' && e.g === 'frisbee';
+export const hasFrisbee = (bag, held = null) => isFrisbee(held) || bag.list().some(isFrisbee);
 const fmt = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 
 /**
  * game: { me, pet, petName(id), room (the picnic lawn or null), mode,
- * seated, riding, bag, shop } as getters, plus clearAction() and sfx.
+ * seated, riding, bag, held (what's in the hand), shop } as getters, plus clearAction() and sfx.
  */
 export function createFrisbee(game) {
   // phase: idle | fly (in the air) | fetch (on the grass, the dog going for
@@ -38,6 +41,7 @@ export function createFrisbee(game) {
   let phase = 'idle', disc = null, t = 0, flight = null, room = null, catchHop = 0, streak = 0, lost = 0, waited = 0;
 
   function end() {
+    if (disc) game.handEmpty?.(false);
     disc?.removeFromParent();
     disc = null;
     if (game.pet) { game.pet.playing = false; game.pet.body.position.y = 0; }
@@ -48,7 +52,7 @@ export function createFrisbee(game) {
   function action(p) {
     const pet = game.pet, here = game.room;
     if (phase !== 'idle' || !here || !pet || !pet.root.visible || game.seated || game.riding) return null;
-    if (!hasFrisbee(game.bag) || !clearGrass(here, p.x, p.z, 0.2)) return null;
+    if (!hasFrisbee(game.bag, game.held) || !clearGrass(here, p.x, p.z, 0.2)) return null;
     return { key: 'frisbee', label: '🥏 ' + fmt(L(FRISBEE_TEXT.throw), { name: game.petName(pet.id) }), run: () => throwIt() };
   }
 
@@ -61,6 +65,7 @@ export function createFrisbee(game) {
     flight = { from: { x: me.position.x, z: me.position.z }, to: at, T: flightTime(at.d), ground, react: 0.1 + Math.random() * 0.2, lucky: Math.random() < catchChance(pet.def.scale || 1, pet.def.kind) };
     disc = makeDisc();
     room.scene.add(disc);
+    if (game.held?.g === 'frisbee') game.handEmpty?.(true); // it left the hand
     pet.playing = true;
     phase = 'fly';
     t = 0;
@@ -75,7 +80,7 @@ export function createFrisbee(game) {
     if (phase === 'idle') return;
     const pet = game.pet;
     // Off the lawn (into a shop, onto a bike, sat down) or no pet: stop.
-    if (!pet || game.room !== room || game.riding || !hasFrisbee(game.bag)) { end(); game.clearAction(); return; }
+    if (!pet || game.room !== room || game.riding || !hasFrisbee(game.bag, game.held)) { end(); game.clearAction(); return; }
     t += dt;
     const me = game.me.root.position, kind = pet.def.kind, fetcher = fetches(kind), scale = pet.def.scale || 1;
     const pr = pet.root.position;

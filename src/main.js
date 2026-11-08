@@ -1871,7 +1871,8 @@ let held = (() => {
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind || null);
+// (a frisbee from the bag is held as itself, not in a shopping bag)
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' && held.g === 'frisbee' ? 'frisbee' : held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
@@ -2730,8 +2731,9 @@ bag.onChange(() => picnic.checkBag()); // sold or given away: it can't stay spre
 // Fetch with your pet on the same picnic lawns (src/game/frisbee.js).
 const frisbee = createFrisbee({
   get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; },
-  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get shop() { return shop; },
+  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
   get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
+  handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
 });
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js).
 const snowman = createSnowman({
@@ -3368,7 +3370,7 @@ let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
   if (product.ingredient === 'mat' && hasMat(bag)) return fail(L(MAT_TEXT.have)); // one is enough
-  if (product.ingredient === 'frisbee' && hasFrisbee(bag)) return fail(L(FRISBEE_TEXT.have));
+  if (product.ingredient === 'frisbee' && hasFrisbee(bag, held)) return fail(L(FRISBEE_TEXT.have));
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
   if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
