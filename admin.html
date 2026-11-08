@@ -81,6 +81,8 @@
         #tab-live { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; overflow: auto; }
         aside { border-left: 0; border-top: 1px solid var(--line); }
       }
+      .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
+      .wxslot { padding: 4px 8px; border-radius: 8px; background: rgba(127,127,127,.12); font-size: 13px; white-space: nowrap; }
     </style>
   </head>
   <body>
@@ -95,6 +97,7 @@
       <button data-tab="free">Free board</button>
       <button data-tab="players">Players</button>
       <button data-tab="notice">📢 Announce</button>
+      <button data-tab="weather">🌦️ Weather</button>
       <button data-tab="retention">Retention</button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
@@ -166,6 +169,28 @@
       </div>
       <div class="tools"><b>Sent</b><button id="noticeReload" type="button">Refresh</button></div>
       <div id="noticeList"></div>
+    </div></section>
+    <section class="tab" id="tab-weather" hidden><div class="pad">
+      <div class="card">
+        <div class="head"><b>🌦️ Weather for every player (날씨)</b><span class="muted">Every game rolls the same weather every 30 minutes from the season's odds. A held weather replaces the roll for a while. Snow settles on the street in about 4 minutes and melts in about 6.</span></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <label>Season <select id="wxSeason"></select></label>
+          <span class="muted" id="wxOdds"></span>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+          <label>Hold a weather now <select id="wxFixed"></select></label>
+          <label>for <select id="wxMinutes">
+            <option value="30">30 minutes</option>
+            <option value="60" selected>1 hour</option>
+            <option value="180">3 hours</option>
+            <option value="1440">1 day</option>
+            <option value="0">until I change it</option>
+          </select></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="wxSave" class="primary" type="button">Apply to everyone</button><button id="wxReload" type="button">Refresh</button></div>
+      </div>
+      <div class="card"><div id="wxNow" class="body">Loading…</div></div>
+      <div class="card"><div class="head"><b>Next 6 hours</b><span class="muted">What every game will show (your local time)</span></div><div id="wxNext" class="wxnext"></div></div>
     </div></section>
     <section class="tab" id="tab-retention" hidden><div class="pad">
       <div class="tools">

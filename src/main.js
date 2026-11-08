@@ -77,6 +77,7 @@ import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
+import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -1238,6 +1239,18 @@ const weather = new WeatherSystem({
     el.title = t('credit.weather');
   },
 });
+
+// The operators' season and held weather (admin.html → Weather,
+// supabase/023_weather.sql), the same for everyone. A little after start,
+// so it never holds up joining the world.
+let weatherClient = null, stopWeather = null;
+function watchWeatherSetting() {
+  if (!cloud.client || cloud.client === weatherClient) return;
+  stopWeather?.();
+  weatherClient = cloud.client;
+  stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
+}
+setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
 // ---------- Multiplayer ----------
 let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
@@ -5728,6 +5741,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
     snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
+    weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
