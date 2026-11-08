@@ -224,6 +224,7 @@ export const ID = {
   'cat.bank': 'Bank',
   'cat.library': 'Perpustakaan',
   'cat.museum': 'Museum',
+  'cat.memorial': 'Museum peringatan',
   'cat.culture': 'Pusat budaya',
   'cat.school': 'Sekolah',
   'cat.petshop': 'Toko hewan',

@@ -118,3 +118,11 @@ test('the history text is in Korean, English, Japanese and Chinese; other game l
     if (!['ko', 'en', 'ja', 'zh', 'zht'].includes(code)) assert.ok(m.NOT_TRANSLATED[code], `notice in ${code}`);
   }
 });
+
+test('every store category has a name on the map (no raw "cat.xxx" key)', async () => {
+  const { STRINGS } = await import('../src/i18n/strings.js');
+  const { stores } = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
+  for (const c of new Set(stores.map((s) => s.category))) {
+    for (const l of ['en', 'ko']) assert.ok(STRINGS[l]['cat.' + c], `cat.${c} (${l})`);
+  }
+});

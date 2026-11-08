@@ -223,6 +223,7 @@ export const ES = {
   'cat.bank': 'Banco',
   'cat.library': 'Biblioteca',
   'cat.museum': 'Museo',
+  'cat.memorial': 'Museo memorial',
   'cat.culture': 'Centro cultural',
   'cat.school': 'Escuela',
   'cat.petshop': 'Tienda de mascotas',

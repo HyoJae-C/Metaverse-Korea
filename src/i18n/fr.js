@@ -224,6 +224,7 @@ export const FR = {
   'cat.bank': 'Banque',
   'cat.library': 'Bibliothèque',
   'cat.museum': 'Musée',
+  'cat.memorial': 'Musée mémorial',
   'cat.petshop': 'Animalerie',
   'fish.open': 'Aller pêcher',
   'fish.title': 'Pêche au fleuve Han',

@@ -224,6 +224,7 @@ export const TH = {
   'cat.bank': 'ธนาคาร',
   'cat.library': 'ห้องสมุด',
   'cat.museum': 'พิพิธภัณฑ์',
+  'cat.memorial': 'พิพิธภัณฑ์อนุสรณ์',
   'cat.petshop': 'ร้านสัตว์เลี้ยง',
   'fish.open': 'ไปตกปลา',
   'fish.title': 'ตกปลาแม่น้ำฮัน',

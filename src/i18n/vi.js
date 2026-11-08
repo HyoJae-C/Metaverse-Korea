@@ -224,6 +224,7 @@ export const VI = {
   'cat.bank': 'Ngân hàng',
   'cat.library': 'Thư viện',
   'cat.museum': 'Bảo tàng',
+  'cat.memorial': 'Bảo tàng tưởng niệm',
   'cat.culture': 'Trung tâm văn hóa',
   'cat.school': 'Trường học',
   'cat.petshop': 'Cửa hàng thú cưng',
