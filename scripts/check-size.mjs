@@ -13,7 +13,7 @@ import { join } from 'node:path';
 // Budgets in KB (gzipped). Raise one only on purpose, in its own commit, and
 // say why in the message.
 export const BUDGET = {
-  firstLoad: 1400, // was 1,324 KB on 2026-11-09
+  firstLoad: 1300, // 1,226 KB on 2026-11-09 (1,324 before languages loaded on demand)
   chunk: 1000, // any single script (the main bundle was about 930 KB)
 };
 

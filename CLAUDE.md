@@ -17,3 +17,10 @@ Read `docs/PERFORMANCE.md` before adding a feature. In short:
   hidden.
 - Stay inside the budgets in `docs/PERFORMANCE.md`. Raise one only on purpose,
   in its own commit, saying why.
+
+## Translations
+
+UI strings live in `src/i18n/<lang>.js`, one file per language; the game
+downloads only the language in use. Add a new key to `en.js` first, then to
+each language file. `src/i18n/strings.js` gathers them all for tests only;
+don't import it from game code.
