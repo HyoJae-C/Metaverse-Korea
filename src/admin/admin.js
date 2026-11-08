@@ -288,6 +288,7 @@ async function start() {
   if (!op.error && op.data !== true) return notOperator();
   panels = createPanels({ client, $, escapeHtml, agoText, describePlace: (pl) => describePlace(pl, stores), setStatus: (t) => { $('status').textContent = t; }, go: showTab, notOperator, badge });
   $('within').onchange = () => { view.fitted = false; poll(); };
+  codeMemo();
   $('fit').onclick = fitAll;
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); panels.wake(tab); } });
   for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => showTab(b.dataset.tab);
@@ -295,8 +296,22 @@ async function start() {
   showTab(location.hash.slice(1));
 }
 
+// The Codes tab's private note: the real code words, kept only in this
+// browser (the page itself is public, so the words are never in it).
+function codeMemo() {
+  const box = $('codeMemo'), note = $('codeMemoNote'), KEY = 'mk.adminCodeMemo';
+  try { box.value = localStorage.getItem(KEY) || ''; } catch { note.textContent = 'This browser blocks saving.'; return; }
+  let timer = 0;
+  box.oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      try { localStorage.setItem(KEY, box.value); note.textContent = 'Saved ' + new Date().toLocaleTimeString(); } catch { note.textContent = 'Could not save.'; }
+    }, 400);
+  };
+}
+
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'ask', 'free', 'players', 'notice', 'weather', 'retention'];
+const TABS = ['overview', 'live', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes'];
 let tab = null, panels = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';
