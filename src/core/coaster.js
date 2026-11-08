@@ -22,8 +22,6 @@ export const HOLD_S = 2; // s stopped at the top before the drop
 export const CARS = 4;
 export const SEATS_PER_CAR = 2;
 export const SEATS = CARS * SEATS_PER_CAR;
-// Seats park guests (NPCs) ride in on each train, so it never runs empty.
-export const GUEST_SEATS = [[3, 6], [1, 4]];
 export const CAR_GAP = 1.75; // m between car centres
 export const G = 9.8;
 export const SPEED_K = 1; // speed scale (tune after riding it; 0.9..1.3)

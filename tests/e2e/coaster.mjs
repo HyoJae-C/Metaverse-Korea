@@ -38,7 +38,7 @@ await page.waitForTimeout(800);
 await shot('platform');
 let c = await co();
 console.log('at the platform:', JSON.stringify(c.boarding), await page.evaluate(() => __mk.action()));
-assert(c.guests >= 2, 'guests riding');
+assert(c.staff === 1, 'the ride attendant at the gate');
 // Wait for a train to board.
 for (let i = 0; i < 70 && !((c = await co()).boarding.train >= 0 && c.boarding.left > 2.5); i++) await page.waitForTimeout(500);
 await page.waitForTimeout(400); // (the action button catches up)

@@ -53,7 +53,7 @@ import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './da
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, rideUntil, seatAt } from './core/themepark.js';
-import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, GUEST_SEATS, LENGTH, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
+import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
 import { COASTER_NAME } from './core/coaster-model.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
@@ -1368,7 +1368,8 @@ function watchWeatherSetting() {
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
 // ---------- Multiplayer ----------
-let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
+const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q) };
+let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
 let onlineAll = 0;
@@ -1475,7 +1476,7 @@ async function joinRoom(room, roomScene, area = null) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
+  others = new RemotePlayers(roomScene, $('labels'), remoteOpts);
   refreshOnline();
   const handlers = {
     onJoin: (p) => {
@@ -1625,7 +1626,7 @@ function goSolo(roomScene) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
+  others = new RemotePlayers(roomScene, $('labels'), remoteOpts);
   refreshOnline();
 }
 net = SOLO;
@@ -2625,17 +2626,17 @@ function enterStore(item) {
     }
   }
   interior.patronNpcs = built.patronNpcs || null;
-  // The roller coaster: park guests already sitting in each train.
-  if (built.coaster && !built.coasterGuests) {
-    built.coasterGuests = GUEST_SEATS.flatMap((seats, train) => seats.slice(0, lowSpec ? 1 : 2).map((seat) => {
-      const o = makeNpc($('labels'), '');
-      o.tag.style.visibility = 'hidden';
-      o.ch.root.rotation.order = 'YXZ';
+  // The roller coaster's ride attendant, by the boarding gate.
+  if (built.stations?.coasterStaff && !built.coasterStaff) {
+    built.coasterStaff = built.stations.coasterStaff.map((st) => {
+      const o = makeNpc($('labels'), '🎢 ' + L(COASTER_TEXT.staff));
+      o.ch.root.position.set(st.x, 0, st.z);
+      o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
-      return Object.assign(o, { train, seat, f: {}, up: false });
-    }));
+      return o;
+    });
   }
-  interior.coasterGuests = built.coasterGuests || null;
+  interior.coasterStaff = built.coasterStaff || null;
   if (built.dome) wireDome(built, store);
   // The sports pub: when someone scores on the big screen, the whole pub
   // jumps up and cheers, and someone shouts "골!".
@@ -4935,6 +4936,9 @@ function updateRide(dt) {
 // number, k = speed / top speed: the field of view, the shake, the speed
 // lines and wind (ui/coaster-fx.js), your hair, the vibration.
 const COASTER_TEXT = {
+  staff: { en: 'Ride attendant', ko: '놀이기구 직원', ja: 'アトラクション係', zh: '游乐设施工作人员', es: 'Encargado de la atracción', id: 'Petugas wahana', vi: 'Nhân viên trò chơi', hi: 'राइड अटेंडेंट', fr: 'Agent de l\'attraction', th: 'พนักงานเครื่องเล่น', ar: 'موظف اللعبة' },
+  enjoy: { en: 'Have a great ride! Keep your arms in… until the drop! 🎢', ko: '즐거운 탑승 되세요! 낙하 때는 두 팔 번쩍! 🎢', ja: 'いってらっしゃい！落ちる時は両手を上げて！🎢', zh: '祝你玩得开心！俯冲时举起双手！🎢', es: '¡Buen viaje! ¡Brazos arriba en la caída! 🎢', id: 'Selamat menikmati! Angkat tangan saat turun! 🎢', vi: 'Chúc vui vẻ! Giơ tay lên khi lao xuống nhé! 🎢', hi: 'मज़े करें! गिरते समय हाथ ऊपर! 🎢', fr: 'Bon tour ! Les bras en l\'air dans la descente ! 🎢', th: 'ขอให้สนุก! ตอนดิ่งยกมือขึ้นเลย! 🎢', ar: 'رحلة ممتعة! ارفع يديك عند الهبوط! 🎢' },
+  full: { en: 'This train is full. The next one comes in 30 s.', ko: '이번 열차는 만석이에요. 30초 뒤 다음 열차가 와요.', ja: 'この列車は満席です。30秒後に次が来ます。', zh: '这班列车满了，30秒后下一班到。', es: 'Este tren está lleno. El siguiente llega en 30 s.', id: 'Kereta ini penuh. Berikutnya datang 30 dtk lagi.', vi: 'Tàu này đã đầy. Tàu sau đến sau 30 giây.', hi: 'यह ट्रेन भरी है। अगली 30 सेकंड में आएगी।', fr: 'Ce train est complet. Le suivant arrive dans 30 s.', th: 'ขบวนนี้เต็มแล้ว ขบวนถัดไปมาใน 30 วิ', ar: 'هذا القطار ممتلئ. التالي بعد 30 ث.' },
   board: { en: 'Ride the {name} · {fare}', ko: '{name} 타기 · {fare}', ja: '{name}に乗る · {fare}', zh: '乘坐{name} · {fare}', es: 'Subir al {name} · {fare}', id: 'Naik {name} · {fare}', vi: 'Đi {name} · {fare}', hi: '{name} पर बैठें · {fare}', fr: 'Monter dans l\'{name} · {fare}', th: 'นั่ง{name} · {fare}', ar: 'اركب {name} · {fare}' },
   wait: { en: 'Next train in {n} s', ko: '다음 열차까지 {n}초', ja: '次の列車まで {n} 秒', zh: '下一班列车 {n} 秒后到', es: 'Próximo tren en {n} s', id: 'Kereta berikutnya {n} dtk lagi', vi: 'Tàu tiếp theo sau {n} giây', hi: 'अगली ट्रेन {n} सेकंड में', fr: 'Prochain train dans {n} s', th: 'ขบวนถัดไปใน {n} วิ', ar: 'القطار التالي بعد {n} ث' },
   on: { en: 'Lap bar down. Hold on tight! 🎢', ko: '안전바가 내려왔어요. 꽉 잡으세요! 🎢', ja: '安全バーが下りました。しっかりつかまって！🎢', zh: '安全杆已放下，抓紧了！🎢', es: 'Barra bajada. ¡Agárrate fuerte! 🎢', id: 'Pengaman sudah turun. Pegangan yang erat! 🎢', vi: 'Thanh an toàn đã hạ. Bám chắc nhé! 🎢', hi: 'सेफ्टी बार नीचे। कसकर पकड़ें! 🎢', fr: 'Barre baissée. Accroche-toi bien ! 🎢', th: 'ราวกันตกลงแล้ว จับให้แน่น! 🎢', ar: 'نزل حاجز الأمان. تمسّك جيدًا! 🎢' },
@@ -4966,16 +4970,24 @@ function coasterAction(p) {
   const st = interior?.stations?.coaster?.[0];
   if (!st || ride || Math.hypot(p.x - st.x, p.z - st.z) > 2.4) return null;
   const b = boarding(coasterNow());
+  if (b.train >= 0 && b.left > 0.6 && takenSeats(b.train).size >= COASTER_SEATS) return { key: 'coaster-full', label: '⏳ ' + L(COASTER_TEXT.full), run: () => shop.toast(L(COASTER_TEXT.full)) };
   if (b.train >= 0 && b.left > 0.6) return { key: 'coaster-board', label: '🎢 ' + fmt(L(COASTER_TEXT.board), { name: coasterName(), fare: rideFare('coaster') }), run: () => boardCoaster() };
   const n = Math.max(1, Math.ceil(b.wait || b.left));
   return { key: 'coaster-wait:' + n, label: '⏳ ' + fmt(L(COASTER_TEXT.wait), { n }), run: () => shop.toast(fmt(L(COASTER_TEXT.wait), { n })) };
 }
 function boardCoaster() {
   const now = coasterNow(), b = boarding(now);
-  if (b.train < 0 || b.left <= 0.3 || !payRide('coaster')) return;
-  const free = Array.from({ length: COASTER_SEATS }, (_, i) => i).filter((i) => !GUEST_SEATS[b.train].includes(i));
+  if (b.train < 0 || b.left <= 0.3) return;
+  // The first free seat from the front, so people who get on together sit
+  // together (side by side, then the car behind).
+  const taken = takenSeats(b.train);
+  const seat = Array.from({ length: COASTER_SEATS }, (_, i) => i).find((i) => !taken.has(i));
+  if (seat == null) { shop.toast(L(COASTER_TEXT.full)); return; }
+  if (!payRide('coaster')) return;
+  const staff = interior.coasterStaff?.[0];
+  if (staff) showBubble(staff, $('labels'), L(COASTER_TEXT.enjoy), 2600, 'chat npc-say');
   ride = {
-    kind: 'coaster', train: b.train, seat: free[Math.floor(Math.random() * free.length)], until: rideEnds(now, b.train),
+    kind: 'coaster', train: b.train, seat, until: rideEnds(now, b.train),
     back: [COASTER_OFF.x, COASTER_OFF.z], view: 'third', phase: '', fov: camera.fov, cam: null, air: false, t: 0, wind: 0,
   };
   me.root.rotation.order = 'YXZ';
@@ -5053,20 +5065,23 @@ function coasterCamera(dt) {
   const inTunnel = tr.s > S_TUNNEL[0] && tr.s < S_TUNNEL[1];
   coasterFx.update(dt, { fx, k: tr.k01, v: tr.v, phase: tr.phase, camera, tunnel: inTunnel });
 }
-// Park guests riding along (two a train), arms up in the drop like everyone.
-function updateCoasterGuests(dt) {
-  const list = interior?.coasterGuests;
-  if (!list) return;
-  const now = coasterNow();
-  for (const o of list) {
-    const f = coasterSeat(o.train, o.seat, now, o.f);
-    sitOnTrack(o.ch.root, f);
-    const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
-    if (up !== o.up) { o.up = up; o.ch.setMoves?.(up ? ARMS_UP : null); }
-    o.ch.setWind?.(f.tr.k01);
-    o.ch.animate(dt, 0, true);
-  }
+// Other players on the coaster: their state says which train and seat (cs =
+// train * 10 + seat + 1); the train runs on the shared clock, so they sit
+// exactly where they are on their own screen, arms up in the drop.
+function placeRemoteRider(ch, cs, q) {
+  if (!interior?.coaster) return;
+  const train = Math.floor((cs - 1) / 10), seat = (cs - 1) % 10;
+  if (train >= TRAINS || seat >= COASTER_SEATS) return;
+  q.cf ||= {};
+  const f = coasterSeat(train, seat, coasterNow(), q.cf);
+  ch.root.rotation.order = 'YXZ';
+  sitOnTrack(ch.root, f);
+  const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
+  if (up !== !!q.coUp) { q.coUp = up; ch.setMoves?.(up ? ARMS_UP : null); }
+  ch.setWind?.(f.tr.k01);
 }
+// Seats taken on train k by other players (from their state).
+const takenSeats = (k) => new Set([...others.players.values()].map((q) => q.target?.cs).filter((cs) => cs > 0 && Math.floor((cs - 1) / 10) === k).map((cs) => (cs - 1) % 10));
 // Namsan Sky Cable: stand at a cabin bay, get in while the doors are open,
 // ride up (or down) on the shared clock and step out at the other station.
 // The way up costs CABLE.fare; the way down is on the same ticket, so
@@ -6589,9 +6604,10 @@ renderer.setAnimationLoop(() => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
+    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; st.x = COASTER_OFF.x; st.z = COASTER_OFF.z; st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
     if (teleports) st.tp = teleports;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
-    if (Math.abs(p.y) > 0.05 && !sky.active) st.y = Math.round(p.y * 100) / 100; // on subway stairs (flying: others see us on the ground)
+    if (Math.abs(p.y) > 0.05 && !sky.active && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (flying: others see us on the ground)
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
@@ -6612,7 +6628,7 @@ renderer.setAnimationLoop(() => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.cs !== lastSent.cs;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -6636,7 +6652,7 @@ renderer.setAnimationLoop(() => {
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
-    updateCoasterGuests(dt); // (riding the coaster) // (bar regulars; the label shows their speech bubbles)
+    for (const o of interior?.coasterStaff || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the coaster's attendant) // (bar regulars; the label shows their speech bubbles)
     for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
@@ -6805,7 +6821,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
-    coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], guests: interior?.coasterGuests?.length ?? 0 }),
+    coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera

@@ -111,6 +111,9 @@ test('you can walk from the gate to the platform, and under the track to the nor
   assert.ok(!col.blocked(C.OFF.x, C.OFF.z, R), 'where you step off is free');
   for (const s of park.seats) assert.ok(!col.blocked(s.stand[0], s.stand[1], R), `bench at ${s.x},${s.z}`);
   for (const s of park.stations.patrons) assert.ok(!col.blocked(s.x, s.z, 0.2), `guest at ${s.x},${s.z}`);
+  const [staff] = park.stations.coasterStaff;
+  assert.ok(!col.blocked(staff.x, staff.z, 0.3) && Math.hypot(staff.x - st.x, staff.z - st.z) < 2.5, 'the attendant stands by the gate');
+  assert.ok(Math.hypot(staff.x - st.x, staff.z - st.z) > 1, 'not on the boarding spot');
   const [b] = park.stations.booth;
   assert.ok(!col.blocked(b.x, b.z, R) && reachable(gate, b), 'ticket window');
 });
