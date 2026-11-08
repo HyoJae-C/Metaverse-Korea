@@ -429,13 +429,13 @@ export class Wallet {
 // Demo "ad": a countdown overlay the player can close early (no reward).
 export function demoAd(el, countEl, closeBtn) {
   return (seconds) => new Promise((resolve) => {
-    let left = seconds;
+    let n = 1; // counts up: 1, 2, 3 … seconds, then done
     el.hidden = false;
-    countEl.textContent = left;
+    countEl.textContent = n;
     const timer = setInterval(() => {
-      left -= 1;
-      countEl.textContent = Math.max(0, left);
-      if (left <= 0) finish(true);
+      n += 1;
+      if (n > seconds) finish(true);
+      else countEl.textContent = n;
     }, 1000);
     const finish = (ok) => {
       clearInterval(timer);

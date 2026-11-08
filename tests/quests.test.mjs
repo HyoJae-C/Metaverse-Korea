@@ -44,7 +44,7 @@ test('a few a day, back again tomorrow; never the same kind twice in a row', () 
   for (let r = 0; r < 1; r += 0.1) assert.notEqual(pickQuest(pool, () => r, 'visit').kind, 'visit');
 });
 
-test('dance needs three emotes on the square; the day starts with a high five with the guide', () => {
+test('dance needs three emotes on the square; a saved high five still works but is never handed out', () => {
   const q = new SquareQuests(memory(), () => 'd1');
   q.s.active = { kind: 'dance', need: 3, n: 0 };
   assert.equal(q.event('emote'), false); // anywhere else doesn't count
@@ -54,11 +54,10 @@ test('dance needs three emotes on the square; the day starts with a high five wi
   assert.equal(q.event('highfive'), true);
   assert.ok(q.ready());
   for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: [] }, () => r).kind, 'highfive'); // never a random one
-  const day = new SquareQuests(memory(), () => 'd2');
-  assert.equal(day.start({ stores: ['a'] }).kind, 'highfive'); // first of the day
-  day.event('highfive');
-  day.claim({});
-  assert.notEqual(day.start({ stores: ['a'] }).kind, 'highfive');
+  for (let r = 0; r < 1; r += 0.05) { // not even the first of the day (it repeated the welcome high five)
+    const day = new SquareQuests(memory(), () => 'd2');
+    assert.notEqual(day.start({ stores: ['a'] }, () => r).kind, 'highfive');
+  }
 });
 
 test('new players get the first path in order, outside the daily limit', () => {

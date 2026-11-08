@@ -11,8 +11,8 @@
 //   pet    come back walking your pet (checked when you report)
 //   talk   say hi to 3 passers-by
 //   dance  do 3 emotes on the square (in front of the big screen)
-//   highfive  high-five the guide: always the first errand of the day, so it
-//             works even when nobody else is online
+//   highfive  high-five the guide (no longer handed out: it repeated the
+//             welcome high five; kept so a saved one can still be finished)
 //   taxi   take a taxi anywhere
 //   eat    sit down in a restaurant and finish a meal
 //   pat    pat an animal in an animal café
@@ -71,7 +71,7 @@ export class SquareQuests {
     if (this.onStarter) {
       const st = STARTER[this.s.starter];
       this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
-    } else this.s.active = this.s.done === 0 && this.s.last !== 'highfive' ? { kind: 'highfive', need: 1, n: 0 } : pickQuest(pool, rand, this.s.last);
+    } else this.s.active = pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
   }

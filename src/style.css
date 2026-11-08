@@ -708,6 +708,7 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 }
 .ad-box small { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #8a6d5a; }
 .ad-box strong { font-size: 22px; }
+.ad-line { margin: 0; font-size: 18px; font-weight: 800; color: #4a3f35; }
 .ad-count { font-size: 44px; font-weight: 800; color: var(--accent); }
 
 /* NPCs */
