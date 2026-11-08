@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PoopTimers, CLEAN_SECONDS, FINE, nextPoopAt, POOP_EVERY } from '../src/core/companion.js';
+import { PoopTimers, CLEAN_SECONDS, FINE, nextPoopAt, POOP_EVERY, Companion, keepOut } from '../src/core/companion.js';
+import { RINK, RINK_FENCE } from '../src/core/bumper-cars.js';
 import { ITEMS, isPet, redeemCode } from '../src/core/inventory.js';
 
 test('poop cleaned in time is fine; left too long gets fined once', () => {
@@ -61,4 +62,29 @@ test('breed fields never overwrite the animal parts (a café spreads both into o
   assert.ok(parts.includes('ears'));
   const defs = [...Object.values(BREEDS).flat(), ...Object.values(ITEMS).filter((i) => i.pet).map((i) => i.pet)];
   for (const b of defs) for (const k of Object.keys(b)) assert.ok(!parts.includes(k), `${b.name}.${k}`);
+});
+
+test('pets keep out of the bumper car rink, even when their person drives in it', () => {
+  const inside = (x, z) => Math.abs(x - RINK_FENCE.x) < RINK_FENCE.hx - 1e-9 && Math.abs(z - RINK_FENCE.z) < RINK_FENCE.hz - 1e-9;
+  assert.ok(RINK_FENCE.hx > RINK.hx && RINK_FENCE.hz > RINK.hz, 'the fence takes in the rail');
+  // A point inside goes out the nearest side; outside stays put.
+  assert.deepEqual(keepOut(RINK.x - RINK.hx + 0.2, RINK.z, [RINK_FENCE]), [RINK_FENCE.x - RINK_FENCE.hx, RINK.z]);
+  assert.deepEqual(keepOut(0, 0, [RINK_FENCE]), [0, 0]);
+  assert.deepEqual(keepOut(RINK.x, RINK.z, null), [RINK.x, RINK.z]);
+  const id = Object.keys(ITEMS).find((k) => isPet(k));
+  const pet = new Companion(id, ITEMS[id].pet);
+  pet.fences = [RINK_FENCE];
+  pet.place(RINK.x - RINK.hx - 3, RINK.z, Math.PI / 2);
+  // Their person gets in a car and drives round the floor for a while.
+  for (let t = 0; t < 30; t += 1 / 30) {
+    const owner = { x: RINK.x + Math.sin(t) * (RINK.hx - 1), z: RINK.z + Math.cos(t * 0.7) * (RINK.hz - 1), ry: t, y: 0 };
+    pet.update(1 / 30, owner, false, false);
+    const r = pet.root.position;
+    assert.ok(!inside(r.x, r.z), `pet outside the rail at t=${t.toFixed(2)} (${r.x.toFixed(2)}, ${r.z.toFixed(2)})`);
+  }
+  // No fences (any other room): walks right up to its person as before.
+  const free = new Companion(id, ITEMS[id].pet);
+  free.place(RINK.x - RINK.hx - 3, RINK.z, Math.PI / 2);
+  for (let t = 0; t < 10; t += 1 / 30) free.update(1 / 30, { x: RINK.x, z: RINK.z, ry: 0, y: 0 }, false, false);
+  assert.ok(inside(free.root.position.x, free.root.position.z));
 });
