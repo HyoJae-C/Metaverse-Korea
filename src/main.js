@@ -2,9 +2,9 @@ import { haptics, buzz, shake } from './core/haptics.js';
 import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
+  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
 } from './core/i18n.js';
-import { REGION_NAMES } from './i18n/strings.js';
+import { REGION_NAMES } from './i18n/languages.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
@@ -367,6 +367,9 @@ function refreshStartText() {
   document.title = t('app.title');
 }
 
+// Only the saved language is downloaded (i18n/languages.js); wait for it so
+// the start screen doesn't flash English first.
+await loadLanguage(getSavedLanguage() || 'en');
 setLanguage(getSavedLanguage() || 'en'); // English until you pick one
 document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
 const pickLang = (code) => {

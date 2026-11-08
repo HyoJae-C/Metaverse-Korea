@@ -7,7 +7,7 @@ These are the limits every change should stay inside, and how to stay there.
 
 | What | Budget | Now (2026-11-09) | Checked by |
 |---|---|---|---|
-| First visit download, gzipped (entry + preloads + CSS) | 1,400 KB | 1,324 KB | `node scripts/check-size.mjs` in CI |
+| First visit download, gzipped (entry + preloads + CSS) | 1,300 KB | 1,226 KB + one language (~15 KB) | `node scripts/check-size.mjs` in CI |
 | Any single script, gzipped | 1,000 KB | 941 KB (main) | same |
 | Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
