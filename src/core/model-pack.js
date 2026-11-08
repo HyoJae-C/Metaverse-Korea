@@ -255,6 +255,7 @@ function makeDumbbell() {
   return g;
 }
 const dyed = new Map();
+export const DYE_SIZE = 256; // px, the longer side of a dyed colour atlas
 function dyedMaterial(id, src, look) {
   const A = PACK.atlas;
   const paint = [['hair', PALETTES.dye[look.dye]], ['eyes', PALETTES.eyes[look.eyes]], ['skin', PALETTES.skin[look.tone]]]
@@ -281,10 +282,15 @@ function dyedMaterial(id, src, look) {
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
   if (!base) return null;
   const img = base.map.image;
+  // The atlas is flat colour bands (8x4 cells of soft vertical gradients), so
+  // a small copy looks the same. Full size (1024x1024) cost 4 MB per dyed
+  // look, ~400 MB with a street of passers-by: past iPhone Safari's canvas
+  // memory limit, the city went blank and the page was closed.
   const c = document.createElement('canvas');
-  c.width = img.width; c.height = img.height;
+  const f = Math.min(1, DYE_SIZE / Math.max(img.width, img.height));
+  c.width = Math.max(A.cols, Math.round(img.width * f)); c.height = Math.max(A.rows, Math.round(img.height * f));
   const g = c.getContext('2d', { willReadFrequently: true });
-  g.drawImage(img, 0, 0);
+  g.drawImage(img, 0, 0, c.width, c.height);
   const cw = c.width / A.cols, ch = c.height / A.rows;
   const col = new THREE.Color(), hsl = {}, target = new THREE.Color();
   if (shirt != null) { // plain clothes: the outfit's colour family becomes the T-shirt colour
