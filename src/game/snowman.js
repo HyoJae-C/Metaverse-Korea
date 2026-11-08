@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import {
   STEPS, MAX_N, MAX_BALLS, MIN_SNOW, ROLL_FROM, CREW_STAGE,
-  stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, liftable,
+  stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop,
   encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, snowPose, holdSpeed, rollGrowth, holdPose, hatOf, hatLook, chillStep, COLD_MS, WARM_RATE, MAX_DUCKS, encodeDucks, parseDucks,
 } from '../core/snowballs.js';
 import { hatModel } from '../core/character.js';
@@ -39,7 +39,6 @@ export const SNOW_TEXT = {
   heavy: { en: 'A giant snowball! It takes two or more people to roll it.', ko: '거대 눈덩이예요! 2명 이상 같이 굴려야 움직여요.', ja: '巨大雪玉！2人以上で転がさないと動きません。', zh: '巨型雪球！需要两人以上一起滚才能动。' },
   full: { en: 'It can\'t get any bigger. Make a snowman with it!', ko: '더는 커지지 않아요. 이걸로 눈사람을 만들어 보세요!', ja: 'これ以上大きくなりません。雪だるまにしよう！', zh: '已经不能再大了，用它做个雪人吧！' },
   snowman: { en: 'A snowman! ⛄', ko: '눈사람 완성! ⛄', ja: '雪だるまの完成！⛄', zh: '雪人做好了！⛄' },
-  tooBig: { en: 'A giant is too heavy to lift. A head can be up to stage 7.', ko: '거대 눈덩이는 너무 무거워서 못 들어요. 머리는 7단계까지 올릴 수 있어요.', ja: '巨大雪玉は重くて持ち上げられません。頭は7段階までです。', zh: '巨型雪球太重了举不起来。头最多到第7阶段。' },
   oldMelted: { en: 'Your oldest snowball melted to make room for a new one.', ko: '새 눈덩이를 만들려고 가장 오래된 눈덩이가 녹았어요.', ja: '新しい雪玉のために、一番古い雪玉が溶けました。', zh: '为了做新雪球，最早的雪球融化了。' },
   names: [
     { en: 'Fist-sized', ko: '주먹만 한', ja: 'こぶし大の', zh: '拳头大的' },
@@ -461,7 +460,6 @@ export function createSnowman(game) {
 
   function topOn(head, body) {
     const p = game.me.root.position;
-    if (!liftable(head.b.n)) { say(L(SNOW_TEXT.tooBig)); return; }
     const ry = Math.atan2(p.x - body.b.x, p.z - body.b.z); // the face looks at you
     const i = mine.indexOf(head.b);
     if (i >= 0) mine.splice(i, 1);
