@@ -320,7 +320,7 @@ function renderLangList(el, onPick) {
   }
 }
 function renderLangDropdown(el, onPick) {
-  const cur = LANGUAGES.find((l) => l.code === getLanguage()) || LANGUAGES[0];
+  const cur = LANGUAGES.find((l) => l.code === getLanguage()) || LANGUAGES.find((l) => l.code === 'en');
   el.innerHTML = '';
   const btn = document.createElement('button');
   btn.className = 'lang-current';

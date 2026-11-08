@@ -10,19 +10,20 @@ import { HI } from './hi.js';
 import { FR } from './fr.js';
 import { TH } from './th.js';
 
+// Shown in this order on the start screen and in settings (Yozi's order).
 export const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
   { code: 'ko', label: '한국어' },
-  { code: 'zh', label: '简体中文' },
+  { code: 'ja', label: '日本語' },
   { code: 'zht', label: '繁體中文' }, // made from the simplified text (core/i18n.js)
+  { code: 'zh', label: '简体中文' },
   { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'fr', label: 'Français' },
   { code: 'vi', label: 'Tiếng Việt' },
   { code: 'th', label: 'ไทย' },
   { code: 'hi', label: 'हिन्दी' },
   { code: 'ar', label: 'العربية', rtl: true },
-  { code: 'ja', label: '日本語' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
 ];
 
 export const STRINGS = {
