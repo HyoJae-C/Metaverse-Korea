@@ -2742,7 +2742,7 @@ const picnic = createPicnic({
 bag.onChange(() => queueMicrotask(() => picnic.checkBag()));
 // Fetch with your pet on the same picnic lawns (src/game/frisbee.js).
 const frisbee = createFrisbee({
-  get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; },
+  get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; }, get others() { return others; },
   get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
   get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
   handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
@@ -5760,13 +5760,14 @@ renderer.setAnimationLoop(() => {
     if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
+    if (frisbee.sync) st.fb = frisbee.sync; // a frisbee throw on the lawn, played on everyone's screen
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
     if (snowman.holdSync != null) st.sh = snowman.holdSync; // rolling one of them along
     if (snowman.grabSync) st.sg = snowman.grabSync; // holding on to a friend's
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -5981,7 +5982,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
     giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
-    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face],
+    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),

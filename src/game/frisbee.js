@@ -9,8 +9,11 @@
 // it flat in its mouth, a monkey in one hand. A cat or a hamster just watches
 // it fly and sits down: walk over and pick it up yourself.
 //
-// Local only: others see your pet follow you as usual, not the game.
-import { throwTarget, clearGrass, flightTime, discAt, chaseSpeed, canCatch, catchChance, fetches, makeDisc, frisbeeColor, DISC_R, makeFace, CATCH_FACES, MISS_FACES } from '../core/frisbee.js';
+// Everyone sees it: the throw goes out in our state as a short note ("fb",
+// core/fetch.js) and the same play runs on their screens with their copy of
+// our pet. (Whether it's caught is decided by the thrower, so it matches.)
+import { throwTarget, clearGrass, catchChance, FRISBEE_COLORS } from '../core/frisbee.js';
+import { playFetch, encodeThrow, parseThrow } from '../core/fetch.js';
 import { L } from '../ui/pocha-ui.js';
 
 export const FRISBEE_TEXT = {
@@ -33,177 +36,112 @@ export const hasFrisbee = (bag, held = null) => isFrisbee(held) || bag.list().so
 const fmt = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 
 /**
- * game: { me, pet, petName(id), room (the picnic lawn or null), mode,
- * seated, riding, bag, held (what's in the hand), shop } as getters, plus clearAction() and sfx.
+ * game: { me, pet, petName(id), room (the picnic lawn or null), seated,
+ * riding, bag, held (what's in the hand), shop, others } as getters, plus
+ * clearAction(), handEmpty(empty) and sfx.
  */
 export function createFrisbee(game) {
-  // phase: idle | fly (in the air) | fetch (on the grass, the dog going for
-  // it) | back (in the dog's mouth) | lie (on the grass, for you to pick up)
-  let phase = 'idle', disc = null, t = 0, flight = null, room = null, catchHop = 0, streak = 0, lost = 0, waited = 0;
-
-  function end() {
-    // (a face still showing pops on until it fades)
-    if (disc) game.handEmpty?.(false);
-    disc?.removeFromParent();
-    disc = null;
-    if (game.pet) { game.pet.playing = false; game.pet.body.position.y = 0; }
-    phase = 'idle';
-    flight = null;
-  }
+  let sim = null, room = null, streak = 0, seq = 0, sync = null;
+  const busy = () => sim && sim.phase !== 'done';
+  const name = () => game.petName(game.pet.id);
 
   function action(p) {
     const pet = game.pet, here = game.room;
-    if (phase !== 'idle' || !here || !pet || !pet.root.visible || game.seated || game.riding) return null;
+    if (busy() || !here || !pet || !pet.root.visible || game.seated || game.riding) return null;
     if (!hasFrisbee(game.bag, game.held) || !clearGrass(here, p.x, p.z, 0.2)) return null;
-    return { key: 'frisbee', label: '🥏 ' + fmt(L(FRISBEE_TEXT.throw), { name: game.petName(pet.id) }), run: () => throwIt() };
+    return { key: 'frisbee', label: '🥏 ' + fmt(L(FRISBEE_TEXT.throw), { name: name() }), run: () => throwIt() };
   }
+
+  function owner() { const r = game.me.root; return { x: r.position.x, y: r.position.y, z: r.position.z, ry: r.rotation.y }; }
 
   function throwIt() {
     const me = game.me.root, pet = game.pet;
     const at = throwTarget(game.room, me.position.x, me.position.z, me.rotation.y, 0.6 + Math.random() * 0.4);
     if (!at || !pet) { game.shop.toast(L(FRISBEE_TEXT.room)); return; }
     room = game.room;
-    const ground = me.position.y;
-    flight = { from: { x: me.position.x, z: me.position.z }, to: at, T: flightTime(at.d), ground, react: 0.1 + Math.random() * 0.2, lucky: Math.random() < catchChance(pet.def.scale || 1, pet.def.kind) };
-    disc = makeDisc(frisbeeColor(isFrisbee(game.held) ? game.held : game.bag.list().find(isFrisbee))); // the one you have
-    room.scene.add(disc);
+    const mine = isFrisbee(game.held) ? game.held : game.bag.list().find(isFrisbee); // the one you have: its colour
+    const thr = { seq: ++seq, from: { x: me.position.x, z: me.position.z }, to: at, d: at.d, lucky: Math.random() < catchChance(pet.def.scale || 1, pet.def.kind), c: ((mine?.q | 0) % FRISBEE_COLORS.length + FRISBEE_COLORS.length) % FRISBEE_COLORS.length, react: 0.1 + Math.random() * 0.2 };
+    sim?.stop();
+    sim = playFetch(pet, room.scene, owner, thr, (ev) => {
+      if (ev === 'caught') {
+        streak++;
+        const line = fmt(L(pet.def.kind === 'monkey' ? FRISBEE_TEXT.caughtHands : FRISBEE_TEXT.caught), { name: name() });
+        game.shop.toast(streak > 1 ? line + ' ' + fmt(L(FRISBEE_TEXT.streak), { n: streak }) : line);
+        game.sfx?.pop?.();
+      } else if (ev === 'missed') {
+        streak = 0;
+        game.shop.toast(fmt(L(FRISBEE_TEXT.missed), { name: name() }));
+      } else if (ev === 'landed') {
+        game.shop.toast(fmt(L(FRISBEE_TEXT.watched), { name: name() }));
+      } else if (ev === 'home') {
+        if (streak < 1) game.shop.toast(fmt(L(FRISBEE_TEXT.fetched), { name: name() }));
+        finish();
+      }
+    });
+    sync = encodeThrow(thr);
     if (game.held?.g === 'frisbee') game.handEmpty?.(true); // it left the hand
-    pet.playing = true;
-    phase = 'fly';
-    t = 0;
-    catchHop = 0;
-    waited = 0;
     game.me.play?.('cast');
     game.sfx?.pop?.();
     game.clearAction();
   }
 
-  // A face over the pet's head for a moment, popping up and fading.
-  let shown = null;
-  function face(pet, faces) {
-    shown?.s.removeFromParent();
-    const s = makeFace(faces[Math.floor(Math.random() * faces.length)]);
-    pet.root.add(s);
-    shown = { s, t: 0, emoji: s.material.map.userData?.emoji, y: 0.75 * (pet.def.scale || 1) + (pet.def.kind === 'monkey' ? 0.35 : 0.1) };
+  function finish() {
+    game.handEmpty?.(false);
+    sync = null;
+    game.clearAction();
   }
-  function tickFace(dt) {
-    if (!shown) return;
-    const f = shown;
-    f.t += dt;
-    const pop = Math.min(1, f.t / 0.15);
-    f.s.scale.setScalar(0.5 * pop * (1 + 0.15 * Math.sin(Math.min(1, f.t / 0.3) * Math.PI)));
-    f.s.position.y = f.y + f.t * 0.15;
-    f.s.material.opacity = f.t < 1.4 ? 1 : Math.max(0, 1 - (f.t - 1.4) / 0.4);
-    if (f.t > 1.8) { f.s.removeFromParent(); shown = null; }
-  }
+  function abort() { sim?.stop(); finish(); }
 
   function tick(dt) {
-    tickFace(dt);
-    if (phase === 'idle') return;
-    const pet = game.pet;
-    // Off the lawn (into a shop, onto a bike, sat down) or no pet: stop.
-    if (!pet || game.room !== room || game.riding || !hasFrisbee(game.bag, game.held)) { end(); game.clearAction(); return; }
-    t += dt;
-    const me = game.me.root.position, kind = pet.def.kind, fetcher = fetches(kind), scale = pet.def.scale || 1;
-    const pr = pet.root.position;
-    if (game.seated && phase !== 'lie') { end(); return; }
-    if (phase === 'fly') {
-      const s = Math.min(1, t / flight.T);
-      const at = discAt(flight.from, flight.to, s, flight.ground);
-      disc.position.set(at.x, at.y, at.z);
-      disc.rotation.y += dt * 18; // spinning
-      disc.rotation.z = Math.sin(t * 3) * 0.08;
-      if (fetcher) {
-        if (t > flight.react) {
-          const left = pet.run(dt, flight.to.x, flight.to.z, chaseSpeed(kind, scale), catchHop);
-          if (left < 0.1) pet.watch(dt, at.x, at.z, 18);
-        } else pet.watch(dt, at.x, at.z, 18);
-        // Close under it: leap for it.
-        const dx = at.x - pr.x, dz = at.z - pr.z;
-        if (Math.hypot(dx, dz) < 1.6 && s > 0.5 && s < 1) catchHop = kind === 'monkey' ? 0.4 : 0.25 + 0.1 * scale;
-        if (s < 1 && flight.lucky && canCatch(dx, dz, at.y - flight.ground, scale, kind)) {
-          streak++;
-          grab(pet);
-          const line = fmt(L(kind === 'monkey' ? FRISBEE_TEXT.caughtHands : FRISBEE_TEXT.caught), { name: game.petName(pet.id) });
-          game.shop.toast(streak > 1 ? line + ' ' + fmt(L(FRISBEE_TEXT.streak), { n: streak }) : line);
-          game.sfx?.pop?.();
-          face(pet, CATCH_FACES);
-          phase = 'back';
+    peerTick(dt);
+    if (!sim) return;
+    if (busy()) {
+      // Off the lawn (into a shop, onto a bike, sat down) or no pet: stop.
+      if (!game.pet || game.room !== room || game.riding || !hasFrisbee(game.bag, game.held) || (game.seated && sim.phase !== 'lie')) { abort(); return; }
+      if (sim.phase === 'lie') { // a cat's owner walks over to pick it up
+        const me = game.me.root.position, d = sim.disc.position;
+        if (Math.hypot(me.x - d.x, me.z - d.z) < 1.1) {
+          game.me.play?.('bow');
+          game.shop.toast(L(FRISBEE_TEXT.picked));
+          abort();
           return;
         }
-      } else pet.watch(dt, at.x, at.z, 3);
-      if (s >= 1) {
-        disc.position.y = flight.ground + 0.03;
-        disc.rotation.z = 0;
-        if (fetcher) {
-          streak = 0;
-          phase = 'fetch';
-          face(pet, MISS_FACES);
-          game.shop.toast(fmt(L(FRISBEE_TEXT.missed), { name: game.petName(pet.id) }));
-        } else {
-          phase = 'lie';
-          pet.playing = false; // back to following you
-          game.shop.toast(fmt(L(FRISBEE_TEXT.watched), { name: game.petName(pet.id) }));
-        }
       }
-      return;
     }
-    if (phase === 'fetch') {
-      const left = pet.run(dt, disc.position.x, disc.position.z, chaseSpeed(kind, scale));
-      if (left < 0.35) { grab(pet); phase = 'back'; }
-      return;
-    }
-    if (phase === 'back') {
-      // Trot back to just in front of you and drop it at your feet.
-      const ry = game.me.root.rotation.y;
-      const left = pet.run(dt, me.x + Math.sin(ry) * 0.9, me.z + Math.cos(ry) * 0.9, chaseSpeed(kind, scale) * 0.8);
-      lost += dt;
-      if (left < 0.15 || lost > 15) {
-        pet.watch(dt, me.x, me.z);
-        if ((waited += dt) > 0.3) {
-          if (streak < 1) game.shop.toast(fmt(L(FRISBEE_TEXT.fetched), { name: game.petName(pet.id) }));
-          end();
-          game.clearAction();
-        }
-      }
-      return;
-    }
-    if (phase === 'lie' && Math.hypot(me.x - disc.position.x, me.z - disc.position.z) < 1.1) {
-      game.me.play?.('bow'); // bend down for it
-      game.shop.toast(L(FRISBEE_TEXT.picked));
-      end();
-      game.clearAction();
-    }
+    if (!sim.tick(dt)) sim = null; // (over, and its face has faded)
   }
 
-  // Into the dog's mouth, or a monkey's hands in front of its tummy (they
-  // are scaled with the body).
-  function grab(pet) {
-    const s = pet.def.scale || 1;
-    disc.scale.setScalar(1 / s);
-    if (pet.def.kind === 'monkey') {
-      // In one hand, at the end of its right arm, held upright by the rim.
-      pet.body.add(disc);
-      disc.position.set(-0.24, 0.17, 0.06 + DISC_R / s);
-      disc.rotation.set(Math.PI / 2, 0, 0);
-    } else {
-      // Lying flat, gripped by its edge: the disc sticks out in front of the
-      // muzzle and the face stays in view.
-      pet.head.add(disc);
-      disc.position.set(0, -0.09, 0.19 + DISC_R / s);
-      disc.rotation.set(0, 0, 0);
+  // Other players' throws, played with their pet as we see it.
+  const peers = new Map(); // id -> { seq, sim, pet }
+  function peerTick(dt) {
+    const others = game.others;
+    if (others) {
+      for (const [id, p] of others.players) {
+        const thr = !p.hidden && p.pet ? parseThrow(p.target?.fb) : null;
+        let st = peers.get(id);
+        if (st && st.pet !== p.pet) { st.sim.stop(); peers.delete(id); st = null; } // their pet changed or left
+        if (thr && thr.seq !== st?.seq) {
+          st?.sim.stop();
+          const r = p.ch.root;
+          st = { seq: thr.seq, pet: p.pet, sim: playFetch(p.pet, p.pet.root.parent || r.parent, () => ({ x: r.position.x, y: r.position.y, z: r.position.z, ry: r.rotation.y }), thr) };
+          peers.set(id, st);
+        } else if (!thr && st && (st.sim.phase === 'lie' || st.sim.phase === 'fly' || st.sim.phase === 'fetch')) st.sim.stop(); // picked up, or they left the game
+      }
     }
-    catchHop = 0;
-    lost = 0;
-    waited = 0;
+    for (const [id, st] of peers) {
+      if (!others?.players.has(id)) { st.sim.stop(); peers.delete(id); continue; }
+      if (!st.sim.tick(dt) && !parseThrow(others.players.get(id)?.target?.fb)) peers.delete(id);
+    }
   }
 
   return {
     action, tick,
-    get phase() { return phase; },
+    get sync() { return sync; }, // "fb" in our state while a throw is on
+    get phase() { return sim ? (sim.phase === 'done' ? 'idle' : sim.phase === 'lie' ? 'lie' : sim.phase) : 'idle'; },
     get streak() { return streak; },
-    get face() { return shown && shown.s.parent ? shown.emoji : null; },
+    get face() { return sim?.face || null; },
     // Where it lies on the grass (for a cat's owner to pick up), or null.
-    get lying() { return phase === 'lie' ? [disc.position.x, disc.position.z] : null; },
+    get lying() { return sim?.phase === 'lie' ? [sim.disc.position.x, sim.disc.position.z] : null; },
+    peerPhases: () => [...peers.values()].map((st) => st.sim.phase),
   };
 }
