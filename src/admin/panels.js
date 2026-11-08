@@ -205,13 +205,13 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
     box.replaceChildren(...data.map((n) => {
       const c = el('div', 'card');
       const h = el('div', 'head');
-      h.append(el('b', '', '📢 ' + (n.sender_name || 'operator')), el('span', 'muted', `${when(n.at)} · ${since(n.at)}`));
+      h.append(el('b', '', '📢 ' + (n.sender_name || 'operator') + (n.pinned ? ' · 📌 pinned on screen' : '')), el('span', 'muted', `${when(n.at)} · ${since(n.at)}`));
       c.append(h, el('div', 'body', n.body));
       const row = el('div', 'row');
       const del = el('button', 'danger', 'Delete');
-      del.title = 'Remove it from the list and from everyone\'s chat';
+      del.title = 'Remove it from the list, from everyone\'s screen and chat';
       del.onclick = async () => {
-        if (!confirm(`Delete this notice? It also disappears from the chat of everyone playing now.\n\n${n.body}`)) return;
+        if (!confirm(`Delete this notice? It also disappears from the screen and chat of everyone playing now.\n\n${n.body}`)) return;
         del.disabled = true;
         const r = await deleteNotice(client, n.id);
         if (r.error === 'operator') return notOperator();

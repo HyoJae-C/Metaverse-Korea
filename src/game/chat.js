@@ -8,7 +8,7 @@
 // a phone messenger (core/friends.js, the 👥 panel).
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
 import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
-import { NOTICE_LABEL, NoticeFeed, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
+import { NOTICE_LABEL, NoticeFeed, PinnedNotices, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
 import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { config } from '../config.js';
@@ -432,14 +432,40 @@ export function createChat(game) {
   // ---------- Notices (공지) from operators ----------
   // Every area, every player; a gold line that stays a while, plus a toast.
   const noticeLines = new Map(); // notice id → its chat line (to take it back out when deleted)
-  const noticeFeed = new NoticeFeed(({ id, body }) => {
+  // Operator notices are also pinned at the top of the screen until deleted
+  // (030_pinned_notices.sql). The ▴ folds them to a small 📢 chip; a new one
+  // opens them again.
+  const pinBox = $('notice-pin');
+  let pinFolded = false;
+  const pinned = new PinnedNotices(renderPinned);
+  function renderPinned(list = pinned.list()) {
+    pinBox.hidden = !list.length;
+    pinBox.classList.toggle('folded', pinFolded);
+    const fold = document.createElement('button');
+    fold.type = 'button';
+    fold.className = 'notice-pin-fold';
+    fold.textContent = pinFolded ? '📢 ' + list.length : '▴';
+    fold.setAttribute('aria-label', pinFolded ? 'Show notices' : 'Hide notices');
+    fold.onclick = () => { pinFolded = !pinFolded; renderPinned(); };
+    const rows = pinFolded ? [] : list.map((n) => {
+      const row = document.createElement('div');
+      row.className = 'notice-pin-row';
+      const b = document.createElement('b');
+      b.textContent = '📢 ' + L(NOTICE_LABEL);
+      row.append(b, document.createTextNode(' ' + n.body));
+      return row;
+    });
+    pinBox.replaceChildren(...rows, fold);
+  }
+  const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {
+    if (pin) { pinFolded = false; pinned.add({ id, body, at, pinned: true }); }
     const line = addChatLine('📢 ' + L(NOTICE_LABEL), body, 'notice');
     line.dataset.stay = '1';
     noticeLines.set(id, line);
     if (noticeLines.size > 20) noticeLines.delete(noticeLines.keys().next().value);
-    game.shop.toast('📢 ' + body);
+    if (!pin) game.shop.toast('📢 ' + body); // a pinned one is already on screen
     try { game.sfx.pop?.(); } catch { /* sound not set up yet */ }
-  }, (id) => { noticeLines.get(id)?.remove(); noticeLines.delete(id); });
+  }, (id) => { noticeLines.get(id)?.remove(); noticeLines.delete(id); pinned.remove(id); });
   let noticeClient = null, stopNotices = null;
   function watchForNotices() {
     if (!config.chatEnabled || !cloud.client || cloud.client === noticeClient) return;
@@ -448,10 +474,10 @@ export function createChat(game) {
     stopNotices = watchNotices(noticeClient, noticeFeed);
   }
   // Start a little after the world is up, so this join never competes with
-  // the multiplayer room joins; notices from the last 10 minutes still come.
+  // the multiplayer room joins; pinned notices still come.
   setTimeout(() => { cloud.onChange(watchForNotices); watchForNotices(); }, 8000);
 
-  onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
+  onLanguageChange(() => { renderChatTo(); friendsUi.update(); renderPinned(); });
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();

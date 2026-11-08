@@ -38,13 +38,38 @@ export class NoticeFeed {
     const body = cleanNotice(n?.body);
     if (!Number.isFinite(id) || !body || this.seen.has(id)) return false;
     this.seen.add(id);
-    this.onNotice({ id, body, at: n.at });
+    this.onNotice({ id, body, at: n.at, pinned: n.pinned === true });
     return true;
   }
 }
 
+// The pinned notices on screen (supabase/030_pinned_notices.sql): each stays
+// until an operator deletes it. Newest first, at most MAX_PINNED shown.
+export const MAX_PINNED = 3;
+export class PinnedNotices {
+  constructor(onChange = () => {}) {
+    this.onChange = onChange;
+    this.byId = new Map();
+  }
+  add(n) {
+    if (!n?.pinned || this.byId.has(n.id)) return false;
+    this.byId.set(n.id, { id: n.id, body: n.body, at: n.at });
+    this.onChange(this.list());
+    return true;
+  }
+  remove(id) {
+    if (!this.byId.delete(id)) return false;
+    this.onChange(this.list());
+    return true;
+  }
+  list() {
+    return [...this.byId.values()].sort((a, b) => b.id - a.id).slice(0, MAX_PINNED);
+  }
+}
+
 // Listens for notices on Supabase: the private 'announce' channel for live
-// ones, plus the last 10 minutes' worth on start. Returns stop().
+// ones, plus on start the notices still pinned (030_pinned_notices.sql), or
+// before that file is run, the last 10 minutes' worth. Returns stop().
 export function watchNotices(client, feed) {
   let ch = null, stopped = false;
   try {
@@ -53,10 +78,15 @@ export function watchNotices(client, feed) {
       .on('broadcast', { event: 'd' }, ({ payload }) => feed.remove(payload))
       .subscribe();
   } catch (e) { console.info('[announce] not listening:', e?.message); }
-  client.rpc('recent_announcements', { within_seconds: 600 }).then(({ data }) => {
+  const show = (data) => {
     if (stopped || !Array.isArray(data)) return; // not set up yet: no notices
     for (const n of [...data].sort((a, b) => a.id - b.id)) feed.add(n);
-  }, () => {});
+  };
+  const recent = () => client.rpc('recent_announcements', { within_seconds: 600 }).then(({ data }) => show(data), () => {});
+  client.rpc('pinned_announcements').then(({ data, error }) => {
+    if (error) return recent(); // 030 not run yet
+    show(data);
+  }, recent);
   return () => {
     stopped = true;
     if (ch) client.removeChannel(ch);
