@@ -159,4 +159,12 @@ export const STAMPS = [
     // Banpo Bridge on its piers, with arcs of water falling from its side
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
+  {
+    // on the gate plaza of Children's Grand Park, beside the rainbow gate
+    id: 'grand-park', place: { at: [452, -72], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
+    name: { ko: '서울어린이대공원', en: "Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园' },
+    gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
+    // a lion's face in its mane
+    icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
+  },
 ];
