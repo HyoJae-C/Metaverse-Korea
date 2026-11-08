@@ -162,3 +162,22 @@ test('before it opens, a hoarding closes the zoo off, and the gate plaza and sta
   assert.ok(gate.x < x0, 'the main gate and its plaza stay open');
   assert.deepEqual(h.p[0], h.p[h.p.length - 1], 'a closed loop');
 });
+
+test('while the zoo is closed, taxis cannot go in or drop you just over the hoarding', async () => {
+  const { noTaxiZones, noTaxiAt, NO_TAXI_MARGIN } = await import('../src/core/taxi.js');
+  const map = buildMap();
+  const zones = noTaxiZones(map.landmarks);
+  if (ZOO_OPEN) { assert.equal(zones.length, 0); return; }
+  assert.equal(zones.length, 1);
+  assert.ok(NO_TAXI_MARGIN > 0 && NO_TAXI_MARGIN <= 6, 'only a little past the fence');
+  for (const pen of PENS) assert.ok(noTaxiAt(zones, pen.x, pen.z), pen.id);
+  const [x0] = HOARDING[0];
+  assert.ok(noTaxiAt(zones, x0 - NO_TAXI_MARGIN / 2, 0), 'just outside the hoarding is out too');
+  assert.equal(noTaxiAt(zones, x0 - NO_TAXI_MARGIN - 1, 0), null);
+  // The gate plaza, the main gate and the park's own pin stay reachable.
+  const park = map.pois[0];
+  assert.equal(noTaxiAt(zones, park.x, park.z), null);
+  for (const l of map.landmarks) if (l.type === 'cgpgate' || (l.type === 'sign' && l.x < x0)) assert.equal(noTaxiAt(zones, l.x, l.z), null, l.type);
+  // Once the hoarding comes down, so does the no-taxi area.
+  assert.equal(noTaxiZones(map.landmarks.filter((l) => l.type !== 'hoarding')).length, 0);
+});

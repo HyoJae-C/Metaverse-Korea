@@ -198,10 +198,8 @@ function macaque(c) {
   const tail = new THREE.Group();
   tail.position.set(0, 0.3, -0.2);
   body.add(tail);
-  for (let i = 0; i < 6; i++) { // short, up and over in a tight curl
-    const a = i * 0.95;
-    part(tail, sphere(0.032, 6, 6), c.color, Math.sin(a) * 0.03, 0.04 + Math.sin(a) * 0.06 + i * 0.012, -0.03 - Math.cos(a) * 0.04 - i * 0.008);
-  }
+  // One thin straight tail, out and up behind.
+  part(tail, cyl(0.014, 0.022, 0.3, 6), c.color, 0, 0.1, -0.11).rotation.x = -0.83;
   body.scale.setScalar(1.25);
   shadow(root, 0.38);
   return { root, body, head, tail, legs, arms, mouth, climbs: true };
@@ -362,7 +360,7 @@ function bigcat(c, kind) {
   const tail = new THREE.Group();
   tail.position.set(0, 0.72, -0.5); // inside the rump
   body.add(tail);
-  const t = tube(tail, [[0, 0, 0], [0, -0.05, -0.25], [0, -0.3, -0.45], [0, -0.38, -0.65], [0, -0.3, -0.82]], 0.045, c.color, 0.035);
+  const t = tube(tail, [[0, 0, 0], [0, -0.05, -0.25], [0, -0.3, -0.45], [0, -0.38, -0.65], [0, -0.3, -0.82]], 0.026, c.color, 0.018); // thin
   if (tiger) for (const u of [0.5, 0.7, 0.85]) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.014, 4, 10), mat('#2a2226'));
     const curve = new THREE.CatmullRomCurve3([[0, 0, 0], [0, -0.05, -0.25], [0, -0.3, -0.45], [0, -0.38, -0.65], [0, -0.3, -0.82]].map((p) => new THREE.Vector3(...p)));
@@ -370,7 +368,7 @@ function bigcat(c, kind) {
     ring.lookAt(ring.position.clone().add(curve.getTangentAt(u)));
     tail.add(ring);
   }
-  part(tail, sphere(tiger ? 0.045 : 0.08, 6, 6), tiger ? '#2a2226' : '#6b4524', t.end.x, t.end.y, t.end.z); // tail tip (a lion's tuft)
+  part(tail, sphere(tiger ? 0.028 : 0.06, 6, 6), tiger ? '#2a2226' : '#6b4524', t.end.x, t.end.y, t.end.z); // tail tip (a lion's tuft)
   body.scale.setScalar(1.35);
   shadow(root, 1);
   return { root, body, head, tail, legs };
@@ -443,10 +441,10 @@ function pinniped(c, walrus) {
 // jaw is its own group so the watermelon feeding can open it).
 function hippo(c) {
   const { root, body } = start();
-  part(body, sphere(0.6), c.color, 0, 0.85, 0, 1, 0.85, 1.6);
-  part(body, sphere(0.45), c.accent, 0, 0.62, 0.1, 0.95, 0.6, 1.4); // pink belly
+  part(body, sphere(0.72, 16, 12), c.color, 0, 0.9, 0, 1, 0.85, 1.5); // a big barrel, low enough to sit on the legs
+  part(body, sphere(0.55), c.accent, 0, 0.62, 0.1, 0.95, 0.55, 1.35); // pink belly
   const head = new THREE.Group();
-  head.position.set(0, 1.0, 0.95);
+  head.position.set(0, 1.02, 1.08);
   body.add(head);
   part(head, sphere(0.4), c.color, 0, 0.05, 0.05, 1.05, 0.8, 1);
   part(head, sphere(0.3), c.color, 0, 0.05, 0.38, 1.25, 0.75, 1); // the big upper snout
@@ -463,12 +461,15 @@ function hippo(c) {
   part(jaw, sphere(0.25), '#e7849a', 0, 0.02, 0.32, 1.05, 0.25, 0.9); // inside of the mouth
   for (const k of [-1, 1]) part(jaw, new THREE.ConeGeometry(0.04, 0.16, 6), '#f6f0de', 0.22 * k, 0.1, 0.52); // tusks
   const legs = [];
-  for (const [x, z] of [[-0.35, 0.55], [0.35, 0.55], [-0.35, -0.55], [0.35, -0.55]]) legs.push(part(body, cyl(0.17, 0.18, 0.5, 8), c.color, x, 0.25, z));
+  // Short thick legs that go up into the barrel (no gap under the body).
+  for (const [x, z] of [[-0.34, 0.55], [0.34, 0.55], [-0.34, -0.55], [0.34, -0.55]]) legs.push(part(body, cyl(0.19, 0.2, 0.66, 8), c.color, x, 0.33, z));
+  // A short flat tail, hanging from the rump with a tuft at the tip.
   const tail = new THREE.Group();
-  tail.position.set(0, 0.9, -0.95);
+  tail.position.set(0, 0.98, -1.02);
   body.add(tail);
-  part(tail, cyl(0.03, 0.05, 0.25, 5), c.color, 0, -0.1, -0.03);
-  shadow(root, 1.1);
+  part(tail, cyl(0.014, 0.03, 0.34, 6), c.color, 0, -0.14, -0.06).rotation.x = 0.35; // thin
+  part(tail, sphere(0.025, 6, 6), '#5d5462', 0, -0.31, -0.12, 1.4, 1.2, 0.8);
+  shadow(root, 1.25);
   return { root, body, head, tail, legs, jaw, swims: true };
 }
 

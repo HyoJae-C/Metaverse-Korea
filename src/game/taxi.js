@@ -7,7 +7,7 @@
 // fare; someone short of money is treated by you, or left behind.
 import { getLanguage, t } from '../core/i18n.js';
 import { showBubble } from '../core/players.js';
-import { taxiFare } from '../core/taxi.js';
+import { noTaxiAt, noTaxiZones, taxiFare } from '../core/taxi.js';
 import { ASK_MS, GO_WAIT_MS, SHARE_RADIUS, TaxiHost, newTrip, taxiMsg, worstShare } from '../core/taxi-share.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 
@@ -34,6 +34,7 @@ export const SHARE_TEXT = {
   theirPick: { en: 'a place they picked', ko: '골라 둔 곳', ja: '選んだ場所', zh: '选好的地方' },
   paid: { en: 'you paid 🪙 {n}', ko: '내가 낸 돈 🪙 {n}', ja: 'あなたの支払い 🪙 {n}', zh: '你付了 🪙 {n}' },
   free: { en: '🎁 Free ride', ko: '🎁 무료 탑승', ja: '🎁 無料乗車', zh: '🎁 免费乘车', es: '🎁 Viaje gratis', id: '🎁 Gratis', ar: '🎁 رحلة مجانية', vi: '🎁 Đi miễn phí', hi: '🎁 मुफ़्त सवारी', fr: '🎁 Course gratuite', th: '🎁 นั่งฟรี' },
+  closed: { en: '🚧 The zoo is opening soon: taxis can\'t go there yet.', ko: '🚧 동물원은 개장 준비 중이라 아직 택시로 갈 수 없어요.', ja: '🚧 動物園はオープン準備中なので、まだタクシーで行けません。', zh: '🚧 动物园即将开放，暂时不能打车过去。' },
   together: { en: '🚕 With {names}', ko: '🚕 {names} 님과 함께', ja: '🚕 {names}さんと一緒', zh: '🚕 和{names}一起' },
 };
 const st = (k, v) => fmt(L(SHARE_TEXT[k]), v);
@@ -56,16 +57,30 @@ export function createTaxi(game) {
   ];
   let taxiTimers = [];
   const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
+  // Closed-off places (the zoo before it opens) and a margin round them.
+  let zones = null, zonesOf = null;
+  const closedZones = () => {
+    if (zonesOf !== game.map) { zonesOf = game.map; zones = noTaxiZones(game.map?.landmarks); }
+    return zones;
+  };
+  const closedAt = (x, z) => noTaxiAt(closedZones(), x, z);
   function taxiDropOff(x, z) {
     let best = [x, z], bd = Infinity;
+    const zs = closedZones();
+    const consider = (px, pz) => {
+      if (zs.length && noTaxiAt(zs, px, pz)) return;
+      const d = (px - x) ** 2 + (pz - z) ** 2;
+      if (d < bd) { bd = d; best = [px, pz]; }
+    };
     for (const r of game.map.roads) {
       if (CAR_FREE.has(r.k)) continue;
       for (let i = 1; i < r.p.length; i++) {
         const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i];
         const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
         const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
-        const px = ax + u * dx, pz = az + u * dz, d = (px - x) ** 2 + (pz - z) ** 2;
-        if (d < bd) { bd = d; best = [px, pz]; }
+        const px = ax + u * dx, pz = az + u * dz;
+        // (in a closed area: try the road's ends instead)
+        if (zs.length && noTaxiAt(zs, px, pz)) { consider(ax, az); consider(bx, bz); } else consider(px, pz);
       }
     }
     return best;
@@ -115,6 +130,7 @@ export function createTaxi(game) {
   // ---- The host: pick a place, maybe ask the people close by.
   let host = null; // { h: TaxiHost, dest, fx, fz, timer, until }
   function rideTaxi(dest) {
+    if (closedAt(dest.x, dest.z)) { shop.toast(st('closed')); return; }
     // Drop-off: the nearest point on a road a car can use, on free ground.
     const [rx, rz] = taxiDropOff(dest.x, dest.z);
     const [fx, fz] = findFreeSpot(rx, rz);
@@ -283,5 +299,5 @@ export function createTaxi(game) {
     const [fx, fz] = findFreeSpot(rx, rz);
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
   }
-  return { rideTaxi, rideFree, onMsg, onLeave };
+  return { rideTaxi, rideFree, onMsg, onLeave, closedAt };
 }

@@ -118,6 +118,14 @@ export class RemotePlayers {
       const vx = (st.x - p.target.x) / dt, vz = (st.z - p.target.z) / dt;
       if (dt > 0.03 && dt < 1 && Math.hypot(vx, vz) < 40) { p.vx = vx; p.vz = vz; } // not a teleport
     }
+    // A jump (taxi, map, warp: st.tp counts them): put them there at once,
+    // rather than sliding them across the map.
+    if (p.target && st.tp !== p.target.tp) {
+      p.ch.root.position.set(st.x, Number.isFinite(st.y) ? Math.max(-6, Math.min(60, st.y)) : 0, st.z);
+      if (Number.isFinite(st.ry)) p.ch.root.rotation.y = st.ry;
+      p.vx = p.vz = 0;
+      if (p.pet) { const r = p.ch.root; p.pet.place(r.position.x, r.position.z, r.rotation.y, r.position.y); }
+    }
     p.lastAt = now;
     p.target = st;
   }
