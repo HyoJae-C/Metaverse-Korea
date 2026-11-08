@@ -262,13 +262,59 @@ function ikseongwan() {
   for (const s of [-1, 1]) g.add(ball(0.075, '#1d1b22', 0.1 * s, 0.55, -0.24, 0.75, 1.15, 0.4));
   return g;
 }
-function roundel() {
+// A round gold-embroidered badge: a gold disc, a coloured centre and a ring
+// of gold stitches; at (x, y, z) facing out along (nx, nz).
+function badge(r, centre, x, y, z, ry = 0, tilt = 0) {
   const g = new THREE.Group();
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), mat('#e2b443'));
-  disc.position.set(0, 0.5, 0.26);
-  const dragon = new THREE.Mesh(new THREE.CircleGeometry(0.055, 12), mat('#c23a33'));
-  dragon.position.set(0, 0.5, 0.262);
-  g.add(disc, dragon);
+  g.position.set(x, y, z);
+  g.rotation.set(tilt, ry, 0, 'YXZ');
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(r, 18), mat('#e9bb3e'));
+  const mid = new THREE.Mesh(new THREE.CircleGeometry(r * 0.58, 14), mat(centre));
+  mid.position.z = 0.003;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r * 0.8, r * 0.07, 6, 18), mat('#ffd76a'));
+  rim.position.z = 0.005;
+  g.add(disc, mid, rim);
+  for (let i = 0; i < 5; i++) { // the coiled dragon (or phoenix) in gold thread
+    const a = (i / 5) * Math.PI * 2;
+    const st = new THREE.Mesh(new THREE.CircleGeometry(r * 0.12, 8), mat('#ffd76a'));
+    st.position.set(Math.sin(a) * r * 0.3, Math.cos(a) * r * 0.3, 0.006);
+    g.add(st);
+  }
+  return g;
+}
+// The king's gold embroidery (금수): the dragon roundels (보) on his chest,
+// back and both shoulders, and a gold-studded jade belt (옥대).
+function kingEmbroidery() {
+  const g = new THREE.Group();
+  g.add(badge(0.12, '#c23a33', 0, 0.5, 0.262));
+  g.add(badge(0.12, '#c23a33', 0, 0.5, -0.262, Math.PI));
+  for (const s of [-1, 1]) g.add(badge(0.075, '#c23a33', 0.2 * s, 0.6, 0.02, s * Math.PI / 2, -0.9));
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.025, 6, 24), mat('#e9bb3e'));
+  belt.rotation.x = Math.PI / 2 - 0.12;
+  belt.position.set(0, 0.4, 0.02);
+  g.add(belt);
+  for (let i = 0; i < 8; i++) { // jade plaques on the belt
+    const a = (i / 8) * Math.PI * 2;
+    g.add(ball(0.03, '#9fd9b8', Math.sin(a) * 0.27, 0.4 + Math.cos(a) * 0.03, Math.cos(a) * 0.27 + 0.02, 1, 1, 0.5));
+  }
+  return g;
+}
+// The queen's: a gold phoenix roundel on her chest, gold-leaf (금박) bands
+// round the jeogori's sleeves and two round the chima's hem (스란단).
+function queenEmbroidery() {
+  const g = new THREE.Group();
+  g.add(badge(0.11, '#2f6b4a', 0, 0.52, 0.255));
+  g.add(badge(0.11, '#2f6b4a', 0, 0.52, -0.255, Math.PI));
+  for (const [r, y, h] of [[0.33, 0.16, 0.05], [0.3, 0.25, 0.035]]) {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.01, h, 24, 1, true), mat('#e9bb3e'));
+    band.material.side = THREE.DoubleSide;
+    band.position.y = y;
+    g.add(band);
+    for (let i = 0; i < 16; i++) { // gold-leaf flowers stamped along the band
+      const a = (i / 16) * Math.PI * 2;
+      g.add(ball(0.018, '#ffd76a', Math.sin(a) * (r + 0.012), y, Math.cos(a) * (r + 0.012)));
+    }
+  }
   return g;
 }
 // The eunuch's samo (사모): a black cap with two flat wings out to the sides.
@@ -286,13 +332,39 @@ function samo() {
   }
   return g;
 }
-// The queen's hairpin (비녀) through her bun, gold with a red bead.
-function queenPin() {
+// The queen's court hairdo (어여머리): a great wide ring of braided hair
+// sitting on the head, gold trembling ornaments (떨잠) on the front and the
+// sides, and a long gold hairpin (비녀) with red beads.
+function queenHair() {
   const g = new THREE.Group();
-  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8), mat('#e2b443'));
+  const hair = mat('#1d1b22');
+  // the ring stands tipped well back, framing the head like a halo
+  const halo = new THREE.Group();
+  halo.position.set(0, 0.42, -0.12);
+  halo.rotation.x = -0.75;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.14, 10, 24), hair);
+  ring.scale.set(1.12, 1, 1);
+  halo.add(ring);
+  for (let i = 0; i < 14; i++) { // the braid's twists round the ring
+    const a = (i / 14) * Math.PI * 2;
+    halo.add(ball(0.075, '#2a2730', Math.sin(a) * 0.37, Math.cos(a) * 0.33, 0.06));
+  }
+  g.add(halo, ball(0.3, '#1d1b22', 0, 0.42, -0.08, 1.05, 0.55, 0.95));
+  // 떨잠: gold discs with a jewel, one in front, one each side
+  for (const [x, y, z, ry, gem] of [[0, 0.7, 0.12, 0, '#3a7bd5'], [-0.4, 0.55, 0.0, -1.0, '#c23a33'], [0.4, 0.55, 0.0, 1.0, '#c23a33']]) {
+    const t = new THREE.Group();
+    t.position.set(x, y, z);
+    t.rotation.y = ry;
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 14), mat('#e9bb3e'));
+    disc.rotation.x = Math.PI / 2;
+    t.add(disc, ball(0.035, gem, 0, 0, 0.02, 1, 1, 0.6));
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; t.add(ball(0.022, '#ffd76a', Math.sin(a) * 0.11, Math.cos(a) * 0.11, 0.01)); }
+    g.add(t);
+  }
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.05, 8), mat('#e9bb3e'));
   pin.rotation.z = Math.PI / 2;
-  pin.position.set(0, 0.95, -0.25);
-  g.add(pin, ball(0.07, '#c23a33', 0.47, 0.95, -0.25), ball(0.07, '#c23a33', -0.47, 0.95, -0.25));
+  pin.position.set(0, 0.42, -0.3);
+  g.add(pin, ball(0.055, '#c23a33', 0.54, 0.42, -0.3), ball(0.055, '#c23a33', -0.54, 0.42, -0.3));
   return g;
 }
 // The red royal parasol (홍양산) the eunuch holds up over the king ahead:
@@ -373,7 +445,7 @@ export class PalaceShow {
         npc = makeNpc(this.layer, '👑 임금님', { ...randomLook(), model: 'hanbok-gonryongpo', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' });
         ch = npc.ch;
         ch.addProp('head', ikseongwan());
-        ch.addProp('body', roundel());
+        ch.addProp('body', kingEmbroidery());
         scene.add(ch.root);
       } else if (o.who === 'eunuch') {
         ch = performer(scene, { model: 'hanbok-dallyeong', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' }, null);
@@ -393,7 +465,8 @@ export class PalaceShow {
       } else if (o.who === 'queen') {
         npc = makeNpc(this.layer, '👑 왕비', { ...randomLook(), model: 'hanbok-queen', skirt: 'chima-red', tee: null, hair: 'black', dye: 'black', hairStyle: 'bun', lip: 'cherry' });
         ch = npc.ch;
-        ch.addProp('head', queenPin());
+        ch.addProp('head', queenHair());
+        ch.addProp('body', queenEmbroidery());
         scene.add(ch.root);
       } else ch = lady();
       return { ...o, ch, npc };
