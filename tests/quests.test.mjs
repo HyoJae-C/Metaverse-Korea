@@ -54,6 +54,10 @@ test('dance needs three emotes on the square; a saved high five still works but 
   assert.equal(q.event('highfive'), true);
   assert.ok(q.ready());
   for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: [] }, () => r).kind, 'highfive'); // never a random one
+  for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: ['a'] }, () => r).kind, 'cook'); // grill and ramen: too hard for now
+  q.s.active = { kind: 'cook', need: 1, n: 0 }; // a saved one can still be finished
+  assert.equal(q.event('cook'), true);
+  assert.ok(q.ready());
   for (let r = 0; r < 1; r += 0.05) { // not even the first of the day (it repeated the welcome high five)
     const day = new SquareQuests(memory(), () => 'd2');
     assert.notEqual(day.start({ stores: ['a'] }, () => r).kind, 'highfive');
