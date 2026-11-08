@@ -4,7 +4,7 @@
 // fine notice arrives and FINE coins are taken, so the streets stay clean.
 // Other players see it too (sent as `pt` in our state); poop stays local.
 import * as THREE from 'three';
-import { makeAnimal, turn } from './pets.js';
+import { makeAnimal, swingEars, turn } from './pets.js';
 import { matCache } from './three-kit.js';
 
 export const CLEAN_SECONDS = 45;
@@ -49,7 +49,7 @@ export class Companion {
   constructor(id, def) {
     this.id = id;
     this.def = def;
-    const a = makeAnimal(def.kind, def.color, def.accent, def.scale || 1);
+    const a = makeAnimal(def.kind, def.color, def.accent, def.scale || 1, def);
     Object.assign(this, a);
     this.phase = Math.random() * 6;
     this.squat = 0; // seconds left of a poop pose
@@ -94,6 +94,7 @@ export class Companion {
     this.body.position.y += (-low - this.body.position.y) * Math.min(1, dt * 10);
     this.body.rotation.x = this.squat > 0 ? -0.35 : moving ? 0 : -0.2;
     this.tail.rotation.y = Math.sin(this.phase * (moving ? 12 : 4)) * 0.5;
+    swingEars(this.ears, this.phase * 8, moving ? 0.22 : 0);
     if (canPoop && moving && this.walked >= this.poopAt) {
       this.walked = 0;
       this.poopAt = nextPoopAt();
