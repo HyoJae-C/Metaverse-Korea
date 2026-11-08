@@ -39,7 +39,7 @@ export function toss(aim, power, rand = Math.random) {
   else if (Math.hypot(Math.abs(x) - EAR_X, d - JAR_AT) < EAR_R) kind = 'ear';
   else if (r < MOUTH_R + RIM) kind = 'rim';
   // Which way it missed, for the teacher's tip.
-  const short = d < JAR_AT - MOUTH_R, long = d > JAR_AT + MOUTH_R;
+  const short = d < JAR_AT - MOUTH_R;
   let tip = null;
   if (kind === 'rim') tip = 'rim';
   else if (kind === 'miss') tip = Math.abs(d - JAR_AT) > Math.abs(x) ? (short ? 'short' : 'long') : x < 0 ? 'left' : 'right';

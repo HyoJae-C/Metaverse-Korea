@@ -27,7 +27,6 @@ export const RAIL = 0.35; // rail thickness round the floor
 export const GATE = { x: RINK.x - RINK.hx - RAIL - 1, z: RINK.z }; // stand here to get in
 // One colour per car, all different.
 export const CAR_COLORS = ['#ff4f5e', '#ffd23f', '#3fa7ff', '#36cf8a', '#a77bff', '#ff9a3c'];
-export const CAR_NAMES = ['red', 'yellow', 'blue', 'green', 'purple', 'orange'];
 // Where the cars wait: three along each long rail, facing in.
 // ry uses the characters' convention: facing (sin ry, cos ry).
 export const HOMES = [-2.7, 0, 2.7].flatMap((dx) => [

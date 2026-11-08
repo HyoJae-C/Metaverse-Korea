@@ -80,3 +80,11 @@ export function distSqToSeg(x, z, [x1, z1], [x2, z2]) {
   const px = x1 + t * dx - x, pz = z1 + t * dz - z;
   return px * px + pz * pz;
 }
+
+// Whether segment a–b properly crosses segment c–d (x/z pairs).
+export function segmentsCross(ax, az, bx, bz, cx, cz, dx, dz) {
+  const o = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
+  const d1 = o(cx, cz, dx, dz, ax, az), d2 = o(cx, cz, dx, dz, bx, bz);
+  const d3 = o(ax, az, bx, bz, cx, cz), d4 = o(ax, az, bx, bz, dx, dz);
+  return d1 * d2 < 0 && d3 * d4 < 0;
+}

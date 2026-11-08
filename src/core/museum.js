@@ -19,7 +19,8 @@
 // first load. Every floor is its own interior (museumFloorStore below).
 import * as THREE from 'three';
 import { PAINTINGS, CREDIT, DISCLAIMER, HALLS, FLOORS, COMING_SOON } from '../data/paintings.js';
-import { canvasTex } from './three-kit.js';
+import { canvasTex, wrapText as wrap } from './three-kit.js';
+import { segmentsCross as crosses } from './collision.js';
 
 export const ROOM_MUSEUM = { w: 52, d: 32, h: 6 };
 const SPACING = 4.4; // metres between frame centres
@@ -95,15 +96,6 @@ export const paintingUrl = (p) => BASE + p.file;
 
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-function wrap(g, text, x, y, maxW, lh) {
-  let line = '';
-  for (const word of text.split(' ')) {
-    const next = line ? line + ' ' + word : word;
-    if (g.measureText(next).width > maxW && line) { g.fillText(line, x, y); y += lh; line = word; } else line = next;
-  }
-  if (line) g.fillText(line, x, y);
-  return y + lh;
-}
 
 // A flat sign: a dark board with one or two centred lines of text.
 function sign(scene, wd, ht, x, y, z, ry, top, bottom, { bg = '#2f2a26', fg = '#f4efe2' } = {}) {
@@ -180,14 +172,6 @@ function hang(scene, p, sl, { box, block }, loader) {
     box(0.08, 0.8, 0.08, px, 0.4, pz, '#b8952e');
   }
   block(bx, bz, along ? W + 0.7 : 0.5, along ? 0.5 : W + 0.7);
-}
-
-// Does the segment p1-p2 cross the segment q1-q2? (2D, x/z)
-function crosses(ax, az, bx, bz, cx, cz, dx, dz) {
-  const o = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
-  const d1 = o(cx, cz, dx, dz, ax, az), d2 = o(cx, cz, dx, dz, bx, bz);
-  const d3 = o(ax, az, bx, bz, cx, cz), d4 = o(ax, az, bx, bz, dx, dz);
-  return d1 * d2 < 0 && d3 * d4 < 0;
 }
 
 // Builds one floor of the museum into an interior scene. `box`, `block`,
