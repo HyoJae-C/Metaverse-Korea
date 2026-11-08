@@ -1,6 +1,6 @@
 // Permanent 49-entry catalogue. Stable IDs preserve bags and lifetime records.
 // Twenty-seven species were available in the first release; more open with
-// each new Han River park (Mangwon, then Banpo-Jamwon).
+// each new Han River park (Mangwon, Banpo-Jamwon, then Yeouido).
 import { takeForcedCatch } from './fish-luck.js';
 export const FISH = [
   {
@@ -349,7 +349,7 @@ export const FISH = [
       "en": "Sea cucumber"
     },
     "rarity": 2,
-    "released": false,
+    "released": true,
     "page": 2,
     "price": 500
   },
@@ -390,7 +390,7 @@ export const FISH = [
       "en": "Ocean sunfish"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 1500
   },
@@ -606,7 +606,7 @@ export const FISH = [
       "zh": "灯笼鮟鱇"
     },
     "rarity": 4,
-    "released": false,
+    "released": true,
     "page": 4,
     "price": 5000
   },
@@ -660,7 +660,7 @@ export const FISH = [
       "en": "Blobfish"
     },
     "rarity": 5,
-    "released": false,
+    "released": true,
     "page": 5,
     "price": 50000
   }
@@ -671,10 +671,10 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
 // Each tier, and each kind in it, bites less often than the tier below:
-// every ★3 kind (1% each of five) stays below any single ★2 kind, every ★4
-// kind (3% for the tier, at most about 0.97% a kind) below any ★3 kind, and
-// even the rarest ★4 (the great white, about 0.46%) above a park's ★5
-// legend (0.4%). Every park shares this one table, so none pays better than
+// every ★3 kind (about 0.83% each of six) stays below any single ★2 kind,
+// every ★4 kind (3% for the tier, at most about 0.72% a kind) below any ★3
+// kind, and even the rarest ★4 (the great white, about 0.47%) above a park's
+// ★5 legend (0.4%). Every park shares this one table, so none pays better than
 // another.
 export const TIER_SHARE = [0, 63.6, 28, 5, 3, 0.4];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
@@ -683,7 +683,7 @@ export const TIER_SHARE = [0, 63.6, 28, 5, 3, 0.4];
 // whale at Ttukseom) about every hour.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
-  'sea-turtle': 1.9, tuna: 1.9, marlin: 1.2, shark: 0.9, orca: 0.4, anglerfish: 0.8,
+  'sea-turtle': 1.4, tuna: 1.4, marlin: 1.1, shark: 0.9, orca: 0.4, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
 // What each rarity is called (the fish book and the odds table).
@@ -710,6 +710,7 @@ export const PARK_LEGENDS = {
   'ttukseom-hangang': { name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' }, legends: ['whale'] },
   'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' }, legends: ['giant-squid'] },
   'banpo-jamwon-hangang': { name: { ko: '반포·잠원', en: 'Banpo-Jamwon', ja: '盤浦・蚕院', zh: '盘浦·蚕院' }, legends: ['manta'] },
+  'yeouido-hangang': { name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' }, legends: ['blobfish'] },
 };
 const legendsAt = park => {
   const list = (PARK_LEGENDS[park]?.legends || []).map(fishById).filter(f => f?.released);

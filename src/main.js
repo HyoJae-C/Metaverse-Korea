@@ -3025,7 +3025,7 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // Picnic mats on the Han River park lawn (src/game/picnic.js).
 // The street's wooded parks (Seoul Forest) take picnic mats too: on the
 // grass, off the paths, clear of trees, benches and sculptures.
-const streetLawns = map.areas.filter((a) => a.k === 'park' && a.trees).map((a) => {
+const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => { // (lawn: an open picnic lawn with no trees, Yeouido's)
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });

@@ -127,6 +127,15 @@
       "anchor": { "place": "South bank of the Han River halfway between Banpo and Jamwon Han River Parks (the park house)", "lat": 37.518, "lon": 127.004, "local": [-12.1, -13.3] }
     },
     {
+      "id": "yeouido",
+      "map": "districts/yeouido.json",
+      "offset": [
+        -2715,
+        284
+      ],
+      "anchor": { "place": "Yeouido Han River Park (the park house)", "lat": 37.5284, "lon": 126.9327, "local": [-168.7, -78], "nudge": [-169.6, -244.8], "why": "The game's Han River runs further north here than the real one (Seongsu's extra room pushes the gu edges about), so the island moves north-west to sit in the middle of the game's river, between Hongdae's bank and Yeongdeungpo." }
+    },
+    {
       "id": "euljiro",
       "map": "districts/euljiro.json",
       "offset": [
@@ -343,10 +352,10 @@
     {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."},
     {"k": "tertiary", "w": 8, "p": [[-1668, 99], [-1684, -60], [-1706, -300], [-1720, -440]], "n": {"ko": "소월로", "en": "Sowol-ro", "ja": "素月路", "zh": "素月路"}, "note": "Sowol-ro round Namsan's west side: from Itaewon's Sowol-ro (Haebangchon) north to Sungnyemun, where Toegye-ro starts. Itaewon and Banpo no longer go round through Seongsu to reach Jung-gu and Jongno."},
     {"k": "walk", "w": 6, "p": [[-3182, -64], [-3140.5, -63.9], [-2776.7, -16.7], [-2562.6, 80.2], [-2422.2, 245.0], [-2302.1, 445.1], [-2152.0, 630.8], [-1900.8, 778.5], [-1602.4, 827.8], [-1395.7, 779.3], [-1307.8, 705.8], [-1075, 486], [-340, 162], [-335, 166]], "n": {"ko": "한강 자전거길", "en": "Han River Bike Path", "ja": "漢江自転車道", "zh": "汉江自行车道"}, "note": "The north-bank Han River path: from Mangwon Han River Park's path east past the north end of Seogang Bridge (Yeouido, later), along the river to the north end of Jamsu Bridge (Banpo-Jamwon) and on to Seongsu's Han River Path at Ttukseom. About 12 m inland from the water (region water below)."},
-    {"k": "walk", "w": 5, "p": [[-2761, -128], [-2776.7, -16.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From Yanghwa-ro at Hongdae's south-east corner down to the Han River Bike Path, where Seogang Bridge will start for Yeouido."}
+    {"k": "walk", "w": 5, "p": [[-2761, -128], [-2776.7, -16.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From Yanghwa-ro at Hongdae's south-east corner down to the Han River Bike Path, where Seogang Bridge starts for Yeouido."}
   ],
   "water": [
-    {"p": [[-3142, -52], [-2780, -5], [-2570, 90], [-2432, 252], [-2312, 452], [-2160, 640], [-1905, 790], [-1602, 840], [-1393, 791], [-1312, 880], [-1620, 950], [-1960, 900], [-2240, 730], [-2390, 530], [-2500, 330], [-2620, 190], [-2800, 100], [-3142, 48]], "note": "Han River from Mangwon Han River Park east to Banpo-Jamwon. Leave a gap in its blocker for Seogang Bridge when Yeouido opens."},
+    {"p":[[-3142,-52],[-2780,-5],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],"blockers":[[[-3142,-52],[-2792.8,-6.7],[-2904.3,144.2],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],[[-2777.5,-3.9],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2893,152.6]]],"note":"Han River from Mangwon Han River Park east to Banpo-Jamwon, round the north shore of Yeouido (scripts/build-yeouido.mjs writes this). Its blocker has a gap for Seogang Bridge."},
     {"p": [[-1067, 495], [-335, 173], [-335, 410], [-986, 584]], "note": "Han River from Banpo-Jamwon north-east to Seongsu (Ttukseom)."}
   ],
   "screens": [
