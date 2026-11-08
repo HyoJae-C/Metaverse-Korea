@@ -79,7 +79,9 @@ try {
   await press(a, 'Grab and roll');
   await wait(300);
   if (await mk(a, 'snowHold') == null) throw new Error('not holding');
-  await a.keyboard.down('KeyW'); await wait(3000); await a.keyboard.up('KeyW');
+  await a.keyboard.down('KeyW'); // (headless frames are slow: walk until it grows, up to 10 s)
+  for (let i = 0; i < 20 && Number((await mk(a, 'snowballs')).split(',')[3]) <= Number(ball0.split(',')[3]); i++) await wait(500);
+  await a.keyboard.up('KeyW');
   await wait(300);
   const ball1 = await mk(a, 'snowballs');
   console.log('A walked it', ball1, JSON.stringify(await mk(a, 'pose')));
@@ -121,6 +123,7 @@ try {
   await b.evaluate(([x, z]) => window.__mk.snowSet(90, x + 2.2, z), [gx, gz]);
   await b.evaluate(([x, z]) => window.__mk.place(x + 1.75, z + 0.6), [gx, gz]);
   await wait(1500);
+  for (let j = 0; j < 20 && !(await mk(b, 'choices'))?.some((c) => c.includes('top')); j++) await wait(300); // (the choices come back once B stops working the ball)
   console.log('B choices', await mk(b, 'choices'));
   const ch = await mk(b, 'choices');
   const i = ch ? ch.findIndex((c) => c.includes('top')) : -1;

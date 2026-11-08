@@ -144,12 +144,12 @@ function makeFace(D, d, hat) {
   return f;
 }
 
-// A little snow duck from a duck maker, about 30 cm long, facing +z. No
-// eyes: a soft grey outline (a slightly bigger back-faced shell) so it
+// A little snow duck from a duck maker, about 25 cm long, facing +z. No
+// eyes: a pale grey outline (a slightly bigger back-faced shell) so it
 // stands out on white snow.
 const duckBodyGeo = new THREE.SphereGeometry(0.5, 14, 10);
-const duckLine = new THREE.MeshBasicMaterial({ color: 0x8a9099, side: THREE.BackSide });
-const DUCK_SIZE = 1.2;
+const duckLine = new THREE.MeshBasicMaterial({ color: 0xc4cad3, side: THREE.BackSide }); // (a pale grey: just enough to tell it from the snow)
+const DUCK_SIZE = 1;
 function makeDuck() {
   const g = new THREE.Group();
   g.userData.noSnow = true;
