@@ -524,6 +524,7 @@ export function buildInterior(store) {
   const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   let animate = null; // per-frame animation (club lights), called while inside
   let see = null; // (x, z) each frame: rooms you can walk into turn see-through
+  let camBlocked = null; // (x, z) → true where the camera must not go (main.js)
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
@@ -1124,10 +1125,24 @@ export function buildInterior(store) {
         edge.position.set(sx2, 0.016, mid);
         scene.add(edge);
       }
-      // Backstage: a silver arch with a dark curtain.
-      for (const sx2 of [-2, 2]) box(0.45, 4, 0.45, sx2, 2, -d / 2 + 0.5, '#c9ced6');
-      box(4.5, 0.55, 0.45, 0, 4.1, -d / 2 + 0.5, '#c9ced6');
-      box(3.6, 3.8, 0.06, 0, 1.9, -d / 2 + 0.12, '#2a2632');
+      // Backstage: a silver arch with a dark curtain. Its own materials, so
+      // they turn see-through when the camera ends up behind them (waiting
+      // by the start, the camera behind you looks back through the arch).
+      const archMat = new THREE.MeshLambertMaterial({ color: '#c9ced6', transparent: true });
+      const curtainMat = new THREE.MeshLambertMaterial({ color: '#2a2632', transparent: true });
+      for (const sx2 of [-2, 2]) box(0.45, 4, 0.45, sx2, 2, -d / 2 + 0.5, '#c9ced6').material = archMat;
+      box(4.5, 0.55, 0.45, 0, 4.1, -d / 2 + 0.5, '#c9ced6').material = archMat;
+      box(3.6, 3.8, 0.06, 0, 1.9, -d / 2 + 0.12, '#2a2632').material = curtainMat;
+      const archZ = -d / 2 + 0.9; // just in front of the pillars
+      see = (px, pz, cx, cz) => {
+        const behind = cz < archZ;
+        for (const m of [archMat, curtainMat]) {
+          const o = behind ? 0.15 : 1;
+          if (m.opacity !== o) { m.opacity = o; m.depthWrite = !behind; }
+        }
+      };
+      // And the camera stays in the room (it stops short of the back wall).
+      camBlocked = (x, z) => z < -d / 2 + 0.6;
       // Seats: four rows each side, turned to the runway, in two blocks with
       // a cross aisle between them (and aisles at both ends) to get in.
       const audience = [];
@@ -1918,5 +1933,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT, noExit };
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit };
 }

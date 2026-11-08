@@ -192,6 +192,7 @@ export class RemotePlayers {
 
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
+  charOf(id) { const p = this.players.get(id); return p && !p.hidden ? p.ch : null; }
   // Where someone is right now, predicted from their last update and speed
   // (no smoothing delay): used to keep a passenger glued to the driver.
   predicted(id) {

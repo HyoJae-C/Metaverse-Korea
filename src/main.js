@@ -109,9 +109,10 @@ import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
 import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
-import { RUNWAY_STORE, POSES as RUNWAY_POSES } from './core/runway-game.js';
+import { RUNWAY_STORE } from './core/runway-game.js';
 import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
-import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, poseWord, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
+import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
+import { poseKind, poseAt, POSE_S } from './core/runway-poses.js';
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
@@ -1411,7 +1412,7 @@ async function joinRoom(room, roomScene, area = null) {
       }
       if (parseRunwayMsg(e)) {
         const m = parseRunwayMsg(e);
-        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) runwayReact(others.rootOf(id), m.tier, m.word);
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) { runwayReact(others.rootOf(id), m.tier, m.word); if (m.pose) runwayPose(others.charOf(id), m.pose); }
         return;
       }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
@@ -1843,6 +1844,7 @@ function updateScents(dt) {
   for (const id of scentSeen.keys()) if (!others.players.has(id)) scentSeen.delete(id);
   scentFx.update(dt);
   runwayWords.update(dt);
+  runwayPoseTick(dt);
   for (const [root, t0] of wobbles) {
     const t = t0 + dt;
     root.rotation.z = wobbleAt(t);
@@ -1862,7 +1864,26 @@ function runwayReact(root, tier, word) {
   if (tier === 'p') scentFx.puff(x, y, z, pickPerfect(), true);
   else if (tier === 'g') scentFx.puff(x, y, z, GOOD_FX, false);
   else { wobbles.set(root, 0); runwayWords.pop(x + 0.45, y + 1.5, z, '!', '#ff6b6b', true); }
-  if (word) runwayWords.pop(x, y + 2.3, z, L(RUNWAY_WORDS[word]), tier === 'p' ? '#ffd166' : '#ffffff');
+  if (word) runwayWords.pop(x, y + 2.3, z, L(RUNWAY_WORDS[word]), wordColor(word)); // each word its own colour
+}
+// A photo pose (core/runway-poses.js) on me or on someone in the room: an
+// emote clip, or bone offsets held for a moment. (The spin is main.js's
+// runwayStep on me; others are seen turning through their updates.)
+const runwayPosing = new Map(); // character → { id, t }
+function runwayPose(ch, id) {
+  const kind = poseKind(id);
+  if (!ch || !kind) return;
+  if (kind === 'clip') { ch.play(id); return; }
+  if (kind !== 'moves') return;
+  const st = { id, t: 0 };
+  runwayPosing.set(ch, st);
+  ch.setMoves?.(() => poseAt(st.id, st.t));
+}
+function runwayPoseTick(dt) {
+  for (const [ch, st] of runwayPosing) {
+    st.t += dt;
+    if (st.t >= POSE_S) { ch.setMoves?.(null); runwayPosing.delete(ch); }
+  }
 }
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
@@ -3462,7 +3483,7 @@ const runwayUi = new RunwayUI({
     sfx.snap();
     for (const o of interior?.audienceNpcs || []) if (Math.random() < 0.6) o.ch.play('clap'); // the audience claps
     if (kind === 'turn') runwaySpin = 0.7;
-    else { me.play(kind); net.sendEmote(kind); }
+    else runwayPose(me, kind); // (others see it from the photo's message, onJudge)
   },
   onFinish: (score) => {
     runwayLine.addScore(myId, score);
@@ -3483,9 +3504,11 @@ const runwayUi = new RunwayUI({
   },
   onJudge: (n, label) => {
     const tier = tierOf(label);
-    const word = n.kind === 'pose' && (label === 'perfect' || label === 'great') ? poseWord(RUNWAY_POSES[n.i]) : null;
+    // Every photo that lands gets a word: one of the list at random.
+    const photo = n.kind === 'pose' && tier !== 'm';
+    const word = photo ? pickWord() : null, pose = photo ? runwayUi.game?.poses?.[n.i] : null;
     runwayReact(me.root, tier, word);
-    net.sendEmote(runwayMsg(tier, word));
+    net.sendEmote(runwayMsg(tier, word, pose));
   },
   onMedal: (medal, coins) => {
     if (coins) shop.toast(t('grill.medalToast', { coins }));
@@ -5646,7 +5669,7 @@ renderer.setAnimationLoop(() => {
     for (let d = 1; d <= horiz; d += 0.5) {
       if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
     }
-  } else if (interior?.camBlocked) { // outdoor rooms (the Namsan summit): stop short of the tower
+  } else if (interior?.camBlocked) { // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
     for (let d = 1; d <= horiz; d += 0.5) {
       if (interior.camBlocked(p.x + sy * d, p.z + cy0 * d)) { horiz = Math.max(1.5, d - 0.6); break; }

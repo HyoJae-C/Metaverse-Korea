@@ -24,7 +24,7 @@ export const RUNWAY_TRACK = 'runway'; // the catwalk music (data/tracks.js)
 export const LEAD_BEATS = 4; // one bar of count-in, standing backstage
 export const STEP_BEATS = 24; // steps down the runway, one a beat
 export const POSE_GAP = 2; // beats between the poses at the end
-export const POSES = ['wave', 'turn', 'cheer']; // what each pose does (main.js plays it)
+export const POSES = ['wave', 'turn', 'cheer']; // three photo slots; each walk picks its own poses (core/runway-poses.js pickPoses)
 export const BACK_BEATS = 8; // the walk back, no taps
 export const POINTS = { perfect: 3, great: 2, good: 1 };
 
