@@ -161,6 +161,25 @@ so the overlap check doesn't count the empty corner its bounding box covers.
 The district is nudged north as far as Songpa, so the two keep their real
 distance. Meeting zone U is on KONEXT Square.
 
+## Yeouido (Yeongdeungpo-gu)
+
+Yeouido is an island in the middle of the Han River
+(`scripts/build-yeouido.mjs`, `districts/yeouido.json`). The script draws the
+island in its own frame (u along the river, v across it, 0 on the north
+shore) and also writes the first river line in `region.json` (`water`[0]):
+the Han from Mangwon to Banpo-Jamwon now runs round the island's north shore,
+and its blocker is cut for Seogang Bridge. The Saetgang, the narrow arm
+south of the island, is the district's own water and blocker. Seogang Bridge
+starts on the Han River Bike Path where "To the Han River" comes down from
+Hongdae, so Hongdae walks straight onto it. On the island: Yeouido Han River
+Park along the north shore (the fishing corner with the park house door, an
+open picnic lawn with no trees, `lawn: true`, Mul-bit Square's shallow pool,
+the Information Center), the Han River path, Yunjung-ro with cherry trees
+that are only pink in spring (`blossoms` with `seasonal`), plain office
+towers and the 63 tower on the east tip (a blocker and a landmark, not
+walkable). The park room's ★5 legend is the blobfish. Run the script again
+after moving the island: it rewrites the river and the doors.
+
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs
