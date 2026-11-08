@@ -29,3 +29,15 @@ export function canvasTex(w, h, draw, { anisotropy = 0, repeat = null } = {}) {
   if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
   return t;
 }
+
+// Draws `text` word-wrapped to maxW at (x, y), lh apart, on a 2D canvas
+// context; returns the y of the line after the last.
+export function wrapText(g, text, x, y, maxW, lh) {
+  let line = '';
+  for (const word of text.split(' ')) {
+    const next = line ? line + ' ' + word : word;
+    if (g.measureText(next).width > maxW && line) { g.fillText(line, x, y); y += lh; line = word; } else line = next;
+  }
+  if (line) g.fillText(line, x, y);
+  return y + lh;
+}

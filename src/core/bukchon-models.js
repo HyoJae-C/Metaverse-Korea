@@ -1,8 +1,7 @@
 // Bukchon landmarks (map "landmarks" in districts/bukchon.json): the Open
 // House (a ㄷ-shaped hanok round a courtyard, with a persimmon tree and a
-// magpie), the rooftop view terrace, the stone stairs down to Samcheong-dong,
-// and Changdeokgung's roofs seen from the east edge. Visual only: collision
-// comes from the map's blockers.
+// magpie), the rooftop view terrace and Changdeokgung's roofs seen from the
+// east edge. Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
@@ -164,15 +163,6 @@ const BUILD = {
     for (const sx of [-1, 1]) box(g, 8.5, 0.15, 0.3, sx * 7.4, 1.4, 10.6, C.wood);
     box(g, 0.5, 1.1, 0.5, 0, 0.85, -8, '#3a5a7a'); // telescope post
     box(g, 0.4, 0.4, 1.0, 0, 1.6, -7.8, '#3a5a7a');
-  },
-  // The stone stairs (돌계단길): steps cut from one rock, down to the west.
-  stonestairs(g, l) {
-    const len = l.len || 30, n = 14;
-    for (let i = 0; i < n; i++) {
-      const s = box(g, len / n + 0.1, 0.12, 4.4, -len / 2 + (i + 0.5) * (len / n), 0.06 + (i % 2) * 0.03, 0, i % 2 ? C.stone : C.dark);
-      s.userData.noShadow = true;
-    }
-    for (const sz of [-1, 1]) box(g, len, 0.8, 0.6, 0, 0.4, sz * 2.6, '#a59c8a'); // rock edges
   },
   // Changdeokgung beyond the east edge: a palace wall and two hall roofs.
   farpalace(g) {

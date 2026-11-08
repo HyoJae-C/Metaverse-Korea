@@ -2,6 +2,7 @@
 // attached to the building facade nearest each store's anchor point.
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
+import { pointInPoly } from './collision.js';
 import { localName } from './i18n.js';
 import { SIGN_SHAPES, signShape, signGeometry, signTexture } from './sign-shapes.js';
 import { hanokSignStyle, hanokSignTexture, addHanokSign } from './hanok-signs.js';
@@ -59,14 +60,6 @@ function nearestFacade(buildings, x, z, isBlocked) {
   return null;
 }
 
-function pointInPoly(x, z, p) {
-  let inside = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
-  }
-  return inside;
-}
 
 // Floating label above a shop: an icon and the name, always facing the
 // camera so the shop is easy to spot from any angle or distance.

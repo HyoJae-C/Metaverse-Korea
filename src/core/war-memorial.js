@@ -23,7 +23,8 @@
 // music: a place to look and remember.
 import * as THREE from 'three';
 import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, COMING, HOLD, MEMORIAL_TEXT, DONATED, ABOUT, TIMELINE, MONTH_TEXT, monthBoard } from '../data/war-memorial.js';
-import { canvasTex } from './three-kit.js';
+import { canvasTex, wrapText as wrap } from './three-kit.js';
+import { segmentsCross as crosses } from './collision.js';
 
 export const ROOM_MEMORIAL = { w: 44, d: 30, h: 7 };
 const PART_H = 4.2;
@@ -70,15 +71,6 @@ export function photoSlots(floor = 1) {
 
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-function wrap(g, text, x, y, maxW, lh) {
-  let line = '';
-  for (const word of text.split(' ')) {
-    const next = line ? line + ' ' + word : word;
-    if (g.measureText(next).width > maxW && line) { g.fillText(line, x, y); y += lh; line = word; } else line = next;
-  }
-  if (line) g.fillText(line, x, y);
-  return y + lh;
-}
 
 function sign(scene, wd, ht, x, y, z, ry, top, bottom, { bg = '#2d3133', fg = '#f1ede4' } = {}) {
   const px = 220;
@@ -280,12 +272,6 @@ function hang(scene, sl, { box, block }, loader) {
   block(bx, bz, along ? len + 0.1 : 0.5, along ? 0.5 : len + 0.1);
 }
 
-function crosses(ax, az, bx, bz, cx, cz, dx, dz) {
-  const o = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
-  const d1 = o(cx, cz, dx, dz, ax, az), d2 = o(cx, cz, dx, dz, bx, bz);
-  const d3 = o(ax, az, bx, bz, cx, cz), d4 = o(ax, az, bx, bz, dx, dz);
-  return d1 * d2 < 0 && d3 * d4 < 0;
-}
 
 // A white chrysanthemum lying on the altar.
 function chrysanthemum() {

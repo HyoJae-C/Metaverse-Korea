@@ -837,11 +837,7 @@ if (square) {
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
-  const R = 6378137;
-  const c = region.center;
-  const mLat = (Math.PI / 180) * R;
-  const mLon = mLat * Math.cos((c.lat * Math.PI) / 180);
-  return [(lon - c.lon) * mLon, -(lat - c.lat) * mLat];
+  return llToLocal(region.center, lat, lon);
 }
 
 function findFreeSpot(x, z) {
@@ -3610,7 +3606,7 @@ function guideToPlace(to) {
 // Information Centers: which district a place is in, the shops of a
 // district, and the nearest shop of a kind (the name tag workshops).
 const dBoxes = districtBoxes(map);
-const storeAt = (st) => placeOf(st, region.center, latLonToLocal);
+const storeAt = (st) => placeOf(st, region.center, llToLocal);
 const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st));
 // "알바급구!" posters for the shops that hire (core/hiring-ads.js): on the
 // empty ad lots nearest each Seongsu job, a few more there for the jobs in
@@ -3909,7 +3905,7 @@ bukchonMarks?.taken(viewBook);
 // seen from Yulgok-ro; the stone walls are only the hill's retaining walls.
 const openHanok = [];
 // Hanok inside a district's enclosure wait for the first visit; the rest
-// (e.g. Seosunra-gil's shops outside Jongmyo's wall) are built at once.
+// are built at once.
 const inEnclosure = (d, b) => {
   if (!d.enclosure) return false;
   const [ax, az, bx, bz] = d.enclosure.box, [ox, oz] = d.offset;
@@ -4083,7 +4079,7 @@ function updateQuiet(p, moving) {
   quietWas = q;
   return q;
 }
-// Jongmyo Shrine and Seosunra-gil (data/jongmyo.js): the guide and the
+// Jongmyo Shrine (data/jongmyo.js): the guide and the
 // grandpas, the stone path's manners (keep off the spirits' middle strip),
 // and the ritual dance on Jeongjeon's terrace (core/jongmyo-show.js).
 const jongmyoAt = (region.districts || []).find((d) => d.id === JONGMYO.district)?.offset || null;

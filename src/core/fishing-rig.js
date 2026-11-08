@@ -60,7 +60,7 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
   let rod = null; // userData.rod of the held rod
   let angle = REST, vel = 0, bend = 0, bendVel = 0, kick = 0, shake = 0;
   let progress = 0, heavy = 0, big = 0;
-  const from = new THREE.Vector3(), to = new THREE.Vector3(), target = new THREE.Vector3(), near = new THREE.Vector3();
+  const from = new THREE.Vector3(), target = new THREE.Vector3(), near = new THREE.Vector3();
   const tipW = new THREE.Vector3(), bob = new THREE.Vector3(), tmp = new THREE.Vector3();
   let catchObj = null; // the fish (or boot) on the line
   let nextNibble = 0, nibble = 0, splashT = 0, landed = false;

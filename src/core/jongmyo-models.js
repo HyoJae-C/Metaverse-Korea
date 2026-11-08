@@ -1,16 +1,15 @@
-// Jongmyo and Seosunra-gil landmarks (map "landmarks" in districts/jongmyo.json,
+// Jongmyo landmarks (map "landmarks" in districts/jongmyo.json,
 // built by scripts/build-jongmyo.mjs): the gates, the two long shrine halls
 // on their stone terraces (woldae), the three-strip stone path (samdo), the
 // square pond, the ritual orchestra's instruments, the janggi tables on
-// Jongmyo Square, the lanterns along the wall on Seosunra-gil and the
-// shrine's woods. Visual only: collision comes from the map's blockers.
+// Jongmyo Square and the shrine's woods. Visual only: collision comes from
+// the map's blockers.
 import * as THREE from 'three';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
-const glow = (c) => (mats['glow' + c] ||= new THREE.MeshBasicMaterial({ color: c }));
 function box(g, sx, sy, sz, x, y, z, c, m) {
   const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m || mat(c));
   o.position.set(x, y, z);
@@ -162,15 +161,6 @@ const BUILD = {
     for (const [x, z] of [[-0.2, -0.22], [0, -0.2], [0.13, -0.11], [-0.07, -0.05]]) pc('#2f6b4f', x, z);
     for (const [x, z] of [[0.2, 0.22], [0, 0.2], [-0.13, 0.11], [0.07, 0.05]]) pc('#b0283a', x, z);
     for (const sx of [-1, 1]) box(g, 0.5, 0.42, 0.4, sx * 0.95, 0.21, 0, '#8a6446');
-  },
-  // Lanterns along the wall on Seosunra-gil: a stone post with a warm light
-  // box, every l.gap metres over l.len.
-  walllamps(g, l) {
-    for (let z = -l.len / 2; z <= l.len / 2; z += l.gap) {
-      box(g, 0.35, 1.0, 0.35, 0, 0.5, z, C.stoneDark);
-      box(g, 0.42, 0.42, 0.42, 0, 1.2, z, null, glow('#ffd58a'));
-      box(g, 0.6, 0.12, 0.6, 0, 1.47, z, '#3d4450');
-    }
   },
   // The shrine's woods: old pines and broadleaf trees. One instanced mesh
   // for the trunks and one for each kind of crown.

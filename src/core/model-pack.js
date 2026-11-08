@@ -81,8 +81,6 @@ const STRIDE = {
 const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
 const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
-export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
-
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 const loader = new GLTFLoader();
 const cache = new Map();
