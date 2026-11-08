@@ -159,6 +159,8 @@ export function createPicnic(game, street = null) {
     // For our state: "x,z,c" while our mat is spread.
     get sync() { return mine && room ? encodeMat(mine) : null; },
     get mine() { return mine; },
+    // The picnic lawn we're on (Han River park, Seoul Forest), or null.
+    get room() { return room; },
     // If the mat leaves the bag (sold, given away), it can't stay spread.
     checkBag() { if (mine && !hasMat(game.bag)) fold(); },
   };

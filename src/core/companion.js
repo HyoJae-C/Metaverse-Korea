@@ -68,6 +68,7 @@ export class Companion {
   // the pet walks on the same ground and not in the air above it.
   update(dt, owner, riding, canPoop) {
     this.phase += dt;
+    if (this.playing) return false; // fetching a frisbee (game/frisbee.js moves it)
     this.root.visible = !riding;
     if (riding) { this.place(owner.x, owner.z, owner.ry, owner.y || 0); return false; }
     const r = this.root.position;
@@ -102,6 +103,37 @@ export class Companion {
       return true;
     }
     return false;
+  }
+
+  // Run towards (x, z) at `speed` m/s (playing fetch). Returns the distance
+  // still to go. hop: how high the body is lifted (a leap for the frisbee).
+  run(dt, x, z, speed, hop = 0) {
+    this.phase += dt;
+    const r = this.root.position, dx = x - r.x, dz = z - r.z, d = Math.hypot(dx, dz);
+    const moving = d > 0.05;
+    if (moving) {
+      const sp = Math.min(d, speed * dt);
+      r.x += (dx / d) * sp;
+      r.z += (dz / d) * sp;
+      turn(this.root, Math.atan2(dx, dz), dt * 2);
+    }
+    const step = moving ? Math.sin(this.phase * 22) * 0.6 : 0;
+    this.legs.forEach((l, i) => { l.rotation.x = i % 2 === (i < 2 ? 0 : 1) ? step : -step; });
+    this.body.position.y += (hop - this.body.position.y) * Math.min(1, dt * 14);
+    this.body.rotation.x = hop > 0.05 ? -0.5 : moving ? 0 : -0.2;
+    this.tail.rotation.y = Math.sin(this.phase * 16) * 0.6;
+    return Math.max(0, d - (moving ? Math.min(d, speed * dt) : 0));
+  }
+
+  // Face (x, z) and sit, wagging (waiting for the frisbee, or watching it).
+  watch(dt, x, z, wag = 6) {
+    this.phase += dt;
+    const r = this.root.position;
+    turn(this.root, Math.atan2(x - r.x, z - r.z), dt);
+    this.legs.forEach((l) => { l.rotation.x = 0; });
+    this.body.position.y += (-0.04 - this.body.position.y) * Math.min(1, dt * 10);
+    this.body.rotation.x = -0.2;
+    this.tail.rotation.y = Math.sin(this.phase * wag) * 0.5;
   }
 
   dispose() { this.root.removeFromParent(); }

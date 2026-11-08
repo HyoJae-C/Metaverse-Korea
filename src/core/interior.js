@@ -160,6 +160,10 @@ export function productModel(kind, color, product = null) {
       add(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 12).rotateZ(Math.PI / 2), 0, 0.07);
       for (const sx of [-0.12, 0.12]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 12).rotateZ(Math.PI / 2), sx, 0.07, 0, mat('#ffffff'));
       break;
+    case 'frisbee': // a frisbee lying flat, with a white rim
+      add(new THREE.CylinderGeometry(0.16, 0.14, 0.03, 20), 0, 0.03);
+      add(new THREE.TorusGeometry(0.15, 0.014, 6, 20).rotateX(Math.PI / 2), 0, 0.04, 0, mat('#ffffff'));
+      break;
     case 'egg': // a small tray of eggs
       add(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, 0.02, 0, mat('#d9c7a6'));
       for (const ex of [-0.09, 0, 0.09]) for (const ez of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.04, 10, 8).scale(1, 1.3, 1), ex, 0.07, ez);
