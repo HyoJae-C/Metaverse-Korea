@@ -24,6 +24,8 @@ jobs:
           npx vite preview --port 4173 &
           sleep 3
           node tests/e2e/multiplayer.mjs http://localhost:4173/
+      - name: Memory budget (iPhone Safari closes pages past its canvas limit)
+        run: node tests/e2e/memory.mjs http://localhost:4173/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
