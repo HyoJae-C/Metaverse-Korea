@@ -12,6 +12,7 @@ import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
 import { describePlace, agoText, fitView } from './view.js';
 import { createPanels } from './panels.js';
 import { createChatPanel } from './chat-panel.js';
+import { createExhibitPanel } from './exhibit-panel.js';
 
 const REGION = 'another-seoul';
 const POLL_MS = 3000;
@@ -290,6 +291,7 @@ async function start() {
   panels = createPanels({ client, $, escapeHtml, agoText, describePlace: (pl) => describePlace(pl, stores), setStatus: (t) => { $('status').textContent = t; }, go: showTab, notOperator, badge });
   chatPanel = createChatPanel({ client, region: REGION, $, describePlace: (pl) => describePlace(pl, stores), badge, setStatus: (t) => { $('status').textContent = t; } });
   chatPanel.show(tab === 'chat');
+  exhibitPanel = createExhibitPanel({ client, $, escapeHtml, badge, notOperator });
   $('within').onchange = () => { view.fitted = false; poll(); };
   codeMemo();
   $('fit').onclick = fitAll;
@@ -314,8 +316,8 @@ function codeMemo() {
 }
 
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes'];
-let tab = null, panels = null, chatPanel = null;
+const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes', 'exhibits'];
+let tab = null, panels = null, chatPanel = null, exhibitPanel = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';
   if (name === tab) return;
@@ -325,6 +327,7 @@ function showTab(name) {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === name);
   if (name === 'live') { resize(); if (!view.fitted) fitAll(); poll(); } else clearTimeout(pollTimer);
   chatPanel?.show(name === 'chat');
+  exhibitPanel?.show(name === 'exhibits');
   panels?.show(name);
 }
 function badge(id, n) {
