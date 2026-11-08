@@ -229,16 +229,18 @@ const TB = (level, pages, color) => ({
   pages: [],
 });
 BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa0'), TB('5-6', 36, '#9c3d54'));
-// Free stories and poems (public-domain Korean works and retold folk
-// tales). The shelf knows only the title; the text is loaded from
-// public/library/<id>.json when the book is opened.
-export const LIT_KINDS = ['children', 'story', 'poems'];
+// Free books (public-domain Korean works, retold folk tales, and books
+// written for the game, some only in Korean). The shelf knows only the
+// title; the text is loaded from public/library/<id>.json when opened.
+export const LIT_KINDS = ['lang', 'story', 'poems', 'children', 'life'];
 // The library's bookshelves: each shelf holds one section, labeled on top.
 export const SHELF_SECTIONS = [
-  { id: 'learn', icon: '🇰🇷', name: { en: 'Learn Korean', ko: '한국어 공부', ja: '韓国語の勉強', zh: '学韩语' } },
-  { id: 'children', icon: '🧸', name: { en: "Children's stories", ko: '어린이 동화', ja: '子ども向けのお話', zh: '儿童故事' } },
-  { id: 'story', icon: '📖', name: { en: 'Short stories', ko: '단편소설', ja: '短編小説', zh: '短篇小说' } },
-  { id: 'poems', icon: '🌸', name: { en: 'Poetry', ko: '시집', ja: '詩集', zh: '诗集' } },
+  { id: 'learn', icon: '🇰🇷', name: { en: 'Learn Korean', ko: '한국어', ja: '韓国語', zh: '韩语' } },
+  { id: 'lang', icon: '🌏', name: { en: 'Languages', ko: '어학', ja: '語学', zh: '外语' } },
+  { id: 'story', icon: '📖', name: { en: 'Stories', ko: '소설', ja: '小説', zh: '小说' } },
+  { id: 'poems', icon: '🌸', name: { en: 'Poetry', ko: '시', ja: '詩', zh: '诗' } },
+  { id: 'children', icon: '🧸', name: { en: "Children's stories", ko: '동화', ja: '童話', zh: '童话' } },
+  { id: 'life', icon: '🍳', name: { en: 'Everyday life', ko: '생활', ja: '暮らし', zh: '生活' } },
 ];
 export const booksInSection = (id) => BOOKS.filter((b) => (id === 'learn' ? !b.lit : b.lit?.kind === id));
 for (const b of LIBRARY) {

@@ -19,6 +19,9 @@ export default defineConfig(({ command }) => ({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1200,
+    // dist/.vite/manifest.json: which file needs which, for the download budget
+    // (scripts/check-size.mjs).
+    manifest: true,
     // admin.html: operators' live player map (src/admin/), not linked from the game.
     // apply.html: the free exhibition application form (src/apply/).
     rollupOptions: {

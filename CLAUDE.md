@@ -15,6 +15,8 @@ Read `docs/PERFORMANCE.md` before adding a feature. In short:
   districts) load with `import()` when first used.
 - Repeated props use InstancedMesh; static props are merged; far things are
   hidden.
+- `src/boot.js` is the page's entry and must stay tiny; the game is
+  `src/main.js`, loaded behind the start screen.
 - Stay inside the budgets in `docs/PERFORMANCE.md`. Raise one only on purpose,
   in its own commit, saying why.
 

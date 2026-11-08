@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex, wrapText } from './three-kit.js';
 import { makeNpc } from './npcs.js';
+import { species, SWIM_TIME } from './sea-life.js';
 
 export const AQUA_ROOM = { w: 56, d: 64, h: 9 };
 const HW = AQUA_ROOM.w / 2, HD = AQUA_ROOM.d / 2;
@@ -64,29 +65,10 @@ function sign(w, h, en, ko, small = '', bg = '#0f3557') {
 
 function put(g, o, x, y, z, ry = 0) { o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; }
 
-// ---- fish: one instanced mesh per kind, each fish on its own loop ----
-// A fish shape along +x: body, tail fin and a top fin.
-function fishGeometry(kind) {
-  const parts = [];
-  if (kind === 'manta') {
-    const s = new THREE.Shape();
-    s.moveTo(0.6, 0); s.lineTo(-0.2, 1.1); s.lineTo(-0.5, 0); s.lineTo(-0.2, -1.1); s.closePath();
-    parts.push(new THREE.ExtrudeGeometry(s, { depth: 0.08, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, 0.04, 0));
-    parts.push(new THREE.CylinderGeometry(0.02, 0.04, 0.9, 4).rotateZ(Math.PI / 2).translate(-0.9, 0, 0));
-  } else if (kind === 'turtle') {
-    parts.push(new THREE.SphereGeometry(0.5, 10, 6).scale(1, 0.35, 0.8));
-    parts.push(new THREE.SphereGeometry(0.16, 8, 6).translate(0.58, 0, 0));
-    for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(0.4, 0.04, 0.22).rotateY(s * 0.6).translate(0.2, 0, s * 0.45));
-  } else if (kind === 'jelly') {
-    parts.push(new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2));
-    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; parts.push(new THREE.CylinderGeometry(0.02, 0.01, 1.1, 3).translate(Math.cos(a) * 0.3, -0.55, Math.sin(a) * 0.3)); }
-  } else {
-    const long = kind === 'shark' || kind === 'dolphin' || kind === 'orca';
-    parts.push(new THREE.SphereGeometry(0.5, 10, 6).scale(1, long ? 0.32 : 0.5, long ? 0.3 : 0.22));
-    parts.push(new THREE.ConeGeometry(long ? 0.22 : 0.26, long ? 0.4 : 0.36, 4).rotateZ(Math.PI / 2).scale(1, 1, 0.25).translate(-0.6, 0, 0));
-    parts.push(new THREE.ConeGeometry(0.1, long ? 0.3 : 0.16, 4).scale(1.4, 1, 0.3).translate(long ? 0 : -0.05, long ? 0.22 : 0.27, 0));
-    if (long) for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(0.22, 0.03, 0.2).rotateY(s * 0.5).translate(0.08, -0.08, s * 0.17));
-  }
+// ---- jellyfish: a bell and trailing tentacles (the fish are core/sea-life.js) ----
+function fishGeometry() {
+  const parts = [new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2)];
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; parts.push(new THREE.CylinderGeometry(0.02, 0.01, 1.1, 3).translate(Math.cos(a) * 0.3, -0.55, Math.sin(a) * 0.3)); }
   const geos = parts.map((p) => (p.index ? p.toNonIndexed() : p));
   for (const p of geos) for (const k of Object.keys(p.attributes)) if (k !== 'position' && k !== 'normal') p.deleteAttribute(k);
   return mergeAll(geos);
@@ -108,11 +90,12 @@ function mergeAll(geos) {
   return out;
 }
 
-// A school: `n` fish of one kind and size, each going round an ellipse
-// (centre cx, cz; radii rx, rz) at its own height and speed.
-function school(g, kind, color, n, size, { cx, cz, rx, rz, y0, y1, speed = 0.35, basic = false }) {
-  const m = basic ? new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 }) : new THREE.MeshLambertMaterial({ color });
-  const mesh = new THREE.InstancedMesh(fishGeometry(kind), m, n);
+// A school: `n` of one species (core/sea-life.js; or 'jelly' in `color`)
+// at about `size` metres long, each going round an ellipse (centre cx, cz;
+// radii rx, rz) at its own height and speed. The tail beat is in the shader.
+function school(g, kind, n, size, { cx, cz, rx, rz, y0, y1, speed = 0.35, color = '#ffffff' }) {
+  const jelly = kind === 'jelly', sp = jelly ? null : species(kind);
+  const mesh = new THREE.InstancedMesh(jelly ? fishGeometry() : sp.geo, jelly ? new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 }) : sp.mat, n);
   mesh.frustumCulled = false;
   g.add(mesh);
   const fish = Array.from({ length: n }, (_, i) => {
@@ -121,17 +104,18 @@ function school(g, kind, color, n, size, { cx, cz, rx, rz, y0, y1, speed = 0.35,
   });
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
   const tick = (t) => {
+    SWIM_TIME.value = t;
     fish.forEach((f, i) => {
-      if (kind === 'jelly') {
+      if (jelly) {
         const pulse = 1 + 0.12 * Math.sin(t * 2 + f.ph * 3);
         v.set(cx + Math.cos(f.ph) * rx * f.k, f.y + Math.sin(t * 0.5 + f.ph) * 0.5, cz + Math.sin(f.ph) * rz * f.k);
         e.set(0, f.ph, 0); sc.set(f.s * pulse, f.s / pulse, f.s * pulse);
       } else {
         const a = t * f.sp / Math.max(rx, rz) * 3 + f.ph;
         v.set(cx + Math.cos(a) * rx * f.k, f.y + Math.sin(a * 2 + f.ph) * 0.25, cz + Math.sin(a) * rz * f.k);
-        // facing along the loop (counter-clockwise seen from above), a small tail wag
+        // facing along the loop (counter-clockwise seen from above); a manta banks gently
         const dx = -Math.sin(a) * rx, dz = Math.cos(a) * rz;
-        e.set(0, Math.atan2(-dz, dx) + Math.sin(t * 6 + i) * 0.08, kind === 'manta' ? Math.sin(t * 1.5 + i) * 0.15 : 0);
+        e.set(0, Math.atan2(-dz, dx), sp.mode === 'ray' ? Math.sin(t * 0.7 + i) * 0.12 : 0);
         sc.set(f.s, f.s, f.s);
       }
       m4.compose(v, q.setFromEuler(e), sc);
@@ -324,9 +308,9 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   put(g, sign(5, 1.3, 'RIVER FISH', '민물고기'), RIVER.x1 + 0.05, 5.4, (RIVER.z0 + RIVER.z1) / 2, Math.PI / 2);
   for (let i = 0; i < 7; i++) kelp(g, RIVER.x0 + 0.6 + (i % 3) * 0.8, RIVER.z0 + 0.8 + i * 1.2, 0.72, 1.4 + (i % 3) * 0.6, sway);
   const rv = { cx: river.cx + 0.3, cz: river.cz, rx: 1.0, rz: 3.4, y0: river.y0, y1: river.y1 };
-  ticks.push(school(g, 'fish', '#c9a24a', 5, 0.7, { ...rv, speed: 0.3 })); // carp
-  ticks.push(school(g, 'fish', '#9aa7ad', 8, 0.4, { ...rv, speed: 0.45 })); // minnows
-  ticks.push(school(g, 'fish', '#e38a6a', 3, 0.9, { ...rv, rx: 0.8, speed: 0.35 })); // salmon
+  ticks.push(school(g, 'carp', 5, 0.75, { ...rv, speed: 0.3 })); // carp
+  ticks.push(school(g, 'chub', 8, 0.32, { ...rv, speed: 0.45 })); // pale chub (피라미)
+  ticks.push(school(g, 'salmon', 3, 0.95, { ...rv, rx: 0.8, speed: 0.35 })); // chum salmon
 
   // Sea floor (right of the lobby): lobster, crabs, kelp
   const sea = wallTank(g, SEAFLOOR, 'x-', '#24496a');
@@ -341,7 +325,7 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
     const crab = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 5), mat(c));
     crab.scale.y = 0.45; put(g, crab, sea.cx - 0.6, 0.78, sea.cz + dz);
   }
-  ticks.push(school(g, 'fish', '#e7c64d', 6, 0.45, { cx: sea.cx - 0.3, cz: sea.cz, rx: 0.9, rz: 3.2, y0: sea.y0 + 0.8, y1: sea.y1 }));
+  ticks.push(school(g, 'butterfly', 6, 0.4, { cx: sea.cx - 0.3, cz: sea.cz, rx: 0.9, rz: 3.2, y0: sea.y0 + 0.8, y1: sea.y1 }));
 
   // ---- middle hall ----
   // Jellyfish columns in six colours.
@@ -353,7 +337,7 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
     put(g, glow, x, 2.65, z);
     const l = new THREE.PointLight(new THREE.Color(jellyColors[i]), 3, 5);
     l.position.set(x, 2.6, z); g.add(l);
-    ticks.push(school(g, 'jelly', jellyColors[i], 5, 0.55, { cx: x, cz: z, rx: 0.5, rz: 0.5, y0: 1.8, y1: 3.8, basic: true }));
+    ticks.push(school(g, 'jelly', 5, 0.55, { cx: x, cz: z, rx: 0.5, rz: 0.5, y0: 1.8, y1: 3.8, color: jellyColors[i] }));
     colliders.push({ p: [[x - 1.2, z - 1.2], [x + 1.2, z - 1.2], [x + 1.2, z + 1.2], [x - 1.2, z + 1.2]] });
   });
   put(g, sign(6, 1.5, 'JELLYFISH', '해파리'), 0, 7.2, 15.6);
@@ -390,9 +374,9 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   const coralCols = ['#ff6f91', '#ffb347', '#c38fff', '#ff8a5c', '#7ee0c3'];
   for (let i = 0; i < 18; i++) coral(g, REEF.x1 - 0.5 - (i % 3) * 0.9, REEF.z0 + 0.8 + i * 1.05, 0.72, coralCols[i % 5], 0.8 + (i % 4) * 0.25);
   const rf = { cx: reef.cx - 0.5, cz: reef.cz, rx: 1.0, rz: 8.6, y0: reef.y0 + 0.5, y1: reef.y1 };
-  ticks.push(school(g, 'fish', '#ff8c1a', 10, 0.32, { ...rf, speed: 0.5 })); // clownfish
-  ticks.push(school(g, 'fish', '#2f6fe0', 8, 0.42, { ...rf, speed: 0.45 })); // blue tang
-  ticks.push(school(g, 'fish', '#ffd93d', 8, 0.4, { ...rf, speed: 0.4 })); // yellow tang
+  ticks.push(school(g, 'clownfish', 10, 0.3, { ...rf, speed: 0.5 })); // clownfish
+  ticks.push(school(g, 'bluetang', 8, 0.42, { ...rf, speed: 0.45 })); // blue tang
+  ticks.push(school(g, 'yellowtang', 8, 0.4, { ...rf, speed: 0.4 })); // yellow tang
 
   // The penguin room on the left: ice, rocks, a pool, and penguins.
   const P = PENGUINS, pcx = (P.x0 + P.x1) / 2, pcz = (P.z0 + P.z1) / 2;
@@ -464,17 +448,17 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   const ocz = (O.z0 + O.z1) / 2;
   for (const s of [-1, 1]) {
     const half = { cx: s * (tw + (HW - tw) / 2), cz: ocz, rx: (HW - tw) / 2 - 2, rz: (O.z1 - O.z0) / 2 - 2.5 };
-    ticks.push(school(g, 'fish', '#c7d7e2', 26, 0.45, { ...half, y0: 1, y1: 4, speed: 0.8 })); // sardines
-    ticks.push(school(g, 'fish', '#f2c14e', 10, 0.6, { ...half, rx: half.rx * 0.6, rz: half.rz * 0.6, y0: 1.5, y1: 5, speed: 0.5 }));
+    ticks.push(school(g, 'sardine', 26, 0.4, { ...half, y0: 1, y1: 4, speed: 0.8 })); // sardines
+    ticks.push(school(g, 'yellowtail', 10, 0.8, { ...half, rx: half.rx * 0.6, rz: half.rz * 0.6, y0: 1.5, y1: 5, speed: 0.5 })); // yellowtail amberjack
   }
   // Big animals go all the way round, over the tunnel.
   const all = { cx: 0, cz: ocz, rx: HW - 4, rz: (O.z1 - O.z0) / 2 - 3 };
-  ticks.push(school(g, 'shark', '#7d8b96', 3, 2.6, { ...all, y0: 3.6, y1: 5.2, speed: 0.9 }));
-  ticks.push(school(g, 'manta', '#3a4654', 1, 2.4, { ...all, rx: all.rx * 0.7, rz: all.rz * 0.8, y0: 4.2, y1: 4.2, speed: 0.6 }));
-  ticks.push(school(g, 'turtle', '#6b8f4e', 2, 1.3, { ...all, rx: all.rx * 0.5, rz: all.rz * 0.6, y0: 3.4, y1: 4.6, speed: 0.4 }));
-  ticks.push(school(g, 'dolphin', '#8aa3b8', 2, 2.2, { ...all, rx: all.rx * 0.85, rz: all.rz * 0.7, y0: 5, y1: 6.4, speed: 1.4 }));
-  ticks.push(school(g, 'orca', '#16191d', 1, 3.6, { ...all, rx: all.rx * 0.6, rz: all.rz * 0.9, y0: 5.8, y1: 5.8, speed: 1 }));
-  ticks.push(school(g, 'fish', '#b8c4cc', 1, 2.4, { ...all, rx: all.rx * 0.4, rz: all.rz * 0.4, y0: 2.6, y1: 2.6, speed: 0.25 })); // sunfish
+  ticks.push(school(g, 'shark', 3, 2.6, { ...all, y0: 3.6, y1: 5.2, speed: 0.9 }));
+  ticks.push(school(g, 'manta', 1, 2.4, { ...all, rx: all.rx * 0.7, rz: all.rz * 0.8, y0: 4.2, y1: 4.2, speed: 0.6 }));
+  ticks.push(school(g, 'turtle', 2, 1.3, { ...all, rx: all.rx * 0.5, rz: all.rz * 0.6, y0: 3.4, y1: 4.6, speed: 0.4 }));
+  ticks.push(school(g, 'dolphin', 2, 2.4, { ...all, rx: all.rx * 0.85, rz: all.rz * 0.7, y0: 5, y1: 6.4, speed: 1.4 }));
+  ticks.push(school(g, 'orca', 1, 3.8, { ...all, rx: all.rx * 0.6, rz: all.rz * 0.9, y0: 5.8, y1: 5.8, speed: 1 }));
+  ticks.push(school(g, 'sunfish', 1, 2.2, { ...all, rx: all.rx * 0.4, rz: all.rz * 0.4, y0: 2.6, y1: 2.6, speed: 0.25 })); // sunfish
   // The diver keeper swims round the left half of the tank, bubbles rising.
   const diver = makeNpc(document.getElementById('labels'), '🤿 Diver keeper', DIVER_LOOK);
   diverGear(diver.ch);
