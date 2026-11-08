@@ -1594,6 +1594,7 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
+  get me() { return me; }, camera, // where a friend request's sender is (core/friends.js whereIs)
 });
 const { cleanChat, addChatLine } = chat;
 
@@ -6106,7 +6107,7 @@ renderer.setAnimationLoop(() => {
     }
     // Carrying passengers: send more often so their seats keep up.
     // In a crowd, less often (net/rate.js).
-    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: config.netSendRateMin }));
+    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin }));
   }
 
   const w = innerWidth, h = innerHeight;

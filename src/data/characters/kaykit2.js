@@ -32,6 +32,15 @@ const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', pla
 // black leather shoes: the guide at the War History Museum's information
 // desk wears it with a suit skirt (look.skirt).
 const SUIT = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, shoes: 0x1d1d22, sole: 0x111114 } };
+// Men's clothes from the Dongdaemun fashion malls (Gentle Floor, Gwajam
+// Club), all on the basic model so the face stays the same.
+// A wool overcoat down to the knees, open over a knit (accent).
+const OVERCOAT = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', bulk: 0.018 }, colors: { accent: 0x2b2b31 } };
+// A varsity jacket (과잠): wool body, sleeves in another colour (accent2),
+// ribbed collar, cuffs and snap placket (accent).
+const VARSITY = { outfit: { hem: 0.56, sleeve: 0.84, arms: 'accent2', cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.016 } };
+// A crew-neck knit jumper with ribbed cuffs.
+const KNIT = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.012 } };
 
 // Swimwear (the changing rooms at Olympic Park Pool, core/pool-hall.js):
 // a sleeveless one-piece, or a short-sleeved rash guard over swim shorts,
@@ -65,11 +74,13 @@ export default {
     // bought items and saved looks still work).
     rogue: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(JACKET) },
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧢', wear: wear(HOODIE), hood: true },
-    mage: { url: 'models/kaykit2/mage.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
-    knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
-    // The tank top and the shirt are on the basic model too: the barbarian
-    // and ranger heads have a beard and a moustache, which grew on players'
-    // faces when they bought the clothes.
+    // The padded coats, the tank top and the shirt are all on the basic
+    // model too: every other head is someone else's face (the knight's is
+    // blond with a big nose, the mage's has long black hair and thick brows,
+    // the barbarian and ranger have a beard and a moustache), which players
+    // saw as their face changing when they put the clothes on.
+    mage: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
+    knight: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(PUFFER) },
     barbarian: { url: 'models/kaykit2/rogue.glb', emoji: '🎽', wear: wear(TANK) },
     ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
     // The gym trainer (an NPC) keeps the bearded head.
@@ -86,11 +97,26 @@ export default {
     ...variants('rogue', '👔', SHIRT, {
       'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
     }),
-    ...variants('knight', '🧥', PUFFER, {
+    ...variants('rogue', '🧥', PUFFER, {
       'puffer-black': { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 }, 'puffer-mustard': { top: 0xd9a43a, accent: 0x8d6a2a, stitch: 0xa8822e },
     }),
-    ...variants('mage', '🧥', LONG_PADDING, {
+    ...variants('rogue', '🧥', LONG_PADDING, {
       'padding-white': { top: 0xeeeae2, accent: 0xa9a59c, stitch: 0xc4beb2 },
+    }),
+    // Men's clothes (Dongdaemun Fashion Town).
+    ...variants('rogue', '🤵', SUIT, {
+      'suit-charcoal': { top: 0x767a84 }, 'suit-navy': { top: 0x44589a },
+    }),
+    ...variants('rogue', '🧥', OVERCOAT, {
+      'coat-camel': { top: 0xdcbc8e, accent: 0x2b2b31 }, 'coat-charcoal': { top: 0x7a7c84, accent: 0xe9e4d8 },
+    }),
+    ...variants('rogue', '🧥', VARSITY, {
+      'varsity-navy': { top: 0x44589a, accent: 0xf3ecdc, accent2: 0xf3ecdc },
+      'varsity-black': { top: 0x22222a, accent: 0xf4f1ea, accent2: 0xf4f1ea },
+      'varsity-green': { top: 0x3f7a52, accent: 0xf3ecdc, accent2: 0xc9b38a },
+    }),
+    ...variants('rogue', '🧶', KNIT, {
+      'knit-grey': { top: 0x9a9ca3, accent: 0x84868d }, 'knit-navy': { top: 0x51639a, accent: 0x44558a }, 'knit-cream': { top: 0xeee6d3, accent: 0xddd3bd },
     }),
     // Hanbok: all on the basic model, so the face stays the same.
     ...variants('rogue', '🪭', JEOGORI, {

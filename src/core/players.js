@@ -191,6 +191,27 @@ export class RemotePlayers {
     return out.sort((a, b) => a.d - b.d);
   }
 
+  // Someone in this area by their name (names are unique), or null.
+  idByName(name) {
+    const key = String(name || '').toLowerCase();
+    for (const [id, p] of this.players) if (!p.hidden && p.target && p.name.toLowerCase() === key) return id;
+    return null;
+  }
+
+  // Make someone easy to spot for a while: their name tag glows and a bubble
+  // pops over their head (only on this screen). Used for friend requests.
+  ping(id, text = '👋', ms = 10000) {
+    const p = this.players.get(id);
+    if (!p || p.hidden) return false;
+    p.tag.classList.remove('ping');
+    void p.tag.offsetWidth; // restart the animation
+    p.tag.classList.add('ping');
+    clearTimeout(p.pingTimer);
+    p.pingTimer = setTimeout(() => p.tag.classList.remove('ping'), ms);
+    showBubble(p, this.layer, text, Math.min(ms, 6000));
+    return true;
+  }
+
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
   charOf(id) { const p = this.players.get(id); return p && !p.hidden ? p.ch : null; }
