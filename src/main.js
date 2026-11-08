@@ -1509,7 +1509,8 @@ async function joinRoom(room, roomScene, area = null) {
 // or 'taken' (someone else uses that name).
 // May I change my name now, and for how much? The first change after
 // picking a name is free and immediate, then one change per 7 days. The
-// server decides when it can be asked (019_chat_names.sql), this browser's
+// server decides when it can be asked (019_chat_names.sql; operators never
+// wait, 027_operator_rename.sql), this browser's
 // record otherwise. { free, waitDays, cost }
 async function renameInfo() {
   const st = (await cloud.nameStatus()) || renameState(identity);
