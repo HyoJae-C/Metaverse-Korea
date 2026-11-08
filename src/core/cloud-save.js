@@ -218,6 +218,16 @@ export class CloudSave {
   // Report where we are on the map, for operators' live view (net/where.js,
   // supabase/008_player_where.sql). Resolves false when the server can't
   // take it (not set up yet), true otherwise.
+  // How many accounts are playing right now, the same count as admin.html
+  // (supabase/021_online_count.sql). Resolves to the number, 'missing' when
+  // the server can't answer (SQL not run yet), or null on a passing error.
+  async onlineCount() {
+    if (!this.client) return 'missing';
+    const { data, error } = await this.client.rpc('online_count');
+    if (error) return error.code === 'PGRST202' || error.code === '42883' || error.code === '42501' ? 'missing' : null;
+    return Number.isFinite(Number(data)) ? Number(data) : null;
+  }
+
   async reportWhere({ name, place, x, z }) {
     if (!this.client || !this.user) return true; // signed in later: keep trying
     const { error } = await this.client.rpc('report_where', {

@@ -1212,8 +1212,8 @@ const weather = new WeatherSystem({
 
 // ---------- Multiplayer ----------
 let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
-// Everyone online on the whole map (net/online.js); without a server that
-// can count, the people around you.
+// Everyone online on the whole map, the same count as admin.html
+// (net/online.js); without a server that can count, the people around you.
 let onlineAll = 0;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
@@ -1224,7 +1224,7 @@ onLanguageChange(refreshOnline);
 let stopOnline = null;
 // Its own id, not myId: the online count is open to everyone, and myId must
 // stay unseen until it is claimed for chat (claimChatId below).
-watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
+watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); }, { fetchCount: () => cloud.onlineCount() })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // A newer build deployed while we play: ask for a refresh (core/update-check.js).
 startUpdateCheck({
