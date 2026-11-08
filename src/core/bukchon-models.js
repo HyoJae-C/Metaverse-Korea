@@ -1,8 +1,7 @@
 // Bukchon landmarks (map "landmarks" in districts/bukchon.json): the Open
 // House (a ㄷ-shaped hanok round a courtyard, with a persimmon tree and a
-// magpie), the rooftop view terrace,
-// and Changdeokgung's roofs seen from the east edge. Visual only: collision
-// comes from the map's blockers.
+// magpie), the rooftop view terrace and Changdeokgung's roofs seen from the
+// east edge. Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
