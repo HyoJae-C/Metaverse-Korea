@@ -17,7 +17,7 @@ const $ = (id) => document.getElementById(id);
  * game: { interior, scene, cam, me, mode, riding, seated, wallet, shop, sfx }
  * (optional) game.streetY(p, px0, pz0): the ground height on the street
  * as getters, plus enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo and
- * clearAction().
+ * clearAction(). (optional) game.onArrive(k): after riding to station k.
  */
 export function createSubway(stations, game) {
   // Walk down an exit's stairs to arrive in the station hall (a room like a
@@ -206,6 +206,7 @@ export function createSubway(stations, game) {
       const { dest, t } = metro;
       endMetro();
       arriveOnPlatform(dest, t);
+      game.onArrive?.(dest); // rode to another station
     }
     void p;
   }

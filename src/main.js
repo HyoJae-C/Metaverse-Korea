@@ -6,8 +6,8 @@ import {
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/strings.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
-import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD } from './core/quests.js';
-import { STARTER_TEXT } from './data/starter-quests.js';
+import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
+import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -1001,7 +1001,7 @@ function onboardHi5() {
     setOnboard(2);
     // Then: the info centre, or explore on your own. After the guide's tip
     // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
-    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) }); }, 15000);
+    setTimeout(() => { if (mode === 'street' && !guide && $('info-hint').hidden) showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) }); }, 15000);
   }, 5600);
 }
 
@@ -2736,6 +2736,7 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
+  onArrive: (k) => subwayArrived(k),
   streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank or Bukchon's hill
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
@@ -3061,19 +3062,13 @@ const taxi = createTaxi({
   },
 });
 const { rideTaxi } = taxi;
-// The new player's taxi errand (core/quests.js STARTER, tip 'taxi'): the
-// first ride is free, to Bukchon Hanok Village; on arrival a card says so and
-// a button puts you back beside the square guide to report.
+// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// the cards that trip shows. "Back to the guide" puts you beside the square guide.
 const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
 const FIRST_TAXI_TEXT = {
-  offer: { en: '🚕 Your first taxi is on us! Ride to Bukchon Hanok Village.', ko: '🚕 첫 택시는 무료예요! 북촌 한옥마을까지 타 보세요.', ja: '🚕 初めてのタクシーは無料！北村韓屋村まで乗ってみよう。', zh: '🚕 第一次坐出租车免费！坐到北村韩屋村吧。', es: '🚕 ¡Tu primer taxi es gratis! Ve a la Aldea Hanok de Bukchon.', id: '🚕 Taksi pertamamu gratis! Naik ke Desa Hanok Bukchon.', ar: '🚕 أول سيارة أجرة مجانًا! اركب إلى قرية بوكتشون هانوك.', vi: '🚕 Chuyến taxi đầu tiên miễn phí! Đi tới Làng Hanok Bukchon nhé.', hi: '🚕 पहली टैक्सी मुफ़्त है! बुकचोन हानोक गाँव तक जाएँ।', fr: '🚕 Ton premier taxi est offert ! Va au village hanok de Bukchon.', th: '🚕 แท็กซี่คันแรกเราเลี้ยง! นั่งไปหมู่บ้านฮันอกบุกชอนกัน' },
-  go: { en: '🚕 Take the free taxi', ko: '🚕 무료 택시 타기', ja: '🚕 無料タクシーに乗る', zh: '🚕 坐免费出租车', es: '🚕 Tomar el taxi gratis', id: '🚕 Naik taksi gratis', ar: '🚕 اركب سيارة الأجرة المجانية', vi: '🚕 Đi taxi miễn phí', hi: '🚕 मुफ़्त टैक्सी लें', fr: '🚕 Prendre le taxi gratuit', th: '🚕 นั่งแท็กซี่ฟรี' },
   place: { en: 'Bukchon Hanok Village', ko: '북촌 한옥마을', ja: '北村韓屋村', zh: '北村韩屋村', es: 'Aldea Hanok de Bukchon', id: 'Desa Hanok Bukchon', ar: 'قرية بوكتشون هانوك', vi: 'Làng Hanok Bukchon', hi: 'बुकचोन हानोक गाँव', fr: 'Village hanok de Bukchon', th: 'หมู่บ้านฮันอกบุกชอน' },
-  arrived: { en: '🚕 You arrived by taxi! This is Bukchon Hanok Village. Look around the hanok alleys, then go back to the guide.', ko: '🚕 택시로 도착했어요! 여기는 북촌 한옥마을이에요. 한옥 골목을 둘러보고 안내원에게 돌아가요.', ja: '🚕 タクシーで到着しました！ここは北村韓屋村。韓屋の路地を見てから案内係のところへ戻ろう。', zh: '🚕 坐出租车到了！这里是北村韩屋村。逛逛韩屋小巷，再回到向导那里吧。', es: '🚕 ¡Llegaste en taxi! Esto es la Aldea Hanok de Bukchon. Pasea por sus callejones y vuelve con el guía.', id: '🚕 Kamu tiba naik taksi! Ini Desa Hanok Bukchon. Jelajahi gang hanoknya, lalu kembali ke pemandu.', ar: '🚕 وصلت بسيارة الأجرة! هذه قرية بوكتشون هانوك. تجوّل في أزقتها ثم عُد إلى المرشد.', vi: '🚕 Bạn đã tới bằng taxi! Đây là Làng Hanok Bukchon. Dạo quanh các con hẻm rồi quay lại chỗ người hướng dẫn.', hi: '🚕 आप टैक्सी से पहुँच गए! यह बुकचोन हानोक गाँव है। हानोक गलियाँ घूमें, फिर गाइड के पास लौटें।', fr: '🚕 Tu es arrivé en taxi ! Voici le village hanok de Bukchon. Promène-toi dans les ruelles de hanoks, puis retourne voir le guide.', th: '🚕 มาถึงด้วยแท็กซี่แล้ว! ที่นี่คือหมู่บ้านฮันอกบุกชอน เดินชมตรอกบ้านฮันอก แล้วกลับไปหาไกด์' },
-  back: { en: '↩️ Back to the guide', ko: '↩️ 안내원에게 돌아가기', ja: '↩️ 案内係のところへ戻る', zh: '↩️ 回到向导那里', es: '↩️ Volver con el guía', id: '↩️ Kembali ke pemandu', ar: '↩️ العودة إلى المرشد', vi: '↩️ Quay lại chỗ người hướng dẫn', hi: '↩️ गाइड के पास लौटें', fr: '↩️ Retour au guide', th: '↩️ กลับไปหาไกด์' },
   look: { en: 'Look around first', ko: '먼저 둘러보기', ja: '先に見て回る', zh: '先逛逛', es: 'Primero mirar', id: 'Lihat-lihat dulu', ar: 'أتجوّل أولًا', vi: 'Dạo một chút đã', hi: 'पहले घूम लूँ', fr: 'D\'abord faire un tour', th: 'เดินดูรอบๆ ก่อน' },
 };
-let firstTaxiTimer = 0;
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3090,28 +3085,155 @@ function firstTaxiCard(lines, buttons) {
   box.replaceChildren(p, actions);
   box.hidden = false;
 }
-function offerFirstTaxi() {
-  firstTaxiCard(L(FIRST_TAXI_TEXT.offer), [['primary', L(FIRST_TAXI_TEXT.go), () => {
-    taxi.rideFree({ ...FIRST_TAXI, label: L(FIRST_TAXI_TEXT.place) }, firstTaxiArrived);
-  }]]);
+// The new player's first errand (core/quests.js STARTER 'trip', steps in
+// TRIP): a little tour. Take out the bike, ride to Seongsu Station, get off
+// (no bikes on the stairs), one stop to Seoul Forest and a walk in the park,
+// the train on to Anguk, up into Bukchon, a walk to Cheonggyecheon; then a
+// free taxi back to the square guide. Each step
+// shows its line on the ground; "Later" moves on to the next errand.
+const TRIP_CARD = {
+  home: { en: "🚕 Back in Seongsu! Tell the guide you made it.", ko: "🚕 성수에 돌아왔어요! 안내원에게 보고해요.", ja: "🚕 聖水に戻ってきた！案内係に報告しよう。", zh: "🚕 回到圣水了！去向导那里汇报吧。", es: "🚕 ¡De vuelta en Seongsu! Avisa al guía.", id: "🚕 Kembali di Seongsu! Lapor ke pemandu.", ar: "🚕 عدت إلى سونغسو! أبلغ المرشد.", vi: "🚕 Đã về Seongsu! Báo cho người hướng dẫn nhé.", hi: "🚕 सोंगसू वापस! गाइड को बताएँ।", fr: "🚕 De retour à Seongsu ! Va le dire au guide.", th: "🚕 กลับถึงซองซูแล้ว! ไปรายงานไกด์กัน" },
+  taxi: { en: "🚕 Free taxi to Seongsu", ko: "🚕 무료 택시로 성수 가기", ja: "🚕 無料タクシーで聖水へ", zh: "🚕 坐免费出租车回圣水", es: "🚕 Taxi gratis a Seongsu", id: "🚕 Taksi gratis ke Seongsu", ar: "🚕 سيارة أجرة مجانية إلى سونغسو", vi: "🚕 Taxi miễn phí về Seongsu", hi: "🚕 सोंगसू तक मुफ़्त टैक्सी", fr: "🚕 Taxi gratuit pour Seongsu", th: "🚕 แท็กซี่ฟรีกลับซองซู" },
+  offer: { en: "🚲 Let's take a little trip! First, take out your bike.", ko: "🚲 작은 여행을 떠나 봐요! 먼저 자전거를 꺼내요.", ja: "🚲 ちょっと旅に出よう！まずは自転車を出して。", zh: "🚲 来一次小旅行吧！先把自行车拿出来。", es: "🚲 ¡Hagamos un pequeño viaje! Primero, saca tu bici.", id: "🚲 Ayo jalan-jalan sebentar! Pertama, keluarkan sepedamu.", ar: "🚲 لنقم برحلة صغيرة! أولًا، أخرج دراجتك.", vi: "🚲 Cùng làm một chuyến đi nhỏ nhé! Trước tiên, lấy xe đạp ra.", hi: "🚲 चलिए छोटी सी सैर करें! पहले अपनी साइकिल निकालें।", fr: "🚲 Partons pour une petite balade ! D'abord, sors ton vélo.", th: "🚲 ไปเที่ยวทริปเล็กๆ กัน! ก่อนอื่นเอาจักรยานออกมา" },
+  bike: { en: "🚲 Take out my bike", ko: "🚲 자전거 꺼내기", ja: "🚲 自転車を出す", zh: "🚲 拿出自行车", es: "🚲 Sacar mi bici", id: "🚲 Keluarkan sepeda", ar: "🚲 أخرج دراجتي", vi: "🚲 Lấy xe đạp", hi: "🚲 साइकिल निकालें", fr: "🚲 Sortir mon vélo", th: "🚲 เอาจักรยานออกมา" },
+  later: { en: "Later", ko: "나중에", ja: "あとで", zh: "以后再说", es: "Más tarde", id: "Nanti saja", ar: "لاحقًا", vi: "Để sau", hi: "बाद में", fr: "Plus tard", th: "ไว้ทีหลัง" },
+  getOff: { en: "🚲 No bikes on the stairs! Get off here and walk down to the trains.", ko: "🚲 계단에는 자전거를 못 가지고 가요! 여기서 내려서 걸어 내려가요.", ja: "🚲 階段は自転車では通れないよ！ここで降りて歩いて下りよう。", zh: "🚲 楼梯上不能骑车！在这里下车，走下去坐车吧。", es: "🚲 ¡No se puede bajar en bici! Bájate aquí y baja a pie hasta los trenes.", id: "🚲 Sepeda tidak boleh di tangga! Turun di sini dan jalan kaki ke kereta.", ar: "🚲 لا دراجات على الدرج! انزل هنا وامشِ إلى القطارات.", vi: "🚲 Không đi xe đạp xuống cầu thang được! Xuống xe ở đây và đi bộ xuống tàu.", hi: "🚲 सीढ़ियों पर साइकिल नहीं! यहीं उतरें और पैदल ट्रेन तक जाएँ।", fr: "🚲 Pas de vélo dans l'escalier ! Descends ici et va à pied jusqu'aux trains.", th: "🚲 ห้ามจักรยานลงบันได! ลงตรงนี้แล้วเดินลงไปขึ้นรถไฟ" },
+  off: { en: "🚲 Get off", ko: "🚲 내리기", ja: "🚲 降りる", zh: "🚲 下车", es: "🚲 Bajarme", id: "🚲 Turun", ar: "🚲 انزل", vi: "🚲 Xuống xe", hi: "🚲 उतरें", fr: "🚲 Descendre", th: "🚲 ลงจากรถ" },
+  wrongStop: { en: "This is {name}. Get off at {stop}!", ko: "여기는 {name}이에요. {stop}에서 내려요!", ja: "ここは{name}。{stop}で降りてね！", zh: "这里是{name}。请在{stop}下车！", es: "Esto es {name}. ¡Bájate en {stop}!", id: "Ini {name}. Turun di {stop}!", ar: "هذه {name}. انزل في {stop}!", vi: "Đây là {name}. Hãy xuống ở {stop}!", hi: "यह {name} है। {stop} पर उतरें!", fr: "C'est {name}. Descends à {stop} !", th: "ที่นี่คือ {name} ลงที่ {stop} นะ!" },
+  done: { en: "🏮 This is Cheonggyecheon! Last step: the taxi back to Seongsu is on us. Then tell the square guide for your coins.", ko: "🏮 여기가 청계천이에요! 마지막은 무료 택시로 다시 성수로 돌아가요. 광장 안내원에게 보고하면 보상을 받아요.", ja: "🏮 ここが清渓川！最後は無料タクシーで聖水へ戻ろう。広場の案内係に報告するとご褒美がもらえるよ。", zh: "🏮 这里就是清溪川！最后一步：坐免费出租车回圣水，向广场向导汇报领取奖励。", es: "🏮 ¡Esto es Cheonggyecheon! Último paso: el taxi de vuelta a Seongsu es gratis. Luego avisa al guía de la plaza para cobrar.", id: "🏮 Ini Cheonggyecheon! Langkah terakhir: taksi gratis kembali ke Seongsu. Lalu lapor ke pemandu alun-alun untuk hadiahmu.", ar: "🏮 هذا تشونغيتشون! الخطوة الأخيرة: سيارة أجرة مجانية للعودة إلى سونغسو. ثم أبلغ مرشد الساحة لتأخذ مكافأتك.", vi: "🏮 Đây là Cheonggyecheon! Bước cuối: taxi miễn phí về lại Seongsu. Rồi báo cho người hướng dẫn quảng trường để nhận thưởng.", hi: "🏮 यह चॉन्गेचॉन है! आख़िरी कदम: सोंगसू वापसी की टैक्सी मुफ़्त है। फिर इनाम के लिए चौक के गाइड को बताएँ।", fr: "🏮 Voici Cheonggyecheon ! Dernière étape : le taxi du retour à Seongsu est offert. Ensuite, va voir le guide de la place pour ta récompense.", th: "🏮 ที่นี่คือชองกเยชอน! ขั้นสุดท้าย: นั่งแท็กซี่ฟรีกลับซองซู แล้วรายงานไกด์ประจำลานเพื่อรับรางวัล" },
+};
+const tripStep = () => (quests.active?.kind === 'trip' ? TRIP[quests.active.stage | 0]?.step || 'done' : null);
+// The pavement outside the subway exit nearest (x, z).
+function nearestSubwayExit(x, z) {
+  let best = null, bd = Infinity;
+  for (const [s, sub] of subwayStations.entries()) for (const ex of sub.exits) {
+    const go = outsideOf(ex), d = Math.hypot(go.x - x, go.z - z);
+    if (d < bd) { bd = d; best = { kind: 'subway', id: stationStores[s].id, x: go.x, z: go.z, label: localName(stationStores[s].name, getLanguage()), d }; }
+  }
+  return best;
 }
-function firstTaxiArrived() {
-  clearTimeout(firstTaxiTimer);
-  firstTaxiCard(L(FIRST_TAXI_TEXT.arrived), [
-    ['primary', L(FIRST_TAXI_TEXT.back), backToGuide],
-    ['chip', L(FIRST_TAXI_TEXT.look), () => { firstTaxiTimer = setTimeout(() => { if (mode === 'street' && quests.active?.kind === 'taxi') firstTaxiArrived(); }, 60000); }],
+const zonePlace = (id) => { const z = zones.items.find((i) => i.zone.id === id); return z && { kind: 'zone', id, x: z.x, z: z.z, label: localName(z.zone.name, getLanguage()) }; };
+// Where this step of the trip happens (null: nothing to walk to).
+function tripPlace(step) {
+  const here = myPlace();
+  if (step === 'forest') return zonePlace('K');
+  if (step === 'station' || step === 'down') return nearestSubwayExit(here.x, here.z);
+  if (step === 'forestStop' || step === 'anguk') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
+  if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
+  if (step === 'cheonggye') return zonePlace('L');
+  return null;
+}
+let tripShown = null, tripGuided = null, tripCard = null; // the step last announced / given a line; its card
+function offerTrip(npc) {
+  tripShown = tripStep();
+  if (tripShown !== 'bike') { tripGuided = null; return; } // (picked up again by tripTick)
+  firstTaxiCard(L(TRIP_CARD.offer), [
+    ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
+    ['chip', L(TRIP_CARD.later), () => {
+      if (!tripStep() || !quests.skipStarter()) return;
+      if (guide) clearGuide();
+      talkToGuide(npc); // the next errand
+    }],
+  ]);
+  tripCard = $('info-hint').firstChild;
+}
+// A step was done: say the next one, and draw its line.
+function onTripStep() {
+  const step = tripStep();
+  if (!step || step === tripShown) return;
+  tripShown = step;
+  tripGuided = null;
+  if (guide?.kind === 'subway' || guide?.kind === 'zone') clearGuide();
+  if (step === 'done') {
+    if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
+    sfx.pop?.();
+    me.play('cheer');
+    tripTaxiCard();
+    return;
+  }
+  if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true; // the last step's card
+  if (step === 'down' && riding) {
+    firstTaxiCard(L(TRIP_CARD.getOff), [['primary', L(TRIP_CARD.off), () => setRiding(0)]]);
+    tripCard = $('info-hint').firstChild;
+  } else shop.toast(L(TRIP_TEXT[step]));
+  tripTick();
+}
+// The trip's end: a free taxi back to the square guide (or look around and
+// report to any guide later).
+function tripTaxiCard() {
+  firstTaxiCard(L(TRIP_CARD.done), [
+    ['primary', L(TRIP_CARD.taxi), () => {
+      if (!squareNpc) return;
+      if (mode === 'store') leaveStore();
+      const g = squareNpc.ch.root, sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
+      taxi.rideFree({ x: g.position.x + sx * 3, z: g.position.z + sz * 3, label: t('quest.guide') }, () => shop.toast(L(TRIP_CARD.home)));
+    }],
+    ['chip', L(FIRST_TAXI_TEXT.look), () => {}],
   ]);
 }
-// Straight back beside the square guide (no walk across the city).
-function backToGuide() {
-  clearTimeout(firstTaxiTimer);
-  if (!squareNpc) return;
-  if (mode === 'store') leaveStore();
-  const g = squareNpc.ch.root;
-  const sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
-  const [x, z] = findFreeSpot(g.position.x + sx * 2.2, g.position.z + sz * 2.2);
-  moveMeTo(scene, x, z, Math.atan2(g.position.x - x, g.position.z - z));
-  action = STALE;
+// Twice a second: the trip's places reached, and its line once per step.
+function tripTick() {
+  const step = tripStep();
+  if (!step || step === 'done') return;
+  const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
+  if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
+  else if (step === 'forest' && near(zonePlace('K'), 30)) missionEvent('place', 'K');
+  else if (step === 'station' && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
+  else if (step === 'bukchon' && near(tripPlace('bukchon'), 20)) missionEvent('place', 'bukchon');
+  else if (step === 'cheonggye' && near(zonePlace('L'), 35)) missionEvent('place', 'L');
+  if (tripStep() !== step) return; // (moved on: onTripStep took care of it)
+  if (mode === 'street' && tripGuided !== step) {
+    const pl = tripPlace(step);
+    // (not when already there: a line would also hide the "get off" card)
+    if (pl && Math.hypot(pl.x - p.x, pl.z - p.z) > 15) { tripGuided = step; setGuide(pl); }
+  }
+}
+setInterval(tripTick, 500);
+function subwayArrived(k) {
+  const id = stationStores[k].subway?.id;
+  missionEvent('subway', id);
+  const want = quests.active?.kind === 'trip' && TRIP[quests.active.stage | 0];
+  const stop = want?.on === 'subway' && want.target !== id && stationStores.find((st) => st.subway?.id === want.target);
+  if (stop) shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()), stop: localName(stop.name, getLanguage()) }));
+}
+// Where I am on the street map (inside: the door I came in by).
+function myPlace() {
+  if (mode === 'street' || !interior?.front?.door) return me.root.position;
+  return interior.front.door;
+}
+// Every guide who hands out errands: the square guide, and the game guide
+// at each Information Center. The nearest one, for "go and see a guide".
+function nearestGuidePlace(x, z) {
+  const out = [];
+  if (squareNpc) out.push({ kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') });
+  for (const it of storefronts.items) if (it.store.workshop === 'info') out.push({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+  let best = null, bd = Infinity;
+  for (const g of out) { const d = Math.hypot(g.x - x, g.z - z); if (d < bd) { bd = d; best = g; } }
+  return best;
+}
+// Low on coins: point at the nearest guide for a paid errand (not more often
+// than every 10 minutes, and only while there are errands left today).
+const LOW_COINS = 5000; // won: about three subway fares
+const LOW_TEXT = {
+  hint: { en: '🪙 Running low on money? Guides give paid missions: on Seongsu Square and at every Information Center.', ko: '🪙 돈이 얼마 안 남았어요! 성수 광장과 모든 안내소의 안내원이 보상 미션을 줘요.', ja: '🪙 お金が少なくなってきたよ！聖水の広場と各インフォメーションセンターの案内係が報酬つきミッションをくれるよ。', zh: '🪙 钱快用完了！圣水广场和每个信息中心的向导都会给有奖励的任务。', es: '🪙 ¿Te queda poco dinero? Los guías dan misiones pagadas: en la plaza de Seongsu y en cada Centro de Información.', id: '🪙 Uangmu menipis? Pemandu memberi misi berhadiah: di Alun-alun Seongsu dan di setiap Pusat Informasi.', ar: '🪙 مالك قليل؟ المرشدون يعطون مهام مدفوعة: في ساحة سونغسو وفي كل مركز معلومات.', vi: '🪙 Sắp hết tiền rồi? Người hướng dẫn giao nhiệm vụ có thưởng: ở Quảng trường Seongsu và mọi Trung tâm Thông tin.', hi: '🪙 पैसे कम हो रहे हैं? गाइड इनाम वाले मिशन देते हैं: सोंगसू चौक पर और हर सूचना केंद्र में।', fr: '🪙 Plus beaucoup d\'argent ? Les guides donnent des missions payées : sur la place de Seongsu et dans chaque Centre d\'information.', th: '🪙 เงินใกล้หมดแล้ว? ไกด์ให้ภารกิจมีรางวัล: ที่ลานซองซูและศูนย์ข้อมูลทุกแห่ง' },
+  go: { en: '🧭 Nearest guide', ko: '🧭 가까운 안내원', ja: '🧭 近くの案内係', zh: '🧭 最近的向导', es: '🧭 Guía más cercano', id: '🧭 Pemandu terdekat', ar: '🧭 أقرب مرشد', vi: '🧭 Người hướng dẫn gần nhất', hi: '🧭 नज़दीकी गाइड', fr: '🧭 Guide le plus proche', th: '🧭 ไกด์ที่ใกล้ที่สุด' },
+};
+let lowCoinsAt = -Infinity, lastCoins = null;
+function checkLowCoins() {
+  const c = wallet.coins, prev = lastCoins;
+  lastCoins = c;
+  if (prev == null || c >= prev || c >= LOW_COINS) return; // only when spending takes you under
+  if (onboard < 2 || Date.now() - lowCoinsAt < 10 * 60 * 1000) return;
+  if (!quests.active && !quests.left) return; // nothing to give out today
+  lowCoinsAt = Date.now();
+  setTimeout(() => {
+    if (!$('info-hint').hidden) { lowCoinsAt = -Infinity; return; } // something else on the card: next time
+    firstTaxiCard(L(LOW_TEXT.hint), [
+      ['primary', L(LOW_TEXT.go), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (!g) return; if (interior) leaveStore(); setGuide(g); }],
+      ['chip', L(TRIP_CARD.later), () => {}],
+    ]);
+  }, 1500); // after the purchase toast
 }
 // Action button (and E / Enter key).
 const moveRef = { yaw: 0, stick: null };
@@ -4839,6 +4961,8 @@ function refreshWallet() {
   $('ad-btn').disabled = left <= 0 || Date.now() < adCoolUntil;
 }
 wallet.onChange(refreshWallet);
+wallet.onChange(checkLowCoins);
+lastCoins = wallet.coins;
 onLanguageChange(refreshWallet);
 refreshWallet();
 function refreshCloud() {
@@ -5024,13 +5148,17 @@ function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
-  if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
+  if (q.kind === 'trip' && TRIP_TEXT[TRIP[q.stage | 0]?.step]) return L(TRIP_TEXT[TRIP[q.stage | 0].step]);
+  if (st && st.kind === q.kind && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 // Where an errand happens (for the 🧭 button next to the chip): its shop,
 // or the square guide once it is done. Null: no one place (talk, taxi).
 function questPlace(q, ready) {
-  if (ready || q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  // Done: report to the nearest guide (the square, or any Information Center).
+  if (ready) { const here = myPlace(); return nearestGuidePlace(here.x, here.z); }
+  if (q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  if (q.kind === 'trip') return tripPlace(TRIP[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
@@ -5050,8 +5178,12 @@ function refreshQuestChip() {
     ? (ready ? '🎁' : '📜') + count + ' ▸'
     : (ready ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + count + ' ◂';
 }
-function talkToGuide() {
-  squareNpc.ch.wave();
+// npc: the square guide, or an Information Center's game guide (who hands
+// out errands in their own district: no dance on the square, no coffee).
+function talkToGuide(npc = squareNpc) {
+  const atSquare = npc === squareNpc, here = interior;
+  const visible = () => (atSquare ? mode === 'street' : interior === here);
+  npc.ch.wave();
   const q = quests.active;
   if (q && quests.ready(questCtx())) {
     const starterQuest = q.starter != null;
@@ -5059,33 +5191,35 @@ function talkToGuide() {
     if (!starterQuest) playCounts.quest(); // retention counts: a mission beyond the first path
     if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
     // Busy square bonus: +1 for everyone else standing around the guide.
-    const g = squareNpc.ch.root.position;
-    const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
+    const g = npc.ch.root.position; // (only counted on the square: others' spots are street spots)
+    const crowd = !atSquare ? 0 : crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
     wallet.add(coins + crowd, { k: 'ledger.quest' }, starterQuest ? { r: 'quest', once: 'starter:' + q.starter } : { r: 'quest' });
     me.play('cheer');
-    say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
+    say(npc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
     shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
     missionEvent('square');
   } else if (q) {
-    say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
+    say(npc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
     // On the first path, say the tip again too (it is easy to miss the first time).
     const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
-    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
-    if (q.starter != null && STARTER[q.starter]?.tip === 'taxi') offerFirstTaxi();
+    if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
+    if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
+    const d = !atSquare && here?.store ? districtOfStore(here.store) : null;
     const a = quests.start({
-      stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
+      stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
+        && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
     });
-    say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
+    say(npc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
     // On the first path the guide also gives a tip for this errand.
     const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
-    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
-    if (a.starter != null && STARTER[a.starter].tip === 'taxi') offerFirstTaxi();
+    if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
+    if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
-    say(squareNpc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
+    say(npc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
   }
   refreshQuestChip();
 }
@@ -5144,6 +5278,7 @@ function hi5Done(id, { coins, who, day }) {
 function missionEvent(type, target) {
   if (quests.event(type, target)) {
     refreshQuestChip();
+    if (quests.active?.kind === 'trip') onTripStep();
     if (quests.ready(questCtx())) shop.toast(t('quest.goBack'));
   }
   const r = daily?.record(type, target);
@@ -5225,6 +5360,16 @@ const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', {
 // Yozi's ice cream sculptures in Seoul Forest (core/park-art.js).
 const sculptureAct = (l) => ({ key: 'icecream:' + l.x + ',' + l.z, label: '🍦 ' + L(ICECREAM_TEXT.look), run: () => { me.play?.('wave'); shop.toast(fmt(L(ICECREAM_TEXT.about), { name: L(ICECREAM[l.model]) })); } });
 const buskerAct = (s) => ({ key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) });
+// An Information Center's game guide hands out and takes errands too, so
+// missions aren't only on Seongsu's square.
+function infoMissionAct(p) {
+  if (mode !== 'store' || interior?.store?.workshop !== 'info' || !clerk || onboard < 2) return null;
+  if (Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) >= 2.8) return null;
+  const q = quests.active;
+  if (!q && !quests.left) return null;
+  const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : '❗ ' + t('quest.take');
+  return { key: 'info-quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide(clerk) };
+}
 // The square guide: the first high five, today's errand, or a chat.
 function guideAct(p) {
   if (!squareNpc) return null;
@@ -5273,6 +5418,7 @@ function moreActions(p, door) {
   if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing) return out;
   if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
+  const im = infoMissionAct(p); if (im) out.push(im);
   if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
@@ -5549,7 +5695,8 @@ function updateAction(p, tSec) {
       if (Math.min(dist(clerk), dist(areaGuide)) < 2.8) {
         next = area
           ? { key: 'info-area', label: '🗺️ ' + fmt(L(INFO_TEXT.askArea), { name }), run: () => { areaGuide.ch.wave(); infoUi.showArea(d); } }
-          : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
+          : quests.active && quests.ready(questCtx()) ? infoMissionAct(p) // a mission to report comes first
+            : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
       }
     } else if (interior.store.workshop === 'tarot' && !seated && nearReader(p)) {
       const r = nearReader(p);

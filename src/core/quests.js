@@ -14,6 +14,7 @@
 //   highfive  high-five the guide (no longer handed out: it repeated the
 //             welcome high five; kept so a saved one can still be finished)
 //   taxi   take a taxi anywhere
+//   trip   the first errand: a little tour in steps (TRIP), by bike and subway
 //   eat    sit down in a restaurant and finish a meal
 //   pat    pat an animal in an animal café
 //
@@ -23,8 +24,8 @@
 export const QUEST_REWARD = 10000;
 export const STARTER_REWARD = 20000;
 export const STARTER = [
+  { kind: 'trip', tip: 'trip' }, // a little tour first: Seoul is bigger than the square (TRIP)
   { kind: 'visit', target: 'nyang-cat-cafe', tip: 'map' }, // the map: tap a place, walk there by itself; or ride a bike
-  { kind: 'taxi', tip: 'taxi' }, // fast, but it costs
   { kind: 'coffee', target: 'meta-coffee', tip: 'coffee' }, // order from the staff
   { kind: 'eat', target: 'ddeok-bunsik', tip: 'eat' }, // sit down and order
   { kind: 'talk', need: 3, tip: 'talk' },
@@ -33,8 +34,27 @@ export const STARTER = [
   { kind: 'visit', target: 'name-studio', tip: 'name' },
   { kind: 'pat', target: 'nyang-cat-cafe', tip: 'pat' },
 ];
+// The first errand's steps, in order. Each is done by one game event (on,
+// and target when given): take out the bike, ride to Seongsu Station, get off
+// and go down, one stop to Seoul Forest and a walk in the park, the train on
+// to Anguk, up into Bukchon, a walk to Cheonggyecheon. Then a free taxi back
+// to the square guide (or report to any guide).
+export const TRIP = [
+  { step: 'bike', on: 'bike' },
+  { step: 'station', on: 'place', target: 'subway' }, // any subway exit (Seongsu Station's is nearest)
+  { step: 'down', on: 'subwayIn' }, // off the bike and down the stairs
+  { step: 'forestStop', on: 'subway', target: 'seoul-forest-station' },
+  { step: 'forest', on: 'place', target: 'K' }, // Seoul Forest (zones.json)
+  { step: 'anguk', on: 'subway', target: 'anguk-station' },
+  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
+  { step: 'cheonggye', on: 'place', target: 'L' }, // Cheonggye Plaza (zones.json)
+];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
+// Saved first-path steps count from 0. Version 2 put the trip in front and
+// took out the taxi errand (the trip ends with a free taxi back to Seongsu):
+// see fromV1.
+const VERSION = 2;
 
 export function pickQuest(pool, rand = Math.random, last = null) {
   const kinds = ['visit', 'coffee', 'talk', 'cook', 'fish', 'pet', 'dance'].filter((k) => k !== last && (k !== 'visit' || pool.stores.length) && (!pool.has || pool.has(k)));
@@ -44,13 +64,28 @@ export function pickQuest(pool, rand = Math.random, last = null) {
   return q;
 }
 
+// A version 1 step (visit, taxi, coffee, …) in today's list (trip, visit,
+// coffee, …). A taxi errand already taken stays and is reported as step 1,
+// so the next one is the coffee; one not taken yet is skipped.
+export function fromV1(i, taxiTaken = false) {
+  if (i <= 0) return 1;
+  if (i === 1) return taxiTaken ? 1 : 2;
+  return i;
+}
+
 export class SquareQuests {
   constructor(storage = globalThis.localStorage, today = () => new Date().toDateString()) {
     this.storage = storage;
     this.today = today;
     let s = {};
     try { s = JSON.parse(storage?.getItem(KEY) || '{}') || {}; } catch { /* ignore */ }
-    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null };
+    this.s = { day: s.day, done: s.done | 0, active: s.active && typeof s.active.kind === 'string' ? s.active : null, last: s.last || null, starter: Number.isInteger(s.starter) ? s.starter : null, v: VERSION };
+    if ((s.v | 0) < VERSION && this.s.starter != null) { // saved before the trip
+      const taxi = this.s.active?.kind === 'taxi';
+      this.s.starter = fromV1(this.s.starter, taxi);
+      if (Number.isInteger(this.s.active?.starter)) this.s.active.starter = fromV1(this.s.active.starter, taxi);
+      this._save();
+    }
     this._roll();
   }
   _roll() {
@@ -71,6 +106,7 @@ export class SquareQuests {
     if (this.onStarter) {
       const st = STARTER[this.s.starter];
       this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
+      if (st.kind === 'trip') this.s.active.stage = 0;
     } else this.s.active = pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
@@ -80,6 +116,14 @@ export class SquareQuests {
   event(type, target) {
     const q = this.s.active;
     if (!q || q.n >= q.need) return false;
+    if (q.kind === 'trip') { // one step at a time
+      const st = TRIP[q.stage | 0];
+      if (!st || type !== st.on || (st.target && target !== st.target)) return false;
+      q.stage = (q.stage | 0) + 1;
+      if (q.stage >= TRIP.length) q.n = q.need;
+      this._save();
+      return true;
+    }
     const hit = (q.kind === 'visit' && type === 'visit' && target === q.target)
       || (q.kind === 'fish' && type === 'fish') || (q.kind === 'cook' && type === 'cook') || (q.kind === 'talk' && type === 'talk')
       || (q.kind === 'dance' && type === 'squareEmote') || (q.kind === 'highfive' && type === 'highfive')
@@ -112,6 +156,14 @@ export class SquareQuests {
   }
 
   drop() { this.s.active = null; this._save(); }
+  // "Later" on a first-path errand: on to the next one, without the coins.
+  skipStarter() {
+    if (this.s.active?.starter == null) return false;
+    this.s.active = null;
+    this.s.starter++;
+    this._save();
+    return true;
+  }
   // New players already high-fived the guide while getting started.
   skipHighFive() { this.s.last = 'highfive'; this._save(); }
 }
