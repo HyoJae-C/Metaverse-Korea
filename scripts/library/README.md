@@ -21,6 +21,7 @@ the game and released as CC0.
 | shortest | 제일 짧은 동화 (1930) | 방정환 (1931) | ko.wikisource.org/wiki/제일_짧은_동화 |
 | dongbaek | 동백꽃 (1936) | 김유정 (1937) | ko.wikisource.org/wiki/동백꽃 |
 | memil | 메밀꽃 필 무렵 (1936) | 이효석 (1942) | ko.wikisource.org/wiki/메밀꽃_필_무렵 |
+| unsu | 운수 좋은 날 (1924) | 현진건 (1943) | ko.wikisource.org/wiki/운수_좋은_날 |
 | sowol | 진달래꽃, 엄마야 누나야, 산유화, 먼 후일 | 김소월 (1934) | ko.wikisource.org/wiki/진달래꽃_(시집) |
 | dongju | 서시, 별 헤는 밤, 해바라기 얼굴, 편지, 눈, 햇비, 빗자루 | 윤동주 (1945) | ko.wikisource.org/wiki/저자:윤동주 |
 | springcat | 봄은 고양이로다 / 향수, 호수, 홍시 / 모란이 피기까지는, 돌담에 속삭이는 햇발 / 청포도 | 이장희 (1929), 정지용 (1950), 김영랑 (1950), 이육사 (1944) | Korean Wikisource |

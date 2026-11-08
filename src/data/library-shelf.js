@@ -77,6 +77,21 @@ export const LIBRARY = [
   "pages": 17
  },
  {
+  "id": "unsu",
+  "kind": "story",
+  "icon": "🌧️",
+  "color": "#5b6b7a",
+  "title": {
+   "en": "A Lucky Day",
+   "ko": "운수 좋은 날"
+  },
+  "author": {
+   "en": "Hyun Jin-geon (1900–1943)",
+   "ko": "현진건 (1900–1943)"
+  },
+  "pages": 24
+ },
+ {
   "id": "dongju",
   "kind": "poems",
   "icon": "⭐",

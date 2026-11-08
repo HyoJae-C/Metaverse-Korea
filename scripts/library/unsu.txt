@@ -1,0 +1,341 @@
+@id unsu
+@kind story
+@icon 🌧️
+@color #5b6b7a
+@title.en A Lucky Day
+@title.ko 운수 좋은 날
+@author.en Hyun Jin-geon (1900–1943)
+@author.ko 현진건 (1900–1943)
+@year 1924
+@about.en A rickshaw puller in 1920s Seoul has the luckiest day in weeks, while his wife lies sick at home. A famous short story with a sad ending, and some harsh words and violence.
+@about.ko 1920년대 서울, 인력거꾼 김 첨지에게 오랜만에 운수 좋은 날이 찾아와요. 결말이 슬프고, 거친 말과 폭력이 나와요.
+@source https://ko.wikisource.org/wiki/운수_좋은_날
+@license Public domain. Hyun Jin-geon died in 1943, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource. English translation written for Another Seoul (free to use, CC0).
+===
+새침하게 흐린 품이 눈이 올 듯하더니 눈은 아니 오고 얼다가 만 비가 추적추적 내리었다.
+
+이날이야말로 동소문 안에서 인력거꾼 노릇을 하는 김 첨지에게는 오래간만에도 닥친 운수 좋은 날이었다. 문안에(거기도 문밖은 아니지만) 들어간답시는 앞집 마나님을 전찻길까지 모셔다 드린 것을 비롯으로 행여나 손님이 있을까 하고 정류장에서 어정어정하며 내리는 사람 하나하나에게 거의 비는 듯한 눈결을 보내고 있다가 마침내 교원인 듯한 양복장이를 동광학교(東光學校)까지 태워다 주기로 되었다.
+
+첫번에 삼십 전, 둘째 번에 오십 전 - 아침 댓바람에 그리 흔치 않은 일이었다. 그야말로 재수가 옴붙어서 근 열흘 동안 돈 구경도 못한 김 첨지는 십 전짜리 백통화 서 푼, 또는 다섯 푼이 찰깍하고 손바닥에 떨어질 제 거의 눈물을 흘릴 만큼 기뻤었다. 더구나 이날 이때에 이 팔십 전이라는 돈이 그에게 얼마나 유용한지 몰랐다. 컬컬한 목에 모주 한 잔도 적실 수 있거니와 그보다도 앓는 아내에게 설렁탕 한 그릇도 사다줄 수 있음이다.
+---
+The sky was sulkily overcast, as if it might snow, but instead of snow a half-frozen rain kept drizzling down.
+
+This day, of all days, was a long-awaited lucky day for Kim Cheomji, who pulled a rickshaw inside Dongsomun Gate. It began when he took the lady from the house in front as far as the streetcar line, as she said she was going into town (not that where they lived was outside the walls). Then he hung about the stop in case there was another fare, giving each person getting off an almost pleading look, until at last a man in a Western suit, a teacher by the look of him, agreed to be taken to Donggwang School.
+
+Thirty jeon for the first fare, fifty for the second: not a common thing so early in the morning. Kim Cheomji, whose luck had been so rotten that he had hardly seen a coin in ten days, was so happy he nearly cried when the three, then five, ten-jeon nickel coins clinked into his palm. And he could not say how useful these eighty jeon were to him, today of all days. He could wet his dry throat with a cup of cheap rice wine, and better still, he could buy a bowl of seolleongtang, ox-bone soup, for his sick wife.
+===
+그의 아내가 기침으로 쿨럭거리기는 벌써 달포가 넘었다. 조밥도 굶기를 먹다시피 하는 형편이니 물론 약 한 첩 써 본 일이 없다. 구태여 쓰려면 못 쓸 바도 아니로되 그는 병이란 놈에게 약을 주어 보내면 재미를 붙여서 자꾸 온다는 자기의 신조(信條)에 어디까지 충실하였다. 따라서 의사에게 보인 적이 없으니 무슨 병인지는 알 수 없으되 반듯이 누워 가지고, 일어나기는새로 모로도 못 눕는 걸 보면 중증은 중증인 듯. 병이 이대도록 심해지기는 열흘 전에 조밥을 먹고 체한 때문이다.
+---
+His wife had been coughing and hacking for more than a month now. They were so poor they went hungry even on millet, so of course she had never had a single dose of medicine. Not that he could not have got some if he really tried, but he was faithful to the very end to his belief that if you give medicine to an illness, it enjoys itself and keeps coming back. So she had never been seen by a doctor, and no one knew what illness it was; but seeing that she lay flat on her back and could not even turn on her side, let alone get up, it must have been serious. It had grown this bad ten days ago, when she ate millet and it stuck in her stomach.
+===
+그때도 김 첨지가 오래간만에 돈을 얻어서 좁쌀 한 되와 십 전짜리 나무 한 단을 사다 주었더니 김 첨지의 말에 의지하면 그 오라질 년이 천방지축(天方地軸)으로 남비에 대고 끓였다. 마음은 급하고 불길은 닿지 않아 채 익지도 않은 것을 그 오라질 년이 숟가락은 고만두고 손으로 움켜서 두 뺨에 주먹덩이 같은 혹이 불거지도록 누가 빼앗을 듯이 처박질 하더니만 그날 저녁부터 가슴이 땅긴다, 배가 켕긴다고 눈을 홉뜨고 지랄병을 하였다. 그때 김 첨지는 열화와 같이 성을 내며,
+
+“에이, 오라질 년, 조롱복은 할 수가 없어, 못 먹어 병, 먹어서 병, 어쩌란 말이야! 왜 눈을 바루 뜨지 못해!”하고 김 첨지는 앓는 이의 뺨을 한 번 후려갈겼다. 홉뜬 눈은 조금 바루어졌건만 이슬이 맺히었다. 김 첨지의 눈시울도 뜨끈뜨끈하였다.
+
+이 환자가 그러고도 먹는 데는 물리지 않았다. 사흘 전부터 설렁탕 국물이 마시고 싶다고 남편을 졸랐다.
+---
+That time too, Kim Cheomji had got some money for once and bought a measure of millet and a ten-jeon bundle of firewood. According to Kim Cheomji, the damned woman had boiled it in the pot in a mad rush. She was in a hurry and the fire was weak, so it was not even cooked, and yet the damned woman, never mind a spoon, grabbed it in her hands and stuffed it in as if someone would steal it, until both cheeks bulged like fists. And from that evening her chest was tight, her belly cramped, and she rolled her eyes and thrashed about. Then Kim Cheomji flew into a rage:
+
+"Damn you, woman! You can't help your rotten luck. Sick when you don't eat, sick when you do eat, what am I supposed to do? Why can't you look at me straight?" And he slapped the sick woman across the cheek. Her rolled-up eyes came back a little, but dew gathered in them. Kim Cheomji's eyelids grew hot too.
+
+Even after all that, the sick woman never lost her appetite. For three days she had been begging her husband for some seolleongtang broth.
+===
+“이런 오라질 년! 조밥도 못 먹는 년이 설렁탕은, 또 처먹고 지랄병을 하게.”라고, 야단을 쳐보았건만, 못 사주는 마음이 시원치는 않았다.
+
+인제 설렁탕을 사줄 수도 있다. 앓는 어미 곁에서 배고파 보채는 개똥이(세 살먹이)에게 죽을 사줄 수도 있다. — 팔십 전을 손에 쥔 김 첨지의 마음은 푼푼하였다. 그러나 그의 행운은 그걸로 그치지 않았다. 땀과 빗물이 섞여 흐르는 목덜미를 기름주머니가 다 된 왜목 수건으로 닦으며, 그 학교 문을 돌아나올 때였다. 뒤에서 <인력거!> 하고 부르는 소리가 난다. 자기를 불러 멈춘 사람이 그 학교 학생인 줄 김 첨지는 한 번 보고 짐작할 수 있었다. 그 학생은 다짜고짜로, “남대문 정거장까지 얼마요?”라고, 물었다.
+---
+"Damn you, woman! Can't even eat millet and you want seolleongtang? So you can gobble it down and thrash about again?" he had scolded, but it did not sit easy with him that he could not buy it for her.
+
+Now he could buy her seolleongtang. He could buy porridge for Gaettong-i (three years old), whining with hunger beside his sick mother. Holding eighty jeon, Kim Cheomji felt rich. But his luck did not stop there. As he came back around from the school gate, wiping the sweat and rain from his neck with a cotton towel gone greasy as an oil bag, a voice behind him called, "Rickshaw!" At a glance Kim Cheomji could tell that the man who had stopped him was a student at that school. Without any preamble the student asked, "How much to Namdaemun Station?"
+===
+아마도 그 학교 기숙사에 있는 이로 동기방학을 이용하여 귀향하려 함이리라. 오늘 가기로 작정은 하였건만 비는 오고, 짐은 있고 해서 어찌할 줄 모르다가 마침 김 첨지를 보고 뛰어나왔음이리라. 그렇지 않으면 왜 구두를 채 신지 못해서 질질 끌고, 비록 <고구라> 양복일망정 노박이로 비를 맞으며 김 첨지를 뒤쫓아 나왔으랴.
+
+“남대문 정거장까지 말씀입니까.”하고 김 첨지는 잠깐 주저하였다. 그는 이 우중에 우장도 없이 그 먼 곳을 철벅거리고 가기가 싫었음일까? 처음 것, 둘째 것으로 그만 만족하였음일까? 아니다, 결코 아니다. 이상하게도 꼬리를 맞물고 덤비는 이 행운 앞에 조금 겁이 났음이다. 그리고 집을 나올 제 아내의 부탁이 마음에 켕기었다. — 앞집 마나님한테서 부르러 왔을 제 병인은 그 뼈만 남은 얼굴에 유일의 생물 같은 유달리 크고 움폭한 눈에 애걸하는 빛을 띠우며, “오늘은 나가지 말아요. 제발 덕분에 집에 붙어있어요. 내가 이렇게 아픈데……”라고, 모기 소리같이 중얼거리고 숨을 걸그렁걸그렁 하였다.
+---
+He was probably a boarder going home for the winter holidays. He had decided to leave today, but with the rain and his luggage he did not know what to do, and seeing Kim Cheomji just then, he must have come running out. Otherwise why would he chase after him, dragging his shoes half on, getting soaked in his suit, cheap cotton though it was?
+
+"To Namdaemun Station, sir?" Kim Cheomji hesitated a moment. Was it that he did not want to slosh all that way in this rain without a raincoat? Was he content with the first and second fares? No, not at all. Strangely, he was a little afraid of this luck that kept coming, one after another. And his wife's plea when he left the house weighed on his mind. When someone came from the house in front to call him, the sick woman, with a pleading look in the huge, sunken eyes that seemed the only living thing in her bony face, had murmured in a voice like a mosquito's, "Don't go out today. Please, please stay home. I'm so sick..." and her breath had rattled in her throat.
+===
+그때에 김 첨지는 대수롭지 않은 듯이, “압다, 젠장맞을 년, 별 빌어먹을 소리를 다 하네. 맞붙들고 앉았으면 누가 먹여 살릴 줄 알아.”하고, 훌쩍 뛰어나오려니까 환자는 붙잡을 듯이 팔을 내저으며, “나가지 말라도 그래, 그러면 일찌기 들어와요.”하고, 목메인 소리가 뒤를 따랐다.
+
+정거장까지 가잔 말을 들은 순간에 경련적으로 떠는 손, 유달리 큼직한 눈, 울 듯한 아내의 얼굴이 김 첨지의 눈앞에 어른어른하였다. “그래 남대문 정거장까지 얼마란 말이요?”하고 학생은 초조한 듯이 인력거꾼의 얼굴을 바라보며 혼잣말같이, “인천 차가 열 한 점에 있고, 그 다음에는 새로 두 점이든가.”라고, 중얼거린다.
+---
+Then Kim Cheomji, as if it were nothing, had said, "Bah, damn you, what nonsense. If I sit here holding your hand, who do you think will feed us?" and as he jumped out, the sick woman waved her arm as if to hold him back, and her choked voice followed him: "If you won't stay, then come home early."
+
+The moment he heard "to the station," his wife's convulsively trembling hand, her unusually large eyes, her face about to cry, flickered before his eyes. "Well, how much to Namdaemun Station?" The student looked at the rickshaw man's face impatiently and muttered as if to himself, "The Incheon train is at eleven, and the next one is at two, I think."
+===
+“일 원 오십 전만 줍시요.” 이 말이 저도 모를 사이에 불쑥 김 첨지의 입에서 떨어졌다. 제 입으로 부르고도 스스로 그 엄청난 돈 액수에 놀래었다. 한꺼번에 이런 금액을 불러라도 본 지가 그 얼마만인가! 그러자 그 돈 벌 용기가 병자에 대한 염려를 사르고 말았다. 설마 오늘 내로 어떠랴 싶었다. 무슨 일이 있더라도 제일 제이의 행운을 곱친 것보다도 오히려 갑절이 많은 이 행운을 놓칠 수 없다 하였다.
+
+“일 원 오십 전은 너무 과한데.” 이런 말을 하며 학생은 고개를 기웃하였다.
+
+“아니올시다. 잇수로 치면 여기서 거기가 시오 리가 넘는답니다. 또 이런 진날은 좀 더 주셔야지요.”하고 빙글빙글 웃는 차부의 얼굴에는 숨길 수 없는 기쁨이 넘쳐 흘렀다.
+
+“그러면 달라는 대로 줄 터이니 빨리 가요.” 관대한 어린 손님은 그런 말을 남기고 총총히 옷도 입고 짐도 챙기러 갈 데로 갔다.
+---
+"Give me one won fifty, sir." The words popped out of Kim Cheomji's mouth before he knew it. Even though he had said it himself, he was startled by the enormous amount. How long had it been since he had even asked for that much at once! And then the courage to earn that money burned away his worry for the sick woman. Surely nothing would happen today, he thought. Whatever happened, he could not let go of this luck, twice as big as the first and second fares put together.
+
+"One won fifty is too much," said the student, tilting his head.
+
+"Not at all, sir. By distance it's more than fifteen li from here to there. And on a wet day like this you ought to give a bit more." Grinning, the rickshaw man could not hide the joy overflowing on his face.
+
+"Then I'll pay what you ask, so let's hurry." With those words, the generous young customer hurried off to get dressed and fetch his luggage.
+===
+그 학생을 태우고 나선 김 첨지의 다리는 이상하게 거뿐하였다. 달음질을 한다느니보다 거의 나는 듯하였다. 바퀴도 어떻게 속히 도는지 군다느니보다 마치 얼음을 지쳐나가는 <스케이트> 모양으로 미끄러져 가는 듯하였다. 얼은 땅에 비가 내려 미끄럽기도 하였지만.
+
+이윽고 끄는 이의 다리는 무거워졌다. 자기 집 가까이 다다른 까닭이다. 새삼스러운 염려가 그의 가슴을 눌렀다. <오늘은 나가지 말아요. 내가 이렇게 아픈데!> 이런 말이 잉잉 그의 귀에 울렸다. 그리고 병자의 움쑥 들어간 눈이 원망하는 듯이 자기를 노리는 듯하였다. 그러자 엉엉하고 우는 개똥이의 곡성을 들은 듯싶다. 딸국딸국 하고 숨 모으는 소리도 나는 듯싶다.“왜 이리우, 기차 놓치겠구먼.”하고 탄 이의 초조한 부르짖음이 간신히 그의 귀에 들어왔다. 언뜻 깨달으니 김 첨지는 인력거를 쥔 채 길 한복판에 엉거주춤 멈춰있지 않은가.
+---
+Setting off with the student, Kim Cheomji's legs felt strangely light. More than running, he was almost flying. And how fast the wheels turned! Rather than rolling, they seemed to glide like skates on ice. Though in fact the rain falling on frozen ground did make it slippery.
+
+Before long the puller's legs grew heavy. It was because they had come near his house. A fresh worry pressed on his chest. "Don't go out today. I'm so sick!" The words rang in his ears. And the sick woman's sunken eyes seemed to glare at him reproachfully. Then he seemed to hear Gaettong-i crying, waah, waah. He seemed to hear the gasping sound of breath, too. "What's the matter? I'll miss my train!" The passenger's impatient cry barely reached his ears. Suddenly he realized he was standing stock-still in the middle of the road, holding the rickshaw shafts.
+===
+“예, 예.”하고, 김 첨지는 또다시 달음질하였다. 집이 차차 멀어갈수록 김 첨지의 걸음에는 다시금 신이 나기 시작하였다. 다리를 재게 놀려야만 쉴새없이 자기의 머리에 떠오르는 모든 근심과 걱정을 잊을 듯이.
+
+정거장까지 끌어다주고 그 깜짝 놀란 일 원 오십 전을 정말 제 손에 쥠에, 제 말마따나 십 리나 되는 길을 비를 맞아 가며 질퍽거리고 온 생각은 아니하고, 거저나 얻은 듯이 고마왔다. 졸부나 된 듯이 기뻤다. 제자식 뻘밖에 안되는 어린 손님에게 몇 번 허리를 굽히며, “안녕히 다녀옵시요.”라고 깍듯이 재우쳤다.
+
+그러나 빈 인력거를 털털거리며 이 우중에 돌아갈 일이 꿈밖이었다. 노동으로 하여 흐른 땀이 식어지자 굶주린 창자에서, 물 흐르는 옷에서 어슬어슬 한기가 솟아나기 비롯하매 일 원 오십 전이란 돈이 얼마나 괜찮고 괴로운 것인 줄 절절히 느끼었다. 정거장을 떠나는 그의 발길은 힘 하나 없었다. 온몸이 옹송그려지며 당장 그 자리에 엎어져 못 일어날 것 같았다.
+---
+"Yes, yes, sir," and Kim Cheomji ran again. The farther he got from home, the more his steps began to fill with energy again. As if only by moving his legs fast could he forget all the cares and worries rising ceaselessly in his head.
+
+When he had pulled him all the way to the station and actually held that astonishing one won fifty in his hand, he did not think of the ten li he had sloshed through the rain, as he had said; he was grateful as if he had got it for nothing. He was as happy as a man suddenly rich. He bowed several times to the young customer, young enough to be his son, and said again and again, politely, "Have a safe trip, sir."
+
+But going back with the empty rickshaw rattling along in this rain was the last thing he wanted. As the sweat from his labor cooled, a chill began to rise from his starving gut and his dripping clothes, and he felt keenly how precious, and how hard-won, one won fifty was. His steps leaving the station had no strength in them. His whole body hunched up, and he felt he would collapse on the spot and never get up.
+===
+“젠장맞을 것! 이 비를 맞으며 빈 인력거를 털털거리고 돌아를 간담. 이런 빌어먹을, 제 할미를 붙을 비가 왜 남의 상판을 딱딱 때려!”
+
+그는 몹시 홧증을 내며 누구에게 반항이나 하는 듯이 게걸거렸다. 그럴 즈음에 그의 머리엔 또 새로운 광명이 비쳤나니 그것은 <이러구 갈 게 아니라 이 근처를 빙빙 돌며 차 오기를 기다리면 또 손님을 태우게 될는지도 몰라>란 생각이었다. 오늘 운수가 괴상하게도 좋으니까 그런 요행이 또한번 없으리라고 누가 보증하랴. 꼬리를 굴리는 행운이 꼭 자기를 기다리고 있다고 내기를 해도 좋을 만한 믿음을 얻게 되었다. 그렇다고 정거장 인력거꾼의 등살이 무서우니 정거장 앞에 섰을 수는 없었다.
+---
+"Damn it! Do I have to rattle back with an empty rickshaw in this rain? Damn this rotten rain, why does it have to slap me in the face!"
+
+He grumbled furiously, as if defying someone. Just then a new light shone in his head: "Instead of going back like this, if I circle around here and wait for the train, I might get another passenger." His luck was so strangely good today, who could promise there wouldn't be another stroke of it? He came to believe so firmly that he could have bet on it: luck that keeps rolling was surely waiting for him. Still, he was afraid of the station rickshaw men, so he could not stand in front of the station.
+===
+그래 그는 이전에도 여러 번 해본 일이라 바로 정거장 앞 전차 정류장에서 조금 떨어지게, 사람 다니는 길과 전찻길 틈에 인력거를 세워놓고 자기는 그 근처를 빙빙 돌며 형세를 관망하기로 하였다. 얼마만에 기차는 왔고, 수십 명이나 되는 손이 정류장으로 쏟아져 나왔다. 그 중에서 손님을 물색하는 김 첨지의 눈엔 양머리에 뒤축 높은 구두를 신고 <망토>까지 두른 기생 퇴물인 듯, 난봉 여학생인 듯한 여편네의 모양이 띄었다. 그는 슬근슬근 그 여자의 곁으로 다가들었다.
+
+“아씨, 인력거 아니 타시랍시요?”
+
+그 여학생인지 뭔지가 한참은 매우 탯갈을 빼며 입술을 꼭 다문 채 김 첨지를 거들떠보지도 않았다. 김 첨지는 구걸하는 거지나 무엇같이 연해연방 그의 기색을 살피며, “아씨, 정거장 애들보담 아주 싸게 모셔다 드리겠읍니다. 댁이 어디신가요.”하고, 추근추근하게도 그 여자의 들고 있는 일본식 버들고리짝에 제 손을 대었다.
+
+“왜 이래, 남 귀치않게.” 소리를 벽력같이 지르고는 돌아선다. 김 첨지는 어랍시요 하고 물러섰다.
+---
+So, as he had done many times before, he left the rickshaw a little way from the streetcar stop in front of the station, between the sidewalk and the tracks, and decided to circle around nearby and watch how things went. After a while a train arrived, and dozens of passengers poured out to the stop. Looking for a fare among them, Kim Cheomji's eye caught a woman with a Western hairdo, high-heeled shoes and even a cape, who looked like a retired gisaeng or a flighty schoolgirl. He sidled up to her.
+
+"Miss, won't you take a rickshaw?"
+
+The schoolgirl, or whatever she was, put on airs for a long while, lips pressed shut, without even glancing at him. Kim Cheomji kept watching her face like a begging beggar and said, "Miss, I'll take you much cheaper than the station boys. Where is your home?" and pushily put his hand on the Japanese-style wicker case she was carrying.
+
+"What are you doing? Leave me alone!" She shouted like a thunderclap and turned away. Kim Cheomji said, "Oh, excuse me," and backed off.
+===
+전차는 왔다. 김 첨지는 원망스럽게 전차 타는 이를 노리고 있었다. 그러나 그의 예감(豫感)은 틀리지 않았다. 전차가 빡빡하게 사람을 싣고 움직이기 시작하였을 때 타고 남은 손 하나이 있었다. 굉장하게 큰 가방을 들고 있는걸 보면 아마 붐비는 차 안에 짐이 크다 하여 차장에게 밀려내려온 눈치였다. 김 첨지는 대어섰다.
+
+“인력거를 타시랍시요.”
+
+한동안 값으로 승강이를 하다가 육십 전에 인사동까지 태워다주기로 하였다. 인력거가 무거워지매 그의 몸은 이상하게도 가벼워졌고 그리고 또 인력거가 가벼워지니 몸은 다시금 무거워졌건만 이번에는 마음조차 초조해 온다. 집의 광경이 자꾸 눈앞에 어른거리어 인제 요행을 바랄 여유도 없었다. 나무 등걸이나 무엇 같고 제 것 같지도 않은 다리를 연해 꾸짖으며 갈팡질팡 뛰는 수밖에 없었다.
+---
+A streetcar came. Kim Cheomji stared resentfully at the people getting on. But his hunch was not wrong. When the streetcar, packed tight with people, began to move, there was one passenger left behind. Seeing the enormous bag he was holding, the conductor had probably pushed him off because his luggage was too big for the crowded car. Kim Cheomji stepped up.
+
+"Will you take a rickshaw, sir?"
+
+After haggling over the price for a while, he agreed to take him to Insa-dong for sixty jeon. When the rickshaw grew heavy, his body grew strangely light; and when the rickshaw grew light again, his body grew heavy again, but this time even his heart grew anxious. The scene at home kept flickering before his eyes, and he had no room left to hope for more luck. He could only keep cursing his legs, which felt like tree stumps and not his own, and run stumbling along.
+===
+저놈의 인력거군이 저렇게 술이 취해가지고 이 진 땅에 어찌 가노, 라고 길 가는 사람이 걱정을 하리만큼 그의 걸음은 황급하였다. 흐리고 비오는 하늘은 어둠침침하게 벌써 황혼에 가까운 듯하다. 창경원 앞까지 다달아서야 그는 턱에 닿은 숨을 돌리고 걸음도 늦추잡았다. 한 걸음 두 걸음 집이 가까와올수록 그의 마음조차 괴상하게 누그러웠다. 그런데 이 누그러움은 안심에서 오는 게 아니요, 자기를 덮친 무서운 불행을 빈틈없이 알게 될 때가 박두한 것을 두려워하는 마음에서 오는 것이다.
+
+그는 불행에 다닥치기 전 시간을 얼마쯤이라도 늘리려고 버르적거렸다. 기적(奇蹟)에 가까운 벌이를 하였다는 기쁨을 할 수 있으면 오래 지니고 싶었다. 그는 두리번두리번 사면을 살피었다. 그 모양은 마치 자기 집 — 곧 불행을 향하고 달려가는 제 다리를 제 힘으로는 도저히 어찌할 수 없으니 누구든지 나를 좀 잡아 다고, 구해 다고 하는 듯하였다.
+---
+His steps were so frantic that passersby worried, "How will that rickshaw man get home on this muddy ground, drunk like that?" The cloudy, rainy sky was so gloomy it seemed already near dusk. Only when he reached the front of Changgyeongwon did he catch the breath stuck in his throat and slow his steps. Step by step, the closer he came to home, the more his heart strangely softened. But this softening did not come from relief; it came from dread that the moment was near when he would know, beyond any doubt, the terrible misfortune that had fallen upon him.
+
+He struggled to stretch out, even a little, the time before he met that misfortune. He wanted to keep as long as he could the joy of having earned an almost miraculous sum. He looked all around him. He looked as if he were saying: I cannot stop my own legs running toward my home, toward misfortune, by my own strength, so somebody, please, catch me, save me.
+===
+그럴 즈음에 마침 길가 선술집에서 그의 친구 치삼이가 나온다. 그의 우글우글 살찐 얼굴에 주홍이 돋는 듯, 온 턱과 뺨을 시커멓게 구레나룻이 덮였거늘, 노르탱탱한 얼굴이 바짝 말라서 여기저기 고랑이 패고, 수염도 있대야 턱밑에만 마치 솔잎 송이를 거꾸로 붙여놓은 듯한 김 첨지의 풍채하고는 기이한 대상을 짓고 있었다.
+
+“여보게 김 첨지, 자네 문안 들어갔다 오는 모양일세그려. 돈 많이 벌었을 테니 한 잔 빨리게.”
+
+뚱뚱보는 말라깽이를 보든 맡에 부르짖었다. 그 목소리는 몸짓과 딴판으로 연하고 싹싹하였다. 김 첨지는 이 친구를 만난 게 어떻게 반가운지 몰랐다. 자기를 살려준 은인이나 무엇같이 고맙기도 하였다.
+
+“자네는 벌써 한잔 한 모양일세그려. 자네도 오늘 재미가 좋아보이.”하고, 김 첨지는 얼굴을 펴서 웃었다.
+
+“압다, 재미 안 좋다고 술 못 먹을 낸가. 그런데 여보게, 자네 왼몸이 어째 물독에 빠진 새앙쥐 같은가? 어서 이리 들어와 말리게.”
+---
+Just then his friend Chisam came out of a roadside tavern. His plump, puffy face seemed to glow red, his whole jaw and cheeks covered with thick black whiskers; a strange contrast to Kim Cheomji, whose yellowish face was dried up and furrowed here and there, and whose beard, such as it was, grew only under his chin, like a cluster of pine needles stuck on upside down.
+
+"Hey, Kim Cheomji, looks like you've been into town and back. You must have made a lot of money, so treat me to a drink."
+
+The fat man cried out the moment he saw the skinny one. His voice, unlike his body, was soft and friendly. Kim Cheomji could not say how glad he was to meet this friend. He was grateful, as if he were the man who had saved his life.
+
+"You've already had a drink, I see. You must be doing well today too," said Kim Cheomji, his face opening into a smile.
+
+"Bah, can't a man drink unless he's doing well? But look at you, why are you like a mouse that fell in a water jar? Come in here and dry off."
+===
+선술집은 훈훈하고 뜨뜻하였다. 추어탕을 끓이는 솥뚜껑을 열 적마다 뭉게뭉게 떠오르는 흰 김, 석쇠에서 뻐지짓뻐지짓 구워지는 너비아니 구이며 제육이며 간이며 콩팥이며 북어며 빈대떡……이 너저분하게 늘어놓인 안주 탁자에 김 첨지는 갑자기 속이 쓰려서 견딜 수 없었다. 마음대로 할 양이면 거기 있는 모든 먹음 먹이를 모조리 깡그리 집어삼켜도 시원치 않았다. 하되 배고픈 이는 위선 분량 많은 빈대떡 두 개를 쪼이기도 하고 추어탕을 한 그릇 청하였다.
+
+주린 창자는 음식맛을 보더니 더욱더욱 비어지며 자꾸자꾸 들이라들이라 하였다. 순식간에 두부와 미꾸리 든 국 한 그릇을 그냥 물같이 들이키고 말았다. 세째 그릇을 받아들었을 제 데우던 막걸이 곱배기 두 잔이 더웠다. 치삼이와 같이 마시자 원원히 비었던 속이라 찌르르하고 창자에 퍼지며 얼굴이 화끈하였다. 눌러 곱배기 한 잔을 또 마셨다.
+
+김 첨지의 눈은 벌써 개개 풀리기 시작하였다. 석쇠에 얹힌 떡 두 개를 숭덩숭덩 썰어서 볼을 불룩거리며 또 곱배기 두 잔을 부어라 하였다.
+---
+The tavern was snug and warm. White steam billowing up each time they lifted the lid of the pot of loach soup; grilled marinated beef, pork, liver, kidneys, dried pollack and mung bean pancakes sizzling on the grill, all laid out in a jumble on the snack table: at the sight, Kim Cheomji's stomach suddenly ached unbearably. If he had his way, swallowing every last bite of food there would not have been enough. But the hungry man first ordered two big mung bean pancakes to be warmed and asked for a bowl of loach soup.
+
+Once his starving gut had a taste, it grew emptier and emptier and kept crying, more, more. In an instant he gulped down a bowl of soup with tofu and loach like water. When he took the third bowl, two double cups of makgeolli warming on the stove were ready. He drank with Chisam, and because his stomach had been empty for so long, it spread tingling through his insides and his face burned. He drank another double cup right away.
+
+Kim Cheomji's eyes were already starting to glaze over. He chopped up the two pancakes on the grill, stuffed his cheeks, and called for two more double cups.
+===
+치삼은 의아한 듯이 김 첨지를 보며, “여보게 또 붓다니, 벌써 우리가 넉 잔씩 먹었네, 돈이 사십 전일세.”라고 주의시켰다.
+
+“아따 이놈아, 사십 전이 그리 끔찍하냐. 오늘 내가 돈을 막 벌었어. 참 오늘 운수가 좋았느니.”
+
+“그래 얼마를 벌었단 말인가?”
+
+“삼십 원을 벌었어, 삼십 원을! 이런 젠장맞을 술을 왜 안부어…… 괜찮다 괜찮다, 막 먹어도 상관이 없어. 오늘 돈 산더미같이 벌었는데.”
+
+“어, 이 사람 취했군, 그만두세.”
+---
+Chisam looked at Kim Cheomji, puzzled, and warned him, "Hey, more? We've already had four cups each. That's forty jeon."
+
+"Bah, you fool, is forty jeon so terrible? I made a pile of money today. My luck was really good today."
+
+"So how much did you make?"
+
+"I made thirty won, thirty won! Why won't they pour this damn wine... It's fine, it's fine, drink all you like. I made a mountain of money today."
+
+"Uh-oh, this man's drunk. Let's stop."
+===
+“이놈아, 이걸 먹고 취할 내냐, 어서 더 먹어.”하고는 치삼의 귀를 잡아채며 취한 이는 부르짖었다. 그리고 술을 붓는 열 다섯 살 됨직한 중대가리에게로 달려들며, “이놈, 오라질 놈, 왜 술을 붓지 않어.”라고 야단을 쳤다. 중대가리는 히히 웃고 치삼을 보며 문의하는 듯이 눈짓을 하였다. 주정꾼이 눈치를 알아보고 화를 버럭내며, “에미를 붙을 이 오라질 놈들 같으니, 이놈 내가 돈이 없을 줄 알고.”하자마자 허리춤을 훔칫훔칫 하더니 일 원짜리 한 장을 꺼내어 중대가리 앞에 펄쩍 집어던졌다. 그 사품에 몇 푼 은전이 잘그랑 하며 떨어진다.
+---
+"You idiot, as if I'd get drunk on this. Go on, drink more," the drunk man shouted, yanking Chisam's ear. Then he lunged at the shaven-headed boy of about fifteen who poured the drinks and yelled, "You little wretch, why aren't you pouring?" The shaven-headed boy grinned and glanced at Chisam as if asking what to do. The drunk saw it and flew into a rage: "You damned rotten wretches! You think I don't have money?" With that he fumbled at his waistband, pulled out a one-won note and flung it down in front of the boy. As he did, a few silver coins fell clinking to the floor.
+===
+“여보게 돈 떨어졌네, 왜 돈을 막 끼얹나.” 이런 말을 하며 일변 돈을 줍는다. 김 첨지는 취한 중에도 돈의 거처를 살피는 듯이 눈을 크게 떠서 땅을 내려다보다가 불시에 제 하는 짓이 너무 더럽다는 듯이 고개를 소스라치자 더욱 성을 내며, “봐라 봐! 이 더러운 놈들아, 내가 돈이 없나, 다리뼉다구를 꺾어놓을 놈들 같으니.”하고 치삼의 주워주는 돈을 받아, “이 원수엣 돈! 이 육시를 할 돈!”하면서, 풀매질을 친다. 벽에 맞아 떨어진 돈은 다시 술 끓이는 양푼에 떨어지며 정당한 매를 맞는다는 듯이 쨍하고 울었다.
+
+곱배기 두 잔은 또 부어질 겨를도 없이 말려가고 말았다. 김 첨지는 입술과 수염에 붙은 술을 빨아들이고 나서 매우 만족한 듯이 그 솔잎 송이 수염을 쓰다듬으며, “또 부어, 또 부어.”라고, 외쳤다.
+---
+"Hey, you dropped your money. Why are you throwing it around?" Chisam said, picking up the coins. Even drunk, Kim Cheomji stared down at the floor with wide eyes, as if watching where the money went, then suddenly jerked his head away as if disgusted by what he was doing, grew even angrier, and shouted, "Look! Look, you dirty wretches! Do I have no money? I'll break your legs!" He took the coins Chisam had picked up and hurled them away: "This cursed money! This damned money!" The coins struck the wall and fell into the pot where the wine was warming, ringing out, ting, as if taking a well-deserved beating.
+
+The two double cups were gone before they could even be poured again. Kim Cheomji sucked the wine from his lips and beard, stroked his pine-needle whiskers in great satisfaction, and cried, "Pour again, pour again!"
+===
+또 한 잔 먹고 나서 김 첨지는 치삼의 어깨를 치며 문득 껄껄 웃는다. 그 웃음 소리가 어떻게 컸는지 술집에 있는 이의 눈은 모두 김 첨지에게로 몰리었다. 웃는 이는 더욱 웃으며, “여보게 치삼이, 내 우스운 이야기 하나 할까. 오늘 손을 태고 정거장에까지 가지 않았겠나.”
+
+“그래서.”
+
+“갔다가 그저 오기가 안 됐데그려. 그래 전차 정류장에서 어름어름하며 손님 하나를 태울 궁리를 하지 않았나. 거기 마침 마나님이신지 여학생님이신지 — 요새야 어디 논다니와 아가씨를 구별할 수가 있던가 — <망토>를 두르고 비를 맞고 서 있겠지. 슬근슬근 가까이 가서 인력거 타시랍시요 하고 손가방을 받으랴니까 내 손을 탁 뿌리치고 홱 돌아서더니만 <왜 남을 이렇게 귀찮게 굴어!> 그 소리야말로 꾀꼬리 소리지, 허허!”
+
+김 첨지는 교묘하게도 정말 꾀꼬리 같은 소리를 내었다. 모든 사람은 일시에 웃었다.
+
+“빌어먹을 깍쟁이 같은 년, 누가 저를 어쩌나, <왜 남을 귀찮게 굴어!> 어이구 소리가 처신도 없지, 허허.”
+---
+After another cup, Kim Cheomji slapped Chisam on the shoulder and suddenly burst out laughing. His laugh was so loud that everyone in the tavern turned to look at him. Laughing even harder, he said, "Hey, Chisam, shall I tell you a funny story? Today I took a fare all the way to the station."
+
+"And then?"
+
+"Seemed a shame to come back empty. So I hung around the streetcar stop trying to pick up another fare. And there was a lady, or a schoolgirl, or whatever (these days who can tell a loose woman from a proper young lady?), standing in the rain in a cape. I sidled up and said, 'Will you take a rickshaw?' and went to take her handbag, and she slapped my hand away, whipped around and went, 'Why are you bothering me like this!' What a voice, like an oriole, ha ha!"
+
+Kim Cheomji cleverly made a voice just like an oriole's. Everyone laughed at once.
+
+"Stuck-up little thing. Who was going to do anything to her? 'Why are you bothering me!' Oh, what a voice, no dignity at all, ha ha."
+===
+웃음 소리들은 높아졌다. 그러나 그 웃음 소리들이 사라지기 전에 김 첨지는 훌쩍훌쩍 울기 시작하였다.
+
+치삼은 어이없이 주정뱅이를 바라보며, “금방 웃고 지랄을 하더니 우는 건 또 무슨 일인가.”
+
+김 첨지는 연해 코를 들여마시며, “우리 마누라가 죽었다네.”
+
+“뭐, 마누라가 죽다니, 언제?”
+
+“이놈아 언제는. 오늘이지.”
+
+“엑기 미친 놈, 거짓말 말아.”
+
+“거짓말은 왜, 참말로 죽었어, 참말로... 마누라 시체를 집어 뻐들쳐놓고 내가 술을 먹다니, 내가 죽일 놈이야, 죽일 놈이야.”하고 김 첨지는 엉엉 소리를 내어 운다.
+
+치삼은 흥이 조금 깨어지는 얼굴로, “원 이 사람이, 참말을 하나 거짓말을 하나. 그러면 집으로 가세, 가.”하고 우는 이의 팔을 잡아당기었다.
+
+치삼의 끄는 손을 뿌리치더니 김 첨지는 눈물이 글썽글썽한 눈으로 싱그레 웃는다.
+
+“죽기는 누가 죽어.”하고 득의가 양양.
+
+“죽기는 왜 죽어, 생때같이 살아만 있단다. 그 오라질 년이 밥을 죽이지. 인제 나한테 속았다.”하고 어린애 모양으로 손뼉을 치며 웃는다.
+---
+The laughter grew louder. But before it had died away, Kim Cheomji began to sob.
+
+Chisam stared at the drunk, dumbfounded. "You were laughing like a madman a moment ago, and now you're crying?"
+
+Kim Cheomji, sniffling, said, "My wife is dead."
+
+"What? Your wife dead? When?"
+
+"When, you fool? Today."
+
+"Ach, you lunatic, don't lie."
+
+"Why would I lie? She's really dead, really... and I leave my wife's body lying there and go drinking. I deserve to die, I deserve to die," and Kim Cheomji wailed aloud.
+
+Chisam, his good mood fading a little, said, "Well, now, is the man telling the truth or lying? Then let's go home, come on," and pulled at the crying man's arm.
+
+Kim Cheomji shook off Chisam's hand and, with tears still brimming in his eyes, grinned.
+
+"Who's dead?" he said, triumphant.
+
+"Why would she die? She's alive and kicking. The only thing that damned woman kills is rice. Now you've been fooled by me!" And he clapped his hands and laughed like a child.
+===
+“이 사람이 정말 미쳤단 말인가. 나도 아주먼네가 앓는단 말은 들었는데.”하고, 치삼이도 어느 불안을 느끼는 듯이 김 첨지에게 또 돌아가라고 권하였다.
+
+“안 죽었어, 안 죽었대도그래.”
+
+김 첨지는 홧증을 내며 확신있게 소리를 질렀으되 그 소리엔 안 죽은 것을 믿으려고 애쓰는 가락이 있었다. 기어이 일 원어치를 채워서 곱배기 한 잔씩 더 먹고 나왔다. 궂은 비는 의연히 추적추적 내린다.
+
+김 첨지는 취중에도 설렁탕을 사가지고 집에 다달았다. 집이라 해도 물론 셋집이요, 또 집 전체를 세든 게 아니라 안과 뚝떨어진 행랑방 한 간을 빌려 든 것인데 물을 길어대고 한 달에 일 원씩 내는 터이다. 만일 김 첨지가 주기를 띠지 않았던들 한 발을 대문에 들여놓았을 제 그곳을 지배하는 무시무시한 정적(靜寂) — 폭풍우가 지나간 뒤의 바다 같은 정적에 다리가 떨렸으리라.
+---
+"Has this man really gone mad? I did hear your wife was sick," said Chisam, who seemed to feel uneasy too, and urged Kim Cheomji again to go home.
+
+"She's not dead, I tell you she's not dead."
+
+Kim Cheomji shouted it angrily and confidently, but in his voice there was a note of trying hard to believe she was not dead. In the end they used up the whole one won, had one more double cup each, and left. The miserable rain was still drizzling down.
+
+Drunk as he was, Kim Cheomji bought the seolleongtang and arrived home. Home, of course, was a rented place, and not even the whole house: just one servant's room, set far apart from the main house, for which he hauled water and paid one won a month. If Kim Cheomji had not been drunk, his legs would have trembled the moment he set one foot inside the gate at the terrible silence that ruled the place: a silence like the sea after a storm has passed.
+===
+쿨룩거리는 기침 소리도 들을 수 없다. 그르렁거리는 숨소리조차 들을 수 없다. 다만 이 무덤같은 침묵을 깨뜨리는 — 깨뜨린다느니보다 한층 더 침묵을 깊게 하고 불길하게 하는 빡빡하는 그윽한 소리, 어린애의 젖 빠는 소리가 날 뿐이다. 만일 청각(聽覺)이 예민한 이 같으면 그 빡빡 소리는 빨 따름이요, 꿀떡꿀떡 하고 젖 넘어가는 소리가 없으니 빈 젖을 빤다는 것도 짐작할는지 모르리라.
+
+혹은 김 첨지도 이 불길한 침묵을 짐작했는지도 모른다. 그렇지 않으면 대문에 들어서자마자 전에 없이, “이 난장 맞을 년, 남편이 들어오는데 나와보지도 않아, 이 오라질 년.”이라고 고함을 친 게 수상하다. 이 고함이야말로 제 몸을 엄습해오는 무시무시한 증을 쫓아버리려는 허장성세(虛張聲勢)인 까닭이다.
+
+하여간 김 첨지는 방문을 왈칵 열었다. 구역을 나게 하는 추기 — 떨어진 삿자리 밑에서 나온 먼지내, 빨지 않은 기저귀에서 나는 똥내와 오줌내, 가지각색 때가 케케히 앉은 옷내, 병인의 땀 썩은 내가 섞인 추기가 무딘 김 첨지의 코를 찔렀다.
+---
+No hacking cough could be heard. Not even the rattle of breathing. Only one faint sound broke this tomblike silence, or rather made the silence deeper and more ominous: a soft sucking sound, a baby sucking at the breast. Someone with sharp ears might have guessed that it was only sucking, with no sound of swallowing, gulp, gulp, and so that it was sucking at an empty breast.
+
+Perhaps Kim Cheomji, too, sensed this ominous silence. Otherwise it was strange that, the moment he stepped through the gate, he shouted as never before, "You good-for-nothing woman, your husband comes home and you don't even come out to see? Damn you!" This shout was nothing but bluster, to drive away the terrible dread that was creeping over him.
+
+Anyway, Kim Cheomji flung open the door of the room. A sickening stench hit his dull nose: the dust from under the torn reed mat, the smell of poo and pee from unwashed diapers, the smell of clothes thick with every kind of grime, mixed with the rotting sweat of the sick.
+===
+방안에 들어서며 설렁탕을 한구석에 놓을 사이도 없이 주정군은 목청을 있는 대로 다 내어 호통을 쳤다.
+
+“이런 오라질 년, 주야장천(晝夜長川) 누워만 있으면 제일이야! 남편이 와도 일어나지를 못해.”라는 소리와 함께 발길로 누운 이의 다리를 몹시 찼다. 그러나 발길에 채이는 건 사람의 살이 아니고 나무등걸과 같은 느낌이 있었다. 이때에 빽빽 소리가 응아 소리로 변하였다. 개똥이가 물었던 젖을 빼어놓고 운다. 운대도 온 얼굴을 찡그려 붙여서, 운다는 표정을 할 뿐이다. 응아 소리도 입에서 나는 게 아니고 마치 뱃속에서 나는 듯하였다. 울다가 울다가 목도 잠겼고 또 울 기운조차 시진한 것 같다.
+
+발로 차도 그 보람이 없는 걸 보자 남편은 아내의 머리맡으로 달려들어 그야말로 까치집 같은 환자의 머리를 꺼들어 흔들며, “이 년아, 말을 해, 말을! 입이 붙었어, 이 오라질 년!”
+
+“…”
+
+“으응, 이것 봐, 아무 말이 없네.” “…”
+
+“이년아, 죽었단 말이냐, 왜 말이 없어.”
+
+“…”
+
+“으응. 또 대답이 없네, 정말 죽었나버이.”
+---
+Stepping into the room, before he even had time to set the seolleongtang down in the corner, the drunk roared at the top of his voice:
+
+"Damn you, woman! Lying there day and night is all you're good for! Can't even get up when your husband comes home." And with that he kicked the legs of the woman lying there, hard. But what his foot struck did not feel like human flesh; it felt like a tree stump. At that moment the sucking sound turned into a cry, "waah." Gaettong-i let go of the breast and cried. Even crying, he only screwed up his whole face into the look of crying. The "waah" did not seem to come from his mouth, but from deep in his belly. He had cried and cried until his throat was hoarse and he had no strength left even to cry.
+
+Seeing that kicking did no good, the husband rushed to his wife's pillow, grabbed the sick woman's hair, which was like a magpie's nest, and shook her. "You! Talk, talk! Is your mouth glued shut? Damn you!"
+
+"..."
+
+"Huh, look at this. Not a word." "..."
+
+"You, are you dead? Why don't you say anything?"
+
+"..."
+
+"Huh. No answer again. She must really be dead."
+===
+이러다가 누운 이의 흰 창을 덮은, 위로 치뜬 눈을 알아보자마자, “이 눈깔! 이 눈깔! 왜 나를 바라보지 못하고 천정만 보느냐, 응.”하는 말 끝엔 목이 메었다. 그러자 산 사람의 눈에서 떨어진 닭의 똥 같은 눈물이 죽은 이의 뻣뻣한 얼굴을 어룽어룽 적시었다. 문득 김 첨지는 미칠 듯이 제 얼굴을 죽은 이의 얼굴에 한테 비비대며 중얼거렸다.
+
+“설렁탕을 사다놓았는데 왜 먹지를 못하니, 왜 먹지를 못하니... 괴상하게도 오늘은! 운수가 좋더니만... ”
+---
+Then, as soon as he saw her eyes rolled upward, the whites covering them, he cried, "These eyes! These eyes! Why won't you look at me, why do you only look at the ceiling, huh?" and his voice choked at the end. Then tears like chicken droppings fell from the living man's eyes and spotted the dead woman's stiff face. Suddenly, like a madman, Kim Cheomji rubbed his face against the dead woman's face and murmured:
+
+"I brought you seolleongtang, why can't you eat it, why can't you eat it... It's so strange, today! I had such good luck..."
