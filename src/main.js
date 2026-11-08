@@ -725,8 +725,27 @@ const ZOO_TEXT = {
 };
 const MELON_PRICE = 3000;
 // Before the zoo opens a hoarding closes it off (scripts/build-grand-park.mjs
-// ZOO_OPEN): no feeding-time toasts then, and its animals stay still.
+// ZOO_OPEN): no feeding-time toasts then. (The animals still live their
+// lives in there, for anyone peeking in.)
 const zooClosed = map.landmarks.some((l) => l.type === 'hoarding' && l.closes === 'zoo');
+// A gap at the foot of the hoarding that only operators fit through
+// (am_operator, asked once when one comes close): Yozi looks round the zoo
+// before it opens. Everyone else just sees a broken board.
+const DOGHOLE = map.landmarks.find((l) => l.type === 'doghole' && l.closes === 'zoo') || null;
+const DOGHOLE_TEXT = { en: '🐾 Crawl through the gap', ko: '🐾 개구멍으로 들어가기', ja: '🐾 すき間をくぐる', zh: '🐾 从缝里钻过去' };
+let dogholeOp = null; // null: not asked yet; then true / false
+function dogholeAct(p) {
+  if (!DOGHOLE || mode !== 'street') return null;
+  const nx = Math.sin(DOGHOLE.ry || 0), nz = Math.cos(DOGHOLE.ry || 0); // the hoarding's face
+  const dx = p.x - DOGHOLE.x, dz = p.z - DOGHOLE.z, across = dx * nx + dz * nz;
+  if (Math.hypot(dx, dz) > 1.8) return null;
+  if (dogholeOp === null) { dogholeOp = false; sky.isOperator().then((ok) => { dogholeOp = ok; action = STALE; }); }
+  if (!dogholeOp) return null;
+  const side = across >= 0 ? -1 : 1; // to the other side
+  return { key: 'doghole', label: DOGHOLE_TEXT[getLanguage()] || DOGHOLE_TEXT.en, run: () => {
+    moveMeTo(scene, DOGHOLE.x + nx * 1.6 * side, DOGHOLE.z + nz * 1.6 * side, Math.atan2(nx * side, nz * side));
+  } };
+}
 const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
   if (mode !== 'street' || zooClosed) return;
   shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
@@ -5977,6 +5996,7 @@ function updateAction(p, tSec) {
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
     else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
     else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
+    else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding (operators)
     else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
@@ -6625,7 +6645,7 @@ renderer.setAnimationLoop(() => {
   others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { if (!zooClosed) zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

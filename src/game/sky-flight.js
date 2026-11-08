@@ -552,6 +552,7 @@ export function createSkyFlight(game) {
   return {
     command,
     fly,
+    isOperator, // (am_operator on the server; also lets operators through the zoo's gap)
     // Sprites drift on after landing: call every frame.
     update(dt) { fx.update(dt); },
     land() { if (kind && phase !== 'off') land(); },

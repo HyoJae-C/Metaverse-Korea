@@ -14,7 +14,7 @@ import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
-import { cgpGate, hoarding } from './grand-park.js';
+import { cgpGate, doghole, hoarding } from './grand-park.js';
 import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -609,6 +609,7 @@ export function buildLandmarks(list = [], scene) {
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
     else if (l.type === 'avenue') avenue(g, l);
+    else if (l.type === 'doghole') doghole(g, l); // (a gap only operators fit through: main.js)
     else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);

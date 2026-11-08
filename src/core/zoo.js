@@ -22,26 +22,52 @@ export const FULL_FAN = 0.3; // how often a peacock opens its train all the way 
 
 // How each kind gets about: walking speed (m/s), how often it rests.
 const KIND = {
-  rabbit: { speed: 1.2, rest: 0.5 },
-  guineapig: { speed: 0.6, rest: 0.55 },
-  goat: { speed: 0.9, rest: 0.45 },
-  sheep: { speed: 0.7, rest: 0.6 },
-  macaque: { speed: 1.4, rest: 0.4 },
-  flamingo: { speed: 0.5, rest: 0.6 },
-  pelican: { speed: 0.6, rest: 0.6 },
-  peacock: { speed: 0.6, rest: 0.45 },
-  tiger: { speed: 1.3, rest: 0.55 },
-  lion: { speed: 1.1, rest: 0.7 },
-  bear: { speed: 0.9, rest: 0.55 },
-  polarbear: { speed: 0.9, rest: 0.45 },
-  seal: { speed: 1.4, rest: 0.35 },
-  walrus: { speed: 0.6, rest: 0.6 },
-  hippo: { speed: 0.6, rest: 0.6 },
-  snake: { speed: 0.35, rest: 0.6 },
+  rabbit: { speed: 1.2, rest: 0.3 },
+  guineapig: { speed: 0.6, rest: 0.35 },
+  goat: { speed: 0.9, rest: 0.3 },
+  sheep: { speed: 0.7, rest: 0.35 },
+  macaque: { speed: 1.4, rest: 0.3 },
+  flamingo: { speed: 0.5, rest: 0.45 },
+  pelican: { speed: 0.6, rest: 0.45 },
+  peacock: { speed: 0.6, rest: 0.35 },
+  tiger: { speed: 1.3, rest: 0.3 },
+  lion: { speed: 1.1, rest: 0.45 },
+  bear: { speed: 0.9, rest: 0.3 },
+  polarbear: { speed: 0.9, rest: 0.3 },
+  seal: { speed: 1.4, rest: 0.25 },
+  walrus: { speed: 0.6, rest: 0.4 },
+  hippo: { speed: 0.6, rest: 0.4 },
+  snake: { speed: 0.35, rest: 0.5 },
+  elephant: { speed: 0.8, rest: 0.3 },
+  giraffe: { speed: 0.9, rest: 0.3 },
+  zebra: { speed: 1.6, rest: 0.3 },
 };
+// Things animals do together, and on their own (core/zoo.js _social, _solo).
+//   pair: walk over to a pen-mate of the same kind, then do it together.
+//   solo: [act, chance] tried in turn when picking what to do next.
+const SOCIAL = {
+  tiger: { pair: 'tussle', p: 0.25, solo: [['pace', 0.25], ['roll', 0.12], ['stretch', 0.12]] },
+  lion: { pair: 'tussle', p: 0.2, solo: [['roar', 0.15], ['roll', 0.12], ['stretch', 0.1]] },
+  bear: { pair: 'wrestle', p: 0.3, solo: [['situp', 0.2], ['roll', 0.15]] },
+  polarbear: { solo: [['roll', 0.2], ['situp', 0.15]] },
+  goat: { pair: 'butt', p: 0.2, solo: [['rear', 0.12]] },
+  sheep: { solo: [['follow', 0.45]] },
+  rabbit: { pair: 'chase', p: 0.2, solo: [['binky', 0.25]] },
+  guineapig: { pair: 'chase', p: 0.15, solo: [['popcorn', 0.2]] },
+  seal: { pair: 'chase', p: 0.3, solo: [['bark', 0.25]] },
+  walrus: { solo: [['bark', 0.2]] },
+  hippo: { pair: 'nudge', p: 0.15, solo: [['yawn', 0.2]] },
+  elephant: { pair: 'trunks', p: 0.2, solo: [['spray', 0.2], ['drink', 0.15]] },
+  giraffe: { pair: 'necking', p: 0.2, solo: [['browse', 0.3], ['drink', 0.12]] },
+  zebra: { pair: 'groom', p: 0.2, solo: [['gallop', 0.18], ['drink', 0.12], ['dust', 0.08]] },
+  flamingo: { solo: [['oneleg', 0.3]] },
+};
+// How long each act lasts (s).
+const ACT_T = { tussle: 5, wrestle: 6, butt: 4, nudge: 4, trunks: 6, necking: 7, groom: 7, pace: 0, roll: 4, stretch: 2.5, roar: 3, situp: 5, rear: 2, binky: 1.6, popcorn: 1.4, bark: 3, yawn: 3, spray: 5, drink: 6, browse: 7, dust: 4, oneleg: 8 };
+const BUSY = new Set(['melon', 'melonOpen', 'eat', 'snack', 'happy', 'pose', 'cheeky', 'climb', 'perch', 'jumpdown', 'flip', 'chase', 'wait']);
 // How deep a swimmer sinks in its pond (metres), so only its back shows.
 const SINK = { polarbear: 0.6, seal: 0.3, walrus: 0.5, hippo: 0.8 };
-const RADIUS = { rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3 };
+const RADIUS = { elephant: 1.6, giraffe: 0.9, zebra: 0.6, rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3 };
 
 // Feeding times: every pen with "feed" has one every FEED_CYCLE seconds, at
 // its own offset, on the wall clock, so everyone sees the same feeding.
@@ -140,7 +166,7 @@ function buildFence(g, pen) {
 // House: a small building, glass at the front (pen.board side), walls and a
 // roof elsewhere (the snake house).
 function glassFence(g, pen, kind) {
-  const H = kind === 'glass' ? 1.3 : kind === 'tank' ? 2.2 : 3.2;
+  const H = kind === 'glass' ? 1.3 : kind === 'tank' ? 3.2 : 3.2;
   const glass = new THREE.MeshLambertMaterial({ color: '#bfe6f2', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
   const hw = pen.w / 2, hd = pen.d / 2, front = pen.board || 'n';
   const sides = { n: [-hw, -hd, hw, -hd], s: [-hw, hd, hw, hd], w: [-hw, -hd, -hw, hd], e: [hw, -hd, hw, hd] };
@@ -165,12 +191,29 @@ function glassFence(g, pen, kind) {
   }
 }
 
-// Hall: a building you walk into (the Sea Animals): walls with a door gap
-// (pen.gate), a coloured band round the top, and a roof that the zoo hides
-// while you are inside so the camera can see you. Inside, the walls drop
-// away too, all but a low base, so the camera behind you can see in.
+// Hall: a building you go into (the Sea Animals): tall walls with a door
+// (pen.gate), a coloured band round the top, a roof. Inside it is a room:
+// sea-blue walls with fish painted on, a high ceiling with lights. Those
+// inner faces only show from inside, so while you are in, the zoo hides the
+// outside shell and the camera behind you looks through the wall at your
+// back while the room stays round you.
+let seaTex = null;
+function seaWall() {
+  return (seaTex ||= canvasTex(256, 256, (c, w, h) => {
+    const gr = c.createLinearGradient?.(0, 0, 0, h);
+    if (gr?.addColorStop) { gr.addColorStop(0, '#9fd8ef'); gr.addColorStop(1, '#2d6e9c'); c.fillStyle = gr; } else c.fillStyle = '#5aa0c8';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    for (const [x, y, k] of [[50, 70, 1], [170, 110, 0.7], [90, 170, 0.9], [200, 200, 0.6]]) { // fish
+      c.beginPath(); c.ellipse?.(x, y, 22 * k, 10 * k, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(x - 20 * k, y); c.lineTo(x - 34 * k, y - 10 * k); c.lineTo(x - 34 * k, y + 10 * k); c.fill();
+    }
+    c.fillStyle = 'rgba(255,255,255,0.35)';
+    for (let i = 0; i < 12; i++) { c.beginPath(); c.arc?.((i * 47) % w, (i * 83) % h, 3 + (i % 3), 0, Math.PI * 2); c.fill(); } // bubbles
+  }));
+}
 function hallWalls(g, pen) {
-  const H = 4.2;
+  const H = 7.5;
   const shell = new THREE.Group(); // everything that hides while you're inside
   shell.name = 'hall-shell';
   g.add(shell);
@@ -188,13 +231,35 @@ function hallWalls(g, pen) {
     const base = new THREE.Mesh(new THREE.BoxGeometry(len, 0.5, 0.32), mat('#3f86b8'));
     base.position.set(mx, 0.25, mz); base.rotation.y = -ang;
     g.add(base);
+    // The room side: a painted face looking in (seen only from inside).
+    const nl = Math.hypot(mx, mz) || 1, ix = -mx / nl, iz = -mz / nl;
+    const inner = new THREE.Mesh(new THREE.PlaneGeometry(len, H), new THREE.MeshLambertMaterial({ map: seaWall() }));
+    inner.position.set(mx + ix * 0.17, H / 2, mz + iz * 0.17);
+    inner.rotation.y = Math.atan2(ix, iz);
+    inner.name = 'hall-inner';
+    g.add(inner);
+  }
+  // The ceiling, high up, seen from below, with rows of lights.
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(pen.w, pen.d).rotateX(Math.PI / 2), mat('#1f4f75'));
+  ceil.position.y = H - 0.02;
+  g.add(ceil);
+  for (let x = -pen.w / 2 + 3; x < pen.w / 2 - 1; x += 6) {
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, pen.d - 4), new THREE.MeshBasicMaterial({ color: '#eaf7ff' }));
+    lamp.position.set(x, H - 0.08, 0);
+    g.add(lamp);
   }
   if (pen.gate) { // a lintel over the door
     const hw = pen.w / 2, hd = pen.d / 2, gw = pen.gate.w || 4, c = pen.gate.at || 0;
     const at = { n: [c, -hd, 0], s: [c, hd, 0], w: [-hw, c, Math.PI / 2], e: [hw, c, Math.PI / 2] }[pen.gate.side];
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.2, H - 2.6, 0.32), mat('#e3eef2'));
-    lintel.position.set(at[0], 2.6 + (H - 2.6) / 2, at[1]); lintel.rotation.y = at[2];
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.2, H - 3, 0.32), mat('#e3eef2'));
+    lintel.position.set(at[0], 3 + (H - 3) / 2, at[1]); lintel.rotation.y = at[2];
     shell.add(lintel);
+    // ...and its room side, over the door
+    const inner = new THREE.Mesh(new THREE.PlaneGeometry(gw + 0.2, H - 3), new THREE.MeshLambertMaterial({ map: seaWall() }));
+    const nl = Math.hypot(at[0], at[1]) || 1;
+    inner.position.set(at[0] - (at[0] / nl) * 0.17, 3 + (H - 3) / 2, at[1] - (at[1] / nl) * 0.17);
+    inner.rotation.y = Math.atan2(-at[0] / nl, -at[1] / nl);
+    g.add(inner);
   }
   const roof = shell;
   const slab = new THREE.Mesh(new THREE.BoxGeometry(pen.w + 0.8, 0.3, pen.d + 0.8), mat('#5d8fb0'));
@@ -403,7 +468,7 @@ export class Zoo {
         a.root.position.set(x, 0, z);
         a.root.rotation.y = Math.random() * Math.PI * 2;
         g.add(a.root);
-        animals.push({ ...a, kind: grp.kind, box, pen, state: 'idle', t: Math.random() * 3, phase: Math.random() * 6, fanT: 0, fanned: 0, sink: 0 });
+        animals.push({ ...a, kind: grp.kind, box, pen, state: 'idle', t: Math.random() * 3, phase: Math.random() * 6, fanT: 0, fanned: 0, sink: 0, neck0: a.neck?.rotation.x || 0 });
       }
     }
     g.traverse((o) => { if (o.isMesh) o.castShadow = !(o.material?.transparent); });
@@ -467,7 +532,10 @@ export class Zoo {
   }
 
   _pick(a, lx, lz, playerNear, P) {
+    if (a.mate) { if (a.mate.mate === a) a.mate.mate = null; a.mate = null; }
+    a.body.rotation.z = a.body.rotation.z % (Math.PI * 2);
     if (a.climbs && this._monkey(a, lx, lz, P)) return;
+    if (!a.feed && !(playerNear && a.pen.pet && this.food > 0) && this._social(a, P)) return;
     const k = KIND[a.kind];
     const r = Math.random();
     const [x0, z0, x1, z1] = a.box;
@@ -529,6 +597,163 @@ export class Zoo {
     }
     if (r < 0.9) { a.state = 'scratch'; a.t = 3 + Math.random() * 2; return true; }
     return false;
+  }
+
+  // Doing something together or alone (SOCIAL). Returns true when it did.
+  _social(a, P) {
+    const S = SOCIAL[a.kind];
+    if (!S) return false;
+    const box = a.box, [x0, z0, x1, z1] = box;
+    const free = (b) => b !== a && b.kind === a.kind && !b.feed && !b.mate && !b.then && !BUSY.has(b.state) && !(b.lift > 0.1);
+    // The elephant calf keeps close to its mother.
+    if (a.calf) {
+      const mum = P.animals.find((b) => b.kind === a.kind && !b.calf);
+      if (mum && Math.random() < 0.6) {
+        const m = mum.root.position, side = Math.random() < 0.5 ? -1 : 1;
+        a.state = 'walk'; a.target = [m.x + side * 2.2, m.z - 1 + Math.random() * 2]; a.t = 8; a.run = 1.3;
+        return true;
+      }
+    }
+    if (S.pair && Math.random() < S.p) {
+      const mates = P.animals.filter(free);
+      const b = mates[Math.floor(Math.random() * mates.length)];
+      if (b) {
+        if (S.pair === 'chase') { // off it runs, and a goes after it
+          b.state = 'walk'; b.run = 2.2; b.then = null; b.t = 4;
+          b.target = [x0 + Math.random() * (x1 - x0), z0 + Math.random() * (z1 - z0)];
+          a.state = 'chase'; a.prey = b; a.t = 4;
+          return true;
+        }
+        const bp = b.root.position, gap = (RADIUS[a.kind] || 0.5) * 2 + 0.2;
+        const ang = Math.random() * Math.PI * 2;
+        a.state = 'walk'; a.target = [bp.x + Math.sin(ang) * gap, bp.z + Math.cos(ang) * gap]; a.t = 10; a.then = S.pair; a.mate = b;
+        b.state = 'wait'; b.t = 11; b.mate = a; b.then = null;
+        return true;
+      }
+    }
+    for (const [act, p] of S.solo || []) {
+      if (Math.random() >= p) continue;
+      if (act === 'gallop') { // the whole herd runs off together
+        const tx = x0 + Math.random() * (x1 - x0), tz = z0 + Math.random() * (z1 - z0);
+        for (const b of P.animals) if (b.kind === a.kind && (b === a || free(b))) {
+          b.state = 'walk'; b.run = 2.6; b.then = null; b.t = 9;
+          b.target = [tx + (Math.random() - 0.5) * 5, tz + (Math.random() - 0.5) * 5];
+        }
+        return true;
+      }
+      if (act === 'follow') { // sheep: tag along behind another
+        const b = P.animals.filter((q) => q !== a && q.kind === a.kind)[Math.floor(Math.random() * (P.animals.length - 1))];
+        if (!b) continue;
+        const bp = b.root.position, ry = b.root.rotation.y;
+        a.state = 'walk'; a.target = [bp.x - Math.sin(ry) * 1.1 + (Math.random() - 0.5), bp.z - Math.cos(ry) * 1.1 + (Math.random() - 0.5)]; a.t = 6;
+        return true;
+      }
+      if (act === 'drink' || act === 'browse') { // walk to the water / a tree first
+        const spot = act === 'drink' ? a.pen.pond : (a.pen.props || []).find(([k]) => k === 'tree')?.slice(1);
+        if (!spot) continue;
+        const ang = Math.random() * Math.PI * 2, rr = act === 'drink' ? spot[2] + (RADIUS[a.kind] || 0.5) : 2.2;
+        a.state = 'walk'; a.target = [spot[0] + Math.sin(ang) * rr, spot[1] + Math.cos(ang) * rr]; a.t = 14; a.then = act;
+        a.spot = [spot[0], spot[1]];
+        return true;
+      }
+      if (act === 'pace') { // a tiger pacing up and down along the front
+        const z = a.box[1] + 0.5;
+        a.state = 'walk'; a.target = [Math.random() < 0.5 ? x0 + 1 : x1 - 1, z]; a.t = 12; a.then = 'pace'; a.laps = (a.laps || 0) + 1;
+        if (a.laps > 4) { a.laps = 0; a.then = null; }
+        return true;
+      }
+      this._begin(a, act);
+      return true;
+    }
+    return false;
+  }
+
+  // Start an act once there: with a mate, both do it facing each other.
+  _begin(a, act) {
+    if (act === 'pace') { const [x0, , x1] = a.box; a.state = 'walk'; a.target = [a.root.position.x < (x0 + x1) / 2 ? x1 - 1 : x0 + 1, a.box[1] + 0.5]; a.t = 12; a.then = a.laps++ < 4 ? 'pace' : null; return; }
+    a.state = act; a.t = (ACT_T[act] || 4) * (0.8 + Math.random() * 0.4);
+    const b = a.mate;
+    if (b && b.mate === a) {
+      const ap = a.root.position, bp = b.root.position;
+      a.face = Math.atan2(bp.x - ap.x, bp.z - ap.z);
+      b.face = act === 'necking' ? a.face : act === 'groom' ? a.face + Math.PI * 0.85 : a.face + Math.PI; // side by side / head to tail / face to face
+      if (act === 'necking') a.face = b.face;
+      b.state = act; b.t = a.t; b.lead = false; a.lead = true;
+    } else if (a.spot) {
+      a.face = Math.atan2(a.spot[0] - a.root.position.x, a.spot[1] - a.root.position.z);
+      a.spot = null;
+    } else a.face = a.root.rotation.y;
+  }
+
+  // How an act looks, frame by frame. Returns { hop, low, rx, rz, moving }.
+  _act(a, dt) {
+    const r = a.root, t = a.phase, ph = a.lead === false ? Math.PI : 0;
+    const out = { hop: 0, low: 0, rx: 0, rz: 0, moving: false };
+    const s = a.state;
+    if (s === 'wait') { const m = a.mate; if (m) turn(r, Math.atan2(m.root.position.x - r.position.x, m.root.position.z - r.position.z), dt); if (!m || m.mate !== a) a.t = Math.min(a.t, 0); return out; }
+    turn(r, a.face ?? r.rotation.y, dt);
+    if (s === 'tussle') { // big cats at play: up on the hind legs, batting, rolling
+      out.hop = Math.max(0, Math.sin(t * 5 + ph)) * 0.35; out.rx = -Math.max(0, Math.sin(t * 5 + ph)) * 0.5; out.rz = Math.sin(t * 3 + ph) * 0.2;
+      const k = Math.sin(t * 2.5 + ph) * dt * 1.2; r.position.x += Math.sin(r.rotation.y) * k; r.position.z += Math.cos(r.rotation.y) * k;
+    } else if (s === 'wrestle') { // bears standing up, pushing each other, swaying
+      out.rx = -0.75 + Math.sin(t * 3 + ph) * 0.15; out.hop = 0.35; out.rz = Math.sin(t * 2 + ph) * 0.15;
+    } else if (s === 'butt' || s === 'rear') { // goats: rear up... and clash
+      const c = Math.sin(t * 3.2 + ph); out.rx = c > 0 ? -c * 0.6 : -c * 0.25; out.hop = Math.max(0, c) * 0.25;
+    } else if (s === 'nudge') { out.rz = Math.sin(t * 2 + ph) * 0.08; a.jaw && (a.jaw.rotation.x = Math.max(0, Math.sin(t * 2)) * 0.5); }
+    else if (s === 'roll') { out.rz = Math.min(Math.PI * 0.85, (ACT_T.roll - Math.max(0, a.t)) * 3) * (a.t > 0.6 ? 1 : a.t / 0.6); out.low = 0.1; a.legs.forEach((l, i) => { l.rotation.x = Math.sin(t * 9 + i) * 0.6; }); }
+    else if (s === 'stretch') { out.rx = 0.25; out.low = 0.12; }
+    else if (s === 'roar') { out.rx = -0.12; }
+    else if (s === 'situp') { out.rx = -0.95; out.hop = 0.25; }
+    else if (s === 'binky' || s === 'popcorn') { const u = (t * (s === 'binky' ? 4 : 6)) % 1; out.hop = Math.sin(u * Math.PI) * (s === 'binky' ? 0.4 : 0.15); out.rz = s === 'binky' ? Math.sin(u * Math.PI * 2) * 0.5 : 0; }
+    else if (s === 'bark') { out.hop = Math.abs(Math.sin(t * 6)) * 0.08; out.rx = -0.2; }
+    else if (s === 'yawn') { if (a.jaw) a.jaw.rotation.x = Math.sin(Math.min(1, (ACT_T.yawn - a.t) / ACT_T.yawn) * Math.PI) * 0.95; }
+    else if (s === 'dust') { out.rz = Math.sin(Math.min(1, (ACT_T.dust - a.t) / ACT_T.dust) * Math.PI) * 1.4; out.low = 0.25; }
+    else if (s === 'oneleg') { if (a.legs[1]) a.legs[1].rotation.x = -2.2; }
+    return out;
+  }
+
+  // Trunk, ears and necks: the parts only some animals have.
+  _parts(a, dt) {
+    const t = a.phase, s = a.state, k = Math.min(1, dt * 4);
+    if (a.ears) { // elephant ears: a slow fan, fast when excited
+      const fast = s === 'trunks' || s === 'spray' || a.run > 1;
+      a.ears.forEach((e, i) => { e.rotation.y = (i ? 1 : -1) * (0.35 + Math.sin(t * (fast ? 7 : 1.6)) * (fast ? 0.45 : 0.25)); });
+    }
+    if (a.trunk) {
+      const up = s === 'spray' ? -0.42 : s === 'trunks' ? -0.3 : s === 'drink' || s === 'eat' || s === 'graze' ? 0.18 : 0.1;
+      a.trunk.forEach((seg, i) => {
+        const want = i === 0 ? up + 0.15 : up + (s === 'trunks' ? Math.sin(t * 3 + i) * 0.12 : 0);
+        seg.rotation.x += (want - seg.rotation.x) * k;
+        seg.rotation.z = Math.sin(t * 1.3 - i * 0.5) * (s === 'drink' ? 0.02 : 0.1);
+      });
+      if (s === 'spray') this._spray(a, t); else if (a.drops) a.drops.visible = false;
+    }
+    if (a.neck) {
+      const tall = a.kind === 'giraffe';
+      let want = a.neck0;
+      if (s === 'graze' || s === 'eat') want += tall ? 0.9 : 0.8;
+      else if (s === 'drink') want += tall ? 1.55 : 0.9;
+      else if (s === 'browse') want -= 0.3;
+      else if (s === 'groom') want += 0.5 + Math.sin(t * 6) * 0.1;
+      a.neck.rotation.x += (want - a.neck.rotation.x) * Math.min(1, dt * 2);
+      a.neck.rotation.z += ((s === 'necking' ? Math.sin(t * 1.6 + (a.lead === false ? Math.PI : 0)) * 0.4 : 0) - a.neck.rotation.z) * k;
+      if (tall && s === 'drink') a.legs.forEach((l, i) => { l.rotation.z = (i % 2 ? -1 : 1) * 0.25; }); else if (tall) a.legs.forEach((l) => { l.rotation.z *= 0.9; });
+    }
+  }
+
+  // Water from an elephant's trunk: drops in an arc over its back.
+  _spray(a, t) {
+    if (!a.drops) {
+      a.drops = new THREE.Group();
+      for (let i = 0; i < 14; i++) a.drops.add(new THREE.Mesh(new THREE.SphereGeometry(0.07, 5, 4), mat('#8fd0f0')));
+      a.root.add(a.drops);
+    }
+    a.drops.visible = true;
+    const sc = a.calf ? 0.55 : 1;
+    a.drops.children.forEach((d, i) => {
+      const u = (t * 0.8 + i / 14) % 1;
+      d.position.set(Math.sin(i * 2.3) * 0.3 * sc, (3.4 + Math.sin(u * Math.PI) * 1.6 - u * 1.4) * sc, (1.4 - u * 3.2) * sc);
+    });
   }
 
   update(dt, player) {
@@ -634,7 +859,7 @@ export class Zoo {
       const tx = Math.min(x1, Math.max(x0, a.target[0])), tz = Math.min(z1, Math.max(z0, a.target[1]));
       const dx = tx - r.position.x, dz = tz - r.position.z, d = Math.hypot(dx, dz);
       if (d < 0.3 || a.t <= 0) {
-        if (a.state === 'melon') { turn(r, a.face, dt); } else if (a.feed) { a.state = 'eat'; a.t = 60; } else if (a.posing) { a.state = 'pose'; a.t = 4; a.posing = false; } else if (a.then === 'cheeky') { a.state = 'cheeky'; a.t = 4; a.then = null; } else if (a.then === 'climb') { a.state = 'climb'; a.t = 1.6; a.then = null; } else a.t = 0;
+        if (a.state === 'melon') { turn(r, a.face, dt); } else if (a.feed) { a.state = 'eat'; a.t = 60; } else if (a.posing) { a.state = 'pose'; a.t = 4; a.posing = false; } else if (a.then === 'cheeky') { a.state = 'cheeky'; a.t = 4; a.then = null; } else if (a.then === 'climb') { a.state = 'climb'; a.t = 1.6; a.then = null; } else if (a.then) { const act = a.then; a.then = null; this._begin(a, act); } else a.t = 0;
         a.run = 0;
       } else {
         const sp = k.speed * (a.run || (a.feed || a.state === 'melon' ? 1.5 : 1)) * (a.sink > 0.1 ? 0.8 : 1) * dt;
@@ -675,6 +900,9 @@ export class Zoo {
     } else if (a.state === 'sit') {
       low = a.bird || a.slithers ? 0 : 0.05;
     }
+    let rx = 0, rz = 0;
+    if (a.state in ACT_T || a.state === 'wait') { const o = this._act(a, dt); hop = o.hop; low = o.low; rx = o.rx; rz = o.rz; }
+    if (a.state !== 'flip') { const k2 = Math.min(1, dt * 6); a.body.rotation.x += (rx - a.body.rotation.x) * k2; a.body.rotation.z += (rz - a.body.rotation.z) * k2; }
     if (a.t <= 0 && !a.state.startsWith('melon')) this._pick(a, lx, lz, near, P);
     if (a.climbs) r.position.y = a.lift || 0;
     // In the pond: sink so only the back shows.
@@ -682,16 +910,17 @@ export class Zoo {
     const inPond = a.swims && pond && Math.hypot(r.position.x - pond[0], r.position.z - pond[1]) < pond[2] - 0.3;
     a.sink += ((inPond ? SINK[a.kind] || 0.3 : 0) - a.sink) * Math.min(1, dt * 2);
     const step = moving && !a.hop && !a.shuffles ? Math.sin(a.phase * (a.bird ? 8 : 12)) * 0.45 : 0;
-    a.legs.forEach((l, i) => { l.rotation.x = (i % 2 === (i < 2 ? 0 : 1) ? step : -step); });
+    if (a.state !== 'roll' && a.state !== 'oneleg') a.legs.forEach((l, i) => { l.rotation.x = (i % 2 === (i < 2 ? 0 : 1) ? step : -step); });
+    this._parts(a, dt);
     if (a.arms) this._arms(a);
     a.body.position.y += (hop - low - a.sink - a.body.position.y) * Math.min(1, dt * 12);
     // Grazing or eating: head down; preening: a bird turns its head back;
     // posing: head up, looking at you.
-    const headDown = a.state === 'graze' || a.state === 'eat' ? 0.7 : a.state === 'snack' ? 0.35 : a.state === 'pose' ? -0.15 : 0;
+    const headDown = a.neck ? (a.state === 'browse' ? -0.4 : a.state === 'graze' || a.state === 'eat' || a.state === 'drink' ? 0.3 : 0) : a.state === 'graze' || a.state === 'eat' || a.state === 'drink' ? 0.7 : a.state === 'snack' ? 0.35 : a.state === 'pose' ? -0.15 : a.state === 'roar' || a.state === 'bark' || a.state === 'yawn' ? -0.45 : 0;
     if (a.state !== 'melonOpen') a.head.rotation.x += (headDown + (a.state === 'eat' || a.state === 'snack' ? Math.sin(a.phase * 8) * 0.1 : Math.sin(a.phase * 1.3) * 0.06) - a.head.rotation.x) * Math.min(1, dt * 4);
     a.head.rotation.y = a.state === 'preen' ? Math.sin(a.phase * 0.8) * 1.2 : a.state === 'pose' ? 0 : Math.sin(a.phase * 0.5) * 0.15;
-    if (a.jaw && a.state !== 'melonOpen') a.jaw.rotation.x += (0 - a.jaw.rotation.x) * Math.min(1, dt * 8);
-    if (a.tail) a.tail.rotation.y = a.fan ? 0 : Math.sin(a.phase * 4) * 0.3;
+    if (a.jaw && a.state !== 'melonOpen' && a.state !== 'yawn' && a.state !== 'nudge') a.jaw.rotation.x += (0 - a.jaw.rotation.x) * Math.min(1, dt * 8);
+    if (a.tail) a.tail.rotation.y = a.fan ? 0 : Math.sin(a.phase * (a.state === 'groom' || a.state === 'tussle' ? 9 : 4)) * (a.state === 'groom' ? 0.6 : 0.3);
     if (a.wings && a.state === 'preen') a.wings.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * Math.abs(Math.sin(a.phase * 3)) * 0.4; });
     if (a.fan) this._fan(a, dt, near);
     if (a.slithers) { // S curves down the body, faster while moving
