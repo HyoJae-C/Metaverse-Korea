@@ -1,0 +1,48 @@
+# Performance budget
+
+The game keeps growing, so "it still runs" has to be checked, not hoped for.
+These are the limits every change should stay inside, and how to stay there.
+
+## Budgets
+
+| What | Budget | Now (2026-11-09) | Checked by |
+|---|---|---|---|
+| First visit download, gzipped (entry + preloads + CSS) | 1,300 KB | 1,226 KB + one language (~15 KB) | `node scripts/check-size.mjs` in CI |
+| Any single script, gzipped | 1,000 KB | 941 KB (main) | same |
+| Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
+| Draw calls inside a room or park | 300 | ~180 | same |
+| Triangles per frame on a street | 150k | ~87k | same |
+| Page memory | see `tests/e2e/memory.mjs` | | CI e2e |
+
+Known hot spots: the Banpo (~3,200), Ttukseom (~2,000) and Mangwon (~800)
+park gates draw every prop as its own mesh. The Han River park work is merging
+those.
+
+## Rules for new features
+
+1. **Start as a module.** New features live in their own file under
+   `src/game/` (or `src/core/` for pure logic), created with a
+   `createX(game)` factory that reads main.js state through getters. Do not
+   add new top-level functions or `*_TEXT` tables to `src/main.js`.
+2. **Load it when first used.** A store interior, a minigame or a district
+   that you only see after walking somewhere should come in with
+   `await import('./game/x.js')`, not a static import. Static imports all land
+   in the first download.
+3. **Repeat with InstancedMesh, merge what never moves.** One mesh per bench,
+   lamp or tree costs one draw call each. Use one InstancedMesh per kind, or
+   merge static geometry (`BufferGeometryUtils.mergeGeometries`). Big instanced
+   meshes are split into 80 m tiles at start-up (`src/core/split-instances.js`)
+   so the off-screen ones are skipped.
+4. **Hide what is far.** People past 150 m are skipped (`src/core/far-people.js`).
+   Props smaller than a person can usually go at 60–100 m.
+5. **Don't do per-frame work that can wait.** Distance checks, label
+   positions and UI text can run every 0.1–0.25 s.
+6. **Compress assets.** Prefer WebP/KTX2 textures at the size they are shown,
+   and Opus/AAC audio. `dist/` is about 34 MB, mostly books and audio, which
+   load only when used; keep it that way.
+
+## When a budget fails
+
+Find what grew (`node scripts/check-size.mjs` lists each file), and move it
+behind `import()`. Raise a budget only on purpose, in its own commit, with the
+reason in the message.

@@ -358,25 +358,27 @@ export class MapView {
       if (this.view.scale > 0.5 * dpr) labels.push({ text: localName(s.store.name, lang), sx: c.sx, sy: c.sy, gap: 17 * dpr, weight: 700, size: 12, color: '#4a3f35', pri: 3 });
     }
 
-    // Zone discs with a letter and the zone's name, on top of shop pins.
+    // Zone discs with their code and the zone's name, on top of shop pins.
     for (const z of this.zones) {
       const [sx, sy] = this.toScreen(z.x, z.z);
       if (!onScreen(sx, sy)) continue;
       g.fillStyle = z.zone.color;
       g.strokeStyle = '#fffaf0';
       g.lineWidth = 2.5 * dpr;
+      // A pill that fits the code ("A-1"), a disc for a single letter.
+      g.font = `900 ${14 * dpr}px system-ui, sans-serif`;
+      const hw = Math.max(15 * dpr, g.measureText(z.zone.id).width / 2 + 7 * dpr);
       g.beginPath();
-      g.arc(sx, sy, 15 * dpr, 0, Math.PI * 2);
+      g.roundRect(sx - hw, sy - 15 * dpr, hw * 2, 30 * dpr, 15 * dpr);
       g.fill();
       g.stroke();
       g.fillStyle = '#fffaf0';
-      g.font = `900 ${16 * dpr}px system-ui, sans-serif`;
       g.fillText(z.zone.id, sx, sy + 1);
-      mark(sx, sy, 16 * dpr);
+      taken.push({ x: sx - hw - dpr, y: sy - 16 * dpr, w: (hw + dpr) * 2, h: 32 * dpr });
       // Shops hidden under the disc: a small count; zoom in to see them.
       const n = zoneShops.get(z) || 0;
       if (n) {
-        const bx = sx + 13 * dpr, by = sy - 13 * dpr;
+        const bx = sx + hw - 2 * dpr, by = sy - 13 * dpr;
         g.fillStyle = filtered ? '#ff6f5b' : '#4a3f35';
         g.beginPath();
         g.arc(bx, by, 9 * dpr, 0, Math.PI * 2);
@@ -775,6 +777,7 @@ export class MapView {
       const i = document.createElement('span');
       i.className = 'map-row-icon';
       i.textContent = icon;
+      if (/^[A-Z]-\d+$/.test(icon)) i.classList.add('code'); // a zone code, "A-1"
       i.style.background = color;
       const tx = document.createElement('span');
       tx.className = 'map-row-text';

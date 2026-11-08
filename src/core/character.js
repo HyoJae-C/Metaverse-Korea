@@ -128,6 +128,7 @@ export function createCharacter(rawLook) {
   let umbrella = null; // open umbrella over the head
   let tube = null; // a swim ring (the pool)
   let phones = null; // headphones at the record café's listening bar
+  const footProps = []; // waiting for the model (addFootProps)
   const attachHeld = () => {
     if (!held) return;
     if (model?.hand) {
@@ -150,7 +151,7 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
+  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; for (const f of footProps.splice(0)) f(m); m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
   return {
     root,
     head,
@@ -160,6 +161,13 @@ export function createCharacter(rawLook) {
     // like the accessories: 'head' (~0.65 m wide, centred) or 'body' (0 at the
     // feet, shoulders at ~0.66).
     addProp(where, g) { (where === 'body' ? bodyAcc : headAcc).add(g); },
+    // Something on each foot (the diver's fins): make(i) builds foot i's piece
+    // (0 left, 1 right) in metres, toes along +z. It goes onto the foot bones
+    // once the model has loaded.
+    addFootProps(make) {
+      const put = (m) => m?.feet?.forEach((f, i) => { if (!f) return; const p = make(i); p.scale.multiplyScalar(1 / m.scale); f.add(p); });
+      if (model) put(model); else footProps.push(put);
+    },
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),

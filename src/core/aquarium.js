@@ -15,6 +15,7 @@
 // Entry is free for now. Signs are bilingual like the other interiors.
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex, wrapText } from './three-kit.js';
+import { makeNpc } from './npcs.js';
 
 export const AQUA_ROOM = { w: 56, d: 64, h: 9 };
 const HW = AQUA_ROOM.w / 2, HD = AQUA_ROOM.d / 2;
@@ -28,7 +29,8 @@ export const SEAFLOOR = { x0: 25, z0: 21, x1: HW, z1: 30 };
 export const JELLIES = [[-7, 3], [-3.8, 7], [-7, 11], [7, 3], [3.8, 7], [7, 11]]; // either side of the path to the tunnel
 export const WHALE = { x: 13, z0: -4.5, len: 25, scale: 2 }; // the floor line is the real length; the model is half
 export const SQUID = { x: -12, z0: 1, len: 12 }; // a giant squid at its real size, tentacles and all
-export const DIVER = { cx: -14, cz: -14.5, rx: 8, rz: 5, y: 3.2, scale: 1.7 }; // the diver keeper's round in the ocean tank (left half)
+export const DIVER = { cx: -14, cz: -14.5, rx: 8, rz: 5, y: 2.4, scale: 1.7 }; // the diver keeper's round in the ocean tank (left half)
+const SWIM_LIFT = 0.74; // how far the swimming pose lifts the body (core/model-pack.js SWIM_POSE.lift)
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const mat = matCache();
@@ -257,36 +259,28 @@ function giantSquid(len) {
   return { g, tick: (t) => { for (const l of limbs) { l.pivot.rotation.x = l.base.x + Math.sin(t * 0.6 + l.ph) * 0.05; l.pivot.rotation.y = l.base.y + Math.cos(t * 0.5 + l.ph) * 0.05; } } };
 }
 
-// The diver keeper: a swimmer in a black wetsuit lying along +z, mask on,
-// a yellow air tank on the back and long yellow fins that kick.
-function diverKeeper() {
-  const g = new THREE.Group();
-  const suit = '#1f2a36';
-  const torso = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), mat(suit));
-  torso.scale.set(0.42, 0.3, 0.9); g.add(torso);
-  for (const s of [-1, 1]) box(g, 0.03, 0.06, 0.7, s * 0.2, 0.02, 0, '#35c2f0'); // bright stripes, easy to spot
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), mat(suit)); // a hood
-  head.position.set(0, 0.08, 0.6); g.add(head);
-  const face = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 6), mat('#f1c7a5'));
-  face.position.set(0, 0.04, 0.72); g.add(face);
-  box(g, 0.26, 0.12, 0.06, 0, 0.08, 0.79, '#7fd3f0'); // the mask
-  box(g, 0.3, 0.14, 0.03, 0, 0.08, 0.77, '#20262c');
-  const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.65, 10), mat('#ffcc2e'));
-  tank.rotation.x = Math.PI / 2; tank.position.set(0, 0.24, 0.02); g.add(tank);
-  box(g, 0.05, 0.05, 0.1, 0, 0.26, 0.38, '#3a3f45'); // the valve
-  const arms = [], legs = [];
-  for (const s of [-1, 1]) {
-    const arm = new THREE.Group(); arm.position.set(s * 0.2, 0, 0.35);
-    const ag = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6).rotateX(Math.PI / 2).translate(0, 0, 0.22);
-    arm.add(new THREE.Mesh(ag, mat(suit))); arm.rotation.y = s * 0.5; g.add(arm); arms.push(arm);
-    const leg = new THREE.Group(); leg.position.set(s * 0.1, 0, -0.38);
-    const lg = new THREE.CylinderGeometry(0.07, 0.05, 0.7, 6).rotateX(Math.PI / 2).translate(0, 0, -0.35);
-    leg.add(new THREE.Mesh(lg, mat(suit)));
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.02, 0.45), mat('#ffcc2e'));
-    fin.position.z = -0.85; leg.add(fin);
-    g.add(leg); legs.push({ leg, s });
-  }
-  return { g, kick(t) { for (const { leg, s } of legs) leg.rotation.x = Math.sin(t * 4 + (s > 0 ? Math.PI : 0)) * 0.25; arms.forEach((a, i) => { a.rotation.x = Math.sin(t * 1.2 + i) * 0.1; }); } };
+// The diver keeper is one of the game's own people (core/npcs.js) in a
+// wetsuit (data/characters/kaykit2.js 'wetsuit'), swimming: a yellow air
+// tank on the back, a mask and long yellow fins.
+export const DIVER_LOOK = { model: 'wetsuit', hair: 'black', skin: 'warm', shirt: 'navy' };
+function diverGear(ch) {
+  const tank = new THREE.Group();
+  const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.46, 12), mat('#ffcc2e'));
+  cyl.position.set(0, 0.46, -0.3); tank.add(cyl);
+  box(tank, 0.07, 0.08, 0.07, 0, 0.72, -0.3, '#3a3f45'); // the valve
+  for (const y of [0.36, 0.56]) box(tank, 0.24, 0.025, 0.2, 0, y, -0.15, '#20262c'); // straps
+  ch.addProp('body', tank);
+  const mask = new THREE.Group();
+  box(mask, 0.4, 0.17, 0.05, 0, 0.06, 0.31, '#20262c');
+  box(mask, 0.33, 0.11, 0.03, 0, 0.06, 0.34, '#7fd3f0');
+  box(mask, 0.5, 0.05, 0.5, 0, 0.04, 0.08, '#20262c'); // the strap round the head
+  ch.addProp('head', mask);
+  ch.addFootProps(() => {
+    const fin = new THREE.Group();
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.015, 0.42), mat('#ffcc2e'));
+    blade.position.set(0, 0, 0.24); fin.add(blade);
+    return fin;
+  });
 }
 
 export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d / 2 - 0.9 }) {
@@ -482,9 +476,12 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   ticks.push(school(g, 'orca', '#16191d', 1, 3.6, { ...all, rx: all.rx * 0.6, rz: all.rz * 0.9, y0: 5.8, y1: 5.8, speed: 1 }));
   ticks.push(school(g, 'fish', '#b8c4cc', 1, 2.4, { ...all, rx: all.rx * 0.4, rz: all.rz * 0.4, y0: 2.6, y1: 2.6, speed: 0.25 })); // sunfish
   // The diver keeper swims round the left half of the tank, bubbles rising.
-  const diver = diverKeeper();
-  diver.g.scale.setScalar(DIVER.scale);
-  g.add(diver.g);
+  const diver = makeNpc(document.getElementById('labels'), '🤿 Diver keeper', DIVER_LOOK);
+  diverGear(diver.ch);
+  diver.ch.activity('swim');
+  diver.speed = 0.4; // (main.js animates it: a slow crawl)
+  diver.ch.root.scale.setScalar(DIVER.scale);
+  g.add(diver.ch.root);
   const bubbles = Array.from({ length: 10 }, (_, i) => {
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (i % 3) * 0.02, 6, 4), new THREE.MeshBasicMaterial({ color: '#e8f8ff', transparent: true, opacity: 0.7 }));
     g.add(b);
@@ -497,9 +494,10 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   ticks.push((tt) => {
     const a = tt * 0.12;
     dpos.set(DIVER.cx + Math.cos(a) * DIVER.rx, DIVER.y + Math.sin(tt * 0.5) * 0.6, DIVER.cz + Math.sin(a) * DIVER.rz);
-    diver.g.position.copy(dpos);
-    diver.g.rotation.set(Math.sin(tt * 0.5) * 0.15, Math.atan2(-Math.sin(a) * DIVER.rx, Math.cos(a) * DIVER.rz), 0, 'YXZ');
-    diver.kick(tt);
+    // (the swimming pose lifts the body off the feet; the root sits below)
+    diver.ch.root.position.set(dpos.x, dpos.y - SWIM_LIFT * DIVER.scale, dpos.z);
+    diver.ch.root.rotation.y = Math.atan2(-Math.sin(a) * DIVER.rx, Math.cos(a) * DIVER.rz);
+    diver.labelY = dpos.y + 0.9;
     for (const q of bubbles) { // up from the valve to the top of the tank, again and again
       const k = (q.k + tt * 0.25) % 1;
       if (k < 0.03) { q.dx = dpos.x; q.dz = dpos.z; q.y0 = dpos.y + 0.6; }
@@ -516,6 +514,7 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
 
   let t = 0;
   const built = {
+    vendorNpcs: [diver], // main.js animates them and places the name tag
     scene, products: [], colliders, seats: [], clerk: null, turntable: null, room: ROOM, exit: EXIT,
     stations: {}, aquarium: true,
     // keep the camera out of the tanks (it may follow you into the tunnel)

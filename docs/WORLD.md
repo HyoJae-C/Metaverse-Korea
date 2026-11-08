@@ -96,9 +96,12 @@ lists **districts** joined into one map (`src/core/districts.js`):
    `npm test`) then checks that it sits in its gu and overlaps no other
    district.
 4. Put its stores, a meeting zone (square) and a bike station there with `at`.
-   A meeting zone's id is a new single letter: its two passers-by take their
-   names from that letter (`src/data/npc-names.js`), so daily "find someone"
-   missions name one person who stays in that area. `npm test`
+   A meeting zone's id is its gu's letter and the gu's next number (A-1,
+   A-2 ... for Seongdong-gu; the letters are in zones.json "gu", and a newly
+   opened gu takes the next unused letter, never I). Its `npc` is a new
+   single letter: its two passers-by take their names from that letter
+   (`src/data/npc-names.js`), so daily "find someone" missions name one
+   person who stays in that area. `npm test`
    (`tests/npc-missions.test.mjs`) checks every zone stands in a district
    next to its own streets.
 5. Give it an Information Center: a store with `"workshop": "info"` and
@@ -160,7 +163,7 @@ Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
 so the overlap check doesn't count the empty corner its bounding box covers.
 The district is nudged north as far as Songpa, so the two keep their real
-distance. Meeting zone U is on KONEXT Square.
+distance. Meeting zone J-1 is on KONEXT Square.
 
 ## Yeouido (Yeongdeungpo-gu)
 
@@ -272,7 +275,7 @@ change each year.
 Drawn by `scripts/build-jongmyo.mjs` from `src/data/jongmyo.js`, in the room
 between Jongno and Yulgok-ro east of Bukchon. Jongno runs on east from
 Gwanghwamun (z -765); Oedaemun, the shrine's gate, stands on its north side
-behind Jongmyo Square (meeting zone R, the janggi grandpas, the stamp). The
+behind Jongmyo Square (meeting zone B-4, the janggi grandpas, the stamp). The
 shrine is a walled place you walk into (`meta.enclosure`): the stone path
 (samdo; its raised middle strip is the spirits', `onSamdo`), Jeongjeon and
 Yeongnyeongjeon on their terraces in walled yards, the square pond, and the
@@ -308,6 +311,6 @@ lake) and a mall with HANEUL Tower (north of the east lake) between
 Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
 stands. Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
-are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone T
+are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
 behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.
