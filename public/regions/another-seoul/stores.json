@@ -852,6 +852,17 @@
       "products": []
     },
     {
+      "id": "sum-yoga",
+      "category": "play",
+      "workshop": "yoga",
+      "size": "large",
+      "at": [-2952, -177],
+      "name": { "en": "Sum Yoga & Pilates", "ko": "숨 요가·필라테스", "ja": "スム ヨガ＆ピラティス", "zh": "呼吸瑜伽·普拉提" },
+      "tagline": { "en": "Join the yoga class on a mat, or breathe and push on a pilates reformer", "ko": "매트 위에서 요가 수업에 끼거나, 리포머에서 숨 쉬며 필라테스", "ja": "マットでヨガのクラスに参加、リフォーマーで呼吸しながらピラティス", "zh": "在垫子上跟瑜伽课，或在核心床上边呼吸边做普拉提" },
+      "colors": { "sign": "#7a5fb0", "awning": "#e6dcf5", "accent": "#faf7fd" },
+      "products": []
+    },
+    {
       "id": "another-land",
       "category": "play",
       "workshop": "themepark",

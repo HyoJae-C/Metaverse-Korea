@@ -29,6 +29,7 @@ import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
+import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
 import { updateFarTextures } from './core/far-textures.js';
 import { BookUI } from './ui/book-ui.js';
@@ -2143,6 +2144,42 @@ let barkeep = null; // a club's bartender
 let areaGuide = null; // an Information Center's area guide (the clerk is the game guide)
 const TRAINER_LOOK = { model: 'trainer', hair: 'black', skin: 'warm', shirt: 'charcoal' };
 let trainerLine = -1;
+// 숨 요가·필라테스: the instructor leads the class at the front; members
+// already on some mats follow her, and someone is on a reformer or two.
+let instructor = null;
+let instructorLine = -1;
+function talkToInstructor() {
+  instructorLine = nextInstructorLine(instructorLine);
+  say(instructor, $('labels'), INSTRUCTOR_LINES[instructorLine]);
+  me.root.rotation.y = Math.atan2(instructor.ch.root.position.x - me.root.position.x, instructor.ch.root.position.z - me.root.position.z);
+}
+// A gym or studio spot you're using: where you stand (or lie, on a bench or
+// a reformer) and where you get off again.
+let gymSpot = null; // { x, z, back: [x, z] | null }
+function useGymSpot(st, kind) {
+  const at = st.lie || { x: st.x, z: st.z, ry: st.face ?? me.root.rotation.y };
+  me.root.position.set(at.x, 0, at.z);
+  me.root.rotation.y = at.ry;
+  gymSpot = { x: at.x, z: at.z, back: st.lie ? [st.x, st.z] : null };
+  gymUi.show(kind);
+}
+function leaveGymSpot() {
+  const s = gymSpot;
+  gymSpot = null;
+  if (gymUi.open) gymUi.close();
+  if (s?.back && mode === 'store') me.root.position.set(s.back[0], 0, s.back[1]); // off the bench / reformer, beside it
+}
+let studioPose = ''; // the class's pose now (the instructor says each new one)
+function updateStudio() {
+  if (!interior?.studioNpcs) return;
+  const pose = classPose(performance.now() / 1000);
+  for (const o of interior.studioNpcs.class) o.ch.activity(pose);
+  if (pose !== studioPose) {
+    studioPose = pose;
+    const p = YOGA_FLOW.find((q) => q.id === pose);
+    if (instructor && p) showBubble(instructor, $('labels'), `${p.icon} ${L(p.name)}`, 2600);
+  }
+}
 function talkToTrainer() {
   trainerLine = nextTrainerLine(trainerLine);
   const [ko, rom, en] = TRAINER_LINES[trainerLine];
@@ -2372,6 +2409,22 @@ function enterStore(item) {
     built.scene.add(built.trainerNpc.ch.root);
   }
   trainer = built.trainerNpc || null;
+  if (built.stations?.instructor && !built.studioNpcs) {
+    const hidden = () => { const o = makeNpc($('labels'), ''); o.tag.style.visibility = 'hidden'; return o; };
+    const put = (o, x, z, ry) => { o.ch.root.position.set(x, 0, z); o.ch.root.rotation.y = ry; built.scene.add(o.ch.root); return o; };
+    const ins = built.stations.instructor;
+    const lead = put(makeNpc($('labels'), '🧘 ' + L(INSTRUCTOR_NAME)), ins.x, ins.z, ins.ry);
+    const members = built.stations.studio.filter((s) => s.npc && s.kind === 'yoga').map((s) => put(hidden(), s.x, s.z, s.face));
+    const riders = built.stations.studio.filter((s) => s.npc && s.kind === 'reformer').map((s) => {
+      const o = put(hidden(), s.lie.x, s.lie.z, s.lie.ry);
+      o.ch.activity('reformer');
+      return o;
+    });
+    built.studioNpcs = { lead, class: [lead, ...members], all: [lead, ...members, ...riders] };
+  }
+  interior.studioNpcs = built.studioNpcs || null;
+  instructor = built.studioNpcs?.lead || null;
+  studioPose = '';
   if (built.barkeep && !built.barkeepNpc) {
     built.barkeepNpc = makeNpc($('labels'), L(BARTENDER));
     built.barkeepNpc.ch.root.position.set(built.barkeep.x, 0, built.barkeep.z);
@@ -2599,15 +2652,17 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
+  gymSpot = null; // (you leave by the door, not off the bench)
   for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  for (const o of [clerk, trainer, barkeep, areaGuide, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   clerk = null;
   trainer = null;
+  instructor = null;
   barkeep = null;
   areaGuide = null;
   if (counterUi.open) counterUi.close();
@@ -3947,20 +4002,21 @@ const saunaUi = new SaunaUI({
 });
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).
-const GYM_POSE = { treadmill: 'run', dumbbell: 'curl', pushup: 'pushup', situp: 'situp', pullup: 'pullup' };
 let dancing = false;
+let debugPose = null;
 const DANCE_TEXT = {
   start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },
   stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
 };
 function currentActivity() {
+  if (debugPose) return debugPose; // (?debug: __mk.forcePose)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
-  if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
+  if (gymUi.open) return gymUi.pose; // (the gym, a yoga mat, a reformer)
   if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return fishingUi.state === 'reel' ? 'reel' : 'fish'; // reeling in: the reel clip
   return null;
@@ -3969,9 +4025,15 @@ function currentActivity() {
 const gymUi = new GymUI({
   root: $('gym-panel'),
   log: gymLog,
-  onRep: (kind) => { if (!GYM_POSE[kind]) me.play('cheer'); },
-  onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
+  onRep: () => { if (!gymUi.pose) me.play('cheer'); },
+  onSet: (boost, kind) => { showBubble(myLabel, $('labels'), kind === 'yoga' ? '🧘' : kind === 'reformer' ? '✨' : '💪'); sfx.pop?.(); },
 });
+// The studio's free mats and reformers (the ones nobody is on).
+const STUDIO_ACT = {
+  yoga: { en: 'Join the yoga class', ko: '요가 수업 함께하기', ja: 'ヨガのクラスに参加', zh: '加入瑜伽课' },
+  reformer: { en: 'Pilates on the reformer', ko: '리포머 필라테스', ja: 'リフォーマーでピラティス', zh: '核心床普拉提' },
+};
+const studioSpot = (p) => interior?.stations?.studio?.find((s) => !s.npc && Math.hypot(p.x - s.x, p.z - s.z) < (s.kind === 'yoga' ? 0.95 : 0.9));
 // Library books: carry one, read it sitting anywhere.
 const BOOK_PAGE_KEY = 'mk.bookPages';
 const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAGE_KEY) || '{}') || {}; } catch { return {}; } })();
@@ -5359,9 +5421,17 @@ function updateAction(p, tSec) {
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
       next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => {
+        if (st.lie) { useGymSpot(st, st.kind); return; } // the bench: lie down on it
         if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; cam.yaw = Math.PI * 0.8; } // hang under the bar
         gymUi.show(st.kind);
       } };
+    } else if (!gymUi.open && studioSpot(p)) {
+      const st = studioSpot(p);
+      next = st.kind === 'yoga'
+        ? { key: 'studio:yoga', label: '🧘 ' + L(STUDIO_ACT.yoga), run: () => useGymSpot(st, 'yoga') }
+        : { key: 'studio:reformer', label: '🤸 ' + L(STUDIO_ACT.reformer), run: () => useGymSpot(st, 'reformer') };
+    } else if (instructor && Math.hypot(p.x - instructor.ch.root.position.x, p.z - instructor.ch.root.position.z) < 2.2) {
+      next = { key: 'instructor', label: '💬 ' + t('gym.talk', { name: L(INSTRUCTOR_NAME) }), run: () => talkToInstructor() };
     } else if (trainer && Math.hypot(p.x - trainer.ch.root.position.x, p.z - trainer.ch.root.position.z) < 2.4) {
       next = { key: 'trainer', label: '💬 ' + t('gym.talk', { name: L(TRAINER_NAME) }), run: () => talkToTrainer() };
     } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
@@ -5638,6 +5708,14 @@ renderer.setAnimationLoop(() => {
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubs.clubState)) { dancing = false; action = STALE; }
+  // Off the bench or reformer as soon as you move (or close the panel); off
+  // a yoga mat once you walk away from it.
+  if (gymSpot && (!gymUi.open || (gymSpot.back ? mag > 0.3 : Math.hypot(p.x - gymSpot.x, p.z - gymSpot.z) > 1.2))) { leaveGymSpot(); action = STALE; }
+  if (mode === 'store') updateStudio();
+  if (interior?.stations?.benchBar) { // the rack's bar is gone while someone lifts it
+    const lifting = me.activityName === 'bench' || [...others.players.values()].some((q) => !q.hidden && q.target?.ac === 'bench');
+    for (const m of interior.stations.benchBar) m.visible = !lifting;
+  }
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   fishRig.update(dt, me);
@@ -5863,6 +5941,7 @@ renderer.setAnimationLoop(() => {
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
+    for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
   }
   if (squareNpc) {
@@ -5979,6 +6058,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    forcePose: (n) => { debugPose = n || null; return me.activityName; },
+    studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
     runwayFx: (tier, word) => runwayReact(me.root, tier, word),
     runwayLine: (on) => (on ? runwayUi.line.join() : runwayUi.line.leave()),
