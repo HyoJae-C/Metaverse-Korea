@@ -177,7 +177,7 @@ export const STAMPS = [
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [115, 717], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [115, 847], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
