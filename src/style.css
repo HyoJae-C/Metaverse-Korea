@@ -2267,3 +2267,16 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 #start > .panel { position: relative; z-index: 1; }
 /* Library shelf tabs: one section per bookshelf */
 .book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }
+
+/* Seoul Bank's teller window (ui/bank-ui.js) */
+.bank-panel { z-index: 7; }
+.bank-panel h3 { margin: 0 36px 10px 0; }
+.bank-soon { font-size: 20px; font-weight: 800; margin: 8px 0; }
+.bank-bal { margin: 0 0 8px; font-weight: 700; }
+.bank-label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: var(--muted, #7a6a5a); }
+.bank-panel input { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #e3d6c6; border-radius: 12px; font: inherit; font-size: 16px; background: #fff; }
+.bank-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bank-chips .chip { background: #fff; padding: 6px 12px; }
+.bank-chips .chip.on { background: var(--accent, #ff8a65); color: #fff; }
+.bank-err { min-height: 1.2em; margin: 10px 0 6px; color: #c0392b; font-size: 14px; }
+.bank-go { width: 100%; }

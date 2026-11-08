@@ -199,6 +199,7 @@ import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
@@ -2351,6 +2352,11 @@ giftsGame = createGifts({
   refreshItems, refreshWallet, safety, shop, storeData,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
+// Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
+const bankGame = createBank({
+  get interior() { return interior; }, get wallet() { return wallet; }, get sfx() { return sfx; },
+  get nickname() { return nickname; }, cloud, shop, refreshWallet, peopleHere,
+});
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2384,6 +2390,7 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 const dayPasses = new DayPasses();
 function enterStore(item) {
+  if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
   // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
   const fee = dayPasses.feeFor(item.store);
   if (fee) {
@@ -2418,7 +2425,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -5125,6 +5132,9 @@ walletReady.then(() => {
   };
   news();
   setInterval(news, 10 * 60 * 1000);
+  // Seoul Bank: money other players sent me (game/bank.js).
+  bankGame.checkNews();
+  setInterval(bankGame.checkNews, 3 * 60 * 1000);
 });
 walletReady.then(() => {
   const gift = wallet.welcome();
@@ -5728,6 +5738,8 @@ function updateAction(p, tSec) {
           : quests.active && quests.ready(questCtx()) ? infoMissionAct(p) // a mission to report comes first
             : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
       }
+    } else if (interior.store.workshop === 'bank' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'bank', label: bankGame.actionLabel(), run: () => { clerk.ch.wave(); bankGame.openBank(); } };
     } else if (interior.store.workshop === 'tarot' && !seated && nearReader(p)) {
       const r = nearReader(p);
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
@@ -6268,6 +6280,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    openBank: () => bankGame.openBank(),
+    bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
+    bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,
     forcePose: (n) => { debugPose = n || null; return me.activityName; },
     studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)

@@ -1915,6 +1915,72 @@ export function buildInterior(store) {
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
       stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
       block(dw / 4, dz - 0.85, 0.6, 0.5);
+    } else if (store.workshop === 'bank') {
+      // Bank: three teller windows behind glass across the back, each with a
+      // number display above it; the middle one is the open teller. Waiting
+      // chairs on the left, a number ticket machine by the door, two ATMs on
+      // the right wall, and a few customers already here.
+      const dz = -d / 2 + 2.4, dw = Math.min(9, w - 4), win = dw / 3;
+      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#f4f6f5');
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // counter top
+      const glass = new THREE.MeshLambertMaterial({ color: '#d6efe8', transparent: true, opacity: 0.3, depthWrite: false });
+      const plane = (pw, ph, tex) => new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex }));
+      for (let i = 0; i < 3; i++) {
+        const wx = (i - 1) * win;
+        const pane = new THREE.Mesh(new THREE.PlaneGeometry(win - 0.5, 0.75), glass); // glass over the counter, a gap below to pass things
+        pane.position.set(wx, COUNTER_H + 0.65, dz + 0.1);
+        scene.add(pane);
+        const num = plane(0.9, 0.22, labelTexture(String(127 + i * 38).padStart(4, '0'), '#1b1b1b'));
+        num.position.set(wx, 2.05, dz + 0.1);
+        scene.add(num);
+        const tag = plane(0.8, 0.16, labelTexture(`${i + 1}번 창구 · Window ${i + 1}`, store.colors.sign));
+        tag.position.set(wx, 1.8, dz + 0.1);
+        scene.add(tag);
+        box(0.42, 0.28, 0.3, wx + 0.5, COUNTER_H + 0.3, dz - 0.2, '#3a3f4a'); // screens
+      }
+      for (let i = 0; i <= 3; i++) box(0.06, 1.3, 0.8, -dw / 2 + i * win, COUNTER_H + 0.75, dz, '#c9d3cf'); // partitions
+      box(dw, 0.12, 0.8, 0, 2.2, dz, store.colors.sign); // header over the windows
+      block(0, dz, dw, 0.8);
+      clerk = { x: 0, z: dz - 0.85, ry: 0 }; // the open window
+      // Waiting chairs, two rows facing the windows.
+      for (const rz of [-0.1, 1.3]) for (let i = 0; i < 4; i++) {
+        const cx = -w / 2 + 1.6 + i * 0.95;
+        box(0.7, SEAT_H, 0.6, cx, SEAT_H / 2, rz, store.colors.awning);
+        box(0.7, 0.5, 0.1, cx, SEAT_H + 0.25, rz + 0.3, store.colors.awning);
+        seats.push({ x: cx, z: rz, ry: Math.PI, stand: [cx, rz - 0.75] });
+      }
+      block(-w / 2 + 1.6 + 1.425, -0.1, 3.9, 0.7);
+      block(-w / 2 + 1.6 + 1.425, 1.3, 3.9, 0.7);
+      // Number ticket machine (번호표) by the door.
+      const tx = 2, tz = d / 2 - 1.6;
+      box(0.5, 1.2, 0.4, tx, 0.6, tz, '#e9edf0');
+      box(0.36, 0.2, 0.02, tx, 1.0, tz - 0.21, '#d93a3a');
+      const ticket = plane(0.9, 0.16, labelTexture('번호표 · Take a number', '#d93a3a'));
+      ticket.position.set(tx, 1.45, tz - 0.21);
+      ticket.rotation.y = Math.PI;
+      scene.add(ticket);
+      block(tx, tz, 0.6, 0.5);
+      // ATMs on the right wall, facing into the room.
+      for (const az of [-0.4, 1.0]) {
+        const ax = w / 2 - 0.55;
+        box(0.7, 1.5, 0.9, ax, 0.75, az, '#5f6b73');
+        const screen = box(0.04, 0.32, 0.42, ax - 0.36, 1.2, az, '#2fb38a');
+        screen.material = new THREE.MeshBasicMaterial({ color: '#2fb38a' });
+        box(0.2, 0.06, 0.5, ax - 0.4, 0.95, az, '#3b444a'); // keypad shelf
+        block(ax, az, 0.8, 1);
+      }
+      const atm = plane(1, 0.16, labelTexture('ATM', store.colors.sign));
+      atm.position.set(w / 2 - 0.08, 2.0, 0.3);
+      atm.rotation.y = -Math.PI / 2;
+      scene.add(atm);
+      // Customers already here: one at window 1, one at window 3, one at an ATM
+      // (main.js stands them up). The middle window stays free for you.
+      stations.visitors = [
+        { x: -win, z: dz + 0.85, ry: Math.PI },
+        { x: win, z: dz + 0.85, ry: Math.PI },
+        { x: w / 2 - 1.45, z: -0.4, ry: Math.PI / 2 },
+      ];
+      for (const v of stations.visitors) block(v.x, v.z, 0.5, 0.5);
     } else if (store.workshop === 'tarot') {
       clerk = stations.tarotReader; // no shop counter: the reader sits at her table
     } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
