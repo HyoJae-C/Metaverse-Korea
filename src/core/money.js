@@ -11,5 +11,3 @@ export function won(n) {
   const v = Math.round(Number(n) || 0);
   return `${v < 0 ? '-' : ''}₩${Math.abs(v).toLocaleString('en-US')}`;
 }
-// "+₩20,000" / "-₩1,550": a change in the balance.
-export const wonDelta = (n) => (Number(n) > 0 ? '+' : '') + won(n);
