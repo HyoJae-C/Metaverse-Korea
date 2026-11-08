@@ -150,9 +150,10 @@ wall round its corner made of two region.json `screens` with `"wave": true`
 KONEXT Aquarium's way in: its door is the store "konext-aquarium"
 (workshop "aquarium"), whose hall is `core/aquarium.js`: a lobby with a river
 fish tank and a sea-floor tank, six jellyfish columns, a 1:2 blue whale model
-over a 25 m line on the floor (the real length), coral reef tanks, a penguin
-room, and an ocean tank across the back with a glass tunnel through it
-(sharks, a manta ray, turtles, dolphins, an orca, a sunfish). Free for now.
+over a 25 m line on the floor (the real length), a real-size giant squid
+(12 m), coral reef tanks, a penguin room, and an ocean tank across the back
+with a glass tunnel through it (sharks, a manta ray, turtles, dolphins, an
+orca, a sunfish, and a diver keeper with an air tank and fins). Free for now.
 Bongeunsa, north of Bongeunsa-ro, is left
 as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
 Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro

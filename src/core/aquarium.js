@@ -5,11 +5,13 @@
 //                 and a sea-floor tank (lobster, crabs, kelp) on the right.
 //   middle hall:  six jellyfish columns in six colours, a 1:2 blue whale
 //                 model hanging over a 25 m line on the floor (the real
-//                 length), coral reef tanks along the right wall and the
-//                 penguin room on the left.
+//                 length), a real-size giant squid hanging on the other side,
+//                 coral reef tanks along the right wall and the penguin room
+//                 on the left.
 //   ocean tank:   the whole back of the hall, with a glass tunnel through it:
 //                 sharks, a manta ray, a sea turtle, dolphins and an orca
-//                 swimming over your head, and schools of small fish.
+//                 swimming over your head, schools of small fish, and a diver
+//                 keeper with fins and an air tank swimming round with them.
 // Entry is free for now. Signs are bilingual like the other interiors.
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex, wrapText } from './three-kit.js';
@@ -25,6 +27,8 @@ export const RIVER = { x0: -HW, z0: 21, x1: -25, z1: 30 };
 export const SEAFLOOR = { x0: 25, z0: 21, x1: HW, z1: 30 };
 export const JELLIES = [[-7, 3], [-3.8, 7], [-7, 11], [7, 3], [3.8, 7], [7, 11]]; // either side of the path to the tunnel
 export const WHALE = { x: 13, z0: -4.5, len: 25, scale: 2 }; // the floor line is the real length; the model is half
+export const SQUID = { x: -12, z0: 1, len: 12 }; // a giant squid at its real size, tentacles and all
+export const DIVER = { cx: -14, cz: -14.5, rx: 8, rz: 5, y: 3.2, scale: 1.7 }; // the diver keeper's round in the ocean tank (left half)
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const mat = matCache();
@@ -211,6 +215,80 @@ function blueWhale(len) {
   return w;
 }
 
+// The giant squid at real size, along +z (arms forward, mantle at the back):
+// a long red mantle with two fins at its tip, a head with eyes the size of
+// a dinner plate, eight arms and the two long feeding tentacles with clubs.
+// Returns the group and a tick that sways the arms.
+function giantSquid(len) {
+  const g = new THREE.Group();
+  const red = '#b9452f', dark = '#93321f';
+  const mantle = 0.3 * len, arms = 0.18 * len, tent = 0.55 * len; // ~3.6 m, 2.2 m, 6.6 m for 12 m
+  const z0 = -len / 2; // the mantle's tip
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 10), mat(red));
+  m.scale.set(0.75, 0.75, mantle); m.position.z = z0 + mantle / 2; g.add(m);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.9, 10), mat(red));
+  tip.rotation.x = -Math.PI / 2; tip.position.z = z0 + 0.1; g.add(tip);
+  for (const s of [-1, 1]) { // the fins at the tip
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.9), mat(dark));
+    fin.rotation.y = Math.PI / 4; fin.position.set(s * 0.45, 0, z0 + 0.6); g.add(fin);
+  }
+  const hz = z0 + mantle + 0.25;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), mat(red));
+  head.scale.z = 1.2; head.position.z = hz; g.add(head);
+  for (const s of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), mat('#f4f1e6'));
+    eye.position.set(s * 0.36, 0.05, hz); g.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 6), mat('#111418'));
+    pupil.position.set(s * 0.47, 0.05, hz); g.add(pupil);
+  }
+  const limbs = [];
+  const limb = (length, r0, r1, a, club) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(Math.cos(a) * 0.22, Math.sin(a) * 0.22, hz + 0.35);
+    const geo = new THREE.CylinderGeometry(r1, r0, length, 6).rotateX(Math.PI / 2).translate(0, 0, length / 2);
+    pivot.add(new THREE.Mesh(geo, mat(red)));
+    if (club) { const c = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), mat(dark)); c.scale.z = 3; c.position.z = length - 0.25; pivot.add(c); }
+    pivot.rotation.set(-Math.sin(a) * 0.12, Math.cos(a) * 0.12, 0);
+    g.add(pivot);
+    limbs.push({ pivot, a, ph: limbs.length * 0.8, base: pivot.rotation.clone() });
+  };
+  for (let i = 0; i < 8; i++) limb(arms, 0.09, 0.02, (i / 8) * Math.PI * 2, false);
+  for (const a of [0.4, Math.PI - 0.4]) limb(tent, 0.05, 0.03, a, true);
+  return { g, tick: (t) => { for (const l of limbs) { l.pivot.rotation.x = l.base.x + Math.sin(t * 0.6 + l.ph) * 0.05; l.pivot.rotation.y = l.base.y + Math.cos(t * 0.5 + l.ph) * 0.05; } } };
+}
+
+// The diver keeper: a swimmer in a black wetsuit lying along +z, mask on,
+// a yellow air tank on the back and long yellow fins that kick.
+function diverKeeper() {
+  const g = new THREE.Group();
+  const suit = '#1f2a36';
+  const torso = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), mat(suit));
+  torso.scale.set(0.42, 0.3, 0.9); g.add(torso);
+  for (const s of [-1, 1]) box(g, 0.03, 0.06, 0.7, s * 0.2, 0.02, 0, '#35c2f0'); // bright stripes, easy to spot
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), mat(suit)); // a hood
+  head.position.set(0, 0.08, 0.6); g.add(head);
+  const face = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 6), mat('#f1c7a5'));
+  face.position.set(0, 0.04, 0.72); g.add(face);
+  box(g, 0.26, 0.12, 0.06, 0, 0.08, 0.79, '#7fd3f0'); // the mask
+  box(g, 0.3, 0.14, 0.03, 0, 0.08, 0.77, '#20262c');
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.65, 10), mat('#ffcc2e'));
+  tank.rotation.x = Math.PI / 2; tank.position.set(0, 0.24, 0.02); g.add(tank);
+  box(g, 0.05, 0.05, 0.1, 0, 0.26, 0.38, '#3a3f45'); // the valve
+  const arms = [], legs = [];
+  for (const s of [-1, 1]) {
+    const arm = new THREE.Group(); arm.position.set(s * 0.2, 0, 0.35);
+    const ag = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6).rotateX(Math.PI / 2).translate(0, 0, 0.22);
+    arm.add(new THREE.Mesh(ag, mat(suit))); arm.rotation.y = s * 0.5; g.add(arm); arms.push(arm);
+    const leg = new THREE.Group(); leg.position.set(s * 0.1, 0, -0.38);
+    const lg = new THREE.CylinderGeometry(0.07, 0.05, 0.7, 6).rotateX(Math.PI / 2).translate(0, 0, -0.35);
+    leg.add(new THREE.Mesh(lg, mat(suit)));
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.02, 0.45), mat('#ffcc2e'));
+    fin.position.z = -0.85; leg.add(fin);
+    g.add(leg); legs.push({ leg, s });
+  }
+  return { g, kick(t) { for (const { leg, s } of legs) leg.rotation.x = Math.sin(t * 4 + (s > 0 ? Math.PI : 0)) * 0.25; arms.forEach((a, i) => { a.rotation.x = Math.sin(t * 1.2 + i) * 0.1; }); } };
+}
+
 export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d / 2 - 0.9 }) {
   const { w, d, h } = ROOM;
   const scene = new THREE.Scene();
@@ -297,6 +375,18 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
     'This model is 12.5 m long. A real blue whale is 25 m: the line on the floor. That is as long as two city buses!\n모형은 12.5 m, 진짜 대왕고래는 25 m (바닥의 선) · 시내버스 두 대 길이예요.');
   put(g, whaleSign, WHALE.x + 3.2, 1.9, WHALE.z0 + WHALE.len + 0.6);
   box(g, 0.12, 1.4, 0.12, WHALE.x + 3.2, 0.7, WHALE.z0 + WHALE.len + 0.55, '#9fb3c4');
+
+  // The giant squid, at real size, on the other side of the hall from the whale.
+  const squid = giantSquid(SQUID.len);
+  squid.g.position.set(SQUID.x, 5.4, SQUID.z0 + SQUID.len / 2);
+  g.add(squid.g);
+  ticks.push(squid.tick);
+  ticks.push((tt) => { squid.g.rotation.z = Math.sin(tt * 0.35) * 0.04; squid.g.position.y = 5.4 + Math.sin(tt * 0.45 + 1) * 0.08; });
+  for (const dz of [-3, 3]) box(g, 0.03, h - 5.8, 0.03, SQUID.x, 5.8 + (h - 5.8) / 2, SQUID.z0 + SQUID.len / 2 + dz, '#9fb3c4');
+  const squidSign = sign(4, 2.5, 'GIANT SQUID · REAL SIZE', '대왕오징어 · 실제 크기',
+    'Up to about 12 m long, most of it the two feeding tentacles. Its eyes are as big as a dinner plate, the biggest of any animal!\n대왕오징어는 길이 약 12 m, 대부분이 긴 촉완 두 개예요. 눈은 접시만큼 커서 동물 중 가장 커요!');
+  put(g, squidSign, SQUID.x + 1, 1.5, SQUID.z0 + SQUID.len + 2.6);
+  box(g, 0.12, 0.6, 0.12, SQUID.x + 1, 0.3, SQUID.z0 + SQUID.len + 2.55, '#9fb3c4');
 
   // Coral reef tanks along the right wall.
   const reef = wallTank(g, REEF, 'x-', '#1f5d86');
@@ -391,6 +481,33 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   ticks.push(school(g, 'dolphin', '#8aa3b8', 2, 2.2, { ...all, rx: all.rx * 0.85, rz: all.rz * 0.7, y0: 5, y1: 6.4, speed: 1.4 }));
   ticks.push(school(g, 'orca', '#16191d', 1, 3.6, { ...all, rx: all.rx * 0.6, rz: all.rz * 0.9, y0: 5.8, y1: 5.8, speed: 1 }));
   ticks.push(school(g, 'fish', '#b8c4cc', 1, 2.4, { ...all, rx: all.rx * 0.4, rz: all.rz * 0.4, y0: 2.6, y1: 2.6, speed: 0.25 })); // sunfish
+  // The diver keeper swims round the left half of the tank, bubbles rising.
+  const diver = diverKeeper();
+  diver.g.scale.setScalar(DIVER.scale);
+  g.add(diver.g);
+  const bubbles = Array.from({ length: 10 }, (_, i) => {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (i % 3) * 0.02, 6, 4), new THREE.MeshBasicMaterial({ color: '#e8f8ff', transparent: true, opacity: 0.7 }));
+    g.add(b);
+    return { b, k: i / 10, dx: 0, dz: 0 };
+  });
+  const diverSign = sign(3.4, 1.6, 'DIVER KEEPER', '잠수 사육사', 'Our keeper dives in every day to check on the fish and keep the tank clean. Wave hello!\n사육사가 매일 수조에 들어가 물고기를 살피고 청소해요. 손 흔들어 주세요!');
+  put(g, diverSign, -21, 1.1, O.z1 + 0.25);
+  box(g, 0.12, 0.4, 0.12, -21, 0.2, O.z1 + 0.2, '#9fb3c4');
+  const dpos = new THREE.Vector3();
+  ticks.push((tt) => {
+    const a = tt * 0.12;
+    dpos.set(DIVER.cx + Math.cos(a) * DIVER.rx, DIVER.y + Math.sin(tt * 0.5) * 0.6, DIVER.cz + Math.sin(a) * DIVER.rz);
+    diver.g.position.copy(dpos);
+    diver.g.rotation.set(Math.sin(tt * 0.5) * 0.15, Math.atan2(-Math.sin(a) * DIVER.rx, Math.cos(a) * DIVER.rz), 0, 'YXZ');
+    diver.kick(tt);
+    for (const q of bubbles) { // up from the valve to the top of the tank, again and again
+      const k = (q.k + tt * 0.25) % 1;
+      if (k < 0.03) { q.dx = dpos.x; q.dz = dpos.z; q.y0 = dpos.y + 0.6; }
+      const y0 = q.y0 ?? dpos.y + 0.4;
+      q.b.position.set((q.dx || dpos.x) + Math.sin(k * 12 + q.k * 6) * 0.08, y0 + k * (O.h - y0), q.dz || dpos.z);
+    }
+  });
+
   // The dolphin note, by the tank.
   const note = sign(5.6, 2.8, 'DOLPHINS & ORCA', '돌고래와 범고래',
     'Fun fact: real Korean aquariums can\'t bring in new dolphins or whales anymore (since 2023). Here in the game, say hi! 🐬\n실제 한국 아쿠아리움은 2023년부터 고래류를 새로 들여올 수 없어요. 게임 속에서는 반갑게 인사해요!');

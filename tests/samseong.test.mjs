@@ -118,3 +118,16 @@ test('KONEXT Aquarium: you walk in through the pavilion, and on to the ocean tun
   assert.equal(WHALE.scale, 2);
   assert.ok(WHALE.z0 + WHALE.len < exitZ && WHALE.z0 > OCEAN.z1, 'the floor line fits in the hall');
 });
+
+test('KONEXT Aquarium: a real-size giant squid in the hall, a diver keeper in the ocean tank', async () => {
+  const { SQUID, DIVER, OCEAN, TUNNEL, PENGUINS, JELLIES, AQUA_ROOM } = await import('../src/core/aquarium.js');
+  assert.equal(SQUID.len, 12, 'a giant squid is about 12 m long');
+  assert.ok(SQUID.x - 1.5 > PENGUINS.x1 && SQUID.z0 > OCEAN.z1 && SQUID.z0 + SQUID.len < AQUA_ROOM.d / 2, 'hangs in the hall, clear of the penguin room');
+  for (const [jx] of JELLIES) assert.ok(Math.abs(jx - SQUID.x) > 3, 'not right over a jellyfish column');
+  // The diver's whole round stays inside the tank and off the tunnel.
+  for (let a = 0; a < Math.PI * 2; a += 0.1) {
+    const x = DIVER.cx + Math.cos(a) * DIVER.rx, z = DIVER.cz + Math.sin(a) * DIVER.rz;
+    assert.ok(x > OCEAN.x0 + 1 && x < -TUNNEL.w / 2 - 1 && z > OCEAN.z0 + 1 && z < OCEAN.z1 - 1, `diver in the water at ${x.toFixed(1)}, ${z.toFixed(1)}`);
+  }
+  assert.ok(DIVER.y > 1 && DIVER.y < OCEAN.h - 1.5, 'swims in mid-water');
+});
