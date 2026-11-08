@@ -7,7 +7,7 @@
 //   node tests/e2e/memory.mjs http://localhost:4173/
 import { chromium } from 'playwright';
 
-export const BUDGET = { canvasMB: 400, textureMB: 150 };
+export const BUDGET = { canvasMB: 250, textureMB: 100 }; // (Safari's canvas limit is around 384 MB on many iPhones; keep well under it)
 
 const url = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({
