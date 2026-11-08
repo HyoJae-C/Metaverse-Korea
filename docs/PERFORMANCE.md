@@ -7,7 +7,7 @@ These are the limits every change should stay inside, and how to stay there.
 
 | What | Budget | Now (2026-11-09) | Checked by |
 |---|---|---|---|
-| First visit download, gzipped (entry + preloads + CSS) | 1,300 KB | 1,226 KB + one language (~15 KB) | `node scripts/check-size.mjs` in CI |
+| First visit download, gzipped (entry + preloads + CSS) | 1,200 KB | 1,131 KB + one language (~15 KB) | `node scripts/check-size.mjs` in CI |
 | Any single script, gzipped | 1,000 KB | 941 KB (main) | same |
 | Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
@@ -27,7 +27,10 @@ those.
 2. **Load it when first used.** A store interior, a minigame or a district
    that you only see after walking somewhere should come in with
    `await import('./game/x.js')`, not a static import. Static imports all land
-   in the first download.
+   in the first download. For a panel object, `lazyPanel()`
+   (`src/core/lazy-panel.js`) stands in until it loads; see
+   `src/game/cooking-classes.js`. Keep the few words the street needs (button
+   label, name tag) in a small labels file, like `src/ui/cooking-labels.js`.
 3. **Repeat with InstancedMesh, merge what never moves.** One mesh per bench,
    lamp or tree costs one draw call each. Use one InstancedMesh per kind, or
    merge static geometry (`BufferGeometryUtils.mergeGeometries`). Big instanced

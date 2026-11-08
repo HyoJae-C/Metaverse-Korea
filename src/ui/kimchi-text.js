@@ -1,11 +1,10 @@
 // Text for the kimjang class (ui/kimchi-ui.js), in every UI language.
 // English is the source; a missing language falls back to English and
 // Traditional Chinese is made from zh (core/i18n.js localName).
+import { KIMCHI_LABELS } from './cooking-labels.js';
 export const KT = {
-  open: { en: 'Make kimchi', ko: '김치 담그기', ja: 'キムチを漬ける', zh: '腌泡菜', es: 'Hacer kimchi', id: 'Membuat kimchi', vi: 'Làm kim chi', hi: 'किमची बनाएँ', fr: 'Faire du kimchi', th: 'ทำกิมจิ', ar: 'اصنع الكيمتشي' },
+  ...KIMCHI_LABELS,
   title: { en: 'Kimjang class', ko: '김장 교실', ja: 'キムジャン教室', zh: '越冬泡菜课', es: 'Clase de kimjang', id: 'Kelas kimjang', vi: 'Lớp kimjang', hi: 'किमजांग क्लास', fr: 'Cours de kimjang', th: 'คลาสคิมจัง', ar: 'درس الكيمجانغ' },
-  teacher: { en: 'Kimchi teacher', ko: '김치 선생님', ja: 'キムチ先生', zh: '泡菜老师', es: 'Maestra de kimchi', id: 'Guru kimchi', vi: 'Cô giáo kim chi', hi: 'किमची टीचर', fr: 'Professeure de kimchi', th: 'ครูสอนทำกิมจิ', ar: 'معلّمة الكيمتشي' },
-  hint: { en: 'Stand at the long work table to join the class.', ko: '긴 작업대 앞에 서면 수업을 시작해요.', ja: '長い作業台の前に立つと教室が始まります。', zh: '站到长工作台前就可以上课。', es: 'Ponte junto a la mesa larga para unirte a la clase.', id: 'Berdirilah di meja kerja panjang untuk ikut kelas.', vi: 'Đứng cạnh bàn làm việc dài để vào lớp.', hi: 'क्लास में शामिल होने के लिए लंबी वर्क टेबल के पास खड़े हों।', fr: 'Mets-toi devant la longue table de travail pour rejoindre le cours.', th: 'ยืนที่โต๊ะทำงานยาวเพื่อเข้าคลาส', ar: 'قف عند طاولة العمل الطويلة لتنضم إلى الدرس.' },
   intro: {
     en: 'Kimjang (김장) is when a family makes a whole winter\'s kimchi together, usually in November and December. Make one napa cabbage of kimchi in 10 steps, the way it is done in a Korean home.',
     ko: '김장은 겨우내 먹을 김치를 온 가족이 함께 담그는 일로, 보통 11~12월에 해요. 한국 가정에서 하는 그대로 10단계에 걸쳐 배추 한 통을 담가 봐요.',
@@ -186,7 +185,6 @@ export const KT = {
   words: { en: 'Korean words from today', ko: '오늘 배운 한국어', ja: '今日の韓国語', zh: '今天学到的韩语', es: 'Palabras coreanas de hoy', id: 'Kata Korea hari ini', vi: 'Từ tiếng Hàn hôm nay', hi: 'आज के कोरियाई शब्द', fr: 'Mots coréens du jour', th: 'คำภาษาเกาหลีวันนี้', ar: 'كلمات كورية من اليوم' },
   gift: { en: '🫙 A jar of your homemade kimchi went into your bag.', ko: '🫙 직접 담근 김치 한 통이 가방에 들어갔어요.', ja: '🫙 手作りキムチがバッグに入りました。', zh: '🫙 一罐亲手腌的泡菜放进了包里。', es: '🫙 Un tarro de tu kimchi casero entró en tu bolsa.', id: '🫙 Sebotol kimchi buatanmu masuk ke tas.', vi: '🫙 Một hũ kim chi tự làm đã vào túi của bạn.', hi: '🫙 आपकी घर की बनी किमची का एक जार बैग में चला गया।', fr: '🫙 Un pot de ton kimchi maison est dans ton sac.', th: '🫙 กิมจิทำเองของคุณหนึ่งไหใส่กระเป๋าแล้ว', ar: '🫙 دخلت جرّة من الكيمتشي المنزلي إلى حقيبتك.' },
   bagFull: { en: 'Your bag is full, so the kimchi stays at the school.', ko: '가방이 가득 차서 김치는 학교에 두고 가요.', ja: 'バッグがいっぱいなので、キムチは教室に置いていきます。', zh: '包满了，泡菜先留在学校。', es: 'Tu bolsa está llena, así que el kimchi se queda en la escuela.', id: 'Tasmu penuh, jadi kimchinya tinggal di sekolah.', vi: 'Túi đầy rồi nên kim chi để lại ở trường.', hi: 'बैग भरा है, इसलिए किमची स्कूल में ही रहेगी।', fr: 'Ton sac est plein, alors le kimchi reste à l\'école.', th: 'กระเป๋าเต็มแล้ว กิมจิเลยต้องอยู่ที่โรงเรียน', ar: 'حقيبتك ممتلئة، فسيبقى الكيمتشي في المدرسة.' },
-  item: { en: 'Homemade kimchi', ko: '직접 담근 김치', ja: '手作りキムチ', zh: '自制泡菜', es: 'Kimchi casero', id: 'Kimchi buatan sendiri', vi: 'Kim chi tự làm', hi: 'घर की बनी किमची', fr: 'Kimchi maison', th: 'กิมจิทำเอง', ar: 'كيمتشي منزلي' },
   // Shown at the end of the kimjang class, under "a jar went into your bag".
   canSell: {
     en: '🪙 You can sell it at the side-dish stall in Yongmaru Market, Itaewon (up to 3 jars a day).',

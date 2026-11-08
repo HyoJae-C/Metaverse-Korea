@@ -5,7 +5,7 @@ import { getLanguage, localName } from '../core/i18n.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 import { isKimchi, kimchiScore, kimchiPrice, KIMCHI_PRICE, SELL_PER_DAY, KimchiSales } from '../core/kimchi-market.js';
 import { MT } from './market-text.js';
-import { KT } from './kimchi-text.js';
+import { KIMCHI_LABELS as KT } from './cooking-labels.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
