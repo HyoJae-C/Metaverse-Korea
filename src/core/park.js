@@ -11,6 +11,7 @@ import { luckySpot } from './fishing.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import * as droneShow from './drone-show.js';
+import { mergeStatic } from './merge-static.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
 const mats = {};
@@ -61,9 +62,14 @@ export function buildPark(store, ROOM, EXIT) {
   // Ttukseom has the drone show (drone-show.js); the other Han River parks
   // (Mangwon, Banpo-Jamwon) are built from the same code without it.
   const drones = store.id === 'ttukseom-hangang';
+  // Open to the street (store.open): the park lies on the real bank of the
+  // world's Han River, drawn over the street (main.js openParks), so it has
+  // no sky, fog, river, far bank or bridge of its own and no walls round
+  // the lawn; its lights follow the street's.
+  const open = !!store.open;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#bfe0f4');
-  scene.fog = new THREE.Fog('#bfe0f4', 40, 140);
+  scene.background = open ? null : new THREE.Color('#bfe0f4');
+  scene.fog = open ? null : new THREE.Fog('#bfe0f4', 40, 140);
   const hemi = new THREE.HemisphereLight(0xffffff, 0x8fbf7a, 1.6);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.2);
@@ -76,26 +82,34 @@ export function buildPark(store, ROOM, EXIT) {
   const block = (x, z, sx, sz) => colliders.push({
     p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]],
   });
+  let target = scene; // (the far bank of an open park goes nowhere: the street has its own)
   const box = (sx, sy, sz, x, y, z, color) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(color));
     m.position.set(x, y, z);
-    scene.add(m);
+    target.add(m);
     return m;
   };
   const plane = (sx, sz, x, y, z, color, o) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz).rotateX(-Math.PI / 2), mat(color, o));
     m.position.set(x, y, z);
-    scene.add(m);
+    target.add(m);
     return m;
   };
 
   const bank = -4; // where the land ends and the river starts (z)
   // Grass, a riverside path, and the river (wide, past the room's back).
-  plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
-  plane(w + 80, 3, 0, 0.01, bank + 1.6, '#d9c7a6'); // path along the river
-  const river = plane(w + 300, 160, 0, -0.25, bank - 80, '#4f9ccf');
-  river.material = river.material.clone(); // (darkens at night on its own)
-  box(w + 80, 0.4, 0.4, 0, -0.05, bank, '#b9b2a6'); // embankment edge
+  // Open: just the park's own lawn and path, over the street's grass and
+  // its riverside walk (0.06 m up); the street's river is the water.
+  const gy = open ? 0.07 : 0;
+  // (pulled towards the camera harder than the street's roads, world.js, so
+  // the walk under the lawn never shows through it)
+  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
+  else plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
+  plane(open ? w : w + 80, 3, 0, gy + 0.01, bank + 1.6, '#d9c7a6', open ? { polygonOffset: true, polygonOffsetFactor: -5 } : undefined); // path along the river
+  const river = open ? { position: new THREE.Vector3(0, 0.03, 0), material: { color: new THREE.Color() } } // (the street's water, world.js)
+    : plane(w + 300, 160, 0, -0.25, bank - 80, '#4f9ccf');
+  if (!open) river.material = river.material.clone(); // (darkens at night on its own)
+  box(open ? w : w + 80, 0.4, 0.4, 0, -0.05, bank, '#b9b2a6'); // embankment edge
   // Railing along the bank, with gaps for the pier.
   for (const s of [-1, 1]) {
     const len = w / 2 - 2;
@@ -104,7 +118,7 @@ export function buildPark(store, ROOM, EXIT) {
   }
   // Fishing pier into the river.
   const pierLen = 8;
-  box(3, 0.2, pierLen, 0, -0.1, bank - pierLen / 2, '#a8794f');
+  box(3, 0.2, pierLen, 0, open ? 0.02 : -0.1, bank - pierLen / 2, '#a8794f'); // (open: above the street's water)
   // A low wooden fence on the pier (posts and two rails, knee-to-hip high),
   // so the river is in view over it while you fish.
   const FENCE_H = 0.55;
@@ -115,6 +129,7 @@ export function buildPark(store, ROOM, EXIT) {
   for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
   // Far bank skyline (Cheongdam across the river) and a bridge. Its windows
   // light up during the drone show.
+  if (open) target = new THREE.Group();
   const lit = []; // [x, y] of each lit window
   for (let i = 0; i < 26; i++) {
     const h = 6 + ((i * 37) % 11) * 2.2, bw = 5 + (i % 3), bx = -95 + i * 7.6;
@@ -126,7 +141,7 @@ export function buildPark(store, ROOM, EXIT) {
   const m4w = new THREE.Matrix4();
   lit.forEach(([x, y], k) => windows.setMatrixAt(k, m4w.makeTranslation(x, y, bank - 147.4)));
   windows.visible = false;
-  scene.add(windows);
+  target.add(windows);
   // Ttukseom: a low, flat two-deck girder bridge, like Cheongdam Bridge
   // across from the real Ttukseom (road on top, the Line 7 subway inside the
   // lower deck), low enough to leave the sky open for the drones. The other
@@ -143,7 +158,7 @@ export function buildPark(store, ROOM, EXIT) {
     for (let x = -60; x < 140; x += 25) { // arches
       const arch = new THREE.Mesh(new THREE.TorusGeometry(12.5, 0.35, 6, 24, Math.PI), mat('#e07a5f'));
       arch.position.set(x + 12.5, 7.4, bz);
-      scene.add(arch);
+      target.add(arch);
     }
   }
   // Lamps along the road deck and the subway's lit window band (at night).
@@ -156,7 +171,7 @@ export function buildPark(store, ROOM, EXIT) {
   const bridgeLights = new THREE.Group();
   bridgeLights.add(bridgeLamps, trainBand);
   bridgeLights.visible = false;
-  scene.add(bridgeLights);
+  target.add(bridgeLights);
 
   // The drone show's launch barge (drone-show.js BARGE), out past where the
   // duck boats go: a flat deck with a grid of landing pads. It floats there
@@ -167,9 +182,11 @@ export function buildPark(store, ROOM, EXIT) {
     const padN = 12 * 4;
     const pads = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), mat('#8a93a0'), padN);
     for (let k = 0; k < padN; k++) pads.setMatrixAt(k, m4w.makeTranslation(BARGE.x + ((k % 12) - 5.5) * 1.15, BARGE.deck + 0.02, BARGE.z + (Math.floor(k / 12) - 1.5) * 1.25));
-    scene.add(pads);
+    target.add(pads);
     for (const sx of [-1, 1]) box(0.2, 1.2, 0.2, BARGE.x + sx * (BARGE.w / 2 - 0.3), BARGE.deck + 0.6, BARGE.z + BARGE.d / 2 - 0.3, '#e05a3a'); // marker posts
   }
+
+  target = scene;
 
   // Walls of the play area: the river (except the pier) and the room edges.
   // The river starts just past the railing (bank + 0.3); the path in front stays walkable.
@@ -179,9 +196,11 @@ export function buildPark(store, ROOM, EXIT) {
   block(0, bank - pierLen - 0.5, 3.4, 1); // pier end
   for (const s of [-1, 1]) block(s * 1.62, bank - pierLen / 2, 0.2, pierLen); // pier sides
   const t = 0.4;
-  block(0, d / 2 + t / 2 - 0.2, w, t);
-  block(-w / 2 + 0.2 - t / 2, 0, t, d);
-  block(w / 2 - 0.2 + t / 2, 0, t, d);
+  if (!open) { // (open: you walk off the lawn onto the street)
+    block(0, d / 2 + t / 2 - 0.2, w, t);
+    block(-w / 2 + 0.2 - t / 2, 0, t, d);
+    block(w / 2 - 0.2 + t / 2, 0, t, d);
+  }
 
   // Trees on the grass (the left corner is the market's).
   for (const [x, z] of [[-4, 12.2], [9, 12], [24.6, 12], [-15, -1], [4, 9]]) {
@@ -414,8 +433,12 @@ export function buildPark(store, ROOM, EXIT) {
   };
 
   if (drones) tickShowRef = tickShow;
+  // Open to the street: its still boxes baked together (core/merge-static.js),
+  // so the park costs a few draw calls on top of the city, not hundreds.
+  if (open) mergeStatic(scene, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
+    lights: { hemi, sun, ambient }, // (an open park's follow the street's: main.js)
     fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
     show, // the drone show right now: { now: droneShowAt(), night, photo } (main.js: camera, notices, music)
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
