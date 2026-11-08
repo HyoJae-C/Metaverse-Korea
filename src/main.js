@@ -2494,6 +2494,31 @@ function enterStore(item) {
     });
   }
   interior.visitorNpcs = built.visitorNpcs || null;
+  // Bars: regulars already sitting at the counter or a table, or standing
+  // round the sports pub's high tables (core/bar-styles.js).
+  if (built.stations?.patrons && !built.patronNpcs) {
+    built.patronNpcs = built.stations.patrons.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      if (s.sit) o.ch.activity('sit');
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.patronNpcs = built.patronNpcs || null;
+  // The sports pub: when someone scores on the big screen, the whole pub
+  // jumps up and cheers, and someone shouts "골!".
+  if (built.stations?.match) {
+    built.stations.match.onGoal = () => {
+      if (interior?.store !== store) return;
+      const crowd = interior.patronNpcs || [];
+      crowd.forEach((o, i) => setTimeout(() => o.ch.play(i % 3 === 2 ? 'clap' : 'cheer'), i * 90));
+      const fans = crowd.filter((_, i) => !built.stations.patrons[i]?.sit); // (the ones watching the screen)
+      if (fans.length) say(fans[Math.floor(Math.random() * fans.length)], $('labels'), GOAL_SHOUT);
+    };
+  }
   // The record café: someone is already at the far end of the listening bar,
   // headphones on, nodding along.
   const bar = built.stations?.listening;
@@ -2630,6 +2655,7 @@ function enterRunwayRoom() {
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
+const GOAL_SHOUT = ['골!!!', 'gol', 'GOAL!!!']; // the sports pub's crowd
 function leaveStore() {
   if (mode !== 'store') return;
   // Trying something on only lasts while you are in the shop: walking out
@@ -5946,6 +5972,7 @@ renderer.setAnimationLoop(() => {
     if (interior?.vendorNpcs) greetAtStalls(p);
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
+    for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (bar regulars; the label shows their speech bubbles)
     for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);

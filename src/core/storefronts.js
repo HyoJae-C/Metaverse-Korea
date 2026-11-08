@@ -218,6 +218,9 @@ export class Storefronts {
   // same; the board keeps its shape and colour either way.
   _signText(it) {
     const { store } = it;
+    // A hidden bar (stores.json "signAs"): the board says what the front
+    // pretends to be (a coin laundry), in any language.
+    if (store.signAs) return this.translated ? [localName(store.signAs, this.lang), ''] : [store.signLocal || store.signAs.en, store.signAs.ko];
     if (this.translated || !store.signLocal) return [this.translated ? localName(store.name, this.lang) : store.name.ko, ''];
     return [store.signLocal, store.name.ko];
   }

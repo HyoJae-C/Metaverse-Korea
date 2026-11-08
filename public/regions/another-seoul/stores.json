@@ -1206,6 +1206,59 @@
       ]
     },
     {
+      "id": "spin-cycle",
+      "category": "bar",
+      "barStyle": "speakeasy",
+      "size": "medium",
+      "at": [-1122, 276],
+      "signLocal": "COIN LAUNDRY",
+      "signAs": {"en": "Coin Laundry", "ko": "코인 빨래방", "ja": "コインランドリー", "zh": "自助洗衣店"},
+      "name": {"en": "Spin Cycle", "ko": "스핀 사이클", "ja": "スピンサイクル", "zh": "旋转周期"},
+      "tagline": {"en": "A hidden alcohol-free bar behind a coin laundry front", "ko": "코인 빨래방인 척하는 숨은 무알코올 바", "ja": "コインランドリーのふりをした隠れ家ノンアルコールバー", "zh": "藏在自助洗衣店门面后的无酒精秘密酒吧"},
+      "colors": {"sign": "#2f6fb5", "awning": "#9fc3d6", "accent": "#2a1a1e"},
+      "products": [
+        {"id": "omija-sour", "model": "cocktail", "color": "#d9405a", "price": 9000, "name": {"en": "Omija sour (alcohol-free)", "ko": "오미자 사워 (무알코올)", "ja": "五味子サワー（ノンアルコール）", "zh": "五味子酸饮（无酒精）"}, "desc": {"en": "Omija, the 'five-flavour berry', tastes sweet, sour, salty, bitter and spicy all at once.", "ko": "오미자는 단맛, 신맛, 짠맛, 쓴맛, 매운맛이 한 번에 나는 열매예요."}},
+        {"id": "sujeonggwa-highball", "model": "cocktail", "color": "#a8572e", "price": 9000, "name": {"en": "Sujeonggwa highball (alcohol-free)", "ko": "수정과 하이볼 (무알코올)", "ja": "スジョングァ・ハイボール（ノンアルコール）", "zh": "水正果高球（无酒精）"}, "desc": {"en": "Korean cinnamon and ginger punch, topped up with soda.", "ko": "계피와 생강으로 만든 수정과에 탄산수를 채웠어요."}},
+        {"id": "lavender-rinse", "model": "cocktail", "color": "#b9a3e3", "price": 8000, "name": {"en": "Lavender Rinse", "ko": "라벤더 린스", "ja": "ラベンダー・リンス", "zh": "薰衣草漂洗"}, "desc": {"en": "Lavender lemonade, named after the laundry out front.", "ko": "가게 앞 빨래방에서 이름을 딴 라벤더 레모네이드예요."}},
+        {"id": "yuja-bubble-wash", "model": "cocktail", "color": "#f2c230", "price": 8000, "name": {"en": "Yuja Bubble Wash", "ko": "유자 버블 워시", "ja": "柚子バブルウォッシュ", "zh": "柚子泡泡洗"}, "desc": {"en": "Yuja (Korean citron) soda under a cloud of foam.", "ko": "유자 소다 위에 거품을 구름처럼 올렸어요."}}
+      ]
+    },
+    {
+      "id": "hilltop-taproom",
+      "category": "bar",
+      "barStyle": "taproom",
+      "size": "medium",
+      "at": [-1090, 276],
+      "signLocal": "HILLTOP TAPROOM",
+      "darts": true,
+      "name": {"en": "Hilltop Taproom", "ko": "힐탑 탭룸", "ja": "ヒルトップ・タップルーム", "zh": "山顶酒馆"},
+      "tagline": {"en": "Craft sodas on tap by Gyeongnidan-gil, with darts and a long shared table", "ko": "경리단길 앞 수제 탄산 탭룸: 다트와 긴 공용 테이블", "ja": "経理団通りのクラフトソーダのタップルーム：ダーツと長い相席テーブル", "zh": "经理团路旁的手工汽水酒馆：飞镖和长条共享桌"},
+      "colors": {"sign": "#7a3b1f", "awning": "#e8c76a", "accent": "#3a2a20"},
+      "products": [
+        {"id": "ginger-beer", "model": "cocktail", "color": "#d9a441", "price": 7000, "name": {"en": "Ginger beer (alcohol-free)", "ko": "진저비어 (무알코올)", "ja": "ジンジャービア（ノンアルコール）", "zh": "姜汁啤酒（无酒精）"}, "desc": {"en": "Spicy fizzy ginger, poured from the tap.", "ko": "탭에서 따른, 톡 쏘는 생강 탄산음료예요."}},
+        {"id": "craft-root-beer", "model": "cocktail", "color": "#5a2a18", "price": 7000, "name": {"en": "Craft root beer", "ko": "수제 루트비어", "ja": "クラフト・ルートビア", "zh": "手工沙士"}, "desc": {"en": "A sweet, creamy soda made with roots and vanilla. No alcohol, despite the name.", "ko": "뿌리와 바닐라로 만든 달콤한 탄산음료예요. 이름과 달리 술이 아니에요."}},
+        {"id": "sikhye-tap", "model": "cocktail", "color": "#efe2c0", "price": 6000, "name": {"en": "Sikhye on tap", "ko": "탭 식혜", "ja": "タップのシッケ", "zh": "鲜榨甜米露"}, "desc": {"en": "Sweet Korean rice drink with grains of rice floating in it.", "ko": "밥알이 동동 뜬 달콤한 한국 전통 음료예요."}},
+        {"id": "maesil-soda", "model": "cocktail", "color": "#9cc45a", "price": 7000, "name": {"en": "Maesil soda", "ko": "매실 소다", "ja": "梅シロップソーダ", "zh": "青梅苏打"}, "desc": {"en": "Green plum syrup with soda. Koreans drink maesil to settle the stomach.", "ko": "매실청에 탄산수를 섞었어요. 한국에서는 소화가 안 될 때 매실을 마셔요."}}
+      ]
+    },
+    {
+      "id": "full-time-pub",
+      "category": "bar",
+      "barStyle": "sports",
+      "size": "large",
+      "at": [-1152, 276],
+      "signLocal": "FULL TIME",
+      "name": {"en": "Full Time Sports Pub", "ko": "풀타임 스포츠 펍", "ja": "フルタイム・スポーツパブ", "zh": "全场体育酒吧"},
+      "tagline": {"en": "Watch the match on the big screen and cheer with the crowd, chimaek style", "ko": "큰 화면으로 경기 보며 다 같이 응원해요, 치맥 스타일로", "ja": "大画面で試合を観てみんなで応援、チメク・スタイルで", "zh": "在大屏幕前看比赛，和大家一起加油，炸鸡配饮料"},
+      "colors": {"sign": "#1f5a3a", "awning": "#f2f2f2", "accent": "#24282e"},
+      "products": [
+        {"id": "fried-chicken", "model": "bowl", "color": "#d99a3a", "price": 12000, "name": {"en": "Fried chicken", "ko": "후라이드 치킨", "ja": "フライドチキン", "zh": "炸鸡"}, "desc": {"en": "Koreans watch big games with chimaek: chicken and maekju (beer). Here it's chicken and a cold soda.", "ko": "한국 사람들은 큰 경기를 치맥(치킨과 맥주)과 함께 봐요. 여기서는 치킨과 시원한 음료로 즐겨요."}},
+        {"id": "yangnyeom-chicken", "model": "bowl", "color": "#b8321e", "price": 13000, "name": {"en": "Yangnyeom chicken", "ko": "양념치킨", "ja": "ヤンニョムチキン", "zh": "调味炸鸡"}, "desc": {"en": "Fried chicken glazed in a sweet and spicy red sauce.", "ko": "달콤하고 매콤한 빨간 양념을 입힌 치킨이에요."}},
+        {"id": "cola", "model": "cup", "color": "#3a1d14", "price": 3000, "name": {"en": "Cola", "ko": "콜라", "ja": "コーラ", "zh": "可乐"}, "desc": {"en": "Ice-cold, the classic with chicken.", "ko": "얼음 가득, 치킨에는 역시 콜라예요."}},
+        {"id": "lemon-soda", "model": "cocktail", "color": "#f5e663", "price": 5000, "name": {"en": "Lemon soda", "ko": "레몬 소다", "ja": "レモンソーダ", "zh": "柠檬苏打"}, "desc": {"en": "Fresh lemon and soda for the second half.", "ko": "후반전에 딱 맞는 상큼한 레몬 소다예요."}}
+      ]
+    },
+    {
       "id": "globe-coffee",
       "category": "cafe",
       "size": "small",
