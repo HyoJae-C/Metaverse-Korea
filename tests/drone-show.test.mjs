@@ -9,9 +9,9 @@ import { STAND_TIMES } from '../src/core/stamp-stands.js';
 
 const KST = (h, m = 0, d = 9) => Date.UTC(2026, 10, d, h - 9, m); // a time on Korean time, 2026-11-d
 
-test('four 20-minute shows a day, 3 hours apart from the planned Yeouido fireworks', () => {
-  assert.deepEqual(DRONE_SHOW_HOURS_KST, [0, 6, 12, 18]);
-  for (const h of DRONE_SHOW_HOURS_KST) for (const f of [3, 9, 15, 21]) assert.ok(Math.abs(h - f) % 24 >= 3);
+test('two 20-minute shows a day, 3 hours apart from the Yeouido fireworks', () => {
+  assert.deepEqual(DRONE_SHOW_HOURS_KST, [6, 18]);
+  for (const h of DRONE_SHOW_HOURS_KST) for (const f of [9, 21]) assert.ok(Math.abs(h - f) % 24 >= 3);
   assert.equal(SHOW_SECONDS, 1200);
   const s = droneShowAt(KST(18, 5));
   assert.equal(s.start, KST(18));
@@ -29,14 +29,15 @@ test('night only around the show: dark from 1 minute before to the landing, day 
   assert.equal(nightAt(SHOW_SECONDS + 60), 1);
   assert.equal(nightAt(SHOW_SECONDS + 180), 0);
   assert.equal(droneShowAt(KST(18, 24)), null);
-  // the midnight show, across the date line
-  assert.equal(droneShowAt(KST(23, 59)).start, KST(0, 0, 10));
-  assert.equal(droneShowAt(KST(0, 10, 10)).start, KST(0, 0, 10));
+  // the morning show, the next day
+  assert.equal(droneShowAt(KST(5, 59, 10)).start, KST(6, 0, 10));
+  assert.equal(droneShowAt(KST(6, 10, 10)).start, KST(6, 0, 10));
+  assert.equal(droneShowAt(KST(0, 0, 10)), null, 'no show at midnight any more');
 });
 
 test('the next show', () => {
-  assert.equal(nextDroneShow(KST(18, 5)), KST(0, 0, 10));
-  assert.equal(nextDroneShow(KST(7)), KST(12));
+  assert.equal(nextDroneShow(KST(18, 5)), KST(6, 0, 10));
+  assert.equal(nextDroneShow(KST(7)), KST(18));
 });
 
 test('the drones fly in front of the bridge, past where the duck boats go', () => {
@@ -56,7 +57,7 @@ test('the program: Yozi\'s lines, in order, inside the show', () => {
   assert.ok(steps.at(-1).at === SHOW_SECONDS && steps.at(-1).land);
   assert.ok(steps.some((s) => s.photo && s.at === PHOTO_TIME[0]));
   // the third act changes from show to show
-  const acts = new Set([0, 6, 12].map((h) => JSON.stringify(program(KST(h, 0, 10)).find((s) => s.at === 750).lines)));
+  const acts = new Set([[6, 10], [18, 10], [6, 11]].map(([h, d]) => JSON.stringify(program(KST(h, 0, d)).find((s) => s.at === 750).lines)));
   assert.ok(acts.size > 1);
 });
 

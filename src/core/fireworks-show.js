@@ -14,7 +14,7 @@
 
 // Show start times on Korean time (KST, UTC+9): twice a day. 21:00 is the
 // evening in Korea, Japan and South-East Asia; 09:00 is the evening in the
-// Americas. Kept 3 hours from the Ttukseom drone show (0, 6, 12, 18 KST).
+// Americas. Kept 3 hours from the Ttukseom drone show (6, 18 KST).
 export const FIREWORKS_HOURS_KST = [9, 21];
 export const SHOW_SECONDS = 60 * 60; // an hour of fireworks (t = 0 … 3600)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
