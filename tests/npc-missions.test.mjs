@@ -17,7 +17,7 @@ const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const json = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
 const zones = json('zones.json').zones;
 const stores = [...json('stores.json').stores, ...(json('homes.json').homes || [])];
-const npcList = zones.flatMap((z) => Array.from({ length: PER_ZONE }, (_, k) => ({ name: npcName(z.id, k), zone: z })));
+const npcList = zones.flatMap((z) => Array.from({ length: PER_ZONE }, (_, k) => ({ name: npcName(z.npc, k), zone: z })));
 const pool = { npcs: npcList.map((n) => n.name), stores: stores.filter((s) => s.category !== 'home') };
 
 test('every passer-by name is one person, with a romanization', () => {
@@ -29,13 +29,38 @@ test('every passer-by name is one person, with a romanization', () => {
 });
 
 test('zone names never repeat and don\'t depend on the order of zones.json', () => {
-  for (const z of zones) assert.match(z.id, /^[A-Z]$/, `zone ${z.id}: ids are single letters, so each gets its own names`);
+  for (const z of zones) assert.match(z.npc, /^[A-Z]$/, `zone ${z.id}: its name letter is one letter, so it gets its own names`);
+  assert.equal(new Set(zones.map((z) => z.npc)).size, zones.length, 'name letters are unique');
   assert.equal(new Set(zones.map((z) => z.id)).size, zones.length, 'zone ids are unique');
   const names = npcList.map((n) => n.name);
   assert.equal(new Set(names).size, names.length, 'no two passers-by share a name: "find X" means one person');
   // Same names for a zone wherever it sits in the list (adding one in the middle moves nobody).
-  const byZone = (list) => Object.fromEntries(list.map((z) => [z.id, [npcName(z.id, 0), npcName(z.id, 1)]]));
+  const byZone = (list) => Object.fromEntries(list.map((z) => [z.id, [npcName(z.npc, 0), npcName(z.npc, 1)]]));
   assert.deepEqual(byZone([...zones].reverse()), byZone(zones));
+});
+
+test('zone codes are <gu letter>-<number>: the letter is the gu the zone stands in', async () => {
+  const { gu } = json('zones.json');
+  const letters = Object.values(gu);
+  assert.equal(new Set(letters).size, letters.length, 'one letter per gu');
+  for (const l of letters) assert.match(l, /^[A-HJ-Z]$/, `${l}: one capital letter, never I (I-1 reads like 1-1)`);
+  const seoul = json('seoul.json').gu;
+  for (const id of Object.keys(gu)) assert.ok(seoul.some((g) => g.id === id && g.open), `${id} is an open gu in seoul.json`);
+  const map = await loadRegionMap(json('region.json'), async (f) => json(f));
+  const boxes = districtBoxes(map);
+  const nums = {};
+  for (const z of zones) {
+    const m = /^([A-Z])-([1-9]\d*)$/.exec(z.id);
+    assert.ok(m, `zone ${z.id} (${z.name.en}) looks like A-1`);
+    const d = districtAt(boxes, z.at[0], z.at[1], 0);
+    const g = seoul.find((x) => (x.districts || []).includes(d));
+    assert.ok(g && gu[g.id], `zone ${z.id} (${z.name.en}): its gu ${g?.id} has a letter`);
+    assert.equal(m[1], gu[g.id], `zone ${z.id} (${z.name.en}) is in ${g.id}, letter ${gu[g.id]}`);
+    (nums[m[1]] ||= []).push(Number(m[2]));
+  }
+  // Each gu counts 1, 2, 3 ... with no gaps, so the next zone's number is obvious.
+  for (const [l, n] of Object.entries(nums)) assert.deepEqual(n.sort((a, b) => a - b), n.map((_, i) => i + 1), `${l}: numbers run 1..${n.length}`);
+  assert.equal(zones[0].id, 'A-1', 'Seongsu Square stays first (main.js uses it as the square)');
 });
 
 test('every meeting zone (where its passers-by live) is on the map, next to a street of its own district', async () => {
