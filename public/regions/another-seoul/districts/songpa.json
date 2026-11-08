@@ -1,6 +1,26 @@
 {
  "meta": {
   "district": "songpa",
+  "parts": [
+   {
+    "why": "the Han River bank, from Jamsil Bridge west",
+    "box": [
+     -420,
+     -215,
+     420,
+     -150
+    ]
+   },
+   {
+    "why": "Songpa-daero, Seokchon Lake and Jamsil Station",
+    "box": [
+     0,
+     -262,
+     819,
+     460
+    ]
+   }
+  ],
   "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. No filler blocks: the open ground by the river and the lakes is left clear."
  },
  "roads": [

@@ -780,7 +780,7 @@ for (const sc of region.screens || []) {
   const wall = { ...near, x: near.x + near.ax * along, z: near.z + near.az * along };
   const w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
   const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
-  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text });
+  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
   wallScreens.push(ws);

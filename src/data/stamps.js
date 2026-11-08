@@ -166,5 +166,12 @@ export const STAMPS = [
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a lion's face in its mane
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
+  },  {
+    // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
+    id: 'konext', place: { at: [115, 717], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
+    gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
+    // the mall's long front with its wave skylight, over a wave
+    icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
   },
 ];
