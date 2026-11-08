@@ -33,7 +33,7 @@ export const BK_TEXT = {
   pickShape: { en: 'Pattern', ko: '모양', ja: '模様', zh: '样式' },
   make: { en: 'Make it · 🪙 {n}', ko: '만들기 · 🪙 {n}', ja: '作る · 🪙 {n}', zh: '制作 · 🪙 {n}' },
   have: { en: 'You have 🪙 {n}', ko: '보유 🪙 {n}', ja: '所持 🪙 {n}', zh: '持有 🪙 {n}' },
-  poor: { en: 'Not enough coins: it costs 🪙 {n}.', ko: '코인이 부족해요. 🪙 {n}이 필요해요.', ja: 'コインが足りません。🪙 {n} 必要です。', zh: '金币不够，需要 🪙 {n}。' },
+  poor: { en: 'Not enough money: it costs 🪙 {n}.', ko: '돈이 부족해요. 🪙 {n}이 필요해요.', ja: 'お金が足りません。🪙 {n} 必要です。', zh: '钱不够，需要 🪙 {n}。' },
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
   // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
@@ -48,13 +48,13 @@ export const BK_TEXT = {
 // Workshop choices. Names are in English for the bag (like other goods).
 export const CRAFT = {
   knot: {
-    icon: '🎀', price: 8,
+    icon: '🎀', price: 8000,
     colors: [['#c8323f', 'red', '다홍'], ['#2f6b4f', 'green', '초록'], ['#2d4f8a', 'blue', '쪽빛'], ['#e3b23c', 'yellow', '노랑'], ['#8b5aa8', 'purple', '보라']],
     shapes: [['butterfly', '나비매듭', { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['chrysanthemum', '국화매듭', { en: 'Chrysanthemum', ko: '국화', ja: '菊', zh: '菊花' }], ['double-coin', '도래매듭', { en: 'Double coin', ko: '도래', ja: '二つ輪', zh: '双钱' }]],
     item: (c, s) => `${c} ${s} knot charm`,
   },
   hanji: {
-    icon: '🏮', price: 10,
+    icon: '🏮', price: 10000,
     colors: [['#f6efe0', 'white', '흰'], ['#f2b8c6', 'pink', '분홍'], ['#a9c9e8', 'sky', '하늘'], ['#f0d27a', 'yellow', '노랑'], ['#9fd0a8', 'green', '연두']],
     shapes: [['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['butterfly', '나비', { en: 'Butterflies', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['cloud', '구름', { en: 'Clouds', ko: '구름', ja: '雲', zh: '云纹' }]],
     item: (c, s) => `${c} hanji lantern (${s})`,
@@ -62,7 +62,7 @@ export const CRAFT = {
   // Sunra Silver Studio: what you make is worn (an accessory item,
   // data/wearables.js acc-pendant-<metal>-<charm>), not put in the bag.
   pendant: {
-    icon: '📿', price: 25, labels: ['pickMetal', 'pickCharm'],
+    icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
     colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
     shapes: [['moon', '달', { en: 'Moon', ko: '달', ja: '月', zh: '月亮' }], ['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['bok', '복', { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' }]],
     wear: (c, s) => `acc-pendant-${c}-${s}`,

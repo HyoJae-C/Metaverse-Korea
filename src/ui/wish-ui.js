@@ -12,7 +12,7 @@ export const WISH_TEXT = {
   pickWish: { en: 'Pick your wish', ko: '소원 고르기', ja: '願いを選ぶ', zh: '选心愿' },
   go: { en: 'Pay 🪙 {n} and float it', ko: '🪙 {n} 내고 띄우기', ja: '🪙 {n} 払って流す', zh: '支付 🪙 {n} 放灯' },
   have: { en: 'You have 🪙 {n}', ko: '보유 🪙 {n}', ja: '所持 🪙 {n}', zh: '持有 🪙 {n}' },
-  poor: { en: 'Not enough coins: a lantern costs 🪙 {n}.', ko: '코인이 부족해요. 소원등은 🪙 {n}이에요.', ja: 'コインが足りません。灯籠は 🪙 {n} です。', zh: '金币不够，一盏灯要 🪙 {n}。' },
+  poor: { en: 'Not enough money: a lantern costs 🪙 {n}.', ko: '돈이 부족해요. 소원등은 🪙 {n}이에요.', ja: 'お金が足りません。灯籠は 🪙 {n} です。', zh: '钱不够，一盏灯要 🪙 {n}。' },
   how: { en: 'It floats down to the end of the stream and joins the other lanterns. Everyone nearby sees it, with your wish in their own language.', ko: '물길을 따라 끝까지 흘러가 다른 소원등들과 모여요. 근처 사람들에게도 보이고, 소원은 각자의 언어로 보여요.', ja: '流れに乗って川の端まで行き、ほかの灯籠と集まります。近くの人にも見えて、願いはそれぞれの言語で表示されます。', zh: '它会顺流漂到尽头，和其他许愿灯聚在一起。附近的人都能看到，心愿会显示成他们自己的语言。' },
   done: { en: '🏮 Your lantern is on its way!', ko: '🏮 소원등이 떠내려가요!', ja: '🏮 灯籠が流れていきます！', zh: '🏮 许愿灯漂走啦！' },
   wait: { en: 'Wait a moment before floating another one.', ko: '잠깐 뒤에 하나 더 띄울 수 있어요.', ja: '少し待ってからもう一つ流せます。', zh: '稍等一下才能再放一盏。' },

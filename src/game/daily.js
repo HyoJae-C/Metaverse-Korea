@@ -1,5 +1,5 @@
 // Daily check-in and three daily missions (see core/daily.js).
-import { Daily, REWARD } from '../core/daily.js';
+import { Daily, REWARD, checkInPay } from '../core/daily.js';
 import { NAME_ROMAN } from '../core/npcs.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
 
@@ -35,7 +35,7 @@ export function createDaily(game) {
     }));
     const btn = $('checkin-btn');
     btn.disabled = done;
-    btn.textContent = done ? t('daily.done') : t('daily.checkIn', { n: wd === 7 ? REWARD.week : REWARD.checkIn });
+    btn.textContent = done ? t('daily.done') : t('daily.checkIn', { n: checkInPay(wd) });
     $('daily-streak').textContent = t('daily.streak', { n: done ? game.daily.streak : Math.max(0, wd - 1), w: REWARD.week });
     $('daily-missions').replaceChildren(...game.daily.missions.map((m) => {
       const li = document.createElement('li');

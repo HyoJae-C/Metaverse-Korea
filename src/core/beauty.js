@@ -7,19 +7,19 @@ import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
-  { key: 'hairStyle', choices: HAIR_STYLES, price: 40, label: 'hair' },
-  { key: 'dye', palette: 'dye', price: 30 },
+  { key: 'hairStyle', choices: HAIR_STYLES, price: 40000, label: 'hair' },
+  { key: 'dye', palette: 'dye', price: 30000 },
 ];
 export const CLINIC = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50, label: 'eyeShape' },
-  { key: 'tone', palette: 'skin', price: 35 }, // skin tone
-  { key: 'small', choices: ['small', 'big'], price: 45, label: 'face' }, // a smaller or bigger head
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50000, label: 'eyeShape' },
+  { key: 'tone', palette: 'skin', price: 35000 }, // skin tone
+  { key: 'small', choices: ['small', 'big'], price: 45000, label: 'face' }, // a smaller or bigger head
 ];
 export const CLINIC2 = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50, label: 'eyeShape' },
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50000, label: 'eyeShape' },
 ];
-export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25 }]; // colour lenses
-export const LIPS = [{ key: 'lip', palette: 'lip', price: 15 }]; // lip tint
+export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
+export const LIPS = [{ key: 'lip', palette: 'lip', price: 15000 }]; // lip tint
 export const MENUS = { salon: SALON, clinic: CLINIC, clinic2: CLINIC2, lens: LENS, lips: LIPS };
 export const BEAUTY_SHOPS = Object.keys(MENUS);
 // Every salon does the basic cuts; each one also has its own concept with a

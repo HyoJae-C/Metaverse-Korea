@@ -8,7 +8,7 @@ import { BLOCKS, LINES, ANSWERS, MENUS, stampId } from '../data/order-missions.j
 import { blocksFor, checkOrder, repeatBack, sentenceFor } from '../core/order-game.js';
 
 const STAMP_KEY = 'mk.stamps';
-export const ORDER_REWARD = 15; // coins for the first time a mission is done
+export const ORDER_REWARD = 30000; // coins for the first time a mission is done
 
 // Stamps collected on this device: { id: date }.
 export class Stamps {

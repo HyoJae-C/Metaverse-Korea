@@ -45,10 +45,10 @@ export const LOCK_TEXT = {
   e_empty: { en: 'Write a message first.', ko: '메시지를 먼저 적어 주세요.', ja: '先にメッセージを書いてください。', zh: '请先写留言。' },
   e_lines: { en: 'Up to 20 lines, please.', ko: '20줄 이하로 써 주세요.', ja: '20行以内で書いてください。', zh: '请写在20行以内。' },
   e_chars: { en: 'Up to 1000 characters, please.', ko: '1000자 이하로 써 주세요.', ja: '1000文字以内で書いてください。', zh: '请写在1000字以内。' },
-  e_coins: { en: 'Not enough coins: a lock costs 🪙 {n}.', ko: '코인이 부족해요. 자물쇠는 🪙 {n}이에요.', ja: 'コインが足りません。南京錠は 🪙 {n} です。', zh: '金币不够，一把锁要 🪙 {n}。' },
+  e_coins: { en: 'Not enough money: a lock costs 🪙 {n}.', ko: '돈이 부족해요. 자물쇠는 🪙 {n}이에요.', ja: 'お金が足りません。南京錠は 🪙 {n} です。', zh: '钱不够，一把锁要 🪙 {n}。' },
   e_price: { en: 'The price has changed to 🪙 {n}. Please check again.', ko: '가격이 🪙 {n}(으)로 바뀌었어요. 다시 확인해 주세요.', ja: '料金が 🪙 {n} に変わりました。もう一度確認してください。', zh: '价格已变为 🪙 {n}，请再确认一次。' },
   e_limit: { en: 'That’s all the locks for today. Come back tomorrow!', ko: '오늘은 더 걸 수 없어요. 내일 또 와 주세요!', ja: '今日はもうかけられません。また明日！', zh: '今天不能再挂了，明天再来吧！' },
-  e_network: { en: 'Couldn’t reach the server. No coins were taken. Try again in a moment.', ko: '서버에 연결하지 못했어요. 코인은 빠져나가지 않았어요. 잠시 후 다시 해 주세요.', ja: 'サーバーにつながりませんでした。コインは減っていません。少ししてからもう一度。', zh: '无法连接服务器，金币没有扣除。请稍后再试。' },
+  e_network: { en: 'Couldn’t reach the server. No money was taken. Try again in a moment.', ko: '서버에 연결하지 못했어요. 돈은 빠져나가지 않았어요. 잠시 후 다시 해 주세요.', ja: 'サーバーにつながりませんでした。お金は減っていません。少ししてからもう一度。', zh: '无法连接服务器，没有扣钱。请稍后再试。' },
 };
 const COLORS = { heart: '#ff5d8f', circle: '#ffc93c', square: '#5dade2', star: '#af7ac5' };
 

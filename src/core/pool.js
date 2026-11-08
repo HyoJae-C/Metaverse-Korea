@@ -56,7 +56,7 @@ export const VMAX = 3.4;
 export const START_V = 2.2; // the push off the block
 export const GOOD = [0.32, 0.7]; // seconds between taps for a full stroke
 export const DAILY_PAID = 3; // races a day that pay coins
-export const PAY = { win: 3, finish: 1 };
+export const PAY = { win: 6000, finish: 2000 };
 
 // How much of a stroke you get for tapping `gap` seconds after the last one.
 export function strokeQuality(gap) {

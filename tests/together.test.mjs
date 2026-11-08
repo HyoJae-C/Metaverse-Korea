@@ -37,6 +37,6 @@ test('messages, together and crowd bonuses', () => {
   assert.equal(parseHi5(hi5Msg('abc-1')), 'abc-1');
   assert.equal(parseHi5('tandem:invite:x'), null);
   assert.equal(crowdBonus(0), 0);
-  assert.equal(crowdBonus(3), 3);
-  assert.equal(crowdBonus(40), 5);
+  assert.equal(crowdBonus(3), 6000);
+  assert.equal(crowdBonus(40), 10000);
 });

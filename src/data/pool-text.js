@@ -42,7 +42,7 @@ export const POOL_TEXT = {
   splash: { en: 'Splash! 💦', ko: '첨벙! 💦', ja: 'バシャ！💦', zh: '溅水！💦', es: '¡Chapoteo! 💦', ar: 'رشّة! 💦', vi: 'Té nước! 💦', hi: 'छपाक! 💦', id: 'Ciprat! 💦' },
   finish: { en: '{medal} Finish! {time} s', ko: '{medal} 도착! {time}초', ja: '{medal} ゴール！{time}秒', zh: '{medal} 到达！{time}秒', es: '{medal} ¡Llegada! {time} s', ar: '{medal} وصلت! {time} ث', vi: '{medal} Về đích! {time} giây', hi: '{medal} फ़िनिश! {time} से.', id: '{medal} Finis! {time} dtk' },
   newBest: { en: 'New best! 🎉', ko: '최고 기록! 🎉', ja: '自己ベスト！🎉', zh: '新纪录！🎉', es: '¡Nuevo récord! 🎉', ar: 'رقم قياسي جديد! 🎉', vi: 'Kỷ lục mới! 🎉', hi: 'नया बेस्ट! 🎉', id: 'Rekor baru! 🎉' },
-  coins: { en: '+{n} coins', ko: '+{n}코인', ja: '+{n}コイン', zh: '+{n}金币', es: '+{n} monedas', ar: '+{n} عملات', vi: '+{n} xu', hi: '+{n} सिक्के', id: '+{n} koin' },
+  coins: { en: '+🪙 {n}', ko: '+🪙 {n}', ja: '+🪙 {n}', zh: '+🪙 {n}', es: '+🪙 {n}', ar: '+🪙 {n}', vi: '+🪙 {n}', hi: '+🪙 {n}', id: '+🪙 {n}' },
   hudRace: { en: '🏊 {m} / 50 m · {t} s', ko: '🏊 {m} / 50m · {t}초', ja: '🏊 {m} / 50m · {t}秒', zh: '🏊 {m} / 50米 · {t}秒', es: '🏊 {m} / 50 m · {t} s', ar: '🏊 {m} / 50 م · {t} ث', vi: '🏊 {m} / 50 m · {t} giây', hi: '🏊 {m} / 50 मी. · {t} से.', id: '🏊 {m} / 50 m · {t} dtk' },
   hudPool: { en: '🏁 Best {race} · 🤸 Best {dive}', ko: '🏁 최고 {race} · 🤸 최고 {dive}', ja: '🏁 ベスト {race} · 🤸 ベスト {dive}', zh: '🏁 最佳 {race} · 🤸 最佳 {dive}', es: '🏁 Mejor {race} · 🤸 Mejor {dive}', ar: '🏁 الأفضل {race} · 🤸 الأفضل {dive}', vi: '🏁 Tốt nhất {race} · 🤸 {dive}', hi: '🏁 बेस्ट {race} · 🤸 {dive}', id: '🏁 Terbaik {race} · 🤸 {dive}' },
   climb: { en: 'Climb up · {h} m', ko: '올라가기 · {h}m', ja: '登る · {h}m', zh: '爬上去 · {h}米', es: 'Subir · {h} m', ar: 'اصعد · {h} م', vi: 'Leo lên · {h} m', hi: 'ऊपर चढ़ें · {h} मी.', id: 'Naik · {h} m' },

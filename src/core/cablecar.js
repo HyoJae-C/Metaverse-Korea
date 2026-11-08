@@ -17,7 +17,7 @@ export const CABLE = {
   // dwell + trip = 15 seconds (from either bay: you board whichever is in).
   dwell: 6, // seconds a cabin waits at each station with its doors open
   trip: 9, // seconds from one station to the other
-  fare: 4, // coins for the way up; the way down is on the same ticket
+  fare: 15000, // won for the way up; the way down is on the same ticket
 };
 CABLE.half = CABLE.dwell + CABLE.trip;
 CABLE.cycle = CABLE.half * 2;
@@ -350,7 +350,7 @@ export function buildCableCar(store, ROOM, EXIT) {
   box(2.4, 2.4, 1.6, -7.5, 1.2, LOW + 4, '#c0392b');
   box(2.8, 0.3, 2, -7.5, 2.55, LOW + 4, '#efe9df');
   block(-7.5, LOW + 4, 2.5, 1.7);
-  const fare = signMesh('하늘 케이블카 · 왕복', `ROUND TRIP · ${CABLE.fare} COINS (GAME)`, 3.6, '#2f4f6f');
+  const fare = signMesh('하늘 케이블카 · 왕복', `ROUND TRIP · ₩${CABLE.fare.toLocaleString('en-US')} (GAME)`, 3.6, '#2f4f6f');
   fare.position.set(-7.5, 3.3, LOW + 4.85);
   scene.add(fare);
   // Benches to wait on.

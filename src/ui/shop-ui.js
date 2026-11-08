@@ -39,7 +39,7 @@ const HOW = {
   item: { en: '🚧 Coming soon: not on sale yet.', ko: '🚧 준비중이에요. 아직 팔지 않아요.', ja: '🚧 準備中です。まだ販売していません。', zh: '🚧 准备中，暂不出售。', es: '🚧 Próximamente: aún no está a la venta.', ar: '🚧 قريبًا: غير متاح للبيع بعد.', vi: '🚧 Sắp ra mắt: chưa bán.', hi: '🚧 जल्द आ रहा है: अभी बिक्री में नहीं।', id: '🚧 Segera hadir: belum dijual.' },
   soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', vi: '🚧 Sắp ra mắt: cửa hàng này đang chuẩn bị.', hi: '🚧 जल्द आ रहा है: यह दुकान तैयार हो रही है।', id: '🚧 Segera hadir: toko sedang disiapkan.' },
   buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar', ar: 'اشترِ', vi: 'Mua', hi: 'ख़रीदें', id: 'Beli' },
-  note: { en: 'Paid with game coins only. No real money.', ko: '게임 코인으로만 사요. 실제 결제는 없어요.', ja: 'ゲーム内コインだけで買えます。実際の支払いはありません。', zh: '只用游戏硬币购买，不会真实付款。', es: 'Solo con monedas del juego. Sin dinero real.', ar: 'بعملات اللعبة فقط. لا أموال حقيقية.', vi: 'Chỉ thanh toán bằng xu trong game. Không dùng tiền thật.', hi: 'सिर्फ़ गेम के सिक्कों से भुगतान। असली पैसा नहीं।', id: 'Hanya pakai koin game. Tanpa uang sungguhan.' },
+  note: { en: 'Paid with game money (won) only. No real payment.', ko: '게임 속 돈(원)으로만 사요. 실제 결제는 없어요.', ja: 'ゲーム内のお金（ウォン）だけで買えます。実際の支払いはありません。', zh: '只用游戏里的钱（韩元）购买，不会真实付款。', es: 'Solo con dinero del juego (wones). Sin pagos reales.', ar: 'بمال اللعبة (الوون) فقط. لا دفع حقيقي.', vi: 'Chỉ thanh toán bằng tiền trong game (won). Không trả tiền thật.', hi: 'सिर्फ़ गेम के पैसे (वॉन) से भुगतान। असली भुगतान नहीं।', id: 'Hanya pakai uang game (won). Tanpa pembayaran sungguhan.' },
 };
 // What a bought thing becomes in your hand: 'food' to eat, 'coffee' to drink,
 // or 'gift' (a shopping bag that is only carried). "goods": true in
@@ -72,7 +72,8 @@ export function itemSoon(store, product) {
   if (how === 'counter') return !!product?.goods;
   return false;
 }
-export const coinsFor = (krw) => Math.max(1, Math.ceil((Number(krw) || 0) / 1000));
+// Money is won: a thing costs its price tag (at least ₩100).
+export const coinsFor = (krw) => Math.max(100, Math.round(Number(krw) || 0));
 const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog': '🐶', 'pet:cat': '🐱', 'pet:chinchilla': '🐭', 'pet:guineapig': '🐹',
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',

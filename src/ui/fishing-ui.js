@@ -101,7 +101,7 @@ export function fishBook(dex, fresh = null) {
     detail.replaceChildren(el('strong', null, fishName(f)), el('p', null,
       !f.released ? text('추후 공개 예정이에요.', 'Coming in a future release.')
       : !n && legendPark(f.id) ? text(`${legendPark(f.id).name.ko} 한강공원에서만 나타나는 전설이에요.`, `A legend that only appears at ${legendPark(f.id).name.en} Han River Park.`) : n
-      ? text('누적 ', 'Caught ') + n + text('마리 · 판매 ', ' times · Sell ') + f.price + text('코인', ' coins')
+      ? text('누적 ', 'Caught ') + n + text('마리 · 판매 ', ' times · Sell ') + '🪙 ' + f.price
       : text('아직 만나지 못했어요. 낚시로 도장을 모아보세요!', 'Not caught yet. Go fishing to earn this stamp!')));
   };
   const render = () => {

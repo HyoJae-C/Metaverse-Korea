@@ -23,7 +23,7 @@ test('a note keeps its line breaks and spaces, HTML stays plain text', () => {
 });
 
 test('hanging a lock takes the price once, even when sent twice', async () => {
-  const w = wallet(100);
+  const w = wallet(100000);
   const s = new LocalLoveLocks(w, mem());
   const req = { requestId: 'r1', shape: 'heart', name: 'Yozi', text: 'hi\nthere', price: LOVE_LOCK.price };
   const a = await s.hang(req);
@@ -31,14 +31,14 @@ test('hanging a lock takes the price once, even when sent twice', async () => {
   assert.equal(a.charged, true);
   assert.equal(b.charged, false);
   assert.equal(b.lock.id, a.lock.id);
-  assert.equal(w.coins, 100 - LOVE_LOCK.price);
+  assert.equal(w.coins, 100000 - LOVE_LOCK.price);
   assert.equal((await s.page()).rows.length, 1);
 });
 
 test('no lock without coins, a message, a known shape or the right price', async () => {
   const s = new LocalLoveLocks(wallet(LOVE_LOCK.price - 1), mem());
   assert.equal((await s.hang({ requestId: 'a', shape: 'heart', name: 'A', text: 'x', price: LOVE_LOCK.price })).error, 'coins');
-  const rich = new LocalLoveLocks(wallet(999), mem());
+  const rich = new LocalLoveLocks(wallet(999999), mem());
   assert.equal((await rich.hang({ requestId: 'b', shape: 'heart', name: 'A', text: '  ', price: LOVE_LOCK.price })).error, 'empty');
   assert.equal((await rich.hang({ requestId: 'c', shape: 'blob', name: 'A', text: 'x', price: LOVE_LOCK.price })).error, 'shape');
   assert.equal((await rich.hang({ requestId: 'd', shape: 'star', name: 'A', text: 'x', price: 1 })).error, 'price');

@@ -19,21 +19,35 @@ test('welcome travel money comes once, and is in the budget book', () => {
   assert.deepEqual(w.log.map((e) => [e.n, e.bal, e.note]), [[WELCOME_COINS, WELCOME_COINS, { k: 'ledger.welcome' }]]);
 });
 
-test('players from before the gift get it too, on top of what they had', () => {
+test('players from before the gift get it too, on top of what they had (old coins become won)', () => {
   fresh();
   store['mk.wallet'] = JSON.stringify({ coins: 42, day: '', ads: 0 });
   const w = new Wallet(cfg);
   assert.equal(w.welcome(), WELCOME_COINS);
-  assert.equal(w.coins, 42 + WELCOME_COINS);
+  assert.equal(w.coins, 42000 + WELCOME_COINS);
 });
 
-test('players who got the old 500 get the rest once when the gift goes up', () => {
+test('players who got the old 500 coins (₩500,000) get the rest once when the gift goes up', () => {
   fresh();
   store['mk.wallet'] = JSON.stringify({ coins: 120, day: '', ads: 0, gift: 1 });
   const w = new Wallet(cfg);
-  assert.equal(w.welcome(), WELCOME_COINS - 500);
-  assert.equal(w.coins, 120 + WELCOME_COINS - 500);
+  assert.equal(w.welcome(), WELCOME_COINS - 500000);
+  assert.equal(w.coins, 120000 + WELCOME_COINS - 500000);
   assert.equal(new Wallet(cfg).welcome(), 0, 'only once');
+});
+
+test('a coin save, budget book and receipts are turned into won once', () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ coins: 7, gift: 1000 });
+  store['mk.ledger'] = JSON.stringify([{ t: 1, n: -3, bal: 7, note: null }]);
+  const w = new Wallet(cfg);
+  assert.equal(w.coins, 7000);
+  assert.equal(w.welcome(), 0, 'the old 1,000-coin gift is the ₩1,000,000 one');
+  assert.deepEqual(w.log.map((e) => [e.n, e.bal]), [[-3000, 7000]]);
+  w.add(500);
+  const again = new Wallet(cfg);
+  assert.equal(again.coins, 7500, 'saved in won: not multiplied again');
+  assert.deepEqual(again.log.map((e) => e.n), [-3000, 500]);
 });
 
 test('every coin in and out is logged with a note, or the current context', () => {
@@ -64,7 +78,8 @@ test('the budget book keeps only the latest entries', () => {
 });
 
 // A pretend server with the rules of supabase/015_wallet.sql (simplified).
-function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COINS, missing = false, resell = 10 } = {}) {
+// unit 'krw': 018_won.sql has run; 'coin': a server from before it.
+function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COINS, missing = false, resell = 10, unit = 'krw' } = {}) {
   const srv = { row: null, seen: new Map(), calls: [], down: false };
   srv.client = {
     rpc: async (fn, args) => {
@@ -74,12 +89,13 @@ function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COIN
       const r = srv.row;
       if (fn === 'wallet_resell_pct') return resell == null ? { error: { code: 'PGRST202', message: 'Could not find the function' } } : { data: resell };
       if (fn === 'wallet_open') {
+        if (unit === 'coin' && args.p_unit) return { error: { code: 'PGRST202', message: 'Could not find the function' } };
         let created = false, given = 0;
         if (!r) { created = true; srv.row = { coins: Math.min(args.p_local, migrateMax), ver: 0, welcome: Math.min(args.p_gift, welcome), ads: 5 }; }
         const w = srv.row;
         if (w.welcome < welcome) { given = welcome - w.welcome; w.coins += given; w.welcome = welcome; }
         if (created || given) w.ver++;
-        return { data: { status: 'ok', coins: w.coins, ver: w.ver, created, welcome: given, ads_left: w.ads } };
+        return { data: { status: 'ok', unit: unit === 'krw' ? 'krw' : undefined, coins: w.coins, ver: w.ver, created, welcome: given, ads_left: w.ads } };
       }
       if (fn === 'wallet_apply') {
         const results = [];
@@ -121,7 +137,7 @@ function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COIN
 
 test('server wallet: the browser balance comes over once, capped, with the welcome money on top', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 99999, gift: 0 });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 99999, gift: 0 });
   const srv = fakeServer();
   const w = new Wallet(cfg);
   assert.equal(await w.connect(srv.cloud), 'server');
@@ -137,7 +153,7 @@ test('server wallet: the browser balance comes over once, capped, with the welco
 
 test('server wallet: changes show at once, then the server balance wins', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 100, gift: WELCOME_COINS });
   const srv = fakeServer({ earnMax: 50 });
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -157,7 +173,7 @@ test('server wallet: changes show at once, then the server balance wins', async 
 
 test('server wallet: offline changes wait in the browser and are sent once', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 200, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 200, gift: WELCOME_COINS });
   const srv = fakeServer();
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -177,7 +193,7 @@ test('server wallet: offline changes wait in the browser and are sent once', asy
 
 test('server wallet: a refund gives back only what that payment took', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 100, gift: WELCOME_COINS });
   const srv = fakeServer();
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -191,7 +207,7 @@ test('server wallet: a refund gives back only what that payment took', async () 
 
 test('server wallet: ads are counted by the server', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 0, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 0, gift: WELCOME_COINS });
   const srv = fakeServer();
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -205,7 +221,7 @@ test('server wallet: ads are counted by the server', async () => {
 
 test('before the SQL is set up, the wallet stays in the browser', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 70, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 70, gift: WELCOME_COINS });
   const w = new Wallet(cfg);
   assert.equal(await w.connect(fakeServer({ missing: true }).cloud), 'local');
   assert.equal(w.server, false);
@@ -216,7 +232,7 @@ test('before the SQL is set up, the wallet stays in the browser', async () => {
 
 test('another account on this device does not get this copy', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 300, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 300, gift: WELCOME_COINS });
   const a = fakeServer();
   const w = new Wallet(cfg);
   await w.connect(a.cloud);
@@ -231,7 +247,7 @@ test('another account on this device does not get this copy', async () => {
 
 test('second-hand shops: the server pays from its ledger, once per purchase, and only once the purchase is there', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 100, gift: WELCOME_COINS });
   const srv = fakeServer();
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -257,7 +273,7 @@ test('second-hand shops: the server pays from its ledger, once per purchase, and
 
 test('second-hand shops: closed until the SQL is run; a browser-only wallet pays at once', async () => {
   fresh();
-  store['mk.wallet'] = JSON.stringify({ coins: 100, gift: WELCOME_COINS });
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 100, gift: WELCOME_COINS });
   const srv = fakeServer({ resell: null });
   const w = new Wallet(cfg);
   await w.connect(srv.cloud);
@@ -268,4 +284,41 @@ test('second-hand shops: closed until the SQL is run; a browser-only wallet pays
   assert.equal(local.resellPct, 10);
   assert.deepEqual(await local.resell({ id: 'x', n: 6 }), { ok: true, n: 6 });
   assert.equal(local.coins, 6);
+});
+
+test('before 018_won.sql the server still counts coins: amounts are changed on the way', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 5000, gift: WELCOME_COINS });
+  const srv = fakeServer({ unit: 'coin', welcome: 1000 });
+  const w = new Wallet(cfg);
+  assert.equal(await w.connect(srv.cloud), 'server');
+  assert.equal(srv.row.coins, 5, 'the browser money went over in coins');
+  assert.equal(w.coins, 5000);
+  assert.equal(w.spend(2000), true);
+  await w.flush();
+  assert.equal(srv.row.coins, 3);
+  assert.equal(w.coins, 3000, 'the server balance, shown in won');
+  assert.equal(srv.client && srv.calls.includes('wallet_apply'), true);
+});
+
+test('ops queued in coins before won are sent as won', async () => {
+  fresh();
+  store['mkw.state'] = JSON.stringify({ uid: 'u1', base: 10, ver: 1, ads: 5, adsDay: '', queue: [{ id: 'a', n: -4, k: 'spend' }] });
+  const w = new Wallet(cfg);
+  assert.equal(w.coins, 6000);
+  const srv = fakeServer();
+  srv.row = { coins: 10000, ver: 1, welcome: WELCOME_COINS, ads: 5 };
+  await w.connect(srv.cloud);
+  await w.flush();
+  assert.equal(srv.row.coins, 6000);
+});
+
+test('the page shows money as won: 🪙 amounts become ₩ with commas', async () => {
+  const { wonText } = await import('../src/ui/gold-coin.js');
+  assert.equal(wonText('🪙 4500'), '₩4,500');
+  assert.equal(wonText('Check in (+30000 🪙)'), 'Check in (+₩30,000)');
+  assert.equal(wonText('Sold! 🪙 +45000'), 'Sold! +₩45,000');
+  assert.equal(wonText('물고기 가방 🪙 1500어치'), '물고기 가방 ₩1,500어치');
+  assert.equal(wonText('Fare 🪙 1,550'), 'Fare ₩1,550');
+  assert.equal(wonText('no money here'), 'no money here');
 });

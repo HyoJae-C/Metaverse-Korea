@@ -10,7 +10,7 @@ import { randomLook } from '../data/appearance.js';
 import { bankHeight, CROWD, SINGER, GIRLS, BOYS, FACE_AUDIENCE } from './busking-layout.js';
 
 export const STAGE_R = 2.2; // stand within this of the singer's spot to busk
-export const TIP = 5; // coins per tip
+export const TIP = 5000; // coins per tip
 export const TIP_EVERY = 20; // seconds of performing per tip
 export const TIPS_PER_DAY = 6;
 const TIP_KEY = 'mk.buskTips';

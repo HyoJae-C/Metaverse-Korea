@@ -66,7 +66,7 @@ export function streetStairs(sub, x, z) {
 export const HALL = { w: 52, d: 30, h: 4.4 };
 export const GATE_X = -9; // ticket gates: the concourse is west (x < GATE_X), the platform east
 export const GATE_LANES = [-3, -1.5, 0, 1.5, 3]; // lane centres (z)
-export const FARE = 2; // coins, paid at the gate on the way in (going out is free)
+export const FARE = 1550; // won (Seoul's card fare), paid at the gate on the way in (going out is free)
 export const DOOR_Z = 7.5; // screen doors on both sides of the island platform
 const TRACK_Z = 10.6;
 const PLAT_X = [-8.5, 25.5];
@@ -778,15 +778,15 @@ export function buildStation(store, ROOM) {
 // Drinks from the station vending machines: all cheap (1 coin), all
 // non-alcoholic, so each one works like a coffee (sips that refill stamina).
 export const VENDING_DRINKS = [
-  { id: 'black-coffee', icon: '☕', price: 1, name: { ko: '블랙커피', en: 'Black coffee', ja: 'ブラックコーヒー', zh: '黑咖啡' } },
-  { id: 'milk-coffee', icon: '☕', price: 1, name: { ko: '밀크커피', en: 'Milk coffee', ja: 'ミルクコーヒー', zh: '牛奶咖啡' } },
-  { id: 'yuja-tea', icon: '🍋', price: 1, name: { ko: '유자차', en: 'Yuja tea', ja: 'ゆず茶', zh: '柚子茶' } },
-  { id: 'hot-choco', icon: '🍫', price: 1, name: { ko: '핫초코', en: 'Hot chocolate', ja: 'ホットチョコ', zh: '热巧克力' } },
-  { id: 'energy', icon: '⚡', price: 1, name: { ko: '에너지음료', en: 'Energy drink', ja: 'エナジードリンク', zh: '能量饮料' } },
-  { id: 'vitamin', icon: '🍊', price: 1, name: { ko: '비타민음료', en: 'Vitamin drink', ja: 'ビタミンドリンク', zh: '维生素饮料' } },
-  { id: 'cider', icon: '🥤', price: 1, name: { ko: '사이다', en: 'Lemon-lime soda (cider)', ja: 'サイダー', zh: '汽水' } },
-  { id: 'barley-tea', icon: '🍵', price: 1, name: { ko: '보리차', en: 'Barley tea', ja: '麦茶', zh: '大麦茶' } },
-  { id: 'water', icon: '💧', price: 1, name: { ko: '생수', en: 'Bottled water', ja: 'ミネラルウォーター', zh: '矿泉水' } },
+  { id: 'black-coffee', icon: '☕', price: 700, name: { ko: '블랙커피', en: 'Black coffee', ja: 'ブラックコーヒー', zh: '黑咖啡' } },
+  { id: 'milk-coffee', icon: '☕', price: 700, name: { ko: '밀크커피', en: 'Milk coffee', ja: 'ミルクコーヒー', zh: '牛奶咖啡' } },
+  { id: 'yuja-tea', icon: '🍋', price: 1000, name: { ko: '유자차', en: 'Yuja tea', ja: 'ゆず茶', zh: '柚子茶' } },
+  { id: 'hot-choco', icon: '🍫', price: 1000, name: { ko: '핫초코', en: 'Hot chocolate', ja: 'ホットチョコ', zh: '热巧克力' } },
+  { id: 'energy', icon: '⚡', price: 1500, name: { ko: '에너지음료', en: 'Energy drink', ja: 'エナジードリンク', zh: '能量饮料' } },
+  { id: 'vitamin', icon: '🍊', price: 1200, name: { ko: '비타민음료', en: 'Vitamin drink', ja: 'ビタミンドリンク', zh: '维生素饮料' } },
+  { id: 'cider', icon: '🥤', price: 1500, name: { ko: '사이다', en: 'Lemon-lime soda (cider)', ja: 'サイダー', zh: '汽水' } },
+  { id: 'barley-tea', icon: '🍵', price: 1300, name: { ko: '보리차', en: 'Barley tea', ja: '麦茶', zh: '大麦茶' } },
+  { id: 'water', icon: '💧', price: 1000, name: { ko: '생수', en: 'Bottled water', ja: 'ミネラルウォーター', zh: '矿泉水' } },
 ];
 
 // ---------- Inside a train car ----------

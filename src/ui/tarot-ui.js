@@ -5,7 +5,7 @@
 // the same table: you pick the first card, they pick the second on their
 // screen, you pick the third for the two of you. Just for fun; the deck is in
 // data/tarot.js, the messages in core/tarot-queue.js.
-import { TAROT_CARDS, TAROT_COST, TOPICS, PAIR_POSITIONS, topicById, cardText, cardMark, shuffleDeck, seeded } from '../data/tarot.js';
+import { TAROT_CARDS, TAROT_COST, TAROT_HALF, TOPICS, PAIR_POSITIONS, topicById, cardText, cardMark, shuffleDeck, seeded } from '../data/tarot.js';
 import { readingSummary, readingVerdict } from '../data/tarot-summary.js';
 import { L, fmt } from './pocha-ui.js';
 
@@ -30,7 +30,7 @@ export const TAROT_UI_TEXT = {
   pick: { en: 'Pick a card: {pos} ({i}/3)', ko: '카드를 골라 주세요: {pos} ({i}/3)', ja: 'カードを選んで：{pos}（{i}/3）', zh: '请选一张牌：{pos}（{i}/3）' },
   theirPick: { en: '{name} is picking: {pos} ({i}/3)', ko: '{name} 님이 고르는 중: {pos} ({i}/3)', ja: '{name}さんが選んでいます：{pos}（{i}/3）', zh: '{name}正在选：{pos}（{i}/3）' },
   done: { en: 'Your reading', ko: '타로 풀이', ja: 'あなたの占い結果', zh: '你的占卜结果' },
-  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
+  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}이 필요해요.', ja: '🪙 {n} 必要です。', zh: '需要 🪙 {n}。' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
   again: { en: 'Another reading', ko: '다른 운세 보기', ja: '別の占い', zh: '再占一次' },
   together: { en: '👫 Read together with {name}', ko: '👫 {name} 님과 같이 보기', ja: '👫 {name}さんと一緒に占う', zh: '👫 和{name}一起占' },
@@ -42,7 +42,7 @@ export const TAROT_UI_TEXT = {
   },
   waiting: { en: 'Asking {name} to join…', ko: '{name} 님에게 같이 보자고 했어요…', ja: '{name}さんを誘っています…', zh: '正在邀请{name}…' },
   cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消' },
-  offer: { en: '{name} wants to read {topic} with you. It\'s their treat!', ko: '{name} 님이 {topic}을 같이 보자고 해요. {name} 님이 낼게요!', ja: '{name}さんが{topic}を一緒に占おうと誘っています。おごりです！', zh: '{name}想和你一起占{topic}。TA请客！' },
+  offer: { en: '{name} wants to read {topic} with you. Dutch pay: 🪙 {n} each.', ko: '{name} 님이 {topic}을 같이 보자고 해요. 더치페이로 한 사람당 🪙 {n}이에요.', ja: '{name}さんが{topic}を一緒に占おうと誘っています。割り勘で1人 🪙 {n} です。', zh: '{name}想和你一起占{topic}。AA制，每人 🪙 {n}。' },
   join: { en: 'Join', ko: '같이 보기', ja: '参加する', zh: '加入' },
   decline: { en: 'No thanks', ko: '괜찮아요', ja: '遠慮する', zh: '不了' },
   declined: { en: '{name} can\'t join right now.', ko: '{name} 님은 지금 같이 볼 수 없대요.', ja: '{name}さんは今は参加できません。', zh: '{name}现在不能加入。' },
@@ -97,7 +97,7 @@ export class TarotUI {
     const s = this.state;
     if (s?.pair && s.picked.length < 3) this.send('bye', s.pair.other);
     if (this.inviting) this.send('bye', this.inviting.to);
-    if (this.offer) this.send('no', this.offer.from);
+    if (this.offer) { this.send('no', this.offer.from); this.payBack(); }
     this.state = this.inviting = this.offer = null;
   }
 
@@ -124,13 +124,17 @@ export class TarotUI {
       if (this.open) this.render();
       return true; // (main shows a toast and the action button)
     }
+    if ((verb === 'no' || verb === 'bye') && this.offer?.from === from && this.offer.accepted) {
+      this.payBack(); // the reading didn't start: the friend's half comes back
+    }
     if (verb === 'no' && this.inviting?.to === from) {
       this.inviting = null;
       this.render(tt('declined', { name }));
     } else if (verb === 'join' && this.inviting?.to === from) {
       const topic = this.inviting.topic;
       this.inviting = null;
-      if (!this.wallet.spend(TAROT_COST, { name: T.title })) { this.send('no', from); this.render(tt('noCoins', { n: TAROT_COST })); return false; }
+      // Dutch pay: each pays half (the friend paid when joining).
+      if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { this.send('no', from); this.render(tt('noCoins', { n: TAROT_HALF })); return false; }
       const seed = Math.floor(this.rand() * 1e9);
       this.state = { topic, deck: shuffleDeck(seeded(seed)), picked: [], taken: [], pair: { host: true, other: from, a: this.myName(), b: name } };
       this.send('deal', from, topic, seed);
@@ -153,10 +157,19 @@ export class TarotUI {
   }
 
   accept() {
-    if (!this.offer) return;
+    if (!this.offer || this.offer.accepted) return;
+    if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { this.render(tt('noCoins', { n: TAROT_HALF })); return; }
+    this.offer.paid = this.wallet.lastOp;
     this.offer.accepted = true;
     this.send('join', this.offer.from);
     this.render();
+  }
+  // Give back my half when a reading I paid into never started.
+  payBack() {
+    const o = this.offer;
+    if (!o?.accepted || o.refunded) return;
+    o.refunded = true;
+    this.wallet.refund(TAROT_HALF, o.paid, { name: T.title });
   }
   decline() {
     if (this.offer) this.send('no', this.offer.from);
@@ -213,7 +226,7 @@ export class TarotUI {
     if (this.offer) {
       const t = topicById(this.offer.topic);
       const box = el('div', 'tarot-offer');
-      box.append(el('p', null, tt('offer', { name: this.offer.name, topic: L(t.name) })));
+      box.append(el('p', null, tt('offer', { name: this.offer.name, topic: L(t.name), n: TAROT_HALF })));
       if (!this.offer.accepted) {
         const row = el('div', 'order-actions');
         row.append(button('primary', '💞 ' + tt('join'), () => this.accept()), button('', tt('decline'), () => this.decline()));
