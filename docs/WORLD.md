@@ -77,7 +77,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
-- Stores, homes, meeting zones and bike stations can be placed with
+- `water` (region.json) adds river stretches between districts (the Han River
+  from Mangwon to Seongsu): each is a water area plus a blocker; give it
+  `blockers` split around a bridge to leave a gap.
+- Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
