@@ -9,7 +9,7 @@
 // any unknown command. What the costumes look like is core/sky-costume.js.
 //
 // Flying: move as usual; Space or R goes up, C or F down (or the ▲ ▼
-// buttons on a phone); Shift (or the stick pushed all the way) flies fast.
+// buttons on a phone); Shift, the stick pushed all the way or ⚡ dashes.
 // Others see us flying too ("fl" in our state, drawn by core/players.js).
 //
 // Carrying: flying low next to someone, 🫴 offers them a ride in one of
@@ -106,8 +106,8 @@ export class Roofs {
   }
 }
 
-const FAST = 40; // m/s across
-const CLIMB = 10, FAST_CLIMB = 26; // m/s up and down
+const FAST = 55; // m/s across, dashing (Shift, the stick pushed all the way, or ⚡)
+const CLIMB = 10, FAST_CLIMB = 32; // m/s up and down
 const TOP = 250; // highest (m)
 const LIFT = 3; // how high the take-off goes (m)
 const NEAR = 4; // how close to offer someone a ride (m)
@@ -124,7 +124,7 @@ export function createSkyFlight(game) {
   let costume = null;
   let savedLook = null, swapped = false, savedFog = null;
   let opOk = false;
-  let climbBtn = 0, fxT = 0, lastRy = 0, roll = 0, hf = 0, fist = 0, climb = 0;
+  let climbBtn = 0, dashBtn = false, fxT = 0, lastRy = 0, roll = 0, hf = 0, fist = 0, climb = 0;
   let landAt = null; // { x, z, y, roof } where to land
   let roof = null; // the rooftop we stand on
   const carriers = new Map(); // slot -> id: who we carry
@@ -170,11 +170,12 @@ export function createSkyFlight(game) {
     pad.style.cssText = 'position:fixed;right:84px;top:30%;display:flex;flex-direction:column;gap:10px;z-index:30';
     pad.up = button('▲', 'Fly up', () => { climbBtn = 1; }, () => { if (climbBtn === 1) climbBtn = 0; });
     pad.down = button('▼', 'Fly down', () => { climbBtn = -1; }, () => { if (climbBtn === -1) climbBtn = 0; });
+    pad.dash = button('⚡', 'Dash', () => { dashBtn = true; }, () => { dashBtn = false; });
     pad.carry = button('🫴', 'Carry someone', () => carryMenu());
     pad.drop = button('🙌', 'Put them down', () => dropAll());
     pad.letGo = button('🪂', 'Let go', () => letGo());
     pad.street = button('⬇', 'Back to the street', () => toStreet());
-    pad.append(pad.up, pad.down, pad.carry, pad.drop, pad.letGo, pad.street);
+    pad.append(pad.up, pad.down, pad.dash, pad.carry, pad.drop, pad.letGo, pad.street);
     document.body.append(pad);
   }
   function refreshPad() {
@@ -183,12 +184,12 @@ export function createSkyFlight(game) {
     if (!pad && !any) return;
     if (!pad) makePad();
     pad.hidden = !any;
-    pad.up.hidden = pad.down.hidden = !flying;
+    pad.up.hidden = pad.down.hidden = pad.dash.hidden = !flying;
     pad.carry.hidden = !(flying && phase === 'fly');
     pad.drop.hidden = !(flying && carriers.size);
     pad.letGo.hidden = !carried;
     pad.street.hidden = !(roof && !kind && !carried);
-    if (!flying) climbBtn = 0;
+    if (!flying) { climbBtn = 0; dashBtn = false; }
   }
   function closePanel() { panel?.remove(); panel = null; }
   function showPanel(title, choices) {
@@ -402,6 +403,7 @@ export function createSkyFlight(game) {
   // Each frame while flying, carried or on a roof, in place of walking.
   // Returns the walk speed for the body's clip.
   function fly(dt, p, mx, my, yaw, fast) {
+    if (kind && dashBtn) fast = true;
     if (game.mode !== 'street') { // a warp or a door: back on foot
       if (carried) { carried = null; releaseCarried(game.me); }
       roof = null;
