@@ -149,16 +149,16 @@
       "map": "districts/samseong.json",
       "offset": [
         163,
-        845
+        975
       ],
-      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0], "nudge": [0, -151], "why": "Moved north as far as Songpa is, so the two keep their real distance to each other: Teheran-ro runs on over Tancheon and up to Songpa's Olympic-ro at Jamsil." }
+      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0], "nudge": [0, -21], "why": "Moved a little north towards Songpa (Teheran-ro runs on over Tancheon to Songpa's Olympic-ro at Jamsil), but no further than the Han River's south bank: Bongeunsa-ro's lawns stay on land." }
     }
   ],
   "links": [
     {
       "k": "primary",
       "w": 16,
-      "p": [[448, 845], [578, 720]],
+      "p": [[448, 975], [578, 720]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
       "note": "Teheran-ro crosses Tancheon on Samseong Bridge and runs on north-east as Olympic-ro to Songpa's Olympic-ro, towards Jamsil Station."
     },
@@ -350,8 +350,8 @@
     {"p": [[-1067, 495], [-335, 173], [-335, 410], [-986, 584]], "note": "Han River from Banpo-Jamwon north-east to Seongsu (Ttukseom)."}
   ],
   "screens": [
-    { "at": [64, 770], "w": 28, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
-    { "at": [43, 788], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
+    { "at": [64, 900], "w": 28, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
+    { "at": [43, 918], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
     {
       "at": [
         60,
@@ -693,7 +693,7 @@
           }
         ]
       },
-      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 831], "ry": -1.5708 }, { "n": 2, "at": [179, 859], "ry": 1.5708 }] },
+      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 961], "ry": -1.5708 }, { "n": 2, "at": [179, 989], "ry": 1.5708 }] },
       {
         "id": "jamsil-station",
         "name": {

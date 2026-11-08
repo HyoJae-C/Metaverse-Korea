@@ -21,7 +21,7 @@
     ]
    }
   ],
-  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. No filler blocks: the open ground by the river and the lakes is left clear. The HANEUL department store, mall and tower (fictional brand) stand on the north shore between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; they are drawn by core/haneul.js. Another Land's island was cut down (x 292..404, z 228..332) with the park's outside, which is drawn at 3/4 size."
+  "source": "hand-made (game map, not to scale): Songpa-gu across the Han River. Seokchon Lake (east and west lakes either side of Songpa-daero) is simplified; Another Land on the west-lake island is an original theme park, not a real place. Songpa-daero runs south-east from Jamsil Bridge to the Olympic-ro corner (540, 100), kept clear for Jamsil Station. The east lake is drawn closer to its real size; the west lake keeps room for Another Land. Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a lawn and a path run from the east lake to its park. Seoul Another Dome (a fictional baseball dome, inspired by the one planned for Jamsil) stands west of Jamsil Station by the river, at the west end of Olympic-ro. No filler blocks: the open ground by the river and the lakes is left clear. The HANEUL department store, mall and tower (fictional brand) stand on the north shore between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; they are drawn by core/haneul.js. Another Land's island was cut down (x 292..404, z 228..332) with the park's outside, which is drawn at 3/4 size."
  },
  "roads": [
   {
@@ -57,7 +57,7 @@
    "w": 12,
    "p": [
     [
-     140,
+     70,
      100
     ],
     [
@@ -355,6 +355,112 @@
     "ko": "하늘타워",
     "en": "HANEUL Tower"
    }
+  },
+  {
+   "h": 14,
+   "p": [
+    [
+     120,
+     60
+    ],
+    [
+     132.9,
+     58.3
+    ],
+    [
+     145,
+     53.3
+    ],
+    [
+     155.4,
+     45.4
+    ],
+    [
+     163.3,
+     35
+    ],
+    [
+     168.3,
+     22.9
+    ],
+    [
+     170,
+     10
+    ],
+    [
+     168.3,
+     -2.9
+    ],
+    [
+     163.3,
+     -15
+    ],
+    [
+     155.4,
+     -25.4
+    ],
+    [
+     145,
+     -33.3
+    ],
+    [
+     132.9,
+     -38.3
+    ],
+    [
+     120,
+     -40
+    ],
+    [
+     107.1,
+     -38.3
+    ],
+    [
+     95,
+     -33.3
+    ],
+    [
+     84.6,
+     -25.4
+    ],
+    [
+     76.7,
+     -15
+    ],
+    [
+     71.7,
+     -2.9
+    ],
+    [
+     70,
+     10
+    ],
+    [
+     71.7,
+     22.9
+    ],
+    [
+     76.7,
+     35
+    ],
+    [
+     84.6,
+     45.4
+    ],
+    [
+     95,
+     53.3
+    ],
+    [
+     107.1,
+     58.3
+    ]
+   ],
+   "n": {
+    "ko": "서울 어나더 돔",
+    "en": "Seoul Another Dome"
+   },
+   "custom": true
   }
  ],
  "rail": [],
@@ -608,6 +714,27 @@
     [
      292,
      332
+    ]
+   ]
+  },
+  {
+   "k": "plaza",
+   "p": [
+    [
+     78,
+     60
+    ],
+    [
+     162,
+     60
+    ],
+    [
+     162,
+     94
+    ],
+    [
+     78,
+     94
     ]
    ]
   }
@@ -1123,6 +1250,13 @@
    "type": "haneultower",
    "x": 722,
    "z": 140
+  },
+  {
+   "type": "dome",
+   "x": 120,
+   "z": 10,
+   "r": 50,
+   "h": 14
   }
  ]
 }

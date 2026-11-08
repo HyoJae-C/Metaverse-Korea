@@ -23,12 +23,20 @@ test('Samseong-dong opens Gangnam-gu, its station corner on the real spot', () =
   assert.match(map.meta.source, /OpenStreetMap/, 'street lines credited to OpenStreetMap');
 });
 
-test('KONEXT: a big mall seen from outside, with the aquarium pavilion closed for now', () => {
+test('Samseong-dong stays on land, south of the Han River', () => {
+  const river = Array.isArray(seoul.river[0][0]) ? seoul.river : [seoul.river];
+  const wet = ([x, z]) => river.some((p) => inPolygon(...world([x, z]), p));
+  for (const list of [map.roads, map.areas, map.buildings]) {
+    for (const o of list) for (const q of o.p) assert.ok(!wet(q), `${o.n?.en || o.k || 'building'} at ${q} is in the river`);
+  }
+});
+
+test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the plaza', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');
   assert.ok(MALL.x1 - MALL.x0 >= 150 && MALL.z1 - MALL.z0 >= 80, 'the biggest building around');
   assert.ok(map.landmarks.some((l) => l.type === 'konext'));
-  assert.ok(map.landmarks.some((l) => l.type === 'aquariumsoon'), 'KONEXT Aquarium pavilion, "Coming soon"');
+  assert.ok(map.landmarks.some((l) => l.type === 'aquarium'), 'KONEXT Aquarium pavilion');
   assert.ok(map.buildings.some((b) => b.custom && b.h === PAVILION.h));
   // Nothing in the game calls it COEX: the real mall's name is a trademark.
   const text = JSON.stringify(map) + JSON.stringify(stores.filter((s) => s.district === 'samseong'));
@@ -65,7 +73,10 @@ test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
   assert.deepEqual(link.p[0], end, 'starts at Teheran-ro\'s east end');
   const songpa = region.districts.find((d) => d.id === 'songpa');
   const olympic = read(songpa.map).roads.find((r) => r.n?.en === 'Olympic-ro');
-  assert.deepEqual(link.p.at(-1), [olympic.p[0][0] + songpa.offset[0], olympic.p[0][1] + songpa.offset[1]], 'ends on Olympic-ro');
+  // (Olympic-ro runs on west past the junction to the dome, so the link ends on the road, not at its end)
+  const [ex, ez] = [link.p.at(-1)[0] - songpa.offset[0], link.p.at(-1)[1] - songpa.offset[1]];
+  const [a, b] = olympic.p;
+  assert.ok(ez === a[1] && ez === b[1] && ex >= Math.min(a[0], b[0]) && ex <= Math.max(a[0], b[0]), 'ends on Olympic-ro');
 });
 
 test('meeting zone U on KONEXT Square, an Information Center and a stamp', () => {
@@ -81,4 +92,29 @@ test('meeting zone U on KONEXT Square, an Information Center and a stamp', () =>
   for (const b of map.buildings) assert.ok(!inPolygon(ix, iz, b.p), 'the door is outside its building');
   const stamp = STAMPS.find((s) => s.id === 'konext');
   assert.ok(stamp && stamp.gu.en === 'Gangnam-gu');
+});
+
+test('KONEXT Aquarium: you walk in through the pavilion, and on to the ocean tunnel', async () => {
+  const { AQUA_ROOM, OCEAN, TUNNEL, PENGUINS, REEF, RIVER, SEAFLOOR, JELLIES, WHALE } = await import('../src/core/aquarium.js');
+  const store = stores.find((s) => s.id === 'konext-aquarium');
+  assert.ok(store, 'the aquarium is a store you can enter');
+  assert.equal(store.workshop, 'aquarium');
+  assert.equal(store.district, 'samseong');
+  const [x, z] = local(store.at);
+  assert.ok(x > PAVILION.x1 && x - PAVILION.x1 < 6 && z > PAVILION.z0 && z < PAVILION.z1, 'its door is on the pavilion\'s plaza side');
+  for (const b of map.buildings) assert.ok(!inPolygon(x, z, b.p), 'the door is outside the building');
+  // Inside: the walk from the front door to the end of the tunnel is clear.
+  const tanks = [OCEAN, PENGUINS, REEF, RIVER, SEAFLOOR];
+  const exitZ = AQUA_ROOM.d / 2 - 0.9;
+  for (let zz = exitZ - 1.4; zz > TUNNEL.end + 0.5; zz -= 0.5) {
+    for (const xx of [-1, 0, 1]) {
+      const inTank = tanks.some((a) => xx > a.x0 && xx < a.x1 && zz > a.z0 && zz < a.z1) && !(Math.abs(xx) < TUNNEL.w / 2 && zz > TUNNEL.end);
+      assert.ok(!inTank, `path open at ${xx}, ${zz}`);
+      for (const [jx, jz] of JELLIES) assert.ok(Math.abs(xx - jx) > 1.2 || Math.abs(zz - jz) > 1.2, `no jellyfish column on the path at ${zz}`);
+    }
+  }
+  // The whale model is half the real length, and the line on the floor is the real 25 m.
+  assert.equal(WHALE.len, 25);
+  assert.equal(WHALE.scale, 2);
+  assert.ok(WHALE.z0 + WHALE.len < exitZ && WHALE.z0 > OCEAN.z1, 'the floor line fits in the hall');
 });

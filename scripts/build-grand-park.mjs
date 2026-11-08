@@ -20,6 +20,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'grand-park.json');
 const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 
+// Is the zoo open? While it isn't, a hoarding ("opening soon") runs round
+// the whole zoo with a sign at the end of the main path; the gate plaza,
+// the information center and the station stay open.
+export const ZOO_OPEN = false;
+export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]]; // (between the plaza's blossom trees, x 52 and 58)
+
 // The zoo loop: a rectangle of paths, a main path along z 0 and a cross path.
 const LOOP = { x0: 60, x1: 180, z0: -44, z1: 44, cx: 120 };
 
@@ -194,6 +200,26 @@ export function buildMap() {
   };
   for (const pen of PENS) for (const line of fenceLines(pen)) map.blockers.push(lineBlocker(line, pen.x, pen.z));
   for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) map.blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
+  if (!ZOO_OPEN) {
+    map.landmarks.push({ type: 'hoarding', closes: 'zoo', p: HOARDING }, {
+      type: 'sign', x: 48, z: 5, ry: -1.5708,
+      title: { ko: '동물원 개장 준비 중', en: 'The zoo is opening soon', ja: '動物園はまもなくオープン', zh: '动物园即将开放', es: 'El zoo abrirá pronto', id: 'Kebun binatang segera dibuka', vi: 'Sở thú sắp mở cửa', hi: 'चिड़ियाघर जल्द खुलेगा', fr: 'Le zoo ouvre bientôt', th: 'สวนสัตว์ใกล้เปิดแล้ว', ar: 'حديقة الحيوان ستفتح قريبًا' },
+      text: {
+        ko: '동물 친구들이 이사 오는 중이에요. 곧 문을 열게요!',
+        en: 'The animals are moving in. We open soon!',
+        ja: '動物たちが引っ越してきています。もうすぐオープン！',
+        zh: '动物们正在搬进来。很快就开放！',
+        es: 'Los animales se están mudando. ¡Abrimos pronto!',
+        id: 'Para hewan sedang pindah ke sini. Segera dibuka!',
+        vi: 'Các bạn thú đang chuyển đến. Sắp mở cửa rồi!',
+        hi: 'जानवर यहाँ आ रहे हैं। हम जल्द खुलेंगे!',
+        fr: 'Les animaux emménagent. Ouverture bientôt !',
+        th: 'สัตว์ต่างๆ กำลังย้ายเข้ามา เร็วๆ นี้จะเปิดแล้ว!',
+        ar: 'الحيوانات تنتقل إلى هنا. سنفتح قريبًا!',
+      },
+    });
+    for (let i = 1; i < HOARDING.length; i++) map.blockers.push(lineBlocker([...HOARDING[i - 1], ...HOARDING[i]], 0, 0));
+  }
   return map;
 }
 

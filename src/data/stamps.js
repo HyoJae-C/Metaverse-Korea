@@ -177,10 +177,18 @@ export const STAMPS = [
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [115, 717], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [115, 847], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
+  },
+  {
+    // on the concourse of Seoul Another Dome, left of the door as you come in
+    id: 'another-dome', place: { store: 'seoul-another-dome', room: true, at: [-14, 54.5], ry: 2.89 }, color: '#1f4f8f', shape: 'circle',
+    name: { ko: '서울 어나더 돔', en: 'Seoul Another Dome', ja: 'ソウル・アナザードーム', zh: '首尔另一个巨蛋' },
+    gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
+    // a baseball with its stitches, and a bat across it
+    icon: '<circle cx="92" cy="104" r="30"/><path d="M72 82 q12 22 0 44 M112 82 q-12 22 0 44"/><path d="M118 70 l34 -34 l8 8 l-34 34 z M118 70 l-8 8"/>',
   },
 ];
