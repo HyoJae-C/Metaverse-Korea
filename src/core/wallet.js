@@ -328,6 +328,15 @@ export class Wallet {
     this._notify();
   }
 
+  // The server gave coins itself (a friend joined with my name,
+  // 025_referrals.sql): show its balance. r: the server's { coins, ver }.
+  credited(n, r, note) {
+    if (!this.s || !n) return;
+    this._fromServer(r);
+    this._log(Math.abs(n), note);
+    this._notify();
+  }
+
   // Send the waiting ops now. Resolves true when the server has all of them.
   async flush() {
     if (!this.s || !this.client) return false;

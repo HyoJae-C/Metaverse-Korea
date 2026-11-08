@@ -1527,6 +1527,9 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .acc.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
+#step-look.returning .referrer-field { display: none; } /* only a new player names who invited them */
+.referrer-field { margin-top: 10px; }
+#referrer.bad { border-color: #d64545; box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.25); }
 /* Returning players going straight in: only the loading line shows */
 #step-look.quick > :not(.status) { display: none; }
 #step-look.quick .status { font-size: 17px; margin: 8px 0; }

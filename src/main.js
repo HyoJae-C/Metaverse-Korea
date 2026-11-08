@@ -484,10 +484,35 @@ const zonesPromise = optionalJson('zones.json');
 const bikesPromise = optionalJson('bikes.json');
 const seoulPromise = optionalJson('seoul.json'); // the gu overview on the map (scripts/build-seoul.mjs)
 
+// A new player may name the friend who invited them (optional): the server
+// pays that friend (supabase/025_referrals.sql). True once it was taken.
+let referralSent = false;
 await new Promise((resolve) => {
   // A new name must not be in use by someone else (checked on the server
   // when it is set up; see supabase/003_names.sql).
   let busy = false;
+  // The friend's name: a name nobody has (or your own) stops here so it can
+  // be fixed or cleared. Anything else (server not set up, offline, named
+  // someone before) lets the player in without a word.
+  const referral = async () => {
+    const el = $('referrer');
+    const who = cleanName(el.value).trim();
+    if (isReturning() || !who) return true;
+    busy = true;
+    $('start-btn').disabled = true;
+    const r = await cloud.claimReferral(who);
+    busy = false;
+    $('start-btn').disabled = false;
+    if (r === 'nobody' || r === 'self') {
+      $('status').textContent = t(r === 'self' ? 'referral.self' : 'referral.nobody');
+      el.classList.add('bad');
+      el.focus();
+      return false;
+    }
+    if (r === 'ok') referralSent = true;
+    el.value = '';
+    return true;
+  };
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
@@ -505,7 +530,7 @@ await new Promise((resolve) => {
         identity = { ...identity, name: given };
         saveIdentity(identity);
       }
-      resolve();
+      if (await referral()) resolve();
       return;
     }
     if (!isReturning() && isReservedName(name)) {
@@ -532,7 +557,15 @@ await new Promise((resolve) => {
       // can't take it (no answer needed; an old clash just stays as it is).
       cloud.claimName(name);
     }
-    resolve();
+    if (await referral()) resolve();
+  };
+  $('referrer').addEventListener('input', (e) => {
+    if (!e.isComposing) { const v = cleanName(e.target.value); if (v !== e.target.value) e.target.value = v; }
+    $('referrer').classList.remove('bad');
+    if ([t('referral.self'), t('referral.nobody')].includes($('status').textContent)) $('status').textContent = '';
+  });
+  $('referrer').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.isComposing) go();
   };
   $('nickname').addEventListener('input', () => {
     $('nickname').classList.remove('bad');
@@ -4837,6 +4870,24 @@ $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
 createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
 // with a word to spend it wisely. Players from before it get it too.
+// Friend invites (supabase/025_referrals.sql): thank a new player whose
+// friend was paid, and tell me when friends joined with my name (now and
+// every 10 minutes while playing).
+walletReady.then(() => {
+  if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
+  const news = async () => {
+    if (!wallet.server || document.hidden) return;
+    const r = await cloud.referralNews();
+    if (!r?.items.length) return;
+    r.items.forEach((it, i) => {
+      wallet.credited(it.n, r, { k: 'ledger.referral', v: { name: it.name || '?' } });
+      setTimeout(() => shop.toast(t('referral.got', { name: it.name || '?', n: won(it.n) })), 1500 + i * 3500);
+    });
+    refreshWallet();
+  };
+  news();
+  setInterval(news, 10 * 60 * 1000);
+});
 walletReady.then(() => {
   const gift = wallet.welcome();
   if (gift) {
