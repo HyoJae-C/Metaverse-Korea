@@ -721,6 +721,47 @@ const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ 
   if (mode !== 'street') return;
   shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
 });
+// The little animal village: a cup of food at the barn door, and a keeper
+// by the gate who tells you about the animals, one at a time.
+const ZOO_FOOD = {
+  buy: { en: 'Buy animal food', ko: '꼬마동물 먹이 사기', ja: '動物のえさを買う', zh: '买动物饲料' },
+  item: { en: 'Food for the little animals', ko: '꼬마동물 먹이', ja: '小さな動物のえさ', zh: '小动物饲料' },
+  got: { en: '🥕 A cup of food: {n} handfuls. The animals have noticed!', ko: '🥕 먹이 한 컵: {n}번 줄 수 있어요. 동물들이 알아챘어요!', ja: '🥕 えさ1カップ：{n}回あげられます。動物たちが気づいた！', zh: '🥕 一杯饲料：可以喂{n}次。动物们注意到了！' },
+  poor: { en: 'Animal food costs 🪙 {n}', ko: '먹이는 🪙 {n}이에요', ja: 'えさは🪙 {n}', zh: '饲料要🪙 {n}' },
+  feed: { en: 'Feed the {name} ({n} left)', ko: '{name}에게 먹이 주기 (남은 {n})', ja: '{name}にえさをあげる（残り{n}）', zh: '喂{name}（剩{n}）' },
+  empty: { en: 'The cup is empty. More at the barn door.', ko: '컵이 비었어요. 빨간 집 앞에서 더 살 수 있어요.', ja: 'カップが空になりました。赤い小屋の前で買えます。', zh: '杯子空了。可以在红房子门口再买。' },
+  keeper: { en: 'Keeper', ko: '사육사', ja: '飼育員', zh: '饲养员' },
+  ask: { en: 'Ask the keeper about the animals', ko: '사육사에게 동물 이야기 듣기', ja: '飼育員に動物の話を聞く', zh: '听饲养员讲动物' },
+};
+const KEEPER_TALK = [
+  { en: "Welcome to the Little Animal Village! Pat them gently, and buy a cup of food at the red barn's door if you like.", ko: '꼬마동물마을에 온 걸 환영해요! 살살 쓰다듬어 주고, 먹이는 빨간 집 문 앞에서 살 수 있어요.', ja: 'こども動物村へようこそ！やさしくなでてね。えさは赤い小屋の前で買えます。', zh: '欢迎来到小动物村！轻轻摸它们，饲料可以在红房子门口买。' },
+  { en: 'Goats climb anything and nibble everything. That little beard? Both boys and girls have one.', ko: '염소는 높은 곳을 좋아하고 뭐든 오물오물 씹어 봐요. 턱수염은 암컷, 수컷 모두 있어요.', ja: 'ヤギは高い所が大好きで、何でもかじってみます。あごひげはオスにもメスにもあります。', zh: '山羊喜欢爬高，什么都想啃一啃。小胡子公母都有。' },
+  { en: "Sheep stay together in a flock. Their wool keeps growing, so we give them a haircut every spring.", ko: '양은 늘 무리 지어 다녀요. 털이 계속 자라서 봄마다 털을 깎아 줘요.', ja: 'ヒツジはいつも群れで動きます。毛が伸び続けるので、毎年春に毛刈りをします。', zh: '绵羊总是成群行动。羊毛一直长，所以每年春天给它们剪毛。' },
+  { en: 'Rabbits see almost all the way round without turning their heads. A happy rabbit jumps and twists in the air!', ko: '토끼는 고개를 안 돌려도 거의 한 바퀴를 다 볼 수 있어요. 기분이 좋으면 공중에서 몸을 비틀며 뛰어요!', ja: 'ウサギは首を回さなくてもほぼ一周見えます。うれしいと空中でひねりジャンプ！', zh: '兔子不转头几乎能看到一圈。开心时会在空中扭身跳！' },
+  { en: "Guinea pigs aren't pigs and aren't from Guinea: they come from the Andes. They squeak 'wheek wheek' when they hear food.", ko: '기니피그는 돼지도 아니고 기니 출신도 아니에요. 남미 안데스에서 왔어요. 먹이 소리가 나면 "뀨뀨" 하고 울어요.', ja: 'モルモットはブタでもギニア出身でもなく、南米アンデスの生まれ。えさの音がすると「キュイキュイ」と鳴きます。', zh: '豚鼠既不是猪也不来自几内亚，它们来自南美安第斯山。听到食物声会"吱吱"叫。' },
+];
+let keeper = null, keeperLine = 0;
+{
+  const KP = zoo.pens.find((P) => P.pen.keeper);
+  if (KP) {
+    keeper = makeNpc($('labels'), '🧑‍🌾 ' + L(ZOO_FOOD.keeper), { ...randomLook(), shirt: 'leaf', pants: 'olive', head: 'bucket-cream' });
+    const [kx, kz] = KP.pen.keeper.at;
+    keeper.ch.root.position.set(KP.pen.x + kx, 0, KP.pen.z + kz);
+    keeper.ch.root.rotation.y = KP.pen.keeper.ry || 0;
+    scene.add(keeper.ch.root);
+  }
+}
+const keeperAct = () => ({ key: 'zoo-keeper', label: '🧑‍🌾 ' + L(ZOO_FOOD.ask), run: () => {
+  keeper.ch.wave?.();
+  showBubble(keeper, $('labels'), L(KEEPER_TALK[keeperLine % KEEPER_TALK.length]), 8000, 'chat npc-say');
+  keeperLine++;
+  missionEvent('talk', 'zookeeper');
+} });
+const foodShopAct = (P) => ({ key: 'zoo-food', label: `🥕 ${L(ZOO_FOOD.buy)} · 🪙 ${P.pen.shop.price.toLocaleString()}`, run: () => {
+  if (!wallet.spend(P.pen.shop.price, { name: ZOO_FOOD.item, at: P.pen.name })) { shop.toast(fmt(L(ZOO_FOOD.poor), { n: P.pen.shop.price.toLocaleString() })); return; }
+  zoo.buyFood();
+  shop.toast(fmt(L(ZOO_FOOD.got), { n: zoo.food }));
+} });
 const melonAct = (P, p) => ({ key: 'zoo-melon', label: `🍉 ${L(ZOO_TEXT.melon)} · 🪙 ${MELON_PRICE.toLocaleString()}`, run: () => {
   if (!wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { shop.toast(fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
   if (zoo.feedMelon(P, p.x, p.z)) me.play?.('wave');
@@ -5515,7 +5556,9 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const za = zoo.nearest(p.x, p.z); if (za) out.push(zooPetAct(za, p));
+    const za = zoo.nearest(p.x, p.z); if (za) { out.push(zooPetAct(za, p)); if (zoo.food > 0) out.push(zooFeedAct(za, p)); }
+    const zs = zoo.shopSpot(p.x, p.z); if (zs) out.push(foodShopAct(zs));
+    if (keeper && zoo.keeperSpot(p.x, p.z)) out.push(keeperAct());
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
@@ -5555,6 +5598,10 @@ const ZOO_PET = {
   rabbit: { en: 'rabbit', ko: '토끼', ja: 'ウサギ', zh: '兔子' }, guineapig: { en: 'guinea pig', ko: '기니피그', ja: 'モルモット', zh: '豚鼠' },
   goat: { en: 'goat', ko: '염소', ja: 'ヤギ', zh: '山羊' }, sheep: { en: 'sheep', ko: '양', ja: 'ヒツジ', zh: '绵羊' },
 };
+const zooFeedAct = (a, p) => ({ key: 'zoofeed:' + a.kind + zoo.food, label: '🥕 ' + fmt(L(ZOO_FOOD.feed), { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit), n: zoo.food }), run: () => {
+  if (zoo.feedPet(a, p.x, p.z)) { me.play?.('wave'); showBubble(myLabel, $('labels'), '🥕'); missionEvent('pet'); }
+  if (!zoo.food) shop.toast(L(ZOO_FOOD.empty));
+} });
 const zooPetAct = (a, p) => ({ key: 'zoopet:' + a.kind, label: '🐾 ' + t('pet.pat', { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit) }), run: () => { zoo.pet(a, p.x, p.z); showBubble(myLabel, $('labels'), a.kind === 'goat' || a.kind === 'sheep' ? '😊' : '🥰'); missionEvent('pet'); } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
 const sitAct = (seat) => (seat.mat
@@ -5600,6 +5647,9 @@ function updateAction(p, tSec) {
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
+    else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
+    else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
     else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
@@ -6237,6 +6287,10 @@ renderer.setAnimationLoop(() => {
     for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
+  }
+  if (keeper) {
+    if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
+    else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';
   }
   if (squareNpc) {
     if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
