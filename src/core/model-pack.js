@@ -4,6 +4,7 @@
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
 import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
+import { PUNGMUL_HANDS } from './pungmul-props.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
@@ -685,7 +686,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
       if (folk && !folkProps && slotL && slotR) {
-        folkProps = folkHandProps(folk);
+        folkProps = PUNGMUL_HANDS[folk] ? PUNGMUL_HANDS[folk]() : folkHandProps(folk);
         if (folkProps[0]) slotL.add(folkProps[0]);
         if (folkProps[1]) slotR.add(folkProps[1]);
       }
