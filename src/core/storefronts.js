@@ -114,6 +114,18 @@ export class Storefronts {
     const isBlocked = collision ? (x, z) => collision.blocked(x, z, 0.6) : null;
     for (const store of stores) {
       const [ax, az] = placeOf(store, center, latLonToLocal);
+      // An open-air place (a Han River park laid out on the bank, store.open):
+      // no shop front and no door to walk up to; you walk straight in. The
+      // item stays for the map, a taxi or a guide: "at" is where they drop you.
+      if (store.open) {
+        const group = new THREE.Group();
+        group.position.set(ax, 0, az);
+        group.rotation.y = store.open.ry + Math.PI; // (facing away from the river, like a door onto the street)
+        group.visible = false;
+        scene.add(group);
+        this.items.push({ store, group, open: true, door: new THREE.Vector3(ax, 0, az) });
+        continue;
+      }
       const f = nearestFacade(map.buildings, ax, az, isBlocked);
       if (!f) {
         console.warn('No facade found for', store.id);
@@ -244,6 +256,7 @@ export class Storefronts {
     this.translated = on;
     this.lang = lang;
     for (const it of this.items) {
+      if (it.open) continue;
       if (it.signMat.map) { this.showSign(it, false); this.showSign(it, true); } // (faraway ones are drawn in the new language when you get there)
       if (!it.badge.userData.home) continue;
       it.badge.material.map.dispose();
@@ -255,6 +268,7 @@ export class Storefronts {
   nearby(x, z, t) {
     let hit = null, drawn = 0;
     for (const it of this.items) {
+      if (it.open) continue;
       const s = 1 + Math.sin(t * 3) * 0.08;
       it.ring.scale.set(s, 1, s);
       // Badges show through walls, so fade them out with distance.

@@ -78,7 +78,7 @@ export function createDuckBoats(game) {
       }) };
     }
     const m = duckRings.list.find((r) => !r.visible) || duckRings.list[0];
-    m.visible = true; m.position.set(x, -0.2, z);
+    m.visible = true; m.position.set(x, (game.park().river?.position.y ?? -0.25) + 0.05, z); // (just on the water: the park's, or the street's for an open park)
     m.userData.t = 0; m.userData.size = 0.8 + big * 1.4;
   }
   // Where the other boats are this frame (not mine): moving if someone steers

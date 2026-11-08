@@ -2258,6 +2258,18 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
 }
 
 const interiorCache = new Map();
+// A shop's inside, built on the first visit and kept.
+function roomFor(store) {
+  let built = interiorCache.get(store.id);
+  if (built) return built;
+  built = buildInterior(store);
+  built.collision = new CollisionMap(built.colliders);
+  interiorCache.set(store.id, built);
+  built.setSignLang?.(signsTranslated ? getLanguage() : null);
+  if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+  stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
+  return built;
+}
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -2484,7 +2496,9 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 const dayPasses = new DayPasses();
 let domeLoading = false;
-function enterStore(item) {
+// walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
+// the park's own metres): no door, no bell, the camera stays as it was.
+function enterStore(item, walkIn = null) {
   // Seoul Another Dome: the stadium's code comes on the first visit.
   if (needsDome(item.store)) {
     if (domeLoading) return;
@@ -2503,26 +2517,21 @@ function enterStore(item) {
   }
   setRiding(false);
   const metroRoom = (st) => st?.category === 'station' || st?.category === 'train';
-  if (!metroRoom(item.store)) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
+  if (!metroRoom(item.store) && !walkIn) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
   const store = item.store;
-  let built = interiorCache.get(store.id);
-  if (!built) {
-    built = buildInterior(store);
-    built.collision = new CollisionMap(built.colliders);
-    interiorCache.set(store.id, built);
-    built.setSignLang?.(signsTranslated ? getLanguage() : null);
-    if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
-    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
-  }
+  const built = roomFor(store);
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
   roomVisit++;
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
-  cam.dist = 7;
-  cam.pitch = 0.7;
-  moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
+  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw);
+  else {
+    cam.dist = 7;
+    cam.pitch = 0.7;
+    moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
+  }
   document.body.classList.add('in-store');
   shop.enterStore(store);
   $('guide').hidden = true;
@@ -2702,7 +2711,7 @@ function enterStore(item) {
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
-  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
+  if (clerk && !walkIn) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -2850,8 +2859,11 @@ function wireDome(built, store) {
     sfx.chant();
   };
 }
-function leaveStore() {
+// walkOut: stepping off an open-air park onto the street (openParks): you
+// come out where you are, no bell, the camera as it was.
+function leaveStore(walkOut = false) {
   if (mode !== 'store') return;
+  const openPark = interior.store?.open ? openParks.find((o) => o.item.store === interior.store) : null;
   // Trying something on only lasts while you are in the shop: walking out
   // without buying puts your own look back.
   if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
@@ -2892,19 +2904,29 @@ function leaveStore() {
   areaGuide = null;
   if (counterUi.open) counterUi.close();
   npcs.setVisible(true);
-  if (interior.store?.category !== 'station' && interior.store?.category !== 'train') sfx.doorbell();
+  if (interior.store?.category !== 'station' && interior.store?.category !== 'train' && !openPark) sfx.doorbell();
   const it = interior.front;
+  const here = { x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y };
   mode = 'street';
   activeScene = scene;
   activeCollision = collision;
-  cam.dist = 9;
-  cam.pitch = 0.42;
-  // Face the street, with the camera to the side so the shop front stays in view.
-  // Step out a little in front of the door, on a spot that is not inside a
-  // building (some shop fronts sit close to their neighbours).
-  const ry = it.group.rotation.y;
-  const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
-  moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
+  if (openPark) {
+    // Out of an open-air park (walking off its lawn, or its Exit button):
+    // where you stand, on the nearest free spot (the pier is over the water).
+    const [wx, wz] = parkWorld(openPark, here.x, here.z);
+    const [ex, ez] = findFreeSpot(wx, wz);
+    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry);
+    if (!walkOut) { cam.dist = 9; cam.pitch = 0.42; }
+  } else {
+    cam.dist = 9;
+    cam.pitch = 0.42;
+    // Face the street, with the camera to the side so the shop front stays in view.
+    // Step out a little in front of the door, on a spot that is not inside a
+    // building (some shop fronts sit close to their neighbours).
+    const ry = it.group.rotation.y;
+    const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
+    moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
+  }
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
@@ -5287,6 +5309,129 @@ function updateFireworks() {
 // The park I'm in right now: its boats, fishing spots, kiosk and ramen
 // machine (core/park.js), or null.
 const hanPark = () => (mode === 'store' && interior?.park ? interior : null);
+// Han River parks open to the street (stores.json "open"): the park lies on
+// the bank of the world's river. It is still its own room (core/park.js, all
+// its fishing, boats, stalls and seats work as before), drawn over the
+// street through a camera moved into its frame, and the street drawn behind
+// it while you're in it. Walking onto its lawn takes you in, walking off it
+// takes you out, with no door.
+const PARK_IN = { x: 25.5, z0: -4, z1: 13.5 }; // the lawn, in the park's metres (its bank is z = -4)
+const PARK_OUT = { x: 26.2, z1: 14.2 }; // (a little wider, so you don't flicker in and out on the edge)
+const PARK_NEAR = 220; // drawn (and built) within this many metres
+const PARK_STAFF = 80; // its sellers and duck boats drawn within this many metres
+const openParks = storefronts.items.filter((i) => i.open).map((item) => {
+  const { at: [ox, oz], ry } = item.store.open;
+  const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
+  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false };
+});
+const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
+function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
+const openParkHere = () => (mode === 'store' && interior?.store?.open ? openParks.find((o) => o.item.store === interior.store) : null);
+// The kiosk clerk and the stall sellers are there before you walk in, so
+// the park looks alive from the street (enterStore keeps these).
+function staffOpenPark(built) {
+  if (built.clerk && !built.clerkNpc) {
+    built.clerkNpc = makeNpc($('labels'), t('npc.clerk'));
+    built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
+    built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
+    built.scene.add(built.clerkNpc.ch.root);
+  }
+  if (built.vendors?.length && !built.vendorNpcs) {
+    built.vendorNpcs = built.vendors.map((v) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(v.x, 0, v.z);
+      o.ch.root.rotation.y = v.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  for (const o of [built.clerkNpc, ...(built.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; }
+}
+// Its room, built the first time it's near (or you arrive by taxi or map).
+function openParkRoom(o) {
+  if (!o.built) {
+    o.built = roomFor(o.item.store);
+    o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
+    staffOpenPark(o.built);
+  }
+  return o.built;
+}
+// Its lights follow the street's (weather, dusk).
+function lightOpenPark(built) {
+  const L3 = built.lights;
+  if (!L3) return;
+  L3.hemi.intensity = hemi.intensity; L3.hemi.color.copy(hemi.color); L3.hemi.groundColor.copy(hemi.groundColor);
+  L3.ambient.intensity = ambient.intensity; L3.ambient.color.copy(ambient.color);
+  L3.sun.intensity = sun.intensity; L3.sun.color.copy(sun.color);
+}
+function updateOpenParks(dt) {
+  if (!openParks.length) return;
+  const p = me.root.position;
+  const here = openParkHere();
+  if (here) {
+    lightOpenPark(openParkRoom(here));
+    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || [])]) if (n) n.ch.root.visible = true;
+    for (const b of here.built.ducks || []) b.g.visible = true;
+    const [wx, wz] = parkWorld(here, p.x, p.z);
+    weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
+    sun.position.set(wx + 60, 120, wz + 40);
+    sun.target.position.set(wx, 0, wz);
+    if (seated == null && (Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1)) leaveStore(true);
+    return;
+  }
+  if (mode !== 'street') return;
+  for (const o of openParks) {
+    const d = Math.hypot(p.x - o.ox, p.z - o.oz);
+    o.near = d < PARK_NEAR;
+    if (!o.near) continue;
+    lightOpenPark(openParkRoom(o));
+    o.built.tick?.(dt, null);
+    // The sellers (about 20 meshes each) only from close by: from further
+    // off the stalls and the kiosk read as busy enough.
+    const close = d < PARK_STAFF;
+    for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
+    for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
+    const [lx, lz] = parkLocal(o, p.x, p.z);
+    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro) {
+      enterStore(o.item, { x: lx, z: lz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
+      return;
+    }
+  }
+}
+// Drawing: the street, then any open park near it over the top (sharing the
+// depth, so buildings and trees hide what's behind them either way).
+const parkCam = new THREE.PerspectiveCamera();
+parkCam.matrixWorldAutoUpdate = false;
+function viewThrough(m) {
+  parkCam.projectionMatrix.copy(camera.projectionMatrix);
+  parkCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+  parkCam.matrixWorld.multiplyMatrices(m, camera.matrixWorld);
+  parkCam.matrixWorldInverse.copy(parkCam.matrixWorld).invert();
+  return parkCam;
+}
+renderer.info.autoReset = false; // (one frame can be two passes: renderScenes resets it)
+function renderScenes() {
+  renderer.info.reset();
+  const here = openParkHere();
+  camera.updateMatrixWorld();
+  if (here) {
+    renderer.render(scene, viewThrough(here.toWorld)); // the street round the park
+    renderer.autoClear = false;
+    renderer.render(activeScene, camera);
+    renderer.autoClear = true;
+    return;
+  }
+  renderer.render(activeScene, camera);
+  if (mode !== 'street') return;
+  for (const o of openParks) {
+    if (!o.near || !o.built) continue;
+    renderer.autoClear = false;
+    renderer.render(o.built.scene, viewThrough(o.toLocal));
+    renderer.autoClear = true;
+  }
+}
+
 const duckBoats = createDuckBoats({
   park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
   others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
@@ -5963,7 +6108,7 @@ function updateAction(p, tSec) {
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
-    } else if (!interior.noExit && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
+    } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
@@ -6342,6 +6487,7 @@ renderer.setAnimationLoop(() => {
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
   updateDucks(dt);
+  updateOpenParks(dt);
   bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
@@ -6379,9 +6525,9 @@ renderer.setAnimationLoop(() => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      const bx = roomBox(interior.room);
-      p.x = THREE.MathUtils.clamp(nx, bx.x0 + 0.5, bx.x1 - 0.5);
-      p.z = THREE.MathUtils.clamp(nz, bx.z0 + 0.5, bx.z1 - 0.5);
+      const bx = roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
+      p.x = THREE.MathUtils.clamp(nx, bx.x0 + m, bx.x1 - m);
+      p.z = THREE.MathUtils.clamp(nz, bx.z0 + m, bx.z1 - m);
     }
     const targetRy = Math.atan2(dx, dz);
     let d = targetRy - me.root.rotation.y;
@@ -6614,7 +6760,7 @@ renderer.setAnimationLoop(() => {
   updateScents(dt);
 
   if (activeScene === scene) farPeople.update(dt, scene, camera); // skip people too far away to see (core/far-people.js)
-  renderer.render(activeScene, camera);
+  renderScenes(); // (the street, the room you're in, open parks: renderScenes)
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
   // through things (signs, glass) would leave it below 1 and let the page
   // show through: make every pixel opaque, then cut the hole.
