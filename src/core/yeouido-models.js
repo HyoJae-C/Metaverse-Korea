@@ -8,6 +8,9 @@
 //   tower63:  the 63 tower at the island's east tip: a tall gold-glass tower
 //             that steps in towards the top, seen on the skyline (you can't go
 //             in). Its long side runs along z.
+//   fwbarge:  a fireworks launch barge in the main channel: a dark deck with
+//             rows of mortar tubes (the fireworks rise from these, at show
+//             time only: fireworks-show.js). Long side along x.
 //   mulbit:   Mul-bit Square's fountain: rows of low jets that rise and fall
 //             over the shallow pool you can walk through (animated).
 //             l.len along z, l.w along x.
@@ -98,4 +101,17 @@ export function mulbit(g, l) {
   return (t) => { if (t - last > 1 / 20) { last = t; set(t); } };
 }
 
-export const YEOUIDO_BUILD = { seogang, tower63, mulbit };
+// A launch barge: deck, low rails and racks of mortar tubes.
+export function fwbarge(g) {
+  box(g, 16, 1.2, 6, 0, -0.1, 0, '#3a4250'); // hull
+  box(g, 15.4, 0.12, 5.4, 0, 0.56, 0, '#59616e'); // deck
+  for (const s of [-1, 1]) box(g, 15.4, 0.5, 0.08, 0, 0.85, s * 2.7, '#f0b43c'); // yellow rails
+  const tube = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 8), mat('#2b2f36'), 36);
+  const m4 = new THREE.Matrix4();
+  let k = 0;
+  for (let i = 0; i < 12; i++) for (let j = 0; j < 3; j++) tube.setMatrixAt(k++, m4.makeTranslation(-5.5 + i, 1.05, -0.8 + j * 0.8));
+  g.add(tube);
+  box(g, 2.2, 1.6, 2, 6.2, 1.4, 0, '#e9e6df'); // the crew's hut
+}
+
+export const YEOUIDO_BUILD = { seogang, tower63, mulbit, fwbarge };

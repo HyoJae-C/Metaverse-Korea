@@ -278,6 +278,14 @@ export class Sfx {
     o.start(t);
     o.stop(t + 0.15);
   }
+  // A firework bursting far away: a deep thud, a rush of air and, for the
+  // big ones, a crackle after it. loud 0..1 (quieter far away).
+  boom(loud = 1, crackle = false) {
+    if (!this.on || !this._ctx() || loud < 0.03) return;
+    this._tone(78, 0, 0.7, 0.3 * loud, 'sine', 32);
+    this._hiss(0, 0.55, 0.16 * loud, 1100, 140);
+    if (crackle) for (let i = 0; i < 6; i++) this._hiss(0.35 + i * 0.09 + Math.random() * 0.05, 0.04, 0.05 * loud, 6000, 3000);
+  }
   // ---- Fishing (Han River). All synthesised here. ----
   // The cast: the rod whipping through the air, then the line running out.
   castWhoosh() {

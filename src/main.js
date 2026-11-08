@@ -140,6 +140,7 @@ import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS } from './core/park.js';
 import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
+import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
 import { Contacts, touching, wobble } from './core/bump.js';
@@ -5198,7 +5199,7 @@ const DRONE_TEXT = {
 const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
 const inDronePark = () => mode === 'store' && interior?.store?.id === 'ttukseom-hangang';
 // In the park while it's dark: the camera may tilt below level to look up.
-const skyLook = () => inDronePark() && (interior.show?.night || 0) > 0.5;
+const skyLook = () => (inDronePark() && (interior.show?.night || 0) > 0.5) || fireworks.look;
 function updateDroneShow() {
   const s = droneShowAt();
   if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
@@ -5222,6 +5223,62 @@ function updateDroneShow() {
   const wantMusic = !!(show?.now && show.night > 0.5 && show.now.on);
   if (wantMusic && !droneShow.music && music.on && music.track.id !== 'droneshow') { droneShow.music = music.track.id; music.setTrack('droneshow'); }
   else if (!wantMusic && droneShow.music) { if (music.track.id === 'droneshow') music.setTrack(droneShow.music); droneShow.music = null; }
+}
+
+// Yeouido fireworks (core/fireworks-show.js: the schedule and the program;
+// core/fireworks-sky.js: the sparks, downloaded only near Yeouido around
+// show time). Here: the game-wide notice 10 minutes before, Yeouido's own
+// night (weather.nightMix, only on and around the island), the sparks, the
+// booms (sound travels slower than light: about 0.3 s per 100 m) and the
+// notices on the lawn.
+const FIREWORKS_TEXT = {
+  soon: { en: '🎆 Fireworks at Yeouido Han River Park in 10 minutes! Cross Seogang Bridge from Hongdae', ko: '🎆 10분 뒤 여의도 한강공원에서 불꽃놀이가 시작돼요! 홍대에서 서강대교를 건너요', ja: '🎆 10分後に汝矣島漢江公園で花火！弘大から西江大橋を渡って', zh: '🎆 10分钟后汝矣岛汉江公园有烟花！从弘大走过西江大桥' },
+  dusk: { en: '🎆 The sky over Yeouido is getting dark. Find a spot on the lawn!', ko: '🎆 여의도 하늘이 어두워지고 있어요. 잔디밭에 자리를 잡으세요!', ja: '🎆 汝矣島の空が暗くなってきました。芝生に場所を取って！', zh: '🎆 汝矣岛的天空暗下来了，去草坪占个位置吧！' },
+  count: { en: '🎆 10 seconds to the first firework!', ko: '🎆 첫 불꽃까지 10초!', ja: '🎆 最初の花火まであと10秒！', zh: '🎆 距离第一发烟花还有10秒！' },
+  photo: { en: '📸 Photo time! Gold willows are falling. Pose with the fireworks behind you', ko: '📸 사진 찍을 시간! 금빛 버드나무 불꽃이 내려와요. 불꽃을 등지고 포즈를 잡아 보세요', ja: '📸 撮影タイム！金色の柳の花火。花火を背にポーズ', zh: '📸 拍照时间！金色柳树烟花落下来了，背对烟花摆个姿势' },
+  finale: { en: '🎆 The finale!', ko: '🎆 대피날레!', ja: '🎆 グランドフィナーレ！', zh: '🎆 压轴大结局！' },
+};
+const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
+function updateFireworks() {
+  const s = fireworksAt();
+  if (s && s.t < -FIREWORKS_ALERT + 30 && fireworks.alerted !== s.start) { fireworks.alerted = s.start; shop.toast(L(FIREWORKS_TEXT.soon)); }
+  const p = me.root.position, street = mode === 'street';
+  const near = street ? nearYeouido(p.x, p.z) : 0;
+  const night = s ? s.night * near : 0;
+  weather.nightMix = night;
+  fireworks.look = night > 0.5;
+  if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
+  const t = s.t, onLawn = near > 0.99;
+  if (onLawn) {
+    if (t >= -FIREWORKS_DUSK && t < -FIREWORKS_DUSK + 60 && fireworks.dusk !== s.start) { fireworks.dusk = s.start; shop.toast(L(FIREWORKS_TEXT.dusk)); }
+    if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
+    if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
+    if (t >= 3420 && t < 3440 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
+    // On the park's shore while it's dark: tilt the view up to the sky once.
+    const [, v] = yeouidoUV(p.x, p.z);
+    if (s.night > 0.5 && v > -5 && v < 45 && fireworks.cam !== s.start && manualCamT <= 0) { fireworks.cam = s.start; cam.pitch = -0.06; }
+  }
+  // The sparks: loaded when you're within about 900 m.
+  const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;
+  if (close && t > -FIREWORKS_DUSK - 60 && !fireworks.sky && !fireworks.loading) {
+    fireworks.loading = true;
+    const phone = lowSpec || (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches);
+    import('./core/fireworks-sky.js').then((m) => { fireworks.sky = m.createFireworksSky(scene, { phone }); })
+      .catch(() => { fireworks.loading = false; }); // (offline: try again later)
+  }
+  if (!fireworks.sky) return;
+  if (!street) { fireworks.sky.points.visible = false; return; }
+  const fired = fireworks.sky.update(s.start, t, night, camera, innerHeight);
+  // Booms: louder close by, later far away; at most a few a second.
+  for (const b of fired) {
+    const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
+    const loud = Math.min(1, 90 / Math.max(60, dist)) * (b.kind === 'small' ? 0.5 : 1);
+    const wait = Math.max(0, b.t - t) + dist / 343;
+    const now = performance.now();
+    if (dist > 900 || now - fireworks.lastBoom < 140) continue;
+    fireworks.lastBoom = now;
+    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'peony'), wait * 1000);
+  }
 }
 
 // Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
@@ -6425,6 +6482,7 @@ renderer.setAnimationLoop(() => {
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
+  updateFireworks();
   updateRide(dt);
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
@@ -6800,6 +6858,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
     openBank: () => bankGame.openBank(),
     bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)

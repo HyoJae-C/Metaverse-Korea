@@ -10,8 +10,8 @@
 // fishing spot and the weather), so friends watch the same drones together.
 
 // Show start times on Korean time (KST, UTC+9). To change the schedule,
-// change this list. Kept 3 hours apart from the planned Yeouido fireworks
-// (03, 09, 15, 21 KST), so the two night shows never overlap.
+// change this list. Kept 3 hours apart from the Yeouido fireworks
+// (09, 21 KST, fireworks-show.js), so the two night shows never overlap.
 export const DRONE_SHOW_HOURS_KST = [0, 6, 12, 18];
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drones rise
