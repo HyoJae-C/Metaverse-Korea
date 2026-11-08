@@ -111,7 +111,8 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   // One private chat channel for the whole region, opened a moment after the
   // rooms so its (slower, checked) join never holds up joining them.
   const chatTimer = privateChat && own().openChat && setTimeout(() => {
-    if (!closed) chatLink = own()?.openChat(room, (id, t) => known(id) && handlers.onChat?.(id, t));
+    // n: the sender's real name, added by the server (019_chat_names.sql).
+    if (!closed) chatLink = own()?.openChat(room, (id, t, n) => known(id) && handlers.onChat?.(id, t, n));
   }, 3000);
 
   return {
@@ -122,7 +123,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
     sendChat(t) {
-      if (chatLink?.ready) chatLink.send(me.id, t);
+      if (chatLink?.ready) chatLink.send(me.id, t, cfg.claimChatId);
       else own()?.sendChat?.(t);
     },
     sendLook(look) {

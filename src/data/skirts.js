@@ -11,7 +11,7 @@
 
 export const SKIRT_LENGTHS = ['mini', 'long'];
 export const SKIRT_PATTERNS = ['solid', 'pleats', 'tartan', 'gingham', 'dots', 'floral', 'stripe', 'denim', 'leopard'];
-export const SKIRT_PRICE = { mini: 45, long: 55 }; // coins
+export const SKIRT_PRICE = { mini: 45, long: 55 }; // in ₩1,000s (see wearables.js)
 
 const COLOR_NAMES = {
   navy: { en: 'Navy', ko: '네이비', ja: 'ネイビー', zh: '藏青色' },

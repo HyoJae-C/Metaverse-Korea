@@ -165,7 +165,7 @@ export class BasketballUI {
     if (pts > this.best) { try { this.store?.setItem(BEST_KEY, String(pts)); } catch { /* storage blocked */ } }
     const medal = basketMedal(pts);
     const coins = medal ? this.medals.add(BASKET_GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + BASKET_GAME + ':' + medal });
     this.onMedal?.(medal, coins);
     this._frame();
     const note = BL('done', { n: pts, m: made }) + (medal ? '  ' + medalIcon(medal) + ' ' + t('grill.' + medal) : '') + (coins ? '  🪙 +' + coins : '');

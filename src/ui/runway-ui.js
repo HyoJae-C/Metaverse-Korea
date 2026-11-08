@@ -257,7 +257,7 @@ export class RunwayUI {
     this._frame();
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(RUNWAY_GAME, medal) : 0;
-    if (coins) this.wallet.add(coins);
+    if (coins) this.wallet.add(coins, undefined, { r: 'medal', once: 'medal:' + RUNWAY_GAME + ':' + medal });
     const res = el('div', 'grill-result');
     res.append(el('span', 'grill-medal', medal ? medalIcon(medal) : '👠'), el('strong', null, tt('score', { n: score })));
     res.append(el('p', 'order-hint', medal ? (coins ? tt('medal', { m: L(MEDAL[medal]), n: coins }) : L(MEDAL[medal])) : tt('noMedal')));

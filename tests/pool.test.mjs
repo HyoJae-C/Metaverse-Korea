@@ -2,7 +2,7 @@
 // dives and the saved records.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { POOL_ROOM, COMP, DIVE, LEISURE, BOARDS, RACE_LEN, laneZ, laneAt, waterAt, strokeQuality, Race, rivalAt, rivalPaces, rivalLanes, airTime, maxFlips, scoreDive, PoolLog, DAILY_PAID, PAY, GOOD } from '../src/core/pool.js';
+import { POOL_ROOM, COMP, DIVE, LEISURE, BOARDS, RACE_LEN, laneZ, laneAt, waterAt, strokeQuality, Race, rivalAt, rivalPaces, rivalLanes, airTime, maxFlips, scoreDive, PoolLog, GOOD } from '../src/core/pool.js';
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 
@@ -100,23 +100,20 @@ test('dives: more height, more flips; an unfinished flip is a belly flop', () =>
   assert.equal(scoreDive(3, 1.95).flips, 2, 'nearly round counts');
 });
 
-test('records and the paid races of the day', () => {
+test('race and dive records (races pay nothing)', () => {
   let day = new Date(2026, 10, 7, 12);
   const store = memory();
   const log = new PoolLog(store, () => day);
   const first = log.finishRace(18.2, 1);
-  assert.deepEqual(first, { coins: PAY.win, best: true });
+  assert.deepEqual(first, { best: true });
   assert.equal(log.finishRace(19, 2).best, false);
-  for (let i = 2; i < DAILY_PAID; i++) log.finishRace(20, 3);
-  assert.equal(log.paidLeft, 0);
-  assert.equal(log.finishRace(17, 1).coins, 0, 'only a few paid races a day');
+  assert.equal(log.finishRace(17, 1).best, true);
   assert.equal(log.finishDive(50).best, true);
   assert.equal(log.finishDive(20).best, false);
   const again = new PoolLog(store, () => day);
   assert.equal(again.s.bestRace, 17);
   assert.equal(again.s.bestDive, 50);
   day = new Date(2026, 10, 8, 12);
-  assert.equal(again.paidLeft, DAILY_PAID, 'a new day');
   assert.equal(again.s.bestRace, 17, 'the best time stays');
 });
 

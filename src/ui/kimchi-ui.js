@@ -467,7 +467,7 @@ export class KimchiUI {
     const score = totalScore(this.scores);
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(KIMCHI_GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + KIMCHI_GAME + ':' + medal });
     const jar = this.onJar?.(score) !== false;
     this._frame();
     this.say('bye');

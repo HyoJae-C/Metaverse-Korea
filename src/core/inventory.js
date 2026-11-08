@@ -13,7 +13,7 @@ const PET_DESC = {
 };
 function pets(defs) {
   const out = {};
-  for (const [id, [price, emoji, pet, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: PET_DESC, pet, price: price || null };
+  for (const [id, [price, emoji, pet, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: PET_DESC, pet, price: price ? price * 1000 : null }; // listed in ₩1,000s
   return out;
 }
 export const isPet = (id) => !!ITEMS[id]?.pet;
@@ -24,11 +24,11 @@ const OUTFIT_DESC = {
   zh: '日常衣橱买的衣服。点“穿上”换上，点“脱下”换回T恤。',
   es: 'Ropa de Armario Diario. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس من خزانة يومية. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo từ Daily Closet. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'डेली क्लोज़ेट के कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', id: 'Baju dari Daily Closet. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
 };
-// outfit: the character model it puts on; price: coins at the clothes shop.
+// outfit: the character model it puts on; price: won at the clothes shop (listed in ₩1,000s).
 // wear / off: the look it puts on and what taking it off changes back.
 function outfits(defs) {
   const out = {};
-  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price, wear: { model: id.slice(7) }, off: { model: 'basic' } };
+  for (const [id, [price, emoji, name]] of Object.entries(defs)) out[id] = { emoji, name, desc: OUTFIT_DESC, outfit: id.slice(7), price: price * 1000, wear: { model: id.slice(7) }, off: { model: 'basic' } };
   return out;
 }
 // Is this item on (every part of its wear matches the look)? A null part
@@ -129,12 +129,12 @@ export const ITEMS = {
   }),
   // Lamps for your home, from the lighting shops on Cheonggyecheon-ro (furniture.js).
   ...lamps(),
-  // Pets: adopted for coins (price), or by code only (no price).
+  // Pets: adopted for money (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the
   // adoption fee. The shiba, chinchilla and guinea pig stay here so pets players
   // already own keep working (and the chinchilla / guinea pig codes still give them).
-  // Prices follow Korean pet-shop prices at 🪙1 = ₩1,000 (a toy poodle is
+  // Prices follow Korean pet-shop prices, listed in ₩1,000s (a toy poodle is
   // about ₩400,000), so a pet costs far more than a perfume or a jacket.
   ...pets({
     'pet-maltese': [400, '🐶', { kind: 'dog', name: '몽이', rom: 'Mongi', color: '#fbf8f2', accent: '#efe6da', scale: 0.85 }, { en: 'Maltese · Mongi', ko: '말티즈 · 몽이', ja: 'マルチーズ · モンイ', zh: '马尔济斯 · 萌萌' }],
@@ -212,7 +212,7 @@ export async function coinCode(code) {
 // Event codes for players: "./EVENTSTART1" (any letter case) gives coins,
 // once per device. A separate, simple format from the developer codes.
 const EVENT_CODES = {
-  '47535964edcf32113829b020570df4d48917a2ae0e6d4f3cd2777e72ab5ef786': { id: 'eventstart1', coins: 100 }, // early players
+  '47535964edcf32113829b020570df4d48917a2ae0e6d4f3cd2777e72ab5ef786': { id: 'eventstart1', coins: 100000 }, // early players
 };
 export const isEventCode = (text) => /^\.\/[A-Za-z0-9_-]{2,40}$/.test(String(text).trim());
 export async function eventCode(text) {

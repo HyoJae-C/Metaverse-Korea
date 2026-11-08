@@ -47,9 +47,19 @@ export class RemotePlayers {
       id: peer.id, ch, tag, bubble: null, name,
       target: null, ry: 0, s: 0,
       model: peer.look?.model ?? null, // (debug: what they wear)
+      look: peer.look,
     };
     this.players.set(peer.id, p);
     this._tag(p, peer.look);
+  }
+
+  // The name the server knows them by (019_chat_names.sql), when the one
+  // they announced isn't theirs.
+  setName(id, name) {
+    const p = this.players.get(id);
+    if (!p || !name || p.name === name) return;
+    p.name = String(name).slice(0, 16);
+    this._tag(p, p.look);
   }
 
   leave(id) {
@@ -68,6 +78,7 @@ export class RemotePlayers {
     const old = p.ch.root;
     p.ch = createCharacter(look);
     p.model = look?.model ?? null;
+    p.look = look;
     this._tag(p, look);
     p.bk = false; // re-applied on the next update
     p.hd = null;

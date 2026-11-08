@@ -4,8 +4,8 @@
 // lockers by the door), swim in any pool (flat on the water while moving, others see
 // it too), borrow a tube, race 50 m against three swimmers by tapping
 // Stroke! in rhythm, or climb the tower and dive, tapping Flip! for
-// somersaults. Records stay on this device; the first races of a day pay a
-// few coins.
+// somersaults. Records stay on this device. Races pay nothing: a day pass
+// at the door pays for the pool (core/day-pass.js).
 import { COMP, COUNTDOWN, FLIP_TIME, LOBBY, PoolLog, RACE_LEN, Race, SWIM_Y, WATER_Y, boardById, diveHeight, laneZ, maxFlips, pickLane, raceMsg, rankTimes, rivalLanes, rivalPaces, scoreDive, waterAt } from '../core/pool.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { MEDALS, POOL_TEXT, RIVAL_LOOKS, RIVAL_NAMES, SWIMSUITS } from '../data/pool-text.js';
@@ -15,8 +15,8 @@ import { getLanguage, onLanguageChange } from '../core/i18n.js';
 import { makeNpc, placeLabels, say } from '../core/npcs.js';
 
 export function createPool(game) {
-  const { $, STALE, cam, camera, hiringRedraws, myId, refreshWallet, safety, setLook, sfx, shop,
-    skatePop, wallet } = game;
+  const { $, STALE, cam, camera, hiringRedraws, myId, safety, setLook, sfx, shop,
+    skatePop } = game;
   const PT = POOL_TEXT;
   const poolLog = new PoolLog();
   const pool = {
@@ -244,11 +244,10 @@ export function createPool(game) {
     // touched the wall before you, so their time is here already).
     const place = m.mates.size ? 1 + [...m.mates.values()].filter((x) => x.time != null && x.time < time).length : r.done.place;
     r.done.place = place;
-    const { coins, best } = poolLog.finishRace(time, place);
+    const { best } = poolLog.finishRace(time, place);
     skatePop(fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) }), place === 1 ? 'big' : 'land');
     let msg = fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) });
     if (best) msg += ' · ' + L(PT.newBest);
-    if (coins) { wallet.add(coins, { name: { en: '50 m race', ko: '50m 레이스' }, at: game.interior?.store.name }); refreshWallet(); msg += ' · ' + fmt(L(PT.coins), { n: coins }); }
     shop.toast(msg);
     sfx.landed?.();
     if (m.rid) game.net.sendEmote(raceMsg('fin', m.rid, time));

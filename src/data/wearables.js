@@ -5,7 +5,8 @@
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
 
-const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price, wear, off, desc, name, ...extra });
+// price: listed in ₩1,000s (70 = ₩70,000).
+const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
 // Trousers also take a skirt off (look.skirt), so a pair can be put back on.
 const pants = (id) => ({ pants: id, skirt: null });
 

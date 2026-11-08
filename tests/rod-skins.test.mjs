@@ -16,19 +16,19 @@ test('rod skins: free basic, rising prices, names in four languages', () => {
   assert.equal(rodSkin('nope').id, 'basic');
 });
 
-test('buying spends once, wears it, and is remembered; short of coins buys nothing', () => {
+test('buying spends once, wears it, and is remembered; short of money buys nothing', () => {
   const st = store();
   const r = new RodSkins(st);
-  const w = wallet(100);
+  const w = wallet(100000);
   assert.equal(r.buy('gold', w), false);
-  assert.equal(w.coins, 100);
+  assert.equal(w.coins, 100000);
   assert.equal(r.equipped, 'basic');
   assert.equal(r.buy('bamboo', w), true);
-  assert.equal(w.coins, 50);
+  assert.equal(w.coins, 50000);
   assert.equal(r.equipped, 'bamboo');
   assert.equal(r.equip('basic'), true);
   assert.equal(r.buy('bamboo', w), true); // already owned: wearing it again is free
-  assert.equal(w.coins, 50);
+  assert.equal(w.coins, 50000);
   assert.equal(r.equip('aurora'), false);
   const again = new RodSkins(st);
   assert.ok(again.has('bamboo'));

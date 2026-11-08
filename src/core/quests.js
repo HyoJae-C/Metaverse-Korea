@@ -20,8 +20,8 @@
 // New players get a fixed first path (STARTER) after the welcome high five:
 // errands close to the square (within ~300 m) that each teach one thing.
 // They don't count towards the daily limit and pay a bit more.
-export const QUEST_REWARD = 15;
-export const STARTER_REWARD = 30;
+export const QUEST_REWARD = 10000;
+export const STARTER_REWARD = 20000;
 export const STARTER = [
   { kind: 'visit', target: 'nyang-cat-cafe', tip: 'map' }, // the map: tap a place, walk there by itself; or ride a bike
   { kind: 'taxi', tip: 'taxi' }, // fast, but it costs

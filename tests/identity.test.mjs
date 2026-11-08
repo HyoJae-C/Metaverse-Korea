@@ -36,7 +36,7 @@ test('an empty name is never locked', () => {
 test('a broken saved record means no lock', () => {
   const s = mem();
   s.setItem('mk.identity', '{oops');
-  assert.deepEqual(readIdentity(s), { name: '', nameAt: 0, model: null, modelAt: 0 });
+  assert.deepEqual(readIdentity(s), { name: '', nameAt: 0, model: null, modelAt: 0, renames: 0, renamedAt: 0 });
 });
 
 test('names keep only Hangul, English letters, numbers and spaces', () => {
@@ -49,4 +49,18 @@ test('official-looking names are reserved', async () => {
   const { isReservedName } = await import('../src/core/identity.js');
   for (const n of ['운영자', '게임 운영자', '관리자1', 'Admin', 'GM', 'gm2', 'Official Kim', '개 발 자']) assert.ok(isReservedName(n), n);
   for (const n of ['효재', 'Sigma', 'Gemma', '운동하자', 'Kim']) assert.ok(!isReservedName(n), n);
+});
+
+test('renaming: the first change is free and now, then once per 7 days', async () => {
+  const { renameState } = await import('../src/core/identity.js');
+  const fresh = readIdentity(mem());
+  assert.deepEqual(renameState(fresh), { free: true, waitDays: 0 });
+  const t0 = 1_000_000;
+  const once = { ...fresh, renames: 1, renamedAt: t0 };
+  assert.deepEqual(renameState(once, t0 + DAY), { free: false, waitDays: 6 });
+  assert.deepEqual(renameState(once, t0 + 7 * DAY), { free: false, waitDays: 0 });
+  const s = mem();
+  s.setItem('mk.identity', JSON.stringify(once));
+  assert.equal(readIdentity(s).renames, 1);
+  assert.equal(readIdentity(s).renamedAt, t0);
 });

@@ -12,7 +12,7 @@ export function createBikeShop(game) {
   const { $, garage, refreshWallet, shop } = game;
   const BIKE_TEXT = {
     open: { en: 'Rides & upgrades', ko: '탈것·업그레이드', ja: '乗り物・アップグレード', zh: '选车·升级', es: 'Vehículos y mejoras' },
-    note: { en: 'Each step is only a little faster. Rides wear out very slowly; a repair costs a few coins at any ride shop.', ko: '단계마다 속도는 조금씩만 빨라져요. 타다 보면 아주 조금씩 닳고, 수리는 어느 탈것 가게에서나 몇 코인이면 돼요.', ja: '段階ごとに少しだけ速くなります。乗るとゆっくりすり減り、修理はどの乗り物店でも数コインです。', zh: '每一级只快一点点。骑久了会缓慢磨损，任何一家车店都能花几枚硬币修理。', es: 'Cada nivel es solo un poco más rápido. Se desgastan muy despacio; cualquier tienda los repara por unas monedas.' },
+    note: { en: 'Each step is only a little faster. Rides wear out very slowly; a repair costs a little (up to 🪙 10000) at any ride shop.', ko: '단계마다 속도는 조금씩만 빨라져요. 타다 보면 아주 조금씩 닳고, 수리는 어느 탈것 가게에서나 조금만 내면 돼요 (최대 🪙 10000).', ja: '段階ごとに少しだけ速くなります。乗るとゆっくりすり減り、修理はどの乗り物店でも少しのお金でできます（最大🪙 10000）。', zh: '每一级只快一点点。骑久了会缓慢磨损，任何一家车店都能花一点钱修理（最多🪙 10000）。', es: 'Cada nivel es solo un poco más rápido. Se desgastan muy despacio; cualquier tienda los repara por poco (hasta 🪙 10000).' },
     skinNote: { en: 'A colour and a pattern you buy once and can put on any ride. Each ride shop sells its own.', ko: '한 번 사면 모든 탈것에 입힐 수 있는 색상과 패턴이에요. 가게마다 파는 스킨이 달라요.', ja: '一度買えばどの乗り物にも使える色と柄です。お店ごとに品ぞろえが違います。', zh: '买一次就能用在所有车上的颜色和图案。每家店卖的都不一样。', es: 'Un color y un estampado que compras una vez y usas en cualquier vehículo. Cada tienda vende los suyos.' },
     limitedNote: { en: 'Limited: the Hunminjeongeum line is sold only here, by Gyeongbokgung. Once bought, it goes on any ride, anywhere.', ko: '한정판: 훈민정음 라인은 경복궁 옆 이곳에서만 팔아요. 한 번 사면 어디서든 모든 탈것에 입힐 수 있어요.', ja: '限定：訓民正音ラインは景福宮のこの店だけで販売。一度買えばどこでもどの乗り物にも使えます。', zh: '限定：训民正音系列只在景福宫旁的这家店出售。买了之后在哪儿都能用在所有车上。', es: 'Limitado: la línea Hunminjeongeum solo se vende aquí, junto a Gyeongbokgung. Una vez comprada, sirve para cualquier vehículo.' },
     tuneNote: { en: 'Tune-ups: our mechanics make a ride you own a little faster, in three steps.', ko: '튜닝: 연구원들이 내 탈것을 3단계에 걸쳐 조금씩 더 빠르게 만들어 줘요.', ja: 'チューンアップ：持っている乗り物を3段階で少しずつ速くします。', zh: '改装：技师分三级把你的车调得快一点。', es: 'Puesta a punto: hacemos tu vehículo un poco más rápido, en tres pasos.' },
@@ -33,7 +33,7 @@ export function createBikeShop(game) {
     fixed: { en: 'Good as new!', ko: '새것처럼 고쳤어요!', ja: '新品同様になりました！', zh: '修好啦，跟新的一样！', es: '¡Como nuevo!' },
     bought: { en: 'Enjoy your new ride!', ko: '새 탈것이 생겼어요!', ja: '新しい乗り物をどうぞ！', zh: '新车到手！', es: '¡Disfruta tu nuevo vehículo!' },
     skinOn: { en: 'Skin applied!', ko: '스킨을 입혔어요!', ja: 'スキンを適用しました！', zh: '已换上皮肤！', es: '¡Aspecto aplicado!' },
-    poor: { en: 'Not enough coins.', ko: '코인이 부족해요.', ja: 'コインが足りません。', zh: '硬币不够。', es: 'No tienes suficientes monedas.' },
+    poor: { en: 'Not enough money.', ko: '돈이 부족해요.', ja: 'お金が足りません。', zh: '钱不够。', es: 'No tienes suficiente dinero.' },
     worn: { en: 'Your ride is getting worn: a repair at any ride shop makes it good as new.', ko: '탈것이 많이 닳았어요. 탈것 가게에서 수리하면 새것처럼 돼요.', ja: '乗り物がすり減ってきました。乗り物店で修理できます。', zh: '车磨损了，去车店修一下吧。', es: 'Tu vehículo está gastado: repáralo en una tienda de vehículos.' },
     colors: { en: 'Colour', ko: '색상', ja: 'カラー', zh: '颜色', es: 'Color' },
     patterns: { en: 'Pattern', ko: '패턴', ja: '柄', zh: '图案', es: 'Estampado' },

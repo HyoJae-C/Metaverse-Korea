@@ -22,7 +22,7 @@ test('the hanbok shop by Gyeongbokgung is open and rents every set', () => {
   assert.equal(shop.products.length, Object.keys(HANBOK).length);
   for (const p of shop.products) {
     assert.ok(HANBOK[p.rent], p.id);
-    assert.equal(p.price, HANBOK[p.rent].coins * 1000, p.id);
+    assert.equal(p.price, HANBOK[p.rent].coins, p.id); // won
     assert.ok(p.name.en && p.name.ko && p.desc.en, p.id);
     if (p.skirt) assert.equal(p.skirt, HANBOK[p.rent].wear.skirt, p.id);
   }

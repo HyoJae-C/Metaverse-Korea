@@ -31,8 +31,8 @@ test('delivery: only shops reachable within a minute, time for a bike, pay for s
   assert.ok(timeFor(MAX_ROAD) <= MAX_SECONDS && timeFor(5000) === MAX_SECONDS);
   assert.ok(reachable(MAX_ROAD) && !reachable(MAX_ROAD + 20));
   assert.equal(deliveryPay(-1), 0);
-  assert.equal(deliveryPay(0), 4);
-  assert.equal(deliveryPay(100), 8);
+  assert.equal(deliveryPay(0), 3500);
+  assert.equal(deliveryPay(100), 3500);
 });
 
 test('noraebang: the same chart for everyone, judged by timing', () => {

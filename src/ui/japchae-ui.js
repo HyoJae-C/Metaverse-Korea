@@ -474,7 +474,7 @@ export class JapchaeUI {
     const score = totalScore(this.scores);
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(JAPCHAE_GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + JAPCHAE_GAME + ':' + medal });
     const boxed = this.onBox?.(score) !== false;
     this._frame();
     this.say('bye');

@@ -14,12 +14,12 @@ test('20 emblems in three tiers, unique ids', () => {
   assert.ok(TIERS.basic.price < TIERS.fancy.price && TIERS.fancy.price < TIERS.dazzling.price);
 });
 
-test('buying spends coins once and is remembered', () => {
+test('buying spends money once and is remembered', () => {
   const st = memory();
-  const w = walletOf(250);
+  const w = walletOf(250000);
   const c = new EmblemCollection(st);
   assert.equal(c.buy('emblem', 'crown', w), 'bought');
-  assert.equal(w.coins, 250 - priceOf(EMBLEMS.find((e) => e.id === 'crown')));
+  assert.equal(w.coins, 250000 - priceOf(EMBLEMS.find((e) => e.id === 'crown')));
   assert.equal(c.buy('emblem', 'crown', w), 'owned');
   assert.equal(c.buy('color', 'rainbow', w), 'poor');
   assert.equal(c.buy('color', 'red', w), 'bought');

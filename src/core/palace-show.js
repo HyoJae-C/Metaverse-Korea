@@ -1,9 +1,9 @@
 // Performances at Gyeongbokgung (district offsets from region.json):
 //  - 부채춤: twenty dancers in hanbok doing the fan dance in the courtyard
 //    in front of Geunjeongjeon, in two rings turning opposite ways.
-//  - 봉산탈춤 + 사자탈: two mask dancers with long white sleeves and a big
-//    two-person lion, on the square near King Sejong's statue.
-//  - 줄타기: a tightrope master crossing a rope beside the mask dance.
+//  - 북청사자놀음: the Bukcheong lion dance troupe (fourteen people, two
+//    lions) on the square near King Sejong's statue (core/bukcheong.js).
+//  - 줄타기: a tightrope master crossing a rope beside the lion dance.
 //  - 수문장: gate guards in front of Gwanghwamun, with lines when greeted.
 //  - 어가 행렬: the king, a eunuch with his parasol and four court ladies
 //    walking from stop to stop round the palace, pausing for photos.
@@ -15,6 +15,7 @@ import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import { DANCER_CHIMAS } from '../data/skirts.js';
 import { makeNpc, say } from './npcs.js';
+import { BukcheongTroupe } from './bukcheong.js';
 
 const NEAR = 110; // metres: closer than this, they perform
 
@@ -86,89 +87,6 @@ const ball = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => {
   o.position.set(x, y, z); o.scale.set(sx, sy, sz);
   return o;
 };
-
-// A Bongsan mask (봉산탈) in chibi head units (centre at the origin, ~0.65 m
-// wide, facing +z): a red face covered in bumps, round white eyes with black
-// pupils, bushy black brows, a wide grin, and a black cloth hood behind.
-export function makeTalMask(face = '#c8323a') {
-  const g = new THREE.Group();
-  g.add(ball(0.5, '#1d1b22', 0, 0.04, -0.08, 1.02, 1.05, 0.95)); // hood
-  g.add(ball(0.42, face, 0, 0, 0.12, 1, 1.12, 0.8));
-  for (const [x, y] of [[-0.18, 0.28], [0.18, 0.28], [0, 0.36], [-0.3, 0.05], [0.3, 0.05], [-0.22, -0.2], [0.22, -0.2], [0, 0.18]]) g.add(ball(0.07, '#ffd34d', x, y, 0.38 + (0.1 - Math.abs(x) * 0.25)));
-  for (const s of [-1, 1]) {
-    g.add(ball(0.09, '#ffffff', 0.15 * s, 0.08, 0.42, 1, 1, 0.5));
-    g.add(ball(0.045, '#1d1b22', 0.15 * s, 0.08, 0.465, 1, 1, 0.5));
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.05), mat('#1d1b22'));
-    brow.position.set(0.16 * s, 0.2, 0.44); brow.rotation.z = -0.35 * s;
-    g.add(brow);
-  }
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.03, 8, 16, Math.PI), mat('#1d1b22'));
-  mouth.position.set(0, -0.12, 0.43); mouth.rotation.z = Math.PI;
-  g.add(mouth);
-  g.add(ball(0.06, '#a8242c', 0, -0.02, 0.48)); // nose
-  g.scale.setScalar(1.05);
-  g.position.y = 0.04;
-  return g;
-}
-
-// 사자탈: a big shaggy lion played by two people (only their legs show).
-function makeLion() {
-  const root = new THREE.Group();
-  const body = new THREE.Group();
-  root.add(body);
-  const fur = '#eeede8'; // white with grey tufts
-  const back = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 1.3, 6, 12), mat(fur));
-  back.rotation.x = Math.PI / 2; back.position.set(0, 1.0, -0.35);
-  body.add(back);
-  // shaggy stripes of colour down the sides
-  for (let i = 0; i < 9; i++) {
-    for (const s of [-1, 1]) {
-      const tuft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.16), mat(['#f7f6f2', '#9b9b98', '#c8c7c2'][i % 3]));
-      tuft.position.set(0.56 * s, 0.75, -1.1 + i * 0.2);
-      tuft.rotation.z = 0.12 * s;
-      body.add(tuft);
-    }
-  }
-  const head = new THREE.Group();
-  head.position.set(0, 1.25, 0.55);
-  body.add(head);
-  head.add(ball(0.62, '#f4f3ef', 0, 0, -0.05, 1, 0.95, 0.8)); // mane
-  for (let i = 0; i < 12; i++) { // mane tufts
-    const a = (i / 12) * Math.PI * 2;
-    head.add(ball(0.16, i % 2 ? '#a3a39f' : '#fbfaf6', Math.cos(a) * 0.6, Math.sin(a) * 0.56, -0.05));
-  }
-  head.add(ball(0.42, '#fff4dc', 0, 0, 0.18, 1, 0.95, 0.85)); // face
-  for (const s of [-1, 1]) {
-    head.add(ball(0.12, '#ffffff', 0.17 * s, 0.12, 0.48));
-    head.add(ball(0.06, '#1d1b22', 0.17 * s, 0.12, 0.58));
-    head.add(ball(0.08, '#e0566b', 0.3 * s, -0.08, 0.44, 1, 0.6, 0.5)); // cheeks
-  }
-  head.add(ball(0.11, '#c8323a', 0, 0, 0.58));
-  const jaw = new THREE.Group();
-  jaw.position.set(0, -0.2, 0.3);
-  head.add(jaw);
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.3), mat('#c8323a'));
-  mouth.position.set(0, -0.04, 0.1);
-  jaw.add(mouth);
-  const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.05), mat('#ffffff'));
-  teeth.position.set(0, 0.02, 0.24);
-  jaw.add(teeth);
-  // four legs in baggy trousers: the two dancers inside
-  const legs = [];
-  for (const [x, z] of [[-0.22, 0.35], [0.22, 0.35], [-0.22, -0.95], [0.22, -0.95]]) {
-    const leg = new THREE.Group();
-    leg.position.set(x, 0.62, z);
-    const pant = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.55, 10), mat('#8f8f8c'));
-    pant.position.y = -0.27;
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.26), mat('#1d1b22'));
-    shoe.position.set(0, -0.58, 0.04);
-    leg.add(pant, shoe);
-    root.add(leg);
-    legs.push(leg);
-  }
-  root.userData = { body, head, jaw, legs };
-  return root;
-}
 
 // 줄타기 rig: an A-frame trestle at each end and the rope between, along x.
 const ROPE = { len: 11, h: 2.6 };
@@ -274,7 +192,7 @@ const GUARD_LINES = [
   ['어서 오시오! 여기는 광화문이오.', 'eoseo osio! yeogineun gwanghwamunieyo.', 'Welcome! This is Gwanghwamun.'],
   ['근정전 앞마당에서 부채춤 공연이 한창이오.', 'geunjeongjeon apmadangeseo buchaechum gongyeoni hanchangio.', 'The fan dance is on in front of Geunjeongjeon.'],
   ['흥례문을 지나면 스탬프대가 있소. 꼭 찍고 가시오!', 'heungnyemuneul jinamyeon seutaempeudaega isso.', 'Past Heungnyemun there is a stamp stand. Do get one!'],
-  ['광장에서는 탈춤과 사자춤이 벌어지고 있소.', 'gwangjangeseoneun talchumgwa sajachumi beoreojigo isso.', 'There is a mask dance and a lion dance on the square.'],
+  ['광장에서는 북청사자놀음이 한창이오.', 'gwangjangeseoneun bukcheongsajanoleumi hanchangio.', 'The Bukcheong lion dance is on in the square.'],
   ['수상한 자는 들이지 않소. 그대는 괜찮소!', 'susanghan janeun deuriji anso. geudaeneun gwaenchanso!', 'No suspicious folk allowed. You are fine!'],
   ['한복을 입으면 궁궐이 더 잘 어울린다오.', 'hanbogeul ibeumyeon gunggwori deo jal eoullindao.', 'The palace suits you even better in hanbok.'],
 ];
@@ -344,13 +262,59 @@ function ikseongwan() {
   for (const s of [-1, 1]) g.add(ball(0.075, '#1d1b22', 0.1 * s, 0.55, -0.24, 0.75, 1.15, 0.4));
   return g;
 }
-function roundel() {
+// A round gold-embroidered badge: a gold disc, a coloured centre and a ring
+// of gold stitches; at (x, y, z) facing out along (nx, nz).
+function badge(r, centre, x, y, z, ry = 0, tilt = 0) {
   const g = new THREE.Group();
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), mat('#e2b443'));
-  disc.position.set(0, 0.5, 0.26);
-  const dragon = new THREE.Mesh(new THREE.CircleGeometry(0.055, 12), mat('#c23a33'));
-  dragon.position.set(0, 0.5, 0.262);
-  g.add(disc, dragon);
+  g.position.set(x, y, z);
+  g.rotation.set(tilt, ry, 0, 'YXZ');
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(r, 18), mat('#e9bb3e'));
+  const mid = new THREE.Mesh(new THREE.CircleGeometry(r * 0.58, 14), mat(centre));
+  mid.position.z = 0.003;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r * 0.8, r * 0.07, 6, 18), mat('#ffd76a'));
+  rim.position.z = 0.005;
+  g.add(disc, mid, rim);
+  for (let i = 0; i < 5; i++) { // the coiled dragon (or phoenix) in gold thread
+    const a = (i / 5) * Math.PI * 2;
+    const st = new THREE.Mesh(new THREE.CircleGeometry(r * 0.12, 8), mat('#ffd76a'));
+    st.position.set(Math.sin(a) * r * 0.3, Math.cos(a) * r * 0.3, 0.006);
+    g.add(st);
+  }
+  return g;
+}
+// The king's gold embroidery (금수): the dragon roundels (보) on his chest,
+// back and both shoulders, and a gold-studded jade belt (옥대).
+function kingEmbroidery() {
+  const g = new THREE.Group();
+  g.add(badge(0.12, '#c23a33', 0, 0.5, 0.262));
+  g.add(badge(0.12, '#c23a33', 0, 0.5, -0.262, Math.PI));
+  for (const s of [-1, 1]) g.add(badge(0.075, '#c23a33', 0.2 * s, 0.6, 0.02, s * Math.PI / 2, -0.9));
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.025, 6, 24), mat('#e9bb3e'));
+  belt.rotation.x = Math.PI / 2 - 0.12;
+  belt.position.set(0, 0.4, 0.02);
+  g.add(belt);
+  for (let i = 0; i < 8; i++) { // jade plaques on the belt
+    const a = (i / 8) * Math.PI * 2;
+    g.add(ball(0.03, '#9fd9b8', Math.sin(a) * 0.27, 0.4 + Math.cos(a) * 0.03, Math.cos(a) * 0.27 + 0.02, 1, 1, 0.5));
+  }
+  return g;
+}
+// The queen's: a gold phoenix roundel on her chest, gold-leaf (금박) bands
+// round the jeogori's sleeves and two round the chima's hem (스란단).
+function queenEmbroidery() {
+  const g = new THREE.Group();
+  g.add(badge(0.11, '#2f6b4a', 0, 0.52, 0.255));
+  g.add(badge(0.11, '#2f6b4a', 0, 0.52, -0.255, Math.PI));
+  for (const [r, y, h] of [[0.33, 0.16, 0.05], [0.3, 0.25, 0.035]]) {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.01, h, 24, 1, true), mat('#e9bb3e'));
+    band.material.side = THREE.DoubleSide;
+    band.position.y = y;
+    g.add(band);
+    for (let i = 0; i < 16; i++) { // gold-leaf flowers stamped along the band
+      const a = (i / 16) * Math.PI * 2;
+      g.add(ball(0.018, '#ffd76a', Math.sin(a) * (r + 0.012), y, Math.cos(a) * (r + 0.012)));
+    }
+  }
   return g;
 }
 // The eunuch's samo (사모): a black cap with two flat wings out to the sides.
@@ -368,13 +332,39 @@ function samo() {
   }
   return g;
 }
-// The queen's hairpin (비녀) through her bun, gold with a red bead.
-function queenPin() {
+// The queen's court hairdo (어여머리): a great wide ring of braided hair
+// sitting on the head, gold trembling ornaments (떨잠) on the front and the
+// sides, and a long gold hairpin (비녀) with red beads.
+function queenHair() {
   const g = new THREE.Group();
-  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8), mat('#e2b443'));
+  const hair = mat('#1d1b22');
+  // the ring stands tipped well back, framing the head like a halo
+  const halo = new THREE.Group();
+  halo.position.set(0, 0.42, -0.12);
+  halo.rotation.x = -0.75;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.14, 10, 24), hair);
+  ring.scale.set(1.12, 1, 1);
+  halo.add(ring);
+  for (let i = 0; i < 14; i++) { // the braid's twists round the ring
+    const a = (i / 14) * Math.PI * 2;
+    halo.add(ball(0.075, '#2a2730', Math.sin(a) * 0.37, Math.cos(a) * 0.33, 0.06));
+  }
+  g.add(halo, ball(0.3, '#1d1b22', 0, 0.42, -0.08, 1.05, 0.55, 0.95));
+  // 떨잠: gold discs with a jewel, one in front, one each side
+  for (const [x, y, z, ry, gem] of [[0, 0.7, 0.12, 0, '#3a7bd5'], [-0.4, 0.55, 0.0, -1.0, '#c23a33'], [0.4, 0.55, 0.0, 1.0, '#c23a33']]) {
+    const t = new THREE.Group();
+    t.position.set(x, y, z);
+    t.rotation.y = ry;
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 14), mat('#e9bb3e'));
+    disc.rotation.x = Math.PI / 2;
+    t.add(disc, ball(0.035, gem, 0, 0, 0.02, 1, 1, 0.6));
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; t.add(ball(0.022, '#ffd76a', Math.sin(a) * 0.11, Math.cos(a) * 0.11, 0.01)); }
+    g.add(t);
+  }
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.05, 8), mat('#e9bb3e'));
   pin.rotation.z = Math.PI / 2;
-  pin.position.set(0, 0.95, -0.25);
-  g.add(pin, ball(0.07, '#c23a33', 0.47, 0.95, -0.25), ball(0.07, '#c23a33', -0.47, 0.95, -0.25));
+  pin.position.set(0, 0.42, -0.3);
+  g.add(pin, ball(0.055, '#c23a33', 0.54, 0.42, -0.3), ball(0.055, '#c23a33', -0.54, 0.42, -0.3));
   return g;
 }
 // The red royal parasol (홍양산) the eunuch holds up over the king ahead:
@@ -410,9 +400,8 @@ function parasol(lean = 0.5) {
   return g;
 }
 export class PalaceShow {
-  // fan: [x, z] centre of the fan dance; mask: [x, z] centre of the mask dance.
-  // fan: [x, z] centre of the fan dance; mask: [x, z] centre of the mask
-  // dance; guards: [[x, z, ry], ...] gate guards; layer: name tags.
+  // fan: [x, z] centre of the fan dance; mask: [x, z] centre of the lion
+  // dance ring; guards: [[x, z, ry], ...] gate guards; layer: name tags.
   // rope: [x, z] middle of the tightrope (runs along x).
   // procession: [x, z] the palace district's offset (ROYAL_ROUTE is in its metres).
   constructor(scene, { fan, mask, rope, guards = [], procession = null, layer = null, inside = () => true }) {
@@ -433,12 +422,7 @@ export class PalaceShow {
       dancers: FAN_LOOKS.map((l) => performer(scene, l, 'fan')),
       part: -1, slotOf: FAN_LOOKS.map((_, i) => i), prevOf: FAN_LOOKS.map((_, i) => i),
     };
-    this.mask = mask && {
-      x: mask[0], z: mask[1],
-      dancers: [performer(scene, { model: 'hanbok-baji', tee: null }, 'tal', makeTalMask('#c8323a')), performer(scene, { model: 'hanbok-durumagi', tee: null }, 'tal', makeTalMask('#f2ede0'))],
-      lion: makeLion(),
-    };
-    if (this.mask) scene.add(this.mask.lion);
+    this.mask = mask ? new BukcheongTroupe(scene, mask) : null;
     this.guards = layer ? guards.map(([x, z, ry]) => {
       const o = makeNpc(layer, '💂 수문장', { ...randomLook(), model: 'basic', pants: 'black', hair: 'black', dye: 'black', tee: null, hairStyle: 'short' });
       o.ch.addProp('head', guardHat());
@@ -461,7 +445,7 @@ export class PalaceShow {
         npc = makeNpc(this.layer, '👑 임금님', { ...randomLook(), model: 'hanbok-gonryongpo', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' });
         ch = npc.ch;
         ch.addProp('head', ikseongwan());
-        ch.addProp('body', roundel());
+        ch.addProp('body', kingEmbroidery());
         scene.add(ch.root);
       } else if (o.who === 'eunuch') {
         ch = performer(scene, { model: 'hanbok-dallyeong', tee: null, hair: 'black', dye: 'black', hairStyle: 'short' }, null);
@@ -481,7 +465,8 @@ export class PalaceShow {
       } else if (o.who === 'queen') {
         npc = makeNpc(this.layer, '👑 왕비', { ...randomLook(), model: 'hanbok-queen', skirt: 'chima-red', tee: null, hair: 'black', dye: 'black', hairStyle: 'bun', lip: 'cherry' });
         ch = npc.ch;
-        ch.addProp('head', queenPin());
+        ch.addProp('head', queenHair());
+        ch.addProp('body', queenEmbroidery());
         scene.add(ch.root);
       } else ch = lady();
       return { ...o, ch, npc };
@@ -576,7 +561,7 @@ export class PalaceShow {
     say(o, this.layer, GUARD_LINES[Math.floor(Math.random() * GUARD_LINES.length)]);
   }
   // Where the performers are (for the debug hook / camera).
-  spots() { return { fan: this.fan && [this.fan.x, this.fan.z], mask: this.mask && [this.mask.x, this.mask.z] }; }
+  spots() { return { fan: this.fan && [this.fan.x, this.fan.z], mask: this.mask && this.mask.spot() }; }
   update(dt, me, camera, w, h, placeLabels) {
     this.t += dt;
     const t = this.t;
@@ -603,34 +588,7 @@ export class PalaceShow {
       }
     }
     if (this.fan) this.updateFan(dt, me, t);
-    if (this.mask) {
-      const on = Math.hypot(me.x - this.mask.x, me.z - this.mask.z) < NEAR;
-      const { x, z, dancers, lion } = this.mask;
-      dancers.forEach((ch, i) => {
-        ch.root.visible = on;
-        if (!on) return;
-        const s = i ? 1 : -1;
-        ch.root.position.set(x + s * 3.2 + Math.sin(t * 0.6 + i) * 0.8, 0, z + 1.5 + Math.cos(t * 0.5 + i) * 0.6);
-        ch.root.rotation.y = Math.sin(t * 0.7 + i * 2) * 0.6; // mostly facing the square (+z)
-        ch.animate(dt, 0);
-      });
-      lion.visible = on;
-      if (on) {
-        // The lion prowls a figure of eight between the two mask dancers.
-        const a = t * 0.35;
-        const lx = x + Math.sin(a) * 3.0, lz = z - 1 + Math.sin(a * 2) * 1.4;
-        const dx = Math.cos(a) * 3.0, dz = Math.cos(a * 2) * 2.8;
-        lion.position.set(lx, 0, lz);
-        lion.rotation.y = Math.atan2(dx, dz);
-        const { body, head, jaw, legs } = lion.userData;
-        const step = t * 7;
-        legs.forEach((l, k) => { l.rotation.x = Math.sin(step + (k % 2 ? Math.PI : 0) + (k > 1 ? Math.PI / 2 : 0)) * 0.45; });
-        body.position.y = Math.abs(Math.sin(step)) * 0.06;
-        head.rotation.y = Math.sin(t * 1.3) * 0.45;
-        head.rotation.x = Math.sin(t * 2.1) * 0.15;
-        jaw.rotation.x = Math.max(0, Math.sin(t * 3.4)) * 0.45; // snap snap
-      }
-    }
+    this.mask?.update(dt, me);
   }
   // The fan dance: the routine's parts in turn (FAN_ROUTINE), each blending
   // in from the last. At the start of each part every dancer is given the

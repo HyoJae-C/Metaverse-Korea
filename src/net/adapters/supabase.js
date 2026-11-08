@@ -5,7 +5,10 @@
 // openChat below). The server checks who may use it (supabase/004_chat.sql):
 // everyone can read, only allowed players can send. Until that SQL has been
 // run the private channel is refused, and chat stays on the public room
-// channels as before.
+// channels as before. With supabase/019_chat_names.sql a message is sent
+// through the server function room_chat_send, which checks the player id
+// belongs to the sender's account and adds their real name, so nobody can
+// chat in someone else's name.
 import { createClient } from '@supabase/supabase-js';
 
 // One client (one websocket) shared by every room we are in. cfg.accessToken
@@ -23,6 +26,9 @@ export function sharedClient(url, key, accessToken) {
   }
   return clients.get(k);
 }
+
+// PostgREST's answer when an rpc function doesn't exist (SQL not run yet).
+export const isMissingFunction = (error) => error?.code === 'PGRST202' || error?.code === '42883' || /could not find the function/i.test(error?.message || '');
 
 export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook, onChat }, cfg) {
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
@@ -123,10 +129,11 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     openChat(room, onMessage) {
       const topic = 'chat:' + room;
       const link = { ready: false, closed: false, ch: null };
+      let direct = false; // the server function isn't set up: send on the channel
       const join = (tries) => {
         if (link.closed) return;
         const ch = (link.ch = client.channel(topic, { config: { private: true, broadcast: { self: false } } }));
-        ch.on('broadcast', { event: 'c' }, ({ payload }) => onMessage(payload.id, payload.t));
+        ch.on('broadcast', { event: 'c' }, ({ payload }) => onMessage(payload.id, payload.t, payload.n));
         ch.subscribe((status, err) => {
           if (ch !== link.ch) return;
           if (status === 'SUBSCRIBED') link.ready = true;
@@ -142,8 +149,22 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       join(0);
       return {
         get ready() { return link.ready; },
-        // The server drops it unless we may chat.
-        send(id, t) { link.ch?.send({ type: 'broadcast', event: 'c', payload: { id, t } }); },
+        // Through the server (019_chat_names.sql), which stamps who sent it.
+        // Before that SQL is run the function doesn't exist: send on the
+        // channel directly, where the server drops it unless we may chat.
+        // claim() re-claims our id when the server doesn't know it yet.
+        async send(id, t, claim) {
+          if (!direct) {
+            const say = () => client.rpc('room_chat_send', { room, net_id: id, msg: t });
+            let { data, error } = await say();
+            if (!error && data === 'id' && claim && (await claim()) === 'ok') ({ data, error } = await say());
+            if (!error) return data;
+            if (!isMissingFunction(error)) return 'error';
+            direct = true;
+          }
+          link.ch?.send({ type: 'broadcast', event: 'c', payload: { id, t } });
+          return 'ok';
+        },
         close() {
           link.closed = true;
           link.ready = false;

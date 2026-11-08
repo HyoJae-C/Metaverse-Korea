@@ -31,7 +31,7 @@
 import * as THREE from 'three';
 import { canvasTex } from './three-kit.js';
 
-export const WISH = { price: 5, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
+export const WISH = { price: 5000, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
 export const WISH_COLORS = ['#ff6b6b', '#ffb347', '#ffe066', '#7bd389', '#7ab8ff', '#c39bff', '#ff8fc7'];
 // The wishes, by index (sent as a number, shown in each viewer's language).
 export const WISHES = [

@@ -15,7 +15,7 @@ test('each stamp pays once and remembers the day', () => {
   const again = new StampBook(st);
   assert.ok(again.has('namsan'));
   assert.equal(again.count(STAMPS), 1);
-  assert.equal(STAMP_REWARD, 10);
+  assert.equal(STAMP_REWARD, 10000);
 });
 
 test('a broken save starts empty', () => {

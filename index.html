@@ -60,7 +60,7 @@
         <span class="online" id="online" hidden></span>
         <button class="online coin-chip rent-chip" id="rent-chip" hidden></button>
         <button class="online coin-chip daily-chip" id="daily-btn" aria-label="Daily">📅<b class="dot" id="daily-dot" hidden></b></button>
-        <button class="online coin-chip" id="coin-btn">🪙 <b id="coin-count">0</b></button>
+        <button class="online coin-chip" id="coin-btn"><b id="coin-count">₩0</b></button>
         <button class="chip icon-chip settings-chip" id="settings-btn" aria-label="Settings">⚙️<b class="dot news-bang" id="settings-dot" hidden>!</b></button>
       </div>
       <div class="tools">
@@ -118,12 +118,12 @@
       </div>
       <div class="sheet" id="wallet-panel" hidden>
         <button class="sheet-x" id="wallet-close" aria-label="Close">✕</button>
-        <strong class="wallet-title">🪙 <span data-i18n="wallet.title"></span></strong>
+        <strong class="wallet-title">💳 <span data-i18n="wallet.title"></span></strong>
         <div class="pay-card" aria-live="polite">
           <span class="pay-card-name">ANOTHER SEOUL PASS</span>
           <i class="pay-card-chip" aria-hidden="true"></i>
           <span class="pay-card-label" data-i18n="ledger.balance"></span>
-          <p class="wallet-balance"><b id="wallet-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+          <p class="wallet-balance"><b id="wallet-coins">₩0</b></p>
         </div>
         <button class="chip ledger-btn" id="ledger-btn">📒 <span data-i18n="ledger.title"></span></button>
         <button class="primary" id="ad-btn">▶️ <span id="ad-label"></span></button>
@@ -382,6 +382,7 @@
         <label class="name-field">
           <span data-i18n="start.nickname"></span>
           <input id="nickname" maxlength="16" autocomplete="off" />
+          <small class="name-face" data-i18n="name.face"></small>
           <small class="name-rule" data-i18n="name.rule"></small>
         </label>
         <p class="look-lock" id="look-lock" hidden></p>
@@ -488,7 +489,7 @@
         <div class="pay-card big">
           <span class="pay-card-name">ANOTHER SEOUL PASS</span>
           <i class="pay-card-chip" aria-hidden="true"></i>
-          <p class="wallet-balance"><b id="welcome-coins">0</b> <span data-i18n="wallet.coins"></span></p>
+          <p class="wallet-balance"><b id="welcome-coins">₩0</b></p>
         </div>
         <p id="welcome-body"></p>
         <ul class="welcome-tips">

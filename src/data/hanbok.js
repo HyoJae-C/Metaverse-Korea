@@ -10,17 +10,17 @@ export const RENT_HOURS = 2;
 const set = (coins, wear) => ({ coins, wear }); // names: the shop's products
 
 export const HANBOK = {
-  'yellow-red': set(15, { model: 'hanbok-yellow', skirt: 'chima-red', tee: null }),
-  'pink-navy': set(15, { model: 'hanbok-pink', skirt: 'chima-navy', tee: null }),
-  'mint-pink': set(15, { model: 'hanbok-mint', skirt: 'chima-pink', tee: null }),
-  'baji-blue': set(15, { model: 'hanbok-baji', skirt: null, tee: null }),
-  'durumagi-lilac': set(18, { model: 'hanbok-durumagi', skirt: null, tee: null }),
+  'yellow-red': set(15000, { model: 'hanbok-yellow', skirt: 'chima-red', tee: null }),
+  'pink-navy': set(15000, { model: 'hanbok-pink', skirt: 'chima-navy', tee: null }),
+  'mint-pink': set(15000, { model: 'hanbok-mint', skirt: 'chima-pink', tee: null }),
+  'baji-blue': set(15000, { model: 'hanbok-baji', skirt: null, tee: null }),
+  'durumagi-lilac': set(18000, { model: 'hanbok-durumagi', skirt: null, tee: null }),
   // more men's sets
-  'baji-navy': set(15, { model: 'hanbok-baji-navy', skirt: null, tee: null }),
-  'baji-jade': set(15, { model: 'hanbok-baji-jade', skirt: null, tee: null }),
-  'baji-ivory': set(15, { model: 'hanbok-baji-ivory', skirt: null, tee: null }),
-  'durumagi-navy': set(18, { model: 'hanbok-durumagi-navy', skirt: null, tee: null }),
-  'durumagi-gray': set(18, { model: 'hanbok-durumagi-gray', skirt: null, tee: null }),
+  'baji-navy': set(15000, { model: 'hanbok-baji-navy', skirt: null, tee: null }),
+  'baji-jade': set(15000, { model: 'hanbok-baji-jade', skirt: null, tee: null }),
+  'baji-ivory': set(15000, { model: 'hanbok-baji-ivory', skirt: null, tee: null }),
+  'durumagi-navy': set(18000, { model: 'hanbok-durumagi-navy', skirt: null, tee: null }),
+  'durumagi-gray': set(18000, { model: 'hanbok-durumagi-gray', skirt: null, tee: null }),
 };
 
 export const hanbokById = (id) => (typeof id === 'string' && Object.hasOwn(HANBOK, id) ? HANBOK[id] : null);

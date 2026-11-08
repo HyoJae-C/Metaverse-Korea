@@ -6,7 +6,9 @@
 // up for fun, with no scientific basis.
 import { MINOR } from './tarot-minor.js';
 
-export const TAROT_COST = 40; // coins for one reading (three cards; a friend reading with you joins free)
+export const TAROT_COST = 20000; // won for one reading (one topic, three cards)
+export const TAROT_PAIR = 40000; // two reading together (couple / friends), split: dutch pay
+export const TAROT_HALF = TAROT_PAIR / 2; // each one's share
 
 export const POSITIONS = [
   { id: 'past', name: { en: 'Past', ko: '과거', ja: '過去', zh: '过去' } },

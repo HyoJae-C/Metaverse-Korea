@@ -29,7 +29,7 @@ test('only clothes with a receipt can be sold: gifts and code items cannot', () 
   const items = { ...WEARABLES, 'not-clothes': { emoji: '🧸', name: { en: 'Bear' } } };
   r.record('not-clothes', 10);
   assert.deepEqual(sellable(owned, items, r), [{ id: 'outfit-hoodie-black', paid: 60, coins: 6 }]);
-  assert.deepEqual(new Receipts(s).get('outfit-hoodie-black'), { paid: 60, op: 'op-1', bn: 'Black hoodie · VINTAGE GARAGE' }, 'kept on the device, with the purchase id and note');
+  assert.deepEqual(new Receipts(s).get('outfit-hoodie-black'), { paid: 60, op: 'op-1', bn: 'Black hoodie · VINTAGE GARAGE', w: 1 }, 'kept on the device, with the purchase id and note');
   r.forget('outfit-hoodie-black');
   assert.equal(new Receipts(s).paid('outfit-hoodie-black'), 0, 'sold: the receipt goes');
 });
@@ -43,13 +43,19 @@ test('clothes bought before receipts are found once in the budget book, never gi
   ];
   const isGift = (note) => note?.at?.en === 'Gift';
   const owned = ['outfit-hoodie-black', 'acc-cap-red', 'pants-black'];
-  assert.deepEqual(scanLedger(log, owned, WEARABLES, isGift), { 'outfit-hoodie-black': { paid: hoodie.price, op: null, bn: 'Black hoodie · Shop' } });
+  assert.deepEqual(scanLedger(log, owned, WEARABLES, isGift), { 'outfit-hoodie-black': { paid: hoodie.price, op: null, bn: 'Black hoodie · Shop', w: 1 } });
   const s = mem(), r = new Receipts(s);
   assert.equal(r.scanOnce(log, owned, WEARABLES, isGift), 1);
   assert.equal(r.paid('outfit-hoodie-black'), hoodie.price);
   r.forget('outfit-hoodie-black');
   assert.equal(r.scanOnce(log, owned, WEARABLES, isGift), 0, 'only once');
   assert.equal(r.paid('outfit-hoodie-black'), 0);
+});
+
+test('receipts saved in coins (before won) are read as won', () => {
+  const s = mem();
+  s.setItem('mk.paid', JSON.stringify({ 'outfit-hoodie-black': { paid: 60, op: 'op-1', bn: 'x' } }));
+  assert.equal(new Receipts(s).paid('outfit-hoodie-black'), 60000);
 });
 
 test('Hongdae VINTAGE GARAGE and Seongsu Gaeul Vintage buy clothes back (no new shop)', () => {

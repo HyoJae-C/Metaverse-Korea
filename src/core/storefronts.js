@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
 import { SIGN_SHAPES, signShape, signGeometry, signTexture } from './sign-shapes.js';
+import { hanokSignStyle, hanokSignTexture, addHanokSign } from './hanok-signs.js';
 import { storeIcon } from './store-icons.js';
 
 const SIGN_W = 6.4;
@@ -129,34 +130,46 @@ export class Storefronts {
       scene.add(group);
 
       const home = store.category === 'home';
-      const shape = signShape(store);
-      const dim = SIGN_SHAPES[shape];
-      const signMat = new THREE.MeshBasicMaterial({ map: signTexture(store.signLocal || store.name.ko, store.colors.sign, '#ffffff', store.signLocal ? store.name.ko : '', shape) });
-      const sign = new THREE.Mesh(signGeometry(shape), [signMat, mat(store.colors.sign)]);
-      if (dim.blade) { // sticks out from the wall beside the door, seen from along the street
-        sign.position.set(2.95, 3.4 + dim.h / 2, 0.8);
-        sign.rotation.y = Math.PI / 2;
-      } else sign.position.set(0, 3.3 + dim.h / 2, 0.2);
-      group.add(sign);
-      if (home) { // a smaller nameplate over a residential entrance
-        sign.scale.set(0.6, 0.6, 1);
-        sign.position.y = 3.2;
-      }
-      const signTop = home ? 0 : sign.position.y + dim.h / 2;
+      // Hanok shops (Bukchon, store.front 'hanok'): the eaves are where a big
+      // board would go, so they get a hanok sign under them (core/hanok-signs.js)
+      // and no awning (the eaves are the awning).
+      const hanok = store.front === 'hanok';
+      const label = store.signLocal || store.name.ko, labelSub = store.signLocal ? store.name.ko : '';
+      let sign = null, signMat, shape, signTop, hanokStyle = null;
+      if (hanok) {
+        hanokStyle = hanokSignStyle(store);
+        const made = addHanokSign(group, hanokStyle, hanokSignTexture(hanokStyle, label, store.colors.sign, labelSub));
+        signMat = made.faceMat;
+        signTop = made.top;
+      } else {
+        shape = signShape(store);
+        const dim = SIGN_SHAPES[shape];
+        signMat = new THREE.MeshBasicMaterial({ map: signTexture(label, store.colors.sign, '#ffffff', labelSub, shape) });
+        sign = new THREE.Mesh(signGeometry(shape), [signMat, mat(store.colors.sign)]);
+        if (dim.blade) { // sticks out from the wall beside the door, seen from along the street
+          sign.position.set(2.95, 3.4 + dim.h / 2, 0.8);
+          sign.rotation.y = Math.PI / 2;
+        } else sign.position.set(0, 3.3 + dim.h / 2, 0.2);
+        group.add(sign);
+        if (home) { // a smaller nameplate over a residential entrance
+          sign.scale.set(0.6, 0.6, 1);
+          sign.position.y = 3.2;
+        }
+        signTop = home ? 0 : sign.position.y + dim.h / 2;
 
-      const awning = new THREE.Mesh(
-        new THREE.BoxGeometry(5.4, 0.08, 1.6),
-        new THREE.MeshLambertMaterial({ map: awningTexture(store.colors.awning) }),
-      );
-      awning.position.set(0, 3.0, 0.8);
-      awning.rotation.x = 0.28;
-      if (home) { awning.scale.set(0.5, 1, 0.8); awning.position.y = 2.7; }
-      group.add(awning);
+        const awning = new THREE.Mesh(
+          new THREE.BoxGeometry(5.4, 0.08, 1.6),
+          new THREE.MeshLambertMaterial({ map: awningTexture(store.colors.awning) }),
+        );
+        awning.position.set(0, 3.0, 0.8);
+        awning.rotation.x = 0.28;
+        if (home) { awning.scale.set(0.5, 1, 0.8); awning.position.y = 2.7; }
+        group.add(awning);
+      }
 
       // Shop front: glass panes either side of a door.
-      // Hanok shops (Bukchon, store.front 'hanok'): a dark wooden frame and
-      // paper-lattice panes instead of glass.
-      const hanok = store.front === 'hanok';
+      // Hanok shops: a dark wooden frame and paper-lattice panes instead of
+      // glass, and a lower door (the plaque goes above it).
       const frame = mat(hanok ? '#6b4630' : '#fffaf0');
       const glass = hanok ? new THREE.MeshLambertMaterial({ color: 0xf3e6c8 }) : new THREE.MeshLambertMaterial({ color: 0xbfe0ee, transparent: true, opacity: 0.85 });
       const front = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.6, 0.12), frame);
@@ -168,8 +181,9 @@ export class Storefronts {
         pane.position.set(sx, 1.35, 0.14);
         group.add(pane);
       }
-      const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.3, 0.06), mat(store.colors.sign));
-      door.position.set(0, 1.15, 0.15);
+      const doorH = hanok ? 2.1 : 2.3;
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, doorH, 0.06), mat(store.colors.sign));
+      door.position.set(0, doorH / 2, 0.15);
       group.add(door);
       const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.4, 0.04), glass);
       doorGlass.position.set(0, 1.35, 0.2);
@@ -196,7 +210,7 @@ export class Storefronts {
       badge.renderOrder = 3;
       group.add(badge);
 
-      this.items.push({ store, group, sign, signMat, shape, ring, badge, door: door3 });
+      this.items.push({ store, group, sign, signMat, shape, hanokStyle, ring, badge, door: door3 });
     }
   }
 
@@ -206,7 +220,8 @@ export class Storefronts {
       const text = on ? localName(it.store.name, lang) : it.store.name.ko;
       const local = it.store.signLocal;
       it.signMat.map.dispose();
-      it.signMat.map = on || !local ? signTexture(text, it.store.colors.sign, '#ffffff', '', it.shape) : signTexture(local, it.store.colors.sign, '#ffffff', it.store.name.ko, it.shape);
+      const [t, sub] = on || !local ? [text, ''] : [local, it.store.name.ko];
+      it.signMat.map = it.hanokStyle ? hanokSignTexture(it.hanokStyle, t, it.store.colors.sign, sub) : signTexture(t, it.store.colors.sign, '#ffffff', sub, it.shape);
       it.signMat.needsUpdate = true;
       it.badge.material.map.dispose();
       it.badge.material.map = badgeTexture(storeIcon(it.store), text, it.store.colors.sign);

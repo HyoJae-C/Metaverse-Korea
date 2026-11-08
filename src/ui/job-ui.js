@@ -218,7 +218,7 @@ export class JobUI {
     this._frame();
     const r = this.round;
     const coins = shiftPay(r.ok, r.all);
-    if (coins) this.wallet.add(coins, { name: JOB_TEXT.ledger, at: this.store?.name });
+    if (coins) this.wallet.add(coins, { name: JOB_TEXT.ledger, at: this.store?.name }, { r: 'job' });
     const res = el('div', 'grill-result');
     res.append(
       el('span', 'grill-medal', this.kind === 'mart' ? '🏪' : '🍽️'),

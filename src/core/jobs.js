@@ -9,7 +9,7 @@
 
 export const JOB_KINDS = ['delivery', 'mart', 'serving'];
 export const SHIFTS_PER_DAY = 5;
-export const MAX_PAY = 8; // coins for a perfect shift (a delivery pays 4–8 too)
+export const MAX_PAY = 5000; // won a shift (a delivery pays ₩3,500)
 const SHIFT_KEY = 'mk.jobShifts';
 
 // Shifts today: { day: 'YYYY-MM-DD', n }.
@@ -107,7 +107,8 @@ export function hiringLines(job, lang, { shopNames, district, meters } = {}) {
 }
 
 // Pay for a counter or serving shift: 2 for showing up, the rest by answers.
-export const shiftPay = (ok, all) => (all ? 2 + Math.round(((MAX_PAY - 2) * Math.max(0, Math.min(ok, all))) / all) : 0);
+export const MIN_PAY = 5000; // won for showing up (the same as MAX_PAY: every shift pays alike)
+export const shiftPay = (ok, all) => (all ? MIN_PAY + Math.round(((MAX_PAY - MIN_PAY) * Math.max(0, Math.min(ok, all))) / all / 1000) * 1000 : 0);
 
 // ── Convenience store counter ───────────────────────────────────────────
 export const MART_CUSTOMERS = 4;

@@ -7,7 +7,11 @@
 import { seededRandom } from './geom.js';
 
 const KEY = 'mk.daily';
-export const REWARD = { checkIn: 10, week: 30, mission: 10, allDone: 20 };
+// Won. The daily check-in is the day's travel support money (여행지원금):
+// it grows with the streak, day 1 to day 7, then starts over.
+export const CHECK_IN = [10000, 20000, 30000, 40000, 50000, 60000, 70000];
+export const checkInPay = (day) => CHECK_IN[(Math.max(1, day) - 1) % CHECK_IN.length];
+export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 10000, allDone: 50000 };
 
 // Local calendar date, YYYY-MM-DD.
 export function dayKey(d = new Date()) {
@@ -111,8 +115,8 @@ export class Daily {
     this.s.last = today;
     this.s.total = (this.s.total || 0) + 1;
     write(this.s);
-    const coins = this.s.streak % 7 === 0 ? REWARD.week : REWARD.checkIn;
-    this.wallet.add(coins, { k: 'ledger.checkIn' });
+    const coins = checkInPay(this.s.streak);
+    this.wallet.add(coins, { k: 'ledger.checkIn' }, { r: 'checkin', once: 'checkin:' + today });
     this._emit();
     return coins;
   }
@@ -128,7 +132,7 @@ export class Daily {
     let coins = REWARD.mission, bonus = false;
     if (!this.s.bonus && this.allDone()) { this.s.bonus = bonus = true; coins += REWARD.allDone; }
     write(this.s);
-    this.wallet.add(coins, { k: 'ledger.mission' });
+    this.wallet.add(coins, { k: 'ledger.mission' }, { r: 'mission', once: 'mission:' + this.s.day + ':' + this.s.missions.indexOf(m) });
     this._emit();
     return { mission: m, coins, bonus };
   }

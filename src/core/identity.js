@@ -30,10 +30,13 @@ export function readIdentity(storage = globalThis.localStorage) {
   try {
     const r = JSON.parse(storage?.getItem(KEY) || 'null');
     if (r && typeof r === 'object') {
-      return { name: cleanName(r.name).trim(), nameAt: Number(r.nameAt) || 0, model: typeof r.model === 'string' ? r.model : null, modelAt: Number(r.modelAt) || 0 };
+      return {
+        name: cleanName(r.name).trim(), nameAt: Number(r.nameAt) || 0, model: typeof r.model === 'string' ? r.model : null, modelAt: Number(r.modelAt) || 0,
+        renames: Math.max(0, Number(r.renames) || 0), renamedAt: Number(r.renamedAt) || 0,
+      };
     }
   } catch { /* corrupt or blocked: no lock */ }
-  return { name: '', nameAt: 0, model: null, modelAt: 0 };
+  return { name: '', nameAt: 0, model: null, modelAt: 0, renames: 0, renamedAt: 0 };
 }
 
 // Whole days left (rounded up) before it can change; 0 = free to change.
@@ -41,6 +44,15 @@ export function daysLeft(at, now = Date.now()) {
   if (!at) return 0;
   const left = at + LOCK_DAYS * DAY - now;
   return left > 0 ? Math.ceil(left / DAY) : 0;
+}
+
+// Changing the name later (name tag workshop): the first change after
+// picking it is free and immediate, then one change per LOCK_DAYS.
+// { free, waitDays }. The server keeps the same rule (019_chat_names.sql);
+// this copy is for playing without it.
+export function renameState(id, now = Date.now()) {
+  if (!id.renames) return { free: true, waitDays: 0 };
+  return { free: false, waitDays: daysLeft(id.renamedAt, now) };
 }
 
 export function nameLocked(id, now = Date.now()) { return !!id.name && daysLeft(id.nameAt, now) > 0; }
