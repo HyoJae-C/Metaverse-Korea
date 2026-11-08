@@ -21,10 +21,10 @@ const T = {
   putDown: { en: 'Put the book away', ko: '책 내려놓기', ja: '本をしまう', zh: '把书放下' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
   freeNote: {
-    en: 'Free to read: Korean classics whose copyright has ended, and old folk tales, with English translations.',
-    ko: '저작권이 끝난 한국 문학과 옛이야기를 무료로 읽을 수 있어요. 영어 번역도 함께 있어요.',
-    ja: '著作権が切れた韓国の名作と昔話を無料で読めます。英語訳つき。',
-    zh: '免费阅读版权已过期的韩国经典和民间故事，附英文翻译。',
+    en: 'Free to read: Korean classics whose copyright has ended, old folk tales, and books written for Another Seoul. Some are in Korean only.',
+    ko: '저작권이 끝난 한국 문학과 옛이야기, Another Seoul이 새로 쓴 책을 무료로 읽을 수 있어요. 한국어로만 된 책도 있어요.',
+    ja: '著作権が切れた韓国の名作、昔話、Another Seoulが書いた本を無料で読めます。韓国語だけの本もあります。',
+    zh: '免费阅读版权已过期的韩国经典、民间故事和 Another Seoul 新写的书。有些书只有韩文。',
   },
   cover: { en: 'Cover', ko: '표지', ja: '表紙', zh: '封面' },
   start: { en: 'Start reading ▶', ko: '읽기 시작 ▶', ja: '読みはじめる ▶', zh: '开始阅读 ▶' },
@@ -186,7 +186,8 @@ export class BookUI {
       page.append(src, lic);
     } else {
       const pg = data.pages[i - 1];
-      if (pg.heading) page.append(el('h4', 'lit-heading', mode === 'ko' ? pg.heading.ko : mode === 'en' ? pg.heading.en : `${pg.heading.ko} · ${pg.heading.en}`));
+      const hd = pg.heading;
+      if (hd) page.append(el('h4', 'lit-heading', mode === 'ko' || !hd.en ? hd.ko : mode === 'en' ? hd.en : `${hd.ko} · ${hd.en}`));
       const block = (text, cls, lang) => {
         const box = el('div', 'lit-text ' + cls);
         box.lang = lang;
@@ -195,8 +196,9 @@ export class BookUI {
         }
         return box;
       };
-      if (mode !== 'en') page.append(block(pg.ko, 'lit-ko', 'ko'));
-      if (mode !== 'ko') page.append(block(pg.en, 'lit-en', 'en'));
+      // Korean-only pages show the Korean whatever the mode.
+      if (mode !== 'en' || !pg.en) page.append(block(pg.ko, 'lit-ko', 'ko'));
+      if (mode !== 'ko' && pg.en) page.append(block(pg.en, 'lit-en', 'en'));
     }
     const modes = el('div', 'lit-modes');
     for (const m of LIT_MODES) {
@@ -216,7 +218,8 @@ export class BookUI {
     away.setAttribute('aria-label', tt('putDown'));
     away.onclick = () => { this.putDown(); this.close(); };
     nav.append(prev, el('span', 'book-num', i === 0 ? tt('cover') : `${i} / ${n}`), next, away);
-    root.append(modes, page, nav);
+    // Books written only in Korean have nothing to switch.
+    root.append(...(data.pages.some((p) => p.en) ? [modes] : []), page, nav);
   }
 
   // Textbooks: full-screen page images, for studying. Swipe or tap the
