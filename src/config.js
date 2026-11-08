@@ -15,7 +15,17 @@ export const config = {
   // heartbeat every netIdleInterval seconds.
   netSendRate: 6,
   netSendRateRun: 8,
-  netIdleInterval: 5,
+  netIdleInterval: 10,
+  // Riding (bike, car, any vehicle) moves fast, so a low rate shows as jumps:
+  // riders send at the running rate and, while fewer than netRideFloorUntil
+  // people are online, never less than netSendRateRide times a second.
+  netSendRateRide: 3.5,
+  netRideFloorUntil: 1000,
+  // In a crowd each player sends less, so that what one player receives stays
+  // near netRecvBudget messages a second (net/rate.js), never below
+  // netSendRateMin. Realtime services count each message once per receiver.
+  netRecvBudget: 20,
+  netSendRateMin: 1.5,
   // Street multiplayer is split into square cells of this size (metres). You
   // see players in your cell and the 8 around it, i.e. at least this far.
   netCellSize: 200,

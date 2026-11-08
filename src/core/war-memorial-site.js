@@ -16,6 +16,7 @@
 //
 // Low-poly and not to scale; collision comes from the map's blockers.
 import * as THREE from 'three';
+import { farFree } from './far-textures.js';
 import { matCache, addBox } from './three-kit.js';
 
 const mat = matCache({ flatShading: true });
@@ -36,7 +37,7 @@ function textTex(cw, ch, draw) {
   draw(c.getContext('2d'), cw, ch);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  return farFree(t);
 }
 
 // Rows of tiny carved marks: names on a dark stone wall, seen from afar.

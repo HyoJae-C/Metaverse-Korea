@@ -5,7 +5,7 @@ import { localName, languageFromBrowser } from '../src/core/i18n.js';
 import { s2t } from '../src/i18n/hant.js';
 
 test('twelve languages in the order the picker shows them, English first', () => {
-  assert.deepEqual(LANGUAGES.map((l) => l.code), ['en', 'es', 'fr', 'ko', 'zh', 'zht', 'id', 'vi', 'th', 'hi', 'ar', 'ja']);
+  assert.deepEqual(LANGUAGES.map((l) => l.code), ['ko', 'ja', 'zht', 'zh', 'id', 'fr', 'vi', 'th', 'hi', 'ar', 'en', 'es']);
 });
 
 for (const code of ['id', 'ar', 'vi', 'hi', 'fr', 'th']) {

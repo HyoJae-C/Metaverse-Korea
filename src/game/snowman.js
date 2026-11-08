@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import {
   STEPS, MAX_N, MAX_BALLS, MIN_SNOW, ROLL_FROM, CREW_STAGE,
   stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop,
-  encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, snowPose, holdSpeed, rollGrowth, holdPose, hatOf, hatLook, chillStep, COLD_MS, WARM_RATE, MAX_DUCKS, encodeDucks, parseDucks,
+  encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, snowPose, holdSpeed, rollGrowth, holdPose, hatOf, hatLook, helperRel, chillStep, COLD_MS, WARM_RATE, MAX_DUCKS, encodeDucks, parseDucks,
 } from '../core/snowballs.js';
 import { hatModel } from '../core/character.js';
 import { L } from '../ui/pocha-ui.js';
@@ -38,6 +38,8 @@ export const SNOW_TEXT = {
   stage: { en: 'Stage {s}: {name} snowball!', ko: '{s}단계: {name} 눈덩이!', ja: '{s}段階：{name}雪玉！', zh: '第{s}阶段：{name}雪球！' },
   nowRoll: { en: 'Too big to pat by hand now. Roll it! Friends can push with you.', ko: '이제 손으로 모으기엔 커요. 굴려 보세요! 친구도 같이 밀 수 있어요.', ja: 'もう手では大きすぎます。転がそう！友だちも一緒に押せます。', zh: '已经大到不能用手堆了，滚起来吧！朋友也可以一起推。' },
   friend: { en: 'Too heavy to grow alone. Get a friend to push with you!', ko: '혼자서는 너무 무거워 더 커지지 않아요. 친구와 같이 밀어 보세요!', ja: '一人では重すぎてもう大きくなりません。友だちと一緒に押そう！', zh: '一个人推太重了，长不大了。叫朋友一起推吧！' },
+  giant: { en: 'Now 0/20: from here it only grows with two or more pushing together from behind!', ko: '이제 0/20부터예요. 여기서부터는 2명 이상이 뒤에서 같이 밀어야 커져요!', ja: 'ここから0/20。この先は2人以上で後ろから一緒に押さないと大きくなりません！', zh: '现在从0/20开始，接下来要两人以上从后面一起推才会变大！' },
+  done: { en: 'The giant snowball is complete! High five! 🙌', ko: '거대 눈덩이 완성! 하이파이브! 🙌', ja: '巨大雪玉の完成！ハイタッチ！🙌', zh: '巨型雪球完成了！击个掌！🙌' },
   heavy: { en: 'A giant snowball! It takes two or more people to roll it.', ko: '거대 눈덩이예요! 2명 이상 같이 굴려야 움직여요.', ja: '巨大雪玉！2人以上で転がさないと動きません。', zh: '巨型雪球！需要两人以上一起滚才能动。' },
   full: { en: 'It can\'t get any bigger. Make a snowman with it!', ko: '더는 커지지 않아요. 이걸로 눈사람을 만들어 보세요!', ja: 'これ以上大きくなりません。雪だるまにしよう！', zh: '已经不能再大了，用它做个雪人吧！' },
   snowman: { en: 'A snowman! ⛄', ko: '눈사람 완성! ⛄', ja: '雪だるまの完成！⛄', zh: '雪人做好了！⛄' },
@@ -57,8 +59,10 @@ const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k] ?? '');
 
 const REACH = 1.1; // how far from a ball's surface you can work on it
 const MELT_EVERY_MS = 2500; // once the snow on the ground is gone: one step off each ball
+const HI5_MS = 1800; // the high five after finishing a giant
 const WORK_POSE_MS = 2200; // the pose stays this long after a press
 const QUIET_MS = 1500; // after working a ball this long, the other snow choices come back
+const BODY_R = 0.28; // how close a body comes to a snowball's surface
 const PUSH_MS = 420; // a push rolls the ball (and you behind it) over this long
 
 // ---------- models ----------
@@ -144,12 +148,12 @@ function makeFace(D, d, hat) {
   return f;
 }
 
-// A little snow duck from a duck maker, about 30 cm long, facing +z. No
-// eyes: a soft grey outline (a slightly bigger back-faced shell) so it
+// A little snow duck from a duck maker, about 25 cm long, facing +z. No
+// eyes: a pale grey outline (a slightly bigger back-faced shell) so it
 // stands out on white snow.
 const duckBodyGeo = new THREE.SphereGeometry(0.5, 14, 10);
-const duckLine = new THREE.MeshBasicMaterial({ color: 0x8a9099, side: THREE.BackSide });
-const DUCK_SIZE = 1.2;
+const duckLine = new THREE.MeshBasicMaterial({ color: 0xc4cad3, side: THREE.BackSide }); // (a pale grey: just enough to tell it from the snow)
+const DUCK_SIZE = 1;
 function makeDuck() {
   const g = new THREE.Group();
   g.userData.noSnow = true;
@@ -184,6 +188,9 @@ export function createSnowman(game) {
   let lastWork = 0, workBall = null, workHelper = false;
   let anim = null; // a push under way: { t, me0, me1 }
   let meltAt = 0;
+  // The giant finished (stage 8, 20/20): a high five with whoever pushed it.
+  let hi5At = 0;
+  const seenN = new Map(); // "owner:k" -> n last frame (a friend's ball reaching the top)
   let hintAt = 0;
   // Grab and walk (stage 4+): `holding` one of my balls, rolling it along in
   // front of me; or `glued` to a friend's ball they're holding:
@@ -237,7 +244,26 @@ export function createSnowman(game) {
     if (s === stageOf(before)) return;
     game.bubble(`⛄ ${s}`);
     game.sfx()?.cheer?.();
-    say(fill(L(SNOW_TEXT.stage), { s, name: L(SNOW_TEXT.names[s - 1]) }) + (s === ROLL_FROM ? ' ' + L(SNOW_TEXT.nowRoll) : ''));
+    say(fill(L(SNOW_TEXT.stage), { s, name: L(SNOW_TEXT.names[s - 1]) }) + (s === ROLL_FROM ? ' ' + L(SNOW_TEXT.nowRoll) : s === CREW_STAGE ? ' ' + L(SNOW_TEXT.giant) : ''));
+  }
+
+  function highFive(withId) {
+    hi5At = Date.now();
+    if (holding || glued) letGo();
+    const at = withId ? game.others.positionOf(withId) : null;
+    if (at) face(at.x, at.z);
+    game.bubble('🙌');
+    game.sfx()?.cheer?.();
+    say(L(SNOW_TEXT.done));
+    game.clearAction();
+  }
+  // The friend who helped with my ball last: the latest other pusher, or
+  // someone holding on to it.
+  function partnerOf(b) {
+    const other = (b.pushes || []).filter((q) => q.who !== game.myId).pop();
+    if (other) return other.who;
+    for (const [id, q] of game.others.players) if (!q.hidden && q.target?.sg === game.myId + ':' + b.k) return id;
+    return null;
   }
 
   function face(x, z, back = false) {
@@ -301,6 +327,7 @@ export function createSnowman(game) {
     }
     b.n = Math.min(MAX_N, b.n + res.grow);
     stageUp(b, before);
+    if (b.n >= MAX_N && before < MAX_N) highFive(partnerOf(b));
     game.resendState();
     game.clearAction();
     return res;
@@ -312,7 +339,7 @@ export function createSnowman(game) {
     const p = game.me.root.position;
     const helper = o.owner !== game.myId;
     const toward = Math.atan2(o.b.x - p.x, o.b.z - p.z);
-    face(o.b.x, o.b.z, snowPose(o.b.n, helper) === 'snowback'); // (a giant: your back to it)
+    face(o.b.x, o.b.z);
     work(o, helper);
     if (helper) game.send(pushMsg(o.owner, o.b.k, toward));
     else applyPush(o.b, game.myId, toward);
@@ -350,7 +377,8 @@ export function createSnowman(game) {
   function holdOn(o) {
     const p = game.me.root.position;
     const ownerRy = game.others.rootOf?.(o.owner)?.rotation.y ?? peer(o.owner)?.target?.ry ?? 0;
-    glued = { owner: o.owner, k: o.b.k, rel: Math.atan2(o.b.x - p.x, o.b.z - p.z) - ownerRy, lost: 0 };
+    // (behind the ball beside them, on the side I took hold of it: both push it from behind)
+    glued = { owner: o.owner, k: o.b.k, rel: helperRel(Math.atan2(o.b.x - p.x, o.b.z - p.z) - ownerRy), lost: 0 };
     holding = null;
     work(o, true);
     game.sfx()?.pop?.();
@@ -385,7 +413,10 @@ export function createSnowman(game) {
         const before = b.n;
         acc += rollGrowth(b.n, crew, moved);
         const whole = Math.floor(acc);
-        if (whole > 0) { acc -= whole; b.n = Math.min(MAX_N, b.n + whole); stageUp(b, before); game.clearAction(); }
+        if (whole > 0) {
+          acc -= whole; b.n = Math.min(MAX_N, b.n + whole); stageUp(b, before); game.clearAction();
+          if (b.n >= MAX_N && before < MAX_N) highFive(partnerOf(b));
+        }
         else if (rollGrowth(b.n, crew, 1) === 0) { acc = 0; hint(L(SNOW_TEXT[b.n >= MAX_N ? 'full' : 'friend'])); }
       }
       lastWork = now;
@@ -412,7 +443,7 @@ export function createSnowman(game) {
     const me = game.me.root;
     if (Math.hypot(me.position.x - x, me.position.z - z) > 0.002) chillBy(dt); // (being walked along: working too)
     if (!game.blocked(x, z, 0.3)) { me.position.x = x; me.position.z = z; }
-    me.rotation.y = holdPose(o.b.n, true) === 'snowback' ? a + Math.PI : a;
+    me.rotation.y = a; // facing the ball, pushing it from behind
     lastWork = now; workBall = o; workHelper = true;
   }
 
@@ -441,6 +472,20 @@ export function createSnowman(game) {
       duckDrawn.set(id, { s, groups });
     }
     for (const [id, d] of duckDrawn) if (!now.has(id)) { for (const g of d.groups) g.removeFromParent(); duckDrawn.delete(id); }
+  }
+
+  // Snowballs are solid: walking into one (anyone's, any size) stops you at
+  // its surface instead of inside it.
+  function keepOut() {
+    const p = game.me.root.position;
+    for (const { b } of balls()) {
+      const min = diameterOf(b.n) / 2 + BODY_R;
+      const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz);
+      if (d >= min) continue;
+      const ux = d > 1e-3 ? dx / d : -Math.sin(game.me.root.rotation.y), uz = d > 1e-3 ? dz / d : -Math.cos(game.me.root.rotation.y);
+      const x = b.x + ux * min, z = b.z + uz * min;
+      if (!game.blocked(x, z, 0.3)) { p.x = x; p.z = z; }
+    }
   }
 
   // ---------- snowman ----------
@@ -487,7 +532,7 @@ export function createSnowman(game) {
   // is deep enough. More: "put it on top" when a bigger ball is next to it.
   function action(p) {
     if (game.mode !== 'street') return null;
-    const stepTxt = (n) => (n >= MAX_N ? '' : ` ${stepOf(n)}/${STEPS}`);
+    const stepTxt = (n) => (n >= MAX_N ? ` ${STEPS}/${STEPS} ✅` : ` ${stepOf(n)}/${STEPS}`);
     if (cold()) {
       const s = Math.ceil((coldUntil - Date.now()) / 1000);
       return { key: 'sb-cold:' + s, label: '🥶 ' + fill(L(SNOW_TEXT.cold), { s }), run: () => (holding ? letGo() : null) };
@@ -546,6 +591,7 @@ export function createSnowman(game) {
     if ((holding || glued) && !game.onFoot) letGo();
     if (holding) walkMine(now, dt);
     else if (glued) walkTheirs(now, dt);
+    keepOut();
     if (now - lastChill > 1500) chill = Math.max(0, chill - dt * WARM_RATE); // resting warms the hands
     // Melting once the snow on the ground is gone.
     if (game.depth <= 0 && !game.snowing && (mine.length || ducks.length)) {
@@ -565,6 +611,14 @@ export function createSnowman(game) {
       const x = anim.from[0] + (anim.to[0] - anim.from[0]) * e, z = anim.from[1] + (anim.to[1] - anim.from[1]) * e;
       if (!game.blocked(x, z, 0.3)) { p.x = x; p.z = z; }
       if (k >= 1) anim = null;
+    }
+    // A friend's giant I was just helping with reaches the top: high five them.
+    for (const { owner, b } of balls()) {
+      if (owner === game.myId) continue;
+      const id = owner + ':' + b.k, was = seenN.get(id);
+      seenN.set(id, b.n);
+      const mineToo = (glued && glued.owner === owner && glued.k === b.k) || (workBall && workBall.owner === owner && workBall.b.k === b.k && Date.now() - lastWork < 5000);
+      if (b.n >= MAX_N && was != null && was < MAX_N && mineToo) highFive(owner);
     }
     // Draw them.
     const seen = new Set();
@@ -613,6 +667,7 @@ export function createSnowman(game) {
     get sync() { return mine.length ? encodeBalls(mine) : null; },
     // The pose while working on a ball (others see it too).
     get pose() {
+      if (Date.now() - hi5At < HI5_MS) return 'snowhi5';
       if (cold()) return 'snowcold';
       if (Date.now() - duckAt < 900) return 'snowscoop'; // (crouched, squeezing the maker)
       if (holding) return holdPose(holding.n, false);

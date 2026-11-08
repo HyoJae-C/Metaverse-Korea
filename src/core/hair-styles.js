@@ -304,6 +304,37 @@ export function buildHair(style, material, atlas, ey) {
       }
       break;
     }
+    case 'bowl': // 바가지 머리: one round helmet of hair, cut straight all round at the brows
+      shade = [0.55, 0.95];
+      cap(0.955, 0.48, -0.5, 0.03); // clipped short under the line at the back
+      shade = [0.15, 0.8];
+      add(sphere(1.04, 28, 14, 0, Math.PI * 0.46), 0, 0.04, -0.03, 1.0, 1.0, 1.02);
+      break;
+    case 'drill': { // 드릴 웨이브: blunt bangs and a tight corkscrew curl down each side
+      cap(0.97, 0.56, -0.25);
+      add(new THREE.SphereGeometry(1.0, 20, 6, Math.PI / 2 - 0.8, 1.6, Math.PI * 0.18, Math.PI * 0.27), 0, 0.02, -0.02, 1.03, 1, 1);
+      for (const s2 of [-1, 1]) {
+        add(sphere(0.26, 12, 10), 0.92 * s2, 0.1, -0.12); // gathered at the side
+        for (const off of [0, Math.PI]) { // two strands twisted round each other
+          const pts = [];
+          for (let i = 0; i <= 48; i++) {
+            const t = i / 48, a = t * Math.PI * 10 + off, R = 0.2 * (1 - 0.45 * t);
+            pts.push([1.02 * s2 + Math.cos(a) * R, -0.05 - 1.35 * t, -0.1 + Math.sin(a) * R]);
+          }
+          tube(pts, 0.085, 96);
+        }
+      }
+      break;
+    }
+    case 'fountain': { // 분수머리: tied up on top and spraying out like a fountain
+      cap(0.96, 0.52, -0.38);
+      add(sphere(0.17, 12, 10), 0, 0.98, 0.0); // the tie
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+        tube([[0, 0.98, 0], [c * 0.08, 1.28, sn * 0.08], [c * 0.3, 1.42, sn * 0.3], [c * 0.52, 1.28, sn * 0.52], [c * 0.64, 1.0, sn * 0.64]], 0.075, 20);
+      }
+      break;
+    }
     default:
       return null;
   }

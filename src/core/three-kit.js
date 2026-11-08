@@ -1,5 +1,6 @@
 // Small 3D and canvas helpers shared by the model files.
 import * as THREE from 'three';
+import { farFree } from './far-textures.js';
 
 // One Lambert material per colour. Each caller gets its own cache, so a file
 // that tweaks one of its materials never changes another file's.
@@ -18,8 +19,9 @@ export function addBox(g, mat, sx, sy, sz, x, y, z, c) {
 }
 
 // A texture drawn once on a canvas: draw(ctx, w, h).
-// opts.anisotropy, opts.repeat ([x, y], also turns on repeat wrapping).
-export function canvasTex(w, h, draw, { anisotropy = 0, repeat = null } = {}) {
+// opts.anisotropy, opts.repeat ([x, y], also turns on repeat wrapping),
+// opts.farFree (let go of the canvas when far away: core/far-textures.js).
+export function canvasTex(w, h, draw, { anisotropy = 0, repeat = null, farFree: free = false } = {}) {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   draw(c.getContext('2d'), w, h);
@@ -27,7 +29,7 @@ export function canvasTex(w, h, draw, { anisotropy = 0, repeat = null } = {}) {
   t.colorSpace = THREE.SRGBColorSpace;
   if (anisotropy) t.anisotropy = anisotropy;
   if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
-  return t;
+  return free ? farFree(t) : t;
 }
 
 // Draws `text` word-wrapped to maxW at (x, y), lh apart, on a 2D canvas

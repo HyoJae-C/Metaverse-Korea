@@ -6,6 +6,7 @@ import { Music } from '../core/music.js';
 import { trackById } from '../data/tracks.js';
 import { Medals, medalFor, medalIcon } from '../core/grill-game.js';
 import { RUNWAY_GAME, RUNWAY_TRACK, POSES, SHOW_BEATS, runwayChart, judgeTap, runwayScore, walkAt } from '../core/runway-game.js';
+import { pickPoses } from '../core/runway-poses.js';
 import { L, fmt } from './pocha-ui.js';
 
 export const RUNWAY_TEXT = {
@@ -60,8 +61,8 @@ const el = (tag, cls, text) => {
 
 export class RunwayUI {
   // wallet; onStart()/onEnd(): pause/resume the background music and take
-  // or give back the camera; onPose(i, kind, label): pose i (POSES[i]) is
-  // due, label null when missed; onJudge(note, label): every step and pose
+  // or give back the camera; onPose(i, kind, label): pose i (kind: this walk's
+  // pose, game.poses[i], from core/runway-poses.js) is due, label null when missed; onJudge(note, label): every step and pose
   // as it is judged (label 'miss' when it went by); onFinish(score) at the
   // end of a walk; onMedal(medal, coins). line: walking with friends
   // (core/runway-line.js, main.js): status() → { order: [{ name, walking,
@@ -166,7 +167,7 @@ export class RunwayUI {
     this.root.classList.add('runway-live');
     const tr = trackById(RUNWAY_TRACK);
     const notes = runwayChart(tr.bpm);
-    const g = (this.game = { notes, hit: notes.map(() => false), points: 0, combo: 0, start: 0, bpm: tr.bpm, flash: null, posed: new Set() });
+    const g = (this.game = { notes, hit: notes.map(() => false), points: 0, combo: 0, start: 0, bpm: tr.bpm, flash: null, posed: new Set(), poses: pickPoses(POSES.length) }); // (three different poses each walk, core/runway-poses.js)
     const cv = el('canvas', 'karaoke-lane');
     cv.width = 640; cv.height = 120;
     const pad = el('button', 'primary karaoke-pad runway-pad', '👣 ' + tt('tap'));
@@ -233,7 +234,7 @@ export class RunwayUI {
     const g = this.game;
     if (!g || g.posed.has(i)) return;
     g.posed.add(i);
-    this.onPose?.(i, POSES[i], label);
+    this.onPose?.(i, g.poses[i], label);
   }
 
   tap() {

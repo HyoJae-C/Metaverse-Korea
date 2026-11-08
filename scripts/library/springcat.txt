@@ -1,0 +1,228 @@
+@id springcat
+@kind poems
+@icon 🐈
+@color #d08a2e
+@title.en Spring Is a Cat: Five Korean Poets
+@title.ko 봄은 고양이로다 · 다섯 시인의 시
+@author.en Lee Jang-hee, Jeong Ji-yong, Kim Yeong-rang, Yi Yuksa
+@author.ko 이장희, 정지용, 김영랑, 이육사
+@about.en Poems from the 1920s and 1930s about a spring cat, a hometown, peonies, sunlight on a stone wall and green grapes in July.
+@about.ko 1920~30년대 시인들이 쓴 봄, 고향, 모란, 청포도의 시를 모았어요.
+@source https://ko.wikisource.org/wiki/봄은_고양이로다 · https://ko.wikisource.org/wiki/향수/향수 · https://ko.wikisource.org/wiki/향수/호수1 · https://ko.wikisource.org/wiki/향수/홍시 · https://ko.wikisource.org/wiki/영랑시집 · https://ko.wikisource.org/wiki/청포도
+@license Public domain. Lee Jang-hee died in 1929, Yi Yuksa in 1944, Jeong Ji-yong and Kim Yeong-rang in 1950, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource, changed to modern spelling. English translation written for Another Seoul (free to use, CC0).
+===
+# 봄은 고양이로다 · 이장희 | Spring Is a Cat · Lee Jang-hee
+꽃가루와 같이 부드러운 고양이의 털에
+고운 봄의 향기가 어리우도다.
+
+금방울과 같이 호동그란 고양이의 눈에
+미친 봄의 불길이 흐르도다.
+
+고요히 다물은 고양이의 입술에
+포근한 봄의 졸음이 떠돌아라.
+
+날카롭게 쭉 뻗은 고양이의 수염에
+푸른 봄의 생기가 뛰놀아라.
+---
+In the cat's fur, soft as pollen,
+the lovely scent of spring lingers.
+
+In the cat's eyes, round as golden bells,
+the wild fire of spring is flowing.
+
+On the cat's lips, quietly closed,
+the cozy drowsiness of spring drifts.
+
+In the cat's whiskers, stretched sharp and straight,
+the green life of spring leaps and plays.
+===
+# 향수 (1) · 정지용 | Homesick (1) · Jeong Ji-yong
+넓은 벌 동쪽 끝으로
+옛이야기 지줄대는 실개천이 회돌아 나가고,
+얼룩백이 황소가
+해설피 금빛 게으른 울음을 우는 곳,
+― 그곳이 차마 꿈엔들 잊힐 리야.
+
+질화로에 재가 식어지면
+비인 밭에 밤바람 소리 말을 달리고,
+엷은 졸음에 겨운 늙으신 아버지가
+짚베개를 돋아 고이시는 곳,
+― 그곳이 차마 꿈엔들 잊힐 리야.
+
+흙에서 자란 내 마음
+파아란 하늘빛이 그리워
+함부로 쏜 화살을 찾으려
+풀섶 이슬에 함추름 휘적시던 곳,
+― 그곳이 차마 꿈엔들 잊힐 리야.
+---
+Where, at the eastern edge of the wide plain,
+a little stream babbling old stories winds away,
+and a spotted bull
+lows its lazy golden lowing in the slanting sun:
+― how could I ever forget that place, even in dreams?
+
+Where, when the ashes cool in the clay brazier,
+the night wind gallops like a horse over the empty fields,
+and my old father, heavy with light sleep,
+plumps up his straw pillow under his head:
+― how could I ever forget that place, even in dreams?
+
+Where my heart, grown from the soil,
+longing for the deep blue of the sky,
+went looking for an arrow shot at random
+and got soaked through in the dew of the grass:
+― how could I ever forget that place, even in dreams?
+===
+# 향수 (2) · 정지용 | Homesick (2) · Jeong Ji-yong
+전설 바다에 춤추는 밤물결 같은
+검은 귀밑머리 날리는 어린 누이와
+아무렇지도 않고 예쁠 것도 없는
+사철 발 벗은 아내가
+따가운 햇살을 등에 지고 이삭 줍던 곳,
+― 그곳이 차마 꿈엔들 잊힐 리야.
+
+하늘에는 성근 별
+알 수도 없는 모래성으로 발을 옮기고,
+서리 까마귀 우지짖고 지나가는 초라한 지붕,
+흐릿한 불빛에 돌아앉아 도란도란거리는 곳,
+― 그곳이 차마 꿈엔들 잊힐 리야.
+---
+Where my little sister, her black hair flying
+like night waves dancing on a sea of legends,
+and my wife, plain and nothing special,
+barefoot in every season,
+gleaned the fallen grain with the hot sun on their backs:
+― how could I ever forget that place, even in dreams?
+
+Where sparse stars in the sky
+walk toward some unknown castle of sand,
+frost crows cry as they pass over the humble roof,
+and we sit turned to the dim lamplight, talking softly:
+― how could I ever forget that place, even in dreams?
+===
+# 호수 · 정지용 | Lake · Jeong Ji-yong
+얼굴 하나야
+손바닥 둘로
+폭 가리지만,
+
+보고 싶은 마음
+호수만 하니
+눈 감을밖에.
+---
+A face, just one,
+I can cover
+with my two hands,
+
+but missing you
+is as big as a lake,
+so I can only close my eyes.
+===
+# 홍시 · 정지용 | Ripe Persimmons · Jeong Ji-yong
+어저께도 홍시 하나.
+오늘에도 홍시 하나.
+
+까마귀야. 까마귀야.
+우리 남게 왜 앉았나.
+
+우리 오빠 오시걸랑.
+맛뵐라구 남겨 뒀다.
+
+후락 딱 딱
+훠이 훠이!
+---
+Yesterday, one ripe persimmon.
+Today, one ripe persimmon too.
+
+Crow, crow,
+why are you sitting in our tree?
+
+I saved them so my big brother
+could taste them when he comes home.
+
+Clap, clap, clap!
+Shoo, shoo!
+===
+# 모란이 피기까지는 · 김영랑 | Until the Peonies Bloom · Kim Yeong-rang
+모란이 피기까지는
+나는 아직 나의 봄을 기다리고 있을 테요.
+모란이 뚝뚝 떨어져 버린 날
+나는 비로소 봄을 여읜 설움에 잠길 테요.
+오월 어느 날, 그 하루 무덥던 날
+떨어져 누운 꽃잎마저 시들어 버리고는
+천지에 모란은 자취도 없어지고
+뻗쳐 오르던 내 보람 서운케 무너졌느니
+모란이 지고 말면 그뿐, 내 한 해는 다 가고 말아
+삼백예순 날 하냥 섭섭해 우옵내다.
+모란이 피기까지는
+나는 아직 기다리고 있을 테요, 찬란한 슬픔의 봄을.
+---
+Until the peonies bloom,
+I will still be waiting for my spring.
+On the day the peonies fall, petal by petal,
+only then will I sink into the grief of losing spring.
+One day in May, one sultry day,
+when even the fallen petals had withered
+and no trace of peonies was left in all the world,
+the joy that had risen in me sadly crumbled.
+Once the peonies are gone, that is all; my whole year is gone,
+and for three hundred and sixty days I weep, always sorry.
+Until the peonies bloom,
+I will still be waiting: for a spring of brilliant sorrow.
+===
+# 돌담에 속삭이는 햇발 · 김영랑 | Sunlight Whispering on a Stone Wall · Kim Yeong-rang
+돌담에 속삭이는 햇발같이
+풀 아래 웃음 짓는 샘물같이
+내 마음 고요히 고운 봄 길 위에
+오늘 하루 하늘을 우러르고 싶다.
+
+새악시 볼에 떠오는 부끄럼같이
+시의 가슴을 살포시 젖는 물결같이
+보드레한 에메랄드 얇게 흐르는
+실비단 하늘을 바라보고 싶다.
+---
+Like sunlight whispering on a stone wall,
+like a spring smiling under the grass,
+my heart, quietly, on a lovely spring path,
+wants to look up at the sky all day today.
+
+Like the blush rising on a young bride's cheek,
+like a ripple gently stirring the heart of a poem,
+I want to gaze at the silken sky
+where soft emerald flows, thin and light.
+===
+# 청포도 · 이육사 | Green Grapes · Yi Yuksa
+내 고장 칠월은
+청포도가 익어 가는 시절.
+
+이 마을 전설이 주절이주절이 열리고
+먼 데 하늘이 꿈꾸며 알알이 들어와 박혀
+
+하늘 밑 푸른 바다가 가슴을 열고
+흰 돛단배가 곱게 밀려서 오면
+
+내가 바라는 손님은 고달픈 몸으로
+청포(靑袍)를 입고 찾아온다고 했으니
+
+내 그를 맞아 이 포도를 따 먹으면
+두 손은 함뿍 적셔도 좋으련
+
+아이야, 우리 식탁엔 은쟁반에
+하이얀 모시 수건을 마련해 두렴.
+---
+July in my hometown
+is the season when green grapes ripen.
+
+The legends of this village hang in clusters,
+and the faraway sky, dreaming, settles into every grape.
+
+When the blue sea under the sky opens its heart
+and a white sailboat drifts gently in,
+
+the guest I long for, they say, will come,
+weary, wearing a green robe.
+
+When I welcome him and we pick these grapes and eat,
+I would not mind if both my hands were soaked.
+
+Child, on our table, on a silver tray,
+set out a pure white ramie napkin.

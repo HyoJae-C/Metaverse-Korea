@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { biteWait } from '../src/core/fishing.js';
+import { PARK_LEGENDS, chanceAt } from '../src/core/fishing.js';
 import { FISH, AVAILABLE_FISH, rollFish, rollCatch, TRASH, TRASH_CHANCE, tapsFor, escapeChance, fishById, FishBag, FishDex, BAG_MAX } from '../src/core/fishing.js';
 
 const memory = () => {
@@ -8,10 +9,10 @@ const memory = () => {
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
 };
 
-test('49 stable catalogue entries, 34 released, nine stamps per page and four special catches', () => {
+test('49 stable catalogue entries, 39 released, nine stamps per page and four special catches', () => {
   assert.equal(FISH.length, 49);
   assert.equal(new Set(FISH.map(f => f.id)).size, 49);
-  assert.equal(AVAILABLE_FISH.length, 34);
+  assert.equal(AVAILABLE_FISH.length, 39);
   assert.deepEqual(Array.from({ length: 6 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,4]);
   assert.equal(fishById('whale').ko, '흰수염고래');
   assert.equal(fishById('shark').ko, '백상아리');
@@ -179,6 +180,14 @@ test('each star tier bites less often in total than the one below it', () => {
   for (let r = 2; r <= 5; r++) assert.ok(tier(r) < tier(r - 1), `★${r} ${tier(r)} < ★${r - 1} ${tier(r - 1)}`);
   // and every ★4 kind is rarer than any ★3 kind
   assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
+  // and every kind of each tier is rarer than any kind of the tier below,
+  // counting a park's ★5 legend at that park (it takes the whole 0.4% there)
+  const kinds = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).map(f => f.chance);
+  for (let r = 2; r <= 4; r++) assert.ok(Math.max(...kinds(r)) < Math.min(...kinds(r - 1)), `every ★${r} kind below every ★${r - 1} kind`);
+  for (const park of Object.keys(PARK_LEGENDS)) {
+    const legend = Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 5).map(f => chanceAt(f, park)));
+    assert.ok(legend < Math.min(...kinds(4)), `${park}: its legend (${legend}%) is rarer than the great white`);
+  }
 });
 
 test('better rods cut the escape chance a little but never change which fish bite', async () => {

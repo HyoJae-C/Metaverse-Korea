@@ -118,6 +118,15 @@
       "anchor": { "place": "Mangwon Market", "lat": 37.556, "lon": 126.9065, "local": [80, -115] }
     },
     {
+      "id": "banpo-jamwon",
+      "map": "districts/banpo-jamwon.json",
+      "offset": [
+        -1129,
+        754
+      ],
+      "anchor": { "place": "South bank of the Han River halfway between Banpo and Jamwon Han River Parks (the park house)", "lat": 37.518, "lon": 127.004, "local": [-12.1, -13.3] }
+    },
+    {
       "id": "euljiro",
       "map": "districts/euljiro.json",
       "offset": [
@@ -137,6 +146,13 @@
     }
   ],
   "links": [
+    {
+      "k": "primary",
+      "w": 14,
+      "p": [[-1518, 445], [-1307.8, 705.8]],
+      "n": { "ko": "반포대교 가는 길", "en": "To Banpo Bridge", "ja": "盤浦大橋へ", "zh": "往盘浦大桥" },
+      "note": "From Itaewon's Hoenamu-ro at Bogwang-ro south-east to the north end of Jamsu Bridge (the low deck under Banpo Bridge), which crosses to Banpo-Jamwon Han River Park."
+    },
     {
       "k": "secondary",
       "w": 16,
@@ -317,8 +333,7 @@
         -97
       ],
       "w": 28,
-      "y": 14,
-      "image": "og.png"
+      "y": 14
     },
     {
       "at": [
@@ -328,12 +343,7 @@
       "along": -19,
       "w": 7,
       "h": 14,
-      "y": 14,
-      "city": {
-        "name": "TOKYO",
-        "local": "東京",
-        "hue": 330
-      }
+      "y": 14
     },
     {
       "at": [
@@ -343,12 +353,7 @@
       "along": 19,
       "w": 7,
       "h": 14,
-      "y": 14,
-      "city": {
-        "name": "HONG KONG",
-        "local": "香港",
-        "hue": 200
-      }
+      "y": 14
     },
     {
       "at": [
@@ -357,8 +362,7 @@
       ],
       "w": 46,
       "h": 11.5,
-      "y": 30,
-      "text": "NEXT IS TOKYO AND HONG KONG..."
+      "y": 30
     },
     {
       "at": [
@@ -710,6 +714,7 @@
           }
         ]
       },
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 729], "ry": -1.5708 }, { "n": 2, "at": [1372, 729], "ry": 1.5708 }] },
       {
         "id": "childrens-grand-park-station",
         "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },

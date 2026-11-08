@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SquareQuests, pickQuest, QUESTS_PER_DAY, QUEST_REWARD, STARTER, STARTER_REWARD } from '../src/core/quests.js';
+import { SquareQuests, fromV1, pickQuest, QUESTS_PER_DAY, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from '../src/core/quests.js';
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
 const pool = { stores: ['meta-coffee', 'chaekmaru-library'] };
@@ -54,6 +54,10 @@ test('dance needs three emotes on the square; a saved high five still works but 
   assert.equal(q.event('highfive'), true);
   assert.ok(q.ready());
   for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: [] }, () => r).kind, 'highfive'); // never a random one
+  for (let r = 0; r < 1; r += 0.05) assert.notEqual(pickQuest({ stores: ['a'] }, () => r).kind, 'cook'); // grill and ramen: too hard for now
+  q.s.active = { kind: 'cook', need: 1, n: 0 }; // a saved one can still be finished
+  assert.equal(q.event('cook'), true);
+  assert.ok(q.ready());
   for (let r = 0; r < 1; r += 0.05) { // not even the first of the day (it repeated the welcome high five)
     const day = new SquareQuests(memory(), () => 'd2');
     assert.notEqual(day.start({ stores: ['a'] }, () => r).kind, 'highfive');
@@ -71,6 +75,7 @@ test('new players get the first path in order, outside the daily limit', () => {
     const a = q.start(pool, () => 0);
     assert.equal(a.kind, STARTER[i].kind);
     assert.equal(a.target, STARTER[i].target);
+    if (a.kind === 'trip') for (const st of TRIP) q.event(st.on, st.target);
     const type = { visit: 'visit', taxi: 'taxi', eat: 'eat', pat: 'pet', talk: 'talk', dance: 'squareEmote' }[a.kind];
     if (type) for (let k = 0; k < a.need; k++) q.event(type, a.target);
     assert.equal(q.claim(ctx), STARTER_REWARD);
@@ -80,12 +85,62 @@ test('new players get the first path in order, outside the daily limit', () => {
   assert.equal(new SquareQuests(store, () => 'd1').onStarter, false); // saved
 });
 
-test('the first path stays near the square and has nine errands after the high five', () => {
+test('the first path starts with a little trip, then eight errands near the square', () => {
   assert.equal(STARTER.length, 9);
+  assert.ok(!STARTER.some((s) => s.kind === 'taxi')); // (the trip ends with the taxi)
+  assert.equal(STARTER[0].kind, 'trip');
   assert.ok(STARTER.every((s) => s.tip));
+  assert.deepEqual(TRIP.map((s) => s.step), ['bike', 'station', 'down', 'forestStop', 'forest', 'anguk', 'bukchon', 'cheonggye']);
 });
 
-test('players from before never get the first path', () => {
-  const q = new SquareQuests(memory(), () => 'd1');
-  assert.equal(q.onStarter, false);
+test('the trip goes one step at a time, in order; "Later" skips it without coins', () => {
+  const store = memory();
+  const q = new SquareQuests(store, () => 'd1');
+  q.beginStarter();
+  assert.equal(q.start(pool).kind, 'trip');
+  assert.equal(q.active.stage, 0);
+  assert.equal(q.event('place', 'subway'), false); // the station before the bike: not yet
+  assert.equal(q.event('bike'), true);
+  assert.equal(q.event('place', 'L'), false); // out of order
+  assert.equal(q.event('place', 'subway'), true);
+  assert.equal(q.event('subwayIn'), true);
+  assert.equal(q.event('subway', 'itaewon-station'), false); // the wrong stop
+  assert.equal(q.event('subway', 'seoul-forest-station'), true);
+  assert.equal(q.event('place', 'K'), true);
+  assert.equal(q.event('subway', 'anguk-station'), true);
+  assert.equal(new SquareQuests(store, () => 'd1').active.stage, 6); // saved on the way
+  assert.equal(q.ready(), false);
+  assert.equal(q.event('place', 'bukchon'), true);
+  assert.equal(q.event('place', 'L'), true);
+  assert.equal(q.ready(), true);
+  assert.equal(q.claim({}), STARTER_REWARD);
+  assert.equal(q.start(pool).kind, STARTER[1].kind);
+  const r = new SquareQuests(memory(), () => 'd1');
+  r.beginStarter();
+  r.start(pool);
+  assert.equal(r.skipStarter(), true);
+  assert.equal(r.active, null);
+  assert.equal(r.start(pool).target, STARTER[1].target);
+  r.drop();
+  r.s.active = { kind: 'talk', need: 3, n: 0 }; // not a first-path errand: nothing to skip
+  assert.equal(r.skipStarter(), false);
+});
+
+test('a first-path step saved before the trip keeps its place', () => {
+  const st = memory();
+  st.setItem('mk.quests', JSON.stringify({ day: 'd1', starter: 2, active: { kind: 'coffee', target: 'meta-coffee', need: 1, n: 0, starter: 2 } }));
+  const q = new SquareQuests(st, () => 'd1');
+  assert.equal(STARTER[q.active.starter].kind, 'coffee');
+  assert.equal(q.starterStep, 2);
+  assert.equal(new SquareQuests(st, () => 'd1').starterStep, 2); // moved once, not on every load
+  assert.equal(STARTER[fromV1(0)].target, 'nyang-cat-cafe'); // the old first errand
+  assert.equal(STARTER[fromV1(1)].kind, 'coffee'); // the taxi, not taken yet: on to the coffee
+  // A taxi errand already taken is still reported, then the coffee.
+  const t = memory();
+  t.setItem('mk.quests', JSON.stringify({ day: 'd1', starter: 1, active: { kind: 'taxi', need: 1, n: 0, starter: 1 } }));
+  const r = new SquareQuests(t, () => 'd1');
+  assert.equal(r.active.kind, 'taxi');
+  r.event('taxi');
+  assert.equal(r.claim({}), STARTER_REWARD);
+  assert.equal(r.start(pool).kind, 'coffee');
 });

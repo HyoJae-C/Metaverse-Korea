@@ -5,11 +5,12 @@ import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS, heldBase } from './held.js';
 // Looping poses others can show (see Character.activity).
-const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive', 'listen', ...SNOW_POSES]);
+const ACTIVITIES = new Set(['dance', 'pushup', 'situp', 'fish', 'reel', 'run', 'clap', 'lie', 'mat', 'matsit', 'pullup', 'curl', 'snip', 'read', 'swim', 'tube', 'dive', 'listen', ...SNOW_POSES, ...Object.keys(STUDIO_MOVES)]); // (yoga poses, the reformer, the bench press)
 import { seatPosition } from './bikes.js';
 import { trickPose, TRICK_BY_ID } from './skatepark.js';
 import { createCharacter } from './character.js';
 import { SNOW_POSES } from './snowballs.js';
+import { STUDIO_MOVES } from './studio-moves.js';
 import { Companion } from './companion.js';
 import { ITEMS, isPet } from './inventory.js';
 import { styleNameTag } from './emblems.js';
@@ -161,10 +162,10 @@ export class RemotePlayers {
     return p ? (p.target || p.ch.root.position) : null;
   }
 
-  chat(id, text, ms = 6000) {
+  chat(id, text, ms = 6000, kind = 'chat') {
     const p = this.players.get(id);
     if (!p || p.hidden) return null;
-    showBubble(p, this.layer, text, ms, 'chat');
+    showBubble(p, this.layer, text, ms, kind);
     return p.name;
   }
 
@@ -190,8 +191,30 @@ export class RemotePlayers {
     return out.sort((a, b) => a.d - b.d);
   }
 
+  // Someone in this area by their name (names are unique), or null.
+  idByName(name) {
+    const key = String(name || '').toLowerCase();
+    for (const [id, p] of this.players) if (!p.hidden && p.target && p.name.toLowerCase() === key) return id;
+    return null;
+  }
+
+  // Make someone easy to spot for a while: their name tag glows and a bubble
+  // pops over their head (only on this screen). Used for friend requests.
+  ping(id, text = '👋', ms = 10000) {
+    const p = this.players.get(id);
+    if (!p || p.hidden) return false;
+    p.tag.classList.remove('ping');
+    void p.tag.offsetWidth; // restart the animation
+    p.tag.classList.add('ping');
+    clearTimeout(p.pingTimer);
+    p.pingTimer = setTimeout(() => p.tag.classList.remove('ping'), ms);
+    showBubble(p, this.layer, text, Math.min(ms, 6000));
+    return true;
+  }
+
   kindOf(id) { return this.players.get(id)?.target?.bk || 0; }
   rootOf(id) { return this.players.get(id)?.ch.root ?? null; }
+  charOf(id) { const p = this.players.get(id); return p && !p.hidden ? p.ch : null; }
   // Where someone is right now, predicted from their last update and speed
   // (no smoothing delay): used to keep a passenger glued to the driver.
   predicted(id) {

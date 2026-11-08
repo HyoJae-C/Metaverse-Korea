@@ -53,9 +53,18 @@ export function discAt(from, to, s, ground = 0) {
   };
 }
 
+// The pets who play fetch: dogs (in the mouth) and monkeys (in one
+// hand). The small round pets only watch it fly. A cat usually just
+// watches too, but now and then (CAT_FETCH) it trots over once the disc
+// has landed and brings it back in its mouth.
+export const FETCHERS = new Set(['dog', 'monkey']);
+export const fetches = (kind) => FETCHERS.has(kind);
+export const CAT_FETCH = 0.04; // about 1 throw in 25
+
 // How fast a pet runs after it (m/s): big dogs are fastest, small round
 // pets slowest.
 export function chaseSpeed(kind, scale = 1) {
+  if (kind === 'monkey') return 6.2; // quick on all fours
   if (kind !== 'dog') return kind === 'cat' ? 4 : 2.5;
   return 6 + 2 * bigness(scale); // 6 (small) .. 8 (big)
 }
@@ -63,19 +72,53 @@ const bigness = (scale) => Math.min(1, Math.max(0, (scale - 0.8) / 0.9));
 
 // How often a dog that gets there in time makes the catch (rolled once per
 // throw): a Maltese about half the time, a big retriever most times.
-export const catchChance = (scale = 1) => 0.5 + 0.35 * bigness(scale);
+// A monkey, with hands, rarely misses. For a cat it's the chance it
+// bothers to fetch it at all.
+export const catchChance = (scale = 1, kind = 'dog') => (kind === 'cat' ? CAT_FETCH : kind === 'monkey' ? 0.8 : 0.5 + 0.35 * bigness(scale));
 
 // Can a dog under the disc snatch it out of the air? Close enough, and
 // low enough to reach with a leap (bigger dogs reach higher).
-export const canCatch = (dx, dz, y, scale = 1) => Math.hypot(dx, dz) < 0.6 && y < 0.75 + 0.35 * scale;
+// A monkey reaches up with its arms, higher than a dog its size.
+export const canCatch = (dx, dz, y, scale = 1, kind = 'dog') => Math.hypot(dx, dz) < 0.6 && y < (kind === 'monkey' ? 1.3 : 0.75 + 0.35 * scale);
 
-// The frisbee: a bright disc with a rim, flat side up.
-export function makeDisc(color = '#ff6b4a') {
+// Each frisbee is red, sky blue or purple, picked when it's bought and kept
+// on the bag entry as q (0-2; older ones without q are red).
+export const FRISBEE_COLORS = ['#ff4f4f', '#5ec8f2', '#9b6bff'];
+export const frisbeeColor = (e) => FRISBEE_COLORS[((e?.q | 0) % 3 + 3) % 3];
+export const newFrisbee = (rand = Math.random) => ({ kind: 'gift', sips: 1, name: 'Frisbee', icon: '🥏', g: 'frisbee', q: Math.floor(rand() * 3) });
+
+// What a pet shows over its head: a big happy face for a catch in the air,
+// a dizzy one for a miss, so you can tell at a glance.
+export const CATCH_FACES = ['🤩', '😆'];
+export const MISS_FACES = ['😵', '😅'];
+
+// An emoji floating over a pet's head (a sprite, so it always faces you).
+const faceTex = {};
+export function makeFace(emoji) {
+  if (!faceTex[emoji]) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const c = cv.getContext('2d');
+    c.fillStyle = 'rgba(255,255,255,0.92)';
+    c.beginPath(); c.arc(64, 64, 58, 0, Math.PI * 2); c.fill();
+    c.font = '84px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(emoji, 64, 70);
+    faceTex[emoji] = new THREE.CanvasTexture(cv);
+    faceTex[emoji].colorSpace = THREE.SRGBColorSpace;
+    faceTex[emoji].userData.emoji = emoji;
+  }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: faceTex[emoji], depthTest: false, transparent: true }));
+  s.renderOrder = 10;
+  return s;
+}
+
+// The frisbee: a bright disc with a thin white line, flat side up.
+export function makeDisc(color = FRISBEE_COLORS[0]) {
   const g = new THREE.Group();
   const top = new THREE.Mesh(new THREE.CylinderGeometry(DISC_R, DISC_R * 0.9, 0.025, 20), new THREE.MeshLambertMaterial({ color }));
   g.add(top);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(DISC_R * 0.93, 0.012, 6, 20).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#ffffff' }));
-  rim.position.y = 0.006;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(DISC_R * 0.8, 0.004, 4, 24).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#ffffff' })); // a thin white line on top
+  rim.position.y = 0.013;
   g.add(rim);
   g.userData.noSnow = true;
   return g;

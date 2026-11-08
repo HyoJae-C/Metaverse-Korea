@@ -26,7 +26,7 @@ function profile(g, pts, z0, z1, m) {
   return mesh;
 }
 
-const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4 });
+const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4, farFree: true });
 
 // Painted wall art: bold blobs, drips and letters in spray-can colours.
 function graffiti(seed, words) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, parseSnowMsg, snowPose, holdSpeed, rollGrowth, holdPose, validHat, hatOf, hatLook, MAX_N, CREW_WINDOW_MS, ROLL_PER_STEP, chillStep, COLD_AFTER, PRESS_CHILL, encodeDucks, parseDucks, MAX_DUCKS } from '../src/core/snowballs.js';
+import { stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, parseSnowMsg, snowPose, holdSpeed, rollGrowth, holdPose, validHat, hatOf, hatLook, MAX_N, CREW_WINDOW_MS, ROLL_PER_STEP, chillStep, COLD_AFTER, PRESS_CHILL, encodeDucks, parseDucks, MAX_DUCKS, helperRel, HELPER_SIDE } from '../src/core/snowballs.js';
 
 test('eight stages of twenty presses, growing all the way', () => {
   assert.equal(stageOf(0), 1);
@@ -30,8 +30,14 @@ test('a friend pushing rolls it further', () => {
 
 test('becoming a giant, and rolling one, takes two people', () => {
   assert.equal(pushResult(138, 1).grow, 1);
-  assert.deepEqual([pushResult(139, 1).grow, pushResult(139, 1).why], [0, 'friend']);
-  assert.equal(pushResult(139, 2).grow, 1);
+  assert.equal(pushResult(139, 1).grow, 1); // stage 7 finishes alone: the giant starts at 0/20
+  assert.deepEqual([stageOf(140), stepOf(140)], [8, 0]);
+  assert.deepEqual([pushResult(140, 1).grow, pushResult(140, 1).why], [0, 'heavy']);
+  assert.equal(pushResult(140, 2).grow, 1);
+  // all 20 giant steps take two people
+  let n = 140, pushes = 0;
+  while (pushResult(n, 2).grow) { n += 1; pushes++; }
+  assert.deepEqual([n, pushes], [MAX_N, 20]);
   assert.deepEqual([pushResult(145, 1).move, pushResult(145, 1).why], [0, 'heavy']);
   assert.ok(pushResult(145, 2).move > 0);
   assert.equal(pushResult(MAX_N, 3).grow, 0);
@@ -68,8 +74,8 @@ test('a different pose for each size, and for a friend helping', () => {
   assert.equal(snowPose(10), 'snowscoop');
   assert.equal(snowPose(70), 'snowpush');
   assert.equal(snowPose(70, true), 'snowpushhigh');
-  assert.equal(snowPose(150), 'snowback');
-  assert.equal(snowPose(150, true), 'snowshoulder');
+  assert.equal(snowPose(150), 'snowshoulder'); // a giant: both push from behind, facing it
+  assert.equal(snowPose(150, true), 'snowpushhigh');
 });
 
 test('grab and walk: a heavy ball slows you, a friend holding on speeds you up', () => {
@@ -85,17 +91,20 @@ test('a walked ball grows with the ground it covers, faster with friends', () =>
   assert.equal(rollGrowth(30, 1, 5), 0);
   assert.ok(Math.abs(rollGrowth(70, 1, ROLL_PER_STEP) - 1) < 1e-9);
   assert.ok(Math.abs(rollGrowth(70, 2, ROLL_PER_STEP) - 2) < 1e-9);
-  assert.equal(rollGrowth(139, 1, 10), 0); // the last step before giant needs a friend
-  assert.equal(rollGrowth(130, 1, 100), 9);
-  assert.equal(rollGrowth(139, 2, 100), MAX_N - 139);
+  assert.equal(rollGrowth(140, 1, 10), 0); // the giant needs a friend from 0/20
+  assert.equal(rollGrowth(130, 1, 100), 10);
+  assert.equal(rollGrowth(140, 2, 100), MAX_N - 140);
   assert.equal(rollGrowth(MAX_N, 3, 10), 0);
 });
 
 test('holding poses: the friend takes the other one', () => {
   assert.notEqual(holdPose(70), holdPose(70, true));
   assert.notEqual(holdPose(110), holdPose(110, true));
-  assert.equal(holdPose(145, true), 'snowback');
-  assert.notEqual(holdPose(145), 'snowback'); // the one steering faces the ball
+  for (const n of [70, 110, 145]) for (const h of [false, true]) assert.notEqual(holdPose(n, h), 'snowback'); // both face the ball, pushing from behind
+  // a friend holding on stands behind the ball beside the owner
+  assert.equal(helperRel(Math.PI * 0.9), HELPER_SIDE);
+  assert.equal(helperRel(-0.1), -HELPER_SIDE);
+  assert.equal(helperRel(Math.PI * 1.5), -HELPER_SIDE);
 });
 
 test('a hat on a snowman', () => {

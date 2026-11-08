@@ -60,10 +60,11 @@ test('the hippo comes to the front, opens wide and crunches the watermelon', () 
   assert.equal(zoo.melonSpot(hip.x + mx + 6, hip.z + mz), null, 'not from further away');
   assert.ok(zoo.feedMelon(P, hip.x + mx, hip.z + mz));
   assert.equal(zoo.melonSpot(hip.x + mx, hip.z + mz), null, 'one watermelon at a time');
+  const eater = zoo.melon.a;
   let opened = 0;
   for (let i = 0; i < 400 && zoo.melon; i++) {
     zoo.update(0.1, { x: hip.x + mx, z: hip.z + mz });
-    opened = Math.max(opened, P.animals.find((a) => a.jaw).jaw.rotation.x);
+    opened = Math.max(opened, eater.jaw.rotation.x);
   }
   assert.equal(zoo.melon, null, 'finished');
   assert.ok(opened > 0.8, 'the mouth opened wide');

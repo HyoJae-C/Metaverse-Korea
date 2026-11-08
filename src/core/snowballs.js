@@ -7,8 +7,9 @@
 // Stages 1-3 you gather snow into it with your hands; from stage 4 it's
 // too big for that and you roll it. Friends can push the same ball: every
 // push counts, and with more people pushing it rolls further each time.
-// Growing from stage 7 to 8, and rolling a stage-8 ball, takes at least two
-// people pushing together.
+// Stages 1-7 you can finish alone. Stage 8 (the giant) starts at 0/20 and
+// every one of its 20 steps takes at least two people pushing together;
+// finishing it ends with a high five.
 
 export const STEPS = 20; // presses per stage
 export const STAGES = 8;
@@ -42,9 +43,8 @@ export const rollDistance = (crew) => 0.5 * (1 + 0.6 * (Math.max(1, Math.min(4, 
 export function pushResult(n, crew) {
   if (!rollable(n)) return { grow: 0, move: 0, why: 'gather' };
   if (stageOf(n) >= CREW_STAGE && crew < 2) return { grow: 0, move: 0, why: 'heavy' }; // a giant: not alone
-  const atGate = n >= (CREW_STAGE - 1) * STEPS - 1 && n < (CREW_STAGE - 1) * STEPS; // the last step before giant
-  const grow = n >= MAX_N ? 0 : atGate && crew < 2 ? 0 : 1;
-  return { grow, move: rollDistance(crew), why: grow ? null : n >= MAX_N ? 'full' : 'friend' };
+  const grow = n >= MAX_N ? 0 : 1;
+  return { grow, move: rollDistance(crew), why: grow ? null : 'full' };
 }
 
 // How many different people pushed within the window before `now`.
@@ -114,16 +114,17 @@ export function parseSnowMsg(e) {
 }
 
 // The pose while working on a ball of n steps: gathering snow by hand at
-// first, then pushing with both hands, leaning in with a shoulder, and a
-// giant with your back to it. A friend helping takes the other pose of the
-// pair, so two people at one ball don't look the same.
+// first, then pushing with both hands, then leaning in with a shoulder. A
+// friend helping takes the other pose of the pair, so two people at one
+// ball don't look the same; on a big ball both push it from behind, facing
+// the way it rolls (no one braces it with their back).
 export function snowPose(n, helper = false) {
   const s = stageOf(n);
   if (s < ROLL_FROM) return 'snowscoop';
   if (s <= 5) return (s === 4) !== helper ? 'snowpush' : 'snowpushhigh';
-  return (s < CREW_STAGE) !== helper ? 'snowshoulder' : 'snowback';
+  return helper ? 'snowpushhigh' : 'snowshoulder';
 }
-export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulder', 'snowback', 'snowcold'];
+export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulder', 'snowback', 'snowcold', 'snowhi5'];
 
 // ---------- grab and walk (stage 4+) ----------
 // From stage 4 you grab the ball once and walk: it rolls in front of you and
@@ -139,19 +140,27 @@ export function holdSpeed(n, crew = 1) {
   return Math.min(1, HOLD_PACE[s] * (1 + 0.6 * (Math.max(1, Math.min(4, crew)) - 1)));
 }
 // Steps a ball of n grows over `metres` with `crew` people holding it.
-// Stops at the last step before the giant without a friend, and at the top.
+// Stops at the start of the giant (stage 8, 0/20) without a friend, and at the top.
 export function rollGrowth(n, crew, metres) {
   if (!rollable(n) || metres <= 0) return 0;
-  const gate = (CREW_STAGE - 1) * STEPS - 1;
+  const gate = (CREW_STAGE - 1) * STEPS;
   const cap = crew < 2 && n <= gate ? gate : MAX_N;
   return Math.max(0, Math.min(cap - n, (metres * Math.max(1, crew)) / ROLL_PER_STEP));
 }
 // The pose while holding a ball and walking it along: facing the ball, so
-// no back push for the one steering; a friend holding on takes the other.
+// a friend holding on pushes beside them, from behind, in the other pose.
 export function holdPose(n, helper = false) {
   const s = stageOf(n);
   if (!helper) return s === 4 ? 'snowpush' : s === 5 ? 'snowpushhigh' : 'snowshoulder';
-  return s <= 5 ? (s === 4 ? 'snowpushhigh' : 'snowpush') : 'snowback';
+  return s === 4 ? 'snowpushhigh' : 'snowpush';
+}
+// Where a friend holding on stands, as an angle off the owner's side of the
+// ball (0: right where the owner is, behind it): always behind it beside
+// the owner, on the side they took hold of it.
+export const HELPER_SIDE = 0.6;
+export function helperRel(rel) {
+  const r = Math.atan2(Math.sin(rel), Math.cos(rel)); // (-pi..pi]
+  return r < 0 ? -HELPER_SIDE : HELPER_SIDE;
 }
 
 // ---------- cold hands ----------

@@ -550,6 +550,12 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   max-width: 220px; padding: 6px 10px; text-align: center;
   overflow-wrap: anywhere; color: var(--ink, #4a3f35);
 }
+/* Chat in the library: a soft grey whisper. */
+.bubble.chat.whisper {
+  background: rgba(236, 234, 231, 0.88); color: #7d7873;
+  font-weight: 500; font-style: italic;
+  box-shadow: 0 2px 0 rgba(74, 63, 53, 0.08);
+}
 .chat-log {
   position: absolute; left: max(12px, env(safe-area-inset-left, 0px));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
@@ -568,6 +574,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 }
 .chat-line b { color: #e0604d; }
 .chat-line.mine b { color: #2f8f6b; }
+.chat-line.whisper, .chat-line.whisper b { color: #8a8580; font-style: italic; }
 .chat-line.note { font-size: 12px; background: rgba(255, 246, 220, 0.92); }
 .chat-line.old { opacity: 0; }
 /* A minute old: faded out and out of the way, back again while the chat is open. */
@@ -624,6 +631,12 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .fr-text { display: grid; min-width: 0; flex: 1; }
 .fr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fr-request .fr-name { flex: 1; min-width: 0; }
+.fr-request { flex-wrap: wrap; }
+.fr-request .fr-text { flex: 1 1 120px; }
+.fr-where.here { color: #2f8a5c; font-weight: 700; }
+/* A player made easy to spot (a friend request from someone around me). */
+.nametag.ping { animation: tag-ping 1s ease-in-out 10; box-shadow: 0 0 0 3px #ffd84a, 0 0 14px 4px rgba(255, 216, 74, .85); }
+@keyframes tag-ping { 50% { scale: 1.25; } }
 .fr-last { color: var(--ink-soft); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fr-time { flex: none; align-self: flex-start; color: var(--ink-soft); font-size: 11px; }
 .fr-unread { flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #e0604d; color: #fff; font-size: 12px; line-height: 20px; text-align: center; }
@@ -1231,6 +1244,11 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .gym-mark { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: #2b2630; }
 .gym-flash { min-height: 1.2em; text-align: center; font-weight: 800; }
 .gym-lift { min-width: 160px; }
+/* Yoga & pilates studio (ui/gym-ui.js) */
+.yoga-pose { font-weight: 800; font-size: 17px; color: #5b4790; }
+.breath-ring { width: 120px; height: 120px; margin: 6px auto; border-radius: 50%; background: radial-gradient(circle, #e6dcf5 0%, #b9a6f0 70%, #7a5fb0 100%); transition: transform 0.08s linear; }
+.breath-ring.out { background: radial-gradient(circle, #dff3ee 0%, #8fd3c7 70%, #3f7f82 100%); }
+.gym-lift.held { filter: brightness(0.88); transform: scale(0.97); }
 
 /* Library books */
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
@@ -1252,6 +1270,28 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .book-rom { margin: 0; font-size: 13px; font-style: italic; opacity: 0.7; }
 .book-mean { margin: 0; font-size: 14px; }
 .book-num { align-self: center; font-size: 12px; font-weight: 700; }
+.book-shelf-title { margin: 6px 0 0; font-size: 15px; }
+.book-card .book-author { opacity: 0.85; }
+/* Library stories and poems: Korean original, English translation, or both */
+#book-panel.book-lit { width: min(560px, calc(100vw - 24px)); max-height: min(84vh, 760px); }
+.lit-modes { display: flex; gap: 6px; justify-content: center; }
+.lit-modes .chip { padding: 4px 12px; font-size: 13px; }
+.lit-modes .chip.on { background: var(--mint); color: #12352f; }
+.book-page.lit-page { display: block; text-align: start; min-height: 0; }
+.lit-heading { margin: 0 0 12px; font-size: 17px; line-height: 1.35; }
+.lit-sub { margin: 4px 0 10px; font-size: 15px; }
+.lit-text p { margin: 0 0 0.85em; white-space: pre-line; line-height: 1.75; overflow-wrap: break-word; }
+.lit-text p:last-child { margin-bottom: 0; }
+.lit-ko { font-size: 16px; word-break: keep-all; }
+.lit-en { font-size: 15px; color: #4a3f35; }
+.lit-ko + .lit-en { margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(74, 63, 53, 0.3); }
+.lit-cover { text-align: center; }
+.lit-cover-icon { font-size: 46px; line-height: 1.1; }
+.lit-cover-title { margin: 6px 0 0; font-size: 22px; font-weight: 900; word-break: keep-all; }
+.lit-cover-sub { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.lit-cover-author { margin: 6px 0 12px; font-size: 13px; opacity: 0.8; }
+.lit-about { margin: 0 0 14px; font-size: 14px; line-height: 1.6; }
+.lit-fine { margin: 0 0 6px; font-size: 11px; line-height: 1.5; opacity: 0.75; text-align: start; overflow-wrap: anywhere; }
 
 /* Food dex */
 .dex-btn { justify-self: start; margin-top: 6px; }
@@ -1498,6 +1538,9 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .acc.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
+#step-look.returning .referrer-field { display: none; } /* only a new player names who invited them */
+.referrer-field { margin-top: 10px; }
+#referrer.bad { border-color: #d64545; box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.25); }
 /* Returning players going straight in: only the loading line shows */
 #step-look.quick > :not(.status) { display: none; }
 #step-look.quick .status { font-size: 17px; margin: 8px 0; }
@@ -2222,3 +2265,5 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
 #start > .panel { position: relative; z-index: 1; }
+/* Library shelf tabs: one section per bookshelf */
+.book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }

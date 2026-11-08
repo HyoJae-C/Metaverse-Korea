@@ -355,3 +355,76 @@ test('once ids are fixed, different per text, and look like uuids', () => {
   assert.notEqual(onceId('medal:grill:gold'), onceId('medal:grill:silver'));
   assert.match(onceId('x'), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
+
+test('server wallet: a reward the server cut gets its own line, so the book adds up to the balance', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 100, gift: WELCOME_COINS });
+  const srv = fakeServer({ earnMax: 50 });
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  w.add(500, { k: 'ledger.quest' });
+  await w.flush();
+  assert.equal(w.coins, 150);
+  const tail = w.log.slice(-2).map((e) => [e.n, e.bal, e.note?.k]);
+  assert.deepEqual(tail, [[500, 600, 'ledger.quest'], [-450, 150, 'ledger.cut']]);
+});
+
+test('signed in to another account on this device: the balance change is in the book, not silent', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 0, gift: WELCOME_COINS });
+  const a = fakeServer();
+  a.row = { coins: 5003850, ver: 3, welcome: WELCOME_COINS, ads: 5 };
+  const w = new Wallet(cfg);
+  await w.connect(a.cloud);
+  w.add(-70000, { k: 'ledger.hair' }, { kind: 'spend' });
+  await w.flush();
+  assert.equal(w.log.at(-1).bal, 4933850);
+  // The same device, now signed in to account u2 that only has the welcome money.
+  const b = fakeServer();
+  b.row = { coins: WELCOME_COINS, ver: 1, welcome: WELCOME_COINS, ads: 5 };
+  b.cloud.user = { id: 'u2' };
+  const again = new Wallet(cfg);
+  await again.connect(b.cloud);
+  assert.equal(again.coins, WELCOME_COINS);
+  const last = again.log.at(-1);
+  assert.deepEqual([last.n, last.bal, last.note], [WELCOME_COINS - 4933850, WELCOME_COINS, { k: 'ledger.account' }]);
+  assert.equal(a.row.coins, 4933850, 'the money is still on the first account');
+});
+
+test('balance changed on another device: one sync line on connect, none when it already matches', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 0, gift: WELCOME_COINS });
+  const srv = fakeServer();
+  srv.row = { coins: 300000, ver: 1, welcome: WELCOME_COINS, ads: 5 };
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  w.add(-1000, null, { kind: 'spend' });
+  await w.flush();
+  const n = w.log.length;
+  srv.row.coins -= 50000; srv.row.ver++; // spent on the phone
+  const again = new Wallet(cfg);
+  await again.connect(srv.cloud);
+  assert.deepEqual([again.log.length, again.log.at(-1).n, again.log.at(-1).note?.k], [n + 1, -50000, 'ledger.sync']);
+  const third = new Wallet(cfg);
+  await third.connect(srv.cloud);
+  assert.equal(third.log.length, n + 1, 'nothing new when it matches');
+});
+
+test('signed in but the server wallet did not answer: asks again soon instead of staying on the browser balance', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 5003850, gift: WELCOME_COINS });
+  store['mk.ledger'] = JSON.stringify([{ t: 1, n: -70000, bal: 5003850, note: null, w: 1 }]);
+  const srv = fakeServer();
+  srv.row = { coins: WELCOME_COINS, ver: 1, welcome: WELCOME_COINS, ads: 5 };
+  const w = new Wallet(cfg);
+  w.reconnectMs = 5;
+  srv.down = true;
+  assert.equal(await w.connect(srv.cloud), 'local');
+  assert.equal(w.server, false);
+  srv.down = false;
+  await new Promise((r) => setTimeout(r, 60));
+  assert.equal(w.server, true, 'connected on the retry');
+  assert.equal(w.coins, WELCOME_COINS);
+  assert.deepEqual([w.log.at(-1).n, w.log.at(-1).note?.k], [WELCOME_COINS - 5003850, 'ledger.sync'], 'the change is in the book');
+  assert.equal(w._reTimer, null, 'no more retries');
+});

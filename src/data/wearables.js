@@ -25,6 +25,17 @@ export const WEARABLES = {
   'outfit-puffer-black': item('🧥', 110, { model: 'puffer-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black puffer jacket', ko: '블랙 숏패딩', ja: '黒のショートダウン', zh: '黑色短款羽绒服' }, { outfit: 'puffer-black' }),
   'outfit-puffer-mustard': item('🧥', 110, { model: 'puffer-mustard' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Mustard puffer jacket', ko: '머스타드 숏패딩', ja: 'マスタードのショートダウン', zh: '芥末黄短款羽绒服' }, { outfit: 'puffer-mustard' }),
   'outfit-padding-white': item('🤍', 140, { model: 'padding-white' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'White long padded coat', ko: '화이트 롱패딩', ja: '白のロングダウン', zh: '白色长款羽绒服' }, { outfit: 'padding-white' }),
+  // Men's clothes (Dongdaemun Fashion Town: Gentle Floor, Gwajam Club).
+  'outfit-suit-charcoal': item('🤵', 150, { model: 'suit-charcoal' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Charcoal suit jacket', ko: '차콜 수트 재킷', ja: 'チャコールのスーツジャケット', zh: '炭灰色西装外套' }, { outfit: 'suit-charcoal' }),
+  'outfit-suit-navy': item('🤵', 150, { model: 'suit-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy suit jacket', ko: '네이비 수트 재킷', ja: 'ネイビーのスーツジャケット', zh: '藏青色西装外套' }, { outfit: 'suit-navy' }),
+  'outfit-coat-camel': item('🧥', 180, { model: 'coat-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel wool coat', ko: '카멜 울 코트', ja: 'キャメルのウールコート', zh: '驼色羊毛大衣' }, { outfit: 'coat-camel' }),
+  'outfit-coat-charcoal': item('🧥', 180, { model: 'coat-charcoal' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Charcoal wool coat', ko: '차콜 울 코트', ja: 'チャコールのウールコート', zh: '炭灰色羊毛大衣' }, { outfit: 'coat-charcoal' }),
+  'outfit-varsity-navy': item('🧥', 90, { model: 'varsity-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy varsity jacket', ko: '네이비 과잠', ja: 'ネイビーのスタジャン', zh: '藏青色棒球夹克' }, { outfit: 'varsity-navy' }),
+  'outfit-varsity-black': item('🧥', 90, { model: 'varsity-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black varsity jacket', ko: '블랙 과잠', ja: 'ブラックのスタジャン', zh: '黑色棒球夹克' }, { outfit: 'varsity-black' }),
+  'outfit-varsity-green': item('🧥', 90, { model: 'varsity-green' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Green varsity jacket', ko: '그린 과잠', ja: 'グリーンのスタジャン', zh: '绿色棒球夹克' }, { outfit: 'varsity-green' }),
+  'outfit-knit-grey': item('🧶', 55, { model: 'knit-grey' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Grey crew-neck knit', ko: '그레이 라운드 니트', ja: 'グレーのクルーネックニット', zh: '灰色圆领毛衣' }, { outfit: 'knit-grey' }),
+  'outfit-knit-navy': item('🧶', 55, { model: 'knit-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy crew-neck knit', ko: '네이비 라운드 니트', ja: 'ネイビーのクルーネックニット', zh: '藏青色圆领毛衣' }, { outfit: 'knit-navy' }),
+  'outfit-knit-cream': item('🧶', 55, { model: 'knit-cream' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Cream crew-neck knit', ko: '크림 라운드 니트', ja: 'クリームのクルーネックニット', zh: '奶油色圆领毛衣' }, { outfit: 'knit-cream' }),
   // Trousers (a colour of look.pants).
   'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
   'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),

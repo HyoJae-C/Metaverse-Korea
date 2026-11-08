@@ -204,6 +204,33 @@ export class CloudSave {
     } catch { return null; }
   }
 
+  // A new player names the friend who invited them (025_referrals.sql); the
+  // server pays the friend. Resolves 'ok', 'nobody' (no such name), 'self',
+  // 'done' (named someone before), 'late' (account too old), or 'offline'
+  // (can't be asked, or the SQL isn't run yet).
+  async claimReferral(name, timeoutMs = 4000) {
+    if (!this.client || !this.user) return 'offline';
+    try {
+      const call = this.client.rpc('claim_referral', { friend_name: String(name).slice(0, 16) });
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      const st = !error && data && typeof data === 'object' ? data.status : null;
+      return ['ok', 'nobody', 'self', 'done', 'late'].includes(st) ? st : 'offline';
+    } catch { return 'offline'; }
+  }
+
+  // Friends who joined with my name since I was last told (025_referrals.sql):
+  // { items: [{ name, n }], coins, ver } or null.
+  async referralNews(timeoutMs = 4000) {
+    if (!this.client || !this.user) return null;
+    try {
+      const call = this.client.rpc('referral_news');
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      if (error || data?.status !== 'ok' || !Array.isArray(data.items)) return null;
+      const items = data.items.map((i) => ({ name: String(i?.name || '').slice(0, 16), n: Math.max(0, Math.round(Number(i?.n) || 0)) })).filter((i) => i.n > 0);
+      return { items, coins: data.coins, ver: data.ver };
+    } catch { return null; }
+  }
+
   // Does this player name belong to an operator account? (005_operators.sql)
   // False when it can't be asked: no badge is better than a fake one.
   async isOperator(name, timeoutMs = 4000) {

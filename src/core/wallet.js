@@ -154,6 +154,9 @@ export class Wallet {
     // What the player is doing right now ({ name } of the shop they are in,
     // say), used as the note when a caller gives none. Set by the game.
     this.context = null;
+    this.reconnectMs = 5000; // first wait before asking for the server wallet again
+    this._reTimer = null;
+    this._reTries = 0;
   }
   // True once coins are kept on the server.
   get server() { return !!this.s; }
@@ -166,10 +169,14 @@ export class Wallet {
   // signed in). Brings this browser's coins over the first time. Resolves
   // 'server', 'offline' (server wallet, not reached now: keeps queueing) or
   // 'local'. Never throws.
-  async connect(cloud, timeoutMs = 4000) {
+  async connect(cloud, timeoutMs = 10000) {
     const client = cloud?.client, uid = cloud?.user?.id;
     if (!client || !uid) return this.s ? 'offline' : 'local';
-    if (this.s && this.s.uid !== uid) { this.s = null; this._saveState(); } // another account's copy
+    // Another account's copy (signed in to another account on this device):
+    // its balance isn't this account's. Noted so the budget book can say why
+    // the balance changed (it used to jump without a line).
+    const switched = !!this.s && this.s.uid !== uid;
+    if (switched) { this.s = null; this._saveState(); }
     this.client = client;
     let res;
     const local = this.w.coins;
@@ -185,8 +192,13 @@ export class Wallet {
     if (error || data?.status !== 'ok') {
       if (missing(error)) { this.client = null; this.s = null; this._saveState(); return 'local'; }
       if (this.s) this._later();
+      // Signed in but no answer (a slow network, or the answer was lost while
+      // the server opened the wallet): don't stay on this browser's own
+      // balance, which the server wallet never takes over. Ask again soon.
+      else this._reconnect(cloud, timeoutMs);
       return this.s ? 'offline' : 'local';
     }
+    clearTimeout(this._reTimer); this._reTimer = null; this._reTries = 0;
     if (data.unit !== 'krw') unit = 'coin';
     const f = unit === 'krw' ? 1 : SERVER_OLD;
     // Brought over just now: the queue (from this browser's balance) is in it.
@@ -194,6 +206,13 @@ export class Wallet {
     this.s = { uid, u: 1, unit, base: (Number(data.coins) || 0) * f, ver: Number(data.ver) || 0, ads: Number(data.ads_left) || 0, adsDay: kstDay(), queue };
     this.welcomed = (Number(data.welcome) || 0) * f;
     if (this.welcomed > 0) this._log(this.welcomed, { k: 'ledger.welcome' });
+    // The budget book's last balance isn't the server's (another account, or
+    // spent or earned on another device): a line for the difference, so the
+    // balance never changes without one.
+    const last = this.log.at(-1);
+    if (last && Number.isFinite(last.bal) && last.bal !== this.coins) {
+      this._log(this.coins - last.bal, { k: switched ? 'ledger.account' : 'ledger.sync' });
+    }
     // Coins that moved here while the server was being asked.
     const late = this.s && data.created ? this.w.coins - local : 0;
     if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn', r: 'late', w: 1 });
@@ -203,6 +222,12 @@ export class Wallet {
     this.flush();
     this._askResellPct(client, timeoutMs);
     return 'server';
+  }
+  _reconnect(cloud, timeoutMs) {
+    if (this._reTimer) return;
+    const ms = Math.min(60000, this.reconnectMs * 2 ** (this._reTries || 0));
+    this._reTries = (this._reTries || 0) + 1;
+    this._reTimer = setTimeout(() => { this._reTimer = null; this.connect(cloud, timeoutMs); }, ms);
   }
   async _askResellPct(client, timeoutMs) {
     this.resellPct = null;
@@ -328,6 +353,15 @@ export class Wallet {
     this._notify();
   }
 
+  // The server gave coins itself (a friend joined with my name,
+  // 025_referrals.sql): show its balance. r: the server's { coins, ver }.
+  credited(n, r, note) {
+    if (!this.s || !n) return;
+    this._fromServer(r);
+    this._log(Math.abs(n), note);
+    this._notify();
+  }
+
   // Send the waiting ops now. Resolves true when the server has all of them.
   async flush() {
     if (!this.s || !this.client) return false;
@@ -350,6 +384,16 @@ export class Wallet {
     this._fromServer(data);
     this._retry = 0;
     this._saveState();
+    // What the server didn't take as asked (an earning over its limit, a
+    // payment it refused): a line for the difference, so the budget book
+    // adds up to the balance.
+    const got = new Map((Array.isArray(data.results) ? data.results : []).map((r) => [String(r?.id), Number(r?.n)]));
+    for (const o of ops) {
+      const n = got.get(o.id);
+      if (!Number.isFinite(n)) continue;
+      const diff = Math.round(n * this._sf()) - o.n;
+      if (Math.abs(diff) >= Math.max(1, this._sf())) this._log(diff, { k: 'ledger.cut' });
+    }
     this._notify();
     return true;
   }

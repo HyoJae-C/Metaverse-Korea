@@ -17,8 +17,8 @@
          with a character, a title and a line about the game. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Another Seoul" />
-    <meta property="og:title" content="Another Seoul · 서울 성수동을 3D로 걸어요" />
-    <meta property="og:description" content="브라우저에서 바로, 친구랑 같이 성수동 골목을 걷고 맛집·자전거·노래방을 즐겨요. Walk Seongsu-dong, Seoul, in 3D with friends." />
+    <meta property="og:title" content="Another Seoul · 서울 구석구석을 3D로 걸어요" />
+    <meta property="og:description" content="브라우저에서 바로, 친구랑 같이 서울 구석구석을 걷고 맛집·쇼핑·전시를 즐겨요. Walk every corner of Seoul in 3D with friends." />
     <meta property="og:url" content="%VITE_SITE_URL%" />
     <meta property="og:image" content="%VITE_SITE_URL%og.png?v=3" />
     <meta property="og:image:width" content="1200" />
@@ -397,6 +397,11 @@
           <input id="nickname" maxlength="16" autocomplete="off" />
           <small class="name-face" data-i18n="name.face"></small>
           <small class="name-rule" data-i18n="name.rule"></small>
+        </label>
+        <label class="name-field referrer-field">
+          <span data-i18n="start.referrer"></span>
+          <input id="referrer" maxlength="16" autocomplete="off" />
+          <small class="name-face" data-i18n="start.referrerHint"></small>
         </label>
         <p class="look-lock" id="look-lock" hidden></p>
         <div class="look-actions">

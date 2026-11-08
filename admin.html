@@ -99,6 +99,8 @@
       #chatOlder { margin-bottom: 8px; }
       @media (max-width: 760px) { table.chat td:nth-child(2) { white-space: normal; max-width: 110px; } }
       .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
+      #tab-exhibits .ximgs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+      #tab-exhibits .ximgs img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; background: var(--line); display: block; }
       #tab-codes h3 { font-size: 15px; margin: 20px 0 8px; }
       #tab-codes table.grid td:first-child { white-space: nowrap; }
       #tab-codes code { background: #f3ecdc; padding: 1px 6px; border-radius: 5px; font-size: 13px; }
@@ -123,6 +125,7 @@
       <button data-tab="weather">🌦️ Weather</button>
       <button data-tab="retention">Retention</button>
       <button data-tab="codes">📋 Codes</button>
+      <button data-tab="exhibits">🎨 Exhibits <span class="badge" id="exhibitBadge" hidden></span></button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
       <div class="stats" id="stats"></div>
@@ -232,6 +235,14 @@
       </div>
       <div class="card"><div id="wxNow" class="body">Loading…</div></div>
       <div class="card"><div class="head"><b>Next 6 hours</b><span class="muted">What every game will show (your local time)</span></div><div id="wxNext" class="wxnext"></div></div>
+    </div></section>
+    <section class="tab" id="tab-exhibits" hidden><div class="pad">
+      <div class="tools" id="exhibitFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <button type="button" data-f="new">New</button><button type="button" data-f="accepted">Accepted</button><button type="button" data-f="declined">Declined</button><button type="button" data-f="all">All</button>
+        <button type="button" id="exhibitReload">Refresh</button>
+        <span class="muted">Applications from <a href="./apply.html" target="_blank">apply.html</a></span>
+      </div>
+      <div id="exhibitList"><p class="empty">Loading…</p></div>
     </div></section>
     <section class="tab" id="tab-retention" hidden><div class="pad">
       <div class="tools">

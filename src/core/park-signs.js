@@ -5,6 +5,7 @@
 // (ry π: the board reads from the north).
 import * as THREE from 'three';
 import { localName } from './i18n.js';
+import { farFree } from './far-textures.js';
 
 const boards = []; // { l, mat } of every sign built, redrawn on a language change
 const W = 2.2, H = 1.5;
@@ -48,7 +49,7 @@ function draw(l, lang) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  return tex;
+  return farFree(tex);
 }
 
 export function sign(g, l) {

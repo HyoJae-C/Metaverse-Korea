@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Outfit lineup</title>
+<style>html,body{margin:0;height:100%;background:#fff8ec;font:13px sans-serif}canvas{display:block;width:100%;height:100%}
+.l{position:absolute;transform:translateX(-50%);background:#fffd;padding:1px 5px;border-radius:4px}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+// Clothes on one look, for checking the shapes (and that the face stays).
+//   ?models=suit-navy,coat-camel  only these   ?yaw=3.14  from the back
+import * as THREE from 'three';
+import { createCharacter } from '../src/core/character.js';
+import { MODELS } from '../src/data/appearance.js';
+const q = new URLSearchParams(location.search);
+const models = q.get('models')?.split(',') || MODELS;
+const cols = +(q.get('cols') || 6);
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xfff1dc);
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0xc9d6b8, 1.5), new THREE.AmbientLight(0xfff0e0, 0.9));
+const sun = new THREE.DirectionalLight(0xfff1d6, 1.4); sun.position.set(3, 6, 5); scene.add(sun);
+const rows = Math.ceil(models.length / cols);
+const GX = 0.9, GY = 1.6;
+const chars = models.map((m, i) => {
+  const c = createCharacter({ model: m, hairStyle: q.get('hair') || null, hair: 'espresso', shirt: 'coral', pants: q.get('pants') || 'denim', skin: 'fair' });
+  const x = ((i % cols) - (cols - 1) / 2) * GX, y = -Math.floor(i / cols) * GY;
+  const pivot = new THREE.Group();
+  pivot.position.set(x, y, 0);
+  pivot.rotation.y = +(q.get('yaw') || 0);
+  pivot.add(c.root);
+  scene.add(pivot);
+  c.label = m;
+  c.at = new THREE.Vector3(x, y - 0.12, 0);
+  return c;
+});
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+const midY = 0.6 - ((rows - 1) * GY) / 2;
+camera.position.set(0, midY + 0.4, 1.2 + Math.max(cols * GX * 1.1, rows * GY * 1.5)); camera.lookAt(0, midY, 0);
+const labels = chars.map((c) => { const d = document.createElement('div'); d.className = 'l'; d.textContent = c.label; document.body.append(d); return d; });
+const resize = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
+addEventListener('resize', resize); resize();
+const t = new THREE.Timer();
+renderer.setAnimationLoop(() => {
+  t.update(); const dt = t.getDelta();
+  chars.forEach((c, i) => {
+    c.animate(dt, 0);
+    const p = c.at.clone().project(camera);
+    labels[i].style.left = ((p.x + 1) / 2) * innerWidth + 'px';
+    labels[i].style.top = ((1 - p.y) / 2) * innerHeight + 'px';
+  });
+  renderer.render(scene, camera);
+});
+</script></body></html>

@@ -6,8 +6,8 @@
 // The picker in the chat bar chooses who hears it: everyone nearby (public;
 // the server keeps it 90 days for reports, supabase/024_chat_log.sql), all friends, or one friend. Friend chat is kept like
 // a phone messenger (core/friends.js, the 👥 panel).
-import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey } from '../core/friends.js';
-import { FRIEND_TEXT, FriendsUI } from '../ui/friends-ui.js';
+import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
+import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
 import { NOTICE_LABEL, NoticeFeed, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
 import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
@@ -228,8 +228,9 @@ export function createChat(game) {
     if (!text || now - lastChatAt < config.chatCooldown) return;
     lastChatAt = now;
     chatInput.value = '';
-    showBubble(myLabel, $('labels'), text, 6000, 'chat');
-    addChatLine(game.nickname, text, 'mine');
+    const quiet = game.whisper; // the library: grey, like a whisper
+    showBubble(myLabel, $('labels'), text, 6000, quiet ? 'chat whisper' : 'chat');
+    addChatLine(game.nickname, text, quiet ? 'mine whisper' : 'mine');
     game.net.sendChat?.(text);
     game.onChatSent?.();
     if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
@@ -287,7 +288,16 @@ export function createChat(game) {
     const ok = (f) => !safety.isBlocked(null, f.name);
     friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
     const seen = new Set(friendList.incoming.map((f) => f.uid));
-    if (knownRequests) for (const f of friendList.incoming) if (!knownRequests.has(f.uid)) game.shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }));
+    // A new request: say who, and if they're around me, where — and make
+    // them easy to spot (their name tag glows, a 👋 pops over their head).
+    if (knownRequests) {
+      for (const f of friendList.incoming) {
+        if (knownRequests.has(f.uid)) continue;
+        const at = locatePlayer(f.name);
+        if (at) game.others.ping(at.id);
+        game.shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }) + (at ? ' 📍 ' + whereText(at) : ''));
+      }
+    }
     knownRequests = seen;
     if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
     // Fetch the newest lines of each chat once, for unread counts and previews.
@@ -301,6 +311,16 @@ export function createChat(game) {
     refreshFriendBadge();
     refreshPersonFriend();
     friendsUi.update();
+  }
+  // Someone in this area by name, and where they are from me as the screen
+  // sees it: { id, m, dir }, or null.
+  function locatePlayer(name) {
+    const others = game.others, me = game.me, cam = game.camera;
+    const id = others?.idByName(name);
+    const pos = id != null ? others.positionOf(id) : null;
+    if (!pos || !me || !cam) return null;
+    const f = cam.getWorldDirection(cam.position.clone());
+    return { id, ...whereIs(me.root.position, pos, { x: f.x, z: f.z }) };
   }
   function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
   function onFriendMessage(m) {
@@ -347,6 +367,8 @@ export function createChat(game) {
     toast: (m) => game.shop.toast(m),
     clean: (s) => filterText(cleanFriendBody(s)),
     isBlocked: (uid, name) => safety.isBlocked(null, name),
+    locate: (name) => locatePlayer(name),
+    ping: (id) => game.others.ping(id),
     onRead: (key) => { if (friendInbox) { saveMarks(friendInbox.markRead(key)); refreshFriendBadge(); } },
     send: (key, text) => {
       if (mustSignInToChat()) { game.shop.toast(friendsUi.errorText('chat')); return false; }
@@ -392,7 +414,8 @@ export function createChat(game) {
     const out = friendList.outgoing.some((x) => x.name === personFor.name);
     btn.hidden = false;
     btn.disabled = out;
-    btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : '➕ ' + L(FRIEND_TEXT.addFriend);
+    const asked = friendList.incoming.some((x) => x.name === personFor.name); // they sent me one
+    btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : asked ? '✅ ' + L(FRIEND_TEXT.acceptReq) : '➕ ' + L(FRIEND_TEXT.addFriend);
   }
   $('person-friend').onclick = async () => {
     if (!personFor) return;

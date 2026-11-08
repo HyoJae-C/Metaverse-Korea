@@ -1,0 +1,122 @@
+@id sowol
+@kind poems
+@icon 🌸
+@color #c2477a
+@title.en Azaleas: Poems by Kim Sowol
+@title.ko 진달래꽃 · 김소월 시선
+@author.en Kim Sowol (1902–1934)
+@author.ko 김소월 (1902–1934)
+@about.en Kim Sowol wrote in the rhythm of Korean folk songs, and many of his poems are still sung today. "Azaleas" is one of the best-loved poems in Korea.
+@about.ko 민요의 가락으로 시를 쓴 김소월의 대표작 네 편. 지금도 노래로 불리는 시가 많아요.
+@source https://ko.wikisource.org/wiki/진달래꽃_(시집)
+@license Public domain. Kim Sowol died in 1934, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource in modern spelling. English translation written for Another Seoul (free to use, CC0).
+===
+# 진달래꽃 | Azaleas
+나 보기가 역겨워
+가실 때에는
+말없이 고이 보내 드리우리다.
+
+영변(寧邊)에 약산(藥山)
+진달래꽃
+아름 따다 가실 길에 뿌리우리다.
+
+가시는 걸음걸음
+놓인 그 꽃을
+사뿐히 즈려밟고 가시옵소서.
+
+나 보기가 역겨워
+가실 때에는
+죽어도 아니 눈물 흘리우리다.
+---
+When you go,
+tired of the sight of me,
+I will let you go gently, without a word.
+
+From Yaksan Mountain in Yeongbyeon
+I will pick an armful of azaleas
+and scatter them on the road you take.
+
+Step by step as you go,
+tread softly, lightly,
+on the flowers laid before you.
+
+When you go,
+tired of the sight of me,
+I will not shed a tear, not even if I die.
+===
+# 엄마야 누나야 | Mother, Sister
+엄마야 누나야 강변 살자,
+뜰에는 반짝이는 금모래 빛,
+뒷문 밖에는 갈잎의 노래
+엄마야 누나야 강변 살자.
+---
+Mother, sister, let's live by the river,
+with glittering golden sand in the yard
+and the song of the reeds outside the back door.
+Mother, sister, let's live by the river.
+===
+# 산유화 | Mountain Flowers
+산에는 꽃 피네
+꽃이 피네
+갈 봄 여름 없이
+꽃이 피네
+
+산에
+산에
+피는 꽃은
+저만치 혼자서 피어 있네
+
+산에서 우는 작은 새요
+꽃이 좋아
+산에서
+사노라네
+
+산에는 꽃 지네
+꽃이 지네
+갈 봄 여름 없이
+꽃이 지네
+---
+On the mountain, flowers bloom,
+flowers bloom,
+autumn, spring and summer through,
+flowers bloom.
+
+On the mountain,
+on the mountain,
+the flowers that bloom
+bloom over there, all alone.
+
+Little bird singing on the mountain,
+you love the flowers,
+so on the mountain
+you live.
+
+On the mountain, flowers fall,
+flowers fall,
+autumn, spring and summer through,
+flowers fall.
+===
+# 먼 후일 | Someday, Far Away
+먼 훗날 당신이 찾으시면
+그때에 내 말이 ‘잊었노라’
+
+당신이 속으로 나무라면
+‘무척 그리다가 잊었노라’
+
+그래도 당신이 나무라면
+‘믿기지 않아서 잊었노라’
+
+오늘도 어제도 아니 잊고
+먼 훗날 그때에 ‘잊었노라’
+---
+If someday, far away, you come looking for me,
+I will say, "I have forgotten."
+
+If in your heart you blame me,
+"I missed you so much, and then I forgot."
+
+If still you blame me,
+"I could not believe it, so I forgot."
+
+Not forgetting today, not forgetting yesterday,
+someday, far away, I will say, "I have forgotten."

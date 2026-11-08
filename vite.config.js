@@ -20,8 +20,9 @@ export default defineConfig(({ command }) => ({
     target: 'es2022',
     chunkSizeWarningLimit: 1200,
     // admin.html: operators' live player map (src/admin/), not linked from the game.
+    // apply.html: the free exhibition application form (src/apply/).
     rollupOptions: {
-      input: { main: 'index.html', admin: 'admin.html' },
+      input: { main: 'index.html', admin: 'admin.html', apply: 'apply.html' },
       // three.js in a file of its own: it only changes when we upgrade it, so
       // returning players keep it cached across deploys and only download the
       // game code again (about 180 KB of the ~1 MB download).
