@@ -41,6 +41,7 @@ export function createMusicCafe(game) {
   }
   function openLpPanel() {
     const root = $('lp-panel');
+    root.dataset.kind = 'lp';
     const lang = getLanguage();
     const x = document.createElement('button');
     x.className = 'sheet-x';

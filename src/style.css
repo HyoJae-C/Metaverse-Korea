@@ -923,6 +923,10 @@ a.setting-row { text-decoration: none; color: inherit; }
 @keyframes lp-spin { to { transform: rotate(360deg); } }
 .lp-text { display: grid; gap: 2px; }
 .lp-text small { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
+/* The record café's listening bar (game/listening-bar.js): cover, title, play. */
+.listen-row .listen-cover { flex: none; width: 56px; height: 56px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.listen-row .lp-text { flex: 1; min-width: 0; }
+.listen-row .listen-go { flex: none; font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
 
 /* Pets: poop timer and the fine notice */
 .poop-chip {

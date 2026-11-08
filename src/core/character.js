@@ -7,6 +7,7 @@ import { attachModel } from './model-pack.js';
 import { makeRide, makeSkate1, SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
+import { makeHeadphones } from './headphones.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/appearance.js';
 import { skirtById } from '../data/skirts.js';
@@ -126,6 +127,7 @@ export function createCharacter(rawLook) {
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
   let tube = null; // a swim ring (the pool)
+  let phones = null; // headphones at the record café's listening bar
   const attachHeld = () => {
     if (!held) return;
     if (model?.hand) {
@@ -338,6 +340,10 @@ export function createCharacter(rawLook) {
         rig.add(tube);
       }
       if (tube) tube.visible = name === 'tube';
+      // Listening at the record café: headphones over the ears (on the head,
+      // so they follow the nod).
+      if (name === 'listen' && !phones) { phones = makeHeadphones(); const wrap = new THREE.Group(); wrap.add(phones); headAcc.add(wrap); } // (wrapped: setBike shows and hides headAcc's children)
+      if (phones) phones.visible = name === 'listen';
     },
     get activityName() { return activityName; },
     // A scripted move: fn() returns bone offsets each frame (armL, armR,
