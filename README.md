@@ -33,7 +33,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor). It is the only animal café in Seongsu
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
-- Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
+- Your own bike: everyone has one (🚲 button) and rides faster than running (no stamina); get off anywhere. There are no rental stations
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it

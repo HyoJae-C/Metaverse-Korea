@@ -157,7 +157,6 @@ import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
-import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
 import { PROMOS } from './data/promos.js';
 import { won } from './core/money.js';
@@ -484,7 +483,6 @@ const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
 const storesPromise = optionalJson('stores.json');
 const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
-const bikesPromise = optionalJson('bikes.json');
 const seoulPromise = optionalJson('seoul.json'); // the gu overview on the map (scripts/build-seoul.mjs)
 
 // A new player may name the friend who invited them (optional): the server
@@ -740,7 +738,6 @@ function planRoute(ax, az, bx, bz) {
   return poly;
 }
 const routeLine = new RouteLine(scene);
-const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, x: z.x, z: z.z })));
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
@@ -2213,7 +2210,7 @@ function talkToTrainer() {
   say(trainer, $('labels'), [ko, rom, en]);
   me.root.rotation.y = Math.atan2(trainer.ch.root.position.x - me.root.position.x, trainer.ch.root.position.z - me.root.position.z);
 }
-// Bike share: rent at a station, get off anywhere (the bike goes back by itself).
+// Riding: your own bike (the 🚲 button), a tandem, a car, or a seat in someone's vehicle.
 let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 a seat in someone's vehicle, 4 car (driving)
 let tandemDriver = null; // id of the driver whose vehicle I'm riding in
 let mySeat = 0; // my seat in their vehicle (see SEATS)
@@ -5502,7 +5499,6 @@ function updateAction(p, tSec) {
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
-    else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
@@ -6303,7 +6299,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
-    bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
     cam: (o) => Object.assign(cam, o),
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },

@@ -720,7 +720,7 @@ export const STRINGS = {
     "game.claw": "인형뽑기 하기",
     "game.duck": "오리배 타기",
     "game.pocha": "포장마차 일하기",
-    "delivery.start": "{name}까지 {s}초 안에 배달해요! 따릉이를 타면 빨라요.",
+    "delivery.start": "{name}까지 {s}초 안에 배달해요! 자전거를 타면 빨라요.",
     "delivery.done": "배달 성공! 🪙 +{n}",
     "delivery.late": "늦었어요… 배달이 취소됐어요.",
     "delivery.cancelHint": "길 안내를 따라가서 시간 안에 가게에 들어가세요.",
