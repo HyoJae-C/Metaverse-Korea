@@ -226,9 +226,10 @@ function buildPark(outer) {
     cabins.push(c);
   }
 
-  // ── Roller coaster: a pink track on chocolate posts, a three-car train.
+  // ── Roller coaster: white icing rails on chocolate posts, a hot-pink
+  // three-car train (the Cotton Candy Express you ride inside: coaster.js).
   const curve = new THREE.CatmullRomCurve3(COASTER.map(([x, y, z]) => new THREE.Vector3(x, y, z)), true, 'catmullrom', 0.4);
-  g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 0.45, 6, true), mat(K.hotPink)));
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 0.45, 6, true), mat(K.icing)));
   for (let i = 0; i < 40; i++) {
     const p = curve.getPointAt(i / 40);
     if (p.y > 1.2) cyl(g, 0.22, 0.3, p.y - 0.4, p.x, 0, p.z, K.choco, 6);
@@ -236,7 +237,7 @@ function buildPark(outer) {
   const train = [];
   for (let i = 0; i < 3; i++) {
     const car = new THREE.Group();
-    box(car, 2.2, 0.9, 1.4, 0, 0.75, 0, [K.lemon, K.mint, K.lilac][i]);
+    box(car, 2.2, 0.9, 1.4, 0, 0.75, 0, K.hotPink);
     box(car, 2.3, 0.2, 1.5, 0, 1.2, 0, K.icing);
     g.add(car);
     train.push(car);
