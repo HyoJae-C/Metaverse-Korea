@@ -20,6 +20,7 @@ import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
+import { splitInstances } from './core/split-instances.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
@@ -6126,6 +6127,9 @@ function guardPosition() {
 // Snow settles on the street (core/snow-cover.js): everything built by now,
 // so the shaders are ready before it first snows; while there's snow, parts
 // of the city built later (first visits) are given it too.
+// Big instanced meshes (trees, reeds, flowers…) cut into tiles so the ones
+// out of view are skipped (core/split-instances.js). Same picture, far less work.
+splitInstances(scene);
 coverScene(scene);
 let snowCoverAt = 0;
 renderer.setAnimationLoop(() => {
