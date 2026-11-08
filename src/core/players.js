@@ -161,10 +161,10 @@ export class RemotePlayers {
     return p ? (p.target || p.ch.root.position) : null;
   }
 
-  chat(id, text, ms = 6000) {
+  chat(id, text, ms = 6000, kind = 'chat') {
     const p = this.players.get(id);
     if (!p || p.hidden) return null;
-    showBubble(p, this.layer, text, ms, 'chat');
+    showBubble(p, this.layer, text, ms, kind);
     return p.name;
   }
 

@@ -10,6 +10,7 @@ import { buildPark } from './park.js';
 import { buildThemePark } from './themepark.js';
 import { buildPoolHall } from './pool-hall.js';
 import { POOL_ROOM } from './pool.js';
+import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
@@ -527,7 +528,10 @@ export function buildInterior(store) {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
     const spines = ['#b5533c', '#3f6e8c', '#d9a441', '#5f8a4e', '#7a4f8c', '#e3d6c0', '#2f3e4f', '#c97b63'];
-    const shelf = (x, z, ry, len) => {
+    // The shelves are split into sections (Learn Korean, children's
+    // stories, short stories, poetry), each a run of neighbouring shelves
+    // named on a board on top.
+    const shelf = (x, z, ry, len, section) => {
       const g = new THREE.Group();
       g.position.set(x, 0, z);
       g.rotation.y = ry;
@@ -547,19 +551,37 @@ export function buildInterior(store) {
           k++;
         }
       }
+      const lc = document.createElement('canvas');
+      lc.width = 512; lc.height = 112;
+      const lg = lc.getContext('2d');
+      lg.fillStyle = '#fffaf0'; lg.fillRect(0, 0, 512, 112);
+      lg.fillStyle = '#4a3326'; lg.textAlign = 'center'; lg.textBaseline = 'middle';
+      lg.font = '800 46px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+      lg.fillText(`${section.icon} ${section.name.ko}`, 256, 40);
+      lg.font = '700 26px system-ui, sans-serif';
+      lg.fillText(section.name.en, 256, 88);
+      const ltex = new THREE.CanvasTexture(lc);
+      ltex.colorSpace = THREE.SRGBColorSpace;
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.48), new THREE.MeshBasicMaterial({ map: ltex }));
+      label.position.set(0, 2.66, 0.2);
+      g.add(label);
       const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.6, len] : [len, 0.6];
       block(x, z, cx, cz);
     };
+    // Going round the room: left wall (front to back), back wall (left to
+    // right), right wall (back to front), so each section is one stretch.
     const nBack = Math.max(2, Math.floor((w - 2) / 2.6));
-    for (let i = 0; i < nBack; i++) shelf((i - (nBack - 1) / 2) * 2.6, -d / 2 + 0.45, 0, 2.4);
     const nSide = Math.max(1, Math.floor((d - 5) / 2.6));
-    for (let i = 0; i < nSide; i++) {
-      const z = -d / 2 + 2.2 + i * 2.6;
-      shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
-      shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
-      for (const sgn of [-1, 1]) (stations.books ||= []).push({ x: sgn * (w / 2 - 1.3), z }); // pick a book here
-    }
-    for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
+    const spots = [];
+    for (let i = nSide - 1; i >= 0; i--) spots.push({ x: -w / 2 + 0.45, z: -d / 2 + 2.2 + i * 2.6, ry: Math.PI / 2, sx: -(w / 2 - 1.3) });
+    for (let i = 0; i < nBack; i++) spots.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 0.45, ry: 0, sz: -d / 2 + 1.3 });
+    for (let i = 0; i < nSide; i++) spots.push({ x: w / 2 - 0.45, z: -d / 2 + 2.2 + i * 2.6, ry: -Math.PI / 2, sx: w / 2 - 1.3 });
+    stations.books = []; // pick a book here: { x, z, section }
+    spots.forEach((sp, i) => {
+      const section = SHELF_SECTIONS[Math.floor((i * SHELF_SECTIONS.length) / spots.length)];
+      shelf(sp.x, sp.z, sp.ry, 2.4, section);
+      stations.books.push({ x: sp.sx ?? sp.x, z: sp.sz ?? sp.z, section: section.id });
+    });
     // Long reading tables with chairs on both long sides.
     // Rows 3.4 m apart so there's an aisle between one row's chair backs
     // and the next table: you stand up into it without getting stuck.
@@ -601,7 +623,7 @@ export function buildInterior(store) {
     const stex = new THREE.CanvasTexture(sc);
     stex.colorSpace = THREE.SRGBColorSpace;
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.75), new THREE.MeshBasicMaterial({ map: stex }));
-    sign.position.set(-w / 2 + 0.05, 2.9, 0);
+    sign.position.set(-w / 2 + 0.05, Math.max(2.9, h - 0.5), 0); // above the shelf boards
     sign.rotation.y = Math.PI / 2;
     scene.add(sign);
   } else if (store.category === 'museum') {

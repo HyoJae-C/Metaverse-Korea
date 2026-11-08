@@ -550,6 +550,12 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   max-width: 220px; padding: 6px 10px; text-align: center;
   overflow-wrap: anywhere; color: var(--ink, #4a3f35);
 }
+/* Chat in the library: a soft grey whisper. */
+.bubble.chat.whisper {
+  background: rgba(236, 234, 231, 0.88); color: #7d7873;
+  font-weight: 500; font-style: italic;
+  box-shadow: 0 2px 0 rgba(74, 63, 53, 0.08);
+}
 .chat-log {
   position: absolute; left: max(12px, env(safe-area-inset-left, 0px));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
@@ -568,6 +574,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 }
 .chat-line b { color: #e0604d; }
 .chat-line.mine b { color: #2f8f6b; }
+.chat-line.whisper, .chat-line.whisper b { color: #8a8580; font-style: italic; }
 .chat-line.note { font-size: 12px; background: rgba(255, 246, 220, 0.92); }
 .chat-line.old { opacity: 0; }
 /* A minute old: faded out and out of the way, back again while the chat is open. */
@@ -2244,3 +2251,5 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
 #start > .panel { position: relative; z-index: 1; }
+/* Library shelf tabs: one section per bookshelf */
+.book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }

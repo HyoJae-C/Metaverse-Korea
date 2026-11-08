@@ -228,8 +228,9 @@ export function createChat(game) {
     if (!text || now - lastChatAt < config.chatCooldown) return;
     lastChatAt = now;
     chatInput.value = '';
-    showBubble(myLabel, $('labels'), text, 6000, 'chat');
-    addChatLine(game.nickname, text, 'mine');
+    const quiet = game.whisper; // the library: grey, like a whisper
+    showBubble(myLabel, $('labels'), text, 6000, quiet ? 'chat whisper' : 'chat');
+    addChatLine(game.nickname, text, quiet ? 'mine whisper' : 'mine');
     game.net.sendChat?.(text);
     game.onChatSent?.();
     if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
