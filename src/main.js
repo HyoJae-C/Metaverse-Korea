@@ -133,6 +133,7 @@ import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { DUCK_SEATS } from './core/park.js';
+import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { DuckRide, DUCK_BUMP } from './core/duck-boat.js';
 import { Contacts, touching, wobble } from './core/bump.js';
@@ -1103,6 +1104,7 @@ const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
 if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
+let roomVisit = 0; // counts rooms walked into (the drone show tilts the view once per visit)
 const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
@@ -2072,6 +2074,7 @@ function buyUmbrella(product) {
   shop.openProduct(product); // the button now says you have one
 }
 if (held) setHeld(held);
+if (held?.kind === 'book') bag.removeKind('book'); // one library book out at a time: the one in hand
 
 // Put what's in my hand into the bag, and take things back out.
 const UMB_DESC = { en: 'Opens by itself outdoors when it rains or snows.', ko: '밖에서 비나 눈이 오면 저절로 펴져요.', ja: '外で雨や雪が降ると自動で開きます。', zh: '在外面下雨或下雪时会自动撑开。' };
@@ -2461,6 +2464,7 @@ function enterStore(item) {
   }
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
   interior = { ...built, store, front: item };
+  roomVisit++;
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
@@ -4251,12 +4255,12 @@ function currentActivity() {
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
+  if (seated && !seated.lie && held?.kind === 'book' && bookUi.open) return 'read'; // reading on any seat (a bench, a picnic mat, a café chair)
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
   if (seated?.bumper != null) return 'bumper'; // in a bumper car: sat back, hands on the wheel
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return gymUi.pose; // (the gym, a yoga mat, a reformer)
-  if (seated && held?.kind === 'book' && bookUi.open) return 'read';
   if (fishingUi.open) return fishingUi.state === 'reel' ? 'reel' : 'fish'; // reeling in: the reel clip
   return null;
 }
@@ -4718,13 +4722,24 @@ function updateWishes() {
   }
   for (const id of wishSeen.keys()) if (!others.players.has(id)) wishSeen.delete(id);
 }
+const BOOK_SWAP_TEXT = { en: 'Swapped books. "{name}" went back on the shelf. Sit anywhere and tap 📖 to read.', ko: '책을 바꿨어요. "{name}"은 책장에 돌려놨어요. 어디든 앉아서 📖를 누르면 읽을 수 있어요.', ja: '本を交換しました。「{name}」は本棚に戻しました。どこでも座って📖を押すと読めます。', zh: '换了一本书。《{name}》已放回书架。随便坐下点📖就能读。' };
+const BOOK_SIT_TEXT = { en: 'Tap 📖 Read to read your book here.', ko: '📖 읽기를 누르면 여기서 책을 읽을 수 있어요.', ja: '📖 読むを押すと、ここで本が読めます。', zh: '点📖阅读，就能在这里看书。' };
 const bookUi = new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
+  // One library book out at a time: picking another swaps it straight away
+  // (the old one goes back on the shelf, never into the bag).
   take: (id) => {
-    if (!handReady()) return;
-    holdNew({ kind: 'book', book: id });
-    shop.toast(t('book.taken'));
+    const back = held?.kind === 'book' ? held.book : bag.list().find((e) => e.kind === 'book')?.book;
+    if (back === id && held?.kind === 'book') return;
+    if (held?.kind === 'book') setHeld({ kind: 'book', book: id });
+    else {
+      if (!handReady()) return;
+      holdNew({ kind: 'book', book: id });
+    }
+    bag.removeKind('book');
+    const old = back && back !== id ? bookById(back) : null;
+    shop.toast(old ? fmt(L(BOOK_SWAP_TEXT), { name: localName(old.title, getLanguage()) }) : t('book.taken'));
   },
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
   getPage: (id) => bookPages[id] | 0,
@@ -4875,6 +4890,44 @@ const duckUi = new DuckUI({
   onStart: () => startDuckRide(),
   onLeave: () => standUp(),
 });
+// Ttukseom drone light show (core/drone-show.js: the schedule; the park room
+// turns its sky to night and flies the drones). Here: the game-wide notice
+// 10 minutes before, the lift-off and photo-time notices in the park, the
+// show music (only if music is on), and a camera that can look up.
+const DRONE_TEXT = {
+  soon: { en: '🛸 Drone light show at Ttukseom Han River Park in 10 minutes', ko: '🛸 10분 뒤 뚝섬 한강공원에서 드론 라이트쇼가 시작돼요', ja: '🛸 10分後にトゥクソム漢江公園でドローンライトショー', zh: '🛸 10分钟后纛岛汉江公园有无人机灯光秀' },
+  lift: { en: '🛸 The drones are rising over the river. Look up!', ko: '🛸 강 위로 드론이 떠올라요. 하늘을 보세요!', ja: '🛸 川の上にドローンが上がります。空を見上げて！', zh: '🛸 无人机正从江面升起，抬头看！' },
+  photo: { en: '📸 Photo time! Stand by the river', ko: '📸 사진 찍을 시간! 강가에 서 보세요', ja: '📸 撮影タイム！川辺に立ってみて', zh: '📸 拍照时间！站到江边吧' },
+};
+const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
+const inDronePark = () => mode === 'store' && interior?.store?.id === 'ttukseom-hangang';
+// In the park while it's dark: the camera may tilt below level to look up.
+const skyLook = () => inDronePark() && (interior.show?.night || 0) > 0.5;
+function updateDroneShow() {
+  const s = droneShowAt();
+  if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
+  const park = inDronePark();
+  if (park) stampStands.showTimed(interior.store.id);
+  const show = park ? interior.show : null;
+  const t = show?.now?.t;
+  if (t != null) {
+    if (t >= -LIFT_SECONDS && t < -LIFT_SECONDS + 60 && droneShow.lifted !== show.now.start) {
+      droneShow.lifted = show.now.start;
+      shop.toast(L(DRONE_TEXT.lift));
+    }
+    // Walking in while it's dark (or the lift-off): tilt the view up to
+    // the sky once, unless the player is steering the camera.
+    if (show.night > 0.5 && droneShow.camRoom !== show.now.start + ':' + roomVisit && manualCamT <= 0) {
+      droneShow.camRoom = show.now.start + ':' + roomVisit;
+      cam.pitch = -0.08;
+    }
+    if (show.photo && t >= show.photo[0] && t < show.photo[0] + 20 && droneShow.photo !== show.now.start) { droneShow.photo = show.now.start; shop.toast(L(DRONE_TEXT.photo)); }
+  }
+  const wantMusic = !!(show?.now && show.night > 0.5 && show.now.on);
+  if (wantMusic && !droneShow.music && music.on && music.track.id !== 'droneshow') { droneShow.music = music.track.id; music.setTrack('droneshow'); }
+  else if (!wantMusic && droneShow.music) { if (music.track.id === 'droneshow') music.setTrack(droneShow.music); droneShow.music = null; }
+}
+
 // Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
 // someone gets in (two seats each). Not a game: whoever sets off steers the
 // boat freely on the river for up to a minute (free), then it pedals itself
@@ -5483,6 +5536,7 @@ function sitDown(seat) {
   missionEvent('sit');
   if (seat.academy) academyUi.show();
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
+  else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
 }
 function standUp() {
   if (!seated) return;
@@ -6021,7 +6075,7 @@ renderer.setAnimationLoop(() => {
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
   cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : 0.12, 1.25);
+  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
 
   // Movement relative to the camera. While the stick is held in one
@@ -6059,6 +6113,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
+  updateDroneShow();
   updateRide(dt);
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
@@ -6168,7 +6223,8 @@ renderer.setAnimationLoop(() => {
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
   const cz = p.z + Math.cos(cam.yaw) * camHoriz;
   // Lower the camera with the distance so a close camera doesn't look straight down.
-  const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
   else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
@@ -6425,6 +6481,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
     openBank: () => bankGame.openBank(),
     bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
     bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,

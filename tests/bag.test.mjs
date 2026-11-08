@@ -64,3 +64,16 @@ test('a Han River ramen bowl stays a ramen bowl in the bag', () => {
   assert.equal(b.add({ kind: 'coffee', sips: 2, ramen: true }), true);
   assert.equal(b.list()[2].ramen, undefined);
 });
+
+test('one library book at a time: a second is refused, removeKind returns them, old piles shrink to one', () => {
+  const s = mem();
+  const b = new Bag(s);
+  assert.ok(b.add({ kind: 'book', book: 'hangul' }));
+  assert.ok(!b.add({ kind: 'book', book: 'idioms' }), 'only one book out');
+  assert.ok(b.add({ kind: 'coffee', sips: 2, name: 'Latte' }));
+  assert.equal(b.removeKind('book'), 1);
+  assert.ok(!b.has('book'));
+  assert.equal(b.size, 1);
+  const pile = mem({ [BAG_KEY]: JSON.stringify({ items: [{ kind: 'book', book: 'a' }, { kind: 'umbrella' }, { kind: 'book', book: 'b' }, { kind: 'book', book: 'c' }] }) });
+  assert.deepEqual(new Bag(pile).list(), [{ kind: 'book', book: 'a' }, { kind: 'umbrella' }]);
+});
