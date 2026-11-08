@@ -116,7 +116,7 @@ export class Daily {
     this.s.total = (this.s.total || 0) + 1;
     write(this.s);
     const coins = checkInPay(this.s.streak);
-    this.wallet.add(coins, { k: 'ledger.checkIn' });
+    this.wallet.add(coins, { k: 'ledger.checkIn' }, { r: 'checkin', once: 'checkin:' + today });
     this._emit();
     return coins;
   }
@@ -132,7 +132,7 @@ export class Daily {
     let coins = REWARD.mission, bonus = false;
     if (!this.s.bonus && this.allDone()) { this.s.bonus = bonus = true; coins += REWARD.allDone; }
     write(this.s);
-    this.wallet.add(coins, { k: 'ledger.mission' });
+    this.wallet.add(coins, { k: 'ledger.mission' }, { r: 'mission', once: 'mission:' + this.s.day + ':' + this.s.missions.indexOf(m) });
     this._emit();
     return { mission: m, coins, bonus };
   }

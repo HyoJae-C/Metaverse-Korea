@@ -209,7 +209,7 @@ export class OrderUI {
     this.onSay?.([LINES.done[0], LINES.done[1], meaning(LINES.done[2])]);
     const first = this.stamps.add(stampId(this.store.id, m.id));
     const coins = first ? ORDER_REWARD : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'order', once: 'order:' + stampId(this.store.id, m.id) });
     this._frame(t('order.done'));
     this.root.append(this._line(LINES.done[0], LINES.done[1], LINES.done[2], 'order-line clerk'));
     this.root.append(el('p', 'order-stamp', (first ? '🎉 ' : '✅ ') + t('order.stamps', { n: this._stampCount(), total: this.menu.length }) + (coins ? ` · 🪙 +${coins}` : '')));

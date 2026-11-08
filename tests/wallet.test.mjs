@@ -6,7 +6,7 @@ globalThis.localStorage = {
   getItem: (k) => store[k] ?? null,
   setItem: (k, v) => { store[k] = String(v); },
 };
-const { Wallet, WELCOME_COINS, LOG_MAX } = await import('../src/core/wallet.js');
+const { Wallet, WELCOME_COINS, LOG_MAX, onceId } = await import('../src/core/wallet.js');
 const cfg = { reward: 20, dailyLimit: 5, seconds: 0 };
 const fresh = () => { for (const k of Object.keys(store)) delete store[k]; return new Wallet(cfg); };
 
@@ -100,6 +100,7 @@ function fakeServer({ earnMax = 2000, migrateMax = 30000, welcome = WELCOME_COIN
       if (fn === 'wallet_apply') {
         const results = [];
         for (const op of args.p_ops) {
+          srv.sent = [...(srv.sent || []), op];
           if (srv.seen.has(op.id)) { results.push({ id: op.id, n: srv.seen.get(op.id), status: 'ok' }); continue; }
           let n = 0;
           if (op.k === 'resell') { // 017_resale.sql
@@ -321,4 +322,36 @@ test('the page shows money as won: 🪙 amounts become ₩ with commas', async (
   assert.equal(wonText('물고기 가방 🪙 1500어치'), '물고기 가방 ₩1,500어치');
   assert.equal(wonText('Fare 🪙 1,550'), 'Fare ₩1,550');
   assert.equal(wonText('no money here'), 'no money here');
+});
+
+test('earnings name their reward; once-only rewards keep one op id however often they are given', async () => {
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 0, gift: WELCOME_COINS });
+  const srv = fakeServer({ earnMax: 1e9 });
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  const base = w.coins;
+  w.add(20000, { k: 'ledger.stamp' }, { r: 'stamp', once: 'stamp:gyeongbok' });
+  w.add(30000, null, { r: 'job' });
+  w.spend(1000, null);
+  await w.flush();
+  const [stamp, job, pay] = srv.sent;
+  assert.equal(stamp.r, 'stamp');
+  assert.equal(stamp.id, onceId('stamp:gyeongbok'));
+  assert.equal(job.r, 'job');
+  assert.equal(pay.r, undefined, 'only earnings name a reward');
+  // Storage cleared, the stamp taken again: the server pays it once.
+  fresh();
+  store['mk.wallet'] = JSON.stringify({ u: 1, coins: 0, gift: WELCOME_COINS });
+  const again = new Wallet(cfg);
+  await again.connect(srv.cloud);
+  again.add(20000, null, { r: 'stamp', once: 'stamp:gyeongbok' });
+  await again.flush();
+  assert.equal(again.coins, base + 20000 + 30000 - 1000);
+});
+
+test('once ids are fixed, different per text, and look like uuids', () => {
+  assert.equal(onceId('medal:grill:gold'), onceId('medal:grill:gold'));
+  assert.notEqual(onceId('medal:grill:gold'), onceId('medal:grill:silver'));
+  assert.match(onceId('x'), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });

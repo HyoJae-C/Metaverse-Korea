@@ -146,7 +146,7 @@ export class GrillUI {
     const score = this.game.score;
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + GAME + ':' + medal });
     this._say(medal ? 'good' : 'again');
     this._frame('🥓 ' + t('grill.title'));
     const big = el('div', 'grill-result');

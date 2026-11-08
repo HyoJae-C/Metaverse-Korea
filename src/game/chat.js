@@ -173,7 +173,7 @@ export function createChat(game) {
       used.push(ev.id);
       try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
       // A fixed op id: the server wallet also takes it once per account.
-      game.wallet.add(ev.coins, { k: 'ledger.gift' }, { id: await opIdFor(`event:${ev.id}`) });
+      game.wallet.add(ev.coins, { k: 'ledger.gift' }, { r: 'event', id: await opIdFor(`event:${ev.id}`) });
       refreshWallet();
       game.shop.toast(fmt(L(game.CODE_TEXT.coins), { n: ev.coins }));
       return;
@@ -199,7 +199,7 @@ export function createChat(game) {
       }
       const coinsFromCode = await coinCode(code);
       if (coinsFromCode) {
-        game.wallet.add(coinsFromCode, { k: 'ledger.gift' });
+        game.wallet.add(coinsFromCode, { k: 'ledger.gift' }, { r: 'code' }); // operators only on the server
         refreshWallet();
         game.shop.toast(fmt(L(game.CODE_TEXT.coins), { n: coinsFromCode }));
         return;

@@ -37,7 +37,7 @@ export function createDelivery(game) {
     delivery = null;
     $('delivery-chip').hidden = true;
     if (!coins) return;
-    wallet.add(coins, { k: 'ledger.delivery' });
+    wallet.add(coins, { k: 'ledger.delivery' }, { r: 'delivery' });
     game.me.play('cheer');
     shop.toast(t('delivery.done', { n: coins }));
     missionEvent('delivery');

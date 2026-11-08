@@ -248,7 +248,7 @@ export function createPool(game) {
     skatePop(fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) }), place === 1 ? 'big' : 'land');
     let msg = fmt(L(PT.finish), { medal: MEDALS[place - 1] || '🏁', time: time.toFixed(2) });
     if (best) msg += ' · ' + L(PT.newBest);
-    if (coins) { wallet.add(coins, { name: { en: '50 m race', ko: '50m 레이스' }, at: game.interior?.store.name }); refreshWallet(); msg += ' · ' + fmt(L(PT.coins), { n: coins }); }
+    if (coins) { wallet.add(coins, { name: { en: '50 m race', ko: '50m 레이스' }, at: game.interior?.store.name }, { r: 'pool' }); refreshWallet(); msg += ' · ' + fmt(L(PT.coins), { n: coins }); }
     shop.toast(msg);
     sfx.landed?.();
     if (m.rid) game.net.sendEmote(raceMsg('fin', m.rid, time));
