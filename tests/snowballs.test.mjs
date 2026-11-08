@@ -2,16 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, parseSnowMsg, snowPose, holdSpeed, rollGrowth, holdPose, validHat, hatOf, hatLook, MAX_N, CREW_WINDOW_MS, ROLL_PER_STEP, chillStep, COLD_AFTER, PRESS_CHILL, encodeDucks, parseDucks, MAX_DUCKS } from '../src/core/snowballs.js';
 
-test('seven stages of twenty presses, growing all the way', () => {
+test('eight stages of twenty presses, growing all the way', () => {
   assert.equal(stageOf(0), 1);
   assert.equal(stageOf(19), 1);
   assert.equal(stageOf(20), 2);
   assert.equal(stageOf(60), 4);
   assert.equal(stageOf(120), 7);
-  assert.equal(stageOf(MAX_N), 7);
+  assert.equal(stageOf(140), 8);
+  assert.equal(stageOf(MAX_N), 8);
+  assert.equal(diameterOf(MAX_N), 2.3); // (the biggest stays as big as before)
   assert.equal(stepOf(65), 5);
   for (let n = 1; n <= MAX_N; n++) assert.ok(diameterOf(n) > diameterOf(n - 1));
-  assert.equal(diameterOf(60), 0.7); // waist-high at stage 4
+  assert.equal(diameterOf(60), 0.6); // waist-high at stage 4
 });
 
 test('gather by hand for stages 1-3, roll from stage 4', () => {
@@ -27,11 +29,11 @@ test('a friend pushing rolls it further', () => {
 });
 
 test('becoming a giant, and rolling one, takes two people', () => {
-  assert.equal(pushResult(118, 1).grow, 1);
-  assert.deepEqual([pushResult(119, 1).grow, pushResult(119, 1).why], [0, 'friend']);
-  assert.equal(pushResult(119, 2).grow, 1);
-  assert.deepEqual([pushResult(125, 1).move, pushResult(125, 1).why], [0, 'heavy']);
-  assert.ok(pushResult(125, 2).move > 0);
+  assert.equal(pushResult(138, 1).grow, 1);
+  assert.deepEqual([pushResult(139, 1).grow, pushResult(139, 1).why], [0, 'friend']);
+  assert.equal(pushResult(139, 2).grow, 1);
+  assert.deepEqual([pushResult(145, 1).move, pushResult(145, 1).why], [0, 'heavy']);
+  assert.ok(pushResult(145, 2).move > 0);
   assert.equal(pushResult(MAX_N, 3).grow, 0);
 });
 
@@ -44,7 +46,11 @@ test('people pushing within the window count as a crew', () => {
 
 test('a snowman head is smaller and liftable', () => {
   assert.equal(canTop(90, 120), true);
-  assert.equal(canTop(110, 120), false); // stage 6: too heavy to lift
+  assert.equal(canTop(110, 120), true); // stage 6 lifts fine
+  assert.equal(canTop(130, 150), true); // and stage 7
+  assert.equal(canTop(145, 150), true); // even a giant on a bigger giant
+  assert.equal(canTop(50, 110), true); // stage 3 on stage 6
+  assert.equal(canTop(110, 110), false); // (the bottom has to be bigger)
   assert.equal(canTop(50, 40), false);
 });
 
@@ -62,8 +68,8 @@ test('a different pose for each size, and for a friend helping', () => {
   assert.equal(snowPose(10), 'snowscoop');
   assert.equal(snowPose(70), 'snowpush');
   assert.equal(snowPose(70, true), 'snowpushhigh');
-  assert.equal(snowPose(130), 'snowback');
-  assert.equal(snowPose(130, true), 'snowshoulder');
+  assert.equal(snowPose(150), 'snowback');
+  assert.equal(snowPose(150, true), 'snowshoulder');
 });
 
 test('grab and walk: a heavy ball slows you, a friend holding on speeds you up', () => {
@@ -71,25 +77,25 @@ test('grab and walk: a heavy ball slows you, a friend holding on speeds you up',
   assert.ok(holdSpeed(70) < 1);
   assert.ok(holdSpeed(110) < holdSpeed(70)); // bigger is heavier
   assert.ok(holdSpeed(110, 2) > holdSpeed(110, 1));
-  assert.equal(holdSpeed(125, 1), 0); // a giant won't move for one person
-  assert.ok(holdSpeed(125, 2) > 0);
+  assert.equal(holdSpeed(145, 1), 0); // a giant won't move for one person
+  assert.ok(holdSpeed(145, 2) > 0);
 });
 
 test('a walked ball grows with the ground it covers, faster with friends', () => {
   assert.equal(rollGrowth(30, 1, 5), 0);
   assert.ok(Math.abs(rollGrowth(70, 1, ROLL_PER_STEP) - 1) < 1e-9);
   assert.ok(Math.abs(rollGrowth(70, 2, ROLL_PER_STEP) - 2) < 1e-9);
-  assert.equal(rollGrowth(119, 1, 10), 0); // the last step before giant needs a friend
-  assert.equal(rollGrowth(110, 1, 100), 9);
-  assert.equal(rollGrowth(119, 2, 100), MAX_N - 119);
+  assert.equal(rollGrowth(139, 1, 10), 0); // the last step before giant needs a friend
+  assert.equal(rollGrowth(130, 1, 100), 9);
+  assert.equal(rollGrowth(139, 2, 100), MAX_N - 139);
   assert.equal(rollGrowth(MAX_N, 3, 10), 0);
 });
 
 test('holding poses: the friend takes the other one', () => {
   assert.notEqual(holdPose(70), holdPose(70, true));
   assert.notEqual(holdPose(110), holdPose(110, true));
-  assert.equal(holdPose(125, true), 'snowback');
-  assert.notEqual(holdPose(125), 'snowback'); // the one steering faces the ball
+  assert.equal(holdPose(145, true), 'snowback');
+  assert.notEqual(holdPose(145), 'snowback'); // the one steering faces the ball
 });
 
 test('a hat on a snowman', () => {

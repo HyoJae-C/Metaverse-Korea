@@ -64,8 +64,14 @@ try {
   await b.evaluate(([x, z]) => window.__mk.place(x + 8, z), [X, Z]);
   await wait(1500);
   await press(a, 'Make a snowball');
+  await wait(300);
+  for (let i = 0; i < 4; i++) { // mashing E: one button, no list of choices popping up
+    await press(a, 'Gather snow'); await wait(150);
+    if (await mk(a, 'choices')) throw new Error('choices while gathering: ' + await mk(a, 'choices'));
+  }
+  console.log('gathered', await mk(a, 'snowballs'));
   await wait(800);
-  await mk(a, 'snowSet', 100);
+  await mk(a, 'snowSet', 120);
   await wait(800);
   const ball0 = await mk(a, 'snowballs');
   console.log('A ball', ball0);
@@ -80,12 +86,12 @@ try {
   const n = (s) => Number(s.split(',')[3]);
   if (!(n(ball1) > n(ball0))) throw new Error('did not grow walking: ' + ball1);
   // alone, it stops at the last step before giant
-  await mk(a, 'snowSet', 119);
+  await mk(a, 'snowSet', 139);
   await a.keyboard.down('KeyW'); await wait(1200); await a.keyboard.up('KeyW');
   await wait(300);
   const alone = await mk(a, 'snowballs');
   console.log('A alone at the gate', alone);
-  if (n(alone) !== 119) throw new Error('grew past the gate alone: ' + alone);
+  if (n(alone) !== 139) throw new Error('grew past the gate alone: ' + alone);
   // B walks up beside the ball and holds on too
   const [, bx, bz] = alone.split(',').map(Number);
   await b.evaluate(([x, z]) => window.__mk.place(x + 1.2, z), [bx, bz]);
@@ -99,7 +105,7 @@ try {
   const after = await mk(a, 'snowballs');
   const bp1 = await mk(b, 'pose');
   console.log('together', after, 'B pose', JSON.stringify(bp1), 'A pose', JSON.stringify(await mk(a, 'pose')));
-  if (!/,1[2-4]\d$/.test(after)) throw new Error('did not reach the giant stage together: ' + after);
+  if (!/,1[4-6]\d$/.test(after)) throw new Error('did not reach the giant stage together: ' + after);
   if (Math.hypot(bp1[1] - bp0[1], bp1[2] - bp0[2]) < 0.15) throw new Error('B did not come along');
   if (shotDir) await a.screenshot({ path: shotDir + '/sb-two.png' });
   await press(a, 'Let go');
@@ -136,7 +142,10 @@ try {
   // B takes out the snow duck maker and stamps out two ducks; A sees them
   await b.evaluate(() => window.__mk.place(18.4, 52.5));
   await wait(1200);
-  await press(b, 'snow duck maker');
+  console.log('B bag', await mk(b, 'bagKinds'));
+  if (!(await mk(b, 'bagKinds')).includes('duckmold')) throw new Error('no duck maker in the bag');
+  if ((await mk(b, 'choices'))?.some((c) => c.includes('duck'))) throw new Error('duck maker offered as a choice');
+  await b.evaluate(() => window.__mk.holdFromBag('duckmold'));
   await wait(400);
   console.log('B holds', await mk(b, 'heldNow'));
   if (await mk(b, 'heldNow') !== 'duckmold') throw new Error('no duck maker in hand');
@@ -147,13 +156,14 @@ try {
   console.log('ducks', ducks);
   if (!ducks || ducks.split(';').length !== 2) throw new Error('no ducks');
   let seen = null;
-  for (let i = 0; i < 20 && !seen; i++) { seen = (await a.evaluate(() => [...window.__mk.snowSeenDucks?.() ?? []])).find(Boolean); await wait(300); }
+  for (let i = 0; i < 20 && seen !== ducks; i++) { seen = (await a.evaluate(() => [...window.__mk.snowSeenDucks?.() ?? []])).find(Boolean); await wait(300); }
   console.log('A sees ducks', seen);
   if (seen !== ducks) throw new Error('A does not see the ducks');
   if (shotDir) { await b.evaluate(() => window.__mk.place(19, 51.3)); await wait(1500); await b.screenshot({ path: shotDir + '/sb-ducks.png' }); }
-  await press(b, 'away');
+  await b.evaluate(() => document.getElementById('stow-btn').click()); // back in the bag
   await wait(400);
   if (await mk(b, 'heldNow') === 'duckmold') throw new Error('duck maker still out');
+  if (!(await mk(b, 'bagKinds')).includes('duckmold')) throw new Error('duck maker not back in the bag');
   await wait(1500);
   if (shotDir) { await b.screenshot({ path: shotDir + '/sb-snowman.png' }); }
   ok = true;
