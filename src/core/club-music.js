@@ -109,7 +109,7 @@ export class ClubMusic {
     this.genre = genre;
     this.on = true;
     playThroughSilentSwitch();
-    await this.ctx.resume();
+    await this.ctx.resume().catch(() => {}); // refused on iOS at times: silent, not an error
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t);
     this.master.gain.setValueAtTime(0, t);
