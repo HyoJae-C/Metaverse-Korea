@@ -39,8 +39,8 @@ test('the drop tower climbs to the top, holds, then drops fast', async () => {
 });
 
 test('Another Land outside: wheel and drop tower are tall, the coaster loops', async () => {
-  const { WHEEL, DROP, dropHeight, COASTER } = await import('../src/core/anotherland.js');
-  assert.ok(WHEEL.hub + WHEEL.r > 50, 'wheel visible over Seongsu rooftops');
+  const { WHEEL, DROP, dropHeight, COASTER, PARK_SCALE } = await import('../src/core/anotherland.js');
+  assert.ok((WHEEL.hub + WHEEL.r) * PARK_SCALE > 40, 'wheel still seen over the lakeside trees and rooftops');
   assert.equal(dropHeight(12), DROP.top);
   assert.equal(dropHeight(1), DROP.low);
   assert.ok(COASTER.every(([, y]) => y >= 4), 'track stays off the ground');

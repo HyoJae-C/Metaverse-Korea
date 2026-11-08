@@ -20,6 +20,7 @@ import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
 import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
+import { buildDome, ROOM_DOME } from './dome.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -42,6 +43,7 @@ export const ROOM_SIZES = {
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
   pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
+  dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
@@ -350,6 +352,7 @@ export function buildInterior(store) {
   const EXIT = exitOf(ROOM);
   if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
   if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
+  if (store.workshop === 'dome') return buildDome(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
