@@ -63,8 +63,10 @@ export function makeBumperCar(color) {
   add(new THREE.BoxGeometry(0.88, 0.05, 0.1), '#fffaf3', 0, 0.56, 0.5); // racing stripe
   add(new THREE.BoxGeometry(0.72, 0.04, 0.6), '#fffaf3', 0, 0.27, -0.12); // cushion
   add(new THREE.BoxGeometry(0.78, 0.46, 0.12), '#fffaf3', 0, 0.5, -0.46); // seat back
-  const wheel = add(new THREE.TorusGeometry(0.13, 0.03, 6, 14), '#2a2a33', 0, 0.62, 0.3);
+  // The wheel on a short column, close enough for a driver sat back.
+  const wheel = add(new THREE.TorusGeometry(0.13, 0.03, 6, 14), '#2a2a33', 0, 0.62, 0.2);
   wheel.rotation.x = -0.9;
+  add(new THREE.CylinderGeometry(0.025, 0.025, 0.3, 6), '#2a2a33', 0, 0.5, 0.3).rotation.x = -0.6;
   for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.07, 8, 6), '#fff6b0', s * 0.28, 0.45, 0.66); // headlights
   // The pole at the back with a star-shaped light on top.
   add(new THREE.CylinderGeometry(0.025, 0.025, 1.5, 6), '#d9dde2', 0, 1.05, -0.55);

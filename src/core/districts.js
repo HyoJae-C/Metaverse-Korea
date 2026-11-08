@@ -9,7 +9,8 @@
 //     { "id": "seongsu", "map": "map.json", "offset": [0, 0] },
 //     { "id": "hongdae", "map": "districts/hongdae.json", "offset": [-900, 0] }
 //   ],
-//   "links": [ { "k": "primary", "w": 16, "p": [[-500, 0], [-400, 0]] } ]
+//   "links": [ { "k": "primary", "w": 16, "p": [[-500, 0], [-400, 0]] } ],
+//   "water": [ { "p": [[x, z], ...], "blockers": [optional, split for bridges] } ]
 //
 // Map files may also have "blockers": polygons you can't walk into (a river,
 // a palace wall) that are not buildings.
@@ -18,7 +19,10 @@ const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
 
-export function mergeDistricts(parts, links = []) {
+// water: river stretches between districts (region.json "water"), e.g. the Han
+// River joining one riverside park to the next. Each is a water area and a
+// blocker you can't walk into (leave a gap in it where a bridge crosses).
+export function mergeDistricts(parts, links = [], water = []) {
   const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [] };
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
@@ -30,6 +34,10 @@ export function mergeDistricts(parts, links = []) {
     out.meta.districts.push({ id, offset: [dx, dz], ...(map.meta?.parts ? { parts: map.meta.parts } : {}), ...(map.meta?.enclosure ? { enclosure: map.meta.enclosure } : {}) });
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
+  for (const w of water) {
+    out.areas.push({ k: 'water', p: w.p, d: 'link' });
+    for (const p of w.blockers || [w.p]) out.blockers.push({ p, d: 'link' });
+  }
   return out;
 }
 
@@ -37,7 +45,7 @@ export function mergeDistricts(parts, links = []) {
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
   const maps = await Promise.all(region.districts.map((d) => fetchJson(d.map)));
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || []));
+  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || []));
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as
