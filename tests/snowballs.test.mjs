@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, encodeBalls, parseBalls, pushMsg, headMsg, parseSnowMsg, snowPose, MAX_N, CREW_WINDOW_MS } from '../src/core/snowballs.js';
+import { stageOf, stepOf, diameterOf, rollable, pushResult, crewSize, canTop, encodeBalls, parseBalls, pushMsg, headMsg, hatMsg, parseSnowMsg, snowPose, holdSpeed, rollGrowth, holdPose, validHat, hatOf, hatLook, MAX_N, CREW_WINDOW_MS, ROLL_PER_STEP, chillStep, COLD_AFTER, PRESS_CHILL, encodeDucks, parseDucks, MAX_DUCKS } from '../src/core/snowballs.js';
 
 test('seven stages of twenty presses, growing all the way', () => {
   assert.equal(stageOf(0), 1);
@@ -64,4 +64,69 @@ test('a different pose for each size, and for a friend helping', () => {
   assert.equal(snowPose(70, true), 'snowpushhigh');
   assert.equal(snowPose(130), 'snowback');
   assert.equal(snowPose(130, true), 'snowshoulder');
+});
+
+test('grab and walk: a heavy ball slows you, a friend holding on speeds you up', () => {
+  assert.equal(holdSpeed(30), 1); // (still gathering)
+  assert.ok(holdSpeed(70) < 1);
+  assert.ok(holdSpeed(110) < holdSpeed(70)); // bigger is heavier
+  assert.ok(holdSpeed(110, 2) > holdSpeed(110, 1));
+  assert.equal(holdSpeed(125, 1), 0); // a giant won't move for one person
+  assert.ok(holdSpeed(125, 2) > 0);
+});
+
+test('a walked ball grows with the ground it covers, faster with friends', () => {
+  assert.equal(rollGrowth(30, 1, 5), 0);
+  assert.ok(Math.abs(rollGrowth(70, 1, ROLL_PER_STEP) - 1) < 1e-9);
+  assert.ok(Math.abs(rollGrowth(70, 2, ROLL_PER_STEP) - 2) < 1e-9);
+  assert.equal(rollGrowth(119, 1, 10), 0); // the last step before giant needs a friend
+  assert.equal(rollGrowth(110, 1, 100), 9);
+  assert.equal(rollGrowth(119, 2, 100), MAX_N - 119);
+  assert.equal(rollGrowth(MAX_N, 3, 10), 0);
+});
+
+test('holding poses: the friend takes the other one', () => {
+  assert.notEqual(holdPose(70), holdPose(70, true));
+  assert.notEqual(holdPose(110), holdPose(110, true));
+  assert.equal(holdPose(125, true), 'snowback');
+  assert.notEqual(holdPose(125), 'snowback'); // the one steering faces the ball
+});
+
+test('a hat on a snowman', () => {
+  const t = hatOf({ head: 'bucket', hatColor: 'mint' });
+  assert.equal(t, 'bucket~mint');
+  assert.deepEqual(hatLook(t), { head: 'bucket', hatColor: 'mint' });
+  assert.equal(hatOf({ head: null }), null);
+  assert.equal(validHat('cap'), true);
+  assert.equal(validHat('a;b'), false);
+  assert.equal(validHat('x:y'), false);
+  const s = encodeBalls([{ k: 1, x: 0, z: 0, n: 120, h: 80, ry: 1, t }, { k: 2, x: 1, z: 1, n: 70, t: 'cap' }]);
+  const [man, ball] = parseBalls(s);
+  assert.equal(man.t, t);
+  assert.equal(ball.t, undefined); // (only a snowman wears one)
+  assert.deepEqual(parseSnowMsg(hatMsg('u1', 3, 'cap')), { kind: 'hat', owner: 'u1', k: 3, t: 'cap' });
+  assert.equal(parseSnowMsg('sbt:u1:3:bad;hat'), null);
+});
+
+test('working the snow too long makes your hands cold; resting warms them', () => {
+  let c = 0, cold = false;
+  for (let i = 0; i < COLD_AFTER - 1; i++) ({ chill: c, cold } = chillStep(c, 1, 1));
+  assert.equal(cold, false);
+  ({ chill: c, cold } = chillStep(c, 1, 1));
+  assert.equal(cold, true);
+  assert.equal(c, 0); // (after warming up, start over)
+  const presses = Math.ceil(COLD_AFTER / PRESS_CHILL);
+  c = 0; cold = false; let n = 0;
+  while (n < 100 && !cold) { ({ chill: c, cold } = chillStep(c, 0, 0, 1)); n++; }
+  assert.equal(n, presses);
+  assert.ok(chillStep(10, 4).chill < 10); // resting
+});
+
+test('snow ducks round-trip, newest kept', () => {
+  const list = Array.from({ length: MAX_DUCKS + 3 }, (_, i) => ({ x: i, z: -i, ry: 0.5 }));
+  const back = parseDucks(encodeDucks(list.slice(-MAX_DUCKS)));
+  assert.equal(back.length, MAX_DUCKS);
+  assert.deepEqual(back.at(-1), { x: MAX_DUCKS + 2, z: -(MAX_DUCKS + 2), ry: 0.5 });
+  assert.deepEqual(parseDucks('1,2,x;3,4,0'), [{ x: 3, z: 4, ry: 0 }]);
+  assert.deepEqual(parseDucks(null), []);
 });

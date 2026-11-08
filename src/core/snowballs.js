@@ -57,39 +57,53 @@ export function crewSize(pushes, now) {
 export const canTop = (head, body) => head > 0 && head < body && stageOf(head) <= 5;
 export const liftable = (n) => stageOf(n) <= 5;
 
-// Our balls go in our state as "k,x,z,n[,h,ry]" joined by ";": k a small id,
-// n the body's steps, h the head's (a snowman), ry the way its face looks.
+// Our balls go in our state as "k,x,z,n[,h,ry[,t]]" joined by ";": k a small
+// id, n the body's steps, h the head's (a snowman), ry the way its face
+// looks, t a hat someone put on it ("cap" or "bucket~mint": a hat id and
+// the hat workshop colour).
 export function encodeBalls(list) {
   return list.map((b) => {
     const base = [b.k, b.x.toFixed(2), b.z.toFixed(2), b.n | 0];
     if (b.h) base.push(b.h | 0, (+b.ry || 0).toFixed(2));
+    if (b.h && validHat(b.t)) base.push(b.t);
     return base.join(',');
   }).join(';');
 }
 export function parseBalls(s) {
-  if (typeof s !== 'string' || !s || s.length > 200) return [];
+  if (typeof s !== 'string' || !s || s.length > 260) return [];
   const out = [];
   for (const part of s.split(';').slice(0, MAX_BALLS)) {
-    const [k, x, z, n, h, ry] = part.split(',').map(Number);
+    const raw = part.split(',');
+    const [k, x, z, n, h, ry] = raw.map(Number);
     if (![k, x, z, n].every(Number.isFinite) || n <= 0 || n > MAX_N) continue;
     const b = { k: k | 0, x, z, n: n | 0 };
-    if (Number.isFinite(h) && h > 0 && h < n) { b.h = h | 0; b.ry = Number.isFinite(ry) ? ry : 0; }
+    if (Number.isFinite(h) && h > 0 && h < n) {
+      b.h = h | 0; b.ry = Number.isFinite(ry) ? ry : 0;
+      if (validHat(raw[6])) b.t = raw[6];
+    }
     out.push(b);
   }
   return out;
 }
 
-// Messages to a ball's owner: a push ("sbp:owner:k:yaw") and a head put on
-// top ("sbh:owner:k:n:ry").
+// A hat for a snowman: "id" or "id~colour", letters, digits and dashes.
+export const validHat = (t) => typeof t === 'string' && /^[a-z0-9-]{1,24}(~[a-z0-9-]{1,16})?$/i.test(t);
+export const hatOf = (look) => (look?.head ? look.head + (look.hatColor ? '~' + look.hatColor : '') : null);
+export const hatLook = (t) => { const [head, hatColor] = String(t).split('~'); return { head, hatColor: hatColor || null }; };
+
+// Messages to a ball's owner: a push ("sbp:owner:k:yaw"), a head put on
+// top ("sbh:owner:k:n:ry") and a hat put on a snowman ("sbt:owner:k:hat").
 export const pushMsg = (owner, k, yaw) => `sbp:${owner}:${k}:${(+yaw).toFixed(2)}`;
 export const headMsg = (owner, k, n, ry) => `sbh:${owner}:${k}:${n | 0}:${(+ry).toFixed(2)}`;
+export const hatMsg = (owner, k, t) => `sbt:${owner}:${k}:${t}`;
 export function parseSnowMsg(e) {
-  if (typeof e !== 'string' || !(e.startsWith('sbp:') || e.startsWith('sbh:'))) return null;
+  if (typeof e !== 'string' || !/^sb[pht]:/.test(e)) return null;
   const parts = e.split(':');
-  const kind = parts[0] === 'sbp' ? 'push' : 'head';
+  const kind = { sbp: 'push', sbh: 'head', sbt: 'hat' }[parts[0]];
   const owner = parts[1];
   const k = Number(parts[2]);
   if (!owner || !Number.isFinite(k)) return null;
+  if (kind === 'hat') return validHat(parts[3]) ? { kind, owner, k, t: parts[3] } : null;
   if (kind === 'push') {
     const yaw = Number(parts[3]);
     return Number.isFinite(yaw) ? { kind, owner, k, yaw } : null;
@@ -108,4 +122,66 @@ export function snowPose(n, helper = false) {
   if (s <= 5) return (s === 4) !== helper ? 'snowpush' : 'snowpushhigh';
   return (s === 6) !== helper ? 'snowshoulder' : 'snowback';
 }
-export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulder', 'snowback'];
+export const SNOW_POSES = ['snowscoop', 'snowpush', 'snowpushhigh', 'snowshoulder', 'snowback', 'snowcold'];
+
+// ---------- grab and walk (stage 4+) ----------
+// From stage 4 you grab the ball once and walk: it rolls in front of you and
+// grows with the ground it covers, one step every ROLL_PER_STEP metres (each
+// friend holding on counts too). A heavy ball slows you down; friends
+// holding on make it lighter. A giant won't move for one person alone.
+export const ROLL_PER_STEP = 0.35;
+const HOLD_PACE = { 4: 0.62, 5: 0.52, 6: 0.44, 7: 0.34 }; // of walking speed, alone
+export function holdSpeed(n, crew = 1) {
+  const s = stageOf(n);
+  if (s < ROLL_FROM) return 1;
+  if (s >= CREW_STAGE && crew < 2) return 0;
+  return Math.min(1, HOLD_PACE[s] * (1 + 0.6 * (Math.max(1, Math.min(4, crew)) - 1)));
+}
+// Steps a ball of n grows over `metres` with `crew` people holding it.
+// Stops at the last step of stage 6 without a friend, and at the top.
+export function rollGrowth(n, crew, metres) {
+  if (!rollable(n) || metres <= 0) return 0;
+  const gate = (CREW_STAGE - 1) * STEPS - 1;
+  const cap = crew < 2 && n <= gate ? gate : MAX_N;
+  return Math.max(0, Math.min(cap - n, (metres * Math.max(1, crew)) / ROLL_PER_STEP));
+}
+// The pose while holding a ball and walking it along: facing the ball, so
+// no back push for the one steering; a friend holding on takes the other.
+export function holdPose(n, helper = false) {
+  const s = stageOf(n);
+  if (!helper) return s === 4 ? 'snowpush' : s === 5 ? 'snowpushhigh' : 'snowshoulder';
+  return s <= 5 ? (s === 4 ? 'snowpushhigh' : 'snowpush') : 'snowback';
+}
+
+// ---------- cold hands ----------
+// Working snow too long makes your hands cold: then you stop for COLD_MS
+// and blow on them. Walking a ball along chills them a second a second,
+// each press (gathering, a push) PRESS_CHILL; resting warms them up again.
+export const COLD_AFTER = 15; // seconds of work
+export const COLD_MS = 3000;
+export const PRESS_CHILL = 0.6;
+export const WARM_RATE = 0.5; // seconds of chill gone per second of rest
+// One step of the chill: { chill, cold } after `dt` seconds, `work` seconds
+// of it working (and `press` presses).
+export function chillStep(chill, dt, work = 0, press = 0) {
+  const c = Math.max(0, chill + work + press * PRESS_CHILL - (work || press ? 0 : dt * WARM_RATE));
+  return c >= COLD_AFTER - 1e-9 ? { chill: 0, cold: true } : { chill: c, cold: false };
+}
+
+// ---------- snow ducks ----------
+// A snow duck maker in your hand stamps out little snow ducks where you
+// stand: they stay put (no pushing, no rolling) until the snow melts. Ours
+// go in our state as "x,z,ry" joined by ";", the newest last.
+export const MAX_DUCKS = 10;
+export function encodeDucks(list) {
+  return list.map((d) => [d.x.toFixed(2), d.z.toFixed(2), (+d.ry || 0).toFixed(1)].join(',')).join(';');
+}
+export function parseDucks(s) {
+  if (typeof s !== 'string' || !s || s.length > 300) return [];
+  const out = [];
+  for (const part of s.split(';').slice(-MAX_DUCKS)) {
+    const [x, z, ry] = part.split(',').map(Number);
+    if ([x, z, ry].every(Number.isFinite)) out.push({ x, z, ry });
+  }
+  return out;
+}

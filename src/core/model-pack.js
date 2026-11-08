@@ -686,7 +686,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
-      const snowy = SNOW_MOVES[activity] && key === 'idle' ? activity : null; // making a snowball (core/snow-moves.js)
+      const snowy = SNOW_MOVES[activity] && (key === 'idle' || key === 'walk') ? activity : null; // making a snowball (core/snow-moves.js); walking one along: arms only
       if (folk && !folkProps && slotL && slotR) {
         folkProps = PUNGMUL_HANDS[folk] ? PUNGMUL_HANDS[folk]() : folkHandProps(folk);
         if (folkProps[0]) slotL.add(folkProps[0]);
@@ -717,8 +717,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       } else if (snowy) {
         moves = SNOW_MOVES[snowy](performance.now() / 1000);
-        bob = moves.bob || 0;
-        turn = moves.turn || 0;
+        if (key === 'walk') moves = { spine: moves.spine, head: moves.head, armL: moves.armL, armR: moves.armR, foreL: moves.foreL, foreR: moves.foreR }; // (the walk clip keeps the legs)
+        else { bob = moves.bob || 0; turn = moves.turn || 0; }
       } else if (listening) {
         moves = listenPose(performance.now() / 1000);
         bob = moves.bob || 0;

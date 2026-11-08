@@ -490,13 +490,9 @@ function pendantGeometry(kind) {
   return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
 }
 
-function addAccessories(look, head, torso, body) {
-  // T-shirt print on the chest.
-  if (TEE_PRINTS[look.tee]) {
-    const print = new THREE.Mesh(geo('teePrint', () => new THREE.PlaneGeometry(0.36, 0.36)), printMat(look.tee));
-    print.position.set(0, TEE_Y, TEE_Z);
-    body.add(print);
-  }
+// The hat (look.head) on a chibi head group: the hat workshop's shapes in
+// the chosen colour with its patch, or a shop hat in its own colour.
+function addHat(look, head) {
   const head1 = accessory('head', look.head);
   if (head1) {
     // Hat workshop hats (no shape: the plain ids) take the chosen colour and
@@ -571,6 +567,26 @@ function addAccessories(look, head, torso, body) {
       head.add(cap, pom);
     }
   }
+
+}
+
+// Just the hat, on its own, sized for a chibi head (radius about 0.33) and
+// centred where that head's centre would be: a snowman wears one
+// (game/snowman.js). Empty when look.head isn't a hat.
+export function hatModel(look) {
+  const g = new THREE.Group();
+  addHat(sanitizeLook(look), g);
+  return g;
+}
+
+function addAccessories(look, head, torso, body) {
+  // T-shirt print on the chest.
+  if (TEE_PRINTS[look.tee]) {
+    const print = new THREE.Mesh(geo('teePrint', () => new THREE.PlaneGeometry(0.36, 0.36)), printMat(look.tee));
+    print.position.set(0, TEE_Y, TEE_Z);
+    body.add(print);
+  }
+  addHat(look, head);
 
   const face = accessory('face', look.face);
   if (face) {

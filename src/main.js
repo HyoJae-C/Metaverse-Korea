@@ -1869,7 +1869,7 @@ let held = (() => {
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind || null);
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : snowman?.tool || held?.kind || null); // (the snow duck maker shows instead of the cup, like the rod)
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
@@ -2727,6 +2727,8 @@ const snowman = createSnowman({
   get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
   get shop() { return shop; }, get scene() { return scene; },
   get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
+  get onFoot() { return !riding && !seated; }, get look() { return myLook; },
+  heldChanged: () => { me.setHeld(heldKind()); lastSent = null; },
   send: (m) => net.sendEmote(m), blocked: (x, z, r) => collision.blocked(x, z, r),
   bubble: (text) => showBubble(myLabel, $('labels'), text), sfx: () => sfx,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
@@ -5533,7 +5535,7 @@ renderer.setAnimationLoop(() => {
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store';
     const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow; // (slower in the pool's water)
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed; // (slower in the pool's water, or rolling a big snowball)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -5558,7 +5560,7 @@ renderer.setAnimationLoop(() => {
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed();
+    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed() * snowman.speed;
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
@@ -5715,9 +5717,12 @@ renderer.setAnimationLoop(() => {
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
+    if (snowman.holdSync != null) st.sh = snowman.holdSync; // rolling one of them along
+    if (snowman.grabSync) st.sg = snowman.grabSync; // holding on to a friend's
+    if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -5842,7 +5847,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     sfxLog: () => sfxLog.slice(),
     snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
-    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
+    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),

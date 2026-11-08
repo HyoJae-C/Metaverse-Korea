@@ -11,7 +11,7 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold'];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
@@ -43,6 +43,28 @@ export function makeHeld(kind) {
     lemon.position.set(-0.03, 0.125, 0);
     lemon.rotation.z = Math.PI / 2;
     g.add(glass, drink, straw, lemon);
+  } else if (kind === 'duckmold') {
+    // A snow duck maker (눈오리 집게): two yellow plastic arms on a hinge,
+    // a duck-shaped cup at the end of each; squeeze snow between them.
+    const y = mat('#ffcf3a'), o = mat('#ff9a2e');
+    for (const sx of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.2, 0.02), y);
+      arm.position.set(sx * 0.018, 0.1, 0);
+      arm.rotation.z = -sx * 0.06;
+      const cup = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8, 0, Math.PI), y); // half a duck's body
+      cup.scale.set(1, 0.8, 1.25);
+      cup.rotation.y = sx * Math.PI / 2;
+      cup.position.set(sx * 0.03, 0.23, 0.01);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 6, 0, Math.PI), y);
+      head.rotation.y = sx * Math.PI / 2;
+      head.position.set(sx * 0.03, 0.27, 0.045);
+      g.add(arm, cup, head);
+    }
+    const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 8).rotateZ(Math.PI / 2), o);
+    hinge.position.y = 0.01;
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 6).rotateX(Math.PI / 2), o);
+    beak.position.set(0, 0.268, 0.085);
+    g.add(hinge, beak);
   } else if (kind === 'spear') {
     // A gate guard's spear (창) with a red tassel, held upright.
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.95, 8), mat('#6b4426'));
