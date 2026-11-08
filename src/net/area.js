@@ -13,6 +13,18 @@ import { createNet } from './index.js';
 
 const LEAVE_DELAY = 1500; // ms; hides the brief gap while a peer changes cell
 
+// Crowds are split into groups. Realtime services count every message once
+// per receiver, so a crowd of k people costs about k² messages: with
+// Supabase's per-second limit that is reached by a dozen people standing at
+// the spawn point. When we see CROWD_CAP or more people around us, we move to
+// the next group: the same streets on their own channels ('…~1', '…~2'), so
+// we see that group and they see us. A dozen people still makes a busy street.
+export const CROWD_CAP = 12;
+export const MAX_GROUPS = 6;
+const CROWD_CHECK_MS = 1500; // let presence arrive before counting
+
+export const groupKey = (key, group) => (group ? `${key}~${group}` : key);
+
 export function cellKey(room, cellSize, x, z) {
   return `${room}@${Math.floor(x / cellSize)},${Math.floor(z / cellSize)}`;
 }
@@ -32,6 +44,9 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   let me = { ...self };
   let closed = false;
   let chatLink = null; // the region's private chat channel (Supabase only)
+  let group = 0; // which crowd group we are in (see CROWD_CAP)
+  let at = { x, z };
+  let crowdTimer = null;
 
   const seen = (id, key, peer) => {
     let set = peerCells.get(id);
@@ -58,6 +73,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     }, LEAVE_DELAY));
   };
   const known = (id) => peerCells.has(id);
+  const visible = () => { let n = 0; for (const set of peerCells.values()) if (set.size) n++; return n; };
 
   async function open(key, listenOnly) {
     const cellHandlers = {
@@ -88,9 +104,10 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   }
 
   async function moveTo(px, pz) {
-    const key = cellSize ? cellKey(room, cellSize, px, pz) : room;
+    at = { x: px, z: pz };
+    const key = groupKey(cellSize ? cellKey(room, cellSize, px, pz) : room, group);
     if (key === ownKey) return;
-    const wanted = new Set(cellSize ? neighbourKeys(room, cellSize, px, pz) : [room]);
+    const wanted = new Set((cellSize ? neighbourKeys(room, cellSize, px, pz) : [room]).map((k) => groupKey(k, group)));
     const prevOwn = ownKey;
     ownKey = key;
     for (const k of [...cells.keys()]) if (!wanted.has(k)) close(k);
@@ -105,7 +122,22 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     await Promise.all(pending);
   }
 
+  // Too many people around us right after we arrived: move on to the next
+  // group. Only the newcomer moves (on joining the region, and again if the
+  // next group is full too), so a crowd that is already there stays together.
+  function checkCrowd() {
+    clearTimeout(crowdTimer);
+    crowdTimer = setTimeout(() => {
+      if (closed || visible() < CROWD_CAP || group >= MAX_GROUPS - 1) return;
+      group += 1;
+      for (const k of [...cells.keys()]) close(k);
+      ownKey = null;
+      moveTo(at.x, at.z).then(checkCrowd);
+    }, CROWD_CHECK_MS);
+  }
+
   await moveTo(x, z);
+  checkCrowd();
   const own = () => cells.get(ownKey)?.adapter;
   if (!own() || cells.get(ownKey).failed) throw new Error('Realtime unavailable');
   // One private chat channel for the whole region, opened a moment after the
@@ -120,6 +152,8 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
       if (!closed && cellSize) moveTo(px, pz);
     },
     get chatReady() { return !!chatLink?.ready; }, // on the private chat channel (else room chat)
+    get peers() { return visible(); }, // people we can see right now
+    get group() { return group; },
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
     sendChat(t) {
@@ -134,6 +168,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     disconnect() {
       closed = true;
       clearTimeout(chatTimer);
+      clearTimeout(crowdTimer);
       chatLink?.close();
       chatLink = null;
       for (const k of [...cells.keys()]) {
