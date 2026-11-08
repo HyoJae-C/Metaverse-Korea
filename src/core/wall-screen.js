@@ -2,9 +2,10 @@
 // shows a "coming soon" card; ads can be drawn on the same canvas later.
 //
 // Placed from region.json "screens": [{ at: [x, z], along, w, h, y, image,
-// city, text }]: the screen goes on the building wall nearest `at` (moved
+// city, text, wave }]: the screen goes on the building wall nearest `at` (moved
 // `along` metres sideways), facing out of the building. It shows `image`, a
-// `city` card ({ name, local }) for a tall screen, or a line of `text`.
+// `city` card ({ name, local }) for a tall screen, a line of `text`, or the
+// sea (`wave`: a big wave rolling inside a box, KONEXT's media wall).
 import * as THREE from 'three';
 import { inPoly } from './geom.js';
 
@@ -140,13 +141,78 @@ function drawText(g, text, t) {
   sweepAndLines(g, t, W, H);
 }
 
+// The sea inside a box: the screen is drawn as the inside of a deep glass
+// box (its side walls in perspective), and a big wave rolls across it, rises
+// and crashes in foam against the near wall, over and over.
+export function drawWave(g, t) {
+  const { width: W, height: H } = g.canvas;
+  const ix = W * 0.1, iy = H * 0.12; // how far in the box's back wall starts
+  // The box: dark walls, a lighter back.
+  g.fillStyle = '#05121f'; g.fillRect(0, 0, W, H);
+  const back = g.createLinearGradient(0, iy, 0, H - iy);
+  back.addColorStop(0, '#0b3557'); back.addColorStop(1, '#06223a');
+  g.fillStyle = back; g.fillRect(ix, iy, W - 2 * ix, H - 2 * iy);
+  g.strokeStyle = 'rgba(140,200,255,0.35)'; g.lineWidth = 3;
+  for (const [x0, y0, x1, y1] of [[0, 0, ix, iy], [W, 0, W - ix, iy], [0, H, ix, H - iy], [W, H, W - ix, H - iy]]) {
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  }
+  g.strokeRect(ix, iy, W - 2 * ix, H - 2 * iy);
+  // The wave: a 9-second cycle; it builds on the left, rolls right and breaks.
+  const cyc = (t % 9) / 9;
+  const crest = W * (-0.1 + cyc * 1.25); // where the crest is
+  const rise = Math.sin(Math.min(1, cyc * 1.4) * Math.PI) * H * 0.42;
+  const level = H * 0.66;
+  for (let layer = 0; layer < 3; layer++) {
+    const k = 1 - layer * 0.28;
+    g.beginPath();
+    g.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) {
+      const swell = Math.sin(x * 0.012 - t * 1.6 + layer) * 10 * k;
+      const near = Math.exp(-(((x - crest) / (W * 0.16)) ** 2));
+      const y = level + layer * H * 0.06 - near * rise * k + swell;
+      g.lineTo(x, y);
+    }
+    g.lineTo(W, H); g.closePath();
+    const sea = g.createLinearGradient(0, level - rise, 0, H);
+    sea.addColorStop(0, `hsla(${190 + layer * 8}, 85%, ${58 - layer * 12}%, ${0.95 - layer * 0.15})`);
+    sea.addColorStop(1, `hsla(${210 + layer * 6}, 80%, ${22 - layer * 4}%, 1)`);
+    g.fillStyle = sea; g.fill();
+  }
+  // Foam on the crest, and spray when it breaks near the right wall.
+  const top = level - rise;
+  g.fillStyle = 'rgba(255,255,255,0.85)';
+  for (let i = 0; i < 40; i++) {
+    const a = i * 2.39996, r = (i % 7) * 6 + 4;
+    const fx = crest + Math.cos(a + t * 3) * W * 0.05 * ((i % 5) / 5 + 0.4);
+    const fy = top + 10 + Math.sin(a * 1.3 + t * 2) * 14;
+    g.beginPath(); g.arc(fx, fy, r * 0.5, 0, Math.PI * 2); g.fill();
+  }
+  if (cyc > 0.7) {
+    const k = (cyc - 0.7) / 0.3;
+    for (let i = 0; i < 70; i++) {
+      const a = (i * 0.37) % 1, sx = W - ix - a * W * 0.25 * k;
+      const sy = level - rise * 0.6 - Math.sin(a * Math.PI) * H * 0.35 * k + k * k * H * 0.3;
+      g.globalAlpha = 1 - k * 0.8;
+      g.beginPath(); g.arc(sx, sy, 3 + (i % 4) * 2, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  // The mall's word in a corner, small.
+  g.textAlign = 'right'; g.textBaseline = 'top';
+  g.fillStyle = 'rgba(255,255,255,0.8)';
+  g.font = `900 ${Math.round(H * 0.07)}px ${FONT}`;
+  g.fillText('KONEXT', W - ix - 12, iy + 10);
+  g.fillStyle = 'rgba(0,0,0,0.16)';
+  for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 2);
+}
+
 export class WallScreen {
   // image: a picture to show (url), instead of the "coming soon" card.
   // city / text: see the region.json note at the top.
-  constructor({ w = 20, h = 10, image = null, city = null, text = null } = {}) {
+  constructor({ w = 20, h = 10, image = null, city = null, text = null, wave = false } = {}) {
     this.t = 0;
     this.frameT = 0;
-    this.city = city; this.text = text;
+    this.city = city; this.text = text; this.wave = wave;
     this.canvas = document.createElement('canvas');
     // The longer side gets 1024 pixels; the canvas has the screen's shape.
     const k = 1024 / Math.max(w, h);
@@ -154,7 +220,8 @@ export class WallScreen {
     this.g = this.canvas.getContext('2d');
     this.tex = new THREE.CanvasTexture(this.canvas);
     this.tex.colorSpace = THREE.SRGBColorSpace;
-    drawSoon(this.g, 0);
+    if (wave) drawWave(this.g, 0);
+    else drawSoon(this.g, 0);
     this.img = null;
     if (image && typeof Image !== 'undefined') {
       const img = new Image();
@@ -184,6 +251,7 @@ export class WallScreen {
     if (this.img) drawImage(this.g, this.img, this.t);
     else if (this.city) drawCity(this.g, this.city, this.t);
     else if (this.text) drawText(this.g, this.text, this.t);
+    else if (this.wave) drawWave(this.g, this.t);
     else drawSoon(this.g, this.t);
     this.tex.needsUpdate = true;
   }

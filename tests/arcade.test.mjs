@@ -107,3 +107,19 @@ test('the batting cage, the gallery booth and the dartboard exist in the data', 
   assert.ok(stores.find((s) => s.id === 'bar-hush')?.darts);
   assert.ok(stores.find((s) => s.workshop === 'themepark'));
 });
+
+test('balloon booth medals: gold wins the small teddy bear, a plush for your home', async () => {
+  const { galleryMedal, GALLERY_MEDALS, GALLERY_GOLD_PRIZE, TARGETS: TG, GALLERY_SHOTS: N } = await import('../src/core/arcade.js');
+  const { ITEMS } = await import('../src/core/inventory.js');
+  assert.equal(galleryMedal(0), null);
+  assert.equal(galleryMedal(149), null);
+  assert.equal(galleryMedal(150), 'bronze');
+  assert.equal(galleryMedal(250), 'silver');
+  assert.equal(galleryMedal(349), 'silver');
+  assert.equal(galleryMedal(350), 'gold');
+  // Gold is reachable with the corks you have, but needs more than balloons and ducks.
+  assert.ok(GALLERY_MEDALS[0][1] <= N * TG.star.points);
+  assert.ok(GALLERY_MEDALS[0][1] > N * TG.duck.points);
+  assert.ok(ITEMS[GALLERY_GOLD_PRIZE]?.plush);
+  assert.equal(ITEMS[GALLERY_GOLD_PRIZE].name.ko, '작은 곰인형');
+});

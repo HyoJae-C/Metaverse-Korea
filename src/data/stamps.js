@@ -56,6 +56,15 @@ export const STAMPS = [
     icon: '<path d="M60 104 h64 q14 0 18 -10 M60 104 q2 16 18 16 h42 q16 0 20 -26"/><path d="M122 104 q-2 -14 4 -24 M136 80 q4 10 -2 24"/><circle cx="130" cy="70" r="11"/><path d="M140 66 l12 4 l-11 4"/><circle cx="132" cy="67" r="2"/><path d="M62 82 h56 M68 82 v22 M112 82 v22"/><path d="M52 132 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
   {
+    // Ttukseom's drone light show (core/drone-show.js): the stand is only on
+    // the lawn while the drones are up, so this stamp means you saw a show.
+    id: 'drone-show', place: { store: 'ttukseom-hangang', room: true, at: [-3.6, 4.6], ry: 0 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
+    gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
+    // drones drawing a heart over the river
+    icon: '<path d="M100 122 l-26 -26 a14 14 0 0 1 26 -18 a14 14 0 0 1 26 18 z" stroke-dasharray="3 7" stroke-linecap="round"/><circle cx="72" cy="70" r="3"/><circle cx="130" cy="66" r="3"/><circle cx="140" cy="92" r="2.5"/><circle cx="62" cy="96" r="2.5"/><path d="M64 136 q9 -6 18 0 q9 6 18 0 q9 -6 18 0 q9 6 18 0"/>',
+  },
+  {
     id: 'gyeongbokgung', place: { at: [-1734, -900] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
@@ -166,6 +175,13 @@ export const STAMPS = [
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a lion's face in its mane
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
+  },  {
+    // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
+    id: 'konext', place: { at: [115, 717], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
+    gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
+    // the mall's long front with its wave skylight, over a wave
+    icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
   },
   {
     // on the concourse of Seoul Another Dome, left of the door as you come in

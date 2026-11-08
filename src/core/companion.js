@@ -44,6 +44,19 @@ export function makePoop() {
   return g;
 }
 
+// Push (x, z) out of any keep-out box ({ x, z, hx, hz }: a centre and half
+// sizes), to the nearest side. Returns [x, z].
+export function keepOut(x, z, fences) {
+  for (const f of fences || []) {
+    const dx = x - f.x, dz = z - f.z;
+    if (Math.abs(dx) >= f.hx || Math.abs(dz) >= f.hz) continue;
+    const ox = f.hx - Math.abs(dx), oz = f.hz - Math.abs(dz);
+    if (ox < oz) x = f.x + (dx < 0 ? -f.hx : f.hx);
+    else z = f.z + (dz < 0 ? -f.hz : f.hz);
+  }
+  return [x, z];
+}
+
 export class Companion {
   // def: { kind, name, rom, color, accent, scale } (see ITEMS in inventory.js)
   constructor(id, def) {
@@ -55,6 +68,7 @@ export class Companion {
     this.squat = 0; // seconds left of a poop pose
     this.walked = 0; // metres since the last poop
     this.poopAt = nextPoopAt();
+    this.fences = null; // keep-out boxes in this room (the bumper car rink): see keepOut
   }
 
   // Put the pet next to the owner at once (on adopting, entering a room…).
@@ -73,8 +87,8 @@ export class Companion {
     if (riding) { this.place(owner.x, owner.z, owner.ry, owner.y || 0); return false; }
     const r = this.root.position;
     // Aim for a spot behind and a little to the side of the owner.
-    const tx = owner.x - Math.sin(owner.ry) * 1.1 + Math.cos(owner.ry) * 0.5;
-    const tz = owner.z - Math.cos(owner.ry) * 1.1 - Math.sin(owner.ry) * 0.5;
+    // (owner in a bumper car: wait by the rail nearest them, not on the floor)
+    const [tx, tz] = keepOut(owner.x - Math.sin(owner.ry) * 1.1 + Math.cos(owner.ry) * 0.5, owner.z - Math.cos(owner.ry) * 1.1 - Math.sin(owner.ry) * 0.5, this.fences);
     const dx = tx - r.x, dz = tz - r.z, d = Math.hypot(dx, dz);
     let moving = false;
     if (d > 12) this.place(owner.x, owner.z, owner.ry, owner.y || 0); // left behind: catch up
@@ -87,6 +101,7 @@ export class Companion {
       moving = true;
       this.walked += sp;
     } else turn(this.root, owner.ry, dt);
+    if (this.fences) [r.x, r.z] = keepOut(r.x, r.z, this.fences);
     r.y += ((owner.y || 0) - r.y) * Math.min(1, dt * 8); // follow the owner up and down the stairs
     // Pose: trotting legs, wagging tail, sit when still, squat to poop.
     const step = moving ? Math.sin(this.phase * 16) * 0.5 : 0;

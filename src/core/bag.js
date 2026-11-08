@@ -56,7 +56,9 @@ export class Bag {
     try { raw = JSON.parse(storage?.getItem(BAG_KEY) || 'null'); } catch { /* broken save */ }
     const cap = Number.isFinite(raw?.cap) ? raw.cap | 0 : BASE_CAP;
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
-    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(Boolean).slice(0, this.cap);
+    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(Boolean)
+      .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
+      .slice(0, this.cap);
     this.listeners = [];
   }
 
@@ -72,6 +74,7 @@ export class Bag {
     const e = cleanEntry(entry, this.opts);
     if (!e || this.full) return false;
     if (e.kind === 'umbrella' && this.has('umbrella')) return false; // one is enough
+    if (e.kind === 'book' && this.has('book')) return false; // one library book out at a time
     this.items.push(e);
     this._save();
     return true;
@@ -83,6 +86,15 @@ export class Bag {
     const [e] = this.items.splice(i, 1);
     this._save();
     return e;
+  }
+
+  // Take out every entry of one kind (e.g. library books going back to the
+  // shelf). Returns how many were removed.
+  removeKind(kind) {
+    const n = this.items.length;
+    this.items = this.items.filter((e) => e.kind !== kind);
+    if (this.items.length !== n) this._save();
+    return n - this.items.length;
   }
 
   // Swap slot i for another entry (take something out, put the held thing

@@ -525,6 +525,32 @@ export class Sfx {
     }
   }
 
+  // A great bronze temple bell struck with a log (Bosingak): a thud, then a
+  // long low hum. Each partial is two tones a little apart, so the hum swells
+  // and fades in slow waves (맥놀이), the sound Korean bells are known for.
+  // loud 0..1 (quieter from further away).
+  bigBell(loud = 1) {
+    if (!this.on || loud <= 0.01) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.03, base = 64;
+    for (const [mult, vol, len] of [[1, 0.2, 7], [2.0, 0.08, 5.5], [2.76, 0.05, 4], [4.1, 0.025, 2.6], [5.4, 0.012, 1.6]]) {
+      for (const beat of [0, mult === 1 ? 0.33 : 0.6]) {
+        const o = c.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = base * mult + beat;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol * loud * 0.5, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + len + 0.05);
+      }
+    }
+    this._hiss(0, 0.18, 0.06 * loud, 500, 160); // the log's thud
+  }
+
   // ---- Subway sounds (all made here; no real metro recordings) ----
   _tone(f, at, len, vol, type = 'sine', f2 = null) {
     const c = this.ctx, t = c.currentTime + 0.02 + at;

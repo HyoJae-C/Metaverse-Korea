@@ -13,7 +13,7 @@ First stop: **Seongsu-dong, Seoul**.
 
 ## Ready, not on the map yet
 
-- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. They wait for a folk games yard (Namsangol Hanok Village, Jung-gu) after the map is redrawn; try them at `dev/folk-games.html`. See docs/FOLK-GAMES.md
+- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. Play them in the folk games yard inside Namsangol Hanok Village (Jung-gu, through the gate south of Toegye-ro), where the locals are already playing; also at `dev/folk-games.html`. See docs/FOLK-GAMES.md
 - Mini basketball (미니 농구): pick a free throw, dunk, fadeaway or layup, play its gauge (stop the needle, tap fast, two timings, or step-step-shoot on the beat), and your character does one of three moves per shot depending on how well you did (e.g. two-hand, one-hand or back dunk). Five shots a round, medals like the folk games. On Olympic Park's Peace Plaza, just south of the skate park; also at `dev/basketball.html`. See docs/BASKETBALL.md
 
 ## Step 2 (in progress)
@@ -33,7 +33,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor). It is the only animal café in Seongsu
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
-- Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
+- Your own bike: everyone has one (🚲 button) and rides faster than running (no stamina); get off anywhere. There are no rental stations
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
