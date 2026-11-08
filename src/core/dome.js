@@ -1,5 +1,6 @@
-// Seoul Another Dome (서울 어나더 돔): the baseball stadium inside, and its
-// dome from the outside (on the Songpa map, west of Jamsil Station). The
+// Seoul Another Dome (서울 어나더 돔): the baseball stadium inside (its dome
+// on the Songpa map is core/dome-outside.js). Loaded the first time someone
+// walks in (main.js enterStore), so the street doesn't carry it. The
 // league and its games are in core/ballgame.js; this file builds the bowl
 // and plays the current game out on the field.
 //
@@ -14,6 +15,7 @@
 import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { matCache, canvasTex } from './three-kit.js';
+import { ROOM_DOME, polar } from './dome-outside.js';
 import { gameAt, boardAt, standings, rng, TEAMS, GAME_LEN, GAME_CYCLE, nextGameOf } from './ballgame.js';
 
 const mat = matCache();
@@ -21,7 +23,6 @@ const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
 // ---- Layout (room metres; the field's centre is (0, 0), home plate is
 // towards +z, by the door) -----------------------------------------------------
-export const ROOM_DOME = { w: 120, d: 120, h: 34 };
 export const FIELD_Y = -7; // the field, below the concourse
 export const FIELD_R = 36; // the outfield wall
 export const ROWS = 10;
@@ -44,7 +45,6 @@ const VISITOR = 0.36; // |θ| < this: the seats behind home plate, free to sit i
 const SIDE_END = 2.35; // the 1st/3rd base sides end here; the outfield bleachers beyond
 const STAGE_A = 1.12; // the cheering stages (home team at +θ, the 1st base side)
 const CHEER_SEATS = [0.86, 1.04]; // free seats in the home cheering section, next to its stage
-export const polar = (r, a) => ({ x: r * Math.sin(a), z: r * Math.cos(a) });
 const faceCentre = (x, z) => Math.atan2(-x, -z); // a character at (x, z) looking at the field
 export const rowY = (i) => ROW_Y0 + i * RISE;
 
@@ -781,54 +781,4 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   };
 }
 
-// ---- The dome from outside (the Songpa map) ----------------------------------
-// A white ring wall with glass bands, a low silver dome on top, the name
-// over the entrance on the plaza side (+z, towards Olympic-ro). r: radius.
-export function domeOutside(g, l) {
-  const r = l.r || 50, h = l.h || 14;
-  const wallM = new THREE.MeshLambertMaterial({ color: '#f1f3f6' });
-  const wallMesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 1.5, h, 64), wallM);
-  wallMesh.position.y = h / 2;
-  g.add(wallMesh);
-  for (const y of [h * 0.35, h * 0.72]) { // glass bands
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.08, r + 0.08, 2.2, 64, 1, true), mat('#8fc8ea'));
-    band.position.y = y;
-    g.add(band);
-  }
-  const roof = new THREE.Mesh(new THREE.SphereGeometry(r + 0.5, 48, 14, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#cfd8e3' }));
-  roof.scale.y = 0.36;
-  roof.position.y = h;
-  g.add(roof);
-  // Ribs over the roof.
-  for (let i = 0; i < 16; i++) {
-    const rib = new THREE.Mesh(new THREE.TorusGeometry(r + 0.55, 0.25, 4, 32, Math.PI), mat('#9aa8b8'));
-    rib.scale.set(1, 0.36, 1);
-    rib.rotation.y = (i / 16) * Math.PI;
-    rib.position.y = h;
-    g.add(rib);
-  }
-  // The entrance: a glass front and the sign above it.
-  const doorM = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 1.2), mat('#4f86c6'));
-  doorM.position.set(0, 3, r + 0.8);
-  g.add(doorM);
-  const sign = canvasTex(1024, 256, (x, w) => {
-    x.fillStyle = '#1f4f8f'; x.fillRect(0, 0, w, 256);
-    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.font = `900 100px ${FONT}`; x.fillText('서울 어나더 돔', 512, 92);
-    x.font = '800 60px system-ui, sans-serif'; x.fillText('SEOUL ANOTHER DOME', 512, 196);
-  });
-  const s = new THREE.Mesh(new THREE.PlaneGeometry(18, 4.5), new THREE.MeshBasicMaterial({ map: sign }));
-  s.position.set(0, h - 3, r + 1.7);
-  g.add(s);
-  // Team flags along the front.
-  TEAMS.forEach((team, i) => {
-    const a = (i - 3.5) * 0.09;
-    const p = polar(r + 4, a);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 9, 6), mat('#d9dde3'));
-    pole.position.set(p.x, 4.5, p.z);
-    g.add(pole);
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: team.color, side: THREE.DoubleSide }));
-    flag.position.set(p.x + 0.85, 7.6, p.z);
-    g.add(flag);
-  });
-}
+export { ROOM_DOME };
