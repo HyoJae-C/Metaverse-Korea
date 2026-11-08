@@ -108,6 +108,27 @@ export const TRACKS = [
     kick: [0, 4], snare: [2, 6], hat: 'odd',
     scale: [67, 69, 71, 74, 76, 79], melodyFrom: 8, melody: 0.5, lead: 'pluck',
   },
+  {
+    // The Curve Runway's show music (not in the music cafe's record list):
+    // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
+    // bass, tense like a fashion show's catwalk.
+    id: 'runway',
+    hidden: true,
+    icon: '👠',
+    color: '#5b4a7a',
+    name: { en: 'Catwalk', ko: '캣워크', ja: 'キャットウォーク', zh: '猫步' },
+    desc: {
+      en: 'Fashion show music: a steady kick, a dark minor loop and a pulsing bass.',
+      ko: '패션쇼 음악: 일정한 킥, 어두운 단조 루프, 맥박 같은 베이스.',
+      ja: 'ファッションショーの音楽：一定のキック、暗い短調のループ、脈打つベース。',
+      zh: '时装秀音乐：稳定的底鼓、暗色小调循环和脉动的贝斯。',
+    },
+    bpm: 120, swing: 1,
+    chords: [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]],
+    bass: [33, 29, 26, 28], octaveBass: true,
+    kick: [0, 2, 4, 6], snare: [2, 6], hat: 'all',
+    scale: [69, 71, 72, 76, 77, 81], melodyFrom: 16, melody: 0.28, lead: 'pluck',
+  },
 ];
 
 export const trackById = (id) => TRACKS.find((tr) => tr.id === id) || TRACKS[0];

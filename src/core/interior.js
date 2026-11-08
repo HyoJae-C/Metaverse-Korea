@@ -29,7 +29,7 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
-  runway: { w: 26, d: 30, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
+  runway: { w: 26, d: 40, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
@@ -1119,7 +1119,8 @@ export function buildInterior(store) {
               const seat = { x: sx2, z, ry: -side * Math.PI / 2, stand: [sx2 - side * 0.62, z] };
               // About a third of the seats are taken already (the same ones
               // for everyone); the rest are for players.
-              if ((k++ * 7) % 3 === 0) audience.push(seat); else seats.push(seat);
+              // (at most 40 people, for phones)
+              if ((k++ * 7) % 3 === 0 && audience.length < 40) audience.push(seat); else seats.push(seat);
             }
             if (zs.length) block(sx2 + side * 0.12, (zs[0] + zs[zs.length - 1]) / 2, 0.45, zs[zs.length - 1] - zs[0] + 0.7);
           }
