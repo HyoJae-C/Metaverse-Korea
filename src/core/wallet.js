@@ -169,7 +169,11 @@ export class Wallet {
   async connect(cloud, timeoutMs = 4000) {
     const client = cloud?.client, uid = cloud?.user?.id;
     if (!client || !uid) return this.s ? 'offline' : 'local';
-    if (this.s && this.s.uid !== uid) { this.s = null; this._saveState(); } // another account's copy
+    // Another account's copy (signed in to another account on this device):
+    // its balance isn't this account's. Noted so the budget book can say why
+    // the balance changed (it used to jump without a line).
+    const switched = !!this.s && this.s.uid !== uid;
+    if (switched) { this.s = null; this._saveState(); }
     this.client = client;
     let res;
     const local = this.w.coins;
@@ -194,6 +198,13 @@ export class Wallet {
     this.s = { uid, u: 1, unit, base: (Number(data.coins) || 0) * f, ver: Number(data.ver) || 0, ads: Number(data.ads_left) || 0, adsDay: kstDay(), queue };
     this.welcomed = (Number(data.welcome) || 0) * f;
     if (this.welcomed > 0) this._log(this.welcomed, { k: 'ledger.welcome' });
+    // The budget book's last balance isn't the server's (another account, or
+    // spent or earned on another device): a line for the difference, so the
+    // balance never changes without one.
+    const last = this.log.at(-1);
+    if (last && Number.isFinite(last.bal) && last.bal !== this.coins) {
+      this._log(this.coins - last.bal, { k: switched ? 'ledger.account' : 'ledger.sync' });
+    }
     // Coins that moved here while the server was being asked.
     const late = this.s && data.created ? this.w.coins - local : 0;
     if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn', r: 'late', w: 1 });
@@ -359,6 +370,16 @@ export class Wallet {
     this._fromServer(data);
     this._retry = 0;
     this._saveState();
+    // What the server didn't take as asked (an earning over its limit, a
+    // payment it refused): a line for the difference, so the budget book
+    // adds up to the balance.
+    const got = new Map((Array.isArray(data.results) ? data.results : []).map((r) => [String(r?.id), Number(r?.n)]));
+    for (const o of ops) {
+      const n = got.get(o.id);
+      if (!Number.isFinite(n)) continue;
+      const diff = Math.round(n * this._sf()) - o.n;
+      if (Math.abs(diff) >= Math.max(1, this._sf())) this._log(diff, { k: 'ledger.cut' });
+    }
     this._notify();
     return true;
   }
