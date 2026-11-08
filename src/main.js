@@ -1594,6 +1594,7 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
+  get me() { return me; }, camera, // where a friend request's sender is (core/friends.js whereIs)
 });
 const { cleanChat, addChatLine } = chat;
 

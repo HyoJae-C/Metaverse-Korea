@@ -32,6 +32,16 @@ export const FRIEND_TEXT = {
   unfriendAsk: { en: 'Remove {name} from your friends? Your chat with them will be hidden.', ko: '{name} 님을 친구에서 뺄까요? 그 친구와의 대화도 안 보이게 돼요.', ja: '{name}さんをフレンドから外しますか？会話も見えなくなります。', zh: '要把 {name} 移出好友吗？和对方的聊天也会隐藏。', es: '¿Quitar a {name} de tus amigos? Tu chat con esa persona se ocultará.', id: 'Hapus {name} dari teman? Obrolan dengannya akan disembunyikan.', vi: 'Xóa {name} khỏi bạn bè? Cuộc trò chuyện cũng sẽ bị ẩn.', hi: '{name} को दोस्तों से हटाएँ? उनसे बातचीत छिप जाएगी।', fr: 'Retirer {name} de tes amis ? Ta discussion avec cette personne sera masquée.', th: 'ลบ {name} ออกจากเพื่อนไหม? แชทกับเขาจะถูกซ่อน', ar: 'إزالة {name} من أصدقائك؟ ستُخفى محادثتكما.' },
   you: { en: 'You', ko: '나', ja: '自分', zh: '我', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
   loading: { en: 'Loading…', ko: '불러오는 중…', ja: '読み込み中…', zh: '加载中…', es: 'Cargando…', id: 'Memuat…', vi: 'Đang tải…', hi: 'लोड हो रहा है…', fr: 'Chargement…', th: 'กำลังโหลด…', ar: 'جارٍ التحميل…' },
+  // Where a player who sent a request is now (seen from me).
+  w_near: { en: 'Right next to you', ko: '바로 옆에 있어요', ja: 'すぐ隣にいます', zh: '就在你旁边', es: 'Justo a tu lado', id: 'Tepat di sebelahmu', vi: 'Ngay bên cạnh bạn', hi: 'आपके ठीक बगल में', fr: 'Juste à côté de toi', th: 'อยู่ข้างๆ คุณเลย', ar: 'بجانبك تماماً' },
+  w_ahead: { en: '{m} m ahead of you', ko: '앞쪽 {m}m', ja: '前方 {m}m', zh: '前方 {m} 米', es: 'A {m} m delante de ti', id: '{m} m di depanmu', vi: 'Cách {m} m phía trước', hi: 'आपके आगे {m} मी', fr: 'À {m} m devant toi', th: 'ข้างหน้า {m} ม.', ar: 'على بُعد {m} م أمامك' },
+  w_right: { en: '{m} m to your right', ko: '오른쪽 {m}m', ja: '右 {m}m', zh: '右边 {m} 米', es: 'A {m} m a tu derecha', id: '{m} m di kananmu', vi: 'Cách {m} m bên phải', hi: 'आपके दाएँ {m} मी', fr: 'À {m} m à ta droite', th: 'ทางขวา {m} ม.', ar: 'على بُعد {m} م إلى يمينك' },
+  w_behind: { en: '{m} m behind you', ko: '뒤쪽 {m}m', ja: '後ろ {m}m', zh: '后面 {m} 米', es: 'A {m} m detrás de ti', id: '{m} m di belakangmu', vi: 'Cách {m} m phía sau', hi: 'आपके पीछे {m} मी', fr: 'À {m} m derrière toi', th: 'ข้างหลัง {m} ม.', ar: 'على بُعد {m} م خلفك' },
+  w_left: { en: '{m} m to your left', ko: '왼쪽 {m}m', ja: '左 {m}m', zh: '左边 {m} 米', es: 'A {m} m a tu izquierda', id: '{m} m di kirimu', vi: 'Cách {m} m bên trái', hi: 'आपके बाएँ {m} मी', fr: 'À {m} m à ta gauche', th: 'ทางซ้าย {m} ม.', ar: 'على بُعد {m} م إلى يسارك' },
+  w_away: { en: 'Not around you right now', ko: '지금 근처에 없어요', ja: '今は近くにいません', zh: '现在不在你附近', es: 'No está cerca ahora', id: 'Sedang tidak di dekatmu', vi: 'Hiện không ở gần bạn', hi: 'अभी आपके आस-पास नहीं', fr: 'Pas près de toi en ce moment', th: 'ตอนนี้ไม่ได้อยู่ใกล้คุณ', ar: 'ليس بالقرب منك الآن' },
+  find: { en: 'Find', ko: '찾기', ja: '探す', zh: '找人', es: 'Buscar', id: 'Cari', vi: 'Tìm', hi: 'ढूँढें', fr: 'Trouver', th: 'ค้นหา', ar: 'ابحث' },
+  findGone: { en: '{name} isn\'t around you right now.', ko: '{name} 님은 지금 근처에 없어요.', ja: '{name}さんは今近くにいません。', zh: '{name} 现在不在你附近。', es: '{name} no está cerca ahora.', id: '{name} sedang tidak di dekatmu.', vi: '{name} hiện không ở gần bạn.', hi: '{name} अभी आपके आस-पास नहीं हैं।', fr: '{name} n\'est pas près de toi en ce moment.', th: 'ตอนนี้ {name} ไม่ได้อยู่ใกล้คุณ', ar: '{name} ليس بالقرب منك الآن.' },
+  acceptReq: { en: 'Accept friend request', ko: '친구 신청 수락', ja: 'フレンド申請を承認', zh: '接受好友申请', es: 'Aceptar solicitud', id: 'Terima permintaan teman', vi: 'Đồng ý kết bạn', hi: 'दोस्ती अनुरोध स्वीकारें', fr: 'Accepter la demande d\'ami', th: 'ตอบรับคำขอเป็นเพื่อน', ar: 'قبول طلب الصداقة' },
   // Results and errors (shown as a toast).
   r_requested: { en: 'Friend request sent to {name}.', ko: '{name} 님에게 친구 신청을 보냈어요.', ja: '{name}さんにフレンド申請を送りました。', zh: '已向 {name} 发送好友申请。', es: 'Solicitud enviada a {name}.', id: 'Permintaan teman terkirim ke {name}.', vi: 'Đã gửi lời mời kết bạn tới {name}.', hi: '{name} को दोस्ती अनुरोध भेजा।', fr: 'Demande d\'ami envoyée à {name}.', th: 'ส่งคำขอเป็นเพื่อนถึง {name} แล้ว', ar: 'أُرسل طلب صداقة إلى {name}.' },
   r_friends: { en: 'You and {name} are now friends!', ko: '{name} 님과 친구가 됐어요!', ja: '{name}さんとフレンドになりました！', zh: '你和 {name} 成为好友了！', es: '¡{name} y tú ahora son amigos!', id: 'Kamu dan {name} sekarang berteman!', vi: 'Bạn và {name} đã là bạn bè!', hi: 'आप और {name} अब दोस्त हैं!', fr: '{name} et toi êtes maintenant amis !', th: 'คุณกับ {name} เป็นเพื่อนกันแล้ว!', ar: 'أنت و{name} صديقان الآن!' },
@@ -48,6 +58,8 @@ export const FRIEND_TEXT = {
   newRequest: { en: '{name} wants to be friends. Open 💬 → 👥 to answer.', ko: '{name} 님이 친구 신청을 했어요. 💬 → 👥 에서 확인하세요.', ja: '{name}さんからフレンド申請が届きました。💬 → 👥 で確認できます。', zh: '{name} 想加你为好友。在 💬 → 👥 查看。', es: '{name} quiere ser tu amigo. Abre 💬 → 👥 para responder.', id: '{name} ingin berteman. Buka 💬 → 👥 untuk menjawab.', vi: '{name} muốn kết bạn. Mở 💬 → 👥 để trả lời.', hi: '{name} दोस्त बनना चाहते हैं। जवाब देने के लिए 💬 → 👥 खोलें।', fr: '{name} veut devenir ton ami. Ouvre 💬 → 👥 pour répondre.', th: '{name} อยากเป็นเพื่อนกับคุณ เปิด 💬 → 👥 เพื่อตอบ', ar: '{name} يريد صداقتك. افتح 💬 ← 👥 للرد.' },
 };
 const T = (k, v) => fmt(L(FRIEND_TEXT[k]), v);
+// "12 m to your right" from whereIs() (core/friends.js).
+export const whereText = (at) => T('w_' + at.dir, { m: at.m });
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -66,7 +78,8 @@ function clock(iso, now = Date.now()) {
 export class FriendsUI {
   // app: { store() → backend or null, inbox() → Inbox or null, me() → my uid,
   //        friends() → current list, refresh() → reload the list, toast(s),
-  //        clean(text) → filtered text, isBlocked(uid, name), onRead() }
+  //        clean(text) → filtered text, isBlocked(uid, name), onRead(),
+  //        locate(name) → { id, m, dir } when they are around me, or null; ping(id) }
   constructor(root, app) {
     this.root = root;
     this.app = app;
@@ -138,7 +151,23 @@ export class FriendsUI {
         ok.onclick = async () => { const r = await st.accept(f.uid); this._result(r, f.name); };
         const no = el('button', 'chip', L(FRIEND_TEXT.decline));
         no.onclick = async () => { await st.remove(f.uid); this.app.refresh(); };
-        row.append(el('span', 'fr-avatar', '🙂'), el('b', 'fr-name', f.name), ok, no);
+        // Who is it? If they're around me, say where (and they can be found).
+        const at = this.app.locate(f.name);
+        const text = el('span', 'fr-text');
+        text.append(el('b', 'fr-name', f.name), el('small', 'fr-last fr-where' + (at ? ' here' : ''), at ? '📍 ' + whereText(at) : L(FRIEND_TEXT.w_away)));
+        row.append(el('span', 'fr-avatar', at ? '👋' : '🙂'), text);
+        if (at) {
+          const find = el('button', 'chip', '👀 ' + L(FRIEND_TEXT.find));
+          find.onclick = () => {
+            const now = this.app.locate(f.name);
+            if (!now) { this.app.toast(T('findGone', { name: f.name })); this.render(); return; }
+            this.close();
+            this.app.ping(now.id);
+            this.app.toast('📍 ' + f.name + ' · ' + whereText(now));
+          };
+          row.append(find);
+        }
+        row.append(ok, no);
         parts.push(row);
       }
     }
