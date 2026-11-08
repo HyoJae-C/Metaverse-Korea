@@ -13,7 +13,7 @@ import { farFree } from './far-textures.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
-import { domeOutside } from './dome.js';
+import { domeOutside } from './dome-outside.js';
 import { cgpGate, hoarding } from './grand-park.js';
 import { konext, aquariumSoon, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
