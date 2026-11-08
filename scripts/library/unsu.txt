@@ -7,8 +7,8 @@
 @author.en Hyun Jin-geon (1900–1943)
 @author.ko 현진건 (1900–1943)
 @year 1924
-@about.en A rickshaw puller in 1920s Seoul has the luckiest day in weeks, while his wife lies sick at home. A famous short story with a sad ending, and some harsh words and violence.
-@about.ko 1920년대 서울, 인력거꾼 김 첨지에게 오랜만에 운수 좋은 날이 찾아와요. 결말이 슬프고, 거친 말과 폭력이 나와요.
+@about.en A rickshaw puller in 1920s Seoul has the luckiest day in weeks, while his wife lies sick at home.
+@about.ko 1920년대 서울, 인력거꾼 김 첨지에게 오랜만에 운수 좋은 날이 찾아와요.
 @source https://ko.wikisource.org/wiki/운수_좋은_날
 @license Public domain. Hyun Jin-geon died in 1943, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource. English translation written for Another Seoul (free to use, CC0).
 ===
