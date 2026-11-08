@@ -22,11 +22,12 @@ export function parseThrow(v) {
 /**
  * pet: a Companion; scene: where the disc flies; owner(): { x, y, z, ry };
  * throw: { from, to, d, lucky, c, react }; on(event): 'caught' | 'missed' |
- * 'landed' (a pet that doesn't fetch: it lies there) | 'home' (dropped at
+ * 'landed' (a pet that doesn't fetch: it lies there) | 'fetching' (a cat
+ * that, this once, goes to get it after it lands) | 'home' (dropped at
  * your feet). tick(dt) returns false once it's over.
  */
 export function playFetch(pet, scene, owner, thr, on = () => {}) {
-  const kind = pet.def.kind, fetcher = fetches(kind), scale = pet.def.scale || 1;
+  const kind = pet.def.kind, fetcher = fetches(kind), catFetch = kind === 'cat' && thr.lucky, scale = pet.def.scale || 1;
   const ground = owner().y || 0;
   const T = flightTime(thr.d ?? Math.hypot(thr.to.x - thr.from.x, thr.to.z - thr.from.z));
   const disc = makeDisc(FRISBEE_COLORS[thr.c | 0]);
@@ -82,7 +83,7 @@ export function playFetch(pet, scene, owner, thr, on = () => {}) {
       if (s >= 1) {
         disc.position.y = ground + 0.03;
         disc.rotation.z = 0;
-        if (fetcher) { phase = 'fetch'; showFace(MISS_FACES); on('missed'); } else { phase = 'lie'; pet.playing = false; on('landed'); }
+        if (fetcher) { phase = 'fetch'; showFace(MISS_FACES); on('missed'); } else if (catFetch) { phase = 'fetch'; on('fetching'); } else { phase = 'lie'; pet.playing = false; on('landed'); }
       }
       return true;
     }
