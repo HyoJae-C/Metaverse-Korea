@@ -90,7 +90,13 @@
       table.chat td { padding: 6px 10px; }
       table.chat td:nth-child(1), table.chat td:nth-child(2) { white-space: nowrap; }
       table.chat td.who { font-weight: 600; white-space: nowrap; }
-      table.chat td:last-child { width: 100%; word-break: break-word; }
+      table.chat td:nth-child(4) { width: 100%; word-break: break-word; }
+      table.chat td.act { white-space: nowrap; }
+      table.chat td.act button { font-size: 12px; padding: 2px 8px; }
+      .chatsize { font-size: 12px; margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; background: #efe7da; color: var(--muted); }
+      .chatsize.warn { background: #fff1cc; color: #8a5a00; }
+      .chatsize.alert { background: #fde3df; color: #b2321f; font-weight: 600; }
+      #chatOlder { margin-bottom: 8px; }
       @media (max-width: 760px) { table.chat td:nth-child(2) { white-space: normal; max-width: 110px; } }
       .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
       #tab-codes h3 { font-size: 15px; margin: 20px 0 8px; }
@@ -159,14 +165,18 @@
     </section>
     <section class="tab" id="tab-chat" hidden>
       <div class="chatbar">
-        <b>💬 Live chat (실시간 채팅)</b>
-        <input type="search" id="chatQ" placeholder="Filter by word, name or place" />
+        <b>💬 Chat (채팅)</b>
+        <input type="search" id="chatQ" placeholder="Word, name or email" />
+        <button id="chatSearch" type="button">Search 90 days</button>
+        <button id="chatBack" type="button" hidden>Back to live</button>
         <label class="muted"><input type="checkbox" id="chatPause" /> Stop scrolling</label>
-        <button id="chatClear" type="button">Clear</button>
         <span class="muted" id="chatCount"></span>
       </div>
       <div class="chatbox">
-        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent, while this page is open (nothing is stored, and friend messages are private). Shops are listened to while someone is inside, so a line in the first few seconds after someone walks in can be missed.</p>
+        <p class="chatsize ok" id="chatSize" hidden></p>
+        <p class="muted" id="chatNote" hidden></p>
+        <button id="chatOlder" type="button" hidden>Load older</button>
+        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent. Friend messages are private and not shown.</p>
         <table class="grid chat"><tbody id="chatList"></tbody></table>
       </div>
     </section>

@@ -373,7 +373,7 @@ export const FR = {
   'notes.note': 'Tes tampons de lieux, ton carnet de plats et ton carnet de poissons. Touche-en un pour l\'ouvrir.',
   'chat.placeholder': 'Dis quelque chose aux gens autour…',
   'chat.send': 'Envoyer',
-  'chat.notice': 'Le chat est public : sois gentil et ne partage pas d\'infos personnelles.',
+  'chat.notice': 'Le chat est public et conservé 90 jours pour vérifier les signalements : sois gentil et ne partage pas d\'infos personnelles.',
   'chat.signIn': 'Seuls les joueurs connectés avec Google peuvent chatter. Tu peux quand même lire les messages des autres.',
   'chat.signInBtn': 'Se connecter avec Google pour chatter',
   'cloud.guestNote': 'Tu joues en invité : ta progression peut être perdue lors d\'une mise à jour. Connecte-toi avec Google pour la garder.',

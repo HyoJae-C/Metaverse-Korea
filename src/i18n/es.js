@@ -374,7 +374,7 @@ export const ES = {
   'notes.note': 'Tus sellos de lugares, tu libro de comida y tu libro de peces. Toca uno para abrirlo.',
   'chat.placeholder': 'Di algo a la gente cercana…',
   'chat.send': 'Enviar',
-  'chat.notice': 'El chat es público: sé amable y no compartas datos personales.',
+  'chat.notice': 'El chat es público y se guarda 90 días para revisar denuncias: sé amable y no compartas datos personales.',
   'chat.signIn': "Solo pueden chatear los jugadores que iniciaron sesión con Google. Aún puedes leer lo que dicen los demás.",
   'chat.signInBtn': "Inicia sesión con Google para chatear",
   'cloud.guestNote': "Juegas como invitado: tu progreso puede perderse cuando se actualice el juego. Inicia sesión con Google para conservarlo.",
