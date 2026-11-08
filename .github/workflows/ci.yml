@@ -18,6 +18,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: First-visit download budget
+        run: node scripts/check-size.mjs
       - name: Multiplayer end-to-end test
         run: |
           npx playwright install --with-deps chromium
