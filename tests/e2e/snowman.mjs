@@ -1,6 +1,7 @@
-// End-to-end check: snowballs with two players on a snowy street. A's ball
-// stops growing alone at the last step of stage 6; with B pushing too it
-// becomes a giant (stage 7). Then B puts a smaller ball on it: a snowman.
+// End-to-end check: snowballs with two players on a snowy street. A grabs
+// a ball and walks it along: it grows, and stops alone at the last step of
+// stage 6; with B holding on too it becomes a giant (stage 7). Then B puts a
+// smaller ball on it (a snowman) and their own hat on that.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/snowman.mjs http://localhost:4173/
 // With a build made with VITE_NET_PROVIDER=local, add --bridge: the two
@@ -53,7 +54,7 @@ const b = await join('Snow B');
 const mk = (pg, f, x) => pg.evaluate(([f, x]) => window.__mk[f](x), [f, x]);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function press(pg, want) { // wait for the button to show `want`, then press
-  for (let i = 0; i < 40; i++) { const l = await mk(pg, 'action'); if (!want || (l && l.includes(want))) { const ch = await mk(pg, 'choices'); if (ch) await pg.evaluate((i) => window.__mk.pick(i), Math.max(0, ch.findIndex((c) => c.includes(want)))); else await mk(pg, 'act'); return l; } await wait(150); }
+  for (let i = 0; i < 40; i++) { const l = await mk(pg, 'action'); if (!want || (l && l.includes(want)) || (await mk(pg, 'choices'))?.some((c) => c.includes(want))) { const ch = await mk(pg, 'choices'); if (ch) await pg.evaluate((i) => window.__mk.pick(i), Math.max(0, ch.findIndex((c) => c.includes(want)))); else await mk(pg, 'act'); return l; } await wait(150); }
   throw new Error('no button ' + want + ' (has ' + await mk(pg, 'action') + ')');
 }
 try {
@@ -64,25 +65,46 @@ try {
   await wait(1500);
   await press(a, 'Make a snowball');
   await wait(800);
-  await mk(a, 'snowSet', 119);
+  await mk(a, 'snowSet', 100);
   await wait(800);
-  console.log('A ball', await mk(a, 'snowballs'));
-  await press(a, 'Roll');
-  await wait(900);
-  console.log('A alone at the gate', await mk(a, 'snowballs'));
-  // B walks up to the far side of the ball
-  const [k, bx, bz] = (await mk(a, 'snowballs')).split(',').map(Number);
-  await b.evaluate(([x, z]) => window.__mk.place(x + 1.1, z), [bx, bz]);
-  for (let i = 0; i < 30; i++) { const s = await mk(a, 'snowSeen'); if (s[0] && Math.abs(s[0][3] - (bx + 1.1)) < 0.3) break; await wait(300); }
-  console.log('B sees', await mk(b, 'action'), JSON.stringify(await mk(b, 'snowSeen')), JSON.stringify(await mk(a, 'snowSeen')), JSON.stringify(await a.evaluate(() => globalThis.__sbdbg)));
-  await Promise.all([press(b, 'Push with'), press(a, 'Roll')]);
-  for (let i = 0; i < 3 && !/,12\d$/.test(await mk(a, 'snowballs')); i++) { await wait(500); await press(a, 'Roll'); }
-  console.log('after first pair', await mk(a, 'snowballs'));
+  const ball0 = await mk(a, 'snowballs');
+  console.log('A ball', ball0);
+  // grab it once and walk: it rolls along in front and grows
+  await press(a, 'Grab and roll');
+  await wait(300);
+  if (await mk(a, 'snowHold') == null) throw new Error('not holding');
+  await a.keyboard.down('KeyW'); await wait(3000); await a.keyboard.up('KeyW');
+  await wait(300);
+  const ball1 = await mk(a, 'snowballs');
+  console.log('A walked it', ball1, JSON.stringify(await mk(a, 'pose')));
+  const n = (s) => Number(s.split(',')[3]);
+  if (!(n(ball1) > n(ball0))) throw new Error('did not grow walking: ' + ball1);
+  // alone, it stops at the last step before giant
+  await mk(a, 'snowSet', 119);
+  await a.keyboard.down('KeyW'); await wait(1200); await a.keyboard.up('KeyW');
+  await wait(300);
+  const alone = await mk(a, 'snowballs');
+  console.log('A alone at the gate', alone);
+  if (n(alone) !== 119) throw new Error('grew past the gate alone: ' + alone);
+  // B walks up beside the ball and holds on too
+  const [, bx, bz] = alone.split(',').map(Number);
+  await b.evaluate(([x, z]) => window.__mk.place(x + 1.2, z), [bx, bz]);
+  for (let i = 0; i < 30; i++) { const s = await mk(a, 'snowSeen'); if (s[0] && Math.abs(s[0][3] - (bx + 1.2)) < 0.3) break; await wait(300); }
+  await press(b, 'Roll it with');
+  await wait(800);
+  console.log('B holds', await mk(b, 'snowHold'), JSON.stringify(await mk(b, 'pose')));
+  const bp0 = await mk(b, 'pose');
+  await a.keyboard.down('KeyW'); await wait(3000); await a.keyboard.up('KeyW');
   await wait(1500);
   const after = await mk(a, 'snowballs');
-  console.log('together', after, 'B pose', JSON.stringify(await mk(b, 'pose')), 'A pose', JSON.stringify(await mk(a, 'pose')));
-  if (!/,12\d$/.test(after)) throw new Error('did not reach the giant stage together: ' + after);
+  const bp1 = await mk(b, 'pose');
+  console.log('together', after, 'B pose', JSON.stringify(bp1), 'A pose', JSON.stringify(await mk(a, 'pose')));
+  if (!/,1[2-4]\d$/.test(after)) throw new Error('did not reach the giant stage together: ' + after);
+  if (Math.hypot(bp1[1] - bp0[1], bp1[2] - bp0[2]) < 0.15) throw new Error('B did not come along');
   if (shotDir) await a.screenshot({ path: shotDir + '/sb-two.png' });
+  await press(a, 'Let go');
+  for (let i = 0; i < 30 && await mk(b, 'snowHold') != null; i++) await wait(300); // (B lets go once they see A has)
+  if (await mk(a, 'snowHold') != null || await mk(b, 'snowHold') != null) throw new Error('still holding: ' + await mk(a, 'snowHold') + ' ' + await mk(b, 'snowHold') + ' ' + JSON.stringify(await b.evaluate(() => [...window.__mk.snowSeen()])));
   // snowman: B makes a small ball away from the giant, then it's set next to it
   const [, gx, gz] = after.split(',').map(Number);
   await b.evaluate(() => window.__mk.place(18.4, 56.5));
@@ -103,6 +125,35 @@ try {
   const sm = await mk(a, 'snowballs');
   console.log('snowman', sm, 'B now', await mk(b, 'snowballs'));
   if (!/,90,/.test(sm)) throw new Error('no snowman');
+  // B puts their hat on it
+  console.log('B wears', await b.evaluate(() => window.__mk.wear({ head: 'bucket', hatColor: 'mint' })));
+  await wait(500);
+  await press(b, 'hat on the snowman');
+  await wait(2000);
+  const hat = await mk(a, 'snowballs');
+  console.log('hat', hat);
+  if (!/,bucket~mint/.test(hat)) throw new Error('no hat on the snowman');
+  // B takes out the snow duck maker and stamps out two ducks; A sees them
+  await b.evaluate(() => window.__mk.place(18.4, 52.5));
+  await wait(1200);
+  await press(b, 'snow duck maker');
+  await wait(400);
+  console.log('B holds', await mk(b, 'heldNow'));
+  if (await mk(b, 'heldNow') !== 'duckmold') throw new Error('no duck maker in hand');
+  await press(b, 'Make a snow duck'); await wait(1000);
+  await b.evaluate(() => window.__mk.place(19.4, 52.5)); await wait(600);
+  await press(b, 'Make a snow duck'); await wait(1500);
+  const ducks = await mk(b, 'ducks');
+  console.log('ducks', ducks);
+  if (!ducks || ducks.split(';').length !== 2) throw new Error('no ducks');
+  let seen = null;
+  for (let i = 0; i < 20 && !seen; i++) { seen = (await a.evaluate(() => [...window.__mk.snowSeenDucks?.() ?? []])).find(Boolean); await wait(300); }
+  console.log('A sees ducks', seen);
+  if (seen !== ducks) throw new Error('A does not see the ducks');
+  if (shotDir) { await b.evaluate(() => window.__mk.place(19, 51.3)); await wait(1500); await b.screenshot({ path: shotDir + '/sb-ducks.png' }); }
+  await press(b, 'away');
+  await wait(400);
+  if (await mk(b, 'heldNow') === 'duckmold') throw new Error('duck maker still out');
   await wait(1500);
   if (shotDir) { await b.screenshot({ path: shotDir + '/sb-snowman.png' }); }
   ok = true;

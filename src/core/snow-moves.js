@@ -60,4 +60,15 @@ export const SNOW_MOVES = {
       legL: [-0.9 - 0.25 * w, 0, 0], kneeL: [1.1 + 0.2 * w, 0, 0], legR: [-0.4 + 0.25 * w, 0, 0], kneeR: [0.6, 0, 0],
     };
   },
+  // Cold hands: both hands up at the mouth, rubbing them and blowing on them.
+  snowcold(t) {
+    const w = wave(t, 2.2);
+    return {
+      bob: -0.02 * w,
+      spine: [0.12, 0, 0], head: [0.18, 0, 0],
+      armL: [-1.05, 0.35 + 0.12 * w, 0], armR: [-1.05, -0.35 - 0.12 * w, 0],
+      foreL: [-1.9, 0, 0], foreR: [-1.9, 0, 0],
+      kneeL: [0.12, 0, 0], kneeR: [0.12, 0, 0],
+    };
+  },
 };
