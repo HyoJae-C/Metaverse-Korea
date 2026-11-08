@@ -5,14 +5,21 @@
 import { chromium } from 'playwright';
 
 const url = process.argv[2] || 'http://localhost:4173/';
-const browser = await chromium.launch({ executablePath: process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+// Each player gets a browser of their own, as in real life. (Two contexts in
+// one browser share its GPU process: with software GL the second player's
+// start-up queued behind the first player's frames, ~5x slower, and timed
+// out at 90 s on CI runners as the map grew.)
+const launch = () => chromium.launch({ executablePath: process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browsers = [];
 const errors = [];
 // A fresh room per run, so visitors on the live site (same Supabase project)
 // or a parallel CI run can't change the player count.
 const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
 
 async function join(name) {
-  const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } }); // separate context: no shared tabs
+  const browser = await launch();
+  browsers.push(browser);
+  const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && errors.push(`${name}: ${m.text()}`));
@@ -22,8 +29,8 @@ async function join(name) {
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
   if ((await page.inputValue('#nickname')) !== name) throw new Error('nickname field did not accept typing');
-  // Building the world blocks the page; with software GL and a first player
-  // already rendering, the second click can take over 30 s on CI runners.
+  // Building the world blocks the page: with software GL the click can take
+  // a while on CI runners.
   await page.click('#start-btn', { timeout: 90000 });
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
   // First visit: the welcome coins card covers the screen until it's closed.
@@ -89,5 +96,5 @@ try {
 await a.screenshot({ path: 'e2e-multiplayer.png' });
 console.log(ok ? 'PASS: players see each other, emotes and chat arrive, area cells switch' : 'FAIL');
 if (errors.length) console.log(errors.join('\n'));
-await browser.close();
+for (const b of browsers) await b.close();
 process.exit(ok ? 0 : 1);
