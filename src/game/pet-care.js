@@ -34,7 +34,7 @@ export const petName = (id) => {
 
 /**
  * g: { me, scene, activeScene, mode, riding, seated, clerk, inventory, wallet,
- * shop, sfx } as getters, plus clearAction(), refreshQuestChip(),
+ * shop, sfx, fences (keep-out boxes, or null) } as getters, plus clearAction(), refreshQuestChip(),
  * refreshItems() and refreshWallet().
  */
 export function createPetCare(g) {
@@ -104,6 +104,7 @@ export function createPetCare(g) {
     // Waits out of sight while you ride or are indoors. Sitting down (a bench,
     // a picnic mat) it stays and sits by you.
     const hidden = g.riding > 0 || g.indoors;
+    pet.fences = g.fences || null; // (kept out of the bumper car rink)
     const poop = pet.update(dt, { x: p.x, z: p.z, y: p.y, ry: me.root.rotation.y }, hidden, g.mode === 'street');
     if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it
     if (poop) {
