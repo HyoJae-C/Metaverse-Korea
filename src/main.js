@@ -30,6 +30,7 @@ import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
+import { updateFarTextures } from './core/far-textures.js';
 import { BookUI } from './ui/book-ui.js';
 import { AcademyUI } from './ui/academy-ui.js';
 import { Academy } from './core/academy.js';
@@ -5131,6 +5132,7 @@ function updateAction(p, tSec) {
   let next = null, door = null;
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
+    updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
     const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot

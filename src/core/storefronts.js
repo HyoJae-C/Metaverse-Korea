@@ -105,6 +105,8 @@ function awningTexture(color) {
   return tex;
 }
 
+export const SIGN_NEAR = 170, SIGN_FAR = 200; // m
+
 export class Storefronts {
   constructor(scene, stores, map, center, collision = null) {
     this.items = [];
@@ -127,17 +129,16 @@ export class Storefronts {
       // board would go, so they get a hanok sign under them (core/hanok-signs.js)
       // and no awning (the eaves are the awning).
       const hanok = store.front === 'hanok';
-      const label = store.signLocal || store.name.ko, labelSub = store.signLocal ? store.name.ko : '';
       let sign = null, signMat, shape, signTop, hanokStyle = null;
       if (hanok) {
         hanokStyle = hanokSignStyle(store);
-        const made = addHanokSign(group, hanokStyle, hanokSignTexture(hanokStyle, label, store.colors.sign, labelSub));
+        const made = addHanokSign(group, hanokStyle, null); // (the face is drawn when you come near: showSign)
         signMat = made.faceMat;
         signTop = made.top;
       } else {
         shape = signShape(store);
         const dim = SIGN_SHAPES[shape];
-        signMat = new THREE.MeshBasicMaterial({ map: signTexture(label, store.colors.sign, '#ffffff', labelSub, shape) });
+        signMat = new THREE.MeshBasicMaterial(); // (the face is drawn when you come near: showSign)
         sign = new THREE.Mesh(signGeometry(shape), [signMat, mat(store.colors.sign)]);
         if (dim.blade) { // sticks out from the wall beside the door, seen from along the street
           sign.position.set(2.95, 3.4 + dim.h / 2, 0.8);
@@ -206,33 +207,56 @@ export class Storefronts {
       badge.renderOrder = 3;
       group.add(badge);
 
+      signMat.color.set(store.colors.sign); // plain board until its face is drawn
       this.items.push({ store, group, sign, signMat, shape, hanokStyle, ring, badge, door: door3 });
     }
   }
 
+  // Sign faces are canvases (~100-500 KB each, 240 shops): drawn only within
+  // SIGN_NEAR of the player and let go past SIGN_FAR. Fog starts at 140 m and
+  // a board's letters can't be read that far away, so the street looks the
+  // same; the board keeps its shape and colour either way.
+  _signText(it) {
+    const { store } = it;
+    if (this.translated || !store.signLocal) return [this.translated ? localName(store.name, this.lang) : store.name.ko, ''];
+    return [store.signLocal, store.name.ko];
+  }
+
+  showSign(it, on) {
+    const m = it.signMat;
+    if (on === !!m.map) return;
+    if (m.map) {
+      m.map.dispose();
+      m.map = null;
+      m.color.set(it.store.colors.sign);
+    } else {
+      const [t, sub] = this._signText(it);
+      m.map = it.hanokStyle ? hanokSignTexture(it.hanokStyle, t, it.store.colors.sign, sub) : signTexture(t, it.store.colors.sign, '#ffffff', sub, it.shape);
+      m.color.set('#ffffff');
+    }
+    m.needsUpdate = true;
+  }
+
   setTranslated(on, lang) {
     this.translated = on;
+    this.lang = lang;
     for (const it of this.items) {
-      const text = on ? localName(it.store.name, lang) : it.store.name.ko;
-      const local = it.store.signLocal;
-      it.signMat.map.dispose();
-      const [t, sub] = on || !local ? [text, ''] : [local, it.store.name.ko];
-      it.signMat.map = it.hanokStyle ? hanokSignTexture(it.hanokStyle, t, it.store.colors.sign, sub) : signTexture(t, it.store.colors.sign, '#ffffff', sub, it.shape);
-      it.signMat.needsUpdate = true;
+      if (it.signMat.map) { this.showSign(it, false); this.showSign(it, true); } // (faraway ones are drawn in the new language when you get there)
       if (!it.badge.userData.home) continue;
       it.badge.material.map.dispose();
-      it.badge.material.map = badgeTexture(storeIcon(it.store), text, it.store.colors.sign);
+      it.badge.material.map = badgeTexture(storeIcon(it.store), on ? localName(it.store.name, lang) : it.store.name.ko, it.store.colors.sign);
     }
   }
 
   // Returns the store whose entrance the player is standing at, if any.
   nearby(x, z, t) {
-    let hit = null;
+    let hit = null, drawn = 0;
     for (const it of this.items) {
       const s = 1 + Math.sin(t * 3) * 0.08;
       it.ring.scale.set(s, 1, s);
       // Badges show through walls, so fade them out with distance.
       const d = Math.hypot(it.door.x - x, it.door.z - z);
+      if (it.signMat.map ? d > SIGN_FAR : d < SIGN_NEAR && drawn++ < 6) this.showSign(it, !it.signMat.map); // (a few new faces a frame, so walking never stutters)
       it.badge.visible = it.badge.userData.home && d < 60;
       it.badge.material.opacity = d < 40 ? 1 : 1 - (d - 40) / 20;
       if (Math.hypot(it.door.x - x, it.door.z - z) < 2.2) hit = it;

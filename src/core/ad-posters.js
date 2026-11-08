@@ -67,7 +67,7 @@ export function storeLot(buildings, [x, z]) {
 }
 
 // ── Textures ────────────────────────────────────────────────────────────
-const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4 });
+const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4, farFree: true });
 
 const BIG_COLORS = ['#ff5a5f', '#2d6cdf', '#11a37f', '#f2a900', '#8e44ad', '#ff7a00', '#e94e77', '#1b998b'];
 

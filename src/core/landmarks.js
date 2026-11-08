@@ -8,6 +8,7 @@ import { buildAnotherLand } from './anotherland.js';
 import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
+import { farFree } from './far-textures.js';
 import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
@@ -193,6 +194,7 @@ const BUILD = {
     x.fillText(l.sub || '', 512, 146);
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
+    farFree(tex);
     for (const side of [1, -1]) {
       const sign = new THREE.Mesh(new THREE.PlaneGeometry(w + 1.2, (w + 1.2) * 0.1875), new THREE.MeshBasicMaterial({ map: tex }));
       sign.position.set(0, H + 0.6, side * 0.26);
