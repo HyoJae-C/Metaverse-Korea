@@ -11,7 +11,7 @@ const KEY = 'mk.daily';
 // it grows with the streak, day 1 to day 7, then starts over.
 export const CHECK_IN = [10000, 20000, 30000, 40000, 50000, 60000, 70000];
 export const checkInPay = (day) => CHECK_IN[(Math.max(1, day) - 1) % CHECK_IN.length];
-export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 20000, allDone: 50000 };
+export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 10000, allDone: 50000 };
 
 // Local calendar date, YYYY-MM-DD.
 export function dayKey(d = new Date()) {

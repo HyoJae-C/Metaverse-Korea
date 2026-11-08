@@ -40,9 +40,9 @@ test('medals keep the best one and pay money for each new tier once', () => {
   const store = new Map();
   const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
   const m = new Medals(storage);
-  assert.equal(m.add('grill', 'bronze'), 20000);
+  assert.equal(m.add('grill', 'bronze'), 5000);
   assert.equal(m.add('grill', 'bronze'), 0);
-  assert.equal(m.add('grill', 'gold'), 100000); // silver + gold
+  assert.equal(m.add('grill', 'gold'), 17000); // silver + gold
   assert.equal(m.add('grill', 'silver'), 0);
   assert.equal(new Medals(storage).best('grill'), 'gold');
 });

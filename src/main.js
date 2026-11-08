@@ -26,6 +26,7 @@ import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
 import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
+import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
@@ -111,7 +112,7 @@ import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, poseWord, tierOf, 
 import { PhotoUI } from './ui/photo-ui.js';
 import { ClawUI } from './ui/claw-ui.js';
 import { parseTarot } from './core/tarot-queue.js';
-import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { BuskingZones, readTips, writeTips, takeTip } from './core/busking.js';
 import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
@@ -2205,7 +2206,16 @@ $('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
+const dayPasses = new DayPasses();
 function enterStore(item) {
+  // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
+  const fee = dayPasses.feeFor(item.store);
+  if (fee) {
+    const name = DAY_PASS_TEXT[item.store.workshop];
+    if (!dayPasses.enter(item.store, wallet, { name, at: item.store.name })) { shop.toast(fmt(L(DAY_PASS_TEXT.short), { name: L(name), n: fee })); return; }
+    refreshWallet();
+    shop.toast(fmt(L(DAY_PASS_TEXT.paid), { name: L(name), n: fee }));
+  }
   setRiding(false);
   const metroRoom = (st) => st?.category === 'station' || st?.category === 'train';
   if (!metroRoom(item.store)) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
@@ -3456,9 +3466,7 @@ const BUSK_TEXT = {
   stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
   hi: { en: 'Say hi to the busker', ko: '버스커에게 인사', ja: 'バスカーにあいさつ', zh: '和街头艺人打招呼', es: 'Saludar al músico', ar: 'حيِّ العازف', vi: 'Chào nghệ sĩ', hi: 'कलाकार को नमस्ते', id: 'Sapa pengamen' },
   begin: { en: '🎤 You\'re on! The crowd is listening. Moving ends the show.', ko: '🎤 공연 시작! 관객이 듣고 있어요. 움직이면 공연이 끝나요.', ja: '🎤 本番スタート！観客が聴いています。動くと終わります。', zh: '🎤 开演了！观众在听。移动就会结束表演。', es: '🎤 ¡A escena! El público escucha. Si te mueves, termina.', ar: '🎤 بدأ العرض! الجمهور يستمع. الحركة تنهي العرض.', vi: '🎤 Bắt đầu! Khán giả đang nghe. Di chuyển sẽ kết thúc.', hi: '🎤 शो शुरू! भीड़ सुन रही है। चलने से शो ख़त्म होगा।', id: '🎤 Mulai! Penonton mendengarkan. Bergerak mengakhiri pertunjukan.' },
-  tip: { en: '🪙 +{n} A listener dropped a tip in your guitar case!', ko: '🪙 +{n} 관객이 기타 케이스에 팁을 넣었어요!', ja: '🪙 +{n} 観客がギターケースにチップを入れました！', zh: '🪙 +{n} 有观众往吉他盒里放了小费！', es: '🪙 +{n} ¡Alguien dejó una propina!', ar: '🪙 +{n} ترك أحد المستمعين إكرامية!', vi: '🪙 +{n} Một khán giả đã boa cho bạn!', hi: '🪙 +{n} एक श्रोता ने टिप दी!', id: '🪙 +{n} Penonton memberi tip!' },
-  noTips: { en: 'Great show! No more tips today, but the crowd still loves you.', ko: '멋진 공연! 오늘 팁은 다 받았지만 관객은 여전히 좋아해요.', ja: '素敵なショー！今日のチップは終わりですが、観客は大喜び。', zh: '精彩的表演！今天的小费已经领完，但观众依然喜欢你。', es: '¡Gran show! Hoy no hay más propinas.', ar: 'عرض رائع! لا مزيد من الإكراميات اليوم.', vi: 'Diễn hay lắm! Hôm nay hết tiền boa rồi.', hi: 'शानदार शो! आज और टिप नहीं।', id: 'Pertunjukan hebat! Hari ini tip sudah habis.' },
-  note: { en: 'Busking tips', ko: '버스킹 팁', ja: 'バスキングのチップ', zh: '街头表演小费' },
+  tip: { en: '👏 A listener is clapping along!', ko: '👏 관객이 박수를 쳐 줘요!', ja: '👏 観客が手拍子してくれています！', zh: '👏 有观众在跟着拍手！', es: '👏 ¡Alguien aplaude contigo!', ar: '👏 أحد المستمعين يصفّق معك!', vi: '👏 Một khán giả đang vỗ tay theo!', hi: '👏 एक श्रोता ताली बजा रहा है!', id: '👏 Penonton ikut bertepuk tangan!' },
 };
 let buskMusic = null; // { wasOn, track } while inside a busking zone
 function startBusking(s) {
@@ -3474,14 +3482,13 @@ function stopBusking() {
   me.play('bow');
   action = STALE;
 }
+// Busking is for fun, not money: listeners clap along (a few times a day).
 function buskTip() {
   const next = takeTip(readTips(), dayKey());
-  if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
+  if (!next) return;
   writeTips(next);
-  wallet.add(TIP, { name: BUSK_TEXT.note }, { r: 'busk' });
-  refreshWallet();
   sfx.pop?.();
-  shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
+  shop.toast(L(BUSK_TEXT.tip));
 }
 // The busking song plays while you're in the zone (and the usual music after).
 function updateBuskMusic(p) {
@@ -3689,7 +3696,6 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
 // Jjimjilbang: hot kiln and ice room, and the sheep towel.
 const saunaUi = new SaunaUI({
   root: $('sauna-panel'),
-  wallet,
   log: new SaunaLog(),
   onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
   onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
@@ -4116,7 +4122,7 @@ function pressStamp(it) {
     wallet.add(STAMP_REWARD, { name }, { r: 'stamp', once: 'stamp:' + s.id });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
-    // The last stamp of a course (e.g. the City Wall Trail) pays its reward once.
+    // The last stamp of a course (e.g. the Joseon Royal Walk) pays its reward once.
     for (const tr of trailsWith(TRAILS, s.id)) {
       if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
       const tname = {};
@@ -4744,12 +4750,12 @@ function onHi5(id) {
   if (r) hi5Done(id, r);
   else { shop.toast(t('hi5.asked', { name })); action = null; } // refresh the button
 }
-function hi5Done(id, { coins }) {
+function hi5Done(id, { coins, who, day }) {
   me.play('cheer');
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together' });
+  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together', once: 'hi5:' + day + ':' + who });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
