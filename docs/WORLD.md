@@ -163,8 +163,8 @@ building drawn by its landmark (`core/euljiro-models.js`) from the outline in
 the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
 City Wall on its west side, and the fashion malls across Jangchungdan-ro.
 South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
-Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
-free for the folk games (docs/FOLK-GAMES.md).
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) with
+the folk games yard in its middle (the `folkyard` landmark, docs/FOLK-GAMES.md).
 
 DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and

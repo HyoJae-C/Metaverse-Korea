@@ -188,6 +188,7 @@ import { createTarot } from './game/tarot.js';
 import { createBumper } from './game/bumper.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
+import { createFolkYard } from './game/folk-yard.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { parseTaxi } from './core/taxi-share.js';
@@ -3395,7 +3396,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3900,6 +3901,14 @@ const basketball = createBasketball({
   shop, wallet,
 });
 const { basketUi, nearCourt, basketTick } = basketball;
+// The folk games yard in Namsangol Hanok Village: yutnori, tuho, jegichagi
+// and neolttwigi with the locals. (game/folk-yard.js)
+const folkYard = createFolkYard({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get action() { return action; }, set action(v) { action = v; },
+  $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
+});
+onLanguageChange(() => folkYard.relabel());
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
 const skate = createSkate({
   get map() { return map; }, get inSkate() { return inSkate; }, set inSkate(v) { inSkate = v; },
@@ -5424,6 +5433,7 @@ function moreActions(p, door) {
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
+    const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -5517,6 +5527,7 @@ function updateAction(p, tSec) {
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
     else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
@@ -6141,9 +6152,9 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);

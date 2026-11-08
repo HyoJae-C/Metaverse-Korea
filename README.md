@@ -13,7 +13,7 @@ First stop: **Seongsu-dong, Seoul**.
 
 ## Ready, not on the map yet
 
-- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. They wait for a folk games yard (Namsangol Hanok Village, Jung-gu) after the map is redrawn; try them at `dev/folk-games.html`. See docs/FOLK-GAMES.md
+- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. Play them in the folk games yard inside Namsangol Hanok Village (Jung-gu, through the gate south of Toegye-ro), where the locals are already playing; also at `dev/folk-games.html`. See docs/FOLK-GAMES.md
 - Mini basketball (미니 농구): pick a free throw, dunk, fadeaway or layup, play its gauge (stop the needle, tap fast, two timings, or step-step-shoot on the beat), and your character does one of three moves per shot depending on how well you did (e.g. two-hand, one-hand or back dunk). Five shots a round, medals like the folk games. On Olympic Park's Peace Plaza, just south of the skate park; also at `dev/basketball.html`. See docs/BASKETBALL.md
 
 ## Step 2 (in progress)
