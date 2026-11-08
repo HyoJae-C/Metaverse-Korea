@@ -946,7 +946,6 @@ function onboardHi5() {
   refreshWallet();
   shop.toast(fmt(L(ONBOARD_TEXT.done), { n: ONBOARD_REWARD }));
   action = STALE;
-  quests.skipHighFive(); // that was today's high five
   quests.beginStarter(); // then the first path: errands near the square that each teach one thing
   // First the guide recommends the info centre, then gives the first mission.
   setTimeout(() => {
@@ -4549,6 +4548,9 @@ function openOrder() {
   clerk.ch.wave();
   orderUi.show(interior.store);
 }
+// The server wants 5 s between ads (wallet_settings.ad_gap_sec) and the ad is
+// 3 s, so the button rests a moment after one.
+let adCoolUntil = 0;
 const showAd = rewardedShow(config.rewardedAd, demoAd($('ad-overlay'), $('ad-count'), $('ad-close')));
 function refreshWallet() {
   $('coin-count').textContent = won(wallet.coins);
@@ -4556,7 +4558,7 @@ function refreshWallet() {
   $('ad-label').textContent = t('wallet.watch', { n: config.rewardedAd.reward });
   const left = wallet.adsLeft();
   $('ad-left').textContent = t('wallet.left', { n: left });
-  $('ad-btn').disabled = left <= 0;
+  $('ad-btn').disabled = left <= 0 || Date.now() < adCoolUntil;
 }
 wallet.onChange(refreshWallet);
 onLanguageChange(refreshWallet);
@@ -4700,11 +4702,12 @@ $('ad-btn').onclick = async () => {
   const music0 = music.on;
   if (music0) music.setOn(false); // a real ad has its own sound
   const n = await wallet.watchAd(showAd);
+  if (n) { adCoolUntil = Date.now() + 2500; setTimeout(refreshWallet, 2600); }
   if (n) playCounts.ad(); // retention counts (core/sessions.js)
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
-  // another-seoul.com/?adtest: say whether Google's ad or the demo ran.
+  // another-seoul.com/?adtest: say whether Google's ad or the game's own ran.
   if (new URLSearchParams(location.search).has('adtest') && showAd.last) {
     const l = showAd.last;
     shop.toast(`Google ad: ${l.google}${l.why ? ` (${l.why})` : ''}${l.demo ? ' → demo shown' : ''}`);
@@ -4931,7 +4934,7 @@ function guideAct(p) {
   if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
   if (d >= 2.6) return null;
   const q = quests.active;
-  if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // today's first errand: high five the guide
+  if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // a high-five errand saved before they stopped
     return { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
       me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
       missionEvent('highfive');

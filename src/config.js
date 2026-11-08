@@ -42,19 +42,20 @@ export const config = {
   // it and see a sign-in prompt). Turn on together with chat_settings.google_only
   // in supabase/004_chat.sql, which enforces it on the server.
   chatGoogleOnly: false,
-  // Rewarded ads behind "Watch an ad" (core/h5-ads.js). provider 'h5' uses
-  // Google's H5 Games Ads (AdSense) once `client` is set; until then, or when
-  // Google has no ad to show, the demo countdown runs instead.
+  // Rewarded ads behind "Watch an ad" (core/h5-ads.js). provider 'self':
+  // the game's own short ad (a 1, 2, 3 count; core/wallet.js demoAd), no
+  // Google. provider 'h5' uses Google's H5 Games Ads (AdSense) once `client`
+  // is set; when Google has no ad to show, the game's own ad runs instead.
   // client: the AdSense publisher ID, e.g. 'ca-pub-1234567890123456'
   //   (VITE_ADSENSE_CLIENT overrides it at build time). Also put
   //   "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0" in public/ads.txt
   //   (public/ads.txt must match the ID used here).
   // test: true shows Google's test ads (no real money); set false after approval.
   rewardedAd: {
-    provider: 'h5',
+    provider: 'self', // back to 'h5' once Google serves ads
     client: import.meta.env.VITE_ADSENSE_CLIENT || 'ca-pub-4337373973481597',
     test: true,
-    reward: 5000, dailyLimit: 10, seconds: 5, // ₩5,000 per ad until the ad network approves the game (then ₩10,000), 10 a day (the server keeps its own numbers: wallet_settings)
+    reward: 5000, dailyLimit: 10, seconds: 3, // ₩5,000 per ad until the ad network approves the game (then ₩10,000), 10 a day (the server keeps its own numbers: wallet_settings)
   },
   // A thin 468x60 AdSense banner at the top left, wide computer screens only
   // (start screen and game; core/side-ad.js). slot: the display ad unit's
