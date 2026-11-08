@@ -65,11 +65,13 @@ export default {
     // bought items and saved looks still work).
     rogue: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(JACKET) },
     hooded: { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧢', wear: wear(HOODIE), hood: true },
-    mage: { url: 'models/kaykit2/mage.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
-    knight: { url: 'models/kaykit2/knight.glb', emoji: '🧥', wear: wear(PUFFER) },
-    // The tank top and the shirt are on the basic model too: the barbarian
-    // and ranger heads have a beard and a moustache, which grew on players'
-    // faces when they bought the clothes.
+    // The padded coats, the tank top and the shirt are all on the basic
+    // model too: every other head is someone else's face (the knight's is
+    // blond with a big nose, the mage's has long black hair and thick brows,
+    // the barbarian and ranger have a beard and a moustache), which players
+    // saw as their face changing when they put the clothes on.
+    mage: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(LONG_PADDING) },
+    knight: { url: 'models/kaykit2/rogue.glb', emoji: '🧥', wear: wear(PUFFER) },
     barbarian: { url: 'models/kaykit2/rogue.glb', emoji: '🎽', wear: wear(TANK) },
     ranger: { url: 'models/kaykit2/rogue.glb', emoji: '👔', wear: wear(SHIRT) },
     // The gym trainer (an NPC) keeps the bearded head.
@@ -86,10 +88,10 @@ export default {
     ...variants('rogue', '👔', SHIRT, {
       'shirt-white': { top: 0xf4f1ea, accent: 0xd9d4ca }, 'shirt-denim': { top: 0x8fb0d6 }, 'shirt-olive': { top: 0x7a8a55 },
     }),
-    ...variants('knight', '🧥', PUFFER, {
+    ...variants('rogue', '🧥', PUFFER, {
       'puffer-black': { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 }, 'puffer-mustard': { top: 0xd9a43a, accent: 0x8d6a2a, stitch: 0xa8822e },
     }),
-    ...variants('mage', '🧥', LONG_PADDING, {
+    ...variants('rogue', '🧥', LONG_PADDING, {
       'padding-white': { top: 0xeeeae2, accent: 0xa9a59c, stitch: 0xc4beb2 },
     }),
     // Hanbok: all on the basic model, so the face stays the same.

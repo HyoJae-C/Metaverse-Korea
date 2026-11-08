@@ -23,7 +23,7 @@ const sun = new THREE.DirectionalLight(0xfff1d6, 1.4); sun.position.set(3, 6, 5)
 const rows = Math.ceil(styles.length / cols);
 const GX = 0.8, GY = 1.5;
 const chars = styles.map((s, i) => {
-  const c = createCharacter({ model: q.get('model') || 'basic', hairStyle: s, hair: q.get('hair') || 'espresso', dye: q.get('dye') || null, shirt: 'coral', pants: 'denim', skin: 'fair' });
+  const c = createCharacter({ model: q.get('model') || 'basic', hairStyle: s, hair: q.get('hair') || 'espresso', dye: q.get('dye') || null, shirt: 'coral', pants: 'denim', skin: 'fair', head: q.get('head') || null });
   const x = ((i % cols) - (cols - 1) / 2) * GX, y = -Math.floor(i / cols) * GY;
   const pivot = new THREE.Group(); // (the character turns its own root)
   pivot.position.set(x, y, 0);
