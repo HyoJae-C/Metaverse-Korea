@@ -71,4 +71,16 @@ export const SNOW_MOVES = {
       kneeL: [0.12, 0, 0], kneeR: [0.12, 0, 0],
     };
   },
+  // A high five after finishing a giant together: up on the toes, the right
+  // hand raised high and slapping forward, the left fist pumping.
+  snowhi5(t) {
+    const w = wave(t, 1.4);
+    return {
+      bob: 0.06 * w,
+      spine: [-0.12 + 0.18 * w, 0, 0.05], head: [-0.2, 0, 0],
+      armR: [-2.9 + 0.7 * w, 0.15, 0], foreR: [-0.15, 0, 0],
+      armL: [-0.6 - 0.4 * w, -0.2, 0], foreL: [-1.6, 0, 0],
+      kneeL: [0.15 * (1 - w), 0, 0], kneeR: [0.15 * (1 - w), 0, 0],
+    };
+  },
 };

@@ -1,7 +1,8 @@
 // End-to-end check: snowballs with two players on a snowy street. A grabs
-// a ball and walks it along: it grows, and stops alone at the last step of
-// stage 6; with B holding on too it becomes a giant (stage 7). Then B puts a
-// smaller ball on it (a snowman) and their own hat on that.
+// a ball and walks it along: it grows, and alone it stops at the start of
+// the giant (stage 8, 0/20); with B holding on too (from behind, beside A)
+// it grows on, and at 20/20 they high five. Then B puts a smaller ball on it
+// (a snowman) and their own hat on that.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/snowman.mjs http://localhost:4173/
 // With a build made with VITE_NET_PROVIDER=local, add --bridge: the two
@@ -87,30 +88,45 @@ try {
   console.log('A walked it', ball1, JSON.stringify(await mk(a, 'pose')));
   const n = (s) => Number(s.split(',')[3]);
   if (!(n(ball1) > n(ball0))) throw new Error('did not grow walking: ' + ball1);
-  // alone, it stops at the last step before giant
-  await mk(a, 'snowSet', 139);
-  await a.keyboard.down('KeyW'); await wait(1200); await a.keyboard.up('KeyW');
+  // alone, it finishes stage 7 and stops at the start of the giant (0/20)
+  await mk(a, 'snowSet', 138);
+  await a.keyboard.down('KeyW'); // (walk until it stops growing, then on a little more)
+  for (let i = 0; i < 20 && n(await mk(a, 'snowballs')) < 140; i++) await wait(300);
+  await wait(1200); await a.keyboard.up('KeyW');
   await wait(300);
   const alone = await mk(a, 'snowballs');
   console.log('A alone at the gate', alone);
-  if (n(alone) !== 139) throw new Error('grew past the gate alone: ' + alone);
+  if (n(alone) !== 140) throw new Error('alone, did not stop at 0/20 of the giant: ' + alone);
   // B walks up beside the ball and holds on too
   const [, bx, bz] = alone.split(',').map(Number);
   await b.evaluate(([x, z]) => window.__mk.place(x + 1.2, z), [bx, bz]);
   for (let i = 0; i < 30; i++) { const s = await mk(a, 'snowSeen'); if (s[0] && Math.abs(s[0][3] - (bx + 1.2)) < 0.3) break; await wait(300); }
+  for (let i = 0; i < 30; i++) { const s = await mk(b, 'snowSeen'); if (s.some((q) => q[2] && q[4] != null && n(q[2]) === 140)) break; await wait(300); } // (B sees the giant, and A holding it)
   await press(b, 'Roll it with');
   await wait(800);
   console.log('B holds', await mk(b, 'snowHold'), JSON.stringify(await mk(b, 'pose')));
   const bp0 = await mk(b, 'pose');
-  await a.keyboard.down('KeyW'); await wait(3000); await a.keyboard.up('KeyW');
+  await a.keyboard.down('KeyW'); // (headless frames are slow: walk until it has grown a few steps, up to 8 s)
+  for (let i = 0; i < 16 && n(await mk(a, 'snowballs')) < 144; i++) await wait(500);
+  await a.keyboard.up('KeyW');
   await wait(1500);
   const after = await mk(a, 'snowballs');
   const bp1 = await mk(b, 'pose');
   console.log('together', after, 'B pose', JSON.stringify(bp1), 'A pose', JSON.stringify(await mk(a, 'pose')));
-  if (!/,1[4-6]\d$/.test(after)) throw new Error('did not reach the giant stage together: ' + after);
+  if (!(n(after) > 140)) throw new Error('the giant did not grow together: ' + after);
   if (Math.hypot(bp1[1] - bp0[1], bp1[2] - bp0[2]) < 0.15) throw new Error('B did not come along');
+  // B is behind the ball with A (both facing it), not bracing it from the front
+  const ap1 = await mk(a, 'pose'), [, ax2, az2] = after.split(',').map(Number);
+  const side = (p) => Math.hypot(p[1] - ax2, p[2] - az2);
+  if (Math.hypot(bp1[1] - ap1[1], bp1[2] - ap1[2]) > side(ap1) * 1.4) throw new Error('B is not beside A behind the ball: ' + JSON.stringify([ap1, bp1, after]));
   if (shotDir) await a.screenshot({ path: shotDir + '/sb-two.png' });
-  await press(a, 'Let go');
+  // 20/20: a high five, and both let go
+  if (n(after) < 160) { await mk(a, 'snowSet', 159); await a.keyboard.down('KeyW'); for (let i = 0; i < 10 && n(await mk(a, 'snowballs')) < 160; i++) await wait(300); await a.keyboard.up('KeyW'); }
+  const hi = [null, null]; // (each one's high five, as each of them sees the ball fill up)
+  for (let i = 0; i < 30 && !(hi[0] && hi[1]); i++) { if ((await mk(a, 'pose'))[0] === 'snowhi5') hi[0] = 'snowhi5'; if ((await mk(b, 'pose'))[0] === 'snowhi5') hi[1] = 'snowhi5'; await wait(100); }
+  console.log('full', await mk(a, 'snowballs'), 'high five', hi);
+  if (hi[0] !== 'snowhi5' || hi[1] !== 'snowhi5') throw new Error('no high five at 20/20: ' + hi);
+  if (shotDir) await a.screenshot({ path: shotDir + '/sb-hi5.png' });
   for (let i = 0; i < 30 && await mk(b, 'snowHold') != null; i++) await wait(300); // (B lets go once they see A has)
   if (await mk(a, 'snowHold') != null || await mk(b, 'snowHold') != null) throw new Error('still holding: ' + await mk(a, 'snowHold') + ' ' + await mk(b, 'snowHold') + ' ' + JSON.stringify(await b.evaluate(() => [...window.__mk.snowSeen()])));
   // snowman: B makes a small ball away from the giant, then it's set next to it
