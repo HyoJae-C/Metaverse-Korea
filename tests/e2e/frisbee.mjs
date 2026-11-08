@@ -38,7 +38,7 @@ try {
   // Held in the hand (out of the bag) it still works.
   await mk('holdFromBag', 'gift');
   if ((await mk('bagKinds')).includes('gift')) throw new Error('still in the bag');
-  if (await mk('heldNow') !== 'gift:frisbee') throw new Error('held as ' + await mk('heldNow'));
+  if (!String(await mk('heldNow')).startsWith('gift:frisbee')) throw new Error('held as ' + await mk('heldNow'));
   await wait(300);
   if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
   console.log('in hand: button shows');

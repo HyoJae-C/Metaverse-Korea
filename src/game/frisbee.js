@@ -6,18 +6,18 @@
 // A dog (or a monkey) races after it: in time, it leaps and catches it in
 // the air (a run of catches is counted), otherwise it picks it up off the
 // grass. Either way it trots back and drops it at your feet: a dog carries
-// it in its mouth, a monkey in both hands. A cat or a hamster just watches
+// it flat in its mouth, a monkey in one hand. A cat or a hamster just watches
 // it fly and sits down: walk over and pick it up yourself.
 //
 // Local only: others see your pet follow you as usual, not the game.
-import { throwTarget, clearGrass, flightTime, discAt, chaseSpeed, canCatch, catchChance, fetches, makeDisc } from '../core/frisbee.js';
+import { throwTarget, clearGrass, flightTime, discAt, chaseSpeed, canCatch, catchChance, fetches, makeDisc, frisbeeColor, DISC_R } from '../core/frisbee.js';
 import { L } from '../ui/pocha-ui.js';
 
 export const FRISBEE_TEXT = {
   throw: { en: 'Throw the frisbee for {name}', ko: '{name}에게 원반 던지기', ja: '{name}にフリスビーを投げる', zh: '给{name}扔飞盘', es: 'Lanzar el frisbi a {name}', id: 'Lempar frisbee untuk {name}', vi: 'Ném đĩa bay cho {name}', hi: '{name} के लिए फ्रिस्बी फेंकें', fr: 'Lancer le frisbee à {name}', th: 'โยนจานร่อนให้ {name}', ar: 'ارمِ الفريسبي لـ{name}' },
   room: { en: 'Face the open grass to throw it.', ko: '탁 트인 잔디 쪽을 보고 던져 주세요.', ja: '開けた芝生の方を向いて投げてね。', zh: '请面向空旷的草地扔。', es: 'Mira hacia el césped abierto para lanzarlo.', fr: 'Tourne-toi vers la pelouse dégagée pour le lancer.' },
   caught: { en: '{name} leapt and caught it in the air! 🥏', ko: '{name}, 점프해서 공중에서 잡았어요! 🥏', ja: '{name}がジャンプして空中でキャッチ！🥏', zh: '{name}跳起来在空中接住了！🥏', es: '¡{name} saltó y lo atrapó en el aire! 🥏', fr: '{name} a sauté et l\'a attrapé en plein vol ! 🥏' },
-  caughtHands: { en: '{name} jumped up and caught it with both hands! 🥏', ko: '{name}, 펄쩍 뛰어서 두 손으로 잡았어요! 🥏', ja: '{name}がぴょんと跳んで両手でキャッチ！🥏', zh: '{name}跳起来用双手接住了！🥏', es: '¡{name} saltó y lo atrapó con las dos manos! 🥏', fr: '{name} a bondi et l\'a attrapé à deux mains ! 🥏' },
+  caughtHands: { en: '{name} jumped up and snatched it with one hand! 🥏', ko: '{name}, 펄쩍 뛰어서 한 손으로 낚아챘어요! 🥏', ja: '{name}がぴょんと跳んで片手でキャッチ！🥏', zh: '{name}跳起来单手接住了！🥏', es: '¡{name} saltó y lo atrapó con una mano! 🥏', fr: '{name} a bondi et l\'a attrapé d\'une main ! 🥏' },
   streak: { en: '{n} catches in a row!', ko: '{n}번 연속 캐치!', ja: '{n}回連続キャッチ！', zh: '连续接住{n}次！', es: '¡{n} atrapadas seguidas!', fr: '{n} attrapés d\'affilée !' },
   fetched: { en: '{name} brought the frisbee back. Throw again!', ko: '{name}이(가) 원반을 물어 왔어요. 한 번 더!', ja: '{name}がフリスビーをくわえて戻ってきた。もう一回！', zh: '{name}把飞盘叼回来了。再扔一次！', es: '{name} trajo el frisbi. ¡Otra vez!', fr: '{name} a rapporté le frisbee. Encore !' },
   watched: { en: '{name} watched it fly… and sat down. Go and pick it up!', ko: '{name}은(는) 날아가는 원반을 구경만 하고 앉았어요. 직접 주우러 가요!', ja: '{name}は飛んでいくのを眺めて座っちゃった。拾いに行こう！', zh: '{name}看着飞盘飞走……然后坐下了。自己去捡吧！', es: '{name} lo vio volar… y se sentó. ¡Ve a recogerlo!', fr: '{name} l\'a regardé voler… et s\'est assis. Va le ramasser !' },
@@ -63,7 +63,7 @@ export function createFrisbee(game) {
     room = game.room;
     const ground = me.position.y;
     flight = { from: { x: me.position.x, z: me.position.z }, to: at, T: flightTime(at.d), ground, react: 0.1 + Math.random() * 0.2, lucky: Math.random() < catchChance(pet.def.scale || 1, pet.def.kind) };
-    disc = makeDisc();
+    disc = makeDisc(frisbeeColor(isFrisbee(game.held) ? game.held : game.bag.list().find(isFrisbee))); // the one you have
     room.scene.add(disc);
     if (game.held?.g === 'frisbee') game.handEmpty?.(true); // it left the hand
     pet.playing = true;
@@ -152,9 +152,19 @@ export function createFrisbee(game) {
   // are scaled with the body).
   function grab(pet) {
     const s = pet.def.scale || 1;
-    if (pet.def.kind === 'monkey') { pet.body.add(disc); disc.position.set(0, 0.36, 0.2); } else { pet.head.add(disc); disc.position.set(0, -0.06, 0.2); }
-    disc.rotation.set(Math.PI / 2, 0, 0);
     disc.scale.setScalar(1 / s);
+    if (pet.def.kind === 'monkey') {
+      // In one hand, at the end of its right arm, held upright by the rim.
+      pet.body.add(disc);
+      disc.position.set(-0.24, 0.17, 0.06 + DISC_R / s);
+      disc.rotation.set(Math.PI / 2, 0, 0);
+    } else {
+      // Lying flat, gripped by its edge: the disc sticks out in front of the
+      // muzzle and the face stays in view.
+      pet.head.add(disc);
+      disc.position.set(0, -0.09, 0.19 + DISC_R / s);
+      disc.rotation.set(0, 0, 0);
+    }
     catchHop = 0;
     lost = 0;
     waited = 0;
