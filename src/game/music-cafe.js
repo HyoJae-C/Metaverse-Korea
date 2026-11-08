@@ -54,7 +54,7 @@ export function createMusicCafe(game) {
     note.textContent = t('lp.note');
     const list = document.createElement('div');
     list.className = 'lp-list';
-    for (const tr of TRACKS) {
+    for (const tr of TRACKS.filter((x) => !x.hidden)) { // (the runway's show music stays at the runway)
       const b = document.createElement('button');
       const playing = music.on && music.track.id === tr.id;
       b.className = 'lp-row' + (playing ? ' on' : '');

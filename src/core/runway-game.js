@@ -20,9 +20,9 @@ export const RUNWAY_STORE = {
 };
 
 export const RUNWAY_GAME = 'runway'; // medal id (core/grill-game.js Medals)
-export const RUNWAY_TRACK = 'citypop';
+export const RUNWAY_TRACK = 'runway'; // the catwalk music (data/tracks.js)
 export const LEAD_BEATS = 4; // one bar of count-in, standing backstage
-export const STEP_BEATS = 16; // steps down the runway, one a beat
+export const STEP_BEATS = 24; // steps down the runway, one a beat
 export const POSE_GAP = 2; // beats between the poses at the end
 export const POSES = ['wave', 'turn', 'cheer']; // what each pose does (main.js plays it)
 export const BACK_BEATS = 8; // the walk back, no taps

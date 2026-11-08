@@ -86,6 +86,44 @@ function greatGate(g, o) {
   }
 }
 
+// DDP's entrance banner: the runway's name and "go in" in Korean and English
+// (a landmark's own art, like the gate boards).
+function ddpBannerTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 205;
+  const x = c.getContext('2d');
+  x.fillStyle = '#24212b'; x.fillRect(0, 0, c.width, c.height);
+  x.strokeStyle = '#ffe9c4'; x.lineWidth = 6; x.strokeRect(10, 10, c.width - 20, c.height - 20);
+  x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const title = '👠 커브 런웨이 · CURVE RUNWAY';
+  let px = 72;
+  do x.font = `900 ${px -= 2}px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif`; while (px > 30 && x.measureText(title).width > c.width - 70);
+  x.fillText(title, 512, 80);
+  x.fillStyle = '#ffd166';
+  x.font = '800 46px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  x.fillText('입장 ENTRANCE  ▼  DDP 홀 HALL', 512, 152);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+let flagTex = null;
+function ddpFlagTexture() {
+  if (flagTex) return flagTex;
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 384;
+  const x = c.getContext('2d');
+  x.fillStyle = '#5b4a7a'; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#ffe9c4'; x.fillRect(0, 0, c.width, 14); x.fillRect(0, c.height - 14, c.width, 14);
+  x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '900 62px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  ['런', '웨', '이'].forEach((ch, i) => x.fillText(ch, 64, 92 + i * 78));
+  x.font = '60px system-ui, sans-serif';
+  x.fillText('👠', 64, 330);
+  flagTex = new THREE.CanvasTexture(c);
+  flagTex.colorSpace = THREE.SRGBColorSpace;
+  return flagTex;
+}
+
 export const EULJIRO_BUILD = {
   // DDP: a silver body with rounded edges (the map outline l.outline, relative to x, z, extruded
   // with a deep bevel), dark panel seams, a strip of green on the roof walk,
@@ -113,6 +151,29 @@ export const EULJIRO_BUILD = {
     const front = zMax - 1.2;
     box(g, 14, 5, 3, 0, 2.5, front, '#2f3a48');
     box(g, 16, 0.5, 4, 0, 5.3, front + 0.6, '#aeb4bd');
+    // So you can tell you can go in: a big banner over the way in, tall
+    // banners on poles either side, and a carpet out onto the plaza.
+    const gapFront = front + 1.5;
+    const banner = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.4), new THREE.MeshBasicMaterial({ map: ddpBannerTexture() }));
+    banner.position.set(0, 7.1, front + 2.65);
+    g.add(banner);
+    box(g, 12.4, 0.16, 0.16, 0, 8.35, front + 2.62, '#3a3545'); // its rail
+    for (const sx of [-1, 1]) {
+      box(g, 0.14, 7, 0.14, sx * 8.6, 3.5, gapFront + 1.2, '#9aa1ab');
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 4.2), new THREE.MeshBasicMaterial({ map: ddpFlagTexture(), side: THREE.DoubleSide }));
+      flag.position.set(sx * 7.85, 4.6, gapFront + 1.2);
+      g.add(flag);
+    }
+    const carpetLen = 9;
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(3.2, carpetLen).rotateX(-Math.PI / 2), mat('#5b4a7a', true));
+    carpet.position.set(0, 0.03, gapFront + carpetLen / 2);
+    g.add(carpet);
+    const edge = new THREE.MeshBasicMaterial({ color: '#ffe9c4' });
+    for (const sx of [-1.6, 1.6]) {
+      const e = new THREE.Mesh(new THREE.PlaneGeometry(0.12, carpetLen).rotateX(-Math.PI / 2), edge);
+      e.position.set(sx, 0.035, gapFront + carpetLen / 2);
+      g.add(e);
+    }
   },
   // The Seoul City Wall (한양도성) in the park, running north-south: granite
   // courses, a stepped parapet on top, and the two-arch water gate
