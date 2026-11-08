@@ -97,7 +97,7 @@ function apply(rows) {
   if (!Object.keys(moved).length) return console.log('Every district is in place.');
   const log = [];
   const AT = new RegExp(`("at"\\s*:\\s*\\[\\s*)${NUM}(\\s*,\\s*)${NUM}`, 'g');
-  for (const f of ['stores.json', 'zones.json', 'bikes.json', 'homes.json']) {
+  for (const f of ['stores.json', 'zones.json', 'homes.json']) {
     const file = path.join(R, f);
     writeFileSync(file, shiftText(read(file), AT, rows, moved, log, f));
   }

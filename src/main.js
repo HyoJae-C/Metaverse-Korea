@@ -159,7 +159,6 @@ import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
-import { BikeStations } from './core/bikes.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
 import { PROMOS } from './data/promos.js';
 import { won } from './core/money.js';
@@ -191,6 +190,7 @@ import { createBumper } from './game/bumper.js';
 import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
+import { createFolkYard } from './game/folk-yard.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { parseTaxi } from './core/taxi-share.js';
@@ -202,6 +202,7 @@ import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
@@ -487,7 +488,6 @@ const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
 const storesPromise = optionalJson('stores.json');
 const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
-const bikesPromise = optionalJson('bikes.json');
 const seoulPromise = optionalJson('seoul.json'); // the gu overview on the map (scripts/build-seoul.mjs)
 
 // A new player may name the friend who invited them (optional): the server
@@ -784,7 +784,6 @@ function planRoute(ax, az, bx, bz) {
   return poly;
 }
 const routeLine = new RouteLine(scene);
-const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, x: z.x, z: z.z })));
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
@@ -2262,7 +2261,7 @@ function talkToTrainer() {
   say(trainer, $('labels'), [ko, rom, en]);
   me.root.rotation.y = Math.atan2(trainer.ch.root.position.x - me.root.position.x, trainer.ch.root.position.z - me.root.position.z);
 }
-// Bike share: rent at a station, get off anywhere (the bike goes back by itself).
+// Riding: your own bike (the 🚲 button), a tandem, a car, or a seat in someone's vehicle.
 let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 a seat in someone's vehicle, 4 car (driving)
 let tandemDriver = null; // id of the driver whose vehicle I'm riding in
 let mySeat = 0; // my seat in their vehicle (see SEATS)
@@ -2400,6 +2399,11 @@ giftsGame = createGifts({
   refreshItems, refreshWallet, safety, shop, storeData,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
+// Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
+const bankGame = createBank({
+  get interior() { return interior; }, get wallet() { return wallet; }, get sfx() { return sfx; },
+  get nickname() { return nickname; }, cloud, shop, refreshWallet, peopleHere,
+});
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2433,6 +2437,7 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 const dayPasses = new DayPasses();
 function enterStore(item) {
+  if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
   // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
   const fee = dayPasses.feeFor(item.store);
   if (fee) {
@@ -2467,7 +2472,7 @@ function enterStore(item) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -3444,7 +3449,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3951,6 +3956,14 @@ const basketball = createBasketball({
   shop, wallet,
 });
 const { basketUi, nearCourt, basketTick } = basketball;
+// The folk games yard in Namsangol Hanok Village: yutnori, tuho, jegichagi
+// and neolttwigi with the locals. (game/folk-yard.js)
+const folkYard = createFolkYard({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get action() { return action; }, set action(v) { action = v; },
+  $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
+});
+onLanguageChange(() => folkYard.relabel());
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
 const skate = createSkate({
   get map() { return map; }, get inSkate() { return inSkate; }, set inSkate(v) { inSkate = v; },
@@ -5247,6 +5260,9 @@ walletReady.then(() => {
   };
   news();
   setInterval(news, 10 * 60 * 1000);
+  // Seoul Bank: money other players sent me (game/bank.js).
+  bankGame.checkNews();
+  setInterval(bankGame.checkNews, 3 * 60 * 1000);
 });
 walletReady.then(() => {
   const gift = wallet.welcome();
@@ -5546,6 +5562,7 @@ function moreActions(p, door) {
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
+    const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
@@ -5631,7 +5648,6 @@ function updateAction(p, tSec) {
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
-    else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
@@ -5650,6 +5666,7 @@ function updateAction(p, tSec) {
     else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
     else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
     else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
+    else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
     else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
@@ -5861,6 +5878,8 @@ function updateAction(p, tSec) {
           : quests.active && quests.ready(questCtx()) ? infoMissionAct(p) // a mission to report comes first
             : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
       }
+    } else if (interior.store.workshop === 'bank' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'bank', label: bankGame.actionLabel(), run: () => { clerk.ch.wave(); bankGame.openBank(); } };
     } else if (interior.store.workshop === 'tarot' && !seated && nearReader(p)) {
       const r = nearReader(p);
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
@@ -6275,9 +6294,9 @@ renderer.setAnimationLoop(() => {
   others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
     for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     if (interior?.vendorNpcs) greetAtStalls(p);
@@ -6406,6 +6425,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     enter: (id) => enterStore(storefronts.get(id)),
+    openBank: () => bankGame.openBank(),
+    bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
+    bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,
     forcePose: (n) => { debugPose = n || null; return me.activityName; },
     studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
@@ -6441,7 +6463,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
-    bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
     riding: () => riding,
     cam: (o) => Object.assign(cam, o),
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },

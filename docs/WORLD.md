@@ -77,7 +77,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
-- Stores, homes, meeting zones and bike stations can be placed with
+- `water` (region.json) adds river stretches between districts (the Han River
+  from Mangwon to Seongsu): each is a water area plus a blocker; give it
+  `blockers` split around a bridge to leave a gap.
+- Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
@@ -163,8 +166,8 @@ building drawn by its landmark (`core/euljiro-models.js`) from the outline in
 the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
 City Wall on its west side, and the fashion malls across Jangchungdan-ro.
 South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
-Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) kept
-free for the folk games (docs/FOLK-GAMES.md).
+Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) with
+the folk games yard in its middle (the `folkyard` landmark, docs/FOLK-GAMES.md).
 
 DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
