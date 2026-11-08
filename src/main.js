@@ -48,6 +48,7 @@ import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js'
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
+import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearStroke, nearBell, strikeBell } from './data/bosingak.js';
 import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -4546,6 +4547,55 @@ function updateJongmyo(p, dt) {
     }
   } else jmWatch = 0;
 }
+// Bosingak on Jongno (data/bosingak.js): in front of the steps, ring the
+// bell (the striker swings, the hum follows); the first ring ever pays a
+// little and shows what the pavilion is. On 1 January from midnight (KST) the
+// bell rings itself 33 times, the same moment for everyone.
+const bosingakAt = (region.districts || []).find((d) => d.id === BOSINGAK.district)?.offset || null;
+const BOSINGAK_KEY = 'mk.bosingak';
+let bellRungAt = -1e9, newYearSeen = -1;
+const bellRungBefore = () => { try { return globalThis.localStorage?.getItem(BOSINGAK_KEY) === '1'; } catch { return false; } };
+// How loud the bell is where you stand: full by the pavilion, gone ~250 m away.
+function bellLoudness(p) {
+  if (!bosingakAt) return 0;
+  const d = Math.hypot(p.x - bosingakAt[0] - BOSINGAK.at[0], p.z - bosingakAt[1] - BOSINGAK.at[1]);
+  return Math.max(0, 1 - d / 250) ** 1.5;
+}
+function bosingakCard() {
+  bukchonUi.card(BOSINGAK_CARD);
+  bukchonUi.view = 'bosingak';
+}
+function ringBosingak() {
+  const now = performance.now() / 1000;
+  if (now - bellRungAt < BOSINGAK.cooldown) { shop.toast(L(BOSINGAK_TEXT.humming)); return; }
+  bellRungAt = now;
+  strikeBell(now);
+  setTimeout(() => sfx.bigBell(1), 1150); // when the log meets the bell
+  if (!bellRungBefore()) {
+    try { globalThis.localStorage?.setItem(BOSINGAK_KEY, '1'); } catch { /* storage blocked */ }
+    const c = BOSINGAK.firstRing;
+    wallet.add(c, { name: BOSINGAK_TEXT.ledger }, { r: 'view', once: 'bosingak:bell' });
+    refreshWallet();
+    setTimeout(() => { shop.toast(fmt(L(BOSINGAK_TEXT.rang), { c: c.toLocaleString() })); bosingakCard(); }, 1300);
+  } else setTimeout(() => shop.toast(L(BOSINGAK_TEXT.again)), 1300);
+  action = STALE;
+}
+function bosingakAct(p) {
+  if (!bosingakAt || mode !== 'street' || !nearBell(p.x, p.z, bosingakAt)) return null;
+  return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
+}
+const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
+// Each frame: the New Year's strokes.
+function updateBosingak(p) {
+  if (!bosingakAt) return;
+  const n = newYearStroke(Date.now());
+  if (n < 0 || n === newYearSeen) return;
+  newYearSeen = n;
+  strikeBell();
+  const loud = mode === 'street' ? bellLoudness(p) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(loud), 1150);
+  if (n === 0 && loud > 0.2 && !spaceBusy()) shop.toast(L(BOSINGAK_TEXT.newYear));
+}
 // Other players' wish lanterns ride on their state ("wl"); add each new one.
 const wishSeen = new Map(); // remote id -> the lantern string we last saw
 function updateWishes() {
@@ -5405,6 +5455,7 @@ function moreActions(p, door) {
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
+    const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -5482,6 +5533,7 @@ function updateAction(p, tSec) {
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (!riding && bukchonAct(p)) next = bukchonAct(p);
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
+    else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -6019,7 +6071,7 @@ renderer.setAnimationLoop(() => {
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
-  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
+  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellLoudness(p) < 0.85 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
@@ -6113,7 +6165,7 @@ renderer.setAnimationLoop(() => {
   const w = innerWidth, h = innerHeight;
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

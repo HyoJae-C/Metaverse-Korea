@@ -191,6 +191,18 @@ Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
 three boxes for the overlap check.
 
+## Bosingak (Jongno)
+
+The bell pavilion stands on the north side of Jongno in the Gyeongbokgung
+district's map, east of Sejong-daero (`src/data/bosingak.js`, model in
+`core/bosingak-model.js`), on its own square where a plain building used to
+be. In front of the steps `🔔 Ring the bell` swings the striker into the bell
+and plays a long synthesised hum (`Sfx.bigBell`); the first ring pays once
+(reward rule `view`) and shows its card. On 1 January from 00:00 KST the bell
+rings itself 33 times, one stroke every 15 seconds, worked out from the clock
+so every player hears the same stroke. No event times are shown in the game:
+they change each year.
+
 ## Jongmyo (Jongno-gu)
 
 Drawn by `scripts/build-jongmyo.mjs` from `src/data/jongmyo.js`, in the room
