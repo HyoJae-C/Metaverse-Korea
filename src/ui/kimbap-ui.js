@@ -341,7 +341,7 @@ export class KimbapUI {
     const score = totalScore(this.scores);
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(KIMBAP_GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + KIMBAP_GAME + ':' + medal });
     const boxed = this.onBox?.(score, this.picks) !== false;
     this._frame();
     this.say('bye');

@@ -81,7 +81,7 @@ export class KimchiSellUI {
       coins = this.sales.sell(this.bag, j.i);
     }
     if (coins) {
-      this.wallet.add(coins);
+      this.wallet.add(coins, undefined, { r: 'kimchi' });
       this.onSold?.(coins, kimchiScore(j.e));
     }
     this.render();

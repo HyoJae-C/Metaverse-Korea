@@ -914,7 +914,7 @@ function onboardHi5() {
   squareNpc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(20000, { k: 'ledger.quest' });
+  wallet.add(20000, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
   refreshWallet();
   shop.toast(L(ONBOARD_TEXT.done));
   action = STALE;
@@ -3477,7 +3477,7 @@ function buskTip() {
   const next = takeTip(readTips(), dayKey());
   if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
   writeTips(next);
-  wallet.add(TIP, { name: BUSK_TEXT.note });
+  wallet.add(TIP, { name: BUSK_TEXT.note }, { r: 'busk' });
   refreshWallet();
   sfx.pop?.();
   shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
@@ -3737,7 +3737,7 @@ const academyUi = new AcademyUI({
   root: $('academy-panel'),
   academy: new Academy(),
   name: () => nickname,
-  onReward: (n) => { wallet.add(n); refreshWallet(); },
+  onReward: (n) => { wallet.add(n, undefined, { r: 'academy' }); refreshWallet(); },
   sfx: () => sfx.pop?.(),
 });
 // Notice boards: in Supabase when signed in to it, else on this device.
@@ -3954,7 +3954,7 @@ function takeView(v) {
   sfx.pop?.();
   const c = viewBook.take(v.n);
   if (c) {
-    wallet.add(c, { name: BK_TEXT.ledger });
+    wallet.add(c, { name: BK_TEXT.ledger }, { r: 'view', once: 'view:' + v.n });
     refreshWallet();
     shop.toast(fmt(L(BK_TEXT.got), { n: v.n, name: L(v.name), c }));
     if (viewBook.done && BUKCHON.views.length > 1) setTimeout(() => shop.toast(L(BK_TEXT.allDone)), 1600);
@@ -3966,7 +3966,7 @@ function takeView(v) {
 function readPart(part) {
   bukchonUi.card(part);
   if (partBook.read(part.id)) {
-    wallet.add(EXPLORER_REWARD, { name: BK_TEXT.explorerLedger });
+    wallet.add(EXPLORER_REWARD, { name: BK_TEXT.explorerLedger }, { r: 'view', once: 'bukchon:explorer' });
     refreshWallet();
     setTimeout(() => shop.toast(fmt(L(BK_TEXT.explorer), { c: EXPLORER_REWARD })), 500);
   }
@@ -4057,12 +4057,12 @@ function updateJongmyo(p, dt) {
   }
   if (inBox(x, z, JONGMYO.jeongjeon.woldae)) {
     const c = jongmyoBook.arrive();
-    if (c) { wallet.add(c, { name: JM_TEXT.mannersLedger }); refreshWallet(); me.play('bow'); shop.toast(fmt(L(JM_TEXT.manners), { c })); }
+    if (c) { wallet.add(c, { name: JM_TEXT.mannersLedger }, { r: 'view', once: 'jongmyo:manners' }); refreshWallet(); me.play('bow'); shop.toast(fmt(L(JM_TEXT.manners), { c })); }
   }
   if (jongmyoShow.watching(p.x, p.z) && !jongmyoBook.rite) {
     if ((jmWatch += dt) >= RITE_WATCH) {
       const c = jongmyoBook.watched();
-      if (c) { wallet.add(c, { name: JM_TEXT.riteLedger }); refreshWallet(); me.play('clap'); shop.toast(fmt(L(JM_TEXT.rite), { c })); }
+      if (c) { wallet.add(c, { name: JM_TEXT.riteLedger }, { r: 'view', once: 'jongmyo:rite' }); refreshWallet(); me.play('clap'); shop.toast(fmt(L(JM_TEXT.rite), { c })); }
     }
   } else jmWatch = 0;
 }
@@ -4112,7 +4112,7 @@ function pressStamp(it) {
   if (stampBook.stamp(s.id)) {
     const name = {};
     for (const l of ['ko', 'en', 'ja', 'zh']) name[l] = fmt(STAMP_TEXT.ledger[l], { name: s.name[l] });
-    wallet.add(STAMP_REWARD, { name });
+    wallet.add(STAMP_REWARD, { name }, { r: 'stamp', once: 'stamp:' + s.id });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
     // The last stamp of a course (e.g. the City Wall Trail) pays its reward once.
@@ -4120,7 +4120,7 @@ function pressStamp(it) {
       if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
       const tname = {};
       for (const l of ['ko', 'en', 'ja', 'zh']) tname[l] = fmt(STAMP_TEXT.trailLedger[l], { name: tr.name[l] });
-      wallet.add(tr.reward, { name: tname });
+      wallet.add(tr.reward, { name: tname }, { r: 'trail', once: 'trail:' + tr.id });
       setTimeout(() => { shop.toast(tr.icon + ' ' + fmt(L(STAMP_TEXT.trailDone), { name: L(tr.name), c: tr.reward })); sfx.cheer?.(); }, 1400);
     }
     setTimeout(() => stampUi.show(s.id), 450);
@@ -4675,7 +4675,7 @@ function talkToGuide() {
     // Busy square bonus: +1 for everyone else standing around the guide.
     const g = squareNpc.ch.root.position;
     const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
-    wallet.add(coins + crowd, { k: 'ledger.quest' });
+    wallet.add(coins + crowd, { k: 'ledger.quest' }, starterQuest ? { r: 'quest', once: 'starter:' + q.starter } : { r: 'quest' });
     me.play('cheer');
     say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
     shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
@@ -4723,7 +4723,7 @@ function togetherBonus(kind) {
   const p = me.root.position;
   const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
   if (!friend) return;
-  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' });
+  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' }, { r: 'together' });
   shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
 }
 
@@ -4748,7 +4748,7 @@ function hi5Done(id, { coins }) {
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins, { k: 'ledger.together' });
+  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together' });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
@@ -5718,7 +5718,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     perfumeIds: () => [...perfumes.keys()],
     holdNew: (h) => holdNew(h),
     takeout: (i = 0) => orderFood(interior.store.products[i], true),
-    giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }); refreshWallet(); },
+    giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
     giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
@@ -5748,7 +5748,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
     poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
-    coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
+    coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins, undefined, { r: 'test' })),
     bagList: () => bag.list(),
     items: () => inventory.list(),
     toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },

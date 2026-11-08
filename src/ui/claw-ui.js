@@ -119,9 +119,9 @@ export class ClawUI {
     if (p.item) {
       const name = this.itemName(p.item);
       if (this.give(p.item)) note = '🎉 ' + tt('gotPlush', { name });
-      else { this.wallet.add(3000); note = tt('hadTee', { name, n: 3000 }); }
+      else { this.wallet.add(3000, undefined, { r: 'claw' }); note = tt('hadTee', { name, n: 3000 }); }
     } else {
-      this.wallet.add(p.coins);
+      this.wallet.add(p.coins, undefined, { r: 'claw' });
       note = '🎉 ' + tt('gotCoins', { n: p.coins });
     }
     this.onWin?.(p);

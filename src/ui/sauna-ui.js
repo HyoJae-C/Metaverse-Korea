@@ -105,11 +105,11 @@ export class SaunaUI {
     let note;
     if (this.kind === 'hot') {
       const n = this.log.finishHot();
-      if (n) this.wallet.add(n);
+      if (n) this.wallet.add(n, undefined, { r: 'sauna' });
       note = '🎉 ' + (n ? tt('hotDone', { n }) : tt('hotDoneFree'));
     } else {
       const r = this.log.finishIce();
-      if (r.coins) this.wallet.add(r.coins);
+      if (r.coins) this.wallet.add(r.coins, undefined, { r: 'sauna' });
       note = r.combo ? '🎉 ' + (r.coins ? tt('iceCombo', { n: r.coins }) : tt('iceComboFree')) : tt('iceDone');
     }
     this.render(note);

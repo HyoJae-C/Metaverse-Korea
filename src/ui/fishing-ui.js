@@ -588,7 +588,7 @@ export class FishMarketUI {
 
   _sell(id, n) {
     const coins = id ? this.bag.sell(id, n) : this.bag.sellAll();
-    if (coins) this.wallet.add(coins);
+    if (coins) this.wallet.add(coins, undefined, { r: 'fish' });
     this.onSold?.(coins);
     this.render();
   }

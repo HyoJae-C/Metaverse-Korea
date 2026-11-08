@@ -106,6 +106,21 @@ export async function opIdFor(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(text)));
   return uuidFromBytes(new Uint8Array(buf).slice(0, 16));
 }
+// The same, at once (no await): for rewards given once ever (a medal, a
+// stamp) or once a day (the check-in), so clearing the browser's storage
+// can't earn them twice on the server.
+export function onceId(text) {
+  let h1 = 0x811c9dc5, h2 = 0x01000193, h3 = 0x9e3779b9, h4 = 0x85ebca6b;
+  const str = 'once:' + String(text);
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193); h2 = Math.imul(h2 ^ c, 0x5bd1e995);
+    h3 = Math.imul(h3 ^ c, 0x27d4eb2d); h4 = Math.imul(h4 ^ c, 0x165667b1);
+  }
+  const b = new Uint8Array(16);
+  [h1, h2 ^ h1, h3 ^ h2, h4 ^ h3].forEach((h, k) => { for (let j = 0; j < 4; j++) b[k * 4 + j] = (h >>> (j * 8)) & 255; });
+  return uuidFromBytes(b);
+}
 function uuidFromBytes(b) {
   b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
   const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
@@ -181,7 +196,7 @@ export class Wallet {
     if (this.welcomed > 0) this._log(this.welcomed, { k: 'ledger.welcome' });
     // Coins that moved here while the server was being asked.
     const late = this.s && data.created ? this.w.coins - local : 0;
-    if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn', w: 1 });
+    if (late > 0) this.s.queue.push({ id: newOpId(), n: late, k: 'earn', r: 'late', w: 1 });
     else if (late < 0) this.s.queue.push({ id: newOpId(), n: late, k: 'take', w: 1 });
     this._saveState();
     this._notify();
@@ -256,15 +271,18 @@ export class Wallet {
   }
   // note: what the coins were for (see LOG_KEY); left out, the current context.
   // opt: { kind: 'earn'|'spend'|'take'|'refund', ref (refund: the payment's
-  // op id), id (a fixed op id) }. Returns the op id.
+  // op id), id (a fixed op id), r (earning: the reward, one of REWARDS; the
+  // server pays each up to its own limits), once (a text: a fixed op id made
+  // from it) }. Returns the op id.
   add(n, note, opt = {}) {
     n = Math.round(Number(n) || 0);
     let id = null;
     if (this.s) {
       if (n) {
-        id = opt.id || newOpId();
+        id = opt.id || (opt.once ? onceId(opt.once) : newOpId());
         const kind = opt.kind || (n > 0 ? 'earn' : 'spend');
         const op = { id, n, k: kind, w: 1 };
+        if (kind === 'earn' && opt.r) op.r = opt.r;
         if (kind === 'refund' && opt.ref) op.ref = opt.ref;
         const txt = noteText(note === undefined ? this._ctx() : note);
         if (txt) op.note = txt;
