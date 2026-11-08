@@ -3,8 +3,8 @@
 // cover the view; opening the chat shows them all again (scroll back while
 // typing). On phones the log can also be folded away (the small tab by it);
 // while folded, a new line makes the 💬 button blink. Opens with 💬, or T or / on a keyboard. Text only, never HTML.
-// The picker in the chat bar chooses who hears it: everyone nearby (public,
-// not stored anywhere), all friends, or one friend. Friend chat is kept like
+// The picker in the chat bar chooses who hears it: everyone nearby (public;
+// the server keeps it 90 days for reports, supabase/024_chat_log.sql), all friends, or one friend. Friend chat is kept like
 // a phone messenger (core/friends.js, the 👥 panel).
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey } from '../core/friends.js';
 import { FRIEND_TEXT, FriendsUI } from '../ui/friends-ui.js';

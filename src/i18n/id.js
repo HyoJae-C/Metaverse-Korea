@@ -375,7 +375,7 @@ export const ID = {
   'notes.note': 'Stempel tempat, buku makanan, dan buku ikanmu. Ketuk salah satu untuk membukanya.',
   'chat.placeholder': 'Katakan sesuatu ke orang di dekatmu…',
   'chat.send': 'Kirim',
-  'chat.notice': 'Obrolan bersifat publik: bersikap baik, dan jangan bagikan info pribadi.',
+  'chat.notice': 'Obrolan bersifat publik dan disimpan 90 hari untuk memeriksa laporan: bersikap baik, dan jangan bagikan info pribadi.',
   'chat.signIn': "Hanya pemain yang masuk dengan Google yang bisa mengobrol. Kamu tetap bisa membaca obrolan orang lain.",
   'chat.signInBtn': "Masuk dengan Google untuk mengobrol",
   'cloud.guestNote': "Bermain sebagai tamu: progresmu bisa hilang saat game diperbarui. Masuk dengan Google untuk menyimpannya.",

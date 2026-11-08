@@ -375,7 +375,7 @@ export const VI = {
   'notes.note': 'Tem địa điểm, sổ món ăn và sổ cá của bạn. Chạm vào một mục để mở.',
   'chat.placeholder': 'Nói gì đó với mọi người gần đây…',
   'chat.send': 'Gửi',
-  'chat.notice': 'Trò chuyện là công khai: hãy tử tế và đừng chia sẻ thông tin cá nhân.',
+  'chat.notice': 'Trò chuyện là công khai và được lưu 90 ngày để kiểm tra báo cáo: hãy tử tế và đừng chia sẻ thông tin cá nhân.',
   'chat.signIn': "Chỉ người chơi đăng nhập bằng Google mới có thể trò chuyện. Bạn vẫn đọc được tin nhắn của người khác.",
   'chat.signInBtn': "Đăng nhập bằng Google để trò chuyện",
   'cloud.guestNote': "Bạn đang chơi với tư cách khách: tiến trình có thể bị mất khi trò chơi cập nhật. Đăng nhập bằng Google để giữ lại.",
