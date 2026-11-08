@@ -147,11 +147,12 @@ function arm(out, o, side) {
   const bulk = (o.bulk || 0) * 0.7;
   const add = (x, r, role) => rings.push({ c: [x * side, 1.107, 0], u: [0, 1, 0], v: [0, 0, 1], ru: r, rv: r, role, w: chain(ARM(s), x) });
   const sleeve = o.sleeve ?? 0.42; // where the sleeve ends (x)
+  const arms = o.arms || 'top'; // sleeves in their own colour (a varsity jacket)
   if (sleeve > 0.2) {
-    add(0.16, 0.115 + bulk, 'top');
-    for (let x = 0.26; x < sleeve; x += 0.08) add(x, 0.105 + bulk, 'top');
-    add(sleeve, 0.1 + bulk, o.cuff || 'top');
-    if (o.cuff) add(sleeve + 0.03, 0.095 + bulk, 'top');
+    add(0.16, 0.115 + bulk, arms);
+    for (let x = 0.26; x < sleeve; x += 0.08) add(x, 0.105 + bulk, arms);
+    add(sleeve, 0.1 + bulk, o.cuff || arms);
+    if (o.cuff) add(sleeve + 0.03, 0.095 + bulk, arms);
     else add(sleeve, 0.068, 'skin');
   } else add(0.18, 0.08, 'skin'); // sleeveless: a bare shoulder from inside the top
   if (sleeve < 0.8) {
