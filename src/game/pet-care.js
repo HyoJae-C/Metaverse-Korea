@@ -101,7 +101,9 @@ export function createPetCare(g) {
     if (!pet) return;
     const me = g.me, activeScene = g.activeScene;
     if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y, p.y); }
-    const hidden = g.riding > 0 || g.seated;
+    // Waits out of sight while you ride or are indoors. Sitting down (a bench,
+    // a picnic mat) it stays and sits by you.
+    const hidden = g.riding > 0 || g.indoors;
     const poop = pet.update(dt, { x: p.x, z: p.z, y: p.y, ry: me.root.rotation.y }, hidden, g.mode === 'street');
     if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it
     if (poop) {

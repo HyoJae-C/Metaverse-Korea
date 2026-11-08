@@ -83,6 +83,31 @@ export const FRISBEE_COLORS = ['#ff4f4f', '#5ec8f2', '#9b6bff'];
 export const frisbeeColor = (e) => FRISBEE_COLORS[((e?.q | 0) % 3 + 3) % 3];
 export const newFrisbee = (rand = Math.random) => ({ kind: 'gift', sips: 1, name: 'Frisbee', icon: '🥏', g: 'frisbee', q: Math.floor(rand() * 3) });
 
+// What a pet shows over its head: a big happy face for a catch in the air,
+// a dizzy one for a miss, so you can tell at a glance.
+export const CATCH_FACES = ['🤩', '😆'];
+export const MISS_FACES = ['😵', '😅'];
+
+// An emoji floating over a pet's head (a sprite, so it always faces you).
+const faceTex = {};
+export function makeFace(emoji) {
+  if (!faceTex[emoji]) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const c = cv.getContext('2d');
+    c.fillStyle = 'rgba(255,255,255,0.92)';
+    c.beginPath(); c.arc(64, 64, 58, 0, Math.PI * 2); c.fill();
+    c.font = '84px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(emoji, 64, 70);
+    faceTex[emoji] = new THREE.CanvasTexture(cv);
+    faceTex[emoji].colorSpace = THREE.SRGBColorSpace;
+    faceTex[emoji].userData.emoji = emoji;
+  }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: faceTex[emoji], depthTest: false, transparent: true }));
+  s.renderOrder = 10;
+  return s;
+}
+
 // The frisbee: a bright disc with a thin white line, flat side up.
 export function makeDisc(color = FRISBEE_COLORS[0]) {
   const g = new THREE.Group();

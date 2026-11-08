@@ -51,10 +51,11 @@ try {
     if (ch) await mk('pick', ch.findIndex((c) => c.includes('🥏'))); else await mk('act');
     await until(async () => (await mk('frisbee'))[0] !== 'idle', 3000);
     if (shotDir && round === 0) { await wait(900); await page.screenshot({ path: `${shotDir}/fly.png` }); }
-    const seen = new Set();
-    await until(async () => { const [ph] = await mk('frisbee'); seen.add(ph); return ph === 'idle'; }, 20000);
+    const seen = new Set(), faces = new Set();
+    await until(async () => { const [ph, , , fc] = await mk('frisbee'); seen.add(ph); if (fc) faces.add(fc); return ph === 'idle'; }, 20000);
+    if (!faces.size) throw new Error('no face over the pet');
     const pet = await mk('pet');
-    console.log('round', round, [...seen].join('>'), 'streak', (await mk('frisbee'))[1], 'pet at', pet.x.toFixed(1), pet.z.toFixed(1));
+    console.log('round', round, [...seen].join('>'), [...faces].join(''), 'streak', (await mk('frisbee'))[1], 'pet at', pet.x.toFixed(1), pet.z.toFixed(1));
     if (!seen.has('back')) throw new Error('the dog never brought it back');
   }
   // The golden retriever and the monkey play too (they come by code).
@@ -96,6 +97,26 @@ try {
   if (await mk('heldNow') !== 'gift:mat') throw new Error('the mat left the hand: ' + await mk('heldNow'));
   await until(async () => (await label()).includes('🧺'), 5000, 'fold button (mat stayed spread)');
   console.log('mat: held as a mat, spread from the hand, stays spread:', await label());
+  // Lying down on the mat: the pet stays out, by you.
+  await page.evaluate(() => { const m = window.__mk; m.sit(m.seats() - 1); }); // (the mat's spots come last)
+  await wait(600);
+  if (!(await mk('seated'))) throw new Error('could not sit');
+  if (!(await mk('pet')).visible) throw new Error('the pet vanished when sitting down');
+  console.log('sitting: the pet stays');
+  await mk('stand');
+  // Indoors (a shop) the pet waits out of sight, and comes back outside.
+  await mk('leave');
+  await until(async () => (await mk('room')).mode === 'street', 15000, 'back on the street');
+  const shop = (await mk('stores')).find((id) => !/hangang|anotherland|cablecar|namsan/.test(id));
+  await mk('enter', shop);
+  await until(async () => (await mk('room')).id === shop, 15000, 'in a shop');
+  await wait(500);
+  if ((await mk('pet')).visible) throw new Error('pet visible indoors in ' + shop);
+  await mk('leave');
+  await until(async () => (await mk('room')).mode === 'street', 15000, 'out again');
+  await wait(500);
+  if (!(await mk('pet')).visible) throw new Error('pet not back outside');
+  console.log('indoors (' + shop + '): hidden; outside: back');
   ok = !errors.length;
 } catch (e) { console.error('FAIL', e.message); }
 if (errors.length) console.error('page errors:', errors);
