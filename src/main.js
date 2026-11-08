@@ -1431,10 +1431,11 @@ async function joinRoom(room, roomScene, area = null) {
         if (!at || Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z) > config.chatStreetRadius) return;
       }
       const ms = street ? config.chatStreetSeconds * 1000 : 6000;
-      const tagName = others.chat(id, text, ms);
+      const quiet = inLibrary();
+      const tagName = others.chat(id, text, ms, quiet ? 'chat whisper' : 'chat');
       if (!tagName) return;
       const real = serverName && filterText(cleanName(serverName).trim());
-      addChatLine(real || tagName, text, '', id);
+      addChatLine(real || tagName, text, quiet ? 'whisper' : '', id);
       const log = (recentLines.get(id) || []).concat(text).slice(-10);
       recentLines.set(id, log);
     },
@@ -1550,6 +1551,7 @@ const chat = createChat({
   get nickname() { return nickname; }, get net() { return net; }, get sfx() { return sfx; }, $, OPERATOR_TEXT,
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
+  get whisper() { return inLibrary(); },
 });
 const { cleanChat, addChatLine } = chat;
 
@@ -1558,6 +1560,8 @@ let mode = 'street';
 let activeScene = scene;
 let activeCollision = collision;
 let interior = null; // { store, scene, products, collision, front }
+// In the library chat shows in grey, like a whisper.
+const inLibrary = () => interior?.store.category === 'library';
 let action = null; // what the action button does right now
 // Assign to `action` to force the button to refresh on the next frame
 // (null would compare equal to "no action" and leave a stale button showing).
