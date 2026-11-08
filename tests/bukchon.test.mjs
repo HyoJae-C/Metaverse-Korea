@@ -223,3 +223,21 @@ test('the hill you see is the hill you walk on (the shadow lands at your feet)',
   const xs = new Set(); for (let i = 0; i < pos.count; i++) xs.add(Math.round(pos.getX(i)));
   assert.ok(xs.size > 20);
 });
+
+test('hanok shops get a hanok sign under the eaves, not a street board through the roof', async () => {
+  const { hanokSignStyle, addHanokSign, HANOK_SIGNS } = await import('../src/core/hanok-signs.js');
+  const THREE = await import('three');
+  const { HANOK } = await import('../src/core/hanok.js');
+  const shops = stores.filter((s) => s.front === 'hanok');
+  assert.ok(shops.length >= 6);
+  const styles = new Set(shops.map((s) => hanokSignStyle(s)));
+  for (const st of styles) assert.ok(HANOK_SIGNS[st], st);
+  assert.ok(styles.size >= 2, 'more than one kind of sign along the street');
+  // The lowest hanok wall (base + wall) is where the eaves start.
+  const eaves = 0.45 + HANOK.wall - 0.25;
+  for (const st of Object.keys(HANOK_SIGNS)) {
+    const g = new THREE.Group();
+    const { top } = addHanokSign(g, st, null);
+    assert.ok(top <= eaves, `${st} reaches ${top} m, the eaves start at ${eaves} m`);
+  }
+});
