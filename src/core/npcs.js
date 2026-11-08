@@ -90,9 +90,10 @@ export function say(o, layer, phrase) {
 }
 
 export class StreetNpcs {
-  // homes: [{ id, x, z }, ...] spots the NPCs stroll around (the meeting
-  // zones). Names come from the zone's id (data/npc-names.js), so each name
-  // is one person and stays in the same part of town.
+  // homes: [{ id, names, x, z }, ...] spots the NPCs stroll around (the
+  // meeting zones). Names come from the zone's fixed name letter (`names`,
+  // zones.json "npc"; else its id, data/npc-names.js), so each name is one
+  // person and stays in the same part of town.
   // opts.who(i): { name, look } for the i-th NPC (default: the zone's name);
   // opts.keepIn(x, z): streets they may walk (e.g. Bukchon's hill village);
   // opts.phrases: what they say when greeted; opts.groundY(x, z): the street's
@@ -106,9 +107,9 @@ export class StreetNpcs {
     this.groundY = opts.groundY || null; // (x, z) => height of the street (a hill)
     if (!graph.nodes.length) return;
     let i = 0;
-    for (const { id, x: hx, z: hz } of homes) {
+    for (const { id, names = id, x: hx, z: hz } of homes) {
       for (let k = 0; k < perHome; k++) {
-        const who = opts.who ? opts.who(i++) : { name: npcName(id, k) };
+        const who = opts.who ? opts.who(i++) : { name: npcName(names, k) };
         const o = makeNpc(layer, who.name, who.look);
         o.owner = this;
         o.zone = id;

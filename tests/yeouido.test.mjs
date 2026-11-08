@@ -82,7 +82,7 @@ test('the park: a big open lawn for mats, Mul-bit Square, Yunjung-ro\'s cherry t
   const pool = map.areas.find((a) => a.k === 'water' && a.p.length === 4);
   const [px, pz] = world([pool.p.reduce((s, p) => s + p[0], 0) / 4, pool.p.reduce((s, p) => s + p[1], 0) / 4]);
   assert.ok(!solid.blocked(px, pz, 0.5), 'walk through the pool');
-  const zone = read('zones.json').zones.find((z) => z.id === 'V');
+  const zone = read('zones.json').zones.find((z) => z.id === 'K-1');
   assert.ok(inPolygon(...zone.at, lawn.p.map(world)), 'people already on the lawn');
 });
 

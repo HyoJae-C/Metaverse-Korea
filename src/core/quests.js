@@ -45,10 +45,10 @@ export const TRIP = [
   { step: 'station', on: 'place', target: 'subway' }, // any subway exit (Seongsu Station's is nearest)
   { step: 'down', on: 'subwayIn' }, // off the bike and down the stairs
   { step: 'forestStop', on: 'subway', target: 'seoul-forest-station' },
-  { step: 'forest', on: 'place', target: 'K' }, // Seoul Forest (zones.json)
+  { step: 'forest', on: 'place', target: 'A-7' }, // Seoul Forest (zones.json)
   { step: 'anguk', on: 'subway', target: 'anguk-station' },
   { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
-  { step: 'cheonggye', on: 'place', target: 'L' }, // Cheonggye Plaza (zones.json)
+  { step: 'cheonggye', on: 'place', target: 'B-2' }, // Cheonggye Plaza (zones.json)
 ];
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';

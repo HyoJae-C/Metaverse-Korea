@@ -79,8 +79,8 @@ test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
   assert.ok(ez === a[1] && ez === b[1] && ex >= Math.min(a[0], b[0]) && ex <= Math.max(a[0], b[0]), 'ends on Olympic-ro');
 });
 
-test('meeting zone U on KONEXT Square, an Information Center and a stamp', () => {
-  const zone = zones.find((z) => z.id === 'U');
+test('meeting zone J-1 on KONEXT Square, an Information Center and a stamp', () => {
+  const zone = zones.find((z) => z.id === 'J-1');
   assert.ok(zone);
   const [zx, zz] = local(zone.at);
   const plaza = map.areas.find((a) => a.k === 'plaza');

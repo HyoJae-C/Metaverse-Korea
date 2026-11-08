@@ -101,17 +101,17 @@ test('the trip goes one step at a time, in order; "Later" skips it without coins
   assert.equal(q.active.stage, 0);
   assert.equal(q.event('place', 'subway'), false); // the station before the bike: not yet
   assert.equal(q.event('bike'), true);
-  assert.equal(q.event('place', 'L'), false); // out of order
+  assert.equal(q.event('place', 'B-2'), false); // out of order
   assert.equal(q.event('place', 'subway'), true);
   assert.equal(q.event('subwayIn'), true);
   assert.equal(q.event('subway', 'itaewon-station'), false); // the wrong stop
   assert.equal(q.event('subway', 'seoul-forest-station'), true);
-  assert.equal(q.event('place', 'K'), true);
+  assert.equal(q.event('place', 'A-7'), true);
   assert.equal(q.event('subway', 'anguk-station'), true);
   assert.equal(new SquareQuests(store, () => 'd1').active.stage, 6); // saved on the way
   assert.equal(q.ready(), false);
   assert.equal(q.event('place', 'bukchon'), true);
-  assert.equal(q.event('place', 'L'), true);
+  assert.equal(q.event('place', 'B-2'), true);
   assert.equal(q.ready(), true);
   assert.equal(q.claim({}), STARTER_REWARD);
   assert.equal(q.start(pool).kind, STARTER[1].kind);

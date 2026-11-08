@@ -816,7 +816,7 @@ function planRoute(ax, az, bx, bz) {
 }
 const routeLine = new RouteLine(scene);
 // Passers-by: two strolling around each meeting zone.
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, x: z.x, z: z.z })));
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })));
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
@@ -3379,11 +3379,11 @@ function tripTick() {
   if (!step || step === 'done') return;
   const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
   if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
-  else if (step === 'forest' && near(zonePlace('K'), 30)) missionEvent('place', 'K');
+  else if (step === 'forest' && near(zonePlace('A-7'), 30)) missionEvent('place', 'A-7');
   else if (step === 'station' && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
   else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
   else if (step === 'bukchon' && near(tripPlace('bukchon'), 20)) missionEvent('place', 'bukchon');
-  else if (step === 'cheonggye' && near(zonePlace('L'), 35)) missionEvent('place', 'L');
+  else if (step === 'cheonggye' && near(zonePlace('B-2'), 35)) missionEvent('place', 'B-2');
   if (tripStep() !== step) return; // (moved on: onTripStep took care of it)
   if (mode === 'street' && tripGuided !== step) {
     const pl = tripPlace(step);

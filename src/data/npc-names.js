@@ -1,7 +1,10 @@
 // Names of the passers-by who stroll around each meeting zone (core/npcs.js).
 //
-// Every passer-by has their own name, and it belongs to their zone's letter:
-// zone A is always Minji and Jihun, zone G always Yujin and Taemin, and so on.
+// Every passer-by has their own name, and it belongs to their zone's name
+// letter (zones.json "npc", the zone's old single-letter id): Seongsu Square
+// (A-1, npc A) is always Minji and Jihun, Gwanghwamun Square (B-1, npc G)
+// always Yujin and Taemin, and so on. Zone ids changed to gu codes (A-1,
+// B-2, ...) but the name letters did not, so nobody moved.
 // The daily mission "Find Jia and say hi" names one person, so the name must
 // point at exactly one of them, and it must not move to another part of town
 // when a zone is added, removed or reordered in zones.json (that used to
@@ -32,9 +35,9 @@ export const NAME_ROMAN = {
   슬기: 'Seulgi', 태양: 'Taeyang', 은비: 'Eunbi', 도현: 'Dohyeon',
 };
 
-// Where a zone's names start in NAMES: by its letter (zone ids are A..Z).
-// Any other id falls back to a hash, so it still gets the same names every
-// time (the test keeps zones.json to single letters, so they never clash).
+// Where a zone's names start in NAMES: by its name letter A..Z. Any other key
+// falls back to a hash, so it still gets the same names every time (the test
+// gives every zone in zones.json its own letter, so they never clash).
 function slotOf(id) {
   const s = String(id);
   if (/^[A-Z]$/.test(s)) return s.charCodeAt(0) - 65;
