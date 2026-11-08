@@ -228,6 +228,28 @@ export const FURNITURE = [
       }
     },
   })),
+  // The balloon booth's gold medal prize: a little teddy bear with a red bow.
+  { id: 'plush-bear-small', emoji: '🧸', item: 'plush-bear-small', size: [0.32, 0.32],
+    name: { en: 'Small teddy bear', ko: '작은 곰인형', ja: '小さなくまのぬいぐるみ', zh: '小泰迪熊' },
+    build(g) {
+      const ball = (r, x, y, z, c) => {
+        const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat(c));
+        m.position.set(x, y, z);
+        g.add(m);
+        return m;
+      };
+      const body = '#c98b4f', accent = '#f3d9b8';
+      ball(0.13, 0, 0.13, 0, body).scale.set(1, 0.9, 0.9); // body
+      ball(0.11, 0, 0.31, 0.01, body); // head
+      ball(0.045, 0, 0.29, 0.1, accent); // muzzle
+      ball(0.03, 0, 0.21, 0.1, '#e2457a').scale.set(1.8, 0.8, 0.6); // bow
+      for (const s of [-1, 1]) {
+        ball(0.037, 0.08 * s, 0.41, 0, body); // ears
+        ball(0.02, 0.08 * s, 0.41, 0.02, accent); // inner ears
+        ball(0.042, 0.1 * s, 0.15, 0.07, body); // paws
+        ball(0.016, 0.04 * s, 0.33, 0.1, '#2b2630'); // eyes
+      }
+    } },
 ];
 
 export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);
