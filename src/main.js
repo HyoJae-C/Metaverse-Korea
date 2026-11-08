@@ -240,6 +240,29 @@ addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.rea
 // data, so a newer save from the server is in place first. Skipped in
 // automated test rooms.
 const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
+// The region list and region file start downloading now, while the cloud
+// save is checked (up to 3 s when the save server can't be reached, as in
+// mainland China). A failed download is tried twice more: on a shaky
+// connection the first try is often the one that drops.
+const getJson = async (url, tries = 3) => {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`${r.status} ${url}`);
+      return await r.json();
+    } catch (e) {
+      if (i >= tries) throw e;
+      await new Promise((ok) => setTimeout(ok, 800 * i));
+    }
+  }
+};
+const regionStart = getJson(`${BASE}regions/index.json`).then((index) => {
+  // ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
+  const asked = new URLSearchParams(location.search).get('region');
+  const id = index.regions.some((r) => r.id === asked) ? asked : index.default;
+  return getJson(`${BASE}regions/${id}/region.json`).then((region) => ({ index, id, region }));
+});
+regionStart.catch(() => {}); // awaited below; this only avoids an early "unhandled" note
 await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
@@ -265,15 +288,11 @@ for (const m of earlyProblems.splice(0)) onProblem(m);
 if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
-const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
-// ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
-const askedRegion = new URLSearchParams(location.search).get('region');
-const regionId = regionsIndex.regions.some((r) => r.id === askedRegion) ? askedRegion : regionsIndex.default;
+const { id: regionId, region } = await regionStart;
 // Realtime room name. Automated tests pass ?debug&room=<name> to get a private
 // room, so real visitors on the live site never mix into a test.
 const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
 const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
-const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
 // Language list: one row per language. On the start screen it is a dropdown
 // (the current language on a button; tap it to open the list below).
@@ -324,6 +343,7 @@ function refreshStartText() {
 }
 
 setLanguage(getSavedLanguage() || 'en'); // English until you pick one
+document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
 const pickLang = (code) => {
   setLanguage(code);
   renderLangDropdown($('lang-grid'), pickLang);

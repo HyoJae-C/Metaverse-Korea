@@ -2185,3 +2185,10 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .runway-line { display: flex; flex-direction: column; gap: 6px; }
 .runway-order { margin: 0; padding-left: 22px; font-size: 14px; }
 .runway-order li.me { font-weight: 800; }
+
+/* Start card before the game code has arrived (index.html #boot-note):
+   only the logo and the loading line, not an empty card with a blank button. */
+#step-lang:has(#boot-note) > :not(.logo):not(.boot-note) { display: none; }
+.boot-note { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 8px 0 4px; text-align: center; }
+.boot-note p { margin: 0; font-size: 15px; line-height: 1.5; color: #5a4a40; word-break: keep-all; }
+.boot-note .primary[hidden] { display: none; }

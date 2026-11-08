@@ -83,7 +83,7 @@ export class Music {
     this.master.gain.setValueAtTime(this.master.gain.value, t);
     if (on) {
       playThroughSilentSwitch();
-      await this.ctx.resume();
+      await this.ctx.resume().catch(() => {}); // refused on iOS at times: silent, not an error
       this.master.gain.linearRampToValueAtTime(0.32, t + 1.5);
       if (!this.timer) {
         this.nextTime = this.ctx.currentTime + 0.1;
@@ -256,7 +256,7 @@ export class Sfx {
       if (!AC) return null;
       this.ctx = new AC();
     }
-    if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume(); }
+    if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume().catch(() => {}); } // iOS can refuse ("Failed to start the audio device"); the next sound tries again
     return this.ctx;
   }
   // A short wooden "tock": a bat meeting the ball, a dart in the board, a
