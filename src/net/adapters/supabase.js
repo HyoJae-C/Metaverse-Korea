@@ -12,19 +12,31 @@
 import { createClient } from '@supabase/supabase-js';
 
 // One client (one websocket) shared by every room we are in. cfg.accessToken
-// (optional) returns the player's sign-in token, so private channels know
-// who we are; without one the client connects with the public key.
+// (optional) returns the player's sign-in token, so private channels and the
+// chat function know who we are; without one the client uses the public key.
+// The first caller may not have a token getter (the online counter starts
+// before any room), so the getter is kept per client and filled in by
+// whoever brings one: otherwise every later room would reuse a client that
+// speaks as nobody, and room_chat_send (signed-in players only) would refuse
+// every line.
 const clients = new Map();
 export function sharedClient(url, key, accessToken) {
   const k = url + '|' + key;
-  if (!clients.has(k)) {
-    clients.set(k, createClient(url, key, {
+  let entry = clients.get(k);
+  if (!entry) {
+    entry = { token: null, client: null };
+    entry.client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       realtime: { params: { eventsPerSecond: 20 } },
-      ...(accessToken ? { accessToken: async () => (await accessToken().catch(() => null)) || key } : {}),
-    }));
+      accessToken: async () => (entry.token ? (await entry.token().catch(() => null)) : null) || key,
+    });
+    clients.set(k, entry);
   }
-  return clients.get(k);
+  if (accessToken && entry.token !== accessToken) {
+    entry.token = accessToken;
+    entry.client.realtime.setAuth().catch(() => {}); // the socket picks the token up now
+  }
+  return entry.client;
 }
 
 // PostgREST's answer when an rpc function doesn't exist (SQL not run yet).
@@ -158,8 +170,11 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
             const say = () => client.rpc('room_chat_send', { room, net_id: id, msg: t });
             let { data, error } = await say();
             if (!error && data === 'id' && claim && (await claim()) === 'ok') ({ data, error } = await say());
-            if (!error) return data;
-            if (!isMissingFunction(error)) return 'error';
+            if (!error) {
+              if (data !== 'ok') console.warn('[chat] server refused the line:', data);
+              return data;
+            }
+            if (!isMissingFunction(error)) { console.warn('[chat] could not send:', error.message || error); return 'error'; }
             direct = true;
           }
           link.ch?.send({ type: 'broadcast', event: 'c', payload: { id, t } });
