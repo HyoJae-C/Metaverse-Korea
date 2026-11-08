@@ -38,7 +38,7 @@ try {
   // Held in the hand (out of the bag) it still works.
   await mk('holdFromBag', 'gift');
   if ((await mk('bagKinds')).includes('gift')) throw new Error('still in the bag');
-  if (await mk('heldNow') !== 'frisbee') throw new Error('held as ' + await mk('heldNow'));
+  if (await mk('heldNow') !== 'gift:frisbee') throw new Error('held as ' + await mk('heldNow'));
   await wait(300);
   if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
   console.log('in hand: button shows');
@@ -83,6 +83,19 @@ try {
   await mk('place', at[0] - 0.5, at[1]);
   await until(async () => (await mk('frisbee'))[0] === 'idle', 3000, 'pick up');
   console.log('cat: watched, picked up');
+  // A picnic mat in the hand: held as a rolled mat, and it can be spread.
+  await mk('giveMat');
+  await mk('holdFromBag', 'gift'); // (swaps the frisbee in hand for the mat)
+  if (await mk('heldNow') !== 'gift:mat') throw new Error('mat held as ' + await mk('heldNow'));
+  await mk('place', -6, 9); await mk('face', Math.PI / 2);
+  await until(async () => (await label()).includes('🧺'), 5000, 'spread from hand');
+  const mc = await mk('choices');
+  const spreadAt = mc ? mc.findIndex((c) => c.includes('🧺')) : 0;
+  if (mc) await mk('pick', spreadAt); else await mk('act');
+  await wait(500);
+  if (await mk('heldNow') !== 'gift:mat') throw new Error('the mat left the hand: ' + await mk('heldNow'));
+  await until(async () => (await label()).includes('🧺'), 5000, 'fold button (mat stayed spread)');
+  console.log('mat: held as a mat, spread from the hand, stays spread:', await label());
   ok = !errors.length;
 } catch (e) { console.error('FAIL', e.message); }
 if (errors.length) console.error('page errors:', errors);

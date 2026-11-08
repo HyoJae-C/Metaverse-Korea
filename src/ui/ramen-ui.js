@@ -50,9 +50,22 @@ export class RamenUI {
   // root: the sheet; bag: the player's bag (list/take); onSay(line): the
   // clerk speaks; beforeCook(): false to stop (e.g. hands full);
   // onCooked({ egg }): the bowl is ready.
-  constructor({ root, bag, onSay, beforeCook, onCooked, onClose }) {
-    Object.assign(this, { root, bag, onSay, beforeCook, onCooked, onClose });
+  // hand: { held, take() } — what's in the hand counts too (taking it out of
+  // the bag empties that slot), and goes in the pot from the hand.
+  constructor({ root, bag, hand = null, onSay, beforeCook, onCooked, onClose }) {
+    Object.assign(this, { root, bag, hand, onSay, beforeCook, onCooked, onClose });
     this.raf = 0;
+  }
+
+  // The bag's goods, then what's in the hand (if anything).
+  _items() { const h = this.hand?.held; return h ? [...this.bag.list(), h] : this.bag.list(); }
+  // Use up one ingredient g: the one in your hand first, else from the bag.
+  // false if there's none.
+  _use(g) {
+    if (ingredientAt([this.hand?.held], g) === 0) { this.hand.take(); return true; }
+    const i = ingredientAt(this.bag.list(), g);
+    if (i >= 0) { this.bag.take(i); return true; }
+    return false;
   }
 
   get open() { return !this.root.hidden; }
@@ -83,14 +96,14 @@ export class RamenUI {
   }
 
   _pantry() {
-    const items = this.bag.list();
+    const items = this._items();
     const n = (g) => ingredientCount(items, g);
     return el('p', 'ramen-pantry', `${L(RAMEN_TEXT.inBag)}: ${INGREDIENTS.ramyeon.icon} ${L(RAMEN_TEXT.ramyeon)} × ${n('ramyeon')} · ${INGREDIENTS.egg.icon} ${L(RAMEN_TEXT.egg)} × ${n('egg')} · 💧 ${L(RAMEN_TEXT.water)}`);
   }
 
   renderStart() {
     this._frame();
-    const ok = canCook(this.bag.list());
+    const ok = canCook(this._items());
     const go = el('button', 'primary', '🔥 ' + L(RAMEN_TEXT.start));
     go.disabled = !ok;
     go.onclick = () => this.play();
@@ -103,9 +116,7 @@ export class RamenUI {
 
   play() {
     if (this.beforeCook?.() === false) return;
-    const at = ingredientAt(this.bag.list(), 'ramyeon');
-    if (at < 0) { this.renderStart(); return; }
-    this.bag.take(at); // the pack goes in the pot (noodles and soup powder)
+    if (!this._use('ramyeon')) { this.renderStart(); return; } // the pack goes in the pot (noodles and soup powder)
     this._frame();
     this.say('start');
     const s = { t: 0, taps: 0, egg: false, done: false };
@@ -118,9 +129,7 @@ export class RamenUI {
     meter.append(fill);
     const egg = el('button', 'chip', '🥚 ' + L(RAMEN_TEXT.addEgg));
     egg.onclick = () => {
-      const i = ingredientAt(this.bag.list(), 'egg');
-      if (i < 0 || s.egg) return;
-      this.bag.take(i);
+      if (s.egg || !this._use('egg')) return;
       s.egg = true;
       paint();
     };
@@ -148,7 +157,7 @@ export class RamenUI {
       status.textContent = !boiled ? L(RAMEN_TEXT.heating) : s.taps ? `꼬들꼬들~ ${'✨'.repeat(s.taps)}` : L(RAMEN_TEXT.inPot);
       fill.style.width = (boiled ? chewy(s.taps) : s.t / BOIL_SECONDS) * 100 + '%';
       meter.classList.toggle('cook', boiled);
-      const eggs = ingredientCount(this.bag.list(), 'egg');
+      const eggs = ingredientCount(this._items(), 'egg');
       egg.disabled = s.egg || !eggs || s.done;
       egg.textContent = s.egg ? '🥚 ✅' : eggs ? `🥚 ${L(RAMEN_TEXT.addEgg)} (${eggs})` : '🥚 ' + L(RAMEN_TEXT.noEgg);
       chant.disabled = !boiled || s.done;

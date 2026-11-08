@@ -26,11 +26,13 @@ export const MAT_TEXT = {
   have: { en: 'You already have a picnic mat in your bag.', ko: '가방에 이미 돗자리가 있어요.', ja: 'もうバッグにレジャーシートがあります。', zh: '包里已经有野餐垫了。' },
 };
 
-export const hasMat = (bag) => bag.list().some((e) => e.kind === 'gift' && e.g === 'mat');
+// In the bag, or taken out and held in the hand (holding takes it out of the bag).
+const isMat = (e) => e?.kind === 'gift' && e.g === 'mat';
+export const hasMat = (bag, held = null) => isMat(held) || bag.list().some(isMat);
 
 /**
- * game: { interior, mode, seated, me, others, bag, shop, myId } as getters,
- * plus standUp(), resendState() and clearAction(). street: the street's park
+ * game: { interior, mode, seated, me, others, bag, held, shop, myId } as
+ * getters, plus standUp(), dropHeld(), resendState() and clearAction(). street: the street's park
  * lawns as a place like the park interior ({ scene, lawns, colliders, seats,
  * blocked }), or null.
  */
@@ -130,8 +132,9 @@ export function createPicnic(game, street = null) {
   // Left alone too long or far behind: the mat is gone, from the bag too.
   function lose() {
     mine = null;
-    const i = game.bag.list().findIndex((e) => e.kind === 'gift' && e.g === 'mat');
+    const i = game.bag.list().findIndex(isMat);
     if (i >= 0) game.bag.take(i);
+    else if (isMat(game.held)) game.dropHeld?.();
     const lines = MAT_TEXT.lost;
     game.shop.toast(L(lines[Math.floor(Math.random() * lines.length)]));
     game.resendState();
@@ -146,7 +149,7 @@ export function createPicnic(game, street = null) {
       const near = Math.abs(p.x - mine.x) < 2.2 && Math.abs(p.z - mine.z) < 1.9;
       return near ? { key: 'mat-fold', label: '🧺 ' + L(MAT_TEXT.fold), run: () => fold() } : null;
     }
-    if (!hasMat(game.bag)) return null;
+    if (!hasMat(game.bag, game.held)) return null;
     // Only where it fits: open grass, clear of trees, benches and other mats
     // (standing on someone's mat you get "Lie down" instead).
     const ahead = { ...matInFront(p.x, p.z, game.me.root.rotation.y), c: 0, d: matDir(game.me.root.rotation.y) };
@@ -162,6 +165,6 @@ export function createPicnic(game, street = null) {
     // The picnic lawn we're on (Han River park, Seoul Forest), or null.
     get room() { return room; },
     // If the mat leaves the bag (sold, given away), it can't stay spread.
-    checkBag() { if (mine && !hasMat(game.bag)) fold(); },
+    checkBag() { if (mine && !hasMat(game.bag, game.held)) fold(); },
   };
 }

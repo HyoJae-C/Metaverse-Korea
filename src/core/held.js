@@ -11,15 +11,21 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'frisbee'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold'];
+// Bag goods that are held as themselves, not in a shopping bag: the held
+// kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
+export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
+export const giftKind = (e) => (GIFT_LOOKS.includes(e?.g) ? 'gift:' + e.g : 'gift');
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
 export function makeHeld(kind) {
   const g = new THREE.Group();
   g.name = 'held:' + kind;
-  const skin = rodSkin(String(kind).split(':')[1]);
+  const sub = String(kind).split(':')[1];
+  const skin = rodSkin(sub);
   kind = heldBase(kind);
+  if (kind === 'gift' && GIFT_LOOKS.includes(sub)) return giftLook(g, sub);
   if (kind === 'coffee') {
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.032, 0.12, 14), mat('#fbfaf6'));
     cup.position.y = 0.06;
@@ -146,13 +152,6 @@ export function makeHeld(kind) {
     const cap = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), mat('#2b2230'));
     cap.position.y = 0.097;
     g.add(glass, juice, collar, cap);
-  } else if (kind === 'frisbee') {
-    // A frisbee from the bag (game/frisbee.js), held upright by its rim.
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.02, 20).rotateZ(Math.PI / 2), mat('#ff6b4a'));
-    disc.position.y = 0.06;
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.01, 6, 20).rotateY(Math.PI / 2), mat('#ffffff'));
-    rim.position.set(0.006, 0.06, 0);
-    g.add(disc, rim);
   } else if (kind === 'gift') {
     // A paper shopping bag with rope handles (something bought in a shop).
     const bag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.13, 0.12), mat('#fff6ee'));
@@ -166,6 +165,33 @@ export function makeHeld(kind) {
       h.position.set(0, 0.025, z);
       g.add(h);
     }
+  }
+  g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+  return g;
+}
+
+// Bag goods as themselves in the hand (GIFT_LOOKS).
+function giftLook(g, sub) {
+  g.name = 'held:gift:' + sub;
+  const add = (geo, color, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); g.add(m); return m; };
+  if (sub === 'frisbee') { // held upright by its rim (game/frisbee.js)
+    add(new THREE.CylinderGeometry(0.12, 0.11, 0.02, 20).rotateZ(Math.PI / 2), '#ff6b4a', 0, 0.06);
+    add(new THREE.TorusGeometry(0.112, 0.01, 6, 20).rotateY(Math.PI / 2), '#ffffff', 0.006, 0.06);
+  } else if (sub === 'mat') { // a rolled-up picnic mat with two white straps, carried across
+    add(new THREE.CylinderGeometry(0.05, 0.05, 0.34, 12).rotateX(Math.PI / 2), '#3f7fd0', 0, 0.02);
+    for (const z of [-0.09, 0.09]) add(new THREE.CylinderGeometry(0.054, 0.054, 0.025, 12).rotateX(Math.PI / 2), '#f4f8ff', 0, 0.02, z);
+  } else if (sub === 'ramyeon') { // an instant-noodle pack: a red pillow bag with a yellow label
+    add(new THREE.BoxGeometry(0.03, 0.12, 0.15), '#d8452f', 0, 0.02);
+    add(new THREE.BoxGeometry(0.032, 0.06, 0.07), '#ffd166', 0, 0.03, 0.02);
+  } else if (sub === 'egg') { // one egg
+    add(new THREE.SphereGeometry(0.03, 10, 8).scale(1, 1.3, 1), '#fff6e6', 0, 0.04);
+  } else if (sub === 'kimchi') { // a glass jar of homemade kimchi with a lid
+    add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 14), '#c8392b', 0, 0.05);
+    add(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 14), '#2f6f4f', 0, 0.11);
+  } else { // japchae, kimbap: a homemade lunch box (dosirak) with a cloth knot
+    add(new THREE.BoxGeometry(0.1, 0.06, 0.13), sub === 'kimbap' ? '#2b3a2b' : '#c98a3e', 0, 0.03);
+    add(new THREE.BoxGeometry(0.105, 0.012, 0.135), '#f4d35e', 0, 0.066);
+    add(new THREE.SphereGeometry(0.02, 8, 6), '#f4d35e', 0, 0.08);
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;
