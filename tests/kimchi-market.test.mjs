@@ -73,7 +73,7 @@ test('market text in every language; the boss speaks Korean with romanization', 
   for (const line of Object.values(BOSS_LINES)) assert.equal(line.length, 3);
 });
 
-test('Itaewon: restaurants north-west, bar and clubs north-east, the market south-west', () => {
+test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the market south-west', () => {
   const R = new URL('../public/regions/another-seoul/', import.meta.url);
   const region = JSON.parse(readFileSync(new URL('region.json', R)));
   const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
@@ -82,7 +82,7 @@ test('Itaewon: restaurants north-west, bar and clubs north-east, the market sout
   const inItaewon = stores.filter((s) => { const [x, z] = local(s); return x > -330 && x < 340 && z > -190 && z < 250; });
   for (const s of inItaewon.filter((s) => s.category === 'club' || s.category === 'bar')) {
     const [x, z] = local(s);
-    assert.ok(x > 0 && z < 0, `${s.id} north-east`);
+    assert.ok(x > 0 && z < 20, `${s.id} east, on Itaewon-ro`); // either side of the road
   }
   const food = inItaewon.filter((s) => s.category === 'restaurant' && !s.id.match(/jeon|hotteok|gukbap|kalguksu/));
   assert.equal(food.length, 12);
