@@ -31,3 +31,20 @@ test('the clothes and accessory shops are open; one icon per kind of shop', () =
   assert.ok(stores.every((s) => !s.icon), 'no per-shop icons');
   for (const c of ['fashion', 'restaurant', 'cafe']) assert.equal(new Set(stores.filter((s) => s.category === c && !s.perfumery).map(storeIcon)).size, 1, c);
 });
+
+test('Dongdaemun Fashion Town: the men\'s clothes keep your face (same model as the basic look)', async () => {
+  const { default: PACK } = await import('../src/data/characters/kaykit2.js');
+  const ids = ['gentle-floor', 'gwajam-club'];
+  let n = 0;
+  for (const id of ids) {
+    const s = stores.find((x) => x.id === id);
+    assert.ok(s && s.district === 'euljiro' && !comingSoon(s), `${id} is open in Euljiro`);
+    for (const p of s.products) {
+      const m = p.tryOn?.model;
+      if (!m) continue;
+      n++;
+      assert.equal(PACK.models[m]?.url, PACK.models.basic.url, `${p.id}: ${m}`);
+    }
+  }
+  assert.ok(n >= 8, `${n} men's clothes`);
+});
