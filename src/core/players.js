@@ -39,9 +39,14 @@ export class RemotePlayers {
   join(peer) {
     if (this.players.has(peer.id)) return;
     const ch = createCharacter(peer.look); // sanitized inside
+    // Hidden until their first position arrives. A phone on its lock screen
+    // stays in the room (presence) but its game is paused and sends nothing,
+    // so without this they stood at the map's origin, inside the shop there.
+    ch.root.visible = false;
     this.scene.add(ch.root);
     const tag = document.createElement('div');
     tag.className = 'nametag';
+    tag.style.display = 'none';
     const name = String(peer.name || 'Traveler').slice(0, 16);
     this.layer.appendChild(tag);
     const p = {
@@ -85,19 +90,24 @@ export class RemotePlayers {
     p.hd = null;
     p.ch.root.position.copy(old.position);
     p.ch.root.rotation.copy(old.rotation);
+    p.ch.root.visible = old.visible;
     this.scene.remove(old);
     this.scene.add(p.ch.root);
   }
 
   // Positions for the map.
   list() {
-    return [...this.players.values()].map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
+    return [...this.players.values()].filter((p) => p.target).map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
   }
 
   state(id, st) {
     const p = this.players.get(id);
     if (!p) return;
-    if (!p.target) p.ch.root.position.set(st.x, 0, st.z);
+    if (!p.target) {
+      p.ch.root.position.set(st.x, 0, st.z);
+      p.ch.root.rotation.y = Number.isFinite(st.ry) ? st.ry : 0;
+      if (!p.hidden) p.ch.root.visible = true;
+    }
     // Estimate their velocity from the last two updates, so we can draw them
     // where they are now rather than where they were when they sent it.
     const now = performance.now();
@@ -162,7 +172,7 @@ export class RemotePlayers {
   nearestFree(x, z, r) {
     let best = null, bd = r;
     for (const [id, p] of this.players) {
-      if (p.hidden || p.target?.bk) continue;
+      if (p.hidden || !p.target || p.target.bk) continue;
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < bd) { bd = d; best = { id, name: p.name }; }
     }
@@ -173,7 +183,7 @@ export class RemotePlayers {
   nearbyFree(x, z, r) {
     const out = [];
     for (const [id, p] of this.players) {
-      if (p.hidden || p.target?.bk) continue;
+      if (p.hidden || !p.target || p.target.bk) continue;
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < r) out.push({ id, name: p.name, d });
     }
@@ -252,7 +262,7 @@ export class RemotePlayers {
         if (d) { [r.position.x, r.position.z] = seatPosition(d.ch.root, d.target?.bk, p.target.seat || 0); r.rotation.y = d.ch.root.rotation.y; }
       }
       if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
-      if (p.hidden) continue;
+      if (p.hidden || !p.target) continue; // not placed yet (see join)
       v.set(r.position.x, r.position.y + 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       const dist = camera.position.distanceTo(r.position);
