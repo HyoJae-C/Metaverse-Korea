@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BumperCar, RINK, HOMES, SEATS, CAR_COLORS, CAR_R, SPEED, BOOST_SPEED, BOARD_MS, ROUND_S, GATE,
-  inRink, phaseOf, roundGo, freeSlot, settleSlot, mayBoard, freeForLine, rammedBy, ranking,
+  MIN_DRIVERS, tooFew, inRink, phaseOf, roundGo, freeSlot, settleSlot, mayBoard, freeForLine, rammedBy, ranking,
 } from '../src/core/bumper-cars.js';
 import { TarotQueue } from '../src/core/tarot-queue.js';
 import { RIDES } from '../src/core/themepark.js';
@@ -32,6 +32,18 @@ test('the rink fits in the park and stays clear of the other rides', () => {
   assert.ok(clear(HAUNT.x, HAUNT.z, 3.5), 'haunted house');
   assert.ok(clear(12, 6, 0.9), 'bench');
   assert.ok(GATE.x < x0 && GATE.x > 13, 'the gate spot is outside, by the plaza');
+});
+
+test('the rink is bigger than the first one (8.8 × 8 m)', () => {
+  assert.ok(RINK.hx * 2 * RINK.hz * 2 > 8.8 * 8 * 1.4, 'at least 40% more floor');
+  assert.ok(RINK.hx >= 4.4 && RINK.hz >= 4, 'longer and wider, not just one way');
+});
+
+test('one driver alone cannot start a round', () => {
+  assert.equal(MIN_DRIVERS, 2);
+  assert.equal(tooFew(1), true);
+  assert.equal(tooFew(2), false);
+  assert.equal(tooFew(6), false);
 });
 
 test('drives where the stick points, and boost is faster for a moment', () => {

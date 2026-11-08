@@ -185,6 +185,7 @@ import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
 import { createBumper } from './game/bumper.js';
+import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createSkate } from './game/skate.js';
@@ -1756,11 +1757,15 @@ const counterUi = new CounterUI({
 // Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
 // River parks, the theme park, the Namsan slope) and the street have them.
 const petIndoors = () => mode === 'store' && !(interior?.park || interior?.cablecar || interior?.lawns);
+// Where pets may not go in this room: the bumper car rink in Another Land.
+const PARK_FENCES = [RINK_FENCE];
+const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
 // My pet: adopt, walk, clean up after it (src/game/pet-care.js).
 const petCare = createPetCare({
   get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
   get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get indoors() { return petIndoors(); },
+  get fences() { return petFences(); },
   get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; },
   clearAction: () => { action = STALE; }, refreshQuestChip, refreshItems, refreshWallet,
@@ -4170,6 +4175,7 @@ function currentActivity() {
   if (listenBar.listening) return 'listen'; // headphones on at the record café
   if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
+  if (seated?.bumper != null) return 'bumper'; // in a bumper car: sat back, hands on the wheel
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
   if (gymUi.open) return gymUi.pose; // (the gym, a yoga mat, a reformer)
   if (seated && held?.kind === 'book' && bookUi.open) return 'read';
@@ -6111,6 +6117,7 @@ renderer.setAnimationLoop(() => {
   }
 
   const w = innerWidth, h = innerHeight;
+  others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
   if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
