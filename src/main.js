@@ -666,7 +666,24 @@ renderer.localClippingEnabled = true; // the station's train stays inside the ha
 // Palace gates, halls, statues (hand-made districts). Those marked "inner"
 // (inside Jongmyo's wall) wait for the first visit (the enclosures below).
 const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
-const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen')); // Children's Grand Park (core/zoo.js)
+// Children's Grand Park's zoo (core/zoo.js): feeding times are told in a toast.
+const ZOO_TEXT = {
+  soon: { en: '🍖 Feeding time at {name} in a minute', ko: '🍖 1분 뒤 {name} 먹이 시간이에요', ja: '🍖 1分後に{name}のごはんの時間', zh: '🍖 1分钟后{name}喂食时间' },
+  now: { en: '🍖 Feeding time at {name}!', ko: '🍖 {name} 먹이 시간!', ja: '🍖 {name}のごはんの時間！', zh: '🍖 {name}喂食时间到！' },
+  melon: { en: 'Toss the hippo a watermelon', ko: '하마에게 수박 주기', ja: 'カバにスイカをあげる', zh: '给河马喂西瓜' },
+  crunch: { en: '🍉 Crunch! The hippo loved it', ko: '🍉 아삭! 하마가 정말 좋아해요', ja: '🍉 ガブッ！カバは大喜び', zh: '🍉 咔嚓！河马很喜欢' },
+  poor: { en: 'A watermelon costs 🪙 {n}', ko: '수박은 🪙 {n}이에요', ja: 'スイカは🪙 {n}', zh: '西瓜要🪙 {n}' },
+  buy: { en: 'Watermelon for the hippo', ko: '하마 수박', ja: 'カバのスイカ', zh: '河马的西瓜' },
+};
+const MELON_PRICE = 3000;
+const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
+  if (mode !== 'street') return;
+  shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
+});
+const melonAct = (P, p) => ({ key: 'zoo-melon', label: `🍉 ${L(ZOO_TEXT.melon)} · 🪙 ${MELON_PRICE.toLocaleString()}`, run: () => {
+  if (!wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { shop.toast(fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
+  if (zoo.feedMelon(P, p.x, p.z)) me.play?.('wave');
+} });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -5167,6 +5184,7 @@ function updateAction(p, tSec) {
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
+    else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -5956,6 +5974,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    zoo: () => zoo, // Children's Grand Park (core/zoo.js)
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)

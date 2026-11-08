@@ -151,4 +151,12 @@ export const STAMPS = [
     // a fishing rod with a fish on the line, over the waves
     icon: '<path d="M58 70 q40 -10 70 30 M128 100 v12"/><path d="M114 116 q14 -12 28 0 q-14 12 -28 0 z M142 116 l8 -6 v12 z"/><path d="M52 136 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
+  {
+    // on the gate plaza of Children's Grand Park, beside the rainbow gate
+    id: 'grand-park', place: { at: [452, -72], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
+    name: { ko: '서울어린이대공원', en: "Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园' },
+    gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
+    // a lion's face in its mane
+    icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
+  },
 ];

@@ -30,6 +30,7 @@ export const PENS = [
     name: L('원숭이마을', 'Monkey Village', 'サル村', '猴子村'),
     props: [['log', -6, -4], ['log', 8, 5], ['tree', -13, 9], ['tree', 13, -9], ['rock', 0, 10]],
     groups: [{ kind: 'macaque', n: 8 }],
+    feed: { at: [0, 11], offset: 480, food: 'greens' },
   },
   {
     id: 'petting', x: 90, z: 22, w: 36, d: 30, fence: 'low', ground: 'grass', board: 'n', pet: true,
@@ -53,6 +54,47 @@ export const PENS = [
       { kind: 'pelican', n: 3, box: [-18, -7, 2, 7] },
       { kind: 'peacock', n: 2, box: [5, -7, 20, 7] },
     ],
+  },
+  {
+    id: 'tigers', x: 137, z: -22, w: 21, d: 28, fence: 'mesh', ground: 'grass', board: 's',
+    name: L('호랑이', 'Tigers', 'トラ', '老虎'),
+    pond: [4, -7, 3], props: [['rock', -5, -2], ['tree', -6, -10]],
+    groups: [{ kind: 'tiger', n: 2 }],
+    feed: { at: [0, 10], offset: 0, food: 'meat' },
+  },
+  {
+    id: 'lions', x: 163, z: -22, w: 21, d: 28, fence: 'mesh', ground: 'dirt', board: 's',
+    name: L('사자', 'Lions', 'ライオン', '狮子'),
+    props: [['rock', 3, -6], ['rock', -4, -9, 1], ['tree', -6, 2]],
+    groups: [{ kind: 'lion', n: 3 }],
+    feed: { at: [0, 10], offset: 120, food: 'meat' },
+  },
+  {
+    id: 'bears', x: 150, z: -62, w: 40, d: 16, fence: 'mesh', ground: 'dirt', board: 's',
+    name: L('곰', 'Bears', 'クマ', '熊'),
+    pond: [12, -1, 4], props: [['rock', -10, -3], ['tree', -16, -4], ['log', 2, -3]],
+    groups: [{ kind: 'bear', n: 2 }],
+    feed: { at: [-4, 5], offset: 240, food: 'fish' },
+  },
+  {
+    id: 'sea', x: 138, z: 22, w: 24, d: 28, fence: 'glass', ground: 'stone', board: 'n',
+    name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
+    pond: [0, 3, 9], props: [['rock', 8, -9], ['rock', -8, 11]],
+    groups: [{ kind: 'seal', n: 3 }, { kind: 'walrus', n: 1 }, { kind: 'polarbear', n: 1 }],
+    feed: { at: [0, -11], offset: 360, food: 'fish' },
+  },
+  {
+    id: 'hippos', x: 163, z: 22, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
+    name: L('하마', 'Hippos', 'カバ', '河马'),
+    pond: [0, 4, 7], props: [['tree', 7, 11]],
+    groups: [{ kind: 'hippo', n: 2 }],
+    melon: [-3, -15.8], melonIn: [0, 1],
+  },
+  {
+    id: 'reptiles', x: 90, z: -62, w: 14, d: 10, fence: 'house', ground: 'stone', board: 's',
+    name: L('파충류관', 'Reptile House', '爬虫類館', '爬行动物馆'),
+    props: [['rock', 3, -2]],
+    groups: [{ kind: 'snake', n: 1, box: [-5, -3, 5, 3] }],
   },
 ];
 
@@ -86,15 +128,15 @@ export function buildMap() {
       { k: 'park', p: [[7, -80], [200, -80], [200, 95], [7, 95], [7, 22], [50, 22], [50, -22], [7, -22]] },
       { k: 'plaza', p: rect(7, -22, 50, 22) },
       // Woods: a strip round the outside.
-      { k: 'park', trees: true, p: rect(50, -80, 200, -52) },
+      { k: 'park', trees: true, p: rect(50, -80, 80, -52) },
+      { k: 'park', trees: true, p: rect(100, -80, 128, -52) },
+      { k: 'park', trees: true, p: rect(172, -80, 200, -52) },
+      { k: 'park', trees: true, p: rect(80, -80, 172, -72) },
       { k: 'park', trees: true, p: rect(188, -52, 200, 95) },
       { k: 'park', trees: true, p: rect(126, 52, 188, 95) },
       { k: 'park', trees: true, p: rect(50, 76, 126, 95) },
       { k: 'park', trees: true, p: rect(7, -80, 50, -52) },
       { k: 'park', trees: true, p: rect(7, 30, 52, 95) },
-      // Lawns in the two quarters still waiting for their pens.
-      { k: 'grass', p: rect(cx + 6, z0 + 6, x1 - 6, -6) },
-      { k: 'grass', p: rect(cx + 6, 6, x1 - 6, z1 - 6) },
     ],
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
