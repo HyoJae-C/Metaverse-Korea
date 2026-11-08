@@ -1,10 +1,9 @@
 // Text for the japchae class (ui/japchae-ui.js), in every UI language.
 // English is the source; Traditional Chinese is made from zh (localName).
+import { JAPCHAE_LABELS } from './cooking-labels.js';
 export const JT = {
-  open: { en: 'Make japchae', ko: '잡채 만들기', ja: 'チャプチェを作る', zh: '做杂菜', es: 'Hacer japchae', id: 'Membuat japchae', vi: 'Làm japchae', hi: 'जापचे बनाएँ', fr: 'Faire du japchae', th: 'ทำจับแช', ar: 'اصنع الجابتشي' },
+  ...JAPCHAE_LABELS,
   title: { en: 'Japchae class', ko: '잡채 교실', ja: 'チャプチェ教室', zh: '杂菜课', es: 'Clase de japchae', id: 'Kelas japchae', vi: 'Lớp japchae', hi: 'जापचे क्लास', fr: 'Cours de japchae', th: 'คลาสจับแช', ar: 'درس الجابتشي' },
-  teacher: { en: 'Cooking teacher', ko: '요리 선생님', ja: '料理の先生', zh: '烹饪老师', es: 'Maestro de cocina', id: 'Guru masak', vi: 'Thầy dạy nấu ăn', hi: 'कुकिंग टीचर', fr: 'Professeur de cuisine', th: 'ครูสอนทำอาหาร', ar: 'معلّم الطبخ' },
-  hint: { en: 'Stand at a stove on the far side of the table for japchae, or at a bamboo mat on the near side for kimbap.', ko: '조리대 안쪽 화구 앞에 서면 잡채, 바깥쪽 김발 앞에 서면 김밥 수업이에요.', ja: '調理台の奥のコンロの前ならチャプチェ、手前の巻きすの前ならキンパの教室です。', zh: '站在长桌里侧的炉子前学杂菜，站在外侧的竹帘前学紫菜包饭。', es: 'Ponte frente a un fogón del lado de dentro para el japchae, o frente a una esterilla del lado de fuera para el kimbap.', id: 'Berdiri di depan kompor di sisi dalam meja untuk japchae, atau di depan tikar bambu di sisi luar untuk kimbap.', vi: 'Đứng trước bếp ở phía trong bàn để làm japchae, hoặc trước mành tre ở phía ngoài để làm kimbap.', hi: 'जापचे के लिए टेबल के अंदर वाले चूल्हे के सामने, किम्बाप के लिए बाहर वाली बाँस की चटाई के सामने खड़े हों।', fr: 'Mets-toi devant un réchaud au fond de la table pour le japchae, ou devant une natte en bambou du côté proche pour le kimbap.', th: 'ยืนที่เตาฝั่งไกลของโต๊ะเพื่อทำจับแช หรือที่เสื่อไม้ไผ่ฝั่งใกล้เพื่อทำคิมบับ', ar: 'قف أمام موقد في الجهة الداخلية من الطاولة للجابتشي، أو أمام حصيرة خيزران في الجهة الخارجية للكيمباب.' },
   intro: {
     en: 'Japchae (잡채) means "mixed vegetables": glossy sweet potato noodles with colourful vegetables, beef and egg. Every part is cooked on its own and mixed at the end. Make one platter in 8 steps.',
     ko: '잡채는 "여러 채소를 섞은 것"이라는 뜻이에요. 윤기 나는 당면에 알록달록한 채소, 소고기, 달걀을 더해요. 재료마다 따로 익혀서 마지막에 버무려요. 8단계로 한 접시를 만들어 봐요.',

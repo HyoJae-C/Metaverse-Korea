@@ -1,8 +1,9 @@
 // Text for the free-style kimbap class (ui/kimbap-ui.js), in every UI
 // language. English is the source; Traditional Chinese comes from zh.
+import { KIMBAP_LABELS } from './cooking-labels.js';
 import { JT } from './japchae-text.js';
 export const BT = {
-  open: { en: 'Make kimbap', ko: '김밥 만들기', ja: 'キンパを作る', zh: '做紫菜包饭', es: 'Hacer kimbap', id: 'Membuat kimbap', vi: 'Làm kimbap', hi: 'किम्बाप बनाएँ', fr: 'Faire du kimbap', th: 'ทำคิมบับ', ar: 'اصنع الكيمباب' },
+  ...KIMBAP_LABELS,
   title: { en: 'Free-style kimbap', ko: '자유 김밥', ja: '自由キンパ', zh: '自由紫菜包饭', es: 'Kimbap libre', id: 'Kimbap bebas', vi: 'Kimbap tự do', hi: 'फ़्री-स्टाइल किम्बाप', fr: 'Kimbap libre', th: 'คิมบับตามใจ', ar: 'كيمباب على ذوقك' },
   intro: {
     en: 'Kimbap (김밥) is rice and fillings rolled in seaweed, then sliced. It is what Koreans pack for picnics and school trips. There is no one right recipe: fill yours with whatever you like!',
