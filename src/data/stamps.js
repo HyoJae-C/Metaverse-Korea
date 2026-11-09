@@ -49,7 +49,7 @@ export const STAMPS = [
   {
     // at the west end of the drone show's lawn, in the park laid on the
     // street (scripts/build-seongsu.mjs), the river ahead
-    id: 'hangang', place: { at: [117, 376.5], ry: 3.1416 }, color: '#1d6fb8', shape: 'square',
+    id: 'hangang', place: { at: [283.8, 419.7], ry: 2.981 }, color: '#1d6fb8', shape: 'square',
     name: { ko: '뚝섬 한강공원', en: 'Ttukseom Han River Park', ja: 'トゥクソム漢江公園', zh: '纛岛汉江公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a duck boat (오리배) on the river
@@ -58,7 +58,7 @@ export const STAMPS = [
   {
     // Ttukseom's drone light show (core/drone-show.js): the stand is only on
     // the lawn (in front of the barge) while the drones are up, so this stamp means you saw a show.
-    id: 'drone-show', place: { at: [142.6, 377.4], ry: 3.1416 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    id: 'drone-show', place: { at: [308.9, 424.7], ry: 2.981 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
     name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // drones drawing a heart over the river
@@ -125,7 +125,8 @@ export const STAMPS = [
     icon: '<path d="M64 98 h72 q-4 26 -36 26 q-32 0 -36 -26 z M60 98 h80"/><path d="M84 88 q-6 -8 0 -16 q6 -8 0 -16 M100 88 q-6 -8 0 -16 q6 -8 0 -16 M116 88 q-6 -8 0 -16 q6 -8 0 -16"/>',
   },
   {
-    id: 'seokchon', place: { at: [263, 576] }, color: '#1e7fa8', shape: 'circle',
+    // on the west lake's south shore (Songpa's map, local 470, 345)
+    id: 'seokchon', place: { at: [908, 1116] }, color: '#1e7fa8', shape: 'circle',
     name: { ko: '석촌호수', en: 'Seokchon Lake', ja: '石村湖', zh: '石村湖' },
     gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
     icon: '<path d="M58 104 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0 M58 120 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0"/><path d="M80 92 v-22 M80 70 q-14 4 -12 16 M80 70 q14 4 12 16 M80 70 q-8 -10 -18 -6 M80 70 q8 -10 18 -6"/><path d="M118 92 q0 -16 12 -24 q-2 14 8 24 z"/>',

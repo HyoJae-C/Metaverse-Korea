@@ -30,7 +30,7 @@ try {
   await mk('enter', 'ttukseom-hangang');
   await until(async () => (await mk('hanPark'))?.id === 'ttukseom-hangang'); // (laid on the street)
   const stand = () => page.evaluate(() => window.__mk.droneShow());
-  await mk('place', 139, 380); await mk('face', 0); await mk('cam', { yaw: Math.PI, pitch: 0.12, dist: 7 }); // on the lawn, facing the barge
+  await mk('place', 304.9, 426.7); await mk('face', -0.16); await mk('cam', { yaw: 2.981, pitch: 0.12, dist: 7 }); // on the lawn, facing the barge
   await wait(8000); // (a software renderer takes a while to draw a new room the first time)
   let st = await stand();
   if (st.night !== 0 || st.stamp) throw new Error('night or stamp in the day: ' + JSON.stringify(st));
@@ -38,7 +38,7 @@ try {
   const moments = [[-150, 'lift'], [-5, 'countdown'], [8, 'another-seoul'], [52, 'eo-na-deo'], [92, 'korea'], [140, 'fan'], [185, 'tower'], [230, 'palace'], [315, 'waver'], [370, 'whale'], [480, 'ramen'], [528, 'meokgo'], [548, 'ttukseom'], [636, 'geurigo'], [665, 'neo-heart'], [720, 'photo-frame'], [790, 'act3'], [860, 'wave'], [900, 'star'], [935, 'moon'], [990, 'clover'], [1040, 'sugo'], [1080, 'burst'], [1170, 'next-show']];
   for (const [t, name] of moments) {
     await page.clock.setFixedTime(START + t * 1000);
-    if (t === -150) await mk('cam', { yaw: Math.PI });
+    if (t === -150) await mk('cam', { yaw: 2.981 });
     await wait(t === -150 ? 3000 : 1600);
     st = await stand();
     if (t > -100 && !(st.night > 0.99)) throw new Error(`not night at ${t}: ` + JSON.stringify(st));

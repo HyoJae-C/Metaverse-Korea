@@ -144,6 +144,7 @@ export const EN = {
   "cinema.empty": "No films yet. Come back soon!",
   "cinema.blocked": "This film can't be played here. On to the next one.",
   "quest.guide": "Square guide",
+  "quest.welcomeGuide": "Guide", // the welcome guide where new players start (Bukchon)
   "quest.take": "Get a mission",
   "quest.check": "Check your mission",
   "quest.report": "Report back · get your reward",

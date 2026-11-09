@@ -38,3 +38,13 @@ test('every Seongsu shop stands on open ground in front of a building, each at i
     if (a !== b) assert.ok(Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]) >= 7, `${a.id} and ${b.id} overlap`);
   }
 });
+
+test('Ttukseom Han River Park and Songpa are at their real places on the Han', async () => {
+  const { toGame, anchorOffset } = await import('../src/core/seoul-grid.js');
+  const park = map.landmarks.find((l) => l.type === 'hanpark');
+  const [rx, rz] = toGame(37.5294, 127.0697); // the park, east of Cheongdam Bridge
+  assert.ok(Math.hypot(park.x - rx, park.z - rz) < 20, `park at ${park.x},${park.z}, real ${rx.toFixed(0)},${rz.toFixed(0)}`);
+  const songpa = read('region.json').districts.find((d) => d.id === 'songpa');
+  assert.ok(!songpa.anchor.nudge, 'Songpa is not nudged');
+  assert.deepEqual(songpa.offset, anchorOffset(songpa.anchor).map(Math.round));
+});

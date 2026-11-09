@@ -51,7 +51,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // Wangsimni-ro (north-south) is Seoul Forest's east edge; the forest lies west
 // of it, the Han River south.
 export const WEST = -465;
-export const BOUNDS = [WEST, -100, 260, 410];
+export const BOUNDS = [WEST, -100, 430, 560];
 const name = (ko, en, ja, zh) => ({ ko, en, ...(ja ? { ja } : {}), ...(zh ? { zh } : {}) });
 export const THETA = (20.5 * Math.PI) / 180;
 const COS = Math.cos(THETA), SIN = Math.sin(THETA);
@@ -82,7 +82,7 @@ const STREETS = [
   { id: 'seongsui', v: 30, from: -110, to: 263, k: 'secondary', w: 14, n: name('성수이로', 'Seongsui-ro', '聖水二路', '圣水二路') },
   { id: 'east1', v: 77, from: 0, to: 155, k: 'residential', w: 7, n: name('연무장13길', 'Yeonmujang 13-gil', 'ヨンムジャン13ギル', '练武场13路') },
   { id: 'east2', v: 145, from: 0, to: 155, k: 'residential', w: 7, n: name('연무장17길', 'Yeonmujang 17-gil', 'ヨンムジャン17ギル', '练武场17路') },
-  { id: 'dongil', v: 195, from: -110, to: 303, k: 'primary', w: 18, n: name('동일로', 'Dongil-ro', '東一路', '东一路') },
+  { id: 'dongil', v: 195, from: -110, to: 290, k: 'primary', w: 18, n: name('동일로', 'Dongil-ro', '東一路', '东一路') },
 ];
 const S = Object.fromEntries(STREETS.map((s) => [s.id, s]));
 const SIDEWALK = 2.5;
@@ -99,11 +99,26 @@ const FOREST_EAST = WANGSIMNI_X + 5; // the forest's east edge, Wangsimni-ro's w
 // The forest's south edge (Gangbyeonbuk-ro runs between it and the river), west to east.
 const FOREST_EDGE = [[WEST, 94], [-440, 103], [-400, 121], [-360, 143], [-320, 160], [-280, 178], [FOREST_EAST, 185]];
 
-// The Han River's north bank: the real one along Seoul Forest, then out to
-// Ttukseom Han River Park's straight bank (z 386, game/han-parks.js), which
-// stays where it is: from x -240 the game's bank runs a little south of the
-// real one (up to about 50 m) to meet it.
-const RIVER_EDGE = [[WEST, 126], [-440, 135], [-400, 151], [-360, 168], [-320, 186], [-280, 201], [-240, 212], [12, 386], [260, 386]];
+// Ttukseom Han River Park (game/han-parks.js; core/han-park.js builds what
+// the map can't draw) lies at its real place, east of Cheongdam Bridge, on a
+// straight bank: its own frame has the bank's edge at Z = 0 (the river Z < 0,
+// the land Z > 0) and X growing west along the bank, which there runs east a
+// little south of east (PARK_TILT). parkAt(X, Z) is where a point of the park is on the map.
+export const PARK_X = 300, PARK_BANK = 432;
+export const PARK_TILT = (9.2 * Math.PI) / 180;
+export const PARK_RY = Math.PI - PARK_TILT;
+const PC = Math.cos(PARK_RY), PS = Math.sin(PARK_RY);
+export const parkAt = (X, Z) => [r1(PARK_X + X * PC + Z * PS), r1(PARK_BANK - X * PS + Z * PC)];
+const parkX = (x, Z) => (PARK_X + Z * PS - x) / -PC; // the park's X where its line Z crosses map x
+// Jamsil Bridge (Songpa's Songpa-daero, x 430..446): the riverside ends there.
+export const BRIDGE_X = 430;
+
+// The Han River's north bank: the real one (OpenStreetMap) from Seoul Forest
+// to Ttukseom Han River Park, then the park's straight bank (within about
+// 10 m of the real one) to Jamsil Bridge.
+const REAL_BANK = [[-240, 212], [-200, 226], [-160, 239], [-120, 253], [-80, 268], [-40, 282], [0, 297], [40, 319], [80, 346], [120, 372], [160, 396], [260, 442]];
+const PARK_BANK_LINE = [parkAt(123, 0), parkAt(parkX(BRIDGE_X, 0), 0)];
+const RIVER_EDGE = [[WEST, 126], [-440, 135], [-400, 151], [-360, 168], [-320, 186], [-280, 201], ...REAL_BANK.slice(0, -1), ...PARK_BANK_LINE];
 const bankZ = (x) => {
   for (let i = 1; i < RIVER_EDGE.length; i++) {
     const [x0, z0] = RIVER_EDGE[i - 1], [x1, z1] = RIVER_EDGE[i];
@@ -111,10 +126,9 @@ const bankZ = (x) => {
   }
   return RIVER_EDGE.at(-1)[1];
 };
-// Where buildings stop on the river side: 20 m before the real bank (OpenStreetMap)
-// and never past the riverside walk above Ttukseom Han River Park (z 352).
-// Between there and the game's bank: riverside grass and the Han River path.
-const REAL_BANK = [[-240, 212], [-200, 226], [-160, 239], [-120, 253], [-80, 268], [-40, 282], [0, 297], [40, 319], [80, 346], [120, 372], [160, 396], [260, 442]];
+// Where buildings stop on the river side: 20 m before the real bank, and
+// never past z 352 (the blocks south of Ttukseom-ro end there). Between there
+// and the bank: riverside grass and the Han River path.
 const realBankZ = (x) => {
   for (let i = 1; i < REAL_BANK.length; i++) {
     const [x0, z0] = REAL_BANK[i - 1], [x1, z1] = REAL_BANK[i];
@@ -123,10 +137,13 @@ const realBankZ = (x) => {
   return REAL_BANK.at(-1)[1];
 };
 const landZ = (x) => Math.min(352, (x < -240 ? bankZ(x) : realBankZ(x)) - 20);
-// How far south the game's water reaches (east to west), about the real Han's width from the bank;
-// Songpa's Han River bank and region.json water[1] carry on from here.
-const RIVER_SOUTH = [[260, 410], [20, 410], [-30, 465], [-150, 417], [-240, 388], [-360, 346], [WEST, 300]];
-const RIVER_PATH = [...RIVER_EDGE.slice(0, -2).map(([x, z]) => [x, r1(z - 7)]), [-20, 357], [10, 372], [260, 372]];
+// How far south the game's water reaches (east to west): to Songpa's own
+// Han River (its bank strip, z 556..611, from x 18 east), then about the real
+// Han's width from the bank; region.json water carries on east of Jamsil
+// Bridge and west of Seoul Forest.
+const RIVER_SOUTH = [[BRIDGE_X, 560], [18, 560], [-30, 490], [-150, 430], [-240, 388], [-360, 346], [WEST, 300]];
+// The Han River path: 7 m up from the bank, then along the park (Z 14) to Jamsil Bridge.
+const RIVER_PATH = [...RIVER_EDGE.slice(0, -2).map(([x, z]) => [x, r1(z - 7)]), parkAt(123, 14), parkAt(parkX(BRIDGE_X, 14), 14)];
 
 // Paths through Seoul Forest (old frame; moved with the forest below).
 const WALKS = [
@@ -193,29 +210,37 @@ const B = [
   { x: ['dongil', EAST_U_EDGE], z: ['dulle', E(300)], sides: { w: 'plain', n: 'plain' } },
 ];
 
+// The land's edge (landZ) from Wangsimni-ro to the map's east edge (x 258).
+const LAND_EDGE = [FOREST_EAST, ...REAL_BANK.map(([x]) => x).filter((x) => x > FOREST_EAST && x < 258), 258].map((x) => [x, r1(landZ(x))]);
+{ // (and where it meets z 352)
+  const i = LAND_EDGE.findIndex(([, z]) => z >= 352);
+  if (i > 0 && LAND_EDGE[i - 1][1] < 352) {
+    const [x0] = LAND_EDGE[i - 1], [x1] = LAND_EDGE[i];
+    let a = x0, b = x1;
+    for (let k = 0; k < 40; k++) { const m = (a + b) / 2; if (landZ(m) < 352) a = m; else b = m; }
+    LAND_EDGE.splice(i, 0, [r1(b), 352]);
+  }
+}
 // Parks and the river (not blocks: no buildings).
 const AREAS = [
   // Seoul Forest (wooded), from Seoulsup-gil down to the riverside grass, west of Wangsimni-ro.
   { k: 'park', trees: true, p: [[WEST, -70], [FOREST_EAST, -70], ...FOREST_EDGE.slice().reverse()] },
   // Riverside grass (Han River park): under the forest, then along the river.
-  { k: 'grass', p: [...FOREST_EDGE, [FOREST_EAST, r1(landZ(FOREST_EAST))], [12, r1(landZ(11.9))], [12, 352], [260, 352], ...RIVER_EDGE.slice().reverse()] },
+  { k: 'grass', p: [...FOREST_EDGE, ...LAND_EDGE, parkAt(parkX(258, 40), 40), parkAt(parkX(BRIDGE_X, 40), 40), ...RIVER_EDGE.slice().reverse()] },
   { k: 'water', p: [...RIVER_EDGE, ...RIVER_SOUTH] }, // Han River
 ];
-// Ttukseom Han River Park, laid straight on the street (game/han-parks.js;
-// core/han-park.js builds what the map can't draw) on the straight bank
-// (z 386) between the river and the Han River path. It faces south over the
-// river, so its own frame is turned half round: x = PARK_X - X, z = 386 - Z
-// (the bank's edge at z = 0, the river z < 0), x growing west. West to east:
+// Ttukseom Han River Park, laid on the street in its own frame (parkAt,
+// above) between the river and the Han River path (Z 14), with the riverside
+// walk above it (Z 34). Facing the river, west is to the right (X grows west):
 //  - the fishing pier and the fish buyer;
-//  - where the walk down from the riverside walk (X 60) meets the river path: the
+//  - where the west walk down from the riverside walk (X 75) meets the river path: the
 //    DAILY MART kiosk with its ramen machine and parasol tables, then the
 //    Riverside Market's six stalls;
 //  - the open lawn for the drone light show (core/drone-show.js), with the
 //    launch barge out on the water in front of it and the show's board by
 //    the railing (picnic mats and frisbees go here too);
-//  - the duck boat dock by the other walk down (X 200), and a quiet end
+//  - the duck boat dock by the other walk down (X -65), and a quiet end
 //    with benches under trees.
-export const PARK_X = 135, PARK_BANK = 386;
 const DRONES_X = -4; // the barge and the drones' sky (X 139)
 export const PARK = {
   bounds: [-123, -52, 123, 17], // bank to the path, and out on its water to the barge
@@ -251,7 +276,7 @@ export const PARK = {
 };
 const PARK_LAWN = [-30, 22]; // the drone show's lawn (x): picnic mats and frisbees
 // (the lawn in the street's metres: no trees, the picnic lawn)
-const lawnArea = { k: 'grass', lawn: true, p: [[PARK_X - PARK_LAWN[1], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 1.2], [PARK_X - PARK_LAWN[1], PARK_BANK - 1.2]] };
+const lawnArea = { k: 'grass', lawn: true, p: [parkAt(-PARK_LAWN[1], 11.4), parkAt(-PARK_LAWN[0], 11.4), parkAt(-PARK_LAWN[0], 1.2), parkAt(-PARK_LAWN[1], 1.2)] };
 AREAS.push(lawnArea);
 // A building placed by hand: the Seoul Forest Culture Center (old frame).
 const EXTRA = [
@@ -442,15 +467,18 @@ for (const l of LANDMARKS) {
   if (Number.isFinite(l.x)) [l.x, l.z] = shift([l.x, l.z]);
   if (l.trees) l.trees = l.trees.map(shift);
 }
-// The park itself (game/han-parks.js): at the bank's edge, turned half round (not part of the forest).
-LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
+// The park itself (game/han-parks.js): at the bank's edge, in its own frame (not part of the forest).
+LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +PARK_RY.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
 BLOCKERS.unshift({ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), ...RIVER_SOUTH] }); // the river
-// The Han River path, and the riverside walk above Ttukseom Han River Park with its two ways down.
+// The Han River path, and the riverside walk above Ttukseom Han River Park
+// (from the path at the park's west end to Jamsil Bridge) with its two ways
+// down and a way up to the road to Jamsil Bridge (region.json).
 WALKS.unshift(
   { w: 4, p: RIVER_PATH, n: name('한강 산책로', 'Han River Path', '漢江遊歩道', '汉江步道') },
-  { w: 4, p: [[60, 352], [60, 372]] }, // (Ttukseom Han River Park's two ways down, from the riverside walk)
-  { w: 4, p: [[200, 352], [200, 372]] },
-  { w: 4, p: [[12, 352], [258, 352]] }, // the riverside walk above the park, from Dongil-ro's end
+  { w: 4, p: [parkAt(75, 34), parkAt(75, 14)] }, // (Ttukseom Han River Park's two ways down, from the riverside walk)
+  { w: 4, p: [parkAt(-65, 34), parkAt(-65, 14)] },
+  { w: 4, p: [parkAt(133, 14), parkAt(123, 34), parkAt(parkX(BRIDGE_X, 34), 34)] }, // the riverside walk above the park
+  { w: 4, p: [[315, 355.2], parkAt(parkX(315, 34), 34)] }, // up to the road to Jamsil Bridge
 );
 
 // ── Geometry helpers ─────────────────────────────────────────────────────

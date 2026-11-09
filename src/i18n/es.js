@@ -144,6 +144,7 @@ export const ES = {
   'cinema.empty': "Aún no hay películas. ¡Vuelve pronto!",
   'cinema.blocked': "Esta película no se puede ver aquí. Pasamos a la siguiente.",
   'quest.guide': 'Guía de la plaza',
+  'quest.welcomeGuide': 'Guía',
   'quest.take': 'Pedir una misión',
   'quest.check': 'Ver tu misión',
   'quest.report': 'Informar · cobrar',

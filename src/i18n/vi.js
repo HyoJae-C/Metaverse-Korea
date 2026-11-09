@@ -145,6 +145,7 @@ export const VI = {
   'cinema.empty': "Chưa có phim nào. Hẹn gặp lại sớm!",
   'cinema.blocked': "Phim này không phát được ở đây. Chuyển sang phim tiếp theo.",
   'quest.guide': 'Người hướng dẫn quảng trường',
+  'quest.welcomeGuide': 'Người hướng dẫn',
   'quest.take': 'Nhận nhiệm vụ',
   'quest.check': 'Xem nhiệm vụ',
   'quest.report': 'Báo cáo · nhận thưởng',

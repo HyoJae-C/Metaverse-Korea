@@ -145,6 +145,7 @@ export const ZH = {
   "cinema.empty": "还没有电影，敬请期待！",
   "cinema.blocked": "这部电影无法在这里播放，接着放下一部。",
   "quest.guide": "广场向导",
+  "quest.welcomeGuide": "向导",
   "quest.take": "领取任务",
   "quest.check": "查看任务",
   "quest.report": "汇报完成",
