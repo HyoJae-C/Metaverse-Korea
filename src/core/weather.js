@@ -61,8 +61,15 @@ const forcedHour = () => {
   }
   return forced;
 };
+// "Day and night on my time" (Settings): the sky follows the player's own
+// clock instead of Seoul's, e.g. for evenings in the Americas. Shows still
+// start on Seoul's time and bring their own night.
+let localSky = false;
+export function setLocalSky(on) { localSky = !!on; }
 export function hourNow(nowMs = Date.now()) {
-  return forcedHour() ?? seoulHour(nowMs);
+  if (forcedHour() != null) return forcedHour();
+  if (localSky) { const d = new Date(nowMs); return d.getHours() + d.getMinutes() / 60; }
+  return seoulHour(nowMs);
 }
 let sunCache = { day: NaN, sun: null }; // (worked out once a day: it's asked every frame)
 export function darkness(nowMs = Date.now()) {

@@ -397,6 +397,7 @@ export const FR = {
   'hud.music': 'Musique',
   'settings.title': 'Réglages',
   'settings.steady': 'Marche tranquille (jamais courir)',
+  'settings.localSky': 'Jour et nuit à mon heure (pas celle de Séoul)',
   'settings.signs': 'Traduire les enseignes',
   'settings.done': 'Terminé',
   'news.title': 'Nouveautés',

@@ -396,6 +396,7 @@ export const ZH = {
   'hud.music': '音乐',
   'settings.title': '设置',
   'settings.steady': '匀速步行（不跑步）',
+  'settings.localSky': '按我的时间显示昼夜 (而非首尔时间)',
   'settings.signs': '翻译店铺招牌',
   'settings.done': '完成',
   "news.title": "更新公告",

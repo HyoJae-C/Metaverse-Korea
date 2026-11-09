@@ -399,6 +399,7 @@ export const VI = {
   'hud.music': 'Nhạc',
   'settings.title': 'Cài đặt',
   'settings.steady': 'Đi bộ đều (không chạy)',
+  'settings.localSky': 'Ngày & đêm theo giờ của tôi (không theo Seoul)',
   'settings.signs': 'Dịch biển hiệu cửa hàng',
   'settings.done': 'Xong',
   'news.title': 'Cập nhật',

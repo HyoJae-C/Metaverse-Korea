@@ -397,6 +397,7 @@ export const TH = {
   'hud.music': 'เพลง',
   'settings.title': 'การตั้งค่า',
   'settings.steady': 'เดินช้าๆ (ไม่วิ่ง)',
+  'settings.localSky': 'กลางวันและกลางคืนตามเวลาของฉัน (แทนเวลาโซล)',
   'settings.signs': 'แปลป้ายร้าน',
   'settings.done': 'เสร็จ',
   'news.title': 'อัปเดต',

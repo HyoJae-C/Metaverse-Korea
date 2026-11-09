@@ -396,6 +396,7 @@ export const KO = {
   'hud.music': '음악',
   'settings.title': '설정',
   'settings.steady': '일정한 걸음 (뛰지 않기)',
+  'settings.localSky': '내 시간에 맞춘 밤낮 (서울 시간 대신)',
   'settings.signs': '가게 간판 번역',
   'settings.done': '완료',
   "news.title": "업데이트 소식",

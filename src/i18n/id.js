@@ -399,6 +399,7 @@ export const ID = {
   'hud.music': 'Musik',
   'settings.title': 'Pengaturan',
   'settings.steady': 'Jalan stabil (tanpa lari)',
+  'settings.localSky': 'Siang & malam sesuai waktuku (bukan Seoul)',
   'settings.signs': 'Terjemahkan papan nama toko',
   'settings.done': 'Selesai',
   "news.title": "Pembaruan",

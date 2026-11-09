@@ -395,6 +395,7 @@ export const EN = {
   'hud.music': 'Music',
   'settings.title': 'Settings',
   'settings.steady': 'Steady walk (never run)',
+  'settings.localSky': "Day & night on my time (not Seoul's)",
   'settings.signs': 'Translate shop signs',
   'settings.done': 'Done',
   "news.title": "Updates",

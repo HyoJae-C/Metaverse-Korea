@@ -398,6 +398,7 @@ export const ES = {
   'hud.music': 'Música',
   'settings.title': 'Ajustes',
   'settings.steady': 'Paso constante (sin correr)',
+  'settings.localSky': 'Día y noche a mi hora (no la de Seúl)',
   'settings.signs': 'Traducir letreros',
   'settings.done': 'Listo',
   "news.title": "Novedades",
