@@ -7,7 +7,7 @@ import {
 import { REGION_NAMES } from './i18n/languages.js';
 import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
 import {
-  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ZOO_TEXT, DOGHOLE_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, BUSK_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
+  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ZOO_TEXT, DOGHOLE_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
@@ -121,7 +121,8 @@ import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line
 import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
 import { poseKind, poseAt, POSE_S } from './core/runway-poses.js';
 import { parseTarot } from './core/tarot-queue.js';
-import { BuskingZones, readTips, writeTips, takeTip } from './core/busking.js';
+import { BuskingZones } from './core/busking.js';
+import { createBuskingPlay } from './game/busking-play.js';
 import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
@@ -3995,45 +3996,12 @@ const poolGame = createPool({
 });
 const { onPoolRace, pool, endRace, wearingSwim, poolMore, poolAction, poolTick, poolLog } = poolGame;
 
-let buskMusic = null; // { wasOn, track } while inside a busking zone
-function startBusking(s) {
-  busking.start(s);
-  me.root.position.set(s.x, 0, s.z);
-  me.root.rotation.y = 0; // face the crowd
-  showBubble(myLabel, $('labels'), '🎤🎶', 3000);
-  shop.toast(L(BUSK_TEXT.begin));
-  action = STALE;
-}
-function stopBusking() {
-  busking.stop();
-  me.play('bow');
-  action = STALE;
-}
-// Busking is for fun, not money: listeners clap along (a few times a day).
-function buskTip() {
-  const next = takeTip(readTips(), dayKey());
-  if (!next) return;
-  writeTips(next);
-  sfx.pop?.();
-  shop.toast(L(BUSK_TEXT.tip));
-}
-// The busking song plays while you're in the zone (and the usual music after).
-function updateBuskMusic(p) {
-  const z = mode === 'street' ? busking.zoneAt(p.x, p.z) : null;
-  if (z === busking.inside) return;
-  busking.inside = z;
-  if (z) {
-    buskMusic = { wasOn: music.on, track: music.track.id === 'busking' ? 'lofi' : music.track.id };
-    music.setTrack('busking');
-    if (!music.on) music.setOn(true).then(applyMusicBtn);
-  } else if (buskMusic) {
-    const { wasOn, track } = buskMusic;
-    buskMusic = null;
-    if (music.track.id === 'busking') music.setTrack(track);
-    if (musicCafe.cafeMusic) musicCafe.cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
-    else if (!wasOn && music.on) music.setOn(false).then(applyMusicBtn);
-  }
-}
+// Playing at a busking zone: start/stop, tips and the busking song. (game/busking-play.js)
+const buskPlay = createBuskingPlay({
+  get me() { return me; }, get mode() { return mode; }, get action() { return action; }, set action(v) { action = v; },
+  busking, myLabel, musicCafe, music, applyMusicBtn, sfx, shop, $, STALE,
+});
+const { stopBusking, buskTip, updateBuskMusic, buskerAct } = buskPlay;
 // Name tag studio: emblems and name colours (a place to spend coins).
 const emblems = new EmblemCollection();
 const emblemUi = new EmblemUI({
@@ -5709,7 +5677,6 @@ const stampAct = (it) => (stampBook.has(it.stamp.id)
 const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { (n.owner || npcs).greet(n, p.x, p.z); missionEvent('talk', n.name); } });
 // Yozi's ice cream sculptures in Seoul Forest (core/park-art.js).
 const sculptureAct = (l) => ({ key: 'icecream:' + l.x + ',' + l.z, label: '🍦 ' + L(ICECREAM_TEXT.look), run: () => { me.play?.('wave'); shop.toast(fmt(L(ICECREAM_TEXT.about), { name: L(ICECREAM[l.model]) })); } });
-const buskerAct = (s) => ({ key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) });
 // An Information Center's game guide hands out and takes errands too, so
 // missions aren't only on Seongsu's square.
 function infoMissionAct(p) {
@@ -5860,14 +5827,8 @@ function updateAction(p, tSec) {
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
-    else if (busking.performing) {
-      next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
-    } else if (!riding && busking.stageAt(p.x, p.z)) {
-      const s = busking.stageAt(p.x, p.z);
-      next = { key: 'busk', label: '🎤 ' + L(BUSK_TEXT.start), run: () => startBusking(s) };
-    } else if (busking.nearBusker(p.x, p.z)) {
-      next = buskerAct(busking.nearBusker(p.x, p.z));
-    } else if (palaceShow?.nearGuard(p.x, p.z)) {
+    else if (buskPlay.buskAction(p, riding)) next = buskPlay.buskAction(p, riding); // the busking stage, the buskers
+    else if (palaceShow?.nearGuard(p.x, p.z)) {    } else if (palaceShow?.nearGuard(p.x, p.z)) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
