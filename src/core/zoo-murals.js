@@ -3,7 +3,9 @@
 // "ANOTHER SEOUL" in big letters. Each is one canvas on a plane just off a
 // wall: 'ice' (a polar bear and her cub on one floe, penguins on another, a
 // seal in the sea, the name in the sky), 'deep' (under the water: a walrus,
-// seals, diving penguins, fish) and 'penguins' (a penguin family by the door).
+// seals, diving penguins, fish), 'arctic' (the northern lights, a polar bear
+// swimming, a walrus on the ice), and 'penguins' and 'friends' either side of
+// the door.
 import * as THREE from 'three';
 import { canvasTex } from './three-kit.js';
 
@@ -142,6 +144,37 @@ export const ART = {
     title(c, 'SEOUL', w / 2, 138, 76);
     penguin(c, 150, 238, 1.6); penguin(c, 250, 256, 1.0, 0.08); penguin(c, 350, 232, 1.75);
     dot(c, 420, 70, 20, '#ffe58a');
+  }],
+  arctic: [1024, 208, (c, w, h) => { // a polar night: the northern lights, a bear swimming, a walrus on the ice
+    c.fillStyle = '#1d3557'; c.fillRect(0, 0, w, 110);
+    for (const [y, col] of [[40, 'rgba(120,255,190,0.45)'], [62, 'rgba(140,200,255,0.4)'], [84, 'rgba(200,140,255,0.3)']]) { // the aurora
+      c.strokeStyle = col; c.lineWidth = 14; c.beginPath(); c.moveTo(0, y);
+      for (let x = 0; x <= w; x += 64) c.lineTo(x, y + Math.sin(x / 90) * 14);
+      c.stroke();
+    }
+    c.fillStyle = '#ffffff'; for (let i = 0; i < 40; i++) c.fillRect((i * 131) % w, (i * 37) % 70, 3, 3); // stars
+    c.fillStyle = SEA; c.fillRect(0, 110, w, h - 110);
+    c.fillStyle = DEEP; c.fillRect(0, 165, w, h - 165);
+    waves(c, w, 116, h - 6, 3);
+    floe(c, 620, 960, 100, 40);
+    walrus(c, 760, 74, 0.7, -1);
+    seal(c, 890, 92, 0.55, -1);
+    polarBear(c, 300, 128, 0.6, 1); // swimming: only the top shows above the water
+    c.fillStyle = SEA; c.fillRect(200, 140, 240, 30);
+    waves(c, w, 140, 150, 1);
+    fish(c, 120, 180, 0.9, '#ffb347'); fish(c, 520, 186, 0.8, '#7fe0c4', -1);
+    title(c, 'ANOTHER SEOUL', 470, 46, 40, '#ffffff', '#0f2238');
+  }],
+  friends: [512, 360, (c, w, h) => { // the hall's animals in a row, waving hello
+    c.fillStyle = SKY; c.fillRect(0, 0, w, h);
+    c.fillStyle = SEA; c.fillRect(0, 230, w, h - 230);
+    waves(c, w, 236, h - 6, 2);
+    floe(c, 20, 492, 214, 70);
+    seal(c, 110, 196, 0.85, 1);
+    penguin(c, 250, 186, 1.2);
+    polarBear(c, 380, 170, 0.62, -1);
+    title(c, 'SEA ANIMALS', w / 2, 60, 56);
+    c.font = '700 34px sans-serif'; c.fillStyle = '#1f5f8f'; c.textAlign = 'center'; c.fillText('바다동물관', w / 2, 116);
   }],
 };
 

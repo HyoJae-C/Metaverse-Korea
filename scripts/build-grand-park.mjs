@@ -107,6 +107,16 @@ function flip(pen) {
   };
 }
 
+// The petting village's barn (pen-local): turned to face the gate, north-west.
+const BARN = { x: 11, z: 8, ry: -Math.PI * 0.75 };
+// A point d metres in front of something facing ry (its +z turned by ry).
+const ahead = (o, d) => [r1(o.x + Math.sin(o.ry) * d), r1(o.z + Math.cos(o.ry) * d)];
+// The corners of a box (half sizes hx, hz) at x, z turned by ry.
+function turnedBox(x, z, hx, hz, ry) {
+  const c = Math.cos(ry), s = Math.sin(ry);
+  return [[-hx, -hz], [hx, -hz], [hx, hz], [-hx, hz]].map(([u, v]) => [r1(x + u * c + v * s), r1(z - u * s + v * c)]);
+}
+
 // Pens: centre (local metres), size, fence, and who lives there.
 export const PENS = [
   // South-west: the little ones, by the gate.
@@ -121,10 +131,12 @@ export const PENS = [
     id: 'petting', x: 92, z: 20, w: 36, d: 30, fence: 'low', ground: 'grass', board: 'n', pet: true,
     gate: { side: 'n', at: 0, w: 4 },
     name: L('꼬마동물마을', 'Little Animal Village', 'こども動物村', '小动物村'),
-    props: [['barn', 11, 8], ['hay', 3, 10], ['hay', 5, 12, 0.6], ['hutch', -12, 9], ['hutch', -15, 4, 0.4], ['tree', -15, -11]],
+    // The red barn, turned corner-on so its door and the food counter in
+    // front of it face you as you come in at the gate (north).
+    props: [['barn', BARN.x, BARN.z, BARN.ry], ['hay', 3, 10], ['hay', 5, 12, 0.6], ['hutch', -12, 9], ['hutch', -15, 4, 0.4], ['tree', -15, -11]],
     // The red barn is solid; at its door you buy a cup of animal food.
-    solid: [[8.4, 5.9, 13.6, 10.1]],
-    shop: { at: [11, 11.6], price: 1000 },
+    solid: [{ p: turnedBox(BARN.x, BARN.z, 2.6, 2.1, BARN.ry) }],
+    shop: { at: ahead(BARN, 3.6), ry: BARN.ry, price: 1000 },
     // The keeper by the gate, who tells you about the animals.
     keeper: { at: [-4, -11], ry: Math.PI },
     groups: [
@@ -158,10 +170,12 @@ export const PENS = [
   {
     id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', closed: true, ground: 'stone', board: 'n', boardAt: 7,
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
-    // Pictures on its walls (core/zoo-murals.js): the polar bears and penguins
-    // and the game's name facing the main path, the deep sea along the ring
-    // road, a penguin family beside the door.
-    murals: [{ side: 's', art: 'ice' }, { side: 'w', art: 'deep' }, { side: 'n', art: 'penguins', at: -6.75, w: 8 }],
+    // Pictures on all four walls (core/zoo-murals.js): the polar bears and
+    // penguins and the game's name facing the main path, the deep sea along
+    // the ring road, the polar night facing the hippos, and either side of
+    // the door a penguin family and the hall's animals in a row.
+    murals: [{ side: 's', art: 'ice' }, { side: 'w', art: 'deep' }, { side: 'e', art: 'arctic' }, { side: 'n', art: 'penguins', at: -6.75, w: 8 }, { side: 'n', art: 'friends', at: 6.75, w: 8 }],
+    ready: false, // (getting ready: its door is barred, a sign hung on its name board)
   },
   {
     id: 'hippos', x: 108, z: -21, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
@@ -259,7 +273,7 @@ export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [
 // road, down past the giraffes, back along the elephants, up the cross path
 // and home along the zebras and kangaroos. A loop of points from the stand
 // (core/zoo-camel-ride.js walks them on the shared clock).
-export const CAMEL_STAND = { x: 184, z: 31.5, sign: [-6.5, -1.7], keeper: [-1.2, -1.6] };
+export const CAMEL_STAND = { x: 184, z: 31.5, sign: [-6.5, -1.7] };
 export const CAMEL_TREK = smooth([[CAMEL_STAND.x, CAMEL_STAND.z], [190, 32.8], [190.6, 44], [189.8, 56.2], [181, 57.3], [167, 57.6], [150, 57.4], [133, 57.4], [123.8, 55], [121.8, 44], [123.5, 35.5], [130, 31.6], [145, 31.3], [160, 31.7], [174, 31.3]], { closed: true, step: 1.5 });
 export const SEA_HALL = { x0: 69, z0: -35, x1: 93, z1: -7 };
 export const SEA_DOOR = { x: 81, z: -35, out: { x: 81, z: -36.6, ry: Math.PI } };
@@ -452,7 +466,7 @@ export function buildMap() {
 export function zooGrounds() {
   const blockers = [];
   for (const pen of PENS) for (const line of fenceLines(pen)) blockers.push(lineBlocker(line, pen.x, pen.z));
-  for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
+  for (const pen of PENS) for (const sd of pen.solid || []) blockers.push({ p: sd.p ? sd.p.map(([x, z]) => [r1(pen.x + x), r1(pen.z + z)]) : rect(r1(pen.x + sd[0]), r1(pen.z + sd[1]), r1(pen.x + sd[2]), r1(pen.z + sd[3])) }); // ([x0, z0, x1, z1], or { p } corners)
   blockers.push({ p: rect(SEA_HALL.x0, SEA_HALL.z0, SEA_HALL.x1, SEA_HALL.z1) });
   return {
     room: ZOO_ROOM, gate: ZOO_GATE, open: ZOO_OPEN,

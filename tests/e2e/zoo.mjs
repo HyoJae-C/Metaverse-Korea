@@ -1,7 +1,7 @@
 // End-to-end check: Children's Grand Park's zoo is a room you walk into.
 // From the gate plaza, the entrance building's door; inside, the paths, the
 // pens and their animals, visitors strolling, the keeper; a cart to drive;
-// the Sea Animals hall's door and back; out by the exit. Draw calls stay in
+// the Sea Animals hall's door, barred while it gets ready; out by the exit. Draw calls stay in
 // the room budget (docs/PERFORMANCE.md).
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/zoo.mjs http://localhost:4173/ [screenshot dir]
@@ -71,23 +71,16 @@ await page.evaluate(() => __mk.act());
 await page.waitForTimeout(400);
 assert((await page.evaluate(() => __mk.riding())) === 0, 'handed it back');
 
-// The Sea Animals hall and back out of its door.
-await page.evaluate(() => { __mk.place(81, -36.6); });
+// The Sea Animals hall is getting ready: its door is barred, the button says so.
+await page.evaluate(() => { __mk.place(81, -37); __mk.cam({ yaw: Math.PI, pitch: 0.2, dist: 7 }); });
 await page.waitForTimeout(800);
 a = await page.evaluate(() => __mk.action());
-assert(/Sea Animals/i.test(a || ''), `hall door: ${a}`);
+assert(/Sea Animals.*getting ready/i.test(a || ''), `hall door, shut: ${a}`);
 await page.evaluate(() => __mk.act());
-await page.waitForTimeout(2000);
+await page.waitForTimeout(1200);
 room = await page.evaluate(() => __mk.room());
-assert(room.id === 'cgp-sea-hall', `in the hall: ${JSON.stringify(room)}`);
-await shot('sea-hall');
-await page.evaluate(() => { __mk.place(0, 11.1); });
-await page.waitForTimeout(900);
-await page.evaluate(() => __mk.act());
-await page.waitForTimeout(2000);
-room = await page.evaluate(() => __mk.room());
-const back = await page.evaluate(() => __mk.me());
-assert(room.id === 'cgp-zoo' && Math.abs(back[0] - 81) < 0.5 && back[1] < -36, `back on the path by the hall: ${JSON.stringify(room)} ${back}`);
+assert(room.id === 'cgp-zoo', `still in the zoo, not in the hall: ${JSON.stringify(room)}`);
+await shot('sea-hall-shut');
 
 // Out by the exit.
 await page.evaluate(() => { __mk.place(52.6, 0); });

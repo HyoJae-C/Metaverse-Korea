@@ -42,6 +42,10 @@ export function sharedClient(url, key, accessToken) {
 // PostgREST's answer when an rpc function doesn't exist (SQL not run yet).
 export const isMissingFunction = (error) => error?.code === 'PGRST202' || error?.code === '42883' || /could not find the function/i.test(error?.message || '');
 
+// How long a room join may take (the client's own join timeout is the same).
+// A cell that gives up is tried again by net/area.js.
+const CONNECT_TIMEOUT = 10000;
+
 export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLook, onChat }, cfg) {
   if (!cfg.url || !cfg.key) throw new Error('Supabase URL and publishable key are required');
   const client = sharedClient(cfg.url, cfg.key, cfg.accessToken);
@@ -49,29 +53,42 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
   let self = null;
   let listening = false; // listen-only: receive, but don't appear in presence
   const known = new Set();
+  // Movement that arrived before its sender's presence did (presence diffs
+  // can lag behind broadcasts): kept, and played as soon as they appear, so
+  // a newcomer isn't left standing at the map's origin until they move again.
+  const early = new Map(); // id -> latest state
+  const EARLY_MAX = 64;
+  let gone = false; // disconnect() was called
 
   return {
-    connect({ room, self: me, listenOnly = false }) {
+    async connect({ room, self: me, listenOnly = false }) {
       self = me;
       listening = listenOnly;
-      // A room we just left may still be closing on the shared client; make
-      // sure we get a fresh channel rather than the old one.
+      // A room we just left may still be closing on the shared client. Wait
+      // until it is gone: until the server confirms the leave,
+      // client.channel() hands the closing channel back, and subscribing to
+      // that does nothing, so the join "timed out" without being sent.
       const topic = 'room:' + room;
-      for (const old of client.getChannels()) {
-        if (old.topic === 'realtime:' + topic || old.topic === topic) client.removeChannel(old);
-      }
-      channel = client.channel(topic, {
+      const closing = client.getChannels().filter((old) => old.topic === 'realtime:' + topic || old.topic === topic);
+      if (closing.length) await Promise.all(closing.map((old) => client.removeChannel(old).catch(() => {})));
+      if (gone) throw new Error('Realtime disconnected');
+      const ch = (channel = client.channel(topic, {
         config: { broadcast: { self: false }, presence: { key: me.id } },
-      });
-      channel
+      }));
+      ch
         .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
+          const state = ch.presenceState();
           const ids = new Set(Object.keys(state));
           for (const id of ids) {
             if (id === self.id || known.has(id)) continue;
             const meta = state[id][0] || {};
             known.add(id);
             onJoin({ id, name: meta.name, look: meta.look });
+            if (early.has(id)) {
+              const st = early.get(id);
+              early.delete(id);
+              onState(id, st);
+            }
           }
           for (const id of [...known]) {
             if (!ids.has(id)) {
@@ -82,6 +99,11 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
         })
         .on('broadcast', { event: 's' }, ({ payload }) => {
           if (known.has(payload.id)) onState(payload.id, payload.st);
+          else if (payload?.id && payload.id !== self.id) {
+            early.delete(payload.id); // (re-inserted last: the oldest go first)
+            early.set(payload.id, payload.st);
+            if (early.size > EARLY_MAX) early.delete(early.keys().next().value);
+          }
         })
         .on('broadcast', { event: 'e' }, ({ payload }) => {
           if (known.has(payload.id)) onEmote(payload.id, payload.e);
@@ -94,15 +116,33 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
         });
 
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Realtime connect timeout')), 10000);
-        channel.subscribe(async (status) => {
+        let settled = false;
+        const fail = (why) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          // Leave for good. Otherwise the client keeps retrying the join in
+          // the background, and when it gets in later we would be in the
+          // room's presence (others see us, standing still at the origin)
+          // while the game, told we failed, sends our movement nowhere.
+          if (channel === ch) channel = null;
+          client.removeChannel(ch).catch(() => {});
+          reject(new Error('Realtime ' + why));
+        };
+        const timeout = setTimeout(() => fail('connect timeout'), CONNECT_TIMEOUT);
+        ch.subscribe(async (status) => {
+          if (channel !== ch) return gone && fail('disconnected');
           if (status === 'SUBSCRIBED') {
-            clearTimeout(timeout);
-            if (!listening) await channel.track({ name: self.name, look: self.look });
-            resolve();
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            clearTimeout(timeout);
-            reject(new Error('Realtime ' + status));
+            // Also after the client rejoined by itself (a network blip): the
+            // server forgot our presence then, so announce ourselves again.
+            if (!listening) await ch.track({ name: self.name, look: self.look });
+            if (!settled) {
+              settled = true;
+              clearTimeout(timeout);
+              resolve();
+            }
+          } else if (!settled && (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')) {
+            fail(status);
           }
         });
       });
@@ -131,8 +171,10 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       self = me;
     },
     disconnect() {
+      gone = true;
       if (channel) client.removeChannel(channel);
       channel = null;
+      early.clear();
     },
     // The private chat channel for a whole region: { ready, send(id, t), close() }.
     // ready turns true once the server lets us in; if it refuses, we try again

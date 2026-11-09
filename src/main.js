@@ -1594,13 +1594,27 @@ async function joinRoom(room, roomScene, area = null) {
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
+    // Tell the room where we are now. What we sent while joining went
+    // nowhere, and an unchanged state is only re-sent on the idle heartbeat
+    // (counted in frame time: on a slow device that is minutes away), so
+    // the people already there would see us stand at the map's origin.
+    lastSent = null; sendTimer = 0;
     // The look changed while we were connecting (the pool hall puts swimwear
     // on as you come in and takes it off as you leave): tell the new room.
     if (currentLook !== joinedLook) n.sendLook?.(currentLook);
   } catch (err) {
     // Keep playing solo if the realtime service is unreachable.
     console.warn('Multiplayer unavailable:', err);
-    if (token === joinToken) net = SOLO;
+    if (token === joinToken) {
+      net = SOLO;
+      // Try again in a while (a busy server, a network blip), unless we
+      // have moved on to another room by then.
+      setTimeout(() => {
+        if (token !== joinToken || net !== SOLO) return;
+        const [wx, wz] = myWorldSpot();
+        joinRoom(room, roomScene, area ? { x: wx, z: wz } : null);
+      }, config.netRetrySeconds * 1000);
+    }
   }
 }
 // Rename at the name tag workshop: costs coins; others see it after a quick
