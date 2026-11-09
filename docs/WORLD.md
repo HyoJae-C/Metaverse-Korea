@@ -67,7 +67,8 @@ neighbours' room and pushes them off their spots.
   its offset follows from it. A `nudge` (with a `why`) moves it off that spot
   on purpose. A big area can be split so each part sits on its own real spot:
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
-  Songpa by Olympic-ro (nudged 245 m south so the road runs straight on).
+  Songpa by Olympic-ro, which climbs north-east from Jamsil Station to the
+  gate as it does in Seoul; the park sits on its real spot, with no nudge.
 - **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
   palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
   stands at close to its real size, so Euljiro's streets round it are wider
@@ -280,7 +281,7 @@ as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
 Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
 so the overlap check doesn't count the empty corner its bounding box covers.
-The district is nudged a little north (21 m) towards Songpa. Meeting zone J-1 is on KONEXT Square.
+The district sits on its real spot (Samseong Station on its corner). Meeting zone J-1 is on KONEXT Square.
 
 ## Yeouido (Yeongdeungpo-gu)
 

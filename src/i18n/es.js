@@ -553,7 +553,7 @@ export const ES = {
   'credit.weather': 'Tiempo',
   'hud.weatherNow': 'Tiempo en directo en Seongsu-dong',
   'start.next': 'Siguiente',
-  'app.disclaimer': 'Las calles son un mapa de juego inspirado en barrios reales de Seúl, no una copia exacta. Todas las tiendas, marcas y productos son muestras ficticias, no negocios reales.',
+  'app.disclaimer': 'Las calles son un mapa de juego inspirado en barrios reales de Seúl, no una copia exacta. Los edificios, tiendas, marcas y productos pueden diferir de la realidad, y la mayoría de las tiendas son ejemplos ficticios.',
   'start.back': 'Atrás',
   'look.title': 'Crea tu personaje',
   'look.random': 'Sorpréndeme',

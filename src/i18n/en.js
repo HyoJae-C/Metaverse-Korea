@@ -556,7 +556,7 @@ export const EN = {
   'credit.weather': 'Weather',
   'hud.weatherNow': 'Live weather in Seongsu-dong',
   'start.next': 'Next',
-  'app.disclaimer': 'The streets are a game map inspired by real Seoul neighbourhoods, not an exact copy. All shops, brands and products here are fictional samples, not real businesses.',
+  'app.disclaimer': 'The streets are a game map inspired by real Seoul neighbourhoods, not an exact copy. Buildings, shops, brands and products may differ from reality, and most shops are fictional examples.',
   'start.back': 'Back',
   'look.title': 'Make your character',
   'look.random': 'Surprise me',
