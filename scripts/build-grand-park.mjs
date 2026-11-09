@@ -24,10 +24,10 @@ const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const r1 = (v) => Math.round(v * 10) / 10;
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
-// Is the zoo open? While it isn't, its door on the street (the entrance
-// building) lets only operators in (main.js), and a sign by it says it
-// opens soon; the gate plaza, the information center and the station stay open.
-export const ZOO_OPEN = false;
+// Is the zoo open? While it isn't, a sign by the entrance says it opens soon
+// and the zoo's keeper says so inside (game/zoo-visit.js welcome()). Open
+// since the zoo became a room you walk into.
+export const ZOO_OPEN = true;
 
 // The zoo is a place you go into, like Another Land: on the street there is
 // only the gate plaza, the rainbow gate and the zoo's entrance building at

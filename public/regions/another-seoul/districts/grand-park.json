@@ -453,7 +453,7 @@
    "d": 20,
    "h": 6,
    "store": "cgp-zoo",
-   "open": false
+   "open": true
   },
   {
    "type": "zoofence",
@@ -483,38 +483,6 @@
      10
     ]
    ]
-  },
-  {
-   "type": "sign",
-   "x": 48,
-   "z": 12,
-   "ry": -1.5708,
-   "title": {
-    "ko": "동물원 개장 준비 중",
-    "en": "The zoo is opening soon",
-    "ja": "動物園はまもなくオープン",
-    "zh": "动物园即将开放",
-    "es": "El zoo abrirá pronto",
-    "id": "Kebun binatang segera dibuka",
-    "vi": "Sở thú sắp mở cửa",
-    "hi": "चिड़ियाघर जल्द खुलेगा",
-    "fr": "Le zoo ouvre bientôt",
-    "th": "สวนสัตว์ใกล้เปิดแล้ว",
-    "ar": "حديقة الحيوان ستفتح قريبًا"
-   },
-   "text": {
-    "ko": "동물 친구들이 이사 오는 중이에요. 곧 문을 열게요!",
-    "en": "The animals are moving in. We open soon!",
-    "ja": "動物たちが引っ越してきています。もうすぐオープン！",
-    "zh": "动物们正在搬进来。很快就开放！",
-    "es": "Los animales se están mudando. ¡Abrimos pronto!",
-    "id": "Para hewan sedang pindah ke sini. Segera dibuka!",
-    "vi": "Các bạn thú đang chuyển đến. Sắp mở cửa rồi!",
-    "hi": "जानवर यहाँ आ रहे हैं। हम जल्द खुलेंगे!",
-    "fr": "Les animaux emménagent. Ouverture bientôt !",
-    "th": "สัตว์ต่างๆ กำลังย้ายเข้ามา เร็วๆ นี้จะเปิดแล้ว!",
-    "ar": "الحيوانات تنتقل إلى هنا. سنفتح قريبًا!"
-   }
   }
  ]
 }
