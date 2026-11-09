@@ -63,6 +63,8 @@ export const JA = {
   "ride.drop": "フリーフォールに乗る",
   "ride.off": "降りる",
   "ride.noCoins": "チケットは 🪙 {n} です。",
+  "ride.staff": "{name}の係員",
+  "ride.enjoy": "楽しんでね！安全バーにしっかりつかまって🎶",
   "book.read": "読む",
   "book.pick": "本を選ぶ",
   "book.sitToRead": "どこかに座って読もう。",

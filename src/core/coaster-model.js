@@ -7,6 +7,7 @@
 // the stretches low enough that you could walk into a passing train.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
+import { COASTER_NAME } from './park-rides.js';
 import { CARS, CAR_GAP, GATE, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
 
 const mat = matCache({ flatShading: true });
@@ -14,7 +15,7 @@ export const TRAIN_PINK = '#ff5f9e';
 const ICING = '#fffaf3';
 const CHOC = '#7a4a2e';
 
-export const COASTER_NAME = { ko: '솜사탕 특급', en: 'Cotton Candy Express', ja: 'わたあめ特急', zh: '棉花糖特快', es: 'Expreso Algodón de Azúcar', id: 'Ekspres Gulali', vi: 'Tàu Lượn Kẹo Bông', hi: 'कॉटन कैंडी एक्सप्रेस', fr: 'Express Barbe à Papa', th: 'สายไหมเอ็กซ์เพรส', ar: 'قطار غزل البنات السريع' };
+export { COASTER_NAME }; // (it lives in park-rides.js, so main.js can name the ride without this file)
 // The boarding spot's own sign ("this is where you get on").
 export const BOARD_SIGN = { ko: '타는 곳', en: 'BOARDING', ja: 'のりば', zh: '乘车处', es: 'EMBARQUE', id: 'NAIK DI SINI', vi: 'LÊN TÀU', hi: 'यहाँ से बैठें', fr: 'EMBARQUEMENT', th: 'ทางขึ้น', ar: 'الصعود' };
 const WALK_UNDER = 1.9; // rail height you can walk under

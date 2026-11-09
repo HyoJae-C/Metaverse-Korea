@@ -63,6 +63,8 @@ export const TH = {
   'ride.drop': 'ขึ้นดรอปทาวเวอร์',
   'ride.off': 'ลง',
   'ride.noCoins': 'ต้องใช้ 🪙 {n} เพื่อซื้อตั๋ว',
+  'ride.staff': 'พนักงาน{name}',
+  'ride.enjoy': 'ขอให้สนุก! จับราวกันตกไว้นะ 🎶',
   'book.read': 'อ่าน',
   'book.pick': 'เลือกหนังสือ',
   'book.sitToRead': 'หาที่นั่งก่อนแล้วค่อยอ่าน',

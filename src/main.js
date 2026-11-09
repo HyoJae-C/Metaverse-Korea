@@ -52,9 +52,8 @@ import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
-import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, rideUntil, seatAt } from './core/themepark.js';
+import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, rideUntil, seatAt, COASTER_NAME, RIDE_NAME, RIDE_EMOJI } from './core/park-rides.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
-import { COASTER_NAME } from './core/coaster-model.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -91,7 +90,7 @@ import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, needsDome, roomBox, setDomeBuilder } from './core/interior.js';
+import { buildInterior, needsDome, needsPark, roomBox, setDomeBuilder, setParkBuilder } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
 import { ShopUI, Cart, coinsFor, goodsKind, itemSoon } from './ui/shop-ui.js';
@@ -2396,6 +2395,13 @@ function enterStore(item, walkIn = null) {
     import('./core/dome.js').then((m) => { setDomeBuilder(m.buildDome); domeLoading = false; enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
     return;
   }
+  // Another Land: the park's models come on the first visit too.
+  if (needsPark(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    return;
+  }
   if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
   // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
   const fee = dayPasses.feeFor(item.store);
@@ -2550,10 +2556,21 @@ function enterStore(item, walkIn = null) {
     }
   }
   interior.patronNpcs = built.patronNpcs || null;
-  // The roller coaster's ride attendant, by the boarding gate.
+  // Each ride's attendant by its gate, named after the ride (the coaster's too).
+  if (built.stations?.rideStaff && !built.rideStaff) {
+    built.rideStaff = {};
+    for (const st of built.stations.rideStaff) {
+      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }));
+      o.ch.root.position.set(st.x, 0, st.z);
+      o.ch.root.rotation.y = st.ry;
+      built.scene.add(o.ch.root);
+      built.rideStaff[st.kind] = o;
+    }
+  }
+  interior.rideStaff = built.rideStaff || null;
   if (built.stations?.coasterStaff && !built.coasterStaff) {
     built.coasterStaff = built.stations.coasterStaff.map((st) => {
-      const o = makeNpc($('labels'), '🎢 ' + L(COASTER_TEXT.staff));
+      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }));
       o.ch.root.position.set(st.x, 0, st.z);
       o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
@@ -4738,6 +4755,8 @@ function boardRide(st) {
   if (!payRide(st.kind)) return;
   const now = interior.time();
   ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
+  const staff = interior.rideStaff?.[st.kind];
+  if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   sendTimer = 0;
   missionEvent('ride');
 }
@@ -6649,6 +6668,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
+    parkStaff: () => Object.keys(interior?.rideStaff || {}),
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
