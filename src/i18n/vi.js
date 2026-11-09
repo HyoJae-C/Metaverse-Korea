@@ -295,6 +295,7 @@ export const VI = {
   'fish.bookHint': 'Mỗi con cá bạn câu được đều được ghi ở đây, kể cả khi đã bán.',
   'fish.unknown': 'Chưa câu được',
   'fish.bookNew': '📖 Mới trong sổ cá! {k} / {all}',
+  'fish.resetRefund': '📖 Sổ cá mới cho mọi người! Cá trong túi đã được bán với giá 🪙 {coins}.',
   'fish.bookDone': '🏆 Bạn đã câu đủ mọi loài. Sổ cá hoàn thành!',
   'fish.back': 'Quay lại câu cá',
   'fish.trophy': '{name} đã câu được {fish}!',

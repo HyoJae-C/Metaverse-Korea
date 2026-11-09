@@ -13,7 +13,7 @@ import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } fro
 import { L, fmt } from '../ui/pocha-ui.js';
 import { config } from '../config.js';
 import { filterText } from '../core/safety.js';
-import { fishCode, forceNextCatch } from '../core/fish-luck.js';
+import { fishCode, forceNextCatch, toggleTour, TOUR } from '../core/fish-luck.js';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
@@ -196,6 +196,10 @@ export function createChat(game) {
       if (skyCode(code) && await game.sky?.command(skyCode(code))) return;
       // Fishing code: the next bite (fishing by hand) is that fish, once.
       const fishFromCode = await fishCode(code);
+      if (fishFromCode === TOUR) {
+        game.shop.toast(L(toggleTour() ? game.CODE_TEXT.tourOn : game.CODE_TEXT.tourOff));
+        return;
+      }
       if (fishFromCode) {
         forceNextCatch(fishFromCode);
         game.shop.toast(L(game.CODE_TEXT.fish));

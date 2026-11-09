@@ -293,6 +293,7 @@ export const FR = {
   'fish.bookHint': 'Chaque poisson pêché est noté ici, même après l\'avoir vendu.',
   'fish.unknown': 'Pas encore attrapé',
   'fish.bookNew': '📖 Nouveau dans ton carnet ! {k} / {all}',
+  'fish.resetRefund': '📖 Nouveau carnet pour tout le monde ! Les poissons de ton sac ont été vendus 🪙 {coins}.',
   'fish.bookDone': '🏆 Tu as attrapé toutes les espèces. Carnet complet !',
   'fish.back': 'Retour à la pêche',
   'fish.trophy': '{name} a attrapé un {fish} !',

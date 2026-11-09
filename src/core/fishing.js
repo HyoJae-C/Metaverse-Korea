@@ -2,7 +2,7 @@
 // and lifetime records; kinds that were swapped out move over in RENAMED.
 // ★1 and ★2 bite at every park; ★3 and up are split between the four parks
 // (PARK_FISH).
-import { takeForcedCatch } from './fish-luck.js';
+import { takeForcedCatch, takeTourStep } from './fish-luck.js';
 export const FISH = [
   {
     "id": "loach",
@@ -921,6 +921,8 @@ export const parkLegend = park => (PARK_FISH[park]?.fish || []).map(fishById).fi
 export function rollCatch(rand = Math.random, lucky = false, park = null, pityBites = 0) {
   const forced = fishById(takeForcedCatch());
   if (forced) return { ...forced, sure: true };
+  const step = takeTourStep(); // the developer fish-book tour: boot, then every kind in book order
+  if (step >= 0) { const i = step % (FISH.length + 1); return i === 0 ? TRASH : { ...FISH[i - 1], sure: true }; }
   const legend = pityBites >= PITY_START && parkLegend(park);
   if (legend) {
     const base = (lucky ? luckyChance(legend, park) : chanceAt(legend, park)) * (1 - (lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE));
@@ -1036,9 +1038,33 @@ export class FishBag {
 // which copies every "mk." key, carries it too). A player who fished before
 // the book existed starts with what is in their bag.
 const DEX_KEY = 'mk.fishdex';
+const PITY_KEY = 'mk.fishpity'; // see FishPity
+// Bump FISH_BOOK_RESET to wipe every player's fish book, legend pity and
+// fish bag once, on their next visit. Clearing the server's saves alone
+// wouldn't do: each browser keeps its own copy and would upload it again.
+// 1: 2026-11-09, a fresh start for the 56-kind book.
+export const FISH_BOOK_RESET = 1;
+const RESET_KEY = 'mk.fishreset';
+// Returns null if already done (or storage is blocked), else { coins: what
+// the bag was worth at today's prices, to pay back; had: there was anything
+// to clear }.
+export function resetFishBookOnce(storage = globalThis.localStorage) {
+  let done = 0;
+  try { done = Number(storage?.getItem(RESET_KEY)) || 0; } catch { return null; }
+  if (!storage || done >= FISH_BOOK_RESET) return null;
+  const coins = new FishBag(storage).value;
+  let had = coins > 0;
+  try { had ||= Object.keys(JSON.parse(storage.getItem(DEX_KEY) || '{}') || {}).length > 0; } catch { /* broken save */ }
+  try {
+    storage.setItem(DEX_KEY, '{}');
+    storage.setItem(PITY_KEY, '{}');
+    storage.setItem(BAG_KEY, '{}');
+    storage.setItem(RESET_KEY, String(FISH_BOOK_RESET));
+  } catch { return null; }
+  return { coins, had };
+}
 // Bites at each park without its legend in the fish book (see pityChance),
 // saved on this device and in the cloud save: { parkId: bites }.
-const PITY_KEY = 'mk.fishpity';
 export class FishPity {
   constructor(storage = globalThis.localStorage) {
     this.storage = storage;

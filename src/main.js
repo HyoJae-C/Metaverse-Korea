@@ -162,7 +162,7 @@ import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
-import { FishBag, FishDex, FishStats, FishPity, FISH, fishById } from './core/fishing.js';
+import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -3769,8 +3769,13 @@ const grillUi = new GrillUI({
 });
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
-const fishBag = new FishBag();
 // Fish book (mk.fishdex): every catch, kept even after selling.
+// A one-time fresh start for everyone (FISH_BOOK_RESET): book, pity and bag
+// cleared, the bag paid back at its selling price.
+const fishRefund = resetFishBookOnce();
+if (fishRefund?.coins) wallet.add(fishRefund.coins, undefined, { r: 'fish', once: 'fish-reset-1' });
+if (fishRefund?.had) setTimeout(() => shop.toast(t('fish.resetRefund', { coins: fishRefund.coins })), 4000);
+const fishBag = new FishBag();
 const fishDex = new FishDex(globalThis.localStorage, fishBag);
 const fishBookUi = new FishBookUI({ root: $('fishbook-panel'), dex: fishDex });
 function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textContent = `${t('fish.book')} · ${fishDex.kinds}/${FISH.length} · 🐟 ${fishDex.total}`; }
