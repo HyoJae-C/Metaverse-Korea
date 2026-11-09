@@ -13,9 +13,11 @@
 // crosses it on Samseong Bridge and runs on towards Jamsil as Olympic-ro.
 //
 // Street lines follow OpenStreetMap (© OpenStreetMap contributors, ODbL);
-// the buildings and KONEXT are made up. Game map at about 1/4 of the real
-// size (Asem-ro, Bongeunsa-ro and Tancheon about 1.2 times their 1/4 distance
-// from the station, to leave KONEXT, the landmark, its size): local x east,
+// the buildings and KONEXT are made up. Game map at 1/4 of the real size,
+// the streets where they really are (Asem-ro 161 m west of the station,
+// Bongeunsa-ro 153 m north, Tancheon 130 m east) and the big buildings at a
+// quarter of their real footprint (KONEXT 88 x 60 m); heights stay real so a
+// person still fits a door: local x east,
 // z south, metres, Samseong Station's corner at (0, 0).
 //
 //   node scripts/build-samseong.mjs   writes the map and sets the "at" of the
@@ -33,15 +35,15 @@ const name = (en, ko, ja, zh) => ({ ko, en, ja, zh });
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
 // Street lines (local metres).
-export const TEHERAN = { z: 0, w: 20, x0: -215, x1: 195 }; // east-west, the south edge of KONEXT
-export const YEONGDONG = { x: 0, w: 20, z0: -250, z1: 90 }; // north-south, KONEXT's east side
-export const BONGEUNSA = { z: -180, w: 14, x0: -215, x1: 80 }; // east-west, KONEXT's north side
-export const ASEM = { x: -205, w: 12, z0: -180, z1: 0 }; // north-south, KONEXT's west side
-export const TANCHEON = { x0: 140, x1: 170 }; // the stream along the east edge
+export const TEHERAN = { z: 0, w: 20, x0: -170, x1: 165 }; // east-west, the south edge of KONEXT
+export const YEONGDONG = { x: 0, w: 20, z0: -212, z1: 90 }; // north-south, KONEXT's east side
+export const BONGEUNSA = { z: -153, w: 14, x0: -170, x1: 67 }; // east-west, KONEXT's north side
+export const ASEM = { x: -161, w: 12, z0: -153, z1: 0 }; // north-south, KONEXT's west side
+export const TANCHEON = { x0: 117, x1: 143 }; // the stream along the east edge
 // KONEXT: the mall (a long box along Teheran-ro), its plaza and the aquarium pavilion.
-export const MALL = { x0: -190, z0: -138, x1: -70, z1: -58, h: 22 };
-export const PAVILION = { x0: -56, z0: -165, x1: -36, z1: -149, h: 6 };
-export const TOWER = { x0: -180, z0: -172, x1: -140, z1: -147, h: 88 };
+export const MALL = { x0: -146, z0: -112, x1: -58, z1: -52, h: 22 };
+export const PAVILION = { x0: -46, z0: -140, x1: -26, z1: -124, h: 6 };
+export const TOWER = { x0: -141, z0: -145, x1: -110, z1: -124, h: 88 };
 
 function build() {
   const buildings = [
@@ -51,14 +53,14 @@ function build() {
     { h: PAVILION.h, custom: true, p: rect(PAVILION.x0, PAVILION.z0, PAVILION.x1, PAVILION.z1) },
     // The office tower behind the mall (no name: just the skyline).
     { h: TOWER.h, wall: '#9fb6c8', roof: '#5d6b78', p: rect(TOWER.x0, TOWER.z0, TOWER.x1, TOWER.z1) },
-    { h: 30, p: rect(-197, -172, -184, -147) }, // a hotel on Asem-ro
+    { h: 30, p: rect(-154, -145, -144, -124) }, // a hotel on Asem-ro
     // North-east of the station: offices and a department store.
-    { h: 48, p: rect(14, -172, 60, -112) },
-    { h: 18, p: rect(70, -172, 120, -112) },
-    { h: 36, p: rect(14, -100, 60, -16) },
-    { h: 30, p: rect(70, -100, 120, -16) },
+    { h: 48, p: rect(12, -146, 50, -95) },
+    { h: 18, p: rect(59, -146, 101, -95) },
+    { h: 36, p: rect(12, -85, 50, -16) },
+    { h: 30, p: rect(59, -85, 101, -16) },
     // South of Teheran-ro: a row of office towers along the street.
-    ...[[-207, -163], [-155, -111], [-103, -59], [-51, -16], [16, 62], [72, 118]].map(([x0, x1], i) => (
+    ...[[-162, -128], [-122, -87], [-81, -46], [-40, -13], [13, 52], [60, 99]].map(([x0, x1], i) => (
       { h: [42, 56, 34, 62, 46, 52][i], p: rect(x0, 18, x1, 66) }
     )),
   ];
@@ -68,29 +70,29 @@ function build() {
     { k: 'secondary', w: BONGEUNSA.w, p: [[BONGEUNSA.x0, BONGEUNSA.z], [BONGEUNSA.x1, BONGEUNSA.z]], n: name('Bongeunsa-ro', '봉은사로', '奉恩寺路', '奉恩寺路') },
     { k: 'tertiary', w: ASEM.w, p: [[ASEM.x, ASEM.z0], [ASEM.x, ASEM.z1]], n: name('Asem-ro', '아셈로', 'アセム路', '亚欧路') },
     // A walk across the KONEXT block, past the mall's north side.
-    { k: 'walk', w: 5, p: [[-199, -143], [-6, -143]], n: name('KONEXT Walk', '코넥스트 산책길', 'コネクスト散歩道', 'KONEXT步道') },
+    { k: 'walk', w: 5, p: [[-155, -118], [-6, -118]], n: name('KONEXT Walk', '코넥스트 산책길', 'コネクスト散歩道', 'KONEXT步道') },
     // A lane between the offices north-east of the station.
-    { k: 'residential', w: 8, p: [[6, -106], [128, -106]] },
+    { k: 'residential', w: 8, p: [[6, -90], [108, -90]] },
   ];
   const areas = [
     // KONEXT Square: the plaza in front of the main entrance, up to the corner.
-    { k: 'plaza', p: rect(-66, -170, -10, -10) },
-    { k: 'plaza', p: rect(-197, -54, -66, -10) }, // along the mall's Teheran-ro side
+    { k: 'plaza', p: rect(-52, -145, -10, -10) },
+    { k: 'plaza', p: rect(-155, -48, -52, -10) }, // along the mall's Teheran-ro side
     // Planters with trees on the plaza, in rows, leaving the middle and the
     // way to the doors open.
-    ...[[-58, -40], [-58, -80], [-18, -40], [-18, -80], [-18, -120], [-170, -30], [-130, -30], [-95, -30]].map(([x, z]) => ({ k: 'park', trees: true, p: rect(x - 3, z - 3, x + 3, z + 3) })),
+    ...[[-46, -34], [-46, -68], [-14, -34], [-14, -68], [-14, -102], [-133, -28], [-102, -28], [-75, -28]].map(([x, z]) => ({ k: 'park', trees: true, p: rect(x - 3, z - 3, x + 3, z + 3) })),
     // North of Bongeunsa-ro: trees (a temple stands here in real life; not built yet).
-    { k: 'park', trees: true, p: rect(-215, -250, -90, -189) },
-    { k: 'park', trees: true, p: rect(-80, -250, 80, -189) },
+    { k: 'park', trees: true, p: rect(-170, -212, -71, -162) },
+    { k: 'park', trees: true, p: rect(-63, -212, 67, -162) },
     // Tancheon and its banks.
-    { k: 'grass', p: rect(TANCHEON.x0 - 12, -250, TANCHEON.x0, 90) },
-    { k: 'grass', p: rect(TANCHEON.x1, -250, TANCHEON.x1 + 12, 90) },
-    { k: 'water', p: rect(TANCHEON.x0, -250, TANCHEON.x1, 90) },
+    { k: 'grass', p: rect(TANCHEON.x0 - 12, -212, TANCHEON.x0, 90) },
+    { k: 'grass', p: rect(TANCHEON.x1, -212, TANCHEON.x1 + 12, 90) },
+    { k: 'water', p: rect(TANCHEON.x0, -212, TANCHEON.x1, 90) },
   ];
   // You can't walk into Tancheon, except over Samseong Bridge (Teheran-ro).
   const gap = TEHERAN.w / 2 + 1;
   const blockers = [
-    { p: rect(TANCHEON.x0, -250, TANCHEON.x1, TEHERAN.z - gap) },
+    { p: rect(TANCHEON.x0, -212, TANCHEON.x1, TEHERAN.z - gap) },
     { p: rect(TANCHEON.x0, TEHERAN.z + gap, TANCHEON.x1, 90) },
   ];
   const cx = (MALL.x0 + MALL.x1) / 2, cz = (MALL.z0 + MALL.z1) / 2;
@@ -98,7 +100,7 @@ function build() {
     { type: 'konext', x: cx, z: cz, ry: 0, w: MALL.x1 - MALL.x0, d: MALL.z1 - MALL.z0, h: MALL.h },
     { type: 'aquarium', x: (PAVILION.x0 + PAVILION.x1) / 2, z: (PAVILION.z0 + PAVILION.z1) / 2, ry: 0, w: PAVILION.x1 - PAVILION.x0, d: PAVILION.z1 - PAVILION.z0, h: PAVILION.h },
     { type: 'samseongbridge', x: (TANCHEON.x0 + TANCHEON.x1) / 2, z: TEHERAN.z, ry: 0, len: TANCHEON.x1 - TANCHEON.x0 + 4, w: TEHERAN.w },
-    { type: 'sign', x: -40, z: -24, ry: Math.PI,
+    { type: 'sign', x: -31, z: -20, ry: Math.PI,
       title: name('KONEXT', '코넥스트', 'コネクスト', 'KONEXT'),
       text: {
         en: 'KONEXT is a big shopping mall by Samseong Station (made up for the game). Its media wall shows the sea, and KONEXT Aquarium is opening soon under the mall: walk with sharks and rays in an undersea tunnel.',
@@ -107,16 +109,16 @@ function build() {
         zh: 'KONEXT是三成站旁的大型购物中心（游戏中的虚构地点）。媒体墙上是一片大海，商场地下的KONEXT水族馆即将开放：在海底隧道里和鲨鱼、鳐鱼一起漫步吧。',
       } },
   ];
-  for (const [x, z, ry] of [[-58, -50, 0], [-18, -50, 0], [-58, -70, Math.PI], [-18, -70, Math.PI], [-150, -22, Math.PI], [-110, -22, Math.PI]]) landmarks.push({ type: 'bench', x, z, ry });
+  for (const [x, z, ry] of [[-46, -43, 0], [-14, -43, 0], [-46, -60, Math.PI], [-14, -60, Math.PI], [-118, -20, Math.PI], [-86, -20, Math.PI]]) landmarks.push({ type: 'bench', x, z, ry });
   const pois = [
     { kind: 'landmark', x: cx, z: cz, name: name('KONEXT', '코넥스트', 'コネクスト', 'KONEXT') },
-    { kind: 'landmark', x: -38, z: -70, name: name('KONEXT Square', '코넥스트 광장', 'コネクスト広場', 'KONEXT广场') },
-    { kind: 'landmark', x: (TANCHEON.x0 + TANCHEON.x1) / 2, z: -120, name: name('Tancheon', '탄천', '炭川', '炭川') },
+    { kind: 'landmark', x: -30, z: -60, name: name('KONEXT Square', '코넥스트 광장', 'コネクスト広場', 'KONEXT广场') },
+    { kind: 'landmark', x: (TANCHEON.x0 + TANCHEON.x1) / 2, z: -102, name: name('Tancheon', '탄천', '炭川', '炭川') },
   ];
   return {
     meta: {
       district: 'samseong',
-      source: 'hand-made (scripts/build-samseong.mjs; game map at about 1/4 of the real size): Samseong-dong, Gangnam-gu, around Samseong Station. Street lines after OpenStreetMap (© OpenStreetMap contributors, ODbL). KONEXT and KONEXT Aquarium are fictional; the other buildings are generic.',
+      source: 'hand-made (scripts/build-samseong.mjs; game map at 1/4 of the real size): Samseong-dong, Gangnam-gu, around Samseong Station. Street lines after OpenStreetMap (© OpenStreetMap contributors, ODbL). KONEXT and KONEXT Aquarium are fictional; the other buildings are generic.',
     },
     roads, buildings, rail: [], areas, blockers, pois, landmarks,
   };
@@ -124,7 +126,7 @@ function build() {
 
 // Where each place is, in the district's own metres.
 export const SPOTS = {
-  'info-samseong': [40, -13], // the office on the station's north-east corner, facing Teheran-ro
+  'info-samseong': [34, -13], // the office on the station's north-east corner, facing Teheran-ro
 };
 // Also in world metres (printed for region.json): the station exits, the
 // meeting zone on KONEXT Square and the stamp.
@@ -132,8 +134,8 @@ export const EXITS = [
   { n: 1, at: [-16, -14], ry: -Math.PI / 2 }, // KONEXT Square side
   { n: 2, at: [16, 14], ry: Math.PI / 2 }, // south-east corner
 ];
-export const ZONE = [-38, -100];
-export const STAMP = [-26, -150];
+export const ZONE = [-30, -85];
+export const STAMP = [-14, -122];
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const map = build();
