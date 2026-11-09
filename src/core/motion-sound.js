@@ -1,18 +1,14 @@
-// Quiet movement sounds, made with Web Audio:
-// - footsteps when walking, a little quicker and firmer when running
-//   (recorded steps from core/sound-files.js: pavement, wooden floors
-//   indoors, snow; a synthesised step until those have loaded),
+// Quiet movement sounds, made with Web Audio (no sound files):
+// - soft synthesised footsteps when walking, a little quicker and firmer
+//   when running (recorded steps sounded too real for the cute characters),
 // - a soft wind while riding (stronger the faster you go),
 // - an engine purr on the motorbike and car (pitch follows speed),
 // - the bicycle bell and the horn, which nearby players hear too.
 // Everything is kept low so it never gets in the way of the game.
 // Pure helpers are exported for tests.
 
-import { stepSound } from './sound-files.js';
-
 export const STEP_GAP = { walk: 0.48, run: 0.32 }; // seconds between steps
-export const STEP_VOL = { walk: 0.05, run: 0.075 };
-export const STEP_FILE_GAIN = 4; // recorded steps: STEP_VOL x this
+export const STEP_VOL = { walk: 0.043, run: 0.064 }; // ~15% under the first version
 export const WIND_MAX = 0.035; // wind gain at full speed
 export const ENGINE_MAX = 0.05; // engine gain
 export const HORN_VOL = 0.09;
@@ -33,7 +29,7 @@ export function parseHonk(e) {
 
 export class MotionSound {
   // sfx: core/music.js Sfx (its audio context and on/off switch).
-  // files: core/sound-files.js SoundFiles (recorded steps), optional.
+  // files: core/sound-files.js SoundFiles (shop blips), optional.
   constructor(sfx, files = null) {
     this.sfx = sfx;
     this.files = files;
@@ -46,7 +42,7 @@ export class MotionSound {
     if (typeof addEventListener === 'function') {
       const unlock = () => {
         if (this.sfx.on) this.sfx._ctx();
-        this.files?.load('step-concrete', 'pay', 'short'); // the other steps load when first walked on
+        this.files?.load('pay', 'short');
         if (this.sfx.ctx?.state === 'running') { removeEventListener('pointerdown', unlock); removeEventListener('keydown', unlock); }
       };
       addEventListener('pointerdown', unlock);
@@ -62,7 +58,7 @@ export class MotionSound {
     return (this.noise = b);
   }
 
-  // Each frame. state: { walking, running, riding (0–5), speed01, indoor, snow }.
+  // Each frame. state: { walking, running, riding (0–5), speed01, indoor }.
   update(dt, st) {
     const c = this.sfx.on && this.sfx.ctx && this.sfx.ctx.state === 'running' ? this.sfx.ctx : null;
     // Footsteps.
@@ -72,7 +68,7 @@ export class MotionSound {
         const kind = st.running ? 'run' : 'walk';
         this.stepT = STEP_GAP[kind] * (0.94 + Math.random() * 0.12);
         const vol = STEP_VOL[kind] * (st.indoor ? 0.8 : 1);
-        if (!this.files?.play(stepSound(st), vol * STEP_FILE_GAIN, 0.92 + Math.random() * 0.16)) this._step(c, vol, st.indoor);
+        this._step(c, vol, st.indoor);
       }
     } else this.stepT = 0.05;
     // Wind and engine.

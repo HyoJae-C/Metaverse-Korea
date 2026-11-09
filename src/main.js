@@ -2920,7 +2920,7 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
-const soundFiles = new SoundFiles(sfx, BASE); // recorded steps and shop blips (Kenney, CC0)
+const soundFiles = new SoundFiles(sfx, BASE); // shop blips (Kenney, CC0)
 const motionSound = new MotionSound(sfx, soundFiles); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
 let shownHonk = null, honkAt = 0;
@@ -3583,7 +3583,7 @@ const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, open
 // Coins and the rewarded-ad slot. The balance is kept on the server once
 // supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
-wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short', paid ? 0.35 : 0.3); });
+wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short', paid ? 0.3 : 0.25); });
 const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
@@ -6643,7 +6643,6 @@ renderer.setAnimationLoop((now) => {
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',
-    snow: weather.kind === 'snow',
   });
   // Event-based sync: send only when our state changed (moving, turning,
   // slowing to a stop; a teleport or a newcomer forces a send), plus a slow

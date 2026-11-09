@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { SOUND_FILES, soundUrl, stepSound, SoundFiles } from '../src/core/sound-files.js';
+import { SOUND_FILES, soundUrl, SoundFiles } from '../src/core/sound-files.js';
 
 test('every listed sound has its files in public/', () => {
   for (const [name, n] of Object.entries(SOUND_FILES)) {
@@ -9,17 +9,10 @@ test('every listed sound has its files in public/', () => {
   }
 });
 
-test('soundUrl numbers variants and wraps around', () => {
+test('soundUrl builds the file path', () => {
   assert.equal(soundUrl('pay'), 'audio/sfx/pay.mp3');
-  assert.equal(soundUrl('step-wood', 2, '/x/'), '/x/audio/sfx/step-wood-2.mp3');
-  assert.equal(soundUrl('step-wood', 5), 'audio/sfx/step-wood-0.mp3');
+  assert.equal(soundUrl('pay', 0, '/x/'), '/x/audio/sfx/pay.mp3');
   assert.equal(soundUrl('nope'), null);
-});
-
-test('stepSound: wood indoors, snow outside when it snows, else pavement', () => {
-  assert.equal(stepSound({ indoor: true, snow: true }), 'step-wood');
-  assert.equal(stepSound({ snow: true }), 'step-snow');
-  assert.equal(stepSound({}), 'step-concrete');
 });
 
 test('play() says false while sound is off or not loaded, so the synth plays', () => {
@@ -28,4 +21,8 @@ test('play() says false while sound is off or not loaded, so the synth plays', (
   assert.equal(f.play('pay'), false); // no audio context yet
   sfx.on = false;
   assert.equal(f.play('pay'), false);
+});
+
+test('footsteps are synthesised again, no recorded step files', () => {
+  assert.ok(!Object.keys(SOUND_FILES).some((k) => k.startsWith('step')));
 });
