@@ -376,7 +376,7 @@ export function buildMap() {
       { k: 'walk', w: 6, p: [[50, 0], [ZOO_ENTRANCE.x0, 0]] }, // to the zoo's door
     ],
     buildings: [
-      { h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') },
+      { h: 8, p: rect(14, -46, 36, -32), n: L('서울어른도대공원 안내센터', "Grown-ups' Grand Park Information Center", '大人も大公園インフォメーションセンター', '大人也大公园信息中心') },
       // The zoo's entrance building: drawn by its landmark (core/grand-park.js
       // zooEntrance), a wall here, and the facade its door (the storefront) sits on.
       { h: ZOO_ENTRANCE.h, custom: true, p: rect(ZOO_ENTRANCE.x0, ZOO_ENTRANCE.z0, ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z1) },
@@ -394,7 +394,7 @@ export function buildMap() {
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
       // (while the zoo is closed, the park's pin is the gate plaza: taxis can't go in)
-      { kind: 'landmark', x: 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
+      { kind: 'landmark', x: 40, z: 0, name: L('서울어른도대공원', "Seoul Grown-ups' Grand Park", 'ソウル大人も大公園', '首尔大人也大公园') },
     ],
     landmarks: [
       { type: 'cgpgate', x: 30, z: 0, ry: 1.5708, label: L('정문', 'Main Gate', '正門', '正门') },
@@ -402,7 +402,7 @@ export function buildMap() {
       { type: 'blossoms', p: [[38, 7], [48, 7]], gap: 5 },
       {
         type: 'sign', x: 42, z: -15, ry: -1.5708,
-        title: { ko: '서울어린이대공원', en: "Seoul Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园', es: 'Gran Parque Infantil de Seúl', id: 'Taman Anak Raya Seoul', vi: 'Công viên Thiếu nhi Seoul', hi: 'सियोल चिल्ड्रन्स ग्रैंड पार्क', fr: 'Grand Parc des enfants de Séoul', th: 'สวนสาธารณะเด็กโซล', ar: 'حديقة الأطفال الكبرى في سيول' },
+        title: { ko: '서울어른도대공원', en: "Seoul Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园', es: 'Gran Parque para Adultos También de Seúl', id: 'Taman Raya Dewasa Juga Seoul', vi: 'Công viên Cả Người lớn Seoul', hi: 'सियोल बड़ों का भी ग्रैंड पार्क', fr: 'Grand Parc des grands aussi de Séoul', th: 'สวนผู้ใหญ่ก็เล่นได้ โซล', ar: 'حديقة الكبار أيضًا في سيول' },
         text: {
           ko: '1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.',
           en: "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.",

@@ -61,10 +61,10 @@
     ]
    ],
    "n": {
-    "ko": "서울어린이대공원 안내센터",
-    "en": "Children's Grand Park Information Center",
-    "ja": "子供大公園インフォメーションセンター",
-    "zh": "儿童大公园信息中心"
+    "ko": "서울어른도대공원 안내센터",
+    "en": "Grown-ups' Grand Park Information Center",
+    "ja": "大人も大公園インフォメーションセンター",
+    "zh": "大人也大公园信息中心"
    }
   },
   {
@@ -365,10 +365,10 @@
    "x": 40,
    "z": 0,
    "name": {
-    "ko": "서울어린이대공원",
-    "en": "Seoul Children's Grand Park",
-    "ja": "ソウル子供大公園",
-    "zh": "首尔儿童大公园"
+    "ko": "서울어른도대공원",
+    "en": "Seoul Grown-ups' Grand Park",
+    "ja": "ソウル大人も大公園",
+    "zh": "首尔大人也大公园"
    }
   }
  ],
@@ -419,17 +419,17 @@
    "z": -15,
    "ry": -1.5708,
    "title": {
-    "ko": "서울어린이대공원",
-    "en": "Seoul Children's Grand Park",
-    "ja": "ソウル子供大公園",
-    "zh": "首尔儿童大公园",
-    "es": "Gran Parque Infantil de Seúl",
-    "id": "Taman Anak Raya Seoul",
-    "vi": "Công viên Thiếu nhi Seoul",
-    "hi": "सियोल चिल्ड्रन्स ग्रैंड पार्क",
-    "fr": "Grand Parc des enfants de Séoul",
-    "th": "สวนสาธารณะเด็กโซล",
-    "ar": "حديقة الأطفال الكبرى في سيول"
+    "ko": "서울어른도대공원",
+    "en": "Seoul Grown-ups' Grand Park",
+    "ja": "ソウル大人も大公園",
+    "zh": "首尔大人也大公园",
+    "es": "Gran Parque para Adultos También de Seúl",
+    "id": "Taman Raya Dewasa Juga Seoul",
+    "vi": "Công viên Cả Người lớn Seoul",
+    "hi": "सियोल बड़ों का भी ग्रैंड पार्क",
+    "fr": "Grand Parc des grands aussi de Séoul",
+    "th": "สวนผู้ใหญ่ก็เล่นได้ โซล",
+    "ar": "حديقة الكبار أيضًا في سيول"
    },
    "text": {
     "ko": "1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.",

@@ -773,8 +773,8 @@
       "size": "small",
       "at": [433, -122],
       "district": "grand-park",
-      "name": { "en": "Children's Grand Park Information Center", "ko": "서울어린이대공원 안내센터", "ja": "子供大公園インフォメーションセンター", "zh": "儿童大公园信息中心" },
-      "tagline": { "en": "Two guides: how the game works, and everything in Children's Grand Park", "ko": "게임 안내와 어린이대공원 안내, 두 명의 안내원", "ja": "ゲーム案内と子供大公園案内の2人がご案内", "zh": "两位向导：游戏玩法和儿童大公园" },
+      "name": { "en": "Grown-ups' Grand Park Information Center", "ko": "서울어른도대공원 안내센터", "ja": "大人も大公園インフォメーションセンター", "zh": "大人也大公园信息中心" },
+      "tagline": { "en": "Two guides: how the game works, and everything in Grown-ups' Grand Park", "ko": "게임 안내와 어른도대공원 안내, 두 명의 안내원", "ja": "ゲーム案内と大人も大公園案内の2人がご案内", "zh": "两位向导：游戏玩法和大人也大公园" },
       "colors": { "sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff" },
       "products": []
     },
@@ -785,7 +785,7 @@
       "size": "zoo",
       "at": [458, -95],
       "district": "grand-park",
-      "name": { "en": "Grand Park Zoo", "ko": "어린이대공원 동물원", "ja": "子供大公園動物園", "zh": "儿童大公园动物园" },
+      "name": { "en": "Grand Park Zoo", "ko": "어른도대공원 동물원", "ja": "大人も大公園動物園", "zh": "大人也大公园动物园" },
       "tagline": { "en": "Walk in to the zoo: lions, tigers, elephants, giraffes, zebras, kangaroos, camels, hippos, the Sea Animals hall and a petting village, with free carts to drive round", "ko": "동물원 입장: 사자, 호랑이, 코끼리, 기린, 얼룩말, 캥거루, 낙타, 하마, 바다동물관과 꼬마동물마을, 무료 카트도 있어요", "ja": "動物園に入る：ライオン、トラ、ゾウ、キリン、シマウマ、カンガルー、ラクダ、カバ、海の動物館とこども動物村、無料カートも", "zh": "进入动物园：狮子、老虎、大象、长颈鹿、斑马、袋鼠、骆驼、河马、海洋动物馆和小动物村，还有免费电动车" },
       "colors": { "sign": "#3f9b5a", "awning": "#cdebd3", "accent": "#f3fbf2" },
       "products": []
