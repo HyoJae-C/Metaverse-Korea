@@ -94,6 +94,10 @@ h2 { margin: 18px 0 10px; font-size: 16px; color: var(--ink-soft); }
 .lang-list[hidden] { display: none; }
 .lang-list button, #lang-grid-2 button { padding: 10px 14px; text-align: start; }
 /* Arabic: panels and messages read right-to-left; the game screen keeps its layout. */
+/* Korean wraps at spaces, not in the middle of a word ("하이 / 파이브").
+   Not for Japanese and Chinese, which have no spaces to wrap at. A word too
+   long for its line still breaks rather than running out of its box. */
+html:not(:lang(ja)):not(:lang(zh)) body { word-break: keep-all; overflow-wrap: break-word; }
 html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='-panel']) { direction: rtl; }
 .name-field { display: grid; gap: 6px; margin-top: 16px; text-align: left; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
 .name-field input {
