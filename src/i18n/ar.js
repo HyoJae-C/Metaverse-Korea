@@ -63,6 +63,8 @@ export const AR = {
   'ride.drop': 'اركب برج السقوط',
   'ride.off': 'انزل',
   'ride.noCoins': 'تحتاج 🪙 {n} للتذكرة.',
+  'ride.staff': 'موظف {name}',
+  'ride.enjoy': 'رحلة ممتعة! تمسّك بالحاجز 🎶',
   'book.read': 'اقرأ',
   'book.pick': 'اختر كتابًا',
   'book.sitToRead': 'اجلس في أي مكان لتقرأ.',

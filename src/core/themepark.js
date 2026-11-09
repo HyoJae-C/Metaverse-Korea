@@ -14,67 +14,18 @@ import { GATE as COASTER_GATE, trackPoints } from './coaster.js';
 
 const mat = matCache({ flatShading: true });
 
-// Ticket prices (won): the thrill rides cost more, the gentle ones less.
-// The bumper cars' fare is BUMPER_COST in bumper-cars.js.
-export const RIDE_PRICE = { coaster: 7000, drop: 4000, viking: 4000, wheel: 3000, carousel: 2000 };
-// The ride-all day pass, sold at the ticket booth: every ride in the park
-// (bumper cars and the coaster too) as often as you like, today.
-export const RIDE_PASS = 20000;
-export const RIDE_SECONDS = { carousel: 24, wheel: 32, viking: 22, drop: 16 };
-
-// Pure ride motion (unit-tested): where seat i is at time t (seconds).
-export const RIDES = {
-  carousel: { x: -9, z: -2, seats: 6, r: 3, speed: 0.55 },
-  wheel: { x: 9.5, z: -7, seats: 8, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
-  viking: { x: -1, z: -9.5, seats: 4, pivot: 6.2, arm: 5, max: 1.05 },
-  // Drop tower: seats round a pole; one shared cycle of load, climb, hold, drop.
-  drop: { x: 14, z: -1, seats: 6, r: 1.55, low: 0.55, top: 16, cycle: 16 },
-};
-// Height of the drop tower's seat ring at time t (seconds).
-export function dropY(t, low = RIDES.drop.low, top = RIDES.drop.top, cycle = RIDES.drop.cycle) {
-  const p = ((t % cycle) + cycle) % cycle;
-  if (p < 3) return low; // loading
-  if (p < 11) return low + ((p - 3) / 8) * (top - low); // slow climb
-  if (p < 13) return top; // hold at the top…
-  if (p < 14) { const k = p - 13; return top - k * k * (top - low - 2); } // …then drop
-  return low + 2 * (1 - (p - 14) / 2); // brakes, settle
-}
-// When a ride that starts now ends. The drop tower runs on its own cycle:
-// board while it loads and you ride this cycle, otherwise the next one.
-export function rideUntil(kind, now) {
-  if (kind !== 'drop') return now + RIDE_SECONDS[kind];
-  const { cycle } = RIDES.drop, start = Math.floor(now / cycle) * cycle;
-  return now - start < 3 ? start + cycle : start + cycle * 2;
-}
-export function seatAt(kind, i, t, started = 0) {
-  const R = RIDES[kind];
-  if (kind === 'carousel') {
-    const a = (i / R.seats) * Math.PI * 2 + t * R.speed;
-    return { x: R.x + Math.sin(a) * R.r, y: 0.55 + 0.25 * Math.sin(t * 2.4 + i * 1.7), z: R.z + Math.cos(a) * R.r, ry: a + Math.PI / 2 };
-  }
-  if (kind === 'wheel') {
-    const a = (i / R.seats) * Math.PI * 2 + t * R.speed;
-    // Cabins hang below the rim; the seat is the cabin floor.
-    return { x: R.x + Math.sin(a) * R.r, y: R.hub - Math.cos(a) * R.r - R.drop, z: R.z + 0.2, ry: 0 };
-  }
-  if (kind === 'drop') {
-    const a = (i / R.seats) * Math.PI * 2;
-    return { x: R.x + Math.sin(a) * R.r, y: dropY(t), z: R.z + Math.cos(a) * R.r, ry: a };
-  }
-  // viking: swings higher for the first seconds of the ride.
-  const ramp = Math.min(1, Math.max(0.15, (t - started) / 8));
-  const ang = R.max * ramp * Math.sin(t * 1.25);
-  const off = (i - (R.seats - 1) / 2) * 1.1; // along the ship
-  const along = off * Math.cos(ang) + Math.sin(ang) * R.arm;
-  return { x: R.x + along, y: R.pivot - Math.cos(ang) * R.arm + off * Math.sin(ang) + 0.4, z: R.z, ry: -Math.PI / 2 };
-}
+// The rides as numbers: park-rides.js (kept apart so main.js needn't load
+// this file, which comes on the first visit).
+export { RIDE_PRICE, RIDE_PASS, RIDE_SECONDS, RIDES, dropY, rideUntil, seatAt } from './park-rides.js';
+import { RIDES, RIDE_GATES, dropY, seatAt } from './park-rides.js';
+import { buildGrounds } from './park-grounds.js';
+import { mergeStatic } from './merge-static.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
   const { w, d } = ROOM;
   // The park's edges. The gate is at the south (z1); the coaster's land
   // reaches far to the west and north of the old square.
   const X0 = ROOM.x0 ?? -w / 2, X1 = ROOM.x1 ?? w / 2, Z0 = ROOM.z0 ?? -d / 2, Z1 = ROOM.z1 ?? d / 2;
-  const CX = (X0 + X1) / 2, CZ = (Z0 + Z1) / 2;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#ffe3f0');
   scene.fog = new THREE.Fog('#ffe3f0', 45, 140);
@@ -84,47 +35,14 @@ export function buildThemePark(store, ROOM, EXIT) {
   scene.add(sun);
   scene.add(new THREE.AmbientLight(0xffffff, 0.35));
   const colliders = [];
+  const seats = [];
   const block = (x, z, sx, sz) => colliders.push({ p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]] });
   const add = (geo, color, x, y, z, parent = scene) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); parent.add(m); return m; };
   const box = (sx, sy, sz, x, y, z, color, parent) => add(new THREE.BoxGeometry(sx, sy, sz), color, x, y, z, parent);
 
-  // Ground: grass with paved paths, a far ring of trees.
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(w * 3, d * 3).rotateX(-Math.PI / 2), mat('#a6d98a'));
-  ground.position.set(CX, 0, CZ);
-  scene.add(ground);
-  const path = new THREE.Mesh(new THREE.PlaneGeometry(4, Z1 - Z0 - 8).rotateX(-Math.PI / 2), mat('#efe2c4'));
-  path.position.set(0, 0.01, (Z0 + 8 + Z1) / 2);
-  scene.add(path);
-  const plaza = new THREE.Mesh(new THREE.PlaneGeometry(48, 6).rotateX(-Math.PI / 2), mat('#efe2c4'));
-  plaza.position.set(0, 0.01, 3);
-  scene.add(plaza);
-  for (let i = 0; i < 26; i++) {
-    const a = (i / 26) * Math.PI * 2, rx = CX + Math.sin(a) * (w * 0.75), rz = CZ + Math.cos(a) * (d * 0.8);
-    // Candy scenery: lollipops and gumdrops instead of plain trees.
-    if (i % 2) {
-      add(new THREE.CylinderGeometry(0.1, 0.1, 3, 6), '#fffaf3', rx, 1.5, rz);
-      const pop = add(new THREE.CylinderGeometry(1.2, 1.2, 0.3, 18), ['#ff8fb8', '#c9a8ff', '#8fe3c7'][i % 3], rx, 3.8, rz);
-      pop.rotation.x = Math.PI / 2;
-      pop.lookAt(CX, 3.8, CZ);
-      pop.rotateX(Math.PI / 2);
-    } else {
-      const drop = add(new THREE.SphereGeometry(1.6, 12, 8), ['#ffe27a', '#ff5a5f', '#8fd0ff', '#ffad6b'][(i / 2) % 4], rx, 0.6, rz);
-      drop.scale.y = 0.8;
-    }
-  }
-  // The edges of the park.
-  for (const [x, z, sx, sz] of [[CX, Z0, X1 - X0, 0.4], [X0, CZ, 0.4, Z1 - Z0], [X1, CZ, 0.4, Z1 - Z0]]) {
-    box(sx, 1, sz, x, 0.5, z, '#f2a7a0');
-    block(x, z, sx, sz);
-  }
-
-  // Entrance arch.
-  for (const sx of [-3, 3]) {
-    for (let i = 0; i < 4; i++) box(0.6, 1, 0.6, sx, 0.5 + i, Z1 - 2.2, i % 2 ? '#fffaf3' : '#ff5a5f'); // candy canes
-    add(new THREE.SphereGeometry(0.55, 10, 8), '#8fe3c7', sx, 4.4, Z1 - 2.2);
-  }
-  box(7, 1.1, 0.6, 0, 4.4, Z1 - 2.2, '#ff8fb8');
-  box(7.2, 0.3, 0.7, 0, 5.05, Z1 - 2.2, '#fffaf3'); // frosting
+  // The grounds: paths, the plaza and its fountain, the yards' fences and
+  // named gates, lamps, flowers, benches, the park's fence (park-grounds.js).
+  const grounds = buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 });
 
   // Carousel: a turning platform, poles and horses, a striped canopy.
   const C = RIDES.carousel;
@@ -211,17 +129,29 @@ export function buildThemePark(store, ROOM, EXIT) {
   add(new THREE.CylinderGeometry(D.r + 1, D.r + 1.2, 0.3, 18), '#b8743f', D.x, 0.15, D.z);
   block(D.x, D.z, 1.4, 1.4);
 
-  // Ticket booth and a churro cart by the entrance.
-  box(2, 2.2, 1.4, -6, 1.1, Z1 - 4.5, '#ffd36e');
-  box(2.4, 0.3, 1.8, -6, 2.35, Z1 - 4.5, '#ff7a8a');
-  block(-6, Z1 - 4.5, 2.1, 1.5);
-  box(1.6, 1, 0.9, 6, 0.5, Z1 - 4.5, '#f6c9a0');
-  box(1.8, 0.1, 1.1, 6, 1.9, Z1 - 4.5, '#ff9bb3');
-  block(6, Z1 - 4.5, 1.7, 1);
+  // Ticket booth (매표소) and a churro cart by the entrance. The booth's
+  // window faces Main Street (south), under a striped awning.
+  const TB = { x: -6, z: Z1 - 4.5 };
+  box(2.2, 2.3, 1.6, TB.x, 1.15, TB.z, '#ffd36e');
+  box(2.36, 0.25, 1.76, TB.x, 0.12, TB.z, '#e2a64a'); // plinth
+  box(1.2, 0.8, 0.06, TB.x, 1.35, TB.z + 0.8, '#5b3a2a'); // the window
+  box(1.4, 0.08, 0.35, TB.x, 0.92, TB.z + 0.95, '#fffaf3'); // its counter
+  for (let i = 0; i < 5; i++) { const a = box(0.5, 0.08, 0.7, TB.x - 1 + i * 0.5, 2.05, TB.z + 1.1, i % 2 ? '#fffaf3' : '#ff5a5f'); a.rotation.x = 0.35; }
+  add(new THREE.ConeGeometry(1.5, 1.2, 4), '#ff7a8a', TB.x, 2.9, TB.z).rotation.y = Math.PI / 4;
+  add(new THREE.SphereGeometry(0.2, 10, 8), '#ff3b55', TB.x, 3.6, TB.z);
+  block(TB.x, TB.z, 2.3, 1.7);
+  const CC = { x: 6, z: Z1 - 4.5 };
+  box(1.6, 0.8, 0.9, CC.x, 0.75, CC.z, '#f6c9a0');
+  box(1.7, 0.08, 1, CC.x, 1.18, CC.z, '#fffaf3');
+  for (const sx of [-0.55, 0.55]) { const w = add(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), '#7a4a2e', CC.x + sx, 0.28, CC.z + 0.5); w.rotation.x = Math.PI / 2; }
+  for (let i = 0; i < 5; i++) { const c = add(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), '#c98b4f', CC.x - 0.4 + i * 0.2, 1.22, CC.z - 0.2); c.rotation.z = 0.25 - i * 0.12; }
+  add(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), '#d9dde2', CC.x, 1.2, CC.z);
+  add(new THREE.ConeGeometry(1.1, 0.5, 8), '#ff9bb3', CC.x, 2.0, CC.z);
+  block(CC.x, CC.z, 1.7, 1.1);
 
   // Balloon shooting gallery (풍선 사격): a striped booth with rows of
   // balloons, toy cork guns on the counter (the game is ui/gallery-ui.js).
-  const G = { x: -14.5, z: -10.5 };
+  const G = { x: -21.5, z: -9.5 };
   box(4.4, 2.8, 0.2, G.x, 1.4, G.z - 1, '#fff3d6'); // back wall
   for (const sx of [-2.1, 2.1]) box(0.2, 2.8, 2, G.x + sx, 1.4, G.z, '#ff7a8a'); // sides
   for (let i = 0; i < 6; i++) box(0.75, 0.3, 2.3, G.x - 1.9 + i * 0.76, 2.95, G.z + 0.1, i % 2 ? '#fffaf3' : '#ff5a5f'); // awning
@@ -249,16 +179,6 @@ export function buildThemePark(store, ROOM, EXIT) {
   // Bumper cars (범퍼카, core/bumper-rink.js): right of the plaza.
   const bumper = buildBumperRink(scene, block);
 
-  // Benches.
-  const seats = [];
-  for (const bx of [-12, 12]) {
-    const bz = 6;
-    box(1.6, 0.08, 0.5, bx, 0.38, bz, '#c98b4f');
-    box(1.6, 0.4, 0.08, bx, 0.6, bz - 0.25, '#c98b4f');
-    block(bx, bz, 1.7, 0.6);
-    for (const o of [-0.4, 0.4]) seats.push({ x: bx + o, z: bz + 0.05, ry: 0, stand: [bx + o, bz + 0.9] });
-  }
-
   // The Cotton Candy Express (coaster-model.js), and its land: only when
   // the park is the big one (an old saved room size has no space for it).
   let coaster = null;
@@ -268,18 +188,20 @@ export function buildThemePark(store, ROOM, EXIT) {
     // The attendant stands at the gate, facing people coming from the park.
     stations.coasterStaff = [{ x: COASTER_GATE.x - 0.8, z: COASTER_GATE.z + 1.7, ry: Math.PI / 2 }];
     buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 });
-    // The square's paving runs on to the platform.
-    const wpath = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6).rotateX(-Math.PI / 2), mat('#efe2c4'));
-    wpath.position.set(-25.6, 0.012, 3);
-    scene.add(wpath);
   }
 
   // Where you board each ride (in front of it).
-  const rides = [
-    { kind: 'carousel', x: C.x + C.r + 2, z: C.z + 1.5 },
-    { kind: 'wheel', x: W.x - 1.5, z: W.z + 3.3 },
-    { kind: 'viking', x: V.x + 5.2, z: V.z + 2.6 },
-    { kind: 'drop', x: D.x - D.r - 2, z: D.z + 2.2 },
+  const rides = ['carousel', 'wheel', 'viking', 'drop'].map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
+  // Each ride's attendant, by its gate (the bumper cars' too), named after the ride.
+  stations.rideStaff = [
+    ...rides.map(({ kind }) => ({ kind, ...RIDE_GATES[kind].staff })),
+    { kind: 'bumper', x: bumper.gate.x - 0.9, z: bumper.gate.z - 1.6, ry: -Math.PI / 2 },
+  ];
+  // Guests already here: round the fountain, at the rides' fences, on Main Street.
+  stations.patrons = [
+    ...(stations.patrons || []),
+    { x: 3.4, z: 1.2, ry: -2.2 }, { x: -2.9, z: -4.6, ry: 0.6 }, { x: -7.5, z: 4.4, ry: -2.3 },
+    { x: 6, z: -2, ry: 2.6 }, { x: 1.4, z: 9.6, ry: Math.PI }, { x: 14.5, z: -1.6, ry: Math.PI / 2 },
   ];
 
   let time = 0;
@@ -295,11 +217,13 @@ export function buildThemePark(store, ROOM, EXIT) {
     coaster?.tick(Date.now() / 1000, dt);
   };
   tick(0);
+  // Everything that never moves, baked into a mesh per colour (merge-static.js).
+  mergeStatic(scene, [carousel, wheel, swing, dropRing, ...cabins, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
     rides, stations, tick, time: () => time, park: true, bumper, coaster,
-    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); },
+    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); },
   };
 }
 

@@ -8,7 +8,6 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildFurniture } from './furniture.js';
 import { buildPark } from './park.js';
-import { buildThemePark } from './themepark.js';
 import { buildPoolHall } from './pool-hall.js';
 import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
@@ -358,13 +357,17 @@ function dartboardTexture() {
 let domeBuilder = null;
 export const setDomeBuilder = (fn) => { domeBuilder = fn; };
 export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
+// Another Land (themepark.js, with its coaster and bumper rink) the same way.
+let parkBuilder = null;
+export const setParkBuilder = (fn) => { parkBuilder = fn; };
+export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;
 
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
-  if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'themepark') return parkBuilder(store, ROOM, EXIT);
   if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
