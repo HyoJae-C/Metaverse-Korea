@@ -251,14 +251,34 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-335, 79], [-430, 79], [-470, 190], [-520, 240], [-760, 240], [-840, 281], [-1088, 281]],
+      "p": [
+        [
+          -335,
+          79
+        ],
+        [
+          -700,
+          79
+        ],
+        [
+          -900,
+          193
+        ],
+        [
+          -960,
+          281
+        ],
+        [
+          -1088,
+          281
+        ]
+      ],
       "n": {
         "ko": "이태원로",
         "en": "Itaewon-ro",
         "ja": "梨泰院路",
         "zh": "梨泰院路"
-      },
-      "note": "From Seongsu west to Itaewon. It runs on from Itaewon-ro along the foot of Gyeongnidan-gil's hill (the lanes coming down from Hoenamu-ro meet it), between the hill and the Han River, and turns north-east only past the hill."
+      }
     },
     {
       "k": "primary",

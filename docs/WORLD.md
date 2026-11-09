@@ -142,31 +142,36 @@ legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
 
 ## Gyeongnidan-gil (Itaewon, Yongsan-gu)
 
-The rest of Itaewon is hand-made, but Gyeongnidan-gil (경리단길) is built on
-its real roads: `node scripts/build-gyeongnidan.mjs` reads Hoenamu-ro (the
-street people call Gyeongnidan-gil) and the lanes off it from
+The rest of Itaewon is hand-made, but Gyeongnidan-gil (경리단길) follows its
+real roads: `node scripts/build-gyeongnidan.mjs` reads Hoenamu-ro (the
+street people call Gyeongnidan-gil) and a few lanes off it from
 OpenStreetMap (`scripts/data/gyeongnidan-osm.json`, © OpenStreetMap
-contributors, ODbL) and writes them into `districts/itaewon.json` at real
-size, from the foot by Noksapyeong-daero up to where Hoenamu-ro 32-gil and
-35-gil cross it, about 650 m. Only the walk from Itaewon-ro up
-Noksapyeong-daero to the foot is squeezed. The script also lines every
-street with small buildings, fills the blocks between the lanes with homes,
-and moves four of Itaewon's own places up the street (a diner, a trattoria,
-a café and the taproom); it makes no new shops.
+contributors, ODbL) and writes them into `districts/itaewon.json` at a
+quarter of the real size, like the rest of the map: from the foot by
+Noksapyeong-daero up to where Hoenamu-ro 35-gil leaves it, about 160 m
+(650 m in Seoul). It stays inside Itaewon's old east side, between
+Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
 
-- **The hill.** The street climbs about 18 m to the top; the lanes north
-  climb on towards Namsan and the lanes south go down to the flat land by
-  Itaewon-ro. The district's `meta.hill` holds the numbers and
-  `src/core/hill-ground.js` turns them into a height (you, NPCs and shop
-  fronts stand on it; a building's walls go from `y0`, the lowest ground
-  under it, to `y + h`). The heights are a game approximation, not a survey.
+- **Simple like the other neighbourhoods.** Only three lanes are kept
+  (13-gil and 35-gil up to Sowol-ro, 26-gil down to Itaewon-ro), and the
+  buildings are one row along each street, at normal size; the blocks
+  behind are left open. The real tangle of lanes, drawn 1:1, read as too
+  busy next to the rest of the city. The script also moves four of
+  Itaewon's own places up the street (a diner, a trattoria, a café and the
+  taproom); it makes no new shops.
+- **The hill.** The street climbs gently, about 5 m to the top; the lanes
+  north climb a little and then ease back down to Sowol-ro, which stays
+  level, and the lanes south go down to the flat land by Itaewon-ro. The
+  district's `meta.hill` holds the numbers and `src/core/hill-ground.js`
+  turns them into a height (you, NPCs and shop fronts stand on it; a
+  building's walls go from `y0`, the lowest ground under it, to `y + h`).
+  The heights are a game approximation, not a survey.
 - **Loaded when near.** The sloped ground, the streets drawn on it and the
   neighbours on the lanes are `src/game/gyeongnidan.js`, loaded with
   `import()` within about 480 m (`src/game/gyeongnidan-near.js`).
 - **Keep things off the slope.** Anything drawn at y 0 (street trees, link
-  roads) would be under the hill: the Itaewon-ro link runs along the foot of
-  the hill, between it and the Han River, and `tests/gyeongnidan.test.mjs`
-  checks it stays clear.
+  roads) would be under the hill: `tests/gyeongnidan.test.mjs` checks the
+  Itaewon-ro link stays clear of it.
 
 ## Samseong-dong (Gangnam-gu)
 
