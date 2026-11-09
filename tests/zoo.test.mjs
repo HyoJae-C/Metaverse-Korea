@@ -354,3 +354,87 @@ test('flower beds and borders: plenty of them, off the paths, out of the pens, i
     }
   }
 });
+
+test('animal calls: every kind that moves has a voice, played when a motion starts, fading with distance', async () => {
+  const { VOICES, LOUD, CALL_NAMES, callFor, fallOff, HEAR } = await import('../src/core/zoo-voices.js');
+  const kinds = new Set(PENS.flatMap((p) => (p.groups || []).map((g) => g.kind)));
+  for (const k of kinds) assert.ok(VOICES[k], `${k} has a voice`);
+  for (const calls of Object.values(VOICES)) for (const c of Object.values(calls)) assert.ok(CALL_NAMES.includes(c) && LOUD[c] > 0, c);
+  assert.equal(callFor('lion', 'roar'), 'roar');
+  assert.equal(callFor('lion', 'walk'), null, 'walking about is quiet');
+  assert.ok(fallOff(0) === 1 && fallOff(10) > fallOff(20) && fallOff(HEAR) === 0);
+  // The zoo says when a motion starts, once.
+  const lions = PENS.find((p) => p.id === 'lions');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null }]);
+  const heard = [];
+  zoo.onSound = (a, m) => heard.push([a.kind, m]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'roar'; a.t = 3;
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  assert.equal(heard.filter(([, m]) => m === 'roar').length, 1);
+});
+
+test('zoo sounds: nearer is louder, panned to its side, and each animal waits before calling again', async () => {
+  const { createZooSounds, COOLDOWN } = await import('../src/game/zoo-sounds.js');
+  const zs = createZooSounds({ sfx: null, listener: () => ({ x: 0, z: 0, rx: 1, rz: 0 }) });
+  const near = zs.placeOf(3, 0), far = zs.placeOf(20, 0), left = zs.placeOf(-5, 0);
+  assert.ok(near.gain > far.gain && near.pan > 0 && left.pan < 0);
+  assert.equal(zs.placeOf(60, 0), null, 'too far to hear');
+  assert.ok(COOLDOWN >= 3);
+});
+
+test('the hippo: ears on hinges that flutter when it comes up, and more time out of the water', () => {
+  const hippos = PENS.find((p) => p.id === 'hippos');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...hippos, name: null }]);
+  const h = zoo.pens[0].animals[0];
+  assert.equal(h.flaps.length, 2, 'two ears that move');
+  h.sink = 0.8; zoo._parts(h, 0.016);
+  h.sink = 0.1; zoo._parts(h, 0.016); zoo._parts(h, 0.01);
+  assert.ok(h.flick > 0, 'coming up: a flutter');
+  assert.ok(h.flaps.some((e) => Math.abs(e.rotation.y) > 0.01), 'the ears move');
+  // Picking what to do, in the water: out it comes, most of the time.
+  const [px, pz] = hippos.pond;
+  let swims = 0;
+  for (let i = 0; i < 400; i++) {
+    h.root.position.set(px, 0, pz); h.mate = null;
+    zoo._pick(h, 100, 100, false, zoo.pens[0]);
+    const tgt = h.state === 'walk' && h.target;
+    if (!tgt || Math.hypot(tgt[0] - px, tgt[1] - pz) < hippos.pond[2]) swims++;
+  }
+  assert.ok(swims / 400 < 0.45, `stays in the water ${(swims / 4).toFixed(0)}% of picks`);
+});
+
+test('three herbivore pens you can see across, bigger zebras, elephants and giraffes, a giraffe neck with two joints', async () => {
+  const { SIZE } = await import('../src/core/zoo-animals.js');
+  for (const [id, kind] of [['zebras', 'zebra'], ['elephants', 'elephant'], ['giraffes', 'giraffe']]) {
+    const p = PENS.find((q) => q.id === id);
+    assert.ok(p && p.groups.every((g) => g.kind === kind), `${id} holds ${kind}`);
+    assert.ok(p.d <= 25, `${id} is small enough to see across`);
+    assert.ok(SIZE[kind] > 1.2, `${kind} drawn bigger`);
+  }
+  assert.ok(!PENS.some((p) => p.id === 'savanna'));
+  const g = makeZooAnimal('giraffe', ZOO_LOOKS.giraffe[0]);
+  assert.ok(g.neck && g.neck2 && g.neck2.parent === g.neck, 'the upper neck hangs off the lower');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...PENS.find((q) => q.id === 'giraffes'), name: null }]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'drink';
+  for (let i = 0; i < 60; i++) zoo._parts(a, 0.05);
+  assert.ok(a.neck2.rotation.x > 0.5 && a.neck.rotation.x > a.neck0 + 0.5, 'both joints bend down to drink');
+});
+
+test('the snake: a smaller house, and a body that follows its head and coils up at rest', () => {
+  const rep = PENS.find((p) => p.id === 'reptiles');
+  assert.ok(rep.w * rep.d <= 80, 'a small reptile house');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...rep, name: null }]);
+  const s = zoo.pens[0].animals[0];
+  s.root.position.set(-2, 0, 0); s.root.rotation.y = Math.PI / 2; // heading +x
+  for (let i = 0; i < 80; i++) { s.root.position.x += 0.03; s.phase += 0.03; zoo._slither(s, 0.03, true); }
+  const tail = s.segs.at(-1).position, mid = s.segs[15].position;
+  assert.ok(tail.z < mid.z && mid.z < 0, 'the body trails behind the head');
+  assert.ok(s.segs.some((q) => Math.abs(q.position.x) > 0.03), 'in S curves');
+  for (let i = 0; i < 200; i++) zoo._slither(s, 0.05, false);
+  assert.ok(s.coil > 0.9, 'coiled up at rest');
+  const spread = Math.max(...s.segs.map((q) => Math.hypot(q.position.x, q.position.z)));
+  assert.ok(spread < 0.5, 'a tight coil');
+});

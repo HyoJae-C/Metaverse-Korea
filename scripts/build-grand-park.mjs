@@ -35,14 +35,14 @@ export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]];
 //   north-west  waterside: Sea Animals hall, hippos, the bird house
 //   north-east  big cats and birds of prey: tigers, lions, bears, vultures
 //   south-west  little ones (by the gate): petting village, reptiles, monkeys
-//   south-east  savanna: elephants, giraffes and zebras on one big plain
+//   south-east  herbivores: zebras, elephants and giraffes, a pen each
 // A path across each north quarter and the south-west one gives the back row
 // of pens a front to face. No path runs straight: each is a smooth curve
 // through the gaps between the pens (smooth()), and flower beds line them
 // and fill the open lawn (flowerBeds(), drawn by core/grand-park.js).
 // Like every district, the park is real Seoul at 1/4 (docs/WORLD.md): the
 // real park's 53 ha are about 3.4 ha here.
-export const PLAZA = { x: 128, z: 0, r: 5.5, bed: 2.4 };
+export const PLAZA = { x: 128, z: 0, r: 6.5, bed: 2.8 };
 
 // A smooth path through control points (Catmull-Rom), as points about
 // `step` metres apart, rounded to 0.1 m. closed: a loop back to the start.
@@ -72,6 +72,8 @@ export const PATHS = {
   crossNorth: { w: 5, pts: [[PLAZA.x, PLAZA.z - PLAZA.r], [125.5, -14], [126.5, -26], [124.5, -38], [127, -53], [125, -73]] },
   crossSouth: { w: 5, pts: [[PLAZA.x, PLAZA.z + PLAZA.r], [129.5, 11], [127, 25], [121.5, 40], [124, 60], [120.5, 75], [125, 89]] },
   north: { w: 4, pts: [[64, -38], [80, -40], [95, -38.5], [110, -40.5], [124.5, -38], [140, -37.5], [155, -38.5], [170, -37.5], [191, -39]] },
+  herdA: { w: 4, pts: [[129, 31.5], [145, 31.25], [160, 31.75], [175, 31.25], [190.5, 31.5]] }, // between the zebras and the elephants
+  herdB: { w: 4, pts: [[123.5, 57.5], [145, 57.25], [160, 57.75], [175, 57.25], [190, 57.5]] }, // between the elephants and the giraffes
   south: { w: 4, pts: [[62, 44], [80, 41], [95, 43.5], [110, 40.5], [121.5, 40]] },
 };
 export const WALKS = Object.fromEntries(Object.entries(PATHS).map(([k, p]) => [k, { w: p.w, p: smooth(p.pts, { closed: p.closed }) }]));
@@ -120,10 +122,10 @@ export const PENS = [
     ],
   },
   flip({
-    id: 'reptiles', x: 118, z: 10, w: 14, d: 10, fence: 'house', ground: 'stone', board: 's',
+    id: 'reptiles', x: 117, z: 10, w: 10, d: 7, fence: 'house', ground: 'stone', board: 's',
     name: L('파충류관', 'Reptile House', '爬虫類館', '爬行动物馆'),
-    props: [['rock', 3, -2]],
-    groups: [{ kind: 'snake', n: 1, box: [-5, -3, 5, 3] }],
+    props: [['rock', 2.5, -1.5]],
+    groups: [{ kind: 'snake', n: 1, box: [-3.6, -2.2, 3.6, 2.2] }],
   }),
   // North-west: the waterside.
   flip({
@@ -183,20 +185,31 @@ export const PENS = [
     groups: [{ kind: 'vulture', n: 3 }],
     feed: { at: [-2, 2], offset: 300, food: 'meat' },
   },
-  // South-east: the savanna, elephants (a mother and her calf), giraffes and
-  // zebras together on one big plain with a waterhole and trees to browse.
-  // A low glass wall all round so you can watch them over it.
+  // South-east: the herbivores, three pens down the cross path, each small
+  // enough to see across, with a walk between them: zebras by the plaza,
+  // the elephants (a mother and her calf) in the middle, the giraffes at the
+  // back among tall trees. A low glass wall all round to watch over.
   {
-    id: 'savanna', x: 159.5, z: 45, w: 51, d: 74, fence: 'glass', ground: 'dirt', board: 'n',
-    name: L('초식동물마을', 'Savanna', '草食動物の村', '草食动物村'),
-    pond: [-12, 8, 7],
-    props: [['tree', 20, -20], ['tree', 22, 6], ['tree', 8, 26], ['tree', -20, 28], ['tree', 14, -30], ['tree', -6, 18], ['tree', 23, 30], ['tree', -23, -8], ['rock', -4, -14], ['rock', -21, -24], ['rock', 12, 12]],
-    groups: [
-      { kind: 'elephant', n: 2, box: [-24, -30, -4, 30] },
-      { kind: 'giraffe', n: 3, box: [4, -32, 23.5, 32] },
-      { kind: 'zebra', n: 7, box: [-23.5, -34, 23.5, 34] },
-    ],
-    feed: { at: [0, -32], offset: 540, food: 'greens' },
+    id: 'zebras', x: 159.5, z: 18.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
+    name: L('얼룩말', 'Zebras', 'シマウマ', '斑马'),
+    pond: [-15, 3, 3.5],
+    props: [['tree', 18, -4], ['tree', -4, 6], ['rock', 8, 4], ['rock', -21, -5]],
+    groups: [{ kind: 'zebra', n: 7 }],
+  },
+  {
+    id: 'elephants', x: 159.5, z: 44.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
+    name: L('코끼리', 'Elephants', 'ゾウ', '大象'),
+    pond: [-14, 2, 5.5],
+    props: [['tree', 19, 5], ['tree', 6, -5], ['rock', 12, 4], ['rock', -22, -6]],
+    groups: [{ kind: 'elephant', n: 2 }],
+    feed: { at: [4, -6.5], offset: 540, food: 'greens' },
+  },
+  {
+    id: 'giraffes', x: 159.5, z: 70.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
+    name: L('기린', 'Giraffes', 'キリン', '长颈鹿'),
+    pond: [14, 3, 3.5],
+    props: [['tree', -16, 3], ['tree', -4, -4], ['tree', 6, 5], ['tree', 20, -5], ['rock', -22, 6]],
+    groups: [{ kind: 'giraffe', n: 3 }],
   },
 ];
 
