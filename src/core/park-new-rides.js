@@ -196,27 +196,27 @@ export function buildFlume(scene, block, mat) {
   const { part, box, cyl } = kit(mat);
   const root = new THREE.Group();
   scene.add(root);
-  const pts = FLUME_TRACK.pts;
+  // The channel follows the smooth curve the boat does (FLUME_TRACK), a
+  // short straight trough every metre or so, so it bends round with it.
+  const pts = FLUME_TRACK.pts, every = Math.max(1, Math.round(1 / FLUME_TRACK.ds));
   const WATER = '#7fd6f0';
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i], b = pts[(i + 1) % pts.length];
+  let sincePost = 99;
+  for (let i = 0; i < pts.length; i += every) {
+    const a = pts[i], b = pts[(i + every) % pts.length];
     const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], dh = Math.hypot(dx, dz), len = Math.hypot(dh, dy), ry = Math.atan2(dx, dz);
     const g = new THREE.Group();
     g.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
     g.rotation.order = 'YXZ';
     g.rotation.set(-Math.atan2(dy, dh), ry, 0);
-    box(g, 1.7, 0.12, len + 0.3, 0, -0.32, 0, BISCUIT); // the trough's bottom
-    for (const s of [-1, 1]) box(g, 0.12, 0.7, len + 0.3, s * 0.85, 0, 0, BISCUIT); // its sides
-    for (const s of [-1, 1]) box(g, 0.16, 0.08, len + 0.3, s * 0.85, 0.38, 0, PINK); // pink rims
-    box(g, 1.58, 0.04, len + 0.3, 0, -0.04, 0, WATER);
+    box(g, 1.7, 0.12, len + 0.12, 0, -0.32, 0, BISCUIT); // the trough's bottom
+    for (const s of [-1, 1]) box(g, 0.12, 0.7, len + 0.12, s * 0.85, 0, 0, BISCUIT); // its sides
+    for (const s of [-1, 1]) box(g, 0.16, 0.08, len + 0.12, s * 0.85, 0.38, 0, PINK); // pink rims
+    box(g, 1.58, 0.04, len + 0.12, 0, -0.04, 0, WATER);
     root.add(g);
-    // Posts under the raised stretches; the low ones are walls you walk round.
-    const steps = Math.max(1, Math.round(len / 2.2));
-    for (let k = 0; k <= steps; k++) {
-      const t = k / steps, x = a[0] + dx * t, y = a[1] + dy * t, z = a[2] + dz * t;
-      if (y > 1.2) for (const s of [-0.7, 0.7]) cyl(root, 0.12, 0.14, y - 0.35, x + Math.cos(ry) * s, 0, z - Math.sin(ry) * s, CHOC, 6);
-      block(x, z, 1.9, 1.9);
-    }
+    // Posts under the raised stretches, every couple of metres; the low ones are walls you walk round.
+    sincePost += len;
+    if (a[1] > 1.2 && sincePost > 2.2) { sincePost = 0; for (const s of [-0.7, 0.7]) cyl(root, 0.12, 0.14, a[1] - 0.35, a[0] + Math.cos(ry) * s, 0, a[2] - Math.sin(ry) * s, CHOC, 6); }
+    block(a[0], a[2], 1.9, 1.9);
   }
   // The splash pool at the foot of the drop, with an icing rim.
   const P = FLUME_POOL;

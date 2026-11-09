@@ -230,29 +230,101 @@ export function trainSpot(i, t) {
   const p = TRAIN_TRACK.at(trainDist(t) - T.gap * (car + 1) - 0.45 + bench * 0.9);
   return { x: p.x + Math.cos(p.ry) * side, y: 0.27, z: p.z - Math.sin(p.ry) * side, ry: p.ry }; // (feet: the bench is 0.65 up)
 }
-// The log flume's channel in the north-east field: [x, y (water level),
-// z], from the station heading west, round and up the lift north, along
-// the top, the big drop south, the splash pool and into the station again. Speeds per stretch (m/s), so the lift
-// is slow and the drop is fast.
-export const FLUME_TRACK = loop([
-  [56.6, 0.4, -16], [44, 0.4, -16], [42.2, 0.4, -17.6], [42, 0.4, -20], // the station (heading west), round the bend
+// A smooth closed path through control points: a centripetal Catmull-Rom
+// spline (the coaster's kind of curve: round bends, no overshoot), walked
+// by distance. pts: the curve every `step` m; ctrl: the control points;
+// at(d): where you are d m along, which way it heads (ry) and how steeply
+// (pitch, + nose down), read off the curve half a metre either side so they
+// turn smoothly too; seg: the stretch (ctrl[seg] → ctrl[seg+1]) you're on.
+function smoothLoop(ctrl, step = 0.25) {
+  const n = ctrl.length, P = (i) => ctrl[((i % n) + n) % n];
+  const knot = (a, b) => Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])) || 1e-4;
+  const fine = [], fineSeg = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+    const t1 = knot(p0, p1), t2 = t1 + knot(p1, p2), t3 = t2 + knot(p2, p3);
+    for (let k = 0; k < 40; k++) {
+      const t = t1 + ((t2 - t1) * k) / 40, q = [0, 0, 0];
+      for (let c = 0; c < 3; c++) {
+        const a1 = ((t1 - t) * p0[c] + t * p1[c]) / t1, a2 = ((t2 - t) * p1[c] + (t - t1) * p2[c]) / (t2 - t1), a3 = ((t3 - t) * p2[c] + (t - t2) * p3[c]) / (t3 - t2);
+        const b1 = ((t2 - t) * a1 + t * a2) / t2, b2 = ((t3 - t) * a2 + (t - t1) * a3) / (t3 - t1);
+        q[c] = ((t2 - t) * b1 + (t - t1) * b2) / (t2 - t1);
+      }
+      fine.push(q); fineSeg.push(i);
+    }
+  }
+  const fcum = [0];
+  for (let i = 1; i <= fine.length; i++) { const a = fine[i - 1], b = fine[i % fine.length]; fcum.push(fcum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])); }
+  const len = fcum[fine.length], N = Math.round(len / step), ds = len / N, pts = [], segOf = [];
+  for (let j = 0, i = 0; j < N; j++) {
+    const d = j * ds;
+    while (fcum[i + 1] < d) i++;
+    const a = fine[i], b = fine[(i + 1) % fine.length], k = (d - fcum[i]) / (fcum[i + 1] - fcum[i] || 1);
+    pts.push([a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]);
+    segOf.push(fineSeg[i]);
+  }
+  const pos = (d) => {
+    d = ((d % len) + len) % len;
+    const j = Math.min(N - 1, Math.floor(d / ds)), a = pts[j], b = pts[(j + 1) % N], k = d / ds - j;
+    return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, z: a[2] + (b[2] - a[2]) * k, j };
+  };
+  const at = (d) => {
+    const p = pos(d), f = pos(d + 0.5), r = pos(d - 0.5), dx = f.x - r.x, dy = f.y - r.y, dz = f.z - r.z;
+    return { x: p.x, y: p.y, z: p.z, ry: Math.atan2(dx, dz), pitch: -Math.atan2(dy, Math.hypot(dx, dz)), seg: segOf[p.j] };
+  };
+  return { ctrl, pts, ds, len, at };
+}
+// The log flume's channel in the north-east field, through these points
+// ([x, y (water level), z]): from the station heading west, round and up
+// the lift north, along the top, the big drop south, the splash pool and
+// into the station again.
+export const FLUME_TRACK = smoothLoop([
+  [57.3, 0.38, -16.15], [55.6, 0.4, -16], [45.4, 0.4, -16], [43.2, 0.4, -16.6], [42.2, 0.4, -18.2], [42, 0.4, -20], // into the station (heading west), round the bend
   [42, 1.2, -21.5], [42, 5.6, -29], [42.6, 6, -31], [44.8, 6, -32.4], [55, 6, -32.4], [57.4, 6, -31], // the lift north, along the top
   [58, 5.9, -28.6], [58, 0.35, -20.6], [58, 0.3, -18.6], [58.2, 0.35, -17.4], // the big drop south, the splash pool
 ]);
-const FLUME_V = [1.6, 1.6, 1.6, 1.4, 0.9, 1.8, 1.8, 1.8, 1.8, 1.8, 7.5, 3.2, 2.2, 1.6];
-const FLUME_T = (() => { const out = [0]; for (let i = 0; i < FLUME_V.length; i++) out.push(out[i] + (FLUME_TRACK.cum[i + 1] - FLUME_TRACK.cum[i]) / FLUME_V[i]); return out; })();
-export const FLUME_LAP_S = FLUME_T[FLUME_T.length - 1];
-export const FLUME_DROP = 10; // the stretch that is the big drop
+export const FLUME_DROP = 12; // the stretch that is the big drop
+const FLUME_START = 3.2; // m along: the boat's middle at the station
+// How fast the boat goes all the way round, like the coaster's: the water
+// carries it at 1.7 m/s; the lift's belt takes it up at a steady 1 m/s
+// (easing on and off); down the drop gravity speeds it up and the water
+// holds it back, hardest in the splash pool; it eases out of the station
+// and back in to stop. v[k] is the speed k·ds past the start, time[k] when
+// it gets there; a lap is scaled to the ride's run.
+const FLUME_RUN = (() => {
+  const T = FLUME_TRACK, ds = 0.1, n = Math.round(T.len / ds), v = [], time = [0];
+  const W = 1.7, BELT = 1, ACC = 0.45, sOf = (i) => { let d = 0; while (T.at(FLUME_START + d).seg !== i) d += 0.1; return d; };
+  const lift0 = sOf(5), lift1 = sOf(8), pool = sOf(14);
+  let sp = 0.3, yPrev = T.at(FLUME_START).y, stopping = false;
+  for (let k = 0; k <= n; k++) {
+    const s = k * ds, y = T.at(FLUME_START + s).y;
+    if (s > lift0 - 0.5 && s < lift1) sp += (BELT - sp) * Math.min(1, ds * 2); // on the belt
+    else {
+      sp = Math.sqrt(Math.max(0.04, sp * sp + 2 * 9.8 * 0.8 * (yPrev - y))); // down a slope: faster
+      const drag = s > pool - 1.5 && s < pool + 4 ? 0.45 : sp > W ? 0.06 : 0.8; // (the splash pool stops it hard)
+      sp += (W - sp) * Math.min(1, ds * drag);
+    }
+    yPrev = y;
+    const easeIn = 0.3 + Math.sqrt(2 * ACC * s), easeOut = 0.15 + Math.sqrt(2 * ACC * Math.max(0, T.len - s));
+    if (s > pool && sp <= easeOut) stopping = true; // (from where the two meet, it slows to a stop)
+    v.push(Math.max(0.15, Math.min(sp, easeIn, stopping ? easeOut : 99)));
+    if (k) time.push(time[k - 1] + (2 * ds) / (v[k - 1] + v[k]));
+  }
+  return { ds, v, time, lap: time[n] };
+})();
+export const FLUME_LAP_S = FLUME_RUN.lap;
 // Where the boat (its middle) is along the channel at t: at the station
-// while it loads, then one lap at the stretches' speeds, scaled to the run.
+// while it loads, then one lap, scaled to the run.
 export function flumeDist(t) {
-  const c = RIDE_CYCLE.flume, r = ridePhase('flume', t);
-  if (r.phase !== 'run') return 2.5;
-  const tt = Math.min(1, r.s / c.run) * FLUME_LAP_S;
-  let i = 0;
-  while (i < FLUME_V.length - 1 && FLUME_T[i + 1] < tt) i++;
-  return 2.5 + FLUME_TRACK.cum[i] + Math.min(tt - FLUME_T[i], FLUME_T[i + 1] - FLUME_T[i]) * FLUME_V[i];
+  const c = RIDE_CYCLE.flume, r = ridePhase('flume', t), R = FLUME_RUN;
+  if (r.phase !== 'run') return FLUME_START;
+  const tt = Math.min(1, r.s / c.run) * R.lap;
+  let lo = 0, hi = R.time.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (R.time[m] <= tt) lo = m; else hi = m; }
+  return FLUME_START + R.ds * (lo + Math.min(1, (tt - R.time[lo]) / (R.time[hi] - R.time[lo] || 1)));
 }
+// The boat's speed at t (m/s along the channel, before the lap is scaled).
+export const flumeSpeed = (t) => { const R = FLUME_RUN; return R.v[Math.min(R.v.length - 1, Math.round((flumeDist(t) - FLUME_START) / R.ds))]; };
 // Seat i: two rows of two in the log, the front row 0.5 m ahead.
 export function flumeSpot(i, t) {
   const row = i >> 1, side = i & 1 ? 0.28 : -0.28;
