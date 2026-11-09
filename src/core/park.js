@@ -103,7 +103,7 @@ export function buildPark(store, ROOM, EXIT) {
   const gy = open ? 0.07 : 0;
   // (pulled towards the camera harder than the street's roads, world.js, so
   // the walk under the lawn never shows through it)
-  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
+  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, store.open.grass ?? '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
   else plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
   plane(open ? w : w + 80, 3, 0, gy + 0.01, bank + 1.6, '#d9c7a6', open ? { polygonOffset: true, polygonOffsetFactor: -5 } : undefined); // path along the river
   const river = open ? { position: new THREE.Vector3(0, 0.03, 0), material: { color: new THREE.Color() } } // (the street's water, world.js)
