@@ -311,9 +311,12 @@ export class RemotePlayers {
       const dist = camera.position.distanceTo(r.position);
       const show = visible && dist < 60;
       const sx = (v.x * 0.5 + 0.5) * width, sy = (-v.y * 0.5 + 0.5) * height;
+      // A flying operator (game/sky-flight.js, "fl") goes without a name
+      // tag: just the costume up there. Chat bubbles still show.
+      const flying = !!p.target.fl;
       for (const el of [p.tag, p.bubble]) {
         if (!el) continue;
-        el.style.display = show ? '' : 'none';
+        el.style.display = show && !(flying && el === p.tag) ? '' : 'none';
         el.style.transform = `translate(-50%, -100%) translate(${sx}px, ${sy - (el === p.bubble ? 24 : 0)}px)`;
       }
     }

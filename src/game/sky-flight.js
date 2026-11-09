@@ -15,7 +15,8 @@
 //
 // Flying: move as usual; Space or R goes up, C or F down (or the ▲ ▼
 // buttons on a phone); Shift or ⚡ (a tap, on until tapped again) dashes.
-// Others see us flying too ("fl" in our state, drawn by core/players.js).
+// Others see us flying too ("fl" in our state, drawn by core/players.js),
+// without our name tag until we land.
 //
 // Carrying: flying low next to someone, 🫴 offers them a ride in one of
 // three poses (one under each arm, under one arm, a princess carry); the
