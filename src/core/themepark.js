@@ -145,7 +145,7 @@ export function buildThemePark(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, park: true, bumper, coaster,
+    rides, stations, tick, time: () => time, park: true, themepark: true, bumper, coaster, // (themepark: only Another Land; the Han River parks are `park: true` too)
     setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); },
   };
 }
