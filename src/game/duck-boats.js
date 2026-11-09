@@ -65,7 +65,6 @@ export function createDuckBoats(game) {
   function startDuckRide() {
     if (game.seated?.duck == null || duckDriver()) return;
     duckRide = new DuckRide(ducks()[game.seated.duck].home, undefined, game.park()?.duckArea || undefined);
-    game.cam.pitch = Math.min(game.cam.pitch, 0.3); game.cam.dist = Math.max(game.cam.dist, 8); // look out over the river
     game.clearAction();
   }
   // A boat's pose from a rider's (seat in the boat's own space, turned with it).

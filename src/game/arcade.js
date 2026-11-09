@@ -5,7 +5,7 @@ import { L, fmt } from '../ui/pocha-ui.js';
 import { dartColorOf, dartPack, dartPinMsg, dartsGoMsg, dartsMsg, pickDartColor } from '../core/arcade.js';
 
 export function createArcade(game) {
-  const { $, cam, myId, safety, sfx, shop } = game;
+  const { $, myId, safety, sfx, shop } = game;
   const arcade = {}; // kind → its UI, once loaded
   const arcadePanel = (kind) => ({ get open() { return !!arcade[kind]?.open; }, close() { arcade[kind]?.close(); } });
   const bowlingUi = arcadePanel('bowling'), climbUi = arcadePanel('climbing'), aimUi = arcadePanel('aim');
@@ -24,11 +24,11 @@ export function createArcade(game) {
   }
   const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < 60000 && game.others.nameOf(dartsInvite.from) ? dartsInvite : null);
   async function openArcade(kind) {
-    // Turn to face the cage, the targets or the board, with the camera behind you.
+    // Turn to face the cage, the targets or the board (the camera stays as the player has it).
     const p = game.me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
     const st = (game.interior?.stations?.[kind] || []).filter((q) => near(q) < 2.5).sort((a, b) => near(a) - near(b))[0];
     if (kind === 'darts') dartsBoard = st?.board ?? 0; // the bar has two boards: the one you stand at
-    if (st?.ry != null) { game.me.root.rotation.y = st.ry; cam.yaw = st.ry + Math.PI; }
+    if (st?.ry != null) game.me.root.rotation.y = st.ry;
     if (!arcade[kind]) {
       // The first time, the panel loads: by then you may have walked off or
       // left; open it only if you are still in the same place.

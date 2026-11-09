@@ -142,7 +142,7 @@ import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -1078,8 +1078,12 @@ const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
 if (onboard === 0 && welcomeNpc) cam.dist = 7.5; // first minute in Bukchon: the guide ahead, the village behind them
 else if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
-let manualCamT = 0; // seconds left before the camera starts following again
-let roomVisit = 0; // counts rooms walked into (the drone show tilts the view once per visit)
+let camOutWait = 0; // seconds before the camera may move back out after a wall
+let manualCamT = 0; // seconds since the player last dragged the view, counted down (walking then goes by the new view)
+// The camera turns only when the player turns it (and on the amusement
+// park's rides). Walking, going through doors, sitting, events and the
+// guide all leave it as it is: a view that moves by itself loses people.
+let doorCam = null; // the street camera when we went in through a door, put back on the way out
 const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
@@ -2182,7 +2186,9 @@ $('revert-look').onclick = () => {
   $('revert-look').hidden = true;
 };
 
-function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
+// The camera keeps its angle to the character (behind stays behind) unless
+// camYaw says where it is.
+function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotation.y) {
   me.root.parent?.remove(me.root);
   targetScene.add(me.root);
   me.root.position.set(x, 0, z);
@@ -2475,15 +2481,13 @@ function enterStore(item, walkIn = null) {
   const store = item.store;
   const built = roomFor(store);
   built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
+  if (mode === 'street') doorCam = { ...cam };
   interior = { ...built, store, front: item };
-  roomVisit++;
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
   if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw);
   else {
-    cam.dist = 7;
-    cam.pitch = 0.7;
     if (built.entry) moveMeTo(built.scene, built.entry.x, built.entry.z, built.entry.ry); // (a room whose door isn't at its south side: the zoo)
     else moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   }
@@ -2764,14 +2768,13 @@ function backToPark() {
   if (fromRunway) {
     // Back in DDP Hall, in front of the runway's door, facing into the hall.
     const d = interior.stations.runwayDoor[0];
-    moveMeTo(interior.scene, d.x, d.z + 0.6, 0, 0.5); // (the camera out in the hall)
+    moveMeTo(interior.scene, d.x, d.z + 0.6, 0);
   } else if (interior.zooPark) {
     // Out of the Sea Animals hall's door onto the zoo's path, facing away from it.
     const d = interior.stations.seaDoor[0];
-    moveMeTo(interior.scene, d.x, d.z, d.ry, d.ry - Math.PI / 2);
+    moveMeTo(interior.scene, d.x, d.z, d.ry);
   } else {
-    // Out in front of the door, the camera to the side so the house stays in view.
-    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
+    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry); // out in front of the door
   }
   hauntFade();
 }
@@ -2833,7 +2836,7 @@ function wireDome(built, store) {
   };
 }
 // walkOut: stepping off an open-air park onto the street (openParks): you
-// come out where you are, no bell, the camera as it was.
+// come out where you are, no bell.
 function leaveStore(walkOut = false) {
   if (mode !== 'store') return;
   const openPark = interior.store?.open ? openParks.find((o) => o.item.store === interior.store) : null;
@@ -2895,17 +2898,16 @@ function leaveStore(walkOut = false) {
     const [wx, wz] = parkWorld(openPark, here.x, here.z);
     const [ex, ez] = findFreeSpot(wx, wz);
     moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry);
-    if (!walkOut) { cam.dist = 9; cam.pitch = 0.42; }
   } else {
-    cam.dist = 9;
-    cam.pitch = 0.42;
-    // Face the street, with the camera to the side so the shop front stays in view.
-    // Step out a little in front of the door, on a spot that is not inside a
+    // Face the street, the camera as it was when we went in (the street looks
+    // the way it did). Step out a little in front of the door, on a spot that is not inside a
     // building (some shop fronts sit close to their neighbours).
     const ry = it.group.rotation.y;
     const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
-    moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
+    moveMeTo(scene, ex, ez, ry, doorCam?.yaw);
+    if (doorCam) { cam.pitch = doorCam.pitch; cam.dist = doorCam.dist; }
   }
+  doorCam = null;
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
@@ -3201,7 +3203,7 @@ if (musicWanted) {
 
 // Guidance to a zone or store.
 let guide = null;
-let routeTimer = 0, routeLen = 0, faceRoute = false;
+let routeTimer = 0, routeLen = 0;
 let routePoly = null; // the current route along the streets
 // Auto-walk: follow the route without steering. Any stick/key input stops it.
 let autoWalk = false;
@@ -3218,8 +3220,7 @@ function setGuide(g) {
   if (onboard >= 2) $('info-hint').hidden = true; // a way is chosen: the info centre card would cover the guide bar
   routePoly = null; // plan a new route
   $('guide').hidden = mode !== 'street';
-  routeTimer = 0; // draw the route on the next frame
-  faceRoute = true; // and turn the camera to look along it
+  routeTimer = 0; // draw the route on the next frame (the camera stays as it is: the line shows the way)
 }
 function clearGuide() {
   guide = null;
@@ -5153,7 +5154,6 @@ function boardCable(i, st) {
   if (c.at !== st || !doorsOpen(c)) return;
   if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
   cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? wallet.lastOp : null };
-  cam.yaw = st === 'low' ? 0 : Math.PI; // look along the way, the view behind
   sendTimer = 0;
   if (st === 'low') missionEvent('ride');
 }
@@ -5174,7 +5174,6 @@ function updateCable() {
     const s = boardSpot(cable.cabin, to);
     me.root.position.set(s.x, s.y, s.z);
     me.root.rotation.y = to === 'top' ? Math.PI : 0;
-    cam.yaw = me.root.rotation.y + Math.PI;
     cable = null;
     sendTimer = 0;
     shop.toast(L(CABLE_TEXT[to]));
@@ -5213,7 +5212,7 @@ const duckUi = new DuckUI({
 // turns its sky to night and flies the drones). Here: the game-wide notice
 // 10 minutes before, the lift-off and photo-time notices in the park, the
 // show music (only if music is on), and a camera that can look up.
-const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
+const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null };
 const dronePark = () => { const h = hanPark(); return h?.show ? h : null; }; // (Ttukseom's, laid on the street)
 // In the park while it's dark: the camera may tilt below level to look up.
 const skyLook = () => (dronePark()?.show.night || 0) > 0.5 || fireworks.look;
@@ -5228,12 +5227,6 @@ function updateDroneShow() {
       droneShow.lifted = show.now.start;
       shop.toast(L(DRONE_TEXT.lift));
     }
-    // Walking in while it's dark (or the lift-off): tilt the view up to
-    // the sky once, unless the player is steering the camera.
-    if (show.night > 0.5 && droneShow.camRoom !== show.now.start + ':' + roomVisit && manualCamT <= 0) {
-      droneShow.camRoom = show.now.start + ':' + roomVisit;
-      cam.pitch = -0.08;
-    }
     if (show.photo && t >= show.photo[0] && t < show.photo[0] + 20 && droneShow.photo !== show.now.start) { droneShow.photo = show.now.start; shop.toast(L(DRONE_TEXT.photo)); }
   }
   const wantMusic = !!(show?.now && show.night > 0.5 && show.now.on);
@@ -5247,7 +5240,7 @@ function updateDroneShow() {
 // night (weather.nightMix, only on and around the island), the sparks, the
 // booms (sound travels slower than light: about 0.3 s per 100 m) and the
 // notices on the lawn.
-const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
+const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, sky: null, loading: false, look: false, lastBoom: 0 };
 // Ttukseom's drone show turns the street's sky dark too, in and around its
 // park (fading out from 100 to 250 m off it), as Yeouido's fireworks do.
 function droneNight(p, street) {
@@ -5273,9 +5266,6 @@ function updateFireworks() {
     if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
     if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
     if (t >= 3420 && t < 3440 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
-    // On the park's shore while it's dark: tilt the view up to the sky once.
-    const [, v] = yeouidoUV(p.x, p.z);
-    if (s.night > 0.5 && v > -5 && v < 45 && fireworks.cam !== s.start && manualCamT <= 0) { fireworks.cam = s.start; cam.pitch = -0.06; }
   }
   // The sparks: loaded when you're within about 900 m.
   const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;
@@ -5309,7 +5299,7 @@ const hanParks = createHanParks({
   makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
-  onVisit: (store) => { roomVisit++; missionEvent('visit', store.id); }, // (as walking into a shop does)
+  onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
   // What there is to do there (each made only when you're next to it).
   acts: {
     duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
@@ -5551,11 +5541,8 @@ const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x,
 let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
   const ry = hanPark()?.frame?.ry || 0; // (a park laid on the street: its river is where its frame says)
-  me.root.rotation.y = Math.PI + ry; // face the river (north)…
-  // …with the camera low behind one shoulder, so the cast and the bobber
-  // out on the water are in view above the panel.
+  me.root.rotation.y = Math.PI + ry; // face the river (north); the camera stays where the player has it
   fishCam = { pitch: cam.pitch, dist: cam.dist };
-  Object.assign(cam, { yaw: (innerWidth < innerHeight ? -0.4 : -0.7) + ry, pitch: 0.3, dist: 6 });
   fishingUi.show();
 }
 function openMarket() {
@@ -5958,7 +5945,7 @@ function sitDown(seat) {
   seated = seat;
   me.root.position.set(seat.x, seat.y || 0, seat.z); // (y: low on the edge of a stream)
   me.root.rotation.y = seat.ry;
-  cam.yaw = seat.ry + Math.PI;
+  if (seat.bumper != null) cam.yaw = seat.ry + Math.PI; // a bumper car (a park ride): behind the wheel
   sendTimer = 0; // tell others right away
   missionEvent('sit');
   if (seat.academy) academyUi.show();
@@ -6268,7 +6255,7 @@ function updateAction(p, tSec) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
       next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => {
         if (st.lie) { useGymSpot(st, st.kind); return; } // the bench: lie down on it
-        if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; cam.yaw = Math.PI * 0.8; } // hang under the bar
+        if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; } // hang under the bar
         gymUi.show(st.kind);
       } };
     } else if (!gymUi.open && studioSpot(p)) {
@@ -6448,17 +6435,6 @@ function updateGuide(p, dt) {
     routeLine.set(poly);
     routeLen = 0;
     for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
-    if (faceRoute) {
-      faceRoute = false;
-      // Look towards the route point about 8 m ahead.
-      let ax = poly[1][0], az = poly[1][1], acc = 0;
-      for (let i = 1; i < poly.length; i++) {
-        acc += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
-        [ax, az] = poly[i];
-        if (acc > 8) break;
-      }
-      if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
-    }
   }
   // Arrived: close by, and not just on the other side of a wall.
   if (dist < (guide.kind === 'npc' ? 2.5 : 6) && routeLen < 10) {
@@ -6650,35 +6626,34 @@ renderer.setAnimationLoop((now) => {
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
-  // Third-person follow: while walking, the camera swings round behind the
-  // character, so running sideways turns into running forward. Paused for a
-  // moment after the player drags the view themselves.
-  // Auto-walk and the tandem back seat follow too (nobody is steering).
-  const carried = (autoWalk && speed01 > 0.05) || (riding === 3 && speed01 > 0.05);
-  if ((mag > 0.05 || carried) && manualCamT <= 0 && !DEBUG_TOP) {
-    const behind = me.root.rotation.y + Math.PI;
-    let d = behind - cam.yaw;
-    d = Math.atan2(Math.sin(d), Math.cos(d));
-    // Don't spin round when walking straight towards the camera.
-    if (Math.abs(d) < 2.7 || carried) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
-  }
+  // (No follow swing: the camera turns only when the player drags it. It
+  // used to swing round behind the character while walking, and on phones a
+  // wobbly thumb on the stick kept the view turning; players got lost.)
 
   // Camera follow.
   // Keep the camera out of buildings: walk back from the player and stop
   // just before the first wall.
   let horiz = Math.cos(cam.pitch) * cam.dist;
-  if (mode === 'street' && !sky.busy) {
-    const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+  const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+  const wall = mode === 'street' && !sky.busy ? (d) => (byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)
+    : interior?.camBlocked ? (d) => interior.camBlocked(p.x + sy * d, p.z + cy0 * d) // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
+      : null;
+  if (wall) {
     for (let d = 1; d <= horiz; d += 0.5) {
-      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)) { horiz = Math.max(1.5, d - 0.6); break; }
-    }
-  } else if (interior?.camBlocked) { // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
-    const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
-    for (let d = 1; d <= horiz; d += 0.5) {
-      if (interior.camBlocked(p.x + sy * d, p.z + cy0 * d)) { horiz = Math.max(1.5, d - 0.6); break; }
+      if (!wall(d)) continue;
+      // Find the wall to about 6 cm, so the distance glides instead of
+      // jumping in half-metre steps as we walk (that read as shaking).
+      let lo = d - 0.5, hi = d;
+      for (let k = 0; k < 3; k++) { const m = (lo + hi) / 2; if (wall(m)) hi = m; else lo = m; }
+      horiz = Math.max(1.5, hi - 0.6);
+      break;
     }
   }
-  camHoriz += (horiz - camHoriz) * Math.min(1, dt * (horiz < camHoriz ? 20 : 4));
+  // In fast (never inside a wall), out only once the way has been clear for
+  // a moment: walking past doorways and posts, the camera doesn't pump in
+  // and out.
+  if (horiz < camHoriz) { camHoriz += (horiz - camHoriz) * Math.min(1, dt * 20); camOutWait = 0.6; }
+  else if ((camOutWait -= dt) <= 0) camHoriz += (horiz - camHoriz) * Math.min(1, dt * 3);
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
   const cz = p.z + Math.cos(cam.yaw) * camHoriz;
   // Lower the camera with the distance so a close camera doesn't look straight down.

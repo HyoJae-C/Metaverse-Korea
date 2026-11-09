@@ -154,7 +154,6 @@ export function createBeauty(game) {
     for (let i = 1; i < path.length; i++) lens.push(Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
     surgery = { t: 0, look, st, gurney, staff, doctor: speaker(staff[0]), path, lens, total: lens.reduce((a, b) => a + b, 0), swapped: false, ry: 0 };
     game.seated = { surgery: true, lie: true, x: p.x, z: p.z, ry: 0, stand: st.door };
-    Object.assign(game.cam, { dist: 7.5, pitch: 0.75 });
     game.shop.toast(t('surgery.go'));
     say(surgery.doctor, $('labels'), ['걱정 마세요!', 'geokjeong maseyo!', t('surgery.doctor')]);
   }
@@ -217,8 +216,7 @@ export function createBeauty(game) {
         r.scale.setScalar(1);
       });
       p.set(s.st.door[0], 0, s.st.door[1] + 0.6);
-      game.cam.yaw = Math.PI * 0.15; game.cam.dist = 3.2; game.cam.pitch = 0.25;
-      game.me.root.rotation.y = game.cam.yaw; // turn round to show the new face
+      game.me.root.rotation.y = game.cam.yaw; // turn round to the camera to show the new face
       game.me.play('cheer');
       $('photo-count').hidden = false;
       $('photo-count').textContent = '✨ ' + t('surgery.done');
