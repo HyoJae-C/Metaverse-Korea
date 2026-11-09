@@ -5238,6 +5238,16 @@ function lightOpenPark(built) {
   L3.ambient.intensity = ambient.intensity; L3.ambient.color.copy(ambient.color);
   L3.sun.intensity = sun.intensity; L3.sun.color.copy(sun.color);
 }
+function freeParkSpot(col, x, z) {
+  if (!col.blocked(x, z, PLAYER_R + 0.05)) return [x, z];
+  for (let r = 0.25; r <= 3; r += 0.25) {
+    for (let a = 0; a < 16; a++) {
+      const g = (a / 16) * Math.PI * 2, px = x + Math.cos(g) * r, pz = z + Math.sin(g) * r;
+      if (!col.blocked(px, pz, PLAYER_R + 0.05)) return [px, pz];
+    }
+  }
+  return [x, z];
+}
 function updateOpenParks(dt) {
   if (!openParks.length) return;
   const p = me.root.position;
@@ -5267,7 +5277,10 @@ function updateOpenParks(dt) {
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
     if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro) {
-      enterStore(o.item, { x: lx, z: lz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
+      // (the street has no trees or bushes where the park has some: step in
+      // beside one, never into it, or you'd be stuck there)
+      const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
+      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
       return;
     }
   }
