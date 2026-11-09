@@ -29,6 +29,8 @@ const ZOO_FOOD = {
 };
 const ZOO_IN = {
   hall: { en: 'Go into the Sea Animals hall', ko: '바다동물관 들어가기', ja: '海の動物館に入る', zh: '进入海洋动物馆' },
+  hallSoon: { en: '🚧 The Sea Animals hall is getting ready. Opening soon!', ko: '🚧 바다동물관은 준비중입니다! 곧 문을 열어요.', ja: '🚧 海の動物館は準備中です。もうすぐオープン！', zh: '🚧 海洋动物馆正在准备中，即将开放！' },
+  hallShut: { en: 'Sea Animals hall: getting ready', ko: '바다동물관 준비중', ja: '海の動物館は準備中', zh: '海洋动物馆准备中' },
   soon: { en: '🚧 The zoo is opening soon: the animals are still moving in. Have a look round!', ko: '🚧 동물원은 개장 준비 중이에요. 동물들이 이사 오는 중이니 먼저 둘러보세요!', ja: '🚧 動物園はまもなくオープン。動物たちが引っ越し中です。ひと足先に見てまわろう！', zh: '🚧 动物园即将开放，动物们正在搬进来。先来逛逛吧！' },
 };
 const KEEPER_TALK = [
@@ -142,8 +144,10 @@ export function createZooVisit(game) {
     if (!game.wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { game.shop.toast(game.fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
     if (zoo.feedMelon(P, p.x, p.z)) game.me.play?.('wave');
   } });
-  const hallAct = () => ({ key: 'zoo-hall', label: '🦭 ' + L(ZOO_IN.hall), run: () => game.enterSeaHall() });
-  const atHallDoor = (p) => built.stations.seaDoor.some((d) => Math.hypot(p.x - d.x, p.z - d.z) < 1.8);
+  const hallAct = () => (built.stations.seaReady === false // (getting ready: barred, a sign up)
+    ? { key: 'zoo-hall-shut', label: '🚧 ' + L(ZOO_IN.hallShut), run: () => game.shop.toast(L(ZOO_IN.hallSoon)) }
+    : { key: 'zoo-hall', label: '🦭 ' + L(ZOO_IN.hall), run: () => game.enterSeaHall() });
+  const atHallDoor = (p) => built.stations.seaDoor.some((d) => Math.hypot(p.x - d.x, p.z - d.z) < (built.stations.seaReady === false ? 2.6 : 1.8));
 
   return {
     CART, carts, camels, adopt,

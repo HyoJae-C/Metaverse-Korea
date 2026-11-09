@@ -91,6 +91,56 @@ function trees(scene, spots) {
   for (const m of [trunk, crown]) { m.computeBoundingSphere(); m.userData.noShadow = true; scene.add(m); }
 }
 
+// The Sea Animals hall while it gets ready: a striped barrier across its
+// door with a "준비중" plate on it, and a bigger plate hung on its name
+// board (pen.boardAt along the north wall, 1.2 m out: core/zoo.js).
+const READY_TEXT = ['준비중입니다!', 'Getting ready · Opening soon'];
+function readyPlate(w, h) {
+  const tex = canvasTex(512, 200, (c, W, H) => {
+    c.fillStyle = '#f2b632'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#fffaf0'; c.fillRect(10, 10, W - 20, H - 20);
+    c.fillStyle = '#c0392b'; c.textAlign = 'center';
+    c.font = 'bold 78px sans-serif'; c.fillText('🚧 ' + READY_TEXT[0], W / 2, 102, W - 30);
+    c.fillStyle = '#5b3b26'; c.font = '38px sans-serif'; c.fillText(READY_TEXT[1], W / 2, 162, W - 30);
+  });
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
+}
+function readySign(sd, pen) {
+  const g = new THREE.Group();
+  const bx = pen.x + (pen.boardAt || 0), bz = pen.z - pen.d / 2 - 1.2; // the name board
+  const plate = readyPlate(2.0, 0.78);
+  plate.position.set(bx, 1.42, bz - 0.12);
+  plate.rotation.set(-0.06, Math.PI, 0); // (hung from the top: leaning out a little)
+  g.add(plate);
+  for (const o of [-0.7, 0.7]) { // its two strings, up to the board's top edge
+    const str = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4), mat('#3b2a1e'));
+    str.position.set(bx + o, 1.92, bz - 0.1);
+    g.add(str);
+  }
+  const z = sd.z - 1.2; // the barrier, a step out from the door
+  for (const o of [-2, 2]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.1, 8), mat('#e8e2d6'));
+    post.position.set(sd.x + o, 0.55, z);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.08, 10), mat('#3a3a3a'));
+    foot.position.set(sd.x + o, 0.04, z);
+    g.add(post, foot);
+  }
+  const stripes = canvasTex(256, 32, (c, W, H) => {
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#d63a2f'; for (let x = -H; x < W; x += 2 * H) { c.beginPath(); c.moveTo(x, H); c.lineTo(x + H, 0); c.lineTo(x + 2 * H, 0); c.lineTo(x + H, H); c.fill(); }
+  });
+  for (const y of [0.95, 0.55]) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.14, 0.05), new THREE.MeshLambertMaterial({ map: stripes }));
+    bar.position.set(sd.x, y, z);
+    g.add(bar);
+  }
+  const small = readyPlate(1.3, 0.5);
+  small.position.set(sd.x, 0.76, z - 0.04);
+  small.rotation.y = Math.PI;
+  g.add(small);
+  return g;
+}
+
 // A seeded random, so every visitor's woods are the same.
 function seeded(seed) {
   let s = seed;
@@ -197,6 +247,15 @@ export function buildZooPark(store, ROOM, EXIT) {
   glass.position.set(sd.x, 1.4, sd.z - 0.08);
   glass.rotation.y = Math.PI;
   scene.add(hallDoor, glass);
+  // Not open yet (pen.ready false): a barrier across its door and a
+  // "getting ready" plate hung on the front of its name board.
+  const seaPen = GROUNDS.pens.find((P) => P.id === 'sea');
+  const seaReady = seaPen?.ready !== false;
+  if (!seaReady) {
+    const parts = readySign(sd, seaPen);
+    scene.add(parts);
+    colliders.push({ p: [[sd.x - 2.3, sd.z - 1.4], [sd.x + 2.3, sd.z - 1.4], [sd.x + 2.3, sd.z], [sd.x - 2.3, sd.z]] });
+  }
 
   // Benches round the flower plaza, facing the flowers.
   const PZ = GROUNDS.flowers, pr = PZ.plaza[0];
@@ -219,7 +278,7 @@ export function buildZooPark(store, ROOM, EXIT) {
 
   const stations = {
     watchers: patronSpots(GROUNDS.pens), // (not `patrons`: game/zoo-visit.js puts them there, to hide the far ones)
-    seaDoor: [sd.out],
+    seaDoor: [sd.out], seaReady,
   };
   let time = 0;
   const tick = (dt, p) => {

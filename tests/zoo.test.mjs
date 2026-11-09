@@ -135,8 +135,14 @@ test('inside the Sea Animals hall: three tanks behind glass, seals, a walrus and
 test('the little animal village: a solid barn, food at its door, a keeper, and animals that eat from your hand', () => {
   const pet = PENS.find((p) => p.pet);
   const [sx, sz] = pet.shop.at;
-  const [x0, z0, x1, z1] = pet.solid[0];
-  assert.ok(sx > x0 && sx < x1 && sz > z1, 'the counter stands in front of the barn, outside it');
+  const barn = pet.solid[0].p;
+  assert.ok(!inPolygon(sx, sz, barn), 'the counter stands outside the barn');
+  const [, bxx, bzz, ry] = pet.props.find((q) => q[0] === 'barn');
+  assert.ok(Math.abs(Math.atan2(sx - bxx, sz - bzz) - ry) < 0.05, 'in front of its door');
+  const gate = [pet.gate.at, -pet.d / 2], toGate = Math.atan2(gate[0] - bxx, gate[1] - bzz);
+  assert.ok(Math.cos(ry - toGate) > 0.85, 'the door and the counter face the gate, so you see them as you come in');
+  assert.ok(Math.abs(Math.sin(ry)) > 0.5 && Math.abs(Math.cos(ry)) > 0.5, 'turned corner-on (diagonal)');
+
   const zoo = new Zoo(new THREE.Scene(), [{ ...pet, name: null }]);
   assert.ok(zoo.shopSpot(pet.x + sx, pet.z + sz));
   assert.ok(zoo.keeperSpot(pet.x + pet.keeper.at[0], pet.z + pet.keeper.at[1]));
@@ -601,7 +607,7 @@ test('riding a camel: pay at the stand, sit on the saddle, carried round, off at
 test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL on them', async () => {
   const { hallMurals, ART } = await import('../src/core/zoo-murals.js');
   const sea = PENS.find((p) => p.id === 'sea');
-  assert.ok(sea.murals?.length >= 3, 'three murals');
+  assert.ok(sea.murals?.length >= 4, 'murals round the hall');
   const ms = hallMurals(sea, 7.5);
   assert.equal(ms.length, sea.murals.length);
   for (const m of ms) {
@@ -611,11 +617,12 @@ test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL
     const n = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y);
     assert.ok(n.x * p.x + n.z * p.z > 0, `${m.name} faces out`);
   }
-  const door = ms.find((m) => m.name === 'mural:penguins');
-  assert.ok(Math.abs(door.position.x) - door.geometry.parameters.width / 2 > 1.6, 'the door stays clear');
-  assert.ok(Math.abs(door.position.x - (sea.boardAt || 0)) > door.geometry.parameters.width / 2 + 1, 'and so does the name board');
-  // Every picture says the game's name.
-  for (const [name, [w, h, draw]] of Object.entries(ART)) {
+  for (const door of ms.filter((m) => Math.abs(m.position.z + sea.d / 2 + 0.17) < 0.01)) {
+    assert.ok(Math.abs(door.position.x) - door.geometry.parameters.width / 2 > 1.6, `${door.name}: the door stays clear`);
+  }
+  assert.deepEqual([...new Set(sea.murals.map((m) => m.side))].sort(), ['e', 'n', 's', 'w'], 'pictures on all four walls');
+  // The pictures say the game's name (the one beside the door says the hall's).
+  for (const [name, [w, h, draw]] of Object.entries(ART).filter(([k]) => k !== 'friends')) {
     const said = [];
     const c = new Proxy({}, { get: (_, k) => (k === 'fillText' || k === 'strokeText' ? (t) => said.push(t) : () => ({})), set: () => true });
     draw(c, w, h);
@@ -649,4 +656,28 @@ test('the camel ride: the rider sits a touch behind the middle of the saddle', a
   const along = (s.x - c.position.x) * Math.sin(c.rotation.y) + (s.z - c.position.z) * Math.cos(c.rotation.y);
   assert.ok(RIDER_BACK > 0 && RIDER_BACK < 0.15, 'only a little');
   assert.ok(Math.abs(along - (SEAT.z - RIDER_BACK) * c.scale.x) < 1e-6 && along < 0, `behind the middle: ${along.toFixed(3)} m`);
+});
+
+test('the Sea Animals hall is getting ready: its door is barred and a sign hangs on its name board', async () => {
+  const { ZOO_PARK_ROOM, ZOO_PARK_EXIT } = await import('../src/core/zoo-rooms.js');
+  const { buildZooPark } = await import('../src/core/zoo-park.js');
+  const sea = PENS.find((p) => p.id === 'sea');
+  assert.equal(sea.ready, false);
+  const r = buildZooPark({ id: ZOO_STORE }, ZOO_PARK_ROOM, ZOO_PARK_EXIT);
+  assert.equal(r.stations.seaReady, false);
+  const blocked = (x, z) => r.colliders.some((c) => inPolygon(x, z, c.p));
+  assert.ok(blocked(SEA_DOOR.x, SEA_DOOR.z - 0.5), 'you can\'t walk up to the door');
+  assert.ok(!blocked(SEA_DOOR.out.x, SEA_DOOR.out.z - 0.3), 'the path in front stays open');
+  const { createZooVisit } = await import('../src/game/zoo-visit.js');
+  const toasts = [];
+  const v = createZooVisit({
+    inZoo: () => true, L: (o) => o.en, fmt: (s) => s, t: (k) => k, shop: { toast: (m) => toasts.push(m) },
+    sounds: { attach() {} }, makeNpc: () => ({ tag: { style: {} }, ch: { root: new THREE.Object3D() } }), randomLook: () => ({}),
+    riding: 0, seated: null, enterSeaHall: () => { throw new Error('the hall is shut'); },
+  });
+  v.adopt(r);
+  const a = v.action({ x: SEA_DOOR.out.x, z: SEA_DOOR.out.z - 0.4 });
+  assert.equal(a.key, 'zoo-hall-shut');
+  a.run();
+  assert.ok(/getting ready/i.test(toasts[0]));
 });
