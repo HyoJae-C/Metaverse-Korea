@@ -15,7 +15,7 @@ test('Itaewon has four bars, each a different style, all alcohol-free', () => {
   assert.deepEqual(bars.map(barStyleOf).sort(), [...BAR_STYLES].sort());
   for (const b of bars) {
     const [x, z] = b.at;
-    assert.ok(x - ox > -640 && x - ox < 340 && z - oz > -182 && z - oz < 246, b.id + ' is in Itaewon');
+    assert.ok(x - ox > -640 && x - ox < 780 && z - oz > -340 && z - oz < 246, b.id + ' is in Itaewon'); // (out to the top of Gyeongnidan-gil)
     assert.ok(b.products.length >= 4, b.id);
     for (const p of b.products) assert.ok(!/\b(soju|wine|whisky|vodka|rum|gin)\b/i.test(p.name.en) || /alcohol-free/i.test(p.name.en), p.id);
   }
@@ -33,7 +33,7 @@ test('the bars stand on open ground on Itaewon-ro (either side), a shop front ap
 
 test('the clubs and bars stand together, between Itaewon Square and Noksapyeong-daero', () => {
   // One nightlife strip both sides of Itaewon-ro, not dotted along it. The
-  // taproom is the exception: it belongs by Gyeongnidan-gil, Itaewon's east gate.
+  // taproom is the exception: it is up on Gyeongnidan-gil, at the top of the hill.
   const night = stores.filter((s) => (s.category === 'club' || s.category === 'bar') && s.id !== 'hilltop-taproom');
   assert.ok(night.length >= 6);
   for (const s of night) assert.ok(s.at[0] - ox > 26 && s.at[0] - ox < 170, s.id + ' is on the strip');

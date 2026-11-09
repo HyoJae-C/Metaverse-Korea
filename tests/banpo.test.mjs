@@ -29,8 +29,8 @@ test('Jamsu Bridge crosses the river from Itaewon, through a gap in the river', 
   const north = world(bridge.p[0]);
   assert.ok(Math.hypot(link.p.at(-1)[0] - north[0], link.p.at(-1)[1] - north[1]) < 1, 'the link road meets the bridge');
   const itaewon = region.districts.find((d) => d.id === 'itaewon');
-  const hoenamu = read(itaewon.map).roads.find((r) => r.n?.en === 'Hoenamu-ro');
-  assert.equal(link.p[0][1], hoenamu.p[0][1] + itaewon.offset[1], 'it starts on Hoenamu-ro');
+  const seobinggo = read(itaewon.map).roads.find((r) => r.n?.en === 'Seobinggo-ro');
+  assert.equal(link.p[0][1], seobinggo.p[0][1] + itaewon.offset[1], 'it starts on Seobinggo-ro');
   // Walk the bridge: no river blocker on its middle.
   const [a, b] = bridge.p;
   for (let t = 0; t <= 1; t += 0.05) {

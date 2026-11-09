@@ -39,7 +39,7 @@ function nearestFacade(buildings, x, z, isBlocked) {
       t = Math.max(margin / len, Math.min(1 - margin / len, t));
       const px = x1 + dx * t, pz = z1 + dz * t;
       const d = Math.hypot(px - x, pz - z);
-      if (d <= 40) cands.push({ d, px, pz, dx: dx / len, dz: dz / len, poly: p });
+      if (d <= 40) cands.push({ d, px, pz, dx: dx / len, dz: dz / len, poly: p, y: b.y || 0 });
     }
   }
   cands.sort((a, b) => a.d - b.d);
@@ -53,7 +53,7 @@ function nearestFacade(buildings, x, z, isBlocked) {
       // a raised ground floor, are not in the collision map).
       if (pointInPoly(c.px + nx * s * 0.5, c.pz + nz * s * 0.5, c.poly)) continue;
       if (!isBlocked || (!isBlocked(fx, fz) && !isBlocked(c.px + nx * s * 1.7, c.pz + nz * s * 1.7))) {
-        return { x: c.px, z: c.pz, nx: nx * s, nz: nz * s };
+        return { x: c.px, z: c.pz, y: c.y, nx: nx * s, nz: nz * s }; // y: the floor, up a hill
       }
     }
   }
@@ -132,7 +132,7 @@ export class Storefronts {
         continue;
       }
       const group = new THREE.Group();
-      group.position.set(f.x, 0, f.z);
+      group.position.set(f.x, f.y, f.z);
       group.rotation.y = Math.atan2(f.nx, f.nz); // +z faces the street
       scene.add(group);
 
