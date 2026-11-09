@@ -26,15 +26,19 @@ export function createDuckBoats(game) {
   const ducks = () => game.park()?.ducks;
   let duckRide = null; // my trip while I steer (core/duck-boat.js)
   let duckFollowed = false; // I rode along with a friend steering
+  // Others in this park, with where they are in its metres (an open-air
+  // park's people are on the street's network, in the street's metres).
+  const peerAt = (o) => (game.peerLocal ? game.peerLocal(o.ch.root) : { x: o.ch.root.position.x, z: o.ch.root.position.z, ry: o.ch.root.rotation.y });
+  function* peers() { for (const [id, o] of game.others.players) if (o.target?.db && peerAt(o)) yield [id, o]; }
   // Which boat each person is in (me and others), to place the boats.
   function duckRiders(i) {
     let n = game.seated?.duck === i ? 1 : 0;
-    for (const o of game.others.players.values()) if (o.target?.db === i + 1) n++;
+    for (const [, o] of peers()) if (o.target.db === i + 1) n++;
     return n;
   }
   function boardDuck(i) {
     const d = ducks()[i];
-    const taken = [...game.others.players.values()].filter((o) => o.target?.db === i + 1).map((o) => o.target.dbs | 0);
+    const taken = [...peers()].map(([, o]) => o).filter((o) => o.target.db === i + 1).map((o) => o.target.dbs | 0);
     const seat = taken.includes(0) ? 1 : 0;
     if (duckRiders(i) >= DUCK_SEATS.length) { game.shop.toast(L(DUCK_TEXT.full)); return; }
     duckRide = null; duckFollowed = false;
@@ -44,7 +48,7 @@ export function createDuckBoats(game) {
   // Someone else in my boat who is steering it (they send st.dr).
   const duckDriver = () => {
     if (game.seated?.duck == null) return null;
-    for (const [id, o] of game.others.players) if (o.target?.db === game.seated.duck + 1 && o.target.dr) return { id, o };
+    for (const [id, o] of peers()) if (o.target.db === game.seated.duck + 1 && o.target.dr) return { id, o };
     return null;
   };
   function startDuckRide() {
@@ -88,7 +92,7 @@ export function createDuckBoats(game) {
     for (const d of ducks()) {
       if (d.i === mine) continue;
       let driven = false;
-      for (const o of game.others.players.values()) if (o.target?.db === d.i + 1 && o.target.dr) { driven = true; break; }
+      for (const [, o] of peers()) if (o.target.db === d.i + 1 && o.target.dr) { driven = true; break; }
       list.push({ x: d.g.position.x, z: d.g.position.z, vx: d.vx || 0, vz: d.vz || 0, fixed: !driven, i: d.i });
     }
     return list;
@@ -111,7 +115,8 @@ export function createDuckBoats(game) {
         if (duckRide.docked) { duckRide = null; game.standUp(); game.shop.toast(L(DUCK_TEXT.docked)); game.clearAction(); return; }
       } else if (drv) {
         const o = drv.o;
-        b = boatFromRider(o.ch.root.position.x, o.ch.root.position.z, o.ch.root.rotation.y, o.target.dbs | 0);
+        const q = peerAt(o);
+        b = boatFromRider(q.x, q.z, q.ry, o.target.dbs | 0);
         duckFollowed = true;
         game.duckUi.hud({ left: Math.max(0, o.target.dr - 1), returning: o.target.dr === 1, driver: game.others.nameOf(drv.id) || '?' });
       } else {
@@ -125,11 +130,11 @@ export function createDuckBoats(game) {
       game.me.root.rotation.y = b.ry + Math.PI;
       moved.add(game.seated.duck);
     } else game.duckUi.hud(null);
-    for (const o of game.others.players.values()) {
-      const i = (o.target?.db | 0) - 1;
+    for (const [, o] of peers()) {
+      const i = (o.target.db | 0) - 1;
       if (i < 0 || i >= ducks().length || moved.has(i)) continue;
-      const r = o.ch.root;
-      placeBoat(ducks()[i], boatFromRider(r.position.x, r.position.z, r.rotation.y, o.target.dbs | 0));
+      const q = peerAt(o);
+      placeBoat(ducks()[i], boatFromRider(q.x, q.z, q.ry, o.target.dbs | 0));
       moved.add(i);
     }
     for (const d of ducks()) if (!moved.has(d.i)) { // empty: back at the dock, bobbing
