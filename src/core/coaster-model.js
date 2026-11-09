@@ -7,8 +7,9 @@
 // the stretches low enough that you could walk into a passing train.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
+import { mergeStatic } from './merge-static.js';
 import { COASTER_NAME } from './park-rides.js';
-import { CARS, CAR_GAP, GATE, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
+import { BOARD_S, CARS, CAR_GAP, GATE, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
 
 const mat = matCache({ flatShading: true });
 export const TRAIN_PINK = '#ff5f9e';
@@ -77,7 +78,16 @@ function makeCar(front) {
   box(1.2, 0.08, 1.56, 0, 0.32, 0, ICING); // icing rim
   box(1.0, 0.42, 0.14, 0, 0.5, -0.62, TRAIN_PINK); // seat back
   box(1.04, 0.06, 0.18, 0, 0.73, -0.62, ICING);
-  box(0.9, 0.06, 0.06, 0, 0.62, 0.32, '#c9c9d4'); // lap bar
+  // The lap bar, hinged at the front of the tub: up while you get on and
+  // off, down for the ride (the tick turns it).
+  const bar = new THREE.Group();
+  bar.position.set(0, 0.4, 0.5);
+  const lap = box(0.9, 0.06, 0.06, 0, 0.22, -0.18, '#c9c9d4');
+  for (const sx of [-0.42, 0.42]) { const arm = box(0.05, 0.24, 0.05, sx, 0.11, -0.09, '#c9c9d4'); arm.rotation.x = -0.68; bar.add(arm); }
+  bar.add(lap);
+  mergeStatic(bar); // (one mesh)
+  g.add(bar);
+  g.userData.bar = bar;
   if (front) {
     const nose = box(1.1, 0.5, 0.5, 0, 0.2, 0.9, TRAIN_PINK);
     nose.rotation.x = -0.35;
@@ -281,7 +291,12 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
     t += dt;
     for (let k = 0; k < TRAINS; k++) {
       const tr = trainAt(now, k);
-      trains[k].forEach((car, c) => placeOnTrack(car, tr.s - 0.9 - c * CAR_GAP, f));
+      const up = (tr.phase === 'board' && tr.p < BOARD_S - 1) || tr.phase === 'unload' ? 1.2 : 0;
+      trains[k].forEach((car, c) => {
+        placeOnTrack(car, tr.s - 0.9 - c * CAR_GAP, f);
+        const b = car.userData.bar;
+        b.rotation.x += (up - b.rotation.x) * Math.min(1, dt * 4 || 1);
+      });
     }
     if (!lowSpec) waveFlags(t);
     else if (Math.floor(t * 4) !== Math.floor((t - dt) * 4)) waveFlags(t);
