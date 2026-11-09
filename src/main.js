@@ -665,7 +665,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0] - 36, palaceAt[1] - 20]; // the front court, past Gwanghwamun and west of the way to Heungnyemun (the king keeps to the courts behind it)
+const fanAt = palaceAt && [palaceAt[0] - 36, palaceAt[1] - 15]; // the front court, past Gwanghwamun and west of the way to Heungnyemun (the king keeps to the courts behind it)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -4509,7 +4509,7 @@ let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past
 // Heungnyemun), and just inside either gate 'Leave' takes you back out.
-const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -7], [0, -40]] }; // in the palace district's metres
+const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -6], [2, -33]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
   const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;

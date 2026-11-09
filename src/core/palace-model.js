@@ -5,7 +5,7 @@
 //   cloister    the roofed corridors (회랑) round Geunjeongjeon's courtyard
 //   throne      Geunjeongjeon: the two-tier terrace (월대), the two-storey hall
 //   rankstones  the officials' rank stones (품계석) either side of the path
-//   palacehall  the halls behind: Sajeongjeon, Gangnyeongjeon, Gyotaejeon…
+//   palacehalls every other hall and gate, from the real map, merged into one
 //   amisan      the terraced garden behind Gyotaejeon with its brick chimneys
 //   hexpavilion Hyangwonjeong, the two-storey hexagonal pavilion on its pond
 // Each model is merged into a few meshes (one per material), so a whole
@@ -184,8 +184,9 @@ export const PALACE_BUILD = {
   // runs of [x0, z0, x1, z1, inward] in the landmark's metres (inward: which
   // side the court is, +1 or -1 across the run's direction); l.d: depth.
   cloister(g, l) {
-    const D = l.d || 6, H = l.h || 4.2; // (l.h: the posts' height; the halls' yards use lower corridors, 행각)
-    for (const [x0, z0, x1, z1, inward] of l.runs) {
+    const H = l.h || 4.2; // (l.h: the posts' height; the halls' yards use lower corridors, 행각)
+    for (const [x0, z0, x1, z1, inward, d] of l.runs) {
+      const D = d || l.d || 6; // (each run may have its own depth)
       const len = Math.hypot(x1 - x0, z1 - z0);
       const seg = new THREE.Group();
       const n = Math.max(2, Math.round(len / 3.2));
@@ -199,7 +200,7 @@ export const PALACE_BUILD = {
       }
       box(seg, len, 0.5, 0.5, 0, 0.45 + H + 0.1, inward * (D / 2 - 0.4), C.beam);
       box(seg, len, 0.14, 0.55, 0, 0.45 + H - 0.2, inward * (D / 2 - 0.4), C.beamRed);
-      tiles(seg, len + 1.5, D + 2.6, 2.0, 0.45 + H + 0.35, { hip: false, lift: 0.4, seg: Math.max(4, Math.round(len / 8)), rows: 2, ridgeEnds: false });
+      tiles(seg, len + 1.5, D + Math.min(2.6, D), Math.min(2.0, 0.4 + D * 0.5), 0.45 + H + 0.35, { hip: false, lift: 0.4, seg: Math.max(4, Math.round(len / 8)), rows: 2, ridgeEnds: false });
       seg.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
       seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
       g.add(seg);
@@ -276,23 +277,44 @@ export const PALACE_BUILD = {
     }
     mergeStatic(g);
   },
-  // A hall on a stone base (기단) with steps in front: posts, doors, the
-  // painted band and a hipped roof. l.w, l.d: the body; l.h: its height;
-  // l.ridge === false: no ridge (Gangnyeongjeon, Gyotaejeon).
-  palacehall(g, l) {
-    const w = l.w, d = l.d, H = l.h || 3, B = 0.8;
-    box(g, w + 2.4, B, d + 2.4, 0, B / 2, 0, C.stone);
-    box(g, w + 2.6, 0.12, d + 2.6, 0, B - 0.04, 0, C.stoneDark);
-    for (let i = 0; i < 3; i++) box(g, 3, B / 3, 0.45, 0, (i + 0.5) * (B / 3), d / 2 + 1.2 + (2 - i) * 0.45 + 0.2, C.stone);
-    body(g, w, d, H, B, Math.max(3, Math.round(w / 2.6)));
-    band(g, w, d, B + H);
-    tiles(g, w + 4.5, d + 4.5, Math.max(1.6, d * 0.42), B + H + 1.75, { hip: true, lift: 0.9, seg: 6, rows: 2, noRidge: l.ridge === false });
-    if (l.name?.han) {
-      mergeStatic(g);
-      const sign = nameBoard(l.name.han, 2.4, 0.9);
-      sign.position.set(0, B + H + 0.9, d / 2 + 1.25);
+  // Every other building of the palace, from the real map
+  // (scripts/build-gyeongbokgung.mjs): l.halls = [[x, z, w, d, ry, kind,
+  // han]] in the landmark's metres, w × d the footprint as drawn (30% of the
+  // real one), kind 'h' a hall (walls, doors, a hipped roof), 'n' a hall
+  // with no ridge (the king's and queen's), 'g' a gate (posts and a roof
+  // you walk under). Heights are half the real ones (l.v scales them). All
+  // of it is merged into a few meshes, so 150 buildings cost a handful of
+  // draw calls.
+  palacehalls(g, l) {
+    const V = l.v || 1, boards = [];
+    for (const [x, z, w, d, ry, kind = 'h', han] of l.halls) {
+      const h = new THREE.Group();
+      const gate = kind === 'g', k = Math.min(w, d);
+      const B = Math.min(0.6, 0.25 + k * 0.05), H = (gate ? Math.max(2.4, 1.6 + k * 0.25) : Math.min(4, Math.max(2.1, 1.1 + d * 0.3))) * V;
+      const post = Math.min(0.45, Math.max(0.22, k * 0.07)), e = Math.min(1.6, Math.max(0.55, d * 0.22 + 0.35));
+      box(h, w + 0.7, B, d + 0.7, 0, B / 2, 0, C.stone);
+      if (!gate) {
+        box(h, w - post, H, d - post, 0, B + H / 2, 0, C.wall);
+        box(h, w - post * 2, H * 0.8, 0.08, 0, B + H * 0.4, d / 2 - post / 2 + 0.03, C.door); // the doors along the front
+        box(h, w - post, 0.5 * V, d - post + 0.02, 0, B + 0.25 * V, 0, C.post); // the red dado
+      } else box(h, w - post, 0.6 * V, 0.2, 0, B + H - 0.3 * V, 0, C.wall);
+      const nx = Math.max(1, Math.round(w / 1.7));
+      for (let i = 0; i <= nx; i++) for (const sz of gate ? [-1, 0, 1] : [-1, 1]) box(h, post, H, post, -w / 2 + (i * w) / nx, B + H / 2, (sz * d) / 2, C.post);
+      box(h, w + 0.25, 0.32 * V, d + 0.25, 0, B + H + 0.16 * V, 0, C.beam);
+      box(h, w + 0.6, 0.3 * V, d + 0.6, 0, B + H + 0.47 * V, 0, C.bracket);
+      tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3.4, d * 0.5)) * V, B + H + 0.62 * V, { hip: true, lift: Math.min(0.9, 0.25 + k * 0.1), seg: k > 4 ? 6 : 4, rows: 2, ridgeEnds: k > 3, noRidge: kind === 'n' });
+      h.position.set(x, 0, z);
+      h.rotation.y = ry;
+      g.add(h);
+      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88]);
+    }
+    mergeStatic(g);
+    for (const [han, x, z, w, d, ry, y] of boards) { // name boards on the main halls (one draw call each)
+      const bw = Math.min(2.4, w * 0.35), sign = nameBoard(han, bw, bw * 0.38);
+      sign.position.set(x + Math.sin(ry) * (d / 2 + 0.12), y, z + Math.cos(ry) * (d / 2 + 0.12));
+      sign.rotation.y = ry;
       g.add(sign);
-    } else mergeStatic(g);
+    }
   },
   // Amisan (아미산): four stepped flower terraces behind Gyotaejeon with the
   // hexagonal red-brick chimneys of the queen's under-floor heating.

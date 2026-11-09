@@ -349,28 +349,38 @@ three boxes for the overlap check.
 
 ## Gyeongbokgung's palace
 
-The palace site is the real one at 1/4 (about 115 x 264 m inside the wall),
-and its buildings are drawn at about half their real size, so they fill
-their quarter-size courts and are worth looking up at (Yozi's call: a site
-is exactly 1/4; a building is 1/4 too unless asked). The models are
-`core/palace-model.js`, each merged into a few meshes. As in Seoul, the way
-in runs north: Gwanghwamun (z 0), its front court with the fan dance,
-Heungnyemun (z -36) and its yard, the palace stream with Yeongjegyo
-(z -47), Geunjeongmun (z -55) and the corridors (회랑) round Geunjeongjeon's
-court, the rank stones either side of the raised middle path, and
-Geunjeongjeon on its two terraces (z -79.5). Gyeonghoeru's pond is
-north-west of the court. Behind it, as in Seoul (checked against the city's
-aerial view), each in its own yard closed by roofed corridors (행각), the
-yards packed one behind the next with narrow passages between, the gate on
-the south side: Sajeongjeon (with Cheonchujeon and Manchunjeon either side), Gangnyeongjeon and
-Gyotaejeon (these two with no ridge, as the king's and queen's halls have
-none) with Amisan's terraces and brick chimneys behind, Jagyeongjeon to the
-north-east, Hyangwonjeong on its pond, and Geoncheonggung. Seasonal trees
-line the walls behind the halls. The royal procession walks from Heungnyemun's yard
-over the bridge and up the middle path to the hall's steps. Inside the wall
-the camera drops and looks up (`game/palace-view.js`), more so in the courts
-behind Heungnyemun, until the player steers it. Visitors in rented hanbok
-already stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
+Everything inside the palace wall is built from OpenStreetMap by
+`scripts/build-gyeongbokgung.mjs` (data in `scripts/data/gyeongbokgung-osm.json`):
+the wall is OSM's outline of the palace grounds, the ponds are OSM's, and
+every hall, gate and roofed corridor (행각) stands on its real spot, measured
+from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
+
+- the site is exactly 1/4 (about 139 x 217 m inside the wall);
+- building footprints are 30% of the real ones (1.2 x the 1/4 map), so the
+  yards between them keep almost their real shape; the corridors round the
+  yards stay at the 1/4 map's size, since they are the yards' edges;
+- heights are half the real ones, so a hall stands taller than Bukchon's
+  houses and a gate's passage is higher than the people;
+- about a quarter of the buildings: 30 of the 73 old ones inside the wall
+  (every hall and gate on the middle line, the big halls either side, the
+  gates in the wall; the script's `KEEP` list), and every corridor ring.
+  Modern buildings (the Palace Museum, offices, sheds) and the Folk Museum's
+  grounds are left out.
+
+The models are `core/palace-model.js`: Gwanghwamun, Heungnyemun and
+Geunjeongmun, Yeongjegyo over the palace stream, Geunjeongjeon on its
+terraces with the rank stones, Gyeonghoeru, Hyangwonjeong and Amisan have
+their own; all other halls are one merged `palacehalls` landmark and all the
+corridors one `cloister` (a few draw calls for the lot). Each ring of
+corridors gets a door on its middle line (OSM draws most gates as part of
+the corridor), and the script checks that every hall and yard can be walked
+to from Gwanghwamun (`--check`, also a test). Where the old halls were pulled
+down (west of the throne hall, north of the ponds) there are lawns, and the
+palace woods line the wall round the north half. The royal procession keeps
+to Geunjeongjeon's court (the 30% gates are too narrow for it two abreast).
+Inside the wall the camera drops and looks up (`game/palace-view.js`), more
+so in the courts, until the player steers it. Visitors in rented hanbok
+stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
 ## Bosingak (Jongno)
 

@@ -581,6 +581,7 @@ export function buildLandmarks(list = [], scene) {
       if (typeof tick === 'function') ticks.push(tick);
       g.position.set(l.x, l.y || 0, l.z); // (l.y: standing up on something, e.g. a hill's deck)
       g.rotation.y = l.ry || 0;
+      if (l.sc) g.scale.set(l.sc[0], l.sc[1] ?? l.sc[0], l.sc[0]); // (sc: [across, up], e.g. the palace's footprints at 30% and heights at 50%)
     } else continue;
     root.add(g);
   }

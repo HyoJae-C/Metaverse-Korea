@@ -8,13 +8,13 @@
 //   view.tick(p, dt);   // each frame on the street
 export const PALACE_VIEW = {
   palace: { pitch: 0.16, dist: 10 }, // inside the wall
-  court: { pitch: -0.03, dist: 8 }, // Heungnyemun's yard and Geunjeongjeon's court
+  court: { pitch: -0.03, dist: 6.5 }, // Heungnyemun's yard and Geunjeongjeon's court
   street: { pitch: 0.42, dist: 9 }, // the usual view (main.js)
 };
 // Where p is, in the palace district's metres: 'court', 'palace' or null.
 export function palaceZone(x, z) {
-  if (x < -62 || x > 53 || z > 0 || z < -264) return null;
-  return z < -36 && z > -90 && Math.abs(x) < 16 ? 'court' : 'palace';
+  if (x < -68 || x > 72 || z > 0 || z < -216) return null; // (the wall's box: districts/gyeongbokgung.json)
+  return z < -30 && z > -84 && Math.abs(x - 3) < 15 ? 'court' : 'palace';
 }
 
 export function createPalaceView({ cam, at, steering }) {

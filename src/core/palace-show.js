@@ -33,33 +33,33 @@ export function ringPoly(x, z, r, n = 24) {
 }
 
 // The royal procession (어가 행렬): the king with a eunuch holding his
-// parasol, and court ladies before and behind, walking the way in to the
-// throne hall. Stops and the paths between them, in the palace district's
-// metres (x east, z south; Gwanghwamun at (0, 0)). From Heungnyemun's yard
-// the king crosses Yeongjegyo, passes through Geunjeongmun's middle passage
-// (the king's) and walks the raised middle path between the rank stones up
-// to the throne hall's steps, then back. Every path keeps clear of the
-// walls, the stream and the fan dance.
+// parasol, and court ladies before and behind, walking round the throne
+// hall's court. Stops and the paths between them, in the palace district's
+// metres (x east, z south; Gwanghwamun at (0, 0)). The palace's gates are
+// drawn at 30% of their real width, too narrow for the procession two
+// abreast, so the king keeps to Geunjeongjeon's court: in from Geunjeongmun
+// up the raised middle path between the rank stones to the throne hall's
+// steps, and along the court's sides. Every path keeps clear of the
+// corridors, the terraces and the fan dance.
 export const ROYAL_ROUTE = {
   stops: [
-    [0, -41.5], // 0 just inside Heungnyemun
-    [-11, -41.5], [11, -41.5], // 1, 2 either side of Heungnyemun's yard
-    [0, -52], // 3 over Yeongjegyo, before Geunjeongmun
-    [0, -66], // 4 between the rank stones, before Geunjeongjeon's steps
+    [3, -56], // 0 just inside Geunjeongmun
+    [3.4, -63], // 1 between the rank stones, before Geunjeongjeon's steps
+    [-5.5, -58], [12.5, -58], // 2, 3 the court's west and east sides
   ],
-  links: [[0, 1], [0, 2], [0, 3], [3, 4]],
+  links: [[0, 1], [0, 2], [0, 3]],
 };
 // Visitors standing about the courts, in the palace district's metres:
 // [x, z, ry, look] (look: a rented hanbok set, or null for everyday
 // clothes). They pose for photos in front of each gate and the throne hall.
 export const PALACE_VISITORS = [
-  [-5, -24, Math.PI, 'pink'], [-3.8, -24.6, Math.PI * 0.9, null], // the front court, Heungnyemun behind them
-  [9, -14, -2.6, 'mint'],
-  [-10, -50, Math.PI * 0.2, 'yellow'], [-8.6, -50.8, Math.PI * 0.3, 'baji'], // by the stream, west of Yeongjegyo
-  [14.5, -39, -2.4, null],
-  [-7.5, -63, -0.4, 'pink'], [7.4, -66, 0.5, 'yellow'], [6.2, -61, 2.8, null], // the throne hall's court, beside the rank stones
-  [-2.5, -172, Math.PI, 'mint'], [5.5, -173, Math.PI * 1.1, null], // the shore of Hyangwonjeong's pond
-  [-9.5, -148, 2.2, 'yellow'], // beside Amisan's chimneys
+  [-6, -21, Math.PI, 'pink'], [-4.8, -21.6, Math.PI * 0.9, null], // the front court, Heungnyemun behind them
+  [12, -12, -2.6, 'mint'],
+  [-6, -36, Math.PI * 0.2, 'yellow'], [-4.6, -36.8, Math.PI * 0.3, 'baji'], // by the stream, west of Yeongjegyo
+  [12, -44, -2.4, null],
+  [-2.5, -60, -0.4, 'pink'], [9.5, -62, 0.5, 'yellow'], [8.2, -57, 2.8, null], // the throne hall's court, beside the rank stones
+  [0, -164, Math.PI, 'mint'], [7, -164.5, Math.PI * 1.1, null], // the shore of Hyangwonjeong's pond
+  [-3, -119, 2.2, 'yellow'], // beside Amisan's chimneys
 ];
 const VISITOR_LOOKS = { // the hanbok shop's own rental sets (data/hanbok.js)
   pink: { ...hanbokById('pink-navy').wear, hairStyle: 'bun' },
