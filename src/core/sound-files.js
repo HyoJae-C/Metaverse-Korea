@@ -1,6 +1,5 @@
-// Short recorded sounds: footsteps and the shop's "paid" and "not enough
-// money" blips. They come from Kenney's Impact Sounds and Interface Sounds
-// packs (CC0, https://kenney.nl), cut to mono MP3 in public/audio/sfx/.
+// Short recorded sounds: the shop's "paid" and "not enough
+// money" blips. They come from Kenney's Interface Sounds pack (CC0, https://kenney.nl), cut to mono MP3 in public/audio/sfx/.
 // Each file is fetched the first time it is needed (a few KB), so nothing is
 // added to the game's start-up download. Until a file has arrived, play()
 // returns false and the caller can fall back to its synthesised sound.
@@ -8,9 +7,6 @@
 
 // name -> how many variants (name-0.mp3 ... name-(n-1).mp3); 1 = name.mp3.
 export const SOUND_FILES = {
-  'step-concrete': 5,
-  'step-wood': 5,
-  'step-snow': 5,
   pay: 1,
   short: 1,
 };
@@ -20,12 +16,6 @@ export function soundUrl(name, i = 0, base = '') {
   const n = SOUND_FILES[name];
   if (!n) return null;
   return `${base}audio/sfx/${n > 1 ? `${name}-${((i % n) + n) % n}` : name}.mp3`;
-}
-
-// Which footstep sound fits where the player is walking.
-export function stepSound({ indoor = false, snow = false } = {}) {
-  if (indoor) return 'step-wood';
-  return snow ? 'step-snow' : 'step-concrete';
 }
 
 export class SoundFiles {
