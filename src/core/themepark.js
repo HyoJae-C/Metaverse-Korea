@@ -1,7 +1,9 @@
 // Another Land (어나더랜드), the candy-house theme park: an outdoor "room"
 // entered through its gate east of Seongsu (the outside is anotherland.js),
 // with a carousel, a Ferris wheel, a swinging pirate ship, a drop tower and
-// bumper cars (game/bumper.js), and the Cotton Candy Express roller coaster
+// bumper cars (game/bumper.js) spread round the central plaza along winding
+// paths (park-grounds.js), food trucks (park-food.js), a balloon clown
+// (game/balloon-clown.js), and the Cotton Candy Express roller coaster
 // (coaster.js) in the land the park grew into, north and west. Each ride has a
 // boarding spot; on a ride the player is carried by seatAt(). Same shape as
 // buildInterior's result, plus tick(dt) to animate the rides.
@@ -21,6 +23,7 @@ import { RIDE_GATES } from './park-rides.js';
 import { buildGrounds } from './park-grounds.js';
 import { buildCarousel, buildDrop, buildViking, buildWheel } from './park-ride-models.js';
 import { mergeStatic } from './merge-static.js';
+import { buildFoodTrucks } from './park-food.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
   const { w, d } = ROOM;
@@ -53,8 +56,8 @@ export function buildThemePark(store, ROOM, EXIT) {
   const wheel = buildWheel(scene, block);
   const drop = buildDrop(scene, block);
 
-  // Ticket booth (매표소) and a churro cart by the entrance. The booth's
-  // window faces Main Street (south), under a striped awning.
+  // Ticket booth (매표소) by the entrance. Its window faces the gate
+  // square (south), under a striped awning.
   const TB = { x: -6, z: Z1 - 4.5 };
   box(2.2, 2.3, 1.6, TB.x, 1.15, TB.z, '#ffd36e');
   box(2.36, 0.25, 1.76, TB.x, 0.12, TB.z, '#e2a64a'); // plinth
@@ -64,18 +67,13 @@ export function buildThemePark(store, ROOM, EXIT) {
   add(new THREE.ConeGeometry(1.5, 1.2, 4), '#ff7a8a', TB.x, 2.9, TB.z).rotation.y = Math.PI / 4;
   add(new THREE.SphereGeometry(0.2, 10, 8), '#ff3b55', TB.x, 3.6, TB.z);
   block(TB.x, TB.z, 2.3, 1.7);
-  const CC = { x: 6, z: Z1 - 4.5 };
-  box(1.6, 0.8, 0.9, CC.x, 0.75, CC.z, '#f6c9a0');
-  box(1.7, 0.08, 1, CC.x, 1.18, CC.z, '#fffaf3');
-  for (const sx of [-0.55, 0.55]) { const w = add(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), '#7a4a2e', CC.x + sx, 0.28, CC.z + 0.5); w.rotation.x = Math.PI / 2; }
-  for (let i = 0; i < 5; i++) { const c = add(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), '#c98b4f', CC.x - 0.4 + i * 0.2, 1.22, CC.z - 0.2); c.rotation.z = 0.25 - i * 0.12; }
-  add(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), '#d9dde2', CC.x, 1.2, CC.z);
-  add(new THREE.ConeGeometry(1.1, 0.5, 8), '#ff9bb3', CC.x, 2.0, CC.z);
-  block(CC.x, CC.z, 1.7, 1.1);
+  // The food trucks on the lane to the bumper cars (park-food.js): ice
+  // cream, churros and hot dogs, bought like a market stall's goods.
+  const food = buildFoodTrucks(scene, block, mat);
 
   // Balloon shooting gallery (풍선 사격): a striped booth with rows of
   // balloons, toy cork guns on the counter (the game is ui/gallery-ui.js).
-  const G = { x: -21.5, z: -9.5 };
+  const G = { x: -20, z: -1 }; // on the coaster's avenue, facing it
   box(4.4, 2.8, 0.2, G.x, 1.4, G.z - 1, '#fff3d6'); // back wall
   for (const sx of [-2.1, 2.1]) box(0.2, 2.8, 2, G.x + sx, 1.4, G.z, '#ff7a8a'); // sides
   for (let i = 0; i < 6; i++) box(0.75, 0.3, 2.3, G.x - 1.9 + i * 0.76, 2.95, G.z + 0.1, i % 2 ? '#fffaf3' : '#ff5a5f'); // awning
@@ -124,8 +122,10 @@ export function buildThemePark(store, ROOM, EXIT) {
   // Guests already here: round the fountain, at the rides' fences, on Main Street.
   stations.patrons = [
     ...(stations.patrons || []),
-    { x: 3.4, z: 1.2, ry: -2.2 }, { x: -2.9, z: -4.6, ry: 0.6 }, { x: -7.5, z: 4.4, ry: -2.3 },
-    { x: 6, z: -2, ry: 2.6 }, { x: 1.4, z: 9.6, ry: Math.PI }, { x: 14.5, z: -1.6, ry: Math.PI / 2 },
+    { x: 3.4, z: 6.6, ry: -2.2 }, { x: -3.2, z: 0.2, ry: 0.6 }, { x: -1.4, z: 17, ry: Math.PI },
+    { x: 1.6, z: 23.5, ry: Math.PI }, { x: 13.4, z: 1.6, ry: Math.PI * 0.9 }, { x: 21, z: -2.2, ry: Math.PI }, // (looking up at the wheel)
+    { x: 12.2, z: 10.7, ry: Math.PI }, { x: 18.9, z: 12.2, ry: Math.PI }, { x: 25.1, z: 13.5, ry: Math.PI }, // at the food trucks
+    { x: 32.6, z: 19, ry: Math.PI / 2 }, { x: 44.6, z: -1.2, ry: -2.4 }, // watching the bumper cars, the drop tower
   ];
 
   let time = 0;
@@ -144,9 +144,9 @@ export function buildThemePark(store, ROOM, EXIT) {
   mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
-    scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
+    scene, products: food.products, vendors: food.vendors, colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
     rides, stations, tick, time: () => time, park: true, themepark: true, bumper, coaster, // (themepark: only Another Land; the Han River parks are `park: true` too)
-    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); },
+    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); food.setSignLang(lang); },
   };
 }
 
@@ -161,9 +161,9 @@ function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const spots = [];
-  for (let n = 0; spots.length < 46 && n < 900; n++) {
+  for (let n = 0; spots.length < 60 && n < 1400; n++) {
     const x = X0 + 2 + rnd() * (X1 - X0 - 4), z = Z0 + 2 + rnd() * (Z1 - Z0 - 4);
-    if (x > -25 && z > -15) continue; // the old square: already full
+    if (x > -25 && z > -15) continue; // the park round the plaza: its own garden (park-grounds.js)
     if (!clear(x, z, 3.2) || busy.some(([bx, bz, r]) => Math.hypot(x - bx, z - bz) < r + 1.5)) continue;
     if (Math.hypot(x + 21, z + 28.5) < 6 || Math.hypot(x + 42, z - 1) < 8) continue; // the ponds
     if (spots.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 3.4)) continue;

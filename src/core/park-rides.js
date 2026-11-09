@@ -4,6 +4,12 @@
 // at time t, the rides' names for their signs and attendants, and the park's
 // layout: the central plaza and each ride's gate.
 
+// Every member of staff (ride attendants, the coaster's, the ticket booth)
+// wears the park's uniform: a pink shirt with a white placket, navy
+// trousers, white sneakers and a berry cap with a heart. Faces and hair stay
+// their own (main.js lays this over a random look).
+export const PARK_UNIFORM = { model: 'ranger', shirt: 'peach', pants: 'navy', shoes: 'white', head: 'cap', hatColor: 'berry', hatPatch: 'heart', face: null, ear: null, neck: null, back: null, skirt: null, tee: null };
+
 // Ticket prices (won): the thrill rides cost more, the gentle ones less.
 // The bumper cars' fare is BUMPER_COST in bumper-cars.js.
 export const RIDE_PRICE = { coaster: 7000, drop: 4000, viking: 4000, wheel: 3000, carousel: 2000 };
@@ -15,14 +21,14 @@ export const RIDE_SECONDS = { carousel: 24, wheel: 40, viking: 22, drop: 13 };
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).
 export const RIDES = {
   // 8 horses on the outer ring, 4 on the inner one.
-  carousel: { x: -14, z: -2, seats: 12, r: 3, inner: 1.85, outer: 8, speed: 0.55 },
+  carousel: { x: -16, z: 12, seats: 12, r: 3, inner: 1.85, outer: 8, speed: 0.55 },
   // 8 gondolas of 2 (seat = gondola * 2 + side); you board the one at the bottom.
-  wheel: { x: 11, z: -9.5, cabins: 8, seats: 16, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
+  wheel: { x: 24, z: -8, cabins: 8, seats: 16, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
   // 4 benches of 2 along the ship, everyone facing the middle; the deck is
   // `arm` below the pivot, the end benches stand higher (to see over).
-  viking: { x: -9.5, z: -10, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
+  viking: { x: -13, z: -9, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
   // Drop tower: 8 seats round the pole, facing out; load, climb, hold, drop.
-  drop: { x: 18.5, z: -2, seats: 8, r: 1.75, low: 0.55, top: 17 },
+  drop: { x: 52, z: -4, seats: 8, r: 1.75, low: 0.55, top: 17 },
 };
 // The carousel, the pirate ship and the drop tower run on everyone's shared
 // clock (like the coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
@@ -142,11 +148,14 @@ export function seatAt(kind, i, t) {
   return { x: R.x + off * c - ly * s, y: R.pivot + off * s + ly * c, z: R.z + side, ry: off < 0 ? Math.PI / 2 : -Math.PI / 2, roll: ang };
 }
 
-// The park's layout (room metres; the gate is at the south, z = 14).
+// The park's layout (room metres; the gate is at the south, z = 34).
 // Main Street runs north from the gate to the round central plaza with its
-// fountain; the rides stand round the plaza, each in its own fenced yard
-// with a gate on the side facing the plaza.
-export const PLAZA = { x: 0, z: -1, r: 5.5 };
+// fountain. The rides are spread round it, a short walk apart along winding
+// paths (park-grounds.js), each in its own fenced yard with a gate on the
+// side its path comes from: the carousel and the pirate ship west, by the
+// coaster's avenue; the Ferris wheel and the drop tower out along the east
+// promenade; the bumper cars past the food trucks, south-east.
+export const PLAZA = { x: 0, z: 4, r: 6 };
 // Where you board each ride (at its yard's gate) and where its attendant stands.
 export const RIDE_GATES = {
   carousel: { x: RIDES.carousel.x + 5.6, z: RIDES.carousel.z, ry: Math.PI / 2, staff: { x: RIDES.carousel.x + 5.2, z: RIDES.carousel.z - 1.9, ry: Math.PI / 2 } },
@@ -166,4 +175,25 @@ export const RIDE_NAME = {
   bumper: { ko: '젤리 범퍼카', en: 'Jelly Bumper Cars', ja: 'ゼリー・バンパーカー', zh: '果冻碰碰车', es: 'Autos Chocones de Gominola', id: 'Bom-bom Car Jeli', vi: 'Xe Điện Đụng Thạch', hi: 'जेली बंपर कार', fr: 'Autos Tamponneuses Gelée', th: 'รถบั๊มเยลลี่', ar: 'سيارات الجيلي المتصادمة' },
   coaster: COASTER_NAME,
 };
+// The food trucks on the lane from the plaza to the bumper cars, serving
+// window to the lane (+z): ice cream cones, churros and hot dogs. Each sells
+// one snack, eaten from the hand (held 'food:<snack>'). Prices in won.
+export const FOOD_TRUCKS = [
+  { id: 'icecream', x: 12.5, z: 8.2, color: '#8fd0ff', awning: '#fffaf3', price: 3000,
+    name: { ko: '아이스크림 콘', en: 'Ice Cream Cone', ja: 'ソフトクリーム', zh: '冰淇淋甜筒', es: 'Cono de helado', id: 'Es Krim Cone', vi: 'Kem ốc quế', hi: 'आइसक्रीम कोन', fr: 'Cornet de glace', th: 'ไอศกรีมโคน', ar: 'آيس كريم بالبسكويت' },
+    truck: { ko: '말랑 아이스크림', en: 'Mallang Ice Cream', ja: 'マルラン・アイス', zh: '软软冰淇淋' } },
+  { id: 'churro', x: 18.5, z: 9.7, color: '#ffad6b', awning: '#ff5a5f', price: 3500,
+    name: { ko: '츄러스', en: 'Churros', ja: 'チュロス', zh: '吉事果', es: 'Churros', id: 'Churros', vi: 'Churros', hi: 'चुरोस', fr: 'Churros', th: 'ชูโรส', ar: 'تشوروس' },
+    truck: { ko: '바삭 츄러스', en: 'Basak Churros', ja: 'バサク・チュロス', zh: '酥脆吉事果' } },
+  { id: 'hotdog', x: 24.5, z: 11, color: '#ffe27a', awning: '#ff5f9e', price: 4000,
+    name: { ko: '핫도그', en: 'Hot Dog', ja: 'ホットドッグ', zh: '热狗', es: 'Perrito caliente', id: 'Hot Dog', vi: 'Xúc xích kẹp bánh mì', hi: 'हॉट डॉग', fr: 'Hot-dog', th: 'ฮอทดอก', ar: 'هوت دوج' },
+    truck: { ko: '통통 핫도그', en: 'Tongtong Hot Dogs', ja: 'トントン・ホットドッグ', zh: '胖胖热狗' } },
+];
+export const FOOD_TRUCK = { w: 4, d: 2.2 }; // the body, long side along x
+// Where you stand to buy (in front of the window) and where the seller is.
+export const truckWindow = (f) => ({ x: f.x, z: f.z + FOOD_TRUCK.d / 2 + 0.9 });
+export const truckSeller = (f) => ({ x: f.x, z: f.z + 0.1, ry: 0 });
+// The balloon clown on tall stilt shoes, by Main Street (game/balloon-clown.js).
+export const CLOWN = { x: 4.8, z: 14, ry: -Math.PI / 2 };
+
 export const RIDE_EMOJI = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🍭', bumper: '🚗', coaster: '🎢' };
