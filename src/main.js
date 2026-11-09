@@ -1333,7 +1333,12 @@ let onlineAll = 0;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
   $('online').hidden = n < 2;
-  $('online').textContent = '🟢 ' + t('hud.online', { n });
+  // Phones show just "🟢 5" (style.css hides .on-long); the full words stay
+  // in the tooltip and for screen readers.
+  const full = t('hud.online', { n });
+  $('online').title = full;
+  $('online').setAttribute('aria-label', full);
+  $('online').replaceChildren('🟢 ', Object.assign(document.createElement('span'), { className: 'on-long', textContent: full }), Object.assign(document.createElement('span'), { className: 'on-short', textContent: String(n), ariaHidden: 'true' }));
 };
 onLanguageChange(refreshOnline);
 let stopOnline = null;
