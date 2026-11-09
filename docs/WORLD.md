@@ -15,19 +15,30 @@ is quick. That way all of Seoul can fit, and Tokyo can follow the same way.
 - Ads: a big screen and a brand space on each area's central square
 - Later: home decorating, seasonal events, brand coupons, a Tokyo world
 
-Seongsu is hand-made too (`scripts/build-seongsu.mjs`): a grid of shopping
-streets loosely shaped like the real neighbourhood, at 1/4 of the real size
-like the rest of the map. Seongsu Station (the Achasan-ro / Seongsui-ro
-crossing, under Line 2) is the map's origin; Yeonmujang-gil is 80 m south of
-it, Ttukseom-ro runs south-east along the Han River, and Seoul Forest lies
-north-west of the shops between Achasan-ro (by Ttukseom) and the river, east
-of Seoulsup-gil. Each street side that faces a shopping street is lined with
-small shop buildings; run `node scripts/build-seongsu.mjs --place` after
-adding a shop to `PLACE_NEW` to give it a free lot. Seoul Forest keeps its own
-layout (it was already about 1/4 of the real park): it is drawn in its old
-frame and moved as one piece by `FOREST_SHIFT`. (Seongsu was drawn full size
-until it was redone at 1/4: 595 x 496 m with the shop streets running 440 m
-from Achasan-ro to Ttukseom-ro.)
+Seongsu is hand-made too (`scripts/build-seongsu.mjs`), at 1/4 of the real
+size like the rest of the map, with its main streets where they really are
+(measured from OpenStreetMap; the blocks and buildings are made up). Seongsu
+Station (the Achasan-ro / Seongsui-ro crossing, under Line 2) is the map's
+origin. The streets are a grid turned 20.5° (`THETA`) from east-west, as in
+Seoul: Achasan-ro, Yeonmujang-gil (56 m south of it), the lane (103 m),
+Ttukseom-ro (155 m), Seongdeokjeong-gil (198 m) and Dulle-gil (245 m) run
+east-south-east; Seongsuil-ro (127 m west of the station), the Red Brick
+Lane, Seongsui-ro (30 m east), Yeonmujang 13-gil and 17-gil and Dongil-ro
+(195 m) cross them. The grid is laid out in its own frame (`toMap` /
+`toGrid`), then turned onto the map and cut back to Wangsimni-ro (north-south
+at x -250, Seoul Forest Station on it), the map's edges and the riverside.
+Each street side that faces a shopping street is lined with small shop
+buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
+finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
+its own layout, drawn in its old frame and moved as one piece by
+`FOREST_SHIFT`, and runs south to its real edge by Gangbyeonbuk-ro. The Han
+River's bank is the real one along the forest; from x -240 it bends out to
+Ttukseom Han River Park's straight bank (z 386), up to about 50 m south of
+the real bank, and buildings stop 20 m short of the real bank (riverside
+grass between). `--place` and `--square` still use the spots of the old
+layout (`SPOTS`); check where they put a shop. (Seongsu was drawn full size
+until it was redone at 1/4, then with an east-west grid until it was laid on
+the real streets.)
 
 ## The Seoul grid: one fixed scale
 
@@ -164,10 +175,10 @@ the station here, about 400 m in Seoul). The district is about 230 x 180 m
 
 ## Ttukseom Han River Park (Seongsu)
 
-Laid straight on the street on Seongsu's straight bank, between the river
+Laid straight on Seongsu's straight bank (z 386), between the river
 and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
 `game/han-parks.js`). West to east: the fishing pier and fish buyer; DAILY
-MART with its ramen machine where the walk comes down from Ttukseom-ro,
+MART with its ramen machine where the walk comes down from the riverside walk (Dongil-ro's end),
 then the Riverside Market's six stalls; the open lawn for the drone light
 show (`lawn: true`: picnic mats, frisbees), with the launch barge out on the
 water and the show's board by the railing; the duck boat dock by the other

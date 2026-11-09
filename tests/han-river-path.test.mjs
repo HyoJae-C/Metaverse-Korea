@@ -30,7 +30,7 @@ test('the Han River Bike Path stays out of the water and off buildings', () => {
 });
 
 test('it joins Mangwon\'s river path, the Jamsu Bridge road and Seongsu\'s Han River Path', () => {
-  for (const at of [[-3182, -64], [-1307.8, 705.8], [-465, 12]]) {
+  for (const at of [[-3182, -64], [-1307.8, 705.8], [-465, 119]]) {
     assert.ok(bike.p.some(([x, z]) => x === at[0] && z === at[1]), `path passes ${at}`);
     assert.ok(nodes.has(at.join(',')), `another road ends at ${at}`);
   }

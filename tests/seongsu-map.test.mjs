@@ -14,8 +14,8 @@ const segDist = (px, pz, [ax, az], [bx, bz]) => {
 };
 const wallDist = (x, z, p) => Math.min(...p.map((a, i) => segDist(x, z, a, p[(i + 1) % p.length])));
 
-test('Seongsu is a hand-made map, not OpenStreetMap data', () => {
-  assert.ok(!/openstreetmap/i.test(JSON.stringify(map.meta)));
+test('Seongsu is a hand-made map on the real street lines (credited to OpenStreetMap)', () => {
+  assert.match(map.meta.source, /OpenStreetMap/);
   assert.ok(map.buildings.length < 180, `${map.buildings.length} buildings`);
 });
 
@@ -32,10 +32,9 @@ test('every Seongsu shop stands on open ground in front of a building, each at i
     assert.ok(!spots.has(key), `${s.id} shares a spot`);
     spots.add(key);
   }
-  // Two shops along the same side of a street need a whole shop front
-  // (about 6.4 m with the sign) between them, or their signs overlap.
+  // Two shops need a whole shop front (about 6.4 m with the sign) between
+  // them, or their signs overlap (the streets run at a slant, so any two).
   for (const a of here) for (const b of here) {
-    if (a === b || Math.abs(a.at[1] - b.at[1]) > 0.5) continue;
-    assert.ok(Math.abs(a.at[0] - b.at[0]) >= 7, `${a.id} and ${b.id} overlap`);
+    if (a !== b) assert.ok(Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]) >= 7, `${a.id} and ${b.id} overlap`);
   }
 });

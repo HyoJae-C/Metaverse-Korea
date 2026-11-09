@@ -65,10 +65,10 @@ const SOUTH_BANK = ['gangseo', 'yangcheon', 'yeongdeungpo', 'dongjak', 'seocho',
 export const GAME_RIVER = [
   [-1103, 584, 220], // Banpo-Jamwon (real river)
   [-1026, 540, 190], // region.json water[1] from Banpo-Jamwon…
-  [-465, 190, 240], // …to Seongsu's river by Seoul Forest
-  [-300, 235, 220],
-  [-150, 330, 170],
-  [-30, 410, 100],
+  [-465, 213, 174], // …to Seongsu's river by Seoul Forest (its real bank)
+  [-300, 281, 172],
+  [-150, 346, 143],
+  [-30, 411, 108],
   [40, 423, 70], // where Songpa's Han River bank joins Seongsu's
   [110, 423, 70],
   [260, 425, 50],
