@@ -935,7 +935,7 @@
       "size": "themepark",
       "at": [788, 852],
       "name": { "en": "Another Land", "ko": "어나더랜드", "ja": "アナザーランド", "zh": "另一乐园" },
-      "tagline": { "en": "A candy-house theme park: the Cotton Candy Express roller coaster, carousel, Ferris wheel, pirate ship, drop tower and bumper cars", "ko": "과자의 집 놀이공원: 솜사탕 특급 롤러코스터, 회전목마, 대관람차, 바이킹, 자이로드롭, 범퍼카", "ja": "お菓子の家の遊園地：わたあめ特急ジェットコースター・メリーゴーランド・観覧車・バイキング・フリーフォール・バンパーカー", "zh": "糖果屋游乐园：棉花糖特快过山车、旋转木马、摩天轮、海盗船、跳楼机、碰碰车" },
+      "tagline": { "en": "A candy-house theme park: the Cotton Candy Express roller coaster, carousel, Ferris wheel, pirate ship, drop tower, swing ride, teacups, park train, log flume, mirror maze and bumper cars", "ko": "과자의 집 놀이공원: 솜사탕 특급 롤러코스터, 회전목마, 대관람차, 바이킹, 자이로드롭, 회전그네, 찻잔, 기차, 후룸라이드, 거울 미로, 범퍼카", "ja": "お菓子の家の遊園地：わたあめ特急ジェットコースター・メリーゴーランド・観覧車・バイキング・フリーフォール・回転ブランコ・ティーカップ・汽車・急流すべり・ミラー迷路・バンパーカー", "zh": "糖果屋游乐园：棉花糖特快过山车、旋转木马、摩天轮、海盗船、跳楼机、旋转秋千、旋转茶杯、小火车、激流勇进、镜子迷宫、碰碰车" },
       "colors": { "sign": "#e2508f", "awning": "#ffd0e0", "accent": "#fff3f7" },
       "products": []
     },

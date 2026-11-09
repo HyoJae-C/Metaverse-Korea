@@ -7,7 +7,7 @@
 // themepark.js merges (merge-static.js), so the whole lot is a few draw calls.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
-import { PLAZA, RIDES, RIDE_GATES, RIDE_NAME, RIDE_EMOJI, FOOD_TRUCKS, CLOWN } from './park-rides.js';
+import { PLAZA, RIDES, RIDE_GATES, RIDE_NAME, RIDE_EMOJI, FOOD_TRUCKS, CLOWN, MAZE, TRAIN_TRACK, FLUME_TRACK, FLUME_POOL, trackDist } from './park-rides.js';
 import { RINK as RINK_AT } from './bumper-cars.js';
 
 const mat = matCache({ flatShading: true });
@@ -20,7 +20,10 @@ const ICING = '#fffaf3', PINK = '#ff8fb8', HOT = '#ff5f9e', MINT = '#8fe3c7', LE
 // coaster's avenue west, with spurs to the carousel, the pirate ship and the
 // haunted house's lane; the long east promenade past the Ferris wheel to the
 // drop tower; the food truck lane south-east to the bumper cars, joined back
-// to the promenade; and the walk north under the coaster's helix.
+// to the promenade, with spurs south to the swing ride and the teacups and
+// on round the bumper cars to the train's station; off the promenade, the
+// mirror maze and the walk up to the log flume; and the walk north under
+// the coaster's helix.
 export const PATHS = [
   { w: 6.6, pts: [[-10, 30.3], [10, 30.3]] }, // gate square
   { w: 5, pts: [[0, 33.6], [0, 9]] }, // Main Street
@@ -33,6 +36,12 @@ export const PATHS = [
   { w: 2.6, pts: [[22, -1.4], [22, -4.2]] }, // → Ferris wheel
   { w: 3.4, pts: [[4.6, 7.2], [11, 11.6], [19, 13.6], [27, 15.4], [33.6, 16]] }, // food truck lane → bumper cars
   { w: 3, pts: [[31, -0.6], [29.6, 7], [28.4, 15]] }, // promenade ↔ food truck lane
+  { w: 2.8, pts: [[17, 13.1], [17, 17.8]] }, // → swing ride
+  { w: 2.8, pts: [[29.3, 15.6], [29.5, 23.3]] }, // → teacups
+  { w: 2.6, pts: [[29.5, 21.6], [33.15, 22.8], [36.5, 24.4], [42, 24.6], [45.9, 24.2]] }, // round the bumper cars → the train
+  { w: 2.8, pts: [[MAZE.door[0], -0.4], [MAZE.door[0], MAZE.door[1] + 0.2]] }, // → mirror maze
+  { w: 2.4, pts: [[MAZE.exit[0] - 0.2, MAZE.exit[1]], [42.4, MAZE.exit[1] + 0.4], [43.4, -6]] }, // out of the maze, back to the flume walk
+  { w: 3, pts: [[43, -2.6], [44, -9], [50, -11.8], [54.5, -12.6]] }, // promenade → log flume
 ];
 // Where a path's paving is: within half its width of one of its stretches.
 export function pathDist(path, x, z) {
@@ -51,6 +60,8 @@ export const YARDS = {
   drop: { ring: 3.6, gap: Math.PI },
   viking: { box: [RIDES.viking.x - 7.5, RIDES.viking.z - 2.8, RIDES.viking.x + 7.5, RIDES.viking.z + 2.8], gap: [RIDES.viking.x + 3.4, RIDES.viking.x + 5.8] },
   wheel: { box: [RIDES.wheel.x - 4.5, RIDES.wheel.z - 3, RIDES.wheel.x + 4.5, RIDES.wheel.z + 2.7], gap: [RIDES.wheel.x - 3.2, RIDES.wheel.x - 0.8] },
+  swing: { ring: 6.7, gap: null }, // (closed all round: you're let in by the attendant, under the arch)
+  teacups: { ring: 4.9, gap: null },
 };
 
 // A sign board over a gate: Korean as built (with the English under it), or
@@ -145,13 +156,14 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
     const steps = Math.max(1, Math.ceil(len / 0.5));
     for (let i = 0; i <= steps; i++) block(ax + ((bx - ax) * i) / steps, az + ((bz - az) * i) / steps, 0.5, 0.5);
   };
-  // A ring fence round (x, z) with a gate gap facing angle `gap` (0 = +x).
+  // A ring fence round (x, z) with a gate gap facing angle `gap` (0 = +x;
+  // null: no gap).
   const fenceRing = (x, z, r, gap) => {
     const n = Math.round((Math.PI * 2 * r) / 1.3), skip = 0.75 / r * 2; // the gap is about 1.5 m wide each side
     for (let i = 0; i < n; i++) {
       const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, mid = (a0 + a1) / 2;
       const d = Math.abs(Math.atan2(Math.sin(mid - gap), Math.cos(mid - gap)));
-      if (d < skip + 0.12) continue;
+      if (gap != null && d < skip + 0.12) continue;
       fenceLine(x + Math.cos(a0) * r, z + Math.sin(a0) * r, x + Math.cos(a1) * r, z + Math.sin(a1) * r);
     }
   };
@@ -166,6 +178,9 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   fenceRing(RIDES.drop.x, RIDES.drop.z, YARDS.drop.ring, YARDS.drop.gap);
   fenceBox(YARDS.viking.box, YARDS.viking.gap);
   fenceBox(YARDS.wheel.box, YARDS.wheel.gap);
+  const SW = RIDES.swing, TC = RIDES.teacups;
+  fenceRing(SW.x, SW.z, YARDS.swing.ring, YARDS.swing.gap);
+  fenceRing(TC.x, TC.z, YARDS.teacups.ring, YARDS.teacups.gap);
 
   // Each ride's gate: two striped posts and its name on a board over the way in.
   const gateArch = (kind, x, z, along) => {
@@ -188,12 +203,19 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   gateArch('drop', D.x - YARDS.drop.ring, D.z, false);
   gateArch('viking', (YARDS.viking.gap[0] + YARDS.viking.gap[1]) / 2, YARDS.viking.box[3], true);
   gateArch('wheel', (YARDS.wheel.gap[0] + YARDS.wheel.gap[1]) / 2, YARDS.wheel.box[3], true);
-  // A short queue rail at each gate, so the way in reads at a glance.
+  gateArch('swing', SW.x, SW.z - YARDS.swing.ring - 0.2, true);
+  gateArch('teacups', TC.x, TC.z - YARDS.teacups.ring - 0.2, true);
+  gateArch('train', RIDE_GATES.train.x - 1.2, RIDE_GATES.train.z, false); // (at the platform's west edge)
+  gateArch('flume', RIDE_GATES.flume.x, RIDE_GATES.flume.z + 0.9, true); // (at the platform's south edge)
+  gateArch('maze', MAZE.door[0], MAZE.door[1] + 0.3, true);
+  // A short queue rail at each yard's gate, so the way in reads at a glance
+  // (the train and the flume board from their platforms).
   for (const [kind, g] of Object.entries(RIDE_GATES)) {
+    if (kind === 'train' || kind === 'flume') continue;
     const side = kind === 'carousel' || kind === 'drop';
-    const sx = side ? Math.sign(g.x - RIDES[kind].x) : 0, sz = side ? 0 : 1;
+    const sx = side ? Math.sign(g.x - RIDES[kind].x) : 0, sz = side ? 0 : Math.sign(g.z - RIDES[kind].z);
     for (const k of [-1, 1]) {
-      const ax = g.x + (side ? -sx * 0.6 : k * 1.25), az = g.z + (side ? k * 1.25 : -0.6);
+      const ax = g.x + (side ? -sx * 0.6 : k * 1.25), az = g.z + (side ? k * 1.25 : -sz * 0.6);
       for (let i = 0; i < 3; i++) {
         const px = ax + sx * i * 0.8, pz = az + sz * i * 0.8;
         add(new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8), '#d4a73a', px, 0.42, pz);
@@ -241,13 +263,18 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
     [-24.5, -6.5, 3.4, 2.6], // the cotton candy cart and its customer (themepark.js)
     ...FOOD_TRUCKS.map((f) => [f.x, f.z, 5.4, 5]), // the food trucks and their queues
     [CLOWN.x, CLOWN.z, 2.6, 2.6], // the balloon clown
+    [RIDES.train.x - RIDES.train.rx - 1.4, RIDES.train.z + 1.5, 3.4, 9.4], // the train's station
+    [53.4, -14.2, 8, 2.6], // the flume's platform
     ...Object.values(RIDE_GATES).map((g) => [g.staff.x, g.staff.z, 1.4, 1.4]), // the attendants
   ];
   const free = (x, z, m) => {
     if (x < -24 || x > X1 - 1.5 || z > Z1 - 1.2 || (z < -14 && x < 18) || z < Z0 + 2) return false; // (not on the coaster's land)
     if (onPath(x, z, m) || Math.hypot(x - PLAZA.x, z - PLAZA.z) < PLAZA.r + m + 0.3) return false;
     if (Math.hypot(x - C.x, z - C.z) < YARDS.carousel.ring + m + 0.4 || Math.hypot(x - D.x, z - D.z) < YARDS.drop.ring + m + 0.4) return false;
-    for (const [x0, z0, x1, z1] of [YARDS.viking.box, YARDS.wheel.box]) if (x > x0 - m - 0.4 && x < x1 + m + 0.4 && z > z0 - m - 0.4 && z < z1 + m + 0.4) return false;
+    for (const [k, R] of [['swing', SW], ['teacups', TC]]) if (Math.hypot(x - R.x, z - R.z) < YARDS[k].ring + m + 0.4) return false;
+    for (const [x0, z0, x1, z1] of [YARDS.viking.box, YARDS.wheel.box, [MAZE.x0, MAZE.z0, MAZE.x1, MAZE.z1]]) if (x > x0 - m - 0.4 && x < x1 + m + 0.4 && z > z0 - m - 0.4 && z < z1 + m + 0.4) return false;
+    if (trackDist(TRAIN_TRACK, x, z) < 1.4 + m || trackDist(FLUME_TRACK, x, z) < 1.6 + m) return false; // (off the rails and the channel)
+    if (Math.hypot(x - FLUME_POOL.x, (z - FLUME_POOL.z) / FLUME_POOL.sz) < FLUME_POOL.r + m + 0.6) return false;
     return !taken.some(([tx, tz, w, d]) => Math.abs(x - tx) < w / 2 + m && Math.abs(z - tz) < d / 2 + m);
   };
   const near = (list, x, z, d) => list.some(([a, b]) => Math.hypot(a - x, b - z) < d);
