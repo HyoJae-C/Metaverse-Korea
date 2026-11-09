@@ -78,9 +78,9 @@
       "map": "districts/olympic-park.json",
       "offset": [
         287,
-        691
+        446
       ],
-      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250], "nudge": [0, 245], "why": "Moved south so its Olympic-ro (local z 180) runs straight on from Songpa's Olympic-ro at Jamsil Station (world z 871): one straight road from the station to the Peace Gate, with no jog. In Seoul Olympic-ro climbs north-east from Jamsil Station to the gate; here it runs straight east, so the park sits 245 m south of its 1/4 place." }
+      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250] }
     },
     {
       "id": "seodaemun",
@@ -171,6 +171,13 @@
       "p": [[328, 975], [578, 871]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
       "note": "Teheran-ro crosses Tancheon on Samseong Bridge and runs on north-east as Olympic-ro to Songpa's Olympic-ro, towards Jamsil Station."
+    },
+    {
+      "k": "secondary",
+      "w": 12,
+      "p": [[1100, 871], [1247, 626]],
+      "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
+      "note": "Olympic-ro climbs north-east from Jamsil Station (Songpa) to Olympic Park's Olympic-ro by the World Peace Gate, as it does in Seoul."
     },
     {
       "k": "primary",
@@ -729,7 +736,7 @@
           }
         ]
       },
-      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 880], "ry": -1.5708 }, { "n": 2, "at": [1372, 880], "ry": 1.5708 }] },
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 635], "ry": -1.5708 }, { "n": 2, "at": [1372, 635], "ry": 1.5708 }] },
       {
         "id": "childrens-grand-park-station",
         "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },

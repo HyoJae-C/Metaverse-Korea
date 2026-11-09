@@ -67,7 +67,8 @@ neighbours' room and pushes them off their spots.
   its offset follows from it. A `nudge` (with a `why`) moves it off that spot
   on purpose. A big area can be split so each part sits on its own real spot:
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
-  Songpa by Olympic-ro (nudged 245 m south so the road runs straight on).
+  Songpa by Olympic-ro, which climbs north-east from Jamsil Station to the
+  gate as it does in Seoul; the park sits on its real spot, with no nudge.
 - **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
   palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
   stands at close to its real size, so Euljiro's streets round it are wider
