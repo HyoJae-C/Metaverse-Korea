@@ -231,7 +231,7 @@ const map = {
     parts: [
       { why: 'DDP, the park, the fashion malls and Namsangol', box: [E.west, E.euljiro, E.east, 152] },
       { why: 'Sungnyemun on its island', box: E.gate.ring },
-      { why: 'Heunginjimun on its island, north of the Cheonggyecheon strip', box: [E.heung.ring[0], E.heung.ring[2], E.heung.ring[1], E.heung.ring[3]] },
+      { why: 'Heunginjimun on its island, north of the Cheonggyecheon strip', box: E.heung.ring },
     ],
     source: 'hand-made (game map, not to scale; loosely after Euljiro, Dongdaemun and Pil-dong, Jung-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-euljiro.mjs',
   },

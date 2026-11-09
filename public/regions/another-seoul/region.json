@@ -104,9 +104,9 @@
       "map": "districts/yeonnam.json",
       "offset": [
         -3011,
-        -570
+        -450
       ],
-      "anchor": { "place": "Gyeongui Line Forest Park at Seongmisan-ro (Yeonnam-dong)", "lat": 37.5612, "lon": 126.923, "local": [50, -30], "nudge": [-33, -138], "why": "Hongdae is drawn full size and reaches over the real south end of the park, so Yeonnam sits just north of it, its forest path running straight on from Hongdae Walking Street." }
+      "anchor": { "place": "Gyeongui Line Forest Park at Seongmisan-ro (Yeonnam-dong)", "lat": 37.5612, "lon": 126.923, "local": [50, -30], "nudge": [-33, -18], "why": "Moved west so its forest path runs straight on from Hongdae Walking Street across Yanghwa-ro, and a little north so the park starts just across the road from Hongik Univ. Station, as it does in Seoul." }
     },
     {
       "id": "mangwon",
@@ -327,16 +327,7 @@
     {
       "k": "primary",
       "w": 14,
-      "p": [
-        [
-          -2761,
-          -448
-        ],
-        [
-          -2740,
-          -388
-        ]
-      ],
+      "p": [[-2851, -328], [-2790, -388], [-2740, -388]],
       "n": {
         "ko": "신촌로",
         "en": "Sinchon-ro",
@@ -344,15 +335,15 @@
         "zh": "新村路"
       }
     },
-    {"k": "walk", "w": 5, "p": [[-2961, -470], [-2961, -443]], "n": {"ko": "경의선숲길", "en": "Gyeongui Line Forest Path", "ja": "京義線森の道", "zh": "京义线林荫路"}},
-    {"k": "tertiary", "w": 9, "p": [[-3051, -470], [-3051, -448]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
-    {"k": "primary", "w": 14, "p": [[-3182, -362], [-3168, -420], [-3161, -448]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
-    {"k": "tertiary", "w": 8, "p": [[-3182, -272], [-3170, -290], [-3161, -308]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
-    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3161, -128]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}},
+    {"k": "walk", "w": 5, "p": [[-2961, -350], [-2961, -328]], "n": {"ko": "경의선숲길", "en": "Gyeongui Line Forest Path", "ja": "京義線森の道", "zh": "京义线林荫路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3051, -350], [-3051, -328]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
+    {"k": "primary", "w": 14, "p": [[-3182, -362], [-3110, -328], [-3081, -328]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
+    {"k": "tertiary", "w": 8, "p": [[-3182, -272], [-3130, -208], [-3081, -208]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
+    {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3140, -148], [-3081, -148]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}},
     {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."},
     {"k": "tertiary", "w": 8, "p": [[-1668, 99], [-1684, -60], [-1706, -300], [-1720, -440]], "n": {"ko": "소월로", "en": "Sowol-ro", "ja": "素月路", "zh": "素月路"}, "note": "Sowol-ro round Namsan's west side: from Itaewon's Sowol-ro (Haebangchon) north to Sungnyemun, where Toegye-ro starts. Itaewon and Banpo no longer go round through Seongsu to reach Jung-gu and Jongno."},
     {"k": "walk", "w": 6, "p": [[-3182, -64], [-3140.5, -63.9], [-2776.7, -16.7], [-2562.6, 80.2], [-2422.2, 245.0], [-2302.1, 445.1], [-2152.0, 630.8], [-1900.8, 778.5], [-1602.4, 827.8], [-1395.7, 779.3], [-1307.8, 705.8], [-1075, 486], [-340, 162], [-335, 166]], "n": {"ko": "한강 자전거길", "en": "Han River Bike Path", "ja": "漢江自転車道", "zh": "汉江自行车道"}, "note": "The north-bank Han River path: from Mangwon Han River Park's path east past the north end of Seogang Bridge (Yeouido, later), along the river to the north end of Jamsu Bridge (Banpo-Jamwon) and on to Seongsu's Han River Path at Ttukseom. About 12 m inland from the water (region water below)."},
-    {"k": "walk", "w": 5, "p": [[-2761, -128], [-2776.7, -16.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From Yanghwa-ro at Hongdae's south-east corner down to the Han River Bike Path, where Seogang Bridge starts for Yeouido."}
+    {"k": "walk", "w": 5, "p": [[-2851, -148], [-2776.7, -16.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From Hongdae's south-east corner (Wausan-ro) down to the Han River Bike Path, where Seogang Bridge starts for Yeouido."}
   ],
   "water": [
     {"p":[[-3142,-52],[-2780,-5],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],"blockers":[[[-3142,-52],[-2792.8,-6.7],[-2904.3,144.2],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],[[-2777.5,-3.9],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2893,152.6]]],"note":"Han River from Mangwon Han River Park east to Banpo-Jamwon, round the north shore of Yeouido (scripts/build-yeouido.mjs writes this). Its blocker has a gap for Seogang Bridge."},
@@ -635,25 +626,8 @@
           "ko": "신촌",
           "en": "Sinchon"
         },
-        "note": "Yanghwa-ro, by the foot of Hongdae Walking Street. The Airport Railroad and Gyeongui-Jungang Line also stop here; the signs show Line 2.",
-        "exits": [
-          {
-            "n": 1,
-            "at": [
-              -2831,
-              -139
-            ],
-            "ry": -1.5708
-          },
-          {
-            "n": 2,
-            "at": [
-              -2821,
-              -117
-            ],
-            "ry": 1.5708
-          }
-        ]
+        "note": "Yanghwa-ro, at the top of Hongdae Walking Street; the Gyeongui Line Forest Park starts across the road. The Airport Railroad and Gyeongui-Jungang Line also stop here; the signs show Line 2.",
+        "exits": [{"n": 1, "at": [-2941, -339], "ry": -1.5708}, {"n": 2, "at": [-2931, -316.5], "ry": 1.5708}]
       },
       {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "Worldcup-ro, a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3264, -352.5], "ry": -1.5708}, {"n": 2, "at": [-3240, -352.5], "ry": 1.5708}]},
       { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro at the north-west corner of DDP, by the park. Lines 4 and 5 also stop here; the signs show Line 2.", "exits": [{ "n": 1, "at": [-1100, -584], "ry": -1.5708 }, { "n": 2, "at": [-1080, -584], "ry": 1.5708 }] },
@@ -770,7 +744,7 @@
       "id": "hongdae-busking",
       "at": [
         -2961,
-        -352.5
+        -248
       ],
       "radius": 22,
       "name": {

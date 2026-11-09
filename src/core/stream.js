@@ -22,6 +22,7 @@
 // you switch from the street layer to the low one.
 import * as THREE from 'three';
 import { buildHeron } from './heron.js';
+import { mergeStatic } from './merge-static.js';
 import { buildLanternFestival, WishLanterns } from './lanterns.js';
 
 export const STAIR = { w: 2.4, run: 9, landing: 3 };
@@ -300,6 +301,9 @@ function buildOne(g, s) {
   box(len, len + WALL, -D, 0, -hw, hw, C.wall); // east end (the stream goes on in real life)
   // Bridges overhead.
   for (const b of s.bridges || []) bridge(g, s, b, D);
+  // Walls, railing posts, steps, stones and bridges never move: one mesh per
+  // colour (core/merge-static.js). Hundreds of draw calls became a handful.
+  mergeStatic(g);
   const heron = s.heron ? buildHeron(g, s) : null; // a grey heron fishing in the water (core/heron.js)
   // The lantern festival and the wish lanterns (core/lanterns.js).
   const fest = s.lanterns ? buildLanternFestival(g, s) : null;

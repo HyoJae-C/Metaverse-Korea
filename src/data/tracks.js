@@ -129,6 +129,27 @@ export const TRACKS = [
     scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.3, lead: 'bell',
   },
   {
+    // The Banpo Bridge rainbow fountain's music (not in the record list):
+    // a light, bright tune like water dancing, soft drums, bells and the
+    // river underneath (game/rainbow-fountain.js).
+    id: 'rainbowfountain',
+    hidden: true,
+    icon: '🌈',
+    color: '#3a6fc9',
+    name: { en: 'Rainbow over Banpo', ko: '반포의 무지개', ja: '盤浦の虹', zh: '盘浦的彩虹' },
+    desc: {
+      en: 'Fountain show music: bright chords, dancing bells and the river at night.',
+      ko: '분수쇼 음악: 밝은 화음, 춤추는 종소리, 밤 강물 소리.',
+      ja: '噴水ショーの音楽：明るい和音、踊るベル、夜の川の音。',
+      zh: '喷泉表演音乐：明亮的和弦、跳跃的铃声和夜晚的江水声。',
+    },
+    bpm: 92, swing: 1,
+    chords: [[60, 64, 67, 72], [57, 60, 64, 69], [53, 57, 60, 65], [55, 59, 62, 67]],
+    bass: [48, 45, 41, 43], bassHits: [[0, 0, 1.8], [4, 7, 1.8]], pad: true, waves: true,
+    kick: [0], snare: [], hat: 'odd',
+    scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.55, lead: 'bell',
+  },
+  {
     // The Curve Runway's show music (not in the music cafe's record list):
     // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
     // bass, tense like a fashion show's catwalk.

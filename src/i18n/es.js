@@ -398,6 +398,7 @@ export const ES = {
   'hud.music': 'Música',
   'settings.title': 'Ajustes',
   'settings.steady': 'Paso constante (sin correr)',
+  'settings.saver': 'Ahorro de batería (más fresco, 30 fps)',
   'settings.signs': 'Traducir letreros',
   'settings.done': 'Listo',
   "news.title": "Novedades",
@@ -637,4 +638,8 @@ export const ES = {
   'dal.called': "¡Tu turno en Seoul Dal! Sube en {s} segundos.",
   'dal.turn': "¡Tu turno! Subir · 🪙 {n} · {s}s",
   'dal.missed': "Perdiste tu turno. Toma otro número en la puerta.",
+  "fountain.soon": "🌈 La Fuente Arcoíris a la Luz de la Luna empieza en un minuto. Mira el puente Banpo desde el césped junto al río.",
+  "fountain.on": "🌈 La Fuente Arcoíris está encendida: agua de colores cae desde ambos lados del puente Banpo.",
+  "fountain.photo": "📸 Hora de la foto: todo el puente es un arcoíris durante el último minuto.",
+  "fountain.next": "🌈 El próximo espectáculo de la Fuente Arcoíris empieza en {min} min.",
 };

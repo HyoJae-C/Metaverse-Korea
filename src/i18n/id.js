@@ -399,6 +399,7 @@ export const ID = {
   'hud.music': 'Musik',
   'settings.title': 'Pengaturan',
   'settings.steady': 'Jalan stabil (tanpa lari)',
+  'settings.saver': 'Hemat baterai (lebih dingin, 30 fps)',
   'settings.signs': 'Terjemahkan papan nama toko',
   'settings.done': 'Selesai',
   "news.title": "Pembaruan",
@@ -638,4 +639,8 @@ export const ID = {
   'dal.called': "Giliranmu naik Seoul Dal! Naik dalam {s} detik.",
   'dal.turn': "Giliranmu! Naik · 🪙 {n} · {s}d",
   'dal.missed': "Giliranmu terlewat. Ambil nomor baru di gerbang.",
+  "fountain.soon": "🌈 Air Mancur Pelangi Cahaya Bulan dimulai satu menit lagi. Tonton Jembatan Banpo dari halaman rumput di tepi sungai.",
+  "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
+  "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",
+  "fountain.next": "🌈 Pertunjukan Air Mancur Pelangi berikutnya dalam {min} menit.",
 };

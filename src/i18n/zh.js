@@ -396,6 +396,7 @@ export const ZH = {
   'hud.music': '音乐',
   'settings.title': '设置',
   'settings.steady': '匀速步行（不跑步）',
+  'settings.saver': '省电模式（降低发热，30帧）',
   'settings.signs': '翻译店铺招牌',
   'settings.done': '完成',
   "news.title": "更新公告",
@@ -641,4 +642,8 @@ export const ZH = {
   'dal.called': "轮到你乘坐首尔月亮了！请在{s}秒内登乘。",
   'dal.turn': "轮到你了！登乘 · 🪙 {n} · {s}秒",
   'dal.missed': "你错过了顺序。请到登乘口重新领号。",
+  "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
+  "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
+  "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
+  "fountain.next": "🌈 下一场月光彩虹喷泉在{min}分钟后。",
 };

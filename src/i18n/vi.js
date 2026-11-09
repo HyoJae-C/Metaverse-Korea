@@ -399,6 +399,7 @@ export const VI = {
   'hud.music': 'Nhạc',
   'settings.title': 'Cài đặt',
   'settings.steady': 'Đi bộ đều (không chạy)',
+  'settings.saver': 'Tiết kiệm pin (mát hơn, 30 fps)',
   'settings.signs': 'Dịch biển hiệu cửa hàng',
   'settings.done': 'Xong',
   'news.title': 'Cập nhật',
@@ -638,4 +639,8 @@ export const VI = {
   'dal.called': "Đến lượt bạn đi Seoul Dal! Lên trong {s} giây.",
   'dal.turn': "Đến lượt! Lên · 🪙 {n} · {s}giây",
   'dal.missed': "Bạn đã lỡ lượt. Lấy số mới ở cổng.",
+  "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
+  "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
+  "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
+  "fountain.next": "🌈 Buổi diễn tiếp theo của Đài phun nước Cầu vồng sau {min} phút.",
 };

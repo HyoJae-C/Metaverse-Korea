@@ -396,6 +396,7 @@ export const KO = {
   'hud.music': '음악',
   'settings.title': '설정',
   'settings.steady': '일정한 걸음 (뛰지 않기)',
+  'settings.saver': '배터리 절약 (덜 뜨겁게, 30프레임)',
   'settings.signs': '가게 간판 번역',
   'settings.done': '완료',
   "news.title": "업데이트 소식",
@@ -641,4 +642,8 @@ export const KO = {
   'dal.called': "서울달 탈 차례예요! {s}초 안에 타 주세요.",
   'dal.turn': "내 차례! 타기 · 🪙 {n} · {s}초",
   'dal.missed': "차례를 놓쳤어요. 게이트에서 대기표를 다시 받아 주세요.",
+  "fountain.soon": "🌈 1분 뒤 달빛무지개분수가 시작돼요. 강가 잔디밭에서 반포대교를 바라봐요.",
+  "fountain.on": "🌈 달빛무지개분수가 켜졌어요. 반포대교 양옆으로 무지개 물줄기가 쏟아져요.",
+  "fountain.photo": "📸 사진 찍을 시간! 마지막 1분, 다리 전체가 무지개로 쏟아져요.",
+  "fountain.next": "🌈 다음 달빛무지개분수는 {min}분 뒤에 시작해요.",
 };
