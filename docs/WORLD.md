@@ -27,7 +27,10 @@ Lane, Seongsui-ro (30 m east), Yeonmujang 13-gil and 17-gil and Dongil-ro
 (195 m) cross them. The grid is laid out in its own frame (`toMap` /
 `toGrid`), then turned onto the map and cut back to Wangsimni-ro (north-south
 at x -250, Seoul Forest Station on it), the map's edges and the riverside.
-Each street side that faces a shopping street is lined with small shop
+The shops crowd into the blocks round Yeonmujang-gil, between Seongsuil-ro
+and Yeonmujang 17-gil (Seongsu's busiest shopping alleys, on Yozi's map),
+with narrow fronts (9.5–12 m); the blocks west and east of them are offices.
+Each street side that faces a shopping street there is lined with small shop
 buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
 finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
 its own layout, drawn in its old frame and moved as one piece by

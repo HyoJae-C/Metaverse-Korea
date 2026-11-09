@@ -762,13 +762,13 @@
     }
   ],
   "adPosters": {
-    "L-64": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
-    "L-04": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
-    "L-03": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
+    "L-67": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
+    "L-05": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
+    "L-29": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
     "L-68": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
-    "L-02": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
+    "L-01": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
     "L-69": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
-    "L-93": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
+    "L-97": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
   },
   "storePosters": {
     "sinjeon-pocha": { "image": "ads/seongsu-retro-v2.webp", "credit": "Alex Shaw" },
