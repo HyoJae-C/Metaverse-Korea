@@ -400,6 +400,7 @@ export const ID = {
   'settings.title': 'Pengaturan',
   'settings.steady': 'Jalan stabil (tanpa lari)',
   'settings.localSky': 'Siang & malam sesuai waktuku (bukan Seoul)',
+  'settings.saver': 'Hemat baterai (lebih dingin, 30 fps)',
   'settings.signs': 'Terjemahkan papan nama toko',
   'settings.done': 'Selesai',
   "news.title": "Pembaruan",
@@ -621,4 +622,8 @@ export const ID = {
   'look.model': 'Karakter',
   'look.tee': 'Warna kaos',
   'credit.chars': 'Karakter',
+  "fountain.soon": "🌈 Air Mancur Pelangi Cahaya Bulan dimulai satu menit lagi. Tonton Jembatan Banpo dari halaman rumput di tepi sungai.",
+  "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
+  "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",
+  "fountain.next": "🌈 Pertunjukan Air Mancur Pelangi berikutnya dalam {min} menit.",
 };

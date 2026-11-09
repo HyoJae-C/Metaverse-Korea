@@ -398,6 +398,7 @@ export const FR = {
   'settings.title': 'Réglages',
   'settings.steady': 'Marche tranquille (jamais courir)',
   'settings.localSky': 'Jour et nuit à mon heure (pas celle de Séoul)',
+  'settings.saver': 'Économie de batterie (plus frais, 30 i/s)',
   'settings.signs': 'Traduire les enseignes',
   'settings.done': 'Terminé',
   'news.title': 'Nouveautés',
@@ -621,4 +622,8 @@ export const FR = {
   'look.model': 'Personnage',
   'look.tee': 'Couleur du t-shirt',
   'credit.chars': 'Personnages',
+  "fountain.soon": "🌈 La fontaine arc-en-ciel au clair de lune commence dans une minute. Regardez le pont Banpo depuis la pelouse au bord du fleuve.",
+  "fountain.on": "🌈 La fontaine arc-en-ciel est lancée : une eau aux couleurs de l'arc-en-ciel tombe des deux côtés du pont Banpo.",
+  "fountain.photo": "📸 C'est l'heure de la photo : tout le pont devient arc-en-ciel pendant la dernière minute.",
+  "fountain.next": "🌈 Le prochain spectacle de la fontaine arc-en-ciel commence dans {min} min.",
 };

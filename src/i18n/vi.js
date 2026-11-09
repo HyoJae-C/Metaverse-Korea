@@ -400,6 +400,7 @@ export const VI = {
   'settings.title': 'Cài đặt',
   'settings.steady': 'Đi bộ đều (không chạy)',
   'settings.localSky': 'Ngày & đêm theo giờ của tôi (không theo Seoul)',
+  'settings.saver': 'Tiết kiệm pin (mát hơn, 30 fps)',
   'settings.signs': 'Dịch biển hiệu cửa hàng',
   'settings.done': 'Xong',
   'news.title': 'Cập nhật',
@@ -621,4 +622,8 @@ export const VI = {
   'look.model': 'Nhân vật',
   'look.tee': 'Màu áo phông',
   'credit.chars': 'Nhân vật',
+  "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
+  "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
+  "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
+  "fountain.next": "🌈 Buổi diễn tiếp theo của Đài phun nước Cầu vồng sau {min} phút.",
 };

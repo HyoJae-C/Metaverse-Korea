@@ -397,6 +397,7 @@ export const ZH = {
   'settings.title': '设置',
   'settings.steady': '匀速步行（不跑步）',
   'settings.localSky': '按我的时间显示昼夜 (而非首尔时间)',
+  'settings.saver': '省电模式（降低发热，30帧）',
   'settings.signs': '翻译店铺招牌',
   'settings.done': '完成',
   "news.title": "更新公告",
@@ -624,4 +625,8 @@ export const ZH = {
   'look.model': '角色',
   'look.tee': 'T恤颜色',
   'credit.chars': '角色',
+  "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
+  "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
+  "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
+  "fountain.next": "🌈 下一场月光彩虹喷泉在{min}分钟后。",
 };

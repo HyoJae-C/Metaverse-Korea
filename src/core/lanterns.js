@@ -29,6 +29,7 @@
 // arrive later see it too. A few lanterns float by on their own, from the
 // clock, so the stream is never empty.
 import * as THREE from 'three';
+import { mergeStatic } from './merge-static.js';
 import { canvasTex } from './three-kit.js';
 
 export const WISH = { price: 5000, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
@@ -432,6 +433,7 @@ export function buildLanternFestival(g, s) {
       root.add(sign);
     }
   }
+  mergeStatic(root); // the still figures, ropes and signs: a mesh per colour (core/merge-static.js)
   return { root, tick: (t) => { for (const f of ticks) f(t); } };
 }
 

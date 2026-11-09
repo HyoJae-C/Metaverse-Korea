@@ -396,6 +396,7 @@ export const EN = {
   'settings.title': 'Settings',
   'settings.steady': 'Steady walk (never run)',
   'settings.localSky': "Day & night on my time (not Seoul's)",
+  'settings.saver': 'Battery saver (cooler, 30 fps)',
   'settings.signs': 'Translate shop signs',
   'settings.done': 'Done',
   "news.title": "Updates",
@@ -623,4 +624,8 @@ export const EN = {
   'look.model': 'Character',
   'look.tee': 'T-shirt colour',
   'credit.chars': 'Characters',
+  "fountain.soon": "🌈 The Moonlight Rainbow Fountain starts in a minute. Watch Banpo Bridge from the lawn by the river.",
+  "fountain.on": "🌈 The Moonlight Rainbow Fountain is on: rainbow water pours from both sides of Banpo Bridge.",
+  "fountain.photo": "📸 Photo time: the whole bridge pours rainbows for the last minute.",
+  "fountain.next": "🌈 The Moonlight Rainbow Fountain's next show is in {min} min.",
 };

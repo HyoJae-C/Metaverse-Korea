@@ -19,6 +19,15 @@ Known hot spots: the Banpo (~3,200), Ttukseom (~2,000) and Mangwon (~800)
 park gates draw every prop as its own mesh. The Han River park work is merging
 those.
 
+## Frame rate and heat
+
+The game draws at most 60 frames a second (30 with Battery saver in
+Settings), and steps down resolution and shadows by itself when the frame
+rate stays low (`src/core/graphics-quality.js`). Anything big added to the
+street that is not in `FarCull` (main.js) is drawn even 2 km away behind the
+fog: the zoo alone cost ~1,500 draw calls a frame from Bukchon until it was
+added. Check `__mk.renderInfo()` facing every direction, not just one.
+
 ## How the page starts
 
 `index.html` runs `src/boot.js`, which only shows the language step and starts

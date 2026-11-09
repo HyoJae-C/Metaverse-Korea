@@ -10,6 +10,7 @@ import {
   ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ZOO_TEXT, DOGHOLE_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
+import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
@@ -35,7 +36,7 @@ import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
-import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
+import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace, onMap } from './core/respawn.js';
 import { updateFarTextures } from './core/far-textures.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
@@ -140,6 +141,7 @@ import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
+import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
 import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
@@ -619,7 +621,6 @@ function showGpuHint() {
 // come back instead of leaving a blank screen.
 canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); reportProblem('graphics context lost — reload the page if it stays blank'); });
 canvas.addEventListener('webglcontextrestored', () => { if (errBox) errBox.hidden = true; });
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec || softwareGL ? 1 : 2));
 renderer.shadowMap.enabled = !lowSpec && !softwareGL;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -638,6 +639,10 @@ sun.position.set(60, 120, 40);
 sun.castShadow = !lowSpec && !softwareGL;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 300 });
+// Resolution, shadows and a 60 fps cap, lowered when the frame rate drops or
+// with Battery saver in Settings (core/graphics-quality.js).
+const SAVER_KEY = 'mk.batterySaver';
+const gfx = createGraphicsQuality({ renderer, sun, capable: !lowSpec && !softwareGL, saver: (() => { try { return localStorage.getItem(SAVER_KEY) === '1'; } catch { return false; } })() });
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
@@ -1035,12 +1040,15 @@ function onboardHi5() {
 
 // Come back where you left off last time, if that spot is still open.
 const spotBoxes = districtBoxes(map);
+// A spot we can't come back to: inside something (a duck boat on the river,
+// a wall) or out in the empty land between districts (e.g. a spot saved
+// before a district moved to its real place, scripts/place-districts.mjs).
+// Such spots aren't saved either, so a refresh keeps the last good one.
+const spotMap = { boxes: spotBoxes, areas: map.areas, onRoad: (x, z) => onAnyRoad(map.roads, x, z, 0) };
+const spotBad = (x, z) => collision.blocked(x, z, 0.4) || !onMap(x, z, spotMap);
 if (onboard >= 2) {
   const last = loadLastSpot();
-  // Not out in the empty land between districts either (e.g. a spot saved
-  // before a district moved to its real place, scripts/place-districts.mjs).
-  const nearDistrict = (x, z) => !spotBoxes.length || spotBoxes.some((b) => x >= b.x0 - 40 && x <= b.x1 + 40 && z >= b.z0 - 40 && z <= b.z1 + 40);
-  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4) || !nearDistrict(x, z))) {
+  if (usableSpot(last, bounds, spotBad)) {
     me.root.position.set(last.x, 0, last.z);
     me.root.rotation.y = last.ry;
     // A save from before districts were remembered: name it now.
@@ -1058,6 +1066,7 @@ const rememberSpot = () => {
   try {
     if (mode !== 'street') return;
     const { x, z } = me.root.position;
+    if (spotBad(x, z)) return; // keep the last spot we can come back to
     saveLastSpot(x, z, me.root.rotation.y);
     if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
   } catch { /* still starting up */ }
@@ -1328,7 +1337,12 @@ let onlineAll = 0;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
   $('online').hidden = n < 2;
-  $('online').textContent = '🟢 ' + t('hud.online', { n });
+  // Phones show just "🟢 5" (style.css hides .on-long); the full words stay
+  // in the tooltip and for screen readers.
+  const full = t('hud.online', { n });
+  $('online').title = full;
+  $('online').setAttribute('aria-label', full);
+  $('online').replaceChildren('🟢 ', Object.assign(document.createElement('span'), { className: 'on-long', textContent: full }), Object.assign(document.createElement('span'), { className: 'on-short', textContent: String(n), ariaHidden: 'true' }));
 };
 onLanguageChange(refreshOnline);
 let stopOnline = null;
@@ -2908,6 +2922,12 @@ $('sfx-btn').onclick = () => {
   if (sfx.on) sfx.doorbell(); // preview
   else motionSound.stopAll();
 };
+$('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+$('saver-btn').onclick = () => {
+  gfx.setSaver(!gfx.saver);
+  $('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+  try { localStorage.setItem(SAVER_KEY, gfx.saver ? '1' : '0'); } catch { /* ignore */ }
+};
 $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
 $('steady-btn').onclick = () => {
   steadyWalk = !steadyWalk;
@@ -4441,9 +4461,11 @@ for (const e of enclosures) {
   e.collect([landmarks, scene], enclosureSkip);
   e.adopt(storefronts.items.filter((i) => e.contains(i.group.position.x, i.group.position.z, 0.5)).map((i) => i.group));
 }
-// Shops, landmarks, subway entrances, stamp stands, meeting zones and the
-// stream's lanterns and stones past the fog are not drawn.
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+// Shops, landmarks, subway entrances, stamp stands, meeting zones, the
+// stream's lanterns and stones, the zoo's pens and the wall posters past the
+// fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
+// Bukchon, 2 km away behind the fog.)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), ...zoo.pens.map((P) => P.g), adPosters.root], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past
@@ -5289,6 +5311,16 @@ const duckBoats = createDuckBoats({
   others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
 });
 const { boardDuck, startDuckRide, updateDucks } = duckBoats;
+
+// Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
+const rainbowFountain = createRainbowFountain({
+  landmarks: map.landmarks, scene, weather, music, phone: () => lowSpec,
+  toast: (s) => shop.toast(s),
+  worldPos: () => {
+    const p = me.root.position, here = openParkHere();
+    return mode === 'street' ? [p.x, p.z] : here ? parkWorld(here, p.x, p.z) : null;
+  },
+});
 
 // Delivery runs from the tteokbokki stall. (game/delivery.js)
 const deliveryGame = createDelivery({
@@ -6276,7 +6308,8 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop((now) => {
+  if (!gfx.frame(now)) return; // (at most 60 frames a second)
   guardPosition();
   timer.update();
   const dt = Math.min(timer.getDelta(), 0.05);
@@ -6327,6 +6360,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
   updateFireworks();
+  rainbowFountain.update();
   updateRide(dt);
   if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   updateCable();
@@ -6711,6 +6745,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
     openBank: () => bankGame.openBank(),
@@ -6754,6 +6789,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     riding: () => riding,
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
+    graphics: () => gfx.state(),
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),

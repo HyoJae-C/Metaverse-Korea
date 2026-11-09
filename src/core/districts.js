@@ -94,7 +94,9 @@ export function districtBoxes(map) {
     // scripts/place-districts.mjs) uses those: e.g. Gyeongbokgung's palace and
     // stream, with Bukchon tucked into the corner between them.
     if (parts?.length) {
-      for (const { box: [x0, z0, x1, z1] } of parts) out.push({ id, x0: x0 + offset[0], x1: x1 + offset[0], z0: z0 + offset[1], z1: z1 + offset[1] });
+      // (Corners in either order: a box written right-to-left, like
+      // Heunginjimun's, used to match nothing.)
+      for (const { box: [ax, az, bx, bz] } of parts) out.push({ id, x0: Math.min(ax, bx) + offset[0], x1: Math.max(ax, bx) + offset[0], z0: Math.min(az, bz) + offset[1], z1: Math.max(az, bz) + offset[1] });
       continue;
     }
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;

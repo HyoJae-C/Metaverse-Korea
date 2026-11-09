@@ -397,6 +397,7 @@ export const JA = {
   'settings.title': '設定',
   'settings.steady': '一定の速さで歩く（走らない）',
   'settings.localSky': '昼と夜を自分の時間に (ソウル時間の代わりに)',
+  'settings.saver': 'バッテリーセーバー（熱を抑える・30fps）',
   'settings.signs': '店の看板を翻訳',
   'settings.done': '完了',
   "news.title": "アップデート情報",
@@ -624,4 +625,8 @@ export const JA = {
   'look.model': 'キャラクター',
   'look.tee': 'Tシャツの色',
   'credit.chars': 'キャラクター',
+  "fountain.soon": "🌈 1分後に月光レインボー噴水が始まります。川辺の芝生から盤浦大橋を眺めましょう。",
+  "fountain.on": "🌈 月光レインボー噴水が始まりました。盤浦大橋の両側から虹色の水が流れ落ちます。",
+  "fountain.photo": "📸 撮影タイム！最後の1分間、橋全体が虹色に染まります。",
+  "fountain.next": "🌈 次の月光レインボー噴水は{min}分後です。",
 };
