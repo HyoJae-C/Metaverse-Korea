@@ -523,7 +523,7 @@ export const ZH = {
   'credit.weather': '天气',
   'hud.weatherNow': '圣水洞实时天气',
   'start.next': '下一步',
-  'app.disclaimer': '街道是参考首尔真实街区绘制的游戏地图，并非精确复制。这里的商店、品牌和商品均为虚构示例，与真实商家无关。',
+  'app.disclaimer': '街道是参考首尔真实街区绘制的游戏地图，并非精确复制。建筑、商店、品牌和商品可能与现实不同，大多数商店为虚构示例。',
   'start.back': '返回',
   'look.title': '打造你的角色',
   'look.random': '随机搭配',

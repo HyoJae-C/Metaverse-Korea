@@ -520,7 +520,7 @@ export const FR = {
   'credit.weather': 'Météo',
   'hud.weatherNow': 'Météo en direct à Seongsu-dong',
   'start.next': 'Suivant',
-  'app.disclaimer': 'Les rues sont une carte de jeu inspirée de vrais quartiers de Séoul, pas une copie exacte. Toutes les boutiques, marques et produits ici sont des exemples fictifs, pas de vrais commerces.',
+  'app.disclaimer': 'Les rues sont une carte de jeu inspirée de vrais quartiers de Séoul, pas une copie exacte. Les bâtiments, boutiques, marques et produits peuvent différer de la réalité, et la plupart des boutiques sont des exemples fictifs.',
   'start.back': 'Retour',
   'look.title': 'Crée ton personnage',
   'look.random': 'Surprends-moi',
