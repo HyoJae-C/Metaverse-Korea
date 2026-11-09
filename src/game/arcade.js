@@ -53,7 +53,7 @@ export function createArcade(game) {
         });
       } else if (kind === 'bowling' || kind === 'climbing' || kind === 'aim') { // the modern activities (ui/activity-ui.js)
         const { BowlingUI, ClimbUI, AimUI } = await import('../ui/activity-ui.js');
-        if (kind === 'bowling') ui = new BowlingUI({ root: $('bowling-panel'), store: localStorage, onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); } });
+        if (kind === 'bowling') ui = new BowlingUI({ root: $('bowling-panel'), store: localStorage, onHit: () => sfx.tock(1, 260), onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); } });
         else if (kind === 'climbing') ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
         else ui = new AimUI({ root: $('aim-panel'), store: localStorage, onHit: () => sfx.tock(0.5, 1400) });
       } else if (kind === 'gallery') {
