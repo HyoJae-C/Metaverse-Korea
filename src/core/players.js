@@ -103,8 +103,10 @@ export class RemotePlayers {
   }
 
   // Positions for the map.
+  // Where everyone is (the map's dots). A flying operator (game/sky-flight.js,
+  // "fl") is left off, like their name tag.
   list() {
-    return [...this.players.values()].filter((p) => p.target).map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
+    return [...this.players.values()].filter((p) => p.target && !p.target.fl).map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
   }
 
   state(id, st) {
