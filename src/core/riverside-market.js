@@ -79,14 +79,17 @@ export function signBoard(w, h, bg) {
 // Builds the market into the park scene. block(x, z, sx, sz) adds a collider;
 // seats is the park's seat list (stools are added to it).
 // Returns { products: [{ product, mesh, pos }], vendors: [{ x, z, ry }], setSignLang }.
-export function buildMarket(scene, store, block, seats) {
+// at: where a park laid on the street puts them (game/han-parks.js):
+// { spots: [[x, z, ry]], tables: [[x, z]], board: [x, z, ry] }; the room parks use the corner above.
+export function buildMarket(scene, store, block, seats, at = {}) {
+  const spots = at.spots || STALL_SPOTS;
   const market = store.market;
   if (!market?.stalls?.length) return { products: [], vendors: [], setSignLang() {} };
   const products = [], vendors = [], signs = [];
   const up = new THREE.Vector3(0, 1, 0);
 
-  market.stalls.slice(0, STALL_SPOTS.length).forEach((stall, i) => {
-    const [x, z, ry] = STALL_SPOTS[i];
+  market.stalls.slice(0, spots.length).forEach((stall, i) => {
+    const [x, z, ry] = spots[i];
     const color = stall.color || '#d8452f';
     const g = new THREE.Group();
     g.position.set(x, 0, z);
@@ -141,23 +144,27 @@ export function buildMarket(scene, store, block, seats) {
   });
 
   // Parasol tables with stools.
-  TABLES.forEach(([tx, tz], i) => parasolTable(scene, block, seats, tx, tz, PARASOLS[i % PARASOLS.length]));
+  (at.tables || TABLES).forEach(([tx, tz], i) => parasolTable(scene, block, seats, tx, tz, PARASOLS[i % PARASOLS.length]));
 
-  // The market's name board at the corner of the lawn.
-  const BX = -12.4; // the name board, at the corner of the lawn
+  // The market's name board on two posts (at the corner of the lawn).
+  const [BX, BZ, BRY] = at.board || [-12.4, 6.6, 0];
+  const bg = new THREE.Group();
+  bg.position.set(BX, 0, BZ);
+  bg.rotation.y = BRY;
+  scene.add(bg);
   const board = signBoard(3, 0.9, market.color || '#7a3b2e');
-  board.mesh.position.set(BX, 2.2, 6.6);
-  scene.add(board.mesh);
+  board.mesh.position.set(0, 2.2, 0);
+  bg.add(board.mesh);
   for (const sx of [-1.4, 1.4]) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.7, 0.1), mat('#6b5a4a'));
-    post.position.set(BX + sx, 1.35, 6.58);
-    scene.add(post);
-    block(BX + sx, 6.58, 0.2, 0.2);
+    post.position.set(sx, 1.35, -0.02);
+    bg.add(post);
+    block(BX + sx * Math.cos(BRY), BZ - sx * Math.sin(BRY), 0.2, 0.2);
   }
   for (const sx of [-1.1, -0.37, 0.37, 1.1]) { // lanterns along the top
     const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8).scale(1, 1.25, 1), glow('#ff7a59'));
-    lamp.position.set(BX + sx, 2.85, 6.66);
-    scene.add(lamp);
+    lamp.position.set(sx, 2.85, 0.06);
+    bg.add(lamp);
   }
 
   const setSignLang = (lang) => {

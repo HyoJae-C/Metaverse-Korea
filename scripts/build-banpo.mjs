@@ -43,12 +43,46 @@ const FAR = -150; // the river's far edge (v): the north bank is beyond
 const PATH = -18; // the Han River path (v)
 const BRIDGE = -100; // where Jamsu Bridge lands (u)
 const BRIDGE_W = 14;
-// The Han River park (core/park.js) is open to the street here: no park
-// house, you walk straight onto its lawn. Its own frame is this one moved
-// so its bank (z = -4) sits on BANK: x = u, z = v - (BANK + 4). It covers
-// u -26..26 and v BANK..v1 (52 x 18 m of land, plus the pier and the boats
-// on the water). stores.json "open" holds the same origin in world metres.
-export const OPEN_PARK = { half: 26, v0: BANK + 4, v1: BANK + 18 };
+// The Han River park, laid straight on the street (game/han-parks.js,
+// core/han-park.js builds what the map can't draw). Its own frame: x along
+// the bank from Jamsu Bridge (x = u - BRIDGE), z inland from the bank's edge
+// (z = v - BANK), so the river is z < 0. At 1/4, as the real parks are:
+//  - Banpo (west of the bridge, downstream): Moonlight Square at the foot of
+//    Banpo Bridge, where people sit on the stone steps to watch the Moonlight
+//    Rainbow Fountain and the food trucks of the night market park, with the
+//    convenience store under the bridge.
+//  - Jamwon (east, upstream): the fishing pier, the boat dock and the open
+//    lawn by the water.
+const PX = (x) => x + BRIDGE; // the park's x back to u
+const PZ = (z) => z + BANK; // its z back to v
+export const PARK = {
+  bounds: [-50, -45, 84, 13], // the park (x0, z0, x1, z1): bank to path, and out on its water
+  layout: {
+    // Moonlight Square: stone paving between the bridge and the river path.
+    paving: [[-47, 0.4, -8.4, 9.3, '#cdbfa8'], [8.4, 0.4, 24, 6.2, '#d9c7a6']],
+    rail: [-48, 82], railGaps: [[-7.6, 7.6]], // (Jamsu Bridge crosses the bank)
+    steps: [{ x: -31, z: 1.8, w: 18, rows: 2 }], // facing the fountain on the bridge
+    market: {
+      spots: [[-42.6, 8.2, Math.PI], [-39.8, 8.2, Math.PI], [-37, 8.2, Math.PI], [-34.2, 8.2, Math.PI]], // the food trucks, facing the river
+      tables: [[-29.4, 6.6], [-25.2, 6.6]],
+      board: [-46.4, 6.2, Math.PI / 2],
+    },
+    kiosk: [-14.6, 7.3, Math.PI], // BANPO 24 under the bridge, facing the square
+    tables: [[-20.2, 2.1], [-16.2, 2.1]],
+    pier: { x: 16, len: 9 },
+    fishBuy: [21, 3.6, 0],
+    dock: 31,
+    duckWater: { minX: 9, maxX: 60, minZ: -40 },
+    fishing: [[-45, 0.75], [11.5, 0.75], [16, -8.2], [44, 0.75]],
+    lamps: [[-44, 2.6], [-24, 4.4], [12, 3], [26, 2.6], [40, 2.6], [54, 2.6], [68, 2.6], [80, 2.6]],
+    benches: [[48, 3.2], [58, 3.2], [72, 3.2]],
+    beds: [[13, 5.4, 3], [45.5, 5.2, 4], [63, 5.2, 4]],
+    trees: [[-47.4, 9.2], [52, 7.6], [66, 7.4], [78, 7]],
+    bushes: [[-8.9, 8.6], [9.2, 8.4], [36, 7.4], [76, 4.4]],
+  },
+};
+// Where on the street the park's things go.
+const park = (x, z) => at(PX(x), PZ(z));
 
 function build() {
   const buildings = [
@@ -66,10 +100,9 @@ function build() {
   ];
   const areas = [
     { k: 'grass', p: rect(-HALF, BANK, HALF, PATH - 2.5) },
-    // The trees leave room for the open-air park (OPEN_PARK) on the bank.
-    { k: 'park', trees: true, p: rect(-HALF, PATH + 3, -OPEN_PARK.half - 1, 34) },
-    { k: 'park', trees: true, p: rect(OPEN_PARK.half + 1, PATH + 3, HALF, 34) },
-    { k: 'park', trees: true, p: rect(-OPEN_PARK.half - 1, OPEN_PARK.v1 + 1, OPEN_PARK.half + 1, 34) },
+    { k: 'park', trees: true, p: rect(-HALF, PATH + 3, HALF, 34) },
+    // Jamwon's open lawn on the bank, for picnic mats (no trees).
+    { k: 'grass', lawn: true, p: [park(40, 4.3), park(84, 4.3), park(84, 9.2), park(40, 9.2)] },
     { k: 'water', p: rect(-HALF - 40, FAR, HALF + 40, BANK) },
   ];
   // You can't walk into the river, except over Jamsu Bridge.
@@ -82,7 +115,7 @@ function build() {
   const landmarks = [
     { type: 'jamsu', x: bx, z: bz, ry: ALONG_V, len: PATH - FAR + 6, w: BRIDGE_W },
     { type: 'arch', ...xz(at(BRIDGE, BANK + 2)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'BANPO-JAMWON HAN RIVER PARK', sub: '반포·잠원 한강공원', color: '#2f6fb0' },
-    { type: 'sign', ...xz(at(OPEN_PARK.half + 8, -13)), ry: FACE_RIVER, // (beside the open-air park)
+    { type: 'sign', ...xz(at(PX(36), -13)), ry: FACE_RIVER, // (across the path from Jamwon's lawn)
       title: name('Banpo-Jamwon Han River Park', '반포·잠원 한강공원', '盤浦・蚕院漢江公園', '盘浦·蚕院汉江公园'),
       text: {
         en: 'Banpo and Jamwon Han River Parks lie side by side on the south bank of the Han River. Walk across Jamsu Bridge under Banpo Bridge, spread a mat on the grass, or fish from the bank: the manta ray, a legend, only bites here.',
@@ -102,7 +135,9 @@ function build() {
       ja: '盤浦大橋の噴水は、橋の両側から虹色にライトアップされた水を漢江へ流し落とします。2008年、世界一長い橋の噴水としてギネス世界記録に認定されました。実際には春から秋（だいたい4月〜10月）、毎晩約20分のショーが数回と正午に1回あり、雨や強風の日は休みます。時間は毎年変わるので、行く前に漢江公園のサイトで確認してください。ゲームでは、ほとんどの時間帯で毎時30分（韓国時間）にショーが始まります。',
       zh: '盘浦大桥喷泉从桥的两侧把彩虹色灯光照亮的水洒进汉江。2008年它被吉尼斯世界纪录认定为世界最长的桥梁喷泉。现实中从春天到秋天（大约4月到10月）运行：每晚有几场约20分钟的表演，中午还有一场，下雨或大风时暂停。时间每年都会变，出发前请在汉江公园网站上确认。在游戏里，大多数时段每小时30分（韩国时间）开始一场表演。',
     } });
-  for (const u of [-165, -135, -70, -40, 30, 60, 90, 130, 160]) landmarks.push({ type: 'bench', ...xz(at(u, -25)), ry: FACE_RIVER });
+  for (const u of [-165, 30, 60, 90, 130, 160]) landmarks.push({ type: 'bench', ...xz(at(u, -25)), ry: FACE_RIVER }); // (the park has its own by the water)
+  // The park itself (game/han-parks.js): set at the bank's edge under the bridge.
+  landmarks.push({ type: 'hanpark', store: 'banpo-jamwon-hangang', ...xz(at(BRIDGE, BANK)), ry: +ALONG_V.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
   const pois = [
     { kind: 'landmark', ...xz(at(0, 10)), name: name('Banpo-Jamwon Han River Park', '반포·잠원 한강공원', '盤浦・蚕院漢江公園', '盘浦·蚕院汉江公园') },
     { kind: 'landmark', ...xz(at(BRIDGE, (FAR + BANK) / 2)), name: name('Jamsu Bridge', '잠수교', '潜水橋', '潜水桥') },
@@ -119,7 +154,7 @@ function xz([x, z]) { return { x, z }; }
 
 // Where each place's door is, in the district's own metres.
 const SPOTS = {
-  'banpo-jamwon-hangang': at(0, OPEN_PARK.v1 + 1), // just behind the open-air park's lawn (where a taxi or the map drops you)
+  'banpo-jamwon-hangang': at(PX(-24), PATH), // on the river path by Moonlight Square (where a taxi or the map drops you)
   'info-banpo-jamwon': at(46, -14.5),
 };
 
@@ -144,8 +179,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     writeFileSync(path.join(R, 'stores.json'), stores);
     // The bridge's north end in world metres, for the link road in region.json.
     const north = at(BRIDGE, FAR - 6);
-    const [px, pz] = at(0, OPEN_PARK.v0);
-    console.log(`open park origin: [${r1(px + ox)}, ${r1(pz + oz)}], ry ${ALONG_V.toFixed(4)}`);
+    const [sx, sz] = park(-45, 4.6);
+    console.log(`park stamp stand: [${r1(sx + ox)}, ${r1(sz + oz)}], ry ${(ALONG_V + Math.PI / 2).toFixed(4)}`);
     console.log(`Jamsu Bridge north end: [${r1(north[0] + ox)}, ${r1(north[1] + oz)}]; south end: [${r1(at(BRIDGE, PATH)[0] + ox)}, ${r1(at(BRIDGE, PATH)[1] + oz)}]`);
   }
   console.log(`banpo-jamwon: ${map.buildings.length} buildings`);

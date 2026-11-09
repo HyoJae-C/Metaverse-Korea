@@ -18,11 +18,18 @@ export const WATER = { minX: -24, maxX: 24, minZ: BANK - 40, maxZ: BANK - 1.5 };
 // The fishing pier sticks out from the bank in the middle (park.js).
 export const PIER = { minX: -1.6, maxX: 1.6, minZ: BANK - 8.6, maxZ: BANK };
 
-// Keep a boat centre on the water: inside WATER and off the pier.
-export function onWater(x, z) {
-  x = Math.min(WATER.maxX - BOAT_R, Math.max(WATER.minX + BOAT_R, x));
-  z = Math.min(WATER.maxZ, Math.max(WATER.minZ + BOAT_R, z));
-  const x0 = PIER.minX - BOAT_R, x1 = PIER.maxX + BOAT_R, z0 = PIER.minZ - BOAT_R;
+// A park's own water and pier (game/han-parks.js: a park laid on the street
+// has its dock and pier where its map puts them); the room parks use these.
+export const AREA = { water: WATER, pier: PIER };
+
+// Keep a boat centre on the water: inside WATER and off the pier (or the
+// area's own: { water, pier }, pier null for none).
+export function onWater(x, z, area = AREA) {
+  const W = area.water, P = area.pier;
+  x = Math.min(W.maxX - BOAT_R, Math.max(W.minX + BOAT_R, x));
+  z = Math.min(W.maxZ, Math.max(W.minZ + BOAT_R, z));
+  if (!P) return [x, z];
+  const x0 = P.minX - BOAT_R, x1 = P.maxX + BOAT_R, z0 = P.minZ - BOAT_R;
   if (x > x0 && x < x1 && z > z0) { // touching the pier: out by the shortest way
     const pushL = x - x0, pushR = x1 - x, pushOut = z - z0;
     const m = Math.min(pushL, pushR, pushOut);
@@ -37,7 +44,8 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 // One boat trip. The bow faces (-sin ry, -cos ry), like the boat model
 // (which faces -z at ry = 0).
 export class DuckRide {
-  constructor(home, seconds = RIDE_SECONDS) {
+  constructor(home, seconds = RIDE_SECONDS, area = AREA) {
+    this.area = area;
     this.home = { x: home.x, z: home.z };
     this.x = home.x; this.z = home.z; this.ry = 0;
     this.left = seconds;
@@ -51,7 +59,7 @@ export class DuckRide {
   bump(others) {
     if (this.docked || !others.length) return null;
     const { dx, dz, hit } = collide(this, others, this.knock, DUCK_BUMP);
-    if (dx || dz) [this.x, this.z] = onWater(this.x + dx, this.z + dz);
+    if (dx || dz) [this.x, this.z] = onWater(this.x + dx, this.z + dz, this.area);
     return hit;
   }
   // Steer towards the world direction (dx, dz); |(dx, dz)| is the throttle,
@@ -72,7 +80,7 @@ export class DuckRide {
     // Still sliding (and spinning) from a bump.
     const [kx, kz, kry] = this.knock.step(dt);
     if (kx || kz || kry) {
-      [this.x, this.z] = onWater(this.x + kx, this.z + kz);
+      [this.x, this.z] = onWater(this.x + kx, this.z + kz, this.area);
       if (!this.docked) this.ry = wrap(this.ry + kry);
     }
     if (dt > 0) { this.vx = (this.x - x0) / dt; this.vz = (this.z - z0) / dt; }
@@ -87,7 +95,7 @@ export class DuckRide {
     this.ry = wrap(this.ry + turn);
     // Slow down while turning hard, like a real pedal boat.
     const v = BOAT_SPEED * mag * (0.35 + 0.65 * Math.max(0, Math.cos(d)));
-    const [nx, nz] = onWater(this.x - Math.sin(this.ry) * v * dt, this.z - Math.cos(this.ry) * v * dt);
+    const [nx, nz] = onWater(this.x - Math.sin(this.ry) * v * dt, this.z - Math.cos(this.ry) * v * dt, this.area);
     const moved = Math.hypot(nx - this.x, nz - this.z);
     this.x = nx; this.z = nz;
     return moved;
@@ -104,7 +112,8 @@ export class DuckRide {
     }
     let tx = hx, tz = hz;
     // On the far side of the pier, close in: first straight out past its end.
-    if (Math.sign(this.x) !== Math.sign(hx) && this.z > PIER.minZ - BOAT_R - 1) { tx = this.x; tz = PIER.minZ - BOAT_R - 2; }
+    const P = this.area.pier, px = P ? (P.minX + P.maxX) / 2 : 0;
+    if (P && Math.sign(this.x - px) !== Math.sign(hx - px) && this.z > P.minZ - BOAT_R - 1) { tx = this.x; tz = P.minZ - BOAT_R - 2; }
     const want = Math.atan2(-(tx - this.x), -(tz - this.z));
     const slow = Math.min(1, 0.4 + dist / 4); // ease in to the dock
     return this._go(want, slow, dt);
