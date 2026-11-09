@@ -36,7 +36,7 @@ import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
-import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace } from './core/respawn.js';
+import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace, onMap } from './core/respawn.js';
 import { updateFarTextures } from './core/far-textures.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
@@ -1040,12 +1040,15 @@ function onboardHi5() {
 
 // Come back where you left off last time, if that spot is still open.
 const spotBoxes = districtBoxes(map);
+// A spot we can't come back to: inside something (a duck boat on the river,
+// a wall) or out in the empty land between districts (e.g. a spot saved
+// before a district moved to its real place, scripts/place-districts.mjs).
+// Such spots aren't saved either, so a refresh keeps the last good one.
+const spotMap = { boxes: spotBoxes, areas: map.areas, onRoad: (x, z) => onAnyRoad(map.roads, x, z, 0) };
+const spotBad = (x, z) => collision.blocked(x, z, 0.4) || !onMap(x, z, spotMap);
 if (onboard >= 2) {
   const last = loadLastSpot();
-  // Not out in the empty land between districts either (e.g. a spot saved
-  // before a district moved to its real place, scripts/place-districts.mjs).
-  const nearDistrict = (x, z) => !spotBoxes.length || spotBoxes.some((b) => x >= b.x0 - 40 && x <= b.x1 + 40 && z >= b.z0 - 40 && z <= b.z1 + 40);
-  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4) || !nearDistrict(x, z))) {
+  if (usableSpot(last, bounds, spotBad)) {
     me.root.position.set(last.x, 0, last.z);
     me.root.rotation.y = last.ry;
     // A save from before districts were remembered: name it now.
@@ -1063,6 +1066,7 @@ const rememberSpot = () => {
   try {
     if (mode !== 'street') return;
     const { x, z } = me.root.position;
+    if (spotBad(x, z)) return; // keep the last spot we can come back to
     saveLastSpot(x, z, me.root.rotation.y);
     if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
   } catch { /* still starting up */ }
