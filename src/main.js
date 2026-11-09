@@ -6442,7 +6442,7 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
-// First-person view (game/first-person.js): V, Settings, or zooming in.
+// First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
   canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
