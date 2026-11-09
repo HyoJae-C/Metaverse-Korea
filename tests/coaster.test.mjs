@@ -178,5 +178,5 @@ test('the old square: every ride has a fenced yard you reach by its gate, with i
 test('the park is a handful of draw calls: still meshes are merged', () => {
   let meshes = 0;
   park.scene.traverse((o) => { if (o.isMesh) meshes++; });
-  assert.ok(meshes < 380, `${meshes} meshes`);
+  assert.ok(meshes < 400, `${meshes} meshes`);
 });

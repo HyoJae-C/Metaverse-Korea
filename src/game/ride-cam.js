@@ -10,19 +10,22 @@ export function createRideCam({ camera }) {
   let cam = null;
   return {
     reset() { cam = null; camera.up.set(0, 1, 0); },
-    // s: the seat; first: from your seat; soft: no leaning (the gentle setting).
-    update(dt, s, first, soft) {
+    // s: the seat; first: from your seat; soft: no leaning (the gentle
+    // setting); face: the camera out in front looking back at you (the drop
+    // tower and the wheel, where behind you is the tower or the gondola);
+    // down: look down (at the top of the drop tower).
+    update(dt, s, first, soft, face = 0, down = 0) {
       const c = Math.cos(s.roll || 0), sn = Math.sin(s.roll || 0);
       // The seat's forward and up, tipped by the roll (about z).
       f.set(Math.sin(s.ry) * c, Math.sin(s.ry) * sn, Math.cos(s.ry));
       up.set(-sn, c, 0);
-      const back = first ? -0.1 : 1.6, high = first ? 1.15 : 2.5;
+      const back = first ? -0.1 : face ? -face : 1.6, high = first ? 1.15 : face ? 1.5 : 2.5;
       want.set(s.x - f.x * back + up.x * high, s.y - f.y * back + up.y * high, s.z - f.z * back + up.z * high);
       if (!cam) cam = want.clone();
       cam.lerp(want, 1 - Math.exp(-dt * (first ? 30 : 8)));
       camera.position.copy(cam);
       camera.up.copy(worldUp).lerp(up, soft ? 0 : 0.7).normalize();
-      const ahead = first ? 5 : 6, lift = first ? 1.0 : 0.6;
+      const ahead = first ? 5 : face ? 0 : 6, lift = first ? 1.0 - down * 4 : face ? 0.9 : 0.6;
       at.set(s.x + f.x * ahead + up.x * lift, s.y + f.y * ahead + up.y * lift, s.z + f.z * ahead + up.z * lift);
       camera.lookAt(at);
     },
