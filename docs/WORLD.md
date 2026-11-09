@@ -524,16 +524,21 @@ you're in) and the slightly wider `open.out` (walk past it and you're back on
 the street), in the room's metres, which are the Cotton Candy Express's own
 (`core/park-island.js`, room size `island`). The coaster stands on it exactly
 as it was, track, speed, station and attendant, with its candy wood. Where
-the bridge lands, a Hansel and Gretel candy house is the park's gate
-(`core/park-candy-house.js`, `open.house`: gingerbread walls, a chocolate
-roof with icing, a 9 m ridge, and an archway the walk goes through). In the
+the bridge lands, a candy castle is the park's gate
+(`core/park-candy-house.js`, `open.house`: a gingerbread keep with icing
+battlements, a round tower under a pink cone to about 11 m between two small
+towers under mint and coral cones, a heart cookie, candy-cane posts round the
+archway the walk goes through, swirl lollipops on its corners, and the name
+in raised icing letters, 어나더랜드 over ANOTHER LAND, front and back; its
+windows, letters and bulbs light up at night through the island's
+`setNight`). In the
 middle of the island a round candy hall with a mint dome and a lollipop on
 top holds the stairs down to the rest of the park (`core/park-hall.js`,
 `open.hall`; the room `another-land`, which has `"below":
 "another-land-island"`: no storefront, its door is the hall's, `at` just
 outside it and `face` the way you face coming out; leaving it puts you back
 on the island). The island grew to the south-east to hold the whole track,
-and again a little east of the bridge's landing for the candy house's
+and again a little east of the bridge's landing for the castle's
 square (about 4,050 m², the track at least 2 m in from the shore and about
 5 m of water round it), so the water is about 12,980 m², 95% of the real
 1/16. The coaster is its first design (83 m across, the helix round

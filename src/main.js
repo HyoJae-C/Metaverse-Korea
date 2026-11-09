@@ -5476,6 +5476,7 @@ function openParkRoom(o) {
   return o.built;
 }
 // Its lights follow the street's (weather, dusk).
+const parkNight = () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0));
 function lightOpenPark(built) {
   const L3 = built.lights;
   if (!L3) return;
@@ -5499,6 +5500,7 @@ function updateOpenParks(dt) {
   const here = openParkHere();
   if (here) {
     lightOpenPark(openParkRoom(here));
+    here.built.setNight?.(parkNight()); // (Another Land's castle gate lights up)
     for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
@@ -5520,6 +5522,7 @@ function updateOpenParks(dt) {
     if (!o.near) continue;
     if (!openParkRoom(o)) continue; // (its code is still coming)
     lightOpenPark(o.built);
+    o.built.setNight?.(parkNight());
     o.built.tick?.(dt, null);
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.
