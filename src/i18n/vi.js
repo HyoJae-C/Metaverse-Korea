@@ -554,7 +554,7 @@ export const VI = {
   'credit.weather': 'Thời tiết',
   'hud.weatherNow': 'Thời tiết trực tiếp ở Seongsu-dong',
   'start.next': 'Tiếp',
-  'app.disclaimer': 'Đường phố là bản đồ trò chơi lấy cảm hứng từ các khu phố thật ở Seoul, không phải bản sao chính xác. Mọi cửa hàng, thương hiệu và sản phẩm ở đây đều là mẫu hư cấu, không phải cơ sở kinh doanh thật.',
+  'app.disclaimer': 'Đường phố là bản đồ trò chơi lấy cảm hứng từ các khu phố thật ở Seoul, không phải bản sao chính xác. Tòa nhà, cửa hàng, thương hiệu và sản phẩm có thể khác với thực tế, và phần lớn cửa hàng là ví dụ hư cấu.',
   'start.back': 'Quay lại',
   'look.title': 'Tạo nhân vật của bạn',
   'look.random': 'Ngẫu nhiên',

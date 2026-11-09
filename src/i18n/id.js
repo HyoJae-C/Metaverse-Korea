@@ -554,7 +554,7 @@ export const ID = {
   'credit.weather': 'Cuaca',
   'hud.weatherNow': 'Cuaca langsung di Seongsu-dong',
   'start.next': 'Lanjut',
-  'app.disclaimer': 'Jalanannya adalah peta permainan yang terinspirasi dari lingkungan nyata di Seoul, bukan salinan persis. Semua toko, merek, dan produk di sini adalah contoh fiksi, bukan bisnis sungguhan.',
+  'app.disclaimer': 'Jalanannya adalah peta permainan yang terinspirasi dari lingkungan nyata di Seoul, bukan salinan persis. Bangunan, toko, merek, dan produk bisa berbeda dari aslinya, dan sebagian besar toko adalah contoh fiktif.',
   'start.back': 'Kembali',
   'look.title': 'Buat karaktermu',
   'look.random': 'Acak',
