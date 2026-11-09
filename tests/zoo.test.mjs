@@ -622,3 +622,31 @@ test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL
     assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('ANOTHER') && said.join(' ').includes('SEOUL'), `${name} says ANOTHER SEOUL`);
   }
 });
+
+test('the camel ride: a keeper leads each camel round, at its head on its left, clear of the pens', async () => {
+  const { keeperSpot, LEAD } = await import('../src/game/zoo-camels.js');
+  const { trekTrack, pointAt, headingAt } = await import('../src/core/zoo-camel-ride.js');
+  // Facing +x the camel's left is -z: the keeper is ahead and to that side.
+  const k = keeperSpot(0, 0, Math.PI / 2, false);
+  assert.ok(Math.abs(k.x - LEAD.ahead) < 1e-9 && Math.abs(k.z + LEAD.side) < 1e-9, `at the head, on the left: ${k.x}, ${k.z}`);
+  assert.ok(Math.abs(k.ry - Math.PI / 2) < 1e-9, 'walking the same way');
+  const kl = keeperSpot(0, 0, Math.PI / 2, true);
+  assert.ok(Math.cos(kl.ry - Math.PI / 2) < 0.5, 'at the stand, turned to the camel');
+  const tr = trekTrack(G.camels.p);
+  const near = (x, z, P) => Math.hypot(Math.max(0, Math.abs(x - P.x) - P.w / 2), Math.max(0, Math.abs(z - P.z) - P.d / 2));
+  for (let s = 0; s < tr.L; s += 1) {
+    const [x, z] = pointAt(tr, s), q = keeperSpot(x, z, headingAt(tr, s), false);
+    for (const P of PENS) assert.ok(near(q.x, q.z, P) > 0.3, `keeper at ${q.x.toFixed(1)}, ${q.z.toFixed(1)} stays out of the ${P.id} pen`);
+  }
+});
+
+test('the camel ride: the rider sits a touch behind the middle of the saddle', async () => {
+  const { ZOO_PARK_ROOM, ZOO_PARK_EXIT } = await import('../src/core/zoo-rooms.js');
+  const { buildZooPark } = await import('../src/core/zoo-park.js');
+  const { SEAT, RIDER_BACK } = await import('../src/core/zoo-camel-ride.js');
+  const R = buildZooPark({ id: ZOO_STORE }, ZOO_PARK_ROOM, ZOO_PARK_EXIT).camels;
+  const c = R.camels[0].a.root, s = R.seat(0);
+  const along = (s.x - c.position.x) * Math.sin(c.rotation.y) + (s.z - c.position.z) * Math.cos(c.rotation.y);
+  assert.ok(RIDER_BACK > 0 && RIDER_BACK < 0.15, 'only a little');
+  assert.ok(Math.abs(along - (SEAT.z - RIDER_BACK) * c.scale.x) < 1e-6 && along < 0, `behind the middle: ${along.toFixed(3)} m`);
+});

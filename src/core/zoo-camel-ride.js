@@ -17,6 +17,7 @@ export const KNEEL = 2.5; // s to kneel down, or to get up again
 export const PACE = 1.5; // m/s along the loop: a camel's easy walk
 export const RAMP = 2; // s to get going, and to slow to a stop at the stand
 export const SEAT = { y: 1.24, z: -0.02 }; // the saddle, between the humps (model space, before SIZE.camel)
+export const RIDER_BACK = 0.07; // the rider sits a touch behind the saddle's middle (model space)
 const DOWN = 0.72; // how far the body sinks kneeling (model space)
 export const VIEW = 45; // m: a camel further off isn't drawn (unless you're on it)
 
@@ -149,13 +150,13 @@ export function buildCamelRide(scene, data) {
   stand(scene, data);
   const S = SIZE.camel;
   const ride = {
-    track: tr, camels, stand: { x: data.x, z: data.z }, keeper: [data.x + data.keeper[0], data.z + data.keeper[1]],
+    track: tr, camels, stand: { x: data.x, z: data.z },
     at: (i, T) => camelAt(tr, T, i),
     // The saddle of camel i, where its rider sits: { x, y, z, ry }.
     seat(i) {
       const r = camels[i].a.root, b = camels[i].a.body;
-      const y = (SEAT.y + b.position.y) * S;
-      return { x: r.position.x + Math.sin(r.rotation.y) * SEAT.z * S, y, z: r.position.z + Math.cos(r.rotation.y) * SEAT.z * S, ry: r.rotation.y };
+      const y = (SEAT.y + b.position.y) * S, back = (SEAT.z - RIDER_BACK) * S;
+      return { x: r.position.x + Math.sin(r.rotation.y) * back, y, z: r.position.z + Math.cos(r.rotation.y) * back, ry: r.rotation.y };
     },
     // Each frame: every camel to its place; far ones not drawn (the one you
     // ride always is).

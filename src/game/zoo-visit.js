@@ -76,7 +76,7 @@ export function createZooVisit(game) {
     built: () => built, here: () => !!here(), get shop() { return game.shop; }, get wallet() { return game.wallet; },
     get me() { return game.me; }, get seated() { return game.seated; }, get riding() { return game.riding; },
     sitDown: (s) => game.sitDown(s), standUp: () => game.standUp(), seatTaken: (x, z) => game.seatTaken?.(x, z),
-    makeNpc: (name, look) => game.makeNpc(name, look), sounds: game.sounds, missionEvent: (k) => game.missionEvent(k), t: (k, v) => game.t(k, v),
+    makeNpc: (name, look) => game.makeNpc(name, look), randomLook: () => game.randomLook(), sounds: game.sounds, missionEvent: (k) => game.missionEvent(k), t: (k, v) => game.t(k, v),
   });
 
   // The first time the zoo's room is built: its keeper, its visitors, its sounds.
@@ -115,7 +115,7 @@ export function createZooVisit(game) {
       walkers.push(o);
     }
     b.zooPeople = [keeper, ...watchers, ...walkers].filter(Boolean);
-    camels.adopt(b); // the camel ride's keeper (game/zoo-camels.js) // (game/room-cache.js takes their name tags off the page if the room is let go)
+    camels.adopt(b); // the camel ride's keepers (game/zoo-camels.js) // (game/room-cache.js takes their name tags off the page if the room is let go)
   }
 
   const feedAct = (a, p) => ({ key: 'zoofeed:' + a.kind + zoo.food, label: '🥕 ' + game.fmt(L(ZOO_FOOD.feed), { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit), n: zoo.food }), run: () => {
@@ -183,7 +183,7 @@ export function createZooVisit(game) {
     },
     // Each frame in the zoo: the visitors stroll, the keeper stands by, labels.
     tick(dt, p, camera, w, h) {
-      camels.tick(); // (on a camel: carried on its saddle; out of the zoo: off)
+      camels.tick(dt, p); // the keepers lead the camels; on one: carried on its saddle (out of the zoo: off)
       if (!here()) return;
       carts.tick(p);
       const near = (o) => {

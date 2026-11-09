@@ -259,7 +259,7 @@ export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [
 // road, down past the giraffes, back along the elephants, up the cross path
 // and home along the zebras and kangaroos. A loop of points from the stand
 // (core/zoo-camel-ride.js walks them on the shared clock).
-export const CAMEL_STAND = { x: 184, z: 31.5, sign: [-6.5, -1.7], keeper: [-1.2, -1.6] };
+export const CAMEL_STAND = { x: 184, z: 31.5, sign: [-6.5, -1.7] };
 export const CAMEL_TREK = smooth([[CAMEL_STAND.x, CAMEL_STAND.z], [190, 32.8], [190.6, 44], [189.8, 56.2], [181, 57.3], [167, 57.6], [150, 57.4], [133, 57.4], [123.8, 55], [121.8, 44], [123.5, 35.5], [130, 31.6], [145, 31.3], [160, 31.7], [174, 31.3]], { closed: true, step: 1.5 });
 export const SEA_HALL = { x0: 69, z0: -35, x1: 93, z1: -7 };
 export const SEA_DOOR = { x: 81, z: -35, out: { x: 81, z: -36.6, ry: Math.PI } };
