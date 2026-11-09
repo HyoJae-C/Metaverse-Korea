@@ -1815,7 +1815,7 @@ const counterUi = new CounterUI({
 
 // Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
 // River parks, the theme park, the Namsan slope) and the street have them.
-const petIndoors = () => mode === 'store' && !(interior?.park || interior?.cablecar || interior?.lawns);
+const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.cablecar || interior?.lawns);
 // Where pets may not go in this room: the bumper car rink in Another Land.
 const PARK_FENCES = [RINK_FENCE];
 const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
@@ -5222,7 +5222,7 @@ function updateFireworks() {
 // Duck boats at the Han River parks (src/game/duck-boats.js).
 // The park I'm in right now: its boats, fishing spots, kiosk and ramen
 // machine (core/park.js), or null.
-const hanPark = () => (mode === 'store' && interior?.park ? interior : null);
+const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
 // its fishing, boats, stalls and seats work as before), drawn over the
@@ -5354,6 +5354,7 @@ function viewThrough(m) {
   parkCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
   parkCam.matrixWorld.multiplyMatrices(m, camera.matrixWorld);
   parkCam.matrixWorldInverse.copy(parkCam.matrixWorld).invert();
+  parkCam.matrixWorld.decompose(parkCam.position, parkCam.quaternion, parkCam.scale); // (name tags measure how far they are from the camera's position)
   return parkCam;
 }
 renderer.info.autoReset = false; // (one frame can be two passes: renderScenes resets it)
@@ -6894,6 +6895,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     act: () => action?.run(),
     pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
+    tags: () => [...others.players.values()].map((q) => q.tag?.style.display !== 'none'), // (other players' name tags on screen)
     outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
@@ -6949,6 +6951,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
+    petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),

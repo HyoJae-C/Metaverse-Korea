@@ -445,7 +445,7 @@ export function buildPark(store, ROOM, EXIT) {
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     lights: { hemi, sun, ambient }, // (an open park's follow the street's: main.js)
-    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
+    fishing, fishBuy, ramen, river, duck, ducks, hanRiver: true, vendors: market.vendors, setSignLang, tick,
     show, // the drone show right now: { now: droneShowAt(), night, photo } (main.js: camera, notices, music)
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
     // the benches and the back, right of the market and left of DAILY MART.

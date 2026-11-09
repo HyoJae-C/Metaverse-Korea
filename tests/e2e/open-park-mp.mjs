@@ -68,6 +68,10 @@ try {
   console.log('B sees', JSON.stringify(bs), 'A sees', JSON.stringify(as));
   if (!bs.some((q) => Math.abs(q[3] - at[0]) < 2)) throw new Error('B on the street does not see A on the lawn where A is');
   if (!as.length) throw new Error('A on the lawn sees nobody');
+  // A on the lawn looking back at the street: B's name tag shows.
+  await mk(a, 'cam', { yaw: Math.PI, pitch: 0.3, dist: 7 });
+  await a.waitForFunction(() => __mk.tags().some(Boolean), null, { timeout: 5000 }).catch(() => {});
+  if (!(await mk(a, 'tags')).some(Boolean)) throw new Error('no name tag on B, seen from the lawn');
   // Off the lawn and back: still the same room (no reconnect), B still there.
   await mk(a, 'leave');
   await mk(a, 'place', ...world(0, 8));
