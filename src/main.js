@@ -146,6 +146,7 @@ import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
 import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
+import { createZooSounds } from './game/zoo-sounds.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -704,6 +705,12 @@ const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ 
   if (mode !== 'street' || zooClosed) return;
   shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
 });
+// The animals' calls when they move, louder the nearer (src/game/zoo-sounds.js).
+const zooSounds = createZooSounds({
+  get sfx() { return sfx; },
+  listener: () => { const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0); return me ? { x: me.root.position.x, z: me.root.position.z, rx: r.x, rz: r.z } : null; },
+});
+zooSounds.attach(zoo);
 // The little animal village: a cup of food at the barn door, and a keeper
 // by the gate who tells you about the animals, one at a time.
 const ZOO_FOOD = {
@@ -2212,6 +2219,7 @@ function roomFor(store) {
   built = buildInterior(store);
   built.collision = new CollisionMap(built.colliders);
   interiorCache.set(store.id, built);
+  if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
   built.setSignLang?.(signsTranslated ? getLanguage() : null);
   if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
   stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)

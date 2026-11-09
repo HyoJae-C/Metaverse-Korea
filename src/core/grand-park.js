@@ -4,6 +4,9 @@
 //   hoarding: the fence round the zoo while it isn't open yet: panels in the
 //            park's colours, every other one painted "Opening soon"
 //            (polyline l.p; its collision is the map's blockers).
+//   zooflowers: the round plaza where the zoo's paths meet, with a flower bed
+//            in rings of colour in its middle, and every flower bed and
+//            border in the zoo (laid out by scripts/build-grand-park.mjs).
 // Collision for the pillars comes from the map's blockers
 // (CGP_GATE_PILLARS), so this is only visual.
 import * as THREE from 'three';
@@ -140,4 +143,78 @@ export function zooCartStation(g, l) {
   sign.position.set(l.sign?.[0] ?? -3, 0, l.sign?.[1] ?? -4);
   g.add(sign);
   mergeStatic(g);
+}
+
+// The zoo's flowers (l.beds: [x, z, r] round beds; l.borders: [x1, z1, x2,
+// z2] strips along the pens' fences; l.plaza: [r, bed r], at the group's
+// origin). Low, so nothing here blocks you. A handful of instanced meshes:
+// bed rims, beds, hedges and the flower heads.
+const PALETTES = [
+  ['#ff6f91', '#ffd1dc', '#ffffff'], // pink and white
+  ['#ffd23f', '#ff9a3c', '#fff3b0'], // yellow and orange
+  ['#9b7bea', '#c9a8ff', '#6fa8ff'], // purple and blue
+  ['#ef4f4f', '#ffffff', '#ff9a9a'], // red and white
+];
+export function zooFlowers(g, l) {
+  const [pr, pb] = l.plaza || [0, 0];
+  const beds = (l.beds || []).slice();
+  const heads = []; // [x, y, z, colour]
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  const plant = (x, z, r, y, pal, per = 2.2) => {
+    const n = Math.max(5, Math.round(Math.PI * r * r * per));
+    for (let i = 0; i < n; i++) {
+      const d = Math.sqrt((i + 0.5) / n) * (r - 0.18), a = i * golden;
+      heads.push([x + Math.cos(a) * d, y + ((i * 7) % 5) * 0.02, z + Math.sin(a) * d, pal[i % pal.length]]);
+    }
+  };
+  if (pr) { // the plaza: paving a hair above the paths, a stone rim, flowers in rings
+    const pave = new THREE.Mesh(new THREE.CircleGeometry(pr, 40).rotateX(-Math.PI / 2), mat('#d8cfc0'));
+    pave.position.y = 0.075;
+    pave.receiveShadow = true;
+    g.add(pave);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(pb + 0.3, pb + 0.3, 0.4, 32), mat('#d9cfbf'));
+    rim.position.y = 0.2;
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(pb, pb, 0.46, 32), mat('#4f9a45'));
+    soil.position.y = 0.23;
+    g.add(rim, soil);
+    const rings = ['#ffd23f', '#ff6f91', '#ffffff', '#9b7bea'];
+    for (let k = 0; k < 4; k++) { // rings of colour from the middle out
+      const r0 = (k / 4) * (pb - 0.2), r1 = ((k + 1) / 4) * (pb - 0.2);
+      const n = Math.round(Math.PI * (r1 * r1 - r0 * r0) * 4);
+      for (let i = 0; i < n; i++) {
+        const a = i * golden, d = Math.sqrt(r0 * r0 + ((i + 0.5) / n) * (r1 * r1 - r0 * r0));
+        heads.push([Math.cos(a) * d, 0.6 + (k === 0 ? 0.12 : 0), Math.sin(a) * d, rings[k]]);
+      }
+    }
+  }
+  // Round beds: a stone rim, a leafy top, flowers.
+  const rims = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 0.14, 18).translate(0, 0.07, 0), mat('#d9cfbf'), Math.max(1, beds.length));
+  const tops = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 0.2, 18).translate(0, 0.1, 0), mat('#4f9a45'), Math.max(1, beds.length));
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+  beds.forEach(([x, z, r], i) => {
+    rims.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(r + 0.15, 1, r + 0.15)));
+    tops.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(r, 1, r)));
+    plant(x, z, r, 0.32, PALETTES[i % PALETTES.length]);
+  });
+  rims.count = tops.count = beds.length;
+  // Borders: a low hedge along the fence with flowers on top, two rows.
+  const borders = l.borders || [];
+  const hedges = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.3, 0.7).translate(0, 0.15, 0), mat('#4f9a45'), Math.max(1, borders.length));
+  borders.forEach(([x1, z1, x2, z2], i) => {
+    const len = Math.hypot(x2 - x1, z2 - z1), ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+    q.setFromAxisAngle(v.set(0, 1, 0), -Math.atan2(uz, ux));
+    hedges.setMatrixAt(i, m4.compose(v.set((x1 + x2) / 2, 0, (z1 + z2) / 2), q, sc.set(len, 1, 1)));
+    const pal = PALETTES[(i + 1) % PALETTES.length];
+    for (let d = 0.2, k = 0; d < len - 0.1; d += 0.55, k++) {
+      for (const s of [-0.17, 0.17]) heads.push([x1 + ux * d - uz * s, 0.36 + (k % 3) * 0.02, z1 + uz * d + ux * s, pal[(k + (s > 0 ? 1 : 0)) % pal.length]]);
+    }
+  });
+  hedges.count = borders.length;
+  const flowers = new THREE.InstancedMesh(new THREE.TetrahedronGeometry(0.15, 0), new THREE.MeshLambertMaterial({ color: '#ffffff' }), Math.max(1, heads.length));
+  heads.forEach(([x, y, z, c], i) => {
+    flowers.setMatrixAt(i, m4.compose(v.set(x, y, z), q.setFromAxisAngle(v.clone().set(0, 1, 0), i * 0.7), sc.set(1, 0.7, 1)));
+    flowers.setColorAt(i, col.set(c));
+  });
+  flowers.count = heads.length;
+  for (const m of [rims, tops, hedges, flowers]) { m.computeBoundingSphere(); m.userData.noShadow = true; g.add(m); }
 }

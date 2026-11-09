@@ -13,6 +13,7 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
+import { buildSeaHall, SEA_ROOM } from './zoo-sea-hall.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
@@ -55,6 +56,7 @@ export const ROOM_SIZES = {
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
   dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
+  zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
@@ -378,6 +380,7 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
+  if (store.workshop === 'zoo-sea') return buildSeaHall(store, ROOM, EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);

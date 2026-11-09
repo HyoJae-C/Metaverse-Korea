@@ -779,6 +779,18 @@
       "products": []
     },
     {
+      "id": "cgp-sea-hall",
+      "category": "play",
+      "workshop": "zoo-sea",
+      "size": "zoosea",
+      "at": [489, -122.4],
+      "district": "grand-park",
+      "name": { "en": "Sea Animals", "ko": "바다동물관", "ja": "海の動物館", "zh": "海洋动物馆" },
+      "tagline": { "en": "The zoo's indoor hall: seals, a walrus and a polar bear behind glass", "ko": "동물원 실내관: 유리 너머 물개, 바다코끼리, 북극곰", "ja": "動物園の屋内館：ガラス越しのアザラシ、セイウチ、ホッキョクグマ", "zh": "动物园室内馆：玻璃后的海豹、海象和北极熊" },
+      "colors": { "sign": "#3f86b8", "awning": "#bfe3f2", "accent": "#eaf7ff" },
+      "products": []
+    },
+    {
       "id": "info-seodaemun",
       "category": "info",
       "workshop": "info",
