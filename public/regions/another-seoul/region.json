@@ -756,12 +756,12 @@
     }
   ],
   "adPosters": {
-    "L-56": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
-    "L-16": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
+    "L-59": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
+    "L-19": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
     "L-04": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
-    "L-10": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
+    "L-11": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
     "L-01": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
-    "L-11": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
+    "L-12": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
     "L-32": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
   },
   "storePosters": {
