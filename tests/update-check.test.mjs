@@ -41,3 +41,17 @@ test('coming back to the tab checks at once; dev builds never check', async () =
   await new Promise((r) => setTimeout(r, 10));
   assert.equal(devFetched, 0);
 });
+
+test('a missing game file after a deploy offers the refresh banner once', async () => {
+  const { watchMissingFiles } = await import('../src/core/update-check.js');
+  const fns = [];
+  const win = { addEventListener: (n, f) => n === 'vite:preloadError' && fns.push(f), removeEventListener() {} };
+  let remote = 'abc', calls = 0;
+  watchMissingFiles({ current: 'abc', fetchVersion: async () => remote, onNew: () => calls++, win });
+  await fns[0]();
+  assert.equal(calls, 0, 'same build (a dropped connection): no banner');
+  remote = 'def';
+  await fns[0]();
+  await fns[0]();
+  assert.equal(calls, 1);
+});

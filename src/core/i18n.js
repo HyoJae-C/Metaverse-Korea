@@ -63,7 +63,7 @@ export function onLanguageChange(fn) {
 }
 
 export function t(key, vars = {}) {
-  const s = STRINGS[current]?.[key] ?? (current === 'zht' && STRINGS.zh[key] ? s2t(STRINGS.zh[key]) : null) ?? STRINGS.en[key] ?? key;
+  const s = STRINGS[current]?.[key] ?? (current === 'zht' && STRINGS.zh?.[key] ? s2t(STRINGS.zh[key]) : null) ?? STRINGS.en[key] ?? key;
   return s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 }
 

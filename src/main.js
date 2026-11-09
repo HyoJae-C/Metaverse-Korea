@@ -7,7 +7,7 @@ import {
 import { REGION_NAMES } from './i18n/languages.js';
 import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
 import {
-  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ZOO_TEXT, DOGHOLE_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
+  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
@@ -87,7 +87,7 @@ import { watchOnline } from './net/online.js';
 import { sendRate } from './net/rate.js';
 import { startWhereReports } from './net/where.js';
 import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
-import { startUpdateCheck } from './core/update-check.js';
+import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
@@ -97,7 +97,7 @@ import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, needsDome, needsPark, roomBox, setDomeBuilder, setParkBuilder } from './core/interior.js';
+import { buildInterior, needsDome, needsPark, needsZoo, roomBox, setDomeBuilder, setParkBuilder, setZooBuilders } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
 import { ShopUI, Cart, coinsFor, goodsKind, itemSoon } from './ui/shop-ui.js';
@@ -146,7 +146,8 @@ import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PH
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
-import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
+import { CART, CART_SPEED } from './game/zoo-carts.js';
+import { createZooVisit } from './game/zoo-visit.js';
 import { createZooSounds } from './game/zoo-sounds.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
@@ -179,7 +180,7 @@ import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
 import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
-import { Zoo } from './core/zoo.js';
+import { SEA_STORE } from './core/zoo-rooms.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
@@ -188,6 +189,7 @@ import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
+import { createRoomCache } from './game/room-cache.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -259,7 +261,15 @@ function reportProblem(msg) {
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
 }
-addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+addEventListener('error', (e) => {
+  const msg = `${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`;
+  // Not our code: scripts an app's built-in browser (Threads, Instagram,
+  // KakaoTalk…) or an extension puts into the page ("onReady is not defined")
+  // and other sites' scripts ("Script error."). Counted, but no warning box:
+  // the game is fine and the box made players think it was broken.
+  if (!/\/(assets|src)\//.test(e.filename || '')) { console.warn('[mk] page script:', msg); onProblem?.('ext: ' + msg); return; }
+  reportProblem(msg);
+});
 addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
 
 // Google ads (AdSense): the script for the rewarded "Watch an ad" button,
@@ -316,7 +326,7 @@ visit.reach(STAGE.OPEN);
 // Errors: counted in the session and the message (digits removed, no
 // account id) sent for the operator's error list, a few per visit.
 const sendError = createErrorSender((m) => cloud.reportError(m));
-onProblem = (msg) => { playCounts.error(); sendError(msg); };
+onProblem = (msg) => { if (!msg.startsWith('ext: ')) playCounts.error(); sendError(msg); }; // ('ext: ' = not our code, see above)
 for (const m of earlyProblems.splice(0)) onProblem(m);
 // Country statistics for the operator page: a guess from the time zone,
 // once a day per account (core/country.js). Loaded on the side; never waits.
@@ -368,10 +378,16 @@ try {
 
 // Load the map while the player is choosing a language.
 // (One map file, or several districts joined into one city: core/districts.js.)
-const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
-  if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
-  return r.json();
-}));
+// A phone on a weak signal can drop one request ("Load failed"): try each
+// file up to three times before giving up, so one hiccup doesn't stop the game.
+const mapPromise = loadRegionMap(region, (file) => {
+  const get = (tries) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
+    if (r.status === 404) throw Object.assign(new Error('no map'), { code: 'noMap' });
+    if (!r.ok) throw new Error('map ' + r.status);
+    return r.json();
+  }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
+  return get(3);
+});
 // And the player's character model, so it is ready when they walk in.
 preloadModel(loadLook().model);
 
@@ -726,80 +742,22 @@ renderer.localClippingEnabled = true; // the station's train stays inside the ha
 // Palace gates, halls, statues (hand-made districts). Those marked "inner"
 // (inside Jongmyo's wall) wait for the first visit (the enclosures below).
 const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
-// Children's Grand Park's zoo (core/zoo.js): feeding times are told in a toast.
-const MELON_PRICE = 3000;
-// Before the zoo opens a hoarding closes it off (scripts/build-grand-park.mjs
-// ZOO_OPEN): no feeding-time toasts then. (The animals still live their
-// lives in there, for anyone peeking in.)
-const zooClosed = map.landmarks.some((l) => l.type === 'hoarding' && l.closes === 'zoo');
-// A gap at the foot of the hoarding that anyone can crawl through, to peek
-// round the zoo before it opens.
-const DOGHOLE = map.landmarks.find((l) => l.type === 'doghole' && l.closes === 'zoo') || null;
-function dogholeAct(p) {
-  if (!DOGHOLE || mode !== 'street') return null;
-  const nx = Math.sin(DOGHOLE.ry || 0), nz = Math.cos(DOGHOLE.ry || 0); // the hoarding's face
-  const dx = p.x - DOGHOLE.x, dz = p.z - DOGHOLE.z, across = dx * nx + dz * nz;
-  if (Math.hypot(dx, dz) > 1.8) return null;
-  const side = across >= 0 ? -1 : 1; // to the other side
-  return { key: 'doghole', label: DOGHOLE_TEXT[getLanguage()] || DOGHOLE_TEXT.en, run: () => {
-    moveMeTo(scene, DOGHOLE.x + nx * 1.6 * side, DOGHOLE.z + nz * 1.6 * side, Math.atan2(nx * side, nz * side));
-  } };
-}
-const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ kind, pen }) => {
-  if (mode !== 'street' || zooClosed) return;
-  shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
-});
+// Children's Grand Park's zoo: a room you walk into (core/zoo-park.js, loaded
+// on the first visit); what you do there is game/zoo-visit.js.
 // The animals' calls when they move, louder the nearer (src/game/zoo-sounds.js).
 const zooSounds = createZooSounds({
   get sfx() { return sfx; },
   listener: () => { const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0); return me ? { x: me.root.position.x, z: me.root.position.z, rx: r.x, rz: r.z } : null; },
 });
-zooSounds.attach(zoo);
-// The little animal village: a cup of food at the barn door, and a keeper
-// by the gate who tells you about the animals, one at a time.
-const ZOO_FOOD = {
-  buy: { en: 'Buy animal food', ko: '꼬마동물 먹이 사기', ja: '動物のえさを買う', zh: '买动物饲料' },
-  item: { en: 'Food for the little animals', ko: '꼬마동물 먹이', ja: '小さな動物のえさ', zh: '小动物饲料' },
-  got: { en: '🥕 A cup of food: {n} handfuls. The animals have noticed!', ko: '🥕 먹이 한 컵: {n}번 줄 수 있어요. 동물들이 알아챘어요!', ja: '🥕 えさ1カップ：{n}回あげられます。動物たちが気づいた！', zh: '🥕 一杯饲料：可以喂{n}次。动物们注意到了！' },
-  poor: { en: 'Animal food costs 🪙 {n}', ko: '먹이는 🪙 {n}이에요', ja: 'えさは🪙 {n}', zh: '饲料要🪙 {n}' },
-  feed: { en: 'Feed the {name} ({n} left)', ko: '{name}에게 먹이 주기 (남은 {n})', ja: '{name}にえさをあげる（残り{n}）', zh: '喂{name}（剩{n}）' },
-  empty: { en: 'The cup is empty. More at the barn door.', ko: '컵이 비었어요. 빨간 집 앞에서 더 살 수 있어요.', ja: 'カップが空になりました。赤い小屋の前で買えます。', zh: '杯子空了。可以在红房子门口再买。' },
-  keeper: { en: 'Keeper', ko: '사육사', ja: '飼育員', zh: '饲养员' },
-  ask: { en: 'Ask the keeper about the animals', ko: '사육사에게 동물 이야기 듣기', ja: '飼育員に動物の話を聞く', zh: '听饲养员讲动物' },
-};
-const KEEPER_TALK = [
-  { en: "Welcome to the Little Animal Village! Pat them gently, and buy a cup of food at the red barn's door if you like.", ko: '꼬마동물마을에 온 걸 환영해요! 살살 쓰다듬어 주고, 먹이는 빨간 집 문 앞에서 살 수 있어요.', ja: 'こども動物村へようこそ！やさしくなでてね。えさは赤い小屋の前で買えます。', zh: '欢迎来到小动物村！轻轻摸它们，饲料可以在红房子门口买。' },
-  { en: 'Goats climb anything and nibble everything. That little beard? Both boys and girls have one.', ko: '염소는 높은 곳을 좋아하고 뭐든 오물오물 씹어 봐요. 턱수염은 암컷, 수컷 모두 있어요.', ja: 'ヤギは高い所が大好きで、何でもかじってみます。あごひげはオスにもメスにもあります。', zh: '山羊喜欢爬高，什么都想啃一啃。小胡子公母都有。' },
-  { en: "Sheep stay together in a flock. Their wool keeps growing, so we give them a haircut every spring.", ko: '양은 늘 무리 지어 다녀요. 털이 계속 자라서 봄마다 털을 깎아 줘요.', ja: 'ヒツジはいつも群れで動きます。毛が伸び続けるので、毎年春に毛刈りをします。', zh: '绵羊总是成群行动。羊毛一直长，所以每年春天给它们剪毛。' },
-  { en: 'Rabbits see almost all the way round without turning their heads. A happy rabbit jumps and twists in the air!', ko: '토끼는 고개를 안 돌려도 거의 한 바퀴를 다 볼 수 있어요. 기분이 좋으면 공중에서 몸을 비틀며 뛰어요!', ja: 'ウサギは首を回さなくてもほぼ一周見えます。うれしいと空中でひねりジャンプ！', zh: '兔子不转头几乎能看到一圈。开心时会在空中扭身跳！' },
-  { en: "Guinea pigs aren't pigs and aren't from Guinea: they come from the Andes. They squeak 'wheek wheek' when they hear food.", ko: '기니피그는 돼지도 아니고 기니 출신도 아니에요. 남미 안데스에서 왔어요. 먹이 소리가 나면 "뀨뀨" 하고 울어요.', ja: 'モルモットはブタでもギニア出身でもなく、南米アンデスの生まれ。えさの音がすると「キュイキュイ」と鳴きます。', zh: '豚鼠既不是猪也不来自几内亚，它们来自南美安第斯山。听到食物声会"吱吱"叫。' },
-];
-let keeper = null, keeperLine = 0;
-{
-  const KP = zoo.pens.find((P) => P.pen.keeper);
-  if (KP) {
-    keeper = makeNpc($('labels'), '🧑‍🌾 ' + L(ZOO_FOOD.keeper), { ...randomLook(), shirt: 'leaf', pants: 'olive', head: 'bucket-cream' });
-    const [kx, kz] = KP.pen.keeper.at;
-    keeper.ch.root.position.set(KP.pen.x + kx, 0, KP.pen.z + kz);
-    keeper.ch.root.rotation.y = KP.pen.keeper.ry || 0;
-    scene.add(keeper.ch.root);
-  }
-}
-const keeperAct = () => ({ key: 'zoo-keeper', label: '🧑‍🌾 ' + L(ZOO_FOOD.ask), run: () => {
-  keeper.ch.wave?.();
-  showBubble(keeper, $('labels'), L(KEEPER_TALK[keeperLine % KEEPER_TALK.length]), 8000, 'chat npc-say');
-  keeperLine++;
-  missionEvent('talk', 'zookeeper');
-} });
-const foodShopAct = (P) => ({ key: 'zoo-food', label: `🥕 ${L(ZOO_FOOD.buy)} · 🪙 ${P.pen.shop.price.toLocaleString()}`, run: () => {
-  if (!wallet.spend(P.pen.shop.price, { name: ZOO_FOOD.item, at: P.pen.name })) { shop.toast(fmt(L(ZOO_FOOD.poor), { n: P.pen.shop.price.toLocaleString() })); return; }
-  zoo.buyFood();
-  shop.toast(fmt(L(ZOO_FOOD.got), { n: zoo.food }));
-} });
-const melonAct = (P, p) => ({ key: 'zoo-melon', label: `🍉 ${L(ZOO_TEXT.melon)} · 🪙 ${MELON_PRICE.toLocaleString()}`, run: () => {
-  if (!wallet.spend(MELON_PRICE, { name: ZOO_TEXT.buy, at: P.pen.name })) { shop.toast(fmt(L(ZOO_TEXT.poor), { n: MELON_PRICE.toLocaleString() })); return; }
-  if (zoo.feedMelon(P, p.x, p.z)) me.play?.('wave');
-} });
+const zooVisit = createZooVisit({
+  get shop() { return shop; }, get wallet() { return wallet; }, get me() { return me; }, get myLabel() { return myLabel; },
+  get riding() { return riding; }, get seated() { return seated; }, sounds: zooSounds, L, fmt, t,
+  inZoo: () => mode === 'store' && !!interior?.zooPark,
+  showBubble: (o, text, ms, kind) => showBubble(o, $('labels'), text, ms, kind),
+  makeNpc: (name, look) => makeNpc($('labels'), name, look), randomLook,
+  missionEvent: (type, target) => missionEvent(type, target), setRiding: (k) => setRiding(k),
+  placeLabels, enterSeaHall: () => enterHaunted(SEA_STORE),
+});
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
@@ -1439,11 +1397,11 @@ let stopOnline = null;
 watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // A newer build deployed while we play: ask for a refresh (core/update-check.js).
-startUpdateCheck({
-  current: __BUILD_ID__,
-  fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v),
-  onNew: () => { if (!tabParked) showUpdateBanner(); },
-});
+{
+  const deployed = { current: __BUILD_ID__, fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v) };
+  startUpdateCheck({ ...deployed, onNew: () => { if (!tabParked) showUpdateBanner(); } });
+  watchMissingFiles({ ...deployed, onNew: () => showUpdateBanner() });
+}
 // Our spot on the map for operators' live view (net/where.js, admin.html).
 // Inside a shop we report the street spot we came in from, and the shop.
 // A hidden tab keeps reporting (browsers slow the timer down to about once a
@@ -2128,7 +2086,7 @@ try {
   if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
-const umbrellaOpen = () => hasUmbrella() && outdoors() && !zoo.indoors && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
+const umbrellaOpen = () => hasUmbrella() && outdoors() && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
 const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
@@ -2281,20 +2239,28 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
 
-const interiorCache = new Map();
-// A shop's inside, built on the first visit and kept.
-function roomFor(store) {
-  let built = interiorCache.get(store.id);
-  if (built) return built;
-  built = buildInterior(store);
-  built.collision = new CollisionMap(built.colliders);
-  interiorCache.set(store.id, built);
-  if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
-  built.setSignLang?.(signsTranslated ? getLanguage() : null);
-  if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
-  stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
-  return built;
-}
+// A shop's inside, built on the first visit and kept while it is one of the
+// last few rooms visited (game/room-cache.js: phones drop the page when
+// every room ever opened stays in memory).
+const interiorCache = createRoomCache({
+  max: lowSpec ? 4 : 10,
+  build: (store) => {
+    const built = buildInterior(store);
+    built.collision = new CollisionMap(built.colliders);
+    if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
+    if (built.zooPark) zooVisit.adopt(built); // the zoo: its keeper, visitors, carts and feeding times
+    built.setSignLang?.(signsTranslated ? getLanguage() : null);
+    if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
+    return built;
+  },
+  // Kept: the room you're in, the park behind its haunted house or runway,
+  // and the open-air parks the street shows.
+  keep: (id) => id === interior?.store?.id || id === interior?.front?.parkFront?.store?.id || openParks.some((o) => o.item.store.id === id),
+  shown: () => [scene],
+  onDrop: (id) => stampStands.dropRoom(id),
+});
+const roomFor = (store) => interiorCache.room(store);
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -2356,7 +2322,7 @@ const freeSeat = () => { for (let i = 0; i < seatsOf(riding); i++) if (!passenge
 function setRiding(on) {
   const kind = on === true ? 1 : on || 0;
   if (riding === kind) return;
-  if (kind && mode !== 'street') return;
+  if (kind && mode !== 'street' && !(interior?.zooPark && (kind === CART || kind === 3))) return; // (in the zoo: its carts, and a seat in a friend's)
   // Leaving a shared vehicle tells the others.
   for (const id of passengers.values()) net.sendEmote(tandemMsg('end', id));
   passengers.clear();
@@ -2387,7 +2353,7 @@ function setRiding(on) {
 function onTandemMsg(from, { verb, target, seat }) {
   if (target !== myId) return;
   const name = others.nameOf(from) || '?';
-  if (verb === 'invite' && !riding && mode === 'street') {
+  if (verb === 'invite' && !riding && (mode === 'street' || interior?.zooPark)) {
     tandemInvite = { from, name, seat, until: performance.now() + 15000 };
     shop.toast(t('tandem.invited', { name }));
     action = STALE;
@@ -2408,7 +2374,7 @@ function tandemGone(id) {
 function hopOn(inv) {
   tandemInvite = null;
   const front = others.rootOf(inv.from);
-  if (!front || mode !== 'street') return;
+  if (!front || (mode !== 'street' && !interior?.zooPark)) return;
   setRiding(0);
   tandemDriver = inv.from;
   mySeat = inv.seat;
@@ -2525,6 +2491,13 @@ function enterStore(item, walkIn = null) {
     import('./core/dome.js').then((m) => { setDomeBuilder(m.buildDome); domeLoading = false; enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
     return;
   }
+  // The zoo: its grounds and animals come on the first visit too.
+  if (needsZoo(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    import('./core/zoo-park.js').then((m) => { setZooBuilders(m); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
+    return;
+  }
   // Another Land: the park's models come on the first visit too.
   if (needsPark(item.store)) {
     if (domeLoading) return;
@@ -2556,8 +2529,10 @@ function enterStore(item, walkIn = null) {
   else {
     cam.dist = 7;
     cam.pitch = 0.7;
-    moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
+    if (built.entry) moveMeTo(built.scene, built.entry.x, built.entry.z, built.entry.ry); // (a room whose door isn't at its south side: the zoo)
+    else moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   }
+  if (built.zooPark) { zooVisit.showLabels(); if (!walkIn && !item.parkFront) zooVisit.welcome(); }
   if (!store.open) document.body.classList.add('in-store'); // (an open-air park keeps the street's buttons)
   shop.enterStore(store);
   $('guide').hidden = true;
@@ -2801,15 +2776,19 @@ function goMuseumFloor(floor) {
 // back into the park, in front of the house.
 let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
 const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
-function enterHaunted() {
-  if (mode !== 'store' || !interior?.themepark || performance.now() < hauntSwitching) return;
+function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
+  const sea = inner === SEA_STORE;
+  if (mode !== 'store' || !(sea ? interior?.zooPark : interior?.themepark) || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
   const front = interior.front;
   endRide();
   standUp();
   if (galleryUi.open) galleryUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; } // the ticket clerk stays outside
-  enterStore({ ...front, store: HAUNT_STORE, parkFront: front });
+  if (sea) setRiding(false);
+  if (sea) zooVisit.hideLabels();
+  enterStore({ ...front, store: inner, parkFront: front });
+  if (sea) { hauntFade(); return; }
   const built = interiorCache.get(HAUNT_STORE.id);
   built.resetVisit();
   built.onScare = (kind) => (kind === 'ghost' ? sfx.ghostly() : sfx.tock(0.25, 260));
@@ -2831,6 +2810,10 @@ function backToPark() {
     // Back in DDP Hall, in front of the runway's door, facing into the hall.
     const d = interior.stations.runwayDoor[0];
     moveMeTo(interior.scene, d.x, d.z + 0.6, 0, 0.5); // (the camera out in the hall)
+  } else if (interior.zooPark) {
+    // Out of the Sea Animals hall's door onto the zoo's path, facing away from it.
+    const d = interior.stations.seaDoor[0];
+    moveMeTo(interior.scene, d.x, d.z, d.ry, d.ry - Math.PI / 2);
   } else {
     // Out in front of the door, the camera to the side so the house stays in view.
     moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry, HAUNT_SPOT.ry - Math.PI / 2);
@@ -2907,6 +2890,8 @@ function leaveStore(walkOut = false) {
   if (subway.metro) endMetro(); // (a taxi or teleport from the train)
   if (interior.store?.workshop === 'runway') { leaveRunwayLine(); runwayLine.clear(); }
   endRide();
+  setRiding(false); // (the zoo's carts stay in the zoo)
+  zooVisit.hideLabels();
   cable = null;
   standUp();
   clearMeal();
@@ -4631,7 +4616,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), ...zoo.pens.map((P) => P.g), adPosters.root], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past
@@ -5551,11 +5536,6 @@ function renderScenes() {
   }
 }
 
-// The zoo's four-seat carts (src/game/zoo-carts.js).
-const zooCarts = createZooCarts({
-  station: map.landmarks.find((l) => l.type === 'zoocarts') || null, shop, setRiding: (k) => setRiding(k),
-  get riding() { return riding; }, get seated() { return seated; },
-});
 const duckBoats = createDuckBoats({
   park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
   get others() { return others; }, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
@@ -6124,9 +6104,6 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const za = zoo.nearest(p.x, p.z); if (za) { out.push(zooPetAct(za, p)); if (zoo.food > 0) out.push(zooFeedAct(za, p)); }
-    const zs = zoo.shopSpot(p.x, p.z); if (zs) out.push(foodShopAct(zs));
-    if (keeper && zoo.keeperSpot(p.x, p.z)) out.push(keeperAct());
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
@@ -6142,6 +6119,7 @@ function moreActions(p, door) {
   const pm = picnic.action(p); if (pm) out.push(pm);
   const fb = frisbee.action(p); if (fb) out.push(fb);
   if (interior.themepark) out.push(...balloonClown.actions(p));
+  if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   return out;
@@ -6158,16 +6136,6 @@ const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(A
   shop.openProduct({ id: 'adopt-' + pet.adopt, model: 'pet:' + pet.kind, color: pet.color, adopt: pet.adopt, price: 0, name: it.name,
     desc: { en: fmt(ADOPT_TEXT.desc.en, { desc: pet.desc?.en || '' }), ko: fmt(ADOPT_TEXT.desc.ko, { desc: pet.desc?.ko || pet.desc?.en || '' }), ja: fmt(ADOPT_TEXT.desc.ja, { desc: pet.desc?.en || '' }), zh: fmt(ADOPT_TEXT.desc.zh, { desc: pet.desc?.en || '' }) } });
 } });
-// Petting in the zoo's little animal village (core/zoo.js).
-const ZOO_PET = {
-  rabbit: { en: 'rabbit', ko: '토끼', ja: 'ウサギ', zh: '兔子' }, guineapig: { en: 'guinea pig', ko: '기니피그', ja: 'モルモット', zh: '豚鼠' },
-  goat: { en: 'goat', ko: '염소', ja: 'ヤギ', zh: '山羊' }, sheep: { en: 'sheep', ko: '양', ja: 'ヒツジ', zh: '绵羊' },
-};
-const zooFeedAct = (a, p) => ({ key: 'zoofeed:' + a.kind + zoo.food, label: '🥕 ' + fmt(L(ZOO_FOOD.feed), { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit), n: zoo.food }), run: () => {
-  if (zoo.feedPet(a, p.x, p.z)) { me.play?.('wave'); showBubble(myLabel, $('labels'), '🥕'); missionEvent('pet'); }
-  if (!zoo.food) shop.toast(L(ZOO_FOOD.empty));
-} });
-const zooPetAct = (a, p) => ({ key: 'zoopet:' + a.kind, label: '🐾 ' + t('pet.pat', { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit) }), run: () => { zoo.pet(a, p.x, p.z); showBubble(myLabel, $('labels'), a.kind === 'goat' || a.kind === 'sheep' ? '😊' : '🥰'); missionEvent('pet'); } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
 const sitAct = (seat) => (seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
@@ -6181,7 +6149,7 @@ function updateAction(p, tSec) {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
-    const sb = !riding && !seated && !zoo.indoors ? snowman.action(p) : null; // (not indoors in the zoo's Sea Animals hall) // a snowball to work on, or to start (src/game/snowman.js)
+    const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
@@ -6191,7 +6159,6 @@ function updateAction(p, tSec) {
       const seat = freeSeat();
       next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
     } else if (riding === 1 && inSkate) next = { key: 'trick', label: '🤸 ' + L(SKATE_TEXT.trick), run: () => skater.tap() }; // (the bike button gets off)
-    else if (riding === CART) next = zooCarts.offAct(); // (game/zoo-carts.js)
     else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
@@ -6214,14 +6181,7 @@ function updateAction(p, tSec) {
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
-    else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
-    else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
-    else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding
-    else if (zooCarts.act(p)) next = zooCarts.act(p); // the zoo's cart station
-    else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
-    else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
-    else if (!riding && zoo.melonSpot(p.x, p.z)) next = melonAct(zoo.melonSpot(p.x, p.z), p); // watermelon for the hippo
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -6252,7 +6212,7 @@ function updateAction(p, tSec) {
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
-      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
+      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
       next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
@@ -6277,6 +6237,16 @@ function updateAction(p, tSec) {
       next = { key: 'ride-view:' + ride.view, label: to === 'scenic' ? '🏞️ ' + t('ride.scenic') : (to === 'third' ? '🎥 ' : '👀 ') + L(to === 'third' ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = to; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
+    } else if (interior.zooPark && riding === CART && freeSeat() >= 0 && others.nearestFree(p.x, p.z, 4.5)) { // the zoo's cart: offer a friend a seat
+      const o = others.nearestFree(p.x, p.z, 4.5), seat = freeSeat();
+      next = { key: 'tandem-invite:' + o.id, label: '🛺 ' + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (interior.zooPark && riding === 3) {
+      next = { key: 'bike-off', label: '🛺 ' + t('car.off'), run: () => setRiding(false) };
+    } else if (interior.zooPark && !riding && tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from)?.position.distanceTo(p) < 6) {
+      const inv = tandemInvite;
+      next = { key: 'tandem-hop:' + inv.from, label: '🛺 ' + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
+    } else if (interior.zooPark && zooVisit.action(p)) {
+      next = zooVisit.action(p); // the zoo: carts, feeding, the keeper, the hippo's watermelon, the Sea Animals hall
     } else if (interior.themepark && coasterAction(p)) {
       next = coasterAction(p);
     } else if (interior.themepark && nearStation(p, 'booth', 1.6)) {
@@ -6602,7 +6572,7 @@ renderer.setAnimationLoop((now) => {
   if (!firstPerson.look(look)) {
     cam.yaw -= look.dx * 0.006;
     cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
-    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, zoo.indoors ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, interior?.zooHall ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
   }
 
   // Movement relative to the camera. While the stick is held in one
@@ -6783,7 +6753,6 @@ renderer.setAnimationLoop((now) => {
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
-    if (weather.particles) weather.particles.visible = !zoo.indoors; // (no rain or snow in the zoo's Sea Animals hall)
     sun.position.set(p.x + 60, 120, p.z + 40);
     sun.target.position.set(p.x, 0, p.z);
     const z = zones.update(camera, p.x, p.z, tSec);
@@ -6905,7 +6874,7 @@ renderer.setAnimationLoop((now) => {
   updateBuskMusic(p);
   if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { zoo.update(dt, p); zooCarts.tick(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -6923,10 +6892,7 @@ renderer.setAnimationLoop((now) => {
   }
   balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
   mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
-  if (keeper) {
-    if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
-    else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';
-  }
+  zooVisit.tick(dt, p, camera, w, h); // (in the zoo: its visitors, its keeper, the carts)
   for (const g of [squareNpc, welcomeNpc]) {
     if (!g) continue;
     if (mode === 'street') { g.ch.animate(dt, 0); placeLabels(g, camera, w, h); }
@@ -7048,6 +7014,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => { const sh = dronePark()?.show; return { night: +(sh?.night || 0).toFixed(3), drones: !!sh?.sky, lit: sh?.sky?.lit() || 0, sky: +(weather.nightMix || 0).toFixed(3), stamp: !!stampStands.items.find((i) => i.stamp.id === 'drone-show')?.up, pitch: +cam.pitch.toFixed(2) }; },
@@ -7129,7 +7097,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
-    zoo: () => zoo, // Children's Grand Park (core/zoo.js)
+    zoo: () => zooVisit.zoo, // Children's Grand Park's zoo (core/zoo.js), while you're in it
+    zooVisit: () => zooVisit,
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
     palace: () => palaceShow, // (debug: the palace performers)

@@ -514,6 +514,7 @@ export const ES = {
   'home.putDown': 'Dejar',
   'home.remove': 'Quitar',
   'home.leave': 'Salir',
+  'zoo.leave': 'Salir del zoo',
   'home.full': 'Tu casa está llena.',
   'shop.enter': 'Entrar en {name}',
   'shop.look': 'Ver {name}',

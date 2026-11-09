@@ -13,7 +13,7 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
-import { buildSeaHall, SEA_ROOM } from './zoo-sea-hall.js';
+import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
@@ -57,6 +57,7 @@ export const ROOM_SIZES = {
   dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
   zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
+  zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
@@ -369,6 +370,10 @@ export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
 let parkBuilder = null;
 export const setParkBuilder = (fn) => { parkBuilder = fn; };
 export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;
+// The zoo (zoo-park.js: the grounds, and the Sea Animals hall inside) too.
+let zooBuilders = null;
+export const setZooBuilders = (m) => { zooBuilders = m; };
+export const needsZoo = (store) => (store?.workshop === 'zoo' || store?.workshop === 'zoo-sea') && !zooBuilders;
 
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
@@ -380,7 +385,8 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
-  if (store.workshop === 'zoo-sea') return buildSeaHall(store, ROOM, EXIT);
+  if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
+  if (store.workshop === 'zoo') return zooBuilders.buildZooPark(store, ROOM, ZOO_PARK_EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);

@@ -1,9 +1,10 @@
-// HANEUL (하늘), a fictional department store, mall and tower on the north
-// shore of Seokchon Lake (Songpa), where a big shopping complex stands by
-// Jamsil Station in real life. The brand and the designs are our own.
+// HANEUL (하늘), a fictional department store and mall on the north shore of
+// Seokchon Lake (Songpa), where a big shopping complex stands by Jamsil
+// Station in real life, and Another Tower beside the station, where the real
+// 555 m tower stands. The names and the designs are our own.
 //   haneulstore: a store block (department store or mall) with glass bands
 //                and a name board on the roof, seen from Olympic-ro and the lake.
-//   haneultower: a tapering octagonal glass tower with a spire, the landmark
+//   haneultower: Another Tower, a tapering octagonal glass tower with a spire, the landmark
 //                you spot from across the river.
 // Their footprints are buildings in the map with "custom": true (collision and
 // the shop door), drawn here instead of the usual windowed block.
@@ -69,7 +70,7 @@ export function haneulStore(g, l) {
 // The tower: TIERS octagonal sections narrowing upwards, white rings between
 // them, a lantern and a spire with a red light on top. r: base radius (the
 // map's octagon, corners at sin/cos of k·45°, the same as CylinderGeometry).
-export const TOWER = { r: 16, top: 7, tiers: 6, tier: 18, spire: 14 };
+export const TOWER = { r: 9, top: 4, tiers: 6, tier: 20, spire: 13 }; // 139 m to the tip: the real 555 m tower at 1/4
 export function towerOutline(cx, cz, r = TOWER.r) {
   return Array.from({ length: 8 }, (_, k) => [Math.round((cx + r * Math.sin((k * Math.PI) / 4)) * 10) / 10, Math.round((cz + r * Math.cos((k * Math.PI) / 4)) * 10) / 10]);
 }

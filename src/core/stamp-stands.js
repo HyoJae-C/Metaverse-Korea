@@ -102,6 +102,8 @@ export class StampStands {
     if (this.rooms.has(storeId)) return;
     this.rooms.set(storeId, roomSpots(this.stamps, storeId).map((s) => place(scene, s, floorAt ? floorAt(s.x, s.z) : 0)));
   }
+  // A room let go (game/room-cache.js): its stands are placed again when it is rebuilt.
+  dropRoom(storeId) { this.rooms.delete(storeId); }
   // The stand in reach: on the street (storeId null) or in that room.
   nearest(x, z, storeId = null) {
     const items = storeId ? this.rooms.get(storeId) || [] : this.items;

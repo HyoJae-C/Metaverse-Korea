@@ -2,23 +2,26 @@
 // station just inside the gate, drive it anywhere in the zoo, and offer
 // friends nearby the other three seats (main.js's ride-together, as with
 // the limousine). Carts stay in the zoo: drive out and it goes back to the
-// station. The station is the map's "zoocarts" landmark (scripts/
-// build-grand-park.mjs); the cart is vehicle kind 7 (core/bikes.js).
+// station. The station is in the zoo's room (scripts/build-grand-park.mjs
+// CARTS, core/zoo-park.js); the cart is vehicle kind 7 (core/bikes.js).
 import { t } from '../core/i18n.js';
 
 export const CART = 7; // riding kind
 export const CART_SPEED = 10; // m/s: quicker than running (12 is a sprint with stamina), slower than a car
 
 export function createZooCarts(game) {
-  const st = game.station; // { x, z, carts: [[x, z]], area: [x0, z0, x1, z1] } or null
-  const rel = (p) => [p.x - st.x, p.z - st.z];
+  // game.station: { x, z, carts: [[x, z]], area: [x0, z0, x1, z1] } or null
+  // (none until the zoo's room is built).
+  const rel = (p) => [p.x - game.station.x, p.z - game.station.z];
   // Standing by the parked carts.
   function atStation(p) {
+    const st = game.station;
     if (!st) return false;
     const [x, z] = rel(p);
     return (st.carts || []).some(([cx, cz]) => Math.abs(x - cx) < 5 && Math.abs(z - cz) < 3.5);
   }
   function inZoo(p) {
+    const st = game.station;
     if (!st) return false;
     const [x, z] = rel(p), [x0, z0, x1, z1] = st.area;
     return x > x0 && x < x1 && z > z0 && z < z1;

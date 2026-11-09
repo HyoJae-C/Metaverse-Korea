@@ -515,6 +515,7 @@ export const HI = {
   'home.putDown': 'नीचे रखें',
   'home.remove': 'हटाएँ',
   'home.leave': 'बाहर जाएँ',
+  'zoo.leave': 'चिड़ियाघर से बाहर जाएँ',
   'home.full': 'आपका घर भर गया है।',
   'shop.enter': '{name} में जाएँ',
   'shop.look': '{name} देखें',
