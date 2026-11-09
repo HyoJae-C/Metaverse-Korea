@@ -159,3 +159,12 @@ test('the palace has about a quarter of its buildings, and every hall and yard c
   assert.ok(n < all / 2);
   assert.match(out, /every hall and yard can be walked to/);
 });
+
+test('left-out buildings stand as plain blocks, and the two museums stay empty', () => {
+  const halls = map.landmarks.find((l) => l.type === 'palacehalls').halls, blocks = halls.filter((h) => h[5] === 'r');
+  assert.ok(blocks.length >= 10 && blocks.length <= 30, `a few plain blocks (${blocks.length})`);
+  for (const [x, z] of blocks) {
+    assert.ok(!(x > 45 && z < -95) && !(x > 25 && z < -150), `no block on or beside the Folk Museum's grounds (${x},${z})`);
+    assert.ok(!(x < -30 && z > -70 && z < -20), `no block on the National Palace Museum (${x},${z})`);
+  }
+});

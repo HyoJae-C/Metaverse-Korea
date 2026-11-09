@@ -221,6 +221,80 @@ for (const u of units) {
 }
 console.log('buildings', counted(), 'of', units.filter((u) => !u.corridor).length, '; corridor rings', units.filter((u) => u.corridor).length);
 
+// ---------- The left-out buildings: a few plain blocks ----------
+// Where a real building was left out, a plain block stands instead: walls
+// and a big tiled roof, no posts, doors or brackets (Yozi, 2026-11-09: "a
+// few big roofs, not every detail"). Neighbours that line up (same angle,
+// under BLOCK_GAP apart) share one block, when their joined box is mostly
+// building; else each keeps its own. Nothing is put where it would touch a
+// hall, a corridor or a pond kept above.
+export const BLOCK_GAP = 3;
+const blocks = [];
+{
+  const sat = (A, B) => { // two convex polygons overlap
+    for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+      const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length], nx = z0 - z1, nz = x1 - x0;
+      let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+      for (const [x, z] of A) { const t = x * nx + z * nz; a0 = Math.min(a0, t); a1 = Math.max(a1, t); }
+      for (const [x, z] of B) { const t = x * nx + z * nz; b0 = Math.min(b0, t); b1 = Math.max(b1, t); }
+      if (a1 <= b0 || b1 <= a0) return false;
+    }
+    return true;
+  };
+  const ponds = osm.elements.filter((e) => e.kind === 'water').map((e) => e.pts.map(local));
+  const kept = blockers.map((b) => b.p);
+  const free = (r) => { // (r: {x, z, w, d, a}, with its walk-round margin)
+    const P = rect(r.x, r.z, r.w + 0.7, r.d + 0.7, r.a);
+    if (kept.some((K) => sat(P, K))) return false;
+    const cs = Math.cos(r.a), sn = Math.sin(r.a);
+    for (let u = -r.w / 2; u <= r.w / 2 + 1e-6; u += Math.max(0.5, r.w / 6)) for (let v = -r.d / 2; v <= r.d / 2 + 1e-6; v += Math.max(0.5, r.d / 6)) {
+      const x = r.x + u * cs - v * sn, z = r.z + u * sn + v * cs;
+      if (!inPalace(x, z) || ponds.some((W) => inside(W, x, z))) return false;
+    }
+    return true;
+  };
+  const pieces = [];
+  for (const u of units) {
+    if (chosen.has(u) || u.corridor || u.gate) continue;
+    if (!u.e.name && u.o.x > 25 && u.o.z < -150) continue; // (unnamed, beside the Folk Museum: Yozi wants its grounds left empty)
+    for (const r of u.parts) pieces.push({ x: r.x, z: r.z, w: r.w * FOOT, d: r.d * FOOT, a: r.a, name: u.e.name, A: r.w * r.d * FOOT * FOOT });
+  }
+  // Join neighbours that line up.
+  const up = pieces.map((_, i) => i), find = (i) => (up[i] === i ? i : (up[i] = find(up[i])));
+  const turn = (a, b) => { const d = Math.abs(a - b) % (Math.PI / 2); return Math.min(d, Math.PI / 2 - d); };
+  for (let i = 0; i < pieces.length; i++) for (let j = i + 1; j < pieces.length; j++) {
+    const p = pieces[i], q = pieces[j];
+    if (turn(p.a, q.a) > (6 * Math.PI) / 180) continue;
+    if (sat(rect(p.x, p.z, p.w + BLOCK_GAP, p.d + BLOCK_GAP, p.a), rect(q.x, q.z, q.w, q.d, q.a))) up[find(i)] = find(j);
+  }
+  const groups = new Map();
+  pieces.forEach((p, i) => { const k = find(i); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(p); });
+  const boxOf = (ps) => { // the box round some pieces, in the biggest one's axes
+    const a = ps.reduce((m, p) => (p.A > m.A ? p : m)).a, cs = Math.cos(a), sn = Math.sin(a);
+    let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+    for (const p of ps) for (const [x, z] of rect(p.x, p.z, p.w, p.d, p.a)) { const u = x * cs + z * sn, v = -x * sn + z * cs; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+    const u = (u0 + u1) / 2, v = (v0 + v1) / 2;
+    return { x: u * cs - v * sn, z: u * sn + v * cs, w: u1 - u0, d: v1 - v0, a, fill: ps.reduce((s, p) => s + p.A, 0) / ((u1 - u0) * (v1 - v0)), n: ps.length };
+  };
+  const place = (r) => { blocks.push(r); kept.push(rect(r.x, r.z, r.w + 0.7, r.d + 0.7, r.a)); };
+  for (const ps of [...groups.values()].sort((a, b) => b.reduce((s, p) => s + p.A, 0) - a.reduce((s, p) => s + p.A, 0))) {
+    const b = boxOf(ps);
+    if (ps.length > 1 && b.fill >= 0.55 && free(b)) { place(b); continue; }
+    for (const p of ps) { // one by one, at 30% or else at the 1/4 map's size
+      const q = { ...p, n: 1 };
+      if (free(q)) place(q);
+      else { const s = { ...q, w: q.w / FOOT, d: q.d / FOOT }; if (Math.min(s.w, s.d) >= 1.5 && free(s)) place(s); }
+    }
+  }
+  for (const r of blocks) {
+    const H = { x: r.x, z: r.z, w: r.w, d: r.d, ry: -r.a, kind: 'r', name: '' };
+    halls.push(H);
+    blockers.push({ p: rect(r.x, r.z, r.w + 0.7, r.d + 0.7, r.a) });
+  }
+  if (process.env.DEBUG_BLOCKS) for (const p of pieces) if (!blocks.some((b) => Math.hypot(b.x - p.x, b.z - p.z) < Math.max(b.w, b.d))) console.log('  not placed', p.name, r1(p.x), r1(p.z), r1(p.w), r1(p.d));
+  console.log('left-out buildings', pieces.length, 'pieces ->', blocks.length, 'plain blocks (', blocks.filter((b) => b.n > 1).length, 'joined )');
+}
+
 // ---------- The buildings with their own models ----------
 const O = Object.fromEntries(own.map((o) => [o.name, o]));
 const lm = [];
@@ -364,6 +438,7 @@ if (si > 0) {
   for (const w of water) s += `<polygon points="${w.p.map(P).join(' ')}" fill="#9cc7e8"/>`;
   for (const e of osm.elements) if (e.kind === 'building') s += `<polygon points="${e.pts.map(local).map(P).join(' ')}" fill="none" stroke="#b5562f" stroke-width="1.5"/>`;
   for (const b of blockers) s += `<polygon points="${b.p.map(P).join(' ')}" fill="#1f5fbf" fill-opacity="0.55"/>`;
+  for (const h of halls) if (h.kind === 'r') s += `<polygon points="${rect(h.x, h.z, h.w, h.d, -h.ry).map(P).join(' ')}" fill="#e08a1e" fill-opacity="0.85"/>`; // the plain blocks
   s += '</svg>';
   writeFileSync(process.argv[si + 1], s);
 }
@@ -398,7 +473,7 @@ if (si > 0) {
   }
   const reach = (x, z) => { for (let r = 0; r <= 1.2; r += 0.4) for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]]) if (seen[cell(x + dx, z + dz)]) return true; return false; };
   const shut = [];
-  for (const h of halls) if (h.kind !== 'g') { // some side of it (most halls are reached from the front; some only from a side yard)
+  for (const h of halls) if (h.kind !== 'g' && h.kind !== 'r') { // some side of it (most halls are reached from the front; some only from a side yard)
     const cs = Math.cos(-h.ry), sn = Math.sin(-h.ry), at = (u, v) => [h.x + u * cs - v * sn, h.z + u * sn + v * cs];
     const sides = [at(0, h.d / 2 + 1.2), at(0, -h.d / 2 - 1.2), at(h.w / 2 + 1.2, 0), at(-h.w / 2 - 1.2, 0)];
     if (!sides.some(([x, z]) => reach(x, z))) shut.push(h.name || `hall at ${r1(h.x)},${r1(h.z)}`);

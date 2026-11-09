@@ -282,13 +282,26 @@ export const PALACE_BUILD = {
   // han]] in the landmark's metres, w × d the footprint as drawn (30% of the
   // real one), kind 'h' a hall (walls, doors, a hipped roof), 'n' a hall
   // with no ridge (the king's and queen's), 'g' a gate (posts and a roof
-  // you walk under). Heights are half the real ones (l.v scales them). All
+  // you walk under), 'r' a plain block (walls and a roof) where a real
+  // building was left out. Heights are half the real ones (l.v scales them). All
   // of it is merged into a few meshes, so 150 buildings cost a handful of
   // draw calls.
   palacehalls(g, l) {
     const V = l.v || 1, boards = [];
     for (const [x, z, w, d, ry, kind = 'h', han] of l.halls) {
       const h = new THREE.Group();
+      if (kind === 'r') { // a plain block where a real building was left out: walls and a big roof only
+        const k = Math.min(w, d), B = 0.35, H = Math.min(3.2, Math.max(2, 1.2 + k * 0.25)) * V, e = Math.min(1.4, Math.max(0.5, k * 0.18 + 0.3));
+        box(h, w + 0.5, B, d + 0.5, 0, B / 2, 0, C.stone);
+        box(h, w, H, d, 0, B + H / 2, 0, C.wall);
+        box(h, w + 0.04, 0.5 * V, d + 0.04, 0, B + 0.25 * V, 0, C.post); // the red dado
+        box(h, w + 0.3, 0.3 * V, d + 0.3, 0, B + H + 0.15 * V, 0, C.beam);
+        tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3, k * 0.45)) * V, B + H + 0.3 * V, { hip: true, lift: Math.min(0.8, 0.2 + k * 0.08), seg: 4, rows: 1 });
+        h.position.set(x, 0, z);
+        h.rotation.y = ry;
+        g.add(h);
+        continue;
+      }
       const gate = kind === 'g', k = Math.min(w, d);
       const B = Math.min(0.6, 0.25 + k * 0.05), H = (gate ? Math.max(2.4, 1.6 + k * 0.25) : Math.min(4, Math.max(2.1, 1.1 + d * 0.3))) * V;
       const post = Math.min(0.45, Math.max(0.22, k * 0.07)), e = Math.min(1.6, Math.max(0.55, d * 0.22 + 0.35));

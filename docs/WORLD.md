@@ -397,7 +397,10 @@ from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
   (every hall and gate on the middle line, the big halls either side, the
   gates in the wall; the script's `KEEP` list), and every corridor ring.
   Modern buildings (the Palace Museum, offices, sheds) and the Folk Museum's
-  grounds are left out.
+  grounds are left out;
+- where a real building was left out, a plain block stands instead: walls and
+  a big tiled roof, no posts or doors (neighbours that line up share one;
+  none on or beside the two museums, which stay empty).
 
 The models are `core/palace-model.js`: Gwanghwamun, Heungnyemun and
 Geunjeongmun, Yeongjegyo over the palace stream, Geunjeongjeon on its
