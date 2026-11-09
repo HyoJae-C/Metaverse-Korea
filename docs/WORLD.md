@@ -447,8 +447,14 @@ on the island). The island grew to the south-east to hold the whole track,
 and again a little east of the bridge's landing for the candy house's
 square (about 4,050 m², the track at least 2 m in from the shore and about
 5 m of water round it), so the water is about 12,980 m², 95% of the real
-1/16. The coaster is its first design (the same 345 m lap, 83 m across,
-the helix round (8, -27) with the little hill before the chocolate tunnel).
+1/16. The coaster is its first design (83 m across, the helix round
+(8, -27) with the little hill before the chocolate tunnel), with a vertical
+loop added after the airtime hill (`LOOP` in `core/coaster.js`: 10.5 m
+tall, a teardrop that pulls hard at its foot and floats over the top, out
+3.5 m to the side of the way in; the lap is 374 m, still a minute). In the
+loop the track's right stays the loop's side, so the train, its riders and
+the ride camera turn right over; its top is held up by a leaning pair of
+legs from either side, clear of the train inside.
 
 Four more rides stand round the coaster, each in its fenced yard with a
 named gate and an attendant (`core/park-yards.js`), off biscuit walks from

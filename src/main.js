@@ -58,7 +58,7 @@ import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoar
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createParkRiders } from './game/park-riders.js';
-import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
+import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -5036,6 +5036,9 @@ function updateCoaster(dt) {
   const dAir = Math.abs(((tr.s - S_AIR + LENGTH / 2) % LENGTH + LENGTH) % LENGTH - LENGTH / 2);
   if (dAir < 1.5 && !ride.air) { ride.air = true; buzz(60); }
   if (dAir > 6) ride.air = false;
+  const dLoop = Math.abs(tr.s - S_LOOP_TOP); // (upside down at the loop's top)
+  if (dLoop < 1.5 && !ride.flip) { ride.flip = true; buzz([40, 30, 40]); showBubble(myLabel, $('labels'), '🙃', 1600); }
+  if (dLoop > 8) ride.flip = false;
   ride.wind += (tr.k01 - ride.wind) * Math.min(1, dt * 4);
   me.setWind?.(ride.wind);
   if (now >= ride.until) endRide();
@@ -5062,7 +5065,10 @@ function coasterCamera(dt) {
   // Lean with the banked track (60%, none on the gentle setting), and at the
   // top, from your seat, look down over the edge (slowly: from behind you the
   // view stays on the track ahead, so the crest doesn't jolt it).
-  _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), rideFxSoft ? 0 : 0.6).normalize();
+  // (In the loop the view turns right over with the track, even on the
+  // gentle setting: leaning only part way, it would spin as you go over.)
+  const loopIn = Math.max(0, Math.min(1, Math.min(tr.s - S_LOOP[0] + 4, S_LOOP[1] + 4 - tr.s) / 4));
+  _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), THREE.MathUtils.lerp(rideFxSoft ? 0 : 0.6, 1, loopIn)).normalize();
   camera.up.copy(_cu);
   ride.down = (ride.down || 0) + ((first && tr.phase === 'hold' ? 3.6 : 0) - (ride.down || 0)) * Math.min(1, dt * 1.5);
   const down = ride.down;
