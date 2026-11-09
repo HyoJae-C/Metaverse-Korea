@@ -23,6 +23,7 @@ useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { lakeHoles } from './core/lakeshore.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { splitInstances } from './core/split-instances.js';
@@ -673,7 +674,7 @@ const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to 
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -5066,13 +5067,17 @@ function coasterCamera(dt) {
 // train * 10 + seat + 1); the train runs on the shared clock, so they sit
 // exactly where they are on their own screen, arms up in the drop.
 function placeRemoteRider(ch, cs, q) {
-  if (!interior?.coaster) return;
+  // (Another Land's island: they're on the street's side, so the seat is
+  // turned from the island's metres into the street's)
+  const op = outdoors() ? openParks.find((o) => o.built?.coaster && (o.near || openParkHere() === o)) : null;
+  if (!op && !interior?.coaster) return;
   const train = Math.floor((cs - 1) / 10), seat = (cs - 1) % 10;
   if (train >= TRAINS || seat >= COASTER_SEATS) return;
   q.cf ||= {};
   const f = coasterSeat(train, seat, coasterNow(), q.cf);
   ch.root.rotation.order = 'YXZ';
   sitOnTrack(ch.root, f);
+  if (op) ch.root.applyMatrix4(op.toWorld);
   const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
   if (up !== !!q.coUp) { q.coUp = up; ch.setMoves?.(up ? ARMS_UP : null); }
   ch.setWind?.(f.tr.k01);
@@ -5280,7 +5285,10 @@ const openParks = storefronts.items.filter((i) => i.open).map((item) => {
   const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
   if (grass) item.store.open.grass = COLORS[grass.k];
   const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
-  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false };
+  // (a park with its own shore, like Another Land's island, says where its
+  // edge is: `lawn` to walk in, the wider `out` to walk off)
+  const { lawn = null, out = null } = item.store.open;
+  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false, lawn, out };
 });
 const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
 function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
@@ -5318,6 +5326,13 @@ function staffOpenPark(built) {
 }
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
+  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+    if (!domeLoading) {
+      domeLoading = true;
+      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    }
+    return null;
+  }
   if (!o.built) {
     o.built = roomFor(o.item.store);
     o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
@@ -5356,7 +5371,8 @@ function updateOpenParks(dt) {
     net.update?.(wx, wz); // (the street's area cells, as on the street)
     sun.position.set(wx + 60, 120, wz + 40);
     sun.target.position.set(wx, 0, wz);
-    if (seated == null && (Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1)) leaveStore(true);
+    const off = here.out ? !pointInPoly(p.x, p.z, here.out) : Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1;
+    if (seated == null && !ride && off) leaveStore(true);
     return;
   }
   if (mode !== 'street') return;
@@ -5367,7 +5383,8 @@ function updateOpenParks(dt) {
     const d = Math.hypot(p.x - o.ox, p.z - o.oz);
     o.near = d < PARK_NEAR;
     if (!o.near) continue;
-    lightOpenPark(openParkRoom(o));
+    if (!openParkRoom(o)) continue; // (its code is still coming)
+    lightOpenPark(o.built);
     o.built.tick?.(dt, null);
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.
@@ -5375,7 +5392,8 @@ function updateOpenParks(dt) {
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
-    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro && !inCab) {
+    const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
+    if (onLawn && !subway.metro && !inCab) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
@@ -6153,6 +6171,9 @@ function updateAction(p, tSec) {
       next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
+    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
+      const under = storefronts.items.find((i) => i.store.below === interior.store.id);
+      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => enterStore(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = parkRideAction(st);
@@ -6719,7 +6740,7 @@ renderer.setAnimationLoop((now) => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
-    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; st.x = COASTER_OFF.x; st.z = COASTER_OFF.z; st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
+    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; [st.x, st.z] = peerSpot(COASTER_OFF.x, COASTER_OFF.z); st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
     if (teleports) st.tp = teleports;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
     if (Math.abs(p.y) > 0.05 && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
@@ -6779,8 +6800,8 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
   }
-  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
-  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !ride);
+  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
+  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
   if (keeper) {
     if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
     else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';

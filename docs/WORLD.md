@@ -411,11 +411,37 @@ are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 The lakes themselves are at the real 1/4: both lakes and the west-lake island
 were traced from the real map around the lake's centre (on Songpa-daero
 between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
-1/4, about 13,500 m² of water against the real 217,850 m² / 16 = 13,616
+1/4, about 13,150 m² of water against the real 217,850 m² / 16 = 13,616
 (`tests/themepark.test.mjs` checks it stays within 5%). Songpa-daero bends
 through the gap between the lakes (about 35 m wide), the mall stands west of
 the east lake's north tip, and the land the old, larger lakes took is
-lakeside park. The island is about 64 x 58 m with at least 4 m of water round
-it; Another Land Bridge runs south from Olympic-ro to its north tip. The park
-model behind the gate is drawn small (`PARK_SCALE`) to stand on the island
-until the rides move out onto it.
+lakeside park. Two spits of land that cut into the water (the south shore's
+west end, and the west lake's east side by Songpa-daero) are lake now.
+
+The water lies about a metre below the ground behind stone banks, and the two
+lakes are one water, joined by a channel under Songpa-daero, which crosses it
+on a bridge (landmark `lakeshore`, `core/lakeshore.js`; the shore is cut out
+of the ground, the water areas are `sunk`). One walk goes round both lakes,
+with a railing along the shore, lamps with flowers at their feet and benches
+facing the water.
+
+### Another Land on the island
+
+The island is Another Land itself, open to the street: no gate, you walk over
+Another Land Bridge (south from Olympic-ro) onto it. It is the store
+`another-land-island` with `"open"` like the Han River parks (main.js
+`openParks`), but its edge is its own shore: `open.lawn` (walk onto it and
+you're in) and the slightly wider `open.out` (walk past it and you're back on
+the street), in the room's metres, which are the Cotton Candy Express's own
+(`core/park-island.js`, room size `island`). The coaster stands on it exactly
+as it was, track, speed, station and attendant, with its candy wood, and a
+candy-striped pavilion over the stairs down to the rest of the park
+(`another-land`, which has `"below": "another-land-island"`: no storefront,
+its door is the stairs; leaving it puts you back on the island). The island
+grew to the south-east to hold the whole track (about 3,870 m², the track at
+least 2 m in from the shore and about 5 m of water round it), so the
+water is about 13,150 m², 97% of the real 1/16. The helix sits south of
+the long run, east of the station (the same 345 m lap, the track 63 m
+across, not 83), which leaves the island's east end free for more rides. `tests/coaster.test.mjs`
+checks the track is on the island and the only way off is the bridge;
+`tests/themepark.test.mjs` checks the island lies on the map's island.
