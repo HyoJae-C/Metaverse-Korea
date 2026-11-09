@@ -5143,15 +5143,14 @@ const duckUi = new DuckUI({
 // 10 minutes before, the lift-off and photo-time notices in the park, the
 // show music (only if music is on), and a camera that can look up.
 const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
-const inDronePark = () => mode === 'store' && interior?.store?.id === 'ttukseom-hangang';
+const dronePark = () => { const h = hanPark(); return h?.show ? h : null; }; // (Ttukseom's, laid on the street)
 // In the park while it's dark: the camera may tilt below level to look up.
-const skyLook = () => (inDronePark() && (interior.show?.night || 0) > 0.5) || fireworks.look;
+const skyLook = () => (dronePark()?.show.night || 0) > 0.5 || fireworks.look;
 function updateDroneShow() {
   const s = droneShowAt();
   if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
-  const park = inDronePark();
-  if (park) stampStands.showTimed(interior.store.id);
-  const show = park ? interior.show : null;
+  stampStands.showTimed(); // (the drone show's stand on its lawn)
+  const show = dronePark()?.show || null;
   const t = show?.now?.t;
   if (t != null) {
     if (t >= -LIFT_SECONDS && t < -LIFT_SECONDS + 60 && droneShow.lifted !== show.now.start) {
@@ -5178,15 +5177,13 @@ function updateDroneShow() {
 // booms (sound travels slower than light: about 0.3 s per 100 m) and the
 // notices on the lawn.
 const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
-// Ttukseom's drone show turns the street's sky dark too, on and around its
-// open lawn (fading out from 150 to 300 m), as Yeouido's fireworks do.
-function droneNight(op, p, street) {
-  const o = openParks.find((x) => x.item.store.id === 'ttukseom-hangang');
-  const k = o?.built?.show?.night || 0;
-  if (!k || !street) return 0;
-  if (op === o) return k;
-  const d = Math.hypot(p.x - o.ox, p.z - o.oz);
-  return k * Math.min(1, Math.max(0, (300 - d) / 150));
+// Ttukseom's drone show turns the street's sky dark too, in and around its
+// park (fading out from 100 to 250 m off it), as Yeouido's fireworks do.
+function droneNight(p, street) {
+  const k = street ? droneShowAt()?.night || 0 : 0;
+  if (!k) return 0;
+  const d = hanParks.awayFrom('ttukseom-hangang', p);
+  return k * Math.min(1, Math.max(0, (250 - d) / 150));
 }
 function updateFireworks() {
   const s = fireworksAt();
@@ -5196,7 +5193,7 @@ function updateFireworks() {
   const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
-  weather.nightMix = Math.max(night, droneNight(op, p, street));
+  weather.nightMix = Math.max(night, droneNight(p, street));
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5241,7 +5238,7 @@ const hanParks = createHanParks({
   makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - daylight(weather.hour()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
-  onVisit: (store) => missionEvent('visit', store.id), // (as walking into a shop does)
+  onVisit: (store) => { roomVisit++; missionEvent('visit', store.id); }, // (as walking into a shop does)
   // What there is to do there (each made only when you're next to it).
   acts: {
     duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
@@ -6441,7 +6438,7 @@ renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now)) return; // (at most 60 frames a second)
   guardPosition();
   timer.update();
-  const dt = Math.min(timer.getDelta(), 0.05);
+  const dt = Math.max(0, Math.min(timer.getDelta(), 0.05)); // (never back in time: a clock set back)
   input.update();
 
   const look = input.consumeLook();
@@ -6893,7 +6890,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     enter: (id) => enterStore(storefronts.get(id)),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
-    droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
+    droneShow: () => { const sh = dronePark()?.show; return { night: +(sh?.night || 0).toFixed(3), drones: !!sh?.sky, lit: sh?.sky?.lit() || 0, sky: +(weather.nightMix || 0).toFixed(3), stamp: !!stampStands.items.find((i) => i.stamp.id === 'drone-show')?.up, pitch: +cam.pitch.toFixed(2) }; },
     openBank: () => bankGame.openBank(),
     bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
     bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,
@@ -6914,8 +6911,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     leave: () => leaveStore(),
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
-    seats: () => interior?.seats?.length ?? 0,
-    sit: (i) => sitDown(interior.seats[i]),
+    seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
+    sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
     stand: () => standUp(),
     tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarotUi.offer && { ...tarotUi.offer }, state: tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),

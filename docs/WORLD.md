@@ -155,6 +155,21 @@ the station here, about 400 m in Seoul). The district is about 230 x 180 m
   down the walking street. `SHOPS` in the script says which lot each takes.
 - Run the script again after changing the map; it rewrites the shops' `at`.
 
+## Ttukseom Han River Park (Seongsu)
+
+Laid straight on the street on Seongsu's straight bank, between the river
+and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
+`game/han-parks.js`). West to east: the fishing pier and fish buyer; DAILY
+MART with its ramen machine where the walk comes down from Ttukseom-ro,
+then the Riverside Market's six stalls; the open lawn for the drone light
+show (`lawn: true`: picnic mats, frisbees), with the launch barge out on the
+water and the show's board by the railing; the duck boat dock by the other
+walk down. The drone show (`core/drone-show.js`) keeps its spots in the old
+park room's metres; `core/han-park.js` sets them on the park (`drones` in
+the layout), loads the drones only near show time, and turns the street's
+sky dark in and around the park while it's on. Both Ttukseom stamps stand
+on the lawn; the drone show's only while the drones are up.
+
 ## Banpo-Jamwon Han River Park (Seocho-gu)
 
 Banpo and Jamwon Han River Parks lie side by side on the south bank, so the

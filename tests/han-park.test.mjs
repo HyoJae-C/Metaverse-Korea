@@ -95,6 +95,41 @@ for (const { l, store, map, d } of streetParks) {
   });
 }
 
+test('the stamps in the Han River parks stand on their land, clear of what the park builds', async () => {
+  const { STAMPS } = await import('../src/data/stamps.js');
+  const found = new Set();
+  for (const { l, store } of streetParks) {
+    const b = buildHanPark(store, l.layout);
+    const col = new CollisionMap(b.colliders);
+    const c = Math.cos(l.ry), sn = Math.sin(l.ry);
+    const local = (x, z) => { const dx = x - l.x, dz = z - l.z; return [dx * c - dz * sn, dx * sn + dz * c]; };
+    const [x0, z0, x1, z1] = l.bounds;
+    for (const st of STAMPS.filter((q) => Array.isArray(q.place?.at))) {
+      const [lx, lz] = local(...st.place.at);
+      if (!(lx > x0 && lx < x1 && lz > z0 && lz < z1)) continue;
+      found.add(st.id);
+      const ry = st.place.ry || 0, [ux, uz] = local(st.place.at[0] + Math.sin(ry) * 0.9, st.place.at[1] + Math.cos(ry) * 0.9);
+      assert.ok(lz > 0.5 && uz > 0.5, `${st.id} on land (${lx.toFixed(1)}, ${lz.toFixed(1)})`);
+      assert.ok(!col.blocked(lx, lz, 0.45) && !col.blocked(ux, uz, 0.35), `${st.id} clear of the park's things`);
+    }
+  }
+  for (const id of ['hangang', 'drone-show', 'banpo-jamwon', 'yeouido', 'mangwon-pier']) assert.ok(found.has(id), `${id} in its park`);
+});
+
+test('Ttukseom has the drone show: its barge out on the river, clear of the duck boats; no other park has one', async () => {
+  const { BARGE } = await import('../src/core/drone-show.js');
+  for (const { l, store } of streetParks) {
+    const b = buildHanPark(store, l.layout);
+    assert.equal(!!b.show, store.id === 'ttukseom-hangang', store.id);
+    if (!b.show) continue;
+    const D = l.layout.drones, bx = D.x + BARGE.x, bz = BARGE.z + 4, w = b.duckArea.water;
+    assert.ok(bz + BARGE.d / 2 < -20, 'well out on the water');
+    assert.ok(bx + BARGE.w / 2 < w.minX - 5 || bx - BARGE.w / 2 > w.maxX + 5 || bz + BARGE.d / 2 < w.minZ - 5, 'away from the duck boats');
+    const [x0, , x1] = l.bounds, lawn = D.mats.map((m) => [D.x + m.x, m.z + 4]);
+    for (const [x, z] of lawn) assert.ok(x > x0 && x < x1 && z > 1 && z < 11, 'the watchers sit on the lawn');
+  }
+});
+
 function segDist(x, z, [ax, az], [bx, bz]) {
   const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
   const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;

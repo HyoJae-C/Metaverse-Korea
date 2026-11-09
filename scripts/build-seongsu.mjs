@@ -136,12 +136,58 @@ const AREAS = [
   { k: 'grass', p: [...FOREST_EDGE, [-110, 294], [-65, 321], [-35, 340], [-8, 358], [260, 358], ...RIVER_EDGE.slice().reverse()] },
   { k: 'water', p: [...RIVER_EDGE, [260, 410], [WEST, 410]] }, // Han River
 ];
-// Ttukseom Han River Park (core/park.js) is open to the street: no gate, you
-// walk from the Han River path straight onto its lawn on the straight bank
-// (z 386). It faces south over the river, so its own frame is turned half
-// round (ry = π): x = x0 - x, z = (386 - 4) - z. It covers x x0-26..x0+26 and
-// z 368..386 (plus the pier, the duck boats and the drone barge on the water).
-export const OPEN_PARK = { x0: 44, bank: 386, depth: 18 };
+// Ttukseom Han River Park, laid straight on the street (game/han-parks.js;
+// core/han-park.js builds what the map can't draw) on the straight bank
+// (z 386) between the river and the Han River path. It faces south over the
+// river, so its own frame is turned half round: x = PARK_X - X, z = 386 - Z
+// (the bank's edge at z = 0, the river z < 0), x growing west. West to east:
+//  - the fishing pier and the fish buyer;
+//  - where the walk down from Ttukseom-ro (X 60) meets the river path: the
+//    DAILY MART kiosk with its ramen machine and parasol tables, then the
+//    Riverside Market's six stalls;
+//  - the open lawn for the drone light show (core/drone-show.js), with the
+//    launch barge out on the water in front of it and the show's board by
+//    the railing (picnic mats and frisbees go here too);
+//  - the duck boat dock by the other walk down (X 200), and a quiet end
+//    with benches under trees.
+export const PARK_X = 135, PARK_BANK = 386;
+const DRONES_X = -4; // the barge and the drones' sky (X 139)
+export const PARK = {
+  bounds: [-123, -52, 123, 17], // bank to the path, and out on its water to the barge
+  layout: {
+    paving: [[26, 0.4, 112, 9.2, '#d9c7a6']],
+    rail: [-122, 122],
+    pier: { x: 100, len: 9 },
+    fishBuy: [92, 4.2, 0],
+    fishing: [[114, 0.75], [106, 0.75], [100, -8.2], [84, 0.75]],
+    kiosk: [68, 6.6, Math.PI], // DAILY MART, facing the river
+    tables: [[59.6, 3.4], [76.4, 3.4]],
+    market: {
+      spots: [[32, 7.6, Math.PI], [34.8, 7.6, Math.PI], [37.6, 7.6, Math.PI], [40.4, 7.6, Math.PI], [43.2, 7.6, Math.PI], [46, 7.6, Math.PI]],
+      tables: [[36.4, 3.6], [44.2, 4.6]],
+      board: [50.8, 8.2, Math.PI],
+    },
+    drones: {
+      x: DRONES_X,
+      sign: [DRONES_X - 4.6, 0.75, 0],
+      // (in the show's own metres: 4 m towards the river from the park's)
+      mats: [{ x: -8.6, z: 4.6, color: '#3f7fd0' }, { x: 9.4, z: 3.6, color: '#e8708f' }],
+      rail: [[-14.5, -2.5], [14.8, -2.4]],
+    },
+    skyline: { z: -150, x0: DRONES_X - 95 }, // Cheongdam across the water (lit at night)
+    dock: -78,
+    duckWater: { minX: -100, maxX: -56, minZ: -38 },
+    lamps: [[110, 2.6], [80, 2.6], [54, 2.6], [24, 2.6], [-36, 2.6], [-60, 2.6], [-96, 2.6]],
+    benches: [[-46, 3.4], [-100, 3.4], [-112, 3.4]],
+    beds: [[20, 6.4, 3], [-32, 6.4, 3], [-62, 6.4, 2.6]],
+    trees: [[118, 7.2], [-92, 7.4], [-106, 7], [-118, 7.4]],
+    bushes: [[24, 9.2], [-34, 9.4], [-88, 8.2]],
+  },
+};
+const PARK_LAWN = [-30, 22]; // the drone show's lawn (x): picnic mats and frisbees
+// (the lawn in the street's metres: no trees, the picnic lawn)
+const lawnArea = { k: 'grass', lawn: true, p: [[PARK_X - PARK_LAWN[1], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 1.2], [PARK_X - PARK_LAWN[1], PARK_BANK - 1.2]] };
+AREAS.push(lawnArea);
 // A building placed by hand: the Seoul Forest Culture Center.
 const EXTRA = [
   { h: 6, p: [[-232, 120], [-216, 120], [-216, 132], [-232, 132]], tag: 'forest' }, // Seoul Forest Culture Center (stores.json seoul-forest-culture; door on the north side)
@@ -182,6 +228,8 @@ function onTrail(i, t, side) {
 }
 // Rose garden: beds in two rings, cross paths, arches, a sculpture in the middle.
 const GARDEN = { x: -158, z: 238, r: 14 };
+// The park itself (game/han-parks.js): at the bank's edge, turned half round.
+LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
 LANDMARKS.push({ type: 'rosegarden', x: GARDEN.x, z: GARDEN.z, r: GARDEN.r, clear: GARDEN.r + 3, label: name('장미정원', 'Rose Garden', 'バラ園', '玫瑰园') });
 WALKS.push({ w: 3, p: [[-179, GARDEN.z], [GARDEN.x - GARDEN.r - 0.5, GARDEN.z]] }); // from the trail to the garden's west arch
 sculpture('strawberry', GARDEN.x, GARDEN.z, faceTo(GARDEN.x, GARDEN.z, GARDEN.x - 20, GARDEN.z)); // the garden's middle, facing its path in
@@ -644,7 +692,7 @@ if (process.argv.includes('--place')) {
     text[key] = setAt(text[key], id, at);
   };
   for (const [id, spot] of [...PLACE, ...PLACE_NEW]) if (!MOVED_AWAY.has(id)) placeOne(id, spot);
-  text.stores = setAt(text.stores, 'ttukseom-hangang', [OPEN_PARK.x0, OPEN_PARK.bank - OPEN_PARK.depth - 1]); // just behind the open-air park's lawn (stores.json "open" is its frame)
+  text.stores = setAt(text.stores, 'ttukseom-hangang', [60, 372]); // where the walk down from Ttukseom-ro meets the river path (where a taxi or the map drops you)
   await writeFile(files.stores, text.stores);
   await writeFile(files.homes, text.homes);
   console.log(`placed ${used.size} shops; ${lots.length - used.size} shop lots left empty`);

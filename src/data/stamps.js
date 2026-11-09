@@ -47,9 +47,9 @@ export const STAMPS = [
     icon: '<path d="M78 128 v-20 M78 108 l-20 0 l20 -30 l20 30 z M78 92 l-14 0 l14 -22 l14 22 z"/><path d="M128 128 l-14 -44 h28 z"/><path d="M112 84 a16 14 0 0 1 32 0 a16 10 0 0 1 -32 0 z"/><path d="M56 128 h88"/>',
   },
   {
-    // in the Ttukseom Han River Park room, on the lawn just inside the
-    // entrance, facing you as you walk in (the river and the pier ahead)
-    id: 'hangang', place: { store: 'ttukseom-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1d6fb8', shape: 'square',
+    // at the west end of the drone show's lawn, in the park laid on the
+    // street (scripts/build-seongsu.mjs), the river ahead
+    id: 'hangang', place: { at: [117, 376.5], ry: 3.1416 }, color: '#1d6fb8', shape: 'square',
     name: { ko: '뚝섬 한강공원', en: 'Ttukseom Han River Park', ja: 'トゥクソム漢江公園', zh: '纛岛汉江公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a duck boat (오리배) on the river
@@ -57,8 +57,8 @@ export const STAMPS = [
   },
   {
     // Ttukseom's drone light show (core/drone-show.js): the stand is only on
-    // the lawn while the drones are up, so this stamp means you saw a show.
-    id: 'drone-show', place: { store: 'ttukseom-hangang', room: true, at: [-3.6, 4.6], ry: 0 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    // the lawn (in front of the barge) while the drones are up, so this stamp means you saw a show.
+    id: 'drone-show', place: { at: [142.6, 377.4], ry: 3.1416 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
     name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // drones drawing a heart over the river
