@@ -69,4 +69,5 @@ test('barges in the river between the island and Hongdae; the night only around 
   assert.equal(nearYeouido(-2776.7, -16.7), 1, 'night at the bridge\'s Hongdae end');
   assert.equal(nearYeouido(-2977, -216), 0, 'day in the middle of Hongdae');
   assert.equal(nearYeouido(0, 0), 0, 'day in Seongsu');
+  assert.equal(nearYeouido(...atUV(-200, 300)), 1, 'night on the south side of the island too');
 });

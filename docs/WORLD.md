@@ -300,8 +300,12 @@ Bridge (a pier, the fish buyer, the kiosk with its ramen machine), the open
 fireworks lawn with no trees (`lawn: true`), the night market's stalls round
 Mul-bit Square's shallow pool, and the boat dock by the Information Center; the Han River path, Yunjung-ro with cherry trees
 that are only pink in spring (`blossoms` with `seasonal`), plain office
-towers and the 63 tower on the east tip (a blocker and a landmark, not
-walkable). The park's ★5 legend is the blobfish. Run the script again
+towers, Yeouido Park and Yeoui-daero across the middle, the National
+Assembly at the west end, Yunjung-ro again along the south side, and the 63
+tower by the Saetgang at the east end (a blocker and a landmark, not
+walkable). The island is 680 x 320 m and the Saetgang about 25 m, as the
+real ones are at 1/4, so Yeongdeungpo is just across it (until it was redone
+the island was half as wide, a thin strip with wide water round it). The park's ★5 legend is the blobfish. Run the script again
 after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
