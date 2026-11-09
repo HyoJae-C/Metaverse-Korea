@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TAROT_CARDS, POSITIONS, ROMAN, shuffleDeck } from '../src/data/tarot.js';
 import { tipsLeft, takeTip, TIPS_PER_DAY } from '../src/core/busking.js';
-import { bankHeight, BANK, CROWD, SINGER, GIRLS, BOYS } from '../src/core/busking-layout.js';
+import { bankHeight, stepAt, BANK, CROWD, SINGER, GIRLS, BOYS } from '../src/core/busking-layout.js';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
@@ -77,14 +77,22 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   }
 });
 
-test('busking bank: flat ground around it, highest along the back, the crowd standing on it', () => {
+test('busking steps: flat ground around them, low steps up from every side, the crowd on them', () => {
   assert.equal(bankHeight(BANK.front + 1, 0), 0);
   assert.equal(bankHeight(BANK.back - 1, 0), 0);
-  assert.equal(bankHeight(-14, BANK.z1 + 1), 0);
-  assert.equal(bankHeight(-14, 0), BANK.h);
-  assert.ok(bankHeight(-10, 0) < bankHeight(-12, 0) && bankHeight(-12, 0) < BANK.h);
-  for (const [x, z] of CROWD) assert.ok(bankHeight(x, z) > 0.1, `listener ${x},${z} up on the bank`);
-  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 10, 'the acts across the street from the bank');
+  assert.equal(bankHeight(-10, BANK.z1 + 1), 0);
+  assert.equal(bankHeight(-11, 0), BANK.h, 'the top step near the back');
+  assert.ok(bankHeight(-1, 0) < bankHeight(-3, 0) && bankHeight(-3, 0) < BANK.h);
+  assert.ok(BANK.rise <= 0.4, 'low steps');
+  // Walking across the steps in any direction, you only ever go up or down one step.
+  for (let x = BANK.back - 1; x <= BANK.front + 1; x += 0.1) {
+    for (let z = BANK.z0 - 1; z <= BANK.z1 + 1; z += 0.1) {
+      assert.ok(Math.abs(stepAt(x + 0.1, z) - stepAt(x, z)) <= 1 && Math.abs(stepAt(x, z + 0.1) - stepAt(x, z)) <= 1, `one step at a time at ${x.toFixed(1)},${z.toFixed(1)}`);
+    }
+  }
+  // The three rows of listeners stand on three different steps.
+  assert.deepEqual([...new Set(CROWD.map(([x, z]) => stepAt(x, z)))].sort(), [1, 2, 3]);
+  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 5, 'the acts on the other half of the street');
 });
 
 test('animal cafés: Seongsu keeps the cat café and the retriever café (the old pet shop), the rest are in Hongdae with a second cat café', () => {
