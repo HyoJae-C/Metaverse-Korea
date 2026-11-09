@@ -126,7 +126,7 @@ export const STAMPS = [
   },
   {
     // on the west lake's south shore (Songpa's map, local 470, 345)
-    id: 'seokchon', place: { at: [908, 1116] }, color: '#1e7fa8', shape: 'circle',
+    id: 'seokchon', place: { at: [958, 1071] }, color: '#1e7fa8', shape: 'circle',
     name: { ko: '석촌호수', en: 'Seokchon Lake', ja: '石村湖', zh: '石村湖' },
     gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
     icon: '<path d="M58 104 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0 M58 120 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0"/><path d="M80 92 v-22 M80 70 q-14 4 -12 16 M80 70 q14 4 12 16 M80 70 q-8 -10 -18 -6 M80 70 q8 -10 18 -6"/><path d="M118 92 q0 -16 12 -24 q-2 14 8 24 z"/>',

@@ -507,6 +507,20 @@ drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore.
 
+Songpa's streets and river are the real ones at 1/4 (OpenStreetMap,
+`/mnt/project-files/osm/songpa-seokchon.json` at the time): the Han's south
+bank with Jamsil Han River Park's grass along it, Jamsil Bridge (Songpa-daero)
+crossing from the north bank, Songpa-daero past Jamsil Station and on
+south-east, Olympic-ro, Baekjegobun-ro, Hangaram-ro, Jamsil-ro, Samjeon-ro and
+Seokchonhosu-ro's west part. The river from Seongsu to past Jamsil Bridge is
+region water, its blockers split for the bridge. Seokchon Lake and Another
+Land keep their game size (the island is about four times the real Magic
+Island, on purpose, for the rides) and were moved as one piece (+50, -45) so
+the channel between the lakes lies on the real Songpa-daero; the real lake is
+smaller and narrower. Seoul Another Dome stands by Olympic-ro near the real
+baseball stadium, the HANEUL department store south of Olympic-ro where the
+real one is, the mall east of the east lake.
+
 The lakes themselves are at the real 1/4: both lakes and the west-lake island
 were traced from the real map around the lake's centre (on Songpa-daero
 between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to

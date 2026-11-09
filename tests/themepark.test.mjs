@@ -119,7 +119,7 @@ test('Seokchon Lake: real 1/4 water, Another Land open on its island', async () 
   const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
   const map = read('districts/songpa.json'), stores = read('stores.json').stores;
   const area = (p) => Math.abs(p.reduce((s, [x, z], i) => { const [x2, z2] = p[(i + 1) % p.length]; return s + x * z2 - x2 * z; }, 0)) / 2;
-  const water = map.areas.filter((a) => a.k === 'water' && a.p.every(([, z]) => z > 100));
+  const water = map.areas.filter((a) => a.k === 'water' && a.sunk);
   const lake = water.reduce((s, a) => s + area(a.p), 0);
   assert.ok(Math.abs(lake / (217850 / 16) - 1) < 0.05, `lake water ${Math.round(lake)} m2`);
   // The island in the street's metres (as main.js parkWorld turns it).
