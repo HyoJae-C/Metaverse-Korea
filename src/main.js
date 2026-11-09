@@ -162,7 +162,7 @@ import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
-import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
+import { FishBag, FishDex, FishStats, FishPity, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -3801,6 +3801,7 @@ const fishingUi = new FishingUI({
   bag: fishBag,
   dex: fishDex,
   stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
+  pity: new FishPity(), // mk.fishpity: bites toward each park's first legend
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);
@@ -3809,9 +3810,10 @@ const fishingUi = new FishingUI({
     if (ph === 'cast') me.play('cast');
     else if (ph === 'land' || ph === 'trash') me.play('catch');
     else if (ph === 'bite') buzz(60);
-    // ★5 legends: a long rumble on the bite, a tug while you reel, a fanfare when landed.
-    const legend = data?.rarity === 5;
-    if (ph === 'bite' && legend) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
+    // Huge bites (★4 or a legend): a long rumble on the bite and a tug while
+    // you reel; only a landed legend gets the fanfare.
+    const legend = data?.rarity === 5, huge = data && !data.trash && !data.mystery && data.rarity >= 4;
+    if (ph === 'bite' && huge) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
     if (ph === 'reel' && legendOn) { clearInterval(legendTug); legendTug = setInterval(() => { buzz(40); shake([$('scene')], false); }, 900); }
     if (ph !== 'reel' && ph !== 'tap' && ph !== 'progress' && ph !== 'bite') { clearInterval(legendTug); legendOn = false; }
     if (ph === 'land' && legend) { buzz([120, 60, 120, 60, 120, 60, 700]); shake([$('scene'), $('fish-panel')]); }
@@ -3830,7 +3832,7 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
-  park: () => (hanPark() || interior)?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  park: () => (hanPark() || interior)?.store?.id || null, // which ★3+ kinds bite here (PARK_FISH in core/fishing.js)
   rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
