@@ -625,4 +625,8 @@ export const FR = {
   "fountain.on": "🌈 La fontaine arc-en-ciel est lancée : une eau aux couleurs de l'arc-en-ciel tombe des deux côtés du pont Banpo.",
   "fountain.photo": "📸 C'est l'heure de la photo : tout le pont devient arc-en-ciel pendant la dernière minute.",
   "fountain.next": "🌈 Le prochain spectacle de la fontaine arc-en-ciel commence dans {min} min.",
+  "zoocart.rent": "🛺 Voiturette du zoo (4 places, gratuit)",
+  "zoocart.off": "Rendre la voiturette",
+  "zoocart.got": "Ta voiturette ! Roule partout dans le zoo. Approche-toi de tes amis pour leur offrir une place (jusqu'à 3).",
+  "zoocart.out": "Les voiturettes restent dans le zoo : celle-ci est retournée à sa station.",
 };

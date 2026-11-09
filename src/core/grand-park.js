@@ -8,6 +8,8 @@
 // (CGP_GATE_PILLARS), so this is only visual.
 import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
+import { makeZooCart } from './bikes.js';
+import { mergeStatic } from './merge-static.js';
 
 const mat = matCache();
 
@@ -106,4 +108,36 @@ export function doghole(g, l) {
     d.add(t);
   }
   g.add(d);
+}
+
+// The zoo cart station (l: x, z, ry; carts face along local -z… see l.carts:
+// [x, z] spots from the station): carts parked in a row and a sign. Where
+// you rent one is game/zoo-carts.js; parked carts are one merged piece.
+export function zooCartStation(g, l) {
+  for (const [x, z] of l.carts || []) {
+    const c = makeZooCart();
+    c.position.set(x - 0.45, 0, z - 0.35); // (turned round: its middle is 0.45 m right of and 0.35 m behind its driver's seat)
+    c.rotation.y = Math.PI; // nose to the main path (north)
+    g.add(c);
+  }
+  const tex = canvasTex(512, 200, (c, w, h) => {
+    c.fillStyle = '#3f9b5a'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#fffaf0'; c.fillRect(10, 10, w - 20, h - 20);
+    c.fillStyle = '#2d5e3a'; c.textAlign = 'center';
+    c.font = 'bold 64px sans-serif'; c.fillText('동물원 카트', w / 2, 92);
+    c.font = '42px sans-serif'; c.fillText('Zoo Cart · 4 seats · Free', w / 2, 152, w - 40);
+  });
+  const sign = new THREE.Group();
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.94), new THREE.MeshLambertMaterial({ map: tex }));
+  board.position.y = 2.1;
+  board.rotation.y = -Math.PI / 2; // facing the loop path (west)
+  board.position.x = -0.04;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.04, 2.5), mat('#3f9b5a'));
+  back.position.set(0.0, 2.1, 0);
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.1, 0.12), mat('#3f9b5a'));
+  post.position.set(0.02, 1.05, 0);
+  sign.add(back, board, post);
+  sign.position.set(l.sign?.[0] ?? -3, 0, l.sign?.[1] ?? -4);
+  g.add(sign);
+  mergeStatic(g);
 }

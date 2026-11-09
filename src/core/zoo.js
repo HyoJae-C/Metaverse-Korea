@@ -14,7 +14,7 @@
 // Animals are local to each visitor, like the café pets.
 import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
-import { makeZooAnimal, ZOO_LOOKS } from './zoo-animals.js';
+import { makeZooAnimal, ZOO_LOOKS, foldWings } from './zoo-animals.js';
 
 const mat = matCache();
 const AWAKE = 80;
@@ -41,6 +41,7 @@ const KIND = {
   elephant: { speed: 0.8, rest: 0.3 },
   giraffe: { speed: 0.9, rest: 0.3 },
   zebra: { speed: 1.6, rest: 0.3 },
+  vulture: { speed: 0.5, rest: 0.5 },
 };
 // Things animals do together, and on their own (core/zoo.js _social, _solo).
 //   pair: walk over to a pen-mate of the same kind, then do it together.
@@ -67,7 +68,7 @@ const ACT_T = { tussle: 5, wrestle: 6, butt: 4, nudge: 4, trunks: 6, necking: 7,
 const BUSY = new Set(['melon', 'melonOpen', 'eat', 'snack', 'happy', 'pose', 'cheeky', 'climb', 'perch', 'jumpdown', 'flip', 'chase', 'wait']);
 // How deep a swimmer sinks in its pond (metres), so only its back shows.
 const SINK = { polarbear: 0.6, seal: 0.3, walrus: 0.5, hippo: 0.8 };
-const RADIUS = { elephant: 1.6, giraffe: 0.9, zebra: 0.6, rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3 };
+const RADIUS = { elephant: 1.6, giraffe: 0.9, zebra: 0.6, rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3, vulture: 0.5 };
 
 // Feeding times: every pen with "feed" has one every FEED_CYCLE seconds, at
 // its own offset, on the wall clock, so everyone sees the same feeding.
@@ -119,7 +120,7 @@ function buildFence(g, pen) {
   const kind = pen.fence || 'low';
   if (kind === 'glass' || kind === 'house' || kind === 'tank') return glassFence(g, pen, kind);
   if (kind === 'hall') return hallWalls(g, pen);
-  const H = kind === 'low' ? 1 : kind === 'mesh' ? 3 : 5;
+  const H = kind === 'low' ? 1 : kind === 'mesh' ? 3 : pen.tall || 5; // (the vultures' aviary is taller, to fly in)
   const postC = kind === 'low' ? '#a0764c' : '#4d5a4f';
   const net = kind === 'low' ? null : new THREE.MeshBasicMaterial({ color: '#2f3b33', transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
   for (const [x1, z1, x2, z2] of fenceLines(pen)) {
@@ -269,7 +270,7 @@ function hallWalls(g, pen) {
 }
 
 function buildProps(g, pen) {
-  for (const [kind, x, z, ry = 0] of pen.props || []) {
+  for (const [kind, x, z, ry = 0, h = 4] of pen.props || []) {
     const p = new THREE.Group();
     p.position.set(x, 0, z);
     p.rotation.y = ry;
@@ -314,6 +315,18 @@ function buildProps(g, pen) {
       const hole = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), mat('#3b2a1e'));
       hole.position.set(0, 0.35, 0.61);
       p.add(box, roof, hole);
+    } else if (kind === 'perch') { // a dead tree for the big birds: a bare trunk h high, a flat top and two stubby branches
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, h, 7), mat('#8d7a66'));
+      trunk.position.y = h / 2;
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.3, 0.16, 8), mat('#7a6856'));
+      top.position.y = h - 0.02;
+      p.add(trunk, top);
+      for (const [y, a] of [[h * 0.55, 0.9], [h * 0.75, -2.2]]) {
+        const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 1.3, 5), mat('#8d7a66'));
+        b.position.set(Math.cos(a) * 0.5, y, Math.sin(a) * 0.5);
+        b.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
+        p.add(b);
+      }
     } else if (kind === 'rock') {
       const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2, 0), mat('#9a9690'));
       r.position.y = 0.5; r.scale.set(1.4, 0.7, 1);
@@ -804,6 +817,11 @@ export class Zoo {
     const hw = P.pen.w / 2, hd = P.pen.d / 2;
     const out = Math.max(Math.abs(lx) - hw, Math.abs(lz) - hd);
     if (out < 0 || out > 4) return;
+    if (P.animals.some((q) => q.flies)) { // the vultures: one on a perch opens its wings to you
+      const b = P.animals.filter((q) => q.flies && !q.fl && q.mode !== 'eat').sort((p, q) => Math.hypot(p.root.position.x - lx, p.root.position.z - lz) - Math.hypot(q.root.position.x - lx, q.root.position.z - lz))[0];
+      if (b) { b.mode = 'spread'; b.wait = 5; b.face = Math.atan2(lx - b.root.position.x, lz - b.root.position.z); P.pose = 25; }
+      return;
+    }
     const ix = Math.max(-hw + 1.5, Math.min(hw - 1.5, lx)), iz = Math.max(-hd + 1.5, Math.min(hd - 1.5, lz));
     const a = P.animals.filter((q) => q.state !== 'melon' && !q.slithers).sort((p, q) => Math.hypot(p.root.position.x - ix, p.root.position.z - iz) - Math.hypot(q.root.position.x - ix, q.root.position.z - iz))[0];
     if (!a) return;
@@ -849,6 +867,7 @@ export class Zoo {
   }
 
   _step(a, dt, lx, lz, P) {
+    if (a.flies) return this._raptor(a, dt, lx, lz, P);
     a.t -= dt;
     a.phase += dt;
     const r = a.root, k = KIND[a.kind];
@@ -928,6 +947,93 @@ export class Zoo {
       a.segs.forEach((s, i) => { s.position.x = Math.sin(a.phase * sp - i * 0.7) * amp * Math.min(1, i / 3); });
       a.tongue.visible = Math.sin(a.phase * 5) > 0.6;
     }
+  }
+
+  // The vultures (pen.props "perch": dead trees, [kind, x, z, ry, height]):
+  // they sit on the perches looking round, now and then open their wings
+  // wide, and fly to another perch the long way, a lap or so round the
+  // aviary under its roof. At feeding time they come down to the food on
+  // the ground. Their own timer (a.wait) and mode, as zoo.js's walking
+  // states don't fit something that flies.
+  _perches(P) {
+    return (P.perches ||= (P.pen.props || []).filter((q) => q[0] === 'perch').map(([, x, z, , h = 4]) => ({ x, z, y: h + 0.06 })));
+  }
+  _freePerch(P, not) {
+    const list = this._perches(P).filter((q) => q !== not && !P.animals.some((b) => b.at === q || b.fl?.to === q));
+    return list[Math.floor(Math.random() * list.length)] || null;
+  }
+  _flyTo(a, P, to, y = to.y) {
+    const r = a.root.position, pen = P.pen;
+    const ex = pen.w / 2 - 2.5, ez = pen.d / 2 - 2.5, top = Math.min((pen.tall || 5) - 1.5, 7.5);
+    const angA = Math.atan2(r.z / ez, r.x / ex), angB = Math.atan2(to.z / ez, to.x / ex), dir = Math.random() < 0.5 ? 1 : -1;
+    let total = ((dir * (angB - angA)) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    if (total < Math.PI) total += Math.PI * 2; // at least half a lap, often more
+    const n = Math.ceil(total / (Math.PI / 3));
+    const pts = [r.clone(), new THREE.Vector3(r.x, r.y + 1.2, r.z)];
+    for (let k = 1; k < n; k++) {
+      const ang = angA + (dir * total * k) / n;
+      pts.push(new THREE.Vector3(Math.cos(ang) * ex, top - 1 + Math.sin(k * 1.7) * 0.8, Math.sin(ang) * ez));
+    }
+    pts.push(new THREE.Vector3(to.x, y + 1.4, to.z), new THREE.Vector3(to.x, y, to.z));
+    const curve = new THREE.CatmullRomCurve3(pts);
+    a.fl = { curve, t: 0, T: curve.getLength() / 4.2, to, y };
+    a.at = null; a.mode = 'fly';
+  }
+  _raptor(a, dt, lx, lz, P) {
+    a.phase += dt;
+    a.wait = (a.wait ?? 2 + Math.random() * 6) - dt;
+    const r = a.root;
+    if (a.at === undefined) { // first time: onto a free perch
+      const q = this._freePerch(P) || { x: r.position.x, z: r.position.z, y: 0 };
+      a.at = q; r.position.set(q.x, q.y, q.z); a.mode = 'sit'; a.spread = 0;
+    }
+    let spread = 0, flap = 0, tuck = 0;
+    if (a.fl) {
+      const F = a.fl;
+      F.t += dt;
+      const u = Math.min(1, F.t / F.T);
+      const p = F.curve.getPointAt(u), tg = F.curve.getTangentAt(u);
+      r.position.copy(p);
+      const yaw = Math.atan2(tg.x, tg.z);
+      const dy = Math.atan2(Math.sin(yaw - r.rotation.y), Math.cos(yaw - r.rotation.y));
+      r.rotation.y += dy * Math.min(1, dt * 6);
+      a.body.rotation.z += (Math.max(-0.6, Math.min(0.6, -dy * 3)) - a.body.rotation.z) * Math.min(1, dt * 4); // bank into the turn
+      a.body.rotation.x = -Math.asin(Math.max(-1, Math.min(1, tg.y))) * 0.6;
+      spread = 1;
+      const hard = u < 0.15 || u > 0.88; // big wingbeats taking off and landing, a glide between
+      flap = hard ? Math.sin(a.phase * 13) * 0.65 : Math.sin(a.phase * 4) * 0.12;
+      tuck = u > 0.92 ? 0 : 1;
+      if (u >= 1) {
+        a.fl = null; a.at = F.to; r.position.set(F.to.x, F.y, F.to.z);
+        a.body.rotation.set(0, 0, 0);
+        a.mode = a.feed && F.to.food ? 'eat' : 'sit'; a.wait = 4 + Math.random() * 8;
+      }
+    } else if (a.feed && !a.at?.food) { // feeding time: down to the food
+      const [fx, fz] = P.pen.feed.at, i = P.animals.indexOf(a), ang = (i / P.animals.length) * Math.PI * 2;
+      this._flyTo(a, P, { x: fx + Math.cos(ang) * 1.6, z: fz + Math.sin(ang) * 1.6, y: 0, food: true });
+    } else if (a.at?.food && !a.feed && a.wait <= 0) { // fed: back up to a perch
+      const q = this._freePerch(P);
+      if (q) this._flyTo(a, P, q); else a.wait = 3;
+    } else if (a.mode === 'eat') {
+      turn(r, Math.atan2(P.pen.feed.at[0] - r.position.x, P.pen.feed.at[1] - r.position.z), dt);
+    } else if (a.mode === 'spread') { // wings wide open, facing you: the photo
+      turn(r, a.face, dt);
+      spread = 1; flap = 0.15 + Math.sin(a.phase * 2) * 0.05;
+      if (a.wait <= 0) { a.mode = 'sit'; a.wait = 4 + Math.random() * 6; }
+    } else if (a.wait <= 0) { // sitting: what next?
+      const k = Math.random();
+      const q = k < 0.45 && !a.at?.food ? this._freePerch(P, a.at) : null;
+      if (q) this._flyTo(a, P, q);
+      else if (k < 0.65) { a.mode = 'spread'; a.wait = 3.5; a.face = r.rotation.y; }
+      else { a.mode = 'sit'; a.wait = 4 + Math.random() * 8; }
+    }
+    a.spread = (a.spread || 0) + (spread - (a.spread || 0)) * Math.min(1, dt * (spread ? 5 : 3));
+    foldWings(a, a.spread, flap * a.spread);
+    a.legs.forEach((l) => { l.rotation.x += (tuck * 1.3 - l.rotation.x) * Math.min(1, dt * 6); });
+    if (a.shadow) a.shadow.visible = !a.fl;
+    const eat = a.mode === 'eat';
+    a.head.rotation.x = eat ? 0.6 + Math.sin(a.phase * 8) * 0.15 : a.fl ? 0.2 : Math.sin(a.phase * 1.1) * 0.06;
+    a.head.rotation.y = a.fl || eat ? 0 : Math.sin(a.phase * 0.7) * 0.9 * (Math.sin(a.phase * 0.23) > 0 ? 1 : 0.3);
   }
 
   // What a monkey's arms are up to (after the walk has swung them).

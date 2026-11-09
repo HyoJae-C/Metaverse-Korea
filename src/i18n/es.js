@@ -624,4 +624,8 @@ export const ES = {
   "fountain.on": "🌈 La Fuente Arcoíris está encendida: agua de colores cae desde ambos lados del puente Banpo.",
   "fountain.photo": "📸 Hora de la foto: todo el puente es un arcoíris durante el último minuto.",
   "fountain.next": "🌈 El próximo espectáculo de la Fuente Arcoíris empieza en {min} min.",
+  "zoocart.rent": "🛺 Carrito del zoo (4 plazas, gratis)",
+  "zoocart.off": "Devolver el carrito",
+  "zoocart.got": "¡Tu carrito del zoo! Conduce por todo el zoo. Acércate a tus amigos para ofrecerles un asiento (hasta 3).",
+  "zoocart.out": "Los carritos no salen del zoo, así que este volvió a su estación.",
 };
