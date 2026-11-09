@@ -20,6 +20,9 @@ async function join(name) {
   const browser = await launch();
   browsers.push(browser);
   const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } });
+  // Both start beside the square guide, so they meet in the same realtime
+  // cells (the start picker otherwise sends new players to Bukchon).
+  await ctx.addInitScript(() => localStorage.setItem('mk.start', 'shop'));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && errors.push(`${name}: ${m.text()}`));
