@@ -70,9 +70,10 @@ neighbours' room and pushes them off their spots.
   Songpa by Olympic-ro, which climbs north-east from Jamsil Station to the
   gate as it does in Seoul; the park sits on its real spot, with no nudge.
 - **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
-  palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
-  stands at close to its real size, so Euljiro's streets round it are wider
-  apart; both are landmark buildings, which keep their size.
+  palace grounds are exactly 1/4, but its halls are drawn wider (30%
+  footprints, 50% heights; see the palace section), and DDP stands at close
+  to its real size, so Euljiro's streets round it are wider apart; both are
+  landmark buildings, which keep more of their size.
 - **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
   everything placed in world metres inside it: stores, zones, bike stations,
   homes, screens, subway exits, busking zones, stamps, and the ends of link
@@ -396,6 +397,44 @@ Two more parts of the same district stand at their gates' spots: Sungnyemun
 Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
 three boxes for the overlap check.
+
+## Gyeongbokgung's palace
+
+Everything inside the palace wall is built from OpenStreetMap by
+`scripts/build-gyeongbokgung.mjs` (data in `scripts/data/gyeongbokgung-osm.json`):
+the wall is OSM's outline of the palace grounds, the ponds are OSM's, and
+every hall, gate and roofed corridor (행각) stands on its real spot, measured
+from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
+
+- the site is exactly 1/4 (about 139 x 217 m inside the wall);
+- building footprints are 30% of the real ones (1.2 x the 1/4 map), so the
+  yards between them keep almost their real shape; the corridors round the
+  yards stay at the 1/4 map's size, since they are the yards' edges;
+- heights are half the real ones, so a hall stands taller than Bukchon's
+  houses and a gate's passage is higher than the people;
+- about a quarter of the buildings: 30 of the 73 old ones inside the wall
+  (every hall and gate on the middle line, the big halls either side, the
+  gates in the wall; the script's `KEEP` list), and every corridor ring.
+  Modern buildings (the Palace Museum, offices, sheds) and the Folk Museum's
+  grounds are left out;
+- where a real building was left out, a plain block stands instead: walls and
+  a big tiled roof, no posts or doors (neighbours that line up share one;
+  none on or beside the two museums, which stay empty).
+
+The models are `core/palace-model.js`: Gwanghwamun, Heungnyemun and
+Geunjeongmun, Yeongjegyo over the palace stream, Geunjeongjeon on its
+terraces with the rank stones, Gyeonghoeru, Hyangwonjeong and Amisan have
+their own; all other halls are one merged `palacehalls` landmark and all the
+corridors one `cloister` (a few draw calls for the lot). Each ring of
+corridors gets a door on its middle line (OSM draws most gates as part of
+the corridor), and the script checks that every hall and yard can be walked
+to from Gwanghwamun (`--check`, also a test). Where the old halls were pulled
+down (west of the throne hall, north of the ponds) there are lawns, and the
+palace woods line the wall round the north half. The royal procession keeps
+to Geunjeongjeon's court (the 30% gates are too narrow for it two abreast).
+Inside the wall the camera drops and looks up (`game/palace-view.js`), more
+so in the courts, until the player steers it. Visitors in rented hanbok
+stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
 ## Bosingak (Jongno)
 
