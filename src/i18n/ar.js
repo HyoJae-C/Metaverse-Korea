@@ -64,6 +64,7 @@ export const AR = {
   'ride.off': 'انزل',
   'ride.noCoins': 'تحتاج 🪙 {n} للتذكرة.',
   'ride.staff': 'موظف {name}',
+  'ride.scenic': 'مشاهدة المنظر',
   'clown.name': 'مهرّج البالونات',
   'balloon.sword': 'سيف بالون',
   'balloon.dog': 'جرو بالون',

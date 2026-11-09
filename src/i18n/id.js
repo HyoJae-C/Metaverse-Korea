@@ -64,6 +64,7 @@ export const ID = {
   'ride.off': 'Turun',
   'ride.noCoins': 'Kamu perlu 🪙 {n} untuk tiket.',
   'ride.staff': 'Petugas {name}',
+  'ride.scenic': 'Lihat pemandangan',
   'clown.name': 'Badut balon',
   'balloon.sword': 'Pedang balon',
   'balloon.dog': 'Anak anjing balon',

@@ -63,6 +63,7 @@ export const ES = {
   'ride.off': 'Bajar',
   'ride.noCoins': 'Necesitas 🪙 {n} para el billete.',
   'ride.staff': 'Encargado de {name}',
+  'ride.scenic': 'Ver el paisaje',
   'clown.name': 'Payaso de globos',
   'balloon.sword': 'Espada de globo',
   'balloon.dog': 'Perrito de globo',

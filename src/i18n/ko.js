@@ -64,6 +64,7 @@ export const KO = {
   "ride.off": "내리기",
   "ride.noCoins": "탑승권은 🪙 {n}이에요.",
   "ride.staff": "{name} 안내원",
+  "ride.scenic": "경치 보기",
   "clown.name": "풍선 삐에로",
   "balloon.sword": "풍선 칼",
   "balloon.dog": "풍선 강아지",

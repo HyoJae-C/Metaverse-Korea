@@ -64,6 +64,7 @@ export const HI = {
   'ride.off': 'उतरें',
   'ride.noCoins': 'टिकट के लिए 🪙 {n} चाहिए।',
   'ride.staff': '{name} अटेंडेंट',
+  'ride.scenic': 'नज़ारा देखें',
   'clown.name': 'गुब्बारे वाला जोकर',
   'balloon.sword': 'गुब्बारे की तलवार',
   'balloon.dog': 'गुब्बारे का पिल्ला',

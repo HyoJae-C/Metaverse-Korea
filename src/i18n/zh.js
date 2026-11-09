@@ -64,6 +64,7 @@ export const ZH = {
   "ride.off": "下来",
   "ride.noCoins": "门票需要 🪙 {n}。",
   "ride.staff": "{name}引导员",
+  "ride.scenic": "看风景",
   "clown.name": "气球小丑",
   "balloon.sword": "气球剑",
   "balloon.dog": "气球小狗",

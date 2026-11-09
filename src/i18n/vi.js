@@ -64,6 +64,7 @@ export const VI = {
   'ride.off': 'Xuống',
   'ride.noCoins': 'Bạn cần 🪙 {n} để mua vé.',
   'ride.staff': 'Nhân viên {name}',
+  'ride.scenic': 'Ngắm cảnh',
   'clown.name': 'Chú hề bóng bay',
   'balloon.sword': 'Kiếm bóng bay',
   'balloon.dog': 'Cún bóng bay',

@@ -64,6 +64,7 @@ export const FR = {
   'ride.off': 'Descendre',
   'ride.noCoins': 'Il te faut 🪙 {n} pour un ticket.',
   'ride.staff': 'Agent · {name}',
+  'ride.scenic': 'Voir le paysage',
   'clown.name': 'Clown aux ballons',
   'balloon.sword': 'Épée en ballon',
   'balloon.dog': 'Chiot en ballon',

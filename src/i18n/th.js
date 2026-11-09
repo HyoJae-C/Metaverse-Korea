@@ -64,6 +64,7 @@ export const TH = {
   'ride.off': 'ลง',
   'ride.noCoins': 'ต้องใช้ 🪙 {n} เพื่อซื้อตั๋ว',
   'ride.staff': 'พนักงาน{name}',
+  'ride.scenic': 'ชมวิว',
   'clown.name': 'ตัวตลกลูกโป่ง',
   'balloon.sword': 'ดาบลูกโป่ง',
   'balloon.dog': 'ลูกหมาลูกโป่ง',

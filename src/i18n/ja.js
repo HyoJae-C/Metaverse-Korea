@@ -64,6 +64,7 @@ export const JA = {
   "ride.off": "降りる",
   "ride.noCoins": "チケットは 🪙 {n} です。",
   "ride.staff": "{name}の係員",
+  "ride.scenic": "景色を見る",
   "clown.name": "バルーンピエロ",
   "balloon.sword": "バルーンの剣",
   "balloon.dog": "バルーンの子犬",

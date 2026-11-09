@@ -63,6 +63,7 @@ export const EN = {
   "ride.off": "Get off",
   "ride.noCoins": "You need 🪙 {n} for a ticket.",
   "ride.staff": "{name} attendant",
+  "ride.scenic": "Scenic view",
   "clown.name": "Balloon clown",
   "balloon.sword": "Balloon sword",
   "balloon.dog": "Balloon puppy",

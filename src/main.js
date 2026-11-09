@@ -6012,8 +6012,9 @@ function updateAction(p, tSec) {
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
     } else if (ride && ride.kind !== 'coaster' && rideLocked(ride.kind, ride.seat, rideClock())) { // the bar is down: the button switches the view
-      const first = ride.view === 'first';
-      next = { key: 'ride-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; rideCam.reset(); action = STALE; } };
+      // (the Ferris wheel adds a scenic view from outside the gondola: third → scenic → seat)
+      const to = ride.view === 'first' ? 'third' : ride.kind === 'wheel' && ride.view === 'third' ? 'scenic' : 'first';
+      next = { key: 'ride-view:' + ride.view, label: to === 'scenic' ? '🏞️ ' + t('ride.scenic') : (to === 'third' ? '🎥 ' : '👀 ') + L(to === 'third' ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = to; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
     } else if (interior.park && coasterAction(p)) {
@@ -6496,7 +6497,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
-  else if (ride?.pose) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0); me.root.visible = ride.view !== 'first'; }
+  else if (ride?.pose) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic'); me.root.visible = ride.view !== 'first'; }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
   if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
