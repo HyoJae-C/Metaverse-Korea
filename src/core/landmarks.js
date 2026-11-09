@@ -10,7 +10,7 @@ import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { farFree } from './far-textures.js';
-import { BANK, bankHeight, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
+import { BANK, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
@@ -365,22 +365,19 @@ export function namsanTower(g, y0 = 0) {
 }
 
 // The busking zone on Hongdae Walking Street (layout in core/busking-layout.js):
-// a long grassy bank for the audience on the west side, the words BUSKING
+// long low stone steps for the audience on the west side, the words BUSKING
 // ZONE painted faintly on the street, and on the east side just a mic stand
 // and an open guitar case. No stage or backdrop: the performers are the show.
 function buskingStage(g) {
-  // The bank: a grid that follows bankHeight, so you can walk up it.
-  const B = BANK, nx = 24, nz = 60;
-  const geo = new THREE.PlaneGeometry(B.front - B.back, B.z1 - B.z0, nx, nz).rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i) + (B.front + B.back) / 2, z = pos.getZ(i) + (B.z1 + B.z0) / 2;
-    pos.setXYZ(i, x, bankHeight(x, z) + 0.03, z);
+  // The steps: one slab per step, each smaller than the one below, so they
+  // match stepAt (what you walk on). Pale stone, every other step a shade
+  // darker so the edges read from afar.
+  const B = BANK;
+  for (let k = 0; k < B.n; k++) {
+    const x0 = B.back + k * B.backTread, x1 = B.front - k * B.tread;
+    const z0 = B.z0 + k * B.endTread, z1 = B.z1 - k * B.endTread;
+    box(g, x1 - x0, B.rise, z1 - z0, (x0 + x1) / 2, (k + 0.5) * B.rise, (z0 + z1) / 2, k % 2 ? '#a9a296' : '#bdb6aa');
   }
-  geo.computeVertexNormals();
-  g.add(new THREE.Mesh(geo, mat('#8fca72')));
-  // A low kerb of stones along the front edge.
-  for (let z = B.z0 + B.end; z < B.z1 - B.end; z += 1.6) box(g, 0.5, 0.18, 1.3, B.front - 0.5, 0.09, z + 0.65, '#c9c3b8');
   // The words on the ground, faint, reading from the audience's side.
   const T = GROUND_TEXT;
   const c = document.createElement('canvas');

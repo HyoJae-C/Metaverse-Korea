@@ -3,29 +3,35 @@
 // Shared by the scenery (core/landmarks.js), the performers and crowd
 // (core/busking.js) and the ground height you walk on (main.js).
 //
-// West: a long grassy bank the audience stands on, facing east (→) towards
-// the performers. Across the walking street, east: a K-pop girl group of
-// five, and some way south of them a boy group of four. North of the dancers
-// the singer plays guitar alone, with a mic stand and an open guitar
-// case for tips; that's also the spot you stand on to busk yourself.
+// West: long low steps the audience stands and sits on, facing east (→)
+// towards the performers, like the stepped edges of the real walking street.
+// Across the walking street, east: a K-pop girl group of five, and some way
+// south of them a boy group of four. North of the dancers the singer plays
+// guitar alone, with a mic stand and an open guitar case for tips; that's
+// also the spot you stand on to busk yourself.
 
-// The bank: a long rectangle, x from back to front, z from end to end. It
-// rises from the front edge to a flat top, then drops off at the back.
-export const BANK = { back: -17, top0: -15, top1: -13.5, front: -9, z0: -16, z1: 14, h: 2, end: 2.5 };
+// The steps: a long rectangle, x from back to front, z from end to end.
+// `n` low steps of `rise` each climb from the front edge (treads `tread`
+// deep), from both ends (`endTread`) and, steeper, from the back
+// (`backTread`), so you can walk up them from any side.
+export const BANK = { back: -17, front: -9, z0: -16, z1: 14, n: 4, rise: 0.35, tread: 1.8, endTread: 0.6, backTread: 0.4 };
+BANK.h = BANK.n * BANK.rise;
 
-const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-
-// Height of the bank's grass at (x, z) from the zone's centre (0 off it).
-export function bankHeight(x, z, B = BANK) {
+// Which step (0 = the street, n = the top) is at (x, z) from the zone's centre.
+export function stepAt(x, z, B = BANK) {
   if (x <= B.back || x >= B.front || z <= B.z0 || z >= B.z1) return 0;
-  const across = x < B.top0 ? smooth((x - B.back) / (B.top0 - B.back))
-    : x > B.top1 ? smooth((B.front - x) / (B.front - B.top1)) : 1;
-  const along = Math.min(smooth((z - B.z0) / B.end), smooth((B.z1 - z) / B.end));
-  return B.h * across * along;
+  return Math.min(B.n,
+    Math.ceil((B.front - x) / B.tread), Math.ceil((x - B.back) / B.backTread),
+    Math.ceil((z - B.z0) / B.endTread), Math.ceil((B.z1 - z) / B.endTread));
+}
+
+// Height of the step you stand on at (x, z) from the zone's centre (0 off it).
+export function bankHeight(x, z, B = BANK) {
+  return stepAt(x, z, B) * B.rise;
 }
 
 // Ground height at a world point from the busking landmarks (map.landmarks):
-// up on the audience bank, 0 elsewhere. (The zones are not rotated.)
+// up on the audience steps, 0 elsewhere. (The zones are not rotated.)
 export function buskingGroundY(list = [], x, z) {
   for (const l of list) {
     if (l.type !== 'busking') continue;
@@ -35,7 +41,7 @@ export function buskingGroundY(list = [], x, z) {
   return 0;
 }
 
-// The audience on the bank: three rows, low at the front, high at the back.
+// The audience on the steps: three rows, one step apart, low at the front.
 export const CROWD = [
   ...[-12, -6, 0, 6, 11].map((z) => [-10.4, z]),
   ...[-13, -8, -3, 2, 7, 12].map((z) => [-12.3, z]),
