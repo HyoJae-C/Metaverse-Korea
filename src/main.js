@@ -2047,7 +2047,7 @@ try {
   if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
-const umbrellaOpen = () => hasUmbrella() && outdoors() && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
+const umbrellaOpen = () => hasUmbrella() && outdoors() && !zoo.indoors && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
 const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
@@ -6032,7 +6032,7 @@ function updateAction(p, tSec) {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
-    const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
+    const sb = !riding && !seated && !zoo.indoors ? snowman.action(p) : null; // (not indoors in the zoo's Sea Animals hall) // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
@@ -6450,7 +6450,7 @@ renderer.setAnimationLoop((now) => {
   if (!firstPerson.look(look)) {
     cam.yaw -= look.dx * 0.006;
     cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
-    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : sky.busy ? 90 : 28);
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, zoo.indoors ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
   }
 
   // Movement relative to the camera. While the stick is held in one
@@ -6630,6 +6630,7 @@ renderer.setAnimationLoop((now) => {
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
+    if (weather.particles) weather.particles.visible = !zoo.indoors; // (no rain or snow in the zoo's Sea Animals hall)
     sun.position.set(p.x + 60, 120, p.z + 40);
     sun.target.position.set(p.x, 0, p.z);
     const z = zones.update(camera, p.x, p.z, tSec);
