@@ -2192,7 +2192,10 @@ $('revert-look').onclick = () => {
   $('revert-look').hidden = true;
 };
 
-function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
+// camVia: walking on from one frame into another (onto an open park's lawn,
+// or off it): the camera and the way I'm walking carry over through that
+// matrix instead of jumping to behind me.
+function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI, camVia = null) {
   me.root.parent?.remove(me.root);
   targetScene.add(me.root);
   me.root.position.set(x, 0, z);
@@ -2200,6 +2203,12 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
   lastSent = null; // teleport: tell others right away
   sendTimer = 0;
   teleports = (teleports + 1) % 100; // (others jump us there instead of sliding: core/players.js)
+  if (camVia) {
+    moveRef.yaw += camYaw - cam.yaw; // (a key held down keeps walking the same way)
+    cam.yaw = camYaw;
+    camera.position.applyMatrix4(camVia);
+    return;
+  }
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
@@ -2474,7 +2483,7 @@ function enterStore(item, walkIn = null) {
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
-  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw);
+  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw, walkIn.camVia);
   else {
     cam.dist = 7;
     cam.pitch = 0.7;
@@ -2875,7 +2884,7 @@ function leaveStore(walkOut = false) {
     // where you stand, on the nearest free spot (the pier is over the water).
     const [wx, wz] = parkWorld(openPark, here.x, here.z);
     const [ex, ez] = findFreeSpot(wx, wz);
-    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry);
+    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry, walkOut ? openPark.toWorld : null);
     if (!walkOut) { cam.dist = 9; cam.pitch = 0.42; }
   } else {
     cam.dist = 9;
@@ -5401,7 +5410,7 @@ function updateOpenParks(dt) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
-      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
+      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry, camVia: o.toLocal });
       return;
     }
   }
@@ -6561,7 +6570,7 @@ renderer.setAnimationLoop((now) => {
   else if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
-    const inStore = mode === 'store';
+    const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
     const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
     const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed; // (slower in the pool's water, or rolling a big snowball)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
