@@ -20,7 +20,7 @@
     "starts": [
       { "k": "tour", "icon": "🏯", "district": "bukchon", "at": [24, -26], "heading": 0, "trip": "bukchon", "why": "Sights: just inside Bukchon's gate, on the open yard by the shops, facing up into the village: hanok roofs and villagers on the first screen, room for the camera, and Anguk Station outside the gate for the first trip to Seongsu." },
       { "k": "shop", "icon": "🛍️", "square": true, "district": "seongsu", "why": "Shopping and dressing up: beside the square guide on Seongsu Square, the old start, with the shops, hair salons and clothes around it." },
-      { "k": "activity", "icon": "🛶", "district": "seongsu", "at": [75, 377], "heading": 180, "trip": "toBukchon", "why": "An outing: on Ttukseom Han River Park's paving by the ramen kiosk and the market, facing the river (duck boats, fishing, the drone show)." },
+      { "k": "activity", "icon": "🛶", "district": "seongsu", "at": [86, 349], "heading": 180, "trip": "toBukchon", "why": "An outing: on Ttukseom Han River Park's bank (moved up when the Han got its real width), facing the river (duck boats, fishing, the drone show)." },
       { "k": "heal", "icon": "🌳", "district": "seongsu", "at": [-330, 52], "heading": 0, "trip": "toBukchon", "why": "A quiet walk: in Seoul Forest at the south end of Metasequoia Avenue, looking up the tree-lined walk, near the butterfly greenhouse and the flower gardens." }
     ]
   },
