@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-// Builds Children's Grand Park (public/regions/another-seoul/districts/
-// grand-park.json): a hand-made district, not to scale. The park is only as
-// big as the zoo needs; the zoo is the point of the place.
+// Builds Children's Grand Park: the street district (public/regions/
+// another-seoul/districts/grand-park.json) and the zoo inside it, a room of
+// its own (src/data/zoo-grounds.json, drawn by core/zoo-park.js). Hand-made:
+// the park is only as big as the zoo needs; the zoo is the point of the place.
 //
-//   Neungdong-ro (x 0) ── gate plaza ── rainbow main gate ── zoo loop
+//   Neungdong-ro (x 0) ── gate plaza ── rainbow main gate ── zoo entrance │ zoo (a room)
 //
-// Pens (core/zoo.js) sit in the four quarters of the loop and south of it.
-// Their fences are written twice from the same layout: as "zoopen"
-// landmarks (drawn by the zoo) and as blockers (you can't walk through).
+// Pens (core/zoo.js) sit in the four quarters of the zoo's loop and south
+// of it. Their fences are written twice from the same layout: as pens (drawn
+// by the zoo) and as blockers (you can't walk through).
 //
 //   node scripts/build-grand-park.mjs
 
@@ -18,16 +19,28 @@ import { fenceLines } from '../src/core/zoo.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'grand-park.json');
+const GROUNDS = path.join(root, 'src', 'data', 'zoo-grounds.json');
 const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const r1 = (v) => Math.round(v * 10) / 10;
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
-// Is the zoo open? While it isn't, a hoarding ("opening soon") runs round
-// the whole zoo with a sign at the end of the main path; the gate plaza,
-// the information center and the station stay open.
-export const ZOO_OPEN = false;
-export const DOGHOLE = [55, -34]; // on the hoarding's west side
-export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]]; // (between the plaza's blossom trees, x 52 and 58)
+// Is the zoo open? While it isn't, a sign by the entrance says it opens soon
+// and the zoo's keeper says so inside (game/zoo-visit.js welcome()). Open
+// since the zoo became a room you walk into.
+export const ZOO_OPEN = true;
+
+// The zoo is a place you go into, like Another Land: on the street there is
+// only the gate plaza, the rainbow gate and the zoo's entrance building at
+// the end of it (its door is the storefront "cgp-zoo"); the woods behind its
+// fence are all you see of the zoo from outside. Walking in opens the zoo
+// grounds as a room of their own (core/zoo-park.js), laid out here in the
+// same metres as the street district: ZOO_ROOM is the room's box, ZOO_GATE
+// where you come in (and go back out), just inside the entrance.
+export const ZOO_ROOM = { x0: 50, x1: 200, z0: -80, z1: 95 };
+export const ZOO_GATE = { x: 52.5, z: 0 };
+export const ZOO_ENTRANCE = { x0: 51, z0: -10, x1: 57, z1: 10, h: 6 };
+export const ZOO_FENCE = [[57, -10], [57, -80], [200, -80], [200, 95], [57, 95], [57, 10]];
+export const ZOO_STORE = 'cgp-zoo';
 
 // The zoo in four themed quarters round a round flower plaza (PLAZA), where
 // the main path from the gate meets the cross path, wrapped in a ring road
@@ -67,7 +80,7 @@ export function smooth(pts, { closed = false, step = 2.5 } = {}) {
 // in and out of the woods; the others weave between the pens.
 export const PATHS = {
   ring: { w: 6, closed: true, pts: [[63, -60], [72, -71], [88, -72.5], [106, -70], [125, -73], [146, -71], [166, -73.5], [182, -72], [192.5, -60], [191, -40], [186, -21], [190, 0], [191, 25], [189.5, 50], [191.5, 76], [184.5, 88], [164, 88.5], [144, 86], [125, 89], [104, 84], [84, 85.5], [68, 82], [62, 68], [60.5, 48], [63.5, 30], [62, 10], [61, -8], [64, -24], [60, -44]] },
-  main: { w: 6, pts: [[50, 0], [62, 0], [78, -1.6], [94, 1], [110, -1.5], [PLAZA.x - PLAZA.r, 0]] },
+  main: { w: 6, pts: [[ZOO_GATE.x - 2.5, 0], [62, 0], [78, -1.6], [94, 1], [110, -1.5], [PLAZA.x - PLAZA.r, 0]] },
   east: { w: 6, pts: [[PLAZA.x + PLAZA.r, 0], [145, 1.6], [161, -1], [176, 1.6], [190, 0]] },
   crossNorth: { w: 5, pts: [[PLAZA.x, PLAZA.z - PLAZA.r], [125.5, -14], [126.5, -26], [124.5, -38], [127, -53], [125, -73]] },
   crossSouth: { w: 5, pts: [[PLAZA.x, PLAZA.z + PLAZA.r], [129.5, 11], [127, 25], [121.5, 40], [124, 60], [120.5, 75], [125, 89]] },
@@ -190,19 +203,35 @@ export const PENS = [
   // the elephants (a mother and her calf) in the middle, the giraffes at the
   // back among tall trees. A low glass wall all round to watch over.
   {
-    id: 'zebras', x: 159.5, z: 18.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
+    id: 'zebras', x: 148.5, z: 18.5, w: 29, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
     name: L('얼룩말', 'Zebras', 'シマウマ', '斑马'),
-    pond: [-15, 3, 3.5],
-    props: [['tree', 18, -4], ['tree', -4, 6], ['rock', 8, 4], ['rock', -21, -5]],
-    groups: [{ kind: 'zebra', n: 7 }],
+    pond: [-8, 3, 3.5],
+    props: [['tree', 9, -4], ['tree', -2, 6], ['rock', 5, 4], ['rock', -12, -5]],
+    groups: [{ kind: 'zebra', n: 5 }],
+  },
+  // Red kangaroos (붉은캥거루: the real zoo's herbivore village has them too)
+  // in a grassy pen of their own beside the zebras.
+  {
+    id: 'kangaroos', x: 175, z: 18.5, w: 20, d: 21, fence: 'glass', ground: 'grass', board: 'n',
+    name: L('캥거루', 'Kangaroos', 'カンガルー', '袋鼠'),
+    props: [['tree', 6, 5], ['rock', -5, 6], ['log', -4, -2]],
+    groups: [{ kind: 'kangaroo', n: 4 }],
   },
   {
-    id: 'elephants', x: 159.5, z: 44.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
+    id: 'elephants', x: 148.5, z: 44.5, w: 29, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
     name: L('코끼리', 'Elephants', 'ゾウ', '大象'),
-    pond: [-14, 2, 5.5],
-    props: [['tree', 19, 5], ['tree', 6, -5], ['rock', 12, 4], ['rock', -22, -6]],
+    pond: [-7, 2.5, 5],
+    props: [['tree', 10, 5], ['rock', 8, -3], ['rock', -12, -6]],
     groups: [{ kind: 'elephant', n: 2 }],
     feed: { at: [4, -6.5], offset: 540, food: 'greens' },
+  },
+  // Bactrian camels (쌍봉낙타, two humps) on sand beside the elephants.
+  {
+    id: 'camels', x: 175, z: 44.5, w: 20, d: 21, fence: 'glass', ground: 'sand', board: 'n',
+    name: L('낙타', 'Camels', 'ラクダ', '骆驼'),
+    pond: [5, -4.5, 1.8], // a small waterhole
+    props: [['rock', -5, 5], ['rock', -6, -5, 1], ['tree', 6, 6]],
+    groups: [{ kind: 'camel', n: 2 }],
   },
   {
     id: 'giraffes', x: 159.5, z: 70.5, w: 51, d: 21, fence: 'glass', ground: 'dirt', board: 'n',
@@ -218,8 +247,15 @@ export const PENS = [
 // Carts stay in the zoo: `area` is where they may go, from the station.
 export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [-1.6, -11], area: [55 - 71.5, -80 - 17, 200 - 71.5, 95 - 17] };
 
-// The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21).
-export const SEA_HALL = { h: 7.5, custom: true, p: rect(69, -35, 93, -7) };
+// The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21),
+// and its door on the north path: the way into the hall's own room
+// (core/zoo-sea-hall.js), as Another Land's haunted house has.
+export const SEA_HALL = { x0: 69, z0: -35, x1: 93, z1: -7 };
+export const SEA_DOOR = { x: 81, z: -35, out: { x: 81, z: -36.6, ry: Math.PI } };
+
+// The woods inside the zoo: a strip between the ring road and the zoo's
+// edge, and the corner by the monkeys.
+export const ZOO_WOODS = [rect(55, -80, 200, -73), rect(55, 89, 200, 95), rect(193, -73, 200, 89), rect(55, -73, 63, -40), rect(55, -28, 63, 89), rect(113, 47, 125, 83)];
 
 // A fence line as a thin blocker (0.4 m thick).
 function lineBlocker([x1, z1, x2, z2], ox, oz) {
@@ -322,44 +358,37 @@ export function buildMap() {
   const map = {
     meta: {
       district: 'grand-park',
-      source: "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo loop with its pens, wrapped in a strip of woods. The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json).",
+      source: "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json).",
     },
     roads: [
       { k: 'secondary', w: 14, p: [[0, -80], [0, 95]], n: L('능동로', 'Neungdong-ro', '陵洞路', '陵洞路') },
-      ...Object.values(WALKS).map((r) => ({ k: 'walk', w: r.w, p: r.p })),
+      { k: 'walk', w: 6, p: [[50, 0], [ZOO_ENTRANCE.x0, 0]] }, // to the zoo's door
     ],
     buildings: [
       { h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') },
-      // The Sea Animals hall: drawn by its pen (core/zoo.js), a wall you bump
-      // into here, and the facade its door (the storefront) sits on.
-      SEA_HALL,
+      // The zoo's entrance building: drawn by its landmark (core/grand-park.js
+      // zooEntrance), a wall here, and the facade its door (the storefront) sits on.
+      { h: ZOO_ENTRANCE.h, custom: true, p: rect(ZOO_ENTRANCE.x0, ZOO_ENTRANCE.z0, ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z1) },
     ],
     rail: [],
     areas: [
       // The park ground round the zoo, leaving the gate plaza out.
       { k: 'park', p: [[7, -80], [200, -80], [200, 95], [7, 95], [7, 22], [50, 22], [50, -22], [7, -22]] },
       { k: 'plaza', p: rect(7, -22, 50, 22) },
-      // Woods: a strip between the ring road and the zoo's edge (a gap on the
-      // west side by the hole in the hoarding), and the corner by the monkeys.
-      { k: 'park', trees: true, p: rect(55, -80, 200, -73) },
-      { k: 'park', trees: true, p: rect(55, 89, 200, 95) },
-      { k: 'park', trees: true, p: rect(193, -73, 200, 89) },
-      { k: 'park', trees: true, p: rect(55, -73, 63, -40) },
-      { k: 'park', trees: true, p: rect(55, -28, 63, 89) },
-      { k: 'park', trees: true, p: rect(113, 47, 125, 83) },
+      // The zoo behind its fence: from the street, a wood (inside is the zoo's own room).
+      { k: 'park', trees: true, p: rect(58, -79, 199, 94) },
       { k: 'park', trees: true, p: rect(7, -80, 50, -52) },
       { k: 'park', trees: true, p: rect(7, 30, 52, 95) },
     ],
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
       // (while the zoo is closed, the park's pin is the gate plaza: taxis can't go in)
-      { kind: 'landmark', x: ZOO_OPEN ? PLAZA.x : 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
-      ...PENS.filter((p) => !p.in).map((p) => ({ kind: 'landmark', x: p.x, z: p.z, name: p.name })),
+      { kind: 'landmark', x: 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
     ],
     landmarks: [
       { type: 'cgpgate', x: 30, z: 0, ry: 1.5708, label: L('정문', 'Main Gate', '正門', '正门') },
-      { type: 'blossoms', p: [[52, -6], [58, -6]], gap: 6 },
-      { type: 'blossoms', p: [[52, 6], [58, 6]], gap: 6 },
+      { type: 'blossoms', p: [[38, -7], [48, -7]], gap: 5 },
+      { type: 'blossoms', p: [[38, 7], [48, 7]], gap: 5 },
       {
         type: 'sign', x: 42, z: -15, ry: -1.5708,
         title: { ko: '서울어린이대공원', en: "Seoul Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园', es: 'Gran Parque Infantil de Seúl', id: 'Taman Anak Raya Seoul', vi: 'Công viên Thiếu nhi Seoul', hi: 'सियोल चिल्ड्रन्स ग्रैंड पार्क', fr: 'Grand Parc des enfants de Séoul', th: 'สวนสาธารณะเด็กโซล', ar: 'حديقة الأطفال الكبرى في سيول' },
@@ -377,21 +406,15 @@ export function buildMap() {
           ar: 'افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية.',
         },
       },
-      ...PENS.map((p) => ({ type: 'zoopen', ...p })),
-      { type: 'zoocarts', ...CARTS },
-      // The round plaza where the paths meet, and every flower bed (core/grand-park.js).
-      { type: 'zooflowers', x: PLAZA.x, z: PLAZA.z, plaza: [PLAZA.r, PLAZA.bed], beds: [], borders: [] },
+      // The entrance building, and the zoo's fence from either side of it round the wood.
+      { type: 'zooentrance', x: (ZOO_ENTRANCE.x0 + ZOO_ENTRANCE.x1) / 2, z: (ZOO_ENTRANCE.z0 + ZOO_ENTRANCE.z1) / 2, w: ZOO_ENTRANCE.x1 - ZOO_ENTRANCE.x0, d: ZOO_ENTRANCE.z1 - ZOO_ENTRANCE.z0, h: ZOO_ENTRANCE.h, store: ZOO_STORE, open: ZOO_OPEN },
+      { type: 'zoofence', p: ZOO_FENCE },
     ],
   };
-  const woods = map.areas.filter((a) => a.trees).map((a) => a.p);
-  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
-  fl.beds = flowerBeds(woods).map(([x, z, r]) => [r1(x - PLAZA.x), r1(z - PLAZA.z), r]);
-  fl.borders = flowerBorders().map(([a, b, c, d]) => [r1(a - PLAZA.x), r1(b - PLAZA.z), r1(c - PLAZA.x), r1(d - PLAZA.z)]);
-  for (const pen of PENS) for (const line of fenceLines(pen)) map.blockers.push(lineBlocker(line, pen.x, pen.z));
-  for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) map.blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
+  for (let i = 1; i < ZOO_FENCE.length; i++) map.blockers.push(lineBlocker([...ZOO_FENCE[i - 1], ...ZOO_FENCE[i]], 0, 0));
   if (!ZOO_OPEN) {
-    map.landmarks.push({ type: 'hoarding', closes: 'zoo', p: HOARDING }, {
-      type: 'sign', x: 48, z: 5, ry: -1.5708,
+    map.landmarks.push({
+      type: 'sign', x: 48, z: 12, ry: -1.5708,
       title: { ko: '동물원 개장 준비 중', en: 'The zoo is opening soon', ja: '動物園はまもなくオープン', zh: '动物园即将开放', es: 'El zoo abrirá pronto', id: 'Kebun binatang segera dibuka', vi: 'Sở thú sắp mở cửa', hi: 'चिड़ियाघर जल्द खुलेगा', fr: 'Le zoo ouvre bientôt', th: 'สวนสัตว์ใกล้เปิดแล้ว', ar: 'حديقة الحيوان ستفتح قريبًا' },
       text: {
         ko: '동물 친구들이 이사 오는 중이에요. 곧 문을 열게요!',
@@ -407,15 +430,37 @@ export function buildMap() {
         ar: 'الحيوانات تنتقل إلى هنا. سنفتح قريبًا!',
       },
     });
-    for (let i = 1; i < HOARDING.length; i++) map.blockers.push(lineBlocker([...HOARDING[i - 1], ...HOARDING[i]], 0, 0));
-    // A gap at the foot of the west side, out of sight of the plaza: only
-    // operators can crawl through it (main.js), to look round before it opens.
-    map.landmarks.push({ type: 'doghole', closes: 'zoo', x: DOGHOLE[0], z: DOGHOLE[1], ry: Math.PI / 2 });
   }
   return map;
 }
 
+// The zoo grounds, for the zoo's room (core/zoo-park.js): the paths, the pens,
+// the woods, the flower plaza, beds and borders (relative to the plaza, as
+// core/grand-park.js zooFlowers draws them), the cart station, the Sea
+// Animals hall's door, and the walls you bump into (fences, the barn, the hall).
+export function zooGrounds() {
+  const blockers = [];
+  for (const pen of PENS) for (const line of fenceLines(pen)) blockers.push(lineBlocker(line, pen.x, pen.z));
+  for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
+  blockers.push({ p: rect(SEA_HALL.x0, SEA_HALL.z0, SEA_HALL.x1, SEA_HALL.z1) });
+  return {
+    room: ZOO_ROOM, gate: ZOO_GATE, open: ZOO_OPEN,
+    walks: Object.entries(WALKS).map(([k, r]) => ({ ...r, ...(PATHS[k].closed ? { closed: true } : {}) })),
+    pens: PENS,
+    woods: ZOO_WOODS,
+    flowers: {
+      x: PLAZA.x, z: PLAZA.z, plaza: [PLAZA.r, PLAZA.bed],
+      beds: flowerBeds(ZOO_WOODS).map(([x, z, r]) => [r1(x - PLAZA.x), r1(z - PLAZA.z), r]),
+      borders: flowerBorders().map(([a, b, c, d]) => [r1(a - PLAZA.x), r1(b - PLAZA.z), r1(c - PLAZA.x), r1(d - PLAZA.z)]),
+    },
+    carts: CARTS,
+    seaDoor: SEA_DOOR,
+    blockers,
+  };
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   writeFileSync(OUT, JSON.stringify(buildMap(), null, 1) + '\n');
-  console.log('wrote', path.relative(root, OUT));
+  writeFileSync(GROUNDS, JSON.stringify(zooGrounds()) + '\n');
+  console.log('wrote', path.relative(root, OUT), 'and', path.relative(root, GROUNDS));
 }

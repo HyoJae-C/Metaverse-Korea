@@ -3,6 +3,9 @@ import { Daily, REWARD, checkInPay } from '../core/daily.js';
 import { NAME_ROMAN } from '../core/npcs.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
 
+// A small picture for each kind of mission, so the list reads at a glance.
+const MISSION_ICON = { talk: '👋', visit: '🛍️', pet: '🐾', sit: '☕', bike: '🚲', emote: '😊' };
+
 export function createDaily(game) {
   const { $, leaveStore, npcs, setGuide, storefronts, wallet, zones } = game;
   game.daily = new Daily(wallet, {
@@ -43,7 +46,8 @@ export function createDaily(game) {
       li.classList.toggle('done', finished);
       const tick = document.createElement('span');
       tick.className = 'tick';
-      tick.textContent = finished ? '✓' : '';
+      tick.setAttribute('aria-hidden', 'true');
+      tick.textContent = finished ? '✓' : MISSION_ICON[m.type] || '⭐';
       const text = document.createElement('span');
       text.className = 'm-text';
       text.textContent = missionText(m);
@@ -58,7 +62,7 @@ export function createDaily(game) {
       const target = m.type === 'visit' ? storeById(m.target) : m.type === 'talk' ? npcs.list.find((o) => o.name === m.target) : null;
       if (target && !finished) {
         const go = document.createElement('button');
-        go.className = 'chip';
+        go.className = 'm-go';
         go.textContent = '🧭 ' + t('mission.go');
         go.onclick = () => {
           $('daily-panel').hidden = true;
@@ -70,6 +74,8 @@ export function createDaily(game) {
       }
       return li;
     }));
+    const missions = game.daily.missions;
+    $('daily-count').textContent = `${missions.filter((m) => m.n >= m.need).length}/${missions.length}`;
     $('daily-bonus').textContent = game.daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
     $('daily-dot').hidden = !game.daily.hasNews();
   }

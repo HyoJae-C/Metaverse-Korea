@@ -27,7 +27,10 @@ Lane, Seongsui-ro (30 m east), Yeonmujang 13-gil and 17-gil and Dongil-ro
 (195 m) cross them. The grid is laid out in its own frame (`toMap` /
 `toGrid`), then turned onto the map and cut back to Wangsimni-ro (north-south
 at x -250, Seoul Forest Station on it), the map's edges and the riverside.
-Each street side that faces a shopping street is lined with small shop
+The shops crowd into the blocks round Yeonmujang-gil, between Seongsuil-ro
+and Yeonmujang 17-gil (Seongsu's busiest shopping alleys, on Yozi's map),
+with narrow fronts (9.5–12 m); the blocks west and east of them are offices.
+Each street side that faces a shopping street there is lined with small shop
 buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
 finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
 its own layout, drawn in its old frame and moved as one piece by
@@ -423,9 +426,10 @@ each course's stops; the last stamp of a course pays its reward once
 ## Seokchon Lake's north shore (Songpa)
 
 HANEUL (하늘), a fictional brand, has a department store (north of the west
-lake) and a mall with HANEUL Tower (north of the east lake) between
-Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
-stands. Their footprints are `custom` buildings in `districts/songpa.json`
+lake) and a mall (north of the east lake) between Olympic-ro and the lakes,
+where the real shopping complex by Jamsil Station stands. Another Tower
+(어나더타워, fictional) stands at the real 555 m tower's place just south-east
+of Jamsil Station, at 1/4 (139 m to the tip, 18 m across). Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore.

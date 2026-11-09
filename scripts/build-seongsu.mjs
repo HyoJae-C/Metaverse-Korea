@@ -173,30 +173,32 @@ const B = [
   { x: ['seongsuil', 'seongsui'], z: [E(-200), 'north'], sides: { s: 'plain' } },
   { x: ['seongsui', 'dongil'], z: [E(-200), 'north'], sides: { s: 'plain' } },
   { x: ['dongil', EAST_U_EDGE], z: [E(-200), 'north'], sides: { s: 'plain' } },
-  // Achasan-ro to Yeonmujang-gil. West of Seongsuil-ro the blocks run on to
-  // Wangsimni-ro by Ttukseom Station (the clinics, the bike shop).
-  { x: [WEST_U, 'seongsuil'], z: ['achasan', 'lane'], sides: { n: 'shop', e: 'shop', w: 'plain' } },
+  // Achasan-ro to Yeonmujang-gil. The shops crowd into the blocks between
+  // Seongsuil-ro and Yeonmujang 17-gil, Seongsu's busiest shopping alleys
+  // (round Yeonmujang-gil); west of Seongsuil-ro (on to Wangsimni-ro by
+  // Ttukseom Station) and east of 17-gil are offices.
+  { x: [WEST_U, 'seongsuil'], z: ['achasan', 'lane'], sides: { n: 'plain' } },
   { x: ['seongsuil', 'brick'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', e: 'shop', s: 'shop', w: 'plain' } },
   // Seongsu Square, by the station: shops along Achasan-ro, the square behind them, open to Yeonmujang-gil.
   { x: ['brick', 'seongsui'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop' }, depth: 8, area: 'plaza', square: true, cut: { ne: 16 } },
   { x: ['seongsui', 'east1'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', w: 'shop', s: 'shop' }, cut: { nw: 16 } },
   { x: ['east1', 'east2'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', s: 'shop', e: 'plain' } },
-  { x: ['east2', 'dongil'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', s: 'shop' } },
+  { x: ['east2', 'dongil'], z: ['achasan', 'yeonmujang'], sides: { n: 'plain' } },
   { x: ['dongil', EAST_U_EDGE], z: ['achasan', 'yeonmujang'], sides: {}, area: 'park' },
   // Yeonmujang-gil to the lane (two rows, back to back), with the pop-up square.
   { x: ['seongsuil', 'brick'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', s: 'shop' } },
   { x: ['brick', 'seongsui'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', s: 'shop' } },
-  { x: ['seongsui', 'east1'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', w: 'shop' }, area: 'plaza', popup: true },
+  { x: ['seongsui', 'east1'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', w: 'shop', s: 'shop' }, area: 'plaza', popup: true },
   { x: ['east1', 'east2'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', s: 'shop' } },
-  { x: ['east2', 'dongil'], z: ['yeonmujang', 'lane'], sides: { n: 'shop', s: 'shop' } },
+  { x: ['east2', 'dongil'], z: ['yeonmujang', 'lane'], sides: { n: 'plain' } },
   { x: ['dongil', EAST_U_EDGE], z: ['yeonmujang', 'ttukseom'], sides: { w: 'plain', n: 'plain' }, tall: true },
   // The lane to Ttukseom-ro.
-  { x: [WEST_U, 'seongsuil'], z: ['lane', 'ttukseom'], sides: { e: 'shop', n: 'plain', s: 'plain' } },
+  { x: [WEST_U, 'seongsuil'], z: ['lane', 'ttukseom'], sides: { n: 'plain', s: 'plain' } },
   { x: ['seongsuil', 'brick'], z: ['lane', 'ttukseom'], sides: { n: 'shop', s: 'shop' } },
   { x: ['brick', 'seongsui'], z: ['lane', 'ttukseom'], sides: { n: 'shop', s: 'shop' } },
   { x: ['seongsui', 'east1'], z: ['lane', 'ttukseom'], sides: { n: 'shop', s: 'shop' } },
   { x: ['east1', 'east2'], z: ['lane', 'ttukseom'], sides: { n: 'shop', s: 'shop' } },
-  { x: ['east2', 'dongil'], z: ['lane', 'ttukseom'], sides: { n: 'shop', s: 'shop' } },
+  { x: ['east2', 'dongil'], z: ['lane', 'ttukseom'], sides: { n: 'plain' } },
   // South of Ttukseom-ro, down to the river: quieter streets.
   { x: [WEST_U, 'seongsuil'], z: ['ttukseom', 'seongdeokjeong'], sides: { n: 'plain' } },
   { x: ['seongsuil', 'seongsui'], z: ['ttukseom', 'seongdeokjeong'], sides: { n: 'plain' } },
@@ -497,12 +499,13 @@ const DEPTH_SHOP = 12, GAP = 0.8;
 const buildings = [], lots = [];
 
 function shopRow(a0, a1, along, place) {
-  // Split [a0, a1] into shop lots 10–15 m wide, separated by a small gap.
+  // Split [a0, a1] into shop lots 9.5–12 m wide, separated by a small gap
+  // (narrow fronts: the shops crowd into the Yeonmujang-gil blocks, as in Seongsu).
   let a = a0;
   const out = [];
-  while (a1 - a >= 10) {
-    let w = pick(13, 19);
-    if (a1 - a - w < 11) w = a1 - a; // last lot takes the rest
+  while (a1 - a >= 9) {
+    let w = pick(9.5, 12);
+    if (a1 - a - w < 9.5) w = a1 - a; // last lot takes the rest
     out.push([a, a + w]);
     a += w + GAP;
   }
