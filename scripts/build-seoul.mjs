@@ -59,27 +59,27 @@ const GU = [
 const NORTH_BANK = ['mapo', 'yongsan', 'seongdong', 'gwangjin'];
 const SOUTH_BANK = ['gangseo', 'yangcheon', 'yeongdeungpo', 'dongjak', 'seocho', 'gangnam', 'songpa', 'gangdong'];
 
-// Room for full-size Seongsu: push points south of Seongsu Station, most at
-// the river, fading out to the east, west and north.
-export function seongsuRoom([x, z]) {
-  const w = Math.max(0, 1 - Math.abs(x - 50) / 700) * Math.max(0, Math.min(1, (z + 150) / 400)) * Math.max(0, Math.min(1, (900 - z) / 500));
-  return [x, z + 150 * w];
-}
-
 // The game's river, west to east, where it differs from the real one: centre
 // line [x, z] and how wide to draw it (m), inside the game's water. Both ends
 // are points on the real river, so the bend fades in and out there.
 export const GAME_RIVER = [
   [-1103, 584, 220], // Banpo-Jamwon (real river)
   [-1026, 540, 190], // region.json water[1] from Banpo-Jamwon…
-  [-335, 291, 180], // …to Seongsu's river
-  [-200, 332, 130],
-  [-65, 373, 60],
-  [10, 398, 22],
-  [40, 423, 50], // where Songpa's Han River bank joins Seongsu's
-  [260, 425, 50],
-  [300, 432, 40],
-  [858, 432, 40], // Songpa's bank (z 405..460) ends
+  [-465, 213, 174], // …to Seongsu's river by Seoul Forest (its real bank)
+  [-300, 281, 172],
+  [-240, 300, 174],
+  [-150, 336, 186],
+  [-30, 388, 200],
+  // From here the map draws the river about the real Han's width (200 m) down
+  // from the north bank, a smooth line with no bulge: the game's water reaches
+  // further south (to Songpa's bank strip, z 556..611), but the map keeps the
+  // real look. Past Ttukseom Han River Park it fills the water to Songpa's land.
+  [18, 407, 200],
+  [100, 459, 200],
+  [160, 496, 200],
+  [260, 518, 185], // Ttukseom Han River Park's straight bank…
+  [430, 532, 156], // …to Jamsil Bridge
+  [858, 533, 154], // Songpa's bank strip ends
   [975, 305, 220], // back on the real river, turning north-east
 ];
 const interp = (pts, x, k) => {
@@ -147,7 +147,7 @@ function labelSpot(p) {
 const osm = JSON.parse(await readFile(path.join(root, 'scripts', 'data', 'seoul-gu-osm.geojson'), 'utf8'));
 const region = JSON.parse(await readFile(path.join(R, 'region.json'), 'utf8'));
 const byEn = Object.fromEntries(osm.features.map((f) => [f.properties['name:en'], f]));
-const projectRaw = (ring) => ring.map(([lon, lat]) => seongsuRoom(toGame(lat, lon)));
+const projectRaw = (ring) => ring.map(([lon, lat]) => toGame(lat, lon));
 
 // The river: points on a north-bank gu's edge that a south-bank gu shares
 // (within 20 real metres), west to east, thinned to one every ~60 m.
@@ -196,7 +196,7 @@ const gu = GU.map(([id, ko, en, ja, zh]) => {
 });
 
 const out = {
-  note: 'Seoul at 1/4 around Seongsu Station (scripts/build-seoul.mjs). Gu outlines © OpenStreetMap contributors (ODbL), simplified; Seongsu has extra room south of it.',
+  note: 'Seoul at 1/4 around Seongsu Station (scripts/build-seoul.mjs). Gu outlines © OpenStreetMap contributors (ODbL), simplified.',
   credit: '© OpenStreetMap contributors',
   scale: SCALE, gu, river: round(river), riverW,
 };

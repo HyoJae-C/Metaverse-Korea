@@ -386,7 +386,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
-  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 999px; font-weight: 800;
+  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 22px; font-weight: 800;
+  width: max-content; max-width: min(88vw, 520px); text-align: center; /* a longer hint wraps across the screen, not in half of it */
   pointer-events: none; z-index: 60;
 }
 .cart { position: relative; text-align: left; }
@@ -436,8 +437,43 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
      results take the map's place, right under the search box. */
   .map-searching .map-card { height: 100%; }
   .map-searching .map-body { grid-template-rows: minmax(0, 1fr); }
-  .map-searching :is(.map-canvas, .map-seoul, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
+  .map-searching :is(.map-canvas, .map-seoul, .map-locate, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
   .map-searching .map-list { padding-top: 0; }
+  /* Phones: the map fills the screen. Search and one row of categories on
+     top; the list of places is a sheet folded to one bar at the bottom. */
+  #map-panel { padding: 0; }
+  #map-panel .map-card {
+    width: 100%; height: 100%; border-radius: 0;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .map-top { padding: 6px 10px 4px 16px; }
+  .map-card > .map-controls { padding: 0 12px 6px; gap: 6px; }
+  .map-search { min-height: 40px; }
+  .map-cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0; }
+  .map-cats::-webkit-scrollbar { display: none; }
+  .map-body { grid-template-rows: minmax(0, 1fr) auto; }
+  .map-list { max-height: 52px; overflow: hidden; padding-top: 0; border-top: 1px solid #eadfcd; }
+  .map-sheet-open .map-body { grid-template-rows: minmax(0, 1fr) minmax(0, 46%); }
+  .map-sheet-open .map-list { max-height: none; overflow: auto; }
+  .map-searching .map-list { max-height: none; overflow: auto; border-top: 0; }
+  .map-searching .map-handle { display: none; }
+  .map-list > .map-disclaimer { margin: 10px 4px 4px; }
+  /* (the sheet is inside .map-body: keep the button above it and the credit) */
+  #map-panel .map-locate { right: 10px; bottom: 82px; }
+  #map-panel.map-sheet-open .map-locate { bottom: calc(46% + 30px); }
+}
+.map-handle {
+  position: sticky; top: 0; z-index: 1; width: 100%; min-height: 48px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 15px; font-weight: 800;
+}
+.map-handle::before { content: ""; position: absolute; top: 5px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #d9ccb6; }
+.map-handle b { font-size: 13px; color: var(--ink-soft); }
+.map-locate {
+  position: absolute; right: calc(280px + 10px); bottom: 30px; z-index: 1; width: 44px; height: 44px; padding: 0; /* (left of the side list) */
+  border-radius: 50%; font-size: 22px; color: #ff6f5b; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.25);
+}
+@media (max-width: 700px) {
   .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
@@ -805,23 +841,57 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 /* Daily check-in and missions */
 .daily-chip { position: relative; }
 .daily-chip .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
-.daily-panel { max-height: min(78dvh, 560px); overflow-y: auto; }
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 12px; }
-.week span { aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: #f1e9dc; font-size: 12px; font-weight: 800; color: var(--ink-soft); }
-.week span.on { background: var(--mint); color: #fff; }
-.week span.today { box-shadow: 0 0 0 2px var(--coral, #ff9b85); }
-.week span.big { font-size: 15px; }
-#daily-panel .primary { width: 100%; }
-#daily-panel .primary:disabled { opacity: 0.6; }
-.daily-sub { display: block; margin-top: 14px; font-size: 15px; }
-.missions { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.missions li { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 12px; font-size: 14px; }
-.missions li .tick { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d9cdbb; display: grid; place-items: center; font-size: 13px; }
-.missions li.done .tick { background: var(--mint); border-color: var(--mint); color: #fff; }
-.missions li.done .m-text { color: var(--ink-soft); text-decoration: line-through; }
-.missions li .m-text { flex: 1; min-width: 0; }
-.missions li .m-prog { font-size: 12px; color: var(--ink-soft); }
-.missions li .chip { flex: 0 0 auto; }
+/* Calm and easy to read: it's information, so soft colours, one accent
+   (coral) for what to press, mint for what's done. */
+.daily-panel { max-height: min(80dvh, 600px); overflow-y: auto; }
+.daily-title { display: flex; align-items: center; gap: 10px; font-size: 19px; color: var(--ink); padding-inline-end: 36px; }
+.daily-ico { flex: none; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: #ffeee8; font-size: 20px; }
+.week {
+  position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  margin: 14px 0 14px; padding: 10px; border-radius: 18px; background: #f7efe3;
+}
+/* A thin track behind the days, so the week reads as one row of steps. */
+.week::before { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: #eadfcd; }
+.week span {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+  background: #fff; font-size: 14px; font-weight: 800; color: #a3958a; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.08);
+}
+.week span.on { background: var(--mint); color: #fff; box-shadow: 0 2px 0 #6fbcae; }
+.week span.today { background: #fff; color: var(--accent-dark); box-shadow: 0 0 0 3px var(--accent); }
+.week span.today.on { background: var(--mint); color: #fff; box-shadow: 0 0 0 3px #6fbcae; }
+.week span.big { font-size: 17px; background: #fff3cf; }
+.week span.big.on { background: var(--mint); }
+#daily-panel .primary { width: 100%; font-size: 17px; padding: 13px; }
+/* Already checked in: a quiet mint "done", not a faded button. */
+#daily-panel #checkin-btn:disabled { opacity: 1; background: #e6f5f1; color: #2f7f71; box-shadow: 0 4px 0 #cbe8e0; }
+#daily-streak { margin-top: 10px; font-size: 12.5px; color: var(--ink-soft); }
+.daily-sub { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; font-size: 16px; color: var(--ink); }
+.daily-count { flex: none; padding: 3px 10px; border-radius: 999px; background: #f1e9dc; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.missions { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.missions li {
+  display: flex; align-items: center; gap: 12px; min-height: 60px;
+  background: #fff; border: 1.5px solid #f1e7d8; border-radius: 16px; padding: 10px 10px 10px 12px;
+  font-size: 15px; line-height: 1.38;
+}
+.missions li .tick {
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 12px; background: #f7efe3;
+  display: grid; place-items: center; font-size: 19px;
+}
+.missions li.done { background: #f6fbf9; border-color: #d9efe9; }
+.missions li.done .tick { background: var(--mint); color: #fff; font-size: 18px; font-weight: 800; }
+.missions li.done .m-text { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: rgba(125, 111, 98, 0.45); }
+.missions li .m-text { flex: 1; min-width: 0; color: var(--ink); }
+.missions li .m-prog { flex: none; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.m-go {
+  flex: 0 0 auto; min-height: 40px; padding: 0 12px; border-radius: 999px;
+  background: #e6f5f1; color: #2a7466; font-size: 13.5px; font-weight: 800; white-space: nowrap;
+}
+.m-go:active { transform: translateY(1px); background: #d5eee7; }
+#daily-bonus {
+  margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: #fff6dc;
+  font-size: 13px; line-height: 1.45; color: #6b5a3e; text-align: start;
+}
+#daily-bonus::before { content: '🎁 '; }
 
 /* Chat safety: tap a name in the chat log to block or report */
 .chat-name { all: unset; color: #e0604d; font-weight: 800; cursor: pointer; pointer-events: auto; text-decoration: underline dotted; }
@@ -1738,6 +1808,8 @@ kbd.wide { padding: 0 7px; }
   box-shadow: 0 2px 0 var(--accent-dark);
 }
 body.beauty-mode #keys-panel { display: none; }
+/* On the operating table (game/beauty.js): the view from your eyes, nothing over it. */
+body.surgery-pov .nametag.me, body.surgery-pov #store-banner, body.surgery-pov #keys-panel, body.surgery-pov #action-btn, body.surgery-pov #action-menu { display: none; }
 /* Keep what used to sit at the bottom left above the key panel. */
 @media (pointer: fine) {
   .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
@@ -2309,6 +2381,95 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
 #start > .panel { position: relative; z-index: 1; }
+
+/* Start screen, first step: this card has little to read, so it can be
+   playful. People from the game hold up the name on a banner over the
+   card, and the "Next" button shines. */
+#start { align-content: center; }
+.start-banner {
+  position: relative; z-index: 2; display: block; justify-self: center;
+  width: min(400px, 96vw); height: auto; margin-bottom: -26px; pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(74, 63, 53, 0.16));
+  animation: banner-sway 3.6s ease-in-out infinite; transform-origin: 50% 100%;
+}
+@keyframes banner-sway { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-3px) rotate(0.6deg); } }
+#start:has(#step-lang[hidden]) .start-banner { display: none; }
+/* The banner carries the name, so the card's title is for screen readers
+   (and comes back on short screens, where the banner is hidden). */
+#step-lang h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#step-lang {
+  padding-top: 34px;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#fffaf2, #fff6ea) padding-box,
+    linear-gradient(135deg, #ffb3c7, #ffd36e 35%, #8fd3c7 65%, #b9a6f0) border-box;
+}
+#step-lang .tagline { color: #6f6156; font-size: 15px; line-height: 1.45; }
+#step-lang h2 { margin-top: 18px; color: var(--ink); font-size: 17px; }
+#step-lang .region {
+  display: inline-block; margin: 14px 0 12px; padding: 6px 14px; border-radius: 999px;
+  background: #fff; border: 2px dashed #ffc2b4; font-size: 14px; color: var(--ink);
+}
+#next-btn {
+  overflow: hidden; /* position: sticky (above) holds the shine */
+  background: linear-gradient(100deg, #ff8f86, #ff9fb4);
+  box-shadow: 0 5px 0 #e9735c, 0 10px 18px rgba(255, 127, 143, 0.28);
+}
+#next-btn::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg); animation: shine 3.6s ease-in-out infinite;
+}
+#next-btn:disabled::after { display: none; }
+@keyframes shine { 0%, 55% { left: -40%; } 85%, 100% { left: 130%; } }
+.start-scenes .scene span { backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(40, 32, 26, 0.15); }
+
+/* Phones held upright: a drawn pastel sky and Seoul skyline (Namsan tower,
+   a hanok roof) instead of the game scenes the card would cover anyway.
+   The scenes' pictures then aren't downloaded at all. */
+.start-art { display: none; }
+@media (max-width: 700px) and (orientation: portrait) {
+  .start-scenes { display: none; }
+  #start { background: linear-gradient(180deg, #ffd9e6 0%, #ffeedd 38%, #d6ecff 100%); }
+  .start-art { display: block; position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .start-art .skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; min-height: 26vh; }
+  .start-art .cloud { position: absolute; width: 120px; height: 36px; border-radius: 999px; background: rgba(255, 255, 255, 0.85); animation: cloud-drift 14s ease-in-out infinite alternate; }
+  .start-art .cloud::before, .start-art .cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
+  .start-art .cloud::before { width: 54px; height: 54px; left: 18px; top: -26px; }
+  .start-art .cloud::after { width: 40px; height: 40px; left: 60px; top: -16px; }
+  .start-art .c1 { left: 6%; top: 7%; }
+  .start-art .c2 { right: 4%; top: 14%; transform: scale(0.75); animation-duration: 18s; }
+  .start-art .c3 { left: 38%; top: 3%; transform: scale(0.55); animation-duration: 22s; opacity: 0.8; }
+  /* Banner and card sit high, so the skyline shows below them. */
+  #start { align-content: start; padding-top: max(20px, calc(env(safe-area-inset-top) + 8px)); }
+}
+@keyframes cloud-drift { from { translate: -10px 0; } to { translate: 14px 0; } }
+@media (max-height: 600px) {
+  .start-banner { display: none; }
+  #step-lang { padding-top: 16px; }
+  #step-lang h1 { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-banner, .start-art .cloud, #next-btn::after { animation: none; }
+  #next-btn::after { display: none; }
+}
+
+/* Type and buttons, one rule for every panel: titles, buttons and section
+   heads in the rounded display font; body text stays plain for reading.
+   Sizes: title 19, body 15, note 12.5. The main action is the big apricot
+   .primary; a helper action (show the way) is a small mint pill. */
+:root { --font-display: 'Fredoka', 'Jua', 'Nunito', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif; }
+h1, h2, .wallet-title, .primary, .daily-sub strong, .daily-count, .region, .lang-current, .m-go, .street-name {
+  font-family: var(--font-display); font-weight: 600; font-synthesis: none;
+}
+.primary { letter-spacing: 0.2px; }
+html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub strong, .region, .lang-current, .m-go, .street-name) { font-family: inherit; font-weight: 800; }
+
+/* The welcome card after the start: information, so calm and easy to read. */
+.welcome-card h2 { margin: 2px 0 14px; color: var(--ink); font-size: 18px; }
+.welcome-card #welcome-body { font-size: 15px; color: var(--ink); }
+.welcome-tips { list-style: none; padding: 0; display: grid; gap: 6px; }
+.welcome-tips li { background: #fff; border: 1.5px solid #f1e7d8; border-radius: 14px; padding: 9px 12px; font-size: 14px; line-height: 1.45; }
 /* Library shelf tabs: one section per bookshelf */
 .book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }
 
@@ -2375,3 +2536,20 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 }
 .online .on-short { display: none; }
 @media (max-width: 700px) and (orientation: portrait) { .online .on-short { display: inline; } }
+
+/* Minimap (game/minimap.js): top-left of the street; tap for the full map. */
+.minimap {
+  position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); z-index: 2;
+  width: 120px; height: 120px; padding: 0; border-radius: 50%; overflow: hidden;
+  background: #f3ecdc; box-shadow: var(--shadow); cursor: pointer;
+}
+.minimap[hidden] { display: none; }
+.minimap canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.minimap-me {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 22px; pointer-events: none;
+}
+.minimap-me svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 700px), (max-height: 500px) {
+  .minimap { width: 88px; height: 88px; }
+  .minimap-me { width: 17px; height: 19px; }
+}

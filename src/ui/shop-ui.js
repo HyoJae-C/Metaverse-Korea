@@ -144,7 +144,7 @@ export class ShopUI {
     const tag = localName(store.tagline, lang) || '';
     this.$('store-tagline').textContent = comingSoon(store) ? `🚧 ${t('map.soon')}${tag ? ' · ' + tag : ''}` : tag;
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
-    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture';
+    this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture' || store.workshop === 'zoo' || store.workshop === 'zoo-sea'; // (the zoo is a real public place, not a made-up brand)
   }
 
   leaveStore() {
@@ -314,11 +314,11 @@ export class ShopUI {
     this.$('cart-count').hidden = n === 0;
   }
 
-  toast(text) {
+  toast(text, ms = 1600) {
     const el = this.$('toast');
     el.textContent = text;
     el.hidden = false;
     clearTimeout(this._tt);
-    this._tt = setTimeout(() => { el.hidden = true; }, 1600);
+    this._tt = setTimeout(() => { el.hidden = true; }, ms);
   }
 }

@@ -4,8 +4,8 @@
 // Low-poly and stylised, not to scale. Collision comes from the map's
 // "blockers", so these are only visual.
 import * as THREE from 'three';
-import { buildAnotherLand } from './anotherland.js';
 import { haneulStore, haneulTower } from './haneul.js';
+import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
@@ -14,7 +14,7 @@ import { BANK, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
-import { cgpGate, doghole, hoarding, zooCartStation } from './grand-park.js';
+import { cgpGate, zooEntrance, zooFence } from './grand-park.js';
 import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -93,13 +93,13 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 }
 
 const BUILD = {
-  anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
   haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
   haneultower: (g) => haneulTower(g),
+  lakeshore: (g, l) => buildLakeshore(g, l), // Seokchon Lake's sunken water, banks and lakeside walk
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
-  zoocarts: (g, l) => zooCartStation(g, l), // the zoo's cart station (core/grand-park.js; renting: game/zoo-carts.js)
+  zooentrance: (g, l) => zooEntrance(g, l), // the zoo's entrance building: its door leads into the zoo (core/zoo-park.js)
   konext: (g, l) => konext(g, l), // KONEXT, the mall by Samseong Station (core/konext.js)
   aquarium: (g, l) => aquariumPavilion(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
@@ -626,8 +626,7 @@ export function buildLandmarks(list = [], scene) {
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
     else if (l.type === 'avenue') avenue(g, l);
-    else if (l.type === 'doghole') doghole(g, l); // (a gap anyone can crawl through: main.js)
-    else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
+    else if (l.type === 'zoofence') zooFence(g, l); // (the zoo's railing round its wood: core/grand-park.js)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);

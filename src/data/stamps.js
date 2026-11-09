@@ -35,13 +35,13 @@ export const STAMPS = [
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',
   },
   {
-    id: 'seongsu', place: { at: [92, 219] }, color: '#e0662a', shape: 'square',
+    id: 'seongsu', place: { at: [19.3, 105.4] }, color: '#e0662a', shape: 'square',
     name: { ko: '성수 팝업스토어', en: 'Seongsu Pop-up', ja: '聖水ポップアップ', zh: '圣水快闪店' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M64 84 l36 -26 l36 26 z M68 84 v40 h64 v-40"/><path d="M64 84 q9 10 18 0 q9 10 18 0 q9 10 18 0 q9 10 18 0"/><rect x="90" y="100" width="20" height="24"/>',
   },
   {
-    id: 'seoul-forest', place: { at: [-196.6, 224], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
+    id: 'seoul-forest', place: { at: [-326.6, 70], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
     name: { ko: '서울숲', en: 'Seoul Forest', ja: 'ソウルの森', zh: '首尔林' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M78 128 v-20 M78 108 l-20 0 l20 -30 l20 30 z M78 92 l-14 0 l14 -22 l14 22 z"/><path d="M128 128 l-14 -44 h28 z"/><path d="M112 84 a16 14 0 0 1 32 0 a16 10 0 0 1 -32 0 z"/><path d="M56 128 h88"/>',
@@ -49,7 +49,7 @@ export const STAMPS = [
   {
     // at the west end of the drone show's lawn, in the park laid on the
     // street (scripts/build-seongsu.mjs), the river ahead
-    id: 'hangang', place: { at: [117, 376.5], ry: 3.1416 }, color: '#1d6fb8', shape: 'square',
+    id: 'hangang', place: { at: [283.8, 419.7], ry: 2.981 }, color: '#1d6fb8', shape: 'square',
     name: { ko: '뚝섬 한강공원', en: 'Ttukseom Han River Park', ja: 'トゥクソム漢江公園', zh: '纛岛汉江公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a duck boat (오리배) on the river
@@ -58,7 +58,7 @@ export const STAMPS = [
   {
     // Ttukseom's drone light show (core/drone-show.js): the stand is only on
     // the lawn (in front of the barge) while the drones are up, so this stamp means you saw a show.
-    id: 'drone-show', place: { at: [142.6, 377.4], ry: 3.1416 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    id: 'drone-show', place: { at: [308.9, 424.7], ry: 2.981 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
     name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // drones drawing a heart over the river
@@ -125,7 +125,8 @@ export const STAMPS = [
     icon: '<path d="M64 98 h72 q-4 26 -36 26 q-32 0 -36 -26 z M60 98 h80"/><path d="M84 88 q-6 -8 0 -16 q6 -8 0 -16 M100 88 q-6 -8 0 -16 q6 -8 0 -16 M116 88 q-6 -8 0 -16 q6 -8 0 -16"/>',
   },
   {
-    id: 'seokchon', place: { at: [263, 576] }, color: '#1e7fa8', shape: 'circle',
+    // on the west lake's south shore (Songpa's map, local 470, 345)
+    id: 'seokchon', place: { at: [908, 1116] }, color: '#1e7fa8', shape: 'circle',
     name: { ko: '석촌호수', en: 'Seokchon Lake', ja: '石村湖', zh: '石村湖' },
     gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
     icon: '<path d="M58 104 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0 M58 120 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0"/><path d="M80 92 v-22 M80 70 q-14 4 -12 16 M80 70 q14 4 12 16 M80 70 q-8 -10 -18 -6 M80 70 q8 -10 18 -6"/><path d="M118 92 q0 -16 12 -24 q-2 14 8 24 z"/>',
@@ -178,14 +179,14 @@ export const STAMPS = [
   },
   {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate
-    id: 'grand-park', place: { at: [452, -72], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
+    id: 'grand-park', place: { at: [452, -81], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
     name: { ko: '서울어린이대공원', en: "Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a lion's face in its mane
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [115, 847], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [149, 874], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
