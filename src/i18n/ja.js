@@ -69,6 +69,7 @@ export const JA = {
   "ride.teacups": "ティーカップに乗る",
   "ride.train": "汽車に乗る",
   "ride.flume": "急流すべりに乗る",
+  "ride.gyro": "ジャイロスイングに乗る",
   "ride.go": "出発！しっかりつかまってね 🎶",
   "maze.in": "ミラー迷路だよ。向こう側の出口を探そう！🪞",
   "maze.out": "{n}秒で迷路を抜けたよ！🎉",

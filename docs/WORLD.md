@@ -465,14 +465,39 @@ Another Land Bridge (south from Olympic-ro) onto it. It is the store
 you're in) and the slightly wider `open.out` (walk past it and you're back on
 the street), in the room's metres, which are the Cotton Candy Express's own
 (`core/park-island.js`, room size `island`). The coaster stands on it exactly
-as it was, track, speed, station and attendant, with its candy wood, and a
-candy-striped pavilion over the stairs down to the rest of the park
-(`another-land`, which has `"below": "another-land-island"`: no storefront,
-its door is the stairs; leaving it puts you back on the island). The island
-grew to the south-east to hold the whole track (about 3,870 m², the track at
-least 2 m in from the shore and about 5 m of water round it), so the
-water is about 13,150 m², 97% of the real 1/16. The helix sits south of
-the long run, east of the station (the same 345 m lap, the track 63 m
-across, not 83), which leaves the island's east end free for more rides. `tests/coaster.test.mjs`
-checks the track is on the island and the only way off is the bridge;
-`tests/themepark.test.mjs` checks the island lies on the map's island.
+as it was, track, speed, station and attendant, with its candy wood. Where
+the bridge lands, a Hansel and Gretel candy house is the park's gate
+(`core/park-candy-house.js`, `open.house`: gingerbread walls, a chocolate
+roof with icing, a 9 m ridge, and an archway the walk goes through). In the
+middle of the island a round candy hall with a mint dome and a lollipop on
+top holds the stairs down to the rest of the park (`core/park-hall.js`,
+`open.hall`; the room `another-land`, which has `"below":
+"another-land-island"`: no storefront, its door is the hall's, `at` just
+outside it and `face` the way you face coming out; leaving it puts you back
+on the island). The island grew to the south-east to hold the whole track,
+and again a little east of the bridge's landing for the candy house's
+square (about 4,050 m², the track at least 2 m in from the shore and about
+5 m of water round it), so the water is about 12,980 m², 95% of the real
+1/16. The coaster is its first design (83 m across, the helix round
+(8, -27) with the little hill before the chocolate tunnel), with a vertical
+loop added after the airtime hill (`LOOP` in `core/coaster.js`: 10.5 m
+tall, a teardrop that pulls hard at its foot and floats over the top, out
+3.5 m to the side of the way in; the lap is 374 m, still a minute). In the
+loop the track's right stays the loop's side, so the train, its riders and
+the ride camera turn right over; its top is held up by a leaning pair of
+legs from either side, clear of the train inside.
+
+Four more rides stand round the coaster, each in its fenced yard with a
+named gate and an attendant (`core/park-yards.js`), off biscuit walks from
+the main one (`SPURS` in `park-island.js`): the Rainbow Wheel by the
+bridge, the Lollipop Drop between the long run and the helix, the Sugar
+Swing in the coaster's north-west loop (in under the airtime hill) and the
+Macaron Gyro Swing south of the middle (`core/park-gyro.js`: a ring of 16 seats
+on a long arm that swings up past level between two A-frames). Which rides
+are where is `ISLAND_RIDES` / `UNDER_RIDES` in `park-rides.js`; the pirate
+ship, carousel, teacups, train and log flume stay in the room below. The
+coaster's station loop is still free for one more. `tests/coaster.test.mjs`
+checks the track is on the island, the only way off is the bridge, every
+ride's gate is a walk from it and nothing that moves comes within 2 m of
+the track; `tests/themepark.test.mjs` checks the island lies on the map's
+island.

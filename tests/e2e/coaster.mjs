@@ -45,7 +45,7 @@ await page.evaluate(() => { __mk.cam({ yaw: 2.4, pitch: 0.45, dist: 16 }); });
 await page.waitForTimeout(600);
 await shot('island');
 // The stairs down again.
-await page.evaluate(() => __mk.place(-26.4, -49.4)); // (in front of the stairs: stores.json open.stairs, 3.4 m out)
+await page.evaluate(() => __mk.place(-24.2, -16.5)); // (at the hall's door: stores.json open.hall, 5.3 m east)
 await page.waitForTimeout(400);
 const dl = await page.evaluate(() => __mk.action());
 assert(/^⬇️ Enter Another Land Underground/.test(dl || ''), `stairs down: ${dl}`);

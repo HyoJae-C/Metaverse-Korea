@@ -1,10 +1,11 @@
 // Another Land (어나더랜드), the candy-house theme park, in two parts: its
 // island in Seokchon Lake, open to the street (park-island.js: the Cotton
-// Candy Express roller coaster, coaster.js, in its candy wood), and the
-// rides under the island, down the island's stairs (this room, a store
-// with "below"): a carousel, a Ferris wheel, a swinging pirate ship, a drop
-// tower, bumper cars (game/bumper.js), a swing ride, teacups, a park train,
-// a log flume and a mirror maze (park-new-rides.js) spread round the
+// Candy Express roller coaster, coaster.js, in its candy wood, with the
+// Ferris wheel, the drop tower, the swing ride and the gyro swing round it),
+// and the rides under the island, down the island's stairs (this room, a
+// store with "below"): a carousel, a swinging pirate ship, bumper cars
+// (game/bumper.js), teacups, a park train, a log flume and a mirror maze
+// (park-new-rides.js) spread round the
 // central plaza along winding paths (park-grounds.js), food trucks
 // (park-food.js) and a balloon clown (game/balloon-clown.js). Each ride has
 // a boarding spot; on a ride the player is carried by seatAt(). Same shape
@@ -21,13 +22,13 @@ const mat = matCache({ flatShading: true });
 // The rides as numbers: park-rides.js (kept apart so main.js needn't load
 // this file, which comes on the first visit).
 export { RIDE_PRICE, RIDE_PASS, RIDE_SECONDS, RIDES, dropY, rideUntil, seatAt } from './park-rides.js';
-import { RIDE_GATES } from './park-rides.js';
+import { RIDE_GATES, UNDER_RIDES } from './park-rides.js';
 import { buildGrounds } from './park-grounds.js';
-import { buildCarousel, buildDrop, buildViking, buildWheel } from './park-ride-models.js';
+import { buildCarousel, buildViking } from './park-ride-models.js';
 import { mergeStatic } from './merge-static.js';
 import { buildFoodTrucks } from './park-food.js';
 import { buildIsland } from './park-island.js';
-import { buildSwing, buildTeacups, buildTrain, buildFlume, buildMirrorMaze } from './park-new-rides.js';
+import { buildTeacups, buildTrain, buildFlume, buildMirrorMaze } from './park-new-rides.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
   // The island, open to the street: the coaster and its candy wood (park-island.js).
@@ -57,14 +58,10 @@ export function buildThemePark(store, ROOM, EXIT) {
   const carousel = buildCarousel(scene, block);
   const viking = buildViking(scene, block);
 
-  // The Rainbow Wheel and the Lollipop Drop (park-ride-models.js).
-  const wheel = buildWheel(scene, block);
-  const drop = buildDrop(scene, block);
-
-  // The Sugar Swing and the Teacup Party south of the food truck lane, the
-  // Candy Train in the south-east corner, the Jelly Flume in the north-east
-  // field and the Mirror Maze off the east promenade (park-new-rides.js).
-  const swing = buildSwing(scene, block, mat);
+  // The Teacup Party south of the food truck lane, the Candy Train in the
+  // south-east corner, the Jelly Flume in the north-east field and the
+  // Mirror Maze off the east promenade (park-new-rides.js). (The Ferris
+  // wheel, the drop tower and the swing ride are up on the island.)
   const teacups = buildTeacups(scene, block, mat);
   const train = buildTrain(scene, block, mat);
   const flume = buildFlume(scene, block, mat);
@@ -127,7 +124,7 @@ export function buildThemePark(store, ROOM, EXIT) {
   }
 
   // Where you board each ride (in front of it).
-  const rides = ['carousel', 'wheel', 'viking', 'drop', 'swing', 'teacups', 'train', 'flume'].map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
+  const rides = UNDER_RIDES.map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
   // Each ride's attendant, by its gate (the bumper cars' too), named after the ride.
   stations.rideStaff = [
     ...rides.map(({ kind }) => ({ kind, ...RIDE_GATES[kind].staff })),
@@ -137,10 +134,10 @@ export function buildThemePark(store, ROOM, EXIT) {
   stations.patrons = [
     ...(stations.patrons || []),
     { x: 3.4, z: 6.6, ry: -2.2 }, { x: -3.2, z: 0.2, ry: 0.6 }, { x: -1.4, z: 17, ry: Math.PI },
-    { x: 1.6, z: 23.5, ry: Math.PI }, { x: 13.4, z: 1.6, ry: Math.PI * 0.9 }, { x: 21, z: -2.2, ry: Math.PI }, // (looking up at the wheel)
+    { x: 1.6, z: 23.5, ry: Math.PI }, { x: 13.4, z: 1.6, ry: Math.PI * 0.9 },
     { x: 12.2, z: 10.7, ry: Math.PI }, { x: 18.9, z: 12.2, ry: Math.PI }, { x: 25.1, z: 13.5, ry: Math.PI }, // at the food trucks
-    { x: 32.6, z: 19, ry: Math.PI / 2 }, { x: 44.6, z: -1.2, ry: -2.4 }, // watching the bumper cars, the drop tower
-    { x: 19.4, z: 16.4, ry: 0.4 }, { x: 31.4, z: 21.4, ry: -0.3 }, // at the swing's and the teacups' fences
+    { x: 32.6, z: 19, ry: Math.PI / 2 }, // watching the bumper cars
+    { x: 31.4, z: 21.4, ry: -0.3 }, // at the teacups' fence
     { x: 47.2, z: 19.2, ry: Math.PI / 2 }, { x: 51.6, z: -12.2, ry: Math.PI }, { x: 37.6, z: -1.8, ry: Math.PI }, // on the train's platform, at the flume, by the maze
   ];
 
@@ -150,9 +147,6 @@ export function buildThemePark(store, ROOM, EXIT) {
     const now = Date.now() / 1000; // (every ride runs on the shared clock: friends see the same ride)
     carousel.tick(now);
     viking.tick(now);
-    wheel.tick(now);
-    drop.tick(now);
-    swing.tick(now);
     teacups.tick(now);
     train.tick(now);
     flume.tick(now);
@@ -161,7 +155,7 @@ export function buildThemePark(store, ROOM, EXIT) {
   };
   tick(0);
   // Everything that never moves, baked into a mesh per colour (merge-static.js).
-  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, ...swing.keep, ...teacups.keep, ...train.keep, ...flume.keep, ...maze.keep, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
+  mergeStatic(scene, [carousel.root, viking.root, viking.swing, ...teacups.keep, ...train.keep, ...flume.keep, ...maze.keep, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
     scene, products: food.products, vendors: food.vendors, colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,

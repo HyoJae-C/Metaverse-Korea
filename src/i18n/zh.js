@@ -69,6 +69,7 @@ export const ZH = {
   "ride.teacups": "坐旋转茶杯",
   "ride.train": "坐小火车",
   "ride.flume": "坐激流勇进",
+  "ride.gyro": "坐大摆锤",
   "ride.go": "出发！抓紧哦 🎶",
   "maze.in": "镜子迷宫：找到另一边的出口吧！🪞",
   "maze.out": "用{n}秒走出了迷宫！🎉",

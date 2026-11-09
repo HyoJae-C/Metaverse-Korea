@@ -124,7 +124,7 @@ export class Storefronts {
       if (store.open || store.hanpark || store.below) {
         const group = new THREE.Group();
         group.position.set(ax, 0, az);
-        group.rotation.y = (store.open?.ry || 0) + Math.PI; // (facing away from the river, like a door onto the street)
+        group.rotation.y = store.face ?? (store.open?.ry || 0) + Math.PI; // (facing away from the river, like a door onto the street; store.face: the way you face coming out)
         group.visible = false;
         scene.add(group);
         this.items.push({ store, group, open: !!store.open, outdoor: true, door: new THREE.Vector3(ax, 0, az) });

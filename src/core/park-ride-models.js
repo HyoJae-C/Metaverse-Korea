@@ -9,10 +9,11 @@
 // parts are merged inside its own moving group, so a ride is a few draw calls.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
-import { mergeStatic } from './merge-static.js';
+import { bakeColors, mergeStatic } from './merge-static.js';
 import { RIDES, barDown, carouselAngle, carouselPace, dropY, horseSpot, vikingAngle, wheelAngle, wheelDoorOpen } from './park-rides.js';
 
 const mat = matCache({ flatShading: true });
+const sided = matCache({ flatShading: true, side: THREE.DoubleSide });
 const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', CHOC = '#6b3f2a', CHOC2 = '#8a5536', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff';
 const part = (parent, geo, color, x, y, z) => { const m = new THREE.Mesh(geo, color.isMaterial ? color : mat(color)); m.position.set(x, y, z); parent.add(m); return m; };
 const box = (parent, sx, sy, sz, x, y, z, c) => part(parent, new THREE.BoxGeometry(sx, sy, sz), c, x, y, z);
@@ -66,8 +67,7 @@ export function buildCarousel(scene, block) {
   // Canopy: a striped cone, a gold band and a fringe of bulbs.
   const R = C.r + 1.15;
   for (let i = 0; i < 16; i++) {
-    const seg = new THREE.Mesh(new THREE.ConeGeometry(R, 1.5, 1, 1, true, (i / 16) * Math.PI * 2, Math.PI / 8), mat(i % 2 ? ICING : HOT));
-    seg.material.side = THREE.DoubleSide;
+    const seg = new THREE.Mesh(new THREE.ConeGeometry(R, 1.5, 1, 1, true, (i / 16) * Math.PI * 2, Math.PI / 8), sided(i % 2 ? ICING : HOT)); // (its own two-sided material: not the cache's, which every ride shares)
     seg.position.set(0, 4.75, 0);
     spin.add(seg);
   }
@@ -217,7 +217,7 @@ export function buildWheel(scene, block) {
   box(root, 3.4, 0.5, 2.6, 0, 0.25, 0, '#f2c6a0');
   box(root, 3.5, 0.08, 2.7, 0, 0.52, 0, ICING);
   for (let i = 0; i < 2; i++) box(root, 1.4, 0.17 * (i + 1), 0.5, -1.4, 0.085 * (i + 1), 1.55 + (1 - i) * 0.45, '#e6b48c');
-  mergeStatic(root);
+  bakeColors(root); // (each part keeps its colour, one draw call: it's out on the island, over the street)
 
   const wheel = new THREE.Group();
   wheel.position.set(W.x, W.hub, Z);
@@ -251,7 +251,8 @@ export function buildWheel(scene, block) {
     const a = (i / 40) * Math.PI * 2;
     part(wheel, new THREE.SphereGeometry(0.08, 6, 4), bulb, Math.sin(a) * (W.r + 0.2), -Math.cos(a) * (W.r + 0.2), 0.62);
   }
-  mergeStatic(wheel);
+  bakeColors(wheel);
+  mergeStatic(wheel); // (the bulbs)
 
   // Gondolas: the group's origin is where it hangs from the rim.
   const cabins = [], bars = [];
@@ -271,7 +272,7 @@ export function buildWheel(scene, block) {
     bar.position.set(-0.78, fl + 0.55, 0.7);
     box(bar, 1.56, 0.08, 0.08, 0.78, 0, 0, HOT);
     c.add(bar);
-    mergeStatic(c, [bar]);
+    bakeColors(c, [bar]);
     scene.add(c);
     cabins.push(c);
     bars.push(bar);
@@ -309,7 +310,7 @@ export function buildDrop(scene, block) {
   for (const [r, c] of [[1.1, ICING], [0.7, MINT], [0.35, LEMON]]) { // swirl rings on both faces
     for (const s of [-1, 1]) { const ring = part(root, new THREE.TorusGeometry(r, 0.1, 6, 24), c, 0, topY + 3.2, s * 0.21); ring.rotation.z = r; }
   }
-  mergeStatic(root);
+  bakeColors(root);
 
   const ring = new THREE.Group();
   ring.position.set(D.x, D.low, D.z);
@@ -317,7 +318,6 @@ export function buildDrop(scene, block) {
   cyl(ring, D.r + 0.45, D.r + 0.45, 0.22, 0, -0.3, 0, MINT, 24);
   cyl(ring, 0.85, 0.85, 1.6, 0, -0.3, 0, ICING, 12); // the carriage round the tower
   cyl(ring, D.r + 0.5, D.r + 0.5, 0.14, 0, 1.5, 0, PINK, 24); // its top band
-  const harness = [];
   for (let i = 0; i < D.seats; i++) {
     const a = (i / D.seats) * Math.PI * 2;
     const seat = new THREE.Group();
@@ -325,22 +325,34 @@ export function buildDrop(scene, block) {
     seat.rotation.y = a; // facing out (+z of the seat)
     box(seat, 0.6, 0.1, 0.5, 0, 0.45, 0.05, ['#ff8fb8', '#ffe27a', '#c9a8ff', '#8fe3c7'][i % 4]); // seat
     box(seat, 0.6, 1.2, 0.12, 0, 1.0, -0.22, ['#ff8fb8', '#ffe27a', '#c9a8ff', '#8fe3c7'][i % 4]); // back
-    const h = new THREE.Group(); // hinged above the head; down = over the shoulders
-    h.position.set(0, 1.55, -0.1);
-    for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.08, 0.5, sx, 0, 0.25, '#d9dde2');
-    for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.6, 0.08, sx, -0.3, 0.48, '#d9dde2');
-    box(h, 0.48, 0.08, 0.08, 0, -0.58, 0.48, HOT);
-    mergeStatic(h);
-    seat.add(h);
     ring.add(seat);
-    harness.push(h);
   }
-  mergeStatic(ring, harness);
+  // The harnesses (hinged above the head; down = over the shoulders): one
+  // shape, baked, drawn eight times as one instanced mesh.
+  const h = new THREE.Group();
+  for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.08, 0.5, sx, 0, 0.25, '#d9dde2');
+  for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.6, 0.08, sx, -0.3, 0.48, '#d9dde2');
+  box(h, 0.48, 0.08, 0.08, 0, -0.58, 0.48, HOT);
+  const baked = bakeColors(h).children[0];
+  const harness = new THREE.InstancedMesh(baked.geometry, baked.material, D.seats);
+  harness.frustumCulled = false;
+  ring.add(harness);
+  bakeColors(ring, [harness]);
   block(D.x, D.z, 2.2, 2.2);
+  const m4 = new THREE.Matrix4(), hinge = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), Y = new THREE.Vector3(0, 1, 0);
+  let bar = -1;
   const tick = (now) => {
     ring.position.y = dropY(now);
-    const d = barDown('drop', now);
-    for (const h of harness) h.rotation.x = -(1 - d) * 1.4; // up: tipped back over the seat
+    const d = Math.round(barDown('drop', now) * 20) / 20;
+    if (d === bar) return;
+    bar = d;
+    hinge.makeRotationX(-(1 - d) * 1.4).setPosition(0, 1.55, -0.1); // up: tipped back over the seat
+    for (let i = 0; i < D.seats; i++) {
+      const a = (i / D.seats) * Math.PI * 2;
+      m4.compose(v.set(Math.sin(a) * (D.r - 0.15), 0, Math.cos(a) * (D.r - 0.15)), q.setFromAxisAngle(Y, a), one).multiply(hinge);
+      harness.setMatrixAt(i, m4);
+    }
+    harness.instanceMatrix.needsUpdate = true;
   };
   return { root, ring, harness, tick };
 }

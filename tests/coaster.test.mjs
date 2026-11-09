@@ -14,6 +14,8 @@ const { DayPasses } = await import('../src/core/day-pass.js');
 
 const { readFileSync } = await import('node:fs');
 const { inPoly } = await import('../src/core/geom.js');
+const { HOUSE } = await import('../src/core/park-candy-house.js');
+const { HALL } = await import('../src/core/park-hall.js');
 
 // The rides under the island (the "another-land" room)...
 const room = ROOM_SIZES.themepark, box = roomBox(room);
@@ -103,20 +105,20 @@ test('the track stays on the island, off the ground, and clear of itself', () =>
   }
 });
 
-test('the coaster keeps clear of the stairs down, and its helix is tucked inside the island', () => {
+test('the coaster keeps clear of the candy house and the hall with the stairs down', () => {
   const pts = C.trackPoints();
-  const { stairs } = islandStore.open;
-  for (const p of pts) assert.ok(Math.hypot(p.x - stairs.x, p.z - stairs.z) > 6, `stairs pavilion at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
-  // (the helix sits south of the long run, east of the station: the track
-  // reaches no further east than the island's old north tip)
-  assert.ok(Math.max(...pts.map((p) => p.x)) < 0, 'no wider than it needs to be');
+  const { house, hall } = islandStore.open;
+  for (const p of pts) {
+    assert.ok(Math.hypot(p.x - hall.x, p.z - hall.z) > HALL.r + 2.5, `hall at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    assert.ok(Math.abs(p.x - house.x) > HOUSE.w / 2 + 2.5 || Math.abs(p.z - house.z) > HOUSE.d / 2 + 2.5, `candy house at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+  }
 });
 
 test('from the bridge you walk to the platform and to the stairs down; the shore holds you in', () => {
   const on = { col: iCol, box: iBox };
   const bridge = { x: island.exit.x, z: island.exit.z - 1.4 }; // (where enterStore puts you)
   const [st] = island.stations.coaster;
-  assert.ok(island.island && island.themepark && !island.rides.length);
+  assert.ok(island.island && island.themepark);
   assert.ok(!iCol.blocked(bridge.x, bridge.z, R), 'stepping off the bridge is free');
   assert.ok(inPoly(bridge.x, bridge.z, islandStore.open.lawn), 'and on the island');
   assert.ok(!iCol.blocked(st.x, st.z, R), 'boarding spot is free');
@@ -153,7 +155,7 @@ test('from the bridge you walk to the platform and to the stairs down; the shore
 });
 
 test('ticket prices and the ride-all day pass', () => {
-  assert.deepEqual(RIDE_PRICE, { coaster: 7000, flume: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 });
+  assert.deepEqual(RIDE_PRICE, { coaster: 7000, flume: 5000, gyro: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 });
   assert.equal(BUMPER_COST, 4000);
   assert.equal(RIDE_PASS, 20000);
   const all = Object.values(RIDE_PRICE).reduce((a, b) => a + b, 0) + BUMPER_COST;
@@ -197,7 +199,7 @@ test('the old square: every ride has a fenced yard you reach by its gate, with i
     assert.deepEqual([r.x, r.z], [RIDE_GATES[r.kind].x, RIDE_GATES[r.kind].z]);
   }
   const kinds = park.stations.rideStaff.map((s) => s.kind).sort();
-  assert.deepEqual(kinds, ['bumper', 'carousel', 'drop', 'flume', 'swing', 'teacups', 'train', 'viking', 'wheel']);
+  assert.deepEqual(kinds, ['bumper', 'carousel', 'flume', 'teacups', 'train', 'viking']);
   for (const s of park.stations.rideStaff) {
     assert.ok(RIDE_NAME[s.kind].ko && RIDE_NAME[s.kind].en, `${s.kind} has a name`);
     assert.ok(!col.blocked(s.x, s.z, 0.3), `${s.kind} attendant stands free`);
@@ -206,8 +208,46 @@ test('the old square: every ride has a fenced yard you reach by its gate, with i
     assert.ok(d > 1 && d < 2.6, `${s.kind} attendant by the gate (${d.toFixed(2)})`);
   }
   // You can't walk into a ride: the middle of each yard is fenced off from the plaza.
-  for (const k of ['carousel', 'viking', 'wheel', 'drop']) assert.ok(!reachable(gate, { x: RIDES[k].x, z: RIDES[k].z + (k === 'carousel' || k === 'drop' ? 0 : 2) }), `${k}: fenced`);
-  for (const k of ['swing', 'teacups']) assert.ok(!reachable(gate, { x: RIDES[k].x + 3.4, z: RIDES[k].z + 1 }), `${k}: fenced`);
+  for (const k of ['carousel', 'viking']) assert.ok(!reachable(gate, { x: RIDES[k].x, z: RIDES[k].z + (k === 'carousel' ? 0 : 2) }), `${k}: fenced`);
+  assert.ok(!reachable(gate, { x: RIDES.teacups.x + 3.4, z: RIDES.teacups.z + 1 }), 'teacups: fenced');
+});
+
+test('the island\'s rides: the wheel, the drop tower, the swing ride and the gyro swing, each fenced, its gate a walk from the bridge', async () => {
+  const { RIDE_GATES, ISLAND_RIDES, RIDE_NAME } = await import('../src/core/park-rides.js');
+  const { YARDS, inYard } = await import('../src/core/park-yards.js');
+  const on = { col: iCol, box: iBox }, bridge = { x: island.exit.x, z: island.exit.z - 1.4 }, { lawn } = islandStore.open;
+  assert.deepEqual(island.rides.map((r) => r.kind), ISLAND_RIDES);
+  assert.deepEqual(park.rides.filter((r) => ISLAND_RIDES.includes(r.kind)), [], 'none of them left in the room below');
+  for (const r of island.rides) {
+    assert.ok(!iCol.blocked(r.x, r.z, R), `${r.kind}: boarding spot is free`);
+    assert.ok(reachable(bridge, r, 0.5, on), `bridge → ${r.kind}`);
+    assert.ok(RIDE_NAME[r.kind].ko && RIDE_NAME[r.kind].en, `${r.kind} has a name`);
+    // its yard on the island, a few metres in from the shore
+    const Y = YARDS[r.kind], ring = Y.ring ? Array.from({ length: 24 }, (_, i) => [RIDES[r.kind].x + Math.cos(i / 3.82) * (Y.ring + 1), RIDES[r.kind].z + Math.sin(i / 3.82) * (Y.ring + 1)]) : [[Y.box[0] - 1, Y.box[1] - 1], [Y.box[2] + 1, Y.box[1] - 1], [Y.box[2] + 1, Y.box[3] + 1], [Y.box[0] - 1, Y.box[3] + 1]];
+    for (const [x, z] of ring) assert.ok(inPoly(x, z, lawn), `${r.kind}: yard on the island (${x.toFixed(1)}, ${z.toFixed(1)})`);
+    // fenced: the middle of the yard isn't a walk from the bridge
+    const mid = r.kind === 'swing' ? { x: RIDES.swing.x + 3.4, z: RIDES.swing.z + 1 } : r.kind === 'wheel' ? { x: RIDES.wheel.x, z: RIDES.wheel.z + 2 } : r.kind === 'gyro' ? { x: RIDES.gyro.x + 4, z: RIDES.gyro.z } : { x: RIDES.drop.x, z: RIDES.drop.z }; // (the drop tower's yard is open at its gate, like the carousel's)
+    assert.ok(!reachable(bridge, mid, 0.5, on), `${r.kind}: fenced`);
+  }
+  for (let i = 0; i < ISLAND_RIDES.length; i++) for (let j = i + 1; j < ISLAND_RIDES.length; j++) {
+    const a = ISLAND_RIDES[i], b = ISLAND_RIDES[j];
+    assert.ok(!inYard(a, RIDES[b].x, RIDES[b].z, 8), `${a} ↔ ${b}: apart`);
+  }
+  for (const s of island.stations.rideStaff) {
+    assert.ok(!iCol.blocked(s.x, s.z, 0.3), `${s.kind} attendant stands free`);
+    const g = RIDE_GATES[s.kind], d = Math.hypot(s.x - g.x, s.z - g.z);
+    assert.ok(d > 1 && d < 2.6, `${s.kind} attendant by the gate (${d.toFixed(2)})`);
+  }
+  // Nothing that moves comes near the coaster's track: the wheel's rim, the
+  // drop tower's ring, the swing ride's chairs flying out, the gyro swing's
+  // arm and ring at the top of its swing.
+  const { seatAt, RIDE_CYCLE } = await import('../src/core/park-rides.js');
+  const track = C.trackPoints();
+  const clear = (p, d, what) => { for (const q of track) assert.ok(Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z) > d, `${what} at ${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)} hits the track`); };
+  for (const k of ISLAND_RIDES) {
+    const c = RIDE_CYCLE[k], len = c ? c.load + c.run + c.stop : 90;
+    for (let t = 0; t < len; t += 0.5) for (let i = 0; i < RIDES[k].seats; i += 3) { const s = seatAt(k, i, 1e6 + t); clear({ x: s.x, y: s.y + 0.8, z: s.z }, 2.2, k); }
+  }
 });
 
 test('the park is a handful of draw calls: still meshes are merged', () => {

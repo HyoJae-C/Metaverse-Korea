@@ -69,6 +69,7 @@ export const KO = {
   "ride.teacups": "찻잔 타기",
   "ride.train": "기차 타기",
   "ride.flume": "후룸라이드 타기",
+  "ride.gyro": "자이로스윙 타기",
   "ride.go": "출발! 꼭 잡으세요 🎶",
   "maze.in": "거울 미로예요. 반대편 출구를 찾아보세요! 🪞",
   "maze.out": "{n}초 만에 미로를 빠져나왔어요! 🎉",

@@ -59,7 +59,7 @@ import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoar
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createParkRiders } from './game/park-riders.js';
-import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
+import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
@@ -2232,8 +2232,10 @@ $('revert-look').onclick = () => {
 };
 
 // The camera keeps its angle to the character (behind stays behind) unless
-// camYaw says where it is.
-function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotation.y) {
+// camYaw says where it is. camVia: walking on from one frame into another
+// (onto an open park's lawn, or off it): the camera and the way I'm walking
+// carry over through that matrix instead of jumping.
+function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotation.y, camVia = null) {
   me.root.parent?.remove(me.root);
   targetScene.add(me.root);
   me.root.position.set(x, 0, z);
@@ -2241,6 +2243,12 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotatio
   lastSent = null; // teleport: tell others right away
   sendTimer = 0;
   teleports = (teleports + 1) % 100; // (others jump us there instead of sliding: core/players.js)
+  if (camVia) {
+    moveRef.yaw += camYaw - cam.yaw; // (a key held down keeps walking the same way)
+    cam.yaw = camYaw;
+    camera.position.applyMatrix4(camVia);
+    return;
+  }
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
@@ -2531,7 +2539,7 @@ function enterStore(item, walkIn = null) {
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
-  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw);
+  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw, walkIn.camVia);
   else {
     if (built.entry) moveMeTo(built.scene, built.entry.x, built.entry.z, built.entry.ry); // (a room whose door isn't at its south side: the zoo)
     else moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
@@ -2942,7 +2950,7 @@ function leaveStore(walkOut = false) {
     // where you stand, on the nearest free spot (the pier is over the water).
     const [wx, wz] = parkWorld(openPark, here.x, here.z);
     const [ex, ez] = findFreeSpot(wx, wz);
-    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry);
+    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry, walkOut ? openPark.toWorld : null);
   } else {
     // Face the street, the camera as it was when we went in (the street looks
     // the way it did). Step out a little in front of the door, on a spot that is not inside a
@@ -4938,7 +4946,7 @@ onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
 // The ride-all day pass (sold at the ticket window) makes every ride free today.
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', coaster: '🎢' };
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
 const rideFare = (kind) => (ridePass() ? '🎫' : `🪙 ${RIDE_PRICE[kind]}`);
 function payRide(kind) {
@@ -5030,8 +5038,8 @@ function updateRide(dt) {
   if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.hold && ph.s < DROP_T.hold + DROP_T.fall && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
   if (ride.kind === 'drop' && ph.phase !== 'run' && ride.fell) { ride.fell = false; me.setMoves?.(null); }
   ride.shout -= dt;
-  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume';
-  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop)
+  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume' || ride.kind === 'gyro';
+  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'gyro' ? Math.abs(s.roll) > 1.2 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop; the gyro swing: up past level)
   if (locked && ride.shout <= 0 && scream) {
     ride.shout = ride.kind === 'viking' ? 3.5 : thrill ? 4 : 6;
     showBubble(myLabel, $('labels'), thrill ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2000);
@@ -5130,6 +5138,9 @@ function updateCoaster(dt) {
   const dAir = Math.abs(((tr.s - S_AIR + LENGTH / 2) % LENGTH + LENGTH) % LENGTH - LENGTH / 2);
   if (dAir < 1.5 && !ride.air) { ride.air = true; buzz(60); }
   if (dAir > 6) ride.air = false;
+  const dLoop = Math.abs(tr.s - S_LOOP_TOP); // (upside down at the loop's top)
+  if (dLoop < 1.5 && !ride.flip) { ride.flip = true; buzz([40, 30, 40]); showBubble(myLabel, $('labels'), '🙃', 1600); }
+  if (dLoop > 8) ride.flip = false;
   ride.wind += (tr.k01 - ride.wind) * Math.min(1, dt * 4);
   me.setWind?.(ride.wind);
   if (now >= ride.until) endRide();
@@ -5154,10 +5165,15 @@ function coasterCamera(dt) {
     ride.cam.z + sh * Math.sin(t * 19.7 + 2),
   );
   // Lean with the banked track (60%, none on the gentle setting), and at the
-  // top look down over the edge.
-  _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), rideFxSoft ? 0 : 0.6).normalize();
+  // top, from your seat, look down over the edge (slowly: from behind you the
+  // view stays on the track ahead, so the crest doesn't jolt it).
+  // (In the loop the view turns right over with the track, even on the
+  // gentle setting: leaning only part way, it would spin as you go over.)
+  const loopIn = Math.max(0, Math.min(1, Math.min(tr.s - S_LOOP[0] + 4, S_LOOP[1] + 4 - tr.s) / 4));
+  _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), THREE.MathUtils.lerp(rideFxSoft ? 0 : 0.6, 1, loopIn)).normalize();
   camera.up.copy(_cu);
-  const down = tr.phase === 'hold' ? 3.6 : 0;
+  ride.down = (ride.down || 0) + ((first && tr.phase === 'hold' ? 3.6 : 0) - (ride.down || 0)) * Math.min(1, dt * 1.5);
+  const down = ride.down;
   const ah = first ? 6 : 8, hu = first ? 0.6 : 1;
   camera.lookAt(f.x + f.fx * ah + f.ux * hu, f.y + f.fy * ah + f.uy * hu - down, f.z + f.fz * ah + f.uz * hu);
   ride.fov += (fx.fov - ride.fov) * Math.min(1, dt * 3);
@@ -5456,7 +5472,7 @@ function updateOpenParks(dt) {
   const here = openParkHere();
   if (here) {
     lightOpenPark(openParkRoom(here));
-    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || [])]) if (n) n.ch.root.visible = true;
+    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
@@ -5482,6 +5498,8 @@ function updateOpenParks(dt) {
     // off the stalls and the kiosk read as busy enough.
     const close = d < PARK_STAFF;
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
+    if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Another Land's island: the guests on its rides)
+    for (const n of o.built.riderNpcs || []) n.ch.root.visible = close;
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
     const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
@@ -5489,7 +5507,7 @@ function updateOpenParks(dt) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
-      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
+      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry, camVia: o.toLocal });
       return;
     }
   }
@@ -6626,7 +6644,7 @@ renderer.setAnimationLoop((now) => {
   else if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
-    const inStore = mode === 'store';
+    const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
     const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
     const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed; // (slower in the pool's water, or rolling a big snowball)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward

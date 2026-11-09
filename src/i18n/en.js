@@ -68,6 +68,7 @@ export const EN = {
   "ride.teacups": "Ride the teacups",
   "ride.train": "Ride the park train",
   "ride.flume": "Ride the log flume",
+  "ride.gyro": "Ride the gyro swing",
   "ride.go": "Here we go! Hold on tight 🎶",
   "maze.in": "Mirror Maze: find the way out on the far side! 🪞",
   "maze.out": "You found the way out in {n} s! 🎉",

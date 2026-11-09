@@ -69,6 +69,7 @@ export const ID = {
   'ride.teacups': 'Naik cangkir putar',
   'ride.train': 'Naik kereta taman',
   'ride.flume': 'Naik arung jeram',
+  'ride.gyro': 'Naik ayunan giro',
   'ride.go': 'Ayo berangkat! Pegangan yang erat 🎶',
   'maze.in': 'Labirin cermin: cari jalan keluar di sisi seberang! 🪞',
   'maze.out': 'Kamu keluar dari labirin dalam {n} detik! 🎉',

@@ -68,6 +68,7 @@ export const ES = {
   'ride.teacups': 'Subir a las tazas',
   'ride.train': 'Subir al trenecito',
   'ride.flume': 'Subir a los troncos',
+  'ride.gyro': 'Subir al péndulo gigante',
   'ride.go': '¡Allá vamos! Agárrate fuerte 🎶',
   'maze.in': 'Laberinto de espejos: ¡encuentra la salida al otro lado! 🪞',
   'maze.out': '¡Saliste del laberinto en {n} s! 🎉',

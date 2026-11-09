@@ -69,6 +69,7 @@ export const FR = {
   'ride.teacups': 'Monter dans les tasses',
   'ride.train': 'Monter dans le petit train',
   'ride.flume': 'Monter dans les bûches',
+  'ride.gyro': 'Monter dans le pendule géant',
   'ride.go': 'C\'est parti ! Tiens-toi bien 🎶',
   'maze.in': 'Labyrinthe des miroirs : trouve la sortie de l\'autre côté ! 🪞',
   'maze.out': 'Sorti du labyrinthe en {n} s ! 🎉',

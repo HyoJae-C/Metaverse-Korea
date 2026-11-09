@@ -1,5 +1,5 @@
 // The Cotton Candy Express's sense of speed, lent to Another Land's swing
-// ride and drop tower: the same numbers (coaster.js rideFx: a wider view
+// ride, drop tower and gyro swing: the same numbers (coaster.js rideFx: a wider view
 // and a shake that grow with the speed, a narrow view while it climbs and
 // holds) and the same overlay and sounds (ui/coaster-fx.js: speed lines,
 // the dark edge, cotton candy bits, the lift's clack, the heartbeat at the
@@ -9,7 +9,7 @@
 import { rideFx } from '../core/coaster.js';
 import { rideSpeed } from '../core/park-rides.js';
 
-export const THRILL_RIDES = new Set(['swing', 'drop']);
+export const THRILL_RIDES = new Set(['swing', 'drop', 'gyro']);
 const BASE_FOV = 62;
 
 export function createRideThrill({ camera, fx: overlay }) {
