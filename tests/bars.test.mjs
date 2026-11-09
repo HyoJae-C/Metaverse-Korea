@@ -15,7 +15,7 @@ test('Itaewon has four bars, each a different style, all alcohol-free', () => {
   assert.deepEqual(bars.map(barStyleOf).sort(), [...BAR_STYLES].sort());
   for (const b of bars) {
     const [x, z] = b.at;
-    assert.ok(x - ox > -640 && x - ox < 780 && z - oz > -340 && z - oz < 246, b.id + ' is in Itaewon'); // (out to the top of Gyeongnidan-gil)
+    assert.ok(x - ox > -640 && x - ox < 340 && z - oz > -182 && z - oz < 246, b.id + ' is in Itaewon');
     assert.ok(b.products.length >= 4, b.id);
     for (const p of b.products) assert.ok(!/\b(soju|wine|whisky|vodka|rum|gin)\b/i.test(p.name.en) || /alcohol-free/i.test(p.name.en), p.id);
   }

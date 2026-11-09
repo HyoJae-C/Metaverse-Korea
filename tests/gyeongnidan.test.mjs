@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { hillGround, hillHeightRel, hillBox } from '../src/core/hill-ground.js';
 
 // Gyeongnidan-gil (scripts/build-gyeongnidan.mjs): Itaewon's hillside street,
-// on its real roads from OpenStreetMap.
+// on its real roads from OpenStreetMap at a quarter of the real size, and as
+// simple as the other neighbourhoods.
 const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const read = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
 const region = read('region.json');
@@ -17,33 +18,51 @@ const ground = (x, z) => hillHeightRel(hill, x - hill.at[0], z - hill.at[1]); //
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 const segDist = (x, z, [ax, az], [bx, bz]) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); return Math.hypot(x - ax - dx * t, z - az - dz * t); };
 
-test('the street is the real Hoenamu-ro, at real size, with the OpenStreetMap credit', () => {
+const length = (p) => p.reduce((s, q, i) => (i ? s + Math.hypot(q[0] - p[i - 1][0], q[1] - p[i - 1][1]) : 0), 0);
+
+test('the street is the real Hoenamu-ro at a quarter of its size, with the OpenStreetMap credit', () => {
   assert.match(osm.license, /OpenStreetMap contributors/);
   assert.match(itaewon.meta.credit, /OpenStreetMap/);
   assert.equal(main.n.en, 'Gyeongnidan-gil (Hoenamu-ro)');
-  // From the foot, its real end of the café strip is about 600 m east and 200 m north.
+  // From the foot, the real end of the café strip is about 600 m east and
+  // 200 m north: a quarter of that here, like the rest of the map.
   const [x0, z0] = main.p[0], [x1, z1] = main.p.at(-1);
   assert.deepEqual([x0, z0], hill.at);
-  assert.ok(Math.abs(x1 - x0 - 600) < 10 && Math.abs(z1 - z0 + 198) < 10, `ends at ${x1 - x0}, ${z1 - z0}`);
-  const len = main.p.reduce((s, p, i) => (i ? s + Math.hypot(p[0] - main.p[i - 1][0], p[1] - main.p[i - 1][1]) : 0), 0);
-  assert.ok(len > 620 && len < 680, `about 650 m long (${Math.round(len)})`);
+  assert.ok(Math.abs(x1 - x0 - 151) < 5 && Math.abs(z1 - z0 + 49) < 5, `ends at ${x1 - x0}, ${z1 - z0}`);
+  const len = length(main.p);
+  assert.ok(len > 150 && len < 175, `about 160 m long, not 650 (${Math.round(len)})`);
   // The lanes off it keep their real names.
-  for (const n of ['Hoenamu-ro 13-gil', 'Hoenamu-ro 26-gil', 'Hoenamu-ro 28-gil', 'Sinheung-ro']) assert.ok(itaewon.roads.some((r) => r.gy && r.n?.en === n), n);
+  for (const n of ['Hoenamu-ro 13-gil', 'Hoenamu-ro 26-gil', 'Hoenamu-ro 35-gil']) assert.ok(itaewon.roads.some((r) => r.gy && r.n?.en === n), n);
+});
+
+test('it stays as simple as the other neighbourhoods: a few lanes, one row of buildings along each street', () => {
+  const roads = itaewon.roads.filter((r) => r.gy);
+  assert.ok(roads.length <= 5, `${roads.length} streets`);
+  // Every building stands at a street (no houses filling the blocks behind).
+  const all = [...itaewon.roads, ...region.links.map((l) => ({ w: l.w, p: l.p.map(([x, z]) => [x - ox, z - oz]) }))];
+  for (const b of itaewon.buildings.filter((q) => q.gy)) {
+    const near = all.some((r) => r.p.some((q, i) => i && b.p.some(([x, z]) => segDist(x, z, r.p[i - 1], q) < r.w / 2 + 3)));
+    assert.ok(near, `building at ${b.p[0]} is off the streets`);
+  }
+  // Inside Itaewon's own box: nothing past the east end of Sowol-ro.
+  const sowol = itaewon.roads.find((r) => r.n?.en === 'Sowol-ro');
+  assert.ok(itaewon.buildings.every((q) => q.p.every(([x]) => x < sowol.p.at(-1)[0] + 20)));
 });
 
 test('the street climbs, the lanes north climb on and the lanes south go down to Itaewon', () => {
   assert.equal(ground(...hill.at), 0, 'level with Noksapyeong-daero at the foot');
   let last = -1;
   for (const [x, z] of main.p) { const h = ground(x, z); assert.ok(h >= last - 1e-9, 'never down going east'); last = h; }
-  assert.ok(last > 15, `the top is well up (${last} m)`);
+  assert.ok(last > 4 && last < 7, `a gentle climb to the top (${last} m)`);
   const [mx, mz] = main.p[Math.floor(main.p.length * 0.7)];
-  assert.ok(ground(mx, mz - 60) > ground(mx, mz) + 3, 'up the lanes towards Namsan');
-  assert.ok(ground(mx, mz + 60) < ground(mx, mz) - 3, 'down the lanes towards Itaewon');
+  assert.ok(ground(mx, mz - 15) > ground(mx, mz) + 0.2, 'up the lanes towards Namsan');
+  assert.ok(ground(mx, mz + 15) < ground(mx, mz) - 0.5, 'down the lanes towards Itaewon');
   assert.equal(ground(mx, -7), 0, 'Itaewon-ro below is flat');
+  for (const x of [180, 240, 320]) assert.equal(ground(x, -178), 0, 'Sowol-ro above is flat');
   // Off the hill the ground is the city's flat ground, and the world function agrees.
   const g = hillGround(hill, [ox, oz]);
   assert.equal(g(0, 0), 0);
-  assert.equal(g(mx + ox, mz + oz), ground(mx, mz));
+  assert.ok(Math.abs(g(mx + ox, mz + oz) - ground(mx, mz)) < 1e-9);
   const [bx0, bz0, bx1, bz1] = hillBox(hill, [ox, oz]);
   assert.equal(g(bx1 + 1, (bz0 + bz1) / 2), 0);
   assert.equal(g((bx0 + bx1) / 2, bz0 - 1), 0);
@@ -72,7 +91,7 @@ test('every lane joins another street (none starts in a field)', () => {
 
 test('houses stand on the slope with no gap under them, and their floor at the street', () => {
   const hillHouses = itaewon.buildings.filter((b) => b.gy && b.y != null);
-  assert.ok(hillHouses.length > 300, 'a lived-in hillside');
+  assert.ok(hillHouses.length > 30, 'a lived-in hillside');
   for (const b of hillHouses) {
     const low = Math.min(...b.p.map(([x, z]) => ground(x, z)));
     assert.ok(b.y0 <= low + 1e-9, 'the walls reach the ground on the low side');
@@ -93,5 +112,5 @@ test('a few of Itaewon\'s own places moved up: a diner, a trattoria, a café and
   }
   // The taproom is at the top of the hill.
   const tap = up.find((s) => s.id === 'hilltop-taproom');
-  assert.ok(ground(tap.at[0] - ox, tap.at[1] - oz) > 15);
+  assert.ok(ground(tap.at[0] - ox, tap.at[1] - oz) > 4);
 });

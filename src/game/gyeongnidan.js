@@ -9,19 +9,18 @@ import * as THREE from 'three';
 import { COLORS } from '../core/world.js';
 import { StreetNpcs, PHRASES } from '../core/npcs.js';
 import { hillHeightRel } from '../core/hill-ground.js';
+import { addSnowCover } from '../core/snow-cover.js';
 
 const CELL = 3; // m: the ground mesh's grid
 // The ground grid is straight between its points, so on a bend of the slope
 // it could rise through a street drawn just above the true height: it is
 // drawn a little lower instead (you walk on the streets, at the true height).
 const SINK = 0.15;
-// Hillside paving (concrete lanes and yards), the green past the houses.
-const PAVE = new THREE.Color(0xd6d0c4), GREEN = new THREE.Color(COLORS.park);
 
 // Where the neighbours start (metres from the foot of the street): along the
 // street and up and down the lanes.
-const NEIGHBOURS = [[40, 0], [120, -20], [200, -70], [260, -110], [330, -140], [420, -150], [500, -175], [570, -195], [230, -40], [300, -60]];
-const NAMES = ['지민', '서연', '현우', '민서', '태윤', '유나', '준혁', '하린', '도윤', '수아'];
+const NEIGHBOURS = [[12, -2], [45, -18], [62, -55], [100, -36], [140, -48], [150, -75]];
+const NAMES = ['지민', '서연', '현우', '민서', '태윤', '유나'];
 
 // game: { scene, labels, roadGraph, roads (the joined map's), offset (the
 // district's), hill (its meta.hill), groundY (world x, z -> height),
@@ -39,23 +38,19 @@ export function createGyeongnidan(game) {
     const nx = Math.ceil((x1 - x0) / CELL), nz = Math.ceil((z1 - z0) / CELL);
     const ys = new Float32Array((nx + 1) * (nz + 1));
     for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) ys[j * (nx + 1) + i] = h(x0 + i * CELL, z0 + j * CELL);
-    const pos = [], col = [], c = new THREE.Color();
-    const inWin = (x, z) => x <= fx + wx1 && z >= fz + wz0;
+    const pos = [];
     for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
       const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => [x0 + a * CELL, ys[b * (nx + 1) + a], z0 + b * CELL]);
       if (Math.max(q[0][1], q[1][1], q[2][1], q[3][1]) < SINK) continue; // the plain: the city's own ground
       for (const k of [0, 3, 2, 0, 2, 1]) {
         const [x, y, z] = q[k];
         pos.push(x, y - SINK, z);
-        c.copy(inWin(x, z) ? PAVE : GREEN);
-        col.push(c.r, c.g, c.b);
       }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     geo.computeVertexNormals();
-    const ground = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    const ground = new THREE.Mesh(geo, addSnowCover(new THREE.MeshLambertMaterial({ color: COLORS.ground })));
     ground.name = 'ground-hill';
     ground.receiveShadow = true;
     group.add(ground);
@@ -89,7 +84,7 @@ export function createGyeongnidan(game) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(sets[k], 3));
       geo.computeVertexNormals();
-      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
+      const m = new THREE.Mesh(geo, addSnowCover(new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }), 0.8)); // (like the city's roads)
       m.name = 'roads-hill';
       m.receiveShadow = true;
       group.add(m);
