@@ -63,6 +63,8 @@ export const ID = {
   'ride.drop': 'Naik menara jatuh bebas',
   'ride.off': 'Turun',
   'ride.noCoins': 'Kamu perlu 🪙 {n} untuk tiket.',
+  'ride.staff': 'Petugas {name}',
+  'ride.enjoy': 'Selamat bersenang-senang! Pegang palangnya 🎶',
   'book.read': 'Baca',
   'book.pick': 'Pilih buku',
   'book.sitToRead': 'Duduk di mana saja untuk membaca.',

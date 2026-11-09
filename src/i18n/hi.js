@@ -63,6 +63,8 @@ export const HI = {
   'ride.drop': 'ड्रॉप टावर की सवारी करें',
   'ride.off': 'उतरें',
   'ride.noCoins': 'टिकट के लिए 🪙 {n} चाहिए।',
+  'ride.staff': '{name} अटेंडेंट',
+  'ride.enjoy': 'मज़े करें! सेफ्टी बार पकड़े रहें 🎶',
   'book.read': 'पढ़ें',
   'book.pick': 'एक किताब चुनें',
   'book.sitToRead': 'पढ़ने के लिए कहीं बैठ जाएँ।',

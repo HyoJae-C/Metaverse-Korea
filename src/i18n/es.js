@@ -62,6 +62,8 @@ export const ES = {
   'ride.drop': 'Subir a la torre de caída',
   'ride.off': 'Bajar',
   'ride.noCoins': 'Necesitas 🪙 {n} para el billete.',
+  'ride.staff': 'Encargado de {name}',
+  'ride.enjoy': '¡Que lo disfrutes! Agárrate a la barra 🎶',
   'book.read': 'Leer',
   'book.pick': 'Elegir un libro',
   'book.sitToRead': 'Siéntate en algún sitio para leer.',

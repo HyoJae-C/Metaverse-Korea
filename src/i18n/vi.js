@@ -63,6 +63,8 @@ export const VI = {
   'ride.drop': 'Đi tháp rơi tự do',
   'ride.off': 'Xuống',
   'ride.noCoins': 'Bạn cần 🪙 {n} để mua vé.',
+  'ride.staff': 'Nhân viên {name}',
+  'ride.enjoy': 'Chơi vui nhé! Nhớ bám thanh an toàn 🎶',
   'book.read': 'Đọc',
   'book.pick': 'Chọn một cuốn sách',
   'book.sitToRead': 'Hãy ngồi xuống đâu đó để đọc.',

@@ -63,6 +63,8 @@ export const ZH = {
   "ride.drop": "坐跳楼机",
   "ride.off": "下来",
   "ride.noCoins": "门票需要 🪙 {n}。",
+  "ride.staff": "{name}引导员",
+  "ride.enjoy": "玩得开心！请抓紧安全杆🎶",
   "book.read": "阅读",
   "book.pick": "选一本书",
   "book.sitToRead": "找个地方坐下来读吧。",

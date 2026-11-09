@@ -153,3 +153,30 @@ test('ride effects follow the speed, gentler when asked', () => {
   assert.ok(Math.hypot(a.x - c.x, a.z - c.z) > 4, 'front to back');
   assert.ok(a.y > C.heightAt(100 - 0.9));
 });
+
+test('the old square: every ride has a fenced yard you reach by its gate, with its attendant there', async () => {
+  const { RIDE_GATES, RIDE_NAME } = await import('../src/core/park-rides.js');
+  const gate = { x: exitOf(room).x, z: exitOf(room).z - 1.4 };
+  for (const r of park.rides) {
+    assert.ok(!col.blocked(r.x, r.z, R), `${r.kind}: boarding spot is free`);
+    assert.ok(reachable(gate, r), `gate → ${r.kind}`);
+    assert.deepEqual([r.x, r.z], [RIDE_GATES[r.kind].x, RIDE_GATES[r.kind].z]);
+  }
+  const kinds = park.stations.rideStaff.map((s) => s.kind).sort();
+  assert.deepEqual(kinds, ['bumper', 'carousel', 'drop', 'viking', 'wheel']);
+  for (const s of park.stations.rideStaff) {
+    assert.ok(RIDE_NAME[s.kind].ko && RIDE_NAME[s.kind].en, `${s.kind} has a name`);
+    assert.ok(!col.blocked(s.x, s.z, 0.3), `${s.kind} attendant stands free`);
+    const g = s.kind === 'bumper' ? park.bumper.gate : RIDE_GATES[s.kind];
+    const d = Math.hypot(s.x - g.x, s.z - g.z);
+    assert.ok(d > 1 && d < 2.6, `${s.kind} attendant by the gate (${d.toFixed(2)})`);
+  }
+  // You can't walk into a ride: the middle of each yard is fenced off from the plaza.
+  for (const k of ['carousel', 'viking', 'wheel', 'drop']) assert.ok(!reachable(gate, { x: RIDES[k].x, z: RIDES[k].z + (k === 'carousel' || k === 'drop' ? 0 : 2) }), `${k}: fenced`);
+});
+
+test('the park is a handful of draw calls: still meshes are merged', () => {
+  let meshes = 0;
+  park.scene.traverse((o) => { if (o.isMesh) meshes++; });
+  assert.ok(meshes < 380, `${meshes} meshes`);
+});

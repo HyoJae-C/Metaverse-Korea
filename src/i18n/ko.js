@@ -63,6 +63,8 @@ export const KO = {
   "ride.drop": "자이로드롭 타기",
   "ride.off": "내리기",
   "ride.noCoins": "탑승권은 🪙 {n}이에요.",
+  "ride.staff": "{name} 안내원",
+  "ride.enjoy": "즐거운 탑승 되세요! 안전바 꼭 잡으세요 🎶",
   "book.read": "읽기",
   "book.pick": "책 고르기",
   "book.sitToRead": "어디든 앉아서 읽어요.",
