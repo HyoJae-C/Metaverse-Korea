@@ -286,27 +286,32 @@ The district sits on its real spot (Samseong Station on its corner). Meeting zon
 ## Yeouido (Yeongdeungpo-gu)
 
 Yeouido is an island in the middle of the Han River
-(`scripts/build-yeouido.mjs`, `districts/yeouido.json`). The script draws the
-island in its own frame (u along the river, v across it, 0 on the north
-shore) and also writes the first river line in `region.json` (`water`[0]):
-the Han from Mangwon to Banpo-Jamwon now runs round the island's north shore,
-and its blocker is cut for Seogang Bridge. The Saetgang, the narrow arm
-south of the island, is the district's own water and blocker. Seogang Bridge
-starts on the Han River Bike Path where "To the Han River" comes down from
-Hongdae, so Hongdae walks straight onto it. On the island: Yeouido Han River
-Park along the north shore, laid straight on the street like Banpo-Jamwon's
-(`PARK` in the script, `game/han-parks.js`): the fishing corner by Seogang
-Bridge (a pier, the fish buyer, the kiosk with its ramen machine), the open
-fireworks lawn with no trees (`lawn: true`), the night market's stalls round
-Mul-bit Square's shallow pool, and the boat dock by the Information Center; the Han River path, Yunjung-ro with cherry trees
-that are only pink in spring (`blossoms` with `seasonal`), plain office
-towers, Yeouido Park and Yeoui-daero across the middle, the National
-Assembly at the west end, Yunjung-ro again along the south side, and the 63
-tower by the Saetgang at the east end (a blocker and a landmark, not
-walkable). The island is 680 x 320 m and the Saetgang about 25 m, as the
-real ones are at 1/4, so Yeongdeungpo is just across it (until it was redone
-the island was half as wide, a thin strip with wide water round it). The park's ★5 legend is the blobfish. Run the script again
-after moving the island: it rewrites the river and the doors.
+(`scripts/build-yeouido.mjs`, `districts/yeouido.json`), on its real spot at
+1/4: the outline, the Saetgang, Yeouido Park and the main streets come from
+OpenStreetMap (`scripts/data/yeouido-osm.json`), and the district's anchor is
+Yeouinaru Station with no nudge. The script draws in the park's frame (u
+along the straight 430 m of north shore the park lies on, v across it, 0 on
+that shore; that bit of shore is drawn as a straight chord, about 7 m off the
+real one) and also writes the first river line in `region.json`
+(`water`[0]): the Han from Mangwon to Banpo-Jamwon runs round the island's
+north shore, and its blocker is cut for Seogang Bridge. The south shore faces
+the Saetgang: its OpenStreetMap water plus a strip of water and blocker 2-10 m
+off the shore, open only where a street crosses to Yeongdeungpo. Seogang
+Bridge starts on the Han River Bike Path where "To the Han River" comes down
+from Hongdae and lands on Gukhoe-daero, as the real one does. On the island:
+Yeouido Han River Park along the north shore, laid straight on the street
+like Banpo-Jamwon's (`PARK` in the script, `game/han-parks.js`), west to east
+the boat dock by the Information Center, the night market's stalls round
+Mul-bit Square's shallow pool by Yeouinaru Station, the open fireworks lawn
+with no trees (`lawn: true`) and the fishing corner towards the 63 tower (a
+pier, the fish buyer, the kiosk with its ramen machine); the Han River path,
+Yunjung-ro (Yeouiseo-ro) with cherry trees that are only pink in spring
+(`blossoms` with `seasonal`), the real street grid with plain office towers
+in its blocks, Yeouido Park, the National Assembly at the west end, and the 63
+tower at the east end (a blocker and a landmark, not walkable; 7 m west of its
+real spot so Yeouidong-ro passes it). The island is about 850 x 440 m, as the
+real one is at 1/4. The park's ★5 legend is the blobfish. Run the script
+again after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
 
@@ -316,7 +321,7 @@ bursts worked out from the show's start, so everyone sees the same sky).
 Three launch barges (`fwbarge`) sit in the main channel facing the lawn.
 During a show only Yeouido's sky turns to night: `weather.nightMix` is the
 show's night times `nearYeouido()` (1 on the island, Seogang Bridge and the
-Hongdae bank, fading out over 90 m). The sparks (`src/core/fireworks-sky.js`,
+Hongdae bank by the bridge, fading out over 90 m). The sparks (`src/core/fireworks-sky.js`,
 one `THREE.Points`, moved on the graphics card) download only when you come
 within about 900 m around show time. Ten minutes before, every player gets a
 notice, like the drone show's.

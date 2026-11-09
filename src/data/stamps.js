@@ -170,8 +170,8 @@ export const STAMPS = [
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
-    // in the fishing corner by Seogang Bridge, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
-    id: 'yeouido', place: { at: [-2890.1, 160.9], ry: 0.9347 }, color: '#1f8fa3', shape: 'circle',
+    // in the fishing corner towards the 63 tower, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
+    id: 'yeouido', place: { at: [-2491.3, 655.1], ry: 0.7679 }, color: '#1f8fa3', shape: 'circle',
     name: { ko: '여의도 한강공원', en: 'Yeouido Han River Park', ja: '汝矣島漢江公園', zh: '汝矣岛汉江公园' },
     gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
     // the island in the river, the 63 tower on its tip and Seogang Bridge's arch
