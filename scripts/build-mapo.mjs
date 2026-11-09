@@ -159,6 +159,12 @@ function yeonnam() {
 // Poeun-ro, lanes, Mangwon-ro, then the lawn, the riverside path and the
 // Han River along the south edge.
 const BANK = 150;
+// The Han River park (core/park.js) is open to the street here: no pier
+// house, you walk straight from the path onto its lawn. It faces south over
+// the river, so its own frame is turned half round (ry = π): x = x0 - x,
+// z = (BANK - 4) - z, its bank (z = -4) on BANK. It covers x x0-26..x0+26 and
+// z BANK-18..BANK (plus the pier and the duck boats on the water).
+const OPEN_PARK = { x0: -12, half: 26, depth: 18 };
 function mangwon() {
   const d = district(621);
   const { row } = d;
@@ -210,11 +216,10 @@ function mangwon() {
     { k: 'tertiary', w: 9, p: [[-190, 74], [190, 74]], n: name('Mangwon-ro', '망원로', '望遠路', '望远路') },
     { k: 'walk', w: 5, p: [[-190, 138], [190, 138]], n: name('Han River path', '한강 산책로', '漢江の散歩道', '汉江步道') },
   ];
-  // The pier house: the way in to the fishing pier (a shop door, like
-  // Ttukseom's park), on the bank south of the path.
-  d.buildings.push({ h: 4, p: [[-22, 141], [-2, 141], [-2, 149], [-22, 149]] });
   const areas = [
-    { k: 'park', trees: true, p: [[-190, 80], [190, 80], [190, 132], [-190, 132]] },
+    // (the trees stop short of the open-air park's lawn)
+    ...[[-190, OPEN_PARK.x0 - OPEN_PARK.half - 2, 132], [OPEN_PARK.x0 - OPEN_PARK.half - 2, OPEN_PARK.x0 + OPEN_PARK.half + 2, BANK - OPEN_PARK.depth - 4], [OPEN_PARK.x0 + OPEN_PARK.half + 2, 190, 132]]
+      .map(([x0, x1, z1]) => ({ k: 'park', trees: true, p: [[x0, 80], [x1, 80], [x1, z1], [x0, z1]] })),
     { k: 'grass', p: [[-190, 141], [190, 141], [190, BANK], [-190, BANK]] },
     { k: 'plaza', p: [[60, -160], [100, -160], [100, -153], [60, -153]] },
     { k: 'water', p: [[-230, BANK], [230, BANK], [230, 250], [-230, 250]] },
@@ -279,19 +284,24 @@ const SHOPS = {
     'dongne-record': ['poeunS2', 5],
   },
 };
-const FIXED = { mangwon: { 'mangwon-hangang': [-12, 138.5] } }; // in front of the pier house
+const FIXED = { mangwon: { 'mangwon-hangang': [OPEN_PARK.x0, BANK - OPEN_PARK.depth - 1] } }; // just behind the open-air park's lawn (where a taxi or the map drops you)
+// The open-air park's frame (core/park.js metres → district metres).
+// skyline: nothing is built across the river from Mangwon, so the park
+// keeps its own far-bank skyline.
+const OPEN = { mangwon: { 'mangwon-hangang': { at: [OPEN_PARK.x0, BANK - 4], ry: Math.PI, skyline: true } } };
 
 const built = { yeonnam: yeonnam(), mangwon: mangwon() };
 const region = readJson('region.json');
 // stores.json is hand-formatted, so only the "at" of each placed shop is
 // rewritten in the text.
 let stores = readFileSync(path.join(R, 'stores.json'), 'utf8');
-function setAt(sid, at) {
+function setAt(sid, at, open = null) {
   const i = stores.indexOf(`"id": "${sid}"`);
   if (i < 0) { console.log(`${sid}: not in stores.json`); return; }
   let end = stores.indexOf('\n    {', i);
   if (end < 0) end = stores.length;
-  const part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${at[0]}, ${at[1]}]`);
+  let part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${at[0]}, ${at[1]}]`);
+  if (open) part = part.replace(/, "open": \{[^}]*\}/, '').replace(/("at": \[[^\]]*\])/, `$1, "open": { "at": [${open.at[0]}, ${open.at[1]}], "ry": ${open.ry.toFixed(4)}${open.skyline ? ', "skyline": true' : ''} }`);
   stores = stores.slice(0, i) + part + stores.slice(end);
 }
 for (const [id, { map, lots }] of Object.entries(built)) {
@@ -305,7 +315,10 @@ for (const [id, { map, lots }] of Object.entries(built)) {
     if (!at) throw new Error(`${sid}: no lot ${rowId}[${i}] (row has ${lots[rowId]?.length || 0})`);
     spots[sid] = at;
   }
-  for (const [sid, [x, z]] of Object.entries(spots)) setAt(sid, [r1(x + ox), r1(z + oz)]);
+  for (const [sid, [x, z]] of Object.entries(spots)) {
+    const o = OPEN[id]?.[sid];
+    setAt(sid, [r1(x + ox), r1(z + oz)], o && { ...o, at: [r1(o.at[0] + ox), r1(o.at[1] + oz)] });
+  }
   console.log(`${id}: ${map.buildings.length} buildings, ${Object.keys(spots).length} shops placed`);
   if (process.argv.includes('--lots')) for (const [k, v] of Object.entries(lots)) console.log('  ', k, v.length);
 }
