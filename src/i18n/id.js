@@ -645,4 +645,8 @@ export const ID = {
   "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
   "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",
   "fountain.next": "🌈 Pertunjukan Air Mancur Pelangi berikutnya dalam {min} menit.",
+  "zoocart.rent": "🛺 Mobil wisata kebun binatang (4 kursi, gratis)",
+  "zoocart.off": "Kembalikan mobil",
+  "zoocart.got": "Mobil wisatamu! Jalan ke mana saja di kebun binatang. Dekati teman untuk menawarkan kursi (sampai 3).",
+  "zoocart.out": "Mobil wisata hanya di dalam kebun binatang, jadi sudah kembali ke stasiunnya.",
 };

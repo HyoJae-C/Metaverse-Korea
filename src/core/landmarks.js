@@ -14,7 +14,7 @@ import { BANK, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
-import { cgpGate, doghole, hoarding } from './grand-park.js';
+import { cgpGate, doghole, hoarding, zooCartStation } from './grand-park.js';
 import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -99,6 +99,7 @@ const BUILD = {
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
+  zoocarts: (g, l) => zooCartStation(g, l), // the zoo's cart station (core/grand-park.js; renting: game/zoo-carts.js)
   konext: (g, l) => konext(g, l), // KONEXT, the mall by Samseong Station (core/konext.js)
   aquarium: (g, l) => aquariumPavilion(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon

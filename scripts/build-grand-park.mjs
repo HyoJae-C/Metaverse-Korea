@@ -27,20 +27,46 @@ export const ZOO_OPEN = false;
 export const DOGHOLE = [55, -34]; // on the hoarding's west side
 export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]]; // (between the plaza's blossom trees, x 52 and 58)
 
-// The zoo loop: a rectangle of paths, a main path along z 0 and a cross path.
-const LOOP = { x0: 60, x1: 180, z0: -44, z1: 44, cx: 120 };
+// The zoo in four themed quarters round a cross of paths (the main path
+// from the gate along z 0 and a cross path along x 128), wrapped in a ring
+// road the zoo carts drive round (game/zoo-carts.js):
+//   north-west  waterside: Sea Animals hall, hippos, the bird house
+//   north-east  big cats and birds of prey: tigers, lions, bears, vultures
+//   south-west  little ones (by the gate): petting village, reptiles, monkeys
+//   south-east  savanna: elephants, giraffes and zebras on one big plain
+// A path across each north quarter (z -38) and the south-west one (z 44)
+// gives the back row of pens a front to face.
+export const RING = { x0: 66, x1: 190, z0: -70, z1: 86, w: 6 };
+const CROSS = 128, NORTH_PATH = -38, SOUTH_PATH = 44;
+
+// A pen turned to face the other way (its board and gate from north to
+// south or back): every pen-local z is mirrored.
+function flip(pen) {
+  const fz = ([x, z, ...r]) => [x, -z, ...r];
+  const side = { n: 's', s: 'n', e: 'e', w: 'w' };
+  return {
+    ...pen,
+    board: side[pen.board || 'n'],
+    ...(pen.gate ? { gate: { ...pen.gate, side: side[pen.gate.side] } } : {}),
+    ...(pen.props ? { props: pen.props.map(([k, x, z, ...r]) => [k, x, -z, ...r]) } : {}),
+    ...(pen.pond ? { pond: fz(pen.pond) } : {}),
+    ...(pen.feed ? { feed: { ...pen.feed, at: fz(pen.feed.at) } } : {}),
+    ...(pen.groups ? { groups: pen.groups.map((g) => (g.box ? { ...g, box: [g.box[0], -g.box[3], g.box[2], -g.box[1]] } : g)) } : {}),
+  };
+}
 
 // Pens: centre (local metres), size, fence, and who lives there.
 export const PENS = [
-  {
-    id: 'monkeys', x: 90, z: -22, w: 36, d: 30, fence: 'mesh', ground: 'grass', board: 's',
+  // South-west: the little ones, by the gate.
+  flip({
+    id: 'monkeys', x: 95, z: 62, w: 36, d: 30, fence: 'mesh', ground: 'grass', board: 's',
     name: L('원숭이마을', 'Monkey Village', 'サル村', '猴子村'),
     props: [['log', -6, -4], ['log', 8, 5], ['tree', -13, 9], ['tree', 13, -9], ['rock', 0, 10]],
     groups: [{ kind: 'macaque', n: 6 }],
     feed: { at: [5, 11], offset: 480, food: 'fruit' },
-  },
+  }),
   {
-    id: 'petting', x: 90, z: 22, w: 36, d: 30, fence: 'low', ground: 'grass', board: 'n', pet: true,
+    id: 'petting', x: 92, z: 20, w: 36, d: 30, fence: 'low', ground: 'grass', board: 'n', pet: true,
     gate: { side: 'n', at: 0, w: 4 },
     name: L('꼬마동물마을', 'Little Animal Village', 'こども動物村', '小动物村'),
     props: [['barn', 11, 8], ['hay', 3, 10], ['hay', 5, 12, 0.6], ['hutch', -12, 9], ['hutch', -15, 4, 0.4], ['tree', -15, -11]],
@@ -56,8 +82,15 @@ export const PENS = [
       { kind: 'guineapig', n: 5, box: [-16, -2, -3, 13] },
     ],
   },
-  {
-    id: 'birds', x: 100, z: 62, w: 44, d: 20, fence: 'aviary', ground: 'grass', board: 'n',
+  flip({
+    id: 'reptiles', x: 118, z: 10, w: 14, d: 10, fence: 'house', ground: 'stone', board: 's',
+    name: L('파충류관', 'Reptile House', '爬虫類館', '爬行动物馆'),
+    props: [['rock', 3, -2]],
+    groups: [{ kind: 'snake', n: 1, box: [-5, -3, 5, 3] }],
+  }),
+  // North-west: the waterside.
+  flip({
+    id: 'birds', x: 95, z: -55, w: 44, d: 20, fence: 'aviary', ground: 'grass', board: 'n',
     name: L('새장', 'Bird House', '鳥の家', '鸟舍'),
     pond: [-9, 1, 6],
     props: [['tree', 16, 3], ['rock', 6, 5]],
@@ -66,83 +99,94 @@ export const PENS = [
       { kind: 'pelican', n: 3, box: [-18, -7, 2, 7] },
       { kind: 'peacock', n: 2, box: [5, -7, 20, 7] },
     ],
-  },
-  {
-    id: 'tigers', x: 137, z: -22, w: 21, d: 28, fence: 'mesh', ground: 'grass', board: 's',
-    name: L('호랑이', 'Tigers', 'トラ', '老虎'),
-    pond: [4, -7, 3], props: [['rock', -5, -2], ['tree', -6, -10]],
-    groups: [{ kind: 'tiger', n: 2 }],
-    feed: { at: [0, 10], offset: 0, food: 'meat' },
-  },
-  {
-    id: 'lions', x: 163, z: -22, w: 21, d: 28, fence: 'mesh', ground: 'dirt', board: 's',
-    name: L('사자', 'Lions', 'ライオン', '狮子'),
-    props: [['rock', 3, -6], ['rock', -4, -9, 1], ['tree', -6, 2]],
-    groups: [{ kind: 'lion', n: 3 }],
-    feed: { at: [0, 10], offset: 120, food: 'meat' },
-  },
-  {
-    id: 'bears', x: 150, z: -62, w: 40, d: 16, fence: 'mesh', ground: 'dirt', board: 's',
-    name: L('곰', 'Bears', 'クマ', '熊'),
-    pond: [12, -1, 4], props: [['rock', -10, -3], ['tree', -16, -4], ['log', 2, -3]],
-    groups: [{ kind: 'bear', n: 2 }],
-    feed: { at: [-4, 5], offset: 240, food: 'fish' },
-  },
-  // Sea Animals: a building (walls, a door onto the main path, a roof that
-  // lifts away while you are inside) with three tanks behind glass along the
+  }),
+  // Sea Animals: a building (walls, a door onto the path, a roof that lifts
+  // away while you are inside) with three tanks behind glass along the
   // back, one for each animal, and a walkway in front of them.
   {
-    id: 'sea', x: 138, z: 22, w: 24, d: 28, fence: 'hall', ground: 'stone', board: 'n',
+    id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', ground: 'stone', board: 'n',
     gate: { side: 'n', at: 0, w: 4 },
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
   },
   {
-    id: 'seals', in: 'sea', x: 130, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    id: 'seals', in: 'sea', x: 73, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
     name: L('물개', 'Seals', 'アザラシ', '海豹'),
     pond: [0, 1.5, 3.2], props: [['rock', 2, -4]],
     groups: [{ kind: 'seal', n: 3 }],
     feed: { at: [-1.5, -4.5], offset: 360, food: 'fish' },
   },
   {
-    id: 'walrus', in: 'sea', x: 138, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    id: 'walrus', in: 'sea', x: 81, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
     name: L('바다코끼리', 'Walrus', 'セイウチ', '海象'),
     pond: [0, 2, 3.2], props: [['rock', -2, -4.5]],
     groups: [{ kind: 'walrus', n: 1 }],
   },
   {
-    id: 'polarbear', in: 'sea', x: 146, z: 28.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
+    id: 'polarbear', in: 'sea', x: 89, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
     name: L('북극곰', 'Polar Bear', 'ホッキョクグマ', '北极熊'),
     pond: [0, 2.5, 3], props: [['rock', 2, -4.5]],
     groups: [{ kind: 'polarbear', n: 1 }],
   },
   {
-    id: 'hippos', x: 163, z: 22, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
+    id: 'hippos', x: 108, z: -21, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
     name: L('하마', 'Hippos', 'カバ', '河马'),
     pond: [0, 4, 7], props: [['tree', 7, 11]],
     groups: [{ kind: 'hippo', n: 2 }],
     melon: [-3, -15.8], melonIn: [0, 1],
   },
-  // The savanna: elephants (a mother and her calf), giraffes and zebras
-  // together, on dry ground with a waterhole and trees to browse. A low glass
-  // wall at the front so you can watch them over it.
+  // North-east: big cats and birds of prey.
   {
-    id: 'savanna', x: 157, z: 72, w: 56, d: 34, fence: 'glass', ground: 'dirt', board: 'n',
-    name: L('초식동물마을', 'Savanna', '草食動物の村', '草食动物村'),
-    pond: [-14, 6, 5], props: [['tree', 18, 8], ['tree', 22, -6], ['tree', 6, 12], ['rock', -4, -10]],
-    groups: [
-      { kind: 'elephant', n: 2, box: [-24, -12, -2, 13] },
-      { kind: 'giraffe', n: 2, box: [4, -12, 25, 13] },
-      { kind: 'zebra', n: 3, box: [-20, -13, 25, 13] },
-    ],
-    feed: { at: [0, -12], offset: 540, food: 'greens' },
+    id: 'tigers', x: 143, z: -20, w: 21, d: 28, fence: 'mesh', ground: 'grass', board: 's',
+    name: L('호랑이', 'Tigers', 'トラ', '老虎'),
+    pond: [4, -7, 3], props: [['rock', -5, -2], ['tree', -6, -10]],
+    groups: [{ kind: 'tiger', n: 2 }],
+    feed: { at: [0, 10], offset: 0, food: 'meat' },
   },
   {
-    id: 'reptiles', x: 90, z: -62, w: 14, d: 10, fence: 'house', ground: 'stone', board: 's',
-    name: L('파충류관', 'Reptile House', '爬虫類館', '爬行动物馆'),
-    props: [['rock', 3, -2]],
-    groups: [{ kind: 'snake', n: 1, box: [-5, -3, 5, 3] }],
+    id: 'lions', x: 168, z: -20, w: 21, d: 28, fence: 'mesh', ground: 'dirt', board: 's',
+    name: L('사자', 'Lions', 'ライオン', '狮子'),
+    props: [['rock', 3, -6], ['rock', -4, -9, 1], ['tree', -6, 2]],
+    groups: [{ kind: 'lion', n: 3 }],
+    feed: { at: [0, 10], offset: 120, food: 'meat' },
+  },
+  {
+    id: 'bears', x: 150, z: -50, w: 32, d: 16, fence: 'mesh', ground: 'dirt', board: 's',
+    name: L('곰', 'Bears', 'クマ', '熊'),
+    pond: [11, -1, 4], props: [['rock', -9, -3], ['tree', -14, -4], ['log', 2, -3]],
+    groups: [{ kind: 'bear', n: 2 }],
+    feed: { at: [-4, 5], offset: 240, food: 'fish' },
+  },
+  // Cinereous vultures (독수리: what Koreans call "doksuri"; they winter in
+  // Korea): a tall aviary with dead trees to perch on. They fly from tree to
+  // tree round it.
+  {
+    id: 'eagles', x: 177, z: -52, w: 19, d: 16, fence: 'aviary', tall: 9, ground: 'grass', board: 's',
+    name: L('독수리', 'Cinereous Vultures', 'クロハゲワシ', '秃鹫'),
+    props: [['perch', -6, -3, 0, 4.2], ['perch', 5, -4, 2, 5.4], ['perch', 1, 3.5, 1, 2.4], ['perch', -6.5, 4, 0.5, 3], ['rock', 3, -1]],
+    groups: [{ kind: 'vulture', n: 3 }],
+    feed: { at: [-2, 2], offset: 300, food: 'meat' },
+  },
+  // South-east: the savanna, elephants (a mother and her calf), giraffes and
+  // zebras together on one big plain with a waterhole and trees to browse.
+  // A low glass wall all round so you can watch them over it.
+  {
+    id: 'savanna', x: 158, z: 45, w: 54, d: 74, fence: 'glass', ground: 'dirt', board: 'n',
+    name: L('초식동물마을', 'Savanna', '草食動物の村', '草食动物村'),
+    pond: [-12, 8, 7],
+    props: [['tree', 20, -20], ['tree', 22, 6], ['tree', 8, 26], ['tree', -20, 28], ['tree', 14, -30], ['tree', -6, 18], ['tree', 23, 30], ['tree', -23, -8], ['rock', -4, -14], ['rock', -21, -24], ['rock', 12, 12]],
+    groups: [
+      { kind: 'elephant', n: 2, box: [-24, -30, -4, 30] },
+      { kind: 'giraffe', n: 3, box: [4, -32, 25, 32] },
+      { kind: 'zebra', n: 7, box: [-24, -34, 25, 34] },
+    ],
+    feed: { at: [0, -32], offset: 540, food: 'greens' },
   },
 ];
+
+// The cart station just inside the gate, between the ring road's west side
+// and the little animal village: three four-seat carts (game/zoo-carts.js).
+// Carts stay in the zoo: `area` is where they may go, from the station.
+export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [-1.6, -11], area: [55 - 71.5, -80 - 17, 200 - 71.5, 95 - 17] };
 
 const r1 = (v) => Math.round(v * 10) / 10;
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
@@ -155,7 +199,7 @@ function lineBlocker([x1, z1, x2, z2], ox, oz) {
 }
 
 export function buildMap() {
-  const { x0, x1, z0, z1, cx } = LOOP;
+  const { x0, x1, z0, z1, w } = RING;
   const map = {
     meta: {
       district: 'grand-park',
@@ -164,8 +208,10 @@ export function buildMap() {
     roads: [
       { k: 'secondary', w: 14, p: [[0, -80], [0, 95]], n: L('능동로', 'Neungdong-ro', '陵洞路', '陵洞路') },
       { k: 'walk', w: 6, p: [[50, 0], [x1, 0]] },
-      { k: 'walk', w: 5, p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, z0]] },
-      { k: 'walk', w: 5, p: [[cx, z0], [cx, z1]] },
+      { k: 'walk', w, p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, z0]] }, // the ring road (carts)
+      { k: 'walk', w: 5, p: [[CROSS, z0], [CROSS, z1]] },
+      { k: 'walk', w: 4, p: [[x0, NORTH_PATH], [x1, NORTH_PATH]] },
+      { k: 'walk', w: 4, p: [[x0, SOUTH_PATH], [CROSS, SOUTH_PATH]] },
     ],
     buildings: [{ h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') }],
     rail: [],
@@ -173,21 +219,21 @@ export function buildMap() {
       // The park ground round the zoo, leaving the gate plaza out.
       { k: 'park', p: [[7, -80], [200, -80], [200, 95], [7, 95], [7, 22], [50, 22], [50, -22], [7, -22]] },
       { k: 'plaza', p: rect(7, -22, 50, 22) },
-      // Woods: a strip round the outside.
-      { k: 'park', trees: true, p: rect(50, -80, 80, -52) },
-      { k: 'park', trees: true, p: rect(100, -80, 128, -52) },
-      { k: 'park', trees: true, p: rect(172, -80, 200, -52) },
-      { k: 'park', trees: true, p: rect(80, -80, 172, -72) },
-      { k: 'park', trees: true, p: rect(188, -52, 200, 95) },
-      { k: 'park', trees: true, p: rect(126, 90, 188, 95) }, // (the savanna fills the rest)
-      { k: 'park', trees: true, p: rect(50, 76, 126, 95) },
+      // Woods: a strip between the ring road and the zoo's edge (a gap on the
+      // west side by the hole in the hoarding), and the corner by the monkeys.
+      { k: 'park', trees: true, p: rect(55, -80, 200, -73) },
+      { k: 'park', trees: true, p: rect(55, 89, 200, 95) },
+      { k: 'park', trees: true, p: rect(193, -73, 200, 89) },
+      { k: 'park', trees: true, p: rect(55, -73, 63, -40) },
+      { k: 'park', trees: true, p: rect(55, -28, 63, 89) },
+      { k: 'park', trees: true, p: rect(113, 47, 125, 83) },
       { k: 'park', trees: true, p: rect(7, -80, 50, -52) },
       { k: 'park', trees: true, p: rect(7, 30, 52, 95) },
     ],
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
       // (while the zoo is closed, the park's pin is the gate plaza: taxis can't go in)
-      { kind: 'landmark', x: ZOO_OPEN ? cx : 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
+      { kind: 'landmark', x: ZOO_OPEN ? CROSS : 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
       ...PENS.filter((p) => !p.in).map((p) => ({ kind: 'landmark', x: p.x, z: p.z, name: p.name })),
     ],
     landmarks: [
@@ -212,6 +258,7 @@ export function buildMap() {
         },
       },
       ...PENS.map((p) => ({ type: 'zoopen', ...p })),
+      { type: 'zoocarts', ...CARTS },
     ],
   };
   for (const pen of PENS) for (const line of fenceLines(pen)) map.blockers.push(lineBlocker(line, pen.x, pen.z));

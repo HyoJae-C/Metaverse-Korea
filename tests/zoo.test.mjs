@@ -203,3 +203,67 @@ test('a gap at the foot of the hoarding, on its line, for anyone to crawl throug
   const blk = map.blockers.filter((b) => b.p.some(([x]) => x < hole.x) && b.p.some(([x]) => x > hole.x) && b.p.some(([, z]) => z <= hole.z) && b.p.some(([, z]) => z >= hole.z));
   assert.ok(blk.length >= 1);
 });
+
+test('the vultures sit on their perches, open their wings, and fly round inside the tall aviary', () => {
+  const pen = { ...PENS.find((p) => p.id === 'eagles'), name: null, feed: null };
+  assert.ok(pen.tall >= 8 && pen.fence === 'aviary');
+  const zoo = new Zoo(new THREE.Scene(), [pen]);
+  const P = zoo.pens[0];
+  zoo.update(0.05, { x: pen.x, z: pen.z + 30 });
+  const perches = zoo._perches(P);
+  for (const a of P.animals) assert.ok(perches.includes(a.at), 'starts on a perch');
+  assert.equal(new Set(P.animals.map((a) => a.at)).size, P.animals.length, 'one bird a perch');
+  let high = 0, flew = 0, spread = 0;
+  for (let i = 0; i < 3000; i++) {
+    zoo.update(0.05, { x: pen.x, z: pen.z + 30 });
+    for (const a of P.animals) {
+      const p = a.root.position;
+      assert.ok(Math.abs(p.x) < pen.w / 2 && Math.abs(p.z) < pen.d / 2 && p.y < pen.tall, 'inside the aviary');
+      if (a.fl) { flew++; high = Math.max(high, p.y); }
+      spread = Math.max(spread, a.spread);
+    }
+  }
+  assert.ok(flew > 0 && high > 5, 'flies up high');
+  assert.ok(spread > 0.9, 'opens its wings');
+  for (const a of P.animals) if (!a.fl) assert.ok(Math.abs(a.root.position.y - a.at.y) < 1e-6, 'lands on a perch');
+});
+
+test('the cart station sits inside the zoo, off the paths and pens, and carts stay in the zoo', async () => {
+  const { createZooCarts, CART } = await import('../src/game/zoo-carts.js');
+  const st = map.landmarks.find((l) => l.type === 'zoocarts');
+  assert.ok(st && st.carts.length === 3);
+  for (const [cx, cz] of st.carts) {
+    const b = [st.x + cx - 0.8, st.z + cz - 1.6, st.x + cx + 0.8, st.z + cz + 1.6];
+    for (const p of PENS) assert.ok(!overlap(b, box(p), 0.5), `cart clear of ${p.id}`);
+    for (const r of map.roads.filter((x) => x.k === 'walk')) for (let i = 1; i < r.p.length; i++) {
+      const [[x1, z1], [x2, z2]] = [r.p[i - 1], r.p[i]];
+      assert.ok(!overlap(b, [Math.min(x1, x2) - r.w / 2, Math.min(z1, z2) - r.w / 2, Math.max(x1, x2) + r.w / 2, Math.max(z1, z2) + r.w / 2]), 'cart off the path');
+    }
+  }
+  const toasts = [];
+  const game = { station: st, riding: 0, seated: null, shop: { toast: (m) => toasts.push(m) }, setRiding(k) { game.riding = k; } };
+  const carts = createZooCarts(game);
+  const at = { x: st.x + st.carts[1][0] - 1.5, z: st.z + st.carts[1][1] };
+  assert.equal(carts.act({ x: st.x - 40, z: st.z }), null, 'not away from the station');
+  carts.act(at).run();
+  assert.equal(game.riding, CART);
+  carts.tick({ x: 120, z: 0 });
+  assert.equal(game.riding, CART, 'fine anywhere in the zoo');
+  carts.tick({ x: 40, z: 0 });
+  assert.equal(game.riding, 0, 'out of the gate: back to the station');
+  assert.equal(toasts.length, 2);
+});
+
+test('every pen faces a path: its board side is a few steps from one', () => {
+  const walks = map.roads.filter((r) => r.k === 'walk').flatMap((r) => r.p.slice(1).map((q, i) => [r.p[i], q, r.w]));
+  for (const p of PENS.filter((q) => !q.in)) {
+    const side = p.board || 'n';
+    const [fx, fz] = { n: [p.x, p.z - p.d / 2], s: [p.x, p.z + p.d / 2], w: [p.x - p.w / 2, p.z], e: [p.x + p.w / 2, p.z] }[side];
+    const near = walks.some(([[x1, z1], [x2, z2], w]) => {
+      const [ax, bx, az, bz] = [Math.min(x1, x2), Math.max(x1, x2), Math.min(z1, z2), Math.max(z1, z2)];
+      const dx = Math.max(ax - fx, 0, fx - bx), dz = Math.max(az - fz, 0, fz - bz);
+      return Math.hypot(dx, dz) - w / 2 < 6;
+    });
+    assert.ok(near, `${p.id} faces a path`);
+  }
+});

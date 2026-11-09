@@ -647,4 +647,8 @@ export const EN = {
   "fountain.on": "🌈 The Moonlight Rainbow Fountain is on: rainbow water pours from both sides of Banpo Bridge.",
   "fountain.photo": "📸 Photo time: the whole bridge pours rainbows for the last minute.",
   "fountain.next": "🌈 The Moonlight Rainbow Fountain's next show is in {min} min.",
+  "zoocart.rent": "🛺 Zoo cart (4 seats, free)",
+  "zoocart.off": "Return the cart",
+  "zoocart.got": "Your zoo cart! Drive anywhere in the zoo. Walk up to friends to offer them a seat (up to 3).",
+  "zoocart.out": "Carts stay inside the zoo, so this one went back to its station.",
 };

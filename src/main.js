@@ -142,6 +142,7 @@ import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
+import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -1092,12 +1093,12 @@ const CAR = 26; // car: big roads only
 const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
-const isCar = (k) => k === 4 || k === 6; // sports car, limousine
+const isCar = (k) => k === 4 || k === 6 || k === CART; // sports car, limousine, the zoo's cart
 let inSkate = false; // in the skate park (rides slow down there; see skateTick)
 const skater = new Skater();
 let skateY = 0; // ground (or air) height in the skate park
 let skateTk = null; // { code, at }: the last trick, sent to others for a moment
-const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
+const rideSpeed = () => (riding === CART ? CART_SPEED : isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
 // Steady walk (a setting, PC and phone): a pace between walking and running
 // that never turns into a run, however long you keep moving. No stamina used;
@@ -5336,6 +5337,11 @@ function renderScenes() {
   }
 }
 
+// The zoo's four-seat carts (src/game/zoo-carts.js).
+const zooCarts = createZooCarts({
+  station: map.landmarks.find((l) => l.type === 'zoocarts') || null, shop, setRiding: (k) => setRiding(k),
+  get riding() { return riding; }, get seated() { return seated; },
+});
 const duckBoats = createDuckBoats({
   park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
   others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
@@ -5955,6 +5961,7 @@ function updateAction(p, tSec) {
       const seat = freeSeat();
       next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
     } else if (riding === 1 && inSkate) next = { key: 'trick', label: '🤸 ' + L(SKATE_TEXT.trick), run: () => skater.tap() }; // (the bike button gets off)
+    else if (riding === CART) next = zooCarts.offAct(); // (game/zoo-carts.js)
     else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
@@ -5979,6 +5986,7 @@ function updateAction(p, tSec) {
     else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
     else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
     else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding
+    else if (zooCarts.act(p)) next = zooCarts.act(p); // the zoo's cart station
     else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
@@ -6651,7 +6659,7 @@ renderer.setAnimationLoop((now) => {
   others.fences = petFences();
   others.update(dt, camera, w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { zoo.update(dt, p); zooCarts.tick(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

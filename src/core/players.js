@@ -271,7 +271,7 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        const inCar = p.target.bk === 3 && [4, 6].includes(this.players.get(p.target.on)?.target?.bk);
+        const inCar = p.target.bk === 3 && [4, 6, 7].includes(this.players.get(p.target.on)?.target?.bk);
         const bv = p.target.bk === 1 ? String(p.target.bv || '').slice(0, 40) : '';
         if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar || bv !== (p.bv || '')) {
           p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;

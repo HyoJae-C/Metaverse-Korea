@@ -19,7 +19,7 @@ export const engineHz = (speed01, car = false) => (car ? 30 : 38) + Math.max(0, 
 // How loud someone else's bell or horn is at distance d (0 = silent).
 export const hearGain = (d) => (d >= HEAR_RADIUS ? 0 : Math.max(0, 1 - d / HEAR_RADIUS) ** 1.5);
 // Which "honk" a vehicle has: bicycles ring, motor vehicles beep.
-export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 || riding === 6 ? 'horn' : null);
+export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 || riding === 6 || riding === 7 ? 'horn' : null);
 export const honkMsg = (kind) => `honk:${kind}`;
 export function parseHonk(e) {
   const m = /^honk:(bell|horn)$/.exec(String(e));
@@ -69,7 +69,7 @@ export class MotionSound {
     // Wind and engine.
     // (Sound switched off: let them fade out.)
     this._setWind(c, c && st.riding ? WIND_MAX * st.speed01 * (st.riding >= 4 ? 1 : 0.7) : 0);
-    this._setEngine(c, c && st.riding >= 4 ? st.speed01 : -1, st.riding === 4 || st.riding === 6);
+    this._setEngine(c, c && st.riding >= 4 && st.riding !== 7 ? st.speed01 : -1, st.riding === 4 || st.riding === 6);
   }
   stopAll() { this._setWind(null, 0); this._setEngine(null, -1); }
 

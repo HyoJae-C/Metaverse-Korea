@@ -648,4 +648,8 @@ export const ZH = {
   "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
   "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
   "fountain.next": "🌈 下一场月光彩虹喷泉在{min}分钟后。",
+  "zoocart.rent": "🛺 动物园游览车（4座，免费）",
+  "zoocart.off": "归还游览车",
+  "zoocart.got": "借到游览车了！在动物园里随便开。走近朋友就能请他们上车（最多3人）。",
+  "zoocart.out": "游览车只能在动物园里开，已经送回车站了。",
 };

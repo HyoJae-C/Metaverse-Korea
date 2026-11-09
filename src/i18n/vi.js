@@ -645,4 +645,8 @@ export const VI = {
   "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
   "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
   "fountain.next": "🌈 Buổi diễn tiếp theo của Đài phun nước Cầu vồng sau {min} phút.",
+  "zoocart.rent": "🛺 Xe điện sở thú (4 chỗ, miễn phí)",
+  "zoocart.off": "Trả xe",
+  "zoocart.got": "Xe điện của bạn! Lái khắp sở thú. Lại gần bạn bè để mời họ lên xe (tối đa 3 người).",
+  "zoocart.out": "Xe chỉ chạy trong sở thú nên đã về lại trạm.",
 };
