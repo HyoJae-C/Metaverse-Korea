@@ -404,11 +404,13 @@ export function buildPark(store, ROOM, EXIT) {
   const setNight = (k) => {
     if (Math.abs(k - nightShown) < 0.002) return;
     nightShown = k;
-    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
-    scene.fog.color.copy(scene.background);
-    scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
-    hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
-    river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    if (!open) { // (open to the street: the sky, light and river are the street's, main.js)
+      scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+      scene.fog.color.copy(scene.background);
+      scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
+      hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+      river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    }
     lamps.glowMat.emissiveIntensity = 0.5 + 2 * k;
     lamps.poolMat.opacity = 0.32 * k; lamps.pools.visible = k > 0.01;
     kioskWindow.emissive.set('#fff1c8'); kioskWindow.emissiveIntensity = 0.9 * k;

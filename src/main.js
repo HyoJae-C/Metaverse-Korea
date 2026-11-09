@@ -5102,6 +5102,16 @@ function updateDroneShow() {
 // booms (sound travels slower than light: about 0.3 s per 100 m) and the
 // notices on the lawn.
 const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
+// Ttukseom's drone show turns the street's sky dark too, on and around its
+// open lawn (fading out from 150 to 300 m), as Yeouido's fireworks do.
+function droneNight(op, p, street) {
+  const o = openParks.find((x) => x.item.store.id === 'ttukseom-hangang');
+  const k = o?.built?.show?.night || 0;
+  if (!k || !street) return 0;
+  if (op === o) return k;
+  const d = Math.hypot(p.x - o.ox, p.z - o.oz);
+  return k * Math.min(1, Math.max(0, (300 - d) / 150));
+}
 function updateFireworks() {
   const s = fireworksAt();
   if (s && s.t < -FIREWORKS_ALERT + 30 && fireworks.alerted !== s.start) { fireworks.alerted = s.start; shop.toast(L(FIREWORKS_TEXT.soon)); }
@@ -5110,7 +5120,7 @@ function updateFireworks() {
   const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
-  weather.nightMix = night;
+  weather.nightMix = Math.max(night, droneNight(op, p, street));
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;

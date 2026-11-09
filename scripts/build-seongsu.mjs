@@ -136,9 +136,14 @@ const AREAS = [
   { k: 'grass', p: [...FOREST_EDGE, [-110, 294], [-65, 321], [-35, 340], [-8, 358], [260, 358], ...RIVER_EDGE.slice().reverse()] },
   { k: 'water', p: [...RIVER_EDGE, [260, 410], [WEST, 410]] }, // Han River
 ];
-// A few buildings placed by hand: the Han River park gate and a café pavilion.
+// Ttukseom Han River Park (core/park.js) is open to the street: no gate, you
+// walk from the Han River path straight onto its lawn on the straight bank
+// (z 386). It faces south over the river, so its own frame is turned half
+// round (ry = π): x = x0 - x, z = (386 - 4) - z. It covers x x0-26..x0+26 and
+// z 368..386 (plus the pier, the duck boats and the drone barge on the water).
+export const OPEN_PARK = { x0: 44, bank: 386, depth: 18 };
+// A building placed by hand: the Seoul Forest Culture Center.
 const EXTRA = [
-  { h: 4.5, p: [[20, 362], [40, 362], [40, 368], [20, 368]], tag: 'ttukseom' }, // park gate (Ttukseom Han River Park shop)
   { h: 6, p: [[-232, 120], [-216, 120], [-216, 132], [-232, 132]], tag: 'forest' }, // Seoul Forest Culture Center (stores.json seoul-forest-culture; door on the north side)
 ];
 const BLOCKERS = [{ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), [260, 410], [WEST, 410]] }]; // the river
@@ -639,7 +644,7 @@ if (process.argv.includes('--place')) {
     text[key] = setAt(text[key], id, at);
   };
   for (const [id, spot] of [...PLACE, ...PLACE_NEW]) if (!MOVED_AWAY.has(id)) placeOne(id, spot);
-  text.stores = setAt(text.stores, 'ttukseom-hangang', [30, 360]); // by the Han River park gate
+  text.stores = setAt(text.stores, 'ttukseom-hangang', [OPEN_PARK.x0, OPEN_PARK.bank - OPEN_PARK.depth - 1]); // just behind the open-air park's lawn (stores.json "open" is its frame)
   await writeFile(files.stores, text.stores);
   await writeFile(files.homes, text.homes);
   console.log(`placed ${used.size} shops; ${lots.length - used.size} shop lots left empty`);

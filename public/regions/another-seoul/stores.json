@@ -335,7 +335,7 @@
       "size": "park",
       "name": { "ko": "뚝섬 한강공원", "en": "Ttukseom Han River Park", "ja": "トゥクソム漢江公園", "zh": "纛岛汉江公园" },
       "tagline": {"en": "Fish from the pier, cook ramen and shop at the riverside market", "ko": "한강에서 낚시하고 라면 끓여 먹고, 강변장터 구경하기", "ja": "桟橋で釣り、川辺でラーメン、そして川辺市場でお買い物", "zh": "在码头钓鱼、江边煮拉面，再逛逛江边集市"},
-      "at": [30, 360],
+      "at": [44, 367], "open": { "at": [44, 382], "ry": 3.1416, "skyline": true },
       "colors": { "sign": "#2f8f5b", "awning": "#9fd8b4", "accent": "#e9f6ee" },
       "kiosk": {"name": {"ko": "데일리마트", "en": "DAILY MART", "ja": "デイリーマート", "zh": "DAILY MART"}, "color": "#2f9e6e"},
       "market": {
