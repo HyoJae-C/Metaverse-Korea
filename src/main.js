@@ -2698,7 +2698,7 @@ function goMuseumFloor(floor) {
 let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
 const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
 function enterHaunted() {
-  if (mode !== 'store' || !interior?.park || performance.now() < hauntSwitching) return;
+  if (mode !== 'store' || !interior?.themepark || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
   const front = interior.front;
   endRide();
@@ -6054,9 +6054,9 @@ function updateAction(p, tSec) {
       next = { key: 'ride-view:' + ride.view, label: to === 'scenic' ? '🏞️ ' + t('ride.scenic') : (to === 'third' ? '🎥 ' : '👀 ') + L(to === 'third' ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = to; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
-    } else if (interior.park && coasterAction(p)) {
+    } else if (interior.themepark && coasterAction(p)) {
       next = coasterAction(p);
-    } else if (interior.park && nearStation(p, 'booth', 1.6)) {
+    } else if (interior.themepark && nearStation(p, 'booth', 1.6)) {
       const name = L(DAY_PASS_TEXT.rides);
       next = ridePass()
         ? { key: 'ride-pass-held', label: '🎫 ' + fmt(L(DAY_PASS_TEXT.ridesHeld), { name }), run: buyRidePass }
@@ -6067,7 +6067,7 @@ function updateAction(p, tSec) {
       next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
       next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
-    } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
+    } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);

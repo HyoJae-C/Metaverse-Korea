@@ -91,3 +91,20 @@ test('Another Land outside: wheel and drop tower are tall, the coaster loops', a
   assert.equal(dropHeight(1), DROP.low);
   assert.ok(COASTER.every(([, y]) => y >= 4), 'track stays off the ground');
 });
+
+test('ride guests only sit in the theme park, not in a Han River park (also `park: true`)', async () => {
+  const { createParkRiders } = await import('../src/game/park-riders.js');
+  const riders = createParkRiders(null);
+  const hanPark = { park: true, rides: [{ kind: 'viking' }], scene: { add() { throw new Error('no guests here'); } } };
+  assert.equal(riders.spawn(hanPark) ?? null, null);
+  assert.equal(hanPark.riderNpcs, undefined);
+});
+
+test('only Another Land carries the `themepark` flag (the Han River parks share `park`)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = (f) => readFileSync(new URL('../src/core/' + f, import.meta.url), 'utf8');
+  assert.match(src('themepark.js'), /themepark: true/);
+  assert.doesNotMatch(src('park.js'), /themepark/);
+  // Theme-park-only code keys on `themepark`, never on the shared `park` flag.
+  assert.doesNotMatch(readFileSync(new URL('../src/game/park-riders.js', import.meta.url), 'utf8'), /\.park\b/);
+});
