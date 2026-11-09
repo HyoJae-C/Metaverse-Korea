@@ -148,12 +148,12 @@ const SQUARE = [-137.6, -94.4]; // Mul-bit Square, u
 // north shore, and on west of it to Mangwon's river.
 function river() {
   // the real north bank (scripts/han-bank.mjs) from Mangwon's map (its own
-  // river ends at x -3142) to Banpo-Jamwon, then across to its map's river
-  const north = [...northBetween(-3142, -1394), [-1312, 880]];
+  // river reaches x -3218 on the bank) to Banpo-Jamwon, then across to its map's river
+  const north = [...northBetween(-3300, -1394), [-1312, 880]];
   const shore = []; // the east end of the park round the north shore to the west tip
   for (let i = SHORE_EAST; ; i = (i + 1) % ISLAND.length) { shore.push(world(at(...ISLAND[i]))); if (i === WEST_TIP) break; }
   const south = [[-1620, 950], [-1960, 900], ...OSM.southBankEast.slice().reverse(), ...shore,
-    [-3240, 276], [-3300, 225], [-3300, 48], [-3142, 48]]; // (west of the island: the real south bank, then up to Mangwon's river)
+    [-3240, 276], [-3300, 225]]; // (west of the island: the real south bank, then up the edge of Mangwon's river)
   const p = [...north, ...south];
   // Its blocker, cut on both sides of Seogang Bridge.
   const gap = BRIDGE_W / 2 + 1;

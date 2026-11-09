@@ -146,16 +146,16 @@ export const STAMPS = [
     icon: '<path d="M60 132 l20 -60 M140 132 l-20 -60 M66 116 h68 M71 100 h58 M76 86 h48"/><path d="M100 70 q-22 -2 -18 -20 q4 -16 18 -12 q14 -4 18 12 q4 18 -18 20 z M100 70 v26"/>',
   },
   {
-    // at the south gate of Mangwon Market, on Poeun-ro
-    id: 'mangwon-market', place: { at: [-3282, -276] }, color: '#c0392b', shape: 'square',
+    // beside the south gate of Mangwon Market (scripts/build-mangwon.mjs: market.gate)
+    id: 'mangwon-market', place: { at: [-3285.3, -294.8] }, color: '#c0392b', shape: 'square',
     name: { ko: '망원시장', en: 'Mangwon Market', ja: '望遠市場', zh: '望远市场' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // the arcade roof over a stall, a croquette on a skewer
     icon: '<path d="M56 96 q44 -40 88 0 M60 96 v32 M140 96 v32 M56 128 h88"/><path d="M72 112 h56 v16 h-56 z"/><ellipse cx="100" cy="84" rx="12" ry="8"/><path d="M100 92 v12"/>',
   },
   {
-    // where the way down from Mangwon meets the river, in the park laid on the street (scripts/build-mapo.mjs prints the spot)
-    id: 'mangwon-pier', place: { at: [-3428, -56], ry: 4.7124 }, color: '#2f78b0', shape: 'circle',
+    // where the way down from Mangwon-ro meets the river, in the park laid on the street (scripts/build-mapo.mjs prints the spot)
+    id: 'mangwon-pier', place: { at: [-3524.9, -267.9], ry: 3.9794 }, color: '#2f78b0', shape: 'circle',
     name: { ko: '망원한강공원', en: 'Mangwon Han River Park', ja: '望遠漢江公園', zh: '望远汉江公园' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a fishing rod with a fish on the line, over the waves
