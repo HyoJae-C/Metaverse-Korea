@@ -53,6 +53,16 @@ export const SKY_TEXT = {
   left: { en: '{name} let go', ko: '{name}님이 내렸어요', ja: '{name}さんが降りました', zh: '{name} 下去了' },
   letGo: { en: 'Let go', ko: '내리기', ja: '降りる', zh: '下去' },
   drop: { en: 'Put them down', ko: '내려 주기', ja: '降ろす', zh: '放下' },
+  track: { en: 'Auto flight', ko: '자동 비행', ja: '自動飛行', zh: '自动飞行' },
+  follow: { en: 'Follow a person', ko: '사람 따라가기', ja: '人について行く', zh: '跟随玩家' },
+  goPlace: { en: 'Fly to a place', ko: '장소로 날아가기', ja: '場所へ飛ぶ', zh: '飞到地点' },
+  nobodyAround: { en: 'Nobody around to follow', ko: '따라갈 사람이 없어요', ja: 'ついて行ける人がいません', zh: '附近没有可跟随的人' },
+  search: { en: 'Search a shop or place', ko: '매장이나 장소 검색', ja: 'お店や場所を検索', zh: '搜索店铺或地点' },
+  following: { en: 'Following {name}. Move to take over', ko: '{name}님을 따라가요. 직접 움직이면 풀려요', ja: '{name}さんについて行きます。操作すると解除', zh: '正在跟随 {name}，操作即可取消' },
+  flyingTo: { en: 'Flying to {name}. Move to take over', ko: '{name}(으)로 날아가요. 직접 움직이면 풀려요', ja: '{name}へ飛びます。操作すると解除', zh: '正在飞往 {name}，操作即可取消' },
+  arrived: { en: 'Here: {name}', ko: '도착: {name}', ja: '到着：{name}', zh: '到达：{name}' },
+  trackOff: { en: 'Auto flight off', ko: '자동 비행을 껐어요', ja: '自動飛行をオフにしました', zh: '已关闭自动飞行' },
+  lost: { en: 'Lost them', ko: '따라가던 사람이 사라졌어요', ja: '見失いました', zh: '跟丢了' },
   down: { en: 'Back to the street', ko: '거리로 내려가기', ja: '通りに降りる', zh: '回到街上' },
 };
 const fmt = (s, o) => String(s).replace(/\{(\w+)\}/g, (_, k) => o[k] ?? '');
@@ -124,6 +134,7 @@ export function createSkyFlight(game) {
   let costume = null;
   let savedLook = null, swapped = false, savedFog = null;
   let opOk = false;
+  let track = null, trackH = 14; // auto flight: { kind: 'player', id, name } or { kind: 'place', x, z, name }; height over them
   let climbBtn = 0, dashBtn = false, fxT = 0, lastRy = 0, roll = 0, hf = 0, fist = 0, climb = 0;
   let landAt = null; // { x, z, y, roof } where to land
   let roof = null; // the rooftop we stand on
@@ -171,11 +182,12 @@ export function createSkyFlight(game) {
     pad.up = button('▲', 'Fly up', () => { climbBtn = 1; }, () => { if (climbBtn === 1) climbBtn = 0; });
     pad.down = button('▼', 'Fly down', () => { climbBtn = -1; }, () => { if (climbBtn === -1) climbBtn = 0; });
     pad.dash = button('⚡', 'Dash', () => { dashBtn = true; }, () => { dashBtn = false; });
+    pad.track = button('🎯', 'Auto flight', () => (track ? stopTrack(true) : trackMenu()));
     pad.carry = button('🫴', 'Carry someone', () => carryMenu());
     pad.drop = button('🙌', 'Put them down', () => dropAll());
     pad.letGo = button('🪂', 'Let go', () => letGo());
     pad.street = button('⬇', 'Back to the street', () => toStreet());
-    pad.append(pad.up, pad.down, pad.dash, pad.carry, pad.drop, pad.letGo, pad.street);
+    pad.append(pad.up, pad.down, pad.dash, pad.track, pad.carry, pad.drop, pad.letGo, pad.street);
     document.body.append(pad);
   }
   function refreshPad() {
@@ -185,7 +197,9 @@ export function createSkyFlight(game) {
     if (!pad) makePad();
     pad.hidden = !any;
     pad.up.hidden = pad.down.hidden = pad.dash.hidden = !flying;
-    pad.carry.hidden = !(flying && phase === 'fly');
+    pad.carry.hidden = pad.track.hidden = !(flying && phase === 'fly');
+    pad.track.style.background = track ? 'rgba(255,120,80,.85)' : '';
+    if (!track) pad.track.style.cssText = BTN;
     pad.drop.hidden = !(flying && carriers.size);
     pad.letGo.hidden = !carried;
     pad.street.hidden = !(roof && !kind && !carried);
@@ -209,6 +223,86 @@ export function createSkyFlight(game) {
       panel.append(b);
     }
     document.body.append(panel);
+  }
+
+  // ---------- Auto flight ----------
+  function stopTrack(say) { if (track && say) toast(SKY_TEXT.trackOff); track = null; }
+  function trackMenu() {
+    if (!kind || phase !== 'fly') return;
+    showPanel('🎯 ' + L(SKY_TEXT.track), [
+      ['🧑 ' + L(SKY_TEXT.follow), followMenu],
+      ['📍 ' + L(SKY_TEXT.goPlace), placeMenu],
+      ['✖', () => {}],
+    ]);
+  }
+  function followMenu() {
+    const me = game.me.root.position, list = [];
+    for (const [id, q] of game.others?.players || []) {
+      if (q.hidden || !q.target || !q.ch.root.visible) continue;
+      const r = q.ch.root.position;
+      list.push([Math.hypot(r.x - me.x, r.z - me.z), id]);
+    }
+    list.sort((a, b) => a[0] - b[0]);
+    if (!list.length) { toast(SKY_TEXT.nobodyAround); return; }
+    showPanel('🧑 ' + L(SKY_TEXT.follow), [
+      ...list.slice(0, 8).map(([d, id]) => [`${nameOf(id)} · ${Math.round(d)} m`, () => {
+        track = { kind: 'player', id, name: nameOf(id) };
+        toast(SKY_TEXT.following, { name: track.name });
+      }]),
+      ['✖', () => {}],
+    ]);
+  }
+  function placeMenu() {
+    showPanel('📍 ' + L(SKY_TEXT.goPlace), [['✖', () => {}]]);
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.placeholder = L(SKY_TEXT.search);
+    input.style.cssText = 'border:1px solid #e4d6cf;border-radius:10px;padding:9px 12px;font:15px system-ui,sans-serif';
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto';
+    panel.insertBefore(list, panel.lastChild);
+    panel.insertBefore(input, list);
+    const all = game.places?.() || [];
+    const draw = () => {
+      const q = input.value.trim().toLowerCase();
+      const me = game.me.root.position;
+      const hits = all.filter((pl) => !q || pl.name.toLowerCase().includes(q))
+        .sort((a, b) => (q ? 0 : Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z)) || a.name.length - b.name.length)
+        .slice(0, 12);
+      list.replaceChildren(...hits.map((pl) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = `${pl.icon || '📍'} ${pl.name} · ${Math.round(Math.hypot(pl.x - me.x, pl.z - me.z))} m`;
+        b.style.cssText = CHOICE + ';text-align:left';
+        b.onclick = () => {
+          closePanel();
+          track = { kind: 'place', x: pl.x, z: pl.z, name: pl.name };
+          toast(SKY_TEXT.flyingTo, { name: pl.name });
+        };
+        return b;
+      }));
+    };
+    input.oninput = draw;
+    draw();
+    input.focus();
+  }
+  // Where auto flight heads now: [x, y, z], or null (and stops) when done.
+  const aim = new THREE.Vector3();
+  function trackAim(p) {
+    if (track.kind === 'player') {
+      const q = game.others?.players.get(track.id);
+      if (!q || q.hidden || !q.target) { toast(SKY_TEXT.lost); track = null; return null; }
+      const r = q.ch.root.position;
+      // Hang back 8 m on our side of them, trackH over their head.
+      let dx = p.x - r.x, dz = p.z - r.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.5) { dx = -Math.sin(q.ch.root.rotation.y); dz = -Math.cos(q.ch.root.rotation.y); } else { dx /= d; dz /= d; }
+      return aim.set(r.x + dx * 8, r.y + trackH, r.z + dz * 8);
+    }
+    const d = Math.hypot(track.x - p.x, track.z - p.z);
+    if (d < 2) { toast(SKY_TEXT.arrived, { name: track.name }); track = null; return null; }
+    // Cruise high over the roofs while far, then come down to look.
+    return aim.set(track.x, d > 60 ? Math.max(p.y, 45) : trackH + 6, track.z);
   }
 
   // ---------- Carrying ----------
@@ -318,6 +412,7 @@ export function createSkyFlight(game) {
   // Back on our own feet: the costume off, the look and the fog as they were.
   function finish(quiet = false) {
     if (!kind) return;
+    track = null;
     dropAll();
     if (swapped) wear(false);
     costume?.dispose();
@@ -449,7 +544,14 @@ export function createSkyFlight(game) {
       climb = climbBtn || ((k?.has('Space') || k?.has('KeyR') ? 1 : 0) - (k?.has('KeyC') || k?.has('KeyF') ? 1 : 0));
       const sp = fast ? FAST : SKY_SPEED;
       const fx0 = -Math.sin(yaw), fz0 = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
-      v1.set((fx0 * my + rx * mx) * sp, climb * (fast ? FAST_CLIMB : CLIMB), (fz0 * my + rz * mx) * sp);
+      if (track && Math.hypot(mx, my) > 0.15) stopTrack(true); // the player took over
+      const goal = track && trackAim(p);
+      if (goal) {
+        // Up / down still work: they change how high we hang over them.
+        trackH = Math.min(120, Math.max(3, trackH + climb * CLIMB * dt));
+        v1.subVectors(goal, p).multiplyScalar(1.6);
+        if (v1.length() > FAST) v1.setLength(FAST);
+      } else v1.set((fx0 * my + rx * mx) * sp, climb * (fast ? FAST_CLIMB : CLIMB), (fz0 * my + rz * mx) * sp);
       vel.lerp(v1, 1 - Math.exp(-dt * 3));
       p.addScaledVector(vel, dt);
       p.y = Math.min(TOP, Math.max(0, p.y));
