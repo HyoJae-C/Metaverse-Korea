@@ -68,13 +68,41 @@ const SAETGANG = [[-330, 90], [-260, 175], [260, 175], [330, 90], [310, 232], [-
 export const BRIDGE_NORTH = [-2776.7, -16.7]; // world
 const [BRIDGE_U, BRIDGE_V] = toUV(BRIDGE_NORTH);
 export const BRIDGE_W = 12;
-// The Han River park (core/park.js) is open to the street here: no park
-// house, you walk straight onto its lawn in the fishing corner, just east of
-// Seogang Bridge. Its own frame is this one moved so its bank (z = -4) sits
-// on the shore (v = 0): x = u - u0, z = v - 4. It covers u u0-26..u0+26 and
-// v 0..18 (plus the pier and the duck boats on the water). stores.json
-// "open" holds the same origin in world metres.
-export const OPEN_PARK = { u0: -186, half: 26, v0: 4, v1: 18 };
+// Yeouido Han River Park, laid straight on the street (game/han-parks.js;
+// core/han-park.js builds what the map can't draw). Its own frame is the
+// island's: x = u, z = v (the shore's edge at z = 0, the river z < 0). At
+// 1/4, as the real park is along the north shore, west to east:
+//  - the fishing corner by Seogang Bridge: a pier, the fish buyer and the
+//    kiosk with its ramen machine (Han River ramen is a Yeouido thing);
+//  - the wide fireworks lawn, open to the river (picnic mats, frisbees);
+//  - Mul-bit Square, where the night market's stalls stand round its pool;
+//  - the boat dock east of it, by the Information Center.
+export const PARK = {
+  bounds: [-268, -45, 268, 43], // the whole shore, from the water to the path
+  layout: {
+    paving: [[-200, 0.4, -152, 7, '#d9c7a6'], [-152, 14, -118, 37, '#d6ccb8']],
+    rail: [-262, 262], railGaps: [[BRIDGE_U - 7.6, BRIDGE_U + 7.6]], // (Seogang Bridge lands on the shore)
+    pier: { x: -186, len: 10 },
+    fishBuy: [-178, 4.2, 0],
+    fishing: [[-252, 0.75], [-207, 0.75], [-186, -9.2], [-160, 0.75]],
+    kiosk: [-136, 30.5, Math.PI], // YEOUIDO 24, at the corner of the lawn, facing the river
+    tables: [[-146, 23.6], [-140, 20.6], [-131, 20.6], [-125, 23.6]],
+    market: {
+      spots: [[124.5, 34.2, Math.PI], [128.2, 34.2, Math.PI], [159.8, 34.2, Math.PI], [163.5, 34.2, Math.PI]], // round Mul-bit Square's pool, facing it
+      tables: [[121.5, 14], [121.5, 21.5]],
+      board: [119.2, 33.4, Math.PI / 2],
+    },
+    dock: 190,
+    duckWater: { minX: 172, maxX: 250, minZ: -38 },
+    lamps: [[-245, 2.6], [-215, 2.6], [-170, 2.6], [-150, 9], [175, 2.6], [205, 2.6], [235, 2.6]],
+    benches: [[-240, 3.4], [-196, 9.2], [-164, 9.2], [228, 3.4]],
+    beds: [[-200, 9.6, 4], [-150, 12.4, 3], [181, 5.6, 3]],
+    trees: [[-258, 30], [-247, 33], [-163, 32], [-157, 22]],
+    bushes: [[-170, 12], [-205, 13], [214, 6]],
+  },
+};
+// Where on the street the park's things go (the district's metres).
+const park = (x, z) => at(x, z);
 
 // The Han River from Mangwon to Banpo-Jamwon (world metres): the old north
 // bank, and on the south side the island's north shore, so the main channel
@@ -160,7 +188,9 @@ function build() {
       } },
   ];
   // Benches on the shore facing the river (none on the bridge's landing).
-  for (const u of [-255, -150, -125, -95, -65, -35, -5, 25, 55, 85, 110, 185, 215, 245]) landmarks.push({ type: 'bench', ...xz(at(u, 4.5)), ry: FACE_RIVER });
+  for (const u of [-125, -95, -65, -35, -5, 25, 55, 85, 110, 245]) landmarks.push({ type: 'bench', ...xz(at(u, 4.5)), ry: FACE_RIVER }); // (the park has its own in the fishing corner and by the dock)
+  // The park itself (game/han-parks.js): its frame is the island's.
+  landmarks.push({ type: 'hanpark', store: 'yeouido-hangang', ...xz(at(0, 0)), ry: +ALONG_V.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
   const pois = [
     { kind: 'landmark', ...xz(at(-20, 20)), name: name('Yeouido Han River Park', '여의도 한강공원', '汝矣島漢江公園', '汝矣岛汉江公园') },
     { kind: 'landmark', ...xz(at(BRIDGE_U, BRIDGE_V / 2)), name: name('Seogang Bridge', '서강대교', '西江大橋', '西江大桥') },
@@ -179,7 +209,7 @@ function xz([x, z]) { return { x, z }; }
 
 // Where each place's door is, in the district's own metres.
 export const SPOTS = {
-  'yeouido-hangang': at(OPEN_PARK.u0, OPEN_PARK.v1 + 1), // just behind the open-air park's lawn (where a taxi or the map drops you)
+  'yeouido-hangang': at(-150, PATH), // on the river path at the corner of the lawn, by the kiosk (where a taxi or the map drops you)
   'info-yeouido': at(203, PATH - 2.5),
 };
 
@@ -202,15 +232,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     if (i < 0) { console.log(`${sid}: not in stores.json`); continue; }
     let end = stores.indexOf('\n    {', i);
     if (end < 0) end = stores.length;
-    let part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${x}, ${z}]`);
-    // The open-air park's frame (core/park.js metres → world), right after "at".
-    if (sid === 'yeouido-hangang') {
-      const [ox, oz] = world(at(OPEN_PARK.u0, OPEN_PARK.v0));
-      const open = `"open": { "at": [${ox}, ${oz}], "ry": ${ALONG_V.toFixed(4)} }`;
-      part = part.replace(/, "open": \{[^}]*\}/, '').replace(/("at": \[[^\]]*\])/, `$1, ${open}`);
-    }
+    const part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${x}, ${z}]`);
     stores = stores.slice(0, i) + part + stores.slice(end);
   }
   writeFileSync(path.join(R, 'stores.json'), stores);
+  const [sx, sz] = world(park(-214, 5));
+  console.log(`park stamp stand: [${sx}, ${sz}], ry ${(ALONG_V + Math.PI / 2).toFixed(4)}`);
   console.log(`yeouido: ${map.buildings.length} buildings; bridge ${r1(-BRIDGE_V)} m over the water at u ${r1(BRIDGE_U)}; park drop-off ${world(SPOTS['yeouido-hangang'])}, local ${SPOTS['yeouido-hangang']}`);
 }

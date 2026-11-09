@@ -250,12 +250,14 @@ and its blocker is cut for Seogang Bridge. The Saetgang, the narrow arm
 south of the island, is the district's own water and blocker. Seogang Bridge
 starts on the Han River Bike Path where "To the Han River" comes down from
 Hongdae, so Hongdae walks straight onto it. On the island: Yeouido Han River
-Park along the north shore (the fishing corner with the park house door, an
-open picnic lawn with no trees, `lawn: true`, Mul-bit Square's shallow pool,
-the Information Center), the Han River path, Yunjung-ro with cherry trees
+Park along the north shore, laid straight on the street like Banpo-Jamwon's
+(`PARK` in the script, `game/han-parks.js`): the fishing corner by Seogang
+Bridge (a pier, the fish buyer, the kiosk with its ramen machine), the open
+fireworks lawn with no trees (`lawn: true`), the night market's stalls round
+Mul-bit Square's shallow pool, and the boat dock by the Information Center; the Han River path, Yunjung-ro with cherry trees
 that are only pink in spring (`blossoms` with `seasonal`), plain office
 towers and the 63 tower on the east tip (a blocker and a landmark, not
-walkable). The park room's ★5 legend is the blobfish. Run the script again
+walkable). The park's ★5 legend is the blobfish. Run the script again
 after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
