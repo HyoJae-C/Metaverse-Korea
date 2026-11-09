@@ -32,9 +32,19 @@ and Yeonmujang 17-gil (Seongsu's busiest shopping alleys, on Yozi's map),
 with narrow fronts (9.5–12 m); the blocks west and east of them are offices.
 Each street side that faces a shopping street there is lined with small shop
 buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
-finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
-its own layout, drawn in its old frame and moved as one piece by
-`FOREST_SHIFT`, and runs south to its real edge by Gangbyeonbuk-ro. The Han
+finds their front from `f`). Seoul Forest lies west of Wangsimni-ro on its real
+outline at 1/4 (`scripts/data/seoul-forest-osm.json`, OpenStreetMap): west
+to x -549, with its piece north of Seoulsup-gil and its real ponds (Seoul
+Forest Lake, the Mirror Pond, the wetland and the small ones). The roads round
+and through it are real too: Seoulsup-gil and Gwangnaru-ro on the north,
+Gosanja-ro down the west side to Ttukseom-ro (south of there it is Seongsu
+Bridge's ramp, not drawn), and Ttukseom-ro across the park, drawn only at the
+two open ends of the Rainbow Tunnel. The corner by Seoul Forest Station that
+is not park has towers. What is in the park (Metasequoia Avenue, the hill,
+the gardens, the greenhouse, the galleries) is drawn in its old frame (old =
+world + 130, 154) and moved as one piece by `FOREST_SHIFT`, placed to keep
+clear of the real roads and ponds. The links to Itaewon and Wangsimni start at
+Ttukseom-ro's west end and Gosanja-ro's north end. The Han
 River's bank is the real one (OpenStreetMap) all the way to Ttukseom Han
 River Park, east of Cheongdam Bridge, whose straight bank (about 9° off
 east-west, within about 10 m of the real one) runs on to Jamsil Bridge
