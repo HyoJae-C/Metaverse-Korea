@@ -509,6 +509,7 @@ export const EN = {
   'home.putDown': 'Put down',
   'home.remove': 'Remove',
   'home.leave': 'Go outside',
+  'zoo.leave': 'Leave the zoo',
   'home.full': 'Your home is full.',
   'shop.enter': 'Enter {name}',
   'shop.look': 'Look at {name}',

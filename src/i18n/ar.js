@@ -513,6 +513,7 @@ export const AR = {
   'home.putDown': 'ضع',
   'home.remove': 'أزِل',
   'home.leave': 'اخرج',
+  'zoo.leave': 'غادر حديقة الحيوان',
   'home.full': 'بيتك ممتلئ.',
   'shop.enter': 'ادخل {name}',
   'shop.look': 'انظر إلى {name}',

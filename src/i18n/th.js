@@ -511,6 +511,7 @@ export const TH = {
   'home.putDown': 'วางลง',
   'home.remove': 'นำออก',
   'home.leave': 'ออกไปข้างนอก',
+  'zoo.leave': 'ออกจากสวนสัตว์',
   'home.full': 'บ้านของคุณเต็มแล้ว',
   'shop.enter': 'เข้า {name}',
   'shop.look': 'ดู {name}',

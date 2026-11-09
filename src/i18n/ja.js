@@ -510,6 +510,7 @@ export const JA = {
   'home.putDown': '置く',
   'home.remove': '片付ける',
   'home.leave': '外に出る',
+  'zoo.leave': '動物園を出る',
   'home.full': '部屋がいっぱいです。',
   'shop.enter': '{name}に入る',
   'shop.look': '{name}を見る',

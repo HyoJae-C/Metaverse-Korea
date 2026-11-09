@@ -29,6 +29,8 @@ export const VOICES = {
   peacock: { fan: 'peacock' },
   vulture: { fly: 'hiss', eat: 'hiss' },
   snake: { walk: 'snakehiss' },
+  kangaroo: { chase: 'thump', situp: 'grunt' }, // (a thump of the feet; a soft cough)
+  camel: { nudge: 'grunt', dust: 'bellow', drink: 'grunt' }, // (camels groan and moan)
 };
 // How loud each call is at the animal (0..1, before the distance falls off).
 export const LOUD = {

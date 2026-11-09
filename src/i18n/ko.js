@@ -510,6 +510,7 @@ export const KO = {
   'home.putDown': '내려놓기',
   'home.remove': '치우기',
   'home.leave': '밖으로 나가기',
+  'zoo.leave': '동물원에서 나가기',
   'home.full': '집이 가득 찼어요.',
   'shop.enter': '{name} 들어가기',
   'shop.look': '{name} 보기',

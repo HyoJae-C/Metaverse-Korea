@@ -513,6 +513,7 @@ export const ID = {
   'home.putDown': 'Taruh',
   'home.remove': 'Singkirkan',
   'home.leave': 'Keluar rumah',
+  'zoo.leave': 'Keluar dari kebun binatang',
   'home.full': 'Rumahmu sudah penuh.',
   'shop.enter': 'Masuk ke {name}',
   'shop.look': 'Lihat {name}',

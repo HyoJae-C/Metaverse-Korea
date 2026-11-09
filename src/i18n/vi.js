@@ -513,6 +513,7 @@ export const VI = {
   'home.putDown': 'Đặt xuống',
   'home.remove': 'Cất đi',
   'home.leave': 'Ra ngoài',
+  'zoo.leave': 'Rời sở thú',
   'home.full': 'Nhà bạn đã đầy.',
   'shop.enter': 'Vào {name}',
   'shop.look': 'Xem {name}',

@@ -779,15 +779,15 @@
       "products": []
     },
     {
-      "id": "cgp-sea-hall",
+      "id": "cgp-zoo",
       "category": "play",
-      "workshop": "zoo-sea",
-      "size": "zoosea",
-      "at": [489, -122.4],
+      "workshop": "zoo",
+      "size": "zoo",
+      "at": [458, -86],
       "district": "grand-park",
-      "name": { "en": "Sea Animals", "ko": "바다동물관", "ja": "海の動物館", "zh": "海洋动物馆" },
-      "tagline": { "en": "The zoo's indoor hall: seals, a walrus and a polar bear behind glass", "ko": "동물원 실내관: 유리 너머 물개, 바다코끼리, 북극곰", "ja": "動物園の屋内館：ガラス越しのアザラシ、セイウチ、ホッキョクグマ", "zh": "动物园室内馆：玻璃后的海豹、海象和北极熊" },
-      "colors": { "sign": "#3f86b8", "awning": "#bfe3f2", "accent": "#eaf7ff" },
+      "name": { "en": "Grand Park Zoo", "ko": "어린이대공원 동물원", "ja": "子供大公園動物園", "zh": "儿童大公园动物园" },
+      "tagline": { "en": "Walk in to the zoo: lions, tigers, elephants, giraffes, zebras, kangaroos, camels, hippos, the Sea Animals hall and a petting village, with free carts to drive round", "ko": "동물원 입장: 사자, 호랑이, 코끼리, 기린, 얼룩말, 캥거루, 낙타, 하마, 바다동물관과 꼬마동물마을, 무료 카트도 있어요", "ja": "動物園に入る：ライオン、トラ、ゾウ、キリン、シマウマ、カンガルー、ラクダ、カバ、海の動物館とこども動物村、無料カートも", "zh": "进入动物园：狮子、老虎、大象、长颈鹿、斑马、袋鼠、骆驼、河马、海洋动物馆和小动物村，还有免费电动车" },
+      "colors": { "sign": "#3f9b5a", "awning": "#cdebd3", "accent": "#f3fbf2" },
       "products": []
     },
     {

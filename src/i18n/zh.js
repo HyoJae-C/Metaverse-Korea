@@ -510,6 +510,7 @@ export const ZH = {
   'home.putDown': '放下',
   'home.remove': '移除',
   'home.leave': '出门',
+  'zoo.leave': '离开动物园',
   'home.full': '房间已经满了。',
   'shop.enter': '进入{name}',
   'shop.look': '查看{name}',

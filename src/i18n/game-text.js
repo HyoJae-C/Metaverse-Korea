@@ -38,8 +38,6 @@ export const ZOO_TEXT = {
   buy: { en: 'Watermelon for the hippo', ko: '하마 수박', ja: 'カバのスイカ', zh: '河马的西瓜' },
 };
 
-export const DOGHOLE_TEXT = { en: '🐾 Crawl through the gap', ko: '🐾 개구멍으로 들어가기', ja: '🐾 すき間をくぐる', zh: '🐾 从缝里钻过去' };
-
 export const ONBOARD_TEXT = {
   hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', vi: '👋 Chào mừng! Hãy 🙌 đập tay với người hướng dẫn quảng trường.', hi: '👋 स्वागत है! चौक के गाइड को 🙌 हाई-फ़ाइव दें।', fr: '👋 Bienvenue ! Tape 🙌 dans la main du guide de la place.', th: '👋 ยินดีต้อนรับ! 🙌 ไฮไฟว์กับไกด์ประจำลานหน่อย', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
   button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', vi: 'Đập tay với người hướng dẫn', hi: 'गाइड को हाई-फ़ाइव दें', fr: 'Taper dans la main du guide', th: 'ไฮไฟว์กับไกด์', id: 'Tos dengan pemandu' },

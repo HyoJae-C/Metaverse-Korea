@@ -14,7 +14,7 @@ import { BANK, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
-import { cgpGate, doghole, hoarding, zooCartStation, zooFlowers } from './grand-park.js';
+import { cgpGate, zooEntrance, zooFence } from './grand-park.js';
 import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -99,8 +99,7 @@ const BUILD = {
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
-  zooflowers: (g, l) => zooFlowers(g, l), // the zoo's flower plaza, beds and borders (core/grand-park.js)
-  zoocarts: (g, l) => zooCartStation(g, l), // the zoo's cart station (core/grand-park.js; renting: game/zoo-carts.js)
+  zooentrance: (g, l) => zooEntrance(g, l), // the zoo's entrance building: its door leads into the zoo (core/zoo-park.js)
   konext: (g, l) => konext(g, l), // KONEXT, the mall by Samseong Station (core/konext.js)
   aquarium: (g, l) => aquariumPavilion(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
@@ -627,8 +626,7 @@ export function buildLandmarks(list = [], scene) {
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
     else if (l.type === 'avenue') avenue(g, l);
-    else if (l.type === 'doghole') doghole(g, l); // (a gap anyone can crawl through: main.js)
-    else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
+    else if (l.type === 'zoofence') zooFence(g, l); // (the zoo's railing round its wood: core/grand-park.js)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);
       if (typeof tick === 'function') ticks.push(tick);

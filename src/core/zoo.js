@@ -42,6 +42,8 @@ const KIND = {
   giraffe: { speed: 0.9, rest: 0.3 },
   zebra: { speed: 1.6, rest: 0.3 },
   vulture: { speed: 0.5, rest: 0.5 },
+  kangaroo: { speed: 1.5, rest: 0.4 },
+  camel: { speed: 0.7, rest: 0.4 },
 };
 // Things animals do together, and on their own (core/zoo.js _social, _solo).
 //   pair: walk over to a pen-mate of the same kind, then do it together.
@@ -62,6 +64,8 @@ const SOCIAL = {
   giraffe: { pair: 'necking', p: 0.2, solo: [['browse', 0.3], ['drink', 0.12]] },
   zebra: { pair: 'groom', p: 0.2, solo: [['gallop', 0.18], ['drink', 0.12], ['dust', 0.08]] },
   flamingo: { solo: [['oneleg', 0.3]] },
+  kangaroo: { pair: 'chase', p: 0.2, solo: [['situp', 0.3]] }, // (up on their tails, looking round)
+  camel: { pair: 'nudge', p: 0.15, solo: [['dust', 0.15], ['drink', 0.1]] },
 };
 // How long each act lasts (s).
 const ACT_T = { tussle: 5, wrestle: 6, butt: 4, nudge: 4, trunks: 6, necking: 7, groom: 7, pace: 0, roll: 4, stretch: 2.5, roar: 3, situp: 5, rear: 2, binky: 1.6, popcorn: 1.4, bark: 3, yawn: 3, spray: 5, drink: 6, browse: 7, dust: 4, oneleg: 8 };
@@ -80,7 +84,7 @@ const COIL = (() => {
 })();
 // How deep a swimmer sinks in its pond (metres), so only its back shows.
 const SINK = { polarbear: 0.6, seal: 0.3, walrus: 0.5, hippo: 0.8 };
-const RADIUS = { elephant: 2, giraffe: 1.1, zebra: 0.85, rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3, vulture: 0.5 };
+const RADIUS = { elephant: 2, giraffe: 1.1, zebra: 0.85, rabbit: 0.2, guineapig: 0.3, goat: 0.45, sheep: 0.45, macaque: 0.3, flamingo: 0.3, pelican: 0.4, peacock: 0.35, tiger: 1.1, lion: 1.1, bear: 1.1, polarbear: 1.2, seal: 0.6, walrus: 1, hippo: 1.3, snake: 0.3, vulture: 0.5, kangaroo: 0.5, camel: 1 };
 
 // Feeding times: every pen with "feed" has one every FEED_CYCLE seconds, at
 // its own offset, on the wall clock, so everyone sees the same feeding.
@@ -453,7 +457,7 @@ export class Zoo {
     const g = new THREE.Group();
     g.name = 'zoopen:' + pen.id;
     g.position.set(pen.x, 0, pen.z);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(pen.w, pen.d).rotateX(-Math.PI / 2), mat(pen.ground === 'dirt' ? '#d8c08f' : pen.ground === 'stone' ? '#cfd3d6' : '#86c46a'));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(pen.w, pen.d).rotateX(-Math.PI / 2), mat(pen.ground === 'dirt' ? '#d8c08f' : pen.ground === 'sand' ? '#ead6a0' : pen.ground === 'stone' ? '#cfd3d6' : '#86c46a'));
     ground.position.y = pen.in ? 0.04 : 0.03; // a tank's floor sits on its hall's
     ground.receiveShadow = true;
     g.add(ground);
@@ -942,7 +946,7 @@ export class Zoo {
         r.position.z += (dz / d) * Math.min(sp, d);
         turn(r, Math.atan2(dx, dz), dt);
         moving = true;
-        if (a.hop) hop = Math.abs(Math.sin(a.phase * 8)) * 0.12;
+        if (a.hop) hop = Math.abs(Math.sin(a.phase * (a.hopRate || 8))) * (a.hopH || 0.12);
         if (a.shuffles && a.sink < 0.1) hop = Math.abs(Math.sin(a.phase * 6)) * 0.06;
       }
     } else if (a.state === 'happy') {
@@ -955,7 +959,7 @@ export class Zoo {
       if (a.state === 'cheeky') hop = Math.abs(Math.sin(a.phase * 9)) * 0.25;
     } else if (a.state === 'chase') {
       const q = a.prey, dx = q.root.position.x - r.position.x, dz = q.root.position.z - r.position.z, d = Math.hypot(dx, dz);
-      if (d > 0.6) { const sp = k.speed * 2.4 * dt; r.position.x += (dx / d) * sp; r.position.z += (dz / d) * sp; turn(r, Math.atan2(dx, dz), dt); moving = true; }
+      if (d > 0.6) { const sp = k.speed * 2.4 * dt; r.position.x += (dx / d) * sp; r.position.z += (dz / d) * sp; turn(r, Math.atan2(dx, dz), dt); moving = true; if (a.hop) hop = Math.abs(Math.sin(a.phase * (a.hopRate || 8))) * (a.hopH || 0.12); }
     } else if (a.state === 'flip') {
       const u = 1 - Math.max(0, a.t) / 0.9; // 0..1
       hop = Math.sin(u * Math.PI) * 0.7;
