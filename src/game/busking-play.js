@@ -3,6 +3,7 @@
 // themselves (stage, singer, dancers, crowd) are core/busking.js; this is
 // the player's side: start/stop, the clapping tips and the busking song.
 import { readTips, writeTips, takeTip } from '../core/busking.js';
+import { SINGER, FACE_AUDIENCE } from '../core/busking-layout.js';
 import { dayKey } from '../core/daily.js';
 import { showBubble } from '../core/players.js';
 import { L } from '../ui/pocha-ui.js';
@@ -14,8 +15,10 @@ export function createBuskingPlay(game) {
 
   function startBusking(s) {
     busking.start(s);
-    game.me.root.position.set(s.x, 0, s.z);
-    game.me.root.rotation.y = 0; // face the crowd
+    // On the singer's spot (the stage), not the middle of the zone: the frame
+    // loop stops busking as soon as you're off the stage.
+    game.me.root.position.set(s.x + SINGER[0], 0, s.z + SINGER[1]);
+    game.me.root.rotation.y = FACE_AUDIENCE; // face the crowd on the bank
     showBubble(game.myLabel, $('labels'), '🎤🎶', 3000);
     game.shop.toast(L(BUSK_TEXT.begin));
     game.action = STALE;
