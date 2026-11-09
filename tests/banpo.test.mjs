@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fishById, chanceAt, legendPark, rollCatch, PARK_LEGENDS, TIER_SHARE } from '../src/core/fishing.js';
+import { fishById, chanceAt, parkOf, rollCatch, PARK_FISH, TIER_SHARE } from '../src/core/fishing.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { STAMPS } from '../src/data/stamps.js';
 
@@ -70,9 +70,9 @@ test('the manta ray is Banpo-Jamwon\'s legend, and only bites there', () => {
   const manta = fishById('manta');
   assert.ok(manta.released);
   for (const id of ['kelp', 'octopus', 'sea-urchin', 'dolphin']) assert.ok(fishById(id).released, `${id} opens with the park`);
-  assert.equal(legendPark('manta').name.en, 'Banpo-Jamwon');
+  assert.equal(parkOf('manta').name.en, 'Banpo-Jamwon');
   assert.ok(Math.abs(chanceAt(manta, 'banpo-jamwon-hangang') - TIER_SHARE[5]) < 1e-9);
-  for (const park of Object.keys(PARK_LEGENDS).filter((p) => p !== 'banpo-jamwon-hangang')) assert.equal(chanceAt(manta, park), 0, park);
+  for (const park of Object.keys(PARK_FISH).filter((p) => p !== 'banpo-jamwon-hangang')) assert.equal(chanceAt(manta, park), 0, park);
   assert.equal(chanceAt(fishById('whale'), 'banpo-jamwon-hangang'), 0);
   assert.equal(chanceAt(fishById('giant-squid'), 'banpo-jamwon-hangang'), 0);
   let seed = 7;

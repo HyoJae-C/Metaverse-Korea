@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { biteWait } from '../src/core/fishing.js';
-import { PARK_LEGENDS, chanceAt } from '../src/core/fishing.js';
+import { PARK_FISH, PARK_TIER, parkOf, chanceAt } from '../src/core/fishing.js';
 import { FISH, AVAILABLE_FISH, rollFish, rollCatch, TRASH, TRASH_CHANCE, tapsFor, escapeChance, fishById, FishBag, FishDex, BAG_MAX } from '../src/core/fishing.js';
 
 const memory = () => {
@@ -9,20 +9,20 @@ const memory = () => {
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
 };
 
-test('49 stable catalogue entries, all released, nine stamps per page and four special catches', () => {
-  assert.equal(FISH.length, 49);
-  assert.equal(new Set(FISH.map(f => f.id)).size, 49);
-  assert.equal(AVAILABLE_FISH.length, 49);
-  assert.deepEqual(Array.from({ length: 6 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,4]);
+test('56 stable catalogue entries, all released, nine stamps per page and four special catches', () => {
+  assert.equal(FISH.length, 56);
+  assert.equal(new Set(FISH.map(f => f.id)).size, 56);
+  assert.equal(AVAILABLE_FISH.length, 56);
+  assert.deepEqual(Array.from({ length: 7 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,7,4]);
   assert.equal(fishById('whale').ko, '흰수염고래');
   assert.equal(fishById('shark').ko, '백상아리');
   assert.equal(FISH.filter(f => f.ko.endsWith('돔')).length, 1);
   for (const f of FISH) assert.ok(f.name.en && f.ko && f.rom);
 });
 
-test('tiers follow the agreed fish book: 14/14/11/6/4, legends alone on the last page', () => {
-  assert.deepEqual([1, 2, 3, 4, 5].map(r => FISH.filter(f => f.rarity === r).length), [14, 14, 11, 6, 4]);
-  assert.deepEqual(FISH.filter(f => f.page === 5).map(f => f.id).sort(), ['blobfish', 'giant-squid', 'manta', 'whale']);
+test('tiers follow the agreed fish book: 15/17/12/8/4, legends alone on the last page', () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map(r => FISH.filter(f => f.rarity === r).length), [15, 17, 12, 8, 4]);
+  assert.deepEqual(FISH.filter(f => f.page === 6).map(f => f.id).sort(), ['blobfish', 'giant-squid', 'manta', 'whale']);
   for (let i = 1; i < FISH.length; i++) assert.ok(FISH[i].rarity >= FISH[i - 1].rarity, FISH[i].id);
   assert.equal(fishById('shark').rarity, 4);
   assert.equal(fishById('tuna').ko, '참다랑어');
@@ -46,9 +46,9 @@ test('normalized lottery never selects unreleased entries and follows every prob
   assert.equal(rollCatch(() => 0.999999).id, AVAILABLE_FISH.at(-1).id);
 });
 
-test('difficulty is bounded for all 49 species and trash cannot escape', () => {
+test('difficulty is bounded for all 56 species and trash cannot escape', () => {
   for (const f of FISH) {
-    assert.ok(tapsFor(f) >= 5 && tapsFor(f) <= 18);
+    assert.ok(tapsFor(f) >= 6 && tapsFor(f) <= 18);
     assert.ok(escapeChance(f) >= 0 && escapeChance(f) <= 0.3);
     assert.equal(escapeChance(f, 1), escapeChance(f) / 2);
     assert.equal(tapsFor({...f}), tapsFor(f));
@@ -86,15 +86,22 @@ test('with every kind out, finishing the available collection finishes the whole
   assert.equal(new FishDex(st).kinds,0);
 });
 
-test('three bite lines for each of the five rarities; auto fishing never rolls a rare fish', async () => {
-  const { BITE_LINES, AUTO_FISH, rollAutoCatch, isRare, drainFor } = await import('../src/core/fishing.js');
-  for (const r of [1, 2, 3, 4, 5]) {
-    assert.equal(BITE_LINES[r].length, 3, `rarity ${r}`);
-    for (const l of BITE_LINES[r]) assert.ok(l.ko && l.en, `rarity ${r}`);
+test('bites feel three ways (★1-2, ★3-4, ★5); auto fishing never rolls a rare fish', async () => {
+  const { BITE_LINES, AUTO_FISH, rollAutoCatch, isRare, drainFor, feelOf } = await import('../src/core/fishing.js');
+  assert.deepEqual([TRASH, ...[1, 2, 3, 4, 5].map(r => ({ rarity: r }))].map(feelOf), [1, 1, 1, 2, 2, 3]);
+  for (const k of [1, 2, 3]) {
+    assert.ok(BITE_LINES[k].length >= 3, `feel ${k}`);
+    for (const l of BITE_LINES[k]) assert.ok(l.ko && l.en && l.ja && l.zh, `feel ${k}`);
   }
+  // nothing before landing tells a ★3 from a ★4, or a ★1 from a ★2
+  for (const [a, b] of [[1, 2], [3, 4]]) {
+    assert.equal(tapsFor({ rarity: a }), tapsFor({ rarity: b }));
+    assert.equal(drainFor({ rarity: a }), drainFor({ rarity: b }));
+  }
+  assert.equal(tapsFor(TRASH), tapsFor({ rarity: 1 }));
   assert.ok(AUTO_FISH.length && AUTO_FISH.every(f => f.released && !isRare(f)));
   for (let i = 0; i < 200; i++) assert.ok(!isRare(rollAutoCatch()));
-  assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 0, 1.2, 2, 2.8]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 0, 1.6, 1.6, 2.8]);
 });
 
 test('every kind has a picture, and saves with swapped-out kinds keep their counts', async () => {
@@ -174,19 +181,33 @@ test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishsta
   assert.equal(new FishStats(m, 7).get('cast'), 0);
 });
 
-test('each star tier bites less often in total than the one below it', () => {
-  const tier = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).reduce((a, f) => a + f.chance, 0);
-  for (let r = 2; r <= 5; r++) assert.ok(tier(r) < tier(r - 1), `★${r} ${tier(r)} < ★${r - 1} ${tier(r - 1)}`);
-  // and every ★4 kind is rarer than any ★3 kind
-  assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
-  // and every kind of each tier is rarer than any kind of the tier below,
-  // counting a park's ★5 legend at that park (it takes the whole ★5 share there)
-  const kinds = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).map(f => f.chance);
-  for (let r = 2; r <= 4; r++) assert.ok(Math.max(...kinds(r)) < Math.min(...kinds(r - 1)), `every ★${r} kind below every ★${r - 1} kind`);
-  for (const park of Object.keys(PARK_LEGENDS)) {
-    const legend = Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 5).map(f => chanceAt(f, park)));
-    assert.ok(legend < Math.min(...kinds(4)), `${park}: its legend (${legend}%) is rarer than the great white`);
+test('each star tier, and every kind in it, bites less often than the tier below, at every park', () => {
+  for (const park of [...Object.keys(PARK_FISH), null]) {
+    const here = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).map(f => chanceAt(f, park)).filter(c => c > 0);
+    const sum = (a) => a.reduce((x, y) => x + y, 0);
+    assert.ok(Math.abs(sum(AVAILABLE_FISH.map(f => chanceAt(f, park))) - 100) < 1e-9, `${park} adds up`);
+    for (let r = 2; r <= 5; r++) {
+      assert.ok(sum(here(r)) < sum(here(r - 1)), `${park}: ★${r} total below ★${r - 1}`);
+      assert.ok(Math.max(...here(r)) < Math.min(...here(r - 1)), `${park}: every ★${r} kind below every ★${r - 1} kind`);
+    }
   }
+});
+
+test('★1-2 bite everywhere; from ★3 each park has its own three ★3, two ★4 and one legend', () => {
+  const all = Object.values(PARK_FISH).flatMap(p => p.fish);
+  assert.deepEqual([...all].sort(), FISH.filter(f => f.rarity >= PARK_TIER).map(f => f.id).sort()); // each once
+  for (const [park, p] of Object.entries(PARK_FISH)) {
+    assert.deepEqual([3, 4, 5].map(r => p.fish.filter(id => fishById(id).rarity === r).length), [3, 2, 1], park);
+    for (const f of AVAILABLE_FISH) {
+      const mine = f.rarity < PARK_TIER || p.fish.includes(f.id);
+      assert.equal(chanceAt(f, park) > 0, mine, `${f.id} at ${park}`);
+    }
+  }
+  assert.equal(parkOf('whale').name.en, 'Ttukseom');
+  assert.equal(parkOf('axolotl').name.ko, '뚝섬');
+  assert.equal(parkOf('carp'), null);
+  // ★3, ★4 and ★5 each sell for one price, so every park pays the same
+  for (const r of [3, 4, 5]) assert.equal(new Set(FISH.filter(f => f.rarity === r).map(f => f.price)).size, 1, `★${r}`);
 });
 
 test('better rods cut the escape chance a little but never change which fish bite', async () => {

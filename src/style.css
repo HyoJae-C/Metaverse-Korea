@@ -1099,9 +1099,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-meter.auto i { background: linear-gradient(90deg, #8ec5ff, #4b8ec7); transition: width .25s linear; }
 .fish-water.rare { background: linear-gradient(#ff7a59, #b7243a); box-shadow: 0 0 0 3px #ffd166 inset; }
 .fish-callout { font-size: 26px; font-weight: 900; color: #ffe066; text-shadow: 0 2px 0 #7a1020, 0 0 12px rgba(255, 224, 102, .8); letter-spacing: .02em; animation: fish-callout .5s cubic-bezier(.2, 1.6, .4, 1) both, fish-pulse .5s ease-in-out .5s infinite; }
-.fish-callout.tier-1, .fish-callout.tier-2 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
-.fish-callout.tier-4 { font-size: 28px; color: #ffd166; }
-.fish-callout.tier-5 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
+.fish-callout.feel-1 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.fish-callout.feel-2 { font-size: 28px; color: #ffd166; }
+.fish-callout.feel-3 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
 @keyframes fish-callout { from { transform: scale(2.4) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .fish-auto-note { margin: 0; padding: 8px 10px; border-radius: 12px; background: #fff4d6; color: #7a5200; font-size: 13px; font-weight: 700; line-height: 1.4; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
@@ -2092,7 +2092,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
-.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=4") no-repeat; background-size: 700% 700%; }
+.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=5") no-repeat; background-size: 800% 700%; }
 .fish-pop-big.fish-stamp-sprite { width: 120px; }
 .fish-big.fish-stamp-sprite { width: 76px; }
 .fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
@@ -2243,16 +2243,12 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 
 /* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
    and the card and its shout grow with the stars. */
-.fish-water.bite.t1 { padding: 14px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
-.fish-water.bite.t2 { padding: 16px 12px; background: linear-gradient(135deg, #9ae9a4, #2a9a52); box-shadow: none; }
-.fish-water.bite.t3 { padding: 19px 12px; color: #4a2c00; background: linear-gradient(135deg, #fff08a, #f0b400); box-shadow: 0 0 0 3px #fff6c8 inset, 0 0 14px rgba(240, 180, 0, .55); }
-.fish-water.bite.t4 { padding: 23px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
-.fish-water.bite.t5 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
-.fish-water.bite .fish-callout.tier-1 { font-size: 18px; }
-.fish-water.bite .fish-callout.tier-2 { font-size: 21px; }
-.fish-water.bite .fish-callout.tier-3 { font-size: 24px; color: #6b2a00; text-shadow: 0 2px 0 #fff6c8, 0 0 10px rgba(255, 255, 255, .8); }
-.fish-water.bite .fish-callout.tier-4 { font-size: 27px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
-.fish-water.bite .fish-callout.tier-5 { font-size: 31px; }
+.fish-water.bite.feel-1 { padding: 15px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
+.fish-water.bite.feel-2 { padding: 22px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
+.fish-water.bite.feel-3 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
+.fish-water.bite .fish-callout.feel-1 { font-size: 19px; }
+.fish-water.bite .fish-callout.feel-2 { font-size: 26px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
+.fish-water.bite .fish-callout.feel-3 { font-size: 31px; }
 
 /* "New features, refresh" banner (ui/update-banner.js) */
 .update-banner {

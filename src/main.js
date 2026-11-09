@@ -3782,7 +3782,7 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
-  park: () => (hanPark() || interior)?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  park: () => (hanPark() || interior)?.store?.id || null, // which ★3+ kinds bite here (PARK_FISH in core/fishing.js)
   rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
   onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
