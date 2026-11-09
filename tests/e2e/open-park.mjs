@@ -70,6 +70,10 @@ try {
     // On the lawn: in the park.
     await page.evaluate(([x, z]) => __mk.place(x, z), world(0, 8));
     await page.waitForFunction((id) => __mk.room().id === id, id, { timeout: 10000 });
+    // On the map and the operators' live view: outdoors, where I am on the lawn (not at a door).
+    const out = await page.evaluate(() => __mk.outside());
+    const [lx8, lz8] = world(0, 8);
+    if (!out.out || Math.hypot(out.x - lx8, out.z - lz8) > 1) throw new Error(`the map puts me indoors or elsewhere: ${JSON.stringify(out)}`);
     const spots = await page.evaluate(() => __mk.spots());
     await page.evaluate(([x, z]) => __mk.place(x, z), spots[1]);
     await page.waitForFunction(() => (__mk.action() || '').includes('🎣'), null, { timeout: 5000 });
