@@ -415,6 +415,7 @@ export const ID = {
   'hud.music': 'Musik',
   'settings.title': 'Pengaturan',
   'settings.steady': 'Jalan stabil (tanpa lari)',
+  'settings.localSky': 'Siang & malam sesuai waktuku (bukan Seoul)',
   'settings.saver': 'Hemat baterai (lebih dingin, 30 fps)',
   'settings.firstPerson': 'Tampilan orang pertama (V)',
   'fp.on': 'Tampilan orang pertama: klik untuk memakai mouse, Esc untuk melepas, V atau perkecil untuk kembali',

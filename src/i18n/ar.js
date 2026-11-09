@@ -415,6 +415,7 @@ export const AR = {
   'hud.music': 'الموسيقى',
   'settings.title': 'الإعدادات',
   'settings.steady': 'مشي ثابت (بدون ركض)',
+  'settings.localSky': 'الليل والنهار حسب وقتي (بدلاً من سيول)',
   'settings.saver': 'موفّر البطارية (أبرد، 30 إطارًا)',
   'settings.firstPerson': 'منظور الشخص الأول (V)',
   'fp.on': 'منظور الشخص الأول: انقر لاستخدام الفأرة، Esc للإفلات، V أو التصغير للعودة',

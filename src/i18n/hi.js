@@ -415,6 +415,7 @@ export const HI = {
   'hud.music': 'संगीत',
   'settings.title': 'सेटिंग्स',
   'settings.steady': 'एक जैसी चाल (दौड़ना नहीं)',
+  'settings.localSky': 'मेरे समय के अनुसार दिन और रात (सियोल के बजाय)',
   'settings.saver': 'बैटरी सेवर (कम गर्म, 30 fps)',
   'settings.firstPerson': 'फ़र्स्ट-पर्सन व्यू (V)',
   'fp.on': 'फ़र्स्ट-पर्सन व्यू: माउस के लिए क्लिक करें, छोड़ने के लिए Esc, वापस जाने के लिए V या ज़ूम आउट',

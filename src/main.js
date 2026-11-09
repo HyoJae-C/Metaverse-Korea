@@ -90,7 +90,7 @@ import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed, daylight } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
@@ -2972,6 +2972,19 @@ $('steady-btn').onclick = () => {
   $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
   try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
 };
+// Day and night on my own clock instead of Seoul's (core/weather.js).
+{
+  let on = false;
+  try { on = localStorage.getItem('mk.localSky') === '1'; } catch { /* ignore */ }
+  setLocalSky(on);
+  $('localsky-btn').setAttribute('aria-pressed', String(on));
+  $('localsky-btn').onclick = () => {
+    on = !on;
+    setLocalSky(on);
+    $('localsky-btn').setAttribute('aria-pressed', String(on));
+    try { localStorage.setItem('mk.localSky', on ? '1' : '0'); } catch { /* ignore */ }
+  };
+}
 // Gentle ride effects (the roller coaster): half the zoom and shake, no leaning.
 const RIDE_FX_KEY = 'mk.rideFx'; // 'soft': the gentle ride effects (Settings)
 let rideFxSoft = false;
@@ -5234,7 +5247,7 @@ function updateFireworks() {
   }
   if (!fireworks.sky) return;
   if (!street) { fireworks.sky.points.visible = false; return; }
-  const fired = fireworks.sky.update(s.start, t, night, op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight);
+  const fired = fireworks.sky.update(s.start, t, Math.max(night, darkness()), op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight); // (bright from afar too when Seoul's night is real)
   // Booms: louder close by, later far away; at most a few a second.
   for (const b of fired) {
     const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
@@ -5255,7 +5268,7 @@ const hanParks = createHanParks({
   scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
   makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
-  night: () => 1 - daylight(weather.hour()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   onVisit: (store) => { roomVisit++; missionEvent('visit', store.id); }, // (as walking into a shop does)
   // What there is to do there (each made only when you're next to it).
   acts: {

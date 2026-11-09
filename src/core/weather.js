@@ -21,38 +21,86 @@ export { WEATHER_ICON, WEATHER_SLOT_MS, WEATHER_ODDS, SEASON_ODDS, SEASONS, seas
 import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
 const NIGHT_ICON = { clear: '🌙' };
 
-// Game clock: a whole day every 2 hours, the same for everyone. Daytime
-// (05:30-19:30, dawn and dusk included) takes 90 minutes, the night 30, so
-// it's light most of the time but you still see night come round.
-// Night is switched off for now: starting a first visit in the dark made the
-// colours look dull. Set to true to bring the day/night cycle back.
-// (?hour=21 still forces a time for testing.)
-export const DAY_NIGHT = false;
-const DAY_HOUR = 13;
-export const DAY_CYCLE_MS = 2 * 60 * 60 * 1000;
-const DAY_SHARE = 0.75;
-export function gameHour(nowMs = Date.now()) {
-  const u = ((nowMs % DAY_CYCLE_MS) + DAY_CYCLE_MS) % DAY_CYCLE_MS / DAY_CYCLE_MS;
-  const h = u < DAY_SHARE ? 5.5 + (u / DAY_SHARE) * 14 : 19.5 + ((u - DAY_SHARE) / (1 - DAY_SHARE)) * 10;
-  return h % 24;
+// Time of day: Seoul's own (KST, UTC+9, no daylight saving), the same for
+// everyone: it's night in the game when it's night in Seoul. Sunrise and
+// sunset move with the seasons (about 05:10 and 19:55 in June, 07:45 and
+// 17:20 around New Year), from the usual textbook sun formula: good to a
+// few minutes, no table to download. ?hour=21 forces a time for testing.
+const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
+const LAT = 37.57 * Math.PI / 180, LON = 126.98; // Seoul
+export function seoulHour(nowMs = Date.now()) {
+  return ((((nowMs + KST) / HOUR) % 24) + 24) % 24;
+}
+// Today's sunrise and sunset in Seoul, in hours (KST).
+export function sunTimes(nowMs = Date.now()) {
+  const y = new Date(nowMs + KST).getUTCFullYear();
+  const doy = (nowMs + KST - Date.UTC(y, 0, 1)) / DAY; // days into the year
+  const B = (2 * Math.PI * (doy - 81)) / 365;
+  const decl = (23.44 * Math.PI / 180) * Math.sin(B);
+  const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B); // minutes
+  const noon = 12 + ((135 - LON) * 4 - eot) / 60; // Seoul is west of the KST meridian (135°E)
+  const half = Math.acos((Math.sin(-0.833 * Math.PI / 180) - Math.sin(LAT) * Math.sin(decl)) / (Math.cos(LAT) * Math.cos(decl))) * 12 / Math.PI;
+  return { rise: noon - half, set: noon + half };
 }
 
-// 0 = night, 1 = full day, with ~1.5 h dawn and dusk ramps.
-export function daylight(hour) {
+// 0 = night, 1 = full day, with a dawn and a dusk of about 1 h 20 min
+// around sunrise and sunset (twilight is still light).
+export function daylight(hour, sun = sunTimes()) {
   const ramp = (x, a, b) => Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return Math.min(ramp(hour, 5.5, 7), 1 - ramp(hour, 18, 19.5));
+  return Math.min(ramp(hour, sun.rise - 0.7, sun.rise + 0.6), 1 - ramp(hour, sun.set - 0.6, sun.set + 0.7));
+}
+
+// The hour now (or the one ?hour= forces), and how dark it is out (0 day,
+// 1 night): for rooms with their own sky (the Han River parks, the cable
+// car) so walking in from the street keeps the same time of day.
+let forced; // (read once: the address doesn't change while you play)
+const forcedHour = () => {
+  if (forced === undefined) {
+    const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+    forced = q?.has('hour') && Number.isFinite(Number(q.get('hour'))) ? Number(q.get('hour')) : null;
+  }
+  return forced;
+};
+// "Day and night on my time" (Settings): the sky follows the player's own
+// clock instead of Seoul's, e.g. for evenings in the Americas. Shows still
+// start on Seoul's time and bring their own night.
+let localSky = false;
+export function setLocalSky(on) { localSky = !!on; }
+export function hourNow(nowMs = Date.now()) {
+  if (forcedHour() != null) return forcedHour();
+  if (localSky) { const d = new Date(nowMs); return d.getHours() + d.getMinutes() / 60; }
+  return seoulHour(nowMs);
+}
+let sunCache = { day: NaN, sun: null }; // (worked out once a day: it's asked every frame)
+export function darkness(nowMs = Date.now()) {
+  const day = Math.floor((nowMs + KST) / DAY);
+  if (day !== sunCache.day) sunCache = { day, sun: sunTimes(nowMs) };
+  return 1 - daylight(hourNow(nowMs), sunCache.sun);
+}
+
+// Night look: moonlit blue instead of the day's warm light, so colours stay
+// clear (not muddy) after dark, and lit windows (glowAtNight).
+const NIGHT_LIGHT = {
+  hemi: new THREE.Color(0xa9b9ff), ground: new THREE.Color(0x46507a),
+  ambient: new THREE.Color(0x9fadde), sun: new THREE.Color(0xc4d2ff),
+};
+const glowing = []; // [material, strength]: emissive that comes on after dark
+export function glowAtNight(material, strength = 1) {
+  material.emissiveIntensity = 0;
+  glowing.push([material, strength]);
 }
 
 const SKY = {
   day: new THREE.Color(0xbfe3ff),
   dusk: new THREE.Color(0xffc9a8),
-  night: new THREE.Color(0x2f3d6b),
+  night: new THREE.Color(0x1e2b5a),
   grey: new THREE.Color(0xc9d0d8),
 };
 
 export class WeatherSystem {
   constructor({ scene, sun, hemi, ambient, region, onUpdate }) {
     Object.assign(this, { scene, sun, hemi, ambient, region, onUpdate });
+    this.dayLight = { hemi: hemi.color.clone(), ground: hemi.groundColor.clone(), ambient: ambient.color.clone(), sun: sun.color.clone() };
     this.kind = 'clear';
     this.settings = null; // the operators' season / held weather (setSettings)
     this.temp = null;
@@ -60,7 +108,6 @@ export class WeatherSystem {
     this.particles = null;
     const forced = new URLSearchParams(location.search).get('weather');
     this.forced = forced && WEATHER_ICON[forced] ? forced : null;
-    this.forcedHour = Number(new URLSearchParams(location.search).get('hour'));
     if (this.forced) this.setKind(this.forced);
     this.refresh();
     setInterval(() => this.refresh(), REFRESH_MS);
@@ -81,12 +128,11 @@ export class WeatherSystem {
   }
 
   hour() {
-    return Number.isFinite(this.forcedHour) && new URLSearchParams(location.search).has('hour')
-      ? this.forcedHour : DAY_NIGHT ? gameHour() : DAY_HOUR;
+    return hourNow();
   }
 
   status() {
-    const day = daylight(this.hour()) > 0.3;
+    const day = darkness() < 0.7;
     const icon = (!day && NIGHT_ICON[this.kind]) || WEATHER_ICON[this.kind];
     return { kind: this.kind, temp: this.temp, icon };
   }
@@ -118,7 +164,7 @@ export class WeatherSystem {
   update(dt, px, pz) {
     // nightMix (0–1): a show's own night in one place, e.g. over Yeouido
     // during the fireworks (main.js), on top of the hour of the day.
-    const d = daylight(this.hour()) * (1 - (this.nightMix || 0));
+    const d = (1 - darkness()) * (1 - (this.nightMix || 0));
     const overcast = { clear: 0, cloudy: 0.5, fog: 0.7, rain: 0.75, snow: 0.6, storm: 0.9 }[this.kind];
     // Sky: night → dusk → day, then greyed by clouds.
     const twilight = 1 - Math.abs(d - 0.5) * 2; // peaks mid-ramp
@@ -135,6 +181,14 @@ export class WeatherSystem {
     this.sun.intensity = (0.4 + 1.6 * d) * (1 - overcast * 0.5);
     this.hemi.intensity = 0.85 + 1.15 * d;
     this.ambient.intensity = 0.75 + 0.5 * d;
+    const n = 1 - d, D = this.dayLight;
+    this.hemi.color.copy(D.hemi).lerp(NIGHT_LIGHT.hemi, n);
+    this.hemi.groundColor.copy(D.ground).lerp(NIGHT_LIGHT.ground, n);
+    this.ambient.color.copy(D.ambient).lerp(NIGHT_LIGHT.ambient, n);
+    this.sun.color.copy(D.sun).lerp(NIGHT_LIGHT.sun, n);
+    // Lit windows: on from dusk (a few stay dark: the texture says which).
+    const glow = Math.max(0, n - 0.15) / 0.85;
+    for (const [m, k] of glowing) m.emissiveIntensity = glow * k;
 
     // Snow on the ground: from the shared clock, so everyone sees the same
     // depth; with ?weather= forced it settles from the moment you arrive
