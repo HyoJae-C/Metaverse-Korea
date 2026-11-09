@@ -1613,6 +1613,10 @@ const sky = createSkyFlight({
   cloud, input, scene, cam, bounds, blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
   buildings: solidBuildings, myId, get net() { return net; }, get others() { return others; },
   isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
+  places: () => [
+    ...zones.items.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
+    ...storefronts.items.map((i) => ({ name: localName(i.store.name, getLanguage()) || '', x: i.door.x, z: i.door.z, icon: '🏬' })),
+  ],
 });
 const chat = createChat({
   sky,
