@@ -33,6 +33,13 @@ export class Input {
       if (pointers.size === 2) pinchDist = this._pinch(pointers);
     });
     canvas.addEventListener('pointermove', (e) => {
+      // Mouse grabbed (first person): the pointer stays put, so turn by how
+      // far the mouse moved.
+      if (document.pointerLockElement === canvas) {
+        this.lookDX += e.movementX || 0;
+        this.lookDY += e.movementY || 0;
+        return;
+      }
       const p = pointers.get(e.pointerId);
       if (!p) return;
       if (pointers.size === 1) {
