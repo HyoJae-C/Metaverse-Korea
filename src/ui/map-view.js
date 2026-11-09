@@ -145,6 +145,9 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   return null;
 }
 
+// The colour of gu borders, on the map and on the street (game/gu-borders.js).
+export const GU_BORDER_COLOR = '#8e44d8';
+
 export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
   // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
@@ -317,6 +320,7 @@ export class MapView {
     g.strokeStyle = '#b8bcc4';
     g.lineWidth = Math.max(2, 7 * this.view.scale);
     for (const r of this.map.rail) { poly(r.p); g.stroke(); }
+    if (this.seoul?.borders) this._drawBorders(g, poly, far);
     if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 
     // Markers first, then names in the gaps between them (see placeLabel),
@@ -526,8 +530,10 @@ export class MapView {
       poly(d.p); g.closePath();
       g.fillStyle = d.open ? (far ? '#ffe9b8' : '#f3ecdc') : '#d9d4ca';
       g.fill();
-      g.strokeStyle = far ? '#ffffff' : 'rgba(255,255,255,0.7)';
-      g.lineWidth = (far ? 2 : 4) * this.dpr;
+      // A thin seam only: the gu borders are the purple lines (_drawBorders),
+      // so a white edge no longer looks like a road.
+      g.strokeStyle = far ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)';
+      g.lineWidth = this.dpr;
       g.stroke();
     }
     g.strokeStyle = '#a9d8f0';
@@ -546,6 +552,20 @@ export class MapView {
       g.stroke();
       i = j + 1;
     }
+  }
+
+  // Where two gu meet (seoul.json borders, from OpenStreetMap): purple, over
+  // the streets, so a border never reads as a road. The same purple as the
+  // line on the street (game/gu-borders.js).
+  _drawBorders(g, poly, far) {
+    const dpr = this.dpr;
+    g.save();
+    g.lineCap = g.lineJoin = 'round';
+    g.strokeStyle = far ? GU_BORDER_COLOR : 'rgba(142,68,216,0.85)';
+    g.lineWidth = (far ? 2.5 : 3) * dpr;
+    if (!far) g.setLineDash([10 * dpr, 6 * dpr]);
+    for (const l of this.seoul.borders) { poly(l); g.stroke(); }
+    g.restore();
   }
 
   // Gu names: the open ones first and bold, then the "coming soon" ones,
