@@ -6834,8 +6834,10 @@ renderer.setAnimationLoop((now) => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
-  if (activeScene === scene) farPeople.update(dt, scene, camera); // skip people too far away to see (core/far-people.js)
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
+  // Skip people too far away to see (core/far-people.js): after drawing, so
+  // everyone's matrixWorld is this frame's; never your own character.
+  if (activeScene === scene) farPeople.update(dt, scene, camera, me.root);
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
   // through things (signs, glass) would leave it below 1 and let the page
   // show through: make every pixel opaque, then cut the hole.
