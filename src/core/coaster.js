@@ -1,13 +1,14 @@
 // The Cotton Candy Express (솜사탕 특급): Another Land's roller coaster.
 // Pure track and timing (no DOM), so it can be unit-tested. Metres and
-// seconds, in the theme park's room space (themepark.js); the model is
+// seconds, in the island room's space (park-island.js); the model is
 // coaster-model.js and riding it is in main.js.
 //
-// The track is one closed loop through the park's new north-west land:
-// the station by the west plaza, a chain lift up to 18 m, a stop at the
-// top with the front car hanging over the edge, a 17 m first drop, an
-// airtime hill, a long run east to a helix behind the Ferris wheel, a
-// tunnel and a smaller second drop, then the brakes and home.
+// The track is one closed loop over Another Land's island (park-island.js):
+// the station at the south end, a chain lift up to 18 m, a stop at the top
+// with the front car hanging over the edge, a 17 m first drop, an airtime
+// hill, a run east along the north shore and down into a helix tucked
+// east of the station (so the island stays narrow), a tunnel and a smaller
+// second drop, then the brakes and home.
 //
 // Timing runs on a shared clock (Date.now(), like the Namsan cable car), so
 // everyone in the park sees the trains in the same place: two trains, one
@@ -53,18 +54,19 @@ export const TRACK = [
   [-42, 2.4, -36.6],
   [-34, 3.4, -35.6],
   [-20, 5.6, -34.6], // long run east, behind the old park
-  [-6, 8.4, -35],
-  [4, 9.6, -35.4], // helix round (8, -27): one and a half turns, dropping
-  [13.6, 9.2, -33],
-  [16.4, 8.6, -26],
-  [12.6, 7.9, -19.6],
-  [4.6, 7.2, -20.4],
-  [1.2, 6.4, -26.4],
-  [5.4, 5.6, -31.6],
-  [12.2, 4.8, -29.6],
-  [10, 3.9, -23], // out under the first turn, heading back west
-  [0, 3.4, -18.8],
-  [-12, 5.6, -20.6],
+  [-9, 8.2, -34.2],
+  [-6.5, 9.8, -16.5], // helix round (-12, -10): dropping, tighter each turn
+  [-4.2, 9.1, -7.5],
+  [-11.4, 8.5, -2.2],
+  [-18.7, 7.8, -6.7],
+  [-17.3, 7.2, -14.7],
+  [-9.8, 6.5, -16.4],
+  [-5.6, 5.8, -10.4],
+  [-9.4, 5.2, -4.5],
+  [-15.8, 4.5, -5.8],
+  [-17.0, 3.9, -11.8],
+  [-12.2, 3.2, -15.0],
+  [-18, 3.3, -17], // out of the helix, heading back west
   [-22, 3.2, -22.4], // second drop into the chocolate tunnel
   [-30, 1.3, -24],
   [-38, 1.4, -23],
@@ -103,7 +105,7 @@ for (let i = 0; i < N; i++) if (pts[i].y > pts[crest].y) crest = i;
 export const S_CREST = crest * DS;
 export const S_TUNNEL = [nearest([...TUNNEL.from.slice(0, 1), 2.4, TUNNEL.from[1]]), nearest([TUNNEL.to[0], 1.4, TUNNEL.to[1]])];
 export const S_AIR = nearest(TRACK[15]); // the airtime hill's top
-export const S_BRAKE = nearest(TRACK[38]); // brakes from here to the station
+export const S_BRAKE = nearest([-52, 1.1, 3]); // brakes from here to the station
 export const TOP_Y = pts[crest].y;
 
 const lerp = (a, b, u) => a + (b - a) * u;

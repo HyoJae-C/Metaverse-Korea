@@ -411,7 +411,7 @@ are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 The lakes themselves are at the real 1/4: both lakes and the west-lake island
 were traced from the real map around the lake's centre (on Songpa-daero
 between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
-1/4, about 13,240 m² of water against the real 217,850 m² / 16 = 13,616
+1/4, about 13,700 m² of water against the real 217,850 m² / 16 = 13,616
 (`tests/themepark.test.mjs` checks it stays within 5%). Songpa-daero bends
 through the gap between the lakes (about 35 m wide), the mall stands west of
 the east lake's north tip, and the land the old, larger lakes took is
@@ -438,8 +438,10 @@ as it was, track, speed, station and attendant, with its candy wood, and a
 candy-striped pavilion over the stairs down to the rest of the park
 (`another-land`, which has `"below": "another-land-island"`: no storefront,
 its door is the stairs; leaving it puts you back on the island). The island
-grew to the south-east to hold the whole track (about 3,800 m², the track at
-least a metre in from the shore and about 5 m of water round it), so the
-water is about 13,240 m², 97% of the real 1/16. `tests/coaster.test.mjs`
+grew to the south-east to hold the whole track (about 3,330 m², the track at
+least 2 m in from the shore and about 5 m of water round it), so the
+water is about 13,700 m², 101% of the real 1/16. To keep the island
+narrow, the helix sits south of the long run, east of the station, rather
+than out to the east (the same 345 m lap, the track 63 m across, not 83). `tests/coaster.test.mjs`
 checks the track is on the island and the only way off is the bridge;
 `tests/themepark.test.mjs` checks the island lies on the map's island.

@@ -9,8 +9,7 @@ const C = await import('../src/core/coaster.js');
 const { buildThemePark, RIDES, RIDE_PRICE, RIDE_PASS } = await import('../src/core/themepark.js');
 const { ROOM_SIZES, exitOf, roomBox } = await import('../src/core/interior.js');
 const { CollisionMap } = await import('../src/core/collision.js');
-const { RINK, BUMPER_COST } = await import('../src/core/bumper-cars.js');
-const { HAUNT } = await import('../src/core/haunted.js');
+const { BUMPER_COST } = await import('../src/core/bumper-cars.js');
 const { DayPasses } = await import('../src/core/day-pass.js');
 
 const { readFileSync } = await import('node:fs');
@@ -104,16 +103,13 @@ test('the track stays on the island, off the ground, and clear of itself', () =>
   }
 });
 
-test('the coaster keeps out of the old square and its rides', () => {
+test('the coaster keeps clear of the stairs down, and its helix is tucked inside the island', () => {
   const pts = C.trackPoints();
-  const clear = (x, z, r, what) => { for (const p of pts) assert.ok(Math.hypot(p.x - x, p.z - z) > r, what); };
-  clear(RIDES.wheel.x, RIDES.wheel.z, 9, 'Ferris wheel');
-  clear(RIDES.viking.x, RIDES.viking.z, 6, 'pirate ship');
-  clear(RIDES.drop.x, RIDES.drop.z, 4, 'drop tower');
-  clear(RIDES.carousel.x, RIDES.carousel.z, 6, 'carousel');
-  clear(HAUNT.x, HAUNT.z, 6, 'haunted house');
-  for (const p of pts) assert.ok(!(p.x > RINK.x - RINK.hx - 2 && p.z > RINK.z - RINK.hz - 2), 'bumper cars');
-  for (const p of pts) assert.ok(!(p.x > -25 && p.z > -15), 'the old square stays as it was');
+  const { stairs } = islandStore.open;
+  for (const p of pts) assert.ok(Math.hypot(p.x - stairs.x, p.z - stairs.z) > 6, `stairs pavilion at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+  // (the helix sits south of the long run, east of the station: the track
+  // reaches no further east than the island's old north tip)
+  assert.ok(Math.max(...pts.map((p) => p.x)) < 0, 'no wider than it needs to be');
 });
 
 test('from the bridge you walk to the platform and to the stairs down; the shore holds you in', () => {
