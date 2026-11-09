@@ -2383,39 +2383,29 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 #start > .panel { position: relative; z-index: 1; }
 
 /* Start screen, first step: this card has little to read, so it can be
-   playful. People from the game wave over its top edge, the title is in
-   candy colours and the "Next" button shines. */
+   playful. People from the game hold up the name on a banner over the
+   card, and the "Next" button shines. */
 #start { align-content: center; }
-.start-npcs {
+.start-banner {
   position: relative; z-index: 2; display: block; justify-self: center;
-  width: min(340px, 86vw); height: auto; margin-bottom: -18px; pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(74, 63, 53, 0.18));
-  animation: npcs-hop 3.2s ease-in-out infinite;
+  width: min(400px, 96vw); height: auto; margin-bottom: -26px; pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(74, 63, 53, 0.16));
+  animation: banner-sway 3.6s ease-in-out infinite; transform-origin: 50% 100%;
 }
-#start:has(#step-lang[hidden]) .start-npcs { display: none; }
-@keyframes npcs-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes banner-sway { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-3px) rotate(0.6deg); } }
+#start:has(#step-lang[hidden]) .start-banner { display: none; }
+/* The banner carries the name, so the card's title is for screen readers
+   (and comes back on short screens, where the banner is hidden). */
+#step-lang h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 #step-lang {
-  padding-top: 30px;
+  padding-top: 34px;
   border: 3px solid transparent;
   background:
-    radial-gradient(circle at 12% 9%, rgba(255, 155, 133, 0.22) 0 7px, transparent 8px),
-    radial-gradient(circle at 88% 6%, rgba(143, 211, 199, 0.35) 0 9px, transparent 10px),
-    radial-gradient(circle at 93% 22%, rgba(255, 211, 110, 0.4) 0 5px, transparent 6px),
-    radial-gradient(circle at 6% 30%, rgba(185, 166, 240, 0.3) 0 5px, transparent 6px),
     linear-gradient(#fffaf2, #fff6ea) padding-box,
     linear-gradient(135deg, #ffb3c7, #ffd36e 35%, #8fd3c7 65%, #b9a6f0) border-box;
 }
-#step-lang h1 {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin-top: 4px; font-size: 34px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.15;
-  background: linear-gradient(100deg, #ff7f8f 0%, #ff9b6a 40%, #c77de0 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-#step-lang h1::before, #step-lang h1::after { content: '✦'; flex: none; font-size: 16px; -webkit-text-fill-color: initial; color: #ffc94d; animation: twinkle 2.4s ease-in-out infinite; }
-#step-lang h1::after { color: #8fd3c7; animation-delay: 1.2s; }
-@keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.75); } }
 #step-lang .tagline { color: #6f6156; font-size: 15px; line-height: 1.45; }
-#step-lang h2 { margin-top: 20px; color: var(--ink); font-size: 15px; }
+#step-lang h2 { margin-top: 18px; color: var(--ink); font-size: 17px; }
 #step-lang .region {
   display: inline-block; margin: 14px 0 12px; padding: 6px 14px; border-radius: 999px;
   background: #fff; border: 2px dashed #ffc2b4; font-size: 14px; color: var(--ink);
@@ -2433,11 +2423,47 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 #next-btn:disabled::after { display: none; }
 @keyframes shine { 0%, 55% { left: -40%; } 85%, 100% { left: 130%; } }
 .start-scenes .scene span { backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(40, 32, 26, 0.15); }
-@media (max-height: 600px) { .start-npcs { display: none; } #step-lang { padding-top: 16px; } }
+
+/* Phones held upright: a drawn pastel sky and Seoul skyline (Namsan tower,
+   a hanok roof) instead of the game scenes the card would cover anyway.
+   The scenes' pictures then aren't downloaded at all. */
+.start-art { display: none; }
+@media (max-width: 700px) and (orientation: portrait) {
+  .start-scenes { display: none; }
+  #start { background: linear-gradient(180deg, #ffd9e6 0%, #ffeedd 38%, #d6ecff 100%); }
+  .start-art { display: block; position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .start-art .skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; min-height: 26vh; }
+  .start-art .cloud { position: absolute; width: 120px; height: 36px; border-radius: 999px; background: rgba(255, 255, 255, 0.85); animation: cloud-drift 14s ease-in-out infinite alternate; }
+  .start-art .cloud::before, .start-art .cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
+  .start-art .cloud::before { width: 54px; height: 54px; left: 18px; top: -26px; }
+  .start-art .cloud::after { width: 40px; height: 40px; left: 60px; top: -16px; }
+  .start-art .c1 { left: 6%; top: 7%; }
+  .start-art .c2 { right: 4%; top: 14%; transform: scale(0.75); animation-duration: 18s; }
+  .start-art .c3 { left: 38%; top: 3%; transform: scale(0.55); animation-duration: 22s; opacity: 0.8; }
+  /* Banner and card sit high, so the skyline shows below them. */
+  #start { align-content: start; padding-top: max(20px, calc(env(safe-area-inset-top) + 8px)); }
+}
+@keyframes cloud-drift { from { translate: -10px 0; } to { translate: 14px 0; } }
+@media (max-height: 600px) {
+  .start-banner { display: none; }
+  #step-lang { padding-top: 16px; }
+  #step-lang h1 { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .start-npcs, #step-lang h1::before, #step-lang h1::after, #next-btn::after { animation: none; }
+  .start-banner, .start-art .cloud, #next-btn::after { animation: none; }
   #next-btn::after { display: none; }
 }
+
+/* Type and buttons, one rule for every panel: titles, buttons and section
+   heads in the rounded display font; body text stays plain for reading.
+   Sizes: title 19, body 15, note 12.5. The main action is the big apricot
+   .primary; a helper action (show the way) is a small mint pill. */
+:root { --font-display: 'Fredoka', 'Jua', 'Nunito', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif; }
+h1, h2, .wallet-title, .primary, .daily-sub strong, .daily-count, .region, .lang-current, .m-go, .street-name {
+  font-family: var(--font-display); font-weight: 600; font-synthesis: none;
+}
+.primary { letter-spacing: 0.2px; }
+html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub strong, .region, .lang-current, .m-go, .street-name) { font-family: inherit; font-weight: 800; }
 
 /* The welcome card after the start: information, so calm and easy to read. */
 .welcome-card h2 { margin: 2px 0 14px; color: var(--ink); font-size: 18px; }
