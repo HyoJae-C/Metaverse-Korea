@@ -98,6 +98,9 @@ const FOREST_EDGE = OLD_FOREST_EDGE.map(shift);
 // water up: a strip of riverside grass with the Han River path, then
 // Ttukseom-ro (or Seoul Forest).
 const RIVER_EDGE = [...OLD_RIVER_EDGE.map(shift), [-5, 378], [10, 386], [260, 386]];
+// How far south the game's water reaches (east to west), about the real Han's width from the bank;
+// Songpa's Han River bank and region.json water[1] carry on from here.
+const RIVER_SOUTH = [[260, 410], [20, 410], [-30, 465], [-150, 420], [-240, 385], [WEST, 250]];
 const RIVER_PATH = [...OLD_RIVER_EDGE.map(([x, z]) => shift([x, z - 7])), [-5, 371], [10, 372], [260, 372]];
 
 // Paths through Seoul Forest (old frame; moved with the forest below).
@@ -168,7 +171,7 @@ const AREAS = [
   { k: 'park', trees: true, p: [[-232.5, -63], [-187, -18], [-179.5, -9], [-179.5, 160], [-232.5, 140]] },
   // Riverside grass (Han River park): under the forest, then under Ttukseom-ro.
   { k: 'grass', p: [...FOREST_EDGE, [TTUK_W[0], TTUK_W[1] + 8.5], [TTUK_E[0] - 10, TTUK_E[1] + 6], [TTUK_E[0], TTUK_E[1] + 6], [260, TTUK_E[1] + 6], ...RIVER_EDGE.slice().reverse()] },
-  { k: 'water', p: [...RIVER_EDGE, [260, 410], [WEST, 410]] }, // Han River
+  { k: 'water', p: [...RIVER_EDGE, ...RIVER_SOUTH] }, // Han River
 ];
 // Ttukseom Han River Park, laid straight on the street (game/han-parks.js;
 // core/han-park.js builds what the map can't draw) on the straight bank
@@ -413,7 +416,7 @@ for (const l of LANDMARKS) {
 }
 // The park itself (game/han-parks.js): at the bank's edge, turned half round (not part of the forest).
 LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
-BLOCKERS.unshift({ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), [260, 410], [WEST, 410]] }); // the river
+BLOCKERS.unshift({ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), ...RIVER_SOUTH] }); // the river
 // The Han River path, and paths from Ttukseom-ro down to it.
 WALKS.unshift(
   { w: 4, p: RIVER_PATH, n: name('한강 산책로', 'Han River Path', '漢江遊歩道', '汉江步道') },

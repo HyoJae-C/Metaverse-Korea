@@ -67,9 +67,9 @@ export const GAME_RIVER = [
   [-1026, 540, 190], // region.json water[1] from Banpo-Jamwon…
   [-465, 190, 240], // …to Seongsu's river by Seoul Forest
   [-300, 235, 220],
-  [-150, 300, 190],
-  [-30, 355, 110],
-  [40, 400, 90], // where Songpa's Han River bank joins Seongsu's
+  [-150, 330, 170],
+  [-30, 410, 100],
+  [40, 423, 70], // where Songpa's Han River bank joins Seongsu's
   [110, 423, 70],
   [260, 425, 50],
   [300, 432, 40],
