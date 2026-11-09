@@ -73,3 +73,11 @@ test('Another Land outside: wheel and drop tower are tall, the coaster loops', a
   assert.equal(dropHeight(1), DROP.low);
   assert.ok(COASTER.every(([, y]) => y >= 4), 'track stays off the ground');
 });
+
+test('ride guests only sit in the theme park, not in a Han River park (also `park: true`)', async () => {
+  const { createParkRiders } = await import('../src/game/park-riders.js');
+  const riders = createParkRiders(null);
+  const hanPark = { park: true, scene: { add() { throw new Error('no guests here'); } } };
+  assert.equal(riders.spawn(hanPark) ?? null, null);
+  assert.equal(hanPark.riderNpcs, undefined);
+});
