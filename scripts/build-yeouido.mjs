@@ -17,7 +17,7 @@
 //   ── Han River path ─────────────────────────────────────────────── v 40
 //   trees ............................................................
 //   ══ Yunjung-ro, cherry trees on both sides ════════════════════════ v 66
-//   office towers                                            63 tower
+//   office towers   [ Yeouido Park, Seoul Dal ]   office towers    63 tower
 //   ~~~~~~~~~~~~~~~~~~~~~~ Saetgang ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v 175..220
 //
 // Game map, not to scale (see docs/WORLD.md).
@@ -60,6 +60,9 @@ const ALONG_U = Math.atan2(U[0], U[1]);
 export const ISLAND = [[-270, 0], [270, 0], [330, 90], [260, 175], [-260, 175], [-330, 90]];
 export const PATH = 40; // the Han River path
 const YUNJUNG = 66; // Yunjung-ro, the cherry blossom road
+// Seoul Dal's pad in Yeouido Park, south of Yunjung-ro in the middle of the
+// island (the real one is on Yeouido Park's lawn, by its management office).
+export const DAL_U = -20, DAL_V = 108;
 // The Saetgang: the narrow arm of the river along the south side.
 const SAETGANG = [[-330, 90], [-260, 175], [260, 175], [330, 90], [310, 232], [-300, 222], [-372, 70]];
 // Seogang Bridge: from the Han River Bike Path at Hongdae's corner (where
@@ -106,8 +109,8 @@ function build() {
     // The Information Center, east of Mul-bit Square.
     { h: 5, p: rect(196, 27, 210, 36) },
     // Yeouido's office towers south of Yunjung-ro (plain, no shops).
-    ...[[-235, 82, -205, 112, 48], [-185, 80, -150, 105, 72], [-130, 84, -100, 118, 56], [-60, 80, -20, 106, 96],
-      [-5, 112, 30, 150, 64], [45, 80, 80, 104, 110], [95, 86, 125, 120, 58], [140, 80, 175, 108, 84],
+    // (none from u -95 to 40: Yeouido Park, round Seoul Dal)
+    ...[[-235, 82, -205, 112, 48], [-185, 80, -150, 105, 72], [-130, 84, -100, 118, 56], [45, 80, 80, 104, 110], [95, 86, 125, 120, 58], [140, 80, 175, 108, 84],
       [-185, 125, -150, 160, 40], [-90, 130, -55, 160, 44], [150, 128, 185, 158, 50]]
       .map(([u0, v0, u1, v1, h]) => ({ h, p: rect(u0, v0, u1, v1) })),
   ];
@@ -117,6 +120,8 @@ function build() {
     { k: 'tertiary', w: 10, p: [at(-300, YUNJUNG), at(300, YUNJUNG)], n: name('Yunjung-ro', '윤중로', '輪中路', '轮中路') },
     { k: 'walk', w: 4, p: [at(-40, PATH), at(-40, YUNJUNG)], n: name('Park lane', '공원 산책길', '公園の小道', '公园小路') },
     { k: 'walk', w: 4, p: [at(185, PATH), at(185, YUNJUNG)], n: name('Park lane', '공원 산책길', '公園の小道', '公园小路') },
+    // On across Yunjung-ro into Yeouido Park, to Seoul Dal's gate.
+    { k: 'walk', w: 4, p: [at(-40, YUNJUNG), at(-40, DAL_V - 18), at(DAL_U, DAL_V - 18), at(DAL_U, DAL_V - 9)], n: name('Yeouido Park path', '여의도공원 길', '汝矣島公園の小道', '汝矣岛公园小路') },
     { k: 'walk', w: 5, p: [at(-140, YUNJUNG), at(-140, 168)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
     { k: 'walk', w: 5, p: [at(132, YUNJUNG), at(132, 168)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
   ];
@@ -128,6 +133,10 @@ function build() {
     { k: 'water', p: rect(126, 9, 164, 30) }, // its shallow pool: walk right in (no blocker)
     { k: 'grass', p: rect(172, 2, 262, PATH - 3) },
     { k: 'park', trees: true, p: rect(-285, PATH + 3, 285, YUNJUNG - 8) },
+    // Yeouido Park, across Yunjung-ro from the river park: an open lawn
+    // round Seoul Dal's pad, trees along its far side.
+    { k: 'grass', p: rect(-95, 76, 40, 128) },
+    { k: 'park', trees: true, p: rect(-50, 132, 40, 162) },
     { k: 'grass', p: rect(-250, 166, 250, 173) }, // the Saetgang bank
     { k: 'water', p: SAETGANG.map(([u, v]) => at(u, v)) },
   ];
@@ -144,6 +153,17 @@ function build() {
     // (the same spots as BARGES in src/core/fireworks-show.js).
     ...BARGES.map(([u, v]) => ({ type: 'fwbarge', ...xz(at(u, v)), ry: ALONG_U + Math.PI / 2 })),
     { type: 'mulbit', ...xz(at(145, 19.5)), ry: ALONG_U, w: 34, d: 17 },
+    // Seoul Dal, the tethered balloon (drawn and ridden by game/seoul-dal.js,
+    // loaded when you come near; its gate faces the river, towards the path).
+    { type: 'seouldal', ...xz(at(DAL_U, DAL_V)), ry: FACE_RIVER },
+    { type: 'sign', ...xz(at(DAL_U - 9, DAL_V - 12)), ry: FACE_RIVER,
+      title: name('Seoul Dal', '서울달', 'ソウルダル', '首尔月亮'),
+      text: {
+        en: 'Seoul Dal ("Seoul Moon") is a real tethered gas balloon in Yeouido Park, flying since 2024. A ring-shaped gondola under the balloon carries up to 20 people about 130 m above Yeouido for around 15 minutes, with the Han River, the National Assembly and the 63 tower below. At night it glows like a full moon. It is open every day from 12:00 to 22:00, and stops in strong wind or rain; the adult ticket was 25,000 won in 2026 (check before you go). In the game it goes up every 3 minutes, a little lower, for 25,000 game won.',
+        ko: '서울달은 여의도공원에 실제로 있는 계류식 가스기구로, 2024년부터 날고 있어요. 기구 아래 고리 모양 곤돌라에 최대 20명이 타고 여의도 위 약 130m까지 올라 15분쯤 머물러요. 아래로 한강, 국회의사당, 63빌딩이 보여요. 밤에는 보름달처럼 빛나요. 매일 12시부터 22시까지 운영하고, 강풍이나 비가 오면 쉬어요. 성인 요금은 2026년 기준 25,000원이에요(가기 전에 확인하세요). 게임에서는 3분마다, 조금 낮게 올라가고 게임 머니 25,000원이에요.',
+        ja: 'ソウルダル（「ソウルの月」）は汝矣島公園に実在する係留式ガス気球で、2024年から飛んでいます。気球の下のリング形ゴンドラに最大20人が乗り、汝矣島の上空約130mまで上がって15分ほど過ごします。眼下には漢江、国会議事堂、63ビル。夜は満月のように光ります。毎日12時から22時まで運行し、強風や雨の日は休みます。大人料金は2026年時点で25,000ウォンです（行く前に確認してください）。ゲームでは3分ごとに、少し低めに上がり、ゲーム内25,000ウォンです。',
+        zh: '首尔月亮（서울달）是汝矣岛公园里真实存在的系留式气球，2024年起开始飞行。气球下方的环形吊舱最多载20人，升到汝矣岛上空约130米，停留约15分钟，下方是汉江、国会议事堂和63大厦。夜晚它像满月一样发光。每天12:00至22:00运营，大风或下雨时停飞；2026年成人票价为25,000韩元（出发前请确认）。游戏里每3分钟升空一次，高度稍低，票价为游戏币25,000韩元。',
+      } },
     { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG - 6.5), at(290, YUNJUNG - 6.5)], gap: 9 },
     { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG + 6.5), at(290, YUNJUNG + 6.5)], gap: 9 },
     { type: 'sign', ...xz(at(-205, PATH - 3)), ry: FACE_RIVER,
@@ -162,6 +182,8 @@ function build() {
     { kind: 'landmark', ...xz(at(BRIDGE_U, BRIDGE_V / 2)), name: name('Seogang Bridge', '서강대교', '西江大橋', '西江大桥') },
     { kind: 'landmark', ...xz(at(145, 19.5)), name: name('Mul-bit Square', '물빛광장', '水光広場', '水光广场') },
     { kind: 'landmark', ...xz(at(277, 128)), name: name('63 Tower', '63빌딩', '63ビル', '63大厦') },
+    { kind: 'landmark', ...xz(at(DAL_U, DAL_V)), name: name('Seoul Dal', '서울달', 'ソウルダル', '首尔月亮') },
+    { kind: 'landmark', ...xz(at(-50, 125)), name: name('Yeouido Park', '여의도공원', '汝矣島公園', '汝矣岛公园') },
   ];
   return {
     meta: {
