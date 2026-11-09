@@ -119,7 +119,10 @@ export function createDuckBoats(game) {
         // The stick, camera-relative like walking: the bow turns towards it.
         const { x: mx, y: my } = game.input.move;
         const fx = -Math.sin(game.moveRef.yaw), fz = -Math.cos(game.moveRef.yaw), rx = Math.cos(game.moveRef.yaw), rz = -Math.sin(game.moveRef.yaw);
-        duckRide.steer(fx * my + rx * mx, fz * my + rz * mx, dt);
+        let dx = fx * my + rx * mx, dz = fz * my + rz * mx;
+        const ry = turn(); // (the boat sails in the park's metres: turn the stick into them)
+        if (ry) [dx, dz] = [dx * Math.cos(ry) - dz * Math.sin(ry), dx * Math.sin(ry) + dz * Math.cos(ry)];
+        duckRide.steer(dx, dz, dt);
         duckRide.bump(otherBoats(game.seated.duck));
         b = duckRide;
         game.duckUi.hud({ left: duckRide.left, returning: duckRide.returning });

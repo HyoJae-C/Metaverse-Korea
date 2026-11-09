@@ -72,6 +72,12 @@ for (const { l, store, map, d } of streetParks) {
       assert.ok(!roadHit(x, z, 0.2), `a keep-out box on a road at (${q[0].toFixed(1)}, ${q[1].toFixed(1)})`);
       assert.ok(!map.buildings.some((bd) => pointInPoly(x, z, bd.p)), 'not in a building');
     }
+    // A taxi or the map drops you in the park, where you can stand.
+    const [ax, az] = [store.at[0] - d.offset[0], store.at[1] - d.offset[1]];
+    const [alx, alz] = [(ax - (l.x - d.offset[0])) * c - (az - (l.z - d.offset[1])) * s, (ax - (l.x - d.offset[0])) * s + (az - (l.z - d.offset[1])) * c];
+    const [bx0, bz0, bx1, bz1] = l.bounds;
+    assert.ok(alx > bx0 && alx < bx1 && alz > 0 && alz < bz1, `dropped in the park (${alx.toFixed(1)}, ${alz.toFixed(1)})`);
+    assert.ok(!map.buildings.some((bd) => pointInPoly(ax, az, bd.p)) && !b.colliders.some((k) => pointInPoly(alx, alz, k.p)), 'where you can stand');
     // You can step onto the pier from the bank: the river's edge doesn't block its deck.
     if (b.decks.length) {
       // (the river's blockers: the district's own and the region's water between districts, in world metres)

@@ -303,6 +303,23 @@ export function buildHanPark(store, L) {
     };
   }
 
+  // A grey warship moored off the bank (Mangwon's Seoul Battleship Park): a
+  // hull, its deck, the bridge, a mast and a gun at the bow. Just to look at.
+  for (const [x, z, len = 40] of L.ships || []) {
+    const beam = 7;
+    box(len, 2.6, beam, x, 0.6, z, '#7d8790'); // hull
+    box(len * 0.92, 0.12, beam - 0.4, x, 1.96, z, '#9aa3ab'); // deck
+    box(len * 0.06, 1.2, beam * 0.7, x - len * 0.45, 1.4, z, '#7d8790'); // the bow, a step up
+    box(len * 0.22, 3, beam * 0.6, x + len * 0.05, 3.5, z, '#a9b2ba'); // the bridge
+    box(len * 0.2, 0.5, beam * 0.62, x + len * 0.05, 4.9, z, '#56606a'); // its windows
+    box(0.25, 6, 0.25, x + len * 0.12, 7.5, z, '#56606a'); // mast
+    box(2.4, 0.18, 0.18, x + len * 0.12, 9.2, z, '#56606a');
+    box(len * 0.08, 1, len * 0.08, x - len * 0.3, 2.5, z, '#8c959d'); // the gun's turret
+    const gun = box(len * 0.12, 0.25, 0.25, x - len * 0.37, 2.7, z, '#56606a');
+    gun.rotation.z = -0.08;
+    box(len, 0.4, beam + 0.1, x, -0.55, z, '#3d464e'); // the waterline
+  }
+
   // The food stalls, their tables and the market's name board.
   const market = L.market ? buildMarket(group, store, block, seats, L.market) : { products: [], vendors: [], setSignLang() {} };
 
