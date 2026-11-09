@@ -386,7 +386,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
-  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 999px; font-weight: 800;
+  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 22px; font-weight: 800;
+  width: max-content; max-width: min(88vw, 520px); text-align: center; /* a longer hint wraps across the screen, not in half of it */
   pointer-events: none; z-index: 60;
 }
 .cart { position: relative; text-align: left; }
@@ -436,8 +437,43 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
      results take the map's place, right under the search box. */
   .map-searching .map-card { height: 100%; }
   .map-searching .map-body { grid-template-rows: minmax(0, 1fr); }
-  .map-searching :is(.map-canvas, .map-seoul, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
+  .map-searching :is(.map-canvas, .map-seoul, .map-locate, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
   .map-searching .map-list { padding-top: 0; }
+  /* Phones: the map fills the screen. Search and one row of categories on
+     top; the list of places is a sheet folded to one bar at the bottom. */
+  #map-panel { padding: 0; }
+  #map-panel .map-card {
+    width: 100%; height: 100%; border-radius: 0;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .map-top { padding: 6px 10px 4px 16px; }
+  .map-card > .map-controls { padding: 0 12px 6px; gap: 6px; }
+  .map-search { min-height: 40px; }
+  .map-cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0; }
+  .map-cats::-webkit-scrollbar { display: none; }
+  .map-body { grid-template-rows: minmax(0, 1fr) auto; }
+  .map-list { max-height: 52px; overflow: hidden; padding-top: 0; border-top: 1px solid #eadfcd; }
+  .map-sheet-open .map-body { grid-template-rows: minmax(0, 1fr) minmax(0, 46%); }
+  .map-sheet-open .map-list { max-height: none; overflow: auto; }
+  .map-searching .map-list { max-height: none; overflow: auto; border-top: 0; }
+  .map-searching .map-handle { display: none; }
+  .map-list > .map-disclaimer { margin: 10px 4px 4px; }
+  /* (the sheet is inside .map-body: keep the button above it and the credit) */
+  #map-panel .map-locate { right: 10px; bottom: 82px; }
+  #map-panel.map-sheet-open .map-locate { bottom: calc(46% + 30px); }
+}
+.map-handle {
+  position: sticky; top: 0; z-index: 1; width: 100%; min-height: 48px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 15px; font-weight: 800;
+}
+.map-handle::before { content: ""; position: absolute; top: 5px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #d9ccb6; }
+.map-handle b { font-size: 13px; color: var(--ink-soft); }
+.map-locate {
+  position: absolute; right: calc(280px + 10px); bottom: 30px; z-index: 1; width: 44px; height: 44px; padding: 0; /* (left of the side list) */
+  border-radius: 50%; font-size: 22px; color: #ff6f5b; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.25);
+}
+@media (max-width: 700px) {
   .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
@@ -1772,6 +1808,8 @@ kbd.wide { padding: 0 7px; }
   box-shadow: 0 2px 0 var(--accent-dark);
 }
 body.beauty-mode #keys-panel { display: none; }
+/* On the operating table (game/beauty.js): the view from your eyes, nothing over it. */
+body.surgery-pov .nametag.me, body.surgery-pov #store-banner, body.surgery-pov #keys-panel, body.surgery-pov #action-btn, body.surgery-pov #action-menu { display: none; }
 /* Keep what used to sit at the bottom left above the key panel. */
 @media (pointer: fine) {
   .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
@@ -2472,3 +2510,20 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 }
 .online .on-short { display: none; }
 @media (max-width: 700px) and (orientation: portrait) { .online .on-short { display: inline; } }
+
+/* Minimap (game/minimap.js): top-left of the street; tap for the full map. */
+.minimap {
+  position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); z-index: 2;
+  width: 120px; height: 120px; padding: 0; border-radius: 50%; overflow: hidden;
+  background: #f3ecdc; box-shadow: var(--shadow); cursor: pointer;
+}
+.minimap[hidden] { display: none; }
+.minimap canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.minimap-me {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 22px; pointer-events: none;
+}
+.minimap-me svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 700px), (max-height: 500px) {
+  .minimap { width: 88px; height: 88px; }
+  .minimap-me { width: 17px; height: 19px; }
+}

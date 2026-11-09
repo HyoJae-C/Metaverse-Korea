@@ -80,7 +80,7 @@ export function createBalloonClown(game) {
   return {
     // Once per Another Land room: the clown, on their shoes.
     spawn(built) {
-      if (!built.themepark) return null;
+      if (!built.themepark || built.island) return null; // (Another Land's island has no plaza for the clown)
       if (!built.clownNpc) {
         const o = makeNpc($('labels'), label(), { ...game.randomLook(), ...LOOK });
         o.ch.root.add(stiltShoes());

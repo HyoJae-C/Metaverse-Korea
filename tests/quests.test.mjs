@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SquareQuests, fromV1, pickQuest, QUESTS_PER_DAY, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from '../src/core/quests.js';
+import { SquareQuests, fromV1, pickQuest, QUESTS_PER_DAY, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP, BUKCHON_TRIP, tripOf } from '../src/core/quests.js';
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
 const pool = { stores: ['meta-coffee', 'chaekmaru-library'] };
@@ -124,6 +124,33 @@ test('the trip goes one step at a time, in order; "Later" skips it without coins
   r.drop();
   r.s.active = { kind: 'talk', need: 3, n: 0 }; // not a first-path errand: nothing to skip
   assert.equal(r.skipStarter(), false);
+});
+
+test('new players who start in Bukchon get the trip from there, ending at Seongsu Square', () => {
+  assert.deepEqual(BUKCHON_TRIP.map((s) => s.step), ['openHouse', 'angukWalk', 'down', 'seongsuStop', 'square']);
+  const store = memory();
+  const q = new SquareQuests(store, () => 'd1');
+  q.beginStarter();
+  const a = q.start({ ...pool, route: 'bukchon' });
+  assert.equal(a.kind, 'trip');
+  assert.equal(a.route, 'bukchon');
+  assert.equal(tripOf(a), BUKCHON_TRIP);
+  assert.equal(q.event('bike'), false); // not a step of this trip
+  assert.equal(q.event('place', 'subway'), false); // the Open House first
+  assert.equal(q.event('place', 'open-house'), true);
+  assert.equal(q.event('place', 'subway'), true);
+  assert.equal(q.event('subwayIn'), true);
+  assert.equal(q.event('subway', 'seoul-forest-station'), false); // the wrong stop
+  assert.equal(q.event('subway', 'seongsu-station'), true);
+  assert.equal(new SquareQuests(store, () => 'd1').active.route, 'bukchon'); // saved with its route
+  assert.equal(q.ready(), false);
+  assert.equal(q.event('place', 'A-1'), true);
+  assert.equal(q.ready(), true);
+  assert.equal(q.claim({}), STARTER_REWARD);
+  // From the square guide (or saved before), the trip is the one from Seongsu.
+  const r = new SquareQuests(memory(), () => 'd1');
+  r.beginStarter();
+  assert.equal(tripOf(r.start(pool)), TRIP);
 });
 
 test('a first-path step saved before the trip keeps its place', () => {

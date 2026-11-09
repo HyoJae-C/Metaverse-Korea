@@ -515,7 +515,19 @@ function hippo(c) {
     part(head, sphere(0.06, 6, 6), '#3a2c30', 0.14 * k, 0.17, 0.62); // nostrils on top
     part(head, sphere(0.09, 8, 6), c.color, 0.22 * k, 0.32, -0.05); // eye bumps
     part(head, sphere(0.035, 8, 6), '#231d20', 0.22 * k, 0.36, 0.02).userData.eye = true; // eyes
-    part(head, sphere(0.07, 8, 6), c.color, 0.24 * k, 0.25, -0.16, 1, 0.85, 0.6); // little ears, sat on the head
+  }
+  // The ears: small round cups up on the back corners of the head, pink
+  // inside, each on its own hinge so it can flick fast (core/zoo.js).
+  const flaps = [];
+  for (const k of [-1, 1]) {
+    const ear = new THREE.Group();
+    ear.position.set(0.25 * k, 0.33, -0.18);
+    ear.rotation.z = -0.35 * k; // tipped out a little
+    head.add(ear);
+    part(ear, cyl(0.035, 0.05, 0.08, 6), c.color, 0, 0.03, 0); // the stalk
+    part(ear, sphere(0.1, 10, 8), c.color, 0, 0.13, 0, 0.85, 1.05, 0.42); // the cup
+    part(ear, sphere(0.07, 10, 8), c.accent, 0, 0.13, 0.025, 0.7, 0.85, 0.25); // pink inside, facing forward
+    flaps.push(ear);
   }
   const jaw = new THREE.Group(); // the lower jaw, hinged at the back of the mouth
   jaw.position.set(0, -0.12, 0.1);
@@ -533,25 +545,36 @@ function hippo(c) {
   part(tail, cyl(0.014, 0.03, 0.34, 6), c.color, 0, -0.14, -0.06).rotation.x = 0.35; // thin
   part(tail, sphere(0.025, 6, 6), '#5d5462', 0, -0.31, -0.12, 1.4, 1.2, 0.8);
   shadow(root, 1.25);
-  return { root, body, head, tail, legs, jaw, swims: true };
+  return { root, body, head, tail, legs, jaw, flaps, swims: true };
 }
 
-// Snake: a chain of beads that slithers in S curves behind its head
-// (zoo.js moves the beads), with a flicking tongue.
+// Snake: a chain of beads, thick behind the head and tapering to a thin
+// tail, a flat head that sits a little up, and a flicking forked tongue.
+// The beads follow the head's own track (core/zoo.js), so the body bends
+// where the head went, in S curves as it slithers, and curls into a coil
+// when it rests.
+export const SNAKE = { n: 30, gap: 0.055 };
 function snake(c) {
   const { root, body } = start();
   const segs = [];
-  for (let i = 0; i < 22; i++) { // beads close enough to overlap: one body
-    const r = 0.09 * (1 - i / 40);
-    const m = part(body, sphere(r, 8, 6), i % 3 === 1 ? c.accent : c.color, 0, r, -i * 0.06);
+  for (let i = 0; i < SNAKE.n; i++) { // beads close enough to overlap: one body
+    const u = i / (SNAKE.n - 1);
+    const r = 0.085 * (u < 0.15 ? 0.8 + u * 1.3 : 1 - (u - 0.15) * 0.8); // a neck, a thick middle, a thin tail
+    const m = part(body, sphere(r, 8, 6), i % 4 === 2 ? c.accent : c.color, 0, r, -i * SNAKE.gap, 1, 0.8, 1.1);
+    m.userData.r = r;
     segs.push(m);
   }
   const head = new THREE.Group();
-  head.position.set(0, 0.09, 0.1);
+  head.position.set(0, 0.09, 0.07);
   body.add(head);
-  part(head, sphere(0.1, 10, 8), c.color, 0, 0, 0, 1, 0.7, 1.4);
-  eyes(head, 0.05, 0.04, 0.08, 0.018);
-  const tongue = part(head, new THREE.BoxGeometry(0.015, 0.005, 0.14), '#d6334a', 0, -0.01, 0.18);
+  part(head, sphere(0.085, 10, 8), c.color, 0, 0, 0.04, 1.1, 0.6, 1.5); // a flat, wide head
+  part(head, sphere(0.05, 8, 6), c.accent, 0, -0.01, 0.13, 1, 0.5, 1); // the snout
+  eyes(head, 0.07, 0.035, 0.07, 0.016);
+  const tongue = new THREE.Group();
+  tongue.position.set(0, -0.015, 0.17);
+  head.add(tongue);
+  part(tongue, new THREE.BoxGeometry(0.012, 0.005, 0.1), '#d6334a', 0, 0, 0.05);
+  for (const k of [-1, 1]) part(tongue, new THREE.BoxGeometry(0.008, 0.004, 0.04), '#d6334a', 0.01 * k, 0, 0.11).rotation.y = 0.35 * k; // forked
   shadow(root, 0.3);
   return { root, body, head, tail: new THREE.Group(), legs: [], segs, tongue, slithers: true };
 }
@@ -680,14 +703,24 @@ function giraffe(c) {
   neck.position.set(0, 2.1, 0.5);
   neck.rotation.x = 0.35;
   body.add(neck);
-  const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.17, 1.8, 10), coatMat('giraffe'));
-  nk.position.y = 0.85;
-  neck.add(nk);
-  part(neck, new THREE.BoxGeometry(0.05, 1.6, 0.08), '#7a4a24', 0, 0.85, -0.12).rotation.x = -0.04; // the mane
+  // The neck in two parts, a joint halfway, so it can curve: down to drink,
+  // up to the treetops, swinging at a friend (core/zoo.js).
+  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.17, 1.0, 10), coatMat('giraffe'));
+  lower.position.y = 0.48;
+  neck.add(lower);
+  part(neck, new THREE.BoxGeometry(0.05, 0.9, 0.08), '#7a4a24', 0, 0.5, -0.14).rotation.x = -0.04; // the mane
+  part(neck, sphere(0.135, 10, 8), c.color, 0, 0.95, 0); // the joint
+  const neck2 = new THREE.Group();
+  neck2.position.set(0, 0.95, 0);
+  neck.add(neck2);
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.135, 0.95, 10), coatMat('giraffe'));
+  upper.position.y = 0.45;
+  neck2.add(upper);
+  part(neck2, new THREE.BoxGeometry(0.05, 0.82, 0.08), '#7a4a24', 0, 0.42, -0.11).rotation.x = -0.04;
   const head = new THREE.Group();
-  head.position.set(0, 1.78, 0.02);
+  head.position.set(0, 0.88, 0.02);
   head.rotation.x = -0.35; // level again
-  neck.add(head);
+  neck2.add(head);
   part(head, sphere(0.17, 12, 10), c.color, 0, 0, 0.04, 0.85, 0.85, 1);
   part(head, sphere(0.13, 10, 8), c.color, 0, -0.05, 0.22, 0.8, 0.75, 1.2); // long face
   part(head, sphere(0.08, 8, 6), c.accent, 0, -0.07, 0.34, 1, 0.8, 0.9); // muzzle
@@ -700,7 +733,7 @@ function giraffe(c) {
   const legs = hipLegs(body, [[-0.22, 0.42, c.color], [0.22, 0.42, c.color], [-0.22, -0.45, c.color], [0.22, -0.45, c.color]], 1.85, 0.07, 0.065, '#3a2a22');
   const tail = tuftTail(body, 2.05, -0.65, 0.8, 0.025, c.color, '#3a2a22');
   shadow(root, 0.8);
-  return { root, body, head, tail, legs, neck };
+  return { root, body, head, tail, legs, neck, neck2 };
 }
 
 // Zebra: a striped pony, a black-and-white standing mane, a dark muzzle.
@@ -733,6 +766,12 @@ function zebra(c) {
 }
 
 // kind -> builder; c: { color, accent }.
+// The big herbivores drawn larger than their first models, nearer the real
+// thing next to a person: a zebra about 1.4 m at the shoulder, an elephant
+// over 3 m tall, a giraffe's head near 5 m up.
+export const SIZE = { zebra: 1.45, elephant: 1.25, giraffe: 1.25 };
+const sized = (a, k) => { a.root.scale.setScalar(k); a.size = k; return a; };
+
 export function makeZooAnimal(kind, c) {
   if (kind === 'rabbit') return rabbit(c);
   if (kind === 'guineapig') return guineapig(c);
@@ -745,9 +784,9 @@ export function makeZooAnimal(kind, c) {
   if (kind === 'seal' || kind === 'walrus') return pinniped(c, kind === 'walrus');
   if (kind === 'hippo') return hippo(c);
   if (kind === 'snake') return snake(c);
-  if (kind === 'elephant') return elephant(c);
-  if (kind === 'giraffe') return giraffe(c);
-  if (kind === 'zebra') return zebra(c);
+  if (kind === 'elephant') return sized(elephant(c), SIZE.elephant);
+  if (kind === 'giraffe') return sized(giraffe(c), SIZE.giraffe);
+  if (kind === 'zebra') return sized(zebra(c), SIZE.zebra);
   if (kind === 'vulture') return raptor(c);
   throw new Error('no zoo animal ' + kind);
 }

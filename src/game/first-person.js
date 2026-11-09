@@ -4,23 +4,23 @@
 // where you look. Only your own screen changes: other players see you as
 // always, just facing where you look.
 //
-// On and off with V, the Settings switch, or the zoom: zoom in past the
-// closest view to step in, zoom out to step back out. Rides, the cable car,
+// On only with V or the Settings switch: never by itself (zooming in used to
+// step in, and a touchpad scroll or a phone pinch flipped the view without
+// the player asking). Zooming out steps back out. Rides, the cable car,
 // flying and the close-up cameras (mirror, hat workshop, fishing, runway)
 // keep their own views and pause it.
 import * as THREE from 'three';
 
-const KEY = 'mk.firstPerson';
+const KEY = 'mk.firstPerson2'; // (new key: drops the 'on' that zooming in saved by accident)
 const EYE = 1.35, EYE_SEATED = 0.95; // above the chibi head (1.2 m), so the world isn't seen from the knees
 const PITCH = 1.35; // up and down as far as this (radians)
 const SENS = 0.0028; // per pixel of mouse or finger
-const ENTER_ZOOM = 2.4; // this much more zooming in at the closest view steps in
 
 export function createFirstPerson(game) {
   const { camera, canvas, cam } = game;
   let on = false;
   try { on = localStorage.getItem(KEY) === '1'; } catch { /* ignore */ }
-  let pitch = 0, wasActive = false, pushIn = 0, hid = false;
+  let pitch = 0, wasActive = false, hid = false;
   const dir = new THREE.Vector3();
   const btn = document.getElementById('fp-btn');
 
@@ -38,7 +38,6 @@ export function createFirstPerson(game) {
     on = !!v;
     try { localStorage.setItem(KEY, on ? '1' : '0'); } catch { /* ignore */ }
     btn?.setAttribute('aria-pressed', String(on));
-    pushIn = 0;
     if (!on) unlock();
     if (!quiet) game.toast(game.t(on ? 'fp.on' : 'fp.off'));
   }
@@ -64,13 +63,7 @@ export function createFirstPerson(game) {
     // The mouse and the zoom, instead of the orbiting camera. Returns false
     // when not in first person (the normal camera takes them).
     look(look) {
-      if (!active()) {
-        // Zoomed all the way in and still zooming in: step into first person.
-        if (on || !game.canUse() || look.zoom >= 0 || cam.dist > 4.01) { if (look.zoom > 0) pushIn = 0; return false; }
-        pushIn -= look.zoom;
-        if (pushIn >= ENTER_ZOOM) set(true);
-        return false;
-      }
+      if (!active()) return false;
       cam.yaw -= look.dx * SENS;
       pitch = THREE.MathUtils.clamp(pitch + look.dy * SENS, -PITCH, PITCH);
       if (look.zoom > 0) { set(false); cam.dist = 4; } // zooming out: back behind your shoulder

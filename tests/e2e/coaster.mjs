@@ -1,6 +1,8 @@
-// End-to-end check: Another Land's roller coaster. Buy the ride-all day pass
-// at the ticket window, wait at the platform for a train, get on, ride the
-// lap (the camera widens in the drop), switch the view, and step off.
+// End-to-end check: Another Land's roller coaster, on its island in Seokchon
+// Lake. Buy the ride-all day pass at the ticket window under the island, up
+// the stairs onto the island, wait at the platform for a train, get on, ride
+// the lap (the camera widens in the drop), switch the view, and step off
+// still on the island.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/coaster.mjs http://localhost:4173/ [screenshot dir]
 import { chromium } from 'playwright';
@@ -23,7 +25,7 @@ const co = () => page.evaluate(() => __mk.coaster());
 await page.evaluate(() => { __mk.coins(30000); __mk.enter('another-land'); });
 await page.waitForTimeout(2500);
 // The ticket window: buy the pass.
-await page.evaluate(() => __mk.place(-6, 11.6));
+await page.evaluate(() => __mk.place(-6, 31.6)); // (themepark.js: the booth at Z1 - 2.4)
 await page.waitForTimeout(400);
 const passLabel = await page.evaluate(() => __mk.action());
 assert(/Ride-all day pass · 🪙 20,000/.test(passLabel || ''), `pass on sale: ${passLabel}`);
@@ -31,6 +33,22 @@ await page.evaluate(() => __mk.act());
 await page.waitForTimeout(300);
 assert((await co()).pass, 'pass bought');
 assert((await page.evaluate(() => __mk.coins())) === 10000, 'paid 20,000');
+
+// Back up the stairs: out of the room under the island, onto the island
+// (no door: you're on its lawn, so you're in it).
+await page.evaluate(() => __mk.leave());
+await page.waitForTimeout(2500);
+let room = await page.evaluate(() => __mk.room());
+assert(room.mode === 'store' && room.id === 'another-land-island', `up on the island: ${JSON.stringify(room)}`);
+assert(!(await page.evaluate(() => document.body.classList.contains('in-store'))), 'outdoors: the street\'s buttons stay');
+await page.evaluate(() => { __mk.cam({ yaw: 2.4, pitch: 0.45, dist: 16 }); });
+await page.waitForTimeout(600);
+await shot('island');
+// The stairs down again.
+await page.evaluate(() => __mk.place(-26.4, -49.4)); // (in front of the stairs: stores.json open.stairs, 3.4 m out)
+await page.waitForTimeout(400);
+const dl = await page.evaluate(() => __mk.action());
+assert(/^⬇️ Enter Another Land Underground/.test(dl || ''), `stairs down: ${dl}`);
 
 // The platform.
 await page.evaluate(() => { __mk.place(-27.4, 2.4); __mk.cam({ yaw: Math.PI / 2 + 0.5, pitch: 0.35, dist: 12 }); });
@@ -68,6 +86,8 @@ assert(wide > 75, `the view widens in the drop (${wide})`);
 assert(high > 16, 'up at the top');
 c = await co();
 assert(!c.ride, 'off again');
+room = await page.evaluate(() => __mk.room());
+assert(room.id === 'another-land-island', `still on the island: ${JSON.stringify(room)}`);
 assert(Math.abs(c.at[0] + 27.6) < 0.2 && c.fov === 62, `on the platform, normal view: ${JSON.stringify(c)}`);
 await shot('off');
 assert(!errors.length, 'page errors: ' + errors.join(' | '));

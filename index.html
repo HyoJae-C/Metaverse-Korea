@@ -451,6 +451,7 @@
         <div class="map-body">
           <canvas class="map-canvas"></canvas>
           <button class="chip map-seoul" type="button">🗺️ <span data-i18n="map.seoul"></span></button>
+          <button class="chip map-locate" type="button"><span aria-hidden="true">◎</span></button>
           <p class="map-soon" hidden></p>
           <div class="map-list"></div>
         </div>
@@ -485,6 +486,9 @@
         </button>
         <button class="setting-row" id="steady-btn" aria-pressed="false">
           <span>🚶</span><span class="setting-label" data-i18n="settings.steady"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="localsky-btn" aria-pressed="false">
+          <span>🌙</span><span class="setting-label" data-i18n="settings.localSky"></span><span class="switch"></span>
         </button>
         <button class="setting-row" id="fp-btn" aria-pressed="false">
           <span>🎯</span><span class="setting-label" data-i18n="settings.firstPerson"></span><span class="switch"></span>

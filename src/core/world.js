@@ -1,6 +1,7 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { glowAtNight } from './weather.js';
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -287,6 +288,29 @@ function makeWindowTexture() {
   return tex;
 }
 
+// Lit windows after dark (weather.js glowAtNight): the same window spots
+// over 4 bays × 4 storeys, about two in three lit in a warm light, so a wall
+// at night doesn't light up in one even grid.
+function makeWindowGlow() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000000';
+  g.fillRect(0, 0, 256, 256);
+  const LIT = [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0];
+  for (let i = 0; i < 16; i++) {
+    if (!LIT[i]) continue;
+    const x = (i % 4) * 64, y = Math.floor(i / 4) * 64;
+    g.fillStyle = i % 3 ? '#ffd98a' : '#fff1cc'; // warm and a few whiter
+    g.fillRect(x + 20, y + 20, 24, 22);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(0.25, 0.25);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeBuildings(buildings) {
   const wPos = [], wUv = [], wCol = [], wIdx = [];
   const rPos = [], rIdx = [], rCol = [];
@@ -344,7 +368,9 @@ function makeBuildings(buildings) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(wCol, 3));
     g.setIndex(wIdx);
     g.computeVertexNormals();
-    walls = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true }));
+    const wallMat = new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true, emissive: 0xffffff, emissiveMap: makeWindowGlow() });
+    glowAtNight(wallMat, 0.85);
+    walls = new THREE.Mesh(g, wallMat);
     walls.name = 'walls';
   }
   if (rPos.length) {

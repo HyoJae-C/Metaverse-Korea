@@ -11,8 +11,9 @@ import {
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
-import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
-import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
+import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
+import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
+import { firstStopSpot } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -23,6 +24,7 @@ useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { lakeHoles } from './core/lakeshore.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { splitInstances } from './core/split-instances.js';
@@ -71,7 +73,8 @@ import { buildBukchonHill } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor, saveLook } from './core/look-editor.js';
+import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
+import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
@@ -88,7 +91,7 @@ import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed, daylight } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
@@ -144,6 +147,7 @@ import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
 import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
+import { createZooSounds } from './game/zoo-sounds.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -333,7 +337,7 @@ function refreshStartText() {
   const lang = getLanguage();
   const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
   $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
-    region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
+    region: localName(DISTRICT_NAME[region.spawn?.first?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon (region.json spawn.first)
     city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
@@ -368,6 +372,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
   if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
   return r.json();
 }));
+// And the player's character model, so it is ready when they walk in.
+preloadModel(loadLook().model);
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
@@ -670,7 +676,7 @@ const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to 
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -700,6 +706,12 @@ const zoo = new Zoo(scene, map.landmarks.filter((l) => l.type === 'zoopen'), ({ 
   if (mode !== 'street' || zooClosed) return;
   shop.toast(fmt(L(ZOO_TEXT[kind]), { name: L(pen.name) }));
 });
+// The animals' calls when they move, louder the nearer (src/game/zoo-sounds.js).
+const zooSounds = createZooSounds({
+  get sfx() { return sfx; },
+  listener: () => { const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0); return me ? { x: me.root.position.x, z: me.root.position.z, rx: r.x, rz: r.z } : null; },
+});
+zooSounds.attach(zoo);
 // The little animal village: a cup of food at the barn door, and a keeper
 // by the gate who tells you about the animals, one at a time.
 const ZOO_FOOD = {
@@ -799,6 +811,12 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
+// New players start inside Bukchon's gate (region.json spawn.first), next
+// to a welcome guide in the same costume: the first thing they see is a
+// hanok village, not a shopping street. The welcome high five and the first
+// errand happen there; the guide hands out errands like any other after.
+const firstStop = firstStopSpot(region);
+let welcomeNpc = null;
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
@@ -815,15 +833,24 @@ for (const sc of region.screens || []) {
 }
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
-  squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
-  squareNpc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
-  squareNpc.tag.classList.add('square-guide');
-  squareNpc.labelY = 1.95; // above the costume head
-  squareNpc.ch.activity('dance'); // dances while waiting: easy to spot
+  const mascotGuide = (x, z, ry, name = t('quest.guide')) => {
+    const npc = makeNpc($('labels'), '❗ ' + name);
+    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+    npc.tag.classList.add('square-guide');
+    npc.labelY = 1.95; // above the costume head
+    npc.ch.activity('dance'); // dances while waiting: easy to spot
+    npc.ch.root.position.set(x, 0, z);
+    npc.ch.root.rotation.y = ry;
+    scene.add(npc.ch.root);
+    return npc;
+  };
   const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
-  squareNpc.ch.root.position.set(gx, 0, gz);
-  squareNpc.ch.root.rotation.y = face(gx, gz);
-  scene.add(squareNpc.ch.root);
+  squareNpc = mascotGuide(gx, gz, face(gx, gz));
+  if (firstStop) { // a few steps ahead of where new players stand, a little to the side, facing them
+    const fx = Math.sin(firstStop.ry), fz = Math.cos(firstStop.ry);
+    const [wx, wz] = findFreeSpot(firstStop.x + fx * 2.4 + fz * 0.9, firstStop.z + fz * 2.4 - fx * 0.9);
+    welcomeNpc = mascotGuide(wx, wz, Math.atan2(firstStop.x - wx, firstStop.z - wz), t('quest.welcomeGuide'));
+  }
   const lang = getLanguage();
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
@@ -991,8 +1018,9 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
-// First minute for new players: start next to the square guide, high-five
-// them, get the first mission, then the info centre is suggested (or just
+// First minute for new players: start next to the welcome guide in Bukchon
+// (or the square guide, in a region without a first stop), high-five them,
+// get the first mission, then the info centre is suggested (or just
 // explore). 0: high five · 1: getting the mission · 2+: done.
 const ONBOARD_KEY = 'mk.onboard';
 const ONBOARD_REWARD = 20000; // won, for the welcome high five (supabase/020_rewards.sql 'quest')
@@ -1003,11 +1031,18 @@ let onboard = (() => {
     return loadLastSpot() ? 2 : 0; // players from before this: skip it
   } catch { return 2; }
 })();
-// Everyone without a saved spot to come back to starts here on the main
+// New players start in Bukchon, facing the welcome guide with the village
+// behind them (until the welcome is done: a refresh in the middle of it too).
+// Everyone else without a saved spot to come back to starts on the main
 // square, next to the guide, not in front of the subway exit and the café:
 // there the first thing you did was walk into a shop door. (A usable saved
 // spot moves returning players back where they left off, just below.)
-if (squareNpc) { // stand next to the guide, facing them
+if (onboard < 2 && welcomeNpc) {
+  const g = welcomeNpc.ch.root;
+  const [ox, oz] = findFreeSpot(firstStop.x + (Math.random() - 0.5), firstStop.z + (Math.random() - 0.5));
+  me.root.position.set(ox, 0, oz);
+  me.root.rotation.y = Math.atan2(g.position.x - ox, g.position.z - oz);
+} else if (squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
   // Beside them (not between them and the square's sign post), so the
   // camera behind us sees the guide clearly.
@@ -1020,11 +1055,11 @@ function setOnboard(n) {
   onboard = n;
   try { localStorage.setItem(ONBOARD_KEY, String(n)); } catch { /* storage blocked */ }
 }
-function onboardHi5() {
+function onboardHi5(npc = squareNpc) {
   setOnboard(1);
   $('info-hint').hidden = true;
   me.play('wave');
-  squareNpc.ch.wave();
+  npc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
   wallet.add(ONBOARD_REWARD, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
@@ -1034,10 +1069,10 @@ function onboardHi5() {
   quests.beginStarter(); // then the first path: errands near the square that each teach one thing
   // First the guide recommends the info centre, then gives the first mission.
   setTimeout(() => {
-    say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
+    say(npc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
   }, 1100);
   setTimeout(() => {
-    talkToGuide(); // the first mission
+    talkToGuide(npc); // the first mission
     setOnboard(2);
     // Then: the info centre, or explore on your own. After the guide's tip
     // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
@@ -1082,7 +1117,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) remem
 addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
-if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
+if (onboard === 0 && welcomeNpc) cam.dist = 7.5; // first minute in Bukchon: the guide ahead, the village behind them
+else if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
 let roomVisit = 0; // counts rooms walked into (the drone show tilts the view once per visit)
@@ -2208,6 +2244,7 @@ function roomFor(store) {
   built = buildInterior(store);
   built.collision = new CollisionMap(built.colliders);
   interiorCache.set(store.id, built);
+  if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
   built.setSignLang?.(signsTranslated ? getLanguage() : null);
   if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
   stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
@@ -2768,6 +2805,7 @@ function enterRunwayRoom() {
   runwayLine.clear(); // (whoever is in line will say so)
   enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
+  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
@@ -2968,6 +3006,19 @@ $('steady-btn').onclick = () => {
   $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
   try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
 };
+// Day and night on my own clock instead of Seoul's (core/weather.js).
+{
+  let on = false;
+  try { on = localStorage.getItem('mk.localSky') === '1'; } catch { /* ignore */ }
+  setLocalSky(on);
+  $('localsky-btn').setAttribute('aria-pressed', String(on));
+  $('localsky-btn').onclick = () => {
+    on = !on;
+    setLocalSky(on);
+    $('localsky-btn').setAttribute('aria-pressed', String(on));
+    try { localStorage.setItem('mk.localSky', on ? '1' : '0'); } catch { /* ignore */ }
+  };
+}
 // Gentle ride effects (the roller coaster): half the zoom and shake, no leaning.
 const RIDE_FX_KEY = 'mk.rideFx'; // 'soft': the gentle ride effects (Settings)
 let rideFxSoft = false;
@@ -3224,6 +3275,16 @@ const mapView = new MapView({
   onTaxi: (dest) => rideTaxi(dest),
 });
 
+// Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
+let minimap = null;
+import('./game/minimap.js').then(({ createMinimap }) => {
+  minimap = createMinimap({
+    hud: $('hud'), map, open: () => $('map-btn').click(),
+    getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no minimap: the Map button still works */ });
+
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -3265,7 +3326,9 @@ function firstTaxiCard(lines, buttons) {
 // TRIP): a little tour. Take out the bike, ride to Seongsu Station, get off
 // (no bikes on the stairs), one stop to Seoul Forest and a walk in the park,
 // the train on to Anguk, up into Bukchon, a walk to Cheonggyecheon; then a
-// free taxi back to the square guide. Each step
+// free taxi back to the square guide. New players, who start in Bukchon,
+// get BUKCHON_TRIP instead: the Open House, Anguk Station, the train to
+// Seongsu and up to the square guide. Each step
 // shows its line on the ground; "Later" moves on to the next errand.
 const TRIP_CARD = {
   home: { en: "🚕 Back in Seongsu! Tell the guide you made it.", ko: "🚕 성수에 돌아왔어요! 안내원에게 보고해요.", ja: "🚕 聖水に戻ってきた！案内係に報告しよう。", zh: "🚕 回到圣水了！去向导那里汇报吧。", es: "🚕 ¡De vuelta en Seongsu! Avisa al guía.", id: "🚕 Kembali di Seongsu! Lapor ke pemandu.", ar: "🚕 عدت إلى سونغسو! أبلغ المرشد.", vi: "🚕 Đã về Seongsu! Báo cho người hướng dẫn nhé.", hi: "🚕 सोंगसू वापस! गाइड को बताएँ।", fr: "🚕 De retour à Seongsu ! Va le dire au guide.", th: "🚕 กลับถึงซองซูแล้ว! ไปรายงานไกด์กัน" },
@@ -3278,7 +3341,15 @@ const TRIP_CARD = {
   wrongStop: { en: "This is {name}. Get off at {stop}!", ko: "여기는 {name}이에요. {stop}에서 내려요!", ja: "ここは{name}。{stop}で降りてね！", zh: "这里是{name}。请在{stop}下车！", es: "Esto es {name}. ¡Bájate en {stop}!", id: "Ini {name}. Turun di {stop}!", ar: "هذه {name}. انزل في {stop}!", vi: "Đây là {name}. Hãy xuống ở {stop}!", hi: "यह {name} है। {stop} पर उतरें!", fr: "C'est {name}. Descends à {stop} !", th: "ที่นี่คือ {name} ลงที่ {stop} นะ!" },
   done: { en: "🏮 This is Cheonggyecheon! Last step: the taxi back to Seongsu is on us. Then tell the square guide for your coins.", ko: "🏮 여기가 청계천이에요! 마지막은 무료 택시로 다시 성수로 돌아가요. 광장 안내원에게 보고하면 보상을 받아요.", ja: "🏮 ここが清渓川！最後は無料タクシーで聖水へ戻ろう。広場の案内係に報告するとご褒美がもらえるよ。", zh: "🏮 这里就是清溪川！最后一步：坐免费出租车回圣水，向广场向导汇报领取奖励。", es: "🏮 ¡Esto es Cheonggyecheon! Último paso: el taxi de vuelta a Seongsu es gratis. Luego avisa al guía de la plaza para cobrar.", id: "🏮 Ini Cheonggyecheon! Langkah terakhir: taksi gratis kembali ke Seongsu. Lalu lapor ke pemandu alun-alun untuk hadiahmu.", ar: "🏮 هذا تشونغيتشون! الخطوة الأخيرة: سيارة أجرة مجانية للعودة إلى سونغسو. ثم أبلغ مرشد الساحة لتأخذ مكافأتك.", vi: "🏮 Đây là Cheonggyecheon! Bước cuối: taxi miễn phí về lại Seongsu. Rồi báo cho người hướng dẫn quảng trường để nhận thưởng.", hi: "🏮 यह चॉन्गेचॉन है! आख़िरी कदम: सोंगसू वापसी की टैक्सी मुफ़्त है। फिर इनाम के लिए चौक के गाइड को बताएँ।", fr: "🏮 Voici Cheonggyecheon ! Dernière étape : le taxi du retour à Seongsu est offert. Ensuite, va voir le guide de la place pour ta récompense.", th: "🏮 ที่นี่คือชองกเยชอน! ขั้นสุดท้าย: นั่งแท็กซี่ฟรีกลับซองซู แล้วรายงานไกด์ประจำลานเพื่อรับรางวัล" },
 };
-const tripStep = () => (quests.active?.kind === 'trip' ? TRIP[quests.active.stage | 0]?.step || 'done' : null);
+const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
+const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
+// Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
+const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
+const inOpenHouse = (x, z) => {
+  if (!bkOffset) return false;
+  const [x0, z0, x1, z1] = BUKCHON.openHouse.box, lx = x - bkOffset[0], lz = z - bkOffset[1];
+  return lx > Math.min(x0, x1) && lx < Math.max(x0, x1) && lz > Math.min(z0, z1) && lz < Math.max(z0, z1);
+};
 // The pavement outside the subway exit nearest (x, z).
 function nearestSubwayExit(x, z) {
   let best = null, bd = Infinity;
@@ -3292,19 +3363,25 @@ const zonePlace = (id) => { const z = zones.items.find((i) => i.zone.id === id);
 // Where this step of the trip happens (null: nothing to walk to).
 function tripPlace(step) {
   const here = myPlace();
-  if (step === 'forest') return zonePlace('K');
-  if (step === 'station' || step === 'down') return nearestSubwayExit(here.x, here.z);
-  if (step === 'forestStop' || step === 'anguk') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
+  if (step === 'forest') return zonePlace('A-7');
+  if (step === 'station' || step === 'angukWalk' || step === 'down') return nearestSubwayExit(here.x, here.z);
+  if (step === 'forestStop' || step === 'anguk' || step === 'seongsuStop') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
   if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
-  if (step === 'cheonggye') return zonePlace('L');
+  if (step === 'cheonggye') return zonePlace('B-2');
+  if (step === 'square') return zonePlace('A-1');
+  if (step === 'openHouse' && bkOffset) { // just inside its gate
+    const [gx, gz] = BUKCHON.openHouse.gate;
+    return { kind: 'zone', id: 'open-house', x: bkOffset[0] + gx, z: bkOffset[1] + gz - 3, label: L(TRIP_TEXT.openHouse) };
+  }
   return null;
 }
 let tripShown = null, tripGuided = null, tripCard = null; // the step last announced / given a line; its card
 function offerTrip(npc) {
   tripShown = tripStep();
-  if (tripShown !== 'bike') { tripGuided = null; return; } // (picked up again by tripTick)
-  firstTaxiCard(L(TRIP_CARD.offer), [
-    ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
+  const first = fromBukchon() && tripShown === 'openHouse'; // (the trip from Bukchon starts on foot)
+  if (tripShown !== 'bike' && !first) { tripGuided = null; return; } // (picked up again by tripTick)
+  firstTaxiCard(L(first ? BUKCHON_TRIP_CARD.offer : TRIP_CARD.offer), [
+    first ? ['primary', L(BUKCHON_TRIP_CARD.go), () => { tripGuided = null; tripTick(); }] : ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
     ['chip', L(TRIP_CARD.later), () => {
       if (!tripStep() || !quests.skipStarter()) return;
       if (guide) clearGuide();
@@ -3324,7 +3401,9 @@ function onTripStep() {
     if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
     sfx.pop?.();
     me.play('cheer');
-    tripTaxiCard();
+    if (fromBukchon()) { // already on Seongsu Square: the guide is right here
+      firstTaxiCard(L(BUKCHON_TRIP_CARD.done), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
+    } else tripTaxiCard();
     return;
   }
   if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true; // the last step's card
@@ -3354,7 +3433,9 @@ function tripTick() {
   const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
   if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
   else if (step === 'forest' && near(zonePlace('A-7'), 30)) missionEvent('place', 'A-7');
-  else if (step === 'station' && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if ((step === 'station' || step === 'angukWalk') && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if (step === 'openHouse' && mode === 'street' && inOpenHouse(p.x, p.z)) missionEvent('place', 'open-house');
+  else if (step === 'square' && near(zonePlace('A-1'), 20)) missionEvent('place', 'A-1');
   else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
   else if (step === 'bukchon' && near(tripPlace('bukchon'), 20)) missionEvent('place', 'bukchon');
   else if (step === 'cheonggye' && near(zonePlace('B-2'), 35)) missionEvent('place', 'B-2');
@@ -3369,7 +3450,7 @@ setInterval(tripTick, 500);
 function subwayArrived(k) {
   const id = stationStores[k].subway?.id;
   missionEvent('subway', id);
-  const want = quests.active?.kind === 'trip' && TRIP[quests.active.stage | 0];
+  const want = quests.active?.kind === 'trip' && tripOf(quests.active)[quests.active.stage | 0];
   const stop = want?.on === 'subway' && want.target !== id && stationStores.find((st) => st.subway?.id === want.target);
   if (stop) shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()), stop: localName(stop.name, getLanguage()) }));
 }
@@ -3384,6 +3465,7 @@ function myPlace() {
 function nearestGuidePlace(x, z) {
   const out = [];
   if (squareNpc) out.push({ kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') });
+  if (welcomeNpc) out.push({ kind: 'npc-guide', id: 'welcome-guide', x: welcomeNpc.ch.root.position.x, z: welcomeNpc.ch.root.position.z, label: t('quest.welcomeGuide') });
   for (const it of storefronts.items) if (it.store.workshop === 'info') out.push({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
   let best = null, bd = Infinity;
   for (const g of out) { const d = Math.hypot(g.x - x, g.z - z); if (d < bd) { bd = d; best = g; } }
@@ -5053,13 +5135,17 @@ function coasterCamera(dt) {
 // train * 10 + seat + 1); the train runs on the shared clock, so they sit
 // exactly where they are on their own screen, arms up in the drop.
 function placeRemoteRider(ch, cs, q) {
-  if (!interior?.coaster) return;
+  // (Another Land's island: they're on the street's side, so the seat is
+  // turned from the island's metres into the street's)
+  const op = outdoors() ? openParks.find((o) => o.built?.coaster && (o.near || openParkHere() === o)) : null;
+  if (!op && !interior?.coaster) return;
   const train = Math.floor((cs - 1) / 10), seat = (cs - 1) % 10;
   if (train >= TRAINS || seat >= COASTER_SEATS) return;
   q.cf ||= {};
   const f = coasterSeat(train, seat, coasterNow(), q.cf);
   ch.root.rotation.order = 'YXZ';
   sitOnTrack(ch.root, f);
+  if (op) ch.root.applyMatrix4(op.toWorld);
   const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
   if (up !== !!q.coUp) { q.coUp = up; ch.setMoves?.(up ? ARMS_UP : null); }
   ch.setWind?.(f.tr.k01);
@@ -5216,7 +5302,7 @@ function updateFireworks() {
   }
   if (!fireworks.sky) return;
   if (!street) { fireworks.sky.points.visible = false; return; }
-  const fired = fireworks.sky.update(s.start, t, night, op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight);
+  const fired = fireworks.sky.update(s.start, t, Math.max(night, darkness()), op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight); // (bright from afar too when Seoul's night is real)
   // Booms: louder close by, later far away; at most a few a second.
   for (const b of fired) {
     const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
@@ -5237,7 +5323,7 @@ const hanParks = createHanParks({
   scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
   makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
-  night: () => 1 - daylight(weather.hour()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   onVisit: (store) => { roomVisit++; missionEvent('visit', store.id); }, // (as walking into a shop does)
   // What there is to do there (each made only when you're next to it).
   acts: {
@@ -5267,7 +5353,10 @@ const openParks = storefronts.items.filter((i) => i.open).map((item) => {
   const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
   if (grass) item.store.open.grass = COLORS[grass.k];
   const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
-  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false };
+  // (a park with its own shore, like Another Land's island, says where its
+  // edge is: `lawn` to walk in, the wider `out` to walk off)
+  const { lawn = null, out = null } = item.store.open;
+  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false, lawn, out };
 });
 const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
 function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
@@ -5305,6 +5394,13 @@ function staffOpenPark(built) {
 }
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
+  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+    if (!domeLoading) {
+      domeLoading = true;
+      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    }
+    return null;
+  }
   if (!o.built) {
     o.built = roomFor(o.item.store);
     o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
@@ -5343,7 +5439,8 @@ function updateOpenParks(dt) {
     net.update?.(wx, wz); // (the street's area cells, as on the street)
     sun.position.set(wx + 60, 120, wz + 40);
     sun.target.position.set(wx, 0, wz);
-    if (seated == null && (Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1)) leaveStore(true);
+    const off = here.out ? !pointInPoly(p.x, p.z, here.out) : Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1;
+    if (seated == null && !ride && off) leaveStore(true);
     return;
   }
   if (mode !== 'street') return;
@@ -5354,7 +5451,8 @@ function updateOpenParks(dt) {
     const d = Math.hypot(p.x - o.ox, p.z - o.oz);
     o.near = d < PARK_NEAR;
     if (!o.near) continue;
-    lightOpenPark(openParkRoom(o));
+    if (!openParkRoom(o)) continue; // (its code is still coming)
+    lightOpenPark(o.built);
     o.built.tick?.(dt, null);
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.
@@ -5362,7 +5460,8 @@ function updateOpenParks(dt) {
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
-    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro && !inCab) {
+    const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
+    if (onLawn && !subway.metro && !inCab) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
@@ -5465,7 +5564,7 @@ const beauty = createBeauty({
   get myLook() { return myLook; }, set myLook(v) { myLook = v; },
   setLook, resendState: () => { lastSent = null; },
 });
-const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
+const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, surgeryView, startHaircut, updateHaircut, finishHaircut } = beauty;
 // Within r metres of a spot ({ x, z }) that may be missing.
 const nearSpot = (q, p, r) => !!q && Math.hypot(p.x - q.x, p.z - q.z) < r;
 const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
@@ -5705,8 +5804,10 @@ function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
-  if (q.kind === 'trip' && TRIP_TEXT[TRIP[q.stage | 0]?.step]) return L(TRIP_TEXT[TRIP[q.stage | 0].step]);
-  if (st && st.kind === q.kind && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
+  const step = q.kind === 'trip' && tripOf(q)[q.stage | 0]?.step;
+  if (step && TRIP_TEXT[step]) return L(TRIP_TEXT[step]);
+  const tipKey = q.route === 'bukchon' ? 'tripBukchon' : st?.tip;
+  if (st && st.kind === q.kind && STARTER_TEXT[tipKey]) return fmt(L(STARTER_TEXT[tipKey].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 // Where an errand happens (for the 🧭 button next to the chip): its shop,
@@ -5715,7 +5816,7 @@ function questPlace(q, ready) {
   // Done: report to the nearest guide (the square, or any Information Center).
   if (ready) { const here = myPlace(); return nearestGuidePlace(here.x, here.z); }
   if (q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
-  if (q.kind === 'trip') return tripPlace(TRIP[q.stage | 0]?.step);
+  if (q.kind === 'trip') return tripPlace(tripOf(q)[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
@@ -5759,12 +5860,13 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
     // On the first path, say the tip again too (it is easy to miss the first time).
-    const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
+    const tip = q.starter != null && STARTER_TEXT[q.route === 'bukchon' ? 'tripBukchon' : STARTER[q.starter]?.tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
     if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
-    const d = !atSquare && here?.store ? districtOfStore(here.store) : null;
+    const d = !atSquare && here?.store ? districtOfStore(here.store) : npc === welcomeNpc ? firstStop.district : null;
     const a = quests.start({
+      route: npc === welcomeNpc ? 'bukchon' : null, // the first trip, from the welcome guide: starts in Bukchon
       stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
         && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
@@ -5772,7 +5874,7 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
     // On the first path the guide also gives a tip for this errand.
-    const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
+    const tip = a.starter != null && STARTER_TEXT[a.route === 'bukchon' ? 'tripBukchon' : STARTER[a.starter].tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
     if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
@@ -5929,20 +6031,23 @@ function infoMissionAct(p) {
 }
 // The square guide: the first high five, today's errand, or a chat.
 function guideAct(p) {
-  if (!squareNpc) return null;
-  const d = Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z);
-  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
+  // The nearer of the square guide and the welcome guide in Bukchon.
+  const dist = (n) => (n ? Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z) : Infinity);
+  const npc = dist(welcomeNpc) < dist(squareNpc) ? welcomeNpc : squareNpc;
+  if (!npc) return null;
+  const d = dist(npc);
+  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5(npc) };
   if (d >= 2.6) return null;
   const q = quests.active;
   if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // a high-five errand saved before they stopped
     return { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
-      me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
+      me.play('wave'); npc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
       missionEvent('highfive');
-      setTimeout(() => talkToGuide(), 700); // report straight away
+      setTimeout(() => talkToGuide(npc), 700); // report straight away
     } };
   }
   const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
-  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide(npc) };
 }
 const MAX_CHOICES = 6;
 // Everything else close enough to do right now, besides what the button shows
@@ -6140,6 +6245,9 @@ function updateAction(p, tSec) {
       next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
+    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
+      const under = storefronts.items.find((i) => i.store.below === interior.store.id);
+      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => enterStore(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = parkRideAction(st);
@@ -6429,7 +6537,7 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
-// First-person view (game/first-person.js): V, Settings, or zooming in.
+// First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
   canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
@@ -6615,6 +6723,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
+  surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
   else if (ride?.pose) {
     rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic');
@@ -6662,6 +6771,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
+  minimap?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
@@ -6704,7 +6814,7 @@ renderer.setAnimationLoop((now) => {
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
-    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; st.x = COASTER_OFF.x; st.z = COASTER_OFF.z; st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
+    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; [st.x, st.z] = peerSpot(COASTER_OFF.x, COASTER_OFF.z); st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
     if (teleports) st.tp = teleports;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
     if (Math.abs(p.y) > 0.05 && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
@@ -6764,15 +6874,16 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
   }
-  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
-  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !ride);
+  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
+  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
   if (keeper) {
     if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
     else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';
   }
-  if (squareNpc) {
-    if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
-    else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
+  for (const g of [squareNpc, welcomeNpc]) {
+    if (!g) continue;
+    if (mode === 'street') { g.ch.animate(dt, 0); placeLabels(g, camera, w, h); }
+    else for (const el of [g.tag, g.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
   if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
@@ -6785,8 +6896,10 @@ renderer.setAnimationLoop((now) => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
-  if (activeScene === scene) farPeople.update(dt, scene, camera); // skip people too far away to see (core/far-people.js)
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
+  // Skip people too far away to see (core/far-people.js): after drawing, so
+  // everyone's matrixWorld is this frame's; never your own character.
+  if (activeScene === scene) farPeople.update(dt, scene, camera, me.root);
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
   // through things (signs, glass) would leave it below 1 and let the page
   // show through: make every pixel opaque, then cut the hole.
@@ -6944,6 +7057,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
+    surgery: () => startSurgery(myLook), // (in a clinic: the operating scene without paying)
+    surgeryT: (t) => { if (beauty.surgery) beauty.surgery.t = t; return beauty.surgery?.t ?? null; },
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
@@ -6992,6 +7107,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
+    welcomeGuide: () => welcomeNpc && [welcomeNpc.ch.root.position.x, welcomeNpc.ch.root.position.z, welcomeNpc.ch.root.rotation.y],
+    onboard: () => onboard,
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     hiring: () => hiringPlaces,
     delivery: () => deliveryGame.delivery && { ...deliveryGame.delivery, left: (deliveryGame.delivery.until - performance.now()) / 1000 },

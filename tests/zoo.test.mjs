@@ -3,9 +3,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { buildMap, PENS, ZOO_OPEN, HOARDING } from '../scripts/build-grand-park.mjs';
+import { buildMap, PENS, ZOO_OPEN, HOARDING, PLAZA, WALKS } from '../scripts/build-grand-park.mjs';
 import { Zoo, feedPhase, fenceLines, FEED_CYCLE, FOOD_CUP } from '../src/core/zoo.js';
 import { makeZooAnimal, ZOO_LOOKS } from '../src/core/zoo-animals.js';
+import { inPolygon } from '../src/core/seoul-grid.js';
 
 // (name boards and signs draw on a canvas; tests don't look at them)
 globalThis.document ??= { createElement: () => ({ getContext: () => new Proxy({}, { get: () => () => ({ width: 0 }) }) }) };
@@ -83,25 +84,54 @@ test('the hippo comes to the front, opens wide and crunches the watermelon', () 
   assert.ok(notices.includes('crunch'));
 });
 
-test('the Sea Animals hall holds three tanks, one animal kind each, with a door onto the path', () => {
+test('the Sea Animals hall is a closed building on the path: its door is a storefront, its inside a room of its own', async () => {
   const hall = PENS.find((p) => p.id === 'sea');
   assert.equal(hall.fence, 'hall');
-  assert.equal(hall.gate.side, 'n');
-  const tanks = PENS.filter((p) => p.in === 'sea');
-  assert.deepEqual(tanks.map((t) => t.groups[0].kind).sort(), ['polarbear', 'seal', 'walrus']);
-  for (const t of tanks) assert.equal(t.groups.length, 1);
+  assert.ok(hall.closed && !hall.gate, 'no way in through the walls');
+  assert.ok(!PENS.some((p) => p.in === 'sea'), 'the tanks are in the room, not on the street');
   const zoo = new Zoo(new THREE.Scene(), [hall]);
+  assert.equal(zoo.pens[0].roof, null, 'the roof never lifts away');
+  assert.ok(!zoo.pens[0].g.children.some((o) => o.name === 'hall-inner'));
   zoo.update(0.1, { x: hall.x, z: hall.z });
-  assert.equal(zoo.pens[0].roof.visible, false, 'the outside shell lifts away while you are inside');
-  // ...but the room stays round you: walls facing in, a high ceiling.
-  const inner = zoo.pens[0].g.children.filter((o) => o.name === 'hall-inner');
-  assert.ok(inner.length >= 5 && inner.every((o) => o.visible && o.geometry.parameters.height >= 6), 'tall room walls');
-  for (const o of inner) { // each faces into the room
-    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(o.quaternion);
-    assert.ok(n.x * -o.position.x + n.z * -o.position.z > 0);
+  assert.equal(zoo.indoors, false);
+  // The walls you bump into are a custom building (drawn by the pen), whose
+  // north face takes the storefront: the door onto the path.
+  const b = map.buildings.find((o) => o.custom);
+  const [x0, z0, x1, z1] = box(hall);
+  assert.deepEqual(b.p, [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+  const { readFileSync } = await import('node:fs');
+  const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
+  const store = read('stores.json').stores.find((s) => s.id === 'cgp-sea-hall');
+  assert.equal(store.workshop, 'zoo-sea');
+  assert.equal(store.district, 'grand-park');
+  const [ox, oz] = read('region.json').districts.find((d) => d.id === 'grand-park').offset;
+  const [dx, dz] = [store.at[0] - ox, store.at[1] - oz];
+  assert.ok(dx > x0 + 3 && dx < x1 - 3 && dz < z0 && z0 - dz < 2, 'the door is on the hall\'s north side, just outside it');
+  assert.ok(Math.abs(dz - -38) < 2.5, 'on the north path');
+  for (const bl of map.blockers) assert.ok(!inPolygon(dx, dz, bl.p), 'nothing in front of the door');
+});
+
+test('inside the Sea Animals hall: three tanks behind glass, seals, a walrus and a polar bear, benches to watch from', async () => {
+  const { buildInterior, roomOf } = await import('../src/core/interior.js');
+  const { SEA_TANKS } = await import('../src/core/zoo-sea-hall.js');
+  const store = { id: 'cgp-sea-hall', workshop: 'zoo-sea', size: 'zoosea', category: 'play', name: { en: 'Sea Animals' }, colors: {} };
+  const room = roomOf(store);
+  const r = buildInterior(store);
+  assert.ok(r.zooHall, 'the tanks are zoo pens');
+  assert.deepEqual(r.zooHall.pens.flatMap((P) => P.animals.map((a) => a.kind)).sort(), ['polarbear', 'seal', 'seal', 'seal', 'walrus']);
+  for (const t of SEA_TANKS) {
+    assert.ok(t.x - t.w / 2 > -room.w / 2 && t.x + t.w / 2 < room.w / 2 && t.z - t.d / 2 > -room.d / 2, `${t.id} tank fits in the room`);
+    assert.equal(t.board, false, 'its name is on the wall, not on a board in front of the glass');
+    assert.equal(t.front, 's', 'its glass faces the walkway');
   }
-  zoo.update(0.1, { x: hall.x, z: hall.z - 30 });
-  assert.equal(zoo.pens[0].roof.visible, true);
+  // The walk from the door to the glass is clear, and the tanks are solid.
+  const inside = (x, z) => r.colliders.some((c) => inPolygon(x, z, c.p));
+  for (let z = r.exit.z - 0.5; z > SEA_TANKS[0].z + SEA_TANKS[0].d / 2 + 0.3; z -= 0.5) assert.ok(!inside(0, z), `path open at ${z}`);
+  for (const t of SEA_TANKS) assert.ok(inside(t.x, t.z), `${t.id} tank is solid`);
+  assert.equal(r.seats.length, 4);
+  for (const s of r.seats) assert.ok(!inside(...s.stand), 'you get up off the bench onto the floor');
+  r.tick(0.1, new THREE.Vector3(0, 0, 3));
+  r.tick(0.1, null);
 });
 
 test('the little animal village: a solid barn, food at its door, a keeper, and animals that eat from your hand', () => {
@@ -283,12 +313,128 @@ test('bears have no hump on the rump: a brown bear\'s hump is over its shoulders
   }
 });
 
-test('the Sea Animals hall is a room: you are indoors in it, and no snow settles on its floor', () => {
-  const hall = PENS.find((p) => p.id === 'sea');
-  const zoo = new Zoo(new THREE.Scene(), [hall]);
-  zoo.update(0.1, { x: hall.x, z: hall.z });
-  assert.equal(zoo.indoors, true);
-  assert.equal(zoo.pens[0].g.userData.noSnow, true);
-  zoo.update(0.1, { x: hall.x, z: hall.z - hall.d / 2 - 3 });
-  assert.equal(zoo.indoors, false, 'out of the door: outdoors');
+test('the paths wind: no long straight run, and they meet at a round flower plaza', () => {
+  for (const [k, r] of Object.entries(WALKS)) {
+    let run = 0, dir = null;
+    for (let i = 1; i < r.p.length; i++) {
+      const a = Math.atan2(r.p[i][1] - r.p[i - 1][1], r.p[i][0] - r.p[i - 1][0]);
+      run = dir != null && Math.abs(a - dir) < 0.01 ? run + Math.hypot(r.p[i][0] - r.p[i - 1][0], r.p[i][1] - r.p[i - 1][1]) : 0;
+      dir = a;
+      assert.ok(run < 15 || (k === 'main' && r.p[i][0] <= 64), `${k}: straight for ${run.toFixed(0)} m at ${r.p[i]}`);
+    }
+  }
+  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
+  assert.deepEqual([fl.x, fl.z], [PLAZA.x, PLAZA.z]);
+  for (const k of ['main', 'east', 'crossNorth', 'crossSouth']) {
+    const ends = [WALKS[k].p[0], WALKS[k].p.at(-1)];
+    assert.ok(ends.some(([x, z]) => Math.abs(Math.hypot(x - PLAZA.x, z - PLAZA.z) - PLAZA.r) < 0.2), `${k} reaches the plaza`);
+  }
+});
+
+test('flower beds and borders: plenty of them, off the paths, out of the pens, inside the zoo', () => {
+  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
+  assert.ok(fl.beds.length >= 40 && fl.borders.length >= 20);
+  const segDist = (x, z, [ax, az], [bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(x - ax - t * dx, z - az - t * dz);
+  };
+  const pathGap = (x, z) => Math.min(...Object.values(WALKS).flatMap((r) => r.p.slice(1).map((q, i) => segDist(x, z, r.p[i], q) - r.w / 2)));
+  const inPen = (x, z, m) => PENS.some((p) => Math.abs(x - p.x) < p.w / 2 + m && Math.abs(z - p.z) < p.d / 2 + m);
+  for (const [bx, bz, r] of fl.beds) {
+    const [x, z] = [bx + fl.x, bz + fl.z];
+    assert.ok(pathGap(x, z) > r, `bed at ${x}, ${z} keeps off the paths`);
+    assert.ok(!inPen(x, z, r), `bed at ${x}, ${z} is out of the pens`);
+    assert.ok(x - r > 55 && x + r < 200 && z - r > -80 && z + r < 95, 'inside the hoarding');
+  }
+  for (const [a, b, c, d] of fl.borders) {
+    for (let t = 0; t <= 1; t += 0.1) {
+      const [x, z] = [fl.x + a + (c - a) * t, fl.z + b + (d - b) * t];
+      assert.ok(pathGap(x, z) > 0.3, `border at ${x.toFixed(1)}, ${z.toFixed(1)} off the paths`);
+      assert.ok(!inPen(x, z, 0.3), 'outside its pen');
+    }
+  }
+});
+
+test('animal calls: every kind that moves has a voice, played when a motion starts, fading with distance', async () => {
+  const { VOICES, LOUD, CALL_NAMES, callFor, fallOff, HEAR } = await import('../src/core/zoo-voices.js');
+  const kinds = new Set(PENS.flatMap((p) => (p.groups || []).map((g) => g.kind)));
+  for (const k of kinds) assert.ok(VOICES[k], `${k} has a voice`);
+  for (const calls of Object.values(VOICES)) for (const c of Object.values(calls)) assert.ok(CALL_NAMES.includes(c) && LOUD[c] > 0, c);
+  assert.equal(callFor('lion', 'roar'), 'roar');
+  assert.equal(callFor('lion', 'walk'), null, 'walking about is quiet');
+  assert.ok(fallOff(0) === 1 && fallOff(10) > fallOff(20) && fallOff(HEAR) === 0);
+  // The zoo says when a motion starts, once.
+  const lions = PENS.find((p) => p.id === 'lions');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null }]);
+  const heard = [];
+  zoo.onSound = (a, m) => heard.push([a.kind, m]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'roar'; a.t = 3;
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  assert.equal(heard.filter(([, m]) => m === 'roar').length, 1);
+});
+
+test('zoo sounds: nearer is louder, panned to its side, and each animal waits before calling again', async () => {
+  const { createZooSounds, COOLDOWN } = await import('../src/game/zoo-sounds.js');
+  const zs = createZooSounds({ sfx: null, listener: () => ({ x: 0, z: 0, rx: 1, rz: 0 }) });
+  const near = zs.placeOf(3, 0), far = zs.placeOf(20, 0), left = zs.placeOf(-5, 0);
+  assert.ok(near.gain > far.gain && near.pan > 0 && left.pan < 0);
+  assert.equal(zs.placeOf(60, 0), null, 'too far to hear');
+  assert.ok(COOLDOWN >= 3);
+});
+
+test('the hippo: ears on hinges that flutter when it comes up, and more time out of the water', () => {
+  const hippos = PENS.find((p) => p.id === 'hippos');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...hippos, name: null }]);
+  const h = zoo.pens[0].animals[0];
+  assert.equal(h.flaps.length, 2, 'two ears that move');
+  h.sink = 0.8; zoo._parts(h, 0.016);
+  h.sink = 0.1; zoo._parts(h, 0.016); zoo._parts(h, 0.01);
+  assert.ok(h.flick > 0, 'coming up: a flutter');
+  assert.ok(h.flaps.some((e) => Math.abs(e.rotation.y) > 0.01), 'the ears move');
+  // Picking what to do, in the water: out it comes, most of the time.
+  const [px, pz] = hippos.pond;
+  let swims = 0;
+  for (let i = 0; i < 400; i++) {
+    h.root.position.set(px, 0, pz); h.mate = null;
+    zoo._pick(h, 100, 100, false, zoo.pens[0]);
+    const tgt = h.state === 'walk' && h.target;
+    if (!tgt || Math.hypot(tgt[0] - px, tgt[1] - pz) < hippos.pond[2]) swims++;
+  }
+  assert.ok(swims / 400 < 0.45, `stays in the water ${(swims / 4).toFixed(0)}% of picks`);
+});
+
+test('three herbivore pens you can see across, bigger zebras, elephants and giraffes, a giraffe neck with two joints', async () => {
+  const { SIZE } = await import('../src/core/zoo-animals.js');
+  for (const [id, kind] of [['zebras', 'zebra'], ['elephants', 'elephant'], ['giraffes', 'giraffe']]) {
+    const p = PENS.find((q) => q.id === id);
+    assert.ok(p && p.groups.every((g) => g.kind === kind), `${id} holds ${kind}`);
+    assert.ok(p.d <= 25, `${id} is small enough to see across`);
+    assert.ok(SIZE[kind] > 1.2, `${kind} drawn bigger`);
+  }
+  assert.ok(!PENS.some((p) => p.id === 'savanna'));
+  const g = makeZooAnimal('giraffe', ZOO_LOOKS.giraffe[0]);
+  assert.ok(g.neck && g.neck2 && g.neck2.parent === g.neck, 'the upper neck hangs off the lower');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...PENS.find((q) => q.id === 'giraffes'), name: null }]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'drink';
+  for (let i = 0; i < 60; i++) zoo._parts(a, 0.05);
+  assert.ok(a.neck2.rotation.x > 0.5 && a.neck.rotation.x > a.neck0 + 0.5, 'both joints bend down to drink');
+});
+
+test('the snake: a smaller house, and a body that follows its head and coils up at rest', () => {
+  const rep = PENS.find((p) => p.id === 'reptiles');
+  assert.ok(rep.w * rep.d <= 80, 'a small reptile house');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...rep, name: null }]);
+  const s = zoo.pens[0].animals[0];
+  s.root.position.set(-2, 0, 0); s.root.rotation.y = Math.PI / 2; // heading +x
+  for (let i = 0; i < 80; i++) { s.root.position.x += 0.03; s.phase += 0.03; zoo._slither(s, 0.03, true); }
+  const tail = s.segs.at(-1).position, mid = s.segs[15].position;
+  assert.ok(tail.z < mid.z && mid.z < 0, 'the body trails behind the head');
+  assert.ok(s.segs.some((q) => Math.abs(q.position.x) > 0.03), 'in S curves');
+  for (let i = 0; i < 200; i++) zoo._slither(s, 0.05, false);
+  assert.ok(s.coil > 0.9, 'coiled up at rest');
+  const spread = Math.max(...s.segs.map((q) => Math.hypot(q.position.x, q.position.z)));
+  assert.ok(spread < 0.5, 'a tight coil');
 });
