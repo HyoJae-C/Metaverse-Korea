@@ -53,14 +53,14 @@ const b = await join('Street B');
 const mk = (pg, f, ...x) => pg.evaluate(([f, x]) => window.__mk[f](...x), [f, x]);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 try {
-  const park = await a.evaluate(async () => (await (await fetch('regions/another-seoul/stores.json')).json()).stores.find((s) => s.id === 'banpo-jamwon-hangang').open);
+  const park = await a.evaluate(async () => (await (await fetch('regions/another-seoul/stores.json')).json()).stores.find((s) => s.id === 'yeouido-hangang').open);
   const { at: [ox, oz], ry } = park;
   const world = (x, z) => [ox + x * Math.cos(ry) + z * Math.sin(ry), oz - x * Math.sin(ry) + z * Math.cos(ry)];
   await mk(a, 'place', ...world(0, 20));
   await mk(b, 'place', ...world(3, 20));
   await wait(4000);
   await mk(a, 'place', ...world(0, 8)); // onto the lawn
-  await a.waitForFunction(() => __mk.room().id === 'banpo-jamwon-hangang', null, { timeout: 10000 });
+  await a.waitForFunction(() => __mk.room().id === 'yeouido-hangang', null, { timeout: 10000 });
   const seen = async (pg) => (await mk(pg, 'snowSeen')).filter((q) => !q[1] && q[3] != null);
   const at = world(0, 8);
   await b.waitForFunction(([x, z]) => __mk.snowSeen().some((q) => q[3] != null && Math.abs(q[3] - x) < 2), at, { timeout: 15000 }).catch(() => {});
@@ -75,7 +75,7 @@ try {
   // Off the lawn and back: still the same room (no reconnect), B still there.
   await mk(a, 'leave');
   await mk(a, 'place', ...world(0, 8));
-  await a.waitForFunction(() => __mk.room().id === 'banpo-jamwon-hangang', null, { timeout: 10000 });
+  await a.waitForFunction(() => __mk.room().id === 'yeouido-hangang', null, { timeout: 10000 });
   await wait(500);
   if (!(await seen(a)).length) throw new Error('A lost B walking off and on the lawn');
   if (errors.length) throw new Error('page errors: ' + errors.join(' | '));

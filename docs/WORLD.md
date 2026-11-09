@@ -162,8 +162,21 @@ own frame (u along the bank, v across it). Jamsu Bridge, the low deck under
 Banpo Bridge, crosses from the north bank: the river's blocker has a gap for
 it, and the `jamsu` landmark draws its kerbs, railings, lamps and Banpo
 Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
-Seobinggo-ro. The park house on the bank is the door to the park room; its ★5
-legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
+Seobinggo-ro. Its ★5 legend is the manta ray (`PARK_LEGENDS` in
+`src/core/fishing.js`).
+
+The park is laid straight on the street, with no room or door: the
+`hanpark` landmark (`PARK` in the script) says where everything goes, in
+the park's own frame (x along the bank from the bridge, z inland from the
+bank's edge). `src/core/han-park.js` builds what the map can't draw, and
+`src/game/han-parks.js` sets it on the street the first time you come near.
+You stay on the street: the same room, the same network, the map. As the
+real parks are, at 1/4:
+- Banpo (west of the bridge): Moonlight Square at the foot of Banpo Bridge,
+  with stone steps facing the rainbow fountain, the night market's food
+  trucks and the convenience store under the bridge.
+- Jamwon (east): the fishing pier, the fish buyer, the duck boat dock and an
+  open lawn by the water for picnic mats.
 
 ## Gyeongnidan-gil (Itaewon, Yongsan-gu)
 

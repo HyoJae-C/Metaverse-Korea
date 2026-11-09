@@ -88,7 +88,7 @@ import { startUpdateCheck } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed, daylight } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
@@ -142,6 +142,7 @@ import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
+import { createHanParks } from './game/han-parks.js';
 import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
@@ -1754,7 +1755,7 @@ const shop = new ShopUI({
     if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
     else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en'), ...(product.snack ? { snack: product.snack } : {}) });
     if (kind !== 'gift') recordFood(shop.store, product, true);
-    const seller = sellerOf(product) || clerk;
+    const seller = sellerOf(product) || parkClerk();
     seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
     shop.toast(fmt(L(product.perfume ? PERFUME_TEXT.got : GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
     return true;
@@ -1771,10 +1772,10 @@ const shop = new ShopUI({
 // Market sellers call out to you as you walk past their stall (now and then).
 const STALL_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], ['맛보고 가세요!', 'matbogo gaseyo!', 'Come have a taste!'], ['방금 만들었어요!', 'banggeum mandeureosseoyo!', 'Freshly made!'], ['구경하고 가세요!', 'gugyeonghago gaseyo!', 'Take a look!']];
 let stallHiAt = 0;
-function greetAtStalls(p) {
+function greetAtStalls(p, list = interior.vendorNpcs) {
   const now = performance.now();
   if (now - stallHiAt < 12000) return;
-  const o = interior.vendorNpcs.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
+  const o = list.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
   if (!o) return;
   stallHiAt = o.hiAt = now;
   o.ch.wave();
@@ -1782,8 +1783,8 @@ function greetAtStalls(p) {
 }
 // At the park's market, the stall's own seller thanks you (not the kiosk clerk).
 function sellerOf(product) {
-  const i = interior?.vendors?.findIndex((v) => v.stall === product.stall);
-  return i >= 0 ? interior.vendorNpcs?.[i] : null;
+  const hp = hanPark() || interior, i = hp?.vendors?.findIndex((v) => v.stall === product.stall);
+  return i >= 0 ? hp.vendorNpcs?.[i] : null;
 }
 // What a bought thing becomes in your hand.
 const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
@@ -2428,6 +2429,13 @@ let domeLoading = false;
 // walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
 // the park's own metres): no door, no bell, the camera stays as it was.
 function enterStore(item, walkIn = null) {
+  // A Han River park laid on the street (game/han-parks.js) has no room:
+  // asked to go in (a guide, a quest), you're just put on its path.
+  if (item.store.hanpark) {
+    if (mode !== 'street') leaveStore();
+    moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
+    return;
+  }
   // Seoul Another Dome: the stadium's code comes on the first visit.
   if (needsDome(item.store)) {
     if (domeLoading) return;
@@ -3707,10 +3715,10 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
-  park: () => interior?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  park: () => (hanPark() || interior)?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
   rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
-  onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
+  onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 });
@@ -3773,7 +3781,7 @@ const marketUi = new FishMarketUI({
   onSold: (coins) => {
     if (!coins) return;
     shop.toast(t('fish.sold', { coins }));
-    if (interior?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
+    if (hanPark()?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
 });
@@ -3783,7 +3791,7 @@ const ramenUi = lazyPanel(() => import('./ui/ramen-ui.js').then(({ RamenUI }) =>
   root: $('ramen-panel'),
   bag,
   hand: { get held() { return held; }, take: () => setHeld(null) }, // a ramyeon pack or an egg in the hand counts too
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onSay: (line) => { const c = parkClerk(); if (c) say(c, $('labels'), line); },
   beforeCook: () => held?.g === 'ramyeon' || handReady(), // (a pack in the hand goes in the pot: the hand is free)
   onCooked: ({ egg }) => {
     holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
@@ -3799,18 +3807,23 @@ const RAMEN_BOWL = {
 // DAILY MART's ramyeon and eggs go in the bag (for the ramen machine).
 // The park's DAILY MART counter: near the kiosk clerk, the counter menu with
 // the kiosk's goods (the products on the counter can still be looked at).
-const martStore = () => ({ ...interior.store, name: interior.store.kiosk.name, products: interior.store.products.filter((q) => q.kiosk) });
-const martCounter = (p) => !!(hanPark()?.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
+// (a park laid on the street has its own clerk: game/han-parks.js)
+const parkClerk = () => clerk || hanPark()?.clerkNpc || null;
+const martStore = () => { const st = hanPark().store; return { ...st, name: st.kiosk.name, products: st.products.filter((q) => q.kiosk) }; };
+const martCounter = (p) => { const c = parkClerk(); return !!(hanPark()?.store.kiosk && c && Math.hypot(p.x - c.ch.root.position.x, p.z - c.ch.root.position.z) < 3); };
+// Han River park: its kiosk's counter (ramyeon and eggs for the ramen machine).
+const martAct = () => ({ key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(hanPark().store.kiosk.name, getLanguage()) }), run: () => { parkClerk()?.ch.wave(); counterUi.show(martStore()); } });
 let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
   if (product.ingredient === 'mat' && hasMat(bag, held)) return fail(L(MAT_TEXT.have)); // one is enough
   if (product.ingredient === 'frisbee' && hasFrisbee(bag, held)) return fail(L(FRISBEE_TEXT.have));
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
-  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
+  if (!wallet.spend(coins, { name: product.name, at: (interior || hanPark())?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
   bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient, ...(product.ingredient === 'frisbee' ? { q: newFrisbee().q } : {}) }); // (a frisbee comes in a random colour)
-  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+  const who = parkClerk();
+  who && say(who, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
   shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
   shop.toast(shopToastText);
   return true;
@@ -5222,7 +5235,23 @@ function updateFireworks() {
 // Duck boats at the Han River parks (src/game/duck-boats.js).
 // The park I'm in right now: its boats, fishing spots, kiosk and ramen
 // machine (core/park.js), or null.
-const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
+// Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
+const hanParks = createHanParks({
+  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
+  get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
+  night: () => 1 - daylight(weather.hour()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  onVisit: (store) => missionEvent('visit', store.id), // (as walking into a shop does)
+  // What there is to do there (each made only when you're next to it).
+  acts: {
+    duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
+    fish: () => ({ key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() }),
+    sell: () => ({ key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }), // the park's fish buyer
+    ramen: () => ({ key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() }),
+    look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+  },
+});
+const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
 // its fishing, boats, stalls and seats work as before), drawn over the
@@ -5445,11 +5474,12 @@ const nearSpot = (q, p, r) => !!q && Math.hypot(p.x - q.x, p.z - q.z) < r;
 const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
-  me.root.rotation.y = Math.PI; // face the river (north)…
+  const ry = hanPark()?.frame?.ry || 0; // (a park laid on the street: its river is where its frame says)
+  me.root.rotation.y = Math.PI + ry; // face the river (north)…
   // …with the camera low behind one shoulder, so the cast and the bobber
   // out on the water are in view above the panel.
   fishCam = { pitch: cam.pitch, dist: cam.dist };
-  Object.assign(cam, { yaw: innerWidth < innerHeight ? -0.4 : -0.7, pitch: 0.3, dist: 6 });
+  Object.assign(cam, { yaw: (innerWidth < innerHeight ? -0.4 : -0.7) + ry, pitch: 0.3, dist: 6 });
   fishingUi.show();
 }
 function openMarket() {
@@ -5838,7 +5868,7 @@ const { closeHatWorkshop, openHatWorkshop } = hatWorkshop;
 let seated = null;
 function nearestSeat(p) {
   let best = null, bd = 1.3;
-  for (const s of (mode === 'street' ? streetSeats : interior?.seats) || []) {
+  for (const list of mode === 'street' ? [streetSeats, hanParks.seats] : [interior?.seats || []]) for (const s of list) { // (a Han River park on the street: its own too)
     const d = Math.hypot(p.x - s.x, p.z - s.z);
     const dd = d - (s.reach || 0); // (stands: sit from the deck in front of them)
     if (dd < bd && !others.seatTaken?.(...peerSpot(s.x, s.z))) { bd = dd; best = s; }
@@ -5935,6 +5965,7 @@ function moreActions(p, door) {
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
+    if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -6004,6 +6035,7 @@ function updateAction(p, tSec) {
     const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
+    else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
     else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
@@ -6024,6 +6056,7 @@ function updateAction(p, tSec) {
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
+    else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -6193,7 +6226,7 @@ function updateAction(p, tSec) {
       next = duckBoats.boardAction(p);
     } else if (martCounter(p)) {
       // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
-      next = { key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(interior.store.kiosk.name, getLanguage()) }), run: () => { clerk?.ch.wave(); counterUi.show(martStore()); } };
+      next = martAct();
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
@@ -6467,6 +6500,7 @@ renderer.setAnimationLoop((now) => {
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
   updateDucks(dt);
   updateOpenParks(dt);
+  if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
@@ -6561,7 +6595,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street' && !sky.busy) {
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
     for (let d = 1; d <= horiz; d += 0.5) {
-      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
+      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)) { horiz = Math.max(1.5, d - 0.6); break; }
     }
   } else if (interior?.camBlocked) { // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
@@ -6716,6 +6750,7 @@ renderer.setAnimationLoop((now) => {
   others.update(dt, streetCam(), w, h);
   updateBuskMusic(p);
   if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
+  if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') { zoo.update(dt, p); zooCarts.tick(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -6890,8 +6925,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
     choices: () => action?.opts?.map((o) => o.label) || null,
-    clerkAt: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
-    productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
+    clerkAt: () => { const c = parkClerk(); return c ? [c.ch.root.position.x, c.ch.root.position.z] : null; },
+    productsAt: () => (hanPark() || interior)?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
     pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
@@ -6929,7 +6964,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     bumper: () => bumper.debug(),
     bumperBoard: () => bumper.board(),
     duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
-    duckBoats: () => interior?.ducks?.map((d) => [+d.g.position.x.toFixed(2), +d.g.position.z.toFixed(2), +d.g.rotation.z.toFixed(3)]),
+    duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
+    hanPark: () => { const hp = hanPark(); return hp ? { id: hp.store.id, street: !!hp.street, ry: hp.frame?.ry ?? null, docks: hp.ducks?.map((d) => (hp.frame ? hp.frame.toWorld(d.home.x, d.home.z + 2.2) : [d.home.x, d.home.z + 2.2])) || [] } : null; },
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
@@ -6973,8 +7009,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     addFish: (id) => fishBag.add(id),
     fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
-    spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
-    ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
+    spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
+    fishBuySpot: () => hanPark()?.fishBuy && [hanPark().fishBuy.x, hanPark().fishBuy.z],
     music: () => ({ on: music.on, track: music.track.id }),
     pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },

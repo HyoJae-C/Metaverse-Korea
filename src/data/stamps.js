@@ -161,8 +161,8 @@ export const STAMPS = [
     icon: '<path d="M58 70 q40 -10 70 30 M128 100 v12"/><path d="M114 116 q14 -12 28 0 q-14 12 -28 0 z M142 116 l8 -6 v12 z"/><path d="M52 136 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
   {
-    // in the Banpo-Jamwon Han River Park room (the same lawn spot as the other parks)
-    id: 'banpo-jamwon', place: { store: 'banpo-jamwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#3a6fc9', shape: 'circle',
+    // at the west end of Moonlight Square, in the park laid on the street (scripts/build-banpo.mjs prints the spot)
+    id: 'banpo-jamwon', place: { at: [-1253.4, 832.7], ry: 2.3081 }, color: '#3a6fc9', shape: 'circle',
     name: { ko: '반포·잠원 한강공원', en: 'Banpo-Jamwon Han River Park', ja: '盤浦・蚕院漢江公園', zh: '盘浦·蚕院汉江公园' },
     gu: { ko: '서초구', en: 'Seocho-gu', ja: '瑞草区', zh: '瑞草区' },
     // Banpo Bridge on its piers, with arcs of water falling from its side
