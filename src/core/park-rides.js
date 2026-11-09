@@ -29,7 +29,7 @@ export const RIDES = {
   carousel: { x: -16, z: 12, seats: 12, r: 3, inner: 1.85, outer: 8, speed: 0.55 },
   // 8 gondolas of 2 (seat = gondola * 2 + side); you board the one at the bottom.
   // (on the island, north by the bridge: the first thing you see)
-  wheel: { x: -40, z: -44, cabins: 8, seats: 16, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
+  wheel: { x: -40, z: -44, cabins: 8, seats: 16, r: 7, hub: 10, drop: 2.5, face: 1, speed: -(Math.PI * 2) / RIDE_SECONDS.wheel }, // (turning clockwise from the south: up on the west side, down on the east; gondolas hang 1 m under the rim, between its two faces 2 m apart)
   // 4 benches of 2 along the ship, everyone facing the middle; the deck is
   // `arm` below the pivot, the end benches stand higher (to see over).
   viking: { x: -13, z: -9, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },

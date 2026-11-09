@@ -226,7 +226,7 @@ export function buildWheel(scene, block) {
   wheel.position.set(W.x, W.hub, Z);
   scene.add(wheel);
   const RAIN = ['#ff5a5f', '#ffad6b', '#ffe27a', '#a6e3a1', '#8fd0ff', '#86a8f0', '#c9a8ff', '#ff8fb8'];
-  for (const rz of [-0.55, 0.55]) {
+  for (const rz of [-W.face, W.face]) { // (the two faces, far enough apart for the gondolas to hang between)
     RAIN.forEach((c, i) => {
       const arc = new THREE.Mesh(new THREE.TorusGeometry(W.r, 0.13, 6, 10, (Math.PI * 2) / 8), mat(c));
       arc.rotation.z = (i / 8) * Math.PI * 2;
@@ -245,14 +245,14 @@ export function buildWheel(scene, block) {
   }
   for (let i = 0; i < W.cabins; i++) { // cross bars where the gondolas hang
     const a = (i / W.cabins) * Math.PI * 2;
-    box(wheel, 0.1, 0.1, 1.2, Math.sin(a) * W.r, -Math.cos(a) * W.r, 0, ICING);
+    box(wheel, 0.1, 0.1, W.face * 2 + 0.2, Math.sin(a) * W.r, -Math.cos(a) * W.r, 0, ICING);
   }
-  part(wheel, new THREE.CylinderGeometry(0.85, 0.85, 1.3, 16), LEMON, 0, 0, 0).rotation.x = Math.PI / 2;
-  for (const rz of [-0.68, 0.68]) part(wheel, new THREE.CylinderGeometry(0.55, 0.55, 0.1, 16), ICING, 0, 0, rz).rotation.x = Math.PI / 2;
+  part(wheel, new THREE.CylinderGeometry(0.85, 0.85, W.face * 2 + 0.2, 16), LEMON, 0, 0, 0).rotation.x = Math.PI / 2;
+  for (const rz of [-W.face - 0.13, W.face + 0.13]) part(wheel, new THREE.CylinderGeometry(0.55, 0.55, 0.1, 16), ICING, 0, 0, rz).rotation.x = Math.PI / 2;
   const bulb = new THREE.MeshBasicMaterial({ color: '#fff4c4' });
   for (let i = 0; i < 40; i++) {
     const a = (i / 40) * Math.PI * 2;
-    part(wheel, new THREE.SphereGeometry(0.08, 6, 4), bulb, Math.sin(a) * (W.r + 0.2), -Math.cos(a) * (W.r + 0.2), 0.62);
+    part(wheel, new THREE.SphereGeometry(0.08, 6, 4), bulb, Math.sin(a) * (W.r + 0.2), -Math.cos(a) * (W.r + 0.2), W.face + 0.07);
   }
   bakeColors(wheel);
   mergeStatic(wheel); // (the bulbs)
