@@ -189,6 +189,7 @@ import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createRoomCache } from './game/room-cache.js';
+import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -255,7 +256,12 @@ function reportProblem(msg) {
     errBox.className = 'err-box';
     document.body.append(errBox);
   }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  // In words a player understands, in their language; the technical line
+  // stays underneath, small, for a screenshot to the operator.
+  const b = document.createElement('b'), small = document.createElement('small');
+  b.textContent = '⚠️ ' + t('error.soft');
+  small.textContent = String(msg).slice(0, 300);
+  errBox.replaceChildren(b, small);
   errBox.hidden = false;
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
@@ -2272,6 +2278,9 @@ const interiorCache = createRoomCache({
   onDrop: (id) => stampStands.dropRoom(id),
 });
 const roomFor = (store) => interiorCache.room(store);
+// Textures not drawn for a minute leave the GPU (game/gpu-janitor.js): far
+// districts and kept rooms stop holding a phone's memory.
+const gpuJanitor = createGpuJanitor({ roots: () => [scene, ...[...interiorCache.values()].map((b) => b.scene)] });
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -7024,6 +7033,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),

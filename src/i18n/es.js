@@ -596,6 +596,7 @@ export const ES = {
   'loading': 'Cargando las calles…',
   'error.noMap': 'Los datos del mapa de esta zona aún no están listos. Vuelve pronto.',
   'error.generic': 'Algo salió mal al cargar. Recarga la página.',
+  'error.soft': 'Hubo un pequeño problema, pero puedes seguir jugando.',
   'help.desktop': 'Moverse: WASD o flechas · Correr: Shift · Mirar: arrastrar · Zoom: rueda',
   'help.mobile': 'Moverse: joystick izquierdo · Mirar: arrastrar · Zoom: pellizcar',
   'help.dismiss': 'Entendido',

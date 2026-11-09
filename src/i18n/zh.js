@@ -600,6 +600,7 @@ export const ZH = {
   'loading': '正在加载街道…',
   'error.noMap': '该地区的地图数据尚未准备好，请稍后再来。',
   'error.generic': '加载时出现问题，请刷新页面。',
+  'error.soft': '出现了一个小问题，但可以继续玩。',
   'help.desktop': '移动：WASD 或方向键 · 奔跑：Shift · 环视：拖动 · 缩放：滚轮',
   'help.mobile': '移动：左侧摇杆 · 环视：拖动 · 缩放：双指',
   'help.dismiss': '知道了',
