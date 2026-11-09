@@ -1406,6 +1406,7 @@ let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+const onStreetRoom = () => !!lastJoin && lastJoin[0] === roomId && lastJoin[1] === scene;
 // Name tags are announced by each player's own game: ask the server who
 // they really are (019_chat_names.sql) and correct a borrowed name. People
 // joining together are asked about in one go.
@@ -2462,7 +2463,7 @@ function enterStore(item, walkIn = null) {
     cam.pitch = 0.7;
     moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   }
-  document.body.classList.add('in-store');
+  if (!store.open) document.body.classList.add('in-store'); // (an open-air park keeps the street's buttons)
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
@@ -2656,6 +2657,13 @@ function enterStore(item, walkIn = null) {
   const museum = store.category === 'museum';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
   if (clerk && !walkIn) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
+  if (store.open) {
+    // An open-air park is part of the street: the same people around you
+    // (our spot sent in the street's metres), the street's people walking
+    // by. Only from somewhere else (a taxi from a shop) join the street.
+    if (!onStreetRoom()) { const [wx, wz] = myWorldSpot(); joinRoom(roomId, scene, { x: wx, z: wz }); }
+    return;
+  }
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -2863,7 +2871,7 @@ function leaveStore(walkOut = false) {
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
+  if (!openPark || !onStreetRoom()) joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z }); // (out of an open park: already there)
 }
 
 // ---------- Subway station ----------
@@ -3046,7 +3054,7 @@ bag.onChange(() => queueMicrotask(() => picnic.checkBag()));
 const frisbee = createFrisbee({
   get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; }, get others() { return others; },
   get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
-  get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
+  get sfx() { return sfx; }, toStreet: (x, z) => peerSpot(x, z), petName, clearAction: () => { action = STALE; },
   handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
 });
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js).
@@ -5225,6 +5233,16 @@ const openParks = storefronts.items.filter((i) => i.open).map((item) => {
 const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
 function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
 const openParkHere = () => (mode === 'store' && interior?.store?.open ? openParks.find((o) => o.item.store === interior.store) : null);
+// Where I am in the street's metres (in an open park: its spot turned into
+// the world's), for the network and everyone else on the street.
+function myWorldSpot() {
+  const op = openParkHere(), p = me.root.position;
+  return op ? parkWorld(op, p.x, p.z) : [p.x, p.z];
+}
+// A spot in the room I'm in, in the street's metres (where others are).
+const peerSpot = (x, z) => { const op = openParkHere(); return op ? parkWorld(op, x, z) : [x, z]; };
+// The camera as the street sees it (in an open park: moved into the world's frame).
+const streetCam = () => { const op = openParkHere(); if (!op) return camera; camera.updateMatrixWorld(); return viewThrough(op.toWorld); };
 // The kiosk clerk and the stall sellers are there before you walk in, so
 // the park looks alive from the street (enterStore keeps these).
 function staffOpenPark(built) {
@@ -5283,6 +5301,7 @@ function updateOpenParks(dt) {
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
+    net.update?.(wx, wz); // (the street's area cells, as on the street)
     sun.position.set(wx + 60, 120, wz + 40);
     sun.target.position.set(wx, 0, wz);
     if (seated == null && (Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1)) leaveStore(true);
@@ -5353,7 +5372,14 @@ const zooCarts = createZooCarts({
 });
 const duckBoats = createDuckBoats({
   park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
-  others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+  get others() { return others; }, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+  // Someone on the street seen from the open park I'm in: in its metres, or null when they're not by it.
+  peerLocal: (r) => {
+    const op = openParkHere();
+    if (!op) return { x: r.position.x, z: r.position.z, ry: r.rotation.y };
+    const [x, z] = parkLocal(op, r.position.x, r.position.z);
+    return Math.abs(x) < 80 && z > -120 && z < 40 ? { x, z, ry: r.rotation.y - op.ry } : null;
+  },
 });
 const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 
@@ -5801,7 +5827,7 @@ function nearestSeat(p) {
   for (const s of (mode === 'street' ? streetSeats : interior?.seats) || []) {
     const d = Math.hypot(p.x - s.x, p.z - s.z);
     const dd = d - (s.reach || 0); // (stands: sit from the deck in front of them)
-    if (dd < bd && !others.seatTaken?.(s.x, s.z)) { bd = dd; best = s; }
+    if (dd < bd && !others.seatTaken?.(...peerSpot(s.x, s.z))) { bd = dd; best = s; }
   }
   return best;
 }
@@ -6621,10 +6647,11 @@ renderer.setAnimationLoop((now) => {
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
+    const sop = openParkHere(), [sx, sz] = myWorldSpot(); // (in an open park: in the street's metres, the people around are the street's)
     const st = {
-      x: Math.round(p.x * 100) / 100,
-      z: Math.round(p.z * 100) / 100,
-      ry: Math.round(me.root.rotation.y * 100) / 100,
+      x: Math.round(sx * 100) / 100,
+      z: Math.round(sz * 100) / 100,
+      ry: Math.round((me.root.rotation.y + (sop ? sop.ry : 0)) * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
@@ -6646,6 +6673,7 @@ renderer.setAnimationLoop((now) => {
     if (umbrellaOpen()) st.um = 1;
     if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
+    if (sop) st.mp = sop.item.store.id; // which open park our mat and frisbee (in its metres) are in
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (frisbee.sync) st.fb = frisbee.sync; // a frisbee throw on the lawn, played on everyone's screen
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
@@ -6667,8 +6695,9 @@ renderer.setAnimationLoop((now) => {
 
   const w = innerWidth, h = innerHeight;
   others.fences = petFences();
-  others.update(dt, camera, w, h);
+  others.update(dt, streetCam(), w, h);
   updateBuskMusic(p);
+  if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') { zoo.update(dt, p); zooCarts.tick(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
