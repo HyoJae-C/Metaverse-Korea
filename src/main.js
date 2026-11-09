@@ -3224,6 +3224,16 @@ const mapView = new MapView({
   onTaxi: (dest) => rideTaxi(dest),
 });
 
+// Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
+let minimap = null;
+import('./game/minimap.js').then(({ createMinimap }) => {
+  minimap = createMinimap({
+    hud: $('hud'), map, open: () => $('map-btn').click(),
+    getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no minimap: the Map button still works */ });
+
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -6662,6 +6672,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
+  minimap?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {

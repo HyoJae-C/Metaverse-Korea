@@ -458,7 +458,7 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
   .map-searching .map-handle { display: none; }
   .map-list > .map-disclaimer { margin: 10px 4px 4px; }
   /* (the sheet is inside .map-body: keep the button above it and the credit) */
-  #map-panel .map-locate { bottom: 82px; }
+  #map-panel .map-locate { right: 10px; bottom: 82px; }
   #map-panel.map-sheet-open .map-locate { bottom: calc(46% + 30px); }
 }
 .map-handle {
@@ -469,7 +469,7 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 .map-handle::before { content: ""; position: absolute; top: 5px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #d9ccb6; }
 .map-handle b { font-size: 13px; color: var(--ink-soft); }
 .map-locate {
-  position: absolute; right: 10px; bottom: 30px; z-index: 1; width: 44px; height: 44px; padding: 0;
+  position: absolute; right: calc(280px + 10px); bottom: 30px; z-index: 1; width: 44px; height: 44px; padding: 0; /* (left of the side list) */
   border-radius: 50%; font-size: 22px; color: #ff6f5b; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.25);
 }
 @media (max-width: 700px) {
@@ -2410,3 +2410,20 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 }
 .online .on-short { display: none; }
 @media (max-width: 700px) and (orientation: portrait) { .online .on-short { display: inline; } }
+
+/* Minimap (game/minimap.js): top-left of the street; tap for the full map. */
+.minimap {
+  position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); z-index: 2;
+  width: 120px; height: 120px; padding: 0; border-radius: 50%; overflow: hidden;
+  background: #f3ecdc; box-shadow: var(--shadow); cursor: pointer;
+}
+.minimap[hidden] { display: none; }
+.minimap canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.minimap-me {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 22px; pointer-events: none;
+}
+.minimap-me svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 700px), (max-height: 500px) {
+  .minimap { width: 88px; height: 88px; }
+  .minimap-me { width: 17px; height: 19px; }
+}
