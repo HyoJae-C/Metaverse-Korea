@@ -145,6 +145,7 @@ export const TH = {
   'cinema.empty': 'ยังไม่มีภาพยนตร์ แวะมาใหม่เร็วๆ นี้นะ!',
   'cinema.blocked': 'เล่นภาพยนตร์เรื่องนี้ที่นี่ไม่ได้ ไปเรื่องถัดไป',
   'quest.guide': 'ไกด์ประจำลาน',
+  'quest.welcomeGuide': 'ไกด์',
   'quest.take': 'รับภารกิจ',
   'quest.check': 'ดูภารกิจของคุณ',
   'quest.report': 'รายงานผล · รับรางวัล',

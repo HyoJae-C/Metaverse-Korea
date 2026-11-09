@@ -16,7 +16,8 @@
     "lat": 37.5446,
     "lon": 127.0557,
     "heading": 200,
-    "nearStore": "ongi-cafe"
+    "nearStore": "ongi-cafe",
+    "first": { "district": "bukchon", "at": [24, -26], "heading": 0, "why": "New players start just inside Bukchon's gate, on the open yard by the shops, facing up into the village: hanok roofs and villagers on the first screen, room for the camera, and Anguk Station outside the gate for the first trip to Seongsu. Players coming back still start where they left off." }
   },
   "districts": [
     {

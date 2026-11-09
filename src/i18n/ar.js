@@ -145,6 +145,7 @@ export const AR = {
   'cinema.empty': "لا توجد أفلام بعد. عُد قريبًا!",
   'cinema.blocked': "لا يمكن تشغيل هذا الفيلم هنا. ننتقل إلى الفيلم التالي.",
   'quest.guide': 'مرشد الساحة',
+  'quest.welcomeGuide': 'المرشد',
   'quest.take': 'خذ مهمة',
   'quest.check': 'تحقّق من مهمتك',
   'quest.report': 'أبلغ · خذ مكافأتك',

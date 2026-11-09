@@ -145,6 +145,7 @@ export const HI = {
   'cinema.empty': "अभी कोई फ़िल्म नहीं है। जल्द मिलते हैं!",
   'cinema.blocked': "यह फ़िल्म यहाँ नहीं चल सकती। अगली फ़िल्म पर चलते हैं।",
   'quest.guide': 'चौक का गाइड',
+  'quest.welcomeGuide': 'गाइड',
   'quest.take': 'मिशन लें',
   'quest.check': 'अपना मिशन देखें',
   'quest.report': 'रिपोर्ट करें · इनाम पाएँ',

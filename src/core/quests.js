@@ -50,6 +50,20 @@ export const TRIP = [
   { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
   { step: 'cheonggye', on: 'place', target: 'B-2' }, // Cheonggye Plaza (zones.json)
 ];
+// The same first errand for new players who start in Bukchon (region.json
+// spawn.first, the welcome guide there): a look inside the Open House hanok,
+// down into Anguk Station, the train to Seongsu, then up to Seongsu Square,
+// where the square guide takes the report. No taxi: it ends at the guide.
+// A trip taken from the square guide, or saved before this, keeps TRIP.
+export const BUKCHON_TRIP = [
+  { step: 'openHouse', on: 'place', target: 'open-house' }, // through the Open House's gate (data/bukchon.js)
+  { step: 'angukWalk', on: 'place', target: 'subway' }, // Anguk Station, just outside Bukchon's gate
+  { step: 'down', on: 'subwayIn' },
+  { step: 'seongsuStop', on: 'subway', target: 'seongsu-station' },
+  { step: 'square', on: 'place', target: 'A-1' }, // Seongsu Square (zones.json)
+];
+// The steps of a trip errand: by where it was handed out.
+export const tripOf = (q) => (q?.route === 'bukchon' ? BUKCHON_TRIP : TRIP);
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
 // Saved first-path steps count from 0. Version 2 put the trip in front and
@@ -107,7 +121,10 @@ export class SquareQuests {
     if (this.onStarter) {
       const st = STARTER[this.s.starter];
       this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
-      if (st.kind === 'trip') this.s.active.stage = 0;
+      if (st.kind === 'trip') {
+        this.s.active.stage = 0;
+        if (pool?.route === 'bukchon') this.s.active.route = 'bukchon'; // from the welcome guide in Bukchon
+      }
     } else this.s.active = pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
@@ -118,10 +135,10 @@ export class SquareQuests {
     const q = this.s.active;
     if (!q || q.n >= q.need) return false;
     if (q.kind === 'trip') { // one step at a time
-      const st = TRIP[q.stage | 0];
+      const steps = tripOf(q), st = steps[q.stage | 0];
       if (!st || type !== st.on || (st.target && target !== st.target)) return false;
       q.stage = (q.stage | 0) + 1;
-      if (q.stage >= TRIP.length) q.n = q.need;
+      if (q.stage >= steps.length) q.n = q.need;
       this._save();
       return true;
     }

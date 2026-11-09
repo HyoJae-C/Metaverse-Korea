@@ -145,6 +145,7 @@ export const ID = {
   'cinema.empty': "Belum ada film. Datang lagi nanti!",
   'cinema.blocked': "Film ini tidak bisa diputar di sini. Lanjut ke film berikutnya.",
   'quest.guide': 'Pemandu alun-alun',
+  'quest.welcomeGuide': 'Pemandu',
   'quest.take': 'Ambil misi',
   'quest.check': 'Cek misimu',
   'quest.report': 'Lapor · ambil hadiah',

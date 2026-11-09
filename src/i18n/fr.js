@@ -145,6 +145,7 @@ export const FR = {
   'cinema.empty': 'Pas encore de films. Reviens bientôt !',
   'cinema.blocked': 'Ce film ne peut pas être lu ici. Au suivant.',
   'quest.guide': 'Guide de la place',
+  'quest.welcomeGuide': 'Guide',
   'quest.take': 'Prendre une mission',
   'quest.check': 'Voir ta mission',
   'quest.report': 'Faire ton rapport · reçois ta récompense',
