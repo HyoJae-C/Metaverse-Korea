@@ -14,12 +14,63 @@ export const RIDE_SECONDS = { carousel: 24, wheel: 32, viking: 22, drop: 16 };
 
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).
 export const RIDES = {
-  carousel: { x: -14, z: -2, seats: 6, r: 3, speed: 0.55 },
+  // 8 horses on the outer ring, 4 on the inner one.
+  carousel: { x: -14, z: -2, seats: 12, r: 3, inner: 1.85, outer: 8, speed: 0.55 },
   wheel: { x: 11, z: -9.5, seats: 8, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
-  viking: { x: -9.5, z: -10, seats: 4, pivot: 6.2, arm: 5, max: 1.05 },
+  // 4 benches of 2 along the ship, everyone facing the middle; the deck is
+  // `arm` below the pivot, the end benches stand higher (to see over).
+  viking: { x: -9.5, z: -10, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
   // Drop tower: seats round a pole; one shared cycle of load, climb, hold, drop.
   drop: { x: 18.5, z: -2, seats: 6, r: 1.55, low: 0.55, top: 16, cycle: 16 },
 };
+// The carousel and the pirate ship run on everyone's shared clock (like the
+// coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
+// friends ride the same swing, and everyone sees the same ship.
+export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 } };
+const cycleLen = (c) => c.load + c.run + c.stop;
+export function ridePhase(kind, t) {
+  const c = RIDE_CYCLE[kind], len = cycleLen(c), n = Math.floor(t / len), p = t - n * len;
+  const phase = p < c.load ? 'load' : p < c.load + c.run ? 'run' : 'stop';
+  return { n, p, phase, s: p - c.load, left: phase === 'load' ? c.load - p : 0, next: phase === 'load' ? 0 : len - p };
+}
+// You can get on while it loads (not in its last second, when the bars come down).
+export const canBoard = (kind, t) => { const r = ridePhase(kind, t); return r.phase === 'load' && r.left > 1.2; };
+// The safety bars: 0 up, 1 down. They come down at the end of loading and
+// go up once it has stopped.
+export function barDown(kind, t) {
+  const r = ridePhase(kind, t), c = RIDE_CYCLE[kind];
+  if (r.phase === 'run') return 1;
+  if (r.phase === 'load') return Math.min(1, Math.max(0, (1.2 - r.left) / 0.7));
+  return Math.min(1, Math.max(0, 1 - (r.p - c.load - c.run - 1) / 0.7));
+}
+// The pirate ship's swing: builds up for 7 s, swings high, and dies down in
+// the last 6 s, ending still.
+export function vikingAngle(t) {
+  const r = ridePhase('viking', t), V = RIDES.viking, run = RIDE_CYCLE.viking.run;
+  if (r.phase !== 'run') return 0;
+  const env = Math.min(1, r.s / 7, (run - r.s) / 6);
+  return V.max * Math.max(0, env) * Math.sin(r.s * V.omega);
+}
+// The carousel's turn: speeds up for 3 s, slows to a stop in the last 4 s.
+const UP = 3, DOWN = 4;
+function turned(s, run, w) {
+  if (s <= 0) return 0;
+  if (s < UP) return (w * s * s) / (2 * UP);
+  const full = run - DOWN;
+  if (s < full) return (w * UP) / 2 + w * (s - UP);
+  const d = Math.min(s, run) - full;
+  return (w * UP) / 2 + w * (full - UP) + w * d - (w * d * d) / (2 * DOWN);
+}
+export function carouselAngle(t) {
+  const c = RIDE_CYCLE.carousel, r = ridePhase('carousel', t), w = RIDES.carousel.speed;
+  return r.n * turned(c.run, c.run, w) + turned(r.s, c.run, w);
+}
+// How fast it's turning, 0..1 (the horses only bob while it turns).
+export function carouselPace(t) {
+  const c = RIDE_CYCLE.carousel, r = ridePhase('carousel', t);
+  if (r.phase !== 'run') return 0;
+  return Math.min(1, r.s / UP, (c.run - r.s) / DOWN);
+}
 // Height of the drop tower's seat ring at time t (seconds).
 export function dropY(t, low = RIDES.drop.low, top = RIDES.drop.top, cycle = RIDES.drop.cycle) {
   const p = ((t % cycle) + cycle) % cycle;
@@ -30,33 +81,43 @@ export function dropY(t, low = RIDES.drop.low, top = RIDES.drop.top, cycle = RID
   return low + 2 * (1 - (p - 14) / 2); // brakes, settle
 }
 // When a ride that starts now ends. The drop tower runs on its own cycle:
-// board while it loads and you ride this cycle, otherwise the next one.
+// board while it loads and you ride this cycle, otherwise the next one. The
+// carousel and the ship: at the end of this cycle (you get on while it loads).
 export function rideUntil(kind, now) {
+  if (RIDE_CYCLE[kind]) { const c = RIDE_CYCLE[kind], r = ridePhase(kind, now); return now - r.p + c.load + c.run + 0.6; }
   if (kind !== 'drop') return now + RIDE_SECONDS[kind];
   const { cycle } = RIDES.drop, start = Math.floor(now / cycle) * cycle;
   return now - start < 3 ? start + cycle : start + cycle * 2;
 }
-export function seatAt(kind, i, t, started = 0) {
+// Where a carousel horse is (in the carousel's own turning frame, angle 0).
+export function horseSpot(i) {
+  const R = RIDES.carousel, out = i < R.outer;
+  const a = out ? (i / R.outer) * Math.PI * 2 : ((i - R.outer + 0.5) / (R.seats - R.outer)) * Math.PI * 2;
+  return { a, r: out ? R.r : R.inner };
+}
+// Seat i at time t: where the rider sits (feet), which way they face (ry),
+// and roll: how far the ride tips them (the ship's swing, about the z axis).
+export function seatAt(kind, i, t) {
   const R = RIDES[kind];
   if (kind === 'carousel') {
-    const a = (i / R.seats) * Math.PI * 2 + t * R.speed;
-    return { x: R.x + Math.sin(a) * R.r, y: 0.55 + 0.25 * Math.sin(t * 2.4 + i * 1.7), z: R.z + Math.cos(a) * R.r, ry: a + Math.PI / 2 };
+    const h = horseSpot(i), a = h.a + carouselAngle(t);
+    const bob = 0.22 * carouselPace(t) * Math.sin(t * 2.4 + i * 1.7);
+    return { x: R.x + Math.sin(a) * h.r, y: 0.62 + bob, z: R.z + Math.cos(a) * h.r, ry: a + Math.PI / 2, roll: 0 };
   }
   if (kind === 'wheel') {
     const a = (i / R.seats) * Math.PI * 2 + t * R.speed;
     // Cabins hang below the rim; the seat is the cabin floor.
-    return { x: R.x + Math.sin(a) * R.r, y: R.hub - Math.cos(a) * R.r - R.drop, z: R.z + 0.2, ry: 0 };
+    return { x: R.x + Math.sin(a) * R.r, y: R.hub - Math.cos(a) * R.r - R.drop, z: R.z + 0.2, ry: 0, roll: 0 };
   }
   if (kind === 'drop') {
     const a = (i / R.seats) * Math.PI * 2;
-    return { x: R.x + Math.sin(a) * R.r, y: dropY(t), z: R.z + Math.cos(a) * R.r, ry: a };
+    return { x: R.x + Math.sin(a) * R.r, y: dropY(t), z: R.z + Math.cos(a) * R.r, ry: a, roll: 0 };
   }
-  // viking: swings higher for the first seconds of the ride.
-  const ramp = Math.min(1, Math.max(0.15, (t - started) / 8));
-  const ang = R.max * ramp * Math.sin(t * 1.25);
-  const off = (i - (R.seats - 1) / 2) * 1.1; // along the ship
-  const along = off * Math.cos(ang) + Math.sin(ang) * R.arm;
-  return { x: R.x + along, y: R.pivot - Math.cos(ang) * R.arm + off * Math.sin(ang) + 0.4, z: R.z, ry: -Math.PI / 2 };
+  // viking: the bench's spot in the ship, turned about the pivot.
+  const ang = vikingAngle(t), off = R.rows[i >> 1], side = i % 2 ? 0.45 : -0.45;
+  const ly = -R.arm + R.bench[i >> 1] - 0.38; // (feet: the sitting pose's seat height below the bench)
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return { x: R.x + off * c - ly * s, y: R.pivot + off * s + ly * c, z: R.z + side, ry: off < 0 ? Math.PI / 2 : -Math.PI / 2, roll: ang };
 }
 
 // The park's layout (room metres; the gate is at the south, z = 14).

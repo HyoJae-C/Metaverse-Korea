@@ -52,7 +52,9 @@ import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
-import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, rideUntil, seatAt, COASTER_NAME, RIDE_NAME, RIDE_EMOJI } from './core/park-rides.js';
+import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideUntil, seatAt, COASTER_NAME, RIDE_NAME, RIDE_EMOJI } from './core/park-rides.js';
+import { createRideCam } from './game/ride-cam.js';
+import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
@@ -2580,6 +2582,7 @@ function enterStore(item, walkIn = null) {
     }
   }
   interior.rideStaff = built.rideStaff || null;
+  interior.riderNpcs = parkRiders.spawn(built) || null;
   if (built.stations?.coasterStaff && !built.coasterStaff) {
     built.coasterStaff = built.stations.coasterStaff.map((st) => {
       const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }));
@@ -4763,32 +4766,69 @@ function buyRidePass() {
   shop.toast(fmt(L(DAY_PASS_TEXT.ridesPaid), { name: L(name), n: RIDE_PASS }));
   action = STALE;
 }
+// The carousel and the pirate ship run on the shared clock (like the
+// coaster): get on while it loads, the bar comes down, and it's the same ride
+// for everyone on it. The drop tower and the wheel keep the park's own clock.
+const rideClock = (kind) => (RIDE_CYCLE[kind] ? Date.now() / 1000 : interior.time());
+const rideCam = createRideCam({ camera });
+const parkRiders = createParkRiders($('labels'));
+function parkRideAction(st) {
+  const label = `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · ${rideFare(st.kind)}`;
+  if (!RIDE_CYCLE[st.kind] || canBoard(st.kind, rideClock(st.kind))) return { key: 'ride:' + st.kind, label, run: () => boardRide(st) };
+  const r = ridePhase(st.kind, rideClock(st.kind)), n = Math.max(1, Math.ceil(r.next || r.left));
+  return { key: 'ride-wait:' + st.kind + ':' + n, label: '⏳ ' + t('ride.wait', { n }), run: () => shop.toast(t('ride.wait', { n })) };
+}
 function boardRide(st) {
+  const now = rideClock(st.kind);
+  if (RIDE_CYCLE[st.kind] && !canBoard(st.kind, now)) return;
   if (!payRide(st.kind)) return;
-  const now = interior.time();
-  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
+  ride = { kind: st.kind, seat: parkRiders.freeSeat(st.kind, PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third' };
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
+  if (RIDE_CYCLE[st.kind]) { rideCam.reset(); shop.toast(t('ride.seated')); }
   sendTimer = 0;
   missionEvent('ride');
+  action = STALE;
 }
 function endRide() {
   if (!ride) return;
   if (ride.kind === 'coaster') endCoaster();
+  else if (RIDE_CYCLE[ride.kind]) {
+    me.root.rotation.order = 'XYZ';
+    me.root.rotation.set(0, Math.atan2(ride.back[0] - me.root.position.x, ride.back[1] - me.root.position.z), 0);
+    cam.yaw = me.root.rotation.y + Math.PI;
+    me.root.visible = true;
+    rideCam.reset();
+  }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
   sendTimer = 0;
   me.play('cheer');
+  action = STALE;
 }
 function updateRide(dt) {
   if (!ride || !interior?.tick) return;
   if (ride.kind === 'coaster') { updateCoaster(dt); return; }
-  const now = interior.time();
-  const s = seatAt(ride.kind, ride.seat, now, ride.t0);
+  const now = rideClock(ride.kind);
+  const s = seatAt(ride.kind, ride.seat, now);
   me.root.position.set(s.x, s.y, s.z);
-  me.root.rotation.y = s.ry;
-  ride.shout -= dt;
-  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  if (RIDE_CYCLE[ride.kind]) {
+    me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship)
+    me.root.rotation.set(0, s.ry, s.roll);
+    ride.pose = s;
+    const ph = ridePhase(ride.kind, now).phase;
+    if (ph !== ride.phase) {
+      if (ph === 'run' && ride.phase) { shop.toast(t(ride.kind === 'viking' ? 'ride.barDown' : 'ride.holdPole')); sfx.tock?.(0.6, 420); buzz(30); action = STALE; }
+      if (ph === 'stop') { if (ride.kind === 'viking') sfx.tock?.(0.5, 520); action = STALE; }
+      ride.phase = ph;
+    }
+    ride.shout -= dt;
+    if (ph === 'run' && ride.shout <= 0 && (ride.kind !== 'viking' || Math.abs(s.roll) > 0.85)) { ride.shout = ride.kind === 'viking' ? 3.5 : 6; showBubble(myLabel, $('labels'), ride.kind === 'viking' ? '😱 꺄아아!' : '🎶', 2000); }
+  } else {
+    me.root.rotation.y = s.ry;
+    ride.shout -= dt;
+    if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  }
   if (now >= ride.until) endRide();
 }
 
@@ -5900,6 +5940,9 @@ function updateAction(p, tSec) {
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
+    } else if (ride && RIDE_CYCLE[ride.kind] && ridePhase(ride.kind, rideClock(ride.kind)).phase === 'run') { // the bar is down: the button switches the view
+      const first = ride.view === 'first';
+      next = { key: 'ride-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
     } else if (interior.park && coasterAction(p)) {
@@ -5917,7 +5960,7 @@ function updateAction(p, tSec) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
-      next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · ${rideFare(st.kind)}`, run: () => boardRide(st) };
+      next = parkRideAction(st);
     } else if (seated?.surgery) {
       next = null; // lie still: the team is at work
     } else if (seated?.beauty) {
@@ -6250,6 +6293,7 @@ renderer.setAnimationLoop(() => {
   }
   if (mode === 'store' && interior?.store.workshop === 'runway') runwayTick(dt); // (walking with friends: the line)
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
+  if (mode === 'store') parkRiders.tick(interior?.riderNpcs); // (guests on the carousel and the ship)
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
@@ -6376,6 +6420,7 @@ renderer.setAnimationLoop(() => {
   }
 
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
+  else if (ride?.pose && RIDE_CYCLE[ride.kind]) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft); me.root.visible = ride.view !== 'first'; }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
   if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
@@ -6507,6 +6552,8 @@ renderer.setAnimationLoop(() => {
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
+    for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
     for (const o of interior?.coasterStaff || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the coaster's attendant) // (bar regulars; the label shows their speech bubbles)
     for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
@@ -6681,6 +6728,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
     parkStaff: () => Object.keys(interior?.rideStaff || {}),
+    parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: { viking: ridePhase('viking', Date.now() / 1000), carousel: ridePhase('carousel', Date.now() / 1000) } }),
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
