@@ -347,6 +347,21 @@ export const LIBRARY = [
   "pages": 9
  },
  {
+  "id": "howto",
+  "kind": "life",
+  "icon": "🤪",
+  "color": "#e05a9a",
+  "title": {
+   "en": "The Useless but Funny How-To Book (Korean only)",
+   "ko": "쓸데없이 진지한 생활 백과"
+  },
+  "author": {
+   "en": "Another Seoul",
+   "ko": "Another Seoul 편집부"
+  },
+  "pages": 11
+ },
+ {
   "id": "jachi",
   "kind": "life",
   "icon": "🍳",
@@ -360,6 +375,21 @@ export const LIBRARY = [
    "ko": "Another Seoul 편집부"
   },
   "pages": 12
+ },
+ {
+  "id": "japhak",
+  "kind": "life",
+  "icon": "🤓",
+  "color": "#5a7ad8",
+  "title": {
+   "en": "Useless but True: A Book of Fun Facts (Korean only)",
+   "ko": "쓸데없지만 진짜인 잡학 사전"
+  },
+  "author": {
+   "en": "Another Seoul",
+   "ko": "Another Seoul 편집부"
+  },
+  "pages": 9
  },
  {
   "id": "money",
