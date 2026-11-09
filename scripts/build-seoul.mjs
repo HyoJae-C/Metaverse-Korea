@@ -69,10 +69,15 @@ export const GAME_RIVER = [
   [-300, 281, 172],
   [-240, 300, 174],
   [-150, 336, 186],
-  [-30, 388, 202],
-  [18, 434, 250], // where Songpa's Han River (its bank strip, z 556..611) starts
-  [40, 465, 290],
-  [160, 503, 212], // Ttukseom Han River Park's straight bank from here…
+  [-30, 388, 200],
+  // From here the map draws the river about the real Han's width (200 m) down
+  // from the north bank, a smooth line with no bulge: the game's water reaches
+  // further south (to Songpa's bank strip, z 556..611), but the map keeps the
+  // real look. Past Ttukseom Han River Park it fills the water to Songpa's land.
+  [18, 407, 200],
+  [100, 459, 200],
+  [160, 496, 200],
+  [260, 518, 185], // Ttukseom Han River Park's straight bank…
   [430, 532, 156], // …to Jamsil Bridge
   [858, 533, 154], // Songpa's bank strip ends
   [975, 305, 220], // back on the real river, turning north-east
