@@ -108,6 +108,19 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .name-field input:focus { outline: none; border-color: var(--mint); }
 .name-field input[readonly] { background: var(--cream, #f6f1e7); color: var(--ink-soft); }
 .acc:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Where new players start (game/first-stop.js): one tap picks, the first is on. */
+.start-pick { margin-top: 16px; text-align: left; }
+.start-pick[hidden] { display: none; }
+.start-pick-title { display: block; font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.start-pick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.start-pick-list button {
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); text-align: start;
+  display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px;
+  border: 3px solid #eadfcd; border-radius: 14px; background: #fff; cursor: pointer;
+}
+.start-pick-list button .ic { font-size: 18px; flex: none; }
+.start-pick-list button[aria-checked='true'] { border-color: var(--mint); background: #eefaf7; }
+.start-pick-list button:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .look-lock { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
 #step-login { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; }
 #step-login[hidden] { display: none; }

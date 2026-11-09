@@ -13,7 +13,7 @@ import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/distri
 import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
-import { firstStopSpot } from './game/first-stop.js';
+import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -337,7 +337,7 @@ function refreshStartText() {
   const lang = getLanguage();
   const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
   $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
-    region: localName(DISTRICT_NAME[region.spawn?.first?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon (region.json spawn.first)
+    region: localName(DISTRICT_NAME[firstStopSpot(region)?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon unless they pick another start (region.json spawn.starts)
     city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
@@ -401,7 +401,30 @@ function showLook() {
   }
   $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
+  // New players pick where to start (game/first-stop.js): one tap, the first is on.
+  const starts = startList(region);
+  $('start-pick').hidden = returning || !starts.length;
+  if (!returning && starts.length) {
+    const keys = [...starts.map((it) => it.k), ANY];
+    if (!keys.includes(startPick)) startPick = keys[0];
+    $('start-pick-list').replaceChildren(...keys.map((k) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(k === startPick));
+      const ic = document.createElement('span');
+      ic.className = 'ic';
+      ic.textContent = k === ANY ? '🎲' : starts.find((it) => it.k === k).icon || '📍';
+      b.append(ic, t('start.' + k));
+      b.onclick = () => {
+        startPick = k;
+        for (const o of $('start-pick-list').children) o.setAttribute('aria-checked', String(o === b));
+      };
+      return b;
+    }));
+  }
 }
+let startPick = savedStart(); // where a new player starts (region.json spawn.starts, or ANY)
 // Made a character already: go straight into town after the language (and
 // login) step, with no name or clothes to pick (see startNow below).
 let startNow = null;
@@ -576,6 +599,26 @@ if (!isReturning()) {
   saveIdentity(identity);
 }
 try { localStorage.setItem('mk.made', '1'); } catch { /* ignore */ }
+// Where a new player starts (until the welcome is done, a refresh too): the
+// start they picked, or for "anywhere" the one with the most people near it
+// right now (asked here, used once the map is up). Null: not new.
+const startChoice = (() => {
+  try {
+    const v = localStorage.getItem('mk.onboard');
+    if (v != null ? Number(v) >= 2 : !!loadLastSpot()) return Promise.resolve(null);
+  } catch { return Promise.resolve(null); }
+  const starts = startList(region), keys = starts.map((it) => it.k);
+  if (!keys.length) return Promise.resolve(null);
+  if (startPick !== ANY) { const k = keys.includes(startPick) ? startPick : keys[0]; saveStart(k); return Promise.resolve(k); }
+  return (async () => {
+    const zs = await zonesPromise; // a "square" start: the main square (zones.json's first zone)
+    const sq = zs?.zones?.[0]?.at;
+    const spots = keys.map((k) => { const sp = startSpot(region, k); return sp?.square ? { x: sq?.[0] ?? 0, z: sq?.[1] ?? 0 } : sp || { x: 0, z: 0 }; });
+    const k = busiestStart(keys, await askCrowds(config.netProvider, config.net, spots));
+    saveStart(k);
+    return k;
+  })();
+})();
 let myLook = editor.getLook();
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
@@ -811,11 +854,13 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
-// New players start inside Bukchon's gate (region.json spawn.first), next
-// to a welcome guide in the same costume: the first thing they see is a
-// hanok village, not a shopping street. The welcome high five and the first
-// errand happen there; the guide hands out errands like any other after.
-const firstStop = firstStopSpot(region);
+// New players start where they picked (region.json spawn.starts; Bukchon's
+// gate unless they picked another), next to a welcome guide in the same
+// costume: the first thing they see is what they came for. The welcome high
+// five and the first errand (a trip that fits the start) happen there; the
+// guide hands out errands like any other after. Shopping starts beside the
+// square guide instead, as before.
+const firstStop = await startChoice.then((k) => { const sp = k && startSpot(region, k); return sp && !sp.square ? sp : null; });
 let welcomeNpc = null;
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
@@ -3343,6 +3388,7 @@ const TRIP_CARD = {
 };
 const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
 const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
+const ROUTE_TIP = { bukchon: 'tripBukchon', toBukchon: 'tripToBukchon' }; // the guide's tip for each first trip (data/starter-quests.js)
 // Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
 const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
 const inOpenHouse = (x, z) => {
@@ -3364,7 +3410,7 @@ const zonePlace = (id) => { const z = zones.items.find((i) => i.zone.id === id);
 function tripPlace(step) {
   const here = myPlace();
   if (step === 'forest') return zonePlace('A-7');
-  if (step === 'station' || step === 'angukWalk' || step === 'down') return nearestSubwayExit(here.x, here.z);
+  if (step === 'station' || step === 'stationNear' || step === 'angukWalk' || step === 'down') return nearestSubwayExit(here.x, here.z);
   if (step === 'forestStop' || step === 'anguk' || step === 'seongsuStop') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
   if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
   if (step === 'cheonggye') return zonePlace('B-2');
@@ -3401,8 +3447,9 @@ function onTripStep() {
     if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
     sfx.pop?.();
     me.play('cheer');
-    if (fromBukchon()) { // already on Seongsu Square: the guide is right here
-      firstTaxiCard(L(BUKCHON_TRIP_CARD.done), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
+    const route = quests.active?.route;
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+      firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
     } else tripTaxiCard();
     return;
   }
@@ -3433,7 +3480,7 @@ function tripTick() {
   const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
   if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
   else if (step === 'forest' && near(zonePlace('A-7'), 30)) missionEvent('place', 'A-7');
-  else if ((step === 'station' || step === 'angukWalk') && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if ((step === 'station' || step === 'stationNear' || step === 'angukWalk') && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
   else if (step === 'openHouse' && mode === 'street' && inOpenHouse(p.x, p.z)) missionEvent('place', 'open-house');
   else if (step === 'square' && near(zonePlace('A-1'), 20)) missionEvent('place', 'A-1');
   else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
@@ -5806,7 +5853,7 @@ function questText(q) {
   const st = q.starter != null && STARTER[q.starter];
   const step = q.kind === 'trip' && tripOf(q)[q.stage | 0]?.step;
   if (step && TRIP_TEXT[step]) return L(TRIP_TEXT[step]);
-  const tipKey = q.route === 'bukchon' ? 'tripBukchon' : st?.tip;
+  const tipKey = ROUTE_TIP[q.route] || st?.tip;
   if (st && st.kind === q.kind && STARTER_TEXT[tipKey]) return fmt(L(STARTER_TEXT[tipKey].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
@@ -5860,13 +5907,13 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
     // On the first path, say the tip again too (it is easy to miss the first time).
-    const tip = q.starter != null && STARTER_TEXT[q.route === 'bukchon' ? 'tripBukchon' : STARTER[q.starter]?.tip]?.tip;
+    const tip = q.starter != null && STARTER_TEXT[ROUTE_TIP[q.route] || STARTER[q.starter]?.tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
     if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
     const d = !atSquare && here?.store ? districtOfStore(here.store) : npc === welcomeNpc ? firstStop.district : null;
     const a = quests.start({
-      route: npc === welcomeNpc ? 'bukchon' : null, // the first trip, from the welcome guide: starts in Bukchon
+      route: npc === welcomeNpc ? firstStop.trip : null, // the first trip, from the welcome guide: one that fits where they started
       stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
         && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
@@ -5874,7 +5921,7 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
     // On the first path the guide also gives a tip for this errand.
-    const tip = a.starter != null && STARTER_TEXT[a.route === 'bukchon' ? 'tripBukchon' : STARTER[a.starter].tip]?.tip;
+    const tip = a.starter != null && STARTER_TEXT[ROUTE_TIP[a.route] || STARTER[a.starter].tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
     if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
