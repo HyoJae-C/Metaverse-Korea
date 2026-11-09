@@ -397,7 +397,7 @@ test('animal calls: every kind that moves has a voice, played when a motion star
   assert.ok(fallOff(0) === 1 && fallOff(10) > fallOff(20) && fallOff(HEAR) === 0);
   // The zoo says when a motion starts, once.
   const lions = PENS.find((p) => p.id === 'lions');
-  const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null }]);
+  const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null, feed: null }]); // (no feeding time: at the lions' feeding, by the clock, they'd all walk to the food)
   const heard = [];
   zoo.onSound = (b, m) => heard.push([b, m]);
   const a = zoo.pens[0].animals[0];
@@ -478,10 +478,10 @@ test('kangaroos and camels: pens of their own beside the zebras and the elephant
   assert.ok(Math.abs(cam.z - ele.z) < 1e-6 && cam.x > ele.x, 'the camels next to the elephants');
   assert.ok(!zeb.groups.some((g) => g.kind === 'kangaroo'), 'not in with the zebras');
   // Hopping: both feet together, up off the ground, as it goes.
-  const zoo = new Zoo(new THREE.Scene(), [{ ...kan, name: null }]);
+  const zoo = new Zoo(new THREE.Scene(), [{ ...kan, name: null, feed: null, groups: [{ ...kan.groups[0], n: 1 }] }]); // (one, alone: no other to bump into)
   const k = zoo.pens[0].animals[0];
   assert.ok(k.hop && k.hopH > 0.2);
-  k.state = 'walk'; k.target = [k.root.position.x + 3, k.root.position.z]; k.t = 10;
+  k.state = 'walk'; k.target = [k.root.position.x > 0 ? -4 : 4, 0]; k.t = 10; // (across the pen, so it doesn't arrive or hit the fence)
   let up = 0;
   for (let i = 0; i < 40; i++) { zoo._step(k, 0.05, 50, 50, zoo.pens[0]); up = Math.max(up, k.body.position.y); }
   assert.ok(up > 0.15, 'up off the ground');

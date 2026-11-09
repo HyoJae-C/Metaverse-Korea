@@ -106,6 +106,7 @@ export function createZooVisit(game) {
       b.scene.add(o.ch.root);
       walkers.push(o);
     }
+    b.zooPeople = [keeper, ...watchers, ...walkers].filter(Boolean); // (game/room-cache.js takes their name tags off the page if the room is let go)
   }
 
   const feedAct = (a, p) => ({ key: 'zoofeed:' + a.kind + zoo.food, label: '🥕 ' + game.fmt(L(ZOO_FOOD.feed), { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit), n: zoo.food }), run: () => {
