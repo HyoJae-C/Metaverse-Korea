@@ -9,10 +9,10 @@ const memory = () => {
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
 };
 
-test('49 stable catalogue entries, 43 released, nine stamps per page and four special catches', () => {
+test('49 stable catalogue entries, all released, nine stamps per page and four special catches', () => {
   assert.equal(FISH.length, 49);
   assert.equal(new Set(FISH.map(f => f.id)).size, 49);
-  assert.equal(AVAILABLE_FISH.length, 43);
+  assert.equal(AVAILABLE_FISH.length, 49);
   assert.deepEqual(Array.from({ length: 6 }, (_, page) => FISH.filter(f => f.page === page).length), [9,9,9,9,9,4]);
   assert.equal(fishById('whale').ko, '흰수염고래');
   assert.equal(fishById('shark').ko, '백상아리');
@@ -74,15 +74,14 @@ test('old bag and dex IDs survive renaming and sales, while trash is never count
   assert.equal(bag.add('whale'),false);
 });
 
-test('available collection can finish before the full catalogue, and future records persist', () => {
+test('with every kind out, finishing the available collection finishes the whole journal; records persist', () => {
   const st=memory(), dex=new FishDex(st);
-  for(const f of AVAILABLE_FISH)dex.add(f.id);
+  for(const f of AVAILABLE_FISH.slice(0, -1))dex.add(f.id);
+  assert.equal(dex.availableComplete,false);
+  dex.add(AVAILABLE_FISH.at(-1).id);
   assert.equal(dex.availableComplete,true);
-  assert.equal(dex.complete,false);
-  dex.add('orca');
-  assert.equal(new FishDex(st).count('orca'),1);
-  for(const f of FISH)dex.add(f.id);
   assert.equal(dex.complete,true);
+  assert.equal(new FishDex(st).count('orca'),1);
   st.setItem('mk.fishdex','broken');
   assert.equal(new FishDex(st).kinds,0);
 });
@@ -181,7 +180,7 @@ test('each star tier bites less often in total than the one below it', () => {
   // and every ★4 kind is rarer than any ★3 kind
   assert.ok(Math.max(...AVAILABLE_FISH.filter(f => f.rarity === 4).map(f => f.chance)) < Math.min(...AVAILABLE_FISH.filter(f => f.rarity === 3).map(f => f.chance)));
   // and every kind of each tier is rarer than any kind of the tier below,
-  // counting a park's ★5 legend at that park (it takes the whole 0.4% there)
+  // counting a park's ★5 legend at that park (it takes the whole ★5 share there)
   const kinds = (r) => AVAILABLE_FISH.filter(f => f.rarity === r).map(f => f.chance);
   for (let r = 2; r <= 4; r++) assert.ok(Math.max(...kinds(r)) < Math.min(...kinds(r - 1)), `every ★${r} kind below every ★${r - 1} kind`);
   for (const park of Object.keys(PARK_LEGENDS)) {

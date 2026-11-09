@@ -65,7 +65,7 @@ test('all the new shops are fictional sample data with names in four languages',
 });
 
 test('every park has the same catch except its ★5 legend, and every park pays the same', async () => {
-  const { chanceAt, rollCatch, PARK_LEGENDS, legendPark, TRASH_CHANCE } = await import('../src/core/fishing.js');
+  const { chanceAt, rollCatch, PARK_LEGENDS, legendPark, TRASH_CHANCE, TIER_SHARE } = await import('../src/core/fishing.js');
   // The kinds first met at Mangwon are ordinary released fish now.
   for (const id of ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid']) assert.ok(fishById(id).released, id);
   assert.ok(stores.every((s) => !('fishPlace' in s)));
@@ -80,7 +80,7 @@ test('every park has the same catch except its ★5 legend, and every park pays 
     const sum = AVAILABLE_FISH.reduce((a, f) => a + chanceAt(f, park), 0);
     assert.ok(Math.abs(sum - 100) < 1e-9, `${park} ${sum}`);
     const five = legends.reduce((a, f) => a + chanceAt(f, park), 0);
-    assert.ok(Math.abs(five - 0.4) < 1e-9, `${park}: ★5 keeps 0.4%`);
+    assert.ok(Math.abs(five - TIER_SHARE[5]) < 1e-9, `${park}: ★5 keeps its share`);
     assert.ok(Math.abs(income(park) - income(null)) < 1e-9, `${park} pays the same`);
   }
   assert.equal(chanceAt(fishById('whale'), 'mangwon-hangang'), 0);
@@ -94,7 +94,7 @@ test('every park has the same catch except its ★5 legend, and every park pays 
     assert.notEqual(a.id, 'whale'); assert.notEqual(b.id, 'giant-squid');
     if (a.id === 'giant-squid') squid++;
   }
-  assert.ok(squid > 200 && squid < 700, `${squid} giant squid in 100000 (about 0.4%)`);
+  assert.ok(squid > 100 && squid < 330, `${squid} giant squid in 100000 (about 0.2%)`);
   assert.ok(FISH.every((f) => fishById(f.id)));
   assert.ok(TRASH_CHANCE > 0);
 });

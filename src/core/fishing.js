@@ -403,7 +403,7 @@ export const FISH = [
       "en": "Clownfish"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 1000
   },
@@ -442,7 +442,7 @@ export const FISH = [
       "en": "Lobster"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 1800
   },
@@ -470,7 +470,7 @@ export const FISH = [
       "en": "Blue tang"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
     "price": 1000
   },
@@ -509,7 +509,7 @@ export const FISH = [
       "en": "Butterflyfish"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 4,
     "price": 1000
   },
@@ -522,7 +522,7 @@ export const FISH = [
       "en": "Moray eel"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 4,
     "price": 1200
   },
@@ -535,7 +535,7 @@ export const FISH = [
       "en": "Orca"
     },
     "rarity": 4,
-    "released": false,
+    "released": true,
     "page": 4,
     "price": 15000
   },
@@ -671,19 +671,20 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
 // Each tier, and each kind in it, bites less often than the tier below:
-// every ★3 kind (about 0.83% each of six) stays below any single ★2 kind,
-// every ★4 kind (3% for the tier, at most about 0.72% a kind) below any ★3
-// kind, and even the rarest ★4 (the great white, about 0.47%) above a park's
-// ★5 legend (0.4%). Every park shares this one table, so none pays better than
-// another.
-export const TIER_SHARE = [0, 63.6, 28, 5, 3, 0.4];
+// every ★3 kind (about 0.36% each of eleven) stays below any single ★2 kind,
+// every ★4 kind (1.8% for the tier, at most about 0.34% a kind) below any ★3
+// kind, and even the rarest ★4 (the orca, about 0.24%) above a park's ★5
+// legend (0.2%). All 49 kinds are out (four Han River parks, one legend
+// each); the shares were made stingier when the last ones opened. Every park
+// shares this one table, so none pays better than another.
+export const TIER_SHARE = [0, 70, 24, 4, 1.8, 0.2];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
 // less often. At a fish every 12 s this gives bluefin tuna about every
-// 20 min, the great white about every 45 min, and a park's legend (the blue
-// whale at Ttukseom) about every hour.
+// hour, the orca about every 80 min, and a park's legend (the blue whale at
+// Ttukseom) about every 100 min.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
-  'sea-turtle': 1.4, tuna: 1.4, marlin: 1.1, shark: 0.9, orca: 0.4, anglerfish: 1,
+  'sea-turtle': 1.1, tuna: 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
 // What each rarity is called (the fish book and the odds table).
