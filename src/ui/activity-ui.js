@@ -2,12 +2,13 @@
 // the climbing wall and the PC방 aim game. Free to play, records only.
 // Loaded the first time you play one (game/arcade.js).
 import {
-  PINS, FRAMES, rollBall, frameRolls, bowlingScores, bowlingTurn, frameMarks, ballX, LANE_HALF,
+  PINS, FRAMES, frameRolls, bowlingScores, bowlingTurn, frameMarks, isSplit,
   CLIMB_ROUTES, routeHolds, judgeReach, gripAfter, gripDrain, climbOpen,
   AIM_SECONDS, aimLife, aimRadius, aimPoints, AIM_MISS, aimTier, accuracy,
   loadActivity, saveActivity,
 } from '../core/activities.js';
 import { L, fmt } from './pocha-ui.js';
+import { simulateRoll, throwFrom, rackSpot, LANE_HALF, LANE_LEN, BOARD, BALL_R, PIN_H, PIN_GAP } from '../core/bowling-physics.js';
 
 const T = {
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
@@ -16,21 +17,25 @@ const T = {
   // Bowling
   bTitle: { en: 'Bowling', ko: '볼링', ja: 'ボウリング', zh: '保龄球', es: 'Bolos', id: 'Bowling', vi: 'Bowling', hi: 'बॉलिंग', fr: 'Bowling', th: 'โบว์ลิ่ง', ar: 'البولينغ' },
   bHow: {
-    en: 'A quick 5-frame game with real scoring. Tap once to stop the ball where you aim (just right of the middle pin is the pocket), then again to pick your power. Free: beat your best score.',
-    ko: '진짜 점수 규칙으로 하는 5프레임 빠른 게임. 한 번 눌러 공의 방향을 멈추고(가운데 핀 살짝 오른쪽이 포켓), 한 번 더 눌러 힘을 정해요. 무료, 내 최고 점수에 도전!',
-    ja: '本物のスコアで遊ぶ5フレームの早撃ちゲーム。1回目のタップで狙いを止め（真ん中のピンの少し右がポケット）、2回目で力を決めます。無料、自己ベストに挑戦！',
-    zh: '用真实计分规则的5局快速赛。第一次点击停住方向（中间球瓶稍右是最佳击球点），第二次点击决定力度。免费，挑战最高分！',
-    es: 'Partida rápida de 5 frames con puntuación real. Toca para fijar la dirección (justo a la derecha del bolo central está el bolsillo) y otra vez para la fuerza. Gratis: supera tu récord.',
-    id: 'Permainan cepat 5 frame dengan skor asli. Ketuk sekali untuk mengunci arah (sedikit kanan pin tengah adalah pocket), lalu sekali lagi untuk tenaga. Gratis: kalahkan skor terbaikmu.',
-    vi: 'Ván nhanh 5 frame với cách tính điểm thật. Chạm một lần để chốt hướng (hơi lệch phải ki giữa là điểm vàng), chạm lần nữa để chọn lực. Miễn phí: phá kỷ lục của bạn.',
-    hi: 'असली स्कोरिंग के साथ 5 फ़्रेम का तेज़ खेल। एक बार टैप करके निशाना रोकें (बीच वाली पिन के ठीक दाएँ पॉकेट है), फिर ताक़त चुनें। मुफ़्त: अपना बेस्ट स्कोर तोड़ें।',
-    fr: 'Partie rapide en 5 frames avec le vrai calcul des points. Touche pour fixer la visée (juste à droite de la quille du milieu, c\'est la poche), puis pour la puissance. Gratuit : bats ton record.',
-    th: 'เกมเร็ว 5 เฟรมนับคะแนนจริง แตะครั้งแรกเพื่อหยุดทิศ (ขวาของพินกลางนิดหน่อยคือพ็อกเก็ต) แตะอีกครั้งเพื่อเลือกแรง เล่นฟรี ทำลายสถิติตัวเอง',
-    ar: 'لعبة سريعة من 5 جولات بحساب نقاط حقيقي. انقر لتثبيت الاتجاه (يمين القارورة الوسطى قليلًا هو الجيب)، ثم انقر لاختيار القوة. مجانية: حطّم رقمك.',
+    en: 'A full 10-frame game with real scoring, and the ball and pins move like the real thing. Pick where you stand (◀ ▶) and your spin, tap to lock your line as it swings, then tap again for speed. Or swipe up from the ball to throw. The pocket is just beside the head pin: a ball that hooks into it strikes, straight into the head pin leaves splits. Free: beat your best score.',
+    ko: '진짜 점수 규칙으로 하는 10프레임 게임. 공과 핀이 실제처럼 움직여요. 설 자리(◀ ▶)와 회전을 고르고, 흔들리는 방향선을 눌러 멈춘 뒤, 한 번 더 눌러 속도를 정해요. 공에서 위로 쓸어 올려 던져도 돼요. 포켓은 1번 핀 바로 옆: 휘어 들어가면 스트라이크, 1번 핀 정면이면 스플릿이 남기 쉬워요. 무료, 내 최고 점수에 도전!',
+    ja: '本物のスコアで遊ぶ10フレーム。ボールとピンが本物のように動きます。立ち位置（◀ ▶）と回転を選び、揺れる狙いの線をタップで止め、もう一度タップで球速を決めます。ボールから上へスワイプして投げることもできます。ポケットはヘッドピンのすぐ横：曲がって入るとストライク、正面だとスプリットが残りがち。無料、自己ベストに挑戦！',
+    zh: '真实计分的完整10局比赛，球和球瓶像真的一样运动。选好站位（◀ ▶）和旋转，点击停住摆动的瞄准线，再点击决定球速。也可以从球向上滑动来投球。最佳击球点在1号瓶旁边：弧线切入容易全中，正面击中1号瓶容易留下分瓶。免费，挑战最高分！',
+    es: 'Una partida completa de 10 frames con puntuación real, y la bola y los bolos se mueven como de verdad. Elige dónde te pones (◀ ▶) y el efecto, toca para fijar la línea mientras oscila y otra vez para la velocidad. O desliza hacia arriba desde la bola. El bolsillo está junto al bolo 1: una bola con curva hace strike, de frente al bolo 1 deja splits. Gratis: supera tu récord.',
+    id: 'Permainan penuh 10 frame dengan skor asli, bola dan pin bergerak seperti sungguhan. Pilih posisi berdiri (◀ ▶) dan putaran, ketuk untuk mengunci arah yang berayun, lalu ketuk lagi untuk kecepatan. Atau usap ke atas dari bola untuk melempar. Pocket ada di samping pin depan: bola melengkung masuk jadi strike, lurus ke pin depan sering menyisakan split. Gratis: kalahkan skor terbaikmu.',
+    vi: 'Ván đủ 10 frame với cách tính điểm thật, bóng và ki chuyển động như thật. Chọn chỗ đứng (◀ ▶) và độ xoáy, chạm để chốt đường bóng đang lắc, rồi chạm lần nữa để chọn tốc độ. Hoặc vuốt lên từ quả bóng để ném. Điểm vàng ngay cạnh ki số 1: bóng cong vào đó dễ strike, đánh thẳng ki số 1 dễ để lại split. Miễn phí: phá kỷ lục của bạn.',
+    hi: 'असली स्कोरिंग के साथ पूरा 10 फ़्रेम का खेल, गेंद और पिनें असली जैसी चलती हैं। खड़े होने की जगह (◀ ▶) और स्पिन चुनें, झूलती लाइन को टैप करके रोकें, फिर रफ़्तार के लिए दोबारा टैप करें। या गेंद से ऊपर स्वाइप करके फेंकें। पॉकेट हेड पिन के ठीक बगल में है: मुड़कर आई गेंद स्ट्राइक करती है, सीधी हेड पिन पर लगे तो स्प्लिट बचता है। मुफ़्त: अपना बेस्ट स्कोर तोड़ें।',
+    fr: 'Une vraie partie de 10 frames avec le vrai calcul des points, et la boule et les quilles bougent comme en vrai. Choisis ta position (◀ ▶) et l\'effet, touche pour fixer ta ligne pendant qu\'elle oscille, puis encore pour la vitesse. Ou glisse vers le haut depuis la boule. La poche est juste à côté de la quille 1 : une boule qui y entre en courbe fait strike, de face sur la 1 elle laisse des splits. Gratuit : bats ton record.',
+    th: 'เกมเต็ม 10 เฟรมนับคะแนนจริง ลูกและพินเคลื่อนที่เหมือนจริง เลือกจุดยืน (◀ ▶) และการหมุน แตะเพื่อหยุดเส้นเล็งที่แกว่งอยู่ แล้วแตะอีกครั้งเพื่อเลือกความเร็ว หรือปัดขึ้นจากลูกเพื่อโยน พ็อกเก็ตอยู่ข้างพินหัว ลูกที่โค้งเข้าไปจะสไตรก์ ตรงเข้าพินหัวมักเหลือสปลิต เล่นฟรี ทำลายสถิติตัวเอง',
+    ar: 'لعبة كاملة من 10 جولات بحساب نقاط حقيقي، والكرة والقوارير تتحرك كالحقيقة. اختر مكان وقوفك (◀ ▶) والدوران، وانقر لتثبيت خطك وهو يتأرجح، ثم انقر مجددًا للسرعة. أو اسحب للأعلى من الكرة لترميها. الجيب بجانب القارورة الأولى: الكرة المنحنية إليه تحقق ضربة كاملة، والمباشرة على القارورة الأولى تترك انقسامًا. مجانية: حطّم رقمك.',
   },
   bStart: { en: 'Start · {n} frames', ko: '시작 · {n}프레임', ja: 'スタート・{n}フレーム', zh: '开始 · {n}局', es: 'Empezar · {n} frames', id: 'Mulai · {n} frame', vi: 'Bắt đầu · {n} frame', hi: 'शुरू · {n} फ़्रेम', fr: 'Commencer · {n} frames', th: 'เริ่ม · {n} เฟรม', ar: 'ابدأ · {n} جولات' },
   bBest: { en: 'Best score: {n}', ko: '최고 점수: {n}', ja: 'ベストスコア：{n}', zh: '最高分：{n}', es: 'Mejor puntuación: {n}', id: 'Skor terbaik: {n}', vi: 'Điểm cao nhất: {n}', hi: 'बेस्ट स्कोर: {n}', fr: 'Meilleur score : {n}', th: 'คะแนนสูงสุด: {n}', ar: 'أفضل نتيجة: {n}' },
-  bAim: { en: 'Frame {f} · ball {b}: tap to aim', ko: '{f}프레임 {b}구: 눌러서 방향', ja: '{f}フレーム {b}投目：タップで狙い', zh: '第{f}局 第{b}球：点击定方向', es: 'Frame {f} · bola {b}: toca para apuntar', id: 'Frame {f} · bola {b}: ketuk untuk membidik', vi: 'Frame {f} · bóng {b}: chạm để ngắm', hi: 'फ़्रेम {f} · बॉल {b}: निशाने के लिए टैप', fr: 'Frame {f} · boule {b} : touche pour viser', th: 'เฟรม {f} · ลูก {b}: แตะเพื่อเล็ง', ar: 'الجولة {f} · الكرة {b}: انقر للتصويب' },
+  bAim: { en: 'Frame {f} · ball {b}: tap to lock your line, or swipe up', ko: '{f}프레임 {b}구: 눌러서 방향을 정하거나 위로 쓸어 던지기', ja: '{f}フレーム {b}投目：タップで線を決めるか、上へスワイプ', zh: '第{f}局 第{b}球：点击定线路，或向上滑动', es: 'Frame {f} · bola {b}: toca para fijar la línea o desliza hacia arriba', id: 'Frame {f} · bola {b}: ketuk untuk mengunci arah, atau usap ke atas', vi: 'Frame {f} · bóng {b}: chạm để chốt đường bóng, hoặc vuốt lên', hi: 'फ़्रेम {f} · बॉल {b}: लाइन तय करने को टैप करें, या ऊपर स्वाइप करें', fr: 'Frame {f} · boule {b} : touche pour fixer ta ligne, ou glisse vers le haut', th: 'เฟรม {f} · ลูก {b}: แตะเพื่อล็อกเส้น หรือปัดขึ้น', ar: 'الجولة {f} · الكرة {b}: انقر لتثبيت خطك أو اسحب للأعلى' },
+  bStand: { en: 'Stand', ko: '서는 자리', ja: '立ち位置', zh: '站位', es: 'Posición', id: 'Posisi', vi: 'Chỗ đứng', hi: 'जगह', fr: 'Position', th: 'จุดยืน', ar: 'الموقف' },
+  bSpin: { en: 'Spin', ko: '회전', ja: '回転', zh: '旋转', es: 'Efecto', id: 'Putaran', vi: 'Xoáy', hi: 'स्पिन', fr: 'Effet', th: 'การหมุน', ar: 'الدوران' },
+  bSpeed: { en: '{n} km/h', ko: '시속 {n}km', ja: '時速{n}km', zh: '时速{n}公里', es: '{n} km/h', id: '{n} km/jam', vi: '{n} km/h', hi: '{n} किमी/घं', fr: '{n} km/h', th: '{n} กม./ชม.', ar: '{n} كم/س' },
+  split: { en: 'Split!', ko: '스플릿!', ja: 'スプリット！', zh: '分瓶！', es: '¡Split!', id: 'Split!', vi: 'Split!', hi: 'स्प्लिट!', fr: 'Split !', th: 'สปลิต!', ar: 'انقسام!' },
   bPower: { en: 'Now tap for power', ko: '이제 눌러서 힘 조절', ja: '次はタップで力加減', zh: '现在点击定力度', es: 'Ahora toca para la fuerza', id: 'Sekarang ketuk untuk tenaga', vi: 'Giờ chạm để chọn lực', hi: 'अब ताक़त के लिए टैप करें', fr: 'Touche pour la puissance', th: 'แตะเพื่อเลือกแรง', ar: 'الآن انقر لاختيار القوة' },
   bThrow: { en: 'THROW', ko: '던지기', ja: '投げる', zh: '投球', es: 'LANZAR', id: 'LEMPAR', vi: 'NÉM', hi: 'फेंकें', fr: 'LANCER', th: 'โยน', ar: 'ارمِ' },
   strike: { en: 'STRIKE!', ko: '스트라이크!', ja: 'ストライク！', zh: '全中！', es: '¡STRIKE!', id: 'STRIKE!', vi: 'STRIKE!', hi: 'स्ट्राइक!', fr: 'STRIKE !', th: 'สไตรก์!', ar: 'ضربة كاملة!' },
@@ -164,130 +169,267 @@ class Panel {
 }
 
 // ── Bowling ──────────────────────────────────────────────────────────────
+// The lane seen from behind the ball, with a camera that follows it down to
+// the pins. You pick where you stand and your spin, lock the swinging line
+// with a tap and the speed with another (or swipe up from the ball); then the
+// roll from core/bowling-physics.js plays back.
+const SPINS = [-1, -0.5, 0, 0.5, 1], SPIN_ICON = ['↰↰', '↰', '│', '↱', '↱↱'];
+const BOWL_KEY = 'bowling10'; // 10-frame bests (older 5-frame ones were under 'bowling')
+const HZ = 70, F = 430; // the horizon's height on the canvas and the focal length
 export class BowlingUI extends Panel {
-  // onRoll(pinsDown, kind) after each ball ('strike', 'spare', 'gutter', 'pins').
-  constructor({ root, store, onRoll, rand = Math.random }) {
+  // onRoll(pinsDown, kind) after each ball ('strike', 'spare', 'split', 'gutter', 'pins'); onHit() when the ball meets the pins.
+  constructor({ root, store, onRoll, onHit, rand = Math.random }) {
     super({ root, store, icon: '🎳', title: 'bTitle' });
-    Object.assign(this, { onRoll, rand });
+    Object.assign(this, { onRoll, onHit, rand });
+    this.stance = 0; this.spin = 0;
+    const tapKey = this.onKey;
+    this.onKey = (e) => {
+      const g = this.game;
+      if (g?.phase === 'aim' && /^(ArrowLeft|ArrowRight|KeyA|KeyD)$/.test(e.code)) {
+        e.preventDefault(); e.stopPropagation();
+        this.move(e.code === 'ArrowLeft' || e.code === 'KeyA' ? -1 : 1);
+      } else if (g?.phase === 'aim' && /^(ArrowUp|ArrowDown|KeyW|KeyS)$/.test(e.code)) {
+        e.preventDefault(); e.stopPropagation();
+        this.setSpin(SPINS[Math.max(0, Math.min(4, SPINS.indexOf(this.spin) + (e.code === 'ArrowUp' || e.code === 'KeyW' ? 1 : -1)))]);
+      } else tapKey(e);
+    };
   }
   renderStart() {
     this._frame();
     this.root.append(el('p', 'order-hint', tt('bHow')));
-    const best = loadActivity(this.store).bowling;
+    const best = loadActivity(this.store)[BOWL_KEY];
     if (best != null) this.root.append(el('p', 'order-hint claw-note', tt('bBest', { n: best })));
     this._actions(this._button('🎳 ' + tt('bStart', { n: FRAMES }), true, () => this.play()));
   }
   play() {
-    this._play({ rolls: [], standing: PINS.map((_, i) => i), phase: 'aim', t0: now(), aim: 0, power: 0, roll: null }, '🎳 ' + tt('bThrow'));
+    const g = this._play({ rolls: [], rack: freshRack(), phase: 'aim', t0: now(), aim: 0, power: 0, sim: null }, '🎳 ' + tt('bThrow'));
+    // Where you stand and your spin, under the lane.
+    const row = el('div', null);
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin:6px 0';
+    const left = this._button('◀', false, () => this.move(-1)), right = this._button('▶', false, () => this.move(1));
+    left.setAttribute('aria-label', tt('bStand') + ' ◀'); right.setAttribute('aria-label', tt('bStand') + ' ▶');
+    g.spinBtns = SPINS.map((s, k) => {
+      const b = this._button(SPIN_ICON[k], false, () => this.setSpin(s));
+      b.className = 'chip';
+      b.style.cssText = 'min-width:44px;padding:6px 8px';
+      b.setAttribute('aria-label', `${tt('bSpin')} ${SPIN_ICON[k]}`);
+      return b;
+    });
+    const row2 = row.cloneNode();
+    row.append(left, el('small', null, tt('bStand')), right);
+    row2.append(el('small', null, tt('bSpin')), ...g.spinBtns);
+    g.status.after(row, row2);
+    g.controls = [left, right, ...g.spinBtns];
+    this.setSpin(this.spin);
+    this.swipe(g);
     this.nextBall();
+  }
+  move(d) {
+    if (this.game?.phase !== 'aim') return;
+    this.stance = Math.max(-1, Math.min(1, Math.round((this.stance + d * 0.1) * 10) / 10));
+  }
+  setSpin(s) {
+    this.spin = s;
+    this.game?.spinBtns?.forEach((b, k) => b.setAttribute('aria-pressed', String(SPINS[k] === s)));
+  }
+  // Swipe up from the ball to throw: the swipe's slant is your line, its
+  // speed is the ball's.
+  swipe(g) {
+    let pts = null;
+    const pos = (e) => { const r = g.cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H, t: now() }; };
+    g.cv.onpointerdown = (e) => { if (g.phase === 'aim' || g.phase === 'power') { pts = [pos(e)]; g.cv.setPointerCapture?.(e.pointerId); } };
+    g.cv.onpointermove = (e) => { if (pts) pts.push(pos(e)); };
+    g.cv.onpointerup = (e) => {
+      if (!pts) return;
+      pts.push(pos(e));
+      const a = pts[0], b = pts.at(-1), recent = pts.filter((p) => b.t - p.t < 0.12)[0] || a;
+      pts = null;
+      const up = a.y - b.y;
+      if (up < 50 || !this.game || this.game !== g) return;
+      const vy = (recent.y - b.y) / Math.max(0.016, b.t - recent.t);
+      g.aim = Math.max(-1, Math.min(1, ((b.x - a.x) / up) / 0.6));
+      this.throw(Math.max(0, Math.min(1, (vy - 150) / 1500)));
+    };
   }
   nextBall() {
     const g = this.game;
     if (!g) return;
     const turn = bowlingTurn(g.rolls);
     if (turn.over) { this.finish(); return; }
-    if (turn.fresh) g.standing = PINS.map((_, i) => i);
+    if (turn.fresh) g.rack = freshRack();
+    else if (g.sim) g.rack = g.sim.left;
     g.turn = turn;
-    g.phase = 'aim'; g.t0 = now(); g.roll = null;
+    g.phase = 'aim'; g.t0 = now(); g.sim = null;
+    g.controls.forEach((b) => { b.disabled = false; });
     g.status.textContent = tt('bAim', { f: turn.frame + 1, b: turn.ball + 1 });
   }
+  aimAt(t) { return Math.sin(t * 1.35) * 0.9; }
+  powerAt(t) { return (1 - Math.cos(t * 2.6)) / 2; }
   tap() {
     const g = this.game;
     if (!g) return;
     const t = now() - g.t0;
     if (g.phase === 'aim') {
-      g.aim = Math.sin(t * 2.3) * 1.05;
+      g.aim = this.aimAt(t);
       g.phase = 'power'; g.t0 = now();
       g.status.textContent = tt('bPower');
-    } else if (g.phase === 'power') {
-      g.power = (1 - Math.cos(t * 3.2)) / 2;
-      const down = rollBall({ aim: g.aim, power: g.power, standing: g.standing, first: g.turn.ball === 0 || g.turn.fresh, rand: this.rand });
-      g.phase = 'roll';
-      g.roll = { at: now(), down };
-      this.timer = setTimeout(() => this.land(), 1100);
-    }
+    } else if (g.phase === 'power') this.throw(this.powerAt(t));
+    else if (g.phase === 'roll') { g.at -= 60; clearTimeout(this.timer); this.land(); } // skip to the end
+  }
+  throw(power) {
+    const g = this.game;
+    g.power = power;
+    g.ball = throwFrom({ stance: this.stance, aim: g.aim, power, spin: this.spin });
+    g.sim = simulateRoll(g.ball, g.rack, this.rand);
+    g.phase = 'roll'; g.at = now(); g.hit = false;
+    g.controls.forEach((b) => { b.disabled = true; });
+    g.status.textContent = tt('bSpeed', { n: Math.round(g.ball.speed * 3.6) });
+    this.timer = setTimeout(() => this.land(), (g.sim.frames.length / 60) * 1000 + 150);
   }
   land() {
     const g = this.game;
-    if (!g) return;
-    const { down } = g.roll;
-    const wasFull = g.standing.length === 10;
-    g.standing = g.standing.filter((i) => !down.includes(i));
+    if (!g || g.phase !== 'roll') return;
+    const { down, left } = g.sim;
+    const wasFull = g.rack.length === 10;
     g.rolls.push(down.length);
-    const kind = down.length === 0 ? 'gutter' : !g.standing.length ? (wasFull ? 'strike' : 'spare') : 'pins';
-    g.status.textContent = kind === 'pins' ? tt('pins', { n: down.length }) : tt(kind);
-    g.phase = 'fallen';
+    const ids = left.map((p) => p.i);
+    const kind = !left.length ? (wasFull ? 'strike' : 'spare') : down.length === 0 ? 'gutter' : wasFull && isSplit(ids) ? 'split' : 'pins';
+    g.status.textContent = kind === 'pins' ? tt('pins', { n: down.length }) : kind === 'split' ? `${tt('split')} ${tt('pins', { n: down.length })}` : tt(kind);
+    if (kind === 'gutter' && !g.sim.gutter) g.status.textContent = tt('pins', { n: 0 });
+    g.phase = 'fallen'; g.kind = kind;
     this.onRoll?.(down.length, kind);
-    this.timer = setTimeout(() => this.nextBall(), kind === 'strike' ? 1600 : 1200);
+    this.timer = setTimeout(() => this.nextBall(), kind === 'strike' ? 1700 : 1300);
   }
   finish() {
     const total = bowlingScores(this.game.rolls).at(-1) ?? 0;
-    const rec = saveActivity(this.store, 'bowling', total);
+    const rec = saveActivity(this.store, BOWL_KEY, total);
     this._end(tt('bDone', { n: total }) + (rec && total > 0 ? '  ' + tt('record') : ''), () => this.play());
   }
   draw(t) {
     const g = this.game, c = g.c;
-    // The lane, seen from the approach: wide at the bottom, narrow at the pins.
-    c.fillStyle = '#1d1f26'; c.fillRect(0, 0, W, H);
-    const top = 70, bot = H - 20, wTop = 120, wBot = 360;
-    const xAt = (lx, y) => W / 2 + (lx / LANE_HALF) * ((wTop + (wBot - wTop) * ((y - top) / (bot - top))) / 2);
-    c.fillStyle = '#d9a86a';
-    c.beginPath(); c.moveTo(W / 2 - wTop / 2, top); c.lineTo(W / 2 + wTop / 2, top); c.lineTo(W / 2 + wBot / 2, bot); c.lineTo(W / 2 - wBot / 2, bot); c.closePath(); c.fill();
-    c.fillStyle = '#3a3f47';
-    for (const s of [-1, 1]) { c.beginPath(); c.moveTo(W / 2 + s * wTop / 2, top); c.lineTo(W / 2 + s * (wTop / 2 + 14), top); c.lineTo(W / 2 + s * (wBot / 2 + 34), bot); c.lineTo(W / 2 + s * wBot / 2, bot); c.closePath(); c.fill(); }
-    c.fillStyle = '#5a3a22'; // the arrows
-    for (let k = -2; k <= 2; k++) { const y = bot - 70 - Math.abs(k) * 8, x = xAt(k * 0.13, y); c.beginPath(); c.moveTo(x, y - 8); c.lineTo(x - 5, y + 4); c.lineTo(x + 5, y + 4); c.fill(); }
-    // The pins (seen from the front: back row higher up).
-    const fallen = g.roll && g.phase !== 'roll' ? [] : null;
-    const rollT = g.roll ? Math.min(1, (t - g.roll.at) / 1.0) : 0;
-    PINS.forEach((p, i) => {
-      const up = g.standing.includes(i);
-      const goingDown = g.roll?.down.includes(i) && rollT >= 1;
-      if (!up && !goingDown && !(g.roll?.down.includes(i))) return;
-      const y = top - 6 - p.row * 9, x = W / 2 + p.x * 160;
-      if (goingDown || (!up && fallen)) { c.fillStyle = 'rgba(251,250,246,0.35)'; c.fillRect(x - 8, y + 4, 16, 5); return; }
-      c.fillStyle = '#fbfaf6'; c.fillRect(x - 4, y - 16, 8, 22);
-      c.fillStyle = '#d9473c'; c.fillRect(x - 4, y - 10, 8, 3);
-    });
-    // The ball: sliding side to side while you aim, then rolling.
-    let bx, by = bot - 16, r = 15;
-    const ph = t - g.t0;
-    if (g.phase === 'aim') bx = xAt(ballX(Math.sin(ph * 2.3) * 1.05), by);
-    else if (g.phase === 'power') bx = xAt(ballX(g.aim), by);
-    else if (g.phase === 'roll') {
-      const u = rollT;
-      by = bot - 16 - (bot - 16 - top) * u;
-      r = 15 - 9 * u;
-      const lx = Math.max(-LANE_HALF - 0.05, Math.min(LANE_HALF + 0.05, ballX(g.aim)));
-      bx = xAt(lx, by);
+    // What to show: the playback frame while rolling, else the rack.
+    let ball, pins;
+    if (g.sim && (g.phase === 'roll' || g.phase === 'fallen')) {
+      const fr = g.sim.frames, k = Math.min(fr.length - 1, Math.floor((t - g.at) * 60));
+      const f = fr[k];
+      ball = { x: f.b[0], z: f.b[1], roll: f.b[2] };
+      pins = g.rack.map((p, j) => ({ x: f.p[j][0], z: f.p[j][1], tilt: f.p[j][2], heading: f.p[j][3], gone: f.p[j][4] }));
+      if (!g.hit && g.sim.hitAt != null && k / 60 >= g.sim.hitAt) { g.hit = true; this.onHit?.(); }
+    } else {
+      ball = { x: throwFrom({ stance: this.stance }).x, z: 0, roll: 0 };
+      pins = g.rack.map((p) => ({ x: p.x, z: p.z, tilt: 0, heading: 0, gone: 0 }));
     }
-    if (bx != null) {
-      c.fillStyle = '#3a64c8'; c.beginPath(); c.arc(bx, by, r, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#1d2a55'; for (const [dx, dy] of [[-4, -4], [3, -5], [0, 2]]) { c.beginPath(); c.arc(bx + dx * r / 15, by + dy * r / 15, 2 * r / 15, 0, Math.PI * 2); c.fill(); }
+    // The camera stands behind the foul line and follows the ball down.
+    const camZ = Math.max(-2.8, Math.min(LANE_LEN - 3.6, ball.z - 2.8));
+    const u = (camZ + 2.8) / (LANE_LEN - 0.8);
+    const camY = 1.5 - 0.45 * u, camX = ball.x * 0.35 * u;
+    const P = (x, y, z) => { const d = Math.max(0.05, z - camZ); return [W / 2 + (F * (x - camX)) / d, HZ + (F * (camY - y)) / d, d]; };
+    const near = camZ + 0.35;
+    const quad = (x0, x1, z0, z1, color, y0 = 0, y1 = 0) => {
+      z0 = Math.max(z0, near); if (z1 <= z0) return;
+      const a = P(x0, y0, z0), b = P(x1, y1, z0), cc = P(x1, y1, z1), d = P(x0, y0, z1);
+      c.fillStyle = color; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fill();
+    };
+    const deckZ = LANE_LEN - 0.6, end = LANE_LEN + 1.05;
+    c.fillStyle = '#15161b'; c.fillRect(0, 0, W, H);
+    // The side walls and, past the deck, the dark pit.
+    quad(-1.6, -LANE_HALF - 0.24, -3, end, '#23252d'); quad(LANE_HALF + 0.24, 1.6, -3, end, '#23252d');
+    quad(-LANE_HALF - 0.24, LANE_HALF + 0.24, end, end + 1.2, '#050506');
+    // The approach, the lane and the pin deck; the gutters either side.
+    quad(-LANE_HALF - 0.24, LANE_HALF + 0.24, -3, 0, '#e3c18e');
+    quad(-LANE_HALF, LANE_HALF, 0, deckZ, '#d9a86a');
+    quad(-LANE_HALF, LANE_HALF, deckZ, end, '#e8c48f');
+    for (const s of [-1, 1]) {
+      quad(s * LANE_HALF, s * (LANE_HALF + 0.235), 0, end, '#3a3f47');
+      // The kickback: the wall beside the pin deck that pins bounce off.
+      const a = P(s * (LANE_HALF + 0.24), 0, Math.max(deckZ, near)), b = P(s * (LANE_HALF + 0.24), 0.5, Math.max(deckZ, near)), cc = P(s * (LANE_HALF + 0.24), 0.5, end), d = P(s * (LANE_HALF + 0.24), 0, end);
+      c.fillStyle = '#30333c'; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fill();
     }
+    // Boards every five, the foul line, the dots and the arrows.
+    c.strokeStyle = 'rgba(120,80,40,0.25)'; c.lineWidth = 1;
+    for (let bd = 5; bd < 39; bd += 5) {
+      const x = -LANE_HALF + bd * BOARD, a = P(x, 0, Math.max(0, near)), b = P(x, 0, deckZ);
+      c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+    }
+    quad(-LANE_HALF - 0.24, LANE_HALF + 0.24, -0.02, 0.02, '#d9473c');
+    c.fillStyle = '#5a3a22';
+    for (const bd of [5, 10, 15, 20, 25, 30, 35]) {
+      const x = LANE_HALF - bd * BOARD, z = 3.66 + (20 - Math.abs(20 - bd)) * 0.061;
+      if (z > near) { const a = P(x, 0, z + 0.15), b = P(x - 0.025, 0, z - 0.05), cc = P(x + 0.025, 0, z - 0.05); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.fill(); }
+      if (2.13 > near) { const [dx, dy, d] = P(x, 0, 2.13); c.beginPath(); c.ellipse(dx, dy, (0.012 * F) / d, (0.006 * F) / d, 0, 0, Math.PI * 2); c.fill(); }
+    }
+    // Your line while you aim: out to the arrows.
+    if (g.phase === 'aim' || g.phase === 'power') {
+      const aim = g.phase === 'aim' ? this.aimAt(t - g.t0) : g.aim, th = throwFrom({ aim }).angle;
+      c.strokeStyle = g.phase === 'aim' ? 'rgba(255,211,110,0.9)' : 'rgba(255,211,110,0.5)'; c.lineWidth = 3; c.setLineDash([10, 8]);
+      const a = P(ball.x, 0.01, 0.15), b = P(ball.x + Math.tan(th) * 6, 0.01, 6);
+      c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); c.setLineDash([]);
+      if (this.spin) { // which way it will hook
+        const [hx, hy] = P(ball.x + Math.tan(th) * 6, 0.01, 6);
+        c.fillStyle = 'rgba(255,211,110,0.9)'; c.font = 'bold 18px system-ui'; c.textAlign = 'center';
+        c.fillText(SPIN_ICON[SPINS.indexOf(this.spin)], hx, hy - 6);
+      }
+    }
+    // The ball and the pins, far ones first.
+    const things = pins.filter((p) => !p.gone && p.z < end).map((p) => ({ z: p.z, draw: () => drawPin(c, P, p) }));
+    things.push({ z: ball.z, draw: () => drawBall(c, P, ball, near) });
+    things.sort((a, b) => b.z - a.z).forEach((o) => o.draw());
     // The power meter.
     if (g.phase === 'power') {
-      const pw = (1 - Math.cos(ph * 3.2)) / 2;
+      const pw = this.powerAt(t - g.t0);
       c.fillStyle = '#2b2d36'; c.fillRect(W - 46, 90, 22, 220);
-      c.fillStyle = '#4caf7a'; c.fillRect(W - 46, 90 + 220 * (1 - 0.95), 22, 220 * 0.25); // the sweet spot
-      c.fillStyle = pw > 0.95 ? '#d9473c' : '#ffd36e'; c.fillRect(W - 46, 90 + 220 * (1 - pw), 22, 220 * pw);
+      c.fillStyle = pw > 0.85 ? '#d9473c' : pw > 0.45 ? '#4caf7a' : '#ffd36e'; c.fillRect(W - 46, 90 + 220 * (1 - pw), 22, 220 * pw);
+      c.fillStyle = '#fff'; c.font = 'bold 12px system-ui'; c.textAlign = 'center';
+      c.fillText(String(Math.round(throwFrom({ power: pw }).speed * 3.6)), W - 35, 84);
     }
-    // The score sheet along the top.
+    // The rack as the screen above a real lane shows it: pins still up.
+    const standing = new Set(g.phase === 'fallen' ? g.sim.left.map((p) => p.i) : g.rack.map((p) => p.i));
+    PINS.forEach((p, i) => {
+      const x = 46 + (p.x / PIN_GAP) * 16, y = H - 22 - p.row * 14;
+      c.fillStyle = standing.has(i) ? '#fbfaf6' : 'rgba(255,255,255,0.15)';
+      c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill();
+    });
+    // The score sheet along the top: ten frames, three boxes in the last.
     const frames = frameRolls(g.rolls), totals = bowlingScores(g.rolls);
-    const fw = (W - 20) / FRAMES;
+    const fw = (W - 12) / (FRAMES + 0.5);
     for (let f = 0; f < FRAMES; f++) {
-      const x = 10 + f * fw;
-      c.fillStyle = g.turn?.frame === f ? '#3a3f6a' : '#2b2d36'; c.fillRect(x + 1, 4, fw - 2, 40);
-      c.fillStyle = '#fff'; c.font = 'bold 14px system-ui'; c.textAlign = 'center';
-      c.fillText(frames[f] ? frameMarks(frames[f]).join(' ') : '', x + fw / 2, 20);
-      c.font = 'bold 15px system-ui';
-      c.fillText(totals[f] != null ? String(totals[f]) : '', x + fw / 2, 39);
+      const x = 6 + f * fw, w = f === FRAMES - 1 ? fw * 1.5 : fw;
+      c.fillStyle = g.turn?.frame === f && !g.turn?.over ? '#3a3f6a' : '#2b2d36'; c.fillRect(x + 1, 4, w - 2, 44);
+      c.fillStyle = 'rgba(255,255,255,0.45)'; c.font = '9px system-ui'; c.textAlign = 'left'; c.fillText(String(f + 1), x + 4, 13);
+      c.fillStyle = '#fff'; c.font = 'bold 12px system-ui'; c.textAlign = 'right';
+      c.fillText(frames[f] ? frameMarks(frames[f]).join(' ') : '', x + w - 5, 16);
+      c.font = 'bold 14px system-ui'; c.textAlign = 'center';
+      c.fillText(totals[f] != null ? String(totals[f]) : '', x + w / 2, 41);
     }
-    if (g.phase === 'fallen' && !g.standing.length) {
-      c.fillStyle = '#ffd36e'; c.font = '900 40px system-ui'; c.textAlign = 'center';
-      c.fillText(g.rolls.length && g.status.textContent, W / 2, H / 2 + 20);
+    if (g.phase === 'fallen' && (g.kind === 'strike' || g.kind === 'spare' || g.kind === 'split')) {
+      c.fillStyle = g.kind === 'split' ? '#ff9a6e' : '#ffd36e'; c.font = '900 40px system-ui'; c.textAlign = 'center';
+      c.fillText(tt(g.kind), W / 2, H / 2 + 20);
     }
   }
+}
+const freshRack = () => PINS.map((_, i) => ({ i, ...rackSpot(i) }));
+// A pin as a few thick strokes up its axis, tipping over towards its heading.
+const PIN_PARTS = [[0, 0.28, 0.1, '#fbfaf6'], [0.28, 0.5, 0.12, '#fbfaf6'], [0.5, 0.62, 0.07, '#fbfaf6'], [0.62, 0.7, 0.05, '#d9473c'], [0.7, 0.9, 0.055, '#fbfaf6']];
+function drawPin(c, P, p) {
+  const tip = p.tilt * (Math.PI / 2) * 0.97, sx = Math.sin(tip) * Math.sin(p.heading), sz = Math.sin(tip) * Math.cos(p.heading), cy = Math.cos(tip);
+  const at = (f) => P(p.x + sx * PIN_H * f, PIN_H * f * cy + (p.tilt > 0.9 ? 0.05 : 0), p.z + sz * PIN_H * f);
+  c.lineCap = 'round';
+  for (const [f0, f1, w, col] of PIN_PARTS) {
+    const a = at(f0), b = at(f1);
+    c.strokeStyle = col; c.lineWidth = Math.max(1, (w * F) / a[2]);
+    c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+  }
+  c.lineCap = 'butt';
+}
+function drawBall(c, P, b, near) {
+  if (b.z < near - 0.3 || b.z > LANE_LEN + 1.05) return; // behind the camera, or in the pit
+  const [x, y, d] = P(b.x, BALL_R, Math.max(b.z, near));
+  const r = (BALL_R * F) / d;
+  c.fillStyle = 'rgba(0,0,0,0.25)'; const s = P(b.x, 0, Math.max(b.z, near)); c.beginPath(); c.ellipse(s[0], s[1], r, r * 0.3, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#3a64c8'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+  // The finger holes turn as it rolls.
+  const k = Math.cos(b.roll), vis = Math.sin(b.roll) > -0.2;
+  if (vis) { c.fillStyle = '#1d2a55'; for (const [dx, dy] of [[-0.25, -0.3], [0.2, -0.35], [0, 0.15]]) { c.beginPath(); c.arc(x + dx * r, y + (dy * k) * r, r * 0.12, 0, Math.PI * 2); c.fill(); } }
 }
 
 // ── Climbing ─────────────────────────────────────────────────────────────
