@@ -536,6 +536,8 @@ export const EN = {
   'map.zones': 'Meeting zones',
   'map.stations': 'Subway stations',
   'map.shops': 'Shops',
+  'map.places': 'Places',
+  'map.locate': 'My location',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'You have arrived at {label}',
   'cat.cafe': 'Café',

@@ -537,6 +537,8 @@ export const KO = {
   'map.zones': '만남 구역',
   'map.stations': '지하철역',
   'map.shops': '매장',
+  'map.places': '장소 목록',
+  'map.locate': '내 위치',
   'guide.to': '{label} · {m}m',
   'guide.arrived': '{label}에 도착했어요',
   'cat.cafe': '카페',
