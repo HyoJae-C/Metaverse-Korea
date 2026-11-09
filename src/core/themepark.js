@@ -19,6 +19,7 @@ const mat = matCache({ flatShading: true });
 export { RIDE_PRICE, RIDE_PASS, RIDE_SECONDS, RIDES, dropY, rideUntil, seatAt } from './park-rides.js';
 import { RIDES, RIDE_GATES, dropY, seatAt } from './park-rides.js';
 import { buildGrounds } from './park-grounds.js';
+import { buildCarousel, buildViking } from './park-ride-models.js';
 import { mergeStatic } from './merge-static.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
@@ -44,28 +45,9 @@ export function buildThemePark(store, ROOM, EXIT) {
   // named gates, lamps, flowers, benches, the park's fence (park-grounds.js).
   const grounds = buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 });
 
-  // Carousel: a turning platform, poles and horses, a striped canopy.
-  const C = RIDES.carousel;
-  const carousel = new THREE.Group();
-  carousel.position.set(C.x, 0, C.z);
-  scene.add(carousel);
-  add(new THREE.CylinderGeometry(C.r + 0.8, C.r + 0.8, 0.3, 24), '#fff3d6', 0, 0.15, 0, carousel);
-  add(new THREE.CylinderGeometry(0.3, 0.3, 3.6, 10), '#d4a73a', 0, 1.8, 0, carousel);
-  const canopy = add(new THREE.ConeGeometry(C.r + 1.2, 1.6, 12), '#ff7a8a', 0, 4.2, 0, carousel);
-  canopy.material = mat('#ff7a8a');
-  const horses = [];
-  for (let i = 0; i < C.seats; i++) {
-    const a = (i / C.seats) * Math.PI * 2;
-    const h = new THREE.Group();
-    h.position.set(Math.sin(a) * C.r, 0.6, Math.cos(a) * C.r);
-    h.rotation.y = a + Math.PI / 2;
-    add(new THREE.CylinderGeometry(0.04, 0.04, 3.4, 6), '#d4a73a', 0, 1.1, 0, h);
-    box(0.9, 0.35, 0.3, 0, 0.2, 0, ['#ffffff', '#ffd36e', '#86b8f0'][i % 3], h); // body
-    box(0.25, 0.45, 0.25, 0.42, 0.5, 0, ['#ffffff', '#ffd36e', '#86b8f0'][i % 3], h); // neck/head
-    carousel.add(h);
-    horses.push(h);
-  }
-  block(C.x, C.z, (C.r + 0.9) * 2, (C.r + 0.9) * 2);
+  // The Candy Carousel and the Choco Viking (park-ride-models.js).
+  const carousel = buildCarousel(scene, block);
+  const viking = buildViking(scene, block);
 
   // Ferris wheel: two A-frames, a rim with spokes, cabins that stay level.
   const W = RIDES.wheel;
@@ -94,23 +76,6 @@ export function buildThemePark(store, ROOM, EXIT) {
     cabins.push(c);
   }
   block(W.x, W.z + 0.2, 6, 3);
-
-  // Pirate ship (바이킹): an A-frame with a swinging boat.
-  const V = RIDES.viking;
-  for (const sz of [-1.6, 1.6]) for (const sx of [-1, 1]) {
-    const leg = box(0.3, V.pivot + 0.5, 0.3, V.x + sx * 1.6, V.pivot / 2, V.z + sz, '#7a4a2e');
-    leg.rotation.z = sx * 0.28;
-  }
-  box(0.25, 0.25, 3.4, V.x, V.pivot, V.z, '#7a4a2e');
-  const swing = new THREE.Group();
-  swing.position.set(V.x, V.pivot, V.z);
-  scene.add(swing);
-  for (const sz of [-1.2, 1.2]) box(0.12, V.arm, 0.12, 0, -V.arm / 2, sz, '#5a3a28', swing);
-  const hull = box(5.6, 1, 1.9, 0, -V.arm, 0, '#8a5a3a', swing);
-  box(5.8, 0.25, 2, 0, -V.arm + 0.55, 0, '#d4a73a', swing);
-  for (const sx of [-1, 1]) { const tip = box(0.9, 1.3, 1.6, sx * 3.1, -V.arm + 0.5, 0, '#8a5a3a', swing); tip.rotation.z = -sx * 0.5; }
-  hull.name = 'hull';
-  block(V.x, V.z, 9, 4);
 
   // Drop tower (자이로드롭): a candy-striped pole and a ring of seats.
   const D = RIDES.drop;
@@ -207,18 +172,18 @@ export function buildThemePark(store, ROOM, EXIT) {
   let time = 0;
   const tick = (dt) => {
     time += dt;
-    carousel.rotation.y = time * C.speed;
-    horses.forEach((h, i) => { h.position.y = 0.6 + 0.25 * Math.sin(time * 2.4 + i * 1.7); });
+    const now = Date.now() / 1000; // (the carousel and the ship run on the shared clock)
+    carousel.tick(now);
+    viking.tick(now);
     wheel.rotation.z = -time * W.speed;
     cabins.forEach((c, i) => { const s = seatAt('wheel', i, time); c.position.set(s.x, s.y + W.drop, W.z + 0.2); });
-    swing.rotation.z = V.max * Math.sin(time * 1.25);
     dropRing.position.y = dropY(time);
     bumper.tick(dt);
     coaster?.tick(Date.now() / 1000, dt);
   };
   tick(0);
   // Everything that never moves, baked into a mesh per colour (merge-static.js).
-  mergeStatic(scene, [carousel, wheel, swing, dropRing, ...cabins, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
+  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel, dropRing, ...cabins, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
