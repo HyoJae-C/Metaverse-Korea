@@ -100,32 +100,12 @@ export const PENS = [
       { kind: 'peacock', n: 2, box: [5, -7, 20, 7] },
     ],
   }),
-  // Sea Animals: a building (walls, a door onto the path, a roof that lifts
-  // away while you are inside) with three tanks behind glass along the
-  // back, one for each animal, and a walkway in front of them.
+  // Sea Animals: a closed building on the path. Its door is a storefront
+  // (stores.json "cgp-sea-hall") and inside is a room of its own, the
+  // interior map in core/zoo-sea-hall.js: seals, a walrus and a polar bear.
   {
-    id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', ground: 'stone', board: 'n',
-    gate: { side: 'n', at: 0, w: 4 },
+    id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', closed: true, ground: 'stone', board: 'n', boardAt: 7,
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
-  },
-  {
-    id: 'seals', in: 'sea', x: 73, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
-    name: L('물개', 'Seals', 'アザラシ', '海豹'),
-    pond: [0, 1.5, 3.2], props: [['rock', 2, -4]],
-    groups: [{ kind: 'seal', n: 3 }],
-    feed: { at: [-1.5, -4.5], offset: 360, food: 'fish' },
-  },
-  {
-    id: 'walrus', in: 'sea', x: 81, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
-    name: L('바다코끼리', 'Walrus', 'セイウチ', '海象'),
-    pond: [0, 2, 3.2], props: [['rock', -2, -4.5]],
-    groups: [{ kind: 'walrus', n: 1 }],
-  },
-  {
-    id: 'polarbear', in: 'sea', x: 89, z: -14.5, w: 7.4, d: 13, fence: 'tank', ground: 'stone', board: 'n',
-    name: L('북극곰', 'Polar Bear', 'ホッキョクグマ', '北极熊'),
-    pond: [0, 2.5, 3], props: [['rock', 2, -4.5]],
-    groups: [{ kind: 'polarbear', n: 1 }],
   },
   {
     id: 'hippos', x: 108, z: -21, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
@@ -190,6 +170,8 @@ export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [
 
 const r1 = (v) => Math.round(v * 10) / 10;
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+// The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21).
+export const SEA_HALL = { h: 7.5, custom: true, p: rect(69, -35, 93, -7) };
 
 // A fence line as a thin blocker (0.4 m thick).
 function lineBlocker([x1, z1, x2, z2], ox, oz) {
@@ -213,7 +195,12 @@ export function buildMap() {
       { k: 'walk', w: 4, p: [[x0, NORTH_PATH], [x1, NORTH_PATH]] },
       { k: 'walk', w: 4, p: [[x0, SOUTH_PATH], [CROSS, SOUTH_PATH]] },
     ],
-    buildings: [{ h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') }],
+    buildings: [
+      { h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') },
+      // The Sea Animals hall: drawn by its pen (core/zoo.js), a wall you bump
+      // into here, and the facade its door (the storefront) sits on.
+      SEA_HALL,
+    ],
     rail: [],
     areas: [
       // The park ground round the zoo, leaving the gate plaza out.

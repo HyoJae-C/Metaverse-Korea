@@ -169,7 +169,7 @@ function buildFence(g, pen) {
 function glassFence(g, pen, kind) {
   const H = kind === 'glass' ? 1.3 : kind === 'tank' ? 3.2 : 3.2;
   const glass = new THREE.MeshLambertMaterial({ color: '#bfe6f2', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
-  const hw = pen.w / 2, hd = pen.d / 2, front = pen.board || 'n';
+  const hw = pen.w / 2, hd = pen.d / 2, front = pen.front || pen.board || 'n'; // (the glass side: its board's, or pen.front when it has none)
   const sides = { n: [-hw, -hd, hw, -hd], s: [-hw, hd, hw, hd], w: [-hw, -hd, -hw, hd], e: [hw, -hd, hw, hd] };
   for (const [k, [x1, z1, x2, z2]] of Object.entries(sides)) {
     const len = Math.hypot(x2 - x1, z2 - z1), ang = Math.atan2(z2 - z1, x2 - x1);
@@ -192,14 +192,16 @@ function glassFence(g, pen, kind) {
   }
 }
 
-// Hall: a building you go into (the Sea Animals): tall walls with a door
-// (pen.gate), a coloured band round the top, a roof. Inside it is a room:
+// Hall: a building you go into: tall walls with a door (pen.gate), a
+// coloured band round the top, a roof. A closed one (pen.closed, the Sea
+// Animals) is only the outside: its door is a storefront and its inside an
+// interior map (core/zoo-sea-hall.js). An open one is a room inside:
 // sea-blue walls with fish painted on, a high ceiling with lights. Those
 // inner faces only show from inside, so while you are in, the zoo hides the
 // outside shell and the camera behind you looks through the wall at your
 // back while the room stays round you.
 let seaTex = null;
-function seaWall() {
+export function seaWall() {
   return (seaTex ||= canvasTex(256, 256, (c, w, h) => {
     const gr = c.createLinearGradient?.(0, 0, 0, h);
     if (gr?.addColorStop) { gr.addColorStop(0, '#9fd8ef'); gr.addColorStop(1, '#2d6e9c'); c.fillStyle = gr; } else c.fillStyle = '#5aa0c8';
@@ -232,6 +234,7 @@ function hallWalls(g, pen) {
     const base = new THREE.Mesh(new THREE.BoxGeometry(len, 0.5, 0.32), mat('#3f86b8'));
     base.position.set(mx, 0.25, mz); base.rotation.y = -ang;
     g.add(base);
+    if (pen.closed) continue; // (a closed hall's inside is a room of its own: no room side here)
     // The room side: a painted face looking in (seen only from inside).
     const nl = Math.hypot(mx, mz) || 1, ix = -mx / nl, iz = -mz / nl;
     const inner = new THREE.Mesh(new THREE.PlaneGeometry(len, H), new THREE.MeshLambertMaterial({ map: seaWall() }));
@@ -239,6 +242,12 @@ function hallWalls(g, pen) {
     inner.rotation.y = Math.atan2(ix, iz);
     inner.name = 'hall-inner';
     g.add(inner);
+  }
+  if (pen.closed) { // a closed hall (its door is a storefront, inside an interior map): just the roof, never lifted
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(pen.w + 0.8, 0.3, pen.d + 0.8), mat('#5d8fb0'));
+    slab.position.y = H + 0.15;
+    shell.add(slab);
+    return null;
   }
   // The ceiling, high up, seen from below, with rows of lights.
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(pen.w, pen.d).rotateX(Math.PI / 2), mat('#1f4f75'));
@@ -443,7 +452,7 @@ export class Zoo {
     }
     const roof = buildFence(g, pen) || null;
     buildProps(g, pen);
-    if (pen.name) {
+    if (pen.name && pen.board !== false) { // (board: false, a name sign on the wall instead: core/zoo-sea-hall.js)
       const b = nameBoard(pen.name);
       const s = pen.board || 'n';
       const hw = pen.w / 2, hd = pen.d / 2;
