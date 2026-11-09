@@ -151,20 +151,24 @@ export function makeBird(kind) {
   const anchor = new THREE.Object3D();
   anchor.position.set(0, -belly - B.leg + 0.08, 0.02);
   pivot.add(anchor);
-  return { obj, pivot, wings, legs, tail, anchor, B, flapT: 0, swayT: 0, g: 1 };
+  return { obj, pivot, wings, legs, tail, anchor, B, h, flapT: 0, swayT: 0, g: 1 };
 }
 
 // Each frame. s: the costume's state (sky-costume.js), y: height over the
 // ground it took off from.
 export function poseBird(b, s, dt) {
   const F = b.B.flap;
-  const grounded = s.y < 0.3 && s.phase !== 'fly';
+  const grounded = (s.y < 0.3 && s.phase !== 'fly') || s.stand;
   b.g += ((grounded ? 1 : 0) - b.g) * Math.min(1, dt * 6); // 1 standing .. 0 in the air
   const g = b.g, air = 1 - g, hover = 1 - s.hf;
   b.swayT += dt;
   // Nose up while hovering or climbing, level when flying fast; banking.
   b.pivot.rotation.x = (-0.3 * hover - s.climb * 0.18) * air - 0.08 * g;
-  b.pivot.rotation.z = (s.roll * 1.4 + Math.sin(b.swayT * 0.7) * F.sway * s.hf) * air;
+  // Walking on the ground: a waddle, rocking side to side with a bob.
+  const w = (s.walk || 0) * g, step = b.swayT * 9;
+  b.pivot.rotation.z = (s.roll * 1.4 + Math.sin(b.swayT * 0.7) * F.sway * s.hf) * air + Math.sin(step) * 0.12 * w;
+  b.pivot.position.y = b.h + Math.abs(Math.sin(step)) * 0.05 * w;
+  b.legs.forEach((leg, i) => { leg.rotation.z = 0; leg.userData.step = Math.sin(step + i * Math.PI) * 0.45 * w; });
   // Hard work (hovering, climbing) flaps big; cruising the eagle flaps in
   // bursts and glides, the albatross just soars.
   const work = Math.max(hover, s.climb > 0 ? 1 : 0);
@@ -180,12 +184,14 @@ export function poseBird(b, s, dt) {
   }
   // Legs down when standing, hovering or holding someone; tucked back in flight.
   const down = Math.max(g, s.carry === 'talons' ? 1 : 0, hover * 0.6);
-  for (const leg of b.legs) leg.rotation.x = (1 - down) * 1.3;
+  for (const leg of b.legs) leg.rotation.x = (1 - down) * 1.3 + (leg.userData.step || 0);
   b.tail.scale.x = 1 + 0.6 * hover * air;
 }
 
 // ---------- The flying carpet ----------
-export const CARPET = { w: 1.3, l: 2.1, y: 0.42, z: -0.3 }; // size; where its middle is under the rider
+// You are the carpet: big enough for two riders sitting one behind the
+// other, just above your feet (the root) so it lies on the ground there.
+export const CARPET = { w: 1.7, l: 2.8, y: 0.14, z: 0 };
 
 function carpetTexture() {
   if (typeof document === 'undefined') return null;
@@ -220,7 +226,7 @@ export function makeCarpet() {
   obj.position.set(0, CARPET.y, CARPET.z);
   const tilt = new THREE.Group();
   obj.add(tilt);
-  const geo = new THREE.PlaneGeometry(CARPET.w, CARPET.l, 8, 16).rotateX(-Math.PI / 2);
+  const geo = new THREE.PlaneGeometry(CARPET.w, CARPET.l, 10, 20).rotateX(-Math.PI / 2);
   const map = carpetTexture();
   const mesh = new THREE.Mesh(geo, lambert(map ? 0xffffff : 0xa3202f, { map, side: THREE.DoubleSide, alphaTest: 0.5 }));
   tilt.add(mesh);
@@ -348,4 +354,64 @@ export function wukongPieces() {
   staff.rotation.x = Math.PI / 2;
   out.push({ obj: staff, at: 'handr', from: [0, 1.5, 0], delay: 0.9, dur: 0.45 });
   return out;
+}
+
+// ---------- The alien flying saucer ----------
+// White, with a glass dome over the cockpit (the pilot sits in front, one
+// rider behind), a band round the rim and cyan lights underneath that run
+// round. Its middle sits UFO.z behind the pilot (the root), UFO.y up.
+export const UFO = { y: 0.35, z: -0.35 };
+export function makeSaucer() {
+  const obj = new THREE.Group();
+  obj.position.set(0, UFO.y, UFO.z);
+  const tilt = new THREE.Group();
+  obj.add(tilt);
+  const white = lambert(0xf6f7fa), grey = lambert(0xc9ced8), band = lambert(0x8a2f3a), dark = lambert(0x3a4150);
+  // The hull: a wide, thin disc, flatter on top round the cockpit.
+  const hull = new THREE.LatheGeometry([[0, -0.32], [0.6, -0.3], [1.4, -0.18], [2.3, -0.02], [2.32, 0.02], [1.5, 0.12], [1.06, 0.16], [1.0, 0.1]].map(([r, y]) => new THREE.Vector2(r, y)), 40);
+  tilt.add(new THREE.Mesh(hull, white));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.035, 6, 48).rotateX(Math.PI / 2), band);
+  tilt.add(rim);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.03, 0.04, 6, 32).rotateX(Math.PI / 2), grey);
+  ring.position.y = 0.14;
+  tilt.add(ring);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.0, 32).rotateX(-Math.PI / 2), dark);
+  floor.position.y = 0.08;
+  tilt.add(floor);
+  // The control panel in front of the pilot, glowing.
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.12), dark);
+  panel.position.set(0, 0.2, -UFO.z + 0.5);
+  panel.rotation.x = -0.5;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.1), new THREE.MeshBasicMaterial({ color: 0x7ff7ff }));
+  screen.position.set(0, 0.012, 0.061);
+  panel.add(screen);
+  tilt.add(panel);
+  // The glass dome.
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(1.02, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: 0x9fe9f5, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide }));
+  dome.scale.y = 1.15;
+  dome.position.y = 0.12;
+  dome.renderOrder = 5;
+  tilt.add(dome);
+  // Lights underneath, running round.
+  const lights = new THREE.Group();
+  lights.position.y = -0.2;
+  const bulb = new THREE.SphereGeometry(0.11, 10, 8), glowM = new THREE.MeshBasicMaterial({ color: 0x5ff5ff });
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2, m = new THREE.Mesh(bulb, glowM);
+    m.position.set(Math.cos(a) * 1.55, -0.02, Math.sin(a) * 1.55);
+    m.scale.y = 0.6;
+    lights.add(m);
+  }
+  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.08, 20), glowM);
+  core.position.y = -0.12;
+  lights.add(core);
+  tilt.add(lights);
+  return { obj, tilt, lights, glowM, time: 0 };
+}
+export function spinSaucer(u, dt, hf) {
+  u.time += dt;
+  u.lights.rotation.y += dt * (1.5 + 4 * hf);
+  u.glowM.color.setHSL(0.5, 1, 0.6 + 0.12 * Math.sin(u.time * 6));
+  u.tilt.position.y = 0.03 * Math.sin(u.time * 1.8); // bobbing gently
 }

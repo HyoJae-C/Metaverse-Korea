@@ -1,11 +1,12 @@
 // Sky view for operators: a chat code puts on a costume and the character
-// flies over the city. Seven costumes, each with its own transformation:
+// flies over the city. Eight costumes, each with its own transformation:
 //   /서울맨 (/seoulman)    a green, blue and red hero suit with a red cape
 //   /스카이슈트 (/skysuit)  armour pieces fly in and lock on, then the suit
 //   /날개 (/wings)         huge feathered wings burst open and flap
 //   /신천옹 (/albatross)   you turn into a huge albatross that soars
 //   /독수리 (/eagle)       you turn into an eagle
-//   /양탄자 (/carpet)      a flying carpet you sit on, rippling in the wind
+//   /양탄자 (/carpet)      you become a flying carpet, rippling in the wind
+//   /우주선 (/ufo)         a white flying saucer you fly from inside the dome
 //   /손오공 (/wukong)      the Monkey King: his cloud, headband, staff and a
 //                         monkey face
 // /착지 (/land), or the same code again, flies down and takes it off.
@@ -51,6 +52,7 @@ export const SKY_TEXT = {
   princess: { en: 'Princess carry', ko: '공주님 안기', ja: 'お姫様抱っこ', zh: '公主抱' },
   talons: { en: 'Grab by the shoulders', ko: '발톱으로 어깨 잡기', ja: '爪で肩をつかむ', zh: '用爪子抓住肩膀' },
   ride: { en: 'Ride with me', ko: '같이 타기', ja: '一緒に乗る', zh: '一起乘坐' },
+  cabin: { en: 'Back seat', ko: '뒷자리에 태우기', ja: '後ろの席に乗せる', zh: '坐后座' },
   nobody: { en: 'Fly down next to someone (within 4 m)', ko: '같이 날 사람 옆(4m 안)으로 내려가 주세요', ja: '一緒に飛ぶ人のそば（4m以内）に降りてください', zh: '请飞到对方旁边（4米内）' },
   full: { en: 'Your arms are full', ko: '이미 팔이 꽉 찼어요', ja: 'もう手がいっぱいです', zh: '手已经满了' },
   other: { en: 'Let go first to change the pose', ko: '자세를 바꾰려면 먼저 내려 주세요', ja: 'ポーズを変えるには先に降ろしてください', zh: '先放下再换姿势' },
@@ -86,6 +88,7 @@ export const SKY_CODES = {
   '독수리': 'eagle', eagle: 'eagle',
   '양탄자': 'carpet', carpet: 'carpet',
   '손오공': 'wukong', wukong: 'wukong',
+  '우주선': 'ufo', ufo: 'ufo',
   '착지': 'off', land: 'off',
 };
 export const skyCode = (code) => SKY_CODES[String(code ?? '').trim().toLowerCase()] || null;
@@ -93,7 +96,7 @@ export const skyCode = (code) => SKY_CODES[String(code ?? '').trim().toLowerCase
 // Carry messages on the emote channel: 'sky:<verb>:<target>[:<pose>:<slot>]'.
 export const skyMsg = (verb, target, pose, slot) => `sky:${verb}:${target}` + (pose ? `:${pose}:${slot ? 1 : 0}` : '');
 export function parseSkyMsg(e) {
-  const m = /^sky:(invite|join|no|leave|end):([\w-]{1,64})(?::(arms2|arm1|princess|talons|ride):([01]))?$/.exec(String(e));
+  const m = /^sky:(invite|join|no|leave|end):([\w-]{1,64})(?::(arms2|arm1|princess|talons|ride|cabin):([01]))?$/.exec(String(e));
   return m ? { verb: m[1], target: m[2], pose: m[3] || null, slot: Number(m[4] || 0) } : null;
 }
 
@@ -136,7 +139,7 @@ const TOP = 250; // highest (m)
 const LIFT = 3; // how high the take-off goes (m)
 const NEAR = 4; // how close to offer someone a ride (m)
 const HANG = 0.8; // lowest a bird flies with someone in its talons (m), their feet off the ground
-const POSE_ICON = { arms2: '👐', arm1: '💪', princess: '👸', talons: '🦅', ride: '🛸' };
+const POSE_ICON = { arms2: '👐', arm1: '💪', princess: '👸', talons: '🦅', ride: '🪄', cabin: '🛸' };
 const clamp01 = (u) => Math.min(1, Math.max(0, u));
 const BTN_BG = 'rgba(20,30,50,.55)';
 const BTN = 'width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:' + BTN_BG + ';color:#fff;touch-action:none';
@@ -153,6 +156,7 @@ export function createSkyFlight(game) {
   let opOk = false;
   let track = null, trackH = 14; // auto flight: { kind: 'player', id, name } or { kind: 'place', x, z, name }; height over them
   let climbBtn = 0, dashBtn = false, fxT = 0, lastRy = 0, roll = 0, hf = 0, fist = 0, climb = 0;
+  let standing = false, walk = 0; // touched down in the costume (no /착지): walking about
   let landAt = null; // { x, z, y, roof } where to land
   let roof = null; // the rooftop we stand on
   const carriers = new Map(); // slot -> id: who we carry
@@ -412,7 +416,7 @@ export function createSkyFlight(game) {
   const puff = (big) => puffAt(COSTUMES[kind].fx, big);
 
   function start(k) {
-    kind = k; phase = 'on'; t = 0;
+    kind = k; phase = 'on'; t = 0; standing = false; walk = 0;
     savedLook ||= game.currentLook;
     swapped = false;
     costume?.dispose();
@@ -442,7 +446,7 @@ export function createSkyFlight(game) {
     }
     if (savedFog && game.scene.fog) Object.assign(game.scene.fog, savedFog);
     savedFog = null; savedLook = null;
-    kind = null; phase = null; landAt = null;
+    kind = null; phase = null; landAt = null; standing = false; walk = 0;
     if (!quiet) toast(roof ? SKY_TEXT.roof : SKY_TEXT.off);
   }
 
@@ -572,15 +576,34 @@ export function createSkyFlight(game) {
       const fx0 = -Math.sin(yaw), fz0 = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
       if (track && Math.hypot(mx, my) > 0.15) stopTrack(true); // the player took over
       const goal = track && trackAim(p);
-      if (goal) {
+      // What is under us to stand on: a roof we are over, or the street.
+      const r = roofs.at(p.x, p.z);
+      const floor = r && p.y >= r.h - 0.05 && Roofs.inside(r, p.x, p.z, 0.3) ? r.h : 0;
+      standing = !goal && climb <= 0 && carryPose !== 'talons' && p.y <= floor + 0.02;
+      walk = 0;
+      if (standing) {
+        // On the ground in the costume: walk about like on foot (not into
+        // buildings on the street); up takes off again.
+        p.y = floor;
+        const mag = Math.min(1, Math.hypot(mx, my)), wsp = (fast ? 6.5 : 3.4) * mag;
+        vel.set((fx0 * my + rx * mx) * wsp, 0, (fz0 * my + rz * mx) * wsp);
+        const nx = p.x + vel.x * dt, nz = p.z + vel.z * dt;
+        if (floor > 0 || !game.blocked?.(nx, nz)) { p.x = nx; p.z = nz; }
+        else if (!game.blocked?.(nx, p.z)) p.x = nx;
+        else if (!game.blocked?.(p.x, nz)) p.z = nz;
+        walk = mag < 0.05 ? 0 : fast ? 1 : 0.45;
+      } else if (goal) {
         // Up / down still work: they change how high we hang over them.
         trackH = Math.min(120, Math.max(3, trackH + climb * CLIMB * dt));
         v1.subVectors(goal, p).multiplyScalar(1.6);
         if (v1.length() > FAST) v1.setLength(FAST);
       } else v1.set((fx0 * my + rx * mx) * sp, climb * (fast ? FAST_CLIMB : CLIMB), (fz0 * my + rz * mx) * sp);
-      vel.lerp(v1, 1 - Math.exp(-dt * (fast ? 6 : 3))); // a dash kicks in quickly
-      p.addScaledVector(vel, dt);
-      p.y = Math.min(TOP, Math.max(carryPose === 'talons' ? HANG : 0, p.y));
+      if (!standing) {
+        vel.lerp(v1, 1 - Math.exp(-dt * (fast ? 6 : 3))); // a dash kicks in quickly
+        p.addScaledVector(vel, dt);
+        // (coming down over a roof: onto it, not through it)
+        p.y = Math.min(TOP, Math.max(carryPose === 'talons' ? Math.max(HANG, floor) : floor, p.y));
+      }
       const b = game.bounds;
       if (b) {
         p.x = Math.min(b.maxX + 150, Math.max(b.minX - 150, p.x));
@@ -588,9 +611,10 @@ export function createSkyFlight(game) {
       }
     }
     const ground = landAt?.y ?? 0;
-    fist += ((kind === 'seoulman' && p.y > ground + 0.3 ? 1 : 0) - fist) * Math.min(1, dt * 5);
+    if (phase !== 'fly') standing = false, walk = 0;
+    fist += ((kind === 'seoulman' && !standing && p.y > ground + 0.3 ? 1 : 0) - fist) * Math.min(1, dt * 5);
     const across = Math.hypot(vel.x, vel.z);
-    if (phase !== 'off') hf += (clamp01(across / SKY_SPEED) - hf) * Math.min(1, dt * 4);
+    if (phase !== 'off') hf += ((standing ? 0 : clamp01(across / SKY_SPEED)) - hf) * Math.min(1, dt * (standing ? 8 : 4));
     // Face where we fly, banking into turns.
     const me = game.me;
     if (across > 0.5) {
@@ -602,10 +626,10 @@ export function createSkyFlight(game) {
     turn = Math.atan2(Math.sin(turn), Math.cos(turn));
     lastRy = me.root.rotation.y;
     roll += (THREE.MathUtils.clamp(-turn / Math.max(dt, 1e-3) * 0.25, -0.6, 0.6) * hf - roll) * Math.min(1, dt * 4);
-    const flames = phase === 'fly' || (phase === 'on' && t > C.ready - 0.6) || (phase === 'off' && !off);
-    costume.update(me, dt, { phase, t, off, hf, climb, roll, y: p.y - (roof && phase === 'on' ? roof.h : 0), fist, carry: carryPose, flames });
+    const flames = !standing && (phase === 'fly' || (phase === 'on' && t > C.ready - 0.6) || (phase === 'off' && !off));
+    costume.update(me, dt, { phase, t, off, hf, climb, roll, y: p.y - (roof && phase === 'on' ? roof.h : 0), fist, carry: carryPose, flames, stand: standing, walk });
     updateFog(p.y);
-    return 0;
+    return C.hide || C.mount === 'ufo' ? 0 : walk; // (the body's walk clip, when it shows and isn't seated)
   }
 
   // ---------- Messages from others ----------
@@ -654,7 +678,7 @@ export function createSkyFlight(game) {
   function state(st) {
     const p = game.me.root.position;
     if (kind || carried || roof) st.y = Math.round(p.y * 100) / 100;
-    if (kind) st.fl = encodeFlight(kind, carryPose);
+    if (kind) st.fl = encodeFlight(kind, carryPose, standing);
     if (carried) st.cr = encodeCarried(carried.flyer, carried.pose, carried.slot);
   }
 
@@ -674,9 +698,12 @@ export function createSkyFlight(game) {
       const C = COSTUMES[f.kind];
       const sp = Math.hypot(pos.x - r.px, pos.z - r.pz) / Math.max(dt, 1e-3);
       r.px = pos.x; r.pz = pos.z;
-      r.hf += (clamp01(sp / SKY_SPEED) - r.hf) * Math.min(1, dt * 3);
+      r.hf += ((f.stand ? 0 : clamp01(sp / SKY_SPEED)) - r.hf) * Math.min(1, dt * 3);
       const ph = r.t < C.ready ? 'on' : 'fly';
-      r.costume.update(q.ch, dt, { phase: ph, t: r.t, off: false, hf: r.hf, climb: 0, roll: 0, y: pos.y, fist: pos.y > 0.3 ? 1 : 0, carry: f.carry, flames: ph === 'fly' || r.t > C.ready - 0.6 });
+      r.costume.update(q.ch, dt, {
+        phase: ph, t: r.t, off: false, hf: r.hf, climb: 0, roll: 0, y: pos.y, fist: !f.stand && pos.y > 0.3 ? 1 : 0, carry: f.carry,
+        flames: !f.stand && (ph === 'fly' || r.t > C.ready - 0.6), stand: f.stand, walk: f.stand ? clamp01(sp / 6.5) : 0,
+      });
     } else if (r) { r.costume.dispose(); remotes.delete(q.id); }
     const c = parseCarried(q.target?.cr);
     const fq = c && c.flyer !== game.myId ? all.players.get(c.flyer) : null;
