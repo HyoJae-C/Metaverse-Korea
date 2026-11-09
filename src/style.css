@@ -2324,3 +2324,12 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .bank-chips .chip.on { background: var(--accent, #ff8a65); color: #fff; }
 .bank-err { min-height: 1.2em; margin: 10px 0 6px; color: #c0392b; font-size: 14px; }
 .bank-go { width: 100%; }
+
+/* The balloon booth in first person (ui/gallery-fps.js). */
+.gallery-fps { position: fixed; inset: 0; z-index: 60; background: #ff7a8a; touch-action: none; user-select: none; -webkit-user-select: none; cursor: none; }
+.gallery-fps canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.gallery-fps-hud { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: rgba(43, 20, 40, 0.72); color: #fff; font: 800 15px system-ui, sans-serif; padding: 6px 14px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+.gallery-fps-hint { position: absolute; left: 50%; bottom: 36%; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); text-align: center; background: rgba(255, 250, 243, 0.92); color: #5a2a40; font: 700 14px system-ui, sans-serif; padding: 10px 14px; border-radius: 14px; pointer-events: none; }
+.gallery-fps-fire { position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: calc(20% + env(safe-area-inset-bottom)); width: 76px; height: 76px; border-radius: 50%; border: 4px solid #fffaf3; background: #ff5f9e; font-size: 34px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; }
+.gallery-fps-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); cursor: pointer; }
+@media (pointer: fine) { .gallery-fps-fire { display: none; } }
