@@ -38,6 +38,20 @@ try {
     await page.keyboard.down('w');
     await page.waitForFunction((z0) => __mk.camPos()[2] < z0 - 2, c0[2], { timeout: 15000 });
     await page.keyboard.up('w');
+    // A taxi from the lawn: out on the street after the ride, not back in the
+    // park (you stand on its lawn while the back-seat scene plays).
+    await page.evaluate(() => __mk.taxi(0, 0)); // (Seongsu, far from every park)
+    await page.waitForSelector('#taxi-ride:not([hidden])', { timeout: 5000 });
+    await page.waitForTimeout(1500);
+    if ((await page.evaluate(() => __mk.room())).mode !== 'street') throw new Error('back in the park during the taxi ride');
+    await page.click('#taxi-skip');
+    await page.waitForSelector('#taxi-ride', { state: 'hidden', timeout: 10000 });
+    await page.waitForTimeout(800);
+    const [cab, [, cx0, cz0]] = await page.evaluate(() => [__mk.room(), __mk.pose()]);
+    if (cab.mode !== 'street') throw new Error('back in the park after a taxi from its lawn ');
+    if (Math.hypot(cx0, cz0) > 30) throw new Error(`the taxi didn't take you there (${cx0}, ${cz0})`);
+    await page.evaluate((id) => __mk.enter(id), id);
+    await page.waitForFunction((id) => __mk.room().id === id, id, { timeout: 10000 });
     await page.evaluate(() => __mk.leave());
     // On the street behind the lawn, looking at the river: still outside.
     await page.evaluate(([x, z]) => __mk.place(x, z), world(0, 18));
