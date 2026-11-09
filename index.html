@@ -172,11 +172,11 @@
       </div>
       <div class="sheet daily-panel" id="daily-panel" hidden>
         <button class="sheet-x" id="daily-close" aria-label="Close">✕</button>
-        <strong class="wallet-title">📅 <span data-i18n="daily.title"></span></strong>
+        <strong class="wallet-title daily-title"><span class="daily-ico" aria-hidden="true">📅</span><span data-i18n="daily.title"></span></strong>
         <div class="week" id="daily-week"></div>
         <button class="primary" id="checkin-btn"></button>
         <p class="fine" id="daily-streak"></p>
-        <strong class="daily-sub" data-i18n="daily.missions"></strong>
+        <div class="daily-sub"><strong data-i18n="daily.missions"></strong><span class="daily-count" id="daily-count"></span></div>
         <ul class="missions" id="daily-missions"></ul>
         <p class="fine" id="daily-bonus"></p>
       </div>
@@ -373,8 +373,9 @@
         <div class="scene" style="background-image: url('assets/promo/bukchon.webp?v=1')"><span data-i18n="promo.bukchon">🏯 Bukchon Hanok Village</span></div>
         <div class="scene" style="background-image: url('assets/promo/cablecar.webp?v=1')"><span data-i18n="promo.cablecar">🚡 Namsan cable car</span></div>
       </div>
+      <!-- People from the game waving over the start card (made from the game's own characters) -->
+      <img class="start-npcs" src="assets/promo/npcs.webp?v=1" alt="" width="640" height="175" decoding="async" />
       <div class="panel" id="step-lang">
-        <div class="logo">🏙️</div>
         <div class="boot-note" id="boot-note" role="status"><p id="boot-msg">Loading…</p><button class="primary" id="boot-reload" hidden>Reload</button></div>
         <h1 data-i18n="app.title"></h1>
         <p class="tagline" data-i18n="app.tagline"></p>
