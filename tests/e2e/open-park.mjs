@@ -45,6 +45,14 @@ try {
     await page.waitForTimeout(1500);
     if ((await page.evaluate(() => __mk.room())).mode !== 'street') throw new Error('in the park before reaching its lawn');
     await shot(`${id}-street`);
+    // Stepping in where the park has a tree and the street has none (core/park.js
+    // trees at (-4, 12.2)): you come in beside it, not stuck inside it.
+    await page.evaluate(([x, z]) => __mk.place(x, z), world(-4, 12.2));
+    await page.waitForFunction((id) => __mk.room().id === id, id, { timeout: 10000 });
+    const [, tx, tz] = await page.evaluate(() => __mk.pose());
+    if (Math.max(Math.abs(tx + 4), Math.abs(tz - 12.2)) < 0.4 + 0.35) throw new Error(`walked in inside a tree (${tx}, ${tz})`);
+    await page.evaluate(() => __mk.leave());
+    await page.evaluate(([x, z]) => __mk.place(x, z), world(0, 18));
     // On the lawn: in the park.
     await page.evaluate(([x, z]) => __mk.place(x, z), world(0, 8));
     await page.waitForFunction((id) => __mk.room().id === id, id, { timeout: 10000 });
