@@ -17,9 +17,9 @@ const mat = matCache({ flatShading: true });
 // The rides as numbers: park-rides.js (kept apart so main.js needn't load
 // this file, which comes on the first visit).
 export { RIDE_PRICE, RIDE_PASS, RIDE_SECONDS, RIDES, dropY, rideUntil, seatAt } from './park-rides.js';
-import { RIDES, RIDE_GATES, dropY, seatAt } from './park-rides.js';
+import { RIDE_GATES } from './park-rides.js';
 import { buildGrounds } from './park-grounds.js';
-import { buildCarousel, buildViking } from './park-ride-models.js';
+import { buildCarousel, buildDrop, buildViking, buildWheel } from './park-ride-models.js';
 import { mergeStatic } from './merge-static.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
@@ -49,50 +49,9 @@ export function buildThemePark(store, ROOM, EXIT) {
   const carousel = buildCarousel(scene, block);
   const viking = buildViking(scene, block);
 
-  // Ferris wheel: two A-frames, a rim with spokes, cabins that stay level.
-  const W = RIDES.wheel;
-  for (const sz of [-0.9, 1.3]) for (const sx of [-1, 1]) {
-    const leg = box(0.3, W.hub + 0.6, 0.3, W.x + sx * 2.2, W.hub / 2, W.z + sz, '#9ca9af');
-    leg.rotation.z = sx * 0.26;
-  }
-  const wheel = new THREE.Group();
-  wheel.position.set(W.x, W.hub, W.z + 0.2);
-  scene.add(wheel);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(W.r, 0.12, 6, 40), mat('#ffffff'));
-  wheel.add(rim);
-  for (let i = 0; i < W.seats; i++) {
-    const s = box(0.08, W.r * 2, 0.08, 0, 0, 0, '#d9dde2', wheel);
-    s.rotation.z = (i / W.seats) * Math.PI;
-  }
-  const cabins = [];
-  const cabinColors = ['#ff7a8a', '#ffd36e', '#8fd3c7', '#86b8f0', '#b9a6f0', '#ffb36b', '#a6d97a', '#ff9bb3'];
-  for (let i = 0; i < W.seats; i++) {
-    // An open gondola: roof at the rim, floor W.drop below, four posts.
-    const c = new THREE.Group();
-    box(1.6, 0.14, 1.4, 0, 0, 0, '#ffffff', c);
-    box(1.5, 0.5, 1.3, 0, -W.drop + 0.2, 0, cabinColors[i], c);
-    for (const sx of [-0.7, 0.7]) for (const sz of [-0.6, 0.6]) box(0.07, W.drop, 0.07, sx, -W.drop / 2, sz, '#d9dde2', c);
-    scene.add(c);
-    cabins.push(c);
-  }
-  block(W.x, W.z + 0.2, 6, 3);
-
-  // Drop tower (자이로드롭): a candy-striped pole and a ring of seats.
-  const D = RIDES.drop;
-  for (let i = 0; i < 9; i++) add(new THREE.CylinderGeometry(0.55, 0.55, 2, 12), i % 2 ? '#ff5a5f' : '#fffaf3', D.x, 1 + i * 2, D.z);
-  add(new THREE.CylinderGeometry(1.4, 1.4, 0.6, 16), '#ffe27a', D.x, 18.3, D.z);
-  add(new THREE.ConeGeometry(1.5, 2, 16), '#ff8fb8', D.x, 19.6, D.z);
-  const dropRing = new THREE.Group();
-  dropRing.position.set(D.x, D.low, D.z);
-  scene.add(dropRing);
-  add(new THREE.CylinderGeometry(D.r + 0.5, D.r + 0.5, 0.25, 18), '#8fe3c7', 0, -0.15, 0, dropRing);
-  for (let i = 0; i < D.seats; i++) {
-    const a = (i / D.seats) * Math.PI * 2;
-    const st = box(0.6, 0.9, 0.12, Math.sin(a) * (D.r - 0.25), 0.35, Math.cos(a) * (D.r - 0.25), ['#ff8fb8', '#ffe27a', '#c9a8ff'][i % 3], dropRing);
-    st.rotation.y = a;
-  }
-  add(new THREE.CylinderGeometry(D.r + 1, D.r + 1.2, 0.3, 18), '#b8743f', D.x, 0.15, D.z);
-  block(D.x, D.z, 1.4, 1.4);
+  // The Rainbow Wheel and the Lollipop Drop (park-ride-models.js).
+  const wheel = buildWheel(scene, block);
+  const drop = buildDrop(scene, block);
 
   // Ticket booth (매표소) and a churro cart by the entrance. The booth's
   // window faces Main Street (south), under a striped awning.
@@ -172,22 +131,21 @@ export function buildThemePark(store, ROOM, EXIT) {
   let time = 0;
   const tick = (dt) => {
     time += dt;
-    const now = Date.now() / 1000; // (the carousel and the ship run on the shared clock)
+    const now = Date.now() / 1000; // (every ride runs on the shared clock: friends see the same ride)
     carousel.tick(now);
     viking.tick(now);
-    wheel.rotation.z = -time * W.speed;
-    cabins.forEach((c, i) => { const s = seatAt('wheel', i, time); c.position.set(s.x, s.y + W.drop, W.z + 0.2); });
-    dropRing.position.y = dropY(time);
+    wheel.tick(now);
+    drop.tick(now);
     bumper.tick(dt);
     coaster?.tick(Date.now() / 1000, dt);
   };
   tick(0);
   // Everything that never moves, baked into a mesh per colour (merge-static.js).
-  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel, dropRing, ...cabins, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
+  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, park: true, bumper, coaster,
+    rides, stations, tick, time: () => time, park: true, themepark: true, bumper, coaster, // (themepark: only Another Land; the Han River parks are `park: true` too)
     setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); },
   };
 }

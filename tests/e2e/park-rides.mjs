@@ -1,6 +1,7 @@
-// End-to-end check: Another Land's Choco Viking and Candy Carousel. Each has
-// its attendant at the gate; wait for it to load, get on, the bar comes
-// down and the view rides with the ship; switch the view; step off at the end.
+// End-to-end check: Another Land's Choco Viking, Candy Carousel, Lollipop
+// Drop and Rainbow Wheel. Each has its attendant at the gate; wait for it to
+// load, get on, the bar comes down and the view rides with the seat; switch
+// the view; step off at the end.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/park-rides.mjs http://localhost:4173/ [screenshot dir]
 import { chromium } from 'playwright';
@@ -46,7 +47,7 @@ for (const [kind, gate] of [['viking', [-4.9, -6.2]], ['carousel', [-8.4, -2]]])
     if (!p.ride) break;
     maxRoll = Math.max(maxRoll, Math.abs(p.ride.roll));
     ys.push(p.at[1]);
-    if (p.ride.phase === 'run' && !viewed && p.phase[kind].p > 20) {
+    if (p.locked && !viewed && p.phase[kind].p > 20) {
       await shot(kind + '-ride');
       const v = await page.evaluate(() => __mk.action());
       assert(/View/.test(v || ''), `${kind}: the button switches the view (${v})`);
@@ -63,6 +64,35 @@ for (const [kind, gate] of [['viking', [-4.9, -6.2]], ['carousel', [-8.4, -2]]])
   if (kind === 'viking') assert(maxRoll > 1 && Math.max(...ys) - Math.min(...ys) > 3, `the ship swings (${maxRoll})`);
   else assert(Math.max(...ys) - Math.min(...ys) > 0.2, 'the horse bobs');
   assert(viewed, `${kind}: rode the run`);
+}
+// The drop climbs the tower and falls; the wheel takes you over the top.
+for (const [kind, gate, high] of [['drop', [13.8, -2], 12], ['wheel', [9, -5.3], 10]]) {
+  await page.evaluate(([x, z]) => { __mk.place(x, z); __mk.cam({ yaw: 0, pitch: 0.35, dist: 9 }); }, gate);
+  await page.waitForTimeout(600);
+  let p = await pr();
+  const ready = (q) => (kind === 'drop' ? q.phase.drop.phase === 'load' && q.phase.drop.left > 3 : q.wheelOpen);
+  for (let i = 0; i < 90 && !ready(p); i++) { await page.waitForTimeout(500); p = await pr(); }
+  await page.waitForTimeout(300);
+  const lbl = await page.evaluate(() => __mk.action());
+  await page.evaluate(() => __mk.act());
+  await page.waitForTimeout(500);
+  p = await pr();
+  assert(p.ride?.kind === kind, `${kind}: on (${lbl})`);
+  await shot(kind + '-seated');
+  let top = 0, locked = false, shotTop = false;
+  const t0 = Date.now();
+  while (Date.now() - t0 < 60000) {
+    p = await pr();
+    if (!p.ride) break;
+    top = Math.max(top, p.at[1]);
+    locked ||= p.locked;
+    if (!shotTop && p.at[1] > high) { await shot(kind + '-top'); shotTop = true; }
+    await page.waitForTimeout(300);
+  }
+  p = await pr();
+  assert(locked, `${kind}: the safety bar locked`);
+  assert(top > high, `${kind}: went up (${top})`);
+  assert(!p.ride && p.at[1] === 0, `${kind}: off at the end ${p.at}`);
 }
 assert(!errors.length, 'page errors: ' + errors.join(' | '));
 await browser.close();
