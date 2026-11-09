@@ -75,7 +75,7 @@ export const LAWN_UV = [-16, 20]; // the middle of the fireworks lawn
 // Hongdae's south edge gets a dusky sky, the rest of Seoul none).
 export function nearYeouido(x, z) {
   const [u, v] = toUV(x, z);
-  const out = Math.max(0, Math.abs(u) - 360, v - 240, -230 - v);
+  const out = Math.max(0, Math.abs(u) - 360, v - 350, -230 - v); // (v up to the Saetgang: the island is 320 m wide)
   return 1 - smooth(out / 90);
 }
 
