@@ -189,7 +189,7 @@ export class RemotePlayers {
   nearestFree(x, z, r) {
     let best = null, bd = r;
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk) continue;
+      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < bd) { bd = d; best = { id, name: p.name }; }
     }
@@ -200,7 +200,7 @@ export class RemotePlayers {
   nearbyFree(x, z, r) {
     const out = [];
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk) continue;
+      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < r) out.push({ id, name: p.name, d });
     }
@@ -248,8 +248,9 @@ export class RemotePlayers {
   }
 
   // Their pet walking with them (pt: the pet's item id), seen by everyone.
+  // Not while they fly (game/sky-flight.js): the pet would give them away.
   _pet(p) {
-    const id = !p.hidden && isPet(p.target.pt) ? p.target.pt : null;
+    const id = !p.hidden && !p.target.fl && isPet(p.target.pt) ? p.target.pt : null;
     if ((p.pet?.id || null) === id) return;
     p.pet?.dispose();
     p.pet = null;
