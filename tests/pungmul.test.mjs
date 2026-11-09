@@ -9,11 +9,11 @@ import { CollisionMap } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/olympic-park.json', import.meta.url)));
 
-test('the troupe is the 75 of Yozi\'s list, in order', () => {
-  const want = { flag: 3, horn: 2, kkwaenggwari: 5, jing: 3, janggu: 10, buk: 7, sogo: 16, japsaek: 4, sangmo: 25 };
+test('the troupe is the 50 of Yozi\'s list, without the extra sangmo players, in order', () => {
+  const want = { flag: 3, horn: 2, kkwaenggwari: 5, jing: 3, janggu: 10, buk: 7, sogo: 16, japsaek: 4 };
   assert.deepEqual(Object.fromEntries(PUNGMUL_ROLES.map((r) => [r.id, r.n])), want);
-  assert.equal(TROUPE_N, 75);
-  assert.equal(TROUPE.filter((p) => SPINNERS.has(p.role)).length, 41, 'sogo and the extra sangmo players whirl ribbons');
+  assert.equal(TROUPE_N, 50);
+  assert.equal(TROUPE.filter((p) => SPINNERS.has(p.role)).length, 16, 'the sogo dancers whirl the ribbons');
   // the flags lead the column, the horns right behind
   assert.deepEqual(TROUPE.slice(0, 5).map((p) => p.role), ['flag', 'flag', 'flag', 'horn', 'horn']);
 });
@@ -71,7 +71,7 @@ test('the column winds into a tight spiral (멍석말이) and the pan has rings'
   const coilEnd = ROUTINE[0].len + ROUTINE[1].len - 0.01;
   const r = TROUPE.map((_, i) => Math.hypot(...troupeSpot(i, coilEnd).slice(0, 2)));
   assert.ok(r[0] < 3, 'the leader reaches the middle');
-  assert.ok(r.filter((x) => x < 9).length > 55, 'most of the troupe is coiled up inside 9 m');
+  assert.ok(r.filter((x) => x < 9).length > TROUPE_N * 0.7, 'most of the troupe is coiled up inside 9 m');
   // on the circle the column is evenly spaced, a step and a half apart
   const m = TROUPE.map((_, i) => troupeSpot(i, 20));
   for (let i = 1; i < TROUPE_N; i++) assert.ok(Math.abs(Math.hypot(m[i][0] - m[i - 1][0], m[i][1] - m[i - 1][1]) - 1.4) < 0.05);
