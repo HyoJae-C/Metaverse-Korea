@@ -74,7 +74,7 @@ import { createLookEditor, saveLook } from './core/look-editor.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
-import { CollisionMap, distSqToSeg } from './core/collision.js';
+import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
@@ -5194,6 +5194,11 @@ const PARK_NEAR = 220; // drawn (and built) within this many metres
 const PARK_STAFF = 80; // its sellers and duck boats drawn within this many metres
 const openParks = storefronts.items.filter((i) => i.open).map((item) => {
   const { at: [ox, oz], ry } = item.store.open;
+  // Its lawn in the same green as the street's grass around it (just behind
+  // it, or beside it), so the park reads as one with the riverside, not a patch.
+  const around = [[0, 15.5], [0, 18], [0, 21], [-28, 6], [28, 6]].map(([x, z]) => [ox + x * Math.cos(ry) + z * Math.sin(ry), oz - x * Math.sin(ry) + z * Math.cos(ry)]);
+  const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
+  if (grass) item.store.open.grass = COLORS[grass.k];
   const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
   return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false };
 });
