@@ -11,6 +11,7 @@ import { luckySpot } from './fishing.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import * as droneShow from './drone-show.js';
+import { darkness } from './weather.js';
 import { mergeStatic } from './merge-static.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
@@ -392,18 +393,20 @@ export function buildPark(store, ROOM, EXIT) {
   };
   setSignLang(null);
 
-  // The drone show (drone-show.js): the park's sky turns to night, the
-  // lights come on, and the drones (drone-sky.js, downloaded only now) rise
-  // from the barge. Everything else in the park carries on as usual.
+  // The drone show (drone-show.js): the park's sky turns to night (if it
+  // isn't already), the lights come on, and the drones (drone-sky.js,
+  // downloaded only now) rise from the barge. Everything else in the park carries on as usual.
   const show = { now: null, night: 0 };
   let nightShown = -1, sky = null, watchers = null, skyLoading = false, signT = 0;
   const setNight = (k) => {
     if (Math.abs(k - nightShown) < 0.002) return;
     nightShown = k;
-    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
-    scene.fog.color.copy(scene.background);
-    scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
-    hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+    if (!open) { // (open: the street's sky and lights, main.js)
+      scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+      scene.fog.color.copy(scene.background);
+      scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
+      hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+    }
     river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
     lamps.glowMat.emissiveIntensity = 0.5 + 2 * k;
     lamps.poolMat.opacity = 0.32 * k; lamps.pools.visible = k > 0.01;
@@ -415,7 +418,6 @@ export function buildPark(store, ROOM, EXIT) {
     const now = Date.now(), s = droneShowAt(now);
     show.now = s;
     show.night = s ? s.night : 0;
-    setNight(show.night);
     if ((signT -= dt) <= 0) { signT = 5; drawDroneSign(now); }
     if (s && s.t > -LIFT_SECONDS - 60 && !sky && !skyLoading) {
       skyLoading = true;
@@ -432,7 +434,12 @@ export function buildPark(store, ROOM, EXIT) {
     watchers?.update(dt, show.night);
   };
 
-  if (drones) tickShowRef = tickShow;
+  // Night falls with Seoul's (weather.js darkness), and in Ttukseom also for
+  // the drone show, whatever the hour: the lamps, windows and bridge light up.
+  tickShowRef = (dt) => {
+    if (drones) tickShow(dt);
+    setNight(Math.max(show.night, darkness()));
+  };
   // Open to the street: its still boxes baked together (core/merge-static.js),
   // so the park costs a few draw calls on top of the city, not hundreds.
   if (open) mergeStatic(scene, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
