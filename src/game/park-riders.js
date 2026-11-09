@@ -17,7 +17,7 @@ export function createParkRiders(labels) {
     // River park, `hanRiver`, has no rides, and the guests would hang in the
     // air over the river on seats that aren't there.)
     spawn(built) {
-      if (built.riderNpcs || !built.themepark) return built.riderNpcs;
+      if (built.riderNpcs || !built.themepark || built.island) return built.riderNpcs; // (nor the island: its only ride is the coaster)
       built.riderNpcs = [];
       for (const [kind, seats] of Object.entries(GUEST_SEATS)) for (const seat of seats) {
         const o = makeNpc(labels, '');

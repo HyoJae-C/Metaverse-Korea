@@ -44,3 +44,13 @@ test('looks only every so often', () => {
   fp.update(0.3, scene, camera);
   assert.equal(m.layers.isEnabled(0), true);
 });
+
+test('never takes your own character off the camera layer', () => {
+  const scene = new THREE.Scene();
+  const [meG, mine] = person(400); scene.add(meG);
+  mine.layers.disable(0); mine.userData.farHidden = true; // (taken for far away earlier)
+  const fp = new FarPeople({ far: 150 });
+  fp.update(1, scene, new THREE.PerspectiveCamera(), meG);
+  assert.equal(mine.layers.isEnabled(0), true);
+  assert.equal(mine.userData.farHidden, false);
+});
