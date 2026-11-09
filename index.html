@@ -35,6 +35,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="application-name" content="Another Seoul" />
     <meta name="apple-mobile-web-app-title" content="Another Seoul" />
+    <!-- Fonts: Fredoka (Latin) and Jua (Hangul) for titles and buttons,
+         Nunito for Latin body text. Shown as they arrive, never blocking. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&family=Nunito:wght@400..900&display=swap" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
@@ -172,11 +177,11 @@
       </div>
       <div class="sheet daily-panel" id="daily-panel" hidden>
         <button class="sheet-x" id="daily-close" aria-label="Close">✕</button>
-        <strong class="wallet-title">📅 <span data-i18n="daily.title"></span></strong>
+        <strong class="wallet-title daily-title"><span class="daily-ico" aria-hidden="true">📅</span><span data-i18n="daily.title"></span></strong>
         <div class="week" id="daily-week"></div>
         <button class="primary" id="checkin-btn"></button>
         <p class="fine" id="daily-streak"></p>
-        <strong class="daily-sub" data-i18n="daily.missions"></strong>
+        <div class="daily-sub"><strong data-i18n="daily.missions"></strong><span class="daily-count" id="daily-count"></span></div>
         <ul class="missions" id="daily-missions"></ul>
         <p class="fine" id="daily-bonus"></p>
       </div>
@@ -373,8 +378,26 @@
         <div class="scene" style="background-image: url('assets/promo/bukchon.webp?v=1')"><span data-i18n="promo.bukchon">🏯 Bukchon Hanok Village</span></div>
         <div class="scene" style="background-image: url('assets/promo/cablecar.webp?v=1')"><span data-i18n="promo.cablecar">🚡 Namsan cable car</span></div>
       </div>
+      <!-- People from the game waving over the start card (made from the game's own characters) -->
+      <!-- Phones held upright: the card covers the scenes, so a drawn sky and
+           skyline instead (style.css .start-art); the scenes stay elsewhere. -->
+      <div class="start-art" aria-hidden="true">
+        <i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i>
+        <svg class="skyline" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice">
+          <path d="M0 120 Q60 80 120 104 T250 92 T400 108 V200 H0Z" fill="#e9defd"/>
+          <path d="M150 96 Q200 40 250 92Z" fill="#dccdfa"/>
+          <rect x="198" y="30" width="4" height="40" rx="2" fill="#b9a6f0"/><rect x="190" y="44" width="20" height="8" rx="4" fill="#c9b8f5"/><rect x="199.2" y="16" width="1.6" height="16" fill="#b9a6f0"/><circle cx="200" cy="15" r="2" fill="#ff9b85"/>
+          <g fill="#cdeee6"><rect x="18" y="112" width="34" height="88" rx="5"/><rect x="300" y="104" width="30" height="96" rx="5"/></g>
+          <g fill="#ffe0d6"><rect x="56" y="128" width="40" height="72" rx="5"/><rect x="334" y="122" width="44" height="78" rx="5"/></g>
+          <g fill="#fff0c2"><rect x="100" y="140" width="30" height="60" rx="5"/><rect x="262" y="134" width="34" height="66" rx="5"/></g>
+          <g fill="#fff" opacity=".75"><rect x="26" y="122" width="6" height="7" rx="1.5"/><rect x="38" y="122" width="6" height="7" rx="1.5"/><rect x="26" y="136" width="6" height="7" rx="1.5"/><rect x="66" y="138" width="7" height="7" rx="1.5"/><rect x="79" y="138" width="7" height="7" rx="1.5"/><rect x="308" y="114" width="6" height="7" rx="1.5"/><rect x="318" y="128" width="6" height="7" rx="1.5"/><rect x="344" y="132" width="7" height="7" rx="1.5"/><rect x="358" y="132" width="7" height="7" rx="1.5"/><rect x="272" y="144" width="6" height="7" rx="1.5"/></g>
+          <path d="M140 160 Q200 146 260 160 L252 166 H148Z" fill="#ffb3a3"/><rect x="156" y="166" width="88" height="34" fill="#fff3e3"/><rect x="190" y="174" width="20" height="26" rx="3" fill="#ffd2c4"/>
+          <rect x="0" y="194" width="400" height="6" fill="#f6e6d2"/>
+        </svg>
+      </div>
+      <!-- People from the game holding the name banner (made from the game's own characters) -->
+      <img class="start-banner" src="assets/promo/banner.webp?v=1" alt="Another Seoul" width="900" height="504" decoding="async" />
       <div class="panel" id="step-lang">
-        <div class="logo">🏙️</div>
         <div class="boot-note" id="boot-note" role="status"><p id="boot-msg">Loading…</p><button class="primary" id="boot-reload" hidden>Reload</button></div>
         <h1 data-i18n="app.title"></h1>
         <p class="tagline" data-i18n="app.tagline"></p>
@@ -413,6 +436,10 @@
           <input id="referrer" maxlength="16" autocomplete="off" />
           <small class="name-face" data-i18n="start.referrerHint"></small>
         </label>
+        <div class="start-pick" id="start-pick" hidden>
+          <span class="start-pick-title" data-i18n="start.where"></span>
+          <div class="start-pick-list" id="start-pick-list" role="radiogroup"></div>
+        </div>
         <p class="look-lock" id="look-lock" hidden></p>
         <div class="look-actions">
           <button class="chip" id="back-btn" data-i18n="start.back"></button>
@@ -450,6 +477,7 @@
         <div class="map-body">
           <canvas class="map-canvas"></canvas>
           <button class="chip map-seoul" type="button">🗺️ <span data-i18n="map.seoul"></span></button>
+          <button class="chip map-locate" type="button"><span aria-hidden="true">◎</span></button>
           <p class="map-soon" hidden></p>
           <div class="map-list"></div>
         </div>
@@ -484,6 +512,9 @@
         </button>
         <button class="setting-row" id="steady-btn" aria-pressed="false">
           <span>🚶</span><span class="setting-label" data-i18n="settings.steady"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="localsky-btn" aria-pressed="false">
+          <span>🌙</span><span class="setting-label" data-i18n="settings.localSky"></span><span class="switch"></span>
         </button>
         <button class="setting-row" id="fp-btn" aria-pressed="false">
           <span>🎯</span><span class="setting-label" data-i18n="settings.firstPerson"></span><span class="switch"></span>

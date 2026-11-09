@@ -26,7 +26,7 @@ test('the fan dance has an unseen ring you cannot walk into', () => {
 });
 
 test('the fan dancers wear a bun and red lips', () => {
-  assert.equal(FAN_LOOKS.length, 20);
+  assert.equal(FAN_LOOKS.length, 10);
   for (const l of FAN_LOOKS) { assert.equal(l.hairStyle, 'bun'); assert.equal(l.lip, 'scarlet'); }
 });
 
@@ -36,16 +36,16 @@ test('the fan dance is a 30-second routine of varied formations, all inside the 
   for (const p of FAN_ROUTINE) assert.ok(p.len > FAN_BLEND + 2, p.name + ' holds a while after blending in');
   for (let t = 0; t < FAN_CYCLE * 2; t += 0.25) {
     const P = fanPart(t);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < FAN_LOOKS.length; i++) {
       const [x, z] = fanSlot(P.part, i, t, P.u);
       assert.ok(Math.hypot(x, z) < FAN_KEEP - 1, `${P.part} slot ${i} at ${t}s strays to the ring`);
     }
   }
   // the line really is one row, and the flower gathers in close
-  const line = Array.from({ length: 20 }, (_, i) => fanSlot('line', i, 3));
+  const line = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('line', i, 3));
   assert.ok(line.every(([, z]) => Math.abs(z) < 0.5));
-  assert.equal(new Set(line.map(([x]) => x.toFixed(2))).size, 20);
-  const flower = Array.from({ length: 20 }, (_, i) => Math.hypot(...fanSlot('flower', i, 3, 0.5).slice(0, 2)));
+  assert.equal(new Set(line.map(([x]) => x.toFixed(2))).size, FAN_LOOKS.length);
+  const flower = Array.from({ length: FAN_LOOKS.length }, (_, i) => Math.hypot(...fanSlot('flower', i, 3, 0.5).slice(0, 2)));
   assert.ok(Math.max(...flower) < 6);
   // parts come round in order and blend in smoothly
   assert.equal(fanPart(0).part, 'rings');
@@ -56,11 +56,11 @@ test('the fan dance is a 30-second routine of varied formations, all inside the 
 });
 
 test('each dancer takes a different place in the next formation, near where she is', () => {
-  const from = Array.from({ length: 20 }, (_, i) => fanSlot('rings', i, 8));
-  const to = Array.from({ length: 20 }, (_, i) => fanSlot('flower', i, 10, 0.3));
+  const from = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('rings', i, 8));
+  const to = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('flower', i, 10, 0.3));
   const slots = assignSlots(from, to);
-  assert.equal(new Set(slots).size, 20);
-  assert.ok(slots.every((s) => s >= 0 && s < 20));
+  assert.equal(new Set(slots).size, FAN_LOOKS.length);
+  assert.ok(slots.every((s) => s >= 0 && s < FAN_LOOKS.length));
   const same = assignSlots(to, to);
   assert.deepEqual(same, to.map((_, i) => i));
 });

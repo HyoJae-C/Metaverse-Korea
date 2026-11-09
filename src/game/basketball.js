@@ -12,7 +12,7 @@ import { shotMove } from '../core/basketball-game.js';
 import { t } from '../core/i18n.js';
 
 export function createBasketball(game) {
-  const { $, STALE, cam, scene, setAutoWalk, sfx, shop, wallet } = game;
+  const { $, STALE, scene, setAutoWalk, sfx, shop, wallet } = game;
   const courtLm = game.map.landmarks.find((l) => l.type === 'basketball') || null;
   let court = null, courtBall = null;
   if (courtLm) {
@@ -62,10 +62,6 @@ export function createBasketball(game) {
         else if (ev.kind === 'bounce' && !m.made && ev.t > m.release && !basketShot.said) { basketShot.said = true; shop.toast(BL('missed')); }
       },
     });
-    // Look from the side, so the hoop and the ball's flight are in view.
-    const ry = court.group.rotation.y;
-    cam.yaw = ry + (move.start[0] < 0 ? -0.75 : 0.75);
-    game.manualCamT = 1;
     game.action = STALE;
   }
   function stopBasketShot() {

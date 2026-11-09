@@ -1,26 +1,28 @@
-// Children's Grand Park zoo: the pens fit the park and keep off the paths,
-// feeding times take turns, and the hippo eats its watermelon.
+// Children's Grand Park zoo: a room you walk into from the gate plaza; the
+// pens fit it and keep off the paths, feeding times take turns, and the
+// hippo eats its watermelon.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { buildMap, PENS, ZOO_OPEN, HOARDING } from '../scripts/build-grand-park.mjs';
+import { buildMap, zooGrounds, PENS, ZOO_OPEN, ZOO_ROOM, ZOO_GATE, ZOO_FENCE, ZOO_ENTRANCE, ZOO_STORE, SEA_DOOR, PLAZA, WALKS } from '../scripts/build-grand-park.mjs';
 import { Zoo, feedPhase, fenceLines, FEED_CYCLE, FOOD_CUP } from '../src/core/zoo.js';
 import { makeZooAnimal, ZOO_LOOKS } from '../src/core/zoo-animals.js';
+import { inPolygon } from '../src/core/seoul-grid.js';
 
 // (name boards and signs draw on a canvas; tests don't look at them)
 globalThis.document ??= { createElement: () => ({ getContext: () => new Proxy({}, { get: () => () => ({ width: 0 }) }) }) };
 
-const map = buildMap();
+const map = buildMap(); // the street district
+const G = zooGrounds(); // the zoo's room
+const walks = G.walks; // the zoo's paths
 const box = (p) => [p.x - p.w / 2, p.z - p.d / 2, p.x + p.w / 2, p.z + p.d / 2];
 const overlap = (a, b, m = 0) => a[0] < b[2] + m && b[0] < a[2] + m && a[1] < b[3] + m && b[1] < a[3] + m;
 
-test('pens sit inside the park, apart from each other and off the walking paths', () => {
-  const park = map.areas[0].p;
-  const [px0, pz0] = [Math.min(...park.map((q) => q[0])), Math.min(...park.map((q) => q[1]))];
-  const [px1, pz1] = [Math.max(...park.map((q) => q[0])), Math.max(...park.map((q) => q[1]))];
+test('pens sit inside the zoo, apart from each other and off the walking paths', () => {
+  const { x0: px0, z0: pz0, x1: px1, z1: pz1 } = ZOO_ROOM;
   for (const p of PENS) {
     const b = box(p);
-    assert.ok(b[0] >= px0 && b[2] <= px1 && b[1] >= pz0 && b[3] <= pz1, `${p.id} inside the park`);
+    assert.ok(b[0] >= px0 && b[2] <= px1 && b[1] >= pz0 && b[3] <= pz1, `${p.id} inside the zoo`);
     for (const q of PENS) {
       if (q === p) continue;
       if (p.in === q.id || q.in === p.id) { // a tank inside its hall: wholly inside
@@ -29,7 +31,7 @@ test('pens sit inside the park, apart from each other and off the walking paths'
       } else if (p.in && p.in === q.in) assert.ok(!overlap(b, box(q), 0.3), `${p.id} and ${q.id} apart`);
       else assert.ok(!overlap(b, box(q), 1), `${p.id} and ${q.id} apart`);
     }
-    for (const r of map.roads.filter((x) => x.k === 'walk')) {
+    for (const r of walks) {
       for (let i = 1; i < r.p.length; i++) {
         const [[x1, z1], [x2, z2]] = [r.p[i - 1], r.p[i]];
         const seg = [Math.min(x1, x2) - r.w / 2, Math.min(z1, z2) - r.w / 2, Math.max(x1, x2) + r.w / 2, Math.max(z1, z2) + r.w / 2];
@@ -41,8 +43,8 @@ test('pens sit inside the park, apart from each other and off the walking paths'
 
 test('every fence line is a blocker, and the petting pen has a gate onto the main path', () => {
   const lines = PENS.reduce((n, p) => n + fenceLines(p).length + (p.solid || []).length, 0);
-  const hoard = ZOO_OPEN ? 0 : HOARDING.length - 1;
-  assert.equal(map.blockers.length, 2 + lines + hoard, 'gate pillars + one blocker per fence line, solid prop and hoarding side');
+  assert.equal(G.blockers.length, lines + 1, 'one blocker per fence line and solid prop, and the Sea Animals hall');
+  assert.equal(map.blockers.length, 2 + ZOO_FENCE.length - 1, 'on the street: the gate pillars and the zoo fence');
   const pet = PENS.find((p) => p.pet);
   assert.equal(pet.gate.side, 'n');
   assert.ok(pet.z - pet.d / 2 > 0 && pet.z - pet.d / 2 < 8, 'the gate opens just south of the main path (z 0)');
@@ -62,7 +64,7 @@ test('feeding times take turns, about one every two minutes', () => {
 
 test('the hippo comes to the front, opens wide and crunches the watermelon', () => {
   const hip = { ...PENS.find((p) => p.id === 'hippos'), name: null };
-  const P0 = map.landmarks.find((l) => l.id === 'hippos');
+  const P0 = G.pens.find((l) => l.id === 'hippos');
   assert.ok(P0.melon, 'the hippo pen has a watermelon spot');
   const notices = [];
   const zoo = new Zoo(new THREE.Scene(), [hip], (n) => notices.push(n.kind));
@@ -83,25 +85,51 @@ test('the hippo comes to the front, opens wide and crunches the watermelon', () 
   assert.ok(notices.includes('crunch'));
 });
 
-test('the Sea Animals hall holds three tanks, one animal kind each, with a door onto the path', () => {
+test('the Sea Animals hall is a closed building on the path: its door leads into a room of its own', async () => {
   const hall = PENS.find((p) => p.id === 'sea');
   assert.equal(hall.fence, 'hall');
-  assert.equal(hall.gate.side, 'n');
-  const tanks = PENS.filter((p) => p.in === 'sea');
-  assert.deepEqual(tanks.map((t) => t.groups[0].kind).sort(), ['polarbear', 'seal', 'walrus']);
-  for (const t of tanks) assert.equal(t.groups.length, 1);
+  assert.ok(hall.closed && !hall.gate, 'no way in through the walls');
+  assert.ok(!PENS.some((p) => p.in === 'sea'), 'the tanks are in the room, not in the zoo');
   const zoo = new Zoo(new THREE.Scene(), [hall]);
+  assert.equal(zoo.pens[0].roof, null, 'the roof never lifts away');
   zoo.update(0.1, { x: hall.x, z: hall.z });
-  assert.equal(zoo.pens[0].roof.visible, false, 'the outside shell lifts away while you are inside');
-  // ...but the room stays round you: walls facing in, a high ceiling.
-  const inner = zoo.pens[0].g.children.filter((o) => o.name === 'hall-inner');
-  assert.ok(inner.length >= 5 && inner.every((o) => o.visible && o.geometry.parameters.height >= 6), 'tall room walls');
-  for (const o of inner) { // each faces into the room
-    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(o.quaternion);
-    assert.ok(n.x * -o.position.x + n.z * -o.position.z > 0);
+  assert.equal(zoo.indoors, false);
+  // Its walls are a blocker; its door is on the north side, onto the north path.
+  const [x0, z0, x1, z1] = box(hall);
+  assert.ok(G.blockers.some((bl) => JSON.stringify(bl.p) === JSON.stringify([[x0, z0], [x1, z0], [x1, z1], [x0, z1]])));
+  assert.ok(SEA_DOOR.x > x0 + 3 && SEA_DOOR.x < x1 - 3 && SEA_DOOR.z === z0, 'the door is in the north wall');
+  const out = SEA_DOOR.out;
+  assert.ok(out.z < z0 && Math.abs(out.z - -38) < 2.5, 'you step out onto the north path');
+  for (const bl of G.blockers) assert.ok(!inPolygon(out.x, out.z, bl.p), 'nothing in front of the door');
+  const { SEA_STORE } = await import('../src/core/zoo-rooms.js');
+  assert.equal(SEA_STORE.workshop, 'zoo-sea');
+  const { readFileSync } = await import('node:fs');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  assert.ok(!stores.some((st) => st.id === SEA_STORE.id), 'not a door on the street');
+});
+
+test('inside the Sea Animals hall: three tanks behind glass, seals, a walrus and a polar bear, benches to watch from', async () => {
+  const { buildInterior, roomOf, setZooBuilders, needsZoo } = await import('../src/core/interior.js');
+  const { SEA_TANKS } = await import('../src/core/zoo-sea-hall.js');
+  const { SEA_STORE: store } = await import('../src/core/zoo-rooms.js');
+  if (needsZoo(store)) setZooBuilders(await import('../src/core/zoo-park.js'));
+  const room = roomOf(store);
+  const r = buildInterior(store);
+  assert.ok(r.zooHall, 'the tanks are zoo pens');
+  assert.deepEqual(r.zooHall.pens.flatMap((P) => P.animals.map((a) => a.kind)).sort(), ['polarbear', 'seal', 'seal', 'seal', 'walrus']);
+  for (const t of SEA_TANKS) {
+    assert.ok(t.x - t.w / 2 > -room.w / 2 && t.x + t.w / 2 < room.w / 2 && t.z - t.d / 2 > -room.d / 2, `${t.id} tank fits in the room`);
+    assert.equal(t.board, false, 'its name is on the wall, not on a board in front of the glass');
+    assert.equal(t.front, 's', 'its glass faces the walkway');
   }
-  zoo.update(0.1, { x: hall.x, z: hall.z - 30 });
-  assert.equal(zoo.pens[0].roof.visible, true);
+  // The walk from the door to the glass is clear, and the tanks are solid.
+  const inside = (x, z) => r.colliders.some((c) => inPolygon(x, z, c.p));
+  for (let z = r.exit.z - 0.5; z > SEA_TANKS[0].z + SEA_TANKS[0].d / 2 + 0.3; z -= 0.5) assert.ok(!inside(0, z), `path open at ${z}`);
+  for (const t of SEA_TANKS) assert.ok(inside(t.x, t.z), `${t.id} tank is solid`);
+  assert.equal(r.seats.length, 4);
+  for (const s of r.seats) assert.ok(!inside(...s.stand), 'you get up off the bench onto the floor');
+  r.tick(0.1, new THREE.Vector3(0, 0, 3));
+  r.tick(0.1, null);
 });
 
 test('the little animal village: a solid barn, food at its door, a keeper, and animals that eat from your hand', () => {
@@ -158,50 +186,84 @@ test('zoo animals are joined up and their eyes show', () => {
   }
 });
 
-test('before it opens, a hoarding closes the zoo off, and the gate plaza and station stay outside it', () => {
-  if (ZOO_OPEN) return;
-  const h = map.landmarks.find((l) => l.type === 'hoarding');
-  assert.equal(h.closes, 'zoo');
-  const xs = h.p.map((q) => q[0]), zs = h.p.map((q) => q[1]);
-  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
-  for (const p of PENS) assert.ok(p.x - p.w / 2 > x0 && p.x + p.w / 2 < x1 && p.z - p.d / 2 > z0 && p.z + p.d / 2 < z1, `${p.id} inside the hoarding`);
+test('the zoo is a room you walk into: on the street, the gate plaza, the entrance building and the fence round a wood', async () => {
+  for (const t of ['zoopen', 'zoocarts', 'zooflowers', 'hoarding', 'doghole']) assert.ok(!map.landmarks.some((l) => l.type === t), `no ${t} on the street`);
+  assert.equal(map.roads.filter((r) => r.k === 'walk').length, 1, 'one short walk, from the plaza to the zoo\'s door');
+  const ent = map.landmarks.find((l) => l.type === 'zooentrance');
+  assert.equal(ent.store, ZOO_STORE);
+  assert.equal(ent.open, ZOO_OPEN);
+  const b = map.buildings.find((o) => o.custom);
+  assert.deepEqual(b.p, [[ZOO_ENTRANCE.x0, ZOO_ENTRANCE.z0], [ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z0], [ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z1], [ZOO_ENTRANCE.x0, ZOO_ENTRANCE.z1]]);
   const gate = map.landmarks.find((l) => l.type === 'cgpgate');
-  assert.ok(gate.x < x0, 'the main gate and its plaza stay open');
-  assert.deepEqual(h.p[0], h.p[h.p.length - 1], 'a closed loop');
+  assert.ok(gate.x < ZOO_ENTRANCE.x0, 'the rainbow gate comes first, on the plaza');
+  const fence = map.landmarks.find((l) => l.type === 'zoofence');
+  assert.deepEqual(fence.p[0], [ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z0], 'the fence starts at the entrance…');
+  assert.deepEqual(fence.p.at(-1), [ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z1], '…and comes back round to it');
+  // The door: the storefront on the entrance's west face, onto the plaza.
+  const { readFileSync } = await import('node:fs');
+  const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
+  const store = read('stores.json').stores.find((st) => st.id === ZOO_STORE);
+  assert.equal(store.workshop, 'zoo');
+  assert.equal(store.size, 'zoo');
+  assert.equal(store.district, 'grand-park');
+  const [ox, oz] = read('region.json').districts.find((d) => d.id === 'grand-park').offset;
+  const [dx, dz] = [store.at[0] - ox, store.at[1] - oz];
+  assert.ok(dx < ZOO_ENTRANCE.x0 && ZOO_ENTRANCE.x0 - dx < 2 && Math.abs(dz) < 2, 'the door is on the west face, at the end of the walk');
+  for (const bl of map.blockers) assert.ok(!inPolygon(dx, dz, bl.p), 'nothing in front of the door');
+  // No taxi zones: the zoo is a room, and the plaza is open.
+  const { noTaxiZones } = await import('../src/core/taxi.js');
+  assert.equal(noTaxiZones(map.landmarks).length, 0);
 });
 
-test('while the zoo is closed, taxis cannot go in or drop you just over the hoarding', async () => {
-  const { noTaxiZones, noTaxiAt, NO_TAXI_MARGIN } = await import('../src/core/taxi.js');
-  const map = buildMap();
-  const zones = noTaxiZones(map.landmarks);
-  if (ZOO_OPEN) { assert.equal(zones.length, 0); return; }
-  assert.equal(zones.length, 1);
-  assert.ok(NO_TAXI_MARGIN > 0 && NO_TAXI_MARGIN <= 6, 'only a little past the fence');
-  for (const pen of PENS) assert.ok(noTaxiAt(zones, pen.x, pen.z), pen.id);
-  const [x0] = HOARDING[0];
-  assert.ok(noTaxiAt(zones, x0 - NO_TAXI_MARGIN / 2, 0), 'just outside the hoarding is out too');
-  assert.equal(noTaxiAt(zones, x0 - NO_TAXI_MARGIN - 1, 0), null);
-  // The gate plaza, the main gate and the park's own pin stay reachable.
-  const park = map.pois[0];
-  assert.equal(noTaxiAt(zones, park.x, park.z), null);
-  for (const l of map.landmarks) if (l.type === 'cgpgate' || (l.type === 'sign' && l.x < x0)) assert.equal(noTaxiAt(zones, l.x, l.z), null, l.type);
-  // Once the hoarding comes down, so does the no-taxi area.
-  assert.equal(noTaxiZones(map.landmarks.filter((l) => l.type !== 'hoarding')).length, 0);
+test('inside the zoo: you come in at its west edge on the main path, and everything is in the room', async () => {
+  const { ZOO_PARK_ROOM, ZOO_PARK_EXIT, ZOO_PARK_ENTRY } = await import('../src/core/zoo-rooms.js');
+  for (const k of ['x0', 'x1', 'z0', 'z1']) assert.equal(ZOO_PARK_ROOM[k], ZOO_ROOM[k], k);
+  assert.deepEqual([ZOO_PARK_EXIT.x, ZOO_PARK_EXIT.z], [ZOO_GATE.x, ZOO_GATE.z]);
+  const { buildZooPark, patronSpots, GROUNDS } = await import('../src/core/zoo-park.js');
+  assert.deepEqual(GROUNDS, JSON.parse(JSON.stringify(G)), 'src/data/zoo-grounds.json is up to date (node scripts/build-grand-park.mjs)');
+  const r = buildZooPark({ id: ZOO_STORE }, ZOO_PARK_ROOM, ZOO_PARK_EXIT);
+  const blocked = (x, z) => r.colliders.some((c) => inPolygon(x, z, c.p));
+  for (const [x, z] of WALKS.main.p) assert.ok(!blocked(x, z), `main path open at ${x}, ${z}`);
+  assert.ok(ZOO_PARK_ENTRY.x > ZOO_PARK_EXIT.x + 1.6, 'you come in a step past the way out');
+  assert.ok(Math.abs(ZOO_PARK_ENTRY.z - WALKS.main.p[0][1]) < 1, 'on the main path');
+  assert.deepEqual(r.stations.seaDoor[0], SEA_DOOR.out);
+  // Visitors stand at the pens, outside the fences, off the walls.
+  const pats = patronSpots(PENS);
+  assert.ok(pats.length >= 12, `${pats.length} visitors at the pens`);
+  for (const s of pats) {
+    assert.ok(!blocked(s.x, s.z), `visitor at ${s.pen} stands free`);
+    assert.ok(!PENS.some((p) => Math.abs(s.x - p.x) < p.w / 2 && Math.abs(s.z - p.z) < p.d / 2), `visitor at ${s.pen} is outside the pens`);
+  }
+  assert.equal(r.zoo.pens.length, PENS.length);
+  r.tick(0.1, { x: ZOO_PARK_ENTRY.x, z: 0 });
+  const far = r.zoo.pens.find((P) => P.pen.id === 'giraffes');
+  assert.equal(far.g.visible, false, 'the far pens are not drawn from the gate');
+  r.tick(0.1, { x: far.pen.x, z: far.pen.z - 15 });
+  assert.equal(far.g.visible, true);
 });
 
-test('a gap at the foot of the hoarding, on its line, for anyone to crawl through', () => {
-  if (ZOO_OPEN) return;
-  const hole = map.landmarks.find((l) => l.type === 'doghole');
-  assert.ok(hole && hole.closes === 'zoo');
-  const onLine = HOARDING.slice(1).some(([x1, z1], i) => {
-    const [x0, z0] = HOARDING[i];
-    return Math.abs((x1 - x0) * (hole.z - z0) - (z1 - z0) * (hole.x - x0)) < 1e-6 && hole.x >= Math.min(x0, x1) && hole.x <= Math.max(x0, x1) && hole.z >= Math.min(z0, z1) && hole.z <= Math.max(z0, z1);
-  });
-  assert.ok(onLine, 'on the hoarding');
-  assert.ok(Math.abs(Math.sin(hole.ry)) === 1, 'faces across the west side');
-  // Still a wall for everyone: the blockers along the side aren't cut.
-  const blk = map.blockers.filter((b) => b.p.some(([x]) => x < hole.x) && b.p.some(([x]) => x > hole.x) && b.p.some(([, z]) => z <= hole.z) && b.p.some(([, z]) => z >= hole.z));
-  assert.ok(blk.length >= 1);
+test('visitors stroll the paths: along them, round the ring, back at an end, stopping now and then', async () => {
+  const { stepWalker } = await import('../src/game/zoo-visit.js');
+  const ring = walks.findIndex((w) => w.closed), main = walks.findIndex((w) => !w.closed);
+  assert.ok(ring >= 0 && main >= 0);
+  const segDist = (x, z, [ax, az], [bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(x - ax - t * dx, z - az - t * dz);
+  };
+  for (const path of [ring, main]) {
+    const p = walks[path].p;
+    const w = { path, i: 0, dir: 1, wait: 0, x: p[0][0], z: p[0][1], ry: 0 };
+    let moved = 0, stops = 0, turns = 0, lastDir = 1;
+    for (let k = 0; k < 4000; k++) {
+      const sp = stepWalker(w, walks, 0.1, () => ((k * 0.618) % 1));
+      if (sp > 0) moved++; else stops++;
+      if (w.dir !== lastDir) { turns++; lastDir = w.dir; }
+      const off = Math.min(...p.slice(1).map((q, i) => segDist(w.x, w.z, p[i], q)));
+      assert.ok(off < 0.05, 'on the path');
+    }
+    assert.ok(moved > 2000 && stops > 0, 'mostly walking, a stop now and then');
+    if (path === main) assert.ok(turns > 0, 'turns back at the end'); else assert.equal(turns, 0, 'round and round the ring');
+  }
 });
 
 test('the vultures sit on their perches, open their wings, and fly round inside the tall aviary', () => {
@@ -230,12 +292,12 @@ test('the vultures sit on their perches, open their wings, and fly round inside 
 
 test('the cart station sits inside the zoo, off the paths and pens, and carts stay in the zoo', async () => {
   const { createZooCarts, CART } = await import('../src/game/zoo-carts.js');
-  const st = map.landmarks.find((l) => l.type === 'zoocarts');
+  const st = G.carts;
   assert.ok(st && st.carts.length === 3);
   for (const [cx, cz] of st.carts) {
     const b = [st.x + cx - 0.8, st.z + cz - 1.6, st.x + cx + 0.8, st.z + cz + 1.6];
     for (const p of PENS) assert.ok(!overlap(b, box(p), 0.5), `cart clear of ${p.id}`);
-    for (const r of map.roads.filter((x) => x.k === 'walk')) for (let i = 1; i < r.p.length; i++) {
+    for (const r of walks) for (let i = 1; i < r.p.length; i++) {
       const [[x1, z1], [x2, z2]] = [r.p[i - 1], r.p[i]];
       assert.ok(!overlap(b, [Math.min(x1, x2) - r.w / 2, Math.min(z1, z2) - r.w / 2, Math.max(x1, x2) + r.w / 2, Math.max(z1, z2) + r.w / 2]), 'cart off the path');
     }
@@ -255,11 +317,11 @@ test('the cart station sits inside the zoo, off the paths and pens, and carts st
 });
 
 test('every pen faces a path: its board side is a few steps from one', () => {
-  const walks = map.roads.filter((r) => r.k === 'walk').flatMap((r) => r.p.slice(1).map((q, i) => [r.p[i], q, r.w]));
+  const segs = walks.flatMap((r) => r.p.slice(1).map((q, i) => [r.p[i], q, r.w]));
   for (const p of PENS.filter((q) => !q.in)) {
     const side = p.board || 'n';
     const [fx, fz] = { n: [p.x, p.z - p.d / 2], s: [p.x, p.z + p.d / 2], w: [p.x - p.w / 2, p.z], e: [p.x + p.w / 2, p.z] }[side];
-    const near = walks.some(([[x1, z1], [x2, z2], w]) => {
+    const near = segs.some(([[x1, z1], [x2, z2], w]) => {
       const [ax, bx, az, bz] = [Math.min(x1, x2), Math.max(x1, x2), Math.min(z1, z2), Math.max(z1, z2)];
       const dx = Math.max(ax - fx, 0, fx - bx), dz = Math.max(az - fz, 0, fz - bz);
       return Math.hypot(dx, dz) - w / 2 < 6;
@@ -283,12 +345,280 @@ test('bears have no hump on the rump: a brown bear\'s hump is over its shoulders
   }
 });
 
-test('the Sea Animals hall is a room: you are indoors in it, and no snow settles on its floor', () => {
-  const hall = PENS.find((p) => p.id === 'sea');
-  const zoo = new Zoo(new THREE.Scene(), [hall]);
-  zoo.update(0.1, { x: hall.x, z: hall.z });
-  assert.equal(zoo.indoors, true);
-  assert.equal(zoo.pens[0].g.userData.noSnow, true);
-  zoo.update(0.1, { x: hall.x, z: hall.z - hall.d / 2 - 3 });
-  assert.equal(zoo.indoors, false, 'out of the door: outdoors');
+test('the paths wind: no long straight run, and they meet at a round flower plaza', () => {
+  for (const [k, r] of Object.entries(WALKS)) {
+    let run = 0, dir = null;
+    for (let i = 1; i < r.p.length; i++) {
+      const a = Math.atan2(r.p[i][1] - r.p[i - 1][1], r.p[i][0] - r.p[i - 1][0]);
+      run = dir != null && Math.abs(a - dir) < 0.01 ? run + Math.hypot(r.p[i][0] - r.p[i - 1][0], r.p[i][1] - r.p[i - 1][1]) : 0;
+      dir = a;
+      assert.ok(run < 15 || (k === 'main' && r.p[i][0] <= 64), `${k}: straight for ${run.toFixed(0)} m at ${r.p[i]}`);
+    }
+  }
+  const fl = G.flowers;
+  assert.deepEqual([fl.x, fl.z], [PLAZA.x, PLAZA.z]);
+  for (const k of ['main', 'east', 'crossNorth', 'crossSouth']) {
+    const ends = [WALKS[k].p[0], WALKS[k].p.at(-1)];
+    assert.ok(ends.some(([x, z]) => Math.abs(Math.hypot(x - PLAZA.x, z - PLAZA.z) - PLAZA.r) < 0.2), `${k} reaches the plaza`);
+  }
+});
+
+test('flower beds and borders: plenty of them, off the paths, out of the pens, inside the zoo', () => {
+  const fl = G.flowers;
+  assert.ok(fl.beds.length >= 40 && fl.borders.length >= 20);
+  const segDist = (x, z, [ax, az], [bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(x - ax - t * dx, z - az - t * dz);
+  };
+  const pathGap = (x, z) => Math.min(...Object.values(WALKS).flatMap((r) => r.p.slice(1).map((q, i) => segDist(x, z, r.p[i], q) - r.w / 2)));
+  const inPen = (x, z, m) => PENS.some((p) => Math.abs(x - p.x) < p.w / 2 + m && Math.abs(z - p.z) < p.d / 2 + m);
+  for (const [bx, bz, r] of fl.beds) {
+    const [x, z] = [bx + fl.x, bz + fl.z];
+    assert.ok(pathGap(x, z) > r, `bed at ${x}, ${z} keeps off the paths`);
+    assert.ok(!inPen(x, z, r), `bed at ${x}, ${z} is out of the pens`);
+    assert.ok(x - r > ZOO_ROOM.x0 && x + r < ZOO_ROOM.x1 && z - r > ZOO_ROOM.z0 && z + r < ZOO_ROOM.z1, 'inside the zoo');
+  }
+  for (const [a, b, c, d] of fl.borders) {
+    for (let t = 0; t <= 1; t += 0.1) {
+      const [x, z] = [fl.x + a + (c - a) * t, fl.z + b + (d - b) * t];
+      assert.ok(pathGap(x, z) > 0.3, `border at ${x.toFixed(1)}, ${z.toFixed(1)} off the paths`);
+      assert.ok(!inPen(x, z, 0.3), 'outside its pen');
+    }
+  }
+});
+
+test('animal calls: every kind that moves has a voice, played when a motion starts, fading with distance', async () => {
+  const { VOICES, LOUD, CALL_NAMES, callFor, fallOff, HEAR } = await import('../src/core/zoo-voices.js');
+  const kinds = new Set(PENS.flatMap((p) => (p.groups || []).map((g) => g.kind)));
+  for (const k of kinds) assert.ok(VOICES[k], `${k} has a voice`);
+  for (const calls of Object.values(VOICES)) for (const c of Object.values(calls)) assert.ok(CALL_NAMES.includes(c) && LOUD[c] > 0, c);
+  assert.equal(callFor('lion', 'roar'), 'roar');
+  assert.equal(callFor('lion', 'walk'), null, 'walking about is quiet');
+  assert.ok(fallOff(0) === 1 && fallOff(10) > fallOff(20) && fallOff(HEAR) === 0);
+  // The zoo says when a motion starts, once.
+  const lions = PENS.find((p) => p.id === 'lions');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null, feed: null }]); // (no feeding time: at the lions' feeding, by the clock, they'd all walk to the food)
+  const heard = [];
+  zoo.onSound = (b, m) => heard.push([b, m]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'roar'; a.t = 3;
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
+  assert.equal(heard.filter(([b, m]) => b === a && m === 'roar').length, 1, 'this lion roared once'); // (the other lions may roar on their own)
+});
+
+test('zoo sounds: nearer is louder, panned to its side, and each animal waits before calling again', async () => {
+  const { createZooSounds, COOLDOWN } = await import('../src/game/zoo-sounds.js');
+  const zs = createZooSounds({ sfx: null, listener: () => ({ x: 0, z: 0, rx: 1, rz: 0 }) });
+  const near = zs.placeOf(3, 0), far = zs.placeOf(20, 0), left = zs.placeOf(-5, 0);
+  assert.ok(near.gain > far.gain && near.pan > 0 && left.pan < 0);
+  assert.equal(zs.placeOf(60, 0), null, 'too far to hear');
+  assert.ok(COOLDOWN >= 3);
+});
+
+test('the hippo: ears on hinges that flutter when it comes up, and more time out of the water', () => {
+  const hippos = PENS.find((p) => p.id === 'hippos');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...hippos, name: null }]);
+  const h = zoo.pens[0].animals[0];
+  assert.equal(h.flaps.length, 2, 'two ears that move');
+  h.sink = 0.8; zoo._parts(h, 0.016);
+  h.sink = 0.1; zoo._parts(h, 0.016); zoo._parts(h, 0.01);
+  assert.ok(h.flick > 0, 'coming up: a flutter');
+  assert.ok(h.flaps.some((e) => Math.abs(e.rotation.y) > 0.01), 'the ears move');
+  // Picking what to do, in the water: out it comes, most of the time.
+  const [px, pz] = hippos.pond;
+  let swims = 0;
+  for (let i = 0; i < 400; i++) {
+    h.root.position.set(px, 0, pz); h.mate = null;
+    zoo._pick(h, 100, 100, false, zoo.pens[0]);
+    const tgt = h.state === 'walk' && h.target;
+    if (!tgt || Math.hypot(tgt[0] - px, tgt[1] - pz) < hippos.pond[2]) swims++;
+  }
+  assert.ok(swims / 400 < 0.45, `stays in the water ${(swims / 4).toFixed(0)}% of picks`);
+});
+
+test('herbivore pens you can see across, bigger zebras, elephants and giraffes, a giraffe neck with two joints', async () => {
+  const { SIZE } = await import('../src/core/zoo-animals.js');
+  for (const [id, kind] of [['zebras', 'zebra'], ['elephants', 'elephant'], ['giraffes', 'giraffe'], ['kangaroos', 'kangaroo'], ['camels', 'camel']]) {
+    const p = PENS.find((q) => q.id === id);
+    assert.ok(p && p.groups.every((g) => g.kind === kind), `${id} holds ${kind}`);
+    assert.ok(p.d <= 25, `${id} is small enough to see across`);
+    assert.ok(SIZE[kind] > 1.2, `${kind} drawn bigger`);
+  }
+  assert.ok(!PENS.some((p) => p.id === 'savanna'));
+  const g = makeZooAnimal('giraffe', ZOO_LOOKS.giraffe[0]);
+  assert.ok(g.neck && g.neck2 && g.neck2.parent === g.neck, 'the upper neck hangs off the lower');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...PENS.find((q) => q.id === 'giraffes'), name: null }]);
+  const a = zoo.pens[0].animals[0];
+  a.state = 'drink';
+  for (let i = 0; i < 60; i++) zoo._parts(a, 0.05);
+  assert.ok(a.neck2.rotation.x > 0.5 && a.neck.rotation.x > a.neck0 + 0.5, 'both joints bend down to drink');
+});
+
+test('the snake: a smaller house, and a body that follows its head and coils up at rest', () => {
+  const rep = PENS.find((p) => p.id === 'reptiles');
+  assert.ok(rep.w * rep.d <= 80, 'a small reptile house');
+  const zoo = new Zoo(new THREE.Scene(), [{ ...rep, name: null }]);
+  const s = zoo.pens[0].animals[0];
+  s.root.position.set(-2, 0, 0); s.root.rotation.y = Math.PI / 2; // heading +x
+  for (let i = 0; i < 80; i++) { s.root.position.x += 0.03; s.phase += 0.03; zoo._slither(s, 0.03, true); }
+  const tail = s.segs.at(-1).position, mid = s.segs[15].position;
+  assert.ok(tail.z < mid.z && mid.z < 0, 'the body trails behind the head');
+  assert.ok(s.segs.some((q) => Math.abs(q.position.x) > 0.03), 'in S curves');
+  for (let i = 0; i < 200; i++) zoo._slither(s, 0.05, false);
+  assert.ok(s.coil > 0.9, 'coiled up at rest');
+  const spread = Math.max(...s.segs.map((q) => Math.hypot(q.position.x, q.position.z)));
+  assert.ok(spread < 0.5, 'a tight coil');
+});
+
+test('kangaroos and camels: pens of their own beside the zebras and the elephants; kangaroos hop, camels have two humps', () => {
+  const pen = (id) => PENS.find((p) => p.id === id);
+  const [zeb, kan, ele, cam] = ['zebras', 'kangaroos', 'elephants', 'camels'].map(pen);
+  assert.ok(Math.abs(kan.z - zeb.z) < 1e-6 && kan.x > zeb.x, 'the kangaroos next to the zebras');
+  assert.ok(Math.abs(cam.z - ele.z) < 1e-6 && cam.x > ele.x, 'the camels next to the elephants');
+  assert.ok(!zeb.groups.some((g) => g.kind === 'kangaroo'), 'not in with the zebras');
+  // Hopping: both feet together, up off the ground, as it goes.
+  const zoo = new Zoo(new THREE.Scene(), [{ ...kan, name: null, feed: null, groups: [{ ...kan.groups[0], n: 1 }] }]); // (one, alone: no other to bump into)
+  const k = zoo.pens[0].animals[0];
+  assert.ok(k.hop && k.hopH > 0.2);
+  k.state = 'walk'; k.target = [k.root.position.x > 0 ? -4 : 4, 0]; k.t = 10; // (across the pen, so it doesn't arrive or hit the fence)
+  let up = 0;
+  for (let i = 0; i < 40; i++) { zoo._step(k, 0.05, 50, 50, zoo.pens[0]); up = Math.max(up, k.body.position.y); }
+  assert.ok(up > 0.15, 'up off the ground');
+  assert.ok(k.legs.every((l) => l.rotation.x === 0), 'feet together, no walking steps');
+  const c = makeZooAnimal('camel', ZOO_LOOKS.camel[0]);
+  c.root.updateMatrixWorld(true);
+  const tops = c.body.children.filter((o) => o.isMesh && o.position.y > 1.15 && o.position.y < 1.3);
+  assert.equal(tops.length, 2, 'two humps');
+});
+
+test('the camel ride: a loop round the herbivores from a stand on the path, clear of every pen', () => {
+  const C = G.camels;
+  assert.ok(C && C.p.length > 40, 'a camel trek in the zoo grounds');
+  assert.deepEqual(C.p[0], [C.x, C.z], 'it starts at the stand');
+  assert.deepEqual(C.p[C.p.length - 1], C.p[0], 'and comes back round to it');
+  const near = (x, z, P) => Math.hypot(Math.max(0, Math.abs(x - P.x) - P.w / 2), Math.max(0, Math.abs(z - P.z) - P.d / 2));
+  let onPath = 0;
+  for (const [x, z] of C.p) {
+    for (const P of PENS) assert.ok(near(x, z, P) > 1.2, `trek at ${x}, ${z} clear of the ${P.id} pen`);
+    assert.ok(x > ZOO_ROOM.x0 + 5 && x < ZOO_ROOM.x1 - 5 && z > ZOO_ROOM.z0 + 5 && z < ZOO_ROOM.z1 - 5, 'inside the zoo');
+    if (Object.values(WALKS).some((r) => r.p.some((q) => Math.hypot(q[0] - x, q[1] - z) < r.w / 2 + 1.5))) onPath++;
+  }
+  assert.ok(onPath / C.p.length > 0.9, `it keeps to the paths (${onPath}/${C.p.length})`);
+  const camelPen = PENS.find((p) => p.id === 'camels');
+  assert.ok(near(C.x, C.z, camelPen) < 4, 'the stand is by the camels');
+  for (const id of ['zebras', 'kangaroos', 'elephants', 'camels', 'giraffes']) {
+    const P = PENS.find((p) => p.id === id);
+    assert.ok(C.p.some(([x, z]) => near(x, z, P) < 4), `the ride passes the ${id}`);
+  }
+});
+
+test('the camel ride runs on the shared clock: one camel kneels at the stand at a time, then walks the loop', async () => {
+  const { trekTrack, camelAt, cycle, LOAD, KNEEL, PACE, RIDE_CAMELS } = await import('../src/core/zoo-camel-ride.js');
+  const tr = trekTrack(G.camels.p);
+  assert.ok(tr.L > 150 && tr.L < 220, `a lap of ${tr.L.toFixed(0)} m`);
+  const C = cycle(tr);
+  assert.ok(C / RIDE_CAMELS - LOAD < 75, 'never much more than a minute to wait for a camel');
+  let prev = null, boardable = 0;
+  for (let T = 1000; T < 1000 + C; T += 0.25) {
+    const st = [0, 1].map((i) => camelAt(tr, T, i));
+    assert.ok(!(st[0].phase === 'load' && st[1].phase === 'load'), 'never both at the stand');
+    for (const s of st) {
+      assert.ok(s.speed <= PACE + 1e-9 && s.speed >= 0);
+      if (s.phase === 'load') { assert.equal(s.speed, 0); assert.deepEqual([s.x, s.z], G.camels.p[0]); }
+      if (s.board) { assert.equal(s.kneel, 1, 'you get on while it kneels'); boardable++; }
+    }
+    if (prev && prev.phase === 'walk' && st[0].phase === 'walk') assert.ok(st[0].s >= prev.s - 1e-9, 'it walks on, never back');
+    prev = st[0];
+  }
+  assert.ok(boardable * 0.25 > (LOAD - 2 * KNEEL - 2) * RIDE_CAMELS, 'each camel waits long enough to get on');
+  // Kneeling down, waiting, getting up.
+  const T0 = 5000 - (5000 % C) + C; // (camel 0's lap starts on a whole cycle)
+  const at = (t) => camelAt(tr, T0 + t, 0);
+  assert.equal(at(0.1).phase, 'load');
+  assert.ok(at(1).kneel > 0 && at(1).kneel < 1, 'kneeling down');
+  assert.equal(at(LOAD / 2).kneel, 1);
+  assert.ok(at(LOAD - 1).kneel < 1 && !at(LOAD - 1).board, 'getting up: too late to get on');
+  assert.equal(at(LOAD + 30).phase, 'walk');
+  assert.ok(Math.abs(at(LOAD + 30).speed - PACE) < 1e-9, 'walking at its pace');
+});
+
+test('riding a camel: pay at the stand, sit on the saddle, carried round, off at the stand', async () => {
+  const { ZOO_PARK_ROOM, ZOO_PARK_EXIT } = await import('../src/core/zoo-rooms.js');
+  const { buildZooPark } = await import('../src/core/zoo-park.js');
+  const { createZooCamels, CAMEL_PRICE } = await import('../src/game/zoo-camels.js');
+  const { cycle, LOAD } = await import('../src/core/zoo-camel-ride.js');
+  const b = buildZooPark({ id: ZOO_STORE }, ZOO_PARK_ROOM, ZOO_PARK_EXIT);
+  const R = b.camels;
+  assert.ok(R && R.camels.length === 2, 'two saddled camels');
+  const C = cycle(R.track);
+  let T = 7000 - (7000 % C) + C + LOAD / 2; // camel 0 kneeling at the stand
+  const realNow = Date.now;
+  Date.now = () => T * 1000;
+  try {
+    let seated = null, coins = 10000;
+    const toasts = [], me = { root: new THREE.Object3D() };
+    const game = {
+      built: () => b, here: () => true, shop: { toast: (m) => toasts.push(m) }, wallet: { spend: (n) => (coins >= n ? ((coins -= n), true) : false) },
+      me, get seated() { return seated; }, riding: 0,
+      sitDown: (s) => { seated = s; }, standUp: () => { me.root.position.set(seated.stand[0], 0, seated.stand[1]); seated = null; },
+      makeNpc: () => ({ tag: { style: {} }, ch: { root: new THREE.Object3D(), wave() {} } }), t: (k) => k,
+    };
+    const cam = createZooCamels(game);
+    cam.adopt(b);
+    for (let k = 0; k < 20; k++) b.tick(0.1, { x: R.stand.x, z: R.stand.z }); // (the camels settle where the clock says)
+    assert.equal(cam.act({ x: R.stand.x - 10, z: R.stand.z }), null, 'nothing away from the stand');
+    const a = cam.act({ x: R.stand.x - 1, z: R.stand.z + 1 });
+    assert.equal(a.key, 'zoocamel');
+    a.run();
+    assert.equal(coins, 10000 - CAMEL_PRICE);
+    assert.equal(seated.camel, 0);
+    b.tick(0.016, me.root.position);
+    cam.tick();
+    const low = me.root.position.y;
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) < 0.5, 'on the camel at the stand');
+    assert.equal(cam.act({ x: R.stand.x, z: R.stand.z }), null, 'no second ride while on one');
+    assert.equal(cam.offAct().key, 'zoocamel-off');
+    // Off it goes: up, and along the loop.
+    for (let t = 0; t < 60; t += 0.1) { T += 0.1; b.tick(0.1, me.root.position); cam.tick(); }
+    assert.ok(seated, 'still riding');
+    assert.ok(me.root.position.y > low + 0.8, `sitting up high once it stands (${low.toFixed(2)} → ${me.root.position.y.toFixed(2)})`);
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) > 20, 'carried away from the stand');
+    // Round the loop and back: off at the stand.
+    for (let t = 0; t < C; t += 0.1) { T += 0.1; b.tick(0.1, me.root.position); cam.tick(); if (!seated) break; }
+    assert.equal(seated, null, 'off at the end of the lap');
+    assert.ok(toasts.includes('zoocamel.done'));
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) < 3, 'stepped down at the stand');
+    // Too poor: no ride.
+    coins = 100;
+    T = 9000 - (9000 % C) + C + LOAD / 2;
+    cam.act({ x: R.stand.x, z: R.stand.z }).run();
+    assert.equal(seated, null);
+    assert.ok(toasts.includes('zoocamel.poor'));
+  } finally { Date.now = realNow; }
+});
+
+test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL on them', async () => {
+  const { hallMurals, ART } = await import('../src/core/zoo-murals.js');
+  const sea = PENS.find((p) => p.id === 'sea');
+  assert.ok(sea.murals?.length >= 3, 'three murals');
+  const ms = hallMurals(sea, 7.5);
+  assert.equal(ms.length, sea.murals.length);
+  for (const m of ms) {
+    const g = m.geometry.parameters, p = m.position;
+    assert.ok(p.y - g.height / 2 >= 0.5 && p.y + g.height / 2 <= 7.5 - 1.2, `${m.name} sits between the base and the band`);
+    assert.ok(Math.abs(p.x) > sea.w / 2 || Math.abs(p.z) > sea.d / 2, `${m.name} is outside the walls`);
+    const n = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y);
+    assert.ok(n.x * p.x + n.z * p.z > 0, `${m.name} faces out`);
+  }
+  const door = ms.find((m) => m.name === 'mural:penguins');
+  assert.ok(Math.abs(door.position.x) - door.geometry.parameters.width / 2 > 1.6, 'the door stays clear');
+  assert.ok(Math.abs(door.position.x - (sea.boardAt || 0)) > door.geometry.parameters.width / 2 + 1, 'and so does the name board');
+  // Every picture says the game's name.
+  for (const [name, [w, h, draw]] of Object.entries(ART)) {
+    const said = [];
+    const c = new Proxy({}, { get: (_, k) => (k === 'fillText' || k === 'strokeText' ? (t) => said.push(t) : () => ({})), set: () => true });
+    draw(c, w, h);
+    assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('ANOTHER') && said.join(' ').includes('SEOUL'), `${name} says ANOTHER SEOUL`);
+  }
 });

@@ -1,13 +1,14 @@
 // The Cotton Candy Express (솜사탕 특급): Another Land's roller coaster.
 // Pure track and timing (no DOM), so it can be unit-tested. Metres and
-// seconds, in the theme park's room space (themepark.js); the model is
+// seconds, in the island room's space (park-island.js); the model is
 // coaster-model.js and riding it is in main.js.
 //
-// The track is one closed loop through the park's new north-west land:
-// the station by the west plaza, a chain lift up to 18 m, a stop at the
-// top with the front car hanging over the edge, a 17 m first drop, an
-// airtime hill, a long run east to a helix behind the Ferris wheel, a
-// tunnel and a smaller second drop, then the brakes and home.
+// The track is one closed loop over Another Land's island (park-island.js):
+// the station at the south end, a chain lift up to 18 m, a stop at the top
+// with the front car hanging over the edge, a 17 m first drop, an airtime
+// hill, a vertical loop, a long run east along the north shore to a helix on the island's
+// east end, up a little hill and down the second drop into a tunnel, then
+// the brakes and home (the first design, kept: the island is wide enough).
 //
 // Timing runs on a shared clock (Date.now(), like the Namsan cable car), so
 // everyone in the park sees the trains in the same place: two trains, one
@@ -25,12 +26,27 @@ export const SEATS = CARS * SEATS_PER_CAR;
 export const CAR_GAP = 1.75; // m between car centres
 export const G = 9.8;
 export const SPEED_K = 1; // speed scale (tune after riding it; 0.9..1.3)
-const LIFT_V = 2.1; // chain lift speed, m/s
+const LIFT_V = 2.4; // chain lift speed, m/s (a little brisk: the loop needs the time)
 const DEPART_V = 3; // tyres push the train out of the station
 const MIN_V = 2.2; // booster tyres keep it rolling on the flats
 const DRAG = 0.03; // energy lost per metre, as a fraction of g (wheels, air)
 const BRAKE_A = 3.2; // m/s² in the brakes
 const HANG = 2.6; // how far past the crest the front car stops (looking down)
+
+// The vertical loop after the airtime hill: in at its foot heading east
+// (+x), up and over upside down, and out 6 m further on and 3.5 m to the
+// side (+z) so the way out runs beside the way in. A teardrop, wide at the
+// foot (about 9 m across the curve) and tight at the top (about 3 m), the
+// way real loops are, so it pulls hard at the bottom and floats over the top.
+export const LOOP = { x: -38.5, y: 2, z: -36.9, h: 10.5, drift: 6, side: 3.5, a: 6.09, b: 0.56 };
+function loopPoints() {
+  const { x, y, z, h, drift, side, a, b } = LOOP, out = [];
+  for (let k = 0; k <= 32; k++) {
+    const t = (k / 32) * Math.PI * 2;
+    out.push([x + Math.sin(t) * (a + b * Math.cos(t)) + (drift * t) / (Math.PI * 2), y + (h * (1 - Math.cos(t))) / 2, z + (side * t) / (Math.PI * 2)]);
+  }
+  return out;
+}
 
 // The loop, in order. [x, y, z]: y is the rail height.
 export const TRACK = [
@@ -50,8 +66,9 @@ export const TRACK = [
   [-62.5, 1.3, -37.6], // pull out east along the north fence
   [-56, 2.2, -38.4],
   [-49, 8.6, -37.6], // airtime hill
-  [-42, 2.4, -36.6],
-  [-34, 3.4, -35.6],
+  [-42, 2.4, -36.8],
+  ...loopPoints(), // the vertical loop
+  [-28.5, 2.8, -33.6],
   [-20, 5.6, -34.6], // long run east, behind the old park
   [-6, 8.4, -35],
   [4, 9.6, -35.4], // helix round (8, -27): one and a half turns, dropping
@@ -64,8 +81,8 @@ export const TRACK = [
   [12.2, 4.8, -29.6],
   [10, 3.9, -23], // out under the first turn, heading back west
   [0, 3.4, -18.8],
-  [-12, 5.6, -20.6],
-  [-22, 3.2, -22.4], // second drop into the chocolate tunnel
+  [-12, 5.6, -20.6], // up a little hill...
+  [-22, 3.2, -22.4], // ...and the second drop into the chocolate tunnel
   [-30, 1.3, -24],
   [-38, 1.4, -23],
   [-44, 2.6, -26.6], // zigzag
@@ -103,8 +120,12 @@ for (let i = 0; i < N; i++) if (pts[i].y > pts[crest].y) crest = i;
 export const S_CREST = crest * DS;
 export const S_TUNNEL = [nearest([...TUNNEL.from.slice(0, 1), 2.4, TUNNEL.from[1]]), nearest([TUNNEL.to[0], 1.4, TUNNEL.to[1]])];
 export const S_AIR = nearest(TRACK[15]); // the airtime hill's top
-export const S_BRAKE = nearest(TRACK[38]); // brakes from here to the station
+export const S_BRAKE = nearest([-52, 1.1, 3]); // brakes from here to the station
 export const TOP_Y = pts[crest].y;
+// The vertical loop: track distance from its foot in to its foot out, and its top.
+export const S_LOOP = [nearest([LOOP.x, LOOP.y, LOOP.z]), nearest([LOOP.x + LOOP.drift, LOOP.y, LOOP.z + LOOP.side])];
+export const S_LOOP_TOP = nearest(loopPoints()[16]);
+const inLoop = (s) => { const w = wrap(s); return w > S_LOOP[0] && w < S_LOOP[1]; };
 
 const lerp = (a, b, u) => a + (b - a) * u;
 // Track height at distance s.
@@ -170,6 +191,8 @@ export const rideEnds = (t, k) => t - lapTime(t, k) + PHASE_T.unload + 0.6;
 
 // The track's frame at s: position, forward, up (banked into the curves)
 // and right. Bank follows the turn, a little more the faster the train goes.
+// In the loop, right stays the loop's side (+z), so up turns with the track,
+// over the top and upside down.
 const T = [], B = [];
 {
   for (let i = 0; i < N; i++) {
@@ -182,17 +205,18 @@ const T = [], B = [];
     const t0 = T[(i - 8 + N) % N], t1 = T[(i + 8) % N];
     const turn = Math.atan2(t0.x * t1.z - t0.z * t1.x, t0.x * t1.x + t0.z * t1.z); // + turning left (seen from above, x→-z)
     const k = turn / (16 * DS); // horizontal curvature, 1/m
-    B.push(Math.max(-0.75, Math.min(0.75, Math.atan((v[i] ** 2 * k) / G))));
+    B.push(inLoop(i * DS) ? 0 : Math.max(-0.75, Math.min(0.75, Math.atan((v[i] ** 2 * k) / G)))); // (no banking in the loop)
   }
   for (let pass = 0; pass < 3; pass++) { const c = B.slice(); for (let i = 0; i < N; i++) { let sum = 0; for (let j = -10; j <= 10; j++) sum += c[(i + j + N) % N]; B[i] = sum / 21; } }
 }
-const _p = new THREE.Vector3(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _r = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+const _p = new THREE.Vector3(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _r = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), SIDE = new THREE.Vector3(0, 0, 1);
 export function frameAt(s, out = {}) {
   const f = wrap(s) / DS, i = Math.floor(f) % N, u = f - Math.floor(f), j = (i + 1) % N;
   _p.lerpVectors(pts[i], pts[i + 1], u);
   _f.lerpVectors(T[i], T[j], u).normalize();
   const bank = lerp(B[i], B[j], u);
-  _r.crossVectors(_f, UP).normalize(); // right of the direction of travel
+  if (inLoop(s)) _r.copy(SIDE).addScaledVector(_f, -_f.dot(SIDE)).normalize(); // (the loop's side)
+  else _r.crossVectors(_f, UP).normalize(); // right of the direction of travel
   _u.crossVectors(_r, _f).normalize();
   _u.applyAxisAngle(_f, -bank); // lean into the turn
   _r.crossVectors(_f, _u).normalize();
@@ -202,7 +226,7 @@ export function frameAt(s, out = {}) {
   out.rx = _r.x; out.ry = _r.y; out.rz = _r.z;
   out.yaw = Math.atan2(_f.x, _f.z); // characters face (sin yaw, cos yaw)
   out.pitch = -Math.asin(Math.max(-1, Math.min(1, _f.y))); // rotation.x (nose up is negative)
-  out.bank = bank; // rotation.z
+  out.bank = bank; // rotation.z (yaw, pitch and bank don't hold the loop: use the vectors)
   return out;
 }
 // Seat i (0..SEATS-1) of a train whose front car is at s: where the rider

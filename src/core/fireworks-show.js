@@ -3,10 +3,10 @@
 // themselves are drawn by fireworks-sky.js, which is only downloaded when
 // you come near Yeouido around show time.
 //
-// The game's day/night cycle is off (weather.js DAY_NIGHT), so "at night"
-// means: during a show the sky turns to night only on and around Yeouido
-// (the island, Seogang Bridge and the Hongdae bank across the river),
-// fading in and out. Everywhere else it stays day.
+// The game's day and night follow Seoul's (weather.js), and the show makes
+// its own night too: during a morning show the sky turns to night only on
+// and around Yeouido (the island, Seogang Bridge and the Hongdae bank
+// across the river), fading in and out. Everywhere else it stays day.
 //
 // Everyone's clock gives the same bursts at the same moment (like the drone
 // show and the weather): the program is worked out from the show's start
@@ -75,7 +75,7 @@ export const LAWN_UV = [-16, 20]; // the middle of the fireworks lawn
 // Hongdae's south edge gets a dusky sky, the rest of Seoul none).
 export function nearYeouido(x, z) {
   const [u, v] = toUV(x, z);
-  const out = Math.max(0, Math.abs(u) - 360, v - 240, -230 - v);
+  const out = Math.max(0, Math.abs(u) - 360, v - 350, -230 - v); // (v up to the Saetgang: the island is 320 m wide)
   return 1 - smooth(out / 90);
 }
 

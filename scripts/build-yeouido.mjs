@@ -17,8 +17,10 @@
 //   ── Han River path ─────────────────────────────────────────────── v 40
 //   trees ............................................................
 //   ══ Yunjung-ro, cherry trees on both sides ════════════════════════ v 66
-//   office towers                                            63 tower
-//   ~~~~~~~~~~~~~~~~~~~~~~ Saetgang ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v 175..220
+//   office towers │ Yeouido Park │ Yeoui-daero │ office towers
+//   National Assembly (west)                                 63 tower
+//   ══ Yunjung-ro (south side) ═══════════════════════════════════════ v 292
+//   ~~~~~~~~~~~~~~~~~~~~~~ Saetgang ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v 320..345
 //
 // Game map, not to scale (see docs/WORLD.md).
 //
@@ -57,11 +59,14 @@ const ALONG_V = Math.atan2(V[0], V[1]);
 const ALONG_U = Math.atan2(U[0], U[1]);
 
 // The island's outline (u, v): a long hexagon, pointed at both ends.
-export const ISLAND = [[-270, 0], [270, 0], [330, 90], [260, 175], [-260, 175], [-330, 90]];
+// At 1/4 as the real island is (about 2.7 km by 1.3 km): 680 m by 320 m.
+export const ISLAND = [[-270, 0], [270, 0], [340, 160], [270, 320], [-270, 320], [-340, 160]];
 export const PATH = 40; // the Han River path
 const YUNJUNG = 66; // Yunjung-ro, the cherry blossom road
-// The Saetgang: the narrow arm of the river along the south side.
-const SAETGANG = [[-330, 90], [-260, 175], [260, 175], [330, 90], [310, 232], [-300, 222], [-372, 70]];
+// The Saetgang: the narrow arm of the river along the south side (about
+// 25 m, as the real one is about 100 m), with Yeongdeungpo just across it.
+const SAETGANG = [[-340, 160], [-270, 320], [270, 320], [340, 160], [352, 205], [295, 345], [-295, 345], [-385, 120]];
+const YUNJUNG_S = 292; // Yunjung-ro's south side, along the Saetgang
 // Seogang Bridge: from the Han River Bike Path at Hongdae's corner (where
 // "To the Han River" comes down from Hongdae) straight across the main
 // channel to the island.
@@ -140,17 +145,25 @@ function build() {
     // Yeouido's office towers south of Yunjung-ro (plain, no shops).
     ...[[-235, 82, -205, 112, 48], [-185, 80, -150, 105, 72], [-130, 84, -100, 118, 56], [-60, 80, -20, 106, 96],
       [-5, 112, 30, 150, 64], [45, 80, 80, 104, 110], [95, 86, 125, 120, 58], [140, 80, 175, 108, 84],
-      [-185, 125, -150, 160, 40], [-90, 130, -55, 160, 44], [150, 128, 185, 158, 50]]
+      [-185, 125, -150, 160, 40], [-90, 130, -55, 160, 44], [150, 128, 185, 158, 50],
+      // the south half, down to Yunjung-ro by the Saetgang
+      [-180, 182, -150, 215, 40], [-180, 240, -150, 275, 46], [0, 180, 32, 215, 62], [-10, 240, 30, 276, 52],
+      [50, 178, 85, 210, 88], [50, 235, 85, 270, 70], [95, 182, 125, 215, 54], [95, 240, 125, 272, 48],
+      [140, 182, 170, 212, 66], [140, 240, 170, 270, 58], [190, 182, 220, 215, 44]]
       .map(([u0, v0, u1, v1, h]) => ({ h, p: rect(u0, v0, u1, v1) })),
+    // The National Assembly at the island's west end (a plain block here).
+    { h: 22, p: rect(-262, 188, -206, 236) },
   ];
   const roads = [
     { k: 'primary', w: BRIDGE_W, p: [[r1(BRIDGE_NORTH[0] - ORIGIN[0]), r1(BRIDGE_NORTH[1] - ORIGIN[1])], at(BRIDGE_U, YUNJUNG)], n: name('Seogang Bridge', '서강대교', '西江大橋', '西江大桥') },
     { k: 'walk', w: 5, p: [at(-292, PATH), at(290, PATH)], n: name('Han River path', '한강 산책로', '漢江の散歩道', '汉江步道') },
-    { k: 'tertiary', w: 10, p: [at(-300, YUNJUNG), at(300, YUNJUNG)], n: name('Yunjung-ro', '윤중로', '輪中路', '轮中路') },
+    { k: 'tertiary', w: 10, p: [at(-288, YUNJUNG), at(288, YUNJUNG)], n: name('Yunjung-ro', '윤중로', '輪中路', '轮中路') },
     { k: 'walk', w: 4, p: [at(-40, PATH), at(-40, YUNJUNG)], n: name('Park lane', '공원 산책길', '公園の小道', '公园小路') },
     { k: 'walk', w: 4, p: [at(185, PATH), at(185, YUNJUNG)], n: name('Park lane', '공원 산책길', '公園の小道', '公园小路') },
-    { k: 'walk', w: 5, p: [at(-140, YUNJUNG), at(-140, 168)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
-    { k: 'walk', w: 5, p: [at(132, YUNJUNG), at(132, 168)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
+    { k: 'walk', w: 5, p: [at(-140, YUNJUNG), at(-140, YUNJUNG_S)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
+    { k: 'walk', w: 5, p: [at(132, YUNJUNG), at(132, YUNJUNG_S)], n: name('Office lane', '빌딩 사잇길', 'オフィス街の道', '写字楼小路') },
+    { k: 'tertiary', w: 10, p: [at(-255, YUNJUNG_S), at(255, YUNJUNG_S)], n: name('Yunjung-ro', '윤중로', '輪中路', '轮中路') },
+    { k: 'secondary', w: 12, p: [at(40, YUNJUNG), at(40, YUNJUNG_S)], n: name('Yeoui-daero', '여의대로', '汝矣大路', '汝矣大路') },
   ];
   const lawn = rect(-150, 2, 118, PATH - 3); // the fireworks lawn
   const areas = [
@@ -160,24 +173,26 @@ function build() {
     { k: 'water', p: rect(126, 9, 164, 30) }, // its shallow pool: walk right in (no blocker)
     { k: 'grass', p: rect(172, 2, 262, PATH - 3) },
     { k: 'park', trees: true, p: rect(-285, PATH + 3, 285, YUNJUNG - 8) },
-    { k: 'grass', p: rect(-250, 166, 250, 173) }, // the Saetgang bank
+    { k: 'park', trees: true, p: rect(-100, 172, -40, 284) }, // Yeouido Park
+    { k: 'grass', p: rect(-262, 240, -206, 284) }, // the National Assembly's lawn
+    { k: 'grass', p: rect(-250, 300, 250, 317) }, // the Saetgang bank
     { k: 'water', p: SAETGANG.map(([u, v]) => at(u, v)) },
   ];
   const blockers = [
     { p: SAETGANG.map(([u, v]) => at(u, v)) },
-    { p: rect(262, 96, 292, 122) }, // the 63 tower (drawn by its landmark)
+    { p: rect(262, 217, 292, 247) }, // the 63 tower (drawn by its landmark), by the Saetgang at the east end
   ];
   const len = PATH - BRIDGE_V; // (v from the bridge's north end to the path)
   const landmarks = [
     { type: 'seogang', ...xz(at(BRIDGE_U, BRIDGE_V / 2)), ry: ALONG_V, len: -BRIDGE_V, w: BRIDGE_W },
     { type: 'arch', ...xz(at(BRIDGE_U, 3)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'YEOUIDO HAN RIVER PARK', sub: '여의도 한강공원', color: '#1f7a8c' },
-    { type: 'tower63', ...xz(at(277, 109)), ry: ALONG_U },
+    { type: 'tower63', ...xz(at(277, 232)), ry: ALONG_U },
     // The fireworks' launch barges in the main channel, facing the lawn
     // (the same spots as BARGES in src/core/fireworks-show.js).
     ...BARGES.map(([u, v]) => ({ type: 'fwbarge', ...xz(at(u, v)), ry: ALONG_U + Math.PI / 2 })),
     { type: 'mulbit', ...xz(at(145, 19.5)), ry: ALONG_U, w: 34, d: 17 },
-    { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG - 6.5), at(290, YUNJUNG - 6.5)], gap: 9 },
-    { type: 'blossoms', seasonal: true, p: [at(-290, YUNJUNG + 6.5), at(290, YUNJUNG + 6.5)], gap: 9 },
+    { type: 'blossoms', seasonal: true, p: [at(-284, YUNJUNG - 6.5), at(284, YUNJUNG - 6.5)], gap: 9 },
+    { type: 'blossoms', seasonal: true, p: [at(-286, YUNJUNG + 6.5), at(286, YUNJUNG + 6.5)], gap: 9 },
     { type: 'sign', ...xz(at(-205, PATH - 3)), ry: FACE_RIVER,
       title: name('Yeouido Han River Park', '여의도 한강공원', '汝矣島漢江公園', '汝矣岛汉江公园'),
       text: {
@@ -195,7 +210,9 @@ function build() {
     { kind: 'landmark', ...xz(at(-20, 20)), name: name('Yeouido Han River Park', '여의도 한강공원', '汝矣島漢江公園', '汝矣岛汉江公园') },
     { kind: 'landmark', ...xz(at(BRIDGE_U, BRIDGE_V / 2)), name: name('Seogang Bridge', '서강대교', '西江大橋', '西江大桥') },
     { kind: 'landmark', ...xz(at(145, 19.5)), name: name('Mul-bit Square', '물빛광장', '水光広場', '水光广场') },
-    { kind: 'landmark', ...xz(at(277, 128)), name: name('63 Tower', '63빌딩', '63ビル', '63大厦') },
+    { kind: 'landmark', ...xz(at(277, 254)), name: name('63 Tower', '63빌딩', '63ビル', '63大厦') },
+    { kind: 'landmark', ...xz(at(-70, 228)), name: name('Yeouido Park', '여의도공원', '汝矣島公園', '汝矣岛公园') },
+    { kind: 'landmark', ...xz(at(-234, 212)), name: name('National Assembly', '국회의사당', '国会議事堂', '国会议事堂') },
   ];
   return {
     meta: {

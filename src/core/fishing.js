@@ -1,6 +1,7 @@
-// Permanent 49-entry catalogue. Stable IDs preserve bags and lifetime records.
-// Twenty-seven species were available in the first release; more open with
-// each new Han River park (Mangwon, Banpo-Jamwon, then Yeouido).
+// Permanent 56-entry catalogue (14 a Han River park). Stable IDs preserve bags
+// and lifetime records; kinds that were swapped out move over in RENAMED.
+// ★1 and ★2 bite at every park; ★3 and up are split between the four parks
+// (PARK_FISH).
 import { takeForcedCatch } from './fish-luck.js';
 export const FISH = [
   {
@@ -190,6 +191,21 @@ export const FISH = [
     "price": 200
   },
   {
+    "id": "gizzard-shad",
+    "emoji": "🐟",
+    "ko": "전어",
+    "rom": "jeoneo",
+    "name": {
+      "en": "Gizzard shad",
+      "ja": "コノシロ",
+      "zh": "斑鰶"
+    },
+    "rarity": 1,
+    "released": true,
+    "page": 1,
+    "price": 200
+  },
+  {
     "id": "seabream",
     "emoji": "🐟",
     "ko": "참돔",
@@ -244,7 +260,7 @@ export const FISH = [
     },
     "rarity": 2,
     "released": true,
-    "page": 1,
+    "page": 2,
     "price": 500
   },
   {
@@ -315,6 +331,36 @@ export const FISH = [
     "price": 500
   },
   {
+    "id": "softshell-turtle",
+    "emoji": "🐢",
+    "ko": "자라",
+    "rom": "jara",
+    "name": {
+      "en": "Softshell turtle",
+      "ja": "スッポン",
+      "zh": "鳖"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 2,
+    "price": 500
+  },
+  {
+    "id": "red-lionfish",
+    "emoji": "🐠",
+    "ko": "쏠배감펭",
+    "rom": "ssolbaegampeng",
+    "name": {
+      "en": "Lionfish",
+      "ja": "ミノカサゴ",
+      "zh": "狮子鱼"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 2,
+    "price": 600
+  },
+  {
     "id": "octopus",
     "emoji": "🐙",
     "ko": "문어",
@@ -328,19 +374,6 @@ export const FISH = [
     "price": 500
   },
   {
-    "id": "webfoot-octopus",
-    "emoji": "🐙",
-    "ko": "주꾸미",
-    "rom": "jukkumi",
-    "name": {
-      "en": "Webfoot octopus"
-    },
-    "rarity": 2,
-    "released": true,
-    "page": 2,
-    "price": 400
-  },
-  {
     "id": "sea-cucumber",
     "emoji": "🐟",
     "ko": "해삼",
@@ -350,7 +383,7 @@ export const FISH = [
     },
     "rarity": 2,
     "released": true,
-    "page": 2,
+    "page": 3,
     "price": 500
   },
   {
@@ -363,7 +396,7 @@ export const FISH = [
     },
     "rarity": 2,
     "released": true,
-    "page": 2,
+    "page": 3,
     "price": 500
   },
   {
@@ -382,6 +415,34 @@ export const FISH = [
     "price": 300
   },
   {
+    "id": "yellowtail",
+    "emoji": "🐟",
+    "ko": "방어",
+    "rom": "bangeo",
+    "name": {
+      "en": "Yellowtail",
+      "ja": "ブリ",
+      "zh": "鰤鱼"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 3,
+    "price": 600
+  },
+  {
+    "id": "cutlassfish",
+    "emoji": "🐟",
+    "ko": "갈치",
+    "rom": "galchi",
+    "name": {
+      "en": "Cutlassfish"
+    },
+    "rarity": 2,
+    "released": true,
+    "page": 3,
+    "price": 600
+  },
+  {
     "id": "sunfish",
     "emoji": "🐟",
     "ko": "개복치",
@@ -392,7 +453,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1500
+    "price": 1400
   },
   {
     "id": "clownfish",
@@ -403,9 +464,9 @@ export const FISH = [
       "en": "Clownfish"
     },
     "rarity": 3,
-    "released": false,
+    "released": true,
     "page": 3,
-    "price": 1000
+    "price": 1400
   },
   {
     "id": "puffer",
@@ -418,7 +479,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1200
+    "price": 1400
   },
   {
     "id": "cuttlefish",
@@ -431,7 +492,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1000
+    "price": 1400
   },
   {
     "id": "lobster",
@@ -442,9 +503,76 @@ export const FISH = [
       "en": "Lobster"
     },
     "rarity": 3,
-    "released": false,
-    "page": 3,
-    "price": 1800
+    "released": true,
+    "page": 4,
+    "price": 1400
+  },
+  {
+    "id": "blue-tang",
+    "emoji": "🐠",
+    "ko": "블루탱",
+    "rom": "beullutaeng",
+    "name": {
+      "en": "Blue tang"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 4,
+    "price": 1400
+  },
+  {
+    "id": "seahorse",
+    "emoji": "🐟",
+    "ko": "해마",
+    "rom": "haema",
+    "name": {
+      "en": "Seahorse"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 4,
+    "price": 1400
+  },
+  {
+    "id": "butterflyfish",
+    "emoji": "🐠",
+    "ko": "나비고기",
+    "rom": "nabigogi",
+    "name": {
+      "en": "Butterflyfish"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 4,
+    "price": 1400
+  },
+  {
+    "id": "electric-eel",
+    "emoji": "⚡",
+    "ko": "전기뱀장어",
+    "rom": "jeongi-baemjangeo",
+    "name": {
+      "en": "Electric eel",
+      "ja": "デンキウナギ",
+      "zh": "电鳗"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 4,
+    "price": 1400
+  },
+  {
+    "id": "moray",
+    "emoji": "🐟",
+    "ko": "곰치",
+    "rom": "gomchi",
+    "name": {
+      "en": "Moray eel"
+    },
+    "rarity": 3,
+    "released": true,
+    "page": 4,
+    "price": 1400
   },
   {
     "id": "dolphin",
@@ -458,86 +586,23 @@ export const FISH = [
     },
     "rarity": 3,
     "released": true,
-    "page": 3,
-    "price": 1800
-  },
-  {
-    "id": "blue-tang",
-    "emoji": "🐠",
-    "ko": "블루탱",
-    "rom": "beullutaeng",
-    "name": {
-      "en": "Blue tang"
-    },
-    "rarity": 3,
-    "released": false,
-    "page": 3,
-    "price": 1000
-  },
-  {
-    "id": "seahorse",
-    "emoji": "🐟",
-    "ko": "해마",
-    "rom": "haema",
-    "name": {
-      "en": "Seahorse"
-    },
-    "rarity": 3,
-    "released": true,
-    "page": 3,
+    "page": 4,
     "price": 1400
   },
   {
-    "id": "cutlassfish",
-    "emoji": "🐟",
-    "ko": "갈치",
-    "rom": "galchi",
+    "id": "axolotl",
+    "emoji": "🦎",
+    "ko": "아홀로틀",
+    "rom": "aholloteul",
     "name": {
-      "en": "Cutlassfish"
+      "en": "Axolotl",
+      "ja": "ウーパールーパー",
+      "zh": "六角恐龙"
     },
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1000
-  },
-  {
-    "id": "butterflyfish",
-    "emoji": "🐠",
-    "ko": "나비고기",
-    "rom": "nabigogi",
-    "name": {
-      "en": "Butterflyfish"
-    },
-    "rarity": 3,
-    "released": false,
-    "page": 4,
-    "price": 1000
-  },
-  {
-    "id": "moray",
-    "emoji": "🐟",
-    "ko": "곰치",
-    "rom": "gomchi",
-    "name": {
-      "en": "Moray eel"
-    },
-    "rarity": 3,
-    "released": false,
-    "page": 4,
-    "price": 1200
-  },
-  {
-    "id": "orca",
-    "emoji": "🐋",
-    "ko": "범고래",
-    "rom": "beomgorae",
-    "name": {
-      "en": "Orca"
-    },
-    "rarity": 4,
-    "released": false,
-    "page": 4,
-    "price": 15000
+    "price": 1400
   },
   {
     "id": "shark",
@@ -552,7 +617,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 7000
+    "price": 6000
   },
   {
     "id": "marlin",
@@ -564,8 +629,8 @@ export const FISH = [
     },
     "rarity": 4,
     "released": true,
-    "page": 4,
-    "price": 3000
+    "page": 5,
+    "price": 6000
   },
   {
     "id": "tuna",
@@ -579,8 +644,8 @@ export const FISH = [
     },
     "rarity": 4,
     "released": true,
-    "page": 4,
-    "price": 2200
+    "page": 5,
+    "price": 6000
   },
   {
     "id": "sea-turtle",
@@ -592,8 +657,8 @@ export const FISH = [
     },
     "rarity": 4,
     "released": true,
-    "page": 4,
-    "price": 2000
+    "page": 5,
+    "price": 6000
   },
   {
     "id": "anglerfish",
@@ -607,8 +672,77 @@ export const FISH = [
     },
     "rarity": 4,
     "released": true,
-    "page": 4,
-    "price": 5000
+    "page": 5,
+    "price": 6000
+  },
+  {
+    "id": "beluga",
+    "emoji": "🐋",
+    "ko": "벨루가",
+    "rom": "belluga",
+    "name": {
+      "en": "Beluga",
+      "ja": "シロイルカ",
+      "zh": "白鲸"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 5,
+    "price": 6000
+  },
+  {
+    "id": "orca",
+    "emoji": "🐋",
+    "ko": "범고래",
+    "rom": "beomgorae",
+    "name": {
+      "en": "Orca"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 5,
+    "price": 6000
+  },
+  {
+    "id": "dugong",
+    "emoji": "🐋",
+    "ko": "듀공",
+    "rom": "dyugong",
+    "name": {
+      "en": "Dugong",
+      "ja": "ジュゴン",
+      "zh": "儒艮"
+    },
+    "rarity": 4,
+    "released": true,
+    "page": 5,
+    "price": 6000
+  },
+  {
+    "id": "giant-squid",
+    "emoji": "🦑",
+    "ko": "대왕오징어",
+    "rom": "daewangojingeo",
+    "name": {
+      "en": "Giant squid"
+    },
+    "rarity": 5,
+    "released": true,
+    "page": 6,
+    "price": 50000
+  },
+  {
+    "id": "blobfish",
+    "emoji": "🐟",
+    "ko": "블롭피시",
+    "rom": "beullopisi",
+    "name": {
+      "en": "Blobfish"
+    },
+    "rarity": 5,
+    "released": true,
+    "page": 6,
+    "price": 50000
   },
   {
     "id": "manta",
@@ -620,7 +754,7 @@ export const FISH = [
     },
     "rarity": 5,
     "released": true,
-    "page": 5,
+    "page": 6,
     "price": 50000
   },
   {
@@ -635,33 +769,7 @@ export const FISH = [
     },
     "rarity": 5,
     "released": true,
-    "page": 5,
-    "price": 50000
-  },
-  {
-    "id": "giant-squid",
-    "emoji": "🦑",
-    "ko": "대왕오징어",
-    "rom": "daewangojingeo",
-    "name": {
-      "en": "Giant squid"
-    },
-    "rarity": 5,
-    "released": true,
-    "page": 5,
-    "price": 50000
-  },
-  {
-    "id": "blobfish",
-    "emoji": "🐟",
-    "ko": "블롭피시",
-    "rom": "beullopisi",
-    "name": {
-      "en": "Blobfish"
-    },
-    "rarity": 5,
-    "released": true,
-    "page": 5,
+    "page": 6,
     "price": 50000
   }
 ];
@@ -670,20 +778,19 @@ export const AVAILABLE_FISH = FISH.filter(f => f.released);
 // How often each rarity bites, in % of fish (trash comes on top). Each tier's
 // share is fixed and split among its released kinds, so releasing a new kind
 // never makes its whole tier more common.
-// Each tier, and each kind in it, bites less often than the tier below:
-// every ★3 kind (about 0.83% each of six) stays below any single ★2 kind,
-// every ★4 kind (3% for the tier, at most about 0.72% a kind) below any ★3
-// kind, and even the rarest ★4 (the great white, about 0.47%) above a park's
-// ★5 legend (0.4%). Every park shares this one table, so none pays better than
-// another.
-export const TIER_SHARE = [0, 63.6, 28, 5, 3, 0.4];
+// Each tier, and each kind in it, bites less often than the tier below, at
+// every park: any ★2 kind (0.77% or more) above each of a park's three ★3
+// (0.5%), those above its two ★4 (0.6% for the tier, at most about 0.35%),
+// and the rarer ★4 above its ★5 legend (0.05%). Made stingier when all the
+// kinds opened, so the fish book takes a while to fill.
+export const TIER_SHARE = [0, 75.85, 22, 1.5, 0.6, 0.05];
 // Within a tier, kinds weigh 1 unless listed: bigger or pricier ones bite
-// less often. At a fish every 12 s this gives bluefin tuna about every
-// 20 min, the great white about every 45 min, and a park's legend (the blue
-// whale at Ttukseom) about every hour.
+// less often. At a fish every 12 s this gives a park's ★3 kinds about every
+// 40 min each, its ★4 kinds about every hour, and its legend about every
+// 7 hours.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
-  'sea-turtle': 1.4, tuna: 1.4, marlin: 1.1, shark: 0.9, orca: 0.4, anglerfish: 1,
+  'sea-turtle': 1.1, tuna: 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
 // What each rarity is called (the fish book and the odds table).
@@ -701,43 +808,54 @@ const sharesTotal = Object.keys(tierTotals).reduce((a, r) => a + TIER_SHARE[r], 
 for (const f of FISH) f.chance = f.released ? TIER_SHARE[f.rarity] * weightOf(f) / tierTotals[f.rarity] / sharesTotal * 100 : 0;
 export const fishById = id => FISH.find(f => f.id === id) || null;
 
-// Legends by park: every park shares the whole table except ★5, where each
-// park has its own legends (keyed by the park store's id). The ★5 tier keeps
-// its 0.4% at every park and every legend sells for the same price, so no park
-// pays better; parks only differ in which legend you can meet. A park not
-// listed here (or whose legends aren't out yet) gets every released legend.
-export const PARK_LEGENDS = {
-  'ttukseom-hangang': { name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' }, legends: ['whale'] },
-  'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' }, legends: ['giant-squid'] },
-  'banpo-jamwon-hangang': { name: { ko: '반포·잠원', en: 'Banpo-Jamwon', ja: '盤浦・蚕院', zh: '盘浦·蚕院' }, legends: ['manta'] },
-  'yeouido-hangang': { name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' }, legends: ['blobfish'] },
+// Fish by park: ★1 and ★2 bite at every park; from ★3 up each park has its
+// own kinds (keyed by the park store's id): three ★3, two ★4 and one ★5
+// legend, 14 a park with the commons counted in. Each tier keeps its whole
+// share at every park and sells for one price (★3, ★4 and ★5 each), so no
+// park pays better; parks only differ in which rare fish you can meet. A park
+// not listed here gets every released kind.
+export const PARK_TIER = 3;
+export const PARK_FISH = {
+  'ttukseom-hangang': { name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' },
+    fish: ['sunfish', 'electric-eel', 'axolotl', 'shark', 'marlin', 'whale'] },
+  'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' },
+    fish: ['cuttlefish', 'lobster', 'seahorse', 'tuna', 'orca', 'giant-squid'] },
+  'banpo-jamwon-hangang': { name: { ko: '반포·잠원', en: 'Banpo-Jamwon', ja: '盤浦・蚕院', zh: '盘浦·蚕院' },
+    fish: ['clownfish', 'blue-tang', 'butterflyfish', 'sea-turtle', 'beluga', 'manta'] },
+  'yeouido-hangang': { name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' },
+    fish: ['puffer', 'moray', 'dolphin', 'anglerfish', 'dugong', 'blobfish'] },
 };
-const legendsAt = park => {
-  const list = (PARK_LEGENDS[park]?.legends || []).map(fishById).filter(f => f?.released);
+// A park's own kinds of one rarity (released), or null when the park keeps
+// every kind of it (★1-2, or a park not in PARK_FISH).
+const parkKinds = (park, rarity) => {
+  if (rarity < PARK_TIER || !PARK_FISH[park]) return null;
+  const list = PARK_FISH[park].fish.map(fishById).filter(f => f?.released && f.rarity === rarity);
   return list.length ? list : null;
 };
-// The park a legend bites at, or null (any park).
-export const legendPark = id => Object.values(PARK_LEGENDS).find(p => p.legends.includes(id)) || null;
+// The park a ★3+ kind bites at, or null (any park).
+export const parkOf = id => Object.values(PARK_FISH).find(p => p.fish.includes(id)) || null;
 // A fish's chance (in % of fish, like f.chance) at a park (null: any park).
+// A park's kinds share their whole tier, so every tier adds up the same at every park.
 export function chanceAt(f, park = null) {
   if (!f.released) return 0;
-  const here = f.rarity === 5 && legendsAt(park);
+  const here = parkKinds(park, f.rarity);
   if (!here) return f.chance;
   if (!here.includes(f)) return 0;
-  return f.chance * tierTotals[5] / here.reduce((a, q) => a + weightOf(q), 0);
+  return f.chance * tierTotals[f.rarity] / here.reduce((a, q) => a + weightOf(q), 0);
 }
-// The picture sheet (public/assets/fishing/fish-icons.webp, 7×7): kinds in
-// reading order. Every kind in FISH has exactly one picture here.
+// The picture sheet (public/assets/fishing/fish-icons.webp, 8×7, 64 px a
+// cell): kinds in reading order, the same order as FISH. Every kind in FISH has exactly one picture here.
 export const FISH_SHEET = [
-  'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine',
-  'herring', 'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop',
-  'seabream', 'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab',
-  'rockfish', 'flounder', 'octopus', 'webfoot-octopus', 'sea-cucumber', 'sea-urchin', 'starfish',
-  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'dolphin', 'blue-tang',
-  'seahorse', 'cutlassfish', 'butterflyfish', 'moray', 'orca', 'shark', 'marlin',
-  'tuna', 'sea-turtle', 'anglerfish', 'manta', 'whale', 'giant-squid', 'blobfish',
+  'loach', 'anchovy', 'minnow', 'crucian', 'ricefish', 'carp', 'sardine', 'herring',
+  'wakame', 'mackerel', 'saury', 'shrimp', 'kelp', 'scallop', 'gizzard-shad', 'seabream',
+  'catfish', 'trout', 'salmon', 'jellyfish', 'bluegill', 'crab', 'rockfish', 'flounder',
+  'softshell-turtle', 'red-lionfish', 'octopus', 'sea-cucumber', 'sea-urchin', 'starfish', 'yellowtail', 'cutlassfish',
+  'sunfish', 'clownfish', 'puffer', 'cuttlefish', 'lobster', 'blue-tang', 'seahorse', 'butterflyfish',
+  'electric-eel', 'moray', 'dolphin', 'axolotl', 'shark', 'marlin', 'tuna', 'sea-turtle',
+  'anglerfish', 'beluga', 'orca', 'dugong', 'giant-squid', 'blobfish', 'manta', 'whale',
 ];
-export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=4';
+export const SHEET_COLS = 8, SHEET_ROWS = 7;
+export const FISH_SHEET_URL = '/assets/fishing/fish-icons.webp?v=5';
 // Kinds swapped out of the catalogue (to match the fish book's pictures),
 // each moved to the new kind of the same rarity in its place, so bags and
 // fish books saved before keep their counts.
@@ -746,6 +864,7 @@ export const RENAMED = {
   filefish: 'wakame', parrotfish: 'kelp', lionfish: 'manta', mandarinfish: 'blobfish', ray: 'orca', swordfish: 'giant-squid',
   crayfish: 'starfish', // too close to the lobster
   'snow-crab': 'dolphin', // too close to the blue crab
+  'webfoot-octopus': 'octopus', // left out of the 56
 };
 const migrate = (raw) => {
   const out = { ...raw };
@@ -784,19 +903,39 @@ export function rollFish(rand = Math.random, lucky = false, park = null) {
   return last;
 }
 
-export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
+export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.webp', trash: true };
 export const TRASH_CHANCE = 0.04;
 export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
 // A fish set up by a developer code (core/fish-luck.js) is the next bite,
 // once: a copy marked `sure` (no fight, never slips off).
-export function rollCatch(rand = Math.random, lucky = false, park = null) {
+// Legend pity, for a park's first legend only: pityBites is how many bites
+// you've had at this park without its legend in your fish book (FishPity).
+// After PITY_START bites the legend's chance creeps up, and by PITY_CAP
+// (about 15 hours of fishing) it's sure to bite.
+export const PITY_START = 3000, PITY_CAP = 4500;
+// The legend's chance (%) after n bites without it, from its usual chance.
+export const pityChance = (base, n) => (n < PITY_START ? base : n >= PITY_CAP - 1 ? 100
+  : base + (100 - base) * ((n - PITY_START) / (PITY_CAP - 1 - PITY_START)) ** 4);
+// A park's ★5 legend (null: a park with none of its own).
+export const parkLegend = park => (PARK_FISH[park]?.fish || []).map(fishById).find(f => f?.released && f.rarity === 5) || null;
+export function rollCatch(rand = Math.random, lucky = false, park = null, pityBites = 0) {
   const forced = fishById(takeForcedCatch());
   if (forced) return { ...forced, sure: true };
+  const legend = pityBites >= PITY_START && parkLegend(park);
+  if (legend) {
+    const base = (lucky ? luckyChance(legend, park) : chanceAt(legend, park)) * (1 - (lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE));
+    if (rand() * 100 < pityChance(base, pityBites) - base) return legend; // the extra on top of the usual roll
+  }
   const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
   return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park);
 }
 export const REEL_SECONDS = 5;
-export const tapsFor = fish => fish.trash ? 5 : [0, 5, 7, 10, 14, 18][fish.rarity];
+// How a bite feels before it's landed: 1 light (★1, and the old boot),
+// 2 heavy (★2-3), 3 huge (★4-5). The bite, the shout, the rod and the reel
+// all go by this, so a huge pull could still be a ★4 or the legend, and the
+// stars only show once the fish is up.
+export const feelOf = fish => (!fish || fish.trash || fish.rarity <= 1 ? 1 : fish.rarity <= 3 ? 2 : 3);
+export const tapsFor = fish => [0, 6, 12, 18][feelOf(fish)];
 // Chance a landed fish still slips off the hook at the end, by rarity
 // (halved by reeling in with time to spare, and cut by a better rod's hold,
 // see rod-skins.js).
@@ -807,30 +946,37 @@ export function escapeChance(fish, spare = 0, hold = 0) {
   return ESCAPE[fish.rarity] * (1 - 0.5 * clamp01(spare)) * (1 - clamp01(hold));
 }
 
-// Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
+// Rare fish (★3 and up) never come to auto fishing. Heavy and huge bites
+// (★2 and up, see feelOf) fight back: the reel gauge drains by this many taps
 // a second, so you have to keep reeling (two reel buttons, both thumbs).
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
-export const drainFor = fish => (isRare(fish) && !fish.sure ? [0, 0, 0, 1.2, 2, 2.8][fish.rarity] : 0);
+export const fightsBack = fish => feelOf(fish) >= 2;
+export const drainFor = fish => (fightsBack(fish) && !fish.sure ? [0, 0, 1.2, 2.4][feelOf(fish)] : 0);
 
-// What you shout when a fish bites: three lines per rarity (★1–★5), one
-// picked at random each bite. ★3 and up are the rare ones.
+// What you shout when a fish bites, by feel (see feelOf): one line picked at
+// random each bite. A line never says which of the stars in its feel it is.
 export const BITE_LINES = {
   1: [{ ko: '작은 녀석이 물었다!', en: 'A little one bit!', ja: '小さいのがかかった！', zh: '小家伙上钩了！' },
     { ko: '오, 입질이다!', en: 'Oh, a bite!', ja: 'おっ、アタリだ！', zh: '哦，有鱼咬钩！' },
     { ko: '귀여운 녀석이네!', en: 'A cute one!', ja: 'かわいいヤツだ！', zh: '可爱的小家伙！' }],
   2: [{ ko: '제법인데?', en: 'Not bad at all!', ja: 'なかなかやるな！', zh: '还不错嘛！' },
     { ko: '손맛이 좋은데!', en: 'Nice pull!', ja: 'いい手応えだ！', zh: '手感不错！' },
-    { ko: '꽤 묵직하다!', en: 'Pretty heavy!', ja: 'けっこう重いぞ！', zh: '还挺沉的！' }],
-  3: [{ ko: '대단한 녀석이다!!', en: 'What a monster!!', ja: 'すごいヤツだ!!', zh: '好厉害的家伙!!' },
     { ko: '이건 보통 놈이 아니야!!', en: 'This is no ordinary fish!!', ja: 'こいつはただ者じゃない!!', zh: '这可不是普通的鱼!!' },
     { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' }],
-  4: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
+  3: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
     { ko: '낚싯대가 부러질 것 같아!!!', en: "The rod's about to snap!!!", ja: '竿が折れそうだ!!!', zh: '鱼竿快要断了!!!' },
-    { ko: '신비로운 놈이 걸렸다!!!', en: 'Something mythic is on!!!', ja: '神秘的なヤツがかかった!!!', zh: '钓到了神秘的家伙!!!' }],
-  5: [{ ko: '강의 주인이 나타났다!!!!', en: 'The lord of the river appears!!!!', ja: '川の主が現れた!!!!', zh: '河之主出现了!!!!' },
-    { ko: '이건… 전설의 그 녀석?!', en: 'Is this… the legend?!', ja: 'これは…伝説のアイツ?!', zh: '难道是…传说中的那家伙?!' },
+    { ko: '강의 주인이 나타났나?!', en: 'Is it the lord of the river?!', ja: '川の主か?!', zh: '难道是河之主?!' },
     { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],
 };
+// A mystery bite: this share of bites (any fish, or the boot) gives nothing
+// away: one middling splash and a line like these. The reel still pulls as
+// hard as the fish really is, so you find out while reeling it in.
+export const MYSTERY_CHANCE = 0.1;
+export const MYSTERY_LINES = [
+  { ko: '잘 모르겠다!!', en: "Can't tell what it is!!", ja: 'なんだかわからない!!', zh: '搞不清是什么!!' },
+  { ko: '이건… 뭐지?!', en: 'What… is this?!', ja: 'これは…なんだ?!', zh: '这是…什么?!' },
+  { ko: '감이 안 온다!!', en: 'No idea what bit!!', ja: '手応えが読めない!!', zh: '完全猜不出来!!' },
+];
 // Auto fishing: catches on its own while you stay at the spot with the game
 // open, but slowly (AUTO_RATE of hands-on fishing, which lands a fish about
 // every MANUAL_SECONDS) and never a rare fish. Lower AUTO_RATE to slow it.
@@ -890,6 +1036,23 @@ export class FishBag {
 // which copies every "mk." key, carries it too). A player who fished before
 // the book existed starts with what is in their bag.
 const DEX_KEY = 'mk.fishdex';
+// Bites at each park without its legend in the fish book (see pityChance),
+// saved on this device and in the cloud save: { parkId: bites }.
+const PITY_KEY = 'mk.fishpity';
+export class FishPity {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+    let raw = {};
+    try { raw = JSON.parse(storage?.getItem(PITY_KEY) || '{}') || {}; } catch { /* broken save */ }
+    this.c = {};
+    for (const [k, v] of Object.entries(raw)) if (PARK_FISH[k] && Number.isInteger(v) && v > 0) this.c[k] = v;
+  }
+  count(park) { return this.c[park] || 0; }
+  bump(park) { if (!PARK_FISH[park]) return; this.c[park] = this.count(park) + 1; this._save(); }
+  clear(park) { if (!this.c[park]) return; delete this.c[park]; this._save(); }
+  _save() { try { this.storage?.setItem(PITY_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
+}
+
 export class FishDex {
   constructor(storage = globalThis.localStorage, bag = null) {
     this.storage = storage;

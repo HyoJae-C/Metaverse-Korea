@@ -119,10 +119,12 @@ export class Storefronts {
       // item stays for the map, a taxi or a guide: "at" is where they drop you.
       // (store.hanpark: one laid straight on the street, game/han-parks.js:
       // the same, but never a room.)
-      if (store.open || store.hanpark) {
+      // (store.below: a room under an open park, e.g. Another Land's rides
+      // under its island, reached by its stairs: no front either.)
+      if (store.open || store.hanpark || store.below) {
         const group = new THREE.Group();
         group.position.set(ax, 0, az);
-        group.rotation.y = (store.open?.ry || 0) + Math.PI; // (facing away from the river, like a door onto the street)
+        group.rotation.y = store.face ?? (store.open?.ry || 0) + Math.PI; // (facing away from the river, like a door onto the street; store.face: the way you face coming out)
         group.visible = false;
         scene.add(group);
         this.items.push({ store, group, open: !!store.open, outdoor: true, door: new THREE.Vector3(ax, 0, az) });

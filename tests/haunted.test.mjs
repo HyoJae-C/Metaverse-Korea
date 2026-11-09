@@ -123,16 +123,15 @@ test('the arcade opens the ghost lantern with its own panel (not the darts one)'
 });
 
 test('Another Land spread out: every ride gate, food truck and the clown is a walk from the gate, and the rides stand apart', async () => {
-  const { RIDE_GATES, FOOD_TRUCKS, CLOWN, truckWindow, RIDES } = await import('../src/core/park-rides.js');
+  const { RIDE_GATES, UNDER_RIDES, FOOD_TRUCKS, CLOWN, truckWindow, RIDES } = await import('../src/core/park-rides.js');
   const { GATE: BUMPER_GATE } = await import('../src/core/bumper-cars.js');
-  const { GATE: COASTER_GATE } = await import('../src/core/coaster.js');
   const room = ROOM_SIZES.themepark;
   const park = buildThemePark({ workshop: 'themepark' }, room, exitOf(room));
   const col = new CollisionMap(park.colliders);
   const spawn = exitOf(room);
   const spots = {
-    ...Object.fromEntries(Object.entries(RIDE_GATES).map(([k, g]) => [k, g])),
-    bumper: BUMPER_GATE, coaster: COASTER_GATE,
+    ...Object.fromEntries(UNDER_RIDES.map((k) => [k, RIDE_GATES[k]])),
+    bumper: BUMPER_GATE, // (the coaster and four rides are up on the island: coaster.test.mjs)
     ...Object.fromEntries(FOOD_TRUCKS.map((f) => [f.id, truckWindow(f)])),
     clown: { x: CLOWN.x - 1.6, z: CLOWN.z },
   };
@@ -140,8 +139,8 @@ test('Another Land spread out: every ride gate, food truck and the clown is a wa
     assert.ok(!col.blocked(s.x, s.z, R), `${name} spot is free`);
     assert.ok(reachable(col, room, spawn, s), `gate → ${name}`);
   }
-  // Not bunched up: the four rides round the plaza are at least 18 m apart.
-  const ks = ['carousel', 'viking', 'wheel', 'drop'];
+  // Not bunched up: the rides round the plaza are at least 18 m apart.
+  const ks = ['carousel', 'viking', 'teacups'];
   for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) {
     const a = RIDES[ks[i]], b = RIDES[ks[j]];
     assert.ok(Math.hypot(a.x - b.x, a.z - b.z) >= 18, `${ks[i]} ↔ ${ks[j]}`);

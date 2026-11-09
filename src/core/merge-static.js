@@ -49,20 +49,25 @@ export function mergeStatic(root, keep = []) {
 // every plain Lambert mesh in it baked together, each part keeping its
 // colour as a vertex colour, so the group is one draw call however many
 // colours it has. One- and two-sided parts make one mesh each; anything
-// else (glows, signs, see-through) is left as it is.
+// else (glows, signs, see-through) is left as it is, and so is anything in
+// `keep` (and what's inside it: a part that moves on its own).
 const tinted = {};
 const tintMat = (flat, side) => (tinted[flat + ':' + side] ||= new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: flat, side }));
-export function bakeColors(group) {
+export function bakeColors(group, keep = []) {
   group.updateMatrixWorld(true);
   const toGroup = new THREE.Matrix4().copy(group.matrixWorld).invert();
   const sets = new Map(); // "flat:side" → [mesh]
-  group.traverse((o) => {
+  const skip = new Set(keep);
+  const walk = (o) => {
+    if (skip.has(o)) return;
+    for (const c of o.children) walk(c);
     const m = o.material;
     if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible || Array.isArray(m) || !m.isMeshLambertMaterial || m.map || m.transparent || m.vertexColors) return;
     const k = !!m.flatShading + ':' + m.side;
     if (!sets.has(k)) sets.set(k, []);
     sets.get(k).push(o);
-  });
+  };
+  walk(group);
   const m4 = new THREE.Matrix4();
   for (const [k, meshes] of sets) {
     const geos = meshes.map((mesh) => {

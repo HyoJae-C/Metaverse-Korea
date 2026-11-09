@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, legendPark, ESCAPE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, parkLegend, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -21,13 +21,13 @@ const pctOf = (x) => +(x * 100).toFixed(1) + '%';
 export const holdText = (hold) => (hold ? `💨 ★5 ${pctOf(ESCAPE[5])} → ${pctOf(ESCAPE[5] * (1 - hold))}` : `💨 ★5 ${pctOf(ESCAPE[5])}`);
 
 export const biteLine = (f, rand = Math.random) => {
-  const lines = !f || f.trash ? null : BITE_LINES[f.rarity];
+  const lines = f ? BITE_LINES[feelOf(f)] : null;
   return lines ? localName(lines[Math.floor(rand() * lines.length) % lines.length]) : null;
 };
 
 // Every picture of a fish (book, stamps, catch cards, guide, market, the
 // trophy and the fish on the line) comes from one sheet: FISH_SHEET.
-const fishIconPositions = new Map(FISH_SHEET.map((id, index) => [id, `${(index % 7) * 100 / 6}% ${Math.floor(index / 7) * 100 / 6}%`]));
+const fishIconPositions = new Map(FISH_SHEET.map((id, index) => [id, `${(index % SHEET_COLS) * 100 / (SHEET_COLS - 1)}% ${Math.floor(index / SHEET_COLS) * 100 / (SHEET_ROWS - 1)}%`]));
 
 export function fishStampIcon(f, cls = 'fish-stamp-fish') {
   const position = fishIconPositions.get(f.id);
@@ -56,12 +56,12 @@ export function trophy(f, name) {
   return w;
 }
 
-// The little picture over the catcher's head for every catch; ★2 adds its stars.
+// The little picture over the catcher's head for every catch, with its stars.
 export function catchBubble(f) {
   const icon = fishStampIcon(f, 'bubble-fish tier-' + f.rarity);
-  if (f.rarity !== 2) return icon;
+  if (!f.rarity) return icon;
   const w = el('span', 'bubble-catch');
-  w.append(icon, el('b', 'bubble-stars', '★★'));
+  w.append(icon, el('b', 'bubble-stars', '★'.repeat(f.rarity)));
   return w;
 }
 
@@ -95,31 +95,32 @@ export function fishBook(dex, fresh = null) {
   previous.type = next.type = 'button';
   const number = el('span'); number.setAttribute('aria-live', 'polite');
   nav.append(previous, number, next);
-  let page = Math.max(0, FISH.findIndex(f => f.id === fresh)) / 9 | 0;
+  const PAGES = Math.max(...FISH.map(f => f.page)) + 1, LAST = PAGES - 1;
+  let page = FISH.find(f => f.id === fresh)?.page ?? 0;
   const showDetail = f => {
     const n = dex.count(f.id);
     detail.replaceChildren(el('strong', null, fishName(f)), el('p', null,
       !f.released ? text('추후 공개 예정이에요.', 'Coming in a future release.')
-      : !n && legendPark(f.id) ? text(`${legendPark(f.id).name.ko} 한강공원에서만 나타나는 전설이에요.`, `A legend that only appears at ${legendPark(f.id).name.en} Han River Park.`) : n
+      : !n && parkOf(f.id) ? text(`${parkOf(f.id).name.ko} 한강공원에서만 잡혀요.`, `Only bites at ${parkOf(f.id).name.en} Han River Park.`) : n
       ? text('누적 ', 'Caught ') + n + text('마리 · 판매 ', ' times · Sell ') + '🪙 ' + f.price
       : text('아직 만나지 못했어요. 낚시로 도장을 모아보세요!', 'Not caught yet. Go fishing to earn this stamp!')));
   };
   const render = () => {
     grid.replaceChildren();
-    grid.classList.toggle('fish-special-page', page === 5);
-    for (const f of FISH.slice(page * 9, page * 9 + 9)) {
+    grid.classList.toggle('fish-special-page', page === LAST);
+    for (const f of FISH.filter(q => q.page === page)) {
       const n = dex.count(f.id);
       const cell = el('button', 'stamp-cell fish-cell' + (n ? '' : ' empty') + (f.id === fresh ? ' fresh' : ''));
       cell.type = 'button';
-      const where = !n && f.released && legendPark(f.id)?.name;
+      const where = !n && f.released && parkOf(f.id)?.name;
       const status = n ? '× ' + n : where ? '📍 ' + text(`${where.ko} 전용`, `${where.en} only`) : f.released ? text('미발견', 'Undiscovered') : text('공개 예정', 'Coming soon');
       cell.setAttribute('aria-label', fishName(f) + ' · ' + (n ? text('수집 완료', 'Collected') : status));
       cell.append(fishStamp(f, !!n), el('i', 'fish-stars', '★'.repeat(rarityStars(f))), el('small', null, status));
       cell.onclick = () => showDetail(f);
       grid.append(cell);
     }
-    number.textContent = (page + 1) + ' / 6' + (page === 5 ? ' · ' + localName(TIER_NAMES[5]) : '');
-    previous.disabled = page === 0; next.disabled = page === 5;
+    number.textContent = (page + 1) + ' / ' + PAGES + (page === LAST ? ' · ' + localName(TIER_NAMES[5]) : '');
+    previous.disabled = page === 0; next.disabled = page === LAST;
     detail.replaceChildren(el('p', null, text('도장을 눌러 자세히 보기', 'Select a stamp to see details')));
   };
   previous.onclick = () => { page--; render(); };
@@ -176,11 +177,12 @@ export class FishingUI {
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
   // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
   // stats: FishStats (optional), counts what happens to each cast for balancing.
-  // park(): the park store's id; every park shares one catch table except
-  // which ★5 legends bite there (PARK_LEGENDS in core/fishing.js).
+  // pity: FishPity (optional), bites toward each park's first legend.
+  // park(): the park store's id; every park shares ★1-2, and each has its own
+  // ★3 and up (PARK_FISH in core/fishing.js).
   // rod(): the rod skin id in use; a better rod cuts the escape chance.
-  constructor({ root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod }) {
-    Object.assign(this, { root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod });
+  constructor({ root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod }) {
+    Object.assign(this, { root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -320,15 +322,21 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    const lucky = !!this.lucky?.();
-    this.fish = rollCatch(Math.random, lucky, this.park?.() || null);
+    const lucky = !!this.lucky?.(), park = this.park?.() || null;
+    // Until this park's legend is in the book, every bite here counts toward its pity.
+    const legend = parkLegend(park), chasing = !!(legend && this.pity && !this.dex?.count(legend.id));
+    this.fish = rollCatch(Math.random, lucky, park, chasing ? this.pity.count(park) : 0);
+    if (chasing) this.pity.bump(park);
+    else if (legend) this.pity?.clear(park);
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
-    this.onPhase?.('bite', this.fish);
-    water.className = 'fish-water bite' + (this.fish.trash ? '' : ' t' + this.fish.rarity) + (isRare(this.fish) ? ' rare' : '');
+    this.mystery = Math.random() < MYSTERY_CHANCE; // a bite that gives nothing away
+    this.feel = this.mystery ? 'mystery' : feelOf(this.fish);
+    this.onPhase?.('bite', this.mystery ? { ...this.fish, mystery: true } : this.fish);
+    water.className = 'fish-water bite feel-' + this.feel + (!this.mystery && fightsBack(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
-    this.shout = biteLine(this.fish); // kept for the reel-in too
-    if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));
+    this.shout = this.mystery ? localName(MYSTERY_LINES[Math.floor(Math.random() * MYSTERY_LINES.length)]) : biteLine(this.fish); // kept for the reel-in too
+    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + this.feel, this.shout));
     btn.classList.add('pulse');
     btn.onclick = () => this.reel();
     this.timer = setTimeout(() => { this.stats?.add('miss'); this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
@@ -342,9 +350,9 @@ export class FishingUI {
     this._frame();
     const big = need >= 12;
     this.onPhase?.('reel', { big });
-    const rare = isRare(this.fish);
+    const rare = fightsBack(this.fish);
     const water = this._water(rare ? t('fish.fightBack') : big ? t('fish.bigOne') : t('fish.reeling'), 'reel' + (rare ? ' rare' : ''));
-    if (this.shout) water.prepend(el('b', 'fish-callout tier-' + this.fish.rarity, this.shout));
+    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + this.feel, this.shout));
     const bar = el('div', 'fish-meter' + (drain ? ' drain' : ''));
     const fill = el('i');
     bar.append(fill);
@@ -462,11 +470,11 @@ export class FishingUI {
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
-    // How loud a catch is, by rarity: ★1 plain, ★2 stars only, ★3 a small
+    // Every catch shows its stars. How loud it is, by rarity: ★1-2 stars only, ★3 a small
     // glow, ★4 a big one, ★5 the works (style.css .fish-card.tier-N).
     const card = el('div', 'fish-card' + (f.rarity >= 2 ? ' tier-' + f.rarity : '') + (f.rarity >= 3 ? ' rare' : ''));
     if (f.rarity >= 5) for (const k of [1, 2, 3]) card.append(el('i', 'fish-spark s' + k, k === 3 ? '⭐' : '✨'));
-    if (f.rarity >= 2) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
+    card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(

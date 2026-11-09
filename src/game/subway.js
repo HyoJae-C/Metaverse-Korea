@@ -52,8 +52,6 @@ export function createSubway(stations, game) {
     game.enterStore(exitFront(s, i));
     const st = game.interior.subway.stairs[i];
     game.moveMeTo(game.interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
-    game.cam.dist = 8;
-    game.cam.pitch = 0.6;
     flashFade();
     subwayCool = 0.6;
   }
@@ -61,7 +59,7 @@ export function createSubway(stations, game) {
     const s = stationStores.indexOf(game.interior.store);
     game.interior.front = exitFront(s, i);
     game.leaveStore();
-    // Face away from the stairs, with the camera behind you.
+    // Face away from the stairs (the camera keeps its angle to you).
     const out = outsideOf(stations[s].exits[i]);
     const [x, z] = game.findFreeSpot(out.x, out.z);
     game.moveMeTo(game.scene, x, z, out.ry);
@@ -122,8 +120,6 @@ export function createSubway(stations, game) {
     game.interior.front = front; // the map shows you at the station you left
     game.goSolo(game.interior.scene); // a short ride: just you in the car
     game.moveMeTo(game.interior.scene, 0, 0, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
-    game.cam.dist = 6;
-    game.cam.pitch = 0.75;
     flashFade();
     game.sfx.pop?.();
     renderMetro();
@@ -168,8 +164,6 @@ export function createSubway(stations, game) {
     game.enterStore(exitFront(k, 0));
     const tr = METRO_TRACKS[t], s = Math.sign(tr.doorZ);
     game.moveMeTo(game.interior.scene, 8.5 + (Math.random() - 0.5) * 6, tr.doorZ - s * 1.4, s > 0 ? Math.PI : 0);
-    game.cam.dist = 8;
-    game.cam.pitch = 0.6;
     flashFade();
     game.sfx.doorOpen();
     subwayCool = 0.8;
