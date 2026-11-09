@@ -1,5 +1,5 @@
 // Performances at Gyeongbokgung (district offsets from region.json):
-//  - 부채춤: twenty dancers in hanbok doing the fan dance in the courtyard
+//  - 부채춤: ten dancers in hanbok doing the fan dance in the courtyard
 //    in front of Geunjeongjeon, in two rings turning opposite ways.
 //  - 북청사자놀음: the Bukcheong lion dance troupe (fourteen people, two
 //    lions) on the square near King Sejong's statue (core/bukcheong.js).
@@ -120,10 +120,11 @@ function performer(scene, look, activity, mask) {
   return ch;
 }
 
-// Twenty fan dancers, black hair up in a bun and red lips, each in her own
+// Ten fan dancers (Yozi: about the fewest that still make the waves and the
+// flower read; twenty was too many), black hair up in a bun and red lips, each in her own
 // chima colour; the jeogori (tops) take turns.
 const TOPS = ['hanbok-pink', 'hanbok-yellow', 'hanbok-mint'];
-export const FAN_LOOKS = Object.keys(DANCER_CHIMAS).map((skirt, i) => ({ model: TOPS[i % 3], skirt, tee: null, hair: 'black', dye: 'black', hairStyle: 'bun', lip: 'scarlet' }));
+export const FAN_LOOKS = Object.keys(DANCER_CHIMAS).slice(0, 10).map((skirt, i) => ({ model: TOPS[i % 3], skirt, tee: null, hair: 'black', dye: 'black', hairStyle: 'bun', lip: 'scarlet' }));
 const FAN_N = FAN_LOOKS.length;
 
 // The fan dance (부채춤): a 30-second routine that loops. Each part blends
@@ -142,7 +143,7 @@ export const FAN_ROUTINE = [
   { name: 'circle', len: 7 },
 ];
 export const FAN_CYCLE = FAN_ROUTINE.reduce((s, p) => s + p.len, 0);
-const RINGS = [{ n: 8, r: 3.2, dir: 1 }, { n: 12, r: 6.4, dir: -1 }];
+const RINGS = [{ n: 4, r: 2.6, dir: 1 }, { n: 6, r: 5.2, dir: -1 }];
 // Slot i of a formation at time t (u: 0..1 through its part): [x, z, ry].
 export function fanSlot(name, i, t, u = 0) {
   if (name === 'rings') {
@@ -151,7 +152,7 @@ export function fanSlot(name, i, t, u = 0) {
     return [Math.sin(a) * r, Math.cos(a) * r, a];
   }
   if (name === 'flower') {
-    const petal = i % 5, j = Math.floor(i / 5); // 5 petals of 4, from the middle out
+    const petal = i % 5, j = Math.floor(i / 5); // 5 petals of 2, from the middle out
     const bloom = 0.85 + 0.15 * Math.sin(u * Math.PI * 2);
     const a = t * 0.2 + (petal / 5) * Math.PI * 2 + (j % 2 ? 0.18 : -0.18) * (j / 3); // petals widen at the tip
     const r = (1.1 + j * 1.45) * bloom;

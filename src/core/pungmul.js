@@ -1,4 +1,4 @@
-// A pungmul troupe (풍물패) of 75 on Olympic Park's Peace Plaza: flags,
+// A pungmul troupe (풍물패) of 19 on Olympic Park's Peace Plaza: flags,
 // the taepyeongso and the nabal, kkwaenggwari, jing, janggu and buk, the
 // sogo dancers and the sangmo players whirling the long ribbons on their
 // hats (상모 돌리기), and four comic characters (잡색). Costumes, instruments
@@ -14,7 +14,7 @@
 // There is no fence: pungmul is a crowd's play, and you can walk in among
 // them (they walk through you).
 //
-// Performance: 75 animated people is a lot, so they are built only the
+// Performance: 19 animated people is a lot, so they are built only the
 // first time you come near (a few per frame), drawn only within NEAR, and
 // animated less often the further away or when off screen.
 //
@@ -27,16 +27,17 @@ import { makeSangmoHat, makeGokkal, makeGat, makeFurHat, makeBun, makeGaksiMask,
 
 // Who plays what (Yozi's list), front of the column to the back.
 export const PUNGMUL_ROLES = [
-  { id: 'flag', ko: '기수', n: 3 },
-  { id: 'horn', ko: '태평소·나발', n: 2 },
-  { id: 'kkwaenggwari', ko: '꽹과리', n: 5 },
-  { id: 'jing', ko: '징', n: 3 },
-  { id: 'janggu', ko: '장구', n: 10 },
-  { id: 'buk', ko: '북', n: 7 },
-  { id: 'sogo', ko: '소고·상모춤', n: 16 },
-  { id: 'japsaek', ko: '잡색', n: 4 },
-  { id: 'sangmo', ko: '추가 상모꾼', n: 25 },
+  { id: 'flag', ko: '기수', n: 1 },
+  { id: 'horn', ko: '태평소·나발', n: 1 },
+  { id: 'kkwaenggwari', ko: '꽹과리', n: 2 },
+  { id: 'jing', ko: '징', n: 1 },
+  { id: 'janggu', ko: '장구', n: 3 },
+  { id: 'buk', ko: '북', n: 2 },
+  { id: 'sogo', ko: '소고·상모춤', n: 7 },
+  { id: 'japsaek', ko: '잡색', n: 2 },
 ];
+// (A quarter of Yozi's first list of 75, every part still there: the full
+// troupe was too many ribbons and too heavy on phones.)
 // One entry per person in column order: { role, k (index within the role) }.
 export const TROUPE = PUNGMUL_ROLES.flatMap((r) => Array.from({ length: r.n }, (_, k) => ({ role: r.id, k })));
 export const TROUPE_N = TROUPE.length;
@@ -312,7 +313,7 @@ export class PungmulTroupe {
       const seen = !camera || _frustum.intersectsSphere(_sphere);
       const dd = Math.hypot(me.x - wx, me.z - wz);
       const every = !seen ? 8 : dd < 30 ? 1 : dd < 60 ? 2 : 3;
-      // No cast shadows (the round blob under each is enough): 75 more
+      // No cast shadows (the round blob under each is enough): 19 more
       // people in the shadow pass would cost as much again.
       if (!p.flat && (this.frame + i) % 20 === 0) p.flat = noShadows(root);
       p.acc += dt;

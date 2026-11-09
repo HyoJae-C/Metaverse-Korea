@@ -798,7 +798,7 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
-// A pungmul troupe of 75 on Olympic Park's Peace Plaza, between the Peace
+// A pungmul troupe of 19 on Olympic Park's Peace Plaza, between the Peace
 // Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
 const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
 const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[0], olympicAt[1] + PLAZA_SPOT[1]], { lowSpec: lowSpec || !!softwareGL }) : null;
