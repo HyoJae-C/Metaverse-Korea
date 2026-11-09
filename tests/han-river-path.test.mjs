@@ -43,6 +43,6 @@ test('Sowol-ro joins Itaewon\'s Sowol-ro to Toegye-ro at Sungnyemun', () => {
 });
 
 test('the river water joins up with the parks\' water', () => {
-  assert.equal(region.water.length, 2);
+  assert.equal(region.water.length, 3); // west of Yeouido, Banpo-Jamwon to Seongsu, and Jamsil Bridge east along Songpa
   for (const w of region.water) assert.ok(w.p.length >= 4);
 });
