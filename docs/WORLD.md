@@ -373,5 +373,16 @@ Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
 stands. Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
-(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
-behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.
+(Seokchon Lakeside) keeps two passers-by on the shore.
+
+The lakes themselves are at the real 1/4: both lakes and the west-lake island
+were traced from the real map around the lake's centre (on Songpa-daero
+between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
+1/4, about 13,500 m² of water against the real 217,850 m² / 16 = 13,616
+(`tests/themepark.test.mjs` checks it stays within 5%). Songpa-daero bends
+through the gap between the lakes (about 35 m wide), the mall stands west of
+the east lake's north tip, and the land the old, larger lakes took is
+lakeside park. The island is about 64 x 58 m with at least 4 m of water round
+it; Another Land Bridge runs south from Olympic-ro to its north tip. The park
+model behind the gate is drawn small (`PARK_SCALE`) to stand on the island
+until the rides move out onto it.
