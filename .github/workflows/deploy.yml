@@ -29,6 +29,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Keep the last day's build files online. A deploy replaces the whole
+      # site, so a player who opened the game before it still runs the old
+      # build, and the old build's files (a shop, a minigame, a district,
+      # loaded with import() when first used) would be gone: the tap would do
+      # nothing. The file names carry a hash, so old and new never clash.
+      - uses: actions/cache/restore@v4
+        with:
+          path: old-assets
+          key: pages-assets-${{ github.run_id }}
+          restore-keys: pages-assets-
+      - name: Keep recent build files
+        run: |
+          mkdir -p old-assets
+          find old-assets -type f -mmin +1440 -delete
+          find dist/assets -maxdepth 1 -type f -exec cp {} old-assets/ \;
+          for f in old-assets/*; do [ -e "dist/assets/${f##*/}" ] || cp "$f" dist/assets/; done
+          du -sh old-assets
+      - uses: actions/cache/save@v4
+        with:
+          path: old-assets
+          key: pages-assets-${{ github.run_id }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
