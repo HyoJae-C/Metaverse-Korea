@@ -67,13 +67,14 @@ export const GAME_RIVER = [
   [-1026, 540, 190], // region.json water[1] from Banpo-Jamwon…
   [-465, 213, 174], // …to Seongsu's river by Seoul Forest (its real bank)
   [-300, 281, 172],
-  [-150, 346, 143],
-  [-30, 411, 108],
-  [40, 423, 70], // where Songpa's Han River bank joins Seongsu's
-  [110, 423, 70],
-  [260, 425, 50],
-  [300, 432, 40],
-  [858, 432, 40], // Songpa's bank (z 405..460) ends
+  [-240, 300, 174],
+  [-150, 336, 186],
+  [-30, 388, 202],
+  [18, 434, 250], // where Songpa's Han River (its bank strip, z 556..611) starts
+  [40, 465, 290],
+  [160, 503, 212], // Ttukseom Han River Park's straight bank from here…
+  [430, 532, 156], // …to Jamsil Bridge
+  [858, 533, 154], // Songpa's bank strip ends
   [975, 305, 220], // back on the real river, turning north-east
 ];
 const interp = (pts, x, k) => {

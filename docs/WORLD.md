@@ -32,10 +32,11 @@ buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
 finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
 its own layout, drawn in its old frame and moved as one piece by
 `FOREST_SHIFT`, and runs south to its real edge by Gangbyeonbuk-ro. The Han
-River's bank is the real one along the forest; from x -240 it bends out to
-Ttukseom Han River Park's straight bank (z 386), up to about 50 m south of
-the real bank, and buildings stop 20 m short of the real bank (riverside
-grass between). `--place` and `--square` still use the spots of the old
+River's bank is the real one (OpenStreetMap) all the way to Ttukseom Han
+River Park, east of Cheongdam Bridge, whose straight bank (about 9° off
+east-west, within about 10 m of the real one) runs on to Jamsil Bridge
+(x 430); buildings stop 20 m short of the real bank (riverside grass and the
+Han River path between). `--place` and `--square` still use the spots of the old
 layout (`SPOTS`); check where they put a shop. (Seongsu was drawn full size
 until it was redone at 1/4, then with an east-west grid until it was laid on
 the real streets.)
@@ -61,10 +62,9 @@ neighbours' room and pushes them off their spots.
   `node scripts/build-seoul.mjs` prints every gu's area.
 - **Anchors.** Each district in `region.json` names one real spot (`anchor`);
   its offset follows from it. A `nudge` (with a `why`) moves it off that spot
-  on purpose: Songpa is nudged north so its Han River bank lines up with
-  Seongsu's. A big area can be split so each part sits on its own real spot:
+  on purpose. A big area can be split so each part sits on its own real spot:
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
-  Songpa by Olympic-ro.
+  Songpa by Olympic-ro (nudged 245 m south so the road runs straight on).
 - **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
   palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
   stands at close to its real size, so Euljiro's streets round it are wider
@@ -175,10 +175,11 @@ the station here, about 400 m in Seoul). The district is about 230 x 180 m
 
 ## Ttukseom Han River Park (Seongsu)
 
-Laid straight on Seongsu's straight bank (z 386), between the river
-and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
+At its real place east of Cheongdam Bridge, on a straight bank in its own
+frame (`parkAt` in `scripts/build-seongsu.mjs`: X along the bank, Z inland;
+landmark `ry`), between the river and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
 `game/han-parks.js`). West to east: the fishing pier and fish buyer; DAILY
-MART with its ramen machine where the walk comes down from the riverside walk (Dongil-ro's end),
+MART with its ramen machine where the walk comes down from the riverside walk,
 then the Riverside Market's six stalls; the open lawn for the drone light
 show (`lawn: true`: picnic mats, frisbees), with the launch barge out on the
 water and the show's board by the railing; the duck boat dock by the other
@@ -276,8 +277,7 @@ as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
 Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
 so the overlap check doesn't count the empty corner its bounding box covers.
-The district is nudged north as far as Songpa, so the two keep their real
-distance. Meeting zone J-1 is on KONEXT Square.
+The district is nudged a little north (21 m) towards Songpa. Meeting zone J-1 is on KONEXT Square.
 
 ## Yeouido (Yeongdeungpo-gu)
 
