@@ -19,7 +19,7 @@ const solid = new CollisionMap(map.buildings.concat(map.blockers));
 const open = stores.filter((s) => s.open);
 
 test('the Han River parks are open to the street', () => {
-  assert.ok(open.length >= 2, `${open.length} open parks`);
+  assert.ok(open.length >= 1, `${open.length} open parks`); // (the rest are laid on the street: tests/han-park.test.mjs)
   for (const s of open) assert.equal(s.category, 'park', s.id);
 });
 

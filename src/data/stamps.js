@@ -153,8 +153,8 @@ export const STAMPS = [
     icon: '<path d="M56 96 q44 -40 88 0 M60 96 v32 M140 96 v32 M56 128 h88"/><path d="M72 112 h56 v16 h-56 z"/><ellipse cx="100" cy="84" rx="12" ry="8"/><path d="M100 92 v12"/>',
   },
   {
-    // in the Mangwon Fishing Pier room (the same lawn spot as Ttukseom's)
-    id: 'mangwon-pier', place: { store: 'mangwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#2f78b0', shape: 'circle',
+    // where the way down from Mangwon meets the river, in the park laid on the street (scripts/build-mapo.mjs prints the spot)
+    id: 'mangwon-pier', place: { at: [-3428, -56], ry: 4.7124 }, color: '#2f78b0', shape: 'circle',
     name: { ko: '망원한강공원', en: 'Mangwon Han River Park', ja: '望遠漢江公園', zh: '望远汉江公园' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a fishing rod with a fish on the line, over the waves

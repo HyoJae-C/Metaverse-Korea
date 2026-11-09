@@ -46,8 +46,8 @@ test('Mangwon-dong: market under an arcade, the open river park and the fishing 
   for (const s of here) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
   const pier = stores.find((s) => s.id === 'mangwon-hangang');
   assert.equal(pier.category, 'park');
-  // The pier's park is open to the street on the bank (tests/open-parks.test.mjs), past the last houses.
-  assert.ok(pier.open, 'the park is open to the street');
+  // The park is laid on the street on the bank (tests/han-park.test.mjs), past the last houses.
+  assert.ok(pier.hanpark && map.landmarks.some((l) => l.type === 'hanpark' && l.store === pier.id), 'the park is laid on the street');
   const land = map.areas.filter((x) => x.k !== 'water').flatMap((x) => x.p).map(([x, z]) => [x + offset[0], z + offset[1]]);
   const [lx0, lx1, lz0, lz1] = [Math.min(...land.map((q) => q[0])), Math.max(...land.map((q) => q[0])), Math.min(...land.map((q) => q[1])), Math.max(...land.map((q) => q[1]))];
   assert.ok(pier.at[0] > lx0 && pier.at[0] < lx1 && pier.at[1] > lz0 && pier.at[1] < lz1, 'the pier is in Mangwon');

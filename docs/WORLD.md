@@ -128,8 +128,11 @@ Both are drawn by `scripts/build-mapo.mjs` (rows of small buildings along
 the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
 Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street;
 Mangwon has Mangwon Market under an arcade roof, Poeun-ro (Mangridan-gil) and
-an open Han River park along its south edge. Its Mangwon Fishing Pier is a
-park room like Ttukseom's; every park's fishing spots share one catch table
+Mangwon Han River Park along its south edge, laid straight on the street
+(the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
+buyer west, the kiosk and food stalls where the path comes down, the duck
+boat dock east of them, and Seoul Battleship Park's warship moored at the
+east end. Every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 

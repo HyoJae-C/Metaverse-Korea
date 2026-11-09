@@ -113,9 +113,14 @@ try {
     await page.evaluate((yaw) => __mk.cam({ yaw }), l.ry);
     const b0 = (await page.evaluate(() => __mk.duckBoats()))[0];
     await page.keyboard.down('w');
-    await page.waitForFunction(([x, z]) => { const b = __mk.duckBoats()?.[0]; return b && Math.hypot(b[0] - x, b[1] - z) > 3; }, b0, { timeout: 15000 }).catch(() => fail('the boat did not set off'));
+    await page.waitForFunction(([x, z]) => { const b = __mk.duckBoats()?.[0]; return b && Math.hypot(b[0] - x, b[1] - z) > 3; }, b0, { timeout: 15000 }).catch(async () => fail('the boat did not set off: ' + JSON.stringify(await page.evaluate(() => [__mk.duck(), __mk.duckBoats(), __mk.pose(), __mk.action()]))));
+    await page.waitForTimeout(800);
     await page.keyboard.up('w');
     await street('on the boat');
+    // Straight out where the camera looks (the river), not off to one side.
+    const b1 = (await page.evaluate(() => __mk.duckBoats()))[0];
+    const mx = (b1[0] - b0[0]) * c - (b1[1] - b0[1]) * s, mz = (b1[0] - b0[0]) * s + (b1[1] - b0[1]) * c;
+    if (!(mz < -2 && Math.abs(mx) < Math.abs(mz))) fail(`the boat went the wrong way (${mx.toFixed(1)}, ${mz.toFixed(1)} in the park's metres)`);
     if (await page.evaluate(() => __mk.petShown())) fail('the dog is out on the river with the duck boat');
     const [, rx, rz] = await page.evaluate(() => __mk.pose());
     const rlz = (rx - ox) * s + (rz - oz) * c;

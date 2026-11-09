@@ -159,12 +159,43 @@ function yeonnam() {
 // Poeun-ro, lanes, Mangwon-ro, then the lawn, the riverside path and the
 // Han River along the south edge.
 const BANK = 150;
-// The Han River park (core/park.js) is open to the street here: no pier
-// house, you walk straight from the path onto its lawn. It faces south over
-// the river, so its own frame is turned half round (ry = π): x = x0 - x,
-// z = (BANK - 4) - z, its bank (z = -4) on BANK. It covers x x0-26..x0+26 and
-// z BANK-18..BANK (plus the pier and the duck boats on the water).
-const OPEN_PARK = { x0: -12, half: 26, depth: 18 };
+// Mangwon Han River Park, laid straight on the street (game/han-parks.js;
+// core/han-park.js builds what the map can't draw). It faces south over the
+// river, so its own frame is turned half round: x = -X, z = BANK - Z (the
+// bank's edge at z = 0, the river z < 0). At 1/4, as the real park is
+// between Seongsan and Yanghwa Bridges, east to west (x growing west):
+//  - the fishing pier and the fish buyer, with a picnic lawn east of it;
+//  - where the way down from Mangwon (Huiujeong-ro, X -60) meets the river
+//    path: the kiosk with its ramen machine, and a few riverside stalls;
+//  - the boat dock, then the grey warship of Seoul Battleship Park moored
+//    off the bank.
+export const PARK = {
+  bounds: [-195, -45, 195, 13], // bank to path, and out on its water
+  layout: {
+    paving: [[30, 0.4, 82, 9.2, '#d9c7a6']],
+    rail: [-188, 188],
+    pier: { x: -20, len: 9 },
+    fishBuy: [-12, 4.2, 0],
+    fishing: [[-46, 0.75], [-26, 0.75], [-20, -8.2], [12, 0.75]],
+    kiosk: [42, 6.6, Math.PI], // MANGWON 24, facing the river
+    tables: [[33.6, 3.4], [49.6, 3.4]],
+    market: {
+      spots: [[66.4, 7.6, Math.PI], [69.2, 7.6, Math.PI], [72, 7.6, Math.PI], [74.8, 7.6, Math.PI]],
+      tables: [[70.6, 3.6], [78.4, 4.6]],
+      board: [79.6, 8.2, Math.PI],
+    },
+    dock: 104,
+    duckWater: { minX: 86, maxX: 126, minZ: -38 },
+    ships: [[152, -13, 40]], // Seoul Battleship Park (서울함 공원)
+    lamps: [[-40, 2.6], [-4, 2.6], [28, 2.6], [56, 2.6], [88, 2.6], [120, 2.6], [150, 2.6]],
+    benches: [[118, 3.4], [138, 3.4], [160, 3.4]],
+    beds: [[-6, 6.4, 3], [56, 8.6, 2.6], [88, 6.4, 3]],
+    trees: [[-84, 7.2], [128, 7.4], [175, 7]],
+    bushes: [[-34, 7.6], [24, 8], [92, 8.2]],
+  },
+};
+const PARK_LAWN = [-150, -36]; // the picnic lawn east of the pier (x)
+
 function mangwon() {
   const d = district(621);
   const { row } = d;
@@ -217,10 +248,10 @@ function mangwon() {
     { k: 'walk', w: 5, p: [[-190, 138], [190, 138]], n: name('Han River path', '한강 산책로', '漢江の散歩道', '汉江步道') },
   ];
   const areas = [
-    // (the trees stop short of the open-air park's lawn)
-    ...[[-190, OPEN_PARK.x0 - OPEN_PARK.half - 2, 132], [OPEN_PARK.x0 - OPEN_PARK.half - 2, OPEN_PARK.x0 + OPEN_PARK.half + 2, BANK - OPEN_PARK.depth - 4], [OPEN_PARK.x0 + OPEN_PARK.half + 2, 190, 132]]
-      .map(([x0, x1, z1]) => ({ k: 'park', trees: true, p: [[x0, 80], [x1, 80], [x1, z1], [x0, z1]] })),
+    { k: 'park', trees: true, p: [[-190, 80], [190, 80], [190, 132], [-190, 132]] },
     { k: 'grass', p: [[-190, 141], [190, 141], [190, BANK], [-190, BANK]] },
+    // The picnic lawn by the water east of the pier (no trees): mats and frisbees.
+    { k: 'grass', lawn: true, p: [[-PARK_LAWN[0], BANK - 9], [-PARK_LAWN[1], BANK - 9], [-PARK_LAWN[1], BANK - 1.2], [-PARK_LAWN[0], BANK - 1.2]] },
     { k: 'plaza', p: [[60, -160], [100, -160], [100, -153], [60, -153]] },
     { k: 'water', p: [[-230, BANK], [230, BANK], [230, 250], [-230, 250]] },
   ];
@@ -239,8 +270,19 @@ function mangwon() {
         ja: '漢江の北岸にある川辺の公園です。川沿いを歩いたり自転車に乗ったり、芝生にシートを広げたり、釣り桟橋で釣りをしてみましょう。ここでしか釣れない魚もいます。',
         zh: '汉江北岸的江边公园。沿着江边散步、骑车，在草地上铺开野餐垫，或者去钓鱼码头碰碰运气：有些鱼只在这里咬钩。',
       } },
+    // Seoul Battleship Park: the warship moored off the bank (core/han-park.js draws it).
+    { type: 'sign', x: -138, z: 134, ry: 0,
+      title: name('Seoul Battleship Park', '서울함 공원', 'ソウル艦公園', '首尔舰公园'),
+      text: {
+        en: 'Three retired Korean Navy ships are moored at Mangwon Han River Park: a frigate, a patrol boat and a submarine. Since 2017 you can go aboard and see how sailors lived. In the game, the grey frigate is just to look at from the bank.',
+        ko: '망원한강공원에는 퇴역한 해군 함정 세 척이 정박해 있어요. 호위함, 고속정, 잠수함이에요. 2017년부터 배에 올라가 수병들이 어떻게 지냈는지 볼 수 있어요. 게임에서는 회색 호위함을 강가에서 구경만 할 수 있어요.',
+        ja: '望遠漢江公園には、退役した韓国海軍の艦艇3隻が停泊しています。護衛艦、高速艇、潜水艦です。2017年から船に乗って、水兵の暮らしを見学できます。ゲームでは灰色の護衛艦を岸から眺めるだけです。',
+        zh: '望远汉江公园停泊着三艘退役的韩国海军舰艇：一艘护卫舰、一艘快艇和一艘潜艇。从2017年起可以登船参观水兵的生活。在游戏里，灰色的护卫舰只能在岸边观看。',
+      } },
   ];
-  for (const x of [-170, -130, -90, 30, 70, 110, 150]) landmarks.push({ type: 'bench', x, z: 143, ry: Math.PI }); // facing the river (south)
+  for (const x of [-170, 30, 70, 110, 150]) landmarks.push({ type: 'bench', x, z: 143, ry: Math.PI }); // facing the river (south; the park has its own by the dock and the kiosk)
+  // The park itself (game/han-parks.js): at the bank's edge, turned half round.
+  landmarks.push({ type: 'hanpark', store: 'mangwon-hangang', x: 0, z: BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
   const pois = [
     { kind: 'landmark', x: 80, z: -115, name: name('Mangwon Market', '망원시장', '望遠市場', '望远市场') },
     { kind: 'landmark', x: -100, z: -70, name: name('Mangridan-gil', '망리단길', '望理団通り', '望理团路') },
@@ -284,24 +326,19 @@ const SHOPS = {
     'dongne-record': ['poeunS2', 5],
   },
 };
-const FIXED = { mangwon: { 'mangwon-hangang': [OPEN_PARK.x0, BANK - OPEN_PARK.depth - 1] } }; // just behind the open-air park's lawn (where a taxi or the map drops you)
-// The open-air park's frame (core/park.js metres → district metres).
-// skyline: nothing is built across the river from Mangwon, so the park
-// keeps its own far-bank skyline.
-const OPEN = { mangwon: { 'mangwon-hangang': { at: [OPEN_PARK.x0, BANK - 4], ry: Math.PI, skyline: true } } };
+const FIXED = { mangwon: { 'mangwon-hangang': [-60, 138] } }; // where the way down from Mangwon meets the river path (where a taxi or the map drops you)
 
 const built = { yeonnam: yeonnam(), mangwon: mangwon() };
 const region = readJson('region.json');
 // stores.json is hand-formatted, so only the "at" of each placed shop is
 // rewritten in the text.
 let stores = readFileSync(path.join(R, 'stores.json'), 'utf8');
-function setAt(sid, at, open = null) {
+function setAt(sid, at) {
   const i = stores.indexOf(`"id": "${sid}"`);
   if (i < 0) { console.log(`${sid}: not in stores.json`); return; }
   let end = stores.indexOf('\n    {', i);
   if (end < 0) end = stores.length;
-  let part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${at[0]}, ${at[1]}]`);
-  if (open) part = part.replace(/, "open": \{[^}]*\}/, '').replace(/("at": \[[^\]]*\])/, `$1, "open": { "at": [${open.at[0]}, ${open.at[1]}], "ry": ${open.ry.toFixed(4)}${open.skyline ? ', "skyline": true' : ''} }`);
+  const part = stores.slice(i, end).replace(/"at": \[[^\]]*\]/, `"at": [${at[0]}, ${at[1]}]`);
   stores = stores.slice(0, i) + part + stores.slice(end);
 }
 for (const [id, { map, lots }] of Object.entries(built)) {
@@ -315,10 +352,8 @@ for (const [id, { map, lots }] of Object.entries(built)) {
     if (!at) throw new Error(`${sid}: no lot ${rowId}[${i}] (row has ${lots[rowId]?.length || 0})`);
     spots[sid] = at;
   }
-  for (const [sid, [x, z]] of Object.entries(spots)) {
-    const o = OPEN[id]?.[sid];
-    setAt(sid, [r1(x + ox), r1(z + oz)], o && { ...o, at: [r1(o.at[0] + ox), r1(o.at[1] + oz)] });
-  }
+  for (const [sid, [x, z]] of Object.entries(spots)) setAt(sid, [r1(x + ox), r1(z + oz)]);
+  if (id === 'mangwon') console.log(`park stamp stand: [${r1(-56 + ox)}, ${r1(BANK - 4 + oz)}], ry ${(Math.PI + Math.PI / 2).toFixed(4)}`);
   console.log(`${id}: ${map.buildings.length} buildings, ${Object.keys(spots).length} shops placed`);
   if (process.argv.includes('--lots')) for (const [k, v] of Object.entries(lots)) console.log('  ', k, v.length);
 }

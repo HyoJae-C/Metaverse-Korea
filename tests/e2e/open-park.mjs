@@ -23,7 +23,7 @@ try {
   await page.waitForSelector('#hud:not([hidden])', { timeout: 90000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   const parks = await page.evaluate(async () => (await (await fetch('regions/another-seoul/stores.json')).json()).stores.filter((st) => st.open).map((st) => ({ id: st.id, ...st.open })));
-  if (parks.length < 2) throw new Error(`only ${parks.length} open parks`);
+  if (parks.length < 1) throw new Error('no open parks');
   await page.evaluate(() => __mk.givePet('pet-golden')); // (walks along: waits on the bank while you're on a duck boat)
   for (const park of parks) {
     // The park's own metres (core/park.js; its bank is z = -4) → world.
