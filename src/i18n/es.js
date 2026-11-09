@@ -539,6 +539,8 @@ export const ES = {
   'map.zones': 'Zonas de encuentro',
   'map.stations': 'Estaciones de metro',
   'map.shops': 'Tiendas',
+  'map.places': 'Lugares',
+  'map.locate': 'Mi ubicación',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Has llegado a {label}',
   'cat.cafe': 'Cafetería',

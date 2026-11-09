@@ -537,6 +537,8 @@ export const ZH = {
   'map.zones': '集合区域',
   'map.stations': '地铁站',
   'map.shops': '商店',
+  'map.places': '地点列表',
+  'map.locate': '我的位置',
   'guide.to': '{label} · {m} 米',
   'guide.arrived': '已到达{label}',
   'cat.cafe': '咖啡馆',

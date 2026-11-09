@@ -538,6 +538,8 @@ export const TH = {
   'map.zones': 'โซนนัดพบ',
   'map.stations': 'สถานีรถไฟใต้ดิน',
   'map.shops': 'ร้านค้า',
+  'map.places': 'รายชื่อสถานที่',
+  'map.locate': 'ตำแหน่งของฉัน',
   'guide.to': '{label} · {m} ม.',
   'guide.arrived': 'คุณมาถึง {label} แล้ว',
   'cat.cafe': 'คาเฟ่',
