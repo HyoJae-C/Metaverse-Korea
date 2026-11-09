@@ -15,6 +15,9 @@ import { RIDES, barDown, carouselAngle, carouselPace, dropY, horseSpot, vikingAn
 const mat = matCache({ flatShading: true });
 const sided = matCache({ flatShading: true, side: THREE.DoubleSide });
 const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', CHOC = '#6b3f2a', CHOC2 = '#8a5536', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff';
+// The island's rides each wear a colour of their own (the wheel blue, the
+// drop purple), so the island isn't all pink.
+const SKY = '#8fd0ff', BLUE = '#4fa3e8', PURPLE = '#9b6ee8';
 const part = (parent, geo, color, x, y, z) => { const m = new THREE.Mesh(geo, color.isMaterial ? color : mat(color)); m.position.set(x, y, z); parent.add(m); return m; };
 const box = (parent, sx, sy, sz, x, y, z, c) => part(parent, new THREE.BoxGeometry(sx, sy, sz), c, x, y, z);
 const cyl = (parent, rt, rb, h, x, y, z, c, seg = 12) => part(parent, new THREE.CylinderGeometry(rt, rb, h, seg), c, x, y + h / 2, z);
@@ -208,7 +211,7 @@ export function buildWheel(scene, block) {
   for (const sz of [-1.7, 1.7]) for (const sx of [-1, 1]) {
     const leg = box(root, 0.3, legH, 0.3, sx * spread / 2, W.hub / 2, sz, ICING);
     leg.rotation.z = sx * Math.atan2(spread, W.hub);
-    for (let k = 1; k < 4; k++) { const t = k / 4, b = box(root, 0.34, 0.3, 0.34, sx * spread * (1 - t), W.hub * t, sz, HOT); b.rotation.z = leg.rotation.z; }
+    for (let k = 1; k < 4; k++) { const t = k / 4, b = box(root, 0.34, 0.3, 0.34, sx * spread * (1 - t), W.hub * t, sz, BLUE); b.rotation.z = leg.rotation.z; }
   }
   for (const sz of [-1.7, 1.7]) box(root, spread * 1.6, 0.2, 0.2, 0, 1.4, sz, ICING);
   const axle = part(root, new THREE.CylinderGeometry(0.22, 0.22, 3.6, 10), GOLD, 0, W.hub, 0);
@@ -244,7 +247,7 @@ export function buildWheel(scene, block) {
     const a = (i / W.cabins) * Math.PI * 2;
     box(wheel, 0.1, 0.1, 1.2, Math.sin(a) * W.r, -Math.cos(a) * W.r, 0, ICING);
   }
-  part(wheel, new THREE.CylinderGeometry(0.85, 0.85, 1.3, 16), HOT, 0, 0, 0).rotation.x = Math.PI / 2;
+  part(wheel, new THREE.CylinderGeometry(0.85, 0.85, 1.3, 16), LEMON, 0, 0, 0).rotation.x = Math.PI / 2;
   for (const rz of [-0.68, 0.68]) part(wheel, new THREE.CylinderGeometry(0.55, 0.55, 0.1, 16), ICING, 0, 0, rz).rotation.x = Math.PI / 2;
   const bulb = new THREE.MeshBasicMaterial({ color: '#fff4c4' });
   for (let i = 0; i < 40; i++) {
@@ -270,7 +273,7 @@ export function buildWheel(scene, block) {
     box(c, 1.5, 0.1, 0.45, 0, fl + 0.45, -0.45, '#ffd36e'); // bench
     const bar = new THREE.Group(); // the front bar, hinged at the left post
     bar.position.set(-0.78, fl + 0.55, 0.7);
-    box(bar, 1.56, 0.08, 0.08, 0.78, 0, 0, HOT);
+    box(bar, 1.56, 0.08, 0.08, 0.78, 0, 0, SKY);
     c.add(bar);
     bakeColors(c, [bar]);
     scene.add(c);
@@ -300,12 +303,12 @@ export function buildDrop(scene, block) {
   cyl(root, D.r + 1.1, D.r + 1.3, 0.45, 0, 0, 0, '#f2c6a0', 24); // base deck
   cyl(root, D.r + 1.15, D.r + 1.15, 0.06, 0, 0.45, 0, ICING, 24);
   const n = Math.round(H / 1.4);
-  for (let i = 0; i < n; i++) cyl(root, 0.62, 0.62, H / n, 0, 0.45 + (i * H) / n, 0, i % 2 ? '#ff5a5f' : ICING, 12);
+  for (let i = 0; i < n; i++) cyl(root, 0.62, 0.62, H / n, 0, 0.45 + (i * H) / n, 0, i % 2 ? LILAC : ICING, 12);
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) box(root, 0.12, H, 0.12, Math.sin(a) * 0.66, H / 2 + 0.45, Math.cos(a) * 0.66, GOLD); // the rails the ring rides
   const topY = H + 0.45;
   cyl(root, 1.2, 1.2, 0.5, 0, topY, 0, LEMON, 16);
   cyl(root, 0.12, 0.12, 1.4, 0, topY + 0.5, 0, ICING, 8);
-  const pop = part(root, new THREE.CylinderGeometry(1.5, 1.5, 0.4, 24), HOT, 0, topY + 3.2, 0);
+  const pop = part(root, new THREE.CylinderGeometry(1.5, 1.5, 0.4, 24), PURPLE, 0, topY + 3.2, 0);
   pop.rotation.x = Math.PI / 2;
   for (const [r, c] of [[1.1, ICING], [0.7, MINT], [0.35, LEMON]]) { // swirl rings on both faces
     for (const s of [-1, 1]) { const ring = part(root, new THREE.TorusGeometry(r, 0.1, 6, 24), c, 0, topY + 3.2, s * 0.21); ring.rotation.z = r; }
@@ -317,7 +320,7 @@ export function buildDrop(scene, block) {
   scene.add(ring);
   cyl(ring, D.r + 0.45, D.r + 0.45, 0.22, 0, -0.3, 0, MINT, 24);
   cyl(ring, 0.85, 0.85, 1.6, 0, -0.3, 0, ICING, 12); // the carriage round the tower
-  cyl(ring, D.r + 0.5, D.r + 0.5, 0.14, 0, 1.5, 0, PINK, 24); // its top band
+  cyl(ring, D.r + 0.5, D.r + 0.5, 0.14, 0, 1.5, 0, LEMON, 24); // its top band
   for (let i = 0; i < D.seats; i++) {
     const a = (i / D.seats) * Math.PI * 2;
     const seat = new THREE.Group();
@@ -332,7 +335,7 @@ export function buildDrop(scene, block) {
   const h = new THREE.Group();
   for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.08, 0.5, sx, 0, 0.25, '#d9dde2');
   for (const sx of [-0.2, 0.2]) box(h, 0.08, 0.6, 0.08, sx, -0.3, 0.48, '#d9dde2');
-  box(h, 0.48, 0.08, 0.08, 0, -0.58, 0.48, HOT);
+  box(h, 0.48, 0.08, 0.08, 0, -0.58, 0.48, PURPLE);
   const baked = bakeColors(h).children[0];
   const harness = new THREE.InstancedMesh(baked.geometry, baked.material, D.seats);
   harness.frustumCulled = false;

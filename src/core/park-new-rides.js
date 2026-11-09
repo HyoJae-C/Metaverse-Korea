@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { bakeColors, mergeStatic } from './merge-static.js';
 import { RIDES, FLUME_TRACK, FLUME_POOL, TRAIN_TRACK, flumeDist, swingAngle, swingTilt, teacupSpin, teacupSpot, trainDist, MAZE } from './park-rides.js';
 
-const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', CHOC = '#6b3f2a', BISCUIT = '#f2c6a0';
+const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', CHOC = '#6b3f2a', BISCUIT = '#f2c6a0', AMBER = '#ffc93c';
 const kit = (mat) => {
   const part = (parent, geo, color, x, y, z) => { const m = new THREE.Mesh(geo, color.isMaterial ? color : mat(color)); m.position.set(x, y, z); parent.add(m); return m; };
   const box = (parent, sx, sy, sz, x, y, z, c) => part(parent, new THREE.BoxGeometry(sx, sy, sz), c, x, y, z);
@@ -34,17 +34,17 @@ export function buildSwing(scene, block, mat) {
   root.position.set(S.x, 0, S.z);
   scene.add(root);
   cyl(root, 1.6, 1.8, 0.3, 0, 0, 0, BISCUIT, 20); // the base
-  for (let i = 0; i < 5; i++) cyl(root, 0.55, 0.55, (S.hub + 0.4) / 5, 0, (i * (S.hub + 0.4)) / 5, 0, i % 2 ? ICING : HOT, 14); // striped tower
+  for (let i = 0; i < 5; i++) cyl(root, 0.55, 0.55, (S.hub + 0.4) / 5, 0, (i * (S.hub + 0.4)) / 5, 0, i % 2 ? ICING : AMBER, 14); // striped tower (the swing is the yellow one)
   const crown = new THREE.Group();
   crown.position.y = S.hub;
   root.add(crown);
   cyl(crown, S.arm + 0.3, S.arm + 0.3, 0.3, 0, 0, 0, GOLD, 24);
   for (let i = 0; i < 16; i++) {
-    const seg = new THREE.Mesh(new THREE.ConeGeometry(S.arm + 0.5, 1.6, 1, 1, true, (i / 16) * Math.PI * 2, Math.PI / 8), sided(i % 2 ? ICING : LILAC));
+    const seg = new THREE.Mesh(new THREE.ConeGeometry(S.arm + 0.5, 1.6, 1, 1, true, (i / 16) * Math.PI * 2, Math.PI / 8), sided(i % 2 ? ICING : LEMON));
     seg.position.y = 1.1;
     crown.add(seg);
   }
-  part(crown, new THREE.SphereGeometry(0.35, 10, 8), HOT, 0, 2.1, 0);
+  part(crown, new THREE.SphereGeometry(0.35, 10, 8), SKY, 0, 2.1, 0);
   const bulb = new THREE.MeshBasicMaterial({ color: '#fff4c4' });
   for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2; part(crown, new THREE.SphereGeometry(0.08, 6, 4), bulb, Math.sin(a) * (S.arm + 0.32), 0.12, Math.cos(a) * (S.arm + 0.32)); }
   bakeColors(crown);
