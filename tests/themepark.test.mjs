@@ -92,7 +92,7 @@ test('the wheel: board the gondola at the bottom, ride one turn, held in while u
 
 test('Another Land outside: wheel and drop tower are tall, the coaster loops', async () => {
   const { WHEEL, DROP, dropHeight, COASTER, PARK_SCALE } = await import('../src/core/anotherland.js');
-  assert.ok((WHEEL.hub + WHEEL.r) * PARK_SCALE > 40, 'wheel still seen over the lakeside trees and rooftops');
+  assert.ok((WHEEL.hub + WHEEL.r) * PARK_SCALE > 15, 'wheel still seen over the lakeside cherry trees');
   assert.equal(dropHeight(12), DROP.top);
   assert.equal(dropHeight(1), DROP.low);
   assert.ok(COASTER.every(([, y]) => y >= 4), 'track stays off the ground');
@@ -115,4 +115,24 @@ test('Another Land and the Han River parks have their own flags, no shared `park
   for (const f of ['themepark.js', 'park.js']) assert.doesNotMatch(src(f), /\bpark: true/, f);
   // Theme-park-only code keys on `themepark`, never on a park flag.
   assert.doesNotMatch(readFileSync(new URL('../src/game/park-riders.js', import.meta.url), 'utf8'), /\.park\b/);
+});
+
+// Seokchon Lake is at the real 1/4 scale like the rest of Seoul: the real
+// lakes hold 217,850 m2 of water, so 1/16 of it here. The model behind
+// Another Land's gate stands on the island.
+test('Seokchon Lake: real 1/4 water, the park model on its island', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { PARK_SCALE } = await import('../src/core/anotherland.js');
+  const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/songpa.json', import.meta.url)));
+  const area = (p) => Math.abs(p.reduce((s, [x, z], i) => { const [x2, z2] = p[(i + 1) % p.length]; return s + x * z2 - x2 * z; }, 0)) / 2;
+  const lake = map.areas.filter((a) => a.k === 'water' && a.p.every(([, z]) => z > 100)).reduce((s, a) => s + area(a.p), 0);
+  assert.ok(Math.abs(lake / (217850 / 16) - 1) < 0.05, `lake water ${Math.round(lake)} m2`);
+  const gate = map.landmarks.find((l) => l.type === 'anotherland');
+  const { inPoly } = await import('../src/core/geom.js');
+  const island = map.blockers.find((b) => inPoly(gate.x, gate.z + 20, b.p));
+  assert.ok(island, 'island behind the gate');
+  const xs = island.p.map(([x]) => x), zs = island.p.map(([, z]) => z);
+  // (Model: the gate faces -x, walls at x 1..130 and z +-60; the map turns it to face north.)
+  assert.ok(gate.x - 60 * PARK_SCALE >= Math.min(...xs) && gate.x + 60 * PARK_SCALE <= Math.max(...xs), 'model as wide as the island at most');
+  assert.ok(gate.z + 130 * PARK_SCALE <= Math.max(...zs), 'model no deeper than the island');
 });
