@@ -1,6 +1,7 @@
 // End-to-end check: Seoul Dal, the balloon in Yeouido Park. Sets the page's
 // clock to the start of a flight, stands at the gate, boards, and checks it
-// carries you up to the top and back down to the gate. Saves screenshots if
+// carries you up to the top and back down to the gate; then a waiting
+// ticket while it flies, called and boarding at the next flight. Saves screenshots if
 // given a dir.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/seoul-dal.mjs http://localhost:4173/ [shot dir] [phone]
@@ -57,6 +58,22 @@ try {
   st = await mk('seoulDal');
   if (st.busy || st.y !== 0 || Math.hypot(st.at[0] - GATE[0], st.at[1] - GATE[1]) > 2) throw new Error('not back at the gate: ' + JSON.stringify(st));
   console.log('landed:', JSON.stringify(st));
+  // While it's up: a waiting ticket, called when the gate opens next time.
+  await at(181 + 70); await wait(1500);
+  let label = await mk('action');
+  if (!label?.startsWith('🎫')) throw new Error('no waiting ticket while it flies: ' + label);
+  await mk('pick', 0); await wait(500);
+  label = await mk('action');
+  if (!label?.includes('1')) throw new Error('not No. 1 in line: ' + label);
+  console.log('ticket:', label);
+  await at(360 + 2); await wait(1500);
+  label = await mk('action');
+  if (!label?.startsWith('🔔')) throw new Error('not called: ' + label);
+  console.log('called:', label);
+  await mk('pick', 0); await wait(500);
+  st = await mk('seoulDal');
+  if (!st.busy || st.coins !== 50000) throw new Error('the called ticket did not board: ' + JSON.stringify(st));
+  await at(360 + 181); await wait(1500);
   // From the fireworks lawn across Yunjung-ro: the balloon up over the park.
   await at(100);
   await mk('place', -2728, 300); await mk('face', 2.5055); await mk('cam', { yaw: 2.5055 + Math.PI, pitch: 0.05, dist: 7 });

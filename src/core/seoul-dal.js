@@ -10,7 +10,8 @@
 // The real one (checked 2026-11-09, Seoul city and news reports): opened in
 // 2024, rises to about 130 m for about 15 minutes, up to 20 people a flight,
 // open every day 12:00-22:00 since April 2026, adults 25,000 won. The game's
-// is shorter (a 3-minute cycle) and lower (DAL.top), so it fits the game map.
+// is shorter (a 3-minute cycle), lower (DAL.top) and smaller (DAL.max), so it
+// fits the game map.
 //
 // Pure: no three.js here (the model and the ride are game/seoul-dal.js).
 
@@ -24,7 +25,10 @@ export const DAL = {
   close: 5, // the gate shuts this many seconds before lift-off
   deck: 0.25, // the gondola's floor above the pad when it's down
   ring: 3.3, // riders stand this far from the cable, round the ring
-  slots: 12, // places round the ring
+  max: 5, // people a flight (the real one takes 20; a quarter here, like the map,
+  //         so the gondola stays roomy and a chat up top isn't crowded); the rest take a waiting ticket
+  slots: 10, // places round the ring (twice the riders: two who board at once rarely share one)
+  turn: 15, // seconds a called ticket has to board
   load: 650, // m: the balloon is loaded and drawn within this of it
 };
 DAL.cycle = DAL.board + DAL.rise + DAL.hover + DAL.sink;

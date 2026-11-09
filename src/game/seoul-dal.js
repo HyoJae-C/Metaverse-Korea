@@ -4,7 +4,7 @@
 //
 //   the pad     a round landing pad on the lawn, a low fence with a gate
 //               facing the path, a ticket booth and a winch in the middle
-//   the balloon a big pale sphere (the "moon"), a band with its name, the
+//   the balloon a big pale sphere (the "moon"), a band with the game's name, the
 //               ring-shaped gondola hanging under it on lines, and the
 //               cable down to the winch; it rises and sinks on the clock
 //
@@ -13,9 +13,16 @@
 // turns down to the river once, and the button switches between looking
 // down and looking out. Back on the ground you step out at the gate. Others
 // see you go up with it (your height goes out in "y", as on the cable car).
+//
+// Up to DAL.max people a flight ("dl" in your state: the flight you're on).
+// When it is full or already up, take a waiting ticket ("dq": when you took
+// it, so every screen sorts the same line, core/tarot-queue.js): when the
+// gate opens the first in line are called, from anywhere near the pad, and
+// have DAL.turn seconds to get in before the next is called.
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex } from '../core/three-kit.js';
 import { DAL, dalAt, gateOpen, opensIn, dalClock, riderSpot, clock } from '../core/seoul-dal.js';
+import { TarotQueue } from '../core/tarot-queue.js';
 
 const mat = matCache();
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -89,15 +96,15 @@ function buildBalloon() {
     m.rotation.y = (i / 4) * Math.PI; m.position.y = HANG + R;
     g.add(m);
   }
-  // Its name round the middle.
+  // The game's name round the middle (Yozi's ask).
   const band = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.08, R + 0.08, 2.2, 48, 1, true), new THREE.MeshLambertMaterial({
     transparent: true,
     map: canvasTex(1024, 64, (x, w, h) => {
       x.clearRect(0, 0, w, h);
       x.fillStyle = '#1f3f66'; x.textAlign = 'center'; x.textBaseline = 'middle';
       x.font = '800 40px "Noto Sans KR", system-ui, sans-serif';
-      x.fillText('SEOULDAL  서울달', w / 4, h / 2);
-      x.fillText('SEOULDAL  서울달', (w * 3) / 4, h / 2);
+      x.fillText('어나더서울  ANOTHER SEOUL', w / 4, h / 2);
+      x.fillText('어나더서울  ANOTHER SEOUL', (w * 3) / 4, h / 2);
     }),
   }));
   band.position.y = HANG + R + 2.6;
@@ -144,7 +151,7 @@ function buildBalloon() {
   return g;
 }
 
-// game: { scene, me, mode, cam, riding, others, wallet, shop, t,
+// game: { scene, me, mode, cam, riding, others, myId, wallet, shop, t,
 // missionEvent, resend, clearAction } (getters where they change);
 // at: { x, z, ry }, the cable's foot (its local +z is the gate).
 export function createSeoulDal(game, at) {
@@ -164,6 +171,24 @@ export function createSeoulDal(game, at) {
   const gate = world(0, GATE);
 
   let ride = null; // { slot, n (the flight), paid, flown, topped, down }
+  let ticket = 0; // my waiting ticket (when I took it, ms), or 0
+  const queue = new TarotQueue(undefined, DAL.turn * 1000);
+  let turn = { order: [], callable: [], expired: [] };
+  // How many are aboard flight n (me too).
+  function aboard(n) {
+    let k = ride?.n === n ? 1 : 0;
+    for (const o of game.others.players.values()) if (!o.hidden && Number(o.target?.dl) === n + 1) k++;
+    return k;
+  }
+  function line() {
+    const out = [];
+    for (const [id, o] of game.others.players) if (!o.hidden && o.target?.dq) out.push({ id, tq: Number(o.target.dq) });
+    if (ticket) out.push({ id: game.myId, tq: ticket });
+    return out;
+  }
+  // Seats free to call the line into: only while the gate is open.
+  const freeNow = (s) => (gateOpen(s) ? Math.max(0, DAL.max - aboard(s.n)) : 0);
+  const myPlace = () => turn.order.indexOf(game.myId) + 1;
   let lastGate = null; // (one toast per flight for "lifting off")
   const T = (k, v) => game.t(k, v);
   function spotNow(s) {
@@ -174,6 +199,8 @@ export function createSeoulDal(game, at) {
   function board() {
     const s = dalAt(dalClock());
     if (!gateOpen(s) || ride) return;
+    turn = queue.update(line(), freeNow(s));
+    if (!mayBoard(s)) { game.shop.toast(T('dal.full', { n: DAL.max })); game.clearAction(); return; }
     if (!game.wallet.spend(DAL.fare, { k: 'ledger.seoulDal' })) { game.shop.toast(T('ride.noCoins', { n: DAL.fare.toLocaleString() })); return; }
     // A free place at the rail: away from the others already standing there.
     const taken = new Set();
@@ -185,6 +212,7 @@ export function createSeoulDal(game, at) {
     }
     const free = [...Array(DAL.slots).keys()].filter((k) => !taken.has(k));
     const pick = free.length ? free : [...Array(DAL.slots).keys()];
+    ticket = 0;
     ride = { slot: pick[Math.floor(Math.random() * pick.length)], n: s.n, paid: game.wallet.lastOp, flown: false, topped: false, down: false };
     const sp = spotNow(s);
     game.me.root.position.set(sp.x, sp.y, sp.z);
@@ -206,11 +234,32 @@ export function createSeoulDal(game, at) {
     game.resend();
     game.clearAction();
   }
+  // Room for me now: under the cap, and nobody in line ahead (or it's my turn).
+  const mayBoard = (s) => gateOpen(s) && aboard(s.n) < DAL.max && queue.maySit(game.myId, turn);
+  function takeTicket() {
+    ticket = Date.now();
+    turn = queue.update(line(), freeNow(dalAt(dalClock())));
+    game.shop.toast(T('dal.took', { n: myPlace() }));
+    game.resend();
+    game.clearAction();
+  }
+  function leaveLine() {
+    ticket = 0;
+    game.shop.toast(T('dal.left'));
+    game.resend();
+    game.clearAction();
+  }
   function update() {
     const p = game.me.root.position;
     const far = Math.hypot(p.x - ox, p.z - oz) > DAL.load + 100;
     root.visible = game.mode === 'street' && !far;
     const s = dalAt(dalClock());
+    // The line: called when the gate opens; a missed turn drops the ticket.
+    const was = turn.callable.includes(game.myId);
+    turn = queue.update(line(), freeNow(s));
+    if (ticket && (far || game.mode !== 'street')) { ticket = 0; game.resend(); } // (went away)
+    if (ticket && turn.expired.includes(game.myId)) { ticket = 0; game.shop.toast(T('dal.missed')); game.resend(); game.clearAction(); }
+    if (ticket && !was && turn.callable.includes(game.myId)) { game.shop.toast(T('dal.called', { s: DAL.turn })); game.clearAction(); }
     if (root.visible) {
       balloon.position.y = s.h + DAL.deck;
       balloon.rotation.y = s.h * 0.004; // (a slow turn as it climbs)
@@ -249,13 +298,25 @@ export function createSeoulDal(game, at) {
         ? { key: 'dal-out', label: '🔭 ' + T('dal.lookOut'), run: () => { ride.down = false; game.cam.pitch = 0.2; game.clearAction(); } }
         : { key: 'dal-down', label: '👀 ' + T('dal.lookDown'), run: () => { ride.down = true; game.cam.pitch = 0.5; game.cam.dist = Math.max(game.cam.dist, 18); game.clearAction(); } }; // (far enough out that the balloon is not in the way)
     }
-    if (game.riding || Math.hypot(p.x - gate[0], p.z - gate[1]) > 2.4) return null;
-    if (gateOpen(s)) return { key: 'dal-board', label: '🎈 ' + T('dal.board', { n: DAL.fare.toLocaleString() }), run: board };
+    if (game.riding) return null;
+    const near = Math.hypot(p.x - ox, p.z - oz);
+    if (ticket && turn.callable.includes(game.myId) && near < 60) { // called: board from anywhere round the pad
+      const sec = queue.secondsLeft(game.myId) ?? 0;
+      return { key: 'dal-turn:' + sec, label: '🔔 ' + T('dal.turn', { s: sec, n: DAL.fare.toLocaleString() }), run: board };
+    }
+    if (Math.hypot(p.x - gate[0], p.z - gate[1]) > 2.4) return null;
+    if (ticket) { const n = myPlace(); return { key: 'dal-line:' + n, label: '🎫 ' + T('dal.line', { n }), run: leaveLine }; }
+    if (mayBoard(s)) return { key: 'dal-board:' + aboard(s.n), label: '🎈 ' + T('dal.board', { n: DAL.fare.toLocaleString(), k: aboard(s.n), max: DAL.max }), run: board };
     const t = clock(opensIn(now));
-    return { key: 'dal-next:' + t, label: '🎈 ' + T('dal.next', { t }), run: () => {} };
+    return { key: 'dal-ticket:' + t, label: '🎫 ' + T('dal.ticket', { t }), run: takeTicket };
+  }
+  // My bits of the shared state: the flight I'm on, my ticket.
+  function state(st) {
+    if (ride) st.dl = ride.n + 1;
+    if (ticket) st.dq = ticket;
   }
   return {
-    update, act,
+    update, act, state,
     get busy() { return !!ride; },
   };
 }

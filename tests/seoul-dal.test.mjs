@@ -37,6 +37,9 @@ test('the gate shuts just before lift-off, and opensIn counts down to it opening
 });
 
 test('riders stand round the ring, inside the gondola, facing out', () => {
+  assert.equal(DAL.max, 5, 'a quarter of the real 20, like the map');
+  assert.ok(DAL.slots >= DAL.max * 2, 'room to spread out');
+  assert.ok(DAL.turn < DAL.board - DAL.close, 'a called ticket can board before the gate shuts');
   const seen = new Set();
   for (let k = 0; k < DAL.slots; k++) {
     const s = riderSpot(k);
@@ -76,7 +79,7 @@ test('the balloon stands on an open lawn in Yeouido Park, its gate on a path fro
 
 test('every language has the Seoul Dal words', () => {
   const keys = Object.keys(EN).filter((k) => k.startsWith('dal.') || k === 'ledger.seoulDal');
-  assert.equal(keys.length, 11);
+  assert.equal(keys.length, 18);
   for (const [lang, table] of Object.entries(STRINGS)) {
     if (lang === 'hant') continue; // (made from zh)
     for (const k of keys) assert.ok(table[k], `${lang} ${k}`);

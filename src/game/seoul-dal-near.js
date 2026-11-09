@@ -20,6 +20,7 @@ export function createSeoulDalNear(game) {
         .catch((e) => { loading = false; console.warn('seoul-dal', e); });
     },
     act: (p) => dal?.act(p) || null,
+    state: (st) => dal?.state(st), // (the flight I'm on, my waiting ticket)
     get busy() { return !!dal?.busy; },
   };
 }
