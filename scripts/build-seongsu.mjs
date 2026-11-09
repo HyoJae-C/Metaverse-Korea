@@ -167,7 +167,7 @@ const B = [
   // from Seongsu Station a 60 m screen tower (region.json "screens").
   { x: [WEST_U, 'seongsuil'], z: [E(-200), 'achasan'], sides: { s: 'plain' }, tall: true },
   { x: ['seongsuil', -35], z: ['north', 'achasan'], sides: { s: 'plain' }, tall: true },
-  { x: [-35, 'seongsui'], z: ['north', 'achasan'], sides: { s: 'plain' }, h: 60 },
+  { x: [-35, 'seongsui'], z: ['north', 'achasan'], sides: { s: 'plain' }, h: 60, wide: { s: 2 } }, // (room for Seongsu Station's exits 1 and 2)
   { x: ['seongsui', 'dongil'], z: ['north', 'achasan'], sides: { s: 'plain' }, tall: true },
   { x: ['dongil', EAST_U_EDGE], z: ['north', 'achasan'], sides: { s: 'plain' } },
   { x: ['seongsuil', 'seongsui'], z: [E(-200), 'north'], sides: { s: 'plain' } },
@@ -180,7 +180,8 @@ const B = [
   { x: [WEST_U, 'seongsuil'], z: ['achasan', 'lane'], sides: { n: 'plain' } },
   { x: ['seongsuil', 'brick'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', e: 'shop', s: 'shop', w: 'plain' } },
   // Seongsu Square, by the station: shops along Achasan-ro, the square behind them, open to Yeonmujang-gil.
-  { x: ['brick', 'seongsui'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop' }, depth: 8, area: 'plaza', square: true, cut: { ne: 16 } },
+  // Its sidewalk on Achasan-ro is 2 m wider, for Seongsu Station's exits 3 and 4.
+  { x: ['brick', 'seongsui'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop' }, depth: 8, area: 'plaza', square: true, cut: { ne: 16 }, wide: { n: 2 } },
   { x: ['seongsui', 'east1'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', w: 'shop', s: 'shop' }, cut: { nw: 16 } },
   { x: ['east1', 'east2'], z: ['achasan', 'yeonmujang'], sides: { n: 'shop', s: 'shop', e: 'plain' } },
   { x: ['east2', 'dongil'], z: ['achasan', 'yeonmujang'], sides: { n: 'plain' } },
@@ -519,7 +520,8 @@ function plainRow(a0, a1, place) {
 
 function fillBlock(b) {
   const L = line(b.x[0], 'x'), R = line(b.x[1], 'x'), T = line(b.z[0], 'z'), Bo = line(b.z[1], 'z');
-  const x0 = L.at + L.inset, x1 = R.at - R.inset, z0 = T.at + T.inset, z1 = Bo.at - Bo.inset;
+  const wide = b.wide || {}; // a wider sidewalk on these sides (m), e.g. round Seongsu Station's exits
+  const x0 = L.at + L.inset + (wide.w || 0), x1 = R.at - R.inset - (wide.e || 0), z0 = T.at + T.inset + (wide.n || 0), z1 = Bo.at - Bo.inset - (wide.s || 0);
   const sides = b.sides || {};
   const DEPTH = b.depth || DEPTH_SHOP;
   const cut = b.cut || {};
