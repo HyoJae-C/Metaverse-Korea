@@ -5051,10 +5051,12 @@ function coasterCamera(dt) {
     ride.cam.z + sh * Math.sin(t * 19.7 + 2),
   );
   // Lean with the banked track (60%, none on the gentle setting), and at the
-  // top look down over the edge.
+  // top, from your seat, look down over the edge (slowly: from behind you the
+  // view stays on the track ahead, so the crest doesn't jolt it).
   _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), rideFxSoft ? 0 : 0.6).normalize();
   camera.up.copy(_cu);
-  const down = tr.phase === 'hold' ? 3.6 : 0;
+  ride.down = (ride.down || 0) + ((first && tr.phase === 'hold' ? 3.6 : 0) - (ride.down || 0)) * Math.min(1, dt * 1.5);
+  const down = ride.down;
   const ah = first ? 6 : 8, hu = first ? 0.6 : 1;
   camera.lookAt(f.x + f.fx * ah + f.ux * hu, f.y + f.fy * ah + f.uy * hu - down, f.z + f.fz * ah + f.uz * hu);
   ride.fov += (fx.fov - ride.fov) * Math.min(1, dt * 3);

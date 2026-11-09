@@ -103,13 +103,10 @@ test('the track stays on the island, off the ground, and clear of itself', () =>
   }
 });
 
-test('the coaster keeps clear of the stairs down, and its helix is tucked inside the island', () => {
+test('the coaster keeps clear of the stairs down', () => {
   const pts = C.trackPoints();
   const { stairs } = islandStore.open;
   for (const p of pts) assert.ok(Math.hypot(p.x - stairs.x, p.z - stairs.z) > 6, `stairs pavilion at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
-  // (the helix sits south of the long run, east of the station: the track
-  // reaches no further east than the island's old north tip)
-  assert.ok(Math.max(...pts.map((p) => p.x)) < 0, 'no wider than it needs to be');
 });
 
 test('from the bridge you walk to the platform and to the stairs down; the shore holds you in', () => {

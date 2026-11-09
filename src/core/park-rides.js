@@ -36,7 +36,7 @@ export const RIDES = {
   // Drop tower: 8 seats round the pole, facing out; load, climb, hold, drop.
   // The climb, the hold at the top and the fall (free fall at `g`, then the
   // magnetic brakes from `brake` metres up) are DROP_T.
-  // (on the island, between the long run and the helix)
+  // (on the island, between the long run and the little hill after the helix)
   drop: { x: -13.2, z: -28.5, seats: 8, r: 1.75, low: 0.55, top: 22, brake: 8, g: 15 },
   // Swing ride: 16 chairs on chains from a spinning crown; as it speeds up
   // they fly out (tilt up to `tilt` radians).
@@ -51,11 +51,12 @@ export const RIDES = {
   // station, up the lift, along the top, down the big drop with a splash.
   // (x, z: where the boat waits at the station)
   flume: { x: 54.1, z: -16, seats: 4 },
-  // Gyro swing, on the island's east end: a ring of 16 seats facing out at
+  // Gyro swing, on the island south of the middle, by the walk to the
+  // station: a ring of 16 seats facing out at
   // the end of a long arm, spinning, while the arm swings like a pendulum
   // between two A-frames, higher each time, up past level (`max` radians).
   // The arm swings in the x-y plane (about the z axis, like the ship).
-  gyro: { x: 5, z: -26, seats: 16, pivot: 7.4, arm: 6.6, ring: 2.1, max: 1.75, omega: 1.15, spin: 0.9, legs: 3.8, frame: 3.4 },
+  gyro: { x: -11.5, z: -13, seats: 16, pivot: 7.4, arm: 6.6, ring: 2.1, max: 1.75, omega: 1.15, spin: 0.9, legs: 3.8, frame: 3.4 },
 };
 // The carousel, the pirate ship and the drop tower run on everyone's shared
 // clock (like the coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
@@ -412,7 +413,7 @@ export const RIDE_GATES = {
   carousel: { x: RIDES.carousel.x + 5.6, z: RIDES.carousel.z, ry: Math.PI / 2, staff: { x: RIDES.carousel.x + 5.2, z: RIDES.carousel.z - 1.9, ry: Math.PI / 2 } },
   viking: { x: RIDES.viking.x + 4.6, z: RIDES.viking.z + 3.8, ry: 0, staff: { x: RIDES.viking.x + 2.6, z: RIDES.viking.z + 3.7, ry: 0 } },
   wheel: { x: RIDES.wheel.x - 2, z: RIDES.wheel.z + 4.2, ry: 0, staff: { x: RIDES.wheel.x - 4, z: RIDES.wheel.z + 3.7, ry: 0 } },
-  drop: { x: RIDES.drop.x, z: RIDES.drop.z + 4.7, ry: 0, staff: { x: RIDES.drop.x + 1.9, z: RIDES.drop.z + 4.2, ry: 0 } }, // (south, off the walk to the gyro swing)
+  drop: { x: RIDES.drop.x - 4.7, z: RIDES.drop.z, ry: -Math.PI / 2, staff: { x: RIDES.drop.x - 4.2, z: RIDES.drop.z + 1.9, ry: -Math.PI / 2 } },
   // The swing ride: its gate on the east side, where the walk comes in
   // under the airtime hill; the gyro swing: on the south side.
   swing: { x: RIDES.swing.x + 7.7, z: RIDES.swing.z, ry: Math.PI / 2, staff: { x: RIDES.swing.x + 7.3, z: RIDES.swing.z - 1.9, ry: Math.PI / 2 } },

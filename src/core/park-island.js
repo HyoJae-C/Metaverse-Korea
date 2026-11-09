@@ -3,7 +3,7 @@
 // Express exactly as it was (track, speed, station, attendant) with its candy
 // wood round it; the Rainbow Wheel by the bridge, the Lollipop Drop beside
 // the helix, the Sugar Swing in the coaster's north-west loop and the
-// Macaron Gyro Swing on the east end, each in its fenced yard with a gate
+// Macaron Gyro Swing south of the middle, each in its fenced yard with a gate
 // off the island's walks (park-yards.js); and the stairs down to the rest of
 // the park under the island (the "another-land" room, store.below). The room
 // is in the coaster's own metres; the island's shore (store.open.lawn, the
@@ -39,13 +39,13 @@ function shoreWalls(lawn, bridge, block) {
 
 // The walks off the main one to the rides' gates ([x, z] points): from the
 // bridge's landing round the Ferris wheel to its gate, on under the airtime
-// hill to the swing ride's; and from the main walk east, past the drop
-// tower's gate, under the helix's edge and the long run, to the gyro swing's.
+// hill to the swing ride's; and from the main walk east to the drop tower's
+// and, further south, to the gyro swing's.
 const SPURS = [
   [[-29.6, -53], [-33.5, -39.6], [-42, -39.6]],
   [[-42, -39.6], [-48.5, -39.6], [-48.5, -29], [-50.3, -29]],
-  [[-22.46, -19.8], [RIDES.gyro.x, -19.8], [RIDES.gyro.x, -21.6]],
-  [[RIDES.drop.x, -19.8], [RIDES.drop.x, RIDES.drop.z + 3.6]],
+  [[-22.9, RIDES.drop.z], [RIDES.drop.x - 3.6, RIDES.drop.z]],
+  [[-23.6, RIDES.gyro.z + 5.9], [RIDES.gyro.x, RIDES.gyro.z + 5.9], [RIDES.gyro.x, RIDES.gyro.z + 4.4]],
 ];
 // Where the rides' moving parts reach past their yards (the wheel's rim and
 // gondolas), kept clear of the candy wood too.
@@ -102,7 +102,7 @@ export function buildIsland(store, ROOM, EXIT, { candyLand }) {
   const rides = ISLAND_RIDES.map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
   stations.rideStaff = ISLAND_RIDES.map((kind) => ({ kind, ...RIDE_GATES[kind].staff }));
   // A few more guests: at the wheel's gate, watching the swing ride and the gyro swing.
-  stations.patrons = [...(stations.patrons || []), { x: -37.6, z: -39, ry: Math.PI }, { x: -47.2, z: -34, ry: -Math.PI / 2 }, { x: 9.6, z: -19.8, ry: Math.PI }, { x: -10.6, z: -21.6, ry: Math.PI }];
+  stations.patrons = [...(stations.patrons || []), { x: -37.6, z: -39, ry: Math.PI }, { x: -47.2, z: -34, ry: -Math.PI / 2 }, { x: -4.6, z: -5.6, ry: Math.PI }, { x: -10.6, z: -24, ry: Math.PI }];
 
   // The stairs down to the rest of the park: a candy-striped pavilion over a
   // stairwell, its sign facing the walk.

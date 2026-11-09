@@ -449,7 +449,7 @@ named gate and an attendant (`core/park-yards.js`), off biscuit walks from
 the main one (`SPURS` in `park-island.js`): the Rainbow Wheel by the
 bridge, the Lollipop Drop between the long run and the helix, the Sugar
 Swing in the coaster's north-west loop (in under the airtime hill) and the
-Macaron Gyro Swing on the east end (`core/park-gyro.js`: a ring of 16 seats
+Macaron Gyro Swing south of the middle (`core/park-gyro.js`: a ring of 16 seats
 on a long arm that swings up past level between two A-frames). Which rides
 are where is `ISLAND_RIDES` / `UNDER_RIDES` in `park-rides.js`; the pirate
 ship, carousel, teacups, train and log flume stay in the room below. The

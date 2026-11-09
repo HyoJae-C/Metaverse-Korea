@@ -6,9 +6,9 @@
 // The track is one closed loop over Another Land's island (park-island.js):
 // the station at the south end, a chain lift up to 18 m, a stop at the top
 // with the front car hanging over the edge, a 17 m first drop, an airtime
-// hill, a run east along the north shore and down into a helix tucked
-// east of the station (so the island stays narrow), a tunnel and a smaller
-// second drop, then the brakes and home.
+// hill, a long run east along the north shore to a helix on the island's
+// east end, up a little hill and down the second drop into a tunnel, then
+// the brakes and home (the first design, kept: the island is wide enough).
 //
 // Timing runs on a shared clock (Date.now(), like the Namsan cable car), so
 // everyone in the park sees the trains in the same place: two trains, one
@@ -54,20 +54,19 @@ export const TRACK = [
   [-42, 2.4, -36.6],
   [-34, 3.4, -35.6],
   [-20, 5.6, -34.6], // long run east, behind the old park
-  [-9, 8.2, -34.2],
-  [-6.5, 9.8, -16.5], // helix round (-12, -10): dropping, tighter each turn
-  [-4.2, 9.1, -7.5],
-  [-11.4, 8.5, -2.2],
-  [-18.7, 7.8, -6.7],
-  [-17.3, 7.2, -14.7],
-  [-9.8, 6.5, -16.4],
-  [-5.6, 5.8, -10.4],
-  [-9.4, 5.2, -4.5],
-  [-15.8, 4.5, -5.8],
-  [-17.0, 3.9, -11.8],
-  [-12.2, 3.2, -15.0],
-  [-18, 3.3, -17], // out of the helix, heading back west
-  [-22, 3.2, -22.4], // second drop into the chocolate tunnel
+  [-6, 8.4, -35],
+  [4, 9.6, -35.4], // helix round (8, -27): one and a half turns, dropping
+  [13.6, 9.2, -33],
+  [16.4, 8.6, -26],
+  [12.6, 7.9, -19.6],
+  [4.6, 7.2, -20.4],
+  [1.2, 6.4, -26.4],
+  [5.4, 5.6, -31.6],
+  [12.2, 4.8, -29.6],
+  [10, 3.9, -23], // out under the first turn, heading back west
+  [0, 3.4, -18.8],
+  [-12, 5.6, -20.6], // up a little hill...
+  [-22, 3.2, -22.4], // ...and the second drop into the chocolate tunnel
   [-30, 1.3, -24],
   [-38, 1.4, -23],
   [-44, 2.6, -26.6], // zigzag

@@ -17,7 +17,7 @@ const ICING = '#fffaf3', PINK = '#ff8fb8', HOT = '#ff5f9e', MINT = '#8fe3c7', LE
 const box = (k, hx, z0, z1, g0, g1) => ({ box: [RIDES[k].x - hx, RIDES[k].z + z0, RIDES[k].x + hx, RIDES[k].z + z1], gap: [RIDES[k].x + g0, RIDES[k].x + g1] });
 export const YARDS = {
   carousel: { ring: RIDES.carousel.r + 1.6, gap: 0 },
-  drop: { ring: 3.6, gap: Math.PI / 2 },
+  drop: { ring: 3.6, gap: Math.PI },
   viking: box('viking', 7.5, -2.8, 2.8, 3.4, 5.8),
   wheel: box('wheel', 4.5, -3, 2.7, -3.2, -0.8),
   swing: { ring: 6.7, gap: null },
