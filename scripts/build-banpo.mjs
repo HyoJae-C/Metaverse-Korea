@@ -91,6 +91,17 @@ function build() {
         zh: '盘浦汉江公园和蚕院汉江公园并排位于汉江南岸。从盘浦大桥下的潜水桥走过江，在草地上铺开野餐垫，或者在江边钓鱼：传说中的蝠鲼只在这里咬钩。',
       } },
   ];
+  // The Moonlight Rainbow Fountain on Banpo Bridge (core/rainbow-fountain.js:
+  // the show; the jets come out of the bridge's upper deck). A board by the
+  // path, looking out at the bridge, with the real fountain's season.
+  landmarks.push({ type: 'sign', ...xz(at(BRIDGE + 22, -13)), ry: FACE_RIVER,
+    title: name('Moonlight Rainbow Fountain', '달빛무지개분수', '月光レインボー噴水', '月光彩虹喷泉'),
+    text: {
+      en: 'Banpo Bridge\'s fountain pours water lit in rainbow colours from both sides of the bridge into the Han River. In 2008 Guinness World Records named it the world\'s longest bridge fountain. In real life it runs from spring to autumn (roughly April to October): several shows of about 20 minutes each evening and one at noon, none in rain or strong wind. Times change every year, so check the Han River Park website before you go. In the game, a show starts at half past most hours (Korean time).',
+      ko: '반포대교 분수는 다리 양옆에서 무지개빛 물줄기를 한강으로 쏟아 내요. 2008년 기네스 세계기록에 세계에서 가장 긴 교량 분수로 올랐어요. 실제로는 봄부터 가을까지(대략 4월~10월) 저녁마다 약 20분짜리 공연을 여러 번, 낮 12시에 한 번 하고, 비가 오거나 바람이 세면 쉬어요. 시간은 해마다 바뀌니 가기 전에 한강공원 누리집에서 확인하세요. 게임에서는 대부분의 시간 매시 30분(한국 시간)에 공연이 시작돼요.',
+      ja: '盤浦大橋の噴水は、橋の両側から虹色にライトアップされた水を漢江へ流し落とします。2008年、世界一長い橋の噴水としてギネス世界記録に認定されました。実際には春から秋（だいたい4月〜10月）、毎晩約20分のショーが数回と正午に1回あり、雨や強風の日は休みます。時間は毎年変わるので、行く前に漢江公園のサイトで確認してください。ゲームでは、ほとんどの時間帯で毎時30分（韓国時間）にショーが始まります。',
+      zh: '盘浦大桥喷泉从桥的两侧把彩虹色灯光照亮的水洒进汉江。2008年它被吉尼斯世界纪录认定为世界最长的桥梁喷泉。现实中从春天到秋天（大约4月到10月）运行：每晚有几场约20分钟的表演，中午还有一场，下雨或大风时暂停。时间每年都会变，出发前请在汉江公园网站上确认。在游戏里，大多数时段每小时30分（韩国时间）开始一场表演。',
+    } });
   for (const u of [-165, -135, -70, -40, 30, 60, 90, 130, 160]) landmarks.push({ type: 'bench', ...xz(at(u, -25)), ry: FACE_RIVER });
   const pois = [
     { kind: 'landmark', ...xz(at(0, 10)), name: name('Banpo-Jamwon Han River Park', '반포·잠원 한강공원', '盤浦・蚕院漢江公園', '盘浦·蚕院汉江公园') },

@@ -620,4 +620,8 @@ export const ID = {
   'look.model': 'Karakter',
   'look.tee': 'Warna kaos',
   'credit.chars': 'Karakter',
+  "fountain.soon": "🌈 Air Mancur Pelangi Cahaya Bulan dimulai satu menit lagi. Tonton Jembatan Banpo dari halaman rumput di tepi sungai.",
+  "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
+  "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",
+  "fountain.next": "🌈 Pertunjukan Air Mancur Pelangi berikutnya dalam {min} menit.",
 };
