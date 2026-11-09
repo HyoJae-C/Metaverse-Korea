@@ -416,6 +416,13 @@ between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
 through the gap between the lakes (about 35 m wide), the mall stands west of
 the east lake's north tip, and the land the old, larger lakes took is
 lakeside park. The island is about 64 x 58 m with at least 4 m of water round
-it; Another Land Bridge runs south from Olympic-ro to its north tip. The park
+it; Another Land Bridge runs south from Olympic-ro to its north tip.
+
+The water lies about a metre below the ground behind stone banks, and the two
+lakes are one water, joined by a channel under Songpa-daero, which crosses it
+on a bridge (landmark `lakeshore`, `core/lakeshore.js`; the shore is cut out
+of the ground, the water areas are `sunk`). One walk goes round both lakes,
+with a railing along the shore, lamps with flowers at their feet and benches
+facing the water. The park
 model behind the gate is drawn small (`PARK_SCALE`) to stand on the island
 until the rides move out onto it.
