@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const map = read('map.json');
 const shops = [...read('stores.json').stores, ...read('homes.json').homes];
-const inSeongsu = ([x, z]) => x >= -335 && x <= 260 && z >= -110 && z <= 410;
+const inSeongsu = ([x, z]) => x >= -465 && x <= 260 && z >= -100 && z <= 410;
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 const segDist = (px, pz, [ax, az], [bx, bz]) => {
   const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;
@@ -14,8 +14,8 @@ const segDist = (px, pz, [ax, az], [bx, bz]) => {
 };
 const wallDist = (x, z, p) => Math.min(...p.map((a, i) => segDist(x, z, a, p[(i + 1) % p.length])));
 
-test('Seongsu is a hand-made map, not OpenStreetMap data', () => {
-  assert.ok(!/openstreetmap/i.test(JSON.stringify(map.meta)));
+test('Seongsu is a hand-made map on the real street lines (credited to OpenStreetMap)', () => {
+  assert.match(map.meta.source, /OpenStreetMap/);
   assert.ok(map.buildings.length < 180, `${map.buildings.length} buildings`);
 });
 
@@ -32,10 +32,19 @@ test('every Seongsu shop stands on open ground in front of a building, each at i
     assert.ok(!spots.has(key), `${s.id} shares a spot`);
     spots.add(key);
   }
-  // Two shops along the same side of a street need a whole shop front
-  // (about 6.4 m with the sign) between them, or their signs overlap.
+  // Two shops need a whole shop front (about 6.4 m with the sign) between
+  // them, or their signs overlap (the streets run at a slant, so any two).
   for (const a of here) for (const b of here) {
-    if (a === b || Math.abs(a.at[1] - b.at[1]) > 0.5) continue;
-    assert.ok(Math.abs(a.at[0] - b.at[0]) >= 7, `${a.id} and ${b.id} overlap`);
+    if (a !== b) assert.ok(Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]) >= 7, `${a.id} and ${b.id} overlap`);
   }
+});
+
+test('Ttukseom Han River Park and Songpa are at their real places on the Han', async () => {
+  const { toGame, anchorOffset } = await import('../src/core/seoul-grid.js');
+  const park = map.landmarks.find((l) => l.type === 'hanpark');
+  const [rx, rz] = toGame(37.5294, 127.0697); // the park, east of Cheongdam Bridge
+  assert.ok(Math.hypot(park.x - rx, park.z - rz) < 20, `park at ${park.x},${park.z}, real ${rx.toFixed(0)},${rz.toFixed(0)}`);
+  const songpa = read('region.json').districts.find((d) => d.id === 'songpa');
+  assert.ok(!songpa.anchor.nudge, 'Songpa is not nudged');
+  assert.deepEqual(songpa.offset, anchorOffset(songpa.anchor).map(Math.round));
 });

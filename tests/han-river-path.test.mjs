@@ -30,7 +30,7 @@ test('the Han River Bike Path stays out of the water and off buildings', () => {
 });
 
 test('it joins Mangwon\'s river path, the Jamsu Bridge road and Seongsu\'s Han River Path', () => {
-  for (const at of [[-3182, -64], [-1307.8, 705.8], [-335, 166]]) {
+  for (const at of [[-3182, -64], [-1307.8, 705.8], [-465, 119]]) {
     assert.ok(bike.p.some(([x, z]) => x === at[0] && z === at[1]), `path passes ${at}`);
     assert.ok(nodes.has(at.join(',')), `another road ends at ${at}`);
   }
@@ -43,6 +43,6 @@ test('Sowol-ro joins Itaewon\'s Sowol-ro to Toegye-ro at Sungnyemun', () => {
 });
 
 test('the river water joins up with the parks\' water', () => {
-  assert.equal(region.water.length, 2);
+  assert.equal(region.water.length, 3); // west of Yeouido, Banpo-Jamwon to Seongsu, and Jamsil Bridge east along Songpa
   for (const w of region.water) assert.ok(w.p.length >= 4);
 });

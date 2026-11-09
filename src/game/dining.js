@@ -174,6 +174,7 @@ export function createDining(game) {
   function orderFood(product, togo) {
     const cost = coinPrice(product.price);
     if (!togo && meal?.seat === game.seated) { game.shop.toast(L(DINE_TEXT.busy)); return; }
+    if (!togo && !game.seated?.plate) { $('lp-panel').hidden = true; return; } // stood up with the menu open: no table to serve
     if (togo && !game.handReady()) return;
     if (!game.wallet.spend(cost, { name: product.name, at: game.interior?.store.name })) { game.shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
     game.refreshWallet();

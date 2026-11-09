@@ -16,7 +16,8 @@
     "lat": 37.5446,
     "lon": 127.0557,
     "heading": 200,
-    "nearStore": "ongi-cafe"
+    "nearStore": "ongi-cafe",
+    "first": { "district": "bukchon", "at": [24, -26], "heading": 0, "why": "New players start just inside Bukchon's gate, on the open yard by the shops, facing up into the village: hanok roofs and villagers on the first screen, room for the camera, and Anguk Station outside the gate for the first trip to Seongsu. Players coming back still start where they left off." }
   },
   "districts": [
     {
@@ -68,18 +69,18 @@
       "map": "districts/songpa.json",
       "offset": [
         438,
-        620
+        771
       ],
-      "anchor": { "place": "Jamsil Station (Songpa-daero / Olympic-ro)", "lat": 37.5133, "lon": 127.1, "local": [540, 100], "nudge": [0, -151], "why": "Its Han River bank (local z -188) lines up with Seongsu's; the full-size Seongsu district puts the river nearer than the real 1/4 distance." }
+      "anchor": { "place": "Jamsil Station (Songpa-daero / Olympic-ro)", "lat": 37.5133, "lon": 127.1, "local": [540, 100] }
     },
     {
       "id": "olympic-park",
       "map": "districts/olympic-park.json",
       "offset": [
         287,
-        540
+        446
       ],
-      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250], "nudge": [0, 94], "why": "Moved south so its Olympic-ro (local z 180) runs straight on from Songpa's Olympic-ro at Jamsil Station (world z 720): one straight road from the station to the Peace Gate, with no jog." }
+      "anchor": { "place": "World Peace Gate (Olympic Park, by Mongchontoseong Station)", "lat": 37.5196, "lon": 127.1163, "local": [1050, 250] }
     },
     {
       "id": "seodaemun",
@@ -133,7 +134,7 @@
         -2715,
         284
       ],
-      "anchor": { "place": "Yeouido Han River Park (the park house)", "lat": 37.5284, "lon": 126.9327, "local": [-168.7, -78], "nudge": [-169.6, -244.8], "why": "The game's Han River runs further north here than the real one (Seongsu's extra room pushes the gu edges about), so the island moves north-west to sit in the middle of the game's river, between Hongdae's bank and Yeongdeungpo." }
+      "anchor": { "place": "Yeouido Han River Park (the park house)", "lat": 37.5284, "lon": 126.9327, "local": [-168.7, -78], "nudge": [-169.6, -244.8], "why": "The game's Han River runs further north here than the real one (the gu edges along it are bent onto the game's river), so the island moves north-west to sit in the middle of the game's river, between Hongdae's bank and Yeongdeungpo." }
     },
     {
       "id": "euljiro",
@@ -149,27 +150,34 @@
       "map": "districts/grand-park.json",
       "offset": [
         408,
-        -86
+        -95
       ],
-      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0], "nudge": [0, 9], "why": "Moved a little south so Achasan-ro from Seongsu (world z -86) runs straight into the main gate." }
+      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0] }
     },
     {
       "id": "samseong",
       "map": "districts/samseong.json",
       "offset": [
         163,
-        975
+        996
       ],
-      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0], "nudge": [0, -21], "why": "Moved a little north towards Songpa (Teheran-ro runs on over Tancheon to Songpa's Olympic-ro at Jamsil), but no further than the Han River's south bank: Bongeunsa-ro's lawns stay on land." }
+      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0] }
     }
   ],
   "links": [
     {
       "k": "primary",
       "w": 16,
-      "p": [[448, 975], [578, 720]],
+      "p": [[328, 996], [578, 871]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
       "note": "Teheran-ro crosses Tancheon on Samseong Bridge and runs on north-east as Olympic-ro to Songpa's Olympic-ro, towards Jamsil Station."
+    },
+    {
+      "k": "secondary",
+      "w": 12,
+      "p": [[1100, 871], [1247, 626]],
+      "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
+      "note": "Olympic-ro climbs north-east from Jamsil Station (Songpa) to Olympic Park's Olympic-ro by the World Peace Gate, as it does in Seoul."
     },
     {
       "k": "primary",
@@ -181,7 +189,7 @@
     {
       "k": "secondary",
       "w": 16,
-      "p": [[260, -86], [408, -86]],
+      "p": [[260, 97.2], [300, 112.2], [390, -95], [408, -95]],
       "n": { "ko": "아차산로", "en": "Achasan-ro", "ja": "峨嵯山路", "zh": "峨嵯山路" },
       "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro and Children's Grand Park's main gate."
     },
@@ -244,7 +252,7 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-335, -86], [-735, -99], [-735, -663.5], [-741, -663.5]],
+      "p": [[-465, -78], [-735, -99], [-735, -663.5], [-741, -663.5]],
       "n": { "ko": "왕십리로", "en": "Wangsimni-ro", "ja": "往十里路", "zh": "往十里路" },
       "note": "From Seongsu north-west to the east end of Cheonggyecheon (Hwanghakgyo)."
     },
@@ -253,8 +261,8 @@
       "w": 16,
       "p": [
         [
-          -335,
-          79
+          -465,
+          -78
         ],
         [
           -700,
@@ -286,7 +294,7 @@
       "p": [
         [
           260,
-          351.7
+          262.7
         ],
         [
           308,
@@ -295,6 +303,10 @@
         [
           438,
           358
+        ],
+        [
+          438,
+          509
         ]
       ],
       "n": {
@@ -342,28 +354,29 @@
     {"k": "tertiary", "w": 9, "p": [[-3182, -128], [-3140, -148], [-3081, -148]], "n": {"ko": "망원로", "en": "Mangwon-ro", "ja": "望遠路", "zh": "望远路"}},
     {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."},
     {"k": "tertiary", "w": 8, "p": [[-1668, 99], [-1684, -60], [-1706, -300], [-1720, -440]], "n": {"ko": "소월로", "en": "Sowol-ro", "ja": "素月路", "zh": "素月路"}, "note": "Sowol-ro round Namsan's west side: from Itaewon's Sowol-ro (Haebangchon) north to Sungnyemun, where Toegye-ro starts. Itaewon and Banpo no longer go round through Seongsu to reach Jung-gu and Jongno."},
-    {"k": "walk", "w": 6, "p": [[-3182, -64], [-3140.5, -63.9], [-2776.7, -16.7], [-2562.6, 80.2], [-2422.2, 245.0], [-2302.1, 445.1], [-2152.0, 630.8], [-1900.8, 778.5], [-1602.4, 827.8], [-1395.7, 779.3], [-1307.8, 705.8], [-1075, 486], [-340, 162], [-335, 166]], "n": {"ko": "한강 자전거길", "en": "Han River Bike Path", "ja": "漢江自転車道", "zh": "汉江自行车道"}, "note": "The north-bank Han River path: from Mangwon Han River Park's path east past the north end of Seogang Bridge (Yeouido, later), along the river to the north end of Jamsu Bridge (Banpo-Jamwon) and on to Seongsu's Han River Path at Ttukseom. About 12 m inland from the water (region water below)."},
+    {"k": "walk", "w": 6, "p": [[-3182, -64], [-3140.5, -63.9], [-2776.7, -16.7], [-2562.6, 80.2], [-2422.2, 245.0], [-2302.1, 445.1], [-2152.0, 630.8], [-1900.8, 778.5], [-1602.4, 827.8], [-1395.7, 779.3], [-1307.8, 705.8], [-1075, 486], [-470, 117], [-465, 119]], "n": {"ko": "한강 자전거길", "en": "Han River Bike Path", "ja": "漢江自転車道", "zh": "汉江自行车道"}, "note": "The north-bank Han River path: from Mangwon Han River Park's path east past the north end of Seogang Bridge (Yeouido, later), along the river to the north end of Jamsu Bridge (Banpo-Jamwon) and on to Seongsu's Han River Path at Ttukseom. About 12 m inland from the water (region water below)."},
     {"k": "walk", "w": 5, "p": [[-2851, -148], [-2776.7, -16.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From Hongdae's south-east corner (Wausan-ro) down to the Han River Bike Path, where Seogang Bridge starts for Yeouido."}
   ],
   "water": [
     {"p":[[-3142,-52],[-2780,-5],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],"blockers":[[[-3142,-52],[-2792.8,-6.7],[-2904.3,144.2],[-2932.2,123.6],[-3033.9,160.4],[-3142,48]],[[-2777.5,-3.9],[-2570,90],[-2432,252],[-2312,452],[-2160,640],[-1905,790],[-1602,840],[-1393,791],[-1312,880],[-1620,950],[-1960,900],[-2240,730],[-2603.5,654.8],[-2609.8,579.2],[-2503,552.4],[-2497.8,444.4],[-2893,152.6]]],"note":"Han River from Mangwon Han River Park east to Banpo-Jamwon, round the north shore of Yeouido (scripts/build-yeouido.mjs writes this). Its blocker has a gap for Seogang Bridge."},
-    {"p": [[-1067, 495], [-335, 173], [-335, 410], [-986, 584]], "note": "Han River from Banpo-Jamwon north-east to Seongsu (Ttukseom)."}
+    {"p": [[-1067, 495], [-465, 126], [-465, 300], [-986, 584]], "note": "Han River from Banpo-Jamwon north-east to Seongsu (Ttukseom)."},
+    { "p": [[430, 453.1], [858, 455], [858, 560], [430, 560]], "blockers": [[[446, 453.4], [858, 455], [858, 560], [446, 560]]], "note": "Han River from Jamsil Bridge east along Songpa's bank: from the north bank (Ttukseom Han River Park's, carried on) to Songpa's own water (z 556). Its blocker leaves Jamsil Bridge (x 430..446) open." }
   ],
   "screens": [
-    { "at": [64, 900], "w": 28, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
-    { "at": [43, 918], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
+    { "at": [106, 932], "w": 22, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
+    { "at": [88, 945], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
     {
       "at": [
-        60,
-        -97
+        3.9,
+        -10.3
       ],
       "w": 28,
       "y": 14
     },
     {
       "at": [
-        60,
-        -97
+        3.9,
+        -10.3
       ],
       "along": -19,
       "w": 7,
@@ -372,8 +385,8 @@
     },
     {
       "at": [
-        60,
-        -97
+        3.9,
+        -10.3
       ],
       "along": 19,
       "w": 7,
@@ -382,8 +395,8 @@
     },
     {
       "at": [
-        60,
-        -97
+        3.9,
+        -10.3
       ],
       "w": 46,
       "h": 11.5,
@@ -469,18 +482,18 @@
           {
             "n": 1,
             "at": [
-              44.5,
-              -69.5
+              7.3,
+              20.4
             ],
-            "ry": -1.5708
+            "ry": -1.9286
           },
           {
             "n": 2,
             "at": [
-              75.5,
-              -69.5
+              37.3,
+              31.6
             ],
-            "ry": 1.5708
+            "ry": 1.213
           }
         ]
       },
@@ -495,23 +508,23 @@
         "line": {
           "color": "#00a84d"
         },
-        "note": "Seoul Forest's north-east corner by Seoulsup-gil: exit 1 on the park corner, exit 2 at the head of Metasequoia Avenue. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
+        "note": "On Wangsimni-ro at Seoul Forest's east edge, north of Ttukseom-ro (its real place): both exits on the forest side of the road. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
         "exits": [
           {
             "n": 1,
             "at": [
-              -195.5,
-              63
+              -258,
+              30
             ],
-            "ry": 3.1416
+            "ry": 0
           },
           {
             "n": 2,
             "at": [
-              -210,
-              93
+              -258,
+              44
             ],
-            "ry": -1.5708
+            "ry": 3.1416
           }
         ]
       },
@@ -676,7 +689,7 @@
           }
         ]
       },
-      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 961], "ry": -1.5708 }, { "n": 2, "at": [179, 989], "ry": 1.5708 }] },
+      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 982], "ry": -1.5708 }, { "n": 2, "at": [179, 1010], "ry": 1.5708 }] },
       {
         "id": "jamsil-station",
         "name": {
@@ -709,7 +722,7 @@
             "n": 1,
             "at": [
               960,
-              729
+              880
             ],
             "ry": -1.5708
           },
@@ -717,13 +730,13 @@
             "n": 2,
             "at": [
               996,
-              729
+              880
             ],
             "ry": 1.5708
           }
         ]
       },
-      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 729], "ry": -1.5708 }, { "n": 2, "at": [1372, 729], "ry": 1.5708 }] },
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 635], "ry": -1.5708 }, { "n": 2, "at": [1372, 635], "ry": 1.5708 }] },
       {
         "id": "childrens-grand-park-station",
         "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },
@@ -733,8 +746,8 @@
         "next": { "ko": "건대입구", "en": "Konkuk Univ." },
         "note": "Under Neungdong-ro at Children's Grand Park's main gate (exit 1 by the gate). The real station is also named Sejong Univ.",
         "exits": [
-          { "n": 1, "at": [420, -104], "ry": 3.14159 },
-          { "n": 2, "at": [396, -104], "ry": 3.14159 }
+          { "n": 1, "at": [420, -113], "ry": 3.14159 },
+          { "n": 2, "at": [396, -113], "ry": 3.14159 }
         ]
       }
     ]
@@ -756,13 +769,13 @@
     }
   ],
   "adPosters": {
-    "L-115": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
-    "L-117": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
-    "L-118": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
-    "L-119": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
-    "L-101": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
-    "L-97": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
-    "L-32": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
+    "L-67": { "image": "ads/seongsu-ss-yellow-v2.webp", "credit": "Hong Nguyen" },
+    "L-05": { "image": "ads/seongsu-red-v2.webp", "credit": "Marjan Taghipour" },
+    "L-29": { "image": "ads/seongsu-fw-suit-v2.webp", "credit": "Becky Sherburn" },
+    "L-68": { "image": "ads/seongsu-blonde-v2.webp", "credit": "David Banjo" },
+    "L-01": { "image": "ads/seongsu-mono-v2.webp", "credit": "Chyntia Juls" },
+    "L-69": { "image": "ads/seongsu-sunday-v2.webp", "credit": "Haley Lawrence" },
+    "L-97": { "image": "ads/seongsu-puffer-v2.webp", "credit": "Mike Von" }
   },
   "storePosters": {
     "sinjeon-pocha": { "image": "ads/seongsu-retro-v2.webp", "credit": "Alex Shaw" },

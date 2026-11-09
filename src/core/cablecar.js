@@ -11,6 +11,10 @@
 import * as THREE from 'three';
 import { namsanTower } from './landmarks.js';
 import { LOCK_SHAPES } from './love-locks.js';
+import { darkness } from './weather.js';
+
+const DAY_SKY = new THREE.Color('#bfdff5'), DAY_FOG = new THREE.Color('#cfe6f5'), NIGHT_SKY = new THREE.Color('#1a2550');
+const WHITE = new THREE.Color('#ffffff'), MOON = new THREE.Color('#a9b9ff');
 
 export const CABLE = {
   // With two cabins half a cycle apart, one is at each station every
@@ -224,11 +228,13 @@ export function buildCableCar(store, ROOM, EXIT) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#bfdff5');
   scene.fog = new THREE.Fog('#cfe6f5', 140, 620);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x88b07a, 1.6));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x88b07a, 1.6);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.2);
   sun.position.set(30, 80, 40);
   scene.add(sun);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(ambient);
 
   const colliders = [];
   const block = (x, z, sx, sz) => colliders.push({ p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]] });
@@ -237,13 +243,14 @@ export function buildCableCar(store, ROOM, EXIT) {
 
   // The city far below: a wide ground, low blocks of buildings all round,
   // a river and a ring of hills on the horizon.
+  const cityMat = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true, emissive: '#ffc874', emissiveIntensity: 0 }); // (glows a little at night: the lit city)
   add(new THREE.PlaneGeometry(1400, 1400).rotateX(-Math.PI / 2), '#b9c7a8', 0, -0.02, 0);
   add(new THREE.PlaneGeometry(1400, 60).rotateX(-Math.PI / 2), '#6fa8d6', 0, 0.02, 250); // the Han
   {
     const geo = new THREE.BoxGeometry(1, 1, 1);
     geo.translate(0, 0.5, 0);
     const N = 520;
-    const city = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), N);
+    const city = new THREE.InstancedMesh(geo, cityMat, N);
     const tones = ['#e8e2d6', '#d6dce4', '#f1ede4', '#c9ced6', '#e3d5c3', '#bfc8d2'].map((c) => new THREE.Color(c));
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
     let seed = 11, n = 0;
@@ -450,9 +457,23 @@ export function buildCableCar(store, ROOM, EXIT) {
 
   // The two cabins.
   const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], ROPE); scene.add(c); return c; });
+  // Night with Seoul's (weather.js darkness): a dark blue sky, moonlit
+  // light and the city below lit up.
+  let nightShown = -1;
+  const setNight = (k) => {
+    if (Math.abs(k - nightShown) < 0.002) return;
+    nightShown = k;
+    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+    scene.fog.color.copy(DAY_FOG).lerp(NIGHT_SKY, k);
+    hemi.intensity = 1.6 - 0.9 * k; hemi.color.copy(WHITE).lerp(MOON, k);
+    sun.intensity = 1.2 - 0.9 * k;
+    ambient.intensity = 0.35 + 0.1 * k;
+    cityMat.emissiveIntensity = 0.32 * k;
+  };
   const tick = () => {
     const t = cableClock();
     cabins.forEach((c, i) => { const s = cabinPos(i, cabinAt(i, t).k); c.position.set(s.x, s.y, s.z); });
+    setNight(darkness());
   };
   tick();
 

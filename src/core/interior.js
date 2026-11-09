@@ -13,6 +13,7 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
+import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
@@ -55,6 +56,8 @@ export const ROOM_SIZES = {
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
   dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
+  zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
+  zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
@@ -367,6 +370,10 @@ export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
 let parkBuilder = null;
 export const setParkBuilder = (fn) => { parkBuilder = fn; };
 export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;
+// The zoo (zoo-park.js: the grounds, and the Sea Animals hall inside) too.
+let zooBuilders = null;
+export const setZooBuilders = (m) => { zooBuilders = m; };
+export const needsZoo = (store) => (store?.workshop === 'zoo' || store?.workshop === 'zoo-sea') && !zooBuilders;
 
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
@@ -378,6 +385,8 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
+  if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
+  if (store.workshop === 'zoo') return zooBuilders.buildZooPark(store, ROOM, ZOO_PARK_EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
@@ -1221,8 +1230,27 @@ export function buildInterior(store) {
         spot.position.set(0, h - 0.5, sz);
         scene.add(spot);
       }
-      let flashT = 0;
+      // Where the walk starts, so nobody misses it: a sign over the arch
+      // (seen from the door), a glowing ring on the floor at the start, and
+      // arrows from the door to the runway's end.
+      const startSign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.69), new THREE.MeshBasicMaterial({ map: labelTexture('▼ 런웨이 시작 · START ▼', '#c2185b') }));
+      startSign.position.set(0, 5, -d / 2 + 0.5);
+      scene.add(startSign);
+      const ringMat = new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.8, depthWrite: false });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 32).rotateX(-Math.PI / 2), ringMat);
+      ring.position.set(0, 0.02, z0);
+      scene.add(ring);
+      const chev = new THREE.Shape([[0, 0.35], [-0.5, -0.15], [-0.5, -0.4], [0, 0.1], [0.5, -0.4], [0.5, -0.15]].map(([x, y]) => new THREE.Vector2(x, y)));
+      const arrowZs = [];
+      for (let az = z1 + 2.6; az < d / 2 - 1.2; az += 1.8) arrowZs.push(az);
+      const arrows = new THREE.InstancedMesh(new THREE.ShapeGeometry(chev).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.75, depthWrite: false }), arrowZs.length);
+      const am = new THREE.Matrix4();
+      arrowZs.forEach((az, i) => arrows.setMatrixAt(i, am.makeTranslation(0, 0.02, az)));
+      scene.add(arrows);
+      let flashT = 0, pulseT = 0;
       animate = (dt) => {
+        pulseT += dt;
+        ringMat.opacity = 0.45 + 0.4 * Math.sin(pulseT * 4) ** 2;
         flashT = Math.max(0, flashT - dt);
         const on = flashT > 0 && Math.sin(flashT * 60) > 0 ? 40 : 0;
         flashes.forEach((fl, i) => { fl.intensity = (i + Math.floor(flashT * 20)) % 2 ? on : 0; });

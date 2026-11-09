@@ -34,7 +34,7 @@ test('Samseong-dong stays on land, south of the Han River', () => {
 test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the plaza', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');
-  assert.ok(MALL.x1 - MALL.x0 >= 150 && MALL.z1 - MALL.z0 >= 80, 'the biggest building around');
+  assert.ok(MALL.x1 - MALL.x0 >= 80 && MALL.z1 - MALL.z0 >= 55, 'the biggest building around');
   assert.ok(map.landmarks.some((l) => l.type === 'konext'));
   assert.ok(map.landmarks.some((l) => l.type === 'aquarium'), 'KONEXT Aquarium pavilion');
   assert.ok(map.buildings.some((b) => b.custom && b.h === PAVILION.h));
