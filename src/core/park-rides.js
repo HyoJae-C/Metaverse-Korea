@@ -16,7 +16,7 @@ export const RIDE_PRICE = { coaster: 7000, flume: 5000, drop: 4000, viking: 4000
 // The ride-all day pass, sold at the ticket booth: every ride in the park
 // (bumper cars and the coaster too) as often as you like, today.
 export const RIDE_PASS = 20000;
-export const RIDE_SECONDS = { carousel: 24, wheel: 40, viking: 22, drop: 13, swing: 26, teacups: 26, train: 44, flume: 40 };
+export const RIDE_SECONDS = { carousel: 24, wheel: 90, viking: 22, drop: 15, swing: 26, teacups: 26, train: 44, flume: 40 }; // (the wheel: one slow turn, time to take in the view)
 
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).
 export const RIDES = {
@@ -28,10 +28,12 @@ export const RIDES = {
   // `arm` below the pivot, the end benches stand higher (to see over).
   viking: { x: -13, z: -9, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
   // Drop tower: 8 seats round the pole, facing out; load, climb, hold, drop.
-  drop: { x: 52, z: -4, seats: 8, r: 1.75, low: 0.55, top: 17 },
+  // The climb, the hold at the top and the fall (free fall at `g`, then the
+  // magnetic brakes from `brake` metres up) are DROP_T.
+  drop: { x: 52, z: -4, seats: 8, r: 1.75, low: 0.55, top: 22, brake: 8, g: 15 },
   // Swing ride: 16 chairs on chains from a spinning crown; as it speeds up
   // they fly out (tilt up to `tilt` radians).
-  swing: { x: 17, z: 24.5, seats: 16, arm: 3.1, chain: 3.8, hub: 4.6, tilt: 0.9, speed: 1.15 },
+  swing: { x: 17, z: 24.5, seats: 16, arm: 2.6, chain: 4.2, hub: 5, tilt: 1.05, speed: 2 },
   // Teacups: 5 cups of 3 on a turning floor, each cup spinning the other way.
   teacups: { x: 29.5, z: 28.2, seats: 15, cups: 5, per: 3, R: 2.6, cupR: 0.9, speed: 0.5, spin: 1.9 },
   // The park train: an engine and 3 cars of 4 (2 benches of 2) round an
@@ -45,7 +47,7 @@ export const RIDES = {
 // The carousel, the pirate ship and the drop tower run on everyone's shared
 // clock (like the coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
 // friends ride the same swing, and everyone sees the same ship.
-export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 }, drop: { load: 9, run: 13, stop: 2 },
+export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 }, drop: { load: 9, run: RIDE_SECONDS.drop, stop: 2 },
   swing: { load: 9, run: RIDE_SECONDS.swing, stop: 4 }, teacups: { load: 9, run: RIDE_SECONDS.teacups, stop: 3 }, train: { load: 10, run: RIDE_SECONDS.train, stop: 3 }, flume: { load: 10, run: RIDE_SECONDS.flume, stop: 3 } };
 const cycleLen = (c) => c.load + c.run + c.stop;
 export function ridePhase(kind, t) {
@@ -92,16 +94,45 @@ export function carouselPace(t) {
   return Math.min(1, r.s / UP, (c.run - r.s) / DOWN);
 }
 // Height of the drop tower's seat ring at time t (seconds): still while it
-// loads, a slow 8 s climb, 2 s at the top with your feet dangling, a
-// one-second fall, then the brakes.
+// loads, a slow climb, a long, quiet hold at the top with your feet
+// dangling, then the release: free fall (faster than real gravity, for the
+// stomach), the magnetic brakes catching you low down, and a soft settle.
+export const DROP_T = (() => {
+  const { top, brake, g, low } = RIDES.drop, fall = Math.sqrt((2 * (top - brake)) / g), v = g * fall;
+  const brakeS = (2 * (brake - low - 0.6)) / v; // (decelerating evenly to a crawl 0.6 m up)
+  return { climb: 8, hold: 10.8, fall, v, brake: brakeS }; // hold: when it lets go (s into the run)
+})();
 export function dropY(t) {
-  const { low, top } = RIDES.drop, r = ridePhase('drop', t);
+  const { low, top, brake, g } = RIDES.drop, r = ridePhase('drop', t), T = DROP_T;
   if (r.phase !== 'run') return low;
   const s = r.s;
-  if (s < 8) return low + (s / 8) * (top - low); // slow climb
-  if (s < 10) return top; // hold at the top…
-  if (s < 11) { const k = s - 10; return top - k * k * (top - low - 2); } // …then drop
-  return low + 2 * Math.max(0, 1 - (s - 11) / 2); // brakes, settle
+  if (s < T.climb) return low + (s / T.climb) * (top - low); // slow climb
+  if (s < T.hold) return top; // hold at the top…
+  const f = s - T.hold;
+  if (f < T.fall) return top - 0.5 * g * f * f; // …free fall
+  const b = f - T.fall, a = T.v / T.brake;
+  if (b < T.brake) return brake - T.v * b + 0.5 * a * b * b; // the brakes
+  return low + 0.6 * Math.max(0, 1 - (b - T.brake) / 1.5); // settle
+}
+// How fast it feels (the coaster's effects use it: coaster.js rideFx): k 0..1
+// of the ride's top speed, v in m/s, and the coaster's phase names (the
+// drop tower climbs like a chain lift, holds, drops; the swing runs).
+export function rideSpeed(kind, t) {
+  const r = ridePhase(kind, t);
+  if (r.phase !== 'run') return { k: 0, v: 0, phase: r.phase === 'load' ? 'board' : 'unload' };
+  if (kind === 'drop') {
+    const T = DROP_T, s = r.s, f = s - T.hold;
+    if (s < T.climb) return { k: 0.12, v: (RIDES.drop.top - RIDES.drop.low) / T.climb, phase: 'lift' };
+    if (f < 0) return { k: 0, v: 0, phase: 'hold' };
+    if (f < T.fall) { const v = RIDES.drop.g * f; return { k: v / T.v, v, phase: 'drop' }; }
+    const b = f - T.fall, v = Math.max(0, T.v - (T.v / T.brake) * b);
+    return { k: v / T.v, v, phase: b < T.brake ? 'run' : 'brake' };
+  }
+  if (kind === 'swing') {
+    const k = Math.sqrt(swingTilt(t) / RIDES.swing.tilt), S = RIDES.swing;
+    return { k, v: k * S.speed * (S.arm + S.chain * Math.sin(S.tilt)), phase: 'run' };
+  }
+  return { k: 0, v: 0, phase: 'run' };
 }
 // The Ferris wheel turns all the time, on the shared clock; gondola i's angle
 // from the bottom. You get on at the bottom and ride one full turn.
@@ -146,7 +177,7 @@ export function swingTilt(t) {
   const c = RIDE_CYCLE.swing, r = ridePhase('swing', t);
   if (r.phase !== 'run') return 0;
   const k = Math.min(1, r.s / 4, (c.run - r.s) / 5);
-  return RIDES.swing.tilt * Math.max(0, k) * Math.max(0, k);
+  return RIDES.swing.tilt * Math.max(0, k) * Math.max(0, k) * (1 + 0.06 * Math.sin(r.s * 1.7) * Math.min(1, k * 2)) / 1.06; // (a little rise and fall at full speed)
 }
 // Teacups: the floor turns one way, each cup spins the other (faster).
 export function teacupFloor(t) {

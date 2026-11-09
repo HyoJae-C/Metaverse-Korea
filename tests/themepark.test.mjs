@@ -62,7 +62,13 @@ test('the drop tower: load, the harness comes down, a slow climb, a hold, then a
   assert.equal(barDown('drop', run + 0.1), 1);
   assert.ok(dropY(run + 4) > R.low + 3 && dropY(run + 4) < R.top, 'climbing');
   assert.equal(dropY(run + 9), R.top);
-  assert.ok(dropY(run + 10.95) < R.top / 3, 'falls within a second');
+  const { DROP_T, rideSpeed } = await import('../src/core/park-rides.js');
+  assert.equal(dropY(run + DROP_T.hold - 0.1), R.top, 'a long hold at the top');
+  assert.ok(DROP_T.fall < 1.6 && dropY(run + DROP_T.hold + DROP_T.fall + 0.1) < R.top / 3, 'free fall: down in a second and a half');
+  assert.ok(DROP_T.v > 18, `fast at the bottom (${DROP_T.v.toFixed(1)} m/s)`);
+  for (let s = 0; s < c.run; s += 0.05) assert.ok(dropY(run + s) >= R.low - 1e-9, 'never below the floor');
+  assert.equal(rideSpeed('drop', run + 9).phase, 'hold');
+  assert.ok(rideSpeed('drop', run + DROP_T.hold + DROP_T.fall - 0.05).k > 0.9, 'top speed at the end of the fall');
   assert.ok(Math.abs(seatAt('drop', 0, run + 9).y - R.top - 0.12) < 1e-9);
   assert.equal(dropY(run + c.run + 0.5), R.low);
   assert.equal(rideUntil('drop', t0 + 2), run + c.run + 0.6);

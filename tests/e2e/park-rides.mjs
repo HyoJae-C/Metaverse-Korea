@@ -83,7 +83,7 @@ for (const [kind, gate, high] of [['drop', [47.3, -4], 12], ['wheel', [22, -3.8]
   assert(tags === 0, `${kind}: no name tags while riding (${tags} showing)`);
   let top = 0, locked = false, shotTop = false;
   const t0 = Date.now();
-  while (Date.now() - t0 < 60000) {
+  while (Date.now() - t0 < 110000) {
     p = await pr();
     if (!p.ride) break;
     top = Math.max(top, p.at[1]);
