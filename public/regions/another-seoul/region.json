@@ -150,25 +150,25 @@
       "map": "districts/grand-park.json",
       "offset": [
         408,
-        -86
+        -95
       ],
-      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0], "nudge": [0, 9], "why": "Moved a little south so Achasan-ro from Seongsu (world z -86) runs straight into the main gate." }
+      "anchor": { "place": "Children's Grand Park Station (Line 7, main gate on Neungdong-ro)", "lat": 37.548, "lon": 127.0742, "local": [0, 0] }
     },
     {
       "id": "samseong",
       "map": "districts/samseong.json",
       "offset": [
         163,
-        975
+        996
       ],
-      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0], "nudge": [0, -21], "why": "Moved a little north towards Songpa (Teheran-ro runs on over Tancheon to Songpa's Olympic-ro at Jamsil), but no further than the Han River's south bank: Bongeunsa-ro's lawns stay on land." }
+      "anchor": { "place": "Samseong Station (Line 2, Teheran-ro / Yeongdong-daero corner)", "lat": 37.5088, "lon": 127.0631, "local": [0, 0] }
     }
   ],
   "links": [
     {
       "k": "primary",
       "w": 16,
-      "p": [[328, 975], [578, 871]],
+      "p": [[328, 996], [578, 871]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
       "note": "Teheran-ro crosses Tancheon on Samseong Bridge and runs on north-east as Olympic-ro to Songpa's Olympic-ro, towards Jamsil Station."
     },
@@ -189,7 +189,7 @@
     {
       "k": "secondary",
       "w": 16,
-      "p": [[260, 97.2], [300, 112.2], [390, -86], [408, -86]],
+      "p": [[260, 97.2], [300, 112.2], [390, -95], [408, -95]],
       "n": { "ko": "아차산로", "en": "Achasan-ro", "ja": "峨嵯山路", "zh": "峨嵯山路" },
       "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro and Children's Grand Park's main gate."
     },
@@ -363,8 +363,8 @@
     { "p": [[430, 453.1], [858, 455], [858, 560], [430, 560]], "blockers": [[[446, 453.4], [858, 455], [858, 560], [446, 560]]], "note": "Han River from Jamsil Bridge east along Songpa's bank: from the north bank (Ttukseom Han River Park's, carried on) to Songpa's own water (z 556). Its blocker leaves Jamsil Bridge (x 430..446) open." }
   ],
   "screens": [
-    { "at": [106, 911], "w": 22, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
-    { "at": [88, 924], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
+    { "at": [106, 932], "w": 22, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
+    { "at": [88, 945], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
     {
       "at": [
         3.9,
@@ -689,7 +689,7 @@
           }
         ]
       },
-      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 961], "ry": -1.5708 }, { "n": 2, "at": [179, 989], "ry": 1.5708 }] },
+      { "id": "samseong-station", "name": { "ko": "삼성", "en": "Samseong", "ja": "三成", "zh": "三成" }, "code": "219", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "선릉", "en": "Seolleung" }, "next": { "ko": "종합운동장", "en": "Sports Complex" }, "note": "Teheran-ro / Yeongdong-daero corner: exit 1 on KONEXT Square, exit 2 on the south-east corner. Listed before Jamsil: on Line 2 the train goes Samseong, Sports Complex, Jamsilsaenae, Jamsil.", "exits": [{ "n": 1, "at": [147, 982], "ry": -1.5708 }, { "n": 2, "at": [179, 1010], "ry": 1.5708 }] },
       {
         "id": "jamsil-station",
         "name": {
@@ -746,8 +746,8 @@
         "next": { "ko": "건대입구", "en": "Konkuk Univ." },
         "note": "Under Neungdong-ro at Children's Grand Park's main gate (exit 1 by the gate). The real station is also named Sejong Univ.",
         "exits": [
-          { "n": 1, "at": [420, -104], "ry": 3.14159 },
-          { "n": 2, "at": [396, -104], "ry": 3.14159 }
+          { "n": 1, "at": [420, -113], "ry": 3.14159 },
+          { "n": 2, "at": [396, -113], "ry": 3.14159 }
         ]
       }
     ]

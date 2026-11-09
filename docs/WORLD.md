@@ -281,7 +281,7 @@ as trees for now. Tancheon runs along the east edge; Teheran-ro crosses it on
 Samseong Bridge and a link road ("Olympic-ro") runs on to Songpa's Olympic-ro
 towards Jamsil. Songpa lists `meta.parts` (its river bank and its main body)
 so the overlap check doesn't count the empty corner its bounding box covers.
-The district is nudged a little north (21 m) towards Songpa. Meeting zone J-1 is on KONEXT Square.
+The district sits on its real spot (Samseong Station on its corner). Meeting zone J-1 is on KONEXT Square.
 
 ## Yeouido (Yeongdeungpo-gu)
 
