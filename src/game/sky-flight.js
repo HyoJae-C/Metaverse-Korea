@@ -261,7 +261,7 @@ export function createSkyFlight(game) {
   function followMenu() {
     const me = game.me.root.position, list = [];
     for (const [id, q] of game.others?.players || []) {
-      if (q.hidden || !q.target || !q.ch.root.visible) continue;
+      if (q.hidden || !q.target || q.target.fl || !q.ch.root.visible) continue; // (not another flyer: they stay anonymous)
       const r = q.ch.root.position;
       list.push([Math.hypot(r.x - me.x, r.z - me.z), id]);
     }
