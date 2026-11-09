@@ -19,6 +19,8 @@ import { fenceLines } from '../src/core/zoo.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'grand-park.json');
 const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
+const r1 = (v) => Math.round(v * 10) / 10;
+const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
 // Is the zoo open? While it isn't, a hoarding ("opening soon") runs round
 // the whole zoo with a sign at the end of the main path; the gate plaza,
@@ -27,17 +29,52 @@ export const ZOO_OPEN = false;
 export const DOGHOLE = [55, -34]; // on the hoarding's west side
 export const HOARDING = [[55, -80], [200, -80], [200, 95], [55, 95], [55, -80]]; // (between the plaza's blossom trees, x 52 and 58)
 
-// The zoo in four themed quarters round a cross of paths (the main path
-// from the gate along z 0 and a cross path along x 128), wrapped in a ring
-// road the zoo carts drive round (game/zoo-carts.js):
+// The zoo in four themed quarters round a round flower plaza (PLAZA), where
+// the main path from the gate meets the cross path, wrapped in a ring road
+// the zoo carts drive round (game/zoo-carts.js):
 //   north-west  waterside: Sea Animals hall, hippos, the bird house
 //   north-east  big cats and birds of prey: tigers, lions, bears, vultures
 //   south-west  little ones (by the gate): petting village, reptiles, monkeys
 //   south-east  savanna: elephants, giraffes and zebras on one big plain
-// A path across each north quarter (z -38) and the south-west one (z 44)
-// gives the back row of pens a front to face.
-export const RING = { x0: 66, x1: 190, z0: -70, z1: 86, w: 6 };
-const CROSS = 128, NORTH_PATH = -38, SOUTH_PATH = 44;
+// A path across each north quarter and the south-west one gives the back row
+// of pens a front to face. No path runs straight: each is a smooth curve
+// through the gaps between the pens (smooth()), and flower beds line them
+// and fill the open lawn (flowerBeds(), drawn by core/grand-park.js).
+// Like every district, the park is real Seoul at 1/4 (docs/WORLD.md): the
+// real park's 53 ha are about 3.4 ha here.
+export const PLAZA = { x: 128, z: 0, r: 5.5, bed: 2.4 };
+
+// A smooth path through control points (Catmull-Rom), as points about
+// `step` metres apart, rounded to 0.1 m. closed: a loop back to the start.
+export function smooth(pts, { closed = false, step = 2.5 } = {}) {
+  const n = pts.length, out = [];
+  const at = (i) => (closed ? pts[(i + n) % n] : pts[Math.max(0, Math.min(n - 1, i))]);
+  const segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    const k = Math.max(1, Math.round(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let j = 0; j < k; j++) {
+      const t = j / k, t2 = t * t, t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+      out.push([r1(f(p0[0], p1[0], p2[0], p3[0])), r1(f(p0[1], p1[1], p2[1], p3[1]))]);
+    }
+  }
+  out.push(closed ? out[0].slice() : pts[n - 1].slice());
+  return out;
+}
+
+// The paths (local metres): control points, smoothed. The ring road wanders
+// in and out of the woods; the others weave between the pens.
+export const PATHS = {
+  ring: { w: 6, closed: true, pts: [[63, -60], [72, -71], [88, -72.5], [106, -70], [125, -73], [146, -71], [166, -73.5], [182, -72], [192.5, -60], [191, -40], [186, -21], [190, 0], [191, 25], [189.5, 50], [191.5, 76], [184.5, 88], [164, 88.5], [144, 86], [125, 89], [104, 84], [84, 85.5], [68, 82], [62, 68], [60.5, 48], [63.5, 30], [62, 10], [61, -8], [64, -24], [60, -44]] },
+  main: { w: 6, pts: [[50, 0], [62, 0], [78, -1.6], [94, 1], [110, -1.5], [PLAZA.x - PLAZA.r, 0]] },
+  east: { w: 6, pts: [[PLAZA.x + PLAZA.r, 0], [145, 1.6], [161, -1], [176, 1.6], [190, 0]] },
+  crossNorth: { w: 5, pts: [[PLAZA.x, PLAZA.z - PLAZA.r], [125.5, -14], [126.5, -26], [124.5, -38], [127, -53], [125, -73]] },
+  crossSouth: { w: 5, pts: [[PLAZA.x, PLAZA.z + PLAZA.r], [129.5, 11], [127, 25], [121.5, 40], [124, 60], [120.5, 75], [125, 89]] },
+  north: { w: 4, pts: [[64, -38], [80, -40], [95, -38.5], [110, -40.5], [124.5, -38], [140, -37.5], [155, -38.5], [170, -37.5], [191, -39]] },
+  south: { w: 4, pts: [[62, 44], [80, 41], [95, 43.5], [110, 40.5], [121.5, 40]] },
+};
+export const WALKS = Object.fromEntries(Object.entries(PATHS).map(([k, p]) => [k, { w: p.w, p: smooth(p.pts, { closed: p.closed }) }]));
 
 // A pen turned to face the other way (its board and gate from north to
 // south or back): every pen-local z is mirrored.
@@ -150,14 +187,14 @@ export const PENS = [
   // zebras together on one big plain with a waterhole and trees to browse.
   // A low glass wall all round so you can watch them over it.
   {
-    id: 'savanna', x: 158, z: 45, w: 54, d: 74, fence: 'glass', ground: 'dirt', board: 'n',
+    id: 'savanna', x: 159.5, z: 45, w: 51, d: 74, fence: 'glass', ground: 'dirt', board: 'n',
     name: L('초식동물마을', 'Savanna', '草食動物の村', '草食动物村'),
     pond: [-12, 8, 7],
     props: [['tree', 20, -20], ['tree', 22, 6], ['tree', 8, 26], ['tree', -20, 28], ['tree', 14, -30], ['tree', -6, 18], ['tree', 23, 30], ['tree', -23, -8], ['rock', -4, -14], ['rock', -21, -24], ['rock', 12, 12]],
     groups: [
       { kind: 'elephant', n: 2, box: [-24, -30, -4, 30] },
-      { kind: 'giraffe', n: 3, box: [4, -32, 25, 32] },
-      { kind: 'zebra', n: 7, box: [-24, -34, 25, 34] },
+      { kind: 'giraffe', n: 3, box: [4, -32, 23.5, 32] },
+      { kind: 'zebra', n: 7, box: [-23.5, -34, 23.5, 34] },
     ],
     feed: { at: [0, -32], offset: 540, food: 'greens' },
   },
@@ -168,8 +205,6 @@ export const PENS = [
 // Carts stay in the zoo: `area` is where they may go, from the station.
 export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [-1.6, -11], area: [55 - 71.5, -80 - 17, 200 - 71.5, 95 - 17] };
 
-const r1 = (v) => Math.round(v * 10) / 10;
-const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 // The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21).
 export const SEA_HALL = { h: 7.5, custom: true, p: rect(69, -35, 93, -7) };
 
@@ -180,8 +215,97 @@ function lineBlocker([x1, z1, x2, z2], ox, oz) {
   return { p: rect(r1(ax - t + ox), r1(az - t + oz), r1(bx + t + ox), r1(bz + t + oz)) };
 }
 
+// Flower beds (local [x, z, r]): small round beds along both sides of every
+// path, then bigger ones in the open lawn, biggest gaps first. They keep off
+// the paths, the pens (and their name boards), the buildings, the cart
+// station, the woods and the gate plaza. Low, so you can walk over them.
+const segDist = (x, z, [ax, az], [bx, bz]) => {
+  const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+  return Math.hypot(x - ax - t * dx, z - az - t * dz);
+};
+const boxDist = (x, z, [x0, z0, x1, z1]) => Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1));
+// Where a pen's name board (and the gate beside it) stands: a box in front of its board side.
+function boardSpot(p) {
+  const s = p.board || 'n', hw = p.w / 2, hd = p.d / 2;
+  const shift = p.gate?.side === s ? (p.gate.at || 0) + (p.gate.w || 4) / 2 + 2 : p.boardAt || 0;
+  const g = p.gate ? [p.gate.side, p.gate.at || 0, (p.gate.w || 4) / 2 + 1] : null;
+  const along = (side, at, half) => ({
+    n: [p.x + at - half, p.z - hd - 3, p.x + at + half, p.z - hd], s: [p.x + at - half, p.z + hd, p.x + at + half, p.z + hd + 3],
+    w: [p.x - hw - 3, p.z + at - half, p.x - hw, p.z + at + half], e: [p.x + hw, p.z + at - half, p.x + hw + 3, p.z + at + half],
+  })[side];
+  return g && g[0] === s ? (() => { const a = along(s, shift, 2.5), b = along(g[0], g[1], g[2]); return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]; })() : along(s, shift, 2.5);
+}
+
+// Flower borders along the pens' fences (outside, 0.9 m out), except on the
+// side you look in from, cut where a path or a building runs past: segments
+// [x1, z1, x2, z2] for core/grand-park.js to plant.
+export function flowerBorders() {
+  const out = [], step = 0.5, off = 0.9;
+  const blocked = (x, z) => x < 64 || x > 196 || z < -76 || z > 91
+    || Object.values(WALKS).some((r) => r.p.some((q, i) => i > 0 && segDist(x, z, r.p[i - 1], q) < r.w / 2 + 0.5))
+    || PENS.some((q) => boxDist(x, z, [q.x - q.w / 2, q.z - q.d / 2, q.x + q.w / 2, q.z + q.d / 2]) < 0.5)
+    || boxDist(x, z, [CARTS.x - 3, CARTS.z - 13, CARTS.x + 2, CARTS.z + 9]) < 0.5;
+  for (const p of PENS) {
+    const hw = p.w / 2 + off, hd = p.d / 2 + off, front = p.board || 'n';
+    const sides = { n: [[-hw, -hd], [hw, -hd]], s: [[-hw, hd], [hw, hd]], w: [[-hw, -hd], [-hw, hd]], e: [[hw, -hd], [hw, hd]] };
+    for (const [k, [[ax, az], [bx, bz]]] of Object.entries(sides)) {
+      if (k === front || (p.gate && p.gate.side === k)) continue;
+      const len = Math.hypot(bx - ax, bz - az), n = Math.round(len / step);
+      let run = null;
+      for (let i = 0; i <= n; i++) {
+        const x = p.x + ax + ((bx - ax) * i) / n, z = p.z + az + ((bz - az) * i) / n;
+        if (!blocked(x, z)) { run ||= [x, z]; run[2] = x; run[3] = z; continue; }
+        if (run && Math.hypot(run[2] - run[0], run[3] - run[1]) >= 1.5) out.push(run.map(r1));
+        run = null;
+      }
+      if (run && Math.hypot(run[2] - run[0], run[3] - run[1]) >= 1.5) out.push(run.map(r1));
+    }
+  }
+  return out;
+}
+
+export function flowerBeds(woods = []) {
+  const walls = [
+    ...PENS.map((p) => [p.x - p.w / 2 - 1.6, p.z - p.d / 2 - 1.6, p.x + p.w / 2 + 1.6, p.z + p.d / 2 + 1.6]),
+    ...PENS.map(boardSpot),
+    [CARTS.x - 4, CARTS.z - 14, CARTS.x + 3, CARTS.z + 10], // the cart station
+  ];
+  const inWoods = (x, z, r) => woods.some((w) => x > w[0][0] - r && x < w[2][0] + r && z > w[0][1] - r && z < w[2][1] + r);
+  // How far a bed at (x, z) could reach before it touched something.
+  const room = (x, z) => {
+    let d = Math.min(x - 64, 196 - x, z + 76, 91 - z, Math.hypot(x - PLAZA.x, z - PLAZA.z) - PLAZA.r - 1);
+    for (const b of walls) d = Math.min(d, boxDist(x, z, b));
+    for (const r of Object.values(WALKS)) for (let i = 1; i < r.p.length; i++) d = Math.min(d, segDist(x, z, r.p[i - 1], r.p[i]) - r.w / 2 - 0.6);
+    return d;
+  };
+  const beds = [];
+  const free = (x, z, r, gap) => room(x, z) >= r && !inWoods(x, z, r) && beds.every(([bx, bz, br]) => Math.hypot(x - bx, z - bz) > r + br + gap);
+  for (const r of Object.values(WALKS)) {
+    let run = 5;
+    for (let i = 1; i < r.p.length; i++) {
+      const [[ax, az], [bx, bz]] = [r.p[i - 1], r.p[i]];
+      const len = Math.hypot(bx - ax, bz - az);
+      if ((run += len) < 8) continue;
+      run = 0;
+      const nx = -(bz - az) / len, nz = (bx - ax) / len, off = r.w / 2 + 0.6 + 0.9;
+      for (const sd of [-1, 1]) {
+        const x = r1(bx + nx * off * sd), z = r1(bz + nz * off * sd);
+        if (free(x, z, 0.9, 1.5)) beds.push([x, z, 0.9]);
+      }
+    }
+  }
+  const spots = [];
+  for (let x = 66; x < 196; x += 2) for (let z = -74; z < 90; z += 2) { const d = room(x, z); if (d >= 2) spots.push([x, z, d]); }
+  spots.sort((a, b) => b[2] - a[2] || a[0] - b[0] || a[1] - b[1]);
+  for (const [x, z, d] of spots) {
+    const r = r1(Math.min(d - 0.3, 4.5));
+    if (r >= 1.2 && free(x, z, r, 2)) beds.push([x, z, r]);
+  }
+  return beds;
+}
+
 export function buildMap() {
-  const { x0, x1, z0, z1, w } = RING;
   const map = {
     meta: {
       district: 'grand-park',
@@ -189,11 +313,7 @@ export function buildMap() {
     },
     roads: [
       { k: 'secondary', w: 14, p: [[0, -80], [0, 95]], n: L('능동로', 'Neungdong-ro', '陵洞路', '陵洞路') },
-      { k: 'walk', w: 6, p: [[50, 0], [x1, 0]] },
-      { k: 'walk', w, p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, z0]] }, // the ring road (carts)
-      { k: 'walk', w: 5, p: [[CROSS, z0], [CROSS, z1]] },
-      { k: 'walk', w: 4, p: [[x0, NORTH_PATH], [x1, NORTH_PATH]] },
-      { k: 'walk', w: 4, p: [[x0, SOUTH_PATH], [CROSS, SOUTH_PATH]] },
+      ...Object.values(WALKS).map((r) => ({ k: 'walk', w: r.w, p: r.p })),
     ],
     buildings: [
       { h: 8, p: rect(14, -46, 36, -32), n: L('서울어린이대공원 안내센터', "Children's Grand Park Information Center", '子供大公園インフォメーションセンター', '儿童大公园信息中心') },
@@ -220,7 +340,7 @@ export function buildMap() {
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],
     pois: [
       // (while the zoo is closed, the park's pin is the gate plaza: taxis can't go in)
-      { kind: 'landmark', x: ZOO_OPEN ? CROSS : 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
+      { kind: 'landmark', x: ZOO_OPEN ? PLAZA.x : 40, z: 0, name: L('서울어린이대공원', "Seoul Children's Grand Park", 'ソウル子供大公園', '首尔儿童大公园') },
       ...PENS.filter((p) => !p.in).map((p) => ({ kind: 'landmark', x: p.x, z: p.z, name: p.name })),
     ],
     landmarks: [
@@ -246,8 +366,14 @@ export function buildMap() {
       },
       ...PENS.map((p) => ({ type: 'zoopen', ...p })),
       { type: 'zoocarts', ...CARTS },
+      // The round plaza where the paths meet, and every flower bed (core/grand-park.js).
+      { type: 'zooflowers', x: PLAZA.x, z: PLAZA.z, plaza: [PLAZA.r, PLAZA.bed], beds: [], borders: [] },
     ],
   };
+  const woods = map.areas.filter((a) => a.trees).map((a) => a.p);
+  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
+  fl.beds = flowerBeds(woods).map(([x, z, r]) => [r1(x - PLAZA.x), r1(z - PLAZA.z), r]);
+  fl.borders = flowerBorders().map(([a, b, c, d]) => [r1(a - PLAZA.x), r1(b - PLAZA.z), r1(c - PLAZA.x), r1(d - PLAZA.z)]);
   for (const pen of PENS) for (const line of fenceLines(pen)) map.blockers.push(lineBlocker(line, pen.x, pen.z));
   for (const pen of PENS) for (const [a, b, c, d] of pen.solid || []) map.blockers.push({ p: rect(r1(pen.x + a), r1(pen.z + b), r1(pen.x + c), r1(pen.z + d)) });
   if (!ZOO_OPEN) {

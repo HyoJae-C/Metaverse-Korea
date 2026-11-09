@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { buildMap, PENS, ZOO_OPEN, HOARDING } from '../scripts/build-grand-park.mjs';
+import { buildMap, PENS, ZOO_OPEN, HOARDING, PLAZA, WALKS } from '../scripts/build-grand-park.mjs';
 import { Zoo, feedPhase, fenceLines, FEED_CYCLE, FOOD_CUP } from '../src/core/zoo.js';
 import { makeZooAnimal, ZOO_LOOKS } from '../src/core/zoo-animals.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
@@ -310,5 +310,47 @@ test('bears have no hump on the rump: a brown bear\'s hump is over its shoulders
     });
     assert.ok(front >= back - 0.01, `${kind}: nothing bulges up on the rump`);
     if (kind === 'bear') assert.ok(front > back + 0.05, 'the brown bear\'s hump stands up over its shoulders');
+  }
+});
+
+test('the paths wind: no long straight run, and they meet at a round flower plaza', () => {
+  for (const [k, r] of Object.entries(WALKS)) {
+    let run = 0, dir = null;
+    for (let i = 1; i < r.p.length; i++) {
+      const a = Math.atan2(r.p[i][1] - r.p[i - 1][1], r.p[i][0] - r.p[i - 1][0]);
+      run = dir != null && Math.abs(a - dir) < 0.01 ? run + Math.hypot(r.p[i][0] - r.p[i - 1][0], r.p[i][1] - r.p[i - 1][1]) : 0;
+      dir = a;
+      assert.ok(run < 15 || (k === 'main' && r.p[i][0] <= 64), `${k}: straight for ${run.toFixed(0)} m at ${r.p[i]}`);
+    }
+  }
+  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
+  assert.deepEqual([fl.x, fl.z], [PLAZA.x, PLAZA.z]);
+  for (const k of ['main', 'east', 'crossNorth', 'crossSouth']) {
+    const ends = [WALKS[k].p[0], WALKS[k].p.at(-1)];
+    assert.ok(ends.some(([x, z]) => Math.abs(Math.hypot(x - PLAZA.x, z - PLAZA.z) - PLAZA.r) < 0.2), `${k} reaches the plaza`);
+  }
+});
+
+test('flower beds and borders: plenty of them, off the paths, out of the pens, inside the zoo', () => {
+  const fl = map.landmarks.find((l) => l.type === 'zooflowers');
+  assert.ok(fl.beds.length >= 40 && fl.borders.length >= 20);
+  const segDist = (x, z, [ax, az], [bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(x - ax - t * dx, z - az - t * dz);
+  };
+  const pathGap = (x, z) => Math.min(...Object.values(WALKS).flatMap((r) => r.p.slice(1).map((q, i) => segDist(x, z, r.p[i], q) - r.w / 2)));
+  const inPen = (x, z, m) => PENS.some((p) => Math.abs(x - p.x) < p.w / 2 + m && Math.abs(z - p.z) < p.d / 2 + m);
+  for (const [bx, bz, r] of fl.beds) {
+    const [x, z] = [bx + fl.x, bz + fl.z];
+    assert.ok(pathGap(x, z) > r, `bed at ${x}, ${z} keeps off the paths`);
+    assert.ok(!inPen(x, z, r), `bed at ${x}, ${z} is out of the pens`);
+    assert.ok(x - r > 55 && x + r < 200 && z - r > -80 && z + r < 95, 'inside the hoarding');
+  }
+  for (const [a, b, c, d] of fl.borders) {
+    for (let t = 0; t <= 1; t += 0.1) {
+      const [x, z] = [fl.x + a + (c - a) * t, fl.z + b + (d - b) * t];
+      assert.ok(pathGap(x, z) > 0.3, `border at ${x.toFixed(1)}, ${z.toFixed(1)} off the paths`);
+      assert.ok(!inPen(x, z, 0.3), 'outside its pen');
+    }
   }
 });
