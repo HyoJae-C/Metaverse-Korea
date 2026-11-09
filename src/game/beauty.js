@@ -154,8 +154,7 @@ export function createBeauty(game) {
       blackout.style.opacity = '0';
       game.seated = null;
       p.set(s.st.door[0], 0, s.st.door[1] + 0.6);
-      game.cam.yaw = Math.PI * 0.15; game.cam.dist = 3.2; game.cam.pitch = 0.25;
-      game.me.root.rotation.y = game.cam.yaw; // turn round to show the new face
+      game.me.root.rotation.y = game.cam.yaw; // turn round to the camera to show the new face
       game.me.play('cheer');
       $('photo-count').hidden = false;
       $('photo-count').textContent = '✨ ' + t('surgery.done');

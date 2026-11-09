@@ -15,7 +15,7 @@ import { getLanguage, onLanguageChange } from '../core/i18n.js';
 import { makeNpc, placeLabels, say } from '../core/npcs.js';
 
 export function createPool(game) {
-  const { $, STALE, cam, camera, hiringRedraws, myId, safety, setLook, sfx, shop,
+  const { $, STALE, camera, hiringRedraws, myId, safety, setLook, sfx, shop,
     skatePop } = game;
   const PT = POOL_TEXT;
   const poolLog = new PoolLog();
@@ -77,7 +77,6 @@ export function createPool(game) {
   function onBlock(lane) {
     game.me.root.position.set(COMP.x0 - 0.55, 0.58, laneZ(lane));
     game.me.root.rotation.y = Math.PI / 2;
-    cam.yaw = 0.55; // from the deck side, looking along the lanes
   }
   function startRace(lane) {
     if (pool.mode) return;
@@ -277,7 +276,6 @@ export function createPool(game) {
     pool.mode = { kind: 'board', b, at: performance.now() };
     game.me.root.position.set(b.tip, b.h, b.z);
     game.me.root.rotation.y = -Math.PI / 2; // facing the water
-    cam.yaw = -0.9; // from the pool side at an angle, clear of the other boards, so the flips show
     if (performance.now() - (pool.diveHinted || 0) > 120e3) { pool.diveHinted = performance.now(); shop.toast(L(PT.diveHint)); }
     game.action = STALE;
   }
