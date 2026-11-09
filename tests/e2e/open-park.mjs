@@ -32,6 +32,7 @@ try {
     // Arriving by map or taxi from far away (the park not built yet): you can walk.
     await page.evaluate((id) => __mk.enter(id), id);
     await page.waitForFunction((id) => __mk.room().id === id, id, { timeout: 10000 });
+    if (await page.isVisible('#store-banner')) throw new Error('a shop banner with an Exit button over the open park');
     await page.evaluate(() => __mk.cam({ yaw: 0 }));
     const c0 = await page.evaluate(() => __mk.camPos());
     await page.keyboard.down('w');

@@ -137,7 +137,8 @@ export class ShopUI {
   enterStore(store) {
     this.store = store;
     const lang = getLanguage();
-    this.$('store-banner').hidden = false;
+    // (an open-air park has no door: you walk off its lawn, so no banner or Exit button)
+    this.$('store-banner').hidden = !!store.open;
     this.$('store-name').textContent = localName(store.name, lang);
     this.$('store-name-ko').textContent = lang === 'ko' ? '' : store.name.ko;
     const tag = localName(store.tagline, lang) || '';
