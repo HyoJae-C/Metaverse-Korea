@@ -44,3 +44,44 @@ export function mergeStatic(root, keep = []) {
   }
   return removed;
 }
+
+// One mesh for a whole moving group (a teacup, a train car, a gondola):
+// every plain Lambert mesh in it baked together, each part keeping its
+// colour as a vertex colour, so the group is one draw call however many
+// colours it has. One- and two-sided parts make one mesh each; anything
+// else (glows, signs, see-through) is left as it is.
+const tinted = {};
+const tintMat = (flat, side) => (tinted[flat + ':' + side] ||= new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: flat, side }));
+export function bakeColors(group) {
+  group.updateMatrixWorld(true);
+  const toGroup = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const sets = new Map(); // "flat:side" → [mesh]
+  group.traverse((o) => {
+    const m = o.material;
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible || Array.isArray(m) || !m.isMeshLambertMaterial || m.map || m.transparent || m.vertexColors) return;
+    const k = !!m.flatShading + ':' + m.side;
+    if (!sets.has(k)) sets.set(k, []);
+    sets.get(k).push(o);
+  });
+  const m4 = new THREE.Matrix4();
+  for (const [k, meshes] of sets) {
+    const geos = meshes.map((mesh) => {
+      let g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+      for (const a of Object.keys(g.attributes)) if (a !== 'position' && a !== 'normal') g.deleteAttribute(a);
+      g = g.applyMatrix4(m4.multiplyMatrices(toGroup, mesh.matrixWorld));
+      const c = mesh.material.color, n = g.attributes.position.count, col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      return g;
+    });
+    const geo = mergeGeometries(geos);
+    for (const g of geos) g.dispose();
+    if (!geo) continue;
+    const [flat, side] = k.split(':');
+    const one = new THREE.Mesh(geo, tintMat(flat === 'true', +side));
+    one.name = 'baked';
+    group.add(one);
+    for (const mesh of meshes) mesh.parent.remove(mesh);
+  }
+  return group;
+}

@@ -12,11 +12,11 @@ export const PARK_UNIFORM = { model: 'ranger', shirt: 'peach', pants: 'navy', sh
 
 // Ticket prices (won): the thrill rides cost more, the gentle ones less.
 // The bumper cars' fare is BUMPER_COST in bumper-cars.js.
-export const RIDE_PRICE = { coaster: 7000, drop: 4000, viking: 4000, wheel: 3000, carousel: 2000 };
+export const RIDE_PRICE = { coaster: 7000, flume: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 };
 // The ride-all day pass, sold at the ticket booth: every ride in the park
 // (bumper cars and the coaster too) as often as you like, today.
 export const RIDE_PASS = 20000;
-export const RIDE_SECONDS = { carousel: 24, wheel: 40, viking: 22, drop: 13 };
+export const RIDE_SECONDS = { carousel: 24, wheel: 40, viking: 22, drop: 13, swing: 26, teacups: 26, train: 44, flume: 40 };
 
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).
 export const RIDES = {
@@ -29,11 +29,24 @@ export const RIDES = {
   viking: { x: -13, z: -9, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
   // Drop tower: 8 seats round the pole, facing out; load, climb, hold, drop.
   drop: { x: 52, z: -4, seats: 8, r: 1.75, low: 0.55, top: 17 },
+  // Swing ride: 16 chairs on chains from a spinning crown; as it speeds up
+  // they fly out (tilt up to `tilt` radians).
+  swing: { x: 17, z: 24.5, seats: 16, arm: 3.1, chain: 3.8, hub: 4.6, tilt: 0.9, speed: 1.15 },
+  // Teacups: 5 cups of 3 on a turning floor, each cup spinning the other way.
+  teacups: { x: 29.5, z: 28.2, seats: 15, cups: 5, per: 3, R: 2.6, cupR: 0.9, speed: 0.5, spin: 1.9 },
+  // The park train: an engine and 3 cars of 4 (2 benches of 2) round an
+  // oval track in the south-east corner; it boards at the west straight.
+  train: { x: 54, z: 20, rx: 5.5, rz: 9.5, seats: 12, cars: 3, gap: 2.4 },
+  // Log flume: one log boat of 4 round a water channel: out of the
+  // station, up the lift, along the top, down the big drop with a splash.
+  // (x, z: where the boat waits at the station)
+  flume: { x: 54.1, z: -16, seats: 4 },
 };
 // The carousel, the pirate ship and the drop tower run on everyone's shared
 // clock (like the coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
 // friends ride the same swing, and everyone sees the same ship.
-export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 }, drop: { load: 9, run: 13, stop: 2 } };
+export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 }, drop: { load: 9, run: 13, stop: 2 },
+  swing: { load: 9, run: RIDE_SECONDS.swing, stop: 4 }, teacups: { load: 9, run: RIDE_SECONDS.teacups, stop: 3 }, train: { load: 10, run: RIDE_SECONDS.train, stop: 3 }, flume: { load: 10, run: RIDE_SECONDS.flume, stop: 3 } };
 const cycleLen = (c) => c.load + c.run + c.stop;
 export function ridePhase(kind, t) {
   const c = RIDE_CYCLE[kind], len = cycleLen(c), n = Math.floor(t / len), p = t - n * len;
@@ -123,6 +136,99 @@ export function horseSpot(i) {
   const a = out ? (i / R.outer) * Math.PI * 2 : ((i - R.outer + 0.5) / (R.seats - R.outer)) * Math.PI * 2;
   return { a, r: out ? R.r : R.inner };
 }
+// The swing ride: how far the crown has turned, and how far out the chairs
+// fly (0 hanging, up to RIDES.swing.tilt at full speed).
+export function swingAngle(t) {
+  const c = RIDE_CYCLE.swing, r = ridePhase('swing', t), w = RIDES.swing.speed;
+  return -(r.n * turned(c.run, c.run, w) + turned(r.s, c.run, w)); // (round the other way to the carousel)
+}
+export function swingTilt(t) {
+  const c = RIDE_CYCLE.swing, r = ridePhase('swing', t);
+  if (r.phase !== 'run') return 0;
+  const k = Math.min(1, r.s / 4, (c.run - r.s) / 5);
+  return RIDES.swing.tilt * Math.max(0, k) * Math.max(0, k);
+}
+// Teacups: the floor turns one way, each cup spins the other (faster).
+export function teacupFloor(t) {
+  const c = RIDE_CYCLE.teacups, r = ridePhase('teacups', t), w = RIDES.teacups.speed;
+  return r.n * turned(c.run, c.run, w) + turned(r.s, c.run, w);
+}
+export function teacupSpin(c, t) {
+  const C = RIDE_CYCLE.teacups, r = ridePhase('teacups', t), w = RIDES.teacups.spin * (1 + (c % 3) * 0.18);
+  return c * 1.3 - (r.n * turned(C.run, C.run, w) + turned(r.s, C.run, w));
+}
+export function teacupSpot(c, t) {
+  const T = RIDES.teacups, a = teacupFloor(t) + (c / T.cups) * Math.PI * 2;
+  return { x: T.x + Math.sin(a) * T.R, z: T.z + Math.cos(a) * T.R, a };
+}
+
+// A closed path walked at even speed: points → cumulative lengths, and
+// where you are at distance d (wrapping round).
+function loop(pts) {
+  const cum = [0];
+  for (let i = 1; i <= pts.length; i++) { const a = pts[i - 1], b = pts[i % pts.length]; cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])); }
+  const len = cum[pts.length];
+  const at = (d) => {
+    d = ((d % len) + len) % len;
+    let i = 1;
+    while (cum[i] < d) i++;
+    const a = pts[i - 1], b = pts[i % pts.length], k = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+    return { x: a[0] + dx * k, y: a[1] + dy * k, z: a[2] + dz * k, ry: Math.atan2(dx, dz), pitch: -Math.atan2(dy, Math.hypot(dx, dz)), seg: i - 1 };
+  };
+  return { pts, cum, len, at };
+}
+// The train's oval, from its west point (the station), heading south.
+export const TRAIN_TRACK = loop(Array.from({ length: 64 }, (_, k) => {
+  const u = -Math.PI / 2 + (k / 64) * Math.PI * 2, T = RIDES.train;
+  return [T.x + T.rx * Math.sin(u), 0, T.z + T.rz * Math.cos(u)];
+}));
+// Where the train's front is at t: stopped at the station while it loads,
+// one lap, easing out of and back into the station.
+export const TRAIN_STOP = 6; // m past the oval's south point: the engine stops here
+export function trainDist(t) {
+  const c = RIDE_CYCLE.train, r = ridePhase('train', t), L = TRAIN_TRACK.len;
+  if (r.phase !== 'run') return TRAIN_STOP;
+  const k = r.s / c.run, e = k < 0.12 ? (k * k) / (2 * 0.12 * 0.88) : k > 0.88 ? 1 - ((1 - k) * (1 - k)) / (2 * 0.12 * 0.88) : (k - 0.06) / 0.88;
+  return TRAIN_STOP + L * e;
+}
+// Seat i: car (i >> 2), bench (i >> 1 & 1), side (i & 1); the cars trail
+// the engine, a car's benches 0.9 m apart, 0.32 m either side.
+export function trainSpot(i, t) {
+  const T = RIDES.train, car = i >> 2, bench = (i >> 1) & 1, side = i & 1 ? 0.32 : -0.32;
+  const p = TRAIN_TRACK.at(trainDist(t) - T.gap * (car + 1) - 0.45 + bench * 0.9);
+  return { x: p.x + Math.cos(p.ry) * side, y: 0.27, z: p.z - Math.sin(p.ry) * side, ry: p.ry }; // (feet: the bench is 0.65 up)
+}
+// The log flume's channel in the north-east field: [x, y (water level),
+// z], from the station heading west, round and up the lift north, along
+// the top, the big drop south, the splash pool and into the station again. Speeds per stretch (m/s), so the lift
+// is slow and the drop is fast.
+export const FLUME_TRACK = loop([
+  [56.6, 0.4, -16], [44, 0.4, -16], [42.2, 0.4, -17.6], [42, 0.4, -20], // the station (heading west), round the bend
+  [42, 1.2, -21.5], [42, 5.6, -29], [42.6, 6, -31], [44.8, 6, -32.4], [55, 6, -32.4], [57.4, 6, -31], // the lift north, along the top
+  [58, 5.9, -28.6], [58, 0.35, -20.6], [58, 0.3, -18.6], [58.2, 0.35, -17.4], // the big drop south, the splash pool
+]);
+const FLUME_V = [1.6, 1.6, 1.6, 1.4, 0.9, 1.8, 1.8, 1.8, 1.8, 1.8, 7.5, 3.2, 2.2, 1.6];
+const FLUME_T = (() => { const out = [0]; for (let i = 0; i < FLUME_V.length; i++) out.push(out[i] + (FLUME_TRACK.cum[i + 1] - FLUME_TRACK.cum[i]) / FLUME_V[i]); return out; })();
+export const FLUME_LAP_S = FLUME_T[FLUME_T.length - 1];
+export const FLUME_DROP = 10; // the stretch that is the big drop
+// Where the boat (its middle) is along the channel at t: at the station
+// while it loads, then one lap at the stretches' speeds, scaled to the run.
+export function flumeDist(t) {
+  const c = RIDE_CYCLE.flume, r = ridePhase('flume', t);
+  if (r.phase !== 'run') return 2.5;
+  const tt = Math.min(1, r.s / c.run) * FLUME_LAP_S;
+  let i = 0;
+  while (i < FLUME_V.length - 1 && FLUME_T[i + 1] < tt) i++;
+  return 2.5 + FLUME_TRACK.cum[i] + Math.min(tt - FLUME_T[i], FLUME_T[i + 1] - FLUME_T[i]) * FLUME_V[i];
+}
+// Seat i: two rows of two in the log, the front row 0.5 m ahead.
+export function flumeSpot(i, t) {
+  const row = i >> 1, side = i & 1 ? 0.28 : -0.28;
+  const p = FLUME_TRACK.at(flumeDist(t) + (row ? -0.5 : 0.5));
+  return { x: p.x + Math.cos(p.ry) * side, y: p.y - 0.08, z: p.z - Math.sin(p.ry) * side, ry: p.ry, pitch: p.pitch, seg: p.seg }; // (feet: the benches are 0.35 over the water line)
+}
+
 // Seat i at time t: where the rider sits (feet), which way they face (ry),
 // and roll: how far the ride tips them (the ship's swing, about the z axis).
 export function seatAt(kind, i, t) {
@@ -140,6 +246,19 @@ export function seatAt(kind, i, t) {
   if (kind === 'drop') {
     const a = (i / R.seats) * Math.PI * 2;
     return { x: R.x + Math.sin(a) * R.r, y: dropY(t) + 0.12, z: R.z + Math.cos(a) * R.r, ry: a, roll: 0 };
+  }
+  if (kind === 'swing') {
+    const a = (i / R.seats) * Math.PI * 2 + swingAngle(t), th = swingTilt(t), out = R.arm + R.chain * Math.sin(th);
+    return { x: R.x + Math.sin(a) * out, y: R.hub - R.chain * Math.cos(th) - 0.38 - 0.12, z: R.z + Math.cos(a) * out, ry: a - Math.PI / 2, roll: 0 }; // (facing the way round)
+  }
+  if (kind === 'teacups') {
+    const c = Math.floor(i / R.per), j = i % R.per, cup = teacupSpot(c, t), b = teacupSpin(c, t) + (j / R.per) * Math.PI * 2;
+    const sx = cup.x + Math.sin(b) * R.cupR * 0.55, sz = cup.z + Math.cos(b) * R.cupR * 0.55;
+    return { x: sx, y: 0.2, z: sz, ry: b + Math.PI, roll: 0 }; // (facing the middle of the cup)
+  }
+  if (kind === 'train' || kind === 'flume') {
+    const P = kind === 'train' ? trainSpot(i, t) : flumeSpot(i, t);
+    return { x: P.x, y: P.y, z: P.z, ry: P.ry, roll: 0, pitch: P.pitch || 0 };
   }
   // viking: the bench's spot in the ship, turned about the pivot.
   const ang = vikingAngle(t), off = R.rows[i >> 1], side = i % 2 ? 0.45 : -0.45;
@@ -162,7 +281,69 @@ export const RIDE_GATES = {
   viking: { x: RIDES.viking.x + 4.6, z: RIDES.viking.z + 3.8, ry: 0, staff: { x: RIDES.viking.x + 2.6, z: RIDES.viking.z + 3.7, ry: 0 } },
   wheel: { x: RIDES.wheel.x - 2, z: RIDES.wheel.z + 4.2, ry: 0, staff: { x: RIDES.wheel.x - 4, z: RIDES.wheel.z + 3.7, ry: 0 } },
   drop: { x: RIDES.drop.x - 4.7, z: RIDES.drop.z, ry: -Math.PI / 2, staff: { x: RIDES.drop.x - 4.2, z: RIDES.drop.z + 1.9, ry: -Math.PI / 2 } },
+  // The swing and the teacups: their gates on the north side, off the food truck lane.
+  swing: { x: RIDES.swing.x, z: RIDES.swing.z - 7.7, ry: Math.PI, staff: { x: RIDES.swing.x - 1.9, z: RIDES.swing.z - 7.2, ry: Math.PI } },
+  teacups: { x: RIDES.teacups.x, z: RIDES.teacups.z - 5.9, ry: Math.PI, staff: { x: RIDES.teacups.x - 1.9, z: RIDES.teacups.z - 5.4, ry: Math.PI } },
+  // The train: on its station's platform (west of the oval), the flume: on its boarding platform.
+  train: { x: 47.1, z: 24, ry: -Math.PI / 2, staff: { x: 47.1, z: 22.1, ry: -Math.PI / 2 } },
+  flume: { x: 54.5, z: -14.3, ry: 0, staff: { x: 52.6, z: -14.6, ry: 0 } },
 };
+// The Mirror Maze (free, walk in): a grid of 2 m cells north of the east
+// promenade, its way in on the south side (from the promenade) and its way
+// out on the east. The walls are a fixed maze (a seeded walk, so it's the
+// same for everyone): [x0, z0, x1, z1] lines of mirror.
+export const MAZE = (() => {
+  const cols = 5, rows = 4, cell = 2, x0 = 30.5, z0 = -12, doorCol = 2, exitRow = 0;
+  const h = Array.from({ length: rows + 1 }, () => Array(cols).fill(true)); // h[r][c]: the line z = z0 + r·cell over cell c
+  const v = Array.from({ length: rows }, () => Array(cols + 1).fill(true)); // v[r][c]: the line x = x0 + c·cell beside row r
+  let seed = 5;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const seen = new Set(['0,0']), stack = [[0, 0]];
+  while (stack.length) {
+    const [c, r] = stack[stack.length - 1];
+    const next = [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]].filter(([a, b]) => a >= 0 && b >= 0 && a < cols && b < rows && !seen.has(a + ',' + b));
+    if (!next.length) { stack.pop(); continue; }
+    const [a, b] = next[Math.floor(rnd() * next.length)];
+    if (a !== c) v[r][Math.max(a, c)] = false; else h[Math.max(b, r)][c] = false;
+    seen.add(a + ',' + b);
+    stack.push([a, b]);
+  }
+  h[rows][doorCol] = false; // the way in (south)
+  v[exitRow][cols] = false; // the way out (east)
+  // Join each line's neighbouring pieces into one wall.
+  const walls = [];
+  for (let r = 0; r <= rows; r++) for (let c = 0; c < cols; c++) {
+    if (!h[r][c]) continue;
+    let e = c;
+    while (e + 1 < cols && h[r][e + 1]) e++;
+    walls.push([x0 + c * cell, z0 + r * cell, x0 + (e + 1) * cell, z0 + r * cell]);
+    for (let k = c; k <= e; k++) h[r][k] = false;
+  }
+  for (let c = 0; c <= cols; c++) for (let r = 0; r < rows; r++) {
+    if (!v[r][c]) continue;
+    let e = r;
+    while (e + 1 < rows && v[e + 1][c]) e++;
+    walls.push([x0 + c * cell, z0 + r * cell, x0 + c * cell, z0 + (e + 1) * cell]);
+    for (let k = r; k <= e; k++) v[k][c] = false;
+  }
+  const w = cols * cell, d = rows * cell;
+  return { cols, rows, cell, x0, z0, x1: x0 + w, z1: z0 + d, w, d, x: x0 + w / 2, z: z0 + d / 2, walls,
+    door: [x0 + (doorCol + 0.5) * cell, z0 + d], exit: [x0 + w, z0 + (exitRow + 0.5) * cell] };
+})();
+// How far (x, z) is from a ride's track or channel, on the ground plan
+// (so trees and lamps keep off it).
+export function trackDist(track, x, z) {
+  let best = Infinity;
+  const p = track.pts;
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i], b = p[(i + 1) % p.length], dx = b[0] - a[0], dz = b[2] - a[2], L2 = dx * dx + dz * dz;
+    const k = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[2]) * dz) / L2)) : 0;
+    best = Math.min(best, Math.hypot(x - a[0] - dx * k, z - a[2] - dz * k));
+  }
+  return best;
+}
+// The flume's splash pool, at the foot of the big drop.
+export const FLUME_POOL = { x: 58.6, z: -19.4, r: 3, sz: 1.4 };
 
 // The rides' names, on the signs over their gates and in their attendants'
 // name tags (the coaster's own sign is coaster-model.js).
@@ -172,6 +353,11 @@ export const RIDE_NAME = {
   viking: { ko: '초코 바이킹', en: 'Choco Viking', ja: 'チョコ・バイキング', zh: '巧克力海盗船', es: 'Vikingo de Chocolate', id: 'Viking Cokelat', vi: 'Thuyền Viking Sô-cô-la', hi: 'चॉको वाइकिंग', fr: 'Drakkar Chocolat', th: 'ไวกิ้งช็อกโก', ar: 'سفينة الشوكولاتة' },
   wheel: { ko: '무지개 관람차', en: 'Rainbow Wheel', ja: 'にじいろ観覧車', zh: '彩虹摩天轮', es: 'Noria Arcoíris', id: 'Bianglala Pelangi', vi: 'Đu Quay Cầu Vồng', hi: 'रेनबो व्हील', fr: 'Grande Roue Arc-en-ciel', th: 'ชิงช้าสวรรค์สายรุ้ง', ar: 'عجلة قوس قزح' },
   drop: { ko: '롤리팝 드롭', en: 'Lollipop Drop', ja: 'ロリポップ・ドロップ', zh: '棒棒糖跳楼机', es: 'Caída Piruleta', id: 'Menara Lolipop', vi: 'Tháp Rơi Kẹo Mút', hi: 'लॉलीपॉप ड्रॉप', fr: 'Chute Sucette', th: 'ลูกอมดิ่งพสุธา', ar: 'برج المصاصة' },
+  swing: { ko: '슈가 회전그네', en: 'Sugar Swing', ja: 'シュガー・スイング', zh: '砂糖旋转秋千', es: 'Sillas Voladoras de Azúcar', id: 'Ayunan Gula', vi: 'Đu Quay Dây Đường', hi: 'शुगर स्विंग', fr: 'Chaises Volantes Sucre', th: 'ชิงช้าหมุนน้ำตาล', ar: 'أرجوحة السكر' },
+  teacups: { ko: '찻잔 파티', en: 'Teacup Party', ja: 'ティーカップ・パーティー', zh: '茶杯派对', es: 'Fiesta de las Tazas', id: 'Pesta Cangkir Teh', vi: 'Tiệc Tách Trà', hi: 'टीकप पार्टी', fr: 'Fête des Tasses', th: 'ปาร์ตี้ถ้วยชา', ar: 'حفلة فناجين الشاي' },
+  train: { ko: '캔디 기차', en: 'Candy Train', ja: 'キャンディ・トレイン', zh: '糖果小火车', es: 'Tren de Caramelo', id: 'Kereta Permen', vi: 'Tàu Hỏa Kẹo', hi: 'कैंडी ट्रेन', fr: 'Petit Train Bonbon', th: 'รถไฟลูกกวาด', ar: 'قطار الحلوى' },
+  flume: { ko: '젤리 후룸라이드', en: 'Jelly Flume', ja: 'ゼリー・フルーム', zh: '果冻激流勇进', es: 'Troncos de Gelatina', id: 'Arung Jeram Jeli', vi: 'Thuyền Gỗ Thạch', hi: 'जेली फ्लूम', fr: 'Bûches Gelée', th: 'ล่องแก่งเยลลี่', ar: 'قناة الجيلي المائية' },
+  maze: { ko: '거울 미로', en: 'Mirror Maze', ja: 'ミラー迷路', zh: '镜子迷宫', es: 'Laberinto de Espejos', id: 'Labirin Cermin', vi: 'Mê Cung Gương', hi: 'शीशों की भूलभुलैया', fr: 'Labyrinthe des Miroirs', th: 'เขาวงกตกระจก', ar: 'متاهة المرايا' },
   bumper: { ko: '젤리 범퍼카', en: 'Jelly Bumper Cars', ja: 'ゼリー・バンパーカー', zh: '果冻碰碰车', es: 'Autos Chocones de Gominola', id: 'Bom-bom Car Jeli', vi: 'Xe Điện Đụng Thạch', hi: 'जेली बंपर कार', fr: 'Autos Tamponneuses Gelée', th: 'รถบั๊มเยลลี่', ar: 'سيارات الجيلي المتصادمة' },
   coaster: COASTER_NAME,
 };
@@ -196,4 +382,4 @@ export const truckSeller = (f) => ({ x: f.x, z: f.z + 0.1, ry: 0 });
 // The balloon clown on tall stilt shoes, by Main Street (game/balloon-clown.js).
 export const CLOWN = { x: 4.8, z: 14, ry: -Math.PI / 2 };
 
-export const RIDE_EMOJI = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🍭', bumper: '🚗', coaster: '🎢' };
+export const RIDE_EMOJI = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🍭', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', maze: '🪞', bumper: '🚗', coaster: '🎢' };

@@ -119,7 +119,7 @@ test('you can walk from the gate to the platform, and under the track to the nor
 });
 
 test('ticket prices and the ride-all day pass', () => {
-  assert.deepEqual(RIDE_PRICE, { coaster: 7000, drop: 4000, viking: 4000, wheel: 3000, carousel: 2000 });
+  assert.deepEqual(RIDE_PRICE, { coaster: 7000, flume: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 });
   assert.equal(BUMPER_COST, 4000);
   assert.equal(RIDE_PASS, 20000);
   const all = Object.values(RIDE_PRICE).reduce((a, b) => a + b, 0) + BUMPER_COST;
@@ -163,7 +163,7 @@ test('the old square: every ride has a fenced yard you reach by its gate, with i
     assert.deepEqual([r.x, r.z], [RIDE_GATES[r.kind].x, RIDE_GATES[r.kind].z]);
   }
   const kinds = park.stations.rideStaff.map((s) => s.kind).sort();
-  assert.deepEqual(kinds, ['bumper', 'carousel', 'drop', 'viking', 'wheel']);
+  assert.deepEqual(kinds, ['bumper', 'carousel', 'drop', 'flume', 'swing', 'teacups', 'train', 'viking', 'wheel']);
   for (const s of park.stations.rideStaff) {
     assert.ok(RIDE_NAME[s.kind].ko && RIDE_NAME[s.kind].en, `${s.kind} has a name`);
     assert.ok(!col.blocked(s.x, s.z, 0.3), `${s.kind} attendant stands free`);
@@ -173,6 +173,7 @@ test('the old square: every ride has a fenced yard you reach by its gate, with i
   }
   // You can't walk into a ride: the middle of each yard is fenced off from the plaza.
   for (const k of ['carousel', 'viking', 'wheel', 'drop']) assert.ok(!reachable(gate, { x: RIDES[k].x, z: RIDES[k].z + (k === 'carousel' || k === 'drop' ? 0 : 2) }), `${k}: fenced`);
+  for (const k of ['swing', 'teacups']) assert.ok(!reachable(gate, { x: RIDES[k].x + 3.4, z: RIDES[k].z + 1 }), `${k}: fenced`);
 });
 
 test('the park is a handful of draw calls: still meshes are merged', () => {
