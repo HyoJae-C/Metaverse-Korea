@@ -359,7 +359,12 @@ Heungnyemun (z -36) and its yard, the palace stream with Yeongjegyo
 (z -47), Geunjeongmun (z -55) and the corridors (회랑) round Geunjeongjeon's
 court, the rank stones either side of the raised middle path, and
 Geunjeongjeon on its two terraces (z -79.5). Gyeonghoeru's pond is
-north-west of the court. The royal procession walks from Heungnyemun's yard
+north-west of the court. Behind it, as in Seoul, each in its own walled
+yard with a gate on the south side: Sajeongjeon, Gangnyeongjeon and
+Gyotaejeon (these two with no ridge, as the king's and queen's halls have
+none) with Amisan's terraces and brick chimneys behind, Jagyeongjeon to the
+north-east, Hyangwonjeong on its pond, and Geoncheonggung. Seasonal trees
+line the walls behind the halls. The royal procession walks from Heungnyemun's yard
 over the bridge and up the middle path to the hall's steps. Inside the wall
 the camera drops and looks up (`game/palace-view.js`), more so in the courts
 behind Heungnyemun, until the player steers it. Visitors in rented hanbok

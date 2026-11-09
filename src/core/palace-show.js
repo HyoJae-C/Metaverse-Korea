@@ -58,6 +58,8 @@ export const PALACE_VISITORS = [
   [-10, -50, Math.PI * 0.2, 'yellow'], [-8.6, -50.8, Math.PI * 0.3, 'baji'], // by the stream, west of Yeongjegyo
   [14.5, -39, -2.4, null],
   [-7.5, -63, -0.4, 'pink'], [7.4, -66, 0.5, 'yellow'], [6.2, -61, 2.8, null], // the throne hall's court, beside the rank stones
+  [-2.5, -172, Math.PI, 'mint'], [5.5, -173, Math.PI * 1.1, null], // the shore of Hyangwonjeong's pond
+  [-9.5, -148, 2.2, 'yellow'], // beside Amisan's chimneys
 ];
 const VISITOR_LOOKS = { // the hanbok shop's own rental sets (data/hanbok.js)
   pink: { ...hanbokById('pink-navy').wear, hairStyle: 'bun' },

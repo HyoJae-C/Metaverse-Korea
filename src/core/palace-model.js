@@ -5,6 +5,9 @@
 //   cloister    the roofed corridors (회랑) round Geunjeongjeon's courtyard
 //   throne      Geunjeongjeon: the two-tier terrace (월대), the two-storey hall
 //   rankstones  the officials' rank stones (품계석) either side of the path
+//   palacehall  the halls behind: Sajeongjeon, Gangnyeongjeon, Gyotaejeon…
+//   amisan      the terraced garden behind Gyotaejeon with its brick chimneys
+//   hexpavilion Hyangwonjeong, the two-storey hexagonal pavilion on its pond
 // Each model is merged into a few meshes (one per material), so a whole
 // courtyard costs a handful of draw calls. Visual only: collision comes
 // from the map's blockers. l.s scales a building (default 1).
@@ -27,7 +30,8 @@ const C = {
 };
 const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
 function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
-  for (const geo of curvedRoof(w, d, h, { color: C.roof, end: C.roofEnd, ...o })) {
+  const geos = curvedRoof(w, d, h, { color: C.roof, end: C.roofEnd, ...o });
+  for (const geo of o.noRidge ? geos.slice(0, 1) : geos) { // (noRidge: the king's and queen's halls have no ridge, 무량각)
     const m = new THREE.Mesh(geo, tileMat);
     m.position.set(x, y, z);
     m.rotation.y = ry;
@@ -270,6 +274,63 @@ export const PALACE_BUILD = {
       box(g, 0.5, 0.16, 0.36, sx * X, 0.08, i * gap, C.stoneDark); // (half the real stones' size, like the halls)
       box(g, 0.34, 0.4, 0.22, sx * X, 0.36, i * gap, C.stone);
     }
+    mergeStatic(g);
+  },
+  // A hall on a stone base (기단) with steps in front: posts, doors, the
+  // painted band and a hipped roof. l.w, l.d: the body; l.h: its height;
+  // l.ridge === false: no ridge (Gangnyeongjeon, Gyotaejeon).
+  palacehall(g, l) {
+    const w = l.w, d = l.d, H = l.h || 3, B = 0.8;
+    box(g, w + 2.4, B, d + 2.4, 0, B / 2, 0, C.stone);
+    box(g, w + 2.6, 0.12, d + 2.6, 0, B - 0.04, 0, C.stoneDark);
+    for (let i = 0; i < 3; i++) box(g, 3, B / 3, 0.45, 0, (i + 0.5) * (B / 3), d / 2 + 1.2 + (2 - i) * 0.45 + 0.2, C.stone);
+    body(g, w, d, H, B, Math.max(3, Math.round(w / 2.6)));
+    band(g, w, d, B + H);
+    tiles(g, w + 4.5, d + 4.5, Math.max(1.6, d * 0.42), B + H + 1.75, { hip: true, lift: 0.9, seg: 6, rows: 2, noRidge: l.ridge === false });
+    if (l.name?.han) {
+      mergeStatic(g);
+      const sign = nameBoard(l.name.han, 2.4, 0.9);
+      sign.position.set(0, B + H + 0.9, d / 2 + 1.25);
+      g.add(sign);
+    } else mergeStatic(g);
+  },
+  // Amisan (아미산): four stepped flower terraces behind Gyotaejeon with the
+  // hexagonal red-brick chimneys of the queen's under-floor heating.
+  amisan(g, l) {
+    const w = l.w || 16;
+    for (let i = 0; i < 4; i++) {
+      box(g, w, 0.45, 2.4, 0, 0.22 + i * 0.45, -i * 2.4, C.stoneDark);
+      for (let k = 0; k < 6; k++) box(g, 0.8, 0.35, 0.8, -w / 2 + 1.5 + (k * (w - 3)) / 5, 0.62 + i * 0.45, -i * 2.4 + 0.4, ['#e58aa3', '#f2c14e', '#d9534f', '#9bc26a'][(i + k) % 4]); // flowers
+    }
+    for (const x of [-4.5, -1.5, 1.5, 4.5]) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, 3.4, 6), mat('#b5523b'));
+      c.position.set(x, 1.8 + 1.35, -6.6);
+      g.add(c);
+      box(g, 1.5, 0.35, 1.5, x, 1.8 + 3.05, -6.6, '#4a4f57');
+    }
+    mergeStatic(g);
+  },
+  // Hyangwonjeong (향원정): a small two-storey hexagonal pavilion on an
+  // island in its pond, Chwihyanggyo bridge to the north shore.
+  hexpavilion(g, l) {
+    const s = l.s || 1, r = 1.9 * s;
+    const isle = new THREE.Mesh(new THREE.CylinderGeometry(r + 1.6, r + 1.9, 0.6, 12), mat(C.stone));
+    isle.position.y = 0.1;
+    g.add(isle);
+    const post = (y, h) => { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; box(g, 0.22, h, 0.22, Math.sin(a) * r, y + h / 2, Math.cos(a) * r, C.post); } };
+    const floor = (y, rr, c) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, 0.18, 6), mat(c)); f.position.y = y; g.add(f); };
+    post(0.4, 1.8); floor(2.2, r + 0.3, C.door); post(2.3, 1.5);
+    floor(3.9, r + 0.3, C.beam);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(r + 1.3, 1.9, 6), mat('#474c55'));
+    roof.position.y = 4.9;
+    g.add(roof);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(C.gold));
+    tip.position.y = 5.95;
+    g.add(tip);
+    // Chwihyanggyo: a wooden bridge north to the shore (l.bridge: its length).
+    const L = l.bridge || 6;
+    box(g, 1.3, 0.15, L, 0, 0.55, -(r + 1.4 + L / 2), '#8a5a3a');
+    for (const sx of [-1, 1]) box(g, 0.08, 0.5, L, sx * 0.62, 0.85, -(r + 1.4 + L / 2), C.post);
     mergeStatic(g);
   },
 };
