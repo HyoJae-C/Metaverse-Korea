@@ -491,3 +491,109 @@ test('kangaroos and camels: pens of their own beside the zebras and the elephant
   const tops = c.body.children.filter((o) => o.isMesh && o.position.y > 1.15 && o.position.y < 1.3);
   assert.equal(tops.length, 2, 'two humps');
 });
+
+test('the camel ride: a loop round the herbivores from a stand on the path, clear of every pen', () => {
+  const C = G.camels;
+  assert.ok(C && C.p.length > 40, 'a camel trek in the zoo grounds');
+  assert.deepEqual(C.p[0], [C.x, C.z], 'it starts at the stand');
+  assert.deepEqual(C.p[C.p.length - 1], C.p[0], 'and comes back round to it');
+  const near = (x, z, P) => Math.hypot(Math.max(0, Math.abs(x - P.x) - P.w / 2), Math.max(0, Math.abs(z - P.z) - P.d / 2));
+  let onPath = 0;
+  for (const [x, z] of C.p) {
+    for (const P of PENS) assert.ok(near(x, z, P) > 1.2, `trek at ${x}, ${z} clear of the ${P.id} pen`);
+    assert.ok(x > ZOO_ROOM.x0 + 5 && x < ZOO_ROOM.x1 - 5 && z > ZOO_ROOM.z0 + 5 && z < ZOO_ROOM.z1 - 5, 'inside the zoo');
+    if (Object.values(WALKS).some((r) => r.p.some((q) => Math.hypot(q[0] - x, q[1] - z) < r.w / 2 + 1.5))) onPath++;
+  }
+  assert.ok(onPath / C.p.length > 0.9, `it keeps to the paths (${onPath}/${C.p.length})`);
+  const camelPen = PENS.find((p) => p.id === 'camels');
+  assert.ok(near(C.x, C.z, camelPen) < 4, 'the stand is by the camels');
+  for (const id of ['zebras', 'kangaroos', 'elephants', 'camels', 'giraffes']) {
+    const P = PENS.find((p) => p.id === id);
+    assert.ok(C.p.some(([x, z]) => near(x, z, P) < 4), `the ride passes the ${id}`);
+  }
+});
+
+test('the camel ride runs on the shared clock: one camel kneels at the stand at a time, then walks the loop', async () => {
+  const { trekTrack, camelAt, cycle, LOAD, KNEEL, PACE, RIDE_CAMELS } = await import('../src/core/zoo-camel-ride.js');
+  const tr = trekTrack(G.camels.p);
+  assert.ok(tr.L > 150 && tr.L < 220, `a lap of ${tr.L.toFixed(0)} m`);
+  const C = cycle(tr);
+  assert.ok(C / RIDE_CAMELS - LOAD < 75, 'never much more than a minute to wait for a camel');
+  let prev = null, boardable = 0;
+  for (let T = 1000; T < 1000 + C; T += 0.25) {
+    const st = [0, 1].map((i) => camelAt(tr, T, i));
+    assert.ok(!(st[0].phase === 'load' && st[1].phase === 'load'), 'never both at the stand');
+    for (const s of st) {
+      assert.ok(s.speed <= PACE + 1e-9 && s.speed >= 0);
+      if (s.phase === 'load') { assert.equal(s.speed, 0); assert.deepEqual([s.x, s.z], G.camels.p[0]); }
+      if (s.board) { assert.equal(s.kneel, 1, 'you get on while it kneels'); boardable++; }
+    }
+    if (prev && prev.phase === 'walk' && st[0].phase === 'walk') assert.ok(st[0].s >= prev.s - 1e-9, 'it walks on, never back');
+    prev = st[0];
+  }
+  assert.ok(boardable * 0.25 > (LOAD - 2 * KNEEL - 2) * RIDE_CAMELS, 'each camel waits long enough to get on');
+  // Kneeling down, waiting, getting up.
+  const T0 = 5000 - (5000 % C) + C; // (camel 0's lap starts on a whole cycle)
+  const at = (t) => camelAt(tr, T0 + t, 0);
+  assert.equal(at(0.1).phase, 'load');
+  assert.ok(at(1).kneel > 0 && at(1).kneel < 1, 'kneeling down');
+  assert.equal(at(LOAD / 2).kneel, 1);
+  assert.ok(at(LOAD - 1).kneel < 1 && !at(LOAD - 1).board, 'getting up: too late to get on');
+  assert.equal(at(LOAD + 30).phase, 'walk');
+  assert.ok(Math.abs(at(LOAD + 30).speed - PACE) < 1e-9, 'walking at its pace');
+});
+
+test('riding a camel: pay at the stand, sit on the saddle, carried round, off at the stand', async () => {
+  const { ZOO_PARK_ROOM, ZOO_PARK_EXIT } = await import('../src/core/zoo-rooms.js');
+  const { buildZooPark } = await import('../src/core/zoo-park.js');
+  const { createZooCamels, CAMEL_PRICE } = await import('../src/game/zoo-camels.js');
+  const { cycle, LOAD } = await import('../src/core/zoo-camel-ride.js');
+  const b = buildZooPark({ id: ZOO_STORE }, ZOO_PARK_ROOM, ZOO_PARK_EXIT);
+  const R = b.camels;
+  assert.ok(R && R.camels.length === 2, 'two saddled camels');
+  const C = cycle(R.track);
+  let T = 7000 - (7000 % C) + C + LOAD / 2; // camel 0 kneeling at the stand
+  const realNow = Date.now;
+  Date.now = () => T * 1000;
+  try {
+    let seated = null, coins = 10000;
+    const toasts = [], me = { root: new THREE.Object3D() };
+    const game = {
+      built: () => b, here: () => true, shop: { toast: (m) => toasts.push(m) }, wallet: { spend: (n) => (coins >= n ? ((coins -= n), true) : false) },
+      me, get seated() { return seated; }, riding: 0,
+      sitDown: (s) => { seated = s; }, standUp: () => { me.root.position.set(seated.stand[0], 0, seated.stand[1]); seated = null; },
+      makeNpc: () => ({ tag: { style: {} }, ch: { root: new THREE.Object3D(), wave() {} } }), t: (k) => k,
+    };
+    const cam = createZooCamels(game);
+    cam.adopt(b);
+    for (let k = 0; k < 20; k++) b.tick(0.1, { x: R.stand.x, z: R.stand.z }); // (the camels settle where the clock says)
+    assert.equal(cam.act({ x: R.stand.x - 10, z: R.stand.z }), null, 'nothing away from the stand');
+    const a = cam.act({ x: R.stand.x - 1, z: R.stand.z + 1 });
+    assert.equal(a.key, 'zoocamel');
+    a.run();
+    assert.equal(coins, 10000 - CAMEL_PRICE);
+    assert.equal(seated.camel, 0);
+    b.tick(0.016, me.root.position);
+    cam.tick();
+    const low = me.root.position.y;
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) < 0.5, 'on the camel at the stand');
+    assert.equal(cam.act({ x: R.stand.x, z: R.stand.z }), null, 'no second ride while on one');
+    assert.equal(cam.offAct().key, 'zoocamel-off');
+    // Off it goes: up, and along the loop.
+    for (let t = 0; t < 60; t += 0.1) { T += 0.1; b.tick(0.1, me.root.position); cam.tick(); }
+    assert.ok(seated, 'still riding');
+    assert.ok(me.root.position.y > low + 0.8, `sitting up high once it stands (${low.toFixed(2)} → ${me.root.position.y.toFixed(2)})`);
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) > 20, 'carried away from the stand');
+    // Round the loop and back: off at the stand.
+    for (let t = 0; t < C; t += 0.1) { T += 0.1; b.tick(0.1, me.root.position); cam.tick(); if (!seated) break; }
+    assert.equal(seated, null, 'off at the end of the lap');
+    assert.ok(toasts.includes('zoocamel.done'));
+    assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) < 3, 'stepped down at the stand');
+    // Too poor: no ride.
+    coins = 100;
+    T = 9000 - (9000 % C) + C + LOAD / 2;
+    cam.act({ x: R.stand.x, z: R.stand.z }).run();
+    assert.equal(seated, null);
+    assert.ok(toasts.includes('zoocamel.poor'));
+  } finally { Date.now = realNow; }
+});

@@ -714,6 +714,7 @@ const zooVisit = createZooVisit({
   makeNpc: (name, look) => makeNpc($('labels'), name, look), randomLook,
   missionEvent: (type, target) => missionEvent(type, target), setRiding: (k) => setRiding(k),
   placeLabels, enterSeaHall: () => enterHaunted(SEA_STORE),
+  sitDown: (s) => sitDown(s), standUp: () => standUp(), seatTaken: (x, z) => others.seatTaken?.(x, z),
 });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
@@ -6572,7 +6573,7 @@ renderer.setAnimationLoop((now) => {
   if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
-  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
+  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street

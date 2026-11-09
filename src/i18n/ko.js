@@ -657,4 +657,11 @@ export const KO = {
   "zoocart.off": "카트 반납하기",
   "zoocart.got": "카트를 빌렸어요! 동물원 어디든 달려 보세요. 친구에게 다가가면 자리를 권할 수 있어요 (최대 3명).",
   "zoocart.out": "카트는 동물원 안에서만 탈 수 있어서 승강장으로 돌려보냈어요.",
+  "zoocamel.ride": "🐪 낙타 타기 · 🪙 {n}",
+  "zoocamel.wait": "다음 낙타까지 {n}초",
+  "zoocamel.off": "낙타에서 내리기",
+  "zoocamel.on": "꽉 잡으세요! 뒷다리부터 일어나요. 얼룩말, 코끼리, 기린 옆을 한 바퀴 돌아요.",
+  "zoocamel.done": "정류장에 도착했어요. 즐거웠죠? 🐪",
+  "zoocamel.poor": "낙타 타기는 🪙 {n}이에요",
+  "zoocamel.taken": "이 낙타에는 벌써 누가 타고 있어요",
 };

@@ -2,13 +2,15 @@
 // its room (core/zoo-park.js). The little animal village's keeper and its cup
 // of food, petting and feeding the little animals, the hippo's watermelon,
 // the feeding-time toasts, the Sea Animals hall's door, the four-seat carts
-// (game/zoo-carts.js), and visitors strolling the paths so the zoo never
+// (game/zoo-carts.js), the camel ride (game/zoo-camels.js), and visitors strolling the paths so the zoo never
 // looks empty.
 //   game: { shop, wallet, sfx-free helpers: L, fmt, t, $, me, myLabel,
 //   showBubble, makeNpc, randomLook, missionEvent, setRiding, riding, seated,
-//   placeLabels, enterSeaHall, sounds (game/zoo-sounds.js) }.
+//   placeLabels, enterSeaHall, sounds (game/zoo-sounds.js), sitDown, standUp,
+//   seatTaken }.
 import { ZOO_TEXT } from '../i18n/game-text.js';
 import { createZooCarts, CART } from './zoo-carts.js';
+import { createZooCamels } from './zoo-camels.js';
 
 export const MELON_PRICE = 3000;
 export const WALKERS = 8; // visitors strolling the paths
@@ -70,6 +72,12 @@ export function createZooVisit(game) {
     get riding() { return game.riding; }, get seated() { return game.seated; },
   });
   const here = () => game.inZoo() && built;
+  const camels = createZooCamels({
+    built: () => built, here: () => !!here(), get shop() { return game.shop; }, get wallet() { return game.wallet; },
+    get me() { return game.me; }, get seated() { return game.seated; }, get riding() { return game.riding; },
+    sitDown: (s) => game.sitDown(s), standUp: () => game.standUp(), seatTaken: (x, z) => game.seatTaken?.(x, z),
+    makeNpc: (name, look) => game.makeNpc(name, look), sounds: game.sounds, missionEvent: (k) => game.missionEvent(k), t: (k, v) => game.t(k, v),
+  });
 
   // The first time the zoo's room is built: its keeper, its visitors, its sounds.
   function adopt(b) {
@@ -106,7 +114,8 @@ export function createZooVisit(game) {
       b.scene.add(o.ch.root);
       walkers.push(o);
     }
-    b.zooPeople = [keeper, ...watchers, ...walkers].filter(Boolean); // (game/room-cache.js takes their name tags off the page if the room is let go)
+    b.zooPeople = [keeper, ...watchers, ...walkers].filter(Boolean);
+    camels.adopt(b); // the camel ride's keeper (game/zoo-camels.js) // (game/room-cache.js takes their name tags off the page if the room is let go)
   }
 
   const feedAct = (a, p) => ({ key: 'zoofeed:' + a.kind + zoo.food, label: '🥕 ' + game.fmt(L(ZOO_FOOD.feed), { name: L(ZOO_PET[a.kind] || ZOO_PET.rabbit), n: zoo.food }), run: () => {
@@ -137,7 +146,7 @@ export function createZooVisit(game) {
   const atHallDoor = (p) => built.stations.seaDoor.some((d) => Math.hypot(p.x - d.x, p.z - d.z) < 1.8);
 
   return {
-    CART, carts, adopt,
+    CART, carts, camels, adopt,
     get zoo() { return here() ? zoo : null; },
     get built() { return built; },
     welcome() { // (once in a while, not every time you come back out of the hall)
@@ -149,12 +158,14 @@ export function createZooVisit(game) {
     action(p) {
       if (!here()) return null;
       if (game.riding === CART) return carts.offAct();
+      if (camels.riding()) return camels.offAct();
       if (game.riding || game.seated) return null;
       const near = zoo.nearest(p.x, p.z);
       if (near && zoo.food > 0) return feedAct(near, p); // feed from your cup
       const shop = zoo.shopSpot(p.x, p.z); if (shop) return foodShopAct(shop); // the food counter at the barn door
       if (atHallDoor(p)) return hallAct();
       const cart = carts.act(p); if (cart) return cart; // the cart station
+      const camel = camels.act(p); if (camel) return camel; // the camel ride's stand
       if (keeper && zoo.keeperSpot(p.x, p.z)) return keeperAct();
       if (near) return petAct(near, p); // the little animal village
       const melon = zoo.melonSpot(p.x, p.z); if (melon) return melonAct(melon, p); // watermelon for the hippo
@@ -172,6 +183,7 @@ export function createZooVisit(game) {
     },
     // Each frame in the zoo: the visitors stroll, the keeper stands by, labels.
     tick(dt, p, camera, w, h) {
+      camels.tick(); // (on a camel: carried on its saddle; out of the zoo: off)
       if (!here()) return;
       carts.tick(p);
       const near = (o) => {

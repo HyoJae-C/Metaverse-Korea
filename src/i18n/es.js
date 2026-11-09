@@ -653,4 +653,11 @@ export const ES = {
   "zoocart.off": "Devolver el carrito",
   "zoocart.got": "¡Tu carrito del zoo! Conduce por todo el zoo. Acércate a tus amigos para ofrecerles un asiento (hasta 3).",
   "zoocart.out": "Los carritos no salen del zoo, así que este volvió a su estación.",
+  "zoocamel.ride": "🐪 Montar en camello · 🪙 {n}",
+  "zoocamel.wait": "Próximo camello en {n} s",
+  "zoocamel.off": "Bajar del camello",
+  "zoocamel.on": "¡Agárrate! Se levanta primero con las patas traseras. Una vuelta junto a cebras, elefantes y jirafas.",
+  "zoocamel.done": "De vuelta en la parada. ¡Gracias por montar! 🐪",
+  "zoocamel.poor": "Montar en camello cuesta 🪙 {n}",
+  "zoocamel.taken": "Alguien ya va en este camello",
 };

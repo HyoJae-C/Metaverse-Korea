@@ -654,4 +654,11 @@ export const VI = {
   "zoocart.off": "Trả xe",
   "zoocart.got": "Xe điện của bạn! Lái khắp sở thú. Lại gần bạn bè để mời họ lên xe (tối đa 3 người).",
   "zoocart.out": "Xe chỉ chạy trong sở thú nên đã về lại trạm.",
+  "zoocamel.ride": "🐪 Cưỡi lạc đà · 🪙 {n}",
+  "zoocamel.wait": "Lạc đà tiếp theo sau {n} giây",
+  "zoocamel.off": "Xuống lạc đà",
+  "zoocamel.on": "Bám chắc nhé! Nó đứng dậy bằng chân sau trước. Đi một vòng quanh ngựa vằn, voi và hươu cao cổ.",
+  "zoocamel.done": "Đã về trạm. Cảm ơn bạn đã cưỡi! 🐪",
+  "zoocamel.poor": "Cưỡi lạc đà giá 🪙 {n}",
+  "zoocamel.taken": "Đã có người cưỡi con lạc đà này",
 };

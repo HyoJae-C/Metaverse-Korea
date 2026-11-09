@@ -657,4 +657,11 @@ export const JA = {
   "zoocart.off": "カートを返す",
   "zoocart.got": "カートを借りました！動物園のどこでも走れます。友だちに近づくと席をすすめられます（3人まで）。",
   "zoocart.out": "カートは動物園の中だけなので、乗り場に戻しました。",
+  "zoocamel.ride": "🐪 ラクダに乗る · 🪙 {n}",
+  "zoocamel.wait": "次のラクダまで{n}秒",
+  "zoocamel.off": "ラクダから降りる",
+  "zoocamel.on": "しっかりつかまって！後ろ足から立ち上がります。シマウマ、ゾウ、キリンのまわりを一周。",
+  "zoocamel.done": "乗り場に戻りました。楽しかった？🐪",
+  "zoocamel.poor": "ラクダ乗りは🪙 {n}",
+  "zoocamel.taken": "このラクダにはもう誰か乗っています",
 };

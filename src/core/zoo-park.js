@@ -16,6 +16,7 @@ import { Zoo } from './zoo.js';
 import { mergeStatic } from './merge-static.js';
 import { zooCartStation, zooFlowers } from './zoo-props.js';
 import { ZOO_PARK_ENTRY } from './zoo-rooms.js';
+import { buildCamelRide } from './zoo-camel-ride.js';
 import GROUNDS from '../data/zoo-grounds.json' with { type: 'json' };
 
 export { buildSeaHall } from './zoo-sea-hall.js';
@@ -213,6 +214,8 @@ export function buildZooPark(store, ROOM, EXIT) {
   }
   scene.add(new THREE.Mesh(mergeGeometries(benchGeo.map((g) => (g.index ? g.toNonIndexed() : g))), mat('#c98b4f')));
   mergeStatic(scene, [...zoo.pens.map((P) => P.g), fl, carts]);
+  // The camel ride's two camels and their stand (core/zoo-camel-ride.js; game/zoo-camels.js).
+  const camels = GROUNDS.camels ? buildCamelRide(scene, GROUNDS.camels) : null;
 
   const stations = {
     watchers: patronSpots(GROUNDS.pens), // (not `patrons`: game/zoo-visit.js puts them there, to hide the far ones)
@@ -231,10 +234,11 @@ export function buildZooPark(store, ROOM, EXIT) {
       if (near) for (const a of P.animals) a.root.visible = Math.hypot(at.x - P.pen.x - a.root.position.x, at.z - P.pen.z - a.root.position.z) < (SMALL_ANIMALS.has(a.kind) ? SMALL_VIEW : ANIMAL_VIEW);
     }
     zoo.update(dt, at);
+    camels?.tick(Date.now() / 1000, dt, at, camels.mine ?? -1);
   };
   tick(0, null);
   return {
     scene, products: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: EXIT, entry: ZOO_PARK_ENTRY,
-    stations, zoo, zooPark: true, carts: GROUNDS.carts, walks: GROUNDS.walks, open: GROUNDS.open, tick, time: () => time,
+    stations, zoo, camels, zooPark: true, carts: GROUNDS.carts, walks: GROUNDS.walks, open: GROUNDS.open, tick, time: () => time,
   };
 }
