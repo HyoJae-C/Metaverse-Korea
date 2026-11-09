@@ -2532,7 +2532,8 @@ function enterStore(item, walkIn = null) {
     built.vendorNpcs = built.vendors.map((v) => {
       const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Another Land's food truck sellers wear the park's uniform)
       o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
-      o.ch.root.position.set(v.x, 0, v.z);
+      o.ch.root.position.set(v.x, v.y || 0, v.z);
+      if (v.sit) { o.ch.activity('sit'); o.labelY = 1.5 + (v.y || 0); } // (the food truck sellers sit up at their hatch)
       o.ch.root.rotation.y = v.ry;
       built.scene.add(o.ch.root);
       return o;
