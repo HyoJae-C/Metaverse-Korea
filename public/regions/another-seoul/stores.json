@@ -1498,7 +1498,7 @@
       "size": "small",
       "at": [-1446.5, 300.5],
       "name": { "ko": "장독 반찬", "en": "Jangdok Banchan", "ja": "チャンドク惣菜", "zh": "酱缸小菜" },
-      "tagline": { "en": "Side dishes, and the boss buys homemade kimchi", "ko": "반찬가게: 직접 담근 김치를 사 줘요", "ja": "お惣菜屋：手作りキムチを買い取ります", "zh": "小菜店：老板收购自制泡菜" },
+      "tagline": { "en": "Side dishes, and the boss buys homemade kimchi, japchae and kimbap", "ko": "반찬가게: 직접 만든 김치·잡채·김밥을 사 줘요", "ja": "お惣菜屋：手作りのキムチ・チャプチェ・キンパを買い取ります", "zh": "小菜店：老板收购自制泡菜、杂菜和紫菜包饭" },
       "colors": { "sign": "#b03a2e", "awning": "#f6d3a1", "accent": "#fff4e6" },
       "workshop": "kimchi-buy",
       "products": [

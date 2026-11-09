@@ -368,7 +368,7 @@ export class KimbapUI {
     }
     const actions = el('div', 'order-actions');
     actions.append(chip(L('quit'), () => this.close()), chip(L('again'), () => this.begin(), 'primary'));
-    this.root.append(res, el('p', 'order-hint', boxed ? L('gift') : L('bagFull')), table, words, el('p', 'kimchi-fact', '🎉 ' + L('share')), actions);
+    this.root.append(res, el('p', 'order-hint', boxed ? L('gift') : L('bagFull')), boxed ? el('p', 'order-hint', L('canSell')) : '', table, words, el('p', 'kimchi-fact', '🎉 ' + L('share')), actions);
     this.onMedal?.(medal, coins);
   }
 }
