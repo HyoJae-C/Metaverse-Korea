@@ -5137,13 +5137,25 @@ function updateDroneShow() {
 // booms (sound travels slower than light: about 0.3 s per 100 m) and the
 // notices on the lawn.
 const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
+// Ttukseom's drone show turns the street's sky dark too, on and around its
+// open lawn (fading out from 150 to 300 m), as Yeouido's fireworks do.
+function droneNight(op, p, street) {
+  const o = openParks.find((x) => x.item.store.id === 'ttukseom-hangang');
+  const k = o?.built?.show?.night || 0;
+  if (!k || !street) return 0;
+  if (op === o) return k;
+  const d = Math.hypot(p.x - o.ox, p.z - o.oz);
+  return k * Math.min(1, Math.max(0, (300 - d) / 150));
+}
 function updateFireworks() {
   const s = fireworksAt();
   if (s && s.t < -FIREWORKS_ALERT + 30 && fireworks.alerted !== s.start) { fireworks.alerted = s.start; shop.toast(L(FIREWORKS_TEXT.soon)); }
-  const p = me.root.position, street = mode === 'street';
+  // (An open-air park counts as the street: its own metres turned into the world's.)
+  const op = openParkHere(), atWorld = (q) => { const [x, z] = parkWorld(op, q.x, q.z); return { x, y: q.y, z }; };
+  const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
-  weather.nightMix = night;
+  weather.nightMix = Math.max(night, droneNight(op, p, street));
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5166,7 +5178,7 @@ function updateFireworks() {
   }
   if (!fireworks.sky) return;
   if (!street) { fireworks.sky.points.visible = false; return; }
-  const fired = fireworks.sky.update(s.start, t, Math.max(night, darkness()), camera, innerHeight); // (bright from afar too when Seoul's night is real)
+  const fired = fireworks.sky.update(s.start, t, Math.max(night, darkness()), op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight); // (bright from afar too when Seoul's night is real)
   // Booms: louder close by, later far away; at most a few a second.
   for (const b of fired) {
     const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
@@ -5239,6 +5251,16 @@ function lightOpenPark(built) {
   L3.ambient.intensity = ambient.intensity; L3.ambient.color.copy(ambient.color);
   L3.sun.intensity = sun.intensity; L3.sun.color.copy(sun.color);
 }
+function freeParkSpot(col, x, z) {
+  if (!col.blocked(x, z, PLAYER_R + 0.05)) return [x, z];
+  for (let r = 0.25; r <= 3; r += 0.25) {
+    for (let a = 0; a < 16; a++) {
+      const g = (a / 16) * Math.PI * 2, px = x + Math.cos(g) * r, pz = z + Math.sin(g) * r;
+      if (!col.blocked(px, pz, PLAYER_R + 0.05)) return [px, pz];
+    }
+  }
+  return [x, z];
+}
 function updateOpenParks(dt) {
   if (!openParks.length) return;
   const p = me.root.position;
@@ -5268,7 +5290,10 @@ function updateOpenParks(dt) {
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
     if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro) {
-      enterStore(o.item, { x: lx, z: lz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
+      // (the street has no trees or bushes where the park has some: step in
+      // beside one, never into it, or you'd be stuck there)
+      const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
+      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry });
       return;
     }
   }
