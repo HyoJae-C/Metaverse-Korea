@@ -19,7 +19,7 @@
     { "id": "C-1", "npc": "H", "color": "#e86fa8", "at": [-1348, 255], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
     { "id": "D-1", "npc": "I", "color": "#7fb89a", "at": [-2520, -540], "snap": false, "radius": 40,
       "name": { "en": "Sinchon Square", "ko": "신촌 광장", "ja": "新村広場", "zh": "新村广场" } },
-    { "id": "E-1", "npc": "J", "color": "#e0457b", "at": [-2977, -216], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
+    { "id": "E-1", "npc": "J", "color": "#e0457b", "at": [-2977, -324], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
     { "id": "A-7", "npc": "K", "color": "#5fae6a", "at": [-190, 215], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } },
     { "id": "B-2", "npc": "L", "color": "#4fa3c7", "at": [-1651, -686], "snap": false, "radius": 40, "name": { "en": "Cheonggye Plaza", "ko": "청계광장", "ja": "清渓広場", "zh": "清溪广场" } },
     { "id": "F-1", "npc": "M", "color": "#3f7fd0", "at": [1407, 920], "snap": false, "radius": 60, "name": { "en": "Olympic Park", "ko": "올림픽공원", "ja": "オリンピック公園", "zh": "奥林匹克公园" } },
