@@ -129,7 +129,10 @@ export function buildPark(store, ROOM, EXIT) {
   for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
   // Far bank skyline (Cheongdam across the river) and a bridge. Its windows
   // light up during the drone show.
-  if (open) target = new THREE.Group();
+  // (an open park keeps only the skyline, and only where the street has
+  // nothing across the water: store.open.skyline)
+  const discard = new THREE.Group();
+  if (open && !store.open.skyline) target = discard;
   const lit = []; // [x, y] of each lit window
   for (let i = 0; i < 26; i++) {
     const h = 6 + ((i * 37) % 11) * 2.2, bw = 5 + (i % 3), bx = -95 + i * 7.6;
@@ -146,6 +149,7 @@ export function buildPark(store, ROOM, EXIT) {
   // across from the real Ttukseom (road on top, the Line 7 subway inside the
   // lower deck), low enough to leave the sky open for the drones. The other
   // parks keep the arched bridge.
+  if (open) target = discard;
   const bz = bank - 70;
   if (drones) {
     box(260, 0.7, 5, 40, 6.2, bz, '#d6dbe0'); // road deck
@@ -400,11 +404,13 @@ export function buildPark(store, ROOM, EXIT) {
   const setNight = (k) => {
     if (Math.abs(k - nightShown) < 0.002) return;
     nightShown = k;
-    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
-    scene.fog.color.copy(scene.background);
-    scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
-    hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
-    river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    if (!open) { // (open to the street: the sky, light and river are the street's, main.js)
+      scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+      scene.fog.color.copy(scene.background);
+      scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
+      hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+      river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    }
     lamps.glowMat.emissiveIntensity = 0.5 + 2 * k;
     lamps.poolMat.opacity = 0.32 * k; lamps.pools.visible = k > 0.01;
     kioskWindow.emissive.set('#fff1c8'); kioskWindow.emissiveIntensity = 0.9 * k;
