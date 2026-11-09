@@ -107,7 +107,12 @@ lists **districts** joined into one map (`src/core/districts.js`):
   a river or a palace wall.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
-  `blockers` split around a bridge to leave a gap.
+  `blockers` split around a bridge to leave a gap. The Han's north bank there
+  is the real one at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
+  `scripts/han-bank.mjs` writes water[1] (Banpo-Jamwon to Seongsu) and the Han
+  River Bike Path 14 m inland of the bank, and `scripts/build-yeouido.mjs`
+  writes water[0] from the same bank. Mangwon's and Banpo-Jamwon's maps still
+  draw their own stretch of river.
 - Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
