@@ -371,9 +371,10 @@ function buildProps(g, pen) {
 
 // The animal-food counter at the barn door: a little table with cups of
 // pellets and carrots, and a sign.
-function foodStand(g, [x, z]) {
+function foodStand(g, [x, z], ry = 0) {
   const s = new THREE.Group();
-  s.position.set(x, 0, z - 0.6);
+  s.position.set(x - Math.sin(ry) * 0.6, 0, z - Math.cos(ry) * 0.6); // (a step back towards the barn)
+  s.rotation.y = ry;
   const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.6), mat('#a77a50'));
   top.position.y = 0.85;
   s.add(top);
@@ -396,7 +397,7 @@ function foodStand(g, [x, z]) {
     c.font = '26px sans-serif'; c.fillText('🪙 1,000', w / 2, 74);
   }) }));
   sign.position.set(0, 1.45, -0.05);
-  // faces south, where you stand to buy (in front of the barn door)
+  // facing the way the barn's door does, where you stand to buy
   const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.06), mat('#7a5a3c'));
   post.position.set(0, 1.15, 0);
   s.add(sign, post);
@@ -520,7 +521,7 @@ export class Zoo {
     }
     scene.add(g);
     let stand = null;
-    if (pen.shop) stand = foodStand(g, pen.shop.at);
+    if (pen.shop) stand = foodStand(g, pen.shop.at, pen.shop.ry || 0);
     return { pen, g, animals, food, roof, stand, feeding: false, warned: 0, pose: 0 };
   }
 
