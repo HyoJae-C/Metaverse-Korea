@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fishById, chanceAt, legendPark, rollCatch, PARK_LEGENDS } from '../src/core/fishing.js';
+import { fishById, chanceAt, parkOf, rollCatch, PARK_FISH, TIER_SHARE } from '../src/core/fishing.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
@@ -117,9 +117,9 @@ test('the blobfish is Yeouido\'s legend, and only bites there', () => {
   const blob = fishById('blobfish');
   assert.ok(blob.released);
   for (const id of ['sea-cucumber', 'sunfish', 'anglerfish']) assert.ok(fishById(id).released, `${id} opens with the park`);
-  assert.equal(legendPark('blobfish').name.en, 'Yeouido');
-  assert.ok(Math.abs(chanceAt(blob, 'yeouido-hangang') - 0.4) < 1e-9);
-  for (const park of Object.keys(PARK_LEGENDS).filter((p) => p !== 'yeouido-hangang')) assert.equal(chanceAt(blob, park), 0, park);
+  assert.equal(parkOf('blobfish').name.en, 'Yeouido');
+  assert.ok(Math.abs(chanceAt(blob, 'yeouido-hangang') - TIER_SHARE[5]) < 1e-9);
+  for (const park of Object.keys(PARK_FISH).filter((p) => p !== 'yeouido-hangang')) assert.equal(chanceAt(blob, park), 0, park);
   for (const id of ['whale', 'giant-squid', 'manta']) assert.equal(chanceAt(fishById(id), 'yeouido-hangang'), 0, id);
   let seed = 11;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);

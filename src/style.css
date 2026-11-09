@@ -108,6 +108,19 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .name-field input:focus { outline: none; border-color: var(--mint); }
 .name-field input[readonly] { background: var(--cream, #f6f1e7); color: var(--ink-soft); }
 .acc:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Where new players start (game/first-stop.js): one tap picks, the first is on. */
+.start-pick { margin-top: 16px; text-align: left; }
+.start-pick[hidden] { display: none; }
+.start-pick-title { display: block; font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.start-pick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.start-pick-list button {
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); text-align: start;
+  display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px;
+  border: 3px solid #eadfcd; border-radius: 14px; background: #fff; cursor: pointer;
+}
+.start-pick-list button .ic { font-size: 18px; flex: none; }
+.start-pick-list button[aria-checked='true'] { border-color: var(--mint); background: #eefaf7; }
+.start-pick-list button:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .look-lock { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
 #step-login { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; }
 #step-login[hidden] { display: none; }
@@ -1099,9 +1112,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-meter.auto i { background: linear-gradient(90deg, #8ec5ff, #4b8ec7); transition: width .25s linear; }
 .fish-water.rare { background: linear-gradient(#ff7a59, #b7243a); box-shadow: 0 0 0 3px #ffd166 inset; }
 .fish-callout { font-size: 26px; font-weight: 900; color: #ffe066; text-shadow: 0 2px 0 #7a1020, 0 0 12px rgba(255, 224, 102, .8); letter-spacing: .02em; animation: fish-callout .5s cubic-bezier(.2, 1.6, .4, 1) both, fish-pulse .5s ease-in-out .5s infinite; }
-.fish-callout.tier-1, .fish-callout.tier-2 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
-.fish-callout.tier-4 { font-size: 28px; color: #ffd166; }
-.fish-callout.tier-5 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
+.fish-callout.feel-1 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.fish-callout.feel-2 { font-size: 28px; color: #ffd166; }
+.fish-callout.feel-3 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
 @keyframes fish-callout { from { transform: scale(2.4) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .fish-auto-note { margin: 0; padding: 8px 10px; border-radius: 12px; background: #fff4d6; color: #7a5200; font-size: 13px; font-weight: 700; line-height: 1.4; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
@@ -1131,8 +1144,22 @@ a.setting-row { text-decoration: none; color: inherit; }
 @keyframes fish-spark { 50% { transform: scale(1.35) rotate(15deg); opacity: .55; } }
 .fish-card-stars { color: #b86e00; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 1px 0 #fff; }
 @keyframes fish-card-pop { from { scale: .6; opacity: 0; } }
+/* ★4 lands with a thump: the card drops in big and wobbles, the fish bounces up.
+   ★5 whirls in: the card spins round and round as it grows, the fish twirls
+   up out of it, and a ring of light keeps turning behind it. */
+.fish-card.tier-4 { animation: fish-card-slam .8s cubic-bezier(.2, 1.4, .4, 1) both; }
+.fish-card.tier-4 .fish-big { animation: fish-big-jump .7s cubic-bezier(.2, 1.8, .4, 1) .15s both, trophy-bob 1s ease-in-out .9s infinite; }
+.fish-card.tier-5 { isolation: isolate; animation: fish-card-whirl 1.2s cubic-bezier(.2, 1.1, .3, 1) both; }
+.fish-card.tier-5 .fish-big { animation: fish-big-twirl 1.1s cubic-bezier(.2, 1.3, .4, 1) .5s both, trophy-bob 1s ease-in-out 1.6s infinite; }
+.fish-card.tier-5::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 42%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 240, 160, .75) 0 10deg, transparent 10deg 30deg); mask: radial-gradient(circle, #000 30%, transparent 70%); animation: fish-rays 6s linear infinite, fish-rays-in .8s ease-out .6s both; pointer-events: none; }
+@keyframes fish-card-slam { 0% { transform: scale(1.7) rotate(-8deg); opacity: 0; } 45% { transform: scale(.9) rotate(3deg); opacity: 1; } 65% { transform: scale(1.06) rotate(-2deg); } 82% { transform: scale(.98) rotate(1deg); } 100% { transform: none; } }
+@keyframes fish-big-jump { 0% { transform: translateY(30px) scale(.3); opacity: 0; } 60% { transform: translateY(-14px) scale(1.25); opacity: 1; } 100% { transform: none; } }
+@keyframes fish-card-whirl { 0% { transform: scale(.1) rotate(-1080deg); opacity: 0; } 70% { transform: scale(1.12) rotate(20deg); opacity: 1; } 85% { transform: scale(.96) rotate(-6deg); } 100% { transform: none; } }
+@keyframes fish-big-twirl { 0% { transform: scale(0) rotate(-720deg); opacity: 0; } 70% { transform: scale(1.45) rotate(15deg); opacity: 1; } 100% { transform: none; } }
+@keyframes fish-rays { to { rotate: 360deg; } }
+@keyframes fish-rays-in { from { opacity: 0; scale: .3; } }
 @keyframes fish-card-shine { 60%, 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare::before, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
 .fish-big { font-size: 56px; line-height: 1; }
 .fish-odds summary { cursor: pointer; font-weight: 700; font-size: 13px; }
 .fish-list { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
@@ -2092,7 +2119,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
-.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=4") no-repeat; background-size: 700% 700%; }
+.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=5") no-repeat; background-size: 800% 700%; }
 .fish-pop-big.fish-stamp-sprite { width: 120px; }
 .fish-big.fish-stamp-sprite { width: 76px; }
 .fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
@@ -2243,16 +2270,14 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 
 /* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
    and the card and its shout grow with the stars. */
-.fish-water.bite.t1 { padding: 14px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
-.fish-water.bite.t2 { padding: 16px 12px; background: linear-gradient(135deg, #9ae9a4, #2a9a52); box-shadow: none; }
-.fish-water.bite.t3 { padding: 19px 12px; color: #4a2c00; background: linear-gradient(135deg, #fff08a, #f0b400); box-shadow: 0 0 0 3px #fff6c8 inset, 0 0 14px rgba(240, 180, 0, .55); }
-.fish-water.bite.t4 { padding: 23px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
-.fish-water.bite.t5 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
-.fish-water.bite .fish-callout.tier-1 { font-size: 18px; }
-.fish-water.bite .fish-callout.tier-2 { font-size: 21px; }
-.fish-water.bite .fish-callout.tier-3 { font-size: 24px; color: #6b2a00; text-shadow: 0 2px 0 #fff6c8, 0 0 10px rgba(255, 255, 255, .8); }
-.fish-water.bite .fish-callout.tier-4 { font-size: 27px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
-.fish-water.bite .fish-callout.tier-5 { font-size: 31px; }
+.fish-water.bite.feel-1 { padding: 15px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
+.fish-water.bite.feel-2 { padding: 22px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
+.fish-water.bite.feel-3 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
+.fish-water.bite.feel-mystery { padding: 20px 12px; background: linear-gradient(135deg, #c9b8ff, #5b4bb8); box-shadow: 0 0 0 3px #e6dcff inset, 0 0 16px rgba(120, 90, 220, .6); }
+.fish-water.bite .fish-callout.feel-1 { font-size: 19px; }
+.fish-water.bite .fish-callout.feel-mystery { font-size: 25px; color: #fff; text-shadow: 0 2px 0 #3a2a80, 0 0 12px rgba(200, 180, 255, .9); }
+.fish-water.bite .fish-callout.feel-2 { font-size: 26px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
+.fish-water.bite .fish-callout.feel-3 { font-size: 31px; }
 
 /* "New features, refresh" banner (ui/update-banner.js) */
 .update-banner {

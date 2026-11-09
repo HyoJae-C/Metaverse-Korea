@@ -43,7 +43,7 @@ try {
     st = await stand();
     if (t > -100 && !(st.night > 0.99)) throw new Error(`not night at ${t}: ` + JSON.stringify(st));
     if (t > -100 && !st.drones) throw new Error(`no drones at ${t}: ` + JSON.stringify(st));
-    if (t > -100 && st.pitch > -0.05) throw new Error(`the view didn't tilt up at ${t}: ` + JSON.stringify(st));
+    if (Math.abs(st.pitch - 0.12) > 0.01) throw new Error(`the view moved by itself at ${t} (only the player turns it): ` + JSON.stringify(st));
     if (t > 0 && !st.stamp) throw new Error(`no stamp stand at ${t}`);
     if (t > 0 && !(st.lit > 50)) throw new Error(`too few drones lit at ${t}: ` + JSON.stringify(st));
     console.log(t, name, JSON.stringify(st));
