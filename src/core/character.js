@@ -1,7 +1,9 @@
 // Characters for the local player, other players and NPCs. The body is a 3D
 // model from the active model pack (src/data/characters). Nothing shows
-// until the model is on (a quick swap from a stand-in looked like a bug); a
-// chibi built from simple rounded shapes shows only if the model fails to load.
+// until the model is on (a quick swap from a stand-in looked like a bug). The
+// chibi built below from simple rounded shapes is never shown: its head and
+// body only measure where hats, glasses and bags go before they move onto
+// the model's bones.
 import * as THREE from 'three';
 import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet, makeZooCart } from './bikes.js';
 import { attachModel } from './model-pack.js';
@@ -102,7 +104,7 @@ export function createCharacter(rawLook) {
   );
   blob.position.y = 0.07;
   root.add(blob);
-  // Hidden until the model is on (or has failed: then the chibi shows).
+  // Hidden until the model is on.
   body.visible = false;
   blob.visible = false;
 
@@ -160,7 +162,19 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root: rig, body, headAcc, bodyAcc }).catch(() => null).then((m) => { model = m; blob.visible = true; if (!m) body.visible = true; for (const f of footProps.splice(0)) f(m); m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
+  // A failed download is tried again a few times (while the character is
+  // still in a scene); the chibi itself never shows.
+  const RETRY = [2, 5, 10, 20, 40];
+  const tryModel = (n = 0) => attachModel(look, { root: rig, body, headAcc, bodyAcc }).catch(() => null).then((m) => {
+    if (!m) {
+      if (n < RETRY.length) setTimeout(() => { if (root.parent) tryModel(n + 1); }, RETRY[n] * 1000);
+      return;
+    }
+    model = m; blob.visible = true;
+    for (const f of footProps.splice(0)) f(m);
+    m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
+  });
+  tryModel();
   return {
     root,
     head,

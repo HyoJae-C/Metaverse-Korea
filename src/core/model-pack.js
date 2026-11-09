@@ -98,15 +98,17 @@ function loadAnims() {
   const jobs = files.map((f) => (f.model ? load(f.model) : loader.loadAsync(BASE + f.url).catch(() => null)).then(add));
   const eager = jobs.filter((_, i) => files[i].eager);
   animsReady = Promise.all(eager).then((r) => r.every(Boolean));
+  animsReady.then((ok) => { if (!ok) animsReady = null; }); // (a later call tries again)
   return animsReady;
 }
 function load(id) {
   if (!cache.has(id)) {
-    // A failed load resolves to null and the character keeps its chibi body.
+    // A failed load resolves to null and is forgotten, so a later call
+    // (core/character.js retries) downloads it again.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
       .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); if (def.wear?.outfit) buildOutfit(g, def.wear.outfit, wearUv); return g; })
-      .catch(() => null));
+      .catch(() => { cache.delete(id); return null; }));
   }
   return cache.get(id);
 }
