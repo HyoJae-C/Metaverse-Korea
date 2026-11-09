@@ -18,11 +18,11 @@ const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
-const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
-const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
-const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
-const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
-const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
+export const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
+export const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
+export const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
+export const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
+export const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
 const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
 const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
 const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
@@ -104,7 +104,7 @@ export function buildPark(store, ROOM, EXIT) {
   const gy = open ? 0.07 : 0;
   // (pulled towards the camera harder than the street's roads, world.js, so
   // the walk under the lawn never shows through it)
-  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
+  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, store.open.grass ?? '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
   else plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
   plane(open ? w : w + 80, 3, 0, gy + 0.01, bank + 1.6, '#d9c7a6', open ? { polygonOffset: true, polygonOffsetFactor: -5 } : undefined); // path along the river
   const river = open ? { position: new THREE.Vector3(0, 0.03, 0), material: { color: new THREE.Color() } } // (the street's water, world.js)
@@ -450,7 +450,7 @@ export function buildPark(store, ROOM, EXIT) {
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     lights: { hemi, sun, ambient }, // (an open park's follow the street's: main.js)
-    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
+    fishing, fishBuy, ramen, river, duck, ducks, hanRiver: true, vendors: market.vendors, setSignLang, tick,
     show, // the drone show right now: { now: droneShowAt(), night, photo } (main.js: camera, notices, music)
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
     // the benches and the back, right of the market and left of DAILY MART.

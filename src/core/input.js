@@ -28,11 +28,20 @@ export class Input {
     const pointers = new Map();
     let pinchDist = 0;
     canvas.addEventListener('pointerdown', (e) => {
-      canvas.setPointerCapture(e.pointerId);
+      // (Not while the mouse is grabbed for first person: capturing then
+      // throws InvalidStateError, and the lock already sends every move here.)
+      if (document.pointerLockElement !== canvas) try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 2) pinchDist = this._pinch(pointers);
     });
     canvas.addEventListener('pointermove', (e) => {
+      // Mouse grabbed (first person): the pointer stays put, so turn by how
+      // far the mouse moved.
+      if (document.pointerLockElement === canvas) {
+        this.lookDX += e.movementX || 0;
+        this.lookDY += e.movementY || 0;
+        return;
+      }
       const p = pointers.get(e.pointerId);
       if (!p) return;
       if (pointers.size === 1) {

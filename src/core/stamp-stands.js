@@ -94,6 +94,7 @@ export class StampStands {
     this.stamps = stamps;
     this.items = standSpots(stamps, getFront).map((s) => place(scene, s, 0));
     this.rooms = new Map(); // store id → stands in its room
+    this.showTimed();
   }
   // Put up the stands that belong inside a room (once, when it is built).
   // floorAt(x, z): the room's floor height (the Namsan summit is up a hill).
@@ -114,8 +115,17 @@ export class StampStands {
   }
   // Show or hide the stands that are only up at certain times (each frame
   // in that room is fine: a few checks).
-  showTimed(storeId) {
-    for (const it of this.rooms.get(storeId) || []) if (it.stamp.onlyDuring) it.mesh.visible = standUp(it);
+  // On the street (no storeId) what's inside the stand is shown or hidden,
+  // so far-off culling can keep the stand itself.
+  showTimed(storeId = null) {
+    if (storeId) { for (const it of this.rooms.get(storeId) || []) if (it.stamp.onlyDuring) it.mesh.visible = standUp(it); return; }
+    for (const it of this.items) {
+      if (!it.stamp.onlyDuring) continue;
+      const up = standUp(it);
+      if (up === it.up) continue;
+      it.up = up;
+      for (const c of it.mesh.children) c.visible = up;
+    }
   }
   // A little press-down bounce on the stand's rubber stamp.
   press(it) {

@@ -23,6 +23,7 @@ useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
 import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
+import { lakeHoles } from './core/lakeshore.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { splitInstances } from './core/split-instances.js';
@@ -53,8 +54,9 @@ import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
-import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI } from './core/park-rides.js';
+import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam } from './game/ride-cam.js';
+import { createFirstPerson } from './game/first-person.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
@@ -70,11 +72,12 @@ import { buildBukchonHill } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor, saveLook } from './core/look-editor.js';
+import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
+import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
-import { CollisionMap, distSqToSeg } from './core/collision.js';
+import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
@@ -141,6 +144,8 @@ import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
+import { createHanParks } from './game/han-parks.js';
+import { createZooCarts, CART, CART_SPEED } from './game/zoo-carts.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
@@ -156,13 +161,14 @@ import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
 import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
-import { HELD_KINDS, COFFEE_SIPS, giftKind } from './core/held.js';
+import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
+import { SoundFiles } from './core/sound-files.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
 import { PROMOS } from './data/promos.js';
@@ -196,6 +202,9 @@ import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createFolkYard } from './game/folk-yard.js';
+import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
+import { createMirrorMaze } from './game/mirror-maze.js';
+import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { parseTaxi } from './core/taxi-share.js';
@@ -361,6 +370,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
   if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
   return r.json();
 }));
+// And the player's character model, so it is ready when they walk in.
+preloadModel(loadLook().model);
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
@@ -663,7 +674,7 @@ const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to 
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -1064,8 +1075,8 @@ let lastSpotTimer = 3;
 const rememberSpot = () => {
   if (tabParked) return; // the newer tab owns the saved spot now
   try {
-    if (mode !== 'street') return;
-    const { x, z } = me.root.position;
+    if (!outdoors()) return;
+    const [x, z] = myWorldSpot(); // (an open-air park: its spot on the street)
     if (spotBad(x, z)) return; // keep the last spot we can come back to
     saveLastSpot(x, z, me.root.rotation.y);
     if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
@@ -1089,12 +1100,12 @@ const CAR = 26; // car: big roads only
 const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
-const isCar = (k) => k === 4 || k === 6; // sports car, limousine
+const isCar = (k) => k === 4 || k === 6 || k === CART; // sports car, limousine, the zoo's cart
 let inSkate = false; // in the skate park (rides slow down there; see skateTick)
 const skater = new Skater();
 let skateY = 0; // ground (or air) height in the skate park
 let skateTk = null; // { code, at }: the last trick, sent to others for a moment
-const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
+const rideSpeed = () => (riding === CART ? CART_SPEED : isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
 // Steady walk (a setting, PC and phone): a pace between walking and running
 // that never turns into a run, however long you keep moving. No stamina used;
@@ -1366,9 +1377,10 @@ startWhereReports({
   get: () => {
     try {
       if (tabParked || !me?.root) return null;
-      if (mode === 'street') streetSpot = { x: me.root.position.x, z: me.root.position.z };
+      const out = outdoors(); // (an open-air Han River park is the street too)
+      if (out) { const [x, z] = myWorldSpot(); streetSpot = { x, z }; }
       if (!streetSpot) return null;
-      return { name: nickname, place: mode === 'street' ? 'street' : interior?.store?.id || mode, ...streetSpot };
+      return { name: nickname, place: out ? 'street' : interior?.store?.id || mode, ...streetSpot };
     } catch { return null; } // still starting up
   },
   send: (spot) => cloud.reportWhere(spot),
@@ -1401,6 +1413,9 @@ let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+// Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
+const outdoors = () => mode === 'street' || !!openParkHere();
+const onStreetRoom = () => !!lastJoin && lastJoin[0] === roomId && lastJoin[1] === scene;
 // Name tags are announced by each player's own game: ask the server who
 // they really are (019_chat_names.sql) and correct a borrowed name. People
 // joining together are asked about in one go.
@@ -1651,7 +1666,8 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
-  get me() { return me; }, camera, // where a friend request's sender is (core/friends.js whereIs)
+  get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
+  streetPos: () => myPlace(),
 });
 const { cleanChat, addChatLine } = chat;
 
@@ -1741,9 +1757,9 @@ const shop = new ShopUI({
     refreshWallet();
     const kind = goodsKind(product);
     if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
-    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en'), ...(product.snack ? { snack: product.snack } : {}) });
     if (kind !== 'gift') recordFood(shop.store, product, true);
-    const seller = sellerOf(product) || clerk;
+    const seller = sellerOf(product) || parkClerk();
     seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
     shop.toast(fmt(L(product.perfume ? PERFUME_TEXT.got : GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
     return true;
@@ -1760,10 +1776,10 @@ const shop = new ShopUI({
 // Market sellers call out to you as you walk past their stall (now and then).
 const STALL_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], ['맛보고 가세요!', 'matbogo gaseyo!', 'Come have a taste!'], ['방금 만들었어요!', 'banggeum mandeureosseoyo!', 'Freshly made!'], ['구경하고 가세요!', 'gugyeonghago gaseyo!', 'Take a look!']];
 let stallHiAt = 0;
-function greetAtStalls(p) {
+function greetAtStalls(p, list = interior.vendorNpcs) {
   const now = performance.now();
   if (now - stallHiAt < 12000) return;
-  const o = interior.vendorNpcs.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
+  const o = list.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
   if (!o) return;
   stallHiAt = o.hiAt = now;
   o.ch.wave();
@@ -1771,8 +1787,8 @@ function greetAtStalls(p) {
 }
 // At the park's market, the stall's own seller thanks you (not the kiosk clerk).
 function sellerOf(product) {
-  const i = interior?.vendors?.findIndex((v) => v.stall === product.stall);
-  return i >= 0 ? interior.vendorNpcs?.[i] : null;
+  const hp = hanPark() || interior, i = hp?.vendors?.findIndex((v) => v.stall === product.stall);
+  return i >= 0 ? hp.vendorNpcs?.[i] : null;
 }
 // What a bought thing becomes in your hand.
 const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
@@ -1804,7 +1820,7 @@ const counterUi = new CounterUI({
 
 // Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
 // River parks, the theme park, the Namsan slope) and the street have them.
-const petIndoors = () => mode === 'store' && !(interior?.park || interior?.cablecar || interior?.lawns);
+const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.cablecar || interior?.lawns);
 // Where pets may not go in this room: the bumper car rink in Another Land.
 const PARK_FENCES = [RINK_FENCE];
 const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
@@ -1981,21 +1997,22 @@ let held = (() => {
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
+    if (h?.kind === 'balloon') return restoreBalloon(h); // (Another Land's clown; gone once its air is out)
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
-    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}) } : null;
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
   } catch { return null; }
 })();
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.kind || null);
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
-  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold'; // a shopping bag is just carried (the duck maker works with E)
-  $('stow-btn').hidden = !h;
+  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
+  $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
@@ -2034,7 +2051,7 @@ try {
   if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
-const umbrellaOpen = () => hasUmbrella() && mode === 'street' && !riding && !seated && WET.has(weather.kind);
+const umbrellaOpen = () => hasUmbrella() && outdoors() && !zoo.indoors && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
 const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
@@ -2416,6 +2433,13 @@ let domeLoading = false;
 // walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
 // the park's own metres): no door, no bell, the camera stays as it was.
 function enterStore(item, walkIn = null) {
+  // A Han River park laid on the street (game/han-parks.js) has no room:
+  // asked to go in (a guide, a quest), you're just put on its path.
+  if (item.store.hanpark) {
+    if (mode !== 'street') leaveStore();
+    moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
+    return;
+  }
   // Seoul Another Dome: the stadium's code comes on the first visit.
   if (needsDome(item.store)) {
     if (domeLoading) return;
@@ -2456,12 +2480,12 @@ function enterStore(item, walkIn = null) {
     cam.pitch = 0.7;
     moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
   }
-  document.body.classList.add('in-store');
+  if (!store.open) document.body.classList.add('in-store'); // (an open-air park keeps the street's buttons)
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2524,9 +2548,10 @@ function enterStore(item, walkIn = null) {
   // The Han River park's market: a seller behind each stall.
   if (built.vendors?.length && !built.vendorNpcs) {
     built.vendorNpcs = built.vendors.map((v) => {
-      const o = makeNpc($('labels'), '');
+      const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Another Land's food truck sellers wear the park's uniform)
       o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
-      o.ch.root.position.set(v.x, 0, v.z);
+      o.ch.root.position.set(v.x, v.y || 0, v.z);
+      if (v.sit) { o.ch.activity('sit'); o.labelY = 1.5 + (v.y || 0); } // (the food truck sellers sit up at their hatch)
       o.ch.root.rotation.y = v.ry;
       built.scene.add(o.ch.root);
       return o;
@@ -2588,7 +2613,7 @@ function enterStore(item, walkIn = null) {
   if (built.stations?.rideStaff && !built.rideStaff) {
     built.rideStaff = {};
     for (const st of built.stations.rideStaff) {
-      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }));
+      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }), { ...randomLook(), ...PARK_UNIFORM });
       o.ch.root.position.set(st.x, 0, st.z);
       o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
@@ -2597,9 +2622,10 @@ function enterStore(item, walkIn = null) {
   }
   interior.rideStaff = built.rideStaff || null;
   interior.riderNpcs = parkRiders.spawn(built) || null;
+  if (!balloonClown.spawn(built)) balloonClown.leave();
   if (built.stations?.coasterStaff && !built.coasterStaff) {
     built.coasterStaff = built.stations.coasterStaff.map((st) => {
-      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }));
+      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }), { ...randomLook(), ...PARK_UNIFORM });
       o.ch.root.position.set(st.x, 0, st.z);
       o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
@@ -2648,6 +2674,13 @@ function enterStore(item, walkIn = null) {
   const museum = store.category === 'museum';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
   if (clerk && !walkIn) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
+  if (store.open) {
+    // An open-air park is part of the street: the same people around you
+    // (our spot sent in the street's metres), the street's people walking
+    // by. Only from somewhere else (a taxi from a shop) join the street.
+    if (!onStreetRoom()) { const [wx, wz] = myWorldSpot(); joinRoom(roomId, scene, { x: wx, z: wz }); }
+    return;
+  }
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -2691,7 +2724,7 @@ function goMuseumFloor(floor) {
 let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
 const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
 function enterHaunted() {
-  if (mode !== 'store' || !interior?.park || performance.now() < hauntSwitching) return;
+  if (mode !== 'store' || !interior?.themepark || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
   const front = interior.front;
   endRide();
@@ -2819,7 +2852,11 @@ function leaveStore(walkOut = false) {
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  // Every name tag and bubble this room put on screen goes with it (Another
+  // Land's ride attendants and guests, the bar regulars, the yoga class),
+  // or they'd hang over the street where they last stood.
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  balloonClown.hideLabels();
   clerk = null;
   trainer = null;
   instructor = null;
@@ -2854,7 +2891,7 @@ function leaveStore(walkOut = false) {
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
+  if (!openPark || !onStreetRoom()) joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z }); // (out of an open park: already there)
 }
 
 // ---------- Subway station ----------
@@ -2902,7 +2939,8 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
-const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
+const soundFiles = new SoundFiles(sfx, BASE); // shop blips (Kenney, CC0)
+const motionSound = new MotionSound(sfx, soundFiles); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
 let shownHonk = null, honkAt = 0;
 function honk() {
@@ -3049,7 +3087,7 @@ bag.onChange(() => queueMicrotask(() => picnic.checkBag()));
 const frisbee = createFrisbee({
   get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; }, get others() { return others; },
   get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
-  get sfx() { return sfx; }, petName, clearAction: () => { action = STALE; },
+  get sfx() { return sfx; }, toStreet: (x, z) => peerSpot(x, z), petName, clearAction: () => { action = STALE; },
   handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
 });
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js).
@@ -3189,10 +3227,11 @@ const mapView = new MapView({
     };
   })),
   getPlayers: () => {
-    const pos = mode === 'street' ? me.root.position : interior.front.door;
+    const op = openParkHere(); // (an open-air park: where I am on its lawn, in the street's metres)
+    const pos = mode === 'street' ? me.root.position : op ? myPlace() : interior.front.door;
     return {
-      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : interior.front.group.rotation.y },
-      others: mode === 'street' ? others.list() : [],
+      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
+      others: outdoors() ? others.list() : [],
     };
   },
   onGuide: (g) => {
@@ -3202,11 +3241,21 @@ const mapView = new MapView({
   onTaxi: (dest) => rideTaxi(dest),
 });
 
+// Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
+let minimap = null;
+import('./game/minimap.js').then(({ createMinimap }) => {
+  minimap = createMinimap({
+    hud: $('hud'), map, open: () => $('map-btn').click(),
+    getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no minimap: the Map button still works */ });
+
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
-  get others() { return others; }, get net() { return net; }, safety,
+  get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop,
   // The shop or place nearest (x, z), for a shared taxi's "going to …".
@@ -3353,6 +3402,7 @@ function subwayArrived(k) {
 }
 // Where I am on the street map (inside: the door I came in by).
 function myPlace() {
+  if (openParkHere()) { const [x, z] = myWorldSpot(); return { x, z }; } // (an open-air park: where I am on it)
   if (mode === 'street' || !interior?.front?.door) return me.root.position;
   return interior.front.door;
 }
@@ -3577,6 +3627,7 @@ const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, open
 // Coins and the rewarded-ad slot. The balance is kept on the server once
 // supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short', paid ? 0.3 : 0.25); });
 const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
@@ -3691,10 +3742,10 @@ const fishingUi = new FishingUI({
     missionEvent('fish', f.id);
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
-  park: () => interior?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
+  park: () => (hanPark() || interior)?.store?.id || null, // which ★5 legends bite here (PARK_LEGENDS in core/fishing.js)
   rod: () => rodSkins.equipped,
   lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
-  onClose: () => { if (fishCam && mode === 'store') Object.assign(cam, fishCam); fishCam = null; },
+  onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 });
@@ -3757,7 +3808,7 @@ const marketUi = new FishMarketUI({
   onSold: (coins) => {
     if (!coins) return;
     shop.toast(t('fish.sold', { coins }));
-    if (interior?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
+    if (hanPark()?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
 });
@@ -3767,7 +3818,7 @@ const ramenUi = lazyPanel(() => import('./ui/ramen-ui.js').then(({ RamenUI }) =>
   root: $('ramen-panel'),
   bag,
   hand: { get held() { return held; }, take: () => setHeld(null) }, // a ramyeon pack or an egg in the hand counts too
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
+  onSay: (line) => { const c = parkClerk(); if (c) say(c, $('labels'), line); },
   beforeCook: () => held?.g === 'ramyeon' || handReady(), // (a pack in the hand goes in the pot: the hand is free)
   onCooked: ({ egg }) => {
     holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
@@ -3783,18 +3834,23 @@ const RAMEN_BOWL = {
 // DAILY MART's ramyeon and eggs go in the bag (for the ramen machine).
 // The park's DAILY MART counter: near the kiosk clerk, the counter menu with
 // the kiosk's goods (the products on the counter can still be looked at).
-const martStore = () => ({ ...interior.store, name: interior.store.kiosk.name, products: interior.store.products.filter((q) => q.kiosk) });
-const martCounter = (p) => !!(hanPark()?.store.kiosk && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 3);
+// (a park laid on the street has its own clerk: game/han-parks.js)
+const parkClerk = () => clerk || hanPark()?.clerkNpc || null;
+const martStore = () => { const st = hanPark().store; return { ...st, name: st.kiosk.name, products: st.products.filter((q) => q.kiosk) }; };
+const martCounter = (p) => { const c = parkClerk(); return !!(hanPark()?.store.kiosk && c && Math.hypot(p.x - c.ch.root.position.x, p.z - c.ch.root.position.z) < 3); };
+// Han River park: its kiosk's counter (ramyeon and eggs for the ramen machine).
+const martAct = () => ({ key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(hanPark().store.kiosk.name, getLanguage()) }), run: () => { parkClerk()?.ch.wave(); counterUi.show(martStore()); } });
 let shopToastText = '';
 function buyIngredient(product, coins) {
   const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
   if (product.ingredient === 'mat' && hasMat(bag, held)) return fail(L(MAT_TEXT.have)); // one is enough
   if (product.ingredient === 'frisbee' && hasFrisbee(bag, held)) return fail(L(FRISBEE_TEXT.have));
   if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
-  if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
+  if (!wallet.spend(coins, { name: product.name, at: (interior || hanPark())?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
   refreshWallet();
   bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient, ...(product.ingredient === 'frisbee' ? { q: newFrisbee().q } : {}) }); // (a frisbee comes in a random colour)
-  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+  const who = parkClerk();
+  who && say(who, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
   shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
   shop.toast(shopToastText);
   return true;
@@ -4034,6 +4090,14 @@ const folkYard = createFolkYard({
   $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
 });
 onLanguageChange(() => folkYard.relabel());
+// Another Land's balloon clown on platform shoes. (game/balloon-clown.js)
+const balloonClown = createBalloonClown({
+  get me() { return me; }, get held() { return held; }, get action() { return action; }, set action(v) { action = v; },
+  $, STALE, shop, wallet, randomLook, refreshWallet: () => refreshWallet(), handReady: () => handReady(), holdNew: (h) => holdNew(h), setHeld: (h) => setHeld(h),
+});
+onLanguageChange(() => balloonClown.relabel());
+// Another Land's mirror maze: a clock from the door to the far side. (game/mirror-maze.js)
+const mirrorMaze = createMirrorMaze({ shop });
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
 const skate = createSkate({
   get map() { return map; }, get inSkate() { return inSkate; }, set inSkate(v) { inSkate = v; },
@@ -4219,7 +4283,7 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
   }
 }
 function nearestStore(test) {
-  const p = interior?.front?.door || me.root.position; // inside a shop: from its door
+  const p = myPlace(); // inside a shop: from its door
   let best = null, bd = Infinity;
   for (const it of storefronts.items) {
     if (!test(it.store)) continue;
@@ -4784,7 +4848,7 @@ onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
 // The ride-all day pass (sold at the ticket window) makes every ride free today.
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', coaster: '🎢' };
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
 const rideFare = (kind) => (ridePass() ? '🎫' : `🪙 ${RIDE_PRICE[kind]}`);
 function payRide(kind) {
@@ -4810,7 +4874,7 @@ const rideCam = createRideCam({ camera });
 const parkRiders = createParkRiders($('labels'));
 // Seconds until a wheel gondola is next at the deck (0: one is there now).
 function wheelWait(now) {
-  for (let s = 0; s < 8; s += 0.25) if (wheelDoorOpen(wheelBottom(now + s), now + s)) return s;
+  for (let s = 0; s < 14; s += 0.25) if (wheelDoorOpen(wheelBottom(now + s), now + s)) return s;
   return 0;
 }
 function parkRideAction(st) {
@@ -4832,6 +4896,7 @@ function boardRide(st) {
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   rideCam.reset();
+  if (THRILL_RIDES.has(st.kind)) rideThrill.start(interior.scene); // (the coaster's speed lines, wind and sounds)
   shop.toast(t(st.kind === 'wheel' ? 'ride.wheelOn' : 'ride.seated'));
   sendTimer = 0;
   missionEvent('ride');
@@ -4846,6 +4911,7 @@ function endRide() {
     cam.yaw = me.root.rotation.y + Math.PI;
     me.root.visible = true;
     rideCam.reset();
+    rideThrill.stop();
   }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
@@ -4853,31 +4919,32 @@ function endRide() {
   me.play('cheer');
   action = STALE;
 }
-const RIDE_GO = { viking: 'ride.barDown', carousel: 'ride.holdPole', drop: 'ride.harness' };
+const RIDE_GO = { viking: 'ride.barDown', carousel: 'ride.holdPole', drop: 'ride.harness', wheel: 'ride.wheelBar' };
 function updateRide(dt) {
   if (!ride || !interior?.tick) return;
   if (ride.kind === 'coaster') { updateCoaster(dt); return; }
   const now = rideClock();
   const s = seatAt(ride.kind, ride.seat, now);
   me.root.position.set(s.x, s.y, s.z);
-  me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship)
-  me.root.rotation.set(0, s.ry, s.roll);
+  me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship, or nose up the train's and the flume's slopes)
+  me.root.rotation.set(s.pitch || 0, s.ry, s.roll);
   ride.pose = s;
   const locked = rideLocked(ride.kind, ride.seat, now);
   if (locked !== ride.locked) { // the bar comes down (or the gondola's bar shuts), or goes up again
     ride.locked = locked;
-    if (locked) { shop.toast(t(RIDE_GO[ride.kind] || 'ride.wheelBar')); sfx.tock?.(0.6, 420); buzz(30); }
+    if (locked) { shop.toast(t(RIDE_GO[ride.kind] || 'ride.go')); sfx.tock?.(0.6, 420); buzz(30); }
     action = STALE;
   }
   const ph = RIDE_CYCLE[ride.kind] ? ridePhase(ride.kind, now) : null;
-  ride.top = ride.kind === 'drop' && ph.phase === 'run' && ph.s > 7.5 && ph.s < 10.2 ? Math.min(1, (ph.s - 7.5) / 1.5) : 0; // (look down at the top)
-  if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > 10 && ph.s < 10.1 && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
+  ride.top = ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.climb - 0.5 && ph.s < DROP_T.hold + 0.2 ? Math.min(1, (ph.s - DROP_T.climb + 0.5) / 1.5) : 0; // (look down at the top)
+  if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.hold && ph.s < DROP_T.hold + DROP_T.fall && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
   if (ride.kind === 'drop' && ph.phase !== 'run' && ride.fell) { ride.fell = false; me.setMoves?.(null); }
   ride.shout -= dt;
-  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'drop' ? ride.fell : true;
+  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume';
+  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop)
   if (locked && ride.shout <= 0 && scream) {
-    ride.shout = ride.kind === 'viking' ? 3.5 : ride.kind === 'drop' ? 4 : 6;
-    showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2000);
+    ride.shout = ride.kind === 'viking' ? 3.5 : thrill ? 4 : 6;
+    showBubble(myLabel, $('labels'), thrill ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2000);
   }
   if (now >= ride.until) endRide();
 }
@@ -4892,6 +4959,7 @@ const DROP_ARMS = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [
 const coasterName = () => L(COASTER_NAME);
 const coasterNow = () => Date.now() / 1000;
 const coasterFx = new CoasterFx(document.body, $('labels'), sfx);
+const rideThrill = createRideThrill({ camera, fx: coasterFx }); // (the swing ride and the drop tower borrow the coaster's effects)
 const _cf = {}, _cm = new THREE.Matrix4(), _cx = new THREE.Vector3(), _cy = new THREE.Vector3(), _cz = new THREE.Vector3(), _cv = new THREE.Vector3(), _cu = new THREE.Vector3();
 const ARMS_UP = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [-0.2, 0, 0], foreL: [-0.2, 0, 0], head: [-0.15, 0, 0] });
 const COWER = () => ({ spine: [0.25, 0, 0], head: [0.3, 0, 0], armR: [-1.2, 0, 0], armL: [-1.2, 0, 0] });
@@ -5012,13 +5080,17 @@ function coasterCamera(dt) {
 // train * 10 + seat + 1); the train runs on the shared clock, so they sit
 // exactly where they are on their own screen, arms up in the drop.
 function placeRemoteRider(ch, cs, q) {
-  if (!interior?.coaster) return;
+  // (Another Land's island: they're on the street's side, so the seat is
+  // turned from the island's metres into the street's)
+  const op = outdoors() ? openParks.find((o) => o.built?.coaster && (o.near || openParkHere() === o)) : null;
+  if (!op && !interior?.coaster) return;
   const train = Math.floor((cs - 1) / 10), seat = (cs - 1) % 10;
   if (train >= TRAINS || seat >= COASTER_SEATS) return;
   q.cf ||= {};
   const f = coasterSeat(train, seat, coasterNow(), q.cf);
   ch.root.rotation.order = 'YXZ';
   sitOnTrack(ch.root, f);
+  if (op) ch.root.applyMatrix4(op.toWorld);
   const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
   if (up !== !!q.coUp) { q.coUp = up; ch.setMoves?.(up ? ARMS_UP : null); }
   ch.setWind?.(f.tr.k01);
@@ -5102,15 +5174,14 @@ const duckUi = new DuckUI({
 // 10 minutes before, the lift-off and photo-time notices in the park, the
 // show music (only if music is on), and a camera that can look up.
 const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null, camRoom: '' };
-const inDronePark = () => mode === 'store' && interior?.store?.id === 'ttukseom-hangang';
+const dronePark = () => { const h = hanPark(); return h?.show ? h : null; }; // (Ttukseom's, laid on the street)
 // In the park while it's dark: the camera may tilt below level to look up.
-const skyLook = () => (inDronePark() && (interior.show?.night || 0) > 0.5) || fireworks.look;
+const skyLook = () => (dronePark()?.show.night || 0) > 0.5 || fireworks.look;
 function updateDroneShow() {
   const s = droneShowAt();
   if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
-  const park = inDronePark();
-  if (park) stampStands.showTimed(interior.store.id);
-  const show = park ? interior.show : null;
+  stampStands.showTimed(); // (the drone show's stand on its lawn)
+  const show = dronePark()?.show || null;
   const t = show?.now?.t;
   if (t != null) {
     if (t >= -LIFT_SECONDS && t < -LIFT_SECONDS + 60 && droneShow.lifted !== show.now.start) {
@@ -5137,15 +5208,13 @@ function updateDroneShow() {
 // booms (sound travels slower than light: about 0.3 s per 100 m) and the
 // notices on the lawn.
 const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, sky: null, loading: false, look: false, lastBoom: 0 };
-// Ttukseom's drone show turns the street's sky dark too, on and around its
-// open lawn (fading out from 150 to 300 m), as Yeouido's fireworks do.
-function droneNight(op, p, street) {
-  const o = openParks.find((x) => x.item.store.id === 'ttukseom-hangang');
-  const k = o?.built?.show?.night || 0;
-  if (!k || !street) return 0;
-  if (op === o) return k;
-  const d = Math.hypot(p.x - o.ox, p.z - o.oz);
-  return k * Math.min(1, Math.max(0, (300 - d) / 150));
+// Ttukseom's drone show turns the street's sky dark too, in and around its
+// park (fading out from 100 to 250 m off it), as Yeouido's fireworks do.
+function droneNight(p, street) {
+  const k = street ? droneShowAt()?.night || 0 : 0;
+  if (!k) return 0;
+  const d = hanParks.awayFrom('ttukseom-hangang', p);
+  return k * Math.min(1, Math.max(0, (250 - d) / 150));
 }
 function updateFireworks() {
   const s = fireworksAt();
@@ -5155,7 +5224,7 @@ function updateFireworks() {
   const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
-  weather.nightMix = Math.max(night, droneNight(op, p, street));
+  weather.nightMix = Math.max(night, droneNight(p, street));
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5194,7 +5263,23 @@ function updateFireworks() {
 // Duck boats at the Han River parks (src/game/duck-boats.js).
 // The park I'm in right now: its boats, fishing spots, kiosk and ramen
 // machine (core/park.js), or null.
-const hanPark = () => (mode === 'store' && interior?.park ? interior : null);
+// Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
+const hanParks = createHanParks({
+  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
+  get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
+  night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  onVisit: (store) => { roomVisit++; missionEvent('visit', store.id); }, // (as walking into a shop does)
+  // What there is to do there (each made only when you're next to it).
+  acts: {
+    duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
+    fish: () => ({ key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() }),
+    sell: () => ({ key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }), // the park's fish buyer
+    ramen: () => ({ key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() }),
+    look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+  },
+});
+const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
 // its fishing, boats, stalls and seats work as before), drawn over the
@@ -5207,12 +5292,30 @@ const PARK_NEAR = 220; // drawn (and built) within this many metres
 const PARK_STAFF = 80; // its sellers and duck boats drawn within this many metres
 const openParks = storefronts.items.filter((i) => i.open).map((item) => {
   const { at: [ox, oz], ry } = item.store.open;
+  // Its lawn in the same green as the street's grass around it (just behind
+  // it, or beside it), so the park reads as one with the riverside, not a patch.
+  const around = [[0, 15.5], [0, 18], [0, 21], [-28, 6], [28, 6]].map(([x, z]) => [ox + x * Math.cos(ry) + z * Math.sin(ry), oz - x * Math.sin(ry) + z * Math.cos(ry)]);
+  const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
+  if (grass) item.store.open.grass = COLORS[grass.k];
   const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
-  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false };
+  // (a park with its own shore, like Another Land's island, says where its
+  // edge is: `lawn` to walk in, the wider `out` to walk off)
+  const { lawn = null, out = null } = item.store.open;
+  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false, lawn, out };
 });
 const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
 function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
 const openParkHere = () => (mode === 'store' && interior?.store?.open ? openParks.find((o) => o.item.store === interior.store) : null);
+// Where I am in the street's metres (in an open park: its spot turned into
+// the world's), for the network and everyone else on the street.
+function myWorldSpot() {
+  const op = openParkHere(), p = me.root.position;
+  return op ? parkWorld(op, p.x, p.z) : [p.x, p.z];
+}
+// A spot in the room I'm in, in the street's metres (where others are).
+const peerSpot = (x, z) => { const op = openParkHere(); return op ? parkWorld(op, x, z) : [x, z]; };
+// The camera as the street sees it (in an open park: moved into the world's frame).
+const streetCam = () => { const op = openParkHere(); if (!op) return camera; camera.updateMatrixWorld(); return viewThrough(op.toWorld); };
 // The kiosk clerk and the stall sellers are there before you walk in, so
 // the park looks alive from the street (enterStore keeps these).
 function staffOpenPark(built) {
@@ -5236,6 +5339,13 @@ function staffOpenPark(built) {
 }
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
+  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+    if (!domeLoading) {
+      domeLoading = true;
+      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    }
+    return null;
+  }
   if (!o.built) {
     o.built = roomFor(o.item.store);
     o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
@@ -5271,17 +5381,23 @@ function updateOpenParks(dt) {
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
+    net.update?.(wx, wz); // (the street's area cells, as on the street)
     sun.position.set(wx + 60, 120, wz + 40);
     sun.target.position.set(wx, 0, wz);
-    if (seated == null && (Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1)) leaveStore(true);
+    const off = here.out ? !pointInPoly(p.x, p.z, here.out) : Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1;
+    if (seated == null && !ride && off) leaveStore(true);
     return;
   }
   if (mode !== 'street') return;
+  // (in a taxi out of the park you are still standing on its lawn until the
+  // ride ends: don't walk back in)
+  const inCab = taxi.inCab();
   for (const o of openParks) {
     const d = Math.hypot(p.x - o.ox, p.z - o.oz);
     o.near = d < PARK_NEAR;
     if (!o.near) continue;
-    lightOpenPark(openParkRoom(o));
+    if (!openParkRoom(o)) continue; // (its code is still coming)
+    lightOpenPark(o.built);
     o.built.tick?.(dt, null);
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.
@@ -5289,7 +5405,8 @@ function updateOpenParks(dt) {
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
-    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro) {
+    const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
+    if (onLawn && !subway.metro && !inCab) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
@@ -5307,6 +5424,7 @@ function viewThrough(m) {
   parkCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
   parkCam.matrixWorld.multiplyMatrices(m, camera.matrixWorld);
   parkCam.matrixWorldInverse.copy(parkCam.matrixWorld).invert();
+  parkCam.matrixWorld.decompose(parkCam.position, parkCam.quaternion, parkCam.scale); // (name tags measure how far they are from the camera's position)
   return parkCam;
 }
 renderer.info.autoReset = false; // (one frame can be two passes: renderScenes resets it)
@@ -5331,9 +5449,21 @@ function renderScenes() {
   }
 }
 
+// The zoo's four-seat carts (src/game/zoo-carts.js).
+const zooCarts = createZooCarts({
+  station: map.landmarks.find((l) => l.type === 'zoocarts') || null, shop, setRiding: (k) => setRiding(k),
+  get riding() { return riding; }, get seated() { return seated; },
+});
 const duckBoats = createDuckBoats({
   park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
-  others, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+  get others() { return others; }, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+  // Someone on the street seen from the open park I'm in: in its metres, or null when they're not by it.
+  peerLocal: (r) => {
+    const op = openParkHere();
+    if (!op) return { x: r.position.x, z: r.position.z, ry: r.rotation.y };
+    const [x, z] = parkLocal(op, r.position.x, r.position.z);
+    return Math.abs(x) < 80 && z > -120 && z < 40 ? { x, z, ry: r.rotation.y - op.ry } : null;
+  },
 });
 const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 
@@ -5379,17 +5509,18 @@ const beauty = createBeauty({
   get myLook() { return myLook; }, set myLook(v) { myLook = v; },
   setLook, resendState: () => { lastSent = null; },
 });
-const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
+const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, surgeryView, startHaircut, updateHaircut, finishHaircut } = beauty;
 // Within r metres of a spot ({ x, z }) that may be missing.
 const nearSpot = (q, p, r) => !!q && Math.hypot(p.x - q.x, p.z - q.z) < r;
 const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
 let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
-  me.root.rotation.y = Math.PI; // face the river (north)…
+  const ry = hanPark()?.frame?.ry || 0; // (a park laid on the street: its river is where its frame says)
+  me.root.rotation.y = Math.PI + ry; // face the river (north)…
   // …with the camera low behind one shoulder, so the cast and the bobber
   // out on the water are in view above the panel.
   fishCam = { pitch: cam.pitch, dist: cam.dist };
-  Object.assign(cam, { yaw: innerWidth < innerHeight ? -0.4 : -0.7, pitch: 0.3, dist: 6 });
+  Object.assign(cam, { yaw: (innerWidth < innerHeight ? -0.4 : -0.7) + ry, pitch: 0.3, dist: 6 });
   fishingUi.show();
 }
 function openMarket() {
@@ -5778,10 +5909,10 @@ const { closeHatWorkshop, openHatWorkshop } = hatWorkshop;
 let seated = null;
 function nearestSeat(p) {
   let best = null, bd = 1.3;
-  for (const s of (mode === 'street' ? streetSeats : interior?.seats) || []) {
+  for (const list of mode === 'street' ? [streetSeats, hanParks.seats] : [interior?.seats || []]) for (const s of list) { // (a Han River park on the street: its own too)
     const d = Math.hypot(p.x - s.x, p.z - s.z);
     const dd = d - (s.reach || 0); // (stands: sit from the deck in front of them)
-    if (dd < bd && !others.seatTaken?.(s.x, s.z)) { bd = dd; best = s; }
+    if (dd < bd && !others.seatTaken?.(...peerSpot(s.x, s.z))) { bd = dd; best = s; }
   }
   return best;
 }
@@ -5875,6 +6006,7 @@ function moreActions(p, door) {
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
+    if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -5901,6 +6033,7 @@ function moreActions(p, door) {
   if (seat?.mat) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
   const fb = frisbee.action(p); if (fb) out.push(fb);
+  if (interior.themepark) out.push(...balloonClown.actions(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   return out;
@@ -5940,15 +6073,17 @@ function updateAction(p, tSec) {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
-    const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
+    const sb = !riding && !seated && !zoo.indoors ? snowman.action(p) : null; // (not indoors in the zoo's Sea Animals hall) // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
+    else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
     else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
       const seat = freeSeat();
       next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
     } else if (riding === 1 && inSkate) next = { key: 'trick', label: '🤸 ' + L(SKATE_TEXT.trick), run: () => skater.tap() }; // (the bike button gets off)
+    else if (riding === CART) next = zooCarts.offAct(); // (game/zoo-carts.js)
     else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
@@ -5962,6 +6097,7 @@ function updateAction(p, tSec) {
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
+    else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -5973,6 +6109,7 @@ function updateAction(p, tSec) {
     else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
     else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
     else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding
+    else if (zooCarts.act(p)) next = zooCarts.act(p); // the zoo's cart station
     else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village
@@ -6027,23 +6164,29 @@ function updateAction(p, tSec) {
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
     } else if (ride && ride.kind !== 'coaster' && rideLocked(ride.kind, ride.seat, rideClock())) { // the bar is down: the button switches the view
-      const first = ride.view === 'first';
-      next = { key: 'ride-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; rideCam.reset(); action = STALE; } };
+      // (the Ferris wheel adds a scenic view from outside the gondola: third → scenic → seat)
+      const to = ride.view === 'first' ? 'third' : ride.kind === 'wheel' && ride.view === 'third' ? 'scenic' : 'first';
+      next = { key: 'ride-view:' + ride.view, label: to === 'scenic' ? '🏞️ ' + t('ride.scenic') : (to === 'third' ? '🎥 ' : '👀 ') + L(to === 'third' ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = to; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
-    } else if (interior.park && coasterAction(p)) {
+    } else if (interior.themepark && coasterAction(p)) {
       next = coasterAction(p);
-    } else if (interior.park && nearStation(p, 'booth', 1.6)) {
+    } else if (interior.themepark && nearStation(p, 'booth', 1.6)) {
       const name = L(DAY_PASS_TEXT.rides);
       next = ridePass()
         ? { key: 'ride-pass-held', label: '🎫 ' + fmt(L(DAY_PASS_TEXT.ridesHeld), { name }), run: buyRidePass }
         : { key: 'ride-pass', label: `🎫 ${name} · 🪙 ${RIDE_PASS.toLocaleString()}`, run: buyRidePass };
+    } else if (interior.themepark && balloonClown.actions(p).length) {
+      next = balloonClown.actions(p)[0]; // (the other balloons are in the more list)
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
       next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
-    } else if (interior.park && nearStation(p, 'hauntedHouse', 1.8)) {
+    } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
+    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
+      const under = storefronts.items.find((i) => i.store.below === interior.store.id);
+      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => enterStore(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = parkRideAction(st);
@@ -6127,7 +6270,7 @@ function updateAction(p, tSec) {
       next = duckBoats.boardAction(p);
     } else if (martCounter(p)) {
       // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
-      next = { key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(interior.store.kiosk.name, getLanguage()) }), run: () => { clerk?.ch.wave(); counterUi.show(martStore()); } };
+      next = martAct();
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
@@ -6333,19 +6476,26 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
+// First-person view (game/first-person.js): V or Settings only.
+const firstPerson = createFirstPerson({
+  camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
+  canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+});
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now)) return; // (at most 60 frames a second)
   guardPosition();
   timer.update();
-  const dt = Math.min(timer.getDelta(), 0.05);
+  const dt = Math.max(0, Math.min(timer.getDelta(), 0.05)); // (never back in time: a clock set back)
   input.update();
 
   const look = input.consumeLook();
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
-  cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : sky.busy ? 90 : 28);
+  if (!firstPerson.look(look)) {
+    cam.yaw -= look.dx * 0.006;
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, zoo.indoors ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
+  }
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -6361,6 +6511,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
+  firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
   if (riding === 3) {
@@ -6393,6 +6544,7 @@ renderer.setAnimationLoop((now) => {
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
   updateDucks(dt);
   updateOpenParks(dt);
+  if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
@@ -6463,6 +6615,7 @@ renderer.setAnimationLoop((now) => {
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
+  if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
@@ -6486,7 +6639,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street' && !sky.busy) {
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
     for (let d = 1; d <= horiz; d += 0.5) {
-      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
+      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)) { horiz = Math.max(1.5, d - 0.6); break; }
     }
   } else if (interior?.camBlocked) { // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
     const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
@@ -6508,14 +6661,21 @@ renderer.setAnimationLoop((now) => {
     camera.lookAt(p.x, 0, p.z);
   }
 
+  firstPerson.update(p, !!seated); // (in your eyes, when on)
+  surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
-  else if (ride?.pose) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0); me.root.visible = ride.view !== 'first'; }
+  else if (ride?.pose) {
+    rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic');
+    me.root.visible = ride.view !== 'first';
+    if (THRILL_RIDES.has(ride.kind)) rideThrill.update(dt, ride.kind, rideClock(), rideFxSoft, ride.view === 'first'); // (the swing's and the drop's speed)
+  }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
-  if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
+  if (!outdoors()) snowUniform.value = 0; // (no snow indoors, even on a material the street shares; a Han River park's lawn is outdoors)
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
+    if (weather.particles) weather.particles.visible = !zoo.indoors; // (no rain or snow in the zoo's Sea Animals hall)
     sun.position.set(p.x + 60, 120, p.z + 40);
     sun.target.position.set(p.x, 0, p.z);
     const z = zones.update(camera, p.x, p.z, tSec);
@@ -6550,6 +6710,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
+  minimap?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
@@ -6584,14 +6745,15 @@ renderer.setAnimationLoop((now) => {
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
+    const sop = openParkHere(), [sx, sz] = myWorldSpot(); // (in an open park: in the street's metres, the people around are the street's)
     const st = {
-      x: Math.round(p.x * 100) / 100,
-      z: Math.round(p.z * 100) / 100,
-      ry: Math.round(me.root.rotation.y * 100) / 100,
+      x: Math.round(sx * 100) / 100,
+      z: Math.round(sz * 100) / 100,
+      ry: Math.round((me.root.rotation.y + (sop ? sop.ry : 0)) * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
-    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; st.x = COASTER_OFF.x; st.z = COASTER_OFF.z; st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
+    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; [st.x, st.z] = peerSpot(COASTER_OFF.x, COASTER_OFF.z); st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
     if (teleports) st.tp = teleports;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
     if (Math.abs(p.y) > 0.05 && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
@@ -6609,6 +6771,7 @@ renderer.setAnimationLoop((now) => {
     if (umbrellaOpen()) st.um = 1;
     if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
+    if (sop) st.mp = sop.item.store.id; // which open park our mat and frisbee (in its metres) are in
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
     if (frisbee.sync) st.fb = frisbee.sync; // a frisbee throw on the lawn, played on everyone's screen
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
@@ -6630,9 +6793,11 @@ renderer.setAnimationLoop((now) => {
 
   const w = innerWidth, h = innerHeight;
   others.fences = petFences();
-  others.update(dt, camera, w, h);
+  others.update(dt, streetCam(), w, h);
   updateBuskMusic(p);
-  if (mode === 'street') { zoo.update(dt, p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
+  if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
+  if (mode === 'street') { zoo.update(dt, p); zooCarts.tick(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -6648,6 +6813,8 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
   }
+  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
+  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
   if (keeper) {
     if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
     else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';
@@ -6772,7 +6939,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     enter: (id) => enterStore(storefronts.get(id)),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
-    droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
+    droneShow: () => { const sh = dronePark()?.show; return { night: +(sh?.night || 0).toFixed(3), drones: !!sh?.sky, lit: sh?.sky?.lit() || 0, sky: +(weather.nightMix || 0).toFixed(3), stamp: !!stampStands.items.find((i) => i.stamp.id === 'drone-show')?.up, pitch: +cam.pitch.toFixed(2) }; },
     openBank: () => bankGame.openBank(),
     bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
     bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,
@@ -6793,8 +6960,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     leave: () => leaveStore(),
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
-    seats: () => interior?.seats?.length ?? 0,
-    sit: (i) => sitDown(interior.seats[i]),
+    seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
+    sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
     stand: () => standUp(),
     tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarotUi.offer && { ...tarotUi.offer }, state: tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
@@ -6804,14 +6971,17 @@ if (new URLSearchParams(location.search).has('debug')) {
     readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
     choices: () => action?.opts?.map((o) => o.label) || null,
-    clerkAt: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
-    productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
+    clerkAt: () => { const c = parkClerk(); return c ? [c.ch.root.position.x, c.ch.root.position.z] : null; },
+    productsAt: () => (hanPark() || interior)?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
     pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
+    tags: () => [...others.players.values()].map((q) => q.tag?.style.display !== 'none'), // (other players' name tags on screen)
+    outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
     riding: () => riding,
+    sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
     graphics: () => gfx.state(),
@@ -6819,10 +6989,12 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
     parkStaff: () => Object.keys(interior?.rideStaff || {}),
-    parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: { viking: ridePhase('viking', Date.now() / 1000), carousel: ridePhase('carousel', Date.now() / 1000), drop: ridePhase('drop', Date.now() / 1000) }, wheelOpen: wheelDoorOpen(wheelBottom(Date.now() / 1000), Date.now() / 1000), locked: !!ride?.locked }),
+    parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: Object.fromEntries(Object.keys(RIDE_CYCLE).map((k) => [k, ridePhase(k, Date.now() / 1000)])), wheelOpen: wheelDoorOpen(wheelBottom(Date.now() / 1000), Date.now() / 1000), locked: !!ride?.locked }),
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
+    surgery: () => startSurgery(myLook), // (in a clinic: the operating scene without paying)
+    surgeryT: (t) => { if (beauty.surgery) beauty.surgery.t = t; return beauty.surgery?.t ?? null; },
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
@@ -6840,7 +7012,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     bumper: () => bumper.debug(),
     bumperBoard: () => bumper.board(),
     duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
-    duckBoats: () => interior?.ducks?.map((d) => [+d.g.position.x.toFixed(2), +d.g.position.z.toFixed(2), +d.g.rotation.z.toFixed(3)]),
+    duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
+    hanPark: () => { const hp = hanPark(); return hp ? { id: hp.store.id, street: !!hp.street, ry: hp.frame?.ry ?? null, docks: hp.ducks?.map((d) => (hp.frame ? hp.frame.toWorld(d.home.x, d.home.z + 2.2) : [d.home.x, d.home.z + 2.2])) || [] } : null; },
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
@@ -6862,6 +7035,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
+    petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),
@@ -6883,8 +7057,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     addFish: (id) => fishBag.add(id),
     fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
-    spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
-    ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
+    spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
+    fishBuySpot: () => hanPark()?.fishBuy && [hanPark().fishBuy.x, hanPark().fishBuy.z],
     music: () => ({ on: music.on, track: music.track.id }),
     pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },

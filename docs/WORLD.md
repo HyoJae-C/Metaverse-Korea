@@ -128,8 +128,11 @@ Both are drawn by `scripts/build-mapo.mjs` (rows of small buildings along
 the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
 Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street;
 Mangwon has Mangwon Market under an arcade roof, Poeun-ro (Mangridan-gil) and
-an open Han River park along its south edge. Its Mangwon Fishing Pier is a
-park room like Ttukseom's; every park's fishing spots share one catch table
+Mangwon Han River Park along its south edge, laid straight on the street
+(the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
+buyer west, the kiosk and food stalls where the path comes down, the duck
+boat dock east of them, and Seoul Battleship Park's warship moored at the
+east end. Every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
@@ -152,6 +155,21 @@ the station here, about 400 m in Seoul). The district is about 230 x 180 m
   down the walking street. `SHOPS` in the script says which lot each takes.
 - Run the script again after changing the map; it rewrites the shops' `at`.
 
+## Ttukseom Han River Park (Seongsu)
+
+Laid straight on the street on Seongsu's straight bank, between the river
+and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
+`game/han-parks.js`). West to east: the fishing pier and fish buyer; DAILY
+MART with its ramen machine where the walk comes down from Ttukseom-ro,
+then the Riverside Market's six stalls; the open lawn for the drone light
+show (`lawn: true`: picnic mats, frisbees), with the launch barge out on the
+water and the show's board by the railing; the duck boat dock by the other
+walk down. The drone show (`core/drone-show.js`) keeps its spots in the old
+park room's metres; `core/han-park.js` sets them on the park (`drones` in
+the layout), loads the drones only near show time, and turns the street's
+sky dark in and around the park while it's on. Both Ttukseom stamps stand
+on the lawn; the drone show's only while the drones are up.
+
 ## Banpo-Jamwon Han River Park (Seocho-gu)
 
 Banpo and Jamwon Han River Parks lie side by side on the south bank, so the
@@ -162,8 +180,21 @@ own frame (u along the bank, v across it). Jamsu Bridge, the low deck under
 Banpo Bridge, crosses from the north bank: the river's blocker has a gap for
 it, and the `jamsu` landmark draws its kerbs, railings, lamps and Banpo
 Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
-Seobinggo-ro. The park house on the bank is the door to the park room; its ★5
-legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
+Seobinggo-ro. Its ★5 legend is the manta ray (`PARK_LEGENDS` in
+`src/core/fishing.js`).
+
+The park is laid straight on the street, with no room or door: the
+`hanpark` landmark (`PARK` in the script) says where everything goes, in
+the park's own frame (x along the bank from the bridge, z inland from the
+bank's edge). `src/core/han-park.js` builds what the map can't draw, and
+`src/game/han-parks.js` sets it on the street the first time you come near.
+You stay on the street: the same room, the same network, the map. As the
+real parks are, at 1/4:
+- Banpo (west of the bridge): Moonlight Square at the foot of Banpo Bridge,
+  with stone steps facing the rainbow fountain, the night market's food
+  trucks and the convenience store under the bridge.
+- Jamwon (east): the fishing pier, the fish buyer, the duck boat dock and an
+  open lawn by the water for picnic mats.
 
 ## Gyeongnidan-gil (Itaewon, Yongsan-gu)
 
@@ -237,12 +268,14 @@ and its blocker is cut for Seogang Bridge. The Saetgang, the narrow arm
 south of the island, is the district's own water and blocker. Seogang Bridge
 starts on the Han River Bike Path where "To the Han River" comes down from
 Hongdae, so Hongdae walks straight onto it. On the island: Yeouido Han River
-Park along the north shore (the fishing corner with the park house door, an
-open picnic lawn with no trees, `lawn: true`, Mul-bit Square's shallow pool,
-the Information Center), the Han River path, Yunjung-ro with cherry trees
+Park along the north shore, laid straight on the street like Banpo-Jamwon's
+(`PARK` in the script, `game/han-parks.js`): the fishing corner by Seogang
+Bridge (a pier, the fish buyer, the kiosk with its ramen machine), the open
+fireworks lawn with no trees (`lawn: true`), the night market's stalls round
+Mul-bit Square's shallow pool, and the boat dock by the Information Center; the Han River path, Yunjung-ro with cherry trees
 that are only pink in spring (`blossoms` with `seasonal`), plain office
 towers and the 63 tower on the east tip (a blocker and a landmark, not
-walkable). The park room's ★5 legend is the blobfish. Run the script again
+walkable). The park's ★5 legend is the blobfish. Run the script again
 after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
@@ -373,5 +406,42 @@ Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
 stands. Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
-(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
-behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.
+(Seokchon Lakeside) keeps two passers-by on the shore.
+
+The lakes themselves are at the real 1/4: both lakes and the west-lake island
+were traced from the real map around the lake's centre (on Songpa-daero
+between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
+1/4, about 13,150 m² of water against the real 217,850 m² / 16 = 13,616
+(`tests/themepark.test.mjs` checks it stays within 5%). Songpa-daero bends
+through the gap between the lakes (about 35 m wide), the mall stands west of
+the east lake's north tip, and the land the old, larger lakes took is
+lakeside park. Two spits of land that cut into the water (the south shore's
+west end, and the west lake's east side by Songpa-daero) are lake now.
+
+The water lies about a metre below the ground behind stone banks, and the two
+lakes are one water, joined by a channel under Songpa-daero, which crosses it
+on a bridge (landmark `lakeshore`, `core/lakeshore.js`; the shore is cut out
+of the ground, the water areas are `sunk`). One walk goes round both lakes,
+with a railing along the shore, lamps with flowers at their feet and benches
+facing the water.
+
+### Another Land on the island
+
+The island is Another Land itself, open to the street: no gate, you walk over
+Another Land Bridge (south from Olympic-ro) onto it. It is the store
+`another-land-island` with `"open"` like the Han River parks (main.js
+`openParks`), but its edge is its own shore: `open.lawn` (walk onto it and
+you're in) and the slightly wider `open.out` (walk past it and you're back on
+the street), in the room's metres, which are the Cotton Candy Express's own
+(`core/park-island.js`, room size `island`). The coaster stands on it exactly
+as it was, track, speed, station and attendant, with its candy wood, and a
+candy-striped pavilion over the stairs down to the rest of the park
+(`another-land`, which has `"below": "another-land-island"`: no storefront,
+its door is the stairs; leaving it puts you back on the island). The island
+grew to the south-east to hold the whole track (about 3,870 m², the track at
+least 2 m in from the shore and about 5 m of water round it), so the
+water is about 13,150 m², 97% of the real 1/16. The helix sits south of
+the long run, east of the station (the same 345 m lap, the track 63 m
+across, not 83), which leaves the island's east end free for more rides. `tests/coaster.test.mjs`
+checks the track is on the island and the only way off is the bridge;
+`tests/themepark.test.mjs` checks the island lies on the map's island.

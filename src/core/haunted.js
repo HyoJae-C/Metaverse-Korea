@@ -10,8 +10,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Where the house stands in the park (themepark.js room metres). It faces
 // -Z, into the park; you walk up to its door from the plaza side.
-export const HAUNT = { x: -14, z: 10, w: 6.4, d: 4.4, h: 5.8, door: { w: 1.5, h: 2.2 } };
-// Front wall at z ≈ 7.8; the door spot (and where you come back out) just
+export const HAUNT = { x: -15, z: 24, w: 6.4, d: 4.4, h: 5.8, door: { w: 1.5, h: 2.2 } };
+// Front wall at z ≈ 21.8; the door spot (and where you come back out) just
 // in front of it, facing away from the house.
 export const HAUNT_SPOT = { x: HAUNT.x, z: HAUNT.z - HAUNT.d / 2 - 1.4, ry: Math.PI };
 

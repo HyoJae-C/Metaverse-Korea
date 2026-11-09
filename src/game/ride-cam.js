@@ -13,13 +13,15 @@ export function createRideCam({ camera }) {
     // s: the seat; first: from your seat; soft: no leaning (the gentle
     // setting); face: the camera out in front looking back at you (the drop
     // tower and the wheel, where behind you is the tower or the gondola);
-    // down: look down (at the top of the drop tower).
-    update(dt, s, first, soft, face = 0, down = 0) {
+    // down: look down (at the top of the drop tower); scenic: the Ferris
+    // wheel's view from outside the gondola, well behind and above the
+    // rider, looking out over the park beyond them.
+    update(dt, s, first, soft, face = 0, down = 0, scenic = false) {
       const c = Math.cos(s.roll || 0), sn = Math.sin(s.roll || 0);
       // The seat's forward and up, tipped by the roll (about z).
       f.set(Math.sin(s.ry) * c, Math.sin(s.ry) * sn, Math.cos(s.ry));
       up.set(-sn, c, 0);
-      const back = first ? -0.1 : face ? -face : 1.6, high = first ? 1.15 : face ? 1.5 : 2.5;
+      const back = scenic ? 9 : first ? -0.1 : face ? -face : 1.6, high = scenic ? 4.5 : first ? 1.15 : face ? 1.5 : 2.5;
       // Ease the camera's offset from the seat, not its place: the camera
       // moves with the seat exactly (easing its place left it trailing the
       // seat by an amount that changed with every frame's length, and the
@@ -27,10 +29,10 @@ export function createRideCam({ camera }) {
       // the ship's tilt is eased.
       want.set(-f.x * back + up.x * high, -f.y * back + up.y * high, -f.z * back + up.z * high);
       if (!cam) cam = want.clone();
-      cam.lerp(want, 1 - Math.exp(-dt * (first ? 30 : 8)));
+      cam.lerp(want, 1 - Math.exp(-dt * (first ? 30 : scenic ? 3 : 8)));
       camera.position.copy(seat.set(s.x, s.y, s.z)).add(cam);
       camera.up.copy(worldUp).lerp(up, soft ? 0 : 0.7).normalize();
-      const ahead = first ? 5 : face ? 0 : 6, lift = first ? 1.0 - down * 4 : face ? 0.9 : 0.6;
+      const ahead = scenic ? 30 : first ? 5 : face ? 0 : 6, lift = scenic ? -4 : first ? 1.0 - down * 4 : face ? 0.9 : 0.6;
       at.set(s.x + f.x * ahead + up.x * lift, s.y + f.y * ahead + up.y * lift, s.z + f.z * ahead + up.z * lift);
       camera.lookAt(at);
     },

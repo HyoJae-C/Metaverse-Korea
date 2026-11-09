@@ -47,9 +47,9 @@ export const STAMPS = [
     icon: '<path d="M78 128 v-20 M78 108 l-20 0 l20 -30 l20 30 z M78 92 l-14 0 l14 -22 l14 22 z"/><path d="M128 128 l-14 -44 h28 z"/><path d="M112 84 a16 14 0 0 1 32 0 a16 10 0 0 1 -32 0 z"/><path d="M56 128 h88"/>',
   },
   {
-    // in the Ttukseom Han River Park room, on the lawn just inside the
-    // entrance, facing you as you walk in (the river and the pier ahead)
-    id: 'hangang', place: { store: 'ttukseom-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1d6fb8', shape: 'square',
+    // at the west end of the drone show's lawn, in the park laid on the
+    // street (scripts/build-seongsu.mjs), the river ahead
+    id: 'hangang', place: { at: [117, 376.5], ry: 3.1416 }, color: '#1d6fb8', shape: 'square',
     name: { ko: '뚝섬 한강공원', en: 'Ttukseom Han River Park', ja: 'トゥクソム漢江公園', zh: '纛岛汉江公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a duck boat (오리배) on the river
@@ -57,8 +57,8 @@ export const STAMPS = [
   },
   {
     // Ttukseom's drone light show (core/drone-show.js): the stand is only on
-    // the lawn while the drones are up, so this stamp means you saw a show.
-    id: 'drone-show', place: { store: 'ttukseom-hangang', room: true, at: [-3.6, 4.6], ry: 0 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    // the lawn (in front of the barge) while the drones are up, so this stamp means you saw a show.
+    id: 'drone-show', place: { at: [142.6, 377.4], ry: 3.1416 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
     name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // drones drawing a heart over the river
@@ -153,24 +153,24 @@ export const STAMPS = [
     icon: '<path d="M56 96 q44 -40 88 0 M60 96 v32 M140 96 v32 M56 128 h88"/><path d="M72 112 h56 v16 h-56 z"/><ellipse cx="100" cy="84" rx="12" ry="8"/><path d="M100 92 v12"/>',
   },
   {
-    // in the Mangwon Fishing Pier room (the same lawn spot as Ttukseom's)
-    id: 'mangwon-pier', place: { store: 'mangwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#2f78b0', shape: 'circle',
+    // where the way down from Mangwon meets the river, in the park laid on the street (scripts/build-mapo.mjs prints the spot)
+    id: 'mangwon-pier', place: { at: [-3428, -56], ry: 4.7124 }, color: '#2f78b0', shape: 'circle',
     name: { ko: '망원한강공원', en: 'Mangwon Han River Park', ja: '望遠漢江公園', zh: '望远汉江公园' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a fishing rod with a fish on the line, over the waves
     icon: '<path d="M58 70 q40 -10 70 30 M128 100 v12"/><path d="M114 116 q14 -12 28 0 q-14 12 -28 0 z M142 116 l8 -6 v12 z"/><path d="M52 136 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
   {
-    // in the Banpo-Jamwon Han River Park room (the same lawn spot as the other parks)
-    id: 'banpo-jamwon', place: { store: 'banpo-jamwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#3a6fc9', shape: 'circle',
+    // at the west end of Moonlight Square, in the park laid on the street (scripts/build-banpo.mjs prints the spot)
+    id: 'banpo-jamwon', place: { at: [-1253.4, 832.7], ry: 2.3081 }, color: '#3a6fc9', shape: 'circle',
     name: { ko: '반포·잠원 한강공원', en: 'Banpo-Jamwon Han River Park', ja: '盤浦・蚕院漢江公園', zh: '盘浦·蚕院汉江公园' },
     gu: { ko: '서초구', en: 'Seocho-gu', ja: '瑞草区', zh: '瑞草区' },
     // Banpo Bridge on its piers, with arcs of water falling from its side
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
-    // in the Yeouido Han River Park room (the same lawn spot as the other parks)
-    id: 'yeouido', place: { store: 'yeouido-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1f8fa3', shape: 'circle',
+    // in the fishing corner by Seogang Bridge, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
+    id: 'yeouido', place: { at: [-2890.1, 160.9], ry: 0.9347 }, color: '#1f8fa3', shape: 'circle',
     name: { ko: '여의도 한강공원', en: 'Yeouido Han River Park', ja: '汝矣島漢江公園', zh: '汝矣岛汉江公园' },
     gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
     // the island in the river, the 63 tower on its tip and Seogang Bridge's arch

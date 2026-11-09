@@ -78,7 +78,9 @@ export function createFrisbee(game) {
         finish();
       }
     });
-    sync = encodeThrow(thr);
+    // (in an open-air park: sent in the street's metres, where everyone else sees our dog)
+    const st = (q) => { const [x, z] = game.toStreet ? game.toStreet(q.x, q.z) : [q.x, q.z]; return { x, z }; };
+    sync = encodeThrow({ ...thr, from: st(thr.from), to: st(thr.to) });
     if (game.held?.g === 'frisbee') game.handEmpty?.(true); // it left the hand
     game.me.play?.('cast');
     game.sfx?.pop?.();

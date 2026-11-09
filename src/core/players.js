@@ -103,8 +103,10 @@ export class RemotePlayers {
   }
 
   // Positions for the map.
+  // Where everyone is (the map's dots). A flying operator (game/sky-flight.js,
+  // "fl") is left off, like their name tag.
   list() {
-    return [...this.players.values()].filter((p) => p.target).map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
+    return [...this.players.values()].filter((p) => p.target && !p.target.fl).map((p) => ({ x: p.ch.root.position.x, z: p.ch.root.position.z, name: p.name }));
   }
 
   state(id, st) {
@@ -187,7 +189,7 @@ export class RemotePlayers {
   nearestFree(x, z, r) {
     let best = null, bd = r;
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk) continue;
+      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < bd) { bd = d; best = { id, name: p.name }; }
     }
@@ -198,7 +200,7 @@ export class RemotePlayers {
   nearbyFree(x, z, r) {
     const out = [];
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk) continue;
+      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < r) out.push({ id, name: p.name, d });
     }
@@ -246,8 +248,9 @@ export class RemotePlayers {
   }
 
   // Their pet walking with them (pt: the pet's item id), seen by everyone.
+  // Not while they fly (game/sky-flight.js): the pet would give them away.
   _pet(p) {
-    const id = !p.hidden && isPet(p.target.pt) ? p.target.pt : null;
+    const id = !p.hidden && !p.target.fl && isPet(p.target.pt) ? p.target.pt : null;
     if ((p.pet?.id || null) === id) return;
     p.pet?.dispose();
     p.pet = null;
@@ -271,7 +274,7 @@ export class RemotePlayers {
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;
-        const inCar = p.target.bk === 3 && [4, 6].includes(this.players.get(p.target.on)?.target?.bk);
+        const inCar = p.target.bk === 3 && [4, 6, 7].includes(this.players.get(p.target.on)?.target?.bk);
         const bv = p.target.bk === 1 ? String(p.target.bv || '').slice(0, 40) : '';
         if ((p.target.bk || 0) !== (p.bk || 0) || inCar !== !!p.inCar || bv !== (p.bv || '')) {
           p.bk = p.target.bk || 0; p.inCar = inCar; p.bv = bv;
@@ -304,16 +307,19 @@ export class RemotePlayers {
       else if (p.onCoaster) { p.onCoaster = false; r.rotation.set(0, r.rotation.y, 0); p.ch.setMoves?.(null); p.ch.setWind?.(0); }
       if (p.target) this.tick?.(p, this, dt);
       if (p.pet) p.pet.fences = this.fences || null;
-      if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk, false);
+      if (p.pet) p.pet.update(dt, { x: r.position.x, z: r.position.z, y: r.position.y, ry: r.rotation.y }, !!p.target?.bk || !!p.target?.db, false); // (waits out of sight while they ride, a duck boat too)
       if (p.hidden || !p.target) continue; // not placed yet (see join)
       v.set(r.position.x, r.position.y + 1.55, r.position.z).project(camera);
       const visible = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       const dist = camera.position.distanceTo(r.position);
       const show = visible && dist < 60;
       const sx = (v.x * 0.5 + 0.5) * width, sy = (-v.y * 0.5 + 0.5) * height;
+      // A flying operator (game/sky-flight.js, "fl") goes without a name
+      // tag: just the costume up there. Chat bubbles still show.
+      const flying = !!p.target.fl;
       for (const el of [p.tag, p.bubble]) {
         if (!el) continue;
-        el.style.display = show ? '' : 'none';
+        el.style.display = show && !(flying && el === p.tag) ? '' : 'none';
         el.style.transform = `translate(-50%, -100%) translate(${sx}px, ${sy - (el === p.bubble ? 24 : 0)}px)`;
       }
     }

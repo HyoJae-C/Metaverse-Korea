@@ -24,32 +24,47 @@ export const DUCK_TEXT = {
 
 export function createDuckBoats(game) {
   const ducks = () => game.park()?.ducks;
+  // A park laid on the street (game/han-parks.js) has its boats in its own
+  // metres: `frame` brings them out to the street's (and back), where I am.
+  const frame = () => game.park()?.frame || null;
+  const out = (x, z) => frame()?.toWorld(x, z) || [x, z];
+  const turn = () => frame()?.ry || 0;
+  const mine = (p) => { const f = frame(); if (!f) return p; const [x, z] = f.toLocal(p.x, p.z); return { x, z }; };
   let duckRide = null; // my trip while I steer (core/duck-boat.js)
   let duckFollowed = false; // I rode along with a friend steering
+  // Others in this park, with where they are in its metres (an open-air
+  // park's people are on the street's network, in the street's metres).
+  const peerAt = (o) => {
+    const r = o.ch.root, f = frame();
+    if (f) { const [x, z] = f.toLocal(r.position.x, r.position.z); return Math.abs(x) < 120 && z > -120 && z < 60 ? { x, z, ry: r.rotation.y - f.ry } : null; }
+    return game.peerLocal ? game.peerLocal(r) : { x: r.position.x, z: r.position.z, ry: r.rotation.y };
+  };
+  function* peers() { for (const [id, o] of game.others.players) if (o.target?.db && peerAt(o)) yield [id, o]; }
   // Which boat each person is in (me and others), to place the boats.
   function duckRiders(i) {
     let n = game.seated?.duck === i ? 1 : 0;
-    for (const o of game.others.players.values()) if (o.target?.db === i + 1) n++;
+    for (const [, o] of peers()) if (o.target.db === i + 1) n++;
     return n;
   }
   function boardDuck(i) {
     const d = ducks()[i];
-    const taken = [...game.others.players.values()].filter((o) => o.target?.db === i + 1).map((o) => o.target.dbs | 0);
+    const taken = [...peers()].map(([, o]) => o).filter((o) => o.target.db === i + 1).map((o) => o.target.dbs | 0);
     const seat = taken.includes(0) ? 1 : 0;
     if (duckRiders(i) >= DUCK_SEATS.length) { game.shop.toast(L(DUCK_TEXT.full)); return; }
     duckRide = null; duckFollowed = false;
-    game.sitDown({ x: d.home.x + DUCK_SEATS[seat][0], z: d.home.z + DUCK_SEATS[seat][1], ry: Math.PI, stand: [d.home.x, d.home.z + 2.6], duck: i, duckSeat: seat });
+    const [x, z] = out(d.home.x + DUCK_SEATS[seat][0], d.home.z + DUCK_SEATS[seat][1]);
+    game.sitDown({ x, z, ry: Math.PI + turn(), stand: out(d.home.x, d.home.z + 2.6), duck: i, duckSeat: seat });
     game.shop.toast(fmt(L(DUCK_TEXT.waiting), { n: duckRiders(i) }));
   }
   // Someone else in my boat who is steering it (they send st.dr).
   const duckDriver = () => {
     if (game.seated?.duck == null) return null;
-    for (const [id, o] of game.others.players) if (o.target?.db === game.seated.duck + 1 && o.target.dr) return { id, o };
+    for (const [id, o] of peers()) if (o.target.db === game.seated.duck + 1 && o.target.dr) return { id, o };
     return null;
   };
   function startDuckRide() {
     if (game.seated?.duck == null || duckDriver()) return;
-    duckRide = new DuckRide(ducks()[game.seated.duck].home);
+    duckRide = new DuckRide(ducks()[game.seated.duck].home, undefined, game.park()?.duckArea || undefined);
     game.cam.pitch = Math.min(game.cam.pitch, 0.3); game.cam.dist = Math.max(game.cam.dist, 8); // look out over the river
     game.clearAction();
   }
@@ -88,7 +103,7 @@ export function createDuckBoats(game) {
     for (const d of ducks()) {
       if (d.i === mine) continue;
       let driven = false;
-      for (const o of game.others.players.values()) if (o.target?.db === d.i + 1 && o.target.dr) { driven = true; break; }
+      for (const [, o] of peers()) if (o.target.db === d.i + 1 && o.target.dr) { driven = true; break; }
       list.push({ x: d.g.position.x, z: d.g.position.z, vx: d.vx || 0, vz: d.vz || 0, fixed: !driven, i: d.i });
     }
     return list;
@@ -104,14 +119,18 @@ export function createDuckBoats(game) {
         // The stick, camera-relative like walking: the bow turns towards it.
         const { x: mx, y: my } = game.input.move;
         const fx = -Math.sin(game.moveRef.yaw), fz = -Math.cos(game.moveRef.yaw), rx = Math.cos(game.moveRef.yaw), rz = -Math.sin(game.moveRef.yaw);
-        duckRide.steer(fx * my + rx * mx, fz * my + rz * mx, dt);
+        let dx = fx * my + rx * mx, dz = fz * my + rz * mx;
+        const ry = turn(); // (the boat sails in the park's metres: turn the stick into them)
+        if (ry) [dx, dz] = [dx * Math.cos(ry) - dz * Math.sin(ry), dx * Math.sin(ry) + dz * Math.cos(ry)];
+        duckRide.steer(dx, dz, dt);
         duckRide.bump(otherBoats(game.seated.duck));
         b = duckRide;
         game.duckUi.hud({ left: duckRide.left, returning: duckRide.returning });
         if (duckRide.docked) { duckRide = null; game.standUp(); game.shop.toast(L(DUCK_TEXT.docked)); game.clearAction(); return; }
       } else if (drv) {
         const o = drv.o;
-        b = boatFromRider(o.ch.root.position.x, o.ch.root.position.z, o.ch.root.rotation.y, o.target.dbs | 0);
+        const q = peerAt(o);
+        b = boatFromRider(q.x, q.z, q.ry, o.target.dbs | 0);
         duckFollowed = true;
         game.duckUi.hud({ left: Math.max(0, o.target.dr - 1), returning: o.target.dr === 1, driver: game.others.nameOf(drv.id) || '?' });
       } else {
@@ -121,15 +140,16 @@ export function createDuckBoats(game) {
       }
       placeBoat(d, b);
       const [sx, sz] = DUCK_SEATS[game.seated.duckSeat || 0];
-      game.me.root.position.set(b.x + sx * Math.cos(b.ry) + sz * Math.sin(b.ry), 0, b.z - sx * Math.sin(b.ry) + sz * Math.cos(b.ry));
-      game.me.root.rotation.y = b.ry + Math.PI;
+      const [wx, wz] = out(b.x + sx * Math.cos(b.ry) + sz * Math.sin(b.ry), b.z - sx * Math.sin(b.ry) + sz * Math.cos(b.ry));
+      game.me.root.position.set(wx, 0, wz);
+      game.me.root.rotation.y = b.ry + Math.PI + turn();
       moved.add(game.seated.duck);
     } else game.duckUi.hud(null);
-    for (const o of game.others.players.values()) {
-      const i = (o.target?.db | 0) - 1;
+    for (const [, o] of peers()) {
+      const i = (o.target.db | 0) - 1;
       if (i < 0 || i >= ducks().length || moved.has(i)) continue;
-      const r = o.ch.root;
-      placeBoat(ducks()[i], boatFromRider(r.position.x, r.position.z, r.rotation.y, o.target.dbs | 0));
+      const q = peerAt(o);
+      placeBoat(ducks()[i], boatFromRider(q.x, q.z, q.ry, o.target.dbs | 0));
       moved.add(i);
     }
     for (const d of ducks()) if (!moved.has(d.i)) { // empty: back at the dock, bobbing
@@ -157,7 +177,7 @@ export function createDuckBoats(game) {
       a.bumpAt = c.bumpAt = now; a.bumpAmp = c.bumpAmp = 0.08 + hard * 0.16;
       const mx = (a.g.position.x + c.g.position.x) / 2, mz = (a.g.position.z + c.g.position.z) / 2;
       duckSplash(mx, mz, hard);
-      const far = Math.hypot(game.me.root.position.x - mx, game.me.root.position.z - mz);
+      const at = mine(game.me.root.position), far = Math.hypot(at.x - mx, at.z - mz);
       game.sfx.bump?.(hard, Math.max(0, 1 - far / 30));
     }
     for (const d of ducks()) {
@@ -192,6 +212,7 @@ export function createDuckBoats(game) {
   function boardAction(p) {
     const list = ducks();
     if (!list || game.seated) return null;
+    p = mine(p);
     const d = list.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
     return d ? { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) } : null;
   }

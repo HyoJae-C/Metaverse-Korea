@@ -45,7 +45,7 @@ const HOW = {
 // or 'gift' (a shopping bag that is only carried). "goods": true in
 // stores.json marks a thing shaped like a cup or bowl that isn't food or a
 // drink (a spray can, a ceramic mug, coffee beans).
-const FOOD_MODELS = ['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'];
+const FOOD_MODELS = ['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon', 'icecream', 'churro', 'hotdog'];
 export const goodsKind = (product) => (product?.goods ? 'gift' : FOOD_MODELS.includes(product?.model) ? 'food' : product?.model === 'cup' || product?.model === 'milk' ? 'coffee' : 'gift');
 // Can you do something with it once it's yours? Eat, drink, wear, rent,
 // walk (pets), spray (perfume), cook with (ingredients), sit on (picnic
@@ -78,7 +78,7 @@ const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog'
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
-  backpack: '🎒', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
+  backpack: '🎒', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', icecream: '🍦', churro: '🥖', hotdog: '🌭', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
 };
 const CART_KEY = 'mk.cart';
 

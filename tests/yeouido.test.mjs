@@ -93,7 +93,7 @@ test('the Information Center stands in front of its building', () => {
   assert.equal(info.workshop, 'info');
   assert.equal(info.district, 'yeouido');
   const polys = map.buildings.map((b) => b.p.map(world));
-  for (const s of [info]) { // (the park is open to the street: tests/open-parks.test.mjs)
+  for (const s of [info]) { // (the park is laid on the street: tests/han-park.test.mjs)
     assert.ok(!polys.some((p) => inPolygon(...s.at, p)), `${s.id} is not inside a building`);
     const near = Math.min(...polys.flat().map(([x, z]) => Math.hypot(x - s.at[0], z - s.at[1])));
     assert.ok(near < 12, `${s.id} is next to its building (${near.toFixed(1)} m)`);
@@ -110,7 +110,7 @@ test('the Information Center stands in front of its building', () => {
   for (const p of park.products) assert.ok(p.kiosk || ids.has(p.stall), p.id);
   const others = new Set(stores.filter((s) => s !== park).flatMap((s) => (s.products || []).map((p) => p.id)));
   for (const p of park.products) assert.ok(!others.has(p.id), `${p.id} is the park's own`);
-  assert.ok(STAMPS.some((s) => s.place.store === 'yeouido-hangang'), 'a stamp in the park');
+  assert.ok(STAMPS.some((s) => s.id === 'yeouido' && Array.isArray(s.place.at) && !s.place.room), 'a stamp in the park, on the street');
 });
 
 test('the blobfish is Yeouido\'s legend, and only bites there', () => {

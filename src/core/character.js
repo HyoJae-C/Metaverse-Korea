@@ -1,8 +1,11 @@
 // Characters for the local player, other players and NPCs. The body is a 3D
-// model from the active model pack (src/data/characters); a chibi built from
-// simple rounded shapes shows while the model loads, or if it fails to load.
+// model from the active model pack (src/data/characters). Nothing shows
+// until the model is on (a quick swap from a stand-in looked like a bug). The
+// chibi built below from simple rounded shapes is never shown: its head and
+// body only measure where hats, glasses and bags go before they move onto
+// the model's bones.
 import * as THREE from 'three';
-import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
+import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet, makeZooCart } from './bikes.js';
 import { attachModel } from './model-pack.js';
 import { makeRide, makeSkate1, SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { rideCode } from './bike-garage.js';
@@ -101,6 +104,9 @@ export function createCharacter(rawLook) {
   );
   blob.position.y = 0.07;
   root.add(blob);
+  // Hidden until the model is on.
+  body.visible = false;
+  blob.visible = false;
 
   // Accessories go in their own groups so they can move onto the model's bones.
   const headAcc = new THREE.Group(), bodyAcc = new THREE.Group();
@@ -114,7 +120,7 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
-  let bike = null, tandem = null, car = null, limo = null, moto = null, helmet = null, riding = false;
+  let bike = null, tandem = null, car = null, limo = null, cart = null, moto = null, helmet = null, riding = false;
   let bikeCode = null; // rideCode of the ride drawn
   let skates = null; // inline skates, one under each foot
   let rideKind = true; // 'board' (skateboard), 'kick' (scooter), 'skates' or true (bike)
@@ -131,6 +137,11 @@ export function createCharacter(rawLook) {
   const footProps = []; // waiting for the model (addFootProps)
   const attachHeld = () => {
     if (!held) return;
+    if (held.userData.onHead) { // (a balloon crown: worn, not held)
+      held.scale.setScalar(1);
+      headAcc.add(held);
+      return;
+    }
     if (model?.hand) {
       held.scale.setScalar(1.8 / model.scale); // inside the scaled model; 1.8x life size so it reads on chibi hands
       held.position.set(0, 0, 0);
@@ -151,7 +162,19 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root: rig, body, headAcc, bodyAcc }).then((m) => { model = m; for (const f of footProps.splice(0)) f(m); m?.setActivity(activityName); m?.setMoves?.(movesFn); attachHeld(); wearMascot(); });
+  // A failed download is tried again a few times (while the character is
+  // still in a scene); the chibi itself never shows.
+  const RETRY = [2, 5, 10, 20, 40];
+  const tryModel = (n = 0) => attachModel(look, { root: rig, body, headAcc, bodyAcc }).catch(() => null).then((m) => {
+    if (!m) {
+      if (n < RETRY.length) setTimeout(() => { if (root.parent) tryModel(n + 1); }, RETRY[n] * 1000);
+      return;
+    }
+    model = m; blob.visible = true;
+    for (const f of footProps.splice(0)) f(m);
+    m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
+  });
+  tryModel();
   return {
     root,
     head,
@@ -171,7 +194,7 @@ export function createCharacter(rawLook) {
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),
-    // 6 limousine (driver's seat). spec: for kind 1, the ride from the bike
+    // 6 limousine (driver's seat), 7 the zoo cart (driver's seat). spec: for kind 1, the ride from the bike
     // shop { type, tier, color, pattern } (a plain colour string means a
     // basic bike in that colour).
     // inCar: a passenger seat in someone's car (sit upright, not leaning).
@@ -196,6 +219,7 @@ export function createCharacter(rawLook) {
       if (kind === 2 && !tandem) { tandem = makeTandem(); rig.add(tandem); }
       if (kind === 4 && !car) { car = makeCar(); rig.add(car); }
       if (kind === 6 && !limo) { limo = makeLimo(); rig.add(limo); }
+      if (kind === 7 && !cart) { cart = makeZooCart(); rig.add(cart); }
       if (kind === 5 && !moto) { moto = makeMoto(); rig.add(moto); }
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
@@ -204,12 +228,13 @@ export function createCharacter(rawLook) {
       if (tandem) tandem.visible = kind === 2;
       if (car) car.visible = kind === 4;
       if (limo) limo.visible = kind === 6;
+      if (cart) cart.visible = kind === 7;
       if (moto) moto.visible = kind === 5;
       // The helmet replaces any hat while riding the motorbike.
       for (const c of headAcc.children) c.visible = kind === 5 ? c === helmet : c !== helmet;
       // Pose: leaning over handlebars on bikes; upright with arms to the
       // wheel in a car; upright and relaxed as a car passenger.
-      riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
+      riding = !kind ? false : kind === 4 || kind === 6 || kind === 7 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
     },
     // A trick in the skate park (core/skatepark.js trickPose): spin, flip
     // and roll turn rider and ride together; rideRoll / rideSpin turn only

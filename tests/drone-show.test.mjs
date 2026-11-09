@@ -72,9 +72,9 @@ test('every line drawing fits the sky over an upright phone', () => {
   }
 });
 
-test('the drone show stamp: in the Ttukseom park room, only while the drones are up', () => {
+test('the drone show stamp: on the Ttukseom park lawn, only while the drones are up', () => {
   const s = STAMPS.find((x) => x.id === 'drone-show');
-  assert.equal(s.place.store, 'ttukseom-hangang');
+  assert.ok(Array.isArray(s.place.at) && !s.place.room, 'on the street (tests/stamp-book.test.mjs: on the lawn)');
   assert.equal(s.onlyDuring, 'droneShow');
   assert.equal(STAND_TIMES.droneShow(KST(18, 5)), true);
   assert.equal(STAND_TIMES.droneShow(KST(17, 30)), false);

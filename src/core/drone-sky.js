@@ -447,10 +447,11 @@ const MATS = [{ x: -8.6, z: 8.2, color: '#3f7fd0' }, { x: 9.4, z: 6.4, color: '#
 const RAIL = [[-14.5, -2.5], [14.8, -2.4]];
 // (createCharacter and randomLook come from the park, so this file pulls in
 // nothing the game hasn't loaded already.)
-export function createWatchers(scene, { createCharacter, randomLook }) {
+// (`mats` and `rail` move them where a park's own lawn and railing are.)
+export function createWatchers(scene, { createCharacter, randomLook, mats = MATS, rail = RAIL }) {
   const group = new THREE.Group();
   const people = [];
-  for (const m of MATS) {
+  for (const m of mats) {
     const mat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 2), new THREE.MeshLambertMaterial({ color: m.color }));
     mat.position.set(m.x, 0.02, m.z);
     group.add(mat);
@@ -463,7 +464,7 @@ export function createWatchers(scene, { createCharacter, randomLook }) {
       people.push({ ch, sit: true });
     }
   }
-  for (const [x, z] of RAIL) {
+  for (const [x, z] of rail) {
     const ch = createCharacter(randomLook());
     ch.root.position.set(x, 0, z);
     ch.root.rotation.y = Math.PI;

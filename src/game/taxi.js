@@ -56,6 +56,7 @@ export function createTaxi(game) {
     ['도착했습니다. 안녕히 가세요!', 'dochakhaetseumnida. annyeonghi gaseyo!', 'taxi.t3'],
   ];
   let taxiTimers = [];
+  let inCab = false; // on the back seat (the scene showing): you aren't standing anywhere
   const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
   // Closed-off places (the zoo before it opens) and a margin round them.
   let zones = null, zonesOf = null;
@@ -107,9 +108,11 @@ export function createTaxi(game) {
     input.keys.clear();
     sayLine(TAXI_LINES[0]);
     let done = false;
+    inCab = true;
     const arrive = () => {
       if (done) return;
       done = true;
+      inCab = false;
       taxiTimers.forEach(clearTimeout);
       taxiTimers = [];
       $('taxi-ride').hidden = true;
@@ -135,9 +138,9 @@ export function createTaxi(game) {
     const [rx, rz] = taxiDropOff(dest.x, dest.z);
     const [fx, fz] = findFreeSpot(rx, rz);
     // The fare grows with the distance (core/taxi.js).
-    const from = game.mode === 'street' ? game.me.root.position : game.interior.front.door;
+    const from = game.place ? game.place() : game.mode === 'street' ? game.me.root.position : game.interior.front.door; // (place: a Han River park's lawn is outdoors, where you stand)
     const fare = taxiFare(from.x, from.z, fx, fz);
-    const near = game.mode === 'street' && !guest ? (game.others?.nearbyFree(from.x, from.z, SHARE_RADIUS) || []).filter((p) => !game.safety?.isBlocked(p.id, p.name)) : [];
+    const near = (game.outdoors ? game.outdoors() : game.mode === 'street') && !guest ? (game.others?.nearbyFree(from.x, from.z, SHARE_RADIUS) || []).filter((p) => !game.safety?.isBlocked(p.id, p.name)) : [];
     if (!near.length) { goAlone(dest, fx, fz, fare); return; }
     const p = panel();
     p.replaceChildren(button('sheet-x', '✕', closePanel), el('h3', null, st('title')),
@@ -289,7 +292,7 @@ export function createTaxi(game) {
   }
 
   $('map-btn').onclick = () => {
-    const pos = game.mode === 'street' ? game.me.root.position : game.interior.front.door;
+    const pos = game.place ? game.place() : game.mode === 'street' ? game.me.root.position : game.interior.front.door;
     mapView.show(pos.x, pos.z);
   };
 
@@ -299,5 +302,5 @@ export function createTaxi(game) {
     const [fx, fz] = findFreeSpot(rx, rz);
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
   }
-  return { rideTaxi, rideFree, onMsg, onLeave, closedAt };
+  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab };
 }

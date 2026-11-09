@@ -191,7 +191,8 @@ export function createChat(game) {
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
       }
-      // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /착지.
+      // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,
+      // /양탄자, /손오공, /착지.
       if (skyCode(code) && await game.sky?.command(skyCode(code))) return;
       // Fishing code: the next bite (fishing by hand) is that fish, once.
       const fishFromCode = await fishCode(code);
@@ -323,7 +324,7 @@ export function createChat(game) {
     const pos = id != null ? others.positionOf(id) : null;
     if (!pos || !me || !cam) return null;
     const f = cam.getWorldDirection(cam.position.clone());
-    return { id, ...whereIs(me.root.position, pos, { x: f.x, z: f.z }) };
+    return { id, ...whereIs(game.streetPos?.() || me.root.position, pos, { x: f.x, z: f.z }) }; // (streetPos: on an open-air park's lawn too)
   }
   function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
   function onFriendMessage(m) {

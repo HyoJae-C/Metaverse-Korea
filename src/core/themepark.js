@@ -1,10 +1,14 @@
-// Another Land (어나더랜드), the candy-house theme park: an outdoor "room"
-// entered through its gate east of Seongsu (the outside is anotherland.js),
-// with a carousel, a Ferris wheel, a swinging pirate ship, a drop tower and
-// bumper cars (game/bumper.js), and the Cotton Candy Express roller coaster
-// (coaster.js) in the land the park grew into, north and west. Each ride has a
-// boarding spot; on a ride the player is carried by seatAt(). Same shape as
-// buildInterior's result, plus tick(dt) to animate the rides.
+// Another Land (어나더랜드), the candy-house theme park, in two parts: its
+// island in Seokchon Lake, open to the street (park-island.js: the Cotton
+// Candy Express roller coaster, coaster.js, in its candy wood), and the
+// rides under the island, down the island's stairs (this room, a store
+// with "below"): a carousel, a Ferris wheel, a swinging pirate ship, a drop
+// tower, bumper cars (game/bumper.js), a swing ride, teacups, a park train,
+// a log flume and a mirror maze (park-new-rides.js) spread round the
+// central plaza along winding paths (park-grounds.js), food trucks
+// (park-food.js) and a balloon clown (game/balloon-clown.js). Each ride has
+// a boarding spot; on a ride the player is carried by seatAt(). Same shape
+// as buildInterior's result, plus tick(dt) to animate the rides.
 import * as THREE from 'three';
 import { HAUNT, HAUNT_SPOT, buildHauntedFacade } from './haunted.js';
 import { matCache } from './three-kit.js';
@@ -21,11 +25,15 @@ import { RIDE_GATES } from './park-rides.js';
 import { buildGrounds } from './park-grounds.js';
 import { buildCarousel, buildDrop, buildViking, buildWheel } from './park-ride-models.js';
 import { mergeStatic } from './merge-static.js';
+import { buildFoodTrucks } from './park-food.js';
+import { buildIsland } from './park-island.js';
+import { buildSwing, buildTeacups, buildTrain, buildFlume, buildMirrorMaze } from './park-new-rides.js';
 
 export function buildThemePark(store, ROOM, EXIT) {
+  // The island, open to the street: the coaster and its candy wood (park-island.js).
+  if (store.open) return buildIsland(store, ROOM, EXIT, { candyLand: buildCandyLand });
   const { w, d } = ROOM;
-  // The park's edges. The gate is at the south (z1); the coaster's land
-  // reaches far to the west and north of the old square.
+  // The park's edges. The gate is at the south (z1).
   const X0 = ROOM.x0 ?? -w / 2, X1 = ROOM.x1 ?? w / 2, Z0 = ROOM.z0 ?? -d / 2, Z1 = ROOM.z1 ?? d / 2;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#ffe3f0');
@@ -53,8 +61,17 @@ export function buildThemePark(store, ROOM, EXIT) {
   const wheel = buildWheel(scene, block);
   const drop = buildDrop(scene, block);
 
-  // Ticket booth (매표소) and a churro cart by the entrance. The booth's
-  // window faces Main Street (south), under a striped awning.
+  // The Sugar Swing and the Teacup Party south of the food truck lane, the
+  // Candy Train in the south-east corner, the Jelly Flume in the north-east
+  // field and the Mirror Maze off the east promenade (park-new-rides.js).
+  const swing = buildSwing(scene, block, mat);
+  const teacups = buildTeacups(scene, block, mat);
+  const train = buildTrain(scene, block, mat);
+  const flume = buildFlume(scene, block, mat);
+  const maze = buildMirrorMaze(scene, block, mat);
+
+  // Ticket booth (매표소) by the entrance. Its window faces the gate
+  // square (south), under a striped awning.
   const TB = { x: -6, z: Z1 - 4.5 };
   box(2.2, 2.3, 1.6, TB.x, 1.15, TB.z, '#ffd36e');
   box(2.36, 0.25, 1.76, TB.x, 0.12, TB.z, '#e2a64a'); // plinth
@@ -64,18 +81,13 @@ export function buildThemePark(store, ROOM, EXIT) {
   add(new THREE.ConeGeometry(1.5, 1.2, 4), '#ff7a8a', TB.x, 2.9, TB.z).rotation.y = Math.PI / 4;
   add(new THREE.SphereGeometry(0.2, 10, 8), '#ff3b55', TB.x, 3.6, TB.z);
   block(TB.x, TB.z, 2.3, 1.7);
-  const CC = { x: 6, z: Z1 - 4.5 };
-  box(1.6, 0.8, 0.9, CC.x, 0.75, CC.z, '#f6c9a0');
-  box(1.7, 0.08, 1, CC.x, 1.18, CC.z, '#fffaf3');
-  for (const sx of [-0.55, 0.55]) { const w = add(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), '#7a4a2e', CC.x + sx, 0.28, CC.z + 0.5); w.rotation.x = Math.PI / 2; }
-  for (let i = 0; i < 5; i++) { const c = add(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), '#c98b4f', CC.x - 0.4 + i * 0.2, 1.22, CC.z - 0.2); c.rotation.z = 0.25 - i * 0.12; }
-  add(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), '#d9dde2', CC.x, 1.2, CC.z);
-  add(new THREE.ConeGeometry(1.1, 0.5, 8), '#ff9bb3', CC.x, 2.0, CC.z);
-  block(CC.x, CC.z, 1.7, 1.1);
+  // The food trucks on the lane to the bumper cars (park-food.js): ice
+  // cream, churros and hot dogs, bought like a market stall's goods.
+  const food = buildFoodTrucks(scene, block, mat);
 
   // Balloon shooting gallery (풍선 사격): a striped booth with rows of
   // balloons, toy cork guns on the counter (the game is ui/gallery-ui.js).
-  const G = { x: -21.5, z: -9.5 };
+  const G = { x: -20, z: -1 }; // on the coaster's avenue, facing it
   box(4.4, 2.8, 0.2, G.x, 1.4, G.z - 1, '#fff3d6'); // back wall
   for (const sx of [-2.1, 2.1]) box(0.2, 2.8, 2, G.x + sx, 1.4, G.z, '#ff7a8a'); // sides
   for (let i = 0; i < 6; i++) box(0.75, 0.3, 2.3, G.x - 1.9 + i * 0.76, 2.95, G.z + 0.1, i % 2 ? '#fffaf3' : '#ff5a5f'); // awning
@@ -103,8 +115,8 @@ export function buildThemePark(store, ROOM, EXIT) {
   // Bumper cars (범퍼카, core/bumper-rink.js): right of the plaza.
   const bumper = buildBumperRink(scene, block);
 
-  // The Cotton Candy Express (coaster-model.js), and its land: only when
-  // the park is the big one (an old saved room size has no space for it).
+  // The Cotton Candy Express (coaster-model.js), and its land: only in a
+  // room big enough for it (it's up on the island now, park-island.js).
   let coaster = null;
   if (X0 < -60 && Z0 < -35) {
     coaster = buildCoaster(scene, block, { lowSpec: typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4) });
@@ -115,7 +127,7 @@ export function buildThemePark(store, ROOM, EXIT) {
   }
 
   // Where you board each ride (in front of it).
-  const rides = ['carousel', 'wheel', 'viking', 'drop'].map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
+  const rides = ['carousel', 'wheel', 'viking', 'drop', 'swing', 'teacups', 'train', 'flume'].map((kind) => ({ kind, x: RIDE_GATES[kind].x, z: RIDE_GATES[kind].z }));
   // Each ride's attendant, by its gate (the bumper cars' too), named after the ride.
   stations.rideStaff = [
     ...rides.map(({ kind }) => ({ kind, ...RIDE_GATES[kind].staff })),
@@ -124,8 +136,12 @@ export function buildThemePark(store, ROOM, EXIT) {
   // Guests already here: round the fountain, at the rides' fences, on Main Street.
   stations.patrons = [
     ...(stations.patrons || []),
-    { x: 3.4, z: 1.2, ry: -2.2 }, { x: -2.9, z: -4.6, ry: 0.6 }, { x: -7.5, z: 4.4, ry: -2.3 },
-    { x: 6, z: -2, ry: 2.6 }, { x: 1.4, z: 9.6, ry: Math.PI }, { x: 14.5, z: -1.6, ry: Math.PI / 2 },
+    { x: 3.4, z: 6.6, ry: -2.2 }, { x: -3.2, z: 0.2, ry: 0.6 }, { x: -1.4, z: 17, ry: Math.PI },
+    { x: 1.6, z: 23.5, ry: Math.PI }, { x: 13.4, z: 1.6, ry: Math.PI * 0.9 }, { x: 21, z: -2.2, ry: Math.PI }, // (looking up at the wheel)
+    { x: 12.2, z: 10.7, ry: Math.PI }, { x: 18.9, z: 12.2, ry: Math.PI }, { x: 25.1, z: 13.5, ry: Math.PI }, // at the food trucks
+    { x: 32.6, z: 19, ry: Math.PI / 2 }, { x: 44.6, z: -1.2, ry: -2.4 }, // watching the bumper cars, the drop tower
+    { x: 19.4, z: 16.4, ry: 0.4 }, { x: 31.4, z: 21.4, ry: -0.3 }, // at the swing's and the teacups' fences
+    { x: 47.2, z: 19.2, ry: Math.PI / 2 }, { x: 51.6, z: -12.2, ry: Math.PI }, { x: 37.6, z: -1.8, ry: Math.PI }, // on the train's platform, at the flume, by the maze
   ];
 
   let time = 0;
@@ -136,17 +152,21 @@ export function buildThemePark(store, ROOM, EXIT) {
     viking.tick(now);
     wheel.tick(now);
     drop.tick(now);
+    swing.tick(now);
+    teacups.tick(now);
+    train.tick(now);
+    flume.tick(now);
     bumper.tick(dt);
     coaster?.tick(Date.now() / 1000, dt);
   };
   tick(0);
   // Everything that never moves, baked into a mesh per colour (merge-static.js).
-  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
+  mergeStatic(scene, [carousel.root, viking.root, viking.swing, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, ...swing.keep, ...teacups.keep, ...train.keep, ...flume.keep, ...maze.keep, haunt.group, ...bumper.cars.map((c) => c.g), ...(coaster?.trains.flat() || [])]);
 
   return {
-    scene, products: [], colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, park: true, themepark: true, bumper, coaster, // (themepark: only Another Land; the Han River parks are `park: true` too)
-    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); },
+    scene, products: food.products, vendors: food.vendors, colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
+    rides, stations, tick, time: () => time, themepark: true, bumper, coaster, // (only Another Land; the Han River parks are `hanRiver: true`, never a shared name)
+    setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); food.setSignLang(lang); },
   };
 }
 
@@ -154,18 +174,24 @@ export function buildThemePark(store, ROOM, EXIT) {
 // whole wood is two draw calls), a jelly pond inside the coaster's loop and
 // one in the north field, benches, a cotton candy cart by the station, and
 // a few guests already there (stations.patrons: main.js puts people there).
-function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
+// On the island (park-island.js) `inside(x, z, r)` keeps it on the land and
+// `keep` lists walks ([[x, z], [x, z]]) to leave clear.
+function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }, { inside = null, keep = [] } = {}) {
+  const offWalk = (x, z, r) => keep.every(([[ax, az], [bx, bz]]) => { const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1, k = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); return Math.hypot(x - ax - dx * k, z - az - dz * k) > r + 2.2; });
+  const ok = (x, z, r) => (!inside || inside(x, z, r)) && offWalk(x, z, r);
   const track = trackPoints().filter((_, i) => i % 6 === 0);
   const clear = (x, z, r) => track.every((p) => Math.hypot(p.x - x, p.z - z) > r);
   const busy = [[-31, 2, 6], [-28, 2, 5], [-22, 3, 3], [0, -24, 3]]; // station, its square, the paths
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const spots = [];
-  for (let n = 0; spots.length < 46 && n < 900; n++) {
+  for (let n = 0; spots.length < 60 && n < 1400; n++) {
     const x = X0 + 2 + rnd() * (X1 - X0 - 4), z = Z0 + 2 + rnd() * (Z1 - Z0 - 4);
-    if (x > -25 && z > -15) continue; // the old square: already full
+    if (!inside && x > -25 && z > -15) continue; // the park round the plaza: its own garden (park-grounds.js)
+    if (!ok(x, z, 1.4)) continue;
     if (!clear(x, z, 3.2) || busy.some(([bx, bz, r]) => Math.hypot(x - bx, z - bz) < r + 1.5)) continue;
     if (Math.hypot(x + 21, z + 28.5) < 6 || Math.hypot(x + 42, z - 1) < 8) continue; // the ponds
+    if (x > 39 && z < -11) continue; // the log flume's field
     if (spots.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 3.4)) continue;
     spots.push([x, z, rnd()]);
   }
@@ -193,7 +219,7 @@ function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
   scene.add(sticks, heads, gums);
   // Jelly ponds: a glossy pink one in the north field, a mint one inside
   // the coaster's loop by the station.
-  for (const [x, z, rx, rz, c] of [[-21, -28.5, 4.2, 3, '#ff9ec7'], [-42, 1, 6, 4.4, '#9fe8d2']]) {
+  for (const [x, z, rx, rz, c] of [[-21, -28.5, 4.2, 3, '#ff9ec7'], [-42, 1, 6, 4.4, '#9fe8d2']].filter(([x, z, rx]) => ok(x, z, rx))) {
     const pond = new THREE.Mesh(new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: 0.85 }));
     pond.scale.set(rx, 1, rz);
     pond.position.set(x, 0.03, z);
@@ -222,8 +248,8 @@ function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
       seats.push({ x: sx, z: sz, ry, stand: [sx + Math.sin(ry) * 0.9, sz + Math.cos(ry) * 0.9] });
     }
   };
-  bench(-21, -23.6, Math.PI); // looking at the pond and the helix behind it
-  bench(-24.2, 9, -Math.PI / 2); // by the station, watching the trains come in
+  if (ok(-21, -23.6, 1)) bench(-21, -23.6, Math.PI); // looking at the pond and the helix behind it
+  if (ok(-24.2, 9, 1)) bench(-24.2, 9, -Math.PI / 2); // by the station, watching the trains come in
   // Cotton candy cart by the station's way in.
   const cart = new THREE.Group();
   const cb = (sx, sy, sz, x, y, z, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c)); m.position.set(x, y, z); cart.add(m); };
@@ -241,8 +267,7 @@ function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
   umb.position.set(0, 2.5, 0);
   cart.add(umb);
   cart.position.set(-25, 0, -6.6);
-  scene.add(cart);
-  block(-25, -6.6, 1.6, 1);
+  if (ok(-25, -6.6, 1)) { scene.add(cart); block(-25, -6.6, 1.6, 1); }
   // Guests already here: watching from the platform's end, at the pond,
   // and in the candy wood.
   stations.patrons = [
@@ -251,5 +276,5 @@ function buildCandyLand(scene, block, seats, stations, { X0, X1, Z0, Z1 }) {
     { x: -19.6, z: -25.2, ry: Math.PI },
     { x: -22.6, z: -25, ry: Math.PI * 0.85 },
     { x: -46, z: -30, ry: 0.4 },
-  ];
+  ].filter((g) => !inside || inside(g.x, g.z, 0.5));
 }
