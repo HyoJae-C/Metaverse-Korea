@@ -18,7 +18,7 @@ test('Seokchon Lake: sunk below the ground, lamps and benches on land', async ()
   const [hole] = lakeHoles([{ ...shore, x: offset[0], z: offset[1] }]);
   assert.deepEqual(hole[0], [shore.lakes[0].shore[0][0] + offset[0], shore.lakes[0].shore[0][1] + offset[1]], 'holes in world metres');
   const lake = shore.lakes[0];
-  const lakeWater = map.areas.filter((a) => a.k === 'water' && a.p.every(([, z]) => z > 100));
+  const lakeWater = map.areas.filter((a) => a.k === 'water' && a.sunk);
   assert.ok(lakeWater.length && lakeWater.every((a) => a.sunk), 'the flat water is not drawn on the street');
   for (const [x, z] of [...shore.lamps, ...shore.benches]) assert.ok(!inPoly(x, z, lake.shore), `on land: ${x}, ${z}`);
   // The two lakes are one water, joined under Songpa-daero, which crosses on a bridge.

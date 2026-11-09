@@ -163,11 +163,11 @@ const realBankZ = (x) => {
   return REAL_BANK.at(-1)[1];
 };
 const landZ = (x) => Math.min(352, (x < -240 ? bankZ(x) : realBankZ(x)) - 20);
-// How far south the game's water reaches (east to west): to Songpa's own
-// Han River (its bank strip, z 556..611, from x 18 east), then about the real
-// Han's width from the bank; region.json water carries on east of Jamsil
-// Bridge and west of Seoul Forest.
-const RIVER_SOUTH = [[BRIDGE_X, 560], [18, 560], [-30, 490], [-150, 430], [-240, 388], [-360, 346], [WEST, 300]];
+// How far south the game's water reaches (east to west): the real south bank
+// (Songpa's, OpenStreetMap) from the map's east edge to x 0, then about the
+// real Han's width from the bank; region.json water carries on east of the
+// map (past Jamsil Bridge) and west of Seoul Forest.
+const RIVER_SOUTH = [[BRIDGE_X, 705], [400, 699], [350, 690], [300, 681], [250, 672], [200, 650], [150, 611], [100, 578], [50, 546], [0, 496], [-30, 480], [-150, 430], [-240, 388], [-360, 346], [WEST, 300]];
 // The Han River path: 7 m up from the bank, then along the park (Z 14) to Jamsil Bridge.
 const RIVER_PATH = [...RIVER_EDGE.slice(0, -2).map(([x, z]) => [x, r1(z - 7)]), parkAt(123, 14), parkAt(parkX(BRIDGE_X, 14), 14)];
 
