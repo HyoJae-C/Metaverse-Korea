@@ -40,7 +40,7 @@
         -1741,
         -911
       ],
-      "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0], "nudge": [0, -40], "why": "The palace is built larger than 1/4, so the gate sits a little north of its spot to let Gwanghwamun Square and Cheonggye Plaza (local z 225) reach theirs." }
+      "anchor": { "place": "Gwanghwamun Gate", "lat": 37.5759, "lon": 126.9768, "local": [0, 0], "nudge": [0, -40], "why": "The gate sits a little north of its spot to let Gwanghwamun Square and Cheonggye Plaza (local z 225) reach theirs." }
     },
     {
       "id": "bukchon",

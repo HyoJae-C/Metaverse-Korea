@@ -50,6 +50,7 @@ import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { createPalaceView } from './game/palace-view.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
@@ -729,7 +730,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0] - 38, palaceAt[1] - 28]; // the front court, past Gwanghwamun and before Heungnyemun (the king keeps to the inner court)
+const fanAt = palaceAt && [palaceAt[0] - 36, palaceAt[1] - 15]; // the front court, past Gwanghwamun and west of the way to Heungnyemun (the king keeps to the courts behind it)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -792,9 +793,10 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 const palaceShow = palaceAt ? new PalaceShow(scene, {
   fan: fanAt,
   procession: palaceAt, // the king's walk round the palace (ROYAL_ROUTE)
+  visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
   mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
-  guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  guards: [[palaceAt[0] - 6.5, palaceAt[1] + 6, 0], [palaceAt[0] + 6.5, palaceAt[1] + 6, 0]], // either side of Gwanghwamun's arches
   inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
@@ -4655,7 +4657,7 @@ let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past
 // Heungnyemun), and just inside either gate 'Leave' takes you back out.
-const PALACE_SPOTS = { gate: [0, 13], inside: [0, -17], leave: [[0, -9], [0, -60]] }; // in the palace district's metres
+const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -6], [2, -33]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
   const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;
@@ -4669,9 +4671,11 @@ function palaceAct(p) {
   } };
   return null;
 }
+const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
+  palaceView.tick(p, dt);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
@@ -5472,6 +5476,7 @@ function openParkRoom(o) {
   return o.built;
 }
 // Its lights follow the street's (weather, dusk).
+const parkNight = () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0));
 function lightOpenPark(built) {
   const L3 = built.lights;
   if (!L3) return;
@@ -5495,6 +5500,7 @@ function updateOpenParks(dt) {
   const here = openParkHere();
   if (here) {
     lightOpenPark(openParkRoom(here));
+    here.built.setNight?.(parkNight()); // (Another Land's castle gate lights up)
     for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
@@ -5516,6 +5522,7 @@ function updateOpenParks(dt) {
     if (!o.near) continue;
     if (!openParkRoom(o)) continue; // (its code is still coming)
     lightOpenPark(o.built);
+    o.built.setNight?.(parkNight());
     o.built.tick?.(dt, null);
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.

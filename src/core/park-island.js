@@ -4,7 +4,7 @@
 // wood round it; the Rainbow Wheel by the bridge, the Lollipop Drop beside
 // the helix, the Sugar Swing in the coaster's north-west loop and the
 // Macaron Gyro Swing south of the middle, each in its fenced yard with a gate
-// off the island's walks (park-yards.js); a candy house over the way in
+// off the island's walks (park-yards.js); a candy castle over the way in
 // where the bridge lands (park-candy-house.js); and a round candy hall in the
 // middle with the stairs down to the rest of the park under the island (the
 // "another-land" room, store.below; park-hall.js). The room is in the
@@ -40,10 +40,10 @@ function shoreWalls(lawn, bridge, block) {
   }
 }
 
-// The main walk ([x, z] points): from the bridge through the candy house's
+// The main walk ([x, z] points): from the bridge through the candy castle's
 // archway, down past the hall's door to the coaster's station.
 const WALK = [[-30.95, -45.6], [-23.2, -38.5], [-22, -12]];
-// The walks off it to the rides' gates: from just inside the candy house
+// The walks off it to the rides' gates: from just inside the candy castle
 // round the Ferris wheel to its gate, on under the airtime hill to the swing
 // ride's; from the main walk east to the drop tower's and, further south, to
 // the gyro swing's; and the few steps to the hall's door.
@@ -77,8 +77,8 @@ export function buildIsland(store, ROOM, EXIT, { candyLand }) {
     coaster: [{ x: COASTER_GATE.x, z: COASTER_GATE.z, ry: -Math.PI / 2 }],
     coasterStaff: [{ x: COASTER_GATE.x - 0.8, z: COASTER_GATE.z + 1.7, ry: Math.PI / 2 }],
   };
-  // The candy house over the way in and the hall with the stairs down.
-  const gate = buildCandyHouse(scene, block, mat, house, store.name);
+  // The candy castle over the way in and the hall with the stairs down.
+  const gate = buildCandyHouse(scene, block, mat, house);
   const down = buildHall(scene, block, mat, hall);
   stations.underground = [{ x: down.door.x, z: down.door.z, ry: hall.ry }];
   const spurs = [...SPURS, [[WALK[2][0] - 0.4, down.door.z], [down.door.x, down.door.z]]];
@@ -93,7 +93,7 @@ export function buildIsland(store, ROOM, EXIT, { candyLand }) {
     keep: [...legs(walk.slice(1)), ...spurs.flatMap(legs)],
   });
 
-  // Biscuit walks: from the bridge through the candy house and on to the
+  // Biscuit walks: from the bridge through the candy castle and on to the
   // station, and off it to the rides' gates and the hall (the spurs a hair
   // higher, so the joins don't flicker).
   [walk, ...spurs].forEach((pts, k) => {
@@ -130,12 +130,13 @@ export function buildIsland(store, ROOM, EXIT, { candyLand }) {
   // Everything that never moves baked into one mesh, each part keeping its
   // colour (it's drawn over the street whenever you're near), then what's
   // left (the bulbs) merged by material.
-  const moving = [...coaster.trains.flat(), down.sign.mesh, ...gate.boards, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, ...swing.keep, ...gyro.keep];
+  const moving = [...coaster.trains.flat(), down.sign.mesh, ...gate.glow, wheel.root, wheel.wheel, ...wheel.cabins, drop.root, drop.ring, ...swing.keep, ...gyro.keep];
   bakeColors(scene, moving);
   mergeStatic(scene, moving);
   return {
-    scene, products: [], vendors: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: { x: WALK[0][0], z: WALK[0][1] + 1.4 }, // (enterStore puts you 1.4 m short of it: just through the candy house)
+    scene, products: [], vendors: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: { x: WALK[0][0], z: WALK[0][1] + 1.4 }, // (enterStore puts you 1.4 m short of it: just through the candy castle)
     rides, stations, tick, themepark: true, island: true, coaster, lights: { hemi, ambient, sun },
-    setSignLang: (lang) => { coaster.setSignLang(lang); down.sign.draw(lang); gate.sign.draw(lang); yards.setSignLang(lang); },
+    setSignLang: (lang) => { coaster.setSignLang(lang); down.sign.draw(lang); yards.setSignLang(lang); },
+    setNight: (k) => gate.setNight(k), // (the castle gate's windows, name and bulbs light up)
   };
 }
