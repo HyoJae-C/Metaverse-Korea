@@ -324,7 +324,7 @@ export function createChat(game) {
     const pos = id != null ? others.positionOf(id) : null;
     if (!pos || !me || !cam) return null;
     const f = cam.getWorldDirection(cam.position.clone());
-    return { id, ...whereIs(me.root.position, pos, { x: f.x, z: f.z }) };
+    return { id, ...whereIs(game.streetPos?.() || me.root.position, pos, { x: f.x, z: f.z }) }; // (streetPos: on an open-air park's lawn too)
   }
   function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
   function onFriendMessage(m) {

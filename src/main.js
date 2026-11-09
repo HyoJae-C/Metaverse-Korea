@@ -1070,8 +1070,8 @@ let lastSpotTimer = 3;
 const rememberSpot = () => {
   if (tabParked) return; // the newer tab owns the saved spot now
   try {
-    if (mode !== 'street') return;
-    const { x, z } = me.root.position;
+    if (!outdoors()) return;
+    const [x, z] = myWorldSpot(); // (an open-air park: its spot on the street)
     if (spotBad(x, z)) return; // keep the last spot we can come back to
     saveLastSpot(x, z, me.root.rotation.y);
     if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
@@ -1372,9 +1372,10 @@ startWhereReports({
   get: () => {
     try {
       if (tabParked || !me?.root) return null;
-      if (mode === 'street') streetSpot = { x: me.root.position.x, z: me.root.position.z };
+      const out = outdoors(); // (an open-air Han River park is the street too)
+      if (out) { const [x, z] = myWorldSpot(); streetSpot = { x, z }; }
       if (!streetSpot) return null;
-      return { name: nickname, place: mode === 'street' ? 'street' : interior?.store?.id || mode, ...streetSpot };
+      return { name: nickname, place: out ? 'street' : interior?.store?.id || mode, ...streetSpot };
     } catch { return null; } // still starting up
   },
   send: (spot) => cloud.reportWhere(spot),
@@ -1407,6 +1408,8 @@ let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+// Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
+const outdoors = () => mode === 'street' || !!openParkHere();
 const onStreetRoom = () => !!lastJoin && lastJoin[0] === roomId && lastJoin[1] === scene;
 // Name tags are announced by each player's own game: ask the server who
 // they really are (019_chat_names.sql) and correct a borrowed name. People
@@ -1658,7 +1661,8 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
-  get me() { return me; }, camera, // where a friend request's sender is (core/friends.js whereIs)
+  get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
+  streetPos: () => myPlace(),
 });
 const { cleanChat, addChatLine } = chat;
 
@@ -3195,10 +3199,11 @@ const mapView = new MapView({
     };
   })),
   getPlayers: () => {
-    const pos = mode === 'street' ? me.root.position : interior.front.door;
+    const op = openParkHere(); // (an open-air park: where I am on its lawn, in the street's metres)
+    const pos = mode === 'street' ? me.root.position : op ? myPlace() : interior.front.door;
     return {
-      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : interior.front.group.rotation.y },
-      others: mode === 'street' ? others.list() : [],
+      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
+      others: outdoors() ? others.list() : [],
     };
   },
   onGuide: (g) => {
@@ -3359,6 +3364,7 @@ function subwayArrived(k) {
 }
 // Where I am on the street map (inside: the door I came in by).
 function myPlace() {
+  if (openParkHere()) { const [x, z] = myWorldSpot(); return { x, z }; } // (an open-air park: where I am on it)
   if (mode === 'street' || !interior?.front?.door) return me.root.position;
   return interior.front.door;
 }
@@ -4234,7 +4240,7 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
   }
 }
 function nearestStore(test) {
-  const p = interior?.front?.door || me.root.position; // inside a shop: from its door
+  const p = myPlace(); // inside a shop: from its door
   let best = null, bd = Infinity;
   for (const it of storefronts.items) {
     if (!test(it.store)) continue;
@@ -6885,6 +6891,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     act: () => action?.run(),
     pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
     room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
+    outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
     riding: () => riding,
