@@ -595,6 +595,12 @@ export const EN = {
   'lang.choose': 'Choose your language',
   'lang.change': 'Language',
   'start.region': 'First stop: {region}, {city}',
+  'start.where': 'What would you like to do first?', // the start screen: where new players start (region.json spawn.starts)
+  'start.tour': 'Sights · Bukchon',
+  'start.shop': 'Shopping & style · Seongsu',
+  'start.activity': 'Outdoors · Han River',
+  'start.heal': 'Relax · Seoul Forest',
+  'start.any': 'Anywhere · where people are',
   'start.last': 'Last location: {place}',
   'start.button': 'Start walking',
   'loading': 'Loading the streets…',
