@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -326,7 +326,7 @@ export class FishingUI {
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
     this.onPhase?.('bite', this.fish);
-    water.className = 'fish-water bite feel-' + feelOf(this.fish) + (isRare(this.fish) ? ' rare' : '');
+    water.className = 'fish-water bite feel-' + feelOf(this.fish) + (fightsBack(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
     this.shout = biteLine(this.fish); // kept for the reel-in too
     if (this.shout) water.prepend(el('b', 'fish-callout feel-' + feelOf(this.fish), this.shout));
@@ -343,7 +343,7 @@ export class FishingUI {
     this._frame();
     const big = need >= 12;
     this.onPhase?.('reel', { big });
-    const rare = isRare(this.fish);
+    const rare = fightsBack(this.fish);
     const water = this._water(rare ? t('fish.fightBack') : big ? t('fish.bigOne') : t('fish.reeling'), 'reel' + (rare ? ' rare' : ''));
     if (this.shout) water.prepend(el('b', 'fish-callout feel-' + feelOf(this.fish), this.shout));
     const bar = el('div', 'fish-meter' + (drain ? ' drain' : ''));

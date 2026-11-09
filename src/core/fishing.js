@@ -915,11 +915,11 @@ export function rollCatch(rand = Math.random, lucky = false, park = null) {
   return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park);
 }
 export const REEL_SECONDS = 5;
-// How a bite feels before it's landed: 1 light (★1-2, and the old boot),
-// 2 heavy (★3-4), 3 legendary (★5). The bite, the shout, the rod and the reel
-// all go by this, so a heavy pull could still be either ★3 or ★4 and the
+// How a bite feels before it's landed: 1 light (★1, and the old boot),
+// 2 heavy (★2-3), 3 huge (★4-5). The bite, the shout, the rod and the reel
+// all go by this, so a huge pull could still be a ★4 or the legend, and the
 // stars only show once the fish is up.
-export const feelOf = fish => (!fish || fish.trash || fish.rarity <= 2 ? 1 : fish.rarity <= 4 ? 2 : 3);
+export const feelOf = fish => (!fish || fish.trash || fish.rarity <= 1 ? 1 : fish.rarity <= 3 ? 2 : 3);
 export const tapsFor = fish => [0, 6, 12, 18][feelOf(fish)];
 // Chance a landed fish still slips off the hook at the end, by rarity
 // (halved by reeling in with time to spare, and cut by a better rod's hold,
@@ -931,26 +931,26 @@ export function escapeChance(fish, spare = 0, hold = 0) {
   return ESCAPE[fish.rarity] * (1 - 0.5 * clamp01(spare)) * (1 - clamp01(hold));
 }
 
-// Rare fish (★3 and up) fight back: the reel gauge drains by this many taps
+// Rare fish (★3 and up) never come to auto fishing. Heavy and huge bites
+// (★2 and up, see feelOf) fight back: the reel gauge drains by this many taps
 // a second, so you have to keep reeling (two reel buttons, both thumbs).
 export const isRare = fish => !fish.trash && fish.rarity >= 3;
-export const drainFor = fish => (isRare(fish) && !fish.sure ? [0, 0, 1.6, 2.8][feelOf(fish)] : 0);
+export const fightsBack = fish => feelOf(fish) >= 2;
+export const drainFor = fish => (fightsBack(fish) && !fish.sure ? [0, 0, 1.2, 2.4][feelOf(fish)] : 0);
 
 // What you shout when a fish bites, by feel (see feelOf): one line picked at
-// random each bite. A heavy line never says which of ★3 or ★4 it is.
+// random each bite. A line never says which of the stars in its feel it is.
 export const BITE_LINES = {
   1: [{ ko: '작은 녀석이 물었다!', en: 'A little one bit!', ja: '小さいのがかかった！', zh: '小家伙上钩了！' },
     { ko: '오, 입질이다!', en: 'Oh, a bite!', ja: 'おっ、アタリだ！', zh: '哦，有鱼咬钩！' },
-    { ko: '귀여운 녀석이네!', en: 'A cute one!', ja: 'かわいいヤツだ！', zh: '可爱的小家伙！' },
-    { ko: '제법인데?', en: 'Not bad at all!', ja: 'なかなかやるな！', zh: '还不错嘛！' },
-    { ko: '손맛이 좋은데!', en: 'Nice pull!', ja: 'いい手応えだ！', zh: '手感不错！' }],
-  2: [{ ko: '대단한 녀석이다!!', en: 'What a monster!!', ja: 'すごいヤツだ!!', zh: '好厉害的家伙!!' },
+    { ko: '귀여운 녀석이네!', en: 'A cute one!', ja: 'かわいいヤツだ！', zh: '可爱的小家伙！' }],
+  2: [{ ko: '제법인데?', en: 'Not bad at all!', ja: 'なかなかやるな！', zh: '还不错嘛！' },
+    { ko: '손맛이 좋은데!', en: 'Nice pull!', ja: 'いい手応えだ！', zh: '手感不错！' },
     { ko: '이건 보통 놈이 아니야!!', en: 'This is no ordinary fish!!', ja: 'こいつはただ者じゃない!!', zh: '这可不是普通的鱼!!' },
-    { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' },
-    { ko: '엄청난 놈이 걸렸다!!', en: 'Something huge is on!!', ja: 'とんでもないのがかかった!!', zh: '钓到了个大家伙!!' },
-    { ko: '낚싯대가 부러질 것 같아!!', en: "The rod's about to snap!!", ja: '竿が折れそうだ!!', zh: '鱼竿快要断了!!' }],
-  3: [{ ko: '강의 주인이 나타났다!!!!', en: 'The lord of the river appears!!!!', ja: '川の主が現れた!!!!', zh: '河之主出现了!!!!' },
-    { ko: '이건… 전설의 그 녀석?!', en: 'Is this… the legend?!', ja: 'これは…伝説のアイツ?!', zh: '难道是…传说中的那家伙?!' },
+    { ko: '희귀종의 기운이 느껴진다!!', en: 'I can feel a rare one!!', ja: 'レアの気配がする!!', zh: '感觉到稀有鱼的气息!!' }],
+  3: [{ ko: '엄청난 놈이 걸렸다!!!', en: 'Something huge is on!!!', ja: 'とんでもないのがかかった!!!', zh: '钓到了个大家伙!!!' },
+    { ko: '낚싯대가 부러질 것 같아!!!', en: "The rod's about to snap!!!", ja: '竿が折れそうだ!!!', zh: '鱼竿快要断了!!!' },
+    { ko: '강의 주인이 나타났나?!', en: 'Is it the lord of the river?!', ja: '川の主か?!', zh: '难道是河之主?!' },
     { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],
 };
 // Auto fishing: catches on its own while you stay at the spot with the game

@@ -182,7 +182,7 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
       phase = name; t = 0;
       if (name === 'cast') { landed = false; progress = 0; nextNibble = 1.5 + Math.random() * 1.5; }
       if (name === 'bite') {
-        heavy = (feelOf(data) - 1) / 2; // ★1-2 · ★3-4 · ★5 feel alike
+        heavy = (feelOf(data) - 1) / 2; // ★1 · ★2-3 · ★4-5 feel alike
         sfx?.bite?.();
         burst(bob, 6, 0.6);
       }

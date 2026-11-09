@@ -86,22 +86,22 @@ test('with every kind out, finishing the available collection finishes the whole
   assert.equal(new FishDex(st).kinds,0);
 });
 
-test('bites feel three ways (★1-2, ★3-4, ★5); auto fishing never rolls a rare fish', async () => {
+test('bites feel three ways (★1, ★2-3, ★4-5); auto fishing never rolls a rare fish', async () => {
   const { BITE_LINES, AUTO_FISH, rollAutoCatch, isRare, drainFor, feelOf } = await import('../src/core/fishing.js');
-  assert.deepEqual([TRASH, ...[1, 2, 3, 4, 5].map(r => ({ rarity: r }))].map(feelOf), [1, 1, 1, 2, 2, 3]);
+  assert.deepEqual([TRASH, ...[1, 2, 3, 4, 5].map(r => ({ rarity: r }))].map(feelOf), [1, 1, 2, 2, 3, 3]);
   for (const k of [1, 2, 3]) {
     assert.ok(BITE_LINES[k].length >= 3, `feel ${k}`);
     for (const l of BITE_LINES[k]) assert.ok(l.ko && l.en && l.ja && l.zh, `feel ${k}`);
   }
-  // nothing before landing tells a ★3 from a ★4, or a ★1 from a ★2
-  for (const [a, b] of [[1, 2], [3, 4]]) {
+  // nothing before landing tells a ★2 from a ★3, or a ★4 from a legend
+  for (const [a, b] of [[2, 3], [4, 5]]) {
     assert.equal(tapsFor({ rarity: a }), tapsFor({ rarity: b }));
     assert.equal(drainFor({ rarity: a }), drainFor({ rarity: b }));
   }
   assert.equal(tapsFor(TRASH), tapsFor({ rarity: 1 }));
   assert.ok(AUTO_FISH.length && AUTO_FISH.every(f => f.released && !isRare(f)));
   for (let i = 0; i < 200; i++) assert.ok(!isRare(rollAutoCatch()));
-  assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 0, 1.6, 1.6, 2.8]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 1.2, 1.2, 2.4, 2.4]);
 });
 
 test('every kind has a picture, and saves with swapped-out kinds keep their counts', async () => {
