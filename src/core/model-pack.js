@@ -598,6 +598,14 @@ function strumPose(t) {
   return { bob: 0, spine: [0.05, 0, 0], head: [0.08 + 0.06 * Math.abs(Math.sin(t * Math.PI * 2)), 0, 0.05], armR: [-0.7, 0.15, 0], foreR: [-1.0 + 0.3 * st, 0, 0], armL: [-1.2, -0.2, 0], foreL: [-1.3, 0, 0] };
 }
 
+// Start downloading a model and the eager clips before any character needs
+// them (main.js: the saved look's model, while the map loads), so the first
+// character shows at once.
+export function preloadModel(id) {
+  load(PACK.models[id] ? id : MODEL_IDS[0]);
+  loadAnims();
+}
+
 // Resolves to { update, play } once the model is on, or null on failure.
 export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const id = PACK.models[look.model] ? look.model : MODEL_IDS[0];

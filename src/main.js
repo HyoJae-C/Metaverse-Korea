@@ -71,7 +71,8 @@ import { buildBukchonHill } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor, saveLook } from './core/look-editor.js';
+import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
+import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
@@ -368,6 +369,8 @@ const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regio
   if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
   return r.json();
 }));
+// And the player's character model, so it is ready when they walk in.
+preloadModel(loadLook().model);
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
