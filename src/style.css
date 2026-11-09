@@ -1773,6 +1773,8 @@ kbd.wide { padding: 0 7px; }
   box-shadow: 0 2px 0 var(--accent-dark);
 }
 body.beauty-mode #keys-panel { display: none; }
+/* On the operating table (game/beauty.js): the view from your eyes, nothing over it. */
+body.surgery-pov .nametag.me, body.surgery-pov #store-banner, body.surgery-pov #keys-panel, body.surgery-pov #action-btn, body.surgery-pov #action-menu { display: none; }
 /* Keep what used to sit at the bottom left above the key panel. */
 @media (pointer: fine) {
   .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
