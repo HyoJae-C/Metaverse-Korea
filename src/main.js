@@ -53,7 +53,7 @@ import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
-import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
+import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createParkRiders } from './game/park-riders.js';
@@ -201,6 +201,7 @@ import { createBasketball } from './game/basketball.js';
 import { createFolkYard } from './game/folk-yard.js';
 import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
 import { createMirrorMaze } from './game/mirror-maze.js';
+import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { parseTaxi } from './core/taxi-share.js';
@@ -4824,7 +4825,7 @@ const rideCam = createRideCam({ camera });
 const parkRiders = createParkRiders($('labels'));
 // Seconds until a wheel gondola is next at the deck (0: one is there now).
 function wheelWait(now) {
-  for (let s = 0; s < 8; s += 0.25) if (wheelDoorOpen(wheelBottom(now + s), now + s)) return s;
+  for (let s = 0; s < 14; s += 0.25) if (wheelDoorOpen(wheelBottom(now + s), now + s)) return s;
   return 0;
 }
 function parkRideAction(st) {
@@ -4846,6 +4847,7 @@ function boardRide(st) {
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   rideCam.reset();
+  if (THRILL_RIDES.has(st.kind)) rideThrill.start(interior.scene); // (the coaster's speed lines, wind and sounds)
   shop.toast(t(st.kind === 'wheel' ? 'ride.wheelOn' : 'ride.seated'));
   sendTimer = 0;
   missionEvent('ride');
@@ -4860,6 +4862,7 @@ function endRide() {
     cam.yaw = me.root.rotation.y + Math.PI;
     me.root.visible = true;
     rideCam.reset();
+    rideThrill.stop();
   }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
@@ -4884,8 +4887,8 @@ function updateRide(dt) {
     action = STALE;
   }
   const ph = RIDE_CYCLE[ride.kind] ? ridePhase(ride.kind, now) : null;
-  ride.top = ride.kind === 'drop' && ph.phase === 'run' && ph.s > 7.5 && ph.s < 10.2 ? Math.min(1, (ph.s - 7.5) / 1.5) : 0; // (look down at the top)
-  if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > 10 && ph.s < 10.1 && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
+  ride.top = ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.climb - 0.5 && ph.s < DROP_T.hold + 0.2 ? Math.min(1, (ph.s - DROP_T.climb + 0.5) / 1.5) : 0; // (look down at the top)
+  if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.hold && ph.s < DROP_T.hold + DROP_T.fall && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
   if (ride.kind === 'drop' && ph.phase !== 'run' && ride.fell) { ride.fell = false; me.setMoves?.(null); }
   ride.shout -= dt;
   const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume';
@@ -4907,6 +4910,7 @@ const DROP_ARMS = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [
 const coasterName = () => L(COASTER_NAME);
 const coasterNow = () => Date.now() / 1000;
 const coasterFx = new CoasterFx(document.body, $('labels'), sfx);
+const rideThrill = createRideThrill({ camera, fx: coasterFx }); // (the swing ride and the drop tower borrow the coaster's effects)
 const _cf = {}, _cm = new THREE.Matrix4(), _cx = new THREE.Vector3(), _cy = new THREE.Vector3(), _cz = new THREE.Vector3(), _cv = new THREE.Vector3(), _cu = new THREE.Vector3();
 const ARMS_UP = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [-0.2, 0, 0], foreL: [-0.2, 0, 0], head: [-0.15, 0, 0] });
 const COWER = () => ({ spine: [0.25, 0, 0], head: [0.3, 0, 0], armR: [-1.2, 0, 0], armL: [-1.2, 0, 0] });
@@ -6571,7 +6575,11 @@ renderer.setAnimationLoop((now) => {
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
-  else if (ride?.pose) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic'); me.root.visible = ride.view !== 'first'; }
+  else if (ride?.pose) {
+    rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic');
+    me.root.visible = ride.view !== 'first';
+    if (THRILL_RIDES.has(ride.kind)) rideThrill.update(dt, ride.kind, rideClock(), rideFxSoft, ride.view === 'first'); // (the swing's and the drop's speed)
+  }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
   if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
