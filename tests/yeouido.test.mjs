@@ -86,14 +86,14 @@ test('the park: a big open lawn for mats, Mul-bit Square, Yunjung-ro\'s cherry t
   assert.ok(inPolygon(...zone.at, lawn.p.map(world)), 'people already on the lawn');
 });
 
-test('the park door and the Information Center stand in front of their buildings', () => {
+test('the Information Center stands in front of its building', () => {
   const park = stores.find((s) => s.id === 'yeouido-hangang');
   const info = stores.find((s) => s.id === 'info-yeouido');
   assert.equal(park.category, 'park');
   assert.equal(info.workshop, 'info');
   assert.equal(info.district, 'yeouido');
   const polys = map.buildings.map((b) => b.p.map(world));
-  for (const s of [park, info]) {
+  for (const s of [info]) { // (the park is open to the street: tests/open-parks.test.mjs)
     assert.ok(!polys.some((p) => inPolygon(...s.at, p)), `${s.id} is not inside a building`);
     const near = Math.min(...polys.flat().map(([x, z]) => Math.hypot(x - s.at[0], z - s.at[1])));
     assert.ok(near < 12, `${s.id} is next to its building (${near.toFixed(1)} m)`);

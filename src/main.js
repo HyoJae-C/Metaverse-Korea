@@ -5105,7 +5105,9 @@ const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, cam: 0, 
 function updateFireworks() {
   const s = fireworksAt();
   if (s && s.t < -FIREWORKS_ALERT + 30 && fireworks.alerted !== s.start) { fireworks.alerted = s.start; shop.toast(L(FIREWORKS_TEXT.soon)); }
-  const p = me.root.position, street = mode === 'street';
+  // (An open-air park counts as the street: its own metres turned into the world's.)
+  const op = openParkHere(), atWorld = (q) => { const [x, z] = parkWorld(op, q.x, q.z); return { x, y: q.y, z }; };
+  const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
   weather.nightMix = night;
@@ -5131,7 +5133,7 @@ function updateFireworks() {
   }
   if (!fireworks.sky) return;
   if (!street) { fireworks.sky.points.visible = false; return; }
-  const fired = fireworks.sky.update(s.start, t, night, camera, innerHeight);
+  const fired = fireworks.sky.update(s.start, t, night, op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight);
   // Booms: louder close by, later far away; at most a few a second.
   for (const b of fired) {
     const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
