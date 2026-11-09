@@ -765,11 +765,95 @@ function zebra(c) {
   return { root, body, head, tail, legs, neck };
 }
 
+// Red kangaroo: sits up on big hind feet and a thick tail, small arms held
+// in front, tall ears; it hops (both feet together) instead of walking.
+function kangaroo(c) {
+  const { root, body } = start();
+  const lean = new THREE.Group(); // the upper body leans forward over the feet
+  lean.position.set(0, 0.42, 0);
+  lean.rotation.x = 0.45;
+  body.add(lean);
+  part(lean, sphere(0.24, 14, 12), c.color, 0, 0.12, 0, 0.9, 1.25, 0.95); // belly and chest
+  part(lean, sphere(0.15, 10, 8), c.accent, 0, 0.12, 0.13, 0.85, 1.2, 0.5); // pale front
+  const head = new THREE.Group();
+  head.position.set(0, 0.86, 0.14);
+  body.add(head);
+  part(head, sphere(0.12, 12, 10), c.color, 0, 0, 0, 0.85, 0.9, 1);
+  part(head, sphere(0.08, 10, 8), c.color, 0, -0.03, 0.11, 0.75, 0.7, 1.2); // snout
+  part(head, sphere(0.022, 6, 6), '#2a2224', 0, -0.02, 0.2); // nose
+  for (const s of [-1, 1]) {
+    const ear = part(head, sphere(0.045, 8, 6), c.color, 0.06 * s, 0.14, -0.03, 0.55, 1.9, 0.4);
+    ear.rotation.z = -0.25 * s;
+    part(head, sphere(0.03, 6, 6), c.accent, 0.06 * s, 0.14, -0.015, 0.35, 1.5, 0.2);
+  }
+  eyes(head, 0.06, 0.03, 0.08, 0.02);
+  for (const s of [-1, 1]) { // little arms, held in front of the chest
+    const arm = part(body, cyl(0.025, 0.02, 0.2, 6), c.color, 0.09 * s, 0.6, 0.2);
+    arm.rotation.x = -0.9;
+  }
+  // The hind legs: a big thigh and a long foot flat on the ground, both
+  // together (legs[] for the zoo, though a hopper doesn't swing them).
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Group();
+    leg.position.set(0.12 * s, 0.3, -0.02);
+    body.add(leg);
+    part(leg, sphere(0.13, 10, 8), c.color, 0, 0, 0, 0.75, 1.1, 1.25); // thigh
+    part(leg, cyl(0.035, 0.03, 0.26, 6), c.color, 0, -0.17, -0.04).rotation.x = 0.3;
+    part(leg, sphere(0.05, 8, 6), c.color, 0, -0.29, 0.06, 0.8, 0.45, 2.4); // the long foot
+    legs.push(leg);
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.3, -0.16);
+  body.add(tail);
+  tube(tail, [[0, 0, 0], [0, -0.14, -0.2], [0, -0.26, -0.45], [0, -0.28, -0.62]], 0.07, c.color, 0.025);
+  shadow(root, 0.32);
+  return { root, body, head, tail, legs, hop: true, hopH: 0.35, hopRate: 5 };
+}
+
+// Bactrian camel: two humps on a sandy body, a long neck that dips and then
+// rises to the head (a group the zoo can lower to graze), shaggy at the top
+// of the legs, wide pads for feet.
+function camel(c) {
+  const { root, body } = start();
+  part(body, sphere(0.32, 16, 12), c.color, 0, 0.98, 0, 0.85, 0.75, 1.45);
+  for (const z of [0.16, -0.2]) { // the two humps, a shaggy tuft on each
+    part(body, sphere(0.15, 10, 8), c.color, 0, 1.22, z, 0.8, 1.1, 0.95);
+    part(body, sphere(0.08, 8, 6), c.accent, 0, 1.37, z, 0.9, 0.7, 0.9);
+  }
+  const neck = new THREE.Group();
+  neck.position.set(0, 1.0, 0.38);
+  neck.rotation.x = 1.0; // out forward first…
+  body.add(neck);
+  const nk = part(neck, cyl(0.08, 0.12, 0.42, 8), c.color, 0, 0.2, 0);
+  part(neck, sphere(0.1, 8, 6), c.accent, 0, 0.12, 0.06, 1, 1.4, 0.8); // the shaggy beard under the neck
+  const head = new THREE.Group();
+  head.position.set(0, 0.42, 0);
+  head.rotation.x = -1.0; // …then the head comes level
+  neck.add(head);
+  const up = part(head, cyl(0.06, 0.08, 0.26, 8), c.color, 0, 0.1, 0); // the upper neck, rising
+  up.rotation.x = -0.5;
+  const face = new THREE.Group();
+  face.position.set(0, 0.22, 0.06);
+  head.add(face);
+  part(face, sphere(0.1, 10, 8), c.color, 0, 0, 0, 0.8, 0.85, 1);
+  part(face, sphere(0.08, 10, 8), c.color, 0, -0.03, 0.12, 0.75, 0.75, 1.15); // long muzzle
+  part(face, sphere(0.06, 8, 6), c.accent, 0, -0.05, 0.19, 0.95, 0.7, 0.8); // droopy lips
+  for (const s of [-1, 1]) part(face, sphere(0.025, 6, 6), c.color, 0.065 * s, 0.07, -0.04, 0.8, 1.2, 0.6); // little round ears
+  eyes(face, 0.06, 0.03, 0.06, 0.02);
+  nk.userData.neck = true;
+  const legs = hipLegs(body, [[-0.13, 0.3, c.color], [0.13, 0.3, c.color], [-0.13, -0.3, c.color], [0.13, -0.3, c.color]], 0.9, 0.055, 0.04, '#6b5a48');
+  for (const l of legs) part(l, sphere(0.07, 8, 6), c.accent, 0, -0.12, 0, 1, 1.4, 1); // shaggy knees… at the top of the leg
+  const tail = tuftTail(body, 1.0, -0.45, 0.32, 0.02, c.color, c.accent);
+  shadow(root, 0.5);
+  return { root, body, head, tail, legs, neck };
+}
+
 // kind -> builder; c: { color, accent }.
 // The big herbivores drawn larger than their first models, nearer the real
 // thing next to a person: a zebra about 1.4 m at the shoulder, an elephant
 // over 3 m tall, a giraffe's head near 5 m up.
-export const SIZE = { zebra: 1.45, elephant: 1.25, giraffe: 1.25 };
+export const SIZE = { zebra: 1.45, elephant: 1.25, giraffe: 1.25, kangaroo: 1.35, camel: 1.6 };
 const sized = (a, k) => { a.root.scale.setScalar(k); a.size = k; return a; };
 
 export function makeZooAnimal(kind, c) {
@@ -788,6 +872,8 @@ export function makeZooAnimal(kind, c) {
   if (kind === 'giraffe') return sized(giraffe(c), SIZE.giraffe);
   if (kind === 'zebra') return sized(zebra(c), SIZE.zebra);
   if (kind === 'vulture') return raptor(c);
+  if (kind === 'kangaroo') return sized(kangaroo(c), SIZE.kangaroo);
+  if (kind === 'camel') return sized(camel(c), SIZE.camel);
   throw new Error('no zoo animal ' + kind);
 }
 
@@ -813,4 +899,6 @@ export const ZOO_LOOKS = {
   giraffe: [{ color: '#d9a35a', accent: '#5a4636' }, { color: '#d39a52', accent: '#5a4636' }],
   vulture: [{ color: '#3d3029', accent: '#57463b' }, { color: '#45362d', accent: '#5e4c40' }, { color: '#382c26', accent: '#52423a' }],
   zebra: [{ color: '#f7f5f0', accent: '#1f1c1e' }, { color: '#f4f2ec', accent: '#1f1c1e' }, { color: '#f7f5f0', accent: '#1f1c1e' }],
+  kangaroo: [{ color: '#c06a3e', accent: '#ecd2b4' }, { color: '#b9653c', accent: '#e8ccad' }, { color: '#a77856', accent: '#e6d2bc' }, { color: '#c27247', accent: '#efd7bb' }],
+  camel: [{ color: '#c49a64', accent: '#8f6a43' }, { color: '#b98f5c', accent: '#86623d' }],
 };

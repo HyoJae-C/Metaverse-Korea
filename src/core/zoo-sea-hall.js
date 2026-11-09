@@ -1,6 +1,7 @@
 // The zoo's Sea Animals hall (Children's Grand Park) as a room of its own:
-// you walk in through its door on the street (stores.json "cgp-sea-hall",
-// workshop "zoo-sea") and the room takes over the screen, like a shop.
+// you walk in through its door in the zoo (core/zoo-park.js; the store is
+// zoo-rooms.js SEA_STORE, workshop "zoo-sea") and the room takes over the
+// screen, like Another Land's haunted house.
 // Sea-blue walls with fish painted on, a high ceiling with strip lights, and
 // three tanks along the back behind glass: seals, a walrus and a polar bear.
 // The tanks and their animals are zoo pens (core/zoo.js), in room metres:
@@ -8,9 +9,10 @@
 import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
 import { Zoo, seaWall } from './zoo.js';
+import { SEA_ROOM } from './zoo-rooms.js';
 
 const mat = matCache();
-export const SEA_ROOM = { w: 26, d: 24, h: 7.5 };
+export { SEA_ROOM };
 const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const TANK = { z: -5.5, w: 7.6, d: 12 }; // centre z and size of each tank (back at -HD + 0.5)
 
