@@ -56,6 +56,7 @@ export function createTaxi(game) {
     ['도착했습니다. 안녕히 가세요!', 'dochakhaetseumnida. annyeonghi gaseyo!', 'taxi.t3'],
   ];
   let taxiTimers = [];
+  let inCab = false; // on the back seat (the scene showing): you aren't standing anywhere
   const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
   // Closed-off places (the zoo before it opens) and a margin round them.
   let zones = null, zonesOf = null;
@@ -107,9 +108,11 @@ export function createTaxi(game) {
     input.keys.clear();
     sayLine(TAXI_LINES[0]);
     let done = false;
+    inCab = true;
     const arrive = () => {
       if (done) return;
       done = true;
+      inCab = false;
       taxiTimers.forEach(clearTimeout);
       taxiTimers = [];
       $('taxi-ride').hidden = true;
@@ -299,5 +302,5 @@ export function createTaxi(game) {
     const [fx, fz] = findFreeSpot(rx, rz);
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
   }
-  return { rideTaxi, rideFree, onMsg, onLeave, closedAt };
+  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab };
 }

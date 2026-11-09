@@ -5275,6 +5275,9 @@ function updateOpenParks(dt) {
     return;
   }
   if (mode !== 'street') return;
+  // (in a taxi out of the park you are still standing on its lawn until the
+  // ride ends: don't walk back in)
+  const inCab = taxi.inCab();
   for (const o of openParks) {
     const d = Math.hypot(p.x - o.ox, p.z - o.oz);
     o.near = d < PARK_NEAR;
@@ -5287,7 +5290,7 @@ function updateOpenParks(dt) {
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
-    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro) {
+    if (Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1 && !subway.metro && !inCab) {
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
