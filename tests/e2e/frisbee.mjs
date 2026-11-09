@@ -31,8 +31,8 @@ try {
   await wait(500);
   if ((await label()).includes('🥏')) throw new Error('frisbee off the lawn: ' + await label());
   await mk('enter', 'ttukseom-hangang');
-  await until(async () => (await mk('room')).id === 'ttukseom-hangang');
-  await mk('place', -10, 7); await mk('face', Math.PI / 2);
+  await until(async () => (await mk('hanPark'))?.id === 'ttukseom-hangang'); // (laid on the street: the drone show's lawn is world x 113..165, z 375..385)
+  await mk('place', 135, 380); await mk('face', Math.PI / 2);
   await until(async () => (await label()).includes('🥏'));
   console.log('button:', await label());
   // Held in the hand (out of the bag) it still works.
@@ -42,9 +42,9 @@ try {
   await wait(300);
   if (!(await label()).includes('🥏')) throw new Error('no button with the frisbee in hand: ' + await label());
   console.log('in hand: button shows');
-  await mk('place', 2, -2); // the riverside path: the button goes (the button refreshes on its own beat, slow in a software renderer)
+  await mk('place', 135, 372); // the riverside path: the button goes (the button refreshes on its own beat, slow in a software renderer)
   await until(async () => !(await label()).includes('🥏'), 5000, 'frisbee on the path');
-  await mk('place', -10, 7); await mk('face', Math.PI / 2);
+  await mk('place', 135, 380); await mk('face', Math.PI / 2);
   for (let round = 0; round < 3; round++) {
     await until(async () => (await label()).includes('🥏'));
     const ch = await mk('choices');
@@ -61,7 +61,7 @@ try {
   // The golden retriever and the monkey play too (they come by code).
   for (const id of ['pet-golden', 'pet-monkey']) {
     await mk('givePet', id);
-    await mk('place', -10, 7); await mk('face', Math.PI / 2);
+    await mk('place', 135, 380); await mk('face', Math.PI / 2);
     const seen = new Set();
     for (let round = 0; round < 2; round++) {
       await until(async () => (await label()).includes('🥏'), 15000, id + ' button');
@@ -74,21 +74,21 @@ try {
   }
   // A cat just watches; walk over to pick it up.
   await mk('givePet', 'pet-cheesecat');
-  await mk('place', -10, 7); await mk('face', Math.PI / 2);
+  await mk('place', 135, 380); await mk('face', Math.PI / 2);
   await until(async () => (await label()).includes('🥏'), 15000, 'cat button');
   const ch = await mk('choices');
   if (ch) await mk('pick', ch.findIndex((c) => c.includes('🥏'))); else await mk('act');
-  await until(async () => (await mk('frisbee'))[0] === 'lie', 6000, 'cat lie');
+  await until(async () => (await mk('frisbee'))[0] === 'lie', 15000, 'cat lie'); // (a software renderer on the street is slow: the game runs in slow motion)
   if ((await label()).includes('🥏')) throw new Error('throwing again while it lies on the grass');
   const [, , at] = await mk('frisbee');
   await mk('place', at[0] - 0.5, at[1]);
-  await until(async () => (await mk('frisbee'))[0] === 'idle', 3000, 'pick up');
+  await until(async () => (await mk('frisbee'))[0] === 'idle', 8000, 'pick up');
   console.log('cat: watched, picked up');
   // A picnic mat in the hand: held as a rolled mat, and it can be spread.
   await mk('giveMat');
   await mk('holdFromBag', 'gift'); // (swaps the frisbee in hand for the mat)
   if (await mk('heldNow') !== 'gift:mat') throw new Error('mat held as ' + await mk('heldNow'));
-  await mk('place', -6, 9); await mk('face', Math.PI / 2);
+  await mk('place', 131, 378); await mk('face', Math.PI / 2);
   await until(async () => (await label()).includes('🧺'), 5000, 'spread from hand');
   const mc = await mk('choices');
   const spreadAt = mc ? mc.findIndex((c) => c.includes('🧺')) : 0;

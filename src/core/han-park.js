@@ -18,6 +18,14 @@ import { luckySpot } from './fishing.js';
 import { makeDuckBoat, DUCK_BOATS, RAMEN_SIGN, FISH_SIGN, FISHING_OK, LUCKY_SIGN, SPOT_COLOR, LUCKY_COLOR } from './park.js';
 import { BOAT_R } from './duck-boat.js';
 import { mergeStatic } from './merge-static.js';
+import * as droneShow from './drone-show.js';
+import { createCharacter } from './character.js';
+import { randomLook } from '../data/appearance.js';
+const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
+const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
+const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
+const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
+const DRONE_COLOR = '#2b3a7a';
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
@@ -320,6 +328,90 @@ export function buildHanPark(store, L) {
     box(len, 0.4, beam + 0.1, x, -0.55, z, '#3d464e'); // the waterline
   }
 
+  // A far-bank skyline across the water (where the street has nothing
+  // there): its windows light up at night.
+  const lit = [];
+  let windows = null;
+  if (L.skyline) {
+    const { z, x0, n = 26 } = L.skyline;
+    for (let i = 0; i < n; i++) {
+      const h = 6 + ((i * 37) % 11) * 2.2, bw = 5 + (i % 3), bx = x0 + i * 7.6;
+      box(bw, h, 5, bx, h / 2 - 0.2, z, ['#c9d3dc', '#b7c3cf', '#dfe5ea'][i % 3]);
+      for (let fy = 2; fy < h - 1; fy += 2.2) for (let c = 0; c < 3; c++) if ((i * 7 + c * 3 + Math.round(fy) * 5) % 5 > 1) lit.push([bx + (c - 1) * bw * 0.28, fy]);
+    }
+    windows = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 1.1),
+      new THREE.MeshBasicMaterial({ color: '#ffd98a', transparent: true, opacity: 0, fog: false, depthWrite: false }), lit.length);
+    lit.forEach(([x, y], k) => windows.setMatrixAt(k, m4.makeTranslation(x, y, z + 2.6)));
+    windows.visible = false;
+    group.add(windows);
+  }
+
+  // The drone light show (Ttukseom: core/drone-show.js has the schedule and
+  // its spots in the old park room's metres, whose bank was at z = -4; here
+  // they sit in `showG`, set on the park at the drones' x and 4 m inland).
+  // The launch barge floats out on the water all day; at show time the
+  // drones (drone-sky.js, downloaded only then) rise from it and a few people
+  // watch from mats on the lawn and at the railing.
+  const D = L.drones || null;
+  const showG = new THREE.Group();
+  const show = D ? { now: null, night: 0 } : null;
+  let droneSign = null;
+  if (D) {
+    showG.position.set(D.x, 0, 4);
+    const bx = D.x + BARGE.x, bz = BARGE.z + 4;
+    box(BARGE.w, 0.8, BARGE.d, bx, 0.1, bz, '#3b4048');
+    box(BARGE.w - 0.4, 0.06, BARGE.d - 0.4, bx, BARGE.deck - 0.02, bz, '#5d636c');
+    const padN = 12 * 4;
+    const pads = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), mat('#8a93a0'), padN);
+    for (let k = 0; k < padN; k++) pads.setMatrixAt(k, m4.makeTranslation(bx + ((k % 12) - 5.5) * 1.15, BARGE.deck + 0.02, bz + (Math.floor(k / 12) - 1.5) * 1.25));
+    group.add(pads);
+    for (const sx of [-1, 1]) box(0.2, 1.2, 0.2, bx + sx * (BARGE.w / 2 - 0.3), BARGE.deck + 0.6, bz + BARGE.d / 2 - 0.3, '#e05a3a'); // marker posts
+    // Its board by the railing: the next show in your own time (or "On now!").
+    if (D.sign) {
+      const f = sub(...D.sign);
+      for (const sx of [-0.75, 0.75]) box(0.07, 1.5, 0.07, sx, 0.75, 0, '#3d4650', f.g);
+      droneSign = signBoard(1.7, 0.62, DRONE_COLOR);
+      droneSign.mesh.position.set(0, 1.55, 0.04);
+      f.g.add(droneSign.mesh);
+      blockIn(f, -0.85, -0.1, 0.85, 0.1);
+    }
+  }
+  const showTime = (ms) => {
+    try { return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch { return ''; }
+  };
+  let droneSignKey = '';
+  const drawDroneSign = (now = Date.now()) => {
+    if (!droneSign) return;
+    const s = droneShowAt(now), on = !!s?.on;
+    const when = on ? null : showTime(nextDroneShow(now));
+    const key = `${signLang}|${on}|${when}`;
+    if (key === droneSignKey) return;
+    droneSignKey = key;
+    const title = '🛸 ' + (signLang ? localName(DRONE_SIGN, signLang) : DRONE_SIGN.ko);
+    const sub2 = on ? (signLang ? localName(DRONE_NOW, signLang) : DRONE_NOW.ko + ' · ' + DRONE_NOW.en) : `${signLang ? localName(DRONE_NEXT, signLang) : DRONE_NEXT.en} ${when}`;
+    droneSign.draw(title, sub2);
+  };
+  let sky = null, watchers = null, skyLoading = false, signT = 0;
+  const tickShow = (dt) => {
+    const now = Date.now(), s = droneShowAt(now);
+    show.now = s;
+    show.night = s ? s.night : 0;
+    if ((signT -= dt) <= 0) { signT = 5; drawDroneSign(now); }
+    if (s && s.t > -LIFT_SECONDS - 60 && !sky && !skyLoading) {
+      skyLoading = true;
+      const phone = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+      import('./drone-sky.js').then((m) => {
+        m.useShow(droneShow);
+        sky = m.createDroneSky(showG, { count: phone ? 400 : 600 });
+        show.photo = m.PHOTO_TIME;
+        show.sky = sky;
+        watchers = m.createWatchers(showG, { createCharacter, randomLook, mats: D.mats, rail: D.rail });
+      }).catch(() => { skyLoading = false; }); // (offline: try again later)
+    }
+    if (sky) sky.update(s?.start, s?.t ?? 0, show.night);
+    watchers?.update(dt, show.night);
+  };
+
   // The food stalls, their tables and the market's name board.
   const market = L.market ? buildMarket(group, store, block, seats, L.market) : { products: [], vendors: [], setSignLang() {} };
 
@@ -330,11 +422,13 @@ export function buildHanPark(store, L) {
     martSign?.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign?.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
     fSign?.draw(lang ? localName(FISH_SIGN, lang) : FISH_SIGN.ko, lang ? '' : FISH_SIGN.en);
+    drawDroneSign();
   };
   setSignLang(null);
 
   // Each frame (while near): the lucky spot moves on now and then, its clover spins.
   const tick = (dt) => {
+    if (show) tickShow(dt);
     if (!fishing.length) return;
     luckT = (luckT + dt) % 1e4;
     updateLucky();
@@ -351,12 +445,15 @@ export function buildHanPark(store, L) {
     nightShown = k;
     glowMat.emissiveIntensity = 0.5 + 2 * k;
     if (kioskWindow) { kioskWindow.emissive.set('#fff1c8'); kioskWindow.emissiveIntensity = 0.9 * k; }
+    if (windows) { windows.material.opacity = k; windows.visible = k > 0.01; }
   };
 
   // Its still boxes baked together: a few draw calls on top of the city.
   mergeStatic(group, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
+  if (D) group.add(showG); // (the drones and their watchers come later: never baked)
   return {
     group, colliders, decks, seats, products: [...products, ...market.products], vendors: market.vendors, clerk,
     fishing, fishBuy, ramen, ducks, duckArea, setSignLang, tick, setNight,
+    show, // the drone show right now, or null: { now: droneShowAt(), night, photo, sky } (main.js: camera, notices, music)
   };
 }

@@ -26,8 +26,8 @@ test('every Seongsu shop stands on open ground in front of a building, each at i
   for (const s of here) {
     const [x, z] = s.at;
     for (const b of map.buildings) assert.ok(!inPoly(x, z, b.p), `${s.id} inside a building`);
-    // (an open-air park's spot is its lawn's edge on the river bank: tests/open-parks.test.mjs)
-    if (!s.open) assert.ok(Math.min(...map.buildings.map((b) => wallDist(x, z, b.p))) < 3, `${s.id} not next to a building`);
+    // (a Han River park's spot is on its path by the river: tests/han-park.test.mjs)
+    if (!s.hanpark) assert.ok(Math.min(...map.buildings.map((b) => wallDist(x, z, b.p))) < 3, `${s.id} not next to a building`);
     const key = `${x},${z}`;
     assert.ok(!spots.has(key), `${s.id} shares a spot`);
     spots.add(key);

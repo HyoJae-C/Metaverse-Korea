@@ -83,6 +83,7 @@ export function createHanParks(game) {
         clerkNpc, vendors: b.vendors, vendorNpcs,
         ducks: b.ducks.length ? b.ducks : null, duckArea: b.duckArea, scene: b.group,
         river: { position: { y: 0.03 } }, // (the street's water, world.js)
+        show: b.show, // (Ttukseom's drone show, or null)
         frame: { ry: o.ry, toWorld: (x, z) => toWorld(o, x, z), toLocal: (x, z) => toLocal(o, x, z) },
       },
     };
@@ -149,5 +150,7 @@ export function createHanParks(game) {
   }
   // Where the parks are (the map, a taxi): store id → [x, z] of its middle.
   const spots = () => parks.map((o) => ({ id: o.store.id, x: o.ox, z: o.oz }));
-  return { parks, seats, update, here, actions, staffNear, spots, toWorld, toLocal };
+  // How far (x, z) is from that park's edge (Infinity if there's none).
+  const awayFrom = (id, p) => { const o = parks.find((q) => q.store.id === id); return o ? away(o, p.x, p.z) : Infinity; };
+  return { parks, seats, update, here, actions, staffNear, spots, awayFrom, toWorld, toLocal };
 }
