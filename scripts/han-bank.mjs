@@ -8,8 +8,8 @@
 //                               and the end of "To the Han River" in region.json
 //
 // Where districts draw the river themselves (Banpo-Jamwon, x -1296 … -961,
-// and Mangwon's park west of x -3182), the bike path keeps to the points
-// they join it at.
+// and Mangwon, west of x -3220), the bike path keeps to the points they
+// join it at.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -70,7 +70,7 @@ function cross(a, b, p) {
 
 export const PATH_OFF = 14; // the bike path, metres in from the water's edge
 // Points other roads meet the path at (kept exactly).
-export const MANGWON_JOIN = [-3182, -64]; // Mangwon's river path
+export const MANGWON_JOIN = [-3224.8, -8.4]; // the east end of Mangwon's river path (scripts/build-mangwon.mjs)
 export const JAMSU_JOIN = [-1307.8, 705.8]; // Jamsu Bridge (Banpo-Jamwon's map)
 export const SEONGSU_JOIN = [-465, 119]; // Seongsu's Han River Path
 
@@ -126,7 +126,7 @@ function keepOff(p, min) {
   return out;
 }
 const along = (x0, x1) => simplify(keepOff(unloop(inland(smooth(northBetween(x0 - 60, x1 + 60)), PATH_OFF)), 8), 2.5).filter(([x]) => x >= x0 && x <= x1).map(([x, z]) => [r1(x), r1(z)]);
-const west = along(-3120, -1335); // Mangwon to just short of Jamsu Bridge
+const west = along(-3205, -1335); // Mangwon to just short of Jamsu Bridge
 const east = along(-1200, -490); // past Banpo-Jamwon to Seongsu
 
 // Seogang Bridge's north end: the real bridge's line (from where it lands
@@ -139,8 +139,7 @@ const hit = cross(BRIDGE_SOUTH, far, west);
 export const BRIDGE_NORTH = hit.at;
 west.splice(hit.i, 0, BRIDGE_NORTH);
 
-// (from Mangwon's river path it first goes east, clear of Mangwon's own river)
-export const BIKE_PATH = [MANGWON_JOIN, [-3135, -64], ...west, JAMSU_JOIN, ...east, SEONGSU_JOIN];
+export const BIKE_PATH = [MANGWON_JOIN, ...west, JAMSU_JOIN, ...east, SEONGSU_JOIN];
 
 // The river east of Banpo-Jamwon to Seongsu (region.json water[1]): the
 // real north bank, across at Seongsu, back along the real south bank.

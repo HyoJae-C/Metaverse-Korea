@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// Builds the two hand-made Mapo-gu districts west and north of Hongdae, and
+// Builds the two Mapo-gu districts west and north of Hongdae, and
 // puts their shops on the street:
 //
 //   Yeonnam-dong (districts/yeonnam.json): the Gyeongui Line Forest Park
 //     ("Yeontral Park") running north from Hongdae Walking Street, with
 //     small shops, cafés and a Chinese restaurant in the lanes either side.
-//   Mangwon-dong (districts/mangwon.json): Mangwon Market under its arcade
-//     roof, the cafés of Poeun-ro (Mangridan-gil), quiet lanes, and the
-//     open Han River park at the south end with the fishing pier.
+//   Mangwon-dong (districts/mangwon.json): drawn at 1/4 on its real
+//     streets by scripts/build-mangwon.mjs (Mangwon Market, Poeun-ro, the
+//     Han River park); this script writes it and places its shops.
 //
-// Game maps, not to scale (see docs/WORLD.md). Street names are the real
-// ones; every shop is fictional (sample data).
+// Yeonnam is a game map, not to scale (see docs/WORLD.md). Street names are
+// the real ones; every shop is fictional (sample data).
 //
 //   node scripts/build-mapo.mjs   writes both maps and sets the "at" of the
 //                                 shops listed in SHOPS in stores.json
@@ -20,6 +20,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { mangwon, SHOPS as MANGWON_SHOPS } from './build-mangwon.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -154,149 +155,6 @@ function yeonnam() {
   };
 }
 
-// ---------------------------------------------------------------- Mangwon
-// Worldcup-ro along the north edge, Mangwon Market (x 80) south of it to
-// Poeun-ro, lanes, Mangwon-ro, then the lawn, the riverside path and the
-// Han River along the south edge.
-const BANK = 150;
-// Mangwon Han River Park, laid straight on the street (game/han-parks.js;
-// core/han-park.js builds what the map can't draw). It faces south over the
-// river, so its own frame is turned half round: x = -X, z = BANK - Z (the
-// bank's edge at z = 0, the river z < 0). At 1/4, as the real park is
-// between Seongsan and Yanghwa Bridges, east to west (x growing west):
-//  - the fishing pier and the fish buyer, with a picnic lawn east of it;
-//  - where the way down from Mangwon (Huiujeong-ro, X -60) meets the river
-//    path: the kiosk with its ramen machine, and a few riverside stalls;
-//  - the boat dock, then the grey warship of Seoul Battleship Park moored
-//    off the bank.
-export const PARK = {
-  bounds: [-195, -45, 195, 13], // bank to path, and out on its water
-  layout: {
-    paving: [[30, 0.4, 82, 9.2, '#d9c7a6']],
-    rail: [-188, 188],
-    pier: { x: -20, len: 9 },
-    fishBuy: [-12, 4.2, 0],
-    fishing: [[-46, 0.75], [-26, 0.75], [-20, -8.2], [12, 0.75]],
-    kiosk: [42, 6.6, Math.PI], // MANGWON 24, facing the river
-    tables: [[33.6, 3.4], [49.6, 3.4]],
-    market: {
-      spots: [[66.4, 7.6, Math.PI], [69.2, 7.6, Math.PI], [72, 7.6, Math.PI], [74.8, 7.6, Math.PI]],
-      tables: [[70.6, 3.6], [78.4, 4.6]],
-      board: [79.6, 8.2, Math.PI],
-    },
-    dock: 104,
-    duckWater: { minX: 86, maxX: 126, minZ: -38 },
-    ships: [[152, -13, 40]], // Seoul Battleship Park (서울함 공원)
-    lamps: [[-40, 2.6], [-4, 2.6], [28, 2.6], [56, 2.6], [88, 2.6], [120, 2.6], [150, 2.6]],
-    benches: [[118, 3.4], [138, 3.4], [160, 3.4]],
-    beds: [[-6, 6.4, 3], [56, 8.6, 2.6], [88, 6.4, 3]],
-    trees: [[-84, 7.2], [128, 7.4], [175, 7]],
-    bushes: [[-34, 7.6], [24, 8], [92, 8.2]],
-  },
-};
-const PARK_LAWN = [-150, -36]; // the picnic lawn east of the pier (x)
-
-function mangwon() {
-  const d = district(621);
-  const { row } = d;
-  const H = { w: [8, 13], h: [6, 13] };
-  const STALL = { w: [6, 8], h: [4, 5] }; // market stalls under the arcade
-  // Mangwon Market: stalls both sides of the market alley (x 80).
-  row('marketW', 'z', -148, -78, 75, -1, 10, STALL);
-  row('marketE', 'z', -148, -78, 85, 1, 10, STALL);
-  // Worldcup-ro, south side (west and east of the market; a wide pavement
-  // for Mangwon Station's exits) and north side.
-  row('worldcupS1', 'x', -186, -66, -148, 1, 12, H);
-  row('worldcupS2', 'x', -54, 64, -148, 1, 12, H);
-  row('worldcupS3', 'x', 96, 146, -148, 1, 12, H);
-  row('worldcupN', 'x', -186, 186, -168, -1, 10, { w: [10, 16], h: [9, 16] });
-  // Poeun-ro (Mangridan-gil): both sides.
-  row('poeunN1', 'x', -186, -144, -75, -1, 12, H);
-  row('poeunN2', 'x', -136, -66, -75, -1, 12, H);
-  row('poeunN3', 'x', -54, 64, -75, -1, 12, H);
-  row('poeunN4', 'x', 96, 146, -75, -1, 12, H);
-  row('poeunS1', 'x', -186, -144, -65, 1, 12, H);
-  row('poeunS2', 'x', -136, -66, -65, 1, 12, H);
-  row('poeunS3', 'x', -54, 146, -65, 1, 12, H);
-  row('poeunS4', 'x', 154, 186, -65, 1, 12, H);
-  // The lanes between Poeun-ro and Mangwon-ro: houses.
-  const HOUSE = { w: [9, 13], h: [6, 10] };
-  row('laneN1', 'x', -186, -144, -4, -1, 11, HOUSE);
-  row('laneN2', 'x', -136, -66, -4, -1, 11, HOUSE);
-  row('laneN3', 'x', -54, 146, -4, -1, 11, HOUSE);
-  row('laneS1', 'x', -186, -144, 4, 1, 11, HOUSE);
-  row('laneS2', 'x', -136, -66, 4, 1, 11, HOUSE);
-  row('laneS3', 'x', -54, 146, 4, 1, 11, HOUSE);
-  row('mangwonN1', 'x', -186, -144, 69, -1, 12, HOUSE);
-  row('mangwonN2', 'x', -136, -66, 69, -1, 12, HOUSE);
-  row('mangwonN3', 'x', -54, 146, 69, -1, 12, HOUSE);
-  row('mangwonN4', 'x', 154, 186, 69, -1, 12, HOUSE);
-  // Huiujeong-ro: rows facing it (between Poeun-ro and Worldcup-ro).
-  row('huiujeongW', 'z', -134, -88, -66, -1, 12, H);
-  row('huiujeongE', 'z', -134, -88, -54, 1, 12, H);
-
-  const roads = [
-    { k: 'primary', w: 14, p: [[-190, -160], [190, -160]], n: name('Worldcup-ro', '월드컵로', 'ワールドカップ路', '世界杯路') },
-    { k: 'walk', w: 8, p: [[80, -153], [80, -70]], n: name('Mangwon Market', '망원시장', '望遠市場', '望远市场') },
-    { k: 'tertiary', w: 8, p: [[-190, -70], [190, -70]], n: name('Poeun-ro (Mangridan-gil)', '포은로 (망리단길)', '圃隠路（望理団通り）', '圃隐路（望理团路）') },
-    { k: 'tertiary', w: 9, p: [[-60, -160], [-60, 74]], n: name('Huiujeong-ro', '희우정로', '喜雨亭路', '喜雨亭路') },
-    { k: 'walk', w: 6, p: [[-60, 74], [-60, 138]], n: name('Way to the Han River', '한강공원 가는 길', '漢江公園への道', '去汉江公园的路') },
-    { k: 'residential', w: 6, p: [[-140, -70], [-140, 74]], n: name('Mangwon lane', '망원동 골목', '望遠洞の路地', '望远洞小巷') },
-    { k: 'residential', w: 6, p: [[150, -160], [150, 74]], n: name('Mangwon lane', '망원동 골목', '望遠洞の路地', '望远洞小巷') },
-    { k: 'residential', w: 6, p: [[-190, 0], [190, 0]], n: name('Mangwon lane', '망원동 골목', '望遠洞の路地', '望远洞小巷') },
-    { k: 'tertiary', w: 9, p: [[-190, 74], [190, 74]], n: name('Mangwon-ro', '망원로', '望遠路', '望远路') },
-    { k: 'walk', w: 5, p: [[-190, 138], [190, 138]], n: name('Han River path', '한강 산책로', '漢江の散歩道', '汉江步道') },
-  ];
-  const areas = [
-    { k: 'park', trees: true, p: [[-190, 80], [190, 80], [190, 132], [-190, 132]] },
-    { k: 'grass', p: [[-190, 141], [190, 141], [190, BANK], [-190, BANK]] },
-    // The picnic lawn by the water east of the pier (no trees): mats and frisbees.
-    { k: 'grass', lawn: true, p: [[-PARK_LAWN[0], BANK - 9], [-PARK_LAWN[1], BANK - 9], [-PARK_LAWN[1], BANK - 1.2], [-PARK_LAWN[0], BANK - 1.2]] },
-    { k: 'plaza', p: [[60, -160], [100, -160], [100, -153], [60, -153]] },
-    { k: 'water', p: [[-230, BANK], [230, BANK], [230, 250], [-230, 250]] },
-  ];
-  const blockers = [{ p: [[-230, BANK], [230, BANK], [230, 250], [-230, 250]] }];
-  const landmarks = [
-    { type: 'arch', x: 80, z: -150, w: 10, ry: Math.PI, title: 'MANGWON MARKET', sub: '망원시장', color: '#c0392b' },
-    { type: 'arch', x: 80, z: -78, w: 10, title: 'MANGWON MARKET', sub: '망원시장', color: '#c0392b' },
-    { type: 'arcade', x: 80, z: -115, len: 70, w: 12, h: 6.2, gap: 12 },
-    { type: 'arch', x: -100, z: -70, w: 10, ry: Math.PI / 2, title: 'MANGRIDAN-GIL', sub: '망리단길 · 포은로', color: '#6a4c93' },
-    { type: 'arch', x: -60, z: 80, w: 8, ry: Math.PI, title: 'MANGWON HAN RIVER PARK', sub: '망원한강공원', color: '#2f78b0' },
-    { type: 'sign', x: -48, z: 134, ry: 0,
-      title: name('Mangwon Han River Park', '망원한강공원', '望遠漢江公園', '望远汉江公园'),
-      text: {
-        en: 'A riverside park on the north bank of the Han River. Walk or cycle along the water, spread a mat on the grass, or try your luck at the fishing pier: some fish only bite here.',
-        ko: '한강 북쪽 강변의 공원이에요. 강을 따라 걷거나 자전거를 타고, 잔디에 돗자리를 펴거나, 낚시 선착장에서 낚시를 해 보세요. 여기서만 잡히는 물고기도 있어요.',
-        ja: '漢江の北岸にある川辺の公園です。川沿いを歩いたり自転車に乗ったり、芝生にシートを広げたり、釣り桟橋で釣りをしてみましょう。ここでしか釣れない魚もいます。',
-        zh: '汉江北岸的江边公园。沿着江边散步、骑车，在草地上铺开野餐垫，或者去钓鱼码头碰碰运气：有些鱼只在这里咬钩。',
-      } },
-    // Seoul Battleship Park: the warship moored off the bank (core/han-park.js draws it).
-    { type: 'sign', x: -138, z: 134, ry: 0,
-      title: name('Seoul Battleship Park', '서울함 공원', 'ソウル艦公園', '首尔舰公园'),
-      text: {
-        en: 'Three retired Korean Navy ships are moored at Mangwon Han River Park: a frigate, a patrol boat and a submarine. Since 2017 you can go aboard and see how sailors lived. In the game, the grey frigate is just to look at from the bank.',
-        ko: '망원한강공원에는 퇴역한 해군 함정 세 척이 정박해 있어요. 호위함, 고속정, 잠수함이에요. 2017년부터 배에 올라가 수병들이 어떻게 지냈는지 볼 수 있어요. 게임에서는 회색 호위함을 강가에서 구경만 할 수 있어요.',
-        ja: '望遠漢江公園には、退役した韓国海軍の艦艇3隻が停泊しています。護衛艦、高速艇、潜水艦です。2017年から船に乗って、水兵の暮らしを見学できます。ゲームでは灰色の護衛艦を岸から眺めるだけです。',
-        zh: '望远汉江公园停泊着三艘退役的韩国海军舰艇：一艘护卫舰、一艘快艇和一艘潜艇。从2017年起可以登船参观水兵的生活。在游戏里，灰色的护卫舰只能在岸边观看。',
-      } },
-  ];
-  for (const x of [-170, 30, 70, 110, 150]) landmarks.push({ type: 'bench', x, z: 143, ry: Math.PI }); // facing the river (south; the park has its own by the dock and the kiosk)
-  // The park itself (game/han-parks.js): at the bank's edge, turned half round.
-  landmarks.push({ type: 'hanpark', store: 'mangwon-hangang', x: 0, z: BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
-  const pois = [
-    { kind: 'landmark', x: 80, z: -115, name: name('Mangwon Market', '망원시장', '望遠市場', '望远市场') },
-    { kind: 'landmark', x: -100, z: -70, name: name('Mangridan-gil', '망리단길', '望理団通り', '望理团路') },
-    { kind: 'landmark', x: -60, z: 110, name: name('Mangwon Han River Park', '망원한강공원', '望遠漢江公園', '望远汉江公园') },
-  ];
-  return {
-    map: {
-      meta: { district: 'mangwon', source: 'hand-made (game map, not to scale; loosely after Mangwon-dong, Mapo-gu). Street names are real; Mangwon Market is a real market, but every stall and shop here is fictional.' },
-      roads, buildings: d.buildings, rail: [], areas, blockers, pois, landmarks,
-    },
-    lots: d.lots,
-  };
-}
-
 // Which lot each shop takes: [row, index along the row].
 const SHOPS = {
   yeonnam: {
@@ -310,25 +168,12 @@ const SHOPS = {
     'munbang-vintage': ['donggyoES', 3],
     'wolhwa-banjeom': ['donggyoES', 6],
   },
-  mangwon: {
-    'info-mangwon': ['huiujeongE', 2],
-    'bongbong-croquette': ['marketW', 0],
-    'baksak-dakgangjeong': ['marketE', 1],
-    'bomnal-tteokjip': ['marketW', 2],
-    'saebyeok-fruit': ['marketE', 3],
-    'eomma-banchan': ['marketW', 4],
-    'sonmat-kalguksu': ['marketE', 5],
-    'ttukttak-eomuk': ['marketW', 6],
-    'kkoma-kimbap': ['marketE', 7],
-    'dalkom-bangatgan': ['marketW', 8],
-    'slow-morning': ['poeunS2', 2],
-    'bbang-gulttuk': ['poeunN2', 3],
-    'dongne-record': ['poeunS2', 5],
-  },
 };
-const FIXED = { mangwon: { 'mangwon-hangang': [-60, 138] } }; // where the way down from Mangwon meets the river path (where a taxi or the map drops you)
 
-const built = { yeonnam: yeonnam(), mangwon: mangwon() };
+const mw = mangwon();
+SHOPS.mangwon = MANGWON_SHOPS;
+const FIXED = { mangwon: mw.fixed };
+const built = { yeonnam: yeonnam(), mangwon: mw };
 const region = readJson('region.json');
 // stores.json is hand-formatted, so only the "at" of each placed shop is
 // rewritten in the text.
@@ -353,7 +198,7 @@ for (const [id, { map, lots }] of Object.entries(built)) {
     spots[sid] = at;
   }
   for (const [sid, [x, z]] of Object.entries(spots)) setAt(sid, [r1(x + ox), r1(z + oz)]);
-  if (id === 'mangwon') console.log(`park stamp stand: [${r1(-56 + ox)}, ${r1(BANK - 4 + oz)}], ry ${(Math.PI + Math.PI / 2).toFixed(4)}`);
+  if (id === 'mangwon') console.log(`park stamp stand: [${r1(mw.stamp.at[0] + ox)}, ${r1(mw.stamp.at[1] + oz)}], ry ${mw.stamp.ry}; market south gate [${r1(mw.market.south[0] + ox)}, ${r1(mw.market.south[1] + oz)}]`);
   console.log(`${id}: ${map.buildings.length} buildings, ${Object.keys(spots).length} shops placed`);
   if (process.argv.includes('--lots')) for (const [k, v] of Object.entries(lots)) console.log('  ', k, v.length);
 }

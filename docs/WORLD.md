@@ -111,8 +111,9 @@ lists **districts** joined into one map (`src/core/districts.js`):
   is the real one at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
   `scripts/han-bank.mjs` writes water[1] (Banpo-Jamwon to Seongsu) and the Han
   River Bike Path 14 m inland of the bank, and `scripts/build-yeouido.mjs`
-  writes water[0] from the same bank. Mangwon's and Banpo-Jamwon's maps still
-  draw their own stretch of river.
+  writes water[0] from the same bank. Mangwon's map draws its own straight
+  stretch of the real bank (west of x -3220), and Banpo-Jamwon's map still
+  draws its own river.
 - Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
@@ -153,9 +154,17 @@ lists **districts** joined into one map (`src/core/districts.js`):
 
 Both are drawn by `scripts/build-mapo.mjs` (rows of small buildings along
 the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
-Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street;
-Mangwon has Mangwon Market under an arcade roof, Poeun-ro (Mangridan-gil) and
-Mangwon Han River Park along its south edge, laid straight on the street
+Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street.
+
+Mangwon (`scripts/build-mangwon.mjs`, called by build-mapo) is at 1/4 on its
+real place: its streets (Worldcup-ro, Poeun-ro, Mangwon-ro, Huiujeong-ro,
+Gangbyeon-buk-ro and the lanes, from `scripts/data/mangwon-osm.json`,
+OpenStreetMap), Mangwon Station's exits on Worldcup-ro, the market alley on
+its real line, and the Han's bank, which is straight here (within 3 m) and
+runs south-east at 42°. Buildings fill the real blocks between Seongsan-ro
+and x -3197 (Yeonnam and Hongdae are east of that). It has Mangwon Market
+under an arcade roof, Poeun-ro (Mangridan-gil) and Mangwon Han River Park
+along its south edge, laid straight on the bank
 (the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
 buyer west, the kiosk and food stalls where the path comes down, the duck
 boat dock east of them, and Seoul Battleship Park's warship moored at the
