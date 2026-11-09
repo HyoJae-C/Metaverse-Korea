@@ -84,9 +84,9 @@ test('the museum stands just south of Itaewon, on open ground by its building', 
   const region = read('region.json');
   const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
   const map = read('districts/itaewon.json');
-  const seobinggo = map.roads.find((r) => r.n?.en === 'Seobinggo-ro'); // Itaewon's southern edge
+  const hoenamu = map.roads.find((r) => r.n?.en === 'Hoenamu-ro'); // Itaewon's southern edge
   const [x, z] = [store.at[0] - ox, store.at[1] - oz];
-  assert.ok(z > seobinggo.p[0][1], 'south of Seobinggo-ro');
+  assert.ok(z > hoenamu.p[0][1], 'south of Hoenamu-ro');
   assert.ok(Math.abs(x) < 60, 'below the middle of Itaewon');
   const inPoly = (px, pz, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > pz) !== (zj > pz) && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) c = !c; } return c; };
   for (const b of map.buildings) assert.ok(!inPoly(x, z, b.p), 'not inside a building');

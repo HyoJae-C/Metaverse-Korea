@@ -176,7 +176,7 @@
       "w": 14,
       "p": [[-1518, 445], [-1307.8, 705.8]],
       "n": { "ko": "반포대교 가는 길", "en": "To Banpo Bridge", "ja": "盤浦大橋へ", "zh": "往盘浦大桥" },
-      "note": "From Itaewon's Seobinggo-ro at Bogwang-ro south-east to the north end of Jamsu Bridge (the low deck under Banpo Bridge), which crosses to Banpo-Jamwon Han River Park."
+      "note": "From Itaewon's Hoenamu-ro at Bogwang-ro south-east to the north end of Jamsu Bridge (the low deck under Banpo Bridge), which crosses to Banpo-Jamwon Han River Park."
     },
     {
       "k": "secondary",
@@ -251,14 +251,34 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-335, 79], [-430, 79], [-470, 190], [-520, 240], [-760, 240], [-840, 281], [-1088, 281]],
+      "p": [
+        [
+          -335,
+          79
+        ],
+        [
+          -700,
+          79
+        ],
+        [
+          -900,
+          193
+        ],
+        [
+          -960,
+          281
+        ],
+        [
+          -1088,
+          281
+        ]
+      ],
       "n": {
         "ko": "이태원로",
         "en": "Itaewon-ro",
         "ja": "梨泰院路",
         "zh": "梨泰院路"
-      },
-      "note": "From Seongsu west to Itaewon. It runs on from Itaewon-ro along the foot of Gyeongnidan-gil's hill (the lanes coming down from Hoenamu-ro meet it), between the hill and the Han River, and turns north-east only past the hill."
+      }
     },
     {
       "k": "primary",

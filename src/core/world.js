@@ -82,8 +82,7 @@ export function buildWorld(map, scene, opts = {}) {
   if (opts.collision) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
-    // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
-    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 
@@ -300,10 +299,8 @@ function makeBuildings(buildings) {
     if (b.custom) return; // drawn by its landmark (e.g. Olympic Park Pool); still a wall and a shop front
     // Ensure counter-clockwise (in x,-z) so wall normals face outward.
     if (signedArea(p) < 0) p = [...p].reverse();
-    // On a hillside street (b.y: the floor at its door, Gyeongnidan-gil) the
-    // walls start lower, at the lowest ground under it (b.y0).
-    const base = b.y0 ?? (b.m || 0);
-    const top = b.h + (b.y || 0);
+    const base = b.m || 0;
+    const top = b.h;
     const tint = (bi * 7 + p.length) % WALL_TINTS.length;
     col.setHex(WALL_TINTS[tint]);
     roofCol.setHex(ROOF_TINTS[tint]);
