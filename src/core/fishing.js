@@ -590,14 +590,14 @@ export const FISH = [
     "price": 1400
   },
   {
-    "id": "axolotl",
-    "emoji": "🦎",
-    "ko": "아홀로틀",
-    "rom": "aholloteul",
+    "id": "tuna",
+    "emoji": "🐟",
+    "ko": "참다랑어",
+    "rom": "chamdarangeo",
     "name": {
-      "en": "Axolotl",
-      "ja": "ウーパールーパー",
-      "zh": "六角恐龙"
+      "en": "Bluefin tuna",
+      "ja": "クロマグロ",
+      "zh": "蓝鳍金枪鱼"
     },
     "rarity": 3,
     "released": true,
@@ -633,14 +633,14 @@ export const FISH = [
     "price": 6000
   },
   {
-    "id": "tuna",
-    "emoji": "🐟",
-    "ko": "참다랑어",
-    "rom": "chamdarangeo",
+    "id": "axolotl",
+    "emoji": "🦎",
+    "ko": "아홀로틀",
+    "rom": "aholloteul",
     "name": {
-      "en": "Bluefin tuna",
-      "ja": "クロマグロ",
-      "zh": "蓝鳍金枪鱼"
+      "en": "Axolotl",
+      "ja": "ウーパールーパー",
+      "zh": "六角恐龙"
     },
     "rarity": 4,
     "released": true,
@@ -790,7 +790,7 @@ export const TIER_SHARE = [0, 75.85, 22, 1.5, 0.6, 0.05];
 // 7 hours.
 export const TIER_WEIGHT = {
   carp: 0.7, mackerel: 0.8, saury: 0.8, shrimp: 0.8, scallop: 0.8, seabream: 0.6, salmon: 0.8, crab: 0.8, flounder: 0.8,
-  'sea-turtle': 1.1, tuna: 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
+  'sea-turtle': 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
 // What each rarity is called (the fish book and the odds table).
@@ -817,9 +817,9 @@ export const fishById = id => FISH.find(f => f.id === id) || null;
 export const PARK_TIER = 3;
 export const PARK_FISH = {
   'ttukseom-hangang': { name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' },
-    fish: ['sunfish', 'electric-eel', 'axolotl', 'shark', 'marlin', 'whale'] },
+    fish: ['sunfish', 'electric-eel', 'tuna', 'shark', 'marlin', 'whale'] },
   'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' },
-    fish: ['cuttlefish', 'lobster', 'seahorse', 'tuna', 'orca', 'giant-squid'] },
+    fish: ['cuttlefish', 'lobster', 'seahorse', 'axolotl', 'orca', 'giant-squid'] },
   'banpo-jamwon-hangang': { name: { ko: '반포·잠원', en: 'Banpo-Jamwon', ja: '盤浦・蚕院', zh: '盘浦·蚕院' },
     fish: ['clownfish', 'blue-tang', 'butterflyfish', 'sea-turtle', 'beluga', 'manta'] },
   'yeouido-hangang': { name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' },

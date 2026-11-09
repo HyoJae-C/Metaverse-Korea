@@ -207,7 +207,8 @@ test('★1-2 bite everywhere; from ★3 each park has its own three ★3, two �
     }
   }
   assert.equal(parkOf('whale').name.en, 'Ttukseom');
-  assert.equal(parkOf('axolotl').name.ko, '뚝섬');
+  assert.equal(parkOf('axolotl').name.ko, '망원');
+  assert.equal(fishById('axolotl').rarity, 4);
   assert.equal(parkOf('carp'), null);
   // ★3, ★4 and ★5 each sell for one price, so every park pays the same
   for (const r of [3, 4, 5]) assert.equal(new Set(FISH.filter(f => f.rarity === r).map(f => f.price)).size, 1, `★${r}`);
