@@ -103,7 +103,7 @@ test('log flume: boards at its platform, climbs the lift, plunges down the drop 
   }
   assert.ok(top > 5.5, `up to ${top.toFixed(1)} m`);
   assert.ok(steepest > 0.5, `down the drop at ${steepest.toFixed(2)} rad`);
-  assert.equal(seen.size, FLUME_TRACK.pts.length, 'every stretch of the channel');
+  assert.equal(seen.size, FLUME_TRACK.ctrl.length, 'every stretch of the channel');
   const e = seatAt('flume', 0, at('flume', 'stop', 1));
   assert.ok(Math.hypot(e.x - s0.x, e.z - s0.z) < 0.01, 'back at the station');
 });
