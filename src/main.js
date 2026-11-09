@@ -84,7 +84,7 @@ import { watchOnline } from './net/online.js';
 import { sendRate } from './net/rate.js';
 import { startWhereReports } from './net/where.js';
 import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
-import { startUpdateCheck } from './core/update-check.js';
+import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
@@ -184,6 +184,7 @@ import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
+import { createRoomCache } from './game/room-cache.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -255,7 +256,15 @@ function reportProblem(msg) {
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
 }
-addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+addEventListener('error', (e) => {
+  const msg = `${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`;
+  // Not our code: scripts an app's built-in browser (Threads, Instagram,
+  // KakaoTalk…) or an extension puts into the page ("onReady is not defined")
+  // and other sites' scripts ("Script error."). Counted, but no warning box:
+  // the game is fine and the box made players think it was broken.
+  if (!/\/(assets|src)\//.test(e.filename || '')) { console.warn('[mk] page script:', msg); onProblem?.('ext: ' + msg); return; }
+  reportProblem(msg);
+});
 addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
 
 // Google ads (AdSense): the script for the rewarded "Watch an ad" button,
@@ -312,7 +321,7 @@ visit.reach(STAGE.OPEN);
 // Errors: counted in the session and the message (digits removed, no
 // account id) sent for the operator's error list, a few per visit.
 const sendError = createErrorSender((m) => cloud.reportError(m));
-onProblem = (msg) => { playCounts.error(); sendError(msg); };
+onProblem = (msg) => { if (!msg.startsWith('ext: ')) playCounts.error(); sendError(msg); }; // ('ext: ' = not our code, see above)
 for (const m of earlyProblems.splice(0)) onProblem(m);
 // Country statistics for the operator page: a guess from the time zone,
 // once a day per account (core/country.js). Loaded on the side; never waits.
@@ -364,10 +373,16 @@ try {
 
 // Load the map while the player is choosing a language.
 // (One map file, or several districts joined into one city: core/districts.js.)
-const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
-  if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
-  return r.json();
-}));
+// A phone on a weak signal can drop one request ("Load failed"): try each
+// file up to three times before giving up, so one hiccup doesn't stop the game.
+const mapPromise = loadRegionMap(region, (file) => {
+  const get = (tries) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
+    if (r.status === 404) throw Object.assign(new Error('no map'), { code: 'noMap' });
+    if (!r.ok) throw new Error('map ' + r.status);
+    return r.json();
+  }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
+  return get(3);
+});
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
@@ -1358,11 +1373,11 @@ let stopOnline = null;
 watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // A newer build deployed while we play: ask for a refresh (core/update-check.js).
-startUpdateCheck({
-  current: __BUILD_ID__,
-  fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v),
-  onNew: () => { if (!tabParked) showUpdateBanner(); },
-});
+{
+  const deployed = { current: __BUILD_ID__, fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v) };
+  startUpdateCheck({ ...deployed, onNew: () => { if (!tabParked) showUpdateBanner(); } });
+  watchMissingFiles({ ...deployed, onNew: () => showUpdateBanner() });
+}
 // Our spot on the map for operators' live view (net/where.js, admin.html).
 // Inside a shop we report the street spot we came in from, and the shop.
 // A hidden tab keeps reporting (browsers slow the timer down to about once a
@@ -2200,19 +2215,26 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
 
-const interiorCache = new Map();
-// A shop's inside, built on the first visit and kept.
-function roomFor(store) {
-  let built = interiorCache.get(store.id);
-  if (built) return built;
-  built = buildInterior(store);
-  built.collision = new CollisionMap(built.colliders);
-  interiorCache.set(store.id, built);
-  built.setSignLang?.(signsTranslated ? getLanguage() : null);
-  if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
-  stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
-  return built;
-}
+// A shop's inside, built on the first visit and kept while it is one of the
+// last few rooms visited (game/room-cache.js: phones drop the page when
+// every room ever opened stays in memory).
+const interiorCache = createRoomCache({
+  max: lowSpec ? 4 : 10,
+  build: (store) => {
+    const built = buildInterior(store);
+    built.collision = new CollisionMap(built.colliders);
+    built.setSignLang?.(signsTranslated ? getLanguage() : null);
+    if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
+    return built;
+  },
+  // Kept: the room you're in, the park behind its haunted house or runway,
+  // and the open-air parks the street shows.
+  keep: (id) => id === interior?.store?.id || id === interior?.front?.parkFront?.store?.id || openParks.some((o) => o.item.store.id === id),
+  shown: () => [scene],
+  onDrop: (id) => stampStands.dropRoom(id),
+});
+const roomFor = (store) => interiorCache.room(store);
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -6888,6 +6910,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => { const sh = dronePark()?.show; return { night: +(sh?.night || 0).toFixed(3), drones: !!sh?.sky, lit: sh?.sky?.lit() || 0, sky: +(weather.nightMix || 0).toFixed(3), stamp: !!stampStands.items.find((i) => i.stamp.id === 'drone-show')?.up, pitch: +cam.pitch.toFixed(2) }; },
