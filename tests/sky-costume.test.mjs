@@ -21,3 +21,26 @@ test('carried state names the flyer, the pose and the slot', () => {
   assert.equal(carrySeats('princess'), 1);
   assert.equal(carrySeats('x'), 0);
 });
+
+test('birds carry by the talons, the carpet and the cloud seat two riders', async () => {
+  const { COSTUMES } = await import('../src/core/sky-costume.js');
+  assert.deepEqual(COSTUMES.eagle.carry, ['talons']);
+  assert.deepEqual(COSTUMES.albatross.carry, ['talons']);
+  assert.deepEqual(COSTUMES.carpet.carry, ['ride']);
+  assert.deepEqual(COSTUMES.wukong.carry, ['ride']);
+  assert.equal(carrySeats('talons'), 1);
+  assert.equal(carrySeats('ride'), 2);
+  assert.equal(encodeFlight('eagle', 'talons'), 'eagle.talons');
+  assert.deepEqual(parseFlight('carpet.ride'), { kind: 'carpet', carry: 'ride' });
+  assert.deepEqual(parseCarried(encodeCarried('p-1', 'talons', 0)), { flyer: 'p-1', pose: 'talons', slot: 0 });
+  assert.deepEqual(parseCarried('p-1.ride.1'), { flyer: 'p-1', pose: 'ride', slot: 1 });
+});
+
+test('the new chat codes and carry messages', async () => {
+  const { skyCode, parseSkyMsg, skyMsg } = await import('../src/game/sky-flight.js');
+  assert.equal(skyCode('신천옹'), 'albatross');
+  assert.equal(skyCode('독수리'), 'eagle');
+  assert.equal(skyCode('양탄자'), 'carpet');
+  assert.equal(skyCode('손오공'), 'wukong');
+  assert.deepEqual(parseSkyMsg(skyMsg('invite', 'abc', 'talons', 0)), { verb: 'invite', target: 'abc', pose: 'talons', slot: 0 });
+});
