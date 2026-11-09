@@ -4835,7 +4835,7 @@ onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
 // The ride-all day pass (sold at the ticket window) makes every ride free today.
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', coaster: '🎢' };
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
 const rideFare = (kind) => (ridePass() ? '🎫' : `🪙 ${RIDE_PRICE[kind]}`);
 function payRide(kind) {
@@ -4927,8 +4927,8 @@ function updateRide(dt) {
   if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.hold && ph.s < DROP_T.hold + DROP_T.fall && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
   if (ride.kind === 'drop' && ph.phase !== 'run' && ride.fell) { ride.fell = false; me.setMoves?.(null); }
   ride.shout -= dt;
-  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume';
-  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop)
+  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume' || ride.kind === 'gyro';
+  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'gyro' ? Math.abs(s.roll) > 1.2 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop; the gyro swing: up past level)
   if (locked && ride.shout <= 0 && scream) {
     ride.shout = ride.kind === 'viking' ? 3.5 : thrill ? 4 : 6;
     showBubble(myLabel, $('labels'), thrill ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2000);
@@ -5364,7 +5364,7 @@ function updateOpenParks(dt) {
   const here = openParkHere();
   if (here) {
     lightOpenPark(openParkRoom(here));
-    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || [])]) if (n) n.ch.root.visible = true;
+    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
@@ -5390,6 +5390,8 @@ function updateOpenParks(dt) {
     // off the stalls and the kiosk read as busy enough.
     const close = d < PARK_STAFF;
     for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
+    if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Another Land's island: the guests on its rides)
+    for (const n of o.built.riderNpcs || []) n.ch.root.visible = close;
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
     const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;

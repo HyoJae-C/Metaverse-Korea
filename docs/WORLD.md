@@ -442,6 +442,19 @@ grew to the south-east to hold the whole track (about 3,870 m², the track at
 least 2 m in from the shore and about 5 m of water round it), so the
 water is about 13,150 m², 97% of the real 1/16. The helix sits south of
 the long run, east of the station (the same 345 m lap, the track 63 m
-across, not 83), which leaves the island's east end free for more rides. `tests/coaster.test.mjs`
-checks the track is on the island and the only way off is the bridge;
-`tests/themepark.test.mjs` checks the island lies on the map's island.
+across, not 83), which leaves the island's east end free for more rides.
+
+Four more rides stand round the coaster, each in its fenced yard with a
+named gate and an attendant (`core/park-yards.js`), off biscuit walks from
+the main one (`SPURS` in `park-island.js`): the Rainbow Wheel by the
+bridge, the Lollipop Drop between the long run and the helix, the Sugar
+Swing in the coaster's north-west loop (in under the airtime hill) and the
+Macaron Gyro Swing on the east end (`core/park-gyro.js`: a ring of 16 seats
+on a long arm that swings up past level between two A-frames). Which rides
+are where is `ISLAND_RIDES` / `UNDER_RIDES` in `park-rides.js`; the pirate
+ship, carousel, teacups, train and log flume stay in the room below. The
+coaster's station loop is still free for one more. `tests/coaster.test.mjs`
+checks the track is on the island, the only way off is the bridge, every
+ride's gate is a walk from it and nothing that moves comes within 2 m of
+the track; `tests/themepark.test.mjs` checks the island lies on the map's
+island.

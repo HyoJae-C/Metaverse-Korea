@@ -1,4 +1,4 @@
-// End-to-end check: Another Land's newer rides (the Sugar Swing, the
+// End-to-end check: Another Land's newer rides under the island (the
 // Teacup Party, the Candy Train and the Jelly Flume) and the Mirror Maze.
 // Each ride: wait at its gate for it to load, get on, the bar comes down,
 // ride the run (up in the air, round the oval, up the lift and down the
@@ -25,11 +25,11 @@ const pr = () => page.evaluate(() => __mk.parkRide());
 await page.evaluate(() => { __mk.coins(40000); __mk.enter('another-land'); });
 await page.waitForTimeout(3000);
 const staff = await page.evaluate(() => __mk.parkStaff());
-assert(['swing', 'teacups', 'train', 'flume'].every((k) => staff.includes(k)), `attendants: ${staff}`);
+assert(['teacups', 'train', 'flume'].every((k) => staff.includes(k)), `attendants: ${staff}`);
 
-const only = (process.env.RIDES || 'swing,teacups,train,flume').split(',');
+// (the swing ride is up on the island: park-rides.mjs)
+const only = (process.env.RIDES || 'teacups,train,flume').split(',');
 const RIDES = [
-  ['swing', [17, 16.8], (q) => q.maxY > 1.2, /swing/i],
   ['teacups', [29.5, 22.3], (q) => q.moved > 3, /teacups/i],
   ['train', [47.1, 24], (q) => q.maxX > 57, /train/i],
   ['flume', [54.5, -14.3], (q) => q.maxY > 5, /flume/i],

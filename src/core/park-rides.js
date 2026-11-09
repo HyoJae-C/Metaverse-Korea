@@ -12,28 +12,36 @@ export const PARK_UNIFORM = { model: 'ranger', shirt: 'peach', pants: 'navy', sh
 
 // Ticket prices (won): the thrill rides cost more, the gentle ones less.
 // The bumper cars' fare is BUMPER_COST in bumper-cars.js.
-export const RIDE_PRICE = { coaster: 7000, flume: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 };
+export const RIDE_PRICE = { coaster: 7000, flume: 5000, gyro: 5000, drop: 4000, viking: 4000, swing: 3000, wheel: 3000, carousel: 2000, teacups: 2000, train: 2000 };
 // The ride-all day pass, sold at the ticket booth: every ride in the park
 // (bumper cars and the coaster too) as often as you like, today.
 export const RIDE_PASS = 20000;
-export const RIDE_SECONDS = { carousel: 24, wheel: 90, viking: 22, drop: 15, swing: 26, teacups: 26, train: 44, flume: 40 }; // (the wheel: one slow turn, time to take in the view)
+export const RIDE_SECONDS = { carousel: 24, wheel: 90, viking: 22, drop: 15, swing: 26, teacups: 26, train: 44, flume: 40, gyro: 30 }; // (the wheel: one slow turn, time to take in the view)
 
+// Which rides are out on the island (park-island.js, in the open over the
+// lake) and which are in the room under it (themepark.js). Both are in the
+// coaster's metres, so a ride's x, z below is where it stands in either.
+export const ISLAND_RIDES = ['wheel', 'drop', 'swing', 'gyro'];
+export const UNDER_RIDES = ['carousel', 'viking', 'teacups', 'train', 'flume'];
 // Pure ride motion (unit-tested): where seat i is at time t (seconds).
 export const RIDES = {
   // 8 horses on the outer ring, 4 on the inner one.
   carousel: { x: -16, z: 12, seats: 12, r: 3, inner: 1.85, outer: 8, speed: 0.55 },
   // 8 gondolas of 2 (seat = gondola * 2 + side); you board the one at the bottom.
-  wheel: { x: 24, z: -8, cabins: 8, seats: 16, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
+  // (on the island, north by the bridge: the first thing you see)
+  wheel: { x: -40, z: -44, cabins: 8, seats: 16, r: 7, hub: 9.4, drop: 1.9, speed: (Math.PI * 2) / RIDE_SECONDS.wheel },
   // 4 benches of 2 along the ship, everyone facing the middle; the deck is
   // `arm` below the pivot, the end benches stand higher (to see over).
   viking: { x: -13, z: -9, seats: 8, pivot: 6.6, arm: 5, max: 1.2, rows: [-2.25, -1.1, 1.1, 2.25], bench: [1.05, 0.6, 0.6, 1.05], omega: 1.36 },
   // Drop tower: 8 seats round the pole, facing out; load, climb, hold, drop.
   // The climb, the hold at the top and the fall (free fall at `g`, then the
   // magnetic brakes from `brake` metres up) are DROP_T.
-  drop: { x: 52, z: -4, seats: 8, r: 1.75, low: 0.55, top: 22, brake: 8, g: 15 },
+  // (on the island, between the long run and the helix)
+  drop: { x: -13.2, z: -28.5, seats: 8, r: 1.75, low: 0.55, top: 22, brake: 8, g: 15 },
   // Swing ride: 16 chairs on chains from a spinning crown; as it speeds up
   // they fly out (tilt up to `tilt` radians).
-  swing: { x: 17, z: 24.5, seats: 16, arm: 2.6, chain: 4.2, hub: 5, tilt: 1.05, speed: 2 },
+  // (on the island, inside the coaster's north-west loop)
+  swing: { x: -57, z: -29, seats: 16, arm: 2.6, chain: 4.2, hub: 5, tilt: 1.05, speed: 2 },
   // Teacups: 5 cups of 3 on a turning floor, each cup spinning the other way.
   teacups: { x: 29.5, z: 28.2, seats: 15, cups: 5, per: 3, R: 2.6, cupR: 0.9, speed: 0.5, spin: 1.9 },
   // The park train: an engine and 3 cars of 4 (2 benches of 2) round an
@@ -43,12 +51,18 @@ export const RIDES = {
   // station, up the lift, along the top, down the big drop with a splash.
   // (x, z: where the boat waits at the station)
   flume: { x: 54.1, z: -16, seats: 4 },
+  // Gyro swing, on the island's east end: a ring of 16 seats facing out at
+  // the end of a long arm, spinning, while the arm swings like a pendulum
+  // between two A-frames, higher each time, up past level (`max` radians).
+  // The arm swings in the x-y plane (about the z axis, like the ship).
+  gyro: { x: 5, z: -26, seats: 16, pivot: 7.4, arm: 6.6, ring: 2.1, max: 1.75, omega: 1.15, spin: 0.9, legs: 3.8, frame: 3.4 },
 };
 // The carousel, the pirate ship and the drop tower run on everyone's shared
 // clock (like the coaster), in cycles: load (stopped, bars up: get on now), run, stop. So
 // friends ride the same swing, and everyone sees the same ship.
 export const RIDE_CYCLE = { carousel: { load: 9, run: RIDE_SECONDS.carousel, stop: 3 }, viking: { load: 9, run: RIDE_SECONDS.viking, stop: 3 }, drop: { load: 9, run: RIDE_SECONDS.drop, stop: 2 },
-  swing: { load: 9, run: RIDE_SECONDS.swing, stop: 4 }, teacups: { load: 9, run: RIDE_SECONDS.teacups, stop: 3 }, train: { load: 10, run: RIDE_SECONDS.train, stop: 3 }, flume: { load: 10, run: RIDE_SECONDS.flume, stop: 3 } };
+  swing: { load: 9, run: RIDE_SECONDS.swing, stop: 4 }, teacups: { load: 9, run: RIDE_SECONDS.teacups, stop: 3 }, train: { load: 10, run: RIDE_SECONDS.train, stop: 3 }, flume: { load: 10, run: RIDE_SECONDS.flume, stop: 3 },
+  gyro: { load: 10, run: RIDE_SECONDS.gyro, stop: 4 } };
 const cycleLen = (c) => c.load + c.run + c.stop;
 export function ridePhase(kind, t) {
   const c = RIDE_CYCLE[kind], len = cycleLen(c), n = Math.floor(t / len), p = t - n * len;
@@ -73,6 +87,16 @@ export function vikingAngle(t) {
   const env = Math.min(1, r.s / 7, (run - r.s) / 6);
   return V.max * Math.max(0, env) * Math.sin(r.s * V.omega);
 }
+// The gyro swing's arm: pushed higher each swing for 10 s, swinging up past
+// level, and let down in the last 8 s, ending still at the bottom.
+export function gyroAngle(t) {
+  const r = ridePhase('gyro', t), G = RIDES.gyro, run = RIDE_CYCLE.gyro.run;
+  if (r.phase !== 'run') return 0;
+  const env = Math.min(1, r.s / 10, (run - r.s) / 8);
+  return G.max * Math.max(0, env) * Math.sin(r.s * G.omega);
+}
+// How fast the arm swings (radians a second), for the ride's thrill.
+const gyroRate = (t) => (gyroAngle(t + 0.05) - gyroAngle(t - 0.05)) / 0.1;
 // The carousel's turn: speeds up for 3 s, slows to a stop in the last 4 s.
 const UP = 3, DOWN = 4;
 function turned(s, run, w) {
@@ -82,6 +106,12 @@ function turned(s, run, w) {
   if (s < full) return (w * UP) / 2 + w * (s - UP);
   const d = Math.min(s, run) - full;
   return (w * UP) / 2 + w * (full - UP) + w * d - (w * d * d) / (2 * DOWN);
+}
+// The gyro swing's ring: turns slowly the whole run (turned below), so each
+// rider swings up facing a different way.
+export function gyroSpin(t) {
+  const c = RIDE_CYCLE.gyro, r = ridePhase('gyro', t), w = RIDES.gyro.spin;
+  return r.n * turned(c.run, c.run, w) + turned(r.s, c.run, w);
 }
 export function carouselAngle(t) {
   const c = RIDE_CYCLE.carousel, r = ridePhase('carousel', t), w = RIDES.carousel.speed;
@@ -127,6 +157,10 @@ export function rideSpeed(kind, t) {
     if (f < T.fall) { const v = RIDES.drop.g * f; return { k: v / T.v, v, phase: 'drop' }; }
     const b = f - T.fall, v = Math.max(0, T.v - (T.v / T.brake) * b);
     return { k: v / T.v, v, phase: b < T.brake ? 'run' : 'brake' };
+  }
+  if (kind === 'gyro') { // (fastest through the bottom of each swing)
+    const G = RIDES.gyro, v = Math.abs(gyroRate(t)) * G.arm, top = G.max * G.omega * G.arm, a = Math.abs(gyroAngle(t));
+    return { k: Math.min(1, v / top), v, phase: a > 1.2 ? 'hold' : 'run' }; // (up past level: that weightless moment)
   }
   if (kind === 'swing') {
     const k = Math.sqrt(swingTilt(t) / RIDES.swing.tilt), S = RIDES.swing;
@@ -344,6 +378,14 @@ export function seatAt(kind, i, t) {
     const sx = cup.x + Math.sin(b) * R.cupR * 0.55, sz = cup.z + Math.cos(b) * R.cupR * 0.55;
     return { x: sx, y: 0.2, z: sz, ry: b + Math.PI, roll: 0 }; // (facing the middle of the cup)
   }
+  if (kind === 'gyro') {
+    // Seat i on the ring (facing out), the ring turned by its spin, at the
+    // arm's end, the arm swung about the pivot (about z: roll).
+    const th = gyroAngle(t), a = (i / R.seats) * Math.PI * 2 + gyroSpin(t);
+    const lx = Math.sin(a) * R.ring, ly = -R.arm + 0.12, lz = Math.cos(a) * R.ring; // (feet: the seats are 0.45 over the ring)
+    const c = Math.cos(th), s = Math.sin(th);
+    return { x: R.x + lx * c - ly * s, y: R.pivot + lx * s + ly * c, z: R.z + lz, ry: a, roll: th };
+  }
   if (kind === 'train' || kind === 'flume') {
     const P = kind === 'train' ? trainSpot(i, t) : flumeSpot(i, t);
     return { x: P.x, y: P.y, z: P.z, ry: P.ry, roll: 0, pitch: P.pitch || 0 };
@@ -360,17 +402,22 @@ export function seatAt(kind, i, t) {
 // fountain. The rides are spread round it, a short walk apart along winding
 // paths (park-grounds.js), each in its own fenced yard with a gate on the
 // side its path comes from: the carousel and the pirate ship west, by the
-// coaster's avenue; the Ferris wheel and the drop tower out along the east
-// promenade; the bumper cars past the food trucks, south-east.
+// coaster's avenue; the teacups south of the food truck lane; the bumper
+// cars past the food trucks, south-east. Up on the island (park-island.js)
+// the Ferris wheel, the drop tower, the swing ride and the gyro swing have
+// yards and gates of their own, off the island's walks.
 export const PLAZA = { x: 0, z: 4, r: 6 };
 // Where you board each ride (at its yard's gate) and where its attendant stands.
 export const RIDE_GATES = {
   carousel: { x: RIDES.carousel.x + 5.6, z: RIDES.carousel.z, ry: Math.PI / 2, staff: { x: RIDES.carousel.x + 5.2, z: RIDES.carousel.z - 1.9, ry: Math.PI / 2 } },
   viking: { x: RIDES.viking.x + 4.6, z: RIDES.viking.z + 3.8, ry: 0, staff: { x: RIDES.viking.x + 2.6, z: RIDES.viking.z + 3.7, ry: 0 } },
   wheel: { x: RIDES.wheel.x - 2, z: RIDES.wheel.z + 4.2, ry: 0, staff: { x: RIDES.wheel.x - 4, z: RIDES.wheel.z + 3.7, ry: 0 } },
-  drop: { x: RIDES.drop.x - 4.7, z: RIDES.drop.z, ry: -Math.PI / 2, staff: { x: RIDES.drop.x - 4.2, z: RIDES.drop.z + 1.9, ry: -Math.PI / 2 } },
-  // The swing and the teacups: their gates on the north side, off the food truck lane.
-  swing: { x: RIDES.swing.x, z: RIDES.swing.z - 7.7, ry: Math.PI, staff: { x: RIDES.swing.x - 1.9, z: RIDES.swing.z - 7.2, ry: Math.PI } },
+  drop: { x: RIDES.drop.x, z: RIDES.drop.z + 4.7, ry: 0, staff: { x: RIDES.drop.x + 1.9, z: RIDES.drop.z + 4.2, ry: 0 } }, // (south, off the walk to the gyro swing)
+  // The swing ride: its gate on the east side, where the walk comes in
+  // under the airtime hill; the gyro swing: on the south side.
+  swing: { x: RIDES.swing.x + 7.7, z: RIDES.swing.z, ry: Math.PI / 2, staff: { x: RIDES.swing.x + 7.3, z: RIDES.swing.z - 1.9, ry: Math.PI / 2 } },
+  gyro: { x: RIDES.gyro.x, z: RIDES.gyro.z + 5.9, ry: 0, staff: { x: RIDES.gyro.x - 2, z: RIDES.gyro.z + 5.4, ry: 0 } },
+  // The teacups: their gate on the north side, off the food truck lane.
   teacups: { x: RIDES.teacups.x, z: RIDES.teacups.z - 5.9, ry: Math.PI, staff: { x: RIDES.teacups.x - 1.9, z: RIDES.teacups.z - 5.4, ry: Math.PI } },
   // The train: on its station's platform (west of the oval), the flume: on its boarding platform.
   train: { x: 47.1, z: 24, ry: -Math.PI / 2, staff: { x: 47.1, z: 22.1, ry: -Math.PI / 2 } },
@@ -444,6 +491,7 @@ export const RIDE_NAME = {
   swing: { ko: '슈가 회전그네', en: 'Sugar Swing', ja: 'シュガー・スイング', zh: '砂糖旋转秋千', es: 'Sillas Voladoras de Azúcar', id: 'Ayunan Gula', vi: 'Đu Quay Dây Đường', hi: 'शुगर स्विंग', fr: 'Chaises Volantes Sucre', th: 'ชิงช้าหมุนน้ำตาล', ar: 'أرجوحة السكر' },
   teacups: { ko: '찻잔 파티', en: 'Teacup Party', ja: 'ティーカップ・パーティー', zh: '茶杯派对', es: 'Fiesta de las Tazas', id: 'Pesta Cangkir Teh', vi: 'Tiệc Tách Trà', hi: 'टीकप पार्टी', fr: 'Fête des Tasses', th: 'ปาร์ตี้ถ้วยชา', ar: 'حفلة فناجين الشاي' },
   train: { ko: '캔디 기차', en: 'Candy Train', ja: 'キャンディ・トレイン', zh: '糖果小火车', es: 'Tren de Caramelo', id: 'Kereta Permen', vi: 'Tàu Hỏa Kẹo', hi: 'कैंडी ट्रेन', fr: 'Petit Train Bonbon', th: 'รถไฟลูกกวาด', ar: 'قطار الحلوى' },
+  gyro: { ko: '마카롱 자이로스윙', en: 'Macaron Gyro Swing', ja: 'マカロン・ジャイロスイング', zh: '马卡龙大摆锤', es: 'Péndulo Macarón', id: 'Ayunan Giro Makaron', vi: 'Đu Quay Con Lắc Macaron', hi: 'मैकरॉन जाइरो स्विंग', fr: 'Pendule Macaron', th: 'ไจโรสวิงมาการง', ar: 'بندول الماكرون' },
   flume: { ko: '젤리 후룸라이드', en: 'Jelly Flume', ja: 'ゼリー・フルーム', zh: '果冻激流勇进', es: 'Troncos de Gelatina', id: 'Arung Jeram Jeli', vi: 'Thuyền Gỗ Thạch', hi: 'जेली फ्लूम', fr: 'Bûches Gelée', th: 'ล่องแก่งเยลลี่', ar: 'قناة الجيلي المائية' },
   maze: { ko: '거울 미로', en: 'Mirror Maze', ja: 'ミラー迷路', zh: '镜子迷宫', es: 'Laberinto de Espejos', id: 'Labirin Cermin', vi: 'Mê Cung Gương', hi: 'शीशों की भूलभुलैया', fr: 'Labyrinthe des Miroirs', th: 'เขาวงกตกระจก', ar: 'متاهة المرايا' },
   bumper: { ko: '젤리 범퍼카', en: 'Jelly Bumper Cars', ja: 'ゼリー・バンパーカー', zh: '果冻碰碰车', es: 'Autos Chocones de Gominola', id: 'Bom-bom Car Jeli', vi: 'Xe Điện Đụng Thạch', hi: 'जेली बंपर कार', fr: 'Autos Tamponneuses Gelée', th: 'รถบั๊มเยลลี่', ar: 'سيارات الجيلي المتصادمة' },
@@ -472,4 +520,4 @@ export const truckSeller = (f) => ({ x: f.x - 0.3, y: SELLER_Y, z: f.z + 0.15, r
 // The balloon clown on tall stilt shoes, by Main Street (game/balloon-clown.js).
 export const CLOWN = { x: 4.8, z: 14, ry: -Math.PI / 2 };
 
-export const RIDE_EMOJI = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🍭', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', maze: '🪞', bumper: '🚗', coaster: '🎢' };
+export const RIDE_EMOJI = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🍭', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', maze: '🪞', bumper: '🚗', coaster: '🎢' };

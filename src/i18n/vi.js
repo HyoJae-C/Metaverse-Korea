@@ -69,6 +69,7 @@ export const VI = {
   'ride.teacups': 'Đi tách trà xoay',
   'ride.train': 'Đi tàu hỏa công viên',
   'ride.flume': 'Đi thuyền gỗ vượt thác',
+  'ride.gyro': 'Đi đu quay con lắc',
   'ride.go': 'Xuất phát! Bám chắc nhé 🎶',
   'maze.in': 'Mê cung gương: hãy tìm lối ra ở phía bên kia! 🪞',
   'maze.out': 'Bạn đã ra khỏi mê cung sau {n} giây! 🎉',

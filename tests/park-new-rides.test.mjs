@@ -50,6 +50,30 @@ test('the new rides: each has a gate, an attendant, a price, a name in every lan
   assert.equal(Object.keys(RIDE_NAME.maze).length, 11);
 });
 
+test('gyro swing: still and low to get on, swings up past level while the ring turns, held in, back down at the end', () => {
+  const G = RIDES.gyro, k = 'gyro';
+  assert.ok(RIDE_GATES[k].staff && P.RIDE_PRICE[k] > 0 && Object.keys(RIDE_NAME[k]).length === 11 && P.RIDE_EMOJI[k]);
+  for (const s of GUEST_SEATS[k]) assert.ok(s < G.seats);
+  const rest = seatAt(k, 0, at(k, 'load', 2));
+  assert.equal(P.gyroAngle(at(k, 'load', 2)), 0);
+  assert.ok(rest.y > 0.5 && rest.y < 1.3, `on the deck to get on (${rest.y.toFixed(2)})`);
+  assert.ok(canBoard(k, at(k, 'load', 2)) && !rideLocked(k, 0, at(k, 'load', 2)) && rideLocked(k, 0, at(k, 'run', 5)));
+  let hi = 0, top = 0, turns = new Set();
+  for (let s = 0; s < RIDE_CYCLE[k].run; s += 0.05) {
+    hi = Math.max(hi, Math.abs(P.gyroAngle(at(k, 'run', s))));
+    top = Math.max(top, seatAt(k, 0, at(k, 'run', s)).y);
+    turns.add(Math.round(((P.gyroSpin(at(k, 'run', s)) % 6.283) / 6.283) * 8));
+  }
+  assert.ok(hi > Math.PI / 2 && hi <= G.max + 1e-9, `up past level (${hi.toFixed(2)} rad)`);
+  assert.ok(top > G.pivot + 1, `riders up over the axle (${top.toFixed(1)} m)`);
+  assert.ok(turns.size >= 8, 'the ring turns all the way round');
+  assert.ok(P.gyroAngle(at(k, 'run', RIDE_CYCLE[k].run - 0.01)) ** 2 < 1e-4 && seatAt(k, 0, at(k, 'stop', 1)).y < 1.3, 'down and still at the end');
+  // Seats round the ring, facing out, all tipped with the arm.
+  const s3 = seatAt(k, 3, at(k, 'run', 12)), s11 = seatAt(k, 11, at(k, 'run', 12));
+  assert.ok(Math.abs(s3.roll - P.gyroAngle(at(k, 'run', 12))) < 1e-9 && Math.hypot(s3.x - s11.x, s3.y - s11.y, s3.z - s11.z) > G.ring * 1.9, 'across the ring');
+  assert.ok(P.rideSpeed(k, at(k, 'run', 15)).k >= 0 && P.rideSpeed(k, at(k, 'load', 1)).phase === 'board');
+});
+
 test('swing ride: chairs hang low to get on, fly out and up while it spins, all round the crown', () => {
   const S = RIDES.swing, rest = seatAt('swing', 0, at('swing', 'load', 2)), fly = seatAt('swing', 0, at('swing', 'run', 12));
   const r = (p) => Math.hypot(p.x - S.x, p.z - S.z);
@@ -110,7 +134,7 @@ test('log flume: boards at its platform, climbs the lift, plunges down the drop 
 
 test('the new rides stand apart and inside the park; every new gate is a walk from the park gate', () => {
   const bx = roomBox(room), spawn = exitOf(room);
-  for (const k of NEW) {
+  for (const k of NEW.filter((k) => P.UNDER_RIDES.includes(k))) { // (the swing ride is up on the island: coaster.test.mjs)
     const g = RIDE_GATES[k];
     assert.ok(g.x > bx.x0 + 1 && g.x < bx.x1 - 1 && g.z > bx.z0 + 1 && g.z < bx.z1 - 1, `${k} gate inside`);
     assert.ok(!col.blocked(g.x, g.z, R), `${k} gate free`);
@@ -119,8 +143,6 @@ test('the new rides stand apart and inside the park; every new gate is a walk fr
   }
   for (const p of TRAIN_TRACK.pts) assert.ok(p[0] < bx.x1 - 1 && p[2] < bx.z1 - 1, 'the oval is inside');
   for (const p of FLUME_TRACK.pts) assert.ok(p[0] < bx.x1 - 1 && p[2] > bx.z0 + 1, 'the channel is inside');
-  const S = RIDES.swing, T = RIDES.teacups;
-  assert.ok(Math.hypot(S.x - T.x, S.z - T.z) > 12, 'swing ↔ teacups');
 });
 
 test('mirror maze: a way through from the door to the exit, walkable, and you reach it from the gate', () => {
