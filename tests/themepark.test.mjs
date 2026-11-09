@@ -53,17 +53,35 @@ test('Ferris wheel cabins reach the top and come back near the ground', () => {
 });
 
 
-test('the drop tower climbs to the top, holds, then drops fast', async () => {
-  const { dropY, rideUntil } = await import('../src/core/themepark.js');
-  const R = RIDES.drop;
-  assert.equal(dropY(1), R.low);
-  assert.equal(dropY(12), R.top);
-  assert.ok(dropY(13.9) < R.top / 3, 'falls within a second');
-  assert.ok(Math.abs(seatAt('drop', 0, 12).y - R.top) < 1e-9);
-  // Board while it loads: ride this cycle; board mid-climb: wait for the next one.
-  assert.equal(rideUntil('drop', 17), 32);
-  assert.equal(rideUntil('drop', 20), 48);
-  assert.equal(rideUntil('wheel', 5), 37);
+test('the drop tower: load, the harness comes down, a slow climb, a hold, then a fast drop', async () => {
+  const { dropY, RIDE_CYCLE, barDown, canBoard } = await import('../src/core/park-rides.js');
+  const R = RIDES.drop, c = RIDE_CYCLE.drop, len = c.load + c.run + c.stop, t0 = len * 3000, run = t0 + c.load;
+  assert.equal(dropY(t0 + 1), R.low);
+  assert.ok(canBoard('drop', t0 + 2) && !canBoard('drop', run + 1));
+  assert.equal(barDown('drop', t0 + 2), 0);
+  assert.equal(barDown('drop', run + 0.1), 1);
+  assert.ok(dropY(run + 4) > R.low + 3 && dropY(run + 4) < R.top, 'climbing');
+  assert.equal(dropY(run + 9), R.top);
+  assert.ok(dropY(run + 10.95) < R.top / 3, 'falls within a second');
+  assert.ok(Math.abs(seatAt('drop', 0, run + 9).y - R.top - 0.12) < 1e-9);
+  assert.equal(dropY(run + c.run + 0.5), R.low);
+  assert.equal(rideUntil('drop', t0 + 2), run + c.run + 0.6);
+});
+
+test('the wheel: board the gondola at the bottom, ride one turn, held in while up', async () => {
+  const { wheelBottom, wheelDoorOpen, rideLocked, RIDE_SECONDS } = await import('../src/core/park-rides.js');
+  const W = RIDES.wheel;
+  for (let t = 1000; t < 1040; t += 0.7) {
+    const i = wheelBottom(t), s = seatAt('wheel', i * 2, t);
+    if (wheelDoorOpen(i, t)) assert.ok(s.y < 1.6, `boarding low (${s.y.toFixed(2)})`);
+    // One turn later the same gondola is back at the bottom.
+    assert.ok(Math.abs(seatAt('wheel', i * 2, t + RIDE_SECONDS.wheel).y - s.y) < 1e-6);
+  }
+  let hi = 0, locked = 0, n = 0;
+  for (let t = 0; t < RIDE_SECONDS.wheel; t += 0.25, n++) { hi = Math.max(hi, seatAt('wheel', 0, t).y); if (rideLocked('wheel', 0, t)) locked++; }
+  assert.ok(hi > W.hub + W.r - W.drop - 0.5, `the top (${hi})`);
+  assert.ok(locked / n > 0.8, 'held in most of the turn');
+  assert.ok(Math.abs(seatAt('wheel', 0, 3).x - seatAt('wheel', 1, 3).x - -0.76) < 1e-9, 'two side by side');
 });
 
 test('Another Land outside: wheel and drop tower are tall, the coaster loops', async () => {

@@ -7,12 +7,13 @@
 // Loaded on first use (see openArcade in main.js).
 import { Gallery, GALLERY_SHOTS, GALLERY_SECONDS, GALLERY_ROWS, GALLERY_MEDALS, GALLERY_GOLD_PRIZE, TARGETS, galleryMedal, galleryMedalIcon, loadRecords, saveRecord } from '../core/arcade.js';
 import { L, fmt } from './pocha-ui.js';
+import { startGalleryFps } from './gallery-fps.js';
 
 const T = {
   title: { en: 'Balloon shooting gallery', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', fr: 'Stand de tir aux ballons', th: 'ซุ้มยิงลูกโป่ง', ar: 'رماية البالونات' },
   howTo: {
-    en: 'A toy cork gun: tap the targets to pop them. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} corks, {s} seconds. Free to play.',
-    ko: '장난감 코르크 총이에요. 과녁을 탭해서 맞혀요. 🎈 10 · 🦆 20 · ⭐ 50점. 코르크 {n}발, {s}초. 무료예요.',
+    en: 'A cork air rifle, in first person: aim and pop the targets. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} corks, {s} seconds. Free to play.',
+    ko: '1인칭으로 코르크 공기총을 쏴요. 조준해서 과녁을 맞혀요. 🎈 10 · 🦆 20 · ⭐ 50점. 코르크 {n}발, {s}초. 무료예요.',
     ja: 'おもちゃのコルク銃です。的をタップして当てよう。🎈10・🦆20・⭐50点。コルク{n}発、{s}秒。無料。',
     zh: '玩具软木塞枪：点击靶子打中它。🎈10 · 🦆20 · ⭐50分。{n}发，{s}秒。免费。',
     es: 'Una escopeta de corcho de juguete: toca los blancos. 🎈 10 · 🦆 20 · ⭐ 50 puntos. {n} corchos, {s} segundos. Gratis.',
@@ -68,6 +69,20 @@ const T = {
     th: 'คุณมีตุ๊กตาหมีตัวเล็กแล้ว ยิงเก่งมาก!',
     ar: 'لديك الدب الصغير بالفعل. تصويب رائع!',
   },
+  fpsHint: {
+    en: 'Air rifle! Move the mouse to aim, click or Space to fire. On a phone: drag to aim, tap 🔫.',
+    ko: '공기총이에요! 마우스로 조준하고 클릭이나 스페이스로 쏴요. 폰은 드래그로 조준하고 🔫를 눌러요.',
+    ja: 'コルク銃！マウスで狙ってクリックかスペースで発射。スマホはドラッグで狙って🔫。',
+    zh: '气枪！移动鼠标瞄准，点击或空格射击。手机上拖动瞄准，点🔫。',
+    es: '¡Escopeta de aire! Mueve el ratón para apuntar, clic o Espacio para disparar. En el móvil: arrastra y toca 🔫.',
+    id: 'Senapan angin! Gerakkan mouse untuk membidik, klik atau Spasi untuk menembak. Di HP: geser lalu ketuk 🔫.',
+    vi: 'Súng hơi! Di chuột để ngắm, bấm chuột hoặc Space để bắn. Trên điện thoại: kéo để ngắm, chạm 🔫.',
+    hi: 'एयर राइफ़ल! माउस से निशाना लगाएँ, क्लिक या स्पेस से चलाएँ। फ़ोन पर: खींचकर निशाना, 🔫 दबाएँ।',
+    fr: 'Carabine à bouchon ! Bouge la souris pour viser, clic ou Espace pour tirer. Sur mobile : glisse et touche 🔫.',
+    th: 'ปืนอัดลม! ขยับเมาส์เล็ง คลิกหรือกด Space เพื่อยิง บนมือถือ: ลากเพื่อเล็ง แตะ 🔫',
+    ar: 'بندقية هواء! حرّك الفأرة للتصويب، وانقر أو اضغط المسافة للإطلاق. على الهاتف: اسحب للتصويب واضغط 🔫.',
+  },
+  fire: { en: 'Fire', ko: '발사', ja: '発射', zh: '射击', es: 'Disparar', id: 'Tembak', vi: 'Bắn', hi: 'चलाएँ', fr: 'Tirer', th: 'ยิง', ar: 'أطلق' },
   again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
 };
@@ -97,7 +112,7 @@ export class GalleryUI {
   get open() { return !this.root.hidden; }
   show() { this.root.hidden = false; this.renderStart(); }
   close() { this._stop(); this.root.hidden = true; }
-  _stop() { cancelAnimationFrame(this.raf); this.raf = 0; this.game = null; }
+  _stop() { cancelAnimationFrame(this.raf); this.raf = 0; const f = this.fps; this.fps = null; this.game = null; f?.stop(); }
 
   _frame() {
     this._stop();
@@ -126,6 +141,7 @@ export class GalleryUI {
   }
 
   play() {
+    if (this.theme.fps) { this.playFps(); return; }
     this._frame();
     const cv = el('canvas', 'arcade-canvas gallery-canvas');
     cv.width = W; cv.height = H;
@@ -156,6 +172,34 @@ export class GalleryUI {
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
+  }
+
+  // The balloon booth: first person, with the cork air rifle (gallery-fps.js).
+  playFps() {
+    this._frame();
+    const cv = el('canvas');
+    cv.width = W * 2; cv.height = H * 2; // (sharper: the wall fills the screen)
+    cv.getContext('2d').setTransform(2, 0, 0, 2, 0, 0);
+    const g = { cv, status: null, gal: new Gallery(), pops: [], shots: [], light: { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 } };
+    this.game = g;
+    this.fps = startGalleryFps({
+      wall: cv,
+      drawWall: (t) => this.draw(g, t),
+      shoot: (x, y, t) => {
+        g.shots.push({ x, y, t });
+        const hit = g.gal.shoot(x, y, t, W / H);
+        if (hit) { g.pops.push({ ...g.gal.at(hit, t), t, kind: hit.kind }); this.onPop?.(hit.kind); }
+        return hit;
+      },
+      status: (t) => this.tt('hud', { p: g.gal.score, n: g.gal.shots, s: Math.ceil(Math.max(0, GALLERY_SECONDS - t)) }),
+      over: (t) => t > GALLERY_SECONDS || (g.gal.shots <= 0 && t - (g.shots.at(-1)?.t ?? 0) > 0.6),
+      done: (finished) => {
+        if (this.game !== g) return;
+        this.fps = null;
+        if (finished) this.finish(); else { this.game = null; this.renderStart(); }
+      },
+      hint: this.tt('fpsHint'), fireLabel: this.tt('fire'), exitLabel: this.tt('close'),
+    });
   }
 
   finish() {
@@ -239,7 +283,7 @@ function balloonTarget(c, tg, x, y, r) {
     }
 }
 export const BALLOON_THEME = {
-  icon: '🎯', record: 'gallery', popColor: '#e2457a', lantern: false, prize: true,
+  icon: '🎯', record: 'gallery', popColor: '#e2457a', lantern: false, prize: true, fps: true,
   back(c) {
     for (let i = 0; i < 12; i++) { c.fillStyle = i % 2 ? '#fff3d6' : '#ffd0e0'; c.fillRect((i * W) / 12, 0, W / 12 + 1, H); }
     c.fillStyle = '#ff7a8a';
