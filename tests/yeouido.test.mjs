@@ -110,7 +110,7 @@ test('the Information Center stands in front of its building', () => {
   for (const p of park.products) assert.ok(p.kiosk || ids.has(p.stall), p.id);
   const others = new Set(stores.filter((s) => s !== park).flatMap((s) => (s.products || []).map((p) => p.id)));
   for (const p of park.products) assert.ok(!others.has(p.id), `${p.id} is the park's own`);
-  assert.ok(STAMPS.some((s) => s.place.store === 'yeouido-hangang'), 'a stamp in the park');
+  assert.ok(STAMPS.some((s) => s.id === 'yeouido' && Array.isArray(s.place.at) && !s.place.room), 'a stamp in the park, on the street');
 });
 
 test('the blobfish is Yeouido\'s legend, and only bites there', () => {

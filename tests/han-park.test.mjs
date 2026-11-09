@@ -74,12 +74,16 @@ for (const { l, store, map, d } of streetParks) {
     }
     // You can step onto the pier from the bank: the river's edge doesn't block its deck.
     if (b.decks.length) {
-      const world = new CollisionMap((map.blockers || []).map((bk) => ({ p: bk.p })));
-      for (const p of b.decks) world.addDeck(p.map(toWorld));
-      world.add(b.colliders.map((k) => ({ p: k.p.map(toWorld) })));
+      // (the river's blockers: the district's own and the region's water between districts, in world metres)
+      const shift = (p) => p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]);
+      const river = [...(map.blockers || []).map((bk) => ({ p: shift(bk.p) })), ...(region.water || []).flatMap((w) => (w.blockers || [w]).map((bk) => ({ p: bk.p || bk })))];
+      const W = (q) => shift([toWorld(q)])[0];
+      const world = new CollisionMap(river);
+      for (const p of b.decks) world.addDeck(p.map(W));
+      world.add(b.colliders.map((k) => ({ p: k.p.map(W) })));
       const px = l.layout.pier.x;
-      for (let z = 1; z > -l.layout.pier.len + 0.6; z -= 0.5) { const [x, wz] = toWorld([px, z]); assert.ok(!world.blocked(x, wz, R), `on the pier at z ${z}`); }
-      const [ox, oz] = toWorld([px + 6, -3]);
+      for (let z = 1; z > -l.layout.pier.len + 0.6; z -= 0.5) { const [x, wz] = W([px, z]); assert.ok(!world.blocked(x, wz, R), `on the pier at z ${z}`); }
+      const [ox, oz] = W([px + 6, -3]);
       assert.ok(world.blocked(ox, oz, R), 'off the pier is still the river');
     }
   });
