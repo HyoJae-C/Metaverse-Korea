@@ -16,11 +16,18 @@ is quick. That way all of Seoul can fit, and Tokyo can follow the same way.
 - Later: home decorating, seasonal events, brand coupons, a Tokyo world
 
 Seongsu is hand-made too (`scripts/build-seongsu.mjs`): a grid of shopping
-streets loosely shaped like the real neighbourhood (Achasan-ro under Line 2,
-Seongsui-ro, Yeonmujang-gil, the Red Brick Lane), with Seoul Forest to the west
-and the Han River to the south. Each street side that faces a shopping street is
-lined with small shop buildings; run `node scripts/build-seongsu.mjs --place`
-after adding a shop to `PLACE_NEW` to give it a free lot.
+streets loosely shaped like the real neighbourhood, at 1/4 of the real size
+like the rest of the map. Seongsu Station (the Achasan-ro / Seongsui-ro
+crossing, under Line 2) is the map's origin; Yeonmujang-gil is 80 m south of
+it, Ttukseom-ro runs south-east along the Han River, and Seoul Forest lies
+north-west of the shops between Achasan-ro (by Ttukseom) and the river, east
+of Seoulsup-gil. Each street side that faces a shopping street is lined with
+small shop buildings; run `node scripts/build-seongsu.mjs --place` after
+adding a shop to `PLACE_NEW` to give it a free lot. Seoul Forest keeps its own
+layout (it was already about 1/4 of the real park): it is drawn in its old
+frame and moved as one piece by `FOREST_SHIFT`. (Seongsu was drawn full size
+until it was redone at 1/4: 595 x 496 m with the shop streets running 440 m
+from Achasan-ro to Ttukseom-ro.)
 
 ## The Seoul grid: one fixed scale
 
@@ -47,10 +54,10 @@ neighbours' room and pushes them off their spots.
   Seongsu's. A big area can be split so each part sits on its own real spot:
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
   Songpa by Olympic-ro.
-- **Seongsu** is the exception: the first district, full size and larger
-  than its 1/4 share (Gyeongbokgung's palace is also drawn larger, see its
-  anchor's `why`), so the river and gu edges just south of it are pushed
-  south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).
+- **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
+  palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
+  stands at close to its real size, so Euljiro's streets round it are wider
+  apart; both are landmark buildings, which keep their size.
 - **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
   everything placed in world metres inside it: stores, zones, bike stations,
   homes, screens, subway exits, busking zones, stamps, and the ends of link

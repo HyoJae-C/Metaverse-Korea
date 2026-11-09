@@ -37,50 +37,72 @@ const rand = rng(20261104);
 const pick = (lo, hi) => lo + rand() * (hi - lo);
 const r1 = (v) => Math.round(v * 10) / 10;
 
-// Seoul Forest runs out past the old west edge (-260) to WEST: half as wide again.
-export const WEST = -335;
-export const BOUNDS = [WEST, -110, 260, 410];
+// Seongsu at 1/4 of the real size, like the rest of the map (docs/WORLD.md):
+// Seongsu Station (the Achasan-ro / Seongsui-ro crossing) is at (0, 0), its
+// real place on the Seoul grid. As in Seoul: Yeonmujang-gil a short walk
+// south of the station, Ttukseom-ro running south-east along the Han River,
+// and Seoul Forest west of Seoulsup-gil, south of Achasan-ro by Ttukseom.
+export const WEST = -465;
+export const BOUNDS = [WEST, -100, 260, 410];
 const name = (ko, en, ja, zh) => ({ ko, en, ...(ja ? { ja } : {}), ...(zh ? { zh } : {}) });
 
 // ── Streets ───────────────────────────────────────────────────────────────
-// h: runs east-west at z; v: runs north-south at x.
+// h: runs east-west at z; v: runs north-south at x. `bend` points come
+// before the straight part (Achasan-ro rises north-west to Ttukseom Station,
+// Ttukseom-ro runs north-west along the river to Seoul Forest).
+const TTUK_W = [-240, 134], TTUK_E = [10, 352]; // where Ttukseom-ro's slanted part starts and ends
 const STREETS = [
-  { id: 'achasan', h: -86, from: WEST, to: 260, k: 'secondary', w: 16, n: name('아차산로', 'Achasan-ro', '峨嵯山路', '峨嵯山路') },
-  { id: 'cafe', h: -6, from: -110, to: 130, k: 'residential', w: 7, n: name('성수 카페거리', 'Café Street', 'カフェ通り', '咖啡街') },
-  { id: 'seoulsup', h: 79, from: WEST, to: 260, k: 'tertiary', w: 10, n: name('서울숲길', 'Seoulsup-gil', 'ソウルの森通り', '首尔林路') },
-  { id: 'yeonmujang', h: 170, from: -110, to: 200, k: 'residential', w: 9, n: name('연무장길', 'Yeonmujang-gil', 'ヨンムジャンギル', '练武场路') },
-  { id: 'south', h: 262, from: -110, to: 200, k: 'residential', w: 7 },
-  // Ttukseom-ro bends north-west with the Han River (RIVER_EDGE below) and
-  // ends at Seongsuil-ro: west of there Seoul Forest runs down to the river.
-  { id: 'ttukseom', h: 352, from: -8, to: 260, bend: [[-110, 288], [-65, 315], [-35, 334]], k: 'tertiary', w: 12, n: name('뚝섬로', 'Ttukseom-ro', 'トゥクソム路', '纛岛路') },
-  { id: 'west', v: -185, from: -86, to: 79, k: 'residential', w: 8 },
-  { id: 'seongsuil', v: -110, from: -86, to: 288, k: 'tertiary', w: 10, n: name('성수일로', 'Seongsuil-ro', '聖水一路', '圣水一路') },
-  { id: 'brick', v: -25, from: -6, to: 262, k: 'walk', w: 5, n: name('붉은 벽돌 골목', 'Red Brick Lane', '赤レンガ路地', '红砖小巷') },
-  { id: 'seongsui', v: 60, from: -86, to: 352, k: 'secondary', w: 14, n: name('성수이로', 'Seongsui-ro', '聖水二路', '圣水二路') },
-  { id: 'east1', v: 130, from: -86, to: 262, k: 'residential', w: 7 },
-  { id: 'east2', v: 200, from: -86, to: 352, k: 'residential', w: 8 },
+  { id: 'achasan', h: 0, from: -160, to: 260, bend: [[WEST, -78], [-240, -78]], k: 'secondary', w: 16, n: name('아차산로', 'Achasan-ro', '峨嵯山路', '峨嵯山路') },
+  { id: 'cafe', h: 34, from: -110, to: 195, k: 'residential', w: 7, n: name('성수 카페거리', 'Café Street', 'カフェ通り', '咖啡街') },
+  { id: 'yeonmujang', h: 80, from: -110, to: 260, k: 'residential', w: 9, n: name('연무장길', 'Yeonmujang-gil', 'ヨンムジャンギル', '练武场路') },
+  { id: 'south', h: 115, from: -110, to: 260, k: 'residential', w: 7 },
+  { id: 'mid', h: 190, from: -110, to: 195, k: 'residential', w: 7 },
+  { id: 'lane', h: 270, from: 65, to: 195, k: 'residential', w: 7 },
+  { id: 'ttukseom', h: TTUK_E[1], from: TTUK_E[0], to: 260, bend: [TTUK_W], k: 'tertiary', w: 12, n: name('뚝섬로', 'Ttukseom-ro', 'トゥクソム路', '纛岛路') },
+  { id: 'seoulsup', v: -240, from: -78, to: TTUK_W[1], k: 'tertiary', w: 10, n: name('서울숲길', 'Seoulsup-gil', 'ソウルの森通り', '首尔林路') },
+  { id: 'west', v: -175, from: -15, to: 176, k: 'residential', w: 8 },
+  { id: 'seongsuil', v: -110, from: 0, to: 217, k: 'tertiary', w: 10, n: name('성수일로', 'Seongsuil-ro', '聖水一路', '圣水一路') },
+  { id: 'brick', v: -60, from: 34, to: 190, k: 'walk', w: 5, n: name('붉은 벽돌 골목', 'Red Brick Lane', '赤レンガ路地', '红砖小巷') },
+  { id: 'seongsui', v: 0, from: 0, to: 343, k: 'secondary', w: 14, n: name('성수이로', 'Seongsui-ro', '聖水二路', '圣水二路') },
+  { id: 'east1', v: 65, from: 0, to: 352, k: 'residential', w: 7 },
+  { id: 'east2', v: 130, from: 0, to: 352, k: 'residential', w: 8 },
+  { id: 'east3', v: 195, from: 0, to: 352, k: 'residential', w: 7 },
 ];
 const S = Object.fromEntries(STREETS.map((s) => [s.id, s]));
 const SIDEWALK = 2.5;
-const CENTER = [40, 90]; // the middle of the shop streets, between the square and Yeonmujang-gil
+const CENTER = [0, 60]; // the middle of the shop streets, between the station and Yeonmujang-gil
 
-// The Han River's north bank. On the Seoul map (seoul.json, scripts/build-seoul.mjs)
-// the river turns north-west in front of Seoul Forest, so here it does too:
-// RIVER_EDGE is a few metres inside the Seoul map's water, and east of x 10
-// it is the old straight bank (z 386). Along it, from the water up: a strip
-// of riverside grass with the Han River path, then Ttukseom-ro (east of
-// Seongsuil-ro) or Seoul Forest (west of it).
-const RIVER_EDGE = [[WEST, 173], [-260, 218], [-200, 254.5], [-155, 281.5], [-110, 308.5], [-65, 335.5], [-35, 354], [-5, 374.5], [10, 386], [260, 386]];
-const RIVER_PATH = [[WEST, 166], [-260, 211], [-200, 247.5], [-155, 274.5], [-110, 301.5], [-65, 328.5], [-35, 347], [-5, 366], [10, 372], [260, 372]];
-const FOREST_EDGE = [[WEST, 159], [-260, 204], [-200, 240.5], [-155, 267.5], [-115, 291.5]]; // Seoul Forest's south edge, west to east
+// Ttukseom-ro's centre line at x, and the lowest z a building north of it may reach.
+const ttukZ = (x) => {
+  if (x <= TTUK_W[0]) return TTUK_W[1];
+  if (x >= TTUK_E[0]) return TTUK_E[1];
+  return TTUK_W[1] + ((TTUK_E[1] - TTUK_W[1]) * (x - TTUK_W[0])) / (TTUK_E[0] - TTUK_W[0]);
+};
+const TTUK_EDGE = (x) => ttukZ(x) - S.ttukseom.w / 2 - SIDEWALK;
 
-// Paths through Seoul Forest and along the river.
+// ── Seoul Forest ─────────────────────────────────────────────────────────
+// The park keeps its size (about 1/4 of the real one already) and all that
+// is in it; it is drawn below in its own old frame and moved as one piece by
+// FOREST_SHIFT onto its real place: north-west of the shop streets, with its
+// north edge on Achasan-ro by Ttukseom Station and its east edge on
+// Seoulsup-gil (Seoul Forest Station on the corner).
+export const FOREST_SHIFT = [-130, -154];
+const OLD_WEST = -335;
+const shift = ([x, z]) => [r1(x + FOREST_SHIFT[0]), r1(z + FOREST_SHIFT[1])];
+const OLD_FOREST_EDGE = [[OLD_WEST, 159], [-260, 204], [-200, 240.5], [-155, 267.5], [-115, 291.5]]; // the forest's south edge, west to east (old frame)
+const OLD_RIVER_EDGE = [[OLD_WEST, 173], [-260, 218], [-200, 254.5], [-155, 281.5], [-110, 308.5]];
+const FOREST_EDGE = OLD_FOREST_EDGE.map(shift);
+
+// The Han River's north bank: along Seoul Forest, then south-east with
+// Ttukseom-ro, then straight past Ttukseom Han River Park. Along it, from the
+// water up: a strip of riverside grass with the Han River path, then
+// Ttukseom-ro (or Seoul Forest).
+const RIVER_EDGE = [...OLD_RIVER_EDGE.map(shift), [-5, 378], [10, 386], [260, 386]];
+const RIVER_PATH = [...OLD_RIVER_EDGE.map(([x, z]) => shift([x, z - 7])), [-5, 371], [10, 372], [260, 372]];
+
+// Paths through Seoul Forest (old frame; moved with the forest below).
 const WALKS = [
-  { w: 4, p: RIVER_PATH, n: name('한강 산책로', 'Han River Path', '漢江遊歩道', '汉江步道') },
-  { w: 4, p: [[-110, 294], [-110, 301.5]] },
-  { w: 4, p: [[60, 352], [60, 372]] },
-  { w: 4, p: [[200, 352], [200, 372]] },
-  // From Seongsuil-ro by Seoulsup-gil, round the greenhouse and the rose garden, to Seongsuil-ro's south end.
+  // From Seongsuil-ro (now Seoulsup-gil) by the forest's corner, round the greenhouse and the rose garden, to the south end.
   { w: 4, p: [[-115, 125], [-165, 150], [-182, 200], [-180, 245], [-116, 284]], n: name('서울숲 산책길', 'Seoul Forest Trail', 'ソウルの森散策路', '首尔林步道') },
   { w: 3, p: [[-185, 84], [-165, 150]] },
   { w: 3, p: [[-198, 200], [-182, 200]] }, // Metasequoia Avenue to the trail
@@ -90,50 +112,62 @@ const WALKS = [
 // Each block lies between four streets (or the map edge) and says what each
 // side holds: 'shop' (small shop buildings), 'plain' (a few long buildings)
 // or 'open' (nothing). `area` paints the ground (plaza, park, grass).
+// `depth` is the depth of its shop rows (12 m unless the block is shallow).
+// Blocks south of Ttukseom-ro's slanted part are cut back to the road.
 const E = (v) => ({ edge: v }); // map edge: no street
 const B = [
   // North of Achasan-ro: offices along the Line 2 viaduct, and right across
   // from Seongsu Station a 60 m screen tower (region.json "screens").
-  { x: [E(-260), 25], z: [E(-110), 'achasan'], sides: { s: 'plain' }, tall: true },
-  { x: [25, 95], z: [E(-110), 'achasan'], sides: { s: 'plain' }, h: 60 },
-  { x: [95, E(260)], z: [E(-110), 'achasan'], sides: { s: 'plain' }, tall: true },
-  // West of Seongsuil-ro, between Achasan-ro and Seoulsup-gil: a pocket park and a big building.
-  { x: [E(WEST), 'west'], z: ['achasan', 'seoulsup'], sides: {}, area: 'park' },
-  { x: ['west', 'seongsuil'], z: ['achasan', 'seoulsup'], sides: { n: 'plain' } },
-  // Station blocks along Achasan-ro.
-  { x: ['seongsuil', 'brick'], z: ['achasan', 'cafe'], sides: { n: 'plain', s: 'shop', w: 'plain', e: 'plain' } },
-  { x: ['brick', 'seongsui'], z: ['achasan', 'cafe'], sides: { n: 'shop', e: 'shop', s: 'shop', w: 'plain' }, cut: { ne: 16 } },
-  { x: ['seongsui', 'east1'], z: ['achasan', 'cafe'], sides: { n: 'shop', w: 'shop', s: 'plain', e: 'plain' }, cut: { nw: 16 } },
-  { x: ['east1', 'east2'], z: ['achasan', 'seoulsup'], sides: { n: 'plain', w: 'plain', s: 'plain', e: 'plain' } },
-  { x: ['east2', E(260)], z: ['achasan', 'seoulsup'], sides: {}, area: 'park' },
-  // Café Street to Seoulsup-gil.
-  { x: ['seongsuil', 'brick'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', e: 'shop', s: 'plain', w: 'plain' } },
-  // Seongsu Square: the shops around it are added after the blocks (see
-  // "Seongsu Square ring" below), so they face the square.
-  { x: ['brick', 'seongsui'], z: ['cafe', 'seoulsup'], sides: { n: 'shop' }, area: 'plaza', square: true },
-  { x: ['seongsui', 'east1'], z: ['cafe', 'seoulsup'], sides: { n: 'shop', w: 'shop', s: 'plain', e: 'plain' } },
-  // Seoulsup-gil to Yeonmujang-gil.
-  { x: ['seongsuil', 'brick'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', e: 'shop', s: 'shop', w: 'plain' } },
-  { x: ['brick', 'seongsui'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', e: 'plain', s: 'shop', w: 'shop' } },
-  { x: ['seongsui', 'east1'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', w: 'shop', s: 'shop', e: 'plain' } },
-  { x: ['east1', 'east2'], z: ['seoulsup', 'yeonmujang'], sides: { n: 'plain', s: 'shop', w: 'plain', e: 'plain' } },
-  { x: ['east2', E(260)], z: ['seoulsup', 'ttukseom'], sides: { w: 'plain', n: 'plain', s: 'plain' }, tall: true },
-  // Yeonmujang-gil to the south lane.
-  { x: ['seongsuil', 'brick'], z: ['yeonmujang', 'south'], sides: { n: 'shop', e: 'shop', s: 'plain', w: 'plain' } },
-  { x: ['brick', 'seongsui'], z: ['yeonmujang', 'south'], sides: { n: 'shop', e: 'plain', w: 'shop', s: 'plain' } },
-  { x: ['seongsui', 'east1'], z: ['yeonmujang', 'south'], sides: { n: 'shop', w: 'shop' }, area: 'plaza', popup: true },
-  { x: ['east1', 'east2'], z: ['yeonmujang', 'south'], sides: { n: 'shop', w: 'plain', s: 'plain', e: 'plain' } },
-  // South lane to Ttukseom-ro.
-  { x: ['seongsuil', 'seongsui'], z: ['south', 'ttukseom'], sides: { n: 'plain' }, area: 'grass' },
-  { x: ['seongsui', 'east2'], z: ['south', 'ttukseom'], sides: { n: 'shop', w: 'plain', s: 'plain', e: 'plain' } },
+  { x: [E(-150), -35], z: [E(-40), 'achasan'], sides: { s: 'plain' }, tall: true },
+  { x: [-35, 35], z: [E(-40), 'achasan'], sides: { s: 'plain' }, h: 60 },
+  { x: [35, E(260)], z: [E(-40), 'achasan'], sides: { s: 'plain' }, tall: true },
+  // West of Seongsuil-ro: the clinics, and the bike shop by Seoul Forest.
+  { x: ['west', 'seongsuil'], z: ['achasan', 'yeonmujang'], sides: { e: 'shop', w: 'plain', n: 'plain' } },
+  { x: ['west', 'seongsuil'], z: ['yeonmujang', 'ttukseom'], sides: { e: 'shop', w: 'shop', n: 'plain' } },
+  // Station blocks along Achasan-ro (two shallow rows, back to back).
+  { x: ['seongsuil', 'brick'], z: ['achasan', 'cafe'], sides: { n: 'shop', s: 'shop' }, depth: 8.3 },
+  { x: ['brick', 'seongsui'], z: ['achasan', 'cafe'], sides: { n: 'shop', s: 'shop' }, depth: 8.3, cut: { ne: 16 } },
+  { x: ['seongsui', 'east1'], z: ['achasan', 'cafe'], sides: { n: 'shop', s: 'shop' }, depth: 8.3, cut: { nw: 16 } },
+  { x: ['east1', 'east2'], z: ['achasan', 'cafe'], sides: { n: 'shop', s: 'shop' }, depth: 8.3 },
+  { x: ['east2', 'east3'], z: ['achasan', 'cafe'], sides: { n: 'plain' } },
+  { x: ['east3', E(260)], z: ['achasan', 'yeonmujang'], sides: {}, area: 'park' },
+  // Café Street to Yeonmujang-gil, with Seongsu Square.
+  { x: ['seongsuil', 'brick'], z: ['cafe', 'yeonmujang'], sides: { n: 'shop', e: 'shop', s: 'shop', w: 'plain' } },
+  { x: ['brick', 'seongsui'], z: ['cafe', 'yeonmujang'], sides: { n: 'shop' }, depth: 8, area: 'plaza', square: true },
+  { x: ['seongsui', 'east1'], z: ['cafe', 'yeonmujang'], sides: { n: 'shop', w: 'shop', s: 'shop' } },
+  { x: ['east1', 'east2'], z: ['cafe', 'yeonmujang'], sides: { n: 'shop', s: 'shop', e: 'plain' } },
+  { x: ['east2', 'east3'], z: ['cafe', 'yeonmujang'], sides: { n: 'plain', s: 'shop', w: 'plain' } },
+  // Yeonmujang-gil to the south lane (two rows, back to back), with the pop-up square.
+  { x: ['seongsuil', 'brick'], z: ['yeonmujang', 'south'], sides: { n: 'shop', s: 'shop' }, depth: 10.6 },
+  { x: ['brick', 'seongsui'], z: ['yeonmujang', 'south'], sides: { n: 'shop', s: 'shop' }, depth: 10.6 },
+  { x: ['seongsui', 'east1'], z: ['yeonmujang', 'south'], sides: { n: 'shop' }, depth: 10.6, area: 'plaza', popup: true },
+  { x: ['east1', 'east2'], z: ['yeonmujang', 'south'], sides: { n: 'shop', s: 'shop' }, depth: 10.6 },
+  { x: ['east2', 'east3'], z: ['yeonmujang', 'south'], sides: { n: 'shop', s: 'shop' }, depth: 10.6 },
+  { x: ['east3', E(260)], z: ['yeonmujang', 'south'], sides: { n: 'plain' } },
+  // South lane to the middle lane.
+  { x: ['seongsuil', 'brick'], z: ['south', 'mid'], sides: { n: 'shop', e: 'shop', w: 'plain', s: 'plain' } },
+  { x: ['brick', 'seongsui'], z: ['south', 'mid'], sides: { n: 'shop', w: 'shop', e: 'plain', s: 'plain' } },
+  { x: ['seongsui', 'east1'], z: ['south', 'mid'], sides: { n: 'shop', s: 'shop', w: 'plain', e: 'plain' } },
+  { x: ['east1', 'east2'], z: ['south', 'mid'], sides: { n: 'shop', s: 'shop', e: 'plain', w: 'plain' } },
+  { x: ['east2', 'east3'], z: ['south', 'mid'], sides: { n: 'shop', w: 'plain', e: 'plain', s: 'plain' } },
+  { x: ['east3', E(260)], z: ['south', 'ttukseom'], sides: { w: 'plain', n: 'plain', s: 'plain' }, tall: true },
+  // The middle lane down to Ttukseom-ro: quieter streets by the river.
+  { x: ['seongsuil', 'seongsui'], z: ['mid', 'ttukseom'], sides: { n: 'plain' }, area: 'grass' },
+  { x: ['seongsui', 'east1'], z: ['mid', 'ttukseom'], sides: { n: 'shop', w: 'plain' } },
+  { x: ['east1', 'east2'], z: ['mid', 'lane'], sides: { n: 'shop', w: 'plain', e: 'plain', s: 'plain' } },
+  { x: ['east2', 'east3'], z: ['mid', 'lane'], sides: { n: 'plain', s: 'plain' } },
+  { x: ['east1', 'east2'], z: ['lane', 'ttukseom'], sides: { n: 'plain', s: 'plain' } },
+  { x: ['east2', 'east3'], z: ['lane', 'ttukseom'], sides: { n: 'plain', s: 'plain' } },
 ];
 
 // Parks and the river (not blocks: no buildings).
+const OLD_FOREST = [[OLD_WEST, 84], [-115, 84], ...OLD_FOREST_EDGE.slice().reverse()];
 const AREAS = [
-  { k: 'park', trees: true, p: [[WEST, 84], [-115, 84], ...FOREST_EDGE.slice().reverse()] }, // Seoul Forest (wooded), down to the riverside grass
-  { k: 'park', trees: true, p: [[WEST, -110], [-260, -110], [-260, -94], [WEST, -94]] }, // a strip of wood west of the offices
+  { k: 'park', trees: true, p: OLD_FOREST.map(shift) }, // Seoul Forest (wooded), down to the riverside grass
+  // Between Seoulsup-gil, Achasan-ro and the west lane: a small wooded corner by Seoul Forest Station.
+  { k: 'park', trees: true, p: [[-232.5, -63], [-187, -18], [-179.5, -9], [-179.5, 160], [-232.5, 140]] },
   // Riverside grass (Han River park): under the forest, then under Ttukseom-ro.
-  { k: 'grass', p: [...FOREST_EDGE, [-110, 294], [-65, 321], [-35, 340], [-8, 358], [260, 358], ...RIVER_EDGE.slice().reverse()] },
+  { k: 'grass', p: [...FOREST_EDGE, [TTUK_W[0], TTUK_W[1] + 8.5], [TTUK_E[0] - 10, TTUK_E[1] + 6], [TTUK_E[0], TTUK_E[1] + 6], [260, TTUK_E[1] + 6], ...RIVER_EDGE.slice().reverse()] },
   { k: 'water', p: [...RIVER_EDGE, [260, 410], [WEST, 410]] }, // Han River
 ];
 // Ttukseom Han River Park, laid straight on the street (game/han-parks.js;
@@ -188,11 +222,11 @@ const PARK_LAWN = [-30, 22]; // the drone show's lawn (x): picnic mats and frisb
 // (the lawn in the street's metres: no trees, the picnic lawn)
 const lawnArea = { k: 'grass', lawn: true, p: [[PARK_X - PARK_LAWN[1], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 11.4], [PARK_X - PARK_LAWN[0], PARK_BANK - 1.2], [PARK_X - PARK_LAWN[1], PARK_BANK - 1.2]] };
 AREAS.push(lawnArea);
-// A building placed by hand: the Seoul Forest Culture Center.
+// A building placed by hand: the Seoul Forest Culture Center (old frame).
 const EXTRA = [
   { h: 6, p: [[-232, 120], [-216, 120], [-216, 132], [-232, 132]], tag: 'forest' }, // Seoul Forest Culture Center (stores.json seoul-forest-culture; door on the north side)
 ];
-const BLOCKERS = [{ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), [260, 410], [WEST, 410]] }]; // the river
+const BLOCKERS = [];
 
 // ── Seoul Forest decor ──────────────────────────────────────────────────
 // A round rose garden off the trail, benches along the paths, and ice cream
@@ -200,7 +234,7 @@ const BLOCKERS = [{ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), [260, 410], [
 // the same size, each at its own spot in the park.
 // Landmarks are drawn by core/landmarks.js + core/park-art.js; "clear" keeps
 // the park's trees away; the sculptures and benches also get blockers.
-const FOREST_TRAIL = WALKS[4].p;
+const FOREST_TRAIL = WALKS[0].p;
 const LANDMARKS = [];
 const r2 = (v) => Math.round(v * 100) / 100;
 const faceTo = (x, z, tx, tz) => r2(Math.atan2(tx - x, tz - z));
@@ -228,8 +262,6 @@ function onTrail(i, t, side) {
 }
 // Rose garden: beds in two rings, cross paths, arches, a sculpture in the middle.
 const GARDEN = { x: -158, z: 238, r: 14 };
-// The park itself (game/han-parks.js): at the bank's edge, turned half round.
-LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
 LANDMARKS.push({ type: 'rosegarden', x: GARDEN.x, z: GARDEN.z, r: GARDEN.r, clear: GARDEN.r + 3, label: name('장미정원', 'Rose Garden', 'バラ園', '玫瑰园') });
 WALKS.push({ w: 3, p: [[-179, GARDEN.z], [GARDEN.x - GARDEN.r - 0.5, GARDEN.z]] }); // from the trail to the garden's west arch
 sculpture('strawberry', GARDEN.x, GARDEN.z, faceTo(GARDEN.x, GARDEN.z, GARDEN.x - 20, GARDEN.z)); // the garden's middle, facing its path in
@@ -370,6 +402,26 @@ for (const fg of FLOWER_GARDENS) {
   bench(bx, bz, faceTo(bx, bz, fg.x, fg.z));
 }
 
+// ── Move the forest onto its place ──────────────────────────────────────
+// Everything above was drawn in the forest's old frame: move it as one piece.
+for (const w of WALKS) w.p = w.p.map(shift);
+for (const x of EXTRA) x.p = x.p.map(shift);
+for (const bl of BLOCKERS) bl.p = bl.p.map(shift);
+for (const l of LANDMARKS) {
+  if (Number.isFinite(l.x)) [l.x, l.z] = shift([l.x, l.z]);
+  if (l.trees) l.trees = l.trees.map(shift);
+}
+// The park itself (game/han-parks.js): at the bank's edge, turned half round (not part of the forest).
+LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +Math.PI.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
+BLOCKERS.unshift({ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), [260, 410], [WEST, 410]] }); // the river
+// The Han River path, and paths from Ttukseom-ro down to it.
+WALKS.unshift(
+  { w: 4, p: RIVER_PATH, n: name('한강 산책로', 'Han River Path', '漢江遊歩道', '汉江步道') },
+  { w: 4, p: [[TTUK_W[0], TTUK_W[1] + 9], [TTUK_W[0], RIVER_PATH[4][1]]] },
+  { w: 4, p: [[60, 358], [60, 372]] }, // (Ttukseom Han River Park's two ways down)
+  { w: 4, p: [[200, 358], [200, 372]] },
+);
+
 // ── Geometry helpers ─────────────────────────────────────────────────────
 function line(ref, axis) {
   if (ref && typeof ref === 'object') return { at: ref.edge, inset: 1 };
@@ -382,7 +434,7 @@ function line(ref, axis) {
 }
 const rect = (x0, z0, x1, z1) => [[r1(x0), r1(z0)], [r1(x1), r1(z0)], [r1(x1), r1(z1)], [r1(x0), r1(z1)]];
 
-const DEPTH = 12, GAP = 0.8;
+const DEPTH_SHOP = 12, GAP = 0.8;
 const buildings = [], lots = [];
 
 function shopRow(a0, a1, along, place) {
@@ -407,6 +459,7 @@ function fillBlock(b) {
   const L = line(b.x[0], 'x'), R = line(b.x[1], 'x'), T = line(b.z[0], 'z'), Bo = line(b.z[1], 'z');
   const x0 = L.at + L.inset, x1 = R.at - R.inset, z0 = T.at + T.inset, z1 = Bo.at - Bo.inset;
   const sides = b.sides || {};
+  const DEPTH = b.depth || DEPTH_SHOP;
   const cut = b.cut || {};
   // Taller towards the middle of the neighbourhood (CENTER): a skyline that
   // rises to the square and Seongsu-ro and falls off to the edges. One pick
@@ -455,16 +508,12 @@ function fillBlock(b) {
 // ── Build ────────────────────────────────────────────────────────────────
 for (const b of B) fillBlock(b);
 
-// ── Seongsu Square ring ──────────────────────────────────────────────────
-// The square used to be an open plaza behind a tall blank wall, so arriving
-// there felt empty. Now shops stand all around it: a row behind the Café
-// Street shops facing the square, and on the west and east sides two rows
-// back to back (one facing the square, one facing the Red Brick Lane or
-// Seongsui-ro), with a passage in the middle of each side. Across
-// Seoulsup-gil, the blocks facing the square get a row of shops too.
-// These lots come after all the block lots and use their own random numbers,
-// so the lots elsewhere (and the ad spot numbers "L-07") stay the same.
-const SQUARE_LOT = 10.2; // narrow lots: more shop fronts around the square
+// ── Seongsu Square ───────────────────────────────────────────────────────
+// Behind the Café Street row, a row of shops facing south onto the square,
+// so arriving there it is already lined with shop fronts; the square opens
+// onto Yeonmujang-gil. These lots come after the block lots and use their
+// own random numbers.
+const SQUARE_LOT = 10.2; // narrow lots: more shop fronts round the square
 const sqRand = rng(20261105);
 const extraLots = [];
 function addLot(poly, face, h) {
@@ -482,88 +531,43 @@ function evenRow(a0, a1, place) {
 }
 const sqH = () => r1(14 + sqRand() * 8);
 {
-  const [x0, z0, x1, z1] = B.find((b) => b.square).box;
-  const IN = 10, OUT = 8; // depth of the rows facing the square / the street
-  // Behind the Café Street row, between the side rows: shops facing south
-  // onto the square.
-  const nz0 = z0 + DEPTH + GAP, nz1 = nz0 + IN;
-  const wx = x0 + OUT + GAP + IN + GAP, ex = x1 - OUT - GAP - IN - GAP;
-  // A walkway in the middle runs from the square through both rows to Café
-  // Street, so the square opens to the north instead of ending in a wall.
-  const NPASS = 7, nmid = (wx + ex) / 2, pa = r1(nmid - NPASS / 2), pb = r1(nmid + NPASS / 2);
-  evenRow(wx, pa, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
-  evenRow(pb, ex, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
-  sqRand(); // the lot the walkway replaced: keeps the other lots' heights
-  for (const lot of lots) {
-    const xs = lot.b.p.map((q) => q[0]), zs = lot.b.p.map((q) => q[1]);
-    const bx0 = Math.min(...xs), bx1 = Math.max(...xs);
-    if (Math.min(...zs) !== r1(z0) || Math.max(...zs) > nz0 || bx1 <= pa || bx0 >= pb) continue;
-    const cut = (bx0 + bx1) / 2 < nmid ? (x) => Math.min(x, pa) : (x) => Math.max(x, pb);
-    for (const q of lot.b.p) q[0] = cut(q[0]);
-    lot.face.x = (Math.min(...lot.b.p.map((q) => q[0])) + Math.max(...lot.b.p.map((q) => q[0]))) / 2;
-  }
-  WALKS.push({ w: NPASS, p: [[r1(nmid), -2.5], [r1(nmid), nz1]] });
-  // West and east sides, from the Café Street row down to Seoulsup-gil, with
-  // a passage in the middle.
-  // The street rows start right behind the Café Street row; the rows facing
-  // the square start below the north row (the corners between are plain).
-  const PASS = 5, mid = (nz1 + z1) / 2, iz0 = nz1 + GAP;
-  for (const [a, b, inner] of [[nz0, mid - PASS / 2, false], [iz0, mid - PASS / 2, true], [mid + PASS / 2, z1, false], [mid + PASS / 2, z1, true]]) {
-    if (inner) {
-      evenRow(a, b, (s, e) => addLot(rect(x0 + OUT + GAP, s, x0 + OUT + GAP + IN, e), { x: x0 + OUT + GAP + IN, z: (s + e) / 2, nx: 1, nz: 0 }, sqH())); // square
-      evenRow(a, b, (s, e) => addLot(rect(x1 - OUT - GAP - IN, s, x1 - OUT - GAP, e), { x: x1 - OUT - GAP - IN, z: (s + e) / 2, nx: -1, nz: 0 }, sqH())); // square
-    } else {
-      evenRow(a, b, (s, e) => addLot(rect(x0, s, x0 + OUT, e), { x: x0, z: (s + e) / 2, nx: -1, nz: 0 }, sqH())); // Red Brick Lane
-      evenRow(a, b, (s, e) => addLot(rect(x1 - OUT, s, x1, e), { x: x1, z: (s + e) / 2, nx: 1, nz: 0 }, sqH())); // Seongsui-ro
-    }
-  }
-  buildings.push({ h: 16, p: rect(x0 + OUT + GAP, nz0, x0 + OUT + GAP + IN, nz1) }, { h: 16, p: rect(x1 - OUT - GAP - IN, nz0, x1 - OUT - GAP, nz1) });
-}
-// Across Seoulsup-gil: the plain buildings facing the square give their
-// north side to a row of shops.
-for (const key of [['brick', 'seongsui'], ['seongsui', 'east1']]) {
-  const b = B.find((q) => q.x[0] === key[0] && q.x[1] === key[1] && q.z[0] === 'seoulsup');
-  const [bx0, bz0, bx1] = b.box;
-  const plain = buildings.filter((q) => !q.f && q.p.some(([, z]) => z === r1(bz0)) && q.p.every(([x]) => x >= bx0 - 0.1 && x <= bx1 + 0.1));
-  if (plain.length !== 1) throw new Error('expected one plain building north in block ' + key);
-  const xs = plain[0].p.map((q) => q[0]);
-  const px0 = Math.min(...xs), px1 = Math.max(...xs);
-  for (const q of plain[0].p) if (q[1] === r1(bz0)) q[1] = r1(bz0 + DEPTH + GAP);
-  evenRow(px0, px1, (s, e) => addLot(rect(s, bz0, e, bz0 + DEPTH), { x: (s + e) / 2, z: bz0, nx: 0, nz: -1 }, sqH()));
+  const sq = B.find((b) => b.square);
+  const [x0, z0, x1] = sq.box, D = sq.depth || DEPTH_SHOP;
+  const nz0 = z0 + D + GAP, nz1 = nz0 + 9;
+  evenRow(x0, x1, (s, e) => addLot(rect(s, nz0, e, nz1), { x: (s + e) / 2, z: nz1, nx: 0, nz: 1 }, sqH()));
 }
 
-// The grass block between the south lane and Ttukseom-ro: Ttukseom-ro bends
-// up across its south side, so its two plain buildings become a row of
-// shorter ones, stepping down to stay off the road (same heights, so the
-// random numbers and every other building stay as they were).
+// ── Ttukseom-ro ──────────────────────────────────────────────────────────
+// The blocks run down to Ttukseom-ro's straight east end; along its slanted
+// part they are cut back to the road: buildings end before its sidewalk (or
+// go, if too little is left, as do shops that would face the road at a
+// slant), and the ground stops at the road too.
 {
-  const b = B.find((q) => q.x[0] === 'seongsuil' && q.z[1] === 'ttukseom');
-  const [bx0, bz0, bx1] = b.box;
-  const T = S.ttukseom, line = [...T.bend, [T.from, T.h]];
-  // The road's north edge (less the sidewalk) at x: the lowest a building may reach.
-  const edge = (x) => {
-    if (x <= line[0][0]) return line[0][1] - T.w / 2 - SIDEWALK;
-    for (let i = 0; i < line.length - 1; i++) {
-      const [ax, az] = line[i], [cx, cz] = line[i + 1];
-      if (x <= cx) return az + ((cz - az) * (x - ax)) / (cx - ax) - T.w / 2 - SIDEWALK;
+  const lowest = (x0, x1) => Math.min(TTUK_EDGE(x0), TTUK_EDGE(x1)) - 0.5;
+  for (let i = buildings.length - 1; i >= 0; i--) {
+    const q = buildings[i];
+    const xs = q.p.map((v) => v[0]), zs = q.p.map((v) => v[1]);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), bz0 = Math.min(...zs), bz1 = Math.max(...zs);
+    if (bx1 <= S.seoulsup.v || bx0 >= TTUK_E[0] || bz1 <= lowest(bx0, bx1)) continue;
+    const z1 = lowest(bx0, bx1);
+    const facesRoad = q.f && q.f[1] === 1;
+    if (facesRoad || z1 - bz0 < 8) {
+      buildings.splice(i, 1);
+      const li = lots.findIndex((l) => l.b === q);
+      if (li >= 0) { const [l] = lots.splice(li, 1); const ei = extraLots.indexOf(l); if (ei >= 0) extraLots.splice(ei, 1); }
+      continue;
     }
-    return T.h - T.w / 2 - SIDEWALK;
-  };
-  const inBlock = (q) => q.p.every(([x, z]) => x >= bx0 - 0.1 && x <= bx1 + 0.1 && z >= bz0 - 0.1);
-  const old = buildings.filter((q) => !q.f && inBlock(q));
-  if (old.length !== 2) throw new Error('expected two plain buildings in the grass block');
-  for (const o of old) {
-    buildings.splice(buildings.indexOf(o), 1);
-    const xs = o.p.map((q) => q[0]), zs = o.p.map((q) => q[1]);
-    const ox0 = Math.min(...xs), ox1 = Math.max(...xs), oz0 = Math.min(...zs);
-    const n = Math.max(1, Math.round((ox1 - ox0) / 26)), w = (ox1 - ox0 - GAP * (n - 1)) / n;
-    for (let i = 0; i < n; i++) {
-      const s = ox0 + i * (w + GAP), e = s + w, z1 = Math.min(Math.max(...zs), edge(s) - 1);
-      if (z1 - oz0 >= 10) buildings.push({ h: o.h, p: rect(s, oz0, e, z1) });
-    }
+    q.p = rect(bx0, bz0, bx1, z1);
+    const lot = lots.find((l) => l.b === q);
+    if (lot && lot.face.nx) lot.face.z = (bz0 + z1) / 2;
   }
-  // The grass stops at the road too.
-  b.areaPoly = [[r1(bx0), r1(bz0)], [r1(bx1), r1(bz0)], [r1(bx1), r1(edge(T.from))], ...line.slice().reverse().map(([x]) => [r1(Math.max(bx0, x)), r1(edge(Math.max(bx0, x)))])];
+  for (const b of B) {
+    if (!b.areaPoly) continue;
+    const [bx0, bz0, bx1, bz1] = b.box;
+    if (bz1 <= TTUK_EDGE(bx0) || bx0 >= TTUK_E[0]) continue;
+    const xs = [bx0, ...[TTUK_W[0], TTUK_E[0]].filter((x) => x > bx0 && x < bx1), bx1];
+    b.areaPoly = [[r1(bx0), r1(bz0)], [r1(bx1), r1(bz0)], ...xs.slice().reverse().map((x) => [r1(x), r1(Math.min(bz1, TTUK_EDGE(x)))])];
+  }
 }
 
 const roads = STREETS.map((s) => ({
@@ -580,12 +584,12 @@ for (const x of EXTRA) buildings.push({ h: x.h, p: x.p });
 const map = {
   meta: {
     region: 'seongsu',
-    source: 'hand-made game map (scripts/build-seongsu.mjs), loosely inspired by Seongsu-dong; not a survey map',
+    source: 'hand-made game map (scripts/build-seongsu.mjs), loosely inspired by Seongsu-dong at 1/4 of the real size; not a survey map',
     center: { lat: 37.5446, lon: 127.0557 },
   },
   roads,
   buildings,
-  rail: [{ e: 1, p: [[WEST, -86], [260, -86]] }], // Line 2 viaduct over Achasan-ro
+  rail: [{ e: 1, p: [[WEST, -78], [-240, -78], [-160, 0], [260, 0]] }], // Line 2 viaduct over Achasan-ro
   areas,
   blockers: BLOCKERS,
   landmarks: LANDMARKS,
