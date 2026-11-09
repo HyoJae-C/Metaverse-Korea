@@ -537,6 +537,8 @@ export const JA = {
   'map.zones': '待ち合わせゾーン',
   'map.stations': '地下鉄の駅',
   'map.shops': 'ショップ',
+  'map.places': '場所の一覧',
+  'map.locate': '現在地',
   'guide.to': '{label} · {m} m',
   'guide.arrived': '{label}に到着しました',
   'cat.cafe': 'カフェ',

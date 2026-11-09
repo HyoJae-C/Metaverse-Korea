@@ -71,7 +71,8 @@ import { buildBukchonHill } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor, saveLook } from './core/look-editor.js';
+import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
+import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
@@ -383,6 +384,8 @@ const mapPromise = loadRegionMap(region, (file) => {
   }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
   return get(3);
 });
+// And the player's character model, so it is ready when they walk in.
+preloadModel(loadLook().model);
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
@@ -3245,6 +3248,16 @@ const mapView = new MapView({
   },
   onTaxi: (dest) => rideTaxi(dest),
 });
+
+// Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
+let minimap = null;
+import('./game/minimap.js').then(({ createMinimap }) => {
+  minimap = createMinimap({
+    hud: $('hud'), map, open: () => $('map-btn').click(),
+    getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no minimap: the Map button still works */ });
 
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
@@ -6684,6 +6697,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
+  minimap?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {

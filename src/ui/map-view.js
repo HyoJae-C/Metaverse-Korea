@@ -88,6 +88,8 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
+// How many "more over here" district badges the street map shows at once.
+export const BADGES_PHONE = 3, BADGES_WIDE = 6;
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of
@@ -166,6 +168,10 @@ export class MapView {
     this.badges = []; // edge badges for districts off screen: { x, y, r, d }
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
+    // Back to where you are (after dragging the map away).
+    const locate = root.querySelector('.map-locate');
+    if (locate) locate.onclick = () => this.locate();
+    this.sheetOpen = false; // phones: the list of places is a sheet, folded under the map
     root.addEventListener('click', (e) => { if (e.target === root) this.hide(); });
   }
 
@@ -178,6 +184,25 @@ export class MapView {
     this.view.scale = this._homeScale();
     this._renderList();
     this.draw();
+  }
+
+  // Centre the map on you again, zooming back in if it was far out.
+  locate() {
+    const { me } = this.getPlayers();
+    if (this.view.scale < SEOUL_ZOOM * this.dpr) this.view.scale = this._homeScale();
+    this.goTo(me.x, me.z);
+  }
+
+  // Phones: unfold (or fold) the list of places under the map.
+  setSheet(open) {
+    this.sheetOpen = !!open;
+    this.root.classList.toggle('map-sheet-open', this.sheetOpen);
+    if (this.handle) {
+      this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+      this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    }
+    if (this.sheetOpen) this.list.scrollTop = 0;
+    if (this.open) { this._resize(); this.draw(); }
   }
 
   hide() {
@@ -440,7 +465,7 @@ export class MapView {
       labels.push({ text: o.name, sx, sy, gap: 8 * dpr, weight: 700, size: 11, color: '#3d4bc4', pri: 1 });
     }
     this._drawMe(g, me);
-    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 14 * dpr); }
+    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 20 * dpr); }
     // Edge badges for other districts, before the names so names keep clear of them.
     this._drawBadges(g, me);
     taken.push(...this.badges);
@@ -468,6 +493,15 @@ export class MapView {
     const [mx, my] = this.toScreen(me.x, me.z);
     g.save();
     g.translate(mx, my);
+    // A soft ring around the arrow, so "you" stands out among the pins.
+    g.fillStyle = 'rgba(255,111,91,0.22)';
+    g.strokeStyle = 'rgba(255,111,91,0.55)';
+    g.lineWidth = 1.5 * dpr;
+    g.beginPath();
+    g.arc(0, 0, 24 * dpr, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    if (this.canvas.width / dpr < 520) g.scale(1.2, 1.2); // phones: a bigger arrow
     g.rotate(-me.ry + Math.PI);
     g.fillStyle = '#ff6f5b';
     g.strokeStyle = '#fffaf0';
@@ -524,7 +558,7 @@ export class MapView {
     g.lineJoin = 'round';
     const { me } = this.getPlayers();
     const [mx, my] = this.toScreen(me.x, me.z);
-    const taken = [{ x: mx - 14 * dpr, y: my - 14 * dpr, w: 28 * dpr, h: 28 * dpr }]; // keep clear of your arrow
+    const taken = [{ x: mx - 24 * dpr, y: my - 24 * dpr, w: 48 * dpr, h: 48 * dpr }]; // keep clear of your arrow and its ring
     // Open gu first, and the one you're in before the rest, so its name sits next to you.
     const here = this._guAt(me.x, me.z);
     const rank = (d) => (d === here ? 2 : d.open ? 1 : 0);
@@ -555,7 +589,7 @@ export class MapView {
     g.font = `700 ${12 * dpr}px system-ui, sans-serif`;
     const items = [['#ffe9b8', t('map.open')], ['#d9d4ca', t('map.soon')]];
     let x = 10 * dpr;
-    const y = H - 30 * dpr;
+    const y = H - (this.seoul?.credit ? 52 : 30) * dpr; // above the OpenStreetMap credit
     const lw = items.reduce((a, [, s]) => a + g.measureText(s).width + 30 * dpr, 6 * dpr);
     g.fillStyle = 'rgba(255,250,240,0.92)';
     g.beginPath();
@@ -593,9 +627,14 @@ export class MapView {
     const narrow = W / dpr < 520;
     this.badges = [];
     const lang = getLanguage();
-    for (const d of this.districts) {
+    // Only the nearest few districts get a badge: sixteen of them covered a
+    // phone's whole map. The rest are a tap away on "All of Seoul".
+    const off = this.districts.filter((d) => {
       const [sx, sy] = this.toScreen(d.x, d.z);
-      if (sx > pad && sx < W - pad && sy > pad && sy < H - pad) continue;
+      return !(sx > pad && sx < W - pad && sy > pad && sy < H - pad);
+    }).sort((a, b) => Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z)).slice(0, narrow ? BADGES_PHONE : BADGES_WIDE);
+    for (const d of off) {
+      const [sx, sy] = this.toScreen(d.x, d.z);
       // Where the line from the centre to the district leaves the screen.
       const cx = W / 2, cy = H / 2, dx = sx - cx, dy = sy - cy;
       const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
@@ -699,6 +738,27 @@ export class MapView {
     const body = this.list.closest('.map-body');
     if (narrow && body && this.controls.nextElementSibling !== body) body.before(this.controls);
     else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
+    // Phones: the list is a sheet under the map, folded to one bar until
+    // tapped, so the map gets the screen. The small print goes at its end.
+    if (!this.handle) {
+      this.handle = document.createElement('button');
+      this.handle.type = 'button';
+      this.handle.className = 'map-handle';
+      this.handle.append(document.createElement('span'), document.createElement('b'));
+      this.handle.onclick = () => this.setSheet(!this.sheetOpen);
+    }
+    this.handle.querySelector('span').textContent = t('map.places');
+    this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+    if (narrow && this.list.firstElementChild !== this.handle) this.list.prepend(this.handle);
+    else if (!narrow && this.handle.parentElement) this.handle.remove();
+    const note = this.root.querySelector('.map-disclaimer');
+    if (note) {
+      if (narrow && note.parentElement !== this.list) this.list.append(note);
+      else if (!narrow && note.parentElement === this.list) this.root.querySelector('.map-card')?.append(note);
+    }
+    const locate = this.root.querySelector('.map-locate');
+    if (locate) locate.title = locate.ariaLabel = t('map.locate');
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
     // Categories wrap onto rows (sideways scrolling was hard with a mouse and
@@ -707,7 +767,7 @@ export class MapView {
     const n = new Map();
     for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
     const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
-    const FOLDED = narrow ? 3 : 5; // phones: fewer rows of chips, more room for the map
+    const FOLDED = narrow ? 2 : 5; // phones: fewer rows of chips, more room for the map
     const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
     const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');

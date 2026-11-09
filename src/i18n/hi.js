@@ -540,6 +540,8 @@ export const HI = {
   'map.zones': 'मिलने की जगहें',
   'map.stations': 'मेट्रो स्टेशन',
   'map.shops': 'दुकानें',
+  'map.places': 'जगहें',
+  'map.locate': 'मेरी जगह',
   'guide.to': '{label} · {m} मी.',
   'guide.arrived': 'आप {label} पहुँच गए',
   'cat.cafe': 'कैफ़े',

@@ -540,6 +540,8 @@ export const ID = {
   'map.zones': 'Zona kumpul',
   'map.stations': 'Stasiun kereta bawah tanah',
   'map.shops': 'Toko',
+  'map.places': 'Daftar tempat',
+  'map.locate': 'Lokasiku',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Kamu sudah sampai di {label}',
   'cat.cafe': 'Kafe',

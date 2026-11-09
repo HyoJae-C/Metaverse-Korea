@@ -18,6 +18,9 @@ import { skirtById } from './skirts.js';
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
   'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads',
   'bowl', 'drill', 'fountain'];
+// Plain hairstyles anyone can pick on the start screen (the rest are cut at
+// the hair salon). With none picked, the model's own hair stays.
+export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 

@@ -538,6 +538,8 @@ export const FR = {
   'map.zones': 'Zones de rencontre',
   'map.stations': 'Stations de métro',
   'map.shops': 'Boutiques',
+  'map.places': 'Lieux',
+  'map.locate': 'Ma position',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Tu es arrivé à {label}',
   'cat.cafe': 'Café',

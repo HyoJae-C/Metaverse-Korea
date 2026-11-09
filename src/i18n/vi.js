@@ -540,6 +540,8 @@ export const VI = {
   'map.zones': 'Khu gặp gỡ',
   'map.stations': 'Ga tàu điện ngầm',
   'map.shops': 'Cửa hàng',
+  'map.places': 'Địa điểm',
+  'map.locate': 'Vị trí của tôi',
   'guide.to': '{label} · {m} m',
   'guide.arrived': 'Bạn đã đến {label}',
   'cat.cafe': 'Quán cà phê',

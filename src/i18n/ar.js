@@ -540,6 +540,8 @@ export const AR = {
   'map.zones': 'مناطق اللقاء',
   'map.stations': 'محطات المترو',
   'map.shops': 'المتاجر',
+  'map.places': 'الأماكن',
+  'map.locate': 'موقعي',
   'guide.to': '{label} · {m} م',
   'guide.arrived': 'وصلت إلى {label}',
   'cat.cafe': 'مقهى',
