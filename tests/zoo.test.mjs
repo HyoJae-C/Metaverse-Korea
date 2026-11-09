@@ -189,7 +189,7 @@ test('while the zoo is closed, taxis cannot go in or drop you just over the hoar
   assert.equal(noTaxiZones(map.landmarks.filter((l) => l.type !== 'hoarding')).length, 0);
 });
 
-test('a gap at the foot of the hoarding, on its line, for operators to crawl through', () => {
+test('a gap at the foot of the hoarding, on its line, for anyone to crawl through', () => {
   if (ZOO_OPEN) return;
   const hole = map.landmarks.find((l) => l.type === 'doghole');
   assert.ok(hole && hole.closes === 'zoo');
