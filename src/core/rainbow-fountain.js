@@ -66,7 +66,7 @@ export function nextFountain(now = Date.now()) {
 // The middle of Banpo Bridge over Jamsu Bridge (the "jamsu" landmark of
 // districts/banpo-jamwon.json, moved by the district's offset), and the
 // bridge's direction: the jets line both sides of the upper deck.
-export const BRIDGE = { x: -1261.5, z: 756.8 };
+export const BRIDGE = { x: -1316.6, z: 807.3 };
 // How much the show's night reaches a spot: 1 on the bridge, the park's
 // lawn and the riverside, fading out over the next 120 m.
 export function nearBridge(x, z) {

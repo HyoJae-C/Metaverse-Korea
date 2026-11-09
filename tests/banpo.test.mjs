@@ -18,7 +18,18 @@ test('Banpo-Jamwon: one riverside park on the south bank, in Seocho-gu', () => {
   assert.ok(gu.open && gu.districts.includes('banpo-jamwon'), 'Seocho-gu is open');
   for (const a of map.areas.filter((x) => x.k !== 'water')) for (const p of a.p) assert.ok(inPolygon(...world(p), gu.p), `${a.k} ${world(p)} is in Seocho-gu`);
   assert.ok(map.areas.some((a) => a.k === 'park' && a.trees), 'a wooded lawn (picnic mats and frisbees go there)');
-  assert.ok(map.areas.some((a) => a.k === 'water') && map.blockers.length === 2, 'the river, which you cannot walk into');
+  // The river is the region's water on the real banks (scripts/han-bank.mjs).
+  // The lawn runs down to the water: just inland of the park's bank edge is
+  // dry, just out from it is river.
+  const park = map.landmarks.find((l) => l.type === 'hanpark');
+  const [px, pz] = world([park.x, park.z]), out = [Math.sin(park.ry), Math.cos(park.ry)];
+  const river = region.water.find((w) => inPolygon(px - out[0] * 30, pz - out[1] * 30, w.p));
+  assert.ok(river?.blockers?.length === 2, 'the river, which you cannot walk into, but for the bridge');
+  for (const x of [-40, 0, 40, 80]) {
+    const along = [px + out[1] * x, pz - out[0] * x]; // (the bank runs at right angles to ry)
+    const wet = (d) => inPolygon(along[0] - out[0] * d, along[1] - out[1] * d, river.p);
+    assert.ok(!wet(-2) && wet(3), `the bank at park x ${x}`);
+  }
   assert.ok(map.landmarks.filter((l) => l.type === 'bench').length >= 6, 'benches facing the river');
 });
 
@@ -31,12 +42,16 @@ test('Jamsu Bridge crosses the river from Itaewon, through a gap in the river', 
   const itaewon = region.districts.find((d) => d.id === 'itaewon');
   const seobinggo = read(itaewon.map).roads.find((r) => r.n?.en === 'Seobinggo-ro');
   assert.equal(link.p[0][1], seobinggo.p[0][1] + itaewon.offset[1], 'it starts on Seobinggo-ro');
-  // Walk the bridge: no river blocker on its middle.
-  const [a, b] = bridge.p;
+  // Walk the bridge: no river blocker on its middle, and it does cross the river.
+  const [a, b] = bridge.p.map(world);
+  const blockers = region.water.flatMap((w) => w.blockers || [w.p]);
+  let wet = 0;
   for (let t = 0; t <= 1; t += 0.05) {
     const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
-    for (const bl of map.blockers) assert.ok(!inPolygon(x, z, bl.p), `bridge at ${t.toFixed(2)} is open`);
+    for (const bl of blockers) assert.ok(!inPolygon(x, z, bl), `bridge at ${t.toFixed(2)} is open`);
+    if (region.water.some((w) => inPolygon(x, z, w.p))) wet++;
   }
+  assert.ok(wet >= 14, `it crosses the river (${wet} of 21 points over water)`);
   assert.ok(map.landmarks.some((l) => l.type === 'jamsu'), 'railings, lamps and Banpo Bridge overhead');
 });
 
