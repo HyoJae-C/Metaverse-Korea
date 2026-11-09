@@ -1,12 +1,14 @@
 // Performances at Gyeongbokgung (district offsets from region.json):
-//  - 부채춤: twenty dancers in hanbok doing the fan dance in the courtyard
-//    in front of Geunjeongjeon, in two rings turning opposite ways.
+//  - 부채춤: twenty dancers in hanbok doing the fan dance in the front court
+//    just inside Gwanghwamun, in two rings turning opposite ways.
 //  - 북청사자놀음: the Bukcheong lion dance troupe (fourteen people, two
 //    lions) on the square near King Sejong's statue (core/bukcheong.js).
 //  - 줄타기: a tightrope master crossing a rope beside the lion dance.
 //  - 수문장: gate guards in front of Gwanghwamun, with lines when greeted.
 //  - 어가 행렬: the king, a eunuch with his parasol and four court ladies
 //    walking from stop to stop round the palace, pausing for photos.
+//  - 관람객: visitors (many in rented hanbok) already about the courts,
+//    taking photos, clapping, waving to friends (PALACE_VISITORS).
 // No fence round the fan dance: an unseen ring keeps visitors out of it
 // (main.js makes it a blocker) and a note asks them to step back.
 // They only move while you're near (like the busking crowd).
@@ -16,6 +18,7 @@ import { randomLook } from '../data/appearance.js';
 import { DANCER_CHIMAS } from '../data/skirts.js';
 import { makeNpc, say } from './npcs.js';
 import { BukcheongTroupe } from './bukcheong.js';
+import { hanbokById } from '../data/hanbok.js';
 
 const NEAR = 110; // metres: closer than this, they perform
 
@@ -30,20 +33,39 @@ export function ringPoly(x, z, r, n = 24) {
 }
 
 // The royal procession (어가 행렬): the king with a eunuch holding his
-// parasol, and court ladies before and behind, walking round the palace.
-// Stops and the paths between them, in the palace district's metres (x
-// east, z south; Gwanghwamun at (0, 0)). Every path keeps clear of the halls,
-// the walls and the fan dance. The route stays round Geunjeongjeon's
-// courtyard (where 'Enter' brings you), so the king is never far away.
+// parasol, and court ladies before and behind, walking the way in to the
+// throne hall. Stops and the paths between them, in the palace district's
+// metres (x east, z south; Gwanghwamun at (0, 0)). From Heungnyemun's yard
+// the king crosses Yeongjegyo, passes through Geunjeongmun's middle passage
+// (the king's) and walks the raised middle path between the rank stones up
+// to the throne hall's steps, then back. Every path keeps clear of the
+// walls, the stream and the fan dance.
 export const ROYAL_ROUTE = {
   stops: [
-    [0, -62], // 0 just inside Heungnyemun
-    [-24, -71], [24, -71], // 1, 2 the lower courtyard
-    [-33, -111], [33, -111], // 3, 4 either side of Geunjeongjeon
-    [-33, -160], [33, -160], [0, -160], // 5, 6, 7 behind the hall
+    [0, -41.5], // 0 just inside Heungnyemun
+    [-11, -41.5], [11, -41.5], // 1, 2 either side of Heungnyemun's yard
+    [0, -52], // 3 over Yeongjegyo, before Geunjeongmun
+    [0, -66], // 4 between the rank stones, before Geunjeongjeon's steps
   ],
-  links: [[0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [6, 7]],
+  links: [[0, 1], [0, 2], [0, 3], [3, 4]],
 };
+// Visitors standing about the courts, in the palace district's metres:
+// [x, z, ry, look] (look: a rented hanbok set, or null for everyday
+// clothes). They pose for photos in front of each gate and the throne hall.
+export const PALACE_VISITORS = [
+  [-5, -24, Math.PI, 'pink'], [-3.8, -24.6, Math.PI * 0.9, null], // the front court, Heungnyemun behind them
+  [9, -14, -2.6, 'mint'],
+  [-10, -50, Math.PI * 0.2, 'yellow'], [-8.6, -50.8, Math.PI * 0.3, 'baji'], // by the stream, west of Yeongjegyo
+  [14.5, -39, -2.4, null],
+  [-7.5, -63, -0.4, 'pink'], [7.4, -66, 0.5, 'yellow'], [6.2, -61, 2.8, null], // the throne hall's court, beside the rank stones
+];
+const VISITOR_LOOKS = { // the hanbok shop's own rental sets (data/hanbok.js)
+  pink: { ...hanbokById('pink-navy').wear, hairStyle: 'bun' },
+  mint: { ...hanbokById('mint-pink').wear, hairStyle: 'long' },
+  yellow: { ...hanbokById('yellow-red').wear, hairStyle: 'pony' },
+  baji: { ...hanbokById('baji-blue').wear, hairStyle: 'short' },
+};
+const VISITOR_MOVES = ['clap', 'wave', 'cheer', 'bow'];
 export const ROYAL_PAUSE = 10; // seconds standing still at each stop (for photos)
 const ROYAL_SPEED = 1.8; // m/s, an unhurried walk, like the people on the streets (core/npcs.js)
 // Who walks where: metres behind the front of the procession, and to the
@@ -190,8 +212,8 @@ const turnTo = (a, b, k) => a + (Math.atan2(Math.sin(b - a), Math.cos(b - a))) *
 // brimmed hat with a red tassel and a spear. Tap to hear a line.
 const GUARD_LINES = [
   ['어서 오시오! 여기는 광화문이오.', 'eoseo osio! yeogineun gwanghwamunieyo.', 'Welcome! This is Gwanghwamun.'],
-  ['근정전 앞마당에서 부채춤 공연이 한창이오.', 'geunjeongjeon apmadangeseo buchaechum gongyeoni hanchangio.', 'The fan dance is on in front of Geunjeongjeon.'],
-  ['흥례문을 지나면 스탬프대가 있소. 꼭 찍고 가시오!', 'heungnyemuneul jinamyeon seutaempeudaega isso.', 'Past Heungnyemun there is a stamp stand. Do get one!'],
+  ['문 안 앞마당에서 부채춤 공연이 한창이오.', 'mun an apmadangeseo buchaechum gongyeoni hanchangio.', 'The fan dance is on in the court just inside.'],
+  ['영제교를 건너 근정전에 가 보시오. 임금님이 행차하신다오.', 'yeongjegyoreul geonneo geunjeongjeone ga bosio. imgeumnimi haengchahasindao.', 'Cross Yeongjegyo to Geunjeongjeon. The king walks there!'],
   ['광장에서는 북청사자놀음이 한창이오.', 'gwangjangeseoneun bukcheongsajanoleumi hanchangio.', 'The Bukcheong lion dance is on in the square.'],
   ['수상한 자는 들이지 않소. 그대는 괜찮소!', 'susanghan janeun deuriji anso. geudaeneun gwaenchanso!', 'No suspicious folk allowed. You are fine!'],
   ['한복을 입으면 궁궐이 더 잘 어울린다오.', 'hanbogeul ibeumyeon gunggwori deo jal eoullindao.', 'The palace suits you even better in hanbok.'],
@@ -404,7 +426,7 @@ export class PalaceShow {
   // dance ring; guards: [[x, z, ry], ...] gate guards; layer: name tags.
   // rope: [x, z] middle of the tightrope (runs along x).
   // procession: [x, z] the palace district's offset (ROYAL_ROUTE is in its metres).
-  constructor(scene, { fan, mask, rope, guards = [], procession = null, layer = null, inside = () => true }) {
+  constructor(scene, { fan, mask, rope, guards = [], procession = null, visitors = null, layer = null, inside = () => true }) {
     this.layer = layer;
     this.inside = inside; // inside the palace wall? The fan dance and the procession are only there for those inside
     if (procession && layer) this.royal = this.makeProcession(scene, procession);
@@ -434,7 +456,31 @@ export class PalaceShow {
       scene.add(o.ch.root);
       return o;
     }) : [];
+    // Visitors: built the first time you walk in (visitors: the palace district's offset).
+    this.visitorsAt = visitors;
+    this.visitors = null;
+    this.scene = scene;
     this.t = 0;
+  }
+  makeVisitors([ox, oz]) {
+    return PALACE_VISITORS.map(([x, z, ry, k], i) => {
+      const ch = performer(this.scene, k ? VISITOR_LOOKS[k] : {}, null);
+      ch.root.position.set(x + ox, 0, z + oz);
+      ch.root.rotation.y = ry;
+      return { ch, next: 2 + ((i * 1.7) % 5) };
+    });
+  }
+  updateVisitors(dt, me) {
+    if (!this.visitors && this.inside()) this.visitors = this.makeVisitors(this.visitorsAt);
+    if (!this.visitors) return;
+    const on = this.inside();
+    for (const v of this.visitors) {
+      const near = on && Math.hypot(me.x - v.ch.root.position.x, me.z - v.ch.root.position.z) < NEAR;
+      v.ch.root.visible = near;
+      if (!near) continue;
+      if ((v.next -= dt) <= 0) { v.ch.play(VISITOR_MOVES[Math.floor(Math.random() * VISITOR_MOVES.length)]); v.next = 4 + Math.random() * 6; }
+      v.ch.animate(dt, 0);
+    }
   }
   makeProcession(scene, [ox, oz]) {
     const stops = ROYAL_ROUTE.stops.map(([x, z]) => [x + ox, z + oz]);
@@ -588,6 +634,7 @@ export class PalaceShow {
       }
     }
     if (this.fan) this.updateFan(dt, me, t);
+    if (this.visitorsAt) this.updateVisitors(dt, me);
     this.mask?.update(dt, me);
   }
   // The fan dance: the routine's parts in turn (FAN_ROUTINE), each blending

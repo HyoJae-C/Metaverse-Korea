@@ -22,6 +22,7 @@ import { EULJIRO_BUILD } from './euljiro-models.js';
 import { JONGMYO_BUILD } from './jongmyo-models.js';
 import { BOSINGAK_BUILD } from './bosingak-model.js';
 import { YEOUIDO_BUILD } from './yeouido-models.js';
+import { PALACE_BUILD } from './palace-model.js';
 import { seasonAt } from './weather-roll.js';
 
 const mats = {};
@@ -106,51 +107,9 @@ const BUILD = {
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
   dome: (g, l) => domeOutside(g, l), // Seoul Another Dome's outside (the stadium inside: core/dome.js)
-  gwanghwamun(g) {
-    // Stone base with three open arches you can walk through: a wide one in
-    // the middle and a smaller one either side.
-    for (const sx of [-1, 1]) {
-      box(g, 17, 9, 16, sx * 21.5, 4.5, 0, C.stone); // outer block
-      box(g, 4, 9, 16, sx * 7, 4.5, 0, C.stone); // pier between the arches
-      box(g, 4, 4, 16, sx * 11, 7, 0, C.stone); // over the side arch
-      box(g, 4.6, 0.5, 16.2, sx * 11, 5.1, 0, C.stoneDark); // its arch band
-    }
-    box(g, 10, 3, 16, 0, 7.5, 0, C.stone); // lintel over the middle arch
-    box(g, 10.6, 0.5, 16.2, 0, 6.1, 0, C.stoneDark);
-    box(g, 61, 0.6, 17, 0, 9.3, 0, C.stoneDark);
-    // Two-storey wooden gate tower
-    hall(g, 34, 9, 5, 9.6, 0, 6);
-    hall(g, 28, 7, 4, 17.5, 0, 5);
-    // Name board 광화문
-    const sign = signBoard('光化門', 6, 1.8);
-    sign.position.set(0, 16.2, 5.6);
-    g.add(sign);
-  },
-  gate(g, l) {
-    // A one-storey gate (e.g. Heungnyemun): white walls either side, an open
-    // passage in the middle under the hall.
-    const w = l.w || 24;
-    box(g, w + 4, 0.3, 10, 0, 0.15, 0, C.stone);
-    for (const sx of [-1, 1]) {
-      box(g, w / 2 - 4, 5, 6, sx * (w / 4 + 2), 2.8, 0, C.white);
-      for (const sz of [-1, 1]) box(g, 0.7, 5, 0.7, sx * 4, 2.8, sz * 3, C.wood); // door posts
-    }
-    box(g, 8.6, 0.8, 6.4, 0, 5.0, 0, C.wood); // beam over the passage
-    hall(g, w, 6, 2.4, 5.3, 0, 7);
-  },
-  hall(g) {
-    // Two-tier stone platform (월대), the throne hall on top, double roof.
-    box(g, 52, 1.4, 34, 0, 0.7, 0, C.stone);
-    box(g, 44, 1.4, 28, 0, 2.1, 0, C.stoneDark);
-    box(g, 6, 2.8, 4, 0, 1.4, 18, C.stone); // front steps
-    hall(g, 30, 14, 8, 2.8, 0, 7);
-    hall(g, 24, 10, 5, 12.5, 0, 5);
-    const sign = signBoard('勤政殿', 4.2, 1.4);
-    sign.position.set(0, 14.6, 7.2);
-    g.add(sign);
-  },
-  pavilion(g) {
-    // Stone pillars standing in the pond, a raised floor, a big roof.
+  pavilion(g, l) {
+    // Stone pillars standing in the pond, a raised floor, a big roof (Gyeonghoeru). l.s: scale.
+    if (l.s) { const h = new THREE.Group(); h.scale.setScalar(l.s); g.add(h); g = h; }
     box(g, 34, 1.2, 26, 0, 0.3, 0, C.stone); // island
     for (let i = 0; i < 6; i++) for (let k = 0; k < 4; k++) box(g, 0.9, 5, 0.9, -13 + i * 5.2, 3.5, -9 + k * 6, C.stoneDark);
     box(g, 30, 0.8, 22, 0, 6.4, 0, C.wood);
@@ -295,6 +254,7 @@ const BUILD = {
   sign, // wooden information boards (core/park-signs.js)
   ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
   ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
+  ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
   ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
   ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
   ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
@@ -550,18 +510,6 @@ function plaque(info, w, h) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
 }
 
-function signBoard(text, w, h) {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 80;
-  const x = c.getContext('2d');
-  x.fillStyle = '#1d1b22'; x.fillRect(0, 0, 256, 80);
-  x.strokeStyle = '#2f8f6b'; x.lineWidth = 6; x.strokeRect(3, 3, 250, 74);
-  x.fillStyle = '#e8c56a'; x.font = '700 54px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(text, 128, 42);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
-}
 
 // A wall along a polyline: stone with a dark tiled cap.
 function wall(g, l) {

@@ -5,7 +5,7 @@ import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSl
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
-const FAN = [-38, -28]; // main.js: the palace offset + (-38, -28), in the front court
+const FAN = [-36, -20]; // main.js: the palace offset + (-36, -20), in the front court
 
 test('the fan dance has an unseen ring you cannot walk into', () => {
   const ring = ringPoly(FAN[0], FAN[1], FAN_KEEP);
@@ -86,8 +86,8 @@ test('the royal procession walks paths clear of halls, walls and the fan dance',
 
 test('the procession picks a new way on, pausing about 10 s for photos', () => {
   assert.ok(ROYAL_PAUSE >= 8 && ROYAL_PAUSE <= 12);
-  for (let i = 0; i < 50; i++) assert.notEqual(nextStop(ROYAL_ROUTE, 1, 0, Math.random), 0); // stop 1 has other ways on
-  assert.equal(nextStop(ROYAL_ROUTE, 0, 1, Math.random), 2);
+  for (let i = 0; i < 50; i++) assert.notEqual(nextStop(ROYAL_ROUTE, 0, 1, Math.random), 1); // stop 0 has other ways on
+  assert.equal(nextStop(ROYAL_ROUTE, 4, 3, Math.random), 3); // at the throne hall's steps: back the way he came
 });
 
 test('the procession stays round Geunjeongjeon, where Enter brings you', () => {
@@ -114,16 +114,28 @@ test('now and then the last court lady trips, gets up flustered and hurries afte
   assert.equal(ROYAL_ORDER.filter((o) => o.who === 'lady').length, 2);
 });
 
-test('the palace is smaller and the king never leaves its inner court', () => {
+test('the palace site is the real one at 1/4 and the king keeps to the way in to the throne hall', () => {
   const walls = map.landmarks.filter((l) => l.type === 'wall');
   const outer = walls[0].p, xs = outer.map(([x]) => x), zs = outer.map(([, z]) => z);
-  assert.ok(Math.max(...xs) - Math.min(...xs) <= 170 && -Math.min(...zs) <= 270, 'about 60% of the old 270 x 440 m');
+  // Gwanghwamun to the north wall about 1,060 m, west to east wall about 460 m in Seoul
+  assert.ok(Math.abs(Math.max(...xs) - Math.min(...xs) - 460 / 4) < 4, 'east-west at 1/4');
+  assert.ok(Math.abs(-Math.min(...zs) - 1060 / 4) < 8, 'north-south at 1/4');
   assert.deepEqual(map.meta.enclosure.box, [Math.min(...xs), 0, Math.max(...xs), Math.min(...zs)]);
-  // inside Heungnyemun's walls: the inner court round Geunjeongjeon
-  const inner = walls[1].p, ix = Math.max(...inner.map(([x]) => Math.abs(x))), iz = inner.map(([, z]) => z);
-  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.abs(x) < ix - 3 && z < Math.max(...iz) - 3 && z > Math.min(...iz) + 3, `stop ${x},${z} is outside the inner court`);
-  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -8) and Heungnyemun's wall
-  assert.ok(FAN[1] + FAN_KEEP < -8 && FAN[1] - FAN_KEEP > Math.max(...iz), 'the fan dance is in the front court');
-  const pass = Math.min(...outer.map(([x]) => x));
-  assert.ok(FAN[0] - FAN_KEEP > pass && FAN[0] + FAN_NOTE < 0, 'off the way from gate to gate, inside the wall');
+  // the stops are in Heungnyemun's yard or Geunjeongjeon's court, on the middle line or in the yard
+  const at = (type, name) => map.landmarks.find((l) => l.type === type && (!name || l.name?.en === name));
+  const heung = at('palacegate', 'Heungnyemun'), geun = at('palacegate', 'Geunjeongmun'), hall = at('throne');
+  for (const [x, z] of ROYAL_ROUTE.stops) {
+    assert.ok(z < heung.z && z > hall.z, `stop ${x},${z} is between Heungnyemun and Geunjeongjeon`);
+    if (z < geun.z) assert.equal(x, 0, 'inside Geunjeongmun the king walks the middle path');
+  }
+  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -3.5) and Heungnyemun
+  assert.ok(FAN[1] + FAN_KEEP < -3.5 && FAN[1] - FAN_KEEP > heung.z + 3, 'the fan dance is in the front court');
+  assert.ok(FAN[0] - FAN_KEEP > Math.min(...xs) && FAN[0] + FAN_NOTE < -2, 'off the way from gate to gate, inside the wall');
+});
+
+test('palace buildings stand at about half their real size', () => {
+  const at = (type) => map.landmarks.find((l) => l.type === type);
+  assert.ok(Math.abs(at('gwanghwamun').w - 34.8 / 2) < 1, 'Gwanghwamun (34.8 m wide)');
+  assert.ok(Math.abs(at('throne').hs - 0.5) < 0.05, 'Geunjeongjeon (30 m wide)');
+  assert.equal(at('pavilion').s, 0.5, 'Gyeonghoeru');
 });

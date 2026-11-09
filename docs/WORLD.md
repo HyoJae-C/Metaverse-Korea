@@ -48,8 +48,7 @@ neighbours' room and pushes them off their spots.
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
   Songpa by Olympic-ro.
 - **Seongsu** is the exception: the first district, full size and larger
-  than its 1/4 share (Gyeongbokgung's palace is also drawn larger, see its
-  anchor's `why`), so the river and gu edges just south of it are pushed
+  than its 1/4 share, so the river and gu edges just south of it are pushed
   south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).
 - **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
   everything placed in world metres inside it: stores, zones, bike stations,
@@ -347,6 +346,24 @@ Two more parts of the same district stand at their gates' spots: Sungnyemun
 Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
 three boxes for the overlap check.
+
+## Gyeongbokgung's palace
+
+The palace site is the real one at 1/4 (about 115 x 264 m inside the wall),
+and its buildings are drawn at about half their real size, so they fill
+their quarter-size courts and are worth looking up at (Yozi's call: a site
+is exactly 1/4; a building is 1/4 too unless asked). The models are
+`core/palace-model.js`, each merged into a few meshes. As in Seoul, the way
+in runs north: Gwanghwamun (z 0), its front court with the fan dance,
+Heungnyemun (z -36) and its yard, the palace stream with Yeongjegyo
+(z -47), Geunjeongmun (z -55) and the corridors (회랑) round Geunjeongjeon's
+court, the rank stones either side of the raised middle path, and
+Geunjeongjeon on its two terraces (z -79.5). Gyeonghoeru's pond is
+north-west of the court. The royal procession walks from Heungnyemun's yard
+over the bridge and up the middle path to the hall's steps. Inside the wall
+the camera drops and looks up (`game/palace-view.js`), more so in the courts
+behind Heungnyemun, until the player steers it. Visitors in rented hanbok
+already stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
 ## Bosingak (Jongno)
 
