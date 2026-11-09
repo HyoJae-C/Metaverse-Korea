@@ -193,43 +193,6 @@ export function teacupSpot(c, t) {
   return { x: T.x + Math.sin(a) * T.R, z: T.z + Math.cos(a) * T.R, a };
 }
 
-// A closed path walked at even speed: points → cumulative lengths, and
-// where you are at distance d (wrapping round).
-function loop(pts) {
-  const cum = [0];
-  for (let i = 1; i <= pts.length; i++) { const a = pts[i - 1], b = pts[i % pts.length]; cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])); }
-  const len = cum[pts.length];
-  const at = (d) => {
-    d = ((d % len) + len) % len;
-    let i = 1;
-    while (cum[i] < d) i++;
-    const a = pts[i - 1], b = pts[i % pts.length], k = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
-    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
-    return { x: a[0] + dx * k, y: a[1] + dy * k, z: a[2] + dz * k, ry: Math.atan2(dx, dz), pitch: -Math.atan2(dy, Math.hypot(dx, dz)), seg: i - 1 };
-  };
-  return { pts, cum, len, at };
-}
-// The train's oval, from its west point (the station), heading south.
-export const TRAIN_TRACK = loop(Array.from({ length: 64 }, (_, k) => {
-  const u = -Math.PI / 2 + (k / 64) * Math.PI * 2, T = RIDES.train;
-  return [T.x + T.rx * Math.sin(u), 0, T.z + T.rz * Math.cos(u)];
-}));
-// Where the train's front is at t: stopped at the station while it loads,
-// one lap, easing out of and back into the station.
-export const TRAIN_STOP = 6; // m past the oval's south point: the engine stops here
-export function trainDist(t) {
-  const c = RIDE_CYCLE.train, r = ridePhase('train', t), L = TRAIN_TRACK.len;
-  if (r.phase !== 'run') return TRAIN_STOP;
-  const k = r.s / c.run, e = k < 0.12 ? (k * k) / (2 * 0.12 * 0.88) : k > 0.88 ? 1 - ((1 - k) * (1 - k)) / (2 * 0.12 * 0.88) : (k - 0.06) / 0.88;
-  return TRAIN_STOP + L * e;
-}
-// Seat i: car (i >> 2), bench (i >> 1 & 1), side (i & 1); the cars trail
-// the engine, a car's benches 0.9 m apart, 0.32 m either side.
-export function trainSpot(i, t) {
-  const T = RIDES.train, car = i >> 2, bench = (i >> 1) & 1, side = i & 1 ? 0.32 : -0.32;
-  const p = TRAIN_TRACK.at(trainDist(t) - T.gap * (car + 1) - 0.45 + bench * 0.9);
-  return { x: p.x + Math.cos(p.ry) * side, y: 0.27, z: p.z - Math.sin(p.ry) * side, ry: p.ry }; // (feet: the bench is 0.65 up)
-}
 // A smooth closed path through control points: a centripetal Catmull-Rom
 // spline (the coaster's kind of curve: round bends, no overshoot), walked
 // by distance. pts: the curve every `step` m; ctrl: the control points;
@@ -273,6 +236,28 @@ function smoothLoop(ctrl, step = 0.25) {
     return { x: p.x, y: p.y, z: p.z, ry: Math.atan2(dx, dz), pitch: -Math.atan2(dy, Math.hypot(dx, dz)), seg: segOf[p.j] };
   };
   return { ctrl, pts, ds, len, at };
+}
+// The train's oval, from its west point (the station), heading south: a
+// smooth curve through 32 points on the ellipse, like the flume's channel.
+export const TRAIN_TRACK = smoothLoop(Array.from({ length: 32 }, (_, k) => {
+  const u = -Math.PI / 2 + (k / 32) * Math.PI * 2, T = RIDES.train;
+  return [T.x + T.rx * Math.sin(u), 0, T.z + T.rz * Math.cos(u)];
+}), 0.5);
+// Where the train's front is at t: stopped at the station while it loads,
+// one lap, easing out of and back into the station.
+export const TRAIN_STOP = 6; // m past the oval's south point: the engine stops here
+export function trainDist(t) {
+  const c = RIDE_CYCLE.train, r = ridePhase('train', t), L = TRAIN_TRACK.len;
+  if (r.phase !== 'run') return TRAIN_STOP;
+  const k = r.s / c.run, e = k < 0.12 ? (k * k) / (2 * 0.12 * 0.88) : k > 0.88 ? 1 - ((1 - k) * (1 - k)) / (2 * 0.12 * 0.88) : (k - 0.06) / 0.88;
+  return TRAIN_STOP + L * e;
+}
+// Seat i: car (i >> 2), bench (i >> 1 & 1), side (i & 1); the cars trail
+// the engine, a car's benches 0.9 m apart, 0.32 m either side.
+export function trainSpot(i, t) {
+  const T = RIDES.train, car = i >> 2, bench = (i >> 1) & 1, side = i & 1 ? 0.32 : -0.32;
+  const p = TRAIN_TRACK.at(trainDist(t) - T.gap * (car + 1) - 0.45 + bench * 0.9);
+  return { x: p.x + Math.cos(p.ry) * side, y: 0.27, z: p.z - Math.sin(p.ry) * side, ry: p.ry }; // (feet: the bench is 0.65 up)
 }
 // The log flume's channel in the north-east field, through these points
 // ([x, y (water level), z]): from the station heading west, round and up
