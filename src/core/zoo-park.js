@@ -29,6 +29,8 @@ export const VIEW = 95;
 // Animals further than this are not drawn: each is a few dozen small meshes,
 // and from further off they'd be a few pixels anyway.
 export const ANIMAL_VIEW = 38;
+export const SMALL_VIEW = 22; // m: the little ones (a rabbit is as many meshes as a lion) go sooner
+export const SMALL_ANIMALS = new Set(['rabbit', 'guineapig', 'goat', 'sheep', 'macaque', 'flamingo', 'pelican', 'peacock', 'vulture']);
 
 // Where visitors stand: a step outside the side you look in from, a few
 // metres apart, turned to the pen. Two at most pens, one at small ones.
@@ -225,7 +227,8 @@ export function buildZooPark(store, ROOM, EXIT) {
       const d = Math.hypot(Math.max(0, Math.abs(at.x - P.pen.x) - P.pen.w / 2), Math.max(0, Math.abs(at.z - P.pen.z) - P.pen.d / 2)); // (to its fence)
       P.g.visible = d < VIEW;
       const near = d < ANIMAL_VIEW;
-      if (P.near !== near) { P.near = near; for (const a of P.animals) a.root.visible = near; }
+      if (P.near !== near) { P.near = near; if (!near) for (const a of P.animals) a.root.visible = false; }
+      if (near) for (const a of P.animals) a.root.visible = Math.hypot(at.x - P.pen.x - a.root.position.x, at.z - P.pen.z - a.root.position.z) < (SMALL_ANIMALS.has(a.kind) ? SMALL_VIEW : ANIMAL_VIEW);
     }
     zoo.update(dt, at);
   };

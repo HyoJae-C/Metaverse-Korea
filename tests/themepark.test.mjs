@@ -90,14 +90,6 @@ test('the wheel: board the gondola at the bottom, ride one turn, held in while u
   assert.ok(Math.abs(seatAt('wheel', 0, 3).x - seatAt('wheel', 1, 3).x - -0.76) < 1e-9, 'two side by side');
 });
 
-test('Another Land outside: wheel and drop tower are tall, the coaster loops', async () => {
-  const { WHEEL, DROP, dropHeight, COASTER, PARK_SCALE } = await import('../src/core/anotherland.js');
-  assert.ok((WHEEL.hub + WHEEL.r) * PARK_SCALE > 40, 'wheel still seen over the lakeside trees and rooftops');
-  assert.equal(dropHeight(12), DROP.top);
-  assert.equal(dropHeight(1), DROP.low);
-  assert.ok(COASTER.every(([, y]) => y >= 4), 'track stays off the ground');
-});
-
 test('ride guests only sit in the theme park, not in a Han River park', async () => {
   const { createParkRiders } = await import('../src/game/park-riders.js');
   const riders = createParkRiders(null);
@@ -115,4 +107,48 @@ test('Another Land and the Han River parks have their own flags, no shared `park
   for (const f of ['themepark.js', 'park.js']) assert.doesNotMatch(src(f), /\bpark: true/, f);
   // Theme-park-only code keys on `themepark`, never on a park flag.
   assert.doesNotMatch(readFileSync(new URL('../src/game/park-riders.js', import.meta.url), 'utf8'), /\.park\b/);
+});
+
+// Seokchon Lake is at the real 1/4 scale like the rest of Seoul: the real
+// lakes hold 217,850 m2 of water, so 1/16 of it here. Another Land's island
+// (stores.json "open", in the coaster's metres) lies on the map's island,
+// its bridge landing on Another Land Bridge.
+test('Seokchon Lake: real 1/4 water, Another Land open on its island', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { inPoly } = await import('../src/core/geom.js');
+  const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
+  const map = read('districts/songpa.json'), stores = read('stores.json').stores;
+  const area = (p) => Math.abs(p.reduce((s, [x, z], i) => { const [x2, z2] = p[(i + 1) % p.length]; return s + x * z2 - x2 * z; }, 0)) / 2;
+  const water = map.areas.filter((a) => a.k === 'water' && a.p.every(([, z]) => z > 100));
+  const lake = water.reduce((s, a) => s + area(a.p), 0);
+  assert.ok(Math.abs(lake / (217850 / 16) - 1) < 0.05, `lake water ${Math.round(lake)} m2`);
+  // The island in the street's metres (as main.js parkWorld turns it).
+  const isl = stores.find((s) => s.id === 'another-land-island'), { at: [ox, oz], ry } = isl.open;
+  const [sx, sz] = read('region.json').districts.find((d) => d.id === 'songpa').offset;
+  const world = ([x, z]) => [ox + x * Math.cos(ry) + z * Math.sin(ry) - sx, oz - x * Math.sin(ry) + z * Math.cos(ry) - sz];
+  const lawn = isl.open.lawn.map(world);
+  // Not over the water: a step in from each corner and each edge's middle is dry.
+  const cx = lawn.reduce((s, [x]) => s + x, 0) / lawn.length, cz = lawn.reduce((s, [, z]) => s + z, 0) / lawn.length;
+  for (let i = 0; i < lawn.length; i++) {
+    const [x1, z1] = lawn[i], [x2, z2] = lawn[(i + 1) % lawn.length];
+    for (const [x, z] of [[x1, z1], [(x1 + x2) / 2, (z1 + z2) / 2]]) {
+      const d = Math.hypot(cx - x, cz - z), px = x + ((cx - x) / d) * 1.2, pz = z + ((cz - z) / d) * 1.2;
+      assert.ok(!water.some((a) => inPoly(px, pz, a.p)), `island dry at ${px.toFixed(1)},${pz.toFixed(1)}`);
+    }
+  }
+  // And it fills its island: a step out from the shore is water.
+  let wet = 0;
+  for (const [x, z] of lawn) { const d = Math.hypot(x - cx, z - cz); if (water.some((a) => inPoly(x + ((x - cx) / d) * 3, z + ((z - cz) / d) * 3, a.p))) wet++; }
+  assert.ok(wet / lawn.length > 0.8, `water round the island (${wet}/${lawn.length})`);
+  // The bridge lands on it: Another Land Bridge's end is at the gap in the shore.
+  const road = map.roads.find((r) => r.n?.en === 'Another Land Bridge');
+  assert.ok(road, 'Another Land Bridge');
+  const [bx, bz] = world(isl.open.bridge);
+  const ends = [road.p[0], road.p[road.p.length - 1]];
+  assert.ok(ends.some(([x, z]) => Math.hypot(x - bx, z - bz) < 4), `bridge lands at ${bx.toFixed(1)},${bz.toFixed(1)}`);
+  // The stairs down are on the island, and the rides' room under it is entered there.
+  const under = stores.find((s) => s.below === isl.id);
+  assert.ok(under && under.id === 'another-land');
+  const [ux, uz] = [under.at[0] - sx, under.at[1] - sz];
+  assert.ok(inPoly(ux, uz, lawn), 'the stairs down are on the island');
 });

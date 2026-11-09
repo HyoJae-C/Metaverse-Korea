@@ -399,12 +399,12 @@ test('animal calls: every kind that moves has a voice, played when a motion star
   const lions = PENS.find((p) => p.id === 'lions');
   const zoo = new Zoo(new THREE.Scene(), [{ ...lions, name: null }]);
   const heard = [];
-  zoo.onSound = (a, m) => heard.push([a.kind, m]);
+  zoo.onSound = (b, m) => heard.push([b, m]);
   const a = zoo.pens[0].animals[0];
   a.state = 'roar'; a.t = 3;
   zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
   zoo.update(0.05, { x: lions.x, z: lions.z + 3 });
-  assert.equal(heard.filter(([, m]) => m === 'roar').length, 1);
+  assert.equal(heard.filter(([b, m]) => b === a && m === 'roar').length, 1, 'this lion roared once'); // (the other lions may roar on their own)
 });
 
 test('zoo sounds: nearer is louder, panned to its side, and each animal waits before calling again', async () => {

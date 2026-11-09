@@ -35,13 +35,13 @@ export const STAMPS = [
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',
   },
   {
-    id: 'seongsu', place: { at: [92, 219] }, color: '#e0662a', shape: 'square',
+    id: 'seongsu', place: { at: [19.3, 105.4] }, color: '#e0662a', shape: 'square',
     name: { ko: '성수 팝업스토어', en: 'Seongsu Pop-up', ja: '聖水ポップアップ', zh: '圣水快闪店' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M64 84 l36 -26 l36 26 z M68 84 v40 h64 v-40"/><path d="M64 84 q9 10 18 0 q9 10 18 0 q9 10 18 0 q9 10 18 0"/><rect x="90" y="100" width="20" height="24"/>',
   },
   {
-    id: 'seoul-forest', place: { at: [-196.6, 224], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
+    id: 'seoul-forest', place: { at: [-326.6, 70], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
     name: { ko: '서울숲', en: 'Seoul Forest', ja: 'ソウルの森', zh: '首尔林' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M78 128 v-20 M78 108 l-20 0 l20 -30 l20 30 z M78 92 l-14 0 l14 -22 l14 22 z"/><path d="M128 128 l-14 -44 h28 z"/><path d="M112 84 a16 14 0 0 1 32 0 a16 10 0 0 1 -32 0 z"/><path d="M56 128 h88"/>',
@@ -185,7 +185,7 @@ export const STAMPS = [
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [115, 847], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [149, 853], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave

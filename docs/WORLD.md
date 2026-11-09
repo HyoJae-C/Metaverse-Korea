@@ -15,12 +15,30 @@ is quick. That way all of Seoul can fit, and Tokyo can follow the same way.
 - Ads: a big screen and a brand space on each area's central square
 - Later: home decorating, seasonal events, brand coupons, a Tokyo world
 
-Seongsu is hand-made too (`scripts/build-seongsu.mjs`): a grid of shopping
-streets loosely shaped like the real neighbourhood (Achasan-ro under Line 2,
-Seongsui-ro, Yeonmujang-gil, the Red Brick Lane), with Seoul Forest to the west
-and the Han River to the south. Each street side that faces a shopping street is
-lined with small shop buildings; run `node scripts/build-seongsu.mjs --place`
-after adding a shop to `PLACE_NEW` to give it a free lot.
+Seongsu is hand-made too (`scripts/build-seongsu.mjs`), at 1/4 of the real
+size like the rest of the map, with its main streets where they really are
+(measured from OpenStreetMap; the blocks and buildings are made up). Seongsu
+Station (the Achasan-ro / Seongsui-ro crossing, under Line 2) is the map's
+origin. The streets are a grid turned 20.5° (`THETA`) from east-west, as in
+Seoul: Achasan-ro, Yeonmujang-gil (56 m south of it), the lane (103 m),
+Ttukseom-ro (155 m), Seongdeokjeong-gil (198 m) and Dulle-gil (245 m) run
+east-south-east; Seongsuil-ro (127 m west of the station), the Red Brick
+Lane, Seongsui-ro (30 m east), Yeonmujang 13-gil and 17-gil and Dongil-ro
+(195 m) cross them. The grid is laid out in its own frame (`toMap` /
+`toGrid`), then turned onto the map and cut back to Wangsimni-ro (north-south
+at x -250, Seoul Forest Station on it), the map's edges and the riverside.
+Each street side that faces a shopping street is lined with small shop
+buildings (lots stand at the grid's slant; `lotFront` in `core/ad-posters.js`
+finds their front from `f`). Seoul Forest lies west of Wangsimni-ro; it keeps
+its own layout, drawn in its old frame and moved as one piece by
+`FOREST_SHIFT`, and runs south to its real edge by Gangbyeonbuk-ro. The Han
+River's bank is the real one along the forest; from x -240 it bends out to
+Ttukseom Han River Park's straight bank (z 386), up to about 50 m south of
+the real bank, and buildings stop 20 m short of the real bank (riverside
+grass between). `--place` and `--square` still use the spots of the old
+layout (`SPOTS`); check where they put a shop. (Seongsu was drawn full size
+until it was redone at 1/4, then with an east-west grid until it was laid on
+the real streets.)
 
 ## The Seoul grid: one fixed scale
 
@@ -47,10 +65,10 @@ neighbours' room and pushes them off their spots.
   Seongsu's. A big area can be split so each part sits on its own real spot:
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
   Songpa by Olympic-ro.
-- **Seongsu** is the exception: the first district, full size and larger
-  than its 1/4 share (Gyeongbokgung's palace is also drawn larger, see its
-  anchor's `why`), so the river and gu edges just south of it are pushed
-  south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).
+- **Seongsu** is at 1/4 too, with its station on the origin. Gyeongbokgung's
+  palace is drawn a little wider than 1/4 (see its anchor's `why`), and DDP
+  stands at close to its real size, so Euljiro's streets round it are wider
+  apart; both are landmark buildings, which keep their size.
 - **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
   everything placed in world metres inside it: stores, zones, bike stations,
   homes, screens, subway exits, busking zones, stamps, and the ends of link
@@ -157,10 +175,10 @@ the station here, about 400 m in Seoul). The district is about 230 x 180 m
 
 ## Ttukseom Han River Park (Seongsu)
 
-Laid straight on the street on Seongsu's straight bank, between the river
+Laid straight on Seongsu's straight bank (z 386), between the river
 and the Han River path (`PARK` in `scripts/build-seongsu.mjs`,
 `game/han-parks.js`). West to east: the fishing pier and fish buyer; DAILY
-MART with its ramen machine where the walk comes down from Ttukseom-ro,
+MART with its ramen machine where the walk comes down from the riverside walk (Dongil-ro's end),
 then the Riverside Market's six stalls; the open lawn for the drone light
 show (`lawn: true`: picnic mats, frisbees), with the launch barge out on the
 water and the show's board by the railing; the duck boat dock by the other
@@ -233,7 +251,11 @@ Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,
 drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`; street lines
-after OpenStreetMap). The block north-west of the corner is KONEXT, a
+after OpenStreetMap) at 1/4 of the real size: Asem-ro is 161 m west of the
+station, Bongeunsa-ro 153 m north and Tancheon 130 m east, a quarter of their
+real distances. The big buildings (KONEXT 88 x 60 m, the office towers) take
+a quarter of their real footprint too; heights stay real. (It was drawn about
+twice as large, then about 1.2 times, before this.) The block north-west of the corner is KONEXT, a
 fictional shopping mall seen from outside only (`core/konext.js`: a custom
 building, so its walls still block): a long, low glass box with a wave
 skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media
@@ -406,5 +428,42 @@ Olympic-ro and the lakes, where the real shopping complex by Jamsil Station
 stands. Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
-(Seokchon Lakeside) keeps two passers-by on the shore. Another Land's park
-behind the gate is drawn at `PARK_SCALE` (3/4) and its island is cut to fit.
+(Seokchon Lakeside) keeps two passers-by on the shore.
+
+The lakes themselves are at the real 1/4: both lakes and the west-lake island
+were traced from the real map around the lake's centre (on Songpa-daero
+between the lakes, about 146 m south of Jamsil Station at 1/4) and shrunk to
+1/4, about 13,150 m² of water against the real 217,850 m² / 16 = 13,616
+(`tests/themepark.test.mjs` checks it stays within 5%). Songpa-daero bends
+through the gap between the lakes (about 35 m wide), the mall stands west of
+the east lake's north tip, and the land the old, larger lakes took is
+lakeside park. Two spits of land that cut into the water (the south shore's
+west end, and the west lake's east side by Songpa-daero) are lake now.
+
+The water lies about a metre below the ground behind stone banks, and the two
+lakes are one water, joined by a channel under Songpa-daero, which crosses it
+on a bridge (landmark `lakeshore`, `core/lakeshore.js`; the shore is cut out
+of the ground, the water areas are `sunk`). One walk goes round both lakes,
+with a railing along the shore, lamps with flowers at their feet and benches
+facing the water.
+
+### Another Land on the island
+
+The island is Another Land itself, open to the street: no gate, you walk over
+Another Land Bridge (south from Olympic-ro) onto it. It is the store
+`another-land-island` with `"open"` like the Han River parks (main.js
+`openParks`), but its edge is its own shore: `open.lawn` (walk onto it and
+you're in) and the slightly wider `open.out` (walk past it and you're back on
+the street), in the room's metres, which are the Cotton Candy Express's own
+(`core/park-island.js`, room size `island`). The coaster stands on it exactly
+as it was, track, speed, station and attendant, with its candy wood, and a
+candy-striped pavilion over the stairs down to the rest of the park
+(`another-land`, which has `"below": "another-land-island"`: no storefront,
+its door is the stairs; leaving it puts you back on the island). The island
+grew to the south-east to hold the whole track (about 3,870 m², the track at
+least 2 m in from the shore and about 5 m of water round it), so the
+water is about 13,150 m², 97% of the real 1/16. The helix sits south of
+the long run, east of the station (the same 345 m lap, the track 63 m
+across, not 83), which leaves the island's east end free for more rides. `tests/coaster.test.mjs`
+checks the track is on the island and the only way off is the bridge;
+`tests/themepark.test.mjs` checks the island lies on the map's island.
