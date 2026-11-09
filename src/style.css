@@ -216,6 +216,7 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
   box-shadow: 0 2px 0 rgba(74, 63, 53, 0.15);
 }
 .nametag.me { background: var(--mint); }
+body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 .bubble {
   font-size: 26px;
   background: #fff; border-radius: 16px; padding: 2px 8px;

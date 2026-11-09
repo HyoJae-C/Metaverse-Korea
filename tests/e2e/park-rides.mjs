@@ -79,6 +79,8 @@ for (const [kind, gate, high] of [['drop', [13.8, -2], 12], ['wheel', [9, -5.3],
   p = await pr();
   assert(p.ride?.kind === kind, `${kind}: on (${lbl})`);
   await shot(kind + '-seated');
+  const tags = await page.evaluate(() => [...document.querySelectorAll('.nametag, .bubble')].filter((e) => e.offsetParent).length);
+  assert(tags === 0, `${kind}: no name tags while riding (${tags} showing)`);
   let top = 0, locked = false, shotTop = false;
   const t0 = Date.now();
   while (Date.now() - t0 < 60000) {

@@ -36,6 +36,7 @@ export function createParkRiders(labels) {
         const s = seatAt(o.kind, o.seat, now);
         o.ch.root.position.set(s.x, s.y, s.z);
         o.ch.root.rotation.set(0, s.ry, s.roll);
+        o.labelY = s.y + 1.45; // (the name tag rides up with them: up the drop tower, round the wheel)
         const up = (o.kind === 'viking' && Math.abs(s.roll) > 0.7) || (o.kind === 'drop' && s.y < 3 && s.y > 1);
         if (up !== o.up) { o.up = up; o.ch.setMoves?.(up ? ARMS_UP : null); }
       }
