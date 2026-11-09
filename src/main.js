@@ -55,6 +55,7 @@ import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strik
 import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam } from './game/ride-cam.js';
+import { createFirstPerson } from './game/first-person.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
@@ -6334,6 +6335,11 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
+// First-person view (game/first-person.js): V, Settings, or zooming in.
+const firstPerson = createFirstPerson({
+  camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
+  canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+});
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now)) return; // (at most 60 frames a second)
   guardPosition();
@@ -6344,9 +6350,11 @@ renderer.setAnimationLoop((now) => {
   const look = input.consumeLook();
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
-  cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : sky.busy ? 90 : 28);
+  if (!firstPerson.look(look)) {
+    cam.yaw -= look.dx * 0.006;
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : sky.busy ? 90 : 28);
+  }
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -6362,6 +6370,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
+  firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
   if (riding === 3) {
@@ -6464,6 +6473,7 @@ renderer.setAnimationLoop((now) => {
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
+  if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
@@ -6509,6 +6519,7 @@ renderer.setAnimationLoop((now) => {
     camera.lookAt(p.x, 0, p.z);
   }
 
+  firstPerson.update(p, !!seated); // (in your eyes, when on)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
   else if (ride?.pose) { rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic'); me.root.visible = ride.view !== 'first'; }
   const tSec = timer.getElapsed();
