@@ -98,15 +98,17 @@ function loadAnims() {
   const jobs = files.map((f) => (f.model ? load(f.model) : loader.loadAsync(BASE + f.url).catch(() => null)).then(add));
   const eager = jobs.filter((_, i) => files[i].eager);
   animsReady = Promise.all(eager).then((r) => r.every(Boolean));
+  animsReady.then((ok) => { if (!ok) animsReady = null; }); // (a later call tries again)
   return animsReady;
 }
 function load(id) {
   if (!cache.has(id)) {
-    // A failed load resolves to null and the character keeps its chibi body.
+    // A failed load resolves to null and is forgotten, so a later call
+    // (core/character.js retries) downloads it again.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
       .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); if (def.wear?.outfit) buildOutfit(g, def.wear.outfit, wearUv); return g; })
-      .catch(() => null));
+      .catch(() => { cache.delete(id); return null; }));
   }
   return cache.get(id);
 }
@@ -596,6 +598,14 @@ const KPOP_B = [
 function strumPose(t) {
   const st = Math.sin(t * Math.PI * 4); // two strums a second
   return { bob: 0, spine: [0.05, 0, 0], head: [0.08 + 0.06 * Math.abs(Math.sin(t * Math.PI * 2)), 0, 0.05], armR: [-0.7, 0.15, 0], foreR: [-1.0 + 0.3 * st, 0, 0], armL: [-1.2, -0.2, 0], foreL: [-1.3, 0, 0] };
+}
+
+// Start downloading a model and the eager clips before any character needs
+// them (main.js: the saved look's model, while the map loads), so the first
+// character shows at once.
+export function preloadModel(id) {
+  load(PACK.models[id] ? id : MODEL_IDS[0]);
+  loadAnims();
 }
 
 // Resolves to { update, play } once the model is on, or null on failure.

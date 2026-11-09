@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { createCharacter } from './character.js';
 import { t, onLanguageChange } from './i18n.js';
-import { PALETTES, randomLook, sanitizeLook } from '../data/appearance.js';
+import { PALETTES, START_HAIR_STYLES, randomLook, sanitizeLook } from '../data/appearance.js';
 
 const STORAGE_KEY = 'mk.look';
 
@@ -119,8 +119,30 @@ export function createLookEditor({ optionsEl, canvas, randomBtn }) {
     section('look.tee', row);
   }
 
+  // A few plain hairstyles (the rest are at the hair salon). Tapping the
+  // picked one again goes back to the model's own hair.
+  {
+    const row = document.createElement('div');
+    row.className = 'acc-row';
+    for (const id of START_HAIR_STYLES) {
+      const b = document.createElement('button');
+      b.className = 'acc none';
+      b.dataset.i18n = 'hair.' + id;
+      b.textContent = t('hair.' + id);
+      b.onclick = () => {
+        look = { ...look, hairStyle: look.hairStyle === id ? null : id };
+        refreshPressed();
+        rebuild();
+      };
+      buttons.push({ el: b, field: 'hairStyle', value: id });
+      row.appendChild(b);
+    }
+    section('beauty.hairStyle', row);
+  }
+
   randomBtn.onclick = () => {
-    look = { ...look, shirt: randomLook().shirt, model: 'basic' };
+    const hair = [null, ...START_HAIR_STYLES];
+    look = { ...look, shirt: randomLook().shirt, model: 'basic', hairStyle: hair[Math.floor(Math.random() * hair.length)] };
     refreshPressed();
     rebuild();
   };
