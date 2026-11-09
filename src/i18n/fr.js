@@ -397,6 +397,7 @@ export const FR = {
   'hud.music': 'Musique',
   'settings.title': 'Réglages',
   'settings.steady': 'Marche tranquille (jamais courir)',
+  'settings.saver': 'Économie de batterie (plus frais, 30 i/s)',
   'settings.signs': 'Traduire les enseignes',
   'settings.done': 'Terminé',
   'news.title': 'Nouveautés',

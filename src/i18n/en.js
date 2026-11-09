@@ -395,6 +395,7 @@ export const EN = {
   'hud.music': 'Music',
   'settings.title': 'Settings',
   'settings.steady': 'Steady walk (never run)',
+  'settings.saver': 'Battery saver (cooler, 30 fps)',
   'settings.signs': 'Translate shop signs',
   'settings.done': 'Done',
   "news.title": "Updates",

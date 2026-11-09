@@ -397,6 +397,7 @@ export const TH = {
   'hud.music': 'เพลง',
   'settings.title': 'การตั้งค่า',
   'settings.steady': 'เดินช้าๆ (ไม่วิ่ง)',
+  'settings.saver': 'ประหยัดแบตเตอรี่ (เครื่องเย็นลง, 30 fps)',
   'settings.signs': 'แปลป้ายร้าน',
   'settings.done': 'เสร็จ',
   'news.title': 'อัปเดต',

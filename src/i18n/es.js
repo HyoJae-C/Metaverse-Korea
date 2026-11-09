@@ -398,6 +398,7 @@ export const ES = {
   'hud.music': 'Música',
   'settings.title': 'Ajustes',
   'settings.steady': 'Paso constante (sin correr)',
+  'settings.saver': 'Ahorro de batería (más fresco, 30 fps)',
   'settings.signs': 'Traducir letreros',
   'settings.done': 'Listo',
   "news.title": "Novedades",
