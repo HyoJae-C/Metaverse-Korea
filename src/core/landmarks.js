@@ -4,7 +4,6 @@
 // Low-poly and stylised, not to scale. Collision comes from the map's
 // "blockers", so these are only visual.
 import * as THREE from 'three';
-import { buildAnotherLand } from './anotherland.js';
 import { haneulStore, haneulTower } from './haneul.js';
 import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
@@ -94,7 +93,6 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 }
 
 const BUILD = {
-  anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
   haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
   haneultower: (g) => haneulTower(g),
   lakeshore: (g, l) => buildLakeshore(g, l), // Seokchon Lake's sunken water, banks and lakeside walk

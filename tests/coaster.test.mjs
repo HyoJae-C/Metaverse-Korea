@@ -13,11 +13,22 @@ const { RINK, BUMPER_COST } = await import('../src/core/bumper-cars.js');
 const { HAUNT } = await import('../src/core/haunted.js');
 const { DayPasses } = await import('../src/core/day-pass.js');
 
+const { readFileSync } = await import('node:fs');
+const { inPoly } = await import('../src/core/geom.js');
+
+// The rides under the island (the "another-land" room)...
 const room = ROOM_SIZES.themepark, box = roomBox(room);
 const park = buildThemePark({}, room, exitOf(room));
 const col = new CollisionMap(park.colliders);
+// ...and the island in Seokchon Lake with the coaster on it, open to the street.
+const STORES = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+const islandStore = STORES.find((s) => s.id === 'another-land-island');
+const iRoom = ROOM_SIZES.island, iBox = roomBox(iRoom);
+const island = buildThemePark(islandStore, iRoom, exitOf(iRoom));
+const iCol = new CollisionMap(island.colliders);
 const R = 0.35;
-function reachable(a, b, step = 0.5) {
+function reachable(a, b, step = 0.5, { col: c = col, box: bx = box } = {}) {
+  const col = c, box = bx;
   const key = (x, z) => `${Math.round(x / step)},${Math.round(z / step)}`;
   const seen = new Set([key(a.x, a.z)]), q = [[a.x, a.z]];
   while (q.length) {
@@ -77,10 +88,13 @@ test('two trains on the shared clock, never in the same place', () => {
   assert.ok(Math.abs(C.rideEnds(1, 0) - (C.PHASES.unload + 0.6)) < 1e-6);
 });
 
-test('the track stays in the park, off the ground, and clear of itself', () => {
+test('the track stays on the island, off the ground, and clear of itself', () => {
   const pts = C.trackPoints();
+  const { lawn } = islandStore.open;
   for (const p of pts) {
-    assert.ok(p.x > box.x0 + 1 && p.x < box.x1 - 1 && p.z > box.z0 + 1 && p.z < box.z1 - 1, `in the park ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    assert.ok(p.x > iBox.x0 + 1 && p.x < iBox.x1 - 1 && p.z > iBox.z0 + 1 && p.z < iBox.z1 - 1, `in the room ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    // (and over the island's land, a metre in from its shore all round)
+    for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) assert.ok(inPoly(p.x + dx, p.z + dz, lawn), `on the island ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
     assert.ok(p.y > 0.3);
   }
   for (let i = 0; i < pts.length; i += 4) for (let j = i + 80; j < pts.length; j += 4) {
@@ -102,18 +116,42 @@ test('the coaster keeps out of the old square and its rides', () => {
   for (const p of pts) assert.ok(!(p.x > -25 && p.z > -15), 'the old square stays as it was');
 });
 
-test('you can walk from the gate to the platform, and under the track to the north field', () => {
-  const gate = { x: exitOf(room).x, z: exitOf(room).z - 1.4 };
-  const [st] = park.stations.coaster;
-  assert.ok(!col.blocked(st.x, st.z, R), 'boarding spot is free');
-  assert.ok(reachable(gate, st), 'gate → coaster');
-  assert.ok(reachable(gate, { x: -21, z: -22.4 }), 'gate → the north pond bench');
-  assert.ok(!col.blocked(C.OFF.x, C.OFF.z, R), 'where you step off is free');
-  for (const s of park.seats) assert.ok(!col.blocked(s.stand[0], s.stand[1], R), `bench at ${s.x},${s.z}`);
-  for (const s of park.stations.patrons) assert.ok(!col.blocked(s.x, s.z, 0.2), `guest at ${s.x},${s.z}`);
-  const [staff] = park.stations.coasterStaff;
-  assert.ok(!col.blocked(staff.x, staff.z, 0.3) && Math.hypot(staff.x - st.x, staff.z - st.z) < 2.5, 'the attendant stands by the gate');
+test('from the bridge you walk to the platform and to the stairs down; the shore holds you in', () => {
+  const on = { col: iCol, box: iBox };
+  const bridge = { x: island.exit.x, z: island.exit.z - 1.4 }; // (where enterStore puts you)
+  const [st] = island.stations.coaster;
+  assert.ok(island.island && island.themepark && !island.rides.length);
+  assert.ok(!iCol.blocked(bridge.x, bridge.z, R), 'stepping off the bridge is free');
+  assert.ok(inPoly(bridge.x, bridge.z, islandStore.open.lawn), 'and on the island');
+  assert.ok(!iCol.blocked(st.x, st.z, R), 'boarding spot is free');
+  assert.ok(reachable(bridge, st, 0.5, on), 'bridge → coaster');
+  const [down] = island.stations.underground;
+  assert.ok(!iCol.blocked(down.x, down.z, R) && reachable(bridge, down, 0.5, on), 'bridge → the stairs down');
+  assert.ok(!iCol.blocked(C.OFF.x, C.OFF.z, R), 'where you step off is free');
+  for (const s of island.seats) assert.ok(!iCol.blocked(s.stand[0], s.stand[1], R), `bench at ${s.x},${s.z}`);
+  for (const s of island.stations.patrons) assert.ok(!iCol.blocked(s.x, s.z, 0.2) && inPoly(s.x, s.z, islandStore.open.lawn), `guest at ${s.x},${s.z}`);
+  const [staff] = island.stations.coasterStaff;
+  assert.ok(!iCol.blocked(staff.x, staff.z, 0.3) && Math.hypot(staff.x - st.x, staff.z - st.z) < 2.5, 'the attendant stands by the gate');
   assert.ok(Math.hypot(staff.x - st.x, staff.z - st.z) > 1, 'not on the boarding spot');
+  // Only the bridge leads off: walking from the bridge's end, the one place
+  // you step past the island's edge (open.out, where you're back on the
+  // street) is at the bridge.
+  const { out, bridge: [bx, bz] } = islandStore.open;
+  const key = (x, z) => `${Math.round(x * 2)},${Math.round(z * 2)}`;
+  const seen = new Set([key(bridge.x, bridge.z)]), q = [[bridge.x, bridge.z]], leave = [];
+  while (q.length) {
+    const [x, z] = q.shift();
+    if (!inPoly(x, z, out)) { leave.push([x, z]); continue; }
+    for (const [dx, dz] of [[0.5, 0], [-0.5, 0], [0, 0.5], [0, -0.5]]) {
+      const nx = x + dx, nz = z + dz;
+      if (nx < iBox.x0 || nx > iBox.x1 || nz < iBox.z0 || nz > iBox.z1 || seen.has(key(nx, nz)) || iCol.blocked(nx, nz, R)) continue;
+      seen.add(key(nx, nz)); q.push([nx, nz]);
+    }
+  }
+  assert.ok(seen.size > 2000 && leave.length, 'the island is walkable, and you can walk back off');
+  for (const [x, z] of leave) assert.ok(Math.hypot(x - bx, z - bz) < 6, `off the island at ${x},${z}, not by the bridge`);
+  // The ride-all pass is still sold at the gate under the island.
+  const gate = { x: exitOf(room).x, z: exitOf(room).z - 1.4 };
   const [b] = park.stations.booth;
   assert.ok(!col.blocked(b.x, b.z, R) && reachable(gate, b), 'ticket window');
 });
@@ -180,4 +218,8 @@ test('the park is a handful of draw calls: still meshes are merged', () => {
   let meshes = 0;
   park.scene.traverse((o) => { if (o.isMesh) meshes++; });
   assert.ok(meshes < 400, `${meshes} meshes`);
+  // (the island is drawn over the street whenever you're near it: fewer still)
+  meshes = 0;
+  island.scene.traverse((o) => { if (o.isMesh) meshes++; });
+  assert.ok(meshes < 120, `island: ${meshes} meshes`);
 });

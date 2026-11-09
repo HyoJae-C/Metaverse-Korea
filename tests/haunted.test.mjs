@@ -125,14 +125,13 @@ test('the arcade opens the ghost lantern with its own panel (not the darts one)'
 test('Another Land spread out: every ride gate, food truck and the clown is a walk from the gate, and the rides stand apart', async () => {
   const { RIDE_GATES, FOOD_TRUCKS, CLOWN, truckWindow, RIDES } = await import('../src/core/park-rides.js');
   const { GATE: BUMPER_GATE } = await import('../src/core/bumper-cars.js');
-  const { GATE: COASTER_GATE } = await import('../src/core/coaster.js');
   const room = ROOM_SIZES.themepark;
   const park = buildThemePark({ workshop: 'themepark' }, room, exitOf(room));
   const col = new CollisionMap(park.colliders);
   const spawn = exitOf(room);
   const spots = {
     ...Object.fromEntries(Object.entries(RIDE_GATES).map(([k, g]) => [k, g])),
-    bumper: BUMPER_GATE, coaster: COASTER_GATE,
+    bumper: BUMPER_GATE, // (the coaster is up on the island: coaster.test.mjs)
     ...Object.fromEntries(FOOD_TRUCKS.map((f) => [f.id, truckWindow(f)])),
     clown: { x: CLOWN.x - 1.6, z: CLOWN.z },
   };
