@@ -195,11 +195,49 @@ const gu = GU.map(([id, ko, en, ja, zh]) => {
   };
 });
 
+// The lines where two gu meet, for the purple border on the street and the
+// map (game/gu-borders.js). Each shared stretch is drawn once, from the gu
+// listed first; the outlines were simplified on their own, so a neighbour's
+// edge counts as shared when it runs within 8 m. Edges between a north-bank
+// and a south-bank gu are the Han River, and Seoul's own outer edge has no
+// neighbour: neither gets a line.
+const segDist = (x, z, [ax, az], [bx, bz]) => {
+  const vx = bx - ax, vz = bz - az;
+  const t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1)));
+  return Math.hypot(x - ax - vx * t, z - az - vz * t);
+};
+const nearRing = (x, z, p, d) => p.some((a, i) => segDist(x, z, a, p[(i + 1) % p.length]) < d);
+const acrossRiver = (a, b) => (NORTH_BANK.includes(a) && SOUTH_BANK.includes(b)) || (SOUTH_BANK.includes(a) && NORTH_BANK.includes(b));
+const borders = [];
+gu.forEach((g, gi) => {
+  const others = gu.filter((o, oi) => oi > gi && !acrossRiver(g.id, o.id));
+  const p = g.p, n = p.length;
+  const shared = p.map((a, i) => {
+    const b = p[(i + 1) % n];
+    // Both ends and the middle near the same neighbour.
+    return others.some((o) => [a, b, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]].every(([x, z]) => nearRing(x, z, o.p, 8)));
+  });
+  // Chain shared edges into lines, starting after an unshared one so a line
+  // never breaks at the ring's first point.
+  const start = shared.indexOf(false);
+  if (start < 0) return;
+  let line = null;
+  for (let k = 1; k <= n; k++) {
+    const i = (start + k) % n;
+    if (shared[i]) {
+      if (!line) line = [p[i]];
+      line.push(p[(i + 1) % n]);
+    } else if (line) { borders.push(line); line = null; }
+  }
+  if (line) borders.push(line);
+});
+
 const out = {
   note: 'Seoul at 1/4 around Seongsu Station (scripts/build-seoul.mjs). Gu outlines © OpenStreetMap contributors (ODbL), simplified.',
   credit: '© OpenStreetMap contributors',
-  scale: SCALE, gu, river: round(river), riverW,
+  scale: SCALE, gu, river: round(river), riverW, borders,
 };
 await writeFile(path.join(R, 'seoul.json'), JSON.stringify(out));
 console.log(gu.map((g) => `${g.id}${g.open ? `*(${g.districts})` : ''} ${(g.area / 1e6).toFixed(2)} km²`).join('\n'));
 console.log(`river: ${river.length} points`);
+console.log(`borders: ${borders.length} lines, ${borders.reduce((s, l) => s + l.length, 0)} points`);
