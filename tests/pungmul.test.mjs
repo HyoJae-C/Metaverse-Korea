@@ -9,13 +9,13 @@ import { CollisionMap } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/olympic-park.json', import.meta.url)));
 
-test('the troupe is the 50 of Yozi\'s list, without the extra sangmo players, in order', () => {
-  const want = { flag: 3, horn: 2, kkwaenggwari: 5, jing: 3, janggu: 10, buk: 7, sogo: 16, japsaek: 4 };
+test('the troupe is a quarter of Yozi\'s list of 75, every part kept, in order', () => {
+  const want = { flag: 1, horn: 1, kkwaenggwari: 2, jing: 1, janggu: 3, buk: 2, sogo: 7, japsaek: 2 };
   assert.deepEqual(Object.fromEntries(PUNGMUL_ROLES.map((r) => [r.id, r.n])), want);
-  assert.equal(TROUPE_N, 50);
-  assert.equal(TROUPE.filter((p) => SPINNERS.has(p.role)).length, 16, 'the sogo dancers whirl the ribbons');
+  assert.equal(TROUPE_N, 19);
+  assert.equal(TROUPE.filter((p) => SPINNERS.has(p.role)).length, 7, 'the sogo dancers whirl the ribbons');
   // the flags lead the column, the horns right behind
-  assert.deepEqual(TROUPE.slice(0, 5).map((p) => p.role), ['flag', 'flag', 'flag', 'horn', 'horn']);
+  assert.deepEqual(TROUPE.slice(0, 2).map((p) => p.role), ['flag', 'horn']);
 });
 
 test('every part has a move and its hands are set (no stray fan-dance fans)', () => {
