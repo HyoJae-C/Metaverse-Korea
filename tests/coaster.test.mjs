@@ -14,6 +14,8 @@ const { DayPasses } = await import('../src/core/day-pass.js');
 
 const { readFileSync } = await import('node:fs');
 const { inPoly } = await import('../src/core/geom.js');
+const { HOUSE } = await import('../src/core/park-candy-house.js');
+const { HALL } = await import('../src/core/park-hall.js');
 
 // The rides under the island (the "another-land" room)...
 const room = ROOM_SIZES.themepark, box = roomBox(room);
@@ -103,10 +105,13 @@ test('the track stays on the island, off the ground, and clear of itself', () =>
   }
 });
 
-test('the coaster keeps clear of the stairs down', () => {
+test('the coaster keeps clear of the candy house and the hall with the stairs down', () => {
   const pts = C.trackPoints();
-  const { stairs } = islandStore.open;
-  for (const p of pts) assert.ok(Math.hypot(p.x - stairs.x, p.z - stairs.z) > 6, `stairs pavilion at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+  const { house, hall } = islandStore.open;
+  for (const p of pts) {
+    assert.ok(Math.hypot(p.x - hall.x, p.z - hall.z) > HALL.r + 2.5, `hall at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    assert.ok(Math.abs(p.x - house.x) > HOUSE.w / 2 + 2.5 || Math.abs(p.z - house.z) > HOUSE.d / 2 + 2.5, `candy house at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+  }
 });
 
 test('from the bridge you walk to the platform and to the stairs down; the shore holds you in', () => {
