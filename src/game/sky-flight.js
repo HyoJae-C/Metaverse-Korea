@@ -9,7 +9,7 @@
 // any unknown command. What the costumes look like is core/sky-costume.js.
 //
 // Flying: move as usual; Space or R goes up, C or F down (or the ▲ ▼
-// buttons on a phone); Shift, the stick pushed all the way or ⚡ dashes.
+// buttons on a phone); Shift or ⚡ (a tap, on until tapped again) dashes.
 // Others see us flying too ("fl" in our state, drawn by core/players.js).
 //
 // Carrying: flying low next to someone, 🫴 offers them a ride in one of
@@ -116,13 +116,14 @@ export class Roofs {
   }
 }
 
-const FAST = 55; // m/s across, dashing (Shift, the stick pushed all the way, or ⚡)
+const FAST = 55; // m/s across, dashing (Shift or ⚡)
 const CLIMB = 10, FAST_CLIMB = 32; // m/s up and down
 const TOP = 250; // highest (m)
 const LIFT = 3; // how high the take-off goes (m)
 const NEAR = 4; // how close to offer someone a ride (m)
 const clamp01 = (u) => Math.min(1, Math.max(0, u));
-const BTN = 'width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:rgba(20,30,50,.55);color:#fff;touch-action:none';
+const BTN_BG = 'rgba(20,30,50,.55)';
+const BTN = 'width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:' + BTN_BG + ';color:#fff;touch-action:none';
 const PANEL = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const CHOICE = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;background:#ffe3d9;color:#2b2230;cursor:pointer';
 
@@ -181,7 +182,9 @@ export function createSkyFlight(game) {
     pad.style.cssText = 'position:fixed;right:84px;top:30%;display:flex;flex-direction:column;gap:10px;z-index:30';
     pad.up = button('▲', 'Fly up', () => { climbBtn = 1; }, () => { if (climbBtn === 1) climbBtn = 0; });
     pad.down = button('▼', 'Fly down', () => { climbBtn = -1; }, () => { if (climbBtn === -1) climbBtn = 0; });
-    pad.dash = button('⚡', 'Dash', () => { dashBtn = true; }, () => { dashBtn = false; });
+    // A tap turns the dash on until the next tap or the landing (holding it
+    // with one thumb while steering with the other was easy to lose).
+    pad.dash = button('⚡', 'Dash', () => { dashBtn = !dashBtn; });
     pad.track = button('🎯', 'Auto flight', () => (track ? stopTrack(true) : trackMenu()));
     pad.carry = button('🫴', 'Carry someone', () => carryMenu());
     pad.drop = button('🙌', 'Put them down', () => dropAll());
@@ -198,8 +201,8 @@ export function createSkyFlight(game) {
     pad.hidden = !any;
     pad.up.hidden = pad.down.hidden = pad.dash.hidden = !flying;
     pad.carry.hidden = pad.track.hidden = !(flying && phase === 'fly');
-    pad.track.style.background = track ? 'rgba(255,120,80,.85)' : '';
-    if (!track) pad.track.style.cssText = BTN;
+    pad.track.style.background = track ? 'rgba(255,120,80,.85)' : BTN_BG;
+    pad.dash.style.background = dashBtn ? 'rgba(255,200,40,.9)' : BTN_BG;
     pad.drop.hidden = !(flying && carriers.size);
     pad.letGo.hidden = !carried;
     pad.street.hidden = !(roof && !kind && !carried);
@@ -498,7 +501,12 @@ export function createSkyFlight(game) {
   // Each frame while flying, carried or on a roof, in place of walking.
   // Returns the walk speed for the body's clip.
   function fly(dt, p, mx, my, yaw, fast) {
-    if (kind && dashBtn) fast = true;
+    // In the air only Shift or ⚡ dash: the stick pushed all the way already
+    // counted as a dash, so on a phone ⚡ seemed to do nothing.
+    if (kind) {
+      const k = game.input?.keys;
+      fast = dashBtn || !!(k?.has('ShiftLeft') || k?.has('ShiftRight'));
+    }
     if (game.mode !== 'street') { // a warp or a door: back on foot
       if (carried) { carried = null; releaseCarried(game.me); }
       roof = null;
@@ -552,7 +560,7 @@ export function createSkyFlight(game) {
         v1.subVectors(goal, p).multiplyScalar(1.6);
         if (v1.length() > FAST) v1.setLength(FAST);
       } else v1.set((fx0 * my + rx * mx) * sp, climb * (fast ? FAST_CLIMB : CLIMB), (fz0 * my + rz * mx) * sp);
-      vel.lerp(v1, 1 - Math.exp(-dt * 3));
+      vel.lerp(v1, 1 - Math.exp(-dt * (fast ? 6 : 3))); // a dash kicks in quickly
       p.addScaledVector(vel, dt);
       p.y = Math.min(TOP, Math.max(0, p.y));
       const b = game.bounds;
