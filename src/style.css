@@ -2335,32 +2335,38 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .gallery-fps-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); cursor: pointer; }
 @media (pointer: fine) { .gallery-fps-fire { display: none; } }
 
-/* Phones held upright: the tool buttons (map, ride, chat, bag, notes) sit in
-   a slim see-through bar along the top instead of a column on the right.
-   The bottom stays free for the thumbs (joystick, emotes), where Safari's
-   address bar already takes room. Everything that sat at the top moves down
-   by the bar's height (the game view itself doesn't shrink). */
+/* Phones held upright: the top line is the status chips (weather, online,
+   daily, coins, settings). The tool buttons become small round icons: ride
+   and chat sit right above the emote button, under the right thumb; map,
+   bag and notes (and the shop's cart, coffee, stow) in a row under the
+   status chips. The bottom left stays for the joystick and the middle of
+   the screen stays clear. */
 @media (max-width: 700px) and (orientation: portrait) {
-  :root { --tool-bar: 54px; }
-  .tools, .in-store .tools {
-    position: fixed; left: 0; right: 0; top: 0; bottom: auto; z-index: 4;
-    flex-direction: row; justify-content: space-around; gap: 0;
-    padding: env(safe-area-inset-top) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
-    background: rgba(255, 250, 240, 0.72);
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    box-shadow: 0 1px 0 rgba(74, 63, 53, 0.08);
+  body:not(.in-store) .top-right { max-width: none; flex-wrap: nowrap; gap: 5px; right: 8px; }
+  .top-right .online { white-space: nowrap; }
+  .tools {
+    top: calc(max(12px, env(safe-area-inset-top)) + 52px); bottom: auto; right: 8px;
+    flex-direction: row; gap: 8px;
   }
-  .tools .tool { flex: 1 1 0; max-width: 84px; width: auto; height: var(--tool-bar); border-radius: 14px; background: transparent; box-shadow: none; }
-  .tools .tool span { font-size: 21px; }
+  .in-store .tools { top: calc(max(12px, env(safe-area-inset-top)) + 100px); bottom: auto; }
+  .tools .tool { width: 46px; height: 46px; border-radius: 50%; background: rgba(255, 250, 240, 0.9); }
+  .tools .tool span { font-size: 22px; }
+  .tools .tool span .note-ico { width: 24px; height: 24px; }
+  /* The words stay for screen readers only. */
+  .tools .tool small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .tools .tool[aria-pressed='true'] { background: var(--mint); }
-  .tools .badge { top: 2px; right: calc(50% - 24px); }
-  :is(.top-right, .store-banner, .notice-pin, .install-nudge, .guide, .duck-hud, .decor-btn, .piece-bar,
-    .poop-chip, .delivery-chip, .info-hint, .skate-hud, .chat-bar, .gift-cards) {
-    translate: 0 var(--tool-bar);
-  }
+  .tools #bike-btn, .tools #chat-btn { position: fixed; right: 21px; z-index: 4; }
+  .tools #chat-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 72px); }
+  .tools #bike-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 126px); }
+  /* The open emote wheel fans up over them. */
+  #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 0; pointer-events: none; }
+  /* Small phones (iPhone SE): the action button leans left, clear of ride. */
+  @media (max-width: 360px) { :is(.action, .action-menu) { left: calc(50% - 26px); } }
+  /* Kept clear of the icon row. */
+  :is(.notice-pin, .install-nudge) { translate: 0 44px; }
   /* The online count: just "🟢 5" (the words are in its tooltip). */
   .online .on-long { display: none; }
-  /* A mini-game or a game panel fills the screen: no bar over it. */
+  /* A mini-game or a game panel fills the screen: no buttons over it. */
   #hud:has(.game-panel:not([hidden])) .tools { display: none; }
 }
 .online .on-short { display: none; }
