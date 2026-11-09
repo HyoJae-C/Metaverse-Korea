@@ -292,6 +292,7 @@ export const JA = {
   "fish.bookHint": "釣った魚は売っても図鑑に残ります。",
   "fish.unknown": "まだ釣っていない",
   "fish.bookNew": "📖 図鑑に新しく登録！ {k} / {all}",
+  "fish.resetRefund": "📖 図鑑がリセットされました！バッグの魚は 🪙 {coins} で売りました。",
   "fish.bookDone": "🏆 全種類を釣りました。図鑑コンプリート！",
   "fish.back": "釣りに戻る",
   "fish.trophy": "{name}さんが{fish}を釣り上げた！",

@@ -295,6 +295,7 @@ export const ID = {
   'fish.bookHint': 'Setiap ikan yang kamu tangkap tercatat di sini, walau sudah dijual.',
   'fish.unknown': 'Belum tertangkap',
   'fish.bookNew': '📖 Baru di buku ikanmu! {k} / {all}',
+  'fish.resetRefund': '📖 Buku ikan baru untuk semua! Ikan di tasmu sudah dijual seharga 🪙 {coins}.',
   'fish.bookDone': '🏆 Semua jenis sudah tertangkap. Buku ikan lengkap!',
   'fish.back': 'Kembali memancing',
   'fish.trophy': '{name} menangkap {fish}!',

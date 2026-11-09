@@ -255,3 +255,29 @@ test('legend pity: a park\'s first legend creeps up after PITY_START bites and i
   p.clear(park);
   assert.equal(new FishPity(st).count(park), 0);
 });
+
+test('a one-time fish book reset clears book, pity and bag, and pays the bag back', async () => {
+  const { resetFishBookOnce, FishPity, FishDex, FISH_BOOK_RESET } = await import('../src/core/fishing.js');
+  const st = memory();
+  const bag = new FishBag(st); bag.add('carp'); bag.add('whale');
+  const dex = new FishDex(st); dex.add('carp'); dex.add('whale');
+  new FishPity(st).bump('ttukseom-hangang');
+  const r = resetFishBookOnce(st);
+  assert.deepEqual(r, { coins: fishById('carp').price + fishById('whale').price, had: true });
+  assert.equal(new FishDex(st).kinds, 0);
+  assert.equal(new FishBag(st).value, 0);
+  assert.equal(new FishPity(st).count('ttukseom-hangang'), 0);
+  assert.equal(resetFishBookOnce(st), null); // only once
+  assert.equal(st.getItem('mk.fishreset'), String(FISH_BOOK_RESET));
+  assert.deepEqual(resetFishBookOnce(memory()), { coins: 0, had: false }); // a new player: nothing to say
+});
+
+test('the developer fish-book tour lands the boot, then every kind in book order', async () => {
+  const { toggleTour } = await import('../src/core/fish-luck.js');
+  assert.equal(toggleTour(), true);
+  assert.equal(rollCatch().id, 'old-boot');
+  for (const f of FISH) { const c = rollCatch(); assert.equal(c.id, f.id); assert.equal(c.sure, true); }
+  assert.equal(rollCatch().id, 'old-boot'); // and round again
+  assert.equal(toggleTour(), false);
+  assert.ok(rollCatch(() => 0.5).id !== undefined);
+});

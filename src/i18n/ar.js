@@ -295,6 +295,7 @@ export const AR = {
   'fish.bookHint': 'كل سمكة تصطادها تُسجَّل هنا حتى بعد بيعها.',
   'fish.unknown': 'لم تُصطد بعد',
   'fish.bookNew': '📖 جديد في كتاب الأسماك! {k} / {all}',
+  'fish.resetRefund': '📖 كتاب أسماك جديد للجميع! بعنا أسماك حقيبتك مقابل 🪙 {coins}.',
   'fish.bookDone': '🏆 اصطدت كل الأنواع. اكتمل كتاب الأسماك!',
   'fish.back': 'العودة إلى الصيد',
   'fish.trophy': 'اصطاد {name} {fish}!',

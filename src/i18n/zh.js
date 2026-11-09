@@ -292,6 +292,7 @@ export const ZH = {
   "fish.bookHint": "钓到的鱼即使卖掉也会一直留在图鉴里。",
   "fish.unknown": "还没钓到",
   "fish.bookNew": "📖 图鉴新登记！{k} / {all}",
+  "fish.resetRefund": "📖 图鉴重新开始了！包里的鱼已按 🪙 {coins} 卖出。",
   "fish.bookDone": "🏆 所有种类都钓到了，图鉴完成！",
   "fish.back": "返回钓鱼",
   "fish.trophy": "{name} 钓到了{fish}！",

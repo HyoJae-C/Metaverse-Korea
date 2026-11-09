@@ -292,6 +292,7 @@ export const KO = {
   "fish.bookHint": "낚은 물고기는 팔아도 도감에 계속 남아요.",
   "fish.unknown": "아직 못 잡음",
   "fish.bookNew": "📖 도감에 새로 등록! {k} / {all}",
+  "fish.resetRefund": "📖 도감이 새로 시작됐어요! 가방 속 물고기는 🪙 {coins}에 팔아드렸어요.",
   "fish.bookDone": "🏆 모든 종류를 잡았어요. 도감 완성!",
   "fish.back": "낚시로 돌아가기",
   "fish.trophy": "{name}님이 {fish}을(를) 낚았다!",

@@ -294,6 +294,7 @@ export const ES = {
   'fish.bookHint': 'Cada pez que pescas queda aquí, aunque lo vendas.',
   'fish.unknown': 'Aún no pescado',
   'fish.bookNew': '📖 ¡Nuevo en tu libro de peces! {k} / {all}',
+  'fish.resetRefund': '📖 ¡Libro de peces nuevo para todos! Vendimos los peces de tu bolsa por 🪙 {coins}.',
   'fish.bookDone': '🏆 Pescaste todas las especies. ¡Libro completo!',
   'fish.back': 'Volver a pescar',
   'fish.trophy': '¡{name} pescó un {fish}!',

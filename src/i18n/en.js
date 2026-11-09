@@ -291,6 +291,7 @@ export const EN = {
   "fish.bookHint": "Every fish you land is recorded here, even after you sell it.",
   "fish.unknown": "Not caught yet",
   "fish.bookNew": "📖 New in your fish book! {k} / {all}",
+  "fish.resetRefund": "📖 A fresh fish book for everyone! Your bag's fish were sold for 🪙 {coins}.",
   "fish.bookDone": "🏆 You caught every kind. Fish book complete!",
   "fish.back": "Back to fishing",
   "fish.trophy": "{name} caught a {fish}!",
