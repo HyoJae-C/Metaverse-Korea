@@ -378,7 +378,9 @@ export const FOOD_TRUCKS = [
 export const FOOD_TRUCK = { w: 4, d: 2.2 }; // the body, long side along x
 // Where you stand to buy (in front of the window) and where the seller is.
 export const truckWindow = (f) => ({ x: f.x, z: f.z + FOOD_TRUCK.d / 2 + 0.9 });
-export const truckSeller = (f) => ({ x: f.x, z: f.z + 0.1, ry: 0 });
+// (sitting on a stool inside, high enough to be seen over the counter)
+export const SELLER_Y = 0.62; // m: the seller's feet (the stool's top is the sitting pose's 0.38 above)
+export const truckSeller = (f) => ({ x: f.x - 0.3, y: SELLER_Y, z: f.z + 0.15, ry: 0, sit: true });
 // The balloon clown on tall stilt shoes, by Main Street (game/balloon-clown.js).
 export const CLOWN = { x: 4.8, z: 14, ry: -Math.PI / 2 };
 

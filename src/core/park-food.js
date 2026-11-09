@@ -2,12 +2,78 @@
 // on the lane to the bumper cars, each with its serving hatch open to the
 // lane, an awning, a big model of its snack on the roof and its name on a
 // board. Ice cream cones, churros and hot dogs (park-rides.js FOOD_TRUCKS).
-// Returns the snacks as products (bought like a market stall's) and where
-// each seller stands, like the Han River market (riverside-market.js).
+// A simple picture of its snack is painted on the back and on the name
+// board. Returns the snacks as products (bought like a market stall's) and
+// where each seller sits (on a stool inside, up at the hatch), like the Han
+// River market (riverside-market.js).
 import * as THREE from 'three';
-import { FOOD_TRUCKS, FOOD_TRUCK, truckWindow, truckSeller } from './park-rides.js';
+import { FOOD_TRUCKS, FOOD_TRUCK, truckWindow, truckSeller, SELLER_Y } from './park-rides.js';
 import { localName } from './i18n.js';
 import { snackModel } from './held.js';
+
+// A flat, friendly picture of a snack, about s pixels tall, centred on (cx, cy).
+const round = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+export function drawSnack(g, id, cx, cy, s) {
+  g.save();
+  g.translate(cx, cy);
+  g.scale(s / 100, s / 100); // (drawn on a 100-unit square round the middle)
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.strokeStyle = '#5b3a2a'; g.lineWidth = 3;
+  if (id === 'icecream') {
+    // A waffle cone with a criss-cross, two scoops and a cherry.
+    g.beginPath(); g.moveTo(-22, -4); g.lineTo(22, -4); g.lineTo(0, 48); g.closePath();
+    g.fillStyle = '#e8b06a'; g.fill(); g.stroke();
+    g.save(); g.clip(); g.strokeStyle = '#b97b3a'; g.lineWidth = 2;
+    for (let k = -40; k <= 40; k += 9) { g.beginPath(); g.moveTo(k, -4); g.lineTo(k + 30, 50); g.stroke(); g.beginPath(); g.moveTo(k, -4); g.lineTo(k - 30, 50); g.stroke(); }
+    g.restore();
+    for (const [x, y, r, c] of [[0, -14, 21, '#8fe3c7'], [0, -36, 18, '#ff9ec7']]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = c; g.fill(); g.stroke(); }
+    g.beginPath(); g.arc(0, -56, 6, 0, Math.PI * 2); g.fillStyle = '#ff3b55'; g.fill(); g.stroke();
+  } else if (id === 'churro') {
+    // Two ridged churros in a striped paper sleeve, sugar on top.
+    for (const a of [-0.28, 0.28]) {
+      g.save(); g.rotate(a);
+      round(g, -8, -50, 16, 90, 8); g.fillStyle = '#e09a4f'; g.fill(); g.stroke();
+      g.strokeStyle = '#b06a2a'; g.lineWidth = 2;
+      for (const x of [-3, 3]) { g.beginPath(); g.moveTo(x, -44); g.lineTo(x, 30); g.stroke(); }
+      g.fillStyle = '#fffaf3';
+      for (let k = 0; k < 7; k++) { g.beginPath(); g.arc(((k * 7) % 11) - 5, -42 + k * 9, 1.6, 0, Math.PI * 2); g.fill(); }
+      g.restore();
+    }
+    g.beginPath(); g.moveTo(-26, 14); g.lineTo(26, 14); g.lineTo(19, 50); g.lineTo(-19, 50); g.closePath();
+    g.fillStyle = '#fffaf3'; g.fill(); g.stroke();
+    g.fillStyle = '#ff5a5f'; for (const x of [-14, 0, 14]) g.fillRect(x - 3, 16, 6, 33);
+  } else {
+    // A hot dog: the bun, the sausage poking out, a zigzag of mustard.
+    round(g, -46, -12, 92, 34, 17); g.fillStyle = '#f2b866'; g.fill(); g.stroke();
+    round(g, -52, -20, 104, 20, 10); g.fillStyle = '#c4462e'; g.fill(); g.stroke();
+    g.strokeStyle = '#ffd53d'; g.lineWidth = 5;
+    g.beginPath(); for (let k = 0; k <= 8; k++) g.lineTo(-38 + k * 9.5, k % 2 ? -16 : -6); g.stroke();
+    g.strokeStyle = '#5b3a2a'; g.lineWidth = 3;
+    round(g, -44, 2, 88, 22, 11); g.fillStyle = '#e9a24e'; g.fill(); g.stroke();
+  }
+  g.restore();
+}
+// The painting on the back of a van: its snack big in a cream frame, with
+// little sparkles, on the awning's colour.
+function backPanel(f) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  const tint = f.awning === '#fffaf3' ? f.color : f.awning;
+  g.fillStyle = tint; g.fillRect(0, 0, 512, 256);
+  round(g, 136, 18, 240, 220, 40); g.fillStyle = '#fffaf3'; g.fill();
+  g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,0.12)'; g.stroke();
+  drawSnack(g, f.id, 256, 128, 170);
+  g.fillStyle = '#fffaf3';
+  for (const [x, y, r] of [[60, 70, 14], [96, 180, 9], [452, 62, 10], [420, 176, 15], [40, 140, 6], [470, 120, 6]]) { // sparkles
+    g.beginPath();
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2, rr = k % 2 ? r * 0.35 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), new THREE.MeshBasicMaterial({ map: tex }));
+}
 
 function nameBoard(f) {
   const c = document.createElement('canvas');
@@ -18,11 +84,14 @@ function nameBoard(f) {
   const draw = (lang) => {
     g.fillStyle = '#fffaf3'; g.fillRect(0, 0, 512, 128);
     g.fillStyle = f.awning === '#fffaf3' ? f.color : f.awning; g.fillRect(8, 8, 496, 112);
+    // Its snack in a cream circle on the left, the name beside it.
+    g.beginPath(); g.arc(70, 64, 50, 0, Math.PI * 2); g.fillStyle = '#fffaf3'; g.fill();
+    drawSnack(g, f.id, 70, 64, 78);
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fffaf3';
     const text = lang ? localName(f.truck, lang) : f.truck.ko;
     g.font = '900 54px "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif';
-    g.fillText(text, 256, lang ? 64 : 54, 480);
-    if (!lang) { g.font = '800 22px system-ui, sans-serif'; g.fillText(f.truck.en.toUpperCase(), 256, 100, 480); }
+    g.fillText(text, 304, lang ? 64 : 54, 370);
+    if (!lang) { g.font = '800 22px system-ui, sans-serif'; g.fillText(f.truck.en.toUpperCase(), 304, 100, 370); }
     tex.needsUpdate = true;
   };
   draw(null);
@@ -68,6 +137,13 @@ export function buildFoodTrucks(scene, block, mat) {
       const a = box(0.5, 0.06, 0.8, -0.3 - 1.25 + i * 0.5, 2.15, d / 2 + 0.35, i % 2 ? '#fffaf3' : f.awning === '#fffaf3' ? f.color : f.awning);
       a.rotation.x = 0.3;
     }
+    // The picture on the back (the side away from the lane), and a stool
+    // inside so the seller sits up at the hatch.
+    const back = backPanel(f);
+    back.position.set(-0.3, 1.4, -d / 2 - 0.01);
+    back.rotation.y = Math.PI;
+    g.add(back);
+    box(0.4, SELLER_Y + 0.38 - 0.48, 0.4, truckSeller(f).x - f.x, (SELLER_Y + 0.38 + 0.48) / 2, truckSeller(f).z - f.z - 0.05, '#ff5f9e');
     const board = nameBoard(f);
     board.mesh.position.set(-0.3, 2.7, d / 2 - 0.2);
     g.add(board.mesh);
