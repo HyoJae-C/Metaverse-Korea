@@ -386,7 +386,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
-  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 999px; font-weight: 800;
+  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 22px; font-weight: 800;
+  width: max-content; max-width: min(88vw, 520px); text-align: center; /* a longer hint wraps across the screen, not in half of it */
   pointer-events: none; z-index: 60;
 }
 .cart { position: relative; text-align: left; }

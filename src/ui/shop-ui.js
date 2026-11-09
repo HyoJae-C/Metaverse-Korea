@@ -314,11 +314,11 @@ export class ShopUI {
     this.$('cart-count').hidden = n === 0;
   }
 
-  toast(text) {
+  toast(text, ms = 1600) {
     const el = this.$('toast');
     el.textContent = text;
     el.hidden = false;
     clearTimeout(this._tt);
-    this._tt = setTimeout(() => { el.hidden = true; }, 1600);
+    this._tt = setTimeout(() => { el.hidden = true; }, ms);
   }
 }

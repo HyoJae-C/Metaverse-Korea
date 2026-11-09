@@ -2780,6 +2780,7 @@ function enterRunwayRoom() {
   runwayLine.clear(); // (whoever is in line will say so)
   enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
+  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
