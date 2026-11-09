@@ -399,6 +399,7 @@ export const HI = {
   'hud.music': 'संगीत',
   'settings.title': 'सेटिंग्स',
   'settings.steady': 'एक जैसी चाल (दौड़ना नहीं)',
+  'settings.saver': 'बैटरी सेवर (कम गर्म, 30 fps)',
   'settings.signs': 'दुकानों के साइनबोर्ड का अनुवाद करें',
   'settings.done': 'हो गया',
   'news.title': 'अपडेट',

@@ -396,6 +396,7 @@ export const ZH = {
   'hud.music': '音乐',
   'settings.title': '设置',
   'settings.steady': '匀速步行（不跑步）',
+  'settings.saver': '省电模式（降低发热，30帧）',
   'settings.signs': '翻译店铺招牌',
   'settings.done': '完成',
   "news.title": "更新公告",

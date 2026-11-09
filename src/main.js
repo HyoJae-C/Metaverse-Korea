@@ -10,6 +10,7 @@ import {
   ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ZOO_TEXT, DOGHOLE_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
+import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
@@ -619,7 +620,6 @@ function showGpuHint() {
 // come back instead of leaving a blank screen.
 canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); reportProblem('graphics context lost — reload the page if it stays blank'); });
 canvas.addEventListener('webglcontextrestored', () => { if (errBox) errBox.hidden = true; });
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec || softwareGL ? 1 : 2));
 renderer.shadowMap.enabled = !lowSpec && !softwareGL;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -638,6 +638,10 @@ sun.position.set(60, 120, 40);
 sun.castShadow = !lowSpec && !softwareGL;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 300 });
+// Resolution, shadows and a 60 fps cap, lowered when the frame rate drops or
+// with Battery saver in Settings (core/graphics-quality.js).
+const SAVER_KEY = 'mk.batterySaver';
+const gfx = createGraphicsQuality({ renderer, sun, capable: !lowSpec && !softwareGL, saver: (() => { try { return localStorage.getItem(SAVER_KEY) === '1'; } catch { return false; } })() });
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
@@ -2908,6 +2912,12 @@ $('sfx-btn').onclick = () => {
   if (sfx.on) sfx.doorbell(); // preview
   else motionSound.stopAll();
 };
+$('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+$('saver-btn').onclick = () => {
+  gfx.setSaver(!gfx.saver);
+  $('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+  try { localStorage.setItem(SAVER_KEY, gfx.saver ? '1' : '0'); } catch { /* ignore */ }
+};
 $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
 $('steady-btn').onclick = () => {
   steadyWalk = !steadyWalk;
@@ -4428,9 +4438,11 @@ for (const e of enclosures) {
   e.collect([landmarks, scene], enclosureSkip);
   e.adopt(storefronts.items.filter((i) => e.contains(i.group.position.x, i.group.position.z, 0.5)).map((i) => i.group));
 }
-// Shops, landmarks, subway entrances, stamp stands, meeting zones and the
-// stream's lanterns and stones past the fog are not drawn.
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams')], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+// Shops, landmarks, subway entrances, stamp stands, meeting zones, the
+// stream's lanterns and stones, the zoo's pens and the wall posters past the
+// fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
+// Bukchon, 2 km away behind the fog.)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), ...zoo.pens.map((P) => P.g), adPosters.root], () => (scene.fog ? scene.fog.far + 30 : Infinity));
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past
@@ -6263,7 +6275,8 @@ splitInstances(scene);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop((now) => {
+  if (!gfx.frame(now)) return; // (at most 60 frames a second)
   guardPosition();
   timer.update();
   const dt = Math.min(timer.getDelta(), 0.05);
@@ -6741,6 +6754,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     riding: () => riding,
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
+    graphics: () => gfx.state(),
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),

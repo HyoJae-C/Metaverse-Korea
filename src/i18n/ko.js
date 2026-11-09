@@ -396,6 +396,7 @@ export const KO = {
   'hud.music': '음악',
   'settings.title': '설정',
   'settings.steady': '일정한 걸음 (뛰지 않기)',
+  'settings.saver': '배터리 절약 (덜 뜨겁게, 30프레임)',
   'settings.signs': '가게 간판 번역',
   'settings.done': '완료',
   "news.title": "업데이트 소식",

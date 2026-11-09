@@ -37,6 +37,7 @@ export function mergeStatic(root, keep = []) {
     const one = new THREE.Mesh(geo, material);
     one.castShadow = meshes.some((x) => x.castShadow);
     one.receiveShadow = meshes.some((x) => x.receiveShadow);
+    if (meshes.every((x) => x.userData.noShadow)) one.userData.noShadow = true; // (stream.js sets shadows after building)
     one.name = 'merged';
     root.add(one);
     for (const mesh of meshes) { mesh.parent.remove(mesh); removed++; }

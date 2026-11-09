@@ -396,6 +396,7 @@ export const JA = {
   'hud.music': '音楽',
   'settings.title': '設定',
   'settings.steady': '一定の速さで歩く（走らない）',
+  'settings.saver': 'バッテリーセーバー（熱を抑える・30fps）',
   'settings.signs': '店の看板を翻訳',
   'settings.done': '完了',
   "news.title": "アップデート情報",

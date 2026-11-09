@@ -399,6 +399,7 @@ export const AR = {
   'hud.music': 'الموسيقى',
   'settings.title': 'الإعدادات',
   'settings.steady': 'مشي ثابت (بدون ركض)',
+  'settings.saver': 'موفّر البطارية (أبرد، 30 إطارًا)',
   'settings.signs': 'ترجمة لافتات المتاجر',
   'settings.done': 'تم',
   "news.title": "التحديثات",
