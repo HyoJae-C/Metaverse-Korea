@@ -140,6 +140,7 @@ import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
 import { fireworksAt, nearYeouido, toUV as yeouidoUV, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
+import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
 import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
@@ -5277,6 +5278,16 @@ const duckBoats = createDuckBoats({
 });
 const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 
+// Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
+const rainbowFountain = createRainbowFountain({
+  landmarks: map.landmarks, scene, weather, music, phone: () => lowSpec,
+  toast: (s) => shop.toast(s),
+  worldPos: () => {
+    const p = me.root.position, here = openParkHere();
+    return mode === 'street' ? [p.x, p.z] : here ? parkWorld(here, p.x, p.z) : null;
+  },
+});
+
 // Delivery runs from the tteokbokki stall. (game/delivery.js)
 const deliveryGame = createDelivery({
   get interior() { return interior; }, get me() { return me; }, get mode() { return mode; }, $, leaveStore,
@@ -6314,6 +6325,7 @@ renderer.setAnimationLoop(() => {
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
   updateFireworks();
+  rainbowFountain.update();
   updateRide(dt);
   if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   updateCable();
@@ -6698,6 +6710,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
     droneShow: () => ({ night: +(interior?.show?.night || 0).toFixed(3), drones: !!interior?.show?.sky, lit: interior?.show?.sky?.lit() || 0, stamp: !!stampStands.rooms.get('ttukseom-hangang')?.find((i) => i.stamp.id === 'drone-show')?.mesh.visible, pitch: +cam.pitch.toFixed(2) }),
     openBank: () => bankGame.openBank(),

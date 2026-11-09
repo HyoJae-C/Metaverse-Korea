@@ -283,6 +283,9 @@ const BUILD = {
     box(g, w + 8, 1.4, len, 0, top, 0, '#d9dde2');
     for (const sx of [-1, 1]) box(g, 0.3, 0.9, len, sx * (half + 3.85), top + 1.15, 0, '#b8bec6'); // its parapets
     for (let z = -len / 2 + 12; z < len / 2; z += 30) for (const sx of [-1, 1]) box(g, 1.6, top - 0.7, 2.2, sx * (half + 2.2), (top - 0.7) / 2, z, '#c3c8ce');
+    // The Moonlight Rainbow Fountain's pipe of nozzles along each side of the
+    // deck (the water itself, at show time only: game/rainbow-fountain.js).
+    for (const sx of [-1, 1]) box(g, 0.35, 0.35, 112, sx * (half + 4.1), top - 0.5, 0, '#6f7a86');
   },
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon

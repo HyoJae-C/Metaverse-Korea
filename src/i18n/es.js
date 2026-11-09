@@ -619,4 +619,8 @@ export const ES = {
   'look.model': 'Personaje',
   'look.tee': 'Color de la camiseta',
   'credit.chars': 'Personajes',
+  "fountain.soon": "🌈 La Fuente Arcoíris a la Luz de la Luna empieza en un minuto. Mira el puente Banpo desde el césped junto al río.",
+  "fountain.on": "🌈 La Fuente Arcoíris está encendida: agua de colores cae desde ambos lados del puente Banpo.",
+  "fountain.photo": "📸 Hora de la foto: todo el puente es un arcoíris durante el último minuto.",
+  "fountain.next": "🌈 El próximo espectáculo de la Fuente Arcoíris empieza en {min} min.",
 };
