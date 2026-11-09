@@ -3,7 +3,8 @@
 // Shared by the scenery (core/landmarks.js), the performers and crowd
 // (core/busking.js) and the ground height you walk on (main.js).
 //
-// West: long low steps the audience stands and sits on, facing east (→)
+// West: long low steps, filling the west half of the walking street, that
+// the audience stands and sits on, facing east (→)
 // towards the performers, like the stepped edges of the real walking street.
 // Across the walking street, east: a K-pop girl group of five, and some way
 // south of them a boy group of four. North of the dancers the singer plays
@@ -14,7 +15,7 @@
 // `n` low steps of `rise` each climb from the front edge (treads `tread`
 // deep), from both ends (`endTread`) and, steeper, from the back
 // (`backTread`), so you can walk up them from any side.
-export const BANK = { back: -13, front: -5, z0: -16, z1: 14, n: 4, rise: 0.35, tread: 1.8, endTread: 0.6, backTread: 0.4 };
+export const BANK = { back: -13, front: 0, z0: -16, z1: 14, n: 4, rise: 0.35, tread: 2.4, endTread: 0.6, backTread: 0.4 };
 BANK.h = BANK.n * BANK.rise;
 
 // Which step (0 = the street, n = the top) is at (x, z) from the zone's centre.
@@ -43,9 +44,9 @@ export function buskingGroundY(list = [], x, z) {
 
 // The audience on the steps: three rows, one step apart, low at the front.
 export const CROWD = [
-  ...[-12, -6, 0, 6, 11].map((z) => [-6.4, z]),
-  ...[-13, -8, -3, 2, 7, 12].map((z) => [-8.3, z]),
-  ...[-10, -4.5, 1, 6.5].map((z) => [-10.3, z]),
+  ...[-12, -6, 0, 6, 11].map((z) => [-1.2, z]),
+  ...[-13, -8, -3, 2, 7, 12].map((z) => [-3.6, z]),
+  ...[-10, -4.5, 1, 6.5].map((z) => [-6, z]),
 ];
 
 // Where the performers stand. Everyone faces west (the audience).
@@ -56,5 +57,5 @@ export const GIRLS = [[6.2, -3], [7.8, -5.4], [7.8, -0.6], [9.4, -7.8], [9.4, 1.
 export const BOYS = [[6.4, 8.6], [6.4, 11.6], [8.6, 7.1], [8.6, 13.1]];
 export const FACE_AUDIENCE = -Math.PI / 2; // rotation.y facing -x
 
-// The faint "BUSKING ZONE" lettering on the ground, in the street between.
-export const GROUND_TEXT = { x: -1.5, z: 0, w: 22, d: 5.5 };
+// The faint "BUSKING ZONE" lettering on the ground, on the acts' half of the street.
+export const GROUND_TEXT = { x: 2.8, z: 0, w: 22, d: 5.5 };

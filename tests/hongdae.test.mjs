@@ -82,7 +82,7 @@ test('busking steps: flat ground around them, low steps up from every side, the 
   assert.equal(bankHeight(BANK.back - 1, 0), 0);
   assert.equal(bankHeight(-10, BANK.z1 + 1), 0);
   assert.equal(bankHeight(-11, 0), BANK.h, 'the top step near the back');
-  assert.ok(bankHeight(-6, 0) < bankHeight(-8, 0) && bankHeight(-8, 0) < BANK.h);
+  assert.ok(bankHeight(-1, 0) < bankHeight(-3, 0) && bankHeight(-3, 0) < BANK.h);
   assert.ok(BANK.rise <= 0.4, 'low steps');
   // Walking across the steps in any direction, you only ever go up or down one step.
   for (let x = BANK.back - 1; x <= BANK.front + 1; x += 0.1) {
@@ -92,7 +92,7 @@ test('busking steps: flat ground around them, low steps up from every side, the 
   }
   // The three rows of listeners stand on three different steps.
   assert.deepEqual([...new Set(CROWD.map(([x, z]) => stepAt(x, z)))].sort(), [1, 2, 3]);
-  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 10, 'the acts across the street from the bank');
+  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 5, 'the acts on the other half of the street');
 });
 
 test('animal cafés: Seongsu keeps the cat café and the retriever café (the old pet shop), the rest are in Hongdae with a second cat café', () => {
