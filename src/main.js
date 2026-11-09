@@ -3761,9 +3761,10 @@ const fishingUi = new FishingUI({
     if (ph === 'cast') me.play('cast');
     else if (ph === 'land' || ph === 'trash') me.play('catch');
     else if (ph === 'bite') buzz(60);
-    // ★5 legends: a long rumble on the bite, a tug while you reel, a fanfare when landed.
-    const legend = data?.rarity === 5;
-    if (ph === 'bite' && legend) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
+    // Huge bites (★4 or a legend): a long rumble on the bite and a tug while
+    // you reel; only a landed legend gets the fanfare.
+    const legend = data?.rarity === 5, huge = data && !data.trash && !data.mystery && data.rarity >= 4;
+    if (ph === 'bite' && huge) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
     if (ph === 'reel' && legendOn) { clearInterval(legendTug); legendTug = setInterval(() => { buzz(40); shake([$('scene')], false); }, 900); }
     if (ph !== 'reel' && ph !== 'tap' && ph !== 'progress' && ph !== 'bite') { clearInterval(legendTug); legendOn = false; }
     if (ph === 'land' && legend) { buzz([120, 60, 120, 60, 120, 60, 700]); shake([$('scene'), $('fish-panel')]); }

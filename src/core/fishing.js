@@ -903,7 +903,7 @@ export function rollFish(rand = Math.random, lucky = false, park = null) {
   return last;
 }
 
-export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.png', trash: true };
+export const TRASH = { id: 'old-boot', emoji: '🥾', image: '/assets/fishing/old-boot.webp', trash: true };
 export const TRASH_CHANCE = 0.04;
 export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
 // A fish set up by a developer code (core/fish-luck.js) is the next bite,
@@ -953,6 +953,15 @@ export const BITE_LINES = {
     { ko: '강의 주인이 나타났나?!', en: 'Is it the lord of the river?!', ja: '川の主か?!', zh: '难道是河之主?!' },
     { ko: '온 힘을 다해 감아라!!!!', en: 'Reel with everything you’ve got!!!!', ja: '全力で巻け!!!!', zh: '使出全力收线!!!!' }],
 };
+// A mystery bite: this share of bites (any fish, or the boot) gives nothing
+// away: one middling splash and a line like these. The reel still pulls as
+// hard as the fish really is, so you find out while reeling it in.
+export const MYSTERY_CHANCE = 0.1;
+export const MYSTERY_LINES = [
+  { ko: '잘 모르겠다!!', en: "Can't tell what it is!!", ja: 'なんだかわからない!!', zh: '搞不清是什么!!' },
+  { ko: '이건… 뭐지?!', en: 'What… is this?!', ja: 'これは…なんだ?!', zh: '这是…什么?!' },
+  { ko: '감이 안 온다!!', en: 'No idea what bit!!', ja: '手応えが読めない!!', zh: '完全猜不出来!!' },
+];
 // Auto fishing: catches on its own while you stay at the spot with the game
 // open, but slowly (AUTO_RATE of hands-on fishing, which lands a fish about
 // every MANUAL_SECONDS) and never a rare fish. Lower AUTO_RATE to slow it.

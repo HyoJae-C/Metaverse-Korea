@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -56,12 +56,12 @@ export function trophy(f, name) {
   return w;
 }
 
-// The little picture over the catcher's head for every catch; ★2 adds its stars.
+// The little picture over the catcher's head for every catch, with its stars.
 export function catchBubble(f) {
   const icon = fishStampIcon(f, 'bubble-fish tier-' + f.rarity);
-  if (f.rarity !== 2) return icon;
+  if (!f.rarity) return icon;
   const w = el('span', 'bubble-catch');
-  w.append(icon, el('b', 'bubble-stars', '★★'));
+  w.append(icon, el('b', 'bubble-stars', '★'.repeat(f.rarity)));
   return w;
 }
 
@@ -325,11 +325,13 @@ export class FishingUI {
     this.fish = rollCatch(Math.random, lucky, this.park?.() || null);
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
-    this.onPhase?.('bite', this.fish);
-    water.className = 'fish-water bite feel-' + feelOf(this.fish) + (fightsBack(this.fish) ? ' rare' : '');
+    this.mystery = Math.random() < MYSTERY_CHANCE; // a bite that gives nothing away
+    this.feel = this.mystery ? 'mystery' : feelOf(this.fish);
+    this.onPhase?.('bite', this.mystery ? { ...this.fish, mystery: true } : this.fish);
+    water.className = 'fish-water bite feel-' + this.feel + (!this.mystery && fightsBack(this.fish) ? ' rare' : '');
     water.querySelector('p').textContent = t('fish.bite');
-    this.shout = biteLine(this.fish); // kept for the reel-in too
-    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + feelOf(this.fish), this.shout));
+    this.shout = this.mystery ? localName(MYSTERY_LINES[Math.floor(Math.random() * MYSTERY_LINES.length)]) : biteLine(this.fish); // kept for the reel-in too
+    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + this.feel, this.shout));
     btn.classList.add('pulse');
     btn.onclick = () => this.reel();
     this.timer = setTimeout(() => { this.stats?.add('miss'); this.onPhase?.('retrieve'); this.renderIdle(t('fish.slow')); }, BITE_WINDOW * 1000);
@@ -345,7 +347,7 @@ export class FishingUI {
     this.onPhase?.('reel', { big });
     const rare = fightsBack(this.fish);
     const water = this._water(rare ? t('fish.fightBack') : big ? t('fish.bigOne') : t('fish.reeling'), 'reel' + (rare ? ' rare' : ''));
-    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + feelOf(this.fish), this.shout));
+    if (this.shout) water.prepend(el('b', 'fish-callout feel-' + this.feel, this.shout));
     const bar = el('div', 'fish-meter' + (drain ? ' drain' : ''));
     const fill = el('i');
     bar.append(fill);
@@ -463,11 +465,11 @@ export class FishingUI {
     const isNew = this.dex ? this.dex.add(f.id) : false;
     this.fresh = isNew ? f.id : null; // the book shows its stamp pressing in
     this._frame();
-    // How loud a catch is, by rarity: ★1 plain, ★2 stars only, ★3 a small
+    // Every catch shows its stars. How loud it is, by rarity: ★1-2 stars only, ★3 a small
     // glow, ★4 a big one, ★5 the works (style.css .fish-card.tier-N).
     const card = el('div', 'fish-card' + (f.rarity >= 2 ? ' tier-' + f.rarity : '') + (f.rarity >= 3 ? ' rare' : ''));
     if (f.rarity >= 5) for (const k of [1, 2, 3]) card.append(el('i', 'fish-spark s' + k, k === 3 ? '⭐' : '✨'));
-    if (f.rarity >= 2) card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
+    card.append(el('span', 'fish-card-stars', '★'.repeat(f.rarity) + ' ' + localName(TIER_NAMES[f.rarity])));
     if (isNew) card.append(el('span', 'fish-new', t('fish.bookNew', { k: this.dex.kinds, all: FISH.length })));
     if (isNew) stampPop(f, this.dex, { onSlam: this.onStamp, onBook: () => this.open && this.renderBook() });
     card.append(

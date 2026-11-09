@@ -99,6 +99,9 @@ test('bites feel three ways (★1, ★2-3, ★4-5); auto fishing never rolls a r
     assert.equal(drainFor({ rarity: a }), drainFor({ rarity: b }));
   }
   assert.equal(tapsFor(TRASH), tapsFor({ rarity: 1 }));
+  const { MYSTERY_CHANCE, MYSTERY_LINES } = await import('../src/core/fishing.js');
+  assert.ok(MYSTERY_CHANCE > 0 && MYSTERY_CHANCE <= 0.15); // now and then, so it stays exciting
+  for (const l of MYSTERY_LINES) assert.ok(l.ko && l.en && l.ja && l.zh);
   assert.ok(AUTO_FISH.length && AUTO_FISH.every(f => f.released && !isRare(f)));
   for (let i = 0; i < 200; i++) assert.ok(!isRare(rollAutoCatch()));
   assert.deepEqual([1, 2, 3, 4, 5].map(r => drainFor({ rarity: r })), [0, 1.2, 1.2, 2.4, 2.4]);
