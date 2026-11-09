@@ -38,9 +38,11 @@ export const ROOM_SIZES = {
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
-  // Another Land (themepark.js): the old 52 × 28 square plus the roller
-  // coaster's land to the west and north. Not centred: x0..x1, z0..z1.
-  themepark: { w: 96, d: 54, h: 8, x0: -70, x1: 26, z0: -40, z1: 14 },
+  // Another Land (themepark.js): the rides round the central plaza, spread
+  // out along walking paths, the roller coaster's land to the west and
+  // north, the east promenade to the Ferris wheel and the drop tower, and
+  // a longer Main Street from the gate. Not centred: x0..x1, z0..z1.
+  themepark: { w: 132, d: 74, h: 8, x0: -70, x1: 62, z0: -40, z1: 34 },
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car

@@ -26,7 +26,7 @@ await page.waitForTimeout(3000);
 const staff = await page.evaluate(() => __mk.parkStaff());
 assert(['carousel', 'viking', 'wheel', 'drop', 'bumper'].every((k) => staff.includes(k)), `attendants: ${staff}`);
 
-for (const [kind, gate] of [['viking', [-4.9, -6.2]], ['carousel', [-8.4, -2]]]) {
+for (const [kind, gate] of [['viking', [-8.4, -5.2]], ['carousel', [-10.4, 12]]]) {
   await page.evaluate(([x, z]) => { __mk.place(x, z); __mk.cam({ yaw: 0, pitch: 0.35, dist: 9 }); }, gate);
   await page.waitForTimeout(600);
   // Wait for it to load.
@@ -66,7 +66,7 @@ for (const [kind, gate] of [['viking', [-4.9, -6.2]], ['carousel', [-8.4, -2]]])
   assert(viewed, `${kind}: rode the run`);
 }
 // The drop climbs the tower and falls; the wheel takes you over the top.
-for (const [kind, gate, high] of [['drop', [13.8, -2], 12], ['wheel', [9, -5.3], 10]]) {
+for (const [kind, gate, high] of [['drop', [47.3, -4], 12], ['wheel', [22, -3.8], 10]]) {
   await page.evaluate(([x, z]) => { __mk.place(x, z); __mk.cam({ yaw: 0, pitch: 0.35, dist: 9 }); }, gate);
   await page.waitForTimeout(600);
   let p = await pr();

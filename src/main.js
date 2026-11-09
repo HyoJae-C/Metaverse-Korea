@@ -53,7 +53,7 @@ import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
-import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI } from './core/park-rides.js';
+import { RIDES as PARK_RIDES, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam } from './game/ride-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_TUNNEL } from './core/coaster.js';
@@ -156,7 +156,7 @@ import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
 import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
-import { HELD_KINDS, COFFEE_SIPS, giftKind } from './core/held.js';
+import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { SEATS, seatPosition } from './core/bikes.js';
@@ -196,6 +196,7 @@ import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createFolkYard } from './game/folk-yard.js';
+import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
 import { parseTaxi } from './core/taxi-share.js';
@@ -1741,7 +1742,7 @@ const shop = new ShopUI({
     refreshWallet();
     const kind = goodsKind(product);
     if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
-    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en'), ...(product.snack ? { snack: product.snack } : {}) });
     if (kind !== 'gift') recordFood(shop.store, product, true);
     const seller = sellerOf(product) || clerk;
     seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
@@ -1981,21 +1982,22 @@ let held = (() => {
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
+    if (h?.kind === 'balloon') return restoreBalloon(h); // (Another Land's clown; gone once its air is out)
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
-    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}) } : null;
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
   } catch { return null; }
 })();
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.kind || null);
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
-  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold'; // a shopping bag is just carried (the duck maker works with E)
-  $('stow-btn').hidden = !h;
+  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
+  $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
@@ -2461,7 +2463,7 @@ function enterStore(item, walkIn = null) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2524,7 +2526,7 @@ function enterStore(item, walkIn = null) {
   // The Han River park's market: a seller behind each stall.
   if (built.vendors?.length && !built.vendorNpcs) {
     built.vendorNpcs = built.vendors.map((v) => {
-      const o = makeNpc($('labels'), '');
+      const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Another Land's food truck sellers wear the park's uniform)
       o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
       o.ch.root.position.set(v.x, 0, v.z);
       o.ch.root.rotation.y = v.ry;
@@ -2588,7 +2590,7 @@ function enterStore(item, walkIn = null) {
   if (built.stations?.rideStaff && !built.rideStaff) {
     built.rideStaff = {};
     for (const st of built.stations.rideStaff) {
-      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }));
+      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }), { ...randomLook(), ...PARK_UNIFORM });
       o.ch.root.position.set(st.x, 0, st.z);
       o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
@@ -2597,9 +2599,10 @@ function enterStore(item, walkIn = null) {
   }
   interior.rideStaff = built.rideStaff || null;
   interior.riderNpcs = parkRiders.spawn(built) || null;
+  if (!balloonClown.spawn(built)) balloonClown.leave();
   if (built.stations?.coasterStaff && !built.coasterStaff) {
     built.coasterStaff = built.stations.coasterStaff.map((st) => {
-      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }));
+      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }), { ...randomLook(), ...PARK_UNIFORM });
       o.ch.root.position.set(st.x, 0, st.z);
       o.ch.root.rotation.y = st.ry;
       built.scene.add(o.ch.root);
@@ -2820,6 +2823,7 @@ function leaveStore(walkOut = false) {
   leaveKpopCafe();
   leaveClub();
   for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  balloonClown.hideLabels();
   clerk = null;
   trainer = null;
   instructor = null;
@@ -4021,6 +4025,12 @@ const folkYard = createFolkYard({
   $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
 });
 onLanguageChange(() => folkYard.relabel());
+// Another Land's balloon clown on platform shoes. (game/balloon-clown.js)
+const balloonClown = createBalloonClown({
+  get me() { return me; }, get held() { return held; }, get action() { return action; }, set action(v) { action = v; },
+  $, STALE, shop, wallet, randomLook, refreshWallet: () => refreshWallet(), handReady: () => handReady(), holdNew: (h) => holdNew(h), setHeld: (h) => setHeld(h),
+});
+onLanguageChange(() => balloonClown.relabel());
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
 const skate = createSkate({
   get map() { return map; }, get inSkate() { return inSkate; }, set inSkate(v) { inSkate = v; },
@@ -5875,6 +5885,7 @@ function moreActions(p, door) {
   if (seat?.mat) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
   const fb = frisbee.action(p); if (fb) out.push(fb);
+  if (interior.themepark) out.push(...balloonClown.actions(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   return out;
@@ -6012,6 +6023,8 @@ function updateAction(p, tSec) {
       next = ridePass()
         ? { key: 'ride-pass-held', label: '🎫 ' + fmt(L(DAY_PASS_TEXT.ridesHeld), { name }), run: buyRidePass }
         : { key: 'ride-pass', label: `🎫 ${name} · 🪙 ${RIDE_PASS.toLocaleString()}`, run: buyRidePass };
+    } else if (interior.themepark && balloonClown.actions(p).length) {
+      next = balloonClown.actions(p)[0]; // (the other balloons are in the more list)
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
@@ -6622,6 +6635,7 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
     listenBar.update(dt, p);
   }
+  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
   if (keeper) {
     if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
     else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';

@@ -21,9 +21,9 @@ export const TURN_MS = 20000; // a called number has this long to get in
 export const BUMPER_COST = 4000; // won (the other rides: RIDE_PRICE in themepark.js)
 
 // The rink: inner floor (cars stay inside), with the gate on the west side
-// facing the plaza. It fills the park's south-east corner, from the drop
-// tower's walkway down to the front and over to the east fence.
-export const RINK = { x: 19.9, z: 8.1, hx: 5.3, hz: 4.8 };
+// facing the lane from the plaza, out in the south-east past the food
+// trucks.
+export const RINK = { x: 40, z: 16, hx: 5.3, hz: 4.8 }; // south-east, past the food trucks
 export const RAIL = 0.35; // rail thickness round the floor
 export const GATE = { x: RINK.x - RINK.hx - RAIL - 1, z: RINK.z }; // stand here to get in
 // Animals (pets walking with their people) keep out of this box: the floor,

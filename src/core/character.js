@@ -131,6 +131,11 @@ export function createCharacter(rawLook) {
   const footProps = []; // waiting for the model (addFootProps)
   const attachHeld = () => {
     if (!held) return;
+    if (held.userData.onHead) { // (a balloon crown: worn, not held)
+      held.scale.setScalar(1);
+      headAcc.add(held);
+      return;
+    }
     if (model?.hand) {
       held.scale.setScalar(1.8 / model.scale); // inside the scaled model; 1.8x life size so it reads on chibi hands
       held.position.set(0, 0, 0);
