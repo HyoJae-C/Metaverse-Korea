@@ -26,9 +26,14 @@ after adding a shop to `PLACE_NEW` to give it a free lot.
 
 Seoul is real Seoul at **1/4** around Seongsu Station (`src/core/seoul-grid.js`):
 the distance and direction between two places is the real one divided by 4.
-Inside a district, streets and buildings stay full size; only the empty land
-between districts shrinks. So every place has a known spot before it is
-built, and nothing needs moving when something new is added next to it.
+That goes for the inside of a district too: its streets are laid out at 1/4
+of their real lengths and distances, while road widths and buildings stay a
+normal size (a district looks like the real place, just shorter). So every
+place has a known spot and a known amount of room before it is built, and
+nothing needs moving when something new is added next to it. Before
+building, check a few real distances (station to the main sight, the length
+of the main street) and divide them by 4; a district drawn larger takes its
+neighbours' room and pushes them off their spots.
 
 - **Gu budgets.** The 25 gu are their real outlines at 1/4
   (`public/regions/another-seoul/seoul.json`, built by `scripts/build-seoul.mjs`
@@ -43,7 +48,8 @@ built, and nothing needs moving when something new is added next to it.
   Olympic Park is its own district (anchor: the World Peace Gate), joined to
   Songpa by Olympic-ro.
 - **Seongsu** is the exception: the first district, full size and larger
-  than its 1/4 share, so the river and gu edges just south of it are pushed
+  than its 1/4 share (Gyeongbokgung's palace is also drawn larger, see its
+  anchor's `why`), so the river and gu edges just south of it are pushed
   south to make room (`seongsuRoom` in `scripts/build-seoul.mjs`).
 - **Moving a district** (`scripts/place-districts.mjs --apply`) also moves
   everything placed in world metres inside it: stores, zones, bike stations,
@@ -126,6 +132,25 @@ an open Han River park along its south edge. Its Mangwon Fishing Pier is a
 park room like Ttukseom's; every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
+
+## Hongdae (Mapo-gu)
+
+`node scripts/build-hongdae.mjs` draws Hongdae (`districts/hongdae.json`) at
+a quarter of the real size and puts its shops on their lots. As in Seoul,
+from north to south: Yeonnam's Gyeongui Line Forest Park ends at Yanghwa-ro,
+Hongik Univ. Station's exits are on Yanghwa-ro, and Hongdae Walking Street
+starts across the road and runs south past the busking zone (about 85 m from
+the station here, about 400 m in Seoul). The district is about 230 x 180 m
+(it was 400 x 360 m, drawn full size, until it was redone at 1/4).
+
+- **The busking zone is the origin** (the anchor in `region.json`). The
+  stage, its low steps and the open plaza round them (44 x 76 m) keep their
+  full size: the crowd is what the street is for.
+- Shops stay in their groups: the info centre and salons, tarot cafés and
+  clothes round the plaza, the perfume alley east of it, Korean restaurants
+  facing each other on Donggyo-ro, the sauna, gym, climbing wall and yoga
+  down the walking street. `SHOPS` in the script says which lot each takes.
+- Run the script again after changing the map; it rewrites the shops' `at`.
 
 ## Banpo-Jamwon Han River Park (Seocho-gu)
 
