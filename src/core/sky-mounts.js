@@ -314,14 +314,14 @@ export function wukongPieces() {
   }
   // The muzzle with nostrils, and furry cheeks.
   const muzzle = new THREE.Group();
-  muzzle.position.set(0, -0.16, 0.28);
+  muzzle.position.set(0, -0.11, 0.29);
   const snout = new THREE.Mesh(ball, face);
-  snout.scale.set(0.14, 0.085, 0.09);
+  snout.scale.set(0.13, 0.08, 0.055);
   muzzle.add(snout);
   for (const s of [-1, 1]) {
     const n = new THREE.Mesh(ball, dark);
     n.scale.setScalar(0.014);
-    n.position.set(s * 0.025, 0.035, 0.085);
+    n.position.set(s * 0.024, 0.03, 0.052);
     muzzle.add(n);
     const cheek = new THREE.Mesh(ball, fur);
     cheek.scale.set(0.05, 0.08, 0.05);
@@ -329,7 +329,7 @@ export function wukongPieces() {
     muzzle.add(cheek);
   }
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 4, 10, Math.PI).rotateZ(Math.PI), dark);
-  mouth.position.set(0, -0.015, 0.088);
+  mouth.position.set(0, -0.015, 0.054);
   muzzle.add(mouth);
   out.push({ obj: muzzle, at: 'head', from: [0, 0, 1.2], delay: 0.45, dur: 0.35 });
   // The tail, curling up behind.
