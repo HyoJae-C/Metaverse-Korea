@@ -412,6 +412,7 @@ export const JA = {
   'hud.music': '音楽',
   'settings.title': '設定',
   'settings.steady': '一定の速さで歩く（走らない）',
+  'settings.localSky': '昼と夜を自分の時間に (ソウル時間の代わりに)',
   'settings.saver': 'バッテリーセーバー（熱を抑える・30fps）',
   'settings.firstPerson': '一人称視点 (V)',
   'fp.on': '一人称視点：画面をクリックでマウス操作、Escで解除、Vかズームアウトで戻ります',

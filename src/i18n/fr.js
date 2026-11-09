@@ -413,6 +413,7 @@ export const FR = {
   'hud.music': 'Musique',
   'settings.title': 'Réglages',
   'settings.steady': 'Marche tranquille (jamais courir)',
+  'settings.localSky': 'Jour et nuit à mon heure (pas celle de Séoul)',
   'settings.saver': 'Économie de batterie (plus frais, 30 i/s)',
   'settings.firstPerson': 'Vue à la première personne (V)',
   'fp.on': 'Vue à la première personne : cliquez pour prendre la souris, Échap pour la lâcher, V ou dézoomez pour revenir',

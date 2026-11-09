@@ -2,9 +2,9 @@
 // DOM, so it can be unit-tested; the drones themselves are in drone-sky.js,
 // which is only downloaded when you walk into Ttukseom park near show time.
 //
-// The game's day/night cycle is off (weather.js DAY_NIGHT), so "only at
-// night" means: during a show, Ttukseom park's own sky turns to night
-// (park.js), fading in and out. Outside the park it stays day.
+// The game's day and night follow Seoul's (weather.js), and the show makes
+// its own night too: during a show Ttukseom park's sky turns to night
+// (park.js) even when the sun is still up, fading in and out.
 //
 // Everyone's clock gives the same show at the same moment (like the lucky
 // fishing spot and the weather), so friends watch the same drones together.

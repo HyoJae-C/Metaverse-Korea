@@ -414,6 +414,7 @@ export const ES = {
   'hud.music': 'Música',
   'settings.title': 'Ajustes',
   'settings.steady': 'Paso constante (sin correr)',
+  'settings.localSky': 'Día y noche a mi hora (no la de Seúl)',
   'settings.saver': 'Ahorro de batería (más fresco, 30 fps)',
   'settings.firstPerson': 'Vista en primera persona (V)',
   'fp.on': 'Vista en primera persona: haz clic para usar el ratón, Esc para soltarlo, V o aleja el zoom para volver',

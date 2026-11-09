@@ -415,6 +415,7 @@ export const VI = {
   'hud.music': 'Nhạc',
   'settings.title': 'Cài đặt',
   'settings.steady': 'Đi bộ đều (không chạy)',
+  'settings.localSky': 'Ngày & đêm theo giờ của tôi (không theo Seoul)',
   'settings.saver': 'Tiết kiệm pin (mát hơn, 30 fps)',
   'settings.firstPerson': 'Góc nhìn thứ nhất (V)',
   'fp.on': 'Góc nhìn thứ nhất: bấm để dùng chuột, Esc để thả, V hoặc thu nhỏ để quay lại',

@@ -4,8 +4,8 @@
 // Low-poly and stylised, not to scale. Collision comes from the map's
 // "blockers", so these are only visual.
 import * as THREE from 'three';
-import { buildAnotherLand } from './anotherland.js';
 import { haneulStore, haneulTower } from './haneul.js';
+import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
@@ -14,7 +14,7 @@ import { BANK, GROUND_TEXT, MIC, CASE } from './busking-layout.js';
 import { buildSkatepark } from './skatepark-model.js';
 import { peaceGate, loneTree, poolHall } from './olympic-park.js';
 import { domeOutside } from './dome-outside.js';
-import { cgpGate, doghole, hoarding, zooCartStation } from './grand-park.js';
+import { cgpGate, doghole, hoarding, zooCartStation, zooFlowers } from './grand-park.js';
 import { konext, aquariumPavilion, samseongBridge } from './konext.js';
 import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
@@ -93,12 +93,13 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
 }
 
 const BUILD = {
-  anotherland: (g) => buildAnotherLand(g), // the theme park on Seokchon Lake's island (animated)
   haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
   haneultower: (g) => haneulTower(g),
+  lakeshore: (g, l) => buildLakeshore(g, l), // Seokchon Lake's sunken water, banks and lakeside walk
   skatepark: (g) => buildSkatepark(g), // the skate park on Olympic Park's Peace Plaza (layout: skatepark.js)
   peacegate: (g) => peaceGate(g), // Olympic Park (core/olympic-park.js)
   cgpgate: (g) => cgpGate(g), // Children's Grand Park's main gate (core/grand-park.js)
+  zooflowers: (g, l) => zooFlowers(g, l), // the zoo's flower plaza, beds and borders (core/grand-park.js)
   zoocarts: (g, l) => zooCartStation(g, l), // the zoo's cart station (core/grand-park.js; renting: game/zoo-carts.js)
   konext: (g, l) => konext(g, l), // KONEXT, the mall by Samseong Station (core/konext.js)
   aquarium: (g, l) => aquariumPavilion(g, l), // KONEXT Aquarium's pavilion on the plaza (animated fish)

@@ -412,6 +412,7 @@ export const ZH = {
   'hud.music': '音乐',
   'settings.title': '设置',
   'settings.steady': '匀速步行（不跑步）',
+  'settings.localSky': '按我的时间显示昼夜 (而非首尔时间)',
   'settings.saver': '省电模式（降低发热，30帧）',
   'settings.firstPerson': '第一人称视角 (V)',
   'fp.on': '第一人称视角：点击画面用鼠标环顾，Esc 释放，按 V 或缩小返回',

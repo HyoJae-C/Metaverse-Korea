@@ -412,6 +412,7 @@ export const KO = {
   'hud.music': '음악',
   'settings.title': '설정',
   'settings.steady': '일정한 걸음 (뛰지 않기)',
+  'settings.localSky': '내 시간에 맞춘 밤낮 (서울 시간 대신)',
   'settings.saver': '배터리 절약 (덜 뜨겁게, 30프레임)',
   'settings.firstPerson': '1인칭 시점 (V)',
   'fp.on': '1인칭 시점: 화면을 누르면 마우스로 둘러보고, Esc로 해제, V나 줌 아웃으로 돌아가요',
