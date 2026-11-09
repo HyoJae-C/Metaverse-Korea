@@ -191,7 +191,8 @@ export function createChat(game) {
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
       }
-      // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /착지.
+      // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,
+      // /양탄자, /손오공, /착지.
       if (skyCode(code) && await game.sky?.command(skyCode(code))) return;
       // Fishing code: the next bite (fishing by hand) is that fish, once.
       const fishFromCode = await fishCode(code);

@@ -1,27 +1,51 @@
 // What a flying operator looks like (game/sky-flight.js), on our own screen
 // and on everyone else's (core/players.js): the costume pieces (Seoulman's
 // cape and emblem, the flight suit's armour, the huge wings), the flames,
-// the flying pose and lean, and someone being carried.
+// the flying pose and lean, and someone being carried. The birds, the
+// carpet and the Monkey King's cloud are core/sky-mounts.js, loaded the
+// first time one is worn.
 import * as THREE from 'three';
 
 // The costumes. model: the clothes (data/characters/kaykit2.js, sky-*),
 // look: other look changes while worn; swapAt: when the clothes change
 // (seconds into the transformation); ready: when it is over; fx: the emoji
-// around the character while transforming (core/scent-fx.js).
+// around the character while transforming (core/scent-fx.js); carry: the
+// ways it can carry someone; bird: the character turns into that bird
+// (shown from swapAt); mount: what it rides on (carpet, cloud); cam: how
+// far back the camera goes at least.
+const ARMS = ['arms2', 'arm1', 'princess'];
 export const COSTUMES = {
   seoulman: {
     model: 'sky-seoulman', look: { hairStyle: 'slick', dye: 'black', head: null, face: null, back: null, skirt: null, tee: null },
-    swapAt: 0.45, ready: 1.5, flame: null, fx: { e: ['✨', '💚', '💙', '❤️'], m: 'rise', c: '#9fe0ff' },
+    swapAt: 0.45, ready: 1.5, flame: null, carry: ARMS, fx: { e: ['✨', '💚', '💙', '❤️'], m: 'rise', c: '#9fe0ff' },
   },
   suit: {
     model: 'sky-armor', look: { head: null, back: null, skirt: null, tee: null },
-    swapAt: 1.35, ready: 2.1, flame: [0xfff2b0, 0xff8a2a], fx: { e: ['⚡', '🔩', '💠'], m: 'orbit', c: '#7ff7e0' },
+    swapAt: 1.35, ready: 2.1, flame: [0xfff2b0, 0xff8a2a], carry: ARMS, fx: { e: ['⚡', '🔩', '💠'], m: 'orbit', c: '#7ff7e0' },
   },
   wings: {
     model: null, look: { back: null },
-    swapAt: 0, ready: 1.7, flame: null, fx: { e: ['🪶', '🤍', '✨'], m: 'fall', c: '#fff4d6' },
+    swapAt: 0, ready: 1.7, flame: null, carry: ARMS, fx: { e: ['🪶', '🤍', '✨'], m: 'fall', c: '#fff4d6' },
+  },
+  albatross: {
+    model: null, look: {}, bird: true, cam: 18,
+    swapAt: 0.55, ready: 1.7, flame: null, carry: ['talons'], fx: { e: ['🪶', '🤍', '🌊'], m: 'rise', c: '#e9f4ff' },
+  },
+  eagle: {
+    model: null, look: {}, bird: true, cam: 14,
+    swapAt: 0.55, ready: 1.6, flame: null, carry: ['talons'], fx: { e: ['🪶', '🦅', '✨'], m: 'rise', c: '#f3e3c3' },
+  },
+  carpet: {
+    model: null, look: { back: null }, mount: 'carpet',
+    swapAt: 0, ready: 1.5, flame: null, carry: ['ride'], fx: { e: ['✨', '🌟', '💫'], m: 'orbit', c: '#ffd36b' },
+  },
+  wukong: {
+    model: 'sky-wukong', look: { hairStyle: 'slick', head: null, face: null, back: null, skirt: null, tee: null }, mount: 'cloud',
+    swapAt: 0.45, ready: 1.8, flame: null, carry: ['ride'], fx: { e: ['☁️', '✨', '🐒'], m: 'rise', c: '#fff1c2' },
   },
 };
+let mountsP = null;
+const loadMounts = () => (mountsP ||= import('./sky-mounts.js'));
 
 const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, ...extra });
 const glow = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity });
@@ -185,8 +209,18 @@ export const SKY_SPEED = 14; // m/s across (hf = 1)
 // ---------- Carrying someone ----------
 // Poses: 'arms2' one under each arm (two people), 'arm1' one under an arm,
 // 'princess' held in both arms. Slots: under the right arm (0), the left (1).
-export const CARRY_POSES = ['arms2', 'arm1', 'princess'];
-export const carrySeats = (pose) => (pose === 'arms2' ? 2 : CARRY_POSES.includes(pose) ? 1 : 0);
+// The birds: 'talons', held by the shoulders under it. The carpet and the
+// cloud: 'ride', sitting (standing on the cloud) behind the flyer, two seats.
+export const CARRY_POSES = ['arms2', 'arm1', 'princess', 'talons', 'ride'];
+export const carrySeats = (pose) => (pose === 'arms2' || pose === 'ride' ? 2 : CARRY_POSES.includes(pose) ? 1 : 0);
+// Sitting on the carpet, legs out in front; standing on the cloud, knees a
+// little bent; the Monkey King with his staff held forward.
+const SEATED = () => ({ legL: [-1.5, 0.12, 0], legR: [-1.5, -0.12, 0], kneeL: [0.05, 0, 0], kneeR: [0.05, 0, 0], armL: [0.25, -0.25, 0], armR: [0.25, 0.25, 0], foreL: [-0.3, 0, 0], foreR: [-0.3, 0, 0] });
+const STANDING = () => ({ legL: [-0.15, 0, 0], legR: [0.12, 0, 0], kneeL: [0.3, 0, 0], kneeR: [0.15, 0, 0], armL: [0.15, -0.35, 0], foreL: [-0.4, 0, 0], armR: [0.15, 0.35, 0], foreR: [-0.4, 0, 0] });
+const WUKONG = () => ({ ...STANDING(), armR: [-0.55, 0.15, 0], foreR: [-0.9, 0, 0] });
+// Riders' seats in the flyer's frame (x left, z forward), slot 0 and 1.
+const RIDE_AT = { carpet: [[0.3, 0, -0.85], [-0.3, 0, -0.85]], cloud: [[0.34, 0, -0.7], [-0.34, 0, -0.7]] };
+const SHOULDER = 0.78; // feet to shoulders (m), held in the talons
 // Where the carried person's middle sits, in the flyer's body frame
 // (x: the flyer's left, y up from the feet, z forward), and how they lie.
 const CARRY_AT = {
@@ -200,15 +234,42 @@ const POSE_Q = {
   princess: new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2 + 0.25, 0, Math.PI / 2, 'YXZ')),
 };
 const CARRIED_MOVES = {
+  talons: () => ({ armL: [0.05, -0.12, 0], armR: [0.05, 0.12, 0], legL: [0.25, 0, 0], legR: [-0.1, 0, 0], kneeL: [0.35, 0, 0], kneeR: [0.2, 0, 0] }), // dangling
+  seat: SEATED,
+  stand: STANDING,
   arm: () => ({ armL: [-2.9, -0.1, 0], armR: [-2.9, 0.1, 0], foreL: [0, 0, 0], foreR: [0, 0, 0], legL: [0.05, 0, 0], legR: [0.05, 0, 0] }), // arms forward like flying
   princess: () => ({ armR: [-2.2, 0.3, 0], foreR: [-0.9, 0, 0], armL: [-0.3, -0.2, 0], foreL: [-0.6, 0, 0], legL: [-1.25, 0, 0], legR: [-1.15, 0, 0], kneeL: [1.2, 0, 0], kneeR: [1.1, 0, 0] }),
 };
+function setCarried(ch, kind) {
+  if (ch.__carryPose !== kind) { ch.__carryPose = kind; ch.setMoves(CARRIED_MOVES[kind]); }
+}
 // Put a carried character in the flyer's arms (flyer: their character,
-// already posed this frame). Works for us being carried and for others.
-export function placeCarried(flyer, pose, slot, ch) {
+// already posed this frame; mount: the flyer's costume). Works for us being
+// carried and for others.
+export function placeCarried(flyer, pose, slot, ch, mount) {
   const rig = flyer.root.children[0]; // (core/character.js: the rig is the root's first child)
   if (!rig) return;
   flyer.root.updateMatrixWorld(true);
+  if (pose === 'talons') {
+    // Hanging by the shoulders under the bird, swinging a little.
+    const a = flyer.root.userData.skyTalons;
+    if (a) a.getWorldPosition(vMid); else flyer.root.localToWorld(vMid.set(0, 0.1, 0));
+    ch.root.rotation.y = flyer.root.rotation.y;
+    ch.setTrick({ flip: Math.sin(performance.now() / 420) * 0.12, spin: 0, roll: 0 }, 0);
+    ch.root.position.set(vMid.x, vMid.y - SHOULDER, vMid.z);
+    setCarried(ch, 'talons');
+    return;
+  }
+  if (pose === 'ride') {
+    const cloud = COSTUMES[mount]?.mount === 'cloud';
+    const at = (cloud ? RIDE_AT.cloud : RIDE_AT.carpet)[slot ? 1 : 0];
+    flyer.root.localToWorld(vMid.set(at[0], at[1], at[2]));
+    ch.root.rotation.y = flyer.root.rotation.y;
+    ch.setTrick({ flip: rig.rotation.x, spin: 0, roll: rig.rotation.z }, 0); // leaning as the flyer leans
+    ch.root.position.copy(vMid);
+    setCarried(ch, cloud ? 'stand' : 'seat');
+    return;
+  }
   const kind = pose === 'princess' ? 'princess' : 'arm';
   const at = kind === 'princess' ? CARRY_AT.princess : CARRY_AT.arm[slot ? 1 : 0];
   rig.localToWorld(vMid.set(at[0], at[1], at[2]));
@@ -220,7 +281,7 @@ export function placeCarried(flyer, pose, slot, ch) {
   // setTrick keeps the body's middle (0.5 m up) over the root: put the
   // root so that middle lands in the arms.
   ch.root.position.set(vMid.x, vMid.y - 0.5, vMid.z);
-  if (ch.__carryPose !== kind) { ch.__carryPose = kind; ch.setMoves(CARRIED_MOVES[kind]); }
+  setCarried(ch, kind);
   void qTmp;
 }
 export function releaseCarried(ch) {
@@ -240,7 +301,7 @@ export function parseFlight(s) {
 // Being carried ("cr"): '<flyer id>.<pose>.<slot>'.
 export const encodeCarried = (flyer, pose, slot) => `${flyer}.${pose}.${slot ? 1 : 0}`;
 export function parseCarried(s) {
-  const m = /^([\w-]{1,64})\.(arms2|arm1|princess)\.([01])$/.exec(String(s ?? ''));
+  const m = /^([\w-]{1,64})\.(arms2|arm1|princess|talons|ride)\.([01])$/.exec(String(s ?? ''));
   return m ? { flyer: m[1], pose: m[2], slot: Number(m[3]) } : null;
 }
 
@@ -268,6 +329,25 @@ export class SkyCostume {
     this.flapT = 0;
     this.s = { phase: 'on', t: 0, hf: 0, climb: 0, roll: 0, y: 0, fist: 0, carry: null };
     this.pose = () => this._pose();
+    this.bird = this.carpet = this.cloud = null;
+    this.extra = []; // objects from sky-mounts.js, freed on dispose
+    if (this.C.bird || this.C.mount) loadMounts().then((M) => { if (!this.dead) this._load(M); }, () => {});
+  }
+
+  // The bird, the carpet or the cloud (and the Monkey King's pieces).
+  _load(M) {
+    this.M = M;
+    if (this.C.bird) { this.bird = M.makeBird(this.kind); this.extra.push(this.bird.obj); }
+    if (this.C.mount === 'carpet') {
+      this.carpet = M.makeCarpet();
+      this.pieces.push(piece(this.carpet.obj, 'root', [0, -0.4, 1.8], 0.1, 0.6));
+    }
+    if (this.C.mount === 'cloud') {
+      this.cloud = M.makeCloud();
+      this.pieces.push(piece(this.cloud.obj, 'root', [0, -2.2, -1.6], 0.1, 0.6));
+    }
+    if (this.kind === 'wukong') for (const p of M.wukongPieces()) this.pieces.push(piece(p.obj, p.at, p.from, p.delay, p.dur));
+    for (const pc of this.pieces) if (!this.extra.includes(pc.obj)) this.extra.push(pc.obj);
   }
 
   _mount(pc) {
@@ -275,7 +355,8 @@ export class SkyCostume {
     pc.holder?.removeFromParent();
     pc.holder = null;
     const holder = new THREE.Group();
-    if (pc.at === 'body' || pc.at === 'head') ch.addProp(pc.at, holder);
+    if (pc.at === 'root') ch.root.add(holder);
+    else if (pc.at === 'body' || pc.at === 'head') ch.addProp(pc.at, holder);
     else {
       const bone = ch.root.getObjectByName(pc.at);
       if (!bone) return false; // the model is still loading: try again next frame
@@ -296,11 +377,26 @@ export class SkyCostume {
   }
 
   dispose() {
+    this.dead = true;
     for (const pc of this.pieces) pc.holder?.removeFromParent();
     for (const f of this.flames) f.removeFromParent();
+    this._unbird();
     if (this.ch) { this.ch.setMoves(null); this.ch.setTrick(null, 0); }
-    this.pieces = []; this.wings = []; this.flames = [];
+    for (const o of this.extra) this.M?.disposeObj(o);
+    this.pieces = []; this.wings = []; this.flames = []; this.extra = [];
+    this.bird = this.carpet = this.cloud = null;
     this.ch = null;
+  }
+
+  // The bird off the character, the character shown again.
+  _unbird() {
+    if (!this.bird) return;
+    this.bird.obj.removeFromParent();
+    const ch = this.ch;
+    if (ch) {
+      if (ch.root.children[0]) ch.root.children[0].visible = true;
+      if (ch.root.userData.skyTalons === this.bird.anchor) delete ch.root.userData.skyTalons;
+    }
   }
 
   // Bone offsets laid over the idle clip (model-pack.js setMoves).
@@ -308,7 +404,10 @@ export class SkyCostume {
     const { hf, fist, carry, kind } = { ...this.s, kind: this.kind };
     const h = 1 - hf;
     let out;
-    if (kind === 'wings') {
+    if (this.C.bird) return {};
+    if (this.C.mount === 'carpet') out = SEATED();
+    else if (kind === 'wukong') out = WUKONG();
+    else if (kind === 'wings') {
       out = { armL: [0.15, -0.3, 0], armR: [0.15, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [0.15 * hf, 0, 0], legR: [0.25 * hf, 0, 0], kneeL: [0.35 - 0.25 * hf, 0, 0], kneeR: [0.2, 0, 0] };
     } else if (kind === 'seoulman' && fist > 0.01 && !carry) {
       // The flying hero: the right fist punched forward over the head, the
@@ -344,6 +443,9 @@ export class SkyCostume {
   // he changes. Held in front (princess carry): never quite flat.
   tilt() {
     const { hf, climb, carry, phase, t } = this.s;
+    if (this.C.bird) return null; // (the character is hidden; the bird leans itself)
+    if (this.C.mount === 'carpet') return { flip: -climb * 0.12, roll: this.s.roll * 0.5, spin: 0 };
+    if (this.C.mount === 'cloud') return { flip: 0.06 + 0.12 * hf - climb * 0.08, roll: this.s.roll * 0.6, spin: 0 };
     let tilt = (this.kind === 'wings' ? 0.15 + 0.7 * hf : 0.2 + 1.2 * hf) - climb * 0.15 * (1 - hf);
     if (carry === 'princess') tilt = Math.min(tilt, 0.35);
     const spin = phase === 'on' && this.kind === 'seoulman' ? smooth(clamp01(t / 0.9)) * Math.PI * 4 : 0;
@@ -352,9 +454,10 @@ export class SkyCostume {
 
   update(ch, dt, state) {
     Object.assign(this.s, state);
-    if (ch !== this.ch) this.bind(ch);
+    if (ch !== this.ch) { this._unbird(); this.bind(ch); }
     const s = this.s;
-    ch.setTrick(this.tilt(), s.y);
+    const lean = this.tilt();
+    ch.setTrick(lean, s.y);
     // Pieces flying on, or off.
     for (const pc of this.pieces) {
       if (!pc.holder && !this._mount(pc)) continue;
@@ -374,6 +477,30 @@ export class SkyCostume {
     }
     if (this.wings.length) this._wings(dt);
     if (this.flames.length) this._flames(!!s.flames);
+    if (this.bird) this._bird(dt);
+    // The carpet ripples once it is up; it and the cloud bank with us.
+    const up = s.phase === 'fly' || (s.phase === 'on' && s.t > this.C.ready - 0.6) || (s.phase === 'off' && !s.off) ? 1 : 0;
+    if (this.carpet) {
+      this.carpet.up = (this.carpet.up ?? 0) + (up - (this.carpet.up ?? 0)) * Math.min(1, dt * 3);
+      this.M.waveCarpet(this.carpet, dt, s.hf, this.carpet.up);
+      this.carpet.tilt.rotation.set(lean.flip, 0, lean.roll);
+    }
+    if (this.cloud) {
+      this.M.puffCloud(this.cloud, dt, s.hf);
+      this.cloud.tilt.rotation.set(0, 0, lean.roll);
+    }
+  }
+
+  // The character turns into the bird from swapAt (and back when landing).
+  _bird(dt) {
+    const s = this.s, b = this.bird, root = this.ch.root;
+    const k = s.off ? 1 - smooth(clamp01(s.t / (OFF_DUR * 0.6))) : s.phase === 'on' ? clamp01((s.t - this.C.swapAt) / 0.4) : 1;
+    const rig = root.children[0];
+    if (b.obj.parent !== root) { root.add(b.obj); root.userData.skyTalons = b.anchor; }
+    if (rig && rig !== b.obj) rig.visible = k <= 0.001;
+    b.obj.visible = k > 0.001;
+    b.obj.scale.setScalar(Math.max(0.001, s.off ? k : easeOutBack(k)));
+    this.M.poseBird(b, s, dt);
   }
 
   _wings(dt) {

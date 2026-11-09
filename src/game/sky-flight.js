@@ -1,8 +1,13 @@
 // Sky view for operators: a chat code puts on a costume and the character
-// flies over the city. Three costumes, each with its own transformation:
+// flies over the city. Seven costumes, each with its own transformation:
 //   /서울맨 (/seoulman)    a green, blue and red hero suit with a red cape
 //   /스카이슈트 (/skysuit)  armour pieces fly in and lock on, then the suit
 //   /날개 (/wings)         huge feathered wings burst open and flap
+//   /신천옹 (/albatross)   you turn into a huge albatross that soars
+//   /독수리 (/eagle)       you turn into an eagle
+//   /양탄자 (/carpet)      a flying carpet you sit on, rippling in the wind
+//   /손오공 (/wukong)      the Monkey King: his cloud, headband, staff and a
+//                         monkey face
 // /착지 (/land), or the same code again, flies down and takes it off.
 // Only operator accounts can use it: the server says who is one
 // (am_operator, supabase/009_admin.sql); for anyone else the codes read like
@@ -13,7 +18,9 @@
 // Others see us flying too ("fl" in our state, drawn by core/players.js).
 //
 // Carrying: flying low next to someone, 🫴 offers them a ride in one of
-// three poses (one under each arm, under one arm, a princess carry). They
+// three poses (one under each arm, under one arm, a princess carry); the
+// birds hold them by the shoulders in their talons, the carpet and the cloud
+// seat two behind you (COSTUMES[kind].carry, core/sky-costume.js). They
 // accept on their own screen, then ride in our arms ("cr" in their state)
 // until they let go or we land.
 //
@@ -41,6 +48,8 @@ export const SKY_TEXT = {
   arms2: { en: 'One under each arm', ko: '양쪽에 끼고 가기', ja: '両脇に抱える', zh: '两边各夹一个' },
   arm1: { en: 'Under one arm', ko: '한쪽에 끼고 가기', ja: '片脇に抱える', zh: '夹在一边' },
   princess: { en: 'Princess carry', ko: '공주님 안기', ja: 'お姫様抱っこ', zh: '公主抱' },
+  talons: { en: 'Grab by the shoulders', ko: '발톱으로 어깨 잡기', ja: '爪で肩をつかむ', zh: '用爪子抓住肩膀' },
+  ride: { en: 'Ride with me', ko: '같이 타기', ja: '一緒に乗る', zh: '一起乘坐' },
   nobody: { en: 'Fly down next to someone (within 4 m)', ko: '같이 날 사람 옆(4m 안)으로 내려가 주세요', ja: '一緒に飛ぶ人のそば（4m以内）に降りてください', zh: '请飞到对方旁边（4米内）' },
   full: { en: 'Your arms are full', ko: '이미 팔이 꽉 찼어요', ja: 'もう手がいっぱいです', zh: '手已经满了' },
   other: { en: 'Let go first to change the pose', ko: '자세를 바꾰려면 먼저 내려 주세요', ja: 'ポーズを変えるには先に降ろしてください', zh: '先放下再换姿势' },
@@ -72,6 +81,10 @@ export const SKY_CODES = {
   '서울맨': 'seoulman', seoulman: 'seoulman',
   '스카이슈트': 'suit', skysuit: 'suit',
   '날개': 'wings', wings: 'wings',
+  '신천옹': 'albatross', albatross: 'albatross',
+  '독수리': 'eagle', eagle: 'eagle',
+  '양탄자': 'carpet', carpet: 'carpet',
+  '손오공': 'wukong', wukong: 'wukong',
   '착지': 'off', land: 'off',
 };
 export const skyCode = (code) => SKY_CODES[String(code ?? '').trim().toLowerCase()] || null;
@@ -79,7 +92,7 @@ export const skyCode = (code) => SKY_CODES[String(code ?? '').trim().toLowerCase
 // Carry messages on the emote channel: 'sky:<verb>:<target>[:<pose>:<slot>]'.
 export const skyMsg = (verb, target, pose, slot) => `sky:${verb}:${target}` + (pose ? `:${pose}:${slot ? 1 : 0}` : '');
 export function parseSkyMsg(e) {
-  const m = /^sky:(invite|join|no|leave|end):([\w-]{1,64})(?::(arms2|arm1|princess):([01]))?$/.exec(String(e));
+  const m = /^sky:(invite|join|no|leave|end):([\w-]{1,64})(?::(arms2|arm1|princess|talons|ride):([01]))?$/.exec(String(e));
   return m ? { verb: m[1], target: m[2], pose: m[3] || null, slot: Number(m[4] || 0) } : null;
 }
 
@@ -121,6 +134,8 @@ const CLIMB = 10, FAST_CLIMB = 32; // m/s up and down
 const TOP = 250; // highest (m)
 const LIFT = 3; // how high the take-off goes (m)
 const NEAR = 4; // how close to offer someone a ride (m)
+const HANG = 0.8; // lowest a bird flies with someone in its talons (m), their feet off the ground
+const POSE_ICON = { arms2: '👐', arm1: '💪', princess: '👸', talons: '🦅', ride: '🛸' };
 const clamp01 = (u) => Math.min(1, Math.max(0, u));
 const BTN_BG = 'rgba(20,30,50,.55)';
 const BTN = 'width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:' + BTN_BG + ';color:#fff;touch-action:none';
@@ -323,13 +338,12 @@ export function createSkyFlight(game) {
   function carryMenu() {
     if (!kind || phase !== 'fly') return;
     showPanel('🫴 ' + L(SKY_TEXT.carry), [
-      ['👐 ' + L(SKY_TEXT.arms2), () => offer('arms2')],
-      ['💪 ' + L(SKY_TEXT.arm1), () => offer('arm1')],
-      ['👸 ' + L(SKY_TEXT.princess), () => offer('princess')],
+      ...COSTUMES[kind].carry.map((pose) => [POSE_ICON[pose] + ' ' + L(SKY_TEXT[pose]), () => offer(pose)]),
       ['✖', () => {}],
     ]);
   }
   function offer(pose) {
+    if (!kind || !COSTUMES[kind].carry.includes(pose)) return;
     if (carryPose && carryPose !== pose) { toast(SKY_TEXT.other); return; }
     const free = [0, 1].slice(0, carrySeats(pose)).filter((s) => !carriers.has(s) && ![...asked.values()].some((a) => a.slot === s && a.until > performance.now()));
     if (!free.length) { toast(SKY_TEXT.full); return; }
@@ -406,7 +420,7 @@ export function createSkyFlight(game) {
     vel.set(0, 0, 0);
     lastRy = game.me.root.rotation.y;
     if (!savedFog && game.scene.fog) savedFog = { near: game.scene.fog.near, far: game.scene.fog.far };
-    if (game.cam) game.cam.dist = Math.max(game.cam.dist, 12);
+    if (game.cam) game.cam.dist = Math.max(game.cam.dist, COSTUMES[k].cam || 12);
     puff(true);
     fxT = 0.25;
     toast(SKY_TEXT.on);
@@ -445,6 +459,7 @@ export function createSkyFlight(game) {
 
   function land() {
     const p = game.me.root.position;
+    if (carryPose === 'talons') dropAll(); // let go first: they drop to whatever is below
     // Over a building: down onto its roof. Otherwise the nearest free ground.
     const r = roofs.at(p.x, p.z);
     if (r && Roofs.inside(r, p.x, p.z, 0.6)) landAt = { x: p.x, z: p.z, y: r.h, roof: r };
@@ -464,6 +479,7 @@ export function createSkyFlight(game) {
     if (game.mode !== 'street') { toast(SKY_TEXT.street); return true; }
     if (game.busy || carried) { toast(SKY_TEXT.busy); return true; }
     if (kind) { // another costume, up in the air: change over
+      if (carryPose && !COSTUMES[k].carry.includes(carryPose)) dropAll();
       const keep = savedLook, fog = savedFog;
       if (swapped) wear(false);
       savedLook = keep; savedFog = fog;
@@ -515,8 +531,9 @@ export function createSkyFlight(game) {
     }
     if (carried) {
       const f = game.others?.players.get(carried.flyer);
-      if (!f || f.hidden || !parseFlight(f.target?.fl)) { letGo(false); return 0; }
-      placeCarried(f.ch, carried.pose, carried.slot, game.me);
+      const ff = parseFlight(f?.target?.fl);
+      if (!f || f.hidden || !ff) { letGo(false); return 0; }
+      placeCarried(f.ch, carried.pose, carried.slot, game.me, ff.kind);
       return 0;
     }
     if (!kind) return roof ? walkRoof(dt, p, mx, my, yaw, fast) : 0;
@@ -562,7 +579,7 @@ export function createSkyFlight(game) {
       } else v1.set((fx0 * my + rx * mx) * sp, climb * (fast ? FAST_CLIMB : CLIMB), (fz0 * my + rz * mx) * sp);
       vel.lerp(v1, 1 - Math.exp(-dt * (fast ? 6 : 3))); // a dash kicks in quickly
       p.addScaledVector(vel, dt);
-      p.y = Math.min(TOP, Math.max(0, p.y));
+      p.y = Math.min(TOP, Math.max(carryPose === 'talons' ? HANG : 0, p.y));
       const b = game.bounds;
       if (b) {
         p.x = Math.min(b.maxX + 150, Math.max(b.minX - 150, p.x));
@@ -607,6 +624,7 @@ export function createSkyFlight(game) {
       const a = asked.get(from);
       asked.delete(from);
       const ok = kind && phase === 'fly' && a && a.until > performance.now() && a.pose === m.pose && a.slot === m.slot
+        && COSTUMES[kind].carry.includes(m.pose)
         && (!carryPose || carryPose === m.pose) && !carriers.has(m.slot) && m.slot < carrySeats(m.pose);
       if (ok) { carriers.set(m.slot, from); carryPose = m.pose; toast(SKY_TEXT.joined, { name }); }
       else send('end', from);
@@ -660,8 +678,10 @@ export function createSkyFlight(game) {
       r.costume.update(q.ch, dt, { phase: ph, t: r.t, off: false, hf: r.hf, climb: 0, roll: 0, y: pos.y, fist: pos.y > 0.3 ? 1 : 0, carry: f.carry, flames: ph === 'fly' || r.t > C.ready - 0.6 });
     } else if (r) { r.costume.dispose(); remotes.delete(q.id); }
     const c = parseCarried(q.target?.cr);
-    const flyer = c && (c.flyer === game.myId ? (kind ? game.me : null) : all.players.get(c.flyer)?.ch);
-    if (flyer && !q.hidden) placeCarried(flyer, c.pose, c.slot, q.ch);
+    const fq = c && c.flyer !== game.myId ? all.players.get(c.flyer) : null;
+    const flyer = c && (c.flyer === game.myId ? (kind ? game.me : null) : fq?.ch);
+    const mount = c && (c.flyer === game.myId ? kind : parseFlight(fq?.target?.fl)?.kind);
+    if (flyer && !q.hidden) placeCarried(flyer, c.pose, c.slot, q.ch, mount);
     else if (q.ch.__carryPose) releaseCarried(q.ch);
   }
 
