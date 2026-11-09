@@ -162,7 +162,7 @@ import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
 import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
-import { FishBag, FishDex, FishStats, FISH, fishById } from './core/fishing.js';
+import { FishBag, FishDex, FishStats, FishPity, FISH, fishById } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
@@ -3753,6 +3753,7 @@ const fishingUi = new FishingUI({
   bag: fishBag,
   dex: fishDex,
   stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
+  pity: new FishPity(), // mk.fishpity: bites toward each park's first legend
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);

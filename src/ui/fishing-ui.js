@@ -4,7 +4,7 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, rarityStars, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, parkLegend, TIER_NAMES, BITE_LINES, FISH_SHEET, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, parkOf, SHEET_COLS, SHEET_ROWS, ESCAPE } from '../core/fishing.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -177,11 +177,12 @@ export class FishingUI {
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
   // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
   // stats: FishStats (optional), counts what happens to each cast for balancing.
+  // pity: FishPity (optional), bites toward each park's first legend.
   // park(): the park store's id; every park shares ★1-2, and each has its own
   // ★3 and up (PARK_FISH in core/fishing.js).
   // rod(): the rod skin id in use; a better rod cuts the escape chance.
-  constructor({ root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod }) {
-    Object.assign(this, { root, bag, dex, stats, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod });
+  constructor({ root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod }) {
+    Object.assign(this, { root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -321,8 +322,12 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    const lucky = !!this.lucky?.();
-    this.fish = rollCatch(Math.random, lucky, this.park?.() || null);
+    const lucky = !!this.lucky?.(), park = this.park?.() || null;
+    // Until this park's legend is in the book, every bite here counts toward its pity.
+    const legend = parkLegend(park), chasing = !!(legend && this.pity && !this.dex?.count(legend.id));
+    this.fish = rollCatch(Math.random, lucky, park, chasing ? this.pity.count(park) : 0);
+    if (chasing) this.pity.bump(park);
+    else if (legend) this.pity?.clear(park);
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
     this.mystery = Math.random() < MYSTERY_CHANCE; // a bite that gives nothing away

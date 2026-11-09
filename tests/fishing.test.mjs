@@ -228,3 +228,30 @@ test('better rods cut the escape chance a little but never change which fish bit
   assert.ok(Math.abs(escapeChance(shark, 1, 0.2) - 0.3 * 0.5 * 0.8) < 1e-12); // stacks with spare time
   assert.equal(escapeChance(TRASH, 0, 0.5), 0);
 });
+
+test('legend pity: a park\'s first legend creeps up after PITY_START bites and is sure by PITY_CAP', async () => {
+  const { pityChance, parkLegend, FishPity, PITY_START, PITY_CAP, chanceAt } = await import('../src/core/fishing.js');
+  const park = 'ttukseom-hangang', whale = parkLegend(park);
+  assert.equal(whale.id, 'whale');
+  assert.equal(parkLegend('nowhere'), null);
+  const base = chanceAt(whale, park);
+  assert.equal(pityChance(base, 0), base);
+  assert.equal(pityChance(base, PITY_START - 1), base);
+  const mid = (PITY_START + PITY_CAP) / 2;
+  assert.ok(pityChance(base, mid) > base && pityChance(base, mid) < 10);
+  assert.equal(pityChance(base, PITY_CAP - 1), 100);
+  for (let n = PITY_START; n < PITY_CAP; n += 50) assert.ok(pityChance(base, n + 50) >= pityChance(base, n));
+  // no pity below the start: the same rolls as before
+  let seed = 5; const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  let s2 = 5; const rand2 = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 500; i++) assert.equal(rollCatch(rand, false, park, 100).id, rollCatch(rand2, false, park, 0).id);
+  assert.equal(rollCatch(() => 0.5, false, park, PITY_CAP).id, 'whale');
+  assert.equal(rollCatch(() => 0.5, true, park, PITY_CAP).id, 'whale');
+  // saved per park
+  const st = memory(), p = new FishPity(st);
+  p.bump(park); p.bump(park); p.bump('nowhere');
+  assert.equal(new FishPity(st).count(park), 2);
+  assert.equal(new FishPity(st).count('nowhere'), 0);
+  p.clear(park);
+  assert.equal(new FishPity(st).count(park), 0);
+});

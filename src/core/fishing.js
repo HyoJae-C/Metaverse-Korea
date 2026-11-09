@@ -908,9 +908,24 @@ export const TRASH_CHANCE = 0.04;
 export const LUCKY_TRASH_CHANCE = TRASH_CHANCE / 2;
 // A fish set up by a developer code (core/fish-luck.js) is the next bite,
 // once: a copy marked `sure` (no fight, never slips off).
-export function rollCatch(rand = Math.random, lucky = false, park = null) {
+// Legend pity, for a park's first legend only: pityBites is how many bites
+// you've had at this park without its legend in your fish book (FishPity).
+// After PITY_START bites the legend's chance creeps up, and by PITY_CAP
+// (about 15 hours of fishing) it's sure to bite.
+export const PITY_START = 3000, PITY_CAP = 4500;
+// The legend's chance (%) after n bites without it, from its usual chance.
+export const pityChance = (base, n) => (n < PITY_START ? base : n >= PITY_CAP - 1 ? 100
+  : base + (100 - base) * ((n - PITY_START) / (PITY_CAP - 1 - PITY_START)) ** 4);
+// A park's ★5 legend (null: a park with none of its own).
+export const parkLegend = park => (PARK_FISH[park]?.fish || []).map(fishById).find(f => f?.released && f.rarity === 5) || null;
+export function rollCatch(rand = Math.random, lucky = false, park = null, pityBites = 0) {
   const forced = fishById(takeForcedCatch());
   if (forced) return { ...forced, sure: true };
+  const legend = pityBites >= PITY_START && parkLegend(park);
+  if (legend) {
+    const base = (lucky ? luckyChance(legend, park) : chanceAt(legend, park)) * (1 - (lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE));
+    if (rand() * 100 < pityChance(base, pityBites) - base) return legend; // the extra on top of the usual roll
+  }
   const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
   return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park);
 }
@@ -1021,6 +1036,23 @@ export class FishBag {
 // which copies every "mk." key, carries it too). A player who fished before
 // the book existed starts with what is in their bag.
 const DEX_KEY = 'mk.fishdex';
+// Bites at each park without its legend in the fish book (see pityChance),
+// saved on this device and in the cloud save: { parkId: bites }.
+const PITY_KEY = 'mk.fishpity';
+export class FishPity {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+    let raw = {};
+    try { raw = JSON.parse(storage?.getItem(PITY_KEY) || '{}') || {}; } catch { /* broken save */ }
+    this.c = {};
+    for (const [k, v] of Object.entries(raw)) if (PARK_FISH[k] && Number.isInteger(v) && v > 0) this.c[k] = v;
+  }
+  count(park) { return this.c[park] || 0; }
+  bump(park) { if (!PARK_FISH[park]) return; this.c[park] = this.count(park) + 1; this._save(); }
+  clear(park) { if (!this.c[park]) return; delete this.c[park]; this._save(); }
+  _save() { try { this.storage?.setItem(PITY_KEY, JSON.stringify(this.c)); } catch { /* storage blocked */ } }
+}
+
 export class FishDex {
   constructor(storage = globalThis.localStorage, bag = null) {
     this.storage = storage;
