@@ -359,8 +359,10 @@ Heungnyemun (z -36) and its yard, the palace stream with Yeongjegyo
 (z -47), Geunjeongmun (z -55) and the corridors (회랑) round Geunjeongjeon's
 court, the rank stones either side of the raised middle path, and
 Geunjeongjeon on its two terraces (z -79.5). Gyeonghoeru's pond is
-north-west of the court. Behind it, as in Seoul, each in its own walled
-yard with a gate on the south side: Sajeongjeon, Gangnyeongjeon and
+north-west of the court. Behind it, as in Seoul (checked against the city's
+aerial view), each in its own yard closed by roofed corridors (행각), the
+yards packed one behind the next with narrow passages between, the gate on
+the south side: Sajeongjeon (with Cheonchujeon and Manchunjeon either side), Gangnyeongjeon and
 Gyotaejeon (these two with no ridge, as the king's and queen's halls have
 none) with Amisan's terraces and brick chimneys behind, Jagyeongjeon to the
 north-east, Hyangwonjeong on its pond, and Geoncheonggung. Seasonal trees

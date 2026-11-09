@@ -184,7 +184,7 @@ export const PALACE_BUILD = {
   // runs of [x0, z0, x1, z1, inward] in the landmark's metres (inward: which
   // side the court is, +1 or -1 across the run's direction); l.d: depth.
   cloister(g, l) {
-    const D = l.d || 6, H = 4.2;
+    const D = l.d || 6, H = l.h || 4.2; // (l.h: the posts' height; the halls' yards use lower corridors, 행각)
     for (const [x0, z0, x1, z1, inward] of l.runs) {
       const len = Math.hypot(x1 - x0, z1 - z0);
       const seg = new THREE.Group();
