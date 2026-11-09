@@ -158,6 +158,10 @@ export const PENS = [
   {
     id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', closed: true, ground: 'stone', board: 'n', boardAt: 7,
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
+    // Pictures on its walls (core/zoo-murals.js): the polar bears and penguins
+    // and the game's name facing the main path, the deep sea along the ring
+    // road, a penguin family beside the door.
+    murals: [{ side: 's', art: 'ice' }, { side: 'w', art: 'deep' }, { side: 'n', art: 'penguins', at: -6.75, w: 8 }],
   },
   {
     id: 'hippos', x: 108, z: -21, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,
@@ -250,6 +254,13 @@ export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [
 // The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21),
 // and its door on the north path: the way into the hall's own room
 // (core/zoo-sea-hall.js), as Another Land's haunted house has.
+// The camel ride (낙타 타기): two saddled camels take turns round the
+// herbivores, from a stand on the path by the camels' pen: east to the ring
+// road, down past the giraffes, back along the elephants, up the cross path
+// and home along the zebras and kangaroos. A loop of points from the stand
+// (core/zoo-camel-ride.js walks them on the shared clock).
+export const CAMEL_STAND = { x: 184, z: 31.5, sign: [-6.5, -1.7], keeper: [-1.2, -1.6] };
+export const CAMEL_TREK = smooth([[CAMEL_STAND.x, CAMEL_STAND.z], [190, 32.8], [190.6, 44], [189.8, 56.2], [181, 57.3], [167, 57.6], [150, 57.4], [133, 57.4], [123.8, 55], [121.8, 44], [123.5, 35.5], [130, 31.6], [145, 31.3], [160, 31.7], [174, 31.3]], { closed: true, step: 1.5 });
 export const SEA_HALL = { x0: 69, z0: -35, x1: 93, z1: -7 };
 export const SEA_DOOR = { x: 81, z: -35, out: { x: 81, z: -36.6, ry: Math.PI } };
 
@@ -455,6 +466,7 @@ export function zooGrounds() {
     },
     carts: CARTS,
     seaDoor: SEA_DOOR,
+    camels: { ...CAMEL_STAND, p: CAMEL_TREK },
     blockers,
   };
 }

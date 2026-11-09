@@ -661,4 +661,11 @@ export const ID = {
   "zoocart.off": "Kembalikan mobil",
   "zoocart.got": "Mobil wisatamu! Jalan ke mana saja di kebun binatang. Dekati teman untuk menawarkan kursi (sampai 3).",
   "zoocart.out": "Mobil wisata hanya di dalam kebun binatang, jadi sudah kembali ke stasiunnya.",
+  "zoocamel.ride": "🐪 Naik unta · 🪙 {n}",
+  "zoocamel.wait": "Unta berikutnya {n} dtk lagi",
+  "zoocamel.off": "Turun dari unta",
+  "zoocamel.on": "Pegangan! Ia berdiri dengan kaki belakang dulu. Satu putaran dekat zebra, gajah, dan jerapah.",
+  "zoocamel.done": "Kembali di halte. Terima kasih sudah naik! 🐪",
+  "zoocamel.poor": "Naik unta 🪙 {n}",
+  "zoocamel.taken": "Unta ini sudah ada penunggangnya",
 };

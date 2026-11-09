@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
 import { makeZooAnimal, ZOO_LOOKS, foldWings, SNAKE } from './zoo-animals.js';
+import { hallMurals } from './zoo-murals.js';
 
 const mat = matCache();
 const AWAKE = 80;
@@ -263,6 +264,7 @@ function hallWalls(g, pen) {
     const slab = new THREE.Mesh(new THREE.BoxGeometry(pen.w + 0.8, 0.3, pen.d + 0.8), mat('#5d8fb0'));
     slab.position.y = H + 0.15;
     shell.add(slab);
+    shell.add(...hallMurals(pen, H)); // pictures on its outside (core/zoo-murals.js)
     return null;
   }
   // The ceiling, high up, seen from below, with rows of lights.

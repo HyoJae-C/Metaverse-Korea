@@ -661,4 +661,11 @@ export const FR = {
   "zoocart.off": "Rendre la voiturette",
   "zoocart.got": "Ta voiturette ! Roule partout dans le zoo. Approche-toi de tes amis pour leur offrir une place (jusqu'à 3).",
   "zoocart.out": "Les voiturettes restent dans le zoo : celle-ci est retournée à sa station.",
+  "zoocamel.ride": "🐪 Balade à dos de chameau · 🪙 {n}",
+  "zoocamel.wait": "Prochain chameau dans {n} s",
+  "zoocamel.off": "Descendre du chameau",
+  "zoocamel.on": "Accroche-toi ! Il se lève par l'arrière. Un tour près des zèbres, des éléphants et des girafes.",
+  "zoocamel.done": "De retour au départ. Merci d'être monté ! 🐪",
+  "zoocamel.poor": "La balade coûte 🪙 {n}",
+  "zoocamel.taken": "Quelqu'un est déjà sur ce chameau",
 };

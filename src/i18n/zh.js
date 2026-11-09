@@ -664,4 +664,11 @@ export const ZH = {
   "zoocart.off": "归还游览车",
   "zoocart.got": "借到游览车了！在动物园里随便开。走近朋友就能请他们上车（最多3人）。",
   "zoocart.out": "游览车只能在动物园里开，已经送回车站了。",
+  "zoocamel.ride": "🐪 骑骆驼 · 🪙 {n}",
+  "zoocamel.wait": "下一头骆驼还有{n}秒",
+  "zoocamel.off": "下骆驼",
+  "zoocamel.on": "抓紧了！它先站起后腿。绕着斑马、大象和长颈鹿走一圈。",
+  "zoocamel.done": "回到上客处了，玩得开心吗？🐪",
+  "zoocamel.poor": "骑骆驼要🪙 {n}",
+  "zoocamel.taken": "这头骆驼上已经有人了",
 };

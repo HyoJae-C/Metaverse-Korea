@@ -663,4 +663,11 @@ export const EN = {
   "zoocart.off": "Return the cart",
   "zoocart.got": "Your zoo cart! Drive anywhere in the zoo. Walk up to friends to offer them a seat (up to 3).",
   "zoocart.out": "Carts stay inside the zoo, so this one went back to its station.",
+  "zoocamel.ride": "🐪 Ride a camel · 🪙 {n}",
+  "zoocamel.wait": "Next camel in {n}s",
+  "zoocamel.off": "Get off the camel",
+  "zoocamel.on": "Hold on! Up it gets, back legs first. Off round the zebras, elephants and giraffes.",
+  "zoocamel.done": "Back at the stand. Thanks for riding! 🐪",
+  "zoocamel.poor": "A camel ride costs 🪙 {n}",
+  "zoocamel.taken": "Someone is already on this camel",
 };
