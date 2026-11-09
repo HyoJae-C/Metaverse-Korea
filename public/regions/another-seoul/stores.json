@@ -740,10 +740,10 @@
       "id": "haneul-mall",
       "category": "lifestyle",
       "size": "large",
-      "at": [1030, 881],
+      "at": [1176, 881],
       "district": "songpa",
       "name": { "en": "HANEUL MALL", "ko": "하늘몰", "ja": "ハヌルモール", "zh": "天空购物中心" },
-      "tagline": { "en": "The lakeside mall under HANEUL Tower: picnic and park gear, umbrellas, caps and snacks for a lakeside walk", "ko": "하늘타워 아래 호숫가 쇼핑몰: 피크닉과 공원 놀이 용품, 우산, 모자, 호숫가 산책 간식", "ja": "ハヌルタワーの下の湖畔モール：ピクニックや公園の遊び道具、傘、帽子、湖畔散歩のおやつ", "zh": "天空塔下的湖畔商场：野餐和公园玩具、雨伞、帽子和湖边散步的零食" },
+      "tagline": { "en": "The lakeside mall by the east lake: picnic and park gear, umbrellas, caps and snacks for a lakeside walk", "ko": "동호 옆 호숫가 쇼핑몰: 피크닉과 공원 놀이 용품, 우산, 모자, 호숫가 산책 간식", "ja": "東湖のそばの湖畔モール：ピクニックや公園の遊び道具、傘、帽子、湖畔散歩のおやつ", "zh": "东湖旁的湖畔商场：野餐和公园玩具、雨伞、帽子和湖边散步的零食" },
       "colors": { "sign": "#2fa39a", "awning": "#cdeeea", "accent": "#f3fbfa" },
       "products": [
         {"id": "hm-umbrella", "model": "umbrella", "color": "#4f7fd6", "price": 0, "umbrella": true, "coins": 5000, "name": {"en": "Umbrella", "ko": "우산", "ja": "傘", "zh": "雨伞"}, "desc": {"en": "Keeps the rain off. It opens by itself when it rains or snows, and you walk almost as fast as on a dry day.", "ko": "비를 막아 줘요. 비나 눈이 오면 저절로 펴지고, 맑은 날과 거의 같은 속도로 걸을 수 있어요.", "ja": "雨や雪の日に自動で開き、晴れの日とほぼ同じ速さで歩けます。", "zh": "下雨或下雪时会自动撑开，走路几乎和晴天一样快。"}},
