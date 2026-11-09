@@ -16,6 +16,9 @@ export const config = {
   netSendRate: 6,
   netSendRateRun: 8,
   netIdleInterval: 10,
+  // Couldn't join the room's realtime channel: play solo, try again after
+  // this many seconds.
+  netRetrySeconds: 8,
   // Riding (bike, car, any vehicle) moves fast, so a low rate shows as jumps:
   // riders send at the running rate and, while fewer than netRideFloorUntil
   // people are online, never less than netSendRateRide times a second.
