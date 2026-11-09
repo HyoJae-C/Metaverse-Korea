@@ -76,7 +76,7 @@ await page.waitForTimeout(1500);
 await shot('island-rides');
 // The drop climbs the tower and falls, the swing ride's chairs fly out, the
 // gyro swing goes up past level; the wheel takes you over the top.
-for (const [kind, gate, high] of [['drop', [-13.2, -23.8], 12], ['swing', [-49.3, -29], 1.2], ['gyro', [5, -20.1], 8], ['wheel', [-42, -39.8], 10]]) {
+for (const [kind, gate, high] of [['drop', [-17.9, -28.5], 12], ['swing', [-49.3, -29], 1.2], ['gyro', [-11.5, -7.1], 8], ['wheel', [-42, -39.8], 10]]) {
   await page.evaluate(([x, z]) => { __mk.place(x, z); __mk.cam({ yaw: 0, pitch: 0.35, dist: 9 }); }, gate);
   await page.waitForTimeout(600);
   let p = await pr();
