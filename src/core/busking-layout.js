@@ -14,7 +14,7 @@
 // `n` low steps of `rise` each climb from the front edge (treads `tread`
 // deep), from both ends (`endTread`) and, steeper, from the back
 // (`backTread`), so you can walk up them from any side.
-export const BANK = { back: -17, front: -9, z0: -16, z1: 14, n: 4, rise: 0.35, tread: 1.8, endTread: 0.6, backTread: 0.4 };
+export const BANK = { back: -13, front: -5, z0: -16, z1: 14, n: 4, rise: 0.35, tread: 1.8, endTread: 0.6, backTread: 0.4 };
 BANK.h = BANK.n * BANK.rise;
 
 // Which step (0 = the street, n = the top) is at (x, z) from the zone's centre.
@@ -43,9 +43,9 @@ export function buskingGroundY(list = [], x, z) {
 
 // The audience on the steps: three rows, one step apart, low at the front.
 export const CROWD = [
-  ...[-12, -6, 0, 6, 11].map((z) => [-10.4, z]),
-  ...[-13, -8, -3, 2, 7, 12].map((z) => [-12.3, z]),
-  ...[-10, -4.5, 1, 6.5].map((z) => [-14.3, z]),
+  ...[-12, -6, 0, 6, 11].map((z) => [-6.4, z]),
+  ...[-13, -8, -3, 2, 7, 12].map((z) => [-8.3, z]),
+  ...[-10, -4.5, 1, 6.5].map((z) => [-10.3, z]),
 ];
 
 // Where the performers stand. Everyone faces west (the audience).

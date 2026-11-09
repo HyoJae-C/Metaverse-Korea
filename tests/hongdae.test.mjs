@@ -80,9 +80,9 @@ test('Hongdae: district, station, busking zone and an even mix of shops and cafÃ
 test('busking steps: flat ground around them, low steps up from every side, the crowd on them', () => {
   assert.equal(bankHeight(BANK.front + 1, 0), 0);
   assert.equal(bankHeight(BANK.back - 1, 0), 0);
-  assert.equal(bankHeight(-14, BANK.z1 + 1), 0);
-  assert.equal(bankHeight(-15, 0), BANK.h, 'the top step near the back');
-  assert.ok(bankHeight(-10, 0) < bankHeight(-12, 0) && bankHeight(-12, 0) < BANK.h);
+  assert.equal(bankHeight(-10, BANK.z1 + 1), 0);
+  assert.equal(bankHeight(-11, 0), BANK.h, 'the top step near the back');
+  assert.ok(bankHeight(-6, 0) < bankHeight(-8, 0) && bankHeight(-8, 0) < BANK.h);
   assert.ok(BANK.rise <= 0.4, 'low steps');
   // Walking across the steps in any direction, you only ever go up or down one step.
   for (let x = BANK.back - 1; x <= BANK.front + 1; x += 0.1) {
