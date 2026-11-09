@@ -10,9 +10,13 @@ import * as THREE from 'three';
 // look: other look changes while worn; swapAt: when the clothes change
 // (seconds into the transformation); ready: when it is over; fx: the emoji
 // around the character while transforming (core/scent-fx.js); carry: the
-// ways it can carry someone; bird: the character turns into that bird
-// (shown from swapAt); mount: what it rides on (carpet, cloud); cam: how
-// far back the camera goes at least.
+// ways it can carry someone; bird: the character turns into that bird;
+// hide: the character is hidden from swapAt on (it becomes the bird or the
+// carpet); mount: the carpet or the cloud; cam: how far back the camera
+// goes at least.
+// Touching down on the street or a roof without /착지, every costume stands
+// and walks ("stand"): the human ones on their feet, the birds waddle, the
+// carpet lies flat and crawls, the Monkey King steps off his cloud.
 const ARMS = ['arms2', 'arm1', 'princess'];
 export const COSTUMES = {
   seoulman: {
@@ -28,16 +32,20 @@ export const COSTUMES = {
     swapAt: 0, ready: 1.7, flame: null, carry: ARMS, fx: { e: ['🪶', '🤍', '✨'], m: 'fall', c: '#fff4d6' },
   },
   albatross: {
-    model: null, look: {}, bird: true, cam: 18,
+    model: null, look: {}, bird: true, hide: true, cam: 18,
     swapAt: 0.55, ready: 1.7, flame: null, carry: ['talons'], fx: { e: ['🪶', '🤍', '🌊'], m: 'rise', c: '#e9f4ff' },
   },
   eagle: {
-    model: null, look: {}, bird: true, cam: 14,
+    model: null, look: {}, bird: true, hide: true, cam: 14,
     swapAt: 0.55, ready: 1.6, flame: null, carry: ['talons'], fx: { e: ['🪶', '🦅', '✨'], m: 'rise', c: '#f3e3c3' },
   },
   carpet: {
-    model: null, look: { back: null }, mount: 'carpet',
-    swapAt: 0, ready: 1.5, flame: null, carry: ['ride'], fx: { e: ['✨', '🌟', '💫'], m: 'orbit', c: '#ffd36b' },
+    model: null, look: {}, mount: 'carpet', hide: true, cam: 11, // you become the carpet
+    swapAt: 0.5, ready: 1.5, flame: null, carry: ['ride'], fx: { e: ['✨', '🌟', '💫'], m: 'orbit', c: '#ffd36b' },
+  },
+  ufo: {
+    model: null, look: { back: null }, mount: 'ufo', cam: 13, // you fly it from inside the dome
+    swapAt: 0, ready: 1.5, flame: null, carry: ['cabin'], fx: { e: ['👽', '🛸', '✨'], m: 'orbit', c: '#9ff7ff' },
   },
   wukong: {
     model: 'sky-wukong', look: { hairStyle: 'slick', head: null, face: null, back: null, skirt: null, tee: null }, mount: 'cloud',
@@ -211,15 +219,21 @@ export const SKY_SPEED = 14; // m/s across (hf = 1)
 // 'princess' held in both arms. Slots: under the right arm (0), the left (1).
 // The birds: 'talons', held by the shoulders under it. The carpet and the
 // cloud: 'ride', sitting (standing on the cloud) behind the flyer, two seats.
-export const CARRY_POSES = ['arms2', 'arm1', 'princess', 'talons', 'ride'];
+// The flying saucer: 'cabin', the one back seat under the dome.
+export const CARRY_POSES = ['arms2', 'arm1', 'princess', 'talons', 'ride', 'cabin'];
 export const carrySeats = (pose) => (pose === 'arms2' || pose === 'ride' ? 2 : CARRY_POSES.includes(pose) ? 1 : 0);
 // Sitting on the carpet, legs out in front; standing on the cloud, knees a
 // little bent; the Monkey King with his staff held forward.
 const SEATED = () => ({ legL: [-1.5, 0.12, 0], legR: [-1.5, -0.12, 0], kneeL: [0.05, 0, 0], kneeR: [0.05, 0, 0], armL: [0.25, -0.25, 0], armR: [0.25, 0.25, 0], foreL: [-0.3, 0, 0], foreR: [-0.3, 0, 0] });
 const STANDING = () => ({ legL: [-0.15, 0, 0], legR: [0.12, 0, 0], kneeL: [0.3, 0, 0], kneeR: [0.15, 0, 0], armL: [0.15, -0.35, 0], foreL: [-0.4, 0, 0], armR: [0.15, 0.35, 0], foreR: [-0.4, 0, 0] });
 const WUKONG = () => ({ ...STANDING(), armR: [-0.55, 0.15, 0], foreR: [-0.9, 0, 0] });
-// Riders' seats in the flyer's frame (x left, z forward), slot 0 and 1.
-const RIDE_AT = { carpet: [[0.3, 0, -0.85], [-0.3, 0, -0.85]], cloud: [[0.34, 0, -0.7], [-0.34, 0, -0.7]] };
+const PILOT = () => ({ ...SEATED(), armL: [-1.1, -0.2, 0], armR: [-1.1, 0.2, 0], foreL: [-0.45, 0, 0], foreR: [-0.45, 0, 0] }); // hands on the controls
+// Riders' seats in the flyer's frame (x left, z forward), slot 0 and 1: on
+// the carpet one in front of the other, sitting on it (their feet, the
+// root, below it so the hips rest on top; core/sky-mounts.js CARPET.y);
+// on the cloud behind the Monkey King.
+const SEAT_HIPS = 0.42;
+const RIDE_AT = { carpet: [[0, 0.14 - SEAT_HIPS, 0.45], [0, 0.14 - SEAT_HIPS, -0.6]], cloud: [[0.34, 0, -0.7], [-0.34, 0, -0.7]], ufo: [[0, 0, -0.75]] };
 const SHOULDER = 0.78; // feet to shoulders (m), held in the talons
 // Where the carried person's middle sits, in the flyer's body frame
 // (x: the flyer's left, y up from the feet, z forward), and how they lie.
@@ -260,12 +274,13 @@ export function placeCarried(flyer, pose, slot, ch, mount) {
     setCarried(ch, 'talons');
     return;
   }
-  if (pose === 'ride') {
+  if (pose === 'ride' || pose === 'cabin') {
     const cloud = COSTUMES[mount]?.mount === 'cloud';
-    const at = (cloud ? RIDE_AT.cloud : RIDE_AT.carpet)[slot ? 1 : 0];
+    const at = pose === 'cabin' ? RIDE_AT.ufo[0] : (cloud ? RIDE_AT.cloud : RIDE_AT.carpet)[slot ? 1 : 0];
     flyer.root.localToWorld(vMid.set(at[0], at[1], at[2]));
     ch.root.rotation.y = flyer.root.rotation.y;
-    ch.setTrick({ flip: rig.rotation.x, spin: 0, roll: rig.rotation.z }, 0); // leaning as the flyer leans
+    const lean = flyer.root.userData.skyTilt || rig; // (the carpet itself, or the Monkey King)
+    ch.setTrick({ flip: lean.rotation.x, spin: 0, roll: lean.rotation.z }, 0); // leaning as the flyer leans
     ch.root.position.copy(vMid);
     setCarried(ch, cloud ? 'stand' : 'seat');
     return;
@@ -291,17 +306,19 @@ export function releaseCarried(ch) {
   ch.setTrick(null, 0);
 }
 
-// The flying state as it travels to other players ("fl"): kind, then the
-// carry pose: 'suit', 'wings.princess'.
-export const encodeFlight = (kind, carry) => (COSTUMES[kind] ? kind + (CARRY_POSES.includes(carry) ? '.' + carry : '') : undefined);
+// The flying state as it travels to other players ("fl"): kind ('!' when
+// standing on the ground), then the carry pose: 'suit', 'wings.princess',
+// 'carpet!.ride'.
+export const encodeFlight = (kind, carry, stand = false) => (COSTUMES[kind] ? kind + (stand ? '!' : '') + (CARRY_POSES.includes(carry) ? '.' + carry : '') : undefined);
 export function parseFlight(s) {
-  const [kind, carry] = String(s ?? '').slice(0, 24).split('.');
-  return COSTUMES[kind] ? { kind, carry: CARRY_POSES.includes(carry) ? carry : null } : null;
+  const [k, carry] = String(s ?? '').slice(0, 24).split('.');
+  const stand = k.endsWith('!'), kind = stand ? k.slice(0, -1) : k;
+  return COSTUMES[kind] ? { kind, carry: CARRY_POSES.includes(carry) ? carry : null, stand } : null;
 }
 // Being carried ("cr"): '<flyer id>.<pose>.<slot>'.
 export const encodeCarried = (flyer, pose, slot) => `${flyer}.${pose}.${slot ? 1 : 0}`;
 export function parseCarried(s) {
-  const m = /^([\w-]{1,64})\.(arms2|arm1|princess|talons|ride)\.([01])$/.exec(String(s ?? ''));
+  const m = /^([\w-]{1,64})\.(arms2|arm1|princess|talons|ride|cabin)\.([01])$/.exec(String(s ?? ''));
   return m ? { flyer: m[1], pose: m[2], slot: Number(m[3]) } : null;
 }
 
@@ -327,9 +344,10 @@ export class SkyCostume {
     for (const f of this.flames) f.visible = false;
     this.ch = null;
     this.flapT = 0;
-    this.s = { phase: 'on', t: 0, hf: 0, climb: 0, roll: 0, y: 0, fist: 0, carry: null };
+    this.s = { phase: 'on', t: 0, hf: 0, climb: 0, roll: 0, y: 0, fist: 0, carry: null, stand: false, walk: 0 };
+    this.sk = 0; // 0 in the air .. 1 standing
     this.pose = () => this._pose();
-    this.bird = this.carpet = this.cloud = null;
+    this.bird = this.carpet = this.cloud = this.body = this.ufo = null;
     this.extra = []; // objects from sky-mounts.js, freed on dispose
     if (this.C.bird || this.C.mount) loadMounts().then((M) => { if (!this.dead) this._load(M); }, () => {});
   }
@@ -337,10 +355,11 @@ export class SkyCostume {
   // The bird, the carpet or the cloud (and the Monkey King's pieces).
   _load(M) {
     this.M = M;
-    if (this.C.bird) { this.bird = M.makeBird(this.kind); this.extra.push(this.bird.obj); }
-    if (this.C.mount === 'carpet') {
-      this.carpet = M.makeCarpet();
-      this.pieces.push(piece(this.carpet.obj, 'root', [0, -0.4, 1.8], 0.1, 0.6));
+    if (this.C.bird) { this.bird = M.makeBird(this.kind); this.body = this.bird.obj; this.extra.push(this.body); }
+    if (this.C.mount === 'carpet') { this.carpet = M.makeCarpet(); this.body = this.carpet.obj; this.extra.push(this.body); }
+    if (this.C.mount === 'ufo') {
+      this.ufo = M.makeSaucer();
+      this.pieces.push(piece(this.ufo.obj, 'root', [0, 7, 0], 0.1, 0.9)); // comes down over you
     }
     if (this.C.mount === 'cloud') {
       this.cloud = M.makeCloud();
@@ -380,22 +399,23 @@ export class SkyCostume {
     this.dead = true;
     for (const pc of this.pieces) pc.holder?.removeFromParent();
     for (const f of this.flames) f.removeFromParent();
-    this._unbird();
+    this._unbody();
     if (this.ch) { this.ch.setMoves(null); this.ch.setTrick(null, 0); }
     for (const o of this.extra) this.M?.disposeObj(o);
     this.pieces = []; this.wings = []; this.flames = []; this.extra = [];
-    this.bird = this.carpet = this.cloud = null;
+    this.bird = this.carpet = this.cloud = this.body = this.ufo = null;
     this.ch = null;
   }
 
-  // The bird off the character, the character shown again.
-  _unbird() {
-    if (!this.bird) return;
-    this.bird.obj.removeFromParent();
+  // The bird or the carpet off the character, the character shown again.
+  _unbody() {
+    if (!this.body) return;
+    this.body.removeFromParent();
     const ch = this.ch;
     if (ch) {
       if (ch.root.children[0]) ch.root.children[0].visible = true;
-      if (ch.root.userData.skyTalons === this.bird.anchor) delete ch.root.userData.skyTalons;
+      delete ch.root.userData.skyTalons;
+      delete ch.root.userData.skyTilt;
     }
   }
 
@@ -404,8 +424,10 @@ export class SkyCostume {
     const { hf, fist, carry, kind } = { ...this.s, kind: this.kind };
     const h = 1 - hf;
     let out;
-    if (this.C.bird) return {};
-    if (this.C.mount === 'carpet') out = SEATED();
+    if (this.C.hide) return {};
+    // Standing: the body's own idle and walk, the staff still in hand.
+    if (this.C.mount === 'ufo') out = PILOT(); // (landed too: still at the controls)
+    else if (this.s.stand) out = kind === 'wukong' ? { armR: [-0.55, 0.15, 0], foreR: [-0.9, 0, 0] } : {};
     else if (kind === 'wukong') out = WUKONG();
     else if (kind === 'wings') {
       out = { armL: [0.15, -0.3, 0], armR: [0.15, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [0.15 * hf, 0, 0], legR: [0.25 * hf, 0, 0], kneeL: [0.35 - 0.25 * hf, 0, 0], kneeR: [0.2, 0, 0] };
@@ -443,8 +465,8 @@ export class SkyCostume {
   // he changes. Held in front (princess carry): never quite flat.
   tilt() {
     const { hf, climb, carry, phase, t } = this.s;
-    if (this.C.bird) return null; // (the character is hidden; the bird leans itself)
-    if (this.C.mount === 'carpet') return { flip: -climb * 0.12, roll: this.s.roll * 0.5, spin: 0 };
+    if (this.C.hide || this.s.stand) return null; // (hidden: the bird or carpet leans itself)
+    if (this.C.mount === 'ufo') return { flip: 0.12 * hf - climb * 0.1, roll: this.s.roll * 0.8, spin: 0 };
     if (this.C.mount === 'cloud') return { flip: 0.06 + 0.12 * hf - climb * 0.08, roll: this.s.roll * 0.6, spin: 0 };
     let tilt = (this.kind === 'wings' ? 0.15 + 0.7 * hf : 0.2 + 1.2 * hf) - climb * 0.15 * (1 - hf);
     if (carry === 'princess') tilt = Math.min(tilt, 0.35);
@@ -454,8 +476,9 @@ export class SkyCostume {
 
   update(ch, dt, state) {
     Object.assign(this.s, state);
-    if (ch !== this.ch) { this._unbird(); this.bind(ch); }
+    if (ch !== this.ch) { this._unbody(); this.bind(ch); }
     const s = this.s;
+    this.sk += ((s.stand ? 1 : 0) - this.sk) * Math.min(1, dt * 6);
     const lean = this.tilt();
     ch.setTrick(lean, s.y);
     // Pieces flying on, or off.
@@ -477,40 +500,58 @@ export class SkyCostume {
     }
     if (this.wings.length) this._wings(dt);
     if (this.flames.length) this._flames(!!s.flames);
-    if (this.bird) this._bird(dt);
-    // The carpet ripples once it is up; it and the cloud bank with us.
-    const up = s.phase === 'fly' || (s.phase === 'on' && s.t > this.C.ready - 0.6) || (s.phase === 'off' && !s.off) ? 1 : 0;
+    if (this.body) this._body(dt);
+    const air = 1 - this.sk;
+    // The carpet ripples once it is up (a slow crawl when walking on the
+    // ground, where it lies flat) and banks with us.
     if (this.carpet) {
-      this.carpet.up = (this.carpet.up ?? 0) + (up - (this.carpet.up ?? 0)) * Math.min(1, dt * 3);
-      this.M.waveCarpet(this.carpet, dt, s.hf, this.carpet.up);
-      this.carpet.tilt.rotation.set(lean.flip, 0, lean.roll);
+      const c = this.carpet;
+      const up = s.stand ? 0.35 * (s.walk || 0) : s.phase === 'fly' || (s.phase === 'on' && s.t > this.C.ready - 0.6) || (s.phase === 'off' && !s.off) ? 1 : 0;
+      c.up = (c.up ?? 0) + (up - (c.up ?? 0)) * Math.min(1, dt * 3);
+      this.M.waveCarpet(c, dt, s.hf, c.up);
+      c.tilt.rotation.set(-s.climb * 0.15 * air, 0, s.roll * air);
+      c.obj.position.y = this.M.CARPET.y - (this.M.CARPET.y - 0.02) * this.sk;
     }
+    // The saucer banks with us (the pilot inside leans the same way).
+    if (this.ufo) {
+      this.M.spinSaucer(this.ufo, dt, s.hf);
+      this.ufo.tilt.rotation.set(lean ? lean.flip : 0, 0, lean ? lean.roll : 0);
+    }
+    // The cloud banks with us, and melts away while he walks.
     if (this.cloud) {
       this.M.puffCloud(this.cloud, dt, s.hf);
-      this.cloud.tilt.rotation.set(0, 0, lean.roll);
+      this.cloud.tilt.rotation.set(0, 0, lean ? lean.roll : 0);
+      this.cloud.obj.scale.multiplyScalar(Math.max(0.001, air));
+      this.cloud.obj.visible &&= air > 0.01;
     }
   }
 
-  // The character turns into the bird from swapAt (and back when landing).
-  _bird(dt) {
-    const s = this.s, b = this.bird, root = this.ch.root;
+  // The character turns into the bird or the carpet from swapAt (and back
+  // when landing).
+  _body(dt) {
+    const s = this.s, body = this.body, root = this.ch.root;
     const k = s.off ? 1 - smooth(clamp01(s.t / (OFF_DUR * 0.6))) : s.phase === 'on' ? clamp01((s.t - this.C.swapAt) / 0.4) : 1;
     const rig = root.children[0];
-    if (b.obj.parent !== root) { root.add(b.obj); root.userData.skyTalons = b.anchor; }
-    if (rig && rig !== b.obj) rig.visible = k <= 0.001;
-    b.obj.visible = k > 0.001;
-    b.obj.scale.setScalar(Math.max(0.001, s.off ? k : easeOutBack(k)));
-    this.M.poseBird(b, s, dt);
+    if (body.parent !== root) {
+      root.add(body);
+      if (this.bird) root.userData.skyTalons = this.bird.anchor;
+      if (this.carpet) root.userData.skyTilt = this.carpet.tilt;
+    }
+    if (rig && rig !== body) rig.visible = k <= 0.001;
+    body.visible = k > 0.001;
+    body.scale.setScalar(Math.max(0.001, s.off ? k : easeOutBack(k)));
+    if (this.bird) this.M.poseBird(this.bird, s, dt);
   }
 
   _wings(dt) {
     const { phase, t, hf, climb } = this.s;
     const climbing = climb > 0;
-    const unfold = phase === 'on' ? smooth(clamp01((t - 0.3) / 0.5)) : this.s.off ? 1 - clamp01(t / OFF_DUR) : 1;
+    // (standing: folded most of the way and still)
+    const unfold = (phase === 'on' ? smooth(clamp01((t - 0.3) / 0.5)) : this.s.off ? 1 - clamp01(t / OFF_DUR) : 1) * (1 - 0.65 * this.sk);
     const burst = phase === 'on' ? easeOutBack(clamp01((t - 0.3) / 0.5)) : unfold;
     const rate = climbing ? 3.2 : 1.6 + (1 - hf) * 0.8; // flaps a second: harder when climbing or hovering
     this.flapT += dt * rate * Math.PI * 2 * (unfold > 0.6 ? 1 : 0.2);
-    const flap = Math.sin(this.flapT) * (0.55 + (climbing ? 0.2 : 0)) * unfold;
+    const flap = Math.sin(this.flapT) * (0.55 + (climbing ? 0.2 : 0)) * unfold * (1 - this.sk);
     for (const w of this.wings) {
       const side = w.userData.side;
       w.scale.setScalar(Math.max(0.05, 0.15 + 0.85 * burst));
