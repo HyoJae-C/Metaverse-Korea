@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { BARGES } from '../src/core/fireworks-show.js';
 import { inPolygon, toGame } from '../src/core/seoul-grid.js';
-import { northBetween, BRIDGE_NORTH } from './han-bank.mjs';
+import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH } from './han-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -143,22 +143,23 @@ export const PARK = {
 const LAWN = [-94.4, 120]; // u
 const SQUARE = [-137.6, -94.4]; // Mul-bit Square, u
 
-// The Han River from Mangwon to Banpo-Jamwon (world metres): the old north
-// bank, and on the south side the real bank east of the island, the island's
-// north shore, and on west of it to Mangwon's river.
+// The Han River from Mangwon to x -1420, west of Banpo Bridge (world metres;
+// han-bank.mjs draws on east of it): the real north bank, and on the south
+// side the real bank east of the island, the island's north shore, and on
+// west of it to Mangwon's river.
 function river() {
   // the real north bank (scripts/han-bank.mjs) from Mangwon's map (its own
-  // river reaches x -3218 on the bank) to Banpo-Jamwon, then across to its map's river
-  const north = [...northBetween(-3300, -1394), [-1312, 880]];
+  // river reaches x -3218 on the bank) to x -1420, then straight across
+  const north = northBetween(-3300, RIVER_CUT);
   const shore = []; // the east end of the park round the north shore to the west tip
   for (let i = SHORE_EAST; ; i = (i + 1) % ISLAND.length) { shore.push(world(at(...ISLAND[i]))); if (i === WEST_TIP) break; }
-  const south = [[-1620, 950], [-1960, 900], ...OSM.southBankEast.slice().reverse(), ...shore,
+  const south = [...southBetween(-2020, RIVER_CUT).slice(0, -1), ...OSM.southBankEast.slice().reverse(), ...shore,
     [-3240, 276], [-3300, 225]]; // (west of the island: the real south bank, then up the edge of Mangwon's river)
   const p = [...north, ...south];
   // Its blocker, cut on both sides of Seogang Bridge.
   const gap = BRIDGE_W / 2 + 1;
   const blockers = [clip(p, (q) => across(q) - gap), clip(p, (q) => -across(q) - gap)];
-  return { p, blockers, note: 'Han River from Mangwon Han River Park east to Banpo-Jamwon, on the real north bank; its south bank is Yeouido\'s real north shore (scripts/build-yeouido.mjs writes this). Its blocker has a gap for Seogang Bridge.' };
+  return { p, blockers, note: 'Han River from Mangwon Han River Park east to just west of Banpo Bridge, on its real banks; its south bank by the island is Yeouido\'s real north shore (scripts/build-yeouido.mjs writes this). Its blocker has a gap for Seogang Bridge.' };
 }
 // The Saetgang's edge: a strip of water 2-10 m off the island's south
 // shore, from the west tip round the east tip to where the Han's water
