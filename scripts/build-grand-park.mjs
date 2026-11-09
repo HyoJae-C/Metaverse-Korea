@@ -158,6 +158,10 @@ export const PENS = [
   {
     id: 'sea', x: 81, z: -21, w: 24, d: 28, fence: 'hall', closed: true, ground: 'stone', board: 'n', boardAt: 7,
     name: L('바다동물관', 'Sea Animals', '海の動物館', '海洋动物馆'),
+    // Pictures on its walls (core/zoo-murals.js): the polar bears and penguins
+    // and the game's name facing the main path, the deep sea along the ring
+    // road, a penguin family beside the door.
+    murals: [{ side: 's', art: 'ice' }, { side: 'w', art: 'deep' }, { side: 'n', art: 'penguins', at: -6.75, w: 8 }],
   },
   {
     id: 'hippos', x: 108, z: -21, w: 21, d: 28, fence: 'glass', ground: 'dirt', board: 'n', boardAt: 6,

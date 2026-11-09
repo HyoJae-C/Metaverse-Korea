@@ -597,3 +597,28 @@ test('riding a camel: pay at the stand, sit on the saddle, carried round, off at
     assert.ok(toasts.includes('zoocamel.poor'));
   } finally { Date.now = realNow; }
 });
+
+test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL on them', async () => {
+  const { hallMurals, ART } = await import('../src/core/zoo-murals.js');
+  const sea = PENS.find((p) => p.id === 'sea');
+  assert.ok(sea.murals?.length >= 3, 'three murals');
+  const ms = hallMurals(sea, 7.5);
+  assert.equal(ms.length, sea.murals.length);
+  for (const m of ms) {
+    const g = m.geometry.parameters, p = m.position;
+    assert.ok(p.y - g.height / 2 >= 0.5 && p.y + g.height / 2 <= 7.5 - 1.2, `${m.name} sits between the base and the band`);
+    assert.ok(Math.abs(p.x) > sea.w / 2 || Math.abs(p.z) > sea.d / 2, `${m.name} is outside the walls`);
+    const n = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y);
+    assert.ok(n.x * p.x + n.z * p.z > 0, `${m.name} faces out`);
+  }
+  const door = ms.find((m) => m.name === 'mural:penguins');
+  assert.ok(Math.abs(door.position.x) - door.geometry.parameters.width / 2 > 1.6, 'the door stays clear');
+  assert.ok(Math.abs(door.position.x - (sea.boardAt || 0)) > door.geometry.parameters.width / 2 + 1, 'and so does the name board');
+  // Every picture says the game's name.
+  for (const [name, [w, h, draw]] of Object.entries(ART)) {
+    const said = [];
+    const c = new Proxy({}, { get: (_, k) => (k === 'fillText' || k === 'strokeText' ? (t) => said.push(t) : () => ({})), set: () => true });
+    draw(c, w, h);
+    assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('ANOTHER') && said.join(' ').includes('SEOUL'), `${name} says ANOTHER SEOUL`);
+  }
+});
