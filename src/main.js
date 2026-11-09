@@ -670,18 +670,14 @@ const MELON_PRICE = 3000;
 // ZOO_OPEN): no feeding-time toasts then. (The animals still live their
 // lives in there, for anyone peeking in.)
 const zooClosed = map.landmarks.some((l) => l.type === 'hoarding' && l.closes === 'zoo');
-// A gap at the foot of the hoarding that only operators fit through
-// (am_operator, asked once when one comes close): Yozi looks round the zoo
-// before it opens. Everyone else just sees a broken board.
+// A gap at the foot of the hoarding that anyone can crawl through, to peek
+// round the zoo before it opens.
 const DOGHOLE = map.landmarks.find((l) => l.type === 'doghole' && l.closes === 'zoo') || null;
-let dogholeOp = null; // null: not asked yet; then true / false
 function dogholeAct(p) {
   if (!DOGHOLE || mode !== 'street') return null;
   const nx = Math.sin(DOGHOLE.ry || 0), nz = Math.cos(DOGHOLE.ry || 0); // the hoarding's face
   const dx = p.x - DOGHOLE.x, dz = p.z - DOGHOLE.z, across = dx * nx + dz * nz;
   if (Math.hypot(dx, dz) > 1.8) return null;
-  if (dogholeOp === null) { dogholeOp = false; sky.isOperator().then((ok) => { dogholeOp = ok; action = STALE; }); }
-  if (!dogholeOp) return null;
   const side = across >= 0 ? -1 : 1; // to the other side
   return { key: 'doghole', label: DOGHOLE_TEXT[getLanguage()] || DOGHOLE_TEXT.en, run: () => {
     moveMeTo(scene, DOGHOLE.x + nx * 1.6 * side, DOGHOLE.z + nz * 1.6 * side, Math.atan2(nx * side, nz * side));
@@ -5827,7 +5823,7 @@ function updateAction(p, tSec) {
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
     else if (!riding && zoo.nearest(p.x, p.z) && zoo.food > 0) next = zooFeedAct(zoo.nearest(p.x, p.z), p); // feed from your cup
     else if (!riding && zoo.shopSpot(p.x, p.z)) next = foodShopAct(zoo.shopSpot(p.x, p.z)); // the food counter at the barn door
-    else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding (operators)
+    else if (!riding && !seated && dogholeAct(p)) next = dogholeAct(p); // the gap in the zoo's hoarding
     else if (!riding && keeper && zoo.keeperSpot(p.x, p.z)) next = keeperAct(); // the keeper
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && zoo.nearest(p.x, p.z)) next = zooPetAct(zoo.nearest(p.x, p.z), p); // the little animal village

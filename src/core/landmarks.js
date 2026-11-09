@@ -625,7 +625,7 @@ export function buildLandmarks(list = [], scene) {
     if (l.type === 'wall') wall(g, l);
     else if (l.type === 'blossoms') blossoms(g, l);
     else if (l.type === 'avenue') avenue(g, l);
-    else if (l.type === 'doghole') doghole(g, l); // (a gap only operators fit through: main.js)
+    else if (l.type === 'doghole') doghole(g, l); // (a gap anyone can crawl through: main.js)
     else if (l.type === 'hoarding') hoarding(g, l); // (the zoo before it opens: core/grand-park.js) // (trees at map positions, like blossoms)
     else if (BUILD[l.type]) {
       const tick = BUILD[l.type](g, l);

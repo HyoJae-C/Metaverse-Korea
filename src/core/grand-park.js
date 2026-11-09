@@ -82,7 +82,7 @@ export function hoarding(g, l) {
 
 // A gap at the foot of the hoarding (l: x, z, ry: its face along local z): a
 // dark hole where a board is broken off, small enough to crawl through.
-// Only operators can (main.js), to look round before the zoo opens.
+// Anyone can (main.js), to look round before the zoo opens.
 export function doghole(g, l) {
   const d = new THREE.Group();
   d.position.set(l.x, 0, l.z);
