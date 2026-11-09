@@ -165,6 +165,7 @@ import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
+import { SoundFiles } from './core/sound-files.js';
 import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
 import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
 import { PROMOS } from './data/promos.js';
@@ -2909,7 +2910,8 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
-const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
+const soundFiles = new SoundFiles(sfx, BASE); // recorded steps and shop blips (Kenney, CC0)
+const motionSound = new MotionSound(sfx, soundFiles); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
 let shownHonk = null, honkAt = 0;
 function honk() {
@@ -3571,6 +3573,7 @@ const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, open
 // Coins and the rewarded-ad slot. The balance is kept on the server once
 // supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short', paid ? 0.35 : 0.3); });
 const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
@@ -6605,6 +6608,7 @@ renderer.setAnimationLoop((now) => {
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',
+    snow: weather.kind === 'snow',
   });
   // Event-based sync: send only when our state changed (moving, turning,
   // slowing to a stop; a teleport or a newcomer forces a send), plus a slow

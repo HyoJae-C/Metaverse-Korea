@@ -142,6 +142,7 @@ export class Wallet {
     this.s = readState(); // set: the server wallet (maybe not reached yet this visit)
     this.log = readLog();
     this.listeners = [];
+    this.spendListeners = []; // f(paid, n): every spend() call, paid or not (shop sounds)
     this.client = null;
     this.welcomed = 0; // welcome money the server gave on opening
     this.lastOp = null; // the id of the last change (for a refund later)
@@ -327,9 +328,10 @@ export class Wallet {
   }
   // Pay n coins if there are enough; returns true when paid (lastOp: its id).
   spend(n, note) {
-    if (n > this.coins) return false;
-    this.add(-n, note, { kind: 'spend' });
-    return true;
+    const paid = n <= this.coins;
+    if (paid) this.add(-n, note, { kind: 'spend' });
+    this.spendListeners.forEach((f) => f(paid, n));
+    return paid;
   }
   // Take up to n coins (a fine never makes the balance negative); returns what was taken.
   take(n, note) {
@@ -343,6 +345,7 @@ export class Wallet {
     return this.add(Math.abs(n), note, ref ? { kind: 'refund', ref } : {});
   }
   onChange(f) { this.listeners.push(f); }
+  onSpend(f) { this.spendListeners.push(f); }
 
   // The server took coins itself (a love lock): show its balance.
   // r: the server's answer { coins, ver }.
