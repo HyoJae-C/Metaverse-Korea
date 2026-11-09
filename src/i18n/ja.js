@@ -145,6 +145,7 @@ export const JA = {
   "cinema.empty": "まだ映画がありません。お楽しみに！",
   "cinema.blocked": "この映画はここで再生できません。次の映画へ進みます。",
   "quest.guide": "広場の案内係",
+  "quest.welcomeGuide": "案内係",
   "quest.take": "ミッションをもらう",
   "quest.check": "ミッションを確認",
   "quest.report": "ミッション完了を報告",

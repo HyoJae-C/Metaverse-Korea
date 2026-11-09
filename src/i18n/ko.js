@@ -145,6 +145,7 @@ export const KO = {
   "cinema.empty": "아직 영화가 없어요. 곧 만나요!",
   "cinema.blocked": "이 영화는 여기서 재생할 수 없어요. 다음 영화로 넘어갈게요.",
   "quest.guide": "광장 안내원",
+  "quest.welcomeGuide": "안내원",
   "quest.take": "미션 받기",
   "quest.check": "미션 확인",
   "quest.report": "미션 완료 보고",

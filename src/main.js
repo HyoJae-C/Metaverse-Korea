@@ -11,8 +11,9 @@ import {
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
-import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, TRIP } from './core/quests.js';
-import { STARTER_TEXT, TRIP_TEXT } from './data/starter-quests.js';
+import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
+import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
+import { firstStopSpot } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -336,7 +337,7 @@ function refreshStartText() {
   const lang = getLanguage();
   const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
   $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
-    region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
+    region: localName(DISTRICT_NAME[region.spawn?.first?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon (region.json spawn.first)
     city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
@@ -810,6 +811,12 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
+// New players start inside Bukchon's gate (region.json spawn.first), next
+// to a welcome guide in the same costume: the first thing they see is a
+// hanok village, not a shopping street. The welcome high five and the first
+// errand happen there; the guide hands out errands like any other after.
+const firstStop = firstStopSpot(region);
+let welcomeNpc = null;
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
@@ -826,15 +833,24 @@ for (const sc of region.screens || []) {
 }
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
-  squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
-  squareNpc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
-  squareNpc.tag.classList.add('square-guide');
-  squareNpc.labelY = 1.95; // above the costume head
-  squareNpc.ch.activity('dance'); // dances while waiting: easy to spot
+  const mascotGuide = (x, z, ry, name = t('quest.guide')) => {
+    const npc = makeNpc($('labels'), '❗ ' + name);
+    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+    npc.tag.classList.add('square-guide');
+    npc.labelY = 1.95; // above the costume head
+    npc.ch.activity('dance'); // dances while waiting: easy to spot
+    npc.ch.root.position.set(x, 0, z);
+    npc.ch.root.rotation.y = ry;
+    scene.add(npc.ch.root);
+    return npc;
+  };
   const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
-  squareNpc.ch.root.position.set(gx, 0, gz);
-  squareNpc.ch.root.rotation.y = face(gx, gz);
-  scene.add(squareNpc.ch.root);
+  squareNpc = mascotGuide(gx, gz, face(gx, gz));
+  if (firstStop) { // a few steps ahead of where new players stand, a little to the side, facing them
+    const fx = Math.sin(firstStop.ry), fz = Math.cos(firstStop.ry);
+    const [wx, wz] = findFreeSpot(firstStop.x + fx * 2.4 + fz * 0.9, firstStop.z + fz * 2.4 - fx * 0.9);
+    welcomeNpc = mascotGuide(wx, wz, Math.atan2(firstStop.x - wx, firstStop.z - wz), t('quest.welcomeGuide'));
+  }
   const lang = getLanguage();
   billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
@@ -1002,8 +1018,9 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
-// First minute for new players: start next to the square guide, high-five
-// them, get the first mission, then the info centre is suggested (or just
+// First minute for new players: start next to the welcome guide in Bukchon
+// (or the square guide, in a region without a first stop), high-five them,
+// get the first mission, then the info centre is suggested (or just
 // explore). 0: high five · 1: getting the mission · 2+: done.
 const ONBOARD_KEY = 'mk.onboard';
 const ONBOARD_REWARD = 20000; // won, for the welcome high five (supabase/020_rewards.sql 'quest')
@@ -1014,11 +1031,18 @@ let onboard = (() => {
     return loadLastSpot() ? 2 : 0; // players from before this: skip it
   } catch { return 2; }
 })();
-// Everyone without a saved spot to come back to starts here on the main
+// New players start in Bukchon, facing the welcome guide with the village
+// behind them (until the welcome is done: a refresh in the middle of it too).
+// Everyone else without a saved spot to come back to starts on the main
 // square, next to the guide, not in front of the subway exit and the café:
 // there the first thing you did was walk into a shop door. (A usable saved
 // spot moves returning players back where they left off, just below.)
-if (squareNpc) { // stand next to the guide, facing them
+if (onboard < 2 && welcomeNpc) {
+  const g = welcomeNpc.ch.root;
+  const [ox, oz] = findFreeSpot(firstStop.x + (Math.random() - 0.5), firstStop.z + (Math.random() - 0.5));
+  me.root.position.set(ox, 0, oz);
+  me.root.rotation.y = Math.atan2(g.position.x - ox, g.position.z - oz);
+} else if (squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
   // Beside them (not between them and the square's sign post), so the
   // camera behind us sees the guide clearly.
@@ -1031,11 +1055,11 @@ function setOnboard(n) {
   onboard = n;
   try { localStorage.setItem(ONBOARD_KEY, String(n)); } catch { /* storage blocked */ }
 }
-function onboardHi5() {
+function onboardHi5(npc = squareNpc) {
   setOnboard(1);
   $('info-hint').hidden = true;
   me.play('wave');
-  squareNpc.ch.wave();
+  npc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
   wallet.add(ONBOARD_REWARD, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
@@ -1045,10 +1069,10 @@ function onboardHi5() {
   quests.beginStarter(); // then the first path: errands near the square that each teach one thing
   // First the guide recommends the info centre, then gives the first mission.
   setTimeout(() => {
-    say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
+    say(npc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
   }, 1100);
   setTimeout(() => {
-    talkToGuide(); // the first mission
+    talkToGuide(npc); // the first mission
     setOnboard(2);
     // Then: the info centre, or explore on your own. After the guide's tip
     // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
@@ -1093,7 +1117,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) remem
 addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
-if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
+if (onboard === 0 && welcomeNpc) cam.dist = 7.5; // first minute in Bukchon: the guide ahead, the village behind them
+else if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
 let manualCamT = 0; // seconds left before the camera starts following again
 let roomVisit = 0; // counts rooms walked into (the drone show tilts the view once per visit)
@@ -3301,7 +3326,9 @@ function firstTaxiCard(lines, buttons) {
 // TRIP): a little tour. Take out the bike, ride to Seongsu Station, get off
 // (no bikes on the stairs), one stop to Seoul Forest and a walk in the park,
 // the train on to Anguk, up into Bukchon, a walk to Cheonggyecheon; then a
-// free taxi back to the square guide. Each step
+// free taxi back to the square guide. New players, who start in Bukchon,
+// get BUKCHON_TRIP instead: the Open House, Anguk Station, the train to
+// Seongsu and up to the square guide. Each step
 // shows its line on the ground; "Later" moves on to the next errand.
 const TRIP_CARD = {
   home: { en: "🚕 Back in Seongsu! Tell the guide you made it.", ko: "🚕 성수에 돌아왔어요! 안내원에게 보고해요.", ja: "🚕 聖水に戻ってきた！案内係に報告しよう。", zh: "🚕 回到圣水了！去向导那里汇报吧。", es: "🚕 ¡De vuelta en Seongsu! Avisa al guía.", id: "🚕 Kembali di Seongsu! Lapor ke pemandu.", ar: "🚕 عدت إلى سونغسو! أبلغ المرشد.", vi: "🚕 Đã về Seongsu! Báo cho người hướng dẫn nhé.", hi: "🚕 सोंगसू वापस! गाइड को बताएँ।", fr: "🚕 De retour à Seongsu ! Va le dire au guide.", th: "🚕 กลับถึงซองซูแล้ว! ไปรายงานไกด์กัน" },
@@ -3314,7 +3341,15 @@ const TRIP_CARD = {
   wrongStop: { en: "This is {name}. Get off at {stop}!", ko: "여기는 {name}이에요. {stop}에서 내려요!", ja: "ここは{name}。{stop}で降りてね！", zh: "这里是{name}。请在{stop}下车！", es: "Esto es {name}. ¡Bájate en {stop}!", id: "Ini {name}. Turun di {stop}!", ar: "هذه {name}. انزل في {stop}!", vi: "Đây là {name}. Hãy xuống ở {stop}!", hi: "यह {name} है। {stop} पर उतरें!", fr: "C'est {name}. Descends à {stop} !", th: "ที่นี่คือ {name} ลงที่ {stop} นะ!" },
   done: { en: "🏮 This is Cheonggyecheon! Last step: the taxi back to Seongsu is on us. Then tell the square guide for your coins.", ko: "🏮 여기가 청계천이에요! 마지막은 무료 택시로 다시 성수로 돌아가요. 광장 안내원에게 보고하면 보상을 받아요.", ja: "🏮 ここが清渓川！最後は無料タクシーで聖水へ戻ろう。広場の案内係に報告するとご褒美がもらえるよ。", zh: "🏮 这里就是清溪川！最后一步：坐免费出租车回圣水，向广场向导汇报领取奖励。", es: "🏮 ¡Esto es Cheonggyecheon! Último paso: el taxi de vuelta a Seongsu es gratis. Luego avisa al guía de la plaza para cobrar.", id: "🏮 Ini Cheonggyecheon! Langkah terakhir: taksi gratis kembali ke Seongsu. Lalu lapor ke pemandu alun-alun untuk hadiahmu.", ar: "🏮 هذا تشونغيتشون! الخطوة الأخيرة: سيارة أجرة مجانية للعودة إلى سونغسو. ثم أبلغ مرشد الساحة لتأخذ مكافأتك.", vi: "🏮 Đây là Cheonggyecheon! Bước cuối: taxi miễn phí về lại Seongsu. Rồi báo cho người hướng dẫn quảng trường để nhận thưởng.", hi: "🏮 यह चॉन्गेचॉन है! आख़िरी कदम: सोंगसू वापसी की टैक्सी मुफ़्त है। फिर इनाम के लिए चौक के गाइड को बताएँ।", fr: "🏮 Voici Cheonggyecheon ! Dernière étape : le taxi du retour à Seongsu est offert. Ensuite, va voir le guide de la place pour ta récompense.", th: "🏮 ที่นี่คือชองกเยชอน! ขั้นสุดท้าย: นั่งแท็กซี่ฟรีกลับซองซู แล้วรายงานไกด์ประจำลานเพื่อรับรางวัล" },
 };
-const tripStep = () => (quests.active?.kind === 'trip' ? TRIP[quests.active.stage | 0]?.step || 'done' : null);
+const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
+const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
+// Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
+const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
+const inOpenHouse = (x, z) => {
+  if (!bkOffset) return false;
+  const [x0, z0, x1, z1] = BUKCHON.openHouse.box, lx = x - bkOffset[0], lz = z - bkOffset[1];
+  return lx > Math.min(x0, x1) && lx < Math.max(x0, x1) && lz > Math.min(z0, z1) && lz < Math.max(z0, z1);
+};
 // The pavement outside the subway exit nearest (x, z).
 function nearestSubwayExit(x, z) {
   let best = null, bd = Infinity;
@@ -3328,19 +3363,25 @@ const zonePlace = (id) => { const z = zones.items.find((i) => i.zone.id === id);
 // Where this step of the trip happens (null: nothing to walk to).
 function tripPlace(step) {
   const here = myPlace();
-  if (step === 'forest') return zonePlace('K');
-  if (step === 'station' || step === 'down') return nearestSubwayExit(here.x, here.z);
-  if (step === 'forestStop' || step === 'anguk') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
+  if (step === 'forest') return zonePlace('A-7');
+  if (step === 'station' || step === 'angukWalk' || step === 'down') return nearestSubwayExit(here.x, here.z);
+  if (step === 'forestStop' || step === 'anguk' || step === 'seongsuStop') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
   if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
-  if (step === 'cheonggye') return zonePlace('L');
+  if (step === 'cheonggye') return zonePlace('B-2');
+  if (step === 'square') return zonePlace('A-1');
+  if (step === 'openHouse' && bkOffset) { // just inside its gate
+    const [gx, gz] = BUKCHON.openHouse.gate;
+    return { kind: 'zone', id: 'open-house', x: bkOffset[0] + gx, z: bkOffset[1] + gz - 3, label: L(TRIP_TEXT.openHouse) };
+  }
   return null;
 }
 let tripShown = null, tripGuided = null, tripCard = null; // the step last announced / given a line; its card
 function offerTrip(npc) {
   tripShown = tripStep();
-  if (tripShown !== 'bike') { tripGuided = null; return; } // (picked up again by tripTick)
-  firstTaxiCard(L(TRIP_CARD.offer), [
-    ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
+  const first = fromBukchon() && tripShown === 'openHouse'; // (the trip from Bukchon starts on foot)
+  if (tripShown !== 'bike' && !first) { tripGuided = null; return; } // (picked up again by tripTick)
+  firstTaxiCard(L(first ? BUKCHON_TRIP_CARD.offer : TRIP_CARD.offer), [
+    first ? ['primary', L(BUKCHON_TRIP_CARD.go), () => { tripGuided = null; tripTick(); }] : ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
     ['chip', L(TRIP_CARD.later), () => {
       if (!tripStep() || !quests.skipStarter()) return;
       if (guide) clearGuide();
@@ -3360,7 +3401,9 @@ function onTripStep() {
     if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
     sfx.pop?.();
     me.play('cheer');
-    tripTaxiCard();
+    if (fromBukchon()) { // already on Seongsu Square: the guide is right here
+      firstTaxiCard(L(BUKCHON_TRIP_CARD.done), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
+    } else tripTaxiCard();
     return;
   }
   if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true; // the last step's card
@@ -3390,7 +3433,9 @@ function tripTick() {
   const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
   if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
   else if (step === 'forest' && near(zonePlace('A-7'), 30)) missionEvent('place', 'A-7');
-  else if (step === 'station' && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if ((step === 'station' || step === 'angukWalk') && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if (step === 'openHouse' && mode === 'street' && inOpenHouse(p.x, p.z)) missionEvent('place', 'open-house');
+  else if (step === 'square' && near(zonePlace('A-1'), 20)) missionEvent('place', 'A-1');
   else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
   else if (step === 'bukchon' && near(tripPlace('bukchon'), 20)) missionEvent('place', 'bukchon');
   else if (step === 'cheonggye' && near(zonePlace('B-2'), 35)) missionEvent('place', 'B-2');
@@ -3405,7 +3450,7 @@ setInterval(tripTick, 500);
 function subwayArrived(k) {
   const id = stationStores[k].subway?.id;
   missionEvent('subway', id);
-  const want = quests.active?.kind === 'trip' && TRIP[quests.active.stage | 0];
+  const want = quests.active?.kind === 'trip' && tripOf(quests.active)[quests.active.stage | 0];
   const stop = want?.on === 'subway' && want.target !== id && stationStores.find((st) => st.subway?.id === want.target);
   if (stop) shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()), stop: localName(stop.name, getLanguage()) }));
 }
@@ -3420,6 +3465,7 @@ function myPlace() {
 function nearestGuidePlace(x, z) {
   const out = [];
   if (squareNpc) out.push({ kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') });
+  if (welcomeNpc) out.push({ kind: 'npc-guide', id: 'welcome-guide', x: welcomeNpc.ch.root.position.x, z: welcomeNpc.ch.root.position.z, label: t('quest.welcomeGuide') });
   for (const it of storefronts.items) if (it.store.workshop === 'info') out.push({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
   let best = null, bd = Infinity;
   for (const g of out) { const d = Math.hypot(g.x - x, g.z - z); if (d < bd) { bd = d; best = g; } }
@@ -5758,8 +5804,10 @@ function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
-  if (q.kind === 'trip' && TRIP_TEXT[TRIP[q.stage | 0]?.step]) return L(TRIP_TEXT[TRIP[q.stage | 0].step]);
-  if (st && st.kind === q.kind && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
+  const step = q.kind === 'trip' && tripOf(q)[q.stage | 0]?.step;
+  if (step && TRIP_TEXT[step]) return L(TRIP_TEXT[step]);
+  const tipKey = q.route === 'bukchon' ? 'tripBukchon' : st?.tip;
+  if (st && st.kind === q.kind && STARTER_TEXT[tipKey]) return fmt(L(STARTER_TEXT[tipKey].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 // Where an errand happens (for the 🧭 button next to the chip): its shop,
@@ -5768,7 +5816,7 @@ function questPlace(q, ready) {
   // Done: report to the nearest guide (the square, or any Information Center).
   if (ready) { const here = myPlace(); return nearestGuidePlace(here.x, here.z); }
   if (q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
-  if (q.kind === 'trip') return tripPlace(TRIP[q.stage | 0]?.step);
+  if (q.kind === 'trip') return tripPlace(tripOf(q)[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
@@ -5812,12 +5860,13 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
     // On the first path, say the tip again too (it is easy to miss the first time).
-    const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
+    const tip = q.starter != null && STARTER_TEXT[q.route === 'bukchon' ? 'tripBukchon' : STARTER[q.starter]?.tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
     if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
-    const d = !atSquare && here?.store ? districtOfStore(here.store) : null;
+    const d = !atSquare && here?.store ? districtOfStore(here.store) : npc === welcomeNpc ? firstStop.district : null;
     const a = quests.start({
+      route: npc === welcomeNpc ? 'bukchon' : null, // the first trip, from the welcome guide: starts in Bukchon
       stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
         && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
@@ -5825,7 +5874,7 @@ function talkToGuide(npc = squareNpc) {
     say(npc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
     // On the first path the guide also gives a tip for this errand.
-    const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
+    const tip = a.starter != null && STARTER_TEXT[a.route === 'bukchon' ? 'tripBukchon' : STARTER[a.starter].tip]?.tip;
     if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
     if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
@@ -5982,20 +6031,23 @@ function infoMissionAct(p) {
 }
 // The square guide: the first high five, today's errand, or a chat.
 function guideAct(p) {
-  if (!squareNpc) return null;
-  const d = Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z);
-  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
+  // The nearer of the square guide and the welcome guide in Bukchon.
+  const dist = (n) => (n ? Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z) : Infinity);
+  const npc = dist(welcomeNpc) < dist(squareNpc) ? welcomeNpc : squareNpc;
+  if (!npc) return null;
+  const d = dist(npc);
+  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5(npc) };
   if (d >= 2.6) return null;
   const q = quests.active;
   if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // a high-five errand saved before they stopped
     return { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
-      me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
+      me.play('wave'); npc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
       missionEvent('highfive');
-      setTimeout(() => talkToGuide(), 700); // report straight away
+      setTimeout(() => talkToGuide(npc), 700); // report straight away
     } };
   }
   const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
-  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide(npc) };
 }
 const MAX_CHOICES = 6;
 // Everything else close enough to do right now, besides what the button shows
@@ -6828,9 +6880,10 @@ renderer.setAnimationLoop((now) => {
     if (mode === 'street') { keeper.ch.animate(dt, 0); placeLabels(keeper, camera, w, h); }
     else for (const el of [keeper.tag, keeper.bubble]) if (el) el.style.display = 'none';
   }
-  if (squareNpc) {
-    if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
-    else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
+  for (const g of [squareNpc, welcomeNpc]) {
+    if (!g) continue;
+    if (mode === 'street') { g.ch.animate(dt, 0); placeLabels(g, camera, w, h); }
+    else for (const el of [g.tag, g.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
   if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
@@ -7054,6 +7107,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
+    welcomeGuide: () => welcomeNpc && [welcomeNpc.ch.root.position.x, welcomeNpc.ch.root.position.z, welcomeNpc.ch.root.rotation.y],
+    onboard: () => onboard,
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     hiring: () => hiringPlaces,
     delivery: () => deliveryGame.delivery && { ...deliveryGame.delivery, left: (deliveryGame.delivery.until - performance.now()) / 1000 },
