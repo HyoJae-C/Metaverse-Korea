@@ -6315,6 +6315,7 @@ renderer.setAnimationLoop(() => {
   updateDroneShow();
   updateFireworks();
   updateRide(dt);
+  if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   updateCable();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && mag > 0.3) standUp(); // (get off a duck boat or bumper car with its button)
