@@ -64,10 +64,10 @@ test('barges in the river between the island and Hongdae; the night only around 
     assert.ok(inPoly(x, z, region.water[0].p), `barge at ${u},${v} floats on the Han`);
     assert.ok(map.landmarks.some((l) => l.type === 'fwbarge' && Math.hypot(l.x + ORIGIN[0] - x, l.z + ORIGIN[1] - z) < 0.5), 'its model is on the map');
   }
-  const lawn = at(-16, 20);
+  const lawn = at(13, 20);
   assert.equal(nearYeouido(lawn[0] + ORIGIN[0], lawn[1] + ORIGIN[1]), 1, 'night on the lawn');
   assert.equal(nearYeouido(-2776.7, -16.7), 1, 'night at the bridge\'s Hongdae end');
   assert.equal(nearYeouido(-2977, -216), 0, 'day in the middle of Hongdae');
   assert.equal(nearYeouido(0, 0), 0, 'day in Seongsu');
-  assert.equal(nearYeouido(...atUV(-200, 300)), 1, 'night on the south side of the island too');
+  assert.equal(nearYeouido(...atUV(-300, 400)), 1, 'night on the south side of the island too');
 });

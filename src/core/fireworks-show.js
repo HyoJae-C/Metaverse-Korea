@@ -57,25 +57,27 @@ export function nextFireworks(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
 }
 
 // ---- Where (world metres; the same frame as scripts/build-yeouido.mjs) ----
-export const ORIGIN = [-2715, 284]; // the middle of the island's north shore
-const L = Math.hypot(348, 257);
-export const U = [348 / L, 257 / L]; // along the river
+export const ORIGIN = [-2606.5, 528.6]; // the middle of the park's stretch of north shore
+const ANGLE = (46 * Math.PI) / 180;
+export const U = [Math.cos(ANGLE), Math.sin(ANGLE)]; // along the river
 export const V = [-U[1], U[0]]; // across it: v < 0 is the main channel, towards Hongdae
 export const atUV = (u, v) => [ORIGIN[0] + u * U[0] + v * V[0], ORIGIN[1] + u * U[1] + v * V[1]];
 export const toUV = (x, z) => {
   const dx = x - ORIGIN[0], dz = z - ORIGIN[1];
   return [dx * U[0] + dz * U[1], dx * V[0] + dz * V[1]];
 };
-// Three launch barges in the main channel, facing the lawn (u -150 … 118).
-export const BARGES = [[-90, -115], [-16, -125], [58, -115]];
-export const LAWN_UV = [-16, 20]; // the middle of the fireworks lawn
+// Three launch barges in the main channel, facing the lawn (u -94 … 120).
+export const BARGES = [[-46, -115], [13, -125], [72, -115]];
+export const LAWN_UV = [13, 20]; // the middle of the fireworks lawn
 
 // How much the show's night reaches a spot: 1 on the island, Seogang Bridge
 // and the Hongdae bank by the bridge, fading to 0 over the next 90 m (so
 // Hongdae's south edge gets a dusky sky, the rest of Seoul none).
 export function nearYeouido(x, z) {
   const [u, v] = toUV(x, z);
-  const out = Math.max(0, Math.abs(u) - 360, v - 350, -230 - v); // (v up to the Saetgang: the island is 320 m wide)
+  // The island runs u -616 … 231 and v 0 … 440 (to the Saetgang); the
+  // bridge's Hongdae end is at v -257.
+  const out = Math.max(0, Math.abs(u + 192) - 450, v - 470, -265 - v);
   return 1 - smooth(out / 90);
 }
 
