@@ -137,8 +137,36 @@ own frame (u along the bank, v across it). Jamsu Bridge, the low deck under
 Banpo Bridge, crosses from the north bank: the river's blocker has a gap for
 it, and the `jamsu` landmark draws its kerbs, railings, lamps and Banpo
 Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
-Hoenamu-ro. The park house on the bank is the door to the park room; its ★5
+Seobinggo-ro. The park house on the bank is the door to the park room; its ★5
 legend is the manta ray (`PARK_LEGENDS` in `src/core/fishing.js`).
+
+## Gyeongnidan-gil (Itaewon, Yongsan-gu)
+
+The rest of Itaewon is hand-made, but Gyeongnidan-gil (경리단길) is built on
+its real roads: `node scripts/build-gyeongnidan.mjs` reads Hoenamu-ro (the
+street people call Gyeongnidan-gil) and the lanes off it from
+OpenStreetMap (`scripts/data/gyeongnidan-osm.json`, © OpenStreetMap
+contributors, ODbL) and writes them into `districts/itaewon.json` at real
+size, from the foot by Noksapyeong-daero up to where Hoenamu-ro 32-gil and
+35-gil cross it, about 650 m. Only the walk from Itaewon-ro up
+Noksapyeong-daero to the foot is squeezed. The script also lines every
+street with small buildings, fills the blocks between the lanes with homes,
+and moves four of Itaewon's own places up the street (a diner, a trattoria,
+a café and the taproom); it makes no new shops.
+
+- **The hill.** The street climbs about 18 m to the top; the lanes north
+  climb on towards Namsan and the lanes south go down to the flat land by
+  Itaewon-ro. The district's `meta.hill` holds the numbers and
+  `src/core/hill-ground.js` turns them into a height (you, NPCs and shop
+  fronts stand on it; a building's walls go from `y0`, the lowest ground
+  under it, to `y + h`). The heights are a game approximation, not a survey.
+- **Loaded when near.** The sloped ground, the streets drawn on it and the
+  neighbours on the lanes are `src/game/gyeongnidan.js`, loaded with
+  `import()` within about 480 m (`src/game/gyeongnidan-near.js`).
+- **Keep things off the slope.** Anything drawn at y 0 (street trees, link
+  roads) would be under the hill: the Itaewon-ro link runs along the foot of
+  the hill, between it and the Han River, and `tests/gyeongnidan.test.mjs`
+  checks it stays clear.
 
 ## Samseong-dong (Gangnam-gu)
 
