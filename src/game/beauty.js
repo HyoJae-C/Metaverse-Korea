@@ -102,17 +102,20 @@ export function createBeauty(game) {
   }
   // The view from the table: your eyes (metres from the table's middle, above
   // its top; you lie with your head towards -z), and where each of the team's
-  // faces is, leaning in over you: the doctor and a nurse close over your
-  // chest, two nurses behind them. Bunched towards the middle so all four fit
-  // a phone held upright. They stand where their faces come out there (raised
-  // a little: chibis are short, and only their heads are in view).
+  // faces is, leaning in over you round the lamp: two on each side, by your
+  // head and by your chest, the doctor at your left ear. They stand where
+  // their faces come out there (raised: only their heads are in view).
   const EYE = [0, 0.46, -0.3];
-  const POV_FACES = [[0.22, 1.28, 0.62], [-0.26, 1.3, 0.88], [0.78, 1.3, 1.35], [-0.78, 1.28, 1.3]];
-  const POV_LEAN = 0.42, HEAD_H = 0.95; // lean (radians, from the feet) and the height of a face
-  function povStand([hx, hy, hz]) { // -> [x, y, z, heading] of someone whose face is at h
+  // [x, y, z, lean]: lean in radians from the feet; the two by your head
+  // bend right over you so their faces look down into yours.
+  const POV_FACES = [[0.38, 1.36, -0.12, 0.95], [-0.38, 1.34, -0.08, 0.95], [0.36, 1.14, 0.5, 0.55], [-0.36, 1.12, 0.54, 0.55]];
+  // Their size (smaller on a phone held upright, so all four faces fit).
+  const povScale = () => (game.camera.aspect < 1 ? 0.7 : 0.85);
+  function povStand([hx, hy, hz, lean]) { // -> [x, y, z, heading] of someone whose face is at h
     const fx = EYE[0] - hx, fz = EYE[2] - hz, f = Math.hypot(fx, fz) || 1;
-    const reach = HEAD_H * Math.sin(POV_LEAN);
-    return [hx - (fx / f) * reach, hy - HEAD_H * Math.cos(POV_LEAN), hz - (fz / f) * reach, Math.atan2(fx, fz)];
+    const headH = 0.95 * povScale(); // (the height of a face)
+    const reach = headH * Math.sin(lean);
+    return [hx - (fx / f) * reach, hy - headH * Math.cos(lean), hz - (fz / f) * reach, Math.atan2(fx, fz)];
   }
   function makeGurney() {
     const g = new THREE.Group();
@@ -191,10 +194,11 @@ export function createBeauty(game) {
       p.set(tx, s.st.tableTop - s.st.bedTop, tz);
       game.me.root.rotation.y = 0;
       POV_FACES.forEach((h, i) => {
-        const [x, y, z, ry] = povStand([h[0], s.st.tableTop + h[1], h[2]]);
+        const [x, y, z, ry] = povStand([h[0], s.st.tableTop + h[1], h[2], h[3]]);
         const r = s.staff[i].root;
         r.position.set(tx + x, y, tz + z);
-        r.rotation.set(POV_LEAN, ry, 0); // facing you, leaning in
+        r.rotation.set(h[3], ry, 0); // facing you, leaning in
+        r.scale.setScalar(povScale());
         s.staff[i].animate(dt, 0, false);
       });
       s.beat = (s.beat || 0) - dt;
@@ -210,6 +214,7 @@ export function createBeauty(game) {
         const r = s.staff[i].root;
         r.position.set(x, 0, z);
         r.rotation.set(0, ry, 0);
+        r.scale.setScalar(1);
       });
       p.set(s.st.door[0], 0, s.st.door[1] + 0.6);
       game.cam.yaw = Math.PI * 0.15; game.cam.dist = 3.2; game.cam.pitch = 0.25;
@@ -244,14 +249,14 @@ export function createBeauty(game) {
       if (!on) { cam.fov = 62; cam.updateProjectionMatrix(); }
     }
     if (!on) return;
-    // A wider lens on a phone held upright, so the faces side by side fit.
-    const fov = cam.aspect < 1 ? 84 : 72;
+    // A wider lens on a phone held upright, so the faces on both sides fit.
+    const fov = cam.aspect < 1 ? 96 : 76;
     if (cam.fov !== fov || cam.near !== 0.05) { cam.fov = fov; cam.near = 0.05; cam.updateProjectionMatrix(); }
     const [tx, tz] = s.st.table;
     const y = s.st.tableTop + EYE[1], z = tz + EYE[2];
     cam.position.set(tx + EYE[0], y, z);
     cam.up.set(0, 1, 0);
-    cam.lookAt(tx, y + 0.72, z + 0.9); // up past your chest, at their faces
+    cam.lookAt(tx, y + 0.85, z + 0.55); // up past your chest, at the faces round you
   }
   // Salon: after you pay, the hairdresser steps up behind your chair, snips
   // away while bits of hair fall, and then the new style appears.
