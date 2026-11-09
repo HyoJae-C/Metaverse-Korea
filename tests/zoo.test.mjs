@@ -267,3 +267,28 @@ test('every pen faces a path: its board side is a few steps from one', () => {
     assert.ok(near, `${p.id} faces a path`);
   }
 });
+
+test('bears have no hump on the rump: a brown bear\'s hump is over its shoulders, a polar bear has none', () => {
+  for (const kind of ['bear', 'polarbear']) {
+    const a = makeZooAnimal(kind, ZOO_LOOKS[kind][0]);
+    a.root.updateMatrixWorld(true);
+    // The top of the back, front half against back half (front is +z).
+    let front = 0, back = 0;
+    a.body.children.filter((o) => o.isMesh).forEach((m) => {
+      const b = new THREE.Box3().setFromObject(m), cz = (b.min.z + b.max.z) / 2;
+      if (cz > 0) front = Math.max(front, b.max.y); else back = Math.max(back, b.max.y);
+    });
+    assert.ok(front >= back - 0.01, `${kind}: nothing bulges up on the rump`);
+    if (kind === 'bear') assert.ok(front > back + 0.05, 'the brown bear\'s hump stands up over its shoulders');
+  }
+});
+
+test('the Sea Animals hall is a room: you are indoors in it, and no snow settles on its floor', () => {
+  const hall = PENS.find((p) => p.id === 'sea');
+  const zoo = new Zoo(new THREE.Scene(), [hall]);
+  zoo.update(0.1, { x: hall.x, z: hall.z });
+  assert.equal(zoo.indoors, true);
+  assert.equal(zoo.pens[0].g.userData.noSnow, true);
+  zoo.update(0.1, { x: hall.x, z: hall.z - hall.d / 2 - 3 });
+  assert.equal(zoo.indoors, false, 'out of the door: outdoors');
+});

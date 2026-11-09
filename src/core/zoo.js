@@ -392,6 +392,7 @@ export class Zoo {
     this.bits = []; // watermelon pieces flying after the crunch
     this.scene = scene;
     this.food = 0; // handfuls of animal food left in your cup (little animal village)
+    this.indoors = false; // inside the Sea Animals hall (update)
   }
 
   // The food counter you are standing at, if any: the pen.
@@ -485,6 +486,10 @@ export class Zoo {
       }
     }
     g.traverse((o) => { if (o.isMesh) o.castShadow = !(o.material?.transparent); });
+    if (pen.fence === 'hall' || pen.in) { // indoors: no snow settles on the floor, tanks or rocks
+      g.userData.noSnow = true; // (core/snow-cover.js skips it, and its colours are its own, not the street's shared ones)
+      g.traverse((o) => { if (o.isMesh && !o.material.map && !Array.isArray(o.material)) o.material = o.material.clone(); });
+    }
     scene.add(g);
     let stand = null;
     if (pen.shop) stand = foodStand(g, pen.shop.at);
@@ -773,6 +778,7 @@ export class Zoo {
     const now = Date.now() / 1000;
     // Standing still? (a photo pause waits for that)
     if (Math.hypot(player.x - this.still.x, player.z - this.still.z) > 0.3) { this.still = { x: player.x, z: player.z, t: 0 }; } else this.still.t += dt;
+    this.indoors = false; // in a hall (the Sea Animals): a room, so no rain or snow, a camera under its ceiling (main.js)
     for (const P of this.pens) {
       const lx = player.x - P.pen.x, lz = player.z - P.pen.z;
       const dist = Math.hypot(lx, lz);
@@ -780,6 +786,7 @@ export class Zoo {
       if (P.roof) { // the hall's roof and walls lift away while you're inside
         const inside = Math.abs(lx) < P.pen.w / 2 + 0.5 && Math.abs(lz) < P.pen.d / 2 + 0.5;
         P.roof.visible = !inside;
+        if (Math.abs(lx) < P.pen.w / 2 && Math.abs(lz) < P.pen.d / 2) this.indoors = true;
       }
       if (P.pen.feed) this._feeding(P, now, dist);
       this._photo(P, lx, lz, dt);

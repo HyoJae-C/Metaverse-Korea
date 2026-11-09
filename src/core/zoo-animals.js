@@ -443,7 +443,7 @@ function bear(c, polar) {
   const { root, body } = start();
   const s = polar ? 1.15 : 1;
   part(body, sphere(0.45 * s), c.color, 0, 0.66 * s, 0, 0.9, 0.85, 1.4);
-  part(body, sphere(0.3 * s), c.color, 0, 0.86 * s, -0.3 * s, 1, 0.9, 1); // the hump
+  if (!polar) part(body, sphere(0.26), c.color, 0, 0.9, 0.36, 1, 0.75, 1); // the brown bear's hump, over the shoulders (a polar bear has none)
   part(body, sphere(0.34 * s), c.color, 0, 0.7 * s, 0.4 * s, 1, 1, 1); // shoulders, up to the head
   const head = new THREE.Group();
   head.position.set(0, 0.86 * s, 0.7 * s);
