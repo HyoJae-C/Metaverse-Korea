@@ -10,6 +10,11 @@ import { RIDES, RIDE_GATES, RIDE_NAME, RIDE_EMOJI } from './park-rides.js';
 
 const mat = matCache({ flatShading: true });
 const ICING = '#fffaf3', PINK = '#ff8fb8', HOT = '#ff5f9e', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff';
+// Each island ride's yard in its own colour (fence rails, then the gate's
+// posts, board and queue rail): the wheel blue, the drop purple, the swing
+// yellow, the gyro swing mint. The rest stay pink.
+const TONES = { wheel: ['#8fd0ff', '#3a8fd8'], drop: [LILAC, '#8c5ad8'], swing: [LEMON, '#e0a21c'], gyro: [MINT, '#26a882'] };
+const PLAIN = [PINK, HOT];
 
 // Each ride's yard fence: a ring (r, gap facing the gate: 0 = +x, π/2 =
 // +z; null: closed all round, you're let in under the arch) or a box
@@ -55,7 +60,7 @@ export function gateSign(names, emoji, w = 512, h = 160, color = HOT) {
     g.textAlign = 'center'; g.textBaseline = 'middle';
     const big = (emoji ? emoji + ' ' : '') + (lang ? names[lang] || names.en : names.ko);
     g.font = `900 ${big.length > 13 ? 46 : 60}px "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif`;
-    g.lineWidth = 9; g.strokeStyle = 'rgba(120,20,60,0.55)'; g.strokeText(big, w / 2, h * 0.47, w - 40);
+    g.lineWidth = 9; g.strokeStyle = 'rgba(60,20,60,0.45)'; g.strokeText(big, w / 2, h * 0.47, w - 40);
     g.fillStyle = ICING; g.fillText(big, w / 2, h * 0.47, w - 40);
     if (!lang) { g.font = '800 24px system-ui, sans-serif'; g.fillStyle = LEMON; g.fillText(names.en.toUpperCase(), w / 2, h * 0.82, w - 40); }
     tex.needsUpdate = true;
@@ -78,7 +83,8 @@ export function yardKit(scene, block) {
     scene.add(r2);
   };
   // A fence along a line: posts every ~1.2 m and two rails; blocked.
-  const fenceLine = (ax, az, bx, bz, h = 0.9, color = PINK, solid = true) => {
+  let tone = PLAIN;
+  const fenceLine = (ax, az, bx, bz, h = 0.9, color = tone[0], solid = true) => {
     const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.2));
     for (let i = 0; i <= n; i++) posts.push([ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n, h]);
     fenceRail(ax, az, bx, bz, h, color);
@@ -105,11 +111,12 @@ export function yardKit(scene, block) {
   };
   // A gate: two striped posts and its name on a board over the way in.
   const gateArch = (kind, x, z, along) => {
-    const s = gateSign(RIDE_NAME[kind], RIDE_EMOJI[kind]);
+    const deep = (TONES[kind] || PLAIN)[1];
+    const s = gateSign(RIDE_NAME[kind], RIDE_EMOJI[kind], 512, 160, deep);
     signs.push(s);
     const dx = along ? 1 : 0, dz = along ? 0 : 1; // the posts stand apart along x (or z)
     for (const k of [-1, 1]) {
-      for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 10), i % 2 ? ICING : HOT, x + dx * k * 1.25, 0.35 + i * 0.7, z + dz * k * 1.25);
+      for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 10), i % 2 ? ICING : deep, x + dx * k * 1.25, 0.35 + i * 0.7, z + dz * k * 1.25);
       add(new THREE.SphereGeometry(0.22, 10, 8), MINT, x + dx * k * 1.25, 2.95, z + dz * k * 1.25);
       block(x + dx * k * 1.25, z + dz * k * 1.25, 0.3, 0.3);
     }
@@ -117,7 +124,7 @@ export function yardKit(scene, block) {
     board.position.set(x, 2.55, z);
     board.rotation.y = along ? 0 : Math.PI / 2;
     scene.add(board);
-    add(new THREE.BoxGeometry(along ? 2.7 : 0.08, 0.9, along ? 0.08 : 2.7), '#b8336e', x - (along ? 0 : 0.06), 2.55, z - (along ? 0.06 : 0));
+    add(new THREE.BoxGeometry(along ? 2.7 : 0.08, 0.9, along ? 0.08 : 2.7), TONES[kind] ? deep : '#b8336e', x - (along ? 0 : 0.06), 2.55, z - (along ? 0.06 : 0));
   };
   // A short queue rail in front of a gate, so the way in reads at a glance.
   const queue = (kind) => {
@@ -130,7 +137,7 @@ export function yardKit(scene, block) {
         add(new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8), '#d4a73a', px, 0.42, pz);
         add(new THREE.SphereGeometry(0.08, 8, 6), LEMON, px, 0.88, pz);
       }
-      const r = new THREE.Mesh(new THREE.BoxGeometry(side ? 1.6 : 0.04, 0.04, side ? 0.04 : 1.6), mat(HOT));
+      const r = new THREE.Mesh(new THREE.BoxGeometry(side ? 1.6 : 0.04, 0.04, side ? 0.04 : 1.6), mat((TONES[kind] || PLAIN)[1]));
       r.position.set(ax + sx * 0.8, 0.78, az + sz * 0.8);
       scene.add(r);
     }
@@ -138,10 +145,12 @@ export function yardKit(scene, block) {
   // A ride's whole yard: its fence, its gate and the queue rail.
   const yard = (kind) => {
     const Y = YARDS[kind], R = RIDES[kind], a = archOf(kind);
+    tone = TONES[kind] || PLAIN;
     if (Y.box) fenceBox(Y.box, Y.gap);
     else fenceRing(R.x, R.z, Y.ring, Y.gap);
     gateArch(kind, a.x, a.z, a.along);
     queue(kind);
+    tone = PLAIN;
   };
   // The fence posts, instanced (sticks and their candy tops).
   const done = () => {

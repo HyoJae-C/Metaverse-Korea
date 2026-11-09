@@ -481,6 +481,7 @@ export function createSkyFlight(game) {
       else if (phase !== 'off') land();
       return true;
     }
+    if (game.mode !== 'street') game.leaveOpenPark?.(); // (an open-air park counts as outside)
     if (game.mode !== 'street') { toast(SKY_TEXT.street); return true; }
     if (game.busy || carried) { toast(SKY_TEXT.busy); return true; }
     if (kind) { // another costume, up in the air: change over

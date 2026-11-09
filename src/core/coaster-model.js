@@ -128,10 +128,12 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
   for (const side of [-0.34, 0.34]) scene.add(new THREE.Mesh(new THREE.TubeGeometry(rail(side, 0), tubes, 0.07, 6, true), mat(ICING)));
   scene.add(new THREE.Mesh(new THREE.TubeGeometry(rail(0, 0.26), tubes, 0.15, 7, true), mat('#ff8fb8')));
 
-  // Sleepers every 1.1 m.
+  // Sleepers every 1.1 m, in sprinkle colours (lemon, lilac, sky, mint, pink).
   const sleepN = Math.floor(LENGTH / 1.1);
-  const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.86, 0.07, 0.16), mat('#ff8fb8'), sleepN);
+  const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.86, 0.07, 0.16), new THREE.MeshLambertMaterial({ flatShading: true }), sleepN);
+  const sprinkles = ['#ffe27a', '#c9a8ff', '#8fd0ff', '#8fe3c7', '#ff8fb8'].map((c) => new THREE.Color(c));
   for (let i = 0; i < sleepN; i++) {
+    sleepers.setColorAt(i, sprinkles[i % 5]);
     frameAt(i * 1.1, f);
     basis(f);
     _m.setPosition(f.x - f.ux * 0.12, f.y - f.uy * 0.12, f.z - f.uz * 0.12);

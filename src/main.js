@@ -1689,6 +1689,9 @@ const { closeWheel } = emoteWheel;
 const sky = createSkyFlight({
   get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
   get shop() { return shop; }, get busy() { return !!(riding || seated || ride || cable); },
+  // (on an open-air park's lawn, Another Land's island or a Han River park:
+  // step back onto the street where you stand, then take off from there)
+  leaveOpenPark: () => { if (mode === 'store' && interior?.store?.open && seated == null && !ride) leaveStore(true); },
   cloud, input, scene, cam, bounds, blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
   buildings: solidBuildings, myId, get net() { return net; }, get others() { return others; },
   isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
@@ -5504,7 +5507,7 @@ function updateOpenParks(dt) {
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
     const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
-    if (onLawn && !subway.metro && !inCab) {
+    if (onLawn && !subway.metro && !inCab && !sky.busy) { // (flying over it: not until we land)
       // (the street has no trees or bushes where the park has some: step in
       // beside one, never into it, or you'd be stuck there)
       const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);

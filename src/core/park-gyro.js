@@ -11,7 +11,8 @@ import * as THREE from 'three';
 import { bakeColors, mergeStatic } from './merge-static.js';
 import { RIDES, barDown, gyroAngle, gyroSpin } from './park-rides.js';
 
-const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', BISCUIT = '#f2c6a0';
+const ICING = '#fffaf3', PINK = '#ff8fb8', GOLD = '#e8b84a', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', BISCUIT = '#f2c6a0';
+const TEAL = '#3fc4a0'; // (the gyro swing is the mint one)
 
 export function buildGyro(scene, block, mat) {
   const G = RIDES.gyro;
@@ -32,12 +33,12 @@ export function buildGyro(scene, block, mat) {
     for (const sx of [-1, 1]) {
       const leg = box(root, 0.36, legL, 0.36, (sx * G.legs) / 2, G.pivot / 2, sz, ICING);
       leg.rotation.z = sx * lean;
-      for (let k = 1; k < 5; k++) { const t = k / 5, b = box(root, 0.42, 0.34, 0.42, sx * G.legs * (1 - t), G.pivot * t, sz, k % 2 ? HOT : PINK); b.rotation.z = leg.rotation.z; }
+      for (let k = 1; k < 5; k++) { const t = k / 5, b = box(root, 0.42, 0.34, 0.42, sx * G.legs * (1 - t), G.pivot * t, sz, k % 2 ? TEAL : MINT); b.rotation.z = leg.rotation.z; }
       cyl(root, 0.5, 0.6, 0.3, sx * G.legs, 0, sz, BISCUIT, 10); // its foot
       block(G.x + sx * G.legs, G.z + sz, 0.9, 0.9);
     }
     box(root, G.legs * 1.1, 0.22, 0.22, 0, 2.2, sz, ICING); // cross bar
-    box(root, 0.8, 0.8, 0.8, 0, G.pivot, sz, HOT); // the bearing at the top
+    box(root, 0.8, 0.8, 0.8, 0, G.pivot, sz, LEMON); // the bearing at the top
     part(root, new THREE.SphereGeometry(0.42, 12, 8), LEMON, 0, G.pivot + 0.7, sz); // a candy on top
   }
   const axle = part(root, new THREE.CylinderGeometry(0.26, 0.26, G.frame * 2 + 0.4, 12), GOLD, 0, G.pivot, 0);
@@ -48,7 +49,7 @@ export function buildGyro(scene, block, mat) {
   const swing = new THREE.Group();
   swing.position.set(G.x, G.pivot, G.z);
   scene.add(swing);
-  const hub = part(swing, new THREE.CylinderGeometry(0.6, 0.6, 1.4, 16), HOT, 0, 0, 0);
+  const hub = part(swing, new THREE.CylinderGeometry(0.6, 0.6, 1.4, 16), TEAL, 0, 0, 0);
   hub.rotation.x = Math.PI / 2;
   for (const sz of [-0.42, 0.42]) box(swing, 0.32, G.arm - 0.4, 0.22, 0, -(G.arm - 0.4) / 2, sz, LILAC);
   for (let k = 1; k < 6; k++) box(swing, 0.36, 0.14, 1.06, 0, -(k / 6) * G.arm, 0, ICING); // rungs
@@ -61,11 +62,11 @@ export function buildGyro(scene, block, mat) {
   spinner.position.y = -G.arm;
   swing.add(spinner);
   const R = G.ring + 0.4;
-  cyl(spinner, R - 0.1, R - 0.35, 0.22, 0, -0.62, 0, PINK, 32);
+  cyl(spinner, R - 0.1, R - 0.35, 0.22, 0, -0.62, 0, MINT, 32);
   cyl(spinner, R - 0.05, R - 0.05, 0.14, 0, -0.4, 0, ICING, 32);
-  cyl(spinner, R, R - 0.1, 0.12, 0, -0.26, 0, PINK, 32);
+  cyl(spinner, R, R - 0.1, 0.12, 0, -0.26, 0, SKY, 32);
   cyl(spinner, R, R, 0.14, 0, -0.14, 0, LEMON, 32);
-  for (let i = 0; i < 4; i++) cyl(spinner, 0.55, 0.55, 0.4, 0, i * 0.4, 0, i % 2 ? ICING : HOT, 14);
+  for (let i = 0; i < 4; i++) cyl(spinner, 0.55, 0.55, 0.4, 0, i * 0.4, 0, i % 2 ? ICING : TEAL, 14);
   for (let i = 0; i < 32; i++) { const a = (i / 32) * Math.PI * 2; part(spinner, new THREE.SphereGeometry(0.07, 6, 4), bulb, Math.sin(a) * (R + 0.02), -0.33, Math.cos(a) * (R + 0.02)); }
   const COLS = [PINK, MINT, LEMON, SKY, LILAC];
   for (let i = 0; i < G.seats; i++) {
@@ -80,7 +81,7 @@ export function buildGyro(scene, block, mat) {
   // The harnesses: one instanced mesh (a bar over each shoulder joined in
   // front), hinged above the head, set when they go up or down.
   const hg = new THREE.BoxGeometry(0.48, 0.08, 0.56).translate(0, 0, 0.26);
-  const harness = new THREE.InstancedMesh(hg, mat(HOT), G.seats);
+  const harness = new THREE.InstancedMesh(hg, mat(LILAC), G.seats);
   harness.frustumCulled = false;
   spinner.add(harness);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), qa = new THREE.Quaternion(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0);
