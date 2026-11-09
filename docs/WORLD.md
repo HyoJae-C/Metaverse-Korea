@@ -240,7 +240,10 @@ Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,
 drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`; street lines
-after OpenStreetMap). The block north-west of the corner is KONEXT, a
+after OpenStreetMap) at about 1/4 of the real size: Asem-ro, Bongeunsa-ro and
+Tancheon are about 1.2 times their 1/4 distance from the station, so that
+KONEXT (120 x 80 m) keeps its size as the area's landmark. (It was drawn
+about twice as large until it was redone at 1/4.) The block north-west of the corner is KONEXT, a
 fictional shopping mall seen from outside only (`core/konext.js`: a custom
 building, so its walls still block): a long, low glass box with a wave
 skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media

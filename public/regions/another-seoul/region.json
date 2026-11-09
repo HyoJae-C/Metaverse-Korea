@@ -167,7 +167,7 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[448, 975], [578, 720]],
+      "p": [[358, 975], [578, 720]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
       "note": "Teheran-ro crosses Tancheon on Samseong Bridge and runs on north-east as Olympic-ro to Songpa's Olympic-ro, towards Jamsil Station."
     },
@@ -350,8 +350,8 @@
     {"p": [[-1067, 495], [-465, 19], [-465, 410], [-986, 584]], "note": "Han River from Banpo-Jamwon north-east to Seongsu (Ttukseom)."}
   ],
   "screens": [
-    { "at": [64, 900], "w": 28, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
-    { "at": [43, 918], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
+    { "at": [94, 900], "w": 28, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
+    { "at": [73, 918], "w": 32, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the Teheran-ro side" },
     {
       "at": [
         0,
