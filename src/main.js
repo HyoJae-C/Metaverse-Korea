@@ -2046,7 +2046,7 @@ try {
   if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
-const umbrellaOpen = () => hasUmbrella() && mode === 'street' && !riding && !seated && WET.has(weather.kind);
+const umbrellaOpen = () => hasUmbrella() && outdoors() && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
 const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
@@ -3220,7 +3220,7 @@ const mapView = new MapView({
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
-  get others() { return others; }, get net() { return net; }, safety,
+  get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop,
   // The shop or place nearest (x, z), for a shared taxi's "going to …".
@@ -6592,7 +6592,7 @@ renderer.setAnimationLoop((now) => {
   }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
-  if (mode !== 'street') snowUniform.value = 0; // (no snow indoors, even on a material the street shares)
+  if (!outdoors()) snowUniform.value = 0; // (no snow indoors, even on a material the street shares; a Han River park's lawn is outdoors)
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);

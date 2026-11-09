@@ -138,9 +138,9 @@ export function createTaxi(game) {
     const [rx, rz] = taxiDropOff(dest.x, dest.z);
     const [fx, fz] = findFreeSpot(rx, rz);
     // The fare grows with the distance (core/taxi.js).
-    const from = game.mode === 'street' ? game.me.root.position : game.interior.front.door;
+    const from = game.place ? game.place() : game.mode === 'street' ? game.me.root.position : game.interior.front.door; // (place: a Han River park's lawn is outdoors, where you stand)
     const fare = taxiFare(from.x, from.z, fx, fz);
-    const near = game.mode === 'street' && !guest ? (game.others?.nearbyFree(from.x, from.z, SHARE_RADIUS) || []).filter((p) => !game.safety?.isBlocked(p.id, p.name)) : [];
+    const near = (game.outdoors ? game.outdoors() : game.mode === 'street') && !guest ? (game.others?.nearbyFree(from.x, from.z, SHARE_RADIUS) || []).filter((p) => !game.safety?.isBlocked(p.id, p.name)) : [];
     if (!near.length) { goAlone(dest, fx, fz, fare); return; }
     const p = panel();
     p.replaceChildren(button('sheet-x', '✕', closePanel), el('h3', null, st('title')),
@@ -292,7 +292,7 @@ export function createTaxi(game) {
   }
 
   $('map-btn').onclick = () => {
-    const pos = game.mode === 'street' ? game.me.root.position : game.interior.front.door;
+    const pos = game.place ? game.place() : game.mode === 'street' ? game.me.root.position : game.interior.front.door;
     mapView.show(pos.x, pos.z);
   };
 
