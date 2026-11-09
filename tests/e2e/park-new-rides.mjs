@@ -75,5 +75,14 @@ await page.waitForTimeout(800);
 const toast = await page.evaluate(() => document.body.innerText);
 assert(/Mirror Maze/.test(toast), 'the maze says hello');
 await shot('maze-in');
+// Out of the park: none of its attendants' name tags stay over the street.
+const tagsUp = () => page.evaluate(() => [...document.querySelectorAll('#labels .nametag.npc')].filter((e) => e.style.display !== 'none' && e.style.visibility !== 'hidden' && /attendant/i.test(e.textContent)).length);
+await page.evaluate(() => { __mk.place(30, 15); __mk.cam({ yaw: 0, pitch: 0.2, dist: 6 }); });
+await page.waitForTimeout(1200);
+const inPark = await tagsUp();
+await page.evaluate(() => __mk.leave());
+await page.waitForTimeout(2000);
+const onStreet = await tagsUp();
+assert(inPark > 0 && onStreet === 0, `attendant tags: ${inPark} in the park, ${onStreet} on the street`);
 assert(!errors.length, 'page errors: ' + errors.join(' | '));
 await browser.close();
