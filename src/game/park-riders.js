@@ -13,9 +13,9 @@ export const GUEST_SEATS = { viking: [1, 2, 6], carousel: [2, 5, 9], drop: [1, 4
 
 export function createParkRiders(labels) {
   return {
-    // Once per theme-park room: the guests, sitting. (`themepark`, not
-    // `park`: the Han River parks are `park: true` too, and the guests would
-    // hang in the air over the river on seats that aren't there.)
+    // Once per theme-park room: the guests, sitting. (`themepark`: a Han
+    // River park, `hanRiver`, has no rides, and the guests would hang in the
+    // air over the river on seats that aren't there.)
     spawn(built) {
       if (built.riderNpcs || !built.themepark) return built.riderNpcs;
       built.riderNpcs = [];

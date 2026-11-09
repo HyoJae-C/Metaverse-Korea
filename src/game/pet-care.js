@@ -73,6 +73,7 @@ export function createPetCare(g) {
   function nearestPoop(p) {
     let best = null, bd = 1.6;
     for (const po of poops.values()) {
+      if (po.mesh.parent && po.mesh.parent !== g.activeScene) continue; // (one left in a park, from the street: not here)
       const d = Math.hypot(po.x - p.x, po.z - p.z);
       if (d < bd) { bd = d; best = po; }
     }
@@ -103,7 +104,7 @@ export function createPetCare(g) {
     if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y, p.y); }
     // Waits out of sight while you ride or are indoors. Sitting down (a bench,
     // a picnic mat) it stays and sits by you.
-    const hidden = g.riding > 0 || g.indoors;
+    const hidden = g.riding > 0 || g.indoors || g.seated?.duck != null; // (out on a duck boat too: it waits on the bank, not on the water)
     pet.fences = g.fences || null; // (kept out of the bumper car rink)
     const poop = pet.update(dt, { x: p.x, z: p.z, y: p.y, ry: me.root.rotation.y }, hidden, g.mode === 'street');
     if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it
@@ -111,7 +112,7 @@ export function createPetCare(g) {
       const pos = pet.root.position;
       const mesh = makePoop();
       mesh.position.set(pos.x, pos.y, pos.z); // down by the stream too
-      g.scene.add(mesh);
+      g.activeScene.add(mesh); // (in the room it's in: a Han River park's lawn is in the park's metres)
       const { id } = poopTimers.add();
       poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
       g.sfx.pop?.();

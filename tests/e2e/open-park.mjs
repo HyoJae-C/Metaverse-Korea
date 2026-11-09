@@ -24,6 +24,7 @@ try {
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   const parks = await page.evaluate(async () => (await (await fetch('regions/another-seoul/stores.json')).json()).stores.filter((st) => st.open).map((st) => ({ id: st.id, ...st.open })));
   if (parks.length < 2) throw new Error(`only ${parks.length} open parks`);
+  await page.evaluate(() => __mk.givePet('pet-golden')); // (walks along: waits on the bank while you're on a duck boat)
   for (const park of parks) {
     // The park's own metres (core/park.js; its bank is z = -4) → world.
     const { id, at: [ox, oz], ry } = park;
@@ -88,6 +89,7 @@ try {
     await page.waitForFunction((z0) => __mk.duck() && __mk.duck().z < z0 - 2, boats[0][1], { timeout: 15000 });
     await page.keyboard.up('w');
     if ((await page.evaluate(() => __mk.room())).mode !== 'store') throw new Error('left the park on the boat');
+    if (await page.evaluate(() => __mk.petShown())) throw new Error('the dog is out on the river with the duck boat');
     await page.evaluate(() => __mk.stand());
     // Off the back of the lawn (past its edge): on the street, just behind it.
     await page.evaluate(() => __mk.place(0, 14.8));
