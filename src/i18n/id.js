@@ -572,6 +572,7 @@ export const ID = {
   'loading': 'Memuat jalanan…',
   'error.noMap': 'Data peta untuk area ini belum siap. Silakan cek lagi nanti.',
   'error.generic': 'Terjadi kesalahan saat memuat. Silakan muat ulang halaman.',
+  'error.soft': 'Ada masalah kecil, tapi kamu bisa terus bermain.',
   'help.desktop': 'Gerak: WASD atau tombol panah · Lari: Shift · Lihat: seret · Zoom: gulir',
   'help.mobile': 'Gerak: stik kiri · Lihat: seret · Zoom: cubit',
   'help.dismiss': 'Mengerti',
