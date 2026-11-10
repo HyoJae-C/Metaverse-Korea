@@ -3964,16 +3964,25 @@ const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, sho
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); }, get interior() { return interior; } });
 // Potato Market (감자마켓) by Dongmyo: players' mats of clothes to buy from,
 // or spread your own (game/potato-market.js, loaded when near).
+// Take off clothes that leave the closet (trousers: back to the plain jeans).
+const takeOffItem = (id) => {
+  const it = ITEMS[id];
+  if (!it || !isWorn(it, myLook)) return;
+  myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
+  saveLook(myLook);
+  setLook(myLook);
+};
 const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
-  takeOff: (id) => { // (trousers: back to the plain jeans)
-    const it = ITEMS[id];
-    if (!it || !isWorn(it, myLook)) return;
-    myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
-    saveLook(myLook);
-    setLook(myLook);
-  } });
+  takeOff: takeOffItem });
+// Clothes bought before the server kept purchases: twice their price back,
+// once (game/old-clothes.js, loaded only until it's done on this device).
+walletReady.then(() => {
+  try { if (!wallet.server || localStorage.getItem('mk.oldClothes')) return; } catch { return; }
+  import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
+    takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
+});
 const resaleUi = new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
