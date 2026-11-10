@@ -7,6 +7,8 @@ import { CollisionMap } from '../src/core/collision.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { EN } from '../src/i18n/en.js';
 import { STRINGS } from '../src/i18n/strings.js';
+import { STAMPS } from '../src/data/stamps.js';
+import { standSpots } from '../src/core/stamp-stands.js';
 import { toUV, DAL_T } from '../scripts/build-yeouido.mjs';
 
 const OSM = JSON.parse(readFileSync(new URL('../scripts/data/yeouido-osm.json', import.meta.url)));
@@ -71,7 +73,7 @@ test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and tr
   for (let a = 0; a < Math.PI * 2; a += 0.2) for (const r of [0, 4, 8, 10]) {
     assert.ok(!solid.blocked(x + Math.sin(a) * r, z + Math.cos(a) * r, 0.4), `open at r ${r}`);
   }
-  // Clear of the office towers (the balloon, radius 9, goes up 70 m), and no trees on the pad.
+  // Clear of the office towers (the balloon, radius 9, goes up 130 m), and no trees on the pad.
   for (const b of joined.buildings) for (const [px, pz] of b.p) assert.ok(Math.hypot(px - x, pz - z) > 20, 'no tower in the way');
   assert.ok(dal[0].clear >= 12, 'the woods keep clear of the pad');
   // The gate (local +z) faces the river park, the way you come in.
@@ -83,9 +85,19 @@ test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and tr
 
 test('every language has the Seoul Dal words', () => {
   const keys = Object.keys(EN).filter((k) => k.startsWith('dal.') || k === 'ledger.seoulDal');
-  assert.equal(keys.length, 18);
+  assert.equal(keys.length, 20);
   for (const [lang, table] of Object.entries(STRINGS)) {
     if (lang === 'hant') continue; // (made from zh)
     for (const k of keys) assert.ok(table[k], `${lang} ${k}`);
   }
+});
+
+test('the Seoul Dal stamp is pressed aboard at the top: no stand on the ground, its place the real pad', async () => {
+  const s = STAMPS.find((q) => q.id === 'seoul-dal');
+  assert.equal(s.place.ride, 'seoulDal');
+  assert.ok(!standSpots(STAMPS, () => null).some((q) => q.stamp.id === 'seoul-dal'), 'no stand');
+  const region = read('region.json');
+  const joined = await loadRegionMap(region, async (f) => read(f));
+  const dal = joined.landmarks.find((l) => l.type === 'seouldal');
+  assert.ok(Math.hypot(s.place.at[0] - dal.x, s.place.at[1] - dal.z) < 1, 'at the cable foot');
 });

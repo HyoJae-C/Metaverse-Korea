@@ -6,6 +6,9 @@
 
 import { Knock, collide } from './bump.js';
 
+// Where the two riders sit, in the boat's own space (it faces -z).
+export const DUCK_SEATS = [[-0.3, 0.15], [0.3, 0.15]];
+
 export const RIDE_SECONDS = 60;
 export const BOAT_SPEED = 3.2; // metres per second at full stick
 export const TURN_RATE = 1.8; // radians per second the bow can swing

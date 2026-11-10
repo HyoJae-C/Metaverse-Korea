@@ -10,7 +10,9 @@
 // `load` returns a promise of the panel (usually `import(...).then(m => new
 // m.SomeUI({...}))`). panel.ready() starts the download early and resolves
 // to the panel.
-export function lazyPanel(load) {
+// `idle`: values for properties read before it has loaded (say { walking:
+// false }), which would otherwise look like methods (a function, truthy).
+export function lazyPanel(load, idle = {}) {
   let ui = null;
   let pending = null;
   const ready = () => (pending ??= Promise.resolve().then(load).then((u) => (ui = u)).catch((e) => {
@@ -27,6 +29,7 @@ export function lazyPanel(load) {
         return typeof v === 'function' ? v.bind(ui) : v;
       }
       if (key === 'open') return false;
+      if (Object.hasOwn(idle, key)) return idle[key];
       if (key === 'close') return () => {};
       if (typeof key !== 'string' || key === 'then') return undefined; // not a promise
       return (...args) => ready().then((u) => u[key](...args), () => {});

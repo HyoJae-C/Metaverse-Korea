@@ -1,6 +1,6 @@
 // A hillside street (district meta "hill"): how high the ground is at a
 // point. Used for Itaewon's Gyeongnidan-gil, which climbs from
-// Noksapyeong-daero east towards Namsan (scripts/build-gyeongnidan.mjs writes
+// Noksapyeong-daero east towards Namsan (scripts/build-itaewon.mjs writes
 // the numbers into districts/itaewon.json).
 //
 // All in metres relative to the foot of the street, `at` (district metres):

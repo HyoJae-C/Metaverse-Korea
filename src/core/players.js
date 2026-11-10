@@ -129,7 +129,7 @@ export class RemotePlayers {
     // A jump (taxi, map, warp: st.tp counts them): put them there at once,
     // rather than sliding them across the map.
     if (p.target && st.tp !== p.target.tp) {
-      p.ch.root.position.set(st.x, Number.isFinite(st.y) ? Math.max(-6, Math.min(80, st.y)) : 0, st.z);
+      p.ch.root.position.set(st.x, Number.isFinite(st.y) ? Math.max(-6, Math.min(140, st.y)) : 0, st.z);
       if (Number.isFinite(st.ry)) p.ch.root.rotation.y = st.ry;
       p.vx = p.vz = 0;
       if (p.pet) { const r = p.ch.root; p.pet.place(r.position.x, r.position.z, r.rotation.y, r.position.y); }
@@ -270,7 +270,7 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
-        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(p.target.fl || p.target.cr ? 260 : 80, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit, Seoul Dal
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(p.target.fl || p.target.cr ? 260 : 140, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit, Seoul Dal
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;

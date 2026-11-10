@@ -1,12 +1,12 @@
 // Performances at Gyeongbokgung (district offsets from region.json):
-//  - 부채춤: ten dancers in hanbok doing the fan dance in the front court
-//    just inside Gwanghwamun, in two rings turning opposite ways.
+//  - 부채춤: ten dancers in hanbok doing the fan dance on the west lawn,
+//    beside the way from Heungnyemun to Geunjeongjeon (FAN_AT).
 //  - 북청사자놀음: the Bukcheong lion dance troupe (fourteen people, two
 //    lions) on the square near King Sejong's statue (core/bukcheong.js).
 //  - 줄타기: a tightrope master crossing a rope beside the lion dance.
 //  - 수문장: gate guards in front of Gwanghwamun, with lines when greeted.
 //  - 어가 행렬: the king, a eunuch with his parasol and four court ladies
-//    walking from stop to stop round the palace, pausing for photos.
+//    walking round the east lawn, pausing for photos (ROYAL_ROUTE).
 //  - 관람객: visitors (many in rented hanbok) already about the courts,
 //    taking photos, clapping, waving to friends (PALACE_VISITORS).
 // No fence round the fan dance: an unseen ring keeps visitors out of it
@@ -28,27 +28,29 @@ const NEAR = 110; // metres: closer than this, they perform
 // blocker). Closer than FAN_NOTE to the centre, a note asks for a few steps back.
 export const FAN_KEEP = 10;
 export const FAN_NOTE = FAN_KEEP + 2.5;
+// Where they dance, in the palace district's metres (x east, z south;
+// Gwanghwamun at (0, 0)): the middle of the lawn west of the corridors round
+// Heungnyemun and Geunjeongjeon, which stood empty (Yozi, 2026-11-10).
+export const FAN_AT = [-37, -52];
 // A circle as a polygon (for the collision map).
 export function ringPoly(x, z, r, n = 24) {
   return Array.from({ length: n }, (_, i) => [x + Math.sin((i / n) * Math.PI * 2) * r, z + Math.cos((i / n) * Math.PI * 2) * r]);
 }
 
 // The royal procession (어가 행렬): the king with a eunuch holding his
-// parasol, and court ladies before and behind, walking round the throne
-// hall's court. Stops and the paths between them, in the palace district's
-// metres (x east, z south; Gwanghwamun at (0, 0)). The palace's gates are
-// drawn at 30% of their real width, too narrow for the procession two
-// abreast, so the king keeps to Geunjeongjeon's court: in from Geunjeongmun
-// up the raised middle path between the rank stones to the throne hall's
-// steps, and along the court's sides. Every path keeps clear of the
-// corridors, the terraces and the fan dance.
+// parasol, and court ladies before and behind. Stops and the paths between
+// them, in the palace district's metres (x east, z south; Gwanghwamun at
+// (0, 0)). The king walks round the lawn east of the corridors, across from
+// the fan dance, where you see him from the front court (Yozi, 2026-11-10:
+// the lawns stood empty). The palace's gates are drawn at 30% of their real
+// width, too narrow for the procession two abreast, so he keeps to the lawn.
+// Every path keeps clear of the corridors and halls.
 export const ROYAL_ROUTE = {
   stops: [
-    [3, -56], // 0 just inside Geunjeongmun
-    [3.4, -63], // 1 between the rank stones, before Geunjeongjeon's steps
-    [-5.5, -58], [12.5, -58], // 2, 3 the court's west and east sides
+    [30, -38], [45, -38], // 0, 1 the lawn's south corners, facing the front court
+    [45, -68], [30, -68], // 2, 3 its north corners
   ],
-  links: [[0, 1], [0, 2], [0, 3]],
+  links: [[0, 1], [1, 2], [2, 3], [3, 0]],
 };
 // Visitors standing about the courts, in the palace district's metres:
 // [x, z, ry, look] (look: a rented hanbok set, or null for everyday

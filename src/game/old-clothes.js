@@ -70,3 +70,45 @@ export async function runOldClothes(game) {
   game.refreshItems?.();
   return res.status;
 }
+
+// Clothes with no receipt at all (gifts, code items, prizes, the outfit
+// picked at the start, clothes from before receipts): taken out once, on
+// every device (Yozi, 2026-11-11: "no record, delete it"). What comes later
+// keeps its record (receipts), so this never runs again. Returns the ids
+// taken out.
+export const SWEPT = 'mk.noReceiptSweep';
+export function sweepNoReceipt(game) {
+  const { inventory, receipts, items, storage = globalThis.localStorage } = game;
+  try { if (storage?.getItem(SWEPT)) return []; } catch { return []; }
+  const gone = inventory.list().filter((id) => items[id]?.wear && !(receipts.paid(id) > 0));
+  for (const id of gone) { game.takeOff?.(id); inventory.remove(id); }
+  try { storage?.setItem(SWEPT, String(gone.length)); } catch { /* storage blocked */ }
+  if (gone.length) { game.refreshItems?.(); game.toast?.(t('oldClothes.swept', { n: gone.length })); }
+  return gone;
+}
+
+// Travel money for accounts made before the server kept purchases (Yozi,
+// 2026-11-11): the update took out clothes with no record and reset the
+// collections, so the trips to buy them were lost. Once per account; the
+// server checks the sign-up time (supabase/037_update_bonus.sql). Returns
+// the server's status, or null (offline or 037 not run yet: next time).
+export const BONUS = 'mk.updateBonus';
+export async function runUpdateBonus(game) {
+  const { wallet, storage = globalThis.localStorage } = game;
+  try { if (storage?.getItem(BONUS)) return null; } catch { return null; }
+  if (!wallet?.server || !wallet.client || !(await wallet.flush())) return null;
+  let data = null;
+  try {
+    const res = await Promise.race([wallet.client.rpc('update_bonus'), new Promise((r) => setTimeout(() => r({ error: { message: 'timeout' } }), 8000))]);
+    data = res?.error ? null : res?.data;
+  } catch { data = null; }
+  if (!data?.status || data.status === 'signin') return null;
+  if (data.status === 'ok') {
+    const n = Number(data.n) || 0;
+    wallet.credited(n, data, { k: 'ledger.updateBonus' });
+    game.refreshWallet?.();
+    game.toast?.(t('oldClothes.bonus', { won: won(n) }));
+  }
+  try { storage?.setItem(BONUS, data.status); } catch { /* storage blocked */ }
+  return data.status;
+}

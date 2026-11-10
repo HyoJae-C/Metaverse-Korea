@@ -1429,10 +1429,10 @@
     "zh": "土豆市场"
    },
    "text": {
-    "en": "Spread a mat and sell clothes you bought. They sell even while you are away.",
-    "ko": "돗자리를 펴고 내가 산 옷을 팔아요. 내가 없어도 팔려요.",
-    "ja": "シートを広げて、買った服を売ろう。留守の間も売れます。",
-    "zh": "铺开垫子，卖你买的衣服。你不在时也能卖出。"
+    "en": "10 potato markets are open. Spread a mat and sell clothes you bought, even while away.",
+    "ko": "장터 10곳이 열려 있어요. 돗자리를 펴고 산 옷을 팔아요. 내가 없어도 팔려요.",
+    "ja": "10の市場が営業中。シートを広げて買った服を売ろう。留守の間も売れます。",
+    "zh": "10个集市正在营业。铺开垫子卖你买的衣服，你不在时也能卖出。"
    }
   }
  ]

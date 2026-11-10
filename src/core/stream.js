@@ -270,14 +270,29 @@ function buildOne(g, s, F) {
   box(0, len, -D - 0.8, -D - 0.6, -ww, ww, C.bed);
   const water = box(0, len, -D - 0.32, -D - 0.3, -ww, ww, mat(C.water, { transparent: true, opacity: 0.85 }));
   water.userData.noShadow = true;
-  // Ripples: pale streaks drifting downstream (east).
+  // Ripples: pale streaks drifting downstream (east). One instanced mesh
+  // (Cheonggyecheon has ~170 of them: one draw call, not one each), placed
+  // along the stream at once so its bounds (and FarCull's) are the stream's.
   const streaks = [];
-  for (let k = 0; k < Math.floor(len / 6); k++) {
-    const m = box(-0.8, 0.8, -D - 0.29, -D - 0.285, -0.06, 0.06, mat('#d8f0f8', { transparent: true, opacity: 0.7 }));
-    m.userData.noShadow = true;
-    m.userData.mover = true;
-    m.position.z = ((k * 37) % 13) / 13 * (ww * 2 - 1) - ww + 0.5;
-    streaks.push({ m, v: m.position.z, u: (k * 6 + (k * 17) % 5) % len, sp: 0.6 + ((k * 7) % 5) / 10 });
+  const nStreak = Math.floor(len / 6);
+  const streakMesh = nStreak ? new THREE.InstancedMesh(new THREE.BoxGeometry(1.6, 0.005, 0.12), mat('#d8f0f8', { transparent: true, opacity: 0.7 }), nStreak) : null;
+  for (let k = 0; k < nStreak; k++) streaks.push({ v: ((k * 37) % 13) / 13 * (ww * 2 - 1) - ww + 0.5, u: (k * 6 + (k * 17) % 5) % len, sp: 0.6 + ((k * 7) % 5) / 10 });
+  const streakY = -D - 0.2875, _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _v = new THREE.Vector3(), _mm = new THREE.Matrix4();
+  const placeStreaks = (t) => {
+    for (let k = 0; k < streaks.length; k++) {
+      const q = streaks[k], u = (q.u + t * q.sp * 2) % len;
+      if (F) { const [x, z] = F.toWorld(u, q.v); _v.set(x, streakY, z); _q.setFromAxisAngle(_up, -F.angAt(u)); } else { _v.set(u, streakY, q.v); _q.identity(); }
+      streakMesh.setMatrixAt(k, _mm.compose(_v, _q, _s));
+    }
+    if (streakMesh) streakMesh.instanceMatrix.needsUpdate = true;
+  };
+  if (streakMesh) {
+    streakMesh.userData.noShadow = true;
+    streakMesh.userData.mover = true;
+    streakMesh.userData.noSplit = true; // (moved every frame: core/split-instances.js must not cut it into still copies)
+    placeStreaks(0);
+    streakMesh.computeBoundingSphere(); // (the streaks only slide along the stream, so this holds)
+    g.add(streakMesh);
   }
   // Clumps of reeds and water plants along the edges of the water.
   const spots = [];
@@ -402,13 +417,7 @@ function buildOne(g, s, F) {
     heron?.();
     fest?.tick(t);
     g.userData.wish?.tick(Date.now() / 1000);
-    for (const q of streaks) {
-      const u = (q.u + t * q.sp * 2) % len;
-      if (!F) { q.m.position.x = u; continue; }
-      const [x, z] = F.toWorld(u, q.v);
-      q.m.position.x = x; q.m.position.z = z;
-      q.m.rotation.y = -F.angAt(u);
-    }
+    if (streakMesh) placeStreaks(t);
     if (fallTex) fallTex.offset.y = (t * 1.6) % 1;
   };
 }

@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "grand-park",
-  "source": "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json)."
+  "source": "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7; Neungdong-ro follows OpenStreetMap at 1/4, © OpenStreetMap contributors, ODbL), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json)."
  },
  "roads": [
   {
@@ -9,12 +9,32 @@
    "w": 14,
    "p": [
     [
-     0,
+     46.8,
      -80
     ],
     [
-     0,
-     95
+     44,
+     -72
+    ],
+    [
+     40,
+     -64
+    ],
+    [
+     25.5,
+     -31
+    ],
+    [
+     7.5,
+     5
+    ],
+    [
+     1,
+     18
+    ],
+    [
+     -3,
+     22
     ]
    ],
    "n": {
@@ -44,20 +64,20 @@
    "h": 8,
    "p": [
     [
-     14,
-     -46
+     42,
+     -50
     ],
     [
-     36,
-     -46
+     55,
+     -50
     ],
     [
-     36,
-     -32
+     55,
+     -36
     ],
     [
-     14,
-     -32
+     42,
+     -36
     ]
    ],
    "n": {
@@ -96,7 +116,7 @@
    "k": "park",
    "p": [
     [
-     7,
+     55.8,
      -80
     ],
     [
@@ -124,8 +144,16 @@
      -22
     ],
     [
-     7,
+     30,
      -22
+    ],
+    [
+     34.5,
+     -31
+    ],
+    [
+     49,
+     -64
     ]
    ]
   },
@@ -133,7 +161,7 @@
    "k": "plaza",
    "p": [
     [
-     7,
+     30,
      -22
     ],
     [
@@ -147,6 +175,10 @@
     [
      7,
      22
+    ],
+    [
+     16.5,
+     5
     ]
    ]
   },
@@ -169,28 +201,6 @@
     [
      58,
      94
-    ]
-   ]
-  },
-  {
-   "k": "park",
-   "trees": true,
-   "p": [
-    [
-     7,
-     -80
-    ],
-    [
-     50,
-     -80
-    ],
-    [
-     50,
-     -52
-    ],
-    [
-     7,
-     -52
     ]
    ]
   },

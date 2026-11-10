@@ -5,7 +5,9 @@
 //          { store: 'id', room: true, at: [x, z], ry } puts it inside that
 //          shop's room (the Namsan summit, a park), at room position x, z,
 //          its front facing ry, or
-//          { at: [x, z] } puts it at a world position.
+//          { at: [x, z] } puts it at a world position, or
+//          { at: [x, z], ride: 'name' } has no stand: a ride offers it
+//          (Seoul Dal: up at the top).
 //   shape: 'circle' | 'square' — the rubber stamp's frame.
 //   icon:  SVG drawn in a 200×200 box, in the stamp's ink colour.
 export const STAMPS = [
@@ -66,13 +68,13 @@ export const STAMPS = [
     icon: '<path d="M100 122 l-26 -26 a14 14 0 0 1 26 -18 a14 14 0 0 1 26 18 z" stroke-dasharray="3 7" stroke-linecap="round"/><circle cx="72" cy="70" r="3"/><circle cx="130" cy="66" r="3"/><circle cx="140" cy="92" r="2.5"/><circle cx="62" cy="96" r="2.5"/><path d="M64 136 q9 -6 18 0 q9 6 18 0 q9 -6 18 0 q9 6 18 0"/>',
   },
   {
-    id: 'gyeongbokgung', place: { at: [-1734, -860] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
+    id: 'gyeongbokgung', place: { at: [-1734, -862.5] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
   },
   {
-    // at the Open House gate, up the lane from Bukchon-ro 5-gil
+    // at the Open House gate, up from the lane of shops
     id: 'bukchon', place: { at: [-1495, -935] }, color: '#5a4a3a', shape: 'square',
     name: { ko: '북촌한옥마을', en: 'Bukchon Hanok Village', ja: '北村韓屋村', zh: '北村韩屋村' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
@@ -110,6 +112,14 @@ export const STAMPS = [
     gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
     // the gate: a stone base with its arch, two tiled roofs
     icon: '<path d="M46 132 h108 v-28 h-108 z M92 132 v-14 q8 -10 16 0 v14"/><path d="M58 104 v-10 h84 v10"/><path d="M40 94 q60 -26 120 0 q-6 -2 -10 2 h-100 q-4 -4 -10 -2 z"/><path d="M70 86 v-10 h60 v10"/><path d="M56 76 q44 -22 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/>',
+  },
+  {
+    // on Myeongdong Cathedral's front yard, to the right of the bell tower
+    id: 'myeongdong-cathedral', place: { at: [-1514.8, -539.8], ry: -2.628 }, color: '#7a3b2e', shape: 'circle',
+    name: { ko: '명동대성당', en: 'Myeongdong Cathedral', ja: '明洞大聖堂', zh: '明洞大教堂' },
+    gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
+    // the bell tower and spire with its cross, the nave behind
+    icon: '<path d="M100 34 v14 M94 40 h12"/><path d="M90 92 l10 -44 l10 44"/><path d="M86 140 v-48 h28 v48"/><circle cx="100" cy="104" r="6"/><path d="M94 140 v-14 q6 -8 12 0 v14"/><path d="M114 140 v-36 l34 -14 v50 M86 140 v-36 l-34 -14 v50"/><path d="M40 140 h120"/>',
   },
   {
     // on DDP's front plaza
@@ -179,6 +189,17 @@ export const STAMPS = [
     icon: '<path d="M126 128 v-70 l8 -6 l8 6 v70"/><path d="M134 52 v-10"/><path d="M48 128 q20 -30 40 0 M48 128 h48"/><path d="M40 128 q60 -12 120 0"/><path d="M44 144 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
+    // Seoul Dal, the balloon in Yeouido Park (game/seoul-dal.js): no stand on
+    // the ground; you press it in the gondola once it is up at the top, so
+    // this stamp means you flew. (at: the cable's foot, for anything that
+    // needs a place on the map.)
+    id: 'seoul-dal', place: { at: [-2902.1, 485.4], ride: 'seoulDal' }, color: '#d9a43a', shape: 'circle',
+    name: { ko: '서울달', en: 'Seoul Dal', ja: 'ソウルダル', zh: '首尔月亮' },
+    gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
+    // the moon-balloon on its cable, the ring gondola under it, over the river
+    icon: '<circle cx="100" cy="66" r="30"/><path d="M76 80 q24 10 48 0"/><path d="M80 88 l-12 30 M120 88 l12 30 M100 96 v18"/><path d="M64 118 h72 v8 h-72 z"/><path d="M48 142 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
+  },
+  {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate
     id: 'grand-park', place: { at: [452, -81], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
     name: { ko: '서울어른도대공원', en: "Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园' },
@@ -187,11 +208,20 @@ export const STAMPS = [
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [149, 874], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [109.6, 909.6], ry: 1.946 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
+  },
+  {
+    // in Dongmyo's flea market, between Potato Market's mats and the way up
+    // from Dongmyo Station exit 3 (data/dongmyo.js market), facing the station
+    id: 'dongmyo-market', place: { at: [-853, -785], ry: 0 }, color: '#a0703a', shape: 'square',
+    name: { ko: '동묘 감자마켓', en: 'Dongmyo Potato Market', ja: '東廟ポテトマーケット', zh: '东庙土豆市场' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // a potato on a mat with a fringe
+    icon: '<path d="M54 122 h92 l10 20 h-112 z"/><path d="M50 142 v8 M64 142 v8 M78 142 v8 M92 142 v8 M108 142 v8 M122 142 v8 M136 142 v8 M150 142 v8"/><path d="M78 112 q-10 -30 16 -42 q28 -10 38 14 q8 22 -16 32 q-22 8 -38 -4 z"/><circle cx="96" cy="86" r="2"/><circle cx="114" cy="94" r="2"/><circle cx="102" cy="104" r="2"/>',
   },
   {
     // on the concourse of Seoul Another Dome, left of the door as you come in

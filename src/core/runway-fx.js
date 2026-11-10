@@ -115,13 +115,14 @@ export class WordFx {
     this.group.parent?.remove(this.group);
     scene.add(this.group);
   }
-  // A word over (x, z), head height y. small: the "!" of a miss.
-  pop(x, y, z, text, color = '#ffd166', small = false) {
+  // A word over (x, z), head height y. small: the "!" of a miss. size (m
+  // tall) and life (s) override the defaults (the darts places, game/arcade.js).
+  pop(x, y, z, text, color = '#ffd166', small = false, size = 0, life = 0) {
     const p = this.free.pop();
     if (!p) return;
     const tex = wordTexture(text, color);
-    const hgt = small ? 0.8 : 0.55;
-    Object.assign(p, { t: 0, life: small ? 0.9 : 1.2, x, y, z, w: hgt * tex.userData.aspect, hgt });
+    const hgt = size || (small ? 0.8 : 0.55);
+    Object.assign(p, { t: 0, life: life || (small ? 0.9 : 1.2), x, y, z, w: hgt * tex.userData.aspect, hgt });
     p.sp.material.map = tex;
     p.sp.material.needsUpdate = true;
     p.sp.visible = true;

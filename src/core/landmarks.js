@@ -121,6 +121,13 @@ const BUILD = {
     box(g, king ? 9.2 : 7.4, king ? 0.35 : 0.4, king ? 11.2 : 7.4, 0, king ? 0.175 : 0.2, 0, C.plinth);
     import('./gwanghwamun-statues.js').then(({ buildStatue }) => buildStatue(g, l));
   },
+  cathedral(g) {
+    // Myeongdong Cathedral, in its own file loaded when the city is built
+    // (core/cathedral-model.js). Its stone base goes in now, so the far
+    // culling knows where it stands.
+    box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
+    import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
+  },
   guard(g) {
     // A gate guard (수문장) in a red robe with a black hat and a flag.
     const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));

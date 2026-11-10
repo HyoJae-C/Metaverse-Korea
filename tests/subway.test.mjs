@@ -122,14 +122,32 @@ test('Dongmyo (Line 1, 127): exits within 15 m of the real 3 and 4, by the marke
   for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 70, `exit ${e.n} near Dongmyo Shrine`);
 });
 
-test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the loop', () => {
+test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the loop, exits within 15 m of the real 1 and 2', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 1: [37.5177063, 127.1132863], 2: [37.5170369, 127.1127931] }; // OSM 5873076167, 3401171485
   const i = stations.findIndex((s) => s.id === 'mongchontoseong-station');
   assert.ok(i > 0 && stations[i - 1].id === 'jamsil-station');
   const st = stations[i];
   assert.equal(st.line.name.en, 'Line 8');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [1, 2]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
   const park = region.districts.find((d) => d.id === 'olympic-park');
   const gate = [park.anchor.local[0] + park.offset[0], park.anchor.local[1] + park.offset[1]];
-  for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 80, `exit ${e.n} near the Peace Gate`);
+  for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 120, `exit ${e.n} near the Peace Gate`);
+});
+
+test("Children's Grand Park (Line 7, 726): exits within 15 m of the real 1 and 2, either side of the main gate", async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 1: [37.5489426, 127.0754075], 2: [37.5472505, 127.0746953] }; // OSM 3401334030, 3401334028
+  const st = stations.find((s) => s.id === 'childrens-grand-park-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [1, 2]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
 });
 
 test('the loop follows the map: every station once, starting at Seongsu, clockwise, no long jumps back and forth', () => {
