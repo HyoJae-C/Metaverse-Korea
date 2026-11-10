@@ -1415,9 +1415,13 @@
   },
   {
    "type": "sign",
-   "x": -28,
-   "z": -18.5,
-   "ry": 3.481592653589793,
+   "x": -35,
+   "z": -6.5,
+   "ry": 0,
+   "sc": [
+    1.4
+   ],
+   "fs": 46,
    "title": {
     "ko": "감자마켓",
     "en": "Potato Market",
@@ -1425,10 +1429,10 @@
     "zh": "土豆市场"
    },
    "text": {
-    "en": "Dongmyo flea market: spread a mat, lay out clothes you bought, pick your price. Others can buy while you are away.",
-    "ko": "동묘 벼룩시장: 돗자리를 펴고 내가 산 옷을 올려 값을 정하세요. 내가 없어도 다른 사람이 살 수 있어요.",
-    "ja": "東廟の蚤の市：シートを広げて、買った服を並べて値段を決めよう。留守の間も他の人が買えます。",
-    "zh": "东庙跳蚤市场：铺开垫子，摆上你买的衣服，自己定价。你不在时别人也能买。"
+    "en": "Spread a mat and sell clothes you bought. They sell even while you are away.",
+    "ko": "돗자리를 펴고 내가 산 옷을 팔아요. 내가 없어도 팔려요.",
+    "ja": "シートを広げて、買った服を売ろう。留守の間も売れます。",
+    "zh": "铺开垫子，卖你买的衣服。你不在时也能卖出。"
    }
   }
  ]

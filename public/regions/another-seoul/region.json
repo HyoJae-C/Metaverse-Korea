@@ -601,6 +601,106 @@
         ]
       },
       {
+        "id": "gwanghwamun-station",
+        "name": {
+          "ko": "광화문",
+          "en": "Gwanghwamun",
+          "ja": "光化門",
+          "zh": "光化门"
+        },
+        "code": "533",
+        "line": {
+          "color": "#996cac",
+          "name": {
+            "ko": "5호선",
+            "en": "Line 5",
+            "ja": "5号線",
+            "zh": "5号线"
+          }
+        },
+        "prev": {
+          "ko": "서대문",
+          "en": "Seodaemun"
+        },
+        "next": {
+          "ko": "종로3가",
+          "en": "Jongno 3(sam)-ga"
+        },
+        "note": "Under Gwanghwamun Square by the King Sejong statue (its real place, OSM). Exits at the real 1, 2 and 9: exit 2 on the square north of the statue (0 m), exit 9 on the square south of it (7 m, moved off the centre walk), exit 1 on the Sejong Center pavement (10 m, moved off Sejong-daero onto the pavement).",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1793.5,
+              -759
+            ],
+            "ry": 0
+          },
+          {
+            "n": 2,
+            "at": [
+              -1728,
+              -776.4
+            ],
+            "ry": 3.1416
+          },
+          {
+            "n": 9,
+            "at": [
+              -1731,
+              -741
+            ],
+            "ry": 0
+          }
+        ]
+      },
+      {
+        "id": "sinchon-station",
+        "name": {
+          "ko": "신촌",
+          "en": "Sinchon",
+          "ja": "新村",
+          "zh": "新村"
+        },
+        "code": "240",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "홍대입구",
+          "en": "Hongik Univ."
+        },
+        "next": {
+          "ko": "이대",
+          "en": "Ewha Womans Univ."
+        },
+        "note": "At its real place (OSM): exits 1 and 4 within 1 m of the real ones. The Seodaemun map is hand-made and not yet on the real map, so its Sinchon-ro runs about 90 m north of the real road; exit 1 stands on West Lane's pavement, exit 4 on the grass east of it.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -2631,
+              -303
+            ],
+            "ry": 0
+          },
+          {
+            "n": 4,
+            "at": [
+              -2613,
+              -302
+            ],
+            "ry": 0
+          }
+        ]
+      },
+      {
         "id": "hongik-univ-station",
         "name": {
           "ko": "홍대입구",
@@ -631,6 +731,7 @@
       },
       {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "On Worldcup-ro at its real place (exits on both pavements, within 12 m of the real ones), a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3207.7, -328.6], "ry": -2.5155}, {"n": 2, "at": [-3223.3, -317.4], "ry": 0.6261}]},
       { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro where Jangchungdan-ro crosses it, by the park and DDP. Lines 4 and 5 also stop here; the signs show Line 2. Exits 1 and 10 at their real places either side of Eulji-ro, moved out of the road onto the pavement (scripts/build-euljiro.mjs stationExits).", "exits": [{ "n": 1, "at": [-1024.2, -594.1], "ry": 1.1903 }, { "n": 10, "at": [-1049.1, -580.9], "ry": 1.281 }] },
+      { "id": "dongmyo-station", "name": { "ko": "동묘앞", "en": "Dongmyo", "ja": "東廟前", "zh": "东庙前" }, "code": "127", "line": { "color": "#0052a4", "name": { "ko": "1호선", "en": "Line 1", "ja": "1号線", "zh": "1号线" } }, "prev": { "ko": "동대문", "en": "Dongdaemun" }, "next": { "ko": "신설동", "en": "Sinseol-dong" }, "note": "Under Jong-ro where Jibong-ro crosses it, at its real place (OSM station 9454775466). Exits at the real 3 and 4 (OSM 3401297193, 3401296590), both south of Jong-ro: exit 3 at the shrine end of the flea market, its mouth facing Dongmyo Shrine (5 m from the real one, moved off Jong-ro); exit 4 in the market's corner by Jibong-ro (5 m, moved off the roads and clear of the stalls). Line 6 also stops here; the signs show Line 1.", "exits": [{ "n": 3, "at": [-846.8, -793.1], "ry": -1.5708 }, { "n": 4, "at": [-874.1, -784.8], "ry": 1.9915 }] },
       {
         "id": "itaewon-station",
         "name": {

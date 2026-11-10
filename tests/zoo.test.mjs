@@ -427,6 +427,7 @@ test('the hippo: ears on hinges that flutter when it comes up, and more time out
   const zoo = new Zoo(new THREE.Scene(), [{ ...hippos, name: null }]);
   const h = zoo.pens[0].animals[0];
   assert.equal(h.flaps.length, 2, 'two ears that move');
+  h.phase = 0.05; // a set moment in the flutter (a random one can land where sin(34t) is ~0 and the ears look still)
   h.sink = 0.8; zoo._parts(h, 0.016);
   h.sink = 0.1; zoo._parts(h, 0.016); zoo._parts(h, 0.01);
   assert.ok(h.flick > 0, 'coming up: a flutter');
