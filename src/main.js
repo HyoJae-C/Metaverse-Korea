@@ -4669,7 +4669,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root], () => (scene.fog ? scene.fog.far + 30 : Infinity));
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance; the king walks the inner court past

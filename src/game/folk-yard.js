@@ -174,5 +174,5 @@ export function createFolkYard(game) {
     for (const o of Object.values(people)) { const n = NAMES[o.id](); o.tag.textContent = n; }
   }
 
-  return { uis, act, tick, hideLabels, relabel, closeAll, stands, get open() { return !!openUi(); } };
+  return { uis, act, tick, hideLabels, relabel, closeAll, stands, props: Object.values(props), get open() { return !!openUi(); } };
 }
