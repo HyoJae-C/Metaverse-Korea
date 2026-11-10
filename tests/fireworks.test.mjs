@@ -52,7 +52,7 @@ test('the program: the same for everyone, no long waits, a photo time and a fina
   assert.ok(photo.length > 30 && photo.every((x) => x.kind === 'willow'), 'gold willows at photo time');
   const perMin = (t0) => a.filter((x) => x.t >= t0 && x.t < t0 + 60).length;
   assert.ok(perMin(1130) > 4 * perMin(30), `finale ${perMin(1130)}/min, opening ${perMin(30)}/min`);
-  for (const x of a.filter((y) => ['heart', 'star', 'smile'].includes(y.kind))) assert.ok(x.t >= 150, 'shapes come after the opening');
+  assert.ok(!a.some((x) => ['heart', 'star', 'smile'].includes(x.kind)), 'no hearts, stars or smiles: those are the drone show\'s');
 });
 
 test('barges in the river between the island and Hongdae; the night only around Yeouido', () => {

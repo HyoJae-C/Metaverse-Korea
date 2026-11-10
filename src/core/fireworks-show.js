@@ -108,21 +108,22 @@ export const PHOTO_TIME = [780, 900];
 export const FINALE_TIME = 1110;
 export const ACTS = [
   { from: 0, to: 150, gap: [0.9, 1.4], kinds: ['peony', 'ring', 'saturn', 'peony'], mono: true, volley: [0.3, 3, 3], name: 'opening: big single-colour flowers' },
-  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['heart', 'star', 'smile', 'flower', 'butterfly', 'double'], volley: [0.2, 3, 3], name: 'act 1: shapes' },
+  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['pistil', 'dahlia', 'kamuro', 'flower', 'butterfly', 'double'], volley: [0.2, 3, 3], name: 'act 1: shapes' },
   { from: 330, to: 360, gap: [0.25, 0.45], kinds: ['small', 'small', 'ring'], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
   { from: 360, to: 540, gap: [0.5, 0.9], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn'], volley: [0.3, 3, 5], name: 'act 2: colours and spirals' },
   { from: 540, to: 600, gap: [0.9, 1.4], kinds: ['small', 'ring', 'double', 'peony', 'rainbow'], volley: [1, 5, 7], name: 'salvo: every barge at once' },
-  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['heart', 'flower', 'butterfly', 'rainbow', 'palm', 'star', 'spiral', 'smile'], volley: [0.3, 3, 5], name: 'act 3: everything' },
+  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['pistil', 'flower', 'butterfly', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro'], volley: [0.3, 3, 5], name: 'act 3: everything' },
   { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [0.9, 1.3], kinds: ['willow'], volley: [0.35, 3, 5], name: 'photo time: gold willows' },
-  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, volley: [0.3, 3, 5], name: 'build-up: faster and faster' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, volley: [0.3, 3, 5], name: 'build-up: faster and faster' },
   { from: FINALE_TIME, to: SHOW_SECONDS, gap: [0.25, 0.4], kinds: ['peony', 'willow', 'ring', 'rainbow', 'peony', 'palm'], big: true, volley: [0.6, 5, 9], name: 'finale' },
 ];
-export const KINDS = ['peony', 'ring', 'heart', 'star', 'smile', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
+// (No hearts, stars or smiles: those are the drone show's. Yozi.)
+export const KINDS = ['peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
 export const GOLD = '#ffc861';
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
-export const LIFE = { peony: 2.6, ring: 2.4, heart: 2.8, star: 2.6, smile: 2.8, willow: 4.6, small: 1.5, saturn: 2.8, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
-export const RADIUS = { peony: 28, ring: 26, heart: 24, star: 26, smile: 24, willow: 30, small: 11, saturn: 26, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
+export const LIFE = { peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, saturn: 2.8, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
+export const RADIUS = { peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, saturn: 26, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
 
 function rng(seed) {
   let a = seed >>> 0;
@@ -150,8 +151,9 @@ export function program(start) {
       const k = act.ramp ? (t - act.from) / (act.to - act.from) : r();
       const kind = act.kinds[Math.floor(r() * act.kinds.length)];
       if (act.mono && (!mono || r() < 0.08)) mono = COLORS[Math.floor(r() * COLORS.length)];
-      const color = kind === 'willow' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-      const color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
+      const color = kind === 'willow' || kind === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
+      let color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
+      if (kind === 'pistil' && color2 === color) color2 = COLORS[(COLORS.indexOf(color) + 3) % COLORS.length] || '#ffffff'; // its heart is another colour
       const scale = (act.big ? 1.15 : 1) * (0.85 + r() * 0.3);
       const [vc, v0, v1] = act.volley || [0, 1, 1];
       const n = r() < vc ? v0 + Math.floor(r() * (v1 - v0 + 1)) : 1;
@@ -164,7 +166,7 @@ export function program(start) {
           const u = BARGES[0][0] - 25 + (span * i) / (n - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
           const m = Math.abs(i / (n - 1) - 0.5) * 2; // 0 in the middle, 1 at the ends
           const h = base + [6, 4 + 16 * m, 20 - 16 * m][shape];
-          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'willow' && color2 !== color ? color2 : color, color2: color, scale, seed: Math.floor(r() * 1e9) });
+          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'willow' && kind !== 'kamuro' && kind !== 'pistil' && color2 !== color ? color2 : color, color2: kind === 'pistil' ? color2 : color, scale, seed: Math.floor(r() * 1e9) });
         }
       } else {
         out.push({
