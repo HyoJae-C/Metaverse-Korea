@@ -82,6 +82,119 @@ function greatGate(g, o) {
   }
 }
 
+// Heunginjimun at half the real size (Yozi, 2026-11-11), drawn after the
+// real gate's proportions (photos and OSM): a wide, low granite base (its
+// height under half the whole), one round arch, stepped wing walls going
+// down either side with grass on their slopes, and a two-storey pavilion
+// whose roofs stay narrower than the base. Local x: across the arch (along
+// the wall); z: through it. The board faces +z. Sizes in HEUNG_GATE so the
+// map builder can fit its blockers to them.
+export const HEUNG_GATE = { W: 13, D: 8, H: 3.8, A: 1.3, wing: 3.6 };
+function heungGate(g) {
+  const { W, D, H, A, wing } = HEUNG_GATE, S = 2.0; // S: where the arch's round top starts
+  const stone = '#cfc4ae', line = '#b3a78f', grass = '#6f9a52';
+  for (const sx of [-1, 1]) box(g, W / 2 - A, H, D, sx * (A + (W / 2 - A) / 2), H / 2, 0, stone);
+  const sh = new THREE.Shape();
+  sh.moveTo(-A, S); sh.lineTo(-A, H); sh.lineTo(A, H); sh.lineTo(A, S);
+  sh.absarc(0, S, A, 0, Math.PI, false);
+  const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 });
+  top.translate(0, 0, -D / 2);
+  g.add(new THREE.Mesh(top, mat(stone)));
+  for (let y = 0.95; y < H; y += 0.95) box(g, W + 0.04, 0.04, D + 0.04, 0, y, 0, line); // courses
+  // The wing walls: four steps down either side, grass on each tread.
+  for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) {
+    const h = H * (0.82 - i * 0.18), w = wing / 4, x = sx * (W / 2 + w * (i + 0.5));
+    box(g, w, h, D * 0.8, x, h / 2, 0, stone);
+    box(g, w + 0.02, 0.12, D * 0.8 - 0.3, x, h + 0.06, 0, grass);
+  }
+  // The parapet round the top, gaps at the ends.
+  for (const sz of [-1, 1]) box(g, W - 2.4, 0.55, 0.35, 0, H + 0.27, sz * (D / 2 - 0.18), '#bfb298');
+  // The pavilion.
+  const red = '#a23a2c', green = '#2f8f6b', wall = '#f1e7d2';
+  box(g, 10.2, 0.25, 6.2, 0, H + 0.12, 0, '#b9ae98');
+  for (let i = 0; i < 6; i++) for (const sz of [-1, 1]) box(g, 0.3, 2, 0.3, -4.5 + i * 1.8, H + 1.25, sz * 2.7, red);
+  box(g, 9.2, 1.6, 5, 0, H + 1.1, 0, wall);
+  box(g, 10.4, 0.4, 6.2, 0, H + 2.2, 0, green); // painted brackets
+  const roof = (w, d, h, y) => {
+    const r = new THREE.Mesh(hipRoofGeometry(w, d, h), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
+    r.position.y = y;
+    g.add(r);
+    box(g, Math.max(0.6, w - d * 0.9) + 0.3, h * 0.15, h * 0.15, 0, y + h * 1.04, 0, '#2b3038'); // ridge
+    box(g, w - 0.4, 0.08, d - 0.4, 0, y + 0.02, 0, '#e8e2d6'); // the pale eave line
+  };
+  roof(11.6, 7.2, 1.2, H + 2.4);
+  box(g, 7.6, 1.5, 4, 0, H + 3.5, 0, wall);
+  for (let i = 0; i < 5; i++) for (const sz of [-1, 1]) box(g, 0.26, 1.5, 0.26, -3.6 + i * 1.8, H + 3.5, sz * 2.05, red);
+  box(g, 8.6, 0.35, 4.8, 0, H + 4.4, 0, green);
+  roof(10.6, 6.4, 1.6, H + 4.55);
+  // The name board under the upper eaves, facing +z, like the real one
+  // (Korea Heritage Service photo): wider than tall, white characters on
+  // deep blue in two columns read right to left (興仁 | 之門), in a frame
+  // painted with flowers.
+  const c = typeof document !== 'undefined' && document.createElement('canvas');
+  const x = c && c.getContext && c.getContext('2d');
+  if (x) {
+    c.width = 256; c.height = 200;
+    x.fillStyle = '#2f5a52'; x.fillRect(0, 0, 256, 200); // the frame
+    for (let i = 0; i < 26; i++) { // its flowers, round the edge
+      const t = i / 26, per = 2 * (256 + 200);
+      let d = t * per, fx, fy;
+      if (d < 256) { fx = d; fy = 11; } else if ((d -= 256) < 200) { fx = 245; fy = d; } else if ((d -= 200) < 256) { fx = 256 - d; fy = 189; } else { fx = 11; fy = 200 - (d - 256); }
+      x.fillStyle = i % 2 ? '#f3eee4' : '#c8443a';
+      x.beginPath(); x.arc(fx, fy, 6, 0, Math.PI * 2); x.fill();
+    }
+    x.fillStyle = '#1f2d4a'; x.fillRect(24, 24, 208, 152);
+    x.fillStyle = '#f3eee4'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = 'bold 64px serif';
+    [['興', 180, 64], ['仁', 180, 138], ['之', 76, 64], ['門', 76, 138]].forEach(([t, tx, ty]) => x.fillText(t, tx, ty));
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.17), new THREE.MeshBasicMaterial({ map: tex }));
+    board.position.set(0, H + 3.6, 2.2);
+    g.add(board);
+  }
+}
+
+// The ongseong (옹성): the half-moon wall round the gate's front, as tall as
+// the gate's base, with a crenellated parapet (a loophole in each merlon)
+// and a low clipped hedge round its foot. l.arc: the wall's middle line,
+// metres from the landmark's x, z (its middle; not "p", which the map would
+// move as world points); l.h: its height.
+function ongseong(g, l) {
+  const h = l.h || 3.4, T = 1.6, stone = '#cbbfa6';
+  const hedgeAt = [];
+  const P = l.arc;
+  for (let i = 1; i < P.length; i++) {
+    const [x0, z0] = P[i - 1], [x1, z1] = P[i];
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    const seg = new THREE.Group();
+    box(seg, len + 0.5, h, T, 0, h / 2, 0, stone);
+    // (the segment's local +z, after its turn, points away from the middle
+    // or towards it: merlons go on the outer edge)
+    const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, a = -Math.atan2(z1 - z0, x1 - x0);
+    const out = Math.sign(mx * Math.sin(a) + mz * Math.cos(a)) || 1;
+    for (let y = 0.85; y < h; y += 0.85) box(seg, len + 0.52, 0.04, T + 0.04, 0, y, 0, '#b3a78f');
+    const n = Math.max(1, Math.round(len / 1.5));
+    for (let k = 0; k < n; k++) {
+      const u = -len / 2 + (k + 0.5) * (len / n);
+      box(seg, len / n - 0.35, 0.75, 0.4, u, h + 0.37, out * (T / 2 - 0.2), '#bfb298'); // merlon, on the outer edge
+      box(seg, 0.14, 0.2, 0.42, u, h + 0.35, out * (T / 2 - 0.2), '#3b3a36'); // its loophole
+    }
+    seg.position.set(mx, 0, mz);
+    seg.rotation.y = a;
+    g.add(seg);
+    for (let k = 0; k < Math.ceil(len / 1.2); k++) hedgeAt.push([x0 + ((x1 - x0) * (k + 0.5)) / Math.ceil(len / 1.2), z0 + ((z1 - z0) * (k + 0.5)) / Math.ceil(len / 1.2), -Math.atan2(z1 - z0, x1 - x0)]);
+  }
+  // The hedge, just outside the wall.
+  const hedge = new THREE.InstancedMesh(new THREE.BoxGeometry(1.3, 0.7, 0.7), mat('#4f8f45'), hedgeAt.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+  hedgeAt.forEach(([x, z, a], i) => {
+    const dx = x, dz = z, d = Math.hypot(dx, dz) || 1, o = T / 2 + 0.75;
+    hedge.setMatrixAt(i, m4.compose(v.set(x + (dx / d) * o, 0.35, z + (dz / d) * o), q.setFromAxisAngle(up, a), one));
+  });
+  g.add(hedge);
+}
+
 // DDP's entrance banner: the runway's name and "go in" in Korean and English
 // (a landmark's own art, like the gate boards).
 function ddpBannerTexture() {
@@ -194,10 +307,11 @@ export const EULJIRO_BUILD = {
   },
   // Sungnyemun (숭례문): its arch runs north-south, the board faces south.
   sungnyemun: (g) => greatGate(g, { W: 28, board: ['崇', '禮', '門'] }),
-  // Heunginjimun (흥인지문): the same kind of gate on a narrower base, its
-  // four-character name board (the only great gate with four); the
-  // half-moon ongseong round its front is a map "wall".
-  heunginjimun: (g) => greatGate(g, { W: 24, board: ['興', '仁', '之', '門'] }),
+  // Heunginjimun (흥인지문): at half the real size, the real one's
+  // proportions (heungGate), its four-character name board (the only great
+  // gate with four); the ongseong round its front is its own landmark.
+  heunginjimun: (g) => heungGate(g),
+  ongseong,
   // Namsangol's gate: two posts, a beam and a small tiled roof over a gap
   // in the wall.
   hanokgate(g) {
