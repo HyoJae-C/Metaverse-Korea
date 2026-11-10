@@ -61,6 +61,7 @@ export class Enclosure {
 // Past the fog nothing can be seen, yet it would still be drawn: shops,
 // landmarks and lanterns further away than the fog's far edge are skipped.
 // far(): the distance (the fog's far edge, which the weather changes).
+const JUMP = 40; // m between two checks: a jump, not a walk or a ride
 export class FarCull {
   constructor(objects, far) {
     const bb = new THREE.Box3(), c = new THREE.Vector3(), s = new THREE.Vector3();
@@ -77,10 +78,17 @@ export class FarCull {
     for (const o of objects) add(o, 0);
     this.far = far;
     this.wait = 0;
+    this.at = null; // where the last check was made
   }
-  update(dt, p) {
-    if ((this.wait -= dt) > 0) return;
-    this.wait = 0.4;
+  // Checks every 0.4 s of real time (not of game time: on a slow phone a
+  // frame's dt is capped, so 0.4 s of game time could be many seconds), and
+  // at once after a jump (a taxi, the map, the subway): until then the
+  // whole city round the old spot would still be drawn.
+  update(dt, p, now = performance.now()) {
+    const jumped = !this.at || Math.hypot(p.x - this.at[0], p.z - this.at[1]) > JUMP;
+    if (!jumped && now < this.wait) return;
+    this.wait = now + 400;
+    this.at = [p.x, p.z];
     const far = this.far();
     for (const it of this.items) {
       const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > far;

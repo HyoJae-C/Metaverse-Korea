@@ -5,11 +5,12 @@
 // Sharing (core/taxi-share.js): with people standing close by, you can ask
 // them to come along. Up to four ride together to your pick and split the
 // fare; someone short of money is treated by you, or left behind.
-import { getLanguage, t } from '../core/i18n.js';
+import { getLanguage, localName, t } from '../core/i18n.js';
 import { showBubble } from '../core/players.js';
 import { noTaxiAt, noTaxiZones, taxiFare } from '../core/taxi.js';
 import { ASK_MS, GO_WAIT_MS, SHARE_RADIUS, TaxiHost, newTrip, taxiMsg, worstShare } from '../core/taxi-share.js';
 import { L, fmt } from '../ui/pocha-ui.js';
+import { nextTip } from './tips.js';
 
 export const SHARE_TEXT = {
   title: { en: '🚕 Share the taxi?', ko: '🚕 택시 같이 탈까요?', ja: '🚕 タクシーに相乗りする？', zh: '🚕 一起拼车吗？' },
@@ -57,6 +58,16 @@ export function createTaxi(game) {
   ];
   let taxiTimers = [];
   let inCab = false; // on the back seat (the scene showing): you aren't standing anywhere
+  // While the back-seat scene covers the screen the 3D street behind it is
+  // drawn only 4 times a second (enough to get the drop-off ready), so the
+  // scene's animation stays smooth on a phone.
+  let cabDrawn = 0;
+  const skipFrame = (now) => {
+    if (!inCab) return false;
+    if (now - cabDrawn < 250) return true;
+    cabDrawn = now;
+    return false;
+  };
   const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
   // Closed-off places (the zoo before it opens) and a margin round them.
   let zones = null, zonesOf = null;
@@ -86,6 +97,36 @@ export function createTaxi(game) {
     }
     return best;
   }
+  // Out of the window: one of the city's activities or sights, picked at
+  // random, to try some day: [name], the gu it is in, what you can do there.
+  // No food, drink or plain shopping for now (the animal cafés are in: you
+  // play with the animals). The plastic surgery clinics and the cafés where
+  // you can adopt a pet (few players find them) come up more often.
+  const PLACE_KINDS = { play: '🎮', workshop: '🎨', culture: '🖼️', museum: '🏛️', memorial: '🕊️', park: '🌳', club: '🎧', school: '📚' };
+  const CLINIC = '💉';
+  const isClinic = (s) => s.workshop === 'clinic' || s.workshop === 'clinic2';
+  const SKIP_WORKSHOP = new Set(['kimchi', 'japchae', 'bike']); // (cooking classes are food; the bike shops sell skins)
+  const NOT_YET = /coming soon|being prepared/i; // (a gallery or corner still getting ready)
+  const PETS = '🐶';
+  const placeIcon = (s) => (isClinic(s) ? CLINIC : s.pets ? PETS : !s.perfumery && !SKIP_WORKSHOP.has(s.workshop) && PLACE_KINDS[s.category]) || null;
+  let lastPlace = null;
+  function showShop() {
+    const box = $('taxi-shop');
+    const pool = [];
+    for (const it of game.shops?.() || []) {
+      const s = it.store;
+      if (it === lastPlace || !s.tagline || NOT_YET.test(s.tagline.en || '') || !placeIcon(s)) continue;
+      for (let n = isClinic(s) || s.adopt ? 4 : 1; n > 0; n--) pool.push(it);
+    }
+    const it = pool[Math.floor(Math.random() * pool.length)];
+    box.hidden = !it;
+    if (!it) return;
+    lastPlace = it;
+    const s = it.store, gu = mapView._guAt?.(it.door.x, it.door.z), what = localName(s.tagline);
+    $('taxi-shop-name').textContent = `[${placeIcon(s)} ${localName(s.name)}]`;
+    $('taxi-shop-where').textContent = gu ? t('taxi.shopWhere', { gu: localName(gu.name) }) : '';
+    $('taxi-shop-line').textContent = t('taxi.shopDo', { what: isClinic(s) ? t('taxi.clinicDo', { what }) : what });
+  }
   const panel = () => $('taxi-share-panel');
   const closePanel = () => { const p = panel(); if (p) { p.hidden = true; p.replaceChildren(); } };
   const send = (verb, to, trip, ...nums) => game.net?.sendEmote(taxiMsg(verb, to, trip, ...nums));
@@ -102,13 +143,24 @@ export function createTaxi(game) {
       $('taxi-rom').textContent = rom;
       $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
     };
+    // On the way the driver tells you a game tip, in your language.
+    const sayTip = () => {
+      $('taxi-ko').textContent = nextTip();
+      $('taxi-rom').textContent = '';
+      $('taxi-tr').textContent = '';
+    };
     $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label }) + ' · ' + (free ? st('free') : t('taxi.fare', { n: won(fare) })) + (paid !== fare ? ' (' + st('paid', { n: won(paid) }) + ')' : '') + (mates?.length ? ' · ' + st('together', { names: mates.join(', ') }) : '');
-    $('taxi-skip').textContent = t('taxi.skip');
     $('taxi-ride').hidden = false;
     input.keys.clear();
     sayLine(TAXI_LINES[0]);
     let done = false;
     inCab = true;
+    // Out at the drop-off already, behind the back-seat scene (it covers the
+    // whole screen): what is far from the old spot goes, the new place's
+    // buildings, signs and shaders get ready while the driver talks, instead
+    // of one long freeze when the doors open.
+    moveMeTo(scene, fx, fz, ry);
+    cabDrawn = 0;
     const arrive = () => {
       if (done) return;
       done = true;
@@ -116,18 +168,17 @@ export function createTaxi(game) {
       taxiTimers.forEach(clearTimeout);
       taxiTimers = [];
       $('taxi-ride').hidden = true;
-      moveMeTo(scene, fx, fz, ry);
       if (guide && Math.hypot(tx - fx, tz - fz) > 4) setGuide(guide);
       showBubble(myLabel, $('labels'), '🚕');
       missionEvent('taxi');
       onArrive?.();
     };
+    showShop();
     taxiTimers = [
-      setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
-      setTimeout(() => sayLine(TAXI_LINES[2]), 4200),
+      setTimeout(sayTip, 1300), // (no skip button: the ride is when the drop-off gets ready)
+      setTimeout(() => sayLine(TAXI_LINES[2]), 4900),
       setTimeout(arrive, 5600),
     ];
-    $('taxi-skip').onclick = arrive;
   }
 
   // ---- The host: pick a place, maybe ask the people close by.
@@ -302,5 +353,5 @@ export function createTaxi(game) {
     const [fx, fz] = findFreeSpot(rx, rz);
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
   }
-  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab };
+  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab, skipFrame };
 }

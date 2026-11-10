@@ -16,6 +16,7 @@ import * as THREE from 'three';
 export const NEAR = 170, FAR = 220; // m
 const SMALL = 32; // px, the longer side of the stand-in
 const SWEEP_MS = 1000;
+export const PER_SWEEP = { grow: 12, shrink: 8 }; // textures changed per sweep, at most
 
 export function farFree(tex) {
   tex.userData.farFree = true;
@@ -43,13 +44,19 @@ export function updateFarTextures(scene, x, z, now = performance.now()) {
       if (e) { e.d = Math.min(e.d, d); e.textures.add(t); } else seen.set(t.source, { d, textures: new Set([t]) });
     }
   });
+  // A few each second, nearest first: after a taxi ride hundreds of signs
+  // change sides at once, and saving each one as a PNG stalls the page
+  // (about 2 s on a slow phone when they all went in one go).
+  const grows = [], shrinks = [];
   for (const [source, { d, textures }] of seen) {
     let s = states.get(source);
     if (!s) states.set(source, (s = { full: true, busy: false }));
     if (s.busy) continue;
-    if (s.full && d > FAR) shrink(source, textures, s);
-    else if (!s.full && d < NEAR) grow(source, textures, s);
+    if (s.full && d > FAR) shrinks.push({ source, textures, s, d });
+    else if (!s.full && d < NEAR) grows.push({ source, textures, s, d });
   }
+  grows.sort((a, b) => a.d - b.d).slice(0, PER_SWEEP.grow).forEach((g) => grow(g.source, g.textures, g.s));
+  shrinks.sort((a, b) => b.d - a.d).slice(0, PER_SWEEP.shrink).forEach((g) => shrink(g.source, g.textures, g.s));
 }
 
 function swap(source, textures, image) {

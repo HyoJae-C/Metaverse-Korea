@@ -1011,7 +1011,13 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .taxi-say strong { font-size: 18px; }
 .taxi-say small { color: var(--ink-soft); }
 .taxi-dest { grid-column: 1 / -1; margin: 0; font-weight: 800; }
-.taxi-cabin .chip { grid-column: 1 / -1; justify-self: end; background: #fff; }
+.taxi-shop { position: absolute; left: 22px; right: 22px; top: 50%; transform: translateY(-50%); display: grid; gap: 4px; padding: 14px 16px; border-radius: 18px; background: #fffaf0f2; color: var(--ink); box-shadow: 0 6px 18px #0003; }
+.taxi-shop small { color: var(--ink-soft); font-weight: 800; }
+.taxi-shop strong { font-size: 19px; }
+.taxi-shop span { font-size: 14px; line-height: 1.4; }
+/* A room being set up on the way in (game/tips.js): a tip over the screen. */
+.room-loading { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 24px; background: #2b2a33; }
+.room-loading p { max-width: 420px; margin: 0; padding: 14px 18px; border-radius: 18px; background: #fffaf0; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.45; text-align: center; }
 @media (max-width: 700px) { .taxi-mode .map-disclaimer { display: none; } }
 
 /* Items and the ride picker */

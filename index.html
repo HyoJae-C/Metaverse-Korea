@@ -356,6 +356,11 @@
         <div class="taxi-city taxi-far"></div>
         <div class="taxi-city taxi-near"></div>
         <div class="taxi-road"></div>
+        <div class="taxi-shop" id="taxi-shop" hidden>
+          <strong id="taxi-shop-name"></strong>
+          <small id="taxi-shop-where"></small>
+          <span id="taxi-shop-line"></span>
+        </div>
       </div>
       <div class="taxi-cabin">
         <div class="taxi-driver">🧑‍✈️</div>
@@ -365,9 +370,10 @@
           <small id="taxi-tr"></small>
         </div>
         <p class="taxi-dest" id="taxi-dest"></p>
-        <button class="chip" id="taxi-skip" data-i18n="taxi.skip"></button>
       </div>
     </div>
+
+    <div class="room-loading" id="room-loading" hidden><p id="room-loading-tip"></p></div>
 
     <!-- Start screen -->
     <div class="overlay" id="start">
