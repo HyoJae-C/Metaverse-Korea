@@ -596,7 +596,7 @@ HANEUL (하늘), a fictional brand, has a department store (north of the west
 lake) and a mall (north of the east lake) between Olympic-ro and the lakes,
 where the real shopping complex by Jamsil Station stands. Another Tower
 (어나더타워, fictional) stands at the real 555 m tower's place just south-east
-of Jamsil Station, at 1/4 (139 m to the tip, 18 m across). Their footprints are `custom` buildings in `districts/songpa.json`
+of Jamsil Station, at half height (278 m to the tip, 35 m across: the real shape at that height, a map exception Yozi chose). Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore.
