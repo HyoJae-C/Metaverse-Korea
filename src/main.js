@@ -51,6 +51,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { createPalaceView } from './game/palace-view.js';
+import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
@@ -4725,10 +4726,13 @@ function palaceAct(p) {
   return null;
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
+let anotherTower;
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Another Tower's top)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   palaceView.tick(p, dt);
+  if (mode === 'street') towerLook.tick(cam, p, dt);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
@@ -6632,7 +6636,7 @@ renderer.setAnimationLoop((now) => {
   manualCamT -= dt;
   if (!firstPerson.look(look)) {
     cam.yaw -= look.dx * 0.006;
-    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : (mode === 'street' && towerLook.min(me.root.position)) || (skyLook() ? -0.12 : 0.12), 1.25);
     cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, interior?.zooHall ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
   }
 
@@ -6795,7 +6799,7 @@ renderer.setAnimationLoop((now) => {
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Another Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
