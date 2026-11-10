@@ -17,7 +17,7 @@
       "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
     { "id": "B-1", "npc": "G", "color": "#d4a73a", "at": [-1741, -791], "radius": 60, "name": {"en": "Gwanghwamun Square", "ko": "광화문광장", "ja": "光化門広場", "zh": "光化门广场"} },
     { "id": "C-1", "npc": "H", "color": "#e86fa8", "at": [-1348, 255], "snap": false, "radius": 60, "name": {"en": "Itaewon", "ko": "이태원", "ja": "梨泰院", "zh": "梨泰院"} },
-    { "id": "D-1", "npc": "I", "color": "#7fb89a", "at": [-2520, -540], "snap": false, "radius": 40,
+    { "id": "D-1", "npc": "I", "color": "#7fb89a", "at": [-2622, -454], "snap": false, "radius": 40,
       "name": { "en": "Sinchon Square", "ko": "신촌 광장", "ja": "新村広場", "zh": "新村广场" } },
     { "id": "E-1", "npc": "J", "color": "#e0457b", "at": [-2951, -258], "snap": false, "radius": 60, "name": {"en": "Hongdae", "ko": "홍대", "ja": "弘大", "zh": "弘大"} },
     { "id": "A-7", "npc": "K", "color": "#5fae6a", "at": [-324, 30], "snap": false, "radius": 70, "name": { "en": "Seoul Forest", "ko": "서울숲", "ja": "ソウルの森", "zh": "首尔林" } },
