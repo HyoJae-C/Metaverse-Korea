@@ -664,7 +664,7 @@ export const ES = {
   "potato.nothing": "Solo la ropa que compraste tú puede ir en una manta. Los regalos y los artículos de códigos no.",
   "potato.full": "Tu manta está llena ({n} cosas). Retira algo para poner otra.",
   "potato.price": "Elige un precio entre 🪙 {min} y 🪙 {max}.",
-  "potato.noref": "No encontramos el recibo de {name}, así que no puede ir en una manta.",
+  "potato.noref": "{name} se compró antes de que tus compras se guardaran en el servidor (o fue un regalo), así que no puede ir en una manta. La ropa que compres a partir de ahora sí.",
   "potato.listed": "¡En tu manta! Otros pueden comprarlo aunque no estés.",
   "potato.back": "{name} volvió a tu armario.",
   "potato.sold": "vendido · +🪙 {n}",
