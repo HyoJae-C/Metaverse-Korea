@@ -55,7 +55,7 @@ export const WEST = -465;
 // start at WEST; west of it the region's water carries on) and north to its
 // piece across Seoulsup-gil (z -181).
 export const PARK_WEST = -549;
-export const BOUNDS = [PARK_WEST, -185, 430, 560];
+export const BOUNDS = [-600, -205, 430, 560]; // (the park's west and north edges: FOREST_W_X, FOREST_N)
 const name = (ko, en, ja, zh) => ({ ko, en, ...(ja ? { ja } : {}), ...(zh ? { zh } : {}) });
 export const THETA = (20.5 * Math.PI) / 180;
 const COS = Math.cos(THETA), SIN = Math.sin(THETA);
@@ -106,6 +106,7 @@ const CENTER = [0, 50]; // the middle of the shop streets, between the station a
 export const FOREST_SHIFT = [-130, -154];
 const OLD_WEST = -335;
 const shift = ([x, z]) => [r1(x + FOREST_SHIFT[0]), r1(z + FOREST_SHIFT[1])];
+const oldF = ([x, z]) => [r1(x - FOREST_SHIFT[0]), r1(z - FOREST_SHIFT[1])]; // world -> old frame
 const FOREST_EAST = WANGSIMNI_X + 5; // the forest's east edge, Wangsimni-ro's west side
 // The forest's south edge (Gangbyeonbuk-ro runs between it and the river), west to east.
 const FOREST_EDGE = [[WEST, 94], [-440, 103], [-400, 121], [-360, 143], [-320, 160], [-280, 178], [FOREST_EAST, 185]];
@@ -118,12 +119,23 @@ const FOREST_ROADS = [
   { k: 'primary', w: 16, n: name('고산자로', 'Gosanja-ro', '高山子路', '高山子路'), p: [[-447, -185], [-440, -159], [-430, -117], [-424, -78], [-421, -60], [-423.5, -36], [-427, -6], [-430, 17]] },
   { k: 'secondary', w: 12, n: name('광나루로', 'Gwangnaru-ro', 'クァンナル路', '广渡路'), p: [[-397, -114], [-407, -103], [-418, -85], [-424, -78], [-436, -61], [-448, -44], [-462, -31], [-480, -17], [-495, -12.5]] },
 ];
+// Yozi's choice (2026-11-10): the park is a little bigger than the real one
+// on three sides, not toward the river. East, it fills the corner by Seoul
+// Forest Station (really towers) from Seoulsup-gil down to Ttukseom-ro; north,
+// the land round its north piece up to z -200 (FOREST_N); west, the land past
+// Gosanja-ro's end between Itaewon-ro and the riverside grass (FOREST_W, to x
+// -600). The real outline had been cut into thin strips by the real roads, so
+// the park felt small and bare.
+const FOREST_FILL_N = [[-385, -102], [-362, -93], [-348, -88], [-336, -86], [-318, -87], [-289, -88], [-262, -90], [FOREST_EAST, -87], [FOREST_EAST, 64], [-265, 65], [-299, 54]]; // along Seoulsup-gil's south side, down Wangsimni-ro and along Ttukseom-ro's north side
+export const FOREST_W_X = -600;
+const FOREST_N = [[-390.8, -118.7], [-424, -125], [-432, -159], [-438, -185], [-440, -200], [FOREST_EAST, -200], [FOREST_EAST, -101], [-262, -104], [-289, -102], [-318, -101], [-336, -100], [-349, -102], [-363, -101], [-392, -107], [-389.7, -112.2], [-363.5, -102.9], [-357.9, -109.4], [-352.3, -108.1], [-295, -117.4], [-296.6, -136.2], [-304.2, -181.5], [-306.7, -181.5], [-348.9, -159.1], [-385.2, -126.3]]; // round the north piece (not inside it), down to Seoulsup-gil
+const FOREST_W = [[-504, -6], [PARK_WEST, -27], [-614, -26], [FOREST_W_X, -14], [FOREST_W_X, 48], [-560, 52], [PARK_WEST, 47], [PARK_WEST, 37]];
 // The park: the real outline, its south edge the riverside grass's (FOREST_EDGE),
 // round Ttukseom-ro's open ends and along Gosanja-ro; and the piece north of Seoulsup-gil.
-const FOREST_PARK = [[-323, 60], [-263, 79], [FOREST_EAST, 79], ...FOREST_EDGE.slice().reverse(), [-538, 58], [PARK_WEST, 47], [PARK_WEST, 37], [-504, -10], [-445, 19], [-436, 24], [-429, 24], [-380, 42], [-379, 33], [-418, 18], [-423, 12], [-412, -67], [-404, -102], [-399, -111], [-389, -107], [-400, -78], [-399, -74], [-363, -65], [-361, -69], [-311, -53], [-319, -27], [-278, -13], [-304, 60], [-322, 54]];
+const FOREST_PARK = [[-323, 60], [-263, 79], [FOREST_EAST, 79], ...FOREST_EDGE.slice().reverse(), [-538, 58], [PARK_WEST, 47], [PARK_WEST, 37], [-504, -10], [-445, 19], [-436, 24], [-429, 24], [-380, 42], [-379, 33], [-418, 18], [-423, 12], [-412, -67], [-404, -102], [-399, -111], [-389, -107], ...FOREST_FILL_N, [-314, 53], [-322, 54]];
 const FOREST_NORTH = SF.park[1];
 // The towers by Seoul Forest Station (world metres), in the corner that is not park.
-const FOREST_TOWERS = [[-300, -86, -284, -72, 50], [-290, -50, -274, -36, 46], [-284, 10, -268, 24, 52], [-292, 34, -276, 48, 48]];
+const FOREST_TOWERS = []; // (none now: the corner is park)
 
 // Ttukseom Han River Park (game/han-parks.js; core/han-park.js builds what
 // the map can't draw) lies at its real place, east of Cheongdam Bridge, on a
@@ -254,8 +266,8 @@ const AREAS = [
   // Seoul Forest (wooded), from Seoulsup-gil down to the riverside grass, west of Wangsimni-ro.
   { k: 'park', trees: true, p: FOREST_PARK },
   { k: 'park', trees: true, p: FOREST_NORTH },
-  // Between the park and Seoulsup-gil (not park: an open lot by the road), grass.
-  { k: 'grass', p: [[-400, -78], [-399, -74], [-363, -65], [-361, -69], [-311, -53], [-305, -90], [-336, -93], [-363, -100], [-389, -110]] },
+  { k: 'park', trees: true, p: FOREST_N },
+  { k: 'park', trees: true, p: FOREST_W },
   // West of WEST: grass from the park down to the river (the region's water).
   { k: 'grass', p: [[PARK_WEST, 52], [-538, 58], [WEST, 94], [WEST, 126], [-491.4, 115], [-537.8, 101.1], [PARK_WEST, 99]] },
   // Its ponds (water, with blockers below): Seoul Forest Lake, the Mirror Pond, the wetland north of Seoulsup-gil and the small ones.
@@ -475,11 +487,12 @@ for (const gl of GALLERIES) {
   WALKS.push({ w: 2.5, p: [[doorX + (gl.face === 'e' ? 0.5 : -0.5), doorZ], gl.to] }); // door to the trail
 }
 // Flower gardens: round beds of one kind of flower, a path across, a sign.
+const xz = (x, z) => { const [ox, oz] = oldF([x, z]); return { x: ox, z: oz }; }; // (from world metres)
 const FLOWER_GARDENS = [
-  { kind: 'tulip', x: -268, z: 118, r: 9, ry: 2.84,
+  { kind: 'tulip', ...xz(-290, -62), r: 9, ry: -Math.PI / 2, // by Seoul Forest Station (world -290, -62)
     n: name('튤립 정원', 'Tulip Garden', 'チューリップガーデン', '郁金香花园'),
     t: name('빨강, 노랑, 분홍 튤립이 줄지어 피어 있어요. 봄 사진 찍기 좋은 곳이에요.', 'Rows of red, yellow and pink tulips. A lovely spot for spring photos.', '赤、黄、ピンクのチューリップが並んで咲いています。春の写真にぴったり。', '红、黄、粉色的郁金香排排开放，很适合拍春天的照片。') },
-  { kind: 'sunflower', x: -275, z: 158, r: 8, ry: -0.4,
+  { kind: 'sunflower', ...xz(-289, -22), r: 8, ry: -Math.PI / 2, // (world -289, -22)
     n: name('해바라기 정원', 'Sunflower Garden', 'ひまわりガーデン', '向日葵花园'),
     t: name('키 큰 해바라기 사이를 걸어 보세요. 모두 해를 보고 있어요.', 'Walk among the tall sunflowers, all turned to the sun.', '背の高いひまわりの間を歩いてみて。みんな太陽を向いています。', '在高高的向日葵间走走吧，它们都朝着太阳。') },
   { kind: 'hydrangea', x: -235, z: 282, r: 8, ry: 0.8,
@@ -497,6 +510,71 @@ for (const fg of FLOWER_GARDENS) {
   bench(bx, bz, faceTo(bx, bz, fg.x, fg.z));
 }
 
+// The tulip and sunflower gardens stand in the corner by Seoul Forest
+// Station, off the trail; a path in from the station's exits.
+WALKS.push({ w: 3, p: [oldF([-316.5, -62]), oldF([-300.5, -62])] });
+WALKS.push({ w: 3, p: [oldF([-317.4, -22]), oldF([-298.5, -22])] });
+WALKS.push({ w: 3, p: [oldF([-270, 37]), oldF([-282, 30]), oldF([-308.5, 15])], n: name('서울숲역 길', 'Station Path', 'ソウルの森駅の道', '首尔林站小路') });
+
+// ── The deer meadow and the wildflower patches ─────────────────────────
+// (Given in world metres here; `oldF` turns them into the old frame above.)
+// 꽃사슴 방사장: Seoul Forest's sika deer live in the Eco Forest, the wood
+// west of Gosanja-ro. A wooden fence round a grassy paddock south of the two
+// galleries, a path along its north side to watch from, a bench and a sign.
+// The deer themselves come from core/forest-deer.js (loaded on first sight).
+const DEER_PEN = [[-490, 62], [-456, 62], [-456, 86], [-490, 74]].map(oldF);
+{
+  const [cx, cz] = oldF([-473, 71]);
+  LANDMARKS.push({ type: 'deerpen', x: cx, z: cz, p: DEER_PEN, deer: 5, clear: 16,
+    label: name('꽃사슴 방사장', 'Deer Meadow', 'シカの放牧場', '梅花鹿园') });
+  for (let i = 0; i < DEER_PEN.length; i++) { // the fence (a thin wall each side)
+    const [x1, z1] = DEER_PEN[i], [x2, z2] = DEER_PEN[(i + 1) % DEER_PEN.length];
+    const len = Math.hypot(x2 - x1, z2 - z1);
+    BLOCKERS.push({ p: rotBox((x1 + x2) / 2, (z1 + z2) / 2, len + 0.3, 0.3, Math.atan2(-(z2 - z1), x2 - x1)) });
+  }
+  WALKS.push({ w: 3, p: [oldF([-447.5, 58.8]), oldF([-492, 58.8])], n: name('꽃사슴길', 'Deer Walk', 'シカの小道', '梅花鹿小路') }); // from the West Wood Trail along the fence
+  const [sx, sz] = oldF([-452.5, 61.4]);
+  LANDMARKS.push({ type: 'sign', x: sx, z: sz, ry: Math.PI, clear: 1.5,
+    title: name('꽃사슴 방사장', 'Deer Meadow', 'シカの放牧場', '梅花鹿园'),
+    text: name('서울숲 생태숲에 사는 꽃사슴들이에요. 하얀 점무늬가 예쁘죠? 울타리 밖에서 조용히 지켜봐 주세요.',
+      'The sika deer of Seoul Forest\'s Eco Forest. See their white spots? Please watch quietly from outside the fence.',
+      'ソウルの森の生態林に住むニホンジカです。白い斑点がかわいいでしょう？柵の外から静かに見守ってね。',
+      '住在首尔林生态林里的梅花鹿，白色斑点很可爱吧？请在围栏外安静地观看。') });
+  const [bx, bz] = oldF([-463, 56]);
+  bench(bx, bz, 0); // facing the meadow (east of the pond)
+}
+// Wildflower patches in the open spots between the gardens (core/park-art.js meadow).
+for (const [x, z, r] of [[-422, 80, 6], [-340, 136, 6.5], [-275, 5, 5], [-325, -160, 5], [-434, 97, 4.5], [-398, -36, 6], [-404, 4, 5.5], [-275, -125, 7], [-272, -40, 4.5]]) {
+  const [ox, oz] = oldF([x, z]);
+  LANDMARKS.push({ type: 'meadow', x: ox, z: oz, r, clear: r + 1 });
+}
+
+// 가족마당, the Family Lawn, in the park's new west end (FOREST_W): an open
+// round lawn for picnics, wildflowers and benches round it, and a path to it
+// from the end of the West Wood Trail's Ttukseom-ro side.
+{
+  const LAWN = { x: -566, z: 14, r: 17 };
+  const [lx, lz] = oldF([LAWN.x, LAWN.z]);
+  LANDMARKS.push({ type: 'lawn', x: lx, z: lz, clear: LAWN.r + 1 }); // (keeps the trees off; nothing drawn)
+  AREAS.push({ k: 'grass', lawn: true, p: Array.from({ length: 20 }, (_, k) => [r1(LAWN.x + Math.cos((k * Math.PI) / 10) * LAWN.r), r1(LAWN.z + Math.sin((k * Math.PI) / 10) * LAWN.r)]) });
+  WALKS.push({ w: 3, p: [oldF([-492, 58.8]), oldF([-524, 61]), oldF([-545, 44]), oldF([LAWN.x + LAWN.r * 0.7, LAWN.z + LAWN.r * 0.7])], n: name('가족마당길', 'Family Lawn Walk', 'ファミリー広場の道', '家庭草坪小路') }); // on from the Deer Walk
+  const [sx, sz] = oldF([LAWN.x + LAWN.r * 0.7 + 2.5, LAWN.z + LAWN.r * 0.7 + 1]);
+  LANDMARKS.push({ type: 'sign', x: sx, z: sz, ry: 0, clear: 1.5,
+    title: name('가족마당', 'Family Lawn', 'ファミリー広場', '家庭草坪'),
+    text: name('넓은 잔디밭이에요. 돗자리를 펴고 쉬거나 반려동물과 원반 놀이를 해 보세요.',
+      'A wide open lawn. Spread a picnic mat and relax, or play frisbee with your pet.',
+      '広い芝生です。レジャーシートを広げて休んだり、ペットとフリスビーで遊んだりしてね。',
+      '宽阔的草坪。铺开野餐垫休息，或者和宠物玩飞盘吧。') });
+  for (const a of [3.0, 3.8, 4.6, 5.4, 1.6, 2.3]) { // wildflowers round the lawn
+    const [mx, mz] = oldF([LAWN.x + Math.cos(a) * (LAWN.r + 5), LAWN.z + Math.sin(a) * (LAWN.r + 5)]);
+    LANDMARKS.push({ type: 'meadow', x: mx, z: mz, r: 3.2, clear: 4.2 });
+  }
+  for (const a of [0.2, 2.8, 4.3]) { // benches on the lawn's edge, facing in
+    const [bx, bz] = oldF([LAWN.x + Math.cos(a) * (LAWN.r + 1.5), LAWN.z + Math.sin(a) * (LAWN.r + 1.5)]);
+    bench(bx, bz, faceTo(bx, bz, lx, lz));
+  }
+}
+
 // ── Move the forest onto its place ──────────────────────────────────────
 // Everything above was drawn in the forest's old frame: move it as one piece.
 for (const w of WALKS) w.p = w.p.map(shift);
@@ -505,6 +583,7 @@ for (const bl of BLOCKERS) bl.p = bl.p.map(shift);
 for (const l of LANDMARKS) {
   if (Number.isFinite(l.x)) [l.x, l.z] = shift([l.x, l.z]);
   if (l.trees) l.trees = l.trees.map(shift);
+  if (l.p) l.p = l.p.map(shift);
 }
 for (const [x0, z0, x1, z1, h] of FOREST_TOWERS) EXTRA.push({ h, p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] });
 for (const w of SF.ponds) BLOCKERS.push({ p: w.p });
@@ -708,7 +787,7 @@ roads.push(
 for (const w of WALKS) roads.push({ k: 'walk', w: w.w, p: w.p, ...(w.n ? { n: w.n } : {}), ...(w.clear ? { clear: w.clear } : {}) });
 
 const areas = [...AREAS];
-for (const b of B) if (b.area && b.areaPoly) areas.push({ k: b.area, p: b.areaPoly });
+for (const b of B) if (b.area && b.areaPoly) areas.push({ k: b.area, ...(b.trees ? { trees: true } : {}), p: b.areaPoly });
 for (const x of EXTRA) buildings.push({ h: x.h, p: x.p });
 
 const map = {
