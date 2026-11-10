@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
+import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const stations = region.subway.stations;
@@ -113,4 +113,32 @@ test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the lo
   const park = region.districts.find((d) => d.id === 'olympic-park');
   const gate = [park.anchor.local[0] + park.offset[0], park.anchor.local[1] + park.offset[1]];
   for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 80, `exit ${e.n} near the Peace Gate`);
+});
+
+test('the loop follows the map: every station once, starting at Seongsu, clockwise, no long jumps back and forth', () => {
+  const list = stations.filter((s) => s.exits?.length);
+  const loop = loopOrder(list);
+  assert.equal(loop.length, list.length);
+  assert.deepEqual(new Set(loop.map((s) => s.id)), new Set(list.map((s) => s.id)));
+  assert.equal(loop[0].id, list[0].id);
+  const P = loop.map(stationAt);
+  let area = 0, len = 0;
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i], q = P[(i + 1) % P.length];
+    area += p[0] * q[1] - q[0] * p[1];
+    len += Math.hypot(q[0] - p[0], q[1] - p[1]);
+  }
+  assert.ok(area > 0, 'clockwise on a north-up map');
+  // Shorter than the order in region.json, which jumps across the city.
+  const L0 = list.map(stationAt).reduce((a, p, i, A) => a + Math.hypot(A[(i + 1) % A.length][0] - p[0], A[(i + 1) % A.length][1] - p[1]), 0);
+  assert.ok(len <= L0 + 1e-6);
+  // Seoul Forest is next to Seongsu (the first errand is one stop).
+  const f = loop.findIndex((s) => s.id === 'seoul-forest-station');
+  assert.ok(f === 1 || f === loop.length - 1);
+  // A new station is placed by where it is: one near Gyeongbokgung lands next to it.
+  const g = list.find((s) => s.id === 'gyeongbokgung-station');
+  const extra = { id: 'test-station', exits: [{ at: [stationAt(g)[0] + 60, stationAt(g)[1] + 120] }] };
+  const loop2 = loopOrder([...list, extra]);
+  const k = loop2.indexOf(extra), n = loop2.length;
+  assert.ok([loop2[(k + 1) % n].id, loop2[(k - 1 + n) % n].id].includes('gyeongbokgung-station'));
 });
