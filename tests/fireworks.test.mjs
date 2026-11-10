@@ -71,3 +71,32 @@ test('barges in the river between the island and Hongdae; the night only around 
   assert.equal(nearYeouido(0, 0), 0, 'day in Seongsu');
   assert.equal(nearYeouido(...atUV(-300, 400)), 1, 'night on the south side of the island too');
 });
+
+test('operators can move the fireworks; the drones and the fountain keep clear', async () => {
+  const fw = await import('../src/core/fireworks-show.js');
+  const { DRONE_SPAN } = await import('../src/core/drone-show.js');
+  const { timesOverlap, clockText } = await import('../src/core/show-clock.js');
+  const fountain = await import('../src/core/rainbow-fountain.js');
+  assert.equal(fw.checkFireworksTimes([540, 600]).error, 'close', 'at least 90 minutes apart');
+  assert.deepEqual(fw.checkFireworksTimes([1230]), { minutes: [1230] });
+  // The defaults never overlap; a drone show 33 minutes before is fine, 32 is not.
+  const defaults = (h) => h.map((x) => x * 60);
+  assert.equal(timesOverlap(defaults(DRONE_SHOW_HOURS_KST), DRONE_SPAN, defaults(FIREWORKS_HOURS_KST), fw.FIREWORKS_SPAN), false);
+  assert.equal(timesOverlap([507], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), false);
+  assert.equal(timesOverlap([508], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), true);
+  assert.equal(timesOverlap([613], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), false);
+  assert.equal(timesOverlap([612], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), true);
+  assert.equal(timesOverlap([1430], DRONE_SPAN, [20], fw.FIREWORKS_SPAN), true, 'round midnight too');
+  assert.equal(clockText(1230), '20:30');
+  try {
+    fw.setFireworksTimes([1230]); // 20:30
+    assert.equal(fireworksAt(KST(2026, 11, 9, 21, 10)).start, KST(2026, 11, 9, 20, 30));
+    assert.equal(fireworksAt(KST(2026, 11, 9, 9, 10)), null, 'no morning show');
+    assert.deepEqual(fountain.skipHours(), [20, 21], 'the fountain sits out 20:30 and 21:30');
+    assert.ok(!fountain.fountainAt(KST(2026, 11, 9, 21, 40))?.on);
+    assert.ok(fountain.fountainAt(KST(2026, 11, 9, 9, 40))?.on, 'and plays at 9:30 again');
+  } finally {
+    fw.setFireworksTimes(null);
+  }
+  assert.deepEqual(fountain.skipHours(), [9, 21]);
+});
