@@ -65,3 +65,17 @@ test('before 035 is run nothing changes', async () => {
   assert.deepEqual(inventory.list(), [A, B, 'gift-thing']);
   assert.equal(storage.getItem(DONE), null);
 });
+
+test('clothes with no receipt leave the closet once; ones with a receipt and non-clothes stay', async () => {
+  const { sweepNoReceipt } = await import('../src/game/old-clothes.js');
+  const { storage, receipts } = setup();
+  const [C] = Object.keys(WEARABLES).filter((id) => WEARABLES[id].price > 0 && id !== A && id !== B);
+  const inventory = inv([A, B, C, 'not-clothes']);
+  const off = [];
+  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage, takeOff: (id) => off.push(id) }), [C]);
+  assert.deepEqual(off, [C]);
+  assert.deepEqual(inventory.list().sort(), [A, B, 'not-clothes'].sort());
+  inventory.add(C);
+  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage }), [], 'only once');
+  assert.ok(inventory.has(C));
+});

@@ -70,3 +70,19 @@ export async function runOldClothes(game) {
   game.refreshItems?.();
   return res.status;
 }
+
+// Clothes with no receipt at all (gifts, code items, prizes, the outfit
+// picked at the start, clothes from before receipts): taken out once, on
+// every device (Yozi, 2026-11-11: "no record, delete it"). What comes later
+// keeps its record (receipts), so this never runs again. Returns the ids
+// taken out.
+export const SWEPT = 'mk.noReceiptSweep';
+export function sweepNoReceipt(game) {
+  const { inventory, receipts, items, storage = globalThis.localStorage } = game;
+  try { if (storage?.getItem(SWEPT)) return []; } catch { return []; }
+  const gone = inventory.list().filter((id) => items[id]?.wear && !(receipts.paid(id) > 0));
+  for (const id of gone) { game.takeOff?.(id); inventory.remove(id); }
+  try { storage?.setItem(SWEPT, String(gone.length)); } catch { /* storage blocked */ }
+  if (gone.length) { game.refreshItems?.(); game.toast?.(t('oldClothes.swept', { n: gone.length })); }
+  return gone;
+}

@@ -123,7 +123,7 @@ export const WEARABLES = {
   ...Object.fromEntries(['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => {
     const M = metal === 'gold' ? { en: 'Gold', ko: '골드', ja: 'ゴールドの', zh: '金色' } : { en: 'Silver', ko: '실버', ja: 'シルバーの', zh: '银色' };
     const S = { moon: { en: 'moon', ko: '달', ja: '月', zh: '月亮' }, plum: { en: 'plum blossom', ko: '매화', ja: '梅', zh: '梅花' }, bok: { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' } }[charm];
-    return [`acc-pendant-${metal}-${charm}`, item(charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', metal === 'gold' ? 30 : 25, { neck: `pendant-${metal}-${charm}` }, { neck: null }, WEAR_DESC.accessory, { en: `${M.en} ${S.en} pendant`, ko: `${M.ko} ${S.ko} 펜던트`, ja: `${M.ja}${S.ja}ペンダント`, zh: `${M.zh}${S.zh}吊坠` })];
+    return [`acc-pendant-${metal}-${charm}`, item(charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', 25, { neck: `pendant-${metal}-${charm}` }, { neck: null }, WEAR_DESC.accessory, { en: `${M.en} ${S.en} pendant`, ko: `${M.ko} ${S.ko} 펜던트`, ja: `${M.ja}${S.ja}ペンダント`, zh: `${M.zh}${S.zh}吊坠` })];
   }))),
   'acc-tote-forest': item('👜', 25, { back: 'tote-forest' }, { back: null }, WEAR_DESC.accessory, { en: 'Forest green tote bag', ko: '숲 초록 에코백', ja: 'フォレストグリーンのトート', zh: '森林绿帆布包' }),
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),

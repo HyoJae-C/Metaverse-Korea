@@ -3978,10 +3978,18 @@ const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.
   takeOff: takeOffItem });
 // Clothes bought before the server kept purchases: twice their price back,
 // once (game/old-clothes.js, loaded only until it's done on this device).
+// Then, once, clothes with no receipt at all leave the closet (gifts, code
+// items, prizes, the starting outfit: Yozi 2026-11-11).
 walletReady.then(() => {
-  try { if (!wallet.server || localStorage.getItem('mk.oldClothes')) return; } catch { return; }
-  import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
-    takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
+  let old, sweep;
+  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); } catch { return; }
+  if (!old && !sweep) return;
+  const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
+    refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
+  import('./game/old-clothes.js').then(async (m) => {
+    if (old) await m.runOldClothes(g).catch(() => {});
+    if (sweep) setTimeout(() => m.sweepNoReceipt(g), 4000); // (after the refund's toast)
+  }).catch(() => {});
 });
 const resaleUi = new ResaleUI({
   root: $('resale-panel'),
@@ -4822,9 +4830,11 @@ const bukchonUi = new BukchonUI({
     if (!k || (!entry && !wear)) return false;
     if (wear) { // a piece you wear (Sunra Silver Studio's pendants): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
-      if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+      const note = { name: BK_TEXT[kind], at: interior?.store.name };
+      if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
       refreshWallet();
       inventory.add(wear);
+      receipts.record(wear, k.price, wallet.lastOp, note); // (so it can be resold: every item keeps its record)
       refreshItems();
       sfx.pop?.();
       clerk && say(clerk, $('labels'), ['잘 어울려요!', 'jal eoullyeoyo!', 'It suits you!']);

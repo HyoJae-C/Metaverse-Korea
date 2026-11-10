@@ -688,6 +688,7 @@ export const FR = {
   "potato.noref": "{name} a été acheté avant que tes achats soient enregistrés sur le serveur (ou c'était un cadeau), il ne peut donc pas aller sur une natte. Les vêtements que tu achètes désormais le pourront.",
   "potato.noReceipt": "pas de reçu (cadeau, code ou ancien vêtement) : ne peut pas aller sur une natte",
   "oldClothes.paid": "Les vêtements achetés avant l'enregistrement des achats sur le serveur ne peuvent pas être revendus, nous les avons donc repris : {n} article(s), {won} (le double du prix).",
+  "oldClothes.swept": "Les vêtements sans trace d'achat (cadeaux, codes, lots, tenue de départ) ont été retirés de ton armoire : {n} article(s). Désormais, chaque objet garde sa trace.",
   "potato.listed": "Sur ta natte ! Les autres peuvent l'acheter même en ton absence.",
   "potato.back": "{name} est de retour dans ton placard.",
   "potato.sold": "vendu · +🪙 {n}",
