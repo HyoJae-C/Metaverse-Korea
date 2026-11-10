@@ -4,8 +4,29 @@
 // swapped for another, like trousers).
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
+import { ANIMAL_LOOKS } from './appearance.js';
 
-const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price, wear, off, desc, name, ...extra });
+const ANIMAL_NAMES = {
+  'cat-black': { en: 'Black cat', ko: '검은 고양이', ja: '黒猫', zh: '黑猫' },
+  'cat-ginger': { en: 'Ginger cat', ko: '치즈 고양이', ja: '茶トラ猫', zh: '橘猫' },
+  dog: { en: 'Puppy', ko: '강아지', ja: '子犬', zh: '小狗' },
+  'bunny-white': { en: 'White bunny', ko: '흰 토끼', ja: '白うさぎ', zh: '小白兔' },
+  'bunny-pink': { en: 'Pink bunny', ko: '분홍 토끼', ja: 'ピンクうさぎ', zh: '粉兔子' },
+  panda: { en: 'Panda', ko: '판다', ja: 'パンダ', zh: '熊猫' },
+};
+
+// Taken off the shops to keep at most two colours of one design (2026-11-10).
+// Anyone who bought one keeps it: it still works and shows "Retired".
+export const RETIRED = new Set([
+  'outfit-jacket-cocoa', 'outfit-jacket-olive', 'outfit-hoodie-orange', 'outfit-shirt-olive', 'outfit-varsity-green', 'outfit-knit-navy',
+  'skirt-pleats-mini-white', 'skirt-pleats-mini-black', 'skirt-solid-mini-black', 'skirt-solid-mini-camel', 'skirt-solid-long-butter', 'skirt-floral-long-butter',
+  'acc-cap-sky', 'acc-cap-orange', 'acc-beanie-mustard',
+  'acc-glasses-gold', 'acc-glasses-pink', 'acc-sunglasses-brown', 'acc-sunglasses-blue',
+  'acc-scarf-cream', 'acc-tote-brick',
+]);
+
+// price: listed in ₩1,000s (70 = ₩70,000).
+const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
 // Trousers also take a skirt off (look.skirt), so a pair can be put back on.
 const pants = (id) => ({ pants: id, skirt: null });
 
@@ -24,6 +45,30 @@ export const WEARABLES = {
   'outfit-puffer-black': item('🧥', 110, { model: 'puffer-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black puffer jacket', ko: '블랙 숏패딩', ja: '黒のショートダウン', zh: '黑色短款羽绒服' }, { outfit: 'puffer-black' }),
   'outfit-puffer-mustard': item('🧥', 110, { model: 'puffer-mustard' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Mustard puffer jacket', ko: '머스타드 숏패딩', ja: 'マスタードのショートダウン', zh: '芥末黄短款羽绒服' }, { outfit: 'puffer-mustard' }),
   'outfit-padding-white': item('🤍', 140, { model: 'padding-white' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'White long padded coat', ko: '화이트 롱패딩', ja: '白のロングダウン', zh: '白色长款羽绒服' }, { outfit: 'padding-white' }),
+  // Men's clothes (Dongdaemun Fashion Town: Gentle Floor, Gwajam Club).
+  'outfit-suit-charcoal': item('🤵', 150, { model: 'suit-charcoal' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Charcoal suit jacket', ko: '차콜 수트 재킷', ja: 'チャコールのスーツジャケット', zh: '炭灰色西装外套' }, { outfit: 'suit-charcoal' }),
+  'outfit-suit-navy': item('🤵', 150, { model: 'suit-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy suit jacket', ko: '네이비 수트 재킷', ja: 'ネイビーのスーツジャケット', zh: '藏青色西装外套' }, { outfit: 'suit-navy' }),
+  'outfit-coat-camel': item('🧥', 180, { model: 'coat-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel wool coat', ko: '카멜 울 코트', ja: 'キャメルのウールコート', zh: '驼色羊毛大衣' }, { outfit: 'coat-camel' }),
+  'outfit-coat-charcoal': item('🧥', 180, { model: 'coat-charcoal' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Charcoal wool coat', ko: '차콜 울 코트', ja: 'チャコールのウールコート', zh: '炭灰色羊毛大衣' }, { outfit: 'coat-charcoal' }),
+  'outfit-varsity-navy': item('🧥', 90, { model: 'varsity-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy varsity jacket', ko: '네이비 과잠', ja: 'ネイビーのスタジャン', zh: '藏青色棒球夹克' }, { outfit: 'varsity-navy' }),
+  'outfit-varsity-black': item('🧥', 90, { model: 'varsity-black' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Black varsity jacket', ko: '블랙 과잠', ja: 'ブラックのスタジャン', zh: '黑色棒球夹克' }, { outfit: 'varsity-black' }),
+  'outfit-varsity-green': item('🧥', 90, { model: 'varsity-green' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Green varsity jacket', ko: '그린 과잠', ja: 'グリーンのスタジャン', zh: '绿色棒球夹克' }, { outfit: 'varsity-green' }),
+  'outfit-knit-grey': item('🧶', 55, { model: 'knit-grey' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Grey crew-neck knit', ko: '그레이 라운드 니트', ja: 'グレーのクルーネックニット', zh: '灰色圆领毛衣' }, { outfit: 'knit-grey' }),
+  'outfit-knit-navy': item('🧶', 55, { model: 'knit-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy crew-neck knit', ko: '네이비 라운드 니트', ja: 'ネイビーのクルーネックニット', zh: '藏青色圆领毛衣' }, { outfit: 'knit-navy' }),
+  'outfit-knit-cream': item('🧶', 55, { model: 'knit-cream' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Cream crew-neck knit', ko: '크림 라운드 니트', ja: 'クリームのクルーネックニット', zh: '奶油色圆领毛衣' }, { outfit: 'knit-cream' }),
+  // Unisex tops, one colour each (data/characters/kaykit2.js, TOPS).
+  'outfit-sweat-pistachio': item('👕', 50, { model: 'sweat-pistachio' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Pistachio sweatshirt', ko: '피스타치오 맨투맨', ja: 'ピスタチオのスウェット', zh: '开心果绿卫衣' }, { outfit: 'sweat-pistachio' }),
+  'outfit-cardigan-brown': item('🧥', 55, { model: 'cardigan-brown' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Brown cardigan', ko: '브라운 가디건', ja: 'ブラウンのカーディガン', zh: '棕色开衫' }, { outfit: 'cardigan-brown' }),
+  'outfit-vest-denim': item('🦺', 50, { model: 'vest-denim' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Denim vest', ko: '데님 조끼', ja: 'デニムベスト', zh: '牛仔背心' }, { outfit: 'vest-denim' }),
+  'outfit-rugby-green': item('👕', 50, { model: 'rugby-green' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Green rugby shirt', ko: '그린 럭비 티', ja: 'グリーンのラガーシャツ', zh: '绿色橄榄球衫' }, { outfit: 'rugby-green' }),
+  'outfit-polo-mint': item('👕', 45, { model: 'polo-mint' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Mint polo shirt', ko: '민트 카라 티', ja: 'ミントのポロシャツ', zh: '薄荷绿Polo衫' }, { outfit: 'polo-mint' }),
+  'outfit-jersey-red': item('⚾', 60, { model: 'jersey-red' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Red baseball jersey', ko: '레드 야구 저지', ja: 'レッドのベースボールシャツ', zh: '红色棒球衫' }, { outfit: 'jersey-red' }),
+  'outfit-track-blue': item('🧥', 60, { model: 'track-blue' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Blue track jacket', ko: '블루 트레이닝 집업', ja: 'ブルーのトラックジャケット', zh: '蓝色运动夹克' }, { outfit: 'track-blue' }),
+  'outfit-fleece-orange': item('🧥', 70, { model: 'fleece-orange' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Orange fleece jacket', ko: '오렌지 플리스', ja: 'オレンジのフリース', zh: '橙色摇粒绒外套' }, { outfit: 'fleece-orange' }),
+  'outfit-breton-navy': item('👕', 40, { model: 'breton-navy' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Striped long-sleeve tee', ko: '스트라이프 티', ja: 'ボーダーの長袖T', zh: '条纹长袖T恤' }, { outfit: 'breton-navy' }),
+  'outfit-turtle-camel': item('👕', 50, { model: 'turtle-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel turtleneck', ko: '카멜 터틀넥', ja: 'キャメルのタートルネック', zh: '驼色高领衫' }, { outfit: 'turtle-camel' }),
+  'outfit-windbreaker-yellow': item('🧥', 75, { model: 'windbreaker-yellow' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow windbreaker', ko: '옐로 바람막이', ja: 'イエローのウィンドブレーカー', zh: '黄色防风夹克' }, { outfit: 'windbreaker-yellow' }),
+  'outfit-vest-padded': item('🦺', 80, { model: 'vest-padded' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Sky blue padded vest', ko: '하늘색 패딩 조끼', ja: '水色のダウンベスト', zh: '天蓝色羽绒背心' }, { outfit: 'vest-padded' }),
   // Trousers (a colour of look.pants).
   'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
   'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
@@ -74,10 +119,26 @@ export const WEARABLES = {
   'acc-scarf': item('🧣', 25, { neck: 'scarf' }, { neck: null }, WEAR_DESC.accessory, { en: 'Coral knit scarf', ko: '코랄 니트 목도리', ja: 'コーラルのニットマフラー', zh: '珊瑚色针织围巾' }),
   'acc-scarf-mint': item('🧣', 25, { neck: 'scarf-mint' }, { neck: null }, WEAR_DESC.accessory, { en: 'Mint knit scarf', ko: '민트 니트 목도리', ja: 'ミントのニットマフラー', zh: '薄荷色针织围巾' }),
   'acc-scarf-cream': item('🧣', 25, { neck: 'scarf-cream' }, { neck: null }, WEAR_DESC.accessory, { en: 'Cream knit scarf', ko: '크림 니트 목도리', ja: 'クリームのニットマフラー', zh: '奶油色针织围巾' }),
+  // Pendants (Seosunra-gil): silver or gold, a moon, a plum blossom or the 복 (luck) charm.
+  ...Object.fromEntries(['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => {
+    const M = metal === 'gold' ? { en: 'Gold', ko: '골드', ja: 'ゴールドの', zh: '金色' } : { en: 'Silver', ko: '실버', ja: 'シルバーの', zh: '银色' };
+    const S = { moon: { en: 'moon', ko: '달', ja: '月', zh: '月亮' }, plum: { en: 'plum blossom', ko: '매화', ja: '梅', zh: '梅花' }, bok: { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' } }[charm];
+    return [`acc-pendant-${metal}-${charm}`, item(charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', metal === 'gold' ? 30 : 25, { neck: `pendant-${metal}-${charm}` }, { neck: null }, WEAR_DESC.accessory, { en: `${M.en} ${S.en} pendant`, ko: `${M.ko} ${S.ko} 펜던트`, ja: `${M.ja}${S.ja}ペンダント`, zh: `${M.zh}${S.zh}吊坠` })];
+  }))),
   'acc-tote-forest': item('👜', 25, { back: 'tote-forest' }, { back: null }, WEAR_DESC.accessory, { en: 'Forest green tote bag', ko: '숲 초록 에코백', ja: 'フォレストグリーンのトート', zh: '森林绿帆布包' }),
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
   'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),
   'acc-backpack-graffiti': item('🎒', 45, { back: 'backpack-graffiti' }, { back: null }, WEAR_DESC.accessory, { en: 'Graffiti backpack', ko: '그래피티 백팩', ja: 'グラフィティのリュック', zh: '涂鸦双肩包' }),
+  // Nyang Meong To Pan (Another Land): animal-ear headbands and matching paw gloves.
+  ...Object.fromEntries(ANIMAL_LOOKS.flatMap((a) => {
+    const n = ANIMAL_NAMES[a.id];
+    return [
+      ['acc-ears-' + a.id, item(a.emoji, 20, { head: 'ears-' + a.id, hatPatch: null }, { head: null }, WEAR_DESC.accessory,
+        { en: `${n.en} ears headband`, ko: `${n.ko} 귀 머리띠`, ja: `${n.ja}耳カチューシャ`, zh: `${n.zh}耳朵发箍` })],
+      ['acc-paws-' + a.id, item(a.emoji, 25, { hand: 'paws-' + a.id }, { hand: null }, WEAR_DESC.accessory,
+        { en: `${n.en} paw gloves`, ko: `${n.ko} 발바닥 장갑`, ja: `${n.ja}の肉球手袋`, zh: `${n.zh}爪爪手套` })],
+    ];
+  })),
   // Skirts (look.skirt, data/skirts.js): two lengths, many colours and patterns.
   ...Object.fromEntries(Object.entries(SKIRTS).map(([id, sk]) => ['skirt-' + id,
     item('👗', SKIRT_PRICE[sk.length], { skirt: id }, { skirt: null }, WEAR_DESC.skirt, skirtName(sk))])),

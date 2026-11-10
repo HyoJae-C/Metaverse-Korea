@@ -1,6 +1,6 @@
 // Library books: pick one from the shelf to carry, then read it page by page
 // while sitting anywhere (a café, a bench, the jjimjilbang...).
-import { BOOKS, bookById, pageCount, EDITIONS, defaultEdition, pageUrl } from '../core/books.js';
+import { bookById, pageCount, EDITIONS, defaultEdition, pageUrl, litUrl, SHELF_SECTIONS, booksInSection } from '../core/books.js';
 import { getLanguage } from '../core/i18n.js';
 import { L, fmt } from './pocha-ui.js';
 
@@ -20,7 +20,26 @@ const T = {
   next: { en: 'Next ▶', ko: '다음 ▶', ja: '次へ ▶', zh: '下一页 ▶' },
   putDown: { en: 'Put the book away', ko: '책 내려놓기', ja: '本をしまう', zh: '把书放下' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
+  freeNote: {
+    en: 'Free to read: Korean classics whose copyright has ended, old folk tales, and books written for Another Seoul. Some are in Korean only.',
+    ko: '저작권이 끝난 한국 문학과 옛이야기, Another Seoul이 새로 쓴 책을 무료로 읽을 수 있어요. 한국어로만 된 책도 있어요.',
+    ja: '著作権が切れた韓国の名作、昔話、Another Seoulが書いた本を無料で読めます。韓国語だけの本もあります。',
+    zh: '免费阅读版权已过期的韩国经典、民间故事和 Another Seoul 新写的书。有些书只有韩文。',
+  },
+  cover: { en: 'Cover', ko: '표지', ja: '表紙', zh: '封面' },
+  start: { en: 'Start reading ▶', ko: '읽기 시작 ▶', ja: '読みはじめる ▶', zh: '开始阅读 ▶' },
+  source: { en: 'Source', ko: '출처', ja: '出典', zh: '出处' },
+  license: { en: 'Copyright', ko: '저작권', ja: '著作権', zh: '版权' },
+  loading: { en: 'Opening the book…', ko: '책을 펴는 중…', ja: '本を開いています…', zh: '正在打开书…' },
+  failed: { en: "Couldn't open this book. Check your connection and try again.", ko: '책을 열지 못했어요. 연결을 확인하고 다시 시도해 주세요.', ja: '本を開けませんでした。接続を確認してもう一度お試しください。', zh: '无法打开这本书。请检查网络后重试。' },
+  retry: { en: 'Try again', ko: '다시 시도', ja: '再試行', zh: '重试' },
+  modeKo: { en: '한국어', ko: '한국어', ja: '한국어', zh: '한국어' },
+  modeEn: { en: 'English', ko: 'English', ja: 'English', zh: 'English' },
+  modeBoth: { en: 'Both', ko: '함께 보기', ja: '両方', zh: '对照' },
 };
+// Opened library books, by id (the JSON is fetched once per visit).
+const litCache = new Map();
+const LIT_MODES = ['ko', 'en', 'both'];
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -36,7 +55,7 @@ export class BookUI {
     Object.assign(this, { root, carrying, take, putDown, getPage, setPage });
   }
   get open() { return !this.root.hidden; }
-  close() { this.root.hidden = true; this.root.classList.remove('book-full'); }
+  close() { this.root.hidden = true; this.root.classList.remove('book-full', 'book-lit'); this._litOpen = null; }
   _head(title) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', tt('close'));
@@ -44,17 +63,31 @@ export class BookUI {
     this.root.replaceChildren(x, el('h3', null, title));
   }
 
-  showShelf() {
+  // One bookshelf = one section. The chips on top switch to another shelf
+  // without walking over to it.
+  showShelf(section = this.section || 'learn') {
+    const sec = SHELF_SECTIONS.find((x) => x.id === section) || SHELF_SECTIONS[0];
+    this.section = sec.id;
     this.root.hidden = false;
-    this._head('📚 ' + tt('shelf'));
-    this.root.append(el('p', 'order-hint', tt('shelfHow')));
+    this.root.classList.remove('book-full', 'book-lit');
+    this._head(`${sec.icon} ${L(sec.name)}`);
+    const tabs = el('div', 'lit-modes book-tabs');
+    for (const x of SHELF_SECTIONS) {
+      const c = el('button', 'chip' + (x.id === sec.id ? ' on' : ''), `${x.icon} ${L(x.name)}`);
+      c.onclick = () => this.showShelf(x.id);
+      tabs.append(c);
+    }
+    this.root.append(tabs, el('p', 'order-hint', tt('shelfHow')));
+    if (sec.id !== 'learn') this.root.append(el('p', 'fine', tt('freeNote')));
     const grid = el('div', 'book-grid');
-    for (const b of BOOKS) {
+    for (const b of booksInSection(sec.id)) {
       const mine = this.carrying() === b.id;
       const card = el('button', 'book-card' + (mine ? ' picked' : ''));
       card.style.setProperty('--spine', b.color);
-      card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)), el('small', null, mine ? tt('carrying') : tt('pages', { n: pageCount(b) })));
-      card.onclick = () => { this.take(b.id); this.showShelf(); };
+      card.append(el('span', 'book-icon', b.icon), el('strong', null, L(b.title)));
+      if (b.lit) card.append(el('small', 'book-author', L(b.lit.author)));
+      card.append(el('small', null, mine ? tt('carrying') : tt('pages', { n: pageCount(b) })));
+      card.onclick = () => { this.take(b.id); this.showShelf(sec.id); };
       grid.append(card);
     }
     this.root.append(grid);
@@ -65,7 +98,8 @@ export class BookUI {
     if (!b) return;
     this.root.hidden = false;
     if (b.textbook) { this._readTextbook(b); return; }
-    this.root.classList.remove('book-full');
+    if (b.lit) { this._readLit(b); return; }
+    this.root.classList.remove('book-full', 'book-lit');
     const n = b.pages.length;
     const i = Math.min(n - 1, Math.max(0, this.getPage(id) | 0));
     this._head(`${b.icon} ${L(b.title)}`);
@@ -86,6 +120,106 @@ export class BookUI {
     const foot = el('div', 'order-actions');
     foot.append(away);
     this.root.append(page, nav, foot);
+  }
+
+  // Stories and poems: page 0 is the cover (author, source, copyright), then
+  // each page shows the Korean original, the English translation, or both.
+  get litMode() {
+    let m = this._litMode;
+    try { m = m || localStorage.getItem('mk.litMode'); } catch { /* storage blocked */ }
+    return LIT_MODES.includes(m) ? m : getLanguage() === 'ko' ? 'ko' : 'en';
+  }
+  set litMode(m) { this._litMode = m; try { localStorage.setItem('mk.litMode', m); } catch { /* storage blocked */ } }
+
+  _readLit(b) {
+    const root = this.root;
+    root.classList.remove('book-full');
+    root.classList.add('book-lit');
+    this._litOpen = b.id;
+    const data = litCache.get(b.id);
+    if (data && !(data instanceof Promise)) { this._renderLit(b, data); return; }
+    this._head(`${b.icon} ${L(b.title)}`);
+    if (data === undefined && this._litFailed === b.id) {
+      root.append(el('p', 'order-hint', tt('failed')));
+      const again = el('button', 'primary', tt('retry'));
+      again.onclick = () => { this._litFailed = null; this._readLit(b); };
+      const foot = el('div', 'order-actions');
+      foot.append(again);
+      root.append(foot);
+      return;
+    }
+    root.append(el('p', 'order-hint', tt('loading')));
+    if (data) return; // already on its way
+    const BASE = import.meta.env?.BASE_URL || '/';
+    const p = fetch(BASE + litUrl(b)).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
+    litCache.set(b.id, p);
+    p.then((d) => { litCache.set(b.id, d); }, () => { litCache.delete(b.id); this._litFailed = b.id; })
+      .then(() => { if (!root.hidden && this._litOpen === b.id) this._readLit(b); });
+  }
+
+  _renderLit(b, data) {
+    const root = this.root;
+    const n = data.pages.length;
+    const i = Math.min(n, Math.max(0, this.getPage(b.id) | 0));
+    const go = (j) => { this.setPage(b.id, j); this._renderLit(b, data); root.scrollTo?.(0, 0); };
+    this._head(`${b.icon} ${L(b.title)}`);
+    const page = el('div', 'book-page lit-page');
+    page.style.setProperty('--spine', b.color);
+    const mode = this.litMode;
+    if (i === 0) {
+      page.classList.add('lit-cover');
+      page.append(el('div', 'lit-cover-icon', b.icon), el('p', 'lit-cover-title', data.title.ko));
+      if (data.title.en) page.append(el('p', 'lit-cover-sub', data.title.en));
+      page.append(el('p', 'lit-cover-author', L(data.author)), el('p', 'lit-about', L(data.about)));
+      const src = el('p', 'lit-fine');
+      src.append(el('strong', null, tt('source') + ': '));
+      data.source.split(' · ').forEach((u, k) => {
+        if (k) src.append(' · ');
+        if (/^https?:/.test(u)) {
+          const a = el('a', null, decodeURI(u).replace(/^https?:\/\//, ''));
+          a.href = u; a.target = '_blank'; a.rel = 'noopener';
+          src.append(a);
+        } else src.append(u);
+      });
+      const lic = el('p', 'lit-fine');
+      lic.append(el('strong', null, tt('license') + ': '), data.license);
+      page.append(src, lic);
+    } else {
+      const pg = data.pages[i - 1];
+      const hd = pg.heading;
+      if (hd) page.append(el('h4', 'lit-heading', mode === 'ko' || !hd.en ? hd.ko : mode === 'en' ? hd.en : `${hd.ko} · ${hd.en}`));
+      const block = (text, cls, lang) => {
+        const box = el('div', 'lit-text ' + cls);
+        box.lang = lang;
+        for (const para of text.split(/\n\n+/)) {
+          box.append(para.startsWith('# ') ? el('h5', 'lit-sub', para.slice(2)) : el('p', null, para));
+        }
+        return box;
+      };
+      // Korean-only pages show the Korean whatever the mode.
+      if (mode !== 'en' || !pg.en) page.append(block(pg.ko, 'lit-ko', 'ko'));
+      if (mode !== 'ko' && pg.en) page.append(block(pg.en, 'lit-en', 'en'));
+    }
+    const modes = el('div', 'lit-modes');
+    for (const m of LIT_MODES) {
+      const c = el('button', 'chip' + (m === mode ? ' on' : ''), tt({ ko: 'modeKo', en: 'modeEn', both: 'modeBoth' }[m]));
+      c.onclick = () => { this.litMode = m; this._renderLit(b, data); };
+      modes.append(c);
+    }
+    const nav = el('div', 'order-actions');
+    const prev = el('button', 'chip', tt('prev'));
+    prev.disabled = i === 0;
+    prev.onclick = () => go(i - 1);
+    const next = el('button', 'primary', i === 0 ? tt('start') : tt('next'));
+    next.disabled = i === n;
+    next.onclick = () => go(i + 1);
+    const away = el('button', 'chip', '📕');
+    away.title = tt('putDown');
+    away.setAttribute('aria-label', tt('putDown'));
+    away.onclick = () => { this.putDown(); this.close(); };
+    nav.append(prev, el('span', 'book-num', i === 0 ? tt('cover') : `${i} / ${n}`), next, away);
+    // Books written only in Korean have nothing to switch.
+    root.append(...(data.pages.some((p) => p.en) ? [modes] : []), page, nav);
   }
 
   // Textbooks: full-screen page images, for studying. Swipe or tap the

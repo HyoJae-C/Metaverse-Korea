@@ -1,0 +1,59 @@
+// Ttukseom drone light show (한강 드론 라이트쇼): when it happens. Pure, no
+// DOM, so it can be unit-tested; the drones themselves are in drone-sky.js,
+// which is only downloaded when you walk into Ttukseom park near show time.
+//
+// The show is in the game's night (show-clock.js, weather.js), and the park
+// makes sure of it too: during a show Ttukseom park's sky is night
+// (park.js), fading in and out.
+//
+// Everyone's clock gives the same show at the same moment (like the lucky
+// fishing spot and the weather), so friends watch the same drones together.
+
+import { smooth, showStarts, cycleNumber, DRONES, SHOW_EVERY } from './show-clock.js';
+
+// When: one night in four of the game's two-hour day (show-clock.js),
+// taking turns with the Yeouido fireworks: three times a real day.
+export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
+export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drones rise
+export const LAND_SECONDS = 180; // after the end: they land, the sky brightens
+export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
+
+// How dark the park's sky is t seconds into a show: 0 = day, 1 = night.
+// Darkens over the 3 minutes before the start, stays dark through the show
+// and the landing, brightens over the last 2 minutes.
+export function nightAt(t) {
+  if (t < -LIFT_SECONDS || t > SHOW_SECONDS + LAND_SECONDS) return 0;
+  if (t < -60) return smooth((t + LIFT_SECONDS) / (LIFT_SECONDS - 60));
+  if (t > SHOW_SECONDS + 60) return 1 - smooth((t - SHOW_SECONDS - 60) / (LAND_SECONDS - 60));
+  return 1;
+}
+
+// The show around `now`, from 10 minutes before the start to the end of the
+// landing: { start (ms), t (seconds from the start, negative before),
+// night (0–1), on (the drones are up: lift-off to landing) }. null otherwise.
+export function droneShowAt(now = Date.now()) {
+  for (const start of showStarts(now, DRONES)) {
+    const t = (now - start) / 1000;
+    if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + LAND_SECONDS) {
+      return { start, t, night: nightAt(t), on: t >= -LIFT_SECONDS && t < SHOW_SECONDS + 60 };
+    }
+  }
+  return null;
+}
+
+// The next show's start (ms) after the current one (or after now).
+export function nextDroneShow(now = Date.now()) {
+  return showStarts(now, DRONES).find((s) => s > now);
+}
+
+// Which show of all time this is (counts up show by show): picks the
+// changing part of the program, the same on every screen.
+export const showNumber = (start) => Math.floor(cycleNumber(start) / SHOW_EVERY);
+
+// Where it happens, in the Ttukseom park room's space (park.js: the river is
+// z < -4, the duck boats stay at z > -44, the bridge is at z = -74). The
+// drones draw on an upright "sky plane" in front of the bridge, sized so a
+// phone held upright still sees the whole picture from the lawn.
+export const SKY = { x: 0, y: 16, z: -52, w: 28, h: 20 };
+// The launch barge the drones rise from and land on (there in the day too).
+export const BARGE = { x: 0, z: -52, w: 15, d: 6, deck: 0.55 };

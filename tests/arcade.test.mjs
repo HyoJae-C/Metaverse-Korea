@@ -5,6 +5,7 @@ import {
   PITCH_SPEEDS, flightTime, judgeSwing, hitDistance, battingTally, betterBatting,
   Gallery, GALLERY_ROWS, GALLERY_SHOTS, TARGETS,
   dartScore, dartAim, dartLand, RING, dartsMsg, parseDarts,
+  dartPack, dartUnpack, swayPack, swayUnpack, challengerThrows, DART_SECONDS, DARTS_EACH,
   loadRecords, saveRecord, RECORD_KEY,
 } from '../src/core/arcade.js';
 
@@ -55,11 +56,30 @@ test('darts: the standard board', () => {
 });
 
 test('darts with a friend: messages round-trip and junk is ignored', () => {
-  assert.deepEqual(parseDarts(dartsMsg('ab-1', 's', 7, 140)), { to: 'ab-1', kind: 's', thrown: 7, total: 140 });
-  assert.deepEqual(parseDarts(dartsMsg('ab-1', 'i')), { to: 'ab-1', kind: 'i', thrown: 0, total: 0 });
-  assert.equal(parseDarts('darts:ab:x:0:0'), null);
-  assert.equal(parseDarts('darts:ab:s:0:99999'), null);
+  assert.deepEqual(parseDarts(dartsMsg('ab-1', 't', 7, 1400)), { to: 'ab-1', kind: 't', thrown: 7, total: 1400, extra: null });
+  assert.deepEqual(parseDarts(dartsMsg('ab-1', 'i')), { to: 'ab-1', kind: 'i', thrown: 0, total: 0, extra: null });
+  assert.deepEqual(parseDarts(dartsMsg('ab-1', 'h', 19, 2000, 3999)), { to: 'ab-1', kind: 'h', thrown: 19, total: 2000, extra: 3999 });
+  assert.equal(parseDarts('darts:ab:q:0:0'), null);
+  assert.equal(parseDarts('darts:ab:h:0:99999'), null);
+  assert.equal(parseDarts('darts:ab:h:0:1:99999'), null);
   assert.equal(parseDarts('wave'), null);
+});
+
+test('darts with a friend: turns, 10 each, 7 seconds, and the same dart on both screens', () => {
+  assert.equal(DART_SECONDS, 7);
+  assert.equal(DARTS_EACH, 10);
+  // The challenger throws darts 0, 2, 4 ... and the friend 1, 3, 5 ...
+  const mine = [...Array(DARTS_EACH * 2).keys()].filter(challengerThrows);
+  assert.deepEqual(mine, [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
+  for (const v of [-1.234567, 0, 0.0371, 0.999, 1.5]) {
+    const back = dartUnpack(dartPack(v));
+    assert.ok(Math.abs(back - v) <= 0.0005, String(v));
+    assert.equal(dartPack(back), dartPack(v)); // rounded once, stays put
+  }
+  assert.equal(dartUnpack(dartPack(9)), 2); // clamped, still fits the message
+  assert.ok(parseDarts(dartsMsg('a', 'h', 3, dartPack(-9), dartPack(9))));
+  for (const s of [0, 3.3333, 19.99]) assert.ok(Math.abs(swayUnpack(swayPack(s)) - s) <= 0.001);
+  assert.ok(parseDarts(dartsMsg('a', 't', 0, swayPack(19.99))));
 });
 
 test('records: only a better result is kept', () => {
@@ -82,8 +102,24 @@ test('no betting: the arcade games never touch the wallet', () => {
 });
 
 test('the batting cage, the gallery booth and the dartboard exist in the data', () => {
-  const stores = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url))).stores;
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   assert.ok(stores.find((s) => s.workshop === 'batting'));
   assert.ok(stores.find((s) => s.id === 'bar-hush')?.darts);
   assert.ok(stores.find((s) => s.workshop === 'themepark'));
+});
+
+test('balloon booth medals: gold wins the small teddy bear, a plush for your home', async () => {
+  const { galleryMedal, GALLERY_MEDALS, GALLERY_GOLD_PRIZE, TARGETS: TG, GALLERY_SHOTS: N } = await import('../src/core/arcade.js');
+  const { ITEMS } = await import('../src/core/inventory.js');
+  assert.equal(galleryMedal(0), null);
+  assert.equal(galleryMedal(149), null);
+  assert.equal(galleryMedal(150), 'bronze');
+  assert.equal(galleryMedal(250), 'silver');
+  assert.equal(galleryMedal(349), 'silver');
+  assert.equal(galleryMedal(350), 'gold');
+  // Gold is reachable with the corks you have, but needs more than balloons and ducks.
+  assert.ok(GALLERY_MEDALS[0][1] <= N * TG.star.points);
+  assert.ok(GALLERY_MEDALS[0][1] > N * TG.duck.points);
+  assert.ok(ITEMS[GALLERY_GOLD_PRIZE]?.plush);
+  assert.equal(ITEMS[GALLERY_GOLD_PRIZE].name.ko, '작은 곰인형');
 });

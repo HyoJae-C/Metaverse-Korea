@@ -11,9 +11,14 @@ First stop: **Seongsu-dong, Seoul**.
 - Street name card in the original Korean, with a Translate button
 - Multiplayer: see other travellers in real time, with nicknames and emotes (Supabase Realtime)
 
+## Ready, not on the map yet
+
+- Folk games (전통놀이): yutnori against 1-3 locals with the real rules, tuho (arrow toss), jegichagi (counted in native Korean numbers) and neolttwigi (seesaw jumping), with 3D props and text in 9 languages. Play them in the folk games yard inside Namsangol Hanok Village (Jung-gu, through the gate south of Toegye-ro), where the locals are already playing; also at `dev/folk-games.html`. See docs/FOLK-GAMES.md
+- Mini basketball (미니 농구): pick a free throw, dunk, fadeaway or layup, play its gauge (stop the needle, tap fast, two timings, or step-step-shoot on the beat), and your character does one of three moves per shot depending on how well you did (e.g. two-hand, one-hand or back dunk). Five shots a round, medals like the folk games. On Olympic Park's Peace Plaza, just south of the skate park; also at `dev/basketball.html`. See docs/BASKETBALL.md
+
 ## Step 2 (in progress)
 
-- Meeting zones A–F with tall lettered signposts ("meet at B!")
+- Meeting zones with tall signposts coded by gu ("meet at A-2!"): each gu has a letter (Seongdong-gu A, Jongno-gu B, ...) and its zones are numbered, A-1, A-2 ...
 - Map (M key or 🗺️): streets, zones, shops, you and other players; tap to get walking guidance
 - 11 fictional sample stores with Korean signs and a Translate signs toggle
 - Store interiors with product displays, try-on for clothes and accessories, a virtual shopping bag
@@ -28,7 +33,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Nyang Nyang Cat Café: six cats wander, sit, nap, play and come over to visitors; walk up to one and tap Pat (cats are local to each visitor). It is the only animal café in Seongsu
 - Text chat (💬, or T): speech bubbles over heads and a short log
 - Homes: Forest Lane Apartments and Sunny Villa (fictional). Walk in and tap 🛋️ Decorate to place, rotate, move and remove furniture; you can sit on your own chairs and sofa. Saved on this device
-- Bike share: rent a bike at a 🚲 station and ride faster than running (no stamina); get off anywhere
+- Your own bike: everyone has one (🚲 button) and rides faster than running (no stamina); get off anywhere. There are no rental stations
 - Coins (🪙) with a demo "watch an ad" button (+20, 5 a day); virtual, no cash value, saved on this device
 - NPCs: passers-by stroll the streets and every shop has a clerk; say hi and they answer in Korean with romanization and English
 - Hat workshop (Seongsu Hat Atelier): pick a shape, colour and embroidered patch; see it on your character live and save it
@@ -42,7 +47,7 @@ First stop: **Seongsu-dong, Seoul**.
 - Hongdae (Mapo-gu, in the north-west next to Seodaemun): a hand-made area loosely after the real one (Yanghwa-ro, Hongdae Walking Street, Wausan-ro and alleys), with Hongik Univ. Station, 5 cafés and 7 shops (fashion, beauty, stickers, records), all fictional
 - Hongdae animal café row, on the south end of Hongdae Walking Street: Gogo Cat Café (six cats, Mochi among them), Neoguri Raccoon Café (five raccoons), Big Paws Dog Café (six big dogs) and Haemjji Hamster Café
 - Hongdae Busking Zone: a busker plays on a street stage with a crowd, and the busking song plays while you're near. Step onto the stage and tap 🎤 Busk to perform yourself (others see you); now and then a listener tips 🪙 5 (6 tips a day)
-- Starlight Tarot (별빛 타로), a tarot café in a Hongdae alley: sit at the reader's table and pay 🪙 10 to draw three cards (past, present, future) from the 22 major arcana, each with a short reading. Just for fun
+- Starlight Tarot (별빛 타로), a tarot café in a Hongdae alley: sit at the reader's table and pay 🪙 40 to draw three cards from the 78-card deck (past/present/future, dating, friendship or money luck), each with a short reading, then a summary that ties the three cards together and a funny one-word verdict. Just for fun
 - Perfume shops: 10 fictional perfumeries, 3 perfumes each, 6 per style (funny, elegant, cute, simple, clean), plus 4 handmade perfume workshops and a perfume pop-up. Most are in Seongsu; five of the playful ones (KKEUNG KKEUNG & CO., OOPS PARFUM, HEART PPYONG PPYONG, MOAI SCENT LAB, PUNGGYEONG SCENT ROOM) make up a perfume alley in Hongdae, on the Hongdae alley just off the walking street with limited editions (`limited`: on sale only between two dates). A bottle goes in your bag and has 5 sprays; hold it and tap 🧴 Spray. In the shop, 👃 Smell the tester shows the effect for free (people in the same shop see it too). A spray lasts 3 minutes, and every ~7 seconds a small effect of that perfume (a stink cloud, hearts, petals, bubbles…) pops up next to you. Others within about 20 m see it too; it adds one short field to the state already sent, no extra messages. The two elegant houses (Maison Seoulsup, Atelier Noir) are larger, with 8 display tables, and their clerk walks around greeting visitors (`displays`, `clerkRoams`). Perfumes and their effects are data in stores.json (`perfume`, `fx`)
 - Hair salons are spread over the areas: Gawison Hair and Mulgyeol Hair in Seongsu; Neon Punk Hair, Indie Hair Room, Groove Hair and Stage Idol Hair (idol cuts for men) in Hongdae; Gareuma Hair on the Seodaemun campus street; and Itaewon Barbershop, a classic men's barber, on Itaewon-ro
 - Lip Street on Yeonmujang-gil (east of Seongsui-ro): six lip tint shops that each sell one colour family (red, coral, pink, purple, green, blue), with signs in their own colour. Sit at the mirror and try the shades on (fictional shops)
@@ -55,8 +60,24 @@ First stop: **Seongsu-dong, Seoul**.
 - Itaewon layout: World Food Street (12 restaurants) and four cafés in the north-west, Bar Hush and the three clubs in the north-east, and one each of a tailor, a shoe shop, an antique shop, a used bookshop and a halal grocery (on Usadan-ro, near the mosque), all fictional
 - Yongmaru Market (용마루시장), a fictional traditional market just south-west of Itaewon Station, inspired by Yongsan's markets such as Yongmun Market: a covered alley with ten stalls (fruit and veg, rice cakes, jeon, dried seafood, a sesame oil mill, hotteok, gukbap, onggi and kitchenware, kalguksu, and side dishes). The side-dish stall's boss buys the homemade kimchi from Sonmat Kimchi School: 🥇 12, 🥈 9, 🥉 6, no medal 3 coins a jar, up to 3 jars a day so it can't farm coins. A jar keeps its score in the bag (`g: 'kimchi', q`). Rules in `src/core/kimchi-market.js`, text in 9 languages in `src/ui/market-text.js`
 - Subway: five underground stations, each with two street exits and real stairwells: Seongsu (Line 2, by the Achasan-ro Crossing), Gyeongbokgung (Line 3), Itaewon (Line 6), Jamsil (Line 2) and Hongik Univ. (Line 2). Walk down the steps into the station hall, pay 2 coins at the ticket gates to reach the platform. Each platform has an up and a down track; a train comes every 15 seconds and keeps its doors open for 5, so walk in (or press Board) before they close. Arrivals, doors opening, the closing warning and departures each have their own sound (made in the browser, not real metro recordings). Inside the car, pick the station to get off at; the ride takes 2.5 seconds per stop and you step out onto that station's platform. Walk up either exit's stairs to come out on the street. Stations are a list in region.json (`subway.stations`), so more can be added as data
-- Cheonggyecheon Stream (청계천), a short stretch south of Gwanghwamun Square, on the Jongno-gu / Jung-gu line: it starts at Cheonggye Plaza with a two-step waterfall and flows east below the street. Four stairs lead down from the sidewalks to walkways on both banks; cross the water on two rows of stepping stones and walk under Mojeongyo (an arch) and Gwangtonggyo (granite slabs on stone piers), or cross them on the street. Meeting zone L is Cheonggye Plaza. Compressed and stylised, not to scale (the real stream runs on for about 11 km). The stream is data in the district map (`streams`), built in `src/core/stream.js`
+- Cheonggyecheon Stream (청계천), south of Gwanghwamun Square, on the Jongno-gu / Jung-gu line: it starts at Cheonggye Plaza with a two-step waterfall and flows east below the street on its real line (at 1/4, from OpenStreetMap) to just past Hwanghakgyo, with all 16 bridges in their real spots. Six stairs lead down from the sidewalks to walkways on both banks; cross the water on two rows of stepping stones and walk under Mojeongyo (an arch), Gwangtonggyo (granite slabs on stone piers) and Jangtonggyo, or cross them on the street. A grey heron (왜가리) lives on the stream: it stands in the shallow water, wades a step or two and stabs at fish, then flies off over the street beside the stream and lands somewhere else on the water. It only ever lands on the water and ignores people, and it runs off the clock, so everyone sees it in the same place without any network traffic (`src/core/heron.js`, poses in `dev/heron.html`). A lantern festival runs along it all year (`src/core/lanterns.js`, data in the stream's `lanterns`): big hanji lantern figures in the water (a moon with its rabbit, two koi, two tigers and lotus flowers), cheongsachorong on the railings, strings of round lanterns across the channel, lit lanterns under the bridges, a light tunnel of colour-cycling arches over the south walkway, and a wall of tile panels showing King Jeongjo's 1795 royal procession, with a sign and an "About the mural" panel: ten segments of the real painting, 정조의 화성행차 (National Museum of Korea, Deoksu 2507, KOGL Type 1, credited in the panel; `public/museum/banchado.jpg`). You can sit on the stone edge of the water anywhere along both banks (🌊 Sit down), except under the bridges and at the stepping stones. Pets walk down by the water with you. Tall office towers (60-112 m) line both sides of Cheonggyecheon-ro with gaps between them, and five carry a big screen ready for ads. The east end is the wish lantern corner: from the walkway there, pay 🪙 5, pick a colour and one of eight wishes, and the lantern drifts down and comes to rest with the others for 10 minutes. Wishes come from a fixed list, so everyone reads them in their own language. Your lantern rides on your player state, so people nearby and people who arrive later see it too, and lanterns also float down from the clock so the corner is never empty. Meeting zone B-2 is Cheonggye Plaza. The channel is wider than the real one at 1/4 so there is room to walk and sit (docs/WORLD.md, Sunken streams). The stream is data in the district map (`streams`), built in `src/core/stream.js`
+- Lighting shops on Cheonggyecheon-ro, by the wish lantern corner: Bitdam Hanji Lamps, Dalbit Lighting, Neon Golmok, Mojeon Lamp Shop and Banjjak Bulbs (all fictional). Each sells three lamps for your home (15 in all: a round hanji lamp, a cheongsachorong stand, a lotus lamp, a moon lamp, a mushroom lamp, a star night light, neon signs, a rainbow LED tube, a retro desk lamp, a brass arc lamp, a lava lamp, a fairy light arch, a big bulb and a candle lantern). Buy one once with coins, then place it at home with 🛋️ Decorate. Models in `src/core/furniture.js` (all lamps in `dev/lamps.html`)
 - Namsan Sky Cable (남산 하늘 케이블카, a fictional cable car) in Itaewon, next to the Namsan trail: two cabins shuttle up and down the hill on one shared clock (10 s at each station, 24 s on the way), so everyone sees the same cabin in the same place, and you can see them climbing from the street. Stand at a cabin bay and get in while the doors are open (🪙 4 for the round trip, the way down is free so nobody gets stuck), ride up over the forest and step out on the summit plaza round the look-out tower: railings hung with love locks, binoculars, and Seoul and the Han River below. Schedule and layout in `src/core/cablecar.js`. The real cable car's fares and hours are not used
+- Seoul Forest: a big wood running down to the Han River (its south-west edge follows the river where it turns north-west, as on the Seoul map), with rows of tall trees round its edge and round trees (some ginkgo yellow), pointed pines and bushes inside. Off the trail there is a round rose garden: eight colours of roses in two rings of beds, rose arches at the four ways in and a hedge round it. There is also a grassy hill with a wide flat top and wooden stairs up to a big round look-out deck (you can walk all over the slope), Metasequoia Avenue (a long straight path north to south lined with tall autumn-orange trees), and park benches you can sit on. A glass butterfly greenhouse full of plants and fluttering butterflies, with a round pond and fountain outside it. Four ice cream sculptures designed by Yozi (strawberry, chocolate, mint chocolate, soft serve), all the same size, each mark a place: strawberry in the rose garden, soft serve on the hill's deck, chocolate at the start of Metasequoia Avenue (the Seoul Forest stamp waits at its far end) and mint chocolate inside the greenhouse. Picnic mats can be spread on the grass here as well as in the Han River park, and on a mat you can lie down or sit. Layout in `scripts/build-seongsu.mjs`, models in `public/models/icecream` (meshopt-compressed, about 90 KB each), drawing in `src/core/park-art.js`
+
+## Operators
+
+Open `/admin.html` in the browser where you play with your operator account (see `supabase/005_operators.sql`). Not linked from the game; anyone else sees "Operators only". Tabs:
+
+- **Overview**: online now, played today / in 7 days, accounts (guest vs Google), new accounts, open inquiries, posts today, chat bans. Tap a number to jump to its tab. Below: **Countries**, players per country for today / 7 days / 30 days / 12 months. The country is guessed from the browser's time zone once a day per account (`src/core/country.js`, map built by `scripts/build-tz-country.mjs`); no IP addresses are used.
+- **Live map**: everyone playing right now on the map (green on the street, purple inside a shop, with the shop's name), refreshed every 3 seconds; tap a name to zoom to them. The game reports its own spot every few seconds while walking and every 20 s while standing still (`src/net/where.js`); only operators can read it.
+- **Inquiries**: the inquiry board (문의게시판). Write a reply and the player sees it under their inquiry in the game; or mark it done without one.
+- **Free board**: hide or show posts.
+- **Players**: search by name or e-mail; guest/Google, joined, last seen, where they are; ban or unban from chat (`chat_bans`).
+- **📢 Announce**: send a notice (공지) to every player. It shows in everyone's chat, in every area, as a gold 공지 line with a toast; players who join in the next 10 minutes see it too. In the game an operator can also type `/공지 message` (or `/notice`, `/announce`) in chat. Only accounts in `operators` can send; the server checks it. Needs `supabase/012_announcements.sql`. **Delete** removes a notice from the list and from the chat of everyone playing (needs `supabase/013_announcement_delete.sql`).
+- **Retention**: players per day, D1/D3/D7 return by start day, median session length, days played in the last week (4+ of 7 = habit), first sessions under 5 minutes, time spent with someone nearby, devices and frame rate. Add `?src=ext` (any short word) to an invite link to see those players as their own group. The game reports one anonymous row per visit once a minute (`src/core/sessions.js`); needs `supabase/011_play_sessions.sql`. No third-party tracker, no IP, no position, no chat text. Below, **More** (needs `supabase/014_retention_more.sql` after `010_countries.sql`): the loading funnel (page open → Play → world loaded → 1 minute, with load time), D1/D7 by country, rewarded ads per player, how far new players get along the first path, what they did on day 1 beyond the missions and their D1, languages, Google link rate, and the top error messages (digits removed, no account id). Operator accounts (the `operators` table) are left out of all of these once `supabase/016_stats_skip_operators.sql` is run.
+
+Needs `supabase/008_player_where.sql`, `supabase/009_admin.sql` and `supabase/010_countries.sql` run once. Page code in `src/admin/`.
 
 ## Run locally
 
@@ -64,6 +85,7 @@ First stop: **Seongsu-dong, Seoul**.
 npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests
+npm run lint       # undefined names and unused code
 ```
 
 To test multiplayer without a server, set `VITE_NET_PROVIDER=local` (e.g. in `.env.local`) and open two tabs.
@@ -76,17 +98,26 @@ public/regions/<id>/map.json      map data (Seongsu: generated by scripts/build-
 public/regions/<id>/stores.json   stores and products (fictional sample data)
 public/regions/<id>/zones.json    meeting zones
 scripts/build-seongsu.mjs         builds Seongsu's hand-made map and places its shops
-src/core/                         shared engine: world, character, input, collision, i18n
+src/main.js                       startup, the game loop and the glue between features
+src/core/                         shared engine and rules: world, character, input, collision, i18n,
+                                  minigame rules (no DOM where possible, so tests can run them)
+src/core/three-kit.js, geom.js    small shared helpers (material cache, boxes, canvas textures, maths)
+src/game/                         features that need the live game (pool, tarot, chat, gifts, taxi…)
+src/ui/                           panels (HTML overlays) and their translated text
+src/data/                         plain data: tarot, wearables, stamps, emote and character packs
 src/net/                          multiplayer, behind a swappable adapter (local, supabase)
-src/data/emotes.js                emote packs (data-driven, ready for a future shop)
-src/data/characters/              character model packs (GLB files in public/models/)
 src/i18n/strings.js               UI translations
 ```
+
+A feature in `src/game/` is a `createX(game)` function. `game` hands it what it needs from
+main.js: things that never change are passed as they are, and values main.js reassigns (the
+player `me`, `mode`, `interior`, …) as getters, so the feature always reads the current one.
+`npm run lint` checks that every name used is defined or imported; CI runs it with the tests.
 
 ### Adding a region
 
 Areas of Seoul are districts of the Seongsu region (see `docs/WORLD.md`): draw a small hand-made
-map file in `public/regions/seongsu/districts/`, add it to `districts` in `region.json` with an
+map file in `public/regions/another-seoul/districts/`, add it to `districts` in `region.json` with an
 offset, and place its stores, zone and bike station with `"at": [x, z]`.
 
 ### Swapping the character model pack
@@ -148,6 +179,7 @@ register it in `FACTORIES`, and set `VITE_NET_PROVIDER`.
 All maps are hand-made game maps inspired by real places, not copies of any map service.
 Store and product data are fictional sample data, not the real businesses at those locations.
 Characters: [KayKit Adventurers 2.0 and Character Animations 1.1](https://kaylousberg.com/) by Kay Lousberg, CC0 (licences in `public/models/kaykit2/`).
+Sound effects: shop sounds from [Kenney](https://kenney.nl/) Interface Sounds, CC0 (licences in `public/audio/sfx/`).
 Korean grammar textbooks (TOPIK 1–6) in the library: provided by the project owner.
-Seongsu fashion posters: photos from [Unsplash](https://unsplash.com/license) (Unsplash License); photographers and links in `public/ads/CREDITS.txt`.
+Seongsu poster and Gwanghwamun Square wall: photos from [Unsplash](https://unsplash.com/license) (Unsplash License); photographers and links in `public/ads/CREDITS.txt`.
 Background music is generated live in the browser (Web Audio); no audio files are used.

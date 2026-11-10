@@ -6,16 +6,18 @@ import {
   makeMartCustomer, MART_ITEMS, makeServeTurn, serveRight, SERVE_DISHES, SERVE_ASKS,
 } from '../src/core/jobs.js';
 import { assignSpots } from '../src/core/hiring-ads.js';
+import { loadRegionMap, districtBoxes, districtAt } from '../src/core/districts.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
-test('part-time jobs: delivery in Seongsu (2), convenience stores in Hongdae (2), serving in Itaewon (1)', () => {
+test('part-time jobs: delivery in Seongsu (2), convenience stores in Hongdae (2), serving in Sinchon (1)', async () => {
   const region = read('region.json');
   const stores = read('stores.json').stores;
-  const off = Object.fromEntries(region.districts.map((d) => [d.id, d.offset]));
-  const district = (s) => Object.entries(off).sort(([, a], [, b]) => Math.hypot(s.at[0] - a[0], s.at[1] - a[1]) - Math.hypot(s.at[0] - b[0], s.at[1] - b[1]))[0][0];
+  // The district each shop stands in, the way the game finds it.
+  const boxes = districtBoxes(await loadRegionMap(region, async (f) => read(f)));
+  const district = (s) => districtAt(boxes, s.at[0], s.at[1]);
   const jobs = stores.filter((s) => jobOf(s)).map((s) => `${district(s)}:${s.job}`).sort();
-  assert.deepEqual(jobs, ['hongdae:mart', 'hongdae:mart', 'itaewon:serving', 'seongsu:delivery', 'seongsu:delivery']);
+  assert.deepEqual(jobs, ['hongdae:mart', 'hongdae:mart', 'seodaemun:serving', 'seongsu:delivery', 'seongsu:delivery']);
   for (const s of stores.filter((q) => q.job === 'mart')) assert.equal(s.category, 'market');
 });
 
@@ -25,7 +27,8 @@ test('shifts: a few a day for all jobs together, counted again the next day', ()
   assert.equal(shiftsLeft(s, '2026-11-05'), 0);
   assert.equal(takeShift(s, '2026-11-05'), null);
   assert.equal(shiftsLeft(s, '2026-11-06'), SHIFTS_PER_DAY);
-  assert.equal(shiftPay(0, 8), 2);
+  assert.equal(shiftPay(0, 8), 5000);
+  assert.equal(shiftPay(4, 8), 5000);
   assert.equal(shiftPay(8, 8), MAX_PAY);
   assert.equal(shiftPay(0, 0), 0);
 });

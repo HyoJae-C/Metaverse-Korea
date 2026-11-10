@@ -83,7 +83,7 @@ export class Music {
     this.master.gain.setValueAtTime(this.master.gain.value, t);
     if (on) {
       playThroughSilentSwitch();
-      await this.ctx.resume();
+      await this.ctx.resume().catch(() => {}); // refused on iOS at times: silent, not an error
       this.master.gain.linearRampToValueAtTime(0.32, t + 1.5);
       if (!this.timer) {
         this.nextTime = this.ctx.currentTime + 0.1;
@@ -256,7 +256,7 @@ export class Sfx {
       if (!AC) return null;
       this.ctx = new AC();
     }
-    if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume(); }
+    if (this.ctx.state === 'suspended') { playThroughSilentSwitch(); this.ctx.resume().catch(() => {}); } // iOS can refuse ("Failed to start the audio device"); the next sound tries again
     return this.ctx;
   }
   // A short wooden "tock": a bat meeting the ball, a dart in the board, a
@@ -278,9 +278,139 @@ export class Sfx {
     o.start(t);
     o.stop(t + 0.15);
   }
+  // A firework bursting far away: a deep thud, a rush of air and, for the
+  // big ones, a crackle after it. loud 0..1 (quieter far away).
+  boom(loud = 1, crackle = false) {
+    if (!this.on || !this._ctx() || loud < 0.03) return;
+    this._tone(78, 0, 0.7, 0.3 * loud, 'sine', 32);
+    this._hiss(0, 0.55, 0.16 * loud, 1100, 140);
+    if (crackle) for (let i = 0; i < 6; i++) this._hiss(0.35 + i * 0.09 + Math.random() * 0.05, 0.04, 0.05 * loud, 6000, 3000);
+  }
+  // ---- Fishing (Han River). All synthesised here. ----
+  // The cast: the rod whipping through the air, then the line running out.
+  castWhoosh() {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.28, 0.16, 700, 3800); // swish
+    this._hiss(0.16, 0.7, 0.035, 5200, 2600); // line zipping off the spool
+    this._tone(1500, 0.16, 0.6, 0.012, 'sawtooth', 700);
+  }
+  // The bobber (or a fish) hitting the water. big 0..1.
+  splash(big = 0.5) {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.18 + big * 0.3, 0.09 + big * 0.16, 2600, 350);
+    this._tone(420 + big * 80, 0, 0.14, 0.07 + big * 0.05, 'sine', 140); // plop
+    if (big > 0.6) this._hiss(0.12, 0.5, 0.05, 1800, 500); // water falling back
+  }
+  // Two duck boats (or bumper cars) bumping: a rubbery "boing" and a slosh.
+  // hard 0..1, loud 0..1 (quieter far away).
+  bump(hard = 0.5, loud = 1) {
+    if (!this.on || !this._ctx() || loud < 0.05) return;
+    this._tone(210 + hard * 60, 0, 0.22, (0.08 + hard * 0.08) * loud, 'sine', 120); // boing
+    this.tock((0.35 + hard * 0.4) * loud, 320);
+    this._hiss(0.03, 0.25 + hard * 0.2, (0.04 + hard * 0.06) * loud, 2200, 400); // water slosh
+  }
+  // A fish nibbling: a tiny "plip" from the bobber.
+  plip() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(980, 0, 0.07, 0.035, 'sine', 520);
+  }
+  // A bite: the bobber is pulled under (two bloops) and the line goes taut.
+  bite() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(360, 0, 0.12, 0.12, 'sine', 120);
+    this._tone(300, 0.13, 0.14, 0.12, 'sine', 100);
+    this._hiss(0, 0.2, 0.08, 2000, 500);
+    this._tone(520, 0.05, 0.28, 0.035, 'triangle', 1350); // the line singing
+  }
+  // One turn of the reel: a quick ratchet "tik-tik-tik".
+  reelClick(n = 3) {
+    if (!this.on || !this._ctx()) return;
+    const c = this.ctx;
+    for (let i = 0; i < n; i++) {
+      const t = c.currentTime + 0.01 + i * 0.032;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(2300 + Math.random() * 300, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.022, t + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+      o.connect(g).connect(c.destination);
+      o.start(t); o.stop(t + 0.03);
+    }
+  }
+  // Winding an empty line back in (missed or got away).
+  reelIn(len = 0.6) {
+    if (!this.on || !this._ctx()) return;
+    for (let t = 0; t < len; t += 0.11) setTimeout(() => this.reelClick(3), t * 1000);
+  }
+  // The line snapping as a fish escapes.
+  snap() {
+    if (!this.on || !this._ctx()) return;
+    this._tone(1300, 0, 0.22, 0.06, 'sawtooth', 180);
+    this.tock(0.6, 1400);
+  }
+  // Pulling the catch out of the water: a big splash and a rising swoosh.
+  landed() {
+    if (!this.on || !this._ctx()) return;
+    this.splash(0.9);
+    this._hiss(0.05, 0.35, 0.08, 600, 3200);
+  }
+  // ---- Skate park (Hongdae). ----
+  // Popping off the ground: the tail snapping on concrete.
+  skatePop() {
+    if (!this.on || !this._ctx()) return;
+    this.tock(0.7, 520);
+    this._hiss(0, 0.09, 0.05, 3000, 900);
+  }
+  // Landing: wheels hitting the ground. clean false: a bail (a bigger thud).
+  skateLand(clean = true) {
+    if (!this.on || !this._ctx()) return;
+    this.tock(clean ? 0.6 : 0.9, clean ? 260 : 170);
+    this._hiss(0, clean ? 0.12 : 0.3, clean ? 0.05 : 0.09, 1400, 300);
+  }
+  // Sliding along a rail: a short metal scrape.
+  grind() {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 0.45, 0.04, 5200, 3600);
+    this._tone(2400, 0, 0.3, 0.012, 'sawtooth', 1900);
+  }
+  // A soft, wobbly "wooo" for the haunted house's ghost: a sine that
+  // slides down with a slow vibrato. Quiet; nothing sudden.
+  ghostly() {
+    if (!this.on) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.02;
+    const o = c.createOscillator(), lfo = c.createOscillator(), depth = c.createGain(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(620, t);
+    o.frequency.exponentialRampToValueAtTime(300, t + 1.3);
+    lfo.frequency.value = 6;
+    depth.gain.value = 18;
+    lfo.connect(depth).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(g).connect(c.destination);
+    o.start(t); lfo.start(t);
+    o.stop(t + 1.45); lfo.stop(t + 1.45);
+  }
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)
+  // ---- Seoul Another Dome (core/dome.js) ----
+  // The crowd roaring for a hit (loud 0..1; a home run is 1).
+  crowd(loud = 0.6) {
+    if (!this.on || !this._ctx()) return;
+    this._hiss(0, 1.2 + loud * 1.4, 0.05 + loud * 0.08, 1400, 700);
+    this._hiss(0.15, 0.9 + loud, 0.03 + loud * 0.05, 3200, 1800);
+  }
+  // A cheer chant's beat: drum, drum, then "짝짝 짝짝짝" (claps).
+  chant() {
+    if (!this.on || !this._ctx()) return;
+    for (const at of [0, 0.36]) this._tone(95, at, 0.2, 0.22, 'sine', 55); // the big drum
+    for (const at of [0.8, 1.0, 1.45, 1.65, 1.85]) this._hiss(at, 0.06, 0.12, 2600, 1500); // claps
+  }
   doorbell() {
     if (!this.on) return;
     const c = this._ctx();
@@ -401,6 +531,32 @@ export class Sfx {
         o.stop(t + len + 0.05);
       }
     }
+  }
+
+  // A great bronze temple bell struck with a log (Bosingak): a thud, then a
+  // long low hum. Each partial is two tones a little apart, so the hum swells
+  // and fades in slow waves (맥놀이), the sound Korean bells are known for.
+  // loud 0..1 (quieter from further away).
+  bigBell(loud = 1) {
+    if (!this.on || loud <= 0.01) return;
+    const c = this._ctx();
+    if (!c) return;
+    const t = c.currentTime + 0.03, base = 64;
+    for (const [mult, vol, len] of [[1, 0.2, 7], [2.0, 0.08, 5.5], [2.76, 0.05, 4], [4.1, 0.025, 2.6], [5.4, 0.012, 1.6]]) {
+      for (const beat of [0, mult === 1 ? 0.33 : 0.6]) {
+        const o = c.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = base * mult + beat;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol * loud * 0.5, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + len + 0.05);
+      }
+    }
+    this._hiss(0, 0.18, 0.06 * loud, 500, 160); // the log's thud
   }
 
   // ---- Subway sounds (all made here; no real metro recordings) ----

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TAROT_CARDS, POSITIONS, ROMAN, shuffleDeck } from '../src/data/tarot.js';
 import { tipsLeft, takeTip, TIPS_PER_DAY } from '../src/core/busking.js';
+import { bankHeight, stepAt, BANK, CROWD, SINGER, GIRLS, BOYS } from '../src/core/busking-layout.js';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/seongsu/' + f, import.meta.url)));
+const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
 
 test('tarot: 22 major and 56 minor arcana, named and explained in each language', () => {
@@ -61,10 +62,38 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   const cafes = stores.filter((s) => s.category === 'cafe').length;
   const shops = stores.filter((s) => ['fashion', 'beauty', 'lifestyle'].includes(s.category)).length;
   // Hongdae has more clothes and beauty shops than cafés now (hair salons,
-  // skirt shops, the perfume alley), but cafés stay a big part of the street.
-  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 9, `cafés ${cafes}, shops ${shops}`);
+  // skirt shops, the perfume alley, Nyang Meong To Pan's animal ears), but
+  // cafés stay a big part of the street.
+  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 10, `cafés ${cafes}, shops ${shops}`);
   assert.ok(stores.some((s) => s.workshop === 'tarot'), 'a tarot café');
   for (const s of stores) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
+  // The busking zone: the audience bank, the dancers and the singer stay
+  // clear of the buildings and keep 3 m from every shop's door.
+  const [cx, cz] = spot.at;
+  for (const [dx, dz] of [...CROWD, SINGER, ...GIRLS, ...BOYS]) assert.ok(!inside(cx + dx, cz + dz), `busking spot ${dx},${dz} in the open`);
+  for (const s of stores) {
+    for (let x = BANK.back; x <= BANK.front; x += 0.5) for (let z = BANK.z0; z <= BANK.z1; z += 0.5) {
+      if (bankHeight(x, z) > 0) assert.ok(Math.hypot(cx + x - s.at[0], cz + z - s.at[1]) > 3, `the bank keeps clear of ${s.id}`);
+    }
+  }
+});
+
+test('busking steps: flat ground around them, low steps up from every side, the crowd on them', () => {
+  assert.equal(bankHeight(BANK.front + 1, 0), 0);
+  assert.equal(bankHeight(BANK.back - 1, 0), 0);
+  assert.equal(bankHeight(-10, BANK.z1 + 1), 0);
+  assert.equal(bankHeight(-11, 0), BANK.h, 'the top step near the back');
+  assert.ok(bankHeight(-1, 0) < bankHeight(-3, 0) && bankHeight(-3, 0) < BANK.h);
+  assert.ok(BANK.rise <= 0.4, 'low steps');
+  // Walking across the steps in any direction, you only ever go up or down one step.
+  for (let x = BANK.back - 1; x <= BANK.front + 1; x += 0.1) {
+    for (let z = BANK.z0 - 1; z <= BANK.z1 + 1; z += 0.1) {
+      assert.ok(Math.abs(stepAt(x + 0.1, z) - stepAt(x, z)) <= 1 && Math.abs(stepAt(x, z + 0.1) - stepAt(x, z)) <= 1, `one step at a time at ${x.toFixed(1)},${z.toFixed(1)}`);
+    }
+  }
+  // The three rows of listeners stand on three different steps.
+  assert.deepEqual([...new Set(CROWD.map(([x, z]) => stepAt(x, z)))].sort(), [1, 2, 3]);
+  for (const [x] of [...GIRLS, ...BOYS, SINGER]) assert.ok(x > BANK.front + 5, 'the acts on the other half of the street');
 });
 
 test('animal cafés: Seongsu keeps the cat café and the retriever café (the old pet shop), the rest are in Hongdae with a second cat café', () => {

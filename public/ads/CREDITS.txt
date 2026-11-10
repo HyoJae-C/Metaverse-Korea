@@ -2,25 +2,13 @@ Photo posters (public/ads/*.webp)
 
 Photos from Unsplash, used under the Unsplash License
 (https://unsplash.com/license): free for commercial use, no permission
-needed. Shown as the original photos, resized; one photo was cropped.
+needed. Shown as the original photos, resized.
 Each poster names its source small in the corner as "UNSPLASH : Name"
 (region.json or the map file's "credit").
 A changed photo gets a new file name (-v2, -v3...): players' browsers
 keep an old image under the same name for a while.
 
-seongsu-ss-yellow-v2.webp   Hong Nguyen        https://unsplash.com/photos/FO-zQd7Wqio
-seongsu-fw-suit-v2.webp     Becky Sherburn     https://unsplash.com/photos/GSiw5fsOrS8
-seongsu-red-v2.webp         Marjan Taghipour   https://unsplash.com/photos/1tjMpBTvFAA
-seongsu-noir-v2.webp        Christian Agbede   https://unsplash.com/photos/EiYH9QupDls
-seongsu-blonde-v2.webp      David Banjo        https://unsplash.com/photos/yePFqWHER8I
-seongsu-sunday-v2.webp      Haley Lawrence     https://unsplash.com/photos/6ugQ978v-zg
-seongsu-puffer-v2.webp      Mike Von           https://unsplash.com/photos/bWUOx0SaSAk
-seongsu-mono-v2.webp        Chyntia Juls       https://unsplash.com/photos/HlVjI5WmoQY
-seongsu-retro-v2.webp       Alex Shaw          https://unsplash.com/photos/J4kxbw1SYwg (cropped)
 seongsu-beanie-v2.webp      Pesce Huang        https://unsplash.com/photos/Ndjb5iZUEHk
 
-Gwanghwamun Square walls (districts/gyeongbokgung.json "wall")
-gyeongbok-corridor.webp     Jet dela Cruz      https://unsplash.com/photos/AOI_fg7A28w
-gyeongbok-alley.webp        Grafi Jeremiah     https://unsplash.com/photos/UONyOCzyO8A
-gyeongbok-lanterns.webp     JIEUN KWON         https://unsplash.com/photos/VMgTeyPP5pM
+Gwanghwamun Square wall (districts/gyeongbokgung.json "wall")
 gyeongbok-kimchi.webp       Daniel             https://unsplash.com/photos/78jWkCp_jdM

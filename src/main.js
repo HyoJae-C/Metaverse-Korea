@@ -1,12 +1,19 @@
+import { haptics, buzz, shake } from './core/haptics.js';
+import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
-import { setBeat } from './core/model-pack.js';
 import {
-  LANGUAGES, t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName,
+  t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
 } from './core/i18n.js';
-import { REGION_NAMES } from './i18n/strings.js';
+import { REGION_NAMES } from './i18n/languages.js';
+import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
+import {
+  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
+} from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
-import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD } from './core/quests.js';
-import { STARTER_TEXT } from './data/starter-quests.js';
+import { createGraphicsQuality } from './core/graphics-quality.js';
+import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
+import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
+import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -15,132 +22,233 @@ import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
-import { buildWorld, COLORS } from './core/world.js';
+import { buildWorld, COLORS, onAnyRoad } from './core/world.js';
 import { buildLandmarks } from './core/landmarks.js';
-import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt } from './core/stream.js';
+import { lakeHoles } from './core/lakeshore.js';
+import { setParkSignsLang } from './core/park-signs.js';
+import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
+import { splitInstances } from './core/split-instances.js';
+import { FarPeople } from './core/far-people.js';
+import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
-import { SaunaUI } from './ui/sauna-ui.js';
 import { SaunaLog } from './core/sauna.js';
+import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
+import { RideTickets } from './core/ride-tickets.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
-import { saveLastSpot, loadLastSpot, usableSpot } from './core/respawn.js';
-import { BookUI } from './ui/book-ui.js';
-import { AcademyUI } from './ui/academy-ui.js';
-import { Academy } from './core/academy.js';
+import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
+import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace, onMap } from './core/respawn.js';
+import { updateFarTextures } from './core/far-textures.js';
 import { bookById } from './core/books.js';
 import { FoodDex, isFood, allFoods } from './core/food-dex.js';
 import { DexUI, DEX_TEXT } from './ui/dex-ui.js';
 import { STAMPS } from './data/stamps.js';
 import { StampBook, availableStamps, STAMP_REWARD } from './core/stamp-book.js';
+import { TRAILS } from './data/trails.js';
+import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow } from './core/palace-show.js';
-import { RIDES as PARK_RIDES, RIDE_COST, rideUntil, seatAt } from './core/themepark.js';
-import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock } from './core/cablecar.js';
+import { PalaceShow, FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { createPalaceView } from './game/palace-view.js';
+import { createTowerLook } from './game/tower-look.js';
+import { JongmyoShow } from './core/jongmyo-show.js';
+import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
+import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
+import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
+import { BosingakShow } from './core/bosingak-show.js';
+import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
+import { createRideCam } from './game/ride-cam.js';
+import { createFirstPerson } from './game/first-person.js';
+import { createTouchSteer } from './game/touch-steer.js';
+import { createParkRiders } from './game/park-riders.js';
+import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
+import { CoasterFx } from './ui/coaster-fx.js';
+import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
+import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
+import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
+import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
+import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
+import { BukchonUI, BK_TEXT, craftEntry, craftWear, CRAFT } from './ui/bukchon-ui.js';
+import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
+import { Enclosure, FarCull } from './core/enclosure.js';
+import { buildBukchonHill } from './core/bukchon-models.js';
+import { buildHanoks } from './core/hanok.js';
+import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
-import { createLookEditor, saveLook } from './core/look-editor.js';
-import { PALETTES, PATCHES, HAT_SHAPES, accessory, OUTFIT_ITEM } from './data/appearance.js';
-import { CollisionMap, distSqToSeg } from './core/collision.js';
+import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
+import { preloadModel } from './core/model-pack.js';
+import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
+import { Receipts, sellable, resaleCoins } from './core/resale.js';
+import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
+import { createUsedRack } from './game/used-rack.js';
+import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
-import { RemotePlayers, showBubble } from './core/players.js';
+import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
+import { sendRate } from './net/rate.js';
+import { startWhereReports } from './net/where.js';
+import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
+import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
+import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
-import { getEmote, ownedPacks } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed } from './core/weather.js';
+import { getEmote } from './data/emotes.js';
+import { WeatherSystem, WET, weatherSpeed, darkness } from './core/weather.js';
+import { coverScene, snowUniform } from './core/snow-cover.js';
+import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { buildInterior } from './core/interior.js';
+import { buildInterior, needsDome, needsPark, needsZoo, roomBox, setDomeBuilder, setParkBuilder, setZooBuilders } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
-import { FURNITURE, furnitureById, buildFurniture, furnitureCollider } from './core/furniture.js';
-import { ShopUI, Cart, howToGet, coinsFor, RENT } from './ui/shop-ui.js';
-import { hanbokById, isHanbokModel, RENT_HOURS } from './data/hanbok.js';
-import { loadRental, saveRental, startRental, endRental, checkRental, timeLeft, isRenting, formatLeft } from './core/hanbok-rental.js';
-import { GiftBox, giftMsg, parseGift, GIFTS_PER_DAY } from './core/gifts.js';
+import { furnitureById } from './core/furniture.js';
+import { ShopUI, Cart, coinsFor, goodsKind, itemSoon, shownStores } from './ui/shop-ui.js';
+import { hanbokById, isHanbokModel } from './data/hanbok.js';
+import { timeLeft, isRenting } from './core/hanbok-rental.js';
+import { GiftBox, parseGift } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
-import { OrderUI } from './ui/order-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
-import { RamenUI } from './ui/ramen-ui.js';
-import { KimchiUI } from './ui/kimchi-ui.js';
-import { KimchiSellUI, ML as MARKET_L } from './ui/kimchi-sell-ui.js';
-import { MuseumUI, MUSEUM_TEXT } from './ui/museum-ui.js';
+import { ML as MARKET_L } from './ui/kimchi-sell-ui.js';
+import { MUSEUM_TEXT } from './ui/museum-ui.js';
 import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
+import { GUIDE_LOOK, MEMORIAL_TEXT, MEMORIAL_FLOORS, HALLS as MEMORIAL_HALLS, DONATED } from './data/war-memorial.js';
+import { HAUNT_STORE, HAUNT_SPOT } from './core/haunted.js';
 import { BOSS_LINES } from './ui/market-text.js';
-import { kimchiJar } from './core/kimchi-market.js';
-import { KT as KIMCHI_TEXT } from './ui/kimchi-text.js';
-import { JapchaeUI } from './ui/japchae-ui.js';
-import { JT as JAPCHAE_TEXT } from './ui/japchae-text.js';
-import { KimbapUI } from './ui/kimbap-ui.js';
-import { BT as KIMBAP_TEXT } from './ui/kimbap-text.js';
+import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first use
+// (The classes' long texts load with the class: game/cooking-classes.js.)
+import { KIMCHI_LABELS as KIMCHI_TEXT, JAPCHAE_LABELS as JAPCHAE_TEXT, KIMBAP_LABELS as KIMBAP_TEXT } from './ui/cooking-labels.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag, giftEntry } from './core/bag.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
 import { KaraokeUI } from './ui/karaoke-ui.js';
-import { PhotoUI } from './ui/photo-ui.js';
-import { ClawUI } from './ui/claw-ui.js';
-import { TarotUI } from './ui/tarot-ui.js';
-import { TarotQueue, parseTarot, tarotMsg } from './core/tarot-queue.js';
-import { BuskingZones, TIP, readTips, writeTips, takeTip } from './core/busking.js';
+import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
+import { RUNWAY_STORE } from './core/runway-game.js';
+import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
+import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
+import { poseKind, poseAt, POSE_S } from './core/runway-poses.js';
+import { parseTarot } from './core/tarot-queue.js';
+import { BuskingZones } from './core/busking.js';
+import { createBuskingPlay } from './game/busking-play.js';
+import { buskingGroundY } from './core/busking-layout.js';
+import { parseRaceMsg } from './core/pool.js';
+import { POOL_TEXT } from './data/pool-text.js';
+import { DOME_TEXT, DOME_SHOUT, chantPhrase } from './data/dome-text.js';
+import { LIFEGUARD_LOOK } from './core/pool-hall.js';
+import { BL } from './ui/basketball-text.js';
+import { Skater, PARK_SPEED } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
-import { DUCK_SEATS, DUCK_TRIP } from './core/park.js';
+import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
+import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
-import { duckMsg, parseDuck } from './core/duck-boat.js';
-import { dartsMsg, parseDarts } from './core/arcade.js';
-import { pickDelivery, timeFor, deliveryPay, MAX_ROAD } from './core/delivery.js';
-import { JOB_TEXT, SHIFTS_PER_DAY, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
-import { JobUI } from './ui/job-ui.js';
+import { createDuckBoats } from './game/duck-boats.js';
+import { createHanParks } from './game/han-parks.js';
+import { CART, CART_SPEED } from './game/zoo-carts.js';
+import { createZooVisit } from './game/zoo-visit.js';
+import { createZooSounds } from './game/zoo-sounds.js';
+import { createRainbowFountain } from './game/rainbow-fountain.js';
+import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
+import { DartPins } from './core/dart-pins.js';
+import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
 import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
+import { supportTexture, pickSupportSpots } from './core/support-poster.js';
 import { BeautyUI } from './ui/beauty-ui.js';
 import { CounterUI, heldFor } from './ui/counter-ui.js';
 import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
-import { FishingUI, FishMarketUI } from './ui/fishing-ui.js';
-import { FishBag } from './core/fishing.js';
-import { HELD_KINDS, COFFEE_SIPS } from './core/held.js';
+import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
+import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
+import { createFishingRig } from './core/fishing-rig.js';
+import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
-import { Inventory, ITEMS, isWorn, redeemCode, isMasterCode, coinCode, eventCode, isEventCode, parseTandem, tandemMsg } from './core/inventory.js';
+import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
+import { closetKind, closetColor } from './core/closet.js';
+import { RETIRED } from './data/wearables.js';
 import { SEATS, seatPosition } from './core/bikes.js';
-import { MapView } from './ui/map-view.js';
+import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
-import { taxiFare } from './core/taxi.js';
-import { Garage, BIKE_MODELS, bikeModel, repairCost, LOW as BIKE_LOW, RIDE_TYPES, RIDE_ICON as VEHICLE_ICON, SKIN_COLORS, rideCode, RIDE_SHOPS, skinPrice, UPGRADE_MAX, TUNE_STEP, KIT_WEAR } from './core/bike-garage.js';
-import { ClubMusic } from './core/club-music.js';
-import { CLUB_TRACKS, CLUB_GENRES, songSeconds } from './data/club-tracks.js';
-import { TRACKS } from './data/tracks.js';
-import { BikeStations } from './core/bikes.js';
-import { Wallet, demoAd } from './core/wallet.js';
-import { Daily, REWARD } from './core/daily.js';
+import { SoundFiles } from './core/sound-files.js';
+import { Garage, BIKE_MODELS, RIDE_ICON as VEHICLE_ICON, rideCode } from './core/bike-garage.js';
+import { Wallet, demoAd, opIdFor, newOpId } from './core/wallet.js';
+import { PROMOS } from './data/promos.js';
+import { won } from './core/money.js';
+import { loadH5Ads, rewardedShow } from './core/h5-ads.js';
+import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
-import { StreetNpcs, NAME_ROMAN, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
+import { SEA_STORE } from './core/zoo-rooms.js';
+import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
-import { cleanName, readIdentity, saveIdentity, isReservedName } from './core/identity.js';
+import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
-import { createPetCare, PET_NAME_TEXT } from './game/pet-care.js';
+import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
+import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
+import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
+import { createRoomCache } from './game/room-cache.js';
+import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
+import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
+import { createSnowman, SNOW_TEXT } from './game/snowman.js';
+import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, SupabaseFriends, LocalFriends, convKey, cleanBody as cleanFriendText } from './core/friends.js';
-import { FriendsUI, FRIEND_TEXT } from './ui/friends-ui.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, PIT } from './core/subway.js';
+import { LocalFriends } from './core/friends.js';
+import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
+import { createBikeShop } from './ui/bike-shop-ui.js';
+import { createPool } from './game/pool.js';
+import { createTarot } from './game/tarot.js';
+import { createBumper } from './game/bumper.js';
+import { RINK_FENCE } from './core/bumper-cars.js';
+import { createArcade } from './game/arcade.js';
+import { createBasketball } from './game/basketball.js';
+import { createFolkYard } from './game/folk-yard.js';
+import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
+import { createParkTickets } from './game/park-tickets.js';
+import { createMirrorMaze } from './game/mirror-maze.js';
+import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
+import { createSkate } from './game/skate.js';
+import { createTaxi } from './game/taxi.js';
+import { createRoomTips } from './game/tips.js';
+import { parseTaxi } from './core/taxi-share.js';
+import { createDecor } from './game/decor.js';
+import { createClubs } from './game/clubs.js';
+import { createMusicCafe } from './game/music-cafe.js';
+import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listening-bar.js';
+import { createHatWorkshop } from './game/hat-workshop.js';
+import { createDelivery } from './game/delivery.js';
+import { createChat } from './game/chat.js';
+import { createGifts } from './game/gifts.js';
+import { createBank } from './game/bank.js';
+import { createHanbokRental } from './game/hanbok-rental.js';
+import { createCookingClasses } from './game/cooking-classes.js';
+import { createEmoteWheel } from './ui/emote-wheel.js';
+import { createDaily } from './game/daily.js';
+import { createSkyFlight } from './game/sky-flight.js';
+import { createLedger } from './ui/ledger-ui.js';
+import { hillGround } from './core/hill-ground.js';
+import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
+import { createSeoulDalNear } from './game/seoul-dal-near.js';
+import { createPotatoMarketNear } from './game/potato-market-near.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
 const $ = (id) => document.getElementById(id);
+// The bag's item lists move in and out of the bag panel as its tabs change,
+// so they're looked up once (a detached node isn't found by id).
+const itemEls = {};
+const itemEl = (id) => (itemEls[id] ||= $(id));
 
 // Safety net: if the player or the camera ever ends up at an invalid
 // position (NaN), put them back at the last good one, and show a short note
@@ -148,73 +256,115 @@ const $ = (id) => document.getElementById(id);
 // first so a failure while the world loads shows up too.
 const lastGood = { x: 0, z: 0, yaw: 0, ok: false };
 let errBox = null;
+// Problems are also counted for the operator's numbers once the cloud is up
+// (see onProblem below); ones before that wait here.
+let onProblem = null;
+const earlyProblems = [];
 function reportProblem(msg) {
   console.error('[mk]', msg);
+  if (onProblem) onProblem(msg); else if (earlyProblems.length < 5) earlyProblems.push(msg);
   if (!errBox) {
     errBox = document.createElement('div');
     errBox.className = 'err-box';
     document.body.append(errBox);
   }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  // In words a player understands, in their language; the technical line
+  // stays underneath, small, for a screenshot to the operator.
+  const b = document.createElement('b'), small = document.createElement('small');
+  b.textContent = '⚠️ ' + t('error.soft');
+  small.textContent = String(msg).slice(0, 300);
+  errBox.replaceChildren(b, small);
   errBox.hidden = false;
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
 }
-addEventListener('error', (e) => reportProblem(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+addEventListener('error', (e) => {
+  const msg = `${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`;
+  // Not our code: scripts an app's built-in browser (Threads, Instagram,
+  // KakaoTalk…) or an extension puts into the page ("onReady is not defined")
+  // and other sites' scripts ("Script error."). Counted, but no warning box:
+  // the game is fine and the box made players think it was broken.
+  if (!/\/(assets|src)\//.test(e.filename || '')) { console.warn('[mk] page script:', msg); onProblem?.('ext: ' + msg); return; }
+  reportProblem(msg);
+});
 addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
+
+// Google ads (AdSense): the script for the rewarded "Watch an ad" button,
+// loaded early so the start screen's banner (wide computer screens) can fill.
+{
+  const ad = config.rewardedAd;
+  const google = ad.provider === 'h5' || sideAdOn(config.sideAd, ad.client);
+  loadH5Ads(google ? ad : {});
+  mountSideAd({ cfg: config.sideAd, client: ad.client, test: ad.test });
+}
 
 // Cloud save (guest account on Supabase). Runs before anything reads saved
 // data, so a newer save from the server is in place first. Skipped in
 // automated test rooms.
 const cloud = new CloudSave(config.netProvider === 'supabase' && !new URLSearchParams(location.search).has('debug') ? config.net : null);
+// The region list and region file start downloading now, while the cloud
+// save is checked (up to 3 s when the save server can't be reached, as in
+// mainland China). A failed download is tried twice more: on a shaky
+// connection the first try is often the one that drops.
+const getJson = async (url, tries = 3) => {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`${r.status} ${url}`);
+      return await r.json();
+    } catch (e) {
+      if (i >= tries) throw e;
+      await new Promise((ok) => setTimeout(ok, 800 * i));
+    }
+  }
+};
+const regionStart = getJson(`${BASE}regions/index.json`).then((index) => {
+  // ?region= picks a region; an unknown id (an old ?region=seongsu link) falls back to the default.
+  const asked = new URLSearchParams(location.search).get('region');
+  const id = index.regions.some((r) => r.id === asked) ? asked : index.default;
+  return getJson(`${BASE}regions/${id}/region.json`).then((region) => ({ index, id, region }));
+});
+regionStart.catch(() => {}); // awaited below; this only avoids an early "unhandled" note
 await cloud.load();
+// This play session's counts for the operator's retention numbers
+// (core/sessions.js); the reports start once the world is up (see below).
+const playCounts = createCounts();
+// The loading funnel (core/sessions.js createVisit): page open → pressed
+// Play → world loaded → a minute of play. (Test rooms run with ?debug,
+// which has no cloud, so nothing is sent from them.)
+let firstVisit = true;
+try { firstVisit = !localStorage.getItem('mk.made'); } catch { /* storage blocked */ }
+const visitDevice = deviceClass({ touch: navigator.maxTouchPoints > 0, width: screen.width, height: screen.height });
+const visit = createVisit({
+  send: (r) => cloud.reportVisit(r),
+  isNew: firstVisit, device: visitDevice, src: firstSrc(location.search),
+});
+visit.reach(STAGE.OPEN);
+// Errors: counted in the session and the message (digits removed, no
+// account id) sent for the operator's error list, a few per visit.
+const sendError = createErrorSender((m) => cloud.reportError(m));
+onProblem = (msg) => { if (!msg.startsWith('ext: ')) playCounts.error(); sendError(msg); }; // ('ext: ' = not our code, see above)
+for (const m of earlyProblems.splice(0)) onProblem(m);
+// Country statistics for the operator page: a guess from the time zone,
+// once a day per account (core/country.js). Loaded on the side; never waits.
+if (cloud.user) import('./core/country.js').then(({ reportCountryOnce }) => reportCountryOnce({ uid: cloud.user.id, send: (g) => cloud.reportCountry(g) })).catch(() => {});
 
 // ---------- Start screen ----------
-const regionsIndex = await fetch(`${BASE}regions/index.json`).then((r) => r.json());
-const regionId = new URLSearchParams(location.search).get('region') || regionsIndex.default;
+const { id: regionId, region } = await regionStart;
 // Realtime room name. Automated tests pass ?debug&room=<name> to get a private
 // room, so real visitors on the live site never mix into a test.
 const testRoom = new URLSearchParams(location.search).has('debug') && new URLSearchParams(location.search).get('room');
 const roomId = testRoom ? `${regionId}~${testRoom.replace(/[^\w-]/g, '').slice(0, 32)}` : regionId;
-const region = await fetch(`${BASE}regions/${regionId}/region.json`).then((r) => r.json());
 
-// Language list: one row per language. On the start screen it is a dropdown
-// (the current language on a button; tap it to open the list below).
-function renderLangList(el, onPick) {
-  el.innerHTML = '';
-  for (const l of LANGUAGES) {
-    const b = document.createElement('button');
-    b.textContent = l.label;
-    b.lang = l.code;
-    if (l.rtl) b.dir = 'rtl';
-    b.setAttribute('aria-pressed', String(l.code === getLanguage()));
-    b.onclick = () => onPick(l.code);
-    el.appendChild(b);
-  }
-}
-function renderLangDropdown(el, onPick) {
-  const cur = LANGUAGES.find((l) => l.code === getLanguage()) || LANGUAGES[0];
-  el.innerHTML = '';
-  const btn = document.createElement('button');
-  btn.className = 'lang-current';
-  btn.setAttribute('aria-expanded', 'false');
-  btn.innerHTML = '<span>🌐</span><span class="lang-name"></span><span class="lang-caret">▾</span>';
-  btn.querySelector('.lang-name').textContent = cur.label;
-  const list = document.createElement('div');
-  list.className = 'lang-list';
-  list.hidden = true;
-  renderLangList(list, onPick);
-  btn.onclick = () => {
-    list.hidden = !list.hidden;
-    btn.setAttribute('aria-expanded', String(!list.hidden));
-  };
-  el.append(btn, list);
-}
 
+// Coming back: where you left off (the district of the saved spot), not the
+// first stop again. Only the very first visit says "First stop".
+let lastPlace = loadLastPlace();
 function refreshStartText() {
   const lang = getLanguage();
-  $('start-region').textContent = t('start.region', {
-    region: localName(REGION_NAMES[regionId], lang) || localName(region.name, lang),
+  const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
+  $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
+    region: localName(DISTRICT_NAME[firstStopSpot(region)?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon unless they pick another start (region.json spawn.starts)
     city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
@@ -222,7 +372,12 @@ function refreshStartText() {
   document.title = t('app.title');
 }
 
+// Only the saved language is downloaded (i18n/languages.js); wait for it so
+// the start screen doesn't flash English first.
+await loadLanguage(getSavedLanguage() || 'en');
 setLanguage(getSavedLanguage() || 'en'); // English until you pick one
+document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
+document.body.dataset.gameUp = '1'; // (boot.js stops drawing the language picker)
 const pickLang = (code) => {
   setLanguage(code);
   renderLangDropdown($('lang-grid'), pickLang);
@@ -240,31 +395,23 @@ try {
 
 // Load the map while the player is choosing a language.
 // (One map file, or several districts joined into one city: core/districts.js.)
-const mapPromise = loadRegionMap(region, (file) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
-  if (!r.ok) throw Object.assign(new Error('no map'), { code: 'noMap' });
-  return r.json();
-}));
+// A phone on a weak signal can drop one request ("Load failed"): try each
+// file up to three times before giving up, so one hiccup doesn't stop the game.
+const mapPromise = loadRegionMap(region, (file) => {
+  const get = (tries) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
+    if (r.status === 404) throw Object.assign(new Error('no map'), { code: 'noMap' });
+    if (!r.ok) throw new Error('map ' + r.status);
+    return r.json();
+  }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
+  return get(3);
+});
+// And the player's character model, so it is ready when they walk in.
+preloadModel(loadLook().model);
 
 // Step 1: language → (guests: Google or guest?) → character + nickname.
 // Name and character stay fixed for a while once chosen (core/identity.js).
 let editor = null;
 let identity = readIdentity();
-const ID_TEXT = {
-  back: { en: 'Welcome back! Change your name at the name tag workshop, and clothes at the Daily Closet or from your items.', ko: '다시 오셨네요! 이름은 네임택 공방에서, 옷은 데일리 클로젯이나 내 아이템에서 바꿀 수 있어요.', ja: 'おかえりなさい！名前はネームタグ工房で、服はデイリークローゼットかアイテムから変えられます。', zh: '欢迎回来！可以在名牌工坊改名，在日常衣橱或物品里换衣服。', es: '¡Bienvenido de nuevo! Cambia tu nombre en el taller de placas y la ropa en Armario Diario o desde tus objetos.', ar: 'أهلًا بعودتك! غيّر اسمك في ورشة بطاقات الأسماء، وملابسك في خزانة يومية أو من أغراضك.', vi: 'Chào mừng bạn trở lại! Đổi tên ở xưởng bảng tên, còn quần áo thì ở Daily Closet hoặc trong đồ của bạn.', hi: 'फिर से स्वागत है! नाम-टैग वर्कशॉप में अपना नाम बदलें, और कपड़े डेली क्लोज़ेट में या अपनी चीज़ों से।', id: 'Selamat datang kembali! Ganti namamu di bengkel papan nama, dan bajumu di Daily Closet atau dari barangmu.' },
-  first: { en: 'Pick a name and a T-shirt colour. Later you can change your name at the name tag workshop, and buy clothes like hoodies or padded coats at the Daily Closet.', ko: '이름과 티셔츠 색을 골라요. 이름은 나중에 네임택 공방에서 바꿀 수 있고, 후드티·패딩 같은 옷은 데일리 클로젯에서 살 수 있어요.', ja: '名前とTシャツの色を選ぼう。名前はあとでネームタグ工房で変えられ、パーカーやダウンなどの服はデイリークローゼットで買えます。', zh: '选择名字和T恤颜色。之后可以在名牌工坊改名，卫衣、羽绒服等衣服可在日常衣橱购买。', es: 'Elige un nombre y el color de tu camiseta. Luego puedes cambiar tu nombre en el taller de placas y comprar ropa como sudaderas o abrigos acolchados en Armario Diario.', ar: 'اختر اسمًا ولون قميص. لاحقًا يمكنك تغيير اسمك في ورشة بطاقات الأسماء، وشراء ملابس مثل الهودي أو المعاطف المنفوخة من خزانة يومية.', vi: 'Chọn tên và màu áo phông. Sau này bạn có thể đổi tên ở xưởng bảng tên, và mua quần áo như áo hoodie hay áo phao ở Daily Closet.', hi: 'एक नाम और टी-शर्ट का रंग चुनें। बाद में नाम-टैग वर्कशॉप में नाम बदल सकते हैं, और डेली क्लोज़ेट से हुडी या पैडेड कोट जैसे कपड़े ख़रीद सकते हैं।', id: 'Pilih nama dan warna kaos. Nanti kamu bisa ganti nama di bengkel papan nama, dan beli baju seperti hoodie atau mantel puffer di Daily Closet.' },
-};
-const LOGIN_TEXT = {
-  title: { en: 'Keep your progress?', ko: '기록을 저장할까요?', ja: '記録を保存しますか？', zh: '要保存进度吗？' },
-  text: {
-    en: 'Sign in with Google and your coins, items and home are saved to your account, so you can carry on from any device. As a guest, your progress may be lost when the game is updated, or if you clear this browser or switch devices.',
-    ko: '구글로 로그인하면 코인, 아이템, 내 집이 계정에 저장돼서 어떤 기기에서든 이어서 할 수 있어요. 게스트는 게임이 업데이트될 때 기록이 사라질 수 있고, 브라우저 기록을 지우거나 기기를 바꿔도 사라질 수 있어요.',
-    ja: 'Googleでログインすると、コイン・アイテム・家がアカウントに保存され、どの端末でも続きから遊べます。ゲストの記録は、ゲームのアップデート時や、ブラウザの履歴を消したり端末を変えたときに消えることがあります。',
-    zh: '用 Google 登录后，金币、物品和家会保存到账号，在任何设备上都能继续。游客的进度在游戏更新时可能会丢失，清除浏览器记录或换设备也可能丢失。',
-  },
-  google: { en: 'Sign in with Google (saves)', ko: '구글로 로그인 (저장돼요)', ja: 'Googleでログイン（保存されます）', zh: '用 Google 登录（会保存）' },
-  guest: { en: 'Play as a guest', ko: '게스트로 시작', ja: 'ゲストで始める', zh: '以游客身份开始' },
-  note: { en: 'You can link Google later in ⚙️ Settings too.', ko: '나중에 ⚙️ 설정에서도 구글을 연결할 수 있어요.', ja: 'あとで ⚙️ 設定からもGoogleを連携できます。', zh: '之后也可以在 ⚙️ 设置里绑定 Google。' },
-};
 // Made a character here before (mk.made since the start screen remembers it;
 // older saves: a look plus a saved spot in town).
 const isReturning = () => {
@@ -287,11 +434,35 @@ function showLook() {
   }
   $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
+  // New players pick where to start (game/first-stop.js): one tap, the first is on.
+  const starts = startList(region);
+  $('start-pick').hidden = returning || !starts.length;
+  if (!returning && starts.length) {
+    const keys = [...starts.map((it) => it.k), ANY];
+    if (!keys.includes(startPick)) startPick = keys[0];
+    $('start-pick-list').replaceChildren(...keys.map((k) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(k === startPick));
+      const ic = document.createElement('span');
+      ic.className = 'ic';
+      ic.textContent = k === ANY ? '🎲' : starts.find((it) => it.k === k).icon || '📍';
+      b.append(ic, t('start.' + k));
+      b.onclick = () => {
+        startPick = k;
+        for (const o of $('start-pick-list').children) o.setAttribute('aria-checked', String(o === b));
+      };
+      return b;
+    }));
+  }
 }
+let startPick = savedStart(); // where a new player starts (region.json spawn.starts, or ANY)
 // Made a character already: go straight into town after the language (and
 // login) step, with no name or clothes to pick (see startNow below).
 let startNow = null;
 const lookOrStart = () => (isReturning() && startNow ? startNow() : showLook());
+$('next-btn').disabled = false; // (boot.js kept it off until now)
 $('next-btn').onclick = () => {
   if (!askLogin()) { lookOrStart(); return; }
   $('step-lang').hidden = true;
@@ -311,11 +482,6 @@ $('next-btn').onclick = () => {
 $('login-guest').onclick = lookOrStart;
 // Operator badge (🛡️): on the name tag; others see it only once the server
 // confirms the name is an operator's (supabase/005_operators.sql).
-const OPERATOR_TEXT = {
-  on: { en: '🛡️ Operator badge on', ko: '🛡️ 운영자 엠블럼을 달았어요', ja: '🛡️ 運営バッジをつけました', zh: '🛡️ 已戴上运营徽章' },
-  off: { en: 'Operator badge off', ko: '운영자 엠블럼을 뗐어요', ja: '運営バッジを外しました', zh: '已摘下运营徽章' },
-};
-const RESERVED_TEXT = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
 const opChecks = new Map(); // name -> Promise<boolean>, once per session
 function isOperatorName(name) {
   if (!opChecks.has(name)) opChecks.set(name, cloud.isOperator(name));
@@ -351,16 +517,57 @@ const optionalJson = (file) => fetch(`${BASE}regions/${regionId}/${file}`)
 const storesPromise = optionalJson('stores.json');
 const homesPromise = optionalJson('homes.json');
 const zonesPromise = optionalJson('zones.json');
-const bikesPromise = optionalJson('bikes.json');
 const seoulPromise = optionalJson('seoul.json'); // the gu overview on the map (scripts/build-seoul.mjs)
 
+// A new player may name the friend who invited them (optional): the server
+// pays that friend (supabase/025_referrals.sql). True once it was taken.
+let referralSent = false;
 await new Promise((resolve) => {
   // A new name must not be in use by someone else (checked on the server
   // when it is set up; see supabase/003_names.sql).
   let busy = false;
+  // The friend's name: a name nobody has (or your own) stops here so it can
+  // be fixed or cleared. Anything else (server not set up, offline, named
+  // someone before) lets the player in without a word.
+  const referral = async () => {
+    const el = $('referrer');
+    const who = cleanName(el.value).trim();
+    if (isReturning() || !who) return true;
+    busy = true;
+    $('start-btn').disabled = true;
+    const r = await cloud.claimReferral(who);
+    busy = false;
+    $('start-btn').disabled = false;
+    if (r === 'nobody' || r === 'self') {
+      $('status').textContent = t(r === 'self' ? 'referral.self' : 'referral.nobody');
+      el.classList.add('bad');
+      el.focus();
+      return false;
+    }
+    if (r === 'ok') referralSent = true;
+    el.value = '';
+    return true;
+  };
   const go = async () => {
     if (busy) return;
     const name = cleanName($('nickname').value).trim();
+    if (isDefaultName(name)) {
+      // No name (or just "여행자"): the server hands out the next number,
+      // 여행자100, 여행자101, …, reserved for this account like any name.
+      busy = true;
+      $('start-btn').disabled = true;
+      const prefix = defaultNamePrefix(t('start.defaultName'));
+      const given = (await cloud.claimDefaultName(prefix)) || localDefaultName(prefix);
+      busy = false;
+      $('start-btn').disabled = false;
+      $('nickname').value = given;
+      if (isReturning()) {
+        identity = { ...identity, name: given };
+        saveIdentity(identity);
+      }
+      if (await referral()) resolve();
+      return;
+    }
     if (!isReturning() && isReservedName(name)) {
       $('status').textContent = L(RESERVED_TEXT);
       $('nickname').classList.add('bad');
@@ -385,7 +592,15 @@ await new Promise((resolve) => {
       // can't take it (no answer needed; an old clash just stays as it is).
       cloud.claimName(name);
     }
-    resolve();
+    if (await referral()) resolve();
+  };
+  $('referrer').addEventListener('input', (e) => {
+    if (!e.isComposing) { const v = cleanName(e.target.value); if (v !== e.target.value) e.target.value = v; }
+    $('referrer').classList.remove('bad');
+    if ([t('referral.self'), t('referral.nobody')].includes($('status').textContent)) $('status').textContent = '';
+  });
+  $('referrer').onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.isComposing) go();
   };
   $('nickname').addEventListener('input', () => {
     $('nickname').classList.remove('bad');
@@ -408,6 +623,7 @@ await new Promise((resolve) => {
   };
 });
 $('status').textContent = '';
+visit.reach(STAGE.PRESSED); // loading time counts from here
 // Locked name/character win over whatever the form says; a new choice
 // starts its lock.
 // Costumes are bought now, so only the name is locked.
@@ -416,6 +632,26 @@ if (!isReturning()) {
   saveIdentity(identity);
 }
 try { localStorage.setItem('mk.made', '1'); } catch { /* ignore */ }
+// Where a new player starts (until the welcome is done, a refresh too): the
+// start they picked, or for "anywhere" the one with the most people near it
+// right now (asked here, used once the map is up). Null: not new.
+const startChoice = (() => {
+  try {
+    const v = localStorage.getItem('mk.onboard');
+    if (v != null ? Number(v) >= 2 : !!loadLastSpot()) return Promise.resolve(null);
+  } catch { return Promise.resolve(null); }
+  const starts = startList(region), keys = starts.map((it) => it.k);
+  if (!keys.length) return Promise.resolve(null);
+  if (startPick !== ANY) { const k = keys.includes(startPick) ? startPick : keys[0]; saveStart(k); return Promise.resolve(k); }
+  return (async () => {
+    const zs = await zonesPromise; // a "square" start: the main square (zones.json's first zone)
+    const sq = zs?.zones?.[0]?.at;
+    const spots = keys.map((k) => { const sp = startSpot(region, k); return sp?.square ? { x: sq?.[0] ?? 0, z: sq?.[1] ?? 0 } : sp || { x: 0, z: 0 }; });
+    const k = busiestStart(keys, await askCrowds(config.netProvider, config.net, spots));
+    saveStart(k);
+    return k;
+  })();
+})();
 let myLook = editor.getLook();
 let daily = null; // daily check-in and missions (set up with the wallet)
 const safety = new Safety(); // chat filter and block list
@@ -429,6 +665,7 @@ try {
   map = await mapPromise;
 } catch (err) {
   $('status').textContent = t(err.code === 'noMap' ? 'error.noMap' : 'error.generic');
+  visit.fail();
   throw err;
 }
 
@@ -473,7 +710,6 @@ function showGpuHint() {
 // come back instead of leaving a blank screen.
 canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); reportProblem('graphics context lost — reload the page if it stays blank'); });
 canvas.addEventListener('webglcontextrestored', () => { if (errBox) errBox.hidden = true; });
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowSpec || softwareGL ? 1 : 2));
 renderer.shadowMap.enabled = !lowSpec && !softwareGL;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -492,55 +728,101 @@ sun.position.set(60, 120, 40);
 sun.castShadow = !lowSpec && !softwareGL;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 300 });
+// Resolution, shadows and a 60 fps cap, lowered when the frame rate drops or
+// with Battery saver in Settings (core/graphics-quality.js).
+const SAVER_KEY = 'mk.batterySaver';
+const gfx = createGraphicsQuality({ renderer, sun, capable: !lowSpec && !softwareGL, saver: (() => { try { return localStorage.getItem(SAVER_KEY) === '1'; } catch { return false; } })() });
 sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
 // Subway stations (region.json "subway.stations"): stair exits cut into the ground.
-const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
+// In the order the trains run round them: one loop following the map (core/subway.js loopOrder).
+const subwayStations = loopOrder((region.subway?.stations || []).filter((st) => st.exits?.length));
 const allExits = subwayStations.flatMap((st) => st.exits);
 // Sunken streams (map "streams", core/stream.js): on the street the channel is
 // a wall that only bridges cross; down by the water you use streamCollision.
 const streams = map.streams || [];
 const streamWalls = streams.flatMap(streamStreetBlockers);
-const collision = new CollisionMap(map.buildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls)); // blockers: rivers, walls
-const treeCollision = allExits.length || streams.length ? new CollisionMap(map.buildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
+// Gyeongbokgung's fan dance (core/palace-show.js): an unseen ring round the
+// dancers that you can't step inside, so the formation isn't broken (no
+// fence in the way of the view; a note asks you to step back instead).
+const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
+const fanAt = palaceAt && [palaceAt[0] + FAN_AT[0], palaceAt[1] + FAN_AT[1]]; // the west lawn (the king walks round the east one)
+const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
+const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
+const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
+const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles)) });
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
-const landmarks = buildLandmarks(map.landmarks, scene); // palace gates, halls, statues (hand-made districts)
+// Palace gates, halls, statues (hand-made districts). Those marked "inner"
+// (inside Jongmyo's wall) wait for the first visit (the enclosures below).
+const landmarks = buildLandmarks(map.landmarks.filter((l) => !l.inner), scene);
+// Children's Grand Park's zoo: a room you walk into (core/zoo-park.js, loaded
+// on the first visit); what you do there is game/zoo-visit.js.
+// The animals' calls when they move, louder the nearer (src/game/zoo-sounds.js).
+const zooSounds = createZooSounds({
+  get sfx() { return sfx; },
+  listener: () => { const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0); return me ? { x: me.root.position.x, z: me.root.position.z, rx: r.x, rz: r.z } : null; },
+});
+const zooVisit = createZooVisit({
+  get shop() { return shop; }, get wallet() { return wallet; }, get me() { return me; }, get myLabel() { return myLabel; },
+  get riding() { return riding; }, get seated() { return seated; }, sounds: zooSounds, L, fmt, t,
+  inZoo: () => mode === 'store' && !!interior?.zooPark,
+  showBubble: (o, text, ms, kind) => showBubble(o, $('labels'), text, ms, kind),
+  makeNpc: (name, look) => makeNpc($('labels'), name, look), randomLook,
+  missionEvent: (type, target) => missionEvent(type, target), setRiding: (k) => setRiding(k),
+  placeLabels, enterSeaHall: () => enterHaunted(SEA_STORE),
+  sitDown: (s) => sitDown(s), standUp: () => standUp(), seatTaken: (x, z) => others.seatTaken?.(x, z),
+});
+const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
-const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
+const storefronts = new Storefronts(scene, shownStores(storeData), map, region.center, collision);
 // Empty shop lots get ad posters (region.json "adPosters" books a spot).
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
+// 1.5 m cells: 1 m cells were 13 M cells (about 270 MB) for all of Seoul
+// and far routes ran out of search; 2 m cells closed Bukchon's alleys.
 let navGrid = null;
-const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1 }));
+const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1, cell: 1.5 }));
 function planRoute(ax, az, bx, bz) {
   const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
   return poly;
 }
 const routeLine = new RouteLine(scene);
-const bikeStations = new BikeStations(scene, (await bikesPromise)?.stations || [], region.center, roadGraph, findFreeSpot);
+// Itaewon's Gyeongnidan-gil is on a hill (district meta "hill"): how high the
+// ground is there (core/hill-ground.js). Its slope, streets and neighbours
+// load when you first come near (game/gyeongnidan-near.js).
+const hillDistrict = (map.meta?.districts || []).find((d) => d.hill);
+const slopeY = hillDistrict ? hillGround(hillDistrict.hill, hillDistrict.offset) : () => 0;
+const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, groundY: slopeY, randomLook });
 // Passers-by: two strolling around each meeting zone.
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => [z.x, z.z]));
-// Busking stages (region.json "busking"), e.g. Hongdae Walking Street: a busker, a crowd, a song.
-// Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
-// the mask dance with a lion in front of Gwanghwamun (core/palace-show.js).
-const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: slopeY });
+// Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
+// Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
+// the Bukcheong lion dance on the square in front of Gwanghwamun
+// (core/palace-show.js, core/bukcheong.js).
 const palaceShow = palaceAt ? new PalaceShow(scene, {
-  fan: [palaceAt[0], palaceAt[1] - 150], // Geunjeongjeon's courtyard
-  mask: [palaceAt[0], palaceAt[1] + 150], // on the square, just before King Sejong's statue
-  rope: [palaceAt[0] - 18, palaceAt[1] + 144], // the tightrope beside it
-  guards: [[palaceAt[0] - 14, palaceAt[1] + 11, 0], [palaceAt[0] + 14, palaceAt[1] + 11, 0]], // either side of Gwanghwamun
+  fan: fanAt,
+  procession: palaceAt, // the king's walk round the east lawn (ROYAL_ROUTE)
+  visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
+  mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
+  rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
+  guards: [[palaceAt[0] - 6.5, palaceAt[1] + 6, 0], [palaceAt[0] + 6.5, palaceAt[1] + 6, 0]], // either side of Gwanghwamun's arches
+  inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
 }) : null;
+// A pungmul troupe of 19 on Olympic Park's Peace Plaza, between the Peace
+// Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
+const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
+const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[0], olympicAt[1] + PLAZA_SPOT[1]], { lowSpec: lowSpec || !!softwareGL }) : null;
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
@@ -552,6 +834,14 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
+// New players start where they picked (region.json spawn.starts; Bukchon's
+// gate unless they picked another), next to a welcome guide in the same
+// costume: the first thing they see is what they came for. The welcome high
+// five and the first errand (a trip that fits the start) happen there; the
+// guide hands out errands like any other after. Shopping starts beside the
+// square guide instead, as before.
+const firstStop = await startChoice.then((k) => { const sp = k && startSpot(region, k); return sp && !sp.square ? sp : null; });
+let welcomeNpc = null;
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
@@ -561,24 +851,32 @@ for (const sc of region.screens || []) {
   const wall = { ...near, x: near.x + near.ax * along, z: near.z + near.az * along };
   const w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
   const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
-  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text });
+  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
   wallScreens.push(ws);
 }
 if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
-  squareNpc = makeNpc($('labels'), '❗ ' + t('quest.guide'));
-  squareNpc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
-  squareNpc.tag.classList.add('square-guide');
-  squareNpc.labelY = 1.95; // above the costume head
-  squareNpc.ch.activity('dance'); // dances while waiting: easy to spot
+  const mascotGuide = (x, z, ry, name = t('quest.guide')) => {
+    const npc = makeNpc($('labels'), '❗ ' + name);
+    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot (it stands still: dancing kept phones busy, Yozi 2026-11-10)
+    npc.tag.classList.add('square-guide');
+    npc.labelY = 1.95; // above the costume head
+    npc.ch.root.position.set(x, 0, z);
+    npc.ch.root.rotation.y = ry;
+    scene.add(npc.ch.root);
+    return npc;
+  };
   const [gx, gz] = findFreeSpot(square.x + 2.4, square.z + 1.6);
-  squareNpc.ch.root.position.set(gx, 0, gz);
-  squareNpc.ch.root.rotation.y = face(gx, gz);
-  scene.add(squareNpc.ch.root);
+  squareNpc = mascotGuide(gx, gz, face(gx, gz));
+  if (firstStop) { // a few steps ahead of where new players stand, a little to the side, facing them
+    const fx = Math.sin(firstStop.ry), fz = Math.cos(firstStop.ry);
+    const [wx, wz] = findFreeSpot(firstStop.x + fx * 2.4 + fz * 0.9, firstStop.z + fz * 2.4 - fx * 0.9);
+    welcomeNpc = mascotGuide(wx, wz, Math.atan2(firstStop.x - wx, firstStop.z - wz), t('quest.welcomeGuide'));
+  }
   const lang = getLanguage();
-  billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
+  billboard = new Billboard(shownStores(storeData).filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
   })), { label: '게임 관련 및 기타 문의', icon: '📷', handle: 'Instagram @hyojae.t' });
   // Raised decks (the station) you can walk under, but a tall screen can't
@@ -678,11 +976,7 @@ if (square) {
 
 // ---------- Player ----------
 function latLonToLocal(lat, lon) {
-  const R = 6378137;
-  const c = region.center;
-  const mLat = (Math.PI / 180) * R;
-  const mLon = mLat * Math.cos((c.lat * Math.PI) / 180);
-  return [(lon - c.lon) * mLon, -(lat - c.lat) * mLat];
+  return llToLocal(region.center, lat, lon);
 }
 
 function findFreeSpot(x, z) {
@@ -748,10 +1042,12 @@ if (spawnStore) {
   me.root.rotation.y = along[pick] + (pick ? -1 : 1) * 0.5; // ~30° towards the shop
 }
 
-// First minute for new players: start next to the square guide, high-five
-// them, get the first mission, then the info centre is suggested (or just
+// First minute for new players: start next to the welcome guide in Bukchon
+// (or the square guide, in a region without a first stop), high-five them,
+// get the first mission, then the info centre is suggested (or just
 // explore). 0: high five · 1: getting the mission · 2+: done.
 const ONBOARD_KEY = 'mk.onboard';
+const ONBOARD_REWARD = 20000; // won, for the welcome high five (supabase/020_rewards.sql 'quest')
 let onboard = (() => {
   try {
     const v = localStorage.getItem(ONBOARD_KEY);
@@ -759,14 +1055,18 @@ let onboard = (() => {
     return loadLastSpot() ? 2 : 0; // players from before this: skip it
   } catch { return 2; }
 })();
-const ONBOARD_TEXT = {
-  hi5: { en: '👋 Welcome! Give the square guide a 🙌 high five.', ko: '👋 환영해요! 광장 안내원과 🙌 하이파이브 해보세요.', ja: '👋 ようこそ！広場の案内係と🙌ハイタッチしてみよう。', zh: '👋 欢迎！和广场向导🙌击个掌吧。', es: '👋 ¡Bienvenido! Choca los cinco 🙌 con el guía de la plaza.', ar: '👋 أهلًا! قدّم لمرشد الساحة 🙌 كفًّا عالية.', vi: '👋 Chào mừng! Hãy 🙌 đập tay với người hướng dẫn quảng trường.', hi: '👋 स्वागत है! चौक के गाइड को 🙌 हाई-फ़ाइव दें।', id: '👋 Selamat datang! Ajak pemandu alun-alun 🙌 tos.' },
-  button: { en: 'High five the guide', ko: '안내원과 하이파이브', ja: '案内係とハイタッチ', zh: '和向导击掌', es: 'Chocar los cinco con el guía', ar: 'كفّ عالية مع المرشد', vi: 'Đập tay với người hướng dẫn', hi: 'गाइड को हाई-फ़ाइव दें', id: 'Tos dengan pemandu' },
-  // The guide, before the first mission: visit the info centre first.
-  infoTip: { en: 'Before your mission, do drop by the Information Center! It shows you everything you can do.', ko: '미션 전에 광장 앞 안내센터에 꼭 들러 보세요! 할 수 있는 걸 전부 알려줘요.', ja: 'ミッションの前に、ぜひインフォメーションセンターに寄ってみて！できることを全部教えてくれるよ。', zh: '做任务前，一定要先去一趟信息中心！那里会告诉你能做的所有事情。', es: '¡Antes de tu misión, pásate por el Centro de Información! Te enseña todo lo que puedes hacer.', ar: 'قبل مهمتك، مُرّ على مركز المعلومات! سيُريك كل ما يمكنك فعله.', vi: 'Trước khi làm nhiệm vụ, hãy ghé Trung tâm Thông tin nhé! Ở đó có tất cả những gì bạn có thể làm.', hi: 'मिशन से पहले सूचना केंद्र ज़रूर जाएँ! वहाँ वह सब दिखता है जो आप कर सकते हैं।', id: 'Sebelum misimu, mampirlah ke Pusat Informasi! Di sana ada semua yang bisa kamu lakukan.' },
-  done: { en: '🙌 Nice! 🪙 +10. Here is your first mission.', ko: '🙌 좋아요! 🪙 +10. 첫 미션을 드릴게요.', ja: '🙌 いいね！🪙 +10。最初のミッションです。', zh: '🙌 太棒了！🪙 +10。这是你的第一个任务。', es: '🙌 ¡Genial! 🪙 +10. Aquí tienes tu primera misión.', ar: '🙌 رائع! 🪙 +10. هذه مهمتك الأولى.', vi: '🙌 Tuyệt! 🪙 +10. Đây là nhiệm vụ đầu tiên của bạn.', hi: '🙌 बढ़िया! 🪙 +10। यह रहा आपका पहला मिशन।', id: '🙌 Mantap! 🪙 +10. Ini misi pertamamu.' },
-};
-if (onboard === 0 && squareNpc) { // stand next to the guide, facing them
+// New players start in Bukchon, facing the welcome guide with the village
+// behind them (until the welcome is done: a refresh in the middle of it too).
+// Everyone else without a saved spot to come back to starts on the main
+// square, next to the guide, not in front of the subway exit and the café:
+// there the first thing you did was walk into a shop door. (A usable saved
+// spot moves returning players back where they left off, just below.)
+if (onboard < 2 && welcomeNpc) {
+  const g = welcomeNpc.ch.root;
+  const [ox, oz] = findFreeSpot(firstStop.x + (Math.random() - 0.5), firstStop.z + (Math.random() - 0.5));
+  me.root.position.set(ox, 0, oz);
+  me.root.rotation.y = Math.atan2(g.position.x - ox, g.position.z - oz);
+} else if (squareNpc) { // stand next to the guide, facing them
   const g = squareNpc.ch.root;
   // Beside them (not between them and the square's sign post), so the
   // camera behind us sees the guide clearly.
@@ -779,53 +1079,77 @@ function setOnboard(n) {
   onboard = n;
   try { localStorage.setItem(ONBOARD_KEY, String(n)); } catch { /* storage blocked */ }
 }
-function onboardHi5() {
+function onboardHi5(npc = squareNpc) {
   setOnboard(1);
   $('info-hint').hidden = true;
   me.play('wave');
-  squareNpc.ch.wave();
+  npc.ch.wave();
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  wallet.add(10, { k: 'ledger.quest' });
+  wallet.add(ONBOARD_REWARD, { k: 'ledger.quest' }, { r: 'quest', once: 'onboard:hi5' });
   refreshWallet();
-  shop.toast(L(ONBOARD_TEXT.done));
+  shop.toast(fmt(L(ONBOARD_TEXT.done), { n: ONBOARD_REWARD }));
   action = STALE;
-  quests.skipHighFive(); // that was today's high five
   quests.beginStarter(); // then the first path: errands near the square that each teach one thing
   // First the guide recommends the info centre, then gives the first mission.
   setTimeout(() => {
-    say(squareNpc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
+    say(npc, $('labels'), ['미션 전에 안내센터에 꼭 들러 보세요!', 'misyeon jeone annaesenteoe kkok deulleo boseyo!', L(ONBOARD_TEXT.infoTip)]);
   }, 1100);
   setTimeout(() => {
-    talkToGuide(); // the first mission
+    talkToGuide(npc); // the first mission
     setOnboard(2);
     // Then: the info centre, or explore on your own. After the guide's tip
     // for the first errand (5.2 s, shown for 9 s), so the card doesn't hide it.
-    setTimeout(() => { if (mode === 'street') showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) }); }, 15000);
+    setTimeout(() => { if (mode === 'street' && !guide && $('info-hint').hidden) showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) }); }, 15000);
   }, 5600);
 }
 
 // Come back where you left off last time, if that spot is still open.
+const spotBoxes = districtBoxes(map);
+// A spot we can't come back to: inside something (a duck boat on the river,
+// a wall) or out in the empty land between districts (e.g. a spot saved
+// before a district moved to its real place, scripts/place-districts.mjs).
+// Such spots aren't saved either, so a refresh keeps the last good one.
+const spotMap = { boxes: spotBoxes, areas: map.areas, onRoad: (x, z) => onAnyRoad(map.roads, x, z, 0) };
+const spotBad = (x, z) => collision.blocked(x, z, 0.4) || !onMap(x, z, spotMap);
 if (onboard >= 2) {
   const last = loadLastSpot();
-  if (usableSpot(last, bounds, (x, z) => collision.blocked(x, z, 0.4))) {
+  if (usableSpot(last, bounds, spotBad)) {
     me.root.position.set(last.x, 0, last.z);
     me.root.rotation.y = last.ry;
+    // A save from before districts were remembered: name it now.
+    if (!lastPlace && spotBoxes.length) {
+      lastPlace = districtAt(spotBoxes, last.x, last.z);
+      saveLastPlace(lastPlace);
+      refreshStartText();
+    }
   }
 }
 let tabParked = false; // another tab of this browser took over (see claimTab)
 let lastSpotTimer = 3;
 const rememberSpot = () => {
   if (tabParked) return; // the newer tab owns the saved spot now
-  try { if (mode === 'street') saveLastSpot(me.root.position.x, me.root.position.z, me.root.rotation.y); } catch { /* still starting up */ }
+  try {
+    if (!outdoors()) return;
+    const [x, z] = myWorldSpot(); // (an open-air park: its spot on the street)
+    if (spotBad(x, z)) return; // keep the last spot we can come back to
+    saveLastSpot(x, z, me.root.rotation.y);
+    if (spotBoxes.length) saveLastPlace(districtAt(spotBoxes, x, z));
+  } catch { /* still starting up */ }
 };
 document.addEventListener('visibilitychange', () => { if (document.hidden) rememberSpot(); });
 addEventListener('pagehide', rememberSpot);
 
 const cam = { yaw: me.root.rotation.y + Math.PI, pitch: 0.42, dist: 9 };
-if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
+if (onboard === 0 && welcomeNpc) cam.dist = 7.5; // first minute in Bukchon: the guide ahead, the village behind them
+else if (onboard === 0 && squareNpc) { cam.yaw += 0.75; cam.dist = 7; } // first minute: the guide in view, beside us
 let camHoriz = 8; // current camera distance (shortened near walls)
-let manualCamT = 0; // seconds left before the camera starts following again
+let camOutWait = 0; // seconds before the camera may move back out after a wall
+let manualCamT = 0; // seconds since the player last dragged the view, counted down (walking then goes by the new view)
+// The camera turns only when the player turns it (and on the amusement
+// park's rides). Walking, going through doors, sitting, events and the
+// guide all leave it as it is: a view that moves by itself loses people.
+let doorCam = null; // the street camera when we went in through a door, put back on the way out
 const PLAYER_R = 0.35;
 // Street speeds are a bit faster than real life so the area feels compact;
 // shops are small rooms, so walking there stays slower.
@@ -836,9 +1160,21 @@ const CAR = 26; // car: big roads only
 const MOTO = 24; // motorbike (from a developer code)
 // My bikes (core/bike-garage.js): faster models from the bike shop; they wear out slowly.
 const garage = new Garage();
-const isCar = (k) => k === 4 || k === 6; // sports car, limousine
-const rideSpeed = () => (isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? garage.speed() : BIKE);
+const isCar = (k) => k === 4 || k === 6 || k === CART; // sports car, limousine, the zoo's cart
+let inSkate = false; // in the skate park (rides slow down there; see skateTick)
+const skater = new Skater();
+let skateY = 0; // ground (or air) height in the skate park
+let skateTk = null; // { code, at }: the last trick, sent to others for a moment
+const rideSpeed = () => (riding === CART ? CART_SPEED : isCar(riding) ? CAR : riding === 5 ? MOTO : riding === 1 ? (inSkate ? Math.min(PARK_SPEED, garage.speed()) : garage.speed()) : BIKE);
 const STORE_WALK = 4.2, STORE_RUN = 7;
+// Steady walk (a setting, PC and phone): a pace between walking and running
+// that never turns into a run, however long you keep moving. No stamina used;
+// the gym boost still applies on top, as with walking.
+const STEADY = 9, STORE_STEADY = 5.6;
+const STEADY_ANIM = 0.52; // speed01 for the steady pace: stays on the walk animation
+const STEADY_KEY = 'mk.steadyWalk';
+let steadyWalk = false;
+try { steadyWalk = localStorage.getItem(STEADY_KEY) === '1'; } catch { /* ignore */ }
 
 const myTag = document.createElement('div');
 myTag.className = 'nametag me';
@@ -850,10 +1186,25 @@ const myLabel = { tag: myTag, bubble: null };
 const input = new Input(canvas, $('joystick'));
 $('hud').hidden = false;
 $('start').hidden = true;
+// The world is up: loading is done. A minute of visible play is the last
+// funnel step.
+visit.reach(STAGE.LOADED);
+{
+  let seen = 0;
+  const minute = setInterval(() => {
+    if (document.hidden) return;
+    if (++seen >= 60) { visit.reach(STAGE.MINUTE); clearInterval(minute); }
+  }, 1000);
+}
 $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
 $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+// "Support the creator" (Buy Me a Coffee link). Hidden until a URL is set in config.
+if (/^https:\/\//.test(config.supportUrl)) {
+  $('support-link').href = config.supportUrl;
+  $('support-link').hidden = false;
+}
 $('settings-panel').onclick = (e) => {
   if (e.target.id === 'settings-panel') $('settings-panel').hidden = true;
 };
@@ -950,9 +1301,6 @@ const stamina = { v: 1, rest: 0, tired: false, boostUntil: 0 };
 // Drinks (all alcohol-free, the bar and clubs too) keep your stamina full
 // for a few minutes.
 const DRINK_BOOST_MS = 3 * 60 * 1000;
-const DRINK_TEXT = {
-  boost: { en: '⚡ Energy up! You can run without getting tired for 3 minutes.', ko: '⚡ 기운이 났어요! 3분 동안 지치지 않고 달릴 수 있어요.', ja: '⚡ 元気が出た！3分間、疲れずに走れます。', zh: '⚡ 精神满满！3分钟内奔跑不会累。', es: '⚡ ¡Con energía! Puedes correr sin cansarte durante 3 minutos.', ar: '⚡ نشاط! يمكنك الركض دون تعب لمدة 3 دقائق.', vi: '⚡ Tràn đầy năng lượng! Bạn có thể chạy mà không mệt trong 3 phút.', hi: '⚡ ऊर्जा भर गई! 3 मिनट तक आप बिना थके दौड़ सकते हैं।', id: '⚡ Semangat! Kamu bisa lari tanpa lelah selama 3 menit.' },
-};
 const staminaEl = document.getElementById('stamina');
 const staminaFill = document.getElementById('stamina-fill');
 function updateStamina(dt, wantsRun, moving) {
@@ -1039,20 +1387,64 @@ const weather = new WeatherSystem({
   },
 });
 
+// The operators' season and held weather (admin.html → Weather,
+// supabase/023_weather.sql), the same for everyone. A little after
+// start, so it never holds up joining the world.
+let weatherClient = null, stopWeather = null;
+function watchWeatherSetting() {
+  if (!cloud.client || cloud.client === weatherClient) return;
+  stopWeather?.();
+  weatherClient = cloud.client;
+  stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
+}
+setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
+
 // ---------- Multiplayer ----------
-let others = new RemotePlayers(scene, $('labels'), { isOperator: isOperatorName });
+const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => sky.remote(q, all, dt) };
+let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
 let onlineAll = 0;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
   $('online').hidden = n < 2;
-  $('online').textContent = '🟢 ' + t('hud.online', { n });
+  // Phones show just "🟢 5" (style.css hides .on-long); the full words stay
+  // in the tooltip and for screen readers.
+  const full = t('hud.online', { n });
+  $('online').title = full;
+  $('online').setAttribute('aria-label', full);
+  $('online').replaceChildren('🟢 ', Object.assign(document.createElement('span'), { className: 'on-long', textContent: full }), Object.assign(document.createElement('span'), { className: 'on-short', textContent: String(n), ariaHidden: 'true' }));
 };
 onLanguageChange(refreshOnline);
 let stopOnline = null;
-watchOnline(config.netProvider, config.net, myId, (n) => { onlineAll = n; refreshOnline(); })
+// Its own id, not myId: the online count is open to everyone, and myId must
+// stay unseen until it is claimed for chat (claimChatId below).
+watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
+// A newer build deployed while we play: ask for a refresh (core/update-check.js).
+{
+  const deployed = { current: __BUILD_ID__, fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v) };
+  startUpdateCheck({ ...deployed, onNew: () => { if (!tabParked) showUpdateBanner(); } });
+  watchMissingFiles({ ...deployed, onNew: () => showUpdateBanner() });
+}
+// Our spot on the map for operators' live view (net/where.js, admin.html).
+// Inside a shop we report the street spot we came in from, and the shop.
+// A hidden tab keeps reporting (browsers slow the timer down to about once a
+// minute): it is still in multiplayer, and an operator watching admin.html
+// in another tab of the same browser should still see their own game.
+let streetSpot = null;
+startWhereReports({
+  get: () => {
+    try {
+      if (tabParked || !me?.root) return null;
+      const out = outdoors(); // (an open-air Han River park is the street too)
+      if (out) { const [x, z] = myWorldSpot(); streetSpot = { x, z }; }
+      if (!streetSpot) return null;
+      return { name: nickname, place: out ? 'street' : interior?.store?.id || mode, ...streetSpot };
+    } catch { return null; } // still starting up
+  },
+  send: (spot) => cloud.reportWhere(spot),
+});
 let net = null;
 let currentLook = myLook;
 // K-POP café room sync (see enterKpopCafe).
@@ -1069,13 +1461,54 @@ const kpop = new KpopRoom({ video: kpopVideo, tv: $('kpop-tv'), panel: $('kpop-p
 $('kpop-tv').querySelector('.kpop-unmute').onclick = () => kpop.unmute();
 const SOLO = { sendState() {}, sendEmote() {}, sendLook() {}, disconnect() {} };
 let idleTimer = 0, sendTimer = 0;
+let teleports = 0; // how many times we jumped (taxi, map, warp), sent as st.tp
 let lastSent = null; // set to null to resend our state at once (e.g. when someone joins)
 // Street rooms are split into cells (see net/area.js); a shop is one room.
 // Gifts between people in the same room (see startGift).
 const gifts = new GiftBox();
 const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
+// Gifts (game/gifts.js) are set up further down, but joining the first room
+// (just below) already calls off any waiting gifts.
+let giftsGame = null;
+function dropGifts() { giftsGame?.dropGifts(); }
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
+// Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
+const outdoors = () => mode === 'street' || !!openParkHere();
+const onStreetRoom = () => !!lastJoin && lastJoin[0] === roomId && lastJoin[1] === scene;
+// Name tags are announced by each player's own game: ask the server who
+// they really are (019_chat_names.sql) and correct a borrowed name. People
+// joining together are asked about in one go.
+const tagQueue = new Set();
+let tagTimer = 0;
+function checkTag(id) {
+  if (config.netProvider !== 'supabase' || testRoom) return;
+  tagQueue.add(id);
+  if (tagTimer) return;
+  tagTimer = setTimeout(async () => {
+    tagTimer = 0;
+    const room = others;
+    const pairs = [...tagQueue].slice(0, 50).map((pid) => [pid, room.nameOf(pid)]).filter((p) => p[1] != null);
+    for (const [pid] of pairs) tagQueue.delete(pid);
+    tagQueue.clear();
+    const fixes = await cloud.tagNames(pairs);
+    for (const [pid, real] of fixes) {
+      if (room !== others) return; // moved to another room meanwhile
+      room.setName(pid, real ? filterText(cleanName(real).trim()) || '?' : '?');
+    }
+  }, 400);
+}
+// Claim myId for this account before anyone can see it, so only we can chat
+// as myId (supabase/019_chat_names.sql). Asked once; asked again if the
+// server couldn't be reached.
+let chatIdClaim = null;
+function claimChatId() {
+  if (!chatIdClaim) {
+    chatIdClaim = cloud.claimChatId(myId, 3000);
+    chatIdClaim.then((r) => { if (r === 'offline') chatIdClaim = null; });
+  }
+  return chatIdClaim;
+}
 async function joinRoom(room, roomScene, area = null) {
   if (tabParked) return;
   lastJoin = [room, roomScene, !!area];
@@ -1084,46 +1517,73 @@ async function joinRoom(room, roomScene, area = null) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
+  others = new RemotePlayers(roomScene, $('labels'), remoteOpts);
   refreshOnline();
   const handlers = {
     onJoin: (p) => {
       others.join({ ...p, name: filterText(cleanName(p.name).trim() || '?') });
       if (safety.isBlocked(p.id, others.nameOf(p.id))) others.hide(p.id);
+      checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
     },
-    onLeave: (id) => { tandemGone(id); others.leave(id); refreshOnline(); },
+    onLeave: (id) => { sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (sky.onMsg(id, e)) return; // carrying someone in flight (game/sky-flight.js)
+      if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
+      if (parseTaxi(e)) {
+        const m = parseTaxi(e);
+        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && taxi.onMsg(id, others.nameOf(id) || '?', m)) action = STALE;
+        return;
+      }
       if (parseTarot(e)) {
         const m = parseTarot(e);
-        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
-          shop.toast(fmt(L(TAROT_TEXT.invited), { name: others.nameOf(id) || '?' }));
-          action = STALE;
+        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) {
+          tarotUi.ready().then((ui) => { // (the panel downloads on the first message)
+            if (!ui.heard(id, others.nameOf(id) || '?', m)) return;
+            shop.toast(fmt(L(TAROT_TEXT.invited), { name: others.nameOf(id) || '?' }));
+            action = STALE;
+          }, () => {});
         }
         return;
       }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
-      if (parseDuck(e)) { const d = parseDuck(e); if (d.to === myId) duckUi.heard(id, d.strokes); return; }
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
+      if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
+      if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
       if (parseHonk(e)) {
         const at = others.positionOf(id);
         if (at && !safety.isBlocked(id, others.nameOf(id))) motionSound.honk(parseHonk(e), hearGain(Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z)));
         return;
       }
+      if (e === BELL_MSG) { onPeerBell(id); return; }
       if (typeof e === 'string' && e.startsWith('sniff:')) { onPeerSniff(id, e.slice(6)); return; }
+      if (typeof e === 'string' && e.startsWith('fishph:')) { onPeerFishing(id, e.slice(7)); return; }
+      if (typeof e === 'string' && e.startsWith('bigfish:')) { onPeerTrophy(id, e.slice(8)); return; }
       if (parseBite(e)) { if (parseBite(e) === myId) onBitten(id); return; }
+      if (parseRaceMsg(e)) { onPoolRace(id, parseRaceMsg(e)); return; }
+      if (parseLineMsg(e)) {
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) runwayLine.heard(id, parseLineMsg(e), Date.now());
+        return;
+      }
+      if (parseRunwayMsg(e)) {
+        const m = parseRunwayMsg(e);
+        if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) { runwayReact(others.rootOf(id), m.tier, m.word); if (m.pose) runwayPose(others.charOf(id), m.pose); }
+        return;
+      }
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
     },
     onLook: (id, look) => others.setLook(id, look),
-    onChat: (id, raw) => {
+    // serverName: the sender's real name, when the server sent it
+    // (019_chat_names.sql); the name tag itself comes from the sender.
+    onChat: (id, raw, serverName) => {
       if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
       const text = filterText(cleanChat(raw));
       if (!text) return;
@@ -1134,41 +1594,79 @@ async function joinRoom(room, roomScene, area = null) {
         if (!at || Math.hypot(at.x - me.root.position.x, at.z - me.root.position.z) > config.chatStreetRadius) return;
       }
       const ms = street ? config.chatStreetSeconds * 1000 : 6000;
-      const name = others.chat(id, text, ms);
-      if (!name) return;
-      addChatLine(name, text, '', id);
+      const quiet = inLibrary();
+      const tagName = others.chat(id, text, ms, quiet ? 'chat whisper' : 'chat');
+      if (!tagName) return;
+      const real = serverName && filterText(cleanName(serverName).trim());
+      addChatLine(real || tagName, text, quiet ? 'whisper' : '', id);
       const log = (recentLines.get(id) || []).concat(text).slice(-10);
       recentLines.set(id, log);
     },
   };
+  const joinedLook = currentLook;
   try {
-    const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken() }, {
-      room, self: { id: myId, name: nickname, look: currentLook },
+    if (config.netProvider === 'supabase' && !testRoom) await claimChatId();
+    if (token !== joinToken) return; // a newer join won
+    const n = await createAreaNet(config.netProvider, handlers, { ...config.net, accessToken: () => cloud.accessToken(), claimChatId }, {
+      room, self: { id: myId, name: nickname, look: joinedLook },
       cellSize: area ? config.netCellSize : 0, x: area?.x, z: area?.z,
+      // Debug test rooms play without an account (no cloud save), and the
+      // private chat channel only carries chat from accounts: chat there on
+      // the room channels instead.
+      privateChat: !testRoom,
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
+    // Tell the room where we are now. What we sent while joining went
+    // nowhere, and an unchanged state is only re-sent on the idle heartbeat
+    // (counted in frame time: on a slow device that is minutes away), so
+    // the people already there would see us stand at the map's origin.
+    lastSent = null; sendTimer = 0;
+    // The look changed while we were connecting (the pool hall puts swimwear
+    // on as you come in and takes it off as you leave): tell the new room.
+    if (currentLook !== joinedLook) n.sendLook?.(currentLook);
   } catch (err) {
     // Keep playing solo if the realtime service is unreachable.
     console.warn('Multiplayer unavailable:', err);
-    if (token === joinToken) net = SOLO;
+    if (token === joinToken) {
+      net = SOLO;
+      // Try again in a while (a busy server, a network blip), unless we
+      // have moved on to another room by then.
+      setTimeout(() => {
+        if (token !== joinToken || net !== SOLO) return;
+        const [wx, wz] = myWorldSpot();
+        joinRoom(room, roomScene, area ? { x: wx, z: wz } : null);
+      }, config.netRetrySeconds * 1000);
+    }
   }
 }
 // Rename at the name tag workshop: costs coins; others see it after a quick
 // rejoin of the room we are in. Resolves to 'ok', 'same', 'empty', 'poor'
 // or 'taken' (someone else uses that name).
+// May I change my name now, and for how much? The first change after
+// picking a name is free and immediate, then one change per 7 days. The
+// server decides when it can be asked (019_chat_names.sql; operators never
+// wait, 027_operator_rename.sql), this browser's
+// record otherwise. { free, waitDays, cost }
+async function renameInfo() {
+  const st = (await cloud.nameStatus()) || renameState(identity);
+  return { ...st, cost: st.free ? 0 : RENAME_COST };
+}
 async function renameMe(raw) {
   const clean = cleanName(raw).trim();
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
   if (isReservedName(clean)) return 'reserved';
-  if (wallet.coins < RENAME_COST) return 'poor';
-  if (await cloud.claimName(clean) === 'taken') return 'taken';
-  if (!wallet.spend(RENAME_COST, { k: 'ledger.rename' })) return 'poor';
+  const info = await renameInfo();
+  if (info.waitDays > 0) return 'wait';
+  if (wallet.coins < info.cost) return 'poor';
+  const claimed = await cloud.claimName(clean);
+  if (claimed === 'taken' || claimed === 'wait') return claimed;
+  if (info.cost && !wallet.spend(info.cost, { k: 'ledger.rename' })) return 'poor';
   nickname = next;
-  if (friendBackend instanceof LocalFriends) friendBackend.setName(nickname);
-  identity = { ...identity, name: clean, nameAt: Date.now() };
+  if (chat.friendBackend instanceof LocalFriends) chat.friendBackend.setName(nickname);
+  identity = { ...identity, name: clean, nameAt: Date.now(), renames: (identity.renames || 0) + 1, renamedAt: Date.now() };
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
   $('nickname').value = clean;
@@ -1187,7 +1685,7 @@ function goSolo(roomScene) {
   net?.disconnect();
   net = SOLO;
   for (const id of [...others.players.keys()]) others.leave(id);
-  others = new RemotePlayers(roomScene, $('labels'), { isOperator: isOperatorName });
+  others = new RemotePlayers(roomScene, $('labels'), remoteOpts);
   refreshOnline();
 }
 net = SOLO;
@@ -1223,418 +1721,50 @@ claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewh
 cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
-// Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
-// send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
-const emoteBar = $('emotes');
-const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
-$('keys-emote-range').textContent = `1–${Math.min(9, emoteList.length)}`;
-$('keys-emote-range').closest('li').hidden = !emoteList.length;
-function sendEmote(em) {
-  missionEvent('emote');
-  if (onSquare()) missionEvent('squareEmote');
-  if (em.anim) me.play(em.anim);
-  showBubble(myLabel, $('labels'), em.emoji);
-  net.sendEmote(em.id);
-}
-const petals = emoteList.map((em, i) => {
-  const b = document.createElement('button');
-  b.textContent = em.emoji;
-  b.setAttribute('aria-label', em.id);
-  // Fan out in a quarter circle above and to the left of the main button.
-  // Rings of 3, 4 and 5 petals so up to 12 fit without overlapping.
-  const ring = i < 3 ? 0 : i < 7 ? 1 : 2;
-  const start = [0, 3, 7][ring];
-  const n = Math.min([3, 4, 5][ring], emoteList.length - start);
-  const ang = Math.PI / 2 + (n > 1 ? ((i - start) / (n - 1)) : 0.5) * (Math.PI / 2);
-  const r = [80, 140, 200][ring];
-  b.style.setProperty('--dx', `${Math.cos(ang) * r}px`);
-  b.style.setProperty('--dy', `${-Math.sin(ang) * r}px`);
-  b.onclick = (e) => { e.stopPropagation(); sendEmote(em); closeWheel(); };
-  emoteBar.appendChild(b);
-  return b;
+// Emote wheel. (ui/emote-wheel.js)
+const emoteWheel = createEmoteWheel({
+  get onSquare() { return onSquare; }, get me() { return me; }, get net() { return net; }, $, missionEvent,
+  myLabel,
 });
-let wheelOpen = false, dragHot = null, dragStart = null;
-function openWheel() { wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open'); }
-function closeWheel() {
-  wheelOpen = false; emoteBar.hidden = true; $('emote-wheel').classList.remove('open');
-  petals.forEach((p) => p.classList.remove('hot'));
-  dragHot = null;
-}
-const mainBtn = $('emote-main');
-mainBtn.addEventListener('pointerdown', (e) => {
-  e.preventDefault();
-  mainBtn.setPointerCapture(e.pointerId);
-  dragStart = { x: e.clientX, y: e.clientY, wasOpen: wheelOpen, moved: false };
-  openWheel();
-});
-mainBtn.addEventListener('pointermove', (e) => {
-  if (!dragStart) return;
-  if (Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 12) dragStart.moved = true;
-  dragHot = null;
-  let best = 44;
-  for (const p of petals) {
-    const r = p.getBoundingClientRect();
-    const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
-    if (d < best) { best = d; dragHot = p; }
-  }
-  petals.forEach((p) => p.classList.toggle('hot', p === dragHot));
-});
-const endDrag = () => {
-  if (!dragStart) return;
-  const { moved, wasOpen } = dragStart;
-  dragStart = null;
-  if (dragHot) { sendEmote(emoteList[petals.indexOf(dragHot)]); closeWheel(); }
-  else if (moved || wasOpen) closeWheel(); // dragged off, or tapped again to close
-  // a plain tap leaves the wheel open for tapping a petal
-};
-mainBtn.addEventListener('pointerup', endDrag);
-mainBtn.addEventListener('pointercancel', () => { dragStart = null; closeWheel(); });
-addEventListener('pointerdown', (e) => { if (wheelOpen && !e.target.closest('#emote-wheel')) closeWheel(); });
-addEventListener('keydown', (e) => {
-  if (e.target instanceof HTMLInputElement) return;
-  const n = Number(e.key);
-  if (n >= 1 && n <= emoteList.length) sendEmote(emoteList[n - 1]);
-});
+const { closeWheel } = emoteWheel;
 
-// Text chat: a speech bubble over your head and a log of the last lines,
-// which stay on screen (older ones scroll up; while typing you can scroll
-// back). Opens with 💬, or T or / on a keyboard. Text only, never HTML.
-// The picker in the chat bar chooses who hears it: everyone nearby (public,
-// not stored anywhere), all friends, or one friend. Friend chat is kept like
-// a phone messenger (core/friends.js, the 👥 panel).
-const chatLog = $('chat-log'), chatBar = $('chat-bar'), chatInput = $('chat-input');
-let lastChatAt = 0, chatNoticeShown = false;
-const cleanChat = (s) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, config.chatMaxLength);
-const CHAT_LOG_LINES = 40;
-// opts.onName: what tapping the name does (default: the block/report menu
-// for someone else's id). opts.tag: a small label before the name (friend chat).
-function addChatLine(name, text, kind = '', id = null, opts = {}) {
-  const line = document.createElement('div');
-  line.className = 'chat-line ' + kind;
-  if (opts.tag) line.append(Object.assign(document.createElement('span'), { className: 'chat-tag', textContent: opts.tag }));
-  // Someone else's name is a button: tap it to block or report them.
-  const tap = opts.onName || (id ? () => openPersonMenu(id, name) : null);
-  const b = document.createElement(tap ? 'button' : 'b');
-  b.textContent = name;
-  if (tap) { b.className = 'chat-name'; b.onclick = tap; }
-  line.append(b, document.createTextNode(' ' + text));
-  if (id) line.dataset.who = name;
-  const atEnd = chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 24;
-  chatLog.append(line);
-  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
-  if (atEnd || !chatBar || chatBar.hidden) chatLog.scrollTop = chatLog.scrollHeight;
-  return line;
-}
-let personFor = null;
-function openPersonMenu(id, name) {
-  personFor = { id, name };
-  $('person-name').textContent = name;
-  refreshPersonFriend();
-  $('person-menu').hidden = false;
-}
-function blockPerson(report) {
-  if (!personFor) return;
-  const { id, name } = personFor;
-  if (report) safety.report(id, name, recentLines.get(id) || []);
-  else safety.block(id, name);
-  others.hide(id);
-  for (const el of chatLog.querySelectorAll('.chat-line')) {
-    if (el.dataset.who === name || el.querySelector('.chat-name')?.textContent === name) el.remove();
-  }
-  // Blocking a friend also ends the friendship.
-  const f = friendList.friends.concat(friendList.incoming, friendList.outgoing).find((x) => x.name === name);
-  if (f) friendStore()?.remove(f.uid).then(refreshFriends);
-  $('person-menu').hidden = true;
-  shop.toast(t(report ? 'safety.reported' : 'safety.blocked', { name }));
-  refreshUnblock();
-}
-$('person-block').onclick = () => blockPerson(false);
-$('person-report').onclick = () => blockPerson(true);
-$('person-close').onclick = () => { $('person-menu').hidden = true; };
-function refreshUnblock() {
-  $('unblock-label').textContent = t('safety.unblockAll', { n: safety.blockedCount });
-  $('unblock-btn').disabled = safety.blockedCount === 0;
-}
-$('unblock-btn').onclick = () => { safety.unblockAll(); refreshUnblock(); shop.toast(t('safety.unblocked')); };
-onLanguageChange(refreshUnblock);
-refreshUnblock();
-function openChat() {
-  // Close any open panel first (daily missions, wallet, cart…) so the chat bar is not hidden behind it.
-  for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
-  chatBar.hidden = false;
-  $('hud').classList.add('chat-open');
-  chatLog.scrollTop = chatLog.scrollHeight;
-  input.keys.clear();
-  chatInput.focus();
-  if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
-}
-function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
-const mustSignInToChat = () => config.chatGoogleOnly && config.netProvider === 'supabase' && !(cloud.user && !cloud.guest);
-// A note in the chat log with a Google sign-in button (links this guest, so
-// the save stays).
-function chatSignInPrompt() {
-  const line = document.createElement('div');
-  line.className = 'chat-line note';
-  const btn = document.createElement('button');
-  btn.className = 'chat-signin';
-  btn.textContent = 'G  ' + t('chat.signInBtn');
-  btn.onclick = async () => googleFail(await cloud.linkGoogle());
-  line.append(document.createTextNode('🔒 ' + t('chat.signIn') + ' '), btn);
-  chatLog.append(line);
-  while (chatLog.children.length > CHAT_LOG_LINES) chatLog.firstChild.remove();
-  chatLog.scrollTop = chatLog.scrollHeight;
-  // Only this notice goes away by itself; chat lines stay.
-  setTimeout(() => line.classList.add('old'), 15000);
-  setTimeout(() => line.remove(), 16000);
-}
-$('chat-btn').hidden = !config.chatEnabled;
-$('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
-chatBar.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  // Commands start with "/" and are never sent to other people.
-  const raw = cleanChat(chatInput.value);
-  // Event codes for everyone: "./EVENTSTART1" — coins, once per device.
-  if (isEventCode(raw)) {
-    chatInput.value = '';
-    const ev = await eventCode(raw);
-    if (!ev) { shop.toast(L(CODE_TEXT.wrong)); return; }
-    let used = [];
-    try { used = JSON.parse(localStorage.getItem('mk.eventCodes') || '[]'); } catch { /* broken save */ }
-    if (used.includes(ev.id)) { shop.toast(L(CODE_TEXT.used)); return; }
-    used.push(ev.id);
-    try { localStorage.setItem('mk.eventCodes', JSON.stringify(used)); } catch { /* storage blocked */ }
-    wallet.add(ev.coins, { k: 'ledger.gift' });
-    refreshWallet();
-    shop.toast(fmt(L(CODE_TEXT.coins), { n: ev.coins }));
-    return;
-  }
-  if (raw.startsWith('/')) {
-    chatInput.value = '';
-    // Developer codes: "/<code>". A wrong one reads like any unknown command.
-    const code = raw.slice(1).trim();
-    // The master code also switches the 🛡️ operator badge on or off.
-    if (await isMasterCode(code)) {
-      myLook = { ...myLook, op: !myLook.op || undefined };
-      if (!myLook.op) delete myLook.op;
-      saveLook(myLook);
-      setLook(myLook);
-      shop.toast(L(myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
-    }
-    const coinsFromCode = await coinCode(code);
-    if (coinsFromCode) {
-      wallet.add(coinsFromCode, { k: 'ledger.gift' });
-      refreshWallet();
-      shop.toast(fmt(L(CODE_TEXT.coins), { n: coinsFromCode }));
-      return;
-    }
-    const unlocked = await redeemCode(code);
-    if (unlocked) {
-      const added = inventory.add(...unlocked);
-      shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
-      refreshItems();
-    } else shop.toast(t('chat.unknownCommand'));
-    return;
-  }
-  // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
-  // instead. Event and developer codes above still work for them.
-  if (mustSignInToChat()) { chatSignInPrompt(); return; }
-  if (chatTo !== PUBLIC) {
-    const body = filterText(cleanFriendBody(chatInput.value));
-    if (!body) return;
-    chatInput.value = '';
-    sendFriend(chatTo, body);
-    if (input.isTouch) closeChat();
-    return;
-  }
-  const text = filterText(cleanChat(chatInput.value));
-  const now = performance.now() / 1000;
-  if (!text || now - lastChatAt < config.chatCooldown) return;
-  lastChatAt = now;
-  chatInput.value = '';
-  showBubble(myLabel, $('labels'), text, 6000, 'chat');
-  addChatLine(nickname, text, 'mine');
-  net.sendChat?.(text);
-  if (input.isTouch) closeChat(); // hide the keyboard, give the joystick back
+// Text chat, chat codes, friends and friend chat. (game/chat.js)
+// Sky view for operators (game/sky-flight.js): chat codes, flying costumes.
+const sky = createSkyFlight({
+  get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
+  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || cable); },
+  // (on an open-air park's lawn, Another Land's island or a Han River park:
+  // step back onto the street where you stand, then take off from there)
+  leaveOpenPark: () => { if (mode === 'store' && interior?.store?.open && seated == null && !ride) leaveStore(true); },
+  cloud, input, scene, cam, bounds, blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
+  buildings: solidBuildings, myId, get net() { return net; }, get others() { return others; },
+  isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
+  places: () => [
+    ...zones.items.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
+    ...storefronts.items.map((i) => ({ name: localName(i.store.name, getLanguage()) || '', x: i.door.x, z: i.door.z, icon: '🏬' })),
+  ],
 });
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.isComposing) e.preventDefault(); // Korean/Japanese IME: finish the word first
-  if (e.key === 'Escape') closeChat();
+const chat = createChat({
+  sky,
+  get others() { return others; }, get shop() { return shop; }, get googleFail() { return googleFail; },
+  get CODE_TEXT() { return CODE_TEXT; }, get wallet() { return wallet; },
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get inventory() { return inventory; },
+  get nickname() { return nickname; }, get net() { return net; }, get sfx() { return sfx; }, $, OPERATOR_TEXT,
+  cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
+  onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
+  get whisper() { return inLibrary(); },
+  get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
+  streetPos: () => myPlace(),
 });
-addEventListener('keydown', (e) => {
-  if (!config.chatEnabled || e.target instanceof HTMLInputElement) return;
-  if (e.code === 'KeyT' || e.code === 'Slash') { e.preventDefault(); openChat(); }
-});
-
-
-// ---------- Friends and friend chat ----------
-// Friends are accounts (found by player name), so friend chat works across
-// rooms and areas, and its messages are kept. On Supabase it needs the
-// online save (a guest account is enough to add friends; sending follows the
-// same chat rules as public chat). Local play: other tabs of this browser.
-const PUBLIC = 'public';
-let chatTo = PUBLIC; // who the chat bar sends to: PUBLIC, FRIENDS_ALL or a friend's uid
-let friendList = { friends: [], incoming: [], outgoing: [] };
-let friendBackend = null, friendInbox = null, stopFriendWatch = null;
-const cleanFriendBody = (s) => cleanFriendText(s);
-const READ_KEY = 'mk.friendRead'; // last read message per chat (in the save, so it follows the account)
-function readMarks() {
-  try { const r = JSON.parse(localStorage.getItem(READ_KEY) || '{}'); return r && typeof r === 'object' ? r : {}; } catch { return {}; }
-}
-function saveMarks(m) { try { localStorage.setItem(READ_KEY, JSON.stringify(m)); } catch { /* storage blocked */ } }
-function friendStore() {
-  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
-  let want = null;
-  if (live) want = friendBackend instanceof SupabaseFriends && friendBackend.uid === cloud.user.id ? friendBackend : new SupabaseFriends(cloud.client, cloud.user.id);
-  else if (config.netProvider !== 'supabase') want = friendBackend instanceof LocalFriends ? friendBackend : new LocalFriends(myId, nickname);
-  if (want !== friendBackend) {
-    stopFriendWatch?.();
-    friendBackend = want;
-    friendInbox = want ? new Inbox(want.uid, readMarks()) : null;
-    friendList = { friends: [], incoming: [], outgoing: [] };
-    friendsUi.loaded.clear();
-    refreshFriends.primed = false;
-    knownRequests = null;
-    stopFriendWatch = want ? want.watch(onFriendMessage, () => refreshFriends()) : null;
-    if (want) setTimeout(refreshFriends, 0);
-  }
-  return friendBackend;
-}
-let knownRequests = null; // uids of requests already seen (null = first load)
-async function refreshFriends() {
-  const st = friendStore();
-  if (!st) return;
-  const r = await st.list();
-  if (r.error || st !== friendBackend) { friendsUi.update(); return; }
-  // Hide people I've blocked.
-  const ok = (f) => !safety.isBlocked(null, f.name);
-  friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
-  const seen = new Set(friendList.incoming.map((f) => f.uid));
-  if (knownRequests) for (const f of friendList.incoming) if (!knownRequests.has(f.uid)) shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }));
-  knownRequests = seen;
-  if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
-  // Fetch the newest lines of each chat once, for unread counts and previews.
-  if (!refreshFriends.primed) {
-    refreshFriends.primed = true;
-    for (const k of [FRIENDS_ALL, ...friendList.friends.map((f) => f.uid)]) {
-      st.history(k).then((h) => { if (Array.isArray(h) && st === friendBackend) { friendInbox.add(h); friendsUi.loaded.add(k); refreshFriendBadge(); friendsUi.update(); } });
-    }
-  }
-  renderChatTo();
-  refreshFriendBadge();
-  refreshPersonFriend();
-  friendsUi.update();
-}
-function friendName(uid) { return friendList.friends.find((f) => f.uid === uid)?.name; }
-function onFriendMessage(m) {
-  if (!friendInbox || m.from === friendBackend?.uid) return;
-  const name = friendName(m.from) || m.name || '?';
-  if (safety.isBlocked(null, name)) return;
-  if (!friendInbox.add({ ...m, name }).length) return;
-  const key = convKey(m, friendBackend.uid);
-  const reading = friendsUi.open && friendsUi.view === key;
-  if (!reading) {
-    addChatLine(name, filterText(cleanFriendBody(m.body)), 'friend', null, {
-      tag: key === FRIENDS_ALL ? '👥' : '💌',
-      onName: () => { closeChat(); friendsUi.show(key); },
-    });
-    try { sfx.pop?.(); } catch { /* sound not set up yet */ }
-  }
-  refreshFriendBadge();
-  friendsUi.update();
-}
-async function sendFriend(key, body) {
-  const st = friendStore();
-  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return false; }
-  const r = await st.send(key, body);
-  if (r.error) {
-    if (r.error === 'chat' && mustSignInToChat()) chatSignInPrompt();
-    else shop.toast(friendsUi.errorText(r.error));
-    return false;
-  }
-  friendInbox?.add({ ...r.message, name: nickname });
-  friendInbox && saveMarks(friendInbox.markRead(key));
-  const to = key === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(key) || '?';
-  if (!(friendsUi.open && friendsUi.view === key)) {
-    addChatLine(nickname + ' → ' + to, body, 'mine friend', null, { tag: key === FRIENDS_ALL ? '👥' : '💌', onName: () => { closeChat(); friendsUi.show(key); } });
-  }
-  friendsUi.update();
-  return true;
-}
-const friendsUi = new FriendsUI($('friends-panel'), {
-  store: () => friendStore(),
-  inbox: () => friendInbox,
-  me: () => friendBackend?.uid,
-  friends: () => friendList,
-  refresh: () => refreshFriends(),
-  toast: (m) => shop.toast(m),
-  clean: (s) => filterText(cleanFriendBody(s)),
-  isBlocked: (uid, name) => safety.isBlocked(null, name),
-  onRead: (key) => { if (friendInbox) { saveMarks(friendInbox.markRead(key)); refreshFriendBadge(); } },
-  send: (key, text) => {
-    if (mustSignInToChat()) { shop.toast(friendsUi.errorText('chat')); return false; }
-    const body = filterText(cleanFriendBody(text));
-    return body ? sendFriend(key, body) : false;
-  },
-});
-function refreshFriendBadge() {
-  const n = friendInbox?.totalUnread() || 0;
-  $('chat-unread').hidden = !n;
-  $('chat-unread').textContent = n > 99 ? '99+' : String(n);
-  $('friends-dot').hidden = !(n || friendList.incoming.length);
-}
-// The chat bar's "send to" picker.
-function renderChatTo() {
-  const sel = $('chat-to');
-  const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
-  if (friendBackend) {
-    opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-    for (const f of friendList.friends) opts.push([f.uid, '💌 ' + f.name]);
-  }
-  sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
-  sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;
-  chatTo = sel.value;
-  sel.hidden = opts.length < 2;
-  applyChatTo();
-}
-function applyChatTo() {
-  const friend = chatTo !== PUBLIC;
-  chatBar.classList.toggle('to-friend', friend);
-  chatInput.maxLength = friend ? FRIEND_MAX_BODY : config.chatMaxLength;
-  chatInput.placeholder = friend
-    ? '💬 ' + (chatTo === FRIENDS_ALL ? L(FRIEND_TEXT.allFriends) : friendName(chatTo) || '') + ' · ' + L(FRIEND_TEXT.ph)
-    : t('chat.placeholder');
-}
-$('chat-to').onchange = (e) => { chatTo = e.target.value; applyChatTo(); chatInput.focus(); };
-$('friends-btn').onclick = () => { closeChat(); friendsUi.show(null); };
-// Person menu: add as a friend, or open the chat with a friend.
-function refreshPersonFriend() {
-  const btn = $('person-friend');
-  if (!personFor || !friendBackend) { btn.hidden = true; return; }
-  const f = friendList.friends.find((x) => x.name === personFor.name);
-  const out = friendList.outgoing.some((x) => x.name === personFor.name);
-  btn.hidden = false;
-  btn.disabled = out;
-  btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : '➕ ' + L(FRIEND_TEXT.addFriend);
-}
-$('person-friend').onclick = async () => {
-  if (!personFor) return;
-  const st = friendStore();
-  if (!st) { shop.toast(L(FRIEND_TEXT.noAccount)); return; }
-  const f = friendList.friends.find((x) => x.name === personFor.name);
-  $('person-menu').hidden = true;
-  if (f) { friendsUi.show(f.uid); return; }
-  friendsUi._result(await st.add(personFor.name), personFor.name);
-};
-onLanguageChange(() => { renderChatTo(); friendsUi.update(); });
-cloud.onChange(() => friendStore());
-friendStore();
-renderChatTo();
+const { cleanChat, addChatLine } = chat;
 
 // ---------- Stores, zones, map, guide ----------
 let mode = 'street';
 let activeScene = scene;
 let activeCollision = collision;
 let interior = null; // { store, scene, products, collision, front }
+// In the library chat shows in grey, like a whisper.
+const inLibrary = () => interior?.store.category === 'library';
 let action = null; // what the action button does right now
 // Assign to `action` to force the button to refresh on the next frame
 // (null would compare equal to "no action" and leave a stale button showing).
@@ -1686,7 +1816,20 @@ const shop = new ShopUI({
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
   onRent: (product) => rentHanbok(product),
-  rentLeft: (product) => (isRenting(rental, product.rent) ? timeLeft(rental) : 0),
+  // Lighting shops: a lamp for your home (core/furniture.js), placed with Decorate.
+  onFurniture: (product) => {
+    const id = product.furniture;
+    if (!ITEMS[id] || inventory.has(id)) return;
+    const coins = coinsFor(product.price);
+    if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
+    inventory.add(id);
+    refreshWallet();
+    labelDecor();
+    sfx.pop?.();
+    clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', 'Thank you!']);
+    shop.toast(fmt(L(HOME_TEXT.bought), { name: localName(product.name, getLanguage()) }));
+  },
+  rentLeft: (product) => (isRenting(hanbokRental.rental, product.rent) ? timeLeft(hanbokRental.rental) : 0),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   canGift: (product) => canGift(product),
   onGift: (product) => startGift(interior?.store, product),
@@ -1694,38 +1837,51 @@ const shop = new ShopUI({
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
-    if (!onSale(product)) return false; // a limited edition outside its dates
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (!onSale(product) || itemSoon(shop.store, product)) return false; // a limited edition outside its dates, or not sold yet
+    if (product.ingredient) return buyIngredient(product, coins);
+    if (!handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     refreshWallet();
     const kind = goodsKind(product);
-    if (product.perfume && perfumes.has(product.id)) setHeld({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
-    else setHeld(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (product.perfume && perfumes.has(product.id)) holdNew({ kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(product.name, 'en') });
+    else holdNew(kind === 'gift' ? { kind, sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️' } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(product.name, 'en'), ...(product.snack ? { snack: product.snack } : {}) });
     if (kind !== 'gift') recordFood(shop.store, product, true);
-    clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+    const seller = sellerOf(product) || parkClerk();
+    seller && say(seller, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
     shop.toast(fmt(L(product.perfume ? PERFUME_TEXT.got : GOODS_TEXT.got), { name: localName(product.name, getLanguage()) }));
     return true;
   },
   onTake: (product) => {
-    if (held && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    if (!handReady()) return;
+    holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(shop.store, product, true);
     clerk && say(clerk, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
     shop.toast(t('coffee.got', { name: localName(product.name, getLanguage()) }));
   },
 });
 
+// Market sellers call out to you as you walk past their stall (now and then).
+const STALL_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], ['맛보고 가세요!', 'matbogo gaseyo!', 'Come have a taste!'], ['방금 만들었어요!', 'banggeum mandeureosseoyo!', 'Freshly made!'], ['구경하고 가세요!', 'gugyeonghago gaseyo!', 'Take a look!']];
+let stallHiAt = 0;
+function greetAtStalls(p, list = interior.vendorNpcs) {
+  const now = performance.now();
+  if (now - stallHiAt < 12000) return;
+  const o = list.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
+  if (!o) return;
+  stallHiAt = o.hiAt = now;
+  o.ch.wave();
+  say(o, $('labels'), STALL_HI[Math.floor(Math.random() * STALL_HI.length)]);
+}
+// At the park's market, the stall's own seller thanks you (not the kiosk clerk).
+function sellerOf(product) {
+  const hp = hanPark() || interior, i = hp?.vendors?.findIndex((v) => v.stall === product.stall);
+  return i >= 0 ? hp.vendorNpcs?.[i] : null;
+}
 // What a bought thing becomes in your hand.
-const SHOP_ICON = { notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
-const goodsKind = (product) => (['samgak', 'bread', 'bowl', 'roll', 'skewer', 'bacon'].includes(product.model) ? 'food' : product.model === 'cup' || product.model === 'milk' ? 'coffee' : 'gift');
-const GOODS_TEXT = {
-  got: { en: 'You bought {name}!', ko: '{name}을(를) 샀어요!', ja: '{name}を買いました！', zh: '买了{name}！', es: '¡Compraste {name}!', ar: 'اشتريت {name}!', vi: 'Bạn đã mua {name}!', hi: 'आपने {name} ख़रीदा!', id: 'Kamu membeli {name}!' },
-  gift: { en: 'A shopping bag · {name}', ko: '쇼핑백 · {name}', ja: 'ショッピングバッグ · {name}', zh: '购物袋 · {name}', es: 'Bolsa de compras · {name}', ar: 'كيس تسوق · {name}', vi: 'Túi mua sắm · {name}', hi: 'शॉपिंग बैग · {name}', id: 'Tas belanja · {name}' },
-  soon: { en: '🚧 Coming soon: this shop is getting ready.', ko: '🚧 현재 준비중입니다.', ja: '🚧 現在準備中です。', zh: '🚧 正在准备中。', es: '🚧 Próximamente: la tienda se está preparando.', ar: '🚧 قريبًا: المتجر قيد التجهيز.', vi: '🚧 Sắp ra mắt: cửa hàng này đang chuẩn bị.', hi: '🚧 जल्द आ रहा है: यह दुकान तैयार हो रही है।', id: '🚧 Segera hadir: toko sedang disiapkan.' },
-};
+const SHOP_ICON = { ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏', notebook: '📓', pen: '🖊️', candle: '🕯️', bottle: '🧴', jar: '🫙', lipstick: '💄', plush: '🧸', tote: '👜', scarf: '🧣', samgak: '🍙', milk: '🥛', bread: '🥐', cup: '🥤' };
 // Ordering at the counter: META COFFEE and the bar from the clerk, a club
 // from its bartender. Coffee refills your stamina when you sip it.
-const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', vi: 'Gọi món', hi: 'ऑर्डर करें', id: 'Pesan' };
+const COUNTER_ORDER = { en: 'Order', ko: '주문하기', ja: '注文する', zh: '点单', es: 'Pedir', ar: 'اطلب', vi: 'Gọi món', hi: 'ऑर्डर करें', fr: 'Commander', th: 'สั่ง', id: 'Pesan' };
 function orderAtCounter(p) {
   const st = interior?.store;
   if (!st || !(st.takeaway || st.category === 'cafe' || st.category === 'bar' || st.category === 'club') || !st.products?.length) return null;
@@ -1737,9 +1893,10 @@ const counterUi = new CounterUI({
   canGift: () => peopleHere().length > 0,
   onGift: (store, product) => startGift(store, product),
   onBuy: (store, product, coins) => {
-    if (held && !confirm(t('coffee.replace'))) return false;
+    if (product.ingredient) { buyIngredient(product, coins); counterUi.render(shopToastText); return false; } // (stays open to buy more)
+    if (itemSoon(store, product) || !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
-    setHeld({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
+    holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
     who && say(who, $('labels'), ['맛있게 드세요!', 'masitge deuseyo!', t('coffee.enjoy')]);
@@ -1748,10 +1905,18 @@ const counterUi = new CounterUI({
   },
 });
 
+// Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
+// River parks, the theme park, the Namsan slope) and the street have them.
+const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.cablecar || interior?.lawns);
+// Where pets may not go in this room: the bumper car rink in Another Land.
+const PARK_FENCES = [RINK_FENCE];
+const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
 // My pet: adopt, walk, clean up after it (src/game/pet-care.js).
 const petCare = createPetCare({
   get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
   get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
+  get indoors() { return petIndoors(); },
+  get fences() { return petFences(); },
   get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; },
   clearAction: () => { action = STALE; }, refreshQuestChip, refreshItems, refreshWallet,
@@ -1767,14 +1932,6 @@ let questFolded = (() => { try { return localStorage.getItem(QUEST_FOLD_KEY) ===
 // sprayed from the hand. A spray lasts 3 minutes; meanwhile a small effect of
 // that perfume pops up next to you every ~7 seconds, and others nearby see it
 // too (one short id in the state we already send, no extra messages).
-const PERFUME_TEXT = {
-  spray: { en: 'Spray', ko: '뿌리기', ja: 'つける', zh: '喷', es: 'Rociar', ar: 'رشّ', vi: 'Xịt', hi: 'छिड़कें', id: 'Semprot' },
-  got: { en: 'You bought {name}! Tap 🧴 Spray to wear it, or keep it in your bag.', ko: '{name}을(를) 샀어요! 🧴 뿌리기를 누르거나 가방에 넣어 두세요.', ja: '{name}を買いました！🧴でつけるか、バッグにしまってね。', zh: '买了{name}！点🧴喷一下，或放进包里。', es: '¡Compraste {name}! Toca 🧴 Rociar o guárdalo en la bolsa.', ar: 'اشتريت {name}! اضغط 🧴 رشّ أو احفظه في الحقيبة.', vi: 'Bạn đã mua {name}! Nhấn 🧴 Xịt hoặc cất vào túi.', hi: 'आपने {name} ख़रीदा! 🧴 छिड़कें दबाएँ या बैग में रखें।', id: 'Kamu membeli {name}! Ketuk 🧴 Semprot atau simpan di tas.' },
-  sprayed: { en: '🧴 {name} · lasts 3 min · {n} sprays left', ko: '🧴 {name} · 3분 동안 향이 나요 · {n}번 남음', ja: '🧴 {name} · 3分間香ります · 残り{n}回', zh: '🧴 {name} · 香味持续3分钟 · 还剩{n}次', es: '🧴 {name} · dura 3 min · quedan {n}', ar: '🧴 {name} · يدوم 3 دقائق · بقيت {n} رشّات', vi: '🧴 {name} · thơm trong 3 phút · còn {n} lần', hi: '🧴 {name} · 3 मिनट तक · {n} बार बाक़ी', id: '🧴 {name} · tahan 3 menit · sisa {n} semprot' },
-  last: { en: '🧴 {name} · lasts 3 min · that was the last spray', ko: '🧴 {name} · 3분 동안 향이 나요 · 마지막 한 번이었어요', ja: '🧴 {name} · 3分間香ります · 最後の1回でした', zh: '🧴 {name} · 香味持续3分钟 · 这是最后一喷', es: '🧴 {name} · dura 3 min · era la última', ar: '🧴 {name} · يدوم 3 دقائق · كانت آخر رشّة', vi: '🧴 {name} · thơm trong 3 phút · đó là lần xịt cuối', hi: '🧴 {name} · 3 मिनट तक · यह आख़िरी बार था', id: '🧴 {name} · tahan 3 menit · itu semprotan terakhir' },
-  gone: { en: 'Your perfume has worn off. Spray again from your bag.', ko: '향수 향이 날아갔어요. 가방에서 꺼내 다시 뿌려요.', ja: '香水の香りが消えました。バッグから出してまたつけてね。', zh: '香水味散了。从包里拿出来再喷一次吧。', es: 'Tu perfume se ha desvanecido. Vuelve a rociarlo desde la bolsa.', ar: 'تلاشى عطرك. رشّه مجددًا من الحقيبة.', vi: 'Mùi nước hoa đã bay hết. Lấy từ túi ra xịt lại nhé.', hi: 'आपकी ख़ुशबू उड़ गई। बैग से निकालकर फिर छिड़कें।', id: 'Wangi parfummu sudah hilang. Semprot lagi dari tas.' },
-  desc: { en: '{style} perfume · {n} sprays left. Hold it and tap 🧴 Spray.', ko: '{style} 향수 · {n}번 남음. 손에 들고 🧴 뿌리기를 눌러요.', ja: '{style}な香水 · 残り{n}回。手に持って🧴をタップ。', zh: '{style}香水 · 还剩{n}次。拿在手上点🧴。', es: 'Perfume {style} · quedan {n}. Sostenlo y toca 🧴.', ar: 'عطر {style} · بقيت {n} رشّات. أمسكه واضغط 🧴.', vi: 'Nước hoa {style} · còn {n} lần. Cầm lên và nhấn 🧴.', hi: '{style} ख़ुशबू · {n} बार बाक़ी। हाथ में लेकर 🧴 दबाएँ।', id: 'Parfum {style} · sisa {n}. Pegang lalu ketuk 🧴.' },
-};
 const scent = new Scent(localStorage, (id) => perfumes.has(id));
 let myScent = scent.active();
 const scentFx = new ScentFx();
@@ -1875,6 +2032,47 @@ function updateScents(dt) {
   }
   for (const id of scentSeen.keys()) if (!others.players.has(id)) scentSeen.delete(id);
   scentFx.update(dt);
+  runwayWords.update(dt);
+  runwayPoseTick(dt);
+  for (const [root, t0] of wobbles) {
+    const t = t0 + dt;
+    root.rotation.z = wobbleAt(t);
+    if (t >= WOBBLE_S) { root.rotation.z = 0; wobbles.delete(root); } else wobbles.set(root, t);
+  }
+}
+// The Curve Runway's reactions (core/runway-fx.js), on me or on someone in
+// the room: a sparkle (perfect), a twinkle (close) or a wobble and "!" (miss),
+// and the pose's word over the head.
+const runwayWords = new WordFx();
+const wobbles = new Map(); // character root → seconds into its wobble
+function runwayReact(root, tier, word) {
+  if (!root || mode !== 'store') return;
+  const { x, y, z } = root.position;
+  scentFx.attach(activeScene);
+  runwayWords.attach(activeScene);
+  if (tier === 'p') scentFx.puff(x, y, z, pickPerfect(), true);
+  else if (tier === 'g') scentFx.puff(x, y, z, GOOD_FX, false);
+  else { wobbles.set(root, 0); runwayWords.pop(x + 0.45, y + 1.5, z, '!', '#ff6b6b', true); }
+  if (word) runwayWords.pop(x, y + 2.3, z, L(RUNWAY_WORDS[word]), wordColor(word)); // each word its own colour
+}
+// A photo pose (core/runway-poses.js) on me or on someone in the room: an
+// emote clip, or bone offsets held for a moment. (The spin is main.js's
+// runwayStep on me; others are seen turning through their updates.)
+const runwayPosing = new Map(); // character → { id, t }
+function runwayPose(ch, id) {
+  const kind = poseKind(id);
+  if (!ch || !kind) return;
+  if (kind === 'clip') { ch.play(id); return; }
+  if (kind !== 'moves') return;
+  const st = { id, t: 0 };
+  runwayPosing.set(ch, st);
+  ch.setMoves?.(() => poseAt(st.id, st.t));
+}
+function runwayPoseTick(dt) {
+  for (const [ch, st] of runwayPosing) {
+    st.t += dt;
+    if (st.t >= POSE_S) { ch.setMoves?.(null); runwayPosing.delete(ch); }
+  }
 }
 const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
@@ -1885,19 +2083,23 @@ let held = (() => {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
+    if (h?.kind === 'duckmold') return { kind: 'duckmold' };
+    if (h?.kind === 'balloon') return restoreBalloon(h); // (Another Land's clown; gone once its air is out)
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
-    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40) } : null;
+    return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
   } catch { return null; }
 })();
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
-const heldKind = () => (rodOut ? 'rod' : held?.kind || null);
+const rodSkins = new RodSkins();
+// (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
-  $('drink-btn').hidden = !h || h.kind === 'gift'; // a shopping bag is just carried
-  $('stow-btn').hidden = !h;
+  $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
+  $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
   $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : '☕';
   $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
@@ -1911,6 +2113,7 @@ function drink() {
     return;
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
+  if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
   if (held.kind === 'coffee' || held.kind === 'glass') { // any drink: full stamina, and it stays full for 3 minutes
@@ -1935,15 +2138,12 @@ try {
   if (localStorage.getItem(UMB_KEY)) { bag.add({ kind: 'umbrella' }); localStorage.removeItem(UMB_KEY); }
 } catch { /* storage blocked */ }
 const hasUmbrella = () => bag.has('umbrella');
-const umbrellaOpen = () => hasUmbrella() && mode === 'street' && !riding && !seated && WET.has(weather.kind);
+const umbrellaOpen = () => hasUmbrella() && outdoors() && !riding && !seated && WET.has(weather.kind); // (on a Han River park's lawn too)
 const wxSpeed = () => (mode !== 'street' || isCar(riding) ? 1 : weatherSpeed(weather.kind, { bike: !!riding, umbrella: umbrellaOpen() }));
-const UMB_TEXT = {
-  bought: { en: 'Got an umbrella! It opens by itself when it rains or snows. ☂️', ko: '우산을 샀어요! 비나 눈이 오면 저절로 펴져요. ☂️', ja: '傘を買いました！雨や雪の日は自動で開きます。☂️', zh: '买到雨伞了！下雨或下雪时会自动撑开。☂️' },
-};
 function buyUmbrella(product) {
   if (hasUmbrella()) return;
   if (bag.full) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
-  const cost = product.coins || 5;
+  const cost = product.coins || 5000;
   if (!wallet.spend(cost, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return; }
   bag.add({ kind: 'umbrella' });
   refreshWallet();
@@ -1951,6 +2151,7 @@ function buyUmbrella(product) {
   shop.openProduct(product); // the button now says you have one
 }
 if (held) setHeld(held);
+if (held?.kind === 'book') bag.removeKind('book'); // one library book out at a time: the one in hand
 
 // Put what's in my hand into the bag, and take things back out.
 const UMB_DESC = { en: 'Opens by itself outdoors when it rains or snows.', ko: '밖에서 비나 눈이 오면 저절로 펴져요.', ja: '外で雨や雪が降ると自動で開きます。', zh: '在外面下雨或下雪时会自动撑开。' };
@@ -1959,6 +2160,7 @@ const BOOK_DESC = { en: 'Hold it and sit down to read.', ko: '손에 들고 앉�
 const DRINK_DESC = { en: '{n} sips left.', ko: '{n}모금 남았어요.', ja: '残り{n}口。', zh: '还剩{n}口。' };
 function describeEntry(e) {
   if (e.kind === 'umbrella') return { emoji: '☂️', name: L(UMB_NAME), desc: L(UMB_DESC), canHold: false };
+  if (e.kind === 'duckmold') return { emoji: '🦆', name: L(SNOW_TEXT.moldName), desc: L(SNOW_TEXT.moldDesc), canHold: true };
   if (e.kind === 'book') {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
@@ -1978,8 +2180,26 @@ function stowHeld() {
   sfx.pop?.();
   shop.toast(fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
 }
+// Taking something new in your hand puts what you were holding into the bag
+// (it used to just vanish). Only when the bag is full do we ask first, since
+// then the old thing would be thrown away.
+function handReady() {
+  if (!held || !bag.full) return true;
+  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.cap }));
+}
+function holdNew(h) {
+  const old = held;
+  if (old && bag.add(old)) {
+    const name = describeEntry(old).name;
+    setTimeout(() => shop.toast(fmt(L(BAG_TEXT.autoStow), { name, n: bag.size, cap: bag.cap })), 1800);
+  }
+  setHeld(h);
+}
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+// Hold on to the collection's nodes now: the bag panel re-renders its children,
+// so they can't be looked up by id once another tab has been shown.
+itemEl('wallet-items-title'); itemEl('wallet-items');
 const bagUi = new BagUI({
   root: $('bag-panel'),
   bag,
@@ -1992,15 +2212,83 @@ const bagUi = new BagUI({
   onDrop: (i) => bag.take(i),
   extra: () => {
     refreshItems();
-    $('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
-    return [$('wallet-items-title'), $('wallet-items')];
+    itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
+    return [itemEl('wallet-items-title'), itemEl('wallet-items')];
   },
+  // The Wardrobe tab, a grid like the bag's: put clothes on or take them off
+  // (trousers can only be swapped for another pair).
+  closet: () => ({
+    ids: inventory.list().filter(isClothes),
+    describe: (id) => {
+      const it = ITEMS[id];
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
+    },
+    actions: (id, redraw) => {
+      const it = ITEMS[id];
+      const w = document.createElement('button');
+      if (it.wear) {
+        const on = isWorn(it, myLook);
+        w.className = 'chip' + (on ? ' on' : '');
+        w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(BAG_TEXT.wearing)) : '✨ ' + t('tee.wear');
+        w.disabled = on && !it.off;
+        w.onclick = () => { outfitAction(id); redraw(); };
+      } else { // a printed shirt
+        const wearing = myLook.tee === it.tee;
+        w.className = 'chip' + (wearing ? ' on' : '');
+        w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
+        w.onclick = () => {
+          myLook = { ...myLook, tee: wearing ? null : it.tee };
+          saveLook(myLook);
+          setLook(myLook);
+          redraw();
+        };
+      }
+      return [w];
+    },
+  }),
+  rides: () => (garage.s.own.length > 1 ? { nodes: [bagRideList()], count: garage.s.own.length } : null),
 });
+// The bag's Rides tab: every ride you own (bike, board, skates, scooter), to
+// switch without going back to a ride shop. On the street and on foot,
+// "Ride this" also gets you on it.
+function bagRideList() {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const list = el('div', 'bag-rides');
+  for (const m of BIKE_MODELS.filter((b) => garage.has(b.id))) {
+    const on = garage.s.use === m.id;
+    const row = el('div', 'lp-row bike-row' + (on ? ' on' : ''));
+    const sw = el('span', 'bike-swatch');
+    sw.style.background = m.color;
+    const text = el('span', 'lp-text');
+    const name = el('strong', null, `${VEHICLE_ICON[m.type]} ${L(m.name)} `);
+    name.append(el('span', 'tier-stars t' + m.tier, TIER_STARS[m.tier]));
+    text.append(name, el('small', null, `${L(BIKE_TEXT.speed)} ${garage.speedOf(m.id).toFixed(1)} · ${fmt(L(BIKE_TEXT.dur), { n: Math.floor(garage.durability(m.id)) })}`));
+    const btns = el('span', 'bike-btns');
+    if (on) btns.append(el('small', 'bike-using', '✓ ' + L(riding === 1 ? BIKE_TEXT.using : BIKE_TEXT.picked)));
+    else {
+      const b = el('button', 'chip', L(BIKE_TEXT.use));
+      b.onclick = () => {
+        garage.use(m.id);
+        sfx.pop?.();
+        if (riding === 1) applyRide();
+        else if (!riding && mode === 'street') { bagUi.hide(); setRiding(1); }
+        shop.toast(fmt(L(riding === 1 ? BIKE_TEXT.switched : BIKE_TEXT.pickedNote), { name: `${VEHICLE_ICON[m.type]} ${L(m.name)}` }));
+        if (!$('bag-panel').hidden) bagUi.render();
+      };
+      btns.append(b);
+    }
+    row.append(sw, text, btns);
+    list.append(row);
+  }
+  return list;
+}
 $('bag-btn').onclick = () => { if ($('bag-panel').hidden) bagUi.show(); else bagUi.hide(); };
 $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+$('keys-bag').textContent = L(BAG_TEXT.title);
 onLanguageChange(() => {
   $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
   $('bag-btn').querySelector('small').textContent = L(BAG_TEXT.title);
+  $('keys-bag').textContent = L(BAG_TEXT.title);
 });
 
 function setLook(look) {
@@ -2021,24 +2309,98 @@ $('revert-look').onclick = () => {
   $('revert-look').hidden = true;
 };
 
-function moveMeTo(targetScene, x, z, ry, camYaw = ry + Math.PI) {
+// The camera keeps its angle to the character (behind stays behind) unless
+// camYaw says where it is. camVia: walking on from one frame into another
+// (onto an open park's lawn, or off it): the camera and the way I'm walking
+// carry over through that matrix instead of jumping.
+function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotation.y, camVia = null) {
   me.root.parent?.remove(me.root);
   targetScene.add(me.root);
   me.root.position.set(x, 0, z);
   me.root.rotation.y = ry;
   lastSent = null; // teleport: tell others right away
   sendTimer = 0;
+  teleports = (teleports + 1) % 100; // (others jump us there instead of sliding: core/players.js)
+  if (camVia) {
+    moveRef.yaw += camYaw - cam.yaw; // (a key held down keeps walking the same way)
+    cam.yaw = camYaw;
+    camera.position.applyMatrix4(camVia);
+    return;
+  }
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
 
-const interiorCache = new Map();
+// A shop's inside, built on the first visit and kept while it is one of the
+// last few rooms visited (game/room-cache.js: phones drop the page when
+// every room ever opened stays in memory).
+const interiorCache = createRoomCache({
+  max: lowSpec ? 4 : 10,
+  build: (store) => {
+    const built = buildInterior(store);
+    built.collision = new CollisionMap(built.colliders);
+    if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
+    if (built.zooPark) zooVisit.adopt(built); // the zoo: its keeper, visitors, carts and feeding times
+    built.setSignLang?.(signsTranslated ? getLanguage() : null);
+    if (built.stations?.dartboards) built.dartPins = new DartPins(built.scene, built.stations.dartboards);
+    stampStands.addRoom(store.id, built.scene, built.floorAt); // stamp stands inside (the Namsan summit)
+    return built;
+  },
+  // Kept: the room you're in, the park behind its haunted house or runway,
+  // and the open-air parks the street shows.
+  keep: (id) => id === interior?.store?.id || id === interior?.front?.parkFront?.store?.id || openParks.some((o) => o.item.store.id === id),
+  shown: () => [scene],
+  onDrop: (id) => stampStands.dropRoom(id),
+});
+const roomFor = (store) => interiorCache.room(store);
+// Walking into a room not built yet: a game tip covers the build (game/tips.js).
+const roomTips = createRoomTips({ $, enterStore: (it) => enterStore(it), built: (store) => !!interiorCache.get(store.id) });
+// Textures not drawn for a minute leave the GPU (game/gpu-janitor.js): far
+// districts and kept rooms stop holding a phone's memory.
+const gpuJanitor = createGpuJanitor({ roots: () => [scene, ...[...interiorCache.values()].map((b) => b.scene)] });
+let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
 let barkeep = null; // a club's bartender
 let areaGuide = null; // an Information Center's area guide (the clerk is the game guide)
 const TRAINER_LOOK = { model: 'trainer', hair: 'black', skin: 'warm', shirt: 'charcoal' };
 let trainerLine = -1;
+// 숨 요가·필라테스: the instructor leads the class at the front; members
+// already on some mats follow her, and someone is on a reformer or two.
+let instructor = null;
+let instructorLine = -1;
+function talkToInstructor() {
+  instructorLine = nextInstructorLine(instructorLine);
+  say(instructor, $('labels'), INSTRUCTOR_LINES[instructorLine]);
+  me.root.rotation.y = Math.atan2(instructor.ch.root.position.x - me.root.position.x, instructor.ch.root.position.z - me.root.position.z);
+}
+// A gym or studio spot you're using: where you stand (or lie, on a bench or
+// a reformer) and where you get off again.
+let gymSpot = null; // { x, z, back: [x, z] | null }
+function useGymSpot(st, kind) {
+  const at = st.lie || { x: st.x, z: st.z, ry: st.face ?? me.root.rotation.y };
+  me.root.position.set(at.x, 0, at.z);
+  me.root.rotation.y = at.ry;
+  gymSpot = { x: at.x, z: at.z, back: st.lie ? [st.x, st.z] : null };
+  gymUi.show(kind);
+}
+function leaveGymSpot() {
+  const s = gymSpot;
+  gymSpot = null;
+  if (gymUi.open) gymUi.close();
+  if (s?.back && mode === 'store') me.root.position.set(s.back[0], 0, s.back[1]); // off the bench / reformer, beside it
+}
+let studioPose = ''; // the class's pose now (the instructor says each new one)
+function updateStudio() {
+  if (!interior?.studioNpcs) return;
+  const pose = classPose(performance.now() / 1000);
+  for (const o of interior.studioNpcs.class) o.ch.activity(pose);
+  if (pose !== studioPose) {
+    studioPose = pose;
+    const p = YOGA_FLOW.find((q) => q.id === pose);
+    if (instructor && p) showBubble(instructor, $('labels'), `${p.icon} ${L(p.name)}`, 2600);
+  }
+}
 function talkToTrainer() {
   trainerLine = nextTrainerLine(trainerLine);
   const [ko, rom, en] = TRAINER_LINES[trainerLine];
@@ -2046,7 +2408,7 @@ function talkToTrainer() {
   say(trainer, $('labels'), [ko, rom, en]);
   me.root.rotation.y = Math.atan2(trainer.ch.root.position.x - me.root.position.x, trainer.ch.root.position.z - me.root.position.z);
 }
-// Bike share: rent at a station, get off anywhere (the bike goes back by itself).
+// Riding: your own bike (the 🚲 button), a tandem, a car, or a seat in someone's vehicle.
 let riding = 0; // 0 walking, 1 bike, 2 tandem (driving), 3 a seat in someone's vehicle, 4 car (driving)
 let tandemDriver = null; // id of the driver whose vehicle I'm riding in
 let mySeat = 0; // my seat in their vehicle (see SEATS)
@@ -2057,7 +2419,8 @@ const freeSeat = () => { for (let i = 0; i < seatsOf(riding); i++) if (!passenge
 function setRiding(on) {
   const kind = on === true ? 1 : on || 0;
   if (riding === kind) return;
-  if (kind && mode !== 'street') return;
+  if (kind && mode !== 'street' && !(interior?.zooPark && (kind === CART || kind === 3))) return; // (in the zoo: its carts, and a seat in a friend's)
+  if (kind && seoulDal.busy) return; // (not in Seoul Dal's gondola)
   // Leaving a shared vehicle tells the others.
   for (const id of passengers.values()) net.sendEmote(tandemMsg('end', id));
   passengers.clear();
@@ -2088,7 +2451,7 @@ function setRiding(on) {
 function onTandemMsg(from, { verb, target, seat }) {
   if (target !== myId) return;
   const name = others.nameOf(from) || '?';
-  if (verb === 'invite' && !riding && mode === 'street') {
+  if (verb === 'invite' && !riding && (mode === 'street' || interior?.zooPark)) {
     tandemInvite = { from, name, seat, until: performance.now() + 15000 };
     shop.toast(t('tandem.invited', { name }));
     action = STALE;
@@ -2109,7 +2472,7 @@ function tandemGone(id) {
 function hopOn(inv) {
   tandemInvite = null;
   const front = others.rootOf(inv.from);
-  if (!front || mode !== 'street') return;
+  if (!front || (mode !== 'street' && !interior?.zooPark)) return;
   setRiding(0);
   tandemDriver = inv.from;
   mySeat = inv.seat;
@@ -2118,6 +2481,9 @@ function hopOn(inv) {
 }
 // Items (saved on this device). A developer code in chat adds items.
 const inventory = new Inventory();
+// What I paid for clothes I bought myself: only those can be sold back at a
+// second-hand shop (core/resale.js).
+const receipts = new Receipts();
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2125,19 +2491,8 @@ try {
     localStorage.setItem('mk.outfitGift', '1');
   }
 } catch { /* storage blocked */ }
+if (String(myLook.model).startsWith('swim-')) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); } // swimwear is only for the pool
 if (OUTFIT_ITEM(myLook.model) && !isHanbokModel(myLook.model) && !inventory.has(OUTFIT_ITEM(myLook.model))) { myLook = { ...myLook, model: 'basic' }; saveLook(myLook); setTimeout(() => setLook(myLook), 0); }
-const CODE_TEXT = {
-  coins: { en: '🪙 +{n} coins!', ko: '🪙 {n}코인을 받았어요!', ja: '🪙 {n}コインもらいました！', zh: '🪙 获得{n}枚硬币！', es: '🪙 ¡+{n} monedas!', ar: '🪙 +{n} عملة!', vi: '🪙 +{n} xu!', hi: '🪙 +{n} सिक्के!', id: '🪙 +{n} koin!' },
-  used: { en: 'That code was already used on this device.', ko: '이 기기에서 이미 쓴 코드예요.', ja: 'この端末ではもう使ったコードです。', zh: '这个代码已在本设备上使用过。', es: 'Ese código ya se usó en este dispositivo.', ar: 'استُخدم هذا الرمز بالفعل على هذا الجهاز.', vi: 'Mã này đã được dùng trên thiết bị này.', hi: 'यह कोड इस डिवाइस पर पहले ही इस्तेमाल हो चुका है।', id: 'Kode itu sudah dipakai di perangkat ini.' },
-  wrong: { en: 'That event code doesn\'t exist.', ko: '없는 이벤트 코드예요.', ja: 'そのイベントコードはありません。', zh: '没有这个活动代码。', es: 'Ese código de evento no existe.', ar: 'رمز الفعالية هذا غير موجود.', vi: 'Mã sự kiện này không tồn tại.', hi: 'यह इवेंट कोड मौजूद नहीं है।', id: 'Kode acara itu tidak ada.' },
-};
-const OUTFIT_TEXT = {
-  bought: { en: 'New clothes! You are wearing them now.', ko: '새 옷을 샀어요! 바로 입었어요.', ja: '新しい服を買いました！さっそく着ています。', zh: '买了新衣服！已经穿上了。', es: '¡Ropa nueva! Ya la llevas puesta.', ar: 'ملابس جديدة! أنت ترتديها الآن.', vi: 'Quần áo mới! Bạn đang mặc rồi.', hi: 'नए कपड़े! आपने इन्हें अभी पहन लिया है।', id: 'Baju baru! Sekarang sedang kamu pakai.' },
-  on: { en: 'Changed clothes!', ko: '옷을 갈아입었어요!', ja: '着替えました！', zh: '换好衣服了！', es: '¡Te cambiaste de ropa!', ar: 'غيّرت ملابسك!', vi: 'Đã thay đồ!', hi: 'कपड़े बदल लिए!', id: 'Sudah ganti baju!' },
-  off: { en: 'Back in your T-shirt.', ko: '티셔츠로 갈아입었어요.', ja: 'Tシャツに着替えました。', zh: '换回T恤了。', es: 'De vuelta a tu camiseta.', ar: 'عدت إلى قميصك.', vi: 'Đã trở lại áo phông.', hi: 'वापस अपनी टी-शर्ट में।', id: 'Kembali ke kaosmu.' },
-  boughtThing: { en: 'Bought! You are wearing it now.', ko: '샀어요! 바로 착용했어요.', ja: '買いました！さっそく着けています。', zh: '买好了！已经穿戴上了。', es: '¡Comprado! Ya lo llevas puesto.', ar: 'تم الشراء! أنت ترتديه الآن.', vi: 'Đã mua! Bạn đang đeo/mặc rồi.', hi: 'ख़रीद लिया! आपने इसे अभी पहन लिया है।', id: 'Sudah dibeli! Sekarang sedang kamu pakai.' },
-  offThing: { en: 'Taken off.', ko: '벗었어요.', ja: '外しました。', zh: '取下了。', es: 'Te lo quitaste.', ar: 'خلعته.', vi: 'Đã tháo ra.', hi: 'उतार दिया।', id: 'Sudah dilepas.' },
-};
 // Clothes and accessory shops and the items list: buy (coins), wear, or
 // take off. Buying puts it on right away.
 function outfitAction(itemId) {
@@ -2145,8 +2500,10 @@ function outfitAction(itemId) {
   if (!it?.wear) return;
   const on = isWorn(it, myLook);
   if (!inventory.has(itemId)) {
-    if (!wallet.spend(it.price, { name: it.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
+    const note = { name: it.name, at: interior?.store.name };
+    if (!wallet.spend(it.price, note)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
+    receipts.record(itemId, it.price, wallet.lastOp, note);
     refreshWallet();
     sfx.pop?.();
     myLook = { ...myLook, ...it.wear };
@@ -2162,182 +2519,26 @@ function outfitAction(itemId) {
   saveLook(myLook);
   setLook(myLook);
 }
-// Hanbok rental (Dano Hanbok Rental by Gyeongbokgung): pay coins, wear it for
-// a few hours, then your own clothes come back by themselves, also after a
-// reload (core/hanbok-rental.js). A chip shows the time left.
-const RENT_TEXT = {
-  rented: { en: '🪭 Rented! Enjoy your hanbok for {h} hours.', ko: '🪭 대여 완료! {h}시간 동안 한복을 즐겨요.', ja: '🪭 レンタル完了！{h}時間韓服を楽しんでね。', zh: '🪭 租好了！尽情穿{h}小时韩服吧。', es: '🪭 ¡Alquilado! Disfruta tu hanbok {h} horas.', ar: '🪭 تم الاستئجار! استمتع بالهانبوك لمدة {h} ساعات.', vi: '🪭 Đã thuê! Tận hưởng hanbok trong {h} giờ.', hi: '🪭 किराए पर लिया! {h} घंटे हानबोक का मज़ा लें।', id: '🪭 Tersewa! Nikmati hanbokmu selama {h} jam.' },
-  ended: { en: '🪭 Your hanbok rental is over: back in your own clothes.', ko: '🪭 한복 대여 시간이 끝나서 원래 옷으로 돌아왔어요.', ja: '🪭 韓服のレンタル時間が終わり、元の服に戻りました。', zh: '🪭 韩服租借时间到了，已换回原来的衣服。', es: '🪭 Terminó el alquiler del hanbok: vuelves a tu ropa.', ar: '🪭 انتهى إيجار الهانبوك: عدت إلى ملابسك.', vi: '🪭 Hết giờ thuê hanbok: bạn đã mặc lại đồ của mình.', hi: '🪭 हानबोक का किराया ख़त्म: आप अपने कपड़ों में वापस हैं।', id: '🪭 Sewa hanbok selesai: kembali ke bajumu sendiri.' },
-  returned: { en: '🪭 Hanbok returned. Thank you!', ko: '🪭 한복을 반납했어요. 감사합니다!', ja: '🪭 韓服を返却しました。ありがとう！', zh: '🪭 韩服已归还，谢谢！', es: '🪭 Hanbok devuelto. ¡Gracias!', ar: '🪭 أُعيد الهانبوك. شكرًا!', vi: '🪭 Đã trả hanbok. Cảm ơn!', hi: '🪭 हानबोक लौटा दिया। धन्यवाद!', id: '🪭 Hanbok dikembalikan. Terima kasih!' },
-  chipHint: { en: 'Your own clothes come back when the time is up. Return it early at the hanbok shop.', ko: '시간이 끝나면 원래 옷으로 돌아와요. 한복집에서 미리 반납할 수도 있어요.', ja: '時間が来ると元の服に戻ります。韓服店で早めに返すこともできます。', zh: '时间到了会换回原来的衣服，也可以在韩服店提前归还。', es: 'Tu ropa vuelve cuando se acaba el tiempo. Puedes devolverlo antes en la tienda.', ar: 'تعود ملابسك عند انتهاء الوقت. يمكنك إعادته مبكرًا في متجر الهانبوك.', vi: 'Hết giờ quần áo của bạn sẽ trở lại. Có thể trả sớm ở tiệm hanbok.', hi: 'समय पूरा होने पर आपके कपड़े लौट आते हैं। चाहें तो दुकान पर पहले लौटा दें।', id: 'Bajumu kembali saat waktunya habis. Bisa dikembalikan lebih awal di toko hanbok.' },
-};
-let rental = loadRental();
-function rentHanbok(product) {
-  const set = hanbokById(product.rent);
-  if (!set) return;
-  if (isRenting(rental, product.rent)) { // give it back early
-    myLook = endRental(myLook, rental);
-    rental = null;
-    shop.toast(L(RENT_TEXT.returned));
-  } else {
-    if (!wallet.spend(set.coins, { name: product.name, at: interior?.store.name })) { shop.toast(t('pet.noCoins', { n: set.coins - wallet.coins })); return; }
-    refreshWallet();
-    sfx.pop?.();
-    const r = startRental(myLook, product.rent, Date.now(), rental);
-    myLook = r.look;
-    rental = r.rental;
-    shop.toast(fmt(L(RENT_TEXT.rented), { h: RENT_HOURS }));
-  }
-  $('revert-look').hidden = true;
-  saveRental(rental);
-  saveLook(myLook);
-  setLook(myLook);
-  refreshRentChip();
-}
-function refreshRentChip() {
-  const chip = $('rent-chip');
-  chip.hidden = !rental;
-  if (rental) chip.textContent = '🪭 ' + formatLeft(timeLeft(rental));
-  chip.title = rental ? fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) }) : '';
-}
-// Time up (checked now, then every 20 s): your own clothes back.
-function tickRental() {
-  const r = checkRental(myLook, rental);
-  if (r.rental !== rental || r.look !== myLook) {
-    rental = r.rental;
-    saveRental(rental);
-    if (r.look !== myLook) {
-      myLook = r.look;
-      saveLook(myLook);
-      if (currentLook !== myLook) $('revert-look').hidden = true;
-      setLook(myLook);
-      if (r.ended) shop.toast(L(RENT_TEXT.ended));
-    }
-  }
-  refreshRentChip();
-}
-setTimeout(tickRental, 0);
-setInterval(tickRental, 20000);
-onLanguageChange(refreshRentChip);
-$('rent-chip').onclick = () => shop.toast(`${fmt(L(RENT.left), { t: formatLeft(timeLeft(rental)) })} · ${L(RENT_TEXT.chipHint)}`);
-// Gifts: buy something in a shop for someone else in the same shop (rules in
-// core/gifts.js). The giver pays now; the friend gets a card to accept, and
-// it goes into their bag (or their items, for clothes). No, no answer, or
-// someone leaving the shop gives the coins back.
-// What a product becomes as a gift here, or null when it can't be one:
-// { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
-function giftFor(store, product) {
-  if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product)) return null;
-  const name = product.name;
-  const itemId = product.item || product.outfit;
-  const it = itemId && ITEMS[itemId];
-  if (it?.wear) return it.price > 0 ? { coins: it.price, icon: it.emoji || '👕', name, item: itemId } : null;
-  const how = howToGet(store);
-  if (how === 'counter') {
-    const kind = heldFor(product, store);
-    return { coins: coinPrice(product.price), icon: kind === 'food' ? '🥐' : kind === 'glass' ? '🍹' : '🥤', name, entry: { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
-  }
-  if (how !== 'buy') return null;
-  const coins = coinsFor(product.price);
-  if (product.perfume) return perfumes.has(product.id) ? { coins, icon: '🧴', name, entry: { kind: 'perfume', p: product.id, sips: SPRAYS, name: localName(name, 'en') } } : null;
-  const kind = goodsKind(product), icon = SHOP_ICON[product.model] || '🛍️';
-  return { coins, icon, name, entry: kind === 'gift' ? { kind, sips: 1, name: localName(name, 'en'), icon } : { kind, sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
-}
-// Everyone I can see in this shop, closest first.
-function peopleHere() {
-  if (!interior || subway.metro) return [];
-  const p = me.root.position, out = [];
-  for (const [id, o] of others.players) {
-    if (o.hidden) continue;
-    const at = o.ch.root.position;
-    out.push({ id, name: o.name || '?', d: Math.hypot(at.x - p.x, at.z - p.z) });
-  }
-  return out.sort((a, b) => a.d - b.d).slice(0, 12);
-}
-const canGift = (product) => !!giftFor(interior?.store, product) && peopleHere().length > 0;
-function startGift(store, product) {
-  const g = giftFor(store, product);
-  if (!g) return;
-  const name = localName(g.name, getLanguage());
-  shop.closeProduct();
-  counterUi.close();
-  giftUi.pick({ icon: g.icon, name, coins: g.coins }, peopleHere(), (to) => {
-    const why = gifts.why(to.id);
-    if (why) { shop.toast(fmt(L(GIFT_TEXT[why]), { name: to.name, n: GIFTS_PER_DAY })); return; }
-    if (!others.players.has(to.id)) { shop.toast(L(GIFT_TEXT.nobody)); return; }
-    if (!wallet.spend(g.coins, { name: g.name, at: GIFT_TEXT.ledger })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: g.coins })); return; }
-    refreshWallet();
-    const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins });
-    net.sendEmote(giftMsg('offer', to.id, gid, store.id, product.id));
-    sfx.pop?.();
-    shop.toast(fmt(L(GIFT_TEXT.sent), { name: to.name }));
-  });
-}
-function refundGift(g, reason) {
-  if (g.coins > 0) wallet.add(g.coins, { name: productById(g.store, g.product)?.name, at: GIFT_TEXT.refund });
-  refreshWallet();
-  shop.toast(fmt(L(GIFT_TEXT.back[reason] || GIFT_TEXT.back.no), { name: g.name, n: g.coins }));
-}
-const productById = (storeId, productId) => storeData.find((s) => s.id === storeId)?.products?.find((p) => p.id === productId) || null;
-function showGiftCards() {
-  giftUi.showCards(gifts.cards().map((c) => {
-    const g = giftFor(storeData.find((s) => s.id === c.store), productById(c.store, c.product));
-    return { gid: c.gid, name: c.name, item: g ? localName(g.name, getLanguage()) : '?', icon: g?.icon || '🎁' };
-  }));
-}
-function onGiftMsg(from, m) {
-  if (m.to !== myId) return;
-  const name = others.nameOf(from) || '?';
-  if (m.verb === 'offer') {
-    if (safety.isBlocked(from, name)) return; // blocked: as if it never came (their coins come back on time out)
-    const store = storeData.find((s) => s.id === m.store);
-    if (!giftFor(store, productById(m.store, m.product))) return; // not something this game version sells
-    const r = gifts.heard(from, name, m);
-    if (r === 'show') { sfx.pop?.(); showGiftCards(); }
-    else if (r) net.sendEmote(giftMsg('no', from, m.gid, r));
-    return;
-  }
-  const r = gifts.answer(from, m.gid, m.verb);
-  if (!r) return;
-  if (m.verb === 'ok') {
-    sfx.pop?.();
-    shop.toast(fmt(L(GIFT_TEXT.accepted), { name: r.gift.name, item: localName(productById(r.gift.store, r.gift.product)?.name, getLanguage()) || '🎁' }));
-  } else refundGift(r.gift, m.reason);
-}
-// I tapped Accept or No thanks on a card.
-function answerGift(gid, ok) {
-  const c = gifts.reply(gid, ok);
-  showGiftCards();
-  if (!c) return;
-  const g = giftFor(storeData.find((s) => s.id === c.store), productById(c.store, c.product));
-  if (!ok || !g) { net.sendEmote(giftMsg('no', c.from, gid, 'no')); return; }
-  const item = localName(g.name, getLanguage());
-  if (g.item) {
-    if (inventory.has(g.item)) { net.sendEmote(giftMsg('no', c.from, gid, 'have')); shop.toast(fmt(L(GIFT_TEXT.mineHave), { item, name: c.name })); return; }
-    inventory.add(g.item);
-    if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
-    shop.toast(fmt(L(GIFT_TEXT.gotItem), { item, name: c.name }));
-  } else {
-    if (!bag.add(g.entry)) { net.sendEmote(giftMsg('no', c.from, gid, 'full')); shop.toast(fmt(L(GIFT_TEXT.mineFull), { name: c.name })); return; }
-    shop.toast(fmt(L(GIFT_TEXT.gotBag), { item, name: c.name }));
-  }
-  sfx.pop?.();
-  net.sendEmote(giftMsg('ok', c.from, gid));
-}
-// Changing room (leaving a shop): every gift still waiting is called off.
-function dropGifts() {
-  for (const g of gifts.cancelAll()) refundGift(g, 'gone');
-  giftUi.close();
-  showGiftCards();
-}
-setInterval(() => {
-  const gone = (id) => !others.players.has(id);
-  for (const g of gifts.expire(gone)) refundGift(g, gone(g.to) ? 'gone' : 'late');
-  const stale = gifts.stale(gone);
-  for (const c of stale) if (!gone(c.from)) net.sendEmote(giftMsg('no', c.from, c.gid, 'late'));
-  if (stale.length) showGiftCards();
-  if (giftUi.open && !interior) giftUi.close();
-}, 1000);
+// Hanbok rental by Gyeongbokgung. (game/hanbok-rental.js)
+const hanbokRental = createHanbokRental({
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get wallet() { return wallet; },
+  get interior() { return interior; }, get sfx() { return sfx; }, get currentLook() { return currentLook; },
+  $, refreshWallet, setLook, shop,
+});
+const { rentHanbok } = hanbokRental;
+// Gifts for friends in the same shop. (game/gifts.js)
+giftsGame = createGifts({
+  get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
+  get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
+  get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
+  refreshItems, refreshWallet, safety, shop, storeData,
+});
+const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
+// Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
+const bankGame = createBank({
+  get interior() { return interior; }, get wallet() { return wallet; }, get sfx() { return sfx; },
+  get nickname() { return nickname; }, cloud, shop, refreshWallet, peopleHere,
+});
 // What you can ride: the share bike always, plus owned vehicles.
 const RIDES = [
   { kind: 1, emoji: '🚲', label: 'ride.bike' },
@@ -2369,30 +2570,72 @@ $('bike-btn').onclick = () => ridePicker();
 onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort' : 'hud.bike'); });
 
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
-function enterStore(item) {
+const dayPasses = new DayPasses();
+const rideTickets = new RideTickets({ pass: () => dayPasses.has('rides') }); // (Another Land's 5-ride and Big 3 tickets)
+let domeLoading = false;
+// walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
+// the park's own metres): no door, no bell, the camera stays as it was.
+function enterStore(item, walkIn = null) {
+  // A Han River park laid on the street (game/han-parks.js) has no room:
+  // asked to go in (a guide, a quest), you're just put on its path.
+  if (item.store.hanpark) {
+    if (mode !== 'street') leaveStore();
+    moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
+    return;
+  }
+  // Seoul Another Dome: the stadium's code comes on the first visit.
+  if (needsDome(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    import('./core/dome.js').then((m) => { setDomeBuilder(m.buildDome); domeLoading = false; enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
+    return;
+  }
+  // The zoo: its grounds and animals come on the first visit too.
+  if (needsZoo(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    import('./core/zoo-park.js').then((m) => { setZooBuilders(m); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
+    return;
+  }
+  // Another Land: the park's models come on the first visit too.
+  if (needsPark(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    return;
+  }
+  if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
+  // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
+  const fee = dayPasses.feeFor(item.store);
+  if (fee) {
+    const name = DAY_PASS_TEXT[item.store.workshop];
+    if (!dayPasses.enter(item.store, wallet, { name, at: item.store.name })) { shop.toast(fmt(L(DAY_PASS_TEXT.short), { name: L(name), n: fee })); return; }
+    refreshWallet();
+    shop.toast(fmt(L(DAY_PASS_TEXT.paid), { name: L(name), n: fee }));
+  }
   setRiding(false);
   const metroRoom = (st) => st?.category === 'station' || st?.category === 'train';
-  if (!metroRoom(item.store)) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
+  if (!metroRoom(item.store) && !walkIn) sfx.doorbell(); // automatic door sliding open (the subway has its own sounds)
   const store = item.store;
-  let built = interiorCache.get(store.id);
-  if (!built) {
-    built = buildInterior(store);
-    built.collision = new CollisionMap(built.colliders);
-    interiorCache.set(store.id, built);
-  }
+  const built = roomFor(store);
+  built.dartPins?.clearAll(); // darts from an earlier visit (those people may be gone)
+  if (mode === 'street') doorCam = { ...cam };
   interior = { ...built, store, front: item };
   mode = 'store';
   activeScene = built.scene;
   activeCollision = built.collision;
-  cam.dist = 7;
-  cam.pitch = 0.7;
-  moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
-  document.body.classList.add('in-store');
+  if (walkIn) moveMeTo(built.scene, walkIn.x, walkIn.z, walkIn.ry, walkIn.yaw, walkIn.camVia);
+  else {
+    if (built.entry) moveMeTo(built.scene, built.entry.x, built.entry.z, built.entry.ry); // (a room whose door isn't at its south side: the zoo)
+    else moveMeTo(built.scene, built.exit.x, built.exit.z - 1.4, Math.PI);
+  }
+  if (built.zooPark) { zooVisit.showLabels(); if (!walkIn && !item.parkFront) zooVisit.welcome(); }
+  if (!store.open) document.body.classList.add('in-store'); // (an open-air park keeps the street's buttons)
   shop.enterStore(store);
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : t('npc.clerk'));
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2409,6 +2652,22 @@ function enterStore(item) {
     built.scene.add(built.trainerNpc.ch.root);
   }
   trainer = built.trainerNpc || null;
+  if (built.stations?.instructor && !built.studioNpcs) {
+    const hidden = () => { const o = makeNpc($('labels'), ''); o.tag.style.visibility = 'hidden'; return o; };
+    const put = (o, x, z, ry) => { o.ch.root.position.set(x, 0, z); o.ch.root.rotation.y = ry; built.scene.add(o.ch.root); return o; };
+    const ins = built.stations.instructor;
+    const lead = put(makeNpc($('labels'), '🧘 ' + L(INSTRUCTOR_NAME)), ins.x, ins.z, ins.ry);
+    const members = built.stations.studio.filter((s) => s.npc && s.kind === 'yoga').map((s) => put(hidden(), s.x, s.z, s.face));
+    const riders = built.stations.studio.filter((s) => s.npc && s.kind === 'reformer').map((s) => {
+      const o = put(hidden(), s.lie.x, s.lie.z, s.lie.ry);
+      o.ch.activity('reformer');
+      return o;
+    });
+    built.studioNpcs = { lead, class: [lead, ...members], all: [lead, ...members, ...riders] };
+  }
+  interior.studioNpcs = built.studioNpcs || null;
+  instructor = built.studioNpcs?.lead || null;
+  studioPose = '';
   if (built.barkeep && !built.barkeepNpc) {
     built.barkeepNpc = makeNpc($('labels'), L(BARTENDER));
     built.barkeepNpc.ch.root.position.set(built.barkeep.x, 0, built.barkeep.z);
@@ -2436,19 +2695,143 @@ function enterStore(item) {
     });
   }
   interior.readerNpcs = built.readerNpcs || null;
+  // The Han River park's market: a seller behind each stall.
+  if (built.vendors?.length && !built.vendorNpcs) {
+    built.vendorNpcs = built.vendors.map((v) => {
+      const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Another Land's food truck sellers wear the park's uniform)
+      o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
+      o.ch.root.position.set(v.x, v.y || 0, v.z);
+      if (v.sit) { o.ch.activity('sit'); o.labelY = 1.5 + (v.y || 0); } // (the food truck sellers sit up at their hatch)
+      o.ch.root.rotation.y = v.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.vendorNpcs = built.vendorNpcs || null;
+  // The Curve Runway's audience: people already sitting in some of the seats.
+  if (built.stations?.runway?.[0]?.audience && !built.audienceNpcs) {
+    built.audienceNpcs = built.stations.runway[0].audience.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      o.ch.activity('sit'); // the sitting clip, legs along the seat
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.audienceNpcs = built.audienceNpcs || null;
+  // DDP Hall: visitors already standing round, looking at the design pieces.
+  if (built.stations?.visitors && !built.visitorNpcs) {
+    built.visitorNpcs = built.stations.visitors.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.rotation.y = s.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.visitorNpcs = built.visitorNpcs || null;
+  // Bars: regulars already sitting at the counter or a table, or standing
+  // round the sports pub's high tables (core/bar-styles.js).
+  if (built.stations?.patrons && !built.patronNpcs) {
+    built.patronNpcs = built.stations.patrons.map((s) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
+      o.ch.root.position.set(s.x, s.y || 0, s.z); // (y: up in the stands at Seoul Another Dome)
+      o.ch.root.rotation.y = s.ry;
+      if (s.sit) o.ch.activity('sit');
+      else if (s.act) o.ch.activity(s.act); // (the climbing gym's climbers, hanging on the wall)
+      built.scene.add(o.ch.root);
+      return o;
+    });
+    // Seoul Another Dome's cheer squads, on their stages: the cheer leader
+    // (with a name tag, for the chants) and the cheer dancers.
+    for (const s of built.stations.cheerSquad || []) {
+      const o = makeNpc($('labels'), s.role === 'leader' ? '📣 ' + L(DOME_TEXT.leader) : '');
+      if (s.role !== 'leader') o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(s.x, s.y, s.z);
+      o.ch.root.rotation.y = s.ry;
+      o.squad = s;
+      built.scene.add(o.ch.root);
+      built.patronNpcs.push(o);
+    }
+  }
+  interior.patronNpcs = built.patronNpcs || null;
+  // Each ride's attendant by its gate, named after the ride (the coaster's too).
+  if (built.stations?.rideStaff && !built.rideStaff) {
+    built.rideStaff = {};
+    for (const st of built.stations.rideStaff) {
+      const o = makeNpc($('labels'), RIDE_EMOJI[st.kind] + ' ' + t('ride.staff', { name: L(RIDE_NAME[st.kind]) }), { ...randomLook(), ...PARK_UNIFORM });
+      o.ch.root.position.set(st.x, 0, st.z);
+      o.ch.root.rotation.y = st.ry;
+      built.scene.add(o.ch.root);
+      built.rideStaff[st.kind] = o;
+    }
+  }
+  interior.rideStaff = built.rideStaff || null;
+  parkTickets.spawn(built); // (the island's ticket guide)
+  interior.riderNpcs = parkRiders.spawn(built) || null;
+  if (!balloonClown.spawn(built)) balloonClown.leave();
+  if (built.stations?.coasterStaff && !built.coasterStaff) {
+    built.coasterStaff = built.stations.coasterStaff.map((st) => {
+      const o = makeNpc($('labels'), '🎢 ' + t('ride.staff', { name: L(COASTER_NAME) }), { ...randomLook(), ...PARK_UNIFORM });
+      o.ch.root.position.set(st.x, 0, st.z);
+      o.ch.root.rotation.y = st.ry;
+      built.scene.add(o.ch.root);
+      return o;
+    });
+  }
+  interior.coasterStaff = built.coasterStaff || null;
+  if (built.dome) wireDome(built, store);
+  // The sports pub: when someone scores on the big screen, the whole pub
+  // jumps up and cheers, and someone shouts "골!".
+  if (built.stations?.match) {
+    built.stations.match.onGoal = () => {
+      if (interior?.store !== store) return;
+      const crowd = interior.patronNpcs || [];
+      crowd.forEach((o, i) => setTimeout(() => o.ch.play(i % 3 === 2 ? 'clap' : 'cheer'), i * 90));
+      const fans = crowd.filter((_, i) => !built.stations.patrons[i]?.sit); // (the ones watching the screen)
+      if (fans.length) say(fans[Math.floor(Math.random() * fans.length)], $('labels'), GOAL_SHOUT);
+    };
+  }
+  // The record café: someone is already at the far end of the listening bar,
+  // headphones on, nodding along.
+  const bar = built.stations?.listening;
+  if (bar?.length > 1 && !built.listenerNpcs) {
+    const s = bar[0];
+    const o = makeNpc($('labels'), '');
+    o.tag.style.visibility = 'hidden';
+    o.ch.root.position.set(s.x, 0, s.z);
+    o.ch.root.rotation.y = s.ry;
+    o.ch.activity('listen');
+    built.scene.add(o.ch.root);
+    s.taken = true; s.npc = true;
+    if (s.rack) s.rack.visible = false;
+    built.listenerNpcs = [o];
+  }
+  interior.listenerNpcs = built.listenerNpcs || null;
   if (store.pets && !built.pets) built.pets = new Pets(built.scene, built.room, (x, z, r) => built.collision.blocked(x, z, r), store.pets, 6, adoptables(store));
   interior.pets = built.pets || null;
   missionEvent('visit', store.id);
   deliveryArrived(store.id);
   if (store.music) enterMusicCafe();
   if (store.kpop) enterKpopCafe();
-  if (store.cinema) enterKpopCafe('cinema');
+  if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (store.genre) enterClub(store.genre);
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
-  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : PHRASES.welcome[0];
-  if (clerk) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
+  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
+  if (clerk && !walkIn) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
+  if (store.open) {
+    // An open-air park is part of the street: the same people around you
+    // (our spot sent in the street's metres), the street's people walking
+    // by. Only from somewhere else (a taxi from a shop) join the street.
+    if (!onStreetRoom()) { const [wx, wz] = myWorldSpot(); joinRoom(roomId, scene, { x: wx, z: wz }); }
+    return;
+  }
   npcs.setVisible(false);
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
@@ -2456,9 +2839,24 @@ function enterStore(item) {
   } else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
-// The museum's lift: each floor is its own interior; you step out by the lift.
+// The War History Museum's altar: a white chrysanthemum on it and a bow (others
+// see the bow; the flowers are only in your own view of the room).
+function layMemorialFlower() {
+  interior?.stations?.layFlower?.();
+  me.play('bow');
+  net.sendEmote('bow');
+  shop.toast(L(MEMORIAL_TEXT.laid));
+}
+
+// The War History Museum's floors, for the lift's floor list.
+const memorialFloors = () => MEMORIAL_FLOORS.map(({ floor, halls }) => ({
+  floor, lines: [...(floor === 2 ? [L(DONATED.title)] : []), ...halls.map((k) => L(MEMORIAL_HALLS[k].name))],
+}));
+
+// The museums' lifts (the art museum and the War History Museum): each floor
+// is its own interior; you step out by the lift.
 function goMuseumFloor(floor) {
-  if (mode !== 'store' || interior?.store.category !== 'museum' || floorOf(interior.store) === floor) return;
+  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || floorOf(interior.store) === floor) return;
   const front = interior.front;
   standUp();
   if (museumUi.open) museumUi.close();
@@ -2470,14 +2868,127 @@ function goMuseumFloor(floor) {
   if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); }
 }
 
+// Another Land's haunted house (core/haunted.js): its own interior, entered
+// from the park. As with the museum's floors, the way out to the street
+// (taxi, map, teleport) is still the park's gate; only its exit door leads
+// back into the park, in front of the house.
+let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
+const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
+function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
+  const sea = inner === SEA_STORE;
+  if (mode !== 'store' || !(sea ? interior?.zooPark : interior?.themepark) || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  const front = interior.front;
+  endRide();
+  standUp();
+  if (galleryUi.open) galleryUi.close();
+  if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; } // the ticket clerk stays outside
+  if (sea) setRiding(false);
+  if (sea) zooVisit.hideLabels();
+  enterStore({ ...front, store: inner, parkFront: front });
+  if (sea) { hauntFade(); return; }
+  const built = interiorCache.get(HAUNT_STORE.id);
+  built.resetVisit();
+  built.onScare = (kind) => (kind === 'ghost' ? sfx.ghostly() : sfx.tock(0.25, 260));
+  built.setSignLang(signsTranslated ? getLanguage() : null);
+  hauntFade();
+  shop.toast(L(HAUNT_TEXT.hello));
+}
+function backToPark() {
+  const park = interior?.front?.parkFront;
+  if (mode !== 'store' || !park || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  if (hauntUi.open) hauntUi.close();
+  if (runwayUi.open) runwayUi.close();
+  standUp();
+  const fromRunway = interior.store.workshop === 'runway';
+  if (fromRunway) { leaveRunwayLine(); runwayLine.clear(); }
+  enterStore(park);
+  if (fromRunway) {
+    // Back in DDP Hall, in front of the runway's door, facing into the hall.
+    const d = interior.stations.runwayDoor[0];
+    moveMeTo(interior.scene, d.x, d.z + 0.6, 0);
+  } else if (interior.zooPark) {
+    // Out of the Sea Animals hall's door onto the zoo's path, facing away from it.
+    const d = interior.stations.seaDoor[0];
+    moveMeTo(interior.scene, d.x, d.z, d.ry);
+  } else {
+    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry); // out in front of the door
+  }
+  hauntFade();
+}
+
+// DDP Hall's back door: the Curve Runway is its own room behind it (as with
+// the haunted house, the way out to the street is still the hall's front door;
+// the runway's door leads back into the hall).
+function enterRunwayRoom() {
+  if (mode !== 'store' || interior?.store.workshop !== 'ddp-hall' || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  const front = interior.front;
+  standUp();
+  for (const o of interior.visitorNpcs || []) { o.bubble?.remove(); o.bubble = null; }
+  runwayLine.clear(); // (whoever is in line will say so)
+  enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
+  hauntFade();
+  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
+}
+
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
-function leaveStore() {
+const GOAL_SHOUT = ['골!!!', 'gol', 'GOAL!!!']; // the sports pub's crowd
+// Seoul Another Dome (core/dome.js): the crowd and the cheer squads react to
+// the game, the cheer leader leads a chant now and then.
+function wireDome(built, store) {
+  const dome = built.dome;
+  if (performance.now() - (built.welcomedAt || -1e9) > 90e3) { built.welcomedAt = performance.now(); shop.toast(L(DOME_TEXT.welcome)); }
+  if (dome.ev.onCheer) return;
+  const here = () => interior?.store === store;
+  const squadOf = (side) => (built.patronNpcs || []).filter((o) => o.squad?.side === side);
+  const fans = () => (built.patronNpcs || []).filter((o) => !o.squad);
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+  dome.ev.onCheer = (res, team) => {
+    if (!here()) return;
+    if (res === 'crack') { sfx.tock(1, 1500); return; }
+    const side = dome.sideOf(team.id), other = side === 'home' ? 'away' : 'home';
+    if (['1B', '2B', '3B', 'HR'].includes(res)) {
+      dome.jump(side, res === 'HR' ? 1.4 : 0.9);
+      if (res === 'HR') dome.jump('all', 0.6);
+      sfx.crowd(res === 'HR' ? 1 : 0.55);
+      squadOf(side).forEach((o, i) => setTimeout(() => o.ch.play('cheer'), i * 120));
+      const crowd = fans();
+      crowd.forEach((o, i) => { if (i % 2 === 0) setTimeout(() => o.ch.play(i % 4 ? 'clap' : 'cheer'), i * 80); });
+      if (crowd.length) say(pickOne(crowd), $('labels'), pickOne(res === 'HR' ? DOME_SHOUT.HR : DOME_SHOUT.hit));
+    } else if (res === 'K') {
+      dome.jump(other, 0.6);
+      sfx.crowd(0.25);
+      const leader = squadOf(other).find((o) => o.squad.role === 'leader');
+      if (leader) say(leader, $('labels'), pickOne(DOME_SHOUT.K));
+    }
+  };
+  dome.ev.onChant = (side, team) => {
+    if (!here()) return;
+    const squad = squadOf(side);
+    const leader = squad.find((o) => o.squad.role === 'leader');
+    if (leader) say(leader, $('labels'), chantPhrase(team));
+    squad.forEach((o, i) => setTimeout(() => o.ch.play(i ? 'clap' : 'cheer'), 800 + i * 100));
+    dome.jump(side, 0.45);
+    sfx.chant();
+  };
+}
+// walkOut: stepping off an open-air park onto the street (openParks): you
+// come out where you are, no bell.
+function leaveStore(walkOut = false) {
   if (mode !== 'store') return;
+  const openPark = interior.store?.open ? openParks.find((o) => o.item.store === interior.store) : null;
   // Trying something on only lasts while you are in the shop: walking out
   // without buying puts your own look back.
   if (!$('revert-look').hidden) { setLook(myLook); $('revert-look').hidden = true; }
+  if (pool.mode?.kind === 'race') endRace(); // (friends hear we left)
+  if (wearingSwim()) setLook(myLook); // out of the pool hall: own clothes back before the street sees you
   if (subway.metro) endMetro(); // (a taxi or teleport from the train)
+  if (interior.store?.workshop === 'runway') { leaveRunwayLine(); runwayLine.clear(); }
   endRide();
+  setRiding(false); // (the zoo's carts stay in the zoo)
+  zooVisit.hideLabels();
   cable = null;
   standUp();
   clearMeal();
@@ -2487,6 +2998,8 @@ function leaveStore() {
   if (grillUi.open) grillUi.close();
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
+  if (resaleUi.open) resaleUi.close();
+  potatoMarket.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
   if (japchaeUi.open) japchaeUi.close();
@@ -2494,36 +3007,53 @@ function leaveStore() {
   if (kimchiSellUi.open) kimchiSellUi.close();
   tarotUi.close();
   leaveTarotLine(true);
-  for (const g of [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi]) if (g.open) g.close();
+  gymSpot = null; // (you leave by the door, not off the bench)
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
+  listenBar.stop(); // (puts the café's music back first)
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
-  for (const o of [clerk, trainer, barkeep, areaGuide, ...(interior.readerNpcs || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  // Every name tag and bubble this room put on screen goes with it (Another
+  // Land's ride attendants and guests, the bar regulars, the yoga class),
+  // or they'd hang over the street where they last stood.
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  balloonClown.hideLabels();
+  parkTickets.hideLabels();
   clerk = null;
   trainer = null;
+  instructor = null;
   barkeep = null;
   areaGuide = null;
   if (counterUi.open) counterUi.close();
   npcs.setVisible(true);
-  if (interior.store?.category !== 'station' && interior.store?.category !== 'train') sfx.doorbell();
+  if (interior.store?.category !== 'station' && interior.store?.category !== 'train' && !openPark) sfx.doorbell();
   const it = interior.front;
+  const here = { x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y };
   mode = 'street';
   activeScene = scene;
   activeCollision = collision;
-  cam.dist = 9;
-  cam.pitch = 0.42;
-  // Face the street, with the camera to the side so the shop front stays in view.
-  // Step out a little in front of the door, on a spot that is not inside a
-  // building (some shop fronts sit close to their neighbours).
-  const ry = it.group.rotation.y;
-  const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
-  moveMeTo(scene, ex, ez, ry, ry + Math.PI / 2);
+  if (openPark) {
+    // Out of an open-air park (walking off its lawn, or its Exit button):
+    // where you stand, on the nearest free spot (the pier is over the water).
+    const [wx, wz] = parkWorld(openPark, here.x, here.z);
+    const [ex, ez] = findFreeSpot(wx, wz);
+    moveMeTo(scene, ex, ez, here.ry + openPark.ry, cam.yaw + openPark.ry, walkOut ? openPark.toWorld : null);
+  } else {
+    // Face the street, the camera as it was when we went in (the street looks
+    // the way it did). Step out a little in front of the door, on a spot that is not inside a
+    // building (some shop fronts sit close to their neighbours).
+    const ry = it.group.rotation.y;
+    const [ex, ez] = findFreeSpot(it.door.x + Math.sin(ry) * 1.2, it.door.z + Math.cos(ry) * 1.2);
+    moveMeTo(scene, ex, ez, ry, doorCam?.yaw);
+    if (doorCam) { cam.pitch = doorCam.pitch; cam.dist = doorCam.dist; }
+  }
+  doorCam = null;
   document.body.classList.remove('in-store');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
-  joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
+  if (!openPark || !onStreetRoom()) joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z }); // (out of an open park: already there)
 }
 
 // ---------- Subway station ----------
@@ -2544,19 +3074,22 @@ const subway = createSubway(subwayStations, {
   get me() { return me; }, get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
-  streetY: (p, px0, pz0) => updateStream(p, px0, pz0), // down by a stream
+  onArrive: (k) => subwayArrived(k),
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
-let signsTranslated = false;
+const supportPlaces = []; // [district, 'spot' | 'wall', where] (debug)
 const hiringRedraws = []; // hiring posters (set up below), redrawn in the sign language
 const hiringPlaces = []; // [shop id, 'spot' | 'wall', spot id or [x, z]] (for checks)
 const applySigns = () => {
   storefronts.setTranslated(signsTranslated, getLanguage());
   zones.setTranslated(signsTranslated, getLanguage());
   for (const e of subwayEntrances) e.setTranslated(signsTranslated, getLanguage());
+  setParkSignsLang(signsTranslated ? getLanguage() : null); // park information boards
   for (const f of hiringRedraws) f(signsTranslated ? getLanguage() : 'en');
+  for (const b of interiorCache.values()) b.setSignLang?.(signsTranslated ? getLanguage() : null); // the haunted house
   $('signs-btn').setAttribute('aria-pressed', String(signsTranslated));
   $('signs-btn').title = t(signsTranslated ? 'hud.signsOn' : 'hud.signsOff');
 };
@@ -2568,12 +3101,9 @@ onLanguageChange(() => { if (signsTranslated) applySigns(); });
 
 // Sound effects (on by default; remembered on this device).
 const sfx = new Sfx();
-const motionSound = new MotionSound(sfx); // footsteps, wind, engine, bell and horn
+const soundFiles = new SoundFiles(sfx, BASE); // shop blips (Kenney, CC0)
+const motionSound = new MotionSound(sfx, soundFiles); // footsteps, wind, engine, bell and horn
 // Bicycle bell / horn while riding: you and nearby players hear it.
-const HONK_TEXT = {
-  bell: { en: 'Ring the bell', ko: '벨 울리기', ja: 'ベルを鳴らす', zh: '按车铃', es: 'Tocar el timbre', ar: 'اقرع الجرس', vi: 'Bấm chuông', hi: 'घंटी बजाएँ', id: 'Bunyikan bel' },
-  horn: { en: 'Honk', ko: '경적 울리기', ja: 'クラクション', zh: '按喇叭', es: 'Tocar el claxon', ar: 'زمّور', vi: 'Bấm còi', hi: 'हॉर्न बजाएँ', id: 'Klakson' },
-};
 let shownHonk = null, honkAt = 0;
 function honk() {
   if (!shownHonk || performance.now() - honkAt < 900) return;
@@ -2592,6 +3122,34 @@ $('sfx-btn').onclick = () => {
   if (sfx.on) sfx.doorbell(); // preview
   else motionSound.stopAll();
 };
+$('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+$('saver-btn').onclick = () => {
+  gfx.setSaver(!gfx.saver);
+  $('saver-btn').setAttribute('aria-pressed', String(gfx.saver));
+  try { localStorage.setItem(SAVER_KEY, gfx.saver ? '1' : '0'); } catch { /* ignore */ }
+};
+$('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
+$('steady-btn').onclick = () => {
+  steadyWalk = !steadyWalk;
+  $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
+  try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
+};
+// Gentle ride effects (the roller coaster): half the zoom and shake, no leaning.
+const RIDE_FX_KEY = 'mk.rideFx'; // 'soft': the gentle ride effects (Settings)
+let rideFxSoft = false;
+try { rideFxSoft = localStorage.getItem(RIDE_FX_KEY) === 'soft'; } catch { /* ignore */ }
+$('ridefx-btn').setAttribute('aria-pressed', String(rideFxSoft));
+$('ridefx-btn').onclick = () => {
+  rideFxSoft = !rideFxSoft;
+  $('ridefx-btn').setAttribute('aria-pressed', String(rideFxSoft));
+  try { localStorage.setItem(RIDE_FX_KEY, rideFxSoft ? 'soft' : ''); } catch { /* ignore */ }
+};
+$('haptics-btn').setAttribute('aria-pressed', String(haptics.on));
+$('haptics-btn').onclick = () => {
+  haptics.on = !haptics.on;
+  $('haptics-btn').setAttribute('aria-pressed', String(haptics.on));
+  buzz(40); // preview
+};
 
 // Background music (off by default; the choice is remembered on this device).
 const music = new Music();
@@ -2608,340 +3166,101 @@ $('music-btn').onclick = async () => {
 applyMusicBtn();
 onLanguageChange(applyMusicBtn);
 
-// Music café: pick an LP to change the song. Only this player hears it (the
-// music plays in this browser). Leaving puts the usual music back.
-let cafeMusic = null; // { wasOn } while inside a music café
-// K-POP café: everyone in the room watches and hears the same music video
-// (ui/kpop-room.js). Our own background music pauses while inside.
-let kpopMusic = null;
-// The cinema works the same way, with its own films.
-async function enterKpopCafe(kind = 'kpop') {
-  kpopMusic = { wasOn: music.on };
-  kpop.enter(kind);
-  if (music.on) { await music.setOn(false); applyMusicBtn(); }
-}
-async function leaveKpopCafe() {
-  if (!kpopMusic) return;
-  const { wasOn } = kpopMusic;
-  kpopMusic = null;
-  kpop.leave();
-  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
-}
-async function enterMusicCafe(track = 'lofi') {
-  cafeMusic = { wasOn: music.on };
-  music.setTrack(track);
-  if (!music.on) { await music.setOn(true); applyMusicBtn(); } // the room's music plays on entering
-}
-async function leaveMusicCafe() {
-  if (!cafeMusic) return;
-  const { wasOn } = cafeMusic;
-  cafeMusic = null;
-  $('lp-panel').hidden = true;
-  music.setTrack('lofi');
-  if (!wasOn && music.on) { await music.setOn(false); applyMusicBtn(); }
-}
-function openLpPanel() {
-  const root = $('lp-panel');
-  const lang = getLanguage();
-  const x = document.createElement('button');
-  x.className = 'sheet-x';
-  x.textContent = '✕';
-  x.setAttribute('aria-label', t('order.close'));
-  x.onclick = () => { root.hidden = true; };
-  const h = document.createElement('h3');
-  h.textContent = '💿 ' + t('lp.title');
-  const note = document.createElement('p');
-  note.className = 'fine';
-  note.textContent = t('lp.note');
-  const list = document.createElement('div');
-  list.className = 'lp-list';
-  for (const tr of TRACKS) {
-    const b = document.createElement('button');
-    const playing = music.on && music.track.id === tr.id;
-    b.className = 'lp-row' + (playing ? ' on' : '');
-    b.innerHTML = `<span class="lp-disc"><i></i></span><span class="lp-text"><strong></strong><small></small></span>`;
-    b.querySelector('.lp-disc').style.background = `radial-gradient(circle, ${tr.color} 0 26%, #141418 27% 100%)`;
-    b.querySelector('strong').textContent = `${tr.icon} ${localName(tr.name, lang)}${playing ? ' · ' + t('lp.playing') : ''}`;
-    b.querySelector('small').textContent = localName(tr.desc, lang);
-    b.onclick = async () => {
-      music.setTrack(tr.id);
-      if (!music.on) { await music.setOn(true); applyMusicBtn(); }
-      shop.toast(t('lp.now', { name: localName(tr.name, lang) }));
-      openLpPanel();
-    };
-    list.append(b);
-  }
-  const off = document.createElement('button');
-  off.className = 'chip';
-  off.textContent = music.on ? '🔇 ' + t('lp.stop') : '🔊 ' + t('lp.play');
-  off.onclick = async () => { await music.setOn(!music.on); applyMusicBtn(); openLpPanel(); };
-  const actions = document.createElement('div');
-  actions.className = 'order-actions';
-  actions.append(off);
-  root.replaceChildren(x, h, note, list, actions);
-  root.hidden = false;
-}
-// Ride shops: Pedal Lab (Seongsu), Bike Research Lab (Hongdae), RIDE WITH ME
-// (Itaewon) and Hangeul Mihak (Gyeongbokgung). Every one sells bikes,
-// skateboards, inline skates and kick scooters in three steps each, and
-// repairs them; each also has its own thing: Pedal Lab the first skins, the
-// Lab speed tune-ups and street-art skins, RIDE WITH ME long-ride kits (less
-// wear) and night skins, Hangeul Mihak a limited Hunminjeongeum skin line
-// sold only by the palace (core/bike-garage.js).
-const BIKE_TEXT = {
-  open: { en: 'Rides & upgrades', ko: '탈것·업그레이드', ja: '乗り物・アップグレード', zh: '选车·升级', es: 'Vehículos y mejoras' },
-  note: { en: 'Each step is only a little faster. Rides wear out very slowly; a repair costs a few coins at any ride shop.', ko: '단계마다 속도는 조금씩만 빨라져요. 타다 보면 아주 조금씩 닳고, 수리는 어느 탈것 가게에서나 몇 코인이면 돼요.', ja: '段階ごとに少しだけ速くなります。乗るとゆっくりすり減り、修理はどの乗り物店でも数コインです。', zh: '每一级只快一点点。骑久了会缓慢磨损，任何一家车店都能花几枚硬币修理。', es: 'Cada nivel es solo un poco más rápido. Se desgastan muy despacio; cualquier tienda los repara por unas monedas.' },
-  skinNote: { en: 'A colour and a pattern you buy once and can put on any ride. Each ride shop sells its own.', ko: '한 번 사면 모든 탈것에 입힐 수 있는 색상과 패턴이에요. 가게마다 파는 스킨이 달라요.', ja: '一度買えばどの乗り物にも使える色と柄です。お店ごとに品ぞろえが違います。', zh: '买一次就能用在所有车上的颜色和图案。每家店卖的都不一样。', es: 'Un color y un estampado que compras una vez y usas en cualquier vehículo. Cada tienda vende los suyos.' },
-  limitedNote: { en: 'Limited: the Hunminjeongeum line is sold only here, by Gyeongbokgung. Once bought, it goes on any ride, anywhere.', ko: '한정판: 훈민정음 라인은 경복궁 옆 이곳에서만 팔아요. 한 번 사면 어디서든 모든 탈것에 입힐 수 있어요.', ja: '限定：訓民正音ラインは景福宮のこの店だけで販売。一度買えばどこでもどの乗り物にも使えます。', zh: '限定：训民正音系列只在景福宫旁的这家店出售。买了之后在哪儿都能用在所有车上。', es: 'Limitado: la línea Hunminjeongeum solo se vende aquí, junto a Gyeongbokgung. Una vez comprada, sirve para cualquier vehículo.' },
-  tuneNote: { en: 'Tune-ups: our mechanics make a ride you own a little faster, in three steps.', ko: '튜닝: 연구원들이 내 탈것을 3단계에 걸쳐 조금씩 더 빠르게 만들어 줘요.', ja: 'チューンアップ：持っている乗り物を3段階で少しずつ速くします。', zh: '改装：技师分三级把你的车调得快一点。', es: 'Puesta a punto: hacemos tu vehículo un poco más rápido, en tres pasos.' },
-  kitNote: { en: 'Long-ride kits: tougher wheels and parts, so a ride you own wears out more slowly.', ko: '롱라이드 키트: 바퀴와 부품을 튼튼하게 바꿔서 덜 닳게 해 줘요.', ja: 'ロングライドキット：丈夫な部品で乗り物がすり減りにくくなります。', zh: '长途套件：更结实的轮子和零件，车磨损得更慢。', es: 'Kit de ruta larga: piezas más duras para que tu vehículo se gaste más despacio.' },
-  speed: { en: 'Speed', ko: '속도', ja: '速さ', zh: '速度', es: 'Velocidad' },
-  dur: { en: 'Condition {n}%', ko: '내구도 {n}%', ja: '状態 {n}%', zh: '耐久 {n}%', es: 'Estado {n}%' },
-  wear: { en: 'Wear −{n}%', ko: '닳는 속도 −{n}%', ja: '摩耗 −{n}%', zh: '磨损 −{n}%', es: 'Desgaste −{n}%' },
-  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买', es: 'Comprar' },
-  use: { en: 'Ride this', ko: '이걸로 타기', ja: 'これに乗る', zh: '用这个', es: 'Usar' },
-  using: { en: 'Riding', ko: '타는 중', ja: '使用中', zh: '使用中', es: 'En uso' },
-  repair: { en: 'Repair', ko: '수리', ja: '修理', zh: '修理', es: 'Reparar' },
-  upgrade: { en: 'Upgrade', ko: '업그레이드', ja: 'アップグレード', zh: '升级', es: 'Mejorar' },
-  maxed: { en: 'Max', ko: '최고 단계', ja: '最大', zh: '已满级', es: 'Máx.' },
-  upgraded: { en: 'Upgraded!', ko: '업그레이드했어요!', ja: 'アップグレードしました！', zh: '升级成功！', es: '¡Mejorado!' },
-  fixed: { en: 'Good as new!', ko: '새것처럼 고쳤어요!', ja: '新品同様になりました！', zh: '修好啦，跟新的一样！', es: '¡Como nuevo!' },
-  bought: { en: 'Enjoy your new ride!', ko: '새 탈것이 생겼어요!', ja: '新しい乗り物をどうぞ！', zh: '新车到手！', es: '¡Disfruta tu nuevo vehículo!' },
-  skinOn: { en: 'Skin applied!', ko: '스킨을 입혔어요!', ja: 'スキンを適用しました！', zh: '已换上皮肤！', es: '¡Aspecto aplicado!' },
-  poor: { en: 'Not enough coins.', ko: '코인이 부족해요.', ja: 'コインが足りません。', zh: '硬币不够。', es: 'No tienes suficientes monedas.' },
-  worn: { en: 'Your ride is getting worn: a repair at any ride shop makes it good as new.', ko: '탈것이 많이 닳았어요. 탈것 가게에서 수리하면 새것처럼 돼요.', ja: '乗り物がすり減ってきました。乗り物店で修理できます。', zh: '车磨损了，去车店修一下吧。', es: 'Tu vehículo está gastado: repáralo en una tienda de vehículos.' },
-  colors: { en: 'Colour', ko: '색상', ja: 'カラー', zh: '颜色', es: 'Color' },
-  patterns: { en: 'Pattern', ko: '패턴', ja: '柄', zh: '图案', es: 'Estampado' },
-  mine: { en: 'My skins from other shops', ko: '다른 가게에서 산 내 스킨', ja: '他の店で買ったスキン', zh: '在别家买的皮肤', es: 'Mis aspectos de otras tiendas' },
-  none: { en: 'Default', ko: '기본', ja: 'デフォルト', zh: '默认', es: 'Normal' },
-  skins: { en: 'Skins', ko: '스킨', ja: 'スキン', zh: '皮肤', es: 'Aspectos' },
-  tune: { en: 'Tune-up', ko: '튜닝', ja: 'チューン', zh: '改装', es: 'Puesta a punto' },
-  kit: { en: 'Long-ride kit', ko: '롱라이드 키트', ja: 'ロングライド', zh: '长途套件', es: 'Kit de ruta' },
-  limited: { en: 'Hunminjeongeum (limited)', ko: '훈민정음 한정판', ja: '訓民正音（限定）', zh: '训民正音（限定）', es: 'Hunminjeongeum (limitado)' },
-};
-// Each shop's title and its own tab (the skins tab of Hangeul Mihak is the
-// limited line).
-const RIDE_SHOP_TEXT = {
-  pedal: { icon: '🚲', en: 'Pedal Lab', ko: '페달랩 탈것 가게', ja: 'ペダルラボ', zh: '踏板实验室', es: 'Pedal Lab' },
-  lab: { icon: '🔬', en: 'Bike Research Lab', ko: '자전거연구소', ja: '自転車研究所', zh: '自行车研究所', es: 'Laboratorio de Bicis' },
-  rwm: { icon: '🌙', en: 'RIDE WITH ME', ko: 'RIDE WITH ME 라이드 위드 미', ja: 'RIDE WITH ME', zh: 'RIDE WITH ME', es: 'RIDE WITH ME' },
-  hangul: { icon: 'ㅎ', en: 'Hangeul Mihak', ko: '한글미학', ja: 'ハングル美学', zh: '韩文美学', es: 'Hangeul Mihak' },
-};
-const RIDE_TAB = {
-  bike: { en: 'Bike', ko: '자전거', ja: '自転車', zh: '自行车', es: 'Bici' },
-  skate: { en: 'Board', ko: '보드', ja: 'スケボー', zh: '滑板', es: 'Patineta' },
-  inline: { en: 'Inline', ko: '인라인', ja: 'インライン', zh: '轮滑', es: 'Patines' },
-  kick: { en: 'Scooter', ko: '킥보드', ja: 'キックボード', zh: '滑板车', es: 'Patinete' },
-};
-const PATTERN_NAME = {
-  flower: { icon: '🌸', en: 'Flowers', ko: '꽃무늬', ja: '花柄', zh: '花朵', es: 'Flores' },
-  bolt: { icon: '⚡', en: 'Lightning', ko: '번개', ja: '稲妻', zh: '闪电', es: 'Rayos' },
-  heart: { icon: '💗', en: 'Hearts', ko: '하트', ja: 'ハート', zh: '爱心', es: 'Corazones' },
-  star: { icon: '⭐', en: 'Stars', ko: '별', ja: '星', zh: '星星', es: 'Estrellas' },
-  hangul: { icon: 'ㅎ', en: 'Hangul', ko: '한글 자모', ja: 'ハングル', zh: '韩文字母', es: 'Hangul' },
-  graffiti: { icon: '🖌️', en: 'Graffiti', ko: '그라피티', ja: 'グラフィティ', zh: '涂鸦', es: 'Grafiti' },
-  checker: { icon: '🏁', en: 'Checkers', ko: '체커보드', ja: 'チェッカー', zh: '棋盘格', es: 'Cuadros' },
-  drip: { icon: '🎨', en: 'Paint drips', ko: '페인트 드립', ja: 'ペンキだれ', zh: '滴漆', es: 'Goteo de pintura' },
-  splat: { icon: '💥', en: 'Paint splats', ko: '물감 스플래시', ja: 'ペンキしぶき', zh: '泼漆', es: 'Salpicaduras' },
-  flame: { icon: '🔥', en: 'Flames', ko: '불꽃', ja: 'ファイヤー', zh: '火焰', es: 'Llamas' },
-  stripe: { icon: '🏎️', en: 'Racing stripes', ko: '레이싱 스트라이프', ja: 'レーシングストライプ', zh: '赛车条纹', es: 'Franjas de carreras' },
-  dots: { icon: '🔵', en: 'Polka dots', ko: '물방울', ja: '水玉', zh: '波点', es: 'Lunares' },
-  wave: { icon: '🌊', en: 'Waves', ko: '물결', ja: '波', zh: '波浪', es: 'Ondas' },
-  hunmin: { icon: '📜', en: 'Hunminjeongeum', ko: '훈민정음', ja: '訓民正音', zh: '训民正音', es: 'Hunminjeongeum' },
-  naratmal: { icon: '📖', en: 'The first line (1446)', ko: '나랏말싸미 (서문)', ja: '序文の一行目', zh: '序文首句', es: 'La primera línea (1446)' },
-  cheonjiin: { icon: '☯️', en: 'Heaven, earth, person (ㆍㅡㅣ)', ko: '천지인 ㆍㅡㅣ', ja: '天地人 ㆍㅡㅣ', zh: '天地人 ㆍㅡㅣ', es: 'Cielo, tierra, persona (ㆍㅡㅣ)' },
-  jaeum: { icon: 'ㄱ', en: 'Five basic consonants', ko: '기본 자음 ㄱㄴㅁㅅㅇ', ja: '基本子音5つ', zh: '五个基本辅音', es: 'Cinco consonantes básicas' },
-  moeum: { icon: 'ㅏ', en: 'Vowels', ko: '모음', ja: '母音', zh: '元音', es: 'Vocales' },
-  gana: { icon: '가', en: 'Ga Na Da', ko: '가나다', ja: 'カナダ（가나다）', zh: '가나다', es: 'Ga Na Da' },
-  dojang: { icon: '🟥', en: 'Name seal', ko: '훈민정음 도장', ja: '落款印', zh: '印章', es: 'Sello' },
-  panbon: { icon: '📃', en: 'Woodblock page', ko: '목판본', ja: '木版本', zh: '木刻本', es: 'Página xilográfica' },
-  'jamo-ring': { icon: 'ㅎ', en: 'ㄱ to ㅎ badges', ko: 'ㄱ부터 ㅎ까지', ja: 'ㄱ〜ㅎ バッジ', zh: 'ㄱ到ㅎ徽章', es: 'Insignias ㄱ a ㅎ' },
-  brush: { icon: '🖋️', en: 'Brush calligraphy', ko: '붓글씨 한글', ja: '筆文字ハングル', zh: '毛笔韩文', es: 'Caligrafía' },
-};
-const COLOR_NAME = {
-  lime: { en: 'Neon lime', ko: '네온 라임' }, spray: { en: 'Spray pink', ko: '스프레이 핑크' }, concrete: { en: 'Concrete', ko: '콘크리트' },
-  midnight: { en: 'Midnight', ko: '미드나잇' }, chrome: { en: 'Chrome', ko: '크롬' }, gold: { en: 'Gold', ko: '골드' }, neonred: { en: 'Neon red', ko: '네온 레드' },
-  hanji: { en: 'Hanji paper', ko: '한지' }, meok: { en: 'Ink (meok)', ko: '먹' }, dancheong: { en: 'Dancheong red', ko: '단청 빨강' }, celadon: { en: 'Celadon', ko: '청자' }, jjok: { en: 'Indigo (jjok)', ko: '쪽빛' },
-};
-const TIER_STARS = ['★', '★★', '★★★'];
-let bikeTab = null, bikeShopId = 'pedal';
-const applyRide = () => { if (riding === 1) me.setBike(1, garage.rideSpec()); };
-// shop: a store with "workshop": "bike" (its "rideShop" picks which shop), or
-// a ride-shop id. With nothing, the shop last opened.
-function openBikeShop(shop) {
-  if (shop) {
-    let id = typeof shop === 'string' ? shop : shop.rideShop || 'pedal';
-    if (!RIDE_SHOPS[id]) id = 'pedal';
-    if (id !== bikeShopId) bikeTab = null; // a new shop opens on its own tab
-    bikeShopId = id;
-  }
-  const sid = bikeShopId, conf = RIDE_SHOPS[sid];
-  const root = $('lp-panel');
-  delete root.dataset.club;
-  root.dataset.rideShop = sid;
-  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-  const x = el('button', 'sheet-x', '✕');
-  x.onclick = () => { root.hidden = true; };
-  const own = [...(conf.extra ? [conf.extra] : []), 'skin'];
-  if (!bikeTab || !(RIDE_TYPES.includes(bikeTab) || own.includes(bikeTab))) bikeTab = conf.extra || (conf.limited ? 'skin' : garage.current.type);
-  const tabs = el('div', 'ride-tabs');
-  const tabLabel = (id) => id === 'skin' ? (conf.limited ? '📜 ' + L(BIKE_TEXT.limited) : '🎨 ' + L(BIKE_TEXT.skins))
-    : id === 'tune' ? '🔧 ' + L(BIKE_TEXT.tune) : id === 'kit' ? '🛡️ ' + L(BIKE_TEXT.kit) : VEHICLE_ICON[id] + ' ' + L(RIDE_TAB[id]);
-  // The shop's own tabs first: they are why you came.
-  for (const id of [...own, ...RIDE_TYPES]) {
-    const b = el('button', 'ride-tab' + (bikeTab === id ? ' on' : '') + (own.includes(id) ? ' special' : ''), tabLabel(id));
-    b.onclick = () => { bikeTab = id; openBikeShop(); };
-    tabs.append(b);
-  }
-  const list = el('div', 'lp-list');
-  const top = Math.max(...BIKE_MODELS.map((m) => m.speed)) + UPGRADE_MAX * TUNE_STEP;
-  const speedBar = (v) => { const bar = el('span', 'bike-bar'); const fill = el('i'); fill.style.width = Math.round((v / top) * 100) + '%'; bar.append(fill); return bar; };
-  let note = BIKE_TEXT.note;
-  if (bikeTab === 'skin') {
-    note = conf.limited ? BIKE_TEXT.limitedNote : BIKE_TEXT.skinNote;
-    const skin = garage.s.skin;
-    const section = (title) => { list.append(el('strong', 'skin-title', title)); const g = el('div', 'skin-grid'); list.append(g); return g; };
-    const pickSkin = (kind, id) => {
-      if (id === null || garage.hasSkin(kind, id)) { garage.setSkin(kind, id); applyRide(); openBikeShop(); return; }
-      const r = garage.buySkin(kind, id, wallet, sid);
-      refreshWallet();
-      shop.toast(L(r === 'bought' ? BIKE_TEXT.skinOn : BIKE_TEXT.poor));
-      if (r === 'bought') applyRide();
-      openBikeShop();
-    };
-    const colorDot = (id) => {
-      const has = garage.hasSkin('color', id);
-      const b = el('button', 'skin-dot' + (skin.color === id ? ' on' : '') + (has ? '' : ' locked'));
-      b.style.background = SKIN_COLORS[id];
-      b.title = COLOR_NAME[id] ? L(COLOR_NAME[id]) : id;
-      if (!has) b.append(el('small', null, '🪙' + skinPrice('color', id)));
-      b.onclick = () => pickSkin('color', id);
-      return b;
-    };
-    const patternChip = (id) => {
-      const has = garage.hasSkin('pattern', id);
-      const b = el('button', 'chip skin-pat' + (skin.pattern === id ? ' on' : ''), `${PATTERN_NAME[id].icon} ${L(PATTERN_NAME[id])}` + (has ? '' : ` · 🪙${skinPrice('pattern', id)}`));
-      b.onclick = () => pickSkin('pattern', id);
-      return b;
-    };
-    const cg = section(`${L(BIKE_TEXT.colors)} · 🪙 ${skinPrice('color', conf.colors[0])}`);
-    const none = el('button', 'skin-dot none' + (!skin.color ? ' on' : ''), L(BIKE_TEXT.none));
-    none.onclick = () => pickSkin('color', null);
-    cg.append(none, ...conf.colors.map(colorDot));
-    const pg = section(`${L(BIKE_TEXT.patterns)} · 🪙 ${skinPrice('pattern', conf.patterns[0])}`);
-    const none2 = el('button', 'chip skin-pat' + (!skin.pattern ? ' on' : ''), L(BIKE_TEXT.none));
-    none2.onclick = () => pickSkin('pattern', null);
-    pg.append(none2, ...conf.patterns.map(patternChip));
-    // Skins bought at the other shops can be put on here too.
-    const otherC = garage.s.colors.filter((c) => !conf.colors.includes(c));
-    const otherP = garage.s.patterns.filter((q) => !conf.patterns.includes(q));
-    if (otherC.length || otherP.length) {
-      const mg = section(L(BIKE_TEXT.mine));
-      mg.append(...otherC.map(colorDot), ...otherP.map(patternChip));
-    }
-  } else if (bikeTab === 'tune' || bikeTab === 'kit') {
-    const kind = bikeTab;
-    note = kind === 'tune' ? BIKE_TEXT.tuneNote : BIKE_TEXT.kitNote;
-    for (const m of BIKE_MODELS.filter((b) => garage.has(b.id))) {
-      const lv = garage.level(kind, m.id), price = garage.upgradePrice(kind, m.id);
-      const row = el('div', 'lp-row bike-row' + (garage.s.use === m.id ? ' on' : ''));
-      const sw = el('span', 'bike-swatch');
-      sw.style.background = m.color;
-      const text = el('span', 'lp-text');
-      const name = el('strong', null, `${VEHICLE_ICON[m.type]} ${L(m.name)} `);
-      name.append(el('span', 'tier-stars t' + m.tier, TIER_STARS[m.tier]));
-      text.append(name);
-      if (kind === 'tune') text.append(speedBar(garage.speedOf(m.id)));
-      const pips = '●'.repeat(lv) + '○'.repeat(UPGRADE_MAX - lv);
-      text.append(el('small', null, `${L(BIKE_TEXT[kind])} ${pips} · ` + (kind === 'tune'
-        ? `${L(BIKE_TEXT.speed)} ${(m.speed + lv * TUNE_STEP).toFixed(2)}`
-        : fmt(L(BIKE_TEXT.wear), { n: Math.round((1 - KIT_WEAR[lv]) * 100) }))));
-      const btns = el('span', 'bike-btns');
-      if (price == null) btns.append(el('small', 'bike-using', '✓ ' + L(BIKE_TEXT.maxed)));
-      else {
-        const b = el('button', 'chip', `${L(BIKE_TEXT.upgrade)} · 🪙 ${price}`);
-        b.onclick = () => {
-          const r = garage.upgrade(kind, m.id, wallet);
-          refreshWallet();
-          shop.toast(L(r === 'upgraded' ? BIKE_TEXT.upgraded : BIKE_TEXT.poor));
-          openBikeShop();
-        };
-        btns.append(b);
-      }
-      row.append(sw, text, btns);
-      list.append(row);
-    }
-  } else for (const m of BIKE_MODELS.filter((b) => b.type === bikeTab)) {
-    const own = garage.has(m.id), on = garage.s.use === m.id;
-    const row = el('div', 'lp-row bike-row' + (on ? ' on' : ''));
-    const sw = el('span', 'bike-swatch');
-    sw.style.background = m.color;
-    const text = el('span', 'lp-text');
-    const name = el('strong', null, `${VEHICLE_ICON[m.type]} ${L(m.name)} `);
-    name.append(el('span', 'tier-stars t' + m.tier, TIER_STARS[m.tier]));
-    text.append(name);
-    const info = el('small', null, `${L(BIKE_TEXT.speed)} ${(own ? m.speed + garage.level('tune', m.id) * TUNE_STEP : m.speed).toFixed(1)}` + (own ? ' · ' + fmt(L(BIKE_TEXT.dur), { n: Math.floor(garage.durability(m.id)) }) : ''));
-    text.append(speedBar(own ? garage.speedOf(m.id) : m.speed), info);
-    const btns = el('span', 'bike-btns');
-    if (!own) {
-      const b = el('button', 'chip', `${L(BIKE_TEXT.buy)} · 🪙 ${m.price}`);
-      b.onclick = () => {
-        const r = garage.buy(m.id, wallet);
-        refreshWallet();
-        shop.toast(L(r === 'bought' ? BIKE_TEXT.bought : BIKE_TEXT.poor));
-        if (r === 'bought') applyRide();
-        openBikeShop();
-      };
-      btns.append(b);
-    } else {
-      if (!on) {
-        const b = el('button', 'chip', L(BIKE_TEXT.use));
-        b.onclick = () => { garage.use(m.id); applyRide(); openBikeShop(); };
-        btns.append(b);
-      } else btns.append(el('small', 'bike-using', '✓ ' + L(BIKE_TEXT.using)));
-      const cost = repairCost(garage.durability(m.id));
-      if (cost > 0) {
-        const r = el('button', 'chip', `🔧 ${L(BIKE_TEXT.repair)} · 🪙 ${cost}`);
-        r.onclick = () => {
-          const res = garage.repair(m.id, wallet);
-          refreshWallet();
-          shop.toast(L(res === 'fixed' ? BIKE_TEXT.fixed : BIKE_TEXT.poor));
-          openBikeShop();
-        };
-        btns.append(r);
-      }
-    }
-    row.append(sw, text, btns);
-    list.append(row);
-  }
-  const head = RIDE_SHOP_TEXT[sid];
-  root.replaceChildren(x, el('strong', 'wallet-title', head.icon + ' ' + L(head)), el('p', 'fine', L(note)), tabs, list);
-  root.hidden = false;
-}
-
+// Music café LPs, the K-POP café and the cinemas. (game/music-cafe.js)
+const musicCafe = createMusicCafe({
+  $, applyMusicBtn, kpop, music, shop,
+});
+const { enterMusicCafe, enterKpopCafe, leaveMusicCafe, leaveKpopCafe, openLpPanel } = musicCafe;
+// The record café's listening bar: headphones on, one song, only you hear
+// it. (game/listening-bar.js)
+const listenBar = createListeningBar({
+  $, applyMusicBtn, music, shop, me: () => me, base: BASE,
+  onChange: () => {
+    action = STALE;
+    // The headphones leave their stand while we wear them.
+    for (const s of interior?.stations?.listening || []) if (s.rack) s.rack.visible = !s.npc && s !== listenBar.station;
+    if (listenBar.station) me.root.rotation.y = listenBar.station.ry; // face the bar
+  },
+});
+// Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
+const bikeShop = createBikeShop({
+  get riding() { return riding; }, get me() { return me; }, get wallet() { return wallet; }, $, garage,
+  refreshWallet, shop,
+});
+const { TIER_STARS, BIKE_TEXT, applyRide, openBikeShop } = bikeShop;
 // Restaurants: sit at a table, order, eat, share bites (src/game/dining.js).
 const dining = createDining({
   get interior() { return interior; }, get seated() { return seated; }, get mode() { return mode; },
   get me() { return me; }, get clerk() { return clerk; }, get others() { return others; }, get net() { return net; },
   get safety() { return safety; }, get held() { return held; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; }, get canvas() { return canvas; }, get camera() { return camera; },
-  missionEvent, refreshWallet, recordFood, setHeld, openMenu,
+  missionEvent, refreshWallet, recordFood, setHeld, holdNew, handReady, openMenu,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
 });
 const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, orderFood } = dining;
+// Picnic mats on the Han River park lawn (src/game/picnic.js).
+// The street's wooded parks (Seoul Forest) take picnic mats too: on the
+// grass, off the paths, clear of trees, benches and sculptures.
+const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => { // (lawn: an open picnic lawn with no trees, Yeouido's)
+  const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+  return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+});
+const hills = (map.landmarks || []).filter((l) => ['hill', 'pond', 'greenhouse'].includes(l.type)) // (not on a slope, in a pond or in the greenhouse)
+  .map((l) => [l.x, l.z, l.type === 'greenhouse' ? Math.hypot(l.w, l.d) / 2 : l.r || 13]);
+const lawnBlocks = lawnObstacles.concat(hills);
+const lawnRoads = map.roads.filter((r) => r.p.some(([x, z]) => streetLawns.some((l) => x > l.x0 - 40 && x < l.x1 + 40 && z > l.z0 - 40 && z < l.z1 + 40)));
+const streetPicnic = streetLawns.length ? {
+  scene, lawns: streetLawns, colliders: [], seats: streetSeats,
+  blocked(r) {
+    for (const [x, z, rad] of lawnBlocks) {
+      const cx = Math.max(r.x0, Math.min(x, r.x1)), cz = Math.max(r.z0, Math.min(z, r.z1));
+      if ((cx - x) ** 2 + (cz - z) ** 2 < rad * rad) return true;
+    }
+    for (const fx of [0, 0.5, 1]) for (const fz of [0, 0.5, 1]) {
+      const x = r.x0 + (r.x1 - r.x0) * fx, z = r.z0 + (r.z1 - r.z0) * fz;
+      if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
+    }
+    return false;
+  },
+} : null;
+const picnic = createPicnic({
+  get interior() { return interior; }, get mode() { return mode; }, get seated() { return seated; },
+  get me() { return me; }, get others() { return others; }, get bag() { return bag; }, get shop() { return shop; },
+  get myId() { return myId; }, get held() { return held; },
+  standUp: () => standUp(), dropHeld: () => setHeld(null), clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
+}, streetPicnic);
+// Sold or given away: it can't stay spread. (After the change settles: taking
+// it out of the bag into the hand empties the bag a moment before the hand fills.)
+bag.onChange(() => queueMicrotask(() => picnic.checkBag()));
+// Fetch with your pet on the same picnic lawns (src/game/frisbee.js).
+const frisbee = createFrisbee({
+  get me() { return me; }, get pet() { return petCare.pet; }, get room() { return picnic.room; }, get others() { return others; },
+  get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
+  get sfx() { return sfx; }, toStreet: (x, z) => peerSpot(x, z), petName, clearAction: () => { action = STALE; },
+  handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
+});
+// Snowballs and snowmen once the snow has settled (src/game/snowman.js).
+const snowman = createSnowman({
+  get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
+  get shop() { return shop; }, get scene() { return scene; },
+  get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
+  get onFoot() { return !riding && !seated; }, get look() { return myLook; },
+  get heldKind() { return heldKind(); },
+  snowNews: () => { // the snow has settled: a snow duck maker for the bag (once), and the news
+    const got = !bag.has('duckmold') && held?.kind !== 'duckmold' && bag.add({ kind: 'duckmold' });
+    shop.toast(L(got ? SNOW_TEXT.snowNewsGot : SNOW_TEXT.snowNews));
+  },
+  send: (m) => net.sendEmote(m), blocked: (x, z, r) => collision.blocked(x, z, r),
+  bubble: (text) => showBubble(myLabel, $('labels'), text), sfx: () => sfx,
+  clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
+});
 // Station vending machines: cheap drinks that work like a coffee to go.
-const VENDING_TEXT = {
-  open: { en: 'Vending machine', ko: '음료 자판기', ja: '自動販売機', zh: '自动售货机' },
-  note: { en: 'Every drink is 1 coin. Sip it to refill your stamina.', ko: '모든 음료가 1코인이에요. 마시면 체력이 채워져요.', ja: '飲み物はすべて1コイン。飲むとスタミナが回復します。', zh: '所有饮料都是1枚硬币。喝了可以恢复体力。' },
-  buy: { en: 'Buy', ko: '사기', ja: '買う', zh: '购买' },
-  got: { en: 'Clunk! {name} drops out.', ko: '덜컹! {name}이(가) 나왔어요.', ja: 'ガコン！{name}が出てきました。', zh: '咚！{name}掉出来了。' },
-};
 function buyVending(dr) {
-  if (held && !confirm(t('coffee.replace'))) return;
+  if (!handReady()) return;
   if (!wallet.spend(dr.price, { name: dr.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: dr.price })); return; }
   refreshWallet();
   sfx.pop?.();
-  setHeld({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
+  holdNew({ kind: 'coffee', sips: COFFEE_SIPS, name: localName(dr.name, 'en') });
   $('lp-panel').hidden = true;
   shop.toast(fmt(L(VENDING_TEXT.got), { name: `${dr.icon} ${localName(dr.name, getLanguage())}` }));
 }
@@ -2965,6 +3284,34 @@ function openVending() {
   root.replaceChildren(x, el('strong', 'wallet-title', '🥤 ' + L(VENDING_TEXT.open)), el('p', 'fine', L(VENDING_TEXT.note)), list);
   root.hidden = false;
 }
+// The route map pillar in a station: walk up to it to see the map up close.
+function openRouteMap() {
+  const rm = interior?.subway?.routeMap;
+  if (!rm) return;
+  const root = $('route-panel');
+  const x = document.createElement('button');
+  x.className = 'sheet-x'; x.textContent = '✕';
+  x.onclick = () => { root.hidden = true; };
+  const title = document.createElement('strong');
+  title.className = 'wallet-title';
+  title.textContent = '🗺️ ' + L(ROUTE_MAP_TEXT.title);
+  const img = document.createElement('img');
+  img.src = rm.canvas.toDataURL();
+  img.alt = L(ROUTE_MAP_TEXT.title);
+  // On a narrow phone the map is shown larger and scrolls sideways, starting
+  // at your station.
+  const wrap = document.createElement('div');
+  wrap.className = 'route-scroll';
+  wrap.append(img);
+  root.replaceChildren(x, title, wrap);
+  root.hidden = false;
+  const fit = () => { if (rm.here && wrap.scrollWidth > wrap.clientWidth) wrap.scrollLeft = rm.here[0] / ROUTE_MAP.w * img.clientWidth - wrap.clientWidth / 2; };
+  if (img.complete) fit(); else img.onload = fit;
+}
+const nearRouteMap = (p) => {
+  const rm = interior?.subway?.routeMap;
+  return rm && Math.abs(p.x - rm.x) < 1.8 && Math.abs(p.z - rm.z) < 1.4;
+};
 function openMenu() {
   const root = $('lp-panel');
   delete root.dataset.club;
@@ -2992,88 +3339,11 @@ function openMenu() {
   root.hidden = false;
 }
 
-// Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
-// songs run on the clock, so everyone inside hears the same song at the same
-// moment. Our own background music pauses while inside.
-const clubMusic = new ClubMusic();
-let clubState = null; // { wasOn, genre } while inside a club
-const CLUB_TEXT = {
-  open: { en: 'Playlist', ko: '플레이리스트', ja: 'プレイリスト', zh: '播放列表' },
-  now: { en: 'Now playing', ko: '지금 나오는 곡', ja: '再生中', zh: '正在播放' },
-  note: { en: 'Everyone in the club hears the same song. 10 songs, 2–3 minutes each, all made in your browser.', ko: '클럽 안의 모두가 같은 곡을 들어요. 2~3분짜리 10곡이 브라우저에서 바로 만들어져요.', ja: 'クラブの全員が同じ曲を聴いています。2〜3分の10曲をブラウザでその場で演奏します。', zh: '俱乐部里的每个人都听同一首歌。共10首，每首2–3分钟，在浏览器中实时生成。' },
-  mute: { en: 'Mute', ko: '음소거', ja: 'ミュート', zh: '静音' },
-  unmute: { en: 'Sound on', ko: '소리 켜기', ja: '音を出す', zh: '打开声音' },
-  left: { en: '{t} left', ko: '{t} 남음', ja: '残り{t}', zh: '剩余{t}' },
-};
-const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-clubMusic.onSong = (i) => {
-  if (!clubState) return;
-  const tr = CLUB_TRACKS[clubState.genre][i];
-  shop.toast('🎧 ' + localName(tr.name, getLanguage()));
-  if (!$('lp-panel').hidden && $('lp-panel').dataset.club) openClubPanel();
-};
-async function enterClub(genre) {
-  clubState = { wasOn: music.on, genre };
-  if (music.on) { await music.setOn(false); applyMusicBtn(); }
-  if (clubState?.genre === genre) await clubMusic.start(genre);
-}
-async function leaveClub() {
-  if (!clubState) return;
-  const { wasOn } = clubState;
-  clubState = null;
-  clubMusic.stop();
-  $('lp-panel').hidden = true;
-  delete $('lp-panel').dataset.club;
-  if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
-}
-function clubPulse() {
-  if (!clubState || !clubMusic.on) return null;
-  const p = clubMusic.pulse();
-  return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
-}
-setBeat(() => clubPulse()); // dancers move to the club's beat
-function openClubPanel() {
-  if (!clubState) return;
-  const root = $('lp-panel');
-  root.dataset.club = '1';
-  const lang = getLanguage();
-  const g = CLUB_GENRES[clubState.genre];
-  const x = document.createElement('button');
-  x.className = 'sheet-x';
-  x.textContent = '✕';
-  x.onclick = () => { root.hidden = true; delete root.dataset.club; };
-  const h = document.createElement('strong');
-  h.className = 'wallet-title';
-  h.textContent = `${g.icon} ${localName(g.name, lang)} · ${L(CLUB_TEXT.open)}`;
-  const note = document.createElement('p');
-  note.className = 'fine';
-  note.textContent = localName(g.desc, lang) + ' ' + L(CLUB_TEXT.note);
-  const list = document.createElement('div');
-  list.className = 'lp-list';
-  const p = clubMusic.pulse();
-  CLUB_TRACKS[clubState.genre].forEach((tr, i) => {
-    const playing = clubMusic.on && clubMusic.index === i;
-    const row = document.createElement('div');
-    row.className = 'lp-row' + (playing ? ' on' : '');
-    row.innerHTML = '<span class="lp-text"><strong></strong><small></small></span>';
-    row.querySelector('strong').textContent = `${i + 1}. ${localName(tr.name, lang)}`;
-    const len = songSeconds(clubState.genre, tr);
-    row.querySelector('small').textContent = playing && p
-      ? `▶ ${L(CLUB_TEXT.now)} · ${fmt(L(CLUB_TEXT.left), { t: mmss(Math.max(0, len - p.pos)) })}`
-      : `${tr.bpm} BPM · ${mmss(len)}`;
-    list.append(row);
-  });
-  const mute = document.createElement('button');
-  mute.className = 'chip';
-  mute.textContent = clubMusic.muted ? '🔊 ' + L(CLUB_TEXT.unmute) : '🔇 ' + L(CLUB_TEXT.mute);
-  mute.onclick = () => { clubMusic.setMuted(!clubMusic.muted); openClubPanel(); };
-  const actions = document.createElement('div');
-  actions.className = 'order-actions';
-  actions.append(mute);
-  root.replaceChildren(x, h, note, list, actions);
-  root.hidden = false;
-}
-
+// Itaewon clubs: genre playlists on a shared clock. (game/clubs.js)
+const clubs = createClubs({
+  $, applyMusicBtn, music, shop,
+});
+const { enterClub, leaveClub, CLUB_TEXT, openClubPanel, clubPulse } = clubs;
 let musicWanted = false;
 try { musicWanted = localStorage.getItem(MUSIC_KEY) === '1'; } catch { /* ignore */ }
 if (musicWanted) {
@@ -3089,7 +3359,7 @@ if (musicWanted) {
 
 // Guidance to a zone or store.
 let guide = null;
-let routeTimer = 0, routeLen = 0, faceRoute = false;
+let routeTimer = 0, routeLen = 0;
 let routePoly = null; // the current route along the streets
 // Auto-walk: follow the route without steering. Any stick/key input stops it.
 let autoWalk = false;
@@ -3106,8 +3376,7 @@ function setGuide(g) {
   if (onboard >= 2) $('info-hint').hidden = true; // a way is chosen: the info centre card would cover the guide bar
   routePoly = null; // plan a new route
   $('guide').hidden = mode !== 'street';
-  routeTimer = 0; // draw the route on the next frame
-  faceRoute = true; // and turn the camera to look along it
+  routeTimer = 0; // draw the route on the next frame (the camera stays as it is: the line shows the way)
 }
 function clearGuide() {
   guide = null;
@@ -3126,13 +3395,19 @@ const mapView = new MapView({
   stores: storefronts.items,
   marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
-    return { x, z, icon: '🚇', color: sub.line?.color, label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()) };
+    const go = outsideOf(ex); // guidance ends on the pavement just outside the stairs
+    return {
+      x, z, icon: '🚇', color: '#5d6470', // one colour for every line for now (no transfers to think about)
+      station: s, name: stationStores[s].name, go: { x: go.x, z: go.z },
+      label: () => `${localName(stationStores[s].name, getLanguage())} ${ex.n ?? i + 1}`, group: () => localName(stationStores[s].name, getLanguage()),
+    };
   })),
   getPlayers: () => {
-    const pos = mode === 'street' ? me.root.position : interior.front.door;
+    const op = openParkHere(); // (an open-air park: where I am on its lawn, in the street's metres)
+    const pos = mode === 'street' ? me.root.position : op ? myPlace() : interior.front.door;
     return {
-      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : interior.front.group.rotation.y },
-      others: mode === 'street' ? others.list() : [],
+      me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
+      others: outdoors() ? others.list() : [],
     };
   },
   onGuide: (g) => {
@@ -3142,78 +3417,224 @@ const mapView = new MapView({
   onTaxi: (dest) => rideTaxi(dest),
 });
 
-// Taxi: pick a place on the map (taxi mode) and ride there. A short scene
-// from the back seat, the driver speaks Korean, then you're dropped off on
-// the nearest street. The fare grows with the distance.
-const TAXI_LINES = [
-  ['안녕하세요! 어디로 가세요?', 'annyeonghaseyo! eodiro gaseyo?', 'taxi.t1'],
-  ['네, 출발할게요!', 'ne, chulbalhalgeyo!', 'taxi.t2'],
-  ['도착했습니다. 안녕히 가세요!', 'dochakhaetseumnida. annyeonghi gaseyo!', 'taxi.t3'],
-];
-let taxiTimers = [];
-const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
-function taxiDropOff(x, z) {
-  let best = [x, z], bd = Infinity;
-  for (const r of map.roads) {
-    if (CAR_FREE.has(r.k)) continue;
-    for (let i = 1; i < r.p.length; i++) {
-      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i];
-      const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
-      const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
-      const px = ax + u * dx, pz = az + u * dz, d = (px - x) ** 2 + (pz - z) ** 2;
-      if (d < bd) { bd = d; best = [px, pz]; }
+// Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
+let minimap = null;
+import('./game/minimap.js').then(({ createMinimap }) => {
+  minimap = createMinimap({
+    hud: $('hud'), map, open: () => $('map-btn').click(),
+    getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no minimap: the Map button still works */ });
+
+// Taxi rides to a picked place on the map. (game/taxi.js)
+const taxi = createTaxi({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
+  get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
+  clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
+  setGuide, setRiding, shop, shops: () => storefronts.items,
+  // The shop or place nearest (x, z), for a shared taxi's "going to …".
+  placeName: (x, z) => {
+    let best = null, bd = 80;
+    for (const it of storefronts.items) {
+      const d = Math.hypot(it.door.x - x, it.door.z - z);
+      if (d < bd) { bd = d; best = it.store; }
     }
+    return best && localName(best.name, getLanguage());
+  },
+});
+const { rideTaxi } = taxi;
+// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// the cards that trip shows. "Back to the guide" puts you beside the square guide.
+const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+function firstTaxiCard(lines, buttons) {
+  const box = $('info-hint');
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+  for (const [cls, label, run] of buttons) {
+    const b = document.createElement('button');
+    b.className = cls;
+    b.textContent = label;
+    b.onclick = () => { box.hidden = true; run(); };
+    actions.append(b);
+  }
+  const p = document.createElement('p');
+  p.textContent = lines;
+  box.replaceChildren(p, actions);
+  box.hidden = false;
+}
+// The new player's first errand (core/quests.js STARTER 'trip', steps in
+// TRIP): a little tour. Take out the bike, ride to Seongsu Station, get off
+// (no bikes on the stairs), one stop to Seoul Forest and a walk in the park,
+// the train on to Anguk, up into Bukchon, a walk to Cheonggyecheon; then a
+// free taxi back to the square guide. New players, who start in Bukchon,
+// get BUKCHON_TRIP instead: the Open House, Anguk Station, the train to
+// Seongsu and up to the square guide. Each step
+// shows its line on the ground; "Later" moves on to the next errand.
+const TRIP_CARD = {
+  home: { en: "🚕 Back in Seongsu! Tell the guide you made it.", ko: "🚕 성수에 돌아왔어요! 안내원에게 보고해요.", ja: "🚕 聖水に戻ってきた！案内係に報告しよう。", zh: "🚕 回到圣水了！去向导那里汇报吧。", es: "🚕 ¡De vuelta en Seongsu! Avisa al guía.", id: "🚕 Kembali di Seongsu! Lapor ke pemandu.", ar: "🚕 عدت إلى سونغسو! أبلغ المرشد.", vi: "🚕 Đã về Seongsu! Báo cho người hướng dẫn nhé.", hi: "🚕 सोंगसू वापस! गाइड को बताएँ।", fr: "🚕 De retour à Seongsu ! Va le dire au guide.", th: "🚕 กลับถึงซองซูแล้ว! ไปรายงานไกด์กัน" },
+  taxi: { en: "🚕 Free taxi to Seongsu", ko: "🚕 무료 택시로 성수 가기", ja: "🚕 無料タクシーで聖水へ", zh: "🚕 坐免费出租车回圣水", es: "🚕 Taxi gratis a Seongsu", id: "🚕 Taksi gratis ke Seongsu", ar: "🚕 سيارة أجرة مجانية إلى سونغسو", vi: "🚕 Taxi miễn phí về Seongsu", hi: "🚕 सोंगसू तक मुफ़्त टैक्सी", fr: "🚕 Taxi gratuit pour Seongsu", th: "🚕 แท็กซี่ฟรีกลับซองซู" },
+  offer: { en: "🚲 Let's take a little trip! First, take out your bike.", ko: "🚲 작은 여행을 떠나 봐요! 먼저 자전거를 꺼내요.", ja: "🚲 ちょっと旅に出よう！まずは自転車を出して。", zh: "🚲 来一次小旅行吧！先把自行车拿出来。", es: "🚲 ¡Hagamos un pequeño viaje! Primero, saca tu bici.", id: "🚲 Ayo jalan-jalan sebentar! Pertama, keluarkan sepedamu.", ar: "🚲 لنقم برحلة صغيرة! أولًا، أخرج دراجتك.", vi: "🚲 Cùng làm một chuyến đi nhỏ nhé! Trước tiên, lấy xe đạp ra.", hi: "🚲 चलिए छोटी सी सैर करें! पहले अपनी साइकिल निकालें।", fr: "🚲 Partons pour une petite balade ! D'abord, sors ton vélo.", th: "🚲 ไปเที่ยวทริปเล็กๆ กัน! ก่อนอื่นเอาจักรยานออกมา" },
+  bike: { en: "🚲 Take out my bike", ko: "🚲 자전거 꺼내기", ja: "🚲 自転車を出す", zh: "🚲 拿出自行车", es: "🚲 Sacar mi bici", id: "🚲 Keluarkan sepeda", ar: "🚲 أخرج دراجتي", vi: "🚲 Lấy xe đạp", hi: "🚲 साइकिल निकालें", fr: "🚲 Sortir mon vélo", th: "🚲 เอาจักรยานออกมา" },
+  later: { en: "Later", ko: "나중에", ja: "あとで", zh: "以后再说", es: "Más tarde", id: "Nanti saja", ar: "لاحقًا", vi: "Để sau", hi: "बाद में", fr: "Plus tard", th: "ไว้ทีหลัง" },
+  getOff: { en: "🚲 No bikes on the stairs! Get off here and walk down to the trains.", ko: "🚲 계단에는 자전거를 못 가지고 가요! 여기서 내려서 걸어 내려가요.", ja: "🚲 階段は自転車では通れないよ！ここで降りて歩いて下りよう。", zh: "🚲 楼梯上不能骑车！在这里下车，走下去坐车吧。", es: "🚲 ¡No se puede bajar en bici! Bájate aquí y baja a pie hasta los trenes.", id: "🚲 Sepeda tidak boleh di tangga! Turun di sini dan jalan kaki ke kereta.", ar: "🚲 لا دراجات على الدرج! انزل هنا وامشِ إلى القطارات.", vi: "🚲 Không đi xe đạp xuống cầu thang được! Xuống xe ở đây và đi bộ xuống tàu.", hi: "🚲 सीढ़ियों पर साइकिल नहीं! यहीं उतरें और पैदल ट्रेन तक जाएँ।", fr: "🚲 Pas de vélo dans l'escalier ! Descends ici et va à pied jusqu'aux trains.", th: "🚲 ห้ามจักรยานลงบันได! ลงตรงนี้แล้วเดินลงไปขึ้นรถไฟ" },
+  off: { en: "🚲 Get off", ko: "🚲 내리기", ja: "🚲 降りる", zh: "🚲 下车", es: "🚲 Bajarme", id: "🚲 Turun", ar: "🚲 انزل", vi: "🚲 Xuống xe", hi: "🚲 उतरें", fr: "🚲 Descendre", th: "🚲 ลงจากรถ" },
+  wrongStop: { en: "This is {name}. Get off at {stop}!", ko: "여기는 {name}이에요. {stop}에서 내려요!", ja: "ここは{name}。{stop}で降りてね！", zh: "这里是{name}。请在{stop}下车！", es: "Esto es {name}. ¡Bájate en {stop}!", id: "Ini {name}. Turun di {stop}!", ar: "هذه {name}. انزل في {stop}!", vi: "Đây là {name}. Hãy xuống ở {stop}!", hi: "यह {name} है। {stop} पर उतरें!", fr: "C'est {name}. Descends à {stop} !", th: "ที่นี่คือ {name} ลงที่ {stop} นะ!" },
+  done: { en: "🏮 This is Cheonggyecheon! Last step: the taxi back to Seongsu is on us. Then tell the square guide for your coins.", ko: "🏮 여기가 청계천이에요! 마지막은 무료 택시로 다시 성수로 돌아가요. 광장 안내원에게 보고하면 보상을 받아요.", ja: "🏮 ここが清渓川！最後は無料タクシーで聖水へ戻ろう。広場の案内係に報告するとご褒美がもらえるよ。", zh: "🏮 这里就是清溪川！最后一步：坐免费出租车回圣水，向广场向导汇报领取奖励。", es: "🏮 ¡Esto es Cheonggyecheon! Último paso: el taxi de vuelta a Seongsu es gratis. Luego avisa al guía de la plaza para cobrar.", id: "🏮 Ini Cheonggyecheon! Langkah terakhir: taksi gratis kembali ke Seongsu. Lalu lapor ke pemandu alun-alun untuk hadiahmu.", ar: "🏮 هذا تشونغيتشون! الخطوة الأخيرة: سيارة أجرة مجانية للعودة إلى سونغسو. ثم أبلغ مرشد الساحة لتأخذ مكافأتك.", vi: "🏮 Đây là Cheonggyecheon! Bước cuối: taxi miễn phí về lại Seongsu. Rồi báo cho người hướng dẫn quảng trường để nhận thưởng.", hi: "🏮 यह चॉन्गेचॉन है! आख़िरी कदम: सोंगसू वापसी की टैक्सी मुफ़्त है। फिर इनाम के लिए चौक के गाइड को बताएँ।", fr: "🏮 Voici Cheonggyecheon ! Dernière étape : le taxi du retour à Seongsu est offert. Ensuite, va voir le guide de la place pour ta récompense.", th: "🏮 ที่นี่คือชองกเยชอน! ขั้นสุดท้าย: นั่งแท็กซี่ฟรีกลับซองซู แล้วรายงานไกด์ประจำลานเพื่อรับรางวัล" },
+};
+const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
+const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
+const ROUTE_TIP = { bukchon: 'tripBukchon', toBukchon: 'tripToBukchon' }; // the guide's tip for each first trip (data/starter-quests.js)
+// Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
+const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
+const inOpenHouse = (x, z) => {
+  if (!bkOffset) return false;
+  const [x0, z0, x1, z1] = BUKCHON.openHouse.box, lx = x - bkOffset[0], lz = z - bkOffset[1];
+  return lx > Math.min(x0, x1) && lx < Math.max(x0, x1) && lz > Math.min(z0, z1) && lz < Math.max(z0, z1);
+};
+// The pavement outside the subway exit nearest (x, z).
+function nearestSubwayExit(x, z) {
+  let best = null, bd = Infinity;
+  for (const [s, sub] of subwayStations.entries()) for (const ex of sub.exits) {
+    const go = outsideOf(ex), d = Math.hypot(go.x - x, go.z - z);
+    if (d < bd) { bd = d; best = { kind: 'subway', id: stationStores[s].id, x: go.x, z: go.z, label: localName(stationStores[s].name, getLanguage()), d }; }
   }
   return best;
 }
-function rideTaxi(dest) {
-  // Drop-off: the nearest point on a road a car can use, on free ground.
-  const [rx, rz] = taxiDropOff(dest.x, dest.z);
-  const [fx, fz] = findFreeSpot(rx, rz);
-  // The fare grows with the distance (core/taxi.js).
-  const from = mode === 'street' ? me.root.position : interior.front.door;
-  const fare = taxiFare(from.x, from.z, fx, fz);
-  if (!wallet.spend(fare, { k: 'ledger.taxi' })) { shop.toast(t('taxi.noCoins', { n: fare.toLocaleString() })); return; }
-  refreshWallet();
-  if (mode === 'store') leaveStore();
-  if (riding) setRiding(false);
-  clearGuide();
-  const ry = Math.atan2(dest.x - fx, dest.z - fz); // face the destination
-  const sayLine = ([ko, rom, key]) => {
-    $('taxi-ko').textContent = ko;
-    $('taxi-rom').textContent = rom;
-    $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
-  };
-  $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label: dest.label }) + ' · 🪙 ' + t('taxi.fare', { n: fare.toLocaleString() });
-  $('taxi-skip').textContent = t('taxi.skip');
-  $('taxi-ride').hidden = false;
-  input.keys.clear();
-  sayLine(TAXI_LINES[0]);
-  let done = false;
-  const arrive = () => {
-    if (done) return;
-    done = true;
-    taxiTimers.forEach(clearTimeout);
-    taxiTimers = [];
-    $('taxi-ride').hidden = true;
-    moveMeTo(scene, fx, fz, ry);
-    if (dest.guide && Math.hypot(dest.x - fx, dest.z - fz) > 4) setGuide(dest.guide);
-    showBubble(myLabel, $('labels'), '🚕');
-    missionEvent('taxi');
-  };
-  taxiTimers = [
-    setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
-    setTimeout(() => sayLine(TAXI_LINES[2]), 4200),
-    setTimeout(arrive, 5600),
-  ];
-  $('taxi-skip').onclick = arrive;
+const zonePlace = (id) => { const z = zones.items.find((i) => i.zone.id === id); return z && { kind: 'zone', id, x: z.x, z: z.z, label: localName(z.zone.name, getLanguage()) }; };
+// Where this step of the trip happens (null: nothing to walk to).
+function tripPlace(step) {
+  const here = myPlace();
+  if (step === 'forest') return zonePlace('A-7');
+  if (step === 'station' || step === 'stationNear' || step === 'angukWalk' || step === 'down') return nearestSubwayExit(here.x, here.z);
+  if (step === 'forestStop' || step === 'anguk' || step === 'seongsuStop') return mode === 'street' ? nearestSubwayExit(here.x, here.z) : null;
+  if (step === 'bukchon') return { kind: 'zone', id: 'bukchon', x: FIRST_TAXI.x, z: FIRST_TAXI.z, label: L(FIRST_TAXI_TEXT.place) };
+  if (step === 'cheonggye') return zonePlace('B-2');
+  if (step === 'square') return zonePlace('A-1');
+  if (step === 'openHouse' && bkOffset) { // just inside its gate
+    const [gx, gz] = BUKCHON.openHouse.gate;
+    return { kind: 'zone', id: 'open-house', x: bkOffset[0] + gx, z: bkOffset[1] + gz - 3, label: L(TRIP_TEXT.openHouse) };
+  }
+  return null;
 }
-$('map-btn').onclick = () => {
-  const pos = mode === 'street' ? me.root.position : interior.front.door;
-  mapView.show(pos.x, pos.z);
-};
-
-// Action button (and E / Enter key).
+let tripShown = null, tripGuided = null, tripCard = null; // the step last announced / given a line; its card
+function offerTrip(npc) {
+  tripShown = tripStep();
+  const first = fromBukchon() && tripShown === 'openHouse'; // (the trip from Bukchon starts on foot)
+  if (tripShown !== 'bike' && !first) { tripGuided = null; return; } // (picked up again by tripTick)
+  firstTaxiCard(L(first ? BUKCHON_TRIP_CARD.offer : TRIP_CARD.offer), [
+    first ? ['primary', L(BUKCHON_TRIP_CARD.go), () => { tripGuided = null; tripTick(); }] : ['primary', L(TRIP_CARD.bike), () => setRiding(1)],
+    ['chip', L(TRIP_CARD.later), () => {
+      if (!tripStep() || !quests.skipStarter()) return;
+      if (guide) clearGuide();
+      talkToGuide(npc); // the next errand
+    }],
+  ]);
+  tripCard = $('info-hint').firstChild;
+}
+// A step was done: say the next one, and draw its line.
+function onTripStep() {
+  const step = tripStep();
+  if (!step || step === tripShown) return;
+  tripShown = step;
+  tripGuided = null;
+  if (guide?.kind === 'subway' || guide?.kind === 'zone') clearGuide();
+  if (step === 'done') {
+    if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true;
+    sfx.pop?.();
+    me.play('cheer');
+    const route = quests.active?.route;
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+      firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
+    } else tripTaxiCard();
+    return;
+  }
+  if (tripCard && $('info-hint').firstChild === tripCard) $('info-hint').hidden = true; // the last step's card
+  if (step === 'down' && riding) {
+    firstTaxiCard(L(TRIP_CARD.getOff), [['primary', L(TRIP_CARD.off), () => setRiding(0)]]);
+    tripCard = $('info-hint').firstChild;
+  } else shop.toast(L(TRIP_TEXT[step]));
+  tripTick();
+}
+// The trip's end: a free taxi back to the square guide (or look around and
+// report to any guide later).
+function tripTaxiCard() {
+  firstTaxiCard(L(TRIP_CARD.done), [
+    ['primary', L(TRIP_CARD.taxi), () => {
+      if (!squareNpc) return;
+      if (mode === 'store') leaveStore();
+      const g = squareNpc.ch.root, sx = Math.cos(g.rotation.y), sz = -Math.sin(g.rotation.y);
+      taxi.rideFree({ x: g.position.x + sx * 3, z: g.position.z + sz * 3, label: t('quest.guide') }, () => shop.toast(L(TRIP_CARD.home)));
+    }],
+    ['chip', L(FIRST_TAXI_TEXT.look), () => {}],
+  ]);
+}
+// Twice a second: the trip's places reached, and its line once per step.
+function tripTick() {
+  const step = tripStep();
+  if (!step || step === 'done') return;
+  const p = me.root.position, near = (pl, r) => pl && mode === 'street' && Math.hypot(pl.x - p.x, pl.z - p.z) < r;
+  if (step === 'bike' && (riding === 1 || riding === 2)) missionEvent('bike'); // (already on one)
+  else if (step === 'forest' && near(zonePlace('A-7'), 30)) missionEvent('place', 'A-7');
+  else if ((step === 'station' || step === 'stationNear' || step === 'angukWalk') && near(nearestSubwayExit(p.x, p.z), 10)) missionEvent('place', 'subway');
+  else if (step === 'openHouse' && mode === 'street' && inOpenHouse(p.x, p.z)) missionEvent('place', 'open-house');
+  else if (step === 'square' && near(zonePlace('A-1'), 20)) missionEvent('place', 'A-1');
+  else if (step === 'down' && mode === 'store' && interior?.store?.category === 'station') missionEvent('subwayIn');
+  else if (step === 'bukchon' && near(tripPlace('bukchon'), 20)) missionEvent('place', 'bukchon');
+  else if (step === 'cheonggye' && near(zonePlace('B-2'), 35)) missionEvent('place', 'B-2');
+  if (tripStep() !== step) return; // (moved on: onTripStep took care of it)
+  if (mode === 'street' && tripGuided !== step) {
+    const pl = tripPlace(step);
+    // (not when already there: a line would also hide the "get off" card)
+    if (pl && Math.hypot(pl.x - p.x, pl.z - p.z) > 15) { tripGuided = step; setGuide(pl); }
+  }
+}
+setInterval(tripTick, 500);
+function subwayArrived(k) {
+  const id = stationStores[k].subway?.id;
+  missionEvent('subway', id);
+  const want = quests.active?.kind === 'trip' && tripOf(quests.active)[quests.active.stage | 0];
+  const stop = want?.on === 'subway' && want.target !== id && stationStores.find((st) => st.subway?.id === want.target);
+  if (stop) shop.toast(fmt(L(TRIP_CARD.wrongStop), { name: localName(stationStores[k].name, getLanguage()), stop: localName(stop.name, getLanguage()) }));
+}
+// Where I am on the street map (inside: the door I came in by).
+function myPlace() {
+  if (openParkHere()) { const [x, z] = myWorldSpot(); return { x, z }; } // (an open-air park: where I am on it)
+  if (mode === 'street' || !interior?.front?.door) return me.root.position;
+  return interior.front.door;
+}
+// Every guide who hands out errands: the square guide, and the game guide
+// at each Information Center. The nearest one, for "go and see a guide".
+function nearestGuidePlace(x, z) {
+  const out = [];
+  if (squareNpc) out.push({ kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') });
+  if (welcomeNpc) out.push({ kind: 'npc-guide', id: 'welcome-guide', x: welcomeNpc.ch.root.position.x, z: welcomeNpc.ch.root.position.z, label: t('quest.welcomeGuide') });
+  for (const it of storefronts.items) if (it.store.workshop === 'info') out.push({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+  let best = null, bd = Infinity;
+  for (const g of out) { const d = Math.hypot(g.x - x, g.z - z); if (d < bd) { bd = d; best = g; } }
+  return best;
+}
+// Low on coins: point at the nearest guide for a paid errand (not more often
+// than every 10 minutes, and only while there are errands left today).
+const LOW_COINS = 5000; // won: about three subway fares
+let lowCoinsAt = -Infinity, lastCoins = null;
+function checkLowCoins() {
+  const c = wallet.coins, prev = lastCoins;
+  lastCoins = c;
+  if (prev == null || c >= prev || c >= LOW_COINS) return; // only when spending takes you under
+  if (onboard < 2 || Date.now() - lowCoinsAt < 10 * 60 * 1000) return;
+  if (!quests.active && !quests.left) return; // nothing to give out today
+  lowCoinsAt = Date.now();
+  setTimeout(() => {
+    if (!$('info-hint').hidden) { lowCoinsAt = -Infinity; return; } // something else on the card: next time
+    firstTaxiCard(L(LOW_TEXT.hint), [
+      ['primary', L(LOW_TEXT.go), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (!g) return; if (interior) leaveStore(); setGuide(g); }],
+      ['chip', L(TRIP_CARD.later), () => {}],
+    ]);
+  }, 1500); // after the purchase toast
+}
+// Action button (and E / Space key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
@@ -3253,7 +3674,6 @@ function setActionLabel(label, choices = 0) {
 
 // The chooser: when several actions are in reach at once, a tap on the
 // action button (or E) lists them all above it. Tap one, or press its number.
-const CHOOSER_TEXT = { en: 'What would you like to do?', ko: '무엇을 할까요?', ja: '何をしますか？', zh: '要做什么？' };
 const chooser = { open: false, sig: '', pick: 0 };
 function closeChooser() {
   if (!chooser.open) return;
@@ -3352,8 +3772,8 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [pochaUi, jobUi, karaokeUi, photoUi, clawUi, battingUi, galleryUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, orderUi, grillUi, fishingUi, marketUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, stampUi, museumUi].some((g) => g?.open)
-  || !$('map-panel').hidden || !$('settings-panel').hidden; } catch { return true; } };
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
   if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
@@ -3361,12 +3781,25 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if (e.code === 'KeyE' || e.code === 'Enter') runAction();
+  // Enter opens the chat, like T and / (as in most games); E and Space act.
+  if (e.code === 'Enter' && !e.repeat && !(e.target instanceof HTMLButtonElement) && !spaceBusy()
+    && !document.querySelector('#hud .sheet:not([hidden])') && !$('chat-btn').hidden) { e.preventDefault(); $('chat-btn').click(); return; }
+  if (e.code === 'KeyE' && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
+  // B for Bag: closes it if open; opens it only when no game or sheet is
+  // taking keys and the bag button is on screen.
+  if (e.code === 'KeyB' && !e.repeat) {
+    if (bagUi.open) bagUi.hide();
+    else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
+  }
   if (e.code === 'Escape') {
-    if (!$('map-panel').hidden) mapView.hide();
+    if (!$('route-panel').hidden) $('route-panel').hidden = true;
+    else if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
-    else if (wheelOpen) closeWheel();
+    else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
+    else if (loveLockUi.open) loveLockUi.close();
+    else if (wishUi.open) wishUi.close();
+    else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
 });
@@ -3385,171 +3818,54 @@ function updateZoneLine(z) {
 onLanguageChange(() => updateZoneLine(currentZone));
 
 
-// Home decorating: place furniture from a catalogue, then tap it again in the
-// catalogue (or walk up to it) to rotate, carry or put it away. One of each
-// piece for now, so rooms stay light. Saved in this browser only (for now).
-const MAX_PIECES = 60;
-let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
-const homeKey = (id) => 'mk.home.' + id;
-function loadDecor(id) {
-  try {
-    const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
-    return Array.isArray(a)
-      ? a.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && a.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
-      : [];
-  } catch { return []; }
-}
-function saveDecor() {
-  const r = (v) => Math.round(v * 100) / 100;
-  try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry) })))); } catch { /* storage blocked */ }
-}
-function rebuildDecor() {
-  decor.group.clear();
-  for (const it of decor.items) {
-    const g = buildFurniture(it.id);
-    g.position.set(it.x, 0, it.z);
-    g.rotation.y = it.ry;
-    decor.group.add(g);
-    it.mesh = g;
-  }
-  // The piece being carried doesn't block you until it is put down.
-  const extra = decor.items.filter((it) => it !== decor.carry).map(furnitureCollider).filter(Boolean);
-  interior.collision = activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
-  interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
-    const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
-    const out = furnitureById(it.id).size[1] / 2 + 0.55;
-    return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out, it.z + fz * out] };
-  });
-  saveDecor();
-  markPlaced();
-}
-// Catalogue buttons show which pieces are already in the room.
-function markPlaced() {
-  for (const b of $('decor-grid').children) b.classList.toggle('placed', !!decor?.items.some((i) => i.id === b.dataset.id));
-}
-function openHome(store, built) {
-  if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
-  decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null, carry: null };
-  rebuildDecor();
-  $('decor-btn').hidden = false;
-}
-function closeHome() {
-  if (!decor) return;
-  setDecorating(false);
-  $('decor-btn').hidden = true;
-  decor = null;
-}
-function setDecorating(on) {
-  decor.editing = on;
-  $('decor-bar').hidden = !on;
-  $('decor-btn').classList.toggle('on', on);
-  if (!on) closePiece();
-  action = STALE; // refresh the action button
-}
-// A spot about 1.6 m in front of the player, inside the room.
-function spotInFront() {
-  const p = me.root.position, ry = me.root.rotation.y;
-  const { w, d } = interior.room;
-  return [
-    THREE.MathUtils.clamp(p.x + Math.sin(ry) * 1.6, -w / 2 + 0.8, w / 2 - 0.8),
-    THREE.MathUtils.clamp(p.z + Math.cos(ry) * 1.6, -d / 2 + 0.8, d / 2 - 1.8),
-    ry + Math.PI, // facing you
-  ];
-}
-function placePiece(id) {
-  const placed = decor.items.find((i) => i.id === id);
-  if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
-  const def = furnitureById(id);
-  if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
-  if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
-  const [x, z, ry] = spotInFront();
-  decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
-  rebuildDecor();
-}
-function nearestPiece(p) {
-  let best = null, bd = 1.6;
-  for (const it of decor.items) {
-    const d = Math.hypot(p.x - it.x, p.z - it.z) - Math.max(...furnitureById(it.id).size) / 2;
-    if (d < bd) { bd = d; best = it; }
-  }
-  return best;
-}
-function openPiece(it, picked = false) {
-  if (decor.carry && decor.carry !== it) putDown();
-  decor.piece = it;
-  decor.picked = picked; // chosen from the catalogue: stays open while you walk
-  $('piece-move-label').textContent = t(decor.carry === it ? 'home.putDown' : 'home.carry');
-  $('piece-name').textContent = furnitureById(it.id).emoji + ' ' + localName(furnitureById(it.id).name, getLanguage());
-  $('piece-bar').hidden = false;
-}
-function closePiece() {
-  if (decor?.carry) putDown();
-  if (decor) { decor.piece = null; decor.picked = false; }
-  $('piece-bar').hidden = true;
-}
-// Carry a piece: it floats in front of you until you put it down.
-function putDown() {
-  decor.carry = null;
-  $('decor-bar').hidden = !decor.editing;
-  rebuildDecor();
-  if (decor.piece) $('piece-move-label').textContent = t('home.carry');
-}
-function updateCarry() {
-  const it = decor?.carry;
-  if (!it?.mesh) return;
-  [it.x, it.z] = spotInFront();
-  it.mesh.position.set(it.x, 0.08, it.z); // lifted a little while carried
-}
-$('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
-$('decor-grid').append(...FURNITURE.map((f) => {
-  const b = document.createElement('button');
-  b.className = 'decor-item';
-  b.innerHTML = `<span>${f.emoji}</span><small></small>`;
-  b.dataset.id = f.id;
-  b.onclick = () => placePiece(f.id);
-  return b;
-}));
-function labelDecor() {
-  for (const b of $('decor-grid').children) {
-    const f = furnitureById(b.dataset.id);
-    b.querySelector('small').textContent = localName(f.name, getLanguage());
-    b.hidden = !!f.item && !inventory.has(f.item); // plushies: once you've won one
-  }
-}
-labelDecor();
-onLanguageChange(labelDecor);
-$('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
-$('piece-move').onclick = () => {
-  if (!decor?.piece) return;
-  if (decor.carry) { putDown(); closePiece(); action = STALE; return; }
-  decor.carry = decor.piece;
-  decor.picked = true;
-  $('decor-bar').hidden = true; // see where you're walking
-  rebuildDecor();
-  $('piece-move-label').textContent = t('home.putDown');
-};
-$('piece-remove').onclick = () => {
-  if (!decor?.piece) return;
-  if (decor.carry === decor.piece) decor.carry = null;
-  decor.items.splice(decor.items.indexOf(decor.piece), 1);
-  rebuildDecor();
-  closePiece();
-  action = STALE;
-};
-$('piece-close').onclick = closePiece;
+// Home decorating: place, move and remove furniture. (game/decor.js)
+const decorGame = createDecor({
+  get interior() { return interior; },
+  get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
+  get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, $, STALE,
+  inventory, shop,
+});
+const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, openPiece, updateCarry } = decorGame;
 
-
-// Coins and the rewarded-ad slot (demo for now; see core/wallet.js).
+// Coins and the rewarded-ad slot. The balance is kept on the server once
+// supabase/015_wallet.sql is set up (see core/wallet.js).
 const wallet = new Wallet(config.rewardedAd);
+wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short', paid ? 0.3 : 0.25); });
+const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
+// Anonymous session reports for the operator's retention numbers
+// (core/sessions.js, supabase/011_play_sessions.sql): once a minute while
+// the tab is visible. Not in test rooms or while another tab owns the game.
+playCounts.coins(wallet.coins);
+wallet.onChange((c) => playCounts.coins(c));
+if (!testRoom) {
+  const device = deviceClass({ touch: input.isTouch, width: screen.width, height: screen.height });
+  const src = firstSrc(location.search);
+  startSessionReports({
+    get: () => (tabParked || !me?.root ? null : { region: regionId, device, src }),
+    // Plus how far along the first path the player is (-1: never on it)
+    // and the language setting, read fresh at each report.
+    send: (r) => cloud.reportSession({ ...r, counts: { ...r.counts, starter: quests.starterStep ?? -1, lang: getLanguage() } }),
+    counts: playCounts,
+    fps: createFpsMeter(),
+    tick: (sec) => {
+      try {
+        if (!me?.root) return;
+        const mine = me.root.position;
+        const near = someoneNear(mine, [...others.players.values()].map((p) => p.ch?.root?.position).filter(Boolean));
+        if (near) playCounts.near(sec);
+      } catch { /* still starting up */ }
+    },
+  });
+}
 // Ordering practice at restaurants (food can't be eaten; you practise ordering).
-const orderUi = new OrderUI({
+const orderUi = lazyPanel(() => import('./ui/order-ui.js').then(({ OrderUI }) => new OrderUI({
   root: $('order-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onStamp: (n, total, coins) => { if (coins) shop.toast(t('order.stampToast', { n, total, coins })); },
-});
+})));
 // Samgyeopsal grilling minigame: medals for good timing.
 const grillUi = new GrillUI({
   root: $('grill-panel'),
@@ -3559,77 +3875,234 @@ const grillUi = new GrillUI({
 });
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
+// Fish book (mk.fishdex): every catch, kept even after selling.
+// A one-time fresh start for everyone (FISH_BOOK_RESET): book, pity and bag
+// cleared, the bag paid back at its selling price.
+const fishRefund = resetFishBookOnce();
+if (fishRefund?.coins) wallet.add(fishRefund.coins, undefined, { r: 'fish', once: 'fish-reset-1' });
+if (fishRefund?.had) setTimeout(() => shop.toast(t('fish.resetRefund', { coins: fishRefund.coins })), 4000);
 const fishBag = new FishBag();
+const fishDex = new FishDex(globalThis.localStorage, fishBag);
+const fishBookUi = new FishBookUI({ root: $('fishbook-panel'), dex: fishDex });
+function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textContent = `${t('fish.book')} · ${fishDex.kinds}/${FISH.length} · 🐟 ${fishDex.total}`; }
+$('fishbook-btn').onclick = () => { $('notes-panel').hidden = true; fishBookUi.show(); };
+refreshFishBookBtn();
+onLanguageChange(refreshFishBookBtn);
+// The cast, bobber, bite and reel in 3D (core/fishing-rig.js).
+const FISH_PHASES = new Set(['idle', 'cast', 'bite', 'reel', 'land', 'trash', 'escape', 'retrieve', 'off']);
+const peerRigs = new Map(); // other anglers' rigs, by player id
+function onPeerFishing(id, msg) {
+  const [ph, fid] = msg.split(':');
+  const p = others.players.get(id);
+  if (!FISH_PHASES.has(ph) || !p || p.hidden) return;
+  let rig = peerRigs.get(id);
+  if (!rig) { rig = createFishingRig({ remote: true, waterY: () => hanPark()?.river?.position.y ?? -0.25 }); peerRigs.set(id, rig); }
+  const f = fid ? fishById(fid) : null;
+  rig.phase(ph, f || (ph === 'land' ? { rarity: 1 } : undefined));
+  if (ph === 'cast') p.ch.play('cast');
+  else if (ph === 'land' || ph === 'trash') p.ch.play('catch');
+}
+function onPeerTrophy(id, fid) {
+  const f = fishById(fid), p = others.players.get(id);
+  if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
+  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
+  showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
+}
+function updatePeerRigs(dt) {
+  for (const [id, rig] of peerRigs) {
+    const p = others.players.get(id);
+    if (!p) { rig.dispose(); peerRigs.delete(id); continue; }
+    rig.update(dt, p.ch);
+  }
+}
+let legendOn = false, legendTug = 0;
+const fishRig = createFishingRig({ sfx, waterY: () => hanPark()?.river?.position.y ?? -0.25 });
 const fishingUi = new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
+  dex: fishDex,
+  stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
+  pity: new FishPity(), // mk.fishpity: bites toward each park's first legend
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
+  onPhase: (ph, data) => {
+    fishRig.phase(ph, data);
+    // Others nearby see the cast, the bite, the reel and the catch too.
+    if (FISH_PHASES.has(ph)) net.sendEmote('fishph:' + ph + (data?.id && !data.trash ? ':' + data.id : ''));
+    if (ph === 'cast') me.play('cast');
+    else if (ph === 'land' || ph === 'trash') me.play('catch');
+    else if (ph === 'bite') buzz(60);
+    // Huge bites (★4 or a legend): a long rumble on the bite and a tug while
+    // you reel; only a landed legend gets the fanfare.
+    const legend = data?.rarity === 5, huge = data && !data.trash && !data.mystery && data.rarity >= 4;
+    if (ph === 'bite' && huge) { legendOn = true; buzz([250, 80, 250, 80, 500]); shake([$('scene'), $('fish-panel')]); }
+    if (ph === 'reel' && legendOn) { clearInterval(legendTug); legendTug = setInterval(() => { buzz(40); shake([$('scene')], false); }, 900); }
+    if (ph !== 'reel' && ph !== 'tap' && ph !== 'progress' && ph !== 'bite') { clearInterval(legendTug); legendOn = false; }
+    if (ph === 'land' && legend) { buzz([120, 60, 120, 60, 120, 60, 700]); shake([$('scene'), $('fish-panel')]); }
+  },
   onCatch: (f) => {
+    playCounts.fish();
     sfx.pop?.();
-    showBubble(myLabel, $('labels'), f.emoji);
-    if (f.chance <= 2) me.play('cheer'); // a rare one!
+    refreshFishBookBtn();
+    showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
+    if (f.rarity >= 3) me.play('cheer'); // a rare one!
+    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
+    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
+    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
+      showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
+      net.sendEmote('bigfish:' + f.id);
+      sfx.reveal(true);
+    }
     missionEvent('fish', f.id);
-    togetherBonus('fish');
   },
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
+  park: () => (hanPark() || interior)?.store?.id || null, // which ★3+ kinds bite here (PARK_FISH in core/fishing.js)
+  rod: () => rodSkins.equipped,
+  lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
+  onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
+  // The stamp slamming down on a first catch: a deep double thud.
+  onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 });
+// Second-hand shops: sell clothes I bought back (core/resale.js), paid by
+// the server wallet from its own ledger. Clothes bought before receipts
+// existed are found once in the budget book.
+receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+// Below it, the second-hand rack: what players sold to the shops, at 40% (game/used-rack.js).
+const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId,
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); }, get interior() { return interior; } });
+// Potato Market (감자마켓) by Dongmyo: players' mats of clothes to buy from,
+// or spread your own (game/potato-market.js, loaded when near).
+// Take off clothes that leave the closet (trousers: back to the plain jeans).
+const takeOffItem = (id) => {
+  const it = ITEMS[id];
+  if (!it || !isWorn(it, myLook)) return;
+  myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
+  saveLook(myLook);
+  setLook(myLook);
+};
+const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
+  scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
+  takeOff: takeOffItem });
+// Clothes bought before the server kept purchases: twice their price back,
+// once (game/old-clothes.js, loaded only until it's done on this device).
+walletReady.then(() => {
+  try { if (!wallet.server || localStorage.getItem('mk.oldClothes')) return; } catch { return; }
+  import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
+    takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
+});
+const resaleUi = new ResaleUI({
+  root: $('resale-panel'),
+  pct: () => wallet.resellPct,
+  list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
+  wearing: (id) => isWorn(ITEMS[id], myLook),
+  onSell: (r) => sellClothes(r),
+  rack: () => usedRack.view(),
+  onOpen: () => usedRack.refresh(),
+  onBuy: (r) => usedRack.buy(r),
+});
+let selling = false; // one sale at a time
+async function sellClothes({ id }) {
+  const it = ITEMS[id], rc = receipts.get(id);
+  if (!it || !rc || !inventory.has(id) || selling) return;
+  selling = true;
+  try { return await sellNow(id, it, rc); } finally { selling = false; }
+}
+async function sellNow(id, it, rc) {
+  const coins = resaleCoins(rc.paid, wallet.resellPct);
+  const name = L(it.name);
+  const note = { name: it.name, at: interior?.store.name };
+  // A fixed id per purchase: asking again (a retry, a second tap) never pays twice.
+  const op = await opIdFor('resell:' + id + ':' + (rc.op || rc.bn || '') + ':' + rc.paid).catch(() => newOpId());
+  const res = await wallet.resell({ id: op, n: coins, ref: rc.op, bn: rc.bn, paid: rc.paid, note });
+  if (!res.ok) {
+    if (res.why === 'noref') { receipts.forget(id); return fmt(L(RESALE_TEXT.noref), { name }); }
+    return L(res.why === 'closed' ? RESALE_TEXT.closed : RESALE_TEXT.offline);
+  }
+  // Paid (or sold before): only now does it leave the closet.
+  if (isWorn(it, myLook)) { // take it off first (trousers: back to the plain jeans)
+    myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
+    saveLook(myLook);
+    setLook(myLook);
+  }
+  inventory.remove(id);
+  receipts.forget(id);
+  if (res.n > 0) usedRack.sold(op, id); // on the rack for others
+  refreshWallet();
+  sfx.pop?.();
+  const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
+  shop.toast(msg);
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(RESALE_TEXT.thanks)]);
+  if (!$('bag-panel').hidden) refreshItems();
+  return msg;
+}
 const marketUi = new FishMarketUI({
   root: $('market-panel'),
   bag: fishBag,
   wallet,
+  rods: rodSkins,
+  // A new rod skin: show it in hand right away if fishing, and tell the world.
+  onRodSkin: (id, bought) => {
+    if (bought) { shop.toast(t('fish.rodBought', { name: localName(rodSkin(id).name) })); sfx.reveal?.(true); }
+    if (rodOut) { me.setHeld(heldKind()); lastSent = null; }
+  },
+  onShort: (s) => shop.toast(t('fish.rodShort', { name: localName(s.name) })),
   onSold: (coins) => {
     if (!coins) return;
     shop.toast(t('fish.sold', { coins }));
+    if (hanPark()?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
 });
-const ramenUi = new RamenUI({
+// The ramen machine takes a ramyeon pack (and an egg) from the bag, bought
+// at DAILY MART; the bowl is carried to a parasol table to eat.
+const ramenUi = lazyPanel(() => import('./ui/ramen-ui.js').then(({ RamenUI }) => new RamenUI({
   root: $('ramen-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
-});
-
-// Kimjang class at Sonmat Kimchi School (Gyeongbokgung): ten steps from the
-// cabbage to the jar; the finished kimchi goes in the bag.
-const kimchiUi = new KimchiUI({
-  root: $('kimchi-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onJar: (score) => bag.add(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
-});
-// Yongmaru Market (Itaewon): the side-dish stall buys homemade kimchi, a few
-// jars a day (core/kimchi-market.js).
-const museumUi = new MuseumUI({ root: $('museum-panel') });
-const kimchiSellUi = new KimchiSellUI({
-  root: $('kimchi-sell-panel'),
   bag,
-  wallet,
-  getHeld: () => held,
-  clearHeld: () => setHeld(null),
-  onSold: (coins, score) => {
-    shop.toast(MARKET_L('sold', { coins }));
-    clerk && say(clerk, $('labels'), score >= 75 ? BOSS_LINES.great : BOSS_LINES.ok);
+  hand: { get held() { return held; }, take: () => setHeld(null) }, // a ramyeon pack or an egg in the hand counts too
+  onSay: (line) => { const c = parkClerk(); if (c) say(c, $('labels'), line); },
+  beforeCook: () => held?.g === 'ramyeon' || handReady(), // (a pack in the hand goes in the pot: the hand is free)
+  onCooked: ({ egg }) => {
+    holdNew({ kind: 'food', sips: FOOD_BITES, name: localName(egg ? RAMEN_BOWL.egg : RAMEN_BOWL.plain, 'en'), ramen: true });
+    me.play('cheer');
+    missionEvent('cook');
+    togetherBonus('cook');
   },
-  onLimit: () => clerk && say(clerk, $('labels'), BOSS_LINES.enough),
+})));
+const RAMEN_BOWL = {
+  plain: { en: 'Han River ramen', ko: '한강 라면' },
+  egg: { en: 'Han River ramen with egg', ko: '계란 한강 라면' },
+};
+// DAILY MART's ramyeon and eggs go in the bag (for the ramen machine).
+// The park's DAILY MART counter: near the kiosk clerk, the counter menu with
+// the kiosk's goods (the products on the counter can still be looked at).
+// (a park laid on the street has its own clerk: game/han-parks.js)
+const parkClerk = () => clerk || hanPark()?.clerkNpc || null;
+const martStore = () => { const st = hanPark().store; return { ...st, name: st.kiosk.name, products: st.products.filter((q) => q.kiosk) }; };
+const martCounter = (p) => { const c = parkClerk(); return !!(hanPark()?.store.kiosk && c && Math.hypot(p.x - c.ch.root.position.x, p.z - c.ch.root.position.z) < 3); };
+// Han River park: its kiosk's counter (ramyeon and eggs for the ramen machine).
+const martAct = () => ({ key: 'mart', label: '🏪 ' + fmt(L(MART_TEXT.buy), { name: localName(hanPark().store.kiosk.name, getLanguage()) }), run: () => { parkClerk()?.ch.wave(); counterUi.show(martStore()); } });
+let shopToastText = '';
+function buyIngredient(product, coins) {
+  const fail = (msg) => { shopToastText = msg; shop.toast(msg); return false; };
+  if (product.ingredient === 'mat' && hasMat(bag, held)) return fail(L(MAT_TEXT.have)); // one is enough
+  if (product.ingredient === 'frisbee' && hasFrisbee(bag, held)) return fail(L(FRISBEE_TEXT.have));
+  if (bag.full) return fail(fmt(L(BAG_TEXT.full), { cap: bag.cap }));
+  if (!wallet.spend(coins, { name: product.name, at: (interior || hanPark())?.store.name })) return fail(fmt(L(DINE_TEXT.poor), { n: coins }));
+  refreshWallet();
+  bag.add({ kind: 'gift', sips: 1, name: localName(product.name, 'en'), icon: SHOP_ICON[product.model] || '🛍️', g: product.ingredient, ...(product.ingredient === 'frisbee' ? { q: newFrisbee().q } : {}) }); // (a frisbee comes in a random colour)
+  const who = parkClerk();
+  who && say(who, $('labels'), ['감사합니다!', 'gamsahamnida!', t('coffee.enjoy')]);
+  shopToastText = fmt(L(INGREDIENT_TEXT.got), { name: localName(product.name, getLanguage()) });
+  shop.toast(shopToastText);
+  return true;
+}
+
+// Cooking classes (kimchi, japchae, kimbap), the market's kimchi stall and the museums. (game/cooking-classes.js)
+const cookingClasses = createCookingClasses({
+  get clerk() { return clerk; }, get me() { return me; }, get held() { return held; }, $, bag, missionEvent,
+  setHeld, shop, togetherBonus, wallet,
 });
-// Japchae class at Suragan Cooking Class, next to the kimchi school.
-const japchaeUi = new JapchaeUI({
-  root: $('japchae-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
-});
-// Free-style kimbap at the same class, at the bamboo mats on the near side.
-const kimbapUi = new KimbapUI({
-  root: $('kimbap-panel'),
-  wallet,
-  onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); me.play(medal ? 'cheer' : 'wave'); },
-  onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
-});
+const { museumUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi } = cookingClasses;
 
 // Minigames (ui/*-ui.js): the tteokbokki stall and its delivery run, the
 // noraebang, the photo booth, the claw machines and the duck boats.
@@ -3645,13 +4118,13 @@ const shifts = {
   left: () => shiftsLeft(readShifts(), dayKey()),
   take: () => { const n = takeShift(readShifts(), dayKey()); if (!n) return false; writeShifts(n); return true; },
 };
-const jobUi = new JobUI({
+const jobUi = lazyPanel(() => import('./ui/job-ui.js').then(({ JobUI }) => new JobUI({
   root: $('job-panel'),
   wallet,
   shifts,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } },
-});
+})));
 function openJob(job) {
   if (job === 'delivery') startDelivery();
   else jobUi.show(job, interior.store);
@@ -3665,8 +4138,113 @@ const karaokeUi = new KaraokeUI({
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
 });
 let karaokeMusic = false;
+// Curve Runway (DDP, ui/runway-ui.js): while the show is on, the movement
+// loop walks the character down the runway and back (runwayStep), the
+// camera watching from the photographers' end; the poses play here.
+let runwayMusic = false, runwayCam = null, runwaySpin = 0;
+const runwayUi = new RunwayUI({
+  root: $('runway-panel'),
+  wallet,
+  onStart: () => {
+    runwayMusic = music.on; if (music.on) { music.setOn(false); applyMusicBtn(); }
+    runwayCam = { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist };
+    Object.assign(cam, { yaw: 0, pitch: 0.3, dist: 7 });
+  },
+  onEnd: () => {
+    if (runwayMusic && !music.on) { music.setOn(true); applyMusicBtn(); }
+    runwayMusic = false; runwaySpin = 0;
+    if (runwayCam) { Object.assign(cam, runwayCam); runwayCam = null; }
+    leaveRunwayLine(); // (the walk is over, or was stopped)
+    // Step aside off the start, so the next walker has it.
+    const st = interior?.stations?.runway?.[0], p = me.root.position;
+    if (st && Math.hypot(p.x - st.x, p.z - st.z) < 0.6) { p.x = st.x + 2.3; p.z = st.z + 0.3; me.root.rotation.y = -Math.PI / 2; lastSent = null; }
+  },
+  onPose: (i, kind, label) => {
+    if (!label) { me.play('shrug'); return; } // missed the beat
+    interior?.stations?.runway?.[0]?.flash?.();
+    sfx.snap();
+    for (const o of interior?.audienceNpcs || []) if (Math.random() < 0.6) o.ch.play('clap'); // the audience claps
+    if (kind === 'turn') runwaySpin = 0.7;
+    else runwayPose(me, kind); // (others see it from the photo's message, onJudge)
+  },
+  onFinish: (score) => {
+    runwayLine.addScore(myId, score);
+    net.sendEmote(lineMsg.score(score));
+  },
+  line: {
+    status: () => {
+      const now = Date.now(), order = runwayLine.order(now);
+      const name = (id) => (id === myId ? nickname : others.nameOf(id) || '?');
+      return {
+        order: order.map((q) => ({ name: name(q.id), walking: q.walking, me: q.id === myId })),
+        board: runwayLine.board().map((r) => ({ name: name(r.id), n: r.n })),
+        inLine: runwayLine.has(), full: order.length >= 4,
+      };
+    },
+    join: () => { if (runwayLine.join(Date.now())) runwayHiAt = 0; },
+    leave: () => leaveRunwayLine(),
+  },
+  onJudge: (n, label) => {
+    const tier = tierOf(label);
+    // Every photo that lands gets a word: one of the list at random.
+    const photo = n.kind === 'pose' && tier !== 'm';
+    const word = photo ? pickWord() : null, pose = photo ? runwayUi.game?.poses?.[n.i] : null;
+    runwayReact(me.root, tier, word);
+    net.sendEmote(runwayMsg(tier, word, pose));
+  },
+  onMedal: (medal, coins) => {
+    if (coins) shop.toast(t('grill.medalToast', { coins }));
+    me.play(medal ? 'cheer' : 'wave');
+    if (medal) for (const o of interior?.audienceNpcs || []) o.ch.play(Math.random() < 0.5 ? 'cheer' : 'clap');
+  },
+});
+// Walking with friends (core/runway-line.js): a line of up to four in the
+// runway room. While in it I say so every LINE_HI_S seconds; when it is my
+// turn (and stays so a moment, so that two people joining at once settle),
+// I am taken to the start and the walk begins.
+const runwayLine = new RunwayLine(myId);
+let runwayHiAt = 0, runwayTurnFor = 0; // (wall clock: a slow frame rate must not slow the hellos)
+function leaveRunwayLine() {
+  if (!runwayLine.has()) return;
+  runwayLine.leave();
+  net.sendEmote(lineMsg.bye());
+}
+function runwayTick(dt) {
+  if (!runwayLine.has()) { runwayTurnFor = 0; return; }
+  const now = Date.now();
+  runwayLine.setWalking(!!runwayUi.game);
+  if (now - runwayHiAt >= LINE_HI_S * 1000) { runwayHiAt = now; net.sendEmote(lineMsg.hi(runwayLine.mine.at, !!runwayUi.game)); }
+  if (!runwayUi.game && runwayLine.myTurn(now)) {
+    runwayTurnFor += dt;
+    if (runwayTurnFor > 0.8) startRunwayTurn();
+  } else runwayTurnFor = 0;
+}
+function startRunwayTurn() {
+  runwayTurnFor = 0;
+  const st = interior?.stations?.runway?.[0];
+  if (!st) { leaveRunwayLine(); return; }
+  standUp();
+  me.root.position.set(st.x, 0, st.z); me.root.rotation.y = st.ry;
+  if (!runwayUi.open) runwayUi.show();
+  runwayUi.play().then(() => { if (!runwayUi.game) leaveRunwayLine(); }); // (no sound: can't walk)
+  runwayLine.setWalking(true);
+  runwayHiAt = 0; // tell everyone right away
+  shop.toast(L(RUNWAY_TEXT.yourTurn));
+}
+// One frame of the show: where on the runway, facing which way.
+function runwayStep(p, dt) {
+  const st = interior?.stations?.runway?.[0], w = runwayUi.walkState();
+  if (!st || !w) return 0;
+  const z = st.z + (st.z1 - st.z) * w.along;
+  const moved = Math.abs(z - p.z);
+  p.x = st.x; p.z = z;
+  let ry = w.phase === 'back' ? Math.PI : 0;
+  if (runwaySpin > 0) { runwaySpin = Math.max(0, runwaySpin - dt); ry += (1 - runwaySpin / 0.7) * Math.PI * 2; }
+  me.root.rotation.y = ry;
+  return moved > 0.0005 ? 0.32 : 0; // a steady catwalk pace
+}
 let snapReq = null; // resolved with a copy of the canvas after the next render
-const photoUi = new PhotoUI({
+const photoUi = lazyPanel(() => import('./ui/photo-ui.js').then(({ PhotoUI }) => new PhotoUI({
   root: $('photo-panel'),
   wallet,
   snap: () => new Promise((resolve) => { snapReq = resolve; }),
@@ -3681,7 +4259,7 @@ const photoUi = new PhotoUI({
     } else if (photoCam) { Object.assign(cam, photoCam); photoCam = null; }
   },
   countdown: (text) => { $('photo-count').hidden = !text; $('photo-count').textContent = text; },
-});
+})));
 let photoCam = null;
 // The booth you're at, and a free spot in it: friends already posing keep
 // their place, and you stand beside them instead of on top of them.
@@ -3702,252 +4280,101 @@ function boothSpot(st) {
   }
   return [st.x + best, st.z];
 }
-const clawUi = new ClawUI({
+// A prize for your home (claw machine plushies, the balloon booth's bear): true if new.
+const givePrize = (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; };
+const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => new ClawUI({
   root: $('claw-panel'),
   wallet,
-  give: (id) => { const added = inventory.add(id); refreshItems(); labelDecor(); return added.length > 0; },
+  give: givePrize,
   itemName: (id) => localName(ITEMS[id]?.name, getLanguage()),
   onWin: () => { me.play('cheer'); sfx.pop?.(); },
+})));
+// Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
+const arcadeGame = createArcade({
+  get interior() { return interior; }, get others() { return others; }, get me() { return me; },
+  get net() { return net; }, get activeScene() { return activeScene; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
-// The batting cage, the shooting gallery in Another Land and darts at Bar
-// Hush (core/arcade.js). Free skill games: no coins in or out, only your own
-// best record. Their panels are loaded the first time you play one.
-const arcade = {}; // kind → its UI, once loaded
-const arcadePanel = (kind) => ({ get open() { return !!arcade[kind]?.open; }, close() { arcade[kind]?.close(); } });
-const battingUi = arcadePanel('batting'), galleryUi = arcadePanel('gallery'), dartsUi = arcadePanel('darts');
-let dartsInvite = null; // { from, name, at }: someone in the bar challenged you
-const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < 60000 && others.nameOf(dartsInvite.from) ? dartsInvite : null);
-async function openArcade(kind) {
-  // Turn to face the cage, the targets or the board, with the camera behind you.
-  const p = me.root.position, st = interior?.stations?.[kind]?.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.5);
-  if (st?.ry != null) { me.root.rotation.y = st.ry; cam.yaw = st.ry + Math.PI; }
-  if (!arcade[kind]) {
-    let ui;
-    if (kind === 'batting') {
-      const { BattingUI } = await import('./ui/batting-ui.js');
-      ui = new BattingUI({
-        root: $('batting-panel'), store: localStorage,
-        onResult: (r) => {
-          if (r === 'homerun' || r === 'hit') sfx.tock(1, r === 'homerun' ? 1200 : 900);
-          if (r === 'homerun') me.play('cheer');
-        },
-      });
-    } else if (kind === 'gallery') {
-      const { GalleryUI } = await import('./ui/gallery-ui.js');
-      ui = new GalleryUI({ root: $('gallery-panel'), store: localStorage, onPop: () => sfx.tock(0.6, 1500) });
-    } else {
-      const { DartsUI } = await import('./ui/darts-ui.js');
-      ui = new DartsUI({
-        root: $('darts-panel'), store: localStorage,
-        friend: () => others.nearestFree(me.root.position.x, me.root.position.z, 6),
-        invite: freshInvite,
-        clearInvite: () => { dartsInvite = null; },
-        send: (to, k, thrown, total) => net.sendEmote(dartsMsg(to, k, thrown, total)),
-        onThrow: (pts) => { sfx.tock(0.7, 600); if (pts >= 50) me.play('cheer'); },
-      });
-    }
-    arcade[kind] ||= ui;
-  }
-  arcade[kind].show();
-}
-// Darts messages for me: a challenge waits up to a minute for you to walk to
-// the board; the rest goes to the darts panel.
-function onDartsMsg(from, m) {
-  if (safety.isBlocked(from, others.nameOf(from))) return;
-  if (m.kind === 'i') {
-    dartsInvite = { from, name: others.nameOf(from) || '?', at: performance.now() };
-    shop.toast(fmt(L(DARTS_INVITE), { name: dartsInvite.name }));
-  } else if (m.kind === 'n' && dartsInvite?.from === from) dartsInvite = null;
-  arcade.darts?.heard(from, m);
-}
-const DARTS_INVITE = {
-  en: '🎯 {name} challenges you to darts! Go to the dartboard to play.',
-  ko: '🎯 {name}님이 다트 대결을 신청했어요! 다트판으로 가서 받아 보세요.',
-  ja: '🎯 {name}さんがダーツで勝負を挑んできました！ダーツボードへ。',
-  zh: '🎯 {name}向你发起飞镖挑战！去飞镖靶那里接受吧。',
-  es: '🎯 ¡{name} te reta a los dardos! Ve a la diana para jugar.',
-  id: '🎯 {name} menantangmu main dart! Pergi ke papan dart untuk main.',
-  vi: '🎯 {name} thách bạn chơi phi tiêu! Đến bảng phi tiêu để chơi.',
-  hi: '🎯 {name} ने आपको डार्ट्स की चुनौती दी! खेलने के लिए डार्टबोर्ड पर जाएँ।',
-  ar: '🎯 {name} يتحداك في رمي السهام! اذهب إلى اللوحة لتلعب.',
-};
-const ARCADE_OPEN = {
-  batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', hi: 'बैटिंग', ar: 'قفص الضرب' },
-  gallery: { en: 'Balloon shooting', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', ar: 'رماية البالونات' },
-  darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', ar: 'العب السهام' },
-};
-// Tarot cafés (Starlight and Lucky Piggy in Hongdae, Moon & Rose in Seongsu):
-// sit at a reader's table and draw three cards, alone or with a friend. When
-// the tables are taken, take a number and wait on the sofa (core/tarot-queue.js).
-const TAROT_TEXT = {
-  reader: { en: 'Tarot reader', ko: '타로 마스터', ja: 'タロット占い師', zh: '塔罗师', es: 'Tarotista', ar: 'قارئة التاروت', vi: 'Thầy bói tarot', hi: 'टैरो रीडर', id: 'Pembaca tarot' },
-  open: { en: 'Tarot reading', ko: '타로 보기', ja: 'タロット占い', zh: '塔罗占卜', es: 'Lectura de tarot', ar: 'قراءة التاروت', vi: 'Xem bài tarot', hi: 'टैरो रीडिंग', id: 'Baca tarot' },
-  hint: { en: 'Have a seat at my table and I\'ll read your cards.', ko: '테이블에 앉으시면 타로를 봐 드릴게요.', ja: 'テーブルに座ってください。カードを読みますね。', zh: '请在我的桌前坐下，我来为你解牌。', es: 'Siéntate a mi mesa y te leo las cartas.', ar: 'اجلس إلى طاولتي وسأقرأ لك البطاقات.', vi: 'Mời ngồi vào bàn, tôi sẽ xem bài cho bạn.', hi: 'मेरी मेज़ पर बैठिए, मैं आपके कार्ड पढ़ूँगी।', id: 'Silakan duduk di mejaku, aku bacakan kartumu.' },
-  sit: { en: 'Sit for a reading', ko: '타로 테이블에 앉기', ja: '占いの席に座る', zh: '入座占卜', es: 'Sentarse para la lectura', ar: 'اجلس للقراءة', vi: 'Ngồi xem bài', hi: 'रीडिंग के लिए बैठें', id: 'Duduk untuk dibaca' },
-  ticket: { en: 'Take a number', ko: '대기 번호 받기', ja: '順番待ちの番号を取る', zh: '取号排队', es: 'Tomar número', ar: 'خذ رقمًا', vi: 'Lấy số thứ tự', hi: 'नंबर लें', id: 'Ambil nomor antrean' },
-  took: { en: 'You\'re No. {n} in line. Have a seat on the sofa; we\'ll call you.', ko: '대기 {n}번이에요. 소파에 앉아 기다리시면 불러 드릴게요.', ja: '{n}番目です。ソファで待っていてください。お呼びします。', zh: '你排第{n}位。请在沙发上稍候，轮到时会叫你。', es: 'Eres el n.º {n}. Siéntate en el sofá, te llamaremos.', ar: 'أنت رقم {n} في الطابور. اجلس على الأريكة وسننادي عليك.', vi: 'Bạn là số {n}. Mời ngồi sofa chờ gọi.', hi: 'आप कतार में {n} नंबर पर हैं। सोफ़े पर बैठिए, हम बुलाएँगे।', id: 'Kamu nomor {n}. Duduk di sofa, nanti dipanggil.' },
-  line: { en: 'No. {n} in line · leave the line', ko: '대기 {n}번 · 대기 취소', ja: '{n}番目 · 列を抜ける', zh: '排第{n}位 · 取消排队', es: 'N.º {n} en la fila · salir', ar: 'رقم {n} · مغادرة الطابور', vi: 'Số {n} · rời hàng', hi: 'कतार में {n} · कतार छोड़ें', id: 'Nomor {n} · keluar antrean' },
-  busy: { en: 'Someone is having a reading. Please take a number and wait your turn.', ko: '지금 다른 손님이 타로를 보고 있어요. 대기 번호를 받고 차례를 기다려 주세요.', ja: '今ほかのお客さんが占い中です。番号を取って順番をお待ちください。', zh: '有其他客人正在占卜。请取号等候。', es: 'Alguien está en una lectura. Toma un número y espera tu turno.', ar: 'هناك من يقرأ الآن. خذ رقمًا وانتظر دورك.', vi: 'Có người đang xem bài. Hãy lấy số và chờ đến lượt.', hi: 'कोई रीडिंग ले रहा है। नंबर लेकर अपनी बारी का इंतज़ार करें।', id: 'Ada yang sedang dibaca. Ambil nomor dan tunggu giliran.' },
-  turn: { en: 'Your turn! Sit at the free table · {s}s', ko: '차례예요! 빈 테이블에 앉으세요 · {s}초', ja: 'あなたの番！空いた席へ · {s}秒', zh: '轮到你了！请坐到空桌 · {s}秒', es: '¡Tu turno! Siéntate en la mesa libre · {s}s', ar: 'دورك! اجلس إلى الطاولة الفارغة · {s}ث', vi: 'Đến lượt bạn! Ngồi vào bàn trống · {s}giây', hi: 'आपकी बारी! खाली मेज़ पर बैठें · {s}से', id: 'Giliranmu! Duduk di meja kosong · {s}d' },
-  called: { en: '🔔 Your turn! A table is free. Please sit down within 10 seconds.', ko: '🔔 차례예요! 테이블이 비었어요. 10초 안에 앉아 주세요.', ja: '🔔 あなたの番です！席が空きました。10秒以内に座ってください。', zh: '🔔 轮到你了！有空桌了。请在10秒内入座。', es: '🔔 ¡Tu turno! Hay una mesa libre. Siéntate en 10 segundos.', ar: '🔔 دورك! هناك طاولة فارغة. اجلس خلال 10 ثوانٍ.', vi: '🔔 Đến lượt bạn! Có bàn trống. Hãy ngồi trong 10 giây.', hi: '🔔 आपकी बारी! मेज़ खाली है। 10 सेकंड में बैठें।', id: '🔔 Giliranmu! Ada meja kosong. Duduk dalam 10 detik.' },
-  missed: { en: 'Your 10 seconds ran out, so your number was cleared. Take a new one any time.', ko: '10초가 지나 대기 번호가 초기화됐어요. 언제든 다시 받을 수 있어요.', ja: '10秒が過ぎたので番号がリセットされました。いつでも取り直せます。', zh: '10秒已过，号码已清除。可以随时重新取号。', es: 'Pasaron los 10 segundos y se borró tu número. Toma otro cuando quieras.', ar: 'انتهت الثواني العشر وأُلغي رقمك. خذ رقمًا جديدًا متى شئت.', vi: 'Hết 10 giây nên số của bạn đã bị hủy. Có thể lấy số mới bất cứ lúc nào.', hi: '10 सेकंड बीत गए, आपका नंबर हटा दिया गया। कभी भी नया लें।', id: '10 detik habis, nomormu dihapus. Ambil lagi kapan saja.' },
-  leftLine: { en: 'You left the line.', ko: '대기를 취소했어요.', ja: '列を抜けました。', zh: '已取消排队。', es: 'Saliste de la fila.', ar: 'غادرت الطابور.', vi: 'Bạn đã rời hàng.', hi: 'आपने कतार छोड़ दी।', id: 'Kamu keluar dari antrean.' },
-  joinFriend: { en: 'Sit with {name} for the reading', ko: '{name} 님 옆에 앉아 같이 보기', ja: '{name}さんの隣で一緒に占う', zh: '坐到{name}旁边一起占', es: 'Sentarse con {name}', ar: 'اجلس مع {name}', vi: 'Ngồi cùng {name}', hi: '{name} के साथ बैठें', id: 'Duduk bersama {name}' },
-  invited: { en: '💞 {name} invites you to a tarot reading together!', ko: '💞 {name} 님이 타로를 같이 보자고 해요!', ja: '💞 {name}さんが一緒にタロットを占おうと誘っています！', zh: '💞 {name}邀请你一起占塔罗！', es: '💞 ¡{name} te invita a una lectura de tarot juntos!', ar: '💞 {name} يدعوك لقراءة تاروت معًا!', vi: '💞 {name} mời bạn cùng xem bài tarot!', hi: '💞 {name} आपको साथ में टैरो रीडिंग के लिए बुला रहे हैं!', id: '💞 {name} mengajakmu baca tarot bersama!' },
-};
-const TAROT_LINES = [
-  ['어서 오세요, 앉으세요.', 'eoseo oseyo, anjeuseyo.', 'Welcome, have a seat.'],
-  ['카드가 좋게 나왔네요!', 'kadeuga joke nawanneyo!', 'The cards look good!'],
-  ['마음을 편하게 하고 골라 보세요.', 'maeumeul pyeonhage hago golla boseyo.', 'Relax and pick a card.'],
-  ['잠시만 기다려 주세요.', 'jamsiman gidaryeo juseyo.', 'Please wait a moment.'],
-  ['다음 손님, 오세요!', 'daeum sonnim, oseyo!', 'Next guest, please!'],
-];
-// The reader at the table you sit at (a café with two tables has two readers).
-const tarotReader = () => (seated?.table ? interior?.readerNpcs?.[seated.table - 1] : null) || clerk;
-const tarotUi = new TarotUI({
-  root: $('tarot-panel'),
-  wallet,
-  onPick: () => sfx.pop?.(),
-  onTension: (last) => sfx.heartbeat?.(last ? 5 : 3),
-  onReveal: (last) => sfx.reveal?.(last),
-  onRead: (cards) => {
-    refreshWallet();
-    const r = tarotReader();
-    if (r) { r.ch.wave(); say(r, $('labels'), TAROT_LINES[1]); }
-    showBubble(myLabel, $('labels'), cards.map((c) => c.icon).join(' '), 4000);
-  },
-  // A friend for a reading together: someone right beside us, not on a bike.
-  partner: () => {
-    if (!seated?.tarot) return null;
-    const p = me.root.position;
-    const o = others.nearestFree(p.x, p.z, 2.6);
-    return o && !safety.isBlocked(o.id, o.name) ? o : null;
-  },
-  send: (verb, to, a, b) => net.sendEmote(tarotMsg(verb, to, a, b)),
-  myName: () => nickname,
+const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
+// Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
+const tarot = createTarot({
+  get seated() { return seated; }, get interior() { return interior; }, get clerk() { return clerk; },
+  get me() { return me; }, get others() { return others; }, get net() { return net; },
+  get nickname() { return nickname; }, get action() { return action; }, set action(v) { action = v; },
+  get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; }, $, STALE, myId, myLabel,
+  refreshWallet, safety, sfx, shop, sitDown, standUp, wallet,
 });
-// The waiting line.
-const tarotQueue = new TarotQueue();
-let myTicket = 0; // when we took our number (0: not in line)
-let tarotTurn = { order: [], callable: [], expired: [] };
-const tarotChairs = (k) => (interior?.seats || []).filter((s) => s.tarot && s.table === k);
-const chairBusy = (s) => s === seated || !!others.sitterAt(s.x, s.z);
-const tableBusy = (k) => tarotChairs(k).some(chairBusy);
-function tarotTick() {
-  const tables = interior.stations?.tarotTables?.length || 0;
-  let free = 0;
-  for (let k = 0; k < tables; k++) if (!tableBusy(k)) free++;
-  const line = others.tickets();
-  if (myTicket) line.push({ id: myId, tq: myTicket });
-  const was = tarotTurn.callable.includes(myId);
-  tarotTurn = tarotQueue.update(line, free);
-  if (myTicket && tarotTurn.expired.includes(myId)) { myTicket = 0; shop.toast(L(TAROT_TEXT.missed)); action = STALE; sendTimer = 0; }
-  if (myTicket && !was && tarotTurn.callable.includes(myId)) {
-    shop.toast(L(TAROT_TEXT.called));
-    sfx.pop?.();
-    if (clerk) say(clerk, $('labels'), TAROT_LINES[4]);
-    action = STALE;
-  }
-}
-// May we sit on this reading chair? Not while someone else is at that table
-// (unless they asked us to read together), and not ahead of the line.
-function tarotSeatOk(s) {
-  const busy = tarotChairs(s.table).map((c) => others.sitterAt(c.x, c.z)).filter(Boolean);
-  if (busy.length) return !!tarotUi.offer && busy.includes(tarotUi.offer.from);
-  return tarotQueue.maySit(myId, tarotTurn);
-}
-function takeTicket() {
-  myTicket = Date.now();
-  sendTimer = 0;
-  tarotTick();
-  shop.toast(fmt(L(TAROT_TEXT.took), { n: tarotTurn.order.indexOf(myId) + 1 }));
-  if (clerk) say(clerk, $('labels'), TAROT_LINES[3]);
-  action = STALE;
-}
-function leaveTarotLine(quiet) {
-  if (!myTicket) return;
-  myTicket = 0;
-  sendTimer = 0;
-  if (!quiet) shop.toast(L(TAROT_TEXT.leftLine));
-  action = STALE;
-}
-// What the action button offers in a tarot café (null: the usual).
-function tarotAction(p, seat) {
-  const offer = tarotUi.offer;
-  if (offer && !offer.accepted && !seated) { // a friend asked: sit beside them
-    const host = others.positionOf(offer.from);
-    const chair = host && (interior.seats || []).find((s) => s.tarot && !chairBusy(s) && tarotChairs(s.table).some((c) => others.sitterAt(c.x, c.z) === offer.from));
-    if (chair) return { key: 'tarot-join:' + offer.from, label: '💞 ' + fmt(L(TAROT_TEXT.joinFriend), { name: offer.name }), run: () => { leaveTarotLine(true); sitDown(chair); tarotUi.show(); tarotUi.accept(); } };
-  }
-  if (!seated && seat?.tarot) {
-    if (tarotSeatOk(seat)) return { key: 'tarot-sit', label: '🔮 ' + L(TAROT_TEXT.sit), run: () => { leaveTarotLine(true); sitDown(seat); const r = tarotReader(); if (r) { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); } tarotUi.show(); } };
-    if (!myTicket) return { key: 'tarot-ticket', label: '🎫 ' + L(TAROT_TEXT.ticket), run: () => { shop.toast(L(TAROT_TEXT.busy)); takeTicket(); } };
-  }
-  if (myTicket) {
-    if (!seated && seat?.wait) return sofa(seat); // (sit on the sofa while waiting)
-    const s = tarotQueue.secondsLeft(myId);
-    if (tarotTurn.callable.includes(myId) && s != null) return { key: 'tarot-turn:' + s, label: '🔔 ' + fmt(L(TAROT_TEXT.turn), { s }), run: () => { if (seated) standUp(); } };
-    const n = tarotTurn.order.indexOf(myId) + 1;
-    return { key: 'tarot-line:' + n, label: '🎫 ' + fmt(L(TAROT_TEXT.line), { n }), run: () => leaveTarotLine() };
-  }
-  // Every table taken, or people already waiting: offer a number.
-  const tables = interior.stations?.tarotTables?.length || 0;
-  const full = tables > 0 && [...Array(tables).keys()].every(tableBusy);
-  if ((full || tarotTurn.order.length) && (seat?.wait || seated?.wait || !seated)) return { key: 'tarot-ticket', label: '🎫 ' + L(TAROT_TEXT.ticket), run: () => takeTicket() };
-  if (!seated && seat?.wait) return sofa(seat);
-  return null;
-}
-const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
-// Busking: step onto a busking stage and perform; the crowd tips now and then.
-const BUSK_TEXT = {
-  start: { en: 'Busk', ko: '버스킹하기', ja: 'バスキングする', zh: '街头表演', es: 'Tocar en la calle', ar: 'اعزف في الشارع', vi: 'Biểu diễn đường phố', hi: 'बस्किंग करें', id: 'Ngamen' },
-  stop: { en: 'Stop busking', ko: '버스킹 끝내기', ja: 'バスキングをやめる', zh: '结束表演', es: 'Terminar', ar: 'إنهاء العزف', vi: 'Dừng biểu diễn', hi: 'बस्किंग बंद करें', id: 'Berhenti ngamen' },
-  hi: { en: 'Say hi to the busker', ko: '버스커에게 인사', ja: 'バスカーにあいさつ', zh: '和街头艺人打招呼', es: 'Saludar al músico', ar: 'حيِّ العازف', vi: 'Chào nghệ sĩ', hi: 'कलाकार को नमस्ते', id: 'Sapa pengamen' },
-  begin: { en: '🎤 You\'re on! The crowd is listening. Moving ends the show.', ko: '🎤 공연 시작! 관객이 듣고 있어요. 움직이면 공연이 끝나요.', ja: '🎤 本番スタート！観客が聴いています。動くと終わります。', zh: '🎤 开演了！观众在听。移动就会结束表演。', es: '🎤 ¡A escena! El público escucha. Si te mueves, termina.', ar: '🎤 بدأ العرض! الجمهور يستمع. الحركة تنهي العرض.', vi: '🎤 Bắt đầu! Khán giả đang nghe. Di chuyển sẽ kết thúc.', hi: '🎤 शो शुरू! भीड़ सुन रही है। चलने से शो ख़त्म होगा।', id: '🎤 Mulai! Penonton mendengarkan. Bergerak mengakhiri pertunjukan.' },
-  tip: { en: '🪙 +{n} A listener dropped a tip in your guitar case!', ko: '🪙 +{n} 관객이 기타 케이스에 팁을 넣었어요!', ja: '🪙 +{n} 観客がギターケースにチップを入れました！', zh: '🪙 +{n} 有观众往吉他盒里放了小费！', es: '🪙 +{n} ¡Alguien dejó una propina!', ar: '🪙 +{n} ترك أحد المستمعين إكرامية!', vi: '🪙 +{n} Một khán giả đã boa cho bạn!', hi: '🪙 +{n} एक श्रोता ने टिप दी!', id: '🪙 +{n} Penonton memberi tip!' },
-  noTips: { en: 'Great show! No more tips today, but the crowd still loves you.', ko: '멋진 공연! 오늘 팁은 다 받았지만 관객은 여전히 좋아해요.', ja: '素敵なショー！今日のチップは終わりですが、観客は大喜び。', zh: '精彩的表演！今天的小费已经领完，但观众依然喜欢你。', es: '¡Gran show! Hoy no hay más propinas.', ar: 'عرض رائع! لا مزيد من الإكراميات اليوم.', vi: 'Diễn hay lắm! Hôm nay hết tiền boa rồi.', hi: 'शानदार शो! आज और टिप नहीं।', id: 'Pertunjukan hebat! Hari ini tip sudah habis.' },
-  note: { en: 'Busking tips', ko: '버스킹 팁', ja: 'バスキングのチップ', zh: '街头表演小费' },
-};
-let buskMusic = null; // { wasOn, track } while inside a busking zone
-function startBusking(s) {
-  busking.start(s);
-  me.root.position.set(s.x, 0, s.z);
-  me.root.rotation.y = 0; // face the crowd
-  showBubble(myLabel, $('labels'), '🎤🎶', 3000);
-  shop.toast(L(BUSK_TEXT.begin));
-  action = STALE;
-}
-function stopBusking() {
-  busking.stop();
-  me.play('bow');
-  action = STALE;
-}
-function buskTip() {
-  const next = takeTip(readTips(), dayKey());
-  if (!next) { if (!busking.noTipsShown) { busking.noTipsShown = true; shop.toast(L(BUSK_TEXT.noTips)); } return; }
-  writeTips(next);
-  wallet.add(TIP, { name: BUSK_TEXT.note });
-  refreshWallet();
-  sfx.pop?.();
-  shop.toast(fmt(L(BUSK_TEXT.tip), { n: TIP }));
-}
-// The busking song plays while you're in the zone (and the usual music after).
-function updateBuskMusic(p) {
-  const z = mode === 'street' ? busking.zoneAt(p.x, p.z) : null;
-  if (z === busking.inside) return;
-  busking.inside = z;
-  if (z) {
-    buskMusic = { wasOn: music.on, track: music.track.id === 'busking' ? 'lofi' : music.track.id };
-    music.setTrack('busking');
-    if (!music.on) music.setOn(true).then(applyMusicBtn);
-  } else if (buskMusic) {
-    const { wasOn, track } = buskMusic;
-    buskMusic = null;
-    if (music.track.id === 'busking') music.setTrack(track);
-    if (cafeMusic) cafeMusic.wasOn = wasOn; // walked straight into a music café or bar
-    else if (!wasOn && music.on) music.setOn(false).then(applyMusicBtn);
-  }
-}
+const { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick } = tarot;
+// Bumper cars in Another Land: six a round, a waiting line. (game/bumper.js)
+const bumper = createBumper({
+  get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
+  get me() { return me; }, get others() { return others; },
+  get action() { return action; }, set action(v) { action = v; },
+  get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
+  $, STALE, myId, shop, sfx, wallet, input, moveRef, cam, sitDown, standUp, missionEvent: (...a) => missionEvent(...a),
+  ridePass: () => rideTickets.covers('bumper'), useRideTicket: () => useRideTicket('bumper'),
+});
+// Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
+const basketball = createBasketball({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get action() { return action; }, set action(v) { action = v; }, get riding() { return riding; },
+  get seated() { return seated; },
+  get manualCamT() { return manualCamT; }, set manualCamT(v) { manualCamT = v; },
+  get speed01() { return speed01; }, set speed01(v) { speed01 = v; }, $, STALE, cam, scene, setAutoWalk, sfx,
+  shop, wallet,
+});
+const { basketUi, nearCourt, basketTick } = basketball;
+// The folk games yard in Namsangol Hanok Village: yutnori, tuho, jegichagi
+// and neolttwigi with the locals. (game/folk-yard.js)
+const folkYard = createFolkYard({
+  get map() { return map; }, get mode() { return mode; }, get me() { return me; },
+  get action() { return action; }, set action(v) { action = v; },
+  $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
+});
+onLanguageChange(() => folkYard.relabel());
+// Another Land's balloon clown on platform shoes. (game/balloon-clown.js)
+const balloonClown = createBalloonClown({
+  get me() { return me; }, get held() { return held; }, get action() { return action; }, set action(v) { action = v; },
+  $, STALE, shop, wallet, randomLook, refreshWallet: () => refreshWallet(), handReady: () => handReady(), holdNew: (h) => holdNew(h), setHeld: (h) => setHeld(h),
+});
+onLanguageChange(() => balloonClown.relabel());
+// Another Land's ticket guide at the island's gate, and the booth below. (game/park-tickets.js)
+const parkTickets = createParkTickets({
+  get interior() { return mode === 'store' ? interior : null; }, get action() { return action; }, set action(v) { action = v; },
+  $, STALE, shop, sfx, wallet, randomLook, tickets: rideTickets, refreshWallet: () => refreshWallet(),
+  passName: () => L(DAY_PASS_TEXT.rides), buyRidePass: () => buyRidePass(),
+});
+onLanguageChange(() => parkTickets.relabel());
+// Another Land's mirror maze: a clock from the door to the far side. (game/mirror-maze.js)
+const mirrorMaze = createMirrorMaze({ shop });
+// Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
+const skate = createSkate({
+  get map() { return map; }, get inSkate() { return inSkate; }, set inSkate(v) { inSkate = v; },
+  get skateTk() { return skateTk; }, set skateTk(v) { skateTk = v; },
+  get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; }, get mode() { return mode; },
+  get action() { return action; }, set action(v) { action = v; }, get riding() { return riding; },
+  get me() { return me; }, get skateY() { return skateY; }, set skateY(v) { skateY = v; },
+  get speed01() { return speed01; }, $, STALE, garage, sfx, shop, skater,
+});
+const { skatePop, SKATE_TEXT, skateTick } = skate;
+
+// Olympic Park Pool: swimming, races and diving. (game/pool.js)
+const poolGame = createPool({
+  get currentLook() { return currentLook; }, get myLook() { return myLook; },
+  get action() { return action; }, set action(v) { action = v; }, get mode() { return mode; },
+  get interior() { return interior; }, get others() { return others; }, get me() { return me; },
+  get net() { return net; }, get nickname() { return nickname; },
+  get signsTranslated() { return signsTranslated; }, get seated() { return seated; },
+  get speed01() { return speed01; }, set speed01(v) { speed01 = v; }, get clerk() { return clerk; }, $, STALE,
+  cam, camera, hiringRedraws, myId, refreshWallet, safety, setLook, sfx, shop, skatePop, wallet,
+});
+const { onPoolRace, pool, endRace, wearingSwim, poolMore, poolAction, poolTick, poolLog } = poolGame;
+
+// Playing at a busking zone: start/stop, tips and the busking song. (game/busking-play.js)
+const buskPlay = createBuskingPlay({
+  get me() { return me; }, get mode() { return mode; }, get action() { return action; }, set action(v) { action = v; },
+  busking, myLabel, musicCafe, music, applyMusicBtn, sfx, shop, $, STALE,
+});
+const { stopBusking, buskTip, updateBuskMusic, buskerAct } = buskPlay;
 // Name tag studio: emblems and name colours (a place to spend coins).
 const emblems = new EmblemCollection();
 const emblemUi = new EmblemUI({
@@ -3956,6 +4383,7 @@ const emblemUi = new EmblemUI({
   wallet,
   name: nickname,
   rename: (raw) => renameMe(raw),
+  renameInfo: () => renameInfo(),
   getLook: () => myLook,
   wearLook: (patch) => {
     myLook = { ...myLook, ...patch };
@@ -3983,7 +4411,7 @@ function guideToPlace(to) {
 // Information Centers: which district a place is in, the shops of a
 // district, and the nearest shop of a kind (the name tag workshops).
 const dBoxes = districtBoxes(map);
-const storeAt = (st) => placeOf(st, region.center, latLonToLocal);
+const storeAt = (st) => placeOf(st, region.center, llToLocal);
 const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st));
 // "알바급구!" posters for the shops that hire (core/hiring-ads.js): on the
 // empty ad lots nearest each Seongsu job, a few more there for the jobs in
@@ -3999,6 +4427,64 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
   const spotById = Object.fromEntries(adPosters.spots.map((sp) => [sp.id, sp]));
   const used = new Set();
   const free = () => adPosters.spots.filter((sp) => !used.has(sp.id) && adPosters.posters[sp.id]);
+  // One "buy me a coffee" poster per district (core/support-poster.js), on
+  // the free ad lot nearest the subway exit (or the square), before the
+  // hiring posters take theirs. Never more than one per district.
+  if (/^https:\/\//.test(config.supportUrl)) {
+    const hubs = {};
+    const dOf = (x, z) => districtAt(dBoxes, x, z) || 'map';
+    for (const b of dBoxes) hubs[b.id] = { x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 };
+    for (const st of subwayStations) { const [x, z] = st.exits[0].at; hubs[dOf(x, z)] = { x, z }; }
+    if (square) hubs[dOf(square.x, square.z)] = { x: square.x, z: square.z };
+    const spotDistrict = (sp) => dOf(sp.front.x, sp.front.z);
+    // Spot ids repeat across districts; setPoster reaches the last one.
+    const spots = adPosters.spots.filter((sp) => spotById[sp.id] === sp).map((sp) => ({ ...sp, b: { d: spotDistrict(sp) } }));
+    const picked = pickSupportSpots(spots, hubs, (sp) => adPosters.posters[sp.id] && !used.has(sp.id));
+    const qrUrl = (import.meta.env.BASE_URL || '/') + 'ads/support-qr.png';
+    const label = config.supportUrl.replace(/^https:\/\/(www\.)?/, '');
+    // One poster texture shared by every district (they're all the same
+    // picture; one canvas each was 10 identical copies).
+    const tex = supportTexture(signLang(), { qrUrl, label });
+    hiringRedraws.push(tex.redraw);
+    for (const [d, hub] of Object.entries(hubs)) {
+      if (picked[d] && picked[d].dist < 300 && adPosters.setPoster(picked[d].id, tex)) {
+        used.add(picked[d].id); supportPlaces.push([d, 'spot', picked[d].id]);
+        continue;
+      }
+      // No free lot nearby: the nearest tall wall to the hub.
+      const edges = [];
+      for (const bd of map.buildings) {
+        if ((bd.d || 'map') !== d || (bd.h || 10) < 7) continue;
+        bd.p.forEach(([x1, z1], i) => {
+          const [x2, z2] = bd.p[(i + 1) % bd.p.length];
+          if (Math.hypot(x2 - x1, z2 - z1) < 7) return;
+          const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2;
+          edges.push({ mx, mz, dist: Math.hypot(mx - hub.x, mz - hub.z) });
+        });
+      }
+      edges.sort((p, q) => p.dist - q.dist);
+      let wall = null;
+      for (const e of edges) {
+        if (e.dist < 12 || e.dist > 300) continue;
+        const w = wallNear(map.buildings, e.mx, e.mz, 7);
+        if (!w || (w.b.d || 'map') !== d || w.h < 7) continue;
+        // Facing the hub side, not over a subway entrance or a shop's sign.
+        if ((hub.x - w.x) * w.nx + (hub.z - w.z) * w.nz < 0) continue;
+        if (allExits.some((ex) => Math.hypot(ex.at[0] - w.x, ex.at[1] - w.z) < 14)) continue;
+        if (storefronts.items.some((o) => Math.hypot(o.group.position.x - w.x, o.group.position.z - w.z) < 7)) continue;
+        // No street tree right in front hiding it.
+        if (treeSpots.some(([x, z]) => {
+          const ahead = (x - w.x) * w.nx + (z - w.z) * w.nz, along = Math.abs((x - w.x) * w.nz - (z - w.z) * w.nx);
+          return ahead > 0 && ahead < 14 && along < 5.5;
+        })) continue;
+        wall = w; break;
+      }
+      if (!wall) continue;
+      const w = Math.min(5.6, wall.len - 1);
+      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w));
+      supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
+    }
+  }
   const putOnSpot = (j, spotId) => {
     const sp = spotById[spotId];
     used.add(spotId);
@@ -4045,7 +4531,7 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
   }
 }
 function nearestStore(test) {
-  const p = interior?.front?.door || me.root.position; // inside a shop: from its door
+  const p = myPlace(); // inside a shop: from its door
   let best = null, bd = Infinity;
   for (const it of storefronts.items) {
     if (!test(it.store)) continue;
@@ -4072,16 +4558,21 @@ if (onboard === 0) { // first time: just the high five, nothing else in the way
   const box = $('info-hint');
   const p0 = document.createElement('p');
   p0.textContent = L(ONBOARD_TEXT.hi5);
-  box.replaceChildren(p0);
+  // The controls line goes in the same card instead of a second one on top of
+  // it (phones had both stacked over the street).
+  const p1 = document.createElement('p');
+  p1.className = 'fine';
+  p1.textContent = t(input.isTouch ? 'help.mobile' : 'help.desktop');
+  box.replaceChildren(p0, p1);
   box.hidden = false;
+  dismissHelp();
 } else setTimeout(function infoHintWhenFree() {
   if (!$('daily-panel').hidden) { setTimeout(infoHintWhenFree, 1500); return; }
   showInfoHint($('info-hint'), { onGo: () => guideToPlace({ store: nearestStore((st) => st.workshop === 'info') || 'info-center' }) });
 }, 2500); // after the daily card would have opened (1.2 s)
 // Jjimjilbang: hot kiln and ice room, and the sheep towel.
-const saunaUi = new SaunaUI({
+const saunaUi = lazyPanel(() => import('./ui/sauna-ui.js').then(({ SaunaUI }) => new SaunaUI({
   root: $('sauna-panel'),
-  wallet,
   log: new SaunaLog(),
   onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
   onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
@@ -4094,42 +4585,53 @@ const saunaUi = new SaunaUI({
       setLook(myLook);
     },
   },
-});
+})));
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).
-const GYM_POSE = { treadmill: 'run', dumbbell: 'curl', pushup: 'pushup', situp: 'situp', pullup: 'pullup' };
 let dancing = false;
-const DANCE_TEXT = {
-  start: { en: 'Dance', ko: '춤추기', ja: '踊る', zh: '跳舞' },
-  stop: { en: 'Stop dancing', ko: '춤 멈추기', ja: 'ダンスをやめる', zh: '停止跳舞' },
-};
+let debugPose = null;
 function currentActivity() {
+  if (debugPose) return debugPose; // (?debug: __mk.forcePose)
+  if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
+  if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
+  if (listenBar.listening) return 'listen'; // headphones on at the record café
+  if (seated && !seated.lie && held?.kind === 'book' && bookUi.open) return 'read'; // reading on any seat (a bench, a picnic mat, a café chair)
+  if (seated?.mat) return seated.lie ? 'mat' : 'matsit'; // a picnic mat (Han River park, Seoul Forest): lying or sitting
   if (seated?.lie) return 'lie'; // a clinic bed, the operating table
+  if (seated?.bumper != null) return 'bumper'; // in a bumper car: sat back, hands on the wheel
   if (dancing || busking.performing) return 'dance'; // (busking: playing on the stage)
-  if (gymUi.open) return GYM_POSE[gymUi.kind] || null;
-  if (seated && held?.kind === 'book' && bookUi.open) return 'read';
-  if (fishingUi.open) return 'fish';
+  if (gymUi.open) return gymUi.pose; // (the gym, a yoga mat, a reformer)
+  if (fishingUi.open) return fishingUi.state === 'reel' ? 'reel' : 'fish'; // reeling in: the reel clip
   return null;
 }
 // Gym: each finished set makes walking a tiny bit faster.
 const gymUi = new GymUI({
   root: $('gym-panel'),
   log: gymLog,
-  onRep: (kind) => { if (!GYM_POSE[kind]) me.play('cheer'); },
-  onSet: () => { showBubble(myLabel, $('labels'), '💪'); sfx.pop?.(); },
+  onRep: () => { if (!gymUi.pose) me.play('cheer'); },
+  onSet: (boost, kind) => { showBubble(myLabel, $('labels'), kind === 'yoga' ? '🧘' : kind === 'reformer' ? '✨' : '💪'); sfx.pop?.(); },
 });
+// The studio's free mats and reformers (the ones nobody is on).
+const STUDIO_ACT = {
+  yoga: { en: 'Join the yoga class', ko: '요가 수업 함께하기', ja: 'ヨガのクラスに参加', zh: '加入瑜伽课' },
+  reformer: { en: 'Pilates on the reformer', ko: '리포머 필라테스', ja: 'リフォーマーでピラティス', zh: '核心床普拉提' },
+};
+const studioSpot = (p) => interior?.stations?.studio?.find((s) => !s.npc && Math.hypot(p.x - s.x, p.z - s.z) < (s.kind === 'yoga' ? 0.95 : 0.9));
 // Library books: carry one, read it sitting anywhere.
 const BOOK_PAGE_KEY = 'mk.bookPages';
 const bookPages = (() => { try { return JSON.parse(localStorage.getItem(BOOK_PAGE_KEY) || '{}') || {}; } catch { return {}; } })();
 // 효재어학당: the course book opens when you sit at a desk or talk to the
 // teacher.
 const ACADEMY_OPEN = { en: 'Courses', ko: '수강 신청 · 수업', ja: '受講・授業', zh: '报名 · 上课' };
-const academyUi = new AcademyUI({
+const academyUi = lazyPanel(async () => {
+  const [{ AcademyUI }, { Academy }] = await Promise.all([import('./ui/academy-ui.js'), import('./core/academy.js')]);
+  return new AcademyUI({
   root: $('academy-panel'),
   academy: new Academy(),
   name: () => nickname,
-  onReward: (n) => { wallet.add(n); refreshWallet(); },
+  onReward: (n) => { wallet.add(n, undefined, { r: 'academy' }); refreshWallet(); },
   sfx: () => sfx.pop?.(),
+});
 });
 // Notice boards: in Supabase when signed in to it, else on this device.
 let boardBackend = null;
@@ -4140,22 +4642,432 @@ function boardStore() {
   return boardBackend;
 }
 const boardUi = new BoardUI({ root: $('board-panel'), store: boardStore, name: () => nickname, toast: (m) => shop.toast(m) });
-const bookUi = new BookUI({
+// Love locks on the Namsan summit: in Supabase when signed in to it (the
+// coins are taken there too, with the note), else on this device.
+let lockBackend = null;
+function loveLockStore() {
+  const live = cloud.status === 'cloud' && cloud.client && cloud.user;
+  if (live && !(lockBackend instanceof SupabaseLoveLocks)) lockBackend = new SupabaseLoveLocks(cloud, wallet);
+  if (!live && !lockBackend) lockBackend = new LocalLoveLocks(wallet);
+  return lockBackend;
+}
+const loveLockUi = new LoveLockUI({
+  root: $('love-lock-panel'), store: loveLockStore, wallet, name: () => nickname, toast: (m) => shop.toast(m),
+  onHung: () => { refreshWallet(); me.play('cheer'); },
+});
+const loveLockActs = () => [
+  { key: 'lovelock-hang', label: '🔒 ' + L(LOCK_TEXT.hang), run: () => loveLockUi.show('write') },
+  { key: 'lovelock-read', label: '💌 ' + L(LOCK_TEXT.read), run: () => loveLockUi.show('list') },
+];
+// Cheonggyecheon's lantern festival (core/lanterns.js): float a wish lantern
+// from the walkway in the wish corner, read about the procession mural.
+const festStream = streams.findIndex((s) => s.lanterns);
+let myWish = null, lastWishAt = -1e9;
+// Where p is in the festival stream's frame, when down by its water.
+function festFrame(p) {
+  if (festStream < 0 || byStream?.i !== festStream || !byStream.low || byStream.stair) return null;
+  const s = streams[festStream];
+  const [u, v] = streamUV(s, p.x, p.z);
+  return { s, u, v };
+}
+const wishSpot = (p) => { const f = festFrame(p); return f && canFloat(f.s, f.u, f.v) ? f : null; };
+const muralSpot = (p) => { const f = festFrame(p), m = f && muralSign(f.s); return m && Math.hypot(f.u - m.u, f.v - m.v) < 2.2 ? m : null; };
+const wishUi = new WishUI({
+  root: $('wish-panel'), wallet,
+  onFloat: (c, w) => {
+    const f = wishSpot(me.root.position);
+    if (!f) return false;
+    const now = Date.now() / 1000;
+    if (now - lastWishAt < WISH.cooldown) { shop.toast(L(WISH_TEXT.wait)); return false; }
+    if (!wallet.spend(WISH.price, { name: WISH_TEXT.float, at: streams[festStream].name })) { shop.toast(fmt(L(WISH_TEXT.poor), { n: WISH.price })); return false; }
+    refreshWallet();
+    lastWishAt = now;
+    const ww = (f.s.water || 8) / 2;
+    const L0 = { id: Math.random().toString(36).slice(2, 10), c, w, u0: Math.min(Math.max(f.u, wishFrom(f.s)), wishTo(f.s) - 6), v: Math.sign(f.v) * (ww - 0.6), t0: now };
+    streamModels.userData.wish?.add(L0, nickname);
+    myWish = L0;
+    lastSent = null; // others see it at once
+    me.play('clap');
+    sfx.pop?.();
+    showBubble(myLabel, $('labels'), '🏮 ' + L(WISHES[w]), 3500);
+    shop.toast(L(WISH_TEXT.done));
+    return true;
+  },
+});
+const wishAct = () => ({ key: 'wish-float', label: `🏮 ${L(WISH_TEXT.float)} · 🪙 ${WISH.price}`, run: () => wishUi.show('wish') });
+const muralAct = () => ({ key: 'mural', label: '📜 ' + L(WISH_TEXT.mural), run: () => wishUi.show('mural') });
+// Bukchon (data/bukchon.js): the 8 Views photo walk, the Open House's hanok
+// parts, the magpie's persimmons, the Quiet Zone, and the craft workshops.
+const bukchonAt = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
+const viewBook = new ViewBook(), partBook = new PartBook();
+// Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
+// In the yard of a home open to visitors, the ground is its flat terrace.
+const visitYards = map.buildings.filter((b) => b.visit).map((b) => ({ x0: Math.min(...b.p.map((q) => q[0])), x1: Math.max(...b.p.map((q) => q[0])), z0: Math.min(...b.p.map((q) => q[1])), z1: Math.max(...b.p.map((q) => q[1])), y: b.lv || 0 }));
+function bukchonY(x, z) {
+  if (!bukchonAt) return 0;
+  for (const v of visitYards) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1) return v.y;
+  return bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+}
+// Villagers in hanbok, men and women, strolling the alleys inside the wall.
+const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
+const HANBOK_MEN = [['baji-blue', 'short'], ['durumagi-lilac', 'crop'], ['baji-navy', 'pomp'], ['durumagi-gray', 'short'], ['baji-jade', 'crop']];
+const bukchonIn = (x, z) => !!bukchonAt && inPolygonXZ(x - bukchonAt[0], z - bukchonAt[1], [[BUKCHON.area[0], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[3]], [BUKCHON.area[0], BUKCHON.area[3]]]);
+const hanbokNpcs = bukchonAt ? new StreetNpcs(scene, $('labels'), roadGraph, BUKCHON.villagers.map(([x, z]) => ({ id: 'bukchon', x: x + bukchonAt[0], z: z + bukchonAt[1] })), 2, {
+  keepIn: bukchonIn,
+  phrases: PHRASES.bukchon,
+  groundY: bukchonY,
+  who: (i) => {
+    const [set, hairStyle] = (i % 2 ? HANBOK_MEN : HANBOK_WOMEN)[Math.floor(i / 2) % 5];
+    return { name: (i % 2 ? ['민준', '도하', '선우', '이준', '주호'] : ['소연', '지유', '하윤', '예나', '서아'])[Math.floor(i / 2) % 5], look: { ...randomLook(), hairStyle, ...hanbokById(set).wear } };
+  },
+}) : null;
+
+const bukchonMarks = bukchonAt ? new BukchonMarks(scene, bukchonAt) : null;
+bukchonMarks?.taken(viewBook);
+// Bukchon sits open on the field: its hanok and hill are built at once and
+// seen from Yulgok-ro; the stone walls are only the hill's retaining walls.
+const openHanok = [];
+// Hanok inside a district's enclosure wait for the first visit; the rest
+// are built at once.
+const inEnclosure = (d, b) => {
+  if (!d.enclosure) return false;
+  const [ax, az, bx, bz] = d.enclosure.box, [ox, oz] = d.offset;
+  return b.p.every(([x, z]) => x >= Math.min(ax, bx) + ox && x <= Math.max(ax, bx) + ox && z >= Math.min(az, bz) + oz && z <= Math.max(az, bz) + oz);
+};
+for (const d of map.meta?.districts || []) {
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
+  if (!hanoks.length) continue;
+  const g = buildHanoks(hanoks);
+  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
+  scene.add(g);
+  openHanok.push(g);
+}
+// Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
+// shows its wall and gates from the street; what is inside is drawn once you
+// walk in.
+const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
+  const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
+  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
+  const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
+  const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
+  if (hanoks.length || inner.length) e.onFirstEnter = () => {
+    const out = [];
+    if (hanoks.length) {
+      const g = buildHanoks(hanoks);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(g);
+      out.push(g);
+    }
+    if (inner.length) { // Jongmyo's halls, terraces, stone path and woods
+      const g = buildLandmarks(inner, scene);
+      const tick = landmarks.userData.tick;
+      landmarks.userData.tick = (t) => { tick(t); g.userData.tick(t); };
+      out.push(g);
+    }
+    return out;
+  };
+  return e;
+});
+const enclosureSkip = new Set([me.root, bukchonMarks?.group, ...openHanok, ...(hanbokNpcs?.list || []).map((o) => o.ch.root)].filter(Boolean));
+for (const e of enclosures) {
+  e.collect([landmarks, scene], enclosureSkip);
+  e.adopt(storefronts.items.filter((i) => e.contains(i.group.position.x, i.group.position.z, 0.5)).map((i) => i.group));
+}
+// Shops, landmarks, subway entrances, stamp stands, meeting zones, the
+// stream's lanterns and stones, the zoo's pens and the wall posters past the
+// fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
+// Bukchon, 2 km away behind the fog.)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+let bukchonWelcomed = false, wasInBukchon = null;
+// Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
+// front court (the fan dance and the king are on the lawns past it),
+// and just inside either gate 'Leave' takes you back out.
+const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -6], [2, -33]] }; // in the palace district's metres
+function palaceAct(p) {
+  if (!palaceAt || mode !== 'street') return null;
+  const x = p.x - palaceAt[0], z = p.z - palaceAt[1], near = ([sx, sz], r) => Math.hypot(x - sx, z - sz) < r;
+  if (near(PALACE_SPOTS.gate, 6)) return { key: 'palace-in', label: '🏯 ' + L(PALACE_TEXT.enter), run: () => {
+    const [ix, iz] = PALACE_SPOTS.inside;
+    moveMeTo(scene, palaceAt[0] + ix, palaceAt[1] + iz, Math.PI); // facing Geunjeongjeon
+  } };
+  if (PALACE_SPOTS.leave.some((s) => near(s, 4))) return { key: 'palace-out', label: '🚪 ' + L(PALACE_TEXT.leave), run: () => {
+    const [gx, gz] = PALACE_SPOTS.gate;
+    moveMeTo(scene, palaceAt[0] + gx, palaceAt[1] + gz + 3, 0); // facing the square
+  } };
+  return null;
+}
+const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
+let anotherTower;
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Another Tower's top)
+let fanNoted = false, pungmulNoted = false;
+function updateEnclosures(p, dt = 0) {
+  farCull.update(dt, p);
+  palaceView.tick(p, dt);
+  if (mode === 'street') towerLook.tick(cam, p, dt);
+  // At the fan dance's edge: please step back a little (once each time you come up).
+  if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
+  else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
+  // Coming up to the pungmul troupe: what it is (once each time you come up).
+  if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
+  else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
+  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  // Walking up into Bukchon the first time this visit: what it is, and the rules.
+  const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
+  wasInBukchon = inBk;
+  if (entered && !bukchonWelcomed && mode === 'street' && !spaceBusy()) {
+    bukchonWelcomed = true;
+    const w = BUKCHON.welcome;
+    bukchonUi.card({ icon: '🏘️', name: w.title, text: w.text }, { sub: '🤫 ' + L(w.rules) });
+    bukchonUi.view = 'welcome';
+  }
+}
+const bukchonUi = new BukchonUI({
+  root: $('bukchon-panel'), wallet,
+  onMake: (kind, ci, si) => {
+    const k = CRAFT[kind], entry = craftEntry(kind, ci, si), wear = craftWear(kind, ci, si);
+    if (!k || (!entry && !wear)) return false;
+    if (wear) { // a piece you wear (Sunra Silver Studio's pendants): it goes to your items
+      if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
+      if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+      refreshWallet();
+      inventory.add(wear);
+      refreshItems();
+      sfx.pop?.();
+      clerk && say(clerk, $('labels'), ['잘 어울려요!', 'jal eoullyeoyo!', 'It suits you!']);
+      shop.toast(fmt(L(BK_TEXT.madeWear), { icon: k.icon, name: L(ITEMS[wear]?.name || { en: wear }) }));
+      return true;
+    }
+    if (bag.full) { shop.toast(L(BK_TEXT.bagFull)); return false; }
+    if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+    refreshWallet();
+    bag.add(entry);
+    sfx.pop?.();
+    clerk && say(clerk, $('labels'), ['잘 만들었어요!', 'jal mandeureosseoyo!', 'Beautiful!']);
+    shop.toast(fmt(L(BK_TEXT.made), { icon: k.icon, name: entry.name }));
+    return true;
+  },
+});
+function takeView(v) {
+  me.play('wave');
+  sfx.pop?.();
+  const c = viewBook.take(v.n);
+  if (c) {
+    wallet.add(c, { name: BK_TEXT.ledger }, { r: 'view', once: 'view:' + v.n });
+    refreshWallet();
+    shop.toast(fmt(L(BK_TEXT.got), { n: v.n, name: L(v.name), c }));
+    if (viewBook.done && BUKCHON.views.length > 1) setTimeout(() => shop.toast(L(BK_TEXT.allDone)), 1600);
+  } else shop.toast(fmt(L(BK_TEXT.again), { n: v.n }));
+  bukchonMarks?.taken(viewBook);
+  bukchonUi.views(viewBook, v.n);
+  action = STALE;
+}
+function readPart(part) {
+  bukchonUi.card(part);
+  if (partBook.read(part.id)) {
+    wallet.add(EXPLORER_REWARD, { name: BK_TEXT.explorerLedger }, { r: 'view', once: 'bukchon:explorer' });
+    refreshWallet();
+    setTimeout(() => shop.toast(fmt(L(BK_TEXT.explorer), { c: EXPLORER_REWARD })), 500);
+  }
+}
+function bukchonAct(p) {
+  if (!bukchonAt || mode !== 'street') return null;
+  const v = nearestAt(BUKCHON.views, p.x, p.z, bukchonAt, 2.4);
+  if (v) return { key: 'bk-view:' + v.n, label: '📸 ' + fmt(L(BK_TEXT.photo), { name: L(v.name) }), run: () => takeView(v) };
+  const oh = BUKCHON.openHouse;
+  const part = nearestAt(oh.parts, p.x, p.z, bukchonAt, 2.2);
+  if (part) return { key: 'bk-part:' + part.id, label: part.icon + ' ' + L(part.name), run: () => readPart(part) };
+  if (nearestAt([oh.tree], p.x, p.z, bukchonAt, 3.2)) return { key: 'bk-magpie', label: oh.tree.icon + ' ' + L(oh.tree.name), run: () => bukchonUi.card(oh.tree) };
+  return null;
+}
+const inQuietZone = (p) => !!bukchonAt && mode === 'street' && inPolygonXZ(p.x - bukchonAt[0], p.z - bukchonAt[1], BUKCHON.quiet);
+let quietWas = false, shhAt = 0;
+// In the Quiet Zone: walking only. Rides get parked, running turns into a walk.
+function updateQuiet(p, moving) {
+  const q = inQuietZone(p);
+  if (q && !quietWas) shop.toast(L(BK_TEXT.quiet));
+  if (q && riding && riding !== 3) { setRiding(false); shop.toast(L(BK_TEXT.noRide)); }
+  if (q && moving && input.run && performance.now() - shhAt > 9000) { shhAt = performance.now(); showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(BK_TEXT.shh)); }
+  quietWas = q;
+  return q;
+}
+// Jongmyo Shrine (data/jongmyo.js): the guide and the
+// grandpas, the stone path's manners (keep off the spirits' middle strip),
+// and the ritual dance on Jeongjeon's terrace (core/jongmyo-show.js).
+const jongmyoAt = (region.districts || []).find((d) => d.id === JONGMYO.district)?.offset || null;
+const jongmyoShow = jongmyoAt ? new JongmyoShow(scene, jongmyoAt, $('labels')) : null;
+const jongmyoBook = new JongmyoBook();
+let jmCard = 0, jmSindoAt = 0, jmWatch = 0, jmWelcomed = false, jmWasIn = null;
+function jongmyoCard(item, sub = '') {
+  bukchonUi.card(item, { sub });
+  bukchonUi.view = 'jm';
+}
+function jongmyoAct(p) {
+  if (!jongmyoShow || mode !== 'street') return null;
+  // Enter from in front of the stamp; leave from just inside the gate.
+  const { entry } = JONGMYO, [ox, oz] = jongmyoAt;
+  if (Math.hypot(p.x - ox - entry.at[0], p.z - oz - entry.at[1]) < entry.r) return { key: 'jm-enter', label: '🏛️ ' + L(JM_TEXT.enter), run: () => moveMeTo(scene, entry.inside[0] + ox, entry.inside[1] + oz, Math.PI) };
+  if (Math.hypot(p.x - ox - entry.leave.at[0], p.z - oz - entry.leave.at[1]) < entry.leave.r) return { key: 'jm-leave', label: '🚪 ' + L(JM_TEXT.leave), run: () => moveMeTo(scene, entry.out[0] + ox, entry.out[1] + oz, 0) };
+  if (jongmyoShow.nearGuide(p.x, p.z)) return { key: 'jm-guide', label: 'ℹ️ ' + L(JM_TEXT.ask), run: () => {
+    jongmyoShow.greetGuide(p.x, p.z);
+    const c = JONGMYO.guideCards[jmCard++ % JONGMYO.guideCards.length];
+    jongmyoCard(c, `${(jmCard - 1) % JONGMYO.guideCards.length + 1} / ${JONGMYO.guideCards.length}`);
+  } };
+  const e = jongmyoShow.nearElder(p.x, p.z);
+  if (e) return { key: 'jm-elder:' + e.home.x, label: '👴 ' + L(JM_TEXT.hi), run: () => jongmyoShow.greetElder(e, p.x, p.z) };
+  return null;
+}
+// Each frame on the street: the walk through the gate, the stone path, the rite.
+function updateJongmyo(p, dt) {
+  if (!jongmyoAt) return;
+  const x = p.x - jongmyoAt[0], z = p.z - jongmyoAt[1];
+  const inside = inBox(x, z, JONGMYO.wall);
+  if (inside && jmWasIn === false) { // walked in through Oedaemun
+    jongmyoBook.enter();
+    if (!jmWelcomed && mode === 'street' && !spaceBusy()) {
+      jmWelcomed = true;
+      const w = JONGMYO.welcome;
+      jongmyoCard({ icon: '🏛️', name: w.title, text: w.text }, '🛤️ ' + L(w.rules));
+    }
+  }
+  jmWasIn = inside;
+  if (!inside) { jmWatch = 0; return; }
+  // Stepped up onto the spirits' strip: slide back down beside it (on foot;
+  // a ride just gets the notice), so the manners are learnt on the way.
+  const down = onSamdo(x, z) === 'sindo' ? offSindo(x, z) : null;
+  if (down) {
+    jongmyoBook.step();
+    if (!riding && !seated) {
+      const k = Math.min(1, dt * 12);
+      p.x += (down[0] - x) * k; p.z += (down[1] - z) * k;
+    }
+    if (performance.now() - jmSindoAt > 8000) { jmSindoAt = performance.now(); shop.toast(L(JM_TEXT.sindo)); }
+  }
+  if (inBox(x, z, JONGMYO.jeongjeon.woldae)) {
+    const c = jongmyoBook.arrive();
+    if (c) { wallet.add(c, { name: JM_TEXT.mannersLedger }, { r: 'view', once: 'jongmyo:manners' }); refreshWallet(); me.play('bow'); shop.toast(fmt(L(JM_TEXT.manners), { c })); }
+  }
+  if (jongmyoShow.watching(p.x, p.z) && !jongmyoBook.rite) {
+    if ((jmWatch += dt) >= RITE_WATCH) {
+      const c = jongmyoBook.watched();
+      if (c) { wallet.add(c, { name: JM_TEXT.riteLedger }, { r: 'view', once: 'jongmyo:rite' }); refreshWallet(); me.play('clap'); shop.toast(fmt(L(JM_TEXT.rite), { c })); }
+    }
+  } else jmWatch = 0;
+}
+// Bosingak on Jongno (data/bosingak.js): in front of the steps, ring the
+// bell (the striker swings, the hum follows; people round the square hear
+// it too). The first ring ever pays a little and shows what the pavilion is.
+// On 1 January at midnight and at noon (KST) the bell keeper comes out and
+// rings it 33 times, heard all along Jongno, the same moment for everyone.
+const bosingakAt = (region.districts || []).find((d) => d.id === BOSINGAK.district)?.offset || null;
+const bosingakShow = bosingakAt ? new BosingakShow(scene, bosingakAt, $('labels')) : null;
+const BOSINGAK_KEY = 'mk.bosingak';
+const BELL_MSG = 'bosingak:ring';
+let bellRungAt = -1e9, ringingSeen = '';
+const bellRungBefore = () => { try { return globalThis.localStorage?.getItem(BOSINGAK_KEY) === '1'; } catch { return false; } };
+// Metres from where you stand to the pavilion (or to the ringing spot).
+function bellDistance(p, [x, z] = BOSINGAK.at) {
+  if (!bosingakAt) return Infinity;
+  return Math.hypot(p.x - bosingakAt[0] - x, p.z - bosingakAt[1] - z);
+}
+// Someone rang it by hand: loud only round the square (BOSINGAK.hear.ring).
+function hearRing(p) {
+  strikeBell();
+  const loud = mode === 'street' ? bellGain(bellDistance(p, BOSINGAK.ring.at), BOSINGAK.hear.ring) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(loud), 1150); // when the log meets the bell
+}
+function bosingakCard() {
+  bukchonUi.card(BOSINGAK_CARD);
+  bukchonUi.view = 'bosingak';
+}
+function ringBosingak() {
+  const now = performance.now() / 1000;
+  if (now - bellRungAt < BOSINGAK.cooldown) { shop.toast(L(BOSINGAK_TEXT.humming)); return; }
+  bellRungAt = now;
+  hearRing(me.root.position);
+  net.sendEmote(BELL_MSG);
+  if (!bellRungBefore()) {
+    try { globalThis.localStorage?.setItem(BOSINGAK_KEY, '1'); } catch { /* storage blocked */ }
+    const c = BOSINGAK.firstRing;
+    wallet.add(c, { name: BOSINGAK_TEXT.ledger }, { r: 'view', once: 'bosingak:bell' });
+    refreshWallet();
+    setTimeout(() => { shop.toast(fmt(L(BOSINGAK_TEXT.rang), { c: c.toLocaleString() })); bosingakCard(); }, 1300);
+  } else setTimeout(() => shop.toast(L(BOSINGAK_TEXT.again)), 1300);
+  action = STALE;
+}
+// Another player rang it (their emote): the striker swings for everyone in
+// sight; the sound only reaches the square.
+function onPeerBell(id) {
+  if (!bosingakAt || safety.isBlocked(id, others.nameOf(id))) return;
+  const at = others.positionOf(id);
+  if (at && bellDistance(at, BOSINGAK.ring.at) > BOSINGAK.ring.r + 3) return; // not at the bell
+  hearRing(me.root.position);
+}
+function bosingakAct(p) {
+  if (!bosingakAt || mode !== 'street' || !nearBell(p.x, p.z, bosingakAt)) return null;
+  return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
+}
+const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
+// Each frame on the street: the people on the square, and the New Year's ringings.
+function updateBosingak(p, dt, w, h) {
+  if (!bosingakAt) return;
+  const r = newYearRinging(Date.now());
+  bosingakShow.update(dt, p, camera, w, h, placeLabels, r);
+  if (!r || r.stroke < 0) return;
+  const key = r.start + ':' + r.stroke;
+  if (key === ringingSeen) return;
+  const first = !ringingSeen.startsWith(r.start + ':');
+  ringingSeen = key;
+  strikeBell();
+  bosingakShow.pull();
+  const loud = mode === 'street' ? bellGain(bellDistance(p), BOSINGAK.hear.ceremony) : 0;
+  if (loud > 0) setTimeout(() => sfx.bigBell(Math.max(0.15, loud)), 1150);
+  if (first && loud > 0 && !spaceBusy()) shop.toast(L(new Date(r.start + 9 * 3600e3).getUTCHours() === 12 ? BOSINGAK_TEXT.noon : BOSINGAK_TEXT.newYear));
+}
+// Other players' wish lanterns ride on their state ("wl"); add each new one.
+const wishSeen = new Map(); // remote id -> the lantern string we last saw
+function updateWishes() {
+  const wish = streamModels.userData.wish;
+  if (!wish) return;
+  const now = Date.now() / 1000;
+  if (myWish && !lanternAt(streams[festStream], myWish, now)) { myWish = null; lastSent = null; }
+  for (const [id, o] of others.players) {
+    const str = !o.hidden && typeof o.target?.wl === 'string' ? o.target.wl : null;
+    if (!str || wishSeen.get(id) === str) continue;
+    wishSeen.set(id, str);
+    if (safety.isBlocked(id, others.nameOf(id))) continue;
+    const L1 = decodeLantern(str, streams[festStream], now);
+    if (!L1 || !wish.add(L1, others.nameOf(id) || '')) continue;
+    if (now - L1.t0 < 10 && camera.position.distanceTo(o.ch.root.position) < 30) showBubble(o, $('labels'), '🏮 ' + L(WISHES[L1.w]), 3500);
+  }
+  for (const id of wishSeen.keys()) if (!others.players.has(id)) wishSeen.delete(id);
+}
+const bookUi = lazyPanel(() => import('./ui/book-ui.js').then(({ BookUI }) => new BookUI({
   root: $('book-panel'),
   carrying: () => (held?.kind === 'book' ? held.book : null),
+  // One library book out at a time: picking another swaps it straight away
+  // (the old one goes back on the shelf, never into the bag).
   take: (id) => {
-    if (held?.kind === 'coffee' && !confirm(t('coffee.replace'))) return;
-    setHeld({ kind: 'book', book: id });
-    shop.toast(t('book.taken'));
+    const back = held?.kind === 'book' ? held.book : bag.list().find((e) => e.kind === 'book')?.book;
+    if (back === id && held?.kind === 'book') return;
+    if (held?.kind === 'book') setHeld({ kind: 'book', book: id });
+    else {
+      if (!handReady()) return;
+      holdNew({ kind: 'book', book: id });
+    }
+    bag.removeKind('book');
+    const old = back && back !== id ? bookById(back) : null;
+    shop.toast(old ? fmt(L(BOOK_SWAP_TEXT), { name: localName(old.title, getLanguage()) }) : t('book.taken'));
   },
   putDown: () => { if (held?.kind === 'book') setHeld(null); },
   getPage: (id) => bookPages[id] | 0,
   setPage: (id, i) => { bookPages[id] = i; try { localStorage.setItem(BOOK_PAGE_KEY, JSON.stringify(bookPages)); } catch { /* storage blocked */ } },
-});
+})));
 const stampBook = new StampBook();
-const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps });
+const trailLog = new TrailLog();
+const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
 function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
-$('stamp-btn').onclick = () => { $('wallet-panel').hidden = true; stampUi.show(); };
+$('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
 onLanguageChange(refreshStampBtn);
 // Press the stamp at a stand: the first time pays 🪙10 and opens the note.
@@ -4167,60 +5079,297 @@ function pressStamp(it) {
   if (stampBook.stamp(s.id)) {
     const name = {};
     for (const l of ['ko', 'en', 'ja', 'zh']) name[l] = fmt(STAMP_TEXT.ledger[l], { name: s.name[l] });
-    wallet.add(STAMP_REWARD, { name });
+    wallet.add(STAMP_REWARD, { name }, { r: 'stamp', once: 'stamp:' + s.id });
     shop.toast('🔖 ' + fmt(L(STAMP_TEXT.got), { name: L(s.name), c: STAMP_REWARD }));
     refreshStampBtn();
+    // The last stamp of a course (e.g. the Joseon Royal Walk) pays its reward once.
+    for (const tr of trailsWith(TRAILS, s.id)) {
+      if (!trailProgress(tr, tourStamps, stampBook).done || !trailLog.finish(tr.id)) continue;
+      const tname = {};
+      for (const l of ['ko', 'en', 'ja', 'zh']) tname[l] = fmt(STAMP_TEXT.trailLedger[l], { name: tr.name[l] });
+      wallet.add(tr.reward, { name: tname }, { r: 'trail', once: 'trail:' + tr.id });
+      setTimeout(() => { shop.toast(tr.icon + ' ' + fmt(L(STAMP_TEXT.trailDone), { name: L(tr.name), c: tr.reward })); sfx.cheer?.(); }, 1400);
+    }
     setTimeout(() => stampUi.show(s.id), 450);
   } else stampUi.show();
   action = STALE;
 }
 const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
 function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
-$('dex-btn').onclick = () => { $('wallet-panel').hidden = true; dexUi.show(); };
+$('dex-btn').onclick = () => { $('notes-panel').hidden = true; dexUi.show(); };
 refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
-let ride = null; // { kind, seat, t0, until, back: [x, z] }
-const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼' };
+// The ride-all day pass (sold at the ticket window) makes every ride free today.
+let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
+const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
+const ridePass = () => dayPasses.has('rides');
+const rideFare = (kind) => (ridePass() ? '🎫' : rideTickets.ticketFor(kind) ? '🎟️' : `🪙 ${RIDE_PRICE[kind]}`);
+// A ride on the pass or a ticket (true), saying what's left on the ticket.
+function useRideTicket(kind) {
+  const id = rideTickets.use(kind);
+  if (id && id !== 'pass') { const n = rideTickets.left(id), name = t('tix.' + id); shop.toast('🎟️ ' + (n ? t('tix.used', { name, n }) : t('tix.done', { name }))); }
+  return !!id;
+}
+function payRide(kind) {
+  if (useRideTicket(kind) || wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) return true;
+  shop.toast(t('ride.noCoins', { n: RIDE_PRICE[kind] }));
+  return false;
+}
+function buyRidePass() {
+  const name = DAY_PASS_TEXT.rides;
+  if (ridePass()) { shop.toast('🎫 ' + fmt(L(DAY_PASS_TEXT.ridesHeld), { name: L(name) })); return; }
+  if (!dayPasses.buy('rides', RIDE_PASS, wallet, { name, at: interior?.store?.name })) { shop.toast(fmt(L(DAY_PASS_TEXT.short), { name: L(name), n: RIDE_PASS })); return; }
+  refreshWallet();
+  sfx.cheer?.();
+  shop.toast(fmt(L(DAY_PASS_TEXT.ridesPaid), { name: L(name), n: RIDE_PASS }));
+  action = STALE;
+}
+// Another Land's rides run on the shared clock (like the coaster), so it's
+// the same ride for everyone on it. The carousel, the ship and the drop
+// tower: get on while it loads, the bar comes down, off at the end. The
+// wheel: step into the gondola at the bottom, ride one turn.
+const rideClock = () => Date.now() / 1000;
+const rideCam = createRideCam({ camera });
+const parkRiders = createParkRiders($('labels'));
+// Seconds until a wheel gondola is next at the deck (0: one is there now).
+function wheelWait(now) {
+  for (let s = 0; s < 14; s += 0.25) if (wheelDoorOpen(wheelBottom(now + s), now + s)) return s;
+  return 0;
+}
+function parkRideAction(st) {
+  const now = rideClock(), label = `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · ${rideFare(st.kind)}`;
+  let n = 0;
+  if (RIDE_CYCLE[st.kind]) { if (!canBoard(st.kind, now)) { const r = ridePhase(st.kind, now); n = Math.max(1, Math.ceil(r.next || r.left)); } }
+  else if (st.kind === 'wheel' && !wheelDoorOpen(wheelBottom(now), now)) n = Math.max(1, Math.ceil(wheelWait(now)));
+  if (!n) return { key: 'ride:' + st.kind, label, run: () => boardRide(st) };
+  return { key: 'ride-wait:' + st.kind + ':' + n, label: '⏳ ' + t('ride.wait', { n }), run: () => shop.toast(t('ride.wait', { n })) };
+}
 function boardRide(st) {
-  if (!wallet.spend(RIDE_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: RIDE_COST })); return; }
-  const now = interior.time();
-  ride = { kind: st.kind, seat: Math.floor(Math.random() * PARK_RIDES[st.kind].seats), t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0 };
+  const now = rideClock();
+  if (RIDE_CYCLE[st.kind] && !canBoard(st.kind, now)) return;
+  const cabin = st.kind === 'wheel' ? wheelBottom(now) : -1;
+  if (cabin >= 0 && !wheelDoorOpen(cabin, now)) return;
+  if (!payRide(st.kind)) return;
+  const seat = cabin >= 0 ? parkRiders.freeSeat('wheel', 2, cabin * 2) : parkRiders.freeSeat(st.kind, PARK_RIDES[st.kind].seats);
+  ride = { kind: st.kind, seat, t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third', locked: false };
+  const staff = interior.rideStaff?.[st.kind];
+  if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
+  rideCam.reset();
+  if (THRILL_RIDES.has(st.kind)) rideThrill.start(interior.scene); // (the coaster's speed lines, wind and sounds)
+  shop.toast(t(st.kind === 'wheel' ? 'ride.wheelOn' : 'ride.seated'));
   sendTimer = 0;
   missionEvent('ride');
+  action = STALE;
 }
 function endRide() {
   if (!ride) return;
+  if (ride.kind === 'coaster') endCoaster();
+  else {
+    me.root.rotation.order = 'XYZ';
+    me.root.rotation.set(0, Math.atan2(ride.back[0] - me.root.position.x, ride.back[1] - me.root.position.z), 0);
+    cam.yaw = me.root.rotation.y + Math.PI;
+    me.root.visible = true;
+    rideCam.reset();
+    rideThrill.stop();
+  }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
   sendTimer = 0;
   me.play('cheer');
+  action = STALE;
 }
+const RIDE_GO = { viking: 'ride.barDown', carousel: 'ride.holdPole', drop: 'ride.harness', wheel: 'ride.wheelBar' };
 function updateRide(dt) {
   if (!ride || !interior?.tick) return;
-  const now = interior.time();
-  const s = seatAt(ride.kind, ride.seat, now, ride.t0);
+  if (ride.kind === 'coaster') { updateCoaster(dt); return; }
+  const now = rideClock();
+  const s = seatAt(ride.kind, ride.seat, now);
   me.root.position.set(s.x, s.y, s.z);
-  me.root.rotation.y = s.ry;
+  me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship, or nose up the train's and the flume's slopes)
+  me.root.rotation.set(s.pitch || 0, s.ry, s.roll);
+  ride.pose = s;
+  const locked = rideLocked(ride.kind, ride.seat, now);
+  if (locked !== ride.locked) { // the bar comes down (or the gondola's bar shuts), or goes up again
+    ride.locked = locked;
+    if (locked) { shop.toast(t(RIDE_GO[ride.kind] || 'ride.go')); sfx.tock?.(0.6, 420); buzz(30); }
+    action = STALE;
+  }
+  const ph = RIDE_CYCLE[ride.kind] ? ridePhase(ride.kind, now) : null;
+  ride.top = ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.climb - 0.5 && ph.s < DROP_T.hold + 0.2 ? Math.min(1, (ph.s - DROP_T.climb + 0.5) / 1.5) : 0; // (look down at the top)
+  if (ride.kind === 'drop' && ph.phase === 'run' && ph.s > DROP_T.hold && ph.s < DROP_T.hold + DROP_T.fall && !ride.fell) { ride.fell = true; buzz(80); me.setMoves?.(DROP_ARMS); }
+  if (ride.kind === 'drop' && ph.phase !== 'run' && ride.fell) { ride.fell = false; me.setMoves?.(null); }
   ride.shout -= dt;
-  if (ride.shout <= 0) { ride.shout = 5; showBubble(myLabel, $('labels'), ride.kind === 'viking' || ride.kind === 'drop' ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2200); }
+  const thrill = ride.kind === 'viking' || ride.kind === 'drop' || ride.kind === 'flume' || ride.kind === 'gyro';
+  const scream = ride.kind === 'viking' ? Math.abs(s.roll) > 0.85 : ride.kind === 'gyro' ? Math.abs(s.roll) > 1.2 : ride.kind === 'drop' ? ride.fell : ride.kind === 'flume' ? s.pitch > 0.4 : true; // (the flume: down the big drop; the gyro swing: up past level)
+  if (locked && ride.shout <= 0 && scream) {
+    ride.shout = ride.kind === 'viking' ? 3.5 : thrill ? 4 : 6;
+    showBubble(myLabel, $('labels'), thrill ? '😱 꺄아아!' : ride.kind === 'wheel' ? '😍' : '🎶', 2000);
+  }
   if (now >= ride.until) endRide();
 }
+const DROP_ARMS = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [-0.2, 0, 0], foreL: [-0.2, 0, 0] });
+
+// The Cotton Candy Express (core/coaster.js): wait at the platform for a
+// train to come in, get on while it boards (6 s), and you're carried round
+// on the shared clock. The camera sits just behind you (or in your seat:
+// the action button switches), and everything about the speed follows one
+// number, k = speed / top speed: the field of view, the shake, the speed
+// lines and wind (ui/coaster-fx.js), your hair, the vibration.
+const coasterName = () => L(COASTER_NAME);
+const coasterNow = () => Date.now() / 1000;
+const coasterFx = new CoasterFx(document.body, $('labels'), sfx);
+const rideThrill = createRideThrill({ camera, fx: coasterFx }); // (the swing ride and the drop tower borrow the coaster's effects)
+const _cf = {}, _cm = new THREE.Matrix4(), _cx = new THREE.Vector3(), _cy = new THREE.Vector3(), _cz = new THREE.Vector3(), _cv = new THREE.Vector3(), _cu = new THREE.Vector3();
+const ARMS_UP = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [-0.2, 0, 0], foreL: [-0.2, 0, 0], head: [-0.15, 0, 0] });
+const COWER = () => ({ spine: [0.25, 0, 0], head: [0.3, 0, 0], armR: [-1.2, 0, 0], armL: [-1.2, 0, 0] });
+// Seat i of train k at shared time now: the rider's frame (for me and the guests).
+function coasterSeat(k, i, now, out = _cf) {
+  const tr = trainAt(now, k);
+  seatPose(tr.s, i, out);
+  out.tr = tr;
+  return out;
+}
+// Put a character in a seat: feet below the seat, facing along the track.
+function sitOnTrack(root, f) {
+  _cx.set(-f.rx, -f.ry, -f.rz); _cy.set(f.ux, f.uy, f.uz); _cz.set(f.fx, f.fy, f.fz);
+  _cm.makeBasis(_cx, _cy, _cz);
+  root.quaternion.setFromRotationMatrix(_cm);
+  root.position.set(f.x - f.ux * 0.38, f.y - f.uy * 0.38, f.z - f.uz * 0.38); // (0.38: the sitting pose's seat height)
+}
+function coasterAction(p) {
+  const st = interior?.stations?.coaster?.[0];
+  if (!st || ride || Math.hypot(p.x - st.x, p.z - st.z) > 2.4) return null;
+  const b = boarding(coasterNow());
+  if (b.train >= 0 && b.left > 0.6 && takenSeats(b.train).size >= COASTER_SEATS) return { key: 'coaster-full', label: '⏳ ' + L(COASTER_TEXT.full), run: () => shop.toast(L(COASTER_TEXT.full)) };
+  if (b.train >= 0 && b.left > 0.6) return { key: 'coaster-board', label: '🎢 ' + fmt(L(COASTER_TEXT.board), { name: coasterName(), fare: rideFare('coaster') }), run: () => boardCoaster() };
+  const n = Math.max(1, Math.ceil(b.wait || b.left));
+  return { key: 'coaster-wait:' + n, label: '⏳ ' + fmt(L(COASTER_TEXT.wait), { n }), run: () => shop.toast(fmt(L(COASTER_TEXT.wait), { n })) };
+}
+function boardCoaster() {
+  const now = coasterNow(), b = boarding(now);
+  if (b.train < 0 || b.left <= 0.3) return;
+  // The first free seat from the front, so people who get on together sit
+  // together (side by side, then the car behind).
+  const taken = takenSeats(b.train);
+  const seat = Array.from({ length: COASTER_SEATS }, (_, i) => i).find((i) => !taken.has(i));
+  if (seat == null) { shop.toast(L(COASTER_TEXT.full)); return; }
+  if (!payRide('coaster')) return;
+  const staff = interior.coasterStaff?.[0];
+  if (staff) showBubble(staff, $('labels'), L(COASTER_TEXT.enjoy), 2600, 'chat npc-say');
+  ride = {
+    kind: 'coaster', train: b.train, seat, until: rideEnds(now, b.train),
+    back: [COASTER_OFF.x, COASTER_OFF.z], view: 'third', phase: '', fov: camera.fov, cam: null, air: false, t: 0, wind: 0,
+  };
+  me.root.rotation.order = 'YXZ';
+  coasterFx.start(interior.scene);
+  shop.toast(L(COASTER_TEXT.on));
+  sfx.tock?.(0.6, 500);
+  sendTimer = 0;
+  missionEvent('ride');
+  action = STALE;
+}
+function endCoaster() {
+  coasterFx.stop();
+  me.setMoves?.(null);
+  me.setWind?.(0);
+  me.root.visible = true;
+  const f = frameAt(trainAt(coasterNow(), ride.train).s, _cf);
+  me.root.quaternion.identity();
+  me.root.rotation.set(0, f.yaw - Math.PI / 2, 0); // facing out of the station, back to the park
+  cam.yaw = me.root.rotation.y + Math.PI;
+  camera.fov = 62;
+  camera.up.set(0, 1, 0);
+  camera.updateProjectionMatrix();
+  shop.toast(L(COASTER_TEXT.back));
+}
+function updateCoaster(dt) {
+  const now = coasterNow(), f = coasterSeat(ride.train, ride.seat, now), tr = f.tr;
+  sitOnTrack(me.root, f);
+  ride.pose = f;
+  ride.t += dt;
+  // Moments: the release at the top, the bottom of the drop, the airtime hill.
+  if (tr.phase !== ride.phase) {
+    if (tr.phase === 'hold') me.setMoves?.(COWER);
+    if (tr.phase === 'drop') { buzz(40); showBubble(myLabel, $('labels'), '😱 꺄아아!', 2600); me.setMoves?.(ARMS_UP); }
+    if (tr.phase === 'run') buzz([220]);
+    if (tr.phase === 'brake') me.setMoves?.(null);
+    if (tr.phase === 'unload' && ride.phase) me.play('cheer');
+    ride.phase = tr.phase;
+  }
+  const dAir = Math.abs(((tr.s - S_AIR + LENGTH / 2) % LENGTH + LENGTH) % LENGTH - LENGTH / 2);
+  if (dAir < 1.5 && !ride.air) { ride.air = true; buzz(60); }
+  if (dAir > 6) ride.air = false;
+  const dLoop = Math.abs(tr.s - S_LOOP_TOP); // (upside down at the loop's top)
+  if (dLoop < 1.5 && !ride.flip) { ride.flip = true; buzz([40, 30, 40]); showBubble(myLabel, $('labels'), '🙃', 1600); }
+  if (dLoop > 8) ride.flip = false;
+  ride.wind += (tr.k01 - ride.wind) * Math.min(1, dt * 4);
+  me.setWind?.(ride.wind);
+  if (now >= ride.until) endRide();
+}
+// After the normal camera follow: the coaster's own camera.
+function coasterCamera(dt) {
+  const f = ride?.pose;
+  if (!f) return;
+  const tr = f.tr, first = ride.view === 'first';
+  const fx = rideFx(tr.k01, tr.phase, rideFxSoft);
+  // A little behind and above you, a beat late so the train surges ahead
+  // when it speeds up (or in your seat).
+  const back = first ? -0.2 : 4, up = first ? 0.72 : 2.1;
+  _cv.set(f.x - f.fx * back + f.ux * up, f.y - f.fy * back + f.uy * up, f.z - f.fz * back + f.uz * up);
+  if (!ride.cam) ride.cam = _cv.clone();
+  ride.cam.lerp(_cv, 1 - Math.exp(-dt * (first ? 30 : 7)));
+  // Shake: smooth wobble (k², so only when fast), less from your own seat.
+  const sh = fx.shake * (first ? 0.45 : 1), t = ride.t;
+  camera.position.set(
+    ride.cam.x + sh * (Math.sin(t * 23) + 0.6 * Math.sin(t * 37.3)),
+    ride.cam.y + sh * (Math.sin(t * 29.1 + 1) + 0.5 * Math.sin(t * 51)),
+    ride.cam.z + sh * Math.sin(t * 19.7 + 2),
+  );
+  // Lean with the banked track (60%, none on the gentle setting), and at the
+  // top, from your seat, look down over the edge (slowly: from behind you the
+  // view stays on the track ahead, so the crest doesn't jolt it).
+  // (In the loop the view turns right over with the track, even on the
+  // gentle setting: leaning only part way, it would spin as you go over.)
+  const loopIn = Math.max(0, Math.min(1, Math.min(tr.s - S_LOOP[0] + 4, S_LOOP[1] + 4 - tr.s) / 4));
+  _cu.set(0, 1, 0).lerp(_cy.set(f.ux, f.uy, f.uz), THREE.MathUtils.lerp(rideFxSoft ? 0 : 0.6, 1, loopIn)).normalize();
+  camera.up.copy(_cu);
+  ride.down = (ride.down || 0) + ((first && tr.phase === 'hold' ? 3.6 : 0) - (ride.down || 0)) * Math.min(1, dt * 1.5);
+  const down = ride.down;
+  const ah = first ? 6 : 8, hu = first ? 0.6 : 1;
+  camera.lookAt(f.x + f.fx * ah + f.ux * hu, f.y + f.fy * ah + f.uy * hu - down, f.z + f.fz * ah + f.uz * hu);
+  ride.fov += (fx.fov - ride.fov) * Math.min(1, dt * 3);
+  if (Math.abs(camera.fov - ride.fov) > 0.05) { camera.fov = ride.fov; camera.updateProjectionMatrix(); }
+  me.root.visible = !first;
+  const inTunnel = tr.s > S_TUNNEL[0] && tr.s < S_TUNNEL[1];
+  coasterFx.update(dt, { fx, k: tr.k01, v: tr.v, phase: tr.phase, camera, tunnel: inTunnel });
+}
+// Other players on the coaster: their state says which train and seat (cs =
+// train * 10 + seat + 1); the train runs on the shared clock, so they sit
+// exactly where they are on their own screen, arms up in the drop.
+function placeRemoteRider(ch, cs, q) {
+  // (Another Land's island: they're on the street's side, so the seat is
+  // turned from the island's metres into the street's)
+  const op = outdoors() ? openParks.find((o) => o.built?.coaster && (o.near || openParkHere() === o)) : null;
+  if (!op && !interior?.coaster) return;
+  const train = Math.floor((cs - 1) / 10), seat = (cs - 1) % 10;
+  if (train >= TRAINS || seat >= COASTER_SEATS) return;
+  q.cf ||= {};
+  const f = coasterSeat(train, seat, coasterNow(), q.cf);
+  ch.root.rotation.order = 'YXZ';
+  sitOnTrack(ch.root, f);
+  if (op) ch.root.applyMatrix4(op.toWorld);
+  const up = f.tr.phase === 'drop' || (f.tr.phase === 'run' && f.tr.k01 > 0.55);
+  if (up !== !!q.coUp) { q.coUp = up; ch.setMoves?.(up ? ARMS_UP : null); }
+  ch.setWind?.(f.tr.k01);
+}
+// Seats taken on train k by other players (from their state).
+const takenSeats = (k) => new Set([...others.players.values()].map((q) => q.target?.cs).filter((cs) => cs > 0 && Math.floor((cs - 1) / 10) === k).map((cs) => (cs - 1) % 10));
 // Namsan Sky Cable: stand at a cabin bay, get in while the doors are open,
 // ride up (or down) on the shared clock and step out at the other station.
 // The way up costs CABLE.fare; the way down is on the same ticket, so
 // nobody gets stuck on the summit without coins.
 let cable = null; // { cabin, from: 'low' | 'top', dx }
-const CABLE_TEXT = {
-  board: { en: 'Get in · 🪙 {n} round trip', ko: '탑승 · 왕복 🪙 {n}', ja: '乗車 · 往復 🪙 {n}', zh: '上车 · 往返 🪙 {n}', es: 'Subir · ida y vuelta 🪙 {n}', id: 'Naik · pulang-pergi 🪙 {n}', ar: 'اركب · ذهاب وعودة 🪙 {n}', vi: 'Lên cabin · khứ hồi 🪙 {n}', hi: 'बैठें · आना-जाना 🪙 {n}' },
-  down: { en: 'Ride down (your ticket covers it)', ko: '내려가기 (왕복권 포함)', ja: '下りに乗る（往復券に含まれます）', zh: '乘缆车下山（往返票已含）', es: 'Bajar (incluido en el billete)', id: 'Turun (sudah termasuk tiket)', ar: 'انزل (مشمول في التذكرة)', vi: 'Đi xuống (đã gồm trong vé)', hi: 'नीचे जाएँ (टिकट में शामिल)' },
-  wait: { en: 'Next cabin in {n} s', ko: '다음 캐빈까지 {n}초', ja: '次のキャビンまで {n} 秒', zh: '下一班缆车 {n} 秒后到', es: 'Próxima cabina en {n} s', id: 'Kabin berikutnya {n} dtk lagi', ar: 'المقصورة التالية بعد {n} ث', vi: 'Cabin tiếp theo sau {n} giây', hi: 'अगला केबिन {n} सेकंड में' },
-  leaves: { en: 'Get off (leaves in {n} s)', ko: '내리기 ({n}초 뒤 출발)', ja: '降りる（{n} 秒後に出発）', zh: '下车（{n} 秒后出发）', es: 'Bajar (sale en {n} s)', id: 'Turun (berangkat {n} dtk lagi)', ar: 'انزل (تنطلق بعد {n} ث)', vi: 'Xuống (khởi hành sau {n} giây)', hi: 'उतरें ({n} सेकंड में रवाना)' },
-  toTop: { en: 'Going up to the summit · {n} s', ko: '정상으로 올라가는 중 · {n}초', ja: '山頂へ向かっています · {n} 秒', zh: '正在上山 · {n} 秒', es: 'Subiendo a la cima · {n} s', id: 'Naik ke puncak · {n} dtk', ar: 'صعودًا إلى القمة · {n} ث', vi: 'Đang lên đỉnh · {n} giây', hi: 'चोटी की ओर · {n} सेकंड' },
-  toLow: { en: 'Going down to the lower station · {n} s', ko: '아래 승강장으로 내려가는 중 · {n}초', ja: '下の乗り場へ向かっています · {n} 秒', zh: '正在下山 · {n} 秒', es: 'Bajando a la estación · {n} s', id: 'Turun ke stasiun bawah · {n} dtk', ar: 'نزولًا إلى المحطة السفلى · {n} ث', vi: 'Đang xuống ga dưới · {n} giây', hi: 'नीचे स्टेशन की ओर · {n} सेकंड' },
-  top: { en: 'Welcome to the top of Namsan! Walk round the tower and look out over Seoul.', ko: '남산 정상에 오신 걸 환영해요! 타워 주변을 걸으며 서울을 내려다보세요.', ja: '南山の山頂へようこそ！タワーの周りを歩いてソウルを見渡してみましょう。', zh: '欢迎来到南山山顶！绕着塔走一走，俯瞰首尔吧。', es: '¡Bienvenido a la cima de Namsan! Pasea alrededor de la torre y mira Seúl.', id: 'Selamat datang di puncak Namsan! Jalan-jalan di sekitar menara dan lihat Seoul.', ar: 'أهلًا بك في قمة نامسان! تجوّل حول البرج وشاهد سيول من الأعلى.', vi: 'Chào mừng lên đỉnh Namsan! Đi quanh tháp và ngắm Seoul nhé.', hi: 'नामसान की चोटी पर स्वागत है! टावर के चारों ओर घूमें और सियोल देखें।' },
-  low: { en: 'Back at the lower station. The exit is behind you.', ko: '아래 승강장에 도착했어요. 출구는 뒤쪽이에요.', ja: '下の乗り場に着きました。出口は後ろです。', zh: '回到下站了，出口在身后。', es: 'De vuelta en la estación. La salida está detrás.', id: 'Kembali di stasiun bawah. Pintu keluar ada di belakang.', ar: 'عدت إلى المحطة السفلى. المخرج خلفك.', vi: 'Đã về ga dưới. Lối ra ở phía sau.', hi: 'नीचे स्टेशन पर वापस। निकास पीछे है।' },
-};
 const cableStation = (p) => (p.z < CC.edge ? 'top' : 'low');
 function cableBay(p) {
   const st = cableStation(p);
@@ -4231,15 +5380,14 @@ function boardCable(i, st) {
   const c = cabinAt(i, cableClock());
   if (c.at !== st || !doorsOpen(c)) return;
   if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
-  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2 };
-  cam.yaw = st === 'low' ? 0 : Math.PI; // look along the way, the view behind
+  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? wallet.lastOp : null };
   sendTimer = 0;
   if (st === 'low') missionEvent('ride');
 }
 function getOffCable(refund) {
   if (!cable) return;
   const s = boardSpot(cable.cabin, cable.from);
-  if (refund && cable.from === 'low') wallet.add(CABLE.fare, { k: 'ledger.cable' });
+  if (refund && cable.from === 'low') wallet.refund(CABLE.fare, cable.paid, { k: 'ledger.cable' });
   me.root.position.set(s.x, s.y, s.z);
   cable = null;
   sendTimer = 0;
@@ -4253,7 +5401,6 @@ function updateCable() {
     const s = boardSpot(cable.cabin, to);
     me.root.position.set(s.x, s.y, s.z);
     me.root.rotation.y = to === 'top' ? Math.PI : 0;
-    cam.yaw = me.root.rotation.y + Math.PI;
     cable = null;
     sendTimer = 0;
     shop.toast(L(CABLE_TEXT[to]));
@@ -4284,120 +5431,323 @@ function cableAction(p) {
 }
 const duckUi = new DuckUI({
   root: $('duck-panel'),
-  wallet,
-  friend: () => others.nearestFree(me.root.position.x, me.root.position.z, TOGETHER_RADIUS),
-  send: (to, n) => net.sendEmote(duckMsg(to, n)),
-  onDone: (ok) => { if (ok) me.play('cheer'); duckTrip.back = true; },
-  onProgress: (k) => { duckTrip.k = k; duckTrip.back = false; },
+  hudRoot: $('duck-hud'),
+  onStart: () => startDuckRide(),
   onLeave: () => standUp(),
 });
-// Riding a duck boat in Ttukseom park: 4 boats wait at the dock until
-// someone gets in (two seats each). Pedalling (the race panel) takes the
-// boat out towards the buoy; afterwards it drifts back to the dock.
-const DUCK_TEXT = {
-  board: { en: 'Get in the duck boat', ko: '오리배 타기', ja: 'アヒルボートに乗る', zh: '坐鸭子船', es: 'Subir al bote pato', ar: 'اركب قارب البطة', vi: 'Lên thuyền vịt', hi: 'बत्तख नाव में बैठें', id: 'Naik perahu bebek' },
-  go: { en: 'Pedal out', ko: '출발하기', ja: '出発する', zh: '出发', es: 'Salir a pedalear', ar: 'انطلق', vi: 'Đạp ra hồ', hi: 'पैडल मारकर चलें', id: 'Berangkat' },
-  full: { en: 'This boat is full', ko: '이 배는 자리가 다 찼어요', ja: 'このボートは満席です', zh: '这条船坐满了', es: 'Este bote está lleno', ar: 'هذا القارب ممتلئ', vi: 'Thuyền này đã đầy', hi: 'यह नाव भर गई है', id: 'Perahu ini penuh' },
-  waiting: { en: 'Waiting at the dock · {n}/2 aboard', ko: '선착장에서 대기 중 · {n}/2명 탑승', ja: '乗り場で待機中 · {n}/2人', zh: '在码头等待 · {n}/2人', es: 'Esperando en el muelle · {n}/2 a bordo', ar: 'ينتظر عند الرصيف · {n}/2 على متنه', vi: 'Đang chờ ở bến · {n}/2 người trên thuyền', hi: 'घाट पर इंतज़ार · {n}/2 सवार', id: 'Menunggu di dermaga · {n}/2 naik' },
-};
-const duckTrip = { k: 0, pos: 0, back: false };
-// Which boat each person is in (me and others), to place the boats.
-function duckRiders(i) {
-  let n = seated?.duck === i ? 1 : 0;
-  for (const o of others.players.values()) if (o.target?.db === i + 1) n++;
-  return n;
-}
-function boardDuck(i) {
-  const d = interior.ducks[i];
-  const taken = [...others.players.values()].filter((o) => o.target?.db === i + 1).map((o) => o.target.dbs | 0);
-  const seat = taken.includes(0) ? 1 : 0;
-  if (duckRiders(i) >= DUCK_SEATS.length) { shop.toast(L(DUCK_TEXT.full)); return; }
-  duckTrip.k = 0; duckTrip.pos = 0; duckTrip.back = false;
-  sitDown({ x: d.home.x + DUCK_SEATS[seat][0], z: d.home.z + DUCK_SEATS[seat][1], ry: Math.PI, stand: [d.home.x, d.home.z + 2.6], duck: i, duckSeat: seat });
-  shop.toast(fmt(L(DUCK_TEXT.waiting), { n: duckRiders(i) }));
-}
-// Each frame in the park: move my boat (out while pedalling, back after),
-// carry me with it, and put other people's boats where they sit.
-function updateDucks(dt) {
-  if (!interior?.ducks) return;
-  const moved = new Set();
-  if (seated?.duck != null) {
-    const d = interior.ducks[seated.duck];
-    const target = duckTrip.back || !duckUi.open ? 0 : duckTrip.k; // the panel closed: drift back
-    duckTrip.pos += (target - duckTrip.pos) * Math.min(1, dt * (duckTrip.back ? 0.6 : 3));
-    const sway = Math.sin(performance.now() / 700) * 0.04;
-    d.g.position.set(d.home.x + Math.sin(duckTrip.pos * 3) * 1.5 * duckTrip.pos, Math.sin(performance.now() / 500) * 0.03, d.home.z - duckTrip.pos * DUCK_TRIP);
-    d.g.rotation.z = sway;
-    const [sx, sz] = DUCK_SEATS[seated.duckSeat || 0];
-    me.root.position.set(d.g.position.x + sx, 0, d.g.position.z + sz);
-    me.root.rotation.y = Math.PI;
-    moved.add(seated.duck);
+// Ttukseom drone light show (core/drone-show.js: the schedule; the park room
+// turns its sky to night and flies the drones). Here: the game-wide notice
+// 10 minutes before, the lift-off and photo-time notices in the park, the
+// show music (only if music is on), and a camera that can look up.
+const droneShow = { alerted: 0, lifted: 0, photo: 0, music: null };
+const dronePark = () => { const h = hanPark(); return h?.show ? h : null; }; // (Ttukseom's, laid on the street)
+// In the park while it's dark: the camera may tilt below level to look up.
+const skyLook = () => (dronePark()?.show.night || 0) > 0.5 || fireworks.look;
+function updateDroneShow() {
+  const s = droneShowAt();
+  if (s && s.t < -ALERT_SECONDS + 30 && droneShow.alerted !== s.start) { droneShow.alerted = s.start; shop.toast(L(DRONE_TEXT.soon)); }
+  stampStands.showTimed(); // (the drone show's stand on its lawn)
+  const show = dronePark()?.show || null;
+  const t = show?.now?.t;
+  if (t != null) {
+    if (t >= -LIFT_SECONDS && t < -LIFT_SECONDS + 60 && droneShow.lifted !== show.now.start) {
+      droneShow.lifted = show.now.start;
+      shop.toast(L(DRONE_TEXT.lift));
+    }
+    if (show.photo && t >= show.photo[0] && t < show.photo[0] + 20 && droneShow.photo !== show.now.start) { droneShow.photo = show.now.start; shop.toast(L(DRONE_TEXT.photo)); }
   }
-  for (const o of others.players.values()) {
-    const i = (o.target?.db | 0) - 1;
-    if (i < 0 || i >= interior.ducks.length || moved.has(i)) continue;
-    const d = interior.ducks[i];
-    const [sx, sz] = DUCK_SEATS[o.target.dbs | 0] || DUCK_SEATS[0];
-    d.g.position.set(o.ch.root.position.x - sx, 0, o.ch.root.position.z - sz);
-    moved.add(i);
+  const wantMusic = !!(show?.now && show.night > 0.5 && show.now.on);
+  if (wantMusic && !droneShow.music && music.on && music.track.id !== 'droneshow') { droneShow.music = music.track.id; music.setTrack('droneshow'); }
+  else if (!wantMusic && droneShow.music) { if (music.track.id === 'droneshow') music.setTrack(droneShow.music); droneShow.music = null; }
+}
+
+// Yeouido fireworks (core/fireworks-show.js: the schedule and the program;
+// core/fireworks-sky.js: the sparks, downloaded only near Yeouido around
+// show time). Here: the game-wide notice 10 minutes before, Yeouido's own
+// night (weather.nightMix, only on and around the island), the sparks, the
+// booms (sound travels slower than light: about 0.3 s per 100 m) and the
+// notices on the lawn.
+const fireworks = { alerted: 0, dusk: 0, count: 0, photo: 0, finale: 0, sky: null, loading: false, look: false, lastBoom: 0 };
+// Ttukseom's drone show turns the street's sky dark too, in and around its
+// park (fading out from 100 to 250 m off it), as Yeouido's fireworks do.
+function droneNight(p, street) {
+  const k = street ? droneShowAt()?.night || 0 : 0;
+  if (!k) return 0;
+  const d = hanParks.awayFrom('ttukseom-hangang', p);
+  return k * Math.min(1, Math.max(0, (250 - d) / 150));
+}
+function updateFireworks() {
+  const s = fireworksAt();
+  if (s && s.t < -FIREWORKS_ALERT + 30 && fireworks.alerted !== s.start) { fireworks.alerted = s.start; shop.toast(L(FIREWORKS_TEXT.soon)); }
+  // (An open-air park counts as the street: its own metres turned into the world's.)
+  const op = openParkHere(), atWorld = (q) => { const [x, z] = parkWorld(op, q.x, q.z); return { x, y: q.y, z }; };
+  const p = op ? atWorld(me.root.position) : me.root.position, street = mode === 'street' || !!op;
+  const near = street ? nearYeouido(p.x, p.z) : 0;
+  const night = s ? s.night * near : 0;
+  weather.nightMix = Math.max(night, droneNight(p, street));
+  weather.setShowClear(weather.nightMix > 0.05); // a clear sky in front of either show
+  fireworks.look = night > 0.5;
+  if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
+  const t = s.t, onLawn = near > 0.99;
+  if (onLawn) {
+    if (t >= -FIREWORKS_DUSK && t < -FIREWORKS_DUSK + 60 && fireworks.dusk !== s.start) { fireworks.dusk = s.start; shop.toast(L(FIREWORKS_TEXT.dusk)); }
+    if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
+    if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
+    if (t >= FIREWORKS_FINALE && t < FIREWORKS_FINALE + 20 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
   }
-  for (const d of interior.ducks) if (!moved.has(d.i)) { // empty: back at the dock, bobbing
-    d.g.position.x += (d.home.x - d.g.position.x) * Math.min(1, dt * 2);
-    d.g.position.z += (d.home.z - d.g.position.z) * Math.min(1, dt * 2);
-    d.g.position.y = Math.sin(performance.now() / 600 + d.i) * 0.03;
+  // The sparks: loaded when you're within about 900 m.
+  const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;
+  if (close && t > -FIREWORKS_DUSK - 60 && !fireworks.sky && !fireworks.loading) {
+    fireworks.loading = true;
+    const phone = lowSpec || (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches);
+    import('./core/fireworks-sky.js').then((m) => { fireworks.sky = m.createFireworksSky(scene, { phone }); })
+      .catch(() => { fireworks.loading = false; }); // (offline: try again later)
+  }
+  if (!fireworks.sky) return;
+  if (!street) { fireworks.sky.points.visible = false; return; }
+  const fired = fireworks.sky.update(s.start, t, Math.max(night, darkness()), op ? { fov: camera.fov, position: atWorld(camera.position) } : camera, innerHeight); // (bright from afar too when Seoul's night is real)
+  // Booms: louder close by, later far away; at most a few a second.
+  for (const b of fired) {
+    const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
+    const loud = Math.min(1, 90 / Math.max(60, dist)) * (b.kind === 'small' ? 0.5 : 1);
+    const wait = Math.max(0, b.t - t) + dist / 343;
+    const now = performance.now();
+    if (dist > 900 || now - fireworks.lastBoom < 140) continue;
+    fireworks.lastBoom = now;
+    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'kamuro' || b.kind === 'peony'), wait * 1000);
   }
 }
 
-// Delivery run from the tteokbokki stall: ride to another shop in time.
-let delivery = null; // { id, name, until }
-function startDelivery() {
-  if (delivery) { shop.toast(t('delivery.cancelHint')); return; }
-  const from = interior?.front?.door || me.root.position;
-  // Only shops reachable within a minute along the streets.
-  const stores = storefronts.items.filter((i) => i.store.category !== 'home' && i.store.category !== 'park' && i.store.category !== 'station' && i.store.id !== interior?.store.id)
-    .map((i) => ({ id: i.store.id, x: i.door.x, z: i.door.z, item: i }))
-    .filter((s) => { const d = Math.hypot(s.x - from.x, s.z - from.z); return d > 30 && d <= MAX_ROAD; })
-    .map((s) => {
-      const poly = roadGraph.route(from.x, from.z, s.x, s.z);
-      let road = 0;
-      for (let k = 1; k < poly.length; k++) road += Math.hypot(poly[k][0] - poly[k - 1][0], poly[k][1] - poly[k - 1][1]);
-      return { ...s, road };
+// Duck boats at the Han River parks (src/game/duck-boats.js).
+// The park I'm in right now: its boats, fishing spots, kiosk and ramen
+// machine (core/park.js), or null.
+// Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
+const hanParks = createHanParks({
+  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
+  get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
+  night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
+  // What there is to do there (each made only when you're next to it).
+  acts: {
+    duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
+    fish: () => ({ key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() }),
+    sell: () => ({ key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }), // the park's fish buyer
+    ramen: () => ({ key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() }),
+    look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+  },
+});
+const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
+// Han River parks open to the street (stores.json "open"): the park lies on
+// the bank of the world's river. It is still its own room (core/park.js, all
+// its fishing, boats, stalls and seats work as before), drawn over the
+// street through a camera moved into its frame, and the street drawn behind
+// it while you're in it. Walking onto its lawn takes you in, walking off it
+// takes you out, with no door.
+const PARK_IN = { x: 25.5, z0: -4, z1: 13.5 }; // the lawn, in the park's metres (its bank is z = -4)
+const PARK_OUT = { x: 26.2, z1: 14.2 }; // (a little wider, so you don't flicker in and out on the edge)
+const PARK_NEAR = 220; // drawn (and built) within this many metres
+const PARK_STAFF = 80; // its sellers and duck boats drawn within this many metres
+const openParks = storefronts.items.filter((i) => i.open).map((item) => {
+  const { at: [ox, oz], ry } = item.store.open;
+  // Its lawn in the same green as the street's grass around it (just behind
+  // it, or beside it), so the park reads as one with the riverside, not a patch.
+  const around = [[0, 15.5], [0, 18], [0, 21], [-28, 6], [28, 6]].map(([x, z]) => [ox + x * Math.cos(ry) + z * Math.sin(ry), oz - x * Math.sin(ry) + z * Math.cos(ry)]);
+  const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
+  if (grass) item.store.open.grass = COLORS[grass.k];
+  const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
+  // (a park with its own shore, like Another Land's island, says where its
+  // edge is: `lawn` to walk in, the wider `out` to walk off)
+  const { lawn = null, out = null } = item.store.open;
+  return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false, lawn, out };
+});
+const parkLocal = (o, x, z) => { const dx = x - o.ox, dz = z - o.oz; return [dx * o.cos - dz * o.sin, dx * o.sin + dz * o.cos]; };
+function parkWorld(o, x, z) { return [o.ox + x * o.cos + z * o.sin, o.oz - x * o.sin + z * o.cos]; }
+const openParkHere = () => (mode === 'store' && interior?.store?.open ? openParks.find((o) => o.item.store === interior.store) : null);
+// Where I am in the street's metres (in an open park: its spot turned into
+// the world's), for the network and everyone else on the street.
+function myWorldSpot() {
+  const op = openParkHere(), p = me.root.position;
+  return op ? parkWorld(op, p.x, p.z) : [p.x, p.z];
+}
+// A spot in the room I'm in, in the street's metres (where others are).
+const peerSpot = (x, z) => { const op = openParkHere(); return op ? parkWorld(op, x, z) : [x, z]; };
+// The camera as the street sees it (in an open park: moved into the world's frame).
+const streetCam = () => { const op = openParkHere(); if (!op) return camera; camera.updateMatrixWorld(); return viewThrough(op.toWorld); };
+// The kiosk clerk and the stall sellers are there before you walk in, so
+// the park looks alive from the street (enterStore keeps these).
+function staffOpenPark(built) {
+  if (built.clerk && !built.clerkNpc) {
+    built.clerkNpc = makeNpc($('labels'), t('npc.clerk'));
+    built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
+    built.clerkNpc.ch.root.rotation.y = built.clerk.ry;
+    built.scene.add(built.clerkNpc.ch.root);
+  }
+  if (built.vendors?.length && !built.vendorNpcs) {
+    built.vendorNpcs = built.vendors.map((v) => {
+      const o = makeNpc($('labels'), '');
+      o.tag.style.visibility = 'hidden';
+      o.ch.root.position.set(v.x, 0, v.z);
+      o.ch.root.rotation.y = v.ry;
+      built.scene.add(o.ch.root);
+      return o;
     });
-  const target = pickDelivery(stores, from);
-  if (!target) return;
-  if (!shifts.take()) { shop.toast(fmt(L(JOB_TEXT.noShifts), { all: SHIFTS_PER_DAY })); return; }
-  const secs = timeFor(target.road);
-  const name = localName(target.item.store.name, getLanguage());
-  delivery = { id: target.id, name, until: performance.now() + secs * 1000, emoji: interior?.store?.jobEmoji || '🛵' };
-  shop.toast(t('delivery.start', { name, s: secs }) + ' · ' + fmt(L(JOB_TEXT.shiftsLeft), { n: shifts.left(), all: SHIFTS_PER_DAY }));
-  if (mode === 'store') leaveStore();
-  setGuide({ kind: 'store', id: target.id, x: target.x, z: target.z, label: name });
+  }
+  for (const o of [built.clerkNpc, ...(built.vendorNpcs || [])]) if (o) { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; }
 }
-function deliveryArrived(storeId) {
-  if (!delivery || delivery.id !== storeId) return;
-  const left = (delivery.until - performance.now()) / 1000;
-  const coins = deliveryPay(left);
-  delivery = null;
-  $('delivery-chip').hidden = true;
-  if (!coins) return;
-  wallet.add(coins, { k: 'ledger.delivery' });
-  me.play('cheer');
-  shop.toast(t('delivery.done', { n: coins }));
-  missionEvent('delivery');
+// Its room, built the first time it's near (or you arrive by taxi or map).
+function openParkRoom(o) {
+  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+    if (!domeLoading) {
+      domeLoading = true;
+      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+    }
+    return null;
+  }
+  if (!o.built) {
+    o.built = roomFor(o.item.store);
+    o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
+    staffOpenPark(o.built);
+    parkTickets.spawn(o.built); // (Another Land's ticket guide: there as you cross the bridge)
+  }
+  return o.built;
 }
-function updateDelivery() {
-  if (!delivery) return;
-  const left = (delivery.until - performance.now()) / 1000;
-  if (left <= 0) {
-    delivery = null;
-    $('delivery-chip').hidden = true;
-    shop.toast(t('delivery.late'));
+// Its lights follow the street's (weather, dusk).
+const parkNight = () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0));
+function lightOpenPark(built) {
+  const L3 = built.lights;
+  if (!L3) return;
+  L3.hemi.intensity = hemi.intensity; L3.hemi.color.copy(hemi.color); L3.hemi.groundColor.copy(hemi.groundColor);
+  L3.ambient.intensity = ambient.intensity; L3.ambient.color.copy(ambient.color);
+  L3.sun.intensity = sun.intensity; L3.sun.color.copy(sun.color);
+}
+function freeParkSpot(col, x, z) {
+  if (!col.blocked(x, z, PLAYER_R + 0.05)) return [x, z];
+  for (let r = 0.25; r <= 3; r += 0.25) {
+    for (let a = 0; a < 16; a++) {
+      const g = (a / 16) * Math.PI * 2, px = x + Math.cos(g) * r, pz = z + Math.sin(g) * r;
+      if (!col.blocked(px, pz, PLAYER_R + 0.05)) return [px, pz];
+    }
+  }
+  return [x, z];
+}
+function updateOpenParks(dt) {
+  if (!openParks.length) return;
+  const p = me.root.position;
+  const here = openParkHere();
+  if (here) {
+    lightOpenPark(openParkRoom(here));
+    here.built.setNight?.(parkNight()); // (Another Land's castle gate lights up)
+    for (const n of [here.built.clerkNpc, here.built.ticketGuide, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
+    for (const b of here.built.ducks || []) b.g.visible = true;
+    const [wx, wz] = parkWorld(here, p.x, p.z);
+    weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
+    net.update?.(wx, wz); // (the street's area cells, as on the street)
+    sun.position.set(wx + 60, 120, wz + 40);
+    sun.target.position.set(wx, 0, wz);
+    const off = here.out ? !pointInPoly(p.x, p.z, here.out) : Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1;
+    if (seated == null && !ride && off) leaveStore(true);
     return;
   }
-  $('delivery-chip').hidden = false;
-  $('delivery-chip').textContent = `🛵${delivery.emoji === '🛵' ? '' : delivery.emoji} ${delivery.name} · ${Math.ceil(left)}s`;
+  if (mode !== 'street') return;
+  // (in a taxi out of the park you are still standing on its lawn until the
+  // ride ends: don't walk back in)
+  const inCab = taxi.inCab();
+  for (const o of openParks) {
+    const d = Math.hypot(p.x - o.ox, p.z - o.oz);
+    o.near = d < PARK_NEAR;
+    if (!o.near) continue;
+    if (!openParkRoom(o)) continue; // (its code is still coming)
+    lightOpenPark(o.built);
+    o.built.setNight?.(parkNight());
+    o.built.tick?.(dt, null);
+    // The sellers (about 20 meshes each) only from close by: from further
+    // off the stalls and the kiosk read as busy enough.
+    const close = d < PARK_STAFF;
+    for (const n of [o.built.clerkNpc, o.built.ticketGuide, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
+    if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Another Land's island: the guests on its rides)
+    for (const n of o.built.riderNpcs || []) n.ch.root.visible = close;
+    for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
+    const [lx, lz] = parkLocal(o, p.x, p.z);
+    const onLawn = o.lawn ? pointInPoly(lx, lz, o.lawn) : Math.abs(lx) < PARK_IN.x && lz > PARK_IN.z0 && lz < PARK_IN.z1;
+    if (onLawn && !subway.metro && !inCab && !sky.busy) { // (flying over it: not until we land)
+      // (the street has no trees or bushes where the park has some: step in
+      // beside one, never into it, or you'd be stuck there)
+      const [fx, fz] = freeParkSpot(o.built.collision, lx, lz);
+      enterStore(o.item, { x: fx, z: fz, ry: me.root.rotation.y - o.ry, yaw: cam.yaw - o.ry, camVia: o.toLocal });
+      return;
+    }
+  }
 }
-$('delivery-chip').onclick = () => { if (delivery) shop.toast(t('delivery.cancelHint')); };
+// Drawing: the street, then any open park near it over the top (sharing the
+// depth, so buildings and trees hide what's behind them either way).
+const parkCam = new THREE.PerspectiveCamera();
+parkCam.matrixWorldAutoUpdate = false;
+function viewThrough(m) {
+  parkCam.projectionMatrix.copy(camera.projectionMatrix);
+  parkCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+  parkCam.matrixWorld.multiplyMatrices(m, camera.matrixWorld);
+  parkCam.matrixWorldInverse.copy(parkCam.matrixWorld).invert();
+  parkCam.matrixWorld.decompose(parkCam.position, parkCam.quaternion, parkCam.scale); // (name tags measure how far they are from the camera's position)
+  return parkCam;
+}
+renderer.info.autoReset = false; // (one frame can be two passes: renderScenes resets it)
+function renderScenes() {
+  renderer.info.reset();
+  const here = openParkHere();
+  camera.updateMatrixWorld();
+  if (here) {
+    renderer.render(scene, viewThrough(here.toWorld)); // the street round the park
+    renderer.autoClear = false;
+    renderer.render(activeScene, camera);
+    renderer.autoClear = true;
+    return;
+  }
+  renderer.render(activeScene, camera);
+  if (mode !== 'street') return;
+  for (const o of openParks) {
+    if (!o.near || !o.built) continue;
+    renderer.autoClear = false;
+    renderer.render(o.built.scene, viewThrough(o.toLocal));
+    renderer.autoClear = true;
+  }
+}
+
+const duckBoats = createDuckBoats({
+  park: hanPark, get seated() { return seated; }, get me() { return me; }, get cam() { return cam; },
+  get others() { return others; }, input, moveRef, shop, sfx, duckUi, sitDown: (s) => sitDown(s), standUp: () => standUp(), clearAction: () => { action = STALE; },
+  // Someone on the street seen from the open park I'm in: in its metres, or null when they're not by it.
+  peerLocal: (r) => {
+    const op = openParkHere();
+    if (!op) return { x: r.position.x, z: r.position.z, ry: r.rotation.y };
+    const [x, z] = parkLocal(op, r.position.x, r.position.z);
+    return Math.abs(x) < 80 && z > -120 && z < 40 ? { x, z, ry: r.rotation.y - op.ry } : null;
+  },
+});
+const { boardDuck, startDuckRide, updateDucks } = duckBoats;
+// Seoul Dal, the balloon in Yeouido Park (game/seoul-dal-near.js loads
+// game/seoul-dal.js when you come near it).
+const seoulDal = createSeoulDalNear({
+  landmarks: map.landmarks, scene, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
+  others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+});
+
+// Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
+const rainbowFountain = createRainbowFountain({
+  landmarks: map.landmarks, scene, weather, music, phone: () => lowSpec,
+  toast: (s) => shop.toast(s),
+  worldPos: () => {
+    const p = me.root.position, here = openParkHere();
+    return mode === 'street' ? [p.x, p.z] : here ? parkWorld(here, p.x, p.z) : null;
+  },
+});
+
+// Delivery runs from the tteokbokki stall. (game/delivery.js)
+const deliveryGame = createDelivery({
+  get interior() { return interior; }, get me() { return me; }, get mode() { return mode; }, $, leaveStore,
+  missionEvent, roadGraph, setGuide, shifts, shop, storefronts, wallet,
+});
+const { deliveryArrived, startDelivery, updateDelivery } = deliveryGame;
 // Beauty shops (core/beauty.js): sit in front of the big mirror (salon,
 // lens shop, lip shop) or lie on a clinic bed, try options on, pay coins to
 // keep them. A clinic sends you through surgery first.
@@ -4405,6 +5755,7 @@ const beautyUi = new BeautyUI({
   root: $('beauty-panel'),
   onPreview: (look) => setLook(beautyUi.kind === 'salon' ? { ...look, head: null } : look), // salon: hat off to see the hair
   onSave: (look, cost) => {
+    if (beauty.surgery || beauty.haircut) return false; // one at a time: no paying twice
     if (cost && !wallet.spend(cost)) { shop.toast(t('pet.noCoins', { n: cost - wallet.coins })); return false; }
     if (cost && isClinic(beautyUi.kind) && interior?.stations?.surgery) { setLook(myLook); endBeautyCam(); startSurgery(look); return true; }
     if (cost && beautyUi.kind === 'salon' && seated?.mirrorZ != null && (look.hairStyle !== myLook.hairStyle || look.dye !== myLook.dye)) { setLook(myLook); startHaircut(look); return true; }
@@ -4423,11 +5774,15 @@ const beauty = createBeauty({
   get myLook() { return myLook; }, set myLook(v) { myLook = v; },
   setLook, resendState: () => { lastSent = null; },
 });
-const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, startHaircut, updateHaircut, finishHaircut } = beauty;
-const nearFishing = (p) => interior?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
+const { keepLook, openBeauty, endBeautyCam, startSurgery, updateSurgery, surgeryView, startHaircut, updateHaircut, finishHaircut } = beauty;
+// Within r metres of a spot ({ x, z }) that may be missing.
+const nearSpot = (q, p, r) => !!q && Math.hypot(p.x - q.x, p.z - q.z) < r;
+const nearFishing = (p) => hanPark()?.fishing?.some((f) => Math.hypot(p.x - f.x, p.z - f.z) < 1.8);
+let fishCam = null; // the camera before fishing, put back after
 function openFishing() {
-  me.root.rotation.y = Math.PI; // face the river (north)…
-  cam.yaw = 0; // …with the camera behind you
+  const ry = hanPark()?.frame?.ry || 0; // (a park laid on the street: its river is where its frame says)
+  me.root.rotation.y = Math.PI + ry; // face the river (north); the camera stays where the player has it
+  fishCam = { pitch: cam.pitch, dist: cam.dist };
   fishingUi.show();
 }
 function openMarket() {
@@ -4445,16 +5800,29 @@ function openOrder() {
   clerk.ch.wave();
   orderUi.show(interior.store);
 }
-const showAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+// The server wants 5 s between ads (wallet_settings.ad_gap_sec) and the ad is
+// 3 s, so the button rests a moment after one.
+let adCoolUntil = 0;
+const ownAd = demoAd($('ad-overlay'), $('ad-count'), $('ad-close'));
+let promoAt = Math.floor(Math.random() * PROMOS.length);
+const showAd = rewardedShow(config.rewardedAd, (seconds) => { // a different place each time
+  const pr = PROMOS[promoAt++ % PROMOS.length];
+  $('ad-scene').src = BASE + pr.img;
+  $('ad-scene').hidden = false;
+  $('ad-place').textContent = t('promo.' + pr.id);
+  return ownAd(seconds);
+});
 function refreshWallet() {
-  $('coin-count').textContent = wallet.coins;
-  $('wallet-coins').textContent = wallet.coins;
+  $('coin-count').textContent = won(wallet.coins);
+  $('wallet-coins').textContent = won(wallet.coins);
   $('ad-label').textContent = t('wallet.watch', { n: config.rewardedAd.reward });
   const left = wallet.adsLeft();
   $('ad-left').textContent = t('wallet.left', { n: left });
-  $('ad-btn').disabled = left <= 0;
+  $('ad-btn').disabled = left <= 0 || Date.now() < adCoolUntil;
 }
 wallet.onChange(refreshWallet);
+wallet.onChange(checkLowCoins);
+lastCoins = wallet.coins;
 onLanguageChange(refreshWallet);
 refreshWallet();
 function refreshCloud() {
@@ -4484,11 +5852,17 @@ refreshCloud();
 initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
-const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', id: 'Dipakai' };
+// Clothes live in the bag's Wardrobe tab (a grid, see BagUI's closet); everything
+// else (pets, ...) in the bag's collection.
+const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
-  $('wallet-items-title').hidden = !list.length;
-  $('wallet-items').replaceChildren(...list.map((id) => {
+  const own = list.filter((id) => !isClothes(id));
+  itemEl('wallet-items-title').hidden = !own.length;
+  itemEl('wallet-items').replaceChildren(...own.map(itemRow));
+}
+function itemRow(id) {
+  {
     const row = document.createElement('div');
     row.className = 'item-row';
     const it = ITEMS[id];
@@ -4535,167 +5909,76 @@ function refreshItems() {
       btns.append(w, nb);
       row.append(btns);
     }
-    if (it.wear) { // put it on, or take it off (trousers can only be swapped)
-      const on = isWorn(it, myLook);
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (on ? ' on' : '');
-      w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear');
-      w.disabled = on && !it.off;
-      w.onclick = () => { outfitAction(id); refreshItems(); };
-      row.append(w);
-    }
-    if (it.tee) { // put the printed shirt on, or take it off
-      const wearing = myLook.tee === it.tee;
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (wearing ? ' on' : '');
-      w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
-      w.onclick = () => {
-        myLook = { ...myLook, tee: wearing ? null : it.tee };
-        saveLook(myLook);
-        setLook(myLook);
-        refreshItems();
-      };
-      row.append(w);
-    }
     return row;
-  }));
+  }
 }
 // Bring back the pet I was walking last time.
 petCare.restorePet();
 $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
-// Budget book (가계부): today's totals and the latest coins in and out.
-function ledgerLabel(e) {
-  const lang = getLanguage(), n = e.note || {};
-  const parts = [n.k && t(n.k, n.v), n.name && localName(n.name, lang), n.at && localName(n.at, lang)].filter(Boolean);
-  return parts.length ? parts.join(' · ') : t(e.n > 0 ? 'ledger.in' : 'ledger.out');
-}
-function renderLedger() {
-  const lang = getLanguage();
-  const day = wallet.dayTotals();
-  $('ledger-today').textContent = t('ledger.today', { in: day.in.toLocaleString(), out: day.out.toLocaleString() });
-  const when = (ms) => {
-    const d = new Date(ms), now = new Date();
-    const time = d.toLocaleTimeString(lang === 'zht' ? 'zh-Hant' : lang, { hour: 'numeric', minute: '2-digit' });
-    return d.toDateString() === now.toDateString() ? time : d.toLocaleDateString(lang === 'zht' ? 'zh-Hant' : lang, { month: 'short', day: 'numeric' }) + ' ' + time;
-  };
-  const rows = wallet.log.slice().reverse().map((e) => {
-    const row = document.createElement('div');
-    row.className = 'ledger-row';
-    const what = document.createElement('span');
-    what.className = 'ledger-what';
-    const label = document.createElement('strong');
-    label.textContent = ledgerLabel(e);
-    const at = document.createElement('small');
-    at.textContent = when(e.t);
-    what.append(label, at);
-    const amt = document.createElement('span');
-    amt.className = 'ledger-amt ' + (e.n > 0 ? 'in' : 'out');
-    amt.textContent = (e.n > 0 ? '+' : '−') + Math.abs(e.n).toLocaleString();
-    const bal = document.createElement('small');
-    bal.className = 'ledger-bal';
-    bal.textContent = '🪙 ' + Number(e.bal ?? 0).toLocaleString();
-    amt.append(bal);
-    row.append(what, amt);
-    return row;
-  });
-  if (!rows.length) {
-    const p = document.createElement('p');
-    p.className = 'fine';
-    p.textContent = t('ledger.empty');
-    rows.push(p);
-  }
-  $('ledger-list').replaceChildren(...rows);
-}
-$('ledger-btn').onclick = () => { $('wallet-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
-$('ledger-close').onclick = () => { $('ledger-panel').hidden = true; };
-wallet.onChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
-onLanguageChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
+// Notebook: the place stamps, food book and fish book live behind their own
+// HUD button so people find them (they used to hide inside the wallet).
+$('notes-btn').onclick = () => { const p = $('notes-panel'); p.hidden = !p.hidden; if (!p.hidden) $('wallet-panel').hidden = true; };
+$('notes-close').onclick = () => { $('notes-panel').hidden = true; };
+// Budget book. (ui/ledger-ui.js)
+createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
 // with a word to spend it wisely. Players from before it get it too.
-{
+// Friend invites (supabase/025_referrals.sql): thank a new player whose
+// friend was paid, and tell me when friends joined with my name (now and
+// every 10 minutes while playing).
+walletReady.then(() => {
+  if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
+  const news = async () => {
+    if (!wallet.server || document.hidden) return;
+    const r = await cloud.referralNews();
+    if (!r?.items.length) return;
+    r.items.forEach((it, i) => {
+      wallet.credited(it.n, r, { k: 'ledger.referral', v: { name: it.name || '?' } });
+      setTimeout(() => shop.toast(t('referral.got', { name: it.name || '?', n: won(it.n) })), 1500 + i * 3500);
+    });
+    refreshWallet();
+  };
+  news();
+  setInterval(news, 10 * 60 * 1000);
+  // Seoul Bank: money other players sent me (game/bank.js).
+  bankGame.checkNews();
+  setInterval(bankGame.checkNews, 3 * 60 * 1000);
+});
+walletReady.then(() => {
   const gift = wallet.welcome();
   if (gift) {
     refreshWallet();
-    $('welcome-coins').textContent = gift.toLocaleString();
+    $('welcome-coins').textContent = won(gift);
     const body = () => { $('welcome-body').textContent = t('welcome.body', { n: gift.toLocaleString() }); };
     body();
     onLanguageChange(body);
     $('welcome-panel').hidden = false;
     $('welcome-close').onclick = () => { $('welcome-panel').hidden = true; };
   }
-}
+});
 $('ad-btn').onclick = async () => {
   $('ad-btn').disabled = true;
   const music0 = music.on;
   if (music0) music.setOn(false); // a real ad has its own sound
   const n = await wallet.watchAd(showAd);
+  if (n) { adCoolUntil = Date.now() + 2500; setTimeout(refreshWallet, 2600); }
+  if (n) playCounts.ad(); // retention counts (core/sessions.js)
   if (music0) music.setOn(true);
   refreshWallet();
   if (n) shop.toast(t('wallet.earned', { n }));
+  // another-seoul.com/?adtest: say whether Google's ad or the game's own ran.
+  if (new URLSearchParams(location.search).has('adtest') && showAd.last) {
+    const l = showAd.last;
+    shop.toast(`Google ad: ${l.google}${l.why ? ` (${l.why})` : ''}${l.demo ? ' → demo shown' : ''}`);
+  }
 };
 
-// Daily check-in and three daily missions (see core/daily.js).
-daily = new Daily(wallet, {
-  npcs: [...new Set(npcs.list.map((o) => o.name))],
-  stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home'),
+// Daily check-in and today's three missions. (game/daily.js)
+const dailyGame = createDaily({
+  get daily() { return daily; }, set daily(v) { daily = v; }, get mode() { return mode; }, $, leaveStore,
+  npcs, setGuide, storefronts, wallet, zones,
 });
-const storeById = (id) => storefronts.items.find((i) => i.store.id === id);
-function missionText(m) {
-  if (m.type === 'talk') return t('mission.talk', { name: getLanguage() === 'ko' ? m.target : `${m.target} (${NAME_ROMAN[m.target] || ''})` });
-  if (m.type === 'visit') return t('mission.visit', { store: localName(storeById(m.target)?.store.name, getLanguage()) || m.target });
-  return t('mission.' + m.type, { n: m.need });
-}
-function renderDaily() {
-  const wd = daily.weekDay(), done = daily.checkedInToday();
-  $('daily-week').replaceChildren(...Array.from({ length: 7 }, (_, i) => {
-    const el = document.createElement('span');
-    const day = i + 1;
-    el.textContent = day === 7 ? '🎁' : String(day);
-    if (day === 7) el.classList.add('big');
-    if (day < wd || (day === wd && done)) el.classList.add('on');
-    if (day === wd) el.classList.add('today');
-    return el;
-  }));
-  const btn = $('checkin-btn');
-  btn.disabled = done;
-  btn.textContent = done ? t('daily.done') : t('daily.checkIn', { n: wd === 7 ? REWARD.week : REWARD.checkIn });
-  $('daily-streak').textContent = t('daily.streak', { n: done ? daily.streak : Math.max(0, wd - 1), w: REWARD.week });
-  $('daily-missions').replaceChildren(...daily.missions.map((m) => {
-    const li = document.createElement('li');
-    const finished = m.n >= m.need;
-    li.classList.toggle('done', finished);
-    const tick = document.createElement('span');
-    tick.className = 'tick';
-    tick.textContent = finished ? '✓' : '';
-    const text = document.createElement('span');
-    text.className = 'm-text';
-    text.textContent = missionText(m);
-    li.append(tick, text);
-    if (m.need > 1 && !finished) {
-      const prog = document.createElement('span');
-      prog.className = 'm-prog';
-      prog.textContent = `${m.n}/${m.need}`;
-      li.append(prog);
-    }
-    // Show the way: to the store, or to where the person is walking right now.
-    const target = m.type === 'visit' ? storeById(m.target) : m.type === 'talk' ? npcs.list.find((o) => o.name === m.target) : null;
-    if (target && !finished) {
-      const go = document.createElement('button');
-      go.className = 'chip';
-      go.textContent = '🧭 ' + t('mission.go');
-      go.onclick = () => {
-        $('daily-panel').hidden = true;
-        if (mode === 'store') leaveStore();
-        if (m.type === 'visit') setGuide({ kind: 'store', id: target.store.id, x: target.door.x, z: target.door.z, label: localName(target.store.name, getLanguage()) });
-        else setGuide({ kind: 'npc', id: target.name, x: target.ch.root.position.x, z: target.ch.root.position.z, label: target.name });
-      };
-      li.append(go);
-    }
-    return li;
-  }));
-  $('daily-bonus').textContent = daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
-  $('daily-dot').hidden = !daily.hasNews();
-}
+const { renderDaily } = dailyGame;
 // Square missions: what the guide can check on the spot, the HUD chip, and
 // talking to the guide (take an errand, see it again, or report back).
 // A function declaration (not a const): setHeld() runs during startup,
@@ -4704,13 +5987,19 @@ function questCtx() { return { held: held?.kind || null, pet: !!petCare.pet }; }
 function questText(q) {
   const store = q.target ? storefronts.items.find((i) => i.store.id === q.target)?.store : null;
   const st = q.starter != null && STARTER[q.starter];
-  if (st && STARTER_TEXT[st.tip]) return fmt(L(STARTER_TEXT[st.tip].text), { store: store ? localName(store.name, getLanguage()) : '' });
+  const step = q.kind === 'trip' && tripOf(q)[q.stage | 0]?.step;
+  if (step && TRIP_TEXT[step]) return L(TRIP_TEXT[step]);
+  const tipKey = ROUTE_TIP[q.route] || st?.tip;
+  if (st && st.kind === q.kind && STARTER_TEXT[tipKey]) return fmt(L(STARTER_TEXT[tipKey].text), { store: store ? localName(store.name, getLanguage()) : '' });
   return t('quest.' + q.kind, { store: store ? localName(store.name, getLanguage()) : '', n: q.n, need: q.need });
 }
 // Where an errand happens (for the 🧭 button next to the chip): its shop,
 // or the square guide once it is done. Null: no one place (talk, taxi).
 function questPlace(q, ready) {
-  if (ready || q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  // Done: report to the nearest guide (the square, or any Information Center).
+  if (ready) { const here = myPlace(); return nearestGuidePlace(here.x, here.z); }
+  if (q.kind === 'dance' || q.kind === 'highfive') return squareNpc ? { kind: 'npc-guide', id: 'square-guide', x: squareNpc.ch.root.position.x, z: squareNpc.ch.root.position.z, label: t('quest.guide') } : null;
+  if (q.kind === 'trip') return tripPlace(tripOf(q)[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
@@ -4730,38 +6019,49 @@ function refreshQuestChip() {
     ? (ready ? '🎁' : '📜') + count + ' ▸'
     : (ready ? '🎁 ' + t('quest.goBackShort') : '📜 ') + ' ' + questText(q) + count + ' ◂';
 }
-function talkToGuide() {
-  squareNpc.ch.wave();
+// npc: the square guide, or an Information Center's game guide (who hands
+// out errands in their own district: no dance on the square, no coffee).
+function talkToGuide(npc = squareNpc) {
+  const atSquare = npc === squareNpc, here = interior;
+  const visible = () => (atSquare ? mode === 'street' : interior === here);
+  npc.ch.wave();
   const q = quests.active;
   if (q && quests.ready(questCtx())) {
+    const starterQuest = q.starter != null;
     const coins = quests.claim(questCtx());
+    if (!starterQuest) playCounts.quest(); // retention counts: a mission beyond the first path
     if (q.kind === 'coffee') setHeld(null); // the guide takes the coffee
     // Busy square bonus: +1 for everyone else standing around the guide.
-    const g = squareNpc.ch.root.position;
-    const crowd = crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
-    wallet.add(coins + crowd, { k: 'ledger.quest' });
+    const g = npc.ch.root.position; // (only counted on the square: others' spots are street spots)
+    const crowd = !atSquare ? 0 : crowdBonus([...others.players.values()].filter((o) => !o.hidden && Math.hypot(o.ch.root.position.x - g.x, o.ch.root.position.z - g.z) < 8).length);
+    wallet.add(coins + crowd, { k: 'ledger.quest' }, starterQuest ? { r: 'quest', once: 'starter:' + q.starter } : { r: 'quest' });
     me.play('cheer');
-    say(squareNpc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
+    say(npc, $('labels'), ['고마워요! 수고했어요!', 'gomawoyo! sugohaesseoyo!', t('quest.thanks')]);
     shop.toast(t('quest.done', { coins: coins + crowd, left: quests.left }) + (crowd ? ' ' + t('quest.crowd', { n: crowd }) : ''));
     missionEvent('square');
   } else if (q) {
-    say(squareNpc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
+    say(npc, $('labels'), ['부탁해요!', 'butakhaeyo!', questText(q)]);
     shop.toast(questText(q));
     // On the first path, say the tip again too (it is easy to miss the first time).
-    const tip = q.starter != null && STARTER_TEXT[STARTER[q.starter]?.tip]?.tip;
-    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
+    const tip = q.starter != null && STARTER_TEXT[ROUTE_TIP[q.route] || STARTER[q.starter]?.tip]?.tip;
+    if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 3000);
+    if (q.starter != null && STARTER[q.starter]?.tip === 'trip') offerTrip(npc);
   } else if (quests.left) {
+    const d = !atSquare && here?.store ? districtOfStore(here.store) : npc === welcomeNpc ? firstStop.district : null;
     const a = quests.start({
-      stores: storefronts.items.filter((i) => i.store.category !== 'home').map((i) => i.store.id),
+      route: npc === welcomeNpc ? firstStop.trip : null, // the first trip, from the welcome guide: one that fits where they started
+      stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
+        && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
     });
-    say(squareNpc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
+    say(npc, $('labels'), ['부탁 하나 들어줄래요?', 'butak hana deureojullaeyo?', questText(a)]);
     shop.toast(t('quest.new', { coins: a.starter != null ? STARTER_REWARD : QUEST_REWARD }));
     // On the first path the guide also gives a tip for this errand.
-    const tip = a.starter != null && STARTER_TEXT[STARTER[a.starter].tip]?.tip;
-    if (tip) setTimeout(() => { if (mode === 'street') showBubble(squareNpc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
+    const tip = a.starter != null && STARTER_TEXT[ROUTE_TIP[a.route] || STARTER[a.starter].tip]?.tip;
+    if (tip) setTimeout(() => { if (visible()) showBubble(npc, $('labels'), '💡 ' + L(tip), 9000, 'chat npc-say'); }, 5200);
+    if (a.starter != null && STARTER[a.starter].tip === 'trip') setTimeout(() => offerTrip(npc), 600);
   } else {
-    say(squareNpc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
+    say(npc, $('labels'), ['오늘은 끝! 내일 또 와요!', 'oneureun kkeut! naeil tto wayo!', t('quest.tomorrow')]);
   }
   refreshQuestChip();
 }
@@ -4787,7 +6087,7 @@ function togetherBonus(kind) {
   const p = me.root.position;
   const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
   if (!friend) return;
-  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' });
+  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' }, { r: 'together' });
   shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
 }
 
@@ -4807,12 +6107,12 @@ function onHi5(id) {
   if (r) hi5Done(id, r);
   else { shop.toast(t('hi5.asked', { name })); action = null; } // refresh the button
 }
-function hi5Done(id, { coins }) {
+function hi5Done(id, { coins, who, day }) {
   me.play('cheer');
   others.emote(id, 'cheer', '🙌');
   showBubble(myLabel, $('labels'), '🙌');
   sfx.pop?.();
-  if (coins) wallet.add(coins, { k: 'ledger.together' });
+  if (coins) wallet.add(coins, { k: 'ledger.together' }, { r: 'together', once: 'hi5:' + day + ':' + who });
   shop.toast(t(coins ? 'hi5.doneCoins' : 'hi5.done', { name: others.nameOf(id), coins }));
   missionEvent('highfive');
 }
@@ -4820,6 +6120,7 @@ function hi5Done(id, { coins }) {
 function missionEvent(type, target) {
   if (quests.event(type, target)) {
     refreshQuestChip();
+    if (quests.active?.kind === 'trip') onTripStep();
     if (quests.ready(questCtx())) shop.toast(t('quest.goBack'));
   }
   const r = daily?.record(type, target);
@@ -4838,80 +6139,44 @@ $('checkin-btn').onclick = () => {
   if (n) shop.toast(t('daily.checked', { n }));
 };
 
-// Hat workshop: pick a shape, colour and embroidered patch; the hat shows on
-// your character while you edit, and Save keeps it (others see it too).
-let hatDraft = null, savedCam = null;
-const hex = (n) => '#' + n.toString(16).padStart(6, '0');
-function hatButtons(rowId, items, render, onPick) {
-  const row = $(rowId);
-  row.replaceChildren(...items.map((id) => {
-    const b = document.createElement('button');
-    b.className = 'hat-opt';
-    b.dataset.id = id ?? '';
-    render(b, id);
-    b.onclick = () => { onPick(id); refreshHat(); };
-    return b;
-  }));
-}
-function refreshHat() {
-  for (const [row, key] of [['hat-shapes', 'head'], ['hat-colors', 'hatColor'], ['hat-patches', 'hatPatch']]) {
-    for (const b of $(row).children) b.classList.toggle('on', (hatDraft[key] ?? '') === b.dataset.id);
-  }
-  setLook(hatDraft);
-}
-function openHatWorkshop() {
-  hatDraft = { ...myLook, head: HAT_SHAPES.includes(myLook.head) ? myLook.head : 'bucket', hatColor: myLook.hatColor || 'butter' };
-  hatButtons('hat-shapes', HAT_SHAPES, (b, id) => { b.textContent = accessory('head', id).emoji; b.title = id; }, (id) => { hatDraft.head = id; });
-  hatButtons('hat-colors', Object.keys(PALETTES.hat), (b, id) => { b.style.background = hex(PALETTES.hat[id]); b.classList.add('swatch'); b.title = id; }, (id) => { hatDraft.hatColor = id; });
-  hatButtons('hat-patches', [null, ...Object.keys(PATCHES)], (b, id) => { b.textContent = id ? PATCHES[id] : '∅'; }, (id) => { hatDraft.hatPatch = id; });
-  $('hat-panel').hidden = false;
-  savedCam = { ...cam };
-  Object.assign(cam, { dist: 2.6, pitch: 0.12, yaw: me.root.rotation.y }); // close-up, facing you
-  refreshHat();
-}
-function closeHatWorkshop(save) {
-  if (!hatDraft) return;
-  $('hat-panel').hidden = true;
-  if (save) {
-    myLook = { ...hatDraft };
-    saveLook(myLook);
-    shop.toast(t('hat.saved'));
-  }
-  setLook(myLook);
-  hatDraft = null;
-  if (savedCam) Object.assign(cam, savedCam);
-}
-$('hat-save').onclick = () => closeHatWorkshop(true);
-$('hat-cancel').onclick = () => closeHatWorkshop(false);
+// Hat workshop: shape, colour and patch. (game/hat-workshop.js)
+const hatWorkshop = createHatWorkshop({
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get me() { return me; }, $, cam, setLook,
+  shop,
+});
+const { closeHatWorkshop, openHatWorkshop } = hatWorkshop;
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
 function nearestSeat(p) {
   let best = null, bd = 1.3;
-  for (const s of interior?.seats || []) {
+  for (const list of mode === 'street' ? [streetSeats, hanParks.seats] : [interior?.seats || []]) for (const s of list) { // (a Han River park on the street: its own too)
     const d = Math.hypot(p.x - s.x, p.z - s.z);
-    if (d < bd && !others.seatTaken?.(s.x, s.z)) { bd = d; best = s; }
+    const dd = d - (s.reach || 0); // (stands: sit from the deck in front of them)
+    if (dd < bd && !others.seatTaken?.(...peerSpot(s.x, s.z))) { bd = dd; best = s; }
   }
   return best;
 }
 function sitDown(seat) {
   seated = seat;
-  me.root.position.set(seat.x, 0, seat.z);
+  me.root.position.set(seat.x, seat.y || 0, seat.z); // (y: low on the edge of a stream)
   me.root.rotation.y = seat.ry;
-  cam.yaw = seat.ry + Math.PI;
+  if (seat.bumper != null) cam.yaw = seat.ry + Math.PI; // a bumper car (a park ride): behind the wheel
   sendTimer = 0; // tell others right away
   missionEvent('sit');
   if (seat.academy) academyUi.show();
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
+  else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
 }
 function standUp() {
   if (!seated) return;
   finishHaircut(); // walking off mid-cut: the new style is already paid for
-  me.root.position.set(seated.stand[0], 0, seated.stand[1]);
+  me.root.position.set(seated.stand[0], seated.standY || 0, seated.stand[1]);
   if (seated.sauna && saunaUi.open) saunaUi.close();
   if (seated.beauty && beautyUi.open) beautyUi.close();
-  if (seated.duck != null) { if (duckUi.open) duckUi.close(); duckTrip.k = duckTrip.pos = 0; }
+  if (seated.duck != null) duckBoats.onStandUp();
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
+  if (seated.bumper != null) bumper.onStandUp();
   seated = null;
   sendTimer = 0;
 }
@@ -4926,7 +6191,7 @@ function hi5Action(o) {
 // Street actions that can be next to each other (a shop door with people at
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
-const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) });
+const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
@@ -4934,24 +6199,38 @@ const boardAct = (b) => (b.board === 'news'
 const stampAct = (it) => (stampBook.has(it.stamp.id)
   ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
   : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) });
-const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { npcs.greet(n, p.x, p.z); missionEvent('talk', n.name); } });
-const buskerAct = (s) => ({ key: 'busker', label: '👋 ' + L(BUSK_TEXT.hi), run: () => busking.greet(s) });
+const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { (n.owner || npcs).greet(n, p.x, p.z); missionEvent('talk', n.name); } });
+// Yozi's ice cream sculptures in Seoul Forest (core/park-art.js).
+const sculptureAct = (l) => ({ key: 'icecream:' + l.x + ',' + l.z, label: '🍦 ' + L(ICECREAM_TEXT.look), run: () => { me.play?.('wave'); shop.toast(fmt(L(ICECREAM_TEXT.about), { name: L(ICECREAM[l.model]) })); } });
+// An Information Center's game guide hands out and takes errands too, so
+// missions aren't only on Seongsu's square.
+function infoMissionAct(p) {
+  if (mode !== 'store' || interior?.store?.workshop !== 'info' || !clerk || onboard < 2) return null;
+  if (Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) >= 2.8) return null;
+  const q = quests.active;
+  if (!q && !quests.left) return null;
+  const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : '❗ ' + t('quest.take');
+  return { key: 'info-quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide(clerk) };
+}
 // The square guide: the first high five, today's errand, or a chat.
 function guideAct(p) {
-  if (!squareNpc) return null;
-  const d = Math.hypot(p.x - squareNpc.ch.root.position.x, p.z - squareNpc.ch.root.position.z);
-  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5() };
+  // The nearer of the square guide and the welcome guide in Bukchon.
+  const dist = (n) => (n ? Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z) : Infinity);
+  const npc = dist(welcomeNpc) < dist(squareNpc) ? welcomeNpc : squareNpc;
+  if (!npc) return null;
+  const d = dist(npc);
+  if (onboard === 0 && d < 3.2) return { key: 'onboard-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => onboardHi5(npc) };
   if (d >= 2.6) return null;
   const q = quests.active;
-  if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // today's first errand: high five the guide
+  if (q?.kind === 'highfive' && !quests.ready(questCtx())) { // a high-five errand saved before they stopped
     return { key: 'quest-hi5', label: '🙌 ' + L(ONBOARD_TEXT.button), run: () => {
-      me.play('wave'); squareNpc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
+      me.play('wave'); npc.ch.wave(); showBubble(myLabel, $('labels'), '🙌'); sfx.pop?.();
       missionEvent('highfive');
-      setTimeout(() => talkToGuide(), 700); // report straight away
+      setTimeout(() => talkToGuide(npc), 700); // report straight away
     } };
   }
   const label = q ? (quests.ready(questCtx()) ? '🎁 ' + t('quest.report') : '📜 ' + t('quest.check')) : quests.left ? '❗ ' + t('quest.take') : '👋 ' + t('npc.hi', { name: t('quest.guide') });
-  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide() };
+  return { key: 'quest:' + (q?.kind || '') + quests.left + (q && quests.ready(questCtx())), label, run: () => talkToGuide(npc) };
 }
 const MAX_CHOICES = 6;
 // Everything else close enough to do right now, besides what the button shows
@@ -4961,21 +6240,43 @@ function moreActions(p, door) {
   const out = [];
   const hi5s = () => { for (const o of others.nearbyFree(p.x, p.z, 2)) out.push(hi5Action(o)); };
   if (mode === 'street') {
-    if (riding || busking.performing) return out;
+    if (riding || busking.performing || seoulDal.busy) return out;
     if (door) out.push(storeAct(door));
     hi5s();
     const g = guideAct(p); if (g) out.push(g);
     const b = boardAt(p); if (b) out.push(boardAct(b));
     const st = stampStands.nearest(p.x, p.z); if (st) out.push(stampAct(st));
+    const bkc = bukchonAct(p); if (bkc) out.push(bkc);
+    const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
+    const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
+    const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
+    const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
+    if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
+    const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
+    if (bs?.mat) out.push(matSitAct(bs));
+    const pm = !seated && picnic.action(p); if (pm) out.push(pm);
+    const fb = frisbee.action(p); if (fb) out.push(fb);
+    if (!seated) out.push(...snowman.more(p)); // put a snowball on a bigger one: a snowman
+    const ic = sculptureNear(map.landmarks, p.x, p.z); if (ic) out.push(sculptureAct(ic));
+    if (muralSpot(p)) out.push(muralAct());
+    if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const n = npcs.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
-  if (!interior || seated || beauty.surgery || ride || decor?.editing) return out;
+  if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing) return out;
+  if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
+  const im = infoMissionAct(p); if (im) out.push(im);
+  if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
-  if (seat) out.push({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
+  if (seat) out.push(sitAct(seat));
+  if (seat?.mat) out.push(matSitAct(seat));
+  const pm = picnic.action(p); if (pm) out.push(pm);
+  const fb = frisbee.action(p); if (fb) out.push(fb);
+  if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
+  if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   return out;
@@ -4987,50 +6288,69 @@ function adoptables(store) {
   return (store.adopt || []).filter((a) => ITEMS[a.pet]?.pet && !inventory.has(a.pet))
     .map((a) => ({ ...ITEMS[a.pet].pet, adopt: a.pet, desc: a.desc }));
 }
-const ADOPT_TEXT = {
-  meet: { en: 'Meet {name} · adopt', ko: '{name} 만나기 · 분양', ja: '{name}に会う · 迎える', zh: '认识{name} · 领养' },
-  desc: { en: '{desc}\nWaiting for a family. The adoption fee helps the café care for the animals.', ko: '{desc}\n가족을 기다리고 있어요. 분양비는 카페 동물들을 돌보는 데 쓰여요.', ja: '{desc}\n家族を待っています。譲渡費はカフェの動物たちのお世話に使われます。', zh: '{desc}\n正在等待家人。领养费用于照顾咖啡馆里的动物。' },
-};
 const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(ADOPT_TEXT.meet), { name: Pets.label(pet) }), run: () => {
   const it = ITEMS[pet.adopt];
   shop.openProduct({ id: 'adopt-' + pet.adopt, model: 'pet:' + pet.kind, color: pet.color, adopt: pet.adopt, price: 0, name: it.name,
     desc: { en: fmt(ADOPT_TEXT.desc.en, { desc: pet.desc?.en || '' }), ko: fmt(ADOPT_TEXT.desc.ko, { desc: pet.desc?.ko || pet.desc?.en || '' }), ja: fmt(ADOPT_TEXT.desc.ja, { desc: pet.desc?.en || '' }), zh: fmt(ADOPT_TEXT.desc.zh, { desc: pet.desc?.en || '' }) } });
 } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
+const sitAct = (seat) => (seat.mat
+  ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
+  : { key: 'sit', label: (seat.edge ? '🌊 ' : '🪑 ') + t('shop.sit'), run: () => sitDown(seat) }); // 🌊 the edge of a stream
+// On a picnic mat you can also sit up, facing the foot of the mat.
+const matSitAct = (seat) => ({ key: 'sit-mat', label: '🧺 ' + L(MAT_TEXT.sit), run: () => sitDown({ ...seat, lie: false }) });
 const lookAct = (pr) => ({ key: 'look:' + pr.product.id, label: '👀 ' + t('shop.look', { name: localName(pr.product.name, getLanguage()) }), run: () => shop.openProduct(pr.product) });
 function updateAction(p, tSec) {
   let next = null, door = null;
+  if (!$('route-panel').hidden && !(mode !== 'street' && nearRouteMap(p))) $('route-panel').hidden = true; // walked away
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
+    updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
-    if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
+    const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
+    if (basketball.basketShot) next = null; // mid-shot
+    else if (seoulDal.busy || seoulDal.act(p)) next = seoulDal.act(p); // aboard Seoul Dal, or at its gate
+    else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
+    else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
     else if ((riding === 2 || isCar(riding) || riding === 5) && freeSeat() >= 0 && others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3)) {
       const o = others.nearestFree(p.x, p.z, isCar(riding) ? 4.5 : 3);
       const seat = freeSeat();
       next = { key: 'tandem-invite:' + o.id, label: (isCar(riding) ? '🚗 ' : riding === 5 ? '🏍️ ' : '🚲 ') + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
-    } else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
+    } else if (riding === 1 && inSkate) next = { key: 'trick', label: '🤸 ' + L(SKATE_TEXT.trick), run: () => skater.tap() }; // (the bike button gets off)
+    else if (riding) next = { key: 'bike-off', label: isCar(riding) ? '🚗 ' + t('car.off') : riding === 5 ? '🏍️ ' + t('bike.offShort') : '🚲 ' + t('bike.off'), run: () => setRiding(false) };
     else if (tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from) && others.rootOf(tandemInvite.from).position.distanceTo(p) < 6) {
       const inv = tandemInvite;
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
-    else if (bikeStations.nearby(p.x, p.z)) next = { key: 'bike-on', label: '🚲 ' + t('bike.on'), run: () => setRiding(true) };
+    else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
+    else if (!riding && bukchonAct(p)) next = bukchonAct(p);
+    else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
+    else if (!riding && bosingakAct(p)) next = bosingakAct(p);
+    else if (!riding && palaceAct(p)) next = palaceAct(p);
+    else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
+    else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
+    else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
+    else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
+    else if (!riding && frisbee.action(p)) next = frisbee.action(p); // fetch with your pet on the lawn
+    else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
+    else if (!riding && muralSpot(p)) next = muralAct();
+    else if (!riding && wishSpot(p)) next = wishAct();
+    else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
+    else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
     else if (guideAct(p)) next = guideAct(p);
-    else if (busking.performing) {
-      next = { key: 'busk-stop', label: '🛑 ' + L(BUSK_TEXT.stop), run: () => stopBusking() };
-    } else if (!riding && busking.stageAt(p.x, p.z)) {
-      const s = busking.stageAt(p.x, p.z);
-      next = { key: 'busk', label: '🎤 ' + L(BUSK_TEXT.start), run: () => startBusking(s) };
-    } else if (busking.nearBusker(p.x, p.z)) {
-      next = buskerAct(busking.nearBusker(p.x, p.z));
-    } else if (palaceShow?.nearGuard(p.x, p.z)) {
+    else if (sb) next = sb; // start a snowball
+    else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
+    else if (buskPlay.buskAction(p, riding)) next = buskPlay.buskAction(p, riding); // the busking stage, the buskers
+    else if (palaceShow?.nearGuard(p.x, p.z)) {    } else if (palaceShow?.nearGuard(p.x, p.z)) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
-      const n = npcs.nearest(p.x, p.z);
+      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z);
       if (n) next = npcAct(n, p);
     }
   } else {
@@ -5042,6 +6362,8 @@ function updateAction(p, tSec) {
     } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
       const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
       next = { key: 'metro-board:' + t, label: `🚇 ${L(METRO_TEXT.board)} · ${L(t === 0 ? METRO_TEXT.up : METRO_TEXT.down)} → ${to ? localName(to, getLanguage()) : ''}`, run: () => boardTrain(t, interior.subway.doorsOpen(t) || 0.5) };
+    } else if (interior.subway && !seated && nearRouteMap(p)) {
+      next = { key: 'route-map', label: '🗺️ ' + L(ROUTE_MAP_TEXT.view), run: openRouteMap };
     } else if (interior.subway && !seated && interior.subway.vending?.some((v) => Math.hypot(p.x - v.x, p.z - v.z) < 1.3)) {
       next = { key: 'vending', label: '🥤 ' + L(VENDING_TEXT.open), run: openVending };
     } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
@@ -5049,24 +6371,62 @@ function updateAction(p, tSec) {
       next = g.inside
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
-    } else if (!interior.noExit && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : 'shop.leave'), run: () => leaveStore() };
+    } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
+    } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
+      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
       next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
-    } else if (decor?.editing) {
+    } else if (decorGame.decor?.editing) {
       // decorate mode: walk up to a piece to rotate, move or remove it
       const it = nearestPiece(p);
-      if (decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
-      else if (it) next = { key: 'piece:' + decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
-      else if (!decor.picked) closePiece();
+      if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
+      else if (it) next = { key: 'piece:' + decorGame.decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
+      else if (!decorGame.decor.picked) closePiece();
     } else if (interior.cablecar && cableAction(p)) {
       next = cableAction(p);
+    } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
+      next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
+    } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
+      next = loveLockActs()[0]; // and "read the messages" (moreActions)
+    } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
+      const first = ride.view === 'first';
+      next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
+    } else if (ride && ride.kind !== 'coaster' && rideLocked(ride.kind, ride.seat, rideClock())) { // the bar is down: the button switches the view
+      // (the Ferris wheel adds a scenic view from outside the gondola: third → scenic → seat)
+      const to = ride.view === 'first' ? 'third' : ride.kind === 'wheel' && ride.view === 'third' ? 'scenic' : 'first';
+      next = { key: 'ride-view:' + ride.view, label: to === 'scenic' ? '🏞️ ' + t('ride.scenic') : (to === 'third' ? '🎥 ' : '👀 ') + L(to === 'third' ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = to; rideCam.reset(); action = STALE; } };
     } else if (ride) {
       next = { key: 'ride-off', label: '🚪 ' + t('ride.off'), run: () => endRide() };
+    } else if (interior.zooPark && riding === CART && freeSeat() >= 0 && others.nearestFree(p.x, p.z, 4.5)) { // the zoo's cart: offer a friend a seat
+      const o = others.nearestFree(p.x, p.z, 4.5), seat = freeSeat();
+      next = { key: 'tandem-invite:' + o.id, label: '🛺 ' + t('tandem.invite', { name: o.name }), run: () => { net.sendEmote(tandemMsg('invite', o.id, seat)); shop.toast(t('tandem.sent', { name: o.name })); } };
+    } else if (interior.zooPark && riding === 3) {
+      next = { key: 'bike-off', label: '🛺 ' + t('car.off'), run: () => setRiding(false) };
+    } else if (interior.zooPark && !riding && tandemInvite && performance.now() < tandemInvite.until && others.rootOf(tandemInvite.from)?.position.distanceTo(p) < 6) {
+      const inv = tandemInvite;
+      next = { key: 'tandem-hop:' + inv.from, label: '🛺 ' + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
+    } else if (interior.zooPark && zooVisit.action(p)) {
+      next = zooVisit.action(p); // the zoo: carts, feeding, the keeper, the hippo's watermelon, the Sea Animals hall
+    } else if (interior.themepark && coasterAction(p)) {
+      next = coasterAction(p);
+    } else if (interior.themepark && parkTickets.actions(p).length) {
+      next = parkTickets.actions(p)[0]; // the ticket guide (the island) or the booth (below): what's what, then each ticket in the more list
+    } else if (interior.themepark && balloonClown.actions(p).length) {
+      next = balloonClown.actions(p)[0]; // (the other balloons are in the more list)
+    } else if (interior.bumper && bumper.action(p)) {
+      next = bumper.action(p);
+    } else if (nearStation(p, 'runwayDoor', 1.8)) {
+      next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
+    } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
+      next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
+    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
+      const under = storefronts.items.find((i) => i.store.below === interior.store.id);
+      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => roomTips.enter(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
-      next = { key: 'ride:' + st.kind, label: `${RIDE_ICON[st.kind]} ${t('ride.' + st.kind)} · 🪙 ${RIDE_COST}`, run: () => boardRide(st) };
+      next = parkRideAction(st);
     } else if (seated?.surgery) {
       next = null; // lie still: the team is at work
     } else if (seated?.beauty) {
@@ -5076,14 +6436,20 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + seated.sauna, label: (seated.sauna === 'hot' ? '🔥 ' : '🧊 ') + t(seated.sauna === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(seated.sauna) };
     } else if (seated && isDining(interior.store)) {
       next = dineAction();
-    } else if (seated?.duck != null) { // in a duck boat: pedal out (or get off from the panel)
-      next = { key: 'duck-go', label: '🚣 ' + L(DUCK_TEXT.go), run: () => duckUi.show() };
+    } else if (seated?.duck != null) { // in a duck boat (game/duck-boats.js)
+      next = duckBoats.seatedAction();
+    } else if (seated?.pc) { // a free PC in the PC방
+      next = { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('aim') };
     } else if (seated?.tarot) {
       next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { tarotReader()?.ch.wave(); tarotUi.show(); } };
     } else if (tarotNext) {
       next = tarotNext;
+    } else if (interior.pool && !seated && poolAction(p)) {
+      next = poolAction(p);
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
+    } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
+      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => runwayUi.show() };
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -5092,18 +6458,32 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
-      next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor) };
+      next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
+    } else if (nearStation(p, 'flower', 1.3)) {
+      next = { key: 'flower', label: '💐 ' + L(MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
+    } else if (nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
+      const pn = nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
+      next = { key: 'panel:' + pn.kind, label: `📖 ${L(MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
     } else if (nearestPainting(interior.stations?.paintings, p.x, p.z)) {
       const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
-      next = { key: 'painting:' + pt.id, label: `🖼️ ${L(MUSEUM_TEXT.look)} · ${getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
+      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? MEMORIAL_TEXT.look : MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
     } else if (nearStation(p, 'books', 1.5)) {
-      next = { key: 'books', label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf() };
+      const shelf = interior.stations.books.reduce((a, st) => (Math.hypot(p.x - st.x, p.z - st.z) < Math.hypot(p.x - a.x, p.z - a.z) ? st : a));
+      next = { key: 'books:' + shelf.section, label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf(shelf.section) };
     } else if (interior.stations?.gym?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 1.4)) {
       const st = interior.stations.gym.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.4);
       next = { key: 'gym:' + st.kind, label: '💪 ' + t('gym.' + st.kind), run: () => {
-        if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; cam.yaw = Math.PI * 0.8; } // hang under the bar
+        if (st.lie) { useGymSpot(st, st.kind); return; } // the bench: lie down on it
+        if (st.bar) { me.root.position.set(st.x, 0, st.z); me.root.rotation.y = 0; } // hang under the bar
         gymUi.show(st.kind);
       } };
+    } else if (!gymUi.open && studioSpot(p)) {
+      const st = studioSpot(p);
+      next = st.kind === 'yoga'
+        ? { key: 'studio:yoga', label: '🧘 ' + L(STUDIO_ACT.yoga), run: () => useGymSpot(st, 'yoga') }
+        : { key: 'studio:reformer', label: '🤸 ' + L(STUDIO_ACT.reformer), run: () => useGymSpot(st, 'reformer') };
+    } else if (instructor && Math.hypot(p.x - instructor.ch.root.position.x, p.z - instructor.ch.root.position.z) < 2.2) {
+      next = { key: 'instructor', label: '💬 ' + t('gym.talk', { name: L(INSTRUCTOR_NAME) }), run: () => talkToInstructor() };
     } else if (trainer && Math.hypot(p.x - trainer.ch.root.position.x, p.z - trainer.ch.root.position.z) < 2.4) {
       next = { key: 'trainer', label: '💬 ' + t('gym.talk', { name: L(TRAINER_NAME) }), run: () => talkToTrainer() };
     } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
@@ -5113,13 +6493,21 @@ function updateAction(p, tSec) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
+    } else if (nearStation(p, 'bowling', 1.4)) {
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+    } else if (nearStation(p, 'climbing', 1.8)) {
+      next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
+    } else if (nearStation(p, 'hauntGallery', 2)) {
+      next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
     } else if (nearStation(p, 'darts', 1.6)) {
-      next = { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
-    } else if (interior.ducks && !seated && interior.ducks.find((d) => Math.hypot(p.x - d.home.x, p.z - (d.home.z + 2.2)) < 1.6)) {
-      const d = interior.ducks.find((q) => Math.hypot(p.x - q.home.x, p.z - (q.home.z + 2.2)) < 1.6);
-      next = { key: 'duck-board:' + d.i, label: '🦆 ' + L(DUCK_TEXT.board) + ` (${duckRiders(d.i)}/2)`, run: () => boardDuck(d.i) };
+      next = arcadeGame.camOn() ? null : { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
+    } else if (duckBoats.boardAction(p)) {
+      next = duckBoats.boardAction(p);
+    } else if (martCounter(p)) {
+      // Han River park: DAILY MART's counter (ramyeon and eggs for the ramen machine).
+      next = martAct();
     } else if (orderAtCounter(p)) {
       const who = orderAtCounter(p);
       next = { key: 'counter', label: '🧾 ' + L(COUNTER_ORDER), run: () => { who.ch.wave(); counterUi.show(interior.store); } };
@@ -5139,21 +6527,33 @@ function updateAction(p, tSec) {
       next = { key: 'japchae-hint', label: '💬 ' + L(JAPCHAE_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(JAPCHAE_TEXT.hint)); } };
     } else if (nearStation(p, 'kimchi', 1.3)) {
       next = { key: 'kimchi', label: '🥬 ' + L(KIMCHI_TEXT.open), run: () => { clerk?.ch.wave(); kimchiUi.show(); } };
+    } else if (CRAFT[interior.store.craft] && clerk && !seated && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      const kind = interior.store.craft;
+      next = { key: 'craft:' + kind, label: `${CRAFT[kind].icon} ${L(BK_TEXT[kind])} · 🪙 ${CRAFT[kind].price}`, run: () => { clerk.ch.wave(); bukchonUi.craft(kind); } };
     } else if (interior.store.workshop === 'kimchi' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
       next = { key: 'kimchi-hint', label: '💬 ' + L(KIMCHI_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(KIMCHI_TEXT.hint)); } };
-    } else if (interior.ramen && Math.hypot(p.x - interior.ramen.x, p.z - interior.ramen.z) < 1.8) {
+    } else if (nearSpot(hanPark()?.fishBuy, p, 1.6)) {
+      next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }; // the park's fish buyer
+    } else if (nearSpot(hanPark()?.ramen, p, 1.8)) {
       next = { key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() };
     } else if (BEAUTY_SHOPS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       const hint = t(isClinic(interior.store.workshop) ? 'beauty.lie' : 'beauty.sit');
       next = { key: 'beauty-hint', label: '💬 ' + hint, run: () => { clerk.ch.wave(); shop.toast(hint); } };
     } else if (interior.store.workshop === 'kimchi-buy' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'kimchi-sell', label: '🫙 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
+      next = { key: 'kimchi-sell', label: '🧺 ' + MARKET_L('open'), run: () => { clerk.ch.wave(); say(clerk, $('labels'), BOSS_LINES.hello); kimchiSellUi.show(); } };
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
-    } else if (clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
+    } else if (interior.store.resale && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
+      next = { key: 'resale', label: '♻️ ' + L(RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
+    } else if (clubs.clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
-    } else if (clubState && !seated) { // anywhere on the club floor: dance to the beat
+    } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
       next = { key: 'dance:' + dancing, label: (dancing ? '🛑 ' : '💃 ') + L(dancing ? DANCE_TEXT.stop : DANCE_TEXT.start), run: () => { dancing = !dancing; if (dancing) missionEvent('dance'); action = STALE; } };
+    } else if (listenBar.listening) {
+      next = { key: 'listen-off', label: '🎧 ' + L(LISTEN_TEXT.off), run: () => listenBar.stop() };
+    } else if (interior.stations?.listening && nearestStation(interior.stations.listening, p.x, p.z)) {
+      const st = nearestStation(interior.stations.listening, p.x, p.z);
+      next = { key: 'listen', label: '🎧 ' + L(LISTEN_TEXT.open), run: () => listenBar.open(st) };
     } else if (interior.turntable && Math.hypot(p.x - interior.turntable.x, p.z - interior.turntable.z) < 2) {
       next = { key: 'lp', label: '💿 ' + t('lp.open'), run: () => openLpPanel() };
     } else if (interior.store.workshop === 'bike' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
@@ -5173,8 +6573,11 @@ function updateAction(p, tSec) {
       if (Math.min(dist(clerk), dist(areaGuide)) < 2.8) {
         next = area
           ? { key: 'info-area', label: '🗺️ ' + fmt(L(INFO_TEXT.askArea), { name }), run: () => { areaGuide.ch.wave(); infoUi.showArea(d); } }
-          : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
+          : quests.active && quests.ready(questCtx()) ? infoMissionAct(p) // a mission to report comes first
+            : { key: 'info-game', label: '🎮 ' + L(INFO_TEXT.askGame), run: () => { clerk.ch.wave(); infoUi.showGame(); } };
       }
+    } else if (interior.store.workshop === 'bank' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.8) {
+      next = { key: 'bank', label: bankGame.actionLabel(), run: () => { clerk.ch.wave(); bankGame.openBank(); } };
     } else if (interior.store.workshop === 'tarot' && !seated && nearReader(p)) {
       const r = nearReader(p);
       next = { key: 'tarot-hint', label: '💬 ' + L(TAROT_TEXT.hint), run: () => { r.ch.wave(); say(r, $('labels'), TAROT_LINES[0]); shop.toast(L(TAROT_TEXT.hint)); } };
@@ -5184,13 +6587,17 @@ function updateAction(p, tSec) {
       const job = jobOf(interior.store);
       next = { key: 'job', label: '💼 ' + fmt(L(JOB_TEXT.work), { role: L(JOB_TEXT.role[job]) }), run: () => { clerk.ch.wave(); openJob(job); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum', 'memorial', 'culture'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
       next = hi5Action(hi5Target(p));
+    } else if (picnic.action(p)) {
+      next = picnic.action(p);
+    } else if (frisbee.action(p)) {
+      next = frisbee.action(p);
     } else if (seat) {
-      next = { key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) };
+      next = sitAct(seat);
     } else {
       let best = null, bestD = 1.9;
       for (const pr of interior.products) {
@@ -5247,17 +6654,6 @@ function updateGuide(p, dt) {
     routeLine.set(poly);
     routeLen = 0;
     for (let i = 1; i < poly.length; i++) routeLen += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
-    if (faceRoute) {
-      faceRoute = false;
-      // Look towards the route point about 8 m ahead.
-      let ax = poly[1][0], az = poly[1][1], acc = 0;
-      for (let i = 1; i < poly.length; i++) {
-        acc += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
-        [ax, az] = poly[i];
-        if (acc > 8) break;
-      }
-      if (Math.hypot(ax - p.x, az - p.z) > 1) cam.yaw = Math.atan2(-(ax - p.x), -(az - p.z));
-    }
   }
   // Arrived: close by, and not just on the other side of a wall.
   if (dist < (guide.kind === 'npc' ? 2.5 : 6) && routeLen < 10) {
@@ -5297,18 +6693,38 @@ function guardPosition() {
   if (!Number.isFinite(cam.dist)) cam.dist = 9;
   if (!lastGood.ok && square) r.set(square.x, 0, square.z + 3);
 }
-renderer.setAnimationLoop(() => {
+// Snow settles on the street (core/snow-cover.js): everything built by now,
+// so the shaders are ready before it first snows; while there's snow, parts
+// of the city built later (first visits) are given it too.
+// Big instanced meshes (trees, reeds, flowers…) cut into tiles so the ones
+// out of view are skipped (core/split-instances.js). Same picture, far less work.
+splitInstances(scene);
+const farPeople = new FarPeople();
+coverScene(scene);
+let snowCoverAt = 0;
+// First-person view (game/first-person.js): V or Settings only.
+const firstPerson = createFirstPerson({
+  camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
+  canUse: () => !arcadeGame.camOn() && !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+});
+// Phones: the stick turns the view as you walk (game/touch-steer.js).
+const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+let mapPause = 0; // (seconds since other players last moved while the map is open)
+renderer.setAnimationLoop((now) => {
+  if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
   timer.update();
-  const dt = Math.min(timer.getDelta(), 0.05);
+  const dt = Math.max(0, Math.min(timer.getDelta(), 0.05)); // (never back in time: a clock set back)
   input.update();
 
-  const look = input.consumeLook();
+  const look = touchSteer.look(input.consumeLook()); // (phones, walking: drag tilts only)
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
-  cam.yaw -= look.dx * 0.006;
-  cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : 0.12, 1.25);
-  cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, mode === 'store' ? 9 : 28);
+  if (!firstPerson.look(look)) {
+    cam.yaw -= look.dx * 0.006;
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : (mode === 'street' && towerLook.min(me.root.position)) || (skyLook() ? -0.12 : 0.12), 1.25);
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, interior?.zooHall ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
+  }
 
   // Movement relative to the camera. While the stick is held in one
   // direction we keep the camera angle from when it was pushed, so the
@@ -5324,6 +6740,9 @@ renderer.setAnimationLoop(() => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
+  const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
+  firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
   if (riding === 3) {
@@ -5341,26 +6760,51 @@ renderer.setAnimationLoop(() => {
       speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, Math.hypot(p.x - ox, p.z - oz) / dt / BIKE), Math.min(1, dt * 5));
     }
   }
-  if (mode === 'store') interior?.tick?.(dt); // amusement park rides
+  if (mode === 'store' && interior?.store.workshop === 'runway') runwayTick(dt); // (walking with friends: the line)
+  if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
+  if (mode === 'store') parkRiders.tick(interior?.riderNpcs); // (guests on the carousel and the ship)
   else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
-  if (mode === 'street' && streams.length) streamModels.userData.tick(performance.now() / 1000); // ripples, waterfall
+  if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
+  updateDroneShow();
+  updateFireworks();
+  rainbowFountain.update();
   updateRide(dt);
+  if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   updateCable();
-  if (seated && !seated.surgery && seated.duck == null && mag > 0.3) standUp(); // (get off a duck boat with its button)
+  if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
+  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
+  seoulDal.update(p, dt); // (carries me up and down in the gondola)
+  updateOpenParks(dt);
+  if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
+  bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
-  if (dancing && (mag > 0.3 || !clubState)) { dancing = false; action = STALE; }
+  if (dancing && (mag > 0.3 || !clubs.clubState)) { dancing = false; action = STALE; }
+  // Off the bench or reformer as soon as you move (or close the panel); off
+  // a yoga mat once you walk away from it.
+  if (gymSpot && (!gymUi.open || (gymSpot.back ? mag > 0.3 : Math.hypot(p.x - gymSpot.x, p.z - gymSpot.z) > 1.2))) { leaveGymSpot(); action = STALE; }
+  if (mode === 'store') updateStudio();
+  if (interior?.stations?.benchBar) { // the rack's bar is gone while someone lifts it
+    const lifting = me.activityName === 'bench' || [...others.players.values()].some((q) => !q.hidden && q.target?.ac === 'bench');
+    for (const m of interior.stations.benchBar) m.visible = !lifting;
+  }
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
+  fishRig.update(dt, me);
+  updatePeerRigs(dt);
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
-  const running = updateStamina(dt, input.run && !riding, mag > 0.05 && !seated);
-  if (mag > 0.05 && !seated && !ride && !cable && riding !== 3) {
+  const steady = steadyWalk && !riding;
+  const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
+  const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
+  if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
+  else if (mag > 0.05 && !seated && !ride && !cable && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
-    const inStore = mode === 'store';
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : (inStore ? STORE_WALK : WALK)) * gymLog.boost) * Math.min(1, mag) * wxSpeed();
+    const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
+    const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed; // (slower in the pool's water, or rolling a big snowball)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -5370,21 +6814,22 @@ renderer.setAnimationLoop(() => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      const { w: rw, d: rd } = interior.room;
-      p.x = THREE.MathUtils.clamp(nx, -rw / 2 + 0.5, rw / 2 - 0.5);
-      p.z = THREE.MathUtils.clamp(nz, -rd / 2 + 0.5, rd / 2 - 0.5);
+      const bx = roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
+      p.x = THREE.MathUtils.clamp(nx, bx.x0 + m, bx.x1 - m);
+      p.z = THREE.MathUtils.clamp(nz, bx.z0 + m, bx.z1 - m);
     }
     const targetRy = Math.atan2(dx, dz);
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN)), Math.min(1, dt * 10));
-  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
+    const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
+    speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
+  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && !seoulDal.busy && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
-    const running = updateStamina(dt, input.run && !riding, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : WALK) * gymLog.boost) * wxSpeed();
+    const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, true);
+    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed() * snowman.speed;
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }
@@ -5396,51 +6841,70 @@ renderer.setAnimationLoop(() => {
     let d = Math.atan2(ddx, ddz) - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 8);
-    speed01 = THREE.MathUtils.lerp(speed01, speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, steady ? STEADY_ANIM : speed / (riding ? rideSpeed() : RUN), Math.min(1, dt * 10));
+  } else if (runwayUi.walking && mode === 'store') {
+    speed01 = THREE.MathUtils.lerp(speed01, runwayStep(p, dt), Math.min(1, dt * 10));
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
   }
+  if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
-  // Third-person follow: while walking, the camera swings round behind the
-  // character, so running sideways turns into running forward. Paused for a
-  // moment after the player drags the view themselves.
-  // Auto-walk and the tandem back seat follow too (nobody is steering).
-  const carried = (autoWalk && speed01 > 0.05) || (riding === 3 && speed01 > 0.05);
-  if ((mag > 0.05 || carried) && manualCamT <= 0 && !DEBUG_TOP) {
-    const behind = me.root.rotation.y + Math.PI;
-    let d = behind - cam.yaw;
-    d = Math.atan2(Math.sin(d), Math.cos(d));
-    // Don't spin round when walking straight towards the camera.
-    if (Math.abs(d) < 2.7 || carried) cam.yaw += d * Math.min(1, dt * (mode === 'store' ? 2 : 3.2));
-  }
+  // (No follow swing: the camera turns only when the player drags it. It
+  // used to swing round behind the character while walking, and on phones a
+  // wobbly thumb on the stick kept the view turning; players got lost.)
 
   // Camera follow.
   // Keep the camera out of buildings: walk back from the player and stop
   // just before the first wall.
   let horiz = Math.cos(cam.pitch) * cam.dist;
-  if (mode === 'street') {
-    const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+  const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
+  const wall = mode === 'street' && !sky.busy ? (d) => (byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)
+    : interior?.camBlocked ? (d) => interior.camBlocked(p.x + sy * d, p.z + cy0 * d) // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
+      : null;
+  if (wall) {
     for (let d = 1; d <= horiz; d += 0.5) {
-      if ((byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3)) { horiz = Math.max(1.5, d - 0.6); break; }
+      if (!wall(d)) continue;
+      // Find the wall to about 6 cm, so the distance glides instead of
+      // jumping in half-metre steps as we walk (that read as shaking).
+      let lo = d - 0.5, hi = d;
+      for (let k = 0; k < 3; k++) { const m = (lo + hi) / 2; if (wall(m)) hi = m; else lo = m; }
+      horiz = Math.max(1.5, hi - 0.6);
+      break;
     }
   }
-  camHoriz += (horiz - camHoriz) * Math.min(1, dt * (horiz < camHoriz ? 20 : 4));
+  // In fast (never inside a wall), out only once the way has been clear for
+  // a moment: walking past doorways and posts, the camera doesn't pump in
+  // and out.
+  if (horiz < camHoriz) { camHoriz += (horiz - camHoriz) * Math.min(1, dt * 20); camOutWait = 0.6; }
+  else if ((camOutWait -= dt) <= 0) camHoriz += (horiz - camHoriz) * Math.min(1, dt * 3);
   const cx = p.x + Math.sin(cam.yaw) * camHoriz;
   const cz = p.z + Math.cos(cam.yaw) * camHoriz;
   // Lower the camera with the distance so a close camera doesn't look straight down.
-  const cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
+  if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Another Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
   }
 
+  firstPerson.update(p, !!seated); // (in your eyes, when on)
+  arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
+  surgeryView(); // (on the operating table: in your eyes, looking up at the team)
+  if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
+  else if (ride?.pose) {
+    rideCam.update(dt, ride.pose, ride.view === 'first', rideFxSoft, ride.kind === 'drop' ? 3.4 : ride.kind === 'wheel' ? 3.8 : 0, ride.top || 0, ride.view === 'scenic');
+    me.root.visible = ride.view !== 'first';
+    if (THRILL_RIDES.has(ride.kind)) rideThrill.update(dt, ride.kind, rideClock(), rideFxSoft, ride.view === 'first'); // (the swing's and the drop's speed)
+  }
   const tSec = timer.getElapsed();
   me.setUmbrella(umbrellaOpen());
+  if (!outdoors()) snowUniform.value = 0; // (no snow indoors, even on a material the street shares; a Han River park's lawn is outdoors)
+  else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
     sun.position.set(p.x + 60, 120, p.z + 40);
@@ -5457,15 +6921,27 @@ renderer.setAnimationLoop(() => {
   updateCarry();
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
+  if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
+  if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
+  if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellDistance(p) > 25 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
   if (mode === 'store' && interior?.animate) interior.animate(dt, clubPulse()); // club lights, candles, the subway train
-  if (riding !== 3 && !seated) updateSubway(dt, p, px0, pz0);
+  if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
+  basketTick(dt, p); // a basketball move places you
+  skateTick(dt, p);
+  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon)
+  sky.update(dt);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
+  poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
+  picnic.tick(); // picnic mats on the park lawn
+  frisbee.tick(dt); // playing fetch on the lawn
+  snowman.tick(dt); // snowballs and snowmen
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
-  if (mapView.open) mapView.draw();
+  mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
+  minimap?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
@@ -5485,7 +6961,7 @@ renderer.setAnimationLoop(() => {
   }
   motionSound.update(dt, {
     walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
-    running: input.run && !stamina.tired,
+    running: input.run && !stamina.tired && !steadyWalk,
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',
@@ -5500,60 +6976,107 @@ renderer.setAnimationLoop(() => {
   sendTimer -= dt;
   idleTimer -= dt;
   if (sendTimer <= 0) {
+    const sop = openParkHere(), [sx, sz] = myWorldSpot(); // (in an open park: in the street's metres, the people around are the street's)
     const st = {
-      x: Math.round(p.x * 100) / 100,
-      z: Math.round(p.z * 100) / 100,
-      ry: Math.round(me.root.rotation.y * 100) / 100,
+      x: Math.round(sx * 100) / 100,
+      z: Math.round(sz * 100) / 100,
+      ry: Math.round((me.root.rotation.y + (sop ? sop.ry : 0)) * 100) / 100,
       s: Math.round(speed01 * 100) / 100,
     };
     if (seated || ride) st.sit = 1;
-    if (myTicket && interior?.store.workshop === 'tarot') st.tq = myTicket; // our place in the tarot café line
-    if (Math.abs(p.y) > 0.05) st.y = Math.round(p.y * 100) / 100; // on subway stairs
+    if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; [st.x, st.z] = peerSpot(COASTER_OFF.x, COASTER_OFF.z); st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
+    if (teleports) st.tp = teleports;
+    if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
+    if (Math.abs(p.y) > 0.05 && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
+    sky.state(st); // flying, carried, on a roof
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
+    if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
+    bumper.state(st); // in a bumper car, or in line for one
+    seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
+    const duckRide = duckBoats.ride;
+    if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
     if (umbrellaOpen()) st.um = 1;
-    if (petCare.pet) st.pt = petCare.pet.id;
+    if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
+    if (sop) st.mp = sop.item.store.id; // which open park our mat and frisbee (in its metres) are in
+    if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
+    if (frisbee.sync) st.fb = frisbee.sync; // a frisbee throw on the lawn, played on everyone's screen
+    if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
+    if (snowman.holdSync != null) st.sh = snowman.holdSync; // rolling one of them along
+    if (snowman.grabSync) st.sg = snowman.grabSync; // holding on to a friend's
+    if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
+    if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
       idleTimer = config.netIdleInterval;
     }
     // Carrying passengers: send more often so their seats keep up.
-    sendTimer = 1 / (passengers.size ? 12 : running ? config.netSendRateRun : config.netSendRate);
+    // In a crowd, less often (net/rate.js).
+    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin }));
   }
 
   const w = innerWidth, h = innerHeight;
-  others.update(dt, camera, w, h);
+  others.fences = petFences();
+  // While the full map is open nothing behind it is seen: other players
+  // only catch up four times a second (their dots on the map still move),
+  // and the street's NPCs wait. Closing the map, everyone is where they are.
+  mapPause += dt;
+  const mapUp = mapView.open;
+  if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
-  if (mode === 'street') { palaceShow?.update(dt, p, camera, w, h, placeLabels); npcs.update(dt, camera, w, h); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
+  if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
-    busking.hideLabels(); palaceShow?.hideLabels();
+    busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
-    for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || [])]) if (o) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    for (const o of [trainer, barkeep, areaGuide, ...(interior?.readerNpcs || []), ...(interior?.vendorNpcs || [])]) if (o) { o.ch.animate(dt, o.speed || 0); placeLabels(o, camera, w, h); }
+    if (interior?.vendorNpcs) greetAtStalls(p);
+    for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
+    for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
+    for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
+    for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
+    for (const o of interior?.coasterStaff || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the coaster's attendant) // (bar regulars; the label shows their speech bubbles)
+    for (const o of interior?.listenerNpcs || []) o.ch.animate(dt, 0); // (the record café's listener, nodding)
+    for (const o of interior?.studioNpcs?.all || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the yoga class, the reformer)
+    listenBar.update(dt, p);
   }
-  if (squareNpc) {
-    if (mode === 'street') { squareNpc.ch.animate(dt, 0); placeLabels(squareNpc, camera, w, h); }
-    else for (const el of [squareNpc.tag, squareNpc.bubble]) if (el) el.style.display = 'none';
+  balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
+  parkTickets.tick(dt, mode === 'store' && !!interior?.island, camera, w, h, placeLabels, p); // (the ticket guide at the island's gate)
+  mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
+  zooVisit.tick(dt, p, camera, w, h); // (in the zoo: its visitors, its keeper, the carts)
+  for (const g of [squareNpc, welcomeNpc]) {
+    if (!g) continue;
+    if (mode === 'street') { g.ch.animate(dt, 0); placeLabels(g, camera, w, h); }
+    else for (const el of [g.tag, g.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
   if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
-  for (const ws of wallScreens) ws.update(dt);
+  for (const ws of wallScreens) if (mode === 'street' && Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z) < 300) ws.update(dt); // only the ones you can see
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
-  tmp.set(p.x, 1.55, p.z).project(camera);
+  tmp.set(p.x, p.y + 1.55, p.z).project(camera); // (p.y: up a hill, on stairs)
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
-  renderer.render(activeScene, camera);
+  // The full map covers the screen, so there is nothing to see behind it:
+  // the game keeps going but the 3D view is not drawn (Yozi, to keep phones cool).
+  if (mapView.open) { updateDelivery(); return; }
+  renderScenes(); // (the street, the room you're in, open parks: renderScenes)
+  // Skip people too far away to see (core/far-people.js): after drawing, so
+  // everyone's matrixWorld is this frame's; never your own character.
+  if (activeScene === scene) farPeople.update(dt, scene, camera, me.root);
   // The canvas has an alpha channel (for the K-POP screen hole), but see-
   // through things (signs, glass) would leave it below 1 and let the page
   // show through: make every pixel opaque, then cut the hole.
@@ -5637,7 +7160,13 @@ if (new URLSearchParams(location.search).has('debug')) {
   window.__mk = {
     stampSpots: () => stampStands.items.map((i) => [i.stamp.id, +i.ux.toFixed(1), +i.uz.toFixed(1), +i.ry.toFixed(2)]),
     sfxLog: () => sfxLog.slice(),
+    snow: (v) => { if (v != null) weather.pinnedSnow = v; return snowUniform.value; },
+    weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
+    snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
+    notice: (n) => chat.debugNotice(n),
+    // Panels downloaded on first use (core/lazy-panel.js): __mk.panel('academy').show()
+    panel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi, academy: academyUi, book: bookUi, sauna: saunaUi, ramen: ramenUi, order: orderUi, job: jobUi, photo: photoUi, claw: clawUi })[k],
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
     order: (i = 0) => orderFood(interior.store.products[i], false),
     mealBites: () => dining.meal?.bites ?? null,
@@ -5646,8 +7175,32 @@ if (new URLSearchParams(location.search).has('debug')) {
     project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
     mapView: () => mapView,
+    chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
+    onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),
+    usedRack, // the second-hand rack (game/used-rack.js), for tests
+    potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
+    wallet, // (tests stand in for the server: wallet.s, wallet.client)
+    enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
+    rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
+    gpu: () => ({ ...renderer.info.memory }),
+    fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
+    fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
+    droneShow: () => { const sh = dronePark()?.show; return { night: +(sh?.night || 0).toFixed(3), drones: !!sh?.sky, lit: sh?.sky?.lit() || 0, sky: +(weather.nightMix || 0).toFixed(3), stamp: !!stampStands.items.find((i) => i.stamp.id === 'drone-show')?.up, pitch: +cam.pitch.toFixed(2) }; },
+    openBank: () => bankGame.openBank(),
+    bankStub: (open) => { cloud.bankStatus = async () => ({ open, min: 1000, max: 500000 }); }, // (test the operator form without a server)
+    bankOpen: () => bankGame.bankUi.open && document.querySelector('#bank-panel')?.textContent,
+    forcePose: (n) => { debugPose = n || null; return me.activityName; },
+    studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
+    runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    runwayFx: (tier, word) => runwayReact(me.root, tier, word),
+    runwayLine: (on) => (on ? runwayUi.line.join() : runwayUi.line.leave()),
+    runwayOpen: () => runwayUi.show(),
+    runwayLineState: () => ({ ...runwayUi.line.status(), walking: !!runwayUi.game }),
+    backOut: () => backToPark(), // (the runway or haunted house back to its hall or park)
     fronts: () => storefronts.items.map((i) => ({ id: i.store.id, x: +i.group.position.x.toFixed(2), z: +i.group.position.z.toFixed(2), ry: +i.group.rotation.y.toFixed(3) })),
     subway: () => ({ mode, y: +me.root.position.y.toFixed(2), exit: interior?.front?.subwayExit ?? null, train: interior?.subway?.train.phase ?? null, exits: allExits.map((e) => [e.at[0], e.at[1], e.ry]) }),
     subwayStairs: () => interior?.subway?.stairs.map((s) => ({ ...s })) ?? null,
@@ -5655,49 +7208,100 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
-    seats: () => interior?.seats?.length ?? 0,
-    sit: (i) => sitDown(interior.seats[i]),
+    dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
+    listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
+    listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
+    seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
+    sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
     stand: () => standUp(),
-    tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarotTurn, ticket: myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarotUi.offer && { ...tarotUi.offer }, state: tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
+    tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarot.tarotOffer() && { ...tarot.tarotOffer() }, state: tarotUi.loaded && tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
     bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
-    bookShelf: () => bookUi.showShelf(),
+    bookShelf: (section) => bookUi.showShelf(section),
+    bookStations: () => interior?.stations?.books?.map((st) => ({ ...st })) ?? null,
     readBook: (id, page = 0) => { bookPages[id] = page; bookUi.read(id); },
     action: () => action?.label || null,
     choices: () => action?.opts?.map((o) => o.label) || null,
-    clerkAt: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
-    productsAt: () => interior?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
+    clerkAt: () => { const c = parkClerk(); return c ? [c.ch.root.position.x, c.ch.root.position.z] : null; },
+    productsAt: () => (hanPark() || interior)?.products?.map((pr) => [pr.pos.x, pr.pos.z]) ?? null,
     act: () => action?.run(),
-    decor: () => decor?.items.length ?? -1,
-    bikes: () => bikeStations.items.map((b) => [b.x, b.z]),
+    pick: (i) => (action?.opts ? action.opts[i] : action)?.run(),
+    room: () => ({ mode, id: interior?.store?.id ?? null, front: interior?.front?.store?.id ?? null }),
+    tags: () => [...others.players.values()].map((q) => q.tag?.style.display !== 'none'), // (other players' name tags on screen)
+    outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
+    dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
+    decor: () => decorGame.decor?.items.length ?? -1,
     riding: () => riding,
+    sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)
+    skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
+    graphics: () => gfx.state(),
+    renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
+    parkStaff: () => Object.keys(interior?.rideStaff || {}),
+    parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: Object.fromEntries(Object.keys(RIDE_CYCLE).map((k) => [k, ridePhase(k, Date.now() / 1000)])), wheelOpen: wheelDoorOpen(wheelBottom(Date.now() / 1000), Date.now() / 1000), locked: !!ride?.locked }),
+    coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
+    surgery: () => startSurgery(myLook), // (in a clinic: the operating scene without paying)
+    surgeryT: (t) => { if (beauty.surgery) beauty.surgery.t = t; return beauty.surgery?.t ?? null; },
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
-    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z]),
-    peers: () => [...others.players.values()].map((p) => ({ name: p.name, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
+    npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
+    peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
+    taxi: (x, z, label = 'test') => rideTaxi({ x, z, label }),
+    skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),
+    poolBoard: () => interior?.boardCanvas?.toDataURL(),
+    pool: () => ({ act: pool.act, mode: pool.mode?.kind || null, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], swim: wearingSwim(), tube: pool.tube, race: pool.mode?.race ? { t: +pool.mode.race.t.toFixed(2), x: +pool.mode.race.x.toFixed(1), v: +pool.mode.race.v.toFixed(2), done: pool.mode.race.done } : null, log: { ...poolLog.s } }),
+    peerTricks: () => [...others.players.values()].map((o) => [o.tk || '', +o.ch.root.position.y.toFixed(2)]),
+    rideOn: (id) => { if (id) { garage.s.own.includes(id) || garage.s.own.push(id); garage.use(id); } setRiding(0); setRiding(1); },
+    face: (ry) => { me.root.rotation.y = ry; cam.yaw = ry + Math.PI; },
+    duckBoard: (i) => boardDuck(i),
+    duckGo: () => startDuckRide(),
+    bumper: () => bumper.debug(),
+    bumperBoard: () => bumper.board(),
+    duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
+    duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
+    hanPark: () => { const hp = hanPark(); return hp ? { id: hp.store.id, street: !!hp.street, ry: hp.frame?.ry ?? null, docks: hp.ducks?.map((d) => (hp.frame ? hp.frame.toWorld(d.home.x, d.home.z + 2.2) : [d.home.x, d.home.z + 2.2])) || [] } : null; },
     doorOf: (id) => { const it = storefronts.get(id); return [it.door.x, it.door.z, it.group.rotation.y]; },
     stores: () => storefronts.items.map((i) => i.store.id),
     storePos: () => storefronts.items.map((i) => [i.store.id, +i.group.position.x.toFixed(1), +i.group.position.z.toFixed(1)]),
     zones: () => zones.items.map((i) => [i.zone.id, i.x, i.z]),
+    zoo: () => zooVisit.zoo, // Children's Grand Park's zoo (core/zoo.js), while you're in it
+    zooVisit: () => zooVisit,
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
+    royal: () => palaceShow?.royalSpot() ?? null, // where the royal procession is
+    palace: () => palaceShow, // (debug: the palace performers)
+    pungmul: () => pungmul, // (debug: the pungmul troupe on Olympic Park's Peace Plaza)
     me: () => [me.root.position.x, me.root.position.z, me.root.rotation.y, cam.yaw],
     clerk: () => (clerk ? [clerk.ch.root.position.x, clerk.ch.root.position.z] : null),
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
+    perfumeIds: () => [...perfumes.keys()],
+    holdNew: (h) => holdNew(h),
+    takeout: (i = 0) => orderFood(interior.store.products[i], true),
+    giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },
+    giveMat: () => bag.add({ kind: 'gift', sips: 1, name: 'Picnic mat', icon: '🧺', g: 'mat' }),
+    giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
+    frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
+    givePet: (id) => { inventory.add(id); setPet(id); },
+    giveItem: (id) => inventory.add(id),
+    petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
+    face: (ry) => { me.root.rotation.y = ry; },
+    bagTab: (tab) => bagUi.show(tab),
     heldKind: () => heldKind(),
     scent: () => myScent,
     kpop: () => kpop.song && { id: kpop.song.id, at: Math.round(kpop.position) },
     quest: () => quests.active && { ...quests.active, ready: quests.ready(questCtx()), left: quests.left },
     guide: () => squareNpc && [squareNpc.ch.root.position.x, squareNpc.ch.root.position.z, squareNpc.ch.root.rotation.y],
+    welcomeGuide: () => welcomeNpc && [welcomeNpc.ch.root.position.x, welcomeNpc.ch.root.position.z, welcomeNpc.ch.root.rotation.y],
+    onboard: () => onboard,
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
     hiring: () => hiringPlaces,
-    delivery: () => delivery && { ...delivery, left: (delivery.until - performance.now()) / 1000 },
+    delivery: () => deliveryGame.delivery && { ...deliveryGame.delivery, left: (deliveryGame.delivery.until - performance.now()) / 1000 },
+    supportPosters: () => supportPlaces,
     adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z), s.front.nx, s.front.nz]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
     wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
@@ -5706,16 +7310,20 @@ if (new URLSearchParams(location.search).has('debug')) {
     setLook: (patch) => setLook({ ...currentLook, ...patch }),
     fish: () => ({ ...fishBag.c }),
     addFish: (id) => fishBag.add(id),
+    fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
-    spots: () => interior?.fishing?.map((f) => [f.x, f.z]) || null,
-    ramenSpot: () => interior?.ramen && [interior.ramen.x, interior.ramen.z],
+    spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
+    fishBuySpot: () => hanPark()?.fishBuy && [hanPark().fishBuy.x, hanPark().fishBuy.z],
     music: () => ({ on: music.on, track: music.track.id }),
-    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, z: pet.root.position.z, visible: pet.root.visible }; },
+    pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
     poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
-    coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins)),
+    coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins, undefined, { r: 'test' })),
     bagList: () => bag.list(),
+    items: () => inventory.list(),
+    toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
@@ -5742,5 +7350,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
     arcade: () => arcade,
+    loveLock: (view) => loveLockUi.show(view),
   };
 }

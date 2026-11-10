@@ -4,11 +4,12 @@
 // fine notice arrives and FINE coins are taken, so the streets stay clean.
 // Other players see it too (sent as `pt` in our state); poop stays local.
 import * as THREE from 'three';
-import { makeAnimal, turn } from './pets.js';
+import { makeAnimal, swingEars, turn } from './pets.js';
+import { matCache } from './three-kit.js';
 
 export const CLEAN_SECONDS = 45;
 // Like the real fine in Korea for not picking up after a dog (₩50,000).
-export const FINE = 50;
+export const FINE = 50000;
 // Metres walked between poops (random in this range).
 export const POOP_EVERY = [150, 260];
 export const nextPoopAt = (rand = Math.random) => POOP_EVERY[0] + rand() * (POOP_EVERY[1] - POOP_EVERY[0]);
@@ -27,8 +28,7 @@ export class PoopTimers {
   }
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 // A cartoon poop swirl.
 export function makePoop() {
   const g = new THREE.Group();
@@ -44,37 +44,54 @@ export function makePoop() {
   return g;
 }
 
+// Push (x, z) out of any keep-out box ({ x, z, hx, hz }: a centre and half
+// sizes), to the nearest side. Returns [x, z].
+export function keepOut(x, z, fences) {
+  for (const f of fences || []) {
+    const dx = x - f.x, dz = z - f.z;
+    if (Math.abs(dx) >= f.hx || Math.abs(dz) >= f.hz) continue;
+    const ox = f.hx - Math.abs(dx), oz = f.hz - Math.abs(dz);
+    if (ox < oz) x = f.x + (dx < 0 ? -f.hx : f.hx);
+    else z = f.z + (dz < 0 ? -f.hz : f.hz);
+  }
+  return [x, z];
+}
+
 export class Companion {
   // def: { kind, name, rom, color, accent, scale } (see ITEMS in inventory.js)
   constructor(id, def) {
     this.id = id;
     this.def = def;
-    const a = makeAnimal(def.kind, def.color, def.accent, def.scale || 1);
+    const a = makeAnimal(def.kind, def.color, def.accent, def.scale || 1, def);
     Object.assign(this, a);
     this.phase = Math.random() * 6;
     this.squat = 0; // seconds left of a poop pose
     this.walked = 0; // metres since the last poop
     this.poopAt = nextPoopAt();
+    this.fences = null; // keep-out boxes in this room (the bumper car rink): see keepOut
   }
 
   // Put the pet next to the owner at once (on adopting, entering a room…).
-  place(x, z, ry) {
-    this.root.position.set(x - Math.sin(ry) * 1.1 + Math.cos(ry) * 0.5, 0, z - Math.cos(ry) * 1.1 - Math.sin(ry) * 0.5);
+  place(x, z, ry, y = 0) {
+    this.root.position.set(x - Math.sin(ry) * 1.1 + Math.cos(ry) * 0.5, y, z - Math.cos(ry) * 1.1 - Math.sin(ry) * 0.5);
     this.root.rotation.y = ry;
   }
 
-  // owner: { x, z, ry }; riding: hide and wait. Returns true when it poops.
+  // owner: { x, z, ry, y }; riding: hide and wait. Returns true when it poops.
+  // y is the owner's height (down by a stream, on the stairs, up a hill), so
+  // the pet walks on the same ground and not in the air above it.
   update(dt, owner, riding, canPoop) {
     this.phase += dt;
+    if (this.playing) return false; // fetching a frisbee (game/frisbee.js moves it)
     this.root.visible = !riding;
-    if (riding) { this.place(owner.x, owner.z, owner.ry); return false; }
+    if (riding) { this.place(owner.x, owner.z, owner.ry, owner.y || 0); return false; }
     const r = this.root.position;
     // Aim for a spot behind and a little to the side of the owner.
-    const tx = owner.x - Math.sin(owner.ry) * 1.1 + Math.cos(owner.ry) * 0.5;
-    const tz = owner.z - Math.cos(owner.ry) * 1.1 - Math.sin(owner.ry) * 0.5;
+    // (owner in a bumper car: wait by the rail nearest them, not on the floor)
+    const [tx, tz] = keepOut(owner.x - Math.sin(owner.ry) * 1.1 + Math.cos(owner.ry) * 0.5, owner.z - Math.cos(owner.ry) * 1.1 - Math.sin(owner.ry) * 0.5, this.fences);
     const dx = tx - r.x, dz = tz - r.z, d = Math.hypot(dx, dz);
     let moving = false;
-    if (d > 12) this.place(owner.x, owner.z, owner.ry); // left behind: catch up
+    if (d > 12) this.place(owner.x, owner.z, owner.ry, owner.y || 0); // left behind: catch up
     else if (this.squat > 0) this.squat -= dt;
     else if (d > 0.35) {
       const sp = Math.min(d, Math.max(1.6, d * 2.2) * dt); // trot faster when further behind
@@ -84,6 +101,8 @@ export class Companion {
       moving = true;
       this.walked += sp;
     } else turn(this.root, owner.ry, dt);
+    if (this.fences) [r.x, r.z] = keepOut(r.x, r.z, this.fences);
+    r.y += ((owner.y || 0) - r.y) * Math.min(1, dt * 8); // follow the owner up and down the stairs
     // Pose: trotting legs, wagging tail, sit when still, squat to poop.
     const step = moving ? Math.sin(this.phase * 16) * 0.5 : 0;
     this.legs.forEach((l, i) => { l.rotation.x = i % 2 === (i < 2 ? 0 : 1) ? step : -step; });
@@ -91,6 +110,7 @@ export class Companion {
     this.body.position.y += (-low - this.body.position.y) * Math.min(1, dt * 10);
     this.body.rotation.x = this.squat > 0 ? -0.35 : moving ? 0 : -0.2;
     this.tail.rotation.y = Math.sin(this.phase * (moving ? 12 : 4)) * 0.5;
+    swingEars(this.ears, this.phase * 8, moving ? 0.22 : 0);
     if (canPoop && moving && this.walked >= this.poopAt) {
       this.walked = 0;
       this.poopAt = nextPoopAt();
@@ -98,6 +118,37 @@ export class Companion {
       return true;
     }
     return false;
+  }
+
+  // Run towards (x, z) at `speed` m/s (playing fetch). Returns the distance
+  // still to go. hop: how high the body is lifted (a leap for the frisbee).
+  run(dt, x, z, speed, hop = 0) {
+    this.phase += dt;
+    const r = this.root.position, dx = x - r.x, dz = z - r.z, d = Math.hypot(dx, dz);
+    const moving = d > 0.05;
+    if (moving) {
+      const sp = Math.min(d, speed * dt);
+      r.x += (dx / d) * sp;
+      r.z += (dz / d) * sp;
+      turn(this.root, Math.atan2(dx, dz), dt * 2);
+    }
+    const step = moving ? Math.sin(this.phase * 22) * 0.6 : 0;
+    this.legs.forEach((l, i) => { l.rotation.x = i % 2 === (i < 2 ? 0 : 1) ? step : -step; });
+    this.body.position.y += (hop - this.body.position.y) * Math.min(1, dt * 14);
+    this.body.rotation.x = hop > 0.05 ? -0.5 : moving ? 0 : -0.2;
+    this.tail.rotation.y = Math.sin(this.phase * 16) * 0.6;
+    return Math.max(0, d - (moving ? Math.min(d, speed * dt) : 0));
+  }
+
+  // Face (x, z) and sit, wagging (waiting for the frisbee, or watching it).
+  watch(dt, x, z, wag = 6) {
+    this.phase += dt;
+    const r = this.root.position;
+    turn(this.root, Math.atan2(x - r.x, z - r.z), dt);
+    this.legs.forEach((l) => { l.rotation.x = 0; });
+    this.body.position.y += (-0.04 - this.body.position.y) * Math.min(1, dt * 10);
+    this.body.rotation.x = -0.2;
+    this.tail.rotation.y = Math.sin(this.phase * wag) * 0.5;
   }
 
   dispose() { this.root.removeFromParent(); }

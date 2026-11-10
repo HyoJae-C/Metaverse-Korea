@@ -10,18 +10,18 @@ export const RIDE_TYPES = ['bike', 'skate', 'inline', 'kick'];
 export const RIDE_ICON = { bike: '🚲', skate: '🛹', inline: '⛸️', kick: '🛴' };
 export const BIKE_MODELS = [
   { id: 'basic', type: 'bike', tier: 0, speed: 13.5, price: 0, color: '#3fb59a', name: { en: 'Basic bike', ko: '기본 자전거', ja: 'ベーシック自転車', zh: '基础自行车' } },
-  { id: 'city', type: 'bike', tier: 1, speed: 14.3, price: 80, color: '#5b8def', name: { en: 'City bike', ko: '시티 자전거', ja: 'シティサイクル', zh: '城市自行车' } },
-  { id: 'sport', type: 'bike', tier: 1, speed: 15.1, price: 180, color: '#f2a33a', name: { en: 'Sport bike', ko: '스포츠 자전거', ja: 'スポーツ自転車', zh: '运动自行车' } },
-  { id: 'road', type: 'bike', tier: 2, speed: 16, price: 320, color: '#e0475b', name: { en: 'Road bike', ko: '로드 자전거', ja: 'ロードバイク', zh: '公路自行车' } },
-  { id: 'skate1', type: 'skate', tier: 0, speed: 13.3, price: 40, color: '#c98a4b', name: { en: 'Skateboard', ko: '스케이트보드', ja: 'スケートボード', zh: '滑板' } },
-  { id: 'skate2', type: 'skate', tier: 1, speed: 14.6, price: 150, color: '#3b7dd8', name: { en: 'Street skateboard', ko: '스트리트 스케이트보드', ja: 'ストリートスケボー', zh: '街头滑板' } },
-  { id: 'skate3', type: 'skate', tier: 2, speed: 15.8, price: 300, color: '#7a3cff', name: { en: 'Pro longboard', ko: '프로 롱보드', ja: 'プロ・ロングボード', zh: '专业长板' } },
-  { id: 'inline1', type: 'inline', tier: 0, speed: 13.4, price: 50, color: '#4fb3a9', name: { en: 'Inline skates', ko: '인라인 스케이트', ja: 'インラインスケート', zh: '直排轮滑' } },
-  { id: 'inline2', type: 'inline', tier: 1, speed: 14.7, price: 160, color: '#ff7a59', name: { en: 'Sport inline skates', ko: '스포츠 인라인', ja: 'スポーツインライン', zh: '运动轮滑' } },
-  { id: 'inline3', type: 'inline', tier: 2, speed: 15.9, price: 320, color: '#1f2a44', name: { en: 'Speed inline skates', ko: '스피드 인라인', ja: 'スピードインライン', zh: '竞速轮滑' } },
-  { id: 'kick1', type: 'kick', tier: 0, speed: 13.6, price: 60, color: '#8fd14f', name: { en: 'Kick scooter', ko: '킥보드', ja: 'キックボード', zh: '滑板车' } },
-  { id: 'kick2', type: 'kick', tier: 1, speed: 14.9, price: 170, color: '#ff5d8f', name: { en: 'Street kick scooter', ko: '스트리트 킥보드', ja: 'ストリートキックボード', zh: '街头滑板车' } },
-  { id: 'kick3', type: 'kick', tier: 2, speed: 16, price: 340, color: '#20c4c4', name: { en: 'Pro kick scooter', ko: '프로 킥보드', ja: 'プロ・キックボード', zh: '专业滑板车' } },
+  { id: 'city', type: 'bike', tier: 1, speed: 14.3, price: 80000, color: '#5b8def', name: { en: 'City bike', ko: '시티 자전거', ja: 'シティサイクル', zh: '城市自行车' } },
+  { id: 'sport', type: 'bike', tier: 1, speed: 15.1, price: 180000, color: '#f2a33a', name: { en: 'Sport bike', ko: '스포츠 자전거', ja: 'スポーツ自転車', zh: '运动自行车' } },
+  { id: 'road', type: 'bike', tier: 2, speed: 16, price: 320000, color: '#e0475b', name: { en: 'Road bike', ko: '로드 자전거', ja: 'ロードバイク', zh: '公路自行车' } },
+  { id: 'skate1', type: 'skate', tier: 0, speed: 13.3, price: 40000, color: '#c98a4b', name: { en: 'Skateboard', ko: '스케이트보드', ja: 'スケートボード', zh: '滑板' } },
+  { id: 'skate2', type: 'skate', tier: 1, speed: 14.6, price: 150000, color: '#3b7dd8', name: { en: 'Street skateboard', ko: '스트리트 스케이트보드', ja: 'ストリートスケボー', zh: '街头滑板' } },
+  { id: 'skate3', type: 'skate', tier: 2, speed: 15.8, price: 300000, color: '#7a3cff', name: { en: 'Pro longboard', ko: '프로 롱보드', ja: 'プロ・ロングボード', zh: '专业长板' } },
+  { id: 'inline1', type: 'inline', tier: 0, speed: 13.4, price: 50000, color: '#4fb3a9', name: { en: 'Inline skates', ko: '인라인 스케이트', ja: 'インラインスケート', zh: '直排轮滑' } },
+  { id: 'inline2', type: 'inline', tier: 1, speed: 14.7, price: 160000, color: '#ff7a59', name: { en: 'Sport inline skates', ko: '스포츠 인라인', ja: 'スポーツインライン', zh: '运动轮滑' } },
+  { id: 'inline3', type: 'inline', tier: 2, speed: 15.9, price: 320000, color: '#1f2a44', name: { en: 'Speed inline skates', ko: '스피드 인라인', ja: 'スピードインライン', zh: '竞速轮滑' } },
+  { id: 'kick1', type: 'kick', tier: 0, speed: 13.6, price: 60000, color: '#8fd14f', name: { en: 'Kick scooter', ko: '킥보드', ja: 'キックボード', zh: '滑板车' } },
+  { id: 'kick2', type: 'kick', tier: 1, speed: 14.9, price: 170000, color: '#ff5d8f', name: { en: 'Street kick scooter', ko: '스트리트 킥보드', ja: 'ストリートキックボード', zh: '街头滑板车' } },
+  { id: 'kick3', type: 'kick', tier: 2, speed: 16, price: 340000, color: '#20c4c4', name: { en: 'Pro kick scooter', ko: '프로 킥보드', ja: 'プロ・キックボード', zh: '专业滑板车' } },
 ];
 
 // Skins: a colour and a pattern, bought once and used on any ride. Each ride
@@ -53,12 +53,12 @@ export const RIDE_SHOPS = {
   hangul: { colors: ['hanji', 'meok', 'dancheong', 'celadon', 'jjok'], patterns: ['hunmin', 'naratmal', 'cheonjiin', 'jaeum', 'moeum', 'gana', 'dojang', 'panbon', 'jamo-ring', 'brush'], extra: null, limited: true },
 };
 export const shopOf = (kind, id) => Object.keys(RIDE_SHOPS).find((k) => RIDE_SHOPS[k][kind === 'color' ? 'colors' : 'patterns'].includes(id)) || null;
-export const SKIN_PRICE = { color: 20, pattern: 40 };
+export const SKIN_PRICE = { color: 20000, pattern: 40000 };
 // Shop-only skins cost a little more; the limited Hangul line the most.
 export function skinPrice(kind, id) {
   const shop = shopOf(kind, id);
   const base = SKIN_PRICE[kind];
-  return shop === 'hangul' ? base + 30 : shop && shop !== 'pedal' ? base + 15 : base;
+  return shop === 'hangul' ? base + 30000 : shop && shop !== 'pedal' ? base + 15000 : base;
 }
 
 // Upgrades for a ride you own, three steps each, small on purpose:
@@ -67,7 +67,7 @@ export function skinPrice(kind, id) {
 export const UPGRADE_MAX = 3;
 export const TUNE_STEP = 0.25; // speed per tune step (a ride step is ~1.2)
 export const KIT_WEAR = [1, 0.75, 0.5, 0.3]; // wear by kit step
-export const UPGRADE_PRICE = { tune: [60, 110, 170], kit: [40, 80, 120] };
+export const UPGRADE_PRICE = { tune: [60000, 110000, 170000], kit: [40000, 80000, 120000] };
 
 // What others need to draw your ride: "type.tier.colour.pattern" (- = none).
 export function rideCode({ type, tier, color, pattern }) {
@@ -92,8 +92,8 @@ const KEY = 'mk.bikes';
 
 // Speed with wear: a worn-out bike is at most 10% slower.
 export const wornSpeed = (speed, dur) => speed * (0.9 + 0.1 * Math.max(0, Math.min(100, dur)) / 100);
-// Repair cost: 1 coin per 10 points missing (at most 10 coins).
-export const repairCost = (dur) => Math.ceil((100 - Math.max(0, Math.min(100, dur))) / 10);
+// Repair cost: ₩1,000 per 10 points missing (at most ₩10,000).
+export const repairCost = (dur) => Math.ceil((100 - Math.max(0, Math.min(100, dur))) / 10) * 1000;
 
 function clean(raw) {
   const own = Array.isArray(raw?.own) ? raw.own.filter((id) => BIKE_MODELS.some((b) => b.id === id)) : [];

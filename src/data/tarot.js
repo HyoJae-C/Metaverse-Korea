@@ -6,7 +6,9 @@
 // up for fun, with no scientific basis.
 import { MINOR } from './tarot-minor.js';
 
-export const TAROT_COST = 10; // coins for one reading (three cards; a friend reading with you joins free)
+export const TAROT_COST = 20000; // won for one reading (one topic, three cards)
+export const TAROT_PAIR = 40000; // two reading together (couple / friends), split: dutch pay
+export const TAROT_HALF = TAROT_PAIR / 2; // each one's share
 
 export const POSITIONS = [
   { id: 'past', name: { en: 'Past', ko: '과거', ja: '過去', zh: '过去' } },
@@ -253,7 +255,7 @@ export const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX
 // The corner mark on a card face: a roman numeral, or the minor card's rank.
 export const cardMark = (card) => (card.suit ? card.mark : ROMAN[card.n]);
 
-// The kinds of reading. Dating and love readings can be done with a friend
+// The kinds of reading. Dating and friendship readings can be done with a friend
 // sitting beside you (pair), with their own three positions.
 const P = (id, en, ko, ja, zh) => ({ id, name: { en, ko, ja, zh } });
 export const TOPICS = [
@@ -266,8 +268,9 @@ export const TOPICS = [
     positions: [P('charm', 'Your charm', '나의 매력', 'あなたの魅力', '你的魅力'), P('meet', 'A new meeting', '다가올 만남', '新しい出会い', '新的邂逅'), P('advice', 'Advice', '조언', 'アドバイス', '建议')],
   },
   {
-    id: 'love', icon: '💞', text: 'love', pairable: true, name: { en: 'Love luck', ko: '애정운', ja: '愛情運', zh: '爱情运' },
-    positions: [P('mine', 'Your heart', '내 마음', 'あなたの気持ち', '你的心意'), P('theirs', 'Their heart', '상대의 마음', '相手の気持ち', '对方的心意'), P('flow', 'Where it goes', '앞으로의 흐름', 'これからの流れ', '未来走向')],
+    // Friendship luck reads the cards' general meanings (no separate texts).
+    id: 'friend', icon: '🤝', text: 'mean', pairable: true, name: { en: 'Friendship luck', ko: '우정운', ja: '友情運', zh: '友情运' },
+    positions: [P('mine', 'Your side', '나의 마음', 'あなたの気持ち', '你的心意'), P('theirs', 'Your friend\'s side', '친구의 마음', '友達の気持ち', '朋友的心意'), P('flow', 'Your friendship ahead', '앞으로의 우정', 'これからの友情', '友情走向')],
   },
   {
     id: 'money', icon: '💰', text: 'money', name: { en: 'Money luck', ko: '금전운', ja: '金運', zh: '财运' },

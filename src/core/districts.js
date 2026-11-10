@@ -9,16 +9,25 @@
 //     { "id": "seongsu", "map": "map.json", "offset": [0, 0] },
 //     { "id": "hongdae", "map": "districts/hongdae.json", "offset": [-900, 0] }
 //   ],
-//   "links": [ { "k": "primary", "w": 16, "p": [[-500, 0], [-400, 0]] } ]
+//   "links": [ { "k": "primary", "w": 16, "p": [[-500, 0], [-400, 0]] } ],
+//   "water": [ { "p": [[x, z], ...], "blockers": [optional, split for bridges] } ]
 //
 // Map files may also have "blockers": polygons you can't walk into (a river,
 // a palace wall) that are not buildings.
+//
+// closed: land not built yet (region.json "closed".rects, [x0, z0, x1, z1],
+// scripts/build-closed.mjs): low blockers you can't walk into, and
+// map.closed for drawing it grey.
+import { inPoly } from './geom.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
 
-export function mergeDistricts(parts, links = []) {
-  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [] };
+// water: river stretches between districts (region.json "water"), e.g. the Han
+// River joining one riverside park to the next. Each is a water area and a
+// blocker you can't walk into (leave a gap in it where a bridge crosses).
+export function mergeDistricts(parts, links = [], water = [], closed = []) {
+  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [], closed: [] };
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
     const [dx, dz] = offset;
@@ -26,9 +35,18 @@ export function mergeDistricts(parts, links = []) {
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
     for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js
-    out.meta.districts.push({ id, offset: [dx, dz] });
+    out.meta.districts.push({ id, offset: [dx, dz], ...(map.meta?.parts ? { parts: map.meta.parts } : {}), ...(map.meta?.enclosure ? { enclosure: map.meta.enclosure } : {}), ...(map.meta?.hill ? { hill: map.meta.hill } : {}) }); // hill: a sloped street (core/hill-ground.js)
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
+  for (const w of water) {
+    out.areas.push({ k: 'water', p: w.p, d: 'link' });
+    for (const p of w.blockers || [w.p]) out.blockers.push({ p, d: 'link' });
+  }
+  for (const [x0, z0, x1, z1] of closed) {
+    const p = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+    out.closed.push(p);
+    out.blockers.push({ p, low: true, d: 'closed' }); // (low: the camera may look over it)
+  }
   return out;
 }
 
@@ -36,7 +54,7 @@ export function mergeDistricts(parts, links = []) {
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
   const maps = await Promise.all(region.districts.map((d) => fetchJson(d.map)));
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || []));
+  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], region.closed?.rects || []));
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as
@@ -64,14 +82,6 @@ export function liftStations(map) {
   }
   return map;
 }
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
 
 // Where something stands: local metres ("at": [x, z], for hand-made
 // districts) or a lat/lon anchor (for maps made from real coordinates).
@@ -80,14 +90,26 @@ export function placeOf(item, center, latLonToLocal) {
   return latLonToLocal(center, item.anchor.lat, item.anchor.lon);
 }
 
-// Which district a point is in: the one whose buildings' bounding box (plus
-// a margin) holds it, else the one with the nearest box centre. `map` is a
-// joined map (mergeDistricts); a single-file map has no districts (null).
+// Which district a point is in: the smallest box (its buildings and land
+// areas, not water) that holds it, else the smallest within a margin, else
+// the one with the nearest box centre. A small district beside a big one
+// (Olympic Park next to Songpa) wins inside its own box. `map` is a joined
+// map (mergeDistricts); a single-file map has no districts (null).
 export function districtBoxes(map) {
   const out = [];
-  for (const { id } of map?.meta?.districts || []) {
+  const items = [...(map?.buildings || []), ...(map?.areas || []).filter((a) => a.k !== 'water')];
+  for (const { id, offset = [0, 0], parts } of map?.meta?.districts || []) {
+    // A district that lists meta.parts (boxes in its own metres, see
+    // scripts/place-districts.mjs) uses those: e.g. Gyeongbokgung's palace and
+    // stream, with Bukchon tucked into the corner between them.
+    if (parts?.length) {
+      // (Corners in either order: a box written right-to-left, like
+      // Heunginjimun's, used to match nothing.)
+      for (const { box: [ax, az, bx, bz] } of parts) out.push({ id, x0: Math.min(ax, bx) + offset[0], x1: Math.max(ax, bx) + offset[0], z0: Math.min(az, bz) + offset[1], z1: Math.max(az, bz) + offset[1] });
+      continue;
+    }
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-    for (const b of map.buildings || []) {
+    for (const b of items) {
       if (b.d !== id) continue;
       for (const [x, z] of b.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     }
@@ -95,10 +117,15 @@ export function districtBoxes(map) {
   }
   return out;
 }
+// A district tucked into another's corner (Bukchon beside Gyeongbokgung)
+// sits inside the bigger box: the smallest box holding the point wins.
 export function districtAt(boxes, x, z, margin = 40) {
+  const area = (b) => (b.x1 - b.x0) * (b.z1 - b.z0);
+  const hold = (m) => boxes.filter((b) => x >= b.x0 - m && x <= b.x1 + m && z >= b.z0 - m && z <= b.z1 + m).sort((a, b) => area(a) - area(b));
+  const hit = hold(0)[0] || hold(margin)[0];
+  if (hit) return hit.id;
   let best = null, bd = Infinity;
   for (const b of boxes) {
-    if (x >= b.x0 - margin && x <= b.x1 + margin && z >= b.z0 - margin && z <= b.z1 + margin) return b.id;
     const d = Math.hypot(x - (b.x0 + b.x1) / 2, z - (b.z0 + b.z1) / 2);
     if (d < bd) { bd = d; best = b.id; }
   }

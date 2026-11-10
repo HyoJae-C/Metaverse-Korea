@@ -1,0 +1,28 @@
+{
+  "sampleData": true,
+  "note": "Fictional homes for decorating. Names are invented; they are not the real buildings at these spots.",
+  "homes": [
+    {
+      "id": "forest-lane-apt",
+      "category": "home",
+      "kind": "apt",
+      "size": "medium",
+      "name": { "ko": "숲길 아파트", "en": "Forest Lane Apartments" },
+      "tagline": { "en": "Your apartment: decorate it your way", "ko": "나만의 아파트, 마음대로 꾸며 보세요" },
+      "at": [83.9, 96.5],
+      "colors": { "sign": "#3d6b4f", "awning": "#cfe8d5", "accent": "#f6f1e7" },
+      "products": []
+    },
+    {
+      "id": "sunny-villa",
+      "category": "home",
+      "kind": "villa",
+      "size": "small",
+      "name": { "ko": "햇살 빌라", "en": "Sunny Villa" },
+      "tagline": { "en": "A cosy villa room (a Korean low-rise flat)", "ko": "아늑한 빌라 원룸" },
+      "at": [80.7, 135.9],
+      "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
+      "products": []
+    }
+  ]
+}

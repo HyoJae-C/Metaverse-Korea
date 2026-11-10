@@ -9,8 +9,8 @@ test('event codes look like ./CODE and ignore letter case', async () => {
   assert.equal(isEventCode('./EVENTSTART1'), true);
   assert.equal(isEventCode('/EVENTSTART1'), false);
   assert.equal(isEventCode('hello ./EVENTSTART1'), false);
-  assert.deepEqual(await eventCode('./EVENTSTART1'), { id: 'eventstart1', coins: 100 });
-  assert.deepEqual(await eventCode('./eventstart1'), { id: 'eventstart1', coins: 100 });
+  assert.deepEqual(await eventCode('./EVENTSTART1'), { id: 'eventstart1', coins: 100000 });
+  assert.deepEqual(await eventCode('./eventstart1'), { id: 'eventstart1', coins: 100000 });
   assert.equal(await eventCode('./NOPE'), null);
 });
 

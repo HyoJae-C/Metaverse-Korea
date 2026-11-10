@@ -12,6 +12,19 @@
 import { createNet } from './index.js';
 
 const LEAVE_DELAY = 1500; // ms; hides the brief gap while a peer changes cell
+const RETRY_MS = 8000; // a cell that couldn't be joined is tried again after this
+
+// Crowds are split into groups. Realtime services count every message once
+// per receiver, so a crowd of k people costs about k² messages: with
+// Supabase's per-second limit that is reached by a dozen people standing at
+// the spawn point. When we see CROWD_CAP or more people around us, we move to
+// the next group: the same streets on their own channels ('…~1', '…~2'), so
+// we see that group and they see us. A dozen people still makes a busy street.
+export const CROWD_CAP = 12;
+export const MAX_GROUPS = 6;
+const CROWD_CHECK_MS = 1500; // let presence arrive before counting
+
+export const groupKey = (key, group) => (group ? `${key}~${group}` : key);
 
 export function cellKey(room, cellSize, x, z) {
   return `${room}@${Math.floor(x / cellSize)},${Math.floor(z / cellSize)}`;
@@ -24,7 +37,7 @@ function neighbourKeys(room, cellSize, x, z) {
   return keys;
 }
 
-export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0 }) {
+export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0, privateChat = true }) {
   const cells = new Map(); // key → { adapter, ready: Promise }
   const peerCells = new Map(); // peer id → Set of cell keys it was seen in
   const leaveTimers = new Map();
@@ -32,6 +45,9 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   let me = { ...self };
   let closed = false;
   let chatLink = null; // the region's private chat channel (Supabase only)
+  let group = 0; // which crowd group we are in (see CROWD_CAP)
+  let at = { x, z };
+  let crowdTimer = null;
 
   const seen = (id, key, peer) => {
     let set = peerCells.get(id);
@@ -58,6 +74,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     }, LEAVE_DELAY));
   };
   const known = (id) => peerCells.has(id);
+  const visible = () => { let n = 0; for (const set of peerCells.values()) if (set.size) n++; return n; };
 
   async function open(key, listenOnly) {
     const cellHandlers = {
@@ -72,8 +89,15 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     const adapter = await createNet(provider, cellHandlers, cfg);
     const entry = { adapter, listenOnly };
     entry.ready = adapter.connect({ room: key, self: me, listenOnly }).catch((err) => {
-      console.warn('Realtime cell unavailable:', key, err);
       entry.failed = true;
+      if (closed || cells.get(key) !== entry) return; // closed while joining: nothing to report
+      console.warn('Realtime cell unavailable:', key, err);
+      // Try that cell again in a while, if we still want it by then.
+      entry.retry = setTimeout(() => {
+        if (closed || cells.get(key) !== entry) return;
+        close(key);
+        open(key, key !== ownKey);
+      }, RETRY_MS);
     });
     cells.set(key, entry);
     return entry;
@@ -83,45 +107,82 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     const entry = cells.get(key);
     if (!entry) return;
     cells.delete(key);
+    clearTimeout(entry.retry);
     entry.adapter.disconnect();
     for (const [id, set] of peerCells) if (set.has(key)) gone(id, key);
   }
 
   async function moveTo(px, pz) {
-    const key = cellSize ? cellKey(room, cellSize, px, pz) : room;
+    at = { x: px, z: pz };
+    const key = groupKey(cellSize ? cellKey(room, cellSize, px, pz) : room, group);
     if (key === ownKey) return;
-    const wanted = new Set(cellSize ? neighbourKeys(room, cellSize, px, pz) : [room]);
+    const wanted = new Set((cellSize ? neighbourKeys(room, cellSize, px, pz) : [room]).map((k) => groupKey(k, group)));
     const prevOwn = ownKey;
     ownKey = key;
     for (const k of [...cells.keys()]) if (!wanted.has(k)) close(k);
     // Stop announcing ourselves in the old cell, start in the new one.
     if (prevOwn && cells.has(prevOwn)) cells.get(prevOwn).adapter.setListenOnly?.(true);
-    const pending = [];
-    for (const k of wanted) {
+    let mine = null;
+    // Our own cell first: joins on one connection are answered in order.
+    for (const k of [key, ...[...wanted].filter((k) => k !== key)]) {
       const entry = cells.get(k);
-      if (!entry) pending.push(open(k, k !== key).then((e) => e.ready));
-      else if (k === key) entry.adapter.setListenOnly?.(false);
+      if (!entry) {
+        const opening = open(k, k !== key);
+        if (k === key) mine = opening.then((e) => e.ready);
+      } else if (k === key) entry.adapter.setListenOnly?.(false);
     }
-    await Promise.all(pending);
+    // Only our own cell is waited for: that's where we are seen and send
+    // from. The cells around us join in the background; one that is slow to
+    // answer used to hold everything up for its full timeout, and all we
+    // sent meanwhile went nowhere.
+    await mine;
+  }
+
+  // Too many people around us right after we arrived: move on to the next
+  // group. Only the newcomer moves (on joining the region, and again if the
+  // next group is full too), so a crowd that is already there stays together.
+  function checkCrowd() {
+    clearTimeout(crowdTimer);
+    crowdTimer = setTimeout(() => {
+      if (closed || visible() < CROWD_CAP || group >= MAX_GROUPS - 1) return;
+      group += 1;
+      for (const k of [...cells.keys()]) close(k);
+      ownKey = null;
+      moveTo(at.x, at.z).then(checkCrowd);
+    }, CROWD_CHECK_MS);
   }
 
   await moveTo(x, z);
   const own = () => cells.get(ownKey)?.adapter;
-  if (!own() || cells.get(ownKey).failed) throw new Error('Realtime unavailable');
+  if (!own() || cells.get(ownKey).failed) {
+    // Leave every cell we opened: one that gets in late would otherwise
+    // show us to others, frozen where we joined, while we play solo.
+    for (const k of [...cells.keys()]) close(k);
+    closed = true;
+    for (const [id, t] of leaveTimers) { clearTimeout(t); handlers.onLeave(id); }
+    leaveTimers.clear();
+    peerCells.clear();
+    throw new Error('Realtime unavailable');
+  }
+  checkCrowd();
   // One private chat channel for the whole region, opened a moment after the
   // rooms so its (slower, checked) join never holds up joining them.
-  const chatTimer = own().openChat && setTimeout(() => {
-    if (!closed) chatLink = own()?.openChat(room, (id, t) => known(id) && handlers.onChat?.(id, t));
+  const chatTimer = privateChat && own().openChat && setTimeout(() => {
+    // n: the sender's real name, added by the server (019_chat_names.sql).
+    if (!closed) chatLink = own()?.openChat(room, (id, t, n) => known(id) && handlers.onChat?.(id, t, n));
   }, 3000);
 
   return {
     update(px, pz) {
       if (!closed && cellSize) moveTo(px, pz);
     },
+    get chatReady() { return !!chatLink?.ready; }, // on the private chat channel (else room chat)
+    get peers() { return visible(); }, // people we can see right now
+    get group() { return group; },
     sendState(st) { own()?.sendState(st); },
     sendEmote(e) { own()?.sendEmote(e); },
     sendChat(t) {
-      if (chatLink?.ready) chatLink.send(me.id, t);
+      if (chatLink?.ready) chatLink.send(me.id, t, cfg.claimChatId);
       else own()?.sendChat?.(t);
     },
     sendLook(look) {
@@ -132,9 +193,11 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     disconnect() {
       closed = true;
       clearTimeout(chatTimer);
+      clearTimeout(crowdTimer);
       chatLink?.close();
       chatLink = null;
       for (const k of [...cells.keys()]) {
+        clearTimeout(cells.get(k).retry);
         cells.get(k).adapter.disconnect();
         cells.delete(k);
       }

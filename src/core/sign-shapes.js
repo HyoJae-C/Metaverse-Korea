@@ -175,7 +175,7 @@ export function signTexture(text, bg, fg = '#ffffff', sub = '', shape = 'board')
   const box = TEXT_BOX[shape];
   if (!box) { // boards: one line, a smaller second line under it
     let size = sub ? c.height * 0.42 : c.height * 0.53;
-    size = fit(g, text, c.width - 70, Math.floor(size), 22);
+    fit(g, text, c.width - 70, Math.floor(size), 22);
     if (!sub) g.fillText(text, c.width / 2, c.height / 2 + 3);
     else {
       g.fillText(text, c.width / 2, c.height * 0.4);

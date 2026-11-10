@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL, Inbox, LocalFriends, convKey, cleanBody } from '../src/core/friends.js';
+import { ALL, Inbox, LocalFriends, convKey, cleanBody, whereIs } from '../src/core/friends.js';
 
 const memory = () => {
   const m = new Map();
@@ -59,4 +59,16 @@ test('local friends: request, accept, chat and All friends', async () => {
   assert.deepEqual(await a.history('B'), []);
   assert.deepEqual((await a.list()).friends, []);
   for (const x of [a, b, c]) x.close();
+});
+
+test('a friend request sender is placed as the screen sees it', () => {
+  const me = { x: 0, z: 0 }, ahead = { x: 0, z: -1 }; // camera looking down -z
+  assert.deepEqual(whereIs(me, { x: 1, z: 2 }, ahead), { m: 2, dir: 'near' });
+  assert.deepEqual(whereIs(me, { x: 0, z: -10 }, ahead), { m: 10, dir: 'ahead' });
+  assert.deepEqual(whereIs(me, { x: 0, z: 12 }, ahead), { m: 12, dir: 'behind' });
+  assert.deepEqual(whereIs(me, { x: 8, z: -1 }, ahead), { m: 8, dir: 'right' });
+  assert.deepEqual(whereIs(me, { x: -8, z: 1 }, ahead), { m: 8, dir: 'left' });
+  // Turned to face +x: what was on the right is now ahead.
+  assert.equal(whereIs(me, { x: 8, z: 0 }, { x: 3, z: 0 }).dir, 'ahead');
+  assert.equal(whereIs(me, { x: 0, z: 8 }, { x: 1, z: 0 }).dir, 'right');
 });

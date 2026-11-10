@@ -4,7 +4,7 @@
 // the other players…) comes in through `game`, whose getters are read only
 // when needed.
 import * as THREE from 'three';
-import { t, localName, getLanguage } from '../core/i18n.js';
+import { localName, getLanguage } from '../core/i18n.js';
 import { coinPrice, takeoutKind, Meal, FOOD_BITES, parseMealSync, biteMsg, BITE_REACH, BITE_GAP_MS, foodScale, isDining } from '../core/dining.js';
 import { productModel } from '../core/interior.js';
 import { say } from '../core/npcs.js';
@@ -14,7 +14,7 @@ const $ = (id) => document.getElementById(id);
 
 export const DINE_TEXT = {
   menu: { en: 'Menu', ko: '메뉴판', ja: 'メニュー', zh: '菜单' },
-  note: { en: 'Order here and your food comes to the table. Paid in coins.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 결제는 코인으로 해요.', ja: 'ここで注文すると料理がテーブルに届きます。お支払いはコインで。', zh: '在这里点餐，菜会送到桌上。用硬币支付。', es: 'Pide aquí y la comida llega a tu mesa. Se paga con monedas.', ar: 'اطلب هنا وسيصل طعامك إلى الطاولة. الدفع بالعملات.', vi: 'Gọi món ở đây và đồ ăn sẽ được mang ra bàn. Trả bằng xu.', hi: 'यहाँ ऑर्डर करें और खाना मेज़ पर आएगा। भुगतान सिक्कों में।', id: 'Pesan di sini dan makanan diantar ke meja. Bayar pakai koin.' },
+  note: { en: 'Order here and your food comes to the table. Menu prices in won.', ko: '여기서 주문하면 음식이 식탁으로 나와요. 가격은 메뉴판 그대로예요.', ja: 'ここで注文すると料理がテーブルに届きます。値段はメニューのウォンのままです。', zh: '在这里点餐，菜会送到桌上。价格就是菜单上的韩元。', es: 'Pide aquí y la comida llega a tu mesa. Precios en wones, como en la carta.', ar: 'اطلب هنا وسيصل طعامك إلى الطاولة. الأسعار بالوون كما في القائمة.', vi: 'Gọi món ở đây và đồ ăn sẽ được mang ra bàn. Giá bằng won như trong thực đơn.', hi: 'यहाँ ऑर्डर करें और खाना मेज़ पर आएगा। दाम मेन्यू के अनुसार वॉन में।', fr: 'Commande ici et ton plat arrive à table. Prix du menu en wons.', th: 'สั่งที่นี่แล้วอาหารจะมาเสิร์ฟที่โต๊ะ ราคาในเมนูเป็นเงินวอน', id: 'Pesan di sini dan makanan diantar ke meja. Harga dalam won sesuai menu.' },
   here: { en: 'Eat here', ko: '먹고 가기', ja: '店内で', zh: '堂食' },
   togo: { en: 'To go', ko: '포장', ja: '持ち帰り', zh: '打包' },
   ordered: { en: 'Ordered {name}! It will be right out.', ko: '{name} 주문 완료! 곧 나와요.', ja: '{name}を注文しました！すぐお持ちします。', zh: '已点{name}！马上就好。' },
@@ -24,19 +24,19 @@ export const DINE_TEXT = {
   bite: { en: 'Yum! {n} bites left', ko: '냠냠! {n}입 남았어요', ja: 'もぐもぐ！あと{n}口', zh: '好吃！还剩{n}口' },
   finished: { en: 'All gone. That was good!', ko: '다 먹었어요. 잘 먹었습니다!', ja: '完食！ごちそうさまでした！', zh: '吃完了，真好吃！' },
   packed: { en: '{name} packed to go. Tap 🥡 to eat.', ko: '{name} 포장 완료! 🥡를 눌러 먹어요.', ja: '{name}を持ち帰りにしました。🥡で食べられます。', zh: '{name}已打包，点🥡就能吃。' },
-  poor: { en: 'Not enough coins ({n} needed)', ko: '코인이 부족해요 ({n}코인 필요)', ja: 'コインが足りません（{n}枚必要）', zh: '硬币不够（需要{n}枚）' },
+  poor: { en: 'Not enough money (🪙 {n} needed)', ko: '돈이 부족해요 (🪙 {n} 필요)', ja: 'お金が足りません（🪙 {n} 必要）', zh: '钱不够（需要 🪙 {n}）' },
   busy: { en: 'Finish the dish on your table first.', ko: '식탁의 음식을 먼저 다 드세요.', ja: 'まずテーブルの料理を食べ終えてね。', zh: '先把桌上的菜吃完吧。' },
-  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}', ar: 'تذوّق طعام {name}', vi: 'Ăn thử một miếng của {name}', hi: '{name} के खाने से एक कौर लें', id: 'Cicipi makanan {name}' },
-  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋', ar: 'تذوّقت طعام {name}. شكرًا! 😋', vi: 'Bạn đã ăn thử một miếng của {name}. Cảm ơn nhé! 😋', hi: 'आपने {name} के खाने से एक कौर लिया। धन्यवाद! 😋', id: 'Kamu mencicipi makanan {name}. Makasih! 😋' },
-  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados', ar: 'تذوّق {name} طعامك! بقيت {n} لقمات', vi: '{name} đã ăn một miếng đồ ăn của bạn! Còn {n} miếng', hi: '{name} ने आपके खाने से एक कौर लिया! {n} कौर बाक़ी', id: '{name} mencicipi makananmu! Sisa {n} gigitan' },
-  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', vi: '{name} đã ăn miếng cuối cùng!', hi: '{name} ने आख़िरी कौर खा लिया!', id: '{name} menghabiskan gigitan terakhir!' },
+  share: { en: 'Have a bite of {name}\'s food', ko: '{name}의 음식 한 입 먹기', ja: '{name}の料理をひと口', zh: '吃一口{name}的菜', es: 'Probar la comida de {name}', ar: 'تذوّق طعام {name}', vi: 'Ăn thử một miếng của {name}', hi: '{name} के खाने से एक कौर लें', fr: 'Goûter le plat de {name}', th: 'ขอชิมอาหารของ {name}', id: 'Cicipi makanan {name}' },
+  took: { en: 'You had a bite of {name}\'s food. Thanks! 😋', ko: '{name}의 음식을 한 입 얻어먹었어요. 잘 먹을게요! 😋', ja: '{name}の料理をひと口もらいました。ごちそうさま！😋', zh: '吃了一口{name}的菜，谢谢款待！😋', es: 'Probaste la comida de {name}. ¡Gracias! 😋', ar: 'تذوّقت طعام {name}. شكرًا! 😋', vi: 'Bạn đã ăn thử một miếng của {name}. Cảm ơn nhé! 😋', hi: 'आपने {name} के खाने से एक कौर लिया। धन्यवाद! 😋', fr: 'Tu as goûté le plat de {name}. Merci ! 😋', th: 'คุณชิมอาหารของ {name} แล้ว ขอบคุณนะ! 😋', id: 'Kamu mencicipi makanan {name}. Makasih! 😋' },
+  stolen: { en: '{name} had a bite of your food! {n} bites left', ko: '{name}이(가) 내 음식을 한 입 먹었어요! {n}입 남았어요', ja: '{name}があなたの料理をひと口食べました！あと{n}口', zh: '{name}吃了你一口菜！还剩{n}口', es: '¡{name} probó tu comida! Quedan {n} bocados', ar: 'تذوّق {name} طعامك! بقيت {n} لقمات', vi: '{name} đã ăn một miếng đồ ăn của bạn! Còn {n} miếng', hi: '{name} ने आपके खाने से एक कौर लिया! {n} कौर बाक़ी', fr: '{name} a goûté ton plat ! Encore {n} bouchées', th: '{name} ชิมอาหารของคุณ! เหลืออีก {n} คำ', id: '{name} mencicipi makananmu! Sisa {n} gigitan' },
+  stolenLast: { en: '{name} ate the last bite!', ko: '{name}이(가) 마지막 한 입을 먹었어요!', ja: '{name}が最後のひと口を食べました！', zh: '{name}吃掉了最后一口！', es: '¡{name} se comió el último bocado!', ar: 'أكل {name} آخر لقمة!', vi: '{name} đã ăn miếng cuối cùng!', hi: '{name} ने आख़िरी कौर खा लिया!', fr: '{name} a mangé la dernière bouchée !', th: '{name} กินคำสุดท้ายไปแล้ว!', id: '{name} menghabiskan gigitan terakhir!' },
   boxDesc: { en: 'Takeout box · {n} bites left', ko: '포장 음식 · {n}입 남음', ja: '持ち帰り · あと{n}口', zh: '外带餐盒 · 还剩{n}口' },
 };
 
 /**
  * game: { interior, seated, mode, me, clerk, others, net, safety, held, wallet,
  * shop, sfx, canvas, camera } as getters, plus missionEvent, refreshWallet,
- * recordFood, setHeld, openMenu, clearAction() and resendState().
+ * recordFood, setHeld, holdNew, handReady, openMenu, clearAction() and resendState().
  */
 export function createDining(game) {
   // The dish comes to your table a few seconds later; eat it in 5 bites. Or
@@ -174,14 +174,15 @@ export function createDining(game) {
   function orderFood(product, togo) {
     const cost = coinPrice(product.price);
     if (!togo && meal?.seat === game.seated) { game.shop.toast(L(DINE_TEXT.busy)); return; }
-    if (togo && game.held && !confirm(t('coffee.replace'))) return;
+    if (!togo && !game.seated?.plate) { $('lp-panel').hidden = true; return; } // stood up with the menu open: no table to serve
+    if (togo && !game.handReady()) return;
     if (!game.wallet.spend(cost, { name: product.name, at: game.interior?.store.name })) { game.shop.toast(fmt(L(DINE_TEXT.poor), { n: cost })); return; }
     game.refreshWallet();
     game.recordFood(game.interior.store, product, true);
     const name = localName(product.name, getLanguage());
     $('lp-panel').hidden = true;
     if (togo) {
-      game.setHeld({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
+      game.holdNew({ kind: takeoutKind(product), sips: FOOD_BITES, name: localName(product.name, 'en') });
       game.shop.toast(fmt(L(DINE_TEXT.packed), { name }));
       game.clerk && say(game.clerk, $('labels'), ['포장해 드릴게요!', 'pojanghae deurilgeyo!', fmt(L(DINE_TEXT.packed), { name })]);
       return;

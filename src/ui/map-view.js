@@ -3,6 +3,8 @@
 import { t, localName, getLanguage } from '../core/i18n.js';
 
 import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
+import { inPoly } from '../core/geom.js';
+import { landmarkPlaces, landmarkMatches } from '../game/landmark-search.js';
 
 export { CATEGORY_ICON };
 
@@ -19,15 +21,56 @@ export function storeMatches(store, query, category, catLabel = '') {
   return texts.some((x) => norm(x).includes(q));
 }
 
+// Subway stations from the map's exit marks ({ station, name, go, … }):
+// one entry per station with all its exits, so every station in every
+// district (and any added later in region.json) can be searched and picked.
+export function stationList(marks) {
+  const by = new Map();
+  for (const m of marks || []) {
+    if (m.station == null) continue;
+    let st = by.get(m.station);
+    if (!st) by.set(m.station, (st = { key: m.station, name: m.name || {}, exits: [] }));
+    st.exits.push(m);
+  }
+  return [...by.values()];
+}
+// Does a station match the search text? Its name in any language, or a
+// word for "subway" / "station" (extra: e.g. the heading in the UI language).
+const STATION_WORDS = ['subway', 'metro', 'station', 'train', '지하철', '전철', '역', '地下鉄', '駅', '地铁', '站'];
+export function stationMatches(st, query, extra = '') {
+  const q = norm(query);
+  if (!q) return true;
+  return [...Object.values(st.name || {}), ...STATION_WORDS, extra].some((x) => norm(x).includes(q));
+}
+// The exit of a station nearest to (x, z): where guidance goes.
+export function nearestExit(exits, x, z) {
+  let best = null, bd = Infinity;
+  for (const e of exits) {
+    const p = e.go || e, d = Math.hypot(p.x - x, p.z - z);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
 // Districts of a joined city (see core/districts.js), with names for the
 // "more over here" badges at the map's edge.
 export const DISTRICT_NAME = {
-  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو', vi: 'Seongsu', hi: 'सोंगसू' },
-  gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग' },
-  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन' },
-  songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा' },
-  seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)' },
-  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे' },
+  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو', vi: 'Seongsu', hi: 'सोंगसू', fr: 'Seongsu', th: 'ซองซู' },
+  gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', fr: 'Gyeongbokgung', th: 'เคียงบกกุง' },
+  jongmyo: { en: 'Jongmyo', ko: '종묘', ja: '宗廟', zh: '宗庙', es: 'Jongmyo', id: 'Jongmyo', ar: 'جونغميو', vi: 'Jongmyo', hi: 'जोंगम्यो', fr: 'Jongmyo', th: 'ชงมโย' },
+  euljiro: { en: 'Euljiro', ko: '을지로', ja: '乙支路', zh: '乙支路', es: 'Euljiro', id: 'Euljiro', ar: 'أولجيرو', vi: 'Euljiro', hi: 'उलजीरो', fr: 'Euljiro', th: 'อึลจีโร' },
+  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन', fr: 'Itaewon', th: 'อิแทวอน' },
+  songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा', fr: 'Songpa', th: 'ซงพา' },
+  bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन', fr: 'Bukchon', th: 'บุกชอน' },
+  'olympic-park': { en: 'Olympic Park', ko: '올림픽공원', ja: 'オリンピック公園', zh: '奥林匹克公园', es: 'Parque Olímpico', id: 'Taman Olimpiade', ar: 'الحديقة الأولمبية', vi: 'Công viên Olympic', hi: 'ओलंपिक पार्क', fr: 'Parc olympique', th: 'สวนโอลิมปิก' },
+  'grand-park': { en: "Grown-ups' Grand Park", ko: '어른도대공원', ja: '大人も大公園', zh: '大人也大公园', es: 'Gran Parque para Adultos También', id: 'Taman Raya Dewasa Juga', ar: 'حديقة الكبار أيضًا', vi: 'Công viên Cả Người lớn', hi: 'बड़ों का भी ग्रैंड पार्क', fr: 'Grand Parc des grands aussi', th: 'สวนผู้ใหญ่ก็เล่นได้' },
+  seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)', fr: 'Seodaemun (Sinchon)', th: 'ซอแดมุน (ชินชน)' },
+  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด' },
+  yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
+  samseong: { en: 'Samseong-dong', ko: '삼성동', ja: '三成洞', zh: '三成洞', es: 'Samseong-dong', id: 'Samseong-dong', ar: 'سامسونغ دونغ', vi: 'Samseong-dong', hi: 'सामसोंग-दोंग', fr: 'Samseong-dong', th: 'ซัมซอง-ดง' },
+  yeouido: { en: 'Yeouido', ko: '여의도', ja: '汝矣島', zh: '汝矣岛', es: 'Yeouido', id: 'Yeouido', ar: 'يويدو', vi: 'Yeouido', hi: 'योइदो', fr: 'Yeouido', th: 'ยออีโด' },
+  'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
+  mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },
 };
 // The middle of each district's buildings.
 export function districtCentres(map) {
@@ -46,14 +89,8 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
-function inPoly(x, z, p) {
-  let r = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, zi] = p[i], [xj, zj] = p[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) r = !r;
-  }
-  return r;
-}
+// How many "more over here" district badges the street map shows at once.
+export const BADGES_PHONE = 3, BADGES_WIDE = 6;
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of
@@ -91,6 +128,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -106,6 +144,22 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
     return box;
   }
   return null;
+}
+
+// The colour of gu borders. Only on the map, not on the ground (the line
+// crossed landmarks; Yozi 2026-11-10).
+export const GU_BORDER_COLOR = '#8e44d8';
+
+// A shape's box in metres [x0, z0, x1, z1], worked out once.
+const boxes = new WeakMap();
+function bboxOf(o) {
+  let b = boxes.get(o);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, z] of o.p) { if (x < b[0]) b[0] = x; if (z < b[1]) b[1] = z; if (x > b[2]) b[2] = x; if (z > b[3]) b[3] = z; }
+    boxes.set(o, b);
+  }
+  return b;
 }
 
 export class MapView {
@@ -128,9 +182,14 @@ export class MapView {
     this.query = '';
     this.category = null;
     this.districts = districtCentres(map);
+    this.landmarkPlaces = landmarkPlaces(map?.landmarks); // gates, statues, towers (game/landmark-search.js)
     this.badges = []; // edge badges for districts off screen: { x, y, r, d }
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
+    // Back to where you are (after dragging the map away).
+    const locate = root.querySelector('.map-locate');
+    if (locate) locate.onclick = () => this.locate();
+    this.sheetOpen = false; // phones: the list of places is a sheet, folded under the map
     root.addEventListener('click', (e) => { if (e.target === root) this.hide(); });
   }
 
@@ -145,8 +204,28 @@ export class MapView {
     this.draw();
   }
 
+  // Centre the map on you again, zooming back in if it was far out.
+  locate() {
+    const { me } = this.getPlayers();
+    if (this.view.scale < SEOUL_ZOOM * this.dpr) this.view.scale = this._homeScale();
+    this.goTo(me.x, me.z);
+  }
+
+  // Phones: unfold (or fold) the list of places under the map.
+  setSheet(open) {
+    this.sheetOpen = !!open;
+    this.root.classList.toggle('map-sheet-open', this.sheetOpen);
+    if (this.handle) {
+      this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+      this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    }
+    if (this.sheetOpen) this.list.scrollTop = 0;
+    if (this.open) { this._resize(); this.draw(); }
+  }
+
   hide() {
     this.open = false;
+    this.canvas.width = this.canvas.height = 1; // let go of the picture (~5 MB on a phone); show() sizes it again
     this._setSearching(false);
     this.root.hidden = true;
     this.setTaxi(false);
@@ -165,6 +244,12 @@ export class MapView {
     if (this.taxi) this.onTaxi({ ...g, guide: g });
     else this.onGuide(g);
     this.hide();
+  }
+
+  // Guide to a subway exit: just outside its stairs.
+  _pickStation(ex, label) {
+    const p = ex.go || ex;
+    this._pick({ kind: 'station', id: ex.station, x: p.x, z: p.z, label: label || localName(ex.name, getLanguage()) });
   }
 
   // Opening zoom: the whole card's worth of streets, but never so far out on
@@ -192,6 +277,49 @@ export class MapView {
   }
 
   draw() {
+    this._draw();
+    this._drawCredit();
+    this.sig = this._sig();
+  }
+
+  // Each frame while open: the map is drawn again only when it changed.
+  // Dragging, zooming, searching and taps draw at once (draw()); here,
+  // a few times a second, only if you or another player moved. It used to
+  // draw the whole city every frame, which kept phones warm.
+  tick(dt) {
+    if (!this.open) return;
+    this.wait = (this.wait || 0) - dt;
+    if (this.wait > 0) return;
+    this.wait = 0.25;
+    if (this._sig() !== this.sig) this.draw();
+  }
+
+  _sig() {
+    const { me, others = [] } = this.getPlayers();
+    let s = `${Math.round(me.x * 2)},${Math.round(me.z * 2)},${Math.round(me.ry * 20)}`;
+    for (const o of others) s += `|${Math.round(o.x * 2)},${Math.round(o.z * 2)}`;
+    return s;
+  }
+
+  // The gu outlines come from OpenStreetMap, whose licence asks for this
+  // credit wherever they are shown: small, in the bottom-right corner.
+  _drawCredit() {
+    const credit = this.seoul?.credit;
+    if (!credit || !this.open) return;
+    const g = this.canvas.getContext('2d'), dpr = this.dpr, W = this.canvas.width, H = this.canvas.height;
+    g.save();
+    g.font = `600 ${10 * dpr}px system-ui, sans-serif`;
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+    const w = g.measureText(credit).width + 10 * dpr, h = 16 * dpr;
+    g.fillStyle = 'rgba(255,250,240,0.8)';
+    g.fillRect(W - w - 4 * dpr, H - h - 4 * dpr, w, h);
+    g.fillStyle = 'rgba(74,63,53,0.85)';
+    g.fillText(credit, W - 9 * dpr, H - 4 * dpr - h / 2 + 1);
+    g.restore();
+  }
+
+  _draw() {
     if (!this.open) return;
     const g = this.canvas.getContext('2d');
     g.fillStyle = '#f3ecdc';
@@ -208,26 +336,39 @@ export class MapView {
     const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
     if (this.seoul) this._drawSeoul(g, poly, far, lang);
     this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
-    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', water: '#a9d8f0' }; // the rest: green
-    const order = { plaza: 0, sand: 0, water: 2 };
-    for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
+    // Only what is on screen (zoomed in, most of the city is not).
+    const [vx0, vz0] = this.toWorld(0, 0), [vx1, vz1] = this.toWorld(this.canvas.width, this.canvas.height);
+    const seen = (o, pad = 0) => { const b = bboxOf(o); return b[2] + pad >= vx0 && b[0] - pad <= vx1 && b[3] + pad >= vz0 && b[1] - pad <= vz1; };
+    // Land not built yet (map.closed): grey like a gu "coming soon". One
+    // path, so there are no seams between its rectangles.
+    g.fillStyle = '#d9d4ca';
+    g.beginPath();
+    for (const p of this.map.closed || []) if (p[2][0] >= vx0 && p[0][0] <= vx1 && p[2][1] >= vz0 && p[0][1] <= vz1) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+    g.fill();
+    const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
+    const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
+    if (this.areasSorted?.length !== this.map.areas.length) this.areasSorted = [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1));
+    for (const a of this.areasSorted) {
+      if (!seen(a)) continue;
       g.fillStyle = AREA[a.k] || '#bfe3a8';
       poly(a.p); g.fill();
     }
     g.lineCap = g.lineJoin = 'round';
     for (const r of this.map.roads) {
+      if (!seen(r, r.w || 0)) continue;
       poly(r.p);
-      g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = r.bike ? '#d9826f' : r.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1, r.w * this.view.scale);
       g.stroke();
     }
     g.fillStyle = '#e2d6c2';
     g.strokeStyle = '#d2c3aa';
     g.lineWidth = 1;
-    for (const b of this.map.buildings) { poly(b.p); g.closePath(); g.fill(); g.stroke(); }
+    for (const b of this.map.buildings) { if (!seen(b)) continue; poly(b.p); g.closePath(); g.fill(); g.stroke(); }
     g.strokeStyle = '#b8bcc4';
     g.lineWidth = Math.max(2, 7 * this.view.scale);
-    for (const r of this.map.rail) { poly(r.p); g.stroke(); }
+    for (const r of this.map.rail) { if (!seen(r, 7)) continue; poly(r.p); g.stroke(); }
+    if (this.seoul?.borders) this._drawBorders(g, poly, far);
     if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 
     // Markers first, then names in the gaps between them (see placeLabel),
@@ -294,25 +435,27 @@ export class MapView {
       if (this.view.scale > 0.5 * dpr) labels.push({ text: localName(s.store.name, lang), sx: c.sx, sy: c.sy, gap: 17 * dpr, weight: 700, size: 12, color: '#4a3f35', pri: 3 });
     }
 
-    // Zone discs with a letter and the zone's name, on top of shop pins.
+    // Zone discs with their code and the zone's name, on top of shop pins.
     for (const z of this.zones) {
       const [sx, sy] = this.toScreen(z.x, z.z);
       if (!onScreen(sx, sy)) continue;
       g.fillStyle = z.zone.color;
       g.strokeStyle = '#fffaf0';
       g.lineWidth = 2.5 * dpr;
+      // A pill that fits the code ("A-1"), a disc for a single letter.
+      g.font = `900 ${14 * dpr}px system-ui, sans-serif`;
+      const hw = Math.max(15 * dpr, g.measureText(z.zone.id).width / 2 + 7 * dpr);
       g.beginPath();
-      g.arc(sx, sy, 15 * dpr, 0, Math.PI * 2);
+      g.roundRect(sx - hw, sy - 15 * dpr, hw * 2, 30 * dpr, 15 * dpr);
       g.fill();
       g.stroke();
       g.fillStyle = '#fffaf0';
-      g.font = `900 ${16 * dpr}px system-ui, sans-serif`;
       g.fillText(z.zone.id, sx, sy + 1);
-      mark(sx, sy, 16 * dpr);
+      taken.push({ x: sx - hw - dpr, y: sy - 16 * dpr, w: (hw + dpr) * 2, h: 32 * dpr });
       // Shops hidden under the disc: a small count; zoom in to see them.
       const n = zoneShops.get(z) || 0;
       if (n) {
-        const bx = sx + 13 * dpr, by = sy - 13 * dpr;
+        const bx = sx + hw - 2 * dpr, by = sy - 13 * dpr;
         g.fillStyle = filtered ? '#ff6f5b' : '#4a3f35';
         g.beginPath();
         g.arc(bx, by, 9 * dpr, 0, Math.PI * 2);
@@ -345,10 +488,19 @@ export class MapView {
       g.font = `${15 * dpr}px system-ui, sans-serif`;
       g.fillText(m.icon || '🚇', c.sx, c.sy + 1);
       mark(c.sx, c.sy, 13 * dpr);
+      if (m.station != null) this.hits.push({ sx: c.sx, sy: c.sy, r: 16 * dpr, kind: 'station', item: c.items });
       const text = c.items.length > 1 ? m.group?.() : m.label?.();
       if (text && this.view.scale > 0.5 * dpr) labels.push({ text, sx: c.sx, sy: c.sy, gap: 14 * dpr, weight: 700, size: 12, color: '#3b322a', pri: 2 });
     }
 
+    // Named park spots (map landmarks with a label: Seoul Forest's gardens, hill…), when zoomed in.
+    if (this.view.scale > 0.9 * dpr) {
+      for (const l of this.map.landmarks || []) {
+        if (!l.label) continue;
+        const [sx, sy] = this.toScreen(l.x, l.z);
+        if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: 0, weight: 700, size: 11, color: '#2f6b3f', pri: 4 });
+      }
+    }
     // Players
     const { me, others } = this.getPlayers();
     for (const o of others) {
@@ -365,7 +517,7 @@ export class MapView {
       labels.push({ text: o.name, sx, sy, gap: 8 * dpr, weight: 700, size: 11, color: '#3d4bc4', pri: 1 });
     }
     this._drawMe(g, me);
-    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 14 * dpr); }
+    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 20 * dpr); }
     // Edge badges for other districts, before the names so names keep clear of them.
     this._drawBadges(g, me);
     taken.push(...this.badges);
@@ -393,6 +545,15 @@ export class MapView {
     const [mx, my] = this.toScreen(me.x, me.z);
     g.save();
     g.translate(mx, my);
+    // A soft ring around the arrow, so "you" stands out among the pins.
+    g.fillStyle = 'rgba(255,111,91,0.22)';
+    g.strokeStyle = 'rgba(255,111,91,0.55)';
+    g.lineWidth = 1.5 * dpr;
+    g.beginPath();
+    g.arc(0, 0, 24 * dpr, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    if (this.canvas.width / dpr < 520) g.scale(1.2, 1.2); // phones: a bigger arrow
     g.rotate(-me.ry + Math.PI);
     g.fillStyle = '#ff6f5b';
     g.strokeStyle = '#fffaf0';
@@ -411,21 +572,51 @@ export class MapView {
   // Seoul's gu as tiles under everything, and the Han River. Open gu are
   // light; the others grey ("coming soon").
   _drawSeoul(g, poly, far) {
-    const { gu, river } = this.seoul;
+    const { gu, river, riverW } = this.seoul;
     g.lineJoin = 'round';
     for (const d of gu) {
       poly(d.p); g.closePath();
       g.fillStyle = d.open ? (far ? '#ffe9b8' : '#f3ecdc') : '#d9d4ca';
       g.fill();
-      g.strokeStyle = far ? '#ffffff' : 'rgba(255,255,255,0.7)';
-      g.lineWidth = (far ? 2 : 4) * this.dpr;
+      // A thin seam only: the gu borders are the purple lines (_drawBorders),
+      // so a white edge no longer looks like a road.
+      g.strokeStyle = far ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)';
+      g.lineWidth = this.dpr;
       g.stroke();
     }
-    poly(river);
     g.strokeStyle = '#a9d8f0';
     g.lineCap = 'round';
-    g.lineWidth = Math.max(5 * this.dpr, 220 * this.view.scale);
-    g.stroke();
+    const width = (m) => Math.max(5 * this.dpr, m * this.view.scale);
+    if (!riverW) { poly(river); g.lineWidth = width(220); g.stroke(); return; }
+    // Narrower where the game's own water is (riverW, m per point: Songpa's
+    // bank), so the line never paints land as river. Runs of one width are
+    // one stroke; round caps join the runs.
+    for (let i = 1; i < river.length;) {
+      const w = (riverW[i - 1] + riverW[i]) / 2;
+      let j = i;
+      while (j + 1 < river.length && Math.abs((riverW[j] + riverW[j + 1]) / 2 - w) < 1) j++;
+      poly(river.slice(i - 1, j + 1));
+      g.lineWidth = width(w);
+      g.stroke();
+      i = j + 1;
+    }
+  }
+
+  // Where two gu meet, and Seoul's outer edge (seoul.json borders and
+  // outline, from OpenStreetMap, stopping at the Han River): purple, over
+  // the streets, so a border never reads as a road.
+  _drawBorders(g, poly, far) {
+    const dpr = this.dpr;
+    g.save();
+    g.lineCap = g.lineJoin = 'round';
+    g.strokeStyle = far ? GU_BORDER_COLOR : 'rgba(142,68,216,0.85)';
+    g.lineWidth = (far ? 2.5 : 3) * dpr;
+    if (!far) g.setLineDash([10 * dpr, 6 * dpr]);
+    for (const l of this.seoul.borders) { poly(l); g.stroke(); }
+    // Seoul's own outer edge, a little bolder so the city's shape reads.
+    g.lineWidth = (far ? 3 : 3.5) * dpr;
+    for (const l of this.seoul.outline || []) { poly(l); g.stroke(); }
+    g.restore();
   }
 
   // Gu names: the open ones first and bold, then the "coming soon" ones,
@@ -438,7 +629,7 @@ export class MapView {
     g.lineJoin = 'round';
     const { me } = this.getPlayers();
     const [mx, my] = this.toScreen(me.x, me.z);
-    const taken = [{ x: mx - 14 * dpr, y: my - 14 * dpr, w: 28 * dpr, h: 28 * dpr }]; // keep clear of your arrow
+    const taken = [{ x: mx - 24 * dpr, y: my - 24 * dpr, w: 48 * dpr, h: 48 * dpr }]; // keep clear of your arrow and its ring
     // Open gu first, and the one you're in before the rest, so its name sits next to you.
     const here = this._guAt(me.x, me.z);
     const rank = (d) => (d === here ? 2 : d.open ? 1 : 0);
@@ -469,7 +660,7 @@ export class MapView {
     g.font = `700 ${12 * dpr}px system-ui, sans-serif`;
     const items = [['#ffe9b8', t('map.open')], ['#d9d4ca', t('map.soon')]];
     let x = 10 * dpr;
-    const y = H - 30 * dpr;
+    const y = H - (this.seoul?.credit ? 52 : 30) * dpr; // above the OpenStreetMap credit
     const lw = items.reduce((a, [, s]) => a + g.measureText(s).width + 30 * dpr, 6 * dpr);
     g.fillStyle = 'rgba(255,250,240,0.92)';
     g.beginPath();
@@ -507,9 +698,14 @@ export class MapView {
     const narrow = W / dpr < 520;
     this.badges = [];
     const lang = getLanguage();
-    for (const d of this.districts) {
+    // Only the nearest few districts get a badge: sixteen of them covered a
+    // phone's whole map. The rest are a tap away on "All of Seoul".
+    const off = this.districts.filter((d) => {
       const [sx, sy] = this.toScreen(d.x, d.z);
-      if (sx > pad && sx < W - pad && sy > pad && sy < H - pad) continue;
+      return !(sx > pad && sx < W - pad && sy > pad && sy < H - pad);
+    }).sort((a, b) => Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z)).slice(0, narrow ? BADGES_PHONE : BADGES_WIDE);
+    for (const d of off) {
+      const [sx, sy] = this.toScreen(d.x, d.z);
       // Where the line from the centre to the district leaves the screen.
       const cx = W / 2, cy = H / 2, dx = sx - cx, dy = sy - cy;
       const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
@@ -613,6 +809,27 @@ export class MapView {
     const body = this.list.closest('.map-body');
     if (narrow && body && this.controls.nextElementSibling !== body) body.before(this.controls);
     else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
+    // Phones: the list is a sheet under the map, folded to one bar until
+    // tapped, so the map gets the screen. The small print goes at its end.
+    if (!this.handle) {
+      this.handle = document.createElement('button');
+      this.handle.type = 'button';
+      this.handle.className = 'map-handle';
+      this.handle.append(document.createElement('span'), document.createElement('b'));
+      this.handle.onclick = () => this.setSheet(!this.sheetOpen);
+    }
+    this.handle.querySelector('span').textContent = t('map.places');
+    this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+    if (narrow && this.list.firstElementChild !== this.handle) this.list.prepend(this.handle);
+    else if (!narrow && this.handle.parentElement) this.handle.remove();
+    const note = this.root.querySelector('.map-disclaimer');
+    if (note) {
+      if (narrow && note.parentElement !== this.list) this.list.append(note);
+      else if (!narrow && note.parentElement === this.list) this.root.querySelector('.map-card')?.append(note);
+    }
+    const locate = this.root.querySelector('.map-locate');
+    if (locate) locate.title = locate.ariaLabel = t('map.locate');
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
     // Categories wrap onto rows (sideways scrolling was hard with a mouse and
@@ -621,7 +838,7 @@ export class MapView {
     const n = new Map();
     for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
     const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
-    const FOLDED = narrow ? 3 : 5; // phones: fewer rows of chips, more room for the map
+    const FOLDED = narrow ? 2 : 5; // phones: fewer rows of chips, more room for the map
     const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
     const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');
@@ -691,6 +908,7 @@ export class MapView {
       const i = document.createElement('span');
       i.className = 'map-row-icon';
       i.textContent = icon;
+      if (/^[A-Z]-\d+$/.test(icon)) i.classList.add('code'); // a zone code, "A-1"
       i.style.background = color;
       const tx = document.createElement('span');
       tx.className = 'map-row-text';
@@ -712,15 +930,33 @@ export class MapView {
     for (const d of dists) {
       row('🗺️', '#fffaf0', localName(d.name, lang), dist(d.x, d.z), () => this.goTo(d.x, d.z));
     }
+    // Landmarks by name (Sungnyemun, Bosingak, King Sejong): guide there.
+    const sights = this.category ? [] : this.landmarkPlaces.filter((l) => landmarkMatches(l, this.query))
+      .sort((a, b) => Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z));
+    if (sights.length) head('map.landmarks');
+    for (const l of sights) {
+      const label = localName(l.name, lang);
+      row(l.icon, '#fffaf0', label, dist(l.x, l.z), () => this._pick({ kind: 'landmark', id: l.key, x: l.x, z: l.z, label }));
+    }
     if (zones.length) head('map.zones');
     for (const z of zones) {
       row(z.zone.id, z.zone.color, localName(z.zone.name, lang), dist(z.x, z.z), () => {
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
       });
     }
+    // Subway stations in every district: guide to the nearest exit.
+    const stations = this.category ? [] : stationList(this.marks)
+      .filter((st) => !filtering || stationMatches(st, this.query, t('map.stations')))
+      .map((st) => ({ st, ex: nearestExit(st.exits, me.x, me.z) }))
+      .sort((a, b) => Math.hypot(a.ex.x - me.x, a.ex.z - me.z) - Math.hypot(b.ex.x - me.x, b.ex.z - me.z));
+    if (stations.length) head('map.stations');
+    for (const { st, ex } of stations) {
+      // One look for every station, no line names: no transfers to think about for now.
+      row('🚇', '#5d6470', localName(st.name, lang), dist(ex.x, ex.z), () => this._pickStation(ex, localName(st.name, lang)));
+    }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length && !dists.length) {
+    if (!shops.length && !zones.length && !dists.length && !stations.length && !sights.length) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
@@ -811,7 +1047,11 @@ export class MapView {
         if (d) { this.view.scale = 0.35 * this.dpr; this.goTo(d.x, d.z); } else this._soon(hit.item, lang);
         return;
       }
-      if (hit.kind === 'store') {
+      if (hit.kind === 'station') { // an exit (or a station's exits drawn as one sign)
+        const first = hit.item[0], { me } = this.getPlayers();
+        const ex = hit.item.length > 1 ? nearestExit(hit.item.filter((m) => m.station === first.station), me.x, me.z) : first;
+        this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
+      } else if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
       } else {

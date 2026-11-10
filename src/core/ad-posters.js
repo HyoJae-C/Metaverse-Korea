@@ -16,18 +16,24 @@
 //   { "h": 28, "p": [...], "wall": { "face": [1, 0], "image": "ads/x.webp", "credit": "Name" } }
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
+import { canvasTex as canvasTexture } from './three-kit.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
-// The front of a lot: middle of the facing side, the direction along it and
-// half its width.
+// The front of a lot: middle of the facing side (the side furthest out
+// along `f`; lots can stand at a slant, like Seongsu's), the direction it
+// faces and half its width.
 export function lotFront(b) {
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
-  const [nx, nz] = b.f;
-  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  if (nz) return { x: cx, z: nz > 0 ? z1 : z0, nx: 0, nz: Math.sign(nz), half: (x1 - x0) / 2 };
-  return { x: nx > 0 ? x1 : x0, z: cz, nx: Math.sign(nx), nz: 0, half: (z1 - z0) / 2 };
+  const [fx, fz] = b.f, fl = Math.hypot(fx, fz) || 1;
+  const nx = fx / fl, nz = fz / fl;
+  const p = b.p, cx = p.reduce((a, q) => a + q[0], 0) / p.length, cz = p.reduce((a, q) => a + q[1], 0) / p.length;
+  let best = null, bd = -Infinity;
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i], c = p[(i + 1) % p.length];
+    const mx = (a[0] + c[0]) / 2, mz = (a[1] + c[1]) / 2, d = (mx - cx) * nx + (mz - cz) * nz;
+    if (d > bd) { bd = d; best = { x: mx, z: mz, half: Math.hypot(c[0] - a[0], c[1] - a[1]) / 2 }; }
+  }
+  return { x: best.x, z: best.z, nx: nx || 0, nz: nz || 0, half: best.half };
 }
 
 // Shop lots with no store in front: [{ id, b, front }]. `points` are where
@@ -66,15 +72,7 @@ export function storeLot(buildings, [x, z]) {
 }
 
 // ── Textures ────────────────────────────────────────────────────────────
-function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
+const canvasTex = (w, h, draw) => canvasTexture(w, h, draw, { anisotropy: 4, farFree: true });
 
 const BIG_COLORS = ['#ff5a5f', '#2d6cdf', '#11a37f', '#f2a900', '#8e44ad', '#ff7a00', '#e94e77', '#1b998b'];
 

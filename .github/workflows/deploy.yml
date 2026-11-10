@@ -17,6 +17,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -28,9 +29,43 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Keep the last day's build files online. A deploy replaces the whole
+      # site, so a player who opened the game before it still runs the old
+      # build, and the old build's files (a shop, a minigame, a district,
+      # loaded with import() when first used) would be gone: the tap would do
+      # nothing. The file names carry a hash, so old and new never clash.
+      - uses: actions/cache/restore@v4
+        with:
+          path: old-assets
+          key: pages-assets-${{ github.run_id }}
+          restore-keys: pages-assets-
+      - name: Keep recent build files
+        run: |
+          mkdir -p old-assets
+          find old-assets -type f -mmin +1440 -delete
+          find dist/assets -maxdepth 1 -type f -exec cp {} old-assets/ \;
+          for f in old-assets/*; do [ -e "dist/assets/${f##*/}" ] || cp "$f" dist/assets/; done
+          du -sh old-assets
+      - uses: actions/cache/save@v4
+        with:
+          path: old-assets
+          key: pages-assets-${{ github.run_id }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      - id: deployment
+      # GitHub's deploy step sometimes hangs until its 10-minute timeout and
+      # fails, though a normal deploy takes under a minute. Give up after 3
+      # minutes and try once more.
+      - id: first
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+        with:
+          timeout: 180000
+      - id: retry
+        if: steps.first.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 300000
+      - id: deployment
+        run: echo "page_url=${{ steps.retry.outputs.page_url || steps.first.outputs.page_url }}" >> "$GITHUB_OUTPUT"

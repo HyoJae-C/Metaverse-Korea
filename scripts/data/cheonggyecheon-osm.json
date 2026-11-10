@@ -1,0 +1,23 @@
+{
+  "note":"Cheonggyecheon at 1/4 (world metres, x east, z south, from src/core/seoul-grid.js toGame), from Yozi's OpenStreetMap export cheonggyecheon (2026-11-09; © OpenStreetMap contributors, ODbL). line: the stream's centre line (waterway=river 청계천), a point every 10-30 m. path: the corners the game's channel is drawn along (Douglas-Peucker, 3 m, of the line), from the source at Cheonggye Plaza to just past Hwanghakgyo. bridges: their middles (OSM bridge ways); Jangtonggyo is not in the export, so its spot is read off the map between Gwanggyo and Samilgyo.",
+  "line":[[-1701.3,-683.1],[-1682.3,-682],[-1666.3,-681],[-1616.2,-676.1],[-1594.4,-673.8],[-1555.2,-664],[-1523.3,-654.3],[-1498,-653.9],[-1483.5,-653.7],[-1445.7,-655.5],[-1428.5,-657.1],[-1406.9,-659.2],[-1393.9,-660.4],[-1381.8,-661.5],[-1340.7,-665.4],[-1326.2,-666.9],[-1300.2,-670.3],[-1278.1,-673.5],[-1228.2,-685.7],[-1195.2,-693.7],[-1179.4,-695.5],[-1159.5,-695.7],[-1130.9,-695.8],[-1090.8,-696.9],[-1043.3,-699.9],[-1024.8,-701.1],[-1007.7,-700.4],[-996.9,-700.3],[-956.5,-699.8],[-898.8,-699.7],[-885,-699.7],[-873.9,-700.9],[-859.2,-705.5],[-842.8,-713.1],[-813.4,-733.2],[-780.6,-751],[-763.4,-757.4],[-746.2,-760],[-735.1,-759.6],[-725.1,-757.4],[-692,-745.9],[-672.1,-738.9],[-660.9,-734.9]],
+  "path":[[-1701,-683],[-1594,-674],[-1523,-654],[-1478,-654],[-1300,-670],[-1190,-695],[-874,-701],[-843,-713],[-781,-751],[-748,-760],[-700,-749]],
+  "bridges":[
+    {"name":{"ko":"모전교","en":"Mojeongyo Bridge"},"at":[-1686,-683],"style":"arch","w":8,"nudge":8,"why":"8 m east of its spot, clear of the stairs down at the falls"},
+    {"name":{"ko":"광통교","en":"Gwangtonggyo Bridge"},"at":[-1648,-679],"style":"slab","w":10},
+    {"name":{"ko":"광교","en":"Gwanggyo Bridge (Namdaemun-ro)"},"at":[-1610,-676],"style":"arch","w":12},
+    {"name":{"ko":"장통교","en":"Jangtonggyo Bridge"},"at":[-1560,-664],"style":"arch","w":8},
+    {"name":{"ko":"삼일교","en":"Samilgyo Bridge (Samil-daero)"},"at":[-1502,-655],"style":"slab","w":12},
+    {"name":{"ko":"수표교","en":"Supyogyo Bridge"},"at":[-1446,-657],"style":"slab","w":10},
+    {"name":{"ko":"관수교","en":"Gwansugyo Bridge"},"at":[-1397,-661],"style":"arch","w":10},
+    {"name":{"ko":"세운교","en":"Sewoongyo Bridge"},"at":[-1335,-666],"style":"slab","w":10},
+    {"name":{"ko":"배오개다리","en":"Baeogae Bridge (Gwangjang Market)"},"at":[-1275,-675],"style":"arch","w":10},
+    {"name":{"ko":"새벽다리","en":"Saebyeok Bridge"},"at":[-1225,-687],"style":"arch","w":8},
+    {"name":{"ko":"마전교","en":"Majeongyo Bridge"},"at":[-1184,-696],"style":"slab","w":10},
+    {"name":{"ko":"나래교","en":"Naraegyo Bridge"},"at":[-1129,-697],"style":"arch","w":8},
+    {"name":{"ko":"오간수교","en":"Ogansugyo Bridge (Dongdaemun)"},"at":[-1014,-701],"style":"slab","w":12},
+    {"name":{"ko":"다산교","en":"Dasangyo Bridge"},"at":[-879,-702],"style":"slab","w":10,"nudge":-1,"why":"1 m west, so its deck is all on one stretch of the channel"},
+    {"name":{"ko":"영도교","en":"Yeongdogyo Bridge"},"at":[-810,-736],"style":"arch","w":10},
+    {"name":{"ko":"황학교","en":"Hwanghakgyo Bridge"},"at":[-713,-756],"style":"slab","w":10}],
+  "places":{"Cheonggye Plaza (the source, the falls)":[-1701,-683],"Sejong-daero (south of Jongno)":{"x":-1733,"from":-765,"to":-566},"Heunginjimun":[-1019,-737]}
+}

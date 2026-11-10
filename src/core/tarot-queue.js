@@ -20,8 +20,9 @@ export function parseTarot(e) {
 export const tarotMsg = (verb, to, a, b) => `tarot:${verb}:${to}${a != null ? ':' + a : ''}${b != null ? ':' + b : ''}`;
 
 export class TarotQueue {
-  constructor(now = () => Date.now()) {
+  constructor(now = () => Date.now(), turnMs = TURN_MS) {
     this.now = now;
+    this.turnMs = turnMs; // how long a called number may take to sit down
     this.called = new Map(); // id → when their turn came (they reached the front with a table free)
     this.dropped = new Map(); // id → the ticket that ran out (ignored until they take a new one)
   }
@@ -40,7 +41,7 @@ export class TarotQueue {
       if (callable.length >= freeTables) break;
       const since = this.called.get(p.id);
       if (since == null) this.called.set(p.id, now);
-      else if (now - since > TURN_MS) { this.dropped.set(p.id, p.tq); this.called.delete(p.id); expired.push(p.id); continue; }
+      else if (now - since > this.turnMs) { this.dropped.set(p.id, p.tq); this.called.delete(p.id); expired.push(p.id); continue; }
       callable.push(p.id);
     }
     // Anyone not at the front (any more) starts the clock again when called.
@@ -56,6 +57,6 @@ export class TarotQueue {
   // Seconds left for someone who has been called.
   secondsLeft(id) {
     const since = this.called.get(id);
-    return since == null ? null : Math.max(0, Math.ceil((TURN_MS - (this.now() - since)) / 1000));
+    return since == null ? null : Math.max(0, Math.ceil((this.turnMs - (this.now() - since)) / 1000));
   }
 }

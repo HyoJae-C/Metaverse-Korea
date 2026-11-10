@@ -6,7 +6,7 @@
 // back to back.
 import { t, localName } from '../core/i18n.js';
 import { KPOP, kpopById, kpopMsg } from '../data/kpop.js';
-import { FILMS, filmById, filmMsg, nextFilm } from '../data/films.js';
+import { filmsFor, filmMsg, nextFilm } from '../data/films.js';
 
 // What plays in each kind of room.
 const SHOWS = {
@@ -16,12 +16,12 @@ const SHOWS = {
     row: (s) => [`${s.artist} · ${s.title}`, t('kpop.official', { channel: s.channel })],
     title: () => '📺 ' + t('kpop.title'), note: () => t('kpop.note'), empty: () => '', blocked: () => t('kpop.blocked'),
   },
-  cinema: {
-    list: () => FILMS, byId: filmById, msg: filmMsg, next: nextFilm,
+  cinema: (c) => ({
+    list: () => filmsFor(c), byId: (id) => filmsFor(c).find((f) => f.id === id) || null, msg: filmMsg, next: (id) => nextFilm(id, c),
     now: (f) => `🎬 ${localName(f.title)}`,
     row: (f) => [localName(f.title), [f.by && t('cinema.by', { by: f.by }), f.sample && t('cinema.sample')].filter(Boolean).join(' · ')],
     title: () => '🎬 ' + t('cinema.title'), note: () => t('cinema.note'), empty: () => t('cinema.empty'), blocked: () => t('cinema.blocked'),
-  },
+  }),
 };
 
 let apiPromise = null;
@@ -59,9 +59,10 @@ export class KpopRoom {
 
   get position() { return this.song ? (Date.now() - this.song.startedAt) / 1000 : 0; }
 
-  // kind: 'kpop' (the K-POP café) or 'cinema'.
-  enter(kind = 'kpop') {
-    this.show = SHOWS[kind] || SHOWS.kpop;
+  // kind: 'kpop' (the K-POP café) or 'cinema'; cinema: which one (the
+  // store's "cinema" value, for its programme).
+  enter(kind = 'kpop', cinema = true) {
+    this.show = kind === 'cinema' ? SHOWS.cinema(cinema) : SHOWS.kpop;
     this.inside = true;
     this.song = null;
     this._render();

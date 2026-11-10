@@ -9,7 +9,7 @@
 
 export const JOB_KINDS = ['delivery', 'mart', 'serving'];
 export const SHIFTS_PER_DAY = 5;
-export const MAX_PAY = 8; // coins for a perfect shift (a delivery pays 4–8 too)
+export const MAX_PAY = 5000; // won a shift (a delivery pays ₩3,500)
 const SHIFT_KEY = 'mk.jobShifts';
 
 // Shifts today: { day: 'YYYY-MM-DD', n }.
@@ -30,16 +30,16 @@ export const jobOf = (store) => (JOB_KINDS.includes(store?.job) ? store.job : nu
 // (others fall back to English, as in the other minigames).
 export const JOB_TEXT = {
   flavor: '알바급구!',
-  help: { en: 'HELP WANTED', ko: '알바 구해요', ja: 'アルバイト急募', zh: '急招兼职', es: 'SE BUSCA PERSONAL', id: 'DICARI PEKERJA', vi: 'CẦN TUYỂN GẤP', hi: 'तुरंत भर्ती', ar: 'مطلوب موظفون' },
+  help: { en: 'HELP WANTED', ko: '알바 구해요', ja: 'アルバイト急募', zh: '急招兼职', es: 'SE BUSCA PERSONAL', id: 'DICARI PEKERJA', vi: 'CẦN TUYỂN GẤP', hi: 'तुरंत भर्ती', fr: 'ON RECRUTE', th: 'รับสมัครงาน', ar: 'مطلوب موظفون' },
   role: {
-    delivery: { en: 'Delivery rider', ko: '배달 라이더', ja: '配達ライダー', zh: '外卖骑手', es: 'Repartidor/a', id: 'Kurir antar', vi: 'Shipper giao hàng', hi: 'डिलीवरी राइडर', ar: 'عامل توصيل' },
-    mart: { en: 'Convenience store clerk', ko: '편의점 계산대', ja: 'コンビニのレジ', zh: '便利店收银员', es: 'Cajero/a de tienda 24 h', id: 'Kasir minimarket', vi: 'Thu ngân cửa hàng tiện lợi', hi: 'कन्वीनियंस स्टोर कैशियर', ar: 'كاشير متجر صغير' },
-    serving: { en: 'Server (hall staff)', ko: '홀 서빙', ja: 'ホールスタッフ', zh: '餐厅服务员', es: 'Camarero/a', id: 'Pelayan restoran', vi: 'Phục vụ bàn', hi: 'वेटर', ar: 'نادل' },
+    delivery: { en: 'Delivery rider', ko: '배달 라이더', ja: '配達ライダー', zh: '外卖骑手', es: 'Repartidor/a', id: 'Kurir antar', vi: 'Shipper giao hàng', hi: 'डिलीवरी राइडर', fr: 'Livreur', th: 'ไรเดอร์ส่งของ', ar: 'عامل توصيل' },
+    mart: { en: 'Convenience store clerk', ko: '편의점 계산대', ja: 'コンビニのレジ', zh: '便利店收银员', es: 'Cajero/a de tienda 24 h', id: 'Kasir minimarket', vi: 'Thu ngân cửa hàng tiện lợi', hi: 'कन्वीनियंस स्टोर कैशियर', fr: 'Vendeur de supérette', th: 'พนักงานร้านสะดวกซื้อ', ar: 'كاشير متجر صغير' },
+    serving: { en: 'Server (hall staff)', ko: '홀 서빙', ja: 'ホールスタッフ', zh: '餐厅服务员', es: 'Camarero/a', id: 'Pelayan restoran', vi: 'Phục vụ bàn', hi: 'वेटर', fr: 'Serveur (salle)', th: 'พนักงานเสิร์ฟ', ar: 'نادل' },
   },
-  pay: { en: 'Pay: up to 🪙 {n} a shift', ko: '시급: 한 번에 최대 🪙 {n}', ja: '給料：1回最大 🪙 {n}', zh: '报酬：每班最多 🪙 {n}', es: 'Paga: hasta 🪙 {n} por turno', id: 'Upah: maks 🪙 {n} per sif', vi: 'Lương: tối đa 🪙 {n} mỗi ca', hi: 'वेतन: हर शिफ़्ट 🪙 {n} तक', ar: 'الأجر: حتى 🪙 {n} للوردية' },
-  away: { en: '{m} m from here', ko: '여기서 {m}m', ja: 'ここから{m}m', zh: '距此{m}米', es: 'a {m} m de aquí', id: '{m} m dari sini', vi: 'cách đây {m} m', hi: 'यहाँ से {m} मी', ar: 'على بعد {m} م' },
-  walkIn: { en: 'Walk in and talk to the staff!', ko: '가게에 들어와서 직원에게 말 걸어 주세요!', ja: 'お店に入ってスタッフに声をかけてね！', zh: '进店和店员说一声吧！', es: '¡Entra y habla con el personal!', id: 'Masuk dan sapa stafnya!', vi: 'Vào quán và nói chuyện với nhân viên nhé!', hi: 'अंदर आइए और स्टाफ़ से बात कीजिए!', ar: 'ادخل وتحدّث إلى الموظفين!' },
-  sticker: { en: 'Part-timer wanted', ko: '아르바이트 구함', ja: 'アルバイト募集', zh: '招兼职', es: 'Se busca', id: 'Lowongan', vi: 'Tuyển nhân viên', hi: 'भर्ती', ar: 'مطلوب' },
+  pay: { en: 'Pay: up to 🪙 {n} a shift', ko: '시급: 한 번에 최대 🪙 {n}', ja: '給料：1回最大 🪙 {n}', zh: '报酬：每班最多 🪙 {n}', es: 'Paga: hasta 🪙 {n} por turno', id: 'Upah: maks 🪙 {n} per sif', vi: 'Lương: tối đa 🪙 {n} mỗi ca', hi: 'वेतन: हर शिफ़्ट 🪙 {n} तक', fr: 'Salaire : jusqu\'à 🪙 {n} par service', th: 'ค่าจ้าง: สูงสุด 🪙 {n} ต่อกะ', ar: 'الأجر: حتى 🪙 {n} للوردية' },
+  away: { en: '{m} m from here', ko: '여기서 {m}m', ja: 'ここから{m}m', zh: '距此{m}米', es: 'a {m} m de aquí', id: '{m} m dari sini', vi: 'cách đây {m} m', hi: 'यहाँ से {m} मी', fr: 'À {m} m d\'ici', th: 'ห่างจากที่นี่ {m} ม.', ar: 'على بعد {m} م' },
+  walkIn: { en: 'Walk in and talk to the staff!', ko: '가게에 들어와서 직원에게 말 걸어 주세요!', ja: 'お店に入ってスタッフに声をかけてね！', zh: '进店和店员说一声吧！', es: '¡Entra y habla con el personal!', id: 'Masuk dan sapa stafnya!', vi: 'Vào quán và nói chuyện với nhân viên nhé!', hi: 'अंदर आइए और स्टाफ़ से बात कीजिए!', fr: 'Entre et parle au personnel !', th: 'เดินเข้าไปคุยกับพนักงานเลย!', ar: 'ادخل وتحدّث إلى الموظفين!' },
+  sticker: { en: 'Part-timer wanted', ko: '아르바이트 구함', ja: 'アルバイト募集', zh: '招兼职', es: 'Se busca', id: 'Lowongan', vi: 'Tuyển nhân viên', hi: 'भर्ती', fr: 'Recherche employé à temps partiel', th: 'รับสมัครพาร์ตไทม์', ar: 'مطلوب' },
   // Game text.
   work: { en: 'Part-time job: {role}', ko: '알바하기: {role}', ja: 'アルバイト：{role}', zh: '打工：{role}' },
   shiftsLeft: { en: 'Shifts left today: {n}/{all}', ko: '오늘 남은 알바: {n}/{all}', ja: '今日の残りシフト：{n}/{all}', zh: '今天剩余班次：{n}/{all}' },
@@ -82,9 +82,9 @@ export const JOB_TEXT = {
 };
 
 export const DISTRICT_NAMES = {
-  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', vi: 'Seongsu', hi: 'सोंगसू', ar: 'سونغسو' },
-  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', hi: 'होंगदे', ar: 'هونغدي' },
-  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इटेवॉन', ar: 'إيتايوون' },
+  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', vi: 'Seongsu', hi: 'सोंगसू', fr: 'Seongsu', th: 'ซองซู', ar: 'سونغسو' },
+  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด', ar: 'هونغدي' },
+  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इटेवॉन', fr: 'Itaewon', th: 'อิแทวอน', ar: 'إيتايوون' },
 };
 
 const pickL = (o, lang) => (o ? o[lang] || o.en : '');
@@ -107,7 +107,8 @@ export function hiringLines(job, lang, { shopNames, district, meters } = {}) {
 }
 
 // Pay for a counter or serving shift: 2 for showing up, the rest by answers.
-export const shiftPay = (ok, all) => (all ? 2 + Math.round(((MAX_PAY - 2) * Math.max(0, Math.min(ok, all))) / all) : 0);
+export const MIN_PAY = 5000; // won for showing up (the same as MAX_PAY: every shift pays alike)
+export const shiftPay = (ok, all) => (all ? MIN_PAY + Math.round(((MAX_PAY - MIN_PAY) * Math.max(0, Math.min(ok, all))) / all / 1000) * 1000 : 0);
 
 // ── Convenience store counter ───────────────────────────────────────────
 export const MART_CUSTOMERS = 4;

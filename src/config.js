@@ -15,7 +15,20 @@ export const config = {
   // heartbeat every netIdleInterval seconds.
   netSendRate: 6,
   netSendRateRun: 8,
-  netIdleInterval: 5,
+  netIdleInterval: 10,
+  // Couldn't join the room's realtime channel: play solo, try again after
+  // this many seconds.
+  netRetrySeconds: 8,
+  // Riding (bike, car, any vehicle) moves fast, so a low rate shows as jumps:
+  // riders send at the running rate and, while fewer than netRideFloorUntil
+  // people are online, never less than netSendRateRide times a second.
+  netSendRateRide: 3.5,
+  netRideFloorUntil: 1000,
+  // In a crowd each player sends less, so that what one player receives stays
+  // near netRecvBudget messages a second (net/rate.js), never below
+  // netSendRateMin. Realtime services count each message once per receiver.
+  netRecvBudget: 20,
+  netSendRateMin: 1.5,
   // Street multiplayer is split into square cells of this size (metres). You
   // see players in your cell and the 8 around it, i.e. at least this far.
   netCellSize: 200,
@@ -42,6 +55,27 @@ export const config = {
   // it and see a sign-in prompt). Turn on together with chat_settings.google_only
   // in supabase/004_chat.sql, which enforces it on the server.
   chatGoogleOnly: false,
-  // Rewarded ads (demo until an ad network is set up; see core/wallet.js).
-  rewardedAd: { provider: 'demo', reward: 20, dailyLimit: 5, seconds: 5 },
+  // Rewarded ads behind "Watch an ad" (core/h5-ads.js). provider 'self':
+  // the game's own short ad (a 1, 2, 3 count; core/wallet.js demoAd), no
+  // Google. provider 'h5' uses Google's H5 Games Ads (AdSense) once `client`
+  // is set; when Google has no ad to show, the game's own ad runs instead.
+  // client: the AdSense publisher ID, e.g. 'ca-pub-1234567890123456'
+  //   (VITE_ADSENSE_CLIENT overrides it at build time). Also put
+  //   "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0" in public/ads.txt
+  //   (public/ads.txt must match the ID used here).
+  // test: true shows Google's test ads (no real money); set false after approval.
+  rewardedAd: {
+    provider: 'self', // back to 'h5' once Google serves ads
+    client: import.meta.env.VITE_ADSENSE_CLIENT || 'ca-pub-4337373973481597',
+    test: true,
+    reward: 5000, dailyLimit: 10, seconds: 3, // ₩5,000 per ad until the ad network approves the game (then ₩10,000), 10 a day (the server keeps its own numbers: wallet_settings)
+  },
+  // A thin 468x60 AdSense banner at the top left, wide computer screens only
+  // (start screen and game; core/side-ad.js). slot: the display ad unit's
+  // data-ad-slot number from AdSense (Ads > By ad unit > Display ads); empty =
+  // no banner. Uses rewardedAd.client and rewardedAd.test.
+  sideAd: { enabled: true, slot: import.meta.env.VITE_ADSENSE_SIDE_SLOT || '' },
+  // "Support the creator" link in Settings (e.g. https://buymeacoffee.com/name).
+  // Empty = the row stays hidden. VITE_SUPPORT_URL overrides it at build time.
+  supportUrl: import.meta.env.VITE_SUPPORT_URL || 'https://buymeacoffee.com/hjseoul',
 };

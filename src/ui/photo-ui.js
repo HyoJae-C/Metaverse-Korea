@@ -5,16 +5,14 @@
 // can be saved or shared.
 import { L, fmt } from './pocha-ui.js';
 
-export const PHOTO_COST = 3;
 export const SHOTS = 4;
 export const FRAMES = { white: ['#ffffff', '#2b2630'], black: ['#1d1b22', '#ffffff'], pink: ['#ffc8de', '#7a2d55'], mint: ['#c6efe2', '#245a4a'] };
 // Each booth kind (the store's workshop): shots, price, frames, black and white.
 export const PHOTO_MODES = {
-  photo: { shots: 4, cost: 3, frames: FRAMES, mono: false, label: 'JOGAK STUDIO', caption: '조각스튜디오' },
-  photo1: { shots: 1, cost: 2, frames: { cream: ['#f6efe2', '#5a4632'], white: ['#ffffff', '#2b2630'], navy: ['#24324f', '#f3e9d2'], rose: ['#f3d0d6', '#6b2f3c'] }, mono: false, label: 'CHUEOK PHOTO', caption: '추억사진관' },
-  photobw: { shots: 4, cost: 3, frames: { white: ['#ffffff', '#1d1b22'], black: ['#141316', '#f2f2f2'] }, mono: true, label: 'MEMORIES', caption: '메모리즈' },
+  photo: { shots: 4, cost: 5000, frames: FRAMES, mono: false, label: 'JOGAK STUDIO', caption: '조각스튜디오' },
+  photo1: { shots: 1, cost: 3000, frames: { cream: ['#f6efe2', '#5a4632'], white: ['#ffffff', '#2b2630'], navy: ['#24324f', '#f3e9d2'], rose: ['#f3d0d6', '#6b2f3c'] }, mono: false, label: 'CHUEOK PHOTO', caption: '추억사진관' },
+  photobw: { shots: 4, cost: 5000, frames: { white: ['#ffffff', '#1d1b22'], black: ['#141316', '#f2f2f2'] }, mono: true, label: 'MEMORIES', caption: '메모리즈' },
 };
-export const PHOTO_WORKSHOPS = Object.keys(PHOTO_MODES);
 
 const T = {
   title: {
@@ -44,7 +42,7 @@ const T = {
   },
   frame: { en: 'Frame colour', ko: '프레임 색', ja: 'フレームの色', zh: '相框颜色' },
   start: { en: 'Take photos · 🪙 {n}', ko: '사진 찍기 · 🪙 {n}', ja: '撮影する · 🪙 {n}', zh: '拍照 · 🪙 {n}' },
-  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
+  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}이 필요해요.', ja: '🪙 {n} 必要です。', zh: '需要 🪙 {n}。' },
   save: { en: 'Save', ko: '저장하기', ja: '保存', zh: '保存' },
   share: { en: 'Share', ko: '공유하기', ja: '共有', zh: '分享' },
   again: { en: 'Again', ko: '다시 찍기', ja: 'もう一度', zh: '再拍一次' },

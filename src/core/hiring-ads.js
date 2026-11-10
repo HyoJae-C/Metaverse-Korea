@@ -106,8 +106,11 @@ export function wallPoster(tex, wall, y, w = 5.6) {
 }
 
 // The door sign: on the shop's facade group (+z faces the street).
+// (Every door shows the same sign, so they share one canvas.)
+const stickers = new Map();
 export function doorSticker(group, text) {
-  const tex = stickerTexture(text);
+  if (!stickers.has(text)) stickers.set(text, stickerTexture(text));
+  const tex = stickers.get(text);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.8), new THREE.MeshBasicMaterial({ map: tex }));
   m.position.set(1.85, 1.45, 0.12);
   group.add(m);

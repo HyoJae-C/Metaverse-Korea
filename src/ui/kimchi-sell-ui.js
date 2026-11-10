@@ -1,11 +1,14 @@
-// Selling homemade kimchi at Yongmaru Market's side-dish stall (rules in
-// core/kimchi-market.js, text in market-text.js). Lists the jars in the bag
-// (and one in your hand) with what each one fetches; a few jars a day.
+// Selling homemade food at Yongmaru Market's side-dish stall (rules in
+// core/kimchi-market.js, text in market-text.js). Lists the kimchi, japchae
+// and kimbap in the bag (and one in your hand) with what each one fetches;
+// a few a day in all.
 import { getLanguage, localName } from '../core/i18n.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
-import { isKimchi, kimchiScore, kimchiPrice, KIMCHI_PRICE, SELL_PER_DAY, KimchiSales } from '../core/kimchi-market.js';
+import { isHomemade, dishOf, DISHES, kimchiScore, kimchiPrice, SELL_PER_DAY, KimchiSales } from '../core/kimchi-market.js';
 import { MT } from './market-text.js';
-import { KT } from './kimchi-text.js';
+import { KIMCHI_LABELS, JAPCHAE_LABELS, KIMBAP_LABELS } from './cooking-labels.js';
+
+const ITEM = { kimchi: KIMCHI_LABELS.item, japchae: JAPCHAE_LABELS.item, kimbap: KIMBAP_LABELS.item };
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -41,15 +44,15 @@ export class KimchiSellUI {
     const left = this.sales.left();
     this.root.replaceChildren(
       x,
-      el('h3', null, '🫙 ' + ML('title')),
+      el('h3', null, '🧺 ' + ML('title')),
       el('p', 'fine', ML('intro')),
-      el('p', 'fine', ML('prices', KIMCHI_PRICE)),
+      ...Object.entries(DISHES).map(([id, d]) => el('p', 'fine', d.icon + ' ' + localName(ITEM[id], getLanguage()) + ' · ' + ML('prices', d.price))),
       el('p', 'order-hint', left ? ML('left', { n: left, max: SELL_PER_DAY }) : ML('limit')),
     );
     const jars = [];
     const h = this.getHeld?.();
-    if (isKimchi(h)) jars.push({ e: h, hand: true });
-    this.bag.list().forEach((e, i) => { if (isKimchi(e)) jars.push({ e, i }); });
+    if (isHomemade(h)) jars.push({ e: h, hand: true });
+    this.bag.list().forEach((e, i) => { if (isHomemade(e)) jars.push({ e, i }); });
     if (!jars.length) {
       this.root.append(el('p', 'fine', ML('none')));
     } else {
@@ -57,11 +60,12 @@ export class KimchiSellUI {
       for (const j of jars) {
         const score = kimchiScore(j.e), medal = medalFor(score);
         const row = el('div', 'fish-row');
-        const label = `${localName(KT.item, getLanguage())}${j.hand ? ' (' + ML('hand') + ')' : ''} · ${medal ? medalIcon(medal) + ' ' : ''}${ML('score', { n: score })}`;
+        const dish = dishOf(j.e);
+        const label = `${localName(ITEM[dish], getLanguage())}${j.hand ? ' (' + ML('hand') + ')' : ''} · ${medal ? medalIcon(medal) + ' ' : ''}${ML('score', { n: score })}`;
         const b = el('button', 'chip', ML('sell', { coins: kimchiPrice(j.e) }));
         b.disabled = !left;
         b.onclick = () => this._sell(j);
-        row.append(el('span', 'fish-emoji', '🫙'), el('span', 'fish-name', label), b);
+        row.append(el('span', 'fish-emoji', DISHES[dish].icon), el('span', 'fish-name', label), b);
         list.append(row);
       }
       this.root.append(list);
@@ -81,7 +85,7 @@ export class KimchiSellUI {
       coins = this.sales.sell(this.bag, j.i);
     }
     if (coins) {
-      this.wallet.add(coins);
+      this.wallet.add(coins, undefined, { r: 'kimchi' });
       this.onSold?.(coins, kimchiScore(j.e));
     }
     this.render();

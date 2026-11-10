@@ -5,8 +5,8 @@
 import { COURSES, courseById } from '../data/academy.js';
 
 export const PASS_RATIO = 0.75;
-export const LESSON_COINS = 2;
-export const COURSE_COINS = 10;
+export const LESSON_COINS = 4000;
+export const COURSE_COINS = 20000;
 const KEY = 'mk.academy';
 
 export class Academy {

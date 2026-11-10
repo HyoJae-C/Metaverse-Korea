@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Operator · Another Seoul</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <style>
+      :root { color-scheme: light; --bg: #f3ecdc; --panel: #fffdf7; --ink: #2b2620; --muted: #7a7064; --line: #e2d6c2; --street: #18a058; --shop: #8a4fff; --accent: #2f6fde; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; color: var(--ink); background: var(--bg); }
+      body { display: grid; grid-template-rows: auto auto 1fr; }
+      nav { display: flex; gap: 4px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
+      nav button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 10px 12px; white-space: nowrap; color: var(--muted); font-weight: 600; cursor: pointer; }
+      nav button.on { color: var(--ink); border-bottom-color: var(--accent); }
+      nav .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: #d8452f; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+      nav .badge[hidden] { display: none; }
+      section.tab { min-height: 0; overflow: auto; }
+      section.tab[hidden] { display: none !important; }
+      .pad { padding: 16px; max-width: 980px; margin: 0 auto; }
+      .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+      .tools input[type=search] { font: inherit; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; min-width: 200px; flex: 1; max-width: 340px; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+      .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+      .stat b { display: block; font-size: 26px; line-height: 1.2; }
+      .stat.link { cursor: pointer; }
+      .stat.alert b { color: #d8452f; }
+      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+      .card.done { opacity: .7; }
+      .card.off { background: #f4f0ea; }
+      .card .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+      .card .body { white-space: pre-wrap; word-break: break-word; margin: 6px 0; }
+      .card .reply { background: #eef4ff; border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; margin: 6px 0; }
+      .card textarea { width: 100%; min-height: 70px; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+      .card .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+      .tag { font-size: 11px; padding: 1px 7px; border-radius: 8px; background: #efe7da; color: var(--muted); font-weight: 600; }
+      .tag.red { background: #fde3df; color: #b2321f; }
+      .tag.green { background: #dcf3e5; color: #12773f; }
+      .tag.blue { background: #e1ecff; color: #2253a8; }
+      table.grid { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+      table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.grid th { font-size: 12px; color: var(--muted); }
+      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      button.danger { color: #b2321f; }
+      .empty { color: var(--muted); padding: 20px 0; text-align: center; }
+      #countries { margin-top: 14px; }
+      .crow { display: grid; grid-template-columns: minmax(120px, 210px) 1fr 70px; gap: 10px; align-items: center; padding: 4px 0; }
+      .crow .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .crow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .crow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .crow .n { text-align: right; font-variant-numeric: tabular-nums; }
+      .scroll-x { overflow-x: auto; }
+      #tab-retention h3 { font-size: 15px; margin: 18px 0 8px; }
+      .rrow { display: grid; grid-template-columns: 96px 1fr minmax(120px, auto); gap: 10px; align-items: center; padding: 3px 0; }
+      .rrow .bar { height: 12px; border-radius: 6px; background: #efe7da; overflow: hidden; }
+      .rrow .bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+      .rrow .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+      header h1 { font-size: 16px; margin: 0; }
+      #count { font-weight: 700; color: var(--street); }
+      #status { color: var(--muted); font-size: 12px; margin-left: auto; }
+      select, button { font: inherit; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+      #tab-live { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; }
+      #map { position: relative; min-height: 0; touch-action: none; cursor: grab; }
+      #map canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+      aside { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; }
+      aside table { width: 100%; border-collapse: collapse; }
+      aside th, aside td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      aside th { position: sticky; top: 0; background: var(--panel); font-size: 12px; color: var(--muted); font-weight: 600; }
+      aside tr.p { cursor: pointer; }
+      aside td:first-child { white-space: nowrap; }
+      aside tr.p:hover, aside tr.p.sel { background: #f1ebff; }
+      .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+      .muted { color: var(--muted); font-size: 12px; }
+      #msg { position: fixed; inset: 0; z-index: 5; background: rgba(243,236,220,.85); display: grid; place-items: center; padding: 16px; }
+      #msg[hidden] { display: none; }
+      #msg > div { max-width: 460px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+      #msg h2 { margin: 0 0 8px; font-size: 17px; }
+      #msg code { background: #f3ecdc; padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+      @media (max-width: 760px) {
+        #tab-live { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; overflow: auto; }
+        aside { border-left: 0; border-top: 1px solid var(--line); }
+      }
+      #tab-chat { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+      #tab-chat[hidden] { display: none !important; }
+      .chatbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+      .chatbar input[type=search] { font: inherit; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; flex: 1; min-width: 160px; max-width: 320px; }
+      .chatbox { overflow: auto; padding: 12px 16px; min-height: 0; }
+      table.chat td { padding: 6px 10px; }
+      table.chat td:nth-child(1), table.chat td:nth-child(2) { white-space: nowrap; }
+      table.chat td.who { font-weight: 600; white-space: nowrap; }
+      table.chat td:nth-child(4) { width: 100%; word-break: break-word; }
+      table.chat td.act { white-space: nowrap; }
+      table.chat td.act button { font-size: 12px; padding: 2px 8px; }
+      .chatsize { font-size: 12px; margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; background: #efe7da; color: var(--muted); }
+      .chatsize.warn { background: #fff1cc; color: #8a5a00; }
+      .chatsize.alert { background: #fde3df; color: #b2321f; font-weight: 600; }
+      #chatOlder { margin-bottom: 8px; }
+      @media (max-width: 760px) { table.chat td:nth-child(2) { white-space: normal; max-width: 110px; } }
+      .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
+      #tab-exhibits .ximgs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+      #tab-exhibits .ximgs img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; background: var(--line); display: block; }
+      #tab-codes h3 { font-size: 15px; margin: 20px 0 8px; }
+      #tab-codes table.grid td:first-child { white-space: nowrap; }
+      #tab-codes code { background: #f3ecdc; padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+      #tab-codes a.try { display: inline-block; margin: 0 4px 4px 0; padding: 1px 7px; border-radius: 6px; background: #e1ecff; color: #2253a8; text-decoration: none; font-size: 13px; }
+      #tab-codes textarea { width: 100%; min-height: 110px; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+      .wxslot { padding: 4px 8px; border-radius: 8px; background: rgba(127,127,127,.12); font-size: 13px; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🛡️ Operator</h1>
+      <span id="status"></span>
+    </header>
+    <nav id="tabs">
+      <button data-tab="overview">Overview</button>
+      <button data-tab="live">Live map <span class="badge" id="liveBadge" hidden></span></button>
+      <button data-tab="chat">💬 Chat <span class="badge" id="chatBadge" hidden></span></button>
+      <button data-tab="ask">Inquiries <span class="badge" id="askBadge" hidden></span></button>
+      <button data-tab="free">Free board</button>
+      <button data-tab="players">Players</button>
+      <button data-tab="notice">📢 Announce</button>
+      <button data-tab="weather">🌦️ Weather</button>
+      <button data-tab="retention">Retention</button>
+      <button data-tab="codes">📋 Codes</button>
+      <button data-tab="exhibits">🎨 Exhibits <span class="badge" id="exhibitBadge" hidden></span></button>
+    </nav>
+    <section class="tab" id="tab-overview" hidden><div class="pad">
+      <div class="stats" id="stats"></div>
+      <p class="muted" id="statsNote"></p>
+      <div class="card" id="countries">
+        <div class="tools" style="margin-bottom:8px">
+          <b style="font-size:15px">🌏 Countries</b>
+          <select id="countryDays" aria-label="Period">
+            <option value="1">Today (KST)</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="365">Last 12 months</option>
+          </select>
+          <span class="muted" id="countryTotal"></span>
+        </div>
+        <div id="countryList"></div>
+        <p class="muted" style="margin:8px 0 0">Guessed from each player's time zone setting, once a day per account (no IP addresses). Travellers whose phone keeps their home time zone count for home.</p>
+      </div>
+    </div></section>
+    <section class="tab" id="tab-live" hidden>
+      <div id="map">
+        <canvas id="cv"></canvas>
+      </div>
+      <aside>
+        <div class="tools" style="padding:10px 10px 0;margin:0">
+          <span><b id="count">–</b> <span id="countLabel">online</span></span>
+          <select id="within" aria-label="Show">
+            <option value="90">online now</option>
+            <option value="900">last 15 min</option>
+            <option value="3600">last hour</option>
+            <option value="86400">last 24 h</option>
+          </select>
+          <select id="labels" aria-label="On the map">
+            <option value="names">Names</option>
+            <option value="counts">Counts</option>
+          </select>
+          <button id="fit" type="button">Fit all</button>
+        </div>
+        <table>
+          <thead><tr><th>Player</th><th>Where</th><th>Seen</th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </aside>
+    </section>
+    <section class="tab" id="tab-chat" hidden>
+      <div class="chatbar">
+        <b>💬 Chat (채팅)</b>
+        <input type="search" id="chatQ" placeholder="Word, name or email" />
+        <button id="chatSearch" type="button">Search 90 days</button>
+        <button id="chatBack" type="button" hidden>Back to live</button>
+        <label class="muted"><input type="checkbox" id="chatPause" /> Stop scrolling</label>
+        <span class="muted" id="chatCount"></span>
+      </div>
+      <div class="chatbox">
+        <p class="chatsize ok" id="chatSize" hidden></p>
+        <p class="muted" id="chatNote" hidden></p>
+        <button id="chatOlder" type="button" hidden>Load older</button>
+        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent. Friend messages are private and not shown.</p>
+        <table class="grid chat"><tbody id="chatList"></tbody></table>
+      </div>
+    </section>
+    <section class="tab" id="tab-ask" hidden><div class="pad">
+      <div class="tools">
+        <label><input type="checkbox" id="askOpen" checked /> Only open</label>
+        <button id="askReload" type="button">Refresh</button>
+      </div>
+      <div id="askList"></div>
+    </div></section>
+    <section class="tab" id="tab-free" hidden><div class="pad">
+      <div class="tools"><button id="freeReload" type="button">Refresh</button></div>
+      <div id="freeList"></div>
+    </div></section>
+    <section class="tab" id="tab-players" hidden><div class="pad">
+      <div class="tools">
+        <input type="search" id="playerQ" placeholder="Search name or e-mail" />
+        <button id="playerReload" type="button">Refresh</button>
+      </div>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>Player</th><th>Account</th><th>Joined</th><th>Last seen</th><th>Chat</th></tr></thead>
+        <tbody id="playerList"></tbody>
+      </table></div>
+    </div></section>
+    <section class="tab" id="tab-notice" hidden><div class="pad">
+      <div class="card">
+        <div class="head"><b>📢 Send a notice to every player</b><span class="muted">Pinned at the top of everyone's screen, in every area, until you delete it below. Players who join later see it too.</span></div>
+        <textarea id="noticeText" placeholder="e.g. Server maintenance in 10 minutes. / 10분 뒤 점검이 있어요."></textarea>
+        <div class="row"><button id="noticeSend" class="primary" type="button">Send notice</button><span class="muted" id="noticeCount" style="margin-left:auto"></span></div>
+        <p class="muted" style="margin:8px 0 0">In the game, operators can also type <code>/공지 message</code> in chat.</p>
+      </div>
+      <div class="tools"><b>Sent</b><button id="noticeReload" type="button">Refresh</button></div>
+      <div id="noticeList"></div>
+    </div></section>
+    <section class="tab" id="tab-weather" hidden><div class="pad">
+      <div class="card">
+        <div class="head"><b>🌦️ Weather for every player (날씨)</b><span class="muted">Every game rolls the same weather every 30 minutes from the season's odds. A held weather replaces the roll for a while. Snow settles on the street in about 4 minutes and melts in about 6.</span></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <label>Season <select id="wxSeason"></select></label>
+          <span class="muted" id="wxOdds"></span>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+          <label>Hold a weather now <select id="wxFixed"></select></label>
+          <label>for <select id="wxMinutes">
+            <option value="30">30 minutes</option>
+            <option value="60" selected>1 hour</option>
+            <option value="180">3 hours</option>
+            <option value="1440">1 day</option>
+            <option value="0">until I change it</option>
+          </select></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="wxSave" class="primary" type="button">Apply to everyone</button><button id="wxReload" type="button">Refresh</button></div>
+      </div>
+      <div class="card"><div id="wxNow" class="body">Loading…</div></div>
+      <div class="card"><div class="head"><b>Next 6 hours</b><span class="muted">What every game will show (your local time)</span></div><div id="wxNext" class="wxnext"></div></div>
+    </div></section>
+    <section class="tab" id="tab-exhibits" hidden><div class="pad">
+      <div class="tools" id="exhibitFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <button type="button" data-f="new">New</button><button type="button" data-f="accepted">Accepted</button><button type="button" data-f="declined">Declined</button><button type="button" data-f="all">All</button>
+        <button type="button" id="exhibitReload">Refresh</button>
+        <span class="muted">Applications from <a href="./apply.html" target="_blank">apply.html</a></span>
+      </div>
+      <div id="exhibitList"><p class="empty">Loading…</p></div>
+    </div></section>
+    <section class="tab" id="tab-retention" hidden><div class="pad">
+      <div class="tools">
+        <select id="retDays" aria-label="Period">
+          <option value="14">Started in the last 14 days</option>
+          <option value="30" selected>Started in the last 30 days</option>
+          <option value="90">Started in the last 90 days</option>
+        </select>
+        <button id="retReload" type="button">Refresh</button>
+      </div>
+      <div id="retBody"><p class="empty">Loading…</p></div>
+    </div></section>
+    <section class="tab" id="tab-codes" hidden><div class="pad">
+      <p class="muted">관리자·테스트 코드 정리표. 이 페이지 파일은 누구나 받아 볼 수 있어서, 비밀 코드의 실제 글자는 여기 적지 않았어요 (게임 안에도 암호화된 값만 있어요). 실제 코드는 맨 아래 <b>내 메모</b>에 적어 두면 이 브라우저에만 저장돼요.</p>
+
+      <h3>🌦️ 날씨: 모든 플레이어에게 (Weather tab)</h3>
+      <div class="card">
+        <ol style="margin:0;padding-left:20px">
+          <li><b>Season (계절)</b>: 30분마다 굴리는 날씨의 확률을 바꿔요. <i>Auto</i>는 달력의 계절을 따라가고, <i>Default</i>는 맑음 80% · 비 10% · 눈 10%.</li>
+          <li><b>Hold a weather now (날씨 고정)</b>: 고를 날씨와 시간(30분 ~ 1일, 또는 바꿀 때까지)을 정해요. <i>No</i>를 고르면 다시 계절대로 굴려요.</li>
+          <li><b>Apply to everyone</b>을 누르면 모든 게임에 바로 적용돼요. 눈은 길에 약 4분 만에 쌓이고, 그친 뒤 약 6분이면 녹아요.</li>
+        </ol>
+        <p class="muted" style="margin:8px 0 0">날씨 종류: <code>clear</code> 맑음 ☀️ · <code>cloudy</code> 흐림 ☁️ · <code>fog</code> 안개 🌫️ · <code>rain</code> 비 🌧️ · <code>snow</code> 눈 ❄️ · <code>storm</code> 폭풍 ⛈️. <a href="#weather">Weather 탭 열기 →</a></p>
+      </div>
+
+
+      <h3>🔗 주소 뒤에 붙이는 코드: 내 화면에서만</h3>
+      <p class="muted">게임 주소 뒤에 <code>?</code>로 붙이고, 여러 개는 <code>&amp;</code>로 이어요. 예: <code>another-seoul.com/?weather=snow&amp;snow=1&amp;hour=20</code>. 다른 플레이어에게는 아무 영향이 없어요. 파란 버튼은 새 탭에서 바로 열려요.</p>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>Code</th><th>하는 일</th><th>바로 열기</th></tr></thead>
+        <tbody>
+          <tr><td><code>?weather=종류</code></td><td>내 화면 날씨를 고정해요 (관리자 설정보다 우선). 종류는 위 6가지. 눈으로 고정하면 들어온 순간부터 쌓여요.</td><td><a class="try" target="_blank" href="./?weather=snow">❄️ snow</a><a class="try" target="_blank" href="./?weather=rain">🌧️ rain</a><a class="try" target="_blank" href="./?weather=storm">⛈️ storm</a><a class="try" target="_blank" href="./?weather=fog">🌫️ fog</a><a class="try" target="_blank" href="./?weather=cloudy">☁️ cloudy</a><a class="try" target="_blank" href="./?weather=clear">☀️ clear</a></td></tr>
+          <tr><td><code>&amp;snow=0~1</code></td><td>길에 쌓인 눈 두께를 고정해요. <code>0</code> 없음, <code>0.5</code> 반, <code>1</code> 가득. 기다리지 않고 눈사람·눈덩이를 시험할 때.</td><td><a class="try" target="_blank" href="./?weather=snow&amp;snow=1">❄️ 눈 가득</a><a class="try" target="_blank" href="./?snow=0.5">반만</a></td></tr>
+          <tr><td><code>?hour=0~23</code></td><td>게임 시간을 그 시각으로 고정해요 (밤 풍경, 조명 확인용). 예: <code>20</code> 저녁, <code>2</code> 한밤, <code>12</code> 낮.</td><td><a class="try" target="_blank" href="./?hour=21">🌙 밤 9시</a><a class="try" target="_blank" href="./?hour=12">☀️ 낮 12시</a></td></tr>
+          <tr><td><code>?adtest</code></td><td>광고 보상을 받으면 구글 광고가 나왔는지, 게임 자체 광고(데모)가 나왔는지 이유와 함께 알려 줘요.</td><td><a class="try" target="_blank" href="./?adtest">광고 시험</a></td></tr>
+          <tr><td><code>?login</code></td><td>처음 화면에서 로그인 단계를 항상 보여 줘요 (로그인 화면 확인용).</td><td><a class="try" target="_blank" href="./?login">로그인 화면</a></td></tr>
+          <tr><td><code>?src=이름</code></td><td>유입 경로 표시. 홍보 링크에 붙이면 그 기기가 처음 들어온 경로로 기록돼 통계에 나와요. 예: <code>?src=insta</code>, <code>?src=qr</code>.</td><td></td></tr>
+          <tr><td><code>?top=높이</code></td><td>카메라를 하늘 위에서 내려다보게 해요 (지도·배치 확인용). 예: <code>?top=120</code>. 안개도 꺼져요.</td><td><a class="try" target="_blank" href="./?top=120">🛰️ 위에서 보기</a></td></tr>
+          <tr><td><code>?debug</code></td><td>개발·자동 테스트용. <b>클라우드 저장이 꺼져서</b> 진행이 계정에 저장되지 않고 통계도 보내지 않아요. 평소엔 쓰지 마세요.</td><td></td></tr>
+          <tr><td><code>?debug&amp;room=이름</code></td><td>나만의 비공개 방에 들어가요. 실제 방문자와 섞이지 않게 테스트할 때.</td><td></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>💬 게임 채팅에 치는 코드</h3>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>Code</th><th>하는 일</th><th>누가</th></tr></thead>
+        <tbody>
+          <tr><td><code>/공지 내용</code></td><td>모든 지역 모든 플레이어 화면 위에 공지를 고정해요. 아래 📢 Announce 탭에서 지우기 전까지 남아요. <code>/notice</code>, <code>/announce</code>도 같아요. <a href="#notice">📢 Announce 탭</a>에서도 보낼 수 있어요.</td><td>운영자 계정만 (서버가 확인)</td></tr>
+          <tr><td><code>/마스터코드</code></td><td>모든 아이템을 받고, 🛡️ 운영자 배지를 켜고 꺼요 (한 번 더 치면 꺼짐). 배지는 operators 표에 있는 계정 이름일 때만 다른 사람에게 보여요.</td><td>코드를 아는 사람</td></tr>
+          <tr><td><code>/코인단어+숫자</code></td><td>그 숫자만큼 코인을 받아요 (최대 1,000,000). 대소문자 상관없음. 예: <code>/단어5000</code>.</td><td>서버 지갑은 운영자만 반영</td></tr>
+          <tr><td><code>/물고기코드</code></td><td>다음에 손으로 낚는 물고기가 흰수염고래 🐋가 돼요 (한 번, 놓치지 않음).</td><td>코드를 아는 사람</td></tr>
+          <tr><td><code>/아이템코드</code></td><td>차 🚗, 스포츠카 + 리무진, 빨간 오토바이 🏍️, 시무르기 티셔츠, 친칠라·기니피그·원숭이 펫을 각각 열어 줘요.</td><td>코드를 아는 사람</td></tr>
+          <tr><td><code>/골든리트리버코드</code></td><td>골든리트리버 펫 🦮 <b>누룽지</b>를 열어 줘요 (입양 카페에서는 못 데려오는 코드 전용 펫). 첫 글자가 대문자로 바뀌어도 돼요.</td><td>코드를 아는 사람</td></tr>
+          <tr><td><code>./EVENTSTART1</code></td><td>이벤트 코드 (모든 플레이어용). 코인 100,000개, 기기당·계정당 한 번.</td><td>누구나</td></tr>
+        </tbody>
+      </table></div>
+      <h3>🕊️ 비행모드 코드 (스카이뷰)</h3>
+      <p class="muted">게임 채팅에 쳐요. 운영자 계정만 쓸 수 있어요 (서버가 확인, 개발 서버에서는 누구나). 다른 사람에게는 이 코드가 모르는 명령처럼 보여요. 날면서 다른 코드를 치면 공중에서 바로 바뀌어요.</p>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>Code</th><th>변신</th><th>같이 날기 (🫴)</th></tr></thead>
+        <tbody>
+          <tr><td><code>/서울맨</code> <code>/seoulman</code></td><td>🦸 초록·파랑·빨강 히어로 슈트와 빨간 망토. 주먹을 앞으로 뻗고 날아요.</td><td>양쪽에 끼기 (2명), 한쪽에 끼기, 공주님 안기</td></tr>
+          <tr><td><code>/스카이슈트</code> <code>/skysuit</code></td><td>🤖 갑옷 조각이 날아와 붙고, 손발에서 불꽃이 나와요.</td><td>양쪽에 끼기 (2명), 한쪽에 끼기, 공주님 안기</td></tr>
+          <tr><td><code>/날개</code> <code>/wings</code></td><td>🪽 커다란 흰 날개가 펼쳐져 펄럭여요.</td><td>양쪽에 끼기 (2명), 한쪽에 끼기, 공주님 안기</td></tr>
+          <tr><td><code>/신천옹</code> <code>/albatross</code></td><td>🕊️ 캐릭터가 아주 큰 알바트로스(날개 폭 약 6m)로 변해요. 주로 활공해요.</td><td>발톱으로 어깨 잡기 (1명)</td></tr>
+          <tr><td><code>/독수리</code> <code>/eagle</code></td><td>🦅 캐릭터가 흰머리 독수리로 변해요.</td><td>발톱으로 어깨 잡기 (1명)</td></tr>
+          <tr><td><code>/양탄자</code> <code>/carpet</code></td><td>🧞 내가 하늘을 나는 양탄자가 돼요. 뜨면 펄럭여요.</td><td>양탄자 위에 앉히기 (2명)</td></tr>
+          <tr><td><code>/우주선</code> <code>/ufo</code></td><td>🛸 흰색 외계인 우주선. 유리 돔 안 조종석에 앉아 조종해요.</td><td>뒷자리 (1명)</td></tr>
+          <tr><td><code>/손오공</code> <code>/wukong</code></td><td>🐒 근두운, 긴고아, 여의봉, 원숭이 귀·주둥이·꼬리.</td><td>근두운에 같이 타기 (2명)</td></tr>
+          <tr><td><code>/착지</code> <code>/land</code></td><td>내려가서 원래 모습으로 돌아와요. 같은 코드를 한 번 더 쳐도 돼요. 건물 위에서 내리면 옥상에 서요 (⬇ 로 거리로).</td><td></td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted">땅이나 옥상까지 내려오면 <code>/착지</code> 없이도 변신한 채로 서서 걸어 다녀요 (새는 뒤뚱뒤뚱, 양탄자와 우주선은 바닥에 내려앉아 미끄러지듯). 위로 올라가면 다시 날아요. 날고 있는 동안에는 다른 사람 화면에 내 닉네임이 보이지 않고, 지도에도 점이 찍히지 않고, 하이파이브·같이 타기·같이 하기 같은 이름이 나오는 버튼도 뜨지 않아요.</p>
+      <p class="muted">조작: 이동은 평소처럼, 위로 <code>Space</code>/<code>R</code> (폰 ▲), 아래로 <code>C</code>/<code>F</code> (폰 ▼), 대시 <code>Shift</code> (폰 ⚡ 한 번 누르면 켜짐). 🎯 자동 비행: 사람 따라가기, 장소로 날아가기. 🫴 같이 날기: 4m 안에 있는 사람에게 물어보고, 상대가 수락하면 태워요.</p>
+
+      <p class="muted">틀린 <code>/</code> 코드는 "모르는 명령"처럼 보여서 코드가 있다는 걸 들키지 않아요. 새 코드를 만들거나 바꾸려면 앨리스에게 말해 주세요.</p>
+
+      <h3>🛡️ 운영자 계정</h3>
+      <div class="card">이 페이지와 <code>/공지</code>, 운영자 배지는 Supabase의 <code>operators</code> 표에 user id가 있는 계정만 쓸 수 있어요 (Table Editor → operators → Insert row).</div>
+
+      <h3>📝 내 메모 (이 브라우저에만 저장)</h3>
+      <div class="card">
+        <textarea id="codeMemo" placeholder="실제 코드 글자를 여기 적어 두세요. 서버로 보내지 않고 이 브라우저에만 저장돼요."></textarea>
+        <div class="row"><span class="muted" id="codeMemoNote"></span></div>
+      </div>
+    </div></section>
+    <div id="msg" hidden></div>
+    <script type="module" src="/src/admin/admin.js"></script>
+  </body>
+</html>

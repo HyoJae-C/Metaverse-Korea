@@ -6,6 +6,7 @@
 //   { kind: 'book', book: '<id>' }
 //   { kind: 'coffee' | 'glass' | 'food', sips: 1-5, name: '<drink name>' }
 //   { kind: 'umbrella' }
+//   { kind: 'duckmold' } (the snow duck maker, given when it first snows)
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
 
@@ -30,6 +31,7 @@ export function giftEntry(e) {
 export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = () => true, maxSprays = 5 } = {}) {
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
+  if (e.kind === 'duckmold') return { kind: 'duckmold' };
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
   if (e.kind === 'perfume') {
     const sips = Math.min(maxSprays, e.sips | 0);
@@ -38,7 +40,11 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
-    return sips > 0 ? { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) } : null;
+    if (sips <= 0) return null;
+    const out = { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) };
+    if (e.kind === 'food' && e.ramen) out.ramen = true; // a Han River ramen bowl stays one
+    if (e.kind === 'food' && ['icecream', 'churro', 'hotdog'].includes(e.snack)) out.snack = e.snack; // Another Land's snacks (held.js SNACKS)
+    return out;
   }
   return null;
 }
@@ -51,7 +57,9 @@ export class Bag {
     try { raw = JSON.parse(storage?.getItem(BAG_KEY) || 'null'); } catch { /* broken save */ }
     const cap = Number.isFinite(raw?.cap) ? raw.cap | 0 : BASE_CAP;
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
-    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(Boolean).slice(0, this.cap);
+    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(Boolean)
+      .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
+      .slice(0, this.cap);
     this.listeners = [];
   }
 
@@ -67,6 +75,7 @@ export class Bag {
     const e = cleanEntry(entry, this.opts);
     if (!e || this.full) return false;
     if (e.kind === 'umbrella' && this.has('umbrella')) return false; // one is enough
+    if (e.kind === 'book' && this.has('book')) return false; // one library book out at a time
     this.items.push(e);
     this._save();
     return true;
@@ -78,6 +87,15 @@ export class Bag {
     const [e] = this.items.splice(i, 1);
     this._save();
     return e;
+  }
+
+  // Take out every entry of one kind (e.g. library books going back to the
+  // shelf). Returns how many were removed.
+  removeKind(kind) {
+    const n = this.items.length;
+    this.items = this.items.filter((e) => e.kind !== kind);
+    if (this.items.length !== n) this._save();
+    return n - this.items.length;
   }
 
   // Swap slot i for another entry (take something out, put the held thing

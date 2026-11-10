@@ -1,16 +1,32 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
+import { listeningBar } from './listening-bar-model.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
+import { RING, BOARD_ORDER } from './arcade.js';
+import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
+import { buildFurniture } from './furniture.js';
 import { buildPark } from './park.js';
-import { buildThemePark } from './themepark.js';
+import { buildPoolHall } from './pool-hall.js';
+import { POOL_ROOM } from './pool.js';
+import { SHELF_SECTIONS } from './books.js';
+import { buildHauntedHouse } from './haunted.js';
+import { buildAquarium, AQUA_ROOM } from './aquarium.js';
+import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
-import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+import { PALETTES, LIP_FAMILIES, accessory } from '../data/appearance.js';
+import { makeEars, makePaw } from './animal-wear.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
+import { buildCulture } from './culture.js';
+import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
+import { ROOM_DOME } from './dome-outside.js';
+import { ACTIVITY_ROOMS, decorateActivityRoom } from './activity-rooms.js';
+import { makeRide, makeSkate1 } from './rides.js';
+import { RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS } from './bike-garage.js';
 
 // Three lipsticks on each mirror shelf, from the shop's own colour family.
 function lipProps(store) {
@@ -23,21 +39,69 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  runway: { w: 26, d: 40, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
+  hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
-  park: { w: 36, d: 28, h: 8 }, // outdoor (see park.js)
+  park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
+  // Another Land (themepark.js): the rides round the central plaza, spread
+  // out along walking paths, the east promenade to the Ferris wheel and the
+  // drop tower, and a longer Main Street from the gate: under the island
+  // since the roller coaster moved out onto it. Not centred: x0..x1, z0..z1.
+  themepark: { w: 88, d: 74, h: 8, x0: -26, x1: 62, z0: -40, z1: 34 },
+  // Another Land's island in Seokchon Lake, open to the street (stores.json
+  // "open"): the Cotton Candy Express and its candy wood, in the coaster's
+  // own metres; the island's shore (open.lawn) is the edge.
+  island: { w: 92, d: 76, h: 8, x0: -72, x1: 20, z0: -60, z1: 16 },
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
+  pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
+  memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
+  dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
+  aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
+  zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
+  zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
-export const exitOf = (room) => ({ x: 0, z: room.d / 2 - 0.9 });
+export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
+// A room's walkable box (most rooms are centred on 0).
+export const roomBox = (room) => ({ x0: room.x0 ?? -room.w / 2, x1: room.x1 ?? room.w / 2, z0: room.z0 ?? -room.d / 2, z1: room.z1 ?? room.d / 2 });
 const SEAT_H = 0.38; // chair seat height, sized for the chibi characters
 const COUNTER_H = 0.62; // shop counters: low enough to see the clerk's face over them
 const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
 
 const mats = {};
 const mat = (c, opts) => (mats[c + JSON.stringify(opts || {})] ||= new THREE.MeshLambertMaterial({ color: c, ...opts }));
+
+// The 2D cinema (Doodle Cinema): the hall looks hand-drawn, like a cartoon.
+// Every surface gets one flat colour (no light or shade) and a black ink
+// outline round each shape. `keep` (the screen) is left as it is.
+const flatMats = new Map();
+const INK = new THREE.LineBasicMaterial({ color: '#1b1820' });
+const INK_RIM = new THREE.MeshBasicMaterial({ color: '#1b1820', side: THREE.BackSide });
+function drawFlat(scene, keep) {
+  const meshes = [];
+  scene.traverse((o) => { if (o.isMesh && o !== keep) meshes.push(o); });
+  for (const m of meshes) {
+    const old = m.material;
+    if (!old || Array.isArray(old) || old.isMeshBasicMaterial) continue; // (lights and screens already glow flat)
+    const key = old.color?.getHexString() + (old.map?.uuid || '') + (old.transparent ? old.opacity : '') + old.side;
+    // Pushed back a little in depth, so the ink lines on their edges always show.
+    if (!flatMats.has(key)) flatMats.set(key, new THREE.MeshBasicMaterial({ color: old.color, map: old.map || null, transparent: old.transparent, opacity: old.opacity, side: old.side, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+    m.material = flatMats.get(key);
+    const g = m.geometry?.type;
+    if (g === 'BoxGeometry') {
+      // A bold outline: a slightly bigger black copy, seen only from inside
+      // (its back faces), so it shows as a rim round the shape.
+      const { width, height, depth } = m.geometry.parameters, t = 0.05;
+      const rim = new THREE.Mesh(m.geometry, INK_RIM);
+      rim.scale.set((width + 2 * t) / width, (height + 2 * t) / height, (depth + 2 * t) / depth);
+      m.add(rim);
+    }
+    if (g === 'BoxGeometry' || g === 'PlaneGeometry') m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), INK));
+  }
+}
 
 function floorTexture(base, room) {
   const c = document.createElement('canvas');
@@ -112,6 +176,22 @@ export function productModel(kind, color, product = null) {
       add(new THREE.SphereGeometry(0.15, 14, 10), 0, 0.15);
       for (const s of [-1, 1]) add(new THREE.CapsuleGeometry(0.035, 0.12, 4, 8), 0.06 * s, 0.33);
       break;
+    case 'ramyeon': // an instant-noodle pack: a red pillow bag with a yellow label
+      add(new THREE.BoxGeometry(0.34, 0.07, 0.26), 0, 0.035);
+      add(new THREE.BoxGeometry(0.16, 0.075, 0.12), -0.05, 0.036, 0.02, mat('#ffd166'));
+      break;
+    case 'picnicmat': // a rolled-up picnic mat with a white strap
+      add(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 12).rotateZ(Math.PI / 2), 0, 0.07);
+      for (const sx of [-0.12, 0.12]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 12).rotateZ(Math.PI / 2), sx, 0.07, 0, mat('#ffffff'));
+      break;
+    case 'frisbee': // a frisbee lying flat, with a white rim
+      add(new THREE.CylinderGeometry(0.16, 0.14, 0.03, 20), 0, 0.03);
+      add(new THREE.TorusGeometry(0.15, 0.014, 6, 20).rotateX(Math.PI / 2), 0, 0.04, 0, mat('#ffffff'));
+      break;
+    case 'egg': // a small tray of eggs
+      add(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, 0.02, 0, mat('#d9c7a6'));
+      for (const ex of [-0.09, 0, 0.09]) for (const ez of [-0.05, 0.05]) add(new THREE.SphereGeometry(0.04, 10, 8).scale(1, 1.3, 1), ex, 0.07, ez);
+      break;
     case 'notebook':
       add(new THREE.BoxGeometry(0.3, 0.04, 0.4), 0, 0.02);
       add(new THREE.BoxGeometry(0.28, 0.035, 0.38), 0.01, 0.022, 0, mat('#ffffff'));
@@ -119,6 +199,13 @@ export function productModel(kind, color, product = null) {
     case 'pen':
       for (let i = 0; i < 3; i++) add(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8).rotateZ(Math.PI / 2), 0, 0.02, -0.06 + i * 0.06);
       break;
+    case 'furniture': { // a lamp for your home (lighting shops), shrunk to fit the display
+      const f = buildFurniture(product?.furniture);
+      const box = new THREE.Box3().setFromObject(f), size = box.getSize(new THREE.Vector3());
+      f.scale.setScalar(Math.min(1, 0.55 / Math.max(size.y, 0.01), 0.5 / Math.max(size.x, size.z, 0.01)));
+      g.add(f);
+      break;
+    }
     case 'candle':
       add(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 16), 0, 0.08, 0, mat('#ffffff', { transparent: true, opacity: 0.7 }));
       add(new THREE.CylinderGeometry(0.09, 0.09, 0.12, 16), 0, 0.06);
@@ -216,6 +303,17 @@ export function productModel(kind, color, product = null) {
       add(new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), 0, 0.72, 0, mat('#8a8f99'));
       break;
     }
+    case 'ears': { // an animal-ear headband (Nyang Meong To Pan) on a little stand
+      const a = accessory('head', product?.tryOn?.head);
+      add(new THREE.CylinderGeometry(0.02, 0.06, 0.12, 10), 0, 0.06, 0, mat('#fffaf0'));
+      if (a) { const e = makeEars(a); e.scale.setScalar(0.5); e.position.y = 0.12; g.add(e); }
+      break;
+    }
+    case 'paws': { // a pair of paw gloves
+      const a = accessory('hand', product?.tryOn?.hand);
+      if (a) for (const s of [-1, 1]) { const p = makePaw(a); p.scale.multiplyScalar(1.6); p.position.set(0.09 * s, 0.11, 0); g.add(p); }
+      break;
+    }
     case 'ribbon':
       for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.06, 10, 8).scale(1.3, 0.9, 0.6), 0.07 * s, 0.1);
       add(new THREE.SphereGeometry(0.03, 8, 6), 0, 0.1);
@@ -254,12 +352,15 @@ function labelTexture(text, bg) {
 }
 
 // A dartboard face: 20 black/cream wedges, red/green double and triple
-// rings and the bull (the game itself is drawn in ui/darts-ui.js).
+// rings, the bull and the number ring, sized by the scoring rules
+// (core/arcade.js RING). Darts are played on this face (game/darts-view.js),
+// so it is drawn sharp enough to read the trebles up close.
 function dartboardTexture() {
+  const S = 512, C = S / 2, R = (S / 2) * 104 / 128; // scoring edge: 104/128 of the face (stations.dartboards r)
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d'), C = 128, R = 104;
-  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, 256, 256);
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, S, S);
   const ring = (r0, r1, cols) => {
     for (let i = 0; i < 20; i++) {
       const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
@@ -267,23 +368,49 @@ function dartboardTexture() {
       g.beginPath(); g.arc(C, C, r1 * R, a0, a1); g.arc(C, C, r0 * R, a1, a0, true); g.closePath(); g.fill();
     }
   };
-  ring(0.95, 1, ['#d9473c', '#2f8f5b']);
-  ring(0.63, 0.95, ['#1b1b20', '#f3e6c4']);
-  ring(0.58, 0.63, ['#d9473c', '#2f8f5b']);
-  ring(0.09, 0.58, ['#1b1b20', '#f3e6c4']);
-  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, 0.09 * R, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, 0.04 * R, 0, Math.PI * 2); g.fill();
+  ring(RING.doubleIn, 1, ['#d9473c', '#2f8f5b']);
+  ring(RING.tripleOut, RING.doubleIn, ['#1b1b20', '#f3e6c4']);
+  ring(RING.tripleIn, RING.tripleOut, ['#d9473c', '#2f8f5b']);
+  ring(RING.outerBull, RING.tripleIn, ['#1b1b20', '#f3e6c4']);
+  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, RING.outerBull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, RING.bull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; g.font = `bold ${Math.round(S * 0.055)}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  BOARD_ORDER.forEach((n, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 10;
+    g.fillText(String(n), C + Math.cos(a) * R * 1.12, C + Math.sin(a) * R * 1.12);
+  });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   return tex;
 }
+
+// Seoul Another Dome's stadium (core/dome.js) is loaded on the first visit:
+// main.js imports it, hands its builder over here, then builds the room.
+let domeBuilder = null;
+export const setDomeBuilder = (fn) => { domeBuilder = fn; };
+export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
+// Another Land (themepark.js, with its coaster and bumper rink) the same way.
+let parkBuilder = null;
+export const setParkBuilder = (fn) => { parkBuilder = fn; };
+export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;
+// The zoo (zoo-park.js: the grounds, and the Sea Animals hall inside) too.
+let zooBuilders = null;
+export const setZooBuilders = (m) => { zooBuilders = m; };
+export const needsZoo = (store) => (store?.workshop === 'zoo' || store?.workshop === 'zoo-sea') && !zooBuilders;
 
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
 export function buildInterior(store) {
   const ROOM = roomOf(store);
   const EXIT = exitOf(ROOM);
-  if (store.workshop === 'themepark') return buildThemePark(store, ROOM, EXIT);
+  if (store.workshop === 'themepark') return parkBuilder(store, ROOM, EXIT);
+  if (store.workshop === 'pool') return buildPoolHall(store, ROOM, EXIT);
+  if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
+  if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
+  if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
+  if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
+  if (store.workshop === 'zoo') return zooBuilders.buildZooPark(store, ROOM, ZOO_PARK_EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
@@ -291,9 +418,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema;
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang'; // (the runway: a dark show room; the PC방 glows with its screens)
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
@@ -303,7 +430,7 @@ export function buildInterior(store) {
   const { w, d, h } = ROOM;
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2),
-    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
+    new THREE.MeshLambertMaterial({ map: floorTexture(store.category === 'fashion' ? '#e9e2d6' : store.cinema === 'doodle' ? '#6f62a8' : store.workshop === 'runway' ? '#2a2733' : store.workshop === 'ddp-hall' ? '#e4e6ea' : night ? '#3a2c26' : cozy ? '#9a6a48' : '#d9b48c', ROOM) }),
   );
   scene.add(floor);
 
@@ -326,8 +453,8 @@ export function buildInterior(store) {
   wall(d, w / 2, 0, -Math.PI / 2);
   wall(w, 0, d / 2, Math.PI);
 
-  // Exit door on the front wall (none upstairs in the museum).
-  const noExit = store.category === 'museum' && store.floor > 1;
+  // Exit door on the front wall (none upstairs in the museums).
+  const noExit = (store.category === 'museum' || store.category === 'memorial') && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
@@ -354,7 +481,7 @@ export function buildInterior(store) {
   const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
-  if (store.category !== 'home' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
+  if (store.category !== 'home' && store.category !== 'memorial' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -450,6 +577,44 @@ export function buildInterior(store) {
     block(x, z, cx, cz);
   });
 
+  // Ride shops: the rides themselves on low stands (a bike, a skateboard, a
+  // kick scooter and inline skates, then more of each), wearing the shop's
+  // own skins, instead of small goods on tables. Buying is at the counter.
+  if (store.workshop === 'bike') {
+    const shop = RIDE_SHOPS[store.rideShop] ? store.rideShop : 'pedal';
+    const { colors, patterns } = RIDE_SHOPS[shop];
+    const order = ['bike', 'skate', 'kick', 'inline'].filter((t) => RIDE_TYPES.includes(t));
+    spots.forEach(([x, z, ry], i) => {
+      const type = order[i % order.length];
+      const tier = 2 - (Math.floor(i / order.length) % 3);
+      const color = SKIN_COLORS[colors[i % colors.length]];
+      const pattern = shop === 'pedal' && i < order.length ? null : patterns[i % patterns.length];
+      const stand = new THREE.Group();
+      stand.position.set(x, 0, z);
+      stand.rotation.y = ry;
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.9, 0.16, 28), mat(store.colors.awning));
+      base.position.y = 0.08;
+      stand.add(base);
+      const ride = new THREE.Group();
+      if (type === 'inline') { // a pair of skates, side by side
+        for (const s of [-1, 1]) {
+          const sk = makeSkate1({ tier, color, pattern });
+          sk.position.x = 0.13 * s;
+          ride.add(sk);
+        }
+        ride.scale.setScalar(3);
+      } else {
+        ride.add(makeRide({ type, tier, color, pattern }));
+        ride.rotation.y = Math.PI / 2; // side on, so you see the whole ride
+        ride.scale.setScalar(type === 'bike' ? 1.5 : 1.9);
+      }
+      ride.position.y = 0.16;
+      stand.add(ride);
+      scene.add(stand);
+      block(x, z, 1.7, 1.7);
+    });
+  }
+
   // Category extras.
   const seats = [];
   let clerk = null; // where the shop clerk stands (behind the counter)
@@ -458,11 +623,15 @@ export function buildInterior(store) {
   const stations = {}; // minigame spots: { karaoke|photo|claw|sauna: [{ x, z }] }
   let animate = null; // per-frame animation (club lights), called while inside
   let see = null; // (x, z) each frame: rooms you can walk into turn see-through
+  let camBlocked = null; // (x, z) → true where the camera must not go (main.js)
   if (store.category === 'library') {
     // Tall bookshelves along the back and side walls, reading tables in the
     // middle (seats below), and a "quiet please" sign. Study content comes later.
     const spines = ['#b5533c', '#3f6e8c', '#d9a441', '#5f8a4e', '#7a4f8c', '#e3d6c0', '#2f3e4f', '#c97b63'];
-    const shelf = (x, z, ry, len) => {
+    // The shelves are split into sections (Learn Korean, children's
+    // stories, short stories, poetry), each a run of neighbouring shelves
+    // named on a board on top.
+    const shelf = (x, z, ry, len, section) => {
       const g = new THREE.Group();
       g.position.set(x, 0, z);
       g.rotation.y = ry;
@@ -482,19 +651,37 @@ export function buildInterior(store) {
           k++;
         }
       }
+      const lc = document.createElement('canvas');
+      lc.width = 512; lc.height = 112;
+      const lg = lc.getContext('2d');
+      lg.fillStyle = '#fffaf0'; lg.fillRect(0, 0, 512, 112);
+      lg.fillStyle = '#4a3326'; lg.textAlign = 'center'; lg.textBaseline = 'middle';
+      lg.font = '800 46px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+      lg.fillText(`${section.icon} ${section.name.ko}`, 256, 40);
+      lg.font = '700 26px system-ui, sans-serif';
+      lg.fillText(section.name.en, 256, 88);
+      const ltex = new THREE.CanvasTexture(lc);
+      ltex.colorSpace = THREE.SRGBColorSpace;
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.48), new THREE.MeshBasicMaterial({ map: ltex }));
+      label.position.set(0, 2.66, 0.2);
+      g.add(label);
       const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.6, len] : [len, 0.6];
       block(x, z, cx, cz);
     };
+    // Going round the room: left wall (front to back), back wall (left to
+    // right), right wall (back to front), so each section is one stretch.
     const nBack = Math.max(2, Math.floor((w - 2) / 2.6));
-    for (let i = 0; i < nBack; i++) shelf((i - (nBack - 1) / 2) * 2.6, -d / 2 + 0.45, 0, 2.4);
     const nSide = Math.max(1, Math.floor((d - 5) / 2.6));
-    for (let i = 0; i < nSide; i++) {
-      const z = -d / 2 + 2.2 + i * 2.6;
-      shelf(-w / 2 + 0.45, z, Math.PI / 2, 2.4);
-      shelf(w / 2 - 0.45, z, -Math.PI / 2, 2.4);
-      for (const sgn of [-1, 1]) (stations.books ||= []).push({ x: sgn * (w / 2 - 1.3), z }); // pick a book here
-    }
-    for (let i = 0; i < nBack; i++) stations.books.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 1.3 });
+    const spots = [];
+    for (let i = nSide - 1; i >= 0; i--) spots.push({ x: -w / 2 + 0.45, z: -d / 2 + 2.2 + i * 2.6, ry: Math.PI / 2, sx: -(w / 2 - 1.3) });
+    for (let i = 0; i < nBack; i++) spots.push({ x: (i - (nBack - 1) / 2) * 2.6, z: -d / 2 + 0.45, ry: 0, sz: -d / 2 + 1.3 });
+    for (let i = 0; i < nSide; i++) spots.push({ x: w / 2 - 0.45, z: -d / 2 + 2.2 + i * 2.6, ry: -Math.PI / 2, sx: w / 2 - 1.3 });
+    stations.books = []; // pick a book here: { x, z, section }
+    spots.forEach((sp, i) => {
+      const section = SHELF_SECTIONS[Math.floor((i * SHELF_SECTIONS.length) / spots.length)];
+      shelf(sp.x, sp.z, sp.ry, 2.4, section);
+      stations.books.push({ x: sp.sx ?? sp.x, z: sp.sz ?? sp.z, section: section.id });
+    });
     // Long reading tables with chairs on both long sides.
     // Rows 3.4 m apart so there's an aisle between one row's chair backs
     // and the next table: you stand up into it without getting stuck.
@@ -536,7 +723,7 @@ export function buildInterior(store) {
     const stex = new THREE.CanvasTexture(sc);
     stex.colorSpace = THREE.SRGBColorSpace;
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.75), new THREE.MeshBasicMaterial({ map: stex }));
-    sign.position.set(-w / 2 + 0.05, 2.9, 0);
+    sign.position.set(-w / 2 + 0.05, Math.max(2.9, h - 0.5), 0); // above the shelf boards
     sign.rotation.y = Math.PI / 2;
     scene.add(sign);
   } else if (store.category === 'museum') {
@@ -547,6 +734,22 @@ export function buildInterior(store) {
     seats.push(...gallery.seats);
     clerk = gallery.clerk;
     see = gallery.see;
+  } else if (store.category === 'memorial') {
+    // The War History Museum: photos, the memorial room and its altar.
+    const hall = buildMemorial(scene, ROOM, { box, block, mat }, store.floor || 1);
+    stations.paintings = hall.looks;
+    stations.lift = hall.lift;
+    stations.panels = hall.panels;
+    stations.flower = hall.flower;
+    stations.layFlower = hall.layFlower;
+    seats.push(...hall.seats);
+    clerk = hall.clerk;
+    see = hall.see;
+  } else if (store.category === 'culture') {
+    // Seoul Forest's culture center and forest galleries (core/culture.js).
+    const room = buildCulture(scene, ROOM, { box, block, mat }, store);
+    seats.push(...room.seats);
+    clerk = room.clerk;
   } else if (store.category === 'school') {
     // 어학당 classroom: a blackboard on the back wall, the teacher's desk in
     // front of it, and rows of student desks facing the board. Sit at any
@@ -717,13 +920,15 @@ export function buildInterior(store) {
   } else if (store.category === 'bar') {
     // A quiet cocktail bar: a long counter with stools, shelves of lit
     // bottles behind it, warm pendant lamps and two candle-lit tables.
+    // The style (core/bar-styles.js) adds what makes each bar its own place.
+    const style = barStyleOf(store);
     const cz = -d / 2 + 2.2;
     box(8.6, BAR_H, 0.8, 0, BAR_H / 2, cz, '#3b2418');
     box(8.8, 0.07, 0.95, 0, BAR_H + 0.01, cz, '#8a5a3a');
     block(0, cz, 8.8, 0.95);
     clerk = { x: 0.6, z: cz - 1.0, ry: 0 }; // the bartender
-    // Back shelves with bottles.
-    for (const y of [1.25, 1.85, 2.45]) {
+    // Back shelves with bottles (the taproom has its tap wall there instead).
+    for (const y of style === 'taproom' ? [] : [1.25, 1.85, 2.45]) {
       box(9, 0.06, 0.35, 0, y, -d / 2 + 0.25, '#5a3a28');
       for (let i = 0; i < 16; i++) {
         const bc = ['#3f8f5f', '#c9a227', '#a33a2c', '#d8e4ea', '#6b3f8c', '#2f5d8c'][(i * 5 + Math.round(y * 10)) % 6];
@@ -752,8 +957,8 @@ export function buildInterior(store) {
       pl.position.set(x, h - 1.3, cz + 0.2);
       scene.add(pl);
     }
-    // Two small tables with candles.
-    for (const tx of [-w / 2 + 2.2, w / 2 - 2.2]) {
+    // Two small tables with candles (the quiet bars).
+    for (const tx of style === 'hush' || style === 'speakeasy' ? [-w / 2 + 2.2, w / 2 - 2.2] : []) {
       const tz = d / 2 - 3.6;
       const top = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 20), mat('#5a3a28'));
       top.position.set(tx, 0.72, tz);
@@ -767,6 +972,9 @@ export function buildInterior(store) {
       glow.position.set(tx, 1.0, tz);
       scene.add(glow);
       for (const s2 of [-1, 1]) {
+        // With darts, the chair against the left wall makes way for the
+        // second dartboard's players.
+        if (store.darts && tx < 0 && s2 < 0) continue;
         const chx = tx + 0.85 * s2;
         box(0.42, 0.06, 0.42, chx, SEAT_H - 0.03, tz, '#6b2f2f');
         box(0.08, 0.5, 0.42, chx + 0.2 * s2, SEAT_H + 0.22, tz, '#6b2f2f');
@@ -774,27 +982,38 @@ export function buildInterior(store) {
       }
       block(tx, tz, 2.3, 0.95);
     }
-    // A dartboard on the left wall (stores.json "darts": true), with the
-    // throw line on the floor in front of it.
+    // Two dartboards side by side on the left wall (stores.json "darts":
+    // true), each with its throw line on the floor in front of it. Darts
+    // thrown there stick in the board for everyone in the bar to see
+    // (core/dart-pins.js); dartboards[i] is board i's face.
     if (store.darts) {
-      const dz = -0.6, bx = -w / 2 + 0.06;
-      box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
-      const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
-      face.rotation.y = Math.PI / 2;
-      face.position.set(bx + 0.08, 1.6, dz);
-      scene.add(face);
-      const spot = new THREE.PointLight(0xfff0d0, 3, 4); // (not 3.5: those are the candles that flicker)
-      spot.position.set(bx + 0.9, 2.6, dz);
-      scene.add(spot);
-      box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
-      stations.darts = [{ x: bx + 2.7, z: dz, ry: -Math.PI / 2 }]; // facing the board
+      const bx = -w / 2 + 0.06;
+      stations.darts = [];
+      stations.dartboards = [];
+      [-1.4, 0.4].forEach((dz, i) => {
+        box(0.08, 1.5, 1.4, bx + 0.02, 1.55, dz, '#2b1d14'); // cabinet
+        const face = new THREE.Mesh(new THREE.CircleGeometry(0.34, 40), new THREE.MeshLambertMaterial({ map: dartboardTexture() }));
+        face.rotation.y = Math.PI / 2;
+        face.position.set(bx + 0.08, 1.6, dz);
+        scene.add(face);
+        const spot = new THREE.PointLight(0xfff0d0, 2.5, 4); // (not 3.5: those are the candles that flicker)
+        spot.position.set(bx + 0.9, 2.6, dz);
+        scene.add(spot);
+        box(0.05, 0.01, 1.2, bx + 2.37, 0.01, dz, '#c9a227'); // the oche (throw line)
+        stations.darts.push({ x: bx + 2.7, z: dz, ry: -Math.PI / 2, board: i }); // facing the board
+        // The scoring area (r = 1 in core/arcade.js) is 104/128 of the face.
+        stations.dartboards.push({ x: bx + 0.08, y: 1.6, z: dz, ry: Math.PI / 2, r: 0.34 * 104 / 128 });
+      });
     }
+    const styled = decorateBar(style, { scene, box, block, mat, seats, stations, w, d, h, cz, store, BAR_H, SEAT_H });
+    if (style === 'hush') seatPatron({ seats, stations }, -2.4, cz + 0.95); // a regular at the end of the bar
     let t = 0;
     const flames = [];
     scene.traverse((o) => { if (o.isPointLight && o.distance === 3.5) flames.push(o); });
     animate = (dt) => {
       t += dt;
       flames.forEach((f, i) => { f.intensity = 2.2 + Math.sin(t * 9 + i * 2) * 0.35 + Math.sin(t * 23 + i) * 0.15; });
+      styled?.(dt);
     };
   } else if (store.category === 'cafe' || store.category === 'restaurant') {
     // Tables with a chair on each side, laid out in rows across the middle of
@@ -935,6 +1154,171 @@ export function buildInterior(store) {
       box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
       for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
       block(fx, fz, 0.9, 2.3);
+    } else if (store.workshop === 'ddp-hall') {
+      // DDP Hall: DDP's bright lobby, entered from the plaza. White curving
+      // forms (a few design pieces on plinths), benches, people already
+      // looking round, and at the back a dark doorway to the Curve Runway
+      // (its own room: main.js walks you in, its door brings you back).
+      // The middle stays open from the front door to the back door.
+      const dz = -d / 2 + 0.2;
+      for (const sx2 of [-1.7, 1.7]) box(0.4, 3.4, 0.4, sx2, 1.7, dz + 0.1, '#c9ced6');
+      box(3.8, 0.4, 0.4, 0, 3.6, dz + 0.1, '#c9ced6');
+      box(3, 3.2, 0.06, 0, 1.6, dz - 0.08, '#24212b');
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.08).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffe9c4' }));
+      glow.position.set(0, 0.015, dz + 0.5);
+      scene.add(glow);
+      const runwaySign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.69), new THREE.MeshBasicMaterial({ map: labelTexture('커브 런웨이 · Curve Runway', '#24212b') }));
+      runwaySign.position.set(0, 4.25, dz + 0.02);
+      scene.add(runwaySign);
+      stations.runwayDoor = [{ x: 0, z: dz + 1.1 }];
+      // Design pieces on white plinths, along both sides.
+      const pieces = [['torus', '#c9ced6'], ['sphere', '#f2b8a0'], ['cone', '#9fb7d9'], ['knot', '#e7d38a']];
+      let n = 0;
+      for (const side of [-1, 1]) {
+        for (const pz of [-d * 0.22, d * 0.08]) {
+          const px = side * (w / 2 - 3.2);
+          box(1.2, 0.9, 1.2, px, 0.45, pz, '#f7f8fa');
+          const [kind, col] = pieces[n++ % pieces.length];
+          const geo = kind === 'torus' ? new THREE.TorusGeometry(0.42, 0.14, 12, 32)
+            : kind === 'sphere' ? new THREE.SphereGeometry(0.42, 24, 16)
+              : kind === 'cone' ? new THREE.ConeGeometry(0.38, 0.9, 24)
+                : new THREE.TorusKnotGeometry(0.3, 0.1, 64, 10);
+          const art = new THREE.Mesh(geo, mat(col));
+          art.position.set(px, 1.4, pz);
+          scene.add(art);
+          block(px, pz, 1.4, 1.4);
+        }
+      }
+      // A long curved white wall piece in each back corner, like DDP's skin.
+      for (const side of [-1, 1]) {
+        const arc = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 3.2, 24, 1, true, side < 0 ? Math.PI : Math.PI / 2, Math.PI / 2), mat('#f4f5f7', { side: THREE.DoubleSide }));
+        arc.position.set(side * (w / 2 - 3), 1.6, -d / 2 + 3);
+        scene.add(arc);
+        block(side * (w / 2 - 1.6), -d / 2 + 1.6, 3, 3);
+      }
+      // Benches in the middle of each side, facing the open floor.
+      for (const side of [-1, 1]) {
+        const bx = side * 4.6, bz = d * 0.28;
+        box(0.7, 0.4, 2.4, bx, 0.2, bz, '#c9ced6');
+        for (const o of [-0.6, 0.6]) seats.push({ x: bx, z: bz + o, ry: -side * Math.PI / 2, stand: [bx - side * 0.9, bz + o] });
+        block(bx, bz, 0.8, 2.5);
+      }
+      // People already here, looking at the pieces (main.js stands them up).
+      stations.visitors = [
+        { x: -w / 2 + 4.9, z: -d * 0.22 + 0.3, ry: -Math.PI / 2 },
+        { x: w / 2 - 4.9, z: d * 0.08 - 0.4, ry: Math.PI / 2 },
+        { x: w / 2 - 4.7, z: -d * 0.22 + 0.9, ry: Math.PI / 2 + 0.4 },
+        { x: -2.6, z: -d / 2 + 3.4, ry: Math.PI + 0.3 },
+        { x: -w / 2 + 4.7, z: d * 0.08 + 0.8, ry: -Math.PI / 2 - 0.3 },
+      ];
+      for (const v of stations.visitors) block(v.x, v.z, 0.5, 0.5);
+    } else if (store.workshop === 'runway') {
+      // Curve Runway (DDP, its own big room size): a long lit catwalk from a
+      // backstage arch at the back wall towards the door, rows of seats
+      // either side facing it (some already taken by an audience, main.js),
+      // and photographers either side of its end. The middle stays open from
+      // the door to the catwalk: walk in, up the runway to backstage.
+      // Flat (at floor height), so walking it needs no climbing.
+      const z0 = -d / 2 + 1.8, z1 = d / 2 - 9, len = z1 - z0 + 1.4, mid = (z0 + z1) / 2;
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(2.6, len).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#f4f1f8' }));
+      strip.position.set(0, 0.012, mid);
+      scene.add(strip);
+      const glowMat = new THREE.MeshBasicMaterial({ color: '#ffe9c4' });
+      for (const sx2 of [-1.35, 1.35]) {
+        const edge = new THREE.Mesh(new THREE.PlaneGeometry(0.1, len).rotateX(-Math.PI / 2), glowMat);
+        edge.position.set(sx2, 0.016, mid);
+        scene.add(edge);
+      }
+      // Backstage: a silver arch with a dark curtain. Its own materials, so
+      // they turn see-through when the camera ends up behind them (waiting
+      // by the start, the camera behind you looks back through the arch).
+      const archMat = new THREE.MeshLambertMaterial({ color: '#c9ced6', transparent: true });
+      const curtainMat = new THREE.MeshLambertMaterial({ color: '#2a2632', transparent: true });
+      for (const sx2 of [-2, 2]) box(0.45, 4, 0.45, sx2, 2, -d / 2 + 0.5, '#c9ced6').material = archMat;
+      box(4.5, 0.55, 0.45, 0, 4.1, -d / 2 + 0.5, '#c9ced6').material = archMat;
+      box(3.6, 3.8, 0.06, 0, 1.9, -d / 2 + 0.12, '#2a2632').material = curtainMat;
+      const archZ = -d / 2 + 0.9; // just in front of the pillars
+      see = (px, pz, cx, cz) => {
+        const behind = cz < archZ;
+        for (const m of [archMat, curtainMat]) {
+          const o = behind ? 0.15 : 1;
+          if (m.opacity !== o) { m.opacity = o; m.depthWrite = !behind; }
+        }
+      };
+      // And the camera stays in the room (it stops short of the back wall).
+      camBlocked = (x, z) => z < -d / 2 + 0.6;
+      // Seats: four rows each side, turned to the runway, in two blocks with
+      // a cross aisle between them (and aisles at both ends) to get in.
+      const audience = [];
+      const rowZs = [];
+      for (let z = z0 + 2; z <= z1 - 0.6; z += 1.15) rowZs.push(z);
+      const aisle = Math.floor(rowZs.length / 2);
+      const blocks = [rowZs.slice(0, aisle), rowZs.slice(aisle + 1)];
+      let k = 0;
+      for (const side of [-1, 1]) {
+        for (let r = 0; r < 4; r++) {
+          const sx2 = side * (2.9 + r * 1.25);
+          for (const zs of blocks) {
+            for (const z of zs) {
+              box(0.62, 0.12, 0.62, sx2, SEAT_H - 0.06, z, store.colors.seat || store.colors.sign);
+              box(0.12, 0.6, 0.62, sx2 + side * 0.3, SEAT_H + 0.28, z, store.colors.seat || store.colors.sign);
+              const seat = { x: sx2, z, ry: -side * Math.PI / 2, stand: [sx2 - side * 0.62, z] };
+              // About a third of the seats are taken already (the same ones
+              // for everyone); the rest are for players.
+              // (at most 40 people, for phones)
+              if ((k++ * 7) % 3 === 0 && audience.length < 40) audience.push(seat); else seats.push(seat);
+            }
+            if (zs.length) block(sx2 + side * 0.12, (zs[0] + zs[zs.length - 1]) / 2, 0.45, zs[zs.length - 1] - zs[0] + 0.7);
+          }
+        }
+      }
+      // The photographers: cameras on tripods either side of the runway's
+      // end, leaving the middle open.
+      const flashes = [];
+      for (const fx of [-3.4, -2.2, 2.2, 3.4]) {
+        const pz = z1 + 1.4;
+        box(0.05, 1.2, 0.05, fx, 0.6, pz, '#3a3a40');
+        box(0.32, 0.22, 0.2, fx, 1.3, pz, '#1f1f24');
+        box(0.12, 0.12, 0.18, fx, 1.3, pz - 0.18, '#55555c'); // lens
+        block(fx, pz, 0.4, 0.4);
+        const fl = new THREE.PointLight(0xffffff, 0, 8);
+        fl.position.set(fx, 1.6, pz - 0.3);
+        scene.add(fl);
+        flashes.push(fl);
+      }
+      // Spotlights over the runway.
+      for (const sz of [mid, z1 - 1]) {
+        const spot = new THREE.PointLight(0xfff1dd, 14, 16);
+        spot.position.set(0, h - 0.5, sz);
+        scene.add(spot);
+      }
+      // Where the walk starts, so nobody misses it: a sign over the arch
+      // (seen from the door), a glowing ring on the floor at the start, and
+      // arrows from the door to the runway's end.
+      const startSign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.69), new THREE.MeshBasicMaterial({ map: labelTexture('▼ 런웨이 시작 · START ▼', '#c2185b') }));
+      startSign.position.set(0, 5, -d / 2 + 0.5);
+      scene.add(startSign);
+      const ringMat = new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.8, depthWrite: false });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 32).rotateX(-Math.PI / 2), ringMat);
+      ring.position.set(0, 0.02, z0);
+      scene.add(ring);
+      const chev = new THREE.Shape([[0, 0.35], [-0.5, -0.15], [-0.5, -0.4], [0, 0.1], [0.5, -0.4], [0.5, -0.15]].map(([x, y]) => new THREE.Vector2(x, y)));
+      const arrowZs = [];
+      for (let az = z1 + 2.6; az < d / 2 - 1.2; az += 1.8) arrowZs.push(az);
+      const arrows = new THREE.InstancedMesh(new THREE.ShapeGeometry(chev).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.75, depthWrite: false }), arrowZs.length);
+      const am = new THREE.Matrix4();
+      arrowZs.forEach((az, i) => arrows.setMatrixAt(i, am.makeTranslation(0, 0.02, az)));
+      scene.add(arrows);
+      let flashT = 0, pulseT = 0;
+      animate = (dt) => {
+        pulseT += dt;
+        ringMat.opacity = 0.45 + 0.4 * Math.sin(pulseT * 4) ** 2;
+        flashT = Math.max(0, flashT - dt);
+        const on = flashT > 0 && Math.sin(flashT * 60) > 0 ? 40 : 0;
+        flashes.forEach((fl, i) => { fl.intensity = (i + Math.floor(flashT * 20)) % 2 ? on : 0; });
+      };
+      // Stand backstage to start; main.js walks you from z to z1 and back.
+      stations.runway = [{ x: 0, z: z0, ry: 0, z1, audience, flash: () => { flashT = 0.5; } }];
     } else if (store.workshop === 'karaoke') {
       // A small stage with a big lyrics screen and a mic stand.
       box(5, 0.2, 2.4, 0, 0.1, -d / 2 + 1.4, '#2b2240');
@@ -998,6 +1382,7 @@ export function buildInterior(store) {
       const cloth = store.tarotCloth || '#4b2f7a';
       const n = Math.max(1, Math.min(2, store.readers || 1));
       const tz = -d / 2 + 2.3;
+      const TT = 0.62; // tabletop height: low, so you look down at the cards
       const xs = n === 2 ? [-w / 4 - 0.1, w / 4 + 0.1] : [0];
       stations.tarotReaders = [];
       stations.tarotTables = [];
@@ -1006,23 +1391,23 @@ export function buildInterior(store) {
         rug.position.set(tx, 0.01, tz + 0.2);
         scene.add(rug);
         const top = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.06, 24), mat(cloth));
-        top.position.set(tx, 0.76, tz);
+        top.position.set(tx, TT, tz);
         scene.add(top);
-        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, 0.7, 24, 1, true), mat(cloth));
-        skirt.position.set(tx, 0.4, tz);
+        const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.87, 0.98, TT - 0.06, 24, 1, true), mat(cloth));
+        skirt.position.set(tx, (TT - 0.06) / 2 + 0.02, tz);
         scene.add(skirt);
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
-        ball.position.set(tx, 0.96, tz - 0.3);
+        ball.position.set(tx, TT + 0.2, tz - 0.3);
         scene.add(ball);
-        box(0.18, 0.05, 0.18, tx, 0.81, tz - 0.3, '#d4a73a'); // its stand
+        box(0.18, 0.05, 0.18, tx, TT + 0.05, tz - 0.3, '#d4a73a'); // its stand
         for (const s2 of [-1, 1]) { // candles
-          box(0.06, 0.16, 0.06, tx + s2 * 0.55, 0.87, tz - 0.15, '#f7f1e3');
+          box(0.06, 0.16, 0.06, tx + s2 * 0.55, TT + 0.11, tz - 0.15, '#f7f1e3');
           const flame = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
-          flame.position.set(tx + s2 * 0.55, 0.98, tz - 0.15);
+          flame.position.set(tx + s2 * 0.55, TT + 0.22, tz - 0.15);
           scene.add(flame);
         }
         for (let q = 0; q < 7; q++) { // a fanned deck, face down
-          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, 0.8, tz + 0.25, '#2a1f4f');
+          const card = box(0.12, 0.01, 0.2, tx + (q - 3) * 0.1, TT + 0.04, tz + 0.25, '#2a1f4f');
           card.rotation.y = (q - 3) * 0.12;
         }
         // A hanging lamp with a fabric shade, and a warm pool of light.
@@ -1056,7 +1441,8 @@ export function buildInterior(store) {
         box(0.06, 0.06, 3.5, 0, h - 0.3, -d / 2 + 1.7, '#d4a73a'); // its rail
         block(0, -d / 2 + 1.7, 0.2, 3.4);
       }
-      // The waiting sofa by the door, a low table with tea, and a bookshelf.
+      // The waiting sofa by the door (left), armchairs on the right where a
+      // shop counter would be, and a bookshelf. The space between is left open.
       const sofaX = -w / 2 + 0.75;
       box(0.75, 0.42, 2.4, sofaX, 0.21, 1.5, '#7a3b4f');
       box(0.2, 0.9, 2.4, sofaX - 0.33, 0.6, 1.5, '#6a2f42');
@@ -1065,10 +1451,15 @@ export function buildInterior(store) {
         seats.push({ x: sofaX + 0.1, z, ry: Math.PI / 2, stand: [sofaX + 1.0, z], wait: true });
       }
       block(sofaX - 0.05, 1.5, 0.8, 2.5);
-      box(0.6, 0.4, 1.0, sofaX + 1.35, 0.2, 1.5, '#5c3b2a');
-      box(0.16, 0.14, 0.16, sofaX + 1.35, 0.47, 1.3, '#f2e6d0'); // teapot
-      for (const z of [1.6, 1.75]) box(0.07, 0.07, 0.07, sofaX + 1.35, 0.44, z, '#f2e6d0'); // cups
-      block(sofaX + 1.35, 1.5, 0.6, 1.0);
+      const chairX = w / 2 - 0.7;
+      for (const z of [1.0, 1.9, 2.8]) { // waiting armchairs on the right wall, facing the room
+        box(0.62, 0.42, 0.62, chairX, 0.21, z, '#5a3a6e');
+        box(0.14, 0.82, 0.62, chairX + 0.26, 0.61, z, '#4a2f5e'); // backrest
+        for (const s2 of [-1, 1]) box(0.5, 0.18, 0.1, chairX + 0.02, 0.5, z + s2 * 0.29, '#4a2f5e'); // arms
+        box(0.46, 0.08, 0.46, chairX - 0.04, 0.46, z, '#f0d9a8'); // cushion
+        seats.push({ x: chairX - 0.1, z, ry: -Math.PI / 2, stand: [chairX - 1.0, z], wait: true });
+      }
+      block(chairX + 0.05, 1.9, 0.75, 2.6);
       box(0.4, 2.0, 1.4, -w / 2 + 0.25, 1.0, -0.6, '#4a3326'); // bookshelf
       for (let r = 0; r < 4; r++) for (let q = 0; q < 5; q++) box(0.22, 0.32, 0.1, -w / 2 + 0.35, 0.3 + r * 0.48, -1.1 + q * 0.24, ['#c9a6ff', '#e6a3b8', '#ffd36e', '#7fb7a8', '#d98b5f'][(r + q) % 5]);
       block(-w / 2 + 0.25, -0.6, 0.4, 1.4);
@@ -1084,6 +1475,9 @@ export function buildInterior(store) {
         star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
+    } else if (ACTIVITY_ROOMS.has(store.workshop)) {
+      // Bowling alley, climbing gym, PC방 (core/activity-rooms.js).
+      animate = decorateActivityRoom(store, { scene, box, block, mat, stations, seats, w, d, h })?.animate || null;
     } else if (store.workshop === 'batting') {
       // 야구 연습장: three netted lanes, a pitching machine at the far end of
       // each, home plate at the open front where you stand to bat.
@@ -1319,14 +1713,18 @@ export function buildInterior(store) {
       bar.rotation.z = Math.PI / 2;
       bar.position.set(px, 1.2, pz - 0.6);
       scene.add(bar);
+      const racked = [bar]; // (hidden while someone has the bar: model-pack.js gives them their own)
       for (const sx2 of [-0.85, 0.85]) {
         const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.08, 18), mat('#2b2b2e'));
         plate.rotation.z = Math.PI / 2;
         plate.position.set(px + sx2, 1.2, pz - 0.6);
         scene.add(plate);
+        racked.push(plate);
       }
       block(px, pz, 1.6, 1.8);
-      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench' });
+      // You lie on the bench (head under the rack) while you lift.
+      stations.gym.push({ x: px + 1.1, z: pz, kind: 'bench', lie: { x: px, z: pz, ry: 0 } });
+      stations.benchBar = racked;
       // Dumbbell rack on the right wall.
       const rx = w / 2 - 0.8, rz = -d * 0.12;
       box(0.7, 0.8, 2.6, rx, 0.4, rz, '#4a4f57');
@@ -1365,6 +1763,95 @@ export function buildInterior(store) {
       mirror.position.set(-w / 2 + 0.03, 1.5, -d * 0.1);
       mirror.rotation.y = Math.PI / 2;
       scene.add(mirror);
+    } else if (store.workshop === 'yoga') {
+      // 숨 요가·필라테스: a yoga floor on the left (the instructor's mat at
+      // the front by the mirror, rows of mats facing her) and pilates
+      // reformers on the right. Some members are already in class; the
+      // middle stays clear from the door.
+      stations.studio = [];
+      box(9.4, 0.012, 12, -5.75, 0.006, -0.6, '#e7dccb'); // the yoga floor (a soft rug)
+      box(8.6, 0.012, 12, 5.9, 0.006, -0.6, '#dfe6e3'); // the pilates floor
+      const mirror = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.2), new THREE.MeshLambertMaterial({ color: '#d4e8f1' }));
+      mirror.position.set(-5.75, 1.4, -d / 2 + 0.03);
+      scene.add(mirror);
+      const yogaMat = (x, z, color) => {
+        box(0.72, 0.03, 1.9, x, 0.015, z, color);
+        box(0.6, 0.032, 0.04, x, 0.016, z - 0.85, '#ffffff'); // a stripe at the top end
+      };
+      // The instructor's mat, facing the class.
+      yogaMat(-5.75, -6.1, '#9b7fd1');
+      stations.instructor = { x: -5.75, z: -6.1, ry: 0 };
+      const matColors = ['#8fc9b4', '#f2b8a2', '#a9c4ef', '#f3d78a', '#c8b3ea'];
+      const members = new Set(['-8.5,-3', '-3,-3', '-5.75,-0.2', '-8.5,2.6']); // mats with someone on them
+      let n = 0;
+      for (const z of [-3, -0.2, 2.6]) {
+        for (const x of [-8.5, -5.75, -3]) {
+          yogaMat(x, z, matColors[n++ % matColors.length]);
+          stations.studio.push({ x, z, kind: 'yoga', face: Math.PI, npc: members.has(`${x},${z}`) });
+        }
+      }
+      // Reformers: a long frame, rails, a sliding padded carriage with
+      // shoulder rests at the head end (-z) and a foot bar with springs.
+      const reformer = (x, z) => {
+        box(0.78, 0.22, 2.5, x, 0.11, z, '#efe9de');
+        for (const s2 of [-0.33, 0.33]) box(0.06, 0.05, 2.5, x + s2, 0.245, z, '#b8bec4');
+        box(0.62, 0.09, 1.1, x, 0.31, z - 0.3, '#3f7f82'); // carriage
+        for (const s2 of [-0.17, 0.17]) box(0.1, 0.16, 0.1, x + s2, 0.43, z - 0.88, '#3f7f82'); // shoulder rests
+        box(0.3, 0.06, 0.18, x, 0.38, z - 0.93, '#3f7f82'); // headrest
+        for (const s2 of [-0.34, 0.34]) box(0.05, 0.5, 0.05, x + s2, 0.47, z + 1.05, '#b8bec4');
+        const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.74, 10), mat('#d6dbe0'));
+        fb.rotation.z = Math.PI / 2;
+        fb.position.set(x, 0.72, z + 1.05);
+        scene.add(fb);
+        for (const s2 of [-0.18, -0.06, 0.06, 0.18]) { // springs
+          const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.55, 6), mat(s2 < 0 ? '#e0566b' : '#f2b84b'));
+          sp.rotation.x = Math.PI / 2;
+          sp.position.set(x + s2, 0.2, z + 0.62);
+          scene.add(sp);
+        }
+        block(x, z, 0.85, 2.6);
+      };
+      const busy = new Set(['3.5,-4.2', '7.8,1.4']);
+      for (const z of [-4.2, 1.4]) {
+        for (const x of [3.5, 7.8]) {
+          reformer(x, z);
+          stations.studio.push({ x: x - 0.85, z, kind: 'reformer', lie: { x, z, ry: 0 }, npc: busy.has(`${x},${z}`) });
+        }
+      }
+      // A shelf of rolled-up mats and foam blocks by the yoga floor, plants in
+      // the corners, and the two room names on the side walls.
+      box(0.5, 1.1, 2.2, -w / 2 + 0.3, 0.55, d / 2 - 3, '#c9a27a');
+      block(-w / 2 + 0.3, d / 2 - 3, 0.6, 2.3);
+      for (let i = 0; i < 5; i++) {
+        const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.45, 12), mat(matColors[i]));
+        roll.rotation.z = Math.PI / 2;
+        roll.position.set(-w / 2 + 0.3, 1.2, d / 2 - 3.9 + i * 0.42);
+        scene.add(roll);
+      }
+      for (let i = 0; i < 3; i++) box(0.22, 0.12, 0.3, -w / 2 + 0.3, 0.75, d / 2 - 3.6 + i * 0.6, '#9b7fd1');
+      for (const [x, z] of [[-w / 2 + 0.7, d / 2 - 0.9], [-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7]]) {
+        box(0.5, 0.5, 0.5, x, 0.25, z, '#d8cbb8');
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), mat('#6f9e6a'));
+        leaf.position.set(x, 0.95, z);
+        scene.add(leaf);
+        block(x, z, 0.6, 0.6);
+      }
+      for (const [text, x, ry] of [['요가 · YOGA', -w / 2 + 0.03, Math.PI / 2], ['필라테스 · PILATES', w / 2 - 0.03, -Math.PI / 2]]) {
+        const c2 = document.createElement('canvas');
+        c2.width = 1024; c2.height = 160;
+        const g2 = c2.getContext('2d');
+        g2.fillStyle = store.colors.sign;
+        fitText(g2, text, 110, 1000);
+        g2.textAlign = 'center';
+        g2.textBaseline = 'middle';
+        g2.fillText(text, 512, 84);
+        const tx2 = new THREE.CanvasTexture(c2);
+        tx2.colorSpace = THREE.SRGBColorSpace;
+        const sign2 = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.66), new THREE.MeshBasicMaterial({ map: tx2, transparent: true }));
+        sign2.position.set(x, 2.9, -1);
+        sign2.rotation.y = ry;
+        scene.add(sign2);
+      }
     } else if (store.workshop === 'japchae') {
       // Suragan Cooking Class: a long cooking table with a burner and a pan
       // at each place, bowls of coloured vegetables down the middle, and a
@@ -1548,12 +2035,80 @@ export function buildInterior(store) {
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
       stations.areaGuide = { x: dw / 4, z: dz - 0.85, ry: 0 }; // neighbourhood guide
       block(dw / 4, dz - 0.85, 0.6, 0.5);
+    } else if (store.workshop === 'bank') {
+      // Bank: three teller windows behind glass across the back, each with a
+      // number display above it; the middle one is the open teller. Waiting
+      // chairs on the left, a number ticket machine by the door, two ATMs on
+      // the right wall, and a few customers already here.
+      const dz = -d / 2 + 2.4, dw = Math.min(9, w - 4), win = dw / 3;
+      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#f4f6f5');
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // counter top
+      const glass = new THREE.MeshLambertMaterial({ color: '#d6efe8', transparent: true, opacity: 0.3, depthWrite: false });
+      const plane = (pw, ph, tex) => new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex }));
+      for (let i = 0; i < 3; i++) {
+        const wx = (i - 1) * win;
+        const pane = new THREE.Mesh(new THREE.PlaneGeometry(win - 0.5, 0.75), glass); // glass over the counter, a gap below to pass things
+        pane.position.set(wx, COUNTER_H + 0.65, dz + 0.1);
+        scene.add(pane);
+        const num = plane(0.9, 0.22, labelTexture(String(127 + i * 38).padStart(4, '0'), '#1b1b1b'));
+        num.position.set(wx, 2.05, dz + 0.1);
+        scene.add(num);
+        const tag = plane(0.8, 0.16, labelTexture(`${i + 1}번 창구 · Window ${i + 1}`, store.colors.sign));
+        tag.position.set(wx, 1.8, dz + 0.1);
+        scene.add(tag);
+        box(0.42, 0.28, 0.3, wx + 0.5, COUNTER_H + 0.3, dz - 0.2, '#3a3f4a'); // screens
+      }
+      for (let i = 0; i <= 3; i++) box(0.06, 1.3, 0.8, -dw / 2 + i * win, COUNTER_H + 0.75, dz, '#c9d3cf'); // partitions
+      box(dw, 0.12, 0.8, 0, 2.2, dz, store.colors.sign); // header over the windows
+      block(0, dz, dw, 0.8);
+      clerk = { x: 0, z: dz - 0.85, ry: 0 }; // the open window
+      // Waiting chairs, two rows facing the windows.
+      for (const rz of [-0.1, 1.3]) for (let i = 0; i < 4; i++) {
+        const cx = -w / 2 + 1.6 + i * 0.95;
+        box(0.7, SEAT_H, 0.6, cx, SEAT_H / 2, rz, store.colors.awning);
+        box(0.7, 0.5, 0.1, cx, SEAT_H + 0.25, rz + 0.3, store.colors.awning);
+        seats.push({ x: cx, z: rz, ry: Math.PI, stand: [cx, rz - 0.75] });
+      }
+      block(-w / 2 + 1.6 + 1.425, -0.1, 3.9, 0.7);
+      block(-w / 2 + 1.6 + 1.425, 1.3, 3.9, 0.7);
+      // Number ticket machine (번호표) by the door.
+      const tx = 2, tz = d / 2 - 1.6;
+      box(0.5, 1.2, 0.4, tx, 0.6, tz, '#e9edf0');
+      box(0.36, 0.2, 0.02, tx, 1.0, tz - 0.21, '#d93a3a');
+      const ticket = plane(0.9, 0.16, labelTexture('번호표 · Take a number', '#d93a3a'));
+      ticket.position.set(tx, 1.45, tz - 0.21);
+      ticket.rotation.y = Math.PI;
+      scene.add(ticket);
+      block(tx, tz, 0.6, 0.5);
+      // ATMs on the right wall, facing into the room.
+      for (const az of [-0.4, 1.0]) {
+        const ax = w / 2 - 0.55;
+        box(0.7, 1.5, 0.9, ax, 0.75, az, '#5f6b73');
+        const screen = box(0.04, 0.32, 0.42, ax - 0.36, 1.2, az, '#2fb38a');
+        screen.material = new THREE.MeshBasicMaterial({ color: '#2fb38a' });
+        box(0.2, 0.06, 0.5, ax - 0.4, 0.95, az, '#3b444a'); // keypad shelf
+        block(ax, az, 0.8, 1);
+      }
+      const atm = plane(1, 0.16, labelTexture('ATM', store.colors.sign));
+      atm.position.set(w / 2 - 0.08, 2.0, 0.3);
+      atm.rotation.y = -Math.PI / 2;
+      scene.add(atm);
+      // Customers already here: one at window 1, one at window 3, one at an ATM
+      // (main.js stands them up). The middle window stays free for you.
+      stations.visitors = [
+        { x: -win, z: dz + 0.85, ry: Math.PI },
+        { x: win, z: dz + 0.85, ry: Math.PI },
+        { x: w / 2 - 1.45, z: -0.4, ry: Math.PI / 2 },
+      ];
+      for (const v of stations.visitors) block(v.x, v.z, 0.5, 0.5);
+    } else if (store.workshop === 'tarot') {
+      clerk = stations.tarotReader; // no shop counter: the reader sits at her table
     } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)
       const cx = Math.min(4.2, sx - 2), cz = d / 2 - 2.3;
       box(2.2, COUNTER_H, 0.8, cx, COUNTER_H / 2, cz, '#fffaf0'); // counter
       box(0.35, 0.25, 0.25, cx + 0.4, COUNTER_H + 0.12, cz, '#4a3f35'); // till
       block(cx, cz, 2.2, 0.8);
-      clerk = stations.tarotReader || stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI }; // (the tarot reader sits at her table)
+      clerk = stations.kimchiTeacher || stations.classTeacher || { x: cx, z: cz + 0.75, ry: Math.PI };
     }
   }
   // Plants in the corners.
@@ -1590,6 +2145,7 @@ export function buildInterior(store) {
     crate.forEach((c, i) => box(0.04, 0.42, 0.42, tx + 0.95 + i * 0.07, 0.31, tz, c)); // LP sleeves
     block(tx + 0.3, tz, 2.1, 0.8);
     turntable = { x: tx, z: tz + 0.9, platter };
+    stations.listening = listeningBar(scene, store, w, d, h, box, block);
   }
   // K-POP café: a big TV on the back wall (the video plays in the corner of
   // the screen; this is the room's look). The cinema has a big screen.
@@ -1603,10 +2159,10 @@ export function buildInterior(store) {
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), new THREE.MeshBasicMaterial({ color: '#2a2833' }));
     glow.position.set(0, sy, sz + 0.07);
     scene.add(glow);
-    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, store.colors.sign); // curtains
+    const seatC = store.colors.seat || store.colors.sign; // seats and curtains
+    for (const sx2 of [-1, 1]) box(0.5, h, 0.4, sx2 * (sw / 2 + 0.9), h / 2, sz + 0.1, seatC); // curtains
     box(sw + 1, 0.5, 0.6, 0, 0.25, sz + 0.6, '#1a1820'); // stage step
     block(0, sz + 0.5, sw + 2.4, 1);
-    const seatC = store.colors.sign;
     const cols = [-6.4, -5.4, -4.4, -3.4, -2.4, -1.4, 1.4, 2.4, 3.4, 4.4, 5.4, 6.4];
     const rows = 5, z0 = -d / 2 + 5, rowGap = 1.7;
     for (let r = 0; r < rows; r++) {
@@ -1651,6 +2207,7 @@ export function buildInterior(store) {
     hall.position.set(0, h - 1, d / 4);
     scene.add(hall);
     tv = { x: kx, z: kz + 1.1, screen: glow, width: sw };
+    if (store.cinema === 'doodle') drawFlat(scene, glow); // the 2D cinema
   } else if (store.kpop) {
     const tvz = -d / 2 + 0.3;
     box(5.2, 3, 0.2, 0, 2.3, tvz, '#1b1b20');
@@ -1661,5 +2218,5 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, room: ROOM, exit: EXIT, noExit };
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit };
 }

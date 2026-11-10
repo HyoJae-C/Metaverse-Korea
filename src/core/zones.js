@@ -1,5 +1,6 @@
-// Meeting zones: big lettered signposts players can agree to meet at
-// ("see you at B!"), visible above the rooftops.
+// Meeting zones: big signposts with a code players can agree to meet at
+// ("see you at A-2!"), visible above the rooftops. A code is the gu's letter
+// and a number (zones.json "codes").
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
@@ -17,10 +18,14 @@ function letterTexture(letter, color) {
   g.strokeStyle = '#fffaf0';
   g.stroke();
   g.fillStyle = '#fffaf0';
-  g.font = '900 150px system-ui, sans-serif';
+  // "A-1" is wider than one letter: shrink it to fit inside the ring.
+  let size = 150;
+  const font = (px) => `900 ${px}px system-ui, sans-serif`;
+  g.font = font(size);
+  while (g.measureText(letter).width > 190 && size > 60) g.font = font((size -= 6));
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(letter, 128, 140);
+  g.fillText(letter, 128, 128 + size * 0.08);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;

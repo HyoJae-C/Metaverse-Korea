@@ -4,7 +4,7 @@ import { makeOrder, orderLine, rightBowl, servePoints, PATIENCE, CUSTOMERS } fro
 import { pickDelivery, timeFor, deliveryPay, reachable, BIKE_MS, MAX_ROAD, MAX_SECONDS } from '../src/core/delivery.js';
 import { chartFor, judge, karaokeScore, karaokeMsg, parseKaraoke, LEAD_BEATS } from '../src/core/karaoke-game.js';
 import { layPrizes, drop, clawX, PRIZES } from '../src/core/claw-game.js';
-import { DuckBoat, COURSE, duckPay, duckMsg, parseDuck } from '../src/core/duck-boat.js';
+import { DuckRide, RIDE_SECONDS, WATER, PIER, BOAT_R, onWater, clock } from '../src/core/duck-boat.js';
 import { ITEMS } from '../src/core/inventory.js';
 import { furnitureById } from '../src/core/furniture.js';
 
@@ -31,8 +31,8 @@ test('delivery: only shops reachable within a minute, time for a bike, pay for s
   assert.ok(timeFor(MAX_ROAD) <= MAX_SECONDS && timeFor(5000) === MAX_SECONDS);
   assert.ok(reachable(MAX_ROAD) && !reachable(MAX_ROAD + 20));
   assert.equal(deliveryPay(-1), 0);
-  assert.equal(deliveryPay(0), 4);
-  assert.equal(deliveryPay(100), 8);
+  assert.equal(deliveryPay(0), 3500);
+  assert.equal(deliveryPay(100), 3500);
 });
 
 test('noraebang: the same chart for everyone, judged by timing', () => {
@@ -57,17 +57,29 @@ test('claw: lined up grabs, off to the side misses; prizes are real items', () =
   for (const p of PRIZES) if (p.item) { assert.ok(ITEMS[p.item]?.plush, p.item); assert.ok(furnitureById(p.item), p.item); }
 });
 
-test('duck boat: alternate pedals, a friend adds strokes', () => {
-  const b = new DuckBoat();
-  b.pedal('L'); b.pedal('L'); b.pedal('R');
-  assert.equal(b.mine, 2);
-  const solo = b.dist;
-  b.heard(10);
-  b.heard(8); // old news
-  assert.ok(b.dist > solo + 15);
-  while (!b.done) b.pedal(b.last === 'L' ? 'R' : 'L');
-  assert.ok(b.dist >= COURSE);
-  assert.equal(duckPay(false, 10), 0);
-  assert.equal(duckPay(true, 30), 6);
-  assert.deepEqual(parseDuck(duckMsg('ab-1', 12)), { to: 'ab-1', strokes: 12 });
+test('duck boat: a free minute on the water, then back to the dock', () => {
+  const home = { x: 10, z: -5.7 };
+  const r = new DuckRide(home);
+  for (let t = 0; t < 5; t += 0.05) r.steer(0, -1, 0.05); // straight out
+  assert.ok(r.z < home.z - 10, 'out on the river');
+  for (let t = 0; t < 20; t += 0.05) r.steer(-1, 0, 0.05); // hard left, past the pier
+  assert.ok(r.x < PIER.minX, 'went past the pier');
+  for (let t = 0; t < 60; t += 0.05) r.steer(0, -1, 0.05); // keep going: the far side stops it
+  assert.ok(r.z >= WATER.minZ && r.x >= WATER.minX, 'stays on the water');
+  assert.ok(r.returning && r.left === 0, 'a minute at most');
+  r.steer(1, 1, 0.05); // the stick does nothing now
+  for (let t = 0; t < 120 && !r.docked; t += 0.05) {
+    r.steer(0, 0, 0.05);
+    const inPier = r.x > PIER.minX - BOAT_R + 0.01 && r.x < PIER.maxX + BOAT_R - 0.01 && r.z > PIER.minZ - BOAT_R + 0.01;
+    assert.ok(!inPier, `through the pier at ${r.x},${r.z}`);
+  }
+  assert.ok(r.docked, 'brought back');
+  assert.deepEqual([r.x, r.z, r.ry], [home.x, home.z, 0]);
+  const early = new DuckRide(home);
+  early.steer(0, -1, 1); early.goBack();
+  assert.ok(early.returning && early.left > RIDE_SECONDS - 2);
+  assert.deepEqual(onWater(0.5, -6), [PIER.maxX + BOAT_R, -6]); // off the pier
+  assert.ok(onWater(0, 5)[1] <= WATER.maxZ); // off the land
+  assert.equal(clock(42.2), '0:43');
+  assert.equal(clock(60), '1:00');
 });

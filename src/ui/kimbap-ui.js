@@ -341,7 +341,7 @@ export class KimbapUI {
     const score = totalScore(this.scores);
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(KIMBAP_GAME, medal) : 0;
-    if (coins) this.wallet?.add(coins);
+    if (coins) this.wallet?.add(coins, undefined, { r: 'medal', once: 'medal:' + KIMBAP_GAME + ':' + medal });
     const boxed = this.onBox?.(score, this.picks) !== false;
     this._frame();
     this.say('bye');
@@ -368,7 +368,7 @@ export class KimbapUI {
     }
     const actions = el('div', 'order-actions');
     actions.append(chip(L('quit'), () => this.close()), chip(L('again'), () => this.begin(), 'primary'));
-    this.root.append(res, el('p', 'order-hint', boxed ? L('gift') : L('bagFull')), table, words, el('p', 'kimchi-fact', '🎉 ' + L('share')), actions);
+    this.root.append(res, el('p', 'order-hint', boxed ? L('gift') : L('bagFull')), boxed ? el('p', 'order-hint', L('canSell')) : '', table, words, el('p', 'kimchi-fact', '🎉 ' + L('share')), actions);
     this.onMedal?.(medal, coins);
   }
 }

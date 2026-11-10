@@ -1,22 +1,28 @@
 // Characters for the local player, other players and NPCs. The body is a 3D
-// model from the active model pack (src/data/characters); a chibi built from
-// simple rounded shapes shows while the model loads, or if it fails to load.
+// model from the active model pack (src/data/characters). Nothing shows
+// until the model is on (a quick swap from a stand-in looked like a bug). The
+// chibi built below from simple rounded shapes is never shown: its head and
+// body only measure where hats, glasses and bags go before they move onto
+// the model's bones.
 import * as THREE from 'three';
-import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet } from './bikes.js';
+import { makeTandem, makeCar, makeLimo, makeMoto, makeHelmet, makeZooCart } from './bikes.js';
 import { attachModel } from './model-pack.js';
 import { makeRide, makeSkate1, SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { rideCode } from './bike-garage.js';
 import { makeHeld, makeUmbrella } from './held.js';
+import { makeHeadphones } from './headphones.js';
 
 import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/appearance.js';
 import { skirtById } from '../data/skirts.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
+import { makeEars, makePaw } from './animal-wear.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
 const matCache = {};
 const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: hex }));
 
+const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
 export function createCharacter(rawLook) {
@@ -26,8 +32,15 @@ export function createCharacter(rawLook) {
     hair: PALETTES.hair[look.hair], skin: PALETTES.skin[look.skin],
   };
   const root = new THREE.Group();
+  root.userData.noSnow = true; // (core/snow-cover.js: no snow on people)
+  // Everything but the shadow hangs on the rig, so a trick (a spin, a flip,
+  // a jump) can turn the rider and the ride together without changing
+  // which way the character is heading (root's rotation).
+  const rig = new THREE.Group();
+  rig.rotation.order = 'YXZ'; // spin round the vertical first, then flip
+  root.add(rig);
   const body = new THREE.Group(); // bobs while walking
-  root.add(body);
+  rig.add(body);
 
   // Total height ≈ 1.2 m: head ≈ 0.6, body+legs ≈ 0.6 (2 heads tall).
   const torso = new THREE.Mesh(geo('torso', () => new THREE.CapsuleGeometry(0.2, 0.16, 6, 12)), mat(o.shirt));
@@ -92,6 +105,9 @@ export function createCharacter(rawLook) {
   );
   blob.position.y = 0.07;
   root.add(blob);
+  // Hidden until the model is on.
+  body.visible = false;
+  blob.visible = false;
 
   // Accessories go in their own groups so they can move onto the model's bones.
   const headAcc = new THREE.Group(), bodyAcc = new THREE.Group();
@@ -105,19 +121,28 @@ export function createCharacter(rawLook) {
 
   let phase = 0;
   let waveT = 0;
-  let bike = null, tandem = null, car = null, limo = null, moto = null, helmet = null, riding = false;
+  let bike = null, tandem = null, car = null, limo = null, cart = null, moto = null, helmet = null, riding = false;
   let bikeCode = null; // rideCode of the ride drawn
   let skates = null; // inline skates, one under each foot
   let rideKind = true; // 'board' (skateboard), 'kick' (scooter), 'skates' or true (bike)
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
+  let tube = null; // a swim ring (the pool)
+  let phones = null; // headphones at the record café's listening bar
+  const footProps = []; // waiting for the model (addFootProps)
   const attachHeld = () => {
     if (!held) return;
+    if (held.userData.onHead) { // (a balloon crown: worn, not held)
+      held.scale.setScalar(1);
+      headAcc.add(held);
+      return;
+    }
     if (model?.hand) {
       held.scale.setScalar(1.8 / model.scale); // inside the scaled model; 1.8x life size so it reads on chibi hands
       held.position.set(0, 0, 0);
@@ -138,7 +163,20 @@ export function createCharacter(rawLook) {
     if (model?.headMesh) model.headMesh.visible = false;
     if (model?.headBone) for (const c of model.headBone.children) if (!c.isBone && c !== headAcc) c.visible = false;
   };
-  attachModel(look, { root, body, headAcc, bodyAcc }).then((m) => { model = m; m?.setActivity(activityName); attachHeld(); wearMascot(); });
+  // A failed download is tried again a few times (while the character is
+  // still in a scene); the chibi itself never shows.
+  const RETRY = [2, 5, 10, 20, 40];
+  const tryModel = (n = 0) => attachModel(look, { root: rig, body, headAcc, bodyAcc }).catch(() => null).then((m) => {
+    if (!m) {
+      if (n < RETRY.length) setTimeout(() => { if (root.parent) tryModel(n + 1); }, RETRY[n] * 1000);
+      return;
+    }
+    model = m; blob.visible = true;
+    for (const f of footProps.splice(0)) f(m);
+    addGloves(look, m);
+    m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
+  });
+  tryModel();
   return {
     root,
     head,
@@ -148,10 +186,17 @@ export function createCharacter(rawLook) {
     // like the accessories: 'head' (~0.65 m wide, centred) or 'body' (0 at the
     // feet, shoulders at ~0.66).
     addProp(where, g) { (where === 'body' ? bodyAcc : headAcc).add(g); },
+    // Something on each foot (the diver's fins): make(i) builds foot i's piece
+    // (0 left, 1 right) in metres, toes along +z. It goes onto the foot bones
+    // once the model has loaded.
+    addFootProps(make) {
+      const put = (m) => m?.feet?.forEach((f, i) => { if (!f) return; const p = make(i); p.scale.multiplyScalar(1 / m.scale); f.add(p); });
+      if (model) put(model); else footProps.push(put);
+    },
     // Show a bike under the character. kind: 0/false none, 1/true bike,
     // 2 tandem (front seat), 3 back seat of someone else's tandem (pose only),
     // 4 open sports car (driver's seat), 5 motorbike (with a helmet),
-    // 6 limousine (driver's seat). spec: for kind 1, the ride from the bike
+    // 6 limousine (driver's seat), 7 the zoo cart (driver's seat). spec: for kind 1, the ride from the bike
     // shop { type, tier, color, pattern } (a plain colour string means a
     // basic bike in that colour).
     // inCar: a passenger seat in someone's car (sit upright, not leaning).
@@ -168,15 +213,16 @@ export function createCharacter(rawLook) {
         if (!bike) {
           bike = makeRide(r);
           bikeCode = code;
-          root.add(bike);
+          rig.add(bike);
           rideKind = ['board', 'kick', 'skates'].includes(bike.userData.pose) ? bike.userData.pose : true;
-          if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); root.add(sk); } }
+          if (rideKind === 'skates') { skates = [makeSkate1(r), makeSkate1(r)]; for (const sk of skates) { sk.scale.setScalar(1.35); rig.add(sk); } }
         }
       }
-      if (kind === 2 && !tandem) { tandem = makeTandem(); root.add(tandem); }
-      if (kind === 4 && !car) { car = makeCar(); root.add(car); }
-      if (kind === 6 && !limo) { limo = makeLimo(); root.add(limo); }
-      if (kind === 5 && !moto) { moto = makeMoto(); root.add(moto); }
+      if (kind === 2 && !tandem) { tandem = makeTandem(); rig.add(tandem); }
+      if (kind === 4 && !car) { car = makeCar(); rig.add(car); }
+      if (kind === 6 && !limo) { limo = makeLimo(); rig.add(limo); }
+      if (kind === 7 && !cart) { cart = makeZooCart(); rig.add(cart); }
+      if (kind === 5 && !moto) { moto = makeMoto(); rig.add(moto); }
       if (kind === 5 && !helmet) { helmet = makeHelmet(); headAcc.add(helmet); }
       if (bike) bike.visible = kind === 1;
       for (const sk of skates || []) sk.visible = kind === 1;
@@ -184,12 +230,37 @@ export function createCharacter(rawLook) {
       if (tandem) tandem.visible = kind === 2;
       if (car) car.visible = kind === 4;
       if (limo) limo.visible = kind === 6;
+      if (cart) cart.visible = kind === 7;
       if (moto) moto.visible = kind === 5;
       // The helmet replaces any hat while riding the motorbike.
       for (const c of headAcc.children) c.visible = kind === 5 ? c === helmet : c !== helmet;
       // Pose: leaning over handlebars on bikes; upright with arms to the
       // wheel in a car; upright and relaxed as a car passenger.
-      riding = !kind ? false : kind === 4 || kind === 6 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
+      riding = !kind ? false : kind === 4 || kind === 6 || kind === 7 ? 'car' : kind === 3 && inCar ? 'seat' : kind === 1 ? rideKind : true;
+    },
+    // A trick in the skate park (core/skatepark.js trickPose): spin, flip
+    // and roll turn rider and ride together; rideRoll / rideSpin turn only
+    // the board, bike or scooter (kickflips, tail whips); tuck crouches.
+    // air: how high above the ground we are (the shadow stays down there).
+    setTrick(pose, air = 0) {
+      const P = pose || {};
+      // Turn about the middle of the body, not the feet.
+      const cy = 0.5;
+      rig.rotation.set(P.flip || 0, P.spin || 0, P.roll || 0);
+      const q = rig.quaternion;
+      _fv.set(0, cy, 0).applyQuaternion(q);
+      rig.position.set(-_fv.x, cy - _fv.y - (P.tuck || 0) * 0.08, -_fv.z);
+      if (bike) {
+        // The board or bike turns about its own middle (just under the
+        // feet), lifted a little while it flips.
+        bike.rotation.set(0, P.rideSpin || 0, P.rideRoll || 0);
+        const by = bike.userData.stand || 0.4;
+        _fv.set(0, by, 0).applyEuler(bike.rotation);
+        const lift = P.rideRoll ? Math.abs(Math.sin(P.rideRoll / 2)) * 0.2 : (P.tuck || 0) * 0.05;
+        bike.position.set(-_fv.x, by - _fv.y + lift, -_fv.z);
+      }
+      blob.position.y = 0.07 - Math.max(0, air);
+      blob.scale.setScalar(Math.max(0.45, 1 - air * 0.25));
     },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
@@ -198,18 +269,18 @@ export function createCharacter(rawLook) {
         model.update(dt, speed01, sit, riding);
         if (skates && riding === 'skates' && model.feet[0]) {
           // Each skate follows its foot (in the body's frame, facing forward).
-          root.updateWorldMatrix(false, true);
+          rig.updateWorldMatrix(true, true);
           model.feet.forEach((f, i) => {
             if (!f || !skates[i]) return;
-            root.worldToLocal(f.getWorldPosition(_fv));
+            rig.worldToLocal(f.getWorldPosition(_fv));
             skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
-          root.updateWorldMatrix(false, true);
+          rig.updateWorldMatrix(true, true);
           model.hand.getWorldQuaternion(qHand);
-          root.getWorldQuaternion(qRoot);
+          rig.getWorldQuaternion(qRoot);
           held.quaternion.copy(qHand.invert().multiply(qRoot));
         }
         return;
@@ -272,7 +343,7 @@ export function createCharacter(rawLook) {
         umbrella = makeUmbrella();
         umbrella.position.set(0.16, 0.62, 0.05);
         umbrella.rotation.z = -0.08;
-        root.add(umbrella);
+        rig.add(umbrella);
       } else { umbrella.removeFromParent(); umbrella = null; }
     },
     // Hold something in the right hand ('coffee'), or nothing (null).
@@ -282,6 +353,8 @@ export function createCharacter(rawLook) {
       held = kind ? makeHeld(kind) : null;
       attachHeld();
     },
+    // The held thing's 3D object (the fishing rig moves the rod's parts).
+    get heldObject() { return held; },
     wave() {
       waveT = 1.6;
       model?.play('wave');
@@ -293,10 +366,31 @@ export function createCharacter(rawLook) {
       model?.setActivity(name);
       // Reading: the book goes from the hand onto the table in front, open.
       if (held) held.visible = name !== 'read';
-      if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); root.add(openBook); }
+      if (name === 'read' && !openBook) { openBook = makeOpenBook(); openBook.position.set(0, 0.665, 0.42); rig.add(openBook); }
       if (openBook) openBook.visible = name === 'read';
+      // Floating in a tube (Olympic Park Pool): a ring round the waist.
+      if (name === 'tube' && !tube) {
+        tube = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.15, 10, 22).rotateX(Math.PI / 2), mat(TUBE_COLORS[Math.floor(Math.random() * TUBE_COLORS.length)]));
+        tube.position.set(0, 0.64, 0.12);
+        rig.add(tube);
+      }
+      if (tube) tube.visible = name === 'tube';
+      // Listening at the record café: headphones over the ears (on the head,
+      // so they follow the nod).
+      if (name === 'listen' && !phones) { phones = makeHeadphones(); const wrap = new THREE.Group(); wrap.add(phones); headAcc.add(wrap); } // (wrapped: setBike shows and hides headAcc's children)
+      if (phones) phones.visible = name === 'listen';
     },
     get activityName() { return activityName; },
+    // A scripted move: fn() returns bone offsets each frame (armL, armR,
+    // foreL, foreR, spine, head, legL, legR, kneeL, kneeR, in radians, as
+    // the dances use), laid over the idle or running clip. null stops it.
+    // Used for basketball shots (core/basketball-game.js shotMove).
+    setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
+    // Wind in the hair (the roller coaster): k 0 still .. 1 full speed.
+    setWind(k) {
+      if (model) { model.setWind?.(k); return; }
+      hair.rotation.x = -0.25 - k * 0.3 + Math.sin(performance.now() / 25) * 0.04 * k;
+    },
     // Body emotes: bow, laugh, angry, shrug, cheer, clap, cry.
     play(name) {
       model?.play(name);
@@ -395,7 +489,7 @@ function printMat(id) {
 }
 
 // Where earrings hang on the chibi head (head-local, the face looks down +z).
-const EAR_X = 0.315, EAR_Y = -0.1, EAR_Z = 0.0;
+const EAR_X = 0.26, EAR_Y = -0.14, EAR_Z = -0.02;
 // Glasses sit this far in front of the head's centre.
 const GLASS_Z = 0.27;
 // A small flat charm (star, heart) or a round cherry, about 5 cm across.
@@ -415,13 +509,30 @@ function charmGeometry(kind) {
   return new THREE.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: false }).translate(0, 0, -0.005);
 }
 
-function addAccessories(look, head, torso, body) {
-  // T-shirt print on the chest.
-  if (TEE_PRINTS[look.tee]) {
-    const print = new THREE.Mesh(geo('teePrint', () => new THREE.PlaneGeometry(0.36, 0.36)), printMat(look.tee));
-    print.position.set(0, TEE_Y, TEE_Z);
-    body.add(print);
+// A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
+// blossom (five petals) or a round tag (the 복 "luck" charm).
+function pendantGeometry(kind) {
+  const sh = new THREE.Shape();
+  if (kind === 'moon') {
+    sh.absarc(0, 0, 0.036, Math.PI * 0.35, Math.PI * 1.65, false);
+    sh.absarc(0.016, 0, 0.028, Math.PI * 1.55, Math.PI * 0.45, true);
+  } else if (kind === 'plum') {
+    for (let i = 0; i <= 60; i++) { // five round petals: r(θ) = a + b |cos(5θ/2)|
+      const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else {
+    sh.absarc(0, 0, 0.032, 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.moveTo(-0.014, -0.004); hole.lineTo(0.014, -0.004); hole.lineTo(0.014, 0.004); hole.lineTo(-0.014, 0.004); hole.lineTo(-0.014, -0.004);
+    sh.holes.push(hole); // a little bar across, like the stroke of a carved 복
   }
+  return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
+}
+
+// The hat (look.head) on a chibi head group: the hat workshop's shapes in
+// the chosen colour with its patch, or a shop hat in its own colour.
+function addHat(look, head) {
   const head1 = accessory('head', look.head);
   if (head1) {
     // Hat workshop hats (no shape: the plain ids) take the chosen colour and
@@ -487,6 +598,8 @@ function addAccessories(look, head, torso, body) {
         swirl.position.set(sgn * 0.385, 0.24, -0.02);
         head.add(swirl);
       }
+    } else if (hat === 'ears') {
+      head.add(makeEars(head1));
     } else if (hat === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);
@@ -496,6 +609,46 @@ function addAccessories(look, head, torso, body) {
       head.add(cap, pom);
     }
   }
+
+}
+
+// Gloves (look.hand) onto the model's hand bones, sized in metres.
+const PAW_DROP = 0.075; // metres from the wrist bone to the mitten's middle
+function addGloves(look, m) {
+  const glove = accessory('hand', look.hand);
+  if (!glove || !m.hands) return;
+  for (const [i, h] of m.hands.entries()) {
+    if (!h) continue;
+    const p = makePaw(glove);
+    p.scale.multiplyScalar(1 / m.scale);
+    // The hand bone runs down the hand (+y to the fingers) with +z out of
+    // the back of the hand: turned round so the pads are on the palm, and
+    // slid down off the wrist to cover the fingers.
+    p.rotation.y = Math.PI;
+    p.position.y = PAW_DROP / m.scale;
+    if (i === 0) p.scale.x *= -1; // (the left hand: mirrored)
+    p.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    h.add(p);
+  }
+}
+
+// Just the hat, on its own, sized for a chibi head (radius about 0.33) and
+// centred where that head's centre would be: a snowman wears one
+// (game/snowman.js). Empty when look.head isn't a hat.
+export function hatModel(look) {
+  const g = new THREE.Group();
+  addHat(sanitizeLook(look), g);
+  return g;
+}
+
+function addAccessories(look, head, torso, body) {
+  // T-shirt print on the chest.
+  if (TEE_PRINTS[look.tee]) {
+    const print = new THREE.Mesh(geo('teePrint', () => new THREE.PlaneGeometry(0.36, 0.36)), printMat(look.tee));
+    print.position.set(0, TEE_Y, TEE_Z);
+    body.add(print);
+  }
+  addHat(look, head);
 
   const face = accessory('face', look.face);
   if (face) {
@@ -546,7 +699,18 @@ function addAccessories(look, head, torso, body) {
   }
 
   const neck = accessory('neck', look.neck);
-  if (neck) {
+  if (neck && shapeOf(neck) === 'pendant') {
+    // A fine chain round the neck and a charm on the chest.
+    const m = mat(neck.color);
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.155, 0.012, 5, 24)), m);
+    chain.rotation.x = Math.PI / 2 - 0.35;
+    chain.position.set(0, 0.6, 0.03);
+    const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
+    charm.position.set(0, 0.5, 0.2);
+    charm.rotation.x = -0.15;
+    charm.scale.setScalar(1.5);
+    body.add(chain, charm);
+  } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
     wrap.rotation.x = Math.PI / 2;

@@ -15,7 +15,7 @@ test('each stamp pays once and remembers the day', () => {
   const again = new StampBook(st);
   assert.ok(again.has('namsan'));
   assert.equal(again.count(STAMPS), 1);
-  assert.equal(STAMP_REWARD, 10);
+  assert.equal(STAMP_REWARD, 10000);
 });
 
 test('a broken save starts empty', () => {
@@ -39,4 +39,13 @@ test('stamp entries are complete and unique', () => {
     assert.match(s.color, /^#[0-9a-f]{6}$/);
     assert.ok(['circle', 'square'].includes(s.shape));
   }
+});
+
+test('the Namsan stamp stands on the summit plaza, inside the cable car room', async () => {
+  const { roomSpots } = await import('../src/core/stamp-stands.js');
+  const { cableFloor, CC } = await import('../src/core/cablecar.js');
+  const [spot] = roomSpots(STAMPS, 'namsan-sky-cable');
+  assert.equal(spot.stamp.id, 'namsan');
+  assert.equal(cableFloor(spot.x, spot.z), CC.top);
+  assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
 });

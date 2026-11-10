@@ -10,13 +10,18 @@
 //   cableCarLandmark(g, l) the same line seen from the street (Itaewon)
 import * as THREE from 'three';
 import { namsanTower } from './landmarks.js';
+import { LOCK_SHAPES } from './love-locks.js';
+import { darkness } from './weather.js';
+
+const DAY_SKY = new THREE.Color('#bfdff5'), DAY_FOG = new THREE.Color('#cfe6f5'), NIGHT_SKY = new THREE.Color('#1a2550');
+const WHITE = new THREE.Color('#ffffff'), MOON = new THREE.Color('#a9b9ff');
 
 export const CABLE = {
   // With two cabins half a cycle apart, one is at each station every
-  // dwell + trip = 30 seconds (from either bay: you board whichever is in).
-  dwell: 8, // seconds a cabin waits at each station with its doors open
-  trip: 22, // seconds from one station to the other
-  fare: 4, // coins for the way up; the way down is on the same ticket
+  // dwell + trip = 15 seconds (from either bay: you board whichever is in).
+  dwell: 6, // seconds a cabin waits at each station with its doors open
+  trip: 9, // seconds from one station to the other
+  fare: 15000, // won for the way up; the way down is on the same ticket
 };
 CABLE.half = CABLE.dwell + CABLE.trip;
 CABLE.cycle = CABLE.half * 2;
@@ -60,10 +65,19 @@ export const CC = {
   lowEdge: 35, // the lower station floor ends here (z > lowEdge)
   tracks: [-3.5, 3.5], // cabin 0 and cabin 1
   tower: { x: 0, z: -47 },
+  towerR: 6.75, // the tower's round terrace (12 m × the 0.55 scale), with a little room
+  // Love locks (사랑의 자물쇠): a heart frame hung with locks by the left
+  // railing, between the flower beds; stand at `spot` to hang one or read.
+  loveLock: { x: -19.9, z: -43, spot: { x: -17.2, z: -43 } },
 };
 export const ROOM_CABLECAR = { w: CC.w, d: CC.d, h: 60 };
 // The floor height under a point: the summit plaza or the lower station.
 export const cableFloor = (x, z) => (z < CC.edge ? CC.top : 0);
+// Near the love-lock heart? (where its two buttons show)
+export const nearLoveLock = (x, z) => Math.hypot(x - CC.loveLock.spot.x, z - CC.loveLock.spot.z) < 2.2;
+// The camera keeps out of the tower's base (single-sided walls you would
+// otherwise see straight through when the camera swings behind it).
+export const cableCamBlocked = (x, z) => z < CC.edge && Math.hypot(x - CC.tower.x, z - CC.tower.z) < 5.4;
 // A cabin's floor at progress k: climbs steeply at first and levels off
 // into the summit station, staying clear of the slope underneath.
 export function cabinPos(i, k) {
@@ -118,17 +132,109 @@ function signMesh(ko, en, w, bg) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: signTexture(ko, en, bg) }));
 }
 
+// Lock bodies in the four shapes players pick from (사랑의 자물쇠): a flat
+// outline about 1 m across, centred on the origin, the shackle on top.
+const heartPts = (s, n = 48) => Array.from({ length: n }, (_, i) => {
+  const t = (i / n) * Math.PI * 2;
+  return new THREE.Vector2(16 * Math.sin(t) ** 3 * s, (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * s);
+});
+export function lockShape(kind) {
+  if (kind === 'heart') return new THREE.Shape(heartPts(0.031).map((v) => v.setY(v.y + 0.06)));
+  if (kind === 'circle') { const sh = new THREE.Shape(); sh.absarc(0, 0, 0.45, 0, Math.PI * 2, false); return sh; }
+  if (kind === 'star') {
+    return new THREE.Shape(Array.from({ length: 10 }, (_, i) => {
+      const a = Math.PI / 2 + (i / 10) * Math.PI * 2, r = i % 2 ? 0.24 : 0.55;
+      return new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r - 0.04);
+    }));
+  }
+  const sh = new THREE.Shape(); // square, with softened corners
+  const h = 0.4, c = 0.08;
+  sh.moveTo(-h + c, -h); sh.lineTo(h - c, -h); sh.quadraticCurveTo(h, -h, h, -h + c); sh.lineTo(h, h - c); sh.quadraticCurveTo(h, h, h - c, h);
+  sh.lineTo(-h + c, h); sh.quadraticCurveTo(-h, h, -h, h - c); sh.lineTo(-h, -h + c); sh.quadraticCurveTo(-h, -h, -h + c, -h);
+  return sh;
+}
+// One lock (body + shackle), facing +z, about `size` metres across.
+export function makeLock(kind, color, size = 0.4) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.ExtrudeGeometry(lockShape(kind), { depth: 0.16, bevelEnabled: false }).translate(0, 0, -0.08), mat(color));
+  g.add(body);
+  const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 6, 14, Math.PI), mat('#c9ced6'));
+  shackle.position.y = 0.42;
+  g.add(shackle);
+  g.scale.setScalar(size);
+  return g;
+}
+
+// The love-lock heart by the left railing: a big heart frame on a plinth,
+// thick with locks on both faces, a sign over it, and the four kinds of
+// lock players can pick hanging on a bar in front. Fixed decoration: locks
+// players hang are kept on the server and shown in the message list, not
+// added here one by one.
+function loveLockHeart(scene, block, TOP) {
+  const { x, z } = CC.loveLock;
+  const g = new THREE.Group();
+  g.position.set(x, TOP, z);
+  g.rotation.y = Math.PI / 2; // its face looks into the plaza (+x)
+  scene.add(g);
+  const S = 0.11, LIFT = 0.45 + 17 * S; // the heart's tip sits on the plinth
+  const outer = heartPts(S, 72);
+  const shape = new THREE.Shape(outer);
+  shape.holes.push(new THREE.Path(heartPts(S * 0.72, 72).map((v) => v.setY(v.y + 0.25))));
+  const frame = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.22, bevelEnabled: false }).translate(0, LIFT, -0.11), mat('#d6336c'));
+  g.add(frame);
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.45, 0.9), mat('#b9ad98'));
+  plinth.position.y = 0.225;
+  g.add(plinth);
+  // Locks on both faces of the frame, between its two edges.
+  const N = 320;
+  const locks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.17, 0.21, 0.06), new THREE.MeshLambertMaterial({ color: '#ffffff' }), N);
+  const cols = ['#ff5d8f', '#ffd23f', '#5dade2', '#58d68d', '#af7ac5', '#f5b041', '#ec7063', '#ffffff', '#ff8fb1'].map((c) => new THREE.Color(c));
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), axis = new THREE.Vector3(0, 0, 1);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < N; i++) {
+    const t = rnd() * Math.PI * 2, k = 0.76 + rnd() * 0.2;
+    const hx = 16 * Math.sin(t) ** 3 * S * k, hy = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * S * k + (1 - k) * 0.9;
+    q.setFromAxisAngle(axis, (rnd() - 0.5) * 0.6);
+    m4.compose(new THREE.Vector3(hx, LIFT + hy, (i % 2 ? 1 : -1) * 0.15), q, one);
+    locks.setMatrixAt(i, m4);
+    locks.setColorAt(i, cols[i % cols.length]);
+  }
+  g.add(locks);
+  // A bar in front with the four kinds of lock (heart, circle, square, star).
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.07, 0.07), mat('#8a8f99'));
+  bar.position.set(0, 1.25, 0.7);
+  g.add(bar);
+  for (const sx of [-1.3, 1.3]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.25, 0.09), mat('#8a8f99'));
+    post.position.set(sx, 0.625, 0.7);
+    g.add(post);
+  }
+  ['#ff5d8f', '#ffd23f', '#5dade2', '#af7ac5'].forEach((c, i) => {
+    const l = makeLock(LOCK_SHAPES[i], c, 0.38);
+    l.position.set(-0.84 + i * 0.56, 1.02, 0.7);
+    g.add(l);
+  });
+  const sign = signMesh('사랑의 자물쇠', 'LOVE LOCKS · HANG ONE, READ THEM', 3.4, '#d6336c');
+  sign.position.set(0, LIFT + 12 * S + 0.75, 0.12);
+  g.add(sign);
+  block(x, z, 1.2, 3.9); // the frame and its plinth (the bar in front too)
+  block(x + 0.7, z, 0.3, 2.8);
+}
+
 export function buildCableCar(store, ROOM, EXIT) {
   const { w, d } = ROOM;
   const TOP = CC.top;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#bfdff5');
   scene.fog = new THREE.Fog('#cfe6f5', 140, 620);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x88b07a, 1.6));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x88b07a, 1.6);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.2);
   sun.position.set(30, 80, 40);
   scene.add(sun);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(ambient);
 
   const colliders = [];
   const block = (x, z, sx, sz) => colliders.push({ p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]] });
@@ -137,13 +243,14 @@ export function buildCableCar(store, ROOM, EXIT) {
 
   // The city far below: a wide ground, low blocks of buildings all round,
   // a river and a ring of hills on the horizon.
+  const cityMat = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true, emissive: '#ffc874', emissiveIntensity: 0 }); // (glows a little at night: the lit city)
   add(new THREE.PlaneGeometry(1400, 1400).rotateX(-Math.PI / 2), '#b9c7a8', 0, -0.02, 0);
   add(new THREE.PlaneGeometry(1400, 60).rotateX(-Math.PI / 2), '#6fa8d6', 0, 0.02, 250); // the Han
   {
     const geo = new THREE.BoxGeometry(1, 1, 1);
     geo.translate(0, 0.5, 0);
     const N = 520;
-    const city = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), N);
+    const city = new THREE.InstancedMesh(geo, cityMat, N);
     const tones = ['#e8e2d6', '#d6dce4', '#f1ede4', '#c9ced6', '#e3d5c3', '#bfc8d2'].map((c) => new THREE.Color(c));
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
     let seed = 11, n = 0;
@@ -191,7 +298,7 @@ export function buildCableCar(store, ROOM, EXIT) {
     summit.scale.z = 0.62;
     summit.position.set(0, TOP / 2 - 0.02, CC.edge - 1 - 43.4);
     scene.add(summit);
-    add(new THREE.BoxGeometry(60, 0.2, 44), '#d9d2c3', 0, TOP - 0.05, CC.edge - 22); // plaza paving
+    add(new THREE.BoxGeometry(60, 0.2, 44), '#d9d2c3', 0, TOP - 0.1, CC.edge - 22); // plaza paving (its top is the floor, TOP)
     // Trees: on the slope, kept away from the cable corridor.
     const tree = new THREE.ConeGeometry(2.4, 7, 6);
     tree.translate(0, 3.2, 0);
@@ -250,7 +357,7 @@ export function buildCableCar(store, ROOM, EXIT) {
   box(2.4, 2.4, 1.6, -7.5, 1.2, LOW + 4, '#c0392b');
   box(2.8, 0.3, 2, -7.5, 2.55, LOW + 4, '#efe9df');
   block(-7.5, LOW + 4, 2.5, 1.7);
-  const fare = signMesh('하늘 케이블카 · 왕복', `ROUND TRIP · ${CABLE.fare} COINS (GAME)`, 3.6, '#2f4f6f');
+  const fare = signMesh('하늘 케이블카 · 왕복', `ROUND TRIP · ₩${CABLE.fare.toLocaleString('en-US')} (GAME)`, 3.6, '#2f4f6f');
   fare.position.set(-7.5, 3.3, LOW + 4.85);
   scene.add(fare);
   // Benches to wait on.
@@ -284,7 +391,11 @@ export function buildCableCar(store, ROOM, EXIT) {
   tower.scale.setScalar(0.55);
   tower.position.set(CC.tower.x, TOP, CC.tower.z);
   scene.add(tower);
-  block(CC.tower.x, CC.tower.z, 9.5, 9.5);
+  // Round, like the terrace (a square block let you walk into its edge and
+  // sink into it up to the knees).
+  colliders.push({ p: Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2; return [CC.tower.x + Math.cos(a) * CC.towerR, CC.tower.z + Math.sin(a) * CC.towerR]; }) });
+
+  loveLockHeart(scene, block, TOP);
 
   // Railings round the plaza, hung with love locks.
   const rails = [
@@ -346,15 +457,29 @@ export function buildCableCar(store, ROOM, EXIT) {
 
   // The two cabins.
   const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], ROPE); scene.add(c); return c; });
+  // Night with Seoul's (weather.js darkness): a dark blue sky, moonlit
+  // light and the city below lit up.
+  let nightShown = -1;
+  const setNight = (k) => {
+    if (Math.abs(k - nightShown) < 0.002) return;
+    nightShown = k;
+    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+    scene.fog.color.copy(DAY_FOG).lerp(NIGHT_SKY, k);
+    hemi.intensity = 1.6 - 0.9 * k; hemi.color.copy(WHITE).lerp(MOON, k);
+    sun.intensity = 1.2 - 0.9 * k;
+    ambient.intensity = 0.35 + 0.1 * k;
+    cityMat.emissiveIntensity = 0.32 * k;
+  };
   const tick = () => {
     const t = cableClock();
     cabins.forEach((c, i) => { const s = cabinPos(i, cabinAt(i, t).k); c.position.set(s.x, s.y, s.z); });
+    setNight(darkness());
   };
   tick();
 
   return {
     scene, products: [], colliders, seats, clerk: { x: -7.5, z: LOW + 2.9, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    tick, floorAt: cableFloor, cablecar: true,
+    tick, floorAt: cableFloor, camBlocked: cableCamBlocked, cablecar: true,
   };
 }
 

@@ -1,9 +1,25 @@
-import { LANGUAGES, STRINGS } from '../i18n/strings.js';
+import { LANGUAGES, PACKS } from '../i18n/languages.js';
+import { EN } from '../i18n/en.js';
 import { s2t } from '../i18n/hant.js';
 
 const STORAGE_KEY = 'mk.lang';
 let current = 'en';
 const listeners = new Set();
+// Loaded languages. English is built in; the others arrive with loadLanguage()
+// (i18n/languages.js), so a player downloads only the language they use.
+const STRINGS = { en: EN };
+const loading = {};
+
+/** Fetch a language's strings (once). Resolves when t() can use them. */
+export function loadLanguage(code) {
+  const key = code === 'zht' ? 'zh' : code;
+  if (STRINGS[key] || !PACKS[code]) return Promise.resolve();
+  return (loading[key] ??= PACKS[code]().then((s) => { STRINGS[key] = s; }).catch((e) => {
+    delete loading[key]; // try again next time (offline for a moment)
+    console.warn('language', code, e);
+  }));
+}
+export const isLanguageLoaded = (code) => !!STRINGS[code === 'zht' ? 'zh' : code];
 
 export function getSavedLanguage() {
   try {
@@ -26,6 +42,15 @@ export function setLanguage(code) {
   document.body?.classList.toggle('rtl', !!LANGUAGES.find((l) => l.code === code)?.rtl);
   applyTranslations(document);
   listeners.forEach((fn) => fn(code));
+  // Not downloaded yet: English shows for a moment, then the page redraws in
+  // the picked language. (main.js loads the saved language before start-up.)
+  if (!isLanguageLoaded(code)) {
+    loadLanguage(code).then(() => {
+      if (current !== code || !isLanguageLoaded(code)) return;
+      applyTranslations(document);
+      listeners.forEach((fn) => fn(code));
+    });
+  }
 }
 
 export function getLanguage() {
@@ -38,7 +63,7 @@ export function onLanguageChange(fn) {
 }
 
 export function t(key, vars = {}) {
-  const s = STRINGS[current]?.[key] ?? (current === 'zht' && STRINGS.zh[key] ? s2t(STRINGS.zh[key]) : null) ?? STRINGS.en[key] ?? key;
+  const s = STRINGS[current]?.[key] ?? (current === 'zht' && STRINGS.zh?.[key] ? s2t(STRINGS.zh[key]) : null) ?? STRINGS.en[key] ?? key;
   return s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 }
 

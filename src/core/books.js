@@ -3,6 +3,8 @@
 // (English, with a Korean note where it helps; other languages fall back to
 // English).
 
+import { LIBRARY } from '../data/library-shelf.js';
+
 const P = (ko, rom, en, kn) => ({ ko, rom, mean: kn ? { en, ko: kn } : { en } });
 
 export const BOOKS = [
@@ -227,7 +229,25 @@ const TB = (level, pages, color) => ({
   pages: [],
 });
 BOOKS.push(TB('1', 29, '#145249'), TB('2', 36, '#1f6f8b'), TB('3-4', 38, '#6b4fa0'), TB('5-6', 36, '#9c3d54'));
-export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.pages.length);
+// Free books (public-domain Korean works, retold folk tales, and books
+// written for the game, some only in Korean). The shelf knows only the
+// title; the text is loaded from public/library/<id>.json when opened.
+export const LIT_KINDS = ['lang', 'story', 'poems', 'children', 'life'];
+// The library's bookshelves: each shelf holds one section, labeled on top.
+export const SHELF_SECTIONS = [
+  { id: 'learn', icon: '🇰🇷', name: { en: 'Learn Korean', ko: '한국어', ja: '韓国語', zh: '韩语' } },
+  { id: 'lang', icon: '🌏', name: { en: 'Languages', ko: '어학', ja: '語学', zh: '外语' } },
+  { id: 'story', icon: '📖', name: { en: 'Stories', ko: '소설', ja: '小説', zh: '小说' } },
+  { id: 'poems', icon: '🌸', name: { en: 'Poetry', ko: '시', ja: '詩', zh: '诗' } },
+  { id: 'children', icon: '🧸', name: { en: "Children's stories", ko: '동화', ja: '童話', zh: '童话' } },
+  { id: 'life', icon: '🍳', name: { en: 'Everyday life', ko: '생활', ja: '暮らし', zh: '生活' } },
+];
+export const booksInSection = (id) => BOOKS.filter((b) => (id === 'learn' ? !b.lit : b.lit?.kind === id));
+for (const b of LIBRARY) {
+  BOOKS.push({ id: b.id, icon: b.icon, color: b.color, title: b.title, lit: { kind: b.kind, author: b.author, pages: b.pages }, pages: [] });
+}
+export const pageCount = (b) => (b.textbook ? b.textbook.pages : b.lit ? b.lit.pages : b.pages.length);
+export const litUrl = (b) => `library/${b.id}.json`;
 // The edition to show first: the reader's Chinese, else English.
 export const defaultEdition = (lang) => (lang === 'zh' ? 'hans' : lang === 'zht' ? 'hant' : 'en');
 export const pageUrl = (b, ed, i) => `books/${b.id}/${ed}/${String(i + 1).padStart(2, '0')}.webp`;

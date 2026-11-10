@@ -17,17 +17,15 @@ export const SCENT_KEY = 'mk.scent';
 // The styles: five of 6 perfumes each in Seongsu's perfume shops, plus the
 // handmade workshops.
 export const STYLES = {
-  funny: { icon: '🤪', en: 'Funny', ko: '재밌는', ja: 'おもしろ', zh: '搞笑', es: 'Divertido', ar: 'مضحك', vi: 'Hài hước', hi: 'मज़ेदार', id: 'Lucu' },
-  elegant: { icon: '🥂', en: 'Elegant', ko: '우아한', ja: 'エレガント', zh: '优雅', es: 'Elegante', ar: 'أنيق', vi: 'Thanh lịch', hi: 'शानदार', id: 'Elegan' },
-  cute: { icon: '🎀', en: 'Cute', ko: '귀여운', ja: 'かわいい', zh: '可爱', es: 'Tierno', ar: 'لطيف', vi: 'Dễ thương', hi: 'प्यारा', id: 'Imut' },
-  simple: { icon: '🤍', en: 'Simple', ko: '심플한', ja: 'シンプル', zh: '简约', es: 'Sencillo', ar: 'بسيط', vi: 'Đơn giản', hi: 'सादा', id: 'Simpel' },
-  handmade: { icon: '⚗️', en: 'Handmade', ko: '핸드메이드', ja: 'ハンドメイド', zh: '手工', es: 'Artesanal', ar: 'يدوي', vi: 'Thủ công', hi: 'हस्तनिर्मित', id: 'Buatan tangan' },
-  clean: { icon: '💧', en: 'Clean', ko: '깔끔한', ja: 'クリーン', zh: '清爽', es: 'Limpio', ar: 'منعش', vi: 'Sạch sẽ', hi: 'ताज़ा', id: 'Segar' },
+  funny: { icon: '🤪', en: 'Funny', ko: '재밌는', ja: 'おもしろ', zh: '搞笑', es: 'Divertido', ar: 'مضحك', vi: 'Hài hước', hi: 'मज़ेदार', fr: 'Drôle', th: 'ตลก', id: 'Lucu' },
+  elegant: { icon: '🥂', en: 'Elegant', ko: '우아한', ja: 'エレガント', zh: '优雅', es: 'Elegante', ar: 'أنيق', vi: 'Thanh lịch', hi: 'शानदार', fr: 'Élégant', th: 'หรูหรา', id: 'Elegan' },
+  cute: { icon: '🎀', en: 'Cute', ko: '귀여운', ja: 'かわいい', zh: '可爱', es: 'Tierno', ar: 'لطيف', vi: 'Dễ thương', hi: 'प्यारा', fr: 'Mignon', th: 'น่ารัก', id: 'Imut' },
+  simple: { icon: '🤍', en: 'Simple', ko: '심플한', ja: 'シンプル', zh: '简约', es: 'Sencillo', ar: 'بسيط', vi: 'Đơn giản', hi: 'सादा', fr: 'Simple', th: 'เรียบง่าย', id: 'Simpel' },
+  handmade: { icon: '⚗️', en: 'Handmade', ko: '핸드메이드', ja: 'ハンドメイド', zh: '手工', es: 'Artesanal', ar: 'يدوي', vi: 'Thủ công', hi: 'हस्तनिर्मित', fr: 'Fait main', th: 'ทำมือ', id: 'Buatan tangan' },
+  clean: { icon: '💧', en: 'Clean', ko: '깔끔한', ja: 'クリーン', zh: '清爽', es: 'Limpio', ar: 'منعش', vi: 'Sạch sẽ', hi: 'ताज़ा', fr: 'Frais', th: 'สะอาดสดชื่น', id: 'Segar' },
 };
 
 export const MOTIONS = ['rise', 'float', 'fall', 'twinkle', 'orbit', 'pop'];
-// Drawn shapes (not emoji): look the same on every device.
-export const SHAPES = ['@spark', '@bubble', '@pearl'];
 
 const isColor = (c) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c);
 

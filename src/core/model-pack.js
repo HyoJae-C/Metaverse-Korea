@@ -3,12 +3,16 @@
 // a skeleton clone per character, and an AnimationMixer driven by our action
 // names (idle, walk, run, sit, ride and the emotes).
 import * as THREE from 'three';
-import { FOLK_DANCES, makeFan, makeSleeve } from './folk-dance.js';
+import { FOLK_DANCES, folkHandProps } from './folk-dance.js';
+import { SNOW_MOVES } from './snow-moves.js';
+import { STUDIO_MOVES } from './studio-moves.js';
+import { listenPose } from './headphones.js';
+import { PUNGMUL_HANDS } from './pungmul-props.js';
 import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
-import { PALETTES } from '../data/appearance.js';
+import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
 import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
@@ -76,9 +80,9 @@ const STRIDE = {
   },
 };
 
+const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
+const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
-export const modelEmoji = (id) => PACK.models[id]?.emoji || '🙂';
-
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 const loader = new GLTFLoader();
 const cache = new Map();
@@ -94,15 +98,17 @@ function loadAnims() {
   const jobs = files.map((f) => (f.model ? load(f.model) : loader.loadAsync(BASE + f.url).catch(() => null)).then(add));
   const eager = jobs.filter((_, i) => files[i].eager);
   animsReady = Promise.all(eager).then((r) => r.every(Boolean));
+  animsReady.then((ok) => { if (!ok) animsReady = null; }); // (a later call tries again)
   return animsReady;
 }
 function load(id) {
   if (!cache.has(id)) {
-    // A failed load resolves to null and the character keeps its chibi body.
+    // A failed load resolves to null and is forgotten, so a later call
+    // (core/character.js retries) downloads it again.
     const def = PACK.models[id];
     cache.set(id, loader.loadAsync(BASE + def.url)
       .then((g) => { if (def.recolor) recolor(g, def.recolor); if (def.wear) applyWear(g, def.wear); if (def.wear?.outfit) buildOutfit(g, def.wear.outfit, wearUv); return g; })
-      .catch(() => null));
+      .catch(() => { cache.delete(id); return null; }));
   }
   return cache.get(id);
 }
@@ -220,7 +226,18 @@ const BIG_HEAD = 1.12;
 const PULLUP = { hang: 0.5, bar: 2.03 };
 // Dumbbell curls: extra rotation (radians) on the upper arm and the forearm at the top of a curl.
 const CURL = { foreL: [0, 0, -2], foreR: [0, 0, 2] };
-const _hv = new THREE.Vector3();
+const _hv = new THREE.Vector3(), _hv2 = new THREE.Vector3(), _hv3 = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+// The bench press bar: a long bar with a plate at each end, along its y axis.
+function makeBarbell() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), new THREE.MeshLambertMaterial({ color: '#c9ced3' })));
+  for (const y of [-0.6, 0.6]) {
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 18), new THREE.MeshLambertMaterial({ color: '#2b2b2e' }));
+    plate.position.y = y;
+    g.add(plate);
+  }
+  return g;
+}
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
 // Hairdresser's scissors, held in the right hand while snipping.
 function makeScissors() {
@@ -252,6 +269,7 @@ function makeDumbbell() {
   return g;
 }
 const dyed = new Map();
+export const DYE_SIZE = 256; // px, the longer side of a dyed colour atlas
 function dyedMaterial(id, src, look) {
   const A = PACK.atlas;
   const paint = [['hair', PALETTES.dye[look.dye]], ['eyes', PALETTES.eyes[look.eyes]], ['skin', PALETTES.skin[look.tone]]]
@@ -278,10 +296,15 @@ function dyedMaterial(id, src, look) {
   src.scene.traverse((o) => { if (!base && o.isMesh && o.material?.map?.image) base = o.material; });
   if (!base) return null;
   const img = base.map.image;
+  // The atlas is flat colour bands (8x4 cells of soft vertical gradients), so
+  // a small copy looks the same. Full size (1024x1024) cost 4 MB per dyed
+  // look, ~400 MB with a street of passers-by: past iPhone Safari's canvas
+  // memory limit, the city went blank and the page was closed.
   const c = document.createElement('canvas');
-  c.width = img.width; c.height = img.height;
+  const f = Math.min(1, DYE_SIZE / Math.max(img.width, img.height));
+  c.width = Math.max(A.cols, Math.round(img.width * f)); c.height = Math.max(A.rows, Math.round(img.height * f));
   const g = c.getContext('2d', { willReadFrequently: true });
-  g.drawImage(img, 0, 0);
+  g.drawImage(img, 0, 0, c.width, c.height);
   const cw = c.width / A.cols, ch = c.height / A.rows;
   const col = new THREE.Color(), hsl = {}, target = new THREE.Color();
   if (shirt != null) { // plain clothes: the outfit's colour family becomes the T-shirt colour
@@ -402,6 +425,15 @@ function shapedHead(facts, geo, shape, key) {
   return out;
 }
 const LIP_FWD = 0.035;
+// Swimming (Olympic Park Pool): the body tips forward about the feet onto
+// the water (tilt), lifted and pulled back so the middle stays on the spot;
+// rate: strokes per second-ish; head: how far it lifts to look ahead.
+const SWIM_POSE = { tilt: 1.35, lift: 0.74, back: 0.5, rate: 6.5, head: 0.5 };
+// Sitting in a tube on the water (the chair clip, raised to the tube).
+const TUBE_SIT = { y: 0.3, z: 0.05 };
+// Sitting in a bumper car (core/bumper-rink.js): the character's root is the
+// car's middle, so slide back onto the cushion, against the seat back.
+const BUMPER_SIT = { y: PACK.sit.y, z: PACK.sit.z - 0.19 };
 function faceExtras(id, headMesh, headBone, look) {
   const A = PACK.atlas;
   const facts = headFacts(id, headMesh.geometry); // the model's own head
@@ -423,6 +455,62 @@ function faceExtras(id, headMesh, headBone, look) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
   headBone.add(extras);
+  return hair;
+}
+
+// Hats (core/character.js addHat) are sized for the model's own head, so a
+// big salon style (curly, afro, pompadour, mohawk, spikes...) poked through
+// them. Under a hat the hair is tucked in: every point of it above the
+// hat's lower edge and outside the crown is pulled back inside, so the hair
+// still shows below the hat but not through it. In the head accessory
+// group's units (a chibi head, radius ~0.33): c the crown's centre, r its
+// radii, y0 the height above which hair is tucked.
+const HAT_CROWNS = {
+  cap: { c: [0, 0.05, -0.01], r: [0.33, 0.33, 0.33], y0: 0.11 },
+  beanie: { c: [0, 0.04, -0.01], r: [0.34, 0.34, 0.34], y0: 0.08 },
+  towel: { c: [0, 0.04, -0.01], r: [0.35, 0.35, 0.35], y0: 0.11 },
+  bucket: { c: [0, 0.1, -0.02], r: [0.28, 0.28, 0.28], y0: 0.21 },
+  beret: { c: [0.04, 0.24, -0.02], r: [0.36, 0.14, 0.36], y0: 0.2 },
+};
+const TUCK = 0.94; // how far inside the crown the hair goes
+const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out
+const _tm = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tp = new THREE.Vector3();
+function tuckHair(hair, headAcc, look) {
+  const crown = HAT_CROWNS[shapeOf(accessory('head', look.head))];
+  if (!hair || !crown) return;
+  const { c, r, y0 } = crown;
+  headAcc.updateMatrix();
+  const toAcc = new THREE.Matrix4().copy(headAcc.matrix).invert(); // head bone -> hat space
+  hair.parent.updateMatrix();
+  hair.updateMatrix();
+  for (const mesh of hair.children) {
+    if (!mesh.isMesh) continue;
+    mesh.updateMatrix();
+    _tm.copy(toAcc).multiply(hair.parent.matrix).multiply(hair.matrix).multiply(mesh.matrix);
+    _ti.copy(_tm).invert();
+    const geo = mesh.geometry.clone();
+    const pos = geo.attributes.position;
+    let moved = false;
+    for (let i = 0; i < pos.count; i++) {
+      _tp.fromBufferAttribute(pos, i).applyMatrix4(_tm);
+      // Fully inside above the edge; just under it the hair may bulge out
+      // more and more (pressed flat by the hat), with no step at the edge.
+      const below = (y0 - _tp.y) / TUCK_BAND;
+      if (below >= 1) continue;
+      const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
+      const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
+      const d = Math.hypot(dx, dy, dz);
+      if (d <= limit) continue;
+      const k = limit / d;
+      _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
+      pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
+      moved = true;
+    }
+    if (!moved) continue;
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+    mesh.geometry = geo;
+  }
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
@@ -464,6 +552,62 @@ const DANCE_MOVES = [
   },
 ];
 
+// K-pop choreography for the busking dancers: sharper moves on the beat,
+// a new one every bar (4 beats), the same for everyone in the group so they
+// dance in unison. KPOP for the girl group, KPOP_B (heavier) for the boys.
+const hit = (ph) => Math.pow(Math.sin(Math.min(1, ph * 1.6) * Math.PI / 2), 0.6); // snaps in, holds
+const KPOP_ACTS = new Set(['kpop', 'kpopb', 'strum']);
+const KPOP = [
+  (ph, b) => { // point and hip: arm shoots up on 1 and 3
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.05, turn: (r ? 0.3 : -0.3), spine: [0, 0, (r ? -0.14 : 0.14) * k], head: [0, 0, (r ? 0.1 : -0.1)], armR: r ? [-2.7 * k, 0.3, 0] : [-0.2, 0.5, 0], armL: r ? [-0.2, -0.5, 0] : [-2.7 * k, -0.3, 0], foreL: [-0.6, 0, 0], foreR: [-0.6, 0, 0], legL: [r ? 0 : -0.3 * k, 0, 0], legR: [r ? -0.3 * k : 0, 0, 0] };
+  },
+  (ph, b) => { // hand hearts over the head, swaying
+    const s = (b % 2 ? 1 : -1) * Math.sin(ph * Math.PI);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.04, spine: [0, 0, 0.12 * s], head: [0, 0, -0.1 * s], armL: [-2.5, -0.6, 0], armR: [-2.5, 0.6, 0], foreL: [-1.5, 0, 0], foreR: [-1.5, 0, 0] };
+  },
+  (ph, b) => { // body wave, arms rolling forward
+    const w = Math.sin((ph + b % 2) * Math.PI);
+    return { bob: 0.04 + w * 0.04, spine: [0.25 * w, 0, 0], head: [-0.2 * w, 0, 0], armL: [-1.3 - 0.6 * w, -0.2, 0], armR: [-1.3 + 0.6 * w, 0.2, 0], foreL: [-0.8, 0, 0], foreR: [-0.8, 0, 0], kneeL: [0.3 * Math.max(0, w), 0, 0], kneeR: [0.3 * Math.max(0, w), 0, 0] };
+  },
+  (ph, b) => { // shoulder shimmy with a step to the side
+    const side = b % 2 ? 1 : -1, sh = Math.sin(ph * Math.PI * 4);
+    return { bob: Math.abs(sh) * 0.025, turn: side * 0.2, spine: [0, 0.15 * sh, 0], armL: [-0.5, -0.9 + 0.15 * sh, 0], armR: [-0.5, 0.9 + 0.15 * sh, 0], foreL: [-1.6, 0, 0], foreR: [-1.6, 0, 0], legL: [0, 0, side < 0 ? -0.25 : 0], legR: [0, 0, side > 0 ? 0.25 : 0] };
+  },
+];
+const KPOP_B = [
+  (ph, b) => { // power hits: both fists punch down on the beat
+    const k = hit(ph);
+    return { bob: -0.06 * k, spine: [0.2 * k, 0, 0], head: [0.15 * k, 0, 0], armL: [-0.6 + 0.4 * k, -0.7, 0], armR: [-0.6 + 0.4 * k, 0.7, 0], foreL: [-1.4 * (1 - k), 0, 0], foreR: [-1.4 * (1 - k), 0, 0], kneeL: [0.4 * k, 0, 0], kneeR: [0.4 * k, 0, 0], legL: [-0.25 * k, 0, 0], legR: [-0.25 * k, 0, 0] };
+  },
+  (ph, b) => { // arm sweep across the chest, turning
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: 0.03, turn: (r ? -0.45 : 0.45) * k, spine: [0, (r ? -0.25 : 0.25) * k, 0], armR: r ? [-1.5, 0.4 - 1.3 * k, 0] : [-0.3, 0.3, 0], armL: r ? [-0.3, -0.3, 0] : [-1.5, -0.4 + 1.3 * k, 0], foreL: [-0.3, 0, 0], foreR: [-0.3, 0, 0] };
+  },
+  (ph, b) => { // the bounce: knees and shoulders, one hand at the cap
+    const k = Math.abs(Math.sin(ph * Math.PI));
+    return { bob: -0.05 * k, spine: [0.12 * k, 0, 0], head: [0.2 * k, 0, 0], armR: [-2.6, 0.5, 0], foreR: [-1.9, 0, 0], armL: [-0.4, -0.6, 0], foreL: [-0.9 * k, 0, 0], kneeL: [0.35 * k, 0, 0], kneeR: [0.35 * k, 0, 0], legL: [-0.2 * k, 0, 0], legR: [-0.2 * k, 0, 0] };
+  },
+  (ph, b) => { // pointing out at the crowd, left then right
+    const r = b % 2 === 0, k = hit(ph);
+    return { bob: Math.abs(Math.sin(ph * Math.PI)) * 0.04, turn: r ? -0.3 : 0.3, armR: r ? [-1.6 * k, 0.5, 0] : [-0.2, 0.4, 0], armL: r ? [-0.2, -0.4, 0] : [-1.6 * k, -0.5, 0], foreL: [0, 0, 0], foreR: [0, 0, 0], head: [0, (r ? -0.2 : 0.2), 0] };
+  },
+];
+// Strumming a guitar held across the body: the right hand strums at the
+// sound hole, the left holds the neck up by the shoulder, the head nods.
+function strumPose(t) {
+  const st = Math.sin(t * Math.PI * 4); // two strums a second
+  return { bob: 0, spine: [0.05, 0, 0], head: [0.08 + 0.06 * Math.abs(Math.sin(t * Math.PI * 2)), 0, 0.05], armR: [-0.7, 0.15, 0], foreR: [-1.0 + 0.3 * st, 0, 0], armL: [-1.2, -0.2, 0], foreL: [-1.3, 0, 0] };
+}
+
+// Start downloading a model and the eager clips before any character needs
+// them (main.js: the saved look's model, while the map loads), so the first
+// character shows at once.
+export function preloadModel(id) {
+  load(PACK.models[id] ? id : MODEL_IDS[0]);
+  loadAnims();
+}
+
 // Resolves to { update, play } once the model is on, or null on failure.
 export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   const id = PACK.models[look.model] ? look.model : MODEL_IDS[0];
@@ -502,6 +646,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     headAcc.scale.set(s, s, size.z / CHIBI_HEAD_D);
     headAcc.updateMatrixWorld(true);
     headBone.attach(headAcc);
+    // Swimwear: a swim cap over the hair, in the suit's colour.
+    if (PACK.models[id].cap) {
+      const capMat = new THREE.MeshLambertMaterial({ color: PACK.models[id].wear?.colors?.top ?? 0x24407a });
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.34, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), capMat);
+      cap.name = 'swimcap';
+      cap.position.set(0, 0.03, -0.02);
+      cap.rotation.x = -0.3;
+      cap.scale.set(1.04, 0.98, 1.06);
+      headAcc.add(cap);
+    }
     if (chestBone && bodyMesh) {
       // Chibi torso: ~0.42 m wide, 0.36 m deep, scarf sits at ~0.6 m.
       bodyMesh.computeBoundingBox();
@@ -516,7 +670,24 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     }
   }
 
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) faceExtras(id, headMesh, headBone, look);
+  let styledHair = null; // (setWind blows its locks back)
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
+    const hair = faceExtras(id, headMesh, headBone, look);
+    if (hair && look.head) tuckHair(hair, headAcc, look);
+    if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
+  }
+  // Wind: every piece but the cap over the skull streams back and up a
+  // little and flutters, the long ones (low and behind) the most.
+  let windK = 0, windT = 0;
+  const locks = styledHair ? styledHair.children.slice(1).map((m) => ({ m, p: m.position.clone(), r: m.rotation.x, w: Math.min(1, 0.35 + Math.max(0, -m.position.y) * 0.9 + Math.max(0, -m.position.z) * 0.5) })) : [];
+  const blow = (dt) => {
+    windT += dt;
+    for (const [i, l] of locks.entries()) {
+      const k = windK * l.w, fl = Math.sin(windT * 31 + i * 1.7) * 0.05 * k;
+      l.m.position.set(l.p.x, l.p.y + 0.14 * k, l.p.z - 0.32 * k + fl);
+      l.m.rotation.x = l.r - 0.55 * k + fl * 3;
+    }
+  };
 
   body.visible = false;
   root.add(m);
@@ -548,9 +719,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let emote = null; // { key, t, dur }
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  let extMoves = null; // a scripted move (basketball shots): () => bone offsets
   let pullT = 0;
+  let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
+  let barbell = null; // the bench press bar, made the first time you bench
   let scissors = null; // the hairdresser's
   let folkProps = null; // fans or long sleeves for the palace performers
   const slotL = m.getObjectByName('handslotl') || handL, slotR = m.getObjectByName('handslotr') || handR;
@@ -564,7 +738,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'pullup' || name === 'curl' || name === 'snip' || FOLK_DANCES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    // A scripted move laid over the clip: fn() → bone offsets, or null.
+    setMoves(fn) { extMoves = fn || null; },
+    // Wind in the hair, 0..1 (the roller coaster).
+    setWind(k) { if (!locks.length || (k < 0.01 && windK < 0.01)) { windK = k; return; } windK = k; if (k < 0.01) blow(0); },
     play(name) {
       if (!PACK.anims[name]) return;
       const clip = action(name)?.getClip();
@@ -572,10 +750,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       currentKey = ''; // restart even if the same clip is already playing
     },
     feet: [m.getObjectByName('footl'), m.getObjectByName('footr')],
+    hands: [handL, handR], // (gloves)
     headMesh, headBone, // (a costume head hides them)
     // How high a board or scooter deck holds you up.
     setBoardHeight(y) { boardY = y; },
     update(dt, speed01, sit, riding) {
+      // In a bumper car (activity 'bumper'): driving, like the open car,
+      // but sat back in the little car's seat.
+      const bumper = activity === 'bumper' && sit && !riding;
+      if (bumper) riding = 'car';
       if (emote) {
         emote.t += dt;
         if (emote.t >= emote.dur || (speed01 > 0.3 && !riding) || sit) emote = null;
@@ -586,15 +769,28 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       // On inline skates: crouched, long slow side pushes (see STRIDE).
       const board = riding === 'board', kick = riding === 'kick', skates = riding === 'skates';
       const seated = riding && !board && !kick && !skates;
-      if (emote && !seated && speed01 < 0.3) key = emote.key;
+      // In the pool (core/pool-hall.js): swimming (flat on the water while
+      // moving, treading water upright when still), floating in a tube
+      // (sitting in it), or arms up for a dive.
+      const swimming = activity === 'swim' && !riding && !sit;
+      const tubing = activity === 'tube' && !riding;
+      if (swimming || (activity === 'dive' && !riding)) key = 'idle';
+      else if (tubing) key = 'sit';
+      else if (emote && !seated && speed01 < 0.3) key = emote.key;
       else if (board || kick || skates) key = 'idle'; // the stride is posed on top
       else if (seated) key = 'ride';
-      else if (sit) key = activity === 'lie' && action('lie') ? 'lie' : 'sit'; // lying on a bed (clinic)
+      else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
+      else if (sit && activity === 'matsit' && action('floor')) key = 'floor'; // sitting on a picnic mat
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
-      else if (activity && activity !== 'dance' && action(activity)) key = activity;
+      else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
       else key = 'idle';
-      const dancing = activity === 'dance' && key === 'idle';
+      // Yoga poses, the pilates reformer and the bench press
+      // (core/studio-moves.js): held while standing still.
+      const studio = STUDIO_MOVES[activity] && key === 'idle' ? (globalThis.__studio?.[activity] || STUDIO_MOVES[activity])(performance.now() / 1000) : null; // (__studio: debug, tune live)
+      if (studio?.clip && action(studio.clip)) key = studio.clip;
+      const dancing = (activity === 'dance' || KPOP_ACTS.has(activity)) && key === 'idle';
+      const listening = activity === 'listen' && key === 'idle'; // headphones on at the listening bar
       const hanging = activity === 'pullup' && key === 'idle'; // on the pull-up bar
       const curling = activity === 'curl' && key === 'idle'; // dumbbell curls
       if (curling && !bells && slotL && slotR) {
@@ -606,13 +802,19 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       if (snipping && !scissors && slotR) { scissors = makeScissors(); slotR.add(scissors); }
       if (scissors) scissors.visible = snipping;
       const folk = FOLK_DANCES[activity] && key === 'idle' ? activity : null; // fan or mask dance
+      const snowy = SNOW_MOVES[activity] && (key === 'idle' || key === 'walk') ? activity : null; // making a snowball (core/snow-moves.js); walking one along: arms only
       if (folk && !folkProps && slotL && slotR) {
-        folkProps = folk === 'tal' ? [makeSleeve(1.6), makeSleeve(1.6)] : folk === 'rope' ? [null, makeFan(1.5)] : [makeFan(1.8), makeFan(1.8)];
+        folkProps = PUNGMUL_HANDS[folk] ? PUNGMUL_HANDS[folk]() : folkHandProps(folk);
         if (folkProps[0]) slotL.add(folkProps[0]);
-        slotR.add(folkProps[1]);
+        if (folkProps[1]) slotR.add(folkProps[1]);
       }
       if (folkProps) for (const f of folkProps) if (f) f.visible = !!folk;
-      to(key);
+      if (studio?.bar != null && !barbell && m.parent) { barbell = makeBarbell(); m.parent.add(barbell); }
+      if (barbell) barbell.visible = studio?.bar != null;
+      // Lying down: the pack's lying clip doesn't turn the hips on these
+      // models (the body stayed upright, as if sitting), so the standing
+      // idle is laid flat on its back instead: head towards -z, face up.
+      to(key === 'lie' ? 'idle' : key);
       if (current && (key === 'walk' || key === 'run')) current.setEffectiveTimeScale(0.8 + speed01 * 0.5);
       let stroke = null;
       if (board || kick || skates) {
@@ -623,26 +825,42 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
       }
-      const off = board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? PACK.ride : sit ? (key === 'lie' ? PACK.lie : PACK.sit) : null;
+      swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
+      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
-      if (folk) {
+      if (studio) {
+        moves = studio;
+        turn = studio.turn || 0;
+      } else if (folk) {
         moves = FOLK_DANCES[folk](performance.now() / 1000);
         bob = moves.bob || 0;
         turn = moves.turn || 0;
+      } else if (snowy) {
+        moves = SNOW_MOVES[snowy](performance.now() / 1000);
+        if (key === 'walk') moves = { spine: moves.spine, head: moves.head, armL: moves.armL, armR: moves.armR, foreL: moves.foreL, foreR: moves.foreR }; // (the walk clip keeps the legs)
+        else { bob = moves.bob || 0; turn = moves.turn || 0; }
+      } else if (listening) {
+        moves = listenPose(performance.now() / 1000);
+        bob = moves.bob || 0;
       } else if (dancing) {
         const { beat, phase } = beatNow();
-        moves = globalThis.__dancePose || DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat); // debug override
+        moves = globalThis.__dancePose // debug override
+          || (activity === 'strum' ? strumPose(performance.now() / 1000)
+            : activity === 'kpop' ? KPOP[Math.floor(beat / 4) % KPOP.length](phase, beat)
+              : activity === 'kpopb' ? KPOP_B[Math.floor(beat / 4) % KPOP_B.length](phase, beat)
+                : DANCE_MOVES[Math.floor(beat / 8) % DANCE_MOVES.length](phase, beat));
         bob = moves.bob || 0;
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : studio?.pitch || 0) - m.rotation.x) * Math.min(1, dt * 12);
       let pull = 0;
       if (hanging) {
         pullT += dt;
         pull = 0.5 - 0.5 * Math.cos((pullT / 1.6) * Math.PI * 2); // 0 hanging .. 1 chin over the bar
         m.position.y = PULLUP.hang; // corrected below, once the arms are posed
-      } else if (dancing || folk) m.position.y = bob;
+      } else if (dancing || folk || snowy || listening) m.position.y = bob;
       else m.position.y += ((off?.y || 0) - m.position.y) * k;
       m.position.z += ((off?.z || 0) - m.position.z) * k;
       // The clips don't key every bone: start the stroke bones from rest so
@@ -673,6 +891,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           if (bone && Array.isArray(r)) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
       }
+      if (swimming) { // front crawl while moving, treading water when still
+        const S = globalThis.__swim || SWIM_POSE; // debug: tune live
+        swimT += dt * (swimPr > 0.5 ? S.rate * (0.6 + 0.5 * speed01) : 2.2);
+        const add = (b, x, y, z) => { if (b) b.rotation.set(b.rotation.x + x, b.rotation.y + y, b.rotation.z + z); };
+        const crawl = swimPr, tread = 1 - swimPr;
+        for (const [side, ph] of [['L', 0], ['R', Math.PI]]) {
+          const a = ((swimT + ph) % (Math.PI * 2)); // one turn per stroke
+          add(dBones['arm' + side], -a * crawl + tread * (-0.5 + 0.35 * Math.sin(swimT + ph)), 0, tread * (side === 'L' ? 0.5 : -0.5));
+          add(dBones['fore' + side], tread * -0.6, 0, 0);
+          add(lBones['upperleg' + side.toLowerCase()], Math.sin(swimT * 2 + ph) * (0.35 * crawl + 0.2 * tread), 0, 0);
+        }
+        add(dBones.head, -S.head * crawl, 0, 0);
+      }
+      if (activity === 'dive' && key === 'idle') { // arms straight up over the head
+        for (const n of ['armL', 'armR']) { const b = dBones[n]; if (b) b.rotation.set(b.rotation.x - 2.95, b.rotation.y, b.rotation.z); }
+      }
       if (hanging) { // arms up to the bar, elbows bending as you pull
         const bend = -1.5 * pull;
         for (const [name, r] of [['armL', [-2.95 - bend * 0.35, 0, 0]], ['armR', [-2.95 - bend * 0.35, 0, 0]], ['foreL', [bend, 0, 0]], ['foreR', [bend, 0, 0]]]) {
@@ -701,6 +935,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
         }
       }
+      if (extMoves) moves = extMoves() || moves; // basketball shots and other scripted moves
       if (moves) {
         for (const [name, bone] of Object.entries(dBones)) {
           const r = moves[name];
@@ -711,6 +946,13 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
           if (bone && r) bone.rotation.set(bone.rotation.x + r[0], bone.rotation.y + r[1], bone.rotation.z + r[2]);
         }
       }
+      if (barbell?.visible && handL && handR) { // the bar runs from hand to hand
+        m.updateMatrixWorld(true);
+        const a = m.parent.worldToLocal(handL.getWorldPosition(_hv)), b = m.parent.worldToLocal(handR.getWorldPosition(_hv2));
+        barbell.position.addVectors(a, b).multiplyScalar(0.5);
+        barbell.quaternion.setFromUnitVectors(_up, _hv3.subVectors(b, a).normalize());
+      }
+      if (windK > 0.01) blow(dt);
       if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
     },
   };

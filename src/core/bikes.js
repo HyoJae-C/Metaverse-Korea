@@ -1,37 +1,10 @@
-// Bike share: stations on the street where you can rent a bike and ride.
-// Fictional service (no real bike-share brand). Stations come from the
-// region's bikes.json; each is snapped to the nearest street.
+// Ride models: bikes, the tandem, motorbike, cars and helmets. Everyone has a
+// bike of their own (core/bike-garage.js), so there are no rental stations.
 import * as THREE from 'three';
-import { placeOf } from './districts.js';
-import { latLonToLocal } from './storefronts.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
-const FRAME = '#3fb59a', DARK = '#2b2f36';
-
-// A small bike, wheels on the ground, front towards +z.
-export function makeBike(color = FRAME) {
-  const g = new THREE.Group();
-  const wheelGeo = new THREE.TorusGeometry(0.27, 0.045, 6, 18).rotateY(Math.PI / 2);
-  for (const z of [-0.48, 0.48]) {
-    const w = new THREE.Mesh(wheelGeo, mat(DARK));
-    w.position.set(0, 0.3, z);
-    g.add(w);
-  }
-  const bar = (sx, sy, sz, x, y, z, rx = 0, c = color) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-    m.position.set(x, y, z);
-    m.rotation.x = rx;
-    g.add(m);
-  };
-  bar(0.06, 0.06, 0.8, 0, 0.5, 0); // top tube
-  bar(0.06, 0.45, 0.06, 0, 0.42, -0.2, 0.25); // seat tube
-  bar(0.06, 0.55, 0.06, 0, 0.55, 0.45, -0.25); // fork
-  bar(0.2, 0.06, 0.28, 0, 0.64, -0.24, 0, DARK); // seat
-  bar(0.55, 0.05, 0.05, 0, 0.86, 0.5, 0, DARK); // handlebar
-  bar(0.3, 0.16, 0.22, 0, 0.72, 0.62, 0, '#ffffff'); // basket
-  return g;
-}
+const DARK = '#2b2f36';
 
 // A red sports motorbike (fairing, tank, a low windscreen), front towards
 // +z. The rider sits where a bike's rider sits, leaning on the tank.
@@ -377,12 +350,51 @@ export function makeLimo(color = '#f8f8f5') {
   return g;
 }
 
+// The zoo's four-seat electric cart (Children's Grand Park): two benches of
+// two under a striped canopy in the park's colours, a cream body and a
+// green bumper. Driver's seat at the origin, front towards +z, like the cars.
+export function makeZooCart() {
+  const g = new THREE.Group();
+  const add = (geo, m, x, y, z, rx = 0) => {
+    const o = new THREE.Mesh(geo, m);
+    o.position.set(x, y, z);
+    o.rotation.x = rx;
+    g.add(o);
+    return o;
+  };
+  const B = (sx, sy, sz) => new THREE.BoxGeometry(sx, sy, sz);
+  const cx = -0.45, W = 1.6, body = shiny('#f6efdc'), green = mat('#3f9b5a');
+  add(B(W, 0.18, 3.0), body, cx, 0.36, -0.35); // floor
+  add(B(W, 0.5, 0.7), body, cx, 0.6, 0.95, -0.15); // the nose (cowl)
+  add(B(W - 0.1, 0.06, 0.5), mat('#2f3338'), cx, 0.88, 0.7, -0.5); // dash
+  add(B(W + 0.08, 0.14, 0.14), green, cx, 0.34, 1.33); // front bumper
+  add(B(W + 0.08, 0.14, 0.14), green, cx, 0.34, -1.88); // back bumper
+  add(B(0.34, 0.34, 0.04), mat('#2a2c31'), 0, 0.98, 0.42, -0.9); // steering wheel
+  for (const s of [-1, 1]) add(new THREE.CylinderGeometry(0.09, 0.09, 0.04, 12).rotateX(Math.PI / 2), shiny('#fffbe0'), cx + s * 0.55, 0.66, 1.31); // headlights
+  // Two benches: cushion and back, green
+  for (const z of [0, -1.2]) {
+    add(B(W - 0.12, 0.14, 0.52), green, cx, 0.58, z - 0.1);
+    add(B(W - 0.12, 0.48, 0.1), green, cx, 0.86, z - 0.4, -0.15);
+  }
+  // Canopy: four posts and a striped roof
+  for (const sx of [-1, 1]) for (const z of [0.45, -1.75]) add(B(0.06, 1.6, 0.06), mat('#d9d4c7'), cx + sx * (W / 2 - 0.05), 1.15, z);
+  const STRIPE = ['#ef6f6c', '#f6efdc', '#f2c94c', '#f6efdc', '#56b4e9', '#f6efdc', '#7bc96f'];
+  STRIPE.forEach((c, i) => add(B(W + 0.16, 0.07, 2.5 / STRIPE.length + 0.01), mat(c), cx, 1.97, 0.55 - (i + 0.5) * (2.5 / STRIPE.length)));
+  for (const s of [-1, 1]) for (const z of [0.95, -1.5]) {
+    const w = carWheel(0.27, 0.2);
+    w.position.set(cx + s * 0.72, 0.27, z);
+    g.add(w);
+  }
+  return g;
+}
+
 // Passenger seats relative to the driver ([x, z], driver facing +z).
 export const SEATS = {
   2: [[0, -TANDEM_GAP]], // tandem back seat
   4: [[-0.9, 0]], // open sports car: one passenger beside the driver
   5: [[0, -0.5]], // motorbike: one passenger behind the rider
   6: [[-0.95, 0], [0, -1.3], [-0.95, -1.3]], // limousine: front passenger + two in the back
+  7: [[-0.9, 0], [0, -1.2], [-0.9, -1.2]], // the zoo cart: beside the driver + the back bench
 };
 
 // Where seat n of the driver's vehicle is in the world.
@@ -390,61 +402,4 @@ export function seatPosition(front, kind, seat) {
   const [ox, oz] = SEATS[kind]?.[seat] || SEATS[2][0];
   const s = Math.sin(front.rotation.y), c = Math.cos(front.rotation.y);
   return [front.position.x + ox * c + oz * s, front.position.z - ox * s + oz * c];
-}
-
-export class BikeStations {
-  constructor(scene, stations, center, roadGraph, findFree) {
-    this.items = [];
-    for (const st of stations) {
-      const [ax, az] = placeOf(st, center, latLonToLocal);
-      const n = roadGraph.nodes[roadGraph.nearest(ax, az)] || [ax, az];
-      const [x, z] = findFree(n[0], n[1]);
-      const group = new THREE.Group();
-      group.position.set(x, 0, z);
-      group.rotation.y = Math.atan2(ax - x, az - z) || 0;
-      scene.add(group);
-      // Rack with three parked bikes and a sign post.
-      const rack = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#9aa3ad'));
-      rack.position.y = 0.04;
-      group.add(rack);
-      for (let i = -1; i <= 1; i++) {
-        const b = makeBike();
-        b.rotation.y = Math.PI / 2;
-        b.position.set(i * 0.8, 0, 0);
-        b.scale.setScalar(0.9);
-        group.add(b);
-      }
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.2, 0.1), mat(DARK));
-      post.position.set(1.6, 1.1, 0);
-      group.add(post);
-      const sign = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.08), new THREE.MeshBasicMaterial({ map: signTexture() }));
-      sign.position.set(1.6, 2.3, 0);
-      group.add(sign);
-      this.items.push({ station: st, group, x, z });
-    }
-  }
-
-  nearby(x, z) {
-    return this.items.find((it) => Math.hypot(it.x - x, it.z - z) < 2.6) || null;
-  }
-}
-
-let tex = null;
-function signTexture() {
-  if (tex) return tex;
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = FRAME;
-  g.fillRect(0, 0, 128, 128);
-  g.font = '64px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText('🚲', 64, 58);
-  g.fillStyle = '#fff';
-  g.font = '800 22px system-ui, sans-serif';
-  g.fillText('자전거', 64, 108);
-  tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
 }

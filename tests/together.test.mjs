@@ -9,13 +9,13 @@ test('a high five needs both to press within a few seconds', () => {
   const a = new HighFives(memory(), () => 'd1', () => now);
   assert.equal(a.press('b', 'Bora'), null); // waiting for them
   now += 2000;
-  assert.deepEqual(a.heard('b', 'Bora'), { coins: HI5_COINS });
+  assert.deepEqual(a.heard('b', 'Bora'), { coins: HI5_COINS, who: 'Bora', day: 'd1' });
   // too slow: their press arrives after the window
   a.press('c', 'Chan');
   now += HI5_WINDOW + 1;
   assert.equal(a.heard('c', 'Chan'), null);
   assert.ok(a.waiting('c'));
-  assert.deepEqual(a.press('c', 'Chan'), { coins: HI5_COINS }); // pressing back now works
+  assert.deepEqual(a.press('c', 'Chan'), { coins: HI5_COINS, who: 'Chan', day: 'd1' }); // pressing back now works
 });
 
 test('coins once per person a day, a few people a day', () => {
@@ -37,6 +37,6 @@ test('messages, together and crowd bonuses', () => {
   assert.equal(parseHi5(hi5Msg('abc-1')), 'abc-1');
   assert.equal(parseHi5('tandem:invite:x'), null);
   assert.equal(crowdBonus(0), 0);
-  assert.equal(crowdBonus(3), 3);
-  assert.equal(crowdBonus(40), 5);
+  assert.equal(crowdBonus(3), 6000);
+  assert.equal(crowdBonus(40), 10000);
 });

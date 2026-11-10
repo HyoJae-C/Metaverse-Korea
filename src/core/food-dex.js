@@ -3,7 +3,7 @@
 // in town, and how many you've bought in total.
 
 export const FOOD_MODELS = new Set(['cup', 'bread', 'bowl', 'bacon', 'roll', 'samgak', 'milk', 'cocktail', 'skewer']);
-const FOOD_SHOPS = new Set(['cafe', 'restaurant', 'market', 'play', 'club', 'bar']);
+const FOOD_SHOPS = new Set(['cafe', 'restaurant', 'market', 'play', 'club', 'bar', 'park']); // (park: the Han River market's stalls)
 
 export const isFood = (store, product) => !!store && !!product && FOOD_SHOPS.has(store.category) && FOOD_MODELS.has(product.model);
 export const foodKey = (store, product) => `${store.id}/${product.id}`;

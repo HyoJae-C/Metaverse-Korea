@@ -20,24 +20,27 @@ const T = {
   off: { en: 'Take off', ko: '빼기', ja: '外す', zh: '取下' },
   owned: { en: 'Owned', ko: '보유', ja: '所持', zh: '已有' },
   wearing: { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '佩戴中' },
-  poor: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
+  poor: { en: 'You need 🪙 {n}.', ko: '🪙 {n}이 필요해요.', ja: '🪙 {n} 必要です。', zh: '需要 🪙 {n}。' },
   bought: { en: 'Bought! It is on your name tag now.', ko: '구매 완료! 이름표에 달았어요.', ja: '購入しました！名札に付けました。', zh: '购买成功！已戴在名牌上。' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
-  nameTab: { en: 'Change name', ko: '이름 바꾸기', ja: '名前変更', zh: '改名', es: 'Cambiar nombre', ar: 'غيّر الاسم', vi: 'Đổi tên', hi: 'नाम बदलें', id: 'Ganti nama' },
+  nameTab: { en: 'Change name', ko: '이름 바꾸기', ja: '名前変更', zh: '改名', es: 'Cambiar nombre', ar: 'غيّر الاسم', vi: 'Đổi tên', hi: 'नाम बदलें', fr: 'Changer de nom', th: 'เปลี่ยนชื่อ', id: 'Ganti nama' },
   nameHow: {
     en: 'Type a new name (Korean or English letters and numbers). Everyone sees it right away.',
     ko: '새 이름을 적어요 (한글, 영어, 숫자). 바꾸면 다른 사람들에게도 바로 보여요.',
     ja: '新しい名前を入力（ハングル・英字・数字）。変えるとすぐみんなに表示されます。',
     zh: '输入新名字（韩文、英文字母和数字），改完大家马上就能看到。',
-    es: 'Escribe un nombre nuevo (letras coreanas o inglesas y números). Todos lo verán al instante.', ar: 'اكتب اسمًا جديدًا (حروف كورية أو إنجليزية وأرقام). يراه الجميع فورًا.', vi: 'Nhập tên mới (chữ Hàn hoặc chữ Latinh và số). Mọi người sẽ thấy ngay.', hi: 'नया नाम लिखें (कोरियाई या अंग्रेज़ी अक्षर और अंक)। सबको तुरंत दिखेगा।', id: 'Ketik nama baru (huruf Korea atau Inggris dan angka). Semua orang langsung melihatnya.',
+    es: 'Escribe un nombre nuevo (letras coreanas o inglesas y números). Todos lo verán al instante.', ar: 'اكتب اسمًا جديدًا (حروف كورية أو إنجليزية وأرقام). يراه الجميع فورًا.', vi: 'Nhập tên mới (chữ Hàn hoặc chữ Latinh và số). Mọi người sẽ thấy ngay.', hi: 'नया नाम लिखें (कोरियाई या अंग्रेज़ी अक्षर और अंक)। सबको तुरंत दिखेगा।', fr: 'Tape un nouveau nom (lettres coréennes ou anglaises et chiffres). Tout le monde le voit immédiatement.', th: 'พิมพ์ชื่อใหม่ (ตัวอักษรเกาหลีหรืออังกฤษและตัวเลข) ทุกคนจะเห็นทันที', id: 'Ketik nama baru (huruf Korea atau Inggris dan angka). Semua orang langsung melihatnya.',
   },
-  rename: { en: 'Change name · 🪙 {n}', ko: '이름 바꾸기 · 🪙 {n}', ja: '名前を変える · 🪙 {n}', zh: '改名 · 🪙 {n}', es: 'Cambiar nombre · 🪙 {n}', ar: 'غيّر الاسم · 🪙 {n}', vi: 'Đổi tên · 🪙 {n}', hi: 'नाम बदलें · 🪙 {n}', id: 'Ganti nama · 🪙 {n}' },
-  renamed: { en: 'Your name is now {name}!', ko: '이름이 「{name}」(으)로 바뀌었어요!', ja: '名前が{name}になりました！', zh: '你的名字现在是{name}！', es: '¡Ahora te llamas {name}!', ar: 'اسمك الآن {name}!', vi: 'Tên của bạn giờ là {name}!', hi: 'अब आपका नाम {name} है!', id: 'Namamu sekarang {name}!' },
-  same: { en: 'That is already your name.', ko: '지금 이름과 같아요.', ja: '今の名前と同じです。', zh: '和现在的名字一样。', es: 'Ya te llamas así.', ar: 'هذا اسمك بالفعل.', vi: 'Đó đã là tên của bạn rồi.', hi: 'यह पहले से आपका नाम है।', id: 'Itu sudah namamu.' },
-  empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', vi: 'Hãy nhập tên trước.', hi: 'पहले कोई नाम लिखें।', id: 'Ketik nama dulu.' },
+  rename: { en: 'Change name · 🪙 {n}', ko: '이름 바꾸기 · 🪙 {n}', ja: '名前を変える · 🪙 {n}', zh: '改名 · 🪙 {n}', es: 'Cambiar nombre · 🪙 {n}', ar: 'غيّر الاسم · 🪙 {n}', vi: 'Đổi tên · 🪙 {n}', hi: 'नाम बदलें · 🪙 {n}', fr: 'Changer de nom · 🪙 {n}', th: 'เปลี่ยนชื่อ · 🪙 {n}', id: 'Ganti nama · 🪙 {n}' },
+  renamed: { en: 'Your name is now {name}!', ko: '이름이 「{name}」(으)로 바뀌었어요!', ja: '名前が{name}になりました！', zh: '你的名字现在是{name}！', es: '¡Ahora te llamas {name}!', ar: 'اسمك الآن {name}!', vi: 'Tên của bạn giờ là {name}!', hi: 'अब आपका नाम {name} है!', fr: 'Ton nom est maintenant {name} !', th: 'ตอนนี้ชื่อของคุณคือ {name}!', id: 'Namamu sekarang {name}!' },
+  same: { en: 'That is already your name.', ko: '지금 이름과 같아요.', ja: '今の名前と同じです。', zh: '和现在的名字一样。', es: 'Ya te llamas así.', ar: 'هذا اسمك بالفعل.', vi: 'Đó đã là tên của bạn rồi.', hi: 'यह पहले से आपका नाम है।', fr: 'C\'est déjà ton nom.', th: 'นั่นคือชื่อของคุณอยู่แล้ว', id: 'Itu sudah namamu.' },
+  renameFree: { en: 'Change name · Free (first change)', ko: '이름 바꾸기 · 무료 (첫 변경)', ja: '名前を変える · 無料（初回）', zh: '改名 · 免费（首次）', es: 'Cambiar nombre · Gratis (primer cambio)', ar: 'غيّر الاسم · مجانًا (أول تغيير)', vi: 'Đổi tên · Miễn phí (lần đầu)', hi: 'नाम बदलें · मुफ़्त (पहली बार)', fr: 'Changer de nom · Gratuit (premier changement)', th: 'เปลี่ยนชื่อ · ฟรี (ครั้งแรก)', id: 'Ganti nama · Gratis (pertama kali)' },
+  renameWait: { en: 'You can change your name again in {n} day(s).', ko: '{n}일 뒤에 다시 이름을 바꿀 수 있어요.', ja: 'あと{n}日で名前をまた変えられます。', zh: '{n}天后可以再次改名。', es: 'Podrás cambiar tu nombre de nuevo en {n} día(s).', ar: 'يمكنك تغيير اسمك مرة أخرى بعد {n} يوم.', vi: 'Bạn có thể đổi tên lại sau {n} ngày.', hi: '{n} दिन बाद आप फिर से नाम बदल सकते हैं।', fr: 'Tu pourras changer de nom à nouveau dans {n} jour(s).', th: 'คุณจะเปลี่ยนชื่อได้อีกครั้งในอีก {n} วัน', id: 'Kamu bisa ganti nama lagi dalam {n} hari.' },
+  renameRule: { en: 'The first change is free. After that, once every 7 days.', ko: '첫 변경은 무료예요. 그다음부터는 7일에 한 번 바꿀 수 있어요.', ja: '初回の変更は無料。その後は7日に1回です。', zh: '首次改名免费，之后每7天可改一次。', es: 'El primer cambio es gratis. Después, una vez cada 7 días.', ar: 'التغيير الأول مجاني. بعد ذلك، مرة كل 7 أيام.', vi: 'Lần đổi đầu tiên miễn phí. Sau đó, 7 ngày một lần.', hi: 'पहला बदलाव मुफ़्त है। उसके बाद हर 7 दिन में एक बार।', fr: 'Le premier changement est gratuit. Ensuite, une fois tous les 7 jours.', th: 'เปลี่ยนครั้งแรกฟรี หลังจากนั้นเปลี่ยนได้ทุก 7 วัน', id: 'Ganti pertama gratis. Setelah itu, sekali tiap 7 hari.' },
+  empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', vi: 'Hãy nhập tên trước.', hi: 'पहले कोई नाम लिखें।', fr: 'Tape d\'abord un nom.', th: 'พิมพ์ชื่อก่อน', id: 'Ketik nama dulu.' },
 };
 const RESERVED_NAME = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
-export const RENAME_COST = 30;
+export const RENAME_COST = 30000;
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -49,9 +52,11 @@ const el = (tag, cls, text) => {
 export class EmblemUI {
   // owned: EmblemCollection; wallet; name; getLook(); wearLook(patch) saves
   // and shows it; preview(look|null) shows a look without saving.
-  // rename(text) → 'ok' | 'same' | 'empty' | 'poor' changes my name.
-  constructor({ root, owned, wallet, name, rename, getLook, wearLook }) {
-    Object.assign(this, { root, owned, wallet, name, rename, getLook, wearLook });
+  // rename(text) → 'ok' | 'same' | 'empty' | 'poor' | 'taken' | 'reserved' |
+  // 'wait' changes my name; renameInfo() → { free, waitDays, cost }.
+  constructor({ root, owned, wallet, name, rename, renameInfo, getLook, wearLook }) {
+    Object.assign(this, { root, owned, wallet, name, rename, renameInfo, getLook, wearLook });
+    this.nameInfo = null; // last renameInfo() answer
     this.tab = 'emblem';
     this.pick = null; // id being previewed
   }
@@ -84,7 +89,7 @@ export class EmblemUI {
       tabs.append(b);
     }
     this.root.append(tabs);
-    if (kind === 'name') { this._renderName(note); return; }
+    if (kind === 'name') { this._renderName(note); this._askNameInfo(); return; }
 
     const list = kind === 'emblem' ? EMBLEMS : NAME_COLORS;
     for (const tier of Object.keys(TIERS)) {
@@ -131,8 +136,25 @@ export class EmblemUI {
     this.root.append(actions);
   }
 
+  // Ask (again) whether and for how much I may change my name, then redraw.
+  _askNameInfo() {
+    if (!this.renameInfo || this.askingInfo) return;
+    this.askingInfo = true;
+    Promise.resolve(this.renameInfo()).then((info) => {
+      this.askingInfo = false;
+      const changed = JSON.stringify(info) !== JSON.stringify(this.nameInfo);
+      this.nameInfo = info;
+      if (changed && this.open && this.tab === 'name' && !this.confirming) this.render(this.lastNote);
+    }, () => { this.askingInfo = false; });
+  }
+
   _renderName(note) {
+    this.lastNote = note;
+    const info = this.nameInfo;
+    const cost = info ? info.cost : RENAME_COST;
+    this.root.append(el('p', 'order-hint name-face', t('name.face')));
     this.root.append(el('p', 'order-hint', tt('nameHow')));
+    this.root.append(el('p', 'order-hint', tt('renameRule')));
     const input = el('input', 'rename-input');
     input.maxLength = 16;
     input.autocomplete = 'off';
@@ -149,7 +171,10 @@ export class EmblemUI {
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const actions = el('div', 'order-actions');
     if (!this.confirming) this.root.append(el('p', 'order-hint name-rule', t('name.rule')));
-    const go = el('button', 'primary', tt('rename', { n: RENAME_COST }));
+    const waiting = info?.waitDays > 0;
+    if (waiting) this.root.append(el('p', 'order-hint claw-note', tt('renameWait', { n: info.waitDays })));
+    const go = el('button', 'primary', info?.free ? tt('renameFree') : tt('rename', { n: cost }));
+    go.disabled = waiting;
     go.onclick = async () => {
       // A warning first: the name rules, and are you sure?
       if (!this.confirming) {
@@ -159,8 +184,10 @@ export class EmblemUI {
       }
       const r = await this.rename(input.value);
       this.confirming = null;
+      if (r === 'ok' || r === 'wait') this.nameInfo = null; // ask again
       if (r === 'ok') { this.draft = null; this.render('🎉 ' + tt('renamed', { name: this.name })); return; }
-      this.render(r === 'poor' ? tt('poor', { n: RENAME_COST }) : r === 'taken' ? t('name.taken') : r === 'reserved' ? L(RESERVED_NAME) : tt(r === 'same' ? 'same' : 'empty'));
+      if (r === 'wait') { this.render(); return; }
+      this.render(r === 'poor' ? tt('poor', { n: cost }) : r === 'taken' ? t('name.taken') : r === 'reserved' ? L(RESERVED_NAME) : tt(r === 'same' ? 'same' : 'empty'));
     };
     input.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) go.click(); };
     if (this.confirming) {

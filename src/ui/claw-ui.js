@@ -1,5 +1,5 @@
 // Claw machine panel (rules in core/claw-game.js): pay, watch the claw swing,
-// press DROP over a prize. Prizes are plushies (for your home) or coins.
+// press DROP over a prize. Prizes are plushies (for your home), never money.
 import { CLAW_COST, clawX, layPrizes, drop } from '../core/claw-game.js';
 import { L, fmt } from './pocha-ui.js';
 
@@ -13,13 +13,12 @@ const T = {
   },
   play: { en: 'Play · 🪙 {n}', ko: '한 판 · 🪙 {n}', ja: '1回 · 🪙 {n}', zh: '玩一次 · 🪙 {n}' },
   drop: { en: 'DROP', ko: '내리기', ja: '落とす', zh: '放下' },
-  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}개가 필요해요.', ja: '🪙 {n}枚必要です。', zh: '需要 🪙 {n}。' },
+  noCoins: { en: 'You need 🪙 {n}.', ko: '🪙 {n}이 필요해요.', ja: '🪙 {n} 必要です。', zh: '需要 🪙 {n}。' },
   miss: { en: 'Missed! Nothing under the claw.', ko: '꽝! 집게 밑에 아무것도 없었어요.', ja: 'ハズレ！アームの下に何もありませんでした。', zh: '没抓到！爪子下面什么都没有。' },
   slip: { en: 'So close! It slipped out of the claw.', ko: '아깝다! 집게에서 미끄러졌어요.', ja: '惜しい！アームから落ちました。', zh: '好可惜！从爪子里滑掉了。' },
   gotTee: { en: 'You got the {name}! It\'s in your bag.', ko: '{name} 획득! 가방에 넣었어요.', ja: '{name}をゲット！バッグに入れました。', zh: '抓到{name}！已放进背包。' },
   gotPlush: { en: 'You got the {name}! Put it in your home with Decorate.', ko: '{name} 획득! 내 집 꾸미기에서 놓을 수 있어요.', ja: '{name}をゲット！家の模様替えで置けます。', zh: '抓到{name}！可以在家里装饰时摆放。' },
-  hadTee: { en: 'You already have the {name}: here are 🪙 {n} instead.', ko: '{name}는 이미 있어서 🪙 {n}으로 바꿔 드렸어요.', ja: '{name}はもう持っているので 🪙 {n} に交換しました。', zh: '你已经有{name}了，换成 🪙 {n}。' },
-  gotCoins: { en: 'A coin pouch! 🪙 +{n}', ko: '코인 주머니! 🪙 +{n}', ja: 'コイン袋！🪙 +{n}', zh: '钱袋！🪙 +{n}' },
+  hadTee: { en: 'You already have the {name}, so it goes back in the machine.', ko: '{name}는 이미 있어서 기계에 다시 넣었어요.', ja: '{name}はもう持っているので、機械に戻しました。', zh: '你已经有{name}了，放回机器里。' },
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
@@ -115,15 +114,8 @@ export class ClawUI {
     const p = res.prize;
     this.pit = this.pit.filter((q) => q !== res.at);
     if (this.pit.length < 3) this.pit = layPrizes(this.rand);
-    let note;
-    if (p.item) {
-      const name = this.itemName(p.item);
-      if (this.give(p.item)) note = '🎉 ' + tt('gotPlush', { name });
-      else { this.wallet.add(3); note = tt('hadTee', { name, n: 3 }); }
-    } else {
-      this.wallet.add(p.coins);
-      note = '🎉 ' + tt('gotCoins', { n: p.coins });
-    }
+    const name = this.itemName(p.item);
+    const note = this.give(p.item) ? '🎉 ' + tt('gotPlush', { name }) : tt('hadTee', { name });
     this.onWin?.(p);
     this.render(note);
   }

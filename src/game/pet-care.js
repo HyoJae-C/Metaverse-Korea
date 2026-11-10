@@ -16,11 +16,11 @@ const $ = (id) => document.getElementById(id);
 const PET_KEY = 'mk.pet';
 
 export const PET_NAME_TEXT = {
-  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', id: 'Beri nama' },
-  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', id: 'Simpan' },
-  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', id: 'Nama hewanmu' },
-  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', id: 'Sekarang namanya {name}!' },
-  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', id: 'Beri nama di tas (✏️).' },
+  rename: { en: 'Name', ko: '이름 짓기', ja: '名前をつける', zh: '起名', es: 'Nombre', ar: 'الاسم', vi: 'Đặt tên', hi: 'नाम रखें', fr: 'Nom', th: 'ชื่อ', id: 'Beri nama' },
+  save: { en: 'Save', ko: '저장', ja: '保存', zh: '保存', es: 'Guardar', ar: 'حفظ', vi: 'Lưu', hi: 'सेव करें', fr: 'Enregistrer', th: 'บันทึก', id: 'Simpan' },
+  placeholder: { en: 'Your pet\'s name', ko: '반려동물 이름', ja: 'ペットの名前', zh: '宠物的名字', es: 'Nombre de tu mascota', ar: 'اسم حيوانك', vi: 'Tên thú cưng', hi: 'पालतू का नाम', fr: 'Le nom de ton animal', th: 'ชื่อสัตว์เลี้ยงของคุณ', id: 'Nama hewanmu' },
+  named: { en: 'Your pet is now called {name}!', ko: '이제 이름은 {name}이에요!', ja: 'これからの名前は{name}！', zh: '它现在叫{name}啦！', es: '¡Ahora se llama {name}!', ar: 'اسمه الآن {name}!', vi: 'Giờ bé tên là {name}!', hi: 'अब इसका नाम {name} है!', fr: 'Ton animal s\'appelle maintenant {name} !', th: 'ตอนนี้สัตว์เลี้ยงของคุณชื่อ {name} แล้ว!', id: 'Sekarang namanya {name}!' },
+  hint: { en: 'Give it your own name in the bag (✏️).', ko: '가방(✏️)에서 이름을 직접 지어 줄 수 있어요.', ja: 'バッグ(✏️)で名前をつけられます。', zh: '可以在包里(✏️)给它起名字。', es: 'Ponle nombre en la bolsa (✏️).', ar: 'سمِّه من الحقيبة (✏️).', vi: 'Đặt tên cho bé trong túi (✏️).', hi: 'बैग (✏️) में इसका नाम रखें।', fr: 'Donne-lui ton propre nom dans le sac (✏️).', th: 'ตั้งชื่อเองได้ในกระเป๋า (✏️)', id: 'Beri nama di tas (✏️).' },
 };
 
 // Korean subject particle after a name: 이 after a final consonant, else 가.
@@ -34,7 +34,7 @@ export const petName = (id) => {
 
 /**
  * g: { me, scene, activeScene, mode, riding, seated, clerk, inventory, wallet,
- * shop, sfx } as getters, plus clearAction(), refreshQuestChip(),
+ * shop, sfx, fences (keep-out boxes, or null) } as getters, plus clearAction(), refreshQuestChip(),
  * refreshItems() and refreshWallet().
  */
 export function createPetCare(g) {
@@ -48,7 +48,7 @@ export function createPetCare(g) {
     if (id && g.inventory.has(id) && ITEMS[id]?.pet) {
       pet = new Companion(id, ITEMS[id].pet);
       g.activeScene.add(pet.root);
-      pet.place(g.me.root.position.x, g.me.root.position.z, g.me.root.rotation.y);
+      pet.place(g.me.root.position.x, g.me.root.position.z, g.me.root.rotation.y, g.me.root.position.y);
     }
     try { if (pet) localStorage.setItem(PET_KEY, id); else localStorage.removeItem(PET_KEY); } catch { /* storage blocked */ }
     g.refreshQuestChip();
@@ -73,6 +73,7 @@ export function createPetCare(g) {
   function nearestPoop(p) {
     let best = null, bd = 1.6;
     for (const po of poops.values()) {
+      if (po.mesh.parent && po.mesh.parent !== g.activeScene) continue; // (one left in a park, from the street: not here)
       const d = Math.hypot(po.x - p.x, po.z - p.z);
       if (d < bd) { bd = d; best = po; }
     }
@@ -100,13 +101,18 @@ export function createPetCare(g) {
     if (soon !== Infinity) $('poop-chip').textContent = `💩 ${t('pet.cleanIn', { s: Math.ceil(soon) })}`;
     if (!pet) return;
     const me = g.me, activeScene = g.activeScene;
-    if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y); }
-    const hidden = g.riding > 0 || g.seated;
-    if (pet.update(dt, { x: p.x, z: p.z, ry: me.root.rotation.y }, hidden, g.mode === 'street')) {
+    if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y, p.y); }
+    // Waits out of sight while you ride or are indoors. Sitting down (a bench,
+    // a picnic mat) it stays and sits by you.
+    const hidden = g.riding > 0 || g.indoors || g.seated?.duck != null; // (out on a duck boat too: it waits on the bank, not on the water)
+    pet.fences = g.fences || null; // (kept out of the bumper car rink)
+    const poop = pet.update(dt, { x: p.x, z: p.z, y: p.y, ry: me.root.rotation.y }, hidden, g.mode === 'street');
+    if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it
+    if (poop) {
       const pos = pet.root.position;
       const mesh = makePoop();
-      mesh.position.set(pos.x, 0, pos.z);
-      g.scene.add(mesh);
+      mesh.position.set(pos.x, pos.y, pos.z); // down by the stream too
+      g.activeScene.add(mesh); // (in the room it's in: a Han River park's lawn is in the park's metres)
       const { id } = poopTimers.add();
       poops.set(id, { id, mesh, x: pos.x, z: pos.z, street: $('street-name')?.textContent || '' });
       g.sfx.pop?.();

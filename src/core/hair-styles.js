@@ -48,7 +48,6 @@ export function buildHair(style, material, atlas, ey) {
     g.add(m);
     return m;
   };
-  const top = ey + 0.3; // forehead line
   // Every style starts from a cap over the skull, leaving the face clear.
   const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04) => add(sphere(r, 24, 14, 0, Math.PI * cover), 0, y, -0.04, 1.02, 1, 1, tilt);
   // A piece standing on the head at (x, y, z), its own +y pointing along dir
@@ -302,6 +301,37 @@ export function buildHair(style, material, atlas, ey) {
         const a = Math.PI * (0.32 + (i / 12) * 1.36); // round the back
         const x = Math.sin(a) * 1.0, z = Math.cos(a) * 0.95 - 0.08;
         add(new THREE.CapsuleGeometry(0.11, 1.0, 4, 8), x, -0.35, z, 1, 1, 1, Math.cos(a) * -0.18, 0, Math.sin(a) * 0.18);
+      }
+      break;
+    }
+    case 'bowl': // 바가지 머리: one round helmet of hair, cut straight all round at the brows
+      shade = [0.55, 0.95];
+      cap(0.955, 0.48, -0.5, 0.03); // clipped short under the line at the back
+      shade = [0.15, 0.8];
+      add(sphere(1.04, 28, 14, 0, Math.PI * 0.46), 0, 0.04, -0.03, 1.0, 1.0, 1.02);
+      break;
+    case 'drill': { // 드릴 웨이브: blunt bangs and a tight corkscrew curl down each side
+      cap(0.97, 0.56, -0.25);
+      add(new THREE.SphereGeometry(1.0, 20, 6, Math.PI / 2 - 0.8, 1.6, Math.PI * 0.18, Math.PI * 0.27), 0, 0.02, -0.02, 1.03, 1, 1);
+      for (const s2 of [-1, 1]) {
+        add(sphere(0.26, 12, 10), 0.92 * s2, 0.1, -0.12); // gathered at the side
+        for (const off of [0, Math.PI]) { // two strands twisted round each other
+          const pts = [];
+          for (let i = 0; i <= 48; i++) {
+            const t = i / 48, a = t * Math.PI * 10 + off, R = 0.2 * (1 - 0.45 * t);
+            pts.push([1.02 * s2 + Math.cos(a) * R, -0.05 - 1.35 * t, -0.1 + Math.sin(a) * R]);
+          }
+          tube(pts, 0.085, 96);
+        }
+      }
+      break;
+    }
+    case 'fountain': { // 분수머리: tied up on top and spraying out like a fountain
+      cap(0.96, 0.52, -0.38);
+      add(sphere(0.17, 12, 10), 0, 0.98, 0.0); // the tie
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+        tube([[0, 0.98, 0], [c * 0.08, 1.28, sn * 0.08], [c * 0.3, 1.42, sn * 0.3], [c * 0.52, 1.28, sn * 0.52], [c * 0.64, 1.0, sn * 0.64]], 0.075, 20);
       }
       break;
     }

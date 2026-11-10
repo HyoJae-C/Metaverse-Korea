@@ -9,6 +9,13 @@
 //        { url: 'https://youtu.be/XXXXXXXXXXX', title: { en: 'My film', ko: '내 영화' }, by: 'Yozi' },
 //      Any YouTube link works: youtu.be/…, youtube.com/watch?v=…, youtube.com/shorts/….
 //      A title in one language is enough; other languages show English.
+//   3. Seodaemun has three cinemas. A film plays in all of them unless it
+//      names some with `in`: 'byeolbit' (Byeolbit Cinema), 'doodle' (the
+//      2D cinema, good for drawn animation) or 'silver' (the black-and-white
+//      cinema, which shows every film in black and white).
+//        { url: '…', title: { … }, in: ['doodle'] },
+//      Korean-language films, or films with little or no talking, suit
+//      visitors who don't share a language best.
 //
 // The two entries marked `sample` are placeholders (Blender Foundation open
 // movies, CC BY) until the first films are up: delete them then.
@@ -27,10 +34,16 @@ export function youtubeId(url) {
 
 export const FILMS = LIST.map((f) => ({ ...f, id: youtubeId(f.url) })).filter((f) => f.id);
 export const filmById = (id) => FILMS.find((f) => f.id === id) || null;
-// The film after this one (wrapping round), for back-to-back showings.
-export const nextFilm = (id) => {
-  const i = FILMS.findIndex((f) => f.id === id);
-  return FILMS.length ? FILMS[(i + 1) % FILMS.length] : null;
+// One cinema's programme (a store's "cinema" value in stores.json: true is
+// Byeolbit Cinema, or 'doodle' / 'silver'). No cinema given: every film.
+export const cinemaKey = (c) => (typeof c === 'string' ? c : 'byeolbit');
+export const filmsFor = (cinema) => (cinema == null ? FILMS : FILMS.filter((f) => !f.in || f.in.includes(cinemaKey(cinema))));
+// The film after this one in a cinema's programme (wrapping round), for
+// back-to-back showings.
+export const nextFilm = (id, cinema) => {
+  const list = filmsFor(cinema);
+  const i = list.findIndex((f) => f.id === id);
+  return list.length ? list[(i + 1) % list.length] : null;
 };
 
 // Room messages, like the K-POP café's: "film:play:<id>:<tenths in>" and

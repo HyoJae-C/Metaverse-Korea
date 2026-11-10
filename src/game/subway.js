@@ -6,7 +6,7 @@
 import { localName, getLanguage } from '../core/i18n.js';
 import {
   GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, FARE, lineAhead, stopsBetween,
-  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT,
+  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt,
 } from '../core/subway.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 
@@ -17,7 +17,7 @@ const $ = (id) => document.getElementById(id);
  * game: { interior, scene, cam, me, mode, riding, seated, wallet, shop, sfx }
  * (optional) game.streetY(p, px0, pz0): the ground height on the street
  * as getters, plus enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo and
- * clearAction().
+ * clearAction(). (optional) game.onArrive(k): after riding to station k.
  */
 export function createSubway(stations, game) {
   // Walk down an exit's stairs to arrive in the station hall (a room like a
@@ -33,6 +33,8 @@ export function createSubway(stations, game) {
   for (const [i, st] of stationStores.entries()) {
     const n = stationStores.length, nm = (k) => ({ ko: stations[k].name?.ko || '', en: stations[k].name?.en || '' });
     st.towards = n > 1 ? { up: nm((i + 1) % n), down: nm((i - 1 + n) % n) } : null;
+    // The route map on the pillar inside the gates: every station on the loop.
+    st.loop = { stops: stations.map((x) => ({ name: x.name || {}, at: stationAt(x) })), index: i };
   }
   const TRAIN_STORE = {
     id: 'subway-train', category: 'train', size: 'train', products: [], line: '#5d6470',
@@ -50,8 +52,6 @@ export function createSubway(stations, game) {
     game.enterStore(exitFront(s, i));
     const st = game.interior.subway.stairs[i];
     game.moveMeTo(game.interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
-    game.cam.dist = 8;
-    game.cam.pitch = 0.6;
     flashFade();
     subwayCool = 0.6;
   }
@@ -59,7 +59,7 @@ export function createSubway(stations, game) {
     const s = stationStores.indexOf(game.interior.store);
     game.interior.front = exitFront(s, i);
     game.leaveStore();
-    // Face away from the stairs, with the camera behind you.
+    // Face away from the stairs (the camera keeps its angle to you).
     const out = outsideOf(stations[s].exits[i]);
     const [x, z] = game.findFreeSpot(out.x, out.z);
     game.moveMeTo(game.scene, x, z, out.ry);
@@ -77,7 +77,7 @@ export function createSubway(stations, game) {
   const GATE_TEXT = {
     in: { en: 'Pay and go in', ko: '내고 들어가기', ja: '払って入る', zh: '付费进站' },
     out: { en: 'Go out', ko: '나가기', ja: '出る', zh: '出站' },
-    poor: { en: 'Not enough coins for the fare ({n})', ko: '요금 {n}코인이 부족해요', ja: '運賃 {n}コインが足りません', zh: '车费 {n} 金币不够' },
+    poor: { en: 'Not enough money for the fare (🪙 {n})', ko: '요금 🪙 {n}이 부족해요', ja: '運賃 🪙 {n} が足りません', zh: '车费 🪙 {n} 不够' },
     paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
   };
   function passGate(g, paying) {
@@ -120,8 +120,6 @@ export function createSubway(stations, game) {
     game.interior.front = front; // the map shows you at the station you left
     game.goSolo(game.interior.scene); // a short ride: just you in the car
     game.moveMeTo(game.interior.scene, 0, 0, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
-    game.cam.dist = 6;
-    game.cam.pitch = 0.75;
     flashFade();
     game.sfx.pop?.();
     renderMetro();
@@ -166,8 +164,6 @@ export function createSubway(stations, game) {
     game.enterStore(exitFront(k, 0));
     const tr = METRO_TRACKS[t], s = Math.sign(tr.doorZ);
     game.moveMeTo(game.interior.scene, 8.5 + (Math.random() - 0.5) * 6, tr.doorZ - s * 1.4, s > 0 ? Math.PI : 0);
-    game.cam.dist = 8;
-    game.cam.pitch = 0.6;
     flashFade();
     game.sfx.doorOpen();
     subwayCool = 0.8;
@@ -204,6 +200,7 @@ export function createSubway(stations, game) {
       const { dest, t } = metro;
       endMetro();
       arriveOnPlatform(dest, t);
+      game.onArrive?.(dest); // rode to another station
     }
     void p;
   }

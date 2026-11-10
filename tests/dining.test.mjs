@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { coinPrice, isDining, takeoutKind, Meal, FOOD_BITES, SERVE_MS } from '../src/core/dining.js';
 import { cleanEntry } from '../src/core/bag.js';
 
-test('menu prices: 1 coin per 1,000 won, rounded, at least 1', () => {
-  assert.equal(coinPrice(6500), 7);
-  assert.equal(coinPrice(4000), 4);
-  assert.equal(coinPrice(4400), 4);
-  assert.equal(coinPrice(300), 1);
-  assert.equal(coinPrice(18000), 18);
+test('menu prices are paid in won, as on the menu (at least ₩100)', () => {
+  assert.equal(coinPrice(6500), 6500);
+  assert.equal(coinPrice(4000), 4000);
+  assert.equal(coinPrice(300), 300);
+  assert.equal(coinPrice(0), 100);
+  assert.equal(coinPrice(18000), 18000);
 });
 
 test('which restaurants use the menu', () => {

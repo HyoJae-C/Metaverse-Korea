@@ -16,7 +16,11 @@ import { skirtById } from './skirts.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
-  'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads'];
+  'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads',
+  'bowl', 'drill', 'fountain'];
+// Plain hairstyles anyone can pick on the start screen (the rest are cut at
+// the hair salon). With none picked, the model's own hair stays.
+export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 
@@ -97,7 +101,19 @@ export const PATCHES = {
 };
 export const HAT_SHAPES = ['bucket', 'cap', 'beanie', 'beret'];
 
-export const SLOTS = ['head', 'face', 'ear', 'neck', 'back'];
+export const SLOTS = ['head', 'face', 'ear', 'neck', 'back', 'hand'];
+
+// The animals of Nyang Meong To Pan (cat, dog, bunny, panda): each as an
+// ear headband and a pair of paw gloves in the same colours. Two colours at
+// most per animal.
+export const ANIMAL_LOOKS = [
+  { id: 'cat-black', animal: 'cat', emoji: '🐱', color: 0x2b2a30, inner: 0xf2a0b4, pad: 0xf2a0b4 },
+  { id: 'cat-ginger', animal: 'cat', emoji: '🐱', color: 0xe8954a, inner: 0xffd9c2, pad: 0xf7b0a0 },
+  { id: 'dog', animal: 'dog', emoji: '🐶', color: 0x9a6a44, inner: 0x6e4a2e, pad: 0x4a3426 },
+  { id: 'bunny-white', animal: 'bunny', emoji: '🐰', color: 0xfaf6ee, inner: 0xf7b6c8, pad: 0xf7b6c8 },
+  { id: 'bunny-pink', animal: 'bunny', emoji: '🐰', color: 0xf7b6c8, inner: 0xfff0f4, pad: 0xffffff },
+  { id: 'panda', animal: 'panda', emoji: '🐼', color: 0x1f1d22, inner: 0x1f1d22, band: 0xf7f4ee, pad: 0x3a3840 },
+];
 
 // Each accessory is drawn by its `shape` (the id when there is none), in its
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
@@ -123,6 +139,9 @@ export const ACCESSORIES = {
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
+    // Animal-ear headbands from Nyang Meong To Pan (core/animal-wear.js):
+    // color the ears and band, inner the inside of the ears.
+    ...ANIMAL_LOOKS.map((a) => ({ id: 'ears-' + a.id, shape: 'ears', animal: a.animal, emoji: a.emoji, color: a.color, inner: a.inner, band: a.band ?? a.color })),
   ],
   face: [
     { id: 'glasses', emoji: '👓', color: 0x4a3f35 },
@@ -148,6 +167,9 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
+    // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
+    // a fine chain with a charm (charm: moon, plum blossom, or 복 "luck").
+    ...['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, emoji: charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
   ],
   back: [
     { id: 'backpack', emoji: '🎒', color: 0x8fd3c7 },
@@ -157,6 +179,9 @@ export const ACCESSORIES = {
     { id: 'tote-brick', shape: 'tote', emoji: '👜', color: 0xb5523b },
     { id: 'backpack-graffiti', shape: 'backpack', emoji: '🎒', color: 0xff7a00 },
   ],
+  // Gloves, one on each hand: the animal paws match the headbands (pad: the
+  // paw pads' colour).
+  hand: ANIMAL_LOOKS.map((a) => ({ id: 'paws-' + a.id, shape: 'paws', animal: a.animal, emoji: a.emoji, color: a.color, pad: a.pad })),
 };
 // What an accessory is drawn as.
 export const shapeOf = (a) => a?.shape || a?.id || null;
@@ -164,7 +189,7 @@ export const shapeOf = (a) => a?.shape || a?.id || null;
 export const DEFAULT_LOOK = {
   model: MODELS[0],
   shirt: 'coral', pants: 'denim', hair: 'espresso', skin: 'fair',
-  head: null, face: null, ear: null, neck: null, back: null,
+  head: null, face: null, ear: null, neck: null, back: null, hand: null,
   hatColor: null, hatPatch: null, // set in the hat workshop
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip

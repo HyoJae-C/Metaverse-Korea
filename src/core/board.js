@@ -86,8 +86,15 @@ export class SupabaseBoard {
     return 'network';
   }
   async list(board) {
-    const { data, error } = await this.client.from(TABLE).select('id, board, user_id, name, body, created_at')
-      .eq('board', board).order('created_at', { ascending: false }).limit(50);
+    const q = (cols) => this.client.from(TABLE).select(cols).eq('board', board).order('created_at', { ascending: false }).limit(50);
+    const base = 'id, board, user_id, name, body, created_at';
+    // Inquiries carry the operator's reply (supabase/009_admin.sql); before
+    // that SQL is run the columns aren't there, so ask again without them.
+    let { data, error } = await q(board === 'ask' && !this.noReply ? base + ', reply, replied_at' : base);
+    if (error && board === 'ask' && !this.noReply && (error.code === '42703' || /column/i.test(error.message || ''))) {
+      this.noReply = true;
+      ({ data, error } = await q(base));
+    }
     const e = this._err(error);
     return e ? { error: e } : data;
   }

@@ -1,0 +1,39 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { isFood } from '../src/core/food-dex.js';
+
+const data = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
+const park = data.stores.find((s) => s.id === 'ttukseom-hangang');
+
+test('the Han River park has a market with stalls and goods', () => {
+  const { market, products } = park;
+  assert.ok(market.name.ko && market.name.en);
+  assert.ok(market.stalls.length >= 4 && market.stalls.length <= 6, 'six stall spots in the park');
+  const ids = new Set(market.stalls.map((s) => s.id));
+  assert.equal(ids.size, market.stalls.length);
+  for (const st of market.stalls) {
+    assert.ok(st.name.ko && st.name.en, st.id);
+    const goods = products.filter((p) => p.stall === st.id);
+    assert.ok(goods.length >= 1 && goods.length <= 2, `${st.id}: one or two kinds on the counter`);
+  }
+  for (const p of products) {
+    assert.ok(ids.has(p.stall) || p.kiosk, `${p.id} belongs to a stall or the DAILY MART kiosk`);
+    assert.ok(p.price > 0 && p.name.en && p.name.ko && p.desc.en, p.id);
+  }
+  assert.equal(new Set(products.map((p) => p.id)).size, products.length);
+});
+
+test('market food goes in the food dex', () => {
+  const food = park.products.filter((p) => isFood(park, p));
+  assert.ok(food.length >= 8);
+  assert.ok(!isFood(park, park.products.find((p) => p.model === 'tote')));
+});
+
+test('DAILY MART in the park sells the ramen ingredients, a picnic mat and a frisbee, which go in the bag', () => {
+  const kiosk = park.products.filter((p) => p.kiosk);
+  assert.deepEqual(kiosk.map((p) => p.ingredient).sort(), ['egg', 'frisbee', 'mat', 'ramyeon']);
+  assert.ok(park.kiosk.name.ko && park.kiosk.name.en);
+  const street = data.stores.find((s) => s.id === 'haru-mart');
+  assert.ok(street.products.some((p) => p.ingredient === 'ramyeon'));
+});

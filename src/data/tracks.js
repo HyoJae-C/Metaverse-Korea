@@ -108,6 +108,68 @@ export const TRACKS = [
     kick: [0, 4], snare: [2, 6], hat: 'odd',
     scale: [67, 69, 71, 74, 76, 79], melodyFrom: 8, melody: 0.5, lead: 'pluck',
   },
+  {
+    // The Ttukseom drone light show's music (not in the record list): no
+    // drums, slow bright chords like a night sky, little bells, the river.
+    id: 'droneshow',
+    hidden: true,
+    icon: '🛸',
+    color: '#3b3f9e',
+    name: { en: 'Drones over the River', ko: '강 위의 드론', ja: '川の上のドローン', zh: '江上的无人机' },
+    desc: {
+      en: 'Drone show music: slow bright chords, little bells and the sound of the river at night.',
+      ko: '드론쇼 음악: 느리고 밝은 화음, 작은 종소리, 밤 강물 소리.',
+      ja: 'ドローンショーの音楽：ゆっくり明るい和音、小さなベル、夜の川の音。',
+      zh: '无人机表演音乐：缓慢明亮的和弦、小铃声和夜晚的江水声。',
+    },
+    bpm: 66, swing: 1,
+    chords: [[53, 60, 64, 69], [48, 55, 64, 67], [50, 57, 62, 65], [46, 53, 62, 65]],
+    bass: [41, 36, 38, 34], bassHits: [[0, 0, 7.5]], pad: true, waves: true,
+    kick: [], snare: [], hat: null,
+    scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.3, lead: 'bell',
+  },
+  {
+    // The Banpo Bridge rainbow fountain's music (not in the record list):
+    // a light, bright tune like water dancing, soft drums, bells and the
+    // river underneath (game/rainbow-fountain.js).
+    id: 'rainbowfountain',
+    hidden: true,
+    icon: '🌈',
+    color: '#3a6fc9',
+    name: { en: 'Rainbow over Banpo', ko: '반포의 무지개', ja: '盤浦の虹', zh: '盘浦的彩虹' },
+    desc: {
+      en: 'Fountain show music: bright chords, dancing bells and the river at night.',
+      ko: '분수쇼 음악: 밝은 화음, 춤추는 종소리, 밤 강물 소리.',
+      ja: '噴水ショーの音楽：明るい和音、踊るベル、夜の川の音。',
+      zh: '喷泉表演音乐：明亮的和弦、跳跃的铃声和夜晚的江水声。',
+    },
+    bpm: 92, swing: 1,
+    chords: [[60, 64, 67, 72], [57, 60, 64, 69], [53, 57, 60, 65], [55, 59, 62, 67]],
+    bass: [48, 45, 41, 43], bassHits: [[0, 0, 1.8], [4, 7, 1.8]], pad: true, waves: true,
+    kick: [0], snare: [], hat: 'odd',
+    scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.55, lead: 'bell',
+  },
+  {
+    // The Curve Runway's show music (not in the music cafe's record list):
+    // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
+    // bass, tense like a fashion show's catwalk.
+    id: 'runway',
+    hidden: true,
+    icon: '👠',
+    color: '#5b4a7a',
+    name: { en: 'Catwalk', ko: '캣워크', ja: 'キャットウォーク', zh: '猫步' },
+    desc: {
+      en: 'Fashion show music: a steady kick, a dark minor loop and a pulsing bass.',
+      ko: '패션쇼 음악: 일정한 킥, 어두운 단조 루프, 맥박 같은 베이스.',
+      ja: 'ファッションショーの音楽：一定のキック、暗い短調のループ、脈打つベース。',
+      zh: '时装秀音乐：稳定的底鼓、暗色小调循环和脉动的贝斯。',
+    },
+    bpm: 120, swing: 1,
+    chords: [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]],
+    bass: [33, 29, 26, 28], octaveBass: true,
+    kick: [0, 2, 4, 6], snare: [2, 6], hat: 'all',
+    scale: [69, 71, 72, 76, 77, 81], melodyFrom: 16, melody: 0.28, lead: 'pluck',
+  },
 ];
 
 export const trackById = (id) => TRACKS.find((tr) => tr.id === id) || TRACKS[0];

@@ -178,7 +178,7 @@ export class KaraokeUI {
     this._frame();
     const medal = medalFor(score);
     const coins = medal ? this.medals.add(KARAOKE_GAME + ':' + g.id, medal) : 0;
-    if (coins) this.wallet.add(coins);
+    if (coins) this.wallet.add(coins, undefined, { r: 'medal', once: 'medal:' + KARAOKE_GAME + ':' + g.id + ':' + medal });
     this.onScore?.(score);
     this.addScore(tt('you'), score);
     const res = el('div', 'grill-result');

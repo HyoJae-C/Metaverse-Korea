@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PoopTimers, CLEAN_SECONDS, FINE, nextPoopAt, POOP_EVERY } from '../src/core/companion.js';
+import { PoopTimers, CLEAN_SECONDS, FINE, nextPoopAt, POOP_EVERY, Companion, keepOut } from '../src/core/companion.js';
+import { RINK, RINK_FENCE } from '../src/core/bumper-cars.js';
 import { ITEMS, isPet, redeemCode } from '../src/core/inventory.js';
 
 test('poop cleaned in time is fine; left too long gets fined once', () => {
@@ -16,9 +17,9 @@ test('poop cleaned in time is fine; left too long gets fined once', () => {
 test('pets cost real pet-shop prices, the fine stings, and poops are spaced out', () => {
   const prices = Object.values(ITEMS).filter((i) => i.pet && i.price).map((i) => i.price);
   assert.ok(prices.length >= 5);
-  assert.equal(ITEMS['pet-poodle'].price, 400); // ~₩400,000
-  assert.ok(ITEMS['pet-maltese'].price > 48 * 5); // a puppy is far more than a perfume (🪙 48)
-  assert.ok(FINE >= 30 && FINE < Math.min(...prices));
+  assert.equal(ITEMS['pet-poodle'].price, 400000); // ~₩400,000
+  assert.ok(ITEMS['pet-maltese'].price > 48000 * 5); // a puppy is far more than a perfume (₩48,000)
+  assert.ok(FINE >= 30000 && FINE < Math.min(...prices));
   for (const r of [0, 0.5, 0.999]) {
     const d = nextPoopAt(() => r);
     assert.ok(d >= POOP_EVERY[0] && d <= POOP_EVERY[1]);
@@ -27,7 +28,8 @@ test('pets cost real pet-shop prices, the fine stings, and poops are spaced out'
 
 test('pets have adoption fees (old ones too, for owners); the monkey comes from a code', async () => {
   for (const id of ['pet-maltese', 'pet-poodle', 'pet-shiba', 'pet-cheesecat', 'pet-bluecat', 'pet-chinchilla', 'pet-guineapig']) assert.ok(isPet(id) && ITEMS[id].price > 0, id);
-  for (const id of ['pet-monkey']) assert.ok(isPet(id) && !ITEMS[id].price, id);
+  for (const id of ['pet-monkey', 'pet-golden']) assert.ok(isPet(id) && !ITEMS[id].price, id);
+  assert.equal(ITEMS['pet-golden'].pet.earStyle, 'golden');
   assert.equal(await redeemCode('pets'), null);
   for (const it of Object.values(ITEMS)) if (it.pet) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(it.name[l] && it.desc[l]);
 });
@@ -35,7 +37,7 @@ test('pets have adoption fees (old ones too, for owners); the monkey comes from 
 test('dogs and cats are adopted at animal cafés, not sold on shelves', async () => {
   const { readFileSync } = await import('node:fs');
   const { BREEDS } = await import('../src/core/pets.js');
-  const { stores } = JSON.parse(readFileSync(new URL('../public/regions/seongsu/stores.json', import.meta.url)));
+  const { stores } = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url)));
   // No animal sits on a display table anywhere.
   for (const s of stores) for (const p of s.products || []) assert.ok(!String(p.model).startsWith('pet:'), `${s.id} ${p.id}`);
   const adopt = (id) => stores.find((s) => s.id === id).adopt.map((a) => a.pet);
@@ -52,4 +54,37 @@ test('dogs and cats are adopted at animal cafés, not sold on shelves', async ()
   for (const r of BREEDS.retrievers) assert.ok(r.scale > ITEMS['pet-maltese'].pet.scale && r.scale < 1.6, r.name);
   // Taken off sale, but pets players already own (or get by code) still exist.
   for (const id of ['pet-shiba', 'pet-chinchilla', 'pet-guineapig']) assert.ok(isPet(id), id);
+});
+
+test('breed fields never overwrite the animal parts (a café spreads both into one object)', async () => {
+  const { BREEDS, makeAnimal } = await import('../src/core/pets.js');
+  const parts = Object.keys(makeAnimal('dog', '#e2a85a', '#c98a3e', 1, { earStyle: 'golden' }));
+  assert.ok(parts.includes('ears'));
+  const defs = [...Object.values(BREEDS).flat(), ...Object.values(ITEMS).filter((i) => i.pet).map((i) => i.pet)];
+  for (const b of defs) for (const k of Object.keys(b)) assert.ok(!parts.includes(k), `${b.name}.${k}`);
+});
+
+test('pets keep out of the bumper car rink, even when their person drives in it', () => {
+  const inside = (x, z) => Math.abs(x - RINK_FENCE.x) < RINK_FENCE.hx - 1e-9 && Math.abs(z - RINK_FENCE.z) < RINK_FENCE.hz - 1e-9;
+  assert.ok(RINK_FENCE.hx > RINK.hx && RINK_FENCE.hz > RINK.hz, 'the fence takes in the rail');
+  // A point inside goes out the nearest side; outside stays put.
+  assert.deepEqual(keepOut(RINK.x - RINK.hx + 0.2, RINK.z, [RINK_FENCE]), [RINK_FENCE.x - RINK_FENCE.hx, RINK.z]);
+  assert.deepEqual(keepOut(0, 0, [RINK_FENCE]), [0, 0]);
+  assert.deepEqual(keepOut(RINK.x, RINK.z, null), [RINK.x, RINK.z]);
+  const id = Object.keys(ITEMS).find((k) => isPet(k));
+  const pet = new Companion(id, ITEMS[id].pet);
+  pet.fences = [RINK_FENCE];
+  pet.place(RINK.x - RINK.hx - 3, RINK.z, Math.PI / 2);
+  // Their person gets in a car and drives round the floor for a while.
+  for (let t = 0; t < 30; t += 1 / 30) {
+    const owner = { x: RINK.x + Math.sin(t) * (RINK.hx - 1), z: RINK.z + Math.cos(t * 0.7) * (RINK.hz - 1), ry: t, y: 0 };
+    pet.update(1 / 30, owner, false, false);
+    const r = pet.root.position;
+    assert.ok(!inside(r.x, r.z), `pet outside the rail at t=${t.toFixed(2)} (${r.x.toFixed(2)}, ${r.z.toFixed(2)})`);
+  }
+  // No fences (any other room): walks right up to its person as before.
+  const free = new Companion(id, ITEMS[id].pet);
+  free.place(RINK.x - RINK.hx - 3, RINK.z, Math.PI / 2);
+  for (let t = 0; t < 10; t += 1 / 30) free.update(1 / 30, { x: RINK.x, z: RINK.z, ry: 0, y: 0 }, false, false);
+  assert.ok(inside(free.root.position.x, free.root.position.z));
 });

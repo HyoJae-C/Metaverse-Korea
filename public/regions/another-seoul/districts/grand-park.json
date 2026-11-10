@@ -1,0 +1,488 @@
+{
+ "meta": {
+  "district": "grand-park",
+  "source": "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json)."
+ },
+ "roads": [
+  {
+   "k": "secondary",
+   "w": 14,
+   "p": [
+    [
+     0,
+     -80
+    ],
+    [
+     0,
+     95
+    ]
+   ],
+   "n": {
+    "ko": "능동로",
+    "en": "Neungdong-ro",
+    "ja": "陵洞路",
+    "zh": "陵洞路"
+   }
+  },
+  {
+   "k": "walk",
+   "w": 6,
+   "p": [
+    [
+     50,
+     0
+    ],
+    [
+     51,
+     0
+    ]
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "h": 8,
+   "p": [
+    [
+     14,
+     -46
+    ],
+    [
+     36,
+     -46
+    ],
+    [
+     36,
+     -32
+    ],
+    [
+     14,
+     -32
+    ]
+   ],
+   "n": {
+    "ko": "서울어른도대공원 안내센터",
+    "en": "Grown-ups' Grand Park Information Center",
+    "ja": "大人も大公園インフォメーションセンター",
+    "zh": "大人也大公园信息中心"
+   }
+  },
+  {
+   "h": 6,
+   "custom": true,
+   "p": [
+    [
+     51,
+     -10
+    ],
+    [
+     57,
+     -10
+    ],
+    [
+     57,
+     10
+    ],
+    [
+     51,
+     10
+    ]
+   ]
+  }
+ ],
+ "rail": [],
+ "areas": [
+  {
+   "k": "park",
+   "p": [
+    [
+     7,
+     -80
+    ],
+    [
+     200,
+     -80
+    ],
+    [
+     200,
+     95
+    ],
+    [
+     7,
+     95
+    ],
+    [
+     7,
+     22
+    ],
+    [
+     50,
+     22
+    ],
+    [
+     50,
+     -22
+    ],
+    [
+     7,
+     -22
+    ]
+   ]
+  },
+  {
+   "k": "plaza",
+   "p": [
+    [
+     7,
+     -22
+    ],
+    [
+     50,
+     -22
+    ],
+    [
+     50,
+     22
+    ],
+    [
+     7,
+     22
+    ]
+   ]
+  },
+  {
+   "k": "park",
+   "trees": true,
+   "p": [
+    [
+     58,
+     -79
+    ],
+    [
+     199,
+     -79
+    ],
+    [
+     199,
+     94
+    ],
+    [
+     58,
+     94
+    ]
+   ]
+  },
+  {
+   "k": "park",
+   "trees": true,
+   "p": [
+    [
+     7,
+     -80
+    ],
+    [
+     50,
+     -80
+    ],
+    [
+     50,
+     -52
+    ],
+    [
+     7,
+     -52
+    ]
+   ]
+  },
+  {
+   "k": "park",
+   "trees": true,
+   "p": [
+    [
+     7,
+     30
+    ],
+    [
+     52,
+     30
+    ],
+    [
+     52,
+     95
+    ],
+    [
+     7,
+     95
+    ]
+   ]
+  }
+ ],
+ "blockers": [
+  {
+   "p": [
+    [
+     29.2,
+     -7.8
+    ],
+    [
+     30.8,
+     -7.8
+    ],
+    [
+     30.8,
+     -6.2
+    ],
+    [
+     29.2,
+     -6.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     29.2,
+     6.2
+    ],
+    [
+     30.8,
+     6.2
+    ],
+    [
+     30.8,
+     7.8
+    ],
+    [
+     29.2,
+     7.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     56.8,
+     -80.2
+    ],
+    [
+     57.2,
+     -80.2
+    ],
+    [
+     57.2,
+     -9.8
+    ],
+    [
+     56.8,
+     -9.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     56.8,
+     -80.2
+    ],
+    [
+     200.2,
+     -80.2
+    ],
+    [
+     200.2,
+     -79.8
+    ],
+    [
+     56.8,
+     -79.8
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     199.8,
+     -80.2
+    ],
+    [
+     200.2,
+     -80.2
+    ],
+    [
+     200.2,
+     95.2
+    ],
+    [
+     199.8,
+     95.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     56.8,
+     94.8
+    ],
+    [
+     200.2,
+     94.8
+    ],
+    [
+     200.2,
+     95.2
+    ],
+    [
+     56.8,
+     95.2
+    ]
+   ]
+  },
+  {
+   "p": [
+    [
+     56.8,
+     9.8
+    ],
+    [
+     57.2,
+     9.8
+    ],
+    [
+     57.2,
+     95.2
+    ],
+    [
+     56.8,
+     95.2
+    ]
+   ]
+  }
+ ],
+ "pois": [
+  {
+   "kind": "landmark",
+   "x": 40,
+   "z": 0,
+   "name": {
+    "ko": "서울어른도대공원",
+    "en": "Seoul Grown-ups' Grand Park",
+    "ja": "ソウル大人も大公園",
+    "zh": "首尔大人也大公园"
+   }
+  }
+ ],
+ "landmarks": [
+  {
+   "type": "cgpgate",
+   "x": 30,
+   "z": 0,
+   "ry": 1.5708,
+   "label": {
+    "ko": "정문",
+    "en": "Main Gate",
+    "ja": "正門",
+    "zh": "正门"
+   }
+  },
+  {
+   "type": "blossoms",
+   "p": [
+    [
+     38,
+     -7
+    ],
+    [
+     48,
+     -7
+    ]
+   ],
+   "gap": 5
+  },
+  {
+   "type": "blossoms",
+   "p": [
+    [
+     38,
+     7
+    ],
+    [
+     48,
+     7
+    ]
+   ],
+   "gap": 5
+  },
+  {
+   "type": "sign",
+   "x": 42,
+   "z": -15,
+   "ry": -1.5708,
+   "title": {
+    "ko": "서울어른도대공원",
+    "en": "Seoul Grown-ups' Grand Park",
+    "ja": "ソウル大人も大公園",
+    "zh": "首尔大人也大公园",
+    "es": "Gran Parque para Adultos También de Seúl",
+    "id": "Taman Raya Dewasa Juga Seoul",
+    "vi": "Công viên Cả Người lớn Seoul",
+    "hi": "सियोल बड़ों का भी ग्रैंड पार्क",
+    "fr": "Grand Parc des grands aussi de Séoul",
+    "th": "สวนผู้ใหญ่ก็เล่นได้ โซล",
+    "ar": "حديقة الكبار أيضًا في سيول"
+   },
+   "text": {
+    "ko": "1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.",
+    "en": "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.",
+    "ja": "1973年のこどもの日に開園した公園です。実際の公園と動物園は入場無料。ゲームの動物は実際の動物園と違うことがあります。",
+    "zh": "1973年儿童节开园。真实的公园和动物园免费入场。游戏中的动物可能与真实动物园不同。",
+    "es": "Abrió el Día del Niño de 1973. El parque real y su zoo son gratuitos. Los animales del juego pueden ser distintos a los del zoo real.",
+    "id": "Dibuka pada Hari Anak 1973. Taman dan kebun binatang aslinya gratis. Hewan di game bisa berbeda dari kebun binatang aslinya.",
+    "vi": "Mở cửa vào Ngày Thiếu nhi năm 1973. Công viên và sở thú thật đều miễn phí vào cửa. Động vật trong game có thể khác sở thú thật.",
+    "hi": "1973 के बाल दिवस पर खुला। असली पार्क और चिड़ियाघर में प्रवेश मुफ़्त है। गेम के जानवर असली चिड़ियाघर से अलग हो सकते हैं।",
+    "fr": "Ouvert le jour des enfants 1973. Le vrai parc et son zoo sont gratuits. Les animaux du jeu peuvent différer du vrai zoo.",
+    "th": "เปิดในวันเด็กปี 1973 สวนและสวนสัตว์จริงเข้าชมฟรี สัตว์ในเกมอาจต่างจากสวนสัตว์จริง",
+    "ar": "افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية."
+   }
+  },
+  {
+   "type": "zooentrance",
+   "x": 54,
+   "z": 0,
+   "w": 6,
+   "d": 20,
+   "h": 6,
+   "store": "cgp-zoo",
+   "open": true
+  },
+  {
+   "type": "zoofence",
+   "p": [
+    [
+     57,
+     -10
+    ],
+    [
+     57,
+     -80
+    ],
+    [
+     200,
+     -80
+    ],
+    [
+     200,
+     95
+    ],
+    [
+     57,
+     95
+    ],
+    [
+     57,
+     10
+    ]
+   ]
+  }
+ ]
+}

@@ -4,9 +4,14 @@
 // Missions are picked from today's date, so everyone gets the same three on
 // the same day. Progress lives in this browser for now (like the wallet);
 // before rewards are worth anything, move it to the server.
+import { seededRandom } from './geom.js';
 
 const KEY = 'mk.daily';
-export const REWARD = { checkIn: 10, week: 30, mission: 10, allDone: 20 };
+// Won. The daily check-in is the day's travel support money (여행지원금):
+// it grows with the streak, day 1 to day 7, then starts over.
+export const CHECK_IN = [10000, 20000, 30000, 40000, 50000, 60000, 70000];
+export const checkInPay = (day) => CHECK_IN[(Math.max(1, day) - 1) % CHECK_IN.length];
+export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 10000, allDone: 50000 };
 
 // Local calendar date, YYYY-MM-DD.
 export function dayKey(d = new Date()) {
@@ -19,15 +24,7 @@ function prevDay(key) {
 }
 
 // Small deterministic RNG from a string (same day -> same missions).
-function rng(seed) {
-  let h = 2166136261;
-  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
-}
+const rng = seededRandom;
 
 // pool: { npcs: [name], stores: [{ id, pets }] }
 // Mission: { id, type, target?, need, n }
@@ -74,8 +71,25 @@ export class Daily {
       this.s.missions = missionsFor(today, this.pool);
       this.s.bonus = false;
       write(this.s);
-    }
+    } else if (!this._checked) this._repair(today);
+    this._checked = true;
     return today;
+  }
+
+  // Today's missions were saved before the map changed: a person or shop
+  // they name may be gone (renamed, moved away). Swap an unfinished one
+  // like that for today's fresh pick of the same kind, so it can be done.
+  _repair(today) {
+    const has = { talk: (t) => this.pool.npcs.includes(t), visit: (t) => this.pool.stores.some((s) => s.id === t) };
+    const fresh = missionsFor(today, this.pool);
+    let changed = false;
+    this.s.missions = this.s.missions.map((m) => {
+      if (!has[m.type] || m.n >= m.need || has[m.type](m.target)) return m;
+      const f = fresh.find((x) => x.type === m.type);
+      changed = true;
+      return f ? { ...f } : { ...m, n: m.need }; // nothing left to pick: count it as done
+    });
+    if (changed) write(this.s);
   }
 
   get missions() { this._roll(); return this.s.missions; }
@@ -101,8 +115,8 @@ export class Daily {
     this.s.last = today;
     this.s.total = (this.s.total || 0) + 1;
     write(this.s);
-    const coins = this.s.streak % 7 === 0 ? REWARD.week : REWARD.checkIn;
-    this.wallet.add(coins, { k: 'ledger.checkIn' });
+    const coins = checkInPay(this.s.streak);
+    this.wallet.add(coins, { k: 'ledger.checkIn' }, { r: 'checkin', once: 'checkin:' + today });
     this._emit();
     return coins;
   }
@@ -118,7 +132,7 @@ export class Daily {
     let coins = REWARD.mission, bonus = false;
     if (!this.s.bonus && this.allDone()) { this.s.bonus = bonus = true; coins += REWARD.allDone; }
     write(this.s);
-    this.wallet.add(coins, { k: 'ledger.mission' });
+    this.wallet.add(coins, { k: 'ledger.mission' }, { r: 'mission', once: 'mission:' + this.s.day + ':' + this.s.missions.indexOf(m) });
     this._emit();
     return { mission: m, coins, bonus };
   }

@@ -14,6 +14,8 @@ const pages = [];
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
 const errors = [];
+const logs = [];
+let step = 'joining';
 
 async function join(name) {
   const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
@@ -24,9 +26,10 @@ async function join(name) {
     });
     await page.addInitScript(() => {
       const Real = window.BroadcastChannel, open = new Set();
-      window.__bcDeliver = (c, d) => { for (const ch of open) if (ch.name === c && !ch.closed) ch.onmessage?.({ data: d }); };
-      window.BroadcastChannel = class {
-        constructor(name) { this.name = name; this.real = new Real(name); this.real.onmessage = (e) => this.onmessage?.(e); open.add(this); }
+      window.__bcDeliver = (c, d) => { for (const ch of open) if (ch.name === c && !ch.closed) ch._got({ data: d }); };
+      window.BroadcastChannel = class extends EventTarget {
+        constructor(name) { super(); this.name = name; this.real = new Real(name); this.real.onmessage = (e) => this._got(e); open.add(this); }
+        _got(e) { this.onmessage?.(e); this.dispatchEvent(new MessageEvent('message', { data: e.data })); }
         postMessage(d) { this.real.postMessage(d); if (!this.name.includes('active-tab')) window.__bcSend(this.name, JSON.parse(JSON.stringify(d))); }
         close() { this.closed = true; open.delete(this); this.real.close(); }
       };
@@ -34,6 +37,19 @@ async function join(name) {
   }
   pages.push(page);
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
+  // Warnings and errors are printed if the test fails (a realtime join that
+  // timed out, a rate limit); with E2E_LOG=1, every console line as it comes.
+  page.on('console', (m) => {
+    const line = `${name} ${m.type()}: ${m.text().slice(0, 200)}`;
+    if (process.env.E2E_LOG) console.log(line);
+    else if (m.type() === 'error' || m.type() === 'warning') logs.push(line);
+  });
+  // Every toast the game shows (gift sent, nobody here, turned down...).
+  await page.exposeFunction('__toastSeen', (t) => logs.push(`${name} toast: ${t}`));
+  await page.addInitScript(() => addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('toast');
+    if (el) new MutationObserver(() => { if (!el.hidden && el.textContent) window.__toastSeen(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
+  }));
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
   await page.click('#next-btn');
   await page.fill('#nickname', '');
@@ -41,18 +57,25 @@ async function join(name) {
   await page.click('#start-btn', { timeout: 90000 });
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
+  await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
   return page;
 }
 
 const a = await join('Gift A');
 const b = await join('Gift B');
+// Both in the shop, and each one sees the other there. An offer sent before
+// the friend has the giver in the room's presence is dropped on arrival
+// (only known people's messages are heard), so wait on both sides.
+async function bothIn(shop) {
+  step = `${shop}: both going in`;
+  for (const page of [a, b]) await page.evaluate((id) => __mk.enter(id), shop);
+  for (const page of [a, b]) await page.waitForFunction((id) => __mk.room().id === id && __mk.near() === 1, shop, { timeout: 30000 });
+}
 let ok = false;
 try {
-  for (const [shop, idx, check] of [['stationery-den', 0, 'bag'], ['denim-lab', 0, 'item']]) {
-    await a.evaluate((id) => __mk.enter(id), shop);
-    await b.evaluate((id) => __mk.enter(id), shop);
-    await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
-    await b.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
+  for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item']]) {
+    await bothIn(shop);
+    step = `${shop}: A sends a gift`;
     const before = await a.evaluate(() => __mk.coins());
     const bagBefore = await b.evaluate(() => __mk.bagList().length);
     await a.evaluate((i) => __mk.product(i), idx);
@@ -60,16 +83,18 @@ try {
     await a.click('#product-gift');
     if (shotDir && check === 'bag') await a.screenshot({ path: shotDir + '/gift-picker.png' });
     await a.click('.gift-person');
+    step = `${shop}: B waits for the gift card`;
     await b.waitForSelector('.gift-card', { timeout: 10000 });
     if (shotDir && check === 'bag') { await b.waitForTimeout(800); await b.screenshot({ path: shotDir + '/gift-card.png' }); }
     const paid = before - (await a.evaluate(() => __mk.coins()));
     if (paid <= 0) throw new Error('A did not pay');
+    step = `${shop}: B accepts`;
     await b.click('.gift-card .primary');
     await a.waitForFunction(() => __mk.gifts().out === 0, null, { timeout: 10000 });
     if ((await a.evaluate(() => __mk.coins())) !== before - paid) throw new Error('A was refunded after an accept');
     if (check === 'bag' && (await b.evaluate(() => __mk.bagList().length)) !== bagBefore + 1) throw new Error('gift not in B\'s bag');
     if (check === 'item') {
-      const res = await fetch(new URL('regions/seongsu/stores.json', url));
+      const res = await fetch(new URL('regions/another-seoul/stores.json', url));
       const p0 = (await res.json()).stores.find((s) => s.id === 'denim-lab').products[idx];
       const itemId = p0.item || p0.outfit;
       if (!(await b.evaluate((x) => __mk.owns(x), itemId))) throw new Error('clothes not in B\'s items');
@@ -80,20 +105,28 @@ try {
   }
   // A last one, declined: A gets the coins back, and B isn't asked again
   // by A for a while (the next offer is turned down on its own).
-  for (const page of [a, b]) await page.evaluate(() => __mk.enter('stationery-den'));
-  await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 20000 });
+  await bothIn('salam-halal');
   const before = await a.evaluate(() => __mk.coins());
-  const sendOne = async () => { await a.evaluate(() => __mk.product(1)); await a.click('#product-gift'); await a.click('.gift-person'); };
+  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); };
+  step = 'decline: A sends a gift';
   await sendOne();
+  step = 'decline: B waits for the gift card';
   await b.waitForSelector('.gift-card', { timeout: 10000 });
+  step = 'decline: B says no, A gets the coins back';
   await b.click('.gift-card .chip');
   await a.waitForFunction((m) => __mk.coins() === m, before, { timeout: 10000 });
+  step = 'decline: A asks again and is turned down on its own';
   await sendOne();
   await a.waitForFunction((m) => __mk.gifts().out === 0 && __mk.coins() === m, before, { timeout: 10000 });
   if (await b.isVisible('.gift-card')) throw new Error('B was asked again right after saying no');
   ok = true;
 } catch (e) {
-  errors.push('assertion: ' + e.message);
+  errors.push(`assertion at "${step}": ${e.message.split('\n')[0]}`);
+  for (const [n, page] of [['A', a], ['B', b]]) {
+    const st = await page.evaluate(() => ({ room: __mk.room(), near: __mk.near(), gifts: __mk.gifts(), coins: __mk.coins() })).catch((x) => x.message);
+    errors.push(`${n} state: ${JSON.stringify(st)}`);
+  }
+  errors.push(...logs.slice(-40));
   if (shotDir) { await a.screenshot({ path: shotDir + '/fail-a.png' }); await b.screenshot({ path: shotDir + '/fail-b.png' }); }
 }
 await browser.close();

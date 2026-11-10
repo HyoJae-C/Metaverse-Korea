@@ -1,6 +1,7 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { glowAtNight } from './weather.js';
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -12,11 +13,14 @@ export const COLORS = {
   road: 0x8d8a8f,
   roadMajor: 0x7f7c84,
   walk: 0xd8cfc0,
+  bike: 0xc0503f, // the Han River bike paths' red asphalt (region.json links with bike: true)
   park: 0x9fd486,
   grass: 0xb4dc93,
   water: 0x7cc4e8,
   plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
   sand: 0xe6d6b2, // palace courtyards
+  closed: 0xa8a297, // land not built yet, that you can't walk into (region.json "closed"; grey like "coming soon" on the map)
+  stone: 0xdcd6ca, // flagstone paving (박석): Gyeongbokgung's courtyards (drawn with stoneTexture)
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
   railTrack: 0x8a8f99,
@@ -38,43 +42,65 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
+  let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
+  // Land not built yet: one flat grey mesh just over the ground, under
+  // everything else (core/districts.js closed).
+  const closed = makeFlatPolys(map.closed || [], COLORS.closed, 0.006);
+  if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
 
   // Paving first, then lawns and water a hair above so they don't flicker.
-  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
+  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
-    const mesh = makeFlatPolys(polys, COLORS[kind], y);
-    if (mesh) group.add(mesh);
+    const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes); // (a stairwell in a park cuts the lawn too)
+    if (mesh && kind === 'stone') {
+      const map = stoneTexture();
+      if (map) { mesh.material.map = map; mesh.material.color.set(0xffffff); }
+    }
+    if (mesh) { mesh.name = mesh.name || kind; group.add(mesh); }
   }
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk'),
+    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
+    bike: map.roads.filter((r) => r.bike),
     minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
     major: map.roads.filter((r) => majors.has(r.k)),
   };
   const roadMesh = (list, color, y) => {
     const m = makeRibbons(list, color, y);
     if (m) {
+      m.name = 'roads';
       m.receiveShadow = true;
       group.add(m);
     }
   };
   roadMesh(roadSets.walk, COLORS.walk, ROAD_Y.walk);
+  roadMesh(roadSets.bike, COLORS.bike, ROAD_Y.walk + 0.004); // (over the paths that join it)
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
-  const { walls, roofs } = makeBuildings(map.buildings);
+  const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
   if (roofs) group.add(roofs);
+  // (Bukchon's hanok are built when you first walk in: core/enclosure.js, main.js)
 
   const rail = makeRail(map.rail);
   if (rail) group.add(rail);
 
   if (opts.collision) {
-    const trees = makeStreetTrees(map.roads, opts.collision, lowSpec ? 900 : 2500, map.areas);
-    if (trees) group.add(...trees);
+    // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
+    const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
+    // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
+    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
+
+  // Snow settles on whatever faces the sky (core/snow-cover.js); not on
+  // water, and not on tree trunks (only the leafy tops).
+  group.traverse((o) => {
+    if (o.name === 'trees' && o.material.color?.getHex() !== 0xffffff) o.userData.noSnow = true;
+  });
 
   if (!lowSpec) {
     group.traverse((o) => {
@@ -84,7 +110,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds };
+  return { group, bounds, obstacles, treeSpots };
 }
 
 export function computeBounds(map) {
@@ -123,12 +149,14 @@ function toShape(p) {
   return new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
 }
 
-function makeFlatPolys(polys, color, y) {
+function makeFlatPolys(polys, color, y, holes = []) {
   if (!polys.length) return null;
   const geos = [];
   for (const p of polys) {
     if (p.length < 3) continue;
-    const g = new THREE.ShapeGeometry(toShape(p));
+    const shape = toShape(p);
+    for (const h of holes || []) if (h.every(([x, z]) => pointInPolygon(x, z, p))) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+    const g = new THREE.ShapeGeometry(shape);
     g.rotateX(-Math.PI / 2);
     g.translate(0, y, 0);
     geos.push(g);
@@ -139,6 +167,61 @@ function makeFlatPolys(polys, color, y) {
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
   mesh.receiveShadow = true;
   return mesh;
+}
+
+// Flagstone paving (박석) like a palace courtyard: big pale granite slabs of
+// uneven, roughly oblong shapes with darker joints between them. Drawn once
+// on a canvas as a tile that repeats every STONE_TILE metres (the shapes'
+// UVs are their x/z in metres).
+export const STONE_TILE = 8;
+let stoneTex;
+export function stoneCells(cols = 6, rows = 9, seed = 7) {
+  let r = seed;
+  const rand = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+  const cells = [];
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    cells.push({ x: (i + 0.2 + rand() * 0.6) / cols, y: (j + 0.2 + rand() * 0.6) / rows, tone: rand(), i, j });
+  }
+  return { cols, rows, cells };
+}
+function stoneTexture() {
+  if (stoneTex !== undefined) return stoneTex;
+  if (typeof document === 'undefined') return (stoneTex = null);
+  const N = 512, cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(N, N), d = img.data;
+  const { cols, rows, cells } = stoneCells();
+  const at = (i, j) => cells[((j + rows) % rows) * cols + ((i + cols) % cols)];
+  let seed = 3;
+  const noise = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let py = 0; py < N; py++) {
+    const v = py / N, cj = Math.floor(v * rows);
+    for (let px = 0; px < N; px++) {
+      const u = px / N, ci = Math.floor(u * cols);
+      let d1 = Infinity, d2 = Infinity, best = null;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const c = at(ci + di, cj + dj);
+        // the cell's point, moved across the tile's edge when it wraps
+        const cx = c.x + Math.floor((ci + di) / cols), cy = c.y + Math.floor((cj + dj) / rows);
+        const dx = (u - cx) * cols, dy = (v - cy) * rows * 0.75; // slabs a little longer than wide
+        const dd = Math.hypot(dx, dy);
+        if (dd < d1) { d2 = d1; d1 = dd; best = c; } else if (dd < d2) d2 = dd;
+      }
+      const edge = d2 - d1; // 0 on a joint
+      const base = 206 + best.tone * 26 + (noise() - 0.5) * 14; // pale granite, each slab its own shade
+      const k = edge < 0.028 ? 0.66 : edge < 0.06 ? 0.66 + (edge - 0.028) / 0.032 * 0.34 : 1;
+      const o = (py * N + px) * 4;
+      d[o] = base * k + 4; d[o + 1] = base * k; d[o + 2] = base * k - 8; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  stoneTex = new THREE.CanvasTexture(cv);
+  stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
+  stoneTex.repeat.set(1 / STONE_TILE, 1 / STONE_TILE);
+  stoneTex.colorSpace = THREE.SRGBColorSpace;
+  stoneTex.anisotropy = 4;
+  return stoneTex;
 }
 
 // Road polylines → flat ribbons with round joints.
@@ -213,6 +296,29 @@ function makeWindowTexture() {
   return tex;
 }
 
+// Lit windows after dark (weather.js glowAtNight): the same window spots
+// over 4 bays × 4 storeys, about two in three lit in a warm light, so a wall
+// at night doesn't light up in one even grid.
+function makeWindowGlow() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000000';
+  g.fillRect(0, 0, 256, 256);
+  const LIT = [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0];
+  for (let i = 0; i < 16; i++) {
+    if (!LIT[i]) continue;
+    const x = (i % 4) * 64, y = Math.floor(i / 4) * 64;
+    g.fillStyle = i % 3 ? '#ffd98a' : '#fff1cc'; // warm and a few whiter
+    g.fillRect(x + 20, y + 20, 24, 22);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(0.25, 0.25);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeBuildings(buildings) {
   const wPos = [], wUv = [], wCol = [], wIdx = [];
   const rPos = [], rIdx = [], rCol = [];
@@ -223,13 +329,18 @@ function makeBuildings(buildings) {
   buildings.forEach((b, bi) => {
     let p = b.p;
     if (p.length < 3) return;
+    if (b.custom) return; // drawn by its landmark (e.g. Olympic Park Pool); still a wall and a shop front
     // Ensure counter-clockwise (in x,-z) so wall normals face outward.
     if (signedArea(p) < 0) p = [...p].reverse();
-    const base = b.m || 0;
-    const top = b.h;
+    // On a hillside street (b.y: the floor at its door, Gyeongnidan-gil) the
+    // walls start lower, at the lowest ground under it (b.y0).
+    const base = b.y0 ?? (b.m || 0);
+    const top = b.h + (b.y || 0);
     const tint = (bi * 7 + p.length) % WALL_TINTS.length;
     col.setHex(WALL_TINTS[tint]);
     roofCol.setHex(ROOF_TINTS[tint]);
+    if (b.wall) col.set(b.wall); // (a landmark building in its own stone, e.g. the War Memorial)
+    if (b.roof) roofCol.set(b.roof);
 
     let u = 0;
     for (let i = 0; i < p.length; i++) {
@@ -265,7 +376,9 @@ function makeBuildings(buildings) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(wCol, 3));
     g.setIndex(wIdx);
     g.computeVertexNormals();
-    walls = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true }));
+    const wallMat = new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true, emissive: 0xffffff, emissiveMap: makeWindowGlow() });
+    glowAtNight(wallMat, 0.85);
+    walls = new THREE.Mesh(g, wallMat);
     walls.name = 'walls';
   }
   if (rPos.length) {
@@ -335,27 +448,67 @@ function makeRail(rails) {
   return mesh;
 }
 
-// Decorative round street trees along the edges of vehicle roads, and a loose
-// grove in parks marked "trees" (e.g. Seoul Forest). These are scenery, not
-// map data: placed where nothing else is in the way.
-function makeStreetTrees(roads, collision, max, areas = []) {
-  const spots = [];
-  // Wooded parks: a jittered grid, ~16 m apart, off the paths.
-  const PARK = 16;
+// Decorative round street trees along the edges of vehicle roads, and a
+// loose grove in parks marked "trees" (e.g. Seoul Forest): round trees big
+// and small, tall pointed ones, and bushes in between. These are scenery,
+// not map data: placed where nothing else is in the way (clear: [x, z, r]
+// circles kept free, e.g. a rose garden).
+function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
+  const spots = []; // [x, z, scale] round trees
+  const pines = []; // [x, z, scale] pointed trees (parks)
+  const bushes = []; // [x, z, scale] (parks)
+  const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
+  const isClear = (x, z, r) => clear.every(([cx, cz, cr]) => (x - cx) ** 2 + (z - cz) ** 2 > (cr + r) ** 2);
+  // Wooded parks: a jittered grid, ~12 m apart, off the paths.
+  const PARK = 12;
+  // Round crowns in the parks: mostly green, some ginkgo yellow.
+  const parkGreens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d, 0x6fb85f].map((h) => new THREE.Color(h));
+  const yellows = [0xf2c94c, 0xe8b730, 0xf5d76e].map((h) => new THREE.Color(h));
+  const crownColor = (h) => (h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    // The edge of the wood: two rows of big trees just inside its outline.
+    for (const [inset, gap] of [[3.5, 6.5], [9, 8]]) {
+      for (let i = 0; i < a.p.length; i++) {
+        const [x1, z1] = a.p[i], [x2, z2] = a.p[(i + 1) % a.p.length];
+        const len = Math.hypot(x2 - x1, z2 - z1);
+        if (len < 1) continue;
+        const ux = (x2 - x1) / len, uz = (z2 - z1) / len;
+        for (let d = gap / 2; d < len; d += gap) {
+          for (const side of [1, -1]) { // (inside is whichever side is in the polygon)
+            const h = hash(x1 + d, z1 + inset), h2 = hash(z1 + d * 1.3, x1 + inset);
+            const px = x1 + ux * d - uz * inset * side + (h - 0.5) * 2, pz = z1 + uz * d + ux * inset * side + (h2 - 0.5) * 2;
+            if (!pointInPolygon(px, pz, a.p) || edgeDist(px, pz, a.p) < inset - 2.5) continue;
+            const pine = h2 < 0.3, s = pine ? 2.2 + h * 1.0 : 2.3 + h * 1.1;
+            if (isClear(px, pz, 0.9 * s) && !collision.blocked(px, pz, 1.2) && !onAnyRoad(roads, px, pz, 2)) (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(h2)]);
+          }
+        }
+      }
+    }
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
-        if (spots.length >= max / 2) break;
-        const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
-        const jx = (h - Math.floor(h) - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
+        if (spots.length + pines.length >= max * 0.7) break; // (Seoul Forest alone takes ~1,700 on a computer)
+        const h = hash(x, z), h2 = hash(z, x);
+        if (edgeDist(x, z, a.p) < 12) continue; // (the edge rows are there)
+        const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
         const px = x + jx, pz = z + jz;
-        if (!pointInPolygon(px, pz, a.p) || collision.blocked(px, pz, 1.4) || onAnyRoad(roads, px, pz)) continue;
-        spots.push([px, pz]);
+        // Sizes from a young tree to a big old one; about one in four pointed.
+        const pine = h2 < 0.26, s = pine ? 1.3 + ((h2 * 13) % 1) * 1.2 : 1.1 + ((h2 * 17) % 1) ** 1.3 * 1.8;
+        const r = 0.9 * s;
+        if (pointInPolygon(px, pz, a.p) && isClear(px, pz, r) && !collision.blocked(px, pz, r) && !onAnyRoad(roads, px, pz, r - 0.6)) {
+          (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(hash(px, pz))]);
+        }
+        // A bush or two between the trees.
+        for (let k = 0; k < 2; k++) {
+          const bx = x + ((h * (31 + k * 17)) % 1 - 0.5) * PARK, bz = z + ((h2 * (23 + k * 11)) % 1 - 0.5) * PARK;
+          const bs = 0.5 + ((h * (5 + k)) % 1) * 0.6;
+          if (pointInPolygon(bx, bz, a.p) && isClear(bx, bz, bs) && !collision.blocked(bx, bz, bs) && !onAnyRoad(roads, bx, bz)) bushes.push([bx, bz, bs]);
+        }
       }
     }
   }
+  const parkRound = spots.length; // (street trees come after the park's)
   const SPACING = 14;
   for (const r of roads) {
     if (r.k === 'walk' || r.k === 'service' || r.w < 6) continue;
@@ -372,33 +525,66 @@ function makeStreetTrees(roads, collision, max, areas = []) {
         for (const side of [1, -1]) {
           const x = x1 + ux * d - uz * off * side;
           const z = z1 + uz * d + ux * off * side;
-          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z)) spots.push([x, z]);
+          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z) && isClear(x, z, 1.4)) spots.push([x, z, 0.85 + ((spots.length * 37) % 10) / 25]);
         }
       }
       carry = d - len;
     }
   }
-  if (!spots.length) return null;
-  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0);
-  const crownGeo = new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0xa47a55 }), spots.length);
-  const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), spots.length);
+  if (!spots.length && !pines.length) return null;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const sc = new THREE.Vector3();
   const pos = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
   const greens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d].map((h) => new THREE.Color(h));
-  spots.forEach(([x, z], i) => {
-    const s = 0.85 + ((i * 37) % 10) / 25;
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.7);
-    m.compose(pos.set(x, 0, z), q, sc.set(s, s, s));
-    trunks.setMatrixAt(i, m);
-    crowns.setMatrixAt(i, m);
-    crowns.setColorAt(i, greens[i % greens.length]);
-  });
-  trunks.name = crowns.name = 'trees';
-  trunks.castShadow = crowns.castShadow = true;
-  return [trunks, crowns];
+  const out = [];
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
+  const tint = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  // instanced(list, geometry, material, colours?)
+  const instanced = (list, geo, material, colors, yScale = 1) => {
+    const mesh = new THREE.InstancedMesh(geo, material, list.length);
+    list.forEach(([x, z, s], i) => {
+      q.setFromAxisAngle(up, i * 1.7);
+      m.compose(pos.set(x, 0, z), q, sc.set(s, s * yScale, s));
+      mesh.setMatrixAt(i, m);
+      if (colors) mesh.setColorAt(i, list[i][3] || colors[i % colors.length]);
+    });
+    mesh.name = 'trees';
+    mesh.castShadow = true;
+    out.push(mesh);
+  };
+  if (spots.length) {
+    instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
+    instanced(spots, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  }
+  if (pines.length) {
+    const pine = mergeGeometries([
+      new THREE.ConeGeometry(1.35, 2.2, 7).translate(0, 2.1, 0),
+      new THREE.ConeGeometry(1.0, 1.9, 7).translate(0, 3.2, 0),
+      new THREE.ConeGeometry(0.62, 1.4, 7).translate(0, 4.2, 0),
+    ].map((g) => { g.deleteAttribute('uv'); return g.index ? g.toNonIndexed() : g; }));
+    instanced(pines, new THREE.CylinderGeometry(0.14, 0.2, 1.2, 6).translate(0, 0.6, 0), trunkMat);
+    instanced(pines, pine, tint, [0x5f9e5a, 0x6fae62, 0x4f8f4f].map((h) => new THREE.Color(h)), 1.1);
+  }
+  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
+  // What stands on the park lawns, for things put down on the grass (picnic
+  // mats): [x, z, r] trunks and bushes.
+  out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters
+  out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
+  return out;
+}
+
+// Distance from (x, z) to the nearest side of polygon p.
+function edgeDist(x, z, p) {
+  let best = Infinity;
+  for (let i = 0; i < p.length; i++) {
+    const [x1, z1] = p[i], [x2, z2] = p[(i + 1) % p.length];
+    const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2));
+    best = Math.min(best, Math.hypot(x1 + t * dx - x, z1 + t * dz - z));
+  }
+  return best;
 }
 
 function pointInPolygon(x, z, p) {
@@ -410,9 +596,9 @@ function pointInPolygon(x, z, p) {
   return c;
 }
 
-function onAnyRoad(roads, x, z) {
+export function onAnyRoad(roads, x, z, pad = 0.3) {
   for (const r of roads) {
-    const hw = r.w / 2 + 0.3;
+    const hw = r.w / 2 + Math.max(0.3, pad, r.clear || 0); // clear: an avenue's own trees line it, keep the others back
     for (let i = 0; i < r.p.length - 1; i++) {
       const [x1, z1] = r.p[i];
       const [x2, z2] = r.p[i + 1];
