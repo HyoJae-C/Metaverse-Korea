@@ -554,7 +554,8 @@ export class MapView {
     }
   }
 
-  // Where two gu meet (seoul.json borders, from OpenStreetMap): purple, over
+  // Where two gu meet, and Seoul's outer edge (seoul.json borders and
+  // outline, from OpenStreetMap, stopping at the Han River): purple, over
   // the streets, so a border never reads as a road. The same purple as the
   // line on the street (game/gu-borders.js).
   _drawBorders(g, poly, far) {
@@ -565,6 +566,9 @@ export class MapView {
     g.lineWidth = (far ? 2.5 : 3) * dpr;
     if (!far) g.setLineDash([10 * dpr, 6 * dpr]);
     for (const l of this.seoul.borders) { poly(l); g.stroke(); }
+    // Seoul's own outer edge, a little bolder so the city's shape reads.
+    g.lineWidth = (far ? 3 : 3.5) * dpr;
+    for (const l of this.seoul.outline || []) { poly(l); g.stroke(); }
     g.restore();
   }
 

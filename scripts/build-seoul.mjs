@@ -232,12 +232,69 @@ gu.forEach((g, gi) => {
   if (line) borders.push(line);
 });
 
+// Seoul's own outer edge: gu edges with no neighbour at all (not even across
+// the river), chained the same way.
+const outline = [];
+gu.forEach((g) => {
+  const others = gu.filter((o) => o !== g), p = g.p, n = p.length;
+  const outer = p.map((a, i) => {
+    const b = p[(i + 1) % n];
+    return ![a, b, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]].every(([x, z]) => others.some((o) => nearRing(x, z, o.p, 8)));
+  });
+  const start = outer.indexOf(false);
+  if (start < 0) return;
+  let line = null;
+  for (let k = 1; k <= n; k++) {
+    const i = (start + k) % n;
+    if (outer[i]) {
+      if (!line) line = [p[i]];
+      line.push(p[(i + 1) % n]);
+    } else if (line) { outline.push(line); line = null; }
+  }
+  if (line) outline.push(line);
+});
+
+// No line on the Han River: a border or the outer edge stops at the bank of
+// the river as the map draws it (its centre line and width), plus 4 m.
+// The game's own Han River counts too (region.json water, and a district's
+// big water areas: Seongsu's and Mangwon's river), which the map draws over
+// the gu. Ponds and streams (under 5 ha) keep their line.
+const waters = [...(region.water || []).map((w) => w.p)];
+for (const d of region.districts) {
+  const m = JSON.parse(await readFile(path.join(R, d.map), 'utf8'));
+  const [ox, oz] = d.offset || [0, 0];
+  for (const a of m.areas || []) if (a.k === 'water' && Math.abs(area(a.p)) > 50000) waters.push(a.p.map(([x, z]) => [x + ox, z + oz]));
+}
+const onRiver = (x, z) => river.some((a, i) => i > 0 && segDist(x, z, river[i - 1], a) < Math.max(riverW[i - 1], riverW[i]) / 2 + 4)
+  || waters.some((w) => inPolygon(x, z, w) || nearRing(x, z, w, 3));
+function offRiver(lines) {
+  const out = [];
+  for (const l of lines) {
+    let run = [];
+    for (const [x, z] of densifyLine(l, 3)) {
+      if (onRiver(x, z)) { if (run.length > 1) out.push(run); run = []; } else run.push([x, z]);
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map((l) => round(simplify(l, 1))).filter((l) => l.length > 1 && Math.hypot(l.at(-1)[0] - l[0][0], l.at(-1)[1] - l[0][1]) > 8);
+}
+function densifyLine(line, step) {
+  const out = [line[0]];
+  for (let i = 1; i < line.length; i++) {
+    const [ax, az] = line[i - 1], [bx, bz] = line[i];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
+    for (let k = 1; k <= n; k++) out.push([ax + ((bx - ax) * k) / n, az + ((bz - az) * k) / n]);
+  }
+  return out;
+}
+const bordersDry = offRiver(borders), outlineDry = offRiver(outline);
+
 const out = {
   note: 'Seoul at 1/4 around Seongsu Station (scripts/build-seoul.mjs). Gu outlines © OpenStreetMap contributors (ODbL), simplified.',
   credit: '© OpenStreetMap contributors',
-  scale: SCALE, gu, river: round(river), riverW, borders,
+  scale: SCALE, gu, river: round(river), riverW, borders: bordersDry, outline: outlineDry,
 };
 await writeFile(path.join(R, 'seoul.json'), JSON.stringify(out));
 console.log(gu.map((g) => `${g.id}${g.open ? `*(${g.districts})` : ''} ${(g.area / 1e6).toFixed(2)} km²`).join('\n'));
 console.log(`river: ${river.length} points`);
-console.log(`borders: ${borders.length} lines, ${borders.reduce((s, l) => s + l.length, 0)} points`);
+console.log(`borders: ${bordersDry.length} lines, ${bordersDry.reduce((s, l) => s + l.length, 0)} points; outline: ${outlineDry.length} lines`);
