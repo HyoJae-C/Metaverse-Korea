@@ -371,8 +371,8 @@ const DONGMYO_JONGNO = [-948, -767];
   blockers.push({ p: rect(x - 1.2, z - half - wing - 6, x + 1.2, z - half - wing) });
   landmarks.push({ type: 'sign', x: x - 9, z: wz - 5, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
   pois.push({ kind: 'landmark', x, z: z - 14, name: N('흥인지문 (동대문)', 'Heunginjimun (Dongdaemun)', '興仁之門（東大門）', '兴仁之门（东大门）') });
-  // Green round it: trees along the lawn's edges (pines among them), off
-  // the walks, and patches of wild flowers in the open corners.
+  // Green round it: trees along the lawn's west and north edges (pines
+  // among them), off the walks, and patches of wild flowers in the corners.
   const spots = [];
   const tree = (tx, tz) => {
     const offWalk = Math.abs(tx - (x - 13)) > 4 && Math.abs(tz - wz) > 4 && !(Math.abs(tx - (x + D / 2 + 3)) < 4 && tz < z);
@@ -381,8 +381,7 @@ const DONGMYO_JONGNO = [-948, -767];
   };
   for (let tz = lzS - 4; tz > nw[1] - 2; tz -= 6.5) tree(lx0 + 3, tz); // the west side
   for (let tx = lx0 + 9; tx < ne[0]; tx += 7) tree(tx, Math.max(lz1 + 3, nw[1] + ((lz1 - nw[1]) * (tx - lx0)) / (rx0 + 25 - lx0) + 3)); // the north side
-  for (let tz = lzS - 4; tz > turn[1] + e + 2; tz -= 6.5) tree(lx1 - 3, tz); // the east side
-  for (let tx = cx + ORX + 7; tx < lx1 - 6; tx += 7) tree(tx, lz1 + 9); // a second row in the north-east
+  // (none on the east side: they hid the gate and its ongseong, Yozi 2026-11-11)
   landmarks.push({ type: 'shrinetrees', x, z, spots: spots.map(([tx, tz]) => [r1(tx - x), r1(tz - z)]) });
   for (const [mx, mz, r] of [[lx0 + 9, z - 8, 4], [lx0 + 10, lzS - 7, 3.5], [lx1 - 8, z + 2, 4.5], [lx1 - 9, lzS - 6, 3.5], [x - 4, lz1 + 6, 3.5]]) landmarks.push({ type: 'meadow', x: r1(mx), z: r1(mz), r, clear: r + 1 });
 }
