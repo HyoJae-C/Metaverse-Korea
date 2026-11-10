@@ -612,6 +612,7 @@ export const VI = {
   'safety.unblocked': 'Đã bỏ chặn tất cả.',
   'look.tee': 'Màu áo phông',
   'credit.chars': 'Nhân vật',
+  'credit.icons': 'Biểu tượng',
   "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
   "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
   "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
@@ -638,4 +639,5 @@ export const VI = {
   "used.gone": "Có người vừa mua chiếc cuối cùng.",
   "used.offline": "Hiện chưa kết nối được quầy thu ngân. Vui lòng thử lại sau giây lát.",
   "used.closed": "Giá đồ cũ sắp mở.",
+  "closet.retired": "Ngừng bán",
 };

@@ -614,6 +614,7 @@ export const EN = {
   'safety.unblocked': 'Everyone is unblocked.',
   'look.tee': 'T-shirt colour',
   'credit.chars': 'Characters',
+  'credit.icons': 'Icons',
   "fountain.soon": "🌈 The Moonlight Rainbow Fountain starts in a minute. Watch Banpo Bridge from the lawn by the river.",
   "fountain.on": "🌈 The Moonlight Rainbow Fountain is on: rainbow water pours from both sides of Banpo Bridge.",
   "fountain.photo": "📸 Photo time: the whole bridge pours rainbows for the last minute.",
@@ -640,4 +641,5 @@ export const EN = {
   "used.gone": "Someone just bought the last one.",
   "used.offline": "We can't reach the shop's till right now. Please try again in a moment.",
   "used.closed": "The second-hand rack opens soon.",
+  "closet.retired": "Retired",
 };

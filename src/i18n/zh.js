@@ -615,6 +615,7 @@ export const ZH = {
   'safety.unblocked': '已全部取消屏蔽。',
   'look.tee': 'T恤颜色',
   'credit.chars': '角色',
+  'credit.icons': '图标',
   "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
   "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
   "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
@@ -641,4 +642,5 @@ export const ZH = {
   "used.gone": "刚刚有人买走了最后一件。",
   "used.offline": "现在连不上店里的收银台，请稍后再试。",
   "used.closed": "二手衣架即将开放。",
+  "closet.retired": "已停售",
 };

@@ -170,7 +170,8 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
-import { closetKind } from './core/closet.js';
+import { closetKind, closetColor } from './core/closet.js';
+import { RETIRED } from './data/wearables.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -2201,7 +2202,7 @@ const bagUi = new BagUI({
     ids: inventory.list().filter(isClothes),
     describe: (id) => {
       const it = ITEMS[id];
-      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price };
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
     },
     actions: (id, redraw) => {
       const it = ITEMS[id];
