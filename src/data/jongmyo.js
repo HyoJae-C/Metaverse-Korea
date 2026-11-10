@@ -29,24 +29,28 @@ export const JONGMYO = {
   district: 'jongmyo',
   // The shrine's outer wall [x0, z0 (south, the gate's line), x1, z1
   // (north)]. Inside it is drawn once you walk in (meta.enclosure).
-  wall: [-56, 0, 84, -92],
+  wall: [-56, 0, 84, -133], // (north: up to Yulgok-ro, the Bukchon map's)
   gate: { at: [0, 0], w: 8 }, // Oedaemun, three doors under one roof
   // The street (district metres): Jongno along the south.
   jongno: 24, // Jongno's centre line (z)
   // The stone path (삼도, samdo): three strips, the raised middle one (신도,
   // sindo) for the spirits. Runs from the gate to each hall's south gate.
   samdo: [
-    [[0, -1], [0, -22]],
-    [[0, -22], [40, -22]],
-    [[40, -22], [40, -34]],
-    [[0, -22], [-34, -22]],
-    [[-34, -22], [-34, -40]],
+    [[0, -1], [0, -67]],
+    [[0, -22], [-28, -22]],
+    [[-28, -22], [-28, -107]],
   ],
   samdoW: 3.6, sindoW: 1.2,
   // Jeongjeon's yard [x0, z0, x1, z1], its gate (Namsinmun), the stone
   // terrace (woldae) and the hall.
-  jeongjeon: { yard: [2, -34, 80, -90], gate: [40, -34], woldae: [6, -40, 76, -73], hall: [6, -75, 76, -87] },
-  yeongnyeongjeon: { yard: [-52, -40, -14, -90], gate: [-34, -40], woldae: [-48, -48, -18, -73], hall: [-48, -75, -18, -86] },
+  // Both halls stand on their real spots and at their real size, a quarter
+  // like the rest of Seoul (Yozi 2026-11-10: Jongmyo's point is the rite, not
+  // grand buildings, and you see it by going in). Jeongjeon is about 92 m
+  // long in real life (here 22 m), Yeongnyeongjeon behind it to the
+  // north-west about 64 m (here 16 m). "real" is each hall's real middle
+  // (OpenStreetMap ways 170403802 and 170403828).
+  jeongjeon: { yard: [-16, -67, 16, -101], gate: [0, -67], woldae: [-13, -72, 13, -90], hall: [-11, -90, 11, -98], real: [37.57491, 126.993981] },
+  yeongnyeongjeon: { yard: [-40, -107, -16, -129], gate: [-28, -107], woldae: [-37, -111, -19, -119], hall: [-36, -119, -20, -126], real: [37.57593, 126.992771] },
   pond: [-46, -4, -26, -16], // the square pond with a round island (중지당지)
   // The ritual dance on Jeongjeon's woldae and the musicians along the top
   // of the terrace, at about a quarter of the real thing: the full rite's
@@ -57,9 +61,9 @@ export const JONGMYO = {
   // (무무, wooden swords in front, spears behind) on the east half. At the
   // real rite they take turns; the sign below the terrace says so.
   rite: {
-    at: [41, -56], rows: 2, cols: 4, gap: 2.2,
-    groups: [{ dance: 'ilmu', dx: -11 }, { dance: 'mumu', dx: 11 }],
-    band: { z: -71.5, x0: 22, x1: 60, n: 15 },
+    at: [0, -81], rows: 2, cols: 4, gap: 2.2,
+    groups: [{ dance: 'ilmu', dx: -6.5 }, { dance: 'mumu', dx: 6.5 }], // (side by side on the 26 m terrace)
+    band: { z: -89, x0: -11, x1: 11, n: 15 },
   },
   // Going in without the walk: an Enter spot just in front of the stamp on
   // Jongmyo Square takes you inside Oedaemun; a Leave spot inside the gate
@@ -68,7 +72,7 @@ export const JONGMYO = {
   entry: { at: [-10, 4], r: 2.5, inside: [-3, -6], leave: { at: [-3, -2.5], r: 2 }, out: [-3, 6] },
   // The sign about the music and the two dances, below the terrace.
   riteSign: {
-    at: [30, -37.5], ry: 0,
+    at: [-8, -70.5], ry: 0,
     title: T('Jongmyo Jeryeak: music and dance', '종묘제례악: 음악과 춤', '宗廟祭礼楽：音楽と舞', '宗庙祭礼乐：音乐与舞蹈'),
     text: T(
       'The music and dance of the royal ancestral rite. On the left, the civil dance (munmu, to Botaepyeong music) praises the kings\' wisdom: a flute in one hand, a feathered staff in the other. On the right, the military dance (mumu, to Jeongdaeeop music) praises their victories, with wooden swords and spears. At the real rite they take turns, the civil dance for the first offering and the military dance for the second and third; here they dance side by side, at about a quarter of the real number of dancers and musicians.',
