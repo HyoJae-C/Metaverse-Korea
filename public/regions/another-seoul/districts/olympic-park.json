@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "olympic-park",
-  "source": "hand-made (game map, not to scale inside): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Olympic-ro follows OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL): from Mongchontoseong Station it runs north-north-east along the park's west side, as in Seoul. Simplified: the Peace Plaza with the World Peace Gate (stylised) between the station and the park, the lone tree on its lawn and a pond; the skate park, the pool hall and the basketball court are game additions. The park's south and east edges are not yet on the real outline (Wiryeseong-daero and Seongnaecheon); see docs. Placed by its anchor, the World Peace Gate (region.json)."
+  "source": "hand-made inside (not to scale), on the real outline at 1/4: Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Olympic-ro (west side, north-north-east from Mongchontoseong Station) and Wiryeseong-daero (south side) follow OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL); the north and east edges follow Seongnaecheon. Estimated where the OSM export ends: Wiryeseong-daero east of Bangi-dong runs straight on, and the east edge between the stream and Wiryeseong-daero is a straight line. Simplified: the Peace Plaza with the World Peace Gate (stylised) between the station and the park, the lone tree on the north lawn (rough spot) and a pond south of the plaza; the skate park, the pool hall and the basketball court are game additions. Placed by its anchor, the World Peace Gate (region.json)."
  },
  "roads": [
   {
@@ -83,42 +83,76 @@
    ]
   },
   {
-   "k": "walk",
-   "w": 4,
+   "k": "secondary",
+   "w": 12,
    "p": [
     [
-     1120,
-     340
+     972,
+     308
     ],
     [
-     1120,
-     520
+     979,
+     311
+    ],
+    [
+     1000,
+     316
+    ],
+    [
+     1032,
+     331
+    ],
+    [
+     1053,
+     341
+    ],
+    [
+     1097,
+     360
+    ],
+    [
+     1128,
+     374
+    ],
+    [
+     1147,
+     383
+    ],
+    [
+     1179,
+     397
+    ],
+    [
+     1194,
+     404
+    ],
+    [
+     1365,
+     481.7
     ]
-   ]
+   ],
+   "n": {
+    "ko": "위례성대로",
+    "en": "Wiryeseong-daero",
+    "ja": "慰礼城大路",
+    "zh": "慰礼城大路"
+   }
   },
   {
    "k": "walk",
    "w": 4,
    "p": [
     [
-     970,
-     350
+     1210,
+     186
     ],
     [
-     1280,
-     350
+     1330,
+     186
     ],
     [
-     1280,
-     520
-    ],
-    [
-     970,
-     520
-    ],
-    [
-     970,
-     350
+     1330,
+     462
     ]
    ]
   }
@@ -182,41 +216,100 @@
    "k": "park",
    "p": [
     [
+     989,
+     303
+    ],
+    [
+     989,
+     296
+    ],
+    [
+     995,
+     276
+    ],
+    [
+     1009,
+     247
+    ],
+    [
+     1022,
+     222
+    ],
+    [
+     1044,
+     179
+    ],
+    [
      1060,
+     146
+    ],
+    [
+     1067,
+     131
+    ],
+    [
+     1127,
      132
     ],
     [
-     1290,
-     132
+     1168,
+     112
     ],
     [
-     1290,
-     192
+     1213,
+     124
     ],
     [
-     1037,
-     192
-    ]
-   ]
-  },
-  {
-   "k": "park",
-   "p": [
-    [
-     960,
-     340
+     1258,
+     139
     ],
     [
-     1290,
-     340
+     1265,
+     139
     ],
     [
-     1290,
-     530
+     1295,
+     176
     ],
     [
-     960,
-     530
+     1317,
+     226
+    ],
+    [
+     1340,
+     301
+    ],
+    [
+     1365,
+     319
+    ],
+    [
+     1365,
+     472.9
+    ],
+    [
+     1194,
+     395.2
+    ],
+    [
+     1147,
+     374.2
+    ],
+    [
+     1097,
+     351.2
+    ],
+    [
+     1053,
+     332.2
+    ],
+    [
+     1032,
+     322.2
+    ],
+    [
+     1000,
+     307.2
     ]
    ]
   },
@@ -236,12 +329,24 @@
      340
     ],
     [
-     985,
+     1076,
      340
     ],
     [
-     984,
-     318
+     1053,
+     332
+    ],
+    [
+     1032,
+     322
+    ],
+    [
+     1000,
+     307
+    ],
+    [
+     989,
+     303
     ],
     [
      989,
@@ -265,20 +370,20 @@
    "k": "water",
    "p": [
     [
-     1160,
-     400
+     1200,
+     346
     ],
     [
      1260,
-     400
+     346
     ],
     [
      1260,
-     500
+     384
     ],
     [
-     1160,
-     500
+     1200,
+     384
     ]
    ]
   }
@@ -287,20 +392,20 @@
   {
    "p": [
     [
-     1160,
-     400
+     1200,
+     346
     ],
     [
      1260,
-     400
+     346
     ],
     [
      1260,
-     500
+     384
     ],
     [
-     1160,
-     500
+     1200,
+     384
     ]
    ]
   },
@@ -387,20 +492,20 @@
   {
    "p": [
     [
-     1059.4,
-     444.4
+     1249.4,
+     159.4
     ],
     [
-     1060.6,
-     444.4
+     1250.6,
+     159.4
     ],
     [
-     1060.6,
-     445.6
+     1250.6,
+     160.6
     ],
     [
-     1059.4,
-     445.6
+     1249.4,
+     160.6
     ]
    ]
   },
@@ -568,8 +673,8 @@
  "pois": [
   {
    "kind": "landmark",
-   "x": 1120,
-   "z": 380,
+   "x": 1200,
+   "z": 215,
    "name": {
     "ko": "올림픽공원",
     "en": "Olympic Park",
@@ -636,8 +741,8 @@
   },
   {
    "type": "lonetree",
-   "x": 1060,
-   "z": 445,
+   "x": 1250,
+   "z": 160,
    "label": {
     "ko": "나홀로나무",
     "en": "Lone Tree",
@@ -649,12 +754,12 @@
    "type": "blossoms",
    "p": [
     [
-     972,
-     524
+     1340,
+     200
     ],
     [
-     1278,
-     524
+     1340,
+     440
     ]
    ],
    "gap": 12
