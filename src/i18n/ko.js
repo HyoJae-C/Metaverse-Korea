@@ -623,6 +623,8 @@ export const KO = {
   'dal.lifts': "탑승 마감 · {t} 뒤 출발",
   'dal.up': "출발! 서울달이 여의도 위로 떠올라요 🎈",
   'dal.top': "꼭대기예요! 아래로 한강, 여의도, 63빌딩이 보여요 📸",
+  'dal.stamp': "스탬프 찍기 · {name}",
+  'dal.stampHint': "여기서 스탬프를 찍어요 🔖",
   'dal.lookDown': "아래 보기",
   'dal.lookOut': "멀리 보기",
   'dal.landed': "땅에 내렸어요. 풍경 어땠어요?",

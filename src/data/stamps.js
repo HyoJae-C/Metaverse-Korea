@@ -5,7 +5,9 @@
 //          { store: 'id', room: true, at: [x, z], ry } puts it inside that
 //          shop's room (the Namsan summit, a park), at room position x, z,
 //          its front facing ry, or
-//          { at: [x, z] } puts it at a world position.
+//          { at: [x, z] } puts it at a world position, or
+//          { at: [x, z], ride: 'name' } has no stand: a ride offers it
+//          (Seoul Dal: up at the top).
 //   shape: 'circle' | 'square' — the rubber stamp's frame.
 //   icon:  SVG drawn in a 200×200 box, in the stamp's ink colour.
 export const STAMPS = [
@@ -177,6 +179,17 @@ export const STAMPS = [
     gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
     // the island in the river, the 63 tower on its tip and Seogang Bridge's arch
     icon: '<path d="M126 128 v-70 l8 -6 l8 6 v70"/><path d="M134 52 v-10"/><path d="M48 128 q20 -30 40 0 M48 128 h48"/><path d="M40 128 q60 -12 120 0"/><path d="M44 144 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
+  },
+  {
+    // Seoul Dal, the balloon in Yeouido Park (game/seoul-dal.js): no stand on
+    // the ground; you press it in the gondola once it is up at the top, so
+    // this stamp means you flew. (at: the cable's foot, for anything that
+    // needs a place on the map.)
+    id: 'seoul-dal', place: { at: [-2902.1, 485.4], ride: 'seoulDal' }, color: '#d9a43a', shape: 'circle',
+    name: { ko: '서울달', en: 'Seoul Dal', ja: 'ソウルダル', zh: '首尔月亮' },
+    gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
+    // the moon-balloon on its cable, the ring gondola under it, over the river
+    icon: '<circle cx="100" cy="66" r="30"/><path d="M76 80 q24 10 48 0"/><path d="M80 88 l-12 30 M120 88 l12 30 M100 96 v18"/><path d="M64 118 h72 v8 h-72 z"/><path d="M48 142 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate

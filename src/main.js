@@ -5723,6 +5723,8 @@ const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 const seoulDal = createSeoulDalNear({
   landmarks: map.landmarks, scene, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
   others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  // The stamp tour's Seoul Dal stamp, pressed in the gondola at the top.
+  stamp: () => { const s = tourStamps.find((q) => q.id === 'seoul-dal'); return s && { got: stampBook.has(s.id), name: L(s.name), press: () => pressStamp({ stamp: s }) }; },
 });
 
 // Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).

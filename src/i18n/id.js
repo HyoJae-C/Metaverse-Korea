@@ -620,6 +620,8 @@ export const ID = {
   'dal.lifts': "Gerbang ditutup · lepas landas dalam {t}",
   'dal.up': "Ayo! Seoul Dal naik di atas Yeouido 🎈",
   'dal.top': "Di puncak! Di bawah ada Sungai Han, Yeouido, dan menara 63 📸",
+  'dal.stamp': "Cap · {name}",
+  'dal.stampHint': "Pasang capnya di atas sini 🔖",
   'dal.lookDown': "Lihat ke bawah",
   'dal.lookOut': "Lihat jauh",
   'dal.landed': "Kembali ke darat. Bagaimana pemandangannya?",

@@ -623,6 +623,8 @@ export const JA = {
   'dal.lifts': "搭乗締切 · {t} 後に離陸",
   'dal.up': "出発！ソウルダルが汝矣島の上へ 🎈",
   'dal.top': "てっぺんです！眼下に漢江、汝矣島、63ビル 📸",
+  'dal.stamp': "スタンプを押す · {name}",
+  'dal.stampHint': "ここでスタンプを押せます 🔖",
   'dal.lookDown': "下を見る",
   'dal.lookOut': "遠くを見る",
   'dal.landed': "地上に戻りました。景色はどうでしたか？",

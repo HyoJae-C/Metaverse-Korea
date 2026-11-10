@@ -620,6 +620,8 @@ export const FR = {
   'dal.lifts': "Embarquement fermé · décollage dans {t}",
   'dal.up': "C'est parti ! Seoul Dal s'élève au-dessus de Yeouido 🎈",
   'dal.top': "Tout en haut ! En bas, le fleuve Han, Yeouido et la tour 63 📸",
+  'dal.stamp': "Tamponner · {name}",
+  'dal.stampHint': "Le tampon se met ici, tout en haut 🔖",
   'dal.lookDown': "Regarder en bas",
   'dal.lookOut': "Regarder au loin",
   'dal.landed': "De retour sur terre. Elle était belle, la vue ?",

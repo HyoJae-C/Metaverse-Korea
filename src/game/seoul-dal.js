@@ -152,7 +152,8 @@ function buildBalloon() {
 }
 
 // game: { scene, me, mode, cam, riding, others, myId, wallet, shop, t,
-// missionEvent, resend, clearAction } (getters where they change);
+// missionEvent, resend, clearAction, stamp } (getters where they change;
+// stamp() is the tour stamp for up top: { got, name, press }, or null);
 // at: { x, z, ry }, the cable's foot (its local +z is the gate).
 export function createSeoulDal(game, at) {
   const { x: ox, z: oz, ry } = at;
@@ -281,7 +282,7 @@ export function createSeoulDal(game, at) {
       ride.topped = true;
       ride.down = true;
       game.cam.pitch = 0.5; game.cam.dist = Math.max(game.cam.dist, 18); // (far enough out that the balloon is not in the way)
-      game.shop.toast(T('dal.top'));
+      game.shop.toast(T('dal.top') + (game.stamp?.() && !game.stamp().got ? ' ' + T('dal.stampHint') : ''));
       game.clearAction();
     }
     p.set(sp.x, sp.y, sp.z);
@@ -294,6 +295,8 @@ export function createSeoulDal(game, at) {
     if (ride) {
       if (s.n === ride.n && gateOpen(s)) { const t = clock(s.left - DAL.close); return { key: 'dal-off:' + t, label: '🚪 ' + T('dal.leave', { t }), run: () => getOff(true) }; }
       if (s.phase === 'board') { const t = clock(s.left); return { key: 'dal-wait:' + t, label: '🎈 ' + T('dal.lifts', { t }), run: () => {} }; }
+      const st = s.phase === 'top' && game.stamp?.(); // (the stamp tour: press it up here)
+      if (st && !st.got) return { key: 'dal-stamp', label: '🔖 ' + T('dal.stamp', { name: st.name }), run: st.press };
       return ride.down
         ? { key: 'dal-out', label: '🔭 ' + T('dal.lookOut'), run: () => { ride.down = false; game.cam.pitch = 0.2; game.clearAction(); } }
         : { key: 'dal-down', label: '👀 ' + T('dal.lookDown'), run: () => { ride.down = true; game.cam.pitch = 0.5; game.cam.dist = Math.max(game.cam.dist, 18); game.clearAction(); } }; // (far enough out that the balloon is not in the way)
