@@ -79,6 +79,7 @@ export function haneulStore(g, l) {
 // leaves it alone (userData.farKeep). Each colour is one merged mesh: five
 // draw calls for the whole tower.
 export const TOWER = { r: 17.5, top: 7.8, tiers: 6, tier: 40, lantern: 12, spire: 26 };
+export const TOWER_FAR = 450; // m from the camera where the full tower gives way to its silhouette
 export const TOWER_HAZE = { from: 10, to: 80, thin: 0.15 }; // m up where the fog starts thinning, where it's thinnest, and how thin (× the distance)
 function hazeAbove(material) {
   const prev = material.onBeforeCompile;
@@ -92,6 +93,15 @@ function hazeAbove(material) {
   };
   material.customProgramCacheKey = () => 'tower-haze';
   return material;
+}
+// The tower's outline in one geometry: the tapering shaft, the lantern and
+// the spire, eight sides each.
+function towerShape() {
+  const T = TOWER, H = T.tiers * T.tier;
+  const shaft = new THREE.CylinderGeometry(T.top, T.r, H, 8, 1, true).translate(0, H / 2, 0);
+  const lantern = new THREE.CylinderGeometry(T.top * 0.7, T.top, T.lantern, 8, 1, true).translate(0, H + T.lantern / 2, 0);
+  const spire = new THREE.ConeGeometry(T.top * 0.55, T.spire, 8, 1, true).translate(0, H + T.lantern + T.spire / 2, 0);
+  return mergeGeometries([shaft, lantern, spire]);
 }
 export function haneulTower(g) {
   const T = TOWER;
@@ -121,11 +131,20 @@ export function haneulTower(g) {
     spire: new THREE.MeshLambertMaterial({ color: '#e8edf2', flatShading: true }),
     light: new THREE.MeshBasicMaterial({ color: '#ff4a4a' }),
   };
+  const near = new THREE.Group();
   for (const k in parts) {
     const geo = mergeGeometries(parts[k].map((p) => (p.index ? p.toNonIndexed() : p)));
     for (const p of parts[k]) p.dispose();
-    g.add(new THREE.Mesh(geo, hazeAbove(mats[k])));
+    near.add(new THREE.Mesh(geo, hazeAbove(mats[k])));
   }
+  // Past TOWER_FAR m: one flat-coloured shape (no light, no rings or fins),
+  // a single draw call, like a shadow of the tower on the sky.
+  const far = new THREE.Mesh(towerShape(), hazeAbove(new THREE.MeshBasicMaterial({ color: '#86a2bd' })));
+  far.userData.noShadow = true;
+  const lod = new THREE.LOD();
+  lod.addLevel(near, 0);
+  lod.addLevel(far, TOWER_FAR);
+  g.add(lod);
   g.name = 'another-tower';
   g.userData.farKeep = true;
 }

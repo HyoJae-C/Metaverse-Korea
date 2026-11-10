@@ -56,7 +56,10 @@ test('Another Tower (farKeep) stays up past the fog, as one tower of five meshes
   g.position.set(1000, 0, 0);
   g.updateMatrixWorld();
   assert.equal(g.userData.farKeep, true);
-  assert.equal(g.children.length, 5, 'merged by colour: few draw calls even from across the river');
+  const lod = g.children[0];
+  assert.ok(lod.isLOD);
+  assert.equal(lod.levels[0].object.children.length, 5, 'up close: merged by colour, five draw calls');
+  assert.ok(lod.levels[1].object.isMesh && lod.levels[1].distance === 450, 'past 450 m: one silhouette, one draw call');
   const near = thing(0, 0);
   const c = new FarCull([near, g], () => 300);
   c.update(0.05, { x: 0, z: 0 }, 0);
