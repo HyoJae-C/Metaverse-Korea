@@ -561,6 +561,8 @@ export const KO = {
   'tab.elsewhere': '다른 탭에서 플레이 중이에요',
   'tab.elsewhereHint': '이 브라우저의 다른 탭에서 어나더서울이 열려 있어 그 탭의 캐릭터로 접속 중이에요. 이 탭을 닫거나, 여기서 계속하세요.',
   'tab.playHere': '여기서 플레이',
+  'device.elsewhere': '다른 기기에서 플레이 중이에요',
+  'device.elsewhereHint': '이 계정이 다른 휴대폰이나 컴퓨터에서 열려서, 지금은 그쪽에 진행 상황이 저장되고 있어요. 여기서 플레이하면 최신 저장 내용을 불러와요.',
   'app.title': '어나더서울',
   'app.tagline': '브라우저에서 바로 한국의 거리를 걸어 보세요.',
   'lang.choose': '언어를 선택하세요',

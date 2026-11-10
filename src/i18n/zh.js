@@ -561,6 +561,8 @@ export const ZH = {
   'tab.elsewhere': '你正在另一个标签页中游玩',
   'tab.elsewhereHint': '此浏览器的另一个标签页已打开 Another Seoul，你的角色正在那里。关闭此标签页，或在这里继续。',
   'tab.playHere': '在这里玩',
+  'device.elsewhere': '你正在另一台设备上游玩',
+  'device.elsewhereHint': '这个账号已在另一部手机或电脑上打开，进度现在保存在那里。在这里玩会载入最新的存档。',
   'app.title': 'Another Seoul',
   'app.tagline': '在浏览器里直接漫步韩国街头。',
   'lang.choose': '请选择语言',

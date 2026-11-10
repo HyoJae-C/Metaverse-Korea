@@ -557,6 +557,8 @@ export const ES = {
   'tab.elsewhere': 'Estás jugando en otra pestaña',
   'tab.elsewhereHint': 'Another Seoul está abierto en otra pestaña de este navegador y apareces allí. Cierra esta pestaña o juega aquí.',
   'tab.playHere': 'Jugar aquí',
+  'device.elsewhere': 'Estás jugando en otro dispositivo',
+  'device.elsewhereHint': 'Esta cuenta se abrió en otro teléfono u ordenador, así que tu progreso se guarda allí. Juega aquí para cargar la partida más reciente.',
   'app.title': 'Another Seoul',
   'app.tagline': 'Pasea por las calles de Corea desde tu navegador.',
   'lang.choose': 'Elige tu idioma',

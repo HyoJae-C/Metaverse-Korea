@@ -1691,7 +1691,11 @@ function goSolo(roomScene) {
 net = SOLO;
 // Same browser, second tab: the newest tab plays, older ones step aside so
 // you never appear twice on the street (see core/single-tab.js).
-claimTab(() => {
+// Same idea across devices: if this account's save was opened on another
+// phone or computer, this one stops saving and steps aside the same way, so
+// it never overwrites the newer progress there (see core/cloud-save.js).
+function stepAside(icon, title, hint) {
+  if (tabParked) return;
   tabParked = true;
   joinToken++; // a join still connecting disconnects itself
   net?.disconnect();
@@ -1703,15 +1707,18 @@ claimTab(() => {
   const box = document.createElement('div');
   box.className = 'overlay dim';
   box.id = 'other-tab';
-  box.innerHTML = '<div class="panel small"><div class="logo">🗂️</div><h2></h2><p></p><button class="primary"></button></div>';
-  box.querySelector('h2').textContent = t('tab.elsewhere');
-  box.querySelector('p').textContent = t('tab.elsewhereHint');
+  box.innerHTML = '<div class="panel small"><div class="logo"></div><h2></h2><p></p><button class="primary"></button></div>';
+  box.querySelector('.logo').textContent = icon;
+  box.querySelector('h2').textContent = t(title);
+  box.querySelector('p').textContent = t(hint);
   const btn = box.querySelector('button');
   btn.textContent = t('tab.playHere');
   btn.onclick = () => location.reload(); // reloading claims this tab again
   box.style.zIndex = 10000;
   document.body.appendChild(box);
-});
+}
+claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint'); });
+cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel. (ui/emote-wheel.js)

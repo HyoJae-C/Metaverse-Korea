@@ -561,6 +561,8 @@ export const JA = {
   'tab.elsewhere': '別のタブでプレイ中です',
   'tab.elsewhereHint': 'このブラウザの別のタブでAnother Seoulが開いているため、そちらでプレイしています。このタブを閉じるか、ここでプレイしてください。',
   'tab.playHere': 'ここでプレイ',
+  'device.elsewhere': '別の端末でプレイ中です',
+  'device.elsewhereHint': 'このアカウントが別のスマホやパソコンで開かれたため、進行状況はそちらに保存されています。ここでプレイすると最新のセーブを読み込みます。',
   'app.title': 'アナザー・ソウル',
   'app.tagline': 'ブラウザでそのまま韓国の街を歩こう。',
   'lang.choose': '言語を選択してください',

@@ -560,6 +560,8 @@ export const EN = {
   'tab.elsewhere': 'You\'re playing in another tab',
   'tab.elsewhereHint': 'Another Seoul is open in another tab of this browser, so you\'re shown there. Close this tab, or play here instead.',
   'tab.playHere': 'Play here',
+  'device.elsewhere': 'You\'re playing on another device',
+  'device.elsewhereHint': 'This account was opened on another phone or computer, so your progress is saved there now. Play here to load the latest save.',
   'app.title': 'Another Seoul',
   'app.tagline': 'Walk the streets of Korea, right in your browser.',
   'lang.choose': 'Choose your language',

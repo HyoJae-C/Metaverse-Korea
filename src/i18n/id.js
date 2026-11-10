@@ -558,6 +558,8 @@ export const ID = {
   'tab.elsewhere': 'Kamu sedang bermain di tab lain',
   'tab.elsewhereHint': 'Another Seoul terbuka di tab lain pada browser ini, jadi kamu tampil di sana. Tutup tab ini, atau main di sini.',
   'tab.playHere': 'Main di sini',
+  'device.elsewhere': 'Kamu sedang bermain di perangkat lain',
+  'device.elsewhereHint': 'Akun ini dibuka di ponsel atau komputer lain, jadi progresmu sekarang disimpan di sana. Main di sini untuk memuat simpanan terbaru.',
   'app.title': 'Another Seoul',
   'app.tagline': 'Jelajahi jalanan Korea, langsung dari browsermu.',
   'lang.choose': 'Pilih bahasamu',

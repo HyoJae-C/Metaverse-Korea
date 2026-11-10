@@ -558,6 +558,8 @@ export const VI = {
   'tab.elsewhere': 'Bạn đang chơi ở một thẻ khác',
   'tab.elsewhereHint': 'Another Seoul đang mở ở một thẻ khác của trình duyệt này nên bạn đang xuất hiện ở đó. Hãy đóng thẻ này, hoặc chơi ở đây.',
   'tab.playHere': 'Chơi ở đây',
+  'device.elsewhere': 'Bạn đang chơi trên thiết bị khác',
+  'device.elsewhereHint': 'Tài khoản này đã được mở trên điện thoại hoặc máy tính khác nên tiến trình của bạn đang được lưu ở đó. Chơi ở đây để tải bản lưu mới nhất.',
   'app.title': 'Another Seoul',
   'app.tagline': 'Dạo bước trên phố phường Hàn Quốc, ngay trong trình duyệt.',
   'lang.choose': 'Chọn ngôn ngữ',
