@@ -21,6 +21,7 @@ export function createSeoulDalNear(game) {
     },
     act: (p) => dal?.act(p) || null,
     state: (st) => dal?.state(st), // (the flight I'm on, my waiting ticket)
+    camera: (c) => dal?.camera(c), // (after the follow camera: the view from the gondola)
     get busy() { return !!dal?.busy; },
   };
 }

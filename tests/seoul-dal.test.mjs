@@ -73,7 +73,7 @@ test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and tr
   for (let a = 0; a < Math.PI * 2; a += 0.2) for (const r of [0, 4, 8, 10]) {
     assert.ok(!solid.blocked(x + Math.sin(a) * r, z + Math.cos(a) * r, 0.4), `open at r ${r}`);
   }
-  // Clear of the office towers (the balloon, radius 9, goes up 70 m), and no trees on the pad.
+  // Clear of the office towers (the balloon, radius 9, goes up 130 m), and no trees on the pad.
   for (const b of joined.buildings) for (const [px, pz] of b.p) assert.ok(Math.hypot(px - x, pz - z) > 20, 'no tower in the way');
   assert.ok(dal[0].clear >= 12, 'the woods keep clear of the pad');
   // The gate (local +z) faces the river park, the way you come in.

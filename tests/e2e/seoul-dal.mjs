@@ -43,13 +43,13 @@ try {
   let st = await mk('seoulDal');
   if (!st.busy || st.coins !== 75000) throw new Error('not aboard or not paid: ' + JSON.stringify(st));
   console.log('aboard:', await mk('action'), JSON.stringify(st));
-  await at(62); await wait(2500);
+  await at(60); await wait(2500);
   st = await mk('seoulDal');
   if (!(st.y > 15 && st.y < 60)) throw new Error('not rising: ' + JSON.stringify(st));
   if (shotDir) await page.screenshot({ path: `${shotDir}/2-rising.png` });
   await at(100); await wait(3000);
   st = await mk('seoulDal');
-  if (!(st.y > 69)) throw new Error('not at the top: ' + JSON.stringify(st));
+  if (!(st.y > 129)) throw new Error('not at the top: ' + JSON.stringify(st));
   console.log('top:', await mk('action'), JSON.stringify(st));
   // The stamp tour's Seoul Dal stamp: only up here, once (🪙10,000).
   if (!(await mk('action'))?.startsWith('🔖')) throw new Error('no stamp at the top: ' + (await mk('action')));
