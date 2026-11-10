@@ -102,7 +102,7 @@ import { Zones } from './core/zones.js';
 import { buildInterior, needsDome, needsPark, needsZoo, roomBox, setDomeBuilder, setParkBuilder, setZooBuilders } from './core/interior.js';
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
-import { ShopUI, Cart, coinsFor, goodsKind, itemSoon } from './ui/shop-ui.js';
+import { ShopUI, Cart, coinsFor, goodsKind, itemSoon, shownStores } from './ui/shop-ui.js';
 import { hanbokById, isHanbokModel } from './data/hanbok.js';
 import { timeLeft, isRenting } from './core/hanbok-rental.js';
 import { GiftBox, parseGift } from './core/gifts.js';
@@ -766,7 +766,7 @@ const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // par
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
-const storefronts = new Storefronts(scene, storeData, map, region.center, collision);
+const storefronts = new Storefronts(scene, shownStores(storeData), map, region.center, collision);
 // Empty shop lots get ad posters (region.json "adPosters" books a spot).
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
@@ -860,7 +860,7 @@ if (square) {
     welcomeNpc = mascotGuide(wx, wz, Math.atan2(firstStop.x - wx, firstStop.z - wz), t('quest.welcomeGuide'));
   }
   const lang = getLanguage();
-  billboard = new Billboard(storeData.filter((s) => s.category !== 'home').map((s) => ({
+  billboard = new Billboard(shownStores(storeData).filter((s) => s.category !== 'home').map((s) => ({
     title: s.name.ko, sub: localName(s.tagline || {}, lang), bg: s.colors.sign, tag: t('quest.adTag'),
   })), { label: '게임 관련 및 기타 문의', icon: '📷', handle: 'Instagram @hyojae.t' });
   // Raised decks (the station) you can walk under, but a tall screen can't

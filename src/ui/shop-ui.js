@@ -58,8 +58,14 @@ export const usable = (product) => !!product && !!(product.outfit || product.ite
 // stationery, records…). Workshops stay open for their activity.
 const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit || p.item || p.rent);
 const baseHow = (store) => (store?.category === 'restaurant' ? 'table' : store?.takeaway || ['cafe', 'bar', 'club'].includes(store?.category) ? 'counter' : 'buy');
-const onlyCarried = (store) => !store.workshop && !store.perfumery && baseHow(store) === 'buy' && store.products?.length > 0 && !store.products.some(usable);
+const onlyCarried = (store) => !store.workshop && !store.craft && !store.perfumery && baseHow(store) === 'buy' && store.products?.length > 0 && !store.products.some(usable);
 export const comingSoon = (store) => !!store && ((store.category === 'fashion' || store.category === 'popup') && !sellsOutfits(store) && !store.perfumery || onlyCarried(store));
+// Coming-soon shops are hidden from the street for now (Yozi, 2026-11):
+// no front, sign, door, map pin, mission or billboard ad, so Seongsu draws
+// less. Their data stays in stores.json (empty-lot posters still treat the
+// spot as taken). Set to false to bring them all back.
+export const HIDE_COMING_SOON = true;
+export const shownStores = (stores) => (HIDE_COMING_SOON ? stores.filter((s) => !comingSoon(s)) : stores);
 // How a shop sells: 'table' (restaurants), 'counter' (cafés, bars, clubs),
 // 'soon' (getting ready) or 'buy' (take it home in a shopping bag).
 export function howToGet(store) {
