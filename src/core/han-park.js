@@ -12,7 +12,7 @@
 // is set on the street at the landmark's spot and turn.
 import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
-import { productModel } from './interior.js';
+import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
 import { luckySpot } from './fishing.js';
 import { makeDuckBoat, DUCK_BOATS, RAMEN_SIGN, FISH_SIGN, FISHING_OK, LUCKY_SIGN, SPOT_COLOR, LUCKY_COLOR } from './park.js';
