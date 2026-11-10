@@ -38,7 +38,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { folkBlockers } from '../src/data/folk-yard.js';
+import { folkBlockers, FOLK_GAMES_ON } from '../src/data/folk-yard.js';
 import { r1, name as N4, town, nearestOn, pointAt, lengthOf, strips, lineDist, inPoly } from './street-rows.mjs';
 import { SOUTH as CG_SOUTH, NORTH as CG_NORTH, zAt } from './cheonggyecheon-line.mjs';
 
@@ -360,7 +360,7 @@ const map = {
   landmarks: landmarks.map((l) => (l.type === 'wall' ? { ...l, p: L(l.p) } : Lx(l))),
 };
 // The folk games' solid props, round the yard as the game places them.
-map.blockers.push(...folkBlockers(map.landmarks.find((l) => l.type === 'folkyard')));
+if (FOLK_GAMES_ON) map.blockers.push(...folkBlockers(map.landmarks.find((l) => l.type === 'folkyard'))); // (hidden for now: no solid props)
 // For the overlap check: the main part in strips (its north edge follows
 // the streets), and the three parts of their own.
 const inMain = (p) => p.every(([x, z]) => x + ox >= EDGE.west - 6 && x + ox <= EDGE.east + 3 && z + oz > -700 && z + oz < -400);
