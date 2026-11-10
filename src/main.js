@@ -49,7 +49,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow, FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-fan.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
@@ -806,7 +806,11 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
 // (core/palace-show.js, core/bukcheong.js).
-const palaceShow = palaceAt ? new PalaceShow(scene, {
+// The performers download when you come within PALACE_LOAD m of the palace
+// (loadPalaceShow, from the frame loop).
+let palaceShow = null, palaceShowAsked = false;
+const PALACE_LOAD = 700;
+const makePalaceShow = (PalaceShow) => new PalaceShow(scene, {
   fan: fanAt,
   procession: palaceAt, // the king's walk round the east lawn (ROYAL_ROUTE)
   visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
@@ -815,7 +819,18 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   guards: [[palaceAt[0] - 6.5, palaceAt[1] + 6, 0], [palaceAt[0] + 6.5, palaceAt[1] + 6, 0]], // either side of Gwanghwamun's arches
   inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
-}) : null;
+});
+function loadPalaceShow(p) {
+  if (!palaceAt || palaceShowAsked || Math.hypot(p.x - palaceAt[0], p.z - palaceAt[1]) > PALACE_LOAD) return;
+  palaceShowAsked = true;
+  import('./core/palace-show.js').then(({ PalaceShow }) => {
+    const before = new Set(scene.children);
+    palaceShow = makePalaceShow(PalaceShow);
+    if (palaceShow.rope?.rig) farCull.add(palaceShow.rope.rig);
+    const added = { children: scene.children.filter((o) => !before.has(o)) };
+    for (const e of enclosures) e.collect([added]); // (its visitors inside the wall hide from outside it, as at start)
+  }, () => { palaceShowAsked = false; });
+}
 // A pungmul troupe of 19 on Olympic Park's Peace Plaza, between the Peace
 // Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
 const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
@@ -4856,7 +4871,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court, palaceShow?.rope?.rig], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -7132,7 +7147,7 @@ renderer.setAnimationLoop((now) => {
   liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
