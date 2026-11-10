@@ -1,15 +1,26 @@
 // Itaewon clubs: each plays its genre's playlist (core/club-music.js). The
 // songs run on the clock, so everyone inside hears the same song at the same
-// moment. Our own background music pauses while inside.
-import { CLUB_GENRES, CLUB_TRACKS, songSeconds } from '../data/club-tracks.js';
-import { ClubMusic } from '../core/club-music.js';
+// moment. Our own background music pauses while inside. The songs and the
+// player download at the first club door.
 import { L, fmt } from '../ui/pocha-ui.js';
 import { getLanguage, localName } from '../core/i18n.js';
 import { setBeat } from '../core/model-pack.js';
 
 export function createClubs(game) {
   const { $, applyMusicBtn, music, shop } = game;
-  const clubMusic = new ClubMusic();
+  let clubMusic = null, tracks = null; // (core/club-music.js, data/club-tracks.js: at the first club)
+  const loadMusic = () => Promise.all([import('../core/club-music.js'), import('../data/club-tracks.js')]).then(([m, t]) => {
+    if (clubMusic) return clubMusic;
+    tracks = t;
+    clubMusic = new m.ClubMusic();
+    clubMusic.onSong = (i) => {
+      if (!clubState) return;
+      const tr = tracks.CLUB_TRACKS[clubState.genre][i];
+      shop.toast('🎧 ' + localName(tr.name, getLanguage()));
+      if (!$('lp-panel').hidden && $('lp-panel').dataset.club) openClubPanel();
+    };
+    return clubMusic;
+  });
   let clubState = null; // { wasOn, genre } while inside a club
   const CLUB_TEXT = {
     open: { en: 'Playlist', ko: '플레이리스트', ja: 'プレイリスト', zh: '播放列表' },
@@ -20,34 +31,30 @@ export function createClubs(game) {
     left: { en: '{t} left', ko: '{t} 남음', ja: '残り{t}', zh: '剩余{t}' },
   };
   const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-  clubMusic.onSong = (i) => {
-    if (!clubState) return;
-    const tr = CLUB_TRACKS[clubState.genre][i];
-    shop.toast('🎧 ' + localName(tr.name, getLanguage()));
-    if (!$('lp-panel').hidden && $('lp-panel').dataset.club) openClubPanel();
-  };
   async function enterClub(genre) {
     clubState = { wasOn: music.on, genre };
     if (music.on) { await music.setOn(false); applyMusicBtn(); }
-    if (clubState?.genre === genre) await clubMusic.start(genre);
+    const cm = await loadMusic().catch(() => null); // (offline for a moment: a quiet club)
+    if (cm && clubState?.genre === genre) await cm.start(genre);
   }
   async function leaveClub() {
     if (!clubState) return;
     const { wasOn } = clubState;
     clubState = null;
-    clubMusic.stop();
+    clubMusic?.stop();
     $('lp-panel').hidden = true;
     delete $('lp-panel').dataset.club;
     if (wasOn && !music.on) { await music.setOn(true); applyMusicBtn(); }
   }
   function clubPulse() {
-    if (!clubState || !clubMusic.on) return null;
+    if (!clubState || !clubMusic?.on) return null;
     const p = clubMusic.pulse();
     return p && { ...p, title: localName(clubMusic.song.name, getLanguage()) };
   }
   setBeat(() => clubPulse()); // dancers move to the club's beat
   function openClubPanel() {
-    if (!clubState) return;
+    if (!clubState || !tracks) return;
+    const { CLUB_GENRES, CLUB_TRACKS, songSeconds } = tracks;
     const root = $('lp-panel');
     root.dataset.club = '1';
     const lang = getLanguage();
