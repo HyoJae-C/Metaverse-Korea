@@ -30,6 +30,7 @@ const read = (f) => JSON.parse(readFileSync(path.join(R, f), 'utf8'));
 export const GU = ['seocho', 'gangnam', 'dongjak']; // (Dongjak: its empty bank was reachable from Banpo past Seocho's edge)
 export const CELL = 10; // m
 export const MARGIN = 30; // m of open land around anything built
+export const BIKE_MARGIN = 6; // m each side of a bike path (scripts/build-bike-paths.mjs): it runs through the closed land, open
 
 export function buildClosed({ region, seoul, maps, extraPoints = [] }) {
   const parts = region.districts.map((d) => ({ ...d, map: maps[d.map] }));
@@ -69,7 +70,7 @@ export function buildClosed({ region, seoul, maps, extraPoints = [] }) {
       for (let s = 0; s <= steps; s++) stamp(ax + ((bx - ax) * s) / steps, az + ((bz - az) * s) / steps, r);
     }
   };
-  for (const r of map.roads) along(r.p, MARGIN + (r.w || 6) / 2, false);
+  for (const r of map.roads) along(r.p, (r.bike ? BIKE_MARGIN : MARGIN) + (r.w || 6) / 2, false);
   for (const r of map.rail || []) along(r.p, MARGIN, false);
   for (const p of land) along(p, MARGIN, true);
   for (const p of map.pois) stamp(p.x, p.z, MARGIN);

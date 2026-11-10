@@ -79,7 +79,7 @@ function draw() {
   g.lineCap = g.lineJoin = 'round';
   for (const r of map.roads) {
     poly(r.p);
-    g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
+    g.strokeStyle = r.bike ? '#d9826f' : r.k === 'walk' ? '#e6dcc8' : '#ffffff';
     g.lineWidth = Math.max(1, r.w * view.scale);
     g.stroke();
   }
