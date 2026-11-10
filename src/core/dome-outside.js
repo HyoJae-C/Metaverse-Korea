@@ -37,9 +37,11 @@ export function domeOutside(g, l) {
     rib.position.y = h;
     g.add(rib);
   }
-  // The entrance: a glass front and the sign above it.
-  const doorM = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 1.2), mat('#4f86c6'));
-  doorM.position.set(0, 3, r + 0.8);
+  // The entrance: a glass front and the sign above it. Both shrink with a
+  // small (1/4 scale) dome, but never below a door a player fits through.
+  const k = Math.min(1, r / 50), doorW = Math.max(7, 12 * k), doorH = Math.max(4.5, 6 * k);
+  const doorM = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 1.2), mat('#4f86c6'));
+  doorM.position.set(0, doorH / 2, r + 0.8);
   g.add(doorM);
   const sign = canvasTex(1024, 256, (x, w) => {
     x.fillStyle = '#1f4f8f'; x.fillRect(0, 0, w, 256);
@@ -47,12 +49,13 @@ export function domeOutside(g, l) {
     x.font = `900 100px ${FONT}`; x.fillText('서울 어나더 돔', 512, 92);
     x.font = '800 60px system-ui, sans-serif'; x.fillText('SEOUL ANOTHER DOME', 512, 196);
   });
-  const s = new THREE.Mesh(new THREE.PlaneGeometry(18, 4.5), new THREE.MeshBasicMaterial({ map: sign }));
-  s.position.set(0, h - 3, r + 1.7);
+  const signW = Math.max(12, 18 * k), signH = signW / 4;
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(signW, signH), new THREE.MeshBasicMaterial({ map: sign }));
+  s.position.set(0, Math.max(h - 3, doorH + 0.4 + signH / 2), r + 1.7);
   g.add(s);
   // Team flags along the front.
   TEAMS.forEach((team, i) => {
-    const a = (i - 3.5) * 0.09;
+    const a = (i - 3.5) * Math.min(0.14, 4.5 / (r + 4)); // about 4.5 m apart
     const p = polar(r + 4, a);
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 9, 6), mat('#d9dde3'));
     pole.position.set(p.x, 4.5, p.z);
