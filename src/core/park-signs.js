@@ -40,7 +40,7 @@ function draw(l, lang) {
   x.fillText(title, c.width / 2, 62, c.width - 60);
   x.fillStyle = '#7cb36a'; x.fillRect(60, 104, c.width - 120, 5);
   x.fillStyle = '#3b3128'; x.textAlign = 'left'; x.textBaseline = 'top';
-  let size = 32, lines;
+  let size = l.fs || 32, lines; // (l.fs: a bigger start for a short text)
   for (; size >= 20; size -= 2) { // shrink until the description fits
     x.font = `500 ${size}px ${font}`;
     lines = wrap(x, text, c.width - 90);

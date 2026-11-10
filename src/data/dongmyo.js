@@ -26,14 +26,17 @@ export const DONGMYO = {
       ...[[-866, -789.3], [-858, -792.2]].map(([x, z], i) => ({ at: [x, z], ry: 0.34, c: 5 + i })),
       ...[[-862, -755.5], [-852, -755.5], [-842, -755.5]].map(([x, z], i) => ({ at: [x, z], ry: Math.PI, c: 7 + i })),
     ],
+    // The market's board on the plaza's middle line, north of the mats,
+    // reading south into the market; 1.4x a park sign with a short text so
+    // it reads from the mats (Yozi 2026-11-11).
     sign: {
-      at: [-846, -796.5], ry: Math.PI + 0.34,
+      at: [-853, -784.5], ry: 0, sc: 1.4, fs: 46,
       title: N('감자마켓', 'Potato Market', 'ポテトマーケット', '土豆市场'),
       text: {
-        en: 'Dongmyo flea market: spread a mat, lay out clothes you bought, pick your price. Others can buy while you are away.',
-        ko: '동묘 벼룩시장: 돗자리를 펴고 내가 산 옷을 올려 값을 정하세요. 내가 없어도 다른 사람이 살 수 있어요.',
-        ja: '東廟の蚤の市：シートを広げて、買った服を並べて値段を決めよう。留守の間も他の人が買えます。',
-        zh: '东庙跳蚤市场：铺开垫子，摆上你买的衣服，自己定价。你不在时别人也能买。',
+        en: 'Spread a mat and sell clothes you bought. They sell even while you are away.',
+        ko: '돗자리를 펴고 내가 산 옷을 팔아요. 내가 없어도 팔려요.',
+        ja: 'シートを広げて、買った服を売ろう。留守の間も売れます。',
+        zh: '铺开垫子，卖你买的衣服。你不在时也能卖出。',
       },
     },
   },
