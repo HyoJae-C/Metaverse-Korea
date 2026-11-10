@@ -45,7 +45,11 @@ export function createLedger(game) {
     }
     $('ledger-list').replaceChildren(...rows);
   }
-  $('ledger-btn').onclick = () => { $('wallet-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
+  const open = () => { $('wallet-panel').hidden = true; $('notes-panel').hidden = true; renderLedger(); $('ledger-panel').hidden = false; };
+  // Two doors: the wallet (next to the balance) and the notebook, where
+  // people look for their other books.
+  $('ledger-btn').onclick = open;
+  $('notes-ledger-btn').onclick = open;
   $('ledger-close').onclick = () => { $('ledger-panel').hidden = true; };
   wallet.onChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });
   onLanguageChange(() => { if (!$('ledger-panel').hidden) renderLedger(); });

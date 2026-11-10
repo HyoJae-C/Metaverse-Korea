@@ -51,6 +51,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { createPalaceView } from './game/palace-view.js';
+import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
@@ -195,6 +196,7 @@ import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createRoomCache } from './game/room-cache.js';
+import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -202,7 +204,7 @@ import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { LocalFriends } from './core/friends.js';
-import { SubwayEntrances, VENDING_DRINKS, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
@@ -263,7 +265,12 @@ function reportProblem(msg) {
     errBox.className = 'err-box';
     document.body.append(errBox);
   }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  // In words a player understands, in their language; the technical line
+  // stays underneath, small, for a screenshot to the operator.
+  const b = document.createElement('b'), small = document.createElement('small');
+  b.textContent = '⚠️ ' + t('error.soft');
+  small.textContent = String(msg).slice(0, 300);
+  errBox.replaceChildren(b, small);
   errBox.hidden = false;
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
@@ -726,7 +733,8 @@ sun.shadow.bias = -0.0005;
 scene.add(sun, sun.target);
 
 // Subway stations (region.json "subway.stations"): stair exits cut into the ground.
-const subwayStations = (region.subway?.stations || []).filter((st) => st.exits?.length);
+// In the order the trains run round them: one loop following the map (core/subway.js loopOrder).
+const subwayStations = loopOrder((region.subway?.stations || []).filter((st) => st.exits?.length));
 const allExits = subwayStations.flatMap((st) => st.exits);
 // Sunken streams (map "streams", core/stream.js): on the street the channel is
 // a wall that only bridges cross; down by the water you use streamCollision.
@@ -2337,6 +2345,9 @@ const interiorCache = createRoomCache({
 const roomFor = (store) => interiorCache.room(store);
 // Walking into a room not built yet: a game tip covers the build (game/tips.js).
 const roomTips = createRoomTips({ $, enterStore: (it) => enterStore(it), built: (store) => !!interiorCache.get(store.id) });
+// Textures not drawn for a minute leave the GPU (game/gpu-janitor.js): far
+// districts and kept rooms stop holding a phone's memory.
+const gpuJanitor = createGpuJanitor({ roots: () => [scene, ...[...interiorCache.values()].map((b) => b.scene)] });
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -3259,6 +3270,34 @@ function openVending() {
   root.replaceChildren(x, el('strong', 'wallet-title', '🥤 ' + L(VENDING_TEXT.open)), el('p', 'fine', L(VENDING_TEXT.note)), list);
   root.hidden = false;
 }
+// The route map pillar in a station: walk up to it to see the map up close.
+function openRouteMap() {
+  const rm = interior?.subway?.routeMap;
+  if (!rm) return;
+  const root = $('route-panel');
+  const x = document.createElement('button');
+  x.className = 'sheet-x'; x.textContent = '✕';
+  x.onclick = () => { root.hidden = true; };
+  const title = document.createElement('strong');
+  title.className = 'wallet-title';
+  title.textContent = '🗺️ ' + L(ROUTE_MAP_TEXT.title);
+  const img = document.createElement('img');
+  img.src = rm.canvas.toDataURL();
+  img.alt = L(ROUTE_MAP_TEXT.title);
+  // On a narrow phone the map is shown larger and scrolls sideways, starting
+  // at your station.
+  const wrap = document.createElement('div');
+  wrap.className = 'route-scroll';
+  wrap.append(img);
+  root.replaceChildren(x, title, wrap);
+  root.hidden = false;
+  const fit = () => { if (rm.here && wrap.scrollWidth > wrap.clientWidth) wrap.scrollLeft = rm.here[0] / ROUTE_MAP.w * img.clientWidth - wrap.clientWidth / 2; };
+  if (img.complete) fit(); else img.onload = fit;
+}
+const nearRouteMap = (p) => {
+  const rm = interior?.subway?.routeMap;
+  return rm && Math.abs(p.x - rm.x) < 1.8 && Math.abs(p.z - rm.z) < 1.4;
+};
 function openMenu() {
   const root = $('lp-panel');
   delete root.dataset.club;
@@ -3581,7 +3620,7 @@ function checkLowCoins() {
     ]);
   }, 1500); // after the purchase toast
 }
-// Action button (and E / Enter key).
+// Action button (and E / Space key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
@@ -3728,7 +3767,10 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
+  // Enter opens the chat, like T and / (as in most games); E and Space act.
+  if (e.code === 'Enter' && !e.repeat && !(e.target instanceof HTMLButtonElement) && !spaceBusy()
+    && !document.querySelector('#hud .sheet:not([hidden])') && !$('chat-btn').hidden) { e.preventDefault(); $('chat-btn').click(); return; }
+  if (e.code === 'KeyE' && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
   // B for Bag: closes it if open; opens it only when no game or sheet is
   // taking keys and the bag button is on screen.
@@ -3737,7 +3779,8 @@ addEventListener('keydown', (e) => {
     else if (!spaceBusy() && $('bag-btn').offsetParent) bagUi.show();
   }
   if (e.code === 'Escape') {
-    if (!$('map-panel').hidden) mapView.hide();
+    if (!$('route-panel').hidden) $('route-panel').hidden = true;
+    else if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
     else if (loveLockUi.open) loveLockUi.close();
@@ -4725,10 +4768,13 @@ function palaceAct(p) {
   return null;
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
+let anotherTower;
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Another Tower's top)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   palaceView.tick(p, dt);
+  if (mode === 'street') towerLook.tick(cam, p, dt);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
@@ -6213,6 +6259,7 @@ const matSitAct = (seat) => ({ key: 'sit-mat', label: '🧺 ' + L(MAT_TEXT.sit),
 const lookAct = (pr) => ({ key: 'look:' + pr.product.id, label: '👀 ' + t('shop.look', { name: localName(pr.product.name, getLanguage()) }), run: () => shop.openProduct(pr.product) });
 function updateAction(p, tSec) {
   let next = null, door = null;
+  if (!$('route-panel').hidden && !(mode !== 'street' && nearRouteMap(p))) $('route-panel').hidden = true; // walked away
   if (mode === 'street') {
     const it = door = storefronts.nearby(p.x, p.z, tSec);
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
@@ -6271,6 +6318,8 @@ function updateAction(p, tSec) {
     } else if (interior.subway && !seated && p.x > GATE_X + 0.5 && Math.abs(p.z) > DOOR_Z - 2.6 && interior.subway.doorsOpen(p.z >= 0 ? 0 : 1) && stationStores.length > 1) {
       const t = p.z >= 0 ? 0 : 1, to = stationStores[stationIndex()].towards?.[t === 0 ? 'up' : 'down'];
       next = { key: 'metro-board:' + t, label: `🚇 ${L(METRO_TEXT.board)} · ${L(t === 0 ? METRO_TEXT.up : METRO_TEXT.down)} → ${to ? localName(to, getLanguage()) : ''}`, run: () => boardTrain(t, interior.subway.doorsOpen(t) || 0.5) };
+    } else if (interior.subway && !seated && nearRouteMap(p)) {
+      next = { key: 'route-map', label: '🗺️ ' + L(ROUTE_MAP_TEXT.view), run: openRouteMap };
     } else if (interior.subway && !seated && interior.subway.vending?.some((v) => Math.hypot(p.x - v.x, p.z - v.z) < 1.3)) {
       next = { key: 'vending', label: '🥤 ' + L(VENDING_TEXT.open), run: openVending };
     } else if (interior.subway && !seated && gateAt(p.x, p.z)) {
@@ -6632,7 +6681,7 @@ renderer.setAnimationLoop((now) => {
   manualCamT -= dt;
   if (!firstPerson.look(look)) {
     cam.yaw -= look.dx * 0.006;
-    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : (mode === 'street' && towerLook.min(me.root.position)) || (skyLook() ? -0.12 : 0.12), 1.25);
     cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, interior?.zooHall ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
   }
 
@@ -6795,7 +6844,7 @@ renderer.setAnimationLoop((now) => {
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Another Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -7071,6 +7120,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
+    notice: (n) => chat.debugNotice(n),
     // Panels downloaded on first use (core/lazy-panel.js): __mk.panel('academy').show()
     panel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi, academy: academyUi, book: bookUi, sauna: saunaUi, ramen: ramenUi, order: orderUi, job: jobUi, photo: photoUi, claw: clawUi })[k],
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
@@ -7090,6 +7140,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
