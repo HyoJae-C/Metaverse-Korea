@@ -163,17 +163,29 @@ lists **districts** joined into one map (`src/core/districts.js`):
 
 ## Yeonnam-dong and Mangwon-dong
 
-Both are drawn by `scripts/build-mapo.mjs` (rows of small buildings along
-the streets, like Seongsu) and sit in Mapo-gu next to Hongdae. Yeonnam's
-Gyeongui Line Forest Park path runs straight on from Hongdae Walking Street.
+Both are drawn by `scripts/build-mapo.mjs` and sit in Mapo-gu next to
+Hongdae: one row of buildings along each street and the blocks behind left
+open, like Seongsu (Yozi, 2026-11-10: filling the blocks with houses was too
+dense; Mangwon went from 279 buildings to 89).
+
+Yeonnam (`scripts/build-yeonnam.mjs`, called by build-mapo) is at 1/4 on its
+real place, north-west of Yanghwa-ro: Donggyo-ro, Yeonnam-ro, Seongmisan-ro,
+Worldcup-buk-ro, Yeonhui-ro and Jandari-ro from `scripts/data/hongdae-osm.json`
+(OpenStreetMap, within 0.7 m). The Gyeongui Line Forest Park ("Yeontral
+Park") runs on its real line, 32° west of north, from Hongik Univ. Station's
+exit 3 at Yanghwa-ro to past Seongmisan-ro (the anchor, no nudge). It is
+drawn `PARK_W` = 16 m wide, twice its real width at 1/4 (about 8 m): Yozi
+chose it so there is room to picnic; change `PARK_W` to redraw it. Shops face
+the park from both sides; the old rails lie in the grass between the
+streets that cross it.
 
 Mangwon (`scripts/build-mangwon.mjs`, called by build-mapo) is at 1/4 on its
 real place: its streets (Worldcup-ro, Poeun-ro, Mangwon-ro, Huiujeong-ro,
 Gangbyeon-buk-ro and the lanes, from `scripts/data/mangwon-osm.json`,
 OpenStreetMap), Mangwon Station's exits on Worldcup-ro, the market alley on
 its real line, and the Han's bank, which is straight here (within 3 m) and
-runs south-east at 42°. Buildings fill the real blocks between Seongsan-ro
-and x -3197 (Yeonnam and Hongdae are east of that). It has Mangwon Market
+runs south-east at 42°. Buildings stand along the main streets between
+Seongsan-ro and x -3197 (Yeonnam and Hongdae are east of that). It has Mangwon Market
 under an arcade roof, Poeun-ro (Mangridan-gil) and Mangwon Han River Park
 along its south edge, laid straight on the bank
 (the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
@@ -186,21 +198,35 @@ the shops it lists in `SHOPS`, so run it again after moving a district.
 ## Hongdae (Mapo-gu)
 
 `node scripts/build-hongdae.mjs` draws Hongdae (`districts/hongdae.json`) at
-a quarter of the real size and puts its shops on their lots. As in Seoul,
-from north to south: Yeonnam's Gyeongui Line Forest Park ends at Yanghwa-ro,
-Hongik Univ. Station's exits are on Yanghwa-ro, and Hongdae Walking Street
-starts across the road and runs south past the busking zone (about 85 m from
-the station here, about 400 m in Seoul). The district is about 230 x 180 m
-(it was 400 x 360 m, drawn full size, until it was redone at 1/4).
+1/4 on its real streets and puts its shops on their lots. The streets are
+OpenStreetMap's (`scripts/data/hongdae-osm.json`, within 0.7 m; Yanghwa-ro is
+drawn as one road on the line between its two carriageways, within 2.7 m of
+each): Yanghwa-ro running south-west from Hongik Univ. Station to Hapjeong,
+Hongik-ro at right angles to it, Hongdae Walking Street (Eoulmadang-ro)
+leaving Hongik-ro south-south-west past the busking zone, Wausan-ro,
+Jandari-ro, and Dongmak-ro from Hapjeong to Sangsu Station. Hongdae is
+south-east of Yanghwa-ro; Yeonnam is north-west of it.
 
-- **The busking zone is the origin** (the anchor in `region.json`). The
-  stage, its low steps and the open plaza round them (44 x 76 m) keep their
-  full size: the crowd is what the street is for.
-- Shops stay in their groups: the info centre and salons, tarot cafés and
-  clothes round the plaza, the perfume alley east of it, Korean restaurants
-  facing each other on Donggyo-ro, the sauna, gym, climbing wall and yoga
-  down the walking street. `SHOPS` in the script says which lot each takes.
+- **The busking zone keeps its game size**: the stage, its low steps and an
+  open plaza round them (29 x 36 m) on the walking street, 11 m from the
+  anchor (the zone's real place). The zones are not turned, so the plaza is
+  square to the map while the street crosses it at an angle.
+- Made up, inside the real blocks and in line with them: the walking
+  street's last 33 m down to Jandari-ro and on to Dongmak-ro, the perfume
+  alley east of it, and three lanes at right angles to Yanghwa-ro. Dongmak-ro's
+  last 100 m to Sangsu Station is drawn straight (the export stops short).
+- Hongik Univ. Station: exit 9 on the Hongdae side (5.6 m from the real one,
+  moved out onto the pavement) and exit 3 at the forest park's south end (at
+  the real one). `stationExits()` in the script works them out.
+- Shops stay in their groups (`GROUPS` in the script: each group takes the
+  free lots of its rows in order): the info centre and name tags at the top
+  of Hongik-ro, salons, tarot cafés and clothes round the plaza, the perfume
+  alley, animal cafés and desserts down the walking street, the sauna, gym,
+  climbing wall and yoga on Wausan-ro, Korean restaurants on Jandari-ro.
 - Run the script again after changing the map; it rewrites the shops' `at`.
+- `meta.parts` (25 m strips) let Hongdae and Yeonnam meet along the diagonal
+  Yanghwa-ro without their boxes overlapping (`strips()` in
+  `scripts/street-rows.mjs`, the helpers both scripts share).
 
 ## Ttukseom Han River Park (Seongsu)
 
