@@ -272,8 +272,9 @@ export function buildHeron(g, s, F = null) {
   const seed = typeof s.heron === 'object' ? s.heron.seed || 1 : 1;
   const m = makeHeron();
   m.userData.mover = true;
+  m.userData.farKeep = true; // (it flies up and down the stream: FarCull hides it with the whole stream instead)
   g.add(m);
-  return () => {
+  const tick = () => {
     const t = Date.now() / 1000, h = heronAt(s, t, seed);
     poseHeron(m, h, t);
     if (F) {
@@ -282,4 +283,6 @@ export function buildHeron(g, s, F = null) {
       m.rotation.y = h.yaw - F.angAt(h.u);
     }
   };
+  tick(); // (on the stream from the start, not at the map's origin: FarCull measures the stream's box when the game starts)
+  return tick;
 }

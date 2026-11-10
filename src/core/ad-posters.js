@@ -17,6 +17,7 @@
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { canvasTex as canvasTexture } from './three-kit.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
@@ -109,17 +110,30 @@ const SMALL = [
   ['#11a37f', '#fff', 'POP-UP', 'SOON'],
   ['#f4f1ea', '#e94e77', 'YOUR', 'BRAND'],
 ];
-let smallMats = null;
-function smallMaterials() {
-  return (smallMats ||= SMALL.map(([bg, fg, a, b]) => new THREE.MeshLambertMaterial({
-    map: canvasTex(128, 192, (g, W, H) => {
-      g.fillStyle = bg; g.fillRect(0, 0, W, H);
-      g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.font = `900 ${a.length > 4 ? 30 : 44}px ${FONT}`; g.fillText(a, W / 2, H * 0.36);
-      g.font = `800 ${b.length > 5 ? 22 : 34}px ${FONT}`; g.fillText(b, W / 2, H * 0.6);
-      g.fillRect(W * 0.2, H * 0.8, W * 0.6, 4);
+// All six on one sheet (3 across, 2 down, 128 × 192 each), so a shutter's
+// row of small posters is one mesh (one draw call) instead of one each.
+let smallSheet = null;
+function smallMaterial() {
+  return (smallSheet ||= new THREE.MeshLambertMaterial({
+    map: canvasTex(384, 384, (g) => {
+      SMALL.forEach(([bg, fg, a, b], i) => {
+        const W = 128, H = 192, x0 = (i % 3) * W, y0 = Math.floor(i / 3) * H;
+        g.fillStyle = bg; g.fillRect(x0, y0, W, H);
+        g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = `900 ${a.length > 4 ? 30 : 44}px ${FONT}`; g.fillText(a, x0 + W / 2, y0 + H * 0.36);
+        g.font = `800 ${b.length > 5 ? 22 : 34}px ${FONT}`; g.fillText(b, x0 + W / 2, y0 + H * 0.6);
+        g.fillRect(x0 + W * 0.2, y0 + H * 0.8, W * 0.6, 4);
+      });
     }),
-  })));
+  }));
+}
+// A small poster's plane, its picture cut from the sheet (design i).
+const _pm = new THREE.Matrix4(), _pq = new THREE.Quaternion(), _pz = new THREE.Vector3(0, 0, 1), _pv = new THREE.Vector3(), _ps = new THREE.Vector3(1, 1, 1);
+function smallPoster(i, x, y, z, rz) {
+  const geo = new THREE.PlaneGeometry(0.9, 1.3);
+  const uv = geo.attributes.uv, col = i % 3, row = Math.floor(i / 3);
+  for (let k = 0; k < uv.count; k++) uv.setXY(k, (col + uv.getX(k)) / 3, 1 - (row + 1 - uv.getY(k)) / 2);
+  return geo.applyMatrix4(_pm.compose(_pv.set(x, y, z), _pq.setFromAxisAngle(_pz, rz), _ps));
 }
 
 // The photo's source in the poster's corner, small, like a magazine photo
@@ -183,10 +197,9 @@ export class AdPosters {
     this.root = new THREE.Group();
     this.spots = emptyLots(buildings, stores.map((s) => placeOf(s, center, latLonToLocal)));
     this.posters = {}; // spot id -> the big poster mesh (for setPoster)
-    const smalls = smallMaterials();
+    const smalls = smallMaterial();
     const shutter = shutterMat();
     shutter.map.wrapS = shutter.map.wrapT = THREE.RepeatWrapping;
-    const small = new THREE.PlaneGeometry(0.9, 1.3);
     this.spots.forEach(({ id, b, front }, k) => {
       const g = new THREE.Group();
       g.position.set(front.x + front.nx * 0.06, 0, front.z + front.nz * 0.06);
@@ -199,12 +212,10 @@ export class AdPosters {
       sm.position.y = sh / 2;
       g.add(sm);
       const n = Math.max(3, Math.floor(sw / 1.25));
-      for (let i = 0; i < n; i++) {
-        const p = new THREE.Mesh(small, smalls[(i + k * 3) % smalls.length]);
-        p.position.set(-sw / 2 + (i + 0.5) * (sw / n), 1.45 + ((i * 7 + k) % 3) * 0.12, 0.02);
-        p.rotation.z = (((i * 13 + k * 5) % 7) - 3) * 0.02;
-        g.add(p);
-      }
+      const parts = [];
+      for (let i = 0; i < n; i++) parts.push(smallPoster((i + k * 3) % SMALL.length, -sw / 2 + (i + 0.5) * (sw / n), 1.45 + ((i * 7 + k) % 3) * 0.12, 0.02, (((i * 13 + k * 5) % 7) - 3) * 0.02));
+      g.add(new THREE.Mesh(mergeGeometries(parts), smalls));
+      for (const q of parts) q.dispose();
       // The big poster above the shutter.
       const top = (b.h || 8) - 0.6, bottom = sh + 0.6;
       const bw = Math.min(wide - 2, 10, ((top - bottom) / 0.62));

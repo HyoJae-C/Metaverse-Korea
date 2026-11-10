@@ -438,29 +438,45 @@ function greenhouse(g, l) {
   });
   g.add(leaves, fronds, blooms);
   // Butterflies: two wings each, flapping, on slow looping paths inside.
+  // One instanced mesh for all the wings and one for the bodies (two draw
+  // calls, not 42); each frame a stand-in group per butterfly is posed and
+  // its wings' matrices copied over.
   const wingGeo = new THREE.CircleGeometry(0.16, 6).translate(0.15, 0, 0);
   const colors = ['#ffb627', '#5ec8f2', '#ff6fae', '#ffffff', '#b38cf2', '#ff8a3d'];
+  const N = 14;
+  const wingMesh = new THREE.InstancedMesh(wingGeo, new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide }), N * 2);
+  const bodyMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.04, 0.04, 0.2), mat('#2b2230'), N);
+  wingMesh.userData.noShadow = bodyMesh.userData.noShadow = true;
+  wingMesh.userData.noSplit = bodyMesh.userData.noSplit = true;
   const flock = [];
-  for (let i = 0; i < 14; i++) {
-    const m = new THREE.MeshBasicMaterial({ color: colors[i % colors.length], side: THREE.DoubleSide });
-    const b = new THREE.Group();
-    const wings = [-1, 1].map((sx) => { const wg = new THREE.Mesh(wingGeo, m); wg.scale.x = sx; wg.userData.noShadow = true; b.add(wg); return wg; });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.2), mat('#2b2230'));
-    body.userData.noShadow = true;
-    b.add(body);
-    g.add(b);
+  const tint = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    const b = new THREE.Object3D();
+    const wings = [-1, 1].map((sx) => { const wg = new THREE.Object3D(); wg.scale.x = sx; b.add(wg); return wg; });
+    for (let k = 0; k < 2; k++) wingMesh.setColorAt(i * 2 + k, tint.set(colors[i % colors.length]));
     flock.push({ b, wings, cx: ((i * 0.37) % 1 - 0.5) * (w - 3), cz: ((i * 0.61) % 1 - 0.5) * (d - 3), rx: 0.8 + (i % 4) * 0.4, rz: 0.6 + (i % 3) * 0.4, y: 1.2 + (i % 5) * 0.35, sp: 0.35 + (i % 4) * 0.12, ph: i * 1.7 });
   }
-  return (t) => {
-    for (const f of flock) {
+  const fly = (t) => {
+    flock.forEach((f, i) => {
       const a = t * f.sp + f.ph;
       const x = f.cx + Math.cos(a) * f.rx, z = f.cz + Math.sin(a * 1.3) * f.rz;
       f.b.position.set(x, f.y + Math.sin(a * 2.1) * 0.25, z);
       f.b.rotation.y = Math.atan2(-Math.sin(a) * f.rx, Math.cos(a * 1.3) * 1.3 * f.rz);
       const flap = Math.sin(t * 14 + f.ph) * 0.9;
       f.wings[0].rotation.z = flap; f.wings[1].rotation.z = -flap;
-    }
+      f.b.updateMatrixWorld(true);
+      bodyMesh.setMatrixAt(i, f.b.matrixWorld);
+      wingMesh.setMatrixAt(i * 2, f.wings[0].matrixWorld);
+      wingMesh.setMatrixAt(i * 2 + 1, f.wings[1].matrixWorld);
+    });
+    wingMesh.instanceMatrix.needsUpdate = bodyMesh.instanceMatrix.needsUpdate = true;
   };
+  fly(0);
+  // (they stay inside the glass: bounds as big as the greenhouse)
+  for (const m of [wingMesh, bodyMesh]) { m.computeBoundingSphere(); m.boundingSphere.radius = Math.hypot(w, d, H) / 2; m.boundingSphere.center.set(0, H / 2, 0); }
+  g.add(wingMesh, bodyMesh);
+  bakeColors(g); // frame, beds and plants: a mesh or two, not ~70 (the glass and the butterflies stay as they are)
+  return fly;
 }
 
 // A round pond (l.r) with a stone rim, lily pads, and a tiered fountain in
@@ -515,6 +531,7 @@ function pond(g, l) {
   ripple.position.y = 0.14;
   ripple.userData.noShadow = true;
   g.add(ripple);
+  bakeColors(g, [top]); // rim, pads and fountain tiers: one mesh (the water jets and ripple stay)
   return (t) => {
     if (top) top.scale.y = 0.85 + Math.sin(t * 3) * 0.15;
     const k = (t * 0.5) % 1;

@@ -837,6 +837,9 @@ let squareNpc = null, billboard = null;
 // square guide instead, as before.
 const firstStop = await startChoice.then((k) => { const sp = k && startSpot(region, k); return sp && !sp.square ? sp : null; });
 let welcomeNpc = null;
+// Street things that FarCull (below) hides past the fog, besides the ones it
+// lists itself: wall screens, the square's billboard and boards, hiring posters.
+const farExtras = [];
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
@@ -849,6 +852,7 @@ for (const sc of region.screens || []) {
   const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
+  farExtras.push(ws.root);
   wallScreens.push(ws);
 }
 if (square) {
@@ -910,6 +914,7 @@ if (square) {
   billboard.root.position.set(bx, 0, bz);
   billboard.root.rotation.y = face(bx, bz);
   scene.add(billboard.root);
+  farExtras.push(billboard.root);
   // Paving blocks (보도블럭) on the square, under the roads.
   const pc = document.createElement('canvas');
   pc.width = pc.height = 256;
@@ -965,6 +970,7 @@ if (square) {
     m.position.set(x, 0, z);
     m.rotation.y = Math.atan2(-ax, -az);
     scene.add(m);
+    farExtras.push(m);
     noticeBoards.push({ board, x: x - ax * 1.2, z: z - az * 1.2 }); // stand in front of it
   }
 }
@@ -4487,7 +4493,9 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
       }
       if (!wall) continue;
       const w = Math.min(5.6, wall.len - 1);
-      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w));
+      const poster = wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w);
+      scene.add(poster);
+      farExtras.push(poster);
       supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
     }
   }
@@ -4518,7 +4526,9 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
       if (storefronts.items.some((o) => Math.hypot(o.group.position.x - wall.x, o.group.position.z - wall.z) < 6)) continue;
       const w = Math.min(5.6, wall.len - 1);
       const tex = hiringTexture({ ...j.ad, meters: Math.hypot(wall.x - j.x, wall.z - j.z) }, signLang());
-      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 7.2), w));
+      const poster = wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 7.2), w);
+      scene.add(poster);
+      farExtras.push(poster);
       hiringRedraws.push(tex.redraw);
       hiringPlaces.push([j.id, 'wall', [Math.round(wall.x), Math.round(wall.z), +wall.nx.toFixed(2), +wall.nz.toFixed(2)]]);
       break;
@@ -4784,7 +4794,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court, palaceShow?.rope?.rig], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
