@@ -140,7 +140,7 @@ const map = {
   meta: {
     district: 'jongmyo',
     // For the overlap check.
-    parts: [{ why: 'the Information Center and the grove, Jongmyo Square and the shrine', box: [GROVE[0] - 2, -102, 86, J + 6] }],
+    parts: [{ why: 'the Information Center and the grove, Jongmyo Square and the shrine', box: [GROVE[0] - 2, WZ1 - 2, 86, J + 6] }],
     enclosure: { why: 'inside the shrine wall: the halls, the stone path, the woods are drawn once you walk in through Oedaemun (core/enclosure.js)', box: [WX0, WZ0, WX1, WZ1] },
     source: 'hand-made (game map, not to scale; loosely after Jongmyo, Jongno-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-jongmyo.mjs',
   },

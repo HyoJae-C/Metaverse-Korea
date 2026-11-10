@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { toGame } from '../src/core/seoul-grid.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, MANNERS_REWARD, RITE_REWARD } from '../src/data/jongmyo.js';
 import { inside } from '../src/data/bukchon.js';
 import { CRAFT, craftWear, craftEntry } from '../src/ui/bukchon-ui.js';
@@ -67,7 +68,14 @@ test('the shrine: walled, one gate on Jongmyo Square, the halls in their yards, 
     assert.ok(!inSolid((h.woldae[0] + h.woldae[2]) / 2, (h.woldae[1] + h.woldae[3]) / 2), 'you can stand on the terrace');
   }
   const hall = map.landmarks.find((l) => l.type === 'shrinehall' && l.bays === 19);
-  assert.ok(hall.w >= 60, 'Jeongjeon is long');
+  assert.ok(Math.abs(hall.w - 92 / 4) < 3, 'Jeongjeon at a quarter of its real 92 m, like the rest of Seoul');
+  // Both halls stand on their real spots (OpenStreetMap), within 15 m.
+  const off = region.districts.find((d) => d.id === 'jongmyo').offset;
+  for (const h of [JONGMYO.jeongjeon, JONGMYO.yeongnyeongjeon]) {
+    const [rx, rz] = toGame(...h.real);
+    const d = Math.hypot((h.hall[0] + h.hall[2]) / 2 + off[0] - rx, (h.hall[1] + h.hall[3]) / 2 + off[1] - rz);
+    assert.ok(d < 15, `hall ${Math.round(d)} m from its real spot`);
+  }
   assert.equal(map.landmarks.find((l) => l.type === 'shrinehall' && l.bays === 16).mid, 4, 'Yeongnyeongjeon\'s taller middle');
 });
 
