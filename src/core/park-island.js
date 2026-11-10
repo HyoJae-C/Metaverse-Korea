@@ -27,6 +27,32 @@ import { HALL, buildHall } from './park-hall.js';
 
 const mat = matCache({ flatShading: true });
 
+// The ticket booth and its guide (game/park-tickets.js) east of the walk
+// from the bridge to the candy castle, so the first thing you meet on the
+// island is someone to ask about tickets. The booth's window faces the walk
+// (west); the guide stands by the walk, facing the bridge.
+export const TICKET_BOOTH = { x: -23.6, z: -53.1 };
+export const TICKET_GUIDE = { x: -27.3, z: -53.6, ry: -1.8 };
+function buildTicketBooth(scene, block) {
+  const { x, z } = TICKET_BOOTH;
+  const box = (sx, sy, sz, px, py, pz, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c)); m.position.set(px, py, pz); scene.add(m); return m; };
+  box(1.7, 0.22, 1.9, x, 0.11, z, '#e2a64a'); // plinth
+  box(1.5, 2.2, 1.7, x, 1.21, z, '#ffd36e');
+  box(0.06, 0.8, 1.0, x - 0.76, 1.4, z, '#5b3a2a'); // the window
+  box(0.35, 0.08, 1.2, x - 0.9, 0.96, z, '#fffaf3'); // its counter
+  for (let i = 0; i < 4; i++) { const a = box(0.7, 0.08, 0.46, x - 1.05, 2.1, z - 0.69 + i * 0.46, i % 2 ? '#fffaf3' : '#ff5a5f'); a.rotation.z = -0.35; } // awning
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.1, 4), mat('#ff7a8a'));
+  roof.position.set(x, 2.85, z); roof.rotation.y = Math.PI / 4; scene.add(roof);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), mat('#ff3b55'));
+  ball.position.set(x, 3.5, z); scene.add(ball);
+  // A big ticket on a post by the walk: pink with a white stub.
+  box(0.1, 1.6, 0.1, x - 1.6, 0.8, z + 1.25, '#fffaf3');
+  box(0.08, 0.6, 1.0, x - 1.6, 1.85, z + 1.25, '#ff5f9e');
+  box(0.09, 0.6, 0.28, x - 1.6, 1.85, z + 1.62, '#fffaf3');
+  block(x, z, 1.7, 1.9);
+  block(x - 1.6, z + 1.25, 0.3, 0.3);
+}
+
 // The shore as thin walls, but for the bridge's landing.
 function shoreWalls(lawn, bridge, block) {
   for (let i = 0; i < lawn.length; i++) {
@@ -80,9 +106,11 @@ export function buildIsland(store, ROOM, EXIT, { candyLand }) {
   // The candy castle over the way in and the hall with the stairs down.
   const gate = buildCandyHouse(scene, block, mat, house);
   const down = buildHall(scene, block, mat, hall);
+  stations.ticketGuide = [TICKET_GUIDE];
   stations.underground = [{ x: down.door.x, z: down.door.z, ry: hall.ry }];
   const spurs = [...SPURS, [[WALK[2][0] - 0.4, down.door.z], [down.door.x, down.door.z]]];
-  const built = (x, z, m) => (Math.abs(x - house.x) < HOUSE.w / 2 + 1.4 + m && Math.abs(z - house.z) < HOUSE.d / 2 + 1.4 + m) || Math.hypot(x - hall.x, z - hall.z) < HALL.r + 1.6 + m;
+  buildTicketBooth(scene, block);
+  const built = (x, z, m) => (Math.abs(x - TICKET_BOOTH.x) < 2.6 + m && Math.abs(z - TICKET_BOOTH.z) < 2.6 + m) || (Math.abs(x - house.x) < HOUSE.w / 2 + 1.4 + m && Math.abs(z - house.z) < HOUSE.d / 2 + 1.4 + m) || Math.hypot(x - hall.x, z - hall.z) < HALL.r + 1.6 + m;
 
   // The candy wood, ponds, benches and cotton candy cart, kept on the island
   // and off the walk from the bridge to the station.

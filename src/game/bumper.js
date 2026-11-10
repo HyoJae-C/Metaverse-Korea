@@ -115,7 +115,7 @@ export function createBumper(game) {
     if (!mayBoard({ phase, riders: rs.length, turn, myId })) { shop.toast(L(BUMPER_TEXT.full)); return; }
     const slot = freeSlot(rs.map((r) => r.slot));
     if (slot < 0) { shop.toast(L(BUMPER_TEXT.full)); return; }
-    const free = paid || game.ridePass?.(); // (bounced out earlier, or the park's ride-all day pass)
+    const free = paid || !!game.useRideTicket?.(); // (bounced out earlier, or the park's ride-all day pass or a ride ticket)
     if (!free && !wallet.spend(BUMPER_COST, { k: 'ledger.ride' })) { shop.toast(t('ride.noCoins', { n: BUMPER_COST })); return; }
     payOp = free ? false : wallet.lastOp; // (nothing to refund on a free ride)
     paid = false; ticket = 0;
@@ -342,7 +342,7 @@ export function createBumper(game) {
       return phaseOf(myGo, Date.now()).phase === 'driving' ? null : { key: 'bumper-out', label: '🚪 ' + L(BUMPER_TEXT.out), run: () => game.standUp() };
     }
     if (game.seated) return null;
-    const free = game.ridePass?.(); // the park's ride-all day pass
+    const free = game.ridePass?.(); // the park's ride-all day pass or a ride ticket that fits
     const cost = paid ? '' : free ? ' · 🎫' : ` · 🪙 ${BUMPER_COST}`;
     if (ticket && turn.callable.includes(myId)) { // called: get in from anywhere in the park
       const s = queue.secondsLeft(myId) ?? 0;

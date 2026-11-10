@@ -35,6 +35,7 @@ import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
 import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
 import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
+import { RideTickets } from './core/ride-tickets.js';
 import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
@@ -214,6 +215,7 @@ import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
 import { createFolkYard } from './game/folk-yard.js';
 import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
+import { createParkTickets } from './game/park-tickets.js';
 import { createMirrorMaze } from './game/mirror-maze.js';
 import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
 import { createSkate } from './game/skate.js';
@@ -2562,6 +2564,7 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 const dayPasses = new DayPasses();
+const rideTickets = new RideTickets({ pass: () => dayPasses.has('rides') }); // (Another Land's 5-ride and Big 3 tickets)
 let domeLoading = false;
 // walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
 // the park's own metres): no door, no bell, the camera stays as it was.
@@ -2761,6 +2764,7 @@ function enterStore(item, walkIn = null) {
     }
   }
   interior.rideStaff = built.rideStaff || null;
+  parkTickets.spawn(built); // (the island's ticket guide)
   interior.riderNpcs = parkRiders.spawn(built) || null;
   if (!balloonClown.spawn(built)) balloonClown.leave();
   if (built.stations?.coasterStaff && !built.coasterStaff) {
@@ -3008,6 +3012,7 @@ function leaveStore(walkOut = false) {
   // or they'd hang over the street where they last stood.
   for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   balloonClown.hideLabels();
+  parkTickets.hideLabels();
   clerk = null;
   trainer = null;
   instructor = null;
@@ -4290,7 +4295,7 @@ const bumper = createBumper({
   get action() { return action; }, set action(v) { action = v; },
   get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
   $, STALE, myId, shop, sfx, wallet, input, moveRef, cam, sitDown, standUp, missionEvent: (...a) => missionEvent(...a),
-  ridePass: () => ridePass(),
+  ridePass: () => rideTickets.covers('bumper'), useRideTicket: () => useRideTicket('bumper'),
 });
 // Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
 const basketball = createBasketball({
@@ -4316,6 +4321,13 @@ const balloonClown = createBalloonClown({
   $, STALE, shop, wallet, randomLook, refreshWallet: () => refreshWallet(), handReady: () => handReady(), holdNew: (h) => holdNew(h), setHeld: (h) => setHeld(h),
 });
 onLanguageChange(() => balloonClown.relabel());
+// Another Land's ticket guide at the island's gate, and the booth below. (game/park-tickets.js)
+const parkTickets = createParkTickets({
+  get interior() { return mode === 'store' ? interior : null; }, get action() { return action; }, set action(v) { action = v; },
+  $, STALE, shop, sfx, wallet, randomLook, tickets: rideTickets, refreshWallet: () => refreshWallet(),
+  passName: () => L(DAY_PASS_TEXT.rides), buyRidePass: () => buyRidePass(),
+});
+onLanguageChange(() => parkTickets.relabel());
 // Another Land's mirror maze: a clock from the door to the far side. (game/mirror-maze.js)
 const mirrorMaze = createMirrorMaze({ shop });
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
@@ -5076,9 +5088,15 @@ onLanguageChange(refreshDexBtn);
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
 const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
-const rideFare = (kind) => (ridePass() ? '🎫' : `🪙 ${RIDE_PRICE[kind]}`);
+const rideFare = (kind) => (ridePass() ? '🎫' : rideTickets.ticketFor(kind) ? '🎟️' : `🪙 ${RIDE_PRICE[kind]}`);
+// A ride on the pass or a ticket (true), saying what's left on the ticket.
+function useRideTicket(kind) {
+  const id = rideTickets.use(kind);
+  if (id && id !== 'pass') { const n = rideTickets.left(id), name = t('tix.' + id); shop.toast('🎟️ ' + (n ? t('tix.used', { name, n }) : t('tix.done', { name }))); }
+  return !!id;
+}
 function payRide(kind) {
-  if (ridePass() || wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) return true;
+  if (useRideTicket(kind) || wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) return true;
   shop.toast(t('ride.noCoins', { n: RIDE_PRICE[kind] }));
   return false;
 }
@@ -5574,6 +5592,7 @@ function openParkRoom(o) {
     o.built = roomFor(o.item.store);
     o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
     staffOpenPark(o.built);
+    parkTickets.spawn(o.built); // (Another Land's ticket guide: there as you cross the bridge)
   }
   return o.built;
 }
@@ -5603,7 +5622,7 @@ function updateOpenParks(dt) {
   if (here) {
     lightOpenPark(openParkRoom(here));
     here.built.setNight?.(parkNight()); // (Another Land's castle gate lights up)
-    for (const n of [here.built.clerkNpc, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
+    for (const n of [here.built.clerkNpc, here.built.ticketGuide, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
@@ -5629,7 +5648,7 @@ function updateOpenParks(dt) {
     // The sellers (about 20 meshes each) only from close by: from further
     // off the stalls and the kiosk read as busy enough.
     const close = d < PARK_STAFF;
-    for (const n of [o.built.clerkNpc, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
+    for (const n of [o.built.clerkNpc, o.built.ticketGuide, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
     if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Another Land's island: the guests on its rides)
     for (const n of o.built.riderNpcs || []) n.ch.root.visible = close;
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
@@ -6240,7 +6259,7 @@ function moreActions(p, door) {
   if (seat?.mat) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
   const fb = frisbee.action(p); if (fb) out.push(fb);
-  if (interior.themepark) out.push(...balloonClown.actions(p));
+  if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
   if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
@@ -6376,11 +6395,8 @@ function updateAction(p, tSec) {
       next = zooVisit.action(p); // the zoo: carts, feeding, the keeper, the hippo's watermelon, the Sea Animals hall
     } else if (interior.themepark && coasterAction(p)) {
       next = coasterAction(p);
-    } else if (interior.themepark && nearStation(p, 'booth', 1.6)) {
-      const name = L(DAY_PASS_TEXT.rides);
-      next = ridePass()
-        ? { key: 'ride-pass-held', label: '🎫 ' + fmt(L(DAY_PASS_TEXT.ridesHeld), { name }), run: buyRidePass }
-        : { key: 'ride-pass', label: `🎫 ${name} · 🪙 ${RIDE_PASS.toLocaleString()}`, run: buyRidePass };
+    } else if (interior.themepark && parkTickets.actions(p).length) {
+      next = parkTickets.actions(p)[0]; // the ticket guide (the island) or the booth (below): what's what, then each ticket in the more list
     } else if (interior.themepark && balloonClown.actions(p).length) {
       next = balloonClown.actions(p)[0]; // (the other balloons are in the more list)
     } else if (interior.bumper && bumper.action(p)) {
@@ -7019,6 +7035,7 @@ renderer.setAnimationLoop((now) => {
     listenBar.update(dt, p);
   }
   balloonClown.tick(dt, mode === 'store' && !!interior?.themepark && !interior.island, camera, w, h, placeLabels); // (the clown, and a balloon in hand losing its air)
+  parkTickets.tick(dt, mode === 'store' && !!interior?.island, camera, w, h, placeLabels, p); // (the ticket guide at the island's gate)
   mirrorMaze.tick(me.root.position, mode === 'store' && !!interior?.themepark && !interior.island && !ride); // (the island is in the coaster's metres, not the maze's)
   zooVisit.tick(dt, p, camera, w, h); // (in the zoo: its visitors, its keeper, the carts)
   for (const g of [squareNpc, welcomeNpc]) {
