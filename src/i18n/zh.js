@@ -629,6 +629,8 @@ export const ZH = {
   'dal.lifts': "登乘截止 · {t} 后升空",
   'dal.up': "出发！首尔月亮正升上汝矣岛上空 🎈",
   'dal.top': "到顶了！下方是汉江、汝矣岛和63大厦 📸",
+  'dal.stamp': "盖章 · {name}",
+  'dal.stampHint': "在这里盖章吧 🔖",
   'dal.lookDown': "往下看",
   'dal.lookOut': "往远看",
   'dal.landed': "回到地面了。风景怎么样？",

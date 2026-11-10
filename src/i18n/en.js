@@ -628,6 +628,8 @@ export const EN = {
   'dal.lifts': "Gate closed · lift-off in {t}",
   'dal.up': "Up we go! Seoul Dal is rising over Yeouido 🎈",
   'dal.top': "At the top! The Han River, Yeouido and the 63 tower below 📸",
+  'dal.stamp': "Stamp · {name}",
+  'dal.stampHint': "Press the stamp up here 🔖",
   'dal.lookDown': "Look down",
   'dal.lookOut': "Look out",
   'dal.landed': "Back on the ground. How was the view?",

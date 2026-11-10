@@ -141,6 +141,7 @@ function buildBalloon() {
     line.position.copy(a).add(b).multiplyScalar(0.5);
     line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
     line.userData.noShadow = true;
+    line.userData.rig = t; // (its angle round the cable: hidden in front of the gondola view)
     g.add(line);
   }
   // From the deck's middle up to the balloon (the cable runs through).
@@ -152,7 +153,8 @@ function buildBalloon() {
 }
 
 // game: { scene, me, mode, cam, riding, others, myId, wallet, shop, t,
-// missionEvent, resend, clearAction } (getters where they change);
+// missionEvent, resend, clearAction, stamp, landmarks, weather } (getters where they change;
+// stamp() is the tour stamp for up top: { got, name, press }, or null);
 // at: { x, z, ry }, the cable's foot (its local +z is the gate).
 export function createSeoulDal(game, at) {
   const { x: ox, z: oz, ry } = at;
@@ -169,6 +171,17 @@ export function createSeoulDal(game, at) {
   root.add(cable);
   game.scene.add(root);
   const gate = world(0, GATE);
+
+  // The view from the gondola, while it's in the air: the camera stands in
+  // the gondola between the cable and the rail, under the balloon, looking
+  // out where cam.yaw points (drag to turn) and down by cam.pitch. First
+  // out at the 63 tower and the river, the way people look from the real one.
+  const aim = game.landmarks?.find((l) => l.type === 'tower63');
+  const aimYaw = aim ? Math.atan2(-(aim.x - ox), -(aim.z - oz)) : ry + Math.PI;
+  const OUT = 0.16, DOWN = 0.75; // (pitch: the skyline, the park below)
+  let lifted = false; // (the haze pulled back: weather.lift)
+  const rig = balloon.children.filter((o) => o.userData.rig !== undefined);
+  let rigHidden = false;
 
   let ride = null; // { slot, n (the flight), paid, flown, topped, down }
   let ticket = 0; // my waiting ticket (when I took it, ms), or 0
@@ -265,6 +278,8 @@ export function createSeoulDal(game, at) {
       balloon.rotation.y = s.h * 0.004; // (a slow turn as it climbs)
       cable.scale.y = Math.max(0.01, s.h + DAL.deck - 0.9);
     }
+    const lift = ride && game.mode === 'street' ? Math.min(1, s.h / DAL.top) : 0;
+    if (game.weather && (lift > 0 || lifted)) { game.weather.lift = lift; lifted = lift > 0; }
     if (!ride) return;
     if (game.mode !== 'street') { ride = null; return; } // (a warp, the map: gone)
     const sp = spotNow(s);
@@ -275,13 +290,13 @@ export function createSeoulDal(game, at) {
       getOff(false);
       return;
     }
-    if (s.phase !== 'board') ride.flown = true;
     if (s.phase === 'up' && lastGate !== s.n) { lastGate = s.n; game.shop.toast(T('dal.up')); }
-    if (s.phase === 'top' && !ride.topped) { // the view: once, down at the river
+    if (s.phase !== 'board' && !ride.flown) { ride.flown = true; game.cam.yaw = aimYaw; game.cam.pitch = OUT; } // lift-off: facing the view
+    if (s.phase === 'top' && !ride.topped) { // the view: once, out at the 63 tower and the river
       ride.topped = true;
-      ride.down = true;
-      game.cam.pitch = 0.5; game.cam.dist = Math.max(game.cam.dist, 18); // (far enough out that the balloon is not in the way)
-      game.shop.toast(T('dal.top'));
+      ride.down = false;
+      game.cam.yaw = aimYaw; game.cam.pitch = OUT;
+      game.shop.toast(T('dal.top') + (game.stamp?.() && !game.stamp().got ? ' ' + T('dal.stampHint') : ''));
       game.clearAction();
     }
     p.set(sp.x, sp.y, sp.z);
@@ -294,9 +309,11 @@ export function createSeoulDal(game, at) {
     if (ride) {
       if (s.n === ride.n && gateOpen(s)) { const t = clock(s.left - DAL.close); return { key: 'dal-off:' + t, label: '🚪 ' + T('dal.leave', { t }), run: () => getOff(true) }; }
       if (s.phase === 'board') { const t = clock(s.left); return { key: 'dal-wait:' + t, label: '🎈 ' + T('dal.lifts', { t }), run: () => {} }; }
+      const st = s.phase === 'top' && game.stamp?.(); // (the stamp tour: press it up here)
+      if (st && !st.got) return { key: 'dal-stamp', label: '🔖 ' + T('dal.stamp', { name: st.name }), run: st.press };
       return ride.down
-        ? { key: 'dal-out', label: '🔭 ' + T('dal.lookOut'), run: () => { ride.down = false; game.cam.pitch = 0.2; game.clearAction(); } }
-        : { key: 'dal-down', label: '👀 ' + T('dal.lookDown'), run: () => { ride.down = true; game.cam.pitch = 0.5; game.cam.dist = Math.max(game.cam.dist, 18); game.clearAction(); } }; // (far enough out that the balloon is not in the way)
+        ? { key: 'dal-out', label: '🔭 ' + T('dal.lookOut'), run: () => { ride.down = false; game.cam.pitch = OUT; game.clearAction(); } }
+        : { key: 'dal-down', label: '👀 ' + T('dal.lookDown'), run: () => { ride.down = true; game.cam.pitch = DOWN; game.clearAction(); } };
     }
     if (game.riding) return null;
     const near = Math.hypot(p.x - ox, p.z - oz);
@@ -310,13 +327,41 @@ export function createSeoulDal(game, at) {
     const t = clock(opensIn(now));
     return { key: 'dal-ticket:' + t, label: '🎫 ' + T('dal.ticket', { t }), run: takeTicket };
   }
+  // After the follow camera, every frame: in the air, the view from the
+  // gondola (see aim above).
+  const look = new THREE.Vector3();
+  function camera(cameraObj) {
+    const s = ride && dalAt(dalClock());
+    if (!s || s.phase === 'board') {
+      if (rigHidden) { for (const l of rig) l.visible = true; rigHidden = false; }
+      return;
+    }
+    const c = game.cam, lx = -Math.sin(c.yaw), lz = -Math.cos(c.yaw);
+    const down = Math.min(1.1, Math.max(0, c.pitch));
+    // Looking out: from inside the rail, the riders beside you; looking
+    // down: out over the rail, so the park is below and not your own head.
+    const r = 2.4 + 2.6 * Math.min(1, Math.max(0, (down - 0.3) / 0.45));
+    const y = s.h + DAL.deck + 2.1; // (under the balloon, which starts HANG up)
+    cameraObj.position.set(ox + lx * r, y, oz + lz * r);
+    // The lines up to the balloon right in front would be thick posts this
+    // close: hide those few (on my screen only).
+    const a = Math.atan2(lx, lz);
+    for (const l of rig) {
+      const d = Math.atan2(Math.sin(l.userData.rig + ry + balloon.rotation.y - a), Math.cos(l.userData.rig + ry + balloon.rotation.y - a));
+      l.visible = Math.abs(d) > 0.6;
+    }
+    rigHidden = true;
+    look.set(cameraObj.position.x + lx * Math.cos(down), y - Math.sin(down), cameraObj.position.z + lz * Math.cos(down));
+    cameraObj.up.set(0, 1, 0);
+    cameraObj.lookAt(look);
+  }
   // My bits of the shared state: the flight I'm on, my ticket.
   function state(st) {
     if (ride) st.dl = ride.n + 1;
     if (ticket) st.dq = ticket;
   }
   return {
-    update, act, state,
+    update, act, state, camera,
     get busy() { return !!ride; },
   };
 }

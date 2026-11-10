@@ -5760,8 +5760,10 @@ const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 // Seoul Dal, the balloon in Yeouido Park (game/seoul-dal-near.js loads
 // game/seoul-dal.js when you come near it).
 const seoulDal = createSeoulDalNear({
-  landmarks: map.landmarks, scene, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
+  landmarks: map.landmarks, scene, weather, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
   others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  // The stamp tour's Seoul Dal stamp, pressed in the gondola at the top.
+  stamp: () => { const s = tourStamps.find((q) => q.id === 'seoul-dal'); return s && { got: stampBook.has(s.id), name: L(s.name), press: () => pressStamp({ stamp: s }) }; },
 });
 
 // Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
@@ -6933,6 +6935,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
+  seoulDal.camera(camera); // (in Seoul Dal's gondola, in the air: the view out)
   arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
   surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)

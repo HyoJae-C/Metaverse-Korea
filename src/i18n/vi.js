@@ -626,6 +626,8 @@ export const VI = {
   'dal.lifts': "Hết giờ lên · cất cánh sau {t}",
   'dal.up': "Lên nào! Seoul Dal đang bay lên trên Yeouido 🎈",
   'dal.top': "Lên đỉnh rồi! Bên dưới là sông Hàn, Yeouido và tháp 63 📸",
+  'dal.stamp': "Đóng dấu · {name}",
+  'dal.stampHint': "Đóng dấu ngay trên này 🔖",
   'dal.lookDown': "Nhìn xuống",
   'dal.lookOut': "Nhìn ra xa",
   'dal.landed': "Đã về mặt đất. Cảnh đẹp chứ?",
